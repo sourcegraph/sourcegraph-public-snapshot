@@ -6,7 +6,7 @@ import CheckboxBlankCircleIcon from 'mdi-react/CheckboxBlankCircleIcon'
 import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
 import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
 import FileDocumentEditOutlineIcon from 'mdi-react/FileDocumentEditOutlineIcon'
-import React, { useCallback, useState } from 'react'
+import React, { useCallback, useMemo, useState } from 'react'
 
 import { Link } from '@sourcegraph/shared/src/components/Link'
 import { Maybe } from '@sourcegraph/shared/src/graphql-operations'
@@ -27,6 +27,7 @@ import { Description } from '../../Description'
 import { ChangesetStatusCell } from '../../detail/changesets/ChangesetStatusCell'
 import { ExternalChangesetTitle } from '../../detail/changesets/ExternalChangesetTitle'
 import { PreviewPageAuthenticatedUser } from '../BatchChangePreviewPage'
+import { getPublishableChangesetSpecID } from '../utils'
 
 import { queryChangesetSpecFileDiffs as _queryChangesetSpecFileDiffs } from './backend'
 import { GitBranchChangesetDescriptionInfo } from './GitBranchChangesetDescriptionInfo'
@@ -213,15 +214,15 @@ const SelectBox: React.FunctionComponent<{
         isSelected: (id: string) => boolean
     }
 }> = ({ node, selectable }) => {
-    const toggleSelected = useCallback((): void => {
-        if (node.targets.__typename === 'VisibleApplyPreviewTargetsDetach') {
-            return
-        }
-        console.log(node.targets, selectable)
-        selectable?.onSelect(node.targets.changesetSpec.id)
-    }, [selectable, node.targets])
+    const changesetSpecID = useMemo(() => getPublishableChangesetSpecID(node), [node])
 
-    if (node.targets.__typename === 'VisibleApplyPreviewTargetsDetach') {
+    const toggleSelected = useCallback((): void => {
+        if (changesetSpecID) {
+            selectable.onSelect(changesetSpecID)
+        }
+    }, [selectable, changesetSpecID])
+
+    if (!changesetSpecID) {
         return (
             <div className="p-2">
                 <InputTooltip
@@ -230,23 +231,21 @@ const SelectBox: React.FunctionComponent<{
                     className="btn"
                     checked={false}
                     disabled={true}
-                    tooltip="You cannot change the publish status for a changeset that will be detached"
+                    tooltip="You cannot currently modify the publish status for this changeset"
                 />
             </div>
         )
     }
 
-    const selected = selectable?.isSelected(node.targets.changesetSpec.id)
-
     return (
         <div className="p-2">
             <input
-                id={`select-changeset-${node.targets.changesetSpec.id}`}
+                id={`select-changeset-${changesetSpecID}`}
                 type="checkbox"
                 className="btn"
-                checked={selected}
+                checked={selectable.isSelected(changesetSpecID)}
                 onChange={toggleSelected}
-                data-tooltip="Click to select changeset for bulk applying a new publish status"
+                data-tooltip="Click to select changeset for bulk-modifying the publish status"
             />
         </div>
     )

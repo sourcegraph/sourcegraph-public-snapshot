@@ -3,7 +3,6 @@ import MagnifyIcon from 'mdi-react/MagnifyIcon'
 import React, { useCallback, useContext, useState } from 'react'
 import { tap } from 'rxjs/operators'
 
-import { VisibleApplyPreviewTargetsUpdateFieldPolicy } from '@sourcegraph/shared/src/graphql-operations'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { Container } from '@sourcegraph/wildcard'
 
@@ -88,7 +87,8 @@ const PreviewListImpl: React.FunctionComponent<Props> = ({
                                     node.targets.__typename === 'VisibleApplyPreviewTargetsAttach' ||
                                     node.targets.__typename === 'VisibleApplyPreviewTargetsUpdate'
                             )
-                            .map(node => node.targets.changesetSpec.id)
+                            // TODO: Lol fix me pls
+                            .map(node => (node.targets as any).changesetSpec.id)
                     )
                     // Remember the totalCount.
                     setTotalCount(data.totalCount)

@@ -65,7 +65,9 @@ And the more explanatory body. And the more explanatory body. And the more expla
     }
 }
 
-export const visibleChangesetApplyPreviewNodeStories: Record<string, VisibleChangesetApplyPreviewFields> = {
+export const visibleChangesetApplyPreviewNodeStories = (
+    publishStatusSet: boolean
+): Record<string, VisibleChangesetApplyPreviewFields> => ({
     'Import changeset': {
         __typename: 'VisibleChangesetApplyPreview',
         operations: [ChangesetSpecOperation.IMPORT],
@@ -106,7 +108,7 @@ export const visibleChangesetApplyPreviewNodeStories: Record<string, VisibleChan
         },
         targets: {
             __typename: 'VisibleApplyPreviewTargetsAttach',
-            changesetSpec: baseChangesetSpec(1, true),
+            changesetSpec: baseChangesetSpec(1, publishStatusSet ? true : null),
         },
     },
     'Create changeset draft': {
@@ -123,7 +125,7 @@ export const visibleChangesetApplyPreviewNodeStories: Record<string, VisibleChan
         },
         targets: {
             __typename: 'VisibleApplyPreviewTargetsAttach',
-            changesetSpec: baseChangesetSpec(2, 'draft'),
+            changesetSpec: baseChangesetSpec(2, publishStatusSet ? 'draft' : null),
         },
     },
     'Create changeset not published': {
@@ -140,7 +142,7 @@ export const visibleChangesetApplyPreviewNodeStories: Record<string, VisibleChan
         },
         targets: {
             __typename: 'VisibleApplyPreviewTargetsAttach',
-            changesetSpec: baseChangesetSpec(3, false),
+            changesetSpec: baseChangesetSpec(3, publishStatusSet ? false : null),
         },
     },
     'Update changeset title': {
@@ -157,7 +159,7 @@ export const visibleChangesetApplyPreviewNodeStories: Record<string, VisibleChan
         },
         targets: {
             __typename: 'VisibleApplyPreviewTargetsUpdate',
-            changesetSpec: baseChangesetSpec(4, true),
+            changesetSpec: baseChangesetSpec(4, publishStatusSet ? true : null),
             changeset: {
                 id: '123123',
                 title: 'the old title',
@@ -212,7 +214,7 @@ export const visibleChangesetApplyPreviewNodeStories: Record<string, VisibleChan
         },
         targets: {
             __typename: 'VisibleApplyPreviewTargetsUpdate',
-            changesetSpec: baseChangesetSpec(5, true),
+            changesetSpec: baseChangesetSpec(5, publishStatusSet ? true : null),
             changeset: {
                 id: '123123',
                 title: 'the old title',
@@ -267,7 +269,7 @@ export const visibleChangesetApplyPreviewNodeStories: Record<string, VisibleChan
         },
         targets: {
             __typename: 'VisibleApplyPreviewTargetsUpdate',
-            changesetSpec: baseChangesetSpec(6, true),
+            changesetSpec: baseChangesetSpec(6, publishStatusSet ? true : null),
             changeset: {
                 id: '123123',
                 title: 'Le draft changeset',
@@ -322,7 +324,7 @@ export const visibleChangesetApplyPreviewNodeStories: Record<string, VisibleChan
         },
         targets: {
             __typename: 'VisibleApplyPreviewTargetsUpdate',
-            changesetSpec: baseChangesetSpec(7, true),
+            changesetSpec: baseChangesetSpec(7, publishStatusSet ? true : null),
             changeset: {
                 id: '123123',
                 title: 'Le closed changeset',
@@ -439,7 +441,7 @@ export const visibleChangesetApplyPreviewNodeStories: Record<string, VisibleChan
         },
         targets: {
             __typename: 'VisibleApplyPreviewTargetsUpdate',
-            changesetSpec: baseChangesetSpec(8, true),
+            changesetSpec: baseChangesetSpec(8, publishStatusSet ? true : null),
             changeset: {
                 id: '123123',
                 title: 'Change base ref',
@@ -494,7 +496,7 @@ export const visibleChangesetApplyPreviewNodeStories: Record<string, VisibleChan
         },
         targets: {
             __typename: 'VisibleApplyPreviewTargetsUpdate',
-            changesetSpec: baseChangesetSpec(9, true),
+            changesetSpec: baseChangesetSpec(9, publishStatusSet ? true : null),
             changeset: {
                 id: '123123',
                 title: 'Change base ref',
@@ -549,7 +551,7 @@ export const visibleChangesetApplyPreviewNodeStories: Record<string, VisibleChan
         },
         targets: {
             __typename: 'VisibleApplyPreviewTargetsUpdate',
-            changesetSpec: baseChangesetSpec(10, true),
+            changesetSpec: baseChangesetSpec(10, publishStatusSet ? true : null),
             changeset: {
                 id: '123123',
                 title: 'the old title',
@@ -604,7 +606,7 @@ export const visibleChangesetApplyPreviewNodeStories: Record<string, VisibleChan
         },
         targets: {
             __typename: 'VisibleApplyPreviewTargetsUpdate',
-            changesetSpec: baseChangesetSpec(11, true),
+            changesetSpec: baseChangesetSpec(11, publishStatusSet ? true : null),
             changeset: {
                 id: '123123',
                 title: 'the old title',
@@ -645,17 +647,19 @@ export const visibleChangesetApplyPreviewNodeStories: Record<string, VisibleChan
             },
         },
     },
-}
+})
 
 const queryEmptyFileDiffs = () => of({ totalCount: 0, pageInfo: { endCursor: null, hasNextPage: false }, nodes: [] })
 
-for (const storyName of Object.keys(visibleChangesetApplyPreviewNodeStories)) {
+const stories = visibleChangesetApplyPreviewNodeStories(true)
+
+for (const storyName of Object.keys(stories)) {
     add(storyName, () => (
         <EnterpriseWebStory>
             {props => (
                 <VisibleChangesetApplyPreviewNode
                     {...props}
-                    node={visibleChangesetApplyPreviewNodeStories[storyName]}
+                    node={stories[storyName]}
                     authenticatedUser={{
                         url: '/users/alice',
                         displayName: 'Alice',
