@@ -274,10 +274,8 @@ func (e *executor) updateChangeset(ctx context.Context) (err error) {
 		if err := draftCss.UpdateDraftChangeset(ctx, &cs); err != nil {
 			return errors.Wrap(err, "updating changeset")
 		}
-	} else {
-		if err := e.css.UpdateChangeset(ctx, &cs); err != nil {
-			return errors.Wrap(err, "updating changeset")
-		}
+	} else if err := e.css.UpdateChangeset(ctx, &cs); err != nil {
+		return errors.Wrap(err, "updating changeset")
 	}
 
 	return nil
