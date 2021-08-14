@@ -15,9 +15,9 @@ enum DashboardReasonDenied {
 
 type DashboardPermissions =
     | {
-        isConfigurable: false
-        reason: DashboardReasonDenied
-    }
+          isConfigurable: false
+          reason: DashboardReasonDenied
+      }
     | {
         isConfigurable: true
     }
