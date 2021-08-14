@@ -96,11 +96,10 @@ export const SelectAffiliatedRepos: FunctionComponent<Props> = ({
     }, [telemetryService])
 
     const { setComplete, resetToTheRight, currentIndex } = useSteps()
-    const { externalServices, errorServices, loadingServices } = useExternalServices(authenticatedUser.id)
-    const { affiliatedRepos, errorAffiliatedRepos, loadingAffiliatedRepos } = useAffiliatedRepos(authenticatedUser.id)
-    const { selectedRepos, errorSelectedRepos, loadingSelectedRepos } = useSelectedRepos(authenticatedUser.id)
+    const { externalServices, errorServices } = useExternalServices(authenticatedUser.id)
+    const { affiliatedRepos, errorAffiliatedRepos } = useAffiliatedRepos(authenticatedUser.id)
+    const { selectedRepos, errorSelectedRepos } = useSelectedRepos(authenticatedUser.id)
 
-    const isLoading = loadingServices || loadingAffiliatedRepos || loadingSelectedRepos
     const fetchingError = errorServices || errorAffiliatedRepos || errorSelectedRepos
 
     useEffect(() => {
@@ -128,7 +127,6 @@ export const SelectAffiliatedRepos: FunctionComponent<Props> = ({
 
     useEffect(() => {
         if (externalServices && affiliatedRepos) {
-            debugger
             const codeHostsHaveSyncAllQuery = []
 
             for (const host of externalServices) {
@@ -530,33 +528,27 @@ export const SelectAffiliatedRepos: FunctionComponent<Props> = ({
                 <ul className="list-group">
                     <li className="list-group-item user-settings-repos__container" key="from-code-hosts">
                         <div className={classNames(!isRedesignEnabled && 'p-4')}>
-                            {(isLoading || fetchingError) && modeSelectShimmer}
+                            {fetchingError || !selectionState.loaded ? modeSelectShimmer : modeSelect}
 
-                            {/* display type of repo sync radio buttons */}
-                            {!isLoading && hasCodeHosts && selectionState.loaded && modeSelect}
-
-                            {
-                                // if we're in 'selected' mode, show a list of all the repos on the code hosts to select from
-                                hasCodeHosts && selectionState.radio === 'selected' && (
-                                    <div className="ml-4">
-                                        {filterControls}
-                                        <table role="grid" className="table">
-                                            {
-                                                // if the repos are loaded display the rows of repos
-                                                repoState.loaded && rows
-                                            }
-                                        </table>
-                                        {filteredRepos.length > 0 && (
-                                            <PageSelector
-                                                currentPage={currentPage}
-                                                onPageChange={setPage}
-                                                totalPages={Math.ceil(filteredRepos.length / PER_PAGE)}
-                                                className="pt-4"
-                                            />
-                                        )}
-                                    </div>
-                                )
-                            }
+                            {hasCodeHosts && selectionState.radio === 'selected' && (
+                                <div className="ml-4">
+                                    {filterControls}
+                                    <table role="grid" className="table">
+                                        {
+                                            // if the repos are loaded display the rows of repos
+                                            repoState.loaded && rows
+                                        }
+                                    </table>
+                                    {filteredRepos.length > 0 && (
+                                        <PageSelector
+                                            currentPage={currentPage}
+                                            onPageChange={setPage}
+                                            totalPages={Math.ceil(filteredRepos.length / PER_PAGE)}
+                                            className="pt-4"
+                                        />
+                                    )}
+                                </div>
+                            )}
                         </div>
                     </li>
                 </ul>
