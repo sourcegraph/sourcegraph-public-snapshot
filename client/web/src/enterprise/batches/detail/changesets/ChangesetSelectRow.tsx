@@ -3,12 +3,13 @@ import React, { useMemo, useContext } from 'react'
 
 import { ChangesetState } from '@sourcegraph/shared/src/graphql-operations'
 import { pluralize } from '@sourcegraph/shared/src/util/strings'
+import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
 
 import { AllChangesetIDsVariables, Scalars } from '../../../../graphql-operations'
 import { eventLogger } from '../../../../tracking/eventLogger'
 import { Action, DropdownButton } from '../../DropdownButton'
 import { MultiSelectContext } from '../../MultiSelectContext'
-import { queryAllChangesetIDs } from '../backend'
+import { queryAllChangesetIDs as _queryAllChangesetIDs } from '../backend'
 
 import { CloseChangesetsModal } from './CloseChangesetsModal'
 import { CreateCommentModal } from './CreateCommentModal'
@@ -142,6 +143,8 @@ export interface ChangesetSelectRowProps {
     queryArguments: Omit<AllChangesetIDsVariables, 'after'>
 
     /** For testing only. */
+    queryAllChangesetIDs?: typeof _queryAllChangesetIDs
+    /** For testing only. */
     dropDownInitiallyOpen?: boolean
 }
 
@@ -153,9 +156,14 @@ export const ChangesetSelectRow: React.FunctionComponent<ChangesetSelectRowProps
     batchChangeID,
     onSubmit,
     queryArguments,
+    queryAllChangesetIDs = _queryAllChangesetIDs,
     dropDownInitiallyOpen = false,
 }) => {
-    const { areAllVisibleSelected, selected, selectAll, totalCount } = useContext(MultiSelectContext)
+    const { areAllVisibleSelected, selected, selectAll } = useContext(MultiSelectContext)
+
+    const allChangesetIDs: string[] | undefined = useObservable(
+        useMemo(() => queryAllChangesetIDs(queryArguments), [queryArguments, queryAllChangesetIDs])
+    )
 
     const actions = useMemo(
         () =>
@@ -167,8 +175,8 @@ export const ChangesetSelectRow: React.FunctionComponent<ChangesetSelectRowProps
                         // the changeset IDs.
                         let ids: () => Promise<Scalars['ID'][]>
                         if (selected === 'all') {
-                            // We asynchronously fetch all the IDs for ALL all.
-                            ids = () => queryAllChangesetIDs(queryArguments).toPromise()
+                            // If all changesets are selected, we can just use the cached allChangesetIDs.
+                            ids = () => Promise.resolve(allChangesetIDs || [])
                         } else {
                             // We can just pass down the IDs.
                             ids = () => Promise.resolve([...selected])
@@ -188,7 +196,7 @@ export const ChangesetSelectRow: React.FunctionComponent<ChangesetSelectRowProps
 
                 return dropdownAction
             }),
-        [batchChangeID, onSubmit, queryArguments, selected]
+        [batchChangeID, onSubmit, queryArguments, selected, allChangesetIDs]
     )
 
     return (
@@ -197,15 +205,16 @@ export const ChangesetSelectRow: React.FunctionComponent<ChangesetSelectRowProps
                 <div className="ml-2 col d-flex align-items-center">
                     <InfoCircleOutlineIcon className="icon-inline text-muted mr-2" />
                     {selected === 'all' ? (
-                        <AllSelectedLabel count={totalCount} />
+                        <AllSelectedLabel count={allChangesetIDs?.length} />
                     ) : (
                         `${selected.size} ${pluralize('changeset', selected.size)}`
                     )}
                     {selected !== 'all' &&
                         areAllVisibleSelected() &&
-                        (totalCount === undefined ? true : totalCount > selected.size) && (
+                        allChangesetIDs &&
+                        allChangesetIDs.length > selected.size && (
                             <button type="button" className="btn btn-link py-0 px-1" onClick={selectAll}>
-                                (Select all{totalCount !== undefined && ` ${totalCount}`})
+                                (Select all{allChangesetIDs !== undefined && ` ${allChangesetIDs.length}`})
                             </button>
                         )}
                 </div>
