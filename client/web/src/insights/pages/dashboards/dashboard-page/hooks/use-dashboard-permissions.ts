@@ -15,12 +15,12 @@ enum DashboardReasonDenied {
 
 type DashboardPermissions =
     | {
-          isConfigurable: false
-          reason: DashboardReasonDenied
-      }
+        isConfigurable: false
+        reason: DashboardReasonDenied
+    }
     | {
-          isConfigurable: true
-      }
+        isConfigurable: true
+    }
 
 const DEFAULT_DASHBOARD_PERMISSIONS: DashboardPermissions = {
     isConfigurable: false,
@@ -101,8 +101,9 @@ export function getTooltipMessage(
                 case InsightsDashboardType.Personal:
                     return "This is an automatically created dashboard that lists all your private insights. You can't edit this dashboard."
                 case InsightsDashboardType.Organization:
-                case InsightsDashboardType.Global:
                     return `This is an automatically created dashboard that lists all the ${dashboard.owner.name}'s insights. You can't edit this dashboard.`
+                case InsightsDashboardType.Global:
+                    return `This is an automatically created dashboard that lists all the global insights. You can't edit this dashboard.`
             }
         case DashboardReasonDenied.AllVirtualDashboard:
             return "This is an automatically created dashboard that lists all the insights you have access to. You can't edit this dashboard."
