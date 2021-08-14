@@ -124,7 +124,7 @@ exports[`SiteInitPage normal 1`] = `
           className="form-group mb-0"
         >
           <button
-            className="btn btn-primary btn-block"
+            className="btn btn-primary btn-block d-flex justify-content-center align-items-center"
             disabled={true}
             type="submit"
           >
