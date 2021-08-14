@@ -23,7 +23,7 @@ fi
 /conf.sh
 
 if [ ! -s "${REINDEX_COMPLETED_FILE}" ]; then
-  echo "[INFO] Re-creating all indexes from for database '$POSTGRES_DB'"
+  echo "[INFO] Re-creating all indexes for database '$POSTGRES_DB'"
   /reindex.sh
 fi
 
