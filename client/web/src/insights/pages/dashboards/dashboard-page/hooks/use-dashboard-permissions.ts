@@ -19,8 +19,8 @@ type DashboardPermissions =
           reason: DashboardReasonDenied
       }
     | {
-        isConfigurable: true
-    }
+          isConfigurable: true
+      }
 
 const DEFAULT_DASHBOARD_PERMISSIONS: DashboardPermissions = {
     isConfigurable: false,
