@@ -185,7 +185,7 @@ func (s *IndexedSearchRequest) Search(ctx context.Context, c streaming.Sender) e
 	}
 
 	if s.Args.Mode == search.ZoektGlobalSearch {
-		q := zoektGlobalQuery(ctx, s.Args.Query, s.Args.Mode, s.Args.RepoOptions, s.Args.UserPrivateRepos)
+		q := zoektGlobalQuery(ctx, s.Args.Query, s.Args.RepoOptions, s.Args.UserPrivateRepos)
 		return doZoektSearchGlobal(ctx, q, s.Args.Typ, s.Args.Zoekt.Client, s.Args.FileMatchLimit, s.Args.Select, c)
 	}
 
@@ -335,7 +335,7 @@ func NewIndexedSearchRequest(ctx context.Context, args *search.TextParameters, t
 // have a repo: filter and consequently no rev: filter. This makes the code a bit
 // simpler because we don't have to resolve revisions before sending off (global)
 // requests to Zoekt.
-func zoektGlobalQuery(ctx context.Context, query zoektquery.Q, mode search.GlobalSearchMode, repoOptions search.RepoOptions, userPrivateRepos []types.RepoName) zoektquery.Q {
+func zoektGlobalQuery(ctx context.Context, query zoektquery.Q, repoOptions search.RepoOptions, userPrivateRepos []types.RepoName) zoektquery.Q {
 	var qs []zoektquery.Q
 
 	// Public
