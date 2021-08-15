@@ -6,9 +6,9 @@ import FocusLock from 'react-focus-lock'
 
 import { SearchBasedBackendFilters } from '../../../../../../core/types/insight/search-insight'
 import { flipRightPosition } from '../../../../../context-menu/utils'
-import { SubmissionResult } from '../../../../../form/hooks/useForm';
+import { SubmissionResult } from '../../../../../form/hooks/useForm'
 import { hasActiveFilters } from '../drill-down-filters-panel/components/drill-down-filters-form/DrillDownFiltersForm'
-import { DrillDownInsightCreationFormValues } from '../drill-down-filters-panel/components/drill-down-insight-creation-form/DrillDownInsightCreationForm';
+import { DrillDownInsightCreationFormValues } from '../drill-down-filters-panel/components/drill-down-insight-creation-form/DrillDownInsightCreationForm'
 import { DrillDownFiltersPanel } from '../drill-down-filters-panel/DrillDownFiltersPanel'
 
 import styles from './DrillDownFiltersPanel.module.scss'

@@ -9,7 +9,7 @@ import {
 } from './components/drill-down-filters-form/DrillDownFiltersForm'
 import {
     DrillDownInsightCreationForm,
-    DrillDownInsightCreationFormValues
+    DrillDownInsightCreationFormValues,
 } from './components/drill-down-insight-creation-form/DrillDownInsightCreationForm'
 import styles from './DrillDownFiltersPanel.module.scss'
 
@@ -27,13 +27,7 @@ export interface DrillDownFiltersPanelProps {
 }
 
 export const DrillDownFiltersPanel: React.FunctionComponent<DrillDownFiltersPanelProps> = props => {
-    const {
-        initialFiltersValue,
-        originalFiltersValue,
-        onFiltersChange,
-        onFilterSave,
-        onInsightCreate
-    } = props
+    const { initialFiltersValue, originalFiltersValue, onFiltersChange, onFilterSave, onInsightCreate } = props
 
     const handleFilterChange = (event: FormChangeEvent<DrillDownFiltersFormValues>): void => {
         if (event.valid) {

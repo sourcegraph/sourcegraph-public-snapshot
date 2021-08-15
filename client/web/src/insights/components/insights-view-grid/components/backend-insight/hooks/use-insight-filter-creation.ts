@@ -1,17 +1,17 @@
-import { camelCase } from 'lodash';
-import { useContext } from 'react';
+import { camelCase } from 'lodash'
+import { useContext } from 'react'
 
-import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context';
+import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 
-import { InsightsApiContext } from '../../../../../core/backend/api-provider';
-import { addInsightToDashboard } from '../../../../../core/settings-action/dashboards';
-import { addInsightToSettings } from '../../../../../core/settings-action/insights';
-import { InsightDashboard, InsightTypePrefix, isVirtualDashboard } from '../../../../../core/types';
-import { SearchBackendBasedInsight, SearchBasedBackendFilters } from '../../../../../core/types/insight/search-insight';
+import { InsightsApiContext } from '../../../../../core/backend/api-provider'
+import { addInsightToDashboard } from '../../../../../core/settings-action/dashboards'
+import { addInsightToSettings } from '../../../../../core/settings-action/insights'
+import { InsightDashboard, InsightTypePrefix, isVirtualDashboard } from '../../../../../core/types'
+import { SearchBackendBasedInsight, SearchBasedBackendFilters } from '../../../../../core/types/insight/search-insight'
 
 interface CreateInsightInputs {
-    insightName: string,
-    originalInsight: SearchBackendBasedInsight,
+    insightName: string
+    originalInsight: SearchBackendBasedInsight
     dashboard: InsightDashboard
     filters: SearchBasedBackendFilters
 }
@@ -29,9 +29,7 @@ export function useInsightFilterCreation(props: UseInsightFilterCreationProps): 
     const createInsightWithFilters = async (inputs: CreateInsightInputs): Promise<void> => {
         const { dashboard, insightName, originalInsight, filters } = inputs
         // Get id of insight setting subject (owner of it insight)
-        const subjectId = isVirtualDashboard(dashboard)
-            ? originalInsight.visibility
-            : dashboard.owner.id
+        const subjectId = isVirtualDashboard(dashboard) ? originalInsight.visibility : dashboard.owner.id
 
         // Create new insight by name and last valid filters value
         const newInsight: SearchBackendBasedInsight = {
@@ -45,17 +43,9 @@ export function useInsightFilterCreation(props: UseInsightFilterCreationProps): 
 
         const updatedSettings = [
             (settings: string) => addInsightToSettings(settings, newInsight),
-            (settings: string) => isVirtualDashboard(dashboard)
-                ? settings
-                : addInsightToDashboard(
-                    settings,
-                    dashboard.id,
-                    dashboard.id
-                )
-        ].reduce(
-            (settings, transformer) => transformer(settings),
-            settings.contents
-        )
+            (settings: string) =>
+                isVirtualDashboard(dashboard) ? settings : addInsightToDashboard(settings, dashboard.id, dashboard.id),
+        ].reduce((settings, transformer) => transformer(settings), settings.contents)
 
         await updateSubjectSettings(platformContext, subjectId, updatedSettings).toPromise()
 
