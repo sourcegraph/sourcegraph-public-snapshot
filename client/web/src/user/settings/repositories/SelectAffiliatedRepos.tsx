@@ -438,6 +438,21 @@ export const SelectAffiliatedRepos: FunctionComponent<Props> = ({
         ]
     )
 
+    const getSelectedReposByCodeHost = (codeHostId: string = ''): Repo[] => {
+        const selectedRepos = [...selectionState.repos.values()]
+        // if no specific code host selected, return all selected repos
+        return codeHostId ? selectedRepos.filter(({ codeHost }) => codeHost?.id === codeHostId) : selectedRepos
+    }
+
+    const areAllReposSelected = (): boolean => {
+        if (selectionState.repos.size === 0) {
+            return false
+        }
+
+        const selectedRepos = getSelectedReposByCodeHost(codeHostFilter)
+        return selectedRepos.length === filteredRepos.length
+    }
+
     const selectAll = (): void => {
         const newMap = new Map<string, Repo>()
         // if not all repos are selected, we should select all, otherwise empty the selection
@@ -465,7 +480,7 @@ export const SelectAffiliatedRepos: FunctionComponent<Props> = ({
                         id="select-all-repos"
                         className="mr-3"
                         type="checkbox"
-                        checked={selectionState.repos.size !== 0 && selectionState.repos.size === filteredRepos.length}
+                        checked={areAllReposSelected()}
                         onChange={selectAll}
                     />
                     <label
