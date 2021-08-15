@@ -15,7 +15,7 @@ import {
 } from '../../../../../../../form/hooks/useInsightTitleValidator'
 import { composeValidators, createRequiredValidator } from '../../../../../../../form/validators'
 
-interface DrillDownInsightCreationFormValues {
+export interface DrillDownInsightCreationFormValues {
     insightName: string
 }
 

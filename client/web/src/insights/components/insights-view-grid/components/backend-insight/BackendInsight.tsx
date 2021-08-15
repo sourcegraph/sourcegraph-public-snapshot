@@ -18,13 +18,16 @@ import { useDistinctValue } from '../../../../hooks/use-distinct-value'
 import { useParallelRequests } from '../../../../hooks/use-parallel-requests/use-parallel-request'
 import { FORM_ERROR, SubmissionErrors } from '../../../form/hooks/useForm'
 import { InsightViewContent } from '../../../insight-view-content/InsightViewContent'
+import { SmartInsightsViewGridContext } from '../../SmartInsightsViewGridContext';
 import { InsightErrorContent } from '../insight-card/components/insight-error-content/InsightErrorContent'
 import { InsightLoadingContent } from '../insight-card/components/insight-loading-content/InsightLoadingContent'
 import { InsightContentCard } from '../insight-card/InsightContentCard'
 
 import styles from './BackendInsight.module.scss'
 import { DrillDownFiltersAction } from './components/drill-down-filters-action/DrillDownFiltersPanel'
+import { DrillDownInsightCreationFormValues } from './components/drill-down-filters-panel/components/drill-down-insight-creation-form/DrillDownInsightCreationForm';
 import { EMPTY_DRILLDOWN_FILTERS } from './components/drill-down-filters-panel/utils'
+import { useInsightFilterCreation } from './hooks/use-insight-filter-creation';
 
 interface BackendInsightProps
     extends TelemetryProps,
@@ -38,14 +41,18 @@ interface BackendInsightProps
  * Renders BE search based insight. Fetches insight data by gql api handler.
  */
 export const BackendInsight: React.FunctionComponent<BackendInsightProps> = props => {
-    const { telemetryService, insight, platformContext, settingsCascade, ref, ...otherProps } = props
-    const { getBackendInsightById, getSubjectSettings, updateSubjectSettings } = useContext(InsightsApiContext)
+    const {telemetryService, insight, platformContext, settingsCascade, ref, ...otherProps} = props
+
+    const {currentDashboard} = useContext(SmartInsightsViewGridContext)
+    const {getBackendInsightById, getSubjectSettings, updateSubjectSettings} = useContext(InsightsApiContext)
 
     const insightCardReference = useRef<HTMLDivElement>(null)
 
     // Original insight filters values that are stored in setting subject with insight
     // configuration object, They are updated  whenever the user clicks update/save button
-    const [originalInsightFilters, setOriginalInsightFilters] = useState(insight.filters ?? EMPTY_DRILLDOWN_FILTERS)
+    const [originalInsightFilters, setOriginalInsightFilters] = useState(
+        insight.filters ?? EMPTY_DRILLDOWN_FILTERS
+    )
 
     // Live valid filters from filter form. They are updated whenever the user is changing
     // filter value in filters fields.
@@ -53,35 +60,6 @@ export const BackendInsight: React.FunctionComponent<BackendInsightProps> = prop
 
     const [isFiltersOpen, setIsFiltersOpen] = useState(false)
     const debouncedFilters = useDebounce(useDistinctValue<BackendInsightFilters>(filters), 500)
-
-    const handleDrillDownFiltersChange = (filters: SearchBasedBackendFilters): void => {
-        setFilters(filters)
-    }
-
-    const handleFilterSave = async (filters: SearchBasedBackendFilters): Promise<SubmissionErrors> => {
-        const subjectId = insight.visibility
-
-        try {
-            const settings = await getSubjectSettings(subjectId).toPromise()
-            const insightWithNewFilters: SearchBackendBasedInsight = {
-                ...insight,
-                filters,
-            }
-
-            const editedSettings = addInsightToSettings(settings.contents, insightWithNewFilters)
-
-            await updateSubjectSettings(platformContext, subjectId, editedSettings).toPromise()
-
-            telemetryService.log('CodeInsightsSearchBasedFilterUpdatingClick')
-
-            setOriginalInsightFilters(filters)
-            setIsFiltersOpen(false)
-        } catch (error) {
-            return { [FORM_ERROR]: asError(error) }
-        }
-
-        return
-    }
 
     // Loading the insight backend data
     const { data, loading, error } = useParallelRequests(
@@ -102,9 +80,56 @@ export const BackendInsight: React.FunctionComponent<BackendInsightProps> = prop
         platformContext,
     })
 
+    const handleFilterSave = async (filters: SearchBasedBackendFilters): Promise<SubmissionErrors> => {
+        const subjectId = insight.visibility
+
+        try {
+            const settings = await getSubjectSettings(subjectId).toPromise()
+            const insightWithNewFilters: SearchBackendBasedInsight = {...insight, filters}
+            const editedSettings = addInsightToSettings(settings.contents, insightWithNewFilters)
+
+            await updateSubjectSettings(platformContext, subjectId, editedSettings).toPromise()
+
+            telemetryService.log('CodeInsightsSearchBasedFilterUpdating')
+
+            setOriginalInsightFilters(filters)
+            setIsFiltersOpen(false)
+        } catch (error) {
+            return {[FORM_ERROR]: asError(error)}
+        }
+
+        return
+    }
+
+    const { create: creteInsightWithFilters } = useInsightFilterCreation({platformContext})
+    const handleInsightFilterCreation = async (values: DrillDownInsightCreationFormValues): Promise<SubmissionErrors> => {
+        const {insightName} = values
+
+        if (!currentDashboard) {
+            return
+        }
+
+        try {
+            await creteInsightWithFilters({
+                insightName,
+                filters,
+                originalInsight: insight,
+                dashboard: currentDashboard
+            })
+
+            telemetryService.log('CodeInsightsSearchBasedFilterInsightCreation')
+            setOriginalInsightFilters(filters)
+            setIsFiltersOpen(false)
+        } catch (error) {
+            return {[FORM_ERROR]: asError(error)}
+        }
+
+        return
+    }
+
     return (
         <InsightContentCard
-            insight={{ id: insight.id, view: data?.view }}
+            insight={{id: insight.id, view: data?.view}}
             hasContextMenu={true}
             actions={
                 <DrillDownFiltersAction
@@ -112,8 +137,9 @@ export const BackendInsight: React.FunctionComponent<BackendInsightProps> = prop
                     popoverTargetRef={insightCardReference}
                     initialFiltersValue={filters}
                     originalFiltersValue={originalInsightFilters}
-                    onFilterChange={handleDrillDownFiltersChange}
+                    onFilterChange={setFilters}
                     onFilterSave={handleFilterSave}
+                    onInsightCreate={handleInsightFilterCreation}
                     onVisibilityChange={setIsFiltersOpen}
                 />
             }
@@ -132,7 +158,7 @@ export const BackendInsight: React.FunctionComponent<BackendInsightProps> = prop
                     icon={DatabaseIcon}
                 />
             ) : isErrorLike(error) ? (
-                <InsightErrorContent error={error} title={insight.id} icon={DatabaseIcon} />
+                <InsightErrorContent error={error} title={insight.id} icon={DatabaseIcon}/>
             ) : (
                 data && (
                     <InsightViewContent

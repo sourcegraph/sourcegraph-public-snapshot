@@ -7,7 +7,10 @@ import {
     DrillDownFiltersForm,
     DrillDownFiltersFormValues,
 } from './components/drill-down-filters-form/DrillDownFiltersForm'
-import { DrillDownInsightCreationForm } from './components/drill-down-insight-creation-form/DrillDownInsightCreationForm'
+import {
+    DrillDownInsightCreationForm,
+    DrillDownInsightCreationFormValues
+} from './components/drill-down-insight-creation-form/DrillDownInsightCreationForm'
 import styles from './DrillDownFiltersPanel.module.scss'
 
 enum DrillDownFiltersStep {
@@ -20,10 +23,17 @@ export interface DrillDownFiltersPanelProps {
     originalFiltersValue: SearchBasedBackendFilters
     onFiltersChange: (filters: SearchBasedBackendFilters) => void
     onFilterSave: (filters: SearchBasedBackendFilters) => SubmissionResult
+    onInsightCreate: (values: DrillDownInsightCreationFormValues) => SubmissionResult
 }
 
 export const DrillDownFiltersPanel: React.FunctionComponent<DrillDownFiltersPanelProps> = props => {
-    const { initialFiltersValue, originalFiltersValue, onFiltersChange, onFilterSave } = props
+    const {
+        initialFiltersValue,
+        originalFiltersValue,
+        onFiltersChange,
+        onFilterSave,
+        onInsightCreate
+    } = props
 
     const handleFilterChange = (event: FormChangeEvent<DrillDownFiltersFormValues>): void => {
         if (event.valid) {
@@ -59,7 +69,7 @@ export const DrillDownFiltersPanel: React.FunctionComponent<DrillDownFiltersPane
     return (
         <DrillDownInsightCreationForm
             className={styles.filtersViewCreation}
-            onCreateInsight={() => {}}
+            onCreateInsight={onInsightCreate}
             onCancel={() => setStep(DrillDownFiltersStep.Filters)}
         />
     )
