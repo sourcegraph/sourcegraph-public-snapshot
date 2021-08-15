@@ -204,7 +204,7 @@ export const ChangesetSelectRow: React.FunctionComponent<ChangesetSelectRowProps
             <div className="row align-items-center no-gutters">
                 <div className="ml-2 col d-flex align-items-center">
                     <InfoCircleOutlineIcon className="icon-inline text-muted mr-2" />
-                    {selected === 'all' ? (
+                    {selected === 'all' || allChangesetIDs?.length === selected.size ? (
                         <AllSelectedLabel count={allChangesetIDs?.length} />
                     ) : (
                         `${selected.size} ${pluralize('changeset', selected.size)}`
