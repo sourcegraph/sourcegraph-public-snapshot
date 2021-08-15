@@ -1,5 +1,7 @@
 import React, { useState } from 'react'
 
+import { Settings } from '@sourcegraph/shared/src/settings/settings'
+
 import { SearchBasedBackendFilters } from '../../../../../../core/types/insight/search-insight'
 import { FormChangeEvent, SubmissionResult } from '../../../../../form/hooks/useForm'
 
@@ -19,6 +21,7 @@ enum DrillDownFiltersStep {
 }
 
 export interface DrillDownFiltersPanelProps {
+    settings: Settings
     initialFiltersValue: SearchBasedBackendFilters
     originalFiltersValue: SearchBasedBackendFilters
     onFiltersChange: (filters: SearchBasedBackendFilters) => void
@@ -27,7 +30,14 @@ export interface DrillDownFiltersPanelProps {
 }
 
 export const DrillDownFiltersPanel: React.FunctionComponent<DrillDownFiltersPanelProps> = props => {
-    const { initialFiltersValue, originalFiltersValue, onFiltersChange, onFilterSave, onInsightCreate } = props
+    const {
+        settings,
+        initialFiltersValue,
+        originalFiltersValue,
+        onFiltersChange,
+        onFilterSave,
+        onInsightCreate,
+    } = props
 
     const handleFilterChange = (event: FormChangeEvent<DrillDownFiltersFormValues>): void => {
         if (event.valid) {
@@ -62,6 +72,7 @@ export const DrillDownFiltersPanel: React.FunctionComponent<DrillDownFiltersPane
 
     return (
         <DrillDownInsightCreationForm
+            settings={settings}
             className={styles.filtersViewCreation}
             onCreateInsight={onInsightCreate}
             onCancel={() => setStep(DrillDownFiltersStep.Filters)}

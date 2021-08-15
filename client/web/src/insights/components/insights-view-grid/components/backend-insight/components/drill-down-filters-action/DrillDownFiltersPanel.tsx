@@ -4,6 +4,8 @@ import FilterOutlineIcon from 'mdi-react/FilterOutlineIcon'
 import React, { useCallback, useRef } from 'react'
 import FocusLock from 'react-focus-lock'
 
+import { Settings } from '@sourcegraph/shared/src/settings/settings'
+
 import { SearchBasedBackendFilters } from '../../../../../../core/types/insight/search-insight'
 import { flipRightPosition } from '../../../../../context-menu/utils'
 import { SubmissionResult } from '../../../../../form/hooks/useForm'
@@ -17,6 +19,7 @@ import { useOnClickOutside } from './hooks/use-outside-click'
 
 interface DrillDownFiltersProps {
     isOpen: boolean
+    settings: Settings
     initialFiltersValue: SearchBasedBackendFilters
     originalFiltersValue: SearchBasedBackendFilters
     popoverTargetRef: React.RefObject<HTMLElement>
@@ -29,6 +32,7 @@ interface DrillDownFiltersProps {
 export const DrillDownFiltersAction: React.FunctionComponent<DrillDownFiltersProps> = props => {
     const {
         isOpen,
+        settings,
         popoverTargetRef,
         initialFiltersValue,
         originalFiltersValue,
@@ -98,6 +102,7 @@ export const DrillDownFiltersAction: React.FunctionComponent<DrillDownFiltersPro
                 >
                     <FocusLock returnFocus={true}>
                         <DrillDownFiltersPanel
+                            settings={settings}
                             initialFiltersValue={initialFiltersValue}
                             originalFiltersValue={originalFiltersValue}
                             onFiltersChange={onFilterChange}

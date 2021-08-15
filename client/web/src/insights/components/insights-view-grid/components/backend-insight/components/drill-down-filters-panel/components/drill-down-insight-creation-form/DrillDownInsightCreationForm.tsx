@@ -1,6 +1,7 @@
 import classnames from 'classnames'
 import React, { useMemo } from 'react'
 
+import { Settings } from '@sourcegraph/shared/src/settings/settings'
 import { Button } from '@sourcegraph/wildcard'
 
 import { ErrorAlert } from '../../../../../../../../../components/alerts'
@@ -38,12 +39,13 @@ function useInsightNameValidator(props: useTitleValidatorProps): Validator<strin
 
 interface DrillDownInsightCreationFormProps {
     className?: string
+    settings: Settings
     onCreateInsight: (values: DrillDownInsightCreationFormValues) => SubmissionResult
     onCancel: () => void
 }
 
 export const DrillDownInsightCreationForm: React.FunctionComponent<DrillDownInsightCreationFormProps> = props => {
-    const { className, onCreateInsight, onCancel } = props
+    const { settings, className, onCreateInsight, onCancel } = props
 
     const { formAPI, ref, handleSubmit } = useForm({
         initialValues: DEFAULT_FORM_VALUES,
@@ -52,7 +54,7 @@ export const DrillDownInsightCreationForm: React.FunctionComponent<DrillDownInsi
 
     const nameValidator = useInsightNameValidator({
         insightType: InsightTypePrefix.search,
-        settings: null,
+        settings,
     })
 
     const insightName = useField({
@@ -76,7 +78,7 @@ export const DrillDownInsightCreationForm: React.FunctionComponent<DrillDownInsi
                 {...insightName.input}
             />
 
-            <footer className="mt-4 d-flex flex-wrap align-items-baseline">
+            <footer className="mt-4 d-flex flex-wrap align-items-center">
                 {formAPI.submitErrors?.[FORM_ERROR] && (
                     <ErrorAlert className="w-100 mb-3" error={formAPI.submitErrors[FORM_ERROR]} />
                 )}

@@ -18,5 +18,5 @@ const fakeAPIRequest = async () => {
 }
 
 add('DrillDownInsightCreationForm', () => (
-    <DrillDownInsightCreationForm onCreateInsight={fakeAPIRequest} onCancel={() => {}} />
+    <DrillDownInsightCreationForm settings={{}} onCreateInsight={fakeAPIRequest} onCancel={() => {}} />
 ))

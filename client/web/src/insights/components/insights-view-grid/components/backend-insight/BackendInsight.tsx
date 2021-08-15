@@ -48,9 +48,16 @@ export const BackendInsight: React.FunctionComponent<BackendInsightProps> = prop
 
     const insightCardReference = useRef<HTMLDivElement>(null)
 
+    // Use deep copy check in case if a setting subject has re-created copy of
+    // the insight config with same structure and values. To avoid insight data
+    // re-fetching.
+    const cachedInsight = useDistinctValue(insight)
+
     // Original insight filters values that are stored in setting subject with insight
     // configuration object, They are updated  whenever the user clicks update/save button
-    const [originalInsightFilters, setOriginalInsightFilters] = useState(insight.filters ?? EMPTY_DRILLDOWN_FILTERS)
+    const [originalInsightFilters, setOriginalInsightFilters] = useState(
+        cachedInsight.filters ?? EMPTY_DRILLDOWN_FILTERS
+    )
 
     // Live valid filters from filter form. They are updated whenever the user is changing
     // filter value in filters fields.
@@ -64,11 +71,11 @@ export const BackendInsight: React.FunctionComponent<BackendInsightProps> = prop
         useCallback(
             () =>
                 getBackendInsightById({
-                    id: insight.id,
+                    id: cachedInsight.id,
+                    series: cachedInsight.series,
                     filters: debouncedFilters,
-                    series: insight.series,
                 }),
-            [insight.id, insight.series, debouncedFilters, getBackendInsightById]
+            [cachedInsight.id, cachedInsight.series, debouncedFilters, getBackendInsightById]
         )
     )
 
@@ -134,6 +141,7 @@ export const BackendInsight: React.FunctionComponent<BackendInsightProps> = prop
             actions={
                 <DrillDownFiltersAction
                     isOpen={isFiltersOpen}
+                    settings={settingsCascade.final ?? {}}
                     popoverTargetRef={insightCardReference}
                     initialFiltersValue={filters}
                     originalFiltersValue={originalInsightFilters}
