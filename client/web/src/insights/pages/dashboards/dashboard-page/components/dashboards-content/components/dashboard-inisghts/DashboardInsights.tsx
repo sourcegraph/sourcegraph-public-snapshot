@@ -59,7 +59,7 @@ export const DashboardInsights: React.FunctionComponent<DashboardInsightsProps> 
 
     return (
         <div>
-            {insightIds.length > 0 ? (
+            {insights.length > 0 ? (
                 <SmartInsightsViewGridContext.Provider value={{ currentDashboard: dashboard }}>
                     <SmartInsightsViewGrid
                         insights={insights}
