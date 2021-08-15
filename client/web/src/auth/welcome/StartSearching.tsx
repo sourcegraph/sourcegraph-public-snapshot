@@ -11,7 +11,7 @@ import { useSteps } from '../Steps'
 import { Terminal, TerminalTitle, TerminalLine, TerminalDetails, TerminalProgress } from '../Terminal'
 import { useExternalServices } from '../useExternalServices'
 import { useRepoCloningStatus } from '../useRepoCloningStatus'
-import { selectedReposVar, useSaveSelectedRepos } from '../useSelectedRepos'
+import { selectedReposVar, useSaveSelectedRepos, MinSelectedRepo } from '../useSelectedRepos'
 
 interface StartSearching {
     user: AuthenticatedUser
@@ -42,6 +42,18 @@ export const useShowAlert = (isDoneCloning: boolean, fetchError: ErrorLike | und
 
     return { showAlert }
 }
+
+const getReposForCodeHost = (selectedRepos: MinSelectedRepo[] = [], codeHostId: string): string[] =>
+    selectedRepos
+        ? selectedRepos.reduce((accumulator, repo) => {
+              if ((repo.externalRepository.id = codeHostId)) {
+                  const nameWithoutService = repo.name.slice(repo.name.indexOf('/') + 1)
+                  accumulator.push(nameWithoutService)
+              }
+
+              return accumulator
+          }, [] as string[])
+        : []
 
 export const StartSearching: React.FunctionComponent<StartSearching> = ({
     user,
@@ -77,26 +89,20 @@ export const StartSearching: React.FunctionComponent<StartSearching> = ({
     }, [fetchError, onError, stopPollingCloningStatus])
 
     useEffect(() => {
-        const selectedRepos = selectedReposVar()
-
         if (externalServices) {
-            for (const host of externalServices) {
-                const repos = selectedRepos
-                    ? selectedRepos.reduce((accumulator, repo) => {
-                          if (repo.externalRepository.id === host.id) {
-                              const nameWithoutService = repo.name.slice(repo.name.indexOf('/') + 1)
-                              accumulator.push(nameWithoutService)
-                          }
+            const selectedRepos = selectedReposVar()
 
-                          return accumulator
-                      }, [] as string[])
-                    : []
+            for (const host of externalServices) {
+                const areSyncingAllRepos = repoSelectionMode === 'all'
+                // when we're in the "sync all" - don't list individual repos
+                // set allRepos key to true
+                const repos = areSyncingAllRepos ? null : getReposForCodeHost(selectedRepos, host.id)
 
                 saveSelectedRepos({
                     variables: {
                         id: host.id,
-                        allRepos: repoSelectionMode === 'all',
-                        repos: (repoSelectionMode === 'selected' && repos) || null,
+                        allRepos: areSyncingAllRepos,
+                        repos,
                     },
                 })
                     .then(() => {

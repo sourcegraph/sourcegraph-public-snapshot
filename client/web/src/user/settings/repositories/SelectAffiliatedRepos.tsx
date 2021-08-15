@@ -165,7 +165,7 @@ export const SelectAffiliatedRepos: FunctionComponent<Props> = ({
             const selectedAffiliatedRepos = new Map<string, Repo>()
 
             const cachedSelectedRepos = selectedReposVar()
-            const userSelectedRepos = cachedSelectedRepos || selectedRepos || []
+            const userSelectedRepos = repoSelectionMode === 'all' ? [] : cachedSelectedRepos || selectedRepos || []
 
             const affiliatedReposWithMirrorInfo = affiliatedRepos.map(affiliatedRepo => {
                 let foundInSelected: SiteAdminRepositoryFields | MinSelectedRepo | null = null
@@ -286,11 +286,11 @@ export const SelectAffiliatedRepos: FunctionComponent<Props> = ({
             loaded: selectionState.loaded,
         })
 
-        if (changeEvent.currentTarget.value === 'all') {
-            saveRepoSelection(affiliatedRepos || [])
-        } else {
-            saveRepoSelection([...selectionState.repos.values()])
-        }
+        // if (changeEvent.currentTarget.value === 'all') {
+        //     saveRepoSelection(affiliatedRepos || [])
+        // } else {
+        //     saveRepoSelection([...selectionState.repos.values()])
+        // }
 
         onRepoSelectionModeChange(changeEvent.currentTarget.value as RepoSelectionMode)
     }
@@ -462,8 +462,6 @@ export const SelectAffiliatedRepos: FunctionComponent<Props> = ({
                 newMap.set(getRepoServiceAndName(repo), repo)
             }
         }
-
-        saveRepoSelection([...newMap.values()])
 
         setSelectionState({
             repos: newMap,
