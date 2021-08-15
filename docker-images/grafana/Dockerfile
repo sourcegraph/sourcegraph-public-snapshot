@@ -34,9 +34,10 @@ COPY --from=monitoring_builder /generated/grafana/* /sg_config_grafana/provision
 # hadolint ignore=DL3020
 ADD entry.sh /
 
-RUN apk add --upgrade --no-cache apk-tools=2.10.8-r0
 
 USER root
+
+RUN apk add --upgrade --no-cache apk-tools=2.10.8-r0
 
 EXPOSE 3370
 USER grafana
