@@ -12,6 +12,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/featureflag"
+	"github.com/sourcegraph/sourcegraph/internal/usagestats"
 )
 
 var MockGetAndSaveUser func(ctx context.Context, op GetAndSaveUserOp) (userID int32, safeErrMsg string, err error)
@@ -119,10 +121,16 @@ func GetAndSaveUser(ctx context.Context, db dbutil.DB, op GetAndSaveUserOp) (use
 		}); err != nil {
 			log15.Error("Failed to grant user pending permissions", "userID", userID, "error", err)
 		}
+		if err = usagestats.LogBackendEvent(db, actor.FromContext(ctx).UID, "ExternalAuthSignupSucceeded", nil, featureflag.FromContext(ctx), nil); err != nil {
+			log15.Warn("Failed to log event ExternalAuthSignupSucceded")
+		}
 
 		return userID, true, true, "", nil
 	}()
 	if err != nil {
+		if err = usagestats.LogBackendEvent(db, actor.FromContext(ctx).UID, "ExternalAuthSignupFailed", nil, featureflag.FromContext(ctx), nil); err != nil {
+			log15.Warn("Failed to log event ExternalAuthSignUpFailed")
+		}
 		return 0, safeErrMsg, err
 	}
 
