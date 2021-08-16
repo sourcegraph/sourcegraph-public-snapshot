@@ -24,13 +24,13 @@ export const CustomersSection: React.FunctionComponent<ThemeProps> = props => {
             <div className="text-muted text-center mb-3">
                 Our customers use Sourcegraph every day to build software you rely on.{' '}
             </div>
-            <div className={styles.logos}>
+            <a className={styles.logos} href="https://about.sourcegraph.com/customers">
                 {logos.map(logo => (
                     <div key={logo.key} className={styles.logo}>
                         {logo}
                     </div>
                 ))}
-            </div>
+            </a>
         </>
     )
 }
