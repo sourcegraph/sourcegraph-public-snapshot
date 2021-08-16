@@ -185,6 +185,7 @@ const RepoRevisionContainerPopover: React.FunctionComponent<RepoRevisionContaine
                 currentRev={revision}
                 currentCommitID={resolvedRevisionOrError.commitID}
                 togglePopover={togglePopover}
+                onSelect={togglePopover}
             />
         </Popover>
     )

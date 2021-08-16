@@ -20,7 +20,7 @@ import {
     Scalars,
 } from '../graphql-operations'
 
-interface GitReferenceNodeProps {
+export interface GitReferenceNodeProps {
     node: GitRefFields
 
     /** Link URL; if undefined, node.url is used. */
@@ -34,6 +34,8 @@ interface GitReferenceNodeProps {
     className?: string
 
     icon?: React.ComponentType<{ className?: string }>
+
+    onClick?: (event: React.MouseEvent<HTMLAnchorElement>) => void
 }
 
 export const GitReferenceNode: React.FunctionComponent<GitReferenceNodeProps> = ({
@@ -42,6 +44,7 @@ export const GitReferenceNode: React.FunctionComponent<GitReferenceNodeProps> = 
     ancestorIsLink,
     children,
     className,
+    onClick,
     icon: Icon,
 }) => {
     const mostRecentSig =
@@ -57,6 +60,7 @@ export const GitReferenceNode: React.FunctionComponent<GitReferenceNodeProps> = 
             key={node.id}
             className={classNames('git-ref-node list-group-item', className)}
             to={!ancestorIsLink ? url : undefined}
+            onClick={onClick}
         >
             <span className="d-flex align-items-center">
                 {Icon && <Icon className="icon-inline mr-1" />}

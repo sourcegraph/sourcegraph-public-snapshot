@@ -6,15 +6,13 @@ import { Popover } from 'reactstrap'
 import { escapeRevspecForURL } from '@sourcegraph/shared/src/util/url'
 import { Button, PageHeader } from '@sourcegraph/wildcard'
 
+import { eventLogger } from '../../tracking/eventLogger'
 import { RevisionsPopover } from '../revisions-popover/RevisionsPopover'
 
 import { RepositoryCompareAreaPageProps } from './RepositoryCompareArea'
 
 interface RepositoryCompareHeaderProps extends RepositoryCompareAreaPageProps {
     className: string
-
-    /** Called when the user updates the comparison spec and submits the form. */
-    onUpdateComparisonSpec: (newBaseSpec: string, newHeadSpec: string) => void
 }
 
 interface RevisionComparison {
@@ -22,13 +20,13 @@ interface RevisionComparison {
     head: RepositoryCompareHeaderProps['head']
 }
 
-export const RepositoryComparePopover: React.FunctionComponent<{
+interface RepositoryComparePopoverProps {
     /**
      * Uniquely identify this specific popover. Used to link the trigger button with the popover to display
      */
     id: string
     /**
-     * Initial revision comparison to load. This can be changed by interactiing with the popover.
+     * Initial revision comparison to load. This can be changed by selecting a new revision through the popover.
      */
     comparison: RevisionComparison
     /**
@@ -36,7 +34,14 @@ export const RepositoryComparePopover: React.FunctionComponent<{
      */
     type: keyof RevisionComparison
     repo: RepositoryCompareHeaderProps['repo']
-}> = ({ id, comparison, repo, type }) => {
+}
+
+export const RepositoryComparePopover: React.FunctionComponent<RepositoryComparePopoverProps> = ({
+    id,
+    comparison,
+    repo,
+    type,
+}) => {
     const [popoverOpen, setPopoverOpen] = React.useState(false)
     const togglePopover = React.useCallback(() => setPopoverOpen(previous => !previous), [])
 
@@ -56,6 +61,14 @@ export const RepositoryComparePopover: React.FunctionComponent<{
         [comparison, repo.name, type]
     )
 
+    const handleSelect = React.useCallback(() => {
+        eventLogger.log('RepositoryComparisonSubmitted')
+        togglePopover()
+    }, [togglePopover])
+
+    const defaultBranch = repo.defaultBranch?.abbrevName || 'HEAD'
+    const currentRevision = comparison[type]?.revision || undefined
+
     return (
         <Button
             type="button"
@@ -66,7 +79,7 @@ export const RepositoryComparePopover: React.FunctionComponent<{
             aria-label={`Change ${type} Git revspec for comparison`}
         >
             <div className="text-muted mr-1">{type}: </div>
-            {comparison[type].revision || repo.defaultBranch?.abbrevName || 'HEAD'}
+            {comparison[type].revision || defaultBranch}
             <ChevronDownIcon className="icon-inline repo-revision-container__breadcrumb-icon" />
             <Popover
                 isOpen={popoverOpen}
@@ -81,13 +94,13 @@ export const RepositoryComparePopover: React.FunctionComponent<{
                 <RevisionsPopover
                     repo={repo.id}
                     repoName={repo.name}
-                    // TODO: abbrevName? or displayName?
-                    defaultBranch={repo.defaultBranch?.abbrevName || ''}
-                    // TODO support currentRev? Or default to branch
-                    currentRev={undefined}
+                    defaultBranch={defaultBranch}
+                    currentRev={currentRevision}
+                    currentCommitID={currentRevision}
                     togglePopover={togglePopover}
                     getURLFromRevision={getURLFromRevision}
                     allowSpeculativeSearch={true}
+                    onSelect={handleSelect}
                 />
             </Popover>
         </Button>

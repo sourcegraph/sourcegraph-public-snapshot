@@ -15,6 +15,7 @@ import {
     RepositoryGitCommitResult,
     RepositoryGitCommitVariables,
 } from '../../graphql-operations'
+import { eventLogger } from '../../tracking/eventLogger'
 
 import { RevisionsPopoverTab } from './RevisionsPopoverTab'
 
@@ -67,6 +68,8 @@ interface GitCommitNodeProps {
     location: H.Location
 
     getURLFromRevision: (href: string, revision: string) => string
+
+    onClick?: (event: React.MouseEvent<HTMLAnchorElement>) => void
 }
 
 const GitCommitNode: React.FunctionComponent<GitCommitNodeProps> = ({
@@ -74,6 +77,7 @@ const GitCommitNode: React.FunctionComponent<GitCommitNodeProps> = ({
     currentCommitID,
     location,
     getURLFromRevision,
+    onClick,
 }) => {
     const isCurrent = currentCommitID === node.oid
     return (
@@ -85,6 +89,7 @@ const GitCommitNode: React.FunctionComponent<GitCommitNodeProps> = ({
                     isCurrent && 'connection-popover__node-link--active',
                     'revisions-popover-git-commit-node__link'
                 )}
+                onClick={onClick}
             >
                 <code className="revisions-popover-git-commit-node__oid" title={node.oid}>
                     {node.abbreviatedOID}
@@ -107,6 +112,8 @@ interface RevisionCommitsTabProps {
     currentRev: string | undefined
 
     currentCommitID?: string
+
+    onSelect?: (event: React.MouseEvent<HTMLAnchorElement>) => void
 }
 
 const BATCH_COUNT = 15
@@ -119,12 +126,12 @@ export const RevisionCommitsTab: React.FunctionComponent<RevisionCommitsTabProps
     noun,
     pluralNoun,
     currentCommitID,
+    onSelect,
 }) => {
     const [searchValue, setSearchValue] = useState('')
     const query = useDebounce(searchValue, 200)
     const location = useLocation()
 
-    // TODO: Event logger on completed?
     const response = useConnection<RepositoryGitCommitResult, RepositoryGitCommitVariables, GitCommitAncestorFields>({
         query: REPOSITORY_GIT_COMMIT,
         variables: {
@@ -144,7 +151,6 @@ export const RevisionCommitsTab: React.FunctionComponent<RevisionCommitsTabProps
                 throw new Error(`Node is a ${node.__typename}, not a Repository`)
             }
 
-            // TODO: Test throwing these
             if (!node.commit?.ancestors) {
                 throw new Error(`Cannot load ancestors for repository ${repo}`)
             }
@@ -179,6 +185,7 @@ export const RevisionCommitsTab: React.FunctionComponent<RevisionCommitsTabProps
                     currentCommitID={currentCommitID}
                     location={location}
                     getURLFromRevision={getURLFromRevision}
+                    onClick={onSelect}
                 />
             ))}
         </RevisionsPopoverTab>

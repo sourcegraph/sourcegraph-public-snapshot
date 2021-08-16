@@ -6,18 +6,17 @@ import { useLocation } from 'react-router'
 
 import { GitRefType, Scalars } from '@sourcegraph/shared/src/graphql-operations'
 import { createAggregateError } from '@sourcegraph/shared/src/util/errors'
+import { escapeRevspecForURL } from '@sourcegraph/shared/src/util/url'
 import { useConnection } from '@sourcegraph/web/src/components/FilteredConnection/hooks/useConnection'
 import { ConnectionSummary } from '@sourcegraph/web/src/components/FilteredConnection/ui'
 import { useDebounce } from '@sourcegraph/wildcard'
 
 import { GitRefFields, RepositoryGitRefsResult, RepositoryGitRefsVariables } from '../../graphql-operations'
-import { GitReferenceNode, REPOSITORY_GIT_REFS } from '../GitReference'
+import { GitReferenceNode, GitReferenceNodeProps, REPOSITORY_GIT_REFS } from '../GitReference'
 
 import { RevisionsPopoverTab } from './RevisionsPopoverTab'
 
-interface GitReferencePopoverNodeProps {
-    node: GitRefFields
-
+interface GitReferencePopoverNodeProps extends Pick<GitReferenceNodeProps, 'node' | 'onClick'> {
     defaultBranch: string
     currentRevision: string | undefined
 
@@ -35,6 +34,7 @@ const GitReferencePopoverNode: React.FunctionComponent<GitReferencePopoverNodePr
     location,
     getURLFromRevision,
     isSpeculative,
+    onClick,
 }) => {
     let isCurrent: boolean
     if (currentRevision) {
@@ -51,6 +51,7 @@ const GitReferencePopoverNode: React.FunctionComponent<GitReferencePopoverNodePr
                 'connection-popover__node-link',
                 isCurrent && 'connection-popover__node-link--active'
             )}
+            onClick={onClick}
             icon={isSpeculative ? SearchIcon : undefined}
         />
     )
@@ -78,16 +79,15 @@ export const SpectulativeGitReferencePopoverNode: React.FunctionComponent<Spectu
         return null
     }
 
-    // TODO: Check the node props and ensure URL is handled correctly
     // We haven't found a node with the same name, render a node with expected props
     return (
         <GitReferencePopoverNode
             node={{
-                displayName: name,
                 name,
+                displayName: name,
                 abbrevName: name,
                 id: name,
-                url: `/${repoName}@${name}`,
+                url: `/${repoName}@${escapeRevspecForURL(name)}`,
                 target: { commit: null },
             }}
             currentRevision={currentRevision}
@@ -113,6 +113,8 @@ interface RevisionReferencesTabProps {
     currentRev: string | undefined
 
     allowSpeculativeSearch?: boolean
+
+    onSelect?: (event: React.MouseEvent<HTMLAnchorElement>) => void
 }
 
 const BATCH_COUNT = 50
@@ -127,6 +129,7 @@ export const RevisionReferencesTab: React.FunctionComponent<RevisionReferencesTa
     noun,
     pluralNoun,
     allowSpeculativeSearch,
+    onSelect,
 }) => {
     const [searchValue, setSearchValue] = useState('')
     const query = useDebounce(searchValue, 200)
@@ -177,6 +180,7 @@ export const RevisionReferencesTab: React.FunctionComponent<RevisionReferencesTa
                     defaultBranch={defaultBranch}
                     getURLFromRevision={getURLFromRevision}
                     location={location}
+                    onClick={onSelect}
                 />
             ))}
             {/* For branch filtering, we support speculative searching */}
@@ -189,6 +193,7 @@ export const RevisionReferencesTab: React.FunctionComponent<RevisionReferencesTa
                     defaultBranch={defaultBranch}
                     getURLFromRevision={getURLFromRevision}
                     location={location}
+                    onClick={onSelect}
                 />
             )}
         </RevisionsPopoverTab>
