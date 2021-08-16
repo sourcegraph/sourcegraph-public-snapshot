@@ -183,7 +183,13 @@ func (s *IndexedSearchRequest) Search(ctx context.Context, c streaming.Sender) e
 	if s.Args == nil {
 		return nil
 	}
-	if len(s.Repos()) == 0 && s.Args.Mode != search.ZoektGlobalSearch {
+
+	if s.Args.Mode == search.ZoektGlobalSearch {
+		q := zoektGlobalQuery(ctx, s.Args.Query, s.Args.Mode, s.Args.RepoOptions, s.Args.UserPrivateRepos)
+		return doZoektSearchGlobal(ctx, q, s.Args.Typ, s.Args.Zoekt.Client, s.Args.FileMatchLimit, s.Args.Select, c)
+	}
+
+	if len(s.Repos()) == 0 {
 		return nil
 	}
 
@@ -422,11 +428,6 @@ func doZoektSearchGlobal(ctx context.Context, q zoektquery.Q, typ search.Indexed
 
 // zoektSearch searches repositories using zoekt.
 func zoektSearch(ctx context.Context, args *search.ZoektParameters, repos *IndexedRepoRevs, since func(t time.Time) time.Duration, c streaming.Sender) error {
-	if args.Mode == search.ZoektGlobalSearch {
-		q := zoektGlobalQuery(ctx, args.Query, args.Mode, args.RepoOptions, args.UserPrivateRepos)
-		return doZoektSearchGlobal(ctx, q, args.Typ, args.Zoekt.Client, args.FileMatchLimit, args.Select, c)
-	}
-
 	if len(repos.repoRevs) == 0 {
 		return nil
 	}
