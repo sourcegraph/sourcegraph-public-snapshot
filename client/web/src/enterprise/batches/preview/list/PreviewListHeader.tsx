@@ -12,14 +12,17 @@ export const PreviewListHeader: React.FunctionComponent<PreviewListHeaderProps> 
     <>
         <span className="p-2 d-none d-sm-block" />
         {toggleSelectAll && (
-            <input
-                type="checkbox"
-                className="btn ml-2"
-                checked={allSelected}
-                onChange={toggleSelectAll}
-                data-tooltip="Click to select all changesets"
-                aria-label="Click to select all changesets"
-            />
+            <div className="d-flex p-2 align-items-center">
+                <input
+                    type="checkbox"
+                    className="btn"
+                    checked={allSelected}
+                    onChange={toggleSelectAll}
+                    data-tooltip="Click to select all changesets"
+                    aria-label="Click to select all changesets"
+                />
+                <span className="pl-2 d-block d-sm-none">Select all</span>
+            </div>
         )}
         <h5 className="p-2 d-none d-sm-block text-uppercase text-center">Current state</h5>
         <h5 className="d-none d-sm-block text-uppercase text-center">

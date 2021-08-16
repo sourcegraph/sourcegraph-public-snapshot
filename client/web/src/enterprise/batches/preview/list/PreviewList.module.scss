@@ -2,7 +2,10 @@
     &__grid {
         display: grid;
         grid-template-columns:
-            [checkbox] min-content [caret] min-content [current_state] min-content [indicator] min-content [action] min-content [info] minmax(
+            [checkbox] minmax(
+                min-content,
+                auto
+            ) [caret] min-content [current_state] min-content [indicator] min-content [action] min-content [info] minmax(
                 auto,
                 1fr
             )

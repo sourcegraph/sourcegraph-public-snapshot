@@ -222,31 +222,30 @@ const SelectBox: React.FunctionComponent<{
         }
     }, [selectable, changesetSpecID])
 
-    if (!changesetSpecID) {
-        return (
-            <div className="p-2">
-                <InputTooltip
-                    id="select-changeset-hidden"
-                    type="checkbox"
-                    className="btn"
-                    checked={false}
-                    disabled={true}
-                    tooltip="You cannot currently modify the publish status for this changeset"
-                />
-            </div>
-        )
-    }
+    const input = !changesetSpecID ? (
+        <InputTooltip
+            id="select-changeset-hidden"
+            type="checkbox"
+            className="btn"
+            checked={false}
+            disabled={true}
+            tooltip="You cannot currently modify the publish status for this changeset"
+        />
+    ) : (
+        <input
+            id={`select-changeset-${changesetSpecID}`}
+            type="checkbox"
+            className="btn"
+            checked={selectable.isSelected(changesetSpecID)}
+            onChange={toggleSelected}
+            data-tooltip="Click to select changeset for bulk-modifying the publish status"
+        />
+    )
 
     return (
-        <div className="p-2">
-            <input
-                id={`select-changeset-${changesetSpecID}`}
-                type="checkbox"
-                className="btn"
-                checked={selectable.isSelected(changesetSpecID)}
-                onChange={toggleSelected}
-                data-tooltip="Click to select changeset for bulk-modifying the publish status"
-            />
+        <div className="d-flex p-2 align-items-center">
+            {input}
+            {changesetSpecID ? <span className="pl-2 d-block d-sm-none">Modify publish status</span> : null}
         </div>
     )
 }
