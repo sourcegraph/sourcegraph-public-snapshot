@@ -254,7 +254,7 @@ export const CodeIntelUploadPage: FunctionComponent<CodeIntelUploadPageProps> = 
     )
 }
 
-const terminalStates = new Set([LSIFUploadState.COMPLETED, LSIFUploadState.ERRORED])
+const terminalStates = new Set([LSIFUploadState.COMPLETED, LSIFUploadState.ERRORED, LSIFUploadState.DELETING])
 
 function shouldReload(upload: LsifUploadFields | ErrorLike | null | undefined): boolean {
     return !isErrorLike(upload) && !(upload && terminalStates.has(upload.state))
