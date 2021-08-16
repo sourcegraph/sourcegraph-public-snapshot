@@ -20,10 +20,11 @@ export interface LivePreviewContainerProps {
     dataOrError: ChartContent | Error | undefined
     defaultMock: ChartContent
     mockMessage: ReactNode
+    description?: ReactNode
 }
 
 export function LivePreviewContainer(props: LivePreviewContainerProps): ReactElement {
-    const { disabled, loading, dataOrError, defaultMock, onUpdateClick, className, mockMessage } = props
+    const { disabled, loading, dataOrError, defaultMock, onUpdateClick, className, mockMessage, description } = props
 
     return (
         <section className={classnames(styles.livePreview, className)}>
@@ -61,6 +62,8 @@ export function LivePreviewContainer(props: LivePreviewContainerProps): ReactEle
                     {!dataOrError && <p className={styles.livePreviewLoadingChartInfo}>{mockMessage}</p>}
                 </div>
             )}
+
+            {description && <span className="mt-2 text-muted">{description}</span>}
         </section>
     )
 }

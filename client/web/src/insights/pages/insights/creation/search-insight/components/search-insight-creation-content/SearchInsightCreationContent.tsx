@@ -140,6 +140,7 @@ export const SearchInsightCreationContent: React.FunctionComponent<SearchInsight
             <SearchInsightLivePreview
                 disabled={!allFieldsForPreviewAreValid}
                 repositories={repositories.meta.value}
+                isAllReposMode={allReposMode.input.value}
                 series={editSeries}
                 step={step.meta.value}
                 stepValue={stepValue.meta.value}
