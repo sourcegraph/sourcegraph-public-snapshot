@@ -130,11 +130,6 @@ export const CodeIntelUploadPage: FunctionComponent<CodeIntelUploadPageProps> = 
         [uploadOrError, fetchLsifUploads]
     )
 
-    const showDependencyGraphState = useCallback(
-        (state: DependencyGraphState) => () => setDependencyGraphState(state),
-        [setDependencyGraphState]
-    )
-
     return deletionOrError === 'deleted' ? (
         <Redirect to="." />
     ) : isErrorLike(deletionOrError) ? (
@@ -185,61 +180,66 @@ export const CodeIntelUploadPage: FunctionComponent<CodeIntelUploadPageProps> = 
                         <CodeIntelUploadTimeline now={now} upload={uploadOrError} className="mb-3" />
                     </Container>
 
-                    <Container className="mt-2">
-                        <div className="mb-2">
-                            {dependencyGraphState === DependencyGraphState.ShowDependencies ? (
-                                <h2>
-                                    Dependencies
-                                    <button
-                                        type="button"
-                                        className="btn btn-link float-right p-0 mb-2"
-                                        onClick={showDependencyGraphState(DependencyGraphState.ShowDependents)}
-                                    >
-                                        Show dependents
-                                    </button>
-                                </h2>
-                            ) : (
-                                <h2>
-                                    Dependents
-                                    <button
-                                        type="button"
-                                        className="btn btn-link float-right p-0 mb-2"
-                                        onClick={showDependencyGraphState(DependencyGraphState.ShowDependencies)}
-                                    >
-                                        Show dependencies
-                                    </button>
-                                </h2>
-                            )}
-                        </div>
+                    {(uploadOrError.state === LSIFUploadState.COMPLETED ||
+                        uploadOrError.state === LSIFUploadState.DELETING) && (
+                        <Container className="mt-2">
+                            <div className="mb-2">
+                                {dependencyGraphState === DependencyGraphState.ShowDependencies ? (
+                                    <h2>
+                                        Dependencies
+                                        <button
+                                            type="button"
+                                            className="btn btn-link float-right p-0 mb-2"
+                                            onClick={() => setDependencyGraphState(DependencyGraphState.ShowDependents)}
+                                        >
+                                            Show dependents
+                                        </button>
+                                    </h2>
+                                ) : (
+                                    <h2>
+                                        Dependents
+                                        <button
+                                            type="button"
+                                            className="btn btn-link float-right p-0 mb-2"
+                                            onClick={() =>
+                                                setDependencyGraphState(DependencyGraphState.ShowDependencies)
+                                            }
+                                        >
+                                            Show dependencies
+                                        </button>
+                                    </h2>
+                                )}
+                            </div>
 
-                        {dependencyGraphState === DependencyGraphState.ShowDependencies ? (
-                            <FilteredConnection
-                                listComponent="div"
-                                listClassName="codeintel-uploads__grid mb-3"
-                                noun="dependency"
-                                pluralNoun="dependencies"
-                                nodeComponent={DependencyOrDependentNode}
-                                queryConnection={queryDependencies}
-                                history={props.history}
-                                location={props.location}
-                                cursorPaging={true}
-                                emptyElement={<EmptyDependenciesElement />}
-                            />
-                        ) : (
-                            <FilteredConnection
-                                listComponent="div"
-                                listClassName="codeintel-uploads__grid mb-3"
-                                noun="dependent"
-                                pluralNoun="dependents"
-                                nodeComponent={DependencyOrDependentNode}
-                                queryConnection={queryDependents}
-                                history={props.history}
-                                location={props.location}
-                                cursorPaging={true}
-                                emptyElement={<EmptyDependentsElement />}
-                            />
-                        )}
-                    </Container>
+                            {dependencyGraphState === DependencyGraphState.ShowDependencies ? (
+                                <FilteredConnection
+                                    listComponent="div"
+                                    listClassName="codeintel-uploads__grid mb-3"
+                                    noun="dependency"
+                                    pluralNoun="dependencies"
+                                    nodeComponent={DependencyOrDependentNode}
+                                    queryConnection={queryDependencies}
+                                    history={props.history}
+                                    location={props.location}
+                                    cursorPaging={true}
+                                    emptyElement={<EmptyDependenciesElement />}
+                                />
+                            ) : (
+                                <FilteredConnection
+                                    listComponent="div"
+                                    listClassName="codeintel-uploads__grid mb-3"
+                                    noun="dependent"
+                                    pluralNoun="dependents"
+                                    nodeComponent={DependencyOrDependentNode}
+                                    queryConnection={queryDependents}
+                                    history={props.history}
+                                    location={props.location}
+                                    cursorPaging={true}
+                                    emptyElement={<EmptyDependentsElement />}
+                                />
+                            )}
+                        </Container>
+                    )}
 
                     <Container className="mt-2">
                         <CodeIntelDeleteUpload
