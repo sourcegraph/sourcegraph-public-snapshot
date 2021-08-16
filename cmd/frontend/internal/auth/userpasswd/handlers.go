@@ -167,7 +167,7 @@ func handleSignUp(w http.ResponseWriter, r *http.Request, failIfNewUserIsNotInit
 		log15.Error("Error in user signup.", "email", creds.Email, "username", creds.Username, "error", err)
 		http.Error(w, message, statusCode)
 
-		if err = usagestats.LogBackendEvent(database.GlobalUsers.Handle().DB(), actor.FromContext(r.Context()).UID, "SignUpFailed", nil, featureflag.FromContext(r.Context()), nil); err != nil {
+		if err = usagestats.LogBackendEvent(database.GlobalUsers.Handle().DB(), actor.FromContext(r.Context()).UID, "SignUpFailed", nil, nil, featureflag.FromContext(r.Context()), nil); err != nil {
 			log15.Warn("Failed to log event SignUpFailed")
 		}
 
@@ -201,7 +201,7 @@ func handleSignUp(w http.ResponseWriter, r *http.Request, failIfNewUserIsNotInit
 		go hubspotutil.SyncUser(creds.Email, hubspotutil.SignupEventID, &hubspot.ContactProperties{AnonymousUserID: creds.AnonymousUserID, FirstSourceURL: creds.FirstSourceURL, DatabaseID: usr.ID})
 	}
 
-	if err = usagestats.LogBackendEvent(database.GlobalUsers.Handle().DB(), actor.FromContext(r.Context()).UID, "SignUpSucceeded", nil, featureflag.FromContext(r.Context()), nil); err != nil {
+	if err = usagestats.LogBackendEvent(database.GlobalUsers.Handle().DB(), actor.FromContext(r.Context()).UID, "SignUpSucceeded", nil, nil, featureflag.FromContext(r.Context()), nil); err != nil {
 		log15.Warn("Failed to log event SignUpSucceeded")
 	}
 }

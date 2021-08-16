@@ -2,6 +2,7 @@ package auth
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 
 	"github.com/inconshreveable/log15"
@@ -121,14 +122,17 @@ func GetAndSaveUser(ctx context.Context, db dbutil.DB, op GetAndSaveUserOp) (use
 		}); err != nil {
 			log15.Error("Failed to grant user pending permissions", "userID", userID, "error", err)
 		}
-		if err = usagestats.LogBackendEvent(db, actor.FromContext(ctx).UID, "ExternalAuthSignupSucceeded", nil, featureflag.FromContext(ctx), nil); err != nil {
+
+		serviceTypeArg := json.RawMessage(fmt.Sprintf(`{"serviceType": %s}`, op.ExternalAccount.ServiceType))
+		if err = usagestats.LogBackendEvent(db, actor.FromContext(ctx).UID, "ExternalAuthSignupSucceeded", serviceTypeArg, serviceTypeArg, featureflag.FromContext(ctx), nil); err != nil {
 			log15.Warn("Failed to log event ExternalAuthSignupSucceded")
 		}
 
 		return userID, true, true, "", nil
 	}()
 	if err != nil {
-		if err = usagestats.LogBackendEvent(db, actor.FromContext(ctx).UID, "ExternalAuthSignupFailed", nil, featureflag.FromContext(ctx), nil); err != nil {
+		serviceTypeArg := json.RawMessage(fmt.Sprintf(`{"serviceType": %s}`, op.ExternalAccount.ServiceType))
+		if err = usagestats.LogBackendEvent(db, actor.FromContext(ctx).UID, "ExternalAuthSignupFailed", serviceTypeArg, serviceTypeArg, featureflag.FromContext(ctx), nil); err != nil {
 			log15.Warn("Failed to log event ExternalAuthSignUpFailed")
 		}
 		return 0, safeErrMsg, err
