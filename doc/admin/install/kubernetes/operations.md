@@ -182,7 +182,7 @@ The following instructions apply only if you are restoring your databases into a
 
 If you are restoring a previously running environment, see the instructions for [restoring a previously running deployment](#restoring-sourcegraph-databases-into-an-existing-environment)
 
-##### 1. Copy the database dumpb files (eg. `sourcegraph_db.out` and `codeintel_db.out`) into the root of the `deploy-sourcegraph` directory
+##### 1. Copy the database dump files (eg. `sourcegraph_db.out` and `codeintel_db.out`) into the root of the `deploy-sourcegraph` directory
 
 ##### 2. Start the database services by running the following command from the root of the [deploy-sourcegraph](https://github.com/sourcegraph/deploy-sourcegraph) directory
 
@@ -244,7 +244,7 @@ kubectl delete pv $pgsql_PV_NAME --namespace=$NAMESPACE --force
 kubectl delete pv $codeintel-db_PV_NAME --namespace=$NAMESPACE --force
 ```
 
-##### 3. Copy the database dumpb files (eg. `sourcegraph_db.out` and `codeintel_db.out`) into the root of the `deploy-sourcegraph` directory
+##### 3. Copy the database dump files (eg. `sourcegraph_db.out` and `codeintel_db.out`) into the root of the `deploy-sourcegraph` directory
 
 ##### 4. Start the database services only
 
