@@ -149,7 +149,7 @@ type ZoektParameters struct {
 	UserPrivateRepos []types.RepoName
 	Select           filter.SelectPath
 
-	Zoekt *searchbackend.Zoekt
+	Zoekt *backend.Zoekt
 }
 
 // TextParameters are the parameters passed to a search backend. It contains the Pattern
