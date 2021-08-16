@@ -406,10 +406,10 @@ export const UserSettingsRepositoriesPage: React.FunctionComponent<Props> = ({
                     },
                 ]}
                 description={
-                    <>
+                    <div className="text-muted">
                         All repositories synced with Sourcegraph from{' '}
                         <Link to={`${routingPrefix}/code-hosts`}>connected code hosts</Link>
-                    </>
+                    </div>
                 }
                 actions={
                     <Link
