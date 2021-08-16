@@ -569,16 +569,21 @@ func (s *PermsSyncer) syncRepoPerms(ctx context.Context, repoID api.RepoID, noPe
 	}
 	defer func() { err = txs.Done(err) }()
 
-	accounts := &extsvc.Accounts{
-		ServiceType: provider.ServiceType(),
-		ServiceID:   provider.ServiceID(),
-		AccountIDs:  pendingAccountIDs,
-	}
-
 	if err = txs.SetRepoPermissions(ctx, p); err != nil {
 		return errors.Wrap(err, "set repository permissions")
-	} else if err = txs.SetRepoPendingPermissions(ctx, accounts, p); err != nil {
-		return errors.Wrap(err, "set repository pending permissions")
+	}
+
+	// If there is no provider, there would be no pending permissions will be generated.
+	// TODO: add a test case where userID is not empty but provider is nil
+	if provider != nil {
+		accounts := &extsvc.Accounts{
+			ServiceType: provider.ServiceType(),
+			ServiceID:   provider.ServiceID(),
+			AccountIDs:  pendingAccountIDs,
+		}
+		if err = txs.SetRepoPendingPermissions(ctx, accounts, p); err != nil {
+			return errors.Wrap(err, "set repository pending permissions")
+		}
 	}
 
 	log15.Debug("PermsSyncer.syncRepoPerms.synced",
