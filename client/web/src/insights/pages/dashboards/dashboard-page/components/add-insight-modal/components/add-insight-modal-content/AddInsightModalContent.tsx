@@ -99,7 +99,6 @@ export const AddInsightModalContent: React.FunctionComponent<AddInsightModalCont
                     label={formAPI.submitting ? 'Saving' : 'Save'}
                     type="submit"
                     disabled={formAPI.submitting}
-                    spinnerClassName="mr-2"
                     className="btn btn-primary"
                 />
             </div>

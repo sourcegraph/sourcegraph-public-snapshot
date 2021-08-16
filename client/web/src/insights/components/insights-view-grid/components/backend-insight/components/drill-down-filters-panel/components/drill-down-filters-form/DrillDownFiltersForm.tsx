@@ -153,10 +153,9 @@ export const DrillDownFiltersForm: React.FunctionComponent<DrillDownFiltersFormP
                             ? 'Update default filters'
                             : 'Save default filters'
                     }
-                    spinnerClassName="mr-2"
                     type="submit"
                     disabled={formAPI.submitting || !hasFiltersChanged}
-                    className="d-flex btn btn-outline-secondary ml-auto"
+                    className="btn btn-outline-secondary ml-auto"
                 />
             </footer>
         </form>
