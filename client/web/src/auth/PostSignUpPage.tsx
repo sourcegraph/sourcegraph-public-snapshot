@@ -60,7 +60,8 @@ export const PostSignUpPage: FunctionComponent<PostSignUpPage> = ({
         goToSearch()
     }
 
-    const finishWelcomeFlow = (): void => {
+    const finishWelcomeFlow = (event: React.MouseEvent<HTMLElement>): void => {
+        event.currentTarget.blur()
         setUserFinishedWelcomeFlow(true)
         goToSearch()
     }

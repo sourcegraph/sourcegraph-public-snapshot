@@ -6,7 +6,7 @@ import { LoaderButton } from '@sourcegraph/web/src/components/LoaderButton'
 import { useSteps } from '../Steps/context'
 
 interface Props {
-    onFinish: () => void
+    onFinish: (event: React.MouseEvent<HTMLElement>) => void
 }
 
 export const Footer: React.FunctionComponent<Props> = ({ onFinish }) => {
@@ -31,14 +31,20 @@ export const Footer: React.FunctionComponent<Props> = ({ onFinish }) => {
                         Not right now
                     </button>
                 )}
-
                 <LoaderButton
                     type="button"
                     alwaysShowLabel={true}
                     label={currentStep.isLastStep ? 'Start searching' : 'Continue'}
-                    className="btn btn-primary ml-2"
+                    className="btn btn-primary float-right ml-2"
                     disabled={!currentStep.isComplete}
-                    onClick={currentStep.isLastStep ? onFinish : () => setStep(currentIndex + 1)}
+                    onClick={
+                        currentStep.isLastStep
+                            ? onFinish
+                            : (event: React.MouseEvent<HTMLElement>) => {
+                                  event.currentTarget.blur()
+                                  setStep(currentIndex + 1)
+                              }
+                    }
                 />
             </div>
         </div>
