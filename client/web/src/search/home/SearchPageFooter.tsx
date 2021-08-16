@@ -107,7 +107,7 @@ export const SearchPageFooter: React.FunctionComponent<ThemeProps & TelemetryPro
                         >
                             <img
                                 src={`${assetsRoot}/img/devtooltime-logo.svg`}
-                                alt=""
+                                alt="DevToolTime logo"
                                 className={styles.devToolTimeImage}
                             />
                             <div className={styles.devToolTimeText}>
