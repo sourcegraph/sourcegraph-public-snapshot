@@ -17,22 +17,21 @@ const ACTIONS: Action[] = [
         buttonLabel: 'Unpublish',
         dropdownTitle: 'Unpublish',
         dropdownDescription:
-            "Remove the selected changesets from this batch change. Unlike archive, this can't be undone.",
+            'Do not publish selected changesets on the codehost. Note, we cannot unpublish a published changeset.',
         onTrigger: noop,
     },
     {
         type: 'publish',
         buttonLabel: 'Publish',
         dropdownTitle: 'Publish',
-        dropdownDescription: 'Re-enqueues the selected changesets for processing, if they failed.',
+        dropdownDescription: 'Publish selected changesets on the codehost.',
         onTrigger: noop,
     },
     {
         type: 'publish-draft',
         buttonLabel: 'Publish draft',
         dropdownTitle: 'Publish draft',
-        dropdownDescription:
-            'Create a comment on all selected changesets. For example, you could ask people for reviews, give an update, or post a cat GIF.',
+        dropdownDescription: 'Publish selected changesets as drafts on the codehost.',
         onTrigger: noop,
     },
 ]
