@@ -1,8 +1,7 @@
 import { Meta } from '@storybook/react'
 import React from 'react'
 
-import { BrandedStory } from '@sourcegraph/branded/src/components/BrandedStory'
-import webStyles from '@sourcegraph/web/src/SourcegraphWebApp.scss'
+import { WebStory } from '@sourcegraph/web/src/components/WebStory'
 
 import { RevisionsPopover } from './RevisionsPopover'
 import { MOCK_PROPS, MOCK_REQUESTS } from './RevisionsPopover.mocks'
@@ -12,15 +11,14 @@ const Story: Meta = {
 
     decorators: [
         story => (
-            <BrandedStory
-                styles={webStyles}
+            <WebStory
                 mocks={MOCK_REQUESTS}
                 initialEntries={[{ pathname: `/${MOCK_PROPS.repoName}` }]}
                 // Can't utilise loose mocking here as the commit/branch requests use the same operations just with different variables
                 useStrictMocking={true}
             >
                 {() => <div className="container mt-3">{story()}</div>}
-            </BrandedStory>
+            </WebStory>
         ),
     ],
 

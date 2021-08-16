@@ -35,7 +35,7 @@ export interface GitReferenceNodeProps {
 
     icon?: React.ComponentType<{ className?: string }>
 
-    onClick?: (event: React.MouseEvent<HTMLAnchorElement>) => void
+    onClick?: React.MouseEventHandler<HTMLAnchorElement>
 }
 
 export const GitReferenceNode: React.FunctionComponent<GitReferenceNodeProps> = ({
