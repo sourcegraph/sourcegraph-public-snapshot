@@ -123,7 +123,7 @@ func GetAndSaveUser(ctx context.Context, db dbutil.DB, op GetAndSaveUserOp) (use
 			log15.Error("Failed to grant user pending permissions", "userID", userID, "error", err)
 		}
 
-		serviceTypeArg := json.RawMessage(fmt.Sprintf(`{"serviceType": %s}`, op.ExternalAccount.ServiceType))
+		serviceTypeArg := json.RawMessage(fmt.Sprintf(`{"serviceType": %q}`, op.ExternalAccount.ServiceType))
 		if logErr := usagestats.LogBackendEvent(db, actor.FromContext(ctx).UID, "ExternalAuthSignupSucceeded", serviceTypeArg, serviceTypeArg, featureflag.FromContext(ctx), nil); logErr != nil {
 			log15.Warn("Failed to log event ExternalAuthSignupSucceded")
 		}
