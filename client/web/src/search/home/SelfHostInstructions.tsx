@@ -48,8 +48,8 @@ export const SelfHostInstructions: React.FunctionComponent<TelemetryProps> = ({ 
                     <li>Free 30 day trial of enterprise-only features</li>
                 </ul>
                 <a href="https://docs.sourcegraph.com/self-hosted-vs-cloud" target="_blank" rel="noopener noreferrer">
-                    Learn more about self-hosted vs. cloud features <OpenInNewIcon className="icon-inline" />{' '}
-                    <span className="sr-only">(Open in new window)</span>
+                    Learn more about self-hosted vs. cloud features{' '}
+                    <OpenInNewIcon aria-label="Open in new window" className="icon-inline" />
                 </a>
             </div>
 
@@ -67,9 +67,9 @@ export const SelfHostInstructions: React.FunctionComponent<TelemetryProps> = ({ 
                         onClick={onCopy}
                         data-tooltip={currentCopyTooltip}
                         data-placement="top"
+                        aria-label="Copy Docker command to clipboard"
                     >
                         <ContentCopyIcon className="icon-inline" />
-                        <span className="sr-only">Copy to clipboard</span>
                     </button>
                     <code className={styles.code}>{dockerCommand}</code>
                 </div>
@@ -80,8 +80,8 @@ export const SelfHostInstructions: React.FunctionComponent<TelemetryProps> = ({ 
                         rel="noopener noreferrer"
                         className="mr-2"
                     >
-                        Learn how to deploy a server or cluster <OpenInNewIcon className="icon-inline" />{' '}
-                        <span className="sr-only">(Open in new window)</span>
+                        Learn how to deploy a server or cluster{' '}
+                        <OpenInNewIcon aria-label="Open in new window" className="icon-inline" />
                     </a>
                     <a
                         href="https://about.sourcegraph.com/contact/request-info/"
