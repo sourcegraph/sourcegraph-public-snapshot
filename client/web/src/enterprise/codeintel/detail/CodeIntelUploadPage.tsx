@@ -141,7 +141,7 @@ export const CodeIntelUploadPage: FunctionComponent<CodeIntelUploadPageProps> = 
         <ErrorAlert prefix="Error deleting LSIF upload" error={deletionOrError} />
     ) : (
         <div className="site-admin-lsif-upload-page w-100">
-            <PageTitle title="Code intelligence - uploads" />
+            <PageTitle title="Precise code intelligence uploads" />
             {isErrorLike(uploadOrError) ? (
                 <ErrorAlert prefix="Error loading LSIF upload" error={uploadOrError} />
             ) : !uploadOrError ? (
