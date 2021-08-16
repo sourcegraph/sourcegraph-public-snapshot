@@ -253,8 +253,8 @@ export const SearchInsightCreationForm: React.FunctionComponent<CreationSearchIn
 
             <hr className={styles.creationInsightFormSeparator} />
 
-            <div className="d-flex flex-wrap align-items-baseline">
-                {submitErrors?.[FORM_ERROR] && <ErrorAlert error={submitErrors[FORM_ERROR]} />}
+            <div className="d-flex flex-wrap align-items-center">
+                {submitErrors?.[FORM_ERROR] && <ErrorAlert className="w-100" error={submitErrors[FORM_ERROR]} />}
 
                 <LoaderButton
                     alwaysShowLabel={true}
