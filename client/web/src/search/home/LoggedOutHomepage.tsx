@@ -170,7 +170,7 @@ export const LoggedOutHomepage: React.FunctionComponent<LoggedOutHomepageProps> 
             </div>
         </div>
 
-        <SelfHostInstructions />
+        <SelfHostInstructions {...props} />
     </div>
 )
 

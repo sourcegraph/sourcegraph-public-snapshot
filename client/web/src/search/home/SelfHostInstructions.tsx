@@ -5,9 +5,11 @@ import DownloadIcon from 'mdi-react/DownloadIcon'
 import OpenInNewIcon from 'mdi-react/OpenInNewIcon'
 import React, { useState } from 'react'
 
+import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+
 import styles from './SelfHostInstructions.module.scss'
 
-export const SelfHostInstructions: React.FunctionComponent<{}> = () => {
+export const SelfHostInstructions: React.FunctionComponent<TelemetryProps> = ({ telemetryService }) => {
     const dockerCommand =
         'docker run --publish 7080:7080 --publish 127.0.0.1:3370:3370 --rm --volume ~/.sourcegraph/config:/etc/sourcegraph --volume ~/.sourcegraph/data:/var/opt/sourcegraph sourcegraph/server:3.30.3'
 
@@ -17,9 +19,18 @@ export const SelfHostInstructions: React.FunctionComponent<{}> = () => {
     const [currentCopyTooltip, setCurrentCopyTooltip] = useState(copyTooltip)
 
     const onCopy = (): void => {
+        telemetryService.log('HomepageCTAClicked', { campaign: 'Local install' }, { campaign: 'Local install' })
         copy(dockerCommand)
         setCurrentCopyTooltip(copyCompletedTooltip)
         setTimeout(() => setCurrentCopyTooltip(copyTooltip), 1000)
+    }
+
+    const onTalkToEngineerClicked = (): void => {
+        telemetryService.log(
+            'HomepageCTAClicked',
+            { campaign: 'Talk to an engineer' },
+            { campaign: 'Talk to an engineer' }
+        )
     }
 
     return (
@@ -67,7 +78,9 @@ export const SelfHostInstructions: React.FunctionComponent<{}> = () => {
                         Learn how to deploy a server or cluster <OpenInNewIcon className="icon-inline" />{' '}
                         <span className="sr-only">(Open in new window)</span>
                     </a>
-                    <a href="https://about.sourcegraph.com/contact/request-info/">Talk to an engineer</a>
+                    <a href="https://about.sourcegraph.com/contact/request-info/" onClick={onTalkToEngineerClicked}>
+                        Talk to an engineer
+                    </a>
                 </div>
             </div>
         </div>
