@@ -10,7 +10,7 @@ and any manual migration steps you must perform.
 
 <!-- GENERATE UPGRADE GUIDE ON RELEASE (release tooling uses this to add entries) -->
 
-# 3.30.3 -> 3.31
+# 3.30.x -> 3.31
 
 The **built-in** main Postgres (`pgsql`) and codeintel (`codeintel-db`) databases have switched to an alpine-based Docker image. Upon upgrading, Sourcegraph will need to re-index the entire database. For systems with large datasets, re-indexing can take 1-2+ hours.
 
