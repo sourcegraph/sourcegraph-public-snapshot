@@ -1,6 +1,6 @@
 .empty-command-list {
     position: relative;
-    color: $gray-17;
+    color: var(--gray-08);
     padding: 1rem;
 
     &__title {
@@ -25,6 +25,6 @@
 
 .theme-dark {
     .empty-command-list {
-        color: $gray-06;
+        color: var(--gray-05);
     }
 }

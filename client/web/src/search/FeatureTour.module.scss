@@ -1,4 +1,10 @@
 .feature-tour {
+    --tour-bg: var(--white);
+
+    :global(.theme-dark) {
+        --tour-bg: var(--gray-08);
+    }
+
     background: var(--tour-bg);
     border: none;
     border-radius: 10px;
