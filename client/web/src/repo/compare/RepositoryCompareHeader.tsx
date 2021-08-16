@@ -48,7 +48,7 @@ export const RepositoryComparePopover: React.FunctionComponent<RepositoryCompare
     /**
      * Override the default node URL behavior to support navigating to a repository sub-page.
      */
-    const getURLFromRevision = React.useCallback(
+    const getPathFromRevision = React.useCallback(
         (_href: string, revision: string) => {
             const escapedRevision = escapeRevspecForURL(revision)
             const comparePath =
@@ -98,8 +98,8 @@ export const RepositoryComparePopover: React.FunctionComponent<RepositoryCompare
                     currentRev={currentRevision}
                     currentCommitID={currentRevision}
                     togglePopover={togglePopover}
-                    getURLFromRevision={getURLFromRevision}
-                    allowSpeculativeSearch={true}
+                    getPathFromRevision={getPathFromRevision}
+                    showSpeculativeResults={true}
                     onSelect={handleSelect}
                 />
             </Popover>
