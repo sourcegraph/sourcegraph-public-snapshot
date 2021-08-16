@@ -1,4 +1,5 @@
 import classNames from 'classnames'
+import copy from 'copy-to-clipboard'
 import ContentCopyIcon from 'mdi-react/ContentCopyIcon'
 import DownloadIcon from 'mdi-react/DownloadIcon'
 import OpenInNewIcon from 'mdi-react/OpenInNewIcon'
@@ -16,14 +17,7 @@ export const SelfHostInstructions: React.FunctionComponent<{}> = () => {
     const [currentCopyTooltip, setCurrentCopyTooltip] = useState(copyTooltip)
 
     const onCopy = (): void => {
-        const textArea = document.createElement('textarea')
-        textArea.textContent = dockerCommand
-        textArea.className = 'hidden'
-        document.body.append(textArea)
-        textArea.select()
-        document.execCommand('copy')
-        textArea.remove()
-
+        copy(dockerCommand)
         setCurrentCopyTooltip(copyCompletedTooltip)
         setTimeout(() => setCurrentCopyTooltip(copyTooltip), 1000)
     }
