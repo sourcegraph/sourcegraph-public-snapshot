@@ -14,17 +14,17 @@ Note that **Organizations** feature is disabled in Sourcegraph Cloud. If you wan
 - [Who can see your code on Sourcegraph Cloud](./code_visibility_on_sourcegraph_cloud.md)
 
 ## FAQ
-### What is Sourcegraph Cloud? 
+### What is Sourcegraph Cloud?
 
-### What are the differences between Sourcegraph cloud and Sourcegraph on-prem/Enterprise? 
+### What are the differences between Sourcegraph cloud and Sourcegraph on-prem/Enterprise?
 
-Sourcegraph cloud is fundamentally similar to Sourcegraph on-prem. Both have the same search capabilities that help developers understand big code. Sourcegraph cloud is still under active development and missing several key organizational features. See a [full breakdown between cloud, on-prem, and enterprise](../../cloud/cloud_ent_on-prem_comparison.md). 
+Sourcegraph cloud is fundamentally similar to Sourcegraph on-prem. Both have the same search capabilities that help developers understand big code. Sourcegraph cloud is still under active development and missing several key organizational features. See a [full breakdown between cloud, on-prem, and enterprise](../../cloud/cloud_ent_on-prem_comparison.md).
 
-### What if I want to use Sourcegraph for my organization? 
+### What if I want to use Sourcegraph for my organization?
 
 Sourcegraph cloud only supports individual users today. This means that any user can sign up for Sourcegraph.com, connect public or private repositories hosted on Github.com or Gitlab.com, and leverage the powerful code search of Sourcegraph. Organizations are supported in Sourcegraph on-prem. Learn how to [run your own Sourcegraph instance](../../../admin/install/index.md).
 
-### What if my code is not stored on Github.com or Gitlab.com? 
+### What if my code is not stored on Github.com or Gitlab.com?
 Today, only Github.com or Gitlab.com are supported on Sourcegraph cloud, though many other code-hosts are supported in our self-hosted version of Sourcegraph. Learn how to [run your own Sourcegraph instance](../../../admin/install/index.md).
 
 ## Search contexts
@@ -33,7 +33,7 @@ Today, only Github.com or Gitlab.com are supported on Sourcegraph cloud, though 
 
 Search contexts help you search the code you care about on Sourcegraph cloud. A search context represents a set of repositories on Sourcegraph cloud that will be targeted by search queries by default.
 
-Sourcegraph Cloud supports two search contexts: 
+Sourcegraph Cloud supports two search contexts:
 
 - Your personal context, `context:@username`, which automatically includes [all repositories you add to Sourcegraph](../how-to/adding_repositories_to_cloud.md).
 - The global context, `context:global`, which includes all repositories on Sourcegraph cloud.
