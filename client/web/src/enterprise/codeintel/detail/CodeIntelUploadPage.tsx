@@ -152,14 +152,10 @@ export const CodeIntelUploadPage: FunctionComponent<CodeIntelUploadPageProps> = 
                         headingElement="h2"
                         path={[
                             {
-                                text: `Upload for commit ${
+                                text: `Upload for commit ${uploadOrError.projectRoot?.repository.name || ''}@${
                                     uploadOrError.projectRoot
                                         ? uploadOrError.projectRoot.commit.abbreviatedOID
                                         : uploadOrError.inputCommit.slice(0, 7)
-                                } indexed by ${uploadOrError.inputIndexer} rooted at ${
-                                    (uploadOrError.projectRoot
-                                        ? uploadOrError.projectRoot.path
-                                        : uploadOrError.inputRoot) || '/'
                                 }`,
                             },
                         ]}

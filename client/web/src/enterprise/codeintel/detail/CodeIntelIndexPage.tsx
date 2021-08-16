@@ -97,7 +97,7 @@ export const CodeIntelIndexPage: FunctionComponent<CodeIntelIndexPageProps> = ({
                         headingElement="h2"
                         path={[
                             {
-                                text: `Auto-index record for commit ${
+                                text: `Auto-index record for ${indexOrError.projectRoot?.repository.name || ''}@${
                                     indexOrError.projectRoot
                                         ? indexOrError.projectRoot.commit.abbreviatedOID
                                         : indexOrError.inputCommit.slice(0, 7)
