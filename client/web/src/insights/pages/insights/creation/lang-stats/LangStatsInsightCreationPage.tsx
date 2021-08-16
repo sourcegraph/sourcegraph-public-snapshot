@@ -1,6 +1,6 @@
 import classnames from 'classnames'
-import React, { useCallback, useContext, useEffect } from 'react'
-import { useHistory } from 'react-router-dom'
+import React, { useCallback, useContext, useEffect, useMemo } from 'react'
+import { useHistory, useParams } from 'react-router-dom'
 
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
@@ -13,6 +13,8 @@ import { PageTitle } from '../../../../../components/PageTitle'
 import { FORM_ERROR, FormChangeEvent } from '../../../../components/form/hooks/useForm'
 import { InsightsApiContext } from '../../../../core/backend/api-provider'
 import { addInsightToSettings } from '../../../../core/settings-action/insights'
+import { isVirtualDashboard } from '../../../../core/types'
+import { useDashboard } from '../../../../hooks/use-dashboard'
 import { useInsightSubjects } from '../../../../hooks/use-insight-subjects/use-insight-subjects'
 
 import {
@@ -40,6 +42,18 @@ export const LangStatsInsightCreationPage: React.FunctionComponent<LangStatsInsi
         undefined
     )
 
+    const { dashboardId } = useParams<{ dashboardId?: string }>()
+    const dashboard = useDashboard({ settingsCascade, dashboardId })
+
+    // Set dashboard scope as initial value for the insight visibility
+    const mergedInitialValues = useMemo<Partial<LangStatsCreationFormFields>>(() => {
+        if (!dashboard || isVirtualDashboard(dashboard)) {
+            return initialFormValues ?? {}
+        }
+
+        return { ...(initialFormValues ?? {}), visibility: dashboard.owner.id }
+    }, [dashboard, initialFormValues])
+
     const insightSubjects = useInsightSubjects({ settingsCascade })
 
     useEffect(() => {
@@ -62,23 +76,41 @@ export const LangStatsInsightCreationPage: React.FunctionComponent<LangStatsInsi
                 setInitialFormValues(undefined)
                 telemetryService.log('CodeInsightsCodeStatsCreationPageSubmitClick')
 
-                // Navigate user to the dashboard page with new created dashboard
-                history.push(`/insights/dashboards/${insight.visibility}`)
+                if (!dashboard || isVirtualDashboard(dashboard)) {
+                    // Navigate user to the dashboard page with new created dashboard
+                    history.push(`/insights/dashboards/${insight.visibility}`)
+
+                    return
+                }
+
+                if (dashboard.owner.id === insight.visibility) {
+                    history.push(`/insights/dashboards/${dashboard.id}`)
+                } else {
+                    history.push(`/insights/dashboards/${insight.visibility}`)
+                }
             } catch (error) {
                 return { [FORM_ERROR]: asError(error) }
             }
 
             return
         },
-        [getSubjectSettings, updateSubjectSettings, platformContext, setInitialFormValues, telemetryService, history]
+        [
+            dashboard,
+            getSubjectSettings,
+            updateSubjectSettings,
+            platformContext,
+            setInitialFormValues,
+            telemetryService,
+            history,
+        ]
     )
 
     const handleCancel = useCallback(() => {
         // Clear initial values if user successfully created search insight
         setInitialFormValues(undefined)
         telemetryService.log('CodeInsightsCodeStatsCreationPageCancelClick')
-        history.push('/insights/dashboards/all')
-    }, [history, setInitialFormValues, telemetryService])
+        history.push(`/insights/dashboards/${dashboard?.id ?? 'all'}`)
+    }, [dashboard, history, setInitialFormValues, telemetryService])
 
     const handleChange = (event: FormChangeEvent<LangStatsCreationFormFields>): void => {
         setInitialFormValues(event.values)
@@ -102,7 +134,7 @@ export const LangStatsInsightCreationPage: React.FunctionComponent<LangStatsInsi
             <LangStatsInsightCreationContent
                 className="pb-5"
                 settings={settingsCascade.final ?? DEFAULT_FINAL_SETTINGS}
-                initialValues={initialFormValues}
+                initialValues={mergedInitialValues}
                 subjects={insightSubjects}
                 onSubmit={handleSubmit}
                 onCancel={handleCancel}

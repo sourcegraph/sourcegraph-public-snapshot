@@ -26,7 +26,7 @@ export interface SearchInsightCreationContentProps {
     subjects?: SupportedInsightSubject[]
 
     /** Initial value for all form fields. */
-    initialValue?: CreateInsightFormFields
+    initialValue?: Partial<CreateInsightFormFields>
     /** Custom class name for root form element. */
     className?: string
     /** Test id for the root content element (form element). */

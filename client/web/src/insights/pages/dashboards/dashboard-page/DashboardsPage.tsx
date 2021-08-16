@@ -60,7 +60,7 @@ export const DashboardsPage: React.FunctionComponent<DashboardsPageProps> = prop
                             <Link to="/insights/add-dashboard" className="btn btn-outline-secondary mr-2">
                                 <PlusIcon className="icon-inline" /> Create new dashboard
                             </Link>
-                            <Link to="/insights/create" className="btn btn-secondary">
+                            <Link to={`/insights/create?dashboardId=${dashboardID}`} className="btn btn-secondary">
                                 <PlusIcon className="icon-inline" /> Create new insight
                             </Link>
                         </>

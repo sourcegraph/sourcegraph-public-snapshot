@@ -1,6 +1,6 @@
 import classnames from 'classnames'
-import React, { useCallback, useContext, useEffect } from 'react'
-import { useHistory } from 'react-router-dom'
+import React, { useCallback, useContext, useEffect, useMemo } from 'react'
+import { useHistory, useParams } from 'react-router-dom'
 
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
@@ -13,6 +13,8 @@ import { PageTitle } from '../../../../../components/PageTitle'
 import { FORM_ERROR, FormChangeEvent } from '../../../../components/form/hooks/useForm'
 import { InsightsApiContext } from '../../../../core/backend/api-provider'
 import { addInsightToSettings } from '../../../../core/settings-action/insights'
+import { isVirtualDashboard } from '../../../../core/types'
+import { useDashboard } from '../../../../hooks/use-dashboard'
 import { useInsightSubjects } from '../../../../hooks/use-insight-subjects/use-insight-subjects'
 
 import {
@@ -23,6 +25,10 @@ import styles from './SearchInsightCreationPage.module.scss'
 import { CreateInsightFormFields } from './types'
 import { getSanitizedSearchInsight } from './utils/insight-sanitizer'
 import { useSearchInsightInitialValues } from './utils/use-initial-values'
+
+interface SearchInsightCreationPageQueryParameters {
+    dashboardId?: string
+}
 
 export interface SearchInsightCreationPageProps
     extends PlatformContextProps<'updateSettings'>,
@@ -35,8 +41,20 @@ export const SearchInsightCreationPage: React.FunctionComponent<SearchInsightCre
 
     const history = useHistory()
     const { updateSubjectSettings, getSubjectSettings } = useContext(InsightsApiContext)
+    const { dashboardId } = useParams<SearchInsightCreationPageQueryParameters>()
+    const dashboard = useDashboard({ settingsCascade, dashboardId })
 
     const { initialValues, loading, setLocalStorageFormValues } = useSearchInsightInitialValues()
+
+    // Set dashboard scope as initial value for the insight visibility
+    const mergedInitialValues = useMemo<Partial<CreateInsightFormFields>>(() => {
+        if (!dashboard || isVirtualDashboard(dashboard)) {
+            return initialValues ?? {}
+        }
+
+        return { ...(initialValues ?? {}), visibility: dashboard.owner.id }
+    }, [dashboard, initialValues])
+
     const subjects = useInsightSubjects({ settingsCascade })
 
     useEffect(() => {
@@ -59,8 +77,18 @@ export const SearchInsightCreationPage: React.FunctionComponent<SearchInsightCre
                 // Clear initial values if user successfully created search insight
                 setLocalStorageFormValues(undefined)
 
-                // Navigate user to the dashboard page with new created dashboard
-                history.push(`/insights/dashboards/${insight.visibility}`)
+                if (!dashboard || isVirtualDashboard(dashboard)) {
+                    // Navigate user to the dashboard page with new created dashboard
+                    history.push(`/insights/dashboards/${insight.visibility}`)
+
+                    return
+                }
+
+                if (dashboard.owner.id === insight.visibility) {
+                    history.push(`/insights/dashboards/${dashboard.id}`)
+                } else {
+                    history.push(`/insights/dashboards/${insight.visibility}`)
+                }
             } catch (error) {
                 return { [FORM_ERROR]: asError(error) }
             }
@@ -68,6 +96,7 @@ export const SearchInsightCreationPage: React.FunctionComponent<SearchInsightCre
             return
         },
         [
+            dashboard,
             getSubjectSettings,
             updateSubjectSettings,
             platformContext,
@@ -84,8 +113,8 @@ export const SearchInsightCreationPage: React.FunctionComponent<SearchInsightCre
     const handleCancel = useCallback(() => {
         telemetryService.log('CodeInsightsSearchBasedCreationPageCancelClick')
         setLocalStorageFormValues(undefined)
-        history.push('/insights/dashboards/all')
-    }, [history, setLocalStorageFormValues, telemetryService])
+        history.push(`/insights/dashboards/${dashboard?.id ?? 'all'}`)
+    }, [dashboard, history, setLocalStorageFormValues, telemetryService])
 
     return (
         <Page className={classnames('col-10', styles.creationPage)}>
@@ -119,7 +148,7 @@ export const SearchInsightCreationPage: React.FunctionComponent<SearchInsightCre
                             className="pb-5"
                             dataTestId="search-insight-create-page-content"
                             settings={settingsCascade.final}
-                            initialValue={initialValues}
+                            initialValue={mergedInitialValues}
                             subjects={subjects}
                             onSubmit={handleSubmit}
                             onCancel={handleCancel}

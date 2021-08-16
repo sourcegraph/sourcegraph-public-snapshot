@@ -36,7 +36,7 @@ export interface LangStatsInsightCreationContentProps {
     subjects?: SupportedInsightSubject[]
 
     /** Initial value for all form fields. */
-    initialValues?: LangStatsCreationFormFields
+    initialValues?: Partial<LangStatsCreationFormFields>
     /** Custom class name for root form element. */
     className?: string
     /** Submit handler for form element. */
@@ -52,18 +52,20 @@ export const LangStatsInsightCreationContent: React.FunctionComponent<LangStatsI
         mode = 'creation',
         settings,
         subjects = [],
-        initialValues,
+        initialValues = {},
         className,
         onSubmit,
         onCancel = noop,
         onChange = noop,
     } = props
 
-    // Calculate initial value for the visibility settings
-    const userSubjectID = subjects.find(isUserSubject)?.id ?? ''
-
     const { values, handleSubmit, formAPI, ref } = useForm<LangStatsCreationFormFields>({
-        initialValues: initialValues ?? { ...INITIAL_VALUES, visibility: userSubjectID },
+        initialValues: {
+            ...INITIAL_VALUES,
+            // Calculate initial value for the visibility settings
+            visibility: subjects.find(isUserSubject)?.id ?? '',
+            ...initialValues,
+        },
         onSubmit,
         onChange,
         touched: mode === 'edit',
