@@ -50,6 +50,7 @@ All notable changes to Sourcegraph are documented in this file.
 - Code Insights GraphQL query `insights` will now fetch 12 months of data instead of 6 if a specific time range is not provided. [#23786](https://github.com/sourcegraph/sourcegraph/pull/23786)
 - Code Insights will now generate 12 months of historical data during a backfill instead of 6. [#23860](https://github.com/sourcegraph/sourcegraph/pull/23860)
 - The `sourcegraph-frontend.Role` in Kubernetes deployments was updated to permit statefulsets access in the Kubernetes API. This is needed to better support stable service discovery for stateful sets during deployments, which isn't currently possible by using service endpoints. [#3670](https://github.com/sourcegraph/deploy-sourcegraph/pull/3670) [#23889](https://github.com/sourcegraph/sourcegraph/pull/23889)
+- For Docker-Compose and Kubernetes users, the built-in main Postgres and codeintel databases have switched to an alpine Docker image. This requires re-indexing the entire database. This process can take up to a few hours on systems with large datasets. [#23697](https://github.com/sourcegraph/sourcegraph/pull/23697)
 
 ### Fixed
 
