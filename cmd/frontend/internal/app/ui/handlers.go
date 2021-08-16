@@ -295,7 +295,7 @@ func serveHome(w http.ResponseWriter, r *http.Request) error {
 		return nil // request was handled
 	}
 
-	// Homepage redirects to /search
+	// Homepage redirects to /search.
 	r.URL.Path = "/search"
 	http.Redirect(w, r, r.URL.String(), http.StatusTemporaryRedirect)
 	return nil
