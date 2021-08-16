@@ -231,12 +231,18 @@ func repoShouldBeSearched(ctx context.Context, searcherURLs *endpoint.Map, searc
 // whether or not the repoShouldBeSearched in or not, based on whether matches were returned.
 func repoHasFilesWithNamesMatching(ctx context.Context, searcherURLs *endpoint.Map, include bool, repoHasFileFlag []string, gitserverRepo api.RepoName, commit api.CommitID, fetchTimeout time.Duration) (bool, error) {
 	for _, pattern := range repoHasFileFlag {
+		foundMatches := false
+		onMatches := func(matches []*protocol.FileMatch) {
+			if len(matches) > 0 {
+				foundMatches = true
+			}
+		}
 		p := search.TextPatternInfo{IsRegExp: true, FileMatchLimit: 1, IncludePatterns: []string{pattern}, PathPatternsAreCaseSensitive: false, PatternMatchesContent: true, PatternMatchesPath: true}
-		matches, _, err := searcher.Search(ctx, searcherURLs, gitserverRepo, "", commit, false, &p, fetchTimeout, []string{}, nil)
+		_, _, err := searcher.Search(ctx, searcherURLs, gitserverRepo, "", commit, false, &p, fetchTimeout, []string{}, onMatches)
 		if err != nil {
 			return false, err
 		}
-		if include && len(matches) == 0 || !include && len(matches) > 0 {
+		if include && !foundMatches || !include && foundMatches {
 			// repo shouldn't be searched if it does not have matches for the patterns in `repohasfile`
 			// or if it has file matches for the patterns in `-repohasfile`.
 			return false, nil
