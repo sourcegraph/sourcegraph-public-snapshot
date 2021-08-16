@@ -133,14 +133,10 @@ func searchFilesInRepo(ctx context.Context, searcherURLs *endpoint.Map, repo typ
 	}
 
 	toMatches := newToMatches(repo, commit, &rev)
-
-	var onMatches func([]*protocol.FileMatch)
-	if stream != nil {
-		onMatches = func(searcherMatches []*protocol.FileMatch) {
-			stream.Send(streaming.SearchEvent{
-				Results: toMatches(searcherMatches),
-			})
-		}
+	onMatches := func(searcherMatches []*protocol.FileMatch) {
+		stream.Send(streaming.SearchEvent{
+			Results: toMatches(searcherMatches),
+		})
 	}
 
 	searcherMatches, limitHit, err := searcher.Search(ctx, searcherURLs, gitserverRepo, rev, commit, index, info, fetchTimeout, indexerEndpoints, onMatches)
