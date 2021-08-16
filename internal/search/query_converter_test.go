@@ -11,6 +11,13 @@ import (
 	zoekt "github.com/google/zoekt/query"
 )
 
+type IndexedRequestType string
+
+const (
+	TextRequest   IndexedRequestType = "text"
+	SymbolRequest IndexedRequestType = "symbol"
+)
+
 func TestQueryToZoektQuery(t *testing.T) {
 	cases := []struct {
 		Name    string

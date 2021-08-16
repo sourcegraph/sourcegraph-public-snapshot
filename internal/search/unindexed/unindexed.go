@@ -44,23 +44,13 @@ func textSearchRequest(ctx context.Context, args *search.TextParameters, onMissi
 			return nil, err
 		}
 		return &zoektutil.IndexedSearchRequest{
-			Args: &search.ZoektParameters{
-				Repos:            args.Repos,
-				Query:            q,
-				Typ:              search.TextRequest,
-				FileMatchLimit:   args.PatternInfo.FileMatchLimit,
-				Enabled:          args.Zoekt.Enabled(),
-				Index:            args.PatternInfo.Index,
-				Mode:             args.Mode,
-				RepoOptions:      args.RepoOptions,
-				UserPrivateRepos: args.UserPrivateRepos,
-				Select:           args.PatternInfo.Select,
-				Zoekt:            args.Zoekt,
-			},
+			Args:     args,
+			Query:    q,
+			Typ:      zoektutil.TextRequest,
 			RepoRevs: &zoektutil.IndexedRepoRevs{},
 		}, nil
 	}
-	return zoektutil.NewIndexedSearchRequest(ctx, args, search.TextRequest, onMissing)
+	return zoektutil.NewIndexedSearchRequest(ctx, args, zoektutil.TextRequest, onMissing)
 }
 
 // SearchFilesInRepos searches a set of repos for a pattern.
