@@ -92,7 +92,6 @@ reindex() {
 
 # allow the container to be started with `--user`
 if [ "$(id -u)" = '0' ]; then
-  # TODO@davejrt is this fix what you meant?
   su-exec postgres "${BASH_SOURCE[0]}" "$@"
 fi
 
