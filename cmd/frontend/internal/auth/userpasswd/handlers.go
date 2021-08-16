@@ -168,7 +168,7 @@ func handleSignUp(w http.ResponseWriter, r *http.Request, failIfNewUserIsNotInit
 		http.Error(w, message, statusCode)
 
 		if err = usagestats.LogBackendEvent(database.GlobalUsers.Handle().DB(), actor.FromContext(r.Context()).UID, "SignUpFailed", nil, nil, featureflag.FromContext(r.Context()), nil); err != nil {
-			log15.Warn("Failed to log event SignUpFailed")
+			log15.Warn("Failed to log event SignUpFailed", "error", err)
 		}
 
 		return
