@@ -7,12 +7,11 @@ export const getDashboardTitle = (dashboard: RealInsightDashboard): string => {
     const { builtIn } = dashboard
 
     if (builtIn) {
-        if (dashboard.type == InsightsDashboardType.Global) {
+        if (dashboard.type === InsightsDashboardType.Global) {
             return 'Global Insights'
         }
-        else {
-            return `${dashboard.owner.name}'s Insights`
-        }
+
+        return `${dashboard.owner.name}'s Insights`
     }
 
     return dashboard.title
