@@ -128,6 +128,8 @@ Now that you have credentials set up, you can publish the changesets in the batc
 
 > NOTE: You can also publish directly from Sourcegraph by omitting the `published` field from your batch spec. This is described in more detail in "[Publishing changesets to the code host](how-tos/publishing_changesets.md#publishing-changesets)".
 
+> NOTE: Code hosts and git don’t allow creating multiple, different changesets on the same branch. Attempting to create another changeset on a branch will result in the following error: `Failed to run operations on changeset. Cannot create changeset on the same branch in multiple batch changes`
+
 ## Congratulations!
 
 You've created your first batch change! 🎉🎉
