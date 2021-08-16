@@ -95,7 +95,6 @@ export const BatchChangeChangesetsImpl: React.FunctionComponent<Props> = ({
         isSelected,
         selectSingle,
         selectVisible,
-        setTotalCount,
         setVisible,
     } = useContext(MultiSelectContext)
 
@@ -158,8 +157,6 @@ export const BatchChangeChangesetsImpl: React.FunctionComponent<Props> = ({
                         setVisible(
                             data.nodes.filter(node => node.__typename === 'ExternalChangeset').map(node => node.id)
                         )
-                        // Remember the totalCount.
-                        setTotalCount(data.totalCount)
                     })
                 )
                 .pipe(repeatWhen(notifier => notifier.pipe(delay(5000))))
@@ -173,7 +170,6 @@ export const BatchChangeChangesetsImpl: React.FunctionComponent<Props> = ({
             onlyArchived,
             queryChangesets,
             setVisible,
-            setTotalCount,
         ]
     )
 

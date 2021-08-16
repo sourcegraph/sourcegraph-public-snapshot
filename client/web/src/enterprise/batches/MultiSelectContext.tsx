@@ -14,7 +14,6 @@ export interface MultiSelectContextState {
     // State fields. These must not be mutated other than through the mutator
     // functions below, but may be read at any time.
     selected: MultiSelectContextSelected
-    totalCount?: number
     visible: Set<string>
 
     // Convenience getters that abstract over the possible values of selected.
@@ -29,9 +28,6 @@ export interface MultiSelectContextState {
     selectVisible: () => void
     selectSingle: (id: string) => void
 
-    // Sets the total number of possible selections, if known.
-    setTotalCount: (count?: number) => void
-
     // Sets the current set of visible IDs. This needs to happen in a single
     // call to avoid unnecessary re-renders: consumers are responsible for
     // aggregating the existing state from visible if required (for example, if
@@ -43,7 +39,6 @@ export interface MultiSelectContextState {
 // eslint-disable @typescript-eslint/no-unused-vars
 const defaultState = (): MultiSelectContextState => ({
     selected: new Set(),
-    totalCount: undefined,
     visible: new Set(),
     areAllVisibleSelected: () => false,
     isSelected: () => false,
@@ -53,7 +48,6 @@ const defaultState = (): MultiSelectContextState => ({
     selectAll: () => {},
     selectVisible: () => {},
     selectSingle: () => {},
-    setTotalCount: () => {},
     setVisible: () => {},
 })
 // eslint-enable @typescript-eslint/no-unused-vars
@@ -76,9 +70,8 @@ export const MultiSelectContext = React.createContext<MultiSelectContextState>(d
 export const MultiSelectContextProvider: React.FunctionComponent<{
     // These props are only for testing purposes.
     initialSelected?: MultiSelectContextSelected | string[]
-    initialTotalCount?: number
     initialVisible?: string[]
-}> = ({ children, initialSelected, initialTotalCount, initialVisible }) => {
+}> = ({ children, initialSelected, initialVisible }) => {
     // Set up state and callbacks for the visible items.
     const [visible, setVisibleInternal] = useState<Set<string>>(new Set(initialVisible ?? []))
     const setVisible = useCallback((ids: string[]) => {
@@ -91,12 +84,6 @@ export const MultiSelectContextProvider: React.FunctionComponent<{
     )
     const selectAll = useCallback(() => setSelected('all'), [setSelected])
     const deselectAll = useCallback(() => setSelected(new Set()), [setSelected])
-
-    // Total count handling.
-    const [totalCount, setTotalCountInternal] = useState<number | undefined>(initialTotalCount)
-    const setTotalCount = useCallback((totalCount?: number) => {
-        setTotalCountInternal(totalCount)
-    }, [])
 
     // Callbacks to select and deselect items.
     const selectVisible = useCallback(() => {
@@ -180,7 +167,6 @@ export const MultiSelectContextProvider: React.FunctionComponent<{
         <MultiSelectContext.Provider
             value={{
                 selected,
-                totalCount,
                 visible,
                 areAllVisibleSelected,
                 isSelected,
@@ -190,7 +176,6 @@ export const MultiSelectContextProvider: React.FunctionComponent<{
                 selectAll,
                 selectVisible,
                 selectSingle,
-                setTotalCount,
                 setVisible,
             }}
         >
