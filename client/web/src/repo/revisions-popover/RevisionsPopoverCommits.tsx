@@ -15,7 +15,6 @@ import {
     RepositoryGitCommitResult,
     RepositoryGitCommitVariables,
 } from '../../graphql-operations'
-import { eventLogger } from '../../tracking/eventLogger'
 
 import { RevisionsPopoverTab } from './RevisionsPopoverTab'
 
