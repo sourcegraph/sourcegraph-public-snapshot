@@ -5,6 +5,9 @@
     margin: 4rem -1rem 0 -1rem; // Negative horizontal margin so it lines up with edges
     padding: 1.5rem 1rem;
     width: calc(100% + 2rem); // Compensate for negative margin
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
 
     :global(.theme-light) & {
         --footer-bg: rgba(230, 235, 242, 0.4);
@@ -15,15 +18,6 @@
         --footer-bg: var(--color-bg-2);
         --footer-border: var(--border-color-2);
     }
-}
-
-.footer-wrapper {
-    display: flex;
-    justify-content: center;
-    align-items: flex-start;
-    max-width: 90%;
-    margin-left: auto;
-    margin-right: auto;
 }
 
 .logo {

@@ -75,49 +75,47 @@ export const SearchPageFooter: React.FunctionComponent<ThemeProps & TelemetryPro
 
     return (
         <footer className={styles.footer}>
-            <div className={styles.footerWrapper}>
-                <Link to="/search" aria-label="Home" className="flex-shrink-0">
-                    <BrandLogo isLightTheme={isLightTheme} variant="symbol" className={styles.logo} />
-                </Link>
+            <Link to="/search" aria-label="Home" className="flex-shrink-0">
+                <BrandLogo isLightTheme={isLightTheme} variant="symbol" className={styles.logo} />
+            </Link>
 
-                <ul className={classNames('d-flex flex-wrap list-unstyled', styles.mainList)}>
-                    {footerLinkSections.map(section => (
-                        <li key={section.name} className={styles.linkSection}>
-                            <h2 className={styles.linkSectionHeading}>{section.name}</h2>
-                            <ul className="list-unstyled">
-                                {section.links.map(link => (
-                                    <li key={link.name}>
-                                        <a
-                                            href={link.to}
-                                            onClick={() => logLinkClicked(link.eventName ?? link.name)}
-                                            className={styles.link}
-                                        >
-                                            {link.name}
-                                        </a>
-                                    </li>
-                                ))}
-                            </ul>
-                        </li>
-                    ))}
-                    <li>
-                        <a
-                            href="https://info.sourcegraph.com/dev-tool-time"
-                            className={styles.devToolTimeWrapper}
-                            onClick={logDevelopmentToolTimeClicked}
-                        >
-                            <img
-                                src={`${assetsRoot}/img/devtooltime-logo.svg`}
-                                alt="DevToolTime logo"
-                                className={styles.devToolTimeImage}
-                            />
-                            <div className={styles.devToolTimeText}>
-                                <h2 className={styles.linkSectionHeading}>Dev tool time</h2>
-                                <div>The show where developers talk about dev tools, productivity hacks, and more.</div>
-                            </div>
-                        </a>
+            <ul className={classNames('d-flex flex-wrap list-unstyled', styles.mainList)}>
+                {footerLinkSections.map(section => (
+                    <li key={section.name} className={styles.linkSection}>
+                        <h2 className={styles.linkSectionHeading}>{section.name}</h2>
+                        <ul className="list-unstyled">
+                            {section.links.map(link => (
+                                <li key={link.name}>
+                                    <a
+                                        href={link.to}
+                                        onClick={() => logLinkClicked(link.eventName ?? link.name)}
+                                        className={styles.link}
+                                    >
+                                        {link.name}
+                                    </a>
+                                </li>
+                            ))}
+                        </ul>
                     </li>
-                </ul>
-            </div>
+                ))}
+                <li>
+                    <a
+                        href="https://info.sourcegraph.com/dev-tool-time"
+                        className={styles.devToolTimeWrapper}
+                        onClick={logDevelopmentToolTimeClicked}
+                    >
+                        <img
+                            src={`${assetsRoot}/img/devtooltime-logo.svg`}
+                            alt="DevToolTime logo"
+                            className={styles.devToolTimeImage}
+                        />
+                        <div className={styles.devToolTimeText}>
+                            <h2 className={styles.linkSectionHeading}>Dev tool time</h2>
+                            <div>The show where developers talk about dev tools, productivity hacks, and more.</div>
+                        </div>
+                    </a>
+                </li>
+            </ul>
         </footer>
     )
 }
