@@ -1,4 +1,3 @@
-import classNames from 'classnames'
 import * as H from 'history'
 import { uniq } from 'lodash'
 import * as React from 'react'
@@ -25,7 +24,7 @@ import { ConnectionNodes, ConnectionNodesState, ConnectionNodesDisplayProps, Con
 import { Connection, ConnectionQueryArguments } from './ConnectionType'
 import { QUERY_KEY } from './constants'
 import { FilteredConnectionFilter, FilteredConnectionFilterValue } from './FilterControl'
-import { ConnectionError, ConnectionLoading, ConnectionForm } from './ui'
+import { ConnectionError, ConnectionLoading, ConnectionForm, ConnectionContainer } from './ui'
 import type { ConnectionFormProps } from './ui/ConnectionForm'
 import { getFilterFromURL, getUrlQuery, parseQueryInt } from './utils'
 
@@ -66,12 +65,6 @@ interface FilteredConnectionDisplayProps extends ConnectionNodesDisplayProps, Co
 
     /** Whether we will use the URL query string to reflect the filter and pagination state or not. */
     useURLQuery?: boolean
-
-    /**
-     * A subject that will force update the filtered connection's current search query, as if typed
-     * by the user.
-     */
-    querySubject?: Subject<string>
 }
 
 /**
@@ -182,10 +175,7 @@ export class FilteredConnection<
     public componentDidMount(): void {
         const activeValuesChanges = this.activeValuesChanges.pipe(startWith(this.state.activeValues))
 
-        const queryChanges = (this.props.querySubject
-            ? merge(this.queryInputChanges, this.props.querySubject)
-            : this.queryInputChanges
-        ).pipe(
+        const queryChanges = this.queryInputChanges.pipe(
             distinctUntilChanged(),
             tap(query => !this.props.hideSearch && this.setState({ query })),
             debounceTime(200),
@@ -469,15 +459,8 @@ export class FilteredConnection<
         //     this.state.connectionOrError.nodes.length > 0 &&
         //     this.props.hideControlsWhenEmpty
 
-        const compactnessClass = `filtered-connection--${this.props.compact ? 'compact' : 'noncompact'}`
         return (
-            <div
-                className={classNames(
-                    'filtered-connection test-filtered-connection',
-                    compactnessClass,
-                    this.props.className
-                )}
-            >
+            <ConnectionContainer compact={this.props.compact} className={this.props.className}>
                 {
                     /* shouldShowControls && */ (!this.props.hideSearch || this.props.filters) && (
                         <ConnectionForm
@@ -522,7 +505,7 @@ export class FilteredConnection<
                     />
                 )}
                 {this.state.loading && <ConnectionLoading className={this.props.loaderClassName} />}
-            </div>
+            </ConnectionContainer>
         )
     }
 
