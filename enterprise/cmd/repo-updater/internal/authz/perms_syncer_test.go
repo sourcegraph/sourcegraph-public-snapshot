@@ -571,9 +571,11 @@ func TestPermsSyncer_syncRepoPerms(t *testing.T) {
 		edb.Mocks.Perms.Transact = func(context.Context) (*edb.PermsStore, error) {
 			return &edb.PermsStore{}, nil
 		}
+
 		edb.Mocks.Perms.GetUserIDsByExternalAccounts = func(context.Context, *extsvc.Accounts) (map[string]int32, error) {
 			return map[string]int32{"user": 1}, nil
 		}
+
 		edb.Mocks.Perms.SetRepoPermissions = func(_ context.Context, p *authz.RepoPermissions) error {
 			if p.RepoID != 1 {
 				return errors.Errorf("RepoID: want 1 but got %d", p.RepoID)
@@ -585,9 +587,11 @@ func TestPermsSyncer_syncRepoPerms(t *testing.T) {
 			}
 			return nil
 		}
+
 		edb.Mocks.Perms.SetRepoPendingPermissions = func(ctx context.Context, accounts *extsvc.Accounts, p *authz.RepoPermissions) error {
-			return nil
+			return errors.Errorf("SetRepoPendingPermissions should not be invoked in this test case")
 		}
+
 		database.Mocks.Repos.List = func(context.Context, database.ReposListOptions) ([]*types.Repo, error) {
 			return []*types.Repo{
 				{
@@ -596,9 +600,11 @@ func TestPermsSyncer_syncRepoPerms(t *testing.T) {
 				},
 			}, nil
 		}
+
 		database.Mocks.Repos.ListExternalServiceUserIDsByRepoID = func(ctx context.Context, repoID api.RepoID) ([]int32, error) {
 			return []int32{1}, nil
 		}
+
 		defer func() {
 			edb.Mocks.Perms = edb.MockPerms{}
 			database.Mocks.Repos = database.MockRepos{}
