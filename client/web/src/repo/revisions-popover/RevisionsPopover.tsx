@@ -5,6 +5,7 @@ import React, { useCallback, useEffect } from 'react'
 import { GitRefType, Scalars } from '@sourcegraph/shared/src/graphql-operations'
 import { useLocalStorage } from '@sourcegraph/shared/src/util/useLocalStorage'
 
+import { GitCommitAncestorFields, GitRefFields } from '../../graphql-operations'
 import { eventLogger } from '../../tracking/eventLogger'
 import { replaceRevisionInURL } from '../../util/url'
 
@@ -25,7 +26,7 @@ export interface RevisionsPopoverProps {
     togglePopover: () => void
 
     /* Determine the URL to use for each revision node */
-    getURLFromRevision?: (href: string, revision: string) => string
+    getPathFromRevision?: (href: string, revision: string) => string
 
     /**
      * If the popover should display result nodes that are not **known** revisions.
@@ -33,7 +34,10 @@ export interface RevisionsPopoverProps {
      */
     showSpeculativeResults?: boolean
 
-    onSelect?: () => void
+    /**
+     * The selected revision node. Should be used to trigger side effects from clicking a node, e.g. calling `eventLogger`.
+     */
+    onSelect?: (node: GitRefFields | GitCommitAncestorFields) => void
 }
 
 type RevisionsPopoverTabID = 'branches' | 'tags' | 'commits'
@@ -59,7 +63,7 @@ const TABS: RevisionsPopoverTab[] = [
  * the current repository.
  */
 export const RevisionsPopover: React.FunctionComponent<RevisionsPopoverProps> = props => {
-    const { getURLFromRevision = replaceRevisionInURL } = props
+    const { getPathFromRevision = replaceRevisionInURL } = props
 
     useEffect(() => {
         eventLogger.logViewEvent('RevisionsPopover')
@@ -96,7 +100,7 @@ export const RevisionsPopover: React.FunctionComponent<RevisionsPopoverProps> = 
                                 pluralNoun={tab.pluralNoun}
                                 type={tab.type}
                                 currentRev={props.currentRev}
-                                getURLFromRevision={getURLFromRevision}
+                                getPathFromRevision={getPathFromRevision}
                                 defaultBranch={props.defaultBranch}
                                 repo={props.repo}
                                 repoName={props.repoName}
@@ -110,7 +114,7 @@ export const RevisionsPopover: React.FunctionComponent<RevisionsPopoverProps> = 
                                 noun={tab.noun}
                                 pluralNoun={tab.pluralNoun}
                                 currentRev={props.currentRev}
-                                getURLFromRevision={getURLFromRevision}
+                                getPathFromRevision={getPathFromRevision}
                                 defaultBranch={props.defaultBranch}
                                 repo={props.repo}
                                 currentCommitID={props.currentCommitID}

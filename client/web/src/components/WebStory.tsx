@@ -12,7 +12,7 @@ import webStyles from '../SourcegraphWebApp.scss'
 
 import { BreadcrumbSetters, BreadcrumbsProps, useBreadcrumbs } from './Breadcrumbs'
 
-export interface WebStoryProps extends MemoryRouterProps, Pick<MockedStoryProviderProps, 'mocks' | 'useStrictMocks'> {
+export interface WebStoryProps extends MemoryRouterProps, Pick<MockedStoryProviderProps, 'mocks' | 'useStrictMocking'> {
     children: React.FunctionComponent<
         ThemeProps & BreadcrumbSetters & BreadcrumbsProps & TelemetryProps & RouteComponentProps<any>
     >
@@ -27,7 +27,7 @@ export const WebStory: React.FunctionComponent<WebStoryProps> = ({
     children,
     additionalWebStyles,
     mocks,
-    useStrictMocks,
+    useStrictMocking,
     ...memoryRouterProps
 }) => {
     const isLightTheme = useTheme()
@@ -38,7 +38,7 @@ export const WebStory: React.FunctionComponent<WebStoryProps> = ({
     usePrependStyles('web-styles', webStyles)
 
     return (
-        <MockedStoryProvider mocks={mocks} useStrictMocks={useStrictMocks}>
+        <MockedStoryProvider mocks={mocks} useStrictMocking={useStrictMocking}>
             <MemoryRouter {...memoryRouterProps}>
                 <Tooltip />
                 <Children

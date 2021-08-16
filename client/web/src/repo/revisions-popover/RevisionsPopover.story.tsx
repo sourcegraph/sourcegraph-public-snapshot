@@ -17,7 +17,7 @@ const Story: Meta = {
                 mocks={MOCK_REQUESTS}
                 initialEntries={[{ pathname: `/${MOCK_PROPS.repoName}` }]}
                 // Can't utilise loose mocking here as the commit/branch requests use the same operations just with different variables
-                useStrictMocks={true}
+                useStrictMocking={true}
             >
                 {() => <div className="container mt-3">{story()}</div>}
             </BrandedStory>

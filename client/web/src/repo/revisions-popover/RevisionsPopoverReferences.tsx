@@ -22,7 +22,7 @@ interface GitReferencePopoverNodeProps extends Pick<GitReferenceNodeProps, 'node
 
     location: H.Location
 
-    getURLFromRevision: (href: string, revision: string) => string
+    getPathFromRevision: (href: string, revision: string) => string
 
     isSpeculative?: boolean
 }
@@ -32,7 +32,7 @@ const GitReferencePopoverNode: React.FunctionComponent<GitReferencePopoverNodePr
     defaultBranch,
     currentRevision,
     location,
-    getURLFromRevision,
+    getPathFromRevision,
     isSpeculative,
     onClick,
 }) => {
@@ -45,7 +45,7 @@ const GitReferencePopoverNode: React.FunctionComponent<GitReferencePopoverNodePr
     return (
         <GitReferenceNode
             node={node}
-            url={getURLFromRevision(location.pathname + location.search + location.hash, node.abbrevName)}
+            url={getPathFromRevision(location.pathname + location.search + location.hash, node.abbrevName)}
             ancestorIsLink={false}
             className={classNames(
                 'connection-popover__node-link',
@@ -57,7 +57,9 @@ const GitReferencePopoverNode: React.FunctionComponent<GitReferencePopoverNodePr
     )
 }
 
-interface SpectulativeGitReferencePopoverNodeProps extends Omit<GitReferencePopoverNodeProps, 'node'> {
+interface SpectulativeGitReferencePopoverNodeProps
+    extends Pick<RevisionReferencesTabProps, 'onSelect'>,
+        Omit<GitReferencePopoverNodeProps, 'node'> {
     name: string
     repoName: string
     existingNodes: GitRefFields[]
@@ -68,9 +70,10 @@ export const SpectulativeGitReferencePopoverNode: React.FunctionComponent<Spectu
     repoName,
     currentRevision,
     defaultBranch,
-    getURLFromRevision,
+    getPathFromRevision,
     location,
     existingNodes,
+    onSelect,
 }) => {
     const alreadyExists = existingNodes.some(existingNode => existingNode.abbrevName === name)
 
@@ -79,21 +82,27 @@ export const SpectulativeGitReferencePopoverNode: React.FunctionComponent<Spectu
         return null
     }
 
+    /**
+     * A dummy GitReferenceNode that we can use to render a possible result in the same styles as existing, known, results.
+     */
+    const speculativeGitNode: GitReferenceNodeProps['node'] | null = {
+        id: name,
+        name,
+        displayName: name,
+        abbrevName: name,
+        url: `/${repoName}@${escapeRevspecForURL(name)}`,
+        target: { commit: null },
+    }
+
     // We haven't found a node with the same name, render a node with expected props
     return (
         <GitReferencePopoverNode
-            node={{
-                name,
-                displayName: name,
-                abbrevName: name,
-                id: name,
-                url: `/${repoName}@${escapeRevspecForURL(name)}`,
-                target: { commit: null },
-            }}
+            node={speculativeGitNode}
             currentRevision={currentRevision}
             defaultBranch={defaultBranch}
-            getURLFromRevision={getURLFromRevision}
+            getPathFromRevision={getPathFromRevision}
             location={location}
+            onClick={() => onSelect?.(speculativeGitNode)}
             isSpeculative={true}
         />
     )
@@ -104,7 +113,7 @@ interface RevisionReferencesTabProps {
     repo: Scalars['ID']
     repoName: string
     defaultBranch: string
-    getURLFromRevision: (href: string, revision: string) => string
+    getPathFromRevision: (href: string, revision: string) => string
 
     noun: string
     pluralNoun: string
@@ -114,7 +123,7 @@ interface RevisionReferencesTabProps {
 
     showSpeculativeResults?: boolean
 
-    onSelect?: (event: React.MouseEvent<HTMLAnchorElement>) => void
+    onSelect?: (node: GitRefFields) => void
 }
 
 const BATCH_COUNT = 50
@@ -124,7 +133,7 @@ export const RevisionReferencesTab: React.FunctionComponent<RevisionReferencesTa
     repo,
     repoName,
     defaultBranch,
-    getURLFromRevision,
+    getPathFromRevision,
     currentRev,
     noun,
     pluralNoun,
@@ -178,9 +187,9 @@ export const RevisionReferencesTab: React.FunctionComponent<RevisionReferencesTa
                     node={node}
                     currentRevision={currentRev}
                     defaultBranch={defaultBranch}
-                    getURLFromRevision={getURLFromRevision}
+                    getPathFromRevision={getPathFromRevision}
                     location={location}
-                    onClick={onSelect}
+                    onClick={() => onSelect?.(node)}
                 />
             ))}
             {showSpeculativeResults && response.connection && query && (
@@ -190,9 +199,9 @@ export const RevisionReferencesTab: React.FunctionComponent<RevisionReferencesTa
                     existingNodes={response.connection.nodes}
                     currentRevision={currentRev}
                     defaultBranch={defaultBranch}
-                    getURLFromRevision={getURLFromRevision}
+                    getPathFromRevision={getPathFromRevision}
                     location={location}
-                    onClick={onSelect}
+                    onSelect={onSelect}
                 />
             )}
         </RevisionsPopoverTab>

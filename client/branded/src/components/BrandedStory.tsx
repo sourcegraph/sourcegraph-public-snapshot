@@ -10,7 +10,7 @@ import brandedStyles from '../global-styles/index.scss'
 
 import { Tooltip } from './tooltip/Tooltip'
 
-export interface BrandedProps extends MemoryRouterProps, Pick<MockedStoryProviderProps, 'mocks' | 'useStrictMocks'> {
+export interface BrandedProps extends MemoryRouterProps, Pick<MockedStoryProviderProps, 'mocks' | 'useStrictMocking'> {
     children: React.FunctionComponent<ThemeProps>
     styles?: string
 }
@@ -23,14 +23,14 @@ export const BrandedStory: React.FunctionComponent<BrandedProps> = ({
     children: Children,
     styles = brandedStyles,
     mocks,
-    useStrictMocks,
+    useStrictMocking,
     ...memoryRouterProps
 }) => {
     const isLightTheme = useTheme()
     usePrependStyles('branded-story-styles', styles)
 
     return (
-        <MockedStoryProvider mocks={mocks} useStrictMocks={useStrictMocks}>
+        <MockedStoryProvider mocks={mocks} useStrictMocking={useStrictMocking}>
             <MemoryRouter {...memoryRouterProps}>
                 <Tooltip />
                 <Children isLightTheme={isLightTheme} />

@@ -66,7 +66,7 @@ interface GitCommitNodeProps {
 
     location: H.Location
 
-    getURLFromRevision: (href: string, revision: string) => string
+    getPathFromRevision: (href: string, revision: string) => string
 
     onClick?: (event: React.MouseEvent<HTMLAnchorElement>) => void
 }
@@ -75,14 +75,14 @@ const GitCommitNode: React.FunctionComponent<GitCommitNodeProps> = ({
     node,
     currentCommitID,
     location,
-    getURLFromRevision,
+    getPathFromRevision,
     onClick,
 }) => {
     const isCurrent = currentCommitID === node.oid
     return (
         <li key={node.oid} className="connection-popover__node revisions-popover-git-commit-node">
             <Link
-                to={getURLFromRevision(location.pathname + location.search + location.hash, node.oid)}
+                to={getPathFromRevision(location.pathname + location.search + location.hash, node.oid)}
                 className={classNames(
                     'connection-popover__node-link',
                     isCurrent && 'connection-popover__node-link--active',
@@ -102,7 +102,7 @@ const GitCommitNode: React.FunctionComponent<GitCommitNodeProps> = ({
 interface RevisionCommitsTabProps {
     repo: Scalars['ID']
     defaultBranch: string
-    getURLFromRevision: (href: string, revision: string) => string
+    getPathFromRevision: (href: string, revision: string) => string
 
     noun: string
     pluralNoun: string
@@ -112,7 +112,7 @@ interface RevisionCommitsTabProps {
 
     currentCommitID?: string
 
-    onSelect?: (event: React.MouseEvent<HTMLAnchorElement>) => void
+    onSelect?: (node: GitCommitAncestorFields) => void
 }
 
 const BATCH_COUNT = 15
@@ -120,7 +120,7 @@ const BATCH_COUNT = 15
 export const RevisionCommitsTab: React.FunctionComponent<RevisionCommitsTabProps> = ({
     repo,
     defaultBranch,
-    getURLFromRevision,
+    getPathFromRevision,
     currentRev,
     noun,
     pluralNoun,
@@ -183,8 +183,8 @@ export const RevisionCommitsTab: React.FunctionComponent<RevisionCommitsTabProps
                     node={node}
                     currentCommitID={currentCommitID}
                     location={location}
-                    getURLFromRevision={getURLFromRevision}
-                    onClick={onSelect}
+                    getPathFromRevision={getPathFromRevision}
+                    onClick={() => onSelect?.(node)}
                 />
             ))}
         </RevisionsPopoverTab>

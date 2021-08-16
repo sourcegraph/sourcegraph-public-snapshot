@@ -17,7 +17,6 @@ const forceMockVariablesLink = (mocks: readonly MockedResponse[]): ApolloLink =>
         } else {
             console.warn(`Unable to find a mock for query: ${operation.operationName}. Did you mean to mock this?`)
         }
-
         return forward(operation)
     })
 
@@ -26,7 +25,7 @@ export interface MockedStoryProviderProps extends MockedProviderProps {
      * Set this to `true` to preserve the default behavior of MockedProvider.
      * Requests will require that both the `operationName` **and** `variables` match the mock to be resolved.
      */
-    useStrictMocks?: boolean
+    useStrictMocking?: boolean
 }
 
 /**
@@ -38,14 +37,14 @@ export interface MockedStoryProviderProps extends MockedProviderProps {
 export const MockedStoryProvider: React.FunctionComponent<MockedStoryProviderProps> = ({
     children,
     mocks = [],
-    useStrictMocks,
+    useStrictMocking,
     ...props
 }) => (
     <MockedProvider
         cache={cache}
         mocks={mocks}
         link={ApolloLink.from(
-            useStrictMocks ? [new MockLink(mocks)] : [forceMockVariablesLink(mocks), new MockLink(mocks)]
+            useStrictMocking ? [new MockLink(mocks)] : [forceMockVariablesLink(mocks), new MockLink(mocks)]
         )}
         {...props}
     >
