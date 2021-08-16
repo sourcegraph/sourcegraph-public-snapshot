@@ -14,6 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
@@ -36,11 +37,11 @@ var (
 // relevant to Batch Changes, normalizes those events into ChangesetEvents
 // and upserts them to the database.
 type GitHubWebhook struct {
-	*Webhook
+	*webhook
 }
 
-func NewGitHubWebhook(store *store.Store) *GitHubWebhook {
-	return &GitHubWebhook{&Webhook{store, extsvc.TypeGitHub}}
+func NewGitHubWebhook(store *store.Store, observationContext *observation.Context) *GitHubWebhook {
+	return &GitHubWebhook{&webhook{store, extsvc.TypeGitHub}}
 }
 
 // Register registers this webhook handler to handle events with the passed webhook router
@@ -53,8 +54,9 @@ func (h *GitHubWebhook) Register(router *webhooks.GitHubWebhook) {
 
 // handleGithubWebhook is the entry point for webhooks from the webhook router, see the events
 // it's registered to handle in GitHubWebhook.Register
-func (h *GitHubWebhook) handleGitHubWebhook(ctx context.Context, extSvc *types.ExternalService, payload interface{}) error {
-	m := new(multierror.Error)
+func (h *GitHubWebhook) handleGitHubWebhook(ctx context.Context, extSvc *types.ExternalService, payload interface{}) (err error) {
+	errs := new(multierror.Error)
+
 	externalServiceID, err := extractExternalServiceID(extSvc)
 	if err != nil {
 		return err
@@ -69,10 +71,10 @@ func (h *GitHubWebhook) handleGitHubWebhook(ctx context.Context, extSvc *types.E
 
 		err := h.upsertChangesetEvent(ctx, externalServiceID, pr, ev)
 		if err != nil {
-			m = multierror.Append(m, err)
+			errs = multierror.Append(errs, err)
 		}
 	}
-	return m.ErrorOrNil()
+	return errs.ErrorOrNil()
 }
 
 func (h *GitHubWebhook) convertEvent(ctx context.Context, externalServiceID string, theirs interface{}) (prs []PR, ours keyer) {
@@ -174,7 +176,7 @@ func (h *GitHubWebhook) convertEvent(ctx context.Context, externalServiceID stri
 			ServiceType: extsvc.TypeGitHub,
 		}
 
-		ids, err := h.Store.GetChangesetExternalIDs(ctx, spec, refs)
+		ids, err := h.store.GetChangesetExternalIDs(ctx, spec, refs)
 		if err != nil {
 			log15.Error("Error executing GetChangesetExternalIDs", "err", err)
 			return nil, nil
@@ -573,7 +575,7 @@ func (h *GitHubWebhook) commitStatusEvent(e *gh.StatusEvent) *github.CommitStatu
 		SHA:        e.GetSHA(),
 		State:      e.GetState(),
 		Context:    e.GetContext(),
-		ReceivedAt: h.Store.Clock()(),
+		ReceivedAt: h.store.Clock()(),
 	}
 }
 
@@ -582,7 +584,7 @@ func (h *GitHubWebhook) checkSuiteEvent(cs *gh.CheckSuite) *github.CheckSuite {
 		ID:         cs.GetNodeID(),
 		Status:     cs.GetStatus(),
 		Conclusion: cs.GetConclusion(),
-		ReceivedAt: h.Store.Clock()(),
+		ReceivedAt: h.store.Clock()(),
 	}
 }
 
@@ -591,6 +593,6 @@ func (h *GitHubWebhook) checkRunEvent(cr *gh.CheckRun) *github.CheckRun {
 		ID:         cr.GetNodeID(),
 		Status:     cr.GetStatus(),
 		Conclusion: cr.GetConclusion(),
-		ReceivedAt: h.Store.Clock()(),
+		ReceivedAt: h.store.Clock()(),
 	}
 }

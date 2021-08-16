@@ -712,6 +712,72 @@ This panel indicates store operation error rate over 5m.
 
 <br />
 
+### Frontend: Batches: webhooks stats
+
+#### frontend: batches_webhooks_total
+
+This panel indicates aggregate webhook operations every 5m.
+
+<sub>*Managed by the [Sourcegraph Batches team](https://about.sourcegraph.com/handbook/engineering/batches).*</sub>
+
+<br />
+
+#### frontend: batches_webhooks_99th_percentile_duration
+
+This panel indicates 99th percentile successful aggregate webhook operation duration over 5m.
+
+<sub>*Managed by the [Sourcegraph Batches team](https://about.sourcegraph.com/handbook/engineering/batches).*</sub>
+
+<br />
+
+#### frontend: batches_webhooks_errors_total
+
+This panel indicates aggregate webhook operation errors every 5m.
+
+<sub>*Managed by the [Sourcegraph Batches team](https://about.sourcegraph.com/handbook/engineering/batches).*</sub>
+
+<br />
+
+#### frontend: batches_webhooks_error_rate
+
+This panel indicates aggregate webhook operation error rate over 5m.
+
+<sub>*Managed by the [Sourcegraph Batches team](https://about.sourcegraph.com/handbook/engineering/batches).*</sub>
+
+<br />
+
+#### frontend: batches_webhooks_total
+
+This panel indicates webhook operations every 5m.
+
+<sub>*Managed by the [Sourcegraph Batches team](https://about.sourcegraph.com/handbook/engineering/batches).*</sub>
+
+<br />
+
+#### frontend: batches_webhooks_99th_percentile_duration
+
+This panel indicates 99th percentile successful webhook operation duration over 5m.
+
+<sub>*Managed by the [Sourcegraph Batches team](https://about.sourcegraph.com/handbook/engineering/batches).*</sub>
+
+<br />
+
+#### frontend: batches_webhooks_errors_total
+
+This panel indicates webhook operation errors every 5m.
+
+<sub>*Managed by the [Sourcegraph Batches team](https://about.sourcegraph.com/handbook/engineering/batches).*</sub>
+
+<br />
+
+#### frontend: batches_webhooks_error_rate
+
+This panel indicates webhook operation error rate over 5m.
+
+<sub>*Managed by the [Sourcegraph Batches team](https://about.sourcegraph.com/handbook/engineering/batches).*</sub>
+
+<br />
+
 ### Frontend: Out-of-band migrations: up migration invocation (one batch processed)
 
 #### frontend: oobmigration_total

@@ -480,7 +480,7 @@ func testGitLabWebhook(db *sql.DB, userID int32) func(*testing.T) {
 			// We can induce an error with a broken database connection.
 			s := gitLabTestSetup(t, db)
 			h := NewGitLabWebhook(s)
-			h.Store = store.NewWithClock(&brokenDB{errors.New("foo")}, &observation.TestContext, nil, s.Clock())
+			h.store = store.NewWithClock(&brokenDB{errors.New("foo")}, &observation.TestContext, nil, s.Clock())
 
 			es, err := h.getExternalServiceFromRawID(ctx, "12345")
 			if es != nil {
@@ -540,7 +540,7 @@ func testGitLabWebhook(db *sql.DB, userID int32) func(*testing.T) {
 				}
 
 				// We can induce an error with a broken database connection.
-				h.Store = store.NewWithClock(&brokenDB{errors.New("foo")}, &observation.TestContext, nil, s.Clock())
+				h.store = store.NewWithClock(&brokenDB{errors.New("foo")}, &observation.TestContext, nil, s.Clock())
 
 				err := h.handleEvent(ctx, es, event)
 				if err == nil {
@@ -560,7 +560,7 @@ func testGitLabWebhook(db *sql.DB, userID int32) func(*testing.T) {
 				}
 
 				// We can induce an error with a broken database connection.
-				h.Store = store.NewWithClock(&brokenDB{errors.New("foo")}, &observation.TestContext, nil, s.Clock())
+				h.store = store.NewWithClock(&brokenDB{errors.New("foo")}, &observation.TestContext, nil, s.Clock())
 
 				err := h.handleEvent(ctx, es, event)
 				if err == nil {

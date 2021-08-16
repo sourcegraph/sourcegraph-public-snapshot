@@ -41,14 +41,14 @@ func Init(ctx context.Context, db dbutil.DB, outOfBandMigrationRunner *oobmigrat
 	}
 
 	// Initialize store.
-	cstore := store.New(db, observationContext, keyring.Default().BatchChangesCredentialKey)
+	bstore := store.New(db, observationContext, keyring.Default().BatchChangesCredentialKey)
 
 	// Register enterprise services.
-	enterpriseServices.BatchChangesResolver = resolvers.New(cstore)
-	enterpriseServices.GitHubWebhook = webhooks.NewGitHubWebhook(cstore)
-	enterpriseServices.BitbucketServerWebhook = webhooks.NewBitbucketServerWebhook(cstore)
-	enterpriseServices.GitLabWebhook = webhooks.NewGitLabWebhook(cstore)
+	enterpriseServices.BatchChangesResolver = resolvers.New(bstore)
+	enterpriseServices.GitHubWebhook = webhooks.NewGitHubWebhook(bstore, observationContext)
+	enterpriseServices.BitbucketServerWebhook = webhooks.NewBitbucketServerWebhook(bstore, observationContext)
+	enterpriseServices.GitLabWebhook = webhooks.NewGitLabWebhook(bstore, observationContext)
 
 	// Register Batch Changes OOB migrations.
-	return migrations.Register(cstore, outOfBandMigrationRunner)
+	return migrations.Register(bstore, outOfBandMigrationRunner)
 }

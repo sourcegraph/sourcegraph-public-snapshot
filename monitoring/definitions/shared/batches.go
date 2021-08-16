@@ -42,3 +42,35 @@ func (batches) NewDBStoreGroup(containerName string) monitoring.Group {
 		},
 	})
 }
+
+// src_batches_webhooks_total
+// src_batches_webhooks_duration_seconds_bucket
+// src_batches_webhooks_errors_total
+func (batches) NewWebhooksGroup(containerName string) monitoring.Group {
+	return Observation.NewGroup(containerName, monitoring.ObservableOwnerBatches, ObservationGroupOptions{
+		GroupConstructorOptions: GroupConstructorOptions{
+			Namespace:       "batches",
+			DescriptionRoot: "webhooks stats",
+			Hidden:          true,
+
+			ObservableConstructorOptions: ObservableConstructorOptions{
+				MetricNameRoot:        "batches_webhooks",
+				MetricDescriptionRoot: "webhook",
+				By:                    []string{"op"},
+			},
+		},
+
+		SharedObservationGroupOptions: SharedObservationGroupOptions{
+			Total:     NoAlertsOption("none"),
+			Duration:  NoAlertsOption("none"),
+			Errors:    NoAlertsOption("none"),
+			ErrorRate: NoAlertsOption("none"),
+		},
+		Aggregate: &SharedObservationGroupOptions{
+			Total:     NoAlertsOption("none"),
+			Duration:  NoAlertsOption("none"),
+			Errors:    NoAlertsOption("none"),
+			ErrorRate: NoAlertsOption("none"),
+		},
+	})
+}

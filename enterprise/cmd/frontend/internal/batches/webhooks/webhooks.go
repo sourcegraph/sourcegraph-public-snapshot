@@ -21,12 +21,12 @@ import (
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
-type Webhook struct {
-	Store *store.Store
+type webhook struct {
+	store *store.Store
 
-	// ServiceType corresponds to api.ExternalRepoSpec.ServiceType
+	// serviceType corresponds to api.ExternalRepoSpec.serviceType
 	// Example values: extsvc.TypeBitbucketServer, extsvc.TypeGitHub
-	ServiceType string
+	serviceType string
 }
 
 type PR struct {
@@ -34,7 +34,7 @@ type PR struct {
 	RepoExternalID string
 }
 
-func (h Webhook) getRepoForPR(
+func (h webhook) getRepoForPR(
 	ctx context.Context,
 	tx *store.Store,
 	pr PR,
@@ -44,7 +44,7 @@ func (h Webhook) getRepoForPR(
 		ExternalRepos: []api.ExternalRepoSpec{
 			{
 				ID:          pr.RepoExternalID,
-				ServiceType: h.ServiceType,
+				ServiceType: h.serviceType,
 				ServiceID:   externalServiceID,
 			},
 		},
@@ -91,14 +91,14 @@ type keyer interface {
 	Key() string
 }
 
-func (h Webhook) upsertChangesetEvent(
+func (h webhook) upsertChangesetEvent(
 	ctx context.Context,
 	externalServiceID string,
 	pr PR,
 	ev keyer,
 ) (err error) {
 	var tx *store.Store
-	if tx, err = h.Store.Transact(ctx); err != nil {
+	if tx, err = h.store.Transact(ctx); err != nil {
 		return err
 	}
 	defer func() { err = tx.Done(err) }()
@@ -117,7 +117,7 @@ func (h Webhook) upsertChangesetEvent(
 	cs, err := tx.GetChangeset(ctx, store.GetChangesetOpts{
 		RepoID:              r.ID,
 		ExternalID:          strconv.FormatInt(pr.ID, 10),
-		ExternalServiceType: h.ServiceType,
+		ExternalServiceType: h.serviceType,
 	})
 	if err != nil {
 		if err == store.ErrNoResults {
@@ -126,7 +126,7 @@ func (h Webhook) upsertChangesetEvent(
 		return err
 	}
 
-	now := h.Store.Clock()()
+	now := h.store.Clock()()
 	event := &btypes.ChangesetEvent{
 		ChangesetID: cs.ID,
 		Kind:        kind,

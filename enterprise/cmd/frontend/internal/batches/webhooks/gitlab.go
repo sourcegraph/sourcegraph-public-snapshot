@@ -6,9 +6,11 @@ import (
 	"io"
 	"net/http"
 	"strconv"
+	"sync"
 
 	"github.com/cockroachdb/errors"
 	"github.com/inconshreveable/log15"
+	"github.com/opentracing/opentracing-go/log"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
@@ -16,77 +18,124 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab/webhooks"
+	"github.com/sourcegraph/sourcegraph/internal/metrics"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 type GitLabWebhook struct {
-	*Webhook
+	*webhook
+
+	metrics *gitlabWebhookMetrics
 }
 
-func NewGitLabWebhook(store *store.Store) *GitLabWebhook {
-	return &GitLabWebhook{&Webhook{store, extsvc.TypeGitLab}}
+type gitlabWebhookMetrics struct {
+	incomingRequest *observation.Operation
+}
+
+var (
+	gitlabMetricsSingleton *gitlabWebhookMetrics
+	gitlabMetricsOnce      sync.Once
+)
+
+func newGitlabWebhookMetrics(observationContext *observation.Context) *gitlabWebhookMetrics {
+	return &gitlabWebhookMetrics{
+		incomingRequest: observationContext.Operation(observation.Op{
+			Name:         "batches.webhooks.gitlab",
+			MetricLabels: []string{"gitlab"},
+			Metrics: metrics.NewOperationMetrics(
+				observationContext.Registerer,
+				"batches_webhooks",
+				metrics.WithLabels("op"),
+				metrics.WithCountHelp("Total number of webhook invocations."),
+			),
+		}),
+	}
+}
+
+func NewGitLabWebhook(store *store.Store, observationContext *observation.Context) *GitLabWebhook {
+	return &GitLabWebhook{
+		webhook: &webhook{
+			store:       store,
+			serviceType: extsvc.TypeGitLab,
+		},
+		metrics: newGitlabWebhookMetrics(observationContext),
+	}
 }
 
 // ServeHTTP implements the http.Handler interface.
 func (h *GitLabWebhook) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	code, err := h.handle(r.Context(), r)
+	respond(w, code, err)
+}
+
+func (h *GitLabWebhook) handle(ctx context.Context, r *http.Request) (code int, err error) {
+	var extSvc *types.ExternalService
+	var unknownObject bool
+	ctx, endObservation := h.metrics.incomingRequest.With(r.Context(), &err, observation.Args{})
+	defer func() {
+		var extSvcID int
+		if extSvc != nil {
+			extSvcID = int(extSvc.ID)
+		}
+		endObservation(1, observation.Args{
+			LogFields: []log.Field{
+				log.Int("externalServiceID", extSvcID),
+				log.Bool("unknownObject", unknownObject),
+			},
+		})
+	}()
+
 	// Look up the external service.
-	extSvc, err := h.getExternalServiceFromRawID(r.Context(), r.FormValue(extsvc.IDParam))
+	extSvc, err = h.getExternalServiceFromRawID(ctx, r.FormValue(extsvc.IDParam))
 	if err == errExternalServiceNotFound {
-		respond(w, http.StatusUnauthorized, err)
-		return
+		return http.StatusUnauthorized, err
 	} else if err != nil {
-		respond(w, http.StatusInternalServerError, errors.Wrap(err, "getting external service"))
-		return
+		return http.StatusInternalServerError, errors.Wrap(err, "getting external service")
 	}
 
 	// 🚨 SECURITY: Verify the shared secret against the GitLab external service
 	// configuration. If there isn't a webhook defined in the service with this
 	// secret, or the header is empty, then we return a 401 to the client.
 	if ok, err := validateGitLabSecret(extSvc, r.Header.Get(webhooks.TokenHeaderName)); err != nil {
-		respond(w, http.StatusInternalServerError, errors.Wrap(err, "validating the shared secret"))
-		return
+		return http.StatusInternalServerError, errors.Wrap(err, "validating the shared secret")
 	} else if !ok {
-		respond(w, http.StatusUnauthorized, "shared secret is incorrect")
-		return
+		return http.StatusUnauthorized, errors.New("shared secret is incorrect")
 	}
 
 	// Parse the event proper.
 	if r.Body == nil {
-		respond(w, http.StatusBadRequest, "missing request body")
-		return
+		return http.StatusBadRequest, errors.New("missing request body")
 	}
 	payload, err := io.ReadAll(r.Body)
 	if err != nil {
-		respond(w, http.StatusInternalServerError, errors.Wrap(err, "reading payload"))
-		return
+		return http.StatusInternalServerError, errors.Wrap(err, "reading payload")
 	}
 
 	event, err := webhooks.UnmarshalEvent(payload)
 	if err != nil {
 		if errors.Is(err, webhooks.ErrObjectKindUnknown) {
+			unknownObject = true
 			// We don't want to return a non-2XX status code and have GitLab
 			// retry the webhook, so we'll log that we don't know what to do
 			// and return 204.
 			log15.Debug("unknown object kind", "err", err)
 
-			// We don't use respond() here so that we don't log an error, since
+			// We don't return an error here so that we don't log an error, since
 			// this really isn't one.
-			w.Header().Set("Content-Type", "text/plain; charset=utf-8")
-			w.WriteHeader(http.StatusNoContent)
-			fmt.Fprintf(w, "%v", err)
-		} else {
-			respond(w, http.StatusInternalServerError, errors.Wrap(err, "unmarshalling payload"))
+			return http.StatusNoContent, nil
 		}
-		return
+
+		return http.StatusInternalServerError, errors.Wrap(err, "unmarshalling payload")
 	}
 
 	// Route the request based on the event type.
-	if err := h.handleEvent(r.Context(), extSvc, event); err != nil {
-		respond(w, err.code, err)
+	if err := h.handleEvent(ctx, extSvc, event); err != nil {
+		return err.code, err
 	} else {
-		respond(w, http.StatusNoContent, nil)
+		return http.StatusNoContent, nil
 	}
 }
 
@@ -108,7 +157,7 @@ func (h *GitLabWebhook) getExternalServiceFromRawID(ctx context.Context, raw str
 		return nil, errors.Wrap(err, "parsing the raw external service ID")
 	}
 
-	es, err := h.Store.ExternalServices().List(ctx, database.ExternalServicesListOptions{
+	es, err := h.store.ExternalServices().List(ctx, database.ExternalServicesListOptions{
 		IDs:   []int64{id},
 		Kinds: []string{extsvc.KindGitLab},
 	})
@@ -212,12 +261,12 @@ func (h *GitLabWebhook) enqueueChangesetSyncFromEvent(ctx context.Context, esID 
 	// the repo ID, and then we can use the merge request IID to match the
 	// external ID.
 	pr := gitlabToPR(&event.Project, event.MergeRequest)
-	repo, err := h.getRepoForPR(ctx, h.Store, pr, esID)
+	repo, err := h.getRepoForPR(ctx, h.store, pr, esID)
 	if err != nil {
 		return errors.Wrap(err, "getting repo")
 	}
 
-	c, err := h.getChangesetForPR(ctx, h.Store, &pr, repo)
+	c, err := h.getChangesetForPR(ctx, h.store, &pr, repo)
 	if err != nil {
 		return errors.Wrap(err, "getting changeset")
 	}
@@ -252,7 +301,7 @@ func (h *GitLabWebhook) getChangesetForPR(ctx context.Context, tx *store.Store, 
 	return tx.GetChangeset(ctx, store.GetChangesetOpts{
 		RepoID:              repo.ID,
 		ExternalID:          strconv.FormatInt(pr.ID, 10),
-		ExternalServiceType: h.ServiceType,
+		ExternalServiceType: h.serviceType,
 	})
 }
 

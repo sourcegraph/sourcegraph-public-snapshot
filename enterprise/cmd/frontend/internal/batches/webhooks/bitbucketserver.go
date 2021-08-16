@@ -1,6 +1,7 @@
 package webhooks
 
 import (
+	"context"
 	"fmt"
 	"io"
 	"net/http"
@@ -15,31 +16,35 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 type BitbucketServerWebhook struct {
-	*Webhook
+	*webhook
 }
 
-func NewBitbucketServerWebhook(store *store.Store) *BitbucketServerWebhook {
+func NewBitbucketServerWebhook(store *store.Store, observationContext *observation.Context) *BitbucketServerWebhook {
 	return &BitbucketServerWebhook{
-		Webhook: &Webhook{store, extsvc.TypeBitbucketServer},
+		webhook: &webhook{store, extsvc.TypeBitbucketServer},
 	}
 }
 
 func (h *BitbucketServerWebhook) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	code, err := h.handle(r.Context(), r)
+	respond(w, code, err)
+}
+
+func (h *BitbucketServerWebhook) handle(ctx context.Context, r *http.Request) (code int, err error) {
 	e, extSvc, hErr := h.parseEvent(r)
 	if hErr != nil {
-		respond(w, hErr.code, hErr)
-		return
+		return hErr.code, hErr
 	}
 
 	externalServiceID, err := extractExternalServiceID(extSvc)
 	if err != nil {
-		respond(w, http.StatusInternalServerError, err)
-		return
+		return http.StatusInternalServerError, err
 	}
 
 	prs, ev := h.convertEvent(e)
@@ -51,14 +56,15 @@ func (h *BitbucketServerWebhook) ServeHTTP(w http.ResponseWriter, r *http.Reques
 			continue
 		}
 
-		err := h.upsertChangesetEvent(r.Context(), externalServiceID, pr, ev)
+		err := h.upsertChangesetEvent(ctx, externalServiceID, pr, ev)
 		if err != nil {
 			m = multierror.Append(m, err)
 		}
 	}
 	if m.ErrorOrNil() != nil {
-		respond(w, http.StatusInternalServerError, m)
+		return http.StatusInternalServerError, m
 	}
+	return http.StatusNoContent, nil
 }
 
 func (h *BitbucketServerWebhook) parseEvent(r *http.Request) (interface{}, *types.ExternalService, *httpError) {
@@ -83,7 +89,7 @@ func (h *BitbucketServerWebhook) parseEvent(r *http.Request) (interface{}, *type
 	if externalServiceID != 0 {
 		args.IDs = append(args.IDs, externalServiceID)
 	}
-	es, err := h.Store.ExternalServices().List(r.Context(), args)
+	es, err := h.store.ExternalServices().List(r.Context(), args)
 	if err != nil {
 		return nil, nil, &httpError{http.StatusInternalServerError, err}
 	}
