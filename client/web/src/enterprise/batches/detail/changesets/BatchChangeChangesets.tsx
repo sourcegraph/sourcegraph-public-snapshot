@@ -251,7 +251,7 @@ const BatchChangeChangesetsImpl: React.FunctionComponent<Props> = ({
                     className="filtered-connection__centered-summary"
                     headComponent={BatchChangeChangesetsHeader}
                     headComponentProps={{
-                        allSelected: areAllVisibleSelected(),
+                        allSelected: showSelectRow && areAllVisibleSelected(),
                         toggleSelectAll: toggleVisible,
                         disabled: !viewerCanAdminister,
                     }}

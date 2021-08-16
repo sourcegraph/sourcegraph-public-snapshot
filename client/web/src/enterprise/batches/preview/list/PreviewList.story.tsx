@@ -5,12 +5,13 @@ import { of, Observable } from 'rxjs'
 
 import { BatchSpecApplyPreviewConnectionFields, ChangesetApplyPreviewFields } from '../../../../graphql-operations'
 import { EnterpriseWebStory } from '../../../components/EnterpriseWebStory'
+import { getPublishableChangesetSpecID } from '../utils'
 
 import { hiddenChangesetApplyPreviewStories } from './HiddenChangesetApplyPreviewNode.story'
 import { PreviewList } from './PreviewList'
 import { visibleChangesetApplyPreviewNodeStories } from './VisibleChangesetApplyPreviewNode.story'
 
-const { add } = storiesOf('web/batches/preview/PreviewList', module)
+const { add } = storiesOf('web/batches/preview', module)
     .addDecorator(story => <div className="p-3 container">{story()}</div>)
     .addParameters({
         chromatic: {
@@ -20,7 +21,7 @@ const { add } = storiesOf('web/batches/preview/PreviewList', module)
 
 const queryEmptyFileDiffs = () => of({ totalCount: 0, pageInfo: { endCursor: null, hasNextPage: false }, nodes: [] })
 
-add('List view', () => {
+add('PreviewList', () => {
     const publishStatusSet = boolean('publish status set by spec file', false)
 
     const nodes: ChangesetApplyPreviewFields[] = [
@@ -38,6 +39,13 @@ add('List view', () => {
             nodes,
         })
 
+    const queryPublishableChangesetSpecIDs = (): Observable<string[]> =>
+        of(
+            Object.values(visibleChangesetApplyPreviewNodeStories(publishStatusSet))
+                .map(node => getPublishableChangesetSpecID(node))
+                .filter((id): id is string => id !== null)
+        )
+
     return (
         <EnterpriseWebStory>
             {props => (
@@ -52,6 +60,7 @@ add('List view', () => {
                     }}
                     queryChangesetApplyPreview={queryChangesetApplyPreview}
                     queryChangesetSpecFileDiffs={queryEmptyFileDiffs}
+                    queryPublishableChangesetSpecIDs={queryPublishableChangesetSpecIDs}
                 />
             )}
         </EnterpriseWebStory>

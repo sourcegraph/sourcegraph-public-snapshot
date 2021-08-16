@@ -7,16 +7,22 @@ import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { Container } from '@sourcegraph/wildcard'
 
 import { FilteredConnection, FilteredConnectionQueryArguments } from '../../../../components/FilteredConnection'
-import { ChangesetApplyPreviewFields, Scalars } from '../../../../graphql-operations'
+import { BatchSpecApplyPreviewVariables, ChangesetApplyPreviewFields, Scalars } from '../../../../graphql-operations'
 import { MultiSelectContext, MultiSelectContextProvider } from '../../MultiSelectContext'
 import { PreviewPageAuthenticatedUser } from '../BatchChangePreviewPage'
+import { getPublishableChangesetSpecID } from '../utils'
 
-import { queryChangesetApplyPreview as _queryChangesetApplyPreview, queryChangesetSpecFileDiffs } from './backend'
+import {
+    queryChangesetApplyPreview as _queryChangesetApplyPreview,
+    queryChangesetSpecFileDiffs,
+    queryPublishableChangesetSpecIDs as _queryPublishableChangesetSpecIDs,
+} from './backend'
 import { ChangesetApplyPreviewNode, ChangesetApplyPreviewNodeProps } from './ChangesetApplyPreviewNode'
 import { EmptyPreviewListElement } from './EmptyPreviewListElement'
 import { PreviewFilterRow, PreviewFilters } from './PreviewFilterRow'
 import styles from './PreviewList.module.scss'
 import { PreviewListHeader, PreviewListHeaderProps } from './PreviewListHeader'
+import { PreviewSelectRow } from './PreviewSelectRow'
 
 interface Props extends ThemeProps {
     batchSpecID: Scalars['ID']
@@ -30,6 +36,8 @@ interface Props extends ThemeProps {
     queryChangesetSpecFileDiffs?: typeof queryChangesetSpecFileDiffs
     /** Expand changeset descriptions, for testing only. */
     expandChangesetDescriptions?: boolean
+    /** For testing only. */
+    queryPublishableChangesetSpecIDs?: typeof _queryPublishableChangesetSpecIDs
 }
 
 /**
@@ -51,6 +59,7 @@ const PreviewListImpl: React.FunctionComponent<Props> = ({
     queryChangesetApplyPreview = _queryChangesetApplyPreview,
     queryChangesetSpecFileDiffs,
     expandChangesetDescriptions,
+    queryPublishableChangesetSpecIDs,
 }) => {
     const {
         selected,
@@ -69,31 +78,42 @@ const PreviewListImpl: React.FunctionComponent<Props> = ({
         action: null,
     })
 
+    const setChangesetFiltersAndDeselectAll = useCallback(
+        (filters: PreviewFilters) => {
+            deselectAll()
+            setFilters(filters)
+        },
+        [deselectAll]
+    )
+
+    const [queryArguments, setQueryArguments] = useState<BatchSpecApplyPreviewVariables>()
+
     const queryChangesetApplyPreviewConnection = useCallback(
-        (args: FilteredConnectionQueryArguments) =>
-            queryChangesetApplyPreview({
+        (args: FilteredConnectionQueryArguments) => {
+            const passedArguments = {
                 first: args.first ?? null,
                 after: args.after ?? null,
                 batchSpec: batchSpecID,
                 search: filters.search,
                 currentState: filters.currentState,
                 action: filters.action,
-            }).pipe(
+            }
+            return queryChangesetApplyPreview(passedArguments).pipe(
                 tap(data => {
+                    // Store the query arguments used for the current connection.
+                    setQueryArguments(passedArguments)
+                    // Available changeset specs are all changesets specs that a user can
+                    // modify the publish status of.
                     setVisible(
                         data.nodes
-                            .filter(
-                                node =>
-                                    node.targets.__typename === 'VisibleApplyPreviewTargetsAttach' ||
-                                    node.targets.__typename === 'VisibleApplyPreviewTargetsUpdate'
-                            )
-                            // TODO: Lol fix me pls
-                            .map(node => (node.targets as any).changesetSpec.id)
+                            .map(node => getPublishableChangesetSpecID(node))
+                            .filter((id): id is string => id !== null)
                     )
                     // Remember the totalCount.
                     setTotalCount(data.totalCount)
                 })
-            ),
+            )
+        },
         [
             batchSpecID,
             filters.search,
@@ -105,9 +125,22 @@ const PreviewListImpl: React.FunctionComponent<Props> = ({
         ]
     )
 
+    const showSelectRow = selected === 'all' || selected.size > 0
+
     return (
         <Container>
-            <PreviewFilterRow history={history} location={location} onFiltersChange={setFilters} />
+            {showSelectRow && queryArguments ? (
+                <PreviewSelectRow
+                    queryPublishableChangesetSpecIDs={queryPublishableChangesetSpecIDs}
+                    queryArguments={queryArguments}
+                />
+            ) : (
+                <PreviewFilterRow
+                    history={history}
+                    location={location}
+                    onFiltersChange={setChangesetFiltersAndDeselectAll}
+                />
+            )}
             <FilteredConnection<
                 ChangesetApplyPreviewFields,
                 Omit<ChangesetApplyPreviewNodeProps, 'node'>,
@@ -136,7 +169,7 @@ const PreviewListImpl: React.FunctionComponent<Props> = ({
                 listClassName={styles.previewListGrid}
                 headComponent={PreviewListHeader}
                 headComponentProps={{
-                    allSelected: areAllVisibleSelected(),
+                    allSelected: showSelectRow && areAllVisibleSelected(),
                     toggleSelectAll: toggleVisible,
                 }}
                 cursorPaging={true}
