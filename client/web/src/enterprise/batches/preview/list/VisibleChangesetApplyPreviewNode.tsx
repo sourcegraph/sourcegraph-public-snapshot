@@ -245,7 +245,7 @@ const SelectBox: React.FunctionComponent<{
     return (
         <div className="d-flex p-2 align-items-center">
             {input}
-            {changesetSpecID ? <span className="pl-2 d-block d-sm-none">Modify publish status</span> : null}
+            {changesetSpecID ? <span className="pl-2 d-block d-sm-none text-nowrap">Modify publish status</span> : null}
         </div>
     )
 }
