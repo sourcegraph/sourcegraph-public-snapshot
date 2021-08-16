@@ -17,6 +17,8 @@ import { useDistinctValue } from '../../../../../../../hooks/use-distinct-value'
 import { useInsights } from '../../../../../../../hooks/use-insight/use-insight'
 import { EmptyInsightDashboard } from '../empty-insight-dashboard/EmptyInsightDashboard'
 
+import { DashboardInsightsContext } from './DashboardInsightsContext'
+
 const DEFAULT_INSIGHT_IDS: string[] = []
 
 interface DashboardInsightsProps
@@ -58,9 +60,10 @@ export const DashboardInsights: React.FunctionComponent<DashboardInsightsProps> 
     }
 
     return (
-        <div>
-            {insights.length > 0 ? (
-                <BackendInsightContext.Provider value={{ currentDashboard: dashboard }}>
+        <DashboardInsightsContext.Provider value={{ dashboard }}>
+            <div>
+                {insights.length > 0 ? (
+                    <BackendInsightContext.Provider value={{ currentDashboard: dashboard }}>
                     <SmartInsightsViewGrid
                         insights={insights}
                         telemetryService={telemetryService}
@@ -69,13 +72,14 @@ export const DashboardInsights: React.FunctionComponent<DashboardInsightsProps> 
                         extensionsController={extensionsController}
                     />
                 </BackendInsightContext.Provider>
-            ) : (
-                <EmptyInsightDashboard
-                    dashboard={dashboard}
-                    settingsCascade={settingsCascade}
-                    onAddInsight={onAddInsightRequest}
-                />
-            )}
-        </div>
+                ) : (
+                    <EmptyInsightDashboard
+                        dashboard={dashboard}
+                        settingsCascade={settingsCascade}
+                        onAddInsight={onAddInsightRequest}
+                    />
+                )}
+            </div>
+        </DashboardInsightsContext.Provider>
     )
 }
