@@ -30,7 +30,7 @@ interface ChangesetListAction extends Omit<Action, 'onTrigger'> {
      */
     onTrigger: (
         batchChangeID: Scalars['ID'],
-        changesetIDs: () => Promise<Scalars['ID'][]>,
+        changesetIDs: Scalars['ID'][],
         onDone: () => void,
         onCancel: () => void
     ) => void | JSX.Element
@@ -171,16 +171,8 @@ export const ChangesetSelectRow: React.FunctionComponent<ChangesetSelectRowProps
                 const dropdownAction: Action = {
                     ...action,
                     onTrigger: (onDone, onCancel) => {
-                        // Depending on the selection, we need to construct a loader function for
-                        // the changeset IDs.
-                        let ids: () => Promise<Scalars['ID'][]>
-                        if (selected === 'all') {
-                            // If all changesets are selected, we can just use the cached allChangesetIDs.
-                            ids = () => Promise.resolve(allChangesetIDs || [])
-                        } else {
-                            // We can just pass down the IDs.
-                            ids = () => Promise.resolve([...selected])
-                        }
+                        // Depending on the selection, the set of changeset ids to act on is different.
+                        const ids = selected === 'all' ? allChangesetIDs || [] : [...selected]
 
                         return action.onTrigger(
                             batchChangeID,
