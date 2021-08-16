@@ -51,7 +51,6 @@ All notable changes to Sourcegraph are documented in this file.
 - Code Insights will now generate 12 months of historical data during a backfill instead of 6. [#23860](https://github.com/sourcegraph/sourcegraph/pull/23860)
 - The `sourcegraph-frontend.Role` in Kubernetes deployments was updated to permit statefulsets access in the Kubernetes API. This is needed to better support stable service discovery for stateful sets during deployments, which isn't currently possible by using service endpoints. [#3670](https://github.com/sourcegraph/deploy-sourcegraph/pull/3670) [#23889](https://github.com/sourcegraph/sourcegraph/pull/23889)
 
-
 ### Fixed
 
 - The search reference will now show matching entries when using the filter input. [#23224](https://github.com/sourcegraph/sourcegraph/pull/23224)
