@@ -7,7 +7,7 @@
 
 .logged-out-homepage {
     width: 100%;
-    max-width: 90%;
+
     @media (--xl-breakpoint-up) {
         max-width: $max-homepage-container-width;
     }
@@ -28,6 +28,7 @@
             @media (--sm-breakpoint-down) {
                 display: flex;
                 flex-wrap: wrap;
+                justify-content: unset;
             }
         }
 
@@ -154,4 +155,12 @@
     padding: 0 0.75rem;
     border-left: 1px solid var(--border-color);
     min-height: 2.375rem;
+}
+
+.repogroup-section {
+    margin-top: 4rem;
+}
+
+.customer-section {
+    margin-top: 4rem;
 }
