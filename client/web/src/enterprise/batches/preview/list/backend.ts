@@ -1,5 +1,5 @@
-import { Observable } from 'rxjs'
-import { map } from 'rxjs/operators'
+import { EMPTY, Observable } from 'rxjs'
+import { expand, map, reduce } from 'rxjs/operators'
 
 import { gql, dataOrThrowErrors } from '@sourcegraph/shared/src/graphql/graphql'
 
@@ -12,8 +12,10 @@ import {
     BatchSpecApplyPreviewResult,
     BatchSpecApplyPreviewVariables,
     ChangesetSpecFileDiffConnectionFields,
+    Scalars,
 } from '../../../../graphql-operations'
 import { personLinkFieldsFragment } from '../../../../person/PersonLink'
+import { getPublishableChangesetSpecID } from '../utils'
 
 const changesetSpecFieldsFragment = gql`
     fragment CommonChangesetSpecFields on ChangesetSpec {
@@ -325,3 +327,33 @@ export const queryChangesetSpecFileDiffs = ({
             return node.description.diff.fileDiffs
         })
     )
+
+export const queryPublishableChangesetSpecIDs = ({
+    batchSpec,
+    search,
+    currentState,
+    action,
+}: BatchSpecApplyPreviewVariables): Observable<Scalars['ID'][]> => {
+    const request = (after: string | null): Observable<BatchSpecApplyPreviewConnectionFields> =>
+        queryChangesetApplyPreview({
+            batchSpec,
+            first: 10000,
+            after,
+            search,
+            currentState,
+            action,
+        })
+
+    return request(null).pipe(
+        expand(connection => (connection.pageInfo.hasNextPage ? request(connection.pageInfo.endCursor) : EMPTY)),
+        reduce(
+            (previous, next) =>
+                previous.concat(
+                    next.nodes
+                        .map(node => getPublishableChangesetSpecID(node))
+                        .filter((maybeID): maybeID is string => maybeID !== null)
+                ),
+            [] as Scalars['ID'][]
+        )
+    )
+}
