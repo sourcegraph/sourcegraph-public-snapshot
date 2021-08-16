@@ -68,7 +68,6 @@ const PreviewListImpl: React.FunctionComponent<Props> = ({
         isSelected,
         toggleSingle,
         toggleVisible,
-        setTotalCount,
         setVisible,
     } = useContext(MultiSelectContext)
 
@@ -109,20 +108,10 @@ const PreviewListImpl: React.FunctionComponent<Props> = ({
                             .map(node => getPublishableChangesetSpecID(node))
                             .filter((id): id is string => id !== null)
                     )
-                    // Remember the totalCount.
-                    setTotalCount(data.totalCount)
                 })
             )
         },
-        [
-            batchSpecID,
-            filters.search,
-            filters.currentState,
-            filters.action,
-            queryChangesetApplyPreview,
-            setTotalCount,
-            setVisible,
-        ]
+        [batchSpecID, filters.search, filters.currentState, filters.action, queryChangesetApplyPreview, setVisible]
     )
 
     const showSelectRow = selected === 'all' || selected.size > 0

@@ -53,7 +53,7 @@ export const PreviewSelectRow: React.FunctionComponent<PreviewSelectRowProps> = 
     queryPublishableChangesetSpecIDs = _queryPublishableChangesetSpecIDs,
     queryArguments,
 }) => {
-    const { areAllVisibleSelected, selected, selectAll, totalCount } = useContext(MultiSelectContext)
+    const { areAllVisibleSelected, selected, selectAll } = useContext(MultiSelectContext)
 
     const allChangesetSpecIDs: string[] | undefined = useObservable(
         useMemo(() => queryPublishableChangesetSpecIDs(queryArguments), [
@@ -77,7 +77,7 @@ export const PreviewSelectRow: React.FunctionComponent<PreviewSelectRowProps> = 
                         allChangesetSpecIDs &&
                         allChangesetSpecIDs.length > selected.size && (
                             <button type="button" className="btn btn-link py-0 px-1" onClick={selectAll}>
-                                (Select all{totalCount !== undefined && ` ${totalCount}`})
+                                (Select all{allChangesetSpecIDs !== undefined && ` ${allChangesetSpecIDs.length}`})
                             </button>
                         )}
                 </div>
