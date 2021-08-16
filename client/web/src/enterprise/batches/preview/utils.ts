@@ -1,4 +1,8 @@
-import { HiddenChangesetApplyPreviewFields, VisibleChangesetApplyPreviewFields } from '../../../graphql-operations'
+import {
+    HiddenChangesetApplyPreviewFields,
+    VisibleChangesetApplyPreviewFields,
+    Scalars,
+} from '../../../graphql-operations'
 
 /**
  * For a given preview of a changeset to be applied, this method checks if the type of
@@ -12,7 +16,7 @@ import { HiddenChangesetApplyPreviewFields, VisibleChangesetApplyPreviewFields }
  */
 export const getPublishableChangesetSpecID = (
     node: VisibleChangesetApplyPreviewFields | HiddenChangesetApplyPreviewFields
-): string | null => {
+): Scalars['ID'] | null => {
     if (
         node.targets.__typename !== 'VisibleApplyPreviewTargetsAttach' &&
         node.targets.__typename !== 'VisibleApplyPreviewTargetsUpdate'

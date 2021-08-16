@@ -346,14 +346,14 @@ export const queryPublishableChangesetSpecIDs = ({
 
     return request(null).pipe(
         expand(connection => (connection.pageInfo.hasNextPage ? request(connection.pageInfo.endCursor) : EMPTY)),
-        reduce(
+        reduce<BatchSpecApplyPreviewConnectionFields, Scalars['ID'][]>(
             (previous, next) =>
                 previous.concat(
                     next.nodes
                         .map(node => getPublishableChangesetSpecID(node))
-                        .filter((maybeID): maybeID is string => maybeID !== null)
+                        .filter((maybeID): maybeID is Scalars['ID'] => maybeID !== null)
                 ),
-            [] as Scalars['ID'][]
+            []
         )
     )
 }

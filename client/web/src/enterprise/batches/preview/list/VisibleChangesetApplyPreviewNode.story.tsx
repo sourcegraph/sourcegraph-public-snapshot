@@ -3,9 +3,10 @@ import classNames from 'classnames'
 import React from 'react'
 import { of } from 'rxjs'
 
-import { ChangesetSpecOperation, ChangesetState } from '@sourcegraph/shared/src/graphql-operations'
-
 import {
+    ChangesetSpecOperation,
+    ChangesetState,
+    Maybe,
     VisibleChangesetSpecFields,
     ChangesetSpecType,
     Scalars,
@@ -24,7 +25,7 @@ const testRepo = { name: 'github.com/sourcegraph/testrepo', url: 'https://test.t
 
 function baseChangesetSpec(
     id: number,
-    published: Scalars['PublishedValue'],
+    published: Maybe<Scalars['PublishedValue']>,
     overrides: Partial<VisibleChangesetSpecFields> = {}
 ): VisibleChangesetSpecFields {
     return {
