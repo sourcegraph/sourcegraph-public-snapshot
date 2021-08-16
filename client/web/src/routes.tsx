@@ -73,12 +73,7 @@ function passThroughToServer(): React.ReactNode {
 export const routes: readonly LayoutRouteProps<any>[] = [
     {
         path: '/',
-        render: props =>
-            window.context.sourcegraphDotComMode && !props.authenticatedUser ? (
-                <Redirect to="https://about.sourcegraph.com" />
-            ) : (
-                <Redirect to="/search" />
-            ),
+        render: () => <Redirect to="/search" />,
         exact: true,
     },
     {
