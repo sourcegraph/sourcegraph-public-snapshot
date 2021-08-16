@@ -1,124 +1,128 @@
+import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
 import DotsHorizontalIcon from 'mdi-react/DotsHorizontalIcon'
 import * as React from 'react'
+import { Popover } from 'reactstrap'
 
-import { Form } from '@sourcegraph/branded/src/components/Form'
+import { escapeRevspecForURL } from '@sourcegraph/shared/src/util/url'
+import { Button, PageHeader } from '@sourcegraph/wildcard'
 
 import { eventLogger } from '../../tracking/eventLogger'
+import { RevisionsPopover } from '../revisions-popover/RevisionsPopover'
 
 import { RepositoryCompareAreaPageProps } from './RepositoryCompareArea'
 
-interface Props extends RepositoryCompareAreaPageProps {
+interface RepositoryCompareHeaderProps extends RepositoryCompareAreaPageProps {
     className: string
-
-    /** Called when the user updates the comparison spec and submits the form. */
-    onUpdateComparisonSpec: (newBaseSpec: string, newHeadSpec: string) => void
 }
 
-interface State {
-    /** The (possibly unsubmitted) value of the input field containing the comparison base spec. */
-    comparisonBaseSpec: string
-
-    /** The (possibly unsubmitted) value of the input field containing the comparison head spec. */
-    comparisonHeadSpec: string
+interface RevisionComparison {
+    base: RepositoryCompareHeaderProps['base']
+    head: RepositoryCompareHeaderProps['head']
 }
 
-/**
- * Header for the repository compare area.
- */
-export class RepositoryCompareHeader extends React.PureComponent<Props, State> {
-    private static BASE_INPUT_ID = 'repository-compare-header__base-spec'
-    private static HEAD_INPUT_ID = 'repository-compare-header__head-spec'
+interface RepositoryComparePopoverProps {
+    /**
+     * Uniquely identify this specific popover. Used to link the trigger button with the popover to display
+     */
+    id: string
+    /**
+     * Initial revision comparison to load. This can be changed by selecting a new revision through the popover.
+     */
+    comparison: RevisionComparison
+    /**
+     * The specific comparison type that the popover is concerned with changing.
+     */
+    type: keyof RevisionComparison
+    repo: RepositoryCompareHeaderProps['repo']
+}
 
-    public state: State = {
-        comparisonBaseSpec: this.props.base.revision || '',
-        comparisonHeadSpec: this.props.head.revision || '',
-    }
+export const RepositoryComparePopover: React.FunctionComponent<RepositoryComparePopoverProps> = ({
+    id,
+    comparison,
+    repo,
+    type,
+}) => {
+    const [popoverOpen, setPopoverOpen] = React.useState(false)
+    const togglePopover = React.useCallback(() => setPopoverOpen(previous => !previous), [])
 
-    public render(): JSX.Element | null {
-        // Whether the user has entered new base/head values that differ from what's in the props and has not yet
-        // submitted the form.
-        const stateDiffers =
-            this.state.comparisonBaseSpec !== (this.props.base.revision || '') ||
-            this.state.comparisonHeadSpec !== (this.props.head.revision || '')
+    /**
+     * Override the default node URL behavior to support navigating to a repository sub-page.
+     */
+    const getURLFromRevision = React.useCallback(
+        (_href: string, revision: string) => {
+            const escapedRevision = escapeRevspecForURL(revision)
+            const comparePath =
+                type === 'base'
+                    ? `${escapedRevision}...${escapeRevspecForURL(comparison.head.revision || '')}`
+                    : `${escapeRevspecForURL(comparison.base.revision || '')}...${escapedRevision}`
 
-        const specIsEmpty = this.props.base === null && this.props.head === null
+            return `/${repo.name}/-/compare/${comparePath}`
+        },
+        [comparison, repo.name, type]
+    )
 
-        return (
-            <div className={`repository-compare-header ${this.props.className}`}>
-                <div className={`${this.props.className}-inner`}>
-                    <Form className="form-inline mb-2" onSubmit={this.onSubmit}>
-                        <label htmlFor={RepositoryCompareHeader.BASE_INPUT_ID} className="sr-only">
-                            Base Git revspec for comparison
-                        </label>
-                        <input
-                            type="text"
-                            id={RepositoryCompareHeader.BASE_INPUT_ID}
-                            className="form-control mr-2 mb-2"
-                            value={this.state.comparisonBaseSpec}
-                            onChange={this.onChange}
-                            placeholder="HEAD"
-                            size={12}
-                            autoCapitalize="off"
-                            spellCheck={false}
-                            autoCorrect="off"
-                            autoComplete="off"
-                        />
-                        <DotsHorizontalIcon className="icon-inline mr-2 mb-2" />
-                        <label htmlFor={RepositoryCompareHeader.HEAD_INPUT_ID} className="sr-only">
-                            Head Git revspec for comparison
-                        </label>
-                        <input
-                            type="text"
-                            id={RepositoryCompareHeader.HEAD_INPUT_ID}
-                            className="form-control mr-2 mb-2"
-                            value={this.state.comparisonHeadSpec}
-                            onChange={this.onChange}
-                            placeholder="HEAD"
-                            size={12}
-                            autoCapitalize="off"
-                            spellCheck={false}
-                            autoCorrect="off"
-                            autoComplete="off"
-                        />
-                        {(stateDiffers || specIsEmpty) && (
-                            <button type="submit" className="btn btn-primary mr-2 mb-2">
-                                {stateDiffers ? 'Update comparison' : 'Compare'}
-                            </button>
-                        )}
-                        {stateDiffers && !specIsEmpty && (
-                            <button type="reset" className="btn btn-secondary mb-2" onClick={this.onCancel}>
-                                Cancel
-                            </button>
-                        )}
-                    </Form>
-                </div>
-            </div>
-        )
-    }
-
-    private onChange: React.ChangeEventHandler<HTMLInputElement> = event => {
-        this.setState(
-            (event.currentTarget.id === RepositoryCompareHeader.BASE_INPUT_ID
-                ? { comparisonBaseSpec: event.currentTarget.value }
-                : { comparisonHeadSpec: event.currentTarget.value }) as Pick<
-                State,
-                'comparisonBaseSpec' & 'comparisonHeadSpec'
-            >
-        )
-    }
-
-    private onSubmit: React.FormEventHandler<HTMLFormElement> = event => {
-        event.preventDefault()
+    const handleSelect = React.useCallback(() => {
         eventLogger.log('RepositoryComparisonSubmitted')
-        this.props.onUpdateComparisonSpec(this.state.comparisonBaseSpec, this.state.comparisonHeadSpec)
-    }
+        togglePopover()
+    }, [togglePopover])
 
-    private onCancel: React.MouseEventHandler<HTMLButtonElement> = event => {
-        event.preventDefault()
-        eventLogger.log('RepositoryComparisonCanceled')
-        this.setState({
-            comparisonBaseSpec: this.props.base.revision || '',
-            comparisonHeadSpec: this.props.head.revision || '',
-        })
-    }
+    const defaultBranch = repo.defaultBranch?.abbrevName || 'HEAD'
+    const currentRevision = comparison[type]?.revision || undefined
+
+    return (
+        <Button
+            type="button"
+            variant="secondary"
+            outline={true}
+            className="d-flex align-items-center text-nowrap"
+            id={id}
+            aria-label={`Change ${type} Git revspec for comparison`}
+        >
+            <div className="text-muted mr-1">{type}: </div>
+            {comparison[type].revision || defaultBranch}
+            <ChevronDownIcon className="icon-inline repo-revision-container__breadcrumb-icon" />
+            <Popover
+                isOpen={popoverOpen}
+                toggle={togglePopover}
+                placement="bottom-start"
+                target={id}
+                trigger="legacy"
+                hideArrow={true}
+                fade={false}
+                popperClassName="border-0"
+            >
+                <RevisionsPopover
+                    repo={repo.id}
+                    repoName={repo.name}
+                    defaultBranch={defaultBranch}
+                    currentRev={currentRevision}
+                    currentCommitID={currentRevision}
+                    togglePopover={togglePopover}
+                    getURLFromRevision={getURLFromRevision}
+                    allowSpeculativeSearch={true}
+                    onSelect={handleSelect}
+                />
+            </Popover>
+        </Button>
+    )
 }
+
+export const RepositoryCompareHeader: React.FunctionComponent<RepositoryCompareHeaderProps> = ({
+    base,
+    head,
+    className,
+    repo,
+}) => (
+    <div className={`repository-compare-header ${className}`}>
+        <PageHeader
+            path={[{ text: 'Compare changes' }]}
+            description="Compare changes across revisions."
+            className="mb-3"
+        />
+        <div className={`${className}-inner d-flex align-items-center`}>
+            <RepositoryComparePopover id="base-popover" type="base" comparison={{ base, head }} repo={repo} />
+            <DotsHorizontalIcon className="icon-inline mx-2" />
+            <RepositoryComparePopover id="head-popover" type="head" comparison={{ base, head }} repo={repo} />
+        </div>
+    </div>
+)
