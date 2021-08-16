@@ -816,14 +816,6 @@ func intsToString(vs []int) string {
 	return strings.Join(strs, ", ")
 }
 
-func nilStringToString(s *string) string {
-	if s == nil {
-		return ""
-	}
-
-	return *s
-}
-
 func nilTimeToString(t *time.Time) string {
 	if t == nil {
 		return ""
