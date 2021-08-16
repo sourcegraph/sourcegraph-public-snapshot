@@ -63,7 +63,7 @@ export function LivePreviewContainer(props: LivePreviewContainerProps): ReactEle
                 </div>
             )}
 
-            <span className="mt-2 text-muted">{description}</span>
+            {description && <span className="mt-2 text-muted">{description}</span>}
         </section>
     )
 }
