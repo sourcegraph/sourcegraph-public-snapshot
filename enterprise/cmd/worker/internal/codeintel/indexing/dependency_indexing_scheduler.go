@@ -2,6 +2,7 @@ package indexing
 
 import (
 	"context"
+	"strconv"
 	"time"
 
 	"github.com/cockroachdb/errors"
@@ -11,6 +12,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker"
 	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
@@ -113,8 +115,8 @@ func (h *dependencyIndexingSchedulerHandler) Handle(ctx context.Context, record 
 			continue
 		}
 
-		if _, err := h.dbStore.InsertCloneableDependencyRepo(ctx, pkg); err != nil {
-			errs = append(errs, errors.Wrap(err, "dbstore.InsertCloneableDependencyRepos"))
+		if err := h.insertDependencyRepo(ctx, pkg); err != nil {
+			errs = append(errs, err)
 		}
 
 		if !kindExists(kinds, extsvcKind) {
@@ -153,6 +155,22 @@ func (h *dependencyIndexingSchedulerHandler) Handle(ctx context.Context, record 
 	}
 
 	return multierror.Append(nil, errs...)
+}
+
+func (h *dependencyIndexingSchedulerHandler) insertDependencyRepo(ctx context.Context, pkg precise.Package) (err error) {
+	var new bool
+	ctx, endObservation := dependencyReposOps.InsertCloneableDependencyRepo.With(ctx, &err, observation.Args{
+		MetricLabelValues: []string{pkg.Scheme},
+	})
+	defer func() {
+		endObservation(1, observation.Args{MetricLabelValues: []string{strconv.FormatBool(new)}})
+	}()
+
+	new, err = h.dbStore.InsertCloneableDependencyRepo(ctx, pkg)
+	if err != nil {
+		return errors.Wrap(err, "dbstore.InsertCloneableDependencyRepos")
+	}
+	return nil
 }
 
 // shouldIndexDependencies returns true if the given upload should undergo dependency

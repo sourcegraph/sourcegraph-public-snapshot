@@ -65,9 +65,9 @@ func newOperations(observationContext *observation.Context, prefix string, keys,
 
 	op := func(name string) *observation.Operation {
 		return observationContext.Operation(observation.Op{
-			Name:         fmt.Sprintf("worker.%s", name),
-			MetricLabels: append(append([]string{}, values...), name),
-			Metrics:      metrics,
+			Name:              fmt.Sprintf("worker.%s", name),
+			MetricLabelValues: append(append([]string{}, values...), name),
+			Metrics:           metrics,
 		})
 	}
 
