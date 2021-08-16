@@ -675,6 +675,104 @@ VALUES (%d, 1, '')
 	}
 }
 
+func TestExternalServicesStore_DeleteWithPhabricator(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+	t.Parallel()
+
+	db := dbtest.NewDB(t, "")
+	ctx := actor.WithInternalActor(context.Background())
+	confGet := func() *conf.Unified {
+		return &conf.Unified{}
+	}
+
+	// Create a new Phabricator external service. What we want to confirm is that
+	// on deletion of the external service, dependent rows in phabricator_repos
+	// are also removed at the same time.
+	es1 := &types.ExternalService{
+		Kind:        extsvc.KindPhabricator,
+		DisplayName: "PHABRICATOR #1",
+		Config:      `{"url": "https://phabricator.example.com", "token": "abc"}`,
+	}
+	err := ExternalServices(db).Create(ctx, confGet, es1)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Note that this repository has a github.com URL, but will have an external
+	// link to Phabricator via the phabricator_repos table.
+	_, err = db.ExecContext(ctx, `
+INSERT INTO repo (id, name, description, fork)
+VALUES (1, 'github.com/user/repo', '', FALSE);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// This is the trigger link between repo and other tables.
+	q := sqlf.Sprintf(`
+INSERT INTO external_service_repos (external_service_id, repo_id, clone_url)
+VALUES (%d, 1, '')
+`, es1.ID)
+	_, err = db.ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// This is the external link associated with the Phabricator repository.
+	_, err = db.ExecContext(ctx, `
+INSERT INTO phabricator_repos (id, callsign, repo_name, url)
+VALUES (1, 'TEST', 'github.com/user/repo', 'https://phabricator.example.com')
+	`)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// We should be able to find this repository by ID.
+	repo, err := Repos(db).Get(ctx, 1)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if repo == nil {
+		t.Fatalf("got nil, want repo")
+	}
+
+	// We should be able to find this repository by name.
+	phabricatorRepo, err := Phabricator(db).GetByName(ctx, "github.com/user/repo")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if phabricatorRepo == nil {
+		t.Fatalf("got nil, want phabricator repo")
+	}
+
+	// Deleting this external service should result in the repository being
+	// removed, as well as the external link.
+	err = ExternalServices(db).Delete(ctx, es1.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// We should not be able to find this repository by ID anymore.
+	repo, err = Repos(db).Get(ctx, 1)
+	if err != nil && !errcode.IsNotFound(err) {
+		t.Fatal(err)
+	}
+	if repo != nil {
+		t.Fatalf("got %v, want nil", repo)
+	}
+
+	// We should not be able to find this repository by name anymore.
+	phabricatorRepo, err = Phabricator(db).GetByName(ctx, "github.com/user/repo")
+	if err != nil && !errcode.IsNotFound(err) {
+		t.Fatal(err)
+	}
+	if phabricatorRepo != nil {
+		t.Fatalf("got %v, want nil", phabricatorRepo)
+	}
+}
+
 func TestExternalServicesStore_Delete(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
