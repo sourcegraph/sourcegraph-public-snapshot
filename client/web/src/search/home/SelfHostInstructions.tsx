@@ -74,11 +74,20 @@ export const SelfHostInstructions: React.FunctionComponent<TelemetryProps> = ({ 
                     <code className={styles.code}>{dockerCommand}</code>
                 </div>
                 <div className="d-flex justify-content-between">
-                    <a href="https://docs.sourcegraph.com/admin/install" target="_blank" rel="noopener noreferrer">
+                    <a
+                        href="https://docs.sourcegraph.com/admin/install"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="mr-2"
+                    >
                         Learn how to deploy a server or cluster <OpenInNewIcon className="icon-inline" />{' '}
                         <span className="sr-only">(Open in new window)</span>
                     </a>
-                    <a href="https://about.sourcegraph.com/contact/request-info/" onClick={onTalkToEngineerClicked}>
+                    <a
+                        href="https://about.sourcegraph.com/contact/request-info/"
+                        onClick={onTalkToEngineerClicked}
+                        className="text-right flex-shrink-0"
+                    >
                         Talk to an engineer
                     </a>
                 </div>
