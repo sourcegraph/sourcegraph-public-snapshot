@@ -1788,6 +1788,15 @@ const (
 	VisibilityPrivate Visibility = "private"
 )
 
+// Visibility is the affiliation filter for listing repositories.
+type Affiliation string
+
+const (
+	AffiliationOwner        Affiliation = "owner"
+	AffiliationCollaborator Affiliation = "collaborator"
+	AffiliationOrgMember    Affiliation = "organization_member"
+)
+
 type restSearchResponse struct {
 	TotalCount        int              `json:"total_count"`
 	IncompleteResults bool             `json:"incomplete_results"`

@@ -387,13 +387,20 @@ func (c *V3Client) ListPublicRepositories(ctx context.Context, sinceRepoID int64
 // ListAffiliatedRepositories lists GitHub repositories affiliated with the client
 // token. page is the page of results to return. Pages are 1-indexed (so the
 // first call should be for page 1).
-func (c *V3Client) ListAffiliatedRepositories(ctx context.Context, visibility Visibility, page int) (
+func (c *V3Client) ListAffiliatedRepositories(ctx context.Context, visibility Visibility, page int, affiliations ...Affiliation) (
 	repos []*Repository,
 	hasNextPage bool,
 	rateLimitCost int,
 	err error,
 ) {
 	path := fmt.Sprintf("user/repos?sort=created&visibility=%s&page=%d&per_page=100", visibility, page)
+	if len(affiliations) > 0 {
+		affilationsStrings := []string{}
+		for _, affiliation := range affiliations {
+			affilationsStrings = append(affilationsStrings, string(affiliation))
+		}
+		path = fmt.Sprintf("%s&affiliation=%s", path, strings.Join(affilationsStrings, ","))
+	}
 	repos, err = c.listRepositories(ctx, path)
 	if err == nil {
 		c.addRepositoriesToCache(repos)
@@ -498,4 +505,9 @@ func (c *V3Client) listRepositories(ctx context.Context, requestURI string) ([]*
 		repos = append(repos, convertRestRepo(restRepo))
 	}
 	return repos, nil
+}
+
+// /user/orgs https://docs.github.com/en/rest/reference/orgs#list-organizations-for-the-authenticated-user
+func (c *V3Client) ListAffiliatedTeamsAndOrganizations(ctx context.Context) ([]*Actor, error) {
+	return nil, nil
 }

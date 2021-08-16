@@ -2,9 +2,11 @@ package github
 
 import (
 	"context"
+	"fmt"
 	"net/url"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/cockroachdb/errors"
 
@@ -12,14 +14,21 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
+	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
+func newGroupPermsCache(urn string, codeHost *extsvc.CodeHost) *rcache.Cache {
+	var cacheTTL time.Duration = 5 * time.Minute
+	return rcache.NewWithTTL(fmt.Sprintf("gh_groups_perms:%s:%s", codeHost.ServiceID, urn), int(cacheTTL/time.Second))
+}
+
 // Provider implements authz.Provider for GitHub repository permissions.
 type Provider struct {
-	urn      string
-	client   client
-	codeHost *extsvc.CodeHost
+	urn         string
+	client      client
+	groupsCache *rcache.Cache
+	codeHost    *extsvc.CodeHost
 }
 
 func NewProvider(urn string, githubURL *url.URL, baseToken string, client *github.V3Client) *Provider {
@@ -27,11 +36,13 @@ func NewProvider(urn string, githubURL *url.URL, baseToken string, client *githu
 		apiURL, _ := github.APIRoot(githubURL)
 		client = github.NewV3Client(apiURL, &auth.OAuthBearerToken{Token: baseToken}, nil)
 	}
+	codeHost := extsvc.NewCodeHost(githubURL, extsvc.TypeGitHub)
 
 	return &Provider{
-		urn:      urn,
-		codeHost: extsvc.NewCodeHost(githubURL, extsvc.TypeGitHub),
-		client:   &ClientAdapter{V3Client: client},
+		urn:         urn,
+		codeHost:    codeHost,
+		groupsCache: newGroupPermsCache(urn, codeHost),
+		client:      &ClientAdapter{V3Client: client},
 	}
 }
 
@@ -68,11 +79,14 @@ func (p *Provider) FetchUserPermsByToken(ctx context.Context, token string) (*au
 	// 100 matches the maximum page size, thus a good default to avoid multiple allocations
 	// when appending the first 100 results to the slice.
 	repoIDs := make([]extsvc.RepoID, 0, 100)
+
+	// First, we list repositories a user has direct access to as a owner or direct collaborator.
 	hasNextPage := true
 	var err error
 	for page := 1; hasNextPage; page++ {
 		var repos []*github.Repository
-		repos, hasNextPage, _, err = client.ListAffiliatedRepositories(ctx, github.VisibilityPrivate, page)
+		repos, hasNextPage, _, err = client.ListAffiliatedRepositories(ctx, github.VisibilityPrivate, page,
+			github.AffiliationOwner, github.AffiliationCollaborator)
 		if err != nil {
 			return &authz.ExternalUserPermissions{
 				Exacts: repoIDs,
@@ -83,6 +97,16 @@ func (p *Provider) FetchUserPermsByToken(ctx context.Context, token string) (*au
 			repoIDs = append(repoIDs, extsvc.RepoID(r.ID))
 		}
 	}
+
+	// Now, we check for groups this user belongs to, and list out repositories that the
+	// user has access to due to that relationship.
+
+	// TODO
+	// ... p.client.ListAffiliatedTeamsAndOrganizations
+	//     ... for each org where default permissions > read
+	//         get repos from cache, or get and cache a new repo list
+	//     ... for each team
+	//         get repos from cache, or get and cache a new repo list
 
 	return &authz.ExternalUserPermissions{
 		Exacts: repoIDs,

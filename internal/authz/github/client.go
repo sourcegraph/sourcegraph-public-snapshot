@@ -11,8 +11,9 @@ import (
 //
 // NOTE: All methods are sorted in alphabetical order.
 type client interface {
-	ListAffiliatedRepositories(ctx context.Context, visibility github.Visibility, page int) (repos []*github.Repository, hasNextPage bool, rateLimitCost int, err error)
+	ListAffiliatedRepositories(ctx context.Context, visibility github.Visibility, page int, affiliations ...github.Affiliation) (repos []*github.Repository, hasNextPage bool, rateLimitCost int, err error)
 	ListRepositoryCollaborators(ctx context.Context, owner, repo string, page int) (users []*github.Collaborator, hasNextPage bool, _ error)
+
 	WithToken(token string) client
 }
 
@@ -32,12 +33,12 @@ func (c *ClientAdapter) WithToken(token string) client {
 var _ client = (*mockClient)(nil)
 
 type mockClient struct {
-	MockListAffiliatedRepositories  func(ctx context.Context, visibility github.Visibility, page int) (repos []*github.Repository, hasNextPage bool, rateLimitCost int, err error)
+	MockListAffiliatedRepositories  func(ctx context.Context, visibility github.Visibility, page int, affiliations ...github.Affiliation) (repos []*github.Repository, hasNextPage bool, rateLimitCost int, err error)
 	MockListRepositoryCollaborators func(ctx context.Context, owner, repo string, page int) (users []*github.Collaborator, hasNextPage bool, _ error)
 	MockWithToken                   func(token string) client
 }
 
-func (m *mockClient) ListAffiliatedRepositories(ctx context.Context, visibility github.Visibility, page int) ([]*github.Repository, bool, int, error) {
+func (m *mockClient) ListAffiliatedRepositories(ctx context.Context, visibility github.Visibility, page int, affiliations ...github.Affiliation) ([]*github.Repository, bool, int, error) {
 	return m.MockListAffiliatedRepositories(ctx, visibility, page)
 }
 

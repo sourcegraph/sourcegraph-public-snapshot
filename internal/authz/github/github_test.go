@@ -69,7 +69,7 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 	})
 
 	mockClient := &mockClient{
-		MockListAffiliatedRepositories: func(ctx context.Context, visibility github.Visibility, page int) ([]*github.Repository, bool, int, error) {
+		MockListAffiliatedRepositories: func(ctx context.Context, visibility github.Visibility, page int, affiliations ...github.Affiliation) ([]*github.Repository, bool, int, error) {
 			switch page {
 			case 1:
 				return []*github.Repository{
