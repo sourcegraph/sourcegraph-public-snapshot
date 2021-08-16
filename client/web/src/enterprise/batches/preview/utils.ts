@@ -1,6 +1,6 @@
 import {
-    HiddenChangesetApplyPreviewFields,
-    VisibleChangesetApplyPreviewFields,
+    PublishableChangesetSpecIDsHiddenChangesetApplyPreviewFields,
+    PublishableChangesetSpecIDsVisibleChangesetApplyPreviewFields,
     Scalars,
 } from '../../../graphql-operations'
 
@@ -15,7 +15,9 @@ import {
  * @param node the `ChangesetApplyPreviewFields` node to check
  */
 export const getPublishableChangesetSpecID = (
-    node: VisibleChangesetApplyPreviewFields | HiddenChangesetApplyPreviewFields
+    node:
+        | PublishableChangesetSpecIDsVisibleChangesetApplyPreviewFields
+        | PublishableChangesetSpecIDsHiddenChangesetApplyPreviewFields
 ): Scalars['ID'] | null => {
     if (
         node.targets.__typename !== 'VisibleApplyPreviewTargetsAttach' &&
