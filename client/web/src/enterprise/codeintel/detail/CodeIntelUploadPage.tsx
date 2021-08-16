@@ -23,17 +23,17 @@ import { ErrorAlert } from '../../../components/alerts'
 import { PageTitle } from '../../../components/PageTitle'
 import { LsifUploadFields } from '../../../graphql-operations'
 import { fetchLsifUploads as defaultFetchLsifUploads } from '../list/backend'
+import { CodeIntelState } from '../shared/CodeIntelState'
 import { CodeIntelStateBanner } from '../shared/CodeIntelStateBanner'
+import { CodeIntelUploadOrIndexCommit } from '../shared/CodeIntelUploadOrIndexCommit'
+import { CodeIntelUploadOrIndexRepository } from '../shared/CodeIntelUploadOrIndexerRepository'
+import { CodeIntelUploadOrIndexIndexer } from '../shared/CodeIntelUploadOrIndexIndexer'
+import { CodeIntelUploadOrIndexRoot } from '../shared/CodeIntelUploadOrIndexRoot'
 
 import { deleteLsifUpload, fetchLsifUpload as defaultFetchUpload } from './backend'
 import { CodeIntelAssociatedIndex } from './CodeIntelAssociatedIndex'
 import { CodeIntelUploadMeta } from './CodeIntelUploadMeta'
 import { CodeIntelUploadTimeline } from './CodeIntelUploadTimeline'
-import { CodeIntelState } from '../shared/CodeIntelState'
-import { CodeIntelUploadOrIndexCommit } from '../shared/CodeIntelUploadOrIndexCommit'
-import { CodeIntelUploadOrIndexRoot } from '../shared/CodeIntelUploadOrIndexRoot'
-import { CodeIntelUploadOrIndexIndexer } from '../shared/CodeIntelUploadOrIndexIndexer'
-import { CodeIntelUploadOrIndexRepository } from '../shared/CodeIntelUploadOrIndexerRepository'
 
 export interface CodeIntelUploadPageProps extends RouteComponentProps<{ id: string }>, TelemetryProps {
     fetchLsifUpload?: typeof defaultFetchUpload
