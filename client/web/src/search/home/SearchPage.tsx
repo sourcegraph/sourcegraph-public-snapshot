@@ -96,7 +96,7 @@ export const SearchPage: React.FunctionComponent<SearchPageProps> = props => {
         )
     )
     return (
-        <div className="search-page d-flex flex-column align-items-center pb-5 px-3">
+        <div className="search-page d-flex flex-column align-items-center px-3">
             <BrandLogo className="search-page__logo" isLightTheme={props.isLightTheme} variant="logo" />
             {props.isSourcegraphDotCom && (
                 <div className="text-muted text-center mt-3">Search your code and 1M+ open source repositories</div>
@@ -110,13 +110,15 @@ export const SearchPage: React.FunctionComponent<SearchPageProps> = props => {
                 <SearchPageInput {...props} source="home" />
                 {views && <StaticInsightsViewGrid {...props} className="mt-5" views={views} />}
             </div>
-            {props.isSourcegraphDotCom &&
-                props.showRepogroupHomepage &&
-                (!props.authenticatedUser || !props.showEnterpriseHomePanels) && <LoggedOutHomepage {...props} />}
+            <div className="flex-grow-1">
+                {props.isSourcegraphDotCom &&
+                    props.showRepogroupHomepage &&
+                    (!props.authenticatedUser || !props.showEnterpriseHomePanels) && <LoggedOutHomepage {...props} />}
 
-            {props.showEnterpriseHomePanels && props.authenticatedUser && <HomePanels {...props} />}
+                {props.showEnterpriseHomePanels && props.authenticatedUser && <HomePanels {...props} />}
+            </div>
 
-            <SearchPageFooter className="search-page__footer" />
+            <SearchPageFooter telemetryService={props.telemetryService} isLightTheme={props.isLightTheme} />
         </div>
     )
 }
