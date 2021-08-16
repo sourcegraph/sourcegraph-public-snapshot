@@ -40,16 +40,5 @@
                 color: inherit;
             }
         }
-        &__oid {
-            margin-bottom: -0.125rem;
-
-            .theme-redesign & {
-                // Extend new default badge styles in redesign
-                @extend .badge;
-                // TODO: Update when we have specific badge font-sizes. Issue: https://github.com/sourcegraph/sourcegraph/issues/20675
-                font-size: 0.75rem;
-                margin-bottom: 0;
-            }
-        }
     }
 }
