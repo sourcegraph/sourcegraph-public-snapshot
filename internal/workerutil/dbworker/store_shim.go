@@ -33,7 +33,7 @@ func (s *storeShim) QueuedCount(ctx context.Context, extraArguments interface{})
 		return 0, err
 	}
 
-	return s.Store.QueuedCount(ctx, conditions)
+	return s.Store.QueuedCount(ctx, false, conditions)
 }
 
 // Dequeue calls into the inner store.

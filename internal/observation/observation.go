@@ -269,7 +269,7 @@ func (op *Operation) finishTrace(err *error, tr *trace.Trace, logFields []log.Fi
 // applyErrorFilter returns nil if the given error does not pass the registered error filter.
 // The original value is returned otherwise.
 func (op *Operation) applyErrorFilter(err *error, behaviour ErrorFilterBehaviour) *error {
-	if op.errorFilter != nil && err != nil && op.errorFilter(*err)&behaviour > 0 {
+	if op.errorFilter != nil && err != nil && op.errorFilter(*err)&behaviour == 0 {
 		return nil
 	}
 

@@ -157,7 +157,7 @@ const GitCommitNode: React.FunctionComponent<GitCommitNodeProps> = ({ node, curr
                     'revisions-popover-git-commit-node__link'
                 )}
             >
-                <code className="revisions-popover-git-commit-node__oid" title={node.oid}>
+                <code className="badge" title={node.oid}>
                     {node.abbreviatedOID}
                 </code>
                 <small className="revisions-popover-git-commit-node__message">{node.subject.slice(0, 200)}</small>

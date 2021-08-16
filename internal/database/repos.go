@@ -540,13 +540,13 @@ type ReposListOptions struct {
 	// ExternalRepos of repos to list. When zero-valued, this is omitted from the predicate set.
 	ExternalRepos []api.ExternalRepoSpec
 
-	// ExternalRepoIncludePrefixes is the list of specs to include repos using
-	// prefix matching. When zero-valued, this is omitted from the predicate set.
-	ExternalRepoIncludePrefixes []api.ExternalRepoSpec
+	// ExternalRepoIncludeContains is the list of specs to include repos using
+	// SIMILAR TO matching. When zero-valued, this is omitted from the predicate set.
+	ExternalRepoIncludeContains []api.ExternalRepoSpec
 
-	// ExternalRepoExcludePrefixes is the list of specs to exclude repos using
-	// prefix matching. When zero-valued, this is omitted from the predicate set.
-	ExternalRepoExcludePrefixes []api.ExternalRepoSpec
+	// ExternalRepoExcludeContains is the list of specs to exclude repos using
+	// SIMILAR TO matching. When zero-valued, this is omitted from the predicate set.
+	ExternalRepoExcludeContains []api.ExternalRepoSpec
 
 	// PatternQuery is an expression tree of patterns to query. The atoms of
 	// the query are strings which are regular expression patterns.
@@ -861,18 +861,18 @@ func (s *RepoStore) listSQL(ctx context.Context, opt ReposListOptions) (*sqlf.Qu
 		where = append(where, sqlf.Sprintf("(%s)", sqlf.Join(er, "\n OR ")))
 	}
 
-	if len(opt.ExternalRepoIncludePrefixes) > 0 {
-		er := make([]*sqlf.Query, 0, len(opt.ExternalRepoIncludePrefixes))
-		for _, spec := range opt.ExternalRepoIncludePrefixes {
-			er = append(er, sqlf.Sprintf("(external_id LIKE %s AND external_service_type = %s AND external_service_id = %s)", spec.ID+"%", spec.ServiceType, spec.ServiceID))
+	if len(opt.ExternalRepoIncludeContains) > 0 {
+		er := make([]*sqlf.Query, 0, len(opt.ExternalRepoIncludeContains))
+		for _, spec := range opt.ExternalRepoIncludeContains {
+			er = append(er, sqlf.Sprintf("(external_id SIMILAR TO %s AND external_service_type = %s AND external_service_id = %s)", spec.ID, spec.ServiceType, spec.ServiceID))
 		}
 		where = append(where, sqlf.Sprintf("(%s)", sqlf.Join(er, "\n OR ")))
 	}
 
-	if len(opt.ExternalRepoExcludePrefixes) > 0 {
-		er := make([]*sqlf.Query, 0, len(opt.ExternalRepoExcludePrefixes))
-		for _, spec := range opt.ExternalRepoExcludePrefixes {
-			er = append(er, sqlf.Sprintf("(external_id NOT LIKE %s AND external_service_type = %s AND external_service_id = %s)", spec.ID+"%", spec.ServiceType, spec.ServiceID))
+	if len(opt.ExternalRepoExcludeContains) > 0 {
+		er := make([]*sqlf.Query, 0, len(opt.ExternalRepoExcludeContains))
+		for _, spec := range opt.ExternalRepoExcludeContains {
+			er = append(er, sqlf.Sprintf("(external_id NOT SIMILAR TO %s AND external_service_type = %s AND external_service_id = %s)", spec.ID, spec.ServiceType, spec.ServiceID))
 		}
 		where = append(where, sqlf.Sprintf("(%s)", sqlf.Join(er, "\n AND ")))
 	}

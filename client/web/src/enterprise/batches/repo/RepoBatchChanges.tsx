@@ -8,7 +8,7 @@ import { Container } from '@sourcegraph/wildcard'
 import { FilteredConnection, FilteredConnectionQueryArguments } from '../../../components/FilteredConnection'
 import { RepoBatchChange, RepositoryFields } from '../../../graphql-operations'
 import { queryExternalChangesetWithFileDiffs as _queryExternalChangesetWithFileDiffs } from '../detail/backend'
-import { BatchChangesListEmpty } from '../list/BatchChangesListEmpty'
+import { GettingStarted } from '../list/GettingStarted'
 
 import { queryRepoBatchChanges as _queryRepoBatchChanges } from './backend'
 import { BatchChangeNode, BatchChangeNodeProps } from './BatchChangeNode'
@@ -76,7 +76,7 @@ export const RepoBatchChanges: React.FunctionComponent<Props> = ({
                 headComponent={RepoBatchChangesHeader}
                 cursorPaging={true}
                 noSummaryIfAllNodesVisible={true}
-                emptyElement={<BatchChangesListEmpty />}
+                emptyElement={<GettingStarted />}
             />
         </Container>
     )

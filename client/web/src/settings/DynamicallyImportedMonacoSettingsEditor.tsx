@@ -43,6 +43,7 @@ interface Props<T extends object>
     onSave?: (value: string) => void
     onChange?: (value: string) => void
     onDirtyChange?: (dirty: boolean) => void
+    onEditor?: (editor: _monaco.editor.ICodeEditor) => void
 
     customSaveToolbar?: {
         propsGenerator: SaveToolbarPropsGenerator<T & { children?: React.ReactNode }>
@@ -192,6 +193,7 @@ export class DynamicallyImportedMonacoSettingsEditor<T extends object = {}> exte
                 disposableToFn(
                     this.monaco.editor.onDidCreateEditor(editor => {
                         this.configEditor = editor
+                        this.props.onEditor?.(editor)
                     })
                 )
             )

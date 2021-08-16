@@ -5,6 +5,8 @@ import (
 	"database/sql"
 	"time"
 
+	"github.com/prometheus/client_golang/prometheus"
+
 	"github.com/cockroachdb/errors"
 
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -44,16 +46,18 @@ func NewCommitIndexer(background context.Context, base dbutil.DB, insights dbuti
 
 	commitStore := NewCommitStore(insights)
 
-	iterator := discovery.AllReposIterator{
-		IndexableReposLister:  dbcache.NewIndexableReposLister(repoStore),
-		RepoStore:             repoStore,
-		Clock:                 time.Now,
-		SourcegraphDotComMode: envvar.SourcegraphDotComMode(),
+	iterator := discovery.NewAllReposIterator(
+		dbcache.NewIndexableReposLister(repoStore),
+		repoStore,
+		time.Now,
+		envvar.SourcegraphDotComMode(),
+		15*time.Minute,
+		&prometheus.CounterOpts{
+			Namespace: "src",
+			Name:      "insights_commit_index_repositories_analyzed",
+			Help:      "Counter of the number of repositories analyzed in the commit indexer.",
+		})
 
-		// If a new repository is added to Sourcegraph, it can take 0-15m for it to be picked
-		// up for backfilling.
-		RepositoryListCacheTime: 15 * time.Minute,
-	}
 	limiter := rate.NewLimiter(10, 1)
 
 	indexer := CommitIndexer{

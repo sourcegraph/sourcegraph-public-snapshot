@@ -351,6 +351,16 @@ func TestInsightStore_GetDataSeries(t *testing.T) {
 		return now
 	}
 
+	t.Run("test empty", func(t *testing.T) {
+		got, err := store.GetDataSeries(ctx, GetDataSeriesArgs{})
+		if err != nil {
+			t.Fatal(err)
+		}
+		if len(got) != 0 {
+			t.Errorf("unexpected length of data series: %v", len(got))
+		}
+	})
+
 	t.Run("test create and get series", func(t *testing.T) {
 		series := types.InsightSeries{
 			SeriesID:              "unique-1",

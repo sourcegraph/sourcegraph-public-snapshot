@@ -8,6 +8,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/prometheus/client_golang/prometheus"
+
 	itypes "github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
 
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -114,6 +116,18 @@ func newInsightHistoricalEnqueuer(ctx context.Context, workerBaseStore *basestor
 		return defaultLen
 	}
 
+	iterator := discovery.NewAllReposIterator(
+		dbcache.NewIndexableReposLister(repoStore),
+		repoStore,
+		time.Now,
+		envvar.SourcegraphDotComMode(),
+		15*time.Minute,
+		&prometheus.CounterOpts{
+			Namespace: "src",
+			Name:      "insights_historical_repositories_analyzed",
+			Help:      "Counter of the number of repositories analyzed and queued for processing for insights.",
+		})
+
 	maxTime := time.Now().Add(-time.Duration(framesToBackfill()) * frameLength())
 
 	historicalEnqueuer := &historicalEnqueuer{
@@ -137,16 +151,7 @@ func newInsightHistoricalEnqueuer(ctx context.Context, workerBaseStore *basestor
 
 		frameFilter: compression.NewHistoricalFilter(true, maxTime, insightsStore.Handle().DB()),
 
-		allReposIterator: (&discovery.AllReposIterator{
-			IndexableReposLister:  dbcache.NewIndexableReposLister(repoStore),
-			RepoStore:             repoStore,
-			Clock:                 time.Now,
-			SourcegraphDotComMode: envvar.SourcegraphDotComMode(),
-
-			// If a new repository is added to Sourcegraph, it can take 0-15m for it to be picked
-			// up for backfilling.
-			RepositoryListCacheTime: 15 * time.Minute,
-		}).ForEach,
+		allReposIterator: iterator.ForEach,
 	}
 
 	// We use a periodic goroutine here just for metrics tracking. We specify 5s here so it runs as

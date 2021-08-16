@@ -66,6 +66,12 @@ interface FilteredConnectionDisplayProps extends ConnectionNodesDisplayProps, Co
 
     /** Whether we will use the URL query string to reflect the filter and pagination state or not. */
     useURLQuery?: boolean
+
+    /**
+     * A subject that will force update the filtered connection's current search query, as if typed
+     * by the user.
+     */
+    querySubject?: Subject<string>
 }
 
 /**
@@ -176,7 +182,10 @@ export class FilteredConnection<
     public componentDidMount(): void {
         const activeValuesChanges = this.activeValuesChanges.pipe(startWith(this.state.activeValues))
 
-        const queryChanges = this.queryInputChanges.pipe(
+        const queryChanges = (this.props.querySubject
+            ? merge(this.queryInputChanges, this.props.querySubject)
+            : this.queryInputChanges
+        ).pipe(
             distinctUntilChanged(),
             tap(query => !this.props.hideSearch && this.setState({ query })),
             debounceTime(200),

@@ -3,13 +3,12 @@
 package searcher
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
-	"net/url"
-	"strconv"
 	"time"
 
 	"github.com/cockroachdb/errors"
@@ -53,58 +52,47 @@ func Search(
 		tr.Finish()
 	}()
 
-	q := url.Values{
-		"Repo":            []string{string(repo)},
-		"Commit":          []string{string(commit)},
-		"Branch":          []string{branch},
-		"Pattern":         []string{p.Pattern},
-		"ExcludePattern":  []string{p.ExcludePattern},
-		"IncludePatterns": p.IncludePatterns,
-		"FetchTimeout":    []string{fetchTimeout.String()},
-		"Languages":       p.Languages,
-		"CombyRule":       []string{p.CombyRule},
-
-		"PathPatternsAreRegExps": []string{"true"},
-		"IndexerEndpoints":       indexerEndpoints,
-		"Select":                 []string{p.Select.Root()},
+	r := protocol.Request{
+		Repo:   repo,
+		Commit: commit,
+		Branch: branch,
+		PatternInfo: protocol.PatternInfo{
+			Pattern:                      p.Pattern,
+			ExcludePattern:               p.ExcludePattern,
+			IncludePatterns:              p.IncludePatterns,
+			Languages:                    p.Languages,
+			CombyRule:                    p.CombyRule,
+			PathPatternsAreRegExps:       true,
+			Select:                       p.Select.Root(),
+			Limit:                        int(p.FileMatchLimit),
+			IsRegExp:                     p.IsRegExp,
+			IsStructuralPat:              p.IsStructuralPat,
+			IsWordMatch:                  p.IsWordMatch,
+			IsCaseSensitive:              p.IsCaseSensitive,
+			PathPatternsAreCaseSensitive: p.PathPatternsAreCaseSensitive,
+			IsNegated:                    p.IsNegated,
+			PatternMatchesContent:        p.PatternMatchesContent,
+			PatternMatchesPath:           p.PatternMatchesPath,
+		},
+		Indexed:          indexed,
+		FetchTimeout:     fetchTimeout.String(),
+		IndexerEndpoints: indexerEndpoints,
 	}
+
 	if deadline, ok := ctx.Deadline(); ok {
 		t, err := deadline.MarshalText()
 		if err != nil {
 			return nil, false, err
 		}
-		q.Set("Deadline", string(t))
-	}
-	q.Set("Limit", strconv.FormatInt(int64(p.FileMatchLimit), 10))
-	if p.IsRegExp {
-		q.Set("IsRegExp", "true")
-	}
-	if p.IsStructuralPat {
-		q.Set("IsStructuralPat", "true")
-	}
-	if indexed {
-		q.Set("Indexed", "true")
-	}
-	if p.IsWordMatch {
-		q.Set("IsWordMatch", "true")
-	}
-	if p.IsCaseSensitive {
-		q.Set("IsCaseSensitive", "true")
-	}
-	if p.PathPatternsAreCaseSensitive {
-		q.Set("PathPatternsAreCaseSensitive", "true")
-	}
-	if p.IsNegated {
-		q.Set("IsNegated", "true")
+		r.Deadline = string(t)
 	}
 	if onMatches != nil {
-		q.Set("Stream", "true")
+		r.Stream = true
 	}
-	// TEMP BACKCOMPAT: always set even if false so that searcher can distinguish new frontends that send
-	// these fields from old frontends that do not (and provide a default in the latter case).
-	q.Set("PatternMatchesContent", strconv.FormatBool(p.PatternMatchesContent))
-	q.Set("PatternMatchesPath", strconv.FormatBool(p.PatternMatchesPath))
-	rawQuery := q.Encode()
+	body, err := json.Marshal(r)
+	if err != nil {
+		return nil, false, err
+	}
 
 	// Searcher caches the file contents for repo@commit since it is
 	// relatively expensive to fetch from gitserver. So we use consistent
@@ -121,29 +109,28 @@ func Search(
 	for {
 		attempt++
 
-		searcherURL, err := searcherURLs.Get(consistentHashKey, excludedSearchURLs)
+		url, err := searcherURLs.Get(consistentHashKey, excludedSearchURLs)
 		if err != nil {
 			return nil, false, err
 		}
 
 		// Fallback to a bad host if nothing is left
-		if searcherURL == "" {
+		if url == "" {
 			tr.LazyPrintf("failed to find endpoint, trying again without excludes")
-			searcherURL, err = searcherURLs.Get(consistentHashKey, nil)
+			url, err = searcherURLs.Get(consistentHashKey, nil)
 			if err != nil {
 				return nil, false, err
 			}
 		}
 
-		url := searcherURL + "?" + rawQuery
 		tr.LazyPrintf("attempt %d: %s", attempt, url)
 		if onMatches != nil {
-			limitHit, err = textSearchURLStream(ctx, url, onMatches)
+			limitHit, err = textSearchStream(ctx, url, body, onMatches)
 			if err == nil || errcode.IsTimeout(err) {
 				return nil, limitHit, err
 			}
 		} else {
-			matches, limitHit, err = textSearchURL(ctx, url)
+			matches, limitHit, err = textSearch(ctx, url, body)
 			if err == nil || errcode.IsTimeout(err) {
 				return matches, limitHit, err
 			}
@@ -161,12 +148,12 @@ func Search(
 
 		tr.LazyPrintf("transient error %s", err.Error())
 		// Retry search on another searcher instance (if possible)
-		excludedSearchURLs[searcherURL] = true
+		excludedSearchURLs[url] = true
 	}
 }
 
-func textSearchURLStream(ctx context.Context, url string, cb func([]*protocol.FileMatch)) (bool, error) {
-	req, err := http.NewRequest("GET", url, nil)
+func textSearchStream(ctx context.Context, url string, body []byte, cb func([]*protocol.FileMatch)) (bool, error) {
+	req, err := http.NewRequest("GET", url, bytes.NewReader(body))
 	if err != nil {
 		return false, err
 	}
@@ -220,8 +207,8 @@ func textSearchURLStream(ctx context.Context, url string, cb func([]*protocol.Fi
 	return ed.LimitHit, err
 }
 
-func textSearchURL(ctx context.Context, url string) ([]*protocol.FileMatch, bool, error) {
-	req, err := http.NewRequest("GET", url, nil)
+func textSearch(ctx context.Context, url string, body []byte) ([]*protocol.FileMatch, bool, error) {
+	req, err := http.NewRequest("GET", url, bytes.NewReader(body))
 	if err != nil {
 		return nil, false, err
 	}

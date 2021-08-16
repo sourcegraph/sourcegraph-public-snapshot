@@ -126,12 +126,7 @@ export const GitCommitNode: React.FunctionComponent<GitCommitNodeProps> = ({
         <div className="w-100 git-commit-node__sha-and-parents">
             <div className={classNames('d-flex', isRedesignEnabled && 'mb-1')}>
                 {isRedesignEnabled && <span className="git-commit-node__sha-and-parents-label">Commit:</span>}
-                <code
-                    className={classNames(
-                        'git-commit-node__sha-and-parents-sha',
-                        !isRedesignEnabled && 'git-ref-tag-2'
-                    )}
-                >
+                <code className="git-commit-node__sha-and-parents-sha">
                     {node.oid}{' '}
                     <button
                         type="button"
@@ -154,13 +149,7 @@ export const GitCommitNode: React.FunctionComponent<GitCommitNodeProps> = ({
                         </span>{' '}
                         {node.parents.map((parent, index) => (
                             <div className="d-flex" key={index}>
-                                <Link
-                                    className={classNames(
-                                        'git-commit-node__sha-and-parents-parent',
-                                        !isRedesignEnabled && 'git-ref-tag-2'
-                                    )}
-                                    to={parent.url}
-                                >
+                                <Link className="git-commit-node__sha-and-parents-parent" to={parent.url}>
                                     <code>{parent.oid}</code>
                                 </Link>
                                 {isRedesignEnabled && (

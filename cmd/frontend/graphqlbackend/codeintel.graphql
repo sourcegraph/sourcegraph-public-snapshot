@@ -8,8 +8,14 @@ extend type Mutation {
     Queues the index jobs for a repository for execution. An optional resolvable revhash
     (commit, branch name, or tag name) can be specified; by default the tip of the default
     branch will be used.
+
+    If a configuration is supplied, that configuration is used to determine what jobs to
+    schedule. If no configuration is supplied, it will go through the regular index scheduling
+    rules: first read any in-repo configuration (e.g., sourcegraph.yaml), then look for any
+    existing in-database configuration, finally falling back to the automatically inferred
+    connfiguration based on the repo contents at the target commit.
     """
-    queueAutoIndexJobForRepo(repository: ID!, rev: String): EmptyResponse
+    queueAutoIndexJobsForRepo(repository: ID!, rev: String, configuration: String): [LSIFIndex!]!
 
     """
     Deletes an LSIF upload.

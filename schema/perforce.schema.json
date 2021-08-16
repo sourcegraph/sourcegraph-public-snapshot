@@ -22,6 +22,10 @@
       "description": "The ticket value for the user (P4PASSWD).",
       "type": "string"
     },
+    "p4.client": {
+      "description": "Client specified as an option for p4 CLI (P4CLIENT, also enables '--use-client-spec')",
+      "type": "string"
+    },
     "depots": {
       "description": "Depots can have arbitrary paths, e.g. a path to depot root or a subdirectory.",
       "type": "array",
@@ -33,11 +37,6 @@
       "type": "number",
       "default": 1000,
       "minimum": 1
-    },
-    "useClientSpec": {
-      "description": "Use a client spec to find the list of interesting files in p4 (git p4 clone --use-client-spec).",
-      "type": "boolean",
-      "default": false
     },
     "rateLimit": {
       "description": "Rate limit applied when making background API requests to Perforce.",

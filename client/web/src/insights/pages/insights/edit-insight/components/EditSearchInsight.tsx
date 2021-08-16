@@ -22,18 +22,29 @@ export const EditSearchBasedInsight: React.FunctionComponent<EditSearchBasedInsi
     const { insight, finalSettings = {}, subjects, onSubmit } = props
     const history = useHistory()
 
-    const insightFormValues = useMemo<CreateInsightFormFields>(
-        () => ({
+    const insightFormValues = useMemo<CreateInsightFormFields>(() => {
+        if (insight.type === InsightType.Backend) {
+            return {
+                title: insight.title,
+                visibility: insight.visibility,
+                repositories: '',
+                series: insight.series.map(line => createDefaultEditSeries({ ...line, valid: true })),
+                stepValue: '2',
+                step: 'weeks',
+                allRepos: true,
+            }
+        }
+
+        return {
             title: insight.title,
             visibility: insight.visibility,
             repositories: insight.repositories.join(', '),
             series: insight.series.map(line => createDefaultEditSeries({ ...line, valid: true })),
             stepValue: Object.values(insight.step)[0]?.toString() ?? '3',
             step: Object.keys(insight.step)[0] as InsightStep,
-            allRepos: insight.type === InsightType.Backend,
-        }),
-        [insight]
-    )
+            allRepos: false,
+        }
+    }, [insight])
 
     // Handlers
     const handleSubmit = (values: CreateInsightFormFields): SubmissionErrors | Promise<SubmissionErrors> | void => {

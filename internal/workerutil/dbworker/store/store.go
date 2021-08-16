@@ -72,8 +72,8 @@ var ErrExecutionLogEntryNotUpdated = errors.New("execution log entry not updated
 type Store interface {
 	basestore.ShareableStore
 
-	// QueuedCount returns the number of records in the queued state matching the given conditions.
-	QueuedCount(ctx context.Context, conditions []*sqlf.Query) (int, error)
+	// QueuedCount returns the number of queued records matching the given conditions.
+	QueuedCount(ctx context.Context, includeProcessing bool, conditions []*sqlf.Query) (int, error)
 
 	// Dequeue selects the first queued record matching the given conditions and updates the state to processing. If there
 	// is such a record, it is returned. If there is no such unclaimed record, a nil record and and a nil cancel function
@@ -324,14 +324,21 @@ func DefaultColumnExpressions() []*sqlf.Query {
 	return expressions
 }
 
-// QueuedCount returns the number of records in the queued state matching the given conditions.
-func (s *store) QueuedCount(ctx context.Context, conditions []*sqlf.Query) (_ int, err error) {
+// QueuedCount returns the number of queued records matching the given conditions.
+func (s *store) QueuedCount(ctx context.Context, includeProcessing bool, conditions []*sqlf.Query) (_ int, err error) {
 	ctx, endObservation := s.operations.queuedCount.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
+
+	stateQueries := make([]*sqlf.Query, 0, 2)
+	stateQueries = append(stateQueries, sqlf.Sprintf("%s", "queued"))
+	if includeProcessing {
+		stateQueries = append(stateQueries, sqlf.Sprintf("%s", "processing"))
+	}
 
 	count, _, err := basestore.ScanFirstInt(s.Query(ctx, s.formatQuery(
 		queuedCountQuery,
 		quote(s.options.ViewName),
+		sqlf.Join(stateQueries, ","),
 		s.options.MaxNumRetries,
 		makeConditionSuffix(conditions),
 	)))
@@ -342,7 +349,7 @@ func (s *store) QueuedCount(ctx context.Context, conditions []*sqlf.Query) (_ in
 const queuedCountQuery = `
 -- source: internal/workerutil/store.go:QueuedCount
 SELECT COUNT(*) FROM %s WHERE (
-	{state} = 'queued' OR
+	{state} IN (%s) OR
 	({state} = 'errored' AND {num_failures} < %s)
 ) %s
 `

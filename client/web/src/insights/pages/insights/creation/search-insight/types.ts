@@ -1,9 +1,9 @@
-import { DataSeries } from '../../../../core/backend/types'
 import { InsightVisibility } from '../../../../core/types'
+import { SearchBasedInsightSeries } from '../../../../core/types/insight/search-insight'
 
 export type InsightStep = 'hours' | 'days' | 'weeks' | 'months' | 'years'
 
-export interface EditableDataSeries extends DataSeries {
+export interface EditableDataSeries extends SearchBasedInsightSeries {
     id: string
     valid: boolean
     edit: boolean

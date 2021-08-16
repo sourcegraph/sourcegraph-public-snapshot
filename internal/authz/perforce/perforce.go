@@ -198,7 +198,12 @@ func (p *Provider) FetchUserPerms(ctx context.Context, account *extsvc.Account) 
 	}
 	defer func() { _ = rc.Close() }()
 
-	var includePrefixes, excludePrefixes []extsvc.RepoID
+	const (
+		wildcardMatchAll       = "%"     // for Perforce '...'
+		wildcardMatchDirectory = "[^/]+" // for Perforce '*'
+	)
+
+	var includeContains, excludeContains []extsvc.RepoID
 	scanner := bufio.NewScanner(rc)
 	for scanner.Scan() {
 		line := scanner.Text()
@@ -219,31 +224,58 @@ func (p *Provider) FetchUserPerms(ctx context.Context, account *extsvc.Account) 
 		if len(fields) < 5 {
 			continue
 		}
-		level := fields[0]                               // e.g. read
-		depotPrefix := strings.TrimRight(fields[4], ".") // e.g. //Sourcegraph/
+		level := fields[0]      // e.g. read
+		depotMatch := fields[4] // e.g. //Sourcegraph/*/dir/...
+
+		// NOTE: Manipulations made to `depotContains` will affect the behaviour of
+		// `(*RepoStore).ListRepoNames` - make sure to test new changes there as well.
+		depotContains := depotMatch
+
+		// '...' matches all files under the current working directory and all subdirectories.
+		// Matches anything, including slashes, and does so across subdirectories.
+		// Replace with '%' for PostgreSQL's LIKE and SIMILAR TO.
+		//
+		// At first, we drop trailing '...' so that we can check for prefixes (see below).
+		// We assume all paths are prefixes, so add 'wildcardMatchAll' to all contains
+		// later on.
+		depotContains = strings.TrimRight(depotContains, ".")
+		depotContains = strings.ReplaceAll(depotContains, "...", wildcardMatchAll)
+
+		// '*' matches all characters except slashes within one directory.
+		// Replace with character class that matches anything except another '/' supported
+		// by PostgreSQL's SIMILAR TO.
+		depotContains = strings.ReplaceAll(depotContains, "*", wildcardMatchDirectory)
 
 		// Rule that starts with a "-" in depot prefix means exclusion (i.e. revoke access)
-		if strings.HasPrefix(depotPrefix, "-") {
-			depotPrefix = depotPrefix[1:]
+		if strings.HasPrefix(depotContains, "-") {
+			depotContains = depotContains[1:]
 
 			if !p.canRevokeReadAccess(level) {
 				continue
 			}
 
-			for i, prefix := range includePrefixes {
-				if !strings.HasPrefix(depotPrefix, string(prefix)) {
-					continue
-				}
+			if strings.Contains(depotContains, wildcardMatchAll) ||
+				strings.Contains(depotContains, wildcardMatchDirectory) {
+				// Always include wildcard matches, because we don't know what they might
+				// be matching on.
+				excludeContains = append(excludeContains, extsvc.RepoID(depotContains))
+			} else {
+				// Otherwise, only include an exclude if a corresponding include exists.
+				for i, prefix := range includeContains {
+					if !strings.HasPrefix(depotContains, string(prefix)) {
+						continue
+					}
 
-				// Perforce ACLs can have conflict rules and the later one wins. So if there is
-				// an exact match for an include prefix, we take it out.
-				if depotPrefix == string(prefix) {
-					includePrefixes = append(includePrefixes[:i], includePrefixes[i+1:]...)
+					// Perforce ACLs can have conflict rules and the later one wins. So if there is
+					// an exact match for an include prefix, we take it out.
+					if depotContains == string(prefix) {
+						includeContains = append(includeContains[:i], includeContains[i+1:]...)
+						break
+					}
+
+					excludeContains = append(excludeContains, extsvc.RepoID(depotContains))
 					break
 				}
-
-				excludePrefixes = append(excludePrefixes, extsvc.RepoID(depotPrefix))
-				break
 			}
 
 		} else {
@@ -251,15 +283,23 @@ func (p *Provider) FetchUserPerms(ctx context.Context, account *extsvc.Account) 
 				continue
 			}
 
-			includePrefixes = append(includePrefixes, extsvc.RepoID(depotPrefix))
+			includeContains = append(includeContains, extsvc.RepoID(depotContains))
 		}
+	}
+
+	// Treat all paths as prefixes.
+	for i, include := range includeContains {
+		includeContains[i] = extsvc.RepoID(string(include) + wildcardMatchAll)
+	}
+	for i, exclude := range excludeContains {
+		excludeContains[i] = extsvc.RepoID(string(exclude) + wildcardMatchAll)
 	}
 
 	// As per interface definition for this method, implementation should return
 	// partial but valid results even when something went wrong.
 	return &authz.ExternalUserPermissions{
-		IncludePrefixes: includePrefixes,
-		ExcludePrefixes: excludePrefixes,
+		IncludeContains: includeContains,
+		ExcludeContains: excludeContains,
 	}, errors.Wrap(scanner.Err(), "scanner.Err")
 }
 
@@ -425,13 +465,13 @@ func (p *Provider) scanAllUsers(ctx context.Context, rc io.ReadCloser) (map[stri
 		if len(fields) < 5 {
 			continue
 		}
-		level := fields[0]                               // e.g. read
-		typ := fields[1]                                 // e.g. user
-		name := fields[2]                                // e.g. alice
-		depotPrefix := strings.TrimRight(fields[4], ".") // e.g. //Sourcegraph/
+		level := fields[0]                              // e.g. read
+		typ := fields[1]                                // e.g. user
+		name := fields[2]                               // e.g. alice
+		depotMatch := strings.TrimRight(fields[4], ".") // e.g. //Sourcegraph/
 
-		// Rule that starts with a "-" in depot prefix means exclusion (i.e. revoke access)
-		if strings.HasPrefix(depotPrefix, "-") {
+		// Rule that starts with a "-" in depot match means exclusion (i.e. revoke access)
+		if strings.HasPrefix(depotMatch, "-") {
 			if !p.canRevokeReadAccess(level) {
 				continue
 			}
