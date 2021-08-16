@@ -5,16 +5,18 @@ import React, { useCallback, useContext, useRef, useState } from 'react'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { isErrorLike } from '@sourcegraph/shared/src/util/errors'
+import { asError, isErrorLike } from '@sourcegraph/shared/src/util/errors'
 import { useDebounce } from '@sourcegraph/wildcard'
 
 import { Settings } from '../../../../../schema/settings.schema'
 import { InsightsApiContext } from '../../../../core/backend/api-provider'
 import { BackendInsightFilters } from '../../../../core/backend/types'
-import { SearchBackendBasedInsight } from '../../../../core/types'
+import { addInsightToSettings } from '../../../../core/settings-action/insights'
+import { SearchBackendBasedInsight, SearchBasedBackendFilters } from '../../../../core/types/insight/search-insight'
 import { useDeleteInsight } from '../../../../hooks/use-delete-insight/use-delete-insight'
 import { useDistinctValue } from '../../../../hooks/use-distinct-value'
 import { useParallelRequests } from '../../../../hooks/use-parallel-requests/use-parallel-request'
+import { FORM_ERROR, SubmissionErrors } from '../../../form/hooks/useForm'
 import { InsightViewContent } from '../../../insight-view-content/InsightViewContent'
 import { InsightErrorContent } from '../insight-card/components/insight-error-content/InsightErrorContent'
 import { InsightLoadingContent } from '../insight-card/components/insight-loading-content/InsightLoadingContent'
@@ -22,7 +24,7 @@ import { InsightContentCard } from '../insight-card/InsightContentCard'
 
 import styles from './BackendInsight.module.scss'
 import { DrillDownFiltersAction } from './components/drill-down-filters-action/DrillDownFiltersPanel'
-import { DrillDownFilters, EMPTY_DRILLDOWN_FILTERS } from './components/drill-down-filters-panel/types'
+import { EMPTY_DRILLDOWN_FILTERS } from './components/drill-down-filters-panel/utils'
 
 interface BackendInsightProps
     extends TelemetryProps,
@@ -37,20 +39,51 @@ interface BackendInsightProps
  */
 export const BackendInsight: React.FunctionComponent<BackendInsightProps> = props => {
     const { telemetryService, insight, platformContext, settingsCascade, ref, ...otherProps } = props
-    const { getBackendInsightById } = useContext(InsightsApiContext)
+    const { getBackendInsightById, getSubjectSettings, updateSubjectSettings } = useContext(InsightsApiContext)
 
     const insightCardReference = useRef<HTMLDivElement>(null)
+
+    // Original insight filters values that are stored in setting subject with insight
+    // configuration object, They are updated  whenever the user clicks update/save button
+    const [originalInsightFilters, setOriginalInsightFilters] = useState(insight.filters ?? EMPTY_DRILLDOWN_FILTERS)
+
+    // Live valid filters from filter form. They are updated whenever the user is changing
+    // filter value in filters fields.
+    const [filters, setFilters] = useState<SearchBasedBackendFilters>(originalInsightFilters)
+
     const [isFiltersOpen, setIsFiltersOpen] = useState(false)
-    const [filters, setFilters] = useState<DrillDownFilters>(EMPTY_DRILLDOWN_FILTERS)
+    const debouncedFilters = useDebounce(useDistinctValue<BackendInsightFilters>(filters), 500)
 
-    // Currently we support only regexp filters so extract them in a separate object
-    // to pass further in a gql api fetcher method
-    const regexpFilters = useDistinctValue<BackendInsightFilters>({
-        excludeRepoRegexp: filters.excludeRepoRegex,
-        includeRepoRegexp: filters.includeRepoRegex,
-    })
-    const debouncedFilters = useDebounce(regexpFilters, 500)
+    const handleDrillDownFiltersChange = (filters: SearchBasedBackendFilters): void => {
+        setFilters(filters)
+    }
 
+    const handleFilterSave = async (filters: SearchBasedBackendFilters): Promise<SubmissionErrors> => {
+        const subjectId = insight.visibility
+
+        try {
+            const settings = await getSubjectSettings(subjectId).toPromise()
+            const insightWithNewFilters: SearchBackendBasedInsight = {
+                ...insight,
+                filters,
+            }
+
+            const editedSettings = addInsightToSettings(settings.contents, insightWithNewFilters)
+
+            await updateSubjectSettings(platformContext, subjectId, editedSettings).toPromise()
+
+            telemetryService.log('CodeInsightsSearchBasedFilterUpdatingClick')
+
+            setOriginalInsightFilters(filters)
+            setIsFiltersOpen(false)
+        } catch (error) {
+            return { [FORM_ERROR]: asError(error) }
+        }
+
+        return
+    }
+
+    // Loading the insight backend data
     const { data, loading, error } = useParallelRequests(
         useCallback(
             () =>
@@ -63,14 +96,11 @@ export const BackendInsight: React.FunctionComponent<BackendInsightProps> = prop
         )
     )
 
+    // Handle insight delete action
     const { loading: isDeleting, delete: handleDelete } = useDeleteInsight({
         settingsCascade,
         platformContext,
     })
-
-    const handleDrillDownFiltersChange = (filters: DrillDownFilters): void => {
-        setFilters(filters)
-    }
 
     return (
         <InsightContentCard
@@ -80,8 +110,10 @@ export const BackendInsight: React.FunctionComponent<BackendInsightProps> = prop
                 <DrillDownFiltersAction
                     isOpen={isFiltersOpen}
                     popoverTargetRef={insightCardReference}
-                    filters={filters}
+                    initialFiltersValue={filters}
+                    originalFiltersValue={originalInsightFilters}
                     onFilterChange={handleDrillDownFiltersChange}
+                    onFilterSave={handleFilterSave}
                     onVisibilityChange={setIsFiltersOpen}
                 />
             }

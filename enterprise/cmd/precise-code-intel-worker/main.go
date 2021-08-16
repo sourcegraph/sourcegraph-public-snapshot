@@ -175,7 +175,7 @@ func mustRegisterQueueMetric(observationContext *observation.Context, workerStor
 		Name: "src_codeintel_upload_total",
 		Help: "Total number of uploads in the queued state.",
 	}, func() float64 {
-		count, err := workerStore.QueuedCount(context.Background(), nil)
+		count, err := workerStore.QueuedCount(context.Background(), false, nil)
 		if err != nil {
 			log15.Error("Failed to determine queue size", "err", err)
 		}

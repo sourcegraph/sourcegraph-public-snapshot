@@ -225,6 +225,7 @@ LEFT JOIN (` + indexRankQueryFragment + `) s
 ON u.id = s.id
 JOIN repo ON repo.id = u.repository_id
 WHERE u.id IN (%s) AND %s
+ORDER BY u.id
 `
 
 type GetIndexesOptions struct {
@@ -366,29 +367,33 @@ SELECT COUNT(*) WHERE EXISTS (
 )
 `
 
-// InsertIndex inserts a new index and returns its identifier.
-func (s *Store) InsertIndex(ctx context.Context, index Index) (id int, err error) {
+// InsertIndexes inserts a new index and returns the hydrated index models.
+func (s *Store) InsertIndexes(ctx context.Context, indexes []Index) (_ []Index, err error) {
 	ctx, endObservation := s.operations.insertIndex.With(ctx, &err, observation.Args{})
 	defer func() {
 		endObservation(1, observation.Args{LogFields: []log.Field{
-			log.Int("id", id),
+			log.Int("numIndexes", len(indexes)),
 		}})
 	}()
 
-	if index.DockerSteps == nil {
-		index.DockerSteps = []DockerStep{}
-	}
-	if index.IndexerArgs == nil {
-		index.IndexerArgs = []string{}
-	}
-	if index.LocalSteps == nil {
-		index.LocalSteps = []string{}
+	if len(indexes) == 0 {
+		return nil, nil
 	}
 
-	id, _, err = basestore.ScanFirstInt(s.Store.Query(
-		ctx,
-		sqlf.Sprintf(
-			insertIndexQuery,
+	values := make([]*sqlf.Query, 0, len(indexes))
+	for _, index := range indexes {
+		if index.DockerSteps == nil {
+			index.DockerSteps = []DockerStep{}
+		}
+		if index.IndexerArgs == nil {
+			index.IndexerArgs = []string{}
+		}
+		if index.LocalSteps == nil {
+			index.LocalSteps = []string{}
+		}
+
+		values = append(values, sqlf.Sprintf(
+			"(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)",
 			index.State,
 			index.Commit,
 			index.RepositoryID,
@@ -399,10 +404,21 @@ func (s *Store) InsertIndex(ctx context.Context, index Index) (id int, err error
 			pq.Array(index.IndexerArgs),
 			index.Outfile,
 			pq.Array(dbworkerstore.ExecutionLogEntries(index.ExecutionLogs)),
-		),
-	))
+		))
+	}
 
-	return id, err
+	tx, err := s.transact(ctx)
+	if err != nil {
+		return nil, err
+	}
+	defer func() { err = tx.Done(err) }()
+
+	ids, err := basestore.ScanInts(tx.Query(ctx, sqlf.Sprintf(insertIndexQuery, sqlf.Join(values, ","))))
+	if err != nil {
+		return nil, err
+	}
+
+	return tx.GetIndexesByIDs(ctx, ids...)
 }
 
 const insertIndexQuery = `
@@ -418,7 +434,7 @@ INSERT INTO lsif_indexes (
 	indexer_args,
 	outfile,
 	execution_logs
-) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+) VALUES %s
 RETURNING id
 `
 

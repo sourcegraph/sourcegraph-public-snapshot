@@ -155,7 +155,14 @@ func (m *Map) discover() {
 
 func (m *Map) sync(ch chan endpoints, ready chan struct{}) {
 	for eps := range ch {
-		log15.Info("endpoints discovered", "service", eps.Service, "endpoints", eps.Endpoints, "error", eps.Error)
+		log15.Info(
+			"endpoints discovered",
+			"urlspec", m.urlspec,
+			"service", eps.Service,
+			"count", len(eps.Endpoints),
+			"endpoints", eps.Endpoints,
+			"error", eps.Error,
+		)
 
 		switch {
 		case eps.Error != nil:

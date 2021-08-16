@@ -4,11 +4,10 @@ import { isErrorLike } from '@sourcegraph/shared/src/util/errors'
 import { Settings } from '../../../../../../../schema/settings.schema'
 import {
     Insight,
-    InsightConfiguration,
+    InsightExtensionBasedConfiguration,
     INSIGHTS_ALL_REPOS_SETTINGS_KEY,
     InsightType,
     isInsightSettingKey,
-    SearchBasedInsightSettings,
 } from '../../../../../../core/types'
 import {
     isSubjectInsightSupported,
@@ -77,7 +76,7 @@ export function useReachableInsights(props: UseReachableInsightsProps): Reachabl
                     const insight = createExtensionInsightFromSettings({
                         insightKey: key,
                         ownerId: subject.id,
-                        insightConfiguration: settings[key] as InsightConfiguration,
+                        insightConfiguration: settings[key] as InsightExtensionBasedConfiguration,
                     })
 
                     return {
@@ -87,9 +86,7 @@ export function useReachableInsights(props: UseReachableInsightsProps): Reachabl
                     }
                 })
 
-            const backendInsightSettings =
-                (settings?.[INSIGHTS_ALL_REPOS_SETTINGS_KEY] as Record<string, SearchBasedInsightSettings>) ?? {}
-
+            const backendInsightSettings = settings?.[INSIGHTS_ALL_REPOS_SETTINGS_KEY] ?? {}
             const backendBasedInsights: ReachableInsight[] = Object.keys(backendInsightSettings)
                 .filter(isInsightSettingKey)
                 .map(key => {

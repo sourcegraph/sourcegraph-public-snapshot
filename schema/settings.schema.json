@@ -439,6 +439,17 @@
         "$ref": "#/definitions/Insight"
       }
     },
+    "insights.allrepos": {
+      "type": "object",
+      "description": "EXPERIMENTAL: Backend-based Code Insights",
+      "propertyNames": {
+        "type": "string",
+        "description": "A valid insight ID."
+      },
+      "additionalProperties": {
+        "$ref": "#/definitions/BackendInsight"
+      }
+    },
     "insights.dashboards": {
       "description": "EXPERIMENTAL: Code Insights Dashboards",
       "type": "object",
@@ -452,6 +463,84 @@
     }
   },
   "definitions": {
+    "BackendInsight": {
+      "type": "object",
+      "required": ["title", "series"],
+      "properties": {
+        "title": {
+          "type": "string",
+          "description": "The short title of this insight"
+        },
+        "description": {
+          "type": "string",
+          "description": "The description of this insight"
+        },
+        "series": {
+          "type": "array",
+          "description": "Each query will be represented by one line on the chart.",
+          "items": {
+            "$ref": "#/definitions/BackendInsightSeries"
+          }
+        },
+        "filters": {
+          "$ref": "#/definitions/InsightFilters"
+        }
+      }
+    },
+    "BackendInsightSeries": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "query"],
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "The name to use for the series in the graph."
+        },
+        "query": {
+          "type": "string",
+          "description": "Performs a search query and shows the number of results returned."
+        },
+        "stroke": {
+          "type": "string",
+          "description": "The color of the line for the series."
+        }
+      }
+    },
+    "InsightFilters": {
+      "type": "object",
+      "description": "Performs a filter",
+      "required": ["includeRepoRegexp", "excludeRepoRegexp"],
+      "properties": {
+        "includeRepoRegexp": { "type": "string" },
+        "excludeRepoRegexp": { "type": "string" },
+        "repositories": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "InsightDashboard": {
+      "type": "object",
+      "required": ["id", "title"],
+      "properties": {
+        "title": {
+          "description": "Title of the dashboard.",
+          "type": "string"
+        },
+        "id": {
+          "type": "string"
+        },
+        "insightIds": {
+          "description": "Insights ids that will be included in the dashboard.",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
     "Insight": {
       "type": "object",
       "additionalProperties": false,
@@ -498,26 +587,6 @@
         "webhook": {
           "type": "string",
           "description": "(not yet supported) Fetch data from a webhook URL."
-        }
-      }
-    },
-    "InsightDashboard": {
-      "type": "object",
-      "required": ["id", "title"],
-      "properties": {
-        "title": {
-          "description": "Title of the dashboard.",
-          "type": "string"
-        },
-        "id": {
-          "type": "string"
-        },
-        "insightIds": {
-          "description": "Insights ids that will be included in the dashboard.",
-          "type": "array",
-          "items": {
-            "type": "string"
-          }
         }
       }
     },

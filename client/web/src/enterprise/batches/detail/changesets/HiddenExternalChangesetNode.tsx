@@ -1,6 +1,8 @@
 import classNames from 'classnames'
 import React from 'react'
 
+import { InputTooltip } from '@sourcegraph/web/src/components/InputTooltip'
+
 import { HiddenExternalChangesetFields } from '../../../../graphql-operations'
 
 import { ChangesetStatusCell } from './ChangesetStatusCell'
@@ -15,13 +17,13 @@ export const HiddenExternalChangesetNode: React.FunctionComponent<HiddenExternal
     <>
         <span className="d-none d-sm-block" />
         <div className="p-2">
-            <input
+            <InputTooltip
                 id={`select-changeset-${node.id}`}
                 type="checkbox"
                 className="btn"
                 checked={false}
                 disabled={true}
-                data-tooltip="You do not have permission to perform a bulk operation on this changeset"
+                tooltip="You do not have permission to perform a bulk operation on this changeset"
             />
         </div>
         <ChangesetStatusCell

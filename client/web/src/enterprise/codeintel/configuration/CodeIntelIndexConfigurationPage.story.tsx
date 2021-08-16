@@ -14,7 +14,27 @@ const { add } = storiesOf('web/codeintel/configuration/CodeIntelIndexConfigurati
         },
     })
 
-add('Page', () => (
+add('Empty', () => (
+    <EnterpriseWebStory>
+        {props => (
+            <CodeIntelIndexConfigurationPage
+                {...props}
+                repo={{ id: '42' }}
+                getConfiguration={() =>
+                    of({
+                        __typename: 'Repository',
+                        indexConfiguration: {
+                            configuration: '',
+                            inferredConfiguration: '',
+                        },
+                    })
+                }
+            />
+        )}
+    </EnterpriseWebStory>
+))
+
+add('SavedConfiguration', () => (
     <EnterpriseWebStory>
         {props => (
             <CodeIntelIndexConfigurationPage
@@ -25,6 +45,27 @@ add('Page', () => (
                         __typename: 'Repository',
                         indexConfiguration: {
                             configuration: '{"foo": "bar"}',
+                            inferredConfiguration: '',
+                        },
+                    })
+                }
+            />
+        )}
+    </EnterpriseWebStory>
+))
+
+add('InferredConfiguration', () => (
+    <EnterpriseWebStory>
+        {props => (
+            <CodeIntelIndexConfigurationPage
+                {...props}
+                repo={{ id: '42' }}
+                getConfiguration={() =>
+                    of({
+                        __typename: 'Repository',
+                        indexConfiguration: {
+                            configuration: '{"foo": "bar"}',
+                            inferredConfiguration: '{"baz": "bonk"}',
                         },
                     })
                 }

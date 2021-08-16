@@ -9,13 +9,13 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 )
 
-type serializer func(*Result) interface{}
+type serializer func(*MatchContext) interface{}
 
-func match(r *Result) interface{} {
+func match(r *MatchContext) interface{} {
 	return r
 }
 
-func environment(r *Result) interface{} {
+func environment(r *MatchContext) interface{} {
 	env := make(map[string]string)
 	for _, m := range r.Matches {
 		for k, v := range m.Environment {
@@ -38,7 +38,7 @@ func TestOfLineMatches(t *testing.T) {
 
 	test := func(input string, serialize serializer) string {
 		r, _ := regexp.Compile(input)
-		result := ofFileMatches(data, r)
+		result := FromFileMatch(data, r)
 		v, _ := json.MarshalIndent(serialize(result), "", "  ")
 		return string(v)
 	}
@@ -49,7 +49,7 @@ func TestOfLineMatches(t *testing.T) {
 }`).Equal(t, test("nothing", match))
 
 	autogold.Want("compute named regexp submatch", `{
-  "$1": "a",
+  "1": "a",
   "ThisIsNamed": "b"
 }`).Equal(t, test("(a)(?P<ThisIsNamed>b)", environment))
 
@@ -70,7 +70,7 @@ func TestOfLineMatches(t *testing.T) {
         }
       },
       "environment": {
-        "$1": {
+        "1": {
           "value": "bc",
           "range": {
             "start": {
@@ -85,7 +85,7 @@ func TestOfLineMatches(t *testing.T) {
             }
           }
         },
-        "$2": {
+        "2": {
           "value": "c",
           "range": {
             "start": {
@@ -100,7 +100,7 @@ func TestOfLineMatches(t *testing.T) {
             }
           }
         },
-        "$3": {
+        "3": {
           "value": "de",
           "range": {
             "start": {
@@ -115,7 +115,7 @@ func TestOfLineMatches(t *testing.T) {
             }
           }
         },
-        "$4": {
+        "4": {
           "value": "g",
           "range": {
             "start": {

@@ -1,11 +1,11 @@
 import { LineChartContent } from 'sourcegraph'
 
 import { InsightFields } from '../../../../graphql-operations'
-import { DataSeries } from '../types'
+import { SearchBasedInsightSeries } from '../../types/insight/search-insight'
 
 export function createViewContent(
     insight: InsightFields,
-    seriesSettings: DataSeries[] = []
+    seriesSettings: SearchBasedInsightSeries[] = []
 ): LineChartContent<{ dateTime: number; [seriesKey: string]: number }, 'dateTime'> {
     const dataByXValue = new Map<string, { dateTime: number; [seriesKey: string]: number }>()
 

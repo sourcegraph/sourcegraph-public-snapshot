@@ -86,7 +86,13 @@ func k8sDiscovery(urlspec, ns string, clientFactory func() (*kubernetes.Clientse
 				}
 			}
 
-			log15.Info("endpoints k8s discovered", "service", u.Service, "endpoints", eps)
+			log15.Info(
+				"endpoints k8s discovered",
+				"urlspec", urlspec,
+				"service", u.Service,
+				"count", len(eps),
+				"endpoints", eps,
+			)
 
 			disco <- endpoints{Service: u.Service, Endpoints: eps}
 		}

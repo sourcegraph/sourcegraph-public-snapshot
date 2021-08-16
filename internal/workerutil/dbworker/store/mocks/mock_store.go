@@ -93,7 +93,7 @@ func NewMockStore() *MockStore {
 			},
 		},
 		QueuedCountFunc: &StoreQueuedCountFunc{
-			defaultHook: func(context.Context, []*sqlf.Query) (int, error) {
+			defaultHook: func(context.Context, bool, []*sqlf.Query) (int, error) {
 				return 0, nil
 			},
 		},
@@ -936,23 +936,23 @@ func (c StoreMarkFailedFuncCall) Results() []interface{} {
 // StoreQueuedCountFunc describes the behavior when the QueuedCount method
 // of the parent MockStore instance is invoked.
 type StoreQueuedCountFunc struct {
-	defaultHook func(context.Context, []*sqlf.Query) (int, error)
-	hooks       []func(context.Context, []*sqlf.Query) (int, error)
+	defaultHook func(context.Context, bool, []*sqlf.Query) (int, error)
+	hooks       []func(context.Context, bool, []*sqlf.Query) (int, error)
 	history     []StoreQueuedCountFuncCall
 	mutex       sync.Mutex
 }
 
 // QueuedCount delegates to the next hook function in the queue and stores
 // the parameter and result values of this invocation.
-func (m *MockStore) QueuedCount(v0 context.Context, v1 []*sqlf.Query) (int, error) {
-	r0, r1 := m.QueuedCountFunc.nextHook()(v0, v1)
-	m.QueuedCountFunc.appendCall(StoreQueuedCountFuncCall{v0, v1, r0, r1})
+func (m *MockStore) QueuedCount(v0 context.Context, v1 bool, v2 []*sqlf.Query) (int, error) {
+	r0, r1 := m.QueuedCountFunc.nextHook()(v0, v1, v2)
+	m.QueuedCountFunc.appendCall(StoreQueuedCountFuncCall{v0, v1, v2, r0, r1})
 	return r0, r1
 }
 
 // SetDefaultHook sets function that is called when the QueuedCount method
 // of the parent MockStore instance is invoked and the hook queue is empty.
-func (f *StoreQueuedCountFunc) SetDefaultHook(hook func(context.Context, []*sqlf.Query) (int, error)) {
+func (f *StoreQueuedCountFunc) SetDefaultHook(hook func(context.Context, bool, []*sqlf.Query) (int, error)) {
 	f.defaultHook = hook
 }
 
@@ -960,7 +960,7 @@ func (f *StoreQueuedCountFunc) SetDefaultHook(hook func(context.Context, []*sqlf
 // QueuedCount method of the parent MockStore instance invokes the hook at
 // the front of the queue and discards it. After the queue is empty, the
 // default hook function is invoked for any future action.
-func (f *StoreQueuedCountFunc) PushHook(hook func(context.Context, []*sqlf.Query) (int, error)) {
+func (f *StoreQueuedCountFunc) PushHook(hook func(context.Context, bool, []*sqlf.Query) (int, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -969,7 +969,7 @@ func (f *StoreQueuedCountFunc) PushHook(hook func(context.Context, []*sqlf.Query
 // SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
 // the given values.
 func (f *StoreQueuedCountFunc) SetDefaultReturn(r0 int, r1 error) {
-	f.SetDefaultHook(func(context.Context, []*sqlf.Query) (int, error) {
+	f.SetDefaultHook(func(context.Context, bool, []*sqlf.Query) (int, error) {
 		return r0, r1
 	})
 }
@@ -977,12 +977,12 @@ func (f *StoreQueuedCountFunc) SetDefaultReturn(r0 int, r1 error) {
 // PushReturn calls PushDefaultHook with a function that returns the given
 // values.
 func (f *StoreQueuedCountFunc) PushReturn(r0 int, r1 error) {
-	f.PushHook(func(context.Context, []*sqlf.Query) (int, error) {
+	f.PushHook(func(context.Context, bool, []*sqlf.Query) (int, error) {
 		return r0, r1
 	})
 }
 
-func (f *StoreQueuedCountFunc) nextHook() func(context.Context, []*sqlf.Query) (int, error) {
+func (f *StoreQueuedCountFunc) nextHook() func(context.Context, bool, []*sqlf.Query) (int, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -1020,7 +1020,10 @@ type StoreQueuedCountFuncCall struct {
 	Arg0 context.Context
 	// Arg1 is the value of the 2nd argument passed to this method
 	// invocation.
-	Arg1 []*sqlf.Query
+	Arg1 bool
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 []*sqlf.Query
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 int
@@ -1032,7 +1035,7 @@ type StoreQueuedCountFuncCall struct {
 // Args returns an interface slice containing the arguments of this
 // invocation.
 func (c StoreQueuedCountFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1}
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
 }
 
 // Results returns an interface slice containing the results of this

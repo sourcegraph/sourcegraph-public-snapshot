@@ -1,7 +1,7 @@
 import { camelCase } from 'lodash'
 
-import { DataSeries } from '../../../../../core/backend/types'
 import { InsightType, InsightTypePrefix, SearchBasedInsight } from '../../../../../core/types'
+import { SearchBasedInsightSeries } from '../../../../../core/types/insight/search-insight'
 import { CreateInsightFormFields, EditableDataSeries } from '../types'
 
 export function getSanitizedRepositories(rawRepositories: string): string[] {
@@ -11,7 +11,7 @@ export function getSanitizedRepositories(rawRepositories: string): string[] {
         .filter(repo => repo)
 }
 
-export function getSanitizedLine(line: EditableDataSeries): DataSeries {
+export function getSanitizedLine(line: EditableDataSeries): SearchBasedInsightSeries {
     return {
         name: line.name.trim(),
         stroke: line.stroke,
@@ -23,7 +23,7 @@ export function getSanitizedLine(line: EditableDataSeries): DataSeries {
     }
 }
 
-export function getSanitizedSeries(rawSeries: EditableDataSeries[]): DataSeries[] {
+export function getSanitizedSeries(rawSeries: EditableDataSeries[]): SearchBasedInsightSeries[] {
     return rawSeries.map(getSanitizedLine)
 }
 
@@ -32,8 +32,19 @@ export function getSanitizedSeries(rawSeries: EditableDataSeries[]): DataSeries[
  * presented in user/org settings.
  */
 export function getSanitizedSearchInsight(rawInsight: CreateInsightFormFields): SearchBasedInsight {
+    // Backend type of insight.
+    if (rawInsight.allRepos) {
+        return {
+            type: InsightType.Backend,
+            id: `${InsightTypePrefix.search}.${camelCase(rawInsight.title)}`,
+            title: rawInsight.title,
+            series: getSanitizedSeries(rawInsight.series),
+            visibility: rawInsight.visibility,
+        }
+    }
+
     return {
-        type: rawInsight.allRepos ? InsightType.Backend : InsightType.Extension,
+        type: InsightType.Extension,
 
         // ID generated according to our naming insight convention
         // <Type of insight>.insight.<name of insight>
