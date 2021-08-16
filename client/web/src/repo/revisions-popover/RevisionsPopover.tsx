@@ -101,7 +101,7 @@ export const RevisionsPopover: React.FunctionComponent<RevisionsPopoverProps> = 
                                 repo={props.repo}
                                 repoName={props.repoName}
                                 onSelect={props.onSelect}
-                                allowSpeculativeSearch={
+                                showSpeculativeResults={
                                     props.showSpeculativeResults && tab.type === GitRefType.GIT_BRANCH
                                 }
                             />
