@@ -13,6 +13,7 @@ import { repogroupList } from '../../repogroups/HomepageConfig'
 import { CustomersSection } from './CustomersSection'
 import { HomepageModalVideo } from './HomepageModalVideo'
 import styles from './LoggedOutHomepage.module.scss'
+import { SelfHostInstructions } from './SelfHostInstructions'
 
 interface SearchExample {
     label: string
@@ -168,6 +169,10 @@ export const LoggedOutHomepage: React.FunctionComponent<LoggedOutHomepageProps> 
                     </div>
                 ))}
             </div>
+        </div>
+
+        <div className={styles.selfHostSection}>
+            <SelfHostInstructions {...props} />
         </div>
 
         <div className={styles.customerSection}>

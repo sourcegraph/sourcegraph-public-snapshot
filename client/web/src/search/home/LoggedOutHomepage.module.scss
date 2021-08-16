@@ -7,10 +7,24 @@
 
 .logged-out-homepage {
     width: 100%;
+    max-width: 90%;
 
     @media (--xl-breakpoint-up) {
         max-width: $max-homepage-container-width;
     }
+
+    :global(.theme-light) & {
+        --homepage-card-color: var(--color-bg-1);
+        --marketing-gradient: linear-gradient(90.64deg, #e4d3fc 3.11%, #d7f0fd 83.64%);
+    }
+
+    :global(.theme-dark) & {
+        --homepage-card-color: var(--color-bg-2);
+        --marketing-gradient: linear-gradient(90.64deg, rgba(108, 8, 223, 0.5) 3.11%, rgba(0, 165, 213, 0.5) 83.64%);
+    }
+
+    --home-marketing-drop: 0 4px 16px -6px rgba(46, 34, 119, 0.1);
+    --search-input-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
 
     &__repogroup-list {
         &-cards {
@@ -158,6 +172,10 @@
 }
 
 .repogroup-section {
+    margin-top: 4rem;
+}
+
+.self-host-section {
     margin-top: 4rem;
 }
 
