@@ -88,10 +88,10 @@ describe('RevisionsPopover', () => {
             )
         })
 
-        describe('Speculative search', () => {
+        describe('Speculative results', () => {
             beforeEach(async () => {
                 cleanup()
-                queries = renderPopover({ allowSpeculativeSearch: true })
+                queries = renderPopover({ showSpeculativeResults: true })
 
                 fireEvent.click(queries.getByText('Branches'))
                 await waitForNextApolloResponse()

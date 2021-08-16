@@ -21,7 +21,7 @@ export const MOCK_PROPS: RevisionsPopoverProps = {
     defaultBranch: 'main',
     currentRev: undefined,
     togglePopover: () => null,
-    allowSpeculativeSearch: false,
+    showSpeculativeResults: false,
 }
 
 const yesterday = subDays(new Date(), 1).toISOString()

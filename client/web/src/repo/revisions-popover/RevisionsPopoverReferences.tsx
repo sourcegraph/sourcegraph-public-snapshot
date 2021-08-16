@@ -112,7 +112,7 @@ interface RevisionReferencesTabProps {
     /** The current revision, or undefined for the default branch. */
     currentRev: string | undefined
 
-    allowSpeculativeSearch?: boolean
+    showSpeculativeResults?: boolean
 
     onSelect?: (event: React.MouseEvent<HTMLAnchorElement>) => void
 }
@@ -128,7 +128,7 @@ export const RevisionReferencesTab: React.FunctionComponent<RevisionReferencesTa
     currentRev,
     noun,
     pluralNoun,
-    allowSpeculativeSearch,
+    showSpeculativeResults,
     onSelect,
 }) => {
     const [searchValue, setSearchValue] = useState('')
@@ -154,7 +154,7 @@ export const RevisionReferencesTab: React.FunctionComponent<RevisionReferencesTa
 
     const summary = response.connection && (
         <ConnectionSummary
-            emptyElement={allowSpeculativeSearch ? <></> : undefined}
+            emptyElement={showSpeculativeResults ? <></> : undefined}
             connection={response.connection}
             first={BATCH_COUNT}
             noun={noun}
@@ -183,8 +183,7 @@ export const RevisionReferencesTab: React.FunctionComponent<RevisionReferencesTa
                     onClick={onSelect}
                 />
             ))}
-            {/* For branch filtering, we support speculative searching */}
-            {allowSpeculativeSearch && response.connection && query && (
+            {showSpeculativeResults && response.connection && query && (
                 <SpectulativeGitReferencePopoverNode
                     name={query}
                     repoName={repoName}

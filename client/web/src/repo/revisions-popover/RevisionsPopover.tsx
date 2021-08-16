@@ -24,9 +24,14 @@ export interface RevisionsPopoverProps {
     /* Callback to dismiss the parent popover wrapper */
     togglePopover: () => void
 
+    /* Determine the URL to use for each revision node */
     getURLFromRevision?: (href: string, revision: string) => string
 
-    allowSpeculativeSearch?: boolean
+    /**
+     * If the popover should display result nodes that are not **known** revisions.
+     * This ensures we can support ancestory-based revision queries (e.g. `main^1`).
+     */
+    showSpeculativeResults?: boolean
 
     onSelect?: () => void
 }
@@ -97,7 +102,7 @@ export const RevisionsPopover: React.FunctionComponent<RevisionsPopoverProps> = 
                                 repoName={props.repoName}
                                 onSelect={props.onSelect}
                                 allowSpeculativeSearch={
-                                    props.allowSpeculativeSearch && tab.type === GitRefType.GIT_BRANCH
+                                    props.showSpeculativeResults && tab.type === GitRefType.GIT_BRANCH
                                 }
                             />
                         ) : (
