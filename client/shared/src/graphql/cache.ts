@@ -8,7 +8,8 @@ const typePolicies: TypedTypePolicies = {
     Query: {
         fields: {
             node: {
-                // `Node` is a heavily used, top-level query. We always want to merge responses into the existing cache.
+                // Node is a top-level interface field used to easily fetch from different parts of the schema through the relevant `id`.
+                // We always want to merge responses from this field as it will be used through very different queries.
                 merge: true,
             },
         },
