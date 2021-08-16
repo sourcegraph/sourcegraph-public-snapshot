@@ -454,17 +454,19 @@ export const SelectAffiliatedRepos: FunctionComponent<Props> = ({
     }
 
     const selectAll = (): void => {
-        const newMap = new Map<string, Repo>()
+        const newSelection = new Map<string, Repo>()
         // if not all repos are selected, we should select all, otherwise empty the selection
 
         if (selectionState.repos.size !== filteredRepos.length) {
             for (const repo of filteredRepos) {
-                newMap.set(getRepoServiceAndName(repo), repo)
+                newSelection.set(getRepoServiceAndName(repo), repo)
             }
         }
 
+        saveRepoSelection([...newSelection.values()])
+
         setSelectionState({
-            repos: newMap,
+            repos: newSelection,
             loaded: selectionState.loaded,
             radio: selectionState.radio,
         })
