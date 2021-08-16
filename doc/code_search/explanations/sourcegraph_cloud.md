@@ -2,7 +2,7 @@
 
 [Sourcegraph Cloud](https://sourcegraph.com/search) lets you search your public code on GitHub or GitLab, and across millions of open-source project.
 
-Note that you can search across a maximum of 2,000 repositories at once using Sourcegraph Cloud. To search across more than 2,000 repositories at once or to search code hosted in an on-prem enviornment, [run your own Sourcegraph instance](../../../admin/install/index.md).
+Note that you can search across a maximum of 2,000 repositories at once using Sourcegraph Cloud. To search across more than 2,000 repositories at once or to search code hosted in an on-prem environment, [run your own Sourcegraph instance](../../../admin/install/index.md).
 
 Note that **Organizations** feature is disabled in Sourcegraph Cloud. If you want to use it, you also need to [run your own Sourcegraph instance](../../../admin/install/index.md).
 
@@ -20,9 +20,9 @@ Note that **Organizations** feature is disabled in Sourcegraph Cloud. If you wan
 
 Sourcegraph cloud is fundamentally similar to Sourcegraph on-prem. Both have the same search capabilities that help developers understand big code. Sourcegraph cloud is still under active development and missing several key organizational features. See a [full breakdown between cloud, on-prem, and enterprise](../../cloud/cloud_ent_on-prem_comparison.md). 
 
-### What if I want to use Sourcegraph for my organziation? 
+### What if I want to use Sourcegraph for my organization? 
 
-Sourcegraph cloud only supports individual users today. This means that any user can sign up for Sourcegraph.com, connect public or private repositories hoested on Github.com or Gitlab.com, and leverage the powerful code search of Sourcegraph. Organizations are supported in Sourcegraph on-prem. Learn how to [run your own Sourcegraph instance](../../../admin/install/index.md).
+Sourcegraph cloud only supports individual users today. This means that any user can sign up for Sourcegraph.com, connect public or private repositories hosted on Github.com or Gitlab.com, and leverage the powerful code search of Sourcegraph. Organizations are supported in Sourcegraph on-prem. Learn how to [run your own Sourcegraph instance](../../../admin/install/index.md).
 
 ### What if my code is not stored on Github.com or Gitlab.com? 
 Today, only Github.com or Gitlab.com are supported on Sourcegraph cloud, though many other code-hosts are supported in our self-hosted version of Sourcegraph. Learn how to [run your own Sourcegraph instance](../../../admin/install/index.md).
