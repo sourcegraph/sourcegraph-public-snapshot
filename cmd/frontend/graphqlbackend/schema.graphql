@@ -1299,6 +1299,10 @@ type Query {
         descending: Boolean = false
     ): SearchContextConnection!
     """
+    Fetch search context by spec (global, @username, @username/ctx, etc.).
+    """
+    searchContextBySpec(spec: String!): SearchContext
+    """
     Determines whether the search context is within the set of search contexts available to the current user.
     The set consists of contexts created by the user, contexts created by the users' organizations, and instance-level contexts.
     """

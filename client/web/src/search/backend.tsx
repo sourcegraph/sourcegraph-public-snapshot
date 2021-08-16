@@ -36,6 +36,8 @@ import {
     DeleteSearchContextVariables,
     DeleteSearchContextResult,
     Maybe,
+    FetchSearchContextBySpecResult,
+    FetchSearchContextBySpecVariables,
 } from '../graphql-operations'
 
 /**
@@ -203,6 +205,24 @@ export const fetchSearchContext = (id: Scalars['ID']): Observable<GQL.ISearchCon
     }).pipe(
         map(dataOrThrowErrors),
         map(data => data.node as GQL.ISearchContext)
+    )
+}
+
+export const fetchSearchContextBySpec = (spec: string): Observable<GQL.ISearchContext> => {
+    const query = gql`
+        query FetchSearchContextBySpec($spec: String!) {
+            searchContextBySpec(spec: $spec) {
+                ...SearchContextFields
+            }
+        }
+        ${searchContextFragment}
+    `
+
+    return requestGraphQL<FetchSearchContextBySpecResult, FetchSearchContextBySpecVariables>(query, {
+        spec,
+    }).pipe(
+        map(dataOrThrowErrors),
+        map(data => data.searchContextBySpec as GQL.ISearchContext)
     )
 }
 
