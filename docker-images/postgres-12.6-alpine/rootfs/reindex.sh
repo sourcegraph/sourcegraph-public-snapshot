@@ -27,12 +27,19 @@ file_env() {
 prepare_env() {
   file_env 'POSTGRES_USER' 'postgres'
   file_env 'POSTGRES_PASSWORD'
-  export PGPASSWORD="${PGPASSWORD:-$POSTGRES_PASSWORD}"
   export PGUSER="${PGUSER:-$POSTGRES_USER}"
+  export PGPASSWORD="${PGPASSWORD:-$POSTGRES_PASSWORD}"
 }
 
 unset_env() {
   unset PGPASSWORD
+}
+
+postgres_is_running() {
+  local pid="$1"
+
+  local proc_entry="/proc/$pid/comm"
+  [[ -s "$proc_entry" ]] && grep -q '^postgres$' "$proc_entry"
 }
 
 postgres_stop_cleanly() {
@@ -56,9 +63,7 @@ postgres_stop() {
   local pid
   pid="$(head -1 "$postmaster_file")"
 
-  local proc_entry="/proc/$pid/comm"
-
-  if [[ -s "$proc_entry" ]] && grep -q "postgres" "$proc_entry"; then
+  if postgres_is_running "$pid"; then
     # postgres is currently running in the container - shut it down cleanly
     postgres_stop_cleanly
     return 0
