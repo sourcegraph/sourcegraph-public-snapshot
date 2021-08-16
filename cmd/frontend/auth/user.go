@@ -124,7 +124,7 @@ func GetAndSaveUser(ctx context.Context, db dbutil.DB, op GetAndSaveUserOp) (use
 		}
 
 		serviceTypeArg := json.RawMessage(fmt.Sprintf(`{"serviceType": %s}`, op.ExternalAccount.ServiceType))
-		if err = usagestats.LogBackendEvent(db, actor.FromContext(ctx).UID, "ExternalAuthSignupSucceeded", serviceTypeArg, serviceTypeArg, featureflag.FromContext(ctx), nil); err != nil {
+		if logErr := usagestats.LogBackendEvent(db, actor.FromContext(ctx).UID, "ExternalAuthSignupSucceeded", serviceTypeArg, serviceTypeArg, featureflag.FromContext(ctx), nil); logErr != nil {
 			log15.Warn("Failed to log event ExternalAuthSignupSucceded")
 		}
 
@@ -132,7 +132,7 @@ func GetAndSaveUser(ctx context.Context, db dbutil.DB, op GetAndSaveUserOp) (use
 	}()
 	if err != nil {
 		serviceTypeArg := json.RawMessage(fmt.Sprintf(`{"serviceType": %s}`, op.ExternalAccount.ServiceType))
-		if err = usagestats.LogBackendEvent(db, actor.FromContext(ctx).UID, "ExternalAuthSignupFailed", serviceTypeArg, serviceTypeArg, featureflag.FromContext(ctx), nil); err != nil {
+		if logErr := usagestats.LogBackendEvent(db, actor.FromContext(ctx).UID, "ExternalAuthSignupFailed", serviceTypeArg, serviceTypeArg, featureflag.FromContext(ctx), nil); logErr != nil {
 			log15.Warn("Failed to log event ExternalAuthSignUpFailed")
 		}
 		return 0, safeErrMsg, err
