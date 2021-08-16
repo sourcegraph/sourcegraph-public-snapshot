@@ -9,7 +9,7 @@ FROM sourcegraph/alpine-3.12:99212_2021-06-14_51f6e1e@sha256:0b98031f67bda9b0884
 USER root
 RUN apk update
 # hadolint ignore=DL3018
-RUN apk --no-cache add bash curl
+RUN apk --no-cache add bash curl apk-tools=2.10.8-r0
 
 COPY --from=base /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
 COPY --from=base /go/bin/all-in-one-linux /go/bin/all-in-one-linux
