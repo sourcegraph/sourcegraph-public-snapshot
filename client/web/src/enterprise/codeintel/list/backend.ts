@@ -39,13 +39,17 @@ export function fetchLsifUploads({
     query,
     state,
     isLatestForRepo,
+    dependencyOf,
+    dependentOf,
     first,
     after,
 }: { repository?: string } & GQL.ILsifUploadsOnRepositoryArguments): Observable<UploadConnection> {
-    const vars = {
+    const vars: LsifUploadsVariables = {
         query: query ?? null,
         state: state ?? null,
         isLatestForRepo: isLatestForRepo ?? null,
+        dependencyOf: dependencyOf ?? null,
+        dependentOf: dependentOf ?? null,
         first: first ?? null,
         after: after ?? null,
     }
@@ -56,6 +60,8 @@ export function fetchLsifUploads({
                 $repository: ID!
                 $state: LSIFUploadState
                 $isLatestForRepo: Boolean
+                $dependencyOf: ID
+                $dependentOf: ID
                 $first: Int
                 $after: String
                 $query: String
@@ -67,6 +73,8 @@ export function fetchLsifUploads({
                             query: $query
                             state: $state
                             isLatestForRepo: $isLatestForRepo
+                            dependencyOf: $dependencyOf
+                            dependentOf: $dependentOf
                             first: $first
                             after: $after
                         ) {
@@ -112,11 +120,21 @@ export function fetchLsifUploads({
         query LsifUploads(
             $state: LSIFUploadState
             $isLatestForRepo: Boolean
+            $dependencyOf: ID
+            $dependentOf: ID
             $first: Int
             $after: String
             $query: String
         ) {
-            lsifUploads(query: $query, state: $state, isLatestForRepo: $isLatestForRepo, first: $first, after: $after) {
+            lsifUploads(
+                query: $query
+                state: $state
+                isLatestForRepo: $isLatestForRepo
+                dependencyOf: $dependencyOf
+                dependentOf: $dependentOf
+                first: $first
+                after: $after
+            ) {
                 nodes {
                     ...LsifUploadFields
                 }
