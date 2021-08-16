@@ -44,12 +44,12 @@ export function fetchLsifUploads({
     first,
     after,
 }: { repository?: string } & GQL.ILsifUploadsOnRepositoryArguments): Observable<UploadConnection> {
-    const vars: GQL.ILsifUploadsOnRepositoryArguments = {
+    const vars: LsifUploadsVariables = {
         query: query ?? null,
         state: state ?? null,
         isLatestForRepo: isLatestForRepo ?? null,
-        ...(dependencyOf ? { dependencyOf: dependencyOf as GQL.ID } : {}),
-        ...(dependentOf ? { dependentOf: dependentOf as GQL.ID } : {}),
+        dependencyOf: dependencyOf ?? null,
+        dependentOf: dependentOf ?? null,
         first: first ?? null,
         after: after ?? null,
     }
