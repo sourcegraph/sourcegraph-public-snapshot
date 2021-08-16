@@ -16,7 +16,8 @@ The **built-in** main Postgres (`pgsql`) and codeintel (`codeintel-db`) database
 
 **Sourcegraph will be unavailable until the re-indexing process has completed.** If the database pods are restarted/killed during the re-indexing process (for example, as a result of automated deployments), re-indexing will have to start over from scratch. Please plan accordingly, and communicate this downtime to your users.
 
-> Note: The above only applies to users that use our built-in databases. Users that use external databases (e.x: Amazon RDS, Google Cloud SQL, etc.) are not affected.
+> NOTE: The above only applies to users that use our built-in databases. Users that use external databases (e.x: Amazon RDS, Google Cloud SQL, etc.) are not affected.
+
 ## 3.29 -> 3.30.3
 
 **⚠️ Users on 3.29.x are advised to upgrade directly to 3.30.3**. If you have already upgraded to 3.30.0, 3.30.1, or 3.30.2 please follow [this migration guide](../migration/3_30.md).
