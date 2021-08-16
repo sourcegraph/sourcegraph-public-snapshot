@@ -68,7 +68,7 @@ interface GitCommitNodeProps {
 
     getPathFromRevision: (href: string, revision: string) => string
 
-    onClick?: (event: React.MouseEvent<HTMLAnchorElement>) => void
+    onClick?: React.MouseEventHandler<HTMLAnchorElement>
 }
 
 const GitCommitNode: React.FunctionComponent<GitCommitNodeProps> = ({
