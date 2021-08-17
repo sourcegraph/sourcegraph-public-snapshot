@@ -154,7 +154,20 @@ export class RepositoryCompareOverviewPage extends React.PureComponent<Props, St
             <div className="repository-compare-page">
                 <PageTitle title="Compare" />
                 {this.state.rangeOrError === null ? (
-                    <p>Select two Git revspecs to compare.</p>
+                    <>
+                        <h3 className="mt-3">Select a revision to start comparing</h3>
+                        <p>
+                            You can also provide a Git{' '}
+                            <a
+                                href="https://git-scm.com/docs/git-rev-parse.html#_specifying_revisions"
+                                rel="noopener noreferrer"
+                                target="_blank"
+                            >
+                                revspec
+                            </a>{' '}
+                            for more fine-grained comparisons.
+                        </p>
+                    </>
                 ) : this.state.rangeOrError === undefined ? (
                     <LoadingSpinner className="icon-inline" />
                 ) : isErrorLike(this.state.rangeOrError) ? (

@@ -10,6 +10,7 @@ import { eventLogger } from '../../tracking/eventLogger'
 import { RevisionsPopover } from '../revisions-popover/RevisionsPopover'
 
 import { RepositoryCompareAreaPageProps } from './RepositoryCompareArea'
+import styles from './RepositoryCompareHeader.module.scss'
 
 interface RepositoryCompareHeaderProps extends RepositoryCompareAreaPageProps {
     className: string
@@ -113,7 +114,7 @@ export const RepositoryCompareHeader: React.FunctionComponent<RepositoryCompareH
     className,
     repo,
 }) => (
-    <div className={`repository-compare-header ${className}`}>
+    <div className={`${styles.repositoryCompareHeader} ${className}`}>
         <PageHeader
             path={[{ text: 'Compare changes' }]}
             description="Compare changes across revisions."
