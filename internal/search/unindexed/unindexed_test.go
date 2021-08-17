@@ -26,6 +26,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/search/searcher"
+	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
@@ -33,25 +34,31 @@ import (
 )
 
 func TestSearchFilesInRepos(t *testing.T) {
-	mockSearchFilesInRepo = func(ctx context.Context, repo types.RepoName, gitserverRepo api.RepoName, rev string, info *search.TextPatternInfo, fetchTimeout time.Duration) (matches []result.Match, limitHit bool, err error) {
+	mockSearchFilesInRepo = func(ctx context.Context, repo types.RepoName, gitserverRepo api.RepoName, rev string, info *search.TextPatternInfo, fetchTimeout time.Duration, stream streaming.Sender) (matches []result.Match, limitHit bool, err error) {
 		repoName := repo.Name
 		switch repoName {
 		case "foo/one":
-			return []result.Match{&result.FileMatch{
-				File: result.File{
-					Repo:     repo,
-					InputRev: &rev,
-					Path:     "main.go",
-				},
-			}}, false, nil
+			stream.Send(streaming.SearchEvent{
+				Results: []result.Match{&result.FileMatch{
+					File: result.File{
+						Repo:     repo,
+						InputRev: &rev,
+						Path:     "main.go",
+					},
+				}},
+			})
+			return nil, false, nil
 		case "foo/two":
-			return []result.Match{&result.FileMatch{
-				File: result.File{
-					Repo:     repo,
-					InputRev: &rev,
-					Path:     "main.go",
-				},
-			}}, false, nil
+			stream.Send(streaming.SearchEvent{
+				Results: []result.Match{&result.FileMatch{
+					File: result.File{
+						Repo:     repo,
+						InputRev: &rev,
+						Path:     "main.go",
+					},
+				}},
+			})
+			return nil, false, nil
 		case "foo/empty":
 			return nil, false, nil
 		case "foo/cloning":
@@ -128,33 +135,42 @@ func TestSearchFilesInRepos(t *testing.T) {
 }
 
 func TestSearchFilesInReposStream(t *testing.T) {
-	mockSearchFilesInRepo = func(ctx context.Context, repo types.RepoName, gitserverRepo api.RepoName, rev string, info *search.TextPatternInfo, fetchTimeout time.Duration) (matches []result.Match, limitHit bool, err error) {
+	mockSearchFilesInRepo = func(ctx context.Context, repo types.RepoName, gitserverRepo api.RepoName, rev string, info *search.TextPatternInfo, fetchTimeout time.Duration, stream streaming.Sender) (matches []result.Match, limitHit bool, err error) {
 		repoName := repo.Name
 		switch repoName {
 		case "foo/one":
-			return []result.Match{&result.FileMatch{
-				File: result.File{
-					Repo:     repo,
-					InputRev: &rev,
-					Path:     "main.go",
-				},
-			}}, false, nil
+			stream.Send(streaming.SearchEvent{
+				Results: []result.Match{&result.FileMatch{
+					File: result.File{
+						Repo:     repo,
+						InputRev: &rev,
+						Path:     "main.go",
+					},
+				}},
+			})
+			return nil, false, nil
 		case "foo/two":
-			return []result.Match{&result.FileMatch{
-				File: result.File{
-					Repo:     repo,
-					InputRev: &rev,
-					Path:     "main.go",
-				},
-			}}, false, nil
+			stream.Send(streaming.SearchEvent{
+				Results: []result.Match{&result.FileMatch{
+					File: result.File{
+						Repo:     repo,
+						InputRev: &rev,
+						Path:     "main.go",
+					},
+				}},
+			})
+			return nil, false, nil
 		case "foo/three":
-			return []result.Match{&result.FileMatch{
-				File: result.File{
-					Repo:     repo,
-					InputRev: &rev,
-					Path:     "main.go",
-				},
-			}}, false, nil
+			stream.Send(streaming.SearchEvent{
+				Results: []result.Match{&result.FileMatch{
+					File: result.File{
+						Repo:     repo,
+						InputRev: &rev,
+						Path:     "main.go",
+					},
+				}},
+			})
+			return nil, false, nil
 		default:
 			return nil, false, errors.New("Unexpected repo")
 		}
@@ -204,17 +220,20 @@ func assertReposStatus(t *testing.T, repoNames map[api.RepoID]string, got search
 }
 
 func TestSearchFilesInRepos_multipleRevsPerRepo(t *testing.T) {
-	mockSearchFilesInRepo = func(ctx context.Context, repo types.RepoName, gitserverRepo api.RepoName, rev string, info *search.TextPatternInfo, fetchTimeout time.Duration) (matches []result.Match, limitHit bool, err error) {
+	mockSearchFilesInRepo = func(ctx context.Context, repo types.RepoName, gitserverRepo api.RepoName, rev string, info *search.TextPatternInfo, fetchTimeout time.Duration, stream streaming.Sender) (matches []result.Match, limitHit bool, err error) {
 		repoName := repo.Name
 		switch repoName {
 		case "foo":
-			return []result.Match{&result.FileMatch{
-				File: result.File{
-					Repo:     repo,
-					CommitID: api.CommitID(rev),
-					Path:     "main.go",
-				},
-			}}, false, nil
+			stream.Send(streaming.SearchEvent{
+				Results: []result.Match{&result.FileMatch{
+					File: result.File{
+						Repo:     repo,
+						CommitID: api.CommitID(rev),
+						Path:     "main.go",
+					},
+				}},
+			})
+			return nil, false, nil
 		default:
 			panic("unexpected repo")
 		}
