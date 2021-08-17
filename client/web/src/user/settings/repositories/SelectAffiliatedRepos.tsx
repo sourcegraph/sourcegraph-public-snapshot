@@ -5,7 +5,6 @@ import React, { useCallback, useEffect, useState, FunctionComponent, Dispatch, S
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ErrorLike } from '@sourcegraph/shared/src/util/errors'
-import { useRedesignToggle } from '@sourcegraph/shared/src/util/useRedesignToggle'
 import { Container, PageSelector } from '@sourcegraph/wildcard'
 
 import { RepoSelectionMode } from '../../../auth/PostSignUpPage'
@@ -113,8 +112,6 @@ export const SelectAffiliatedRepos: FunctionComponent<Props> = ({
     const ALLOW_SYNC_ALL = authenticatedUser.tags.includes('AllowUserExternalServiceSyncAll')
 
     // set up state hooks
-    const [isRedesignEnabled] = useRedesignToggle()
-
     const [currentPage, setPage] = useState(1)
     const [repoState, setRepoState] = useState(initialRepoState)
     const [onloadSelectedRepos, setOnloadSelectedRepos] = useState<string[]>([])
@@ -298,7 +295,6 @@ export const SelectAffiliatedRepos: FunctionComponent<Props> = ({
                 <div className="d-flex flex-column ml-2">
                     <p
                         className={classNames('mb-0', {
-                            'user-settings-repos__text': ALLOW_SYNC_ALL,
                             'user-settings-repos__text-disabled': !ALLOW_SYNC_ALL,
                         })}
                     >
@@ -306,7 +302,7 @@ export const SelectAffiliatedRepos: FunctionComponent<Props> = ({
                     </p>
                     <p
                         className={classNames({
-                            'user-settings-repos__text': ALLOW_SYNC_ALL,
+                            'user-settings-repos__text-light': true,
                             'user-settings-repos__text-disabled': !ALLOW_SYNC_ALL,
                         })}
                     >
@@ -505,7 +501,7 @@ export const SelectAffiliatedRepos: FunctionComponent<Props> = ({
             <Container>
                 <ul className="list-group">
                     <li className="list-group-item user-settings-repos__container" key="from-code-hosts">
-                        <div className={classNames(!isRedesignEnabled && 'p-4')}>
+                        <div>
                             {/* display type of repo sync radio buttons or shimmer when appropriate */}
                             {hasCodeHosts && selectionState.loaded ? modeSelect : modeSelectShimmer}
 

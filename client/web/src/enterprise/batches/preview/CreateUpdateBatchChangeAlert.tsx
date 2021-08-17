@@ -5,7 +5,6 @@ import React, { useCallback, useState } from 'react'
 import { Link } from '@sourcegraph/shared/src/components/Link'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { isErrorLike } from '@sourcegraph/shared/src/util/errors'
-import { useRedesignToggle } from '@sourcegraph/shared/src/util/useRedesignToggle'
 
 import { ErrorAlert } from '../../../components/alerts'
 import { BatchSpecFields } from '../../../graphql-operations'
@@ -31,7 +30,6 @@ export const CreateUpdateBatchChangeAlert: React.FunctionComponent<CreateUpdateB
 }) => {
     const batchChangeID = batchChange?.id
     const [isLoading, setIsLoading] = useState<boolean | Error>(false)
-    const [isRedesignEnabled] = useRedesignToggle()
 
     const onApply = useCallback(async () => {
         if (!confirm(`Are you sure you want to ${batchChangeID ? 'update' : 'create'} this batch change?`)) {
@@ -56,12 +54,7 @@ export const CreateUpdateBatchChangeAlert: React.FunctionComponent<CreateUpdateB
 
     return (
         <>
-            <div
-                className={classNames(
-                    'alert alert-info mb-3 d-block d-md-flex align-items-center body-lead',
-                    !isRedesignEnabled && 'p-3'
-                )}
-            >
+            <div className="alert alert-info mb-3 d-block d-md-flex align-items-center body-lead">
                 <div className={classNames(styles.createUpdateBatchChangeAlertCopy, 'flex-grow-1 mr-3')}>
                     {!batchChange && (
                         <>

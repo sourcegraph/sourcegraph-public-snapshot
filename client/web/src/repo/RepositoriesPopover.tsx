@@ -9,7 +9,6 @@ import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
 import { gql } from '@sourcegraph/shared/src/graphql/graphql'
 import * as GQL from '@sourcegraph/shared/src/graphql/schema'
 import { createAggregateError } from '@sourcegraph/shared/src/util/errors'
-import { useRedesignToggle } from '@sourcegraph/shared/src/util/useRedesignToggle'
 
 import { queryGraphQL } from '../backend/graphql'
 import { FilteredConnection, FilteredConnectionQueryArguments } from '../components/FilteredConnection'
@@ -78,7 +77,6 @@ class FilteredRepositoryConnection extends FilteredConnection<GQL.IRepository> {
 export const RepositoriesPopover: React.FunctionComponent<RepositoriesPopoverProps> = ({ currentRepo }) => {
     const location = useLocation()
     const history = useHistory()
-    const [isRedesignEnabled] = useRedesignToggle()
 
     useEffect(() => {
         eventLogger.logViewEvent('RepositoriesPopover')
@@ -96,7 +94,6 @@ export const RepositoriesPopover: React.FunctionComponent<RepositoriesPopoverPro
         <div className="repositories-popover connection-popover">
             <FilteredRepositoryConnection
                 className="connection-popover__content"
-                showMoreClassName={isRedesignEnabled ? '' : 'connection-popover__show-more'}
                 inputClassName="connection-popover__input"
                 listClassName="connection-popover__nodes"
                 compact={true}

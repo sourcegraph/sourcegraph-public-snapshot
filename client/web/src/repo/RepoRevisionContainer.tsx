@@ -2,7 +2,6 @@ import * as H from 'history'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
-import MenuDownIcon from 'mdi-react/MenuDownIcon'
 import React, { useCallback, useMemo, useState } from 'react'
 import { Route, RouteComponentProps, Switch } from 'react-router'
 import { Popover } from 'reactstrap'
@@ -22,7 +21,6 @@ import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryServi
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { ErrorLike, isErrorLike } from '@sourcegraph/shared/src/util/errors'
 import { RevisionSpec } from '@sourcegraph/shared/src/util/url'
-import { useRedesignToggle } from '@sourcegraph/shared/src/util/useRedesignToggle'
 
 import { AuthenticatedUser } from '../auth'
 import { BatchChangesProps } from '../batches'
@@ -138,57 +136,29 @@ const RepoRevisionContainerBreadcrumb: React.FunctionComponent<RepoRevisionBread
     repo,
     history,
     location,
-}) => {
-    const [isRedesignEnabled] = useRedesignToggle()
-
-    if (isRedesignEnabled) {
-        return (
-            <button
-                type="button"
-                className="btn btn-sm btn-outline-secondary d-flex align-items-center text-nowrap"
-                key="repo-revision"
-                id="repo-revision-popover"
-                aria-label="Change revision"
-            >
-                {(revision && revision === resolvedRevisionOrError.commitID
-                    ? resolvedRevisionOrError.commitID.slice(0, 7)
-                    : revision) ||
-                    resolvedRevisionOrError.defaultBranch ||
-                    'HEAD'}
-                <ChevronDownIcon className="icon-inline repo-revision-container__breadcrumb-icon" />
-                <RepoRevisionContainerPopover
-                    repo={repo}
-                    resolvedRevisionOrError={resolvedRevisionOrError}
-                    revision={revision}
-                    history={history}
-                    location={location}
-                />
-            </button>
-        )
-    }
-
-    return (
-        <div className="d-flex align-items-center" key="repo-revision">
-            <span className="test-revision">
-                {(revision && revision === resolvedRevisionOrError.commitID
-                    ? resolvedRevisionOrError.commitID.slice(0, 7)
-                    : revision) ||
-                    resolvedRevisionOrError.defaultBranch ||
-                    'HEAD'}
-            </span>
-            <button type="button" id="repo-revision-popover" className="btn btn-icon px-0" aria-label="Change revision">
-                <MenuDownIcon className="icon-inline" />
-            </button>
-            <RepoRevisionContainerPopover
-                repo={repo}
-                resolvedRevisionOrError={resolvedRevisionOrError}
-                revision={revision}
-                history={history}
-                location={location}
-            />
-        </div>
-    )
-}
+}) => (
+    <button
+        type="button"
+        className="btn btn-sm btn-outline-secondary d-flex align-items-center text-nowrap"
+        key="repo-revision"
+        id="repo-revision-popover"
+        aria-label="Change revision"
+    >
+        {(revision && revision === resolvedRevisionOrError.commitID
+            ? resolvedRevisionOrError.commitID.slice(0, 7)
+            : revision) ||
+            resolvedRevisionOrError.defaultBranch ||
+            'HEAD'}
+        <ChevronDownIcon className="icon-inline repo-revision-container__breadcrumb-icon" />
+        <RepoRevisionContainerPopover
+            repo={repo}
+            resolvedRevisionOrError={resolvedRevisionOrError}
+            revision={revision}
+            history={history}
+            location={location}
+        />
+    </button>
+)
 
 interface RepoRevisionContainerPopoverProps
     extends Pick<RepoRevisionContainerProps, 'repo' | 'revision' | 'history' | 'location'> {

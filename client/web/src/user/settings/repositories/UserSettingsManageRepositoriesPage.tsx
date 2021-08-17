@@ -8,7 +8,6 @@ import { Form } from '@sourcegraph/branded/src/components/Form'
 import { Link } from '@sourcegraph/shared/src/components/Link'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { asError, ErrorLike, isErrorLike } from '@sourcegraph/shared/src/util/errors'
-import { useRedesignToggle } from '@sourcegraph/shared/src/util/useRedesignToggle'
 import { Badge } from '@sourcegraph/web/src/components/Badge'
 import { Container, PageSelector } from '@sourcegraph/wildcard'
 
@@ -160,7 +159,6 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
     const ALLOW_SYNC_ALL = authenticatedUser.tags.includes('AllowUserExternalServiceSyncAll')
 
     // set up state hooks
-    const [isRedesignEnabled] = useRedesignToggle()
     const [repoState, setRepoState] = useState(initialRepoState)
     const [publicRepoState, setPublicRepoState] = useState(initialPublicRepoState)
     const [codeHosts, setCodeHosts] = useState(initialCodeHostState)
@@ -548,7 +546,6 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
                 <div className="d-flex flex-column ml-2">
                     <p
                         className={classNames('mb-0', {
-                            'user-settings-repos__text': ALLOW_SYNC_ALL,
                             'user-settings-repos__text-disabled': !ALLOW_SYNC_ALL,
                         })}
                     >
@@ -556,7 +553,7 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
                     </p>
                     <p
                         className={classNames({
-                            'user-settings-repos__text': ALLOW_SYNC_ALL,
+                            'user-settings-repos__text-light': true,
                             'user-settings-repos__text-disabled': !ALLOW_SYNC_ALL,
                         })}
                     >
@@ -749,7 +746,7 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
             <Container>
                 <ul className="list-group">
                     <li className="list-group-item user-settings-repos__container" key="from-code-hosts">
-                        <div className={classNames(!isRedesignEnabled && 'p-4')}>
+                        <div>
                             <h3>Your repositories</h3>
                             <p className="text-muted">
                                 Repositories you own or collaborate on from your{' '}
@@ -807,7 +804,7 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
                     </li>
                     {window.context.sourcegraphDotComMode && (
                         <li className="list-group-item user-settings-repos__container" key="add-textarea">
-                            <div className={classNames(!isRedesignEnabled && 'p-4')}>
+                            <div>
                                 <h3>Other public repositories</h3>
                                 <p className="text-muted">Public repositories on GitHub and GitLab</p>
                                 <input
