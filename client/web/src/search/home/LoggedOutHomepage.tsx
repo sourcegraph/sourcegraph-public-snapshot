@@ -10,11 +10,8 @@ import { SyntaxHighlightedSearchQuery } from '../../components/SyntaxHighlighted
 import { FeatureFlagProps } from '../../featureFlags/featureFlags'
 import { repogroupList } from '../../repogroups/HomepageConfig'
 
-<<<<<<< HEAD
-import { HeroSection } from './HeroSection'
-=======
 import { CustomersSection } from './CustomersSection'
->>>>>>> jp/searchisdotcom
+import { HeroSection } from './HeroSection'
 import { HomepageModalVideo } from './HomepageModalVideo'
 import styles from './LoggedOutHomepage.module.scss'
 import { SelfHostInstructions } from './SelfHostInstructions'
