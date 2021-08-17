@@ -12,13 +12,14 @@ interface DynamicWebFontsProps {
 /**
  * Use native CSS Font Loading Module API to load fonts dynamically.
  * Show loading spinner until fonts are ready.
+ * In case of a network error proceed to UI rendering.
  */
 export const DynamicWebFonts: React.FunctionComponent<DynamicWebFontsProps> = props => {
     const { children, fonts } = props
-    const areFontsLoaded = useDynamicWebFonts(fonts)
+    const areFontsLoading = useDynamicWebFonts(fonts)
 
     // While fonts are not ready, show loading spinner to avoid content jumps.
-    if (!areFontsLoaded) {
+    if (areFontsLoading) {
         return <LoadingSpinner className={styles.spinner} />
     }
 

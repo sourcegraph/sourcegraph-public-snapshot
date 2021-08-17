@@ -55,6 +55,7 @@ export function useDynamicWebFonts(fonts: DynamicWebFont[]): boolean {
     // The font size parameter value is not important for our use case and it can be set to any value
     const areFontsLoadedInitially = fonts.every(font => document.fonts.check(`12px ${font.family}`))
     const [areFontsLoaded, setAreFontsLoaded] = useState(areFontsLoadedInitially)
+    const [hasNetworkError, setHasNetworkError] = useState(false)
 
     useEffect(() => {
         async function loadFonts(): Promise<void> {
@@ -75,15 +76,22 @@ export function useDynamicWebFonts(fonts: DynamicWebFont[]): boolean {
                     document.fonts.add(font)
                 }
 
+                setHasNetworkError(false)
                 setAreFontsLoaded(true)
             })
         }
 
         // If fonts are available, skip redundant network request and proceed to UI rendering.
         if (!areFontsLoaded) {
-            loadFonts().catch(error => console.error(error))
+            loadFonts().catch(error => {
+                console.error(error)
+                setHasNetworkError(true)
+            })
         }
     }, [fonts, areFontsLoaded, setAreFontsLoaded])
 
-    return areFontsLoaded
+    // Fonts are loading if they are not available yet and there's no network error.
+    const areFontsLoading = !(areFontsLoaded || hasNetworkError)
+
+    return areFontsLoading
 }
