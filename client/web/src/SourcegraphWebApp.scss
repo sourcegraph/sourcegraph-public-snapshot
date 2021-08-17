@@ -71,6 +71,12 @@ body,
     min-width: 0;
 }
 
+// Global styles provided by @reach packages. Should be imported once in the global scope.
+@import '@reach/dialog/styles.css';
+@import '@reach/combobox/styles.css';
+@import '@reach/menu-button/styles.css';
+@import '@reach/listbox/styles.css';
+
 // Pages
 @import './Layout';
 @import './api/ApiConsole';
