@@ -4,8 +4,11 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"html/template"
 	"io"
 	"io/ioutil"
+	"os"
+	"os/exec"
 	"path"
 	"regexp"
 	"strings"
@@ -271,6 +274,82 @@ func (svc *Service) ParseBatchSpec(in io.Reader) (*batches.BatchSpec, string, er
 		return nil, "", errors.Wrap(err, "parsing batch spec")
 	}
 	return spec, string(data), nil
+}
+
+const exampleSpecTmpl = `name: NAME-OF-YOUR-BATCH-CHANGE
+description: DESCRIPTION-OF-YOUR-BATCH-CHANGE
+
+# "on" specifies on which repositories to execute the "steps".
+on:
+  # Example: find all repositories that contain a README.md file.
+  - repositoriesMatchingQuery: file:README.md
+
+# "steps" are run in each repository. Each step is run in a Docker container
+# with the repository as the working directory. Once complete, each
+# repository's resulting diff is captured.
+steps:
+  # Example: append "Hello World" to every README.md
+  - run: echo "Hello World" | tee -a $(find -name README.md)
+    container: alpine:3
+
+# "changesetTemplate" describes the changeset (e.g., GitHub pull request) that
+# will be created for each repository.
+changesetTemplate:
+  title: Hello World
+  body: This adds Hello World to the README
+
+  branch: BRANCH-NAME-IN-EACH-REPOSITORY # Push the commit to this branch.
+
+  commit:
+    author:
+      name: {{ .Author.Name }}
+      email: {{ .Author.Email }}
+    message: Append Hello World to all README.md files
+`
+
+const exampleSpecPublishFlagTmpl = `
+  # Change published to true once you're ready to create changesets on the code host.
+  published: false
+`
+
+func (svc *Service) GenerateExampleSpec(ctx context.Context, fileName string) error {
+	// Try to create file. Bail out, if it already exists.
+	f, err := os.OpenFile(fileName, os.O_WRONLY|os.O_CREATE|os.O_EXCL, 0644)
+	if err != nil {
+		if os.IsExist(err) {
+			return fmt.Errorf("file %s already exists", fileName)
+		}
+		return errors.Wrapf(err, "failed to create file %s", fileName)
+	}
+	defer f.Close()
+
+	t := exampleSpecTmpl
+	if !svc.features.AllowOptionalPublished {
+		t += exampleSpecPublishFlagTmpl
+	}
+	tmpl, err := template.New("").Parse(t)
+	if err != nil {
+		return err
+	}
+
+	author := batches.GitCommitAuthor{
+		Name:  "Sourcegraph",
+		Email: "batch-changes@sourcegraph.com",
+	}
+	// Try to get better default values from git, ignore any errors.
+	gitAuthorName, err1 := getGitConfig("user.name")
+	gitAuthorEmail, err2 := getGitConfig("user.email")
+	if err1 == nil && err2 == nil && gitAuthorName != "" && gitAuthorEmail != "" {
+		author.Name = gitAuthorName
+		author.Email = gitAuthorEmail
+	}
+
+	err = tmpl.Execute(f, map[string]interface{}{"Author": author})
+	if err != nil {
+		return errors.Wrap(err, "failed to write batch spec to file")
+	}
+
+	return nil
 }
 
 const namespaceQuery = `
@@ -701,4 +780,13 @@ func (sr *searchResult) UnmarshalJSON(data []byte) error {
 	default:
 		return errors.Errorf("unknown GraphQL type %q", tn.Typename)
 	}
+}
+
+func getGitConfig(attribute string) (string, error) {
+	cmd := exec.Command("git", "config", "--get", attribute)
+	out, err := cmd.CombinedOutput()
+	if err != nil {
+		return "", err
+	}
+	return strings.TrimSpace(string(out)), nil
 }
