@@ -181,11 +181,10 @@ func Main(enterpriseInit EnterpriseInit) {
 		Store:   store,
 		// We always want to listen on the Synced channel since external service syncing
 		// happens on both Cloud and non Cloud instances.
-		Synced:      make(chan repos.Diff),
-		Logger:      log15.Root(),
-		Now:         clock,
-		Registerer:  prometheus.DefaultRegisterer,
-		PermsSyncer: server.PermsSyncer,
+		Synced:     make(chan repos.Diff),
+		Logger:     log15.Root(),
+		Now:        clock,
+		Registerer: prometheus.DefaultRegisterer,
 	}
 
 	var gps *repos.GitolitePhabricatorMetadataSyncer
@@ -193,7 +192,7 @@ func Main(enterpriseInit EnterpriseInit) {
 		gps = repos.NewGitolitePhabricatorMetadataSyncer(store)
 	}
 
-	go watchSyncer(ctx, syncer, scheduler, gps)
+	go watchSyncer(ctx, syncer, scheduler, gps, server.PermsSyncer)
 	go func() {
 		log.Fatal(syncer.Run(ctx, store, repos.RunOptions{
 			EnqueueInterval: repos.ConfRepoListUpdateInterval,
@@ -358,7 +357,18 @@ type scheduler interface {
 	EnsureScheduled([]types.RepoName)
 }
 
-func watchSyncer(ctx context.Context, syncer *repos.Syncer, sched scheduler, gps *repos.GitolitePhabricatorMetadataSyncer) {
+type permsSyncer interface {
+	// ScheduleRepos schedules new permissions syncing requests for given repositories.
+	ScheduleRepos(ctx context.Context, repoIDs ...api.RepoID)
+}
+
+func watchSyncer(
+	ctx context.Context,
+	syncer *repos.Syncer,
+	sched scheduler,
+	gps *repos.GitolitePhabricatorMetadataSyncer,
+	permsSyncer permsSyncer,
+) {
 	log15.Debug("started new repo syncer updates scheduler relay thread")
 
 	for {
@@ -381,17 +391,24 @@ func watchSyncer(ctx context.Context, syncer *repos.Syncer, sched scheduler, gps
 			}()
 
 			// PermsSyncer is only available in enterprise mode.
-			if syncer.PermsSyncer != nil {
-				// Schedule a repo permissions sync for alll private repos in added and modified.
+			if permsSyncer != nil {
+				// Schedule a repo permissions sync for all private repos that were added or
+				// modified.
 				var repoIDs []api.RepoID
 
-				for _, r := range append(diff.Added, diff.Modified...) {
+				for _, r := range diff.Added {
 					if r.Private {
 						repoIDs = append(repoIDs, r.ID)
 					}
 				}
 
-				syncer.PermsSyncer.ScheduleRepos(ctx, repoIDs...)
+				for _, r := range diff.Modified {
+					if r.Private {
+						repoIDs = append(repoIDs, r.ID)
+					}
+				}
+
+				permsSyncer.ScheduleRepos(ctx, repoIDs...)
 			}
 		}
 	}
