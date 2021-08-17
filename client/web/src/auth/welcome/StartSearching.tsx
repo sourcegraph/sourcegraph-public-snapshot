@@ -129,15 +129,15 @@ export const StartSearching: React.FunctionComponent<StartSearching> = ({
 
     return (
         <div className="mt-5">
-            <h3>Start searching...</h3>
+            <h3>Fetching repositories...</h3>
             <p className="text-muted mb-4">
                 We’re cloning your repos to Sourcegraph. In just a few moments, you can make your first search!
             </p>
             <div className="border overflow-hidden rounded">
                 <header>
-                    <div className="py-3 px-4">
-                        <h3 className="d-inline-block m-0">Activity log</h3>
-                        <span className="float-right m-0">{statusSummary}</span>
+                    <div className="py-3 px-4 d-flex justify-content-between align-items-center">
+                        <h4 className="m-0">Activity log</h4>
+                        <small className="m-0 text-muted">{statusSummary}</small>
                     </div>
                 </header>
                 <Terminal>

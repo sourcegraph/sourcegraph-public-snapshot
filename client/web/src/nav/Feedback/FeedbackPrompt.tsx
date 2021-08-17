@@ -1,6 +1,4 @@
-import classNames from 'classnames'
 import CloseIcon from 'mdi-react/CloseIcon'
-import MessageDrawIcon from 'mdi-react/MessageDrawIcon'
 import TickIcon from 'mdi-react/TickIcon'
 import React, { useCallback, useEffect, useState } from 'react'
 import TextAreaAutosize from 'react-textarea-autosize'
@@ -10,7 +8,6 @@ import { Form } from '@sourcegraph/branded/src/components/Form'
 import { Link } from '@sourcegraph/shared/src/components/Link'
 import { gql, useMutation } from '@sourcegraph/shared/src/graphql/graphql'
 import { useLocalStorage } from '@sourcegraph/shared/src/util/useLocalStorage'
-import { useRedesignToggle } from '@sourcegraph/shared/src/util/useRedesignToggle'
 import { Button, LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { ErrorAlert } from '../../components/alerts'
@@ -177,21 +174,16 @@ export const FeedbackPrompt: React.FunctionComponent<Props> = ({ open, routes })
     const handleToggle = useCallback(() => setIsOpen(open => !open), [])
     const forceClose = useCallback(() => setIsOpen(false), [])
     const match = useRoutesMatch(routes)
-    const [isRedesignEnabled] = useRedesignToggle()
 
     return (
         <ButtonDropdown a11y={false} isOpen={isOpen} toggle={handleToggle} className="feedback-prompt" group={false}>
             <DropdownToggle
                 tag="button"
                 caret={false}
-                className={classNames('btn btn-sm text-decoration-none feedback-prompt__toggle', {
-                    'btn-outline-secondary': isRedesignEnabled,
-                    'btn-link': !isRedesignEnabled,
-                })}
+                className="btn btn-sm btn-outline-secondary text-decoration-none feedback-prompt__toggle"
                 aria-label="Feedback"
             >
-                {!isRedesignEnabled && <MessageDrawIcon className="d-lg-none icon-inline" />}
-                <span className={classNames({ 'd-none d-lg-block': !isRedesignEnabled })}>Feedback</span>
+                <span>Feedback</span>
             </DropdownToggle>
             <DropdownMenu right={true} className="feedback-prompt__menu">
                 <FeedbackPromptContent closePrompt={forceClose} routeMatch={match} />

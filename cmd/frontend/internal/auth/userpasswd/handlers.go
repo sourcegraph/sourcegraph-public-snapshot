@@ -24,7 +24,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
+	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/internal/usagestats"
 )
 
 type credentials struct {
@@ -164,6 +166,11 @@ func handleSignUp(w http.ResponseWriter, r *http.Request, failIfNewUserIsNotInit
 		}
 		log15.Error("Error in user signup.", "email", creds.Email, "username", creds.Username, "error", err)
 		http.Error(w, message, statusCode)
+
+		if err = usagestats.LogBackendEvent(database.GlobalUsers.Handle().DB(), actor.FromContext(r.Context()).UID, "SignUpFailed", nil, nil, featureflag.FromContext(r.Context()), nil); err != nil {
+			log15.Warn("Failed to log event SignUpFailed", "error", err)
+		}
+
 		return
 	}
 
@@ -184,14 +191,18 @@ func handleSignUp(w http.ResponseWriter, r *http.Request, failIfNewUserIsNotInit
 	}
 
 	// Write the session cookie
-	actor := &actor.Actor{UID: usr.ID}
-	if err := session.SetActor(w, r, actor, 0, usr.CreatedAt); err != nil {
+	a := &actor.Actor{UID: usr.ID}
+	if err := session.SetActor(w, r, a, 0, usr.CreatedAt); err != nil {
 		httpLogAndError(w, "Could not create new user session", http.StatusInternalServerError)
 	}
 
 	// Track user data
 	if r.UserAgent() != "Sourcegraph e2etest-bot" {
 		go hubspotutil.SyncUser(creds.Email, hubspotutil.SignupEventID, &hubspot.ContactProperties{AnonymousUserID: creds.AnonymousUserID, FirstSourceURL: creds.FirstSourceURL, DatabaseID: usr.ID})
+	}
+
+	if err = usagestats.LogBackendEvent(database.GlobalUsers.Handle().DB(), actor.FromContext(r.Context()).UID, "SignUpSucceeded", nil, nil, featureflag.FromContext(r.Context()), nil); err != nil {
+		log15.Warn("Failed to log event SignUpSucceeded", "error", err)
 	}
 }
 
@@ -280,6 +291,7 @@ func logSignInEvent(r *http.Request, db dbutil.DB, usr *types.User, name *databa
 	// Safe to ignore this error
 	event.AnonymousUserID, _ = cookie.AnonymousUID(r)
 
+	usagestats.LogBackendEvent(db, usr.ID, string(*name), nil, nil, featureflag.FromContext(r.Context()), nil)
 	database.SecurityEventLogs(db).LogEvent(r.Context(), event)
 }
 

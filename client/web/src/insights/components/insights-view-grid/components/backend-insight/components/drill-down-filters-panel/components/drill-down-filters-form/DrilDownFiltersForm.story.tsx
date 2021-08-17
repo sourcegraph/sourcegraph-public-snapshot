@@ -33,5 +33,6 @@ add('DrillDownFiltersForm', () => (
         originalFiltersValue={DRILLDOWN_FILTERS}
         onFilterSave={fakeAPIRequest}
         onFiltersChange={() => {}}
+        onCreateInsightRequest={() => {}}
     />
 ))
