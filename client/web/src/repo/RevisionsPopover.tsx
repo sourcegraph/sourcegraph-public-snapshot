@@ -13,7 +13,6 @@ import { gql, dataOrThrowErrors } from '@sourcegraph/shared/src/graphql/graphql'
 import { memoizeObservable } from '@sourcegraph/shared/src/util/memoizeObservable'
 import { RevisionSpec } from '@sourcegraph/shared/src/util/url'
 import { useLocalStorage } from '@sourcegraph/shared/src/util/useLocalStorage'
-import { useRedesignToggle } from '@sourcegraph/shared/src/util/useRedesignToggle'
 
 import { requestGraphQL } from '../backend/graphql'
 import { FilteredConnection, FilteredConnectionQueryArguments } from '../components/FilteredConnection'
@@ -218,7 +217,6 @@ export const RevisionsPopover: React.FunctionComponent<Props> = props => {
 
     const [tabIndex, setTabIndex] = useLocalStorage(LAST_TAB_STORAGE_KEY, 0)
     const handleTabsChange = useCallback((index: number) => setTabIndex(index), [setTabIndex])
-    const [isRedesignEnabled] = useRedesignToggle()
 
     const queryGitBranches = (args: FilteredConnectionQueryArguments): Observable<GitRefConnectionFields> =>
         queryGitReferences({ ...args, repo: props.repo, type: GitRefType.GIT_BRANCH, withBehindAhead: false })
@@ -239,13 +237,12 @@ export const RevisionsPopover: React.FunctionComponent<Props> = props => {
         className: 'connection-popover__content',
         inputClassName: 'connection-popover__input',
         listClassName: 'connection-popover__nodes',
-        showMoreClassName: isRedesignEnabled ? '' : 'connection-popover__show-more',
         inputPlaceholder: 'Find...',
         compact: true,
         autoFocus: true,
         history: props.history,
         location: props.location,
-        noSummaryIfAllNodesVisible: !isRedesignEnabled,
+        noSummaryIfAllNodesVisible: false,
         useURLQuery: false,
     }
 
