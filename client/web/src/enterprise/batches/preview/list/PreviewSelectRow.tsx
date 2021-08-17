@@ -5,7 +5,7 @@ import React, { useMemo, useContext } from 'react'
 import { pluralize } from '@sourcegraph/shared/src/util/strings'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
 
-import { BatchSpecApplyPreviewVariables, Maybe, Scalars } from '../../../../graphql-operations'
+import { BatchSpecApplyPreviewVariables, Scalars } from '../../../../graphql-operations'
 import { Action, DropdownButton } from '../../DropdownButton'
 import { MultiSelectContext } from '../../MultiSelectContext'
 import { BatchChangePreviewContext } from '../BatchChangePreviewContext'
@@ -38,16 +38,15 @@ const ACTIONS: Action[] = [
 ]
 
 // Returns the desired `PublishedValue` for the given action.
-const getPublicationStateFromAction = (action: Action): Maybe<Scalars['PublishedValue']> => {
+const getPublicationStateFromAction = (action: Action): Scalars['PublishedValue'] => {
     switch (action.type) {
-        case 'unpublish':
-            return false
         case 'publish':
             return true
         case 'publish-draft':
             return 'draft'
+        case 'unpublish':
         default:
-            return null
+            return false
     }
 }
 
