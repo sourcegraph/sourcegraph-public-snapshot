@@ -269,12 +269,14 @@ func TestSearchFilesInRepos_multipleRevsPerRepo(t *testing.T) {
 }
 
 func TestRepoShouldBeSearched(t *testing.T) {
-	searcher.MockSearch = func(ctx context.Context, repo api.RepoName, commit api.CommitID, p *search.TextPatternInfo, fetchTimeout time.Duration) (matches []*protocol.FileMatch, limitHit bool, err error) {
+	searcher.MockSearch = func(ctx context.Context, repo api.RepoName, commit api.CommitID, p *search.TextPatternInfo, fetchTimeout time.Duration, onMatches func([]*protocol.FileMatch)) (matches []*protocol.FileMatch, limitHit bool, err error) {
 		repoName := repo
 		switch repoName {
 		case "foo/one":
+			onMatches([]*protocol.FileMatch{{Path: "main.go"}})
 			return []*protocol.FileMatch{{Path: "main.go"}}, false, nil
 		case "foo/no-filematch":
+			onMatches([]*protocol.FileMatch{})
 			return []*protocol.FileMatch{}, false, nil
 		default:
 			return nil, false, errors.New("Unexpected repo")
