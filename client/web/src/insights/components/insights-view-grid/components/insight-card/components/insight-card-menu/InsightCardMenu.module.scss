@@ -3,13 +3,11 @@
     overflow: hidden;
     padding: 0.25rem 0;
 
-    // Explicit override @reach ui border styles
-    border: 1px solid var(--dropdown-border-color);
-    background-color: var(--dropdown-bg);
-
     // class .dropdown-menu brings position absolute and breaks
     // Menu positioning in portal because of it we reset position
     position: static;
+    // The .dropdown-menu is hidden by default
+    display: block;
 }
 
 .button {
