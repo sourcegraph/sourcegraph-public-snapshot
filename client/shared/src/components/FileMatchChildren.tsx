@@ -16,7 +16,6 @@ import {
 } from '../util/url'
 
 import { CodeExcerpt, FetchFileParameters } from './CodeExcerpt'
-import { CodeExcerptUnhighlighted } from './CodeExcerptUnhighlighted'
 import { MatchItem } from './FileMatch'
 import { MatchGroup, calculateMatchGroups } from './FileMatchContext'
 import { Link } from './Link'
@@ -47,9 +46,6 @@ interface FileMatchProps extends SettingsCascadeProps, ThemeProps {
     onSelect: () => void
 }
 
-// Dev flag for disabling syntax highlighting on search results pages.
-const NO_SEARCH_HIGHLIGHTING = localStorage.getItem('noSearchHighlighting') !== null
-
 export const FileMatchChildren: React.FunctionComponent<FileMatchProps> = props => {
     // The number of lines of context to show before and after each match.
     let context = 1
@@ -67,7 +63,7 @@ export const FileMatchChildren: React.FunctionComponent<FileMatchProps> = props 
     }
 
     const maxMatches = props.allMatches ? 0 : props.subsetMatches
-    const [matches, grouped] = React.useMemo(() => calculateMatchGroups(props.items, maxMatches, context), [
+    const [, grouped] = React.useMemo(() => calculateMatchGroups(props.items, maxMatches, context), [
         props.items,
         maxMatches,
         context,
@@ -128,16 +124,6 @@ export const FileMatchChildren: React.FunctionComponent<FileMatchProps> = props 
         return appendLineRangeQueryParameter(
             appendSubtreeQueryParameter(getFileMatchUrl(result)),
             positionOrRangeQueryParameter
-        )
-    }
-
-    if (NO_SEARCH_HIGHLIGHTING) {
-        return (
-            <CodeExcerptUnhighlighted
-                urlWithoutPosition={getFileMatchUrl(result)}
-                items={matches}
-                onSelect={props.onSelect}
-            />
         )
     }
 
