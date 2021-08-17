@@ -41,7 +41,6 @@ export interface ContentMatch {
 }
 
 interface LineMatch {
-    line: string
     lineNumber: number
     offsetAndLengths: number[][]
     aggregableBadges?: AggregableBadge[]
