@@ -1,6 +1,6 @@
 import classNames from 'classnames'
 import * as H from 'history'
-import React, { useCallback, useState } from 'react'
+import React, { useCallback, useContext, useState } from 'react'
 
 import { Link } from '@sourcegraph/shared/src/components/Link'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
@@ -10,6 +10,7 @@ import { ErrorAlert } from '../../../components/alerts'
 import { BatchSpecFields } from '../../../graphql-operations'
 
 import { createBatchChange, applyBatchChange } from './backend'
+import { BatchChangePreviewContext } from './BatchChangePreviewContext'
 import styles from './CreateUpdateBatchChangeAlert.module.scss'
 
 export interface CreateUpdateBatchChangeAlertProps extends TelemetryProps {
@@ -29,6 +30,9 @@ export const CreateUpdateBatchChangeAlert: React.FunctionComponent<CreateUpdateB
     telemetryService,
 }) => {
     const batchChangeID = batchChange?.id
+
+    const { publicationStates } = useContext(BatchChangePreviewContext)
+
     const [isLoading, setIsLoading] = useState<boolean | Error>(false)
 
     const onApply = useCallback(async () => {
@@ -38,8 +42,8 @@ export const CreateUpdateBatchChangeAlert: React.FunctionComponent<CreateUpdateB
         setIsLoading(true)
         try {
             const batchChange = batchChangeID
-                ? await applyBatchChange({ batchSpec: specID, batchChange: batchChangeID })
-                : await createBatchChange({ batchSpec: specID })
+                ? await applyBatchChange({ batchSpec: specID, batchChange: batchChangeID, publicationStates })
+                : await createBatchChange({ batchSpec: specID, publicationStates })
 
             if (toBeArchived > 0) {
                 history.push(`${batchChange.url}?archivedCount=${toBeArchived}&archivedBy=${specID}`)
@@ -50,27 +54,24 @@ export const CreateUpdateBatchChangeAlert: React.FunctionComponent<CreateUpdateB
         } catch (error) {
             setIsLoading(error)
         }
-    }, [specID, setIsLoading, history, batchChangeID, telemetryService, toBeArchived])
+    }, [specID, setIsLoading, history, batchChangeID, telemetryService, toBeArchived, publicationStates])
 
     return (
         <>
             <div className="alert alert-info mb-3 d-block d-md-flex align-items-center body-lead">
                 <div className={classNames(styles.createUpdateBatchChangeAlertCopy, 'flex-grow-1 mr-3')}>
-                    {!batchChange && (
-                        <>
-                            Review the proposed changesets below. Click 'Apply spec' or run <code>src batch apply</code>{' '}
-                            against your batch spec to create the batch change and perform the indicated action on each
-                            changeset.
-                        </>
-                    )}
-                    {batchChange && (
+                    {batchChange ? (
                         <>
                             This operation will update the existing batch change{' '}
-                            <Link to={batchChange.url}>{batchChange.name}</Link>. Click 'Apply spec' or run{' '}
-                            <code>src batch apply</code> against your batch spec to update the batch change and perform
-                            the indicated action on each changeset.
+                            <Link to={batchChange.url}>{batchChange.name}</Link>
                         </>
-                    )}
+                    ) : (
+                        'Review the proposed changesets below.'
+                    )}{' '}
+                    Click 'Apply' or run <code>src batch apply</code> against your batch spec to{' '}
+                    {batchChange ? 'update' : 'create'} the batch change and perform the indicated action on each
+                    changeset. Select a changeset and modify the action to customize the publication state of each or
+                    all changesets.
                 </div>
                 <div className={styles.createUpdateBatchChangeAlertBtn}>
                     <button
@@ -85,7 +86,7 @@ export const CreateUpdateBatchChangeAlert: React.FunctionComponent<CreateUpdateB
                             !viewerCanAdminister ? 'You have no permission to apply this batch change.' : undefined
                         }
                     >
-                        Apply spec
+                        Apply
                     </button>
                 </div>
             </div>
