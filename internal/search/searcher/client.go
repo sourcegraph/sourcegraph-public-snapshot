@@ -26,7 +26,7 @@ import (
 
 var (
 	searchDoer, _ = httpcli.NewInternalClientFactory("search").Doer()
-	MockSearch    func(ctx context.Context, repo api.RepoName, commit api.CommitID, p *search.TextPatternInfo, fetchTimeout time.Duration, onMatches func([]*protocol.FileMatch)) (matches []*protocol.FileMatch, limitHit bool, err error)
+	MockSearch    func(ctx context.Context, repo api.RepoName, commit api.CommitID, p *search.TextPatternInfo, fetchTimeout time.Duration, onMatches func([]*protocol.FileMatch)) (limitHit bool, err error)
 )
 
 // Search searches repo@commit with p.
@@ -41,7 +41,7 @@ func Search(
 	fetchTimeout time.Duration,
 	indexerEndpoints []string,
 	onMatches func([]*protocol.FileMatch),
-) (matches []*protocol.FileMatch, limitHit bool, err error) {
+) (limitHit bool, err error) {
 	if MockSearch != nil {
 		return MockSearch(ctx, repo, commit, p, fetchTimeout, onMatches)
 	}
@@ -83,13 +83,13 @@ func Search(
 	if deadline, ok := ctx.Deadline(); ok {
 		t, err := deadline.MarshalText()
 		if err != nil {
-			return nil, false, err
+			return false, err
 		}
 		r.Deadline = string(t)
 	}
 	body, err := json.Marshal(r)
 	if err != nil {
-		return nil, false, err
+		return false, err
 	}
 
 	// Searcher caches the file contents for repo@commit since it is
@@ -109,7 +109,7 @@ func Search(
 
 		url, err := searcherURLs.Get(consistentHashKey, excludedSearchURLs)
 		if err != nil {
-			return nil, false, err
+			return false, err
 		}
 
 		// Fallback to a bad host if nothing is left
@@ -117,24 +117,24 @@ func Search(
 			tr.LazyPrintf("failed to find endpoint, trying again without excludes")
 			url, err = searcherURLs.Get(consistentHashKey, nil)
 			if err != nil {
-				return nil, false, err
+				return false, err
 			}
 		}
 
 		tr.LazyPrintf("attempt %d: %s", attempt, url)
 		limitHit, err = textSearchStream(ctx, url, body, onMatches)
 		if err == nil || errcode.IsTimeout(err) {
-			return nil, limitHit, err
+			return limitHit, err
 		}
 
 		// If we are canceled, return that error.
 		if err := ctx.Err(); err != nil {
-			return nil, false, err
+			return false, err
 		}
 
 		// If not temporary or our last attempt then don't try again.
 		if !errcode.IsTemporary(err) || attempt == maxAttempts {
-			return nil, false, err
+			return false, err
 		}
 
 		tr.LazyPrintf("transient error %s", err.Error())
