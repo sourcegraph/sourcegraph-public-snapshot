@@ -169,15 +169,6 @@ type IndexedSearchRequest struct {
 	since func(time.Time) time.Duration
 }
 
-// Repos is a map of repository revisions that are indexed and will be
-// searched by Zoekt. Do not mutate.
-func (s *IndexedSearchRequest) Repos() map[string]*search.RepositoryRevisions {
-	if s.RepoRevs == nil {
-		return nil
-	}
-	return s.RepoRevs.repoRevs
-}
-
 // Search streams 0 or more events to c.
 func (s *IndexedSearchRequest) Search(ctx context.Context, c streaming.Sender) error {
 	if s.Args == nil {
@@ -189,7 +180,7 @@ func (s *IndexedSearchRequest) Search(ctx context.Context, c streaming.Sender) e
 		return doZoektSearchGlobal(ctx, q, s.Args.Typ, s.Args.Zoekt.Client, s.Args.FileMatchLimit, s.Args.Select, c)
 	}
 
-	if len(s.Repos()) == 0 {
+	if s.RepoRevs == nil {
 		return nil
 	}
 
@@ -428,6 +419,10 @@ func doZoektSearchGlobal(ctx context.Context, q zoektquery.Q, typ search.Indexed
 
 // zoektSearch searches repositories using zoekt.
 func zoektSearch(ctx context.Context, args *search.ZoektParameters, repos *IndexedRepoRevs, since func(t time.Time) time.Duration, c streaming.Sender) error {
+	if len(repos.repoRevs) == 0 {
+		return nil
+	}
+
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
