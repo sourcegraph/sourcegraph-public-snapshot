@@ -42,6 +42,7 @@ const mockInsightAPI = createMockInsightAPI({
                 title: 'Backend Insight Mock',
                 subtitle: 'Backend insight description text',
                 content: [LINE_CHART_CONTENT_MOCK],
+                isFetchingHistoricalData: false,
             },
         }),
 })

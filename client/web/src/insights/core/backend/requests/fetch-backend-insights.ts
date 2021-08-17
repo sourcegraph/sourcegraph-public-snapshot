@@ -24,6 +24,11 @@ const insightFieldsFragment = gql`
                 dateTime
                 value
             }
+            status {
+                pendingJobs
+                completedJobs
+                failedJobs
+            }
         }
     }
 `

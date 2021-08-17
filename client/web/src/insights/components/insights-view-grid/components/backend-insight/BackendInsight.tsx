@@ -1,7 +1,9 @@
 import classnames from 'classnames'
+import AlertIcon from 'mdi-react/AlertIcon'
 import DatabaseIcon from 'mdi-react/DatabaseIcon'
 import React, { useCallback, useContext, useRef, useState } from 'react'
 
+import { Tooltip } from '@sourcegraph/branded/src/components/tooltip/Tooltip'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
@@ -10,6 +12,7 @@ import { useDebounce } from '@sourcegraph/wildcard'
 
 import { Settings } from '../../../../../schema/settings.schema'
 import { InsightsApiContext } from '../../../../core/backend/api-provider'
+import { InsightStillProcessingError } from '../../../../core/backend/api/get-backend-insight-by-id'
 import { BackendInsightFilters } from '../../../../core/backend/types'
 import { addInsightToSettings } from '../../../../core/settings-action/insights'
 import { SearchBackendBasedInsight, SearchBasedBackendFilters } from '../../../../core/types/insight/search-insight'
@@ -134,22 +137,36 @@ export const BackendInsight: React.FunctionComponent<BackendInsightProps> = prop
         return
     }
 
+    const LoadingIndicator: React.FunctionComponent = () => (
+        <>
+            <Tooltip />
+            <AlertIcon
+                size={16}
+                className="text-warning"
+                data-tooltip="Some data for this insight is still being processed."
+            />
+        </>
+    )
+
     return (
         <InsightContentCard
             insight={{ id: insight.id, view: data?.view }}
             hasContextMenu={true}
             actions={
-                <DrillDownFiltersAction
-                    isOpen={isFiltersOpen}
-                    settings={settingsCascade.final ?? {}}
-                    popoverTargetRef={insightCardReference}
-                    initialFiltersValue={filters}
-                    originalFiltersValue={originalInsightFilters}
-                    onFilterChange={setFilters}
-                    onFilterSave={handleFilterSave}
-                    onInsightCreate={handleInsightFilterCreation}
-                    onVisibilityChange={setIsFiltersOpen}
-                />
+                <>
+                    {data?.view.isFetchingHistoricalData && <LoadingIndicator />}
+                    <DrillDownFiltersAction
+                        isOpen={isFiltersOpen}
+                        settings={settingsCascade.final ?? {}}
+                        popoverTargetRef={insightCardReference}
+                        initialFiltersValue={filters}
+                        originalFiltersValue={originalInsightFilters}
+                        onFilterChange={setFilters}
+                        onFilterSave={handleFilterSave}
+                        onInsightCreate={handleInsightFilterCreation}
+                        onVisibilityChange={setIsFiltersOpen}
+                    />
+                </>
             }
             telemetryService={telemetryService}
             onDelete={() => handleDelete(insight)}
@@ -166,7 +183,11 @@ export const BackendInsight: React.FunctionComponent<BackendInsightProps> = prop
                     icon={DatabaseIcon}
                 />
             ) : isErrorLike(error) ? (
-                <InsightErrorContent error={error} title={insight.id} icon={DatabaseIcon} />
+                <InsightErrorContent error={error} title={insight.id} icon={DatabaseIcon}>
+                    {error instanceof InsightStillProcessingError ? (
+                        <div className="alert alert-info m-0">{error.message}</div>
+                    ) : null}
+                </InsightErrorContent>
             ) : (
                 data && (
                     <InsightViewContent
