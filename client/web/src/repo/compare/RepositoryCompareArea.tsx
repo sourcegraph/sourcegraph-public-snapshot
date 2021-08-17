@@ -19,7 +19,6 @@ import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryServi
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { property, isDefined } from '@sourcegraph/shared/src/util/types'
 import {
-    escapeRevspecForURL,
     FileSpec,
     ModeSpec,
     UIPositionSpec,
@@ -187,11 +186,7 @@ export class RepositoryCompareArea extends React.Component<RepositoryCompareArea
         }
         return (
             <div className="repository-compare-area container" ref={this.nextRepositoryCompareAreaElement}>
-                <RepositoryCompareHeader
-                    className="my-3"
-                    {...commonProps}
-                    onUpdateComparisonSpec={this.onUpdateComparisonSpec}
-                />
+                <RepositoryCompareHeader className="my-3" {...commonProps} />
                 {spec === null ? (
                     <div className="alert alert-danger">Invalid comparison specifier</div>
                 ) : (
@@ -223,16 +218,6 @@ export class RepositoryCompareArea extends React.Component<RepositoryCompareArea
                     />
                 )}
             </div>
-        )
-    }
-
-    private onUpdateComparisonSpec = (newBaseSpec: string, newHeadSpec: string): void => {
-        this.props.history.push(
-            `/${this.props.repo.name}/-/compare${
-                newBaseSpec || newHeadSpec
-                    ? `/${escapeRevspecForURL(newBaseSpec || '')}...${escapeRevspecForURL(newHeadSpec || '')}`
-                    : ''
-            }`
         )
     }
 }

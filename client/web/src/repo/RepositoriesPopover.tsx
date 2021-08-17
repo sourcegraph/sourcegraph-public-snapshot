@@ -3,7 +3,6 @@ import { Link, useHistory, useLocation } from 'react-router-dom'
 import { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
 
-import { CircleChevronLeftIcon } from '@sourcegraph/shared/src/components/icons'
 import { displayRepoName } from '@sourcegraph/shared/src/components/RepoFileLink'
 import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
 import { gql } from '@sourcegraph/shared/src/graphql/graphql'
@@ -55,9 +54,6 @@ const RepositoryNode: React.FunctionComponent<RepositoryNodeProps> = ({ node, cu
             }`}
         >
             {displayRepoName(node.name)}
-            {node.id === currentRepo && (
-                <CircleChevronLeftIcon className="icon-inline connection-popover__node-link-icon" />
-            )}
         </Link>
     </li>
 )
