@@ -26,7 +26,7 @@ import (
 
 var (
 	searchDoer, _ = httpcli.NewInternalClientFactory("search").Doer()
-	MockSearch    func(ctx context.Context, repo api.RepoName, commit api.CommitID, p *search.TextPatternInfo, fetchTimeout time.Duration, onMatches func([]*protocol.FileMatch)) (matches []*protocol.FileMatch, limitHit bool, err error)
+	MockSearch    func(ctx context.Context, repo api.RepoName, commit api.CommitID, p *search.TextPatternInfo, fetchTimeout time.Duration, onMatches func([]*protocol.FileMatch)) (limitHit bool, err error)
 )
 
 // Search searches repo@commit with p.
@@ -41,7 +41,7 @@ func Search(
 	fetchTimeout time.Duration,
 	indexerEndpoints []string,
 	onMatches func([]*protocol.FileMatch),
-) (matches []*protocol.FileMatch, limitHit bool, err error) {
+) (limitHit bool, err error) {
 	if MockSearch != nil {
 		return MockSearch(ctx, repo, commit, p, fetchTimeout, onMatches)
 	}
@@ -83,13 +83,13 @@ func Search(
 	if deadline, ok := ctx.Deadline(); ok {
 		t, err := deadline.MarshalText()
 		if err != nil {
-			return nil, false, err
+			return false, err
 		}
 		r.Deadline = string(t)
 	}
 	body, err := json.Marshal(r)
 	if err != nil {
-		return nil, false, err
+		return false, err
 	}
 
 	// Searcher caches the file contents for repo@commit since it is
@@ -100,12 +100,12 @@ func Search(
 
 	nodes, err := searcherURLs.Endpoints()
 	if err != nil {
-		return nil, false, err
+		return false, err
 	}
 
 	urls, err := searcherURLs.GetN(consistentHashKey, len(nodes))
 	if err != nil {
-		return nil, false, err
+		return false, err
 	}
 
 	for attempt := 0; attempt < 2; attempt++ {
@@ -114,23 +114,23 @@ func Search(
 		tr.LazyPrintf("attempt %d: %s", attempt, url)
 		limitHit, err = textSearchStream(ctx, url, body, onMatches)
 		if err == nil || errcode.IsTimeout(err) {
-			return nil, limitHit, err
+			return limitHit, err
 		}
 
 		// If we are canceled, return that error.
 		if err = ctx.Err(); err != nil {
-			return nil, false, err
+			return false, err
 		}
 
 		// If not temporary or our last attempt then don't try again.
 		if !errcode.IsTemporary(err) {
-			return nil, false, err
+			return false, err
 		}
 
 		tr.LazyPrintf("transient error %s", err.Error())
 	}
 
-	return nil, false, err
+	return false, err
 }
 
 func textSearchStream(ctx context.Context, url string, body []byte, cb func([]*protocol.FileMatch)) (bool, error) {
