@@ -731,11 +731,11 @@ type BatchChangesUsageStatistics struct {
 	ViewBatchChangeApplyPageCount int32
 	// ViewBatchChangeDetailsPageAfterCreateCount is the number of page views on
 	// the batch changes details page *after creating* the batch change on the apply
-	// page by clicking "Apply spec".
+	// page by clicking "Apply".
 	ViewBatchChangeDetailsPageAfterCreateCount int32
 	// ViewBatchChangeDetailsPageAfterUpdateCount is the number of page views on
 	// the batch changes details page *after updating* a batch change on the apply page
-	// by clicking "Apply spec".
+	// by clicking "Apply".
 	ViewBatchChangeDetailsPageAfterUpdateCount int32
 
 	// BatchChangesCount is the number of batch changes on the instance. This can go

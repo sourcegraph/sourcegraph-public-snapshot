@@ -25,7 +25,7 @@ In order to update a batch change after previewing the changes, do the following
 
     <pre><code>src batch preview -f <em>YOUR_BATCH_SPEC.batch.yaml</em></code></pre>
 1. Open on the URL that's printed to preview the changes that will be made by applying the new batch spec.
-1. Click **Apply spec** to update the batch change.
+1. Click **Apply** to update the batch change.
 
 All of the changesets on your code host will be updated to the desired state that was shown in the preview.
 
