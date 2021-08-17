@@ -38,7 +38,17 @@ type Syncer struct {
 	// Now is time.Now. Can be set by tests to get deterministic output.
 	Now func() time.Time
 
+	// Registerer is the interface to register / unregister prometheus metrics.
 	Registerer prometheus.Registerer
+
+	// PermsSyncer is the interface that lets the syncer schedule permissions syncing without
+	// directly having access to the permissions syncer client.
+	PermsSyncer interface {
+		// ScheduleRepos will schedule a repository permissions sync. PermsSyncer can be nil so
+		// callers of syncer.PermsSyncer.ScheduleRepos must ensure to check if the interface is nil
+		// before invoking the method.
+		ScheduleRepos(ctx context.Context, repoIDs ...api.RepoID)
+	}
 
 	// UserReposMaxPerUser can be used to override the value read from config.
 	// If zero, we'll read from config instead.

@@ -22,6 +22,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repoupdater"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -180,10 +181,11 @@ func Main(enterpriseInit EnterpriseInit) {
 		Store:   store,
 		// We always want to listen on the Synced channel since external service syncing
 		// happens on both Cloud and non Cloud instances.
-		Synced:     make(chan repos.Diff),
-		Logger:     log15.Root(),
-		Now:        clock,
-		Registerer: prometheus.DefaultRegisterer,
+		Synced:      make(chan repos.Diff),
+		Logger:      log15.Root(),
+		Now:         clock,
+		Registerer:  prometheus.DefaultRegisterer,
+		PermsSyncer: server.PermsSyncer,
 	}
 
 	var gps *repos.GitolitePhabricatorMetadataSyncer
@@ -367,14 +369,30 @@ func watchSyncer(ctx context.Context, syncer *repos.Syncer, sched scheduler, gps
 			if !conf.Get().DisableAutoGitUpdates {
 				sched.UpdateFromDiff(diff)
 			}
+
 			if gps == nil {
 				continue
 			}
+
 			go func() {
 				if err := gps.Sync(ctx, diff.Repos()); err != nil {
 					log15.Error("GitolitePhabricatorMetadataSyncer", "error", err)
 				}
 			}()
+
+			// PermsSyncer is only available in enterprise mode.
+			if syncer.PermsSyncer != nil {
+				// Schedule a repo permissions sync for alll private repos in added and modified.
+				var repoIDs []api.RepoID
+
+				for _, r := range append(diff.Added, diff.Modified...) {
+					if r.Private {
+						repoIDs = append(repoIDs, r.ID)
+					}
+				}
+
+				syncer.PermsSyncer.ScheduleRepos(ctx, repoIDs...)
+			}
 		}
 	}
 }
