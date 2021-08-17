@@ -25,7 +25,7 @@ type gcpConfig struct {
 }
 
 func (c *gcpConfig) load(parent *env.BaseConfig) {
-	c.ProjectID = parent.GetOptional("EXECUTOR_METRIC_GCP_PROJECT_ID", "The project containing the custom metric.")
+	c.ProjectID = parent.Get("EXECUTOR_METRIC_GCP_PROJECT_ID", "", "The project containing the custom metric.")
 	c.CredentialsFile = parent.GetOptional("EXECUTOR_METRIC_GOOGLE_APPLICATION_CREDENTIALS_FILE", "The path to a service account key file with access to metrics.")
 	c.CredentialsFileContents = parent.GetOptional("EXECUTOR_METRIC_GOOGLE_APPLICATION_CREDENTIALS_FILE_CONTENT", "The contents of a service account key file with access to metrics.")
 }
