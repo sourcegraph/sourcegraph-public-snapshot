@@ -7,6 +7,7 @@ import { InsightsApiContext } from '../../../../../core/backend/api-provider'
 import { addInsightToDashboard } from '../../../../../core/settings-action/dashboards'
 import { addInsightToSettings } from '../../../../../core/settings-action/insights'
 import { InsightDashboard, InsightTypePrefix, isVirtualDashboard } from '../../../../../core/types'
+import { isSettingsBasedInsightsDashboard } from '../../../../../core/types/dashboard/real-dashboard'
 import { SearchBackendBasedInsight, SearchBasedBackendFilters } from '../../../../../core/types/insight/search-insight'
 
 interface CreateInsightInputs {
@@ -43,8 +44,15 @@ export function useInsightFilterCreation(props: UseInsightFilterCreationProps): 
 
         const updatedSettings = [
             (settings: string) => addInsightToSettings(settings, newInsight),
-            (settings: string) =>
-                isVirtualDashboard(dashboard) ? settings : addInsightToDashboard(settings, dashboard.id, dashboard.id),
+            (settings: string) => {
+                // Virtual and built-in dashboards calculate their insight dynamically in runtime
+                // no need to store insight list for them explicitly
+                if (isVirtualDashboard(dashboard) || !isSettingsBasedInsightsDashboard(dashboard)) {
+                    return settings
+                }
+
+                return addInsightToDashboard(settings, dashboard.settingsKey, newInsight.id)
+            },
         ].reduce((settings, transformer) => transformer(settings), settings.contents)
 
         await updateSubjectSettings(platformContext, subjectId, updatedSettings).toPromise()

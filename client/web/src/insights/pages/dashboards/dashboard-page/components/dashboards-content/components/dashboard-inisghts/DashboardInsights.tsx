@@ -11,11 +11,12 @@ import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
 import { Settings } from '../../../../../../../../schema/settings.schema'
 import { CodeInsightsIcon } from '../../../../../../../components'
 import { SmartInsightsViewGrid } from '../../../../../../../components/insights-view-grid'
-import { BackendInsightContext } from '../../../../../../../components/insights-view-grid/components/backend-insight/BackendInsightContext'
 import { InsightDashboard } from '../../../../../../../core/types'
 import { useDistinctValue } from '../../../../../../../hooks/use-distinct-value'
 import { useInsights } from '../../../../../../../hooks/use-insight/use-insight'
 import { EmptyInsightDashboard } from '../empty-insight-dashboard/EmptyInsightDashboard'
+
+import { DashboardInsightsContext } from './DashboardInsightsContext'
 
 const DEFAULT_INSIGHT_IDS: string[] = []
 
@@ -58,9 +59,9 @@ export const DashboardInsights: React.FunctionComponent<DashboardInsightsProps> 
     }
 
     return (
-        <div>
-            {insights.length > 0 ? (
-                <BackendInsightContext.Provider value={{ currentDashboard: dashboard }}>
+        <DashboardInsightsContext.Provider value={{ dashboard }}>
+            <div>
+                {insights.length > 0 ? (
                     <SmartInsightsViewGrid
                         insights={insights}
                         telemetryService={telemetryService}
@@ -68,14 +69,14 @@ export const DashboardInsights: React.FunctionComponent<DashboardInsightsProps> 
                         platformContext={platformContext}
                         extensionsController={extensionsController}
                     />
-                </BackendInsightContext.Provider>
-            ) : (
-                <EmptyInsightDashboard
-                    dashboard={dashboard}
-                    settingsCascade={settingsCascade}
-                    onAddInsight={onAddInsightRequest}
-                />
-            )}
-        </div>
+                ) : (
+                    <EmptyInsightDashboard
+                        dashboard={dashboard}
+                        settingsCascade={settingsCascade}
+                        onAddInsight={onAddInsightRequest}
+                    />
+                )}
+            </div>
+        </DashboardInsightsContext.Provider>
     )
 }

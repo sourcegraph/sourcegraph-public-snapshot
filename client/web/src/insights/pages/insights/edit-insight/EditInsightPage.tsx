@@ -19,7 +19,7 @@ import { findInsightById } from '../../../hooks/use-insight/use-insight'
 import { EditLangStatsInsight } from './components/EditLangStatsInsight'
 import { EditSearchBasedInsight } from './components/EditSearchInsight'
 import styles from './EditInsightPage.module.scss'
-import { useHandleSubmit } from './hooks/use-handle-submit'
+import { usePageHandlers } from './hooks/use-page-handlers'
 
 export interface EditInsightPageProps extends SettingsCascadeProps, PlatformContextProps<'updateSettings'> {
     /** Normalized insight id <type insight>.insight.<name of insight> */
@@ -28,7 +28,7 @@ export interface EditInsightPageProps extends SettingsCascadeProps, PlatformCont
     /**
      * Authenticated user info, Used to decide where code insight will appears
      * in personal dashboard (private) or in organisation dashboard (public)
-     * */
+     */
     authenticatedUser: Pick<AuthenticatedUser, 'id' | 'organizations' | 'username'>
 }
 
@@ -43,7 +43,7 @@ export const EditInsightPage: React.FunctionComponent<EditInsightPageProps> = pr
     // (if user changed visibility we remove insight first from previous subject)
     // show the wrong visual state.
     const [insight] = useState(() => findInsightById(settingsCascade, insightID))
-    const { handleEditInsightSubmit } = useHandleSubmit({
+    const { handleSubmit, handleCancel } = usePageHandlers({
         originalInsight: insight,
         settingsCascade,
         platformContext,
@@ -106,7 +106,8 @@ export const EditInsightPage: React.FunctionComponent<EditInsightPageProps> = pr
                     insight={insight}
                     finalSettings={finalSettings}
                     subjects={subjects}
-                    onSubmit={handleEditInsightSubmit}
+                    onSubmit={handleSubmit}
+                    onCancel={handleCancel}
                 />
             )}
 
@@ -115,7 +116,8 @@ export const EditInsightPage: React.FunctionComponent<EditInsightPageProps> = pr
                     insight={insight}
                     finalSettings={finalSettings}
                     subjects={subjects}
-                    onSubmit={handleEditInsightSubmit}
+                    onSubmit={handleSubmit}
+                    onCancel={handleCancel}
                 />
             )}
         </Page>

@@ -34,6 +34,9 @@
     }
 
     &__nodes {
+        &:empty {
+            display: none;
+        }
         .theme-redesign & {
             border-top: solid 1px var(--border-color-2);
             padding-top: 0.25rem;

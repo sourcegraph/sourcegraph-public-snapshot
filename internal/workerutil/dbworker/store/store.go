@@ -633,8 +633,8 @@ RETURNING {id}
 `
 
 // MarkErrored attempts to update the state of the record to errored. This method will only have an effect
-// if the current state of the record is processing or completed. A requeued record or a record already marked
-// with an error will not be updated. This method returns a boolean flag indicating if the record was updated.
+// if the current state of the record is processing. A requeued record or a record already marked with an
+// error will not be updated. This method returns a boolean flag indicating if the record was updated.
 func (s *store) MarkErrored(ctx context.Context, id int, failureMessage string, options MarkFinalOptions) (_ bool, err error) {
 	ctx, endObservation := s.operations.markErrored.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("id", id),
@@ -664,8 +664,8 @@ RETURNING {id}
 `
 
 // MarkFailed attempts to update the state of the record to failed. This method will only have an effect
-// if the current state of the record is processing or completed. A requeued record or a record already marked
-// with an error will not be updated. This method returns a boolean flag indicating if the record was updated.
+// if the current state of the record is processing. A requeued record or a record already marked with an
+// error will not be updated. This method returns a boolean flag indicating if the record was updated.
 func (s *store) MarkFailed(ctx context.Context, id int, failureMessage string, options MarkFinalOptions) (_ bool, err error) {
 	ctx, endObservation := s.operations.markFailed.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("id", id),
