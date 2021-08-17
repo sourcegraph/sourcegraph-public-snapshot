@@ -11,6 +11,7 @@ import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryServi
 import { asError, ErrorLike, isErrorLike } from '@sourcegraph/shared/src/util/errors'
 import { repeatUntil } from '@sourcegraph/shared/src/util/rxjs/repeatUntil'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
+import { Badge } from '@sourcegraph/web/src/components/Badge'
 import { Container, PageHeader } from '@sourcegraph/wildcard'
 
 import { requestGraphQL } from '../../../backend/graphql'
@@ -390,12 +391,20 @@ export const UserSettingsRepositoriesPage: React.FunctionComponent<Props> = ({
             <PageTitle title="Repositories" />
             <PageHeader
                 headingElement="h2"
-                path={[{ text: 'Repositories' }]}
+                path={[
+                    {
+                        text: (
+                            <div className="d-flex">
+                                Repositories <Badge status="beta" className="ml-2" />
+                            </div>
+                        ),
+                    },
+                ]}
                 description={
-                    <>
+                    <div className="text-muted">
                         All repositories synced with Sourcegraph from{' '}
                         <Link to={`${routingPrefix}/code-hosts`}>connected code hosts</Link>
-                    </>
+                    </div>
                 }
                 actions={
                     <Link

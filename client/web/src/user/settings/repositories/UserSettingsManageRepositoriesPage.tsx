@@ -8,6 +8,7 @@ import { Form } from '@sourcegraph/branded/src/components/Form'
 import { Link } from '@sourcegraph/shared/src/components/Link'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { asError, ErrorLike, isErrorLike } from '@sourcegraph/shared/src/util/errors'
+import { Badge } from '@sourcegraph/web/src/components/Badge'
 import { Container, PageSelector } from '@sourcegraph/wildcard'
 
 import { ALLOW_NAVIGATION, AwayPrompt } from '../../../components/AwayPrompt'
@@ -736,7 +737,9 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
     return (
         <div className="user-settings-repos">
             <PageTitle title="Manage Repositories" />
-            <h2 className="mb-2">Manage Repositories</h2>
+            <h2 className="d-flex mb-2">
+                Manage Repositories <Badge status="beta" className="ml-2" />
+            </h2>
             <p className="text-muted">
                 Choose repositories to sync with Sourcegraph to search code you care about all in one place
             </p>
