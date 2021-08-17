@@ -70,8 +70,8 @@ export const CreateUpdateBatchChangeAlert: React.FunctionComponent<CreateUpdateB
                     )}{' '}
                     Click 'Apply' or run <code>src batch apply</code> against your batch spec to{' '}
                     {batchChange ? 'update' : 'create'} the batch change and perform the indicated action on each
-                    changeset. Select a changeset and modify the action to customize the publish status of each or all
-                    changesets.
+                    changeset. Select a changeset and modify the action to customize the publication state of each or
+                    all changesets.
                 </div>
                 <div className={styles.createUpdateBatchChangeAlertBtn}>
                     <button
