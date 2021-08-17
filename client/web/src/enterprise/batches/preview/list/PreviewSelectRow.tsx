@@ -45,7 +45,7 @@ export interface PreviewSelectRowProps {
 }
 
 /**
- * Renders the top bar of the PreviewList with the publish status dropdown selector and
+ * Renders the top bar of the PreviewList with the publication state dropdown selector and
  * the X selected label. Provides select ALL functionality.
  */
 export const PreviewSelectRow: React.FunctionComponent<PreviewSelectRowProps> = ({

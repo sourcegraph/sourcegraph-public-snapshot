@@ -6,9 +6,9 @@ import {
 
 /**
  * For a given preview of a changeset to be applied, this method checks if the type of
- * changeset allows for the user to modify its publish status from the UI: namely, that
+ * changeset allows for the user to modify its publication state from the UI: namely, that
  * the applied changeset is visible to the user applying, will be attaching or updating
- * the changeset, is not an existing reference, and has not had its publish status set
+ * the changeset, is not an existing reference, and has not had its publication state set
  * from the batch spec file. Returns the id of the changeset spec if it is publishable
  * from the UI, or null if for any reason it is not.
  *

@@ -102,7 +102,7 @@ const PreviewListImpl: React.FunctionComponent<Props> = ({
                     // Store the query arguments used for the current connection.
                     setQueryArguments(passedArguments)
                     // Available changeset specs are all changesets specs that a user can
-                    // modify the publish status of.
+                    // modify the publication state of from the UI.
                     setVisible(
                         data.nodes
                             .map(node => getPublishableChangesetSpecID(node))

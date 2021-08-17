@@ -67,7 +67,7 @@ And the more explanatory body. And the more explanatory body. And the more expla
 }
 
 export const visibleChangesetApplyPreviewNodeStories = (
-    publishStatusSet: boolean
+    publicationStateSet: boolean
 ): Record<string, VisibleChangesetApplyPreviewFields> => ({
     'Import changeset': {
         __typename: 'VisibleChangesetApplyPreview',
@@ -109,7 +109,7 @@ export const visibleChangesetApplyPreviewNodeStories = (
         },
         targets: {
             __typename: 'VisibleApplyPreviewTargetsAttach',
-            changesetSpec: baseChangesetSpec(1, publishStatusSet ? true : null),
+            changesetSpec: baseChangesetSpec(1, publicationStateSet ? true : null),
         },
     },
     'Create changeset draft': {
@@ -126,7 +126,7 @@ export const visibleChangesetApplyPreviewNodeStories = (
         },
         targets: {
             __typename: 'VisibleApplyPreviewTargetsAttach',
-            changesetSpec: baseChangesetSpec(2, publishStatusSet ? 'draft' : null),
+            changesetSpec: baseChangesetSpec(2, publicationStateSet ? 'draft' : null),
         },
     },
     'Create changeset not published': {
@@ -143,7 +143,7 @@ export const visibleChangesetApplyPreviewNodeStories = (
         },
         targets: {
             __typename: 'VisibleApplyPreviewTargetsAttach',
-            changesetSpec: baseChangesetSpec(3, publishStatusSet ? false : null),
+            changesetSpec: baseChangesetSpec(3, publicationStateSet ? false : null),
         },
     },
     'Update changeset title': {
@@ -160,7 +160,7 @@ export const visibleChangesetApplyPreviewNodeStories = (
         },
         targets: {
             __typename: 'VisibleApplyPreviewTargetsUpdate',
-            changesetSpec: baseChangesetSpec(4, publishStatusSet ? true : null),
+            changesetSpec: baseChangesetSpec(4, publicationStateSet ? true : null),
             changeset: {
                 id: '123123',
                 title: 'the old title',
@@ -215,7 +215,7 @@ export const visibleChangesetApplyPreviewNodeStories = (
         },
         targets: {
             __typename: 'VisibleApplyPreviewTargetsUpdate',
-            changesetSpec: baseChangesetSpec(5, publishStatusSet ? true : null),
+            changesetSpec: baseChangesetSpec(5, publicationStateSet ? true : null),
             changeset: {
                 id: '123123',
                 title: 'the old title',
@@ -270,7 +270,7 @@ export const visibleChangesetApplyPreviewNodeStories = (
         },
         targets: {
             __typename: 'VisibleApplyPreviewTargetsUpdate',
-            changesetSpec: baseChangesetSpec(6, publishStatusSet ? true : null),
+            changesetSpec: baseChangesetSpec(6, publicationStateSet ? true : null),
             changeset: {
                 id: '123123',
                 title: 'Le draft changeset',
@@ -325,7 +325,7 @@ export const visibleChangesetApplyPreviewNodeStories = (
         },
         targets: {
             __typename: 'VisibleApplyPreviewTargetsUpdate',
-            changesetSpec: baseChangesetSpec(7, publishStatusSet ? true : null),
+            changesetSpec: baseChangesetSpec(7, publicationStateSet ? true : null),
             changeset: {
                 id: '123123',
                 title: 'Le closed changeset',
@@ -442,7 +442,7 @@ export const visibleChangesetApplyPreviewNodeStories = (
         },
         targets: {
             __typename: 'VisibleApplyPreviewTargetsUpdate',
-            changesetSpec: baseChangesetSpec(8, publishStatusSet ? true : null),
+            changesetSpec: baseChangesetSpec(8, publicationStateSet ? true : null),
             changeset: {
                 id: '123123',
                 title: 'Change base ref',
@@ -497,7 +497,7 @@ export const visibleChangesetApplyPreviewNodeStories = (
         },
         targets: {
             __typename: 'VisibleApplyPreviewTargetsUpdate',
-            changesetSpec: baseChangesetSpec(9, publishStatusSet ? true : null),
+            changesetSpec: baseChangesetSpec(9, publicationStateSet ? true : null),
             changeset: {
                 id: '123123',
                 title: 'Change base ref',
@@ -552,7 +552,7 @@ export const visibleChangesetApplyPreviewNodeStories = (
         },
         targets: {
             __typename: 'VisibleApplyPreviewTargetsUpdate',
-            changesetSpec: baseChangesetSpec(10, publishStatusSet ? true : null),
+            changesetSpec: baseChangesetSpec(10, publicationStateSet ? true : null),
             changeset: {
                 id: '123123',
                 title: 'the old title',
@@ -607,7 +607,7 @@ export const visibleChangesetApplyPreviewNodeStories = (
         },
         targets: {
             __typename: 'VisibleApplyPreviewTargetsUpdate',
-            changesetSpec: baseChangesetSpec(11, publishStatusSet ? true : null),
+            changesetSpec: baseChangesetSpec(11, publicationStateSet ? true : null),
             changeset: {
                 id: '123123',
                 title: 'the old title',

@@ -229,7 +229,7 @@ const SelectBox: React.FunctionComponent<{
             className="btn"
             checked={false}
             disabled={true}
-            tooltip="You cannot currently modify the publish status for this changeset"
+            tooltip="You cannot currently modify the publication state for this changeset"
         />
     ) : (
         <InputTooltip
@@ -238,14 +238,16 @@ const SelectBox: React.FunctionComponent<{
             className="btn"
             checked={selectable.isSelected(changesetSpecID)}
             onChange={toggleSelected}
-            tooltip="Click to select changeset for bulk-modifying the publish status"
+            tooltip="Click to select changeset for bulk-modifying the publication state"
         />
     )
 
     return (
         <div className="d-flex p-2 align-items-center">
             {input}
-            {changesetSpecID ? <span className="pl-2 d-block d-sm-none text-nowrap">Modify publish status</span> : null}
+            {changesetSpecID ? (
+                <span className="pl-2 d-block d-sm-none text-nowrap">Modify publication state</span>
+            ) : null}
         </div>
     )
 }

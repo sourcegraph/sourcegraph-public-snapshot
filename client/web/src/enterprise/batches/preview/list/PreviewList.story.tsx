@@ -22,10 +22,10 @@ const { add } = storiesOf('web/batches/preview', module)
 const queryEmptyFileDiffs = () => of({ totalCount: 0, pageInfo: { endCursor: null, hasNextPage: false }, nodes: [] })
 
 add('PreviewList', () => {
-    const publishStatusSet = boolean('publish status set by spec file', false)
+    const publicationStateSet = boolean('publication state set by spec file', false)
 
     const nodes: ChangesetApplyPreviewFields[] = [
-        ...Object.values(visibleChangesetApplyPreviewNodeStories(publishStatusSet)),
+        ...Object.values(visibleChangesetApplyPreviewNodeStories(publicationStateSet)),
         ...Object.values(hiddenChangesetApplyPreviewStories),
     ]
 
@@ -41,7 +41,7 @@ add('PreviewList', () => {
 
     const queryPublishableChangesetSpecIDs = (): Observable<string[]> =>
         of(
-            Object.values(visibleChangesetApplyPreviewNodeStories(publishStatusSet))
+            Object.values(visibleChangesetApplyPreviewNodeStories(publicationStateSet))
                 .map(node => getPublishableChangesetSpecID(node))
                 .filter((id): id is string => id !== null)
         )
