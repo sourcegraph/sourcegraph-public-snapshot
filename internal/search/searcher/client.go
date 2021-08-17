@@ -26,7 +26,7 @@ import (
 
 var (
 	searchDoer, _ = httpcli.NewInternalClientFactory("search").Doer()
-	MockSearch    func(ctx context.Context, repo api.RepoName, commit api.CommitID, p *search.TextPatternInfo, fetchTimeout time.Duration) (matches []*protocol.FileMatch, limitHit bool, err error)
+	MockSearch    func(ctx context.Context, repo api.RepoName, commit api.CommitID, p *search.TextPatternInfo, fetchTimeout time.Duration, onMatches func([]*protocol.FileMatch)) (matches []*protocol.FileMatch, limitHit bool, err error)
 )
 
 // Search searches repo@commit with p.
@@ -43,7 +43,7 @@ func Search(
 	onMatches func([]*protocol.FileMatch),
 ) (matches []*protocol.FileMatch, limitHit bool, err error) {
 	if MockSearch != nil {
-		return MockSearch(ctx, repo, commit, p, fetchTimeout)
+		return MockSearch(ctx, repo, commit, p, fetchTimeout, onMatches)
 	}
 
 	tr, ctx := trace.New(ctx, "searcher.client", fmt.Sprintf("%s@%s", repo, commit))
