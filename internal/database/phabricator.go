@@ -180,7 +180,7 @@ func (p *PhabricatorStore) GetByName(ctx context.Context, name api.RepoName) (*t
 		}
 	}
 
-	return p.getOneBySQL(ctx, "WHERE repo_name=$1", name)
+	return p.getOneBySQL(ctx, "WHERE repo_name=$1 AND deleted_at IS NULL", name)
 }
 
 type MockPhabricator struct {

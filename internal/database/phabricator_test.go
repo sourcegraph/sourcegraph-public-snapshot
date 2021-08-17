@@ -8,6 +8,7 @@ import (
 	"github.com/keegancsmith/sqlf"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
+	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 )
 
@@ -62,7 +63,7 @@ VALUES (%d, %s, %s, %s, %s, %s, %s)
 	// Look for the deleted repository.
 	{
 		repo, err := store.GetByName(ctx, "phabricator.example.com/deleted")
-		if err != nil {
+		if err != nil && !errcode.IsNotFound(err) {
 			t.Fatal(err)
 		}
 		if repo != nil {
