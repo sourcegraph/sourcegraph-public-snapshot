@@ -21,10 +21,8 @@ func QueueOptions(db dbutil.DB, config *Config, observationContext *observation.
 
 	store := background.NewExecutorStore(basestore.NewHandleWithDB(db, sql.TxOptions{}), observationContext)
 	return handler.QueueOptions{
-		Store:             store,
-		RecordTransformer: recordTransformer,
-		FetchCanceled: func(ctx context.Context, executorName string) (canceledIDs []int, err error) {
-			return store.FetchCanceled(ctx, executorName)
-		},
+		Store:                  store,
+		RecordTransformer:      recordTransformer,
+		CanceledRecordsFetcher: store.FetchCanceled,
 	}
 }
