@@ -20,9 +20,20 @@ export const RepositoryCompareHeader: React.FunctionComponent<RepositoryCompareH
 }) => (
     <div className={classNames(styles.repositoryCompareHeader, className)}>
         <PageHeader
-            path={[{ text: 'Compare changes' }]}
-            description="Compare changes across revisions."
-            className="mb-3"
+            path={[{ text: 'Compare changes across revisions' }]}
+            description={
+                <p>
+                    Select a revision or provide a{' '}
+                    <a
+                        href="https://git-scm.com/docs/git-rev-parse.html#_specifying_revisions"
+                        rel="noopener noreferrer"
+                        target="_blank"
+                    >
+                        Git revspec
+                    </a>{' '}
+                    for more fine-grained comparisons
+                </p>
+            }
         />
         <div className="d-flex align-items-center">
             <RepositoryComparePopover id="base-popover" type="base" comparison={{ base, head }} repo={repo} />
