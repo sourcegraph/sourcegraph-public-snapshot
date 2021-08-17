@@ -53,6 +53,7 @@ All notable changes to Sourcegraph are documented in this file.
 - The `sourcegraph-frontend.Role` in Kubernetes deployments was updated to permit statefulsets access in the Kubernetes API. This is needed to better support stable service discovery for stateful sets during deployments, which isn't currently possible by using service endpoints. [#3670](https://github.com/sourcegraph/deploy-sourcegraph/pull/3670) [#23889](https://github.com/sourcegraph/sourcegraph/pull/23889)
 - For Docker-Compose and Kubernetes users, the built-in main Postgres and codeintel databases have switched to an alpine Docker image. This requires re-indexing the entire database. This process can take up to a few hours on systems with large datasets. [#23697](https://github.com/sourcegraph/sourcegraph/pull/23697)
 - Results are now streamed from searcher by default, improving memory usage and latency for large, unindexed searches. [#23754](https://github.com/sourcegraph/sourcegraph/pull/23754)
+- Postgres has been upgraded to `12.8` in the single-server Sourcegraph image [#23999](https://github.com/sourcegraph/sourcegraph/pull/23999)
 
 ### Fixed
 
