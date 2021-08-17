@@ -10,61 +10,11 @@ import { SyntaxHighlightedSearchQuery } from '../../components/SyntaxHighlighted
 import { FeatureFlagProps } from '../../featureFlags/featureFlags'
 import { repogroupList } from '../../repogroups/HomepageConfig'
 
+import { DynamicWebFonts } from './DynamicWebFonts'
 import { HomepageModalVideo } from './HomepageModalVideo'
+import { SearchExample, exampleNotebooks, exampleQueries, fonts } from './LoggedOutHomepage.constants'
 import styles from './LoggedOutHomepage.module.scss'
 import { SignUpCta } from './SignUpCta'
-
-interface SearchExample {
-    label: string
-    trackEventName: string
-    query: string
-    to: string
-}
-
-const exampleQueries: SearchExample[] = [
-    {
-        label: 'Search all of your repos, without escaping or regex',
-        trackEventName: 'HomepageExampleRepoClicked',
-        query: 'repo:sourcegraph/.* Sprintf("%d -file:tests',
-        to: '/search?q=context:global+repo:sourcegraph/*+Sprintf%28%22%25d+-file:tests&patternType=literal&case=yes',
-    },
-    {
-        label: 'Search and review commits faster than git log and grep',
-        trackEventName: 'HomepageExampleDiffClicked',
-        query: 'type:diff before:"last week" TODO',
-        to:
-            '/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+type:diff+after:"last+week"+select:commit.diff.added+TODO&patternType=literal&case=yes',
-    },
-    {
-        label: 'Quickly filter by language and other key attributes',
-        trackEventName: 'HomepageExampleFiltersClicked',
-        query: 'repo:sourcegraph lang:go or lang:Typescript',
-        to:
-            '/search?q=context:global+repo:sourcegraph/*+-f:tests+%28lang:TypeScript+or+lang:go%29+Config%28%29&patternType=literal&case=yes',
-    },
-]
-
-const exampleNotebooks: SearchExample[] = [
-    {
-        label: 'Find and reference code across all of your repositories',
-        trackEventName: 'HomepageNotebookRepoClicked',
-        query: 'repo:sourcegraph/.* Config()',
-        to: '/github.com/sourcegraph/notebooks/-/blob/onboarding/find-code-across-all-of-your-repositories.snb.md',
-    },
-    {
-        label: 'Search and review commits and their code faster than git log and grep ',
-        trackEventName: 'HomepageNotebookDiffClicked',
-        query: 'type:diff before:"last week" TODO',
-        to: '/github.com/sourcegraph/notebooks/-/blob/onboarding/search-and-review-commits.snb.md',
-    },
-    {
-        label: 'Quickly filter by file path, language and other elements of code',
-        trackEventName: 'HomepageNotebookFiltersClicked',
-        query: 'repo:sourcegraph/.* lang:go -f:tests',
-        to:
-            '/github.com/sourcegraph/notebooks/-/blob/onboarding/filter-by-file-language-and-other-elements-of-code.snb.md',
-    },
-]
 
 export interface LoggedOutHomepageProps extends TelemetryProps, ThemeProps, FeatureFlagProps {}
 
@@ -128,72 +78,74 @@ export const LoggedOutHomepage: React.FunctionComponent<LoggedOutHomepageProps> 
     }, [props.telemetryService])
 
     return (
-        <div className={styles.loggedOutHomepage}>
-            <div className={styles.helpContent}>
-                {props.featureFlags.get('search-notebook-onboarding') ? (
-                    <SearchExamples
-                        title="Search notebooks"
-                        subtitle="Three ways code search is more efficient than your IDE"
-                        examples={exampleNotebooks}
-                        icon={<BookOutlineIcon />}
-                        {...props}
-                    />
-                ) : (
-                    <SearchExamples
-                        title="Search examples"
-                        subtitle="Find answers faster with code search across multiple repos and commits"
-                        examples={exampleQueries}
-                        icon={<MagnifyingGlassSearchIcon />}
-                        {...props}
-                    />
-                )}
-                <div className={styles.thumbnail}>
-                    <div className={classNames(styles.title, 'mb-2')}>Watch and learn</div>
-                    <HomepageModalVideo {...props} />
+        <DynamicWebFonts fonts={fonts}>
+            <div className={styles.loggedOutHomepage}>
+                <div className={styles.helpContent}>
+                    {props.featureFlags.get('search-notebook-onboarding') ? (
+                        <SearchExamples
+                            title="Search notebooks"
+                            subtitle="Three ways code search is more efficient than your IDE"
+                            examples={exampleNotebooks}
+                            icon={<BookOutlineIcon />}
+                            {...props}
+                        />
+                    ) : (
+                        <SearchExamples
+                            title="Search examples"
+                            subtitle="Find answers faster with code search across multiple repos and commits"
+                            examples={exampleQueries}
+                            icon={<MagnifyingGlassSearchIcon />}
+                            {...props}
+                        />
+                    )}
+                    <div className={styles.thumbnail}>
+                        <div className={classNames(styles.title, 'mb-2')}>Watch and learn</div>
+                        <HomepageModalVideo {...props} />
+                    </div>
                 </div>
-            </div>
 
-            <div className="mt-5 d-flex justify-content-center">
-                <div className="d-flex align-items-center flex-column">
-                    <SignUpCta className={styles.loggedOutHomepageCta} telemetryService={props.telemetryService} />
-                    <div className="mt-2 text-center">
-                        Search private code by{' '}
-                        <a
-                            href="https://docs.sourcegraph.com/admin/install"
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            onClick={onClickInstallSubtext}
-                        >
-                            installing Sourcegraph locally.
-                        </a>
+                <div className="mt-5 d-flex justify-content-center">
+                    <div className="d-flex align-items-center flex-column">
+                        <SignUpCta className={styles.loggedOutHomepageCta} telemetryService={props.telemetryService} />
+                        <div className="mt-2 text-center">
+                            Search private code by{' '}
+                            <a
+                                href="https://docs.sourcegraph.com/admin/install"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                onClick={onClickInstallSubtext}
+                            >
+                                installing Sourcegraph locally.
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <div className="mt-5">
+                    <div className="d-flex align-items-baseline mt-5 mb-3">
+                        <div className={classNames(styles.title, 'mr-2')}>Repository groups</div>
+                        <div className="font-weight-normal text-muted">Search sets of repositories</div>
+                    </div>
+                    <div className={styles.loggedOutHomepageRepogroupListCards}>
+                        {repogroupList.map(repogroup => (
+                            <div className="d-flex align-items-center" key={repogroup.name}>
+                                <img
+                                    className={classNames(styles.loggedOutHomepageRepogroupListIcon, 'mr-2')}
+                                    src={repogroup.homepageIcon}
+                                    alt={`${repogroup.name} icon`}
+                                />
+                                <Link
+                                    to={repogroup.url}
+                                    className={classNames(styles.loggedOutHomepageRepogroupListingTitle)}
+                                >
+                                    {repogroup.title}
+                                </Link>
+                            </div>
+                        ))}
                     </div>
                 </div>
             </div>
-
-            <div className="mt-5">
-                <div className="d-flex align-items-baseline mt-5 mb-3">
-                    <div className={classNames(styles.title, 'mr-2')}>Repository groups</div>
-                    <div className="font-weight-normal text-muted">Search sets of repositories</div>
-                </div>
-                <div className={styles.loggedOutHomepageRepogroupListCards}>
-                    {repogroupList.map(repogroup => (
-                        <div className="d-flex align-items-center" key={repogroup.name}>
-                            <img
-                                className={classNames(styles.loggedOutHomepageRepogroupListIcon, 'mr-2')}
-                                src={repogroup.homepageIcon}
-                                alt={`${repogroup.name} icon`}
-                            />
-                            <Link
-                                to={repogroup.url}
-                                className={classNames(styles.loggedOutHomepageRepogroupListingTitle)}
-                            >
-                                {repogroup.title}
-                            </Link>
-                        </div>
-                    ))}
-                </div>
-            </div>
-        </div>
+        </DynamicWebFonts>
     )
 }
 
