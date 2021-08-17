@@ -2,11 +2,13 @@ import { Observable, of, throwError } from 'rxjs'
 import { map, switchMap } from 'rxjs/operators'
 
 import { fetchBackendInsights } from '../requests/fetch-backend-insights'
-import { BackendInsightData } from '../types'
+import { BackendInsightData, BackendInsightInputs } from '../types'
 import { createViewContent } from '../utils/create-view-content'
 
-export function getBackendInsightById(id: string): Observable<BackendInsightData> {
-    return fetchBackendInsights([id]).pipe(
+export function getBackendInsightById(props: BackendInsightInputs): Observable<BackendInsightData> {
+    const { id, filters, series } = props
+
+    return fetchBackendInsights([id], filters).pipe(
         switchMap(backendInsights => {
             if (backendInsights.length === 0) {
                 return throwError(new Error("We couldn't find insight"))
@@ -19,7 +21,7 @@ export function getBackendInsightById(id: string): Observable<BackendInsightData
             view: {
                 title: insight.title,
                 subtitle: insight.description,
-                content: [createViewContent(insight)],
+                content: [createViewContent(insight, series)],
             },
         }))
     )

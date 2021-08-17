@@ -8,6 +8,7 @@ import { useDistinctValue } from '../../../hooks/use-distinct-value'
 export const FORM_ERROR = 'useForm/submissionErrors'
 
 export type SubmissionErrors = Record<string, any> | undefined
+export type SubmissionResult = SubmissionErrors | Promise<SubmissionErrors> | void
 export type ValidationResult = string | undefined | void
 
 export interface FormChangeEvent<FormValues> {
@@ -140,6 +141,11 @@ export interface FieldMetaState {
      * State to understand when users focused and blurred input element.
      */
     touched: boolean
+
+    /**
+     * State to understand when user typed some value in input element or not.
+     */
+    dirty: boolean
 
     /**
      * Valid state with initial value NOT_VALIDATED, with VALID when all validators

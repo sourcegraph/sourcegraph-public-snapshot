@@ -37,8 +37,13 @@ var (
 		UsageFunc:  printRunUsage,
 	}
 
-	runSetFlagSet = flag.NewFlagSet("sg run-set", flag.ExitOnError)
-	runSetCommand = &ffcli.Command{
+	runSetFlagSet       = flag.NewFlagSet("sg run-set", flag.ExitOnError)
+	debugRunSetServices = runSetFlagSet.String("debug", "", "Comma separated list of services to set at debug log level.")
+	infoRunSetServices  = runSetFlagSet.String("info", "", "Comma separated list of services to set at info log level.")
+	warnRunSetServices  = runSetFlagSet.String("warn", "", "Comma separated list of services to set at warn log level.")
+	errorRunSetServices = runSetFlagSet.String("error", "", "Comma separated list of services to set at error log level.")
+	critRunSetServices  = runSetFlagSet.String("crit", "", "Comma separated list of services to set at crit log level.")
+	runSetCommand       = &ffcli.Command{
 		Name:       "run-set",
 		ShortUsage: "sg run-set <commandset>",
 		ShortHelp:  "Run the given command set.",
@@ -313,7 +318,7 @@ func runSetExec(ctx context.Context, args []string) error {
 		return flag.ErrHelp
 	}
 
-	if len(args) != 1 {
+	if len(args) > 2 {
 		out.WriteLine(output.Linef("", output.StyleWarning, "ERROR: too many arguments\n"))
 		return flag.ErrHelp
 	}
@@ -354,7 +359,54 @@ func runSetExec(ctx context.Context, args []string) error {
 		cmds = append(cmds, cmd)
 	}
 
+	levelOverrides := logLevelOverrides()
+	for _, cmd := range cmds {
+		enrichWithLogLevels(&cmd, levelOverrides)
+	}
 	return run.Commands(ctx, globalConf.Env, cmds...)
+}
+
+// enrichWithLogLevels will add any logger level overrides to a given command if they have been specified.
+func enrichWithLogLevels(cmd *run.Command, overrides map[string]string) {
+	logLevelVariable := "SRC_LOG_LEVEL"
+
+	if level, ok := overrides[cmd.Name]; ok {
+		out.WriteLine(output.Linef("", output.StylePending, "Setting log level: %s for command %s.", level, cmd.Name))
+		if cmd.Env == nil {
+			cmd.Env = make(map[string]string, 1)
+			cmd.Env[logLevelVariable] = level
+		}
+		cmd.Env[logLevelVariable] = level
+	}
+}
+
+// parseCsv takes an input comma seperated string and returns a list of tokens each trimmed for whitespace
+func parseCsv(input string) []string {
+	tokens := strings.Split(input, ",")
+	results := make([]string, 0, len(tokens))
+	for _, token := range tokens {
+		results = append(results, strings.TrimSpace(token))
+	}
+	return results
+}
+
+// logLevelOverrides builds a map of commands -> log level that should be overridden in the environment.
+func logLevelOverrides() map[string]string {
+	levelServices := make(map[string][]string)
+	levelServices["debug"] = parseCsv(*debugRunSetServices)
+	levelServices["info"] = parseCsv(*infoRunSetServices)
+	levelServices["warn"] = parseCsv(*warnRunSetServices)
+	levelServices["error"] = parseCsv(*errorRunSetServices)
+	levelServices["crit"] = parseCsv(*critRunSetServices)
+
+	overrides := make(map[string]string)
+	for level, services := range levelServices {
+		for _, service := range services {
+			overrides[service] = level
+		}
+	}
+
+	return overrides
 }
 
 func testExec(ctx context.Context, args []string) error {

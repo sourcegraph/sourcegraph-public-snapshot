@@ -18,16 +18,30 @@ type CodeIntelAggregatedEvent struct {
 // This is sent from private instances to the cloud frontends, where it is further
 // massaged and inserted into a BigQuery.
 type NewCodeIntelUsageStatistics struct {
-	StartOfWeek                         time.Time
-	WAUs                                *int32
-	PreciseWAUs                         *int32
-	SearchBasedWAUs                     *int32
-	CrossRepositoryWAUs                 *int32
-	PreciseCrossRepositoryWAUs          *int32
-	SearchBasedCrossRepositoryWAUs      *int32
-	EventSummaries                      []CodeIntelEventSummary
-	NumRepositoriesWithUploadRecords    *int32
-	NumRepositoriesWithoutUploadRecords *int32
+	StartOfWeek                                      time.Time
+	WAUs                                             *int32
+	PreciseWAUs                                      *int32
+	SearchBasedWAUs                                  *int32
+	CrossRepositoryWAUs                              *int32
+	PreciseCrossRepositoryWAUs                       *int32
+	SearchBasedCrossRepositoryWAUs                   *int32
+	EventSummaries                                   []CodeIntelEventSummary
+	NumRepositories                                  *int32
+	NumRepositoriesWithUploadRecords                 *int32
+	NumRepositoriesWithoutUploadRecords              *int32 // Deprecated, no longer sent
+	NumRepositoriesWithFreshUploadRecords            *int32
+	NumRepositoriesWithIndexRecords                  *int32
+	NumRepositoriesWithFreshIndexRecords             *int32
+	NumRepositoriesWithAutoIndexConfigurationRecords *int32
+	CountsByLanguage                                 map[string]CodeIntelRepositoryCountsByLanguage
+	SettingsPageViewCount                            *int32
+}
+
+type CodeIntelRepositoryCountsByLanguage struct {
+	NumRepositoriesWithUploadRecords      *int32
+	NumRepositoriesWithFreshUploadRecords *int32
+	NumRepositoriesWithIndexRecords       *int32
+	NumRepositoriesWithFreshIndexRecords  *int32
 }
 
 type CodeIntelEventSummary struct {

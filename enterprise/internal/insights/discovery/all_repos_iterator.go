@@ -4,6 +4,10 @@ import (
 	"context"
 	"time"
 
+	"github.com/prometheus/client_golang/prometheus/promauto"
+
+	"github.com/prometheus/client_golang/prometheus"
+
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 
 	"github.com/cockroachdb/errors"
@@ -38,10 +42,16 @@ type AllReposIterator struct {
 	// to pull such large numbers of rows from the DB frequently.
 	RepositoryListCacheTime time.Duration
 
+	counter *prometheus.CounterVec
+
 	// Internal fields below.
 	cachedRepoNamesAge time.Time
 	cachedRepoNames    []string
 	cachedPageRequests map[database.LimitOffset]cachedPageRequest
+}
+
+func NewAllReposIterator(indexableReposLister IndexableReposLister, repoStore RepoStore, clock func() time.Time, sourcegraphDotComMode bool, repositoryListCacheTime time.Duration, counterOpts *prometheus.CounterOpts) *AllReposIterator {
+	return &AllReposIterator{IndexableReposLister: indexableReposLister, RepoStore: repoStore, Clock: clock, SourcegraphDotComMode: sourcegraphDotComMode, RepositoryListCacheTime: repositoryListCacheTime, counter: promauto.NewCounterVec(*counterOpts, []string{"result"})}
 }
 
 func (a *AllReposIterator) timeSince(t time.Time) time.Duration {
@@ -59,6 +69,7 @@ func (a *AllReposIterator) timeSince(t time.Time) time.Duration {
 func (a *AllReposIterator) ForEach(ctx context.Context, forEach func(repoName string) error) error {
 	// 🚨 SECURITY: this context will ensure that this iterator goes over all repositories
 	globalCtx := actor.WithInternalActor(ctx)
+
 	if a.SourcegraphDotComMode {
 		// Has the cache expired or empty? If so, refresh it.
 		if a.timeSince(a.cachedRepoNamesAge) > a.RepositoryListCacheTime || a.cachedRepoNames == nil {
@@ -78,8 +89,10 @@ func (a *AllReposIterator) ForEach(ctx context.Context, forEach func(repoName st
 		}
 		for _, repo := range a.cachedRepoNames {
 			if err := forEach(repo); err != nil {
+				a.counter.WithLabelValues("error").Inc()
 				return errors.Wrap(err, "forEach")
 			}
+			a.counter.WithLabelValues("success").Inc()
 		}
 		return nil
 	}
@@ -104,8 +117,11 @@ func (a *AllReposIterator) ForEach(ctx context.Context, forEach func(repoName st
 		// Call the forEach function on every repository.
 		for _, r := range repos {
 			if err := forEach(string(r.Name)); err != nil {
+				a.counter.WithLabelValues("error").Inc()
 				return errors.Wrap(err, "forEach")
 			}
+			a.counter.WithLabelValues("success").Inc()
+
 		}
 
 		// Set outselves up to get the next page.

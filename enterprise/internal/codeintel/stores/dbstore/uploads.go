@@ -282,6 +282,8 @@ type GetUploadsOptions struct {
 	State          string
 	Term           string
 	VisibleAtTip   bool
+	DependencyOf   int
+	DependentOf    int
 	UploadedBefore *time.Time
 	UploadedAfter  *time.Time
 	OldestFirst    bool
@@ -296,6 +298,8 @@ func (s *Store) GetUploads(ctx context.Context, opts GetUploadsOptions) (_ []Upl
 		log.String("state", opts.State),
 		log.String("term", opts.Term),
 		log.Bool("visibleAtTip", opts.VisibleAtTip),
+		log.Int("dependencyOf", opts.DependencyOf),
+		log.Int("dependentOf", opts.DependentOf),
 		log.String("uploadedBefore", nilTimeToString(opts.UploadedBefore)),
 		log.String("uploadedAfter", nilTimeToString(opts.UploadedAfter)),
 		log.Bool("oldestFirst", opts.OldestFirst),
@@ -324,6 +328,22 @@ func (s *Store) GetUploads(ctx context.Context, opts GetUploadsOptions) (_ []Upl
 	}
 	if opts.VisibleAtTip {
 		conds = append(conds, sqlf.Sprintf("EXISTS ("+visibleAtTipSubselectQuery+")"))
+	}
+	if opts.DependencyOf != 0 {
+		conds = append(conds, sqlf.Sprintf(`
+			u.id IN (
+				SELECT dump_id FROM lsif_packages
+				WHERE (scheme, name, version) IN (SELECT scheme, name, version FROM lsif_references WHERE dump_id = %s)
+			)
+		`, opts.DependencyOf))
+	}
+	if opts.DependentOf != 0 {
+		conds = append(conds, sqlf.Sprintf(`
+			u.id IN (
+				SELECT dump_id FROM lsif_references
+				WHERE (scheme, name, version) IN (SELECT scheme, name, version FROM lsif_packages WHERE dump_id = %s)
+			)
+		`, opts.DependentOf))
 	}
 	if opts.UploadedBefore != nil {
 		conds = append(conds, sqlf.Sprintf("u.uploaded_at < %s", *opts.UploadedBefore))

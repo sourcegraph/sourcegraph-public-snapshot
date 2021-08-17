@@ -6,7 +6,7 @@ import { useDebounce } from '@sourcegraph/wildcard'
 
 import { LivePreviewContainer } from '../../../../../../components/live-preview-container/LivePreviewContainer'
 import { InsightsApiContext } from '../../../../../../core/backend/api-provider'
-import { DataSeries } from '../../../../../../core/backend/types'
+import { SearchBasedInsightSeries } from '../../../../../../core/types/insight/search-insight'
 import { useDistinctValue } from '../../../../../../hooks/use-distinct-value'
 import { EditableDataSeries, InsightStep } from '../../types'
 import { getSanitizedLine, getSanitizedRepositories } from '../../utils/insight-sanitizer'
@@ -22,22 +22,26 @@ export interface SearchInsightLivePreviewProps {
     series: EditableDataSeries[]
     /** Step value for chart. */
     stepValue: string
+
     /**
      * Disable prop to disable live preview.
      * Used in a consumer of this component when some required fields
      * for live preview are invalid.
-     * */
+     */
     disabled?: boolean
+
     /** Step mode for step value prop. */
     step: InsightStep
+
+    isAllReposMode: boolean
 }
 
 /**
  * Displays live preview chart for creation UI with latest insights settings
  * from creation UI form.
- * */
+ */
 export const SearchInsightLivePreview: React.FunctionComponent<SearchInsightLivePreviewProps> = props => {
-    const { series, repositories, step, stepValue, disabled = false, className } = props
+    const { series, repositories, step, stepValue, disabled = false, isAllReposMode, className } = props
 
     const { getSearchInsightContent } = useContext(InsightsApiContext)
 
@@ -52,7 +56,7 @@ export const SearchInsightLivePreview: React.FunctionComponent<SearchInsightLive
             // Cut off all unnecessary for live preview fields in order to
             // not trigger live preview update if any of unnecessary has been updated
             // Example: edit true => false - chart shouldn't re-fetch data
-            .map<DataSeries>(getSanitizedLine)
+            .map<SearchBasedInsightSeries>(getSanitizedLine)
     )
 
     const liveSettings = useMemo(
@@ -94,10 +98,20 @@ export const SearchInsightLivePreview: React.FunctionComponent<SearchInsightLive
             disabled={disabled}
             defaultMock={DEFAULT_MOCK_CHART_CONTENT}
             mockMessage={
-                <span>
-                    {' '}
-                    The chart preview will be shown here once you have filled out the repositories and series fields.
-                </span>
+                isAllReposMode ? (
+                    <span> Live previews are currently not available for insights running over all repositories. </span>
+                ) : (
+                    <span>
+                        {' '}
+                        The chart preview will be shown here once you have filled out the repositories and series
+                        fields.
+                    </span>
+                )
+            }
+            description={
+                isAllReposMode
+                    ? 'Previews are only displayed only if you individually list up to 50 repositories.'
+                    : null
             }
             className={className}
             onUpdateClick={() => setLastPreviewVersion(version => version + 1)}

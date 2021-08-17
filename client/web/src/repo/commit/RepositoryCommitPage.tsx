@@ -1,4 +1,3 @@
-import classNames from 'classnames'
 import { isEqual } from 'lodash'
 import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
@@ -29,7 +28,6 @@ import {
     RevisionSpec,
     UIPositionSpec,
 } from '@sourcegraph/shared/src/util/url'
-import { useRedesignToggle } from '@sourcegraph/shared/src/util/useRedesignToggle'
 
 import { getHover, getDocumentHighlights } from '../../backend/features'
 import { requestGraphQL } from '../../backend/graphql'
@@ -50,8 +48,6 @@ import {
 import { GitCommitNode } from '../commits/GitCommitNode'
 import { gitCommitFragment } from '../commits/RepositoryCommitsPage'
 import { queryRepositoryComparisonFileDiffs } from '../compare/RepositoryCompareDiffPage'
-
-import { DiffModeSelector } from './DiffModeSelector'
 
 const queryCommit = memoizeObservable(
     (args: { repo: Scalars['ID']; revspec: string }): Observable<GitCommitFields> =>
@@ -109,15 +105,9 @@ interface State extends HoverState<HoverContext, HoverMerged, ActionItemAction> 
 
 const DIFF_MODE_VISUALIZER = 'diff-mode-visualizer'
 
-export const RepositoryCommitPage: React.FC<Props> = ({ ...props }) => {
-    const [isRedesignEnabled] = useRedesignToggle()
-
-    return <RepositoryCommitPageDetails {...props} isRedesignEnabled={isRedesignEnabled} />
-}
-
 /** Displays a commit. */
-class RepositoryCommitPageDetails extends React.Component<Props & { isRedesignEnabled: boolean }, State> {
-    private componentUpdates = new Subject<Props & { isRedesignEnabled: boolean }>()
+export class RepositoryCommitPage extends React.Component<Props, State> {
+    private componentUpdates = new Subject<Props>()
 
     /** Emits whenever the ref callback for the hover element is called */
     private hoverOverlayElements = new Subject<HTMLElement | null>()
@@ -138,7 +128,7 @@ class RepositoryCommitPageDetails extends React.Component<Props & { isRedesignEn
         ActionItemAction
     >
 
-    constructor(props: Props & { isRedesignEnabled: boolean }) {
+    constructor(props: Props) {
         super(props)
         this.hoverifier = createHoverifier<
             RepoSpec & RevisionSpec & FileSpec & ResolvedRevisionSpec,
@@ -257,14 +247,8 @@ class RepositoryCommitPageDetails extends React.Component<Props & { isRedesignEn
                     <ErrorAlert className="mt-2" error={this.state.commitOrError} />
                 ) : (
                     <>
-                        <div
-                            className={classNames(
-                                this.props.isRedesignEnabled
-                                    ? 'border-bottom pb-2'
-                                    : 'card repository-commit-page__card'
-                            )}
-                        >
-                            <div className={classNames(!this.props.isRedesignEnabled && 'card-body')}>
+                        <div className="border-bottom pb-2">
+                            <div>
                                 <GitCommitNode
                                     node={this.state.commitOrError}
                                     expandCommitMessageBody={true}
@@ -274,13 +258,6 @@ class RepositoryCommitPageDetails extends React.Component<Props & { isRedesignEn
                                 />
                             </div>
                         </div>
-                        {!this.props.isRedesignEnabled && (
-                            <DiffModeSelector
-                                className="py-2 text-right"
-                                onHandleDiffMode={this.onHandleDiffMode}
-                                diffMode={this.state.diffMode}
-                            />
-                        )}
                         <FileDiffConnection
                             listClassName="list-group list-group-flush"
                             noun="changed file"

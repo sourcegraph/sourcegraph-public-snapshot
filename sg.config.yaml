@@ -634,6 +634,14 @@ commands:
   postgres_exporter:
     cmd: ./dev/postgres_exporter.sh
 
+  monitoring-generator:
+    cmd: go generate ./monitoring
+    env:
+      RELOAD: true
+    watch:
+      - monitoring
+    continueWatchOnExit: true
+
 checks:
   docker:
     cmd: docker version
@@ -811,11 +819,29 @@ commandsets:
       - github-proxy
 
   monitoring:
+    checks:
+      - docker
     commands:
       - jaeger
       - prometheus
       - grafana
       - postgres_exporter
+      - monitoring-generator
+
+  monitoring-alerts:
+    checks:
+      - docker
+      - redis
+      - postgres
+    commands:
+      - prometheus
+      - grafana
+      # For generated alerts docs
+      - docsite
+      # For the alerting integration with frontend
+      - enterprise-frontend
+      - enterprise-web
+      - caddy
 
 tests:
   # These can be run with `sg test [name]`

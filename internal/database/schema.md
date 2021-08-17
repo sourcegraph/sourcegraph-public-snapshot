@@ -781,6 +781,8 @@ Indexes:
     "insights_query_runner_jobs_cost_idx" btree (cost)
     "insights_query_runner_jobs_priority_idx" btree (priority)
     "insights_query_runner_jobs_state_btree" btree (state)
+Referenced by:
+    TABLE "insights_query_runner_jobs_dependencies" CONSTRAINT "insights_query_runner_jobs_dependencies_fk_job_id" FOREIGN KEY (job_id) REFERENCES insights_query_runner_jobs(id) ON DELETE CASCADE
 
 ```
 
@@ -789,6 +791,26 @@ See [enterprise/internal/insights/background/queryrunner/worker.go:Job](https://
 **cost**: Integer representing a cost approximation of executing this search query.
 
 **priority**: Integer representing a category of priority for this query. Priority in this context is ambiguously defined for consumers to decide an interpretation.
+
+# Table "public.insights_query_runner_jobs_dependencies"
+```
+     Column     |            Type             | Collation | Nullable |                               Default                               
+----------------+-----------------------------+-----------+----------+---------------------------------------------------------------------
+ id             | integer                     |           | not null | nextval('insights_query_runner_jobs_dependencies_id_seq'::regclass)
+ job_id         | integer                     |           | not null | 
+ recording_time | timestamp without time zone |           | not null | 
+Indexes:
+    "insights_query_runner_jobs_dependencies_pkey" PRIMARY KEY, btree (id)
+Foreign-key constraints:
+    "insights_query_runner_jobs_dependencies_fk_job_id" FOREIGN KEY (job_id) REFERENCES insights_query_runner_jobs(id) ON DELETE CASCADE
+
+```
+
+Stores data points for a code insight that do not need to be queried directly, but depend on the result of a query at a different point
+
+**job_id**: Foreign key to the job that owns this record.
+
+**recording_time**: The time for which this dependency should be recorded at using the parents value.
 
 # Table "public.lsif_dependency_indexing_jobs"
 ```
@@ -1686,6 +1708,29 @@ Foreign-key constraints:
 
 ```
 
+# Table "public.temporary_settings"
+```
+   Column   |           Type           | Collation | Nullable |                    Default                     
+------------+--------------------------+-----------+----------+------------------------------------------------
+ id         | integer                  |           | not null | nextval('temporary_settings_id_seq'::regclass)
+ user_id    | integer                  |           | not null | 
+ contents   | jsonb                    |           |          | 
+ created_at | timestamp with time zone |           | not null | now()
+ updated_at | timestamp with time zone |           | not null | now()
+Indexes:
+    "temporary_settings_pkey" PRIMARY KEY, btree (id)
+    "temporary_settings_user_id_key" UNIQUE CONSTRAINT, btree (user_id)
+Foreign-key constraints:
+    "temporary_settings_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+
+```
+
+Stores per-user temporary settings used in the UI, for example, which modals have been dimissed or what theme is preferred.
+
+**contents**: JSON-encoded temporary settings.
+
+**user_id**: The ID of the user the settings will be saved for.
+
 # Table "public.user_credentials"
 ```
         Column         |           Type           | Collation | Nullable |                   Default                    
@@ -1872,6 +1917,7 @@ Referenced by:
     TABLE "settings" CONSTRAINT "settings_author_user_id_fkey" FOREIGN KEY (author_user_id) REFERENCES users(id) ON DELETE RESTRICT
     TABLE "settings" CONSTRAINT "settings_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE RESTRICT
     TABLE "survey_responses" CONSTRAINT "survey_responses_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id)
+    TABLE "temporary_settings" CONSTRAINT "temporary_settings_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
     TABLE "user_credentials" CONSTRAINT "user_credentials_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE DEFERRABLE
     TABLE "user_emails" CONSTRAINT "user_emails_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id)
     TABLE "user_external_accounts" CONSTRAINT "user_external_accounts_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id)

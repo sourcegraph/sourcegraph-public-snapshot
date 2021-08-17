@@ -1,9 +1,7 @@
 package resolvers
 
 import (
-	"bytes"
 	"context"
-	"encoding/json"
 	"time"
 
 	"github.com/opentracing/opentracing-go/log"
@@ -28,10 +26,11 @@ type Resolver interface {
 	IndexConnectionResolver(opts store.GetIndexesOptions) *IndexesResolver
 	DeleteUploadByID(ctx context.Context, uploadID int) error
 	DeleteIndexByID(ctx context.Context, id int) error
-	IndexConfiguration(ctx context.Context, repositoryID int) ([]byte, error)
+	IndexConfiguration(ctx context.Context, repositoryID int) ([]byte, bool, error)
+	InferredIndexConfiguration(ctx context.Context, repositoryID int) (*config.IndexConfiguration, bool, error)
 	UpdateIndexConfigurationByRepositoryID(ctx context.Context, repositoryID int, configuration string) error
 	CommitGraph(ctx context.Context, repositoryID int) (gql.CodeIntelligenceCommitGraphResolver, error)
-	QueueAutoIndexJobForRepo(ctx context.Context, repositoryID int, rev *string) error
+	QueueAutoIndexJobsForRepo(ctx context.Context, repositoryID int, rev, configuration string) ([]store.Index, error)
 	QueryResolver(ctx context.Context, args *gql.GitBlobLSIFDataArgs) (QueryResolver, error)
 }
 
@@ -108,30 +107,25 @@ func (r *resolver) DeleteIndexByID(ctx context.Context, id int) error {
 	return err
 }
 
-func (r *resolver) IndexConfiguration(ctx context.Context, repositoryID int) ([]byte, error) {
+func (r *resolver) IndexConfiguration(ctx context.Context, repositoryID int) ([]byte, bool, error) {
 	configuration, exists, err := r.dbStore.GetIndexConfigurationByRepositoryID(ctx, repositoryID)
 	if err != nil {
-		return nil, err
+		return nil, false, err
+	}
+	if !exists {
+		return nil, false, nil
 	}
 
-	if exists {
-		return configuration.Data, nil
-	}
+	return configuration.Data, true, nil
+}
 
-	// nothing in DB, prepopulate with a best guess from the inference engine
+func (r *resolver) InferredIndexConfiguration(ctx context.Context, repositoryID int) (*config.IndexConfiguration, bool, error) {
 	maybeConfig, err := r.indexEnqueuer.InferIndexConfiguration(ctx, repositoryID)
 	if err != nil || maybeConfig == nil {
-		return nil, err
+		return nil, false, err
 	}
 
-	marshaled, err := config.MarshalJSON(*maybeConfig)
-	if err != nil {
-		return nil, err
-	}
-
-	var indented bytes.Buffer
-	_ = json.Indent(&indented, marshaled, "", "\t")
-	return indented.Bytes(), nil
+	return maybeConfig, true, nil
 }
 
 func (r *resolver) UpdateIndexConfigurationByRepositoryID(ctx context.Context, repositoryID int, configuration string) error {
@@ -151,13 +145,8 @@ func (r *resolver) CommitGraph(ctx context.Context, repositoryID int) (gql.CodeI
 	return NewCommitGraphResolver(stale, updatedAt), nil
 }
 
-func (r *resolver) QueueAutoIndexJobForRepo(ctx context.Context, repositoryID int, rev *string) error {
-	revOrDefault := "HEAD"
-	if rev != nil {
-		revOrDefault = *rev
-	}
-
-	return r.indexEnqueuer.ForceQueueIndexesForRepository(ctx, repositoryID, revOrDefault)
+func (r *resolver) QueueAutoIndexJobsForRepo(ctx context.Context, repositoryID int, rev, configuration string) ([]store.Index, error) {
+	return r.indexEnqueuer.QueueIndexes(ctx, repositoryID, rev, configuration, true)
 }
 
 const slowQueryResolverRequestThreshold = time.Second

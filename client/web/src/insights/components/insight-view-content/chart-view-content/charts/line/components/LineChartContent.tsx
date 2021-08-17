@@ -344,9 +344,11 @@ export function LineChartContent<Datum extends object>(props: LineChartContentPr
                         </Group>
 
                         <Tooltip
-                            className="line-chart__tooltip"
+                            className="line-chart__tooltip percy-hide"
                             showHorizontalCrosshair={false}
                             showVerticalCrosshair={true}
+                            // Fix flaky code insights test https://github.com/sourcegraph/sourcegraph/issues/23669
+                            verticalCrosshairStyle={{ className: 'percy-hide' }}
                             snapTooltipToDatumX={false}
                             snapTooltipToDatumY={false}
                             showDatumGlyph={false}

@@ -102,6 +102,9 @@ sg start
 # Run the enterprise environment:
 sg run-set enterprise
 
+# Override the logger levels for specific services
+sg run-set --debug=gitserver --error=enterprise-worker,enterprise-frontend enterprise
+
 # Run specific commands:
 sg run gitserver
 sg run frontend
@@ -192,7 +195,7 @@ sg rfc open 420
 
 ## Configuration
 
-`sg` is configured through the `sg.yaml` file in the root of the `sourcegraph/sourcegraph` repository:
+`sg` is configured through the `sg.config.yaml` file in the root of the `sourcegraph/sourcegraph` repository:
 
 ```yaml
 commands:
@@ -287,6 +290,12 @@ tests:
     env:
       TS_NODE_PROJECT: client/web/src/end-to-end/tsconfig.json
 ```
+
+To modify your configuration locally without accidentally committing the changes, you can overwrite
+chunks of configuration with a `sg.config.overwrite.yaml` file in the root of the repository. If it exists,
+the contents of this file will be merged into the contents of the default configuration file, overwriting
+where there are conflicts. This is useful for running custom command sets or adding environment variables
+specific to your work.
 
 ## TODOs
 

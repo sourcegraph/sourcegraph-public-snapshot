@@ -38,16 +38,17 @@ type Event struct {
 }
 
 // LogBackendEvent is a convenience function for logging backend events.
-func LogBackendEvent(db dbutil.DB, userID int32, eventName string, argument json.RawMessage, featureFlags featureflag.FlagSet, cohortID *string) error {
+func LogBackendEvent(db dbutil.DB, userID int32, eventName string, argument, publicArgument json.RawMessage, featureFlags featureflag.FlagSet, cohortID *string) error {
 	return LogEvent(context.Background(), db, Event{
-		EventName:    eventName,
-		UserID:       userID,
-		UserCookieID: "backend", // Use a non-empty string here to avoid the event_logs table's user existence constraint causing issues
-		URL:          "",
-		Source:       "BACKEND",
-		Argument:     argument,
-		FeatureFlags: featureFlags,
-		CohortID:     cohortID,
+		EventName:      eventName,
+		UserID:         userID,
+		UserCookieID:   "backend", // Use a non-empty string here to avoid the event_logs table's user existence constraint causing issues
+		URL:            "",
+		Source:         "BACKEND",
+		Argument:       argument,
+		PublicArgument: publicArgument,
+		FeatureFlags:   featureFlags,
+		CohortID:       cohortID,
 	})
 }
 
@@ -76,7 +77,7 @@ type bigQueryEvent struct {
 	FeatureFlags    string  `json:"feature_flags"`
 	CohortID        *string `json:"cohort_id,omitempty"`
 	Referrer        string  `json:"referrer,omitempty"`
-	PublicArgument  string  `json:"publicArgument,omitempty"`
+	PublicArgument  string  `json:"public_argument"`
 }
 
 // publishSourcegraphDotComEvent publishes Sourcegraph.com events to BigQuery.

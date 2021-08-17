@@ -48,6 +48,7 @@ func ProvidersFromConfig(
 	}()
 
 	opt := database.ExternalServicesListOptions{
+		NoNamespace: true,
 		Kinds: []string{
 			extsvc.KindGitHub,
 			extsvc.KindGitLab,
@@ -77,6 +78,10 @@ func ProvidersFromConfig(
 		opt.AfterID = svcs[len(svcs)-1].ID // Advance the cursor
 
 		for _, svc := range svcs {
+			if svc.CloudDefault { // Only public repos in CloudDefault services
+				continue
+			}
+
 			cfg, err := extsvc.ParseConfig(svc.Kind, svc.Config)
 			if err != nil {
 				seriousProblems = append(seriousProblems, fmt.Sprintf("Could not parse config of external service %d: %v", svc.ID, err))

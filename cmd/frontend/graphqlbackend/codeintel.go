@@ -22,7 +22,7 @@ type CodeIntelResolver interface {
 	IndexConfiguration(ctx context.Context, id graphql.ID) (IndexConfigurationResolver, error) // TODO - rename ...ForRepo
 	UpdateRepositoryIndexConfiguration(ctx context.Context, args *UpdateRepositoryIndexConfigurationArgs) (*EmptyResponse, error)
 	CommitGraph(ctx context.Context, id graphql.ID) (CodeIntelligenceCommitGraphResolver, error)
-	QueueAutoIndexJobForRepo(ctx context.Context, args *QueueAutoIndexJobForRepoArgs) (*EmptyResponse, error)
+	QueueAutoIndexJobsForRepo(ctx context.Context, args *QueueAutoIndexJobsForRepoArgs) ([]LSIFIndexResolver, error)
 	GitBlobLSIFData(ctx context.Context, args *GitBlobLSIFDataArgs) (GitBlobLSIFDataResolver, error)
 
 	NodeResolvers() map[string]NodeByIDFunc
@@ -33,6 +33,8 @@ type LSIFUploadsQueryArgs struct {
 	Query           *string
 	State           *string
 	IsLatestForRepo *bool
+	DependencyOf    *graphql.ID
+	DependentOf     *graphql.ID
 	After           *string
 }
 
@@ -119,7 +121,8 @@ type LSIFIndexConnectionResolver interface {
 }
 
 type IndexConfigurationResolver interface {
-	Configuration() *string
+	Configuration(ctx context.Context) (*string, error)
+	InferredConfiguration(ctx context.Context) (*string, error)
 }
 
 type UpdateRepositoryIndexConfigurationArgs struct {
@@ -127,13 +130,10 @@ type UpdateRepositoryIndexConfigurationArgs struct {
 	Configuration string
 }
 
-type QueueAutoIndexJobForRepoArgs struct {
-	Repository graphql.ID
-	Rev        *string
-}
-
-type QueueAutoIndexJobArgs struct {
-	Repository graphql.ID
+type QueueAutoIndexJobsForRepoArgs struct {
+	Repository    graphql.ID
+	Rev           *string
+	Configuration *string
 }
 
 type GitTreeLSIFDataResolver interface {

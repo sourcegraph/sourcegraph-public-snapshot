@@ -17,10 +17,11 @@ export const repositoriesFieldValidator: Validator<string> = value => {
 }
 
 export const requiredStepValueField = createRequiredValidator('Please specify a step between points.')
+
 /**
  * Custom validator for chart series. Since series has complex type
  * we can't validate this with standard validators.
- * */
+ */
 export const seriesRequired: Validator<EditableDataSeries[]> = series => {
     if (!series || series.length === 0) {
         return 'No series defined. You must add at least one series to create a code insight.'

@@ -2,7 +2,7 @@
 
 // Light theme badge variants
 :where(.theme-light) {
-    @each $color, $value in $theme-colors-light {
+    @each $color, $value in $theme-colors {
         .badge-#{$color},
         :where(a).badge-#{$color} {
             @include badge-variant($value);

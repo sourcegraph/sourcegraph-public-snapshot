@@ -1,62 +1,163 @@
 import classnames from 'classnames'
 import DatabaseIcon from 'mdi-react/DatabaseIcon'
-import FilterOutlineIcon from 'mdi-react/FilterOutlineIcon'
-import React, { useCallback, useContext, useRef } from 'react'
-import FocusLock from 'react-focus-lock'
-import { UncontrolledPopover } from 'reactstrap'
+import React, { useCallback, useContext, useRef, useState } from 'react'
 
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { isErrorLike } from '@sourcegraph/shared/src/util/errors'
+import { asError, isErrorLike } from '@sourcegraph/shared/src/util/errors'
+import { useDebounce } from '@sourcegraph/wildcard'
 
 import { Settings } from '../../../../../schema/settings.schema'
 import { InsightsApiContext } from '../../../../core/backend/api-provider'
-import { SearchBackendBasedInsight } from '../../../../core/types'
+import { BackendInsightFilters } from '../../../../core/backend/types'
+import { addInsightToSettings } from '../../../../core/settings-action/insights'
+import { SearchBackendBasedInsight, SearchBasedBackendFilters } from '../../../../core/types/insight/search-insight'
 import { useDeleteInsight } from '../../../../hooks/use-delete-insight/use-delete-insight'
+import { useDistinctValue } from '../../../../hooks/use-distinct-value'
 import { useParallelRequests } from '../../../../hooks/use-parallel-requests/use-parallel-request'
+import { FORM_ERROR, SubmissionErrors } from '../../../form/hooks/useForm'
 import { InsightViewContent } from '../../../insight-view-content/InsightViewContent'
 import { InsightErrorContent } from '../insight-card/components/insight-error-content/InsightErrorContent'
 import { InsightLoadingContent } from '../insight-card/components/insight-loading-content/InsightLoadingContent'
 import { InsightContentCard } from '../insight-card/InsightContentCard'
 
 import styles from './BackendInsight.module.scss'
-import { DrillDownFiltersPanel } from './components/drill-down-filters/DrillDownFiltersPanel'
+import { BackendInsightContext } from './BackendInsightContext'
+import { DrillDownFiltersAction } from './components/drill-down-filters-action/DrillDownFiltersPanel'
+import { DrillDownInsightCreationFormValues } from './components/drill-down-filters-panel/components/drill-down-insight-creation-form/DrillDownInsightCreationForm'
+import { EMPTY_DRILLDOWN_FILTERS } from './components/drill-down-filters-panel/utils'
+import { useInsightFilterCreation } from './hooks/use-insight-filter-creation'
 
 interface BackendInsightProps
     extends TelemetryProps,
         SettingsCascadeProps<Settings>,
         PlatformContextProps<'updateSettings'>,
-        React.HTMLAttributes<HTMLElement> {
+        React.DetailedHTMLProps<React.HTMLAttributes<HTMLElement>, HTMLElement> {
     insight: SearchBackendBasedInsight
-    drilldown?: boolean
 }
 
 /**
  * Renders BE search based insight. Fetches insight data by gql api handler.
  */
 export const BackendInsight: React.FunctionComponent<BackendInsightProps> = props => {
-    const { telemetryService, insight, platformContext, settingsCascade, drilldown, ...otherProps } = props
-    const { getBackendInsightById } = useContext(InsightsApiContext)
+    const { telemetryService, insight, platformContext, settingsCascade, ref, ...otherProps } = props
 
-    const { data, loading, error } = useParallelRequests(
-        useCallback(() => getBackendInsightById(insight.id), [insight.id, getBackendInsightById])
+    const { currentDashboard } = useContext(BackendInsightContext)
+    const { getBackendInsightById, getSubjectSettings, updateSubjectSettings } = useContext(InsightsApiContext)
+
+    const insightCardReference = useRef<HTMLDivElement>(null)
+
+    // Use deep copy check in case if a setting subject has re-created copy of
+    // the insight config with same structure and values. To avoid insight data
+    // re-fetching.
+    const cachedInsight = useDistinctValue(insight)
+
+    // Original insight filters values that are stored in setting subject with insight
+    // configuration object, They are updated  whenever the user clicks update/save button
+    const [originalInsightFilters, setOriginalInsightFilters] = useState(
+        cachedInsight.filters ?? EMPTY_DRILLDOWN_FILTERS
     )
 
+    // Live valid filters from filter form. They are updated whenever the user is changing
+    // filter value in filters fields.
+    const [filters, setFilters] = useState<SearchBasedBackendFilters>(originalInsightFilters)
+
+    const [isFiltersOpen, setIsFiltersOpen] = useState(false)
+    const debouncedFilters = useDebounce(useDistinctValue<BackendInsightFilters>(filters), 500)
+
+    // Loading the insight backend data
+    const { data, loading, error } = useParallelRequests(
+        useCallback(
+            () =>
+                getBackendInsightById({
+                    id: cachedInsight.id,
+                    series: cachedInsight.series,
+                    filters: debouncedFilters,
+                }),
+            [cachedInsight.id, cachedInsight.series, debouncedFilters, getBackendInsightById]
+        )
+    )
+
+    // Handle insight delete action
     const { loading: isDeleting, delete: handleDelete } = useDeleteInsight({
         settingsCascade,
         platformContext,
     })
 
+    const handleFilterSave = async (filters: SearchBasedBackendFilters): Promise<SubmissionErrors> => {
+        const subjectId = insight.visibility
+
+        try {
+            const settings = await getSubjectSettings(subjectId).toPromise()
+            const insightWithNewFilters: SearchBackendBasedInsight = { ...insight, filters }
+            const editedSettings = addInsightToSettings(settings.contents, insightWithNewFilters)
+
+            await updateSubjectSettings(platformContext, subjectId, editedSettings).toPromise()
+
+            telemetryService.log('CodeInsightsSearchBasedFilterUpdating')
+
+            setOriginalInsightFilters(filters)
+            setIsFiltersOpen(false)
+        } catch (error) {
+            return { [FORM_ERROR]: asError(error) }
+        }
+
+        return
+    }
+
+    const { create: creteInsightWithFilters } = useInsightFilterCreation({ platformContext })
+    const handleInsightFilterCreation = async (
+        values: DrillDownInsightCreationFormValues
+    ): Promise<SubmissionErrors> => {
+        const { insightName } = values
+
+        if (!currentDashboard) {
+            return
+        }
+
+        try {
+            await creteInsightWithFilters({
+                insightName,
+                filters,
+                originalInsight: insight,
+                dashboard: currentDashboard,
+            })
+
+            telemetryService.log('CodeInsightsSearchBasedFilterInsightCreation')
+            setOriginalInsightFilters(filters)
+            setIsFiltersOpen(false)
+        } catch (error) {
+            return { [FORM_ERROR]: asError(error) }
+        }
+
+        return
+    }
+
     return (
         <InsightContentCard
             insight={{ id: insight.id, view: data?.view }}
             hasContextMenu={true}
-            actions={drilldown && <DrillDownFilters active={true} />}
+            actions={
+                <DrillDownFiltersAction
+                    isOpen={isFiltersOpen}
+                    settings={settingsCascade.final ?? {}}
+                    popoverTargetRef={insightCardReference}
+                    initialFiltersValue={filters}
+                    originalFiltersValue={originalInsightFilters}
+                    onFilterChange={setFilters}
+                    onFilterSave={handleFilterSave}
+                    onInsightCreate={handleInsightFilterCreation}
+                    onVisibilityChange={setIsFiltersOpen}
+                />
+            }
             telemetryService={telemetryService}
-            onDelete={handleDelete}
+            onDelete={() => handleDelete(insight)}
+            innerRef={insightCardReference}
             {...otherProps}
-            className={classnames('be-insight-card', otherProps.className)}
+            className={classnames('be-insight-card', otherProps.className, {
+                [styles.cardWithFilters]: isFiltersOpen,
+            })}
         >
             {loading || isDeleting ? (
                 <InsightLoadingContent
@@ -82,41 +183,5 @@ export const BackendInsight: React.FunctionComponent<BackendInsightProps> = prop
                 otherProps.children
             }
         </InsightContentCard>
-    )
-}
-
-interface DrillDownFiltersProps {
-    active?: boolean
-}
-
-const DrillDownFilters: React.FunctionComponent<DrillDownFiltersProps> = props => {
-    const { active } = props
-    const targetButtonReference = useRef<HTMLButtonElement>(null)
-
-    return (
-        <>
-            <button
-                ref={targetButtonReference}
-                type="button"
-                className={classnames('btn btn-icon btn-secondary rounded-circle p-1', styles.filterButton, {
-                    [styles.filterButtonActive]: active,
-                })}
-            >
-                <FilterOutlineIcon size="1rem" />
-            </button>
-
-            <UncontrolledPopover
-                placement="right-start"
-                target={targetButtonReference}
-                trigger="legacy"
-                hideArrow={true}
-                fade={false}
-                popperClassName="border-0"
-            >
-                <FocusLock returnFocus={true}>
-                    <DrillDownFiltersPanel className={classnames(styles.filterPanel)} />
-                </FocusLock>
-            </UncontrolledPopover>
-        </>
     )
 }

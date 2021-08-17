@@ -41,7 +41,8 @@
     "release": "cd dev/release && yarn run release",
     "docsite:serve": "./dev/docsite.sh -config doc/docsite.json serve -http=localhost:5080",
     "download-puppeteer-browser": "yarn --cwd client/shared download-puppeteer-browser",
-    "build-browser-extension": "yarn --cwd client/browser run build"
+    "build-browser-extension": "yarn --cwd client/browser run build",
+    "install:sg": "dev/sg/install.sh"
   },
   "browserslist": [
     "last 1 version",
@@ -379,7 +380,7 @@
     "react-stripe-elements": "^6.1.2",
     "react-textarea-autosize": "^8.3.0",
     "react-visibility-sensor": "^5.1.1",
-    "reactstrap": "^8.4.1",
+    "reactstrap": "^8.9.0",
     "recharts": "^1.8.5",
     "regexpp": "^3.1.0",
     "rxjs": "^6.6.3",

@@ -4,7 +4,7 @@ import { isEqual } from 'lodash'
 import React, { useCallback, useEffect, useState, FunctionComponent, Dispatch, SetStateAction } from 'react'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { useRedesignToggle } from '@sourcegraph/shared/src/util/useRedesignToggle'
+import { ErrorLike } from '@sourcegraph/shared/src/util/errors'
 import { Container, PageSelector } from '@sourcegraph/wildcard'
 
 import { RepoSelectionMode } from '../../../auth/PostSignUpPage'
@@ -35,6 +35,7 @@ interface authenticatedUser {
 interface Props extends TelemetryProps {
     authenticatedUser: authenticatedUser
     onRepoSelectionModeChange: Dispatch<SetStateAction<RepoSelectionMode>>
+    onError: (error: ErrorLike) => void
 }
 
 export interface Repo {
@@ -85,15 +86,24 @@ export const SelectAffiliatedRepos: FunctionComponent<Props> = ({
     authenticatedUser,
     onRepoSelectionModeChange,
     telemetryService,
+    onError,
 }) => {
     useEffect(() => {
         telemetryService.logViewEvent('UserSettingsRepositories')
     }, [telemetryService])
 
     const { setComplete, currentIndex } = useSteps()
-    const { externalServices } = useExternalServices(authenticatedUser.id)
-    const { affiliatedRepos } = useAffiliatedRepos(authenticatedUser.id)
-    const { selectedRepos } = useSelectedRepos(authenticatedUser.id)
+    const { externalServices, errorServices } = useExternalServices(authenticatedUser.id)
+    const { affiliatedRepos, errorAffiliatedRepos } = useAffiliatedRepos(authenticatedUser.id)
+    const { selectedRepos, errorSelectedRepos } = useSelectedRepos(authenticatedUser.id)
+
+    const fetchingError = errorServices || errorAffiliatedRepos || errorSelectedRepos
+
+    useEffect(() => {
+        if (fetchingError) {
+            onError(fetchingError)
+        }
+    }, [fetchingError, onError])
 
     // if we should tweak UI messaging and copy
     const ALLOW_PRIVATE_CODE = externalServiceUserModeFromTags(authenticatedUser.tags) === 'all'
@@ -102,8 +112,6 @@ export const SelectAffiliatedRepos: FunctionComponent<Props> = ({
     const ALLOW_SYNC_ALL = authenticatedUser.tags.includes('AllowUserExternalServiceSyncAll')
 
     // set up state hooks
-    const [isRedesignEnabled] = useRedesignToggle()
-
     const [currentPage, setPage] = useState(1)
     const [repoState, setRepoState] = useState(initialRepoState)
     const [onloadSelectedRepos, setOnloadSelectedRepos] = useState<string[]>([])
@@ -494,11 +502,9 @@ export const SelectAffiliatedRepos: FunctionComponent<Props> = ({
             <Container>
                 <ul className="list-group">
                     <li className="list-group-item user-settings-repos__container" key="from-code-hosts">
-                        <div className={classNames(!isRedesignEnabled && 'p-4')}>
-                            {!affiliatedRepos && modeSelectShimmer}
-
-                            {/* display type of repo sync radio buttons */}
-                            {hasCodeHosts && selectionState.loaded && modeSelect}
+                        <div>
+                            {/* display type of repo sync radio buttons or shimmer when appropriate */}
+                            {hasCodeHosts && selectionState.loaded ? modeSelect : modeSelectShimmer}
 
                             {
                                 // if we're in 'selected' mode, show a list of all the repos on the code hosts to select from

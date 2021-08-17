@@ -63,6 +63,7 @@ const defaultProps = (props: ThemeProps): SearchPageProps => ({
     hasUserAddedRepositories: false,
     hasUserAddedExternalServices: false,
     getUserSearchContextNamespaces: mockGetUserSearchContextNamespaces,
+    featureFlags: new Map(),
 })
 
 const { add } = storiesOf('web/search/input/SearchPage', module).addParameters({
@@ -88,6 +89,19 @@ add('Cloud without repogroups or panels', () => (
 add('Cloud with repogroups', () => (
     <WebStory>
         {webProps => <SearchPage {...defaultProps(webProps)} isSourcegraphDotCom={true} showRepogroupHomepage={true} />}
+    </WebStory>
+))
+
+add('Cloud with notebook onboarding', () => (
+    <WebStory>
+        {webProps => (
+            <SearchPage
+                {...defaultProps(webProps)}
+                isSourcegraphDotCom={true}
+                showRepogroupHomepage={true}
+                featureFlags={new Map([['search-notebook-onboarding', true]])}
+            />
+        )}
     </WebStory>
 ))
 

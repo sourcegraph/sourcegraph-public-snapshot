@@ -137,6 +137,7 @@ func main() {
 
 				return &server.PerforceDepotSyncer{
 					MaxChanges: int(c.MaxChanges),
+					Client:     c.P4Client,
 				}, nil
 			case extsvc.TypeJVMPackages:
 				var c schema.JVMPackagesConnection
@@ -176,6 +177,7 @@ func main() {
 
 	// Create Handler now since it also initializes state
 
+	// TODO: Why do we set server state as a side effect of creating our handler?
 	handler := ot.Middleware(trace.HTTPTraceMiddleware(gitserver.Handler()))
 
 	// Ready immediately
@@ -237,11 +239,14 @@ func getPercent(p int) (int, error) {
 // getStores initializes a connection to the database and returns RepoStore and
 // ExternalServiceStore.
 func getDB() (dbutil.DB, error) {
+
 	//
 	// START FLAILING
 
-	// Gitserver is an internal actor. We rely on the frontend to do authz
-	// checks for user requests.
+	// Gitserver is an internal actor. We rely on the frontend to do authz checks for
+	// user requests.
+	//
+	// This call to SetProviders is here so that calls to GetProviders don't block.
 	authz.SetProviders(true, []authz.Provider{})
 
 	// END FLAILING

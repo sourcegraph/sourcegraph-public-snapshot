@@ -2,7 +2,7 @@ import classNames from 'classnames'
 import * as H from 'history'
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { Observable } from 'rxjs'
-import { debounceTime } from 'rxjs/operators'
+import { throttleTime } from 'rxjs/operators'
 
 import { FetchFileParameters } from '@sourcegraph/shared/src/components/CodeExcerpt'
 import { Link } from '@sourcegraph/shared/src/components/Link'
@@ -127,7 +127,7 @@ export const StreamingSearchResults: React.FunctionComponent<StreamingSearchResu
                     caseSensitive,
                     versionContext: resolveVersionContext(versionContext, availableVersionContexts),
                     trace,
-                }).pipe(debounceTime(500)),
+                }).pipe(throttleTime(500, undefined, { leading: true, trailing: true })),
             [streamSearch, query, patternType, caseSensitive, versionContext, availableVersionContexts, trace]
         )
     )

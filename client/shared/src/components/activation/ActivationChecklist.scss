@@ -58,6 +58,6 @@
     }
 
     &__icon {
-        fill: $body-color !important;
+        fill: var(--body-color) !important;
     }
 }

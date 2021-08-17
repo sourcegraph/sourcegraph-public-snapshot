@@ -132,10 +132,9 @@ export const EditDashboardPage: React.FunctionComponent<EditDashboardPageProps> 
                                 data-testid="insight-save-button"
                                 loading={formAPI.submitting}
                                 label={formAPI.submitting ? 'Saving' : 'Save changes'}
-                                spinnerClassName="mr-2"
                                 type="submit"
                                 disabled={formAPI.submitting}
-                                className="d-flex btn btn-primary ml-2 mb-2"
+                                className="btn btn-primary ml-2 mb-2"
                             />
                         </>
                     )}

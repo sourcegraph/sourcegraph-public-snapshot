@@ -13,7 +13,6 @@ import (
 	"strconv"
 	"strings"
 	"testing"
-	"time"
 
 	"github.com/dnaeon/go-vcr/cassette"
 	"github.com/dnaeon/go-vcr/recorder"
@@ -30,71 +29,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
-
-func TestNewSourcer(t *testing.T) {
-	now := time.Now()
-
-	github := types.ExternalService{
-		Kind:        extsvc.KindGitHub,
-		DisplayName: "Github - Test",
-		Config:      `{"url": "https://github.com"}`,
-		CreatedAt:   now,
-		UpdatedAt:   now,
-	}
-
-	gitlab := types.ExternalService{
-		Kind:        extsvc.KindGitHub,
-		DisplayName: "Github - Test",
-		Config:      `{"url": "https://github.com"}`,
-		CreatedAt:   now,
-		UpdatedAt:   now,
-		DeletedAt:   now,
-	}
-
-	sources := func(es ...*types.ExternalService) (srcs []Source) {
-		t.Helper()
-
-		for _, e := range es {
-			src, err := NewSource(e, nil)
-			if err != nil {
-				t.Fatal(err)
-			}
-			srcs = append(srcs, src)
-		}
-
-		return srcs
-	}
-
-	for _, tc := range []struct {
-		name string
-		svcs types.ExternalServices
-		srcs Sources
-		err  string
-	}{
-		{
-			name: "deleted external services are excluded",
-			svcs: types.ExternalServices{&github, &gitlab},
-			srcs: sources(&github),
-			err:  "<nil>",
-		},
-	} {
-		tc := tc
-
-		t.Run(tc.name, func(t *testing.T) {
-			srcs, err := NewSourcer(nil)(tc.svcs...)
-			if have, want := fmt.Sprint(err), tc.err; have != want {
-				t.Errorf("error:\nhave: %q\nwant: %q", have, want)
-			}
-
-			have := srcs.ExternalServices()
-			want := tc.srcs.ExternalServices()
-
-			if !reflect.DeepEqual(have, want) {
-				t.Errorf("sources:\n%s", cmp.Diff(have, want))
-			}
-		})
-	}
-}
 
 func TestSources_ListRepos(t *testing.T) {
 	conf.Mock(&conf.Unified{
@@ -686,7 +620,7 @@ func TestSources_ListRepos(t *testing.T) {
 				lg.SetHandler(log15.DiscardHandler())
 
 				obs := ObservedSource(lg, NewSourceMetrics())
-				srcs, err := NewSourcer(cf, obs)(svc)
+				src, err := NewSourcer(cf, obs)(svc)
 				if err != nil {
 					t.Fatal(err)
 				}
@@ -696,7 +630,7 @@ func TestSources_ListRepos(t *testing.T) {
 					ctx = context.Background()
 				}
 
-				repos, err := listAll(ctx, srcs)
+				repos, err := listAll(ctx, src)
 				if have, want := fmt.Sprint(err), tc.err; have != want {
 					t.Errorf("error:\nhave: %q\nwant: %q", have, want)
 				}

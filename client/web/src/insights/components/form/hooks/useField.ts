@@ -85,6 +85,7 @@ export function useField<FormValues, Key extends keyof FormAPI<FormValues>['init
     const [state, setState] = useState<FieldState<FormValues[Key]>>({
         value: initialValues[name],
         touched: false,
+        dirty: false,
         validState: 'NOT_VALIDATED',
         error: '',
         validity: null,
@@ -170,7 +171,7 @@ export function useField<FormValues, Key extends keyof FormAPI<FormValues>['init
         (event: ChangeEvent<HTMLInputElement> | FormValues[Key]) => {
             const value = getEventValue(event)
 
-            setState(state => ({ ...state, value }))
+            setState(state => ({ ...state, value, dirty: true }))
             onChange(value)
         },
         [onChange]

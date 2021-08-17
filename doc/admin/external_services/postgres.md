@@ -2,6 +2,17 @@
 
 You can use your own PostgreSQL v12+ server with Sourcegraph if you wish. For example, you may prefer this if you already have existing backup infrastructure around your own PostgreSQL server, wish to use Amazon RDS, etc.
 
+## General recommendations
+
+If you choose to set up your own PostgreSQL server, please note **we strongly recommend each database to be set up in different servers and/or hosts**. We suggest either:
+
+1. Deploy _codeintel-db_ alongside the other Sourcegraph containers, i.e. not as a managed PostgreSQL instance.
+2. Deploy a separate PostgreSQL instance. The primary reason to not use the same Postgres instance for this data is because precise code intelligence data can take up a significant of space (given the amount of indexed repositories is large) and the performance of the database may impact the performance of the general application database. You'll most likely want to be able to scale their resources independently.
+
+We also recommend having backups for the _codeintel_db_ as a best practice. The reason behind this recommendation is that _codeintel-db_ data is uploaded via CI systems. If data is lost, Sourcegraph cannot automatically rebuild it from the repositories, which means you'd have to wait until it is re-uploaded from your CI systems. 
+
+## Instructions
+
 The addition of `PG*` environment variables to your Sourcegraph deployment files will instruct Sourcegraph to target an external PostgreSQL server. To externalize the _frontend database_, use the following standard `PG*` variables:
 
 - `PGHOST`

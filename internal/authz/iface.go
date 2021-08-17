@@ -17,8 +17,8 @@ import (
 // have a complete set of IDs.
 type ExternalUserPermissions struct {
 	Exacts          []extsvc.RepoID
-	IncludePrefixes []extsvc.RepoID
-	ExcludePrefixes []extsvc.RepoID
+	IncludeContains []extsvc.RepoID
+	ExcludeContains []extsvc.RepoID
 }
 
 // Provider defines a source of truth of which repositories a user is authorized to view. The

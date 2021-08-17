@@ -26,6 +26,7 @@ export interface RepoCloningStatus {
     isDoneCloning: boolean
     error: ApolloError | undefined
     statusSummary: string
+    stopPolling: () => void
 }
 
 interface RepoFields {
@@ -134,6 +135,7 @@ export const useRepoCloningStatus = ({
             isDoneCloning: false,
             loading,
             error,
+            stopPolling,
             statusSummary: '',
         }
     }
@@ -176,7 +178,8 @@ export const useRepoCloningStatus = ({
         isDoneCloning,
         loading,
         error,
-        statusSummary: `${clonedReposCount}/${repoLines.length} done`,
+        stopPolling,
+        statusSummary: `${clonedReposCount}/${repoLines.length} repositories synced`,
     }
 }
 

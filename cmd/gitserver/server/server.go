@@ -30,6 +30,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"golang.org/x/time/rate"
 
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -1137,34 +1138,14 @@ func (s *Server) setLastError(ctx context.Context, name api.RepoName, error stri
 	if s.DB == nil {
 		return nil
 	}
-	tx, err := database.Repos(s.DB).Transact(ctx)
-	if err != nil {
-		return err
-	}
-	defer func() { err = tx.Done(err) }()
-
-	repo, err := tx.GetByName(ctx, name)
-	if err != nil {
-		return err
-	}
-	return database.NewGitserverReposWith(tx).SetLastError(ctx, repo.ID, error, s.Hostname)
+	return database.GitserverRepos(s.DB).SetLastError(ctx, name, error, s.Hostname)
 }
 
 func (s *Server) setLastFetched(ctx context.Context, name api.RepoName, lastFetched time.Time) error {
 	if s.DB == nil {
 		return nil
 	}
-	tx, err := database.Repos(s.DB).Transact(ctx)
-	if err != nil {
-		return err
-	}
-	defer func() { err = tx.Done(err) }()
-
-	repo, err := tx.GetByName(ctx, name)
-	if err != nil {
-		return err
-	}
-	return database.NewGitserverReposWith(tx).SetLastFetched(ctx, repo.ID, lastFetched, s.Hostname)
+	return database.GitserverRepos(s.DB).SetLastFetched(ctx, name, lastFetched, s.Hostname)
 }
 
 // setLastErrorNonFatal is the same as setLastError but only logs errors
@@ -1182,17 +1163,7 @@ func (s *Server) setCloneStatus(ctx context.Context, name api.RepoName, status t
 	if s.DB == nil {
 		return nil
 	}
-	tx, err := database.Repos(s.DB).Transact(ctx)
-	if err != nil {
-		return err
-	}
-	defer func() { err = tx.Done(err) }()
-
-	repo, err := tx.GetByName(ctx, name)
-	if err != nil {
-		return err
-	}
-	return database.NewGitserverReposWith(tx).SetCloneStatus(ctx, repo.ID, status, s.Hostname)
+	return database.GitserverRepos(s.DB).SetCloneStatus(ctx, name, status, s.Hostname)
 }
 
 // setCloneStatusNonFatal is the same as setCloneStatus but only logs errors
@@ -1653,6 +1624,9 @@ func (s *Server) doBackgroundRepoUpdate(repo api.RepoName) error {
 	// background context.
 	ctx, cancel1 := s.serverContext()
 	defer cancel1()
+
+	// This background process should use our internal actor
+	ctx = actor.WithInternalActor(ctx)
 
 	ctx, cancel2, err := s.acquireCloneLimiter(ctx)
 	if err != nil {

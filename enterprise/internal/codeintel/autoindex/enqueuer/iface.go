@@ -17,9 +17,10 @@ type DBStore interface {
 	Transact(ctx context.Context) (DBStore, error)
 	Done(err error) error
 
+	GetIndexesByIDs(ctx context.Context, ids ...int) ([]dbstore.Index, error)
 	DirtyRepositories(ctx context.Context) (map[int]int, error)
 	IsQueued(ctx context.Context, repositoryID int, commit string) (bool, error)
-	InsertIndex(ctx context.Context, index dbstore.Index) (int, error)
+	InsertIndexes(ctx context.Context, index []dbstore.Index) ([]dbstore.Index, error)
 	GetRepositoriesWithIndexConfiguration(ctx context.Context) ([]int, error)
 	GetIndexConfigurationByRepositoryID(ctx context.Context, repositoryID int) (dbstore.IndexConfiguration, bool, error)
 }
