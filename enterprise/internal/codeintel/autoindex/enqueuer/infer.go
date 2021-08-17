@@ -8,7 +8,15 @@ import (
 )
 
 func InferRepositoryAndRevision(pkg precise.Package) (repoName, gitTagOrCommit string, ok bool) {
-	return inferGoRepositoryAndRevision(pkg)
+	for _, fn := range []func(pkg precise.Package) (string, string, bool){
+		inferGoRepositoryAndRevision,
+	} {
+		if repoName, gitTagOrCommit, ok := fn(pkg); ok {
+			return repoName, gitTagOrCommit, true
+		}
+	}
+
+	return "", "", false
 }
 
 const GitHubScheme = "https://"
