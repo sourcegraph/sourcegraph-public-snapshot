@@ -44,14 +44,14 @@ export const Footer: React.FunctionComponent<Props> = ({ onFinish }) => {
                     label={currentStep.isLastStep ? 'Start searching' : 'Continue'}
                     className="btn btn-primary float-right ml-2"
                     disabled={!currentStep.isComplete}
-                    onClick={event =>
-                        currentStep.isLastStep
-                            ? onFinish(event, { eventName: 'StartSearching_Clicked' })
-                            : (event: React.MouseEvent<HTMLElement>) => {
-                                  event.currentTarget.blur()
-                                  setStep(currentIndex + 1)
-                              }
-                    }
+                    onClick={event => {
+                        if (currentStep.isLastStep) {
+                            onFinish(event, { eventName: 'StartSearching_Clicked' })
+                        } else {
+                            event.currentTarget.blur()
+                            setStep(currentIndex + 1)
+                        }
+                    }}
                 />
             </div>
         </div>

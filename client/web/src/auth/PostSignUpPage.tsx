@@ -65,7 +65,7 @@ export const PostSignUpPage: FunctionComponent<PostSignUpPage> = ({
     const goToSearch = (): void => history.push(getReturnTo(location))
 
     useEffect(() => {
-        eventLogger.log(getPostSignUpEvent('View'))
+        eventLogger.log(getPostSignUpEvent('Page_Viewed'))
     }, [])
 
     // if the welcome flow was already finished - navigate to search
@@ -99,7 +99,7 @@ export const PostSignUpPage: FunctionComponent<PostSignUpPage> = ({
             return
         }
 
-        eventLogger.log(getPostSignUpEvent('NavigatedAway'))
+        eventLogger.log(getPostSignUpEvent('Page_NavigatedAway'))
         setUserFinishedWelcomeFlow(true)
     }, [setUserFinishedWelcomeFlow])
 
