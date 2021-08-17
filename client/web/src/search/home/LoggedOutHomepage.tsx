@@ -119,67 +119,96 @@ const SearchExamples: React.FunctionComponent<SearchExamplesProps> = ({
     )
 }
 
-export const LoggedOutHomepage: React.FunctionComponent<LoggedOutHomepageProps> = props => (
-    <div className={styles.loggedOutHomepage}>
-        <div className={styles.helpContent}>
-            {props.featureFlags.get('search-notebook-onboarding') ? (
-                <SearchExamples
-                    title="Search notebooks"
-                    subtitle="Three ways code search is more efficient than your IDE"
-                    examples={exampleNotebooks}
-                    icon={<BookOutlineIcon />}
-                    {...props}
-                />
-            ) : (
-                <SearchExamples
-                    title="Search examples"
-                    subtitle="Find answers faster with code search across multiple repos and commits"
-                    examples={exampleQueries}
-                    icon={<MagnifyingGlassSearchIcon />}
-                    {...props}
-                />
-            )}
-            <div className={styles.thumbnail}>
-                <div className={classNames(styles.title, 'mb-2')}>Watch and learn</div>
-                <HomepageModalVideo {...props} />
-            </div>
-        </div>
+export const LoggedOutHomepage: React.FunctionComponent<LoggedOutHomepageProps> = props => {
+    const onSignUpClick = useCallback(() => {
+        props.telemetryService.log('HomepageCTAClicked')
+    }, [props.telemetryService])
 
-        <div className={styles.repogroupSection}>
-            <div className="d-block d-md-flex align-items-baseline mb-3">
-                <div className={classNames(styles.title, 'mr-2')}>Search open source communities</div>
-                <div className="font-weight-normal text-muted">
-                    Customized search portals for our open source partners
+    return (
+        <div className={styles.loggedOutHomepage}>
+            <div className={styles.helpContent}>
+                {props.featureFlags.get('search-notebook-onboarding') ? (
+                    <SearchExamples
+                        title="Search notebooks"
+                        subtitle="Three ways code search is more efficient than your IDE"
+                        examples={exampleNotebooks}
+                        icon={<BookOutlineIcon />}
+                        {...props}
+                    />
+                ) : (
+                    <SearchExamples
+                        title="Search examples"
+                        subtitle="Find answers faster with code search across multiple repos and commits"
+                        examples={exampleQueries}
+                        icon={<MagnifyingGlassSearchIcon />}
+                        {...props}
+                    />
+                )}
+                <div className={styles.thumbnail}>
+                    <div className={classNames(styles.title, 'mb-2')}>Watch and learn</div>
+                    <HomepageModalVideo {...props} />
                 </div>
             </div>
-            <div className={styles.loggedOutHomepageRepogroupListCards}>
-                {repogroupList.map(repogroup => (
-                    <div
-                        className={classNames(styles.loggedOutHomepageRepogroupListCard, 'd-flex align-items-center')}
-                        key={repogroup.name}
-                    >
-                        <img
-                            className={classNames(styles.loggedOutHomepageRepogroupListIcon, 'mr-2')}
-                            src={repogroup.homepageIcon}
-                            alt={`${repogroup.name} icon`}
-                        />
-                        <Link to={repogroup.url} className={classNames(styles.loggedOutHomepageRepogroupListingTitle)}>
-                            {repogroup.title}
-                        </Link>
+
+            <div className="d-flex justify-content-center">
+                <div className={classNames('card', styles.ctaCard)}>
+                    <span className="badge badge-merged text-uppercase mr-2">Beta</span>
+                    <span>
+                        Search your public and private code.{' '}
+                        <Link to="/sign-up?src=HomepageCTA" onClick={onSignUpClick}>
+                            Sign up
+                        </Link>{' '}
+                        to get started, or {/* TODO: Link */}
+                        <a href="https://about.sourcegraph.com/" target="_blank" rel="noopener noreferrer">
+                            read our blog post
+                        </a>{' '}
+                        to learn more.
+                    </span>
+                </div>
+            </div>
+
+            <div className={styles.repogroupSection}>
+                <div className="d-block d-md-flex align-items-baseline mb-3">
+                    <div className={classNames(styles.title, 'mr-2')}>Search open source communities</div>
+                    <div className="font-weight-normal text-muted">
+                        Customized search portals for our open source partners
                     </div>
-                ))}
+                </div>
+                <div className={styles.loggedOutHomepageRepogroupListCards}>
+                    {repogroupList.map(repogroup => (
+                        <div
+                            className={classNames(
+                                styles.loggedOutHomepageRepogroupListCard,
+                                'd-flex align-items-center'
+                            )}
+                            key={repogroup.name}
+                        >
+                            <img
+                                className={classNames(styles.loggedOutHomepageRepogroupListIcon, 'mr-2')}
+                                src={repogroup.homepageIcon}
+                                alt={`${repogroup.name} icon`}
+                            />
+                            <Link
+                                to={repogroup.url}
+                                className={classNames(styles.loggedOutHomepageRepogroupListingTitle)}
+                            >
+                                {repogroup.title}
+                            </Link>
+                        </div>
+                    ))}
+                </div>
+            </div>
+
+            <div className={styles.selfHostSection}>
+                <SelfHostInstructions {...props} />
+            </div>
+
+            <div className={styles.customerSection}>
+                <CustomersSection {...props} />
             </div>
         </div>
-
-        <div className={styles.selfHostSection}>
-            <SelfHostInstructions {...props} />
-        </div>
-
-        <div className={styles.customerSection}>
-            <CustomersSection {...props} />
-        </div>
-    </div>
-)
+    )
+}
 
 const MagnifyingGlassSearchIcon = React.memo(() => (
     <svg width="18" height="18" fill="none" xmlns="http://www.w3.org/2000/svg">

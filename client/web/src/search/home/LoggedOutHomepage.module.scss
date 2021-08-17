@@ -70,9 +70,16 @@
     }
 }
 
+.cta-card {
+    display: flex;
+    flex-direction: row;
+    padding: 0.75rem 1rem;
+}
+
 .help-content {
     display: flex;
     justify-content: center;
+    margin-bottom: 3rem;
     @media (--sm-breakpoint-down) {
         align-items: stretch;
         flex-direction: column;
