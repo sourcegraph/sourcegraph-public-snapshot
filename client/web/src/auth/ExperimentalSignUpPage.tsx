@@ -26,8 +26,8 @@ const SourceToTitleMap = {
     Saved: 'Create a library of useful searches.',
     Monitor: 'Monitor code for changes.',
     Extend: 'Augment code and workflows via extensions.',
-    SearchCTA: 'Add your public and private repositories.',
-    HomepageCTA: 'Add your public and private repositories.',
+    SearchCTA: 'Easily search the code you care about.',
+    HomepageCTA: 'Easily search the code you care about.',
     Snippet: 'Easily search all the code you care about.',
 }
 
