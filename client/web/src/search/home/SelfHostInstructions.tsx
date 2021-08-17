@@ -47,7 +47,11 @@ export const SelfHostInstructions: React.FunctionComponent<TelemetryProps> = ({ 
                     <li>Your code never leaves your server</li>
                     <li>Free 30 day trial of enterprise-only features</li>
                 </ul>
-                <a href="https://docs.sourcegraph.com/self-hosted-vs-cloud" target="_blank" rel="noopener noreferrer">
+                <a
+                    href="https://docs.sourcegraph.com/cloud/cloud_ent_on-prem_comparison"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                >
                     Learn more about self-hosted vs. cloud features{' '}
                     <OpenInNewIcon aria-label="Open in new window" className="icon-inline" />
                 </a>
@@ -55,10 +59,7 @@ export const SelfHostInstructions: React.FunctionComponent<TelemetryProps> = ({ 
 
             <div className={styles.column}>
                 <div>
-                    <strong>Quickstart:</strong> launch Sourcegraph at{' '}
-                    <a href="http://localhost:3370" target="_blank" rel="noopener noreferrer">
-                        http://localhost:3370
-                    </a>
+                    <strong>Quickstart:</strong> launch Sourcegraph at http://localhost:3370
                 </div>
                 <div className={styles.codeWrapper}>
                     <button
