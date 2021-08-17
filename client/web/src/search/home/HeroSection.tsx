@@ -15,13 +15,7 @@ export const HeroSection: React.FunctionComponent<ThemeProps & TelemetryProps> =
     return (
         <div className={styles.hero}>
             <div className={styles.column}>
-                <img
-                    srcSet={`${assetsRoot}/img/homepage-hero-${theme}@1x.png,
-                         ${assetsRoot}/img/homepage-hero-${theme}@2x.png 2x`}
-                    src={`${assetsRoot}/img/homepage-hero-${theme}@1x.png`}
-                    alt=""
-                    className={styles.image}
-                />
+                <img src={`${assetsRoot}/img/homepage-hero-${theme}.svg`} alt="" className={styles.image} />
             </div>
             <div className={styles.column}>
                 <h2 className={styles.header}>
