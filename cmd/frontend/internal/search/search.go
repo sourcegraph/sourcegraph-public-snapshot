@@ -425,7 +425,6 @@ func fromContentMatch(fm *result.FileMatch, repoCache map[api.RepoID]*types.Sear
 	lineMatches := make([]streamhttp.EventLineMatch, 0, len(fm.LineMatches))
 	for _, lm := range fm.LineMatches {
 		lineMatches = append(lineMatches, streamhttp.EventLineMatch{
-			Line:             lm.Preview,
 			LineNumber:       lm.LineNumber,
 			OffsetAndLengths: lm.OffsetAndLengths,
 		})

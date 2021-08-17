@@ -51,7 +51,6 @@ func (e *EventPathMatch) eventMatch() {}
 
 // EventLineMatch is a subset of zoekt.LineMatch for our Event API.
 type EventLineMatch struct {
-	Line             string     `json:"line"`
 	LineNumber       int32      `json:"lineNumber"`
 	OffsetAndLengths [][2]int32 `json:"offsetAndLengths"`
 }
