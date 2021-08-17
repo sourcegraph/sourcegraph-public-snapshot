@@ -63,19 +63,32 @@ func (p *Provider) Validate() (problems []string) {
 	return nil
 }
 
-// FetchUserPermsByToken fetches all the private repo ids that the token can
-// access.
+// FetchUserPermsByToken fetches all the private repo ids that the token can access.
+//
+// This may return a partial result if an error is encountered, e.g. via rate limits.
 func (p *Provider) FetchUserPermsByToken(ctx context.Context, token string) (*authz.ExternalUserPermissions, error) {
 	// 🚨 SECURITY: Use user token is required to only list repositories the user has access to.
 	client := p.client.WithToken(token)
 
+	// 100 matches the maximum page size, thus a good default to avoid multiple allocations
+	// when appending the first 100 results to the slice.
+	const repoSetSize = 100
 	perms := &authz.ExternalUserPermissions{
-		// 100 matches the maximum page size, thus a good default to avoid multiple allocations
-		// when appending the first 100 results to the slice.
-		Exacts: make([]extsvc.RepoID, 0, 100),
+		Exacts: make([]extsvc.RepoID, 0, repoSetSize),
+	}
+	seenRepos := make(map[extsvc.RepoID]bool, repoSetSize)
+
+	// appendRepo checks if the given repos are already tracked before adding it to perms.
+	appendRepo := func(repos ...extsvc.RepoID) {
+		for _, repo := range repos {
+			if _, exists := seenRepos[repo]; !exists {
+				perms.Exacts = append(perms.Exacts, repo)
+			}
+		}
 	}
 
 	// First, we list repositories a user has direct access to as a owner or direct collaborator.
+	// We let other permissions ('organization' affiliation) be sync'd by teams/orgs.
 	hasNextPage := true
 	var err error
 	for page := 1; hasNextPage; page++ {
@@ -87,7 +100,7 @@ func (p *Provider) FetchUserPermsByToken(ctx context.Context, token string) (*au
 		}
 
 		for _, r := range repos {
-			perms.Exacts = append(perms.Exacts, extsvc.RepoID(r.ID))
+			appendRepo(extsvc.RepoID(r.ID))
 		}
 	}
 
@@ -97,6 +110,7 @@ func (p *Provider) FetchUserPermsByToken(ctx context.Context, token string) (*au
 	// Track groups in this map of "org/team":group so that we don't check GitHub teams
 	// that this user already has access to through Organization membership.
 	groups := make(map[string]cachedGroup)
+	// Get orgs
 	hasNextPage = true
 	for page := 1; hasNextPage; page++ {
 		var orgs []*github.OrgDetails
@@ -112,6 +126,8 @@ func (p *Provider) FetchUserPermsByToken(ctx context.Context, token string) (*au
 			}
 		}
 	}
+	// Get teams
+	hasNextPage = true
 	for page := 1; hasNextPage; page++ {
 		var teams []*github.Team
 		teams, hasNextPage, _, err = client.GetAuthenticatedUserTeams(ctx, page)
@@ -135,8 +151,7 @@ func (p *Provider) FetchUserPermsByToken(ctx context.Context, token string) (*au
 	for _, group := range groups {
 		groupPerms, exists := p.groupsCache.getGroupPermsFromCache(group.Org, group.Team)
 		if exists {
-			// TODO: dedupe?
-			perms.Exacts = append(perms.Exacts, groupPerms.Repositories...)
+			appendRepo(groupPerms.Repositories...)
 			continue
 		}
 
