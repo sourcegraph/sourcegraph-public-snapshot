@@ -10,7 +10,7 @@ import { RevisionsPopover, RevisionsPopoverProps } from './RevisionsPopover'
 import { MOCK_PROPS, MOCK_REQUESTS } from './RevisionsPopover.mocks'
 
 describe('RevisionsPopover', () => {
-    let queries: RenderWithRouterResult
+    let renderResult: RenderWithRouterResult
 
     const fetchMoreNodes = async (currentTab: HTMLElement) => {
         fireEvent.click(within(currentTab).getByText('Show more'))
@@ -25,18 +25,20 @@ describe('RevisionsPopover', () => {
             { route: `/${MOCK_PROPS.repoName}` }
         )
 
+    const waitForInputDebounce = () => act(() => new Promise(resolve => setTimeout(resolve, 200)))
+
     afterEach(cleanup)
 
     describe('Branches', () => {
         let branchesTab: HTMLElement
 
         beforeEach(async () => {
-            queries = renderPopover()
+            renderResult = renderPopover()
 
-            fireEvent.click(queries.getByText('Branches'))
+            fireEvent.click(renderResult.getByText('Branches'))
             await waitForNextApolloResponse()
 
-            branchesTab = queries.getByRole('tabpanel', { name: 'Branches' })
+            branchesTab = renderResult.getByRole('tabpanel', { name: 'Branches' })
         })
 
         it('renders correct number of results', () => {
@@ -66,8 +68,7 @@ describe('RevisionsPopover', () => {
             const searchInput = within(branchesTab).getByRole('searchbox')
             fireEvent.change(searchInput, { target: { value: 'some query' } })
 
-            // Allow input to debounce
-            await act(() => new Promise(resolve => setTimeout(resolve, 200)))
+            await waitForInputDebounce()
             await waitForNextApolloResponse()
 
             expect(within(branchesTab).getAllByRole('link')).toHaveLength(2)
@@ -91,20 +92,19 @@ describe('RevisionsPopover', () => {
         describe('Speculative results', () => {
             beforeEach(async () => {
                 cleanup()
-                queries = renderPopover({ showSpeculativeResults: true })
+                renderResult = renderPopover({ showSpeculativeResults: true })
 
-                fireEvent.click(queries.getByText('Branches'))
+                fireEvent.click(renderResult.getByText('Branches'))
                 await waitForNextApolloResponse()
 
-                branchesTab = queries.getByRole('tabpanel', { name: 'Branches' })
+                branchesTab = renderResult.getByRole('tabpanel', { name: 'Branches' })
             })
 
             it('displays results correctly by displaying a single speculative result', async () => {
                 const searchInput = within(branchesTab).getByRole('searchbox')
                 fireEvent.change(searchInput, { target: { value: 'some other query' } })
 
-                // Allow input to debounce
-                await act(() => new Promise(resolve => setTimeout(resolve, 200)))
+                await waitForInputDebounce()
                 await waitForNextApolloResponse()
 
                 expect(within(branchesTab).getByRole('link')).toBeInTheDocument()
@@ -122,12 +122,12 @@ describe('RevisionsPopover', () => {
         let tagsTab: HTMLElement
 
         beforeEach(async () => {
-            queries = renderPopover()
+            renderResult = renderPopover()
 
-            fireEvent.click(queries.getByText('Tags'))
+            fireEvent.click(renderResult.getByText('Tags'))
             await waitForNextApolloResponse()
 
-            tagsTab = queries.getByRole('tabpanel', { name: 'Tags' })
+            tagsTab = renderResult.getByRole('tabpanel', { name: 'Tags' })
         })
 
         it('renders correct number of results', () => {
@@ -155,8 +155,7 @@ describe('RevisionsPopover', () => {
             const searchInput = within(tagsTab).getByRole('searchbox')
             fireEvent.change(searchInput, { target: { value: 'some query' } })
 
-            // Allow input to debounce
-            await act(() => new Promise(resolve => setTimeout(resolve, 200)))
+            await waitForInputDebounce()
             await waitForNextApolloResponse()
 
             expect(within(tagsTab).getAllByRole('link')).toHaveLength(2)
@@ -168,12 +167,12 @@ describe('RevisionsPopover', () => {
         let commitsTab: HTMLElement
 
         beforeEach(async () => {
-            queries = renderPopover()
+            renderResult = renderPopover()
 
-            fireEvent.click(queries.getByText('Commits'))
+            fireEvent.click(renderResult.getByText('Commits'))
             await waitForNextApolloResponse()
 
-            commitsTab = queries.getByRole('tabpanel', { name: 'Commits' })
+            commitsTab = renderResult.getByRole('tabpanel', { name: 'Commits' })
         })
 
         it('renders correct number of results', () => {
@@ -198,8 +197,7 @@ describe('RevisionsPopover', () => {
             const searchInput = within(commitsTab).getByRole('searchbox')
             fireEvent.change(searchInput, { target: { value: 'some query' } })
 
-            // Allow input to debounce
-            await act(() => new Promise(resolve => setTimeout(resolve, 200)))
+            await waitForInputDebounce()
             await waitForNextApolloResponse()
 
             expect(within(commitsTab).getAllByRole('link')).toHaveLength(2)
@@ -209,12 +207,12 @@ describe('RevisionsPopover', () => {
         describe('Against a speculative revision', () => {
             beforeEach(async () => {
                 cleanup()
-                queries = renderPopover({ currentRev: 'non-existent-revision' })
+                renderResult = renderPopover({ currentRev: 'non-existent-revision' })
 
-                fireEvent.click(queries.getByText('Commits'))
+                fireEvent.click(renderResult.getByText('Commits'))
                 await waitForNextApolloResponse()
 
-                commitsTab = queries.getByRole('tabpanel', { name: 'Commits' })
+                commitsTab = renderResult.getByRole('tabpanel', { name: 'Commits' })
             })
 
             it('renders 0 results', () => {

@@ -1,8 +1,9 @@
 import classNames from 'classnames'
-import React, { useCallback, useEffect, useRef } from 'react'
+import React, { useCallback, useRef } from 'react'
 import { useMergeRefs } from 'use-callback-ref'
 
 import { Form } from '@sourcegraph/branded/src/components/Form'
+import { useAutoFocus } from '@sourcegraph/wildcard'
 
 import { FilterControl, FilteredConnectionFilter, FilteredConnectionFilterValue } from '../FilterControl'
 
@@ -67,14 +68,7 @@ export const ConnectionForm = React.forwardRef<HTMLInputElement, ConnectionFormP
             event.preventDefault()
         }, [])
 
-        useEffect(() => {
-            if (autoFocus) {
-                // Ensure that the input field is focused. The autofocus field is unreliable within modals
-                requestAnimationFrame(() => {
-                    localReference.current?.focus()
-                })
-            }
-        }, [autoFocus])
+        useAutoFocus({ autoFocus, reference: localReference })
 
         return (
             <Form

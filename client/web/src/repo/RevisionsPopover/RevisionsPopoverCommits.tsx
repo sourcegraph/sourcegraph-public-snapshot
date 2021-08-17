@@ -99,7 +99,7 @@ const GitCommitNode: React.FunctionComponent<GitCommitNodeProps> = ({
     )
 }
 
-interface RevisionCommitsTabProps {
+interface RevisionsPopoverCommitsProps {
     repo: Scalars['ID']
     defaultBranch: string
     getPathFromRevision: (href: string, revision: string) => string
@@ -118,7 +118,7 @@ interface RevisionCommitsTabProps {
 
 const BATCH_COUNT = 15
 
-export const RevisionCommitsTab: React.FunctionComponent<RevisionCommitsTabProps> = ({
+export const RevisionsPopoverCommits: React.FunctionComponent<RevisionsPopoverCommitsProps> = ({
     repo,
     defaultBranch,
     getPathFromRevision,
