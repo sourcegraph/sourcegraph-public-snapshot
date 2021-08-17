@@ -960,7 +960,11 @@ CREATE TEMPORARY TABLE IF NOT EXISTS
 	// Soft delete orphaned phabricator repos. This must happen *before* the
 	// repo deletion, because repo deletion modifies the repo name and the only
 	// link between these tables is the repo name.
-	if err := tx.Exec(ctx, sqlf.Sprintf(`
+	//
+	// NOTE: we need additional join tables (e.g. external_service_repos) to
+	//  support this in Cloud, so for the time being we skip this step.
+	if !envvar.SourcegraphDotComMode() {
+		if err := tx.Exec(ctx, sqlf.Sprintf(`
 		UPDATE phabricator_repos
 		SET deleted_at = TRANSACTION_TIMESTAMP()
 		WHERE deleted_at IS NULL
@@ -971,7 +975,8 @@ CREATE TEMPORARY TABLE IF NOT EXISTS
 			)
 		);
 	`)); err != nil {
-		return errors.Wrap(err, "cleaning up potentially orphaned phabricator repos")
+			return errors.Wrap(err, "cleaning up potentially orphaned phabricator repos")
+		}
 	}
 
 	// Soft delete orphaned repos
