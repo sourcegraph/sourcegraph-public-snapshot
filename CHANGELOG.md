@@ -63,7 +63,7 @@ All notable changes to Sourcegraph are documented in this file.
 - Clicking on symbols in the left search pane now renders hover tooltips for indexed repositories. [#23664](https://github.com/sourcegraph/sourcegraph/pull/23664)
 - Fixed a result streaming throttling issue that was causing significantly increased latency for some searches. [#23736](https://github.com/sourcegraph/sourcegraph/pull/23736)
 - GitCredentials passwords stored in AWS CodeCommit configuration is now redacted. [#23832](https://github.com/sourcegraph/sourcegraph/pull/23832)
-- Patched a vulnerability ni `apk-tools`. [#23917](https://github.com/sourcegraph/sourcegraph/pull/23917)
+- Patched a vulnerability in `apk-tools`. [#23917](https://github.com/sourcegraph/sourcegraph/pull/23917)
 - Line content was being duplicated in unindexed search payloads, causing memory instability for some dense search queries. [#23918](https://github.com/sourcegraph/sourcegraph/pull/23918)
 - Updating draft merge requests on GitLab from batch changes no longer removes the draft status. [#23944](https://github.com/sourcegraph/sourcegraph/issues/23944)
 
