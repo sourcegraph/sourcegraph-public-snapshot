@@ -11,11 +11,9 @@
         box-sizing: border-box;
         transition: none;
 
-        .theme-redesign & {
-            @media (--xs-breakpoint-down) {
-                border: 1px solid var(--input-border-color);
-                margin-left: 0;
-            }
+        @media (--xs-breakpoint-down) {
+            border: 1px solid var(--input-border-color);
+            margin-left: 0;
         }
 
         &:hover,
@@ -76,11 +74,9 @@
     }
 
     &__menu {
-        .theme-redesign & {
-            @media (--xs-breakpoint-down) {
-                max-width: 85%;
-                transform: none;
-            }
+        @media (--xs-breakpoint-down) {
+            max-width: 85%;
+            transform: none;
         }
     }
 }
