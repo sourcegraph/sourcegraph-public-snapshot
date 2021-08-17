@@ -965,6 +965,7 @@ CREATE TEMPORARY TABLE IF NOT EXISTS
 	//  support this in Cloud, so for the time being we skip this step.
 	if !envvar.SourcegraphDotComMode() {
 		if err := tx.Exec(ctx, sqlf.Sprintf(`
+		-- source: internal/database/external_services.go:Delete
 		UPDATE phabricator_repos
 		SET deleted_at = TRANSACTION_TIMESTAMP()
 		WHERE deleted_at IS NULL
