@@ -24,10 +24,9 @@ import { Settings } from '../../schema/settings.schema'
 import { VersionContext } from '../../schema/site.schema'
 import { ThemePreferenceProps } from '../../theme'
 import { submitSearch, SubmitSearchParameters } from '../helpers'
+import { SearchBox } from '../input/SearchBox'
+import { useSearchOnboardingTour } from '../input/SearchOnboardingTour'
 import { QuickLinks } from '../QuickLinks'
-
-import { SearchBox } from './SearchBox'
-import { useSearchOnboardingTour } from './SearchOnboardingTour'
 
 interface Props
     extends SettingsCascadeProps<Settings>,

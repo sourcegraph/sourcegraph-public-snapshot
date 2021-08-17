@@ -11,7 +11,7 @@ import type { ExtensionAlertProps } from './repo/RepoContainer'
 import { UserExternalServicesOrRepositoriesUpdateProps } from './util'
 import { lazyComponent } from './util/lazyComponent'
 
-const SearchPage = lazyComponent(() => import('./search/input/SearchPage'), 'SearchPage')
+const SearchPage = lazyComponent(() => import('./search/home/SearchPage'), 'SearchPage')
 const StreamingSearchResults = lazyComponent(
     () => import('./search/results/StreamingSearchResults'),
     'StreamingSearchResults'
@@ -73,12 +73,7 @@ function passThroughToServer(): React.ReactNode {
 export const routes: readonly LayoutRouteProps<any>[] = [
     {
         path: '/',
-        render: props =>
-            window.context.sourcegraphDotComMode && !props.authenticatedUser ? (
-                <Redirect to="https://about.sourcegraph.com" />
-            ) : (
-                <Redirect to="/search" />
-            ),
+        render: () => <Redirect to="/search" />,
         exact: true,
     },
     {

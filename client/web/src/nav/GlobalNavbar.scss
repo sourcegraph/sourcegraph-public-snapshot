@@ -43,7 +43,14 @@
         }
 
         &__sign-up {
-            border: 1px solid var(--brand-secondary);
+            border: 1px solid transparent;
+            background-color: var(--brand-secondary);
+            color: var(--white);
+
+            &:hover {
+                background-color: var(--brand-secondary-3);
+                color: var(--white);
+            }
         }
     }
 }

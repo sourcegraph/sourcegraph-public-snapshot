@@ -1,12 +1,12 @@
 @import '../../nav/GlobalNavbar';
 @import '../QuickLinks';
-@import './MonacoQueryInput';
-@import './InfoDropdown';
-@import './SearchContextDropdown';
-@import './SearchContextMenu';
-@import './SearchOnboardingTour';
+@import '../input/MonacoQueryInput';
+@import '../input/InfoDropdown';
+@import '../input/SearchContextDropdown';
+@import '../input/SearchContextMenu';
+@import '../input/SearchOnboardingTour';
 @import '../panels/HomePanels';
-@import './toggles/Toggles';
+@import '../input/toggles/Toggles';
 @import './homepage';
 
 .search-page {
@@ -30,7 +30,6 @@
         margin-top: 2.5rem;
         width: 100%;
 
-        max-width: 90%;
         @media (--xl-breakpoint-up) {
             max-width: $max-homepage-container-width;
         }
@@ -52,9 +51,5 @@
         width: 100%;
         display: block;
         margin: 0.5rem 0;
-    }
-
-    &__footer {
-        margin-top: 2rem;
     }
 }
