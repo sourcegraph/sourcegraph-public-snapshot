@@ -336,7 +336,7 @@ func callSearcherOverRepos(
 					defer done()
 
 					var s streaming.Sender
-					if featureflag.FromContext(ctx).GetBoolOr("cc_streaming_searcher", false) {
+					if featureflag.FromContext(ctx).GetBoolOr("cc_streaming_searcher", true) {
 						s = stream
 					}
 
