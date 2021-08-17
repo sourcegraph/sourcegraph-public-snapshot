@@ -131,7 +131,7 @@ func GetAndSaveUser(ctx context.Context, db dbutil.DB, op GetAndSaveUserOp) (use
 		return userID, true, true, "", nil
 	}()
 	if err != nil {
-		serviceTypeArg := json.RawMessage(fmt.Sprintf(`{"serviceType": %s}`, op.ExternalAccount.ServiceType))
+		serviceTypeArg := json.RawMessage(fmt.Sprintf(`{"serviceType": %q}`, op.ExternalAccount.ServiceType))
 		if logErr := usagestats.LogBackendEvent(db, actor.FromContext(ctx).UID, "ExternalAuthSignupFailed", serviceTypeArg, serviceTypeArg, featureflag.FromContext(ctx), nil); logErr != nil {
 			log15.Warn("Failed to log event ExternalAuthSignUpFailed", "error", logErr)
 		}
