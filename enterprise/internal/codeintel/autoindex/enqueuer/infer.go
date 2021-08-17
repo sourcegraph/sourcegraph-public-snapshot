@@ -7,11 +7,23 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 )
 
+func InferRepositoryAndRevision(pkg precise.Package) (repoName, gitTagOrCommit string, ok bool) {
+	for _, fn := range []func(pkg precise.Package) (string, string, bool){
+		inferGoRepositoryAndRevision,
+	} {
+		if repoName, gitTagOrCommit, ok := fn(pkg); ok {
+			return repoName, gitTagOrCommit, true
+		}
+	}
+
+	return "", "", false
+}
+
 const GitHubScheme = "https://"
 
 var goVersionPattern = lazyregexp.New(`^v?[\d\.]+-([a-f0-9]+)`)
 
-func InferGoRepositoryAndRevision(pkg precise.Package) (repoName, gitTagOrCommit string, ok bool) {
+func inferGoRepositoryAndRevision(pkg precise.Package) (string, string, bool) {
 	if pkg.Scheme != "gomod" || !strings.HasPrefix(pkg.Name, GitHubScheme+"github.com/") {
 		return "", "", false
 	}
