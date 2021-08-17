@@ -19,7 +19,6 @@ import (
 	"math"
 	"net/http"
 	"strconv"
-	"sync"
 	"time"
 
 	nettrace "golang.org/x/net/trace"
@@ -101,16 +100,13 @@ func (s *Service) streamSearch(ctx context.Context, w http.ResponseWriter, p pro
 		return
 	}
 
-	var bufMux sync.Mutex
 	matchesBuf := streamhttp.NewJSONArrayBuf(32*1024, func(data []byte) error {
 		return eventWriter.EventBytes("matches", data)
 	})
 	onMatches := func(match protocol.FileMatch) {
-		bufMux.Lock()
 		if err := matchesBuf.Append(match); err != nil {
 			log.Printf("failed appending match to buffer: %s", err)
 		}
-		bufMux.Unlock()
 	}
 
 	ctx, cancel, stream := newLimitedStream(ctx, p.Limit, onMatches)
