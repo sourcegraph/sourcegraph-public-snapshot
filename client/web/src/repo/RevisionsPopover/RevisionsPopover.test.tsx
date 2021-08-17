@@ -1,9 +1,7 @@
-import { MockedProvider } from '@apollo/client/testing'
 import { cleanup, within, fireEvent, act } from '@testing-library/react'
 import React from 'react'
 
-import { cache } from '@sourcegraph/shared/src/graphql/cache'
-import { waitForNextApolloResponse } from '@sourcegraph/shared/src/testing/apollo'
+import { MockedTestProvider, waitForNextApolloResponse } from '@sourcegraph/shared/src/testing/apollo'
 import { renderWithRouter, RenderWithRouterResult } from '@sourcegraph/shared/src/testing/render-with-router'
 
 import { RevisionsPopover, RevisionsPopoverProps } from './RevisionsPopover'
@@ -19,9 +17,9 @@ describe('RevisionsPopover', () => {
 
     const renderPopover = (props?: Partial<RevisionsPopoverProps>): RenderWithRouterResult =>
         renderWithRouter(
-            <MockedProvider mocks={MOCK_REQUESTS} cache={cache}>
+            <MockedTestProvider mocks={MOCK_REQUESTS}>
                 <RevisionsPopover {...MOCK_PROPS} {...props} />
-            </MockedProvider>,
+            </MockedTestProvider>,
             { route: `/${MOCK_PROPS.repoName}` }
         )
 

@@ -111,7 +111,6 @@ interface RevisionsPopoverCommitsProps {
     currentRev: string | undefined
 
     currentCommitID?: string
-    speculativeCommitID?: string
 
     onSelect?: (node: GitCommitAncestorFields) => void
 }
