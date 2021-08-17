@@ -22,13 +22,13 @@ interface Props extends ThemeProps, TelemetryProps {
 }
 
 const SourceToTitleMap = {
-    Context: 'Easily search the code you care about.',
+    Context: 'Easily search all the code you care about.',
     Saved: 'Create a library of useful searches.',
     Monitor: 'Monitor code for changes.',
     Extend: 'Augment code and workflows via extensions.',
     SearchCTA: 'Add your public and private repositories.',
     HomepageCTA: 'Add your public and private repositories.',
-    Snippet: 'Easily search the code you care about.',
+    Snippet: 'Easily search all the code you care about.',
 }
 
 export type ExperimentalSignUpSource = keyof typeof SourceToTitleMap
