@@ -1,4 +1,6 @@
 import { storiesOf } from '@storybook/react'
+import delay from 'delay'
+import { noop } from 'lodash'
 import React from 'react'
 
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
@@ -9,7 +11,7 @@ import { createMockInsightAPI } from '../../../../core/backend/insights-api'
 import { SETTINGS_CASCADE_MOCK } from '../../../../mocks/settings-cascade'
 
 import { getRandomLangStatsMock } from './components/live-preview-chart/live-preview-mock-data'
-import { LangStatsInsightCreationPage, LangStatsInsightCreationPageProps } from './LangStatsInsightCreationPage'
+import { LangStatsInsightCreationPage } from './LangStatsInsightCreationPage'
 
 const { add } = storiesOf('web/insights/CreateLangStatsInsightPageProps', module)
     .addDecorator(story => <WebStory>{() => story()}</WebStory>)
@@ -19,15 +21,14 @@ const { add } = storiesOf('web/insights/CreateLangStatsInsightPageProps', module
         },
     })
 
-const PLATFORM_CONTEXT: LangStatsInsightCreationPageProps['platformContext'] = {
-    // eslint-disable-next-line @typescript-eslint/require-await
-    updateSettings: async (...args) => {
-        console.log('PLATFORM CONTEXT update settings with', { ...args })
-    },
-}
-
 function sleep(delay: number): Promise<void> {
     return new Promise(resolve => setTimeout(resolve, delay))
+}
+
+const fakeAPIRequest = async () => {
+    await delay(1000)
+
+    throw new Error('Network error')
 }
 
 const mockAPI = createMockInsightAPI({
@@ -51,9 +52,12 @@ const mockAPI = createMockInsightAPI({
 add('Page', () => (
     <InsightsApiContext.Provider value={mockAPI}>
         <LangStatsInsightCreationPage
+            visibility="user_test_id"
             telemetryService={NOOP_TELEMETRY_SERVICE}
-            platformContext={PLATFORM_CONTEXT}
             settingsCascade={SETTINGS_CASCADE_MOCK}
+            onInsightCreateRequest={fakeAPIRequest}
+            onSuccessfulCreation={noop}
+            onCancel={noop}
         />
     </InsightsApiContext.Provider>
 ))
