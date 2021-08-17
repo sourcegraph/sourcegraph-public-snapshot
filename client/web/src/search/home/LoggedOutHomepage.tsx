@@ -112,7 +112,7 @@ export const LoggedOutHomepage: React.FunctionComponent<LoggedOutHomepageProps> 
                             <Link to="/sign-up?src=HomepageCTA" onClick={onSignUpClick}>
                                 Sign up
                             </Link>{' '}
-                            to get started, or
+                            to get started, or{' '}
                             <a
                                 href="https://about.sourcegraph.com/blog/why-index-the-oss-universe/"
                                 target="_blank"

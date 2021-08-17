@@ -8,7 +8,8 @@ import { Container } from '@sourcegraph/wildcard'
 
 import { FilteredConnection, FilteredConnectionQueryArguments } from '../../../../components/FilteredConnection'
 import { BatchSpecApplyPreviewVariables, ChangesetApplyPreviewFields, Scalars } from '../../../../graphql-operations'
-import { MultiSelectContext, MultiSelectContextProvider } from '../../MultiSelectContext'
+import { MultiSelectContext } from '../../MultiSelectContext'
+import { BatchChangePreviewContext } from '../BatchChangePreviewContext'
 import { PreviewPageAuthenticatedUser } from '../BatchChangePreviewPage'
 import { getPublishableChangesetSpecID } from '../utils'
 
@@ -19,7 +20,7 @@ import {
 } from './backend'
 import { ChangesetApplyPreviewNode, ChangesetApplyPreviewNodeProps } from './ChangesetApplyPreviewNode'
 import { EmptyPreviewListElement } from './EmptyPreviewListElement'
-import { PreviewFilterRow, PreviewFilters } from './PreviewFilterRow'
+import { PreviewFilterRow } from './PreviewFilterRow'
 import styles from './PreviewList.module.scss'
 import { PreviewListHeader, PreviewListHeaderProps } from './PreviewListHeader'
 import { PreviewSelectRow } from './PreviewSelectRow'
@@ -43,13 +44,7 @@ interface Props extends ThemeProps {
 /**
  * A list of a batch spec's preview nodes.
  */
-export const PreviewList: React.FunctionComponent<Props> = props => (
-    <MultiSelectContextProvider>
-        <PreviewListImpl {...props} />
-    </MultiSelectContextProvider>
-)
-
-const PreviewListImpl: React.FunctionComponent<Props> = ({
+export const PreviewList: React.FunctionComponent<Props> = ({
     batchSpecID,
     history,
     location,
@@ -61,29 +56,10 @@ const PreviewListImpl: React.FunctionComponent<Props> = ({
     expandChangesetDescriptions,
     queryPublishableChangesetSpecIDs,
 }) => {
-    const {
-        selected,
-        deselectAll,
-        areAllVisibleSelected,
-        isSelected,
-        toggleSingle,
-        toggleVisible,
-        setVisible,
-    } = useContext(MultiSelectContext)
-
-    const [filters, setFilters] = useState<PreviewFilters>({
-        search: null,
-        currentState: null,
-        action: null,
-    })
-
-    const setChangesetFiltersAndDeselectAll = useCallback(
-        (filters: PreviewFilters) => {
-            deselectAll()
-            setFilters(filters)
-        },
-        [deselectAll]
+    const { selected, areAllVisibleSelected, isSelected, toggleSingle, toggleVisible, setVisible } = useContext(
+        MultiSelectContext
     )
+    const { filters } = useContext(BatchChangePreviewContext)
 
     const [queryArguments, setQueryArguments] = useState<BatchSpecApplyPreviewVariables>()
 
@@ -124,11 +100,7 @@ const PreviewListImpl: React.FunctionComponent<Props> = ({
                     queryArguments={queryArguments}
                 />
             ) : (
-                <PreviewFilterRow
-                    history={history}
-                    location={location}
-                    onFiltersChange={setChangesetFiltersAndDeselectAll}
-                />
+                <PreviewFilterRow history={history} location={location} />
             )}
             <FilteredConnection<
                 ChangesetApplyPreviewFields,
