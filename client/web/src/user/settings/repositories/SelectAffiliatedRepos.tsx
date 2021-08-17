@@ -110,6 +110,7 @@ export const SelectAffiliatedRepos: FunctionComponent<Props> = ({
 
     // if we should tweak UI messaging and copy
     const ALLOW_PRIVATE_CODE = externalServiceUserModeFromTags(authenticatedUser.tags) === 'all'
+    const ALLOW_SYNC_ALL = authenticatedUser.tags.includes('AllowUserExternalServiceSyncAll')
 
     // set up state hooks
     const [isRedesignEnabled] = useRedesignToggle()
@@ -222,7 +223,8 @@ export const SelectAffiliatedRepos: FunctionComponent<Props> = ({
 
             const radioSelectOption =
                 repoSelectionMode ||
-                (externalServices.length === codeHostsHaveSyncAllQuery.length &&
+                (ALLOW_SYNC_ALL &&
+                externalServices.length === codeHostsHaveSyncAllQuery.length &&
                 codeHostsHaveSyncAllQuery.every(Boolean)
                     ? 'all'
                     : selectedAffiliatedRepos.size > 0
@@ -252,6 +254,7 @@ export const SelectAffiliatedRepos: FunctionComponent<Props> = ({
         setComplete,
         currentIndex,
         repoSelectionMode,
+        ALLOW_SYNC_ALL,
     ])
 
     // select repos by code host and query
@@ -286,12 +289,6 @@ export const SelectAffiliatedRepos: FunctionComponent<Props> = ({
             loaded: selectionState.loaded,
         })
 
-        // if (changeEvent.currentTarget.value === 'all') {
-        //     saveRepoSelection(affiliatedRepos || [])
-        // } else {
-        //     saveRepoSelection([...selectionState.repos.values()])
-        // }
-
         onRepoSelectionModeChange(changeEvent.currentTarget.value as RepoSelectionMode)
     }
 
@@ -318,10 +315,28 @@ export const SelectAffiliatedRepos: FunctionComponent<Props> = ({
     const modeSelect: JSX.Element = (
         <>
             <label className="d-flex flex-row align-items-baseline">
-                <input type="radio" value="all" checked={selectionState.radio === 'all'} onChange={handleRadioSelect} />
+                <input
+                    type="radio"
+                    value="all"
+                    disabled={!ALLOW_SYNC_ALL}
+                    checked={selectionState.radio === 'all'}
+                    onChange={handleRadioSelect}
+                />
                 <div className="d-flex flex-column ml-2">
-                    <p className="mb-0 user-settings-repos__text">Sync all repositories</p>
-                    <p className="user-settings-repos__text">
+                    <p
+                        className={classNames('mb-0', {
+                            'user-settings-repos__text': ALLOW_SYNC_ALL,
+                            'user-settings-repos__text-disabled': !ALLOW_SYNC_ALL,
+                        })}
+                    >
+                        Sync all repositories {!ALLOW_SYNC_ALL && '(coming soon)'}
+                    </p>
+                    <p
+                        className={classNames({
+                            'user-settings-repos__text': ALLOW_SYNC_ALL,
+                            'user-settings-repos__text-disabled': !ALLOW_SYNC_ALL,
+                        })}
+                    >
                         Will sync all current and future public and private repositories
                     </p>
                 </div>
