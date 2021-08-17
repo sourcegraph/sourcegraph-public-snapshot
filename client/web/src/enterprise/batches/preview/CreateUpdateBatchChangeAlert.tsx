@@ -5,9 +5,11 @@ import React, { useCallback, useContext, useState } from 'react'
 import { Link } from '@sourcegraph/shared/src/components/Link'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { isErrorLike } from '@sourcegraph/shared/src/util/errors'
+import { ButtonTooltip } from '@sourcegraph/web/src/components/ButtonTooltip'
 
 import { ErrorAlert } from '../../../components/alerts'
 import { BatchSpecFields } from '../../../graphql-operations'
+import { MultiSelectContext } from '../MultiSelectContext'
 
 import { createBatchChange, applyBatchChange } from './backend'
 import { BatchChangePreviewContext } from './BatchChangePreviewContext'
@@ -32,10 +34,31 @@ export const CreateUpdateBatchChangeAlert: React.FunctionComponent<CreateUpdateB
     const batchChangeID = batchChange?.id
 
     const { publicationStates } = useContext(BatchChangePreviewContext)
+    const { selected } = useContext(MultiSelectContext)
 
     const [isLoading, setIsLoading] = useState<boolean | Error>(false)
 
+    const canApply = selected !== 'all' && selected.size === 0 && !isLoading && viewerCanAdminister
+
+    // Returns a tooltip error message appropriate for the given circumstances preventing
+    // the user from applying the preview.
+    const disabledTooltip = useCallback((): string | undefined => {
+        if (canApply) {
+            return undefined
+        }
+        if (!viewerCanAdminister) {
+            return "You don't have permission to apply this batch change."
+        }
+        if (selected === 'all' || selected.size > 0) {
+            return 'You have selected changesets. Choose an action or deselect to continue.'
+        }
+        return undefined
+    }, [canApply, selected, viewerCanAdminister])
+
     const onApply = useCallback(async () => {
+        if (!canApply) {
+            return
+        }
         if (!confirm(`Are you sure you want to ${batchChangeID ? 'update' : 'create'} this batch change?`)) {
             return
         }
@@ -54,7 +77,7 @@ export const CreateUpdateBatchChangeAlert: React.FunctionComponent<CreateUpdateB
         } catch (error) {
             setIsLoading(error)
         }
-    }, [specID, setIsLoading, history, batchChangeID, telemetryService, toBeArchived, publicationStates])
+    }, [canApply, specID, setIsLoading, history, batchChangeID, telemetryService, toBeArchived, publicationStates])
 
     return (
         <>
@@ -74,20 +97,18 @@ export const CreateUpdateBatchChangeAlert: React.FunctionComponent<CreateUpdateB
                     all changesets.
                 </div>
                 <div className={styles.createUpdateBatchChangeAlertBtn}>
-                    <button
+                    <ButtonTooltip
                         type="button"
                         className={classNames(
                             'btn btn-primary test-batches-confirm-apply-btn text-nowrap',
                             isLoading === true || (!viewerCanAdminister && 'disabled')
                         )}
                         onClick={onApply}
-                        disabled={isLoading === true || !viewerCanAdminister}
-                        data-tooltip={
-                            !viewerCanAdminister ? 'You have no permission to apply this batch change.' : undefined
-                        }
+                        disabled={!canApply}
+                        tooltip={disabledTooltip()}
                     >
                         Apply
-                    </button>
+                    </ButtonTooltip>
                 </div>
             </div>
             {isErrorLike(isLoading) && <ErrorAlert error={isLoading} />}
