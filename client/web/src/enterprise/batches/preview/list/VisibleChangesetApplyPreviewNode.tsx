@@ -232,13 +232,13 @@ const SelectBox: React.FunctionComponent<{
             tooltip="You cannot currently modify the publish status for this changeset"
         />
     ) : (
-        <input
+        <InputTooltip
             id={`select-changeset-${changesetSpecID}`}
             type="checkbox"
             className="btn"
             checked={selectable.isSelected(changesetSpecID)}
             onChange={toggleSelected}
-            data-tooltip="Click to select changeset for bulk-modifying the publish status"
+            tooltip="Click to select changeset for bulk-modifying the publish status"
         />
     )
 

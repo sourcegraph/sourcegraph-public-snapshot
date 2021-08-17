@@ -1,5 +1,7 @@
 import React from 'react'
 
+import { InputTooltip } from '@sourcegraph/web/src/components/InputTooltip'
+
 export interface PreviewListHeaderProps {
     allSelected?: boolean
     toggleSelectAll?: () => void
@@ -13,12 +15,12 @@ export const PreviewListHeader: React.FunctionComponent<PreviewListHeaderProps> 
         <span className="p-2 d-none d-sm-block" />
         {toggleSelectAll && (
             <div className="d-flex p-2 align-items-center">
-                <input
+                <InputTooltip
                     type="checkbox"
                     className="btn"
                     checked={allSelected}
                     onChange={toggleSelectAll}
-                    data-tooltip="Click to select all changesets"
+                    tooltip="Click to select all changesets"
                     aria-label="Click to select all changesets"
                 />
                 <span className="pl-2 d-block d-sm-none">Select all</span>
