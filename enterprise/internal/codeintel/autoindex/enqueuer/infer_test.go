@@ -43,7 +43,7 @@ func TestInferRepositoryAndRevision(t *testing.T) {
 		}
 
 		for _, testCase := range testCases {
-			repoName, revision, ok := InferGoRepositoryAndRevision(testCase.pkg)
+			repoName, revision, ok := InferRepositoryAndRevision(testCase.pkg)
 			if !ok {
 				t.Fatalf("expected repository to be inferred")
 			}
