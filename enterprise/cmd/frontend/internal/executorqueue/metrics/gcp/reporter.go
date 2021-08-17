@@ -1,9 +1,8 @@
-package metrics
+package gcp
 
 import (
 	"context"
 	"fmt"
-	"time"
 
 	monitoring "cloud.google.com/go/monitoring/apiv3/v2"
 	"github.com/cockroachdb/errors"
@@ -14,47 +13,48 @@ import (
 	"google.golang.org/genproto/googleapis/api/monitoredres"
 	monitoringpb "google.golang.org/genproto/googleapis/monitoring/v3"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/executorqueue/handler"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 )
 
-func initGCPMetrics(config *GCPConfig, queueOptions map[string]handler.QueueOptions) error {
+func InitReportCounter(environmentLabel string) (*gcpMetricReporter, error) {
+	config := gcpConfig
+
 	if config.ProjectID == "" {
-		return nil
+		return nil, nil
 	}
 
 	metricClient, err := monitoring.NewMetricClient(context.Background(), gcsClientOptions(config)...)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	for queueName, options := range queueOptions {
-		initGCPMetric(config, metricClient, queueName, options.Store)
+	return &gcpMetricReporter{
+		config:           config,
+		environmentLabel: environmentLabel,
+		metricClient:     metricClient,
+	}, nil
+}
+
+type gcpMetricReporter struct {
+	config           *GCPConfig
+	environmentLabel string
+	metricClient     *monitoring.MetricClient
+}
+
+func (r *gcpMetricReporter) ReportCount(ctx context.Context, queueName string, store store.Store, count int) {
+	if err := sendGCPMetric(r.config, r.metricClient, queueName, r.environmentLabel, store); err != nil {
+		log15.Error("Failed to send executor queue size metric to GCP", "queue", queueName, "error", err)
 	}
-
-	return nil
 }
 
-func initGCPMetric(config *GCPConfig, metricClient *monitoring.MetricClient, queueName string, store store.Store) {
-	go func() {
-		for {
-			if err := sendGCPMetric(config, metricClient, queueName, store); err != nil {
-				log15.Error("Failed to send executor queue size metric to GCP", "queue", queueName, "error", err)
-			}
-
-			time.Sleep(time.Second * 5)
-		}
-	}()
-}
-
-func sendGCPMetric(config *GCPConfig, metricClient *monitoring.MetricClient, queueName string, store store.Store) error {
+func sendGCPMetric(config *GCPConfig, metricClient *monitoring.MetricClient, queueName, environmentLabel string, store store.Store) error {
 	count, err := store.QueuedCount(context.Background(), true, nil)
 	if err != nil {
 		return errors.Wrap(err, "dbworkerstore.QueuedCount")
 	}
 
-	if err := metricClient.CreateTimeSeries(context.Background(), makeGCPMetricRequest(config, queueName, count)); err != nil {
+	if err := metricClient.CreateTimeSeries(context.Background(), makeGCPMetricRequest(config, queueName, environmentLabel, count)); err != nil {
 		return errors.Wrap(err, "metricClient.CreateTimeSeries")
 	}
 
@@ -66,8 +66,8 @@ const (
 	gcpMetricType = "custom.googleapis.com/executors/queue/size"
 )
 
-func makeGCPMetricRequest(config *GCPConfig, queueName string, count int) *monitoringpb.CreateTimeSeriesRequest {
-	pbMetric := &metricpb.Metric{Type: gcpMetricType, Labels: map[string]string{"queueName": queueName, "environment": config.EnvironmentLabel}}
+func makeGCPMetricRequest(config *GCPConfig, queueName, environmentLabel string, count int) *monitoringpb.CreateTimeSeriesRequest {
+	pbMetric := &metricpb.Metric{Type: gcpMetricType, Labels: map[string]string{"queueName": queueName, "environment": environmentLabel}}
 	now := &timestamp.Timestamp{Seconds: timeutil.Now().Unix()}
 	pbInterval := &monitoringpb.TimeInterval{StartTime: now, EndTime: now}
 	pbValue := &monitoringpb.TypedValue{Value: &monitoringpb.TypedValue_Int64Value{Int64Value: int64(count)}}
