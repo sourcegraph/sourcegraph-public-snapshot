@@ -187,8 +187,8 @@ If you are restoring a previously running environment, see the instructions for 
 ##### 2. Start the database services by running the following command from the root of the [deploy-sourcegraph](https://github.com/sourcegraph/deploy-sourcegraph) directory
 
 ```bash
-kubectl apply -f ./base/pgsql/pgsql.Deployment.yaml -n ns-sourcegraph
-kubectl apply -f ./base/codeintel-db/codeintel-db.Deployment.yaml -n ns-sourcegraph
+kubectl apply -f ./base/pgsql/pgsql.Deployment.yaml --namespace=$NAMESPACE
+kubectl apply -f ./base/codeintel-db/codeintel-db.Deployment.yaml --namespace=$NAMESPACE
 ```
 
 ##### 3. Copy the database files into the pods by running the following command from the root of the [deploy-sourcegraph](https://github.com/sourcegraph/deploy-sourcegraph) directory
