@@ -1,4 +1,3 @@
-import classNames from 'classnames'
 import ArrowRightIcon from 'mdi-react/ArrowRightIcon'
 import React from 'react'
 
@@ -38,7 +37,11 @@ export const HeroSection: React.FunctionComponent<ThemeProps & TelemetryProps> =
                         <li>Integrate code with other services</li>
                     </ul>
                 </div>
-                <a href="https://about.sourcegraph.com/" className={styles.link}>
+                <a
+                    href="https://about.sourcegraph.com/"
+                    className={styles.link}
+                    onClick={() => telemetryService.log('HomepageAboutSiteLinkClicked')}
+                >
                     Learn more about Sourcegraph <ArrowRightIcon className="ml-2" />
                 </a>
             </div>
