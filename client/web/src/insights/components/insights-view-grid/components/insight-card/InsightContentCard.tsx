@@ -1,4 +1,5 @@
 import classnames from 'classnames'
+import { noop } from 'lodash'
 import { MdiReactIconComponentType } from 'mdi-react'
 import DatabaseIcon from 'mdi-react/DatabaseIcon'
 import PuzzleIcon from 'mdi-react/PuzzleIcon'
@@ -16,8 +17,6 @@ import { LineChartSettingsContext } from '../../../insight-view-content/chart-vi
 
 import { InsightCardMenu } from './components/insight-card-menu/InsightCardMenu'
 import styles from './InsightCard.module.scss'
-
-const ASYNC_NOOP = (): Promise<void> => Promise.resolve()
 
 export interface InsightCardProps
     extends TelemetryProps,
@@ -45,14 +44,14 @@ export interface InsightCardProps
     containerClassName?: string
 
     /**
-     * Deleting handler fires when the user clicks delete in the insight menu.
-     */
-    onDelete?: (id: string) => void
-
-    /**
      * Ref prop for root element (section) of insight content card.
      */
     innerRef?: React.RefObject<HTMLElement>
+
+    /**
+     * Deleting handler fires when the user clicks delete in the insight menu.
+     */
+    onDelete?: (id: string) => void
 }
 
 /**
@@ -64,10 +63,10 @@ export const InsightContentCard: React.FunctionComponent<PropsWithChildren<Insig
         actions,
         containerClassName,
         hasContextMenu,
-        onDelete = ASYNC_NOOP,
         telemetryService,
         children,
         innerRef,
+        onDelete = noop,
         ...otherProps
     } = props
 
