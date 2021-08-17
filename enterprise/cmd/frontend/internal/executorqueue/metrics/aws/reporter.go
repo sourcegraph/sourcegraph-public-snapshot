@@ -3,20 +3,19 @@ package aws
 import (
 	"context"
 
+	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/cloudwatch"
 	"github.com/aws/aws-sdk-go-v2/service/cloudwatch/types"
 	"github.com/cockroachdb/errors"
 	"github.com/inconshreveable/log15"
 
-	"github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
+	metricsconfig "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/executorqueue/metrics/config"
 )
 
-const (
-	metricName = "src_executors_queue_size"
-)
+const metricName = "src_executors_queue_size"
 
-func InitReportCounter(environmentLabel string) (*awsMetricReporter, error) {
+func NewReporter(environmentLabel string) (*awsMetricReporter, error) {
 	if awsConfig.MetricNamespace == "" {
 		return nil, nil
 	}
@@ -25,6 +24,8 @@ func InitReportCounter(environmentLabel string) (*awsMetricReporter, error) {
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to load aws default config")
 	}
+
+	log15.Info("Sending executor queue metrics to AWS CloudWatch")
 
 	metricClient := cloudwatch.NewFromConfig(cfg)
 
@@ -41,44 +42,35 @@ type awsMetricReporter struct {
 	metricClient     *cloudwatch.Client
 }
 
-func (r *awsMetricReporter) ReportCount(ctx context.Context, queueName string, store store.Store, count int) {
-	if err := sendAWSMetric(r.config, r.metricClient, queueName, r.environmentLabel, store, count); err != nil {
-		log15.Error("Failed to send executor queue size metric to GCP", "queue", queueName, "error", err)
+func (r *awsMetricReporter) ReportCount(ctx context.Context, queueName string, count int) {
+	if _, err := r.metricClient.PutMetricData(ctx, makePutMetricDataInput(r.config, queueName, r.environmentLabel, count)); err != nil {
+		log15.Error("Failed to send executor queue size metric to AWS CloudWatch", "queue", queueName, "error", err)
 	}
 }
 
-func sendAWSMetric(c *AWSConfig, metricClient *cloudwatch.Client, queueName, environmentLabel string, store store.Store, count int) error {
-	if _, err := metricClient.PutMetricData(context.Background(), makeAWSMetricRequest(c, queueName, environmentLabel, count)); err != nil {
-		return errors.Wrap(err, "metricClient.PutMetricData")
-	}
-
-	return nil
+func (r *awsMetricReporter) GetAllocation(queueAllocation metricsconfig.QueueAllocation) float64 {
+	return queueAllocation.PercentageAWS
 }
 
-func makeAWSMetricRequest(c *AWSConfig, queueName, environmentLabel string, count int) *cloudwatch.PutMetricDataInput {
-	input := &cloudwatch.PutMetricDataInput{
-		Namespace: strptr(c.MetricNamespace),
+func makePutMetricDataInput(config *AWSConfig, queueName, environmentLabel string, count int) *cloudwatch.PutMetricDataInput {
+	return &cloudwatch.PutMetricDataInput{
+		Namespace: aws.String(config.MetricNamespace),
 		MetricData: []types.MetricDatum{
 			{
-				MetricName: strptr(metricName),
+				MetricName: aws.String(metricName),
 				Unit:       types.StandardUnitCount,
-				Value:      f64ptr(float64(count)),
+				Value:      aws.Float64(float64(count)),
 				Dimensions: []types.Dimension{
 					{
-						Name:  strptr("environment"),
-						Value: strptr(environmentLabel),
+						Name:  aws.String("queueName"),
+						Value: aws.String(queueName),
 					},
 					{
-						Name:  strptr("queueName"),
-						Value: strptr(queueName),
+						Name:  aws.String("environment"),
+						Value: aws.String(environmentLabel),
 					},
 				},
 			},
 		},
 	}
-	return input
 }
-
-func strptr(s string) *string { return &s }
-
-func f64ptr(f float64) *float64 { return &f }

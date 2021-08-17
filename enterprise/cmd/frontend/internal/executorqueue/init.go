@@ -58,7 +58,8 @@ func Init(ctx context.Context, db dbutil.DB, outOfBandMigrationRunner *oobmigrat
 		}
 	}
 
-	// Register queues.
+	// Register queues. If this set changes, be sure to also update the list of valid
+	// queue names in ./metrics/config/vars.go.
 	queueOptions := map[string]handler.QueueOptions{
 		"codeintel": codeintelqueue.QueueOptions(db, codeintelConfig, observationContext),
 		"batches":   batches.QueueOptions(db, batchesConfig, observationContext),

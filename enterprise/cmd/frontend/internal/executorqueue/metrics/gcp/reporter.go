@@ -5,7 +5,6 @@ import (
 	"fmt"
 
 	monitoring "cloud.google.com/go/monitoring/apiv3/v2"
-	"github.com/cockroachdb/errors"
 	"github.com/golang/protobuf/ptypes/timestamp"
 	"github.com/inconshreveable/log15"
 	"google.golang.org/api/option"
@@ -13,24 +12,29 @@ import (
 	"google.golang.org/genproto/googleapis/api/monitoredres"
 	monitoringpb "google.golang.org/genproto/googleapis/monitoring/v3"
 
+	metricsconfig "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/executorqueue/metrics/config"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
-	"github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 )
 
-func InitReportCounter(environmentLabel string) (*gcpMetricReporter, error) {
-	config := gcpConfig
+const (
+	gcpMetricKind = metricpb.MetricDescriptor_GAUGE
+	gcpMetricType = "custom.googleapis.com/executors/queue/size"
+)
 
-	if config.ProjectID == "" {
+func NewReporter(environmentLabel string) (*gcpMetricReporter, error) {
+	if gcpConfig.ProjectID == "" {
 		return nil, nil
 	}
 
-	metricClient, err := monitoring.NewMetricClient(context.Background(), gcsClientOptions(config)...)
+	log15.Info("Sending executor queue metrics to Google Cloud Monitoring")
+
+	metricClient, err := monitoring.NewMetricClient(context.Background(), gcsClientOptions(gcpConfig)...)
 	if err != nil {
 		return nil, err
 	}
 
 	return &gcpMetricReporter{
-		config:           config,
+		config:           gcpConfig,
 		environmentLabel: environmentLabel,
 		metricClient:     metricClient,
 	}, nil
@@ -42,46 +46,51 @@ type gcpMetricReporter struct {
 	metricClient     *monitoring.MetricClient
 }
 
-func (r *gcpMetricReporter) ReportCount(ctx context.Context, queueName string, store store.Store, count int) {
-	if err := sendGCPMetric(r.config, r.metricClient, queueName, r.environmentLabel, store); err != nil {
-		log15.Error("Failed to send executor queue size metric to GCP", "queue", queueName, "error", err)
+func (r *gcpMetricReporter) ReportCount(ctx context.Context, queueName string, count int) {
+	if err := r.metricClient.CreateTimeSeries(ctx, makeCreateTimeSeriesRequest(r.config, queueName, r.environmentLabel, count)); err != nil {
+		log15.Error("Failed to send executor queue size metric to Google Cloud Monitoring", "queue", queueName, "error", err)
 	}
 }
 
-func sendGCPMetric(config *GCPConfig, metricClient *monitoring.MetricClient, queueName, environmentLabel string, store store.Store) error {
-	count, err := store.QueuedCount(context.Background(), true, nil)
-	if err != nil {
-		return errors.Wrap(err, "dbworkerstore.QueuedCount")
-	}
-
-	if err := metricClient.CreateTimeSeries(context.Background(), makeGCPMetricRequest(config, queueName, environmentLabel, count)); err != nil {
-		return errors.Wrap(err, "metricClient.CreateTimeSeries")
-	}
-
-	return nil
+func (r *gcpMetricReporter) GetAllocation(queueAllocation metricsconfig.QueueAllocation) float64 {
+	return queueAllocation.PercentageGCP
 }
 
-const (
-	gcpMetricKind = metricpb.MetricDescriptor_GAUGE
-	gcpMetricType = "custom.googleapis.com/executors/queue/size"
-)
-
-func makeGCPMetricRequest(config *GCPConfig, queueName, environmentLabel string, count int) *monitoringpb.CreateTimeSeriesRequest {
-	pbMetric := &metricpb.Metric{Type: gcpMetricType, Labels: map[string]string{"queueName": queueName, "environment": environmentLabel}}
-	now := &timestamp.Timestamp{Seconds: timeutil.Now().Unix()}
-	pbInterval := &monitoringpb.TimeInterval{StartTime: now, EndTime: now}
-	pbValue := &monitoringpb.TypedValue{Value: &monitoringpb.TypedValue_Int64Value{Int64Value: int64(count)}}
-	pbTimeSeriesPoints := []*monitoringpb.Point{{Interval: pbInterval, Value: pbValue}}
-	pbTimeSeries := &monitoringpb.TimeSeries{
-		Metric:     pbMetric,
-		MetricKind: gcpMetricKind,
-		Points:     pbTimeSeriesPoints,
-		Resource:   &monitoredres.MonitoredResource{Type: "global", Labels: map[string]string{"project_id": config.ProjectID}},
-	}
+func makeCreateTimeSeriesRequest(config *GCPConfig, queueName, environmentLabel string, count int) *monitoringpb.CreateTimeSeriesRequest {
+	name := fmt.Sprintf("projects/%s", config.ProjectID)
+	now := timeutil.Now().Unix()
 
 	return &monitoringpb.CreateTimeSeriesRequest{
-		Name:       fmt.Sprintf("projects/%s", config.ProjectID),
-		TimeSeries: []*monitoringpb.TimeSeries{pbTimeSeries},
+		Name: name,
+		TimeSeries: []*monitoringpb.TimeSeries{
+			{
+				MetricKind: gcpMetricKind,
+				Metric: &metricpb.Metric{
+					Type: gcpMetricType,
+					Labels: map[string]string{
+						"queueName":   queueName,
+						"environment": environmentLabel,
+					},
+				},
+				Points: []*monitoringpb.Point{
+					{
+						Interval: &monitoringpb.TimeInterval{
+							StartTime: &timestamp.Timestamp{Seconds: now},
+							EndTime:   &timestamp.Timestamp{Seconds: now},
+						},
+						Value: &monitoringpb.TypedValue{
+							Value: &monitoringpb.TypedValue_Int64Value{Int64Value: int64(count)},
+						},
+					},
+				},
+				Resource: &monitoredres.MonitoredResource{
+					Type: "global",
+					Labels: map[string]string{
+						"project_id": config.ProjectID,
+					},
+				},
+			},
+		},
 	}
 }
 
