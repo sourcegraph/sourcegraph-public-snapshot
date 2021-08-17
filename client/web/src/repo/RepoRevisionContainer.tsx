@@ -125,8 +125,7 @@ interface RepoRevisionContainerProps
     isMacPlatform: boolean
 }
 
-interface RepoRevisionBreadcrumbProps
-    extends Pick<RepoRevisionContainerProps, 'repo' | 'revision' | 'history' | 'location'> {
+interface RepoRevisionBreadcrumbProps extends Pick<RepoRevisionContainerProps, 'repo' | 'revision'> {
     resolvedRevisionOrError: ResolvedRevision
 }
 
@@ -134,8 +133,6 @@ const RepoRevisionContainerBreadcrumb: React.FunctionComponent<RepoRevisionBread
     revision,
     resolvedRevisionOrError,
     repo,
-    history,
-    location,
 }) => (
     <button
         type="button"
@@ -154,14 +151,11 @@ const RepoRevisionContainerBreadcrumb: React.FunctionComponent<RepoRevisionBread
             repo={repo}
             resolvedRevisionOrError={resolvedRevisionOrError}
             revision={revision}
-            history={history}
-            location={location}
         />
     </button>
 )
 
-interface RepoRevisionContainerPopoverProps
-    extends Pick<RepoRevisionContainerProps, 'repo' | 'revision' | 'history' | 'location'> {
+interface RepoRevisionContainerPopoverProps extends Pick<RepoRevisionContainerProps, 'repo' | 'revision'> {
     resolvedRevisionOrError: ResolvedRevision
 }
 
@@ -169,8 +163,6 @@ const RepoRevisionContainerPopover: React.FunctionComponent<RepoRevisionContaine
     repo,
     resolvedRevisionOrError,
     revision,
-    history,
-    location,
 }) => {
     const [popoverOpen, setPopoverOpen] = useState(false)
     const togglePopover = useCallback(() => setPopoverOpen(previous => !previous), [])
@@ -192,9 +184,8 @@ const RepoRevisionContainerPopover: React.FunctionComponent<RepoRevisionContaine
                 defaultBranch={resolvedRevisionOrError.defaultBranch}
                 currentRev={revision}
                 currentCommitID={resolvedRevisionOrError.commitID}
-                history={history}
-                location={location}
                 togglePopover={togglePopover}
+                onSelect={togglePopover}
             />
         </Popover>
     )
@@ -222,12 +213,10 @@ export const RepoRevisionContainer: React.FunctionComponent<RepoRevisionContaine
                         resolvedRevisionOrError={props.resolvedRevisionOrError}
                         revision={props.revision}
                         repo={props.repo}
-                        history={props.history}
-                        location={props.location}
                     />
                 ),
             }
-        }, [props.resolvedRevisionOrError, props.revision, props.repo, props.history, props.location])
+        }, [props.resolvedRevisionOrError, props.revision, props.repo])
     )
 
     if (!props.resolvedRevisionOrError) {
