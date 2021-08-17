@@ -60,6 +60,10 @@
         max-width: 30% !important;
     }
 
+    &__text-light {
+        font-weight: 400;
+    }
+
     &__text-disabled {
         color: var(--text-disabled);
     }
