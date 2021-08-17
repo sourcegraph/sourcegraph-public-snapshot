@@ -6,24 +6,6 @@
     background: transparent;
 }
 
-[data-reach-tab] {
-    text-transform: uppercase;
-    font-size: 0.75rem;
-    letter-spacing: 1px;
-    border-bottom: 3px solid transparent;
-    margin-bottom: -(3/16) + rem;
-    padding: (5/16) + rem;
-    color: var(--text-muted);
-    &:hover {
-        color: var(--body-color);
-        border-bottom: 3px solid var(--link-color);
-    }
-    &[data-selected] {
-        color: var(--body-color);
-        border-bottom: 3px solid var(--primary);
-    }
-}
-
 .tablist-wrapper {
     min-height: 2rem;
     border-bottom: 1px solid var(--border-color-2);
@@ -49,16 +31,17 @@
     flex-direction: column;
     justify-content: center;
     border-bottom: 2px solid transparent;
-    &:active {
-        background-color: transparent;
-    }
     &:hover {
+        // color: var(--body-color);
         border-bottom: 2px solid var(--border-color);
     }
     &[data-selected] {
         color: var(--body-color);
         font-weight: 700;
         border-bottom: 2px solid var(--brand-secondary);
+    }
+    &:active {
+        background-color: transparent;
     }
     // ::after used here for avoids the CLS when the font-weight change (see: https://css-tricks.com/bold-on-hover-without-the-layout-shift/)
     &::after {

@@ -33,15 +33,11 @@
         }
 
         &:not(:only-of-type) {
-            border-bottom: 1px solid var(--border-color);
+            border-bottom: none;
         }
 
         &-description {
             line-height: (14/11);
-        }
-
-        &:not(:only-of-type) {
-            border-bottom: none;
         }
     }
 
