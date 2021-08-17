@@ -168,4 +168,57 @@ func testStoreChangesetSpecExecutions(t *testing.T, ctx context.Context, s *Stor
 			}
 		})
 	})
+
+	t.Run("CancelBatchSpecExecution", func(t *testing.T) {
+		t.Run("Queued", func(t *testing.T) {
+			record, err := s.CancelBatchSpecExecution(ctx, execs[1].RandID)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if have, want := record.State, btypes.BatchSpecExecutionStateFailed; have != want {
+				t.Errorf("invalid state: have=%q want=%q", have, want)
+			}
+			if have, want := record.Cancel, true; have != want {
+				t.Errorf("invalid cancel value: have=%t want=%t", have, want)
+			}
+			if record.FinishedAt == nil {
+				t.Error("finished_at not set")
+			} else if have, want := *record.FinishedAt, s.now(); !have.Equal(want) {
+				t.Errorf("invalid finished_at: have=%s want=%s", have, want)
+			}
+			if have, want := record.UpdatedAt, s.now(); !have.Equal(want) {
+				t.Errorf("invalid updated_at: have=%s want=%s", have, want)
+			}
+		})
+		t.Run("Processing", func(t *testing.T) {
+			record, err := s.CancelBatchSpecExecution(ctx, execs[0].RandID)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if have, want := record.State, btypes.BatchSpecExecutionStateProcessing; have != want {
+				t.Errorf("invalid state: have=%q want=%q", have, want)
+			}
+			if have, want := record.Cancel, true; have != want {
+				t.Errorf("invalid cancel value: have=%t want=%t", have, want)
+			}
+			if record.FinishedAt != nil {
+				t.Error("finished_at set")
+			}
+			if have, want := record.UpdatedAt, s.now(); !have.Equal(want) {
+				t.Errorf("invalid updated_at: have=%s want=%s", have, want)
+			}
+		})
+		t.Run("Invalid current state", func(t *testing.T) {
+			if err := s.Exec(ctx, sqlf.Sprintf("UPDATE batch_spec_executions SET state = 'completed' WHERE id = %s", execs[0].ID)); err != nil {
+				t.Fatal(err)
+			}
+			_, err := s.CancelBatchSpecExecution(ctx, execs[0].RandID)
+			if err == nil {
+				t.Fatal("got unexpected nil error")
+			}
+			if err != ErrNoResults {
+				t.Fatal(err)
+			}
+		})
+	})
 }

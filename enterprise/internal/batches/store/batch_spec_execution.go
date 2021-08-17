@@ -100,11 +100,14 @@ func createBatchSpecExecutionQuery(c *btypes.BatchSpecExecution) (*sqlf.Query, e
 }
 
 // CancelBatchSpecExecution cancels the given BatchSpecExecution.
-func (s *Store) CancelBatchSpecExecution(ctx context.Context, randID string) (*btypes.BatchSpecExecution, error) {
+func (s *Store) CancelBatchSpecExecution(ctx context.Context, randID string) (exec *btypes.BatchSpecExecution, err error) {
+	ctx, endObservation := s.operations.cancelBatchSpecExecution.With(ctx, &err, observation.Args{LogFields: []log.Field{log.String("randID", randID)}})
+	defer endObservation(1, observation.Args{})
+
 	q := s.cancelBatchSpecExecutionQuery(randID)
 
 	var b btypes.BatchSpecExecution
-	err := s.query(ctx, q, func(sc scanner) error { return scanBatchSpecExecution(&b, sc) })
+	err = s.query(ctx, q, func(sc scanner) error { return scanBatchSpecExecution(&b, sc) })
 	if err != nil {
 		return nil, err
 	}
@@ -125,6 +128,9 @@ WITH candidate AS (
 		batch_spec_executions
 	WHERE
 		rand_id = %s
+		AND
+		-- It must be queued or processing, we cannot cancel jobs that have already completed.
+		state IN (%s, %s)
 	FOR UPDATE
 )
 UPDATE
@@ -133,14 +139,11 @@ SET
 	cancel = TRUE,
 	-- If the execution is still queued, we directly abort, otherwise we keep the
 	-- state, so the worker can to teardown and, at some point, mark it failed itself.
-	state = CASE WHEN batch_spec_executions.state = 'processing' THEN batch_spec_executions.state ELSE 'failed' END,
-	finished_at = CASE WHEN batch_spec_executions.state = 'processing' THEN batch_spec_executions.finished_at ELSE %s END,
+	state = CASE WHEN batch_spec_executions.state = %s THEN batch_spec_executions.state ELSE %s END,
+	finished_at = CASE WHEN batch_spec_executions.state = %s THEN batch_spec_executions.finished_at ELSE %s END,
 	updated_at = %s
 WHERE
 	id IN (SELECT id FROM candidate)
-	AND
-	-- It must be queued or processing, we cannot cancel jobs that have already completed.
-	state IN ('queued', 'processing')
 RETURNING %s
 `
 
@@ -148,6 +151,11 @@ func (s *Store) cancelBatchSpecExecutionQuery(randID string) *sqlf.Query {
 	return sqlf.Sprintf(
 		cancelBatchSpecExecutionQueryFmtstr,
 		randID,
+		btypes.BatchSpecExecutionStateQueued,
+		btypes.BatchSpecExecutionStateProcessing,
+		btypes.BatchSpecExecutionStateProcessing,
+		btypes.BatchSpecExecutionStateFailed,
+		btypes.BatchSpecExecutionStateProcessing,
 		s.now(),
 		s.now(),
 		sqlf.Join(BatchSpecExecutionColumns, ", "),
