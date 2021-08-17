@@ -250,8 +250,6 @@ export const GlobalNavbar: React.FunctionComponent<Props> = ({
                                 <Link
                                     className="global-navbar__link"
                                     to="https://about.sourcegraph.com"
-                                    rel="noreferrer noopener"
-                                    target="_blank"
                                 >
                                     About Sourcegraph
                                 </Link>

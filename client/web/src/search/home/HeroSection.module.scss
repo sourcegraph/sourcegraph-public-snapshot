@@ -6,6 +6,7 @@
     padding: 1.5rem;
     display: flex;
     gap: 3rem;
+    font-family: 'Source Sans Pro', sans-serif;
 
     @media (--sm-breakpoint-down) {
         flex-direction: column;

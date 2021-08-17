@@ -123,8 +123,6 @@ exports[`GlobalNavbar default 1`] = `
       >
         <a
           class="global-navbar__link"
-          rel="noreferrer noopener"
-          target="_blank"
           to="https://about.sourcegraph.com"
         >
           About Sourcegraph
@@ -302,8 +300,6 @@ exports[`GlobalNavbar low-profile 1`] = `
       >
         <a
           class="global-navbar__link"
-          rel="noreferrer noopener"
-          target="_blank"
           to="https://about.sourcegraph.com"
         >
           About Sourcegraph
@@ -481,8 +477,6 @@ exports[`GlobalNavbar no-search-input 1`] = `
       >
         <a
           class="global-navbar__link"
-          rel="noreferrer noopener"
-          target="_blank"
           to="https://about.sourcegraph.com"
         >
           About Sourcegraph
