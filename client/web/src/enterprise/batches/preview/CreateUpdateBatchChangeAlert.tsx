@@ -60,14 +60,7 @@ export const CreateUpdateBatchChangeAlert: React.FunctionComponent<CreateUpdateB
         <>
             <div className="alert alert-info mb-3 d-block d-md-flex align-items-center body-lead">
                 <div className={classNames(styles.createUpdateBatchChangeAlertCopy, 'flex-grow-1 mr-3')}>
-                    {!batchChange && (
-                        <>
-                            Review the proposed changesets below. Click 'Apply spec' or run <code>src batch apply</code>{' '}
-                            against your batch spec to create the batch change and perform the indicated action on each
-                            changeset.
-                        </>
-                    )}
-                    {batchChange && (
+                    {batchChange ? (
                         <>
                             This operation will update the existing batch change{' '}
                             <Link to={batchChange.url}>{batchChange.name}</Link>
