@@ -5,9 +5,10 @@ import React, { useMemo, useContext } from 'react'
 import { pluralize } from '@sourcegraph/shared/src/util/strings'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
 
-import { BatchSpecApplyPreviewVariables } from '../../../../graphql-operations'
+import { BatchSpecApplyPreviewVariables, Maybe, Scalars } from '../../../../graphql-operations'
 import { Action, DropdownButton } from '../../DropdownButton'
 import { MultiSelectContext } from '../../MultiSelectContext'
+import { BatchChangePreviewContext } from '../BatchChangePreviewContext'
 
 import { queryPublishableChangesetSpecIDs as _queryPublishableChangesetSpecIDs } from './backend'
 
@@ -36,6 +37,20 @@ const ACTIONS: Action[] = [
     },
 ]
 
+// Returns the desired `PublishedValue` for the given action.
+const getPublicationStateFromAction = (action: Action): Maybe<Scalars['PublishedValue']> => {
+    switch (action.type) {
+        case 'unpublish':
+            return false
+        case 'publish':
+            return true
+        case 'publish-draft':
+            return 'draft'
+        default:
+            return null
+    }
+}
+
 export interface PreviewSelectRowProps {
     queryArguments: BatchSpecApplyPreviewVariables
     /** For testing only. */
@@ -53,13 +68,37 @@ export const PreviewSelectRow: React.FunctionComponent<PreviewSelectRowProps> = 
     queryPublishableChangesetSpecIDs = _queryPublishableChangesetSpecIDs,
     queryArguments,
 }) => {
-    const { areAllVisibleSelected, selected, selectAll } = useContext(MultiSelectContext)
+    const { setPublicationStates } = useContext(BatchChangePreviewContext)
+    const { areAllVisibleSelected, deselectAll, selected, selectAll } = useContext(MultiSelectContext)
 
     const allChangesetSpecIDs: string[] | undefined = useObservable(
         useMemo(() => queryPublishableChangesetSpecIDs(queryArguments), [
             queryArguments,
             queryPublishableChangesetSpecIDs,
         ])
+    )
+
+    const actions = useMemo(
+        () =>
+            ACTIONS.map(action => {
+                const dropdownAction: Action = {
+                    ...action,
+                    onTrigger: onDone => {
+                        // TODO: Recalculate actions with applyPreview
+                        setPublicationStates(
+                            [...selected].map(changeSpecID => ({
+                                changesetSpec: changeSpecID,
+                                publicationState: getPublicationStateFromAction(action),
+                            }))
+                        )
+                        deselectAll()
+                        onDone()
+                    },
+                }
+
+                return dropdownAction
+            }),
+        [deselectAll, selected, setPublicationStates]
     )
 
     return (
@@ -86,7 +125,7 @@ export const PreviewSelectRow: React.FunctionComponent<PreviewSelectRowProps> = 
                     <div className="row no-gutters">
                         <div className="col ml-0 ml-sm-2">
                             <DropdownButton
-                                actions={ACTIONS}
+                                actions={actions}
                                 dropdownMenuPosition="right"
                                 initiallyOpen={dropDownInitiallyOpen}
                                 placeholder="Select action"

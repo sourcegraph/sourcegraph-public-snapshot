@@ -13,8 +13,8 @@ import { HeroPage } from '../../../components/HeroPage'
 import { PageTitle } from '../../../components/PageTitle'
 import { Description } from '../Description'
 import { SupersedingBatchSpecAlert } from '../detail/SupersedingBatchSpecAlert'
-
 import { MultiSelectContextProvider } from '../MultiSelectContext'
+
 import { fetchBatchSpecById as _fetchBatchSpecById } from './backend'
 import { BatchChangePreviewContextProvider } from './BatchChangePreviewContext'
 import { BatchChangePreviewStatsBar } from './BatchChangePreviewStatsBar'
