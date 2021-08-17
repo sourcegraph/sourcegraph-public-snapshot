@@ -11,6 +11,7 @@ import { FeatureFlagProps } from '../../featureFlags/featureFlags'
 import { repogroupList } from '../../repogroups/HomepageConfig'
 
 import { CustomersSection } from './CustomersSection'
+import { HeroSection } from './HeroSection'
 import { HomepageModalVideo } from './HomepageModalVideo'
 import styles from './LoggedOutHomepage.module.scss'
 import { SelfHostInstructions } from './SelfHostInstructions'
@@ -143,6 +144,10 @@ export const LoggedOutHomepage: React.FunctionComponent<LoggedOutHomepageProps> 
                 <div className={classNames(styles.title, 'mb-2')}>Watch and learn</div>
                 <HomepageModalVideo {...props} />
             </div>
+        </div>
+
+        <div className={styles.heroSection}>
+            <HeroSection {...props} />
         </div>
 
         <div className={styles.repogroupSection}>
