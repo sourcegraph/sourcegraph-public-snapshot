@@ -17,7 +17,7 @@ const ACTIONS: Action[] = [
         buttonLabel: 'Unpublish',
         dropdownTitle: 'Unpublish',
         dropdownDescription:
-            'Do not publish selected changesets on the codehost. Note that a changeset that has already been published cannot be unpublished.',
+            'Do not publish selected changesets on the codehost. Note: a changeset that has been published cannot be unpublished.',
         onTrigger: noop,
     },
     {
