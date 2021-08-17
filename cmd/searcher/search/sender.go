@@ -112,8 +112,8 @@ func (m *limitedStream) Send(match protocol.FileMatch) {
 	if match.MatchCount <= m.remaining {
 		m.remaining -= match.MatchCount
 		m.sentCount += match.MatchCount
-		m.mux.Unlock()
 		m.cb(match)
+		m.mux.Unlock()
 		return
 	}
 
@@ -137,8 +137,8 @@ func (m *limitedStream) Send(match protocol.FileMatch) {
 	match.MatchCount = m.remaining
 	m.sentCount += m.remaining
 	m.remaining = 0
-	m.mux.Unlock()
 	m.cb(match)
+	m.mux.Unlock()
 }
 
 func (m *limitedStream) SentCount() int {
