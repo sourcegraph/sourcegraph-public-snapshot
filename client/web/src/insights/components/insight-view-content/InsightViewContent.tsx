@@ -1,5 +1,5 @@
 import { isObject } from 'lodash'
-import React, { useEffect, useRef } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import { View, MarkupContent } from 'sourcegraph'
 
 import { MarkupKind } from '@sourcegraph/extension-api-classes'
@@ -19,6 +19,9 @@ export interface InsightViewContentProps extends TelemetryProps {
 
     /** To get container to track hovers for pings */
     containerClassName?: string
+
+    // Render prop to display overlaid alerts
+    alertOverlay?(): void
 }
 
 /**
@@ -28,8 +31,18 @@ export const InsightViewContent: React.FunctionComponent<InsightViewContentProps
     viewContent,
     viewID,
     containerClassName,
+    alertOverlay,
     ...props
 }) => {
+    // Track hovering for hide/show message overlay
+    const [isHovered, setIsHovered] = useState(false)
+    const hoverProps = {
+        onMouseOver: () => setIsHovered(true),
+        onMouseOut: () => setIsHovered(false),
+        onFocus: () => setIsHovered(true),
+        onBlur: () => setIsHovered(false),
+    }
+
     // Track user intent to interact with extension-contributed views
     const viewContentReference = useRef<HTMLDivElement>(null)
 
@@ -74,7 +87,7 @@ export const InsightViewContent: React.FunctionComponent<InsightViewContentProps
     }, [viewID, containerClassName, props.telemetryService])
 
     return (
-        <div className="view-content" ref={viewContentReference}>
+        <div className="view-content" ref={viewContentReference} {...hoverProps}>
             {viewContent.map((content, index) =>
                 isMarkupContent(content) ? (
                     <React.Fragment key={index}>
@@ -88,13 +101,15 @@ export const InsightViewContent: React.FunctionComponent<InsightViewContentProps
                         )}
                     </React.Fragment>
                 ) : 'chart' in content ? (
-                    <ChartViewContent
-                        key={index}
-                        content={content}
-                        viewID={viewID}
-                        telemetryService={props.telemetryService}
-                        className="view-content__chart"
-                    />
+                    <React.Fragment key={index}>
+                        <ChartViewContent
+                            content={content}
+                            viewID={viewID}
+                            telemetryService={props.telemetryService}
+                            className="view-content__chart"
+                        />
+                        {alertOverlay && !isHovered && alertOverlay()}
+                    </React.Fragment>
                 ) : null
             )}
         </div>

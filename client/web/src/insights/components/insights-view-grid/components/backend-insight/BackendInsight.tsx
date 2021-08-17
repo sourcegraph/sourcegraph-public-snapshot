@@ -1,9 +1,8 @@
 import classnames from 'classnames'
-import AlertIcon from 'mdi-react/AlertIcon'
 import DatabaseIcon from 'mdi-react/DatabaseIcon'
+import ProgressWrench from 'mdi-react/ProgressWrenchIcon'
 import React, { useCallback, useContext, useRef, useState } from 'react'
 
-import { Tooltip } from '@sourcegraph/branded/src/components/tooltip/Tooltip'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
@@ -26,6 +25,7 @@ import { InsightErrorContent } from '../insight-card/components/insight-error-co
 import { InsightLoadingContent } from '../insight-card/components/insight-loading-content/InsightLoadingContent'
 import { InsightContentCard } from '../insight-card/InsightContentCard'
 
+import { BackendAlertOverlay } from './BackendAlertOverlay'
 import styles from './BackendInsight.module.scss'
 import { DrillDownFiltersAction } from './components/drill-down-filters-action/DrillDownFiltersPanel'
 import { DrillDownInsightCreationFormValues } from './components/drill-down-filters-panel/components/drill-down-insight-creation-form/DrillDownInsightCreationForm'
@@ -137,16 +137,23 @@ export const BackendInsight: React.FunctionComponent<BackendInsightProps> = prop
         return
     }
 
-    const LoadingIndicator: React.FunctionComponent = () => (
-        <>
-            <Tooltip />
-            <AlertIcon
-                size={16}
-                className="text-warning"
-                data-tooltip="Some data for this insight is still being processed."
+    interface AlertOverLayProps {
+        isFetchingHistoricalData?: boolean
+        hasNoData: boolean
+    }
+    const AlertOverlay: React.FunctionComponent<AlertOverLayProps> = ({ isFetchingHistoricalData, hasNoData }) =>
+        isFetchingHistoricalData ? (
+            <BackendAlertOverlay
+                icon={() => <ProgressWrench className={classnames('mb-3')} size={33} />}
+                title="This insight is still being processed"
+                description="Datapoints shown may be undercounted."
             />
-        </>
-    )
+        ) : hasNoData ? (
+            <BackendAlertOverlay
+                title="No data to display"
+                description="We couldn’t find any matches for this insight."
+            />
+        ) : null
 
     return (
         <InsightContentCard
@@ -154,7 +161,6 @@ export const BackendInsight: React.FunctionComponent<BackendInsightProps> = prop
             hasContextMenu={true}
             actions={
                 <>
-                    {data?.view.isFetchingHistoricalData && <LoadingIndicator />}
                     <DrillDownFiltersAction
                         isOpen={isFiltersOpen}
                         settings={settingsCascade.final ?? {}}
@@ -190,12 +196,20 @@ export const BackendInsight: React.FunctionComponent<BackendInsightProps> = prop
                 </InsightErrorContent>
             ) : (
                 data && (
-                    <InsightViewContent
-                        telemetryService={telemetryService}
-                        viewContent={data.view.content}
-                        viewID={insight.id}
-                        containerClassName="be-insight-card"
-                    />
+                    <>
+                        <InsightViewContent
+                            telemetryService={telemetryService}
+                            viewContent={data.view.content}
+                            viewID={insight.id}
+                            containerClassName="be-insight-card"
+                            alertOverlay={() => (
+                                <AlertOverlay
+                                    hasNoData={!data.view.content.some(({ data }) => data.length > 0)}
+                                    isFetchingHistoricalData={data.view.isFetchingHistoricalData}
+                                />
+                            )}
+                        />
+                    </>
                 )
             )}
             {

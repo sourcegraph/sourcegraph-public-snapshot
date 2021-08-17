@@ -41,3 +41,27 @@ export const LINE_CHART_CONTENT_MOCK: LineChartContent<any, string> = {
         type: 'number',
     },
 }
+
+export const LINE_CHART_CONTENT_MOCK_EMPTY: LineChartContent<any, string> = {
+    chart: 'line',
+    data: [],
+    series: [
+        {
+            dataKey: 'a',
+            name: 'A metric',
+            stroke: 'var(--warning)',
+            linkURLs: [],
+        },
+        {
+            dataKey: 'b',
+            name: 'B metric',
+            stroke: 'var(--warning)',
+            linkURLs: [],
+        },
+    ],
+    xAxis: {
+        dataKey: 'x',
+        scale: 'time',
+        type: 'number',
+    },
+}

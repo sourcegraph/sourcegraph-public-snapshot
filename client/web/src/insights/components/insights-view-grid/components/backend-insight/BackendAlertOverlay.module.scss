@@ -1,0 +1,18 @@
+.bg-loading {
+    &-gradient {
+        background: var(--body-bg);
+        opacity: 0.75;
+    }
+
+    svg {
+        fill: var(--gray-06);
+    }
+
+    h4 {
+        color: var(--body-color);
+    }
+
+    small {
+        color: var(--text-muted);
+    }
+}
