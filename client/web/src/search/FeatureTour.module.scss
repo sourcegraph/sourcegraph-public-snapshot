@@ -1,7 +1,7 @@
 .feature-tour {
     --tour-bg: var(--white);
 
-    :global(.theme-dark) {
+    :global(.theme-dark) & {
         --tour-bg: var(--gray-08);
     }
 

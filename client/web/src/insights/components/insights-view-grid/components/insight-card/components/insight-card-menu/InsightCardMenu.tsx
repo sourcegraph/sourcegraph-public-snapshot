@@ -6,15 +6,16 @@ import React, { MouseEvent, useContext } from 'react'
 import { useHistory } from 'react-router'
 
 import { isSearchBasedInsightId } from '../../../../../../core/types/insight/search-insight'
+import { DashboardInsightsContext } from '../../../../../../pages/dashboards/dashboard-page/components/dashboards-content/components/dashboard-inisghts/DashboardInsightsContext'
 import { positionRight } from '../../../../../context-menu/utils'
 import { LineChartSettingsContext } from '../../../../../insight-view-content/chart-view-content/charts/line/line-chart-settings-provider'
 
 import styles from './InsightCardMenu.module.scss'
 
 export interface InsightCardMenuProps {
+    insightID: string
     menuButtonClassName?: string
     onDelete: (insightID: string) => void
-    insightID: string
     onToggleZeroYAxisMin?: () => void
 }
 
@@ -24,11 +25,24 @@ export interface InsightCardMenuProps {
 export const InsightCardMenu: React.FunctionComponent<InsightCardMenuProps> = props => {
     const { insightID, menuButtonClassName, onDelete, onToggleZeroYAxisMin } = props
     const history = useHistory()
+
     const { zeroYAxisMin } = useContext(LineChartSettingsContext)
+
+    // Get dashboard information in case if insight card component
+    // is rendered on the dashboard page, otherwise get null value.
+    const { dashboard } = useContext(DashboardInsightsContext)
 
     const handleEditClick = (event: MouseEvent): void => {
         event.preventDefault()
-        history.push(`/insights/edit/${insightID}`)
+
+        const dashboardID = dashboard?.id
+
+        if (dashboardID) {
+            // Redirect to the edit insight page with dashboard id information
+            history.push(`/insights/edit/${insightID}?dashboardId=${dashboardID}`)
+        } else {
+            history.push(`/insights/edit/${insightID}`)
+        }
     }
 
     const showYAxisToggleMenu = isSearchBasedInsightId(insightID) && onToggleZeroYAxisMin

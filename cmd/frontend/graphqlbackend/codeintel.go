@@ -33,6 +33,8 @@ type LSIFUploadsQueryArgs struct {
 	Query           *string
 	State           *string
 	IsLatestForRepo *bool
+	DependencyOf    *graphql.ID
+	DependentOf     *graphql.ID
 	After           *string
 }
 

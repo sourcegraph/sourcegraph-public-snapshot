@@ -1,10 +1,10 @@
-import { MockedProvider, MockedResponse } from '@apollo/client/testing'
+import { MockedResponse } from '@apollo/client/testing'
 import { render, RenderResult, fireEvent } from '@testing-library/react'
 import { GraphQLError } from 'graphql'
 import React from 'react'
 
 import { getDocumentNode } from '@sourcegraph/shared/src/graphql/graphql'
-import { waitForNextApolloResponse } from '@sourcegraph/shared/src/testing/apollo'
+import { MockedTestProvider, waitForNextApolloResponse } from '@sourcegraph/shared/src/testing/apollo'
 
 import { SubmitHappinessFeedbackVariables, SubmitHappinessFeedbackResult } from '../../graphql-operations'
 import { routes } from '../../routes'
@@ -33,9 +33,9 @@ describe('FeedbackPrompt', () => {
     describe('layout', () => {
         beforeEach(() => {
             queries = render(
-                <MockedProvider>
+                <MockedTestProvider>
                     <FeedbackPrompt routes={routes} />
-                </MockedProvider>
+                </MockedTestProvider>
             )
         })
 
@@ -105,9 +105,9 @@ describe('FeedbackPrompt', () => {
 
             beforeEach(async () => {
                 queries = render(
-                    <MockedProvider mocks={[successMock]}>
+                    <MockedTestProvider mocks={[successMock]}>
                         <FeedbackPrompt routes={routes} />
-                    </MockedProvider>
+                    </MockedTestProvider>
                 )
 
                 await submitFeedback()
@@ -128,17 +128,9 @@ describe('FeedbackPrompt', () => {
             }
             beforeEach(async () => {
                 queries = render(
-                    <MockedProvider
-                        mocks={[errorMock]}
-                        defaultOptions={{
-                            mutate: {
-                                // Fix errors being thrown globally https://github.com/apollographql/apollo-client/issues/7167
-                                errorPolicy: 'all',
-                            },
-                        }}
-                    >
+                    <MockedTestProvider mocks={[errorMock]}>
                         <FeedbackPrompt routes={routes} />
-                    </MockedProvider>
+                    </MockedTestProvider>
                 )
 
                 await submitFeedback()

@@ -11,6 +11,7 @@ import (
 	"github.com/keegancsmith/sqlf"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/lsifstore"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
@@ -322,11 +323,23 @@ func TestGetUploads(t *testing.T) {
 	)
 	insertVisibleAtTip(t, db, 50, 2, 5, 7, 8)
 
+	// upload 10 depends on uploads 7 and 8
+	insertPackages(t, store, []lsifstore.Package{
+		{DumpID: 7, Scheme: "npm", Name: "foo", Version: "0.1.0"},
+		{DumpID: 8, Scheme: "npm", Name: "bar", Version: "1.2.3"},
+	})
+	insertPackageReferences(t, store, []lsifstore.PackageReference{
+		{Package: lsifstore.Package{DumpID: 10, Scheme: "npm", Name: "foo", Version: "0.1.0"}},
+		{Package: lsifstore.Package{DumpID: 10, Scheme: "npm", Name: "bar", Version: "1.2.3"}},
+	})
+
 	testCases := []struct {
 		repositoryID   int
 		state          string
 		term           string
 		visibleAtTip   bool
+		dependencyOf   int
+		dependentOf    int
 		uploadedBefore *time.Time
 		uploadedAfter  *time.Time
 		oldestFirst    bool
@@ -343,6 +356,8 @@ func TestGetUploads(t *testing.T) {
 		{term: "QuEuEd", expectedIDs: []int{1, 3, 4, 9}},     // searches text status
 		{term: "bAr", expectedIDs: []int{4, 6}},              // search repo names
 		{visibleAtTip: true, expectedIDs: []int{2, 5, 7, 8}},
+		{dependencyOf: 10, expectedIDs: []int{7, 8}},
+		{dependentOf: 7, expectedIDs: []int{10}},
 		{uploadedBefore: &t5, expectedIDs: []int{6, 7, 8, 9, 10}},
 		{uploadedAfter: &t4, expectedIDs: []int{1, 2, 3}},
 	}
@@ -355,11 +370,13 @@ func TestGetUploads(t *testing.T) {
 			}
 
 			name := fmt.Sprintf(
-				"repositoryID=%d state=%s term=%s visibleAtTip=%v offset=%d",
+				"repositoryID=%d state=%s term=%s visibleAtTip=%v dependencyOf=%d dependentOf=%d offset=%d",
 				testCase.repositoryID,
 				testCase.state,
 				testCase.term,
 				testCase.visibleAtTip,
+				testCase.dependencyOf,
+				testCase.dependentOf,
 				lo,
 			)
 
@@ -369,6 +386,8 @@ func TestGetUploads(t *testing.T) {
 					State:          testCase.state,
 					Term:           testCase.term,
 					VisibleAtTip:   testCase.visibleAtTip,
+					DependencyOf:   testCase.dependencyOf,
+					DependentOf:    testCase.dependentOf,
 					UploadedBefore: testCase.uploadedBefore,
 					UploadedAfter:  testCase.uploadedAfter,
 					OldestFirst:    testCase.oldestFirst,

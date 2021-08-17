@@ -42,10 +42,6 @@
     }
 
     &__skipped {
-        &--warning {
-            color: var(--infobar-warning-color);
-        }
-
         &-popover {
             width: 20rem;
             padding: 0;

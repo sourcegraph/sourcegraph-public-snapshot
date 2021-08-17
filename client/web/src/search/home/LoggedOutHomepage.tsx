@@ -11,6 +11,7 @@ import { FeatureFlagProps } from '../../featureFlags/featureFlags'
 import { repogroupList } from '../../repogroups/HomepageConfig'
 
 import { CustomersSection } from './CustomersSection'
+import { HeroSection } from './HeroSection'
 import { HomepageModalVideo } from './HomepageModalVideo'
 import styles from './LoggedOutHomepage.module.scss'
 import { SelfHostInstructions } from './SelfHostInstructions'
@@ -169,6 +170,10 @@ export const LoggedOutHomepage: React.FunctionComponent<LoggedOutHomepageProps> 
                 </div>
             </div>
 
+            <div className={styles.heroSection}>
+                <HeroSection {...props} />
+            </div>
+
             <div className={styles.repogroupSection}>
                 <div className="d-block d-md-flex align-items-baseline mb-3">
                     <div className={classNames(styles.title, 'mr-2')}>Search open source communities</div>
@@ -176,28 +181,37 @@ export const LoggedOutHomepage: React.FunctionComponent<LoggedOutHomepageProps> 
                         Customized search portals for our open source partners
                     </div>
                 </div>
-                <div className={styles.loggedOutHomepageRepogroupListCards}>
-                    {repogroupList.map(repogroup => (
-                        <div
-                            className={classNames(
-                                styles.loggedOutHomepageRepogroupListCard,
-                                'd-flex align-items-center'
-                            )}
-                            key={repogroup.name}
-                        >
-                            <img
-                                className={classNames(styles.loggedOutHomepageRepogroupListIcon, 'mr-2')}
-                                src={repogroup.homepageIcon}
-                                alt={`${repogroup.name} icon`}
-                            />
-                            <Link
-                                to={repogroup.url}
-                                className={classNames(styles.loggedOutHomepageRepogroupListingTitle)}
-                            >
-                                {repogroup.title}
-                            </Link>
+
+                <div className={styles.repogroupSection}>
+                    <div className="d-block d-md-flex align-items-baseline mb-3">
+                        <div className={classNames(styles.title, 'mr-2')}>Search open source communities</div>
+                        <div className="font-weight-normal text-muted">
+                            Customized search portals for our open source partners
                         </div>
-                    ))}
+                    </div>
+                    <div className={styles.loggedOutHomepageRepogroupListCards}>
+                        {repogroupList.map(repogroup => (
+                            <div
+                                className={classNames(
+                                    styles.loggedOutHomepageRepogroupListCard,
+                                    'd-flex align-items-center'
+                                )}
+                                key={repogroup.name}
+                            >
+                                <img
+                                    className={classNames(styles.loggedOutHomepageRepogroupListIcon, 'mr-2')}
+                                    src={repogroup.homepageIcon}
+                                    alt={`${repogroup.name} icon`}
+                                />
+                                <Link
+                                    to={repogroup.url}
+                                    className={classNames(styles.loggedOutHomepageRepogroupListingTitle)}
+                                >
+                                    {repogroup.title}
+                                </Link>
+                            </div>
+                        ))}
+                    </div>
                 </div>
             </div>
 

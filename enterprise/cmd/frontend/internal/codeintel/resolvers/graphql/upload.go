@@ -7,17 +7,19 @@ import (
 	"github.com/graph-gophers/graphql-go"
 
 	gql "github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/resolvers"
 	store "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 )
 
 type UploadResolver struct {
+	resolver         resolvers.Resolver
 	upload           store.Upload
 	prefetcher       *Prefetcher
 	locationResolver *CachedLocationResolver
 }
 
-func NewUploadResolver(upload store.Upload, prefetcher *Prefetcher, locationResolver *CachedLocationResolver) gql.LSIFUploadResolver {
+func NewUploadResolver(resolver resolvers.Resolver, upload store.Upload, prefetcher *Prefetcher, locationResolver *CachedLocationResolver) gql.LSIFUploadResolver {
 	if upload.AssociatedIndexID != nil {
 		// Request the next batch of index fetches to contain the record's associated
 		// index id, if one exists it exists. This allows the prefetcher.GetIndexByID
@@ -27,6 +29,7 @@ func NewUploadResolver(upload store.Upload, prefetcher *Prefetcher, locationReso
 	}
 
 	return &UploadResolver{
+		resolver:         resolver,
 		upload:           upload,
 		prefetcher:       prefetcher,
 		locationResolver: locationResolver,
@@ -64,7 +67,7 @@ func (r *UploadResolver) AssociatedIndex(ctx context.Context) (gql.LSIFIndexReso
 		return nil, err
 	}
 
-	return NewIndexResolver(index, r.prefetcher, r.locationResolver), nil
+	return NewIndexResolver(r.resolver, index, r.prefetcher, r.locationResolver), nil
 }
 
 func (r *UploadResolver) ProjectRoot(ctx context.Context) (*gql.GitTreeEntryResolver, error) {

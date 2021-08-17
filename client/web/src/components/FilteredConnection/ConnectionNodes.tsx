@@ -73,7 +73,7 @@ export interface ConnectionNodesDisplayProps {
     noSummaryIfAllNodesVisible?: boolean
 
     /** The component displayed when the list of nodes is empty. */
-    emptyElement?: JSX.Element
+    emptyElement?: JSX.Element | null
 
     /** The component displayed when all nodes have been fetched. */
     totalCountSummaryComponent?: React.ComponentType<{ totalCount: number }>
@@ -133,11 +133,10 @@ export const ConnectionNodes = <C extends Connection<N>, N, NP = {}, HP = {}>({
 }: ConnectionNodesProps<C, N, NP, HP>): JSX.Element => {
     const nextPage = hasNextPage(connection)
 
-    const totalCount = getTotalCount(connection, first)
     const summary = (
         <ConnectionSummary
+            first={first}
             noSummaryIfAllNodesVisible={noSummaryIfAllNodesVisible}
-            totalCount={totalCount}
             totalCountSummaryComponent={totalCountSummaryComponent}
             noun={noun}
             pluralNoun={pluralNoun}
