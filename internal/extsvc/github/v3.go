@@ -458,6 +458,15 @@ func (c *V3Client) ListOrgRepositories(ctx context.Context, org string, page int
 	return repos, len(repos) > 0, 1, err
 }
 
+// ListTeamRepositories lists GitHub repositories from the specified team.
+// org is the name of the team's organization. team is the team slug (not name).
+// page is the page of results to return. Pages are 1-indexed (so the first call should be for page 1).
+func (c *V3Client) ListTeamRepositories(ctx context.Context, org, team string, page int) (repos []*Repository, hasNextPage bool, rateLimitCost int, err error) {
+	path := fmt.Sprintf("orgs/%s/teams/%s/repos?page=%d&per_page=100", org, team, page)
+	repos, err = c.listRepositories(ctx, path)
+	return repos, len(repos) > 0, 1, err
+}
+
 // ListUserRepositories lists GitHub repositories from the specified user.
 // Pages are 1-indexed (so the first call should be for page 1)
 func (c *V3Client) ListUserRepositories(ctx context.Context, user string, page int) (repos []*Repository, hasNextPage bool, rateLimitCost int, err error) {

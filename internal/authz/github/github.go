@@ -78,8 +78,8 @@ func (p *Provider) FetchUserPermsByToken(ctx context.Context, token string) (*au
 	}
 	seenRepos := make(map[extsvc.RepoID]bool, repoSetSize)
 
-	// appendRepo checks if the given repos are already tracked before adding it to perms.
-	appendRepo := func(repos ...extsvc.RepoID) {
+	// addRepoToPerms checks if the given repos are already tracked before adding it to perms.
+	addRepoToPerms := func(repos ...extsvc.RepoID) {
 		for _, repo := range repos {
 			if _, exists := seenRepos[repo]; !exists {
 				perms.Exacts = append(perms.Exacts, repo)
@@ -100,7 +100,7 @@ func (p *Provider) FetchUserPermsByToken(ctx context.Context, token string) (*au
 		}
 
 		for _, r := range repos {
-			appendRepo(extsvc.RepoID(r.ID))
+			addRepoToPerms(extsvc.RepoID(r.ID))
 		}
 	}
 
@@ -151,11 +151,33 @@ func (p *Provider) FetchUserPermsByToken(ctx context.Context, token string) (*au
 	for _, group := range groups {
 		groupPerms, exists := p.groupsCache.getGroupPermsFromCache(group.Org, group.Team)
 		if exists {
-			appendRepo(groupPerms.Repositories...)
+			addRepoToPerms(groupPerms.Repositories...)
 			continue
 		}
+		isOrg := group.Team == ""
 
-		// TODO: fetch repos, append to perms.Exacts, push to cache
+		hasNextPage = true
+		for page := 1; hasNextPage; page++ {
+			var repos []*github.Repository
+			if isOrg {
+				repos, hasNextPage, _, err = p.client.ListOrgRepositories(ctx, group.Org, page, "")
+			} else {
+				repos, hasNextPage, _, err = p.client.ListTeamRepositories(ctx, group.Org, group.Team, page)
+			}
+			if err != nil {
+				// track effort so far in cache
+				p.groupsCache.addGroupPermsToCache(*groupPerms)
+				return perms, err
+			}
+			for _, r := range repos {
+				repoID := extsvc.RepoID(r.ID)
+				groupPerms.Repositories = append(groupPerms.Repositories, repoID)
+				addRepoToPerms(repoID)
+			}
+		}
+
+		// add sync'd repos to cache
+		p.groupsCache.addGroupPermsToCache(*groupPerms)
 	}
 
 	return perms, nil
