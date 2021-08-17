@@ -84,7 +84,7 @@ export const InsightCreationPage: React.FunctionComponent<InsightCreationPagePro
 
     const handleInsightSuccessfulCreation = (insight: Insight): void => {
         if (!dashboard || isVirtualDashboard(dashboard)) {
-            // Navigate user to the dashboard page with new created dashboard
+            // Navigate to the dashboard page with new created dashboard
             history.push(`/insights/dashboards/${insight.visibility}`)
 
             return
