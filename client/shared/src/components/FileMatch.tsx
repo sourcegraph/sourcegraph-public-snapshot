@@ -21,7 +21,6 @@ export interface MatchItem extends Badge {
         start: number
         highlightLength: number
     }[]
-    preview: string
     /**
      * The 0-based line number of this match.
      */
@@ -87,7 +86,6 @@ export const FileMatch: React.FunctionComponent<Props> = props => {
                       start,
                       highlightLength,
                   })),
-                  preview: match.line,
                   line: match.lineNumber,
                   aggregableBadges: match.aggregableBadges,
               }))
