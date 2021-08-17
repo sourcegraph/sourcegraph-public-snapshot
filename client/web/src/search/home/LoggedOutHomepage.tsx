@@ -152,7 +152,9 @@ export const LoggedOutHomepage: React.FunctionComponent<LoggedOutHomepageProps> 
 
             <div className="d-flex justify-content-center">
                 <div className={classNames('card', styles.ctaCard)}>
-                    <span className="badge badge-merged text-uppercase mr-2">Beta</span>
+                    <div className="d-flex align-items-center">
+                        <span className="badge badge-merged text-uppercase mr-2">Beta</span>
+                    </div>
                     <span>
                         Search your public and private code.{' '}
                         <Link to="/sign-up?src=HomepageCTA" onClick={onSignUpClick}>
