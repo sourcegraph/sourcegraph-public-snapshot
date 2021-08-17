@@ -291,7 +291,7 @@ func logSignInEvent(r *http.Request, db dbutil.DB, usr *types.User, name *databa
 	// Safe to ignore this error
 	event.AnonymousUserID, _ = cookie.AnonymousUID(r)
 
-	usagestats.LogBackendEvent(db, int32(usr.ID), string(*name), nil, nil, featureflag.FromContext(r.Context()), nil)
+	usagestats.LogBackendEvent(db, usr.ID, string(*name), nil, nil, featureflag.FromContext(r.Context()), nil)
 	database.SecurityEventLogs(db).LogEvent(r.Context(), event)
 }
 
