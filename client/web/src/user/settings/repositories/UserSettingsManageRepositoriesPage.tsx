@@ -547,7 +547,6 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
                 <div className="d-flex flex-column ml-2">
                     <p
                         className={classNames('mb-0', {
-                            'user-settings-repos__text': ALLOW_SYNC_ALL,
                             'user-settings-repos__text-disabled': !ALLOW_SYNC_ALL,
                         })}
                     >
@@ -555,7 +554,7 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
                     </p>
                     <p
                         className={classNames({
-                            'user-settings-repos__text': ALLOW_SYNC_ALL,
+                            'user-settings-repos__text-light': true,
                             'user-settings-repos__text-disabled': !ALLOW_SYNC_ALL,
                         })}
                     >
