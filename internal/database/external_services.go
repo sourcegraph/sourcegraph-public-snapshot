@@ -957,6 +957,23 @@ CREATE TEMPORARY TABLE IF NOT EXISTS
 		return errors.Wrap(err, "populating temporary table")
 	}
 
+	// Soft delete orphaned phabricator repos. This must happen *before* the
+	// repo deletion, because repo deletion modifies the repo name and the only
+	// link between these tables is the repo name.
+	if err := tx.Exec(ctx, sqlf.Sprintf(`
+		UPDATE phabricator_repos
+		SET deleted_at = TRANSACTION_TIMESTAMP()
+		WHERE deleted_at IS NULL
+		AND repo_name IN (
+			SELECT name FROM repo
+			WHERE id IN (
+				SELECT id FROM deleted_repos_temp
+			)
+		);
+	`)); err != nil {
+		return errors.Wrap(err, "cleaning up potentially orphaned phabricator repos")
+	}
+
 	// Soft delete orphaned repos
 	if err := tx.Exec(ctx, sqlf.Sprintf(`
 	UPDATE repo
@@ -970,21 +987,6 @@ CREATE TEMPORARY TABLE IF NOT EXISTS
 	   );
 `)); err != nil {
 		return errors.Wrap(err, "cleaning up potentially orphaned repos")
-	}
-
-	// Soft delete orphaned phabricator repos
-	if err := tx.Exec(ctx, sqlf.Sprintf(`
-	UPDATE phabricator_repos
-	SET deleted_at = TRANSACTION_TIMESTAMP()
-	WHERE deleted_at IS NULL
-	AND repo_name IN (
-		SELECT name FROM repo
-		WHERE id IN (
-			SELECT id FROM deleted_repos_temp
-		)
-	);
-`)); err != nil {
-		return errors.Wrap(err, "cleaning up potentially orphaned phabricator repos")
 	}
 
 	// Clear temporary table in case delete is called multiple times within the same
