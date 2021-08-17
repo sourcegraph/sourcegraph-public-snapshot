@@ -62,7 +62,6 @@ export const DashboardInsights: React.FunctionComponent<DashboardInsightsProps> 
         <DashboardInsightsContext.Provider value={{ dashboard }}>
             <div>
                 {insights.length > 0 ? (
-
                     <SmartInsightsViewGrid
                         insights={insights}
                         telemetryService={telemetryService}
@@ -70,7 +69,6 @@ export const DashboardInsights: React.FunctionComponent<DashboardInsightsProps> 
                         platformContext={platformContext}
                         extensionsController={extensionsController}
                     />
-
                 ) : (
                     <EmptyInsightDashboard
                         dashboard={dashboard}
