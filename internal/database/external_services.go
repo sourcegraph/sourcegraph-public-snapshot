@@ -957,29 +957,6 @@ CREATE TEMPORARY TABLE IF NOT EXISTS
 		return errors.Wrap(err, "populating temporary table")
 	}
 
-	// Soft delete orphaned phabricator repos. This must happen *before* the
-	// repo deletion, because repo deletion modifies the repo name and the only
-	// link between these tables is the repo name.
-	//
-	// NOTE: we need additional join tables (e.g. external_service_repos) to
-	//  support this in Cloud, so for the time being we skip this step.
-	if !envvar.SourcegraphDotComMode() {
-		if err := tx.Exec(ctx, sqlf.Sprintf(`
-		-- source: internal/database/external_services.go:Delete
-		UPDATE phabricator_repos
-		SET deleted_at = TRANSACTION_TIMESTAMP()
-		WHERE deleted_at IS NULL
-		AND repo_name IN (
-			SELECT name FROM repo
-			WHERE id IN (
-				SELECT id FROM deleted_repos_temp
-			)
-		);
-	`)); err != nil {
-			return errors.Wrap(err, "cleaning up potentially orphaned phabricator repos")
-		}
-	}
-
 	// Soft delete orphaned repos
 	if err := tx.Exec(ctx, sqlf.Sprintf(`
 	UPDATE repo
@@ -993,6 +970,30 @@ CREATE TEMPORARY TABLE IF NOT EXISTS
 	   );
 `)); err != nil {
 		return errors.Wrap(err, "cleaning up potentially orphaned repos")
+	}
+
+	// Soft delete orphaned phabricator repos. Note that there are no foreign
+	// key relationships to other tables, so we must transform the repo name
+	// in the table via soft_deleted_repository_name(repo_name) since it was
+	// modified in repo in the previous step.
+	//
+	// NOTE: we need additional join tables (e.g. external_service_repos) to
+	//  support this in Cloud, so for now it's skipped in that build.
+	if !envvar.SourcegraphDotComMode() {
+		if err := tx.Exec(ctx, sqlf.Sprintf(`
+		-- source: internal/database/external_services.go:Delete
+		UPDATE phabricator_repos
+		SET deleted_at = TRANSACTION_TIMESTAMP()
+		WHERE deleted_at IS NULL
+		AND soft_deleted_repository_name(repo_name) IN (
+			SELECT name FROM repo
+			WHERE id IN (
+				SELECT id FROM deleted_repos_temp
+			)
+		);
+	`)); err != nil {
+			return errors.Wrap(err, "cleaning up potentially orphaned phabricator repos")
+		}
 	}
 
 	// Clear temporary table in case delete is called multiple times within the same
