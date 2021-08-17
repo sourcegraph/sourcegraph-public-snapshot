@@ -158,6 +158,10 @@ export const CodeIntelUploadPage: FunctionComponent<CodeIntelUploadPageProps> = 
                     />
 
                     <Container>
+                        <CodeIntelUploadMeta node={uploadOrError} now={now} />
+                    </Container>
+
+                    <Container className="mt-2">
                         <CodeIntelStateBanner
                             state={uploadOrError.state}
                             placeInQueue={uploadOrError.placeInQueue}
@@ -167,15 +171,24 @@ export const CodeIntelUploadPage: FunctionComponent<CodeIntelUploadPageProps> = 
                             className={classNamesByState.get(uploadOrError.state)}
                         />
                         {uploadOrError.isLatestForRepo && (
-                            <div className="mb-3">
+                            <div>
                                 <InformationOutlineIcon className="icon-inline" /> This upload can answer queries for
                                 the tip of the default branch and are targets of cross-repository find reference
                                 operations.
                             </div>
                         )}
-                        <CodeIntelUploadMeta node={uploadOrError} now={now} />
-                        <CodeIntelAssociatedIndex node={uploadOrError} now={now} />
+                    </Container>
 
+                    <Container className="mt-2">
+                        <CodeIntelDeleteUpload
+                            state={uploadOrError.state}
+                            deleteUpload={deleteUpload}
+                            deletionOrError={deletionOrError}
+                        />
+                    </Container>
+
+                    <Container className="mt-2">
+                        <CodeIntelAssociatedIndex node={uploadOrError} now={now} />
                         <h3>Timeline</h3>
                         <CodeIntelUploadTimeline now={now} upload={uploadOrError} className="mb-3" />
                     </Container>
@@ -185,7 +198,7 @@ export const CodeIntelUploadPage: FunctionComponent<CodeIntelUploadPageProps> = 
                         <Container className="mt-2">
                             <div className="mb-2">
                                 {dependencyGraphState === DependencyGraphState.ShowDependencies ? (
-                                    <h2>
+                                    <h3>
                                         Dependencies
                                         <button
                                             type="button"
@@ -194,9 +207,9 @@ export const CodeIntelUploadPage: FunctionComponent<CodeIntelUploadPageProps> = 
                                         >
                                             Show dependents
                                         </button>
-                                    </h2>
+                                    </h3>
                                 ) : (
-                                    <h2>
+                                    <h3>
                                         Dependents
                                         <button
                                             type="button"
@@ -207,7 +220,7 @@ export const CodeIntelUploadPage: FunctionComponent<CodeIntelUploadPageProps> = 
                                         >
                                             Show dependencies
                                         </button>
-                                    </h2>
+                                    </h3>
                                 )}
                             </div>
 
@@ -240,14 +253,6 @@ export const CodeIntelUploadPage: FunctionComponent<CodeIntelUploadPageProps> = 
                             )}
                         </Container>
                     )}
-
-                    <Container className="mt-2">
-                        <CodeIntelDeleteUpload
-                            state={uploadOrError.state}
-                            deleteUpload={deleteUpload}
-                            deletionOrError={deletionOrError}
-                        />
-                    </Container>
                 </>
             )}
         </div>
