@@ -34,40 +34,51 @@ const repositories: ISearchContextRepositoryRevisions[] = [
     },
 ]
 
-const fetchPublicContext = (): Observable<ISearchContext> =>
-    of({
-        __typename: 'SearchContext',
-        id: '1',
-        spec: 'public-ctx',
-        name: 'public-ctx',
-        namespace: null,
-        public: true,
-        autoDefined: false,
-        description: 'Repositories on Sourcegraph',
-        repositories,
-        updatedAt: subDays(new Date(), 1).toISOString(),
-        viewerCanManage: true,
-    })
+const mockContext: ISearchContext = {
+    __typename: 'SearchContext',
+    id: '1',
+    spec: 'public-ctx',
+    name: 'public-ctx',
+    namespace: null,
+    public: true,
+    autoDefined: false,
+    description: 'Repositories on Sourcegraph',
+    repositories,
+    updatedAt: subDays(new Date(), 1).toISOString(),
+    viewerCanManage: true,
+}
+
+const fetchPublicContext = (): Observable<ISearchContext> => of(mockContext)
 
 const fetchPrivateContext = (): Observable<ISearchContext> =>
     of({
-        __typename: 'SearchContext',
-        id: '1',
+        ...mockContext,
         spec: 'private-ctx',
         name: 'private-ctx',
         namespace: null,
         public: false,
-        autoDefined: false,
-        description: 'Repositories on Sourcegraph',
-        repositories,
-        updatedAt: subDays(new Date(), 1).toISOString(),
-        viewerCanManage: true,
+    })
+
+const fetchAutoDefinedContext = (): Observable<ISearchContext> =>
+    of({
+        ...mockContext,
+        autoDefined: true,
     })
 
 add(
     'public context',
     () => (
         <WebStory>{webProps => <SearchContextPage {...webProps} fetchSearchContext={fetchPublicContext} />}</WebStory>
+    ),
+    {}
+)
+
+add(
+    'autodefined context',
+    () => (
+        <WebStory>
+            {webProps => <SearchContextPage {...webProps} fetchSearchContext={fetchAutoDefinedContext} />}
+        </WebStory>
     ),
     {}
 )

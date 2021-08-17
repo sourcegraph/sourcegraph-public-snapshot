@@ -1,10 +1,8 @@
-import classNames from 'classnames'
 import * as H from 'history'
 import { escapeRegExp } from 'lodash'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
-import MenuDownIcon from 'mdi-react/MenuDownIcon'
 import SourceRepositoryIcon from 'mdi-react/SourceRepositoryIcon'
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Route, RouteComponentProps, Switch } from 'react-router'
@@ -33,7 +31,6 @@ import { repeatUntil } from '@sourcegraph/shared/src/util/rxjs/repeatUntil'
 import { encodeURIPathComponent, makeRepoURI } from '@sourcegraph/shared/src/util/url'
 import { useLocalStorage } from '@sourcegraph/shared/src/util/useLocalStorage'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
-import { useRedesignToggle } from '@sourcegraph/shared/src/util/useRedesignToggle'
 
 import { AuthenticatedUser } from '../auth'
 import { BatchChangesProps } from '../batches'
@@ -172,7 +169,6 @@ export interface ExtensionAlertProps {
  * Renders a horizontal bar and content for a repository page.
  */
 export const RepoContainer: React.FunctionComponent<RepoContainerProps> = props => {
-    const [isRedesignEnabled] = useRedesignToggle()
     const { repoName, revision, rawRevision, filePath, commitRange, position, range } = parseBrowserRepoURL(
         location.pathname + location.search + location.hash
     )
@@ -243,34 +239,24 @@ export const RepoContainer: React.FunctionComponent<RepoContainerProps> = props 
                 key: 'repository',
                 element: (
                     <>
-                        <div className={classNames('d-inline-flex', isRedesignEnabled && 'btn-group')}>
+                        <div className="d-inline-flex btn-group">
                             <Link
                                 to={
                                     resolvedRevisionOrError && !isErrorLike(resolvedRevisionOrError)
                                         ? resolvedRevisionOrError.rootTreeURL
                                         : repoOrError.url
                                 }
-                                className={classNames(
-                                    'text-nowrap test-repo-header-repo-link',
-                                    isRedesignEnabled ? 'btn btn-sm btn-outline-secondary' : 'font-weight-bold'
-                                )}
+                                className="btn btn-sm btn-outline-secondary text-nowrap test-repo-header-repo-link"
                             >
                                 <SourceRepositoryIcon className="icon-inline" /> {displayRepoName(repoOrError.name)}
                             </Link>
                             <button
                                 type="button"
                                 id="repo-popover"
-                                className={classNames(
-                                    'btn repo-container__repo-change',
-                                    isRedesignEnabled ? 'btn-sm btn-outline-secondary' : 'btn-icon'
-                                )}
+                                className="btn btn-sm btn-outline-secondary repo-container__repo-change"
                                 aria-label="Change repository"
                             >
-                                {isRedesignEnabled ? (
-                                    <ChevronDownIcon className="icon-inline" />
-                                ) : (
-                                    <MenuDownIcon className="icon-inline" />
-                                )}
+                                <ChevronDownIcon className="icon-inline" />
                             </button>
                         </div>
                         <UncontrolledPopover
@@ -286,7 +272,7 @@ export const RepoContainer: React.FunctionComponent<RepoContainerProps> = props 
                     </>
                 ),
             }
-        }, [repoOrError, resolvedRevisionOrError, isRedesignEnabled])
+        }, [repoOrError, resolvedRevisionOrError])
     )
 
     // Update the workspace roots service to reflect the current repo / resolved revision

@@ -8,7 +8,6 @@ import { Form } from '@sourcegraph/branded/src/components/Form'
 import { Link } from '@sourcegraph/shared/src/components/Link'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { asError, ErrorLike, isErrorLike } from '@sourcegraph/shared/src/util/errors'
-import { useRedesignToggle } from '@sourcegraph/shared/src/util/useRedesignToggle'
 import { Container, PageSelector } from '@sourcegraph/wildcard'
 
 import { ALLOW_NAVIGATION, AwayPrompt } from '../../../components/AwayPrompt'
@@ -159,7 +158,6 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
     const ALLOW_SYNC_ALL = authenticatedUser.tags.includes('AllowUserExternalServiceSyncAll')
 
     // set up state hooks
-    const [isRedesignEnabled] = useRedesignToggle()
     const [repoState, setRepoState] = useState(initialRepoState)
     const [publicRepoState, setPublicRepoState] = useState(initialPublicRepoState)
     const [codeHosts, setCodeHosts] = useState(initialCodeHostState)
@@ -746,7 +744,7 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
             <Container>
                 <ul className="list-group">
                     <li className="list-group-item user-settings-repos__container" key="from-code-hosts">
-                        <div className={classNames(!isRedesignEnabled && 'p-4')}>
+                        <div>
                             <h3>Your repositories</h3>
                             <p className="text-muted">
                                 Repositories you own or collaborate on from your{' '}
@@ -804,7 +802,7 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
                     </li>
                     {window.context.sourcegraphDotComMode && (
                         <li className="list-group-item user-settings-repos__container" key="add-textarea">
-                            <div className={classNames(!isRedesignEnabled && 'p-4')}>
+                            <div>
                                 <h3>Other public repositories</h3>
                                 <p className="text-muted">Public repositories on GitHub and GitLab</p>
                                 <input

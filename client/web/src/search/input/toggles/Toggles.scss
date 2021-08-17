@@ -40,7 +40,7 @@
 
         &:active {
             // stylelint-disable-next-line declaration-property-unit-whitelist
-            border: 2px solid var(--color-border-active);
+            border: 2px solid var(--border-active-color);
 
             .theme-redesign & {
                 border-color: var(--primary);
@@ -50,12 +50,12 @@
         &.disabled,
         &.disabled:hover {
             background-color: var(--color-bg-3);
-            color: var(--color-text-3);
+            color: var(--text-muted);
             cursor: default;
             opacity: 1;
 
             .theme-light & {
-                background-color: var(--color-bg-4);
+                background-color: var(--color-bg-2);
             }
 
             &:active {
@@ -64,7 +64,7 @@
         }
 
         &--active {
-            background-color: var(--color-border-active);
+            background-color: var(--border-active-color);
             color: #ffffff !important;
 
             .theme-redesign & {
@@ -72,7 +72,7 @@
             }
 
             &:hover {
-                background-color: var(--color-border-active);
+                background-color: var(--border-active-color);
 
                 .theme-redesign & {
                     background-color: var(--primary);

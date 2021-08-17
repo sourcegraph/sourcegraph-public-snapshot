@@ -1,4 +1,3 @@
-import classNames from 'classnames'
 import AddIcon from 'mdi-react/AddIcon'
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { RouteComponentProps } from 'react-router'
@@ -12,7 +11,6 @@ import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryServi
 import { asError, ErrorLike, isErrorLike } from '@sourcegraph/shared/src/util/errors'
 import { repeatUntil } from '@sourcegraph/shared/src/util/rxjs/repeatUntil'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
-import { useRedesignToggle } from '@sourcegraph/shared/src/util/useRedesignToggle'
 import { Container, PageHeader } from '@sourcegraph/wildcard'
 
 import { requestGraphQL } from '../../../backend/graphql'
@@ -108,7 +106,6 @@ export const UserSettingsRepositoriesPage: React.FunctionComponent<Props> = ({
     routingPrefix,
     telemetryService,
 }) => {
-    const [isRedesignEnabled] = useRedesignToggle()
     const [hasRepos, setHasRepos] = useState(false)
     const [externalServices, setExternalServices] = useState<ExternalServicesResult['externalServices']['nodes']>()
     const [repoFilters, setRepoFilters] = useState<FilteredConnectionFilter[]>([])
@@ -116,9 +113,7 @@ export const UserSettingsRepositoriesPage: React.FunctionComponent<Props> = ({
     const [updateReposList, setUpdateReposList] = useState(false)
 
     const NoAddedReposBanner = (
-        <Container
-            className={classNames(isRedesignEnabled && 'text-center', !isRedesignEnabled && 'border rounded p-3')}
-        >
+        <Container className="text-center">
             <h4>You have not added any repositories to Sourcegraph.</h4>
 
             {externalServices?.length === 0 ? (

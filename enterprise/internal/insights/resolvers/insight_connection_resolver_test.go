@@ -2,6 +2,7 @@ package resolvers
 
 import (
 	"context"
+	"fmt"
 	"testing"
 	"time"
 
@@ -187,17 +188,19 @@ func TestResolver_InsightsRepoPermissions(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	_, err = timescale.Exec(`INSERT INTO repo_names (id, name) VALUES (1, 'ignore-me');`)
-	if err != nil {
-		t.Fatal(err)
+	for i := 0; i < 3; i++ {
+		_, err = timescale.Exec(`INSERT INTO repo_names (name) VALUES ($1);`, fmt.Sprint("ignore-me-", i))
+		if err != nil {
+			t.Fatal(err)
+		}
 	}
 
 	// Create some timeseries data, one row in each repository
 	_, err = timescale.Exec(`
 		INSERT INTO series_points (series_id, "time", "value", metadata_id, repo_id, repo_name_id, original_repo_name_id)
 		VALUES
-			('s:087855E6A24440837303FD8A252E9893E8ABDFECA55B61AC83DA1B521906626E', $1, 5.0, null, 1, 1, 1),
-			('s:087855E6A24440837303FD8A252E9893E8ABDFECA55B61AC83DA1B521906626E', $1, 6.0, null, 2, 1, 1),
+			('s:087855E6A24440837303FD8A252E9893E8ABDFECA55B61AC83DA1B521906626E', $1, 5.0, null, 1, 3, 3),
+			('s:087855E6A24440837303FD8A252E9893E8ABDFECA55B61AC83DA1B521906626E', $1, 6.0, null, 2, 2, 2),
 			('s:087855E6A24440837303FD8A252E9893E8ABDFECA55B61AC83DA1B521906626E', $1, 7.0, null, 3, 1, 1)`, now)
 	if err != nil {
 		t.Fatal(err)
