@@ -1,3 +1,4 @@
+import { noop } from 'lodash'
 import React, { useCallback, useState } from 'react'
 
 /**
@@ -13,8 +14,8 @@ export type MultiSelectContextSelected = Set<string> | 'all'
 export interface MultiSelectContextState {
     // State fields. These must not be mutated other than through the mutator
     // functions below, but may be read at any time.
-    selected: MultiSelectContextSelected
-    visible: Set<string>
+    readonly selected: MultiSelectContextSelected
+    readonly visible: Set<string>
 
     // Convenience getters that abstract over the possible values of selected.
     areAllVisibleSelected: () => boolean
@@ -27,6 +28,9 @@ export interface MultiSelectContextState {
     selectAll: () => void
     selectVisible: () => void
     selectSingle: (id: string) => void
+    toggleAll: () => void
+    toggleVisible: () => void
+    toggleSingle: (id: string) => void
 
     // Sets the current set of visible IDs. This needs to happen in a single
     // call to avoid unnecessary re-renders: consumers are responsible for
@@ -38,17 +42,20 @@ export interface MultiSelectContextState {
 
 // eslint-disable @typescript-eslint/no-unused-vars
 const defaultState = (): MultiSelectContextState => ({
-    selected: new Set(),
-    visible: new Set(),
     areAllVisibleSelected: () => false,
+    deselectAll: noop,
+    deselectSingle: noop,
+    deselectVisible: noop,
     isSelected: () => false,
-    deselectAll: () => {},
-    deselectVisible: () => {},
-    deselectSingle: () => {},
-    selectAll: () => {},
-    selectVisible: () => {},
-    selectSingle: () => {},
-    setVisible: () => {},
+    selectAll: noop,
+    selected: new Set(),
+    selectSingle: noop,
+    selectVisible: noop,
+    setVisible: noop,
+    toggleAll: noop,
+    toggleSingle: noop,
+    toggleVisible: noop,
+    visible: new Set(),
 })
 // eslint-enable @typescript-eslint/no-unused-vars
 
@@ -84,6 +91,11 @@ export const MultiSelectContextProvider: React.FunctionComponent<{
     )
     const selectAll = useCallback(() => setSelected('all'), [setSelected])
     const deselectAll = useCallback(() => setSelected(new Set()), [setSelected])
+    const toggleAll = useCallback(() => (selected === 'all' ? deselectAll() : selectAll()), [
+        deselectAll,
+        selectAll,
+        selected,
+    ])
 
     // Callbacks to select and deselect items.
     const selectVisible = useCallback(() => {
@@ -109,6 +121,28 @@ export const MultiSelectContextProvider: React.FunctionComponent<{
             setSelected(new Set([...selected].filter(id => !visible.has(id))))
         }
     }, [selected, visible])
+
+    const areAllVisibleSelected = useCallback(() => {
+        if (selected === 'all') {
+            return true
+        }
+
+        for (const id of visible) {
+            if (!selected.has(id)) {
+                return false
+            }
+        }
+
+        return true
+    }, [selected, visible])
+
+    const toggleVisible = useCallback(() => {
+        if (areAllVisibleSelected()) {
+            deselectVisible()
+        } else {
+            selectVisible()
+        }
+    }, [areAllVisibleSelected, deselectVisible, selectVisible])
 
     const selectSingle = useCallback(
         (id: string) => {
@@ -146,37 +180,36 @@ export const MultiSelectContextProvider: React.FunctionComponent<{
         [selected, visible]
     )
 
-    // Helper functions to access the current selection state.
-    const areAllVisibleSelected = useCallback(() => {
-        if (selected === 'all') {
-            return true
-        }
-
-        for (const id of visible) {
-            if (!selected.has(id)) {
-                return false
-            }
-        }
-
-        return true
-    }, [selected, visible])
-
     const isSelected = useCallback((id: string) => selected === 'all' || selected.has(id), [selected])
+
+    const toggleSingle = useCallback(
+        (id: string): void => {
+            if (isSelected(id)) {
+                deselectSingle(id)
+            } else {
+                selectSingle(id)
+            }
+        },
+        [deselectSingle, isSelected, selectSingle]
+    )
 
     return (
         <MultiSelectContext.Provider
             value={{
-                selected,
-                visible,
                 areAllVisibleSelected,
-                isSelected,
                 deselectAll,
-                deselectVisible,
                 deselectSingle,
+                deselectVisible,
+                isSelected,
                 selectAll,
-                selectVisible,
+                selected,
                 selectSingle,
+                selectVisible,
                 setVisible,
+                toggleAll,
+                toggleSingle,
+                toggleVisible,
+                visible,
             }}
         >
             {children}

@@ -193,7 +193,7 @@ export const ChangesetSelectRow: React.FunctionComponent<ChangesetSelectRowProps
 
     return (
         <>
-            <div className="row align-items-center no-gutters">
+            <div className="row align-items-center no-gutters mb-2">
                 <div className="ml-2 col d-flex align-items-center">
                     <InfoCircleOutlineIcon className="icon-inline text-muted mr-2" />
                     {selected === 'all' || allChangesetIDs?.length === selected.size ? (
@@ -213,7 +213,7 @@ export const ChangesetSelectRow: React.FunctionComponent<ChangesetSelectRowProps
                 <div className="w-100 d-block d-md-none" />
                 <div className="m-0 col col-md-auto">
                     <div className="row no-gutters">
-                        <div className="col my-2 ml-0 ml-sm-2">
+                        <div className="col ml-0 ml-sm-2">
                             <DropdownButton
                                 actions={actions}
                                 dropdownMenuPosition="right"
