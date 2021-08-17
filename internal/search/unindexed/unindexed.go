@@ -123,9 +123,9 @@ func SearchFilesInReposBatch(ctx context.Context, args *search.TextParameters) (
 	return fms, stats, err
 }
 
-var mockSearchFilesInRepo func(ctx context.Context, repo types.RepoName, gitserverRepo api.RepoName, rev string, info *search.TextPatternInfo, fetchTimeout time.Duration, stream streaming.Sender) (matches []result.Match, limitHit bool, err error)
+var mockSearchFilesInRepo func(ctx context.Context, repo types.RepoName, gitserverRepo api.RepoName, rev string, info *search.TextPatternInfo, fetchTimeout time.Duration, stream streaming.Sender) (limitHit bool, err error)
 
-func searchFilesInRepo(ctx context.Context, searcherURLs *endpoint.Map, repo types.RepoName, gitserverRepo api.RepoName, rev string, index bool, info *search.TextPatternInfo, fetchTimeout time.Duration, stream streaming.Sender) ([]result.Match, bool, error) {
+func searchFilesInRepo(ctx context.Context, searcherURLs *endpoint.Map, repo types.RepoName, gitserverRepo api.RepoName, rev string, index bool, info *search.TextPatternInfo, fetchTimeout time.Duration, stream streaming.Sender) (bool, error) {
 	if mockSearchFilesInRepo != nil {
 		return mockSearchFilesInRepo(ctx, repo, gitserverRepo, rev, info, fetchTimeout, stream)
 	}
@@ -136,15 +136,15 @@ func searchFilesInRepo(ctx context.Context, searcherURLs *endpoint.Map, repo typ
 	// repo is not on gitserver.
 	commit, err := git.ResolveRevision(ctx, gitserverRepo, rev, git.ResolveRevisionOptions{NoEnsureRevision: true})
 	if err != nil {
-		return nil, false, err
+		return false, err
 	}
 
 	shouldBeSearched, err := repoShouldBeSearched(ctx, searcherURLs, info, gitserverRepo, commit, fetchTimeout)
 	if err != nil {
-		return nil, false, err
+		return false, err
 	}
 	if !shouldBeSearched {
-		return nil, false, err
+		return false, err
 	}
 
 	var indexerEndpoints []string
@@ -154,7 +154,7 @@ func searchFilesInRepo(ctx context.Context, searcherURLs *endpoint.Map, repo typ
 			indexerEndpoints = append(indexerEndpoints, key)
 		}
 		if err != nil {
-			return nil, false, err
+			return false, err
 		}
 	}
 
@@ -167,10 +167,10 @@ func searchFilesInRepo(ctx context.Context, searcherURLs *endpoint.Map, repo typ
 
 	limitHit, err := searcher.Search(ctx, searcherURLs, gitserverRepo, rev, commit, index, info, fetchTimeout, indexerEndpoints, onMatches)
 	if err != nil {
-		return nil, false, err
+		return false, err
 	}
 
-	return nil, limitHit, err
+	return limitHit, err
 }
 
 // newToMatches returns a closure that converts []*protocol.FileMatch to []result.Match.
@@ -336,7 +336,7 @@ func callSearcherOverRepos(
 					ctx, done := limitCtx, limitDone
 					defer done()
 
-					matches, repoLimitHit, err := searchFilesInRepo(ctx, args.SearcherURLs, repoRev.Repo, repoRev.GitserverRepo(), repoRev.RevSpecs()[0], index, args.PatternInfo, fetchTimeout, stream)
+					repoLimitHit, err := searchFilesInRepo(ctx, args.SearcherURLs, repoRev.Repo, repoRev.GitserverRepo(), repoRev.RevSpecs()[0], index, args.PatternInfo, fetchTimeout, stream)
 					if err != nil {
 						tr.LogFields(otlog.String("repo", string(repoRev.Repo.Name)), otlog.Error(err), otlog.Bool("timeout", errcode.IsTimeout(err)), otlog.Bool("temporary", errcode.IsTemporary(err)))
 						log15.Warn("searchFilesInRepo failed", "error", err, "repo", repoRev.Repo.Name)
@@ -344,8 +344,7 @@ func callSearcherOverRepos(
 					// non-diff search reports timeout through err, so pass false for timedOut
 					stats, err := repos.HandleRepoSearchResult(repoRev, repoLimitHit, false, err)
 					stream.Send(streaming.SearchEvent{
-						Results: matches,
-						Stats:   stats,
+						Stats: stats,
 					})
 					return err
 				})
