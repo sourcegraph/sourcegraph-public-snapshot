@@ -2,6 +2,7 @@ import React from 'react'
 
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 
+import styles from './DynamicWebFonts.module.scss'
 import { useDynamicWebFonts, DynamicWebFont } from './useDynamicWebFonts'
 
 interface DynamicWebFontsProps {
@@ -18,7 +19,7 @@ export const DynamicWebFonts: React.FunctionComponent<DynamicWebFontsProps> = pr
 
     // While fonts are not ready, show loading spinner to avoid content jumps.
     if (!areFontsLoaded) {
-        return <LoadingSpinner />
+        return <LoadingSpinner className={styles.spinner} />
     }
 
     return <>{children}</>
