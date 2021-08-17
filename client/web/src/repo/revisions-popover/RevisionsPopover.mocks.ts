@@ -19,7 +19,7 @@ export const MOCK_PROPS: RevisionsPopoverProps = {
     repo: 'some-repo-id',
     repoName: 'testorg/testrepo',
     defaultBranch: 'main',
-    currentRev: undefined,
+    currentRev: 'main',
     togglePopover: () => null,
     showSpeculativeResults: false,
 }
@@ -265,7 +265,7 @@ const commitsMock: MockedResponse<RepositoryGitCommitResult> = {
             query: '',
             first: 15,
             repo: MOCK_PROPS.repo,
-            revision: MOCK_PROPS.defaultBranch,
+            revision: MOCK_PROPS.currentRev,
         },
     },
     result: {
@@ -341,6 +341,28 @@ const filteredCommitsMock: MockedResponse<RepositoryGitCommitResult> = {
     },
 }
 
+/**
+ * This mock is to test the case where a speculative revision is provided as context.
+ * In this case, the code should not error as it is still valid to display 0 results.
+ */
+const noCommitsMock: MockedResponse<RepositoryGitCommitResult> = {
+    request: {
+        ...commitsMock.request,
+        variables: {
+            ...commitsMock.request.variables,
+            revision: 'non-existent-revision',
+        },
+    },
+    result: {
+        data: {
+            node: {
+                __typename: 'Repository',
+                commit: null,
+            },
+        },
+    },
+}
+
 export const MOCK_REQUESTS = [
     branchesMock,
     additionalBranchesMock,
@@ -352,4 +374,5 @@ export const MOCK_REQUESTS = [
     commitsMock,
     additionalCommitsMock,
     filteredCommitsMock,
+    noCommitsMock,
 ]

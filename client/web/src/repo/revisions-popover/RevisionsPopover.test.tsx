@@ -205,5 +205,23 @@ describe('RevisionsPopover', () => {
             expect(within(commitsTab).getAllByRole('link')).toHaveLength(2)
             expect(within(commitsTab).getByTestId('summary')).toHaveTextContent('2 commits matching some query')
         })
+
+        describe('Against a speculative revision', () => {
+            beforeEach(async () => {
+                cleanup()
+                queries = renderPopover({ currentRev: 'non-existent-revision' })
+
+                fireEvent.click(queries.getByText('Commits'))
+                await waitForNextApolloResponse()
+
+                commitsTab = queries.getByRole('tabpanel', { name: 'Commits' })
+            })
+
+            it('renders 0 results', () => {
+                expect(within(commitsTab).queryByRole('link')).not.toBeInTheDocument()
+                expect(within(commitsTab).queryByText('Show more')).not.toBeInTheDocument()
+                expect(within(commitsTab).getByTestId('summary')).toHaveTextContent('No commits')
+            })
+        })
     })
 })

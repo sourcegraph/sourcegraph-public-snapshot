@@ -111,6 +111,7 @@ interface RevisionCommitsTabProps {
     currentRev: string | undefined
 
     currentCommitID?: string
+    speculativeCommitID?: string
 
     onSelect?: (node: GitCommitAncestorFields) => void
 }
@@ -150,7 +151,15 @@ export const RevisionCommitsTab: React.FunctionComponent<RevisionCommitsTabProps
                 throw new Error(`Node is a ${node.__typename}, not a Repository`)
             }
 
-            if (!node.commit?.ancestors) {
+            if (!node.commit) {
+                // Did not find a commit for the current revision, the user may have provided an invalid revision.
+                // Avoid erroring here so this can be reflected correctly in the UI.
+                return {
+                    nodes: [],
+                }
+            }
+
+            if (!node.commit.ancestors) {
                 throw new Error(`Cannot load ancestors for repository ${repo}`)
             }
 
