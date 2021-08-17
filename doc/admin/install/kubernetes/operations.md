@@ -172,7 +172,7 @@ kubectl exec -it --namespace=$NAMESPACE $pgsql_POD_NAME -- bash -c 'pg_dump -C -
 kubectl exec -it --namespace=$NAMESPACE $codeintel-db_POD_NAME -- bash -c 'pg_dump -C --username sg sg' > codeintel_db.out
 ```
 
-#### 4. Ensure the `sourcegraph_db.out` and `codeintel_db.out` files are moved to a safe and secure location.
+Ensure the `sourcegraph_db.out` and `codeintel_db.out` files are moved to a safe and secure location.
 
 ### Restore Sourcegraph databases
 
