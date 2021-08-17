@@ -97,7 +97,11 @@ func (s *JVMPackagesSource) listDependentRepos(ctx context.Context, results chan
 		return
 	}
 
-	lastID := 0
+	var (
+		totalDBFetched  int
+		totalDBResolved int
+		lastID          int
+	)
 	for {
 		dbDeps, err := s.dbStore.GetJVMDependencyRepos(ctx, dbstore.GetJVMDependencyReposOpts{
 			After: lastID,
@@ -111,6 +115,8 @@ func (s *JVMPackagesSource) listDependentRepos(ctx context.Context, results chan
 		if len(dbDeps) == 0 {
 			break
 		}
+
+		totalDBFetched += len(dbDeps)
 
 		lastID = dbDeps[len(dbDeps)-1].ID
 
@@ -132,12 +138,15 @@ func (s *JVMPackagesSource) listDependentRepos(ctx context.Context, results chan
 			}
 
 			repo := s.makeRepo(mavenDependency.MavenModule)
+			totalDBResolved++
 			results <- SourceResult{
 				Source: s,
 				Repo:   repo,
 			}
 		}
 	}
+
+	log15.Info("finished listing resolvable maven artifacts", "totalDB", totalDBFetched, "resolvedDB", totalDBResolved, "totalConfig", len(modules))
 }
 
 func (s *JVMPackagesSource) GetRepo(ctx context.Context, artifactPath string) (*types.Repo, error) {

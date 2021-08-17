@@ -7,6 +7,7 @@ import (
 
 	"github.com/cockroachdb/errors"
 	"github.com/hashicorp/go-multierror"
+	"github.com/inconshreveable/log15"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
@@ -87,8 +88,11 @@ func (h *dependencyIndexingSchedulerHandler) Handle(ctx context.Context, record 
 		}
 	}()
 
-	var kinds []string
-
+	var (
+		kinds                      []string
+		oldDependencyReposInserted int
+		newDependencyReposInserted int
+	)
 	for {
 		packageReference, exists, err := scanner.Next()
 		if err != nil {
@@ -115,8 +119,13 @@ func (h *dependencyIndexingSchedulerHandler) Handle(ctx context.Context, record 
 			continue
 		}
 
-		if err := h.insertDependencyRepo(ctx, pkg); err != nil {
+		new, err := h.insertDependencyRepo(ctx, pkg)
+		if err != nil {
 			errs = append(errs, err)
+		} else if new {
+			newDependencyReposInserted++
+		} else {
+			oldDependencyReposInserted++
 		}
 
 		if !kindExists(kinds, extsvcKind) {
@@ -137,6 +146,10 @@ func (h *dependencyIndexingSchedulerHandler) Handle(ctx context.Context, record 
 			}
 		}
 
+		log15.Info("syncing external services",
+			"upload", job.UploadID, "num", len(externalServices), "job", job.ID, "schemaKinds", kinds,
+			"newRepos", newDependencyReposInserted, "existingInserts", oldDependencyReposInserted)
+
 		for _, externalService := range externalServices {
 			externalService.NextSyncAt = time.Now()
 			err := h.extsvcStore.Upsert(ctx, externalService)
@@ -144,6 +157,8 @@ func (h *dependencyIndexingSchedulerHandler) Handle(ctx context.Context, record 
 				errs = append(errs, errors.Wrapf(err, "dbstore.Upsert: error setting next_sync_at for external service %d - %s", externalService.ID, externalService.DisplayName))
 			}
 		}
+	} else {
+		log15.Info("no package schema kinds to sync external services for", "upload", job.UploadID, "job", job.ID)
 	}
 
 	if len(errs) == 0 {
@@ -157,8 +172,7 @@ func (h *dependencyIndexingSchedulerHandler) Handle(ctx context.Context, record 
 	return multierror.Append(nil, errs...)
 }
 
-func (h *dependencyIndexingSchedulerHandler) insertDependencyRepo(ctx context.Context, pkg precise.Package) (err error) {
-	var new bool
+func (h *dependencyIndexingSchedulerHandler) insertDependencyRepo(ctx context.Context, pkg precise.Package) (new bool, err error) {
 	ctx, endObservation := dependencyReposOps.InsertCloneableDependencyRepo.With(ctx, &err, observation.Args{
 		MetricLabelValues: []string{pkg.Scheme},
 	})
@@ -168,9 +182,9 @@ func (h *dependencyIndexingSchedulerHandler) insertDependencyRepo(ctx context.Co
 
 	new, err = h.dbStore.InsertCloneableDependencyRepo(ctx, pkg)
 	if err != nil {
-		return errors.Wrap(err, "dbstore.InsertCloneableDependencyRepos")
+		return new, errors.Wrap(err, "dbstore.InsertCloneableDependencyRepos")
 	}
-	return nil
+	return new, nil
 }
 
 // shouldIndexDependencies returns true if the given upload should undergo dependency
