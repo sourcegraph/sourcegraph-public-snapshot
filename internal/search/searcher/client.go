@@ -77,7 +77,6 @@ func Search(
 		Indexed:          indexed,
 		FetchTimeout:     fetchTimeout.String(),
 		IndexerEndpoints: indexerEndpoints,
-		Stream:           true,
 	}
 
 	if deadline, ok := ctx.Deadline(); ok {
