@@ -8,7 +8,6 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
-	"net/url"
 	"os"
 	"sort"
 	"strconv"
@@ -403,44 +402,11 @@ func TestSearch_badrequest(t *testing.T) {
 }
 
 func doSearch(u string, p *protocol.Request) ([]protocol.FileMatch, error) {
-	form := url.Values{
-		"Repo":            []string{string(p.Repo)},
-		"URL":             []string{p.URL},
-		"Commit":          []string{string(p.Commit)},
-		"Pattern":         []string{p.Pattern},
-		"FetchTimeout":    []string{p.FetchTimeout},
-		"IncludePatterns": p.IncludePatterns,
-		"ExcludePattern":  []string{p.ExcludePattern},
-		"CombyRule":       []string{p.CombyRule},
+	reqBody, err := json.Marshal(p)
+	if err != nil {
+		return nil, err
 	}
-	if p.IsRegExp {
-		form.Set("IsRegExp", "true")
-	}
-	if p.IsStructuralPat {
-		form.Set("IsStructuralPat", "true")
-	}
-	if p.IsWordMatch {
-		form.Set("IsWordMatch", "true")
-	}
-	if p.IsCaseSensitive {
-		form.Set("IsCaseSensitive", "true")
-	}
-	if p.PathPatternsAreRegExps {
-		form.Set("PathPatternsAreRegExps", "true")
-	}
-	if p.PathPatternsAreCaseSensitive {
-		form.Set("PathPatternsAreCaseSensitive", "true")
-	}
-	if p.PatternMatchesContent {
-		form.Set("PatternMatchesContent", "true")
-	}
-	if p.PatternMatchesPath {
-		form.Set("PatternMatchesPath", "true")
-	}
-	if p.IsNegated {
-		form.Set("IsNegated", "true")
-	}
-	resp, err := http.PostForm(u, form)
+	resp, err := http.Post(u, "application/json", bytes.NewReader(reqBody))
 	if err != nil {
 		return nil, err
 	}

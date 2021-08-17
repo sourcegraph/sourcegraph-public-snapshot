@@ -54,3 +54,17 @@ type InsightSeries struct {
 	BackfillQueuedAt      time.Time
 	RecordingIntervalDays int
 }
+
+type DirtyQuery struct {
+	ID      int
+	Query   string
+	ForTime time.Time
+	DirtyAt time.Time
+	Reason  string
+}
+
+type DirtyQueryAggregate struct {
+	Count   int
+	ForTime time.Time
+	Reason  string
+}

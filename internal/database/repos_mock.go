@@ -18,6 +18,10 @@ type MockRepos struct {
 	Metadata      func(ctx context.Context, ids ...api.RepoID) ([]*types.SearchedRepo, error)
 	Create        func(ctx context.Context, repos ...*types.Repo) (err error)
 	Count         func(ctx context.Context, opt ReposListOptions) (int, error)
+
+	// TODO: we're knowingly taking on a little tech debt by placing these here for now.
+	ListExternalServiceUserIDsByRepoID func(ctx context.Context, repoID api.RepoID) ([]int32, error)
+	ListExternalServiceRepoIDsByUserID func(ctx context.Context, userID int32) ([]api.RepoID, error)
 }
 
 func (s *MockRepos) MockGet(t *testing.T, wantRepo api.RepoID) (called *bool) {

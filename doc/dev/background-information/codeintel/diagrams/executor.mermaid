@@ -1,21 +1,21 @@
 sequenceDiagram
-  Executor          ->>+ Frontend (proxy): Dequeue()
-  Frontend (proxy)  ->>+ Executor queue: Dequeue()
-  Executor queue    ->>+ DB store: BeginTx()
-  Executor queue   -->>- Frontend (proxy): job
-  Frontend (proxy) -->>- Executor: job
+  Executor          ->>+ Frontend: Dequeue()
+  Frontend         -->>- Executor: job
 
   loop
-    Executor          ->>+ Frontend (proxy): Heartbeat(self.id, [job.id])
-    Frontend (proxy)  ->>+ Executor queue: Heartbeat(self.id, [job.id])
-    Executor queue   -->>- Frontend (proxy): Ok
-    Frontend (proxy) -->>- Executor: Ok
+    Executor          ->>+ Frontend: Heartbeat(self.id, [job.id])
+    Frontend         -->>- Executor: Ok
   end
 
-  Executor          ->>+ Frontend (proxy): GitClone(job.repo, job.commit)
-  Frontend (proxy)  ->>+ Gitserver: GitClone(job.repo, job.commit)
-  Gitserver        -->>- Frontend (proxy): ...
-  Frontend (proxy) -->>- Executor: ...
+  loop
+    Executor          ->>+ Frontend: AddExecutionLogEntry(job.id, exec output from each command)
+    Frontend         -->>- Executor: Ok
+  end
+
+  Executor          ->>+ Frontend: GitClone(job.repo, job.commit)
+  Frontend          ->>+ Gitserver: GitClone(job.repo, job.commit)
+  Gitserver        -->>- Frontend: ...
+  Frontend         -->>- Executor: ...
 
   Executor        ->>+ Firecracker: setupFirecracker()
   Firecracker    -->>- Executor: vm
@@ -33,16 +33,5 @@ sequenceDiagram
   Executor        ->>+ Firecracker: teardownFirecracker(vm.id)
   Firecracker    -->>- Executor: Ok
 
-  loop
-    Executor          ->>+ Frontend (proxy): AddExecutionLogEntry(job.id, combined exec output)
-    Frontend (proxy)  ->>+ Executor queue: AddExecutionLogEntry(job.id, combined exec output)
-    Executor queue   -->>- Frontend (proxy): Ok
-    Frontend (proxy) -->>- Executor: Ok
-  end
-
-  Executor          ->>+ Frontend (proxy): MarkComplete(job.id)
-  Frontend (proxy)  ->>+ Executor queue: MarkComplete(job.id)
-  Executor queue    ->>  DB store: Commit()
-  DB store         -->>- Executor queue: Ok
-  Executor queue   -->>- Frontend (proxy): Ok
-  Frontend (proxy) -->>- Executor: Ok
+  Executor          ->>+ Frontend: MarkComplete(job.id)
+  Frontend         -->>- Executor: Ok

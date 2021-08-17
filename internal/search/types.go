@@ -6,9 +6,10 @@ import (
 	"strings"
 	"time"
 
+	zoektquery "github.com/google/zoekt/query"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/endpoint"
-	searchbackend "github.com/sourcegraph/sourcegraph/internal/search/backend"
+	"github.com/sourcegraph/sourcegraph/internal/search/backend"
 	"github.com/sourcegraph/sourcegraph/internal/search/filter"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
@@ -128,6 +129,29 @@ func (m GlobalSearchMode) String() string {
 	return "None"
 }
 
+type IndexedRequestType string
+
+const (
+	TextRequest   IndexedRequestType = "text"
+	SymbolRequest IndexedRequestType = "symbol"
+)
+
+// ZoektParameters contains all the inputs to run a Zoekt indexed search.
+type ZoektParameters struct {
+	Repos            []*RepositoryRevisions
+	RepoOptions      RepoOptions
+	Query            zoektquery.Q
+	Typ              IndexedRequestType
+	FileMatchLimit   int32
+	Enabled          bool
+	Index            query.YesNoOnly
+	Mode             GlobalSearchMode
+	UserPrivateRepos []types.RepoName
+	Select           filter.SelectPath
+
+	Zoekt *backend.Zoekt
+}
+
 // TextParameters are the parameters passed to a search backend. It contains the Pattern
 // to search for, as well as the hydrated list of repository revisions to
 // search. It defines behavior for text search on repository names, file names, and file content.
@@ -157,7 +181,7 @@ type TextParameters struct {
 	// to true if the user requests a specific timeout or maximum result size.
 	UseFullDeadline bool
 
-	Zoekt        *searchbackend.Zoekt
+	Zoekt        *backend.Zoekt
 	SearcherURLs *endpoint.Map
 }
 

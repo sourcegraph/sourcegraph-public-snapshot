@@ -26,8 +26,8 @@ import {
 } from './backend'
 import styles from './BatchChangeListPage.module.scss'
 import { BatchChangeNode, BatchChangeNodeProps } from './BatchChangeNode'
-import { BatchChangesListEmpty } from './BatchChangesListEmpty'
 import { BatchChangesListIntro } from './BatchChangesListIntro'
+import { GettingStarted } from './GettingStarted'
 import { NewBatchChangeButton } from './NewBatchChangeButton'
 
 export interface BatchChangeListPageProps extends TelemetryProps, Pick<RouteComponentProps, 'location'> {
@@ -132,9 +132,9 @@ export const BatchChangeListPage: React.FunctionComponent<BatchChangeListPagePro
             />
             <BatchChangesListIntro licensed={licensed} />
             <BatchChangeListTabHeader selectedTab={selectedTab} setSelectedTab={setSelectedTab} />
-            <Container className="mb-4">
-                {selectedTab === 'gettingStarted' && <BatchChangesListEmpty />}
-                {selectedTab === 'batchChanges' && (
+            {selectedTab === 'gettingStarted' && <GettingStarted className="mb-4" footer={<GettingStartedFooter />} />}
+            {selectedTab === 'batchChanges' && (
+                <Container className="mb-4">
                     <FilteredConnection<ListBatchChange, Omit<BatchChangeNodeProps, 'node'>>
                         {...props}
                         location={location}
@@ -153,8 +153,8 @@ export const BatchChangeListPage: React.FunctionComponent<BatchChangeListPagePro
                         noSummaryIfAllNodesVisible={true}
                         emptyElement={<BatchChangeListEmptyElement location={location} />}
                     />
-                )}
-            </Container>
+                </Container>
+            )}
         </>
     )
 }
@@ -247,3 +247,20 @@ const BatchChangeListTabHeader: React.FunctionComponent<{
         </div>
     )
 }
+
+const GettingStartedFooter: React.FunctionComponent<{}> = () => (
+    <div className="row pb-4">
+        <div className="col-12 col-sm-8 offset-sm-2 col-md-6 offset-md-3">
+            <div className="card">
+                <div className="card-body text-center">
+                    <p>Create your first batch change</p>
+                    <h2 className="mb-0">
+                        <a href="https://docs.sourcegraph.com/batch_changes/quickstart" target="_blank" rel="noopener">
+                            Batch Changes quickstart
+                        </a>
+                    </h2>
+                </div>
+            </div>
+        </div>
+    </div>
+)

@@ -12,21 +12,17 @@ import {
     LsifIndexesResult,
     LsifIndexesVariables,
     LsifIndexFields,
-    LsifUploadFields,
     LsifUploadsForRepoResult,
     LsifUploadsForRepoVariables,
     LsifUploadsResult,
     LsifUploadsVariables,
     CodeIntelligenceCommitGraphMetadataResult,
     CodeIntelligenceCommitGraphMetadataVariables,
+    QueueAutoIndexJobsForRepoResult,
+    QueueAutoIndexJobsForRepoVariables,
+    LsifUploadConnectionFields,
 } from '../../../graphql-operations'
 import { lsifIndexFieldsFragment, lsifUploadFieldsFragment } from '../shared/backend'
-
-export interface UploadConnection {
-    nodes: LsifUploadFields[]
-    totalCount: number | null
-    pageInfo: { endCursor: string | null; hasNextPage: boolean }
-}
 
 /**
  * Return LSIF uploads. If a repository is given, only uploads for that repository will be returned. Otherwise,
@@ -37,13 +33,17 @@ export function fetchLsifUploads({
     query,
     state,
     isLatestForRepo,
+    dependencyOf,
+    dependentOf,
     first,
     after,
-}: { repository?: string } & GQL.ILsifUploadsOnRepositoryArguments): Observable<UploadConnection> {
-    const vars = {
+}: { repository?: string } & GQL.ILsifUploadsOnRepositoryArguments): Observable<LsifUploadConnectionFields> {
+    const vars: LsifUploadsVariables = {
         query: query ?? null,
         state: state ?? null,
         isLatestForRepo: isLatestForRepo ?? null,
+        dependencyOf: dependencyOf ?? null,
+        dependentOf: dependentOf ?? null,
         first: first ?? null,
         after: after ?? null,
     }
@@ -54,6 +54,8 @@ export function fetchLsifUploads({
                 $repository: ID!
                 $state: LSIFUploadState
                 $isLatestForRepo: Boolean
+                $dependencyOf: ID
+                $dependentOf: ID
                 $first: Int
                 $after: String
                 $query: String
@@ -65,6 +67,8 @@ export function fetchLsifUploads({
                             query: $query
                             state: $state
                             isLatestForRepo: $isLatestForRepo
+                            dependencyOf: $dependencyOf
+                            dependentOf: $dependentOf
                             first: $first
                             after: $after
                         ) {
@@ -110,11 +114,21 @@ export function fetchLsifUploads({
         query LsifUploads(
             $state: LSIFUploadState
             $isLatestForRepo: Boolean
+            $dependencyOf: ID
+            $dependentOf: ID
             $first: Int
             $after: String
             $query: String
         ) {
-            lsifUploads(query: $query, state: $state, isLatestForRepo: $isLatestForRepo, first: $first, after: $after) {
+            lsifUploads(
+                query: $query
+                state: $state
+                isLatestForRepo: $isLatestForRepo
+                dependencyOf: $dependencyOf
+                dependentOf: $dependentOf
+                first: $first
+                after: $after
+            ) {
                 nodes {
                     ...LsifUploadFields
                 }
@@ -275,5 +289,25 @@ export function fetchLsifIndexes({
     return requestGraphQL<LsifIndexesResult, LsifIndexesVariables>(gqlQuery, vars).pipe(
         map(dataOrThrowErrors),
         map(({ lsifIndexes }) => lsifIndexes)
+    )
+}
+
+export function enqueueIndexJob(id: string, revision: string): Observable<LsifIndexFields[]> {
+    const query = gql`
+        mutation QueueAutoIndexJobsForRepo($id: ID!, $rev: String) {
+            queueAutoIndexJobsForRepo(repository: $id, rev: $rev) {
+                ...LsifIndexFields
+            }
+        }
+
+        ${lsifIndexFieldsFragment}
+    `
+
+    return requestGraphQL<QueueAutoIndexJobsForRepoResult, QueueAutoIndexJobsForRepoVariables>(query, {
+        id,
+        rev: revision,
+    }).pipe(
+        map(dataOrThrowErrors),
+        map(({ queueAutoIndexJobsForRepo }) => queueAutoIndexJobsForRepo)
     )
 }

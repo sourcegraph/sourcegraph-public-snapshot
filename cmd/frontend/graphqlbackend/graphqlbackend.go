@@ -393,6 +393,8 @@ func NewSchema(db dbutil.DB, batchChanges BatchChangesResolver, codeIntel CodeIn
 		}
 	}
 
+	schemas = append(schemas, computeSchema)
+
 	return graphql.ParseSchema(
 		strings.Join(schemas, "\n"),
 		resolver,
@@ -408,6 +410,7 @@ type schemaResolver struct {
 	BatchChangesResolver
 	AuthzResolver
 	CodeIntelResolver
+	ComputeResolver
 	InsightsResolver
 	CodeMonitorsResolver
 	LicenseResolver
@@ -477,6 +480,7 @@ func newSchemaResolver(db dbutil.DB) *schemaResolver {
 // in enterprise mode. These resolver instances are nil when running as OSS.
 var EnterpriseResolvers = struct {
 	codeIntelResolver    CodeIntelResolver
+	computeResolver      ComputeResolver
 	insightsResolver     InsightsResolver
 	authzResolver        AuthzResolver
 	batchChangesResolver BatchChangesResolver
