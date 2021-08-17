@@ -35,10 +35,14 @@ import {
 } from '../../../graphql-operations'
 import { listUserRepositories } from '../../../site-admin/backend'
 import { eventLogger } from '../../../tracking/eventLogger'
+import { UserExternalServicesOrRepositoriesUpdateProps } from '../../../util'
 
 import { RepositoryNode } from './RepositoryNode'
 
-interface Props extends RouteComponentProps, TelemetryProps {
+interface Props
+    extends RouteComponentProps,
+        TelemetryProps,
+        Pick<UserExternalServicesOrRepositoriesUpdateProps, 'onUserExternalServicesOrRepositoriesUpdate'> {
     userID: string
     routingPrefix: string
 }
@@ -107,6 +111,7 @@ export const UserSettingsRepositoriesPage: React.FunctionComponent<Props> = ({
     userID,
     routingPrefix,
     telemetryService,
+    onUserExternalServicesOrRepositoriesUpdate,
 }) => {
     const [isRedesignEnabled] = useRedesignToggle()
     const [hasRepos, setHasRepos] = useState(false)
@@ -220,6 +225,7 @@ export const UserSettingsRepositoriesPage: React.FunctionComponent<Props> = ({
         if (result?.node?.repositories?.totalCount && result.node.repositories.totalCount > 0) {
             setHasRepos(true)
         }
+        onUserExternalServicesOrRepositoriesUpdate(services.length, result?.node?.repositories.totalCount ?? 0)
 
         // configure filters
         const specificCodeHostFilters = services.map(service => ({
@@ -238,7 +244,7 @@ export const UserSettingsRepositoriesPage: React.FunctionComponent<Props> = ({
         }
 
         setRepoFilters([statusFilter, updatedCodeHostFilter])
-    }, [fetchExternalServices, fetchUserReposCount])
+    }, [fetchExternalServices, fetchUserReposCount, onUserExternalServicesOrRepositoriesUpdate])
 
     const TWO_SECONDS = 2
 
