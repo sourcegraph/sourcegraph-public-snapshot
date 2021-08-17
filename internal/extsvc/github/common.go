@@ -47,8 +47,12 @@ type Actor struct {
 
 // A Team represents a team on Github.
 type Team struct {
-	Name string
-	URL  string
+	Name string `json:"name"`
+	Slug string `json:"slug"`
+	URL  string `json:"url"`
+
+	ReposCount   int `json:"repos_count"`
+	Organization Org `json:"organization"`
 }
 
 // A GitActor represents an actor in a Git commit (ie. an author or committer).
@@ -1855,6 +1859,14 @@ type UserEmail struct {
 
 type Org struct {
 	Login string `json:"login,omitempty"`
+}
+
+// OrgDetails describes the more detailed Org data you can get from the get an organization
+// API (https://docs.github.com/en/rest/reference/orgs#get-an-organization)
+type OrgDetails struct {
+	Org
+
+	DefaultRepositoryPermission string `json:"default_repository_permission,omitempty"`
 }
 
 // Collaborator is a collaborator of a repository.

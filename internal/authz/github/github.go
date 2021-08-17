@@ -6,7 +6,6 @@ import (
 	"net/url"
 	"strconv"
 	"strings"
-	"time"
 
 	"github.com/cockroachdb/errors"
 
@@ -14,20 +13,14 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
-	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
-
-func newGroupPermsCache(urn string, codeHost *extsvc.CodeHost) *rcache.Cache {
-	var cacheTTL time.Duration = 5 * time.Minute
-	return rcache.NewWithTTL(fmt.Sprintf("gh_groups_perms:%s:%s", codeHost.ServiceID, urn), int(cacheTTL/time.Second))
-}
 
 // Provider implements authz.Provider for GitHub repository permissions.
 type Provider struct {
 	urn         string
 	client      client
-	groupsCache *rcache.Cache
+	groupsCache *groupsCache
 	codeHost    *extsvc.CodeHost
 }
 
@@ -76,9 +69,11 @@ func (p *Provider) FetchUserPermsByToken(ctx context.Context, token string) (*au
 	// 🚨 SECURITY: Use user token is required to only list repositories the user has access to.
 	client := p.client.WithToken(token)
 
-	// 100 matches the maximum page size, thus a good default to avoid multiple allocations
-	// when appending the first 100 results to the slice.
-	repoIDs := make([]extsvc.RepoID, 0, 100)
+	perms := &authz.ExternalUserPermissions{
+		// 100 matches the maximum page size, thus a good default to avoid multiple allocations
+		// when appending the first 100 results to the slice.
+		Exacts: make([]extsvc.RepoID, 0, 100),
+	}
 
 	// First, we list repositories a user has direct access to as a owner or direct collaborator.
 	hasNextPage := true
@@ -88,29 +83,67 @@ func (p *Provider) FetchUserPermsByToken(ctx context.Context, token string) (*au
 		repos, hasNextPage, _, err = client.ListAffiliatedRepositories(ctx, github.VisibilityPrivate, page,
 			github.AffiliationOwner, github.AffiliationCollaborator)
 		if err != nil {
-			return &authz.ExternalUserPermissions{
-				Exacts: repoIDs,
-			}, err
+			return perms, err
 		}
 
 		for _, r := range repos {
-			repoIDs = append(repoIDs, extsvc.RepoID(r.ID))
+			perms.Exacts = append(perms.Exacts, extsvc.RepoID(r.ID))
 		}
 	}
 
-	// Now, we check for groups this user belongs to, and list out repositories that the
-	// user has access to due to that relationship.
+	// Now, we check for groups this user belongs to that give access to additional
+	// repositories.
+	//
+	// Track groups in this map of "org/team":group so that we don't check GitHub teams
+	// that this user already has access to through Organization membership.
+	groups := make(map[string]cachedGroup)
+	hasNextPage = true
+	for page := 1; hasNextPage; page++ {
+		var orgs []*github.OrgDetails
+		orgs, hasNextPage, _, err = client.GetAuthenticatedUserOrgsDetails(ctx, page)
+		if err != nil {
+			return perms, err
+		}
+		for _, org := range orgs {
+			if org.DefaultRepositoryPermission != "none" {
+				groups[org.Login] = cachedGroup{
+					Org: org.Login,
+				}
+			}
+		}
+	}
+	for page := 1; hasNextPage; page++ {
+		var teams []*github.Team
+		teams, hasNextPage, _, err = client.GetAuthenticatedUserTeams(ctx, page)
+		if err != nil {
+			return perms, err
+		}
+		for _, team := range teams {
+			// if a team's repos is a subset of a organization's, don't sync
+			if _, exists := groups[team.Organization.Login]; !exists {
+				if team.ReposCount > 0 {
+					groups[fmt.Sprintf("%s/%s", team.Organization.Login, team.Slug)] = cachedGroup{
+						Org:  team.Organization.Login,
+						Team: team.Slug,
+					}
+				}
+			}
+		}
+	}
 
-	// TODO
-	// ... p.client.ListAffiliatedTeamsAndOrganizations
-	//     ... for each org where default permissions > read
-	//         get repos from cache, or get and cache a new repo list
-	//     ... for each team
-	//         get repos from cache, or get and cache a new repo list
+	// Get repos from groups, cached if possible.
+	for _, group := range groups {
+		groupPerms, exists := p.groupsCache.getGroupPermsFromCache(group.Org, group.Team)
+		if exists {
+			// TODO: dedupe?
+			perms.Exacts = append(perms.Exacts, groupPerms.Repositories...)
+			continue
+		}
 
-	return &authz.ExternalUserPermissions{
-		Exacts: repoIDs,
-	}, nil
+		// TODO: fetch repos, append to perms.Exacts, push to cache
+	}
+
+	return perms, nil
 }
 
 // FetchUserPerms returns a list of repository IDs (on code host) that the given account

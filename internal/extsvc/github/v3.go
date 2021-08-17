@@ -257,6 +257,19 @@ func (c *V3Client) GetAuthenticatedUserEmails(ctx context.Context) ([]*UserEmail
 	return emails, nil
 }
 
+func (c *V3Client) getAuthenticatedUserOrgs(ctx context.Context, page int) (
+	orgs []*Org,
+	hasNextPage bool,
+	rateLimitCost int,
+	err error,
+) {
+	err = c.requestGet(ctx, fmt.Sprintf("/user/orgs?per_page=100&page=%d", page), &orgs)
+	if err != nil {
+		return
+	}
+	return orgs, len(orgs) > 0, 1, err
+}
+
 var MockGetAuthenticatedUserOrgs func(ctx context.Context) ([]*Org, error)
 
 // GetAuthenticatedUserOrgs returns the first 100 organizations associated with the currently
@@ -265,13 +278,40 @@ func (c *V3Client) GetAuthenticatedUserOrgs(ctx context.Context) ([]*Org, error)
 	if MockGetAuthenticatedUserOrgs != nil {
 		return MockGetAuthenticatedUserOrgs(ctx)
 	}
+	orgs, _, _, err := c.getAuthenticatedUserOrgs(ctx, 1)
+	return orgs, err
+}
 
-	var orgs []*Org
-	err := c.requestGet(ctx, "/user/orgs?per_page=100", &orgs)
+func (c *V3Client) GetAuthenticatedUserOrgsDetails(ctx context.Context, page int) (
+	orgs []*OrgDetails,
+	hasNextPage bool,
+	rateLimitCost int,
+	err error,
+) {
+	orgNames, hasNextPage, cost, err := c.getAuthenticatedUserOrgs(ctx, 1)
 	if err != nil {
-		return nil, err
+		return
 	}
-	return orgs, nil
+	orgs = make([]*OrgDetails, len(orgNames))
+	for i, org := range orgNames {
+		if err = c.requestGet(ctx, "/org/"+org.Login, &orgs[i]); err != nil {
+			return
+		}
+	}
+	return orgs, hasNextPage, cost + len(orgs), err
+}
+
+func (c *V3Client) GetAuthenticatedUserTeams(ctx context.Context, page int) (
+	teams []*Team,
+	hasNextPage bool,
+	rateLimitCost int,
+	err error,
+) {
+	err = c.requestGet(ctx, fmt.Sprintf("/user/teams?per_page=100&page=%d", page), &teams)
+	if err != nil {
+		return
+	}
+	return teams, len(teams) > 0, 1, err
 }
 
 var MockGetAuthenticatedUserOAuthScopes func(ctx context.Context) ([]string, error)
@@ -505,9 +545,4 @@ func (c *V3Client) listRepositories(ctx context.Context, requestURI string) ([]*
 		repos = append(repos, convertRestRepo(restRepo))
 	}
 	return repos, nil
-}
-
-// /user/orgs https://docs.github.com/en/rest/reference/orgs#list-organizations-for-the-authenticated-user
-func (c *V3Client) ListAffiliatedTeamsAndOrganizations(ctx context.Context) ([]*Actor, error) {
-	return nil, nil
 }

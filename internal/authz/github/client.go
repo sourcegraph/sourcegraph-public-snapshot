@@ -14,6 +14,9 @@ type client interface {
 	ListAffiliatedRepositories(ctx context.Context, visibility github.Visibility, page int, affiliations ...github.Affiliation) (repos []*github.Repository, hasNextPage bool, rateLimitCost int, err error)
 	ListRepositoryCollaborators(ctx context.Context, owner, repo string, page int) (users []*github.Collaborator, hasNextPage bool, _ error)
 
+	GetAuthenticatedUserOrgsDetails(ctx context.Context, page int) (orgs []*github.OrgDetails, hasNextPage bool, rateLimitCost int, err error)
+	GetAuthenticatedUserTeams(ctx context.Context, page int) (teams []*github.Team, hasNextPage bool, rateLimitCost int, err error)
+
 	WithToken(token string) client
 }
 
@@ -33,9 +36,11 @@ func (c *ClientAdapter) WithToken(token string) client {
 var _ client = (*mockClient)(nil)
 
 type mockClient struct {
-	MockListAffiliatedRepositories  func(ctx context.Context, visibility github.Visibility, page int, affiliations ...github.Affiliation) (repos []*github.Repository, hasNextPage bool, rateLimitCost int, err error)
-	MockListRepositoryCollaborators func(ctx context.Context, owner, repo string, page int) (users []*github.Collaborator, hasNextPage bool, _ error)
-	MockWithToken                   func(token string) client
+	MockListAffiliatedRepositories      func(ctx context.Context, visibility github.Visibility, page int, affiliations ...github.Affiliation) (repos []*github.Repository, hasNextPage bool, rateLimitCost int, err error)
+	MockListRepositoryCollaborators     func(ctx context.Context, owner, repo string, page int) (users []*github.Collaborator, hasNextPage bool, _ error)
+	MockGetAuthenticatedUserOrgsDetails func(ctx context.Context, page int) (orgs []*github.OrgDetails, hasNextPage bool, rateLimitCost int, err error)
+	MockGetAuthenticatedUserTeams       func(ctx context.Context, page int) (teams []*github.Team, hasNextPage bool, rateLimitCost int, err error)
+	MockWithToken                       func(token string) client
 }
 
 func (m *mockClient) ListAffiliatedRepositories(ctx context.Context, visibility github.Visibility, page int, affiliations ...github.Affiliation) ([]*github.Repository, bool, int, error) {
@@ -44,6 +49,14 @@ func (m *mockClient) ListAffiliatedRepositories(ctx context.Context, visibility 
 
 func (m *mockClient) ListRepositoryCollaborators(ctx context.Context, owner, repo string, page int) ([]*github.Collaborator, bool, error) {
 	return m.MockListRepositoryCollaborators(ctx, owner, repo, page)
+}
+
+func (m *mockClient) GetAuthenticatedUserOrgsDetails(ctx context.Context, page int) (orgs []*github.OrgDetails, hasNextPage bool, rateLimitCost int, err error) {
+	return m.MockGetAuthenticatedUserOrgsDetails(ctx, page)
+}
+
+func (m *mockClient) GetAuthenticatedUserTeams(ctx context.Context, page int) (teams []*github.Team, hasNextPage bool, rateLimitCost int, err error) {
+	return m.MockGetAuthenticatedUserTeams(ctx, page)
 }
 
 func (m *mockClient) WithToken(token string) client {
