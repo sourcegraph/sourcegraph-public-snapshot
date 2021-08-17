@@ -392,8 +392,15 @@ func (s *GitLabSource) UpdateChangeset(ctx context.Context, c *Changeset) error 
 	}
 	project := c.Repo.Metadata.(*gitlab.Project)
 
+	// Avoid accidentally undrafting the changeset by checking its current
+	// status.
+	title := c.Title
+	if mr.WorkInProgress {
+		title = gitlab.SetWIP(c.Title)
+	}
+
 	updated, err := s.client.UpdateMergeRequest(ctx, project, mr, gitlab.UpdateMergeRequestOpts{
-		Title:        c.Title,
+		Title:        title,
 		Description:  c.Body,
 		TargetBranch: git.AbbreviateRef(c.BaseRef),
 	})
@@ -412,13 +419,6 @@ func (s *GitLabSource) UpdateChangeset(ctx context.Context, c *Changeset) error 
 // UndraftChangeset marks the changeset as *not* work in progress anymore.
 func (s *GitLabSource) UndraftChangeset(ctx context.Context, c *Changeset) error {
 	c.Title = gitlab.UnsetWIP(c.Title)
-	return s.UpdateChangeset(ctx, c)
-}
-
-// UpdateDraftChangeset updates a Changeset on the source, being careful to
-// retain its draft status.
-func (s *GitLabSource) UpdateDraftChangeset(ctx context.Context, c *Changeset) error {
-	c.Title = gitlab.SetWIP(c.Title)
 	return s.UpdateChangeset(ctx, c)
 }
 

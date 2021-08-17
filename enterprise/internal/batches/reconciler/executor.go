@@ -264,17 +264,7 @@ func (e *executor) updateChangeset(ctx context.Context) (err error) {
 		return errors.Wrapf(err, "decorating body for changeset %d", e.ch.ID)
 	}
 
-	// Determine if this is a draft or regular changeset and act accordingly.
-	if e.ch.ExternalState == btypes.ChangesetExternalStateDraft {
-		draftCss, err := sources.ToDraftChangesetSource(e.css)
-		if err != nil {
-			return err
-		}
-
-		if err := draftCss.UpdateDraftChangeset(ctx, &cs); err != nil {
-			return errors.Wrap(err, "updating changeset")
-		}
-	} else if err := e.css.UpdateChangeset(ctx, &cs); err != nil {
+	if err := e.css.UpdateChangeset(ctx, &cs); err != nil {
 		return errors.Wrap(err, "updating changeset")
 	}
 

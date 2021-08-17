@@ -25,9 +25,6 @@ type GithubSource struct {
 	au     auth.Authenticator
 }
 
-var _ ChangesetSource = GithubSource{}
-var _ DraftChangesetSource = GithubSource{}
-
 func NewGithubSource(svc *types.ExternalService, cf *httpcli.Factory) (*GithubSource, error) {
 	var c schema.GitHubConnection
 	if err := jsonc.Unmarshal(svc.Config, &c); err != nil {
@@ -227,11 +224,6 @@ func (s GithubSource) UpdateChangeset(ctx context.Context, c *Changeset) error {
 	}
 
 	return c.Changeset.SetMetadata(updated)
-}
-
-// UpdateDraftChangeset updates the given draft *Changeset on the code host.
-func (s GithubSource) UpdateDraftChangeset(ctx context.Context, c *Changeset) error {
-	return s.UpdateChangeset(ctx, c)
 }
 
 // ReopenChangeset reopens the given *Changeset on the code host.
