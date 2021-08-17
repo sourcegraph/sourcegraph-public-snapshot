@@ -16,6 +16,9 @@ const typePolicies: TypedTypePolicies = {
     },
 }
 
-export const cache = new InMemoryCache({
-    typePolicies,
-})
+export const generateCache = (): InMemoryCache =>
+    new InMemoryCache({
+        typePolicies,
+    })
+
+export const cache = generateCache()

@@ -58,7 +58,7 @@ const GitReferencePopoverNode: React.FunctionComponent<GitReferencePopoverNodePr
 }
 
 interface SpectulativeGitReferencePopoverNodeProps
-    extends Pick<RevisionReferencesTabProps, 'onSelect'>,
+    extends Pick<RevisionsPopoverReferencesProps, 'onSelect'>,
         Omit<GitReferencePopoverNodeProps, 'node'> {
     name: string
     repoName: string
@@ -108,7 +108,7 @@ export const SpectulativeGitReferencePopoverNode: React.FunctionComponent<Spectu
     )
 }
 
-interface RevisionReferencesTabProps {
+interface RevisionsPopoverReferencesProps {
     type: GitRefType
     repo: Scalars['ID']
     repoName: string
@@ -128,7 +128,7 @@ interface RevisionReferencesTabProps {
 
 const BATCH_COUNT = 50
 
-export const RevisionReferencesTab: React.FunctionComponent<RevisionReferencesTabProps> = ({
+export const RevisionsPopoverReferences: React.FunctionComponent<RevisionsPopoverReferencesProps> = ({
     type,
     repo,
     repoName,
@@ -181,7 +181,7 @@ export const RevisionReferencesTab: React.FunctionComponent<RevisionReferencesTa
             inputValue={searchValue}
             onInputChange={setSearchValue}
         >
-            {response.connection?.nodes?.map((node, index) => (
+            {response.connection?.nodes.map((node, index) => (
                 <GitReferencePopoverNode
                     key={index}
                     node={node}

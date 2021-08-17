@@ -99,7 +99,7 @@ const GitCommitNode: React.FunctionComponent<GitCommitNodeProps> = ({
     )
 }
 
-interface RevisionCommitsTabProps {
+interface RevisionsPopoverCommitsProps {
     repo: Scalars['ID']
     defaultBranch: string
     getPathFromRevision: (href: string, revision: string) => string
@@ -117,7 +117,7 @@ interface RevisionCommitsTabProps {
 
 const BATCH_COUNT = 15
 
-export const RevisionCommitsTab: React.FunctionComponent<RevisionCommitsTabProps> = ({
+export const RevisionsPopoverCommits: React.FunctionComponent<RevisionsPopoverCommitsProps> = ({
     repo,
     defaultBranch,
     getPathFromRevision,
@@ -150,7 +150,15 @@ export const RevisionCommitsTab: React.FunctionComponent<RevisionCommitsTabProps
                 throw new Error(`Node is a ${node.__typename}, not a Repository`)
             }
 
-            if (!node.commit?.ancestors) {
+            if (!node.commit) {
+                // Did not find a commit for the current revision, the user may have provided an invalid revision.
+                // Avoid erroring here so this can be reflected correctly in the UI.
+                return {
+                    nodes: [],
+                }
+            }
+
+            if (!node.commit.ancestors) {
                 throw new Error(`Cannot load ancestors for repository ${repo}`)
             }
 

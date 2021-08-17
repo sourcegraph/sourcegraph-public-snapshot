@@ -40,7 +40,7 @@ export const RevisionsPopoverTab: React.FunctionComponent<RevisionsPopoverTabPro
         />
         <SummaryContainer>{query && summary}</SummaryContainer>
         {error && <ConnectionError errors={[error.message]} />}
-        <ConnectionList className="connection-popover__nodes">{children}</ConnectionList>
+        {connection && <ConnectionList className="connection-popover__nodes">{children}</ConnectionList>}
         {loading && <ConnectionLoading />}
         {!loading && connection && (
             <SummaryContainer>

@@ -9,8 +9,8 @@ import { GitCommitAncestorFields, GitRefFields } from '../../graphql-operations'
 import { eventLogger } from '../../tracking/eventLogger'
 import { replaceRevisionInURL } from '../../util/url'
 
-import { RevisionCommitsTab } from './RevisionsPopoverCommits'
-import { RevisionReferencesTab } from './RevisionsPopoverReferences'
+import { RevisionsPopoverCommits } from './RevisionsPopoverCommits'
+import { RevisionsPopoverReferences } from './RevisionsPopoverReferences'
 
 export interface RevisionsPopoverProps {
     repo: Scalars['ID']
@@ -95,7 +95,7 @@ export const RevisionsPopover: React.FunctionComponent<RevisionsPopoverProps> = 
                 {TABS.map(tab => (
                     <TabPanel key={tab.id}>
                         {tab.type ? (
-                            <RevisionReferencesTab
+                            <RevisionsPopoverReferences
                                 noun={tab.noun}
                                 pluralNoun={tab.pluralNoun}
                                 type={tab.type}
@@ -110,7 +110,7 @@ export const RevisionsPopover: React.FunctionComponent<RevisionsPopoverProps> = 
                                 }
                             />
                         ) : (
-                            <RevisionCommitsTab
+                            <RevisionsPopoverCommits
                                 noun={tab.noun}
                                 pluralNoun={tab.pluralNoun}
                                 currentRev={props.currentRev}
