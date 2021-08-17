@@ -11,6 +11,7 @@ import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
 import { Settings } from '../../../../../../../../schema/settings.schema'
 import { CodeInsightsIcon } from '../../../../../../../components'
 import { SmartInsightsViewGrid } from '../../../../../../../components/insights-view-grid'
+import { BackendInsightContext } from '../../../../../../../components/insights-view-grid/components/backend-insight/BackendInsightContext'
 import { InsightDashboard } from '../../../../../../../core/types'
 import { useDistinctValue } from '../../../../../../../hooks/use-distinct-value'
 import { useInsights } from '../../../../../../../hooks/use-insight/use-insight'
@@ -58,14 +59,16 @@ export const DashboardInsights: React.FunctionComponent<DashboardInsightsProps> 
 
     return (
         <div>
-            {insightIds.length > 0 ? (
-                <SmartInsightsViewGrid
-                    insights={insights}
-                    telemetryService={telemetryService}
-                    settingsCascade={settingsCascade}
-                    platformContext={platformContext}
-                    extensionsController={extensionsController}
-                />
+            {insights.length > 0 ? (
+                <BackendInsightContext.Provider value={{ currentDashboard: dashboard }}>
+                    <SmartInsightsViewGrid
+                        insights={insights}
+                        telemetryService={telemetryService}
+                        settingsCascade={settingsCascade}
+                        platformContext={platformContext}
+                        extensionsController={extensionsController}
+                    />
+                </BackendInsightContext.Provider>
             ) : (
                 <EmptyInsightDashboard
                     dashboard={dashboard}

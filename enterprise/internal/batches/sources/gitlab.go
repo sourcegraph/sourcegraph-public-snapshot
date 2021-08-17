@@ -24,6 +24,9 @@ type GitLabSource struct {
 	au     auth.Authenticator
 }
 
+var _ ChangesetSource = &GitLabSource{}
+var _ DraftChangesetSource = &GitLabSource{}
+
 // NewGitLabSource returns a new GitLabSource from the given external service.
 func NewGitLabSource(svc *types.ExternalService, cf *httpcli.Factory) (*GitLabSource, error) {
 	var c schema.GitLabConnection
@@ -389,8 +392,15 @@ func (s *GitLabSource) UpdateChangeset(ctx context.Context, c *Changeset) error 
 	}
 	project := c.Repo.Metadata.(*gitlab.Project)
 
+	// Avoid accidentally undrafting the changeset by checking its current
+	// status.
+	title := c.Title
+	if mr.WorkInProgress {
+		title = gitlab.SetWIP(c.Title)
+	}
+
 	updated, err := s.client.UpdateMergeRequest(ctx, project, mr, gitlab.UpdateMergeRequestOpts{
-		Title:        c.Title,
+		Title:        title,
 		Description:  c.Body,
 		TargetBranch: git.AbbreviateRef(c.BaseRef),
 	})

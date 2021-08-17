@@ -154,13 +154,21 @@ func (s *Store) SeriesPoints(ctx context.Context, opts SeriesPointsOpts) ([]Seri
 	return points, err
 }
 
+// Note: the inner query could return duplicate points on its own if we merely did a SUM(value) over
+// all desired repositories. By using the sub-query, we select the per-repository maximum (thus
+// eliminating duplicate points that might have been recorded in a given interval for a given repository)
+// and then SUM the result for each repository, giving us our final total number.
 const fullVectorSeriesAggregation = `
 -- source: enterprise/internal/insights/store/store.go:SeriesPoints
-SELECT sp.series_id, sp.time AS interval_time, SUM(value) as value, null as metadata
-FROM series_points sp JOIN repo_names rn ON sp.repo_name_id = rn.id
-WHERE %s
-GROUP BY sp.series_id, interval_time
-ORDER BY sp.series_id, interval_time DESC
+SELECT sub.series_id, sub.interval_time, SUM(sub.value) as value, sub.metadata FROM (
+	SELECT sp.repo_name_id, sp.series_id, sp.time AS interval_time, MAX(value) as value, null as metadata
+	FROM series_points sp JOIN repo_names rn ON sp.repo_name_id = rn.id
+	WHERE %s
+	GROUP BY sp.series_id, interval_time, sp.repo_name_id
+	ORDER BY sp.series_id, interval_time, sp.repo_name_id DESC
+) sub
+GROUP BY sub.series_id, sub.interval_time, sub.metadata
+ORDER BY sub.series_id, sub.interval_time DESC
 `
 
 // Note that the series_points table may contain duplicate points, or points recorded at irregular

@@ -86,7 +86,7 @@ export const CodeIntelIndexPage: FunctionComponent<CodeIntelIndexPageProps> = ({
         <ErrorAlert prefix="Error deleting LSIF index record" error={deletionOrError} />
     ) : (
         <div className="site-admin-lsif-index-page w-100">
-            <PageTitle title="Code intelligence - auto-indexing" />
+            <PageTitle title="Auto-indexing jobs" />
             {isErrorLike(indexOrError) ? (
                 <ErrorAlert prefix="Error loading LSIF index" error={indexOrError} />
             ) : !indexOrError ? (
@@ -97,7 +97,7 @@ export const CodeIntelIndexPage: FunctionComponent<CodeIntelIndexPageProps> = ({
                         headingElement="h2"
                         path={[
                             {
-                                text: `Auto-index record for commit ${
+                                text: `Auto-index record for ${indexOrError.projectRoot?.repository.name || ''}@${
                                     indexOrError.projectRoot
                                         ? indexOrError.projectRoot.commit.abbreviatedOID
                                         : indexOrError.inputCommit.slice(0, 7)

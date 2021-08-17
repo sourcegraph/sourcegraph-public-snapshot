@@ -11,7 +11,6 @@ const { add } = storiesOf('web/batches/details/CloseChangesetsModal', module).ad
     <div className="p-3 container">{story()}</div>
 ))
 
-const changesetIDsFunction = () => Promise.resolve(['test-123', 'test-234'])
 const closeChangesets = () => {
     action('CloseChangesets')
     return Promise.resolve()
@@ -24,7 +23,7 @@ add('Confirmation', () => (
                 {...props}
                 afterCreate={noop}
                 batchChangeID="test-123"
-                changesetIDs={changesetIDsFunction}
+                changesetIDs={['test-123', 'test-234']}
                 onCancel={noop}
                 closeChangesets={closeChangesets}
             />
