@@ -102,10 +102,6 @@ export const LoggedOutHomepage: React.FunctionComponent<LoggedOutHomepageProps> 
                     </div>
                 </div>
 
-                <div className={styles.heroSection}>
-                    <HeroSection {...props} />
-                </div>
-
                 <div className="d-flex justify-content-center">
                     <div className={classNames('card', styles.ctaCard)}>
                         <div className="d-flex align-items-center">
@@ -116,13 +112,21 @@ export const LoggedOutHomepage: React.FunctionComponent<LoggedOutHomepageProps> 
                             <Link to="/sign-up?src=HomepageCTA" onClick={onSignUpClick}>
                                 Sign up
                             </Link>{' '}
-                            to get started, or {/* TODO: Link */}
-                            <a href="https://about.sourcegraph.com/" target="_blank" rel="noopener noreferrer">
+                            to get started, or
+                            <a
+                                href="https://about.sourcegraph.com/blog/why-index-the-oss-universe/"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                            >
                                 read our blog post
                             </a>{' '}
                             to learn more.
                         </span>
                     </div>
+                </div>
+
+                <div className={styles.heroSection}>
+                    <HeroSection {...props} />
                 </div>
 
                 <div className={styles.repogroupSection}>
