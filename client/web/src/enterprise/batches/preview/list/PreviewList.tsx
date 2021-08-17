@@ -59,7 +59,7 @@ export const PreviewList: React.FunctionComponent<Props> = ({
     const { selected, areAllVisibleSelected, isSelected, toggleSingle, toggleVisible, setVisible } = useContext(
         MultiSelectContext
     )
-    const { filters } = useContext(BatchChangePreviewContext)
+    const { filters, publicationStates } = useContext(BatchChangePreviewContext)
 
     const [queryArguments, setQueryArguments] = useState<BatchSpecApplyPreviewVariables>()
 
@@ -72,6 +72,7 @@ export const PreviewList: React.FunctionComponent<Props> = ({
                 search: filters.search,
                 currentState: filters.currentState,
                 action: filters.action,
+                publicationStates,
             }
             return queryChangesetApplyPreview(passedArguments).pipe(
                 tap(data => {
@@ -87,7 +88,15 @@ export const PreviewList: React.FunctionComponent<Props> = ({
                 })
             )
         },
-        [batchSpecID, filters.search, filters.currentState, filters.action, queryChangesetApplyPreview, setVisible]
+        [
+            batchSpecID,
+            filters.search,
+            filters.currentState,
+            filters.action,
+            queryChangesetApplyPreview,
+            setVisible,
+            publicationStates,
+        ]
     )
 
     const showSelectRow = selected === 'all' || selected.size > 0
