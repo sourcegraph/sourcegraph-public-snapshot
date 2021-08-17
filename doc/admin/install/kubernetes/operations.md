@@ -134,6 +134,24 @@ SELECT * FROM users;
 
 > NOTE: To execute an SQL query against the database without first creating an interactive session (as below), append `--command "SELECT * FROM users;"` to the docker container exec command.
 
+## Kubectl configurations
+
+In some of the following commands you will see options like namespace used. Here are some example `kubectl` commands:
+
+```bash
+# add a new user to your kubeconf that supports basic auth
+kubectl config set-credentials kubeuser/foo.kubernetes.com --username=kubeuser --password=kubepassword
+
+# permanently save the namespace for all subsequent kubectl commands in that context.
+kubectl config set-context --current --namespace=ggckad-s2
+
+# set a context utilizing a specific username and namespace.
+kubectl config set-context gce --user=cluster-admin --namespace=foo \
+  && kubectl config use-context gce
+```
+
+More kubectl configuration options can be found here: [kubectl Cheat Sheet](https://kubernetes.io/docs/reference/kubectl/cheatsheet/)
+
 ## Backup and restore
 
 The following instructions are specific to backing up and restoring the sourcegraph databases in a Kubernetes deployment. These do not apply to other deployment types.
