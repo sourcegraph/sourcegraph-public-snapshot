@@ -35,7 +35,7 @@ export interface ExternalChangesetNodeProps extends ThemeProps {
     node: ExternalChangesetFields
     viewerCanAdminister: boolean
     selectable?: {
-        onSelect: (id: string, selected: boolean) => void
+        onSelect: (id: string) => void
         isSelected: (id: string) => boolean
     }
     history: H.History
@@ -75,8 +75,8 @@ export const ExternalChangesetNode: React.FunctionComponent<ExternalChangesetNod
 
     const selected = selectable?.isSelected(node.id)
     const toggleSelected = useCallback((): void => {
-        selectable?.onSelect(node.id, !selected)
-    }, [selectable, selected, node.id])
+        selectable?.onSelect(node.id)
+    }, [selectable, node.id])
 
     return (
         <>
