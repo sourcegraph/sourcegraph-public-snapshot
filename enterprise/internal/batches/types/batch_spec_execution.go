@@ -1,6 +1,7 @@
 package types
 
 import (
+	"strings"
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
@@ -38,6 +39,16 @@ type BatchSpecExecution struct {
 	Cancel          bool
 }
 
-func (i BatchSpecExecution) RecordID() int {
-	return int(i.ID)
+func (e BatchSpecExecution) RecordID() int {
+	return int(e.ID)
+}
+
+func (e BatchSpecExecution) GQLState() string {
+	if e.Cancel {
+		if e.State == BatchSpecExecutionStateFailed {
+			return "CANCELED"
+		}
+		return "CANCELING"
+	}
+	return strings.ToUpper(string(e.State))
 }

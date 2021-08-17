@@ -41,13 +41,7 @@ func (r *batchSpecExecutionResolver) InputSpec() string {
 }
 
 func (r *batchSpecExecutionResolver) State() string {
-	if r.exec.Cancel {
-		if r.exec.State == btypes.BatchSpecExecutionStateFailed {
-			return "CANCELED"
-		}
-		return "CANCELING"
-	}
-	return strings.ToUpper(string(r.exec.State))
+	return r.exec.GQLState()
 }
 
 func (r *batchSpecExecutionResolver) CreatedAt() graphqlbackend.DateTime {
