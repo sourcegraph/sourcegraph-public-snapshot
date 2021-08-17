@@ -5,49 +5,48 @@ import (
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/executorqueue/handler"
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/executorqueue/metrics/aws"
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/executorqueue/metrics/config"
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/executorqueue/metrics/gcp"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
-var metricsConfig = &config.Config{}
-
-func init() {
-	metricsConfig.Load()
-}
-
-func Init(observationContext *observation.Context, queueOptions map[string]handler.QueueOptions) error {
-	if err := metricsConfig.Validate(); err != nil {
-		return err
-	}
-
+func Init(observationContext *observation.Context, queueOptions map[string]handler.QueueOptions, metricsConfig *Config) error {
 	// Emit metrics to control alerts
 	initPrometheusMetrics(observationContext, queueOptions)
 
 	// Emit metrics to control executor auto-scaling
-	return initExternalMetricReporters(queueOptions)
+	if err := initExternalMetricReporters(queueOptions, metricsConfig); err != nil {
+		return err
+	}
+
+	return nil
 }
 
-func initExternalMetricReporters(queueOptions map[string]handler.QueueOptions) error {
-	awsReporter, err := aws.NewReporter(metricsConfig.EnvironmentLabel)
+func initExternalMetricReporters(queueOptions map[string]handler.QueueOptions, metricsConfig *Config) error {
+	awsReporter, err := newAWSReporter(metricsConfig)
 	if err != nil {
 		return err
 	}
 
-	gcsReporter, err := gcp.NewReporter(metricsConfig.EnvironmentLabel)
+	gcsReporter, err := newGCPReporter(metricsConfig)
 	if err != nil {
 		return err
+	}
+
+	var reporters []reporter
+	if awsReporter != nil {
+		reporters = append(reporters, awsReporter)
+	}
+	if gcsReporter != nil {
+		reporters = append(reporters, gcsReporter)
 	}
 
 	ctx := context.Background()
 	routines := make([]goroutine.BackgroundRoutine, 0, len(queueOptions))
 	for queueName, queue := range queueOptions {
-		routines = append(routines, goroutine.NewPeriodicGoroutine(ctx, 5*time.Second, &externalMetricsEmitter{
+		routines = append(routines, goroutine.NewPeriodicGoroutine(ctx, 5*time.Second, &externalEmitter{
 			queueName:  queueName,
 			store:      queue.Store,
-			reporters:  []reporter{awsReporter, gcsReporter},
+			reporters:  reporters,
 			allocation: metricsConfig.Allocations[queueName],
 		}))
 	}

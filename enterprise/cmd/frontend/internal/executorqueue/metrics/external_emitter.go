@@ -6,26 +6,25 @@ import (
 
 	"github.com/cockroachdb/errors"
 
-	metricsconfig "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/executorqueue/metrics/config"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 )
 
-type externalMetricsEmitter struct {
+type externalEmitter struct {
 	queueName  string
 	store      store.Store
 	reporters  []reporter
-	allocation metricsconfig.QueueAllocation
+	allocation QueueAllocation
 }
 
-var _ goroutine.Handler = &externalMetricsEmitter{}
+var _ goroutine.Handler = &externalEmitter{}
 
 type reporter interface {
 	ReportCount(ctx context.Context, queueName string, count int)
-	GetAllocation(queueAllocation metricsconfig.QueueAllocation) float64
+	GetAllocation(queueAllocation QueueAllocation) float64
 }
 
-func (r *externalMetricsEmitter) Handle(ctx context.Context) error {
+func (r *externalEmitter) Handle(ctx context.Context) error {
 	count, err := r.store.QueuedCount(context.Background(), true, nil)
 	if err != nil {
 		return errors.Wrap(err, "dbworkerstore.QueuedCount")
@@ -47,7 +46,10 @@ func runParallel(fns []func()) {
 	wg.Add(len(fns))
 
 	for _, fn := range fns {
-		go fn()
+		go func(fn func()) {
+			defer wg.Done()
+			fn()
+		}(fn)
 	}
 
 	wg.Wait()

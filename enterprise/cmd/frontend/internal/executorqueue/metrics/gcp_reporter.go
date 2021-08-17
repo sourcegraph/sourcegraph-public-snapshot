@@ -1,4 +1,4 @@
-package gcp
+package metrics
 
 import (
 	"context"
@@ -12,36 +12,45 @@ import (
 	"google.golang.org/genproto/googleapis/api/monitoredres"
 	monitoringpb "google.golang.org/genproto/googleapis/monitoring/v3"
 
-	metricsconfig "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/executorqueue/metrics/config"
+	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 )
 
-const (
-	gcpMetricKind = metricpb.MetricDescriptor_GAUGE
-	gcpMetricType = "custom.googleapis.com/executors/queue/size"
-)
+type gcpConfig struct {
+	env.BaseConfig
 
-func NewReporter(environmentLabel string) (*gcpMetricReporter, error) {
-	if gcpConfig.ProjectID == "" {
+	ProjectID               string
+	CredentialsFile         string
+	CredentialsFileContents string
+}
+
+func (c *gcpConfig) load(parent *env.BaseConfig) {
+	c.ProjectID = parent.GetOptional("EXECUTOR_METRIC_GCP_PROJECT_ID", "The project containing the custom metric.")
+	c.CredentialsFile = parent.GetOptional("EXECUTOR_METRIC_GOOGLE_APPLICATION_CREDENTIALS_FILE", "The path to a service account key file with access to metrics.")
+	c.CredentialsFileContents = parent.GetOptional("EXECUTOR_METRIC_GOOGLE_APPLICATION_CREDENTIALS_FILE_CONTENT", "The contents of a service account key file with access to metrics.")
+}
+
+func newGCPReporter(config *Config) (*gcpMetricReporter, error) {
+	if config.GCPConfig.ProjectID == "" {
 		return nil, nil
 	}
 
 	log15.Info("Sending executor queue metrics to Google Cloud Monitoring")
 
-	metricClient, err := monitoring.NewMetricClient(context.Background(), gcsClientOptions(gcpConfig)...)
+	metricClient, err := monitoring.NewMetricClient(context.Background(), gcsClientOptions(config.GCPConfig)...)
 	if err != nil {
 		return nil, err
 	}
 
 	return &gcpMetricReporter{
-		config:           gcpConfig,
-		environmentLabel: environmentLabel,
+		config:           config.GCPConfig,
+		environmentLabel: config.EnvironmentLabel,
 		metricClient:     metricClient,
 	}, nil
 }
 
 type gcpMetricReporter struct {
-	config           *GCPConfig
+	config           gcpConfig
 	environmentLabel string
 	metricClient     *monitoring.MetricClient
 }
@@ -52,11 +61,16 @@ func (r *gcpMetricReporter) ReportCount(ctx context.Context, queueName string, c
 	}
 }
 
-func (r *gcpMetricReporter) GetAllocation(queueAllocation metricsconfig.QueueAllocation) float64 {
+func (r *gcpMetricReporter) GetAllocation(queueAllocation QueueAllocation) float64 {
 	return queueAllocation.PercentageGCP
 }
 
-func makeCreateTimeSeriesRequest(config *GCPConfig, queueName, environmentLabel string, count int) *monitoringpb.CreateTimeSeriesRequest {
+const (
+	gcpMetricKind = metricpb.MetricDescriptor_GAUGE
+	gcpMetricType = "custom.googleapis.com/executors/queue/size"
+)
+
+func makeCreateTimeSeriesRequest(config gcpConfig, queueName, environmentLabel string, count int) *monitoringpb.CreateTimeSeriesRequest {
 	name := fmt.Sprintf("projects/%s", config.ProjectID)
 	now := timeutil.Now().Unix()
 
@@ -94,7 +108,7 @@ func makeCreateTimeSeriesRequest(config *GCPConfig, queueName, environmentLabel 
 	}
 }
 
-func gcsClientOptions(config *GCPConfig) []option.ClientOption {
+func gcsClientOptions(config gcpConfig) []option.ClientOption {
 	if config.CredentialsFile != "" {
 		return []option.ClientOption{option.WithCredentialsFile(config.CredentialsFile)}
 	}

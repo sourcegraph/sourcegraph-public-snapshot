@@ -1,4 +1,4 @@
-package config
+package metrics
 
 import (
 	"github.com/cockroachdb/errors"
@@ -9,6 +9,11 @@ type QueueAllocation struct {
 	PercentageAWS float64
 	PercentageGCP float64
 }
+
+var (
+	validQueueNames         = []string{"batches", "codeintel"}
+	validCloudProviderNames = []string{"aws", "gcp"}
+)
 
 func normalizeAllocations(m map[string]map[string]float64, awsConfigured, gcpConfigured bool) (map[string]QueueAllocation, error) {
 	for queueName := range m {
