@@ -66,7 +66,6 @@ All notable changes to Sourcegraph are documented in this file.
 - Patched a vulnerability ni `apk-tools`. [#23917](https://github.com/sourcegraph/sourcegraph/pull/23917)
 - Line content was being duplicated in unindexed search payloads, causing memory instability for some dense search queries. [#23918](https://github.com/sourcegraph/sourcegraph/pull/23918)
 - Updating draft merge requests on GitLab from batch changes no longer removes the draft status. [#23944](https://github.com/sourcegraph/sourcegraph/issues/23944)
-- Updating draft merge requests on GitLab from Batch Changes no longer removes the draft status. [#23944](https://github.com/sourcegraph/sourcegraph/issues/23944)
 
 ### Removed
 
