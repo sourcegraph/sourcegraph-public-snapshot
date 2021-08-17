@@ -28,7 +28,7 @@ export interface LangStatsInsightCreationContentProps {
      * This component might be used in two different modes for creation and
      * edit mode. In edit mode we change some text keys for form and trigger
      * validation on form fields immediately.
-     * */
+     */
     mode?: 'creation' | 'edit'
     /** Final settings cascade. Used for title field validation. */
     settings?: Settings | null
