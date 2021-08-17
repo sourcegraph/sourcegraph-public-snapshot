@@ -671,10 +671,13 @@ type OrgMembership struct {
 }
 
 type PhabricatorRepo struct {
-	ID       int32
-	Name     api.RepoName
-	URL      string
-	Callsign string
+	ID        int32
+	Name      api.RepoName
+	URL       string
+	Callsign  string
+	CreatedAt *time.Time
+	UpdatedAt *time.Time
+	DeletedAt *time.Time
 }
 
 type UserUsageStatistics struct {
