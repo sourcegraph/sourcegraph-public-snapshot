@@ -13,7 +13,7 @@ export interface MergeChangesetsModalProps {
     onCancel: () => void
     afterCreate: () => void
     batchChangeID: Scalars['ID']
-    changesetIDs: () => Promise<Scalars['ID'][]>
+    changesetIDs: Scalars['ID'][]
 
     /** For testing only. */
     mergeChangesets?: typeof _mergeChangesets
@@ -32,8 +32,7 @@ export const MergeChangesetsModal: React.FunctionComponent<MergeChangesetsModalP
     const onSubmit = useCallback<React.FormEventHandler>(async () => {
         setIsLoading(true)
         try {
-            const ids = await changesetIDs()
-            await mergeChangesets(batchChangeID, ids, squash)
+            await mergeChangesets(batchChangeID, changesetIDs, squash)
             afterCreate()
         } catch (error) {
             setIsLoading(asError(error))

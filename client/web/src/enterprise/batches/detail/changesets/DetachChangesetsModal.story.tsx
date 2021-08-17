@@ -13,7 +13,6 @@ const { add } = storiesOf('web/batches/details/DetachChangesetsModal', module).a
     <div className="p-3 container">{story()}</div>
 ))
 
-const changesetIDsFunction = () => Promise.resolve(['test-123', 'test-234'])
 const detachAction = () => {
     action('DetachChangesets')
     return Promise.resolve()
@@ -26,7 +25,7 @@ add('Confirmation', () => (
                 {...props}
                 afterCreate={noop}
                 batchChangeID="test-123"
-                changesetIDs={changesetIDsFunction}
+                changesetIDs={['test-123', 'test-234']}
                 onCancel={noop}
                 telemetryService={NOOP_TELEMETRY_SERVICE}
                 detachChangesets={detachAction}
