@@ -42,20 +42,20 @@ export interface MultiSelectContextState {
 
 // eslint-disable @typescript-eslint/no-unused-vars
 const defaultState = (): MultiSelectContextState => ({
-    selected: new Set(),
-    visible: new Set(),
     areAllVisibleSelected: () => false,
-    isSelected: () => false,
     deselectAll: noop,
-    deselectVisible: noop,
     deselectSingle: noop,
+    deselectVisible: noop,
+    isSelected: () => false,
     selectAll: noop,
-    selectVisible: noop,
-    toggleAll: noop,
-    toggleVisible: noop,
-    toggleSingle: noop,
+    selected: new Set(),
     selectSingle: noop,
+    selectVisible: noop,
     setVisible: noop,
+    toggleAll: noop,
+    toggleSingle: noop,
+    toggleVisible: noop,
+    visible: new Set(),
 })
 // eslint-enable @typescript-eslint/no-unused-vars
 
@@ -196,20 +196,20 @@ export const MultiSelectContextProvider: React.FunctionComponent<{
     return (
         <MultiSelectContext.Provider
             value={{
-                selected,
-                visible,
                 areAllVisibleSelected,
-                isSelected,
                 deselectAll,
-                deselectVisible,
                 deselectSingle,
+                deselectVisible,
+                isSelected,
                 selectAll,
-                selectVisible,
+                selected,
                 selectSingle,
-                toggleAll,
-                toggleVisible,
-                toggleSingle,
+                selectVisible,
                 setVisible,
+                toggleAll,
+                toggleSingle,
+                toggleVisible,
+                visible,
             }}
         >
             {children}
