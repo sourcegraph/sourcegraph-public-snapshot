@@ -12,6 +12,7 @@ import { useDebounce } from '@sourcegraph/wildcard'
 
 import { Settings } from '../../../../../schema/settings.schema'
 import { InsightsApiContext } from '../../../../core/backend/api-provider'
+import { InsightStillProcessingError } from '../../../../core/backend/api/get-backend-insight-by-id'
 import { BackendInsightFilters } from '../../../../core/backend/types'
 import { addInsightToSettings } from '../../../../core/settings-action/insights'
 import { SearchBackendBasedInsight, SearchBasedBackendFilters } from '../../../../core/types/insight/search-insight'
@@ -182,7 +183,11 @@ export const BackendInsight: React.FunctionComponent<BackendInsightProps> = prop
                     icon={DatabaseIcon}
                 />
             ) : isErrorLike(error) ? (
-                <InsightErrorContent error={error} title={insight.id} icon={DatabaseIcon} />
+                <InsightErrorContent error={error} title={insight.id} icon={DatabaseIcon}>
+                    {error instanceof InsightStillProcessingError ? (
+                        <div className="alert alert-info m-0">{error.message}</div>
+                    ) : null}
+                </InsightErrorContent>
             ) : (
                 data && (
                     <InsightViewContent
