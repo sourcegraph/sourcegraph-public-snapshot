@@ -16,6 +16,7 @@ import { SearchBackendBasedInsight, SearchBasedBackendFilters } from '../../../.
 import { useDeleteInsight } from '../../../../hooks/use-delete-insight/use-delete-insight'
 import { useDistinctValue } from '../../../../hooks/use-distinct-value'
 import { useParallelRequests } from '../../../../hooks/use-parallel-requests/use-parallel-request'
+import { DashboardInsightsContext } from '../../../../pages/dashboards/dashboard-page/components/dashboards-content/components/dashboard-inisghts/DashboardInsightsContext'
 import { FORM_ERROR, SubmissionErrors } from '../../../form/hooks/useForm'
 import { InsightViewContent } from '../../../insight-view-content/InsightViewContent'
 import { InsightErrorContent } from '../insight-card/components/insight-error-content/InsightErrorContent'
@@ -23,7 +24,6 @@ import { InsightLoadingContent } from '../insight-card/components/insight-loadin
 import { InsightContentCard } from '../insight-card/InsightContentCard'
 
 import styles from './BackendInsight.module.scss'
-import { BackendInsightContext } from './BackendInsightContext'
 import { DrillDownFiltersAction } from './components/drill-down-filters-action/DrillDownFiltersPanel'
 import { DrillDownInsightCreationFormValues } from './components/drill-down-filters-panel/components/drill-down-insight-creation-form/DrillDownInsightCreationForm'
 import { EMPTY_DRILLDOWN_FILTERS } from './components/drill-down-filters-panel/utils'
@@ -43,7 +43,7 @@ interface BackendInsightProps
 export const BackendInsight: React.FunctionComponent<BackendInsightProps> = props => {
     const { telemetryService, insight, platformContext, settingsCascade, ref, ...otherProps } = props
 
-    const { currentDashboard } = useContext(BackendInsightContext)
+    const { dashboard } = useContext(DashboardInsightsContext)
     const { getBackendInsightById, getSubjectSettings, updateSubjectSettings } = useContext(InsightsApiContext)
 
     const insightCardReference = useRef<HTMLDivElement>(null)
@@ -112,7 +112,7 @@ export const BackendInsight: React.FunctionComponent<BackendInsightProps> = prop
     ): Promise<SubmissionErrors> => {
         const { insightName } = values
 
-        if (!currentDashboard) {
+        if (!dashboard) {
             return
         }
 
@@ -120,8 +120,8 @@ export const BackendInsight: React.FunctionComponent<BackendInsightProps> = prop
             await creteInsightWithFilters({
                 insightName,
                 filters,
+                dashboard,
                 originalInsight: insight,
-                dashboard: currentDashboard,
             })
 
             telemetryService.log('CodeInsightsSearchBasedFilterInsightCreation')
