@@ -42,6 +42,7 @@
             @media (--sm-breakpoint-down) {
                 display: flex;
                 flex-wrap: wrap;
+                justify-content: unset;
             }
         }
 
@@ -170,6 +171,9 @@
     min-height: 2.375rem;
 }
 
-.hero-section {
+.hero-section,
+.repogroup-section,
+.self-host-section,
+.customer-section {
     margin-top: 4rem;
 }
