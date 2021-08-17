@@ -1,5 +1,4 @@
 import React, { useMemo } from 'react'
-import { useHistory } from 'react-router-dom'
 
 import { Settings } from '@sourcegraph/shared/src/settings/settings'
 
@@ -13,37 +12,44 @@ import { getSanitizedSearchInsight } from '../../creation/search-insight/utils/i
 
 interface EditSearchBasedInsightProps {
     insight: SearchBasedInsight
-    onSubmit: (insight: SearchBasedInsight) => SubmissionErrors | Promise<SubmissionErrors> | void
     finalSettings: Settings
     subjects: SupportedInsightSubject[]
+    onSubmit: (insight: SearchBasedInsight) => SubmissionErrors | Promise<SubmissionErrors> | void
+    onCancel: () => void
 }
 
 export const EditSearchBasedInsight: React.FunctionComponent<EditSearchBasedInsightProps> = props => {
-    const { insight, finalSettings = {}, subjects, onSubmit } = props
-    const history = useHistory()
+    const { insight, finalSettings = {}, subjects, onSubmit, onCancel } = props
 
-    const insightFormValues = useMemo<CreateInsightFormFields>(
-        () => ({
+    const insightFormValues = useMemo<CreateInsightFormFields>(() => {
+        if (insight.type === InsightType.Backend) {
+            return {
+                title: insight.title,
+                visibility: insight.visibility,
+                repositories: '',
+                series: insight.series.map(line => createDefaultEditSeries({ ...line, valid: true })),
+                stepValue: '2',
+                step: 'weeks',
+                allRepos: true,
+            }
+        }
+
+        return {
             title: insight.title,
             visibility: insight.visibility,
             repositories: insight.repositories.join(', '),
             series: insight.series.map(line => createDefaultEditSeries({ ...line, valid: true })),
             stepValue: Object.values(insight.step)[0]?.toString() ?? '3',
             step: Object.keys(insight.step)[0] as InsightStep,
-            allRepos: insight.type === InsightType.Backend,
-        }),
-        [insight]
-    )
+            allRepos: false,
+        }
+    }, [insight])
 
     // Handlers
     const handleSubmit = (values: CreateInsightFormFields): SubmissionErrors | Promise<SubmissionErrors> | void => {
         const sanitizedInsight = getSanitizedSearchInsight(values)
 
         return onSubmit(sanitizedInsight)
-    }
-
-    const handleCancel = (): void => {
-        history.push(`/insights/dashboards/${insight.visibility}`)
     }
 
     return (
@@ -55,7 +61,7 @@ export const EditSearchBasedInsight: React.FunctionComponent<EditSearchBasedInsi
             subjects={subjects}
             dataTestId="search-insight-edit-page-content"
             onSubmit={handleSubmit}
-            onCancel={handleCancel}
+            onCancel={onCancel}
         />
     )
 }

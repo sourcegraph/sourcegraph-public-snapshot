@@ -46,12 +46,12 @@
         &.disabled,
         &.disabled:hover {
             background-color: var(--color-bg-3);
-            color: var(--color-text-3);
+            color: var(--text-muted);
             cursor: default;
             opacity: 1;
 
             .theme-light & {
-                background-color: var(--color-bg-4);
+                background-color: var(--color-bg-2);
             }
 
             &:active {
@@ -60,7 +60,7 @@
         }
 
         &--active {
-            background-color: var(--primary);
+            background-color: var(--border-active-color);
             color: #ffffff !important;
 
             &:hover {

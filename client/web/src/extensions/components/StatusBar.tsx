@@ -2,8 +2,6 @@ import classNames from 'classnames'
 import * as H from 'history'
 import ChevronLeftIcon from 'mdi-react/ChevronLeftIcon'
 import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
-import MenuLeftIcon from 'mdi-react/MenuLeftIcon'
-import MenuRightIcon from 'mdi-react/MenuRightIcon'
 import React, { useCallback, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Observable, timer } from 'rxjs'
@@ -15,7 +13,6 @@ import { haveInitialExtensionsLoaded } from '@sourcegraph/shared/src/api/feature
 import { ButtonLink } from '@sourcegraph/shared/src/components/LinkOrButton'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
-import { useRedesignToggle } from '@sourcegraph/shared/src/util/useRedesignToggle'
 
 import { ErrorBoundary } from '../../components/ErrorBoundary'
 import { useCarousel } from '../../components/useCarousel'
@@ -81,11 +78,6 @@ export const StatusBar: React.FunctionComponent<StatusBarProps> = ({
         onPositiveClicked,
     } = useCarousel({ direction: 'leftToRight' })
 
-    const [isRedesignEnabled] = useRedesignToggle()
-
-    const LeftIcon = isRedesignEnabled ? ChevronLeftIcon : MenuLeftIcon
-    const RightIcon = isRedesignEnabled ? ChevronRightIcon : MenuRightIcon
-
     if (!hasEnoughTimePassed && hideWhileInitializing) {
         return null
     }
@@ -115,7 +107,7 @@ export const StatusBar: React.FunctionComponent<StatusBarProps> = ({
                         className="btn btn-link status-bar__scroll border-0"
                         onClick={onNegativeClicked}
                     >
-                        <LeftIcon className="icon-inline" />
+                        <ChevronLeftIcon className="icon-inline" />
                     </button>
                 )}
                 <div className="status-bar__items d-flex align-items-center px-2" ref={carouselReference}>
@@ -147,7 +139,7 @@ export const StatusBar: React.FunctionComponent<StatusBarProps> = ({
                         className="btn btn-link status-bar__scroll border-0"
                         onClick={onPositiveClicked}
                     >
-                        <RightIcon className="icon-inline" />
+                        <ChevronRightIcon className="icon-inline" />
                     </button>
                 )}
             </ErrorBoundary>

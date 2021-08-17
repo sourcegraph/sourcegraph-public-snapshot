@@ -8,7 +8,7 @@ import { Form } from '@sourcegraph/branded/src/components/Form'
 import { Link } from '@sourcegraph/shared/src/components/Link'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { asError, ErrorLike, isErrorLike } from '@sourcegraph/shared/src/util/errors'
-import { useRedesignToggle } from '@sourcegraph/shared/src/util/useRedesignToggle'
+import { Badge } from '@sourcegraph/web/src/components/Badge'
 import { Container, PageSelector } from '@sourcegraph/wildcard'
 
 import { ALLOW_NAVIGATION, AwayPrompt } from '../../../components/AwayPrompt'
@@ -159,7 +159,6 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
     const ALLOW_SYNC_ALL = authenticatedUser.tags.includes('AllowUserExternalServiceSyncAll')
 
     // set up state hooks
-    const [isRedesignEnabled] = useRedesignToggle()
     const [repoState, setRepoState] = useState(initialRepoState)
     const [publicRepoState, setPublicRepoState] = useState(initialPublicRepoState)
     const [codeHosts, setCodeHosts] = useState(initialCodeHostState)
@@ -547,7 +546,6 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
                 <div className="d-flex flex-column ml-2">
                     <p
                         className={classNames('mb-0', {
-                            'user-settings-repos__text': ALLOW_SYNC_ALL,
                             'user-settings-repos__text-disabled': !ALLOW_SYNC_ALL,
                         })}
                     >
@@ -555,7 +553,7 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
                     </p>
                     <p
                         className={classNames({
-                            'user-settings-repos__text': ALLOW_SYNC_ALL,
+                            'user-settings-repos__text-light': true,
                             'user-settings-repos__text-disabled': !ALLOW_SYNC_ALL,
                         })}
                     >
@@ -637,17 +635,32 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
         [selectionState, setSelectionState]
     )
 
+    const getSelectedReposByCodeHost = (codeHostId: string = ''): Repo[] => {
+        const selectedRepos = [...selectionState.repos.values()]
+        // if no specific code host selected, return all selected repos
+        return codeHostId ? selectedRepos.filter(({ codeHost }) => codeHost?.id === codeHostId) : selectedRepos
+    }
+
+    const areAllReposSelected = (): boolean => {
+        if (selectionState.repos.size === 0) {
+            return false
+        }
+
+        const selectedRepos = getSelectedReposByCodeHost(codeHostFilter)
+        return selectedRepos.length === filteredRepos.length
+    }
+
     const selectAll = (): void => {
-        const newMap = new Map<string, Repo>()
+        const newSelectAll = new Map<string, Repo>()
         // if not all repos are selected, we should select all, otherwise empty the selection
 
         if (selectionState.repos.size !== filteredRepos.length) {
             for (const repo of filteredRepos) {
-                newMap.set(getRepoServiceAndName(repo), repo)
+                newSelectAll.set(getRepoServiceAndName(repo), repo)
             }
         }
         setSelectionState({
-            repos: newMap,
+            repos: newSelectAll,
             loaded: selectionState.loaded,
             radio: selectionState.radio,
         })
@@ -661,7 +674,7 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
                         id="select-all-repos"
                         className="mr-3"
                         type="checkbox"
-                        checked={selectionState.repos.size !== 0 && selectionState.repos.size === filteredRepos.length}
+                        checked={areAllReposSelected()}
                         onChange={selectAll}
                     />
                     <label
@@ -724,14 +737,16 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
     return (
         <div className="user-settings-repos">
             <PageTitle title="Manage Repositories" />
-            <h2 className="mb-2">Manage Repositories</h2>
+            <h2 className="d-flex mb-2">
+                Manage Repositories <Badge status="beta" className="ml-2" />
+            </h2>
             <p className="text-muted">
                 Choose repositories to sync with Sourcegraph to search code you care about all in one place
             </p>
             <Container>
                 <ul className="list-group">
                     <li className="list-group-item user-settings-repos__container" key="from-code-hosts">
-                        <div className={classNames(!isRedesignEnabled && 'p-4')}>
+                        <div>
                             <h3>Your repositories</h3>
                             <p className="text-muted">
                                 Repositories you own or collaborate on from your{' '}
@@ -789,7 +804,7 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
                     </li>
                     {window.context.sourcegraphDotComMode && (
                         <li className="list-group-item user-settings-repos__container" key="add-textarea">
-                            <div className={classNames(!isRedesignEnabled && 'p-4')}>
+                            <div>
                                 <h3>Other public repositories</h3>
                                 <p className="text-muted">Public repositories on GitHub and GitLab</p>
                                 <input

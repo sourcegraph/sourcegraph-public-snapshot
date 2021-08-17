@@ -1,6 +1,8 @@
 import classnames from 'classnames'
 import React, { ReactElement } from 'react'
 
+import { DEFAULT_ACTIVE_COLOR } from '../../../form-color-input/FormColorInput'
+
 import styles from './SeriesCard.module.scss'
 
 interface SeriesCardProps {
@@ -9,7 +11,7 @@ interface SeriesCardProps {
     /** Query value of series. */
     query: string
     /** Color value of series. */
-    stroke: string
+    stroke?: string
     /** Custom class name for root button element. */
     className?: string
     /** Edit handler. */
@@ -22,7 +24,7 @@ interface SeriesCardProps {
  * Renders series card component, visual list item of series (name, color, query)
  * */
 export function SeriesCard(props: SeriesCardProps): ReactElement {
-    const { name, query, stroke: color, className, onEdit, onRemove } = props
+    const { name, query, stroke: color = DEFAULT_ACTIVE_COLOR, className, onEdit, onRemove } = props
 
     return (
         <li

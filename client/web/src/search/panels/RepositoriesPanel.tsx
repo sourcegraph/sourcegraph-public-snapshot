@@ -78,7 +78,11 @@ export const RepositoriesPanel: React.FunctionComponent<Props> = ({
     useEffect(() => {
         // Only log the first load (when items to load is equal to the page size)
         if (repoFilterValues && itemsToLoad === pageSize) {
-            telemetryService.log('RepositoriesPanelLoaded', { empty: repoFilterValues.length === 0 })
+            telemetryService.log(
+                'RepositoriesPanelLoaded',
+                { empty: repoFilterValues.length === 0 },
+                { empty: repoFilterValues.length === 0 }
+            )
         }
     }, [repoFilterValues, telemetryService, itemsToLoad])
 

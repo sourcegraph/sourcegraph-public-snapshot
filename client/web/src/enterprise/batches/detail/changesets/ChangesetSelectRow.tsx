@@ -1,13 +1,15 @@
 import InfoCircleOutlineIcon from 'mdi-react/InfoCircleOutlineIcon'
-import React, { useMemo } from 'react'
+import React, { useMemo, useContext } from 'react'
 
 import { ChangesetState } from '@sourcegraph/shared/src/graphql-operations'
 import { pluralize } from '@sourcegraph/shared/src/util/strings'
+import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
 
 import { AllChangesetIDsVariables, Scalars } from '../../../../graphql-operations'
 import { eventLogger } from '../../../../tracking/eventLogger'
 import { Action, DropdownButton } from '../../DropdownButton'
-import { queryAllChangesetIDs } from '../backend'
+import { MultiSelectContext } from '../../MultiSelectContext'
+import { queryAllChangesetIDs as _queryAllChangesetIDs } from '../backend'
 
 import { CloseChangesetsModal } from './CloseChangesetsModal'
 import { CreateCommentModal } from './CreateCommentModal'
@@ -28,7 +30,7 @@ interface ChangesetListAction extends Omit<Action, 'onTrigger'> {
      */
     onTrigger: (
         batchChangeID: Scalars['ID'],
-        changesetIDs: () => Promise<Scalars['ID'][]>,
+        changesetIDs: Scalars['ID'][],
         onDone: () => void,
         onCancel: () => void
     ) => void | JSX.Element
@@ -136,15 +138,12 @@ const AVAILABLE_ACTIONS: ChangesetListAction[] = [
 ]
 
 export interface ChangesetSelectRowProps {
-    selected: Set<Scalars['ID']>
     batchChangeID: Scalars['ID']
     onSubmit: () => void
-    allVisibleSelected: boolean
-    totalCount: number
-    allSelected: boolean
-    setAllSelected: () => void
     queryArguments: Omit<AllChangesetIDsVariables, 'after'>
 
+    /** For testing only. */
+    queryAllChangesetIDs?: typeof _queryAllChangesetIDs
     /** For testing only. */
     dropDownInitiallyOpen?: boolean
 }
@@ -154,32 +153,26 @@ export interface ChangesetSelectRowProps {
  * label. Provides select ALL functionality.
  */
 export const ChangesetSelectRow: React.FunctionComponent<ChangesetSelectRowProps> = ({
-    selected,
     batchChangeID,
     onSubmit,
-    allVisibleSelected,
-    totalCount,
-    allSelected,
-    setAllSelected,
     queryArguments,
+    queryAllChangesetIDs = _queryAllChangesetIDs,
     dropDownInitiallyOpen = false,
 }) => {
+    const { areAllVisibleSelected, selected, selectAll } = useContext(MultiSelectContext)
+
+    const allChangesetIDs: string[] | undefined = useObservable(
+        useMemo(() => queryAllChangesetIDs(queryArguments), [queryArguments, queryAllChangesetIDs])
+    )
+
     const actions = useMemo(
         () =>
             AVAILABLE_ACTIONS.filter(action => action.isAvailable(queryArguments)).map(action => {
                 const dropdownAction: Action = {
                     ...action,
                     onTrigger: (onDone, onCancel) => {
-                        // Depending on the selection, we need to construct a loader function for
-                        // the changeset IDs.
-                        let ids: () => Promise<Scalars['ID'][]>
-                        if (allSelected) {
-                            // We asynchronously fetch all the IDs for ALL all.
-                            ids = () => queryAllChangesetIDs(queryArguments).toPromise()
-                        } else {
-                            // We can just pass down the IDs.
-                            ids = () => Promise.resolve([...selected])
-                        }
+                        // Depending on the selection, the set of changeset ids to act on is different.
+                        const ids = selected === 'all' ? allChangesetIDs || [] : [...selected]
 
                         return action.onTrigger(
                             batchChangeID,
@@ -195,23 +188,27 @@ export const ChangesetSelectRow: React.FunctionComponent<ChangesetSelectRowProps
 
                 return dropdownAction
             }),
-        [allSelected, batchChangeID, onSubmit, queryArguments, selected]
+        [batchChangeID, onSubmit, queryArguments, selected, allChangesetIDs]
     )
-
-    // If we have ALL all selected, we take the totalCount in the current connection, otherwise the count of selected changeset IDs.
-    const selectedAmount = allSelected ? totalCount : selected.size
 
     return (
         <>
             <div className="row align-items-center no-gutters">
                 <div className="ml-2 col d-flex align-items-center">
                     <InfoCircleOutlineIcon className="icon-inline text-muted mr-2" />
-                    {selectedAmount} {pluralize('changeset', selectedAmount)} selected
-                    {allVisibleSelected && totalCount > selectedAmount && (
-                        <button type="button" className="btn btn-link py-0 px-1" onClick={setAllSelected}>
-                            (Select all {totalCount})
-                        </button>
+                    {selected === 'all' || allChangesetIDs?.length === selected.size ? (
+                        <AllSelectedLabel count={allChangesetIDs?.length} />
+                    ) : (
+                        `${selected.size} ${pluralize('changeset', selected.size)}`
                     )}
+                    {selected !== 'all' &&
+                        areAllVisibleSelected() &&
+                        allChangesetIDs &&
+                        allChangesetIDs.length > selected.size && (
+                            <button type="button" className="btn btn-link py-0 px-1" onClick={selectAll}>
+                                (Select all{allChangesetIDs !== undefined && ` ${allChangesetIDs.length}`})
+                            </button>
+                        )}
                 </div>
                 <div className="w-100 d-block d-md-none" />
                 <div className="m-0 col col-md-auto">
@@ -227,6 +224,18 @@ export const ChangesetSelectRow: React.FunctionComponent<ChangesetSelectRowProps
                     </div>
                 </div>
             </div>
+        </>
+    )
+}
+
+const AllSelectedLabel: React.FunctionComponent<{ count?: number }> = ({ count }) => {
+    if (count === undefined) {
+        return <>All changesets selected</>
+    }
+
+    return (
+        <>
+            All {count} {pluralize('changeset', count)} selected
         </>
     )
 }

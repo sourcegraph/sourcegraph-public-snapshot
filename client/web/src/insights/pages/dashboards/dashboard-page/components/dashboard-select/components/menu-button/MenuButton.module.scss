@@ -12,7 +12,7 @@
     border: 1px solid var(--border-color);
 
     &:focus {
-        border-color: var(--focus-outline-color);
+        border-color: var(--primary);
     }
 }
 
@@ -38,6 +38,6 @@
 
 .expanded-icon {
     flex-shrink: 0;
-    color: var(--color-bg-6);
+    color: var(--icon-color);
     margin-left: auto;
 }

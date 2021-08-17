@@ -31,11 +31,6 @@
     }
 
     &__skipped {
-        flex-grow: 1;
-        &--warning {
-            color: var(--infobar-warning-color);
-        }
-
         &-popover {
             width: 20rem;
             padding: 0;

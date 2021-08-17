@@ -8,14 +8,14 @@ import ErrorIcon from 'mdi-react/ErrorIcon'
 import InformationIcon from 'mdi-react/InformationIcon'
 import ProgressClockIcon from 'mdi-react/ProgressClockIcon'
 import TimerSandIcon from 'mdi-react/TimerSandIcon'
-import React, { useMemo } from 'react'
+import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { delay, distinctUntilChanged, repeatWhen } from 'rxjs/operators'
 
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { Link } from '@sourcegraph/shared/src/components/Link'
 import { BatchSpecExecutionState } from '@sourcegraph/shared/src/graphql-operations'
+import { asError, isErrorLike } from '@sourcegraph/shared/src/util/errors'
 import { isDefined } from '@sourcegraph/shared/src/util/types'
-import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
 import { Container, PageHeader } from '@sourcegraph/wildcard'
 
 import { BatchChangesIcon } from '../../../batches/icons'
@@ -27,7 +27,7 @@ import { Timeline, TimelineStage } from '../../../components/Timeline'
 import { BatchSpecExecutionFields, Scalars } from '../../../graphql-operations'
 import { BatchSpec } from '../BatchSpec'
 
-import { fetchBatchSpecExecution as _fetchBatchSpecExecution } from './backend'
+import { cancelBatchSpecExecution, fetchBatchSpecExecution as _fetchBatchSpecExecution } from './backend'
 
 export interface BatchSpecExecutionDetailsPageProps {
     executionID: Scalars['ID']
@@ -46,16 +46,30 @@ export const BatchSpecExecutionDetailsPage: React.FunctionComponent<BatchSpecExe
     fetchBatchSpecExecution = _fetchBatchSpecExecution,
     expandStage,
 }) => {
-    const batchSpecExecution: BatchSpecExecutionFields | null | undefined = useObservable(
-        useMemo(
-            () =>
-                fetchBatchSpecExecution(executionID).pipe(
-                    repeatWhen(notifier => notifier.pipe(delay(2500))),
-                    distinctUntilChanged((a, b) => isEqual(a, b))
-                ),
-            [fetchBatchSpecExecution, executionID]
-        )
-    )
+    const [batchSpecExecution, setBatchSpecExecution] = useState<BatchSpecExecutionFields | null | undefined>()
+
+    useEffect(() => {
+        const subscription = fetchBatchSpecExecution(executionID)
+            .pipe(
+                repeatWhen(notifier => notifier.pipe(delay(2500))),
+                distinctUntilChanged((a, b) => isEqual(a, b))
+            )
+            .subscribe(execution => {
+                setBatchSpecExecution(execution)
+            })
+
+        return () => subscription.unsubscribe()
+    }, [fetchBatchSpecExecution, executionID])
+
+    const [isCanceling, setIsCanceling] = useState<boolean | Error>(false)
+    const cancelExecution = useCallback(async () => {
+        try {
+            const execution = await cancelBatchSpecExecution(executionID)
+            setBatchSpecExecution(execution)
+        } catch (error) {
+            setIsCanceling(asError(error))
+        }
+    }, [executionID])
 
     // Is loading.
     if (batchSpecExecution === undefined) {
@@ -83,8 +97,30 @@ export const BatchSpecExecutionDetailsPage: React.FunctionComponent<BatchSpecExe
                         to: `${batchSpecExecution.namespace.url}/batch-changes`,
                         text: batchSpecExecution.namespace.namespaceName,
                     },
-                    { text: 'Execution' },
+                    {
+                        text: (
+                            <>
+                                Execution <span className="badge badge-secondary">{batchSpecExecution.state}</span>
+                            </>
+                        ),
+                    },
                 ]}
+                actions={
+                    (batchSpecExecution.state === BatchSpecExecutionState.QUEUED ||
+                        batchSpecExecution.state === BatchSpecExecutionState.PROCESSING) && (
+                        <>
+                            <button
+                                type="button"
+                                className="btn btn-outline-secondary"
+                                onClick={cancelExecution}
+                                disabled={isCanceling === true}
+                            >
+                                Cancel
+                            </button>
+                            {isErrorLike(isCanceling) && <ErrorAlert error={isCanceling} />}
+                        </>
+                    )
+                }
                 className="mb-3"
             />
 
@@ -144,6 +180,8 @@ const ExecutionTimeline: React.FunctionComponent<ExecutionTimelineProps> = ({
 
             execution.state === BatchSpecExecutionState.COMPLETED
                 ? { icon: <CheckIcon />, text: 'Finished', date: execution.finishedAt, className: 'bg-success' }
+                : execution.state === BatchSpecExecutionState.CANCELED
+                ? { icon: <ErrorIcon />, text: 'Canceled', date: execution.finishedAt, className: 'bg-secondary' }
                 : { icon: <ErrorIcon />, text: 'Failed', date: execution.finishedAt, className: 'bg-danger' },
         ],
         [execution, now, expandStage]

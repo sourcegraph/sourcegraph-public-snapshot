@@ -4,7 +4,7 @@ import React, { useCallback, useState } from 'react'
 import { CodeSnippet } from '@sourcegraph/branded/src/components/CodeSnippet'
 import { Container } from '@sourcegraph/wildcard'
 
-import { SidebarGroup, SidebarGroupHeader, SidebarGroupItems } from '../../../components/Sidebar'
+import { SidebarGroup, SidebarGroupHeader } from '../../../components/Sidebar'
 
 import combySample from './examples/comby.batch.yaml'
 import helloWorldSample from './examples/empty.batch.yaml'
@@ -76,17 +76,15 @@ export const OldBatchChangePageContent: React.FunctionComponent<{}> = () => {
             <div className="d-flex mb-3">
                 <div className="flex-shrink-0">
                     <SidebarGroup>
-                        <SidebarGroupItems>
-                            <SidebarGroupHeader label="Examples" />
-                            {samples.map(sample => (
-                                <SampleTabHeader
-                                    key={sample.name}
-                                    sample={sample}
-                                    active={selectedSample.name === sample.name}
-                                    setSelectedSample={setSelectedSample}
-                                />
-                            ))}
-                        </SidebarGroupItems>
+                        <SidebarGroupHeader label="Examples" />
+                        {samples.map(sample => (
+                            <SampleTabHeader
+                                key={sample.name}
+                                sample={sample}
+                                active={selectedSample.name === sample.name}
+                                setSelectedSample={setSelectedSample}
+                            />
+                        ))}
                     </SidebarGroup>
                 </div>
                 <Container className="ml-3 flex-grow-1">

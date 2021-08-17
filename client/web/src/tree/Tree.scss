@@ -34,7 +34,7 @@
         &--active {
             width: 100%;
             background-color: var(--primary);
-            color: $white;
+            color: var(--white);
         }
 
         .theme-light.theme-redesign &--active,

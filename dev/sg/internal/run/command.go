@@ -10,15 +10,16 @@ import (
 )
 
 type Command struct {
-	Name         string
-	Cmd          string            `yaml:"cmd"`
-	Install      string            `yaml:"install"`
-	CheckBinary  string            `yaml:"checkBinary"`
-	Env          map[string]string `yaml:"env"`
-	Watch        []string          `yaml:"watch"`
-	IgnoreStdout bool              `yaml:"ignoreStdout"`
-	IgnoreStderr bool              `yaml:"ignoreStderr"`
-	DefaultArgs  string            `yaml:"defaultArgs"`
+	Name                string
+	Cmd                 string            `yaml:"cmd"`
+	Install             string            `yaml:"install"`
+	CheckBinary         string            `yaml:"checkBinary"`
+	Env                 map[string]string `yaml:"env"`
+	Watch               []string          `yaml:"watch"`
+	IgnoreStdout        bool              `yaml:"ignoreStdout"`
+	IgnoreStderr        bool              `yaml:"ignoreStderr"`
+	DefaultArgs         string            `yaml:"defaultArgs"`
+	ContinueWatchOnExit bool              `yaml:"continueWatchOnExit"`
 
 	// ATTENTION: If you add a new field here, be sure to also handle that
 	// field in `Merge` (below).
@@ -45,6 +46,7 @@ func (c Command) Merge(other Command) Command {
 	if other.DefaultArgs != merged.DefaultArgs && other.DefaultArgs != "" {
 		merged.DefaultArgs = other.DefaultArgs
 	}
+	merged.ContinueWatchOnExit = other.ContinueWatchOnExit || merged.ContinueWatchOnExit
 
 	for k, v := range other.Env {
 		merged.Env[k] = v

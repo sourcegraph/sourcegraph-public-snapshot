@@ -14,6 +14,24 @@
     position: static;
 }
 
+.button {
+    // Change the icon color on hover/focus state
+    &:hover,
+    &:focus {
+        .button-icon {
+            fill: var(--body-color);
+        }
+    }
+}
+
+.button-icon {
+    fill: var(--icon-color);
+
+    &--active {
+        fill: var(--body-color);
+    }
+}
+
 .item[data-reach-menu-item] {
     padding: 0.25rem 0.75rem;
     text-align: right;

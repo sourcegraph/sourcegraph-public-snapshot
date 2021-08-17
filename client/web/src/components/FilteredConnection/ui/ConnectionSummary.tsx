@@ -2,7 +2,7 @@ import * as React from 'react'
 
 import { pluralize } from '@sourcegraph/shared/src/util/strings'
 
-import { ConnectionNodesState, ConnectionProps } from '../ConnectionNodes'
+import { ConnectionNodesState, ConnectionProps, getTotalCount } from '../ConnectionNodes'
 import { Connection } from '../ConnectionType'
 
 interface ConnectionNodesSummaryProps<C extends Connection<N>, N, NP = {}, HP = {}>
@@ -14,13 +14,12 @@ interface ConnectionNodesSummaryProps<C extends Connection<N>, N, NP = {}, HP = 
         | 'pluralNoun'
         | 'connectionQuery'
         | 'emptyElement'
+        | 'first'
     > {
     /** The fetched connection data or an error (if an error occurred). */
     connection: C
 
     hasNextPage: boolean
-
-    totalCount: number | null
 }
 
 /**
@@ -31,18 +30,21 @@ export const ConnectionSummary = <C extends Connection<N>, N, NP = {}, HP = {}>(
     noSummaryIfAllNodesVisible,
     connection,
     hasNextPage,
-    totalCount,
     totalCountSummaryComponent: TotalCountSummaryComponent,
     noun,
     pluralNoun,
     connectionQuery,
     emptyElement,
+    first,
 }: ConnectionNodesSummaryProps<C, N, NP, HP>): JSX.Element | null => {
     const shouldShowSummary = !noSummaryIfAllNodesVisible || connection.nodes.length === 0 || hasNextPage
 
     if (!shouldShowSummary) {
         return null
     }
+
+    // We cannot always rely on `connection.totalCount` to be returned, fallback to `connection.nodes.length` if possible.
+    const totalCount = getTotalCount(connection, first)
 
     if (totalCount !== null && totalCount > 0 && TotalCountSummaryComponent) {
         return <TotalCountSummaryComponent totalCount={totalCount} />

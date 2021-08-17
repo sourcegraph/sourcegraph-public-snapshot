@@ -49,9 +49,6 @@
                 color: var(--light-text);
             }
 
-            &-icon {
-                display: none;
-            }
             &--active {
                 font-weight: inherit;
                 background-color: var(--color-bg-3);
@@ -63,14 +60,5 @@
         margin: 0.5rem;
         padding-left: 0.5rem;
         padding-right: 0.5rem;
-    }
-
-    &__show-more {
-        flex: 0 0;
-        border: none;
-        border-radius: 0;
-        text-align: left;
-        font-size: 0.75rem;
-        padding: var(--popover-item-padding-v) var(--popover-item-padding-h);
     }
 }

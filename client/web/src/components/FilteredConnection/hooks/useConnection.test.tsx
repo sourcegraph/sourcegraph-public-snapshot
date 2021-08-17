@@ -1,9 +1,9 @@
-import { MockedProvider, MockedResponse } from '@apollo/client/testing'
+import { MockedResponse } from '@apollo/client/testing'
 import { fireEvent } from '@testing-library/react'
 import React from 'react'
 
 import { dataOrThrowErrors, getDocumentNode, gql } from '@sourcegraph/shared/src/graphql/graphql'
-import { waitForNextApolloResponse } from '@sourcegraph/shared/src/testing/apollo'
+import { MockedTestProvider, waitForNextApolloResponse } from '@sourcegraph/shared/src/testing/apollo'
 import { renderWithRouter, RenderWithRouterResult } from '@sourcegraph/shared/src/testing/render-with-router'
 
 import {
@@ -148,9 +148,9 @@ describe('useConnection', () => {
 
     const renderWithMocks = async (mocks: MockedResponse<TestConnectionQueryResult>[], route = '/') => {
         const renderResult = renderWithRouter(
-            <MockedProvider mocks={mocks}>
+            <MockedTestProvider mocks={mocks}>
                 <TestComponent />
-            </MockedProvider>,
+            </MockedTestProvider>,
             { route }
         )
 

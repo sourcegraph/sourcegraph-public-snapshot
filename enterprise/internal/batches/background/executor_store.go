@@ -14,6 +14,7 @@ import (
 	"github.com/keegancsmith/sqlf"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
+	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
@@ -43,9 +44,14 @@ var executorWorkerStoreOptions = dbworkerstore.Options{
 	MaxNumRetries: 0,
 }
 
+type ExecutorStore interface {
+	dbworkerstore.Store
+	FetchCanceled(ctx context.Context, executorName string) (canceledIDs []int, err error)
+}
+
 // NewExecutorStore creates a dbworker store that wraps the batch_spec_executions
 // table.
-func NewExecutorStore(handle *basestore.TransactableHandle, observationContext *observation.Context) dbworkerstore.Store {
+func NewExecutorStore(handle *basestore.TransactableHandle, observationContext *observation.Context) ExecutorStore {
 	return &executorStore{
 		Store:              dbworkerstore.NewWithMetrics(handle, executorWorkerStoreOptions, observationContext),
 		observationContext: observationContext,
@@ -84,6 +90,26 @@ func (s *executorStore) MarkComplete(ctx context.Context, id int, options dbwork
 
 	_, ok, err := basestore.ScanFirstInt(batchesStore.Query(ctx, sqlf.Sprintf(markCompleteQuery, batchSpecRandID, id, options.WorkerHostname)))
 	return ok, err
+}
+
+func (s *executorStore) FetchCanceled(ctx context.Context, executorName string) (canceledIDs []int, err error) {
+	batchesStore := store.New(s.Store.Handle().DB(), s.observationContext, nil)
+
+	t := true
+	cs, err := batchesStore.ListBatchSpecExecutions(ctx, store.ListBatchSpecExecutionsOpts{
+		Cancel:         &t,
+		State:          btypes.BatchSpecExecutionStateProcessing,
+		WorkerHostname: executorName,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	ids := make([]int, 0, len(cs))
+	for _, c := range cs {
+		ids = append(ids, c.RecordID())
+	}
+	return ids, nil
 }
 
 func loadAndExtractBatchSpecRandID(ctx context.Context, s *store.Store, id int64) (string, error) {

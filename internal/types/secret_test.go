@@ -35,6 +35,10 @@ func TestRoundTripRedactExternalServiceConfig(t *testing.T) {
 	awsCodeCommitConfig := schema.AWSCodeCommitConnection{
 		SecretAccessKey: someSecret,
 		Region:          "us-east-9000z",
+		GitCredentials: schema.AWSCodeCommitGitCredentials{
+			Username: "username",
+			Password: "password",
+		},
 	}
 	phabricatorConfig := schema.PhabricatorConnection{
 		Token: someSecret,
@@ -93,6 +97,12 @@ func TestRoundTripRedactExternalServiceConfig(t *testing.T) {
 			config:      &awsCodeCommitConfig,
 			editField:   &awsCodeCommitConfig.Region,
 			secretField: &awsCodeCommitConfig.SecretAccessKey,
+		},
+		{
+			kind:        extsvc.KindAWSCodeCommit,
+			config:      &awsCodeCommitConfig,
+			editField:   &awsCodeCommitConfig.Region,
+			secretField: &awsCodeCommitConfig.GitCredentials.Password,
 		},
 		{
 			kind:        extsvc.KindPhabricator,

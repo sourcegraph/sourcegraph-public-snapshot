@@ -1,4 +1,3 @@
-import BrainIcon from 'mdi-react/BrainIcon'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import React, { useMemo } from 'react'
 import { Redirect, Route, RouteComponentProps, Switch } from 'react-router'
@@ -33,10 +32,6 @@ const CodeIntelUploadPage = lazyComponent<CodeIntelUploadPageProps, 'CodeIntelUp
     () => import('../../codeintel/detail/CodeIntelUploadPage'),
     'CodeIntelUploadPage'
 )
-const CodeIntelIndexConfigurationPage = lazyComponent<
-    CodeIntelIndexConfigurationPageProps,
-    'CodeIntelIndexConfigurationPage'
->(() => import('../../codeintel/configuration/CodeIntelIndexConfigurationPage'), 'CodeIntelIndexConfigurationPage')
 
 const CodeIntelIndexesPage = lazyComponent<CodeIntelIndexesPageProps, 'CodeIntelIndexesPage'>(
     () => import('../../codeintel/list/CodeIntelIndexesPage'),
@@ -46,6 +41,11 @@ const CodeIntelIndexPage = lazyComponent<CodeIntelIndexPageProps, 'CodeIntelInde
     () => import('../../codeintel/detail/CodeIntelIndexPage'),
     'CodeIntelIndexPage'
 )
+
+const CodeIntelIndexConfigurationPage = lazyComponent<
+    CodeIntelIndexConfigurationPageProps,
+    'CodeIntelIndexConfigurationPage'
+>(() => import('../../codeintel/configuration/CodeIntelIndexConfigurationPage'), 'CodeIntelIndexConfigurationPage')
 
 export const routes: readonly CodeIntelAreaRoute[] = [
     {
@@ -105,21 +105,25 @@ export interface RepositoryCodeIntelAreaPageProps
 
 const sidebarRoutes: CodeIntelSideBarGroups = [
     {
-        header: { label: 'Precise intelligence', icon: BrainIcon },
+        header: { label: 'Precise intelligence' },
         items: [
             {
                 to: '/uploads',
                 label: 'Uploads',
             },
+        ],
+    },
+    {
+        header: { label: 'Auto-indexing' },
+        condition: () => Boolean(window.context?.codeIntelAutoIndexingEnabled),
+        items: [
             {
                 to: '/indexes',
-                label: 'Auto indexing',
-                condition: () => Boolean(window.context?.codeIntelAutoIndexingEnabled),
+                label: 'Index jobs',
             },
             {
                 to: '/index-configuration',
-                label: 'Index configuration',
-                condition: () => Boolean(window.context?.codeIntelAutoIndexingEnabled),
+                label: 'Configuration',
             },
         ],
     },

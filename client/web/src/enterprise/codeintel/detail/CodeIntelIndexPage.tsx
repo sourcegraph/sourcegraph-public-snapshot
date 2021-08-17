@@ -86,7 +86,7 @@ export const CodeIntelIndexPage: FunctionComponent<CodeIntelIndexPageProps> = ({
         <ErrorAlert prefix="Error deleting LSIF index record" error={deletionOrError} />
     ) : (
         <div className="site-admin-lsif-index-page w-100">
-            <PageTitle title="Code intelligence - auto-indexing" />
+            <PageTitle title="Auto-indexing jobs" />
             {isErrorLike(indexOrError) ? (
                 <ErrorAlert prefix="Error loading LSIF index" error={indexOrError} />
             ) : !indexOrError ? (
@@ -97,19 +97,13 @@ export const CodeIntelIndexPage: FunctionComponent<CodeIntelIndexPageProps> = ({
                         headingElement="h2"
                         path={[
                             {
-                                text: (
-                                    <>
-                                        <span className="text-muted">Auto-index record for commit</span>
-                                        <span className="ml-2">
-                                            {indexOrError.projectRoot
-                                                ? indexOrError.projectRoot.commit.abbreviatedOID
-                                                : indexOrError.inputCommit.slice(0, 7)}
-                                        </span>
-                                    </>
-                                ),
+                                text: `Auto-index record for ${indexOrError.projectRoot?.repository.name || ''}@${
+                                    indexOrError.projectRoot
+                                        ? indexOrError.projectRoot.commit.abbreviatedOID
+                                        : indexOrError.inputCommit.slice(0, 7)
+                                }`,
                             },
                         ]}
-                        actions={<CodeIntelDeleteIndex deleteIndex={deleteIndex} deletionOrError={deletionOrError} />}
                         className="mb-3"
                     />
 
@@ -127,6 +121,10 @@ export const CodeIntelIndexPage: FunctionComponent<CodeIntelIndexPageProps> = ({
 
                         <h3>Timeline</h3>
                         <CodeIntelIndexTimeline index={indexOrError} now={now} className="mb-3" />
+                    </Container>
+
+                    <Container className="mt-2">
+                        <CodeIntelDeleteIndex deleteIndex={deleteIndex} deletionOrError={deletionOrError} />
                     </Container>
                 </>
             )}

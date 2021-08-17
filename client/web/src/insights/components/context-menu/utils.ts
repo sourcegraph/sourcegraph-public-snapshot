@@ -70,19 +70,22 @@ export const flipRightPosition: Position = (targetRectangle, popoverRectangle) =
         return {}
     }
 
-    const { directionUp, directionLeft, directionRight } = getCollisions(targetRectangle, popoverRectangle)
+    const isEnoughSpaceLeft = targetRectangle.left - popoverRectangle.width > 0
+    const isEnoughSpaceRight = window.innerWidth > targetRectangle.right + popoverRectangle.width
 
-    if (directionLeft) {
+    const { directionUp } = getCollisions(targetRectangle, popoverRectangle)
+
+    if (isEnoughSpaceRight) {
         return {
             left: `${targetRectangle.right + window.scrollX + DEFAULT_PADDING}px`,
-            top: `${targetRectangle.top + window.scrollY}px`,
+            top: `${targetRectangle.top + window.scrollY - 4}px`,
         }
     }
 
-    if (directionRight) {
+    if (isEnoughSpaceLeft) {
         return {
             left: `${targetRectangle.left - popoverRectangle.width + window.scrollX - DEFAULT_PADDING}px`,
-            top: `${targetRectangle.top + window.scrollY}px`,
+            top: `${targetRectangle.top + window.scrollY - 4}px`,
         }
     }
 

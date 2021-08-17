@@ -6,7 +6,7 @@ import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { Container } from '@sourcegraph/wildcard'
 
 import batchSpecSchemaJSON from '../../../../../../../schema/batch_spec.schema.json'
-import { SidebarGroup, SidebarGroupHeader, SidebarGroupItems } from '../../../../components/Sidebar'
+import { SidebarGroup, SidebarGroupHeader } from '../../../../components/Sidebar'
 import { MonacoSettingsEditor } from '../../../../settings/MonacoSettingsEditor'
 import { BatchSpecDownloadLink, getFileName } from '../../BatchSpec'
 
@@ -41,14 +41,12 @@ export const ExampleTabs: React.FunctionComponent<ExampleTabsProps> = ({ isLight
     <Tabs className={styles.exampleTabs}>
         <TabList className="d-flex flex-column flex-shrink-0">
             <SidebarGroup>
-                <SidebarGroupItems>
-                    <SidebarGroupHeader label="Examples" />
-                    {EXAMPLES.map((example, index) => (
-                        <ExampleTab key={example.name} index={index}>
-                            {example.name}
-                        </ExampleTab>
-                    ))}
-                </SidebarGroupItems>
+                <SidebarGroupHeader label="Examples" />
+                {EXAMPLES.map((example, index) => (
+                    <ExampleTab key={example.name} index={index}>
+                        {example.name}
+                    </ExampleTab>
+                ))}
             </SidebarGroup>
         </TabList>
 

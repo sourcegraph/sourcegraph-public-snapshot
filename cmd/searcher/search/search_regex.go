@@ -256,16 +256,23 @@ func appendMatches(matches []protocol.LineMatch, fileBuf []byte, matchLineBuf []
 		if limit < 0 {
 			limit = len(fileBuf)
 		}
-		matches = append(matches, protocol.LineMatch{
-			// we are not allowed to use the fileBuf data after the ZipFile has been Closed,
-			// which currently occurs before Preview has been serialized.
-			// TODO: consider moving the call to Close until after we are
-			// done with Preview, and stop making a copy here.
-			// Special care must be taken to call Close on all possible paths, including error paths.
-			Preview:          string(fileBuf[:limit]),
-			LineNumber:       lineNumber,
-			OffsetAndLengths: [][2]int{{offset, length}},
-		})
+
+		if n := len(matches); n > 0 && matches[n-1].LineNumber == lineNumber {
+			// If the line number hasn't changed since the last match, append the offsets to that LineMatch.
+			matches[n-1].OffsetAndLengths = append(matches[n-1].OffsetAndLengths, [2]int{offset, length})
+		} else {
+			// If we are appending matches for a new line, create a new LineMatch
+			matches = append(matches, protocol.LineMatch{
+				// we are not allowed to use the fileBuf data after the ZipFile has been Closed,
+				// which currently occurs before Preview has been serialized.
+				// TODO: consider moving the call to Close until after we are
+				// done with Preview, and stop making a copy here.
+				// Special care must be taken to call Close on all possible paths, including error paths.
+				Preview:          string(fileBuf[:limit]),
+				LineNumber:       lineNumber,
+				OffsetAndLengths: [][2]int{{offset, length}},
+			})
+		}
 
 		if eol >= 0 {
 			fileBuf = fileBuf[eol+1:]
