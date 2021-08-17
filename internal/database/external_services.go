@@ -972,6 +972,21 @@ CREATE TEMPORARY TABLE IF NOT EXISTS
 		return errors.Wrap(err, "cleaning up potentially orphaned repos")
 	}
 
+	// Soft delete orphaned phabricator repos
+	if err := tx.Exec(ctx, sqlf.Sprintf(`
+	UPDATE phabricator_repos
+	SET deleted_at = TRANSACTION_TIMESTAMP()
+	WHERE deleted_at IS NULL
+	AND repo_name IN (
+		SELECT name FROM repo
+		WHERE id IN (
+			SELECT id FROM deleted_repos_temp
+		)
+	);
+`)); err != nil {
+		return errors.Wrap(err, "cleaning up potentially orphaned phabricator repos")
+	}
+
 	// Clear temporary table in case delete is called multiple times within the same
 	// transaction
 	if err := tx.Exec(ctx, sqlf.Sprintf(`
