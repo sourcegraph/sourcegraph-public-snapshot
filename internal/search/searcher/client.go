@@ -77,6 +77,7 @@ func Search(
 		Indexed:          indexed,
 		FetchTimeout:     fetchTimeout.String(),
 		IndexerEndpoints: indexerEndpoints,
+		Stream:           true,
 	}
 
 	if deadline, ok := ctx.Deadline(); ok {
@@ -85,9 +86,6 @@ func Search(
 			return nil, false, err
 		}
 		r.Deadline = string(t)
-	}
-	if onMatches != nil {
-		r.Stream = true
 	}
 	body, err := json.Marshal(r)
 	if err != nil {
