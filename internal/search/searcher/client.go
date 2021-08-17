@@ -114,16 +114,9 @@ func Search(
 		url := urls[attempt%len(urls)]
 
 		tr.LazyPrintf("attempt %d: %s", attempt, url)
-		if onMatches != nil {
-			limitHit, err = textSearchStream(ctx, url, body, onMatches)
-			if err == nil || errcode.IsTimeout(err) {
-				return nil, limitHit, err
-			}
-		} else {
-			matches, limitHit, err = textSearch(ctx, url, body)
-			if err == nil || errcode.IsTimeout(err) {
-				return matches, limitHit, err
-			}
+		limitHit, err = textSearchStream(ctx, url, body, onMatches)
+		if err == nil || errcode.IsTimeout(err) {
+			return nil, limitHit, err
 		}
 
 		// If we are canceled, return that error.
@@ -195,54 +188,6 @@ func textSearchStream(ctx context.Context, url string, body []byte, cb func([]*p
 		err = context.DeadlineExceeded
 	}
 	return ed.LimitHit, err
-}
-
-func textSearch(ctx context.Context, url string, body []byte) ([]*protocol.FileMatch, bool, error) {
-	req, err := http.NewRequest("GET", url, bytes.NewReader(body))
-	if err != nil {
-		return nil, false, err
-	}
-	req = req.WithContext(ctx)
-
-	req, ht := nethttp.TraceRequest(ot.GetTracer(ctx), req,
-		nethttp.OperationName("Searcher Client"),
-		nethttp.ClientTrace(false))
-	defer ht.Finish()
-
-	// Do not lose the context returned by TraceRequest
-	ctx = req.Context()
-
-	resp, err := searchDoer.Do(req)
-	if err != nil {
-		// If we failed due to cancellation or timeout (with no partial results in the response
-		// body), return just that.
-		if ctx.Err() != nil {
-			err = ctx.Err()
-		}
-		return nil, false, errors.Wrap(err, "searcher request failed")
-	}
-	defer resp.Body.Close()
-	if resp.StatusCode != 200 {
-		body, err := io.ReadAll(resp.Body)
-		if err != nil {
-			return nil, false, err
-		}
-		return nil, false, errors.WithStack(&searcherError{StatusCode: resp.StatusCode, Message: string(body)})
-	}
-
-	r := struct {
-		Matches     []*protocol.FileMatch
-		LimitHit    bool
-		DeadlineHit bool
-	}{}
-	err = json.NewDecoder(resp.Body).Decode(&r)
-	if err != nil {
-		return nil, false, errors.Wrap(err, "searcher response invalid")
-	}
-	if r.DeadlineHit {
-		err = context.DeadlineExceeded
-	}
-	return r.Matches, r.LimitHit, err
 }
 
 type searcherError struct {
