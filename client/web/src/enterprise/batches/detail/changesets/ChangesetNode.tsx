@@ -21,7 +21,7 @@ export interface ChangesetNodeProps extends ThemeProps {
     history: H.History
     location: H.Location
     selectable?: {
-        onSelect: (id: string, selected: boolean) => void
+        onSelect: (id: string) => void
         isSelected: (id: string) => boolean
     }
     extensionInfo?: {
