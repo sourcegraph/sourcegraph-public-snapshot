@@ -154,8 +154,6 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
 
     // if we should tweak UI messaging and copy
     const ALLOW_PRIVATE_CODE = externalServiceUserModeFromTags(authenticatedUser.tags) === 'all'
-
-    // if 'sync all' radio button is enabled and users can sync all repos from code hosts
     const ALLOW_SYNC_ALL = authenticatedUser.tags.includes('AllowUserExternalServiceSyncAll')
 
     // set up state hooks
@@ -163,6 +161,7 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
     const [publicRepoState, setPublicRepoState] = useState(initialPublicRepoState)
     const [codeHosts, setCodeHosts] = useState(initialCodeHostState)
     const [onloadSelectedRepos, setOnloadSelectedRepos] = useState<string[]>([])
+    const [onloadRadioValue, setOnloadRadioValue] = useState('')
     const [selectionState, setSelectionState] = useState(initialSelectionState)
     const [currentPage, setPage] = useState(1)
     const [query, setQuery] = useState('')
@@ -352,13 +351,14 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
 
         const radioSelectOption =
             ALLOW_SYNC_ALL &&
-            ((externalServices.length === codeHostsHaveSyncAllQuery.length &&
-                codeHostsHaveSyncAllQuery.every(Boolean)) ||
-                affiliatedReposWithMirrorInfo.length === selectedAffiliatedRepos.size)
+            externalServices.length === codeHostsHaveSyncAllQuery.length &&
+            codeHostsHaveSyncAllQuery.every(Boolean)
                 ? 'all'
                 : selectedAffiliatedRepos.size > 0
                 ? 'selected'
                 : ''
+
+        setOnloadRadioValue(radioSelectOption)
 
         // set sorted repos and mark as loaded
         setRepoState(previousRepoState => ({
@@ -438,8 +438,18 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
 
         const currentlySelectedRepos = [...publicRepos, ...affiliatedRepos]
 
-        return !isEqual(currentlySelectedRepos.sort(), onloadSelectedRepos.sort())
-    }, [onloadSelectedRepos, publicRepoState.enabled, publicRepoState.repos, selectionState.repos])
+        return (
+            selectionState.radio !== onloadRadioValue ||
+            !isEqual(currentlySelectedRepos.sort(), onloadSelectedRepos.sort())
+        )
+    }, [
+        onloadSelectedRepos,
+        publicRepoState.enabled,
+        publicRepoState.repos,
+        selectionState.repos,
+        selectionState.radio,
+        onloadRadioValue,
+    ])
 
     // save changes and update code hosts
     const submit = useCallback(
