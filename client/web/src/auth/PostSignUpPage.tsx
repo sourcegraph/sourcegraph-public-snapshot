@@ -60,7 +60,8 @@ export const PostSignUpPage: FunctionComponent<PostSignUpPage> = ({
         goToSearch()
     }
 
-    const finishWelcomeFlow = (): void => {
+    const finishWelcomeFlow = (event: React.MouseEvent<HTMLElement>): void => {
+        event.currentTarget.blur()
         setUserFinishedWelcomeFlow(true)
         goToSearch()
     }
@@ -109,7 +110,7 @@ export const PostSignUpPage: FunctionComponent<PostSignUpPage> = ({
                     lessPadding={true}
                     className="text-left"
                     body={
-                        <div className="post-signup-page__container">
+                        <div className="post-signup-page__container pb-1">
                             {hasErrors && (
                                 <div className="alert alert-danger mb-4" role="alert">
                                     Sorry, something went wrong. Try refreshing the page or{' '}

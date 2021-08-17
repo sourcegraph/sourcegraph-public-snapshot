@@ -93,13 +93,17 @@ export const SearchContextPage: React.FunctionComponent<SearchContextPageProps> 
                                     )
                                 }
                             />
-                            <div className="text-muted">
-                                <span className="mr-1">{searchContextOrError.repositories.length} repositories</span>
-                                &middot;
-                                <span className="ml-1">
-                                    Updated <Timestamp date={searchContextOrError.updatedAt} noAbout={true} />
-                                </span>
-                            </div>
+                            {!searchContextOrError.autoDefined && (
+                                <div className="text-muted">
+                                    <span className="mr-1">
+                                        {searchContextOrError.repositories.length} repositories
+                                    </span>
+                                    &middot;
+                                    <span className="ml-1">
+                                        Updated <Timestamp date={searchContextOrError.updatedAt} noAbout={true} />
+                                    </span>
+                                </div>
+                            )}
                             <div className="my-2">
                                 <Markdown dangerousInnerHTML={renderMarkdown(searchContextOrError.description)} />
                             </div>

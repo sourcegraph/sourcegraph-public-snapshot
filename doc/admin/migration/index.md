@@ -30,3 +30,4 @@ See [How to troubleshoot an unfinished migration](../how-to/unfinished_migration
 - [Migrating from Sourcegraph 3.x to 3.7.2+](3_7.md)
 - [Migrating from Sourcegraph 3.x to 3.11](3_11.md)
 - [Migrating from Sourcegraph 3.30.0, 3.30.1, and 3.30.2](3_30.md)
+- [Migrating from Sourcegraph 3.31.x](3_31.md)

@@ -542,7 +542,8 @@ export const SelectAffiliatedRepos: FunctionComponent<Props> = ({
                 <ul className="list-group">
                     <li className="list-group-item user-settings-repos__container" key="from-code-hosts">
                         <div className={classNames(!isRedesignEnabled && 'p-4')}>
-                            {fetchingError || !selectionState.loaded ? modeSelectShimmer : modeSelect}
+                            {/* display type of repo sync radio buttons or shimmer when appropriate */}
+                            {hasCodeHosts && selectionState.loaded ? modeSelect : modeSelectShimmer}
 
                             {hasCodeHosts && selectionState.radio === 'selected' && (
                                 <div className="ml-4">

@@ -13,7 +13,7 @@ export interface CreateCommentModalProps {
     onCancel: () => void
     afterCreate: () => void
     batchChangeID: Scalars['ID']
-    changesetIDs: () => Promise<Scalars['ID'][]>
+    changesetIDs: Scalars['ID'][]
 
     /** For testing only. */
     createChangesetComments?: typeof _createChangesetComments
@@ -38,8 +38,7 @@ export const CreateCommentModal: React.FunctionComponent<CreateCommentModalProps
             event.preventDefault()
             setIsLoading(true)
             try {
-                const ids = await changesetIDs()
-                await createChangesetComments(batchChangeID, ids, commentBody)
+                await createChangesetComments(batchChangeID, changesetIDs, commentBody)
                 afterCreate()
             } catch (error) {
                 setIsLoading(asError(error))

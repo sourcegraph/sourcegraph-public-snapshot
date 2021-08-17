@@ -25,7 +25,6 @@ import (
 	nettrace "golang.org/x/net/trace"
 
 	"github.com/cockroachdb/errors"
-	"github.com/gorilla/schema"
 	"github.com/inconshreveable/log15"
 	"github.com/opentracing/opentracing-go/ext"
 	otlog "github.com/opentracing/opentracing-go/log"
@@ -57,12 +56,6 @@ const (
 type Service struct {
 	Store *store.Store
 	Log   log15.Logger
-}
-
-var decoder = schema.NewDecoder()
-
-func init() {
-	decoder.IgnoreUnknownKeys(true)
 }
 
 // ServeHTTP handles HTTP based search requests

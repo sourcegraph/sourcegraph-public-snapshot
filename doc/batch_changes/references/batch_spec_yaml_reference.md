@@ -903,7 +903,7 @@ and this workspace configuration
 workspaces:
   - rootAtLocationOf: package.json
     in: github.com/our-our/our-large-monorepo
-    fetchOnlyWorkspace: true
+    onlyFetchWorkspace: true
 ```
 
 then
@@ -921,5 +921,5 @@ Only download the workspaces of specific JavaScript projects in a large monorepo
 workspaces:
   - rootAtLocationOf: package.json
     in: github.com/our-our/our-large-monorepo
-    fetchOnlyWorkspace: true
+    onlyFetchWorkspace: true
 ```
