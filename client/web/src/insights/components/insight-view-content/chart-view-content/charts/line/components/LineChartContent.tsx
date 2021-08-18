@@ -1,6 +1,5 @@
 import { curveLinear } from '@visx/curve'
 import { GridRows } from '@visx/grid'
-import { GridScale } from '@visx/grid/lib/types'
 import { Group } from '@visx/group'
 import { Axis, DataProvider, GlyphSeries, LineSeries, Tooltip, TooltipProvider, XYChart } from '@visx/xychart'
 import { RenderTooltipParams } from '@visx/xychart/lib/components/Tooltip'
@@ -14,8 +13,9 @@ import { LineChartContent as LineChartContentType } from 'sourcegraph'
 
 import { DEFAULT_LINE_STROKE } from '../constants'
 import { generateAccessors } from '../helpers/generate-accessors'
+import { getYAxisWidth } from '../helpers/get-y-axis-width'
 import { usePointerEventEmitters } from '../helpers/use-event-emitters'
-import { useScales } from '../helpers/use-scales'
+import { useScalesConfiguration, useXScale, useYScale } from '../helpers/use-scales'
 import { onDatumZoneClick } from '../types'
 
 import { ActiveDatum, GlyphContent } from './GlyphContent'
@@ -26,7 +26,7 @@ import { TooltipContent } from './TooltipContent'
 // Chart configuration
 const WIDTH_PER_TICK = 70
 const HEIGHT_PER_TICK = 40
-const MARGIN = { top: 10, left: 40, bottom: 26, right: 20 }
+const MARGIN = { top: 10, left: 0, bottom: 26, right: 20 }
 const SCALES_CONFIG = {
     x: {
         type: 'time' as const,
@@ -68,13 +68,34 @@ export interface LineChartContentProps<Datum extends object>
 export function LineChartContent<Datum extends object>(props: LineChartContentProps<Datum>): ReactElement {
     const { width, height, data, series, xAxis, onDatumZoneClick = noop, onDatumLinkClick = noop } = props
 
-    // Calculate inner sizes for chart without padding values
-    const innerWidth = width - MARGIN.left - MARGIN.right
-    const innerHeight = height - MARGIN.top - MARGIN.bottom
+    // XYChart must know how to get the right data from datum object in order to render lines and axes
+    // Because of that we have to generate map of getters for all kind of data which will be rendered on the chart.
+    const accessors = useMemo(() => generateAccessors(xAxis, series), [xAxis, series])
 
-    // Calculate how many labels we need to have for each axis
-    const numberOfTicksX = Math.max(1, Math.floor(innerWidth / WIDTH_PER_TICK))
+    const scalesConfiguration = useScalesConfiguration({
+        data,
+        accessors,
+        config: SCALES_CONFIG,
+    })
+
+    const innerHeight = height - MARGIN.top - MARGIN.bottom
     const numberOfTicksY = Math.max(1, Math.floor(innerHeight / HEIGHT_PER_TICK))
+
+    const yScale = useYScale({ config: scalesConfiguration.y, height: innerHeight })
+    const yAxisWidth = getYAxisWidth(yScale, numberOfTicksY)
+
+    // Calculate inner sizes for chart without padding values
+    const innerWidth = width - MARGIN.left - MARGIN.right - yAxisWidth
+    const numberOfTicksX = Math.max(1, Math.floor(innerWidth / WIDTH_PER_TICK))
+
+    const xScale = useXScale({
+        config: scalesConfiguration.x,
+        width: innerWidth,
+        accessors,
+        data,
+    })
+
+    const dynamicMargin = { ...MARGIN, left: MARGIN.left + yAxisWidth }
 
     // In case if we've got unsorted by x (time) axis dataset we have to sort that by ourselves
     // otherwise we will get an error in calculation of position for the tooltip
@@ -85,18 +106,6 @@ export function LineChartContent<Datum extends object>(props: LineChartContentPr
         () => data.sort((firstDatum, secondDatum) => +firstDatum[xAxis.dataKey] - +secondDatum[xAxis.dataKey]),
         [data, xAxis]
     )
-
-    // XYChart must know how to get the right data from datum object in order to render lines and axes
-    // Because of that we have to generate map of getters for all kind of data which will be rendered on the chart.
-    const accessors = useMemo(() => generateAccessors(xAxis, series), [xAxis, series])
-
-    const { config: scalesConfig, xScale, yScale } = useScales({
-        config: SCALES_CONFIG,
-        data: sortedData,
-        width: innerWidth,
-        height: innerHeight,
-        accessors,
-    })
 
     // state
     const [hoveredDatum, setHoveredDatum] = useState<ActiveDatum<Datum> | null>(null)
@@ -220,16 +229,16 @@ export function LineChartContent<Datum extends object>(props: LineChartContentPr
                 have to provide DataContext and TooltipContext as well to avoid problem with EmitterContext.
             */}
             <DataProvider
-                xScale={scalesConfig.x}
-                yScale={scalesConfig.y}
-                initialDimensions={{ width, height, margin: MARGIN }}
+                xScale={scalesConfiguration.x}
+                yScale={scalesConfiguration.y}
+                initialDimensions={{ width, height, margin: dynamicMargin }}
             >
                 <TooltipProvider>
                     <XYChart
                         height={height}
                         width={width}
                         captureEvents={false}
-                        margin={MARGIN}
+                        margin={dynamicMargin}
                         onPointerMove={handlePointerMove}
                         onPointerUp={handlePointerUp}
                         accessibilityLabel="Line chart content"
@@ -238,9 +247,9 @@ export function LineChartContent<Datum extends object>(props: LineChartContentPr
                         <Group aria-label="Chart axes">
                             {/* eslint-disable-next-line jsx-a11y/aria-role */}
                             <Group role="graphics-axis" aria-orientation="horizontal" aria-label="Y axis: number">
-                                <Group aria-hidden={true} top={MARGIN.top} left={MARGIN.left}>
+                                <Group aria-hidden={true} top={dynamicMargin.top} left={dynamicMargin.left}>
                                     <GridRows
-                                        scale={yScale as GridScale}
+                                        scale={yScale}
                                         numTicks={numberOfTicksY}
                                         width={innerWidth}
                                         className="line-chart__grid-line"
@@ -285,8 +294,8 @@ export function LineChartContent<Datum extends object>(props: LineChartContentPr
                         >
                             {/* Spread size of parent group element by transparent rect with width and height */}
                             <rect
-                                x={MARGIN.left}
-                                y={MARGIN.top}
+                                x={dynamicMargin.left}
+                                y={dynamicMargin.top}
                                 width={innerWidth}
                                 height={innerHeight}
                                 aria-hidden={true}
