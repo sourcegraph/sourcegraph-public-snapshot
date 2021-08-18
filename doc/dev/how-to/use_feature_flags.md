@@ -11,6 +11,7 @@ are added to every event log for the purpose of analytics.
 ## How it works
 
 Each feature flag is either a static feature flag, or a "rollout" flag. 
+
 - A static feature flag has a single value (currently only "true" or "false") for all users that haven't overriden it.
 - A rollout flag assigns a random (but stable) value to each user. Each rollout flag is created with a percentage of users that should be randomly assigned the value "true".
 
