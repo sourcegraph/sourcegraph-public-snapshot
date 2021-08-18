@@ -46,7 +46,7 @@ export type RepoSelectionMode = 'all' | 'selected' | undefined
 
 export type FinishWelcomeFlow = (event: React.MouseEvent<HTMLElement>, payload: FinishEventPayload) => void
 
-export const getPostSignUpEvent = (action?: string): string => `PostSignUp_${action || 'Unknown'}`
+export const getPostSignUpEvent = (action?: string): string => `PostSignUp${action ? '_' + action : ''}`
 
 const USER_FINISHED_WELCOME_FLOW = 'finished-welcome-flow'
 
@@ -65,7 +65,7 @@ export const PostSignUpPage: FunctionComponent<PostSignUpPage> = ({
     const goToSearch = (): void => history.push(getReturnTo(location))
 
     useEffect(() => {
-        eventLogger.log(getPostSignUpEvent('Page_Viewed'))
+        eventLogger.logViewEvent(getPostSignUpEvent())
     }, [])
 
     // if the welcome flow was already finished - navigate to search
