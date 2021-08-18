@@ -11,6 +11,8 @@ import (
 	"github.com/cockroachdb/errors"
 	"github.com/inconshreveable/log15"
 	otlog "github.com/opentracing/opentracing-go/log"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
@@ -109,11 +111,18 @@ func (s *PermsSyncer) scheduleUsers(ctx context.Context, users ...scheduledUser)
 	}
 }
 
+var repoPermsSyncScheduled = promauto.NewCounter(prometheus.CounterOpts{
+	Name: "src_repoupdater_repo_perms_sync_scheduled_total",
+	Help: "The total number of repo permissions sync scheduled",
+})
+
 // ScheduleRepos schedules new permissions syncing requests for given repositories.
 // By design, all schedules triggered by user actions are in high priority.
 //
 // This method implements the repoupdater.Server.PermsSyncer in the OSS namespace.
 func (s *PermsSyncer) ScheduleRepos(ctx context.Context, repoIDs ...api.RepoID) {
+	repoPermsSyncScheduled.Inc()
+
 	if len(repoIDs) == 0 {
 		return
 	} else if s.isDisabled() {
