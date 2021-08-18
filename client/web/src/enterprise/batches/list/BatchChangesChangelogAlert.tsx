@@ -15,7 +15,7 @@ export const BatchChangesChangelogAlert: React.FunctionComponent = () => (
                 <h4>New Batch Changes features in version 3.31</h4>
                 <ul className="mb-0 pl-3">
                     <li>
-                        Changesets can now be published from the preview UI.{' '}
+                        Changesets can now be set to published when previewing new or updated batch changes.{' '}
                         <a
                             href="https://docs.sourcegraph.com/batch_changes/how-tos/publishing_changesets#within-the-ui"
                             rel="noopener"
