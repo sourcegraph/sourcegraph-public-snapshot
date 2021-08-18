@@ -1,7 +1,5 @@
-import classNames from 'classnames'
 import React from 'react'
 
-import { ActionsNavItems, ActionsNavItemsProps } from '@sourcegraph/shared/src/actions/ActionsNavItems'
 import {
     CommandListPopoverButton,
     CommandListPopoverButtonProps,
@@ -26,20 +24,3 @@ export const WebCommandListPopoverButton: React.FunctionComponent<CommandListPop
 )
 
 WebCommandListPopoverButton.displayName = 'WebCommandListPopoverButton'
-
-export const WebActionsNavItems: React.FunctionComponent<ActionsNavItemsProps> = ({
-    listClass,
-    listItemClass,
-    actionItemClass,
-    actionItemIconClass,
-    ...props
-}) => (
-    <ActionsNavItems
-        {...props}
-        listClass={classNames(listClass, 'nav')}
-        listItemClass={classNames(listItemClass, 'nav-item')}
-        actionItemClass={classNames(actionItemClass, 'nav-link')}
-        actionItemIconClass={classNames(actionItemIconClass, 'icon-inline-md')}
-    />
-)
-WebActionsNavItems.displayName = 'WebActionsNavItems'
