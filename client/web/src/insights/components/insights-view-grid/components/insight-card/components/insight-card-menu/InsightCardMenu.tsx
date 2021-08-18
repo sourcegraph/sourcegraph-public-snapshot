@@ -80,7 +80,7 @@ export const InsightCardMenu: React.FunctionComponent<InsightCardMenuProps> = pr
                                     onClick={onToggleZeroYAxisMin}
                                 >
                                     <CheckIcon size={16} className={classnames('mr-2', { 'd-none': !zeroYAxisMin })} />{' '}
-                                    Axis at 0
+                                    Start Y Axis at 0
                                 </MenuLink>
                             )}
 
