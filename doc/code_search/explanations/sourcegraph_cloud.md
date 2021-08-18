@@ -38,7 +38,7 @@ Learn more about [how to run your own Sourcegraph instance](../../../admin/insta
 
 ### What are the differences between Sourcegraph cloud and Sourcegraph on-prem/Enterprise?
 
-Both Sourcegraph cloud and self-hosted Sourcegraph instances power the same search experience relied on by developers around the world. The Sourcegraph team is working on bringing Sourcegraph cloud to feature parity with our self-hosted Sourcegraph solution. See a [full breakdown between Sourcegraph cloud, self-hosted, and enterprise](../../cloud/cloud_self_hosted_comparison.md).
+Both Sourcegraph cloud and self-hosted Sourcegraph instances power the same search experience relied on by developers around the world. The Sourcegraph team is working on bringing Sourcegraph cloud to feature parity with our self-hosted Sourcegraph solution. See a [full breakdown between Sourcegraph cloud, self-hosted, and enterprise](../../cloud/cloud_ent_on-prem_comparison.md).
 
 ### How secure is Sourcegraph cloud? Can Sourcegraph see my code?
 
