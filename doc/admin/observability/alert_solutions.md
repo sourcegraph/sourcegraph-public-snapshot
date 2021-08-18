@@ -2710,7 +2710,8 @@ with your code hosts connections or networking issues affecting communication wi
 
 **Descriptions**
 
-- <span class="badge badge-critical">critical</span> repo-updater: 0+ site level external service sync error rate for 10m0s
+- <span class="badge badge-warning">warning</span> repo-updater: 0.5+ site level external service sync error rate for 10m0s
+- <span class="badge badge-critical">critical</span> repo-updater: 1+ site level external service sync error rate for 10m0s
 
 **Possible solutions**
 
@@ -2725,6 +2726,7 @@ with your code hosts connections or networking issues affecting communication wi
 
 ```json
 "observability.silenceAlerts": [
+  "warning_repo-updater_src_repoupdater_syncer_sync_errors_total",
   "critical_repo-updater_src_repoupdater_syncer_sync_errors_total"
 ]
 ```
