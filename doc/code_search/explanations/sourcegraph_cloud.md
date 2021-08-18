@@ -1,20 +1,20 @@
-# Sourcegraph Cloud
+# Sourcegraph cloud
 
-[Sourcegraph Cloud](https://sourcegraph.com/search) lets you search your personal (public or private) code on GitHub.com or GitLab.com, and more than a million of open-source projects.
+[Sourcegraph cloud](https://sourcegraph.com/search) lets you search your personal (public or private) code on GitHub.com or GitLab.com, and more than a million of open-source projects.
 
-Note that you can search across a maximum of 2,000 repositories at once using Sourcegraph Cloud. To search across more than 2,000 repositories at once or to search code hosted in an on-prem environment, [run your own Sourcegraph instance](../../../admin/install/index.md).
+Note that you can search across a maximum of 2,000 repositories at once using Sourcegraph cloud. To search across more than 2,000 repositories at once or to search code hosted in an on-prem environment, [run your own Sourcegraph instance](../../../admin/install/index.md).
 
-Note that **Organizations** feature is disabled in Sourcegraph Cloud. If you want to use it, you also need to [run your own Sourcegraph instance](../../../admin/install/index.md). 
+Note that **Organizations** feature is disabled in Sourcegraph cloud. If you want to use it, you also need to [run your own Sourcegraph instance](../../../admin/install/index.md). 
 
 
 ## Explanations and how-tos
 
 - [Adding repositories to Sourcegraph cloud](../how-to/adding_repositories_to_cloud.md)
-- [Searching across repositories you’ve added to Sourcegraph Cloud with search contexts](../how-to/searching_with_search_contexts.md)
+- [Searching across repositories you’ve added to Sourcegraph cloud with search contexts](../how-to/searching_with_search_contexts.md)
 - [Who can see your code on Sourcegraph cloud](./code_visibility_on_sourcegraph_cloud.md)
 
 ## FAQ
-### What is Sourcegraph Cloud?
+### What is Sourcegraph cloud?
 Sourcegraph cloud is a Software-as-a-Service version of Sourcegraph. This means that we handle hosting and updating Sourcegraph so you can focus on what matters, searching your code. Sourcegraph cloud is available in public beta today for any individual user to [sign-up](https://sourcegraph.com/sign-up) for free. 
 
 ### What are the differences between Sourcegraph cloud and Sourcegraph on-prem/Enterprise?
@@ -54,7 +54,7 @@ It is easy to share Sourcegraph with your team. Each team member must [sign-up](
 
 Search contexts help you search the code you care about on Sourcegraph cloud. A search context represents a set of repositories on Sourcegraph cloud that will be targeted by search queries by default.
 
-Sourcegraph Cloud supports two search contexts:
+Sourcegraph cloud supports two search contexts:
 
 - Your personal context, `context:@username`, which automatically includes [all repositories you add to Sourcegraph](../how-to/adding_repositories_to_cloud.md).
 - The global context, `context:global`, which includes all repositories on Sourcegraph cloud.
