@@ -248,7 +248,7 @@ export const GlobalNavbar: React.FunctionComponent<Props> = ({
                         <>
                             <NavAction>
                                 <Link className="global-navbar__link" to="https://about.sourcegraph.com">
-                                    About Sourcegraph
+                                    About <span className="d-none d-sm-inline">Sourcegraph</span>
                                 </Link>
                             </NavAction>
 

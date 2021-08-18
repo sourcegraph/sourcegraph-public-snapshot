@@ -125,7 +125,12 @@ exports[`GlobalNavbar default 1`] = `
           class="global-navbar__link"
           to="https://about.sourcegraph.com"
         >
-          About Sourcegraph
+          About 
+          <span
+            class="d-none d-sm-inline"
+          >
+            Sourcegraph
+          </span>
         </a>
       </li>
       <li
@@ -302,7 +307,12 @@ exports[`GlobalNavbar low-profile 1`] = `
           class="global-navbar__link"
           to="https://about.sourcegraph.com"
         >
-          About Sourcegraph
+          About 
+          <span
+            class="d-none d-sm-inline"
+          >
+            Sourcegraph
+          </span>
         </a>
       </li>
       <li
@@ -479,7 +489,12 @@ exports[`GlobalNavbar no-search-input 1`] = `
           class="global-navbar__link"
           to="https://about.sourcegraph.com"
         >
-          About Sourcegraph
+          About 
+          <span
+            class="d-none d-sm-inline"
+          >
+            Sourcegraph
+          </span>
         </a>
       </li>
       <li
