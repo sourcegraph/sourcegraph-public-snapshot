@@ -375,6 +375,9 @@ const publishableChangesetSpecIDsFieldsFragment = gql`
                 changesetSpec {
                     ...PublishableChangesetSpecIDsVisibleChangesetSpecFields
                 }
+                changeset {
+                    state
+                }
             }
         }
     }
