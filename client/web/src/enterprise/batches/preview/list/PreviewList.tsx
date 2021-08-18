@@ -4,6 +4,7 @@ import React, { useCallback, useContext, useState } from 'react'
 import { tap } from 'rxjs/operators'
 
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
+import { DismissibleAlert } from '@sourcegraph/web/src/components/DismissibleAlert'
 import { Container } from '@sourcegraph/wildcard'
 
 import { FilteredConnection, FilteredConnectionQueryArguments } from '../../../../components/FilteredConnection'
@@ -59,7 +60,7 @@ export const PreviewList: React.FunctionComponent<Props> = ({
     const { selected, areAllVisibleSelected, isSelected, toggleSingle, toggleVisible, setVisible } = useContext(
         MultiSelectContext
     )
-    const { filters, publicationStates } = useContext(BatchChangePreviewContext)
+    const { filters, publicationStates, addRecalculationUpdate } = useContext(BatchChangePreviewContext)
 
     const [queryArguments, setQueryArguments] = useState<BatchSpecApplyPreviewVariables>()
 
@@ -98,6 +99,16 @@ export const PreviewList: React.FunctionComponent<Props> = ({
             publicationStates,
         ]
     )
+
+    // Every subsequent query after the first will have its success time recorded
+    const [isInitialQuery, setIsInitialQuery] = useState(true)
+    const onUpdate = useCallback(() => {
+        if (isInitialQuery) {
+            setIsInitialQuery(false)
+        } else {
+            addRecalculationUpdate(new Date())
+        }
+    }, [addRecalculationUpdate, isInitialQuery])
 
     const showSelectRow = selected === 'all' || selected.size > 0
 
@@ -151,6 +162,7 @@ export const PreviewList: React.FunctionComponent<Props> = ({
                         <EmptyPreviewListElement />
                     )
                 }
+                onUpdate={onUpdate}
             />
         </Container>
     )
