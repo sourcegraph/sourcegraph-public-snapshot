@@ -1,6 +1,6 @@
 # Sourcegraph cloud
 
-[Sourcegraph cloud](https://sourcegraph.com/search) lets you search across your code from GitHub.com or GitLab.com, and across any open-source project on GitHub.com or Gitlab.com. Sourcegraph cloud is in public beta, allowing any individual to sign-up, connect personal repositories, and search across personal code. 
+[Sourcegraph cloud](https://sourcegraph.com/search) lets you search across your code from GitHub.com or GitLab.com, and across any open-source project on GitHub.com or Gitlab.com. Sourcegraph cloud is in Public Beta, allowing any individual to sign-up, connect personal repositories, and search across personal code. 
 
 Note that you can search across a maximum of 2,000 repositories at once using Sourcegraph cloud. To search across more than 2,000 repositories at once or to search code hosted in an on-prem environment, [run your own Sourcegraph instance](../../../admin/install/index.md).
 
@@ -14,7 +14,7 @@ Note that you can search across a maximum of 2,000 repositories at once using So
 
 ### What is Sourcegraph cloud?
 
-Sourcegraph cloud is a Software-as-a-Service version of Sourcegraph. This means that we handle hosting and updating Sourcegraph so you can focus on what matters: searching your code. Sourcegraph cloud is available in public beta for any individual user to [sign up for free](https://sourcegraph.com/sign-up).
+Sourcegraph cloud is a Software-as-a-Service version of Sourcegraph. This means that we handle hosting and updating Sourcegraph so you can focus on what matters: searching your code. Sourcegraph cloud is available in Public Beta for any individual user to [sign up for free](https://sourcegraph.com/sign-up).
 
 ### Limitations
 
@@ -40,7 +40,7 @@ Both Sourcegraph cloud and self-hosted Sourcegraph instances power the same sear
 
 ### How secure is Sourcegraph cloud? Can Sourcegraph see my code?
 
-Even though Sourcegraph cloud is in private beta, it has been designed with security and privacy at the core. No Sourcegraph user, admin, or Sourcegraph employee has access to your private code. This functionality has been rigorously tested during a 2 month private beta with hundreds of users who connected more than 15,000 repositories. In addition, prior to public beta Sourcegraph conducted a robust 3rd party penetration test and regularly conducts internal security audits. 
+Even though Sourcegraph cloud is in private beta, it has been designed with security and privacy at the core. No Sourcegraph user, admin, or Sourcegraph employee has access to your private code. This functionality has been rigorously tested during a 2 month private beta with hundreds of users who connected more than 15,000 repositories. In addition, prior to Public Beta Sourcegraph conducted a robust 3rd party penetration test and regularly conducts internal security audits. 
 
 See also:
 
