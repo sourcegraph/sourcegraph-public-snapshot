@@ -20,7 +20,7 @@ export interface InsightViewContentProps extends TelemetryProps {
     /** To get container to track hovers for pings */
     containerClassName?: string
 
-    // Render prop to display overlaid alerts
+    /** Render prop to display overlaid alerts */
     alertOverlay?(): void
 }
 
