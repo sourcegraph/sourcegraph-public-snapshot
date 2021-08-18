@@ -12,6 +12,7 @@ import { HeroPage } from '@sourcegraph/web/src/components/HeroPage'
 import { AuthenticatedUser } from '../auth'
 import { PageTitle } from '../components/PageTitle'
 import { SourcegraphContext } from '../jscontext'
+import { eventLogger } from '../tracking/eventLogger'
 import { SelectAffiliatedRepos } from '../user/settings/repositories/SelectAffiliatedRepos'
 import { UserExternalServicesOrRepositoriesUpdateProps } from '../util'
 
@@ -37,7 +38,15 @@ interface Step {
     onNextButtonClick?: () => Promise<void>
 }
 
+interface FinishEventPayload {
+    eventName?: string
+    tabNumber?: number
+}
 export type RepoSelectionMode = 'all' | 'selected' | undefined
+
+export type FinishWelcomeFlow = (event: React.MouseEvent<HTMLElement>, payload: FinishEventPayload) => void
+
+export const getPostSignUpEvent = (action?: string): string => `PostSignUp${action ? '_' + action : ''}`
 
 const USER_FINISHED_WELCOME_FLOW = 'finished-welcome-flow'
 
@@ -55,14 +64,26 @@ export const PostSignUpPage: FunctionComponent<PostSignUpPage> = ({
 
     const goToSearch = (): void => history.push(getReturnTo(location))
 
+    useEffect(() => {
+        eventLogger.logViewEvent(getPostSignUpEvent())
+    }, [])
+
     // if the welcome flow was already finished - navigate to search
     if (didUserFinishWelcomeFlow) {
         goToSearch()
     }
 
-    const finishWelcomeFlow = (event: React.MouseEvent<HTMLElement>): void => {
+    const finishWelcomeFlow: FinishWelcomeFlow = (event, { eventName, tabNumber }) => {
         event.currentTarget.blur()
         setUserFinishedWelcomeFlow(true)
+
+        const fullEventName = getPostSignUpEvent(eventName)
+        if (tabNumber) {
+            eventLogger.log(fullEventName, { tabNumber }, { tabNumber })
+        } else {
+            eventLogger.log(fullEventName)
+        }
+
         goToSearch()
     }
 
@@ -78,6 +99,7 @@ export const PostSignUpPage: FunctionComponent<PostSignUpPage> = ({
             return
         }
 
+        eventLogger.log(getPostSignUpEvent('Page_NavigatedAway'))
         setUserFinishedWelcomeFlow(true)
     }, [setUserFinishedWelcomeFlow])
 
@@ -100,7 +122,7 @@ export const PostSignUpPage: FunctionComponent<PostSignUpPage> = ({
                     className="ml-3 mt-3 post-signup-page__logo"
                     isLightTheme={true}
                     variant="symbol"
-                    onClick={finishWelcomeFlow}
+                    onClick={event => finishWelcomeFlow(event, { eventName: 'BrandLogo_Clicked' })}
                 />
             </LinkOrSpan>
 

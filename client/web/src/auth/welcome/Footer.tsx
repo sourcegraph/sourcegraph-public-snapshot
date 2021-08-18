@@ -3,10 +3,11 @@ import React from 'react'
 import { Link } from '@sourcegraph/shared/src/components/Link'
 import { LoaderButton } from '@sourcegraph/web/src/components/LoaderButton'
 
+import { FinishWelcomeFlow } from '../PostSignUpPage'
 import { useSteps } from '../Steps/context'
 
 interface Props {
-    onFinish: (event: React.MouseEvent<HTMLElement>) => void
+    onFinish: FinishWelcomeFlow
 }
 
 export const Footer: React.FunctionComponent<Props> = ({ onFinish }) => {
@@ -27,7 +28,13 @@ export const Footer: React.FunctionComponent<Props> = ({ onFinish }) => {
 
             <div>
                 {!currentStep.isLastStep && (
-                    <button type="button" className="btn btn-link font-weight-normal text-secondary" onClick={onFinish}>
+                    <button
+                        type="button"
+                        className="btn btn-link font-weight-normal text-secondary"
+                        onClick={event =>
+                            onFinish(event, { eventName: 'NotRightNow_Clicked', tabNumber: currentIndex })
+                        }
+                    >
                         Not right now
                     </button>
                 )}
@@ -37,14 +44,14 @@ export const Footer: React.FunctionComponent<Props> = ({ onFinish }) => {
                     label={currentStep.isLastStep ? 'Start searching' : 'Continue'}
                     className="btn btn-primary float-right ml-2"
                     disabled={!currentStep.isComplete}
-                    onClick={
-                        currentStep.isLastStep
-                            ? onFinish
-                            : (event: React.MouseEvent<HTMLElement>) => {
-                                  event.currentTarget.blur()
-                                  setStep(currentIndex + 1)
-                              }
-                    }
+                    onClick={event => {
+                        if (currentStep.isLastStep) {
+                            onFinish(event, { eventName: 'StartSearching_Clicked' })
+                        } else {
+                            event.currentTarget.blur()
+                            setStep(currentIndex + 1)
+                        }
+                    }}
                 />
             </div>
         </div>

@@ -4,9 +4,10 @@ import { Link } from '@sourcegraph/shared/src/components/Link'
 import { ErrorLike, isErrorLike } from '@sourcegraph/shared/src/util/errors'
 
 import { AuthenticatedUser } from '../../auth'
+import { eventLogger } from '../../tracking/eventLogger'
 import { UserExternalServicesOrRepositoriesUpdateProps } from '../../util'
 import { LogoAscii } from '../LogoAscii'
-import { RepoSelectionMode } from '../PostSignUpPage'
+import { getPostSignUpEvent, RepoSelectionMode } from '../PostSignUpPage'
 import { useSteps } from '../Steps'
 import { Terminal, TerminalTitle, TerminalLine, TerminalDetails, TerminalProgress } from '../Terminal'
 import { useExternalServices } from '../useExternalServices'
@@ -27,7 +28,10 @@ export const useShowAlert = (isDoneCloning: boolean, fetchError: ErrorLike | und
     const [showAlert, setShowAlert] = useState(false)
 
     useEffect(() => {
-        const timer = setTimeout(() => setShowAlert(true), SIXTY_SECONDS)
+        const timer = setTimeout(() => {
+            eventLogger.log(getPostSignUpEvent('SlowCloneBanner_Shown'))
+            setShowAlert(true)
+        }, SIXTY_SECONDS)
 
         if (isDoneCloning || isErrorLike(fetchError)) {
             clearTimeout(timer)
@@ -43,6 +47,9 @@ export const useShowAlert = (isDoneCloning: boolean, fetchError: ErrorLike | und
     return { showAlert }
 }
 
+const trackBannerClick = (): void => {
+    eventLogger.log(getPostSignUpEvent('SlowCloneBanner_Clicked'))
+}
 const getReposForCodeHost = (selectedRepos: MinSelectedRepo[] = [], codeHostId: string): string[] =>
     selectedRepos
         ? selectedRepos.reduce((accumulator, repo) => {
@@ -187,9 +194,15 @@ export const StartSearching: React.FunctionComponent<StartSearching> = ({
             {showAlert && (
                 <div className="alert alert-warning mt-4">
                     Cloning your repositories is taking a long time. You can wait for cloning to finish, or{' '}
-                    <Link to="/search">continue to Sourcegraph now</Link> while cloning continues in the background.
-                    Note that you can only search repos that have finished cloning. Check status at any time in{' '}
-                    <Link to="user/settings/repositories">Settings → Repositories</Link>.
+                    <Link to="/search" onClick={trackBannerClick}>
+                        continue to Sourcegraph now
+                    </Link>{' '}
+                    while cloning continues in the background. Note that you can only search repos that have finished
+                    cloning. Check status at any time in{' '}
+                    <Link to="user/settings/repositories" onClick={trackBannerClick}>
+                        Settings → Repositories
+                    </Link>
+                    .
                 </div>
             )}
         </div>
