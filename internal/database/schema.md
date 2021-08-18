@@ -99,6 +99,7 @@ Indexes:
  namespace_org_id  | integer                  |           |          | 
  rand_id           | text                     |           | not null | 
  last_heartbeat_at | timestamp with time zone |           |          | 
+ cancel            | boolean                  |           |          | false
 Indexes:
     "batch_spec_executions_pkey" PRIMARY KEY, btree (id)
     "batch_spec_executions_rand_id" btree (rand_id)

@@ -101,14 +101,14 @@ const lightRules: monaco.editor.ITokenThemeRule[] = [
     // Sourcegraph base language tokens
     { token: 'identifier', foreground: '#14171f' }, // --search-query-text-color
     { token: 'field', foreground: '#0b70db' }, // --search-filter-keyword-color
-    { token: 'keyword', foreground: '#a305e1' }, // --search-keyword-color
-    { token: 'openingParen', foreground: '#a305e1' }, // --search-keyword-color
-    { token: 'closingParen', foreground: '#a305e1' }, // --search-keyword-color
+    { token: 'keyword', foreground: '#a112ff' }, // --search-keyword-color
+    { token: 'openingParen', foreground: '#a112ff' }, // --search-keyword-color
+    { token: 'closingParen', foreground: '#a112ff' }, // --search-keyword-color
     { token: 'comment', foreground: '#d9480f' }, // --oc-orange-9
     // Sourcegraph decorated language tokens
     { token: 'metaRepoRevisionSeparator', foreground: '#0b70db' }, // --search-filter-keyword-color
-    { token: 'metaContextPrefix', foreground: '#a305e1' }, // --search-keyword-color
-    { token: 'metaPredicateNameAccess', foreground: '#a305e1' }, // --search-keyword-color
+    { token: 'metaContextPrefix', foreground: '#a112ff' }, // --search-keyword-color
+    { token: 'metaPredicateNameAccess', foreground: '#a112ff' }, // --search-keyword-color
     { token: 'metaPredicateDot', foreground: '#14171f' }, // --search-query-text-color
     { token: 'metaPredicateParenthesis', foreground: '#d9480f' }, // --oc-orange-9
     // Regexp pattern highlighting
@@ -116,11 +116,11 @@ const lightRules: monaco.editor.ITokenThemeRule[] = [
     { token: 'metaRegexpAssertion', foreground: '#c92a2a' }, // --oc-red-9
     { token: 'metaRegexpLazyQuantifier', foreground: '#c92a2a' }, // --oc-red-9
     { token: 'metaRegexpEscapedCharacter', foreground: '#d9480f' }, // --oc-orange-9
-    { token: 'metaRegexpCharacterSet', foreground: '#a305e1' }, // --search-keyword-color
-    { token: 'metaRegexpCharacterClass', foreground: '#a305e1' }, // --search-keyword-color
+    { token: 'metaRegexpCharacterSet', foreground: '#a112ff' }, // --search-keyword-color
+    { token: 'metaRegexpCharacterClass', foreground: '#a112ff' }, // --search-keyword-color
     { token: 'metaRegexpCharacterClassMember', foreground: '#14171f' }, // --search-query-text-color
     { token: 'metaRegexpCharacterClassRange', foreground: '#14171f' }, // --search-query-text-color
-    { token: 'metaRegexpCharacterClassRangeHyphen', foreground: '#a305e1' }, // --search-keyword-color
+    { token: 'metaRegexpCharacterClassRangeHyphen', foreground: '#a112ff' }, // --search-keyword-color
     { token: 'metaRegexpRangeQuantifier', foreground: '#1098ad' }, // --oc-cyan-7
     { token: 'metaRegexpAlternative', foreground: '#1098ad' }, // --oc-cyan-7
     // Structural pattern highlighting

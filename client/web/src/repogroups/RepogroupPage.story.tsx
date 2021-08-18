@@ -19,8 +19,8 @@ import {
 import { ThemePreference } from '../theme'
 
 import { cncf } from './cncf'
-import { python2To3Metadata } from './Python2To3'
 import { RepogroupPage, RepogroupPageProps } from './RepogroupPage'
+import { temporal } from './Temporal'
 
 const { add } = storiesOf('web/RepogroupPage', module).addParameters({
     design: {
@@ -103,7 +103,7 @@ const commonProps = () =>
         authRequired: false,
         batchChangesEnabled: false,
         authenticatedUser: authUser,
-        repogroupMetadata: python2To3Metadata,
+        repogroupMetadata: temporal,
         globbing: false,
         showOnboardingTour: false,
         showQueryBuilder: false,
@@ -114,7 +114,7 @@ const commonProps = () =>
         getUserSearchContextNamespaces: mockGetUserSearchContextNamespaces,
     })
 
-add('Refactor Python 2 to 3', () => (
+add('Temporal', () => (
     <WebStory>
         {webProps => (
             <RepogroupPage

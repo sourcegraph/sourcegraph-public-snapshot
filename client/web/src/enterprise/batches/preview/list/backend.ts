@@ -1,5 +1,5 @@
-import { Observable } from 'rxjs'
-import { map } from 'rxjs/operators'
+import { EMPTY, Observable } from 'rxjs'
+import { expand, map, reduce } from 'rxjs/operators'
 
 import { gql, dataOrThrowErrors } from '@sourcegraph/shared/src/graphql/graphql'
 
@@ -12,8 +12,13 @@ import {
     BatchSpecApplyPreviewResult,
     BatchSpecApplyPreviewVariables,
     ChangesetSpecFileDiffConnectionFields,
+    Scalars,
+    AllPublishableChangesetSpecIDsVariables,
+    PublishableChangesetSpecIDsConnectionFields,
+    AllPublishableChangesetSpecIDsResult,
 } from '../../../../graphql-operations'
 import { personLinkFieldsFragment } from '../../../../person/PersonLink'
+import { getPublishableChangesetSpecID } from '../utils'
 
 const changesetSpecFieldsFragment = gql`
     fragment CommonChangesetSpecFields on ChangesetSpec {
@@ -325,3 +330,123 @@ export const queryChangesetSpecFileDiffs = ({
             return node.description.diff.fileDiffs
         })
     )
+
+const publishableChangesetSpecIDsFieldsFragment = gql`
+    fragment PublishableChangesetSpecIDsConnectionFields on ChangesetApplyPreviewConnection {
+        nodes {
+            ...PublishableChangesetSpecIDsChangesetApplyPreviewFields
+        }
+        pageInfo {
+            hasNextPage
+            endCursor
+        }
+    }
+
+    fragment PublishableChangesetSpecIDsChangesetApplyPreviewFields on ChangesetApplyPreview {
+        __typename
+        ... on HiddenChangesetApplyPreview {
+            ...PublishableChangesetSpecIDsHiddenChangesetApplyPreviewFields
+        }
+        ... on VisibleChangesetApplyPreview {
+            ...PublishableChangesetSpecIDsVisibleChangesetApplyPreviewFields
+        }
+    }
+
+    fragment PublishableChangesetSpecIDsHiddenChangesetApplyPreviewFields on HiddenChangesetApplyPreview {
+        __typename
+        targets {
+            __typename
+        }
+    }
+
+    fragment PublishableChangesetSpecIDsVisibleChangesetApplyPreviewFields on VisibleChangesetApplyPreview {
+        __typename
+        targets {
+            __typename
+            ... on VisibleApplyPreviewTargetsAttach {
+                changesetSpec {
+                    ...PublishableChangesetSpecIDsVisibleChangesetSpecFields
+                }
+            }
+            ... on VisibleApplyPreviewTargetsUpdate {
+                changesetSpec {
+                    ...PublishableChangesetSpecIDsVisibleChangesetSpecFields
+                }
+            }
+        }
+    }
+
+    fragment PublishableChangesetSpecIDsVisibleChangesetSpecFields on VisibleChangesetSpec {
+        id
+        description {
+            __typename
+            ... on GitBranchChangesetDescription {
+                published
+            }
+        }
+    }
+`
+
+export const queryPublishableChangesetSpecIDs = ({
+    batchSpec,
+    first,
+    search,
+    currentState,
+    action,
+}: Omit<AllPublishableChangesetSpecIDsVariables, 'after'>): Observable<Scalars['ID'][]> => {
+    const request = (after: string | null): Observable<PublishableChangesetSpecIDsConnectionFields> =>
+        requestGraphQL<AllPublishableChangesetSpecIDsResult, AllPublishableChangesetSpecIDsVariables>(
+            gql`
+                query AllPublishableChangesetSpecIDs(
+                    $batchSpec: ID!
+                    $first: Int
+                    $after: String
+                    $search: String
+                    $currentState: ChangesetState
+                    $action: ChangesetSpecOperation
+                ) {
+                    node(id: $batchSpec) {
+                        __typename
+                        ... on BatchSpec {
+                            applyPreview(
+                                first: $first
+                                after: $after
+                                search: $search
+                                currentState: $currentState
+                                action: $action
+                            ) {
+                                ...PublishableChangesetSpecIDsConnectionFields
+                            }
+                        }
+                    }
+                }
+
+                ${publishableChangesetSpecIDsFieldsFragment}
+            `,
+            { batchSpec, first, after, search, currentState, action }
+        ).pipe(
+            map(dataOrThrowErrors),
+            map(({ node }) => {
+                if (!node) {
+                    throw new Error(`BatchSpec with ID ${batchSpec} does not exist`)
+                }
+                if (node.__typename !== 'BatchSpec') {
+                    throw new Error(`The given ID is a ${node.__typename}, not a BatchSpec`)
+                }
+                return node.applyPreview
+            })
+        )
+
+    return request(null).pipe(
+        expand(connection => (connection.pageInfo.hasNextPage ? request(connection.pageInfo.endCursor) : EMPTY)),
+        reduce<PublishableChangesetSpecIDsConnectionFields, Scalars['ID'][]>(
+            (previous, next) =>
+                previous.concat(
+                    next.nodes
+                        .map(node => getPublishableChangesetSpecID(node))
+                        .filter((maybeID): maybeID is Scalars['ID'] => maybeID !== null)
+                ),
+            []
+        )
+    )
+}

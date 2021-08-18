@@ -72,11 +72,36 @@ func (s *sessionIssuerHelper) GetOrCreateUser(ctx context.Context, token *oauth2
 		firstSafeErrMsg string
 		firstErr        error
 	)
-	for i, verifiedEmail := range verifiedEmails {
+
+	// We will first attempt to connect one of the verified emails with an existing
+	// account in Sourcegraph
+	type attemptConfig struct {
+		email            string
+		createIfNotExist bool
+	}
+	var attempts []attemptConfig
+	for i := range verifiedEmails {
+		attempts = append(attempts, attemptConfig{
+			email:            verifiedEmails[i],
+			createIfNotExist: false,
+		})
+	}
+	// If allowSignup is true, we will create an account using the first verified
+	// email address from GitHub which we expect to be their primary address. Note
+	// that the order of attempts is important. If we manage to connect with an
+	// existing account we return early and don't attempt to create a new account.
+	if s.allowSignup {
+		attempts = append(attempts, attemptConfig{
+			email:            verifiedEmails[0],
+			createIfNotExist: true,
+		})
+	}
+
+	for i, attempt := range attempts {
 		userID, safeErrMsg, err := auth.GetAndSaveUser(ctx, s.db, auth.GetAndSaveUserOp{
 			UserProps: database.NewUser{
 				Username:        login,
-				Email:           verifiedEmail,
+				Email:           attempt.email,
 				EmailIsVerified: true,
 				DisplayName:     deref(ghUser.Name),
 				AvatarURL:       deref(ghUser.AvatarURL),
@@ -88,10 +113,10 @@ func (s *sessionIssuerHelper) GetOrCreateUser(ctx context.Context, token *oauth2
 				AccountID:   strconv.FormatInt(derefInt64(ghUser.ID), 10),
 			},
 			ExternalAccountData: data,
-			CreateIfNotExist:    s.allowSignup,
+			CreateIfNotExist:    attempt.createIfNotExist,
 		})
 		if err == nil {
-			go hubspotutil.SyncUser(verifiedEmail, hubspotutil.SignupEventID, &hubspot.ContactProperties{
+			go hubspotutil.SyncUser(attempt.email, hubspotutil.SignupEventID, &hubspot.ContactProperties{
 				AnonymousUserID: anonymousUserID,
 				FirstSourceURL:  firstSourceURL,
 			})
@@ -101,6 +126,7 @@ func (s *sessionIssuerHelper) GetOrCreateUser(ctx context.Context, token *oauth2
 			firstSafeErrMsg, firstErr = safeErrMsg, err
 		}
 	}
+
 	// On failure, return the first error
 	return nil, fmt.Sprintf("No user exists matching any of the verified emails: %s.\n\nFirst error was: %s", strings.Join(verifiedEmails, ", "), firstSafeErrMsg), firstErr
 }

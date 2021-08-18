@@ -358,7 +358,7 @@ func TestEventLogs_TestCodeIntelligenceRepositoryCounts(t *testing.T) {
 		name      string
 		deletedAt *time.Time
 	}{
-		{1, "test01", nil},
+		{1, "test01", nil}, // 2 weeks old
 		{2, "test02", nil},
 		{3, "test03", nil},
 		{4, "test04", nil},  // (no LSIF data)
@@ -386,27 +386,170 @@ func TestEventLogs_TestCodeIntelligenceRepositoryCounts(t *testing.T) {
 		{5}, // deleted repository
 		{6}, // missing repository
 	}
+
+	// Insert each upload once a day; first two uploads are not fresh
+	// Add an extra hour so that we're not testing the weird edge boundary
+	// when Postgres NOW() - interval and the record's upload time is not
+	// too close.
+	uploadedAt := time.Now().UTC().Add(-time.Hour * 24 * (7 + 2)).Add(time.Hour)
+
 	for i, upload := range uploads {
 		query := sqlf.Sprintf(
-			"INSERT INTO lsif_uploads (repository_id, commit, indexer, num_parts, uploaded_parts, state) VALUES (%s, %s, 'idx', 1, '{}', 'completed')",
+			"INSERT INTO lsif_uploads (repository_id, commit, indexer, uploaded_at, num_parts, uploaded_parts, state) VALUES (%s, %s, 'idx', %s, 1, '{}', 'completed')",
 			upload.repositoryID,
 			fmt.Sprintf("%040d", i),
+			uploadedAt,
 		)
 		if _, err := db.Exec(query.Query(sqlf.PostgresBindVar), query.Args()...); err != nil {
 			t.Fatalf("unexpected error preparing database: %s", err.Error())
 		}
+
+		uploadedAt = uploadedAt.Add(time.Hour * 24)
 	}
 
-	withUploads, withoutUploads, err := EventLogs(db).CodeIntelligenceRepositoryCounts(ctx)
+	query := sqlf.Sprintf(
+		"INSERT INTO lsif_index_configuration (repository_id, data, autoindex_enabled) VALUES (1, '', true)",
+	)
+	if _, err := db.Exec(query.Query(sqlf.PostgresBindVar), query.Args()...); err != nil {
+		t.Fatalf("unexpected error preparing database: %s", err.Error())
+	}
+
+	query = sqlf.Sprintf(
+		`
+		INSERT INTO lsif_indexes (repository_id, commit, indexer, root, indexer_args, outfile, local_steps, docker_steps, queued_at, state) VALUES
+			(1, %s, 'idx', '', '{}', 'dump.lsif', '{}', '{}', %s, 'completed'),
+			(2, %s, 'idx', '', '{}', 'dump.lsif', '{}', '{}', %s, 'completed'),
+			(3, %s, 'idx', '', '{}', 'dump.lsif', '{}', '{}', NOW(), 'queued') -- ignored
+		`,
+		fmt.Sprintf("%040d", 1), time.Now().UTC().Add(-time.Hour*24*7*2), // 2 weeks
+		fmt.Sprintf("%040d", 2), time.Now().UTC().Add(-time.Hour*24*5), // 5 days
+		fmt.Sprintf("%040d", 3),
+	)
+	if _, err := db.Exec(query.Query(sqlf.PostgresBindVar), query.Args()...); err != nil {
+		t.Fatalf("unexpected error preparing database: %s", err.Error())
+	}
+
+	t.Run("All", func(t *testing.T) {
+		counts, err := EventLogs(db).CodeIntelligenceRepositoryCounts(ctx)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if counts.NumRepositories != 4 {
+			t.Errorf("unexpected number of repositories. want=%d have=%d", 4, counts.NumRepositories)
+		}
+		if counts.NumRepositoriesWithUploadRecords != 3 {
+			t.Errorf("unexpected number of repositories with uploads. want=%d have=%d", 3, counts.NumRepositoriesWithUploadRecords)
+		}
+		if counts.NumRepositoriesWithFreshUploadRecords != 2 {
+			t.Errorf("unexpected number of repositories with fresh uploads. want=%d have=%d", 2, counts.NumRepositoriesWithFreshUploadRecords)
+		}
+		if counts.NumRepositoriesWithIndexRecords != 2 {
+			t.Errorf("unexpected number of repositories with indexes. want=%d have=%d", 2, counts.NumRepositoriesWithIndexRecords)
+		}
+		if counts.NumRepositoriesWithFreshIndexRecords != 1 {
+			t.Errorf("unexpected number of repositories with fresh indexes. want=%d have=%d", 1, counts.NumRepositoriesWithFreshIndexRecords)
+		}
+		if counts.NumRepositoriesWithAutoIndexConfigurationRecords != 1 {
+			t.Errorf("unexpected number of repositories with index configuration. want=%d have=%d", 1, counts.NumRepositoriesWithAutoIndexConfigurationRecords)
+		}
+	})
+
+	t.Run("ByLanguage", func(t *testing.T) {
+		counts, err := EventLogs(db).CodeIntelligenceRepositoryCountsByLanguage(ctx)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if len(counts) != 1 {
+			t.Errorf("unexpected number of counts. want=%d have=%d", 1, len(counts))
+		}
+
+		for language, counts := range counts {
+			if language != "idx" {
+				t.Errorf("unexpected indexer. want=%s have=%s", "idx", language)
+			}
+
+			if counts.NumRepositoriesWithUploadRecords != 3 {
+				t.Errorf("unexpected number of repositories with uploads. want=%d have=%d", 3, counts.NumRepositoriesWithUploadRecords)
+			}
+			if counts.NumRepositoriesWithFreshUploadRecords != 2 {
+				t.Errorf("unexpected number of repositories with fresh uploads. want=%d have=%d", 2, counts.NumRepositoriesWithFreshUploadRecords)
+			}
+			if counts.NumRepositoriesWithIndexRecords != 2 {
+				t.Errorf("unexpected number of repositories with indexes. want=%d have=%d", 2, counts.NumRepositoriesWithIndexRecords)
+			}
+			if counts.NumRepositoriesWithFreshIndexRecords != 1 {
+				t.Errorf("unexpected number of repositories with fresh indexes. want=%d have=%d", 1, counts.NumRepositoriesWithFreshIndexRecords)
+			}
+		}
+	})
+}
+
+func TestEventLogs_CodeIntelligenceSettingsPageViewCounts(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+	t.Parallel()
+	db := dbtest.NewDB(t, "")
+	ctx := context.Background()
+
+	names := []string{
+		"ViewBatchesConfiguration",
+		"ViewCodeIntelUploadsPage",            // contributes 75 events
+		"ViewCodeIntelUploadPage",             // contributes 75 events
+		"ViewCodeIntelIndexesPage",            // contributes 75 events
+		"ViewCodeIntelIndexPage",              // contributes 75 events
+		"ViewCodeIntelIndexConfigurationPage", // contributes 75 events
+	}
+
+	// This unix timestamp is equivalent to `Friday, May 15, 2020 10:30:00 PM GMT` and is set to
+	// be a consistent value so that the tests don't fail when someone runs it at some particular
+	// time that falls too near the edge of a week.
+	now := time.Unix(1589581800, 0).UTC()
+
+	days := []time.Time{
+		now,                           // Today
+		now.Add(-time.Hour * 24 * 3),  // This week
+		now.Add(-time.Hour * 24 * 4),  // This week
+		now.Add(-time.Hour * 24 * 6),  // This month
+		now.Add(-time.Hour * 24 * 12), // This month
+		now.Add(-time.Hour * 24 * 40), // Previous month
+	}
+
+	g, gctx := errgroup.WithContext(ctx)
+
+	for _, name := range names {
+		for _, day := range days {
+			for i := 0; i < 25; i++ {
+				e := &Event{
+					UserID:   1,
+					Name:     name,
+					URL:      "test",
+					Source:   "test",
+					Argument: json.RawMessage(fmt.Sprintf(`{"languageId": "lang-%02d"}`, (i%3)+1)),
+					// Jitter current time +/- 30 minutes
+					Timestamp: day.Add(time.Minute * time.Duration(rand.Intn(60)-30)),
+				}
+
+				g.Go(func() error {
+					return EventLogs(db).Insert(gctx, e)
+				})
+			}
+		}
+	}
+
+	if err := g.Wait(); err != nil {
+		t.Fatal(err)
+	}
+
+	count, err := EventLogs(db).codeIntelligenceSettingsPageViewCount(ctx, now)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	if withUploads != 3 {
-		t.Errorf("unexpected number of repositories with uploads. want=%d have=%d", 3, withUploads)
-	}
-	if withoutUploads != 1 {
-		t.Errorf("unexpected number of repositories without uploads. want=%d have=%d", 1, withoutUploads)
+	if count != 375 {
+		t.Errorf("unexpected count. want=%d have=%d", 375, count)
 	}
 }
 

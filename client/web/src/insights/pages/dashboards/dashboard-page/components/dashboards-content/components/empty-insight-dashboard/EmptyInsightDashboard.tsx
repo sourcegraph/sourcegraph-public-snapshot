@@ -27,7 +27,7 @@ export const EmptyInsightDashboard: React.FunctionComponent<EmptyInsightDashboar
             onAddInsight={onAddInsight}
         />
     ) : (
-        <EmptyBuiltInDashboard />
+        <EmptyBuiltInDashboard dashboard={dashboard} />
     )
 }
 
@@ -36,9 +36,9 @@ export const EmptyInsightDashboard: React.FunctionComponent<EmptyInsightDashboar
  * Since all insights within built-in dashboards are calculated there's no ability to add insight to
  * this type of dashboard.
  */
-export const EmptyBuiltInDashboard: React.FunctionComponent = () => (
+export const EmptyBuiltInDashboard: React.FunctionComponent<{ dashboard: InsightDashboard }> = props => (
     <section className={styles.emptySection}>
-        <Link to="/insights/create" className={classnames(styles.itemCard, 'card')}>
+        <Link to={`/insights/create?dashboardId=${props.dashboard.id}`} className={classnames(styles.itemCard, 'card')}>
             <PlusIcon size="2rem" />
             <span>Create new insight</span>
         </Link>
@@ -76,7 +76,7 @@ export const EmptySettingsBasedDashboard: React.FunctionComponent<EmptyInsightDa
                 </div>
             </button>
             <span className="d-flex justify-content-center mt-3">
-                <Link to="/insights/create">or, create new insight</Link>
+                <Link to={`/insights/create?dashboardId=${dashboard.id}`}>or, create new insight</Link>
             </span>
         </section>
     )

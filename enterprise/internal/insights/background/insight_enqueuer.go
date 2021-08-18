@@ -122,5 +122,5 @@ func withCountUnlimited(s string) string {
 	if strings.Contains(s, "count:") {
 		return s
 	}
-	return s + " count:9999999"
+	return s + " count:all"
 }

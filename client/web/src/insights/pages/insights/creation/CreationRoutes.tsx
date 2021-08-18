@@ -8,22 +8,16 @@ import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryServi
 import { AuthenticatedUser } from '../../../../auth'
 import { lazyComponent } from '../../../../util/lazyComponent'
 
-const IntroCreationLazyPage = lazyComponent(() => import('./intro/IntroCreationPage'), 'IntroCreationPage')
-const SearchInsightCreationLazyPage = lazyComponent(
-    () => import('./search-insight/SearchInsightCreationPage'),
-    'SearchInsightCreationPage'
-)
+import { InsightCreationPageType } from './InsightCreationPage'
 
-const LangStatsInsightCreationLazyPage = lazyComponent(
-    () => import('./lang-stats/LangStatsInsightCreationPage'),
-    'LangStatsInsightCreationPage'
-)
+const IntroCreationLazyPage = lazyComponent(() => import('./intro/IntroCreationPage'), 'IntroCreationPage')
+const InsightCreationLazyPage = lazyComponent(() => import('./InsightCreationPage'), 'InsightCreationPage')
 
 interface CreationRoutesProps extends TelemetryProps, PlatformContextProps<'updateSettings'>, SettingsCascadeProps {
     /**
      * Authenticated user info, Used to decide where code insight will appears
      * in personal dashboard (private) or in organisation dashboard (public)
-     * */
+     */
     authenticatedUser: AuthenticatedUser
 }
 
@@ -47,7 +41,8 @@ export const CreationRoutes: React.FunctionComponent<CreationRoutesProps> = prop
             <Route
                 path={`${match.url}/search`}
                 render={() => (
-                    <SearchInsightCreationLazyPage
+                    <InsightCreationLazyPage
+                        mode={InsightCreationPageType.Search}
                         telemetryService={telemetryService}
                         platformContext={platformContext}
                         settingsCascade={settingsCascade}
@@ -59,7 +54,8 @@ export const CreationRoutes: React.FunctionComponent<CreationRoutesProps> = prop
                 path={`${match.url}/lang-stats`}
                 exact={true}
                 render={() => (
-                    <LangStatsInsightCreationLazyPage
+                    <InsightCreationLazyPage
+                        mode={InsightCreationPageType.LangStats}
                         telemetryService={telemetryService}
                         platformContext={platformContext}
                         settingsCascade={settingsCascade}

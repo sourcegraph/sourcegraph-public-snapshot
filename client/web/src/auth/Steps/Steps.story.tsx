@@ -56,6 +56,6 @@ export const Stepper: Story = () => (
 Stepper.storyName = 'Steps component top navigation'
 
 export default {
-    title: 'wildcard/Steps',
+    title: 'web/Steps',
     component: Stepper,
 } as Meta

@@ -59,7 +59,11 @@ export const SearchNotebook: React.FunctionComponent<SearchNotebookProps> = ({
             notebook.runBlockById(id)
             updateBlocks()
 
-            props.telemetryService.log('SearchNotebookRunBlock', { type: notebook.getBlockById(id)?.type })
+            props.telemetryService.log(
+                'SearchNotebookRunBlock',
+                { type: notebook.getBlockById(id)?.type },
+                { type: notebook.getBlockById(id)?.type }
+            )
         },
         [notebook, props.telemetryService, updateBlocks]
     )
@@ -85,7 +89,7 @@ export const SearchNotebook: React.FunctionComponent<SearchNotebookProps> = ({
             setSelectedBlockId(addedBlock.id)
             updateBlocks()
 
-            props.telemetryService.log('SearchNotebookAddBlock', { type: addedBlock.type })
+            props.telemetryService.log('SearchNotebookAddBlock', { type: addedBlock.type }, { type: addedBlock.type })
         },
         [notebook, isReadOnly, props.telemetryService, updateBlocks, setSelectedBlockId]
     )
@@ -102,7 +106,7 @@ export const SearchNotebook: React.FunctionComponent<SearchNotebookProps> = ({
             setSelectedBlockId(blockToFocusAfterDelete)
             updateBlocks()
 
-            props.telemetryService.log('SearchNotebookDeleteBlock', { type: block?.type })
+            props.telemetryService.log('SearchNotebookDeleteBlock', { type: block?.type }, { type: block?.type })
         },
         [notebook, isReadOnly, props.telemetryService, setSelectedBlockId, updateBlocks]
     )
@@ -116,7 +120,11 @@ export const SearchNotebook: React.FunctionComponent<SearchNotebookProps> = ({
             notebook.moveBlockById(id, direction)
             updateBlocks()
 
-            props.telemetryService.log('SearchNotebookMoveBlock', { type: notebook.getBlockById(id)?.type, direction })
+            props.telemetryService.log(
+                'SearchNotebookMoveBlock',
+                { type: notebook.getBlockById(id)?.type, direction },
+                { type: notebook.getBlockById(id)?.type, direction }
+            )
         },
         [notebook, isReadOnly, props.telemetryService, updateBlocks]
     )
@@ -136,7 +144,11 @@ export const SearchNotebook: React.FunctionComponent<SearchNotebookProps> = ({
             }
             updateBlocks()
 
-            props.telemetryService.log('SearchNotebookDuplicateBlock', { type: duplicateBlock?.type })
+            props.telemetryService.log(
+                'SearchNotebookDuplicateBlock',
+                { type: duplicateBlock?.type },
+                { type: duplicateBlock?.type }
+            )
         },
         [notebook, isReadOnly, props.telemetryService, setSelectedBlockId, updateBlocks]
     )

@@ -1,8 +1,9 @@
 import classnames from 'classnames'
-import React, { useRef, forwardRef, InputHTMLAttributes, ReactNode, useEffect } from 'react'
+import React, { useRef, forwardRef, InputHTMLAttributes, ReactNode } from 'react'
 import { useMergeRefs } from 'use-callback-ref'
 
 import { LoaderInput } from '@sourcegraph/branded/src/components/LoaderInput'
+import { useAutoFocus } from '@sourcegraph/wildcard'
 
 import styles from './FormInput.module.scss'
 import { ForwardReferenceComponent } from './types'
@@ -53,19 +54,7 @@ const FormInput = forwardRef((props, reference) => {
     const localReference = useRef<HTMLInputElement>(null)
     const mergedReference = useMergeRefs([localReference, reference])
 
-    useEffect(() => {
-        if (autoFocus) {
-            // In some cases if form input has been rendered within reach/portal element
-            // react autoFocus set focus too early and in this case we have to
-            // call focus explicitly in the next tick to be sure that focus will be
-            // on input element. See reach/portal implementation and notice async way to
-            // render children in react portal component.
-            // https://github.com/reach/reach-ui/blob/0ae833201cf842fc00859612cfc6c30a593d593d/packages/portal/src/index.tsx#L45
-            requestAnimationFrame(() => {
-                localReference.current?.focus()
-            })
-        }
-    }, [autoFocus])
+    useAutoFocus({ autoFocus, reference: localReference })
 
     return (
         <label className={classnames('w-100', className)}>

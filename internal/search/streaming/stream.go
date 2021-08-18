@@ -60,9 +60,14 @@ func (s *LimitStream) Send(event SearchEvent) {
 // Stream are complete.
 func WithLimit(ctx context.Context, parent Sender, limit int) (context.Context, Sender, context.CancelFunc) {
 	ctx, cancel := context.WithCancel(ctx)
-	stream := &LimitStream{cancel: cancel, s: parent}
+	mutCtx := WithMutableValue(ctx)
+	cancelWithReason := func() {
+		mutCtx.Set(CanceledLimitHit, true)
+		cancel()
+	}
+	stream := &LimitStream{cancel: cancelWithReason, s: parent}
 	stream.remaining.Store(int64(limit))
-	return ctx, stream, cancel
+	return mutCtx, stream, cancel
 }
 
 // WithSelect returns a child Stream of parent that runs the select operation

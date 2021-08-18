@@ -23,7 +23,6 @@ import { GlobalNavbar } from './GlobalNavbar'
 if (!window.context) {
     window.context = {} as SourcegraphContext & SuiteFunction
 }
-window.context.assetsRoot = 'https://sourcegraph.com/.assets'
 
 const history = createMemoryHistory()
 

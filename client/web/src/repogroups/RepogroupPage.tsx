@@ -30,7 +30,7 @@ import {
     SearchContextInputProps,
 } from '../search'
 import { submitSearch } from '../search/helpers'
-import { SearchPageInput } from '../search/input/SearchPageInput'
+import { SearchPageInput } from '../search/home/SearchPageInput'
 import { ThemePreferenceProps } from '../theme'
 import { eventLogger } from '../tracking/eventLogger'
 
@@ -198,7 +198,7 @@ export const RepogroupPage: React.FunctionComponent<RepogroupPageProps> = (props
 }
 
 const RepoLinkClicked = (repoName: string) => (): void =>
-    eventLogger.log('RepogroupPageRepoLinkClicked', { repo_name: repoName })
+    eventLogger.log('RepogroupPageRepoLinkClicked', { repo_name: repoName }, { repo_name: repoName })
 
 const RepoLink: React.FunctionComponent<{ repo: string }> = ({ repo }) => (
     <li className="repogroup-page__repo-item list-unstyled mb-3" key={repo}>

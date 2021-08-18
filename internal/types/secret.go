@@ -1,13 +1,10 @@
-/*
-	The functions in this file are used to redact secrets from ExternalServices in transit, eg when written back and
-	forth between the client and API, as we don't want to leak an access token once it's been configured. Any config
-	written back from the client with a redacted token should then be updated with the real token from the database,
-	the validation in the ExternalService DB methods will check for this field and throw an error if it's not been
-	replaced, to prevent us accidentally blanking tokens in the DB.
-	This is risky, hacky, and ugly, and we fully intend to replace it ASAP, once our Vault tooling is ready we will
-	migrate external services into their own tables for each kind, and encrypt secrets using Vault's KMS.
-	if you wanna speak to someone about this talk to @arussellsaw or the Cloud team.
-*/
+// The functions in this file are used to redact secrets from ExternalServices in
+// transit, eg when written back and forth between the client and API, as we
+// don't want to leak an access token once it's been configured. Any config
+// written back from the client with a redacted token should then be updated with
+// the real token from the database, the validation in the ExternalService DB
+// methods will check for this field and throw an error if it's not been
+// replaced, to prevent us accidentally blanking tokens in the DB.
 
 package types
 
@@ -15,7 +12,6 @@ import (
 	"strings"
 
 	"github.com/cockroachdb/errors"
-
 	"github.com/fatih/structs"
 	jsoniter "github.com/json-iterator/go"
 
@@ -42,32 +38,32 @@ func (e *ExternalService) RedactConfigSecrets() error {
 	}
 	switch cfg := cfg.(type) {
 	case *schema.GitHubConnection:
-		newCfg, err = redactField(e.Config, "token")
+		newCfg, err = redactField(e.Config, []string{"token"})
 	case *schema.GitLabConnection:
-		newCfg, err = redactField(e.Config, "token")
+		newCfg, err = redactField(e.Config, []string{"token"})
 	case *schema.BitbucketServerConnection:
 		// BitbucketServer can have a token OR password
-		var fields []string
+		var fields [][]string
 		if cfg.Password != "" {
-			fields = append(fields, "password")
+			fields = append(fields, []string{"password"})
 		}
 		if cfg.Token != "" {
-			fields = append(fields, "token")
+			fields = append(fields, []string{"token"})
 		}
 		newCfg, err = redactField(e.Config, fields...)
 	case *schema.BitbucketCloudConnection:
-		newCfg, err = redactField(e.Config, "appPassword")
+		newCfg, err = redactField(e.Config, []string{"appPassword"})
 	case *schema.AWSCodeCommitConnection:
-		newCfg, err = redactField(e.Config, "secretAccessKey")
+		newCfg, err = redactField(e.Config, []string{"secretAccessKey"}, []string{"gitCredentials", "password"})
 	case *schema.PhabricatorConnection:
-		newCfg, err = redactField(e.Config, "token")
+		newCfg, err = redactField(e.Config, []string{"token"})
 	case *schema.PerforceConnection:
-		newCfg, err = redactField(e.Config, "p4.passwd")
+		newCfg, err = redactField(e.Config, []string{"p4.passwd"})
 	case *schema.GitoliteConnection:
 		// Gitolite has no secret fields
 		newCfg, err = redactField(e.Config)
 	case *schema.OtherExternalServiceConnection:
-		newCfg, err = redactField(e.Config, "url")
+		newCfg, err = redactField(e.Config, []string{"url"})
 	case *schema.JVMPackagesConnection:
 		newCfg, err = e.Config, nil
 	default:
@@ -84,10 +80,10 @@ func (e *ExternalService) RedactConfigSecrets() error {
 // redactField will unmarshal the passed JSON string into the passed value, and then replace the pointer fields you pass
 // with RedactedSecret, see RedactExternalServiceConfig for usage examples.
 // who needs generics anyway?
-func redactField(buf string, fields ...string) (string, error) {
+func redactField(buf string, paths ...[]string) (string, error) {
 	var err error
-	for _, field := range fields {
-		buf, err = jsonc.Edit(buf, RedactedSecret, field)
+	for _, path := range paths {
+		buf, err = jsonc.Edit(buf, RedactedSecret, path...)
 		if err != nil {
 			return buf, err
 		}
@@ -119,32 +115,37 @@ func (e *ExternalService) UnredactConfig(old *ExternalService) error {
 	}
 	switch cfg := cfg.(type) {
 	case *schema.GitHubConnection:
-		unredacted, err = unredactField(old.Config, e.Config, &cfg, jsonStringField{"token", &cfg.Token})
+		unredacted, err = unredactField(old.Config, e.Config, &cfg, jsonStringField{[]string{"token"}, &cfg.Token})
 	case *schema.GitLabConnection:
-		unredacted, err = unredactField(old.Config, e.Config, &cfg, jsonStringField{"token", &cfg.Token})
+		unredacted, err = unredactField(old.Config, e.Config, &cfg, jsonStringField{[]string{"token"}, &cfg.Token})
 	case *schema.BitbucketServerConnection:
 		// BitbucketServer can have a token OR password
 		var fields []jsonStringField
 		if cfg.Password != "" {
-			fields = append(fields, jsonStringField{"password", &cfg.Password})
+			fields = append(fields, jsonStringField{[]string{"password"}, &cfg.Password})
 		}
 		if cfg.Token != "" {
-			fields = append(fields, jsonStringField{"token", &cfg.Token})
+			fields = append(fields, jsonStringField{[]string{"token"}, &cfg.Token})
 		}
 		unredacted, err = unredactField(old.Config, e.Config, &cfg, fields...)
 	case *schema.BitbucketCloudConnection:
-		unredacted, err = unredactField(old.Config, e.Config, &cfg, jsonStringField{"appPassword", &cfg.AppPassword})
+		unredacted, err = unredactField(old.Config, e.Config, &cfg, jsonStringField{[]string{"appPassword"}, &cfg.AppPassword})
 	case *schema.AWSCodeCommitConnection:
-		unredacted, err = unredactField(old.Config, e.Config, &cfg, jsonStringField{"secretAccessKey", &cfg.SecretAccessKey})
+		unredacted, err = unredactField(old.Config,
+			e.Config,
+			&cfg,
+			jsonStringField{[]string{"secretAccessKey"}, &cfg.SecretAccessKey},
+			jsonStringField{[]string{"gitCredentials", "password"}, &cfg.GitCredentials.Password},
+		)
 	case *schema.PhabricatorConnection:
-		unredacted, err = unredactField(old.Config, e.Config, &cfg, jsonStringField{"token", &cfg.Token})
+		unredacted, err = unredactField(old.Config, e.Config, &cfg, jsonStringField{[]string{"token"}, &cfg.Token})
 	case *schema.PerforceConnection:
-		unredacted, err = unredactField(old.Config, e.Config, &cfg, jsonStringField{"p4.passwd", &cfg.P4Passwd})
+		unredacted, err = unredactField(old.Config, e.Config, &cfg, jsonStringField{[]string{"p4.passwd"}, &cfg.P4Passwd})
 	case *schema.GitoliteConnection:
 		// no secret fields?
 		unredacted, err = unredactField(old.Config, e.Config, &cfg)
 	case *schema.OtherExternalServiceConnection:
-		unredacted, err = unredactField(old.Config, e.Config, &cfg, jsonStringField{"url", &cfg.Url})
+		unredacted, err = unredactField(old.Config, e.Config, &cfg, jsonStringField{[]string{"url"}, &cfg.Url})
 	case *schema.JVMPackagesConnection:
 		unredacted, err = e.Config, nil
 	default:
@@ -159,7 +160,7 @@ func (e *ExternalService) UnredactConfig(old *ExternalService) error {
 }
 
 type jsonStringField struct {
-	path string
+	path []string
 	ptr  *string
 }
 
@@ -176,7 +177,7 @@ func unredactField(old, new string, cfg interface{}, fields ...jsonStringField) 
 	// and apply edits to update those fields in the new config
 	var err error
 	for _, field := range fields {
-		v, err := jsonc.ReadProperty(new, field.path)
+		v, err := jsonc.ReadProperty(new, field.path...)
 		if err != nil {
 			return new, err
 		}
@@ -186,14 +187,14 @@ func unredactField(old, new string, cfg interface{}, fields ...jsonStringField) 
 		}
 		if stringValue != RedactedSecret {
 			// using unicode zero width space might mean the user includes it when editing still, we strip that out here
-			new, err = jsonc.Edit(new, strings.ReplaceAll(stringValue, RedactedSecret, ""), field.path)
+			new, err = jsonc.Edit(new, strings.ReplaceAll(stringValue, RedactedSecret, ""), field.path...)
 			if err != nil {
 				return new, err
 			}
 			// if the field has been edited we should skip unredaction to allow edits
 			continue
 		}
-		new, err = jsonc.Edit(new, *field.ptr, field.path)
+		new, err = jsonc.Edit(new, *field.ptr, field.path...)
 		if err != nil {
 			return new, err
 		}

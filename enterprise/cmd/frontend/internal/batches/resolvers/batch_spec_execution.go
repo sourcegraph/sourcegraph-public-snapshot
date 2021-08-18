@@ -41,7 +41,7 @@ func (r *batchSpecExecutionResolver) InputSpec() string {
 }
 
 func (r *batchSpecExecutionResolver) State() string {
-	return strings.ToUpper(string(r.exec.State))
+	return r.exec.GQLState()
 }
 
 func (r *batchSpecExecutionResolver) CreatedAt() graphqlbackend.DateTime {

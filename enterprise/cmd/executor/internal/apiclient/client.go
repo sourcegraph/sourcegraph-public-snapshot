@@ -173,6 +173,21 @@ func (c *Client) MarkFailed(ctx context.Context, queueName string, jobID int, er
 	return c.client.DoAndDrop(ctx, req)
 }
 
+func (c *Client) Canceled(ctx context.Context, queueName string) (canceledIDs []int, err error) {
+	req, err := c.makeRequest("POST", fmt.Sprintf("%s/canceled", queueName), executor.CanceledRequest{
+		ExecutorName: c.options.ExecutorName,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	if _, err := c.client.DoAndDecode(ctx, req, &canceledIDs); err != nil {
+		return nil, err
+	}
+
+	return canceledIDs, nil
+}
+
 func (c *Client) Ping(ctx context.Context, queueName string, jobIDs []int) (err error) {
 	req, err := c.makeRequest("POST", fmt.Sprintf("%s/heartbeat", queueName), executor.HeartbeatRequest{
 		ExecutorName: c.options.ExecutorName,

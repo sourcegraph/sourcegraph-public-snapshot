@@ -8,7 +8,9 @@ import { composeValidators, createRequiredValidator } from '../validators'
 
 import { Validator } from './useField'
 
-/** Default value for final user/org settings cascade */
+/**
+ * Default value for final user/org settings cascade
+ */
 const DEFAULT_FINAL_SETTINGS = {}
 
 export interface useTitleValidatorProps {
@@ -16,11 +18,7 @@ export interface useTitleValidatorProps {
     settings?: Settings | null
 }
 
-/**
- * Shared validator for title insight.
- * We can't have two or more insights with the same name, since we rely on name as on id at insights pages.
- * */
-export function useInsightTitleValidator(props: useTitleValidatorProps): Validator<string> {
+export function useInsightTitleDuplicationCheck(props: useTitleValidatorProps): Validator<string> {
     const { settings, insightType } = props
 
     return useMemo(() => {
@@ -36,10 +34,27 @@ export function useInsightTitleValidator(props: useTitleValidatorProps): Validat
                 .map(key => camelCase(key.split(`${insightType}.`).pop()))
         )
 
-        return composeValidators<string>(createRequiredValidator('Title is a required field.'), value =>
+        return value =>
             existingInsightNames.has(camelCase(value))
                 ? 'An insight with this name already exists. Please set a different name for the new insight.'
                 : undefined
-        )
     }, [settings, insightType])
+}
+
+/**
+ * Shared validator for title insight.
+ * We can't have two or more insights with the same name, since we rely on the insight name
+ * as an id (which is camel cased title) in settings cascade.
+ */
+export function useInsightTitleValidator(props: useTitleValidatorProps): Validator<string> {
+    const hasInsightTitleDuplication = useInsightTitleDuplicationCheck(props)
+
+    return useMemo(
+        () =>
+            composeValidators<string>(
+                createRequiredValidator('Title is a required field.'),
+                hasInsightTitleDuplication
+            ),
+        [hasInsightTitleDuplication]
+    )
 }

@@ -247,6 +247,61 @@ func TestSessionIssuerHelper_GetOrCreateUser(t *testing.T) {
 	}
 }
 
+func TestSessionIssuerHelper_SignupMatchesSecondaryAccount(t *testing.T) {
+	githubsvc.MockGetAuthenticatedUserEmails = func(ctx context.Context) ([]*githubsvc.UserEmail, error) {
+		return []*githubsvc.UserEmail{
+			{
+				Email:    "primary@example.com",
+				Primary:  true,
+				Verified: true,
+			},
+			{
+				Email:    "secondary@example.com",
+				Primary:  false,
+				Verified: true,
+			},
+		}, nil
+	}
+	// We just want to make sure that we end up getting to the secondary email
+	auth.MockGetAndSaveUser = func(ctx context.Context, op auth.GetAndSaveUserOp) (userID int32, safeErrMsg string, err error) {
+		if op.CreateIfNotExist {
+			// We should not get here as we should hit the second email address
+			// before trying again with creation enabled.
+			t.Fatal("Should not get here")
+		}
+		// Mock the second email address matching
+		if op.UserProps.Email == "secondary@example.com" {
+			return 1, "", nil
+		}
+		return 0, "no match", errors.New("no match")
+	}
+	defer func() {
+		githubsvc.MockGetAuthenticatedUserEmails = nil
+		auth.MockGetAndSaveUser = nil
+	}()
+
+	ghURL, _ := url.Parse("https://github.com")
+	codeHost := extsvc.NewCodeHost(ghURL, extsvc.TypeGitHub)
+	clientID := "client-id"
+	ghUser := &github.User{
+		ID:    github.Int64(101),
+		Login: github.String("alice"),
+	}
+
+	ctx := githublogin.WithUser(context.Background(), ghUser)
+	s := &sessionIssuerHelper{
+		CodeHost:    codeHost,
+		clientID:    clientID,
+		allowSignup: true,
+		allowOrgs:   nil,
+	}
+	tok := &oauth2.Token{AccessToken: "dummy-value-that-isnt-relevant-to-unit-correctness"}
+	_, _, err := s.GetOrCreateUser(ctx, tok, "", "")
+	if err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestSessionIssuerHelper_CreateCodeHostConnection(t *testing.T) {
 	createCodeHostConnectionHelper(t, false)
 }

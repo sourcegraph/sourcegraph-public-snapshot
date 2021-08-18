@@ -8,7 +8,7 @@ import { CreateInsightFormFields } from '../types'
 import { useURLQueryInsight } from './use-url-query-insight/use-url-query-insight'
 
 export interface UseInitialValuesResult {
-    initialValues: CreateInsightFormFields | undefined
+    initialValues: Partial<CreateInsightFormFields>
     loading: boolean
     setLocalStorageFormValues: (values: CreateInsightFormFields | undefined) => void
 }
@@ -29,14 +29,14 @@ export function useSearchInsightInitialValues(): UseInitialValuesResult {
 
     if (hasQueryInsight) {
         return {
-            initialValues: !isErrorLike(urlQueryInsightValues) ? urlQueryInsightValues : undefined,
+            initialValues: !isErrorLike(urlQueryInsightValues) ? urlQueryInsightValues ?? {} : {},
             loading: urlQueryInsightValues === undefined,
             setLocalStorageFormValues,
         }
     }
 
     return {
-        initialValues: localStorageFormValues,
+        initialValues: localStorageFormValues ?? {},
         loading: false,
         setLocalStorageFormValues,
     }

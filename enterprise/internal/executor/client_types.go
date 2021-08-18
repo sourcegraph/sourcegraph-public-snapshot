@@ -98,3 +98,7 @@ type HeartbeatRequest struct {
 	ExecutorName string `json:"executorName"`
 	JobIDs       []int  `json:"jobIds"`
 }
+
+type CanceledRequest struct {
+	ExecutorName string `json:"executorName"`
+}

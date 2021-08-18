@@ -13,6 +13,7 @@ import { ChangesetState } from '@sourcegraph/shared/src/graphql-operations'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { asError, isErrorLike } from '@sourcegraph/shared/src/util/errors'
 import { RepoSpec, RevisionSpec, FileSpec, ResolvedRevisionSpec } from '@sourcegraph/shared/src/util/url'
+import { InputTooltip } from '@sourcegraph/web/src/components/InputTooltip'
 
 import { ErrorAlert, ErrorMessage } from '../../../../components/alerts'
 import { DiffStatStack } from '../../../../components/diff/DiffStat'
@@ -34,7 +35,7 @@ export interface ExternalChangesetNodeProps extends ThemeProps {
     node: ExternalChangesetFields
     viewerCanAdminister: boolean
     selectable?: {
-        onSelect: (id: string, selected: boolean) => void
+        onSelect: (id: string) => void
         isSelected: (id: string) => boolean
     }
     history: H.History
@@ -74,8 +75,8 @@ export const ExternalChangesetNode: React.FunctionComponent<ExternalChangesetNod
 
     const selected = selectable?.isSelected(node.id)
     const toggleSelected = useCallback((): void => {
-        selectable?.onSelect(node.id, !selected)
-    }, [selectable, selected, node.id])
+        selectable?.onSelect(node.id)
+    }, [selectable, node.id])
 
     return (
         <>
@@ -93,14 +94,18 @@ export const ExternalChangesetNode: React.FunctionComponent<ExternalChangesetNod
             </button>
             {selectable ? (
                 <div className="p-2">
-                    <input
+                    <InputTooltip
                         id={`select-changeset-${node.id}`}
                         type="checkbox"
                         className="btn"
                         checked={selected}
                         onChange={toggleSelected}
                         disabled={!viewerCanAdminister}
-                        data-tooltip="Click to select changeset for bulk operation"
+                        tooltip={
+                            viewerCanAdminister
+                                ? 'Click to select changeset for bulk operation'
+                                : 'You do not have permission to perform this operation'
+                        }
                     />
                 </div>
             ) : (

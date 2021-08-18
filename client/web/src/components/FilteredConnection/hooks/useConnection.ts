@@ -1,5 +1,4 @@
-import { QueryResult } from '@apollo/client'
-import { GraphQLError } from 'graphql'
+import { ApolloError, QueryResult } from '@apollo/client'
 import { useMemo, useRef } from 'react'
 
 import { GraphQLResult, useQuery } from '@sourcegraph/shared/src/graphql/graphql'
@@ -10,9 +9,9 @@ import { Connection, ConnectionQueryArguments } from '../ConnectionType'
 
 import { useConnectionUrl } from './useConnectionUrl'
 
-interface UseConnectionResult<TData> {
+export interface UseConnectionResult<TData> {
     connection?: Connection<TData>
-    errors?: readonly GraphQLError[]
+    error?: ApolloError
     fetchMore: () => void
     loading: boolean
     hasNextPage: boolean
@@ -93,6 +92,7 @@ export const useConnection = <TResult, TVariables, TData>({
             ...variables,
             ...initialControls,
         },
+        notifyOnNetworkStatusChange: true, // Ensures loading state is updated on `fetchMore`
     })
 
     /**
@@ -147,7 +147,7 @@ export const useConnection = <TResult, TVariables, TData>({
     return {
         connection,
         loading,
-        errors: error?.graphQLErrors,
+        error,
         fetchMore: fetchMoreData,
         hasNextPage: connection ? hasNextPage(connection) : false,
     }

@@ -8,6 +8,8 @@ import {
     BatchSpecExecutionByIDResult,
     BatchSpecExecutionByIDVariables,
     BatchSpecExecutionFields,
+    CancelBatchSpecExecutionResult,
+    CancelBatchSpecExecutionVariables,
     Scalars,
 } from '../../../graphql-operations'
 
@@ -81,3 +83,19 @@ export const fetchBatchSpecExecution = (id: Scalars['ID']): Observable<BatchSpec
             return node
         })
     )
+
+export async function cancelBatchSpecExecution(id: Scalars['ID']): Promise<BatchSpecExecutionFields> {
+    const result = await requestGraphQL<CancelBatchSpecExecutionResult, CancelBatchSpecExecutionVariables>(
+        gql`
+            mutation CancelBatchSpecExecution($id: ID!) {
+                cancelBatchSpecExecution(batchSpecExecution: $id) {
+                    ...BatchSpecExecutionFields
+                }
+            }
+
+            ${batchSpecExecutionFieldsFragment}
+        `,
+        { id }
+    ).toPromise()
+    return dataOrThrowErrors(result).cancelBatchSpecExecution
+}
