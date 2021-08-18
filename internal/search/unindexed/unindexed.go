@@ -35,30 +35,11 @@ var textSearchLimiter = mutablelimiter.New(32)
 
 var MockSearchFilesInRepos func(args *search.TextParameters) ([]result.Match, *streaming.Stats, error)
 
-func textSearchRequest(ctx context.Context, args *search.TextParameters, onMissing zoektutil.OnMissingRepoRevs) (*zoektutil.IndexedSubsetSearchRequest, error) {
-	// performance: for global searches, we avoid calling NewIndexedSubsetSearchRequest
-	// because zoekt will anyway have to search all its shards.
+func textSearchRequest(ctx context.Context, args *search.TextParameters, onMissing zoektutil.OnMissingRepoRevs) (zoektutil.IndexedSearchRequest, error) {
 	if args.Mode == search.ZoektGlobalSearch {
-		q, err := search.QueryToZoektQuery(args.PatternInfo, false)
-		if err != nil {
-			return nil, err
-		}
-		return &zoektutil.IndexedSubsetSearchRequest{
-			Args: &search.ZoektParameters{
-				Repos:            args.Repos,
-				Query:            q,
-				Typ:              search.TextRequest,
-				FileMatchLimit:   args.PatternInfo.FileMatchLimit,
-				Enabled:          args.Zoekt.Enabled(),
-				Index:            args.PatternInfo.Index,
-				Mode:             args.Mode,
-				RepoOptions:      args.RepoOptions,
-				UserPrivateRepos: args.UserPrivateRepos,
-				Select:           args.PatternInfo.Select,
-				Zoekt:            args.Zoekt,
-			},
-			RepoRevs: &zoektutil.IndexedRepoRevs{},
-		}, nil
+		// performance: optimize global searches where Zoekt searches
+		// all shards anyway.
+		return zoektutil.NewIndexedUniverseSearchRequest(ctx, args, args.RepoOptions, args.UserPrivateRepos)
 	}
 	return zoektutil.NewIndexedSubsetSearchRequest(ctx, args, search.TextRequest, onMissing)
 }
