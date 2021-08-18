@@ -8,6 +8,7 @@ import (
 	"net/url"
 	"os"
 	"os/user"
+	"sort"
 	"strings"
 	"sync"
 
@@ -16,6 +17,7 @@ import (
 	"github.com/inconshreveable/log15"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
+	"github.com/sourcegraph/sourcegraph/internal/endpoint"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/confdb"
@@ -47,19 +49,17 @@ func printConfigValidation() {
 	}
 }
 
-var (
-	metricConfigOverrideUpdates = promauto.NewCounterVec(prometheus.CounterOpts{
-		Name: "src_frontend_config_file_watcher_updates",
-		Help: "Incremented each time the config file is updated.",
-	}, []string{"status"})
-)
+var metricConfigOverrideUpdates = promauto.NewCounterVec(prometheus.CounterOpts{
+	Name: "src_frontend_config_file_watcher_updates",
+	Help: "Incremented each time the config file is updated.",
+}, []string{"status"})
 
 func overrideSiteConfig(ctx context.Context) error {
 	path := os.Getenv("SITE_CONFIG_FILE")
 	if path == "" {
 		return nil
 	}
-	var updateFunc = func(ctx context.Context) error {
+	updateFunc := func(ctx context.Context) error {
 		raw, err := (&configurationSource{}).Read(ctx)
 		if err != nil {
 			return err
@@ -91,7 +91,7 @@ func overrideGlobalSettings(ctx context.Context, db dbutil.DB) error {
 		return nil
 	}
 	settings := database.Settings(db)
-	var update = func(ctx context.Context) error {
+	update := func(ctx context.Context) error {
 		globalSettingsBytes, err := os.ReadFile(path)
 		if err != nil {
 			return errors.Wrap(err, "reading GLOBAL_SETTINGS_FILE")
@@ -131,7 +131,7 @@ func overrideExtSvcConfig(ctx context.Context, db dbutil.DB) error {
 	}
 	extsvcs := database.ExternalServices(db)
 
-	var update = func(ctx context.Context) error {
+	update := func(ctx context.Context) error {
 		raw, err := (&configurationSource{}).Read(ctx)
 		if err != nil {
 			return err
@@ -349,9 +349,15 @@ func (c configurationSource) Read(ctx context.Context) (conftypes.RawUnified, er
 	if err != nil {
 		return conftypes.RawUnified{}, errors.Wrap(err, "confdb.SiteGetLatest")
 	}
+
+	conns, err := serviceConnections()
+	if err != nil {
+		return conftypes.RawUnified{}, err
+	}
+
 	return conftypes.RawUnified{
 		Site:               site.Contents,
-		ServiceConnections: serviceConnections(),
+		ServiceConnections: conns,
 	}, nil
 }
 
@@ -371,9 +377,22 @@ func (c configurationSource) Write(ctx context.Context, input conftypes.RawUnifi
 var (
 	serviceConnectionsVal  conftypes.ServiceConnections
 	serviceConnectionsOnce sync.Once
+
+	gitservers = endpoint.New(func() string {
+		v := os.Getenv("SRC_GIT_SERVERS")
+		if v == "" {
+			// Detect 'go test' and setup default addresses in that case.
+			p, err := os.Executable()
+			if err == nil && strings.HasSuffix(p, ".test") {
+				return "gitserver:3178"
+			}
+			return "k8s+rpc://gitserver:3178?kind=sts"
+		}
+		return v
+	}())
 )
 
-func serviceConnections() conftypes.ServiceConnections {
+func serviceConnections() (conftypes.ServiceConnections, error) {
 	serviceConnectionsOnce.Do(func() {
 		username := ""
 		if user, err := user.Current(); err == nil {
@@ -381,7 +400,6 @@ func serviceConnections() conftypes.ServiceConnections {
 		}
 
 		serviceConnectionsVal = conftypes.ServiceConnections{
-			GitServers:               gitServers(),
 			PostgresDSN:              dbutil.PostgresDSN("", username, os.Getenv),
 			CodeIntelPostgresDSN:     dbutil.PostgresDSN("codeintel", username, os.Getenv),
 			CodeInsightsTimescaleDSN: dbutil.PostgresDSN("codeinsights", username, os.Getenv),
@@ -398,19 +416,28 @@ func serviceConnections() conftypes.ServiceConnections {
 		}
 	})
 
-	return serviceConnectionsVal
-}
-
-func gitServers() []string {
-	v := os.Getenv("SRC_GIT_SERVERS")
-	if v == "" {
-		// Detect 'go test' and setup default addresses in that case.
-		p, err := os.Executable()
-		if err == nil && strings.HasSuffix(p, ".test") {
-			v = "gitserver:3178"
-		}
+	eps, err := gitservers.Endpoints()
+	if err != nil {
+		return conftypes.ServiceConnections{}, err
 	}
-	return strings.Fields(v)
+
+	if len(eps) == 0 {
+		return conftypes.ServiceConnections{}, errors.New("no endpoints configured for gitserver")
+	}
+
+	addrs := make([]string, 0, len(eps))
+	for ep := range eps {
+		addrs = append(addrs, ep)
+	}
+
+	sort.Strings(addrs)
+
+	return conftypes.ServiceConnections{
+		GitServers:               addrs,
+		PostgresDSN:              serviceConnectionsVal.PostgresDSN,
+		CodeIntelPostgresDSN:     serviceConnectionsVal.CodeIntelPostgresDSN,
+		CodeInsightsTimescaleDSN: serviceConnectionsVal.CodeInsightsTimescaleDSN,
+	}, nil
 }
 
 // comparePostgresDSNs returns an error if one of the given Postgres DSN values are
