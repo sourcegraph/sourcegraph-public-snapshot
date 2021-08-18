@@ -1,4 +1,4 @@
-# Quickstart step 3: Start Docker
+# Quickstart step 2: Start Docker
 
 ## macOS
 

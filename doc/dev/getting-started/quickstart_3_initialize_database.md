@@ -1,4 +1,4 @@
-# Quickstart step 2: Initialize your database
+# Quickstart step 3: Initialize your database
 
 ## With Docker
 
