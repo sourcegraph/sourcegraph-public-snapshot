@@ -122,6 +122,7 @@ export const PreviewList: React.FunctionComponent<Props> = ({
             ) : (
                 <PreviewFilterRow history={history} location={location} />
             )}
+            <PublicationStatesUpdateAlerts />
             <FilteredConnection<
                 ChangesetApplyPreviewFields,
                 Omit<ChangesetApplyPreviewNodeProps, 'node'>,
@@ -176,3 +177,22 @@ const EmptyPreviewSearchElement: React.FunctionComponent<{}> = () => (
         </div>
     </div>
 )
+
+/**
+ * A list of none to many dismissible alerts, one for each time the publication state
+ * actions are recalculated when the user modifies the publication states for preview
+ * changesets.
+ */
+const PublicationStatesUpdateAlerts: React.FunctionComponent<{}> = () => {
+    const { recalculationUpdates } = useContext(BatchChangePreviewContext)
+
+    return (
+        <div className="mt-2">
+            {recalculationUpdates.map(timestamp => (
+                <DismissibleAlert className="alert-success" key={timestamp}>
+                    Publication state actions were recalculated.
+                </DismissibleAlert>
+            ))}
+        </div>
+    )
+}
