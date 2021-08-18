@@ -177,13 +177,15 @@ To publish from the Sourcegraph UI, you'll need to remove (or omit) the `publish
 
 #### From the preview
 
+> NOTE: This feature requires Sourcegraph 3.31 or later.
+
 When you run `src batch preview` against your batch spec and open the preview link, you'll see the current states of each of your changesets as well as the actions that will be performed when you apply:
 <!-- TODO: Add image -->
 
 For any changesets that are currently unpublished or only published as drafts, you can select the checkbox and choose an action from the dropdown menu to indicate what publication state you want to set the changesets in on apply:
 <!-- TODO: Add image -->
 
-Once the preview actions look good, you can click "Apply" to publish the changesets.
+Once the preview actions look good, you can click **Apply** to publish the changesets.
 
 #### From an open batch change
 
