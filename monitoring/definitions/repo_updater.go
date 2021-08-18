@@ -64,7 +64,8 @@ func RepoUpdater() *monitoring.Container {
 							Name:        "src_repoupdater_syncer_sync_errors_total",
 							Description: "site level external service sync error rate",
 							Query:       `max by (family) (rate(src_repoupdater_syncer_sync_errors_total{owner!="user"}[5m]))`,
-							Critical:    monitoring.Alert().Greater(0, nil).For(10 * time.Minute),
+							Warning:     monitoring.Alert().Greater(0.5, nil).For(10 * time.Minute),
+							Critical:    monitoring.Alert().Greater(1, nil).For(10 * time.Minute),
 							Panel:       monitoring.Panel().Unit(monitoring.Number).With(monitoring.PanelOptions.ZeroIfNoData()),
 							Owner:       monitoring.ObservableOwnerCoreApplication,
 							PossibleSolutions: `
