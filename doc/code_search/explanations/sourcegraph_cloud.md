@@ -22,8 +22,6 @@ Sourcegraph cloud is a Software-as-a-Service version of Sourcegraph. This means 
 - **Searching code**: You can search across a maximum of 50 repositories at once with a `type:diff` or `type:commit` search using Sourcegraph cloud. To search across more than 50 repositories at once, [run your own Sourcegraph instance](../../../admin/install/index.md).
 - **Organizations and collaboration**: Sourcegraph Cloud currently only supports individual use of Sourcegraph Cloud. To create and manage an organization with Sourcegraph with team-oriented functionality, get started with the [self-hosted deployment](../../../admin/install/index.md) in less than a minute.
 
-## FAQ
-
 ### Who is Sourcegraph cloud for / why should I use this over Sourcegraph self-hosted?
 
 Sourcegraph cloud is designed for individual developers to connect and search personal code stored on Github.com or Gitlab.com. While our self-hosted product provides an incredible experience for enterprises, we've heard feedback that individual developers want a simple way to search personal code. 
