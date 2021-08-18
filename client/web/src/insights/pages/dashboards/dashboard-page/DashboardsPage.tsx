@@ -53,7 +53,7 @@ export const DashboardsPage: React.FunctionComponent<DashboardsPageProps> = prop
         <div className="w-100">
             <Page>
                 <PageHeader
-                    annotation={<FeedbackBadge status="prototype" feedback={{ mailto: 'support@sourcegraph.com' }} />}
+                    annotation={<FeedbackBadge status="beta" feedback={{ mailto: 'support@sourcegraph.com' }} />}
                     path={[{ icon: CodeInsightsIcon, text: 'Insights' }]}
                     actions={
                         <>
