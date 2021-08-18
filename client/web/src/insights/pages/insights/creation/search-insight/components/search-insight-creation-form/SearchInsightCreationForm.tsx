@@ -67,7 +67,7 @@ interface CreationSearchInsightFormProps {
 /**
  * Displays creation code insight form (title, visibility, series, etc.)
  * UI layer only, all controlled data should be managed by consumer of this component.
- * */
+ */
 export const SearchInsightCreationForm: React.FunctionComponent<CreationSearchInsightFormProps> = props => {
     const {
         mode,
@@ -141,18 +141,13 @@ export const SearchInsightCreationForm: React.FunctionComponent<CreationSearchIn
                             <span className="pl-2">Run your insight over all your repositories</span>
 
                             <small className="w-100 mt-2 text-muted">
-                                {!allReposMode.input.value ? (
-                                    <>This feature is actively in development. </>
-                                ) : (
-                                    <>This feature is actively in development. </>
-                                )}
-                                Read about the{' '}
+                                This feature is actively in development. Read about the{' '}
                                 <a
                                     href="https://docs.sourcegraph.com/code_insights/explanations/current_limitations_of_code_insights"
                                     target="_blank"
                                     rel="noopener noreferrer"
                                 >
-                                    beta limitations here. 
+                                    beta limitations here.
                                 </a>
                             </small>
                         </label>
