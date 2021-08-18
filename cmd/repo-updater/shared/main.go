@@ -380,16 +380,6 @@ func watchSyncer(
 				sched.UpdateFromDiff(diff)
 			}
 
-			if gps == nil {
-				continue
-			}
-
-			go func() {
-				if err := gps.Sync(ctx, diff.Repos()); err != nil {
-					log15.Error("GitolitePhabricatorMetadataSyncer", "error", err)
-				}
-			}()
-
 			// PermsSyncer is only available in enterprise mode.
 			if permsSyncer != nil {
 				// Schedule a repo permissions sync for all private repos that were added or
@@ -410,6 +400,17 @@ func watchSyncer(
 
 				permsSyncer.ScheduleRepos(ctx, repoIDs...)
 			}
+
+			if gps == nil {
+				continue
+			}
+
+			go func() {
+				if err := gps.Sync(ctx, diff.Repos()); err != nil {
+					log15.Error("GitolitePhabricatorMetadataSyncer", "error", err)
+				}
+			}()
+
 		}
 	}
 }
