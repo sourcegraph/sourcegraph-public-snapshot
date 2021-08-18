@@ -22,6 +22,12 @@ import (
 	"strconv"
 )
 
+type consistentHash interface {
+	Lookup(string) string
+	LookupN(string, int) []string
+	Nodes() map[string]struct{}
+}
+
 type hashFn func(data []byte) uint32
 
 type hashMap struct {
@@ -63,9 +69,7 @@ func (m *hashMap) add(keys ...string) {
 	sort.Ints(m.keys)
 }
 
-// Gets the closest item in the hash to the provided key that is not in
-// exclude.
-func (m *hashMap) get(key string, exclude map[string]bool) string {
+func (m *hashMap) Lookup(key string) string {
 	if m.isEmpty() {
 		return ""
 	}
@@ -75,22 +79,27 @@ func (m *hashMap) get(key string, exclude map[string]bool) string {
 	// Binary search for appropriate replica.
 	idx := sort.Search(len(m.keys), func(i int) bool { return m.keys[i] >= hash })
 
-	// Means we have cycled back to the first replica.
-	if idx == len(m.keys) {
-		idx = 0
+	return m.hashMap[m.keys[idx%len(m.keys)]]
+}
+
+func (m *hashMap) LookupN(key string, n int) []string {
+	if m.isEmpty() {
+		return nil
 	}
 
-	if exclude == nil {
-		return m.hashMap[m.keys[idx]]
+	hash := int(m.hash([]byte(key)))
+
+	// Binary search for appropriate replica.
+	idx := sort.Search(len(m.keys), func(i int) bool { return m.keys[i] >= hash })
+
+	nodes := make([]string, 0, n)
+	for offset := 0; offset < n; offset++ {
+		nodes = append(nodes, m.hashMap[m.keys[(idx+offset)%len(m.keys)]])
 	}
 
-	// This will return the same key our binary search would if we excluded
-	// all keys in exclude.
-	for offset := 0; offset < len(m.keys); offset++ {
-		item := m.hashMap[m.keys[(idx+offset)%len(m.keys)]]
-		if _, ok := exclude[item]; !ok {
-			return item
-		}
-	}
-	return ""
+	return nodes
+}
+
+func (m *hashMap) Nodes() map[string]struct{} {
+	return m.values
 }
