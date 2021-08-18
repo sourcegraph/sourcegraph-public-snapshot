@@ -67,7 +67,7 @@ export const PreviewSelectRow: React.FunctionComponent<PreviewSelectRowProps> = 
     queryPublishableChangesetSpecIDs = _queryPublishableChangesetSpecIDs,
     queryArguments,
 }) => {
-    const { setPublicationStates } = useContext(BatchChangePreviewContext)
+    const { updatePublicationStates } = useContext(BatchChangePreviewContext)
     const { areAllVisibleSelected, deselectAll, selected, selectAll } = useContext(MultiSelectContext)
 
     const allChangesetSpecIDs: string[] | undefined = useObservable(
@@ -83,8 +83,7 @@ export const PreviewSelectRow: React.FunctionComponent<PreviewSelectRowProps> = 
                 const dropdownAction: Action = {
                     ...action,
                     onTrigger: onDone => {
-                        // TODO: Recalculate actions with applyPreview
-                        setPublicationStates(
+                        updatePublicationStates(
                             [...selected].map(changeSpecID => ({
                                 changesetSpec: changeSpecID,
                                 publicationState: getPublicationStateFromAction(action),
@@ -97,7 +96,7 @@ export const PreviewSelectRow: React.FunctionComponent<PreviewSelectRowProps> = 
 
                 return dropdownAction
             }),
-        [deselectAll, selected, setPublicationStates]
+        [deselectAll, selected, updatePublicationStates]
     )
 
     return (

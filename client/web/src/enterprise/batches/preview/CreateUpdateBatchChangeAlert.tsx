@@ -86,7 +86,7 @@ export const CreateUpdateBatchChangeAlert: React.FunctionComponent<CreateUpdateB
                     {batchChange ? (
                         <>
                             This operation will update the existing batch change{' '}
-                            <Link to={batchChange.url}>{batchChange.name}</Link>
+                            <Link to={batchChange.url}>{batchChange.name}</Link>.
                         </>
                     ) : (
                         'Review the proposed changesets below.'

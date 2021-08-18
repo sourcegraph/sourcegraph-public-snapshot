@@ -226,6 +226,7 @@ export const queryChangesetApplyPreview = ({
     search,
     currentState,
     action,
+    publicationStates,
 }: BatchSpecApplyPreviewVariables): Observable<BatchSpecApplyPreviewConnectionFields> =>
     requestGraphQL<BatchSpecApplyPreviewResult, BatchSpecApplyPreviewVariables>(
         gql`
@@ -236,6 +237,7 @@ export const queryChangesetApplyPreview = ({
                 $search: String
                 $currentState: ChangesetState
                 $action: ChangesetSpecOperation
+                $publicationStates: [ChangesetSpecPublicationStateInput!]
             ) {
                 node(id: $batchSpec) {
                     __typename
@@ -246,6 +248,7 @@ export const queryChangesetApplyPreview = ({
                             search: $search
                             currentState: $currentState
                             action: $action
+                            publicationStates: $publicationStates
                         ) {
                             ...BatchSpecApplyPreviewConnectionFields
                         }
@@ -255,7 +258,7 @@ export const queryChangesetApplyPreview = ({
 
             ${batchSpecApplyPreviewConnectionFieldsFragment}
         `,
-        { batchSpec, first, after, search, currentState, action }
+        { batchSpec, first, after, search, currentState, action, publicationStates }
     ).pipe(
         map(dataOrThrowErrors),
         map(({ node }) => {

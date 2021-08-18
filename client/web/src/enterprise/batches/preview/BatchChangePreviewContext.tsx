@@ -1,5 +1,5 @@
-import { noop } from 'lodash'
-import React, { useState } from 'react'
+import { noop, uniqBy } from 'lodash'
+import React, { useState, useCallback } from 'react'
 
 import { ChangesetSpecOperation, ChangesetSpecPublicationStateInput, ChangesetState } from '../../../graphql-operations'
 import { isValidChangesetSpecOperation, isValidChangesetState } from '../utils'
@@ -24,14 +24,14 @@ export interface BatchChangePreviewContextState {
     // Maps any changesets to modified publish statuses set from the UI, to be included in
     // the mutation to apply the preview.
     readonly publicationStates: ChangesetSpecPublicationStateInput[]
-    setPublicationStates: (publicationStates: ChangesetSpecPublicationStateInput[]) => void
+    updatePublicationStates: (publicationStates: ChangesetSpecPublicationStateInput[]) => void
 }
 
 export const defaultState = (): BatchChangePreviewContextState => ({
     filters: defaultFilters(),
     setFilters: noop,
     publicationStates: [],
-    setPublicationStates: noop,
+    updatePublicationStates: noop,
 })
 
 /**
@@ -58,13 +58,25 @@ export const BatchChangePreviewContextProvider: React.FunctionComponent<{}> = ({
 
     const [publicationStates, setPublicationStates] = useState<ChangesetSpecPublicationStateInput[]>([])
 
+    // Merge the new set of modified publication states with what's already been modified,
+    // favoring the newest state set for a given changeset spec
+    const updatePublicationStates = useCallback(
+        (newPublicationStates: ChangesetSpecPublicationStateInput[]) => {
+            // uniqBy removes duplicates by taking the first item it finds for a
+            // `changesetSpec`, so we spread the updated publication states first so that
+            // they get precedence
+            setPublicationStates(uniqBy([...newPublicationStates, ...publicationStates], 'changesetSpec'))
+        },
+        [publicationStates]
+    )
+
     return (
         <BatchChangePreviewContext.Provider
             value={{
                 filters,
                 setFilters,
                 publicationStates,
-                setPublicationStates,
+                updatePublicationStates,
             }}
         >
             {children}
