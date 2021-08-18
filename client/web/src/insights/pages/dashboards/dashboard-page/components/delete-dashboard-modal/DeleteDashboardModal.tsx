@@ -63,7 +63,6 @@ export const DeleteDashboardModal: React.FunctionComponent<DeleteDashboardModalP
                     loading={isDeleting}
                     label={isDeleting ? 'Deleting' : 'Delete forever'}
                     disabled={isDeleting}
-                    spinnerClassName="mr-2"
                     className="btn btn-danger"
                     onClick={handler}
                 />

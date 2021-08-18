@@ -2,10 +2,9 @@ import { storiesOf } from '@storybook/react'
 import React from 'react'
 import { Observable, of } from 'rxjs'
 
-import { LsifUploadFields, LSIFUploadState } from '../../../graphql-operations'
+import { LsifUploadConnectionFields, LsifUploadFields, LSIFUploadState } from '../../../graphql-operations'
 import { EnterpriseWebStory } from '../../components/EnterpriseWebStory'
 
-import { UploadConnection } from './backend'
 import { CodeIntelUploadsPage } from './CodeIntelUploadsPage'
 
 const { add } = storiesOf('web/codeintel/list/CodeIntelUploadPage', module)
@@ -89,7 +88,7 @@ const fetch = (
         LsifUploadFields,
         '__typename' | 'projectRoot' | 'inputCommit' | 'inputRoot' | 'inputIndexer' | 'isLatestForRepo'
     >[]
-): (() => Observable<UploadConnection>) => () =>
+): (() => Observable<LsifUploadConnectionFields>) => () =>
     of({
         nodes: uploads.map(upload => ({
             __typename: 'LSIFUpload',

@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/keegancsmith/sqlf"
 
 	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
@@ -99,6 +100,124 @@ func testStoreChangesetSpecExecutions(t *testing.T, ctx context.Context, s *Stor
 
 			if have != want {
 				t.Fatalf("have err %v, want %v", have, want)
+			}
+		})
+	})
+
+	t.Run("List", func(t *testing.T) {
+		execs[0].WorkerHostname = "asdf-host"
+		execs[0].Cancel = true
+		execs[0].State = btypes.BatchSpecExecutionStateProcessing
+		if err := s.Exec(ctx, sqlf.Sprintf("UPDATE batch_spec_executions SET worker_hostname = %s, cancel = %s, state = %s WHERE id = %s", execs[0].WorkerHostname, execs[0].Cancel, execs[0].State, execs[0].ID)); err != nil {
+			t.Fatal(err)
+		}
+		execs[1].WorkerHostname = "nvm-host"
+		if err := s.Exec(ctx, sqlf.Sprintf("UPDATE batch_spec_executions SET worker_hostname = %s WHERE id = %s", execs[1].WorkerHostname, execs[1].ID)); err != nil {
+			t.Fatal(err)
+		}
+
+		t.Run("All", func(t *testing.T) {
+			have, err := s.ListBatchSpecExecutions(ctx, ListBatchSpecExecutionsOpts{})
+			if err != nil {
+				t.Fatal(err)
+			}
+			if diff := cmp.Diff(have, execs); diff != "" {
+				t.Fatalf("invalid executions returned: %s", diff)
+			}
+		})
+
+		t.Run("WorkerHostname", func(t *testing.T) {
+			for _, exec := range execs {
+				have, err := s.ListBatchSpecExecutions(ctx, ListBatchSpecExecutionsOpts{
+					WorkerHostname: exec.WorkerHostname,
+				})
+				if err != nil {
+					t.Fatal(err)
+				}
+				if diff := cmp.Diff(have, []*btypes.BatchSpecExecution{exec}); diff != "" {
+					t.Fatalf("invalid executions returned: %s", diff)
+				}
+			}
+		})
+
+		t.Run("State", func(t *testing.T) {
+			for _, exec := range execs {
+				have, err := s.ListBatchSpecExecutions(ctx, ListBatchSpecExecutionsOpts{
+					State: exec.State,
+				})
+				if err != nil {
+					t.Fatal(err)
+				}
+				if diff := cmp.Diff(have, []*btypes.BatchSpecExecution{exec}); diff != "" {
+					t.Fatalf("invalid executions returned: %s", diff)
+				}
+			}
+		})
+
+		t.Run("Cancel", func(t *testing.T) {
+			for _, exec := range execs {
+				have, err := s.ListBatchSpecExecutions(ctx, ListBatchSpecExecutionsOpts{
+					Cancel: &exec.Cancel,
+				})
+				if err != nil {
+					t.Fatal(err)
+				}
+				if diff := cmp.Diff(have, []*btypes.BatchSpecExecution{exec}); diff != "" {
+					t.Fatalf("invalid executions returned: %s", diff)
+				}
+			}
+		})
+	})
+
+	t.Run("CancelBatchSpecExecution", func(t *testing.T) {
+		t.Run("Queued", func(t *testing.T) {
+			record, err := s.CancelBatchSpecExecution(ctx, execs[1].RandID)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if have, want := record.State, btypes.BatchSpecExecutionStateFailed; have != want {
+				t.Errorf("invalid state: have=%q want=%q", have, want)
+			}
+			if have, want := record.Cancel, true; have != want {
+				t.Errorf("invalid cancel value: have=%t want=%t", have, want)
+			}
+			if record.FinishedAt == nil {
+				t.Error("finished_at not set")
+			} else if have, want := *record.FinishedAt, s.now(); !have.Equal(want) {
+				t.Errorf("invalid finished_at: have=%s want=%s", have, want)
+			}
+			if have, want := record.UpdatedAt, s.now(); !have.Equal(want) {
+				t.Errorf("invalid updated_at: have=%s want=%s", have, want)
+			}
+		})
+		t.Run("Processing", func(t *testing.T) {
+			record, err := s.CancelBatchSpecExecution(ctx, execs[0].RandID)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if have, want := record.State, btypes.BatchSpecExecutionStateProcessing; have != want {
+				t.Errorf("invalid state: have=%q want=%q", have, want)
+			}
+			if have, want := record.Cancel, true; have != want {
+				t.Errorf("invalid cancel value: have=%t want=%t", have, want)
+			}
+			if record.FinishedAt != nil {
+				t.Error("finished_at set")
+			}
+			if have, want := record.UpdatedAt, s.now(); !have.Equal(want) {
+				t.Errorf("invalid updated_at: have=%s want=%s", have, want)
+			}
+		})
+		t.Run("Invalid current state", func(t *testing.T) {
+			if err := s.Exec(ctx, sqlf.Sprintf("UPDATE batch_spec_executions SET state = 'completed' WHERE id = %s", execs[0].ID)); err != nil {
+				t.Fatal(err)
+			}
+			_, err := s.CancelBatchSpecExecution(ctx, execs[0].RandID)
+			if err == nil {
+				t.Fatal("got unexpected nil error")
+			}
+			if err != ErrNoResults {
+				t.Fatal(err)
 			}
 		})
 	})

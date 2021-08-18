@@ -101,10 +101,9 @@ export const InsightsDashboardCreationPage: React.FunctionComponent<InsightsDash
                                 data-testid="insight-save-button"
                                 loading={formAPI.submitting}
                                 label={formAPI.submitting ? 'Creating' : 'Create dashboard'}
-                                spinnerClassName="mr-2"
                                 type="submit"
                                 disabled={formAPI.submitting}
-                                className="d-flex btn btn-primary ml-2 mb-2"
+                                className="btn btn-primary ml-2 mb-2"
                             />
                         </>
                     )}

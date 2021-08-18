@@ -13,7 +13,7 @@
     border-bottom: 3px solid transparent;
     margin-bottom: -(3/16) + rem;
     padding: (5/16) + rem;
-    color: var(--color-text-3);
+    color: var(--text-muted);
     &:hover {
         color: var(--body-color);
         border-bottom: 3px solid var(--link-color);

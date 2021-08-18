@@ -30,7 +30,7 @@ type Resolver interface {
 	InferredIndexConfiguration(ctx context.Context, repositoryID int) (*config.IndexConfiguration, bool, error)
 	UpdateIndexConfigurationByRepositoryID(ctx context.Context, repositoryID int, configuration string) error
 	CommitGraph(ctx context.Context, repositoryID int) (gql.CodeIntelligenceCommitGraphResolver, error)
-	QueueAutoIndexJobForRepo(ctx context.Context, repositoryID int, rev *string) error
+	QueueAutoIndexJobsForRepo(ctx context.Context, repositoryID int, rev, configuration string) ([]store.Index, error)
 	QueryResolver(ctx context.Context, args *gql.GitBlobLSIFDataArgs) (QueryResolver, error)
 }
 
@@ -145,13 +145,8 @@ func (r *resolver) CommitGraph(ctx context.Context, repositoryID int) (gql.CodeI
 	return NewCommitGraphResolver(stale, updatedAt), nil
 }
 
-func (r *resolver) QueueAutoIndexJobForRepo(ctx context.Context, repositoryID int, rev *string) error {
-	revOrDefault := "HEAD"
-	if rev != nil {
-		revOrDefault = *rev
-	}
-
-	return r.indexEnqueuer.ForceQueueIndexesForRepository(ctx, repositoryID, revOrDefault)
+func (r *resolver) QueueAutoIndexJobsForRepo(ctx context.Context, repositoryID int, rev, configuration string) ([]store.Index, error) {
+	return r.indexEnqueuer.QueueIndexes(ctx, repositoryID, rev, configuration, true)
 }
 
 const slowQueryResolverRequestThreshold = time.Second

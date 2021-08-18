@@ -17,7 +17,7 @@ export const CodeIntelAssociatedUpload: FunctionComponent<CodeIntelAssociatedUpl
     node.associatedUpload && node.projectRoot ? (
         <>
             <div className="list-group position-relative">
-                <div className="codeintel-associated-upload__grid mb-3">
+                <div className="codeintel-associated-upload__grid">
                     <span className="codeintel-associated-upload__separator" />
 
                     <div className="d-flex flex-column codeintel-associated-upload__information">
@@ -51,8 +51,6 @@ export const CodeIntelAssociatedUpload: FunctionComponent<CodeIntelAssociatedUpl
                             <ChevronRightIcon />
                         </Link>
                     </span>
-
-                    <span className="codeintel-associated-upload__separator" />
                 </div>
             </div>
         </>

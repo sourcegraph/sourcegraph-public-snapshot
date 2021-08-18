@@ -146,7 +146,7 @@ $default-icon-colors: $oc-grape-7, $oc-violet-7, $oc-cyan-9, $oc-indigo-7, $oc-p
         // Default icon generated for extensions with no iconURL
         &--no-icon {
             &::after {
-                color: $white;
+                color: var(--white);
                 // Center letter
                 display: flex;
                 align-items: center;

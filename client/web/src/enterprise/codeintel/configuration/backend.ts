@@ -1,5 +1,5 @@
 import { Observable } from 'rxjs'
-import { map, mapTo } from 'rxjs/operators'
+import { map } from 'rxjs/operators'
 
 import {
     createInvalidGraphQLMutationResponseError,
@@ -14,8 +14,6 @@ import {
     RepositoryIndexConfigurationFields,
     UpdateRepositoryIndexConfigurationResult,
     UpdateRepositoryIndexConfigurationVariables,
-    QueueAutoIndexJobForRepoResult,
-    QueueAutoIndexJobForRepoVariables,
 } from '../../../graphql-operations'
 
 export function getConfiguration({ id }: { id: string }): Observable<RepositoryIndexConfigurationFields | null> {
@@ -30,6 +28,7 @@ export function getConfiguration({ id }: { id: string }): Observable<RepositoryI
             __typename
             indexConfiguration {
                 configuration
+                inferredConfiguration
             }
         }
     `
@@ -68,19 +67,4 @@ export function updateConfiguration({ id, content }: { id: string; content: stri
             }
         })
     )
-}
-
-export function enqueueIndexJob(id: string, revision: string): Observable<void> {
-    const query = gql`
-        mutation QueueAutoIndexJobForRepo($id: ID!, $rev: String) {
-            queueAutoIndexJobForRepo(repository: $id, rev: $rev) {
-                alwaysNil
-            }
-        }
-    `
-
-    return requestGraphQL<QueueAutoIndexJobForRepoResult, QueueAutoIndexJobForRepoVariables>(query, {
-        id,
-        rev: revision,
-    }).pipe(map(dataOrThrowErrors), mapTo(undefined))
 }

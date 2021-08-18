@@ -4,6 +4,7 @@ import { MemoryRouter, MemoryRouterProps, RouteComponentProps, withRouter } from
 import { Tooltip } from '@sourcegraph/branded/src/components/tooltip/Tooltip'
 import { NOOP_TELEMETRY_SERVICE, TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
+import { MockedStoryProvider, MockedStoryProviderProps } from '@sourcegraph/storybook/src/apollo/MockedStoryProvider'
 import { usePrependStyles } from '@sourcegraph/storybook/src/hooks/usePrependStyles'
 import { useTheme } from '@sourcegraph/storybook/src/hooks/useTheme'
 
@@ -11,7 +12,7 @@ import webStyles from '../SourcegraphWebApp.scss'
 
 import { BreadcrumbSetters, BreadcrumbsProps, useBreadcrumbs } from './Breadcrumbs'
 
-export interface WebStoryProps extends MemoryRouterProps {
+export interface WebStoryProps extends MemoryRouterProps, Pick<MockedStoryProviderProps, 'mocks' | 'useStrictMocking'> {
     children: React.FunctionComponent<
         ThemeProps & BreadcrumbSetters & BreadcrumbsProps & TelemetryProps & RouteComponentProps<any>
     >
@@ -25,6 +26,8 @@ export interface WebStoryProps extends MemoryRouterProps {
 export const WebStory: React.FunctionComponent<WebStoryProps> = ({
     children,
     additionalWebStyles,
+    mocks,
+    useStrictMocking,
     ...memoryRouterProps
 }) => {
     const isLightTheme = useTheme()
@@ -35,9 +38,15 @@ export const WebStory: React.FunctionComponent<WebStoryProps> = ({
     usePrependStyles('web-styles', webStyles)
 
     return (
-        <MemoryRouter {...memoryRouterProps}>
-            <Tooltip />
-            <Children {...breadcrumbSetters} isLightTheme={isLightTheme} telemetryService={NOOP_TELEMETRY_SERVICE} />
-        </MemoryRouter>
+        <MockedStoryProvider mocks={mocks} useStrictMocking={useStrictMocking}>
+            <MemoryRouter {...memoryRouterProps}>
+                <Tooltip />
+                <Children
+                    {...breadcrumbSetters}
+                    isLightTheme={isLightTheme}
+                    telemetryService={NOOP_TELEMETRY_SERVICE}
+                />
+            </MemoryRouter>
+        </MockedStoryProvider>
     )
 }

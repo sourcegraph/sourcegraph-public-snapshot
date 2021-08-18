@@ -242,6 +242,10 @@ type CreateBatchSpecExecutionArgs struct {
 	Namespace *graphql.ID
 }
 
+type CancelBatchSpecExecutionArgs struct {
+	BatchSpecExecution graphql.ID
+}
+
 type CloseChangesetsArgs struct {
 	BulkOperationBaseArgs
 }
@@ -282,6 +286,7 @@ type BatchChangesResolver interface {
 	ReenqueueChangesets(ctx context.Context, args *ReenqueueChangesetsArgs) (BulkOperationResolver, error)
 	MergeChangesets(ctx context.Context, args *MergeChangesetsArgs) (BulkOperationResolver, error)
 	CreateBatchSpecExecution(ctx context.Context, args *CreateBatchSpecExecutionArgs) (BatchSpecExecutionResolver, error)
+	CancelBatchSpecExecution(ctx context.Context, args *CancelBatchSpecExecutionArgs) (BatchSpecExecutionResolver, error)
 	CloseChangesets(ctx context.Context, args *CloseChangesetsArgs) (BulkOperationResolver, error)
 	PublishChangesets(ctx context.Context, args *PublishChangesetsArgs) (BulkOperationResolver, error)
 

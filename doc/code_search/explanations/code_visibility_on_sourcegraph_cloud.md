@@ -10,4 +10,4 @@ If a repository is private on GitHub or GitLab, only users who have permission t
 
 The Sourcegraph team and administrators on Sourcegraph cloud cannot view private repositories. Metadata related to private repositories on Sourcegraph Cloud is excluded from all analytics and plain-text data storage. You can read more in our [privacy policy](https://about.sourcegraph.com/privacy/).
 
-> Note: We are hard at work on releasing Sourcegraph cloud for organizations. We are hoping to deliver an early-access version in late fall 2021. Follow our [Twitter](https://twitter.com/sourcegraph) for the latest updates. 
+> Note: We are working towards bringing Sourcegraph cloud to organizations. We are hoping to deliver an early-access version in late fall 2021. Follow our [Twitter](https://twitter.com/sourcegraph) for the latest updates. 

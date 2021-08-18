@@ -16,14 +16,15 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"math"
 	"net/http"
 	"strconv"
+	"sync"
 	"time"
 
 	nettrace "golang.org/x/net/trace"
 
 	"github.com/cockroachdb/errors"
-	"github.com/gorilla/schema"
 	"github.com/inconshreveable/log15"
 	"github.com/opentracing/opentracing-go/ext"
 	otlog "github.com/opentracing/opentracing-go/log"
@@ -32,6 +33,8 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/searcher/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
+	"github.com/sourcegraph/sourcegraph/internal/search/searcher"
+	streamhttp "github.com/sourcegraph/sourcegraph/internal/search/streaming/http"
 	"github.com/sourcegraph/sourcegraph/internal/store"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 )
@@ -55,30 +58,19 @@ type Service struct {
 	Log   log15.Logger
 }
 
-var decoder = schema.NewDecoder()
-
-func init() {
-	decoder.IgnoreUnknownKeys(true)
-}
-
 // ServeHTTP handles HTTP based search requests
 func (s *Service) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	running.Inc()
 	defer running.Dec()
 
-	err := r.ParseForm()
-	if err != nil {
-		http.Error(w, "failed to parse form: "+err.Error(), http.StatusBadRequest)
-		return
-	}
-
 	var p protocol.Request
-	err = decoder.Decode(&p, r.Form)
-	if err != nil {
+	dec := json.NewDecoder(r.Body)
+	if err := dec.Decode(&p); err != nil {
 		http.Error(w, "failed to decode form: "+err.Error(), http.StatusBadRequest)
 		return
 	}
+
 	if p.Deadline != "" {
 		var deadline time.Time
 		if err := deadline.UnmarshalText([]byte(p.Deadline)); err != nil {
@@ -94,10 +86,16 @@ func (s *Service) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		// search file content in that case.
 		p.PatternMatchesContent = true
 	}
-	if err = validateParams(&p); err != nil {
+	if err := validateParams(&p); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
+
+	if p.Stream {
+		s.streamSearch(ctx, w, p)
+		return
+	}
+
 	if p.Limit == 0 || p.Limit > maxLimit {
 		p.Limit = maxLimit
 	}
@@ -132,7 +130,53 @@ func (s *Service) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	_ = json.NewEncoder(w).Encode(&resp)
 }
 
-func (s *Service) search(ctx context.Context, p *protocol.Request, sender *limitedStreamCollector) (deadlineHit bool, err error) {
+func (s *Service) streamSearch(ctx context.Context, w http.ResponseWriter, p protocol.Request) {
+	if p.Limit == 0 {
+		// No limit for streaming search since upstream limits
+		// will either be sent in the request, or propagated by
+		// a cancelled context.
+		p.Limit = math.MaxInt32
+	}
+	eventWriter, err := streamhttp.NewWriter(w)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	var bufMux sync.Mutex
+	matchesBuf := streamhttp.NewJSONArrayBuf(32*1024, func(data []byte) error {
+		return eventWriter.EventBytes("matches", data)
+	})
+	onMatches := func(match protocol.FileMatch) {
+		bufMux.Lock()
+		if err := matchesBuf.Append(match); err != nil {
+			log.Printf("failed appending match to buffer: %s", err)
+		}
+		bufMux.Unlock()
+	}
+
+	ctx, cancel, stream := newLimitedStream(ctx, p.Limit, onMatches)
+	defer cancel()
+
+	deadlineHit, err := s.search(ctx, &p, stream)
+	doneEvent := searcher.EventDone{
+		DeadlineHit: deadlineHit,
+		LimitHit:    stream.LimitHit(),
+	}
+	if err != nil {
+		doneEvent.Error = err.Error()
+	}
+
+	// Flush remaining matches before sending a different event
+	if err := matchesBuf.Flush(); err != nil {
+		log.Printf("failed to flush matches: %s", err)
+	}
+	if err := eventWriter.Event("done", doneEvent); err != nil {
+		log.Printf("failed to send done event: %s", err)
+	}
+}
+
+func (s *Service) search(ctx context.Context, p *protocol.Request, sender matchSender) (deadlineHit bool, err error) {
 	tr := nettrace.New("search", fmt.Sprintf("%s@%s", p.Repo, p.Commit))
 	tr.LazyPrintf("%s", p.Pattern)
 

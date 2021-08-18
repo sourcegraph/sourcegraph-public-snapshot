@@ -69,7 +69,9 @@ describe('[VISUAL] Code insights page', () => {
         await takeChartSnapshot('Code insights page with back-end insights only')
     })
 
-    it('is styled correctly with search-based insights ', async () => {
+    // Unmute that test when flaky issue with line chart tooltip will be resolved
+    // see https://github.com/sourcegraph/sourcegraph/issues/23669
+    it.skip('is styled correctly with search-based insights ', async () => {
         overrideGraphQLExtensions({
             testContext,
 

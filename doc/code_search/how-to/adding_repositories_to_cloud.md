@@ -41,4 +41,4 @@ If you've connected with a code host and repositories you expect to find are not
 
 If the missing repositories belong to an organization on GitHub, [review the Sourcegraph OAuth access](https://github.com/settings/connections/applications/e917b2b7fa9040e1edd4). If necessary, grant or request access for the given organization. If you are not an owner, you will receive an email notification when an owner grants access. Then, you can [follow the steps to add repositories](#adding-repositories-you-own-or-collaborate-on-from-github-or-gitlab).
 
-If you continue to have issues, reach out to [our team](mailto:support@sourcegraph.com)
+If you continue to have issues, [reach out to our team](mailto:support@sourcegraph.com).

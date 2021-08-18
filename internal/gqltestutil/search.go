@@ -527,7 +527,7 @@ type SearchStreamClient struct {
 
 func (s *SearchStreamClient) SearchRepositories(query string) (SearchRepositoryResults, error) {
 	var results SearchRepositoryResults
-	err := s.search(query, streamhttp.Decoder{
+	err := s.search(query, streamhttp.FrontendStreamDecoder{
 		OnMatches: func(matches []streamhttp.EventMatch) {
 			for _, m := range matches {
 				r, ok := m.(*streamhttp.EventRepoMatch)
@@ -545,7 +545,7 @@ func (s *SearchStreamClient) SearchRepositories(query string) (SearchRepositoryR
 
 func (s *SearchStreamClient) SearchFiles(query string) (*SearchFileResults, error) {
 	var results SearchFileResults
-	err := s.search(query, streamhttp.Decoder{
+	err := s.search(query, streamhttp.FrontendStreamDecoder{
 		OnProgress: func(p *api.Progress) {
 			results.MatchCount = int64(p.MatchCount)
 		},
@@ -607,7 +607,7 @@ func (s *SearchStreamClient) SearchFiles(query string) (*SearchFileResults, erro
 }
 func (s *SearchStreamClient) SearchAll(query string) ([]*AnyResult, error) {
 	var results []interface{}
-	err := s.search(query, streamhttp.Decoder{
+	err := s.search(query, streamhttp.FrontendStreamDecoder{
 		OnMatches: func(matches []streamhttp.EventMatch) {
 			for _, m := range matches {
 				switch v := m.(type) {
@@ -669,7 +669,7 @@ func (s *SearchStreamClient) AuthenticatedUserID() string {
 	return s.Client.AuthenticatedUserID()
 }
 
-func (s *SearchStreamClient) search(query string, dec streamhttp.Decoder) error {
+func (s *SearchStreamClient) search(query string, dec streamhttp.FrontendStreamDecoder) error {
 	req, err := streamhttp.NewRequest(s.Client.baseURL, query)
 	if err != nil {
 		return err

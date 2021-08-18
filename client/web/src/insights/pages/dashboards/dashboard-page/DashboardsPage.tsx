@@ -1,5 +1,5 @@
 import PlusIcon from 'mdi-react/PlusIcon'
-import React from 'react'
+import React, { useEffect } from 'react'
 import { useRouteMatch } from 'react-router'
 import { Redirect } from 'react-router-dom'
 
@@ -39,6 +39,10 @@ export const DashboardsPage: React.FunctionComponent<DashboardsPageProps> = prop
     const { dashboardID, settingsCascade, extensionsController, telemetryService, platformContext } = props
     const { url } = useRouteMatch()
 
+    useEffect(() => {
+        telemetryService.logViewEvent('CodeInsightsDashboardPage')
+    }, [telemetryService])
+
     if (!dashboardID) {
         // In case if url doesn't have a dashboard id we should fallback on
         // built-in "All insights" dashboard
@@ -56,7 +60,7 @@ export const DashboardsPage: React.FunctionComponent<DashboardsPageProps> = prop
                             <Link to="/insights/add-dashboard" className="btn btn-outline-secondary mr-2">
                                 <PlusIcon className="icon-inline" /> Create new dashboard
                             </Link>
-                            <Link to="/insights/create" className="btn btn-secondary">
+                            <Link to={`/insights/create?dashboardId=${dashboardID}`} className="btn btn-secondary">
                                 <PlusIcon className="icon-inline" /> Create new insight
                             </Link>
                         </>

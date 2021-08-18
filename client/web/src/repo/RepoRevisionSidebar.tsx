@@ -1,5 +1,4 @@
 import { Tab, TabList, TabPanel, TabPanels, Tabs } from '@reach/tabs'
-import classnames from 'classnames'
 import * as H from 'history'
 import ChevronDoubleLeftIcon from 'mdi-react/ChevronDoubleLeftIcon'
 import ChevronDoubleRightIcon from 'mdi-react/ChevronDoubleRightIcon'
@@ -12,7 +11,6 @@ import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { AbsoluteRepoFile } from '@sourcegraph/shared/src/util/url'
 import { useLocalStorage } from '@sourcegraph/shared/src/util/useLocalStorage'
-import { useRedesignToggle } from '@sourcegraph/shared/src/util/useRedesignToggle'
 
 import { Tree } from '../tree/Tree'
 
@@ -36,7 +34,6 @@ const SIDEBAR_KEY = 'repo-revision-sidebar-toggle'
 export const RepoRevisionSidebar: React.FunctionComponent<Props> = props => {
     const [tabIndex, setTabIndex] = useLocalStorage(TABS_KEY, 0)
     const [toggleSidebar, setToggleSidebar] = useLocalStorage(SIDEBAR_KEY, true)
-    const [isRedesignEnabled] = useRedesignToggle()
 
     const handleTabsChange = useCallback((index: number) => setTabIndex(index), [setTabIndex])
     const handleSidebarToggle = useCallback(() => setToggleSidebar(!toggleSidebar), [setToggleSidebar, toggleSidebar])
@@ -60,7 +57,7 @@ export const RepoRevisionSidebar: React.FunctionComponent<Props> = props => {
             handlePosition="right"
             storageKey={SIZE_STORAGE_KEY}
             element={
-                <div className={classnames('d-flex w-100', !isRedesignEnabled && 'bg-2 border-right')}>
+                <div className="d-flex w-100">
                     <Tabs
                         className="w-100 test-repo-revision-sidebar pr-3"
                         defaultIndex={tabIndex}

@@ -1,4 +1,6 @@
 import { storiesOf } from '@storybook/react'
+import delay from 'delay'
+import { noop } from 'lodash'
 import React from 'react'
 
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
@@ -12,7 +14,7 @@ import {
     DEFAULT_MOCK_CHART_CONTENT,
     getRandomDataForMock,
 } from './components/live-preview-chart/live-preview-mock-data'
-import { SearchInsightCreationPage, SearchInsightCreationPageProps } from './SearchInsightCreationPage'
+import { SearchInsightCreationPage } from './SearchInsightCreationPage'
 
 const { add } = storiesOf('web/insights/SearchInsightCreationPage', module)
     .addDecorator(story => <WebStory>{() => story()}</WebStory>)
@@ -21,13 +23,6 @@ const { add } = storiesOf('web/insights/SearchInsightCreationPage', module)
             viewports: [576, 1440],
         },
     })
-
-const PLATFORM_CONTEXT: SearchInsightCreationPageProps['platformContext'] = {
-    // eslint-disable-next-line @typescript-eslint/require-await
-    updateSettings: async (...args) => {
-        console.log('PLATFORM CONTEXT update settings with', { ...args })
-    },
-}
 
 function sleep(delay: number): Promise<void> {
     return new Promise(resolve => setTimeout(resolve, delay))
@@ -51,12 +46,21 @@ const mockAPI = createMockInsightAPI({
     ],
 })
 
+const fakeAPIRequest = async () => {
+    await delay(1000)
+
+    throw new Error('Network error')
+}
+
 add('Page', () => (
     <InsightsApiContext.Provider value={mockAPI}>
         <SearchInsightCreationPage
+            visibility="user_test_id"
             telemetryService={NOOP_TELEMETRY_SERVICE}
-            platformContext={PLATFORM_CONTEXT}
             settingsCascade={SETTINGS_CASCADE_MOCK}
+            onInsightCreateRequest={fakeAPIRequest}
+            onSuccessfulCreation={noop}
+            onCancel={noop}
         />
     </InsightsApiContext.Provider>
 ))

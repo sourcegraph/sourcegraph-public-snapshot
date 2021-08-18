@@ -26,7 +26,7 @@ export interface SearchInsightCreationContentProps {
     subjects?: SupportedInsightSubject[]
 
     /** Initial value for all form fields. */
-    initialValue?: CreateInsightFormFields
+    initialValue?: Partial<CreateInsightFormFields>
     /** Custom class name for root form element. */
     className?: string
     /** Test id for the root content element (form element). */
@@ -140,6 +140,7 @@ export const SearchInsightCreationContent: React.FunctionComponent<SearchInsight
             <SearchInsightLivePreview
                 disabled={!allFieldsForPreviewAreValid}
                 repositories={repositories.meta.value}
+                isAllReposMode={allReposMode.input.value}
                 series={editSeries}
                 step={step.meta.value}
                 stepValue={stepValue.meta.value}

@@ -610,6 +610,36 @@ func TestGitLabSource_ChangesetSource(t *testing.T) {
 		})
 	})
 
+	t.Run("UpdateChangeset draft", func(t *testing.T) {
+		// We won't test the full set of UpdateChangeset scenarios; instead
+		// we'll just make sure the title is appropriately munged.
+		in := &gitlab.MergeRequest{IID: 2, WorkInProgress: true}
+		out := &gitlab.MergeRequest{}
+
+		p := newGitLabChangesetSourceTestProvider(t)
+		p.changeset.Changeset.Metadata = in
+
+		oldMock := gitlab.MockUpdateMergeRequest
+		t.Cleanup(func() { gitlab.MockUpdateMergeRequest = oldMock })
+		gitlab.MockUpdateMergeRequest = func(c *gitlab.Client, ctx context.Context, project *gitlab.Project, mr *gitlab.MergeRequest, opts gitlab.UpdateMergeRequestOpts) (*gitlab.MergeRequest, error) {
+			if have, want := opts.Title, "WIP: title"; have != want {
+				t.Errorf("unexpected title: have=%q want=%q", have, want)
+			}
+			return out, nil
+		}
+
+		p.mockGetMergeRequestNotes(in.IID, nil, 20, nil)
+		p.mockGetMergeRequestResourceStateEvents(in.IID, nil, 20, nil)
+		p.mockGetMergeRequestPipelines(in.IID, nil, 20, nil)
+
+		if err := p.source.UpdateChangeset(p.ctx, p.changeset); err != nil {
+			t.Errorf("unexpected non-nil error: %+v", err)
+		}
+		if p.changeset.Changeset.Metadata != out {
+			t.Errorf("metadata not correctly updated: have %+v; want %+v", p.changeset.Changeset.Metadata, out)
+		}
+	})
+
 	t.Run("CreateComment", func(t *testing.T) {
 		commentBody := "test-comment"
 		t.Run("invalid metadata", func(t *testing.T) {

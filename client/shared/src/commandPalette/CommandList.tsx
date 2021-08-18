@@ -6,8 +6,6 @@ import { sortBy, uniq, uniqueId } from 'lodash'
 import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
 import ChevronUpIcon from 'mdi-react/ChevronUpIcon'
 import ConsoleIcon from 'mdi-react/ConsoleIcon'
-import MenuDownIcon from 'mdi-react/MenuDownIcon'
-import MenuUpIcon from 'mdi-react/MenuUpIcon'
 import PuzzleIcon from 'mdi-react/PuzzleIcon'
 import React, { useCallback, useMemo, useState } from 'react'
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
@@ -19,7 +17,6 @@ import stringScore from 'string-score'
 import { Key } from 'ts-key-enum'
 
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
-import { useRedesignToggle } from '@sourcegraph/shared/src/util/useRedesignToggle'
 
 import { ActionItem, ActionItemAction } from '../actions/ActionItem'
 import { wrapRemoteObservable } from '../api/client/api/common'
@@ -342,8 +339,8 @@ export function filterAndRankItems(
     }
 
     // Memoize labels and scores.
-    const labels: string[] = new Array(items.length)
-    const scores: number[] = new Array(items.length)
+    const labels = new Array<string>(items.length)
+    const scores = new Array<number>(items.length)
     const scoredItems = items
         .filter((item, index) => {
             let label = labels[index]
@@ -388,20 +385,14 @@ export const CommandListPopoverButton: React.FunctionComponent<CommandListPopove
 
     const id = useMemo(() => uniqueId('command-list-popover-button-'), [])
 
-    const [isRedesignEnabled] = useRedesignToggle()
-
-    const MenuDropdownIcon = (): JSX.Element => {
-        const UpIcon = isRedesignEnabled ? ChevronUpIcon : MenuUpIcon
-        const DownIcon = isRedesignEnabled ? ChevronDownIcon : MenuDownIcon
-
-        return isOpen ? <UpIcon className="icon-inline" /> : <DownIcon className="icon-inline" />
-    }
+    const MenuDropdownIcon = (): JSX.Element =>
+        isOpen ? <ChevronUpIcon className="icon-inline" /> : <ChevronDownIcon className="icon-inline" />
 
     return (
         <ButtonElement
             role="button"
             className={classNames('test-command-list-button command-list__popover-button', buttonClassName, {
-                buttonOpenClassName: isOpen,
+                [buttonOpenClassName]: isOpen,
             })}
             id={id}
             onClick={toggleIsOpen}

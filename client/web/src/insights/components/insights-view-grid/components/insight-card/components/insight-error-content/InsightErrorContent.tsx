@@ -13,11 +13,11 @@ interface InsightErrorContentProps {
 }
 
 export const InsightErrorContent: React.FunctionComponent<InsightErrorContentProps> = props => {
-    const { error, title, icon } = props
+    const { error, title, icon, children } = props
 
     return (
         <div className="h-100 w-100 d-flex flex-column">
-            <ErrorAlert data-testid={`${title} insight error`} className="m-0" error={error} />
+            {children || <ErrorAlert data-testid={`${title} insight error`} className="m-0" error={error} />}
             <InsightDescription className="mt-auto" title={title} icon={icon} />
         </div>
     )

@@ -100,6 +100,7 @@ func (c *CommitFilter) FilterFrames(ctx context.Context, frames []Frame, id api.
 	metadata, err := c.store.GetMetadata(ctx, id)
 	if err != nil {
 		// the commit index is considered optional so we can always fall back to every frame in this case
+		log15.Error("unable to retrieve commit index metadata", "repo_id", id, "error", err)
 		return uncompressedPlan(frames)
 	}
 

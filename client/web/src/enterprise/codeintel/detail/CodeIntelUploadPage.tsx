@@ -1,7 +1,10 @@
+import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
 import DeleteIcon from 'mdi-react/DeleteIcon'
 import InformationOutlineIcon from 'mdi-react/InformationOutlineIcon'
+import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import React, { FunctionComponent, useCallback, useEffect, useMemo, useState } from 'react'
 import { Redirect, RouteComponentProps } from 'react-router'
+import { Link } from 'react-router-dom'
 import { timer } from 'rxjs'
 import { catchError, concatMap, delay, repeatWhen, takeWhile } from 'rxjs/operators'
 
@@ -10,12 +13,22 @@ import { LSIFUploadState } from '@sourcegraph/shared/src/graphql-operations'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { asError, ErrorLike, isErrorLike } from '@sourcegraph/shared/src/util/errors'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
+import {
+    FilteredConnection,
+    FilteredConnectionQueryArguments,
+} from '@sourcegraph/web/src/components/FilteredConnection'
 import { Container, PageHeader } from '@sourcegraph/wildcard'
 
 import { ErrorAlert } from '../../../components/alerts'
 import { PageTitle } from '../../../components/PageTitle'
 import { LsifUploadFields } from '../../../graphql-operations'
+import { fetchLsifUploads as defaultFetchLsifUploads } from '../list/backend'
+import { CodeIntelState } from '../shared/CodeIntelState'
 import { CodeIntelStateBanner } from '../shared/CodeIntelStateBanner'
+import { CodeIntelUploadOrIndexCommit } from '../shared/CodeIntelUploadOrIndexCommit'
+import { CodeIntelUploadOrIndexRepository } from '../shared/CodeIntelUploadOrIndexerRepository'
+import { CodeIntelUploadOrIndexIndexer } from '../shared/CodeIntelUploadOrIndexIndexer'
+import { CodeIntelUploadOrIndexRoot } from '../shared/CodeIntelUploadOrIndexRoot'
 
 import { deleteLsifUpload, fetchLsifUpload as defaultFetchUpload } from './backend'
 import { CodeIntelAssociatedIndex } from './CodeIntelAssociatedIndex'
@@ -24,6 +37,7 @@ import { CodeIntelUploadTimeline } from './CodeIntelUploadTimeline'
 
 export interface CodeIntelUploadPageProps extends RouteComponentProps<{ id: string }>, TelemetryProps {
     fetchLsifUpload?: typeof defaultFetchUpload
+    fetchLsifUploads?: typeof defaultFetchLsifUploads
     now?: () => Date
 }
 
@@ -34,17 +48,25 @@ const classNamesByState = new Map([
     [LSIFUploadState.ERRORED, 'alert-danger'],
 ])
 
+enum DependencyGraphState {
+    ShowDependencies,
+    ShowDependents,
+}
+
 export const CodeIntelUploadPage: FunctionComponent<CodeIntelUploadPageProps> = ({
     match: {
         params: { id },
     },
     fetchLsifUpload = defaultFetchUpload,
+    fetchLsifUploads = defaultFetchLsifUploads,
     telemetryService,
     now,
+    ...props
 }) => {
     useEffect(() => telemetryService.logViewEvent('CodeIntelUpload'), [telemetryService])
 
     const [deletionOrError, setDeletionOrError] = useState<'loading' | 'deleted' | ErrorLike>()
+    const [dependencyGraphState, setDependencyGraphState] = useState(DependencyGraphState.ShowDependencies)
 
     const uploadOrError = useObservable(
         useMemo(
@@ -86,13 +108,35 @@ export const CodeIntelUploadPage: FunctionComponent<CodeIntelUploadPageProps> = 
         }
     }, [id, uploadOrError])
 
+    const queryDependencies = useCallback(
+        (args: FilteredConnectionQueryArguments) => {
+            if (uploadOrError && !isErrorLike(uploadOrError)) {
+                return fetchLsifUploads({ dependencyOf: uploadOrError.id, ...args })
+            }
+
+            throw new Error('unreachable: queryDependencies referenced with invalid upload')
+        },
+        [uploadOrError, fetchLsifUploads]
+    )
+
+    const queryDependents = useCallback(
+        (args: FilteredConnectionQueryArguments) => {
+            if (uploadOrError && !isErrorLike(uploadOrError)) {
+                return fetchLsifUploads({ dependentOf: uploadOrError.id, ...args })
+            }
+
+            throw new Error('unreachable: queryDependents referenced with invalid upload')
+        },
+        [uploadOrError, fetchLsifUploads]
+    )
+
     return deletionOrError === 'deleted' ? (
         <Redirect to="." />
     ) : isErrorLike(deletionOrError) ? (
         <ErrorAlert prefix="Error deleting LSIF upload" error={deletionOrError} />
     ) : (
         <div className="site-admin-lsif-upload-page w-100">
-            <PageTitle title="Code intelligence - uploads" />
+            <PageTitle title="Precise code intelligence uploads" />
             {isErrorLike(uploadOrError) ? (
                 <ErrorAlert prefix="Error loading LSIF upload" error={uploadOrError} />
             ) : !uploadOrError ? (
@@ -103,37 +147,21 @@ export const CodeIntelUploadPage: FunctionComponent<CodeIntelUploadPageProps> = 
                         headingElement="h2"
                         path={[
                             {
-                                text: (
-                                    <>
-                                        <span className="text-muted">Upload for commit</span>
-                                        <span className="ml-2">
-                                            {uploadOrError.projectRoot
-                                                ? uploadOrError.projectRoot.commit.abbreviatedOID
-                                                : uploadOrError.inputCommit.slice(0, 7)}
-                                        </span>
-                                        <span className="ml-2 text-muted">indexed by</span>
-                                        <span className="ml-2">{uploadOrError.inputIndexer}</span>
-                                        <span className="ml-2 text-muted">rooted at</span>
-                                        <span className="ml-2">
-                                            {(uploadOrError.projectRoot
-                                                ? uploadOrError.projectRoot.path
-                                                : uploadOrError.inputRoot) || '/'}
-                                        </span>
-                                    </>
-                                ),
+                                text: `Upload for commit ${uploadOrError.projectRoot?.repository.name || ''}@${
+                                    uploadOrError.projectRoot
+                                        ? uploadOrError.projectRoot.commit.abbreviatedOID
+                                        : uploadOrError.inputCommit.slice(0, 7)
+                                }`,
                             },
                         ]}
-                        actions={
-                            <CodeIntelDeleteUpload
-                                state={uploadOrError.state}
-                                deleteUpload={deleteUpload}
-                                deletionOrError={deletionOrError}
-                            />
-                        }
                         className="mb-3"
                     />
 
                     <Container>
+                        <CodeIntelUploadMeta node={uploadOrError} now={now} />
+                    </Container>
+
+                    <Container className="mt-2">
                         <CodeIntelStateBanner
                             state={uploadOrError.state}
                             placeInQueue={uploadOrError.placeInQueue}
@@ -143,29 +171,150 @@ export const CodeIntelUploadPage: FunctionComponent<CodeIntelUploadPageProps> = 
                             className={classNamesByState.get(uploadOrError.state)}
                         />
                         {uploadOrError.isLatestForRepo && (
-                            <div className="mb-3">
+                            <div>
                                 <InformationOutlineIcon className="icon-inline" /> This upload can answer queries for
                                 the tip of the default branch and are targets of cross-repository find reference
                                 operations.
                             </div>
                         )}
-                        <CodeIntelUploadMeta node={uploadOrError} now={now} />
-                        <CodeIntelAssociatedIndex node={uploadOrError} now={now} />
+                    </Container>
 
+                    <Container className="mt-2">
+                        <CodeIntelDeleteUpload
+                            state={uploadOrError.state}
+                            deleteUpload={deleteUpload}
+                            deletionOrError={deletionOrError}
+                        />
+                    </Container>
+
+                    <Container className="mt-2">
+                        <CodeIntelAssociatedIndex node={uploadOrError} now={now} />
                         <h3>Timeline</h3>
                         <CodeIntelUploadTimeline now={now} upload={uploadOrError} className="mb-3" />
                     </Container>
+
+                    {(uploadOrError.state === LSIFUploadState.COMPLETED ||
+                        uploadOrError.state === LSIFUploadState.DELETING) && (
+                        <Container className="mt-2">
+                            <div className="mb-2">
+                                {dependencyGraphState === DependencyGraphState.ShowDependencies ? (
+                                    <h3>
+                                        Dependencies
+                                        <button
+                                            type="button"
+                                            className="btn btn-link float-right p-0 mb-2"
+                                            onClick={() => setDependencyGraphState(DependencyGraphState.ShowDependents)}
+                                        >
+                                            Show dependents
+                                        </button>
+                                    </h3>
+                                ) : (
+                                    <h3>
+                                        Dependents
+                                        <button
+                                            type="button"
+                                            className="btn btn-link float-right p-0 mb-2"
+                                            onClick={() =>
+                                                setDependencyGraphState(DependencyGraphState.ShowDependencies)
+                                            }
+                                        >
+                                            Show dependencies
+                                        </button>
+                                    </h3>
+                                )}
+                            </div>
+
+                            {dependencyGraphState === DependencyGraphState.ShowDependencies ? (
+                                <FilteredConnection
+                                    listComponent="div"
+                                    listClassName="codeintel-uploads__grid mb-3"
+                                    noun="dependency"
+                                    pluralNoun="dependencies"
+                                    nodeComponent={DependencyOrDependentNode}
+                                    queryConnection={queryDependencies}
+                                    history={props.history}
+                                    location={props.location}
+                                    cursorPaging={true}
+                                    emptyElement={<EmptyDependenciesElement />}
+                                />
+                            ) : (
+                                <FilteredConnection
+                                    listComponent="div"
+                                    listClassName="codeintel-uploads__grid mb-3"
+                                    noun="dependent"
+                                    pluralNoun="dependents"
+                                    nodeComponent={DependencyOrDependentNode}
+                                    queryConnection={queryDependents}
+                                    history={props.history}
+                                    location={props.location}
+                                    cursorPaging={true}
+                                    emptyElement={<EmptyDependentsElement />}
+                                />
+                            )}
+                        </Container>
+                    )}
                 </>
             )}
         </div>
     )
 }
 
-const terminalStates = new Set([LSIFUploadState.COMPLETED, LSIFUploadState.ERRORED])
+const terminalStates = new Set([LSIFUploadState.COMPLETED, LSIFUploadState.ERRORED, LSIFUploadState.DELETING])
 
 function shouldReload(upload: LsifUploadFields | ErrorLike | null | undefined): boolean {
     return !isErrorLike(upload) && !(upload && terminalStates.has(upload.state))
 }
+
+interface DependencyOrDependentNodeProps {
+    node: LsifUploadFields
+    now?: () => Date
+}
+
+const DependencyOrDependentNode: FunctionComponent<DependencyOrDependentNodeProps> = ({ node }) => (
+    <>
+        <span className="codeintel-upload-node__separator" />
+
+        <div className="d-flex flex-column codeintel-upload-node__information">
+            <div className="m-0">
+                <h3 className="m-0 d-block d-md-inline">
+                    <CodeIntelUploadOrIndexRepository node={node} />
+                </h3>
+            </div>
+
+            <div>
+                <span className="mr-2 d-block d-mdinline-block">
+                    Directory <CodeIntelUploadOrIndexRoot node={node} /> indexed at commit{' '}
+                    <CodeIntelUploadOrIndexCommit node={node} /> by <CodeIntelUploadOrIndexIndexer node={node} />
+                </span>
+            </div>
+        </div>
+
+        <span className="d-none d-md-inline codeintel-upload-node__state">
+            <CodeIntelState node={node} className="d-flex flex-column align-items-center" />
+        </span>
+        <span>
+            <Link to={`./${node.id}`}>
+                <ChevronRightIcon />
+            </Link>
+        </span>
+    </>
+)
+
+const EmptyDependenciesElement: React.FunctionComponent = () => (
+    <p className="text-muted text-center w-100 mb-0 mt-1">
+        <MapSearchIcon className="mb-2" />
+        <br />
+        This upload has no dependencies.
+    </p>
+)
+
+const EmptyDependentsElement: React.FunctionComponent = () => (
+    <p className="text-muted text-center w-100 mb-0 mt-1">
+        <MapSearchIcon className="mb-2" />
+        <br />
+        This upload has no dependents.
+    </p>
+)
 
 interface CodeIntelDeleteUploadProps {
     state: LSIFUploadState

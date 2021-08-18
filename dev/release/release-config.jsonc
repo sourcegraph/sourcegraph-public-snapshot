@@ -13,7 +13,7 @@
     "captainSlackUsername": "dax",
     "captainGitHubUsername": "daxmc99",
     // Release versions
-    "previousRelease": "3.30.3",
+    "previousRelease": "3.30.4",
     "upcomingRelease": "3.31.0",
     // Release dates
     "oneWorkingDayBeforeRelease": "19 August 2021 10:00 PST",
