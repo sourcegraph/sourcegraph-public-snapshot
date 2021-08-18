@@ -104,7 +104,7 @@ func SearchFilesInRepos(ctx context.Context, args *search.TextParameters, stream
 
 	// Concurrently run searcher for all unindexed repos regardless whether text or regexp.
 	g.Go(func() error {
-		return callSearcherOverRepos(ctx, args, stream, request.Unindexed, false)
+		return callSearcherOverRepos(ctx, args, stream, request.UnindexedRepos(), false)
 	})
 
 	return g.Wait()
