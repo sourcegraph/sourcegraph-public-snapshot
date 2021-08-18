@@ -118,7 +118,7 @@ export const SearchPage: React.FunctionComponent<SearchPageProps> = props => {
                 {props.showEnterpriseHomePanels && props.authenticatedUser && <HomePanels {...props} />}
             </div>
 
-            <SearchPageFooter telemetryService={props.telemetryService} isLightTheme={props.isLightTheme} />
+            <SearchPageFooter {...props} />
         </div>
     )
 }
