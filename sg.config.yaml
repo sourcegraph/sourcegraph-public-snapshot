@@ -335,7 +335,7 @@ commands:
 
   zoekt-indexserver-template: &zoekt_indexserver_template
     cmd: |
-      .bin/zoekt-sourcegraph-indexserver \
+      env PATH="${PWD}/.bin":$PATH .bin/zoekt-sourcegraph-indexserver \
         -sourcegraph_url 'http://localhost:3090' \
         -index "$HOME/.sourcegraph/zoekt/index-$ZOEKT_NUM" \
         -hostname "localhost:$ZOEKT_HOSTNAME_PORT" \
@@ -352,7 +352,6 @@ commands:
     env: &zoektenv
       GOGC: 50
       CTAGS_COMMAND: cmd/symbols/universal-ctags-dev
-      PATH: .bin:$PATH
 
   zoekt-indexserver-0:
     <<: *zoekt_indexserver_template
@@ -378,15 +377,14 @@ commands:
     env:
       JAEGER_DISABLED: false
       GOGC: 50
-      PATH: .bin:$PATH
 
   zoekt-webserver-0:
     <<: *zoekt_webserver_template
-    cmd: .bin/zoekt-webserver -index "$HOME/.sourcegraph/zoekt/index-0" -pprof -rpc -listen ":3070"
+    cmd: env PATH="${PWD}/.bin":$PATH .bin/zoekt-webserver -index "$HOME/.sourcegraph/zoekt/index-0" -pprof -rpc -listen ":3070"
 
   zoekt-webserver-1:
     <<: *zoekt_webserver_template
-    cmd: .bin/zoekt-webserver -index "$HOME/.sourcegraph/zoekt/index-1" -pprof -rpc -listen ":3071"
+    cmd: env PATH="${PWD}/.bin":$PATH .bin/zoekt-webserver -index "$HOME/.sourcegraph/zoekt/index-1" -pprof -rpc -listen ":3071"
 
   precise-code-intel-worker:
     cmd: .bin/precise-code-intel-worker
