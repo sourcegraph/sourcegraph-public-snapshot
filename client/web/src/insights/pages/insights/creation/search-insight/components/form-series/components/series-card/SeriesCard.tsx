@@ -6,6 +6,8 @@ import { DEFAULT_ACTIVE_COLOR } from '../../../form-color-input/FormColorInput'
 import styles from './SeriesCard.module.scss'
 
 interface SeriesCardProps {
+    isRemoveSeriesAvailable: boolean
+
     /** Name of series. */
     name: string
     /** Query value of series. */
@@ -24,7 +26,15 @@ interface SeriesCardProps {
  * Renders series card component, visual list item of series (name, color, query)
  * */
 export function SeriesCard(props: SeriesCardProps): ReactElement {
-    const { name, query, stroke: color = DEFAULT_ACTIVE_COLOR, className, onEdit, onRemove } = props
+    const {
+        isRemoveSeriesAvailable,
+        name,
+        query,
+        stroke: color = DEFAULT_ACTIVE_COLOR,
+        className,
+        onEdit,
+        onRemove,
+    } = props
 
     return (
         <li
@@ -64,6 +74,7 @@ export function SeriesCard(props: SeriesCardProps): ReactElement {
                     data-testid="series-delete-button"
                     type="button"
                     onClick={onRemove}
+                    disabled={!isRemoveSeriesAvailable}
                     className="border-0 btn btn-outline-danger ml-1"
                 >
                     Remove

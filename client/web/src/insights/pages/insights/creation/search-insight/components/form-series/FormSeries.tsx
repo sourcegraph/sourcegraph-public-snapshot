@@ -14,7 +14,7 @@ export interface FormSeriesProps {
      * query field since our backend insight can't update BE data according
      * to the latest insight configuration.
      */
-    isSearchQueryDisabled: boolean
+    isBackendInsightEdit: boolean
 
     /**
      * Show all validation error for all forms and fields within the series forms.
@@ -64,7 +64,7 @@ export interface FormSeriesProps {
 export const FormSeries: React.FunctionComponent<FormSeriesProps> = props => {
     const {
         series = [],
-        isSearchQueryDisabled,
+        isBackendInsightEdit,
         showValidationErrorsOnMount,
         onEditSeriesRequest,
         onEditSeriesCommit,
@@ -79,7 +79,7 @@ export const FormSeries: React.FunctionComponent<FormSeriesProps> = props => {
                 line.edit ? (
                     <FormSeriesInput
                         key={line.id}
-                        isSearchQueryDisabled={isSearchQueryDisabled}
+                        isSearchQueryDisabled={isBackendInsightEdit}
                         showValidationErrorsOnMount={showValidationErrorsOnMount}
                         index={index + 1}
                         cancel={series.length > 1}
@@ -94,6 +94,7 @@ export const FormSeries: React.FunctionComponent<FormSeriesProps> = props => {
                     line && (
                         <SeriesCard
                             key={`${line.id}-card`}
+                            isRemoveSeriesAvailable={!isBackendInsightEdit}
                             onEdit={() => onEditSeriesRequest(index)}
                             onRemove={() => onSeriesRemove(index)}
                             className={styles.formSeriesItem}
@@ -106,6 +107,7 @@ export const FormSeries: React.FunctionComponent<FormSeriesProps> = props => {
             <button
                 data-testid="add-series-button"
                 type="button"
+                disabled={isBackendInsightEdit}
                 onClick={() => onEditSeriesRequest(series.length)}
                 className={classnames(styles.formSeriesItem, styles.formSeriesAddButton, 'btn btn-link p-3')}
             >
