@@ -56,7 +56,7 @@ func (s *searchRepos) getJob(ctx context.Context) func() error {
 	}
 }
 
-func runJobs(ctx context.Context, jobs []searchRepos) error {
+func runJobs(ctx context.Context, jobs []*searchRepos) error {
 	g, ctx := errgroup.WithContext(ctx)
 	for _, j := range jobs {
 		g.Go(j.getJob(ctx))
@@ -83,9 +83,9 @@ func streamStructuralSearch(ctx context.Context, args *search.TextParameters, st
 		return err
 	}
 
-	jobs := []searchRepos{}
+	jobs := []*searchRepos{}
 	for _, repoSet := range repoSets(indexed, args.Mode) {
-		jobs = append(jobs, searchRepos{args: args, stream: stream, repoSet: repoSet})
+		jobs = append(jobs, &searchRepos{args: args, stream: stream, repoSet: repoSet})
 	}
 	return runJobs(ctx, jobs)
 }
