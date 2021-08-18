@@ -15,9 +15,18 @@ const validQuery = createRequiredValidator('Query is a required field for data s
 interface FormSeriesInputProps {
     /** Series index. */
     index: number
+
+    /**
+     * This prop represents the case whenever the edit insight UI page
+     * deals with backend insight. We need to disable our search insight
+     * query field since our backend insight can't update BE data according
+     * to the latest insight configuration.
+     */
+    isSearchQueryDisabled: boolean
+
     /**
      * Show all validation error of all fields within the form.
-     * */
+     */
     showValidationErrorsOnMount?: boolean
     /** Name of series. */
     name?: string
@@ -43,6 +52,7 @@ interface FormSeriesInputProps {
 export const FormSeriesInput: React.FunctionComponent<FormSeriesInputProps> = props => {
     const {
         index,
+        isSearchQueryDisabled,
         showValidationErrorsOnMount = false,
         name,
         query,
@@ -95,6 +105,7 @@ export const FormSeriesInput: React.FunctionComponent<FormSeriesInputProps> = pr
         name: 'seriesQuery',
         formApi: formAPI,
         validators: { sync: validQuery },
+        disabled: isSearchQueryDisabled,
     })
 
     const colorField = useField({
@@ -128,6 +139,7 @@ export const FormSeriesInput: React.FunctionComponent<FormSeriesInputProps> = pr
                 valid={(hasQueryControlledValue || queryField.meta.touched) && queryField.meta.validState === 'VALID'}
                 error={queryField.meta.touched && queryField.meta.error}
                 className="mt-4"
+                data-tooltip={isSearchQueryDisabled ? "You can't edit this field for all repositories insight" : null}
                 {...queryField.input}
             />
 

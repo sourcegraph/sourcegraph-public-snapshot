@@ -9,52 +9,62 @@ import styles from './FormSeries.module.scss'
 
 export interface FormSeriesProps {
     /**
+     * This prop represents the case whenever the edit insight UI page
+     * deals with backend insight. We need to disable our search insight
+     * query field since our backend insight can't update BE data according
+     * to the latest insight configuration.
+     */
+    isSearchQueryDisabled: boolean
+
+    /**
      * Show all validation error for all forms and fields within the series forms.
-     * */
+     */
     showValidationErrorsOnMount: boolean
+
     /**
      * Controlled value (series - chart lines) for series input component.
-     * */
+     */
     series?: EditableDataSeries[]
 
     /**
      * Live change series handler while user typing in active series form.
      * Used by consumers to get latest values from series inputs and pass
      * them tp live preview chart.
-     * */
+     */
     onLiveChange: (liveSeries: EditableDataSeries, isValid: boolean, index: number) => void
 
     /**
      * Handler that runs every time user clicked edit on particular
      * series card.
-     * */
+     */
     onEditSeriesRequest: (editSeriesIndex: number) => void
 
     /**
      * Handler that runs every time use clicked commit (done) in
      * series edit form.
-     * */
+     */
     onEditSeriesCommit: (seriesIndex: number, editedSeries: EditableDataSeries) => void
 
     /**
      * Handler that runs every time use canceled (click cancel) in
      * series edit form.
-     * */
+     */
     onEditSeriesCancel: (closedCardIndex: number) => void
 
     /**
      * Handler that runs every time use removed (click remove) in
      * series card.
-     * */
+     */
     onSeriesRemove: (removedSeriesIndex: number) => void
 }
 
 /**
  * Renders form series (sub-form) for series (chart lines) creation code insight form.
- * */
+ */
 export const FormSeries: React.FunctionComponent<FormSeriesProps> = props => {
     const {
         series = [],
+        isSearchQueryDisabled,
         showValidationErrorsOnMount,
         onEditSeriesRequest,
         onEditSeriesCommit,
@@ -69,6 +79,7 @@ export const FormSeries: React.FunctionComponent<FormSeriesProps> = props => {
                 line.edit ? (
                     <FormSeriesInput
                         key={line.id}
+                        isSearchQueryDisabled={isSearchQueryDisabled}
                         showValidationErrorsOnMount={showValidationErrorsOnMount}
                         index={index + 1}
                         cancel={series.length > 1}
