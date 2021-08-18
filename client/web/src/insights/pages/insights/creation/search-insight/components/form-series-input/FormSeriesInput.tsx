@@ -136,6 +136,9 @@ export const FormSeriesInput: React.FunctionComponent<FormSeriesInputProps> = pr
                             <>
                                 Do not include the <code>repo:</code> filter as it will be added automatically for the
                                 repositories you included above.
+                                <br />
+                                Tip: include <code>archived:yes</code> and <code>forked:yes</code> if you don't want
+                                results from archived or forked repos.
                             </>
                         ) : (
                             <>
