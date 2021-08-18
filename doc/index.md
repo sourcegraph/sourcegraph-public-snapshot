@@ -14,7 +14,8 @@ This website is home to Sourcegraph's feature, installation, administration, and
 
 <div class="cta-group">
 <a class="btn btn-primary" href="#getting-started">★ Try Sourcegraph now</a>
-<a class="btn" href="#core-documentation">Core documentation</a>
+<a class="btn" href="#core-documentation">Core docs</a>
+<a class="btn" href="#cloud-documentation">Cloud docs</a>
 <a class="btn" href="https://about.sourcegraph.com/">About Sourcegraph</a>
 </div>
 
@@ -80,6 +81,11 @@ For next steps, visit the [Docker installation documentation](admin/install/dock
 - [Administration](admin/index.md)
 - [Extensions](extensions/index.md)
 - [Cloud](code_search/explanations/sourcegraph_cloud.md)
+
+## Cloud documentation
+
+- [Sourcegraph cloud](code_search/explanations/sourcegraph_cloud.md)
+- [Differences between Sourcegraph cloud and self-hosted ](cloud/cloud_ent_on-prem_comparison.md)
 
 ### Features and tutorials
 
