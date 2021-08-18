@@ -73,7 +73,7 @@ func runJobs(ctx context.Context, jobs []withContext) error {
 func repoSets(request *zoektutil.IndexedSearchRequest, mode search.GlobalSearchMode) []repoData {
 	repoSets := []repoData{UnindexedList(request.Unindexed)} // unindexed included by default
 	if mode != search.SearcherOnly {
-		repoSets = append(repoSets, IndexedMap(request.Repos()))
+		repoSets = append(repoSets, IndexedMap(request.IndexedRepos()))
 	}
 	return repoSets
 }
