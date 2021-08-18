@@ -5,7 +5,7 @@ import { of, Observable } from 'rxjs'
 
 import { BatchSpecApplyPreviewConnectionFields, ChangesetApplyPreviewFields } from '../../../../graphql-operations'
 import { EnterpriseWebStory } from '../../../components/EnterpriseWebStory'
-import { MultiSelectContext, MultiSelectContextProvider } from '../../MultiSelectContext'
+import { MultiSelectContextProvider } from '../../MultiSelectContext'
 import { getPublishableChangesetSpecID } from '../utils'
 
 import { hiddenChangesetApplyPreviewStories } from './HiddenChangesetApplyPreviewNode.story'
