@@ -88,7 +88,7 @@ func SearchFilesInRepos(ctx context.Context, args *search.TextParameters, stream
 		trace.Stringer("global_search_mode", args.Mode),
 	)
 
-	indexed, err := textSearchRequest(ctx, args, zoektutil.MissingRepoRevStatus(stream))
+	request, err := textSearchRequest(ctx, args, zoektutil.MissingRepoRevStatus(stream))
 	if err != nil {
 		return err
 	}
@@ -98,13 +98,13 @@ func SearchFilesInRepos(ctx context.Context, args *search.TextParameters, stream
 	if args.Mode != search.SearcherOnly {
 		// Run literal and regexp searches on indexed repositories.
 		g.Go(func() error {
-			return indexed.Search(ctx, stream)
+			return request.Search(ctx, stream)
 		})
 	}
 
 	// Concurrently run searcher for all unindexed repos regardless whether text or regexp.
 	g.Go(func() error {
-		return callSearcherOverRepos(ctx, args, stream, indexed.Unindexed, false)
+		return callSearcherOverRepos(ctx, args, stream, request.Unindexed, false)
 	})
 
 	return g.Wait()

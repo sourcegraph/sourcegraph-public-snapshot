@@ -70,10 +70,10 @@ func runJobs(ctx context.Context, jobs []withContext) error {
 }
 
 // repoSets returns the set of repositories to search (whether indexed or unindexed) based on search mode.
-func repoSets(indexed *zoektutil.IndexedSearchRequest, mode search.GlobalSearchMode) []repoData {
-	repoSets := []repoData{UnindexedList(indexed.Unindexed)} // unindexed included by default
+func repoSets(request *zoektutil.IndexedSearchRequest, mode search.GlobalSearchMode) []repoData {
+	repoSets := []repoData{UnindexedList(request.Unindexed)} // unindexed included by default
 	if mode != search.SearcherOnly {
-		repoSets = append(repoSets, IndexedMap(indexed.Repos()))
+		repoSets = append(repoSets, IndexedMap(request.Repos()))
 	}
 	return repoSets
 }
@@ -83,13 +83,13 @@ func streamStructuralSearch(ctx context.Context, args *search.TextParameters, st
 	ctx, stream, cleanup := streaming.WithLimit(ctx, stream, int(args.PatternInfo.FileMatchLimit))
 	defer cleanup()
 
-	indexed, err := textSearchRequest(ctx, args, zoektutil.MissingRepoRevStatus(stream))
+	request, err := textSearchRequest(ctx, args, zoektutil.MissingRepoRevStatus(stream))
 	if err != nil {
 		return err
 	}
 
 	jobs := []withContext{}
-	for _, repoSet := range repoSets(indexed, args.Mode) {
+	for _, repoSet := range repoSets(request, args.Mode) {
 		jobs = append(jobs, structuralSearchJob(args, stream, repoSet))
 	}
 	return runJobs(ctx, jobs)
