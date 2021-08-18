@@ -35,15 +35,15 @@ var textSearchLimiter = mutablelimiter.New(32)
 
 var MockSearchFilesInRepos func(args *search.TextParameters) ([]result.Match, *streaming.Stats, error)
 
-func textSearchRequest(ctx context.Context, args *search.TextParameters, onMissing zoektutil.OnMissingRepoRevs) (*zoektutil.IndexedSearchRequest, error) {
-	// performance: for global searches, we avoid calling NewIndexedSearchRequest
+func textSearchRequest(ctx context.Context, args *search.TextParameters, onMissing zoektutil.OnMissingRepoRevs) (*zoektutil.IndexedSubsetSearchRequest, error) {
+	// performance: for global searches, we avoid calling NewIndexedSubsetSearchRequest
 	// because zoekt will anyway have to search all its shards.
 	if args.Mode == search.ZoektGlobalSearch {
 		q, err := search.QueryToZoektQuery(args.PatternInfo, false)
 		if err != nil {
 			return nil, err
 		}
-		return &zoektutil.IndexedSearchRequest{
+		return &zoektutil.IndexedSubsetSearchRequest{
 			Args: &search.ZoektParameters{
 				Repos:            args.Repos,
 				Query:            q,
@@ -60,7 +60,7 @@ func textSearchRequest(ctx context.Context, args *search.TextParameters, onMissi
 			RepoRevs: &zoektutil.IndexedRepoRevs{},
 		}, nil
 	}
-	return zoektutil.NewIndexedSearchRequest(ctx, args, search.TextRequest, onMissing)
+	return zoektutil.NewIndexedSubsetSearchRequest(ctx, args, search.TextRequest, onMissing)
 }
 
 // SearchFilesInRepos searches a set of repos for a pattern.
