@@ -5,6 +5,7 @@ import { of, Observable } from 'rxjs'
 
 import { BatchSpecApplyPreviewConnectionFields, ChangesetApplyPreviewFields } from '../../../../graphql-operations'
 import { EnterpriseWebStory } from '../../../components/EnterpriseWebStory'
+import { MultiSelectContextProvider } from '../../MultiSelectContext'
 import { getPublishableChangesetSpecID } from '../utils'
 
 import { hiddenChangesetApplyPreviewStories } from './HiddenChangesetApplyPreviewNode.story'
@@ -49,19 +50,21 @@ add('PreviewList', () => {
     return (
         <EnterpriseWebStory>
             {props => (
-                <PreviewList
-                    {...props}
-                    batchSpecID="123123"
-                    authenticatedUser={{
-                        url: '/users/alice',
-                        displayName: 'Alice',
-                        username: 'alice',
-                        email: 'alice@email.test',
-                    }}
-                    queryChangesetApplyPreview={queryChangesetApplyPreview}
-                    queryChangesetSpecFileDiffs={queryEmptyFileDiffs}
-                    queryPublishableChangesetSpecIDs={queryPublishableChangesetSpecIDs}
-                />
+                <MultiSelectContextProvider>
+                    <PreviewList
+                        {...props}
+                        batchSpecID="123123"
+                        authenticatedUser={{
+                            url: '/users/alice',
+                            displayName: 'Alice',
+                            username: 'alice',
+                            email: 'alice@email.test',
+                        }}
+                        queryChangesetApplyPreview={queryChangesetApplyPreview}
+                        queryChangesetSpecFileDiffs={queryEmptyFileDiffs}
+                        queryPublishableChangesetSpecIDs={queryPublishableChangesetSpecIDs}
+                    />
+                </MultiSelectContextProvider>
             )}
         </EnterpriseWebStory>
     )

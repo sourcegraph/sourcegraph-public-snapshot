@@ -15,24 +15,24 @@ import { queryPublishableChangesetSpecIDs as _queryPublishableChangesetSpecIDs }
 const ACTIONS: Action[] = [
     {
         type: 'unpublish',
-        buttonLabel: 'Unpublish',
-        dropdownTitle: 'Unpublish',
+        buttonLabel: 'Unpublish on apply',
+        dropdownTitle: 'Unpublish on apply',
         dropdownDescription:
-            'Do not publish selected changesets on the codehost. Note: a changeset that has been published cannot be unpublished.',
+            'Do not publish selected changesets on the codehost on apply. Note: a changeset that has been published cannot be unpublished.',
         onTrigger: noop,
     },
     {
         type: 'publish',
-        buttonLabel: 'Publish',
-        dropdownTitle: 'Publish',
-        dropdownDescription: 'Publish selected changesets on the codehost.',
+        buttonLabel: 'Publish on apply',
+        dropdownTitle: 'Publish on apply',
+        dropdownDescription: 'Publish selected changesets on the codehost on apply.',
         onTrigger: noop,
     },
     {
         type: 'publish-draft',
-        buttonLabel: 'Publish draft',
-        dropdownTitle: 'Publish draft',
-        dropdownDescription: 'Publish selected changesets as drafts on the codehost.',
+        buttonLabel: 'Publish draft on apply',
+        dropdownTitle: 'Publish draft on apply',
+        dropdownDescription: 'Publish selected changesets as drafts on the codehost on apply.',
         onTrigger: noop,
     },
 ]
@@ -126,7 +126,7 @@ export const PreviewSelectRow: React.FunctionComponent<PreviewSelectRowProps> = 
                                 actions={actions}
                                 dropdownMenuPosition="right"
                                 initiallyOpen={dropDownInitiallyOpen}
-                                placeholder="Select action"
+                                placeholder="Select action on apply"
                             />
                         </div>
                     </div>

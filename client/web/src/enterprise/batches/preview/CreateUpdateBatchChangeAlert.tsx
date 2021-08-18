@@ -50,7 +50,7 @@ export const CreateUpdateBatchChangeAlert: React.FunctionComponent<CreateUpdateB
             return "You don't have permission to apply this batch change."
         }
         if (selected === 'all' || selected.size > 0) {
-            return 'You have selected changesets. Choose an action or deselect to continue.'
+            return 'You have selected changesets. Choose the action to be performed on apply or deselect to continue.'
         }
         return undefined
     }, [canApply, selected, viewerCanAdminister])
