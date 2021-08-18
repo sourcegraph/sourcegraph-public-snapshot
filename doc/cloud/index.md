@@ -1,3 +1,3 @@
-# Sourcegraph Cloud
+# Sourcegraph cloud
 
-- [Differences between cloud and on-prem](cloud_ent_on-prem_comparison.md)
+- [Differences between Sourcegraph cloud, self-hosted, and enterprise](cloud_self_hosted_comparison.md)

@@ -1,6 +1,6 @@
-# Adding repositories to Sourcegraph Cloud
+# Adding repositories to Sourcegraph cloud
 
-Sourcegraph Cloud lets you add repositories to search with Sourcegraph without needing to self-host. You can add repositories you own or collaborate on from GitHub.com or GitLab.com.
+Sourcegraph cloud lets you add repositories to search with Sourcegraph without needing to self-host. You can add repositories you own or collaborate on from GitHub.com or GitLab.com.
 
 ## Adding repositories you own or collaborate on from GitHub.com or GitLab.com
 
@@ -29,9 +29,9 @@ To add public or private repositories from GitHub.com or Gitlab.com without crea
 1. Specify public repositories on GitHub and GitLab using complete URLs to the repositories. One repository per line.
 1. Press the **Save** button.
 
-## Who can see your code on Sourcegraph Cloud.
+## Who can see your code on Sourcegraph cloud.
 
-Please see [who can see your code on Sourcegraph Cloud](../explanations/code_visibility_on_sourcegraph_cloud.md).
+Please see [who can see your code on Sourcegraph cloud](../explanations/code_visibility_on_sourcegraph_cloud.md).
 
 ## Troubleshooting
 
@@ -41,4 +41,4 @@ If you've connected with a code host and repositories you expect to find are not
 
 If the missing repositories belong to an organization on GitHub, [review the Sourcegraph OAuth access](https://github.com/settings/connections/applications/e917b2b7fa9040e1edd4). If necessary, grant or request access for the given organization. If you are not an owner, you will receive an email notification when an owner grants access. Then, you can [follow the steps to add repositories](#adding-repositories-you-own-or-collaborate-on-from-github-or-gitlab).
 
-If you continue to have issues, reach out to [our team](mailto:support@sourcegraph.com)
+If you continue to have issues, [reach out to our team](mailto:support@sourcegraph.com).

@@ -73,4 +73,4 @@ Learn how to [manage search contexts with the GraphQL API](../../api/graphql/man
 
 Sourcegraph cloud is the Software-as-a-Service version of Sourcegraph. 
 
-Learn how to [search across repositories you've added to Sourcegraph Cloud with search contexts](./searching_with_search_contexts.md).
+Learn how to [search across repositories you've added to Sourcegraph cloud with search contexts](./searching_with_search_contexts.md).
