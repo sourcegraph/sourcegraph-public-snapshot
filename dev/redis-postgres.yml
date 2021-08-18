@@ -1,7 +1,7 @@
 # This files provides an easy way to start Redis and PostgreSQL servers for
 # development, via docker-compose.
 #
-# See https://docs.sourcegraph.com/dev/getting-started/quickstart_2_initialize_database#with-docker
+# See https://docs.sourcegraph.com/dev/getting-started/quickstart_3_initialize_database#with-docker
 #
 # You can also use `sg run redis-postgres`.
 services:
