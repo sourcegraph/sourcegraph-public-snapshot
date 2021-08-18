@@ -79,7 +79,7 @@ export const PostSignUpPage: FunctionComponent<PostSignUpPage> = ({
 
         const fullEventName = getPostSignUpEvent(eventName)
         if (tabNumber) {
-            eventLogger.log(fullEventName, { tabNumber })
+            eventLogger.log(fullEventName, { tabNumber }, { tabNumber })
         } else {
             eventLogger.log(fullEventName)
         }
