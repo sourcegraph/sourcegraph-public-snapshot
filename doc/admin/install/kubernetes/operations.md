@@ -165,6 +165,8 @@ The following instructions are specific to backing up and restoring the sourcegr
 >
 > The above may take a while if you have a lot of repositories. In the meantime, searches may be slow or return incomplete results. This process rarely takes longer than 6 hours and is usually **much** faster.
 
+> NOTE: Add `-n $NAMESPACE` to commands if you are not using the default namespace
+
 ### Back up Sourcegraph databases
 
 These instructions will back up the primary `sourcegraph` database and the [codeintel](../../../code_intelligence/index.md) database.
@@ -178,16 +180,16 @@ kubectl get pods -A
 #### 2. Stop all connections to the database by removing the frontend deployment
 
 ```bash
-kubectl scale --replicas=0 deployment/sourcegraph-frontend --namespace=$NAMESPACE
+kubectl scale --replicas=0 deployment/sourcegraph-frontend
 # or
-kubectl delete deployment sourcegraph-frontend --namespace=$NAMESPACE
+kubectl delete deployment sourcegraph-frontend
 ```
 
 #### 3. Generate the database dumps
 
 ```bash
-kubectl exec -it --namespace=$NAMESPACE $pgsql_POD_NAME -- bash -c 'pg_dump -C --username sg sg' > sourcegraph_db.out
-kubectl exec -it --namespace=$NAMESPACE $codeintel-db_POD_NAME -- bash -c 'pg_dump -C --username sg sg' > codeintel_db.out
+kubectl exec -it $pgsql_POD_NAME -- bash -c 'pg_dump -C --username sg sg' > sourcegraph_db.out
+kubectl exec -it $codeintel-db_POD_NAME -- bash -c 'pg_dump -C --username sg sg' > codeintel_db.out
 ```
 
 Ensure the `sourcegraph_db.out` and `codeintel_db.out` files are moved to a safe and secure location.
@@ -205,8 +207,8 @@ If you are restoring a previously running environment, see the instructions for 
 ##### 2. Start the database services by running the following command from the root of the [deploy-sourcegraph](https://github.com/sourcegraph/deploy-sourcegraph) directory
 
 ```bash
-kubectl apply -f ./base/pgsql/pgsql.Deployment.yaml --namespace=$NAMESPACE
-kubectl apply -f ./base/codeintel-db/codeintel-db.Deployment.yaml --namespace=$NAMESPACE
+kubectl rollout restart deployment pgsql
+kubectl rollout restart deployment codeintel-db
 ```
 
 ##### 3. Copy the database files into the pods by running the following command from the root of the [deploy-sourcegraph](https://github.com/sourcegraph/deploy-sourcegraph) directory
@@ -219,8 +221,8 @@ kubectl cp codeintel_db.out $NAMESPACE/$codeintel-db_POD_NAME:/tmp/codeintel_db.
 ##### 4. Restore the databases
 
 ```bash
-kubectl exec -it --namespace=$NAMESPACE $pgsql_POD_NAME -- bash -c 'psql -v ERROR_ON_STOP=1 --username sg -f /tmp/sourcegraph_db.out sg'
-kubectl exec -it --namespace=$NAMESPACE $codeintel-db_POD_NAME -- bash -c 'psql -v ERROR_ON_STOP=1 --username sg -f /tmp/condeintel_db.out sg'
+kubectl exec -it $pgsql_POD_NAME -- bash -c 'psql -v ERROR_ON_STOP=1 --username sg -f /tmp/sourcegraph_db.out sg'
+kubectl exec -it $codeintel-db_POD_NAME -- bash -c 'psql -v ERROR_ON_STOP=1 --username sg -f /tmp/condeintel_db.out sg'
 ```
 
 ##### 5. Start the remaining Sourcegraph services by running the following command from the root of the [deploy-sourcegraph](https://github.com/sourcegraph/deploy-sourcegraph) directory
@@ -238,7 +240,7 @@ kubectl get pods -A -o wide --watch
 ##### 7. After deployment is completed, verify Sourcegraph is running by temporarily making the frontend port accessible:
 
 ```
-kubectl port-forward svc/sourcegraph-frontend 3080:30080 --namespace=$NAMESPACE
+kubectl port-forward svc/sourcegraph-frontend 3080:30080
 ```
 
 ##### 8. Browse to your Sourcegraph deployment, login and verify your existing configuration has been restored
@@ -248,18 +250,18 @@ kubectl port-forward svc/sourcegraph-frontend 3080:30080 --namespace=$NAMESPACE
 ##### 1. Stop the existing deployment by removing the frontend deployment
 
 ```bash
-kubectl scale --replicas=0 deployment/sourcegraph-frontend --namespace=$NAMESPACE
+kubectl scale --replicas=0 deployment/sourcegraph-frontend
 # or
-kubectl delete deployment sourcegraph-frontend --namespace=$NAMESPACE
+kubectl delete deployment sourcegraph-frontend
 ```
 
 ##### 2. Remove any existing volumes for the databases in the existing deployment
  
 ```bash
-kubectl delete pvc pgsql --namespace=$NAMESPACE
-kubectl delete pvc codeintel-db --namespace=$NAMESPACE
-kubectl delete pv $pgsql_PV_NAME --namespace=$NAMESPACE --force
-kubectl delete pv $codeintel-db_PV_NAME --namespace=$NAMESPACE --force
+kubectl delete pvc pgsql
+kubectl delete pvc codeintel-db
+kubectl delete pv $pgsql_PV_NAME --force
+kubectl delete pv $codeintel-db_PV_NAME --force
 ```
 
 ##### 3. Copy the database dump files (eg. `sourcegraph_db.out` and `codeintel_db.out`) into the root of the `deploy-sourcegraph` directory
@@ -267,8 +269,8 @@ kubectl delete pv $codeintel-db_PV_NAME --namespace=$NAMESPACE --force
 ##### 4. Start the database services only
 
 ```bash
-kubectl apply -f ./base/pgsql/pgsql.Deployment.yaml --namespace=$NAMESPACE
-kubectl apply -f ./base/codeintel-db/codeintel-db.Deployment.yaml --namespace=$NAMESPACE
+kubectl rollout restart deployment pgsql
+kubectl rollout restart deployment codeintel-db
 ```
 
 ##### 5. Copy the database files into the pods by running the following command from the root of the [deploy-sourcegraph](https://github.com/sourcegraph/deploy-sourcegraph) directory
@@ -281,8 +283,8 @@ kubectl cp codeintel_db.out $NAMESPACE/$codeintel-db_POD_NAME:/tmp/codeintel_db.
 ##### 6. Restore the databases
 
 ```bash
-kubectl exec -it --namespace=$NAMESPACE $pgsql_POD_NAME -- bash -c 'psql -v ERROR_ON_STOP=1 --username sg -f /tmp/sourcegraph_db.out sg'
-kubectl exec -it --namespace=$NAMESPACE $codeintel-db_POD_NAME -- bash -c 'psql -v ERROR_ON_STOP=1 --username sg -f /tmp/condeintel_db.out sg'
+kubectl exec -it $pgsql_POD_NAME -- bash -c 'psql -v ERROR_ON_STOP=1 --username sg -f /tmp/sourcegraph_db.out sg'
+kubectl exec -it $codeintel-db_POD_NAME -- bash -c 'psql -v ERROR_ON_STOP=1 --username sg -f /tmp/condeintel_db.out sg'
 ```
 
 ##### 7. Start the remaining Sourcegraph services by running the following command from the root of the [deploy-sourcegraph](https://github.com/sourcegraph/deploy-sourcegraph) directory
