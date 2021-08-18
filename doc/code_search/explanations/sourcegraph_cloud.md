@@ -14,7 +14,7 @@ Note that you can search across a maximum of 2,000 repositories at once using So
 
 ### What is Sourcegraph cloud?
 
-Sourcegraph cloud is a Software-as-a-Service version of Sourcegraph. This means that we handle hosting and updating Sourcegraph so you can focus on what matters, searching your code. Sourcegraph cloud is available in public beta today for any individual user to [sign-up](https://sourcegraph.com/sign-up) for free. 
+Sourcegraph cloud is a Software-as-a-Service version of Sourcegraph. This means that we handle hosting and updating Sourcegraph so you can focus on what matters: searching your code. Sourcegraph cloud is available in public beta today for any individual user to [sign up for free](https://sourcegraph.com/sign-up).
 
 ### Limitations
 
