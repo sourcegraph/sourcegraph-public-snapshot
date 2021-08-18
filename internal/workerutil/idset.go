@@ -31,13 +31,26 @@ func (i *IDSet) Add(id int, cancel context.CancelFunc) bool {
 }
 
 // Remove invokes the cancel function associated with the given identifier
-// in the setand removes the identifier from the set. If the identifier is
+// in the set and removes the identifier from the set. If the identifier is
 // not a member of the set, then no action is performed.
 func (i *IDSet) Remove(id int) {
 	i.Lock()
 	cancel, ok := i.ids[id]
 	delete(i.ids, id)
 	i.Unlock()
+
+	if ok {
+		cancel()
+	}
+}
+
+// Remove invokes the cancel function associated with the given identifier
+// in the set. If the identifier is not a member of the set, then no action
+// is performed.
+func (i *IDSet) Cancel(id int) {
+	i.RLock()
+	cancel, ok := i.ids[id]
+	i.RUnlock()
 
 	if ok {
 		cancel()
@@ -56,4 +69,15 @@ func (i *IDSet) Slice() []int {
 	sort.Ints(ids)
 
 	return ids
+}
+
+// Has returns whether the IDSet contains the given id.
+func (i *IDSet) Has(id int) bool {
+	for _, have := range i.Slice() {
+		if id == have {
+			return true
+		}
+	}
+
+	return false
 }

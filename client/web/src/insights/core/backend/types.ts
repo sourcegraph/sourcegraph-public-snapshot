@@ -36,6 +36,7 @@ export interface BackendInsightData {
         title: string
         subtitle: string
         content: LineChartContent<any, string>[]
+        isFetchingHistoricalData: boolean
     }
 }
 

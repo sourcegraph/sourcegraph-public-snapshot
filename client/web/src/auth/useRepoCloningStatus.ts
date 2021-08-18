@@ -5,12 +5,15 @@ import { useQuery, gql } from '@sourcegraph/shared/src/graphql/graphql'
 
 import { Maybe, UserRepositoriesVariables } from '../graphql-operations'
 
+import { RepoSelectionMode } from './PostSignUpPage'
+import { useAffiliatedRepos } from './useAffiliatedRepos'
 import { MinSelectedRepo } from './useSelectedRepos'
 
 interface UseRepoCloningStatusArguments {
     userId: string
     pollInterval: number
     selectedReposVar: ReactiveVar<MinSelectedRepo[] | undefined>
+    repoSelectionMode: RepoSelectionMode
 }
 
 interface RepoLine {
@@ -98,6 +101,7 @@ export const useRepoCloningStatus = ({
     userId,
     pollInterval = 5000,
     selectedReposVar,
+    repoSelectionMode,
 }: UseRepoCloningStatusArguments): RepoCloningStatus => {
     let clonedReposCount = 0
 
@@ -119,12 +123,18 @@ export const useRepoCloningStatus = ({
         }
     )
 
+    let didReceiveAllRepoStatuses = false
+    const repos = data?.node?.repositories.nodes
+    const isSyncingAllRepos = repoSelectionMode === 'all'
+    const { affiliatedRepos } = useAffiliatedRepos(userId)
+    // check if we received cloning status for all selected repos
     const selectedRepos = selectedReposVar()
 
-    const repos = data?.node?.repositories.nodes
-
-    // check if we received cloning status for all selected repos
-    const didReceiveAllRepoStatuses = xor(getRepoNames(selectedRepos), getRepoNames(repos)).length === 0
+    if (isSyncingAllRepos && affiliatedRepos && repos) {
+        didReceiveAllRepoStatuses = affiliatedRepos.length === repos.length
+    } else {
+        didReceiveAllRepoStatuses = xor(getRepoNames(selectedRepos), getRepoNames(repos)).length === 0
+    }
 
     // don't display repo statuses unless we received all repos
     // when user goes back to reselect repos and navigates to the terminal UI

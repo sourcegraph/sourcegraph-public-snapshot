@@ -2,7 +2,6 @@ package zoekt
 
 import (
 	"context"
-	"fmt"
 	"strings"
 	"time"
 	"unicode/utf8"
@@ -184,7 +183,13 @@ func (s *IndexedSearchRequest) Search(ctx context.Context, c streaming.Sender) e
 	if s.Args == nil {
 		return nil
 	}
-	if len(s.Repos()) == 0 && s.Args.Mode != search.ZoektGlobalSearch {
+
+	if s.Args.Mode == search.ZoektGlobalSearch {
+		q := zoektGlobalQuery(s.Args.Query, s.Args.RepoOptions, s.Args.UserPrivateRepos)
+		return doZoektSearchGlobal(ctx, q, s.Args.Typ, s.Args.Zoekt.Client, s.Args.FileMatchLimit, s.Args.Select, c)
+	}
+
+	if len(s.Repos()) == 0 {
 		return nil
 	}
 
@@ -193,7 +198,7 @@ func (s *IndexedSearchRequest) Search(ctx context.Context, c streaming.Sender) e
 		since = s.since
 	}
 
-	return zoektSearch(ctx, s.Args, s.RepoRevs, since, c)
+	return zoektSearch(ctx, s.RepoRevs, s.Args.Query, s.Args.Typ, s.Args.Zoekt.Client, s.Args.FileMatchLimit, s.Args.Select, since, c)
 }
 
 const maxUnindexedRepoRevSearchesPerQuery = 200
@@ -321,31 +326,20 @@ func NewIndexedSearchRequest(ctx context.Context, args *search.TextParameters, t
 	}, nil
 }
 
-// zoektSearchGlobal searches the entire universe of indexed repositories.
+// zoektGlobalQuery constructs a query that searches the entire universe of indexed repositories.
 //
-// We send 2 queries to Zoekt. One query for public repos and one query for
+// We construct 2 Zoekt queries. One query for public repos and one query for
 // private repos.
 //
 // We only have to search "HEAD", because global queries, per definition, don't
 // have a repo: filter and consequently no rev: filter. This makes the code a bit
 // simpler because we don't have to resolve revisions before sending off (global)
 // requests to Zoekt.
-func zoektSearchGlobal(ctx context.Context, args *search.ZoektParameters, c streaming.Sender) error {
-	if args == nil {
-		return nil
-	}
-
-	if args.Mode != search.ZoektGlobalSearch {
-		return fmt.Errorf("zoektSearchGlobal called with args.Mode %d instead of %d", args.Mode, search.ZoektGlobalSearch)
-	}
-
-	ctx, cancel := context.WithCancel(ctx)
-	defer cancel()
-
+func zoektGlobalQuery(query zoektquery.Q, repoOptions search.RepoOptions, userPrivateRepos []types.RepoName) zoektquery.Q {
 	var qs []zoektquery.Q
 
 	// Public
-	if !args.RepoOptions.OnlyPrivate {
+	if !repoOptions.OnlyPrivate {
 		rc := zoektquery.RcOnlyPublic
 		apply := func(f zoektquery.RawConfig, b bool) {
 			if !b {
@@ -353,30 +347,33 @@ func zoektSearchGlobal(ctx context.Context, args *search.ZoektParameters, c stre
 			}
 			rc |= f
 		}
-		apply(zoektquery.RcOnlyArchived, args.RepoOptions.OnlyArchived)
-		apply(zoektquery.RcNoArchived, args.RepoOptions.NoArchived)
-		apply(zoektquery.RcOnlyForks, args.RepoOptions.OnlyForks)
-		apply(zoektquery.RcNoForks, args.RepoOptions.NoForks)
+		apply(zoektquery.RcOnlyArchived, repoOptions.OnlyArchived)
+		apply(zoektquery.RcNoArchived, repoOptions.NoArchived)
+		apply(zoektquery.RcOnlyForks, repoOptions.OnlyForks)
+		apply(zoektquery.RcNoForks, repoOptions.NoForks)
 
-		qs = append(qs, zoektquery.NewAnd(&zoektquery.Branch{Pattern: "HEAD", Exact: true}, rc, args.Query))
+		qs = append(qs, zoektquery.NewAnd(&zoektquery.Branch{Pattern: "HEAD", Exact: true}, rc, query))
 	}
 
 	// Private
-	if !args.RepoOptions.OnlyPublic && len(args.UserPrivateRepos) > 0 {
-		privateRepoSet := make(map[string][]string, len(args.UserPrivateRepos))
+	if repoOptions.OnlyPublic && len(userPrivateRepos) > 0 {
+		privateRepoSet := make(map[string][]string, len(userPrivateRepos))
 		head := []string{"HEAD"}
-		for _, r := range args.UserPrivateRepos {
+		for _, r := range userPrivateRepos {
 			privateRepoSet[string(r.Name)] = head
 		}
-		qs = append(qs, zoektquery.NewAnd(&zoektquery.RepoBranches{Set: privateRepoSet}, args.Query))
+		qs = append(qs, zoektquery.NewAnd(&zoektquery.RepoBranches{Set: privateRepoSet}, query))
 	}
 
-	return doZoektSearchGlobal(ctx, zoektquery.Simplify(zoektquery.NewOr(qs...)), args, c)
+	return zoektquery.Simplify(zoektquery.NewOr(qs...))
 }
 
-func doZoektSearchGlobal(ctx context.Context, q zoektquery.Q, args *search.ZoektParameters, c streaming.Sender) error {
-	k := ResultCountFactor(0, args.FileMatchLimit, true)
-	searchOpts := SearchOpts(ctx, k, args.FileMatchLimit)
+func doZoektSearchGlobal(ctx context.Context, q zoektquery.Q, typ search.IndexedRequestType, client zoekt.Streamer, fileMatchLimit int32, selector filter.SelectPath, c streaming.Sender) error {
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
+
+	k := ResultCountFactor(0, fileMatchLimit, true)
+	searchOpts := SearchOpts(ctx, k, fileMatchLimit)
 
 	if deadline, ok := ctx.Deadline(); ok {
 		// If the user manually specified a timeout, allow zoekt to use all of the remaining timeout.
@@ -397,8 +394,8 @@ func doZoektSearchGlobal(ctx context.Context, q zoektquery.Q, args *search.Zoekt
 
 	// PERF: if we are going to be selecting to repo results only anyways, we can
 	// just ask zoekt for only results of type repo.
-	if args.Select.Root() == filter.Repository {
-		repoList, err := args.Zoekt.Client.List(ctx, q, nil)
+	if selector.Root() == filter.Repository {
+		repoList, err := client.List(ctx, q, nil)
 		if err != nil {
 			return err
 		}
@@ -418,27 +415,19 @@ func doZoektSearchGlobal(ctx context.Context, q zoektquery.Q, args *search.Zoekt
 		return nil
 	}
 
-	return args.Zoekt.Client.StreamSearch(ctx, q, &searchOpts, backend.ZoektStreamFunc(func(event *zoekt.SearchResult) {
+	return client.StreamSearch(ctx, q, &searchOpts, backend.ZoektStreamFunc(func(event *zoekt.SearchResult) {
 		sendMatches(event, func(file *zoekt.FileMatch) (types.RepoName, []string) {
 			repo := types.RepoName{
 				ID:   api.RepoID(file.RepositoryID),
 				Name: api.RepoName(file.Repository),
 			}
 			return repo, []string{""}
-		}, args.Typ, c)
+		}, typ, c)
 	}))
 }
 
 // zoektSearch searches repositories using zoekt.
-func zoektSearch(ctx context.Context, args *search.ZoektParameters, repos *IndexedRepoRevs, since func(t time.Time) time.Duration, c streaming.Sender) error {
-	if args == nil {
-		return nil
-	}
-
-	if args.Mode == search.ZoektGlobalSearch {
-		return zoektSearchGlobal(ctx, args, c)
-	}
-
+func zoektSearch(ctx context.Context, repos *IndexedRepoRevs, q zoektquery.Q, typ search.IndexedRequestType, client zoekt.Streamer, fileMatchLimit int32, selector filter.SelectPath, since func(t time.Time) time.Duration, c streaming.Sender) error {
 	if len(repos.repoRevs) == 0 {
 		return nil
 	}
@@ -446,10 +435,10 @@ func zoektSearch(ctx context.Context, args *search.ZoektParameters, repos *Index
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
-	finalQuery := zoektquery.NewAnd(&zoektquery.RepoBranches{Set: repos.repoBranches}, args.Query)
+	finalQuery := zoektquery.NewAnd(&zoektquery.RepoBranches{Set: repos.repoBranches}, q)
 
-	k := ResultCountFactor(len(repos.repoBranches), args.FileMatchLimit, false)
-	searchOpts := SearchOpts(ctx, k, args.FileMatchLimit)
+	k := ResultCountFactor(len(repos.repoBranches), fileMatchLimit, false)
+	searchOpts := SearchOpts(ctx, k, fileMatchLimit)
 
 	// Start event stream.
 	t0 := time.Now()
@@ -473,8 +462,8 @@ func zoektSearch(ctx context.Context, args *search.ZoektParameters, repos *Index
 
 	// PERF: if we are going to be selecting to repo results only anyways, we can just ask
 	// zoekt for only results of type repo.
-	if args.Select.Root() == filter.Repository {
-		return zoektSearchReposOnly(ctx, args.Zoekt.Client, finalQuery, c, func() map[api.RepoID]*search.RepositoryRevisions {
+	if selector.Root() == filter.Repository {
+		return zoektSearchReposOnly(ctx, client, finalQuery, c, func() map[api.RepoID]*search.RepositoryRevisions {
 			repoRevMap := make(map[api.RepoID]*search.RepositoryRevisions, len(repos.repoRevs))
 			for _, r := range repos.repoRevs {
 				repoRevMap[r.Repo.ID] = r
@@ -484,9 +473,9 @@ func zoektSearch(ctx context.Context, args *search.ZoektParameters, repos *Index
 	}
 
 	foundResults := atomic.Bool{}
-	err := args.Zoekt.Client.StreamSearch(ctx, finalQuery, &searchOpts, backend.ZoektStreamFunc(func(event *zoekt.SearchResult) {
+	err := client.StreamSearch(ctx, finalQuery, &searchOpts, backend.ZoektStreamFunc(func(event *zoekt.SearchResult) {
 		foundResults.CAS(false, event.FileCount != 0 || event.MatchCount != 0)
-		sendMatches(event, repos.getRepoInputRev, args.Typ, c)
+		sendMatches(event, repos.getRepoInputRev, typ, c)
 	}))
 	if err != nil {
 		return err

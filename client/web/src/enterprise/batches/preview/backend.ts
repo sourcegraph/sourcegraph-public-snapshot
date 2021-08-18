@@ -123,17 +123,18 @@ export const fetchBatchSpecById = (batchSpec: Scalars['ID']): Observable<BatchSp
 
 export const createBatchChange = ({
     batchSpec,
+    publicationStates,
 }: CreateBatchChangeVariables): Promise<CreateBatchChangeResult['createBatchChange']> =>
     requestGraphQL<CreateBatchChangeResult, CreateBatchChangeVariables>(
         gql`
-            mutation CreateBatchChange($batchSpec: ID!) {
-                createBatchChange(batchSpec: $batchSpec) {
+            mutation CreateBatchChange($batchSpec: ID!, $publicationStates: [ChangesetSpecPublicationStateInput!]) {
+                createBatchChange(batchSpec: $batchSpec, publicationStates: $publicationStates) {
                     id
                     url
                 }
             }
         `,
-        { batchSpec }
+        { batchSpec, publicationStates }
     )
         .pipe(
             map(dataOrThrowErrors),
@@ -144,17 +145,26 @@ export const createBatchChange = ({
 export const applyBatchChange = ({
     batchSpec,
     batchChange,
+    publicationStates,
 }: ApplyBatchChangeVariables): Promise<ApplyBatchChangeResult['applyBatchChange']> =>
     requestGraphQL<ApplyBatchChangeResult, ApplyBatchChangeVariables>(
         gql`
-            mutation ApplyBatchChange($batchSpec: ID!, $batchChange: ID!) {
-                applyBatchChange(batchSpec: $batchSpec, ensureBatchChange: $batchChange) {
+            mutation ApplyBatchChange(
+                $batchSpec: ID!
+                $batchChange: ID!
+                $publicationStates: [ChangesetSpecPublicationStateInput!]
+            ) {
+                applyBatchChange(
+                    batchSpec: $batchSpec
+                    ensureBatchChange: $batchChange
+                    publicationStates: $publicationStates
+                ) {
                     id
                     url
                 }
             }
         `,
-        { batchSpec, batchChange }
+        { batchSpec, batchChange, publicationStates }
     )
         .pipe(
             map(dataOrThrowErrors),

@@ -322,6 +322,26 @@ func TestMarkFailed(t *testing.T) {
 	})
 }
 
+func TestCanceled(t *testing.T) {
+	spec := routeSpec{
+		expectedMethod:   "POST",
+		expectedPath:     "/.executors/queue/test_queue/canceled",
+		expectedUsername: "test",
+		expectedPassword: "hunter2",
+		expectedPayload:  `{"executorName": "deadbeef"}`,
+		responseStatus:   http.StatusOK,
+		responsePayload:  `[1]`,
+	}
+
+	testRoute(t, spec, func(client *Client) {
+		if ids, err := client.Canceled(context.Background(), "test_queue"); err != nil {
+			t.Fatalf("unexpected error completing job: %s", err)
+		} else if diff := cmp.Diff(ids, []int{1}); diff != "" {
+			t.Fatalf("unexpected set of IDs returned: %s", diff)
+		}
+	})
+}
+
 func TestHeartbeat(t *testing.T) {
 	spec := routeSpec{
 		expectedMethod:   "POST",
