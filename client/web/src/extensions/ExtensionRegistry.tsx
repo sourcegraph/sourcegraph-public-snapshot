@@ -41,6 +41,7 @@ interface Props
         ThemeProps {
     location: H.Location
     history: H.History
+    isSourcegraphDotCom: boolean
 }
 
 const LOADING = 'loading' as const
@@ -383,7 +384,7 @@ export const ExtensionRegistry: React.FunctionComponent<Props> = props => {
                                 </div>
                             </>
                         )}
-                        {(
+                        {props.isSourcegraphDotCom && (
                             <>
                                 <hr className="mt-5" />
                                 <div className="my-4 justify-content-center">
