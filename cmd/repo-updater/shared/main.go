@@ -22,6 +22,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repoupdater"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -191,7 +192,7 @@ func Main(enterpriseInit EnterpriseInit) {
 		gps = repos.NewGitolitePhabricatorMetadataSyncer(store)
 	}
 
-	go watchSyncer(ctx, syncer, scheduler, gps)
+	go watchSyncer(ctx, syncer, scheduler, gps, server.PermsSyncer)
 	go func() {
 		log.Fatal(syncer.Run(ctx, store, repos.RunOptions{
 			EnqueueInterval: repos.ConfRepoListUpdateInterval,
@@ -356,7 +357,18 @@ type scheduler interface {
 	EnsureScheduled([]types.RepoName)
 }
 
-func watchSyncer(ctx context.Context, syncer *repos.Syncer, sched scheduler, gps *repos.GitolitePhabricatorMetadataSyncer) {
+type permsSyncer interface {
+	// ScheduleRepos schedules new permissions syncing requests for given repositories.
+	ScheduleRepos(ctx context.Context, repoIDs ...api.RepoID)
+}
+
+func watchSyncer(
+	ctx context.Context,
+	syncer *repos.Syncer,
+	sched scheduler,
+	gps *repos.GitolitePhabricatorMetadataSyncer,
+	permsSyncer permsSyncer,
+) {
 	log15.Debug("started new repo syncer updates scheduler relay thread")
 
 	for {
@@ -367,14 +379,38 @@ func watchSyncer(ctx context.Context, syncer *repos.Syncer, sched scheduler, gps
 			if !conf.Get().DisableAutoGitUpdates {
 				sched.UpdateFromDiff(diff)
 			}
+
+			// PermsSyncer is only available in enterprise mode.
+			if permsSyncer != nil {
+				// Schedule a repo permissions sync for all private repos that were added or
+				// modified.
+				var repoIDs []api.RepoID
+
+				for _, r := range diff.Added {
+					if r.Private {
+						repoIDs = append(repoIDs, r.ID)
+					}
+				}
+
+				for _, r := range diff.Modified {
+					if r.Private {
+						repoIDs = append(repoIDs, r.ID)
+					}
+				}
+
+				permsSyncer.ScheduleRepos(ctx, repoIDs...)
+			}
+
 			if gps == nil {
 				continue
 			}
+
 			go func() {
 				if err := gps.Sync(ctx, diff.Repos()); err != nil {
 					log15.Error("GitolitePhabricatorMetadataSyncer", "error", err)
 				}
 			}()
+
 		}
 	}
 }
