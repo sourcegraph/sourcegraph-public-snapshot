@@ -1,4 +1,4 @@
-# Sourcegraph Cloud 
+# Sourcegraph cloud 
 
 Sourcegraph cloud is a newly released cloud-based version of Sourcegraph. Both Sourcegraph cloud and self-hosted Sourcegraph instances power the same search experience relied on by developers around the world. The Sourcegraph team is working on bringing Sourcegraph cloud to feature parity with our self-hosted Sourcegraph solution.
 
