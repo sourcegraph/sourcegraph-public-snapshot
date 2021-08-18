@@ -6,6 +6,7 @@
   },
   "builders": [
     {
+      "name": "gcp",
       "type": "googlecompute",
       "project_id": "sourcegraph-ci",
       "source_image_project_id": "ubuntu-os-cloud",
@@ -16,16 +17,22 @@
       "image_licenses": ["projects/vm-options/global/licenses/enable-vmx"],
       "disk_type": "pd-ssd",
       "image_name": "executor-{{user `version`}}-{{user `build_timestamp`}}",
-      "tags": ["packer"],
-      "account_file": "/workspace/builder-sa-key.json"
+      "tags": ["packer"]
+    },
+    {
+      "name": "aws",
+      "type": "amazon-ebs",
+      "ami_name": "executor-{{user `version`}}-{{user `build_timestamp`}}",
+      "ssh_username": "ubuntu",
+      "instance_type": "t3.micro",
+      "source_ami": "ami-02868af3c3df4b3aa",
+      "region": "us-west-2",
+      "vpc_id": "vpc-0cdd19a3c7d821029",
+      "subnet_id": "subnet-0d25cdd0f10558e3b",
+      "associate_public_ip_address": true
     }
   ],
   "provisioners": [
-    {
-      "type": "file",
-      "sources": ["/workspace/builder-sa-key.json"],
-      "destination": "/tmp/"
-    },
     {
       "type": "file",
       "sources": ["executor"],
@@ -40,7 +47,14 @@
       "type": "shell",
       "execute_command": "chmod +x {{ .Path }}; {{ .Vars }} sudo -E bash {{ .Path }}",
       "script": "build.sh",
-      "environment_vars": ["SRC_CLI_VERSION={{user `SRC_CLI_VERSION`}}"]
+      "override": {
+        "gcp": {
+          "environment_vars": ["SRC_CLI_VERSION={{user `SRC_CLI_VERSION`}}", "PLATFORM_TYPE=gcp"]
+        },
+        "aws": {
+          "environment_vars": ["SRC_CLI_VERSION={{user `SRC_CLI_VERSION`}}", "PLATFORM_TYPE=aws"]
+        }
+      }
     }
   ]
 }
