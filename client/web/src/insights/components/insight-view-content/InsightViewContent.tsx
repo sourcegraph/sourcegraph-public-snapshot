@@ -13,27 +13,31 @@ import { ChartViewContent } from './chart-view-content/ChartViewContent'
 const isMarkupContent = (input: unknown): input is MarkupContent =>
     isObject(input) && hasProperty('value')(input) && typeof input.value === 'string'
 
+const Alert: React.FunctionComponent = () => null
+
 export interface InsightViewContentProps extends TelemetryProps {
     viewContent: View['content']
     viewID: string
 
     /** To get container to track hovers for pings */
     containerClassName?: string
-
-    /** Render prop to display overlaid alerts */
-    alertOverlay?(): void
 }
 
 /**
  * Renders the content of an extension-contributed view.
  */
-export const InsightViewContent: React.FunctionComponent<InsightViewContentProps> = ({
+const InsightViewContentComponent: React.FunctionComponent<InsightViewContentProps> = ({
     viewContent,
     viewID,
     containerClassName,
-    alertOverlay,
+    children,
     ...props
 }) => {
+    const alertChild = React.Children.toArray(children).find(
+        child => React.isValidElement(child) && child.type === Alert
+    ) as React.ReactElement | undefined
+    const alertSlot = (alertChild?.props as React.PropsWithChildren<{}>).children || null
+
     // Track hovering for hide/show message overlay
     const [isHovered, setIsHovered] = useState(false)
     const hoverProps = {
@@ -108,10 +112,12 @@ export const InsightViewContent: React.FunctionComponent<InsightViewContentProps
                             telemetryService={props.telemetryService}
                             className="view-content__chart"
                         />
-                        {alertOverlay && !isHovered && alertOverlay()}
+                        {!isHovered && alertSlot}
                     </React.Fragment>
                 ) : null
             )}
         </div>
     )
 }
+
+export const InsightViewContent = Object.assign(InsightViewContentComponent, { Alert })
