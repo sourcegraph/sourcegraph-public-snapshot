@@ -19,6 +19,12 @@ All notable changes to `src-cli` are documented in this file.
 
 ### Removed
 
+## 3.31.0
+
+### Changed
+
+- `src batch new` now omits the publish flag, if the Sourcegraph instance supports publish from GUI.
+
 ## 3.30.5
 
 ### Added
