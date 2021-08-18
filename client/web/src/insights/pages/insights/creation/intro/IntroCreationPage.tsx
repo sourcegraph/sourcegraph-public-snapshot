@@ -9,6 +9,7 @@ import { Page } from '../../../../../components/Page'
 import { PageTitle } from '../../../../../components/PageTitle'
 import { LineChart } from '../../../../components/insight-view-content/chart-view-content/charts/line/LineChart'
 import { PieChart } from '../../../../components/insight-view-content/chart-view-content/charts/pie/PieChart'
+import { LinkWithQuery } from '../../../../components/link-with-query'
 
 import { LINE_CHART_DATA, PIE_CHART_DATA } from './charts-mock'
 import styles from './IntroCreationPage.module.scss'
@@ -59,13 +60,13 @@ export const IntroCreationPage: React.FunctionComponent<IntroCreationPageProps> 
                         custom search query.
                     </p>
 
-                    <Link
+                    <LinkWithQuery
                         to="/insights/create/search"
                         onClick={logCreateSearchBasedInsightClick}
                         className={classnames(styles.createIntroPageInsightButton, 'btn', 'btn-primary')}
                     >
                         Create search insight
-                    </Link>
+                    </LinkWithQuery>
 
                     <hr className="ml-n3 mr-n3 mt-4 mb-3" />
 
@@ -82,13 +83,13 @@ export const IntroCreationPage: React.FunctionComponent<IntroCreationPageProps> 
 
                     <p>Shows language usage in your repository by lines of code.</p>
 
-                    <Link
+                    <LinkWithQuery
                         to="/insights/create/lang-stats"
                         onClick={logCreateCodeStatsInsightClick}
                         className={classnames(styles.createIntroPageInsightButton, 'btn', 'btn-primary')}
                     >
                         Create language usage insight
-                    </Link>
+                    </LinkWithQuery>
 
                     <hr className="ml-n3 mr-n3 mt-4 mb-3" />
 
