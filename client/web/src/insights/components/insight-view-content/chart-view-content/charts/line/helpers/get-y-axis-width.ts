@@ -16,7 +16,7 @@ export function getYAxisWidth<Scale extends AnyD3Scale>(scale: Scale, numberTick
                 .filter(symbol => symbol !== '.').length
     )
 
-    const maxNumberSymbolsInTicks = Math.max(...ticksLengths)
+    const maxNumberSymbolsInTicks = Math.max(...ticksLengths, 0)
 
     return maxNumberSymbolsInTicks * APPROXIMATE_SYMBOL_WIDTH
 }
