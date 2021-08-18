@@ -12,7 +12,7 @@ export interface CloseChangesetsModalProps {
     onCancel: () => void
     afterCreate: () => void
     batchChangeID: Scalars['ID']
-    changesetIDs: () => Promise<Scalars['ID'][]>
+    changesetIDs: Scalars['ID'][]
 
     /** For testing only. */
     closeChangesets?: typeof _closeChangesets
@@ -30,8 +30,7 @@ export const CloseChangesetsModal: React.FunctionComponent<CloseChangesetsModalP
     const onSubmit = useCallback<React.FormEventHandler>(async () => {
         setIsLoading(true)
         try {
-            const ids = await changesetIDs()
-            await closeChangesets(batchChangeID, ids)
+            await closeChangesets(batchChangeID, changesetIDs)
             afterCreate()
         } catch (error) {
             setIsLoading(asError(error))

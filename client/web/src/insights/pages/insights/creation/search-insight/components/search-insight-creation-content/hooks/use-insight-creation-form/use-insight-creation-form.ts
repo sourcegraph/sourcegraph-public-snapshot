@@ -27,7 +27,7 @@ export interface UseInsightCreationFormProps {
     /**
      * Initial value for all form fields
      */
-    initialValue?: CreateInsightFormFields
+    initialValue?: Partial<CreateInsightFormFields>
 
     /**
      * Set initial touched state for all form fields.
@@ -61,13 +61,17 @@ export interface InsightCreationForm {
  * Hooks absorbs all insight creation form logic (field state managements, validations, fields dependencies)
  */
 export function useInsightCreationForm(props: UseInsightCreationFormProps): InsightCreationForm {
-    const { subjects = [], initialValue, touched, settings, onSubmit, onChange } = props
+    const { subjects = [], initialValue = {}, touched, settings, onSubmit, onChange } = props
 
     // Calculate initial value for visibility settings
     const userSubjectID = subjects.find(isUserSubject)?.id ?? ''
 
     const form = useForm<CreateInsightFormFields>({
-        initialValues: initialValue ?? { ...INITIAL_INSIGHT_VALUES, visibility: userSubjectID },
+        initialValues: {
+            ...INITIAL_INSIGHT_VALUES,
+            visibility: userSubjectID,
+            ...initialValue,
+        },
         onSubmit,
         onChange,
         touched,

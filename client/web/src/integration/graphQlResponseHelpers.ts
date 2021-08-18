@@ -72,7 +72,7 @@ export const createRepositoryRedirectResult = (
         externalURLs: [{ url: new URL(`https://${encodeURIPathComponent(repoName)}`).href, serviceKind }],
         description: 'bla',
         viewerCanAdminister: false,
-        defaultBranch: { displayName: 'master' },
+        defaultBranch: { displayName: 'master', abbrevName: 'master' },
     },
 })
 

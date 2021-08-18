@@ -1,19 +1,8 @@
-import { PublishedStoreItem, StoryStore } from '@storybook/client-api'
+import { PublishedStoreItem } from '@storybook/client-api'
 import { toId } from '@storybook/csf'
 
 import { createChromaticStory, CreateChromaticStoryOptions } from './create-chromatic-story'
-
-// This global reference is used internally by Storybook:
-// https://github.com/storybookjs/storybook/blob/3ec358f71c6111838092397d13fbe35b627a9a9d/lib/core-client/src/preview/start.ts#L43
-declare global {
-    interface Window {
-        __STORYBOOK_STORY_STORE__: StoryStore
-    }
-}
-
-// See the discussion about `StoryStore` usage in stories:
-// https://github.com/storybookjs/storybook/discussions/12050#discussioncomment-125658
-const storyStore = window.__STORYBOOK_STORY_STORE__
+import { storyStore } from './story-store'
 
 interface AddStoryOptions extends Pick<CreateChromaticStoryOptions, 'isDarkModeEnabled'> {
     storeItem: PublishedStoreItem

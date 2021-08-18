@@ -99,6 +99,7 @@ Indexes:
  namespace_org_id  | integer                  |           |          | 
  rand_id           | text                     |           | not null | 
  last_heartbeat_at | timestamp with time zone |           |          | 
+ cancel            | boolean                  |           |          | false
 Indexes:
     "batch_spec_executions_pkey" PRIMARY KEY, btree (id)
     "batch_spec_executions_rand_id" btree (rand_id)
@@ -801,6 +802,7 @@ See [enterprise/internal/insights/background/queryrunner/worker.go:Job](https://
  recording_time | timestamp without time zone |           | not null | 
 Indexes:
     "insights_query_runner_jobs_dependencies_pkey" PRIMARY KEY, btree (id)
+    "insights_query_runner_jobs_dependencies_job_id_fk_idx" btree (job_id)
 Foreign-key constraints:
     "insights_query_runner_jobs_dependencies_fk_job_id" FOREIGN KEY (job_id) REFERENCES insights_query_runner_jobs(id) ON DELETE CASCADE
 

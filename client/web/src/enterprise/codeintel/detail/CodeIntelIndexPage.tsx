@@ -108,6 +108,10 @@ export const CodeIntelIndexPage: FunctionComponent<CodeIntelIndexPageProps> = ({
                     />
 
                     <Container>
+                        <CodeIntelIndexMeta node={indexOrError} now={now} />
+                    </Container>
+
+                    <Container className="mt-2">
                         <CodeIntelStateBanner
                             state={indexOrError.state}
                             placeInQueue={indexOrError.placeInQueue}
@@ -116,15 +120,16 @@ export const CodeIntelIndexPage: FunctionComponent<CodeIntelIndexPageProps> = ({
                             pluralTypeName="indexes"
                             className={classNamesByState.get(indexOrError.state)}
                         />
-                        <CodeIntelIndexMeta node={indexOrError} now={now} />
-                        <CodeIntelAssociatedUpload node={indexOrError} now={now} />
-
-                        <h3>Timeline</h3>
-                        <CodeIntelIndexTimeline index={indexOrError} now={now} className="mb-3" />
                     </Container>
 
                     <Container className="mt-2">
                         <CodeIntelDeleteIndex deleteIndex={deleteIndex} deletionOrError={deletionOrError} />
+                    </Container>
+
+                    <Container className="mt-2">
+                        <h3>Timeline</h3>
+                        <CodeIntelIndexTimeline index={indexOrError} now={now} className="mb-3" />
+                        <CodeIntelAssociatedUpload node={indexOrError} now={now} />
                     </Container>
                 </>
             )}

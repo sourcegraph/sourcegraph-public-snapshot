@@ -38,6 +38,7 @@ type Syncer struct {
 	// Now is time.Now. Can be set by tests to get deterministic output.
 	Now func() time.Time
 
+	// Registerer is the interface to register / unregister prometheus metrics.
 	Registerer prometheus.Registerer
 
 	// UserReposMaxPerUser can be used to override the value read from config.

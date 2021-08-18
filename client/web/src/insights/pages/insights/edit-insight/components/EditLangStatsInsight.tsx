@@ -1,5 +1,4 @@
 import React, { useMemo } from 'react'
-import { useHistory } from 'react-router-dom'
 
 import { Settings } from '@sourcegraph/shared/src/settings/settings'
 
@@ -12,14 +11,14 @@ import { getSanitizedLangStatsInsight } from '../../creation/lang-stats/utils/in
 
 export interface EditLangStatsInsightProps {
     insight: LangStatsInsight
-    onSubmit: (insight: LangStatsInsight) => SubmissionErrors | Promise<SubmissionErrors> | void
     finalSettings: Settings
     subjects: SupportedInsightSubject[]
+    onSubmit: (insight: LangStatsInsight) => SubmissionErrors | Promise<SubmissionErrors> | void
+    onCancel: () => void
 }
 
 export const EditLangStatsInsight: React.FunctionComponent<EditLangStatsInsightProps> = props => {
-    const { insight, finalSettings, subjects, onSubmit } = props
-    const history = useHistory()
+    const { insight, finalSettings, subjects, onSubmit, onCancel } = props
 
     const insightFormValues = useMemo<LangStatsCreationFormFields>(
         () => ({
@@ -38,10 +37,6 @@ export const EditLangStatsInsight: React.FunctionComponent<EditLangStatsInsightP
         return onSubmit(sanitizedInsight)
     }
 
-    const handleCancel = (): void => {
-        history.push(`/insights/dashboards/${insight.visibility}`)
-    }
-
     return (
         <LangStatsInsightCreationContent
             mode="edit"
@@ -50,7 +45,7 @@ export const EditLangStatsInsight: React.FunctionComponent<EditLangStatsInsightP
             settings={finalSettings}
             subjects={subjects}
             onSubmit={handleSubmit}
-            onCancel={handleCancel}
+            onCancel={onCancel}
         />
     )
 }

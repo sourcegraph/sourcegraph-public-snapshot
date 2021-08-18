@@ -4,14 +4,15 @@ import { Link } from '@sourcegraph/shared/src/components/Link'
 import { ErrorLike, isErrorLike } from '@sourcegraph/shared/src/util/errors'
 
 import { AuthenticatedUser } from '../../auth'
+import { eventLogger } from '../../tracking/eventLogger'
 import { UserExternalServicesOrRepositoriesUpdateProps } from '../../util'
 import { LogoAscii } from '../LogoAscii'
-import { RepoSelectionMode } from '../PostSignUpPage'
+import { getPostSignUpEvent, RepoSelectionMode } from '../PostSignUpPage'
 import { useSteps } from '../Steps'
 import { Terminal, TerminalTitle, TerminalLine, TerminalDetails, TerminalProgress } from '../Terminal'
 import { useExternalServices } from '../useExternalServices'
 import { useRepoCloningStatus } from '../useRepoCloningStatus'
-import { selectedReposVar, useSaveSelectedRepos } from '../useSelectedRepos'
+import { selectedReposVar, useSaveSelectedRepos, MinSelectedRepo } from '../useSelectedRepos'
 
 interface StartSearching {
     user: AuthenticatedUser
@@ -27,7 +28,10 @@ export const useShowAlert = (isDoneCloning: boolean, fetchError: ErrorLike | und
     const [showAlert, setShowAlert] = useState(false)
 
     useEffect(() => {
-        const timer = setTimeout(() => setShowAlert(true), SIXTY_SECONDS)
+        const timer = setTimeout(() => {
+            eventLogger.log(getPostSignUpEvent('SlowCloneBanner_Shown'))
+            setShowAlert(true)
+        }, SIXTY_SECONDS)
 
         if (isDoneCloning || isErrorLike(fetchError)) {
             clearTimeout(timer)
@@ -43,10 +47,24 @@ export const useShowAlert = (isDoneCloning: boolean, fetchError: ErrorLike | und
     return { showAlert }
 }
 
+const trackBannerClick = (): void => {
+    eventLogger.log(getPostSignUpEvent('SlowCloneBanner_Clicked'))
+}
+const getReposForCodeHost = (selectedRepos: MinSelectedRepo[] = [], codeHostId: string): string[] =>
+    selectedRepos
+        ? selectedRepos.reduce((accumulator, repo) => {
+              if ((repo.externalRepository.id = codeHostId)) {
+                  const nameWithoutService = repo.name.slice(repo.name.indexOf('/') + 1)
+                  accumulator.push(nameWithoutService)
+              }
+
+              return accumulator
+          }, [] as string[])
+        : []
+
 export const StartSearching: React.FunctionComponent<StartSearching> = ({
     user,
     repoSelectionMode,
-    onUserExternalServicesOrRepositoriesUpdate,
     setSelectedSearchContextSpec,
     onError,
 }) => {
@@ -64,6 +82,7 @@ export const StartSearching: React.FunctionComponent<StartSearching> = ({
         userId: user.id,
         pollInterval: 2000,
         selectedReposVar,
+        repoSelectionMode,
     })
 
     const isLoading = loadingServices || cloningStatusLoading
@@ -77,44 +96,29 @@ export const StartSearching: React.FunctionComponent<StartSearching> = ({
     }, [fetchError, onError, stopPollingCloningStatus])
 
     useEffect(() => {
-        const selectedRepos = selectedReposVar()
+        if (externalServices) {
+            const selectedRepos = selectedReposVar()
 
-        if (externalServices && selectedRepos) {
             for (const host of externalServices) {
-                const repos: string[] = []
-                for (const repo of selectedRepos) {
-                    if (repo.externalRepository.id !== host.id) {
-                        continue
-                    }
-
-                    const nameWithoutService = repo.name.slice(repo.name.indexOf('/') + 1)
-                    repos.push(nameWithoutService)
-                }
+                const areSyncingAllRepos = repoSelectionMode === 'all'
+                // when we're in the "sync all" - don't list individual repos
+                // set allRepos key to true
+                const repos = areSyncingAllRepos ? null : getReposForCodeHost(selectedRepos, host.id)
 
                 saveSelectedRepos({
                     variables: {
                         id: host.id,
-                        allRepos: repoSelectionMode === 'all',
-                        repos: (repoSelectionMode === 'selected' && repos) || null,
+                        allRepos: areSyncingAllRepos,
+                        repos,
                     },
                 })
                     .then(() => {
-                        // update the external services and the search context
-                        onUserExternalServicesOrRepositoriesUpdate(externalServices.length, selectedRepos.length)
                         setSelectedSearchContextSpec(`@${user.username}`)
                     })
                     .catch(onError)
             }
         }
-    }, [
-        externalServices,
-        saveSelectedRepos,
-        repoSelectionMode,
-        onUserExternalServicesOrRepositoriesUpdate,
-        onError,
-        setSelectedSearchContextSpec,
-        user.username,
-    ])
+    }, [externalServices, saveSelectedRepos, repoSelectionMode, onError, setSelectedSearchContextSpec, user.username])
 
     const { showAlert } = useShowAlert(isDoneCloning, fetchError)
     const { currentIndex, setComplete } = useSteps()
@@ -190,9 +194,15 @@ export const StartSearching: React.FunctionComponent<StartSearching> = ({
             {showAlert && (
                 <div className="alert alert-warning mt-4">
                     Cloning your repositories is taking a long time. You can wait for cloning to finish, or{' '}
-                    <Link to="/search">continue to Sourcegraph now</Link> while cloning continues in the background.
-                    Note that you can only search repos that have finished cloning. Check status at any time in{' '}
-                    <Link to="user/settings/repositories">Settings → Repositories</Link>.
+                    <Link to="/search" onClick={trackBannerClick}>
+                        continue to Sourcegraph now
+                    </Link>{' '}
+                    while cloning continues in the background. Note that you can only search repos that have finished
+                    cloning. Check status at any time in{' '}
+                    <Link to="user/settings/repositories" onClick={trackBannerClick}>
+                        Settings → Repositories
+                    </Link>
+                    .
                 </div>
             )}
         </div>
