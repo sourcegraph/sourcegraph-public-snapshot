@@ -49,8 +49,8 @@ type searchRepos struct {
 	stream  streaming.Sender
 }
 
-// WithContext uses ctx when running a search over repos using for a searchRepos job.
-func (s *searchRepos) WithContext(ctx context.Context) func() error {
+// getJob returns a function parameterized by ctx to search over repos.
+func (s *searchRepos) getJob(ctx context.Context) func() error {
 	return func() error {
 		return callSearcherOverRepos(ctx, s.args, s.stream, s.repoSet.AsList(), s.repoSet.IsIndexed())
 	}
@@ -58,8 +58,8 @@ func (s *searchRepos) WithContext(ctx context.Context) func() error {
 
 func runJobs(ctx context.Context, jobs []searchRepos) error {
 	g, ctx := errgroup.WithContext(ctx)
-	for _, job := range jobs {
-		g.Go(job.WithContext(ctx))
+	for _, j := range jobs {
+		g.Go(j.getJob(ctx))
 	}
 	return g.Wait()
 }
