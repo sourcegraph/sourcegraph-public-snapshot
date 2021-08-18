@@ -142,28 +142,17 @@ export const SearchInsightCreationForm: React.FunctionComponent<CreationSearchIn
 
                             <small className="w-100 mt-2 text-muted">
                                 {!allReposMode.input.value ? (
-                                    <>
-                                        We currently recommend not exceeding more than ~500 repositories per insight.
-                                        You can filter down from "all repositories" using a{' '}
-                                        <a
-                                            href="https://docs.sourcegraph.com/code_search/reference/queries#repository-search"
-                                            target="_blank"
-                                            rel="noopener noreferrer"
-                                        >
-                                            repo: filter
-                                        </a>{' '}
-                                        in your search queries below.
-                                    </>
+                                    <>This feature is actively in development. </>
                                 ) : (
-                                    <>We strongly recommend not to exceed 500 repositories per insight.</>
+                                    <>This feature is actively in development. </>
                                 )}
-                                Read more about the{' '}
+                                Read about the{' '}
                                 <a
                                     href="https://docs.sourcegraph.com/code_insights/explanations/current_limitations_of_code_insights"
                                     target="_blank"
                                     rel="noopener noreferrer"
                                 >
-                                    beta limitations
+                                    beta limitations here. 
                                 </a>
                             </small>
                         </label>
