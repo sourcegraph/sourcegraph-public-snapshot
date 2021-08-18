@@ -1,0 +1,60 @@
+---
+sidebar_position: 6
+---
+
+# Input
+The `Input` component is used as input text form field.
+
+## Figma
+<iframe
+    width="800"
+    height="450"
+    src="https://www.figma.com/embed?embed_host=share&url=https%3A%2F%2Fwww.figma.com%2Ffile%2FNIsN34NH7lPu04olBzddTw%2FDesign-Refresh-Systemization-source-of-truth%3Fnode-id%3D908%253A1"
+    allowFullScreen={true}
+/>
+
+## Import
+```tsx
+  import { Input } from '@sourcegraph/wildcard'
+```
+
+## Usage
+:::caution
+
+Remember always use this component inside a **form** element.
+
+:::
+
+```tsx
+function Example() {
+  const [value, setValue] = React.useState("")
+  const handleChange = (event) => setValue(event.target.value)
+
+  return (
+      <Input
+        value={value}
+        onChange={handleChange}
+        placeholder="Here is a sample placeholder"
+        size="sm"
+      />
+  )
+}
+```
+
+## Missing point
+Is possible to render a component right here. Some webpack configs needs to be adjusted.
+
+## Options
+:::warning
+The idea is research about props extraction and populated the info below dynamically.
+:::
+
+| Name | Type | Required | Description |
+| ------------- | ---------- | -------- | ----------- |
+| `label`| `string` | No | text label of input files. |
+| `message`          | `ReactNode`  | No | Description block shown below the input. |
+| `className`           | `string`             | No       | Custom class name for root label element. |
+| `inputClassName`        | `string`           | No       | Custom class name for input element. |
+| `status` | `'error'` `'loading'` `'valid'`  | No       | Exclusive status |
+| `disabled` | boolean | No |Disable input behavior |
+| `variant` | `regular` `small` | No | Determines the size of the input |
