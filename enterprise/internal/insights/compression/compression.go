@@ -109,6 +109,7 @@ func (c *CommitFilter) FilterFrames(ctx context.Context, frames []Frame, id api.
 	// horizon of the indexer
 	addToPlan(frames[0], "")
 	for i := 1; i < len(frames); i++ {
+		previous := frames[i-1]
 		frame := frames[i]
 		if metadata.LastIndexedAt.Before(frame.To) {
 			// The commit indexer is not up to date enough to understand if this frame can be dropped
@@ -116,7 +117,8 @@ func (c *CommitFilter) FilterFrames(ctx context.Context, frames []Frame, id api.
 			continue
 		}
 
-		commits, err := c.store.Get(ctx, id, frame.From, frame.To)
+		// We have to diff the commits in the previous frame to determine if we should query at the start of this frame
+		commits, err := c.store.Get(ctx, id, previous.From, previous.To)
 		if err != nil {
 			log15.Error("insights: compression.go/FilterFrames unable to retrieve commits\n", "repo_id", id, "from", frame.From, "to", frame.To)
 			addToPlan(frame, "")
