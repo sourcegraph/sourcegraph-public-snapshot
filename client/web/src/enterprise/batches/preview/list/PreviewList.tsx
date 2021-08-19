@@ -4,6 +4,7 @@ import React, { useCallback, useContext, useState } from 'react'
 import { tap } from 'rxjs/operators'
 
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
+import { DismissibleAlert } from '@sourcegraph/web/src/components/DismissibleAlert'
 import { Container } from '@sourcegraph/wildcard'
 
 import { FilteredConnection, FilteredConnectionQueryArguments } from '../../../../components/FilteredConnection'
@@ -59,7 +60,7 @@ export const PreviewList: React.FunctionComponent<Props> = ({
     const { selected, areAllVisibleSelected, isSelected, toggleSingle, toggleVisible, setVisible } = useContext(
         MultiSelectContext
     )
-    const { filters, publicationStates } = useContext(BatchChangePreviewContext)
+    const { filters, publicationStates, addRecalculationUpdate } = useContext(BatchChangePreviewContext)
 
     const [queryArguments, setQueryArguments] = useState<BatchSpecApplyPreviewVariables>()
 
@@ -99,6 +100,16 @@ export const PreviewList: React.FunctionComponent<Props> = ({
         ]
     )
 
+    // Every subsequent query after the first will have its success time recorded
+    const [isInitialQuery, setIsInitialQuery] = useState(true)
+    const onUpdate = useCallback(() => {
+        if (isInitialQuery) {
+            setIsInitialQuery(false)
+        } else {
+            addRecalculationUpdate(new Date())
+        }
+    }, [addRecalculationUpdate, isInitialQuery])
+
     const showSelectRow = selected === 'all' || selected.size > 0
 
     return (
@@ -111,6 +122,7 @@ export const PreviewList: React.FunctionComponent<Props> = ({
             ) : (
                 <PreviewFilterRow history={history} location={location} />
             )}
+            <PublicationStatesUpdateAlerts />
             <FilteredConnection<
                 ChangesetApplyPreviewFields,
                 Omit<ChangesetApplyPreviewNodeProps, 'node'>,
@@ -151,6 +163,7 @@ export const PreviewList: React.FunctionComponent<Props> = ({
                         <EmptyPreviewListElement />
                     )
                 }
+                onUpdate={onUpdate}
             />
         </Container>
     )
@@ -164,3 +177,22 @@ const EmptyPreviewSearchElement: React.FunctionComponent<{}> = () => (
         </div>
     </div>
 )
+
+/**
+ * A list of none to many dismissible alerts, one for each time the publication state
+ * actions are recalculated when the user modifies the publication states for preview
+ * changesets.
+ */
+const PublicationStatesUpdateAlerts: React.FunctionComponent<{}> = () => {
+    const { recalculationUpdates } = useContext(BatchChangePreviewContext)
+
+    return (
+        <div className="mt-2">
+            {recalculationUpdates.map(timestamp => (
+                <DismissibleAlert className="alert-success" key={timestamp}>
+                    Publication state actions were recalculated.
+                </DismissibleAlert>
+            ))}
+        </div>
+    )
+}

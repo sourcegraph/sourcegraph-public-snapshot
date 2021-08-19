@@ -25,6 +25,12 @@ export interface BatchChangePreviewContextState {
     // the mutation to apply the preview.
     readonly publicationStates: ChangesetSpecPublicationStateInput[]
     updatePublicationStates: (publicationStates: ChangesetSpecPublicationStateInput[]) => void
+    // Timestamps (as numbers) for each time preview publication states are successfully
+    // recalculated. We really only care about knowing the number of times we have
+    // recalculated so far, but the timestamp gives us a stable key to use for creating an
+    // array of React components from the updates.
+    readonly recalculationUpdates: number[]
+    addRecalculationUpdate: (date: Date) => void
 }
 
 export const defaultState = (): BatchChangePreviewContextState => ({
@@ -32,6 +38,8 @@ export const defaultState = (): BatchChangePreviewContextState => ({
     setFilters: noop,
     publicationStates: [],
     updatePublicationStates: noop,
+    recalculationUpdates: [],
+    addRecalculationUpdate: noop,
 })
 
 /**
@@ -70,6 +78,14 @@ export const BatchChangePreviewContextProvider: React.FunctionComponent<{}> = ({
         [publicationStates]
     )
 
+    const [recalculationUpdates, setRecalculationUpdates] = useState<number[]>([])
+    const addRecalculationUpdate = useCallback(
+        (date: Date) => {
+            setRecalculationUpdates([...recalculationUpdates, date.getTime()])
+        },
+        [recalculationUpdates]
+    )
+
     return (
         <BatchChangePreviewContext.Provider
             value={{
@@ -77,6 +93,8 @@ export const BatchChangePreviewContextProvider: React.FunctionComponent<{}> = ({
                 setFilters,
                 publicationStates,
                 updatePublicationStates,
+                recalculationUpdates,
+                addRecalculationUpdate,
             }}
         >
             {children}
