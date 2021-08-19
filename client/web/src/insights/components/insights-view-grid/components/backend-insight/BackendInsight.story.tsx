@@ -74,7 +74,7 @@ add('Backend Insight Card with delay API', () => (
     </InsightsApiContext.Provider>
 ))
 
-add('Backend Insight Card still fetching data', () => (
+add('Backend Insight Card backfilling data', () => (
     <InsightsApiContext.Provider value={mockInsightAPI({ isFetchingHistoricalData: true })}>
         <TestBackendInsight />
     </InsightsApiContext.Provider>
@@ -86,7 +86,7 @@ add('Backend Insight Card no data', () => (
     </InsightsApiContext.Provider>
 ))
 
-add('Backend Insight Card data not processed yet', () => (
+add('Backend Insight Card insight syncing', () => (
     <InsightsApiContext.Provider value={mockInsightAPI({ throwProcessingError: true })}>
         <TestBackendInsight />
     </InsightsApiContext.Provider>

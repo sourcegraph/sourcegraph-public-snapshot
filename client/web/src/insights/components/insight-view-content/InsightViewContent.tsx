@@ -13,31 +13,28 @@ import { ChartViewContent } from './chart-view-content/ChartViewContent'
 const isMarkupContent = (input: unknown): input is MarkupContent =>
     isObject(input) && hasProperty('value')(input) && typeof input.value === 'string'
 
-const Alert: React.FunctionComponent = () => null
-
 export interface InsightViewContentProps extends TelemetryProps {
     viewContent: View['content']
     viewID: string
 
     /** To get container to track hovers for pings */
     containerClassName?: string
+
+    /** Optionally display an alert overlay */
+    alert?: React.ReactNode
 }
 
 /**
  * Renders the content of an extension-contributed view.
  */
-const InsightViewContentComponent: React.FunctionComponent<InsightViewContentProps> = ({
+export const InsightViewContent: React.FunctionComponent<InsightViewContentProps> = ({
     viewContent,
     viewID,
     containerClassName,
     children,
+    alert,
     ...props
 }) => {
-    const alertChild = React.Children.toArray(children).find(
-        child => React.isValidElement(child) && child.type === Alert
-    ) as React.ReactElement | undefined
-    const alertSlot = (alertChild?.props as React.PropsWithChildren<{}>).children || null
-
     // Track user intent to interact with extension-contributed views
     const viewContentReference = useRef<HTMLDivElement>(null)
 
@@ -97,18 +94,16 @@ const InsightViewContentComponent: React.FunctionComponent<InsightViewContentPro
                     </React.Fragment>
                 ) : 'chart' in content ? (
                     <React.Fragment key={index}>
+                        {alert && <div className="view-content-alert-overlay">{alert}</div>}
                         <ChartViewContent
                             content={content}
                             viewID={viewID}
                             telemetryService={props.telemetryService}
                             className="view-content__chart"
                         />
-                        {alertSlot && <div className="view-content-alert-overlay">{alertSlot}</div>}
                     </React.Fragment>
                 ) : null
             )}
         </div>
     )
 }
-
-export const InsightViewContent = Object.assign(InsightViewContentComponent, { Alert })

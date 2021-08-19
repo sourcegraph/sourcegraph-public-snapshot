@@ -182,14 +182,13 @@ export const BackendInsight: React.FunctionComponent<BackendInsightProps> = prop
                         viewContent={data.view.content}
                         viewID={insight.id}
                         containerClassName="be-insight-card"
-                    >
-                        <InsightViewContent.Alert>
+                        alert={
                             <BackendAlertOverlay
                                 hasNoData={!data.view.content.some(({ data }) => data.length > 0)}
                                 isFetchingHistoricalData={data.view.isFetchingHistoricalData}
                             />
-                        </InsightViewContent.Alert>
-                    </InsightViewContent>
+                        }
+                    />
                 )
             )}
             {
