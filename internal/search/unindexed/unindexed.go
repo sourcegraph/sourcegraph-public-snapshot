@@ -39,7 +39,7 @@ func textSearchRequest(ctx context.Context, args *search.TextParameters, onMissi
 	if args.Mode == search.ZoektGlobalSearch {
 		// performance: optimize global searches where Zoekt searches
 		// all shards anyway.
-		return zoektutil.NewIndexedUniverseSearchRequest(ctx, args, args.RepoOptions, args.UserPrivateRepos)
+		return zoektutil.NewIndexedUniverseSearchRequest(ctx, args, search.TextRequest, args.RepoOptions, args.UserPrivateRepos)
 	}
 	return zoektutil.NewIndexedSubsetSearchRequest(ctx, args, search.TextRequest, onMissing)
 }

@@ -110,16 +110,16 @@ const (
 	// optimised code path.
 	SearcherOnly
 
-	// Disables content and file path search. Used:
+	// SkipUnindexed disables content, path, and symbol search. Used:
 	// (1) in conjunction with ZoektGlobalSearch on Sourcegraph.com.
-	// (2) when a query does not specify any patterns for a content or file path search.
-	SkipContentAndPathSearch
+	// (2) when a query does not specify any patterns, include patterns, or exclude pattern.
+	SkipUnindexed
 )
 
 var globalSearchModeStrings = map[GlobalSearchMode]string{
-	ZoektGlobalSearch:        "ZoektGlobalSearch",
-	SearcherOnly:             "SearcherOnly",
-	SkipContentAndPathSearch: "SkipContentAndPathSearch",
+	ZoektGlobalSearch: "ZoektGlobalSearch",
+	SearcherOnly:      "SearcherOnly",
+	SkipUnindexed:     "SkipUnindexed",
 }
 
 func (m GlobalSearchMode) String() string {
