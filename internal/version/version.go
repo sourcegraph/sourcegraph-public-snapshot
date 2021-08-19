@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/cockroachdb/errors"
-	"github.com/google/zoekt"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 )
@@ -27,7 +26,7 @@ func init() {
 	exportedVersion.Set(version)
 	promauto.NewGaugeVec(prometheus.GaugeOpts{
 		Name: "src_version",
-	}, []string{"version"}).WithLabelValues(zoekt.Version).Set(1)
+	}, []string{"version"}).WithLabelValues(version).Set(1)
 }
 
 // Version returns the version string configured at build time.
