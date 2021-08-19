@@ -33,7 +33,7 @@ func TestCodeHostOf(t *testing.T) {
 		codehosts: PublicCodeHosts,
 		want:      GitHubDotCom,
 	}, {
-		name:      "trick",
+		name:      "invalid",
 		repo:      "github.com.example.com/foo/bar",
 		codehosts: PublicCodeHosts,
 		want:      nil,
