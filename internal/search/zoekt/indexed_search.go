@@ -191,7 +191,6 @@ func NewIndexedUniverseSearchRequest(ctx context.Context, args *search.TextParam
 		RepoOptions:      repoOptions,
 		UserPrivateRepos: userPrivateRepos,
 		Args: &search.ZoektParameters{
-			Repos:          args.Repos,
 			Query:          q,
 			Typ:            typ,
 			FileMatchLimit: args.PatternInfo.FileMatchLimit,
@@ -374,7 +373,6 @@ func NewIndexedSubsetSearchRequest(ctx context.Context, args *search.TextParamet
 
 	return &IndexedSubsetSearchRequest{
 		Args: &search.ZoektParameters{
-			Repos:            args.Repos,
 			Query:            q,
 			Typ:              typ,
 			FileMatchLimit:   args.PatternInfo.FileMatchLimit,
