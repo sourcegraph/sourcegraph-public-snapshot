@@ -1,9 +1,7 @@
 import classnames from 'classnames'
-import AlertIcon from 'mdi-react/AlertIcon'
 import DatabaseIcon from 'mdi-react/DatabaseIcon'
 import React, { useCallback, useContext, useRef, useState } from 'react'
 
-import { Tooltip } from '@sourcegraph/branded/src/components/tooltip/Tooltip'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
@@ -25,6 +23,7 @@ import { InsightErrorContent } from '../insight-card/components/insight-error-co
 import { InsightLoadingContent } from '../insight-card/components/insight-loading-content/InsightLoadingContent'
 import { InsightContentCard } from '../insight-card/InsightContentCard'
 
+import { BackendAlertOverlay } from './BackendAlertOverlay'
 import styles from './BackendInsight.module.scss'
 import { DrillDownFiltersAction } from './components/drill-down-filters-action/DrillDownFiltersPanel'
 import { DrillDownInsightCreationFormValues } from './components/drill-down-filters-panel/components/drill-down-insight-creation-form/DrillDownInsightCreationForm'
@@ -135,24 +134,12 @@ export const BackendInsight: React.FunctionComponent<BackendInsightProps> = prop
         return
     }
 
-    const LoadingIndicator: React.FunctionComponent = () => (
-        <>
-            <Tooltip />
-            <AlertIcon
-                size={16}
-                className="text-warning"
-                data-tooltip="Some data for this insight is still being processed."
-            />
-        </>
-    )
-
     return (
         <InsightContentCard
             insight={{ id: insight.id, view: data?.view }}
             hasContextMenu={true}
             actions={
                 <>
-                    {data?.view.isFetchingHistoricalData && <LoadingIndicator />}
                     <DrillDownFiltersAction
                         isOpen={isFiltersOpen}
                         settings={settingsCascade.final ?? {}}
@@ -193,6 +180,12 @@ export const BackendInsight: React.FunctionComponent<BackendInsightProps> = prop
                         viewContent={data.view.content}
                         viewID={insight.id}
                         containerClassName="be-insight-card"
+                        alert={
+                            <BackendAlertOverlay
+                                hasNoData={!data.view.content.some(({ data }) => data.length > 0)}
+                                isFetchingHistoricalData={data.view.isFetchingHistoricalData}
+                            />
+                        }
                     />
                 )
             )}
