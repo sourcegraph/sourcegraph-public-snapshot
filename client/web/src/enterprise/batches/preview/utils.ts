@@ -28,8 +28,8 @@ export interface Unpublishable {
  * - if the operation is updating a changeset, the changeset is in a state we can
  * transition to published or draft from
  *
- * Returns the id of the changeset spec if it is publishable from the UI, or null if for
- * any reason it is not.
+ * Returns a `Publishable` with the node's changeset spec ID if it is publishable from the
+ * UI, or else an `Unpublishable` with the reason it is not.
  *
  * @param node the `ChangesetApplyPreviewFields` node to check
  */
