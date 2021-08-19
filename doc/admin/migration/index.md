@@ -4,8 +4,7 @@
 - [Back up or migrate to a new Sourcegraph instance](../install/migrate-backup.md)
 - [Update notes](../updates/index.md)
 - [Migrating from Sourcegraph 3.30.0, 3.30.1, and 3.30.2](3_30.md)
-- [Migrating from Sourcegraph 3.31.x](3_31.md)
-
+- [Migrating to Sourcegraph 3.31.x](3_31.md)
 
 ## Out of band migrations
 

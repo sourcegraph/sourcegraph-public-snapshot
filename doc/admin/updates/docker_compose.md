@@ -10,17 +10,17 @@ Each section comprehensively describes the steps needed to upgrade, and any manu
 
 <!-- GENERATE UPGRADE GUIDE ON RELEASE (release tooling uses this to add entries) -->
 
-# 3.30.x -> 3.31
+## 3.30.x -> 3.31
 
 The **built-in** main Postgres (`pgsql`) and codeintel (`codeintel-db`) databases have switched to an alpine-based Docker image. Upon upgrading, Sourcegraph will need to re-index the entire database.
 
-All users that use our bundled database instances **must** read through the [3.31 upgrade guide](../migration/3_31.md) _before_ upgrading.
+All users that use our bundled (built-in) database instances **must** read through the [3.31 upgrade guide](../migration/3_31.md) _before_ upgrading.
 
-> NOTE: The above only applies to users that use our built-in databases. Users that use external databases (e.x: Amazon RDS, Google Cloud SQL, etc.) are not affected.
+> NOTE: The above does not apply to users that use external databases (e.x: Amazon RDS, Google Cloud SQL, etc.).
 
 ## 3.29 -> 3.30.3
 
-**⚠️ Users on 3.29.x are advised to upgrade directly to 3.30.3**. If you have already upgraded to 3.30.0, 3.30.1, or 3.30.2 please follow [this migration guide](../migration/3_30.md).
+> WARNING: **Users on 3.29.x are advised to upgrade directly to 3.30.3**. If you have already upgraded to 3.30.0, 3.30.1, or 3.30.2 please follow [this migration guide](../migration/3_30.md).
 
 No manual migration required.
 
