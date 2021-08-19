@@ -1,4 +1,3 @@
-import delay from 'delay'
 import { View } from 'sourcegraph'
 
 import { createDriverForTest, Driver } from '@sourcegraph/shared/src/testing/driver'
@@ -37,14 +36,7 @@ describe('[VISUAL] Code insights page', () => {
     afterEach(() => testContext?.dispose())
 
     async function takeChartSnapshot(name: string): Promise<void> {
-        // Move mouse cursor away from charts and click to avoid chart tooltip appearance
-        await driver.page.mouse.move(0, 0)
-        await driver.page.click('body')
-
         await driver.page.waitForSelector('[data-testid="line-chart__content"] svg circle')
-        // Due to autosize of chart we have to wait 1s that window-resize be able
-        // render chart with container size.
-        await delay(1000)
         await percySnapshotWithVariants(driver.page, name)
     }
 
@@ -69,9 +61,7 @@ describe('[VISUAL] Code insights page', () => {
         await takeChartSnapshot('Code insights page with back-end insights only')
     })
 
-    // Unmute that test when flaky issue with line chart tooltip will be resolved
-    // see https://github.com/sourcegraph/sourcegraph/issues/23669
-    it.skip('is styled correctly with search-based insights ', async () => {
+    it('is styled correctly with search-based insights ', async () => {
         overrideGraphQLExtensions({
             testContext,
 
@@ -108,6 +98,13 @@ describe('[VISUAL] Code insights page', () => {
         })
 
         await driver.page.goto(driver.sourcegraphBaseUrl + '/insights/dashboards/all')
+
+        await driver.page.waitForSelector(
+            '[data-testid="insight-card.searchInsights.insight.teamSize"] [data-testid="line-chart__content"] svg circle'
+        )
+        await driver.page.hover(
+            '[data-testid="insight-card.searchInsights.insight.teamSize"] [data-testid="line-chart__content"] circle:first-child'
+        )
 
         await takeChartSnapshot('Code insights page with search-based insights only')
     })
@@ -149,6 +146,13 @@ describe('[VISUAL] Code insights page', () => {
         })
 
         await driver.page.goto(driver.sourcegraphBaseUrl + '/insights/dashboards/all')
+
+        await driver.page.waitForSelector(
+            '[data-testid="insight-card.searchInsights.insight.graphQLTypesMigration"] [data-testid="line-chart__content"] svg circle'
+        )
+        await driver.page.hover(
+            '[data-testid="insight-card.searchInsights.insight.graphQLTypesMigration"] [data-testid="line-chart__content"] circle:last-child'
+        )
 
         await takeChartSnapshot('Code insights page with search-based errored insight')
     })
@@ -192,6 +196,13 @@ describe('[VISUAL] Code insights page', () => {
         })
 
         await driver.page.goto(driver.sourcegraphBaseUrl + '/insights/dashboards/all')
+
+        await driver.page.waitForSelector(
+            '[data-testid="insight-card.searchInsights.insight.graphQLTypesMigration"] [data-testid="line-chart__content"] svg circle'
+        )
+        await driver.page.hover(
+            '[data-testid="insight-card.searchInsights.insight.graphQLTypesMigration"] [data-testid="line-chart__content"] circle:last-child'
+        )
 
         await takeChartSnapshot('Code insights page with all types of insight')
     })
