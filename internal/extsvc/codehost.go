@@ -61,12 +61,25 @@ func NormalizeBaseURL(baseURL *url.URL) *url.URL {
 	return baseURL
 }
 
-// CodeHostOf returns the CodeHost of the given repo, if any, as
-// determined by a common prefix between the repo name and the
-// code hosts' URL hostname component.
+// CodeHostOf returns the CodeHost of the given repo, if any. A correct repo name will have three
+// parts separated by a "/":
+// 1. Codehost URL
+// 2. Repo Owner
+// 3. Repo Name
+//
+// For example: github.com/sourcegraph/sourcegraph
+//
+// If "name" does not adhere to this format or the Codehost URL does not match the list of
+// "codehosts" given as the argument to CodeHostOf, it will return nil, otherwise it retuns the
+// matching codehost from the given list.
 func CodeHostOf(name api.RepoName, codehosts ...*CodeHost) *CodeHost {
+	repoNameParts := strings.Split(string(name), "/")
+	if len(repoNameParts) != 3 {
+		return nil
+	}
+
 	for _, c := range codehosts {
-		if strings.HasPrefix(strings.ToLower(string(name)), c.BaseURL.Hostname()) {
+		if strings.EqualFold(repoNameParts[0], c.BaseURL.Hostname()) {
 			return c
 		}
 	}
