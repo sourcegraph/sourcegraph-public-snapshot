@@ -133,3 +133,123 @@ SELECT * FROM users;
 ```
 
 > NOTE: To execute an SQL query against the database without first creating an interactive session (as below), append `--command "SELECT * FROM users;"` to the docker container exec command.
+
+## Backup and restore
+
+The following instructions are specific to backing up and restoring the sourcegraph databases in a Kubernetes deployment. These do not apply to other deployment types.
+
+> WARNING: **Only core data will be backed up**.
+>
+> These instructions will only back up core data including user accounts, configuration, repository-metadata, etc. Other data will be regenerated automatically:
+>
+> - Repositories will be re-cloned
+> - Search indexes will be rebuilt from scratch
+>
+> The above may take a while if you have a lot of repositories. In the meantime, searches may be slow or return incomplete results. This process rarely takes longer than 6 hours and is usually **much** faster.
+
+> NOTE: In some places you will see `$NAMESPACE` used. Add `-n $NAMESPACE` to commands if you are not using the default namespace
+> More kubectl configuration options can be found here: [kubectl Cheat Sheet](https://kubernetes.io/docs/reference/kubectl/cheatsheet/)
+
+### Back up Sourcegraph databases
+
+These instructions will back up the primary `sourcegraph` database and the [codeintel](../../../code_intelligence/index.md) database.
+
+#### 1. Verify deployment running
+
+```bash
+kubectl get pods -A
+```
+
+#### 2. Stop all connections to the database by removing the frontend deployment
+
+```bash
+kubectl scale --replicas=0 deployment/sourcegraph-frontend
+# or
+kubectl delete deployment sourcegraph-frontend
+```
+
+#### 3. Generate the database dumps
+
+```bash
+kubectl exec -it $pgsql_POD_NAME -- bash -c 'pg_dump -C --username sg sg' > sourcegraph_db.out
+kubectl exec -it $codeintel-db_POD_NAME -- bash -c 'pg_dump -C --username sg sg' > codeintel_db.out
+```
+
+Ensure the `sourcegraph_db.out` and `codeintel_db.out` files are moved to a safe and secure location.
+
+### Restore Sourcegraph databases
+
+#### Restoring Sourcegraph databases into a new environment
+
+The following instructions apply only if you are restoring your databases into a new deployment of Sourcegraph ie: a new virtual machine 
+
+If you are restoring a previously running environment, see the instructions for [restoring a previously running deployment](#restoring-sourcegraph-databases-into-an-existing-environment)
+
+##### 1. Copy the database dump files (eg. `sourcegraph_db.out` and `codeintel_db.out`) into the root of the `deploy-sourcegraph` directory
+
+##### 2. Start the database services by running the following command from the root of the [deploy-sourcegraph](https://github.com/sourcegraph/deploy-sourcegraph) directory
+
+```bash
+kubectl rollout restart deployment pgsql
+kubectl rollout restart deployment codeintel-db
+```
+
+##### 3. Copy the database files into the pods by running the following command from the root of the [deploy-sourcegraph](https://github.com/sourcegraph/deploy-sourcegraph) directory
+
+```bash
+kubectl cp sourcegraph_db.out $NAMESPACE/$pgsql_POD_NAME:/tmp/sourcegraph_db.out
+kubectl cp codeintel_db.out $NAMESPACE/$codeintel-db_POD_NAME:/tmp/codeintel_db.out
+```
+
+##### 4. Restore the databases
+
+```bash
+kubectl exec -it $pgsql_POD_NAME -- bash -c 'psql -v ERROR_ON_STOP=1 --username sg -f /tmp/sourcegraph_db.out sg'
+kubectl exec -it $codeintel-db_POD_NAME -- bash -c 'psql -v ERROR_ON_STOP=1 --username sg -f /tmp/condeintel_db.out sg'
+```
+
+##### 5. Start the remaining Sourcegraph services by running the following the command from the root of the [deploy-sourcegraph](https://github.com/sourcegraph/deploy-sourcegraph) directory and following the steps in [Sourcegraph - Kubernetes applying manifests](https://docs.sourcegraph.com/admin/install/kubernetes/configure#applying-manifests)
+
+#### Restoring Sourcegraph databases into an existing environment
+
+##### 1. Stop the existing deployment by removing the frontend deployment
+
+```bash
+kubectl scale --replicas=0 deployment/sourcegraph-frontend
+# or
+kubectl delete deployment sourcegraph-frontend
+```
+
+##### 2. Remove any existing volumes for the databases in the existing deployment
+ 
+```bash
+kubectl delete pvc pgsql
+kubectl delete pvc codeintel-db
+kubectl delete pv $pgsql_PV_NAME --force
+kubectl delete pv $codeintel-db_PV_NAME --force
+```
+
+##### 3. Copy the database dump files (eg. `sourcegraph_db.out` and `codeintel_db.out`) into the root of the `deploy-sourcegraph` directory
+
+##### 4. Start the database services only
+
+```bash
+kubectl rollout restart deployment pgsql
+kubectl rollout restart deployment codeintel-db
+```
+
+##### 5. Copy the database files into the pods by running the following command from the root of the [deploy-sourcegraph](https://github.com/sourcegraph/deploy-sourcegraph) directory
+
+```bash
+kubectl cp sourcegraph_db.out $NAMESPACE/$pgsql_POD_NAME:/tmp/sourcegraph_db.out
+kubectl cp codeintel_db.out $NAMESPACE/$codeintel-db_POD_NAME:/tmp/codeintel_db.out
+```
+
+##### 6. Restore the databases
+
+```bash
+kubectl exec -it $pgsql_POD_NAME -- bash -c 'psql -v ERROR_ON_STOP=1 --username sg -f /tmp/sourcegraph_db.out sg'
+kubectl exec -it $codeintel-db_POD_NAME -- bash -c 'psql -v ERROR_ON_STOP=1 --username sg -f /tmp/condeintel_db.out sg'
+```
+
+##### 7. Start the remaining Sourcegraph services by running the following the command from the root of the [deploy-sourcegraph](https://github.com/sourcegraph/deploy-sourcegraph) directory and following the steps in [Sourcegraph - Kubernetes applying manifests](https://docs.sourcegraph.com/admin/install/kubernetes/configure#applying-manifests)
