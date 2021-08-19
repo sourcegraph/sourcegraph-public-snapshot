@@ -35,22 +35,13 @@ var textSearchLimiter = mutablelimiter.New(32)
 
 var MockSearchFilesInRepos func(args *search.TextParameters) ([]result.Match, *streaming.Stats, error)
 
-func textSearchRequest(ctx context.Context, args *search.TextParameters, onMissing zoektutil.OnMissingRepoRevs) (*zoektutil.IndexedSearchRequest, error) {
-	// performance: for global searches, we avoid calling NewIndexedSearchRequest
-	// because zoekt will anyway have to search all its shards.
+func textSearchRequest(ctx context.Context, args *search.TextParameters, onMissing zoektutil.OnMissingRepoRevs) (zoektutil.IndexedSearchRequest, error) {
 	if args.Mode == search.ZoektGlobalSearch {
-		q, err := search.QueryToZoektQuery(args.PatternInfo, false)
-		if err != nil {
-			return nil, err
-		}
-		return &zoektutil.IndexedSearchRequest{
-			Args:     args,
-			Query:    q,
-			Typ:      zoektutil.TextRequest,
-			RepoRevs: &zoektutil.IndexedRepoRevs{},
-		}, nil
+		// performance: optimize global searches where Zoekt searches
+		// all shards anyway.
+		return zoektutil.NewIndexedUniverseSearchRequest(ctx, args, args.RepoOptions, args.UserPrivateRepos)
 	}
-	return zoektutil.NewIndexedSearchRequest(ctx, args, zoektutil.TextRequest, onMissing)
+	return zoektutil.NewIndexedSubsetSearchRequest(ctx, args, search.TextRequest, onMissing)
 }
 
 // SearchFilesInRepos searches a set of repos for a pattern.
@@ -78,7 +69,7 @@ func SearchFilesInRepos(ctx context.Context, args *search.TextParameters, stream
 		trace.Stringer("global_search_mode", args.Mode),
 	)
 
-	indexed, err := textSearchRequest(ctx, args, zoektutil.MissingRepoRevStatus(stream))
+	request, err := textSearchRequest(ctx, args, zoektutil.MissingRepoRevStatus(stream))
 	if err != nil {
 		return err
 	}
@@ -88,13 +79,13 @@ func SearchFilesInRepos(ctx context.Context, args *search.TextParameters, stream
 	if args.Mode != search.SearcherOnly {
 		// Run literal and regexp searches on indexed repositories.
 		g.Go(func() error {
-			return indexed.Search(ctx, stream)
+			return request.Search(ctx, stream)
 		})
 	}
 
 	// Concurrently run searcher for all unindexed repos regardless whether text or regexp.
 	g.Go(func() error {
-		return callSearcherOverRepos(ctx, args, stream, indexed.Unindexed, false)
+		return callSearcherOverRepos(ctx, args, stream, request.UnindexedRepos(), false)
 	})
 
 	return g.Wait()
@@ -326,7 +317,7 @@ func callSearcherOverRepos(
 					defer done()
 
 					var s streaming.Sender
-					if featureflag.FromContext(ctx).GetBoolOr("cc_streaming_searcher", false) {
+					if featureflag.FromContext(ctx).GetBoolOr("cc_streaming_searcher", true) {
 						s = stream
 					}
 

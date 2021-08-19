@@ -45,6 +45,16 @@ extend type Query {
         state: LSIFUploadState
 
         """
+        When specified, shows only uploads that are a dependency of the specified upload.
+        """
+        dependencyOf: ID
+
+        """
+        When specified, shows only uploads that are a dependent of the specified upload.
+        """
+        dependentOf: ID
+
+        """
         When specified, shows only uploads that are latest for the given repository.
         """
         isLatestForRepo: Boolean
@@ -123,6 +133,16 @@ extend type Repository {
         When specified, shows only uploads that are latest for the given repository.
         """
         isLatestForRepo: Boolean
+
+        """
+        When specified, shows only uploads that are a dependency of the specified upload.
+        """
+        dependencyOf: ID
+
+        """
+        When specified, shows only uploads that are a dependent of the specified upload.
+        """
+        dependentOf: ID
 
         """
         When specified, indicates that this request should be paginated and

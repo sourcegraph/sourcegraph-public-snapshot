@@ -1,0 +1,56 @@
+@import 'wildcard/src/global-styles/breakpoints';
+
+.wrapper {
+    background-color: var(--homepage-card-color);
+    box-shadow: var(--home-marketing-drop);
+    padding: 1.5rem;
+    display: flex;
+    gap: 0.5rem;
+
+    @media (--sm-breakpoint-down) {
+        flex-direction: column;
+        gap: 2rem;
+    }
+}
+
+.column {
+    width: 50%;
+
+    @media (--sm-breakpoint-down) {
+        width: 100%;
+    }
+}
+
+.download-icon {
+    color: var(--merged);
+}
+
+.feature-list {
+    // Optically align bullets under the download icon
+    padding-left: 1.5rem;
+}
+
+.code-wrapper {
+    background: var(--marketing-gradient);
+    border-radius: var(--border-radius);
+    padding: 0.25rem;
+    margin: 0.625rem 0;
+}
+
+.code {
+    white-space: normal;
+    word-break: break-word;
+    display: block;
+    background-color: var(--code-bg);
+    border-radius: var(--border-radius);
+    padding: 0.5rem;
+}
+
+.copy-button {
+    float: right;
+    padding: 0.5rem;
+}
+
+.contact-link {
+    display: inline-block;
+}

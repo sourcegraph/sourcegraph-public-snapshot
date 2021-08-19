@@ -4,22 +4,27 @@ package endpoint
 import (
 	"fmt"
 	"hash/crc32"
+	"os"
 	"sort"
 	"strings"
 	"sync"
 
 	"github.com/cockroachdb/errors"
 	"github.com/inconshreveable/log15"
+	"github.com/segmentio/fasthash/fnv1a"
+	"github.com/sourcegraph/go-rendezvous"
 )
 
 // Map is a consistent hash map to URLs. It uses the kubernetes API to watch
 // the endpoints for a service and update the map when they change. It can
 // also fallback to static URLs if not configured for kubernetes.
 type Map struct {
-	urlspec   string
-	mu        sync.RWMutex
-	hm        *hashMap
-	err       error
+	urlspec string
+
+	mu  sync.RWMutex
+	hm  consistentHash
+	err error
+
 	init      sync.Once
 	discofunk func(chan endpoints) // I like to know who is in my party!
 }
@@ -66,7 +71,7 @@ func New(urlspec string) *Map {
 func Static(endpoints ...string) *Map {
 	return &Map{
 		urlspec: fmt.Sprintf("%v", endpoints),
-		hm:      newConsistentHashMap(endpoints),
+		hm:      newConsistentHash(endpoints),
 	}
 }
 
@@ -82,13 +87,12 @@ func (m *Map) String() string {
 	return fmt.Sprintf("endpoint.Map(%s)", m.urlspec)
 }
 
-// Get the closest URL in the hash to the provided key that is not in
-// exclude. If no URL is found, "" is returned.
+// Get the closest URL in the hash to the provided key.
 //
 // Note: For k8s URLs we return URLs based on the registered endpoints. The
 // endpoint may not actually be available yet / at the moment. So users of the
 // URL should implement a retry strategy.
-func (m *Map) Get(key string, exclude map[string]bool) (string, error) {
+func (m *Map) Get(key string) (string, error) {
 	m.init.Do(m.discover)
 
 	m.mu.RLock()
@@ -98,7 +102,21 @@ func (m *Map) Get(key string, exclude map[string]bool) (string, error) {
 		return "", m.err
 	}
 
-	return m.hm.get(key, exclude), nil
+	return m.hm.Lookup(key), nil
+}
+
+// GetN gets the n closest URLs in the hash to the provided key.
+func (m *Map) GetN(key string, n int) ([]string, error) {
+	m.init.Do(m.discover)
+
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+
+	if m.err != nil {
+		return nil, m.err
+	}
+
+	return m.hm.LookupN(key, n), nil
 }
 
 // GetMany is the same as calling Get on each item of keys. It will only
@@ -118,7 +136,7 @@ func (m *Map) GetMany(keys ...string) ([]string, error) {
 
 	vals := make([]string, len(keys))
 	for i := range keys {
-		vals[i] = m.hm.get(keys[i], nil)
+		vals[i] = m.hm.Lookup(keys[i])
 	}
 
 	return vals, nil
@@ -135,7 +153,7 @@ func (m *Map) Endpoints() (map[string]struct{}, error) {
 		return nil, m.err
 	}
 
-	return m.hm.values, nil
+	return m.hm.Nodes(), nil
 }
 
 // discover updates the Map with discovered endpoints
@@ -174,7 +192,7 @@ func (m *Map) sync(ch chan endpoints, ready chan struct{}) {
 
 			metricEndpointSize.WithLabelValues(eps.Service).Set(float64(len(eps.Endpoints)))
 
-			hm := newConsistentHashMap(eps.Endpoints)
+			hm := newConsistentHash(eps.Endpoints)
 			m.mu.Lock()
 			m.hm = hm
 			m.mu.Unlock()
@@ -196,10 +214,14 @@ func (m *Map) sync(ch chan endpoints, ready chan struct{}) {
 	}
 }
 
-func newConsistentHashMap(keys []string) *hashMap {
+func newConsistentHash(nodes []string) consistentHash {
+	if os.Getenv("SRC_ENDPOINTS_CONSISTENT_HASH") == "rendezvous" {
+		log15.Info("endpoints: using rendezvous hashing")
+		return rendezvous.New(nodes, fnv1a.HashString64)
+	}
 	// 50 replicas and crc32.ChecksumIEEE are the defaults used by
 	// groupcache.
 	m := hashMapNew(50, crc32.ChecksumIEEE)
-	m.add(keys...)
+	m.add(nodes...)
 	return m
 }

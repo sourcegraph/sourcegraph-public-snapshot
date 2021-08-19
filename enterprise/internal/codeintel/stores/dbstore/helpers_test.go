@@ -206,6 +206,21 @@ func deleteRepo(t testing.TB, db *sql.DB, id int, deleted_at time.Time) {
 	}
 }
 
+// insertPackages populates the lsif_packages table with the given packages.
+func insertPackages(t testing.TB, store *Store, packages []lsifstore.Package) {
+	for _, pkg := range packages {
+		if err := store.UpdatePackages(context.Background(), pkg.DumpID, []precise.Package{
+			{
+				Scheme:  pkg.Scheme,
+				Name:    pkg.Name,
+				Version: pkg.Version,
+			},
+		}); err != nil {
+			t.Fatalf("unexpected error updating packages: %s", err)
+		}
+	}
+}
+
 // insertPackageReferences populates the lsif_references table with the given package references.
 func insertPackageReferences(t testing.TB, store *Store, packageReferences []lsifstore.PackageReference) {
 	for _, packageReference := range packageReferences {

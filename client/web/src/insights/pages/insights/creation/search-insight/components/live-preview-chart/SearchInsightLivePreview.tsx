@@ -22,14 +22,18 @@ export interface SearchInsightLivePreviewProps {
     series: EditableDataSeries[]
     /** Step value for chart. */
     stepValue: string
+
     /**
      * Disable prop to disable live preview.
      * Used in a consumer of this component when some required fields
      * for live preview are invalid.
-     * */
+     */
     disabled?: boolean
+
     /** Step mode for step value prop. */
     step: InsightStep
+
+    isAllReposMode: boolean
 }
 
 /**
@@ -37,7 +41,7 @@ export interface SearchInsightLivePreviewProps {
  * from creation UI form.
  */
 export const SearchInsightLivePreview: React.FunctionComponent<SearchInsightLivePreviewProps> = props => {
-    const { series, repositories, step, stepValue, disabled = false, className } = props
+    const { series, repositories, step, stepValue, disabled = false, isAllReposMode, className } = props
 
     const { getSearchInsightContent } = useContext(InsightsApiContext)
 
@@ -94,10 +98,20 @@ export const SearchInsightLivePreview: React.FunctionComponent<SearchInsightLive
             disabled={disabled}
             defaultMock={DEFAULT_MOCK_CHART_CONTENT}
             mockMessage={
-                <span>
-                    {' '}
-                    The chart preview will be shown here once you have filled out the repositories and series fields.
-                </span>
+                isAllReposMode ? (
+                    <span> Live previews are currently not available for insights running over all repositories. </span>
+                ) : (
+                    <span>
+                        {' '}
+                        The chart preview will be shown here once you have filled out the repositories and series
+                        fields.
+                    </span>
+                )
+            }
+            description={
+                isAllReposMode
+                    ? 'Previews are only displayed only if you individually list up to 50 repositories.'
+                    : null
             }
             className={className}
             onUpdateClick={() => setLastPreviewVersion(version => version + 1)}

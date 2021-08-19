@@ -93,6 +93,70 @@ func TestFilterFrames(t *testing.T) {
 		autogold.Equal(t, got, autogold.ExportedOnly())
 	})
 
+	t.Run("test multiple frames ensure previous frame is used for compression", func(t *testing.T) {
+		commitStore := NewMockCommitStore()
+		commitFilter.store = commitStore
+
+		// This test is a scenario from a bug discovered on a real insight. In this scenario there are 2 commits, each
+		// in the middle of a frame. The goal of this test is to ensure that we use the correct frames to determine
+		// if any changes have been made to query for the 'from' time point.
+		input := []Frame{
+			{
+				toTime("2021-01-01"), toTime("2021-02-01"), "jan",
+			},
+			{
+				toTime("2021-02-01"), toTime("2021-03-01"), "feb",
+			},
+			{
+				toTime("2021-03-01"), toTime("2021-04-01"), "march",
+			},
+			{
+				toTime("2021-04-01"), toTime("2021-05-01"), "april",
+			},
+			{
+				toTime("2021-05-01"), toTime("2021-06-01"), "may",
+			},
+			{
+				toTime("2021-06-01"), toTime("2021-07-01"), "june",
+			},
+			{
+				toTime("2021-07-01"), toTime("2021-08-01"), "july",
+			},
+			{
+				toTime("2021-08-01"), toTime("2021-08-15"), "aug",
+			},
+		}
+		commitStore.GetMetadataFunc.PushReturn(CommitIndexMetadata{
+			RepoId:        1,
+			Enabled:       true,
+			LastIndexedAt: toTime("2021-09-01"),
+		}, nil)
+
+		commitStore.GetFunc.PushReturn([]CommitStamp{
+			{
+				RepoID:      2,
+				Commit:      "stamp1",
+				CommittedAt: toTime("2021-01-15"),
+			},
+		}, nil)
+		commitStore.GetFunc.PushReturn([]CommitStamp{}, nil)
+		commitStore.GetFunc.PushReturn([]CommitStamp{}, nil)
+		commitStore.GetFunc.PushReturn([]CommitStamp{}, nil)
+		commitStore.GetFunc.PushReturn([]CommitStamp{}, nil)
+		commitStore.GetFunc.PushReturn([]CommitStamp{
+			{
+				RepoID:      2,
+				Commit:      "stamp2",
+				CommittedAt: toTime("2021-06-26"),
+			},
+		}, nil)
+		commitStore.GetFunc.PushReturn([]CommitStamp{}, nil)
+		commitStore.GetFunc.PushReturn([]CommitStamp{}, nil)
+
+		got := commitFilter.FilterFrames(ctx, input, 2)
+		autogold.Equal(t, got, autogold.ExportedOnly())
+	})
+
 	t.Run("test three frames middle has no commits but index is behind", func(t *testing.T) {
 		commitStore := NewMockCommitStore()
 		commitFilter.store = commitStore

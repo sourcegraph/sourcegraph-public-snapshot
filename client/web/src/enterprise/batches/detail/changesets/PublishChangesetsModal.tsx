@@ -13,7 +13,7 @@ export interface PublishChangesetsModalProps {
     onCancel: () => void
     afterCreate: () => void
     batchChangeID: Scalars['ID']
-    changesetIDs: () => Promise<Scalars['ID'][]>
+    changesetIDs: Scalars['ID'][]
 
     /** For testing only. */
     publishChangesets?: typeof _publishChangesets
@@ -32,8 +32,7 @@ export const PublishChangesetsModal: React.FunctionComponent<PublishChangesetsMo
     const onSubmit = useCallback<React.FormEventHandler>(async () => {
         setIsLoading(true)
         try {
-            const ids = await changesetIDs()
-            await publishChangesets(batchChangeID, ids, draft)
+            await publishChangesets(batchChangeID, changesetIDs, draft)
             afterCreate()
         } catch (error) {
             setIsLoading(asError(error))

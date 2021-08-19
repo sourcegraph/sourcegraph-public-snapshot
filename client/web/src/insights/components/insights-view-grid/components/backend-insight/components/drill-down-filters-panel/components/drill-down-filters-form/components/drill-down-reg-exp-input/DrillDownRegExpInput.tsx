@@ -17,7 +17,7 @@ export const DrillDownRegExpInput = forwardRef((props: DrillDownRegExpInputProps
 
     return (
         <span className="d-flex w-100">
-            <span className={styles.prefixText}>{prefix}</span>
+            <span className={classnames(styles.prefixText, 'text-monospace')}>{prefix}</span>
             <FlexTextArea {...inputProps} className={classnames(inputProps.className, styles.input)} ref={reference} />
         </span>
     )

@@ -30,7 +30,7 @@ import {
     SearchContextInputProps,
 } from '../search'
 import { submitSearch } from '../search/helpers'
-import { SearchPageInput } from '../search/input/SearchPageInput'
+import { SearchPageInput } from '../search/home/SearchPageInput'
 import { ThemePreferenceProps } from '../theme'
 import { eventLogger } from '../tracking/eventLogger'
 

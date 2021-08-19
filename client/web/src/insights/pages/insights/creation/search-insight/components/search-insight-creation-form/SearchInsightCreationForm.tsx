@@ -67,7 +67,7 @@ interface CreationSearchInsightFormProps {
 /**
  * Displays creation code insight form (title, visibility, series, etc.)
  * UI layer only, all controlled data should be managed by consumer of this component.
- * */
+ */
 export const SearchInsightCreationForm: React.FunctionComponent<CreationSearchInsightFormProps> = props => {
     const {
         mode,
@@ -109,15 +109,18 @@ export const SearchInsightCreationForm: React.FunctionComponent<CreationSearchIn
         >
             <FormGroup
                 name="insight repositories"
-                title="Repositories"
+                title="Targeted repositories"
                 subtitle="Create a list of repositories to run your search over"
             >
                 <FormInput
                     as={RepositoriesField}
                     autoFocus={true}
                     required={true}
+                    title="Repositories"
                     description="Separate repositories with commas"
-                    placeholder="Example: github.com/sourcegraph/sourcegraph"
+                    placeholder={
+                        allReposMode.input.value ? 'All repositories' : 'Example: github.com/sourcegraph/sourcegraph'
+                    }
                     loading={repositories.meta.validState === 'CHECKING'}
                     valid={repositories.meta.touched && repositories.meta.validState === 'VALID'}
                     error={repositories.meta.touched && repositories.meta.error}
@@ -127,7 +130,7 @@ export const SearchInsightCreationForm: React.FunctionComponent<CreationSearchIn
 
                 {hasAllReposUI && (
                     <>
-                        <label className="d-flex align-items-center mb-2 mt-2 font-weight-normal">
+                        <label className="d-flex flex-wrap align-items-center mb-2 mt-3 font-weight-normal">
                             <input
                                 type="checkbox"
                                 {...allReposMode.input}
@@ -136,6 +139,17 @@ export const SearchInsightCreationForm: React.FunctionComponent<CreationSearchIn
                             />
 
                             <span className="pl-2">Run your insight over all your repositories</span>
+
+                            <small className="w-100 mt-2 text-muted">
+                                This feature is actively in development. Read about the{' '}
+                                <a
+                                    href="https://docs.sourcegraph.com/code_insights/explanations/current_limitations_of_code_insights"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                >
+                                    beta limitations here.
+                                </a>
+                            </small>
                         </label>
 
                         <hr className={styles.creationInsightFormSeparator} />

@@ -100,28 +100,18 @@ func Search(
 	consistentHashKey := string(repo) + "@" + string(commit)
 	tr.LazyPrintf("%s", consistentHashKey)
 
-	var (
-		// When we retry do not use a host we already tried.
-		excludedSearchURLs = map[string]bool{}
-		attempt            = 0
-		maxAttempts        = 2
-	)
-	for {
-		attempt++
+	nodes, err := searcherURLs.Endpoints()
+	if err != nil {
+		return nil, false, err
+	}
 
-		url, err := searcherURLs.Get(consistentHashKey, excludedSearchURLs)
-		if err != nil {
-			return nil, false, err
-		}
+	urls, err := searcherURLs.GetN(consistentHashKey, len(nodes))
+	if err != nil {
+		return nil, false, err
+	}
 
-		// Fallback to a bad host if nothing is left
-		if url == "" {
-			tr.LazyPrintf("failed to find endpoint, trying again without excludes")
-			url, err = searcherURLs.Get(consistentHashKey, nil)
-			if err != nil {
-				return nil, false, err
-			}
-		}
+	for attempt := 0; attempt < 2; attempt++ {
+		url := urls[attempt%len(urls)]
 
 		tr.LazyPrintf("attempt %d: %s", attempt, url)
 		if onMatches != nil {
@@ -137,19 +127,19 @@ func Search(
 		}
 
 		// If we are canceled, return that error.
-		if err := ctx.Err(); err != nil {
+		if err = ctx.Err(); err != nil {
 			return nil, false, err
 		}
 
 		// If not temporary or our last attempt then don't try again.
-		if !errcode.IsTemporary(err) || attempt == maxAttempts {
+		if !errcode.IsTemporary(err) {
 			return nil, false, err
 		}
 
 		tr.LazyPrintf("transient error %s", err.Error())
-		// Retry search on another searcher instance (if possible)
-		excludedSearchURLs[url] = true
 	}
+
+	return nil, false, err
 }
 
 func textSearchStream(ctx context.Context, url string, body []byte, cb func([]*protocol.FileMatch)) (bool, error) {

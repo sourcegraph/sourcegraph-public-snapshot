@@ -26,7 +26,7 @@ const { add } = storiesOf('web/batches/preview/BatchChangePreviewPage', module)
     })
 
 const nodes: ChangesetApplyPreviewFields[] = [
-    ...Object.values(visibleChangesetApplyPreviewNodeStories),
+    ...Object.values(visibleChangesetApplyPreviewNodeStories(false)),
     ...Object.values(hiddenChangesetApplyPreviewStories),
 ]
 

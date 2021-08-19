@@ -1,9 +1,7 @@
 import classnames from 'classnames'
-import React, { useCallback, useContext, useEffect } from 'react'
-import { useHistory } from 'react-router-dom'
+import React, { useCallback, useEffect } from 'react'
 
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
-import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { asError } from '@sourcegraph/shared/src/util/errors'
@@ -11,8 +9,7 @@ import { asError } from '@sourcegraph/shared/src/util/errors'
 import { Page } from '../../../../../components/Page'
 import { PageTitle } from '../../../../../components/PageTitle'
 import { FORM_ERROR, FormChangeEvent } from '../../../../components/form/hooks/useForm'
-import { InsightsApiContext } from '../../../../core/backend/api-provider'
-import { addInsightToSettings } from '../../../../core/settings-action/insights'
+import { SearchBasedInsight } from '../../../../core/types'
 import { useInsightSubjects } from '../../../../hooks/use-insight-subjects/use-insight-subjects'
 
 import {
@@ -24,20 +21,52 @@ import { CreateInsightFormFields } from './types'
 import { getSanitizedSearchInsight } from './utils/insight-sanitizer'
 import { useSearchInsightInitialValues } from './utils/use-initial-values'
 
-export interface SearchInsightCreationPageProps
-    extends PlatformContextProps<'updateSettings'>,
-        SettingsCascadeProps,
-        TelemetryProps {}
+export interface InsightCreateEvent {
+    subjectId: string
+    insight: SearchBasedInsight
+}
+
+export interface SearchInsightCreationPageProps extends SettingsCascadeProps, TelemetryProps {
+    /**
+     * Set initial value for insight visibility setting.
+     */
+    visibility: string
+
+    /**
+     * Whenever the user submit form and clicks on save/submit button
+     *
+     * @param event - creation event with subject id and updated settings content
+     * info.
+     */
+    onInsightCreateRequest: (event: InsightCreateEvent) => Promise<void>
+
+    /**
+     * Whenever insight was created and all operations after creation were completed.
+     */
+    onSuccessfulCreation: (insight: SearchBasedInsight) => void
+
+    /**
+     * Whenever the user click on cancel button
+     */
+    onCancel: () => void
+}
 
 /** Displays create insight page with creation form. */
 export const SearchInsightCreationPage: React.FunctionComponent<SearchInsightCreationPageProps> = props => {
-    const { platformContext, settingsCascade, telemetryService } = props
+    const {
+        visibility,
+        settingsCascade,
+        telemetryService,
+        onInsightCreateRequest,
+        onCancel,
+        onSuccessfulCreation,
+    } = props
 
-    const history = useHistory()
-    const { updateSubjectSettings, getSubjectSettings } = useContext(InsightsApiContext)
-
-    const { initialValues, loading, setLocalStorageFormValues } = useSearchInsightInitialValues()
     const subjects = useInsightSubjects({ settingsCascade })
+    const { initialValues, loading, setLocalStorageFormValues } = useSearchInsightInitialValues()
+
+    // Set top-level scope value as initial value for the insight visibility
+    const mergedInitialValues = { ...initialValues, visibility }
 
     useEffect(() => {
         telemetryService.logViewEvent('CodeInsightsSearchBasedCreationPage')
@@ -48,33 +77,23 @@ export const SearchInsightCreationPage: React.FunctionComponent<SearchInsightCre
             const subjectID = values.visibility
 
             try {
-                const settings = await getSubjectSettings(subjectID).toPromise()
                 const insight = getSanitizedSearchInsight(values)
-                const editedSettings = addInsightToSettings(settings.contents, insight)
 
-                await updateSubjectSettings(platformContext, subjectID, editedSettings).toPromise()
+                await onInsightCreateRequest({ subjectId: subjectID, insight })
 
                 telemetryService.log('CodeInsightsSearchBasedCreationPageSubmitClick')
 
                 // Clear initial values if user successfully created search insight
                 setLocalStorageFormValues(undefined)
 
-                // Navigate user to the dashboard page with new created dashboard
-                history.push(`/insights/dashboards/${insight.visibility}`)
+                onSuccessfulCreation(insight)
             } catch (error) {
                 return { [FORM_ERROR]: asError(error) }
             }
 
             return
         },
-        [
-            getSubjectSettings,
-            updateSubjectSettings,
-            platformContext,
-            telemetryService,
-            setLocalStorageFormValues,
-            history,
-        ]
+        [onInsightCreateRequest, telemetryService, setLocalStorageFormValues, onSuccessfulCreation]
     )
 
     const handleChange = (event: FormChangeEvent<CreateInsightFormFields>): void => {
@@ -84,8 +103,8 @@ export const SearchInsightCreationPage: React.FunctionComponent<SearchInsightCre
     const handleCancel = useCallback(() => {
         telemetryService.log('CodeInsightsSearchBasedCreationPageCancelClick')
         setLocalStorageFormValues(undefined)
-        history.push('/insights/dashboards/all')
-    }, [history, setLocalStorageFormValues, telemetryService])
+        onCancel()
+    }, [telemetryService, setLocalStorageFormValues, onCancel])
 
     return (
         <Page className={classnames('col-10', styles.creationPage)}>
@@ -119,7 +138,7 @@ export const SearchInsightCreationPage: React.FunctionComponent<SearchInsightCre
                             className="pb-5"
                             dataTestId="search-insight-create-page-content"
                             settings={settingsCascade.final}
-                            initialValue={initialValues}
+                            initialValue={mergedInitialValues}
                             subjects={subjects}
                             onSubmit={handleSubmit}
                             onCancel={handleCancel}

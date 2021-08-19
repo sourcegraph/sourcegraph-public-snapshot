@@ -16,6 +16,10 @@ export interface ChangesetApplyPreviewNodeProps extends ThemeProps {
     history: H.History
     location: H.Location
     authenticatedUser: PreviewPageAuthenticatedUser
+    selectable?: {
+        onSelect: (id: string) => void
+        isSelected: (id: string) => boolean
+    }
 
     /** Used for testing. */
     queryChangesetSpecFileDiffs?: typeof queryChangesetSpecFileDiffs
@@ -25,12 +29,9 @@ export interface ChangesetApplyPreviewNodeProps extends ThemeProps {
 
 export const ChangesetApplyPreviewNode: React.FunctionComponent<ChangesetApplyPreviewNodeProps> = ({
     node,
-    history,
-    location,
-    authenticatedUser,
-    isLightTheme,
     queryChangesetSpecFileDiffs,
     expandChangesetDescriptions,
+    ...props
 }) => {
     if (node.__typename === 'HiddenChangesetApplyPreview') {
         return (
@@ -45,10 +46,7 @@ export const ChangesetApplyPreviewNode: React.FunctionComponent<ChangesetApplyPr
             <span className={styles.changesetApplyPreviewNodeSeparator} />
             <VisibleChangesetApplyPreviewNode
                 node={node}
-                history={history}
-                location={location}
-                isLightTheme={isLightTheme}
-                authenticatedUser={authenticatedUser}
+                {...props}
                 queryChangesetSpecFileDiffs={queryChangesetSpecFileDiffs}
                 expandChangesetDescriptions={expandChangesetDescriptions}
             />

@@ -1,7 +1,9 @@
 import classNames from 'classnames'
-import React, { useCallback } from 'react'
+import React, { useCallback, useRef } from 'react'
+import { useMergeRefs } from 'use-callback-ref'
 
 import { Form } from '@sourcegraph/branded/src/components/Form'
+import { useAutoFocus } from '@sourcegraph/wildcard'
 
 import { FilterControl, FilteredConnectionFilter, FilteredConnectionFilterValue } from '../FilterControl'
 
@@ -59,10 +61,14 @@ export const ConnectionForm = React.forwardRef<HTMLInputElement, ConnectionFormP
         },
         reference
     ) => {
+        const localReference = useRef<HTMLInputElement>(null)
+        const mergedReference = useMergeRefs([localReference, reference])
         const handleSubmit = useCallback<React.FormEventHandler<HTMLFormElement>>(event => {
             // Do nothing. The <input onChange> handler will pick up any changes shortly.
             event.preventDefault()
         }, [])
+
+        useAutoFocus({ autoFocus, reference: localReference })
 
         return (
             <Form
@@ -86,7 +92,7 @@ export const ConnectionForm = React.forwardRef<HTMLInputElement, ConnectionFormP
                         autoComplete="off"
                         autoCorrect="off"
                         autoCapitalize="off"
-                        ref={reference}
+                        ref={mergedReference}
                         spellCheck={false}
                     />
                 )}

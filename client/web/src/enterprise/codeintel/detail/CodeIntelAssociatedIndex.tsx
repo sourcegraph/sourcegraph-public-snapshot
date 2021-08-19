@@ -17,8 +17,6 @@ export const CodeIntelAssociatedIndex: FunctionComponent<CodeIntelAssociatedInde
         <>
             <div className="list-group position-relative">
                 <div className="codeintel-associated-index__grid mb-3">
-                    <span className="codeintel-associated-index__separator" />
-
                     <div className="d-flex flex-column codeintel-associated-index__information">
                         <div className="m-0">
                             <h3 className="m-0 d-block d-md-inline">This upload was created by an auto-indexing job</h3>

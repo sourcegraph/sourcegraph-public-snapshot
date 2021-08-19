@@ -48,10 +48,10 @@ img.icon-inline,
 
 // @sourcegraph/react-loading-spinner coloring
 .theme-light {
-    --loading-spinner-outer-color: #{rgba($gray-19, 0.3)};
-    --loading-spinner-inner-color: #{rgba($gray-19, 1)};
+    --loading-spinner-outer-color: var(--gray-05);
+    --loading-spinner-inner-color: var(--gray-08);
 }
 .theme-dark {
-    --loading-spinner-outer-color: #{rgba($white, 0.3)};
-    --loading-spinner-inner-color: #{rgba($white, 1)};
+    --loading-spinner-outer-color: var(--gray-07);
+    --loading-spinner-inner-color: var(--white);
 }

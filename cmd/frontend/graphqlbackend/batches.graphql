@@ -2173,6 +2173,11 @@ extend type Mutation {
     If namespace is not specified, the current user's personal namespace is used.
     """
     createBatchSpecExecution(spec: String!, namespace: ID): BatchSpecExecution!
+
+    """
+    Attempts to cancel the given batch spec execution. It must not have completed yet.
+    """
+    cancelBatchSpecExecution(batchSpecExecution: ID!): BatchSpecExecution!
 }
 
 extend type Query {
@@ -2949,6 +2954,16 @@ enum BatchSpecExecutionState {
     This spec is queued to be processed.
     """
     QUEUED
+
+    """
+    The execution is being canceled.
+    """
+    CANCELING
+
+    """
+    The execution has been canceled.
+    """
+    CANCELED
 }
 
 """
