@@ -132,14 +132,29 @@ export const FormSeriesInput: React.FunctionComponent<FormSeriesInputProps> = pr
                 placeholder="Example: patternType:regexp const\s\w+:\s(React\.)?FunctionComponent"
                 description={
                     <span>
-                        Do not include the <code>repo:</code> filter as it will be added automatically for the
-                        repositories you included above.
+                        {!isSearchQueryDisabled ? (
+                            <>
+                                Do not include the <code>repo:</code> filter as it will be added automatically for the
+                                repositories you included above.
+                            </>
+                        ) : (
+                            <>
+                                We don't yet allow editing queries for insights over all repos. To change the query,
+                                make a new insight. This is a known{' '}
+                                <a
+                                    href="https://docs.sourcegraph.com/code_insights/explanations/current_limitations_of_code_insights"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                >
+                                    beta limitation
+                                </a>
+                            </>
+                        )}
                     </span>
                 }
                 valid={(hasQueryControlledValue || queryField.meta.touched) && queryField.meta.validState === 'VALID'}
                 error={queryField.meta.touched && queryField.meta.error}
                 className="mt-4"
-                data-tooltip={isSearchQueryDisabled ? "You can't edit this field for all repositories insight" : null}
                 {...queryField.input}
             />
 
