@@ -4,212 +4,137 @@ exports[`SignUpPage renders redirect when user is authenticated 1`] = `null`;
 
 exports[`SignUpPage renders sign up page (cloud) 1`] = `
 <div
-  className="signin-signup-page sign-up-page"
+  className="page"
 >
+  <header>
+    <div
+      className="position-relative"
+    >
+      <div
+        className="headerBackground1"
+      />
+      <div
+        className="headerBackground2"
+      />
+      <div
+        className="headerBackground3"
+      />
+      <div
+        className="limitWidth"
+      >
+        <img
+          alt="Sourcegraph logo"
+          className="brand-logo logo"
+          src="/img/sourcegraph-logo-light.svg"
+        />
+      </div>
+    </div>
+    <div
+      className="limitWidth"
+    >
+      <h2
+        className="pageHeading"
+      >
+        Easily search the code you care about.
+      </h2>
+    </div>
+  </header>
   <div
-    className="hero-page hero-page__less-padding"
+    className="contents limitWidth"
   >
     <div
-      className="hero-page__icon bg-transparent"
+      className="contentsLeft"
     >
-      <a
-        href="/search"
-        onClick={[Function]}
+      With a Sourcegraph account, you can also:
+      <ul
+        className="featureList"
       >
-        <svg
-          fill="none"
-          height="64"
-          viewBox="0 0 52 52"
-          width="65"
-          xmlns="http://www.w3.org/2000/svg"
-        >
-          <path
-            d="M30.8 51.8c-2.8.5-5.5-1.3-6-4.1L17.2 6.2c-.5-2.8 1.3-5.5 4.1-6s5.5 1.3 6 4.1l7.6 41.5c.5 2.8-1.4 5.5-4.1 6z"
-            fill="#FF5543"
-          />
-          <path
-            d="M10.9 44.7C9.1 45 7.3 44.4 6 43c-1.8-2.2-1.6-5.4.6-7.2L38.7 8.5c2.2-1.8 5.4-1.6 7.2.6 1.8 2.2 1.6 5.4-.6 7.2l-32 27.3c-.7.6-1.6 1-2.4 1.1z"
-            fill="#A112FF"
-          />
-          <path
-            d="M46.8 38.1c-.9.2-1.8.1-2.6-.2L4.4 23.8c-2.7-1-4.1-3.9-3.1-6.6 1-2.7 3.9-4.1 6.6-3.1l39.7 14.1c2.7 1 4.1 3.9 3.1 6.6-.6 1.8-2.2 3-3.9 3.3z"
-            fill="#00CBEC"
-          />
-        </svg>
-      </a>
-    </div>
-    <div
-      className="hero-page__title"
-    >
-      Sign up for Sourcegraph Cloud
-    </div>
-    <div
-      className="signup-page__container pb-5"
-    >
-      <p
-        className="pt-1 pb-2"
-      >
-        Start searching public code now
-      </p>
-      <form
-        className="signin-signup-form signup-form test-signup-form rounded p-4 text-left mt-3"
-        noValidate={true}
-        onSubmit={[Function]}
-      >
-        <div
-          className="form-group d-flex flex-column align-content-start"
-        >
-          <label
-            className="align-self-start"
-            htmlFor="email"
-          >
-            Email
-          </label>
+        <li>
           <div
-            className="loader-input__container"
+            className="d-flex align-items-center"
           >
-            <input
-              autoComplete="email"
-              autoFocus={true}
-              className="form-control signin-signup-form__input"
-              disabled={false}
-              id="email"
-              name="email"
-              onChange={[Function]}
-              placeholder=" "
-              required={true}
-              spellCheck={false}
-              type="email"
-              value=""
-            />
-          </div>
-        </div>
-        <div
-          className="form-group d-flex flex-column align-content-start"
-        >
-          <label
-            className="align-self-start"
-            htmlFor="username"
-          >
-            Username
-          </label>
-          <div
-            className="loader-input__container"
-          >
-            <input
-              autoCapitalize="off"
-              autoComplete="username"
-              className="form-control signin-signup-form__input"
-              disabled={false}
-              id="username"
-              maxLength={255}
-              name="username"
-              onChange={[Function]}
-              pattern="^[\\\\dA-Za-z](?:[\\\\dA-Za-z]|[.-](?=[\\\\dA-Za-z]))*-?$"
-              placeholder=" "
-              required={true}
-              spellCheck={false}
-              type="text"
-              value=""
-            />
-          </div>
-        </div>
-        <div
-          className="form-group d-flex flex-column align-content-start"
-        >
-          <label
-            className="align-self-start"
-            htmlFor="password"
-          >
-            Password
-          </label>
-          <div
-            className="loader-input__container"
-          >
-            <input
-              autoComplete="new-password"
-              className="form-control signin-signup-form__input"
-              disabled={false}
-              formNoValidate={true}
-              id="password"
-              minLength={12}
-              name="password"
-              onChange={[Function]}
-              onInvalid={[Function]}
-              placeholder=" "
-              required={true}
-              type="password"
-              value=""
-            />
-          </div>
-          <small
-            className="form-text text-muted"
-          >
-            At least 12 characters
-          </small>
-        </div>
-        <div
-          className="form-group mb-0"
-        >
-          <button
-            className="btn btn-primary btn-block d-flex justify-content-center align-items-center"
-            disabled={true}
-            type="submit"
-          >
-            Register
-          </button>
-        </div>
-        <div
-          className="my-4 d-flex align-items-center"
-        >
-          <div
-            className="w-100 or-divider__border"
-          />
-          <small
-            className="px-2 text-muted "
-          >
-            OR
-          </small>
-          <div
-            className="w-100 or-divider__border"
-          />
-        </div>
-        <div
-          className="mb-2"
-        >
-          <a
-            className="btn btn-secondary btn-block"
-            href="&redirect=/welcome"
-            onClick={[Function]}
-          >
-            <svg
-              className="mdi-icon icon-inline"
-              fill="currentColor"
-              height={24}
-              viewBox="0 0 24 24"
-              width={24}
+            <span
+              className="badge badge-info text-uppercase mr-1"
             >
-              <path
-                d="M12,2A10,10 0 0,0 2,12C2,16.42 4.87,20.17 8.84,21.5C9.34,21.58 9.5,21.27 9.5,21C9.5,20.77 9.5,20.14 9.5,19.31C6.73,19.91 6.14,17.97 6.14,17.97C5.68,16.81 5.03,16.5 5.03,16.5C4.12,15.88 5.1,15.9 5.1,15.9C6.1,15.97 6.63,16.93 6.63,16.93C7.5,18.45 8.97,18 9.54,17.76C9.63,17.11 9.89,16.67 10.17,16.42C7.95,16.17 5.62,15.31 5.62,11.5C5.62,10.39 6,9.5 6.65,8.79C6.55,8.54 6.2,7.5 6.75,6.15C6.75,6.15 7.59,5.88 9.5,7.17C10.29,6.95 11.15,6.84 12,6.84C12.85,6.84 13.71,6.95 14.5,7.17C16.41,5.88 17.25,6.15 17.25,6.15C17.8,7.5 17.45,8.54 17.35,8.79C18,9.5 18.38,10.39 18.38,11.5C18.38,15.32 16.04,16.16 13.81,16.41C14.17,16.72 14.5,17.33 14.5,18.26C14.5,19.6 14.5,20.68 14.5,21C14.5,21.27 14.66,21.59 15.17,21.5C19.14,20.16 22,16.42 22,12A10,10 0 0,0 12,2Z"
-              />
-            </svg>
-             
-            Continue with 
-            GitHub
-          </a>
-        </div>
-      </form>
-      <p
-        className="mt-3"
+              Beta
+            </span>
+             Search across all your public and private repositories
+          </div>
+        </li>
+        <li>
+          Monitor code for changes
+        </li>
+        <li>
+          Navigate through code with IDE like go to references and definition hovers
+        </li>
+        <li>
+          Integrate data, tooling, and code in a single location 
+        </li>
+      </ul>
+      <div
+        className="companiesHeader"
       >
+        Trusted by developers at the world's most innovative companies:
+      </div>
+      <img
+        alt="Cloudflare, Uber, SoFi, Dropbox, Plaid, Toast"
+        src="/img/customer-logos-light.svg"
+      />
+    </div>
+    <div
+      className="signUpWrapper"
+    >
+      <h2>
+        Create a free account
+      </h2>
+      <div
+        className="mb-4"
+      >
+        Or,
+         
+        <a
+          href="/?showEmail=true"
+          onClick={[Function]}
+        >
+          continue with email
+        </a>
+      </div>
+      <small
+        className="text-muted"
+      >
+        By registering, you agree to our
+         
+        <a
+          href="https://about.sourcegraph.com/terms"
+          rel="noopener"
+          target="_blank"
+        >
+          Terms of Service
+        </a>
+         
+        and
+         
+        <a
+          href="https://about.sourcegraph.com/privacy"
+          rel="noopener"
+          target="_blank"
+        >
+          Privacy Policy
+        </a>
+        .
+      </small>
+      <hr
+        className="separator"
+      />
+      <div>
         Already have an account? 
         <a
           href="/sign-in"
           onClick={[Function]}
         >
-          Sign in
+          Log in
         </a>
-      </p>
+      </div>
     </div>
   </div>
 </div>
