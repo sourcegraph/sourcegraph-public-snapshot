@@ -4,15 +4,15 @@
         opacity: 0.75;
     }
 
-    svg {
-        fill: var(--gray-06);
+    .icon {
+        color: var(--gray-06);
     }
 
-    h4 {
+    .title {
         color: var(--body-color);
     }
 
-    small {
+    .description {
         color: var(--text-muted);
     }
 }

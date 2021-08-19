@@ -4,16 +4,14 @@ import React from 'react'
 import styles from './BackendAlertOverlay.module.scss'
 
 export interface BackendAlertOverlayProps {
-    // Render prop for optional icon
-    icon?(): void
     title: string
     description: string
 }
 
 export const BackendAlertOverlay: React.FunctionComponent<BackendAlertOverlayProps> = ({
-    icon,
     title,
     description,
+    children: icon,
 }) => (
     <>
         <div className={classNames('position-absolute w-100 h-100', styles.bgLoadingGradient)} />
@@ -23,9 +21,9 @@ export const BackendAlertOverlay: React.FunctionComponent<BackendAlertOverlayPro
                 styles.bgLoading
             )}
         >
-            {icon?.()}
-            <h4>{title}</h4>
-            <small>{description}</small>
+            {icon && <div className={styles.icon}>{icon}</div>}
+            <h4 className={styles.title}>{title}</h4>
+            <small className={styles.description}>{description}</small>
         </div>
     </>
 )

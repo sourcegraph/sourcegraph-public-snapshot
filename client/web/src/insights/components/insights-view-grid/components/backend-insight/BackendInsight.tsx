@@ -144,10 +144,11 @@ export const BackendInsight: React.FunctionComponent<BackendInsightProps> = prop
     const AlertOverlay: React.FunctionComponent<AlertOverLayProps> = ({ isFetchingHistoricalData, hasNoData }) =>
         isFetchingHistoricalData ? (
             <BackendAlertOverlay
-                icon={() => <ProgressWrench className={classnames('mb-3')} size={33} />}
                 title="This insight is still being processed"
                 description="Datapoints shown may be undercounted."
-            />
+            >
+                <ProgressWrench className={classnames('mb-3')} size={33} />
+            </BackendAlertOverlay>
         ) : hasNoData ? (
             <BackendAlertOverlay
                 title="No data to display"
