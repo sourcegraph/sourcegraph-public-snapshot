@@ -4,13 +4,8 @@
     width: max-content;
 
     &:first-child &__button {
-        border-top-left-radius: 2px;
-        border-bottom-left-radius: 2px;
-
-        .theme-redesign & {
-            border-top-left-radius: var(--border-radius);
-            border-bottom-left-radius: var(--border-radius);
-        }
+        border-top-left-radius: var(--border-radius);
+        border-bottom-left-radius: var(--border-radius);
     }
 
     &:not(:first-child) .version-context-dropdown__button {
@@ -20,16 +15,13 @@
     &__button {
         display: flex;
         border-radius: 0;
+        padding: 0.5rem 0.75rem;
+        border: none;
 
-        .theme-redesign & {
-            padding: 0.5rem 0.75rem;
-            border: none;
-
-            @media (--xs-breakpoint-down) {
-                padding: 0.2rem 0.25rem;
-                margin-right: 0.5rem;
-                border-radius: var(--border-radius);
-            }
+        @media (--xs-breakpoint-down) {
+            padding: 0.2rem 0.25rem;
+            margin-right: 0.5rem;
+            border-radius: var(--border-radius);
         }
 
         &-text {
