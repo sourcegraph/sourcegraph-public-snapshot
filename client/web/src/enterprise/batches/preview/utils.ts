@@ -5,6 +5,18 @@ import {
     Scalars,
 } from '../../../graphql-operations'
 
+/* The preview changeset can be published from the UI */
+export interface Publishable {
+    publishable: true
+    changesetSpecID: Scalars['ID']
+}
+
+/* The preview changeset cannot currently be published from the UI */
+export interface Unpublishable {
+    publishable: false
+    reason: string
+}
+
 /**
  * For a given preview of a changeset to be applied, this method checks if the type of
  * changeset allows for the user to modify its publication state from the UI: namely, that
@@ -21,32 +33,60 @@ import {
  *
  * @param node the `ChangesetApplyPreviewFields` node to check
  */
-export const getPublishableChangesetSpecID = (
+export const checkPublishability = (
     node:
         | PublishableChangesetSpecIDsVisibleChangesetApplyPreviewFields
         | PublishableChangesetSpecIDsHiddenChangesetApplyPreviewFields
-): Scalars['ID'] | null => {
-    // The changeset is either hidden, or the operation is detaching a changeset
+): Publishable | Unpublishable => {
+    // The operatino is detaching a changeset
+    if (node.targets.__typename === 'VisibleApplyPreviewTargetsDetach') {
+        return {
+            publishable: false,
+            reason:
+                'You cannot modify the publication state for a changeset that will be detached from this batch change.',
+        }
+    }
+    // The changeset is hidden to the user applying
     if (
         node.targets.__typename !== 'VisibleApplyPreviewTargetsAttach' &&
         node.targets.__typename !== 'VisibleApplyPreviewTargetsUpdate'
     ) {
-        return null
+        return { publishable: false, reason: 'You do not have permission to publish to this repository.' }
     }
-    // The changeset is an existing reference
+    // The changeset is an existing, imported reference
     if (node.targets.changesetSpec.description.__typename !== 'GitBranchChangesetDescription') {
-        return null
+        return {
+            publishable: false,
+            reason: 'You cannot modify the publication state for an imported changeset.',
+        }
     }
     // The changeset has its publication state specified in the batch spec file, which takes priority
     if (node.targets.changesetSpec.description.published !== null) {
-        return null
+        return {
+            publishable: false,
+            reason:
+                "This changeset's publication state is being controlled by the spec file. To modify it here, omit it from your spec.",
+        }
     }
-    // The changeset is already published or in a state we can't transition to published/draft from
-    if (
-        node.targets.__typename === 'VisibleApplyPreviewTargetsUpdate' &&
-        !(node.targets.changeset.state in [ChangesetState.DRAFT, ChangesetState.UNPUBLISHED])
-    ) {
-        return null
+    if (node.targets.__typename === 'VisibleApplyPreviewTargetsUpdate') {
+        console.log(
+            node.targets.changeset.state,
+            [ChangesetState.CLOSED, ChangesetState.DELETED, ChangesetState.MERGED, ChangesetState.OPEN].includes(
+                node.targets.changeset.state
+            )
+        )
+        // The changeset is already published
+        if (
+            [ChangesetState.CLOSED, ChangesetState.DELETED, ChangesetState.MERGED, ChangesetState.OPEN].includes(
+                node.targets.changeset.state
+            )
+        ) {
+            return { publishable: false, reason: 'This changeset has already been published.' }
+        }
+        // This changeset is not in a state we want to transition to published/draft from
+        if (![ChangesetState.DRAFT, ChangesetState.UNPUBLISHED].includes(node.targets.changeset.state)) {
+            return { publishable: false, reason: 'This changeset is in a state we cannot currently publish from.' }
+        }
     }
-    return node.targets.changesetSpec.id
+    return { publishable: true, changesetSpecID: node.targets.changesetSpec.id }
 }
