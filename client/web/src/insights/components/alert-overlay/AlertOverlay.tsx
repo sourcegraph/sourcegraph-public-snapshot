@@ -3,16 +3,13 @@ import React from 'react'
 
 import styles from './AlertOverlay.module.scss'
 
-export interface BackendAlertOverlayProps {
+export interface AlertOverlayProps {
     title: string
     description: string
+    icon?: React.ReactNode
 }
 
-export const AlertOverlay: React.FunctionComponent<BackendAlertOverlayProps> = ({
-    title,
-    description,
-    children: icon,
-}) => (
+export const AlertOverlay: React.FunctionComponent<AlertOverlayProps> = ({ title, description, icon }) => (
     <>
         <div className={classNames('position-absolute w-100 h-100', styles.gradient)} />
         <div className="position-absolute d-flex flex-column justify-content-center align-items-center w-100 h-100">
