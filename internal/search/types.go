@@ -138,7 +138,6 @@ const (
 
 // ZoektParameters contains all the inputs to run a Zoekt indexed search.
 type ZoektParameters struct {
-	Repos            []*RepositoryRevisions
 	RepoOptions      RepoOptions
 	Query            zoektquery.Q
 	Typ              IndexedRequestType
