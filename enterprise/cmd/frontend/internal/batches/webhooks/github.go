@@ -54,7 +54,6 @@ func (h *GitHubWebhook) Register(router *webhooks.GitHubWebhook) {
 // handleGithubWebhook is the entry point for webhooks from the webhook router, see the events
 // it's registered to handle in GitHubWebhook.Register
 func (h *GitHubWebhook) handleGitHubWebhook(ctx context.Context, extSvc *types.ExternalService, payload interface{}) error {
-	m := new(multierror.Error)
 	externalServiceID, err := extractExternalServiceID(extSvc)
 	if err != nil {
 		return err
@@ -62,6 +61,11 @@ func (h *GitHubWebhook) handleGitHubWebhook(ctx context.Context, extSvc *types.E
 
 	prs, ev := h.convertEvent(ctx, externalServiceID, payload)
 
+	if ev == nil {
+		return nil
+	}
+
+	m := new(multierror.Error)
 	for _, pr := range prs {
 		if pr == (PR{}) {
 			continue
