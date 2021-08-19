@@ -74,7 +74,12 @@ func NormalizeBaseURL(baseURL *url.URL) *url.URL {
 // matching codehost from the given list.
 func CodeHostOf(name api.RepoName, codehosts ...*CodeHost) *CodeHost {
 	repoNameParts := strings.Split(string(name), "/")
-	if len(repoNameParts) != 3 {
+
+	// We do not want to fail in case the name includes query parameteres with a "/" in it. As a
+	// result a check for at least three is erring on the side of caution. In any case we only ever
+	// need the first "part" that is the Codehost URL in this function, so we can ignore anything
+	// that comes after it.
+	if len(repoNameParts) < 3 {
 		return nil
 	}
 
