@@ -38,7 +38,7 @@ export const checkPublishability = (
         | PublishableChangesetSpecIDsVisibleChangesetApplyPreviewFields
         | PublishableChangesetSpecIDsHiddenChangesetApplyPreviewFields
 ): Publishable | Unpublishable => {
-    // The operatino is detaching a changeset
+    // The operation is detaching a changeset
     if (node.targets.__typename === 'VisibleApplyPreviewTargetsDetach') {
         return {
             publishable: false,
