@@ -179,6 +179,7 @@ exports[`SignUpPage renders sign up page (cloud) 1`] = `
         >
           <a
             className="btn btn-secondary btn-block"
+            href="&redirect=/welcome"
             onClick={[Function]}
           >
             <svg
