@@ -24,7 +24,7 @@ import (
 type webhook struct {
 	store *store.Store
 
-	// serviceType corresponds to api.ExternalRepoSpec.serviceType
+	// serviceType corresponds to api.ExternalRepoSpec.ServiceType
 	// Example values: extsvc.TypeBitbucketServer, extsvc.TypeGitHub
 	serviceType string
 }
