@@ -150,10 +150,7 @@ func searchFilesInRepo(ctx context.Context, searcherURLs *endpoint.Map, repo typ
 
 	var indexerEndpoints []string
 	if info.IsStructuralPat {
-		endpoints, err := search.Indexers().Map.Endpoints()
-		for _, key := range endpoints {
-			indexerEndpoints = append(indexerEndpoints, key)
-		}
+		indexerEndpoints, err = search.Indexers().Map.Endpoints()
 		if err != nil {
 			return nil, false, err
 		}
