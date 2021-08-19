@@ -13,7 +13,6 @@ import { useDebounce } from '@sourcegraph/wildcard'
 import { Settings } from '../../../../../schema/settings.schema'
 import { InsightsApiContext } from '../../../../core/backend/api-provider'
 import { InsightStillProcessingError } from '../../../../core/backend/api/get-backend-insight-by-id'
-import { BackendInsightFilters } from '../../../../core/backend/types'
 import { addInsightToSettings } from '../../../../core/settings-action/insights'
 import { SearchBackendBasedInsight, SearchBasedBackendFilters } from '../../../../core/types/insight/search-insight'
 import { useDeleteInsight } from '../../../../hooks/use-delete-insight/use-delete-insight'
@@ -67,18 +66,17 @@ export const BackendInsight: React.FunctionComponent<BackendInsightProps> = prop
     const [filters, setFilters] = useState<SearchBasedBackendFilters>(originalInsightFilters)
 
     const [isFiltersOpen, setIsFiltersOpen] = useState(false)
-    const debouncedFilters = useDebounce(useDistinctValue<BackendInsightFilters>(filters), 500)
+    const debouncedFilters = useDebounce(useDistinctValue<SearchBasedBackendFilters>(filters), 500)
 
     // Loading the insight backend data
     const { data, loading, error } = useParallelRequests(
         useCallback(
             () =>
                 getBackendInsightById({
-                    id: cachedInsight.id,
-                    series: cachedInsight.series,
+                    ...cachedInsight,
                     filters: debouncedFilters,
                 }),
-            [cachedInsight.id, cachedInsight.series, debouncedFilters, getBackendInsightById]
+            [cachedInsight, debouncedFilters, getBackendInsightById]
         )
     )
 

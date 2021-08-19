@@ -1,8 +1,9 @@
 import { Observable, of, throwError } from 'rxjs'
 import { map, switchMap } from 'rxjs/operators'
 
+import { SearchBackendBasedInsight } from '../../types/insight/search-insight'
 import { fetchBackendInsights } from '../requests/fetch-backend-insights'
-import { BackendInsightData, BackendInsightInputs } from '../types'
+import { BackendInsightData } from '../types'
 import { createViewContent } from '../utils/create-view-content'
 
 export class InsightStillProcessingError extends Error {
@@ -12,8 +13,8 @@ export class InsightStillProcessingError extends Error {
     }
 }
 
-export function getBackendInsightById(props: BackendInsightInputs): Observable<BackendInsightData> {
-    const { id, filters, series } = props
+export function getBackendInsightById(insight: SearchBackendBasedInsight): Observable<BackendInsightData> {
+    const { id, filters, series } = insight
 
     return fetchBackendInsights([id], filters).pipe(
         switchMap(backendInsights => {
@@ -23,13 +24,13 @@ export function getBackendInsightById(props: BackendInsightInputs): Observable<B
 
             return of(backendInsights[0])
         }),
-        map(insight => ({
-            id: insight.id,
+        map(backendInsight => ({
+            id: backendInsight.id,
             view: {
-                title: insight.title,
-                subtitle: insight.description,
-                content: [createViewContent(insight, series)],
-                isFetchingHistoricalData: insight.series.some(line => line.status.pendingJobs > 0),
+                title: insight.title ?? backendInsight.title,
+                subtitle: backendInsight.description,
+                content: [createViewContent(backendInsight, series)],
+                isFetchingHistoricalData: backendInsight.series.some(line => line.status.pendingJobs > 0),
             },
         }))
     )

@@ -28,7 +28,7 @@ export function createViewContent(
         chart: 'line',
         data: [...dataByXValue.values()],
         series: insight.series.map((series, index) => ({
-            name: series.label,
+            name: seriesSettings[index]?.name ?? series.label,
             dataKey: `series${index}`,
             stroke: seriesSettings[index]?.stroke,
         })),

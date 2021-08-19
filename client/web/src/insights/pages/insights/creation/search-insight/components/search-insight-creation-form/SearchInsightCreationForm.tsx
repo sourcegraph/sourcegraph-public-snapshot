@@ -167,6 +167,7 @@ export const SearchInsightCreationForm: React.FunctionComponent<CreationSearchIn
             >
                 <FormSeries
                     series={series.input.value}
+                    isBackendInsightEdit={isEditMode && allReposMode.input.value}
                     showValidationErrorsOnMount={submitted}
                     onLiveChange={onSeriesLiveChange}
                     onEditSeriesRequest={onEditSeriesRequest}
