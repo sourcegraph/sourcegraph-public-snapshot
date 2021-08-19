@@ -27,7 +27,7 @@ export function getBackendInsightById(insight: SearchBackendBasedInsight): Obser
         map(backendInsight => ({
             id: backendInsight.id,
             view: {
-                title: insight.title,
+                title: insight.title ?? backendInsight.title,
                 subtitle: backendInsight.description,
                 content: [createViewContent(backendInsight, series)],
                 isFetchingHistoricalData: backendInsight.series.some(line => line.status.pendingJobs > 0),
