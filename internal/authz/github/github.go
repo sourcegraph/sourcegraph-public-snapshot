@@ -2,7 +2,6 @@ package github
 
 import (
 	"context"
-	"log"
 	"net/url"
 	"strconv"
 	"strings"
@@ -115,12 +114,23 @@ func (p *Provider) FetchUserPermsByToken(ctx context.Context, token string, opts
 		}
 	}
 
-	// Now, we check for groups this user belongs to that give access to additional
+	// Now, we check for seenGroups this user belongs to that give access to additional
 	// repositories.
-	//
-	// Track groups in this map of "org/team":group so that we don't check GitHub teams
-	// that this user already has access to through Organization membership.
-	groups := make(map[string]cachedGroup)
+	groups := make([]cachedGroup, 0)
+	seenGroups := make(map[string]bool)
+	syncGroup := func(org, team string) {
+		if team != "" {
+			// if a team's repos is a subset of a organization's, don't sync. if an org
+			// has default read+ permissions, a team's orgs will always be a strict subset
+			// of the org's.
+			if _, exists := seenGroups[team]; exists {
+				return
+			}
+		}
+		g := cachedGroup{Org: org, Team: team}
+		seenGroups[g.key()] = true
+		groups = append(groups, g)
+	}
 	// Get orgs
 	hasNextPage = true
 	for page := 1; hasNextPage; page++ {
@@ -131,10 +141,7 @@ func (p *Provider) FetchUserPermsByToken(ctx context.Context, token string, opts
 		}
 		for _, org := range orgs {
 			if canViewOrgRepos(org) {
-				g := cachedGroup{
-					Org: org.Login,
-				}
-				groups[g.key()] = g
+				syncGroup(org.Login, "")
 			}
 		}
 	}
@@ -147,26 +154,18 @@ func (p *Provider) FetchUserPermsByToken(ctx context.Context, token string, opts
 			return perms, err
 		}
 		for _, team := range teams {
-			// if a team's repos is a subset of a organization's, don't sync
-			if _, exists := groups[team.Organization.Login]; !exists {
-				// only sync teams with repos
-				if team.ReposCount > 0 {
-					g := cachedGroup{
-						Org:  team.Organization.Login,
-						Team: team.Slug,
-					}
-					groups[g.key()] = g
-				}
+			// only sync teams with repos
+			if team.ReposCount > 0 {
+				syncGroup(team.Organization.Login, team.Slug)
 			}
 		}
 	}
 
 	// Get repos from groups, cached if possible.
 	for _, group := range groups {
-		log.Printf("")
 		groupPerms, exists := p.groupsCache.getGroup(group.Org, group.Team)
 		if exists {
-			if opts != nil && !opts.InvalidateCaches {
+			if opts != nil && opts.InvalidateCaches {
 				// invalidate this cache and sync again
 				p.groupsCache.deleteGroup(groupPerms)
 				groupPerms.Repositories = nil

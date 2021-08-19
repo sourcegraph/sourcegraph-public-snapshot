@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/gregjones/httpcache"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
@@ -21,6 +22,10 @@ func mustURL(t *testing.T, u string) *url.URL {
 		t.Fatal(err)
 	}
 	return parsed
+}
+
+func memGroupsCache() *groupsCache {
+	return &groupsCache{cache: httpcache.NewMemoryCache()}
 }
 
 func TestProvider_FetchUserPerms(t *testing.T) {
@@ -87,24 +92,28 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 
 			return []*github.Repository{}, false, 1, nil
 		}
+
+		mockOrgNoRead      = &github.OrgDetails{Org: github.Org{Login: "not-sourcegraph"}, DefaultRepositoryPermission: "none"}
+		mockOrgRead        = &github.OrgDetails{Org: github.Org{Login: "sourcegraph"}, DefaultRepositoryPermission: "read"}
 		mockListOrgDetails = func(ctx context.Context, page int) (orgs []*github.OrgDetails, hasNextPage bool, rateLimitCost int, err error) {
 			switch page {
 			case 1:
 				return []*github.OrgDetails{
 					// does not have access to this org
-					{Org: github.Org{Login: "not-sourcegraph"}, DefaultRepositoryPermission: "none"},
+					mockOrgNoRead,
 				}, true, 1, nil
 			case 2:
 				return []*github.OrgDetails{
 					// has access to this org
-					{Org: github.Org{Login: "sourcegraph"}, DefaultRepositoryPermission: "read"},
+					mockOrgRead,
 				}, false, 1, nil
 			}
 			return nil, false, 1, nil
 		}
+
 		mockListOrgRepositories = func(ctx context.Context, org string, page int, repoType string) (repos []*github.Repository, hasNextPage bool, rateLimitCost int, err error) {
 			switch org {
-			case "sourcegraph":
+			case mockOrgRead.Login:
 				switch page {
 				case 1:
 					return []*github.Repository{
@@ -143,6 +152,7 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 
 		p := NewProvider("", ProviderOptions{GitHubURL: mustURL(t, "https://github.com")})
 		p.client = mockClient
+		p.groupsCache = memGroupsCache()
 
 		authData := json.RawMessage(`{"access_token": "my_access_token"}`)
 		repoIDs, err := p.FetchUserPerms(context.Background(),
@@ -175,7 +185,7 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 		}
 	})
 
-	t.Run("uncached: user in orgs", func(t *testing.T) {
+	t.Run("user in orgs", func(t *testing.T) {
 		mockClient := &mockClient{
 			MockListAffiliatedRepositories:      mockListAffiliatedRepositories,
 			MockGetAuthenticatedUserOrgsDetails: mockListOrgDetails,
@@ -188,6 +198,7 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 
 		p := NewProvider("", ProviderOptions{GitHubURL: mustURL(t, "https://github.com")})
 		p.client = mockClient
+		p.groupsCache = memGroupsCache()
 
 		authData := json.RawMessage(`{"access_token": "my_access_token"}`)
 		repoIDs, err := p.FetchUserPerms(context.Background(),
@@ -200,7 +211,7 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 					AuthData: &authData,
 				},
 			},
-			&authz.FetchPermOptions{InvalidateCaches: true},
+			nil,
 		)
 		if err != nil {
 			t.Fatal(err)
@@ -218,7 +229,7 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 		}
 	})
 
-	t.Run("uncached: user in orgs and teams", func(t *testing.T) {
+	t.Run("user in orgs and teams", func(t *testing.T) {
 		mockClient := &mockClient{
 			MockListAffiliatedRepositories:      mockListAffiliatedRepositories,
 			MockGetAuthenticatedUserOrgsDetails: mockListOrgDetails,
@@ -227,14 +238,14 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 				case 1:
 					return []*github.Team{
 						// should not get repos from this team because parent org has default read permissions
-						{Organization: github.Org{Login: "sourcegraph"}, Name: "ns team", Slug: "ns-team"},
+						{Organization: mockOrgRead.Org, Name: "ns team", Slug: "ns-team"},
 						// should not get repos from this team since it has no repos
-						{Organization: github.Org{Login: "not-sourcegraph"}, Name: "ns team", Slug: "ns-team", ReposCount: 0},
+						{Organization: mockOrgNoRead.Org, Name: "ns team", Slug: "ns-team", ReposCount: 0},
 					}, true, 1, nil
 				case 2:
 					return []*github.Team{
 						// should get repos from this team
-						{Organization: github.Org{Login: "not-sourcegraph"}, Name: "ns team 2", Slug: "ns-team-2", ReposCount: 3},
+						{Organization: mockOrgNoRead.Org, Name: "ns team 2", Slug: "ns-team-2", ReposCount: 3},
 					}, false, 1, nil
 				}
 				return nil, false, 1, nil
@@ -265,6 +276,7 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 
 		p := NewProvider("", ProviderOptions{GitHubURL: mustURL(t, "https://github.com")})
 		p.client = mockClient
+		p.groupsCache = memGroupsCache()
 
 		authData := json.RawMessage(`{"access_token": "my_access_token"}`)
 		repoIDs, err := p.FetchUserPerms(context.Background(),
@@ -295,6 +307,112 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 		if diff := cmp.Diff(wantRepoIDs, repoIDs.Exacts); diff != "" {
 			t.Fatalf("RepoIDs mismatch (-want +got):\n%s", diff)
 		}
+	})
+
+	t.Run("cache and invalidate: user in orgs and teams", func(t *testing.T) {
+		callsToListOrgRepos := 0
+		callsToListTeamRepos := 0
+		mockClient := &mockClient{
+			MockListAffiliatedRepositories:      mockListAffiliatedRepositories,
+			MockGetAuthenticatedUserOrgsDetails: mockListOrgDetails,
+			MockGetAuthenticatedUserTeams: func(ctx context.Context, page int) (teams []*github.Team, hasNextPage bool, rateLimitCost int, err error) {
+				return []*github.Team{
+					{Organization: mockOrgNoRead.Org, Name: "ns team 2", Slug: "ns-team-2", ReposCount: 3},
+				}, false, 1, nil
+			},
+			MockListOrgRepositories: func(ctx context.Context, org string, page int, repoType string) (repos []*github.Repository, hasNextPage bool, rateLimitCost int, err error) {
+				callsToListOrgRepos++
+				return mockListOrgRepositories(ctx, org, page, repoType)
+			},
+			MockListTeamRepositories: func(ctx context.Context, org, team string, page int) (repos []*github.Repository, hasNextPage bool, rateLimitCost int, err error) {
+				callsToListTeamRepos++
+				return []*github.Repository{
+					{ID: "MDEwOlJlcG9zaXRvcnkyNDI2nsteam1="},
+				}, false, 1, nil
+			},
+		}
+
+		p := NewProvider("", ProviderOptions{GitHubURL: mustURL(t, "https://github.com")})
+		p.client = mockClient
+		memCache := memGroupsCache()
+		p.groupsCache = memCache
+
+		authData := json.RawMessage(`{"access_token": "my_access_token"}`)
+		account := &extsvc.Account{
+			AccountSpec: extsvc.AccountSpec{
+				ServiceType: "github",
+				ServiceID:   "https://github.com/",
+			},
+			AccountData: extsvc.AccountData{
+				AuthData: &authData,
+			},
+		}
+		wantRepoIDs := []extsvc.RepoID{
+			"MDEwOlJlcG9zaXRvcnkyNTI0MjU2NzE=",
+			"MDEwOlJlcG9zaXRvcnkyNDQ1MTc1MzY=",
+			"MDEwOlJlcG9zaXRvcnkyNDI2NTEwMDA=",
+			"MDEwOlJlcG9zaXRvcnkyNDQ1MTc1234=",
+			"MDEwOlJlcG9zaXRvcnkyNDI2NTE5678=",
+			"MDEwOlJlcG9zaXRvcnkyNDI2nsteam1=",
+		}
+
+		// first call
+		t.Run("first call", func(t *testing.T) {
+			repoIDs, err := p.FetchUserPerms(context.Background(),
+				account,
+				nil,
+			)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if callsToListOrgRepos == 0 || callsToListTeamRepos == 0 {
+				t.Fatalf("expected repos to be listed: callsToListOrgRepos=%d, callsToListTeamRepos=%d",
+					callsToListOrgRepos, callsToListTeamRepos)
+			}
+			if diff := cmp.Diff(wantRepoIDs, repoIDs.Exacts); diff != "" {
+				t.Fatalf("RepoIDs mismatch (-want +got):\n%s", diff)
+			}
+		})
+
+		// second call should use cache
+		t.Run("second call", func(t *testing.T) {
+			callsToListOrgRepos = 0
+			callsToListTeamRepos = 0
+			repoIDs, err := p.FetchUserPerms(context.Background(),
+				account,
+				&authz.FetchPermOptions{InvalidateCaches: false},
+			)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if callsToListOrgRepos > 0 || callsToListTeamRepos > 0 {
+				t.Fatalf("expected repos not to be listed: callsToListOrgRepos=%d, callsToListTeamRepos=%d",
+					callsToListOrgRepos, callsToListTeamRepos)
+			}
+			if diff := cmp.Diff(wantRepoIDs, repoIDs.Exacts); diff != "" {
+				t.Fatalf("RepoIDs mismatch (-want +got):\n%s", diff)
+			}
+		})
+
+		// third call should make a fresh query when invalidating cache
+		t.Run("third call", func(t *testing.T) {
+			callsToListOrgRepos = 0
+			callsToListTeamRepos = 0
+			repoIDs, err := p.FetchUserPerms(context.Background(),
+				account,
+				&authz.FetchPermOptions{InvalidateCaches: true},
+			)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if callsToListOrgRepos == 0 || callsToListTeamRepos == 0 {
+				t.Fatalf("expected repos to be listed: callsToListOrgRepos=%d, callsToListTeamRepos=%d",
+					callsToListOrgRepos, callsToListTeamRepos)
+			}
+			if diff := cmp.Diff(wantRepoIDs, repoIDs.Exacts); diff != "" {
+				t.Fatalf("RepoIDs mismatch (-want +got):\n%s", diff)
+			}
+		})
 	})
 }
 
