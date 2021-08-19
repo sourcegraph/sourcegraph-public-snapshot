@@ -32,7 +32,13 @@ func TestCodeHostOf(t *testing.T) {
 		repo:      "GITHUB.COM/foo/bar",
 		codehosts: PublicCodeHosts,
 		want:      GitHubDotCom,
-	}} {
+	}, {
+		name:      "invalid",
+		repo:      "github.com.example.com/foo/bar",
+		codehosts: PublicCodeHosts,
+		want:      nil,
+	},
+	} {
 		t.Run(tc.name, func(t *testing.T) {
 			have := CodeHostOf(tc.repo, tc.codehosts...)
 			if have != tc.want {
