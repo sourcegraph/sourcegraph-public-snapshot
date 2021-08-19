@@ -82,15 +82,13 @@ See the [overlays guide](#overlays) to learn about the [overlays we provide](#pr
 
 ### Applying manifests
 
-Most of our guides will reference a `kubectl-apply-all.sh` script that you run to apply changes to the [Kubernetes](./index.md#kubernetes) manifests to your cluster, for example:
-
+Apply - changes to the [Kubernetes](./index.md#kubernetes) manifests to your cluster:
 ```sh
 ./kubectl-apply-all.sh
 ```
 
-By default, this script applies our base manifests using [`kubectl apply`](https://kubernetes.io/docs/reference/generated/kubectl/kubectl-commands#apply) with a variety of arguments specific to the [reference repository](./index.md#reference-repository)'s layout.
-
-If you have specific commands that should be run whenever you apply your manifests, you should modify this script as needed.
+> By default, this script applies our base manifests using [`kubectl apply`](https://kubernetes.io/docs/reference/generated/kubectl/kubectl-commands#apply) with a variety of arguments specific to the [reference repository](./index.md#reference-repository)'s layout.
+> If you have specific commands that should be run whenever you apply your manifests, you should modify this script as needed.
 For example, if you use [overlays to make changes to the manifests](#overlays), you should modify this script to apply your generated cluster instead.
 
 Watch - Next verify the deployment has started:
