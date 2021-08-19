@@ -67,8 +67,7 @@ func NormalizeBaseURL(baseURL *url.URL) *url.URL {
 // 2. Repo Owner
 // 3. Repo Name
 //
-// For example:
-// github.com/sourcegraph/sourcegraph
+// For example: github.com/sourcegraph/sourcegraph
 //
 // If "name" does not adhere to this format or the Codehost URL does not match the list of
 // "codehosts" given as the argument to CodeHostOf, it will return nil, otherwise it retuns the
