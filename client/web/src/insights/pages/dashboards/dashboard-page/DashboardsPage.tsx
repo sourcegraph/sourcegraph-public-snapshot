@@ -41,7 +41,7 @@ export const DashboardsPage: React.FunctionComponent<DashboardsPageProps> = prop
 
     useEffect(() => {
         telemetryService.logViewEvent('Insights')
-    }, [telemetryService])
+    }, [telemetryService, dashboardID])
 
     const handleAddMoreInsightClick = (): void => {
         telemetryService.log('InsightAddMoreClick')
