@@ -208,25 +208,7 @@ kubectl exec -it $pgsql_POD_NAME -- bash -c 'psql -v ERROR_ON_STOP=1 --username 
 kubectl exec -it $codeintel-db_POD_NAME -- bash -c 'psql -v ERROR_ON_STOP=1 --username sg -f /tmp/condeintel_db.out sg'
 ```
 
-##### 5. Start the remaining Sourcegraph services by running the following command from the root of the [deploy-sourcegraph](https://github.com/sourcegraph/deploy-sourcegraph) directory
-
-```bash
- ./kubectl-apply-all.sh
-```
-
-##### 6. Verify the deployment has started
-
-```bash
-kubectl get pods -A -o wide --watch
-```
-
-##### 7. After deployment is completed, verify Sourcegraph is running by temporarily making the frontend port accessible:
-
-```
-kubectl port-forward svc/sourcegraph-frontend 3080:30080
-```
-
-##### 8. Browse to your Sourcegraph deployment, login and verify your existing configuration has been restored
+##### 5. Start the remaining Sourcegraph services by running the following the command from the root of the [deploy-sourcegraph](https://github.com/sourcegraph/deploy-sourcegraph) directory and following the steps in [Sourcegraph - Kubernetes applying manifests](https://docs.sourcegraph.com/admin/install/kubernetes/configure#applying-manifests)
 
 #### Restoring Sourcegraph databases into an existing environment
 
@@ -270,22 +252,4 @@ kubectl exec -it $pgsql_POD_NAME -- bash -c 'psql -v ERROR_ON_STOP=1 --username 
 kubectl exec -it $codeintel-db_POD_NAME -- bash -c 'psql -v ERROR_ON_STOP=1 --username sg -f /tmp/condeintel_db.out sg'
 ```
 
-##### 7. Start the remaining Sourcegraph services by running the following command from the root of the [deploy-sourcegraph](https://github.com/sourcegraph/deploy-sourcegraph) directory
-
-```bash
- ./kubectl-apply-all.sh
-```
-
-##### 8. Verify the deployment has started
-
-```bash
-kubectl get pods -A -o wide --watch
-```
-
-##### 9. After deployment is completed, verify Sourcegraph is running by temporarily making the frontend port accessible:
-
-```
-kubectl port-forward svc/sourcegraph-frontend 3080:30080 --namespace=$NAMESPACE
-```
-
-##### 10. Browse to your Sourcegraph deployment, login and verify your existing configuration has been restored
+##### 7. Start the remaining Sourcegraph services by running the following the command from the root of the [deploy-sourcegraph](https://github.com/sourcegraph/deploy-sourcegraph) directory and following the steps in [Sourcegraph - Kubernetes applying manifests](https://docs.sourcegraph.com/admin/install/kubernetes/configure#applying-manifests)
