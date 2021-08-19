@@ -9,43 +9,23 @@ $default-icon-colors: $oc-grape-7, $oc-violet-7, $oc-cyan-9, $oc-indigo-7, $oc-p
         flex: 0 0 auto;
         // We won't need hacky container width in the redesign.
         // Remove this var and use --action-item-width everywhere.
-        width: var(--action-item-container-width);
-        background-color: var(--color-bg-2);
+        width: var(--action-item-width);
+        background-color: var(--body-bg);
         list-style: none;
 
-        .theme-redesign & {
-            width: var(--action-item-width);
-            background-color: var(--body-bg);
-
-            // Only rendered for redesign
-            &--collapsed {
-                width: 0.5rem;
-            }
+        // Only rendered for redesign
+        &--collapsed {
+            width: 0.5rem;
         }
     }
 
     &__toggle-container {
         width: var(--action-item-width);
         background-color: var(--color-bg-2);
-        padding-top: 0.375rem;
-        padding-bottom: 0.25rem;
-
-        .theme-redesign & {
-            background-color: var(--body-bg);
-            padding-top: 0;
-            padding-bottom: 0;
-        }
+        background-color: var(--body-bg);
 
         &--open {
-            border-bottom: solid var(--color-bg-2) 1px;
             margin-bottom: -0.0625rem;
-
-            .theme-redesign & {
-                // Don't need to cover RepoHeader border since it doesn't exist in the redesign.
-                // Simplify &__.toggle-container (by removing negative margin-botton) when we remove old styles.
-                border-bottom: none;
-                margin-bottom: 0;
-            }
         }
     }
 
@@ -55,36 +35,17 @@ $default-icon-colors: $oc-grape-7, $oc-violet-7, $oc-cyan-9, $oc-indigo-7, $oc-p
         width: 1.25rem;
         background-color: var(--border-color);
         left: 0.625rem;
-
-        &:first-of-type {
-            // Special case (pre-redesign): action items toggle belongs to the repo header, which
-            // had 1px border-bottom. We used to have to cover it with this divider.
-            top: 0;
-            transform: translateY(-0.0625rem);
-
-            .theme-redesign & {
-                top: auto;
-                transform: none;
-            }
-        }
     }
 
     // Used to visually separate action items bar toggle from repo header actions.
     &__divider-vertical {
-        position: absolute;
         height: 1.25rem;
         width: 0.0625rem;
         top: 0.75rem;
-        transform: translateX(-0.0625rem);
+        align-self: center;
 
         border-radius: 2px;
         background-color: var(--border-color);
-
-        .theme-redesign & {
-            position: static;
-            transform: none;
-            align-self: center;
-        }
     }
 
     &__list {
@@ -107,24 +68,18 @@ $default-icon-colors: $oc-grape-7, $oc-violet-7, $oc-cyan-9, $oc-indigo-7, $oc-p
     }
 
     &__action {
-        width: var(--action-item-width);
+        width: 2rem;
         height: 2rem;
-
-        .theme-redesign & {
-            width: 2rem;
-            margin-left: 0.25rem;
-            border-radius: 0.1875rem;
-        }
+        margin-left: 0.25rem;
+        border-radius: 0.1875rem;
 
         &:hover {
             background-color: var(--color-bg-2);
         }
 
         &--toggle {
-            .theme-redesign & {
-                height: auto;
-                padding: 0.25rem;
-            }
+            height: auto;
+            padding: 0.25rem;
         }
 
         &--pressed {
@@ -183,9 +138,7 @@ $default-icon-colors: $oc-grape-7, $oc-violet-7, $oc-cyan-9, $oc-indigo-7, $oc-p
 
     // e.g. "close extensions panel", "add extensions"
     &__aux-icon {
-        .theme-redesign & {
-            color: var(--icon-color);
-        }
+        color: var(--icon-color);
     }
 
     &__scroll {
