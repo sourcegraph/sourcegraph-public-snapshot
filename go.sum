@@ -1370,6 +1370,8 @@ github.com/sourcegraph/go-lsp v0.0.0-20200429204803-219e11d77f5d h1:afLbh+ltiygT
 github.com/sourcegraph/go-lsp v0.0.0-20200429204803-219e11d77f5d/go.mod h1:SULmZY7YNBsvNiQbrb/BEDdEJ84TGnfyUQxaHt8t8rY=
 github.com/sourcegraph/go-rendezvous v0.0.0-20210817141400-b50ebb50dc8a h1:7aQSpVGMHqodrTJDfC6P3xI97h4FCp9OUEwQPjr/xZ8=
 github.com/sourcegraph/go-rendezvous v0.0.0-20210817141400-b50ebb50dc8a/go.mod h1:IhIP+gIbf0TKVMjcEEwUBjomZRjrPnlZbzT2Wac7XA0=
+github.com/sourcegraph/go-rendezvous v0.0.0-20210819140028-cdd914a24376 h1:XYZBi/XEMLcTBsB2xbgk3Qljfs3Xt7jps2ixQh+2V4U=
+github.com/sourcegraph/go-rendezvous v0.0.0-20210819140028-cdd914a24376/go.mod h1:IhIP+gIbf0TKVMjcEEwUBjomZRjrPnlZbzT2Wac7XA0=
 github.com/sourcegraph/gologin v1.0.2-0.20181110030308-c6f1b62954d8 h1:K7hzuWsJGoU8ILHJzrXxsuvXvLHpP/g4iUk7VFj2lY8=
 github.com/sourcegraph/gologin v1.0.2-0.20181110030308-c6f1b62954d8/go.mod h1:0VfoEApmSPgPhnePllwhrB4vwCUkI0K0w8aueOgoJQI=
 github.com/sourcegraph/gosaml2 v0.6.1-0.20210128133756-84151d087b10 h1:lLSG41QZ5I81jSOakWLB1qEXZhJ65spo81f4SEd8Z20=

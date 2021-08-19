@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"hash/crc32"
 	"os"
-	"sort"
 	"strings"
 	"sync"
 
@@ -142,8 +141,8 @@ func (m *Map) GetMany(keys ...string) ([]string, error) {
 	return vals, nil
 }
 
-// Endpoints returns a set of all addresses. Do not modify the returned value.
-func (m *Map) Endpoints() (map[string]struct{}, error) {
+// Endpoints returns a list of all addresses. Do not modify the returned value.
+func (m *Map) Endpoints() ([]string, error) {
 	m.init.Do(m.discover)
 
 	m.mu.RLock()
@@ -188,8 +187,6 @@ func (m *Map) sync(ch chan endpoints, ready chan struct{}) {
 			m.err = eps.Error
 			m.mu.Unlock()
 		case len(eps.Endpoints) > 0:
-			sort.Strings(eps.Endpoints)
-
 			metricEndpointSize.WithLabelValues(eps.Service).Set(float64(len(eps.Endpoints)))
 
 			hm := newConsistentHash(eps.Endpoints)
