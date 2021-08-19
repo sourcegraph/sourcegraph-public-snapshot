@@ -20,7 +20,7 @@ describe('[VISUAL] Code insights page', () => {
     let testContext: WebIntegrationTestContext
 
     before(async () => {
-        driver = await createDriverForTest()
+        driver = await createDriverForTest({ defaultViewport: { width: 1920 } })
     })
 
     after(() => driver?.close())
@@ -176,7 +176,7 @@ describe('[VISUAL] Code insights page', () => {
                     series: [],
                 },
                 'codeStatsInsights.insight.langUsage': {},
-                'insights.allrepos': {}
+                'insights.allrepos': {},
             },
             insightExtensionsMocks: {
                 'codeStatsInsights.insight.langUsage': CODE_STATS_INSIGHT_LANG_USAGE,
