@@ -151,6 +151,23 @@ type ZoektParameters struct {
 	Zoekt *backend.Zoekt
 }
 
+// SearcherParameters the inputs for a search fulfilled by the Searcher service
+// (cmd/searcher). Searcher fulfills (1) unindexed literal and regexp searches
+// and (2) structural search requests.
+type SearcherParameters struct {
+	SearcherURLs *endpoint.Map
+	PatternInfo  *TextPatternInfo
+
+	// UseFullDeadline indicates that the search should try do as much work as
+	// it can within context.Deadline. If false the search should try and be
+	// as fast as possible, even if a "slow" deadline is set.
+	//
+	// For example searcher will wait to full its archive cache for a
+	// repository if this field is true. Another example is we set this field
+	// to true if the user requests a specific timeout or maximum result size.
+	UseFullDeadline bool
+}
+
 // TextParameters are the parameters passed to a search backend. It contains the Pattern
 // to search for, as well as the hydrated list of repository revisions to
 // search. It defines behavior for text search on repository names, file names, and file content.
