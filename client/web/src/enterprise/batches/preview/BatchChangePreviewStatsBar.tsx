@@ -29,7 +29,7 @@ const actionClassNames = classNames(
 export interface BatchChangePreviewStatsBarProps {
     batchSpec: BatchSpecFields
     /** For testing purposes only. */
-    queryApplyPreviewStats: typeof _queryApplyPreviewStats
+    queryApplyPreviewStats?: typeof _queryApplyPreviewStats
 }
 
 export const BatchChangePreviewStatsBar: React.FunctionComponent<BatchChangePreviewStatsBarProps> = ({
