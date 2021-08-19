@@ -74,10 +74,10 @@ Commit author is determined at the time of running `src batch [apply|preview]`. 
 
 ### Why is the checkbox on my changeset disabled when I'm previewing a batch change?
 
-Since Sourcegraph 3.31, it is possible to publish many types of changeset when previewing a batch change by modifying the publication state for the changeset directly from the UI (see ["Publishing changesets"](how-tos/publishing_changesets.md#from-the-preview)). However, not every changeset can be published by Sourcegraph. By hovering over your changeset's disabled checkbox, you can see the reason why that specific changeset is not currently publishable. The most common reasons include:
+Since Sourcegraph 3.31, it is possible to publish many types of changeset when previewing a batch change by modifying the publication state for the changeset directly from the UI (see ["Publishing changesets"](../how-tos/publishing_changesets.md#from-the-preview)). However, not every changeset can be published by Sourcegraph. By hovering over your changeset's disabled checkbox, you can see the reason why that specific changeset is not currently publishable. The most common reasons include:
 
 - The changeset is already published (we cannot unpublish a changeset, or convert it back to a draft).
-- The changeset's publication state is being controlled from your batch spec file (i.e. you have the [`published` flag set in your batch spec](references/batch_spec_yaml_reference.md#changesettemplate-published)); the batch spec takes precedence over the UI.
+- The changeset's publication state is being controlled from your batch spec file (i.e. you have the [`published` flag set in your batch spec](batch_spec_yaml_reference.md#changesettemplate-published)); the batch spec takes precedence over the UI.
 - You do not have permission to publish to the repository the changeset would be opened against.
 - The changeset was imported (and therefore, Batch Changes does not own it).
 
