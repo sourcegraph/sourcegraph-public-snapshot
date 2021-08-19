@@ -9,6 +9,8 @@ import MenuIcon from 'mdi-react/MenuIcon'
 import MenuUpIcon from 'mdi-react/MenuUpIcon'
 import React, { useCallback, useMemo, useState } from 'react'
 
+import { ActionItem } from '@sourcegraph/shared/src/actions/ActionItem'
+import { ActionsContainer } from '@sourcegraph/shared/src/actions/ActionsContainer'
 import { ContributableMenu } from '@sourcegraph/shared/src/api/protocol'
 import { ButtonLink } from '@sourcegraph/shared/src/components/LinkOrButton'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
@@ -21,7 +23,6 @@ import { PatternTypeProps, CaseSensitivityProps } from '..'
 import { AuthenticatedUser } from '../../auth'
 import { CodeMonitoringProps } from '../../code-monitoring'
 import { CodeMonitoringLogo } from '../../code-monitoring/CodeMonitoringLogo'
-import { WebActionsNavItems as ActionsNavItems } from '../../components/shared'
 import { SearchPatternType } from '../../graphql-operations'
 import { BookmarkRadialGradientIcon, CodeMonitorRadialGradientIcon } from '../CtaIcons'
 import styles from '../FeatureTour.module.scss'
@@ -311,14 +312,25 @@ export const SearchResultsInfoBar: React.FunctionComponent<SearchResultsInfoBarP
                 <div className="search-results-info-bar__expander" />
 
                 <ul className="nav align-items-center">
-                    <ActionsNavItems
+                    <ActionsContainer
                         {...props}
                         extraContext={extraContext}
                         menu={ContributableMenu.SearchResultsToolbar}
-                        wrapInList={false}
-                        showLoadingSpinnerDuringExecution={true}
-                        actionItemClass="btn btn-outline-secondary mr-2 text-decoration-none btn-sm"
-                    />
+                    >
+                        {actionItems => (
+                            <>
+                                {actionItems.map(actionItem => (
+                                    <ActionItem
+                                        {...props}
+                                        {...actionItem}
+                                        key={actionItem.action.id}
+                                        showLoadingSpinnerDuringExecution={false}
+                                        className="btn btn-outline-secondary mr-2 text-decoration-none btn-sm"
+                                    />
+                                ))}
+                            </>
+                        )}
+                    </ActionsContainer>
 
                     {(codeInsightsButton || createCodeMonitorButton || saveSearchButton) && (
                         <li className="search-results-info-bar__divider" aria-hidden="true" />
