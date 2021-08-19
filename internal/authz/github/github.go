@@ -76,7 +76,7 @@ func (p *Provider) Validate() (problems []string) {
 // FetchUserPermsByToken fetches all the private repo ids that the token can access.
 //
 // This may return a partial result if an error is encountered, e.g. via rate limits.
-func (p *Provider) FetchUserPermsByToken(ctx context.Context, token string) (*authz.ExternalUserPermissions, error) {
+func (p *Provider) FetchUserPermsByToken(ctx context.Context, token string, opts *authz.FetchPermOptions) (*authz.ExternalUserPermissions, error) {
 	// 🚨 SECURITY: Use user token is required to only list repositories the user has access to.
 	client := p.client.WithToken(token)
 
@@ -159,11 +159,18 @@ func (p *Provider) FetchUserPermsByToken(ctx context.Context, token string) (*au
 
 	// Get repos from groups, cached if possible.
 	for _, group := range groups {
-		groupPerms, exists := p.groupsCache.getGroupPermsFromCache(group.Org, group.Team)
+		groupPerms, exists := p.groupsCache.getGroup(group.Org, group.Team)
 		if exists {
-			addRepoToPerms(groupPerms.Repositories...)
-			continue
+			if opts != nil && !opts.InvalidateCaches {
+				// invalidate this cache
+				p.groupsCache.deleteGroup(*groupPerms)
+			} else {
+				// use cached perms and continue
+				addRepoToPerms(groupPerms.Repositories...)
+				continue
+			}
 		}
+
 		isOrg := group.Team == ""
 
 		hasNextPage = true
@@ -176,7 +183,7 @@ func (p *Provider) FetchUserPermsByToken(ctx context.Context, token string) (*au
 			}
 			if err != nil {
 				// track effort so far in cache
-				p.groupsCache.addGroupPermsToCache(*groupPerms)
+				p.groupsCache.setGroup(*groupPerms)
 				return perms, err
 			}
 			for _, r := range repos {
@@ -187,7 +194,7 @@ func (p *Provider) FetchUserPermsByToken(ctx context.Context, token string) (*au
 		}
 
 		// add sync'd repos to cache
-		p.groupsCache.addGroupPermsToCache(*groupPerms)
+		p.groupsCache.setGroup(*groupPerms)
 	}
 
 	return perms, nil
@@ -201,7 +208,7 @@ func (p *Provider) FetchUserPermsByToken(ctx context.Context, token string) (*au
 // callers to decide whether to discard.
 //
 // API docs: https://developer.github.com/v3/repos/#list-repositories-for-the-authenticated-user
-func (p *Provider) FetchUserPerms(ctx context.Context, account *extsvc.Account) (*authz.ExternalUserPermissions, error) {
+func (p *Provider) FetchUserPerms(ctx context.Context, account *extsvc.Account, opts *authz.FetchPermOptions) (*authz.ExternalUserPermissions, error) {
 	if account == nil {
 		return nil, errors.New("no account provided")
 	} else if !extsvc.IsHostOfAccount(p.codeHost, account) {
@@ -216,7 +223,7 @@ func (p *Provider) FetchUserPerms(ctx context.Context, account *extsvc.Account) 
 		return nil, errors.New("no token found in the external account data")
 	}
 
-	return p.FetchUserPermsByToken(ctx, tok.AccessToken)
+	return p.FetchUserPermsByToken(ctx, tok.AccessToken, opts)
 }
 
 // FetchRepoPerms returns a list of user IDs (on code host) who have read access to

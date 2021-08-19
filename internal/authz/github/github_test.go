@@ -25,7 +25,7 @@ func mustURL(t *testing.T, u string) *url.URL {
 func TestProvider_FetchUserPerms(t *testing.T) {
 	t.Run("nil account", func(t *testing.T) {
 		p := NewProvider("", ProviderOptions{GitHubURL: mustURL(t, "https://github.com")})
-		_, err := p.FetchUserPerms(context.Background(), nil)
+		_, err := p.FetchUserPerms(context.Background(), nil, nil)
 		want := "no account provided"
 		got := fmt.Sprintf("%v", err)
 		if got != want {
@@ -42,6 +42,7 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 					ServiceID:   "https://gitlab.com/",
 				},
 			},
+			nil,
 		)
 		want := `not a code host of the account: want "https://gitlab.com/" but have "https://github.com/"`
 		got := fmt.Sprintf("%v", err)
@@ -60,6 +61,7 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 				},
 				AccountData: extsvc.AccountData{},
 			},
+			nil,
 		)
 		want := `no token found in the external account data`
 		got := fmt.Sprintf("%v", err)
@@ -105,6 +107,7 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 				AuthData: &authData,
 			},
 		},
+		nil,
 	)
 	if err != nil {
 		t.Fatal(err)
