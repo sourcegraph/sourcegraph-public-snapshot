@@ -1,6 +1,5 @@
 import classnames from 'classnames'
 import DatabaseIcon from 'mdi-react/DatabaseIcon'
-import ProgressWrench from 'mdi-react/ProgressWrenchIcon'
 import React, { useCallback, useContext, useRef, useState } from 'react'
 
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
@@ -25,7 +24,7 @@ import { InsightErrorContent } from '../insight-card/components/insight-error-co
 import { InsightLoadingContent } from '../insight-card/components/insight-loading-content/InsightLoadingContent'
 import { InsightContentCard } from '../insight-card/InsightContentCard'
 
-import { BackendAlertOverlay } from './BackendAlertOverlay'
+import { AlertOverlay } from './AlertOverlay'
 import styles from './BackendInsight.module.scss'
 import { DrillDownFiltersAction } from './components/drill-down-filters-action/DrillDownFiltersPanel'
 import { DrillDownInsightCreationFormValues } from './components/drill-down-filters-panel/components/drill-down-insight-creation-form/DrillDownInsightCreationForm'
@@ -136,25 +135,6 @@ export const BackendInsight: React.FunctionComponent<BackendInsightProps> = prop
 
         return
     }
-
-    interface AlertOverLayProps {
-        isFetchingHistoricalData?: boolean
-        hasNoData: boolean
-    }
-    const AlertOverlay: React.FunctionComponent<AlertOverLayProps> = ({ isFetchingHistoricalData, hasNoData }) =>
-        isFetchingHistoricalData ? (
-            <BackendAlertOverlay
-                title="This insight is still being processed"
-                description="Datapoints shown may be undercounted."
-            >
-                <ProgressWrench className={classnames('mb-3')} size={33} />
-            </BackendAlertOverlay>
-        ) : hasNoData ? (
-            <BackendAlertOverlay
-                title="No data to display"
-                description="We couldn’t find any matches for this insight."
-            />
-        ) : null
 
     return (
         <InsightContentCard
