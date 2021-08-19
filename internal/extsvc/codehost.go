@@ -62,7 +62,10 @@ func NormalizeBaseURL(baseURL *url.URL) *url.URL {
 }
 
 // CodeHostOf returns the CodeHost of the given repo, if any. A correct repo name will have three
-// parts separated by a "/": 1. Codehost URL 2. Repo Owner 3. Repo Name
+// parts separated by a "/":
+// 1. Codehost URL
+// 2. Repo Owner
+// 3. Repo Name
 //
 // For example:
 // github.com/sourcegraph/sourcegraph
