@@ -134,8 +134,10 @@ export const FormSeriesInput: React.FunctionComponent<FormSeriesInputProps> = pr
                     <span>
                         {!isSearchQueryDisabled ? (
                             <>
-                                Do not include the <code>repo:</code> filter as it will be added automatically for the
-                                repositories you included above.
+                                Do not include the <code>repo:</code> filter; if needed, it will be added automatically.
+                                <br />
+                                Tip: include <code>archived:no</code> and <code>fork:no</code> if you don't want results
+                                from archived or forked repos.
                             </>
                         ) : (
                             <>
