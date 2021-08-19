@@ -38,7 +38,7 @@ describe('[VISUAL] Code insights page', () => {
 
     async function takeChartSnapshot(name: string): Promise<void> {
         await driver.page.waitForSelector('[data-testid="line-chart__content"] svg circle')
-        await delay(500)
+        await delay(1000)
         await percySnapshotWithVariants(driver.page, name)
     }
 
@@ -83,9 +83,7 @@ describe('[VISUAL] Code insights page', () => {
                     repositories: [],
                     series: [],
                 },
-                'insights.allrepos': {
-                    'searchInsights.insight.backend_ID_001': {},
-                },
+                'insights.allrepos': {},
             },
             insightExtensionsMocks: {
                 'searchInsights.insight.teamSize': INSIGHT_VIEW_TEAM_SIZE,
@@ -131,9 +129,7 @@ describe('[VISUAL] Code insights page', () => {
                     repositories: [],
                     series: [],
                 },
-                'insights.allrepos': {
-                    'searchInsights.insight.backend_ID_001': {},
-                },
+                'insights.allrepos': {},
             },
             insightExtensionsMocks: {
                 'searchInsights.insight.teamSize': ({ message: 'Error message', name: 'hello' } as unknown) as View,
@@ -180,9 +176,7 @@ describe('[VISUAL] Code insights page', () => {
                     series: [],
                 },
                 'codeStatsInsights.insight.langUsage': {},
-                'insights.allrepos': {
-                    'searchInsights.insight.backend_ID_001': {},
-                },
+                'insights.allrepos': {}
             },
             insightExtensionsMocks: {
                 'codeStatsInsights.insight.langUsage': CODE_STATS_INSIGHT_LANG_USAGE,
