@@ -15,7 +15,7 @@ Are you stuck along the way? Please do not hesitate to reach out to our [support
 
 ## Explanations and how-tos
 
-- [Adding repositories to Sourcegraph cloud](../how-to/adding_repositories_to_cloud.md)
-- [Searching across repositories you’ve added to Sourcegraph cloud with search contexts](../how-to/searching_with_search_contexts.md)
-- [Who can see your code on Sourcegraph cloud](./code_visibility_on_sourcegraph_cloud.md)
-- [FAQ](https://docs.sourcegraph.com/code_search/explanations/sourcegraph_cloud)
+- [Adding repositories to Sourcegraph cloud](../code_search/how-to/adding_repositories_to_cloud.md)
+- [Searching across repositories you’ve added to Sourcegraph cloud with search contexts](../code_search/how-to/searching_with_search_contexts.md)
+- [Who can see your code on Sourcegraph cloud](../code_search/explanations/code_visibility_on_sourcegraph_cloud.md)
+- [FAQ](../code_search/explanations/sourcegraph_cloud)
