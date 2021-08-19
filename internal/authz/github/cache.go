@@ -33,6 +33,9 @@ type groupsCache struct {
 }
 
 func newGroupPermsCache(urn string, codeHost *extsvc.CodeHost, ttl time.Duration) *groupsCache {
+	if ttl < 0 {
+		return nil
+	}
 	return &groupsCache{
 		cache: rcache.NewWithTTL(fmt.Sprintf("gh_groups_perms:%s:%s", codeHost.ServiceID, urn), int(ttl/time.Second)),
 	}

@@ -165,7 +165,7 @@
       "type": "object",
       "properties": {
         "groupsCacheTTL": {
-          "description": "Hours cached permissions from teams and organizations should be kept for",
+          "description": "Hours cached permissions from teams and organizations should be kept for. A negative value disables syncing from teams and organizations, and syncs all permisisons directly from user repository affiliations instead (note that this requires more API requests). In both cases, the same permissions are the synchronized.",
           "type": "number",
           "default": 72
         }

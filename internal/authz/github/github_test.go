@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/url"
 	"testing"
+	"time"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/gregjones/httpcache"
@@ -413,6 +414,47 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 				t.Fatalf("RepoIDs mismatch (-want +got):\n%s", diff)
 			}
 		})
+	})
+
+	t.Run("disabled cache", func(t *testing.T) {
+		mockClient := &mockClient{
+			MockListAffiliatedRepositories: mockListAffiliatedRepositories,
+		}
+
+		p := NewProvider("", ProviderOptions{
+			GitHubURL:      mustURL(t, "https://github.com"),
+			GroupsCacheTTL: time.Duration(-1),
+		})
+		p.client = mockClient
+		if p.groupsCache != nil {
+			t.Fatal("expected nil groupsCache")
+		}
+
+		authData := json.RawMessage(`{"access_token": "my_access_token"}`)
+		repoIDs, err := p.FetchUserPerms(context.Background(),
+			&extsvc.Account{
+				AccountSpec: extsvc.AccountSpec{
+					ServiceType: "github",
+					ServiceID:   "https://github.com/",
+				},
+				AccountData: extsvc.AccountData{
+					AuthData: &authData,
+				},
+			},
+			nil,
+		)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		wantRepoIDs := []extsvc.RepoID{
+			"MDEwOlJlcG9zaXRvcnkyNTI0MjU2NzE=",
+			"MDEwOlJlcG9zaXRvcnkyNDQ1MTc1MzY=",
+			"MDEwOlJlcG9zaXRvcnkyNDI2NTEwMDA=",
+		}
+		if diff := cmp.Diff(wantRepoIDs, repoIDs.Exacts); diff != "" {
+			t.Fatalf("RepoIDs mismatch (-want +got):\n%s", diff)
+		}
 	})
 }
 

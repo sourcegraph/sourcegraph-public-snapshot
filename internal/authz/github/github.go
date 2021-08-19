@@ -18,10 +18,11 @@ import (
 
 // Provider implements authz.Provider for GitHub repository permissions.
 type Provider struct {
-	urn         string
-	client      client
+	urn      string
+	client   client
+	codeHost *extsvc.CodeHost
+	// groupsCache may be nil if group caching is disabled (negative TTL)
 	groupsCache *groupsCache
-	codeHost    *extsvc.CodeHost
 }
 
 type ProviderOptions struct {
@@ -97,14 +98,20 @@ func (p *Provider) FetchUserPermsByToken(ctx context.Context, token string, opts
 		}
 	}
 
-	// First, we list repositories a user has direct access to as a owner or direct collaborator.
-	// We let other permissions ('organization' affiliation) be sync'd by teams/orgs.
+	// If groups caching is enabled, we sync just a subset of direct affiliations - we let
+	// other permissions ('organization' affiliation) be sync'd by teams/orgs.
+	affiliations := []github.Affiliation{github.AffiliationOwner, github.AffiliationCollaborator}
+	if p.groupsCache == nil {
+		// Otherwise, sync all direct affiliations.
+		affiliations = append(affiliations, github.AffiliationOrgMember)
+	}
+
+	// Sync direct affiliations
 	hasNextPage := true
 	var err error
 	for page := 1; hasNextPage; page++ {
 		var repos []*github.Repository
-		repos, hasNextPage, _, err = client.ListAffiliatedRepositories(ctx, github.VisibilityPrivate, page,
-			github.AffiliationOwner, github.AffiliationCollaborator)
+		repos, hasNextPage, _, err = client.ListAffiliatedRepositories(ctx, github.VisibilityPrivate, page, affiliations...)
 		if err != nil {
 			return perms, err
 		}
@@ -114,7 +121,12 @@ func (p *Provider) FetchUserPermsByToken(ctx context.Context, token string, opts
 		}
 	}
 
-	// Now, we check for seenGroups this user belongs to that give access to additional
+	// If groups caching is disabled, we are done.
+	if p.groupsCache == nil {
+		return perms, nil
+	}
+
+	// Now, we look for groups this user belongs to that give access to additional
 	// repositories.
 	groups := make([]cachedGroup, 0)
 	seenGroups := make(map[string]bool)
