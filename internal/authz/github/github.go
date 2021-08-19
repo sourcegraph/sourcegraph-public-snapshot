@@ -6,6 +6,7 @@ import (
 	"net/url"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/cockroachdb/errors"
 
@@ -24,18 +25,27 @@ type Provider struct {
 	codeHost    *extsvc.CodeHost
 }
 
-func NewProvider(urn string, githubURL *url.URL, baseToken string, client *github.V3Client) *Provider {
-	if client == nil {
-		apiURL, _ := github.APIRoot(githubURL)
-		client = github.NewV3Client(apiURL, &auth.OAuthBearerToken{Token: baseToken}, nil)
-	}
-	codeHost := extsvc.NewCodeHost(githubURL, extsvc.TypeGitHub)
+type ProviderOptions struct {
+	// If a GitHubClient is not provided, one is constructed from GitHubURL
+	GitHubClient *github.V3Client
+	GitHubURL    *url.URL
 
+	BaseToken      string
+	GroupsCacheTTL time.Duration
+}
+
+func NewProvider(urn string, opts ProviderOptions) *Provider {
+	if opts.GitHubClient == nil {
+		apiURL, _ := github.APIRoot(opts.GitHubURL)
+		opts.GitHubClient = github.NewV3Client(apiURL, &auth.OAuthBearerToken{Token: opts.BaseToken}, nil)
+	}
+
+	codeHost := extsvc.NewCodeHost(opts.GitHubURL, extsvc.TypeGitHub)
 	return &Provider{
 		urn:         urn,
 		codeHost:    codeHost,
-		groupsCache: newGroupPermsCache(urn, codeHost),
-		client:      &ClientAdapter{V3Client: client},
+		groupsCache: newGroupPermsCache(urn, codeHost, opts.GroupsCacheTTL),
+		client:      &ClientAdapter{V3Client: opts.GitHubClient},
 	}
 }
 

@@ -629,6 +629,8 @@ type GitHubAuthProvider struct {
 
 // GitHubAuthorization description: If non-null, enforces GitHub repository permissions. This requires that there is an item in the `auth.providers` field of type "github" with the same `url` field as specified in this `GitHubConnection`.
 type GitHubAuthorization struct {
+	// GroupsCacheTTL description: Hours cached permissions from teams and organizations should be kept for
+	GroupsCacheTTL float64 `json:"groupsCacheTTL,omitempty"`
 }
 
 // GitHubConnection description: Configuration for a connection to GitHub or GitHub Enterprise.

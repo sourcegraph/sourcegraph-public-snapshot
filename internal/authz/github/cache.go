@@ -28,10 +28,9 @@ type groupsCache struct {
 	cache *rcache.Cache
 }
 
-func newGroupPermsCache(urn string, codeHost *extsvc.CodeHost) *groupsCache {
-	var cacheTTL time.Duration = 90 * time.Minute
+func newGroupPermsCache(urn string, codeHost *extsvc.CodeHost, ttl time.Duration) *groupsCache {
 	return &groupsCache{
-		cache: rcache.NewWithTTL(fmt.Sprintf("gh_groups_perms:%s:%s", codeHost.ServiceID, urn), int(cacheTTL/time.Second)),
+		cache: rcache.NewWithTTL(fmt.Sprintf("gh_groups_perms:%s:%s", codeHost.ServiceID, urn), int(ttl/time.Second)),
 	}
 }
 
