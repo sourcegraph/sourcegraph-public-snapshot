@@ -16,6 +16,7 @@ All notable changes to `src-cli` are documented in this file.
 ### Changed
 
 ### Fixed
+- `src search -stream` displayed the number of lines that contain matches instead of the number of matches.
 
 ### Removed
 

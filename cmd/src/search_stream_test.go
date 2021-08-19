@@ -45,9 +45,9 @@ var event = []streaming.EventMatch{
 		Version:    "",
 		LineMatches: []streaming.EventLineMatch{
 			{
-				Line:             "foo bar",
+				Line:             "foo bar foo",
 				LineNumber:       4,
-				OffsetAndLengths: [][2]int32{{4, 3}},
+				OffsetAndLengths: [][2]int32{{0, 3}, {8, 3}},
 			},
 		},
 	},

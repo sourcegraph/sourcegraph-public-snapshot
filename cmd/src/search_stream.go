@@ -230,7 +230,7 @@ const streamingTemplate = `
 	{{- color "search-repository"}}{{.Repository}}{{color "nc" -}}
 	{{- " › " -}}
 	{{- color "search-filename"}}{{.Path}}{{color "nc" -}}
-	{{- color "success"}}{{matchOrMatches (len .LineMatches)}}{{color "nc" -}}
+	{{- color "success"}}{{matchOrMatches (countMatches .LineMatches)}}{{color "nc" -}}
 	{{- "\n" -}}
 	{{- color "search-border"}}{{"--------------------------------------------------------------------------------\n"}}{{color "nc"}}
 	
@@ -374,6 +374,14 @@ var streamSearchTemplateFuncs = map[string]interface{}{
 			return " (1 match)"
 		}
 		return fmt.Sprintf(" (%d matches)", i)
+	},
+
+	"countMatches": func(lineMatches []streaming.EventLineMatch) int {
+		count := 0
+		for _, l := range lineMatches {
+			count += len(l.OffsetAndLengths)
+		}
+		return count
 	},
 }
 

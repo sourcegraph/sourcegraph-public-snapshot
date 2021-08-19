@@ -100,6 +100,7 @@ func parseTemplate(text string) (*template.Template, error) {
 		"streamSearchHighlightCommit":      streamSearchTemplateFuncs["streamSearchHighlightCommit"],
 		"streamSearchRenderCommitLabel":    streamSearchTemplateFuncs["streamSearchRenderCommitLabel"],
 		"matchOrMatches":                   streamSearchTemplateFuncs["matchOrMatches"],
+		"countMatches":                     streamSearchTemplateFuncs["countMatches"],
 
 		// Alert rendering
 		"searchAlertRender": func(alert searchResultsAlert) string {
