@@ -5,9 +5,9 @@ import "strings"
 type RepoVisibility string
 
 const (
-	Any     RepoVisibility = "any"
-	Private RepoVisibility = "private"
-	Public  RepoVisibility = "public"
+	Any     RepoVisibility = "Any"
+	Private RepoVisibility = "Private"
+	Public  RepoVisibility = "Public"
 )
 
 func ParseVisibility(s string) RepoVisibility {

@@ -333,14 +333,8 @@ func (op *RepoOptions) String() string {
 	if op.OnlyArchived {
 		b.WriteString(" OnlyArchived")
 	}
-	if op.Visibility == query.Private {
-		b.WriteString(" OnlyPrivate")
-	}
-	if op.Visibility == query.Public {
-		b.WriteString(" OnlyPublic")
-	}
-	if op.Visibility == query.Any {
-		b.WriteString(" AnyVisibility")
+	if op.Visibility != query.Any {
+		b.WriteString(" Visibility" + string(op.Visibility))
 	}
 
 	return b.String()
