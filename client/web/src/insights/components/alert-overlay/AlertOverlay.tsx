@@ -14,13 +14,8 @@ export const AlertOverlay: React.FunctionComponent<BackendAlertOverlayProps> = (
     children: icon,
 }) => (
     <>
-        <div className={classNames('position-absolute w-100 h-100', styles.bgLoadingGradient)} />
-        <div
-            className={classNames(
-                'position-absolute d-flex flex-column justify-content-center align-items-center w-100 h-100',
-                styles.bgLoading
-            )}
-        >
+        <div className={classNames('position-absolute w-100 h-100', styles.gradient)} />
+        <div className="position-absolute d-flex flex-column justify-content-center align-items-center w-100 h-100">
             {icon && <div className={styles.icon}>{icon}</div>}
             <h4 className={styles.title}>{title}</h4>
             <small className={styles.description}>{description}</small>
