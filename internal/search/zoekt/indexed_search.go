@@ -424,7 +424,7 @@ func zoektGlobalQuery(query zoektquery.Q, repoOptions search.RepoOptions, userPr
 	}
 
 	// Private
-	if repoOptions.OnlyPublic && len(userPrivateRepos) > 0 {
+	if !repoOptions.OnlyPublic && len(userPrivateRepos) > 0 {
 		privateRepoSet := make(map[string][]string, len(userPrivateRepos))
 		head := []string{"HEAD"}
 		for _, r := range userPrivateRepos {
