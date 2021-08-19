@@ -320,5 +320,11 @@ add('results with signup CTA', () => {
         },
     }
 
-    return <WebStory>{() => <StreamingSearchResults {...defaultProps} streamSearch={() => of(result)} />}</WebStory>
+    return (
+        <WebStory>
+            {() => (
+                <StreamingSearchResults {...defaultProps} authenticatedUser={null} streamSearch={() => of(result)} />
+            )}
+        </WebStory>
+    )
 })

@@ -26,7 +26,8 @@ const SourceToTitleMap = {
     Saved: 'Create a library of useful searches.',
     Monitor: 'Monitor code for changes.',
     Extend: 'Augment code and workflows via extensions.',
-    SearchCTA: 'Add your public (and soon private) repositories.',
+    SearchCTA: 'Easily search the code you care about.',
+    HomepageCTA: 'Easily search the code you care about.',
     Snippet: 'Easily search the code you care about.',
 }
 
@@ -95,7 +96,12 @@ export const ExperimentalSignUpPage: React.FunctionComponent<Props> = ({
                 <div className={styles.contentsLeft}>
                     With a Sourcegraph account, you can also:
                     <ul className={styles.featureList}>
-                        <li>Search across all your public (and soon private) repositories</li>
+                        <li>
+                            <div className="d-flex align-items-center">
+                                <span className="badge badge-info text-uppercase mr-1">Beta</span> Search across all
+                                your public and private repositories
+                            </div>
+                        </li>
                         <li>Monitor code for changes</li>
                         <li>Navigate through code with IDE like go to references and definition hovers</li>
                         <li>Integrate data, tooling, and code in a single location </li>

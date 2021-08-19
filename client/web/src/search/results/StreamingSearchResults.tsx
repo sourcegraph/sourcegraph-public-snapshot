@@ -31,7 +31,7 @@ import { PageTitle } from '../../components/PageTitle'
 import { FeatureFlagProps } from '../../featureFlags/featureFlags'
 import { isCodeInsightsEnabled } from '../../insights'
 import { SavedSearchModal } from '../../savedSearches/SavedSearchModal'
-import { SearchStarRadialGradientIcon } from '../CtaIcons'
+import { SearchBetaIcon } from '../CtaIcons'
 import { getSubmittedSearchesCount, QueryState, submitSearch } from '../helpers'
 
 import { StreamingProgress } from './progress/StreamingProgress'
@@ -293,16 +293,18 @@ export const StreamingSearchResults: React.FunctionComponent<StreamingSearchResu
 
                 {showSignUpCta && (
                     <div className="card my-2 mr-3 d-flex p-3 flex-row align-items-center">
-                        <div className={classNames('mr-3', styles.streamingSearchResultsCtaIconWrapper)}>
-                            <SearchStarRadialGradientIcon />
+                        <div className="mr-3">
+                            <SearchBetaIcon />
                         </div>
                         <div className="flex-1">
-                            <div className={classNames('mb-2', styles.streamingSearchResultsCtaTitle)}>
-                                <strong>Search your public (and soon private) code</strong>
+                            <div className={classNames('mb-1', styles.streamingSearchResultsCtaTitle)}>
+                                <strong>
+                                    Sign up to add your public and private repositories and unlock search flow
+                                </strong>
                             </div>
                             <div className={classNames('text-muted', styles.streamingSearchResultsCtaDescription)}>
-                                Create a free account to search all of your repos at once.{' '}
-                                <i>(It's like a developer's superpower.)</i>
+                                Do all the things editors can’t: search multiple repos & commit history, monitor, save
+                                searches and more.
                             </div>
                         </div>
                         <Link
@@ -310,7 +312,7 @@ export const StreamingSearchResults: React.FunctionComponent<StreamingSearchResu
                             to={`/sign-up?src=SearchCTA&returnTo=${encodeURIComponent('/user/settings/repositories')}`}
                             onClick={onSignUpClick}
                         >
-                            Sign up for Sourcegraph
+                            Create a free account
                         </Link>
                     </div>
                 )}
