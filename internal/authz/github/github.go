@@ -2,7 +2,7 @@ package github
 
 import (
 	"context"
-	"fmt"
+	"log"
 	"net/url"
 	"strconv"
 	"strings"
@@ -92,6 +92,7 @@ func (p *Provider) FetchUserPermsByToken(ctx context.Context, token string, opts
 	addRepoToPerms := func(repos ...extsvc.RepoID) {
 		for _, repo := range repos {
 			if _, exists := seenRepos[repo]; !exists {
+				seenRepos[repo] = true
 				perms.Exacts = append(perms.Exacts, repo)
 			}
 		}
@@ -130,9 +131,10 @@ func (p *Provider) FetchUserPermsByToken(ctx context.Context, token string, opts
 		}
 		for _, org := range orgs {
 			if canViewOrgRepos(org) {
-				groups[org.Login] = cachedGroup{
+				g := cachedGroup{
 					Org: org.Login,
 				}
+				groups[g.key()] = g
 			}
 		}
 	}
@@ -147,11 +149,13 @@ func (p *Provider) FetchUserPermsByToken(ctx context.Context, token string, opts
 		for _, team := range teams {
 			// if a team's repos is a subset of a organization's, don't sync
 			if _, exists := groups[team.Organization.Login]; !exists {
+				// only sync teams with repos
 				if team.ReposCount > 0 {
-					groups[fmt.Sprintf("%s/%s", team.Organization.Login, team.Slug)] = cachedGroup{
+					g := cachedGroup{
 						Org:  team.Organization.Login,
 						Team: team.Slug,
 					}
+					groups[g.key()] = g
 				}
 			}
 		}
@@ -159,11 +163,13 @@ func (p *Provider) FetchUserPermsByToken(ctx context.Context, token string, opts
 
 	// Get repos from groups, cached if possible.
 	for _, group := range groups {
+		log.Printf("")
 		groupPerms, exists := p.groupsCache.getGroup(group.Org, group.Team)
 		if exists {
 			if opts != nil && !opts.InvalidateCaches {
-				// invalidate this cache
-				p.groupsCache.deleteGroup(*groupPerms)
+				// invalidate this cache and sync again
+				p.groupsCache.deleteGroup(groupPerms)
+				groupPerms.Repositories = nil
 			} else {
 				// use cached perms and continue
 				addRepoToPerms(groupPerms.Repositories...)
@@ -183,7 +189,7 @@ func (p *Provider) FetchUserPermsByToken(ctx context.Context, token string, opts
 			}
 			if err != nil {
 				// track effort so far in cache
-				p.groupsCache.setGroup(*groupPerms)
+				p.groupsCache.setGroup(groupPerms)
 				return perms, err
 			}
 			for _, r := range repos {
@@ -194,7 +200,7 @@ func (p *Provider) FetchUserPermsByToken(ctx context.Context, token string, opts
 		}
 
 		// add sync'd repos to cache
-		p.groupsCache.setGroup(*groupPerms)
+		p.groupsCache.setGroup(groupPerms)
 	}
 
 	return perms, nil

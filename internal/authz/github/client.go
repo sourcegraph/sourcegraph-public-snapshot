@@ -83,5 +83,8 @@ func (m *mockClient) GetAuthenticatedUserTeams(ctx context.Context, page int) (t
 }
 
 func (m *mockClient) WithToken(token string) client {
+	if m.MockWithToken == nil {
+		return m
+	}
 	return m.MockWithToken(token)
 }

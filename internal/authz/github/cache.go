@@ -10,7 +10,9 @@ import (
 )
 
 type cachedGroup struct {
-	Org  string
+	// Org login, required
+	Org string
+	// Team slug, if empty implies group is an org
 	Team string
 
 	Repositories []extsvc.RepoID
@@ -43,16 +45,17 @@ func (c *groupsCache) setGroup(group cachedGroup) error {
 	return nil
 }
 
-func (c *groupsCache) getGroup(org string, team string) (*cachedGroup, bool) {
-	group := &cachedGroup{Org: org, Team: team}
+func (c *groupsCache) getGroup(org string, team string) (cachedGroup, bool) {
+	group := cachedGroup{Org: org, Team: team}
 	bytes, ok := c.cache.Get(group.key())
 	if !ok {
-		return nil, ok
+		return group, ok
 	}
-	if err := json.Unmarshal(bytes, group); err != nil {
-		return nil, false
+	var cached cachedGroup
+	if err := json.Unmarshal(bytes, &cached); err != nil {
+		return group, false
 	}
-	return group, ok
+	return cached, ok
 }
 
 func (c *groupsCache) deleteGroup(group cachedGroup) {
