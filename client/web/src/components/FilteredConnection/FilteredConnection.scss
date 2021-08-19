@@ -46,7 +46,6 @@ $compact-summary-min-height: 2.75rem;
 
     &__summary-container {
         display: flex;
-        flex-direction: column;
         flex-direction: row;
         justify-content: space-between;
         align-items: center;
@@ -67,9 +66,6 @@ $compact-summary-min-height: 2.75rem;
     }
     &--compact &__summary {
         flex: 1;
-        padding: 0;
-        opacity: 1;
-        border-top: none;
     }
 
     &--noncompact {
