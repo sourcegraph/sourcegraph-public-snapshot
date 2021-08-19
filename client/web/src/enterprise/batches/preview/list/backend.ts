@@ -18,7 +18,7 @@ import {
     AllPublishableChangesetSpecIDsResult,
 } from '../../../../graphql-operations'
 import { personLinkFieldsFragment } from '../../../../person/PersonLink'
-import { getPublishableChangesetSpecID } from '../utils'
+import { filterPublishableIDs } from '../utils'
 
 const changesetSpecFieldsFragment = gql`
     fragment CommonChangesetSpecFields on ChangesetSpec {
@@ -446,12 +446,7 @@ export const queryPublishableChangesetSpecIDs = ({
     return request(null).pipe(
         expand(connection => (connection.pageInfo.hasNextPage ? request(connection.pageInfo.endCursor) : EMPTY)),
         reduce<PublishableChangesetSpecIDsConnectionFields, Scalars['ID'][]>(
-            (previous, next) =>
-                previous.concat(
-                    next.nodes
-                        .map(node => getPublishableChangesetSpecID(node))
-                        .filter((maybeID): maybeID is Scalars['ID'] => maybeID !== null)
-                ),
+            (previous, next) => previous.concat(filterPublishableIDs(next.nodes)),
             []
         )
     )

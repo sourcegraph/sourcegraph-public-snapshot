@@ -12,7 +12,7 @@ import { BatchSpecApplyPreviewVariables, ChangesetApplyPreviewFields, Scalars } 
 import { MultiSelectContext } from '../../MultiSelectContext'
 import { BatchChangePreviewContext } from '../BatchChangePreviewContext'
 import { PreviewPageAuthenticatedUser } from '../BatchChangePreviewPage'
-import { getPublishableChangesetSpecID } from '../utils'
+import { filterPublishableIDs } from '../utils'
 
 import {
     queryChangesetApplyPreview as _queryChangesetApplyPreview,
@@ -81,11 +81,7 @@ export const PreviewList: React.FunctionComponent<Props> = ({
                     setQueryArguments(passedArguments)
                     // Available changeset specs are all changesets specs that a user can
                     // modify the publication state of from the UI.
-                    setVisible(
-                        data.nodes
-                            .map(node => getPublishableChangesetSpecID(node))
-                            .filter((id): id is string => id !== null)
-                    )
+                    setVisible(filterPublishableIDs(data.nodes))
                 })
             )
         },

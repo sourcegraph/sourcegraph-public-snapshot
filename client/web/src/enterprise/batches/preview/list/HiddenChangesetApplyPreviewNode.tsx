@@ -28,7 +28,7 @@ export const HiddenChangesetApplyPreviewNode: React.FunctionComponent<HiddenChan
                 className="btn"
                 checked={false}
                 disabled={true}
-                tooltip="You do not have permission to perform this operation"
+                tooltip="You do not have permission to publish to this repository."
             />
         </div>
         <HiddenChangesetApplyPreviewNodeStatusCell

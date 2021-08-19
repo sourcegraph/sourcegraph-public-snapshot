@@ -6,7 +6,7 @@ import { of, Observable } from 'rxjs'
 import { BatchSpecApplyPreviewConnectionFields, ChangesetApplyPreviewFields } from '../../../../graphql-operations'
 import { EnterpriseWebStory } from '../../../components/EnterpriseWebStory'
 import { MultiSelectContextProvider } from '../../MultiSelectContext'
-import { getPublishableChangesetSpecID } from '../utils'
+import { filterPublishableIDs } from '../utils'
 
 import { hiddenChangesetApplyPreviewStories } from './HiddenChangesetApplyPreviewNode.story'
 import { PreviewList } from './PreviewList'
@@ -41,11 +41,7 @@ add('PreviewList', () => {
         })
 
     const queryPublishableChangesetSpecIDs = (): Observable<string[]> =>
-        of(
-            Object.values(visibleChangesetApplyPreviewNodeStories(publicationStateSet))
-                .map(node => getPublishableChangesetSpecID(node))
-                .filter((id): id is string => id !== null)
-        )
+        of(filterPublishableIDs(Object.values(visibleChangesetApplyPreviewNodeStories(publicationStateSet))))
 
     return (
         <EnterpriseWebStory>
