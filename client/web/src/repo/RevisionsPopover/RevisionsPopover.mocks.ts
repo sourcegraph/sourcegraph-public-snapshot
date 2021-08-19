@@ -1,5 +1,5 @@
 import { MockedResponse } from '@apollo/client/testing'
-import { startOfYesterday } from 'date-fns'
+import { subDays } from 'date-fns'
 
 import { GitRefType } from '@sourcegraph/shared/src/graphql-operations'
 import { getDocumentNode } from '@sourcegraph/shared/src/graphql/graphql'
@@ -24,7 +24,7 @@ export const MOCK_PROPS: RevisionsPopoverProps = {
     showSpeculativeResults: false,
 }
 
-const yesterday = startOfYesterday().toISOString()
+const yesterday = subDays(new Date(), 1).toISOString()
 
 const commitPerson = {
     displayName: 'display-name',
