@@ -100,7 +100,7 @@ func (a *Aggregator) DoStructuralSearch(ctx context.Context, args *search.TextPa
 		tr.Finish()
 	}()
 
-	err = unindexed.StructuralSearch(ctx, args, a)
+	err = unindexed.StructuralSearch(ctx, args, args.PatternInfo.FileMatchLimit, a)
 	return errors.Wrap(err, "structural search failed")
 }
 

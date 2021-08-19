@@ -74,8 +74,8 @@ func repoSets(request zoektutil.IndexedSearchRequest, mode search.GlobalSearchMo
 }
 
 // streamStructuralSearch runs structural search jobs and streams the results.
-func streamStructuralSearch(ctx context.Context, args *search.TextParameters, stream streaming.Sender) (err error) {
-	ctx, stream, cleanup := streaming.WithLimit(ctx, stream, int(args.PatternInfo.FileMatchLimit))
+func streamStructuralSearch(ctx context.Context, args *search.TextParameters, fileMatchLimit int32, stream streaming.Sender) (err error) {
+	ctx, stream, cleanup := streaming.WithLimit(ctx, stream, int(fileMatchLimit))
 	defer cleanup()
 
 	request, err := textSearchRequest(ctx, args, zoektutil.MissingRepoRevStatus(stream))
@@ -96,34 +96,34 @@ func streamStructuralSearch(ctx context.Context, args *search.TextParameters, st
 	return runJobs(ctx, jobs)
 }
 
-// retryStructuralSearch runs a structural search with a higher limit file match
-// limit so that Zoekt resolves more potential file matches.
-func retryStructuralSearch(ctx context.Context, args *search.TextParameters, stream streaming.Sender) error {
+// retryStructuralSearch runs a structural search with an updated file match limit so
+// that Zoekt resolves more potential file matches.
+func retryStructuralSearch(ctx context.Context, args *search.TextParameters, fileMatchLimit int32, stream streaming.Sender) error {
 	patternCopy := *(args.PatternInfo)
-	patternCopy.FileMatchLimit = 1000
+	patternCopy.FileMatchLimit = fileMatchLimit
 	argsCopy := *args
 	argsCopy.PatternInfo = &patternCopy
 	args = &argsCopy
-	return streamStructuralSearch(ctx, args, stream)
+	return streamStructuralSearch(ctx, args, fileMatchLimit, stream)
 }
 
-func StructuralSearch(ctx context.Context, args *search.TextParameters, stream streaming.Sender) error {
-	if args.PatternInfo.FileMatchLimit != search.DefaultMaxSearchResults {
+func StructuralSearch(ctx context.Context, args *search.TextParameters, fileMatchLimit int32, stream streaming.Sender) error {
+	if fileMatchLimit != search.DefaultMaxSearchResults {
 		// streamStructuralSearch performs a streaming search when the user sets a value
 		// for `count`. The first return parameter indicates whether the request was
 		// serviced with streaming.
-		return streamStructuralSearch(ctx, args, stream)
+		return streamStructuralSearch(ctx, args, fileMatchLimit, stream)
 	}
 
 	// For structural search with default limits we retry if we get no results.
 	fileMatches, stats, err := streaming.CollectStream(func(stream streaming.Sender) error {
-		return streamStructuralSearch(ctx, args, stream)
+		return streamStructuralSearch(ctx, args, fileMatchLimit, stream)
 	})
 
 	if len(fileMatches) == 0 && err == nil {
 		// retry structural search with a higher limit.
 		fileMatches, stats, err = streaming.CollectStream(func(stream streaming.Sender) error {
-			return retryStructuralSearch(ctx, args, stream)
+			return retryStructuralSearch(ctx, args, 1000, stream)
 		})
 		if err != nil {
 			return err
