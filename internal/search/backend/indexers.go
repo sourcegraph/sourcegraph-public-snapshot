@@ -3,7 +3,6 @@ package backend
 import (
 	"context"
 	"fmt"
-	"sort"
 	"strings"
 
 	"github.com/cockroachdb/errors"
@@ -12,8 +11,8 @@ import (
 // EndpointMap is the subset of endpoint.Map (consistent hashmap) methods we
 // use. Declared as an interface for testing.
 type EndpointMap interface {
-	// Endpoints returns a set of all addresses. Do not modify the returned value.
-	Endpoints() (map[string]struct{}, error)
+	// Endpoints returns a list of all addresses. Do not modify the returned value.
+	Endpoints() ([]string, error)
 	// GetMany returns the endpoint for each key. (consistent hashing).
 	GetMany(...string) ([]string, error)
 }
@@ -93,7 +92,7 @@ func (c *Indexers) Enabled() bool {
 }
 
 // findEndpoint returns the endpoint in eps which matches hostname.
-func findEndpoint(eps map[string]struct{}, hostname string) (string, error) {
+func findEndpoint(eps []string, hostname string) (string, error) {
 	// The hostname can be a less qualified hostname. For example in k8s
 	// $HOSTNAME will be "indexed-search-0", but to access the pod you will
 	// need to specify the endpoint address
@@ -105,7 +104,7 @@ func findEndpoint(eps map[string]struct{}, hostname string) (string, error) {
 	// Given this looser matching, we ensure we don't match more than one
 	// endpoint.
 	endpoint := ""
-	for ep := range eps {
+	for _, ep := range eps {
 		if !strings.HasPrefix(ep, hostname) {
 			continue
 		}
@@ -128,13 +127,7 @@ func findEndpoint(eps map[string]struct{}, hostname string) (string, error) {
 }
 
 // endpointsString creates a user readable String for an endpoint map.
-func endpointsString(m map[string]struct{}) string {
-	eps := make([]string, 0, len(m))
-	for k := range m {
-		eps = append(eps, k)
-	}
-	sort.Strings(eps)
-
+func endpointsString(eps []string) string {
 	var b strings.Builder
 	b.WriteString("Endpoints{")
 	for i, k := range eps {

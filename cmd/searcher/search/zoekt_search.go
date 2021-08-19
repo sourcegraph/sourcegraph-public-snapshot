@@ -25,9 +25,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 )
 
-var zoektOnce sync.Once
-var endpointMap atomicEndpoints
-var zoektClient zoekt.Streamer
+var (
+	zoektOnce   sync.Once
+	endpointMap atomicEndpoints
+	zoektClient zoekt.Streamer
+)
 
 func getZoektClient(indexerEndpoints []string) zoekt.Streamer {
 	zoektOnce.Do(func() {
@@ -276,24 +278,19 @@ type atomicEndpoints struct {
 	endpoints atomic.Value
 }
 
-func (a *atomicEndpoints) Endpoints() (map[string]struct{}, error) {
+func (a *atomicEndpoints) Endpoints() ([]string, error) {
 	eps := a.endpoints.Load()
 	if eps == nil {
 		return nil, errors.New("endpoints have not been set")
 	}
-	return eps.(map[string]struct{}), nil
+	return eps.([]string), nil
 }
 
 func (a *atomicEndpoints) Set(endpoints []string) {
 	if !a.needsUpdate(endpoints) {
 		return
 	}
-
-	eps := make(map[string]struct{}, len(endpoints))
-	for _, addr := range endpoints {
-		eps[addr] = struct{}{}
-	}
-	a.endpoints.Store(eps)
+	a.endpoints.Store(endpoints)
 }
 
 func (a *atomicEndpoints) needsUpdate(endpoints []string) bool {
@@ -305,8 +302,8 @@ func (a *atomicEndpoints) needsUpdate(endpoints []string) bool {
 		return true
 	}
 
-	for _, addr := range endpoints {
-		if _, ok := old[addr]; !ok {
+	for i := range endpoints {
+		if old[i] != endpoints[i] {
 			return true
 		}
 	}

@@ -8,7 +8,6 @@ import (
 	"net/url"
 	"os"
 	"os/user"
-	"sort"
 	"strings"
 	"sync"
 
@@ -350,14 +349,9 @@ func (c configurationSource) Read(ctx context.Context) (conftypes.RawUnified, er
 		return conftypes.RawUnified{}, errors.Wrap(err, "confdb.SiteGetLatest")
 	}
 
-	conns, err := serviceConnections()
-	if err != nil {
-		return conftypes.RawUnified{}, err
-	}
-
 	return conftypes.RawUnified{
 		Site:               site.Contents,
-		ServiceConnections: conns,
+		ServiceConnections: serviceConnections(),
 	}, nil
 }
 
@@ -392,7 +386,7 @@ var (
 	}())
 )
 
-func serviceConnections() (conftypes.ServiceConnections, error) {
+func serviceConnections() conftypes.ServiceConnections {
 	serviceConnectionsOnce.Do(func() {
 		username := ""
 		if user, err := user.Current(); err == nil {
@@ -416,28 +410,17 @@ func serviceConnections() (conftypes.ServiceConnections, error) {
 		}
 	})
 
-	eps, err := gitservers.Endpoints()
+	addrs, err := gitservers.Endpoints()
 	if err != nil {
-		return conftypes.ServiceConnections{}, err
+		log15.Error("serviceConnections", "error", err)
 	}
-
-	if len(eps) == 0 {
-		return conftypes.ServiceConnections{}, errors.New("no endpoints configured for gitserver")
-	}
-
-	addrs := make([]string, 0, len(eps))
-	for ep := range eps {
-		addrs = append(addrs, ep)
-	}
-
-	sort.Strings(addrs)
 
 	return conftypes.ServiceConnections{
 		GitServers:               addrs,
 		PostgresDSN:              serviceConnectionsVal.PostgresDSN,
 		CodeIntelPostgresDSN:     serviceConnectionsVal.CodeIntelPostgresDSN,
 		CodeInsightsTimescaleDSN: serviceConnectionsVal.CodeInsightsTimescaleDSN,
-	}, nil
+	}
 }
 
 // comparePostgresDSNs returns an error if one of the given Postgres DSN values are

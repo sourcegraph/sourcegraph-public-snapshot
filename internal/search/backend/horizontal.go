@@ -31,7 +31,7 @@ type HorizontalSearcher struct {
 	// Map is a subset of EndpointMap only using the Endpoints function. We
 	// use this to find the endpoints to dial over time.
 	Map interface {
-		Endpoints() (map[string]struct{}, error)
+		Endpoints() ([]string, error)
 	}
 	Dial func(endpoint string) zoekt.Streamer
 
@@ -309,20 +309,26 @@ func (s *HorizontalSearcher) syncSearchers() (map[string]zoekt.Streamer, error) 
 	if err != nil {
 		return nil, err
 	}
+
 	if equalKeys(s.clients, eps) {
 		return s.clients, nil
 	}
 
+	set := make(map[string]struct{}, len(eps))
+	for _, ep := range eps {
+		set[ep] = struct{}{}
+	}
+
 	// Disconnect first
 	for addr, client := range s.clients {
-		if _, ok := eps[addr]; !ok {
+		if _, ok := set[addr]; !ok {
 			client.Close()
 		}
 	}
 
 	// Use new map to avoid read conflicts
 	clients := make(map[string]zoekt.Streamer, len(eps))
-	for addr := range eps {
+	for _, addr := range eps {
 		// Try re-use
 		client, ok := s.clients[addr]
 		if !ok {
@@ -335,12 +341,12 @@ func (s *HorizontalSearcher) syncSearchers() (map[string]zoekt.Streamer, error) 
 	return s.clients, nil
 }
 
-func equalKeys(a map[string]zoekt.Streamer, b map[string]struct{}) bool {
+func equalKeys(a map[string]zoekt.Streamer, b []string) bool {
 	if len(a) != len(b) {
 		return false
 	}
-	for k := range a {
-		if _, ok := b[k]; !ok {
+	for _, k := range b {
+		if _, ok := a[k]; !ok {
 			return false
 		}
 	}

@@ -161,12 +161,7 @@ func TestFindEndpoint(t *testing.T) {
 
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			eps := map[string]struct{}{}
-			for _, ep := range tc.endpoints {
-				eps[ep] = struct{}{}
-			}
-
-			got, err := findEndpoint(eps, tc.hostname)
+			got, err := findEndpoint(tc.endpoints, tc.hostname)
 			if tc.errS != "" {
 				got := fmt.Sprintf("%v", err)
 				if !strings.Contains(got, tc.errS) {
@@ -188,12 +183,8 @@ func TestFindEndpoint(t *testing.T) {
 // prefixMap assigns keys to values if the value is a prefix of key.
 type prefixMap []string
 
-func (m prefixMap) Endpoints() (map[string]struct{}, error) {
-	eps := map[string]struct{}{}
-	for _, v := range m {
-		eps[v] = struct{}{}
-	}
-	return eps, nil
+func (m prefixMap) Endpoints() ([]string, error) {
+	return m, nil
 }
 
 func (m prefixMap) GetMany(keys ...string) ([]string, error) {

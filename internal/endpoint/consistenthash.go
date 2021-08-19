@@ -25,7 +25,7 @@ import (
 type consistentHash interface {
 	Lookup(string) string
 	LookupN(string, int) []string
-	Nodes() map[string]struct{}
+	Nodes() []string
 }
 
 type hashFn func(data []byte) uint32
@@ -35,7 +35,7 @@ type hashMap struct {
 	replicas int
 	keys     []int // Sorted
 	hashMap  map[int]string
-	values   map[string]struct{}
+	nodes    []string
 }
 
 func hashMapNew(replicas int, fn hashFn) *hashMap {
@@ -43,7 +43,6 @@ func hashMapNew(replicas int, fn hashFn) *hashMap {
 		replicas: replicas,
 		hash:     fn,
 		hashMap:  make(map[int]string),
-		values:   make(map[string]struct{}),
 	}
 	if m.hash == nil {
 		m.hash = crc32.ChecksumIEEE
@@ -56,14 +55,14 @@ func (m *hashMap) isEmpty() bool {
 	return len(m.keys) == 0
 }
 
-// Adds some keys to the hash.
-func (m *hashMap) add(keys ...string) {
-	for _, key := range keys {
-		m.values[key] = struct{}{}
+// Adds some nodes to the hash.
+func (m *hashMap) add(nodes ...string) {
+	for _, node := range nodes {
+		m.nodes = append(m.nodes, node)
 		for i := 0; i < m.replicas; i++ {
-			hash := int(m.hash([]byte(strconv.Itoa(i) + key)))
+			hash := int(m.hash([]byte(strconv.Itoa(i) + node)))
 			m.keys = append(m.keys, hash)
-			m.hashMap[hash] = key
+			m.hashMap[hash] = node
 		}
 	}
 	sort.Ints(m.keys)
@@ -100,6 +99,6 @@ func (m *hashMap) LookupN(key string, n int) []string {
 	return nodes
 }
 
-func (m *hashMap) Nodes() map[string]struct{} {
-	return m.values
+func (m *hashMap) Nodes() []string {
+	return m.nodes
 }
