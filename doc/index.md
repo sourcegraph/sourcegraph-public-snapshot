@@ -14,7 +14,8 @@ This website is home to Sourcegraph's feature, installation, administration, and
 
 <div class="cta-group">
 <a class="btn btn-primary" href="#getting-started">★ Try Sourcegraph now</a>
-<a class="btn" href="#core-documentation">Core documentation</a>
+<a class="btn" href="#core-documentation">Core docs</a>
+<a class="btn" href="#cloud-documentation">Cloud docs</a>
 <a class="btn" href="https://about.sourcegraph.com/">About Sourcegraph</a>
 </div>
 
@@ -24,7 +25,7 @@ This website is home to Sourcegraph's feature, installation, administration, and
   <a href="https://sourcegraph.com/search" class="btn btn-primary" alt="Sourcegraph Cloud">
    <span>★ Sourcegraph Cloud</span>
    </br>
-   <b>Search open source code or your own public repositories.</b> No signup or installation required.
+   <b>Search 1 million+ open source respositories or your own repositories.</b> No installation required.
   </a>
 
   <a href="admin/install" class="btn btn-primary" alt="Self-host">
@@ -79,6 +80,12 @@ For next steps, visit the [Docker installation documentation](admin/install/dock
 - [Using Sourcegraph](getting-started/index.md)
 - [Administration](admin/index.md)
 - [Extensions](extensions/index.md)
+- [Cloud](code_search/explanations/sourcegraph_cloud.md)
+
+## Cloud documentation
+
+- [Sourcegraph cloud](code_search/explanations/sourcegraph_cloud.md)
+- [Differences between Sourcegraph cloud and self-hosted ](cloud/cloud_ent_on-prem_comparison.md)
 
 ### Features and tutorials
 
