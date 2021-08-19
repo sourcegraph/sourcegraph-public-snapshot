@@ -23,7 +23,7 @@ Examples:
 | Pattern | Explanation |
 |---------|-------------|
 | `^github\.com/sourcegraph/sourcegraph$` | Include or exclude the specific repository `github.com/sourcegraph/sourcegraph` |
-| `^github\.com/sourcegraph/(sourcegraph|about|docsite)$` | Include or exclude the specific repositories `github.com/sourcegraph/sourcegraph`, `github.com/sourcegraph/about` and `github.com/sourcegraph/docsite` |
+| `^github\.com/sourcegraph/(sourcegraph\|about\|docsite)$` | Include or exclude the specific repositories `github.com/sourcegraph/sourcegraph`, `github.com/sourcegraph/about` and `github.com/sourcegraph/docsite` |
 | `^github\.com/sourcegraph/go-` | Include or exclude all repositories with the prefix `github.com/sourcegraph/go-` |
 | `service` | Include or exclude all repositories that contain the word `service` in their name |
 | `\.js$` | Include or exclude all repositories that end in `.js` |
