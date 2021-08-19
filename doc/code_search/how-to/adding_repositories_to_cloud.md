@@ -4,6 +4,8 @@ Sourcegraph cloud lets you add repositories to search with Sourcegraph without n
 
 ## Adding repositories you own or collaborate on from GitHub.com or GitLab.com
 
+> NOTE: If you're adding organization repositories from GitHub.com, the Sourcegraph.com OAuth application needs to [get approval from the organization owner for granting access](https://docs.github.com/en/organizations/restricting-access-to-your-organizations-data/approving-oauth-apps-for-your-organization).
+
 To add repositories you own or collaborate on from GitHub or GitLab, you must first create a code host connection:
 
 1. Go to **User menu > Settings** in the top navigation bar.
