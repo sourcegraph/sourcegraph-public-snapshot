@@ -1,3 +1,4 @@
+import delay from 'delay'
 import { View } from 'sourcegraph'
 
 import { createDriverForTest, Driver } from '@sourcegraph/shared/src/testing/driver'
@@ -37,6 +38,7 @@ describe('[VISUAL] Code insights page', () => {
 
     async function takeChartSnapshot(name: string): Promise<void> {
         await driver.page.waitForSelector('[data-testid="line-chart__content"] svg circle')
+        await delay(500)
         await percySnapshotWithVariants(driver.page, name)
     }
 
