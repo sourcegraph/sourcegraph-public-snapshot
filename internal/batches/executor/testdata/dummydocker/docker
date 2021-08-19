@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # This script is used by the executor integration test to simulate Docker.
 # It gets put into $PATH as "docker" and accepts the "run" command.
