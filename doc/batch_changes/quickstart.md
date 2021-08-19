@@ -29,7 +29,7 @@ In order to create batch changes we need to [install the Sourcegraph CLI](../cli
     curl -L https://YOUR-SOURCEGRAPH-INSTANCE/.api/src-cli/src_linux_amd64 -o /usr/local/bin/src
     chmod +x /usr/local/bin/src
     ```
-2. Authenticate `src` with your Sourcegraph instance by running **`src login`** and following the instructions:
+1. Authenticate `src` with your Sourcegraph instance by running **`src login`** and following the instructions:
 
     ```
     src login https://YOUR-SOURCEGRAPH-INSTANCE
@@ -78,49 +78,65 @@ Let's see the changes that will be made. Don't worry---no commits, branches, or 
 1. In your terminal, run this command:
 
     <pre>src batch preview -f hello-world.batch.yaml</pre>
-    <!-- TODO: Update pictures -->
 1. Wait for it to run and compute the changes for each repository.
-    <img src="https://sourcegraphstatic.com/docs/images/batch_changes/src_batch_preview_waiting.png" class="screenshot">
-1. When it's done, click the displayed link to see the **preview page** of all the changes that will be made.
-    <img src="https://sourcegraphstatic.com/docs/images/batch_changes/src_batch_preview_link.png" class="screenshot">
+    <img src="https://sourcegraphstatic.com/docs/images/batch_changes/quickstart/src_batch_preview_waiting.png" class="screenshot">
+1. When it's done, follow the link to the *preview page* to see all the changes that will be made.
+    <img src="https://sourcegraphstatic.com/docs/images/batch_changes/quickstart/src_batch_preview_link.png" class="screenshot">
 1. Make sure the changes look right.
-    <img src="https://sourcegraphstatic.com/docs/images/batch_changes/browser_batch_preview.png" class="screenshot">
-1. If you want to modify which changes are made, edit the `hello-world.batch.yaml` file, rerun the `src batch preview` command and open the newly generated preview URL.
+    <img src="https://sourcegraphstatic.com/docs/images/batch_changes/quickstart/browser_preview.png" class="screenshot">
+1. Click **Apply** to create the batch change. You should see something like this:
+    <img src="https://sourcegraphstatic.com/docs/images/batch_changes/quickstart/browser_created.png" class="screenshot">
 
-    >NOTE: If you want to run the batch change on fewer repositories, change the `repositoriesMatchingQuery` in `hello-world.batch.yaml` to something like `file:README.md repo:myproject` (to only match repositories whose name contains `myproject`).
+**You've now created your first batch change!**
 
-## Publish the changes
+The batch change's *changesets* are still unpublished, which means they exist only on Sourcegraph and haven't been pushed to your code host yet. This is good news, as you probably don't want to publish these toy "Hello World" changesets to actively-developed repositories, because that might confuse people ("Why did you add this line to our READMEs?"). In the next steps, we'll prepare to publish a single test changeset.
 
-So far, nothing has been created on the code hosts yet. For that to happen, we need to publish the changesets in our batch change.
+## Publish a changeset
 
-Publishing causes commits, branches, and pull requests/merge requests to be created on your code host.
+So far, nothing has been created on your code hosts. For that to happen, we need to tell Sourcegraph to *publish a changeset*.
 
-_You probably don't want to publish these toy "Hello World" changesets to actively developed repositories, because that might confuse people ("Why did you add this line to our READMEs?")._
+Publishing causes commits, branches, and pull requests/merge requests to be written to your code host.
 
 ### Configure code host credentials
 
-Batch Changes needs permission to open changesets on your behalf. To grant permission, you will need to [add a personal access token](how-tos/configuring_credentials.md#adding-a-token) for each code host you'll be publishing changesets on.
+Batch Changes needs permission to publish changesets on your behalf. To grant permission, you will need to [add a personal access token](how-tos/configuring_credentials.md#adding-a-token) for each code host you'll be publishing changesets on.
 
-This is a one-time operation that you don't need to do for each batch change. You can also ask the administrators of your Sourcegraph instance to [configure global credentials](how-tos/configuring_credentials.md#global-service-account-tokens) instead.
+This is a one-time operation, so don't worry---we won't need to do this for every batch change. You can also ask the administrators of your Sourcegraph instance to [configure global credentials](how-tos/configuring_credentials.md#global-service-account-tokens) instead.
 
-Once you have successfully added a token, Sourcegraph will have everything it needs to publish changesets to that code host!
+### (Optional) Modify the batch spec to only target a specific repository
 
-### Publish to code hosts
+Before publishing, you might want to change the `repositoriesMatchingQuery` in `hello-world.batch.yaml` to target only a single, test repository that you could open a toy pull request/merge request on, such as one that you are the owner of. For example:
 
-Back from the **preview page**, for each changest, you can choose whether to leave it as-is unpublished, publish it as a normal pull request/merge request, or publish it as a draft (if the code host supports it). Let's try publishing some changesets normally:
+```yaml
+# Find all repositories that contain a README.md file and whose name matches our test repo.
+on:
+  - repositoriesMatchingQuery: file:README.md repo:sourcegraph-testing/batch-changes-test-repo
+```
 
-<!-- TODO: Add pictures -->
-1. Back from the **preview page**, select the changesets you would like to publish.
-1. Open the actions dropdown, select "Publish", and then click again to update the preview.
-1. You should see the updated actions reflect our intent to publish the changesets.
-1. Click the **Apply** button to create the batch change and publish the changesets. You should see something like this:
+With your updated batch spec, re-run the preview command, `src batch preview -f hello-world.batch.yaml` (you should notice it's a lot quicker this time thanks to the caching!). Once again, follow the link to the *preview page*. You should now see something like this:
+
+<img src="https://sourcegraphstatic.com/docs/images/batch_changes/quickstart/browser_preview_update.png" class="screenshot">
+
+As before, you get a preview before any changes are applied, but this time, you are *updating your existing changesets*. Now, all of the changesets listed will be *detached* ("Batch Changes speak" for *removed from the batch change*), except for the one you're about to publish.
+
+Once you are ready, click **Apply** again to apply the update to your batch change.
+
+### Publish to code host
+
+There are [multiple ways to publish a changeset](how-tos/publishing_changesets.md#publishing-changesets). Let's look at how to do so from the screen you are currently on.
+
+1. Select the changeset you would like to publish (in our case it's the only one).
+    <img src="https://sourcegraphstatic.com/docs/images/batch_changes/quickstart/browser_publish_select_changesets.png" class="screenshot">
+1. Choose the "Publish changesets" action from the dropdown.
+    <img src="https://sourcegraphstatic.com/docs/images/batch_changes/quickstart/browser_publish_select_action.png" class="screenshot">
+1. Click **Publish changesets**. You'll be prompted to confirm. You may also choose to publish as draft changeset(s), if the code host supports it.
+    <img src="https://sourcegraphstatic.com/docs/images/batch_changes/quickstart/browser_publish_confirm.png" class="screenshot">
+1. Click **Publish**, and wait for an alert to appear (it may take a couple seconds).
+1. Sit tight---once it's done, the page should update, and you should see something like this:
+    <img src="https://sourcegraphstatic.com/docs/images/batch_changes/quickstart/browser_publish_complete.png" class="screenshot">
 
 ## Congratulations!
 
-You've created your first batch change! 🎉
+**You've published your first Batch Changes changeset!** 🎉
 
-Feel free to customize your batch spec and experiment with making other types of changes.
-
-To update your batch change, edit `hello-world.batch.yaml` and run `src batch preview` again. As before, you'll see a preview before any changes are applied, but this time, you'll be updating your existing changesets.
-
-[Explore the documentation](index.md) to learn what else you can do with Batch Changes!
+Feel free to customize your batch spec and experiment with making other types of changes. You can also [explore the documentation](index.md) to learn what else you can do with Batch Changes!
