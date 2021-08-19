@@ -29,7 +29,6 @@
     justify-content: center;
     border-bottom: 2px solid transparent;
     &:hover {
-        // color: var(--body-color);
         border-bottom: 2px solid var(--border-color);
     }
     &[data-selected] {
