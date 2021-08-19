@@ -1,29 +1,21 @@
-import classNames from 'classnames'
+import classnames from 'classnames'
+import ProgressWrench from 'mdi-react/ProgressWrenchIcon'
 import React from 'react'
 
-import styles from './BackendAlertOverlay.module.scss'
+import { AlertOverlay } from '../../../alert-overlay/AlertOverlay'
 
-export interface BackendAlertOverlayProps {
-    title: string
-    description: string
+interface AlertOverLayProps {
+    isFetchingHistoricalData?: boolean
+    hasNoData: boolean
 }
-
-export const BackendAlertOverlay: React.FunctionComponent<BackendAlertOverlayProps> = ({
-    title,
-    description,
-    children: icon,
-}) => (
-    <>
-        <div className={classNames('position-absolute w-100 h-100', styles.bgLoadingGradient)} />
-        <div
-            className={classNames(
-                'position-absolute d-flex flex-column justify-content-center align-items-center w-100 h-100',
-                styles.bgLoading
-            )}
-        >
-            {icon && <div className={styles.icon}>{icon}</div>}
-            <h4 className={styles.title}>{title}</h4>
-            <small className={styles.description}>{description}</small>
-        </div>
-    </>
-)
+export const BackendAlertOverlay: React.FunctionComponent<AlertOverLayProps> = ({
+    isFetchingHistoricalData,
+    hasNoData,
+}) =>
+    isFetchingHistoricalData ? (
+        <AlertOverlay title="This insight is still being processed" description="Datapoints shown may be undercounted.">
+            <ProgressWrench className={classnames('mb-3')} size={33} />
+        </AlertOverlay>
+    ) : hasNoData ? (
+        <AlertOverlay title="No data to display" description="We couldn’t find any matches for this insight." />
+    ) : null

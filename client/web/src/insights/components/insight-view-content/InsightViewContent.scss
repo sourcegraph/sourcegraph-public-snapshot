@@ -28,7 +28,7 @@
     }
 
     &:hover,
-    &:focus {
+    &:focus-within {
         .view-content-alert-overlay {
             display: none;
         }

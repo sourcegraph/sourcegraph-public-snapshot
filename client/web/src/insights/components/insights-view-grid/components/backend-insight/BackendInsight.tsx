@@ -24,7 +24,7 @@ import { InsightErrorContent } from '../insight-card/components/insight-error-co
 import { InsightLoadingContent } from '../insight-card/components/insight-loading-content/InsightLoadingContent'
 import { InsightContentCard } from '../insight-card/InsightContentCard'
 
-import { AlertOverlay } from './AlertOverlay'
+import { BackendAlertOverlay } from './BackendAlertOverlay'
 import styles from './BackendInsight.module.scss'
 import { DrillDownFiltersAction } from './components/drill-down-filters-action/DrillDownFiltersPanel'
 import { DrillDownInsightCreationFormValues } from './components/drill-down-filters-panel/components/drill-down-insight-creation-form/DrillDownInsightCreationForm'
@@ -177,21 +177,19 @@ export const BackendInsight: React.FunctionComponent<BackendInsightProps> = prop
                 </InsightErrorContent>
             ) : (
                 data && (
-                    <>
-                        <InsightViewContent
-                            telemetryService={telemetryService}
-                            viewContent={data.view.content}
-                            viewID={insight.id}
-                            containerClassName="be-insight-card"
-                        >
-                            <InsightViewContent.Alert>
-                                <AlertOverlay
-                                    hasNoData={!data.view.content.some(({ data }) => data.length > 0)}
-                                    isFetchingHistoricalData={data.view.isFetchingHistoricalData}
-                                />
-                            </InsightViewContent.Alert>
-                        </InsightViewContent>
-                    </>
+                    <InsightViewContent
+                        telemetryService={telemetryService}
+                        viewContent={data.view.content}
+                        viewID={insight.id}
+                        containerClassName="be-insight-card"
+                    >
+                        <InsightViewContent.Alert>
+                            <BackendAlertOverlay
+                                hasNoData={!data.view.content.some(({ data }) => data.length > 0)}
+                                isFetchingHistoricalData={data.view.isFetchingHistoricalData}
+                            />
+                        </InsightViewContent.Alert>
+                    </InsightViewContent>
                 )
             )}
             {
