@@ -119,7 +119,7 @@ func (p *Provider) FetchUserPermsByToken(ctx context.Context, token string) (*au
 			return perms, err
 		}
 		for _, org := range orgs {
-			if org.DefaultRepositoryPermission != "" && org.DefaultRepositoryPermission != "none" {
+			if canViewOrgRepos(org) {
 				groups[org.Login] = cachedGroup{
 					Org: org.Login,
 				}

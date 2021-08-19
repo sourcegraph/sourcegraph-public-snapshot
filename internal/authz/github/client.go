@@ -7,6 +7,16 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 )
 
+func canViewOrgRepos(org *github.OrgDetails) bool {
+	if org == nil {
+		return false
+	}
+	// https://github.com/organizations/$ORG/settings/member_privileges -> "Base permissions"
+	return org.DefaultRepositoryPermission == "read" ||
+		org.DefaultRepositoryPermission == "write" ||
+		org.DefaultRepositoryPermission == "admin"
+}
+
 // client defines the set of GitHub API client methods used by the authz provider.
 //
 // NOTE: All methods are sorted in alphabetical order.
