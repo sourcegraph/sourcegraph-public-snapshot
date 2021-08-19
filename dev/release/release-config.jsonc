@@ -16,9 +16,9 @@
     "previousRelease": "3.30.4",
     "upcomingRelease": "3.31.0",
     // Release dates
-    "oneWorkingDayBeforeRelease": "19 August 2021 10:00 PST",
-    "releaseDate": "20 August 2021 10:00 PST",
-    "oneWorkingDayAfterRelease": "27 August 2021 10:00 PST",
+    "oneWorkingDayBeforeRelease": "26 August 2021 10:00 PST",
+    "releaseDate": "27 August 2021 10:00 PST",
+    "oneWorkingDayAfterRelease": "30 August 2021 10:00 PST",
     // Channel where messages from the tooling are posted
     "slackAnnounceChannel": "dev-announce",
     // Email for preparing calendar events
