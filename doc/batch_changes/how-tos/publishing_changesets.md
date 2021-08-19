@@ -187,6 +187,8 @@ For any changesets that are currently unpublished or only published as drafts, y
 
 <img src="https://sourcegraphstatic.com/docs/images/batch_changes/publish_ui_browser_select_action_on_apply.png" class="screenshot">
 
+> NOTE: Certain types of changeset cannot be published from the UI and will have their checkbox disabled. Not sure why your changeset is disabled? Check the [FAQ](../references/faq.md#why-is-the-checkbox-on-my-changeset-disabled-when-i-m-previewing-a-batch-change).
+
 Once the preview actions look good, you can click **Apply** to publish the changesets. You should see an alert appear indicating that the publication states actions have updated, and the changesets' "Actions" will reflect the new publication states:
 
 <img src="https://sourcegraphstatic.com/docs/images/batch_changes/publish_ui_browser_preview_update.png" class="screenshot">
