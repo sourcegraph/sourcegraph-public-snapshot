@@ -229,7 +229,8 @@ const batchPreviewStages = (
                 expand,
                 now,
                 <ul className="list-group mt-3">
-                    {tasks.map(task => {
+                    {tasks === null && <li className="list-group-item text-muted">No tasks</li>}
+                    {tasks?.map(task => {
                         const tuple = findLogLineTuple(
                             parsed,
                             JSONLogLineOperation.EXECUTING_TASK,
@@ -420,7 +421,7 @@ interface ExecutingTasksJSONLogLine {
     status: JSONLogLineStatus
     message?: string
     metadata: {
-        tasks: Task[]
+        tasks: Task[] | null
     }
 }
 
