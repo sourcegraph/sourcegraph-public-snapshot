@@ -8,9 +8,9 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/cespare/xxhash/v2"
 	"github.com/cockroachdb/errors"
 	"github.com/inconshreveable/log15"
-	"github.com/segmentio/fasthash/fnv1a"
 	"github.com/sourcegraph/go-rendezvous"
 )
 
@@ -214,7 +214,7 @@ func (m *Map) sync(ch chan endpoints, ready chan struct{}) {
 func newConsistentHash(nodes []string) consistentHash {
 	if os.Getenv("SRC_ENDPOINTS_CONSISTENT_HASH") == "rendezvous" {
 		log15.Info("endpoints: using rendezvous hashing")
-		return rendezvous.New(nodes, fnv1a.HashString64)
+		return rendezvous.New(nodes, xxhash.Sum64String)
 	}
 	// 50 replicas and crc32.ChecksumIEEE are the defaults used by
 	// groupcache.
