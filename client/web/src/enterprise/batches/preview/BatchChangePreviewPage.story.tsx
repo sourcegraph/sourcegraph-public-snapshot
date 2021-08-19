@@ -5,6 +5,7 @@ import React from 'react'
 import { of, Observable } from 'rxjs'
 
 import {
+    ApplyPreviewStatsFields,
     BatchSpecApplyPreviewConnectionFields,
     BatchSpecFields,
     ChangesetApplyPreviewFields,
@@ -29,6 +30,22 @@ const nodes: ChangesetApplyPreviewFields[] = [
     ...Object.values(visibleChangesetApplyPreviewNodeStories(false)),
     ...Object.values(hiddenChangesetApplyPreviewStories),
 ]
+
+const APPLY_PREVIEW_STATS: ApplyPreviewStatsFields['stats'] = {
+    close: 10,
+    detach: 10,
+    import: 10,
+    publish: 10,
+    publishDraft: 10,
+    push: 10,
+    reopen: 10,
+    undraft: 10,
+    update: 10,
+    archive: 18,
+    added: 5,
+    modified: 10,
+    removed: 3,
+}
 
 const batchSpec = (): BatchSpecFields => ({
     appliesToBatchChange: null,
@@ -65,21 +82,7 @@ const batchSpec = (): BatchSpecFields => ({
     },
     originalInput: 'name: awesome-batch-change\ndescription: somestring',
     applyPreview: {
-        stats: {
-            close: 10,
-            detach: 10,
-            import: 10,
-            publish: 10,
-            publishDraft: 10,
-            push: 10,
-            reopen: 10,
-            undraft: 10,
-            update: 10,
-            archive: 18,
-            added: 5,
-            modified: 10,
-            removed: 3,
-        },
+        stats: APPLY_PREVIEW_STATS,
         totalCount: 18,
     },
 })
@@ -114,6 +117,8 @@ const fetchBatchSpecUpdate: typeof fetchBatchSpecById = () =>
         },
     })
 
+const queryApplyPreviewStats = (): Observable<ApplyPreviewStatsFields['stats']> => of(APPLY_PREVIEW_STATS)
+
 const queryChangesetApplyPreview = (): Observable<BatchSpecApplyPreviewConnectionFields> =>
     of({
         pageInfo: {
@@ -146,6 +151,7 @@ add('Create', () => (
                 fetchBatchSpecById={fetchBatchSpecCreate}
                 queryChangesetApplyPreview={queryChangesetApplyPreview}
                 queryChangesetSpecFileDiffs={queryEmptyFileDiffs}
+                queryApplyPreviewStats={queryApplyPreviewStats}
                 authenticatedUser={{
                     url: '/users/alice',
                     displayName: 'Alice',
@@ -167,6 +173,7 @@ add('Update', () => (
                 fetchBatchSpecById={fetchBatchSpecUpdate}
                 queryChangesetApplyPreview={queryChangesetApplyPreview}
                 queryChangesetSpecFileDiffs={queryEmptyFileDiffs}
+                queryApplyPreviewStats={queryApplyPreviewStats}
                 authenticatedUser={{
                     url: '/users/alice',
                     displayName: 'Alice',
@@ -188,6 +195,7 @@ add('Missing credentials', () => (
                 fetchBatchSpecById={fetchBatchSpecMissingCredentials}
                 queryChangesetApplyPreview={queryChangesetApplyPreview}
                 queryChangesetSpecFileDiffs={queryEmptyFileDiffs}
+                queryApplyPreviewStats={queryApplyPreviewStats}
                 authenticatedUser={{
                     url: '/users/alice',
                     displayName: 'Alice',
@@ -209,6 +217,7 @@ add('Spec file', () => (
                 fetchBatchSpecById={fetchBatchSpecCreate}
                 queryChangesetApplyPreview={queryChangesetApplyPreview}
                 queryChangesetSpecFileDiffs={queryEmptyFileDiffs}
+                queryApplyPreviewStats={queryApplyPreviewStats}
                 authenticatedUser={{
                     url: '/users/alice',
                     displayName: 'Alice',
@@ -230,6 +239,7 @@ add('No changesets', () => (
                 fetchBatchSpecById={fetchBatchSpecCreate}
                 queryChangesetApplyPreview={queryEmptyChangesetApplyPreview}
                 queryChangesetSpecFileDiffs={queryEmptyFileDiffs}
+                queryApplyPreviewStats={queryApplyPreviewStats}
                 authenticatedUser={{
                     url: '/users/alice',
                     displayName: 'Alice',
