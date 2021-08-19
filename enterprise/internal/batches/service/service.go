@@ -14,10 +14,13 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
+	streamapi "github.com/sourcegraph/sourcegraph/internal/search/streaming/api"
+	streamhttp "github.com/sourcegraph/sourcegraph/internal/search/streaming/http"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
@@ -633,4 +636,62 @@ func (s *Service) CreateChangesetJobs(ctx context.Context, batchChangeID int64, 
 	}
 
 	return bulkGroupID, nil
+}
+
+func ensureSelectRepo(query string) string {
+	// TODO detect
+	return query + " select:repo"
+}
+
+func ensureCountAll(query string) string {
+	// TODO detect
+	return query + " count:all"
+}
+
+func (s *Service) ResolveReposForSearchQuery(ctx context.Context, userID int32, query string) ([]api.RepoID, error) {
+	var err error
+	req, err := streamhttp.NewRequest(api.InternalClient.URL, ensureCountAll(ensureSelectRepo(query)))
+	if err != nil {
+		return nil, err
+	}
+
+	req = req.WithContext(actor.WithActor(ctx, actor.FromUser(userID)))
+	// TODO: get token
+	// req.Header.Set("Authorization", "token "+"mysecrettoken")
+	req.Header.Set("User-Agent", "Batch Changes repository resolver")
+
+	resp, err := httpcli.InternalClient.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	repoIDs := []api.RepoID{}
+	dec := streamhttp.FrontendStreamDecoder{
+		OnMatches: func(matches []streamhttp.EventMatch) {
+			for _, match := range matches {
+				if m, ok := match.(*streamhttp.EventRepoMatch); ok {
+					repoIDs = append(repoIDs, api.RepoID(m.RepositoryID))
+				}
+			}
+		},
+		OnError: func(ee *streamhttp.EventError) {
+			err = errors.New(ee.Message)
+		},
+		OnProgress: func(p *streamapi.Progress) {
+			// TODO: Evaluate skipped for values we care about.
+		},
+	}
+
+	if err := dec.ReadAll(resp.Body); err != nil {
+		return nil, err
+	}
+
+	accessibleRepos, err := s.store.Repos().List(actor.WithActor(ctx, actor.FromUser(userID)), database.ReposListOptions{IDs: repoIDs})
+	if err != nil {
+		return nil, err
+	}
+	accessibleRepoIDs := make([]int, 0, len(accessibleRepos))
+
+	return repoIDs, err
 }
