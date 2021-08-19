@@ -10,7 +10,7 @@ import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { BrandLogo } from '../components/branding/BrandLogo'
 import { SourcegraphContext } from '../jscontext'
 
-import styles from './ExperimentalSignUpPage.module.scss'
+import styles from './CloudSignUpPage.module.scss'
 import { SignUpArguments, SignUpForm } from './SignUpForm'
 
 interface Props extends ThemeProps, TelemetryProps {
@@ -31,11 +31,14 @@ const SourceToTitleMap = {
     Snippet: 'Easily search the code you care about.',
 }
 
-export type ExperimentalSignUpSource = keyof typeof SourceToTitleMap
+export type CloudSignUpSource = keyof typeof SourceToTitleMap
 
 export const ShowEmailFormQueryParameter = 'showEmail'
 
-export const ExperimentalSignUpPage: React.FunctionComponent<Props> = ({
+/**
+ * Sign up page specifically for Sourcegraph.com
+ */
+export const CloudSignUpPage: React.FunctionComponent<Props> = ({
     isLightTheme,
     source,
     showEmailForm,
@@ -66,7 +69,7 @@ export const ExperimentalSignUpPage: React.FunctionComponent<Props> = ({
     )
 
     const sourceIsValid = source && Object.keys(SourceToTitleMap).includes(source)
-    const title = sourceIsValid ? SourceToTitleMap[source as ExperimentalSignUpSource] : SourceToTitleMap.Context // Use Context as default
+    const title = sourceIsValid ? SourceToTitleMap[source as CloudSignUpSource] : SourceToTitleMap.Context // Use Context as default
 
     const logEvent = (): void => {
         if (sourceIsValid) {
