@@ -85,7 +85,12 @@ func SearchFilesInRepos(ctx context.Context, args *search.TextParameters, stream
 
 	// Concurrently run searcher for all unindexed repos regardless whether text or regexp.
 	g.Go(func() error {
-		return callSearcherOverRepos(ctx, args, stream, request.UnindexedRepos(), false)
+		searcherArgs := &search.SearcherParameters{
+			SearcherURLs:    args.SearcherURLs,
+			PatternInfo:     args.PatternInfo,
+			UseFullDeadline: args.UseFullDeadline,
+		}
+		return callSearcherOverRepos(ctx, searcherArgs, stream, request.UnindexedRepos(), false)
 	})
 
 	return g.Wait()
@@ -244,7 +249,7 @@ func matchesToFileMatches(matches []result.Match) ([]*result.FileMatch, error) {
 // callSearcherOverRepos calls searcher on searcherRepos.
 func callSearcherOverRepos(
 	ctx context.Context,
-	args *search.TextParameters,
+	args *search.SearcherParameters,
 	stream streaming.Sender,
 	searcherRepos []*search.RepositoryRevisions,
 	index bool,
