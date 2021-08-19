@@ -1,5 +1,5 @@
 import { isObject } from 'lodash'
-import React, { useEffect, useRef, useState } from 'react'
+import React, { useEffect, useRef } from 'react'
 import { View, MarkupContent } from 'sourcegraph'
 
 import { MarkupKind } from '@sourcegraph/extension-api-classes'
@@ -37,15 +37,6 @@ const InsightViewContentComponent: React.FunctionComponent<InsightViewContentPro
         child => React.isValidElement(child) && child.type === Alert
     ) as React.ReactElement | undefined
     const alertSlot = (alertChild?.props as React.PropsWithChildren<{}>).children || null
-
-    // Track hovering for hide/show message overlay
-    const [isHovered, setIsHovered] = useState(false)
-    const hoverProps = {
-        onMouseOver: () => setIsHovered(true),
-        onMouseOut: () => setIsHovered(false),
-        onFocus: () => setIsHovered(true),
-        onBlur: () => setIsHovered(false),
-    }
 
     // Track user intent to interact with extension-contributed views
     const viewContentReference = useRef<HTMLDivElement>(null)
@@ -91,7 +82,7 @@ const InsightViewContentComponent: React.FunctionComponent<InsightViewContentPro
     }, [viewID, containerClassName, props.telemetryService])
 
     return (
-        <div className="view-content" ref={viewContentReference} {...hoverProps}>
+        <div className="view-content" ref={viewContentReference}>
             {viewContent.map((content, index) =>
                 isMarkupContent(content) ? (
                     <React.Fragment key={index}>
@@ -112,7 +103,7 @@ const InsightViewContentComponent: React.FunctionComponent<InsightViewContentPro
                             telemetryService={props.telemetryService}
                             className="view-content__chart"
                         />
-                        {!isHovered && alertSlot}
+                        {alertSlot && <div className="view-content-alert-overlay">{alertSlot}</div>}
                     </React.Fragment>
                 ) : null
             )}
