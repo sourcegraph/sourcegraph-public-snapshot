@@ -90,3 +90,20 @@ export const checkPublishability = (
     }
     return { publishable: true, changesetSpecID: node.targets.changesetSpec.id }
 }
+
+/**
+ * For a list of `ChangesetApplyPreview` nodes, this method returns a list of the
+ * changeset spec IDs for any of the nodes that are considered publishable.
+ *
+ * @see `checkPublishability`
+ */
+export const filterPublishableIDs = (
+    nodes: (
+        | PublishableChangesetSpecIDsVisibleChangesetApplyPreviewFields
+        | PublishableChangesetSpecIDsHiddenChangesetApplyPreviewFields
+    )[]
+): Scalars['ID'][] =>
+    nodes
+        .map(node => checkPublishability(node))
+        .filter((result): result is Publishable => result.publishable)
+        .map(result => result.changesetSpecID)
