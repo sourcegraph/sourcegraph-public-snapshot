@@ -147,7 +147,7 @@ The following instructions are specific to backing up and restoring the sourcegr
 >
 > The above may take a while if you have a lot of repositories. In the meantime, searches may be slow or return incomplete results. This process rarely takes longer than 6 hours and is usually **much** faster.
 
-> NOTE: Add `-n $NAMESPACE` to commands if you are not using the default namespace
+> NOTE: In some places you will see `$NAMESPACE` used. Add `-n $NAMESPACE` to commands if you are not using the default namespace
 > More kubectl configuration options can be found here: [kubectl Cheat Sheet](https://kubernetes.io/docs/reference/kubectl/cheatsheet/)
 
 ### Back up Sourcegraph databases
