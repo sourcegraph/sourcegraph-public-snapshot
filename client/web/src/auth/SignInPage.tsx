@@ -69,7 +69,12 @@ export const SignInPage: React.FunctionComponent<SignInPageProps> = props => {
                         // here because this list will not be updated during this component's lifetime.
                         /* eslint-disable react/no-array-index-key */
                         <div className="mb-2" key={index}>
-                            <a href={provider.authenticationURL} className="btn btn-secondary btn-block">
+                            <a
+                                href={`${provider.authenticationURL || ''}${
+                                    props.context.sourcegraphDotComMode ? '&redirect=/welcome' : ''
+                                }`}
+                                className="btn btn-secondary btn-block"
+                            >
                                 {provider.displayName === 'GitHub' && (
                                     <>
                                         <GithubIcon className="icon-inline" />{' '}
