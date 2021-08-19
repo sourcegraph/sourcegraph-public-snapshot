@@ -8,10 +8,10 @@
 }
 
 .streaming-progress {
+    flex-grow: 1;
     &__count {
         color: var(--body-color);
-        padding-left: 0.5rem;
-        padding-right: 0.5rem;
+        padding: 0.375rem 0.5rem;
         border-radius: var(--border-radius);
 
         &--in-progress {
@@ -26,16 +26,7 @@
         }
     }
 
-    &__count-icon {
-        display: none;
-    }
-
     &__skipped {
-        flex-grow: 1;
-        &--warning {
-            color: var(--infobar-warning-color);
-        }
-
         &-popover {
             width: 20rem;
             padding: 0;
