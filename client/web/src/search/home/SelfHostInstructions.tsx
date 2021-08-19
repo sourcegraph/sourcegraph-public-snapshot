@@ -85,7 +85,7 @@ export const SelfHostInstructions: React.FunctionComponent<TelemetryProps> = ({ 
                         <OpenInNewIcon aria-label="Open in new window" className="icon-inline" />
                     </a>
                     <a
-                        href="https://about.sourcegraph.com/contact/request-info/"
+                        href="https://info.sourcegraph.com/talk-to-a-developer"
                         onClick={onTalkToEngineerClicked}
                         className="text-right flex-shrink-0"
                     >
