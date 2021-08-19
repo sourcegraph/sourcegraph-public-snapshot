@@ -80,8 +80,17 @@ if [ "$sg_in_path" != "$target" ]; then
     echo "  running sg will run '$sg_in_path' instead."
   fi
   echo
+  echo
   echo "  Consider adding $(dirname "$target") to your \$PATH for easier"
   echo "  sg-ing!"
+  echo
+  echo "  For example: append the following to your ~/.bashrc file:"
+  echo
+  echo "      export PATH=\"$(dirname "$target"):\$PATH\""
+  echo
+  echo "  and reload your shell/terminal."
+  echo
+  echo "  If you use ZSH use ~/.zshrc, etc."
 fi
 
 echo "                                                  "
