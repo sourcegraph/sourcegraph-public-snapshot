@@ -93,6 +93,20 @@ By default, this script applies our base manifests using [`kubectl apply`](https
 If you have specific commands that should be run whenever you apply your manifests, you should modify this script as needed.
 For example, if you use [overlays to make changes to the manifests](#overlays), you should modify this script to apply your generated cluster instead.
 
+Watch - Next verify the deployment has started:
+
+```bash
+kubectl get pods -A -o wide --watch
+```
+
+Port forward - After deployment is completed, verify Sourcegraph is running by temporarily making the frontend port accessible:
+
+```
+kubectl port-forward svc/sourcegraph-frontend 3080:30080
+```
+
+Login - Browse to your Sourcegraph deployment, login and verify your existing configuration has been restored
+
 ## Overlays
 
 Kustomize overlays are our recommended way to [customize Sourcegraph with Kubernetes](#customization).
