@@ -403,11 +403,11 @@ func NewIndexedSubsetSearchRequest(ctx context.Context, args *search.TextParamet
 // have a repo: filter and consequently no rev: filter. This makes the code a bit
 // simpler because we don't have to resolve revisions before sending off (global)
 // requests to Zoekt.
-func zoektGlobalQuery(query zoektquery.Q, repoOptions search.RepoOptions, userPrivateRepos []types.RepoName) zoektquery.Q {
+func zoektGlobalQuery(q zoektquery.Q, repoOptions search.RepoOptions, userPrivateRepos []types.RepoName) zoektquery.Q {
 	var qs []zoektquery.Q
 
-	// Public
-	if !repoOptions.OnlyPrivate {
+	// Public or Any
+	if repoOptions.Visibility == query.Public || repoOptions.Visibility == query.Any {
 		rc := zoektquery.RcOnlyPublic
 		apply := func(f zoektquery.RawConfig, b bool) {
 			if !b {
@@ -420,17 +420,17 @@ func zoektGlobalQuery(query zoektquery.Q, repoOptions search.RepoOptions, userPr
 		apply(zoektquery.RcOnlyForks, repoOptions.OnlyForks)
 		apply(zoektquery.RcNoForks, repoOptions.NoForks)
 
-		qs = append(qs, zoektquery.NewAnd(&zoektquery.Branch{Pattern: "HEAD", Exact: true}, rc, query))
+		qs = append(qs, zoektquery.NewAnd(&zoektquery.Branch{Pattern: "HEAD", Exact: true}, rc, q))
 	}
 
-	// Private
-	if !repoOptions.OnlyPublic && len(userPrivateRepos) > 0 {
+	// Private or Any
+	if (repoOptions.Visibility == query.Private || repoOptions.Visibility == query.Any) && len(userPrivateRepos) > 0 {
 		privateRepoSet := make(map[string][]string, len(userPrivateRepos))
 		head := []string{"HEAD"}
 		for _, r := range userPrivateRepos {
 			privateRepoSet[string(r.Name)] = head
 		}
-		qs = append(qs, zoektquery.NewAnd(&zoektquery.RepoBranches{Set: privateRepoSet}, query))
+		qs = append(qs, zoektquery.NewAnd(&zoektquery.RepoBranches{Set: privateRepoSet}, q))
 	}
 
 	return zoektquery.Simplify(zoektquery.NewOr(qs...))

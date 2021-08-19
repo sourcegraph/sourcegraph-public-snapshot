@@ -289,8 +289,7 @@ type RepoOptions struct {
 	NoArchived         bool
 	OnlyArchived       bool
 	CommitAfter        string
-	OnlyPrivate        bool
-	OnlyPublic         bool
+	Visibility         query.RepoVisibility
 	Ranked             bool // Return results ordered by rank
 	Limit              int
 	CacheLookup        bool
@@ -334,11 +333,14 @@ func (op *RepoOptions) String() string {
 	if op.OnlyArchived {
 		b.WriteString(" OnlyArchived")
 	}
-	if op.OnlyPrivate {
+	if op.Visibility == query.Private {
 		b.WriteString(" OnlyPrivate")
 	}
-	if op.OnlyPublic {
+	if op.Visibility == query.Public {
 		b.WriteString(" OnlyPublic")
+	}
+	if op.Visibility == query.Any {
+		b.WriteString(" AnyVisibility")
 	}
 
 	return b.String()

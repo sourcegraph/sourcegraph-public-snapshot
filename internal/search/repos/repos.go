@@ -157,8 +157,8 @@ func (r *Resolver) Resolve(ctx context.Context, op search.RepoOptions) (Resolved
 			OnlyForks:    op.OnlyForks,
 			NoArchived:   op.NoArchived,
 			OnlyArchived: op.OnlyArchived,
-			NoPrivate:    op.OnlyPublic,
-			OnlyPrivate:  op.OnlyPrivate,
+			NoPrivate:    op.Visibility == query.Public,
+			OnlyPrivate:  op.Visibility == query.Private,
 		}
 
 		if searchContext.ID != 0 {
