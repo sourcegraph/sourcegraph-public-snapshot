@@ -2,7 +2,7 @@
 
 This how-to assumes that you already have [created some search insights](../quickstart.md).
 
-> Note: filters are not yet available on language statistics insights. 
+> NOTE: filters are not yet available on language statistics insights. 
 
 ### 1. Click the filter icon button for the insight you want to filter
 
