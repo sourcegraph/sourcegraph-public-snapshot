@@ -8,7 +8,7 @@ Filters take effect immediately, without needing to re-process the data series o
 
 ## Filter options
 
-### Repo: filters
+### `repo:` filters
 
 You can include or exclude repositories from your insight using regular expressions, the same way you can with the `repo:` filter in [Sourcegraph searches](../../code_search/reference/queries.md#keywords-all-searches).
 
