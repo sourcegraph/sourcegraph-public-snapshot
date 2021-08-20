@@ -141,9 +141,6 @@ type ZoektParameters struct {
 	Query          zoektquery.Q
 	Typ            IndexedRequestType
 	FileMatchLimit int32
-	Enabled        bool
-	Index          query.YesNoOnly
-	Mode           GlobalSearchMode
 	Select         filter.SelectPath
 
 	Zoekt *backend.Zoekt
