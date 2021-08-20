@@ -14,6 +14,9 @@ import {
     BatchSpecByIDResult,
     BatchSpecByIDVariables,
     BatchSpecFields,
+    QueryApplyPreviewStatsVariables,
+    QueryApplyPreviewStatsResult,
+    ApplyPreviewStatsFields,
 } from '../../../graphql-operations'
 
 export const viewerBatchChangesCodeHostsFragment = gql`
@@ -62,20 +65,7 @@ export const batchSpecFragment = gql`
         originalInput
         applyPreview {
             stats {
-                close
-                detach
                 archive
-                import
-                publish
-                publishDraft
-                push
-                reopen
-                undraft
-                update
-
-                added
-                modified
-                removed
             }
             totalCount
         }
@@ -118,6 +108,57 @@ export const fetchBatchSpecById = (batchSpec: Scalars['ID']): Observable<BatchSp
                 throw new Error(`The given ID is a ${node.__typename}, not a BatchSpec`)
             }
             return node
+        })
+    )
+
+export const queryApplyPreviewStats = ({
+    batchSpec,
+    publicationStates,
+}: QueryApplyPreviewStatsVariables): Observable<ApplyPreviewStatsFields['stats']> =>
+    requestGraphQL<QueryApplyPreviewStatsResult, QueryApplyPreviewStatsVariables>(
+        gql`
+            query QueryApplyPreviewStats($batchSpec: ID!, $publicationStates: [ChangesetSpecPublicationStateInput!]) {
+                node(id: $batchSpec) {
+                    __typename
+                    ... on BatchSpec {
+                        id
+                        applyPreview(publicationStates: $publicationStates) {
+                            ...ApplyPreviewStatsFields
+                        }
+                    }
+                }
+            }
+
+            fragment ApplyPreviewStatsFields on ChangesetApplyPreviewConnection {
+                stats {
+                    close
+                    detach
+                    archive
+                    import
+                    publish
+                    publishDraft
+                    push
+                    reopen
+                    undraft
+                    update
+
+                    added
+                    modified
+                    removed
+                }
+            }
+        `,
+        { batchSpec, publicationStates }
+    ).pipe(
+        map(dataOrThrowErrors),
+        map(({ node }) => {
+            if (!node) {
+                throw new Error(`BatchSpec with ID ${batchSpec} does not exist`)
+            }
+            if (node.__typename !== 'BatchSpec') {
+                throw new Error(`The given ID is a ${node.__typename}, not a BatchSpec`)
+            }
+            return node.applyPreview.stats
         })
     )
 
