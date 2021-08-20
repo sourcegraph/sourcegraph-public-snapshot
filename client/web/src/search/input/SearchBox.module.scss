@@ -7,14 +7,12 @@
     flex: 1 1 auto;
     min-width: 12rem;
 
-    :global(.theme-redesign) & {
-        @media (--xs-breakpoint-down) {
-            background-color: var(--color-bg-1);
-            border: 1px solid var(--input-border-color);
-            border-radius: var(--border-radius);
-            display: inline;
-            padding: 0.5rem;
-        }
+    @media (--xs-breakpoint-down) {
+        background-color: var(--color-bg-1);
+        border: 1px solid var(--input-border-color);
+        border-radius: var(--border-radius);
+        display: inline;
+        padding: 0.5rem;
     }
 
     &__shadow {
@@ -28,17 +26,13 @@
         border: 1px solid var(--input-border-color);
         border-right-color: transparent;
         border-left-color: transparent;
-        background-color: var(--input-bg);
+        background-color: var(--color-bg-1);
         height: 100%;
 
-        :global(.theme-redesign) & {
-            background-color: var(--color-bg-1);
-
-            @media (--xs-breakpoint-down) {
-                height: auto;
-                border: none;
-                display: inline;
-            }
+        @media (--xs-breakpoint-down) {
+            height: auto;
+            border: none;
+            display: inline;
         }
 
         &:first-child {
@@ -59,12 +53,17 @@
         border: 1px solid transparent;
         // Match padding from the regular query input.
         padding-left: 0.75rem;
+        border-top-left-radius: var(--border-radius);
+        border-bottom-left-radius: var(--border-radius);
 
         &:not(:first-child) {
             padding-left: 0.5rem; // smaller padding if the search context selector is visible
             margin-left: 0.0625rem;
-            border-top-left-radius: 0.25rem;
-            border-bottom-left-radius: 0.25rem;
+
+            @media (--xs-breakpoint-down) {
+                padding-left: 0;
+                margin-left: 0;
+            }
         }
 
         &:focus-within {
@@ -72,42 +71,26 @@
             box-shadow: 0 0 0 2px rgba(28, 126, 214, 0.25);
         }
 
-        :global(.theme-redesign) & {
-            border-top-left-radius: var(--border-radius);
-            border-bottom-left-radius: var(--border-radius);
+        @media (--xs-breakpoint-down) {
+            height: auto;
+            flex-wrap: wrap;
+            display: inline;
+            padding-left: 0;
+            margin-left: 0;
 
-            @media (--xs-breakpoint-down) {
-                height: auto;
-                flex-wrap: wrap;
-                display: inline;
-                padding-left: 0;
-                margin-left: 0;
-
-                &:focus-within {
-                    border: none;
-                    box-shadow: none;
-                }
+            &:focus-within {
+                border: none;
+                box-shadow: none;
             }
         }
     }
 
-    &__version-context-dropdown {
-        :global(.theme-redesign) & {
-            @media (--xs-breakpoint-down) {
-                display: inline-block;
-                vertical-align: middle;
-                margin-bottom: 0.5rem;
-            }
-        }
-    }
-
+    &__version-context-dropdown,
     &__context-dropdown {
-        :global(.theme-redesign) & {
-            @media (--xs-breakpoint-down) {
-                display: inline-block;
-                vertical-align: middle;
-                margin-bottom: 0.5rem;
-            }
+        @media (--xs-breakpoint-down) {
+            display: inline-block;
+            vertical-align: middle;
+            margin-bottom: 0.5rem;
         }
     }
 
@@ -117,27 +100,23 @@
         height: 1.125rem;
         background-color: var(--border-color-2);
 
-        :global(.theme-redesign) & {
-            @media (--xs-breakpoint-down) {
-                display: none;
-            }
+        @media (--xs-breakpoint-down) {
+            display: none;
         }
     }
 
     &__input {
-        :global(.theme-redesign) & {
-            @media (--xs-breakpoint-down) {
-                display: inline-block;
-                width: 100%;
-                border: 1px solid var(--input-border-color);
-                border-radius: var(--border-radius);
-                padding: 0.375rem 0.5rem;
+        @media (--xs-breakpoint-down) {
+            display: inline-block;
+            width: 100%;
+            border: 1px solid var(--input-border-color);
+            border-radius: var(--border-radius);
+            padding: 0.375rem 0.5rem;
 
-                &:focus-within,
-                &:focus {
-                    border: 1px solid var(--input-focus-border-color);
-                    box-shadow: 0 0 0 2px rgba(28, 126, 214, 0.25);
-                }
+            &:focus-within,
+            &:focus {
+                border: 1px solid var(--input-focus-border-color);
+                box-shadow: 0 0 0 2px rgba(28, 126, 214, 0.25);
             }
         }
     }
@@ -146,24 +125,20 @@
         padding-right: 0.5rem;
         padding-left: 0.35rem;
 
-        :global(.theme-redesign) & {
-            @media (--xs-breakpoint-down) {
-                display: inline-flex;
-                margin-top: 0.75rem;
-                padding-left: 0;
-            }
+        @media (--xs-breakpoint-down) {
+            display: inline-flex;
+            margin-top: 0.75rem;
+            padding-left: 0;
         }
     }
 
     &__button {
         display: flex;
-        :global(.theme-redesign) & {
-            @media (--xs-breakpoint-down) {
-                display: inline-flex;
-                flex-direction: row-reverse;
-                margin-top: 0.5rem;
-                float: right;
-            }
+        @media (--xs-breakpoint-down) {
+            display: inline-flex;
+            flex-direction: row-reverse;
+            margin-top: 0.5rem;
+            float: right;
         }
     }
 }
