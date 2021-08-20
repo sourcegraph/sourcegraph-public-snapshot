@@ -713,6 +713,33 @@ func (r *Resolver) BatchChanges(ctx context.Context, args *graphqlbackend.ListBa
 	}, nil
 }
 
+func (r *Resolver) BatchSpecExecutions(ctx context.Context, args *graphqlbackend.ListBatchSpecExecutionsArgs) (graphqlbackend.BatchSpecExecutionsConnectionResolver, error) {
+	if err := enterprise.BatchChangesEnabledForUser(ctx, r.store.DB()); err != nil {
+		return nil, err
+	}
+
+	opts := store.ListBatchSpecExecutionsOpts{}
+
+	opts.Limit = int(args.First)
+	if args.After != nil {
+		cursor, err := strconv.ParseInt(*args.After, 10, 32)
+		if err != nil {
+			return nil, err
+		}
+		opts.Cursor = cursor
+	}
+
+	authErr := backend.CheckCurrentUserIsSiteAdmin(ctx, r.store.DB())
+	if authErr != nil && authErr != backend.ErrMustBeSiteAdmin {
+		return nil, authErr
+	}
+
+	return &batchSpecExecutionsConnectionResolver{
+		store: r.store,
+		opts:  opts,
+	}, nil
+}
+
 func (r *Resolver) RepoChangesetsStats(ctx context.Context, repo *graphql.ID) (graphqlbackend.RepoChangesetsStatsResolver, error) {
 	repoID, err := graphqlbackend.UnmarshalRepositoryID(*repo)
 	if err != nil {
