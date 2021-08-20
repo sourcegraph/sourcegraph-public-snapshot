@@ -400,7 +400,8 @@ export const ExtensionRegistry: React.FunctionComponent<Props> = props => {
                                     <a href="https://docs.sourcegraph.com/integration/editor">editor integrations</a>.
                                     You may not use the Sourcegraph.com extension registry with Sourcegraph OSS. Learn
                                     more about the Sourcegraph.com extension registry and administration options in our
-                                    <a href ="https://docs.sourcegraph.com/admin/extensions">extensions documentation</a>.
+                                    <a href ="https://docs.sourcegraph.com/admin/extensions">extensions 
+                                    documentation</a>.
                                 </div>
                             </>
                         )}
