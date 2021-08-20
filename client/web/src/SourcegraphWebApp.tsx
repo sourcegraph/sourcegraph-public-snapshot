@@ -353,7 +353,7 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
                 .pipe(bufferCount(2, 1))
                 .subscribe(([[oldSettings], [newSettings, authUser]]) => {
                     if (authUser) {
-                        logInsightMetrics(oldSettings, newSettings, authUser, eventLogger)
+                        logInsightMetrics(oldSettings, newSettings, eventLogger)
                     }
                 })
         )

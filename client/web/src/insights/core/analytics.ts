@@ -3,24 +3,22 @@ import { isEqual } from 'lodash'
 
 import {
     isSettingsValid,
+    mergeSettings,
     Settings,
     SettingsCascade,
     SettingsCascadeOrError,
 } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryService } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
-import { AuthenticatedUser } from '../../auth'
-
-import { InsightTypePrefix } from './types'
+import { INSIGHTS_ALL_REPOS_SETTINGS_KEY, InsightTypePrefix } from './types'
 import { SearchBasedExtensionInsightSettings } from './types/insight/search-insight'
 
 export function logInsightMetrics(
     oldSettingsCascade: SettingsCascadeOrError<Settings>,
     newSettingsCascade: SettingsCascadeOrError<Settings>,
-    authUser: AuthenticatedUser,
     telemetryService: TelemetryService
 ): void {
-    logCodeInsightsCount(oldSettingsCascade, newSettingsCascade, authUser, telemetryService)
+    logCodeInsightsCount(oldSettingsCascade, newSettingsCascade, telemetryService)
     logSearchBasedInsightStepSize(oldSettingsCascade, newSettingsCascade, telemetryService)
     logCodeInsightsChanges(oldSettingsCascade, newSettingsCascade, telemetryService)
 }
@@ -28,7 +26,6 @@ export function logInsightMetrics(
 export function logCodeInsightsCount(
     oldSettingsCascade: SettingsCascadeOrError<Settings>,
     newSettingsCascade: SettingsCascadeOrError<Settings>,
-    authUser: AuthenticatedUser,
     telemetryService: TelemetryService
 ): void {
     const oldSettings = isSettingsValid(oldSettingsCascade) && oldSettingsCascade
@@ -36,8 +33,8 @@ export function logCodeInsightsCount(
 
     try {
         if (oldSettings && newSettings) {
-            const oldGroupedInsights = getInsightsGroupedByType(oldSettings, authUser)
-            const newGroupedInsights = getInsightsGroupedByType(newSettings, authUser)
+            const oldGroupedInsights = getInsightsGroupedByType(oldSettings)
+            const newGroupedInsights = getInsightsGroupedByType(newSettings)
 
             if (!isEqual(oldGroupedInsights, newGroupedInsights)) {
                 telemetryService.log('InsightsGroupedCount', newGroupedInsights, newGroupedInsights)
@@ -72,7 +69,7 @@ export function logSearchBasedInsightStepSize(
 
 /**
  * Collect number current insights that are org-visible by type of insight.
- * */
+ */
 export function getGroupedStepSizes(settings: Settings): number[] {
     return Object.keys(settings)
         .filter(key => key.startsWith(InsightTypePrefix.search))
@@ -113,44 +110,49 @@ export function getDaysFromInsightStep(step: Duration): number {
 interface InsightGroups {
     codeStatsInsights: number
     searchBasedInsights: number
+    searchBasedBackendInsights: number
+    searchBasedExtensionInsights: number
 }
 
 /**
  * Collect insights count statistic from orgs settings according to
  * auth user organization list.
- * */
-export function getInsightsGroupedByType(
-    settingsCascade: SettingsCascade<Settings>,
-    authUser: AuthenticatedUser
-): InsightGroups {
+ */
+export function getInsightsGroupedByType(settingsCascade: SettingsCascade<Settings>): InsightGroups {
     const { subjects } = settingsCascade
-    const {
-        organizations: { nodes: orgs },
-    } = authUser
-    const orgIDs = new Set(orgs.map(org => org.id))
 
-    const orgSubjects = subjects.filter(subject => orgIDs.has(subject.subject.id))
+    const globalSubjects = subjects.filter(configuredSubject => configuredSubject.subject.__typename === 'Site')
+    const orgSubjects = subjects.filter(configuredSubject => configuredSubject.subject.__typename === 'Org')
 
-    const finalSettingsOfAllOrgs = orgSubjects.reduce((finalSettings, orgSubject) => {
+    const finalSettingsOfAllPublicSubjects = [...globalSubjects, ...orgSubjects].reduce((finalSettings, orgSubject) => {
         const orgSettings = orgSubject.settings
 
         if (!orgSettings) {
             return finalSettings
         }
-        return { ...finalSettings, ...orgSettings }
-    }, {})
 
-    const codeStatsInsights = Object.keys(finalSettingsOfAllOrgs).filter(key =>
+        const mergedSettings = mergeSettings([finalSettings, orgSettings])
+
+        return mergedSettings ?? finalSettings
+    }, {} as Settings)
+
+    const codeStatsInsightCount = Object.keys(finalSettingsOfAllPublicSubjects).filter(key =>
         key.startsWith(InsightTypePrefix.langStats)
     ).length
 
-    const searchBasedInsights = Object.keys(finalSettingsOfAllOrgs).filter(key =>
+    const searchBasedExtensionInsightCount = Object.keys(finalSettingsOfAllPublicSubjects).filter(key =>
         key.startsWith(InsightTypePrefix.search)
     ).length
 
+    const searchBasedBackendInsightCount = Object.keys(
+        finalSettingsOfAllPublicSubjects[INSIGHTS_ALL_REPOS_SETTINGS_KEY] ?? {}
+    ).filter(key => key.startsWith(InsightTypePrefix.search)).length
+
     return {
-        codeStatsInsights,
-        searchBasedInsights,
+        codeStatsInsights: codeStatsInsightCount,
+        searchBasedInsights: searchBasedExtensionInsightCount + searchBasedBackendInsightCount,
+        searchBasedExtensionInsights: searchBasedExtensionInsightCount,
+        searchBasedBackendInsights: searchBasedBackendInsightCount,
     }
 }
 
@@ -231,31 +233,15 @@ export function parseInsightSettingsKey(key: string): Omit<InsightData, 'configu
         return undefined
     }
 
-    switch (insightType) {
-        // Exceptional extensions that don't adhere to the standard insight settings key format
-        case 'codeStatsInsights': {
-            if (key.split('.')[1] !== 'query') {
-                return
-            }
+    if (maybeInsight !== 'insight') {
+        return
+    }
 
-            return {
-                insightType,
-                name: insightType,
-            }
-        }
-
-        // Extensions that contribute insights should define settings
-        // keys with the format `$EXTENSION_NAME.insight` or `$EXTENSION_NAME.insight.$INSIGHT_NAME`
-        // example key: "searchInsights.insights.graphQLTypesMigration"
-        default: {
-            if (maybeInsight !== 'insight') {
-                return
-            }
-
-            return {
-                insightType,
-                name: insightName ?? insightType, // fallback to type
-            }
-        }
+    // Extensions that contribute insights should define settings
+    // keys with the format `$EXTENSION_NAME.insight` or `$EXTENSION_NAME.insight.$INSIGHT_NAME`
+    // example key: "searchInsights.insights.graphQLTypesMigration"
+    return {
+        insightType,
+        name: insightName ?? insightType, // fallback to type
     }
 }
