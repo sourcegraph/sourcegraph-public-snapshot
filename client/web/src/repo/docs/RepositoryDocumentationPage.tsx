@@ -168,6 +168,7 @@ export const RepositoryDocumentationPage: React.FunctionComponent<Props> = React
         [setVisiblePathID, setVisibilityEvents]
     )
 
+    const onlyPathID = location.search === '' ? undefined : props.pathID + '#' + location.search.slice('?'.length)
     return (
         <div className="repository-docs-page">
             <PageTitle title="API docs" />
@@ -262,6 +263,7 @@ export const RepositoryDocumentationPage: React.FunctionComponent<Props> = React
                                 pagePathID={pagePathID}
                                 depth={0}
                                 isFirstChild={true}
+                                onlyPathID={onlyPathID}
                                 excludingTags={excludingTags}
                                 scrollingRoot={containerReference}
                                 onVisible={onVisible}
