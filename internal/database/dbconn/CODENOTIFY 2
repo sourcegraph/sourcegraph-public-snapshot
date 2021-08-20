@@ -1,0 +1,5 @@
+# See https://github.com/sourcegraph/codenotify for documentation.
+
+**/* @efritz
+**/* @asdine
+dbconn_restricted.go @unknwon

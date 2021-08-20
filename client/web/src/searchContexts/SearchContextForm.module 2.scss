@@ -1,0 +1,31 @@
+.search-context-form {
+    &__divider {
+        border-color: var(--border-color-2);
+    }
+
+    &__name-input {
+        height: 2rem;
+    }
+
+    &__preview-title {
+        font-size: 0.75rem;
+    }
+
+    &__preview {
+        display: flex;
+        width: fit-content;
+        padding: 0.25rem;
+        border-radius: 0.25rem;
+        background-color: var(--color-bg-2);
+    }
+
+    &__visibility-radio {
+        margin-top: 0.2rem;
+        width: 0.875rem;
+        height: 0.875rem;
+    }
+
+    &__visibility-title {
+        cursor: pointer;
+    }
+}

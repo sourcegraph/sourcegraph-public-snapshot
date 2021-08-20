@@ -1,0 +1,59 @@
+---
+version: 1
+interactions:
+- request:
+    body: ""
+    form: {}
+    headers:
+      Content-Type:
+      - application/json; charset=utf-8
+    url: https://gitlab.com/oauth/token/info
+    method: GET
+  response:
+    body: '{"resource_owner_id":7799956,"scope":["read_user","read_api","api"],"expires_in":null,"application":{"uid":"a2148736697e8d87a22ccf0d29fd29f60f40538fcfd26f75326c89f9389c3e43"},"created_at":1623838922,"scopes":["read_user","read_api","api"],"expires_in_seconds":null}'
+    headers:
+      Cache-Control:
+      - max-age=0, private, must-revalidate
+      Cf-Cache-Status:
+      - DYNAMIC
+      Cf-Ray:
+      - 66036a7d6edf3ea5-CPT
+      Cf-Request-Id:
+      - 0ab600e26500003ea554263000000001
+      Content-Type:
+      - application/json; charset=utf-8
+      Date:
+      - Wed, 16 Jun 2021 10:39:44 GMT
+      Etag:
+      - W/"6e32fb070d83fd277a1927005e85d785"
+      Expect-Ct:
+      - max-age=604800, report-uri="https://report-uri.cloudflare.com/cdn-cgi/beacon/expect-ct"
+      Gitlab-Lb:
+      - fe-04-lb-gprd
+      Gitlab-Sv:
+      - web-16-sv-gprd
+      Referrer-Policy:
+      - strict-origin-when-cross-origin
+      Server:
+      - cloudflare
+      Strict-Transport-Security:
+      - max-age=31536000
+      Vary:
+      - Accept-Encoding
+      X-Content-Type-Options:
+      - nosniff
+      X-Download-Options:
+      - noopen
+      X-Frame-Options:
+      - SAMEORIGIN
+      X-Permitted-Cross-Domain-Policies:
+      - none
+      X-Request-Id:
+      - 01F8A6FJQXHV232VDNN60VM2RJ
+      X-Runtime:
+      - "0.019830"
+      X-Xss-Protection:
+      - 1; mode=block
+    status: 200 OK
+    code: 200
+    duration: ""

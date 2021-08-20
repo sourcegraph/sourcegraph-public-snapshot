@@ -1,0 +1,179 @@
+import * as jsonc from '@sqs/jsonc-parser'
+import { setProperty } from '@sqs/jsonc-parser/lib/edit'
+import CheckIcon from 'mdi-react/CheckIcon'
+import React, { useCallback, useEffect, useState } from 'react'
+import { useHistory } from 'react-router'
+import { Observable } from 'rxjs'
+import { delay, mergeMap, startWith, tap } from 'rxjs/operators'
+
+import { ISearchContextRepositoryRevisions } from '@sourcegraph/shared/src/graphql/schema'
+import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { ThemeProps } from '@sourcegraph/shared/src/theme'
+import { useEventObservable } from '@sourcegraph/shared/src/util/useObservable'
+
+import { DynamicallyImportedMonacoSettingsEditor } from '../settings/DynamicallyImportedMonacoSettingsEditor'
+
+import { MAX_REVISION_LENGTH, REPOSITORY_KEY, REVISIONS_KEY } from './repositoryRevisionsConfigParser'
+
+const LOADING = 'LOADING' as const
+
+const REPOSITORY_REVISIONS_INPUT_COMMENT = `// Define each repository and its revisions as objects
+//
+// [
+//   {
+//     "${REPOSITORY_KEY}": "github.com/example/repository-name",
+//     "${REVISIONS_KEY}": [
+//       "main", "ls/sample-branch", "aa2cf5feda231c46a329c01ca55c45f29b1708c4"
+//     ]
+//   }
+// ]
+`
+
+export const REPOSITORIES_REVISIONS_CONFIG_SCHEMA = {
+    $id: 'repositoriesAndRevisions.schema.json#',
+    allowComments: true,
+    type: 'array',
+    items: {
+        type: 'object',
+        required: [REPOSITORY_KEY, REVISIONS_KEY],
+        properties: {
+            [REPOSITORY_KEY]: {
+                type: 'string',
+            },
+            [REVISIONS_KEY]: {
+                type: 'array',
+                items: {
+                    type: 'string',
+                    maxLength: MAX_REVISION_LENGTH,
+                },
+            },
+        },
+    },
+}
+
+const defaultFormattingOptions: jsonc.FormattingOptions = {
+    eol: '\n',
+    insertSpaces: true,
+    tabSize: 2,
+}
+
+const actions: {
+    id: string
+    label: string
+    run: (config: string) => { edits: jsonc.Edit[]; selectText: string }
+}[] = [
+    {
+        id: 'addRepository',
+        label: 'Add repository',
+        run: config => {
+            const value = { [REPOSITORY_KEY]: 'github.com/example/repository-name', [REVISIONS_KEY]: ['HEAD'] }
+            const edits = setProperty(config, [-1], value, defaultFormattingOptions)
+            return { edits, selectText: 'github.com/example/repository-name' }
+        },
+    },
+]
+
+export interface SearchContextRepositoriesFormAreaProps extends ThemeProps, TelemetryProps {
+    repositories: ISearchContextRepositoryRevisions[] | undefined
+    validateRepositories: () => Observable<Error[]>
+    onChange: (config: string, isInitialValue?: boolean) => void
+}
+
+export const SearchContextRepositoriesFormArea: React.FunctionComponent<SearchContextRepositoriesFormAreaProps> = ({
+    isLightTheme,
+    telemetryService,
+    repositories,
+    onChange,
+    validateRepositories,
+}) => {
+    const [hasTestedConfig, setHasTestedConfig] = useState(false)
+    const [triggerTestConfig, triggerTestConfigErrors] = useEventObservable(
+        useCallback(
+            (click: Observable<React.MouseEvent<HTMLButtonElement>>) =>
+                click.pipe(
+                    mergeMap(() =>
+                        validateRepositories().pipe(
+                            delay(500),
+                            tap(() => setHasTestedConfig(true)),
+                            startWith(LOADING)
+                        )
+                    )
+                ),
+            [validateRepositories, setHasTestedConfig]
+        )
+    )
+
+    const testConfigButtonText =
+        triggerTestConfigErrors === LOADING
+            ? 'Testing configuration...'
+            : hasTestedConfig
+            ? 'Test configuration again'
+            : 'Test configuration'
+
+    const isValidConfig =
+        hasTestedConfig && typeof triggerTestConfigErrors !== 'undefined' && triggerTestConfigErrors.length === 0
+
+    const [repositoriesConfig, setRepositoriesConfig] = useState('')
+    useEffect(
+        () => {
+            const mappedRepositories = repositories?.map(repository => ({
+                repository: repository.repository.name,
+                revisions: repository.revisions,
+            }))
+            const config =
+                REPOSITORY_REVISIONS_INPUT_COMMENT +
+                (mappedRepositories ? JSON.stringify(mappedRepositories, undefined, 2) : '[]')
+            setRepositoriesConfig(config)
+            onChange(config, true)
+        },
+        // Only stringify repositories on initial load
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+        []
+    )
+
+    const history = useHistory()
+    return (
+        <div data-testid="repositories-config-area">
+            <DynamicallyImportedMonacoSettingsEditor
+                value={repositoriesConfig}
+                jsonSchema={REPOSITORIES_REVISIONS_CONFIG_SCHEMA}
+                actions={actions}
+                canEdit={false}
+                onChange={onChange}
+                height={400}
+                isLightTheme={isLightTheme}
+                history={history}
+                telemetryService={telemetryService}
+                blockNavigationIfDirty={false}
+            />
+            {triggerTestConfigErrors && triggerTestConfigErrors !== LOADING && triggerTestConfigErrors.length > 0 && (
+                <div className="alert alert-danger my-2">
+                    <strong>The following problems were found:</strong>
+                    <ul className="mt-2">
+                        {triggerTestConfigErrors.map(error => (
+                            <li key={error.message}>{error.message}</li>
+                        ))}
+                    </ul>
+                </div>
+            )}
+            <button
+                type="button"
+                className="mt-3 btn btn-sm btn-outline-secondary"
+                data-testid="repositories-config-button"
+                onClick={triggerTestConfig}
+                disabled={triggerTestConfigErrors === LOADING || isValidConfig}
+            >
+                {isValidConfig ? (
+                    <span className="d-flex align-items-center">
+                        <span className="icon-inline text-success mr-1">
+                            <CheckIcon />{' '}
+                        </span>
+                        <span>Valid configuration</span>
+                    </span>
+                ) : (
+                    testConfigButtonText
+                )}
+            </button>
+        </div>
+    )
+}

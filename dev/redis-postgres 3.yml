@@ -1,0 +1,28 @@
+# This files provides an easy way to start Redis and PostgreSQL servers for
+# development, via docker-compose.
+#
+# See https://docs.sourcegraph.com/dev/getting-started/quickstart_2_initialize_database#with-docker
+#
+# You can also use `sg run redis-postgres`.
+services:
+  redis:
+    image: index.docker.io/sourcegraph/redis-cache:insiders
+    ports:
+      - 6379:6379
+    volumes:
+      - ./redis.conf:/etc/redis/redis.conf
+      - ${REDIS_DATA_DIR:-redis_data}:/data
+  postgresql:
+    image: index.docker.io/sourcegraph/postgres-12.6-alpine:insiders
+    ports:
+      - 5432:5432
+    environment:
+      - POSTGRES_PASSWORD=${PGUSER:-sourcegraph}
+      - POSTGRES_USER=${PGPASSWORD:-sourcegraph}
+      - POSTGRES_DB=${PGDATABASE:-sourcegraph}
+      - "POSTGRES_INITDB_ARGS= --encoding=UTF8 "
+    volumes:
+      - ${PGDATA_DIR:-postgres_data}:/var/lib/postgresql/data
+volumes:
+  redis_data:
+  postgres_data:

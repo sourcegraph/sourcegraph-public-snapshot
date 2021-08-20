@@ -1,0 +1,15 @@
+.search-context-cta-prompt {
+    width: 31rem;
+    padding: 0.75rem;
+
+    &__title {
+        display: flex;
+        align-items: center;
+        font-weight: 600;
+        margin-bottom: 0.5rem;
+    }
+
+    &__button {
+        margin-top: 0.75rem;
+    }
+}

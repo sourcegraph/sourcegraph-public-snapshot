@@ -1,0 +1,15 @@
+[
+  {
+   "message": "Pull Request is not mergeable",
+   "type": "UNPROCESSABLE",
+   "path": [
+    "mergePullRequest"
+   ],
+   "locations": [
+    {
+     "line": 303,
+     "column": 3
+    }
+   ]
+  }
+ ]

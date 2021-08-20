@@ -1,0 +1,15 @@
+[
+  {
+    "Kind": "GITHUB",
+    "DisplayName": "code-intel-repos",
+    "Config": {
+      "url": "https://github.com",
+      "repos": [
+        "sourcegraph-testing/etcd",
+        "sourcegraph-testing/tidb",
+        "sourcegraph-testing/titan",
+        "sourcegraph-testing/zap"
+      ]
+    }
+  }
+]

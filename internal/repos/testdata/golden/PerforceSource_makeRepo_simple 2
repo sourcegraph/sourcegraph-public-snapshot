@@ -1,0 +1,54 @@
+[
+  {
+   "ID": 0,
+   "Name": "Sourcegraph",
+   "URI": "Sourcegraph",
+   "Description": "",
+   "Fork": false,
+   "Archived": false,
+   "Private": true,
+   "CreatedAt": "0001-01-01T00:00:00Z",
+   "UpdatedAt": "0001-01-01T00:00:00Z",
+   "DeletedAt": "0001-01-01T00:00:00Z",
+   "ExternalRepo": {
+    "ID": "//Sourcegraph/",
+    "ServiceType": "perforce",
+    "ServiceID": "ssl:111.222.333.444:1666"
+   },
+   "Sources": {
+    "extsvc:perforce:1": {
+     "ID": "extsvc:perforce:1",
+     "CloneURL": "perforce://ssl:111.222.333.444:1666//Sourcegraph/"
+    }
+   },
+   "Metadata": {
+    "depot": "//Sourcegraph/"
+   }
+  },
+  {
+   "ID": 0,
+   "Name": "Engineering/Cloud",
+   "URI": "Engineering/Cloud",
+   "Description": "",
+   "Fork": false,
+   "Archived": false,
+   "Private": true,
+   "CreatedAt": "0001-01-01T00:00:00Z",
+   "UpdatedAt": "0001-01-01T00:00:00Z",
+   "DeletedAt": "0001-01-01T00:00:00Z",
+   "ExternalRepo": {
+    "ID": "//Engineering/Cloud/",
+    "ServiceType": "perforce",
+    "ServiceID": "ssl:111.222.333.444:1666"
+   },
+   "Sources": {
+    "extsvc:perforce:1": {
+     "ID": "extsvc:perforce:1",
+     "CloneURL": "perforce://ssl:111.222.333.444:1666//Engineering/Cloud/"
+    }
+   },
+   "Metadata": {
+    "depot": "//Engineering/Cloud/"
+   }
+  }
+ ]

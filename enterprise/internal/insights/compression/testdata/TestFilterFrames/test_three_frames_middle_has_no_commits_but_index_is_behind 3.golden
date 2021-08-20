@@ -1,0 +1,10 @@
+compression.BackfillPlan{
+	Executions: []*compression.QueryExecution{
+		&compression.QueryExecution{RecordingTime: time.Time{
+			ext: 63723888000,
+		}},
+		&compression.QueryExecution{RecordingTime: time.Time{ext: 63726566400}},
+		&compression.QueryExecution{RecordingTime: time.Time{ext: 63729158400}},
+	},
+	RecordCount: 3,
+}

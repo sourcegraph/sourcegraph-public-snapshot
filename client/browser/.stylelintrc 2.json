@@ -1,0 +1,8 @@
+{
+  "$schema": "http://json.schemastore.org/stylelintrc",
+  "extends": ["@sourcegraph/stylelint-config"],
+  "rules": {
+    "declaration-property-unit-whitelist": null,
+    "selector-class-pattern": null
+  }
+}

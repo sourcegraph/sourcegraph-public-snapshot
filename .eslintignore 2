@@ -1,0 +1,4 @@
+out/
+src/schema/*
+src/graphql-operations.ts
+GH2SG.bookmarklet.js

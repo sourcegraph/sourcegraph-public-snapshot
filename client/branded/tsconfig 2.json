@@ -1,0 +1,17 @@
+{
+  "extends": "../../tsconfig.json",
+  "compilerOptions": {
+    "jsx": "react",
+    "module": "esnext",
+    "sourceRoot": "src",
+    "baseUrl": ".",
+    "paths": {
+      "*": ["src/types/*", "*"],
+    },
+    "rootDir": ".",
+    "outDir": "./out",
+  },
+  "include": ["**/*", ".*", "./src/**/*.json"],
+  "exclude": ["../../node_modules", "./node_modules", "./out"],
+  "references": [{ "path": "../shared" }, { "path": "../storybook" }],
+}

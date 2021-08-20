@@ -1,0 +1,23 @@
+# See https://github.com/sourcegraph/codenotify for documentation.
+
+observability.go @bobheadxi
+site_monitoring.go @bobheadxi
+
+# Search
+*search*.go @keegancsmith
+*zoekt*.go @keegancsmith
+*search*.go @rvantonder
+*zoekt*.go @rvantonder
+
+# Batch changes
+batches.go @eseliger
+
+# Insights
+insights.go @slimsag
+insights.go @sourcegraph/code-insights-backend
+
+# Code intelligence
+codeintel.go @efritz
+
+# Migrations
+oobmigrations.go @efritz

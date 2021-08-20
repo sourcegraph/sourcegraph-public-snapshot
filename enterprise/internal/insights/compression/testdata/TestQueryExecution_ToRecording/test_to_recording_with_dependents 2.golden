@@ -1,0 +1,22 @@
+[]store.RecordSeriesPointArgs{
+	store.RecordSeriesPointArgs{
+		SeriesID: "series1",
+		Point: store.SeriesPoint{
+			Time: time.Time{
+				ext: 63713433600,
+			},
+			Value: 5,
+		},
+		RepoName: valast.Addr("repoName1").(*string),
+		RepoID:   valast.Addr(api.RepoID(1)).(*api.RepoID),
+	},
+	store.RecordSeriesPointArgs{
+		SeriesID: "series1",
+		Point: store.SeriesPoint{
+			Time:  time.Time{ext: 63713520000},
+			Value: 5,
+		},
+		RepoName: valast.Addr("repoName1").(*string),
+		RepoID:   valast.Addr(api.RepoID(1)).(*api.RepoID),
+	},
+}

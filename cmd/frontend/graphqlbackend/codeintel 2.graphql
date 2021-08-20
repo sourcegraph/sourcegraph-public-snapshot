@@ -1,0 +1,937 @@
+extend type Mutation {
+    """
+    Updates the indexing configuration associated with a repository.
+    """
+    updateRepositoryIndexConfiguration(repository: ID!, configuration: String!): EmptyResponse
+
+    """
+    Queues the index jobs for a repository for execution. An optional resolvable revhash
+    (commit, branch name, or tag name) can be specified; by default the tip of the default
+    branch will be used.
+
+    If a configuration is supplied, that configuration is used to determine what jobs to
+    schedule. If no configuration is supplied, it will go through the regular index scheduling
+    rules: first read any in-repo configuration (e.g., sourcegraph.yaml), then look for any
+    existing in-database configuration, finally falling back to the automatically inferred
+    connfiguration based on the repo contents at the target commit.
+    """
+    queueAutoIndexJobsForRepo(repository: ID!, rev: String, configuration: String): [LSIFIndex!]!
+
+    """
+    Deletes an LSIF upload.
+    """
+    deleteLSIFUpload(id: ID!): EmptyResponse
+
+    """
+    Deletes an LSIF index.
+    """
+    deleteLSIFIndex(id: ID!): EmptyResponse
+}
+
+extend type Query {
+    """
+    The repository's LSIF uploads.
+    """
+    lsifUploads(
+        """
+        An (optional) search query that searches over the state, repository name,
+        commit, root, and indexer properties.
+        """
+        query: String
+
+        """
+        The state of returned uploads.
+        """
+        state: LSIFUploadState
+
+        """
+        When specified, shows only uploads that are a dependency of the specified upload.
+        """
+        dependencyOf: ID
+
+        """
+        When specified, shows only uploads that are a dependent of the specified upload.
+        """
+        dependentOf: ID
+
+        """
+        When specified, shows only uploads that are latest for the given repository.
+        """
+        isLatestForRepo: Boolean
+
+        """
+        When specified, indicates that this request should be paginated and
+        the first N results (relative to the cursor) should be returned. i.e.
+        how many results to return per page. It must be in the range of 0-5000.
+        """
+        first: Int
+
+        """
+        When specified, indicates that this request should be paginated and
+        to fetch results starting at this cursor.
+
+        A future request can be made for more results by passing in the
+        'LSIFUploadConnection.pageInfo.endCursor' that is returned.
+        """
+        after: String
+    ): LSIFUploadConnection!
+
+    """
+    The repository's LSIF uploads.
+    """
+    lsifIndexes(
+        """
+        An (optional) search query that searches over the state, repository name,
+        and commit properties.
+        """
+        query: String
+
+        """
+        The state of returned uploads.
+        """
+        state: LSIFIndexState
+
+        """
+        When specified, indicates that this request should be paginated and
+        the first N results (relative to the cursor) should be returned. i.e.
+        how many results to return per page. It must be in the range of 0-5000.
+        """
+        first: Int
+
+        """
+        When specified, indicates that this request should be paginated and
+        to fetch results starting at this cursor.
+        A future request can be made for more results by passing in the
+        'LSIFIndexConnection.pageInfo.endCursor' that is returned.
+        """
+        after: String
+    ): LSIFIndexConnection!
+}
+
+extend type Repository {
+    """
+    Gets the indexing configuration associated with the repository.
+    """
+    indexConfiguration: IndexConfiguration
+
+    """
+    The repository's LSIF uploads.
+    """
+    lsifUploads(
+        """
+        An (optional) search query that searches over the state, repository name,
+        commit, root, and indexer properties.
+        """
+        query: String
+
+        """
+        The state of returned uploads.
+        """
+        state: LSIFUploadState
+
+        """
+        When specified, shows only uploads that are latest for the given repository.
+        """
+        isLatestForRepo: Boolean
+
+        """
+        When specified, shows only uploads that are a dependency of the specified upload.
+        """
+        dependencyOf: ID
+
+        """
+        When specified, shows only uploads that are a dependent of the specified upload.
+        """
+        dependentOf: ID
+
+        """
+        When specified, indicates that this request should be paginated and
+        the first N results (relative to the cursor) should be returned. i.e.
+        how many results to return per page. It must be in the range of 0-5000.
+        """
+        first: Int
+
+        """
+        When specified, indicates that this request should be paginated and
+        to fetch results starting at this cursor.
+        A future request can be made for more results by passing in the
+        'LSIFUploadConnection.pageInfo.endCursor' that is returned.
+        """
+        after: String
+    ): LSIFUploadConnection!
+
+    """
+    The repository's LSIF uploads.
+    """
+    lsifIndexes(
+        """
+        An (optional) search query that searches over the state, repository name,
+        and commit properties.
+        """
+        query: String
+
+        """
+        The state of returned uploads.
+        """
+        state: LSIFIndexState
+
+        """
+        When specified, indicates that this request should be paginated and
+        the first N results (relative to the cursor) should be returned. i.e.
+        how many results to return per page. It must be in the range of 0-5000.
+        """
+        first: Int
+
+        """
+        When specified, indicates that this request should be paginated and
+        to fetch results starting at this cursor.
+        A future request can be made for more results by passing in the
+        'LSIFIndexConnection.pageInfo.endCursor' that is returned.
+        """
+        after: String
+    ): LSIFIndexConnection!
+}
+
+extend interface TreeEntry {
+    """
+    LSIF data for this tree entry.
+    """
+    lsif(
+        """
+        An optional filter for the name of the tool that produced the upload data.
+        """
+        toolName: String
+    ): TreeEntryLSIFData
+}
+
+extend type GitTree {
+    """
+    LSIF data for this tree entry.
+    """
+    lsif(
+        """
+        An optional filter for the name of the tool that produced the upload data.
+        """
+        toolName: String
+    ): GitTreeLSIFData
+}
+
+extend type GitBlob {
+    """
+    A wrapper around LSIF query methods. If no LSIF upload can be used to answer code
+    intelligence queries for this path-at-revision, this resolves to null.
+    """
+    lsif(
+        """
+        An optional filter for the name of the tool that produced the upload data.
+        """
+        toolName: String
+    ): GitBlobLSIFData
+}
+
+"""
+LSIF data available for a tree entry (file OR directory, see GitBlobLSIFData for file-specific
+resolvers and GitTreeLSIFData for directory-specific resolvers.)
+"""
+interface TreeEntryLSIFData {
+    """
+    Code diagnostics provided through LSIF.
+    """
+    diagnostics(first: Int): DiagnosticConnection!
+
+    """
+    Returns the documentation page corresponding to the given path ID, where the empty string "/"
+    refers to the current tree entry and can be used to walk all documentation below this tree entry.
+
+    Currently this method is only supported on the root tree entry of a repository.
+
+    A pathID refers to all the structured documentation slugs emitted by the LSIF indexer joined together
+    with a slash, starting at the slug corresponding to this tree entry filepath. A pathID and filepath may
+    sometimes look similar, but are not equal. Some examples include:
+
+    * A documentation page under filepath `internal/pkg/mux` with pathID `/Router/ServeHTTP/examples`.
+    * A documentation page under filepath `/` (repository root) with pathID `/internal/pkg/mux/Router/ServeHTTP/examples`
+
+    In other words, a path ID is said to be the path to the page, relative to the tree entry
+    filepath.
+
+    The components of the pathID are chosen solely by the LSIF indexer, and may vary over time or
+    even dynamically based on e.g. project size. The same is true of pages, e.g. an LSIF indexer
+    may choose to create new pages if an API surface exceeds some threshold size.
+    """
+    documentationPage(pathID: String!): DocumentationPage!
+
+    """
+    Returns the documentation pth info corresponding to the given path ID, where the empty string "/"
+    refers to the current tree entry and can be used to walk all documentation below this tree entry.
+
+    Currently this method is only supported on the root tree entry of a repository.
+
+    See @documentationPage for information about what a pathID refers to.
+
+    This method is optimal for e.g. walking the entire documentation path structure of a repository,
+    whereas documentationPage would require you to fetch the content for all pages you walk (not true
+    of path info.)
+
+    If maxDepth is specified, pages will be recursively returned up to that depth. Default max depth
+    is one (immediate child pages only.)
+
+    If ignoreIndex is true, empty index pages (pages whose only purpose is to describe pages below
+    them) will not qualify as a page in relation to the maxDepth property: index pages will be
+    recursively followed and included until a page with actual content is found, and only then will
+    the depth be considered to increment. Default is false.
+
+    This returns a JSON value because GraphQL has terrible support for recursive data structures: https://github.com/graphql/graphql-spec/issues/91
+
+    The exact structure of the return value is documented here:
+    https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+type+DocumentationPathInfoResult+struct&patternType=literal&case=yes
+    """
+    documentationPathInfo(pathID: String!, maxDepth: Int, ignoreIndex: Boolean): JSONValue!
+
+    """
+    A list of definitions of the symbol described by the given documentation path ID, if any.
+    """
+    documentationDefinitions(pathID: String!): LocationConnection!
+
+    """
+    A list of references of the symbol under the given document position.
+    """
+    documentationReferences(
+        """
+        The documentation path ID, e.g. from the documentationPage return value.
+        """
+        pathID: String!
+
+        """
+        When specified, indicates that this request should be paginated and
+        to fetch results starting at this cursor.
+        A future request can be made for more results by passing in the
+        'LocationConnection.pageInfo.endCursor' that is returned.
+        """
+        after: String
+
+        """
+        When specified, indicates that this request should be paginated and
+        the first N results (relative to the cursor) should be returned. i.e.
+        how many results to return per page.
+        """
+        first: Int
+    ): LocationConnection!
+}
+
+"""
+A wrapper object around LSIF query methods for a particular git-tree-at-revision. When this node is
+null, no LSIF data is available for the git tree in question.
+"""
+type GitTreeLSIFData implements TreeEntryLSIFData {
+    """
+    Code diagnostics provided through LSIF.
+    """
+    diagnostics(first: Int): DiagnosticConnection!
+
+    """
+    Returns the documentation page corresponding to the given path ID, where the empty string "/"
+    refers to the current tree entry and can be used to walk all documentation below this tree entry.
+
+    Currently this method is only supported on the root tree entry of a repository.
+
+    A pathID refers to all the structured documentation slugs emitted by the LSIF indexer joined together
+    with a slash, starting at the slug corresponding to this tree entry filepath. A pathID and filepath may
+    sometimes look similar, but are not equal. Some examples include:
+
+    * A documentation page under filepath `internal/pkg/mux` with pathID `/Router/ServeHTTP/examples`.
+    * A documentation page under filepath `/` (repository root) with pathID `/internal/pkg/mux/Router/ServeHTTP/examples`
+
+    In other words, a path ID is said to be the path to the page, relative to the tree entry
+    filepath.
+
+    The components of the pathID are chosen solely by the LSIF indexer, and may vary over time or
+    even dynamically based on e.g. project size. The same is true of pages, e.g. an LSIF indexer
+    may choose to create new pages if an API surface exceeds some threshold size.
+    """
+    documentationPage(pathID: String!): DocumentationPage!
+
+    """
+    Returns the documentation pth info corresponding to the given path ID, where the empty string "/"
+    refers to the current tree entry and can be used to walk all documentation below this tree entry.
+
+    Currently this method is only supported on the root tree entry of a repository.
+
+    See @documentationPage for information about what a pathID refers to.
+
+    This method is optimal for e.g. walking the entire documentation path structure of a repository,
+    whereas documentationPage would require you to fetch the content for all pages you walk (not true
+    of path info.)
+
+    If maxDepth is specified, pages will be recursively returned up to that depth. Default max depth
+    is one (immediate child pages only.)
+
+    If ignoreIndex is true, empty index pages (pages whose only purpose is to describe pages below
+    them) will not qualify as a page in relation to the maxDepth property: index pages will be
+    recursively followed and included until a page with actual content is found, and only then will
+    the depth be considered to increment. Default is false.
+
+    This returns a JSON value because GraphQL has terrible support for recursive data structures: https://github.com/graphql/graphql-spec/issues/91
+
+    The exact structure of the return value is documented here:
+    https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+type+DocumentationPathInfoResult+struct&patternType=literal&case=yes
+    """
+    documentationPathInfo(pathID: String!, maxDepth: Int, ignoreIndex: Boolean): JSONValue!
+
+    """
+    A list of definitions of the symbol described by the given documentation path ID, if any.
+    """
+    documentationDefinitions(pathID: String!): LocationConnection!
+
+    """
+    A list of references of the symbol under the given document position.
+    """
+    documentationReferences(
+        """
+        The documentation path ID, e.g. from the documentationPage return value.
+        """
+        pathID: String!
+
+        """
+        When specified, indicates that this request should be paginated and
+        to fetch results starting at this cursor.
+        A future request can be made for more results by passing in the
+        'LocationConnection.pageInfo.endCursor' that is returned.
+        """
+        after: String
+
+        """
+        When specified, indicates that this request should be paginated and
+        the first N results (relative to the cursor) should be returned. i.e.
+        how many results to return per page.
+        """
+        first: Int
+    ): LocationConnection!
+}
+
+"""
+A wrapper object around LSIF query methods for a particular git-blob-at-revision. When this node is
+null, no LSIF data is available for the git blob in question.
+"""
+type GitBlobLSIFData implements TreeEntryLSIFData {
+    """
+    Get aggregated local code intelligence for all ranges that fall in the window
+    indicated by the given zero-based start (inclusive) and end (exclusive) lines.
+    The associated data for each range is "local", in that the locations and hover
+    must also be defined in the same index as the source range. To get cross-repository
+    and cross-bundle results, you must query the definitions, references, and hovers
+    of that range explicitly.
+    """
+    ranges(startLine: Int!, endLine: Int!): CodeIntelligenceRangeConnection
+
+    """
+    A list of definitions of the symbol under the given document position.
+    """
+    definitions(
+        """
+        The line on which the symbol occurs (zero-based, inclusive).
+        """
+        line: Int!
+
+        """
+        The character (not byte) of the start line on which the symbol occurs (zero-based, inclusive).
+        """
+        character: Int!
+    ): LocationConnection!
+
+    """
+    A list of references of the symbol under the given document position.
+    """
+    references(
+        """
+        The line on which the symbol occurs (zero-based, inclusive).
+        """
+        line: Int!
+
+        """
+        The character (not byte) of the start line on which the symbol occurs (zero-based, inclusive).
+        """
+        character: Int!
+
+        """
+        When specified, indicates that this request should be paginated and
+        to fetch results starting at this cursor.
+        A future request can be made for more results by passing in the
+        'LocationConnection.pageInfo.endCursor' that is returned.
+        """
+        after: String
+
+        """
+        When specified, indicates that this request should be paginated and
+        the first N results (relative to the cursor) should be returned. i.e.
+        how many results to return per page.
+        """
+        first: Int
+    ): LocationConnection!
+
+    """
+    The hover result of the symbol under the given document position.
+    """
+    hover(
+        """
+        The line on which the symbol occurs (zero-based, inclusive).
+        """
+        line: Int!
+
+        """
+        The character (not byte) of the start line on which the symbol occurs (zero-based, inclusive).
+        """
+        character: Int!
+    ): Hover
+
+    """
+    The documentation of the symbol under the given document position, if any.
+    """
+    documentation(
+        """
+        The line on which the symbol occurs (zero-based, inclusive).
+        """
+        line: Int!
+
+        """
+        The character (not byte) of the start line on which the symbol occurs (zero-based, inclusive).
+        """
+        character: Int!
+    ): Documentation
+
+    """
+    Code diagnostics provided through LSIF.
+    """
+    diagnostics(first: Int): DiagnosticConnection!
+
+    """
+    Returns the documentation page corresponding to the given path ID, where the path ID "/"
+    refers to the current git blob and can be used to walk all documentation below this git blob.
+
+    Currently this method is only supported on the root git blob of a repository.
+
+    A pathID refers to all the structured documentation slugs emitted by the LSIF indexer joined together
+    with a slash, starting at the slug corresponding to this git blob filepath. A pathID and filepath may
+    sometimes look similar, but are not equal. Some examples include:
+
+    * A documentation page under filepath `internal/pkg/mux` with pathID `/Router/ServeHTTP/examples`.
+    * A documentation page under filepath `/` (repository root) with pathID `/internal/pkg/mux/Router/ServeHTTP/examples`
+
+    In other words, a path ID is said to be the path to the page, relative to the git blob
+    filepath.
+
+    The components of the pathID are chosen solely by the LSIF indexer, and may vary over time or
+    even dynamically based on e.g. project size. The same is true of pages, e.g. an LSIF indexer
+    may choose to create new pages if an API surface exceeds some threshold size.
+    """
+    documentationPage(pathID: String!): DocumentationPage!
+
+    """
+    Returns the documentation pth info corresponding to the given path ID, where the empty string "/"
+    refers to the current tree entry and can be used to walk all documentation below this tree entry.
+
+    Currently this method is only supported on the root tree entry of a repository.
+
+    See @documentationPage for information about what a pathID refers to.
+
+    This method is optimal for e.g. walking the entire documentation path structure of a repository,
+    whereas documentationPage would require you to fetch the content for all pages you walk (not true
+    of path info.)
+
+    If maxDepth is specified, pages will be recursively returned up to that depth. Default max depth
+    is one (immediate child pages only.)
+
+    If ignoreIndex is true, empty index pages (pages whose only purpose is to describe pages below
+    them) will not qualify as a page in relation to the maxDepth property: index pages will be
+    recursively followed and included until a page with actual content is found, and only then will
+    the depth be considered to increment. Default is false.
+
+    This returns a JSON value because GraphQL has terrible support for recursive data structures: https://github.com/graphql/graphql-spec/issues/91
+
+    The exact structure of the return value is documented here:
+    https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+type+DocumentationPathInfoResult+struct&patternType=literal&case=yes
+    """
+    documentationPathInfo(pathID: String!, maxDepth: Int, ignoreIndex: Boolean): JSONValue!
+
+    """
+    A list of definitions of the symbol described by the given documentation path ID, if any.
+    """
+    documentationDefinitions(pathID: String!): LocationConnection!
+
+    """
+    A list of references of the symbol under the given document position.
+    """
+    documentationReferences(
+        """
+        The documentation path ID, e.g. from the documentationPage return value.
+        """
+        pathID: String!
+
+        """
+        When specified, indicates that this request should be paginated and
+        to fetch results starting at this cursor.
+        A future request can be made for more results by passing in the
+        'LocationConnection.pageInfo.endCursor' that is returned.
+        """
+        after: String
+
+        """
+        When specified, indicates that this request should be paginated and
+        the first N results (relative to the cursor) should be returned. i.e.
+        how many results to return per page.
+        """
+        first: Int
+    ): LocationConnection!
+}
+
+"""
+Describes a single page of documentation.
+"""
+type DocumentationPage {
+    """
+    The tree of documentation nodes describing this page's hierarchy. It is a JSON value because
+    GraphQL has terrible support for recursive data structures: https://github.com/graphql/graphql-spec/issues/91
+
+    The exact structure of this value is documented here:
+    https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+type+DocumentationNode+struct&patternType=literal&case=yes
+    """
+    tree: JSONValue!
+}
+
+"""
+The state an LSIF upload can be in.
+"""
+enum LSIFUploadState {
+    """
+    This upload is being processed.
+    """
+    PROCESSING
+
+    """
+    This upload failed to be processed.
+    """
+    ERRORED
+
+    """
+    This upload was processed successfully.
+    """
+    COMPLETED
+
+    """
+    This upload is queued to be processed later.
+    """
+    QUEUED
+
+    """
+    This upload is currently being transferred to Sourcegraph.
+    """
+    UPLOADING
+
+    """
+    This upload is queued for deletion. This upload was previously in the
+    COMPLETED state and evicted, replaced by a newer upload, or deleted by
+    a user. This upload is able to answer code intelligence queries until
+    the commit graph of the upload's repository is next calculated, at which
+    point the upload will become unreachable.
+    """
+    DELETING
+}
+
+"""
+Metadata and status about an LSIF upload.
+"""
+type LSIFUpload implements Node {
+    """
+    The ID.
+    """
+    id: ID!
+
+    """
+    The project for which this upload provides code intelligence.
+    """
+    projectRoot: GitTree
+
+    """
+    The original 40-character commit commit supplied at upload time.
+    """
+    inputCommit: String!
+
+    """
+    The original root supplied at upload time.
+    """
+    inputRoot: String!
+
+    """
+    The original indexer name supplied at upload time.
+    """
+    inputIndexer: String!
+
+    """
+    The upload's current state.
+    """
+    state: LSIFUploadState!
+
+    """
+    The time the upload was uploaded.
+    """
+    uploadedAt: DateTime!
+
+    """
+    The time the upload was processed.
+    """
+    startedAt: DateTime
+
+    """
+    The time the upload completed or errored.
+    """
+    finishedAt: DateTime
+
+    """
+    The processing error message (not set if state is not ERRORED).
+    """
+    failure: String
+
+    """
+    Whether or not this upload provides intelligence for the tip of the default branch. Find reference
+    queries will return symbols from remote repositories only when this property is true. This property
+    is updated asynchronously and is eventually consistent with the git data known by the Sourcegraph
+    instance.
+    """
+    isLatestForRepo: Boolean!
+
+    """
+    The rank of this upload in the queue. The value of this field is null if the upload has been processed.
+    """
+    placeInQueue: Int
+
+    """
+    The LSIF indexing job that created this upload record.
+    """
+    associatedIndex: LSIFIndex
+}
+
+"""
+A list of LSIF uploads.
+"""
+type LSIFUploadConnection {
+    """
+    A list of LSIF uploads.
+    """
+    nodes: [LSIFUpload!]!
+
+    """
+    The total number of uploads in this result set.
+    """
+    totalCount: Int
+
+    """
+    Pagination information.
+    """
+    pageInfo: PageInfo!
+}
+
+"""
+The state an LSIF index can be in.
+"""
+enum LSIFIndexState {
+    """
+    This index is being processed.
+    """
+    PROCESSING
+
+    """
+    This index failed to be processed.
+    """
+    ERRORED
+
+    """
+    This index was processed successfully.
+    """
+    COMPLETED
+
+    """
+    This index is queued to be processed later.
+    """
+    QUEUED
+}
+
+"""
+Metadata and status about an LSIF index.
+"""
+type LSIFIndex implements Node {
+    """
+    The ID.
+    """
+    id: ID!
+
+    """
+    The project for which this upload provides code intelligence.
+    """
+    projectRoot: GitTree
+
+    """
+    The original 40-character commit commit supplied at index time.
+    """
+    inputCommit: String!
+
+    """
+    The original root supplied at index schedule time.
+    """
+    inputRoot: String!
+
+    """
+    The name of the target indexer Docker image (e.g., sourcegraph/lsif-go@sha256:...).
+    """
+    inputIndexer: String!
+
+    """
+    The index's current state.
+    """
+    state: LSIFIndexState!
+
+    """
+    The time the index was queued.
+    """
+    queuedAt: DateTime!
+
+    """
+    The time the index was processed.
+    """
+    startedAt: DateTime
+
+    """
+    The time the index completed or errored.
+    """
+    finishedAt: DateTime
+
+    """
+    The processing error message (not set if state is not ERRORED).
+    """
+    failure: String
+
+    """
+    The configuration and execution summary (if completed or errored) of this index job.
+    """
+    steps: IndexSteps!
+
+    """
+    The rank of this index in the queue. The value of this field is null if the index has been processed.
+    """
+    placeInQueue: Int
+
+    """
+    The LSIF upload created as part of this indexing job.
+    """
+    associatedUpload: LSIFUpload
+}
+
+"""
+Configuration and execution summary of an index job.
+"""
+type IndexSteps {
+    """
+    Execution log entries related to setting up the indexing workspace.
+    """
+    setup: [ExecutionLogEntry!]!
+
+    """
+    Configuration and execution summary (if completed or errored) of steps to be performed prior to indexing.
+    """
+    preIndex: [PreIndexStep!]!
+
+    """
+    Configuration and execution summary (if completed or errored) of the indexer.
+    """
+    index: IndexStep!
+
+    """
+    Execution log entry related to uploading the dump produced by the indexing step.
+    This field be missing if the upload step had not been executed.
+    """
+    upload: ExecutionLogEntry
+
+    """
+    Execution log entries related to tearing down the indexing workspace.
+    """
+    teardown: [ExecutionLogEntry!]!
+}
+
+"""
+The configuration and execution summary of a step to be performed prior to indexing.
+"""
+type PreIndexStep {
+    """
+    The working directory relative to the cloned repository root.
+    """
+    root: String!
+
+    """
+    The name of the Docker image to run.
+    """
+    image: String!
+
+    """
+    The arguments to supply to the Docker container's entrypoint.
+    """
+    commands: [String!]!
+
+    """
+    The execution summary (if completed or errored) of the docker command.
+    """
+    logEntry: ExecutionLogEntry
+}
+
+"""
+The configuration and execution summary of the indexer.
+"""
+type IndexStep {
+    """
+    The arguments to supply to the indexer container.
+    """
+    indexerArgs: [String!]!
+
+    """
+    The path to the index file relative to the root directory (dump.lsif by default).
+    """
+    outfile: String
+
+    """
+    The execution summary (if completed or errored) of the index command.
+    """
+    logEntry: ExecutionLogEntry
+}
+
+"""
+A list of LSIF indexes.
+"""
+type LSIFIndexConnection {
+    """
+    A list of LSIF indexes.
+    """
+    nodes: [LSIFIndex!]!
+
+    """
+    The total number of indexes in this result set.
+    """
+    totalCount: Int
+
+    """
+    Pagination information.
+    """
+    pageInfo: PageInfo!
+}
+
+"""
+Explicit configuration for indexing a repository.
+"""
+type IndexConfiguration {
+    """
+    The raw JSON-encoded index configuration.
+    """
+    configuration: String
+
+    """
+    The raw JSON-encoded index configuration as inferred by the auto-indexer.
+    """
+    inferredConfiguration: String
+}

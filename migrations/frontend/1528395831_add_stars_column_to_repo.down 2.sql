@@ -1,0 +1,7 @@
+BEGIN;
+
+DROP INDEX IF EXISTS repo_stars_idx;
+
+ALTER TABLE repo DROP COLUMN IF EXISTS stars;
+
+COMMIT;

@@ -1,0 +1,31 @@
+.loading-panel {
+    height: 7rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.suggestions-list {
+    &__item {
+        display: block;
+        padding: 0.5rem;
+    }
+
+    [data-reach-combobox-option]:hover {
+        background-color: var(--body-bg);
+    }
+
+    /**
+        Reach ui by default highlights suggested value and skips the user value.
+        This is a bit weird and inconsistent with our highlight visual logic
+        in search bar. In order to support consistent logic we override font-weight
+        for suggested and user parts of value.
+     */
+    [data-suggested-value] {
+        font-weight: normal;
+    }
+
+    [data-user-value] {
+        font-weight: bold;
+    }
+}

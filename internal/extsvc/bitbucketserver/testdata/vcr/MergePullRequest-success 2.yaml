@@ -1,0 +1,41 @@
+---
+version: 1
+interactions:
+- request:
+    body: ""
+    form: {}
+    headers:
+      Content-Type:
+      - application/json; charset=utf-8
+    url: https://bitbucket.sgdev.org/rest/api/1.0/projects/SOUR/repos/automation-testing/pull-requests/146/merge?version=0
+    method: POST
+  response:
+    body: '{"id":146,"version":2,"title":"file3.txt edited online with Bitbucket","state":"MERGED","open":false,"closed":true,"createdDate":1623421327682,"updatedDate":1623421519622,"closedDate":1623421519622,"fromRef":{"id":"refs/heads/erik/file3txt-1623421319662","displayId":"erik/file3txt-1623421319662","latestCommit":"88e8840c12b7fba586f7e8aeb360d3dd638e7888","repository":{"slug":"automation-testing","id":10070,"name":"automation-testing","hierarchyId":"1c17e4711a8a022d0a9a","scmId":"git","state":"AVAILABLE","statusMessage":"Available","forkable":true,"project":{"key":"SOUR","id":1,"name":"sourcegraph","public":false,"type":"NORMAL","links":{"self":[{"href":"https://bitbucket.sgdev.org/projects/SOUR"}]}},"public":false,"links":{"clone":[{"href":"https://bitbucket.sgdev.org/scm/sour/automation-testing.git","name":"http"},{"href":"ssh://git@bitbucket.sgdev.org:7999/sour/automation-testing.git","name":"ssh"}],"self":[{"href":"https://bitbucket.sgdev.org/projects/SOUR/repos/automation-testing/browse"}]}}},"toRef":{"id":"refs/heads/master","displayId":"master","latestCommit":"2475733b17fc2d527bb29e5f45540e76a8c3a9b6","repository":{"slug":"automation-testing","id":10070,"name":"automation-testing","hierarchyId":"1c17e4711a8a022d0a9a","scmId":"git","state":"AVAILABLE","statusMessage":"Available","forkable":true,"project":{"key":"SOUR","id":1,"name":"sourcegraph","public":false,"type":"NORMAL","links":{"self":[{"href":"https://bitbucket.sgdev.org/projects/SOUR"}]}},"public":false,"links":{"clone":[{"href":"https://bitbucket.sgdev.org/scm/sour/automation-testing.git","name":"http"},{"href":"ssh://git@bitbucket.sgdev.org:7999/sour/automation-testing.git","name":"ssh"}],"self":[{"href":"https://bitbucket.sgdev.org/projects/SOUR/repos/automation-testing/browse"}]}}},"locked":false,"author":{"user":{"name":"erik","emailAddress":"erik@sourcegraph.com","id":152,"displayName":"Erik
+      Seliger","active":true,"slug":"erik","type":"NORMAL","links":{"self":[{"href":"https://bitbucket.sgdev.org/users/erik"}]}},"role":"AUTHOR","approved":false,"status":"UNAPPROVED"},"reviewers":[{"user":{"name":"thorsten","emailAddress":"thorsten@sourcegraph.com","id":104,"displayName":"thorsten","active":true,"slug":"thorsten","type":"NORMAL","links":{"self":[{"href":"https://bitbucket.sgdev.org/users/thorsten"}]}},"role":"REVIEWER","approved":false,"status":"UNAPPROVED"}],"participants":[],"properties":{"mergeCommit":{"displayId":"fadfd840d09","id":"fadfd840d095677bbf6457eb597255fb181050e6"}},"links":{"self":[{"href":"https://bitbucket.sgdev.org/projects/SOUR/repos/automation-testing/pull-requests/146"}]}}'
+    headers:
+      Cache-Control:
+      - private, no-cache
+      - no-cache, no-transform
+      Content-Type:
+      - application/json;charset=UTF-8
+      Date:
+      - Fri, 11 Jun 2021 14:25:19 GMT
+      Pragma:
+      - no-cache
+      Server:
+      - Caddy
+      Vary:
+      - accept-encoding,x-auserid,cookie,x-ausername,accept-encoding
+      X-Arequestid:
+      - '@TVP4VKx865x2732537x0'
+      X-Asessionid:
+      - 1a2pzq8
+      X-Auserid:
+      - "152"
+      X-Ausername:
+      - erik
+      X-Content-Type-Options:
+      - nosniff
+    status: 200 OK
+    code: 200
+    duration: ""

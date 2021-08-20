@@ -1,0 +1,11 @@
+.example-tabs {
+    display: flex;
+
+    [data-reach-tab],
+    [data-reach-tab]:hover,
+    [data-reach-tab][data-selected] {
+        margin: 0;
+        border: none;
+        padding: 0;
+    }
+}

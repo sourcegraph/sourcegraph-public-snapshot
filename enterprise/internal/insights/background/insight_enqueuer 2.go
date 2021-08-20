@@ -1,0 +1,126 @@
+package background
+
+import (
+	"context"
+	"strings"
+	"time"
+
+	"github.com/sourcegraph/sourcegraph/internal/insights/priority"
+
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
+
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
+
+	"github.com/cockroachdb/errors"
+	"github.com/hashicorp/go-multierror"
+
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/background/queryrunner"
+	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
+	"github.com/sourcegraph/sourcegraph/internal/goroutine"
+	"github.com/sourcegraph/sourcegraph/internal/metrics"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
+)
+
+// newInsightEnqueuer returns a background goroutine which will periodically find all of the search
+// and webhook insights across all user settings, and enqueue work for the query runner and webhook
+// runner workers to perform.
+func newInsightEnqueuer(ctx context.Context, workerBaseStore *basestore.Store, insightStore store.DataSeriesStore, observationContext *observation.Context) goroutine.BackgroundRoutine {
+	metrics := metrics.NewOperationMetrics(
+		observationContext.Registerer,
+		"insights_enqueuer",
+		metrics.WithCountHelp("Total number of insights enqueuer executions"),
+	)
+	operation := observationContext.Operation(observation.Op{
+		Name:    "Enqueuer.Run",
+		Metrics: metrics,
+	})
+
+	// Note: We run this goroutine once every 10 minutes, and StalledMaxAge in queryrunner/ is
+	// set to 60s. If you change this, make sure the StalledMaxAge is less than this period
+	// otherwise there is a fair chance we could enqueue work faster than it can be completed.
+	//
+	// See also https://github.com/sourcegraph/sourcegraph/pull/17227#issuecomment-779515187 for some very rough
+	// data retention / scale concerns.
+	return goroutine.NewPeriodicGoroutineWithMetrics(ctx, 12*time.Hour, goroutine.NewHandlerWithErrorMessage(
+		"insights_enqueuer",
+		func(ctx context.Context) error {
+			queryRunnerEnqueueJob := func(ctx context.Context, job *queryrunner.Job) error {
+				_, err := queryrunner.EnqueueJob(ctx, workerBaseStore, job)
+				return err
+			}
+			return discoverAndEnqueueInsights(ctx, time.Now, insightStore, queryRunnerEnqueueJob)
+		},
+	), operation)
+}
+
+const queryJobOffsetTime = 30 * time.Second
+
+// discoverAndEnqueueInsights discovers insights defined in the given setting store from user/org/global
+// settings and enqueues them to be executed and have insights recorded.
+func discoverAndEnqueueInsights(
+	ctx context.Context,
+	now func() time.Time,
+	insightStore store.DataSeriesStore,
+	enqueueQueryRunnerJob func(ctx context.Context, job *queryrunner.Job) error,
+) error {
+	// foundInsights, err := discovery.Discover(ctx, settingStore, loader, discovery.InsightFilterArgs{})
+	dataSeries, err := insightStore.GetDataSeries(ctx, store.GetDataSeriesArgs{NextRecordingBefore: now()})
+	if err != nil {
+		return errors.Wrap(err, "Discover")
+	}
+
+	// Deduplicate series that may be unique (e.g. different name/description) but do not have
+	// unique data (i.e. use the same exact search query or webhook URL.)
+	var (
+		uniqueSeries = map[string]types.InsightSeries{}
+		multi        error
+		offset       time.Duration
+	)
+	for _, series := range dataSeries {
+		seriesID := series.SeriesID
+		_, enqueuedAlready := uniqueSeries[seriesID]
+		if enqueuedAlready {
+			continue
+		}
+		uniqueSeries[seriesID] = series
+
+		// Enqueue jobs for each unique series, offsetting each job execution by a minute so we
+		// don't execute all queries at once and harm search performance in general.
+		processAfter := now().Add(offset)
+		offset += queryJobOffsetTime
+		err = enqueueQueryRunnerJob(ctx, &queryrunner.Job{
+			SeriesID:     seriesID,
+			SearchQuery:  withCountUnlimited(series.Query),
+			ProcessAfter: &processAfter,
+			State:        "queued",
+			Priority:     int(priority.High),
+			Cost:         int(priority.Indexed),
+		})
+		if err != nil {
+			multi = multierror.Append(multi, err)
+		}
+
+		// The recording timestamp update can't be transactional because this is a separate database currently, so we will use
+		// at-least-once semantics by waiting until the queue transaction is complete and without error.
+		_, err = insightStore.StampRecording(ctx, series)
+		if err != nil {
+			multi = multierror.Append(multi, err)
+			continue // might as well try the other insights and just skip this one
+		}
+	}
+
+	return multi
+}
+
+// withCountUnlimited adds `count:9999999` to the given search query string iff `count:` does not
+// exist in the query string. This is extremely important as otherwise the number of results our
+// search query would return would be incomplete and fluctuate.
+//
+// TODO(slimsag): future: we should pull in the search query parser to avoid cases where `count:`
+// is actually e.g. a search query like `content:"count:"`.
+func withCountUnlimited(s string) string {
+	if strings.Contains(s, "count:") {
+		return s
+	}
+	return s + " count:all"
+}

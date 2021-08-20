@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="en" class="base">
+
+<head>
+	{{.Injected.HeadTop}}
+	<meta charset="utf-8">
+	<meta http-equiv="x-ua-compatible" content="ie=edge">
+	<meta name="google" content="notranslate">
+	<meta http-equiv="Content-Language" content="en">
+	<meta name="viewport" content="width=device-width, viewport-fit=cover" />
+	<meta name="referrer" content="origin-when-cross-origin"/>
+	<meta name="color-scheme" content="light dark"/>
+	{{with .Metadata}}
+	<meta name='description' content="{{.Description}}" />
+		{{if .ShowPreview}}
+		<meta name='twitter:title' content="{{.Title}}" />
+			{{ if .PreviewImage }}
+			<meta name='twitter:card' content='summary_large_image' />
+			<meta name="twitter:image" content="{{.PreviewImage}}" />
+			<meta property="og:image" content="{{.PreviewImage}}" />
+			{{ else }}
+			<meta name='twitter:card' content='summary' />
+			{{ end }}
+		<meta name='twitter:description' content="{{.Description}}" />
+		<meta property="og:type" content="website" />
+		<meta property='og:title' content="{{.Title}}" />
+		<meta property='og:description' content="{{.Description}}" />
+		{{end}}
+	{{end}}
+	<title>{{.Title}}</title>
+	{{if not .WebpackDevServer}}<link rel="stylesheet" href="{{.Manifest.AppCSSBundlePath}}">{{end}}
+	<link id='sourcegraph-chrome-webstore-item' rel="chrome-webstore-item" href="https://chrome.google.com/webstore/detail/dgjhfomjieaadpoljlnidmbgkdffpack">
+	<link rel="search" href="/opensearch.xml" type="application/opensearchdescription+xml" title="Sourcegraph Search">
+	{{ if .Context.SourcegraphDotComMode }}
+	<!-- Google Tag Manager -->
+	<script ignore-csp>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+	new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+	j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+	'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+	})(window,document,'script','dataLayer','GTM-TB4NLS7');</script>
+	<!-- End Google Tag Manager -->
+	{{ end }}
+	<script ignore-csp>
+		window.context = {{.Context }}
+		window.pageError = {{.Error }}
+	</script>
+	{{.Injected.HeadBottom}}
+</head>
+
+<body>
+	{{ if .Context.SourcegraphDotComMode }}
+	<!-- Google Tag Manager (noscript) -->
+	<noscript><iframe ignore-csp src="https://www.googletagmanager.com/ns.html?id=GTM-TB4NLS7" height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+	<!-- End Google Tag Manager (noscript) -->
+	{{ end }}
+	{{.Injected.BodyTop}}
+	<div id="root"></div>
+	<noscript>
+		<p>Sourcegraph is a web-based code search and navigation tool for dev teams. Search, navigate, and review code. Find answers.</p>
+
+		<br>
+		<br>
+		<br>
+		You need to enable JavaScript to run this app.
+	</noscript>
+	{{if .WebpackDevServer}}<script src="{{.Manifest.AppJSRuntimeBundlePath}}"></script>{{end}}
+	<script src="{{.Manifest.AppJSBundlePath}}"></script>
+	{{.Injected.BodyBottom}}
+</body>
+
+</html>

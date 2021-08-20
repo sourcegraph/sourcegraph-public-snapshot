@@ -1,0 +1,148 @@
+{
+  "ID": "MDExOlB1bGxSZXF1ZXN0NTc3Nzc3NzEy",
+  "Title": "This is a test PR",
+  "Body": "This is the description of the test PR",
+  "State": "MERGED",
+  "URL": "https://github.com/sourcegraph/automation-testing/pull/424",
+  "HeadRefOid": "81da5d9c265d943d33a6bbed9da18da16f3ac633",
+  "BaseRefOid": "53229c4dc5ba7c0f7abf109003aa15a956be485e",
+  "HeadRefName": "test-pr-7",
+  "BaseRefName": "master",
+  "Number": 424,
+  "Author": {
+   "AvatarURL": "https://avatars.githubusercontent.com/u/229984?v=4",
+   "Login": "LawnGnome",
+   "URL": "https://github.com/LawnGnome"
+  },
+  "Participants": [
+   {
+    "AvatarURL": "https://avatars.githubusercontent.com/u/229984?v=4",
+    "Login": "LawnGnome",
+    "URL": "https://github.com/LawnGnome"
+   },
+   {
+    "AvatarURL": "https://avatars.githubusercontent.com/u/19534377?v=4",
+    "Login": "eseliger",
+    "URL": "https://github.com/eseliger"
+   },
+   {
+    "AvatarURL": "https://avatars.githubusercontent.com/u/1185253?u=35f048c505007991433b46c9c0616ccbcfbd4bff\u0026v=4",
+    "Login": "mrnugget",
+    "URL": "https://github.com/mrnugget"
+   }
+  ],
+  "Labels": {
+   "Nodes": []
+  },
+  "TimelineItems": [
+   {
+    "Type": "PullRequestCommit",
+    "Item": {
+     "Commit": {
+      "OID": "81da5d9c265d943d33a6bbed9da18da16f3ac633",
+      "Message": "Push a new branch",
+      "MessageHeadline": "Push a new branch",
+      "URL": "https://github.com/sourcegraph/automation-testing/commit/81da5d9c265d943d33a6bbed9da18da16f3ac633",
+      "Committer": {
+       "AvatarURL": "https://avatars.githubusercontent.com/u/1185253?v=4",
+       "Email": "mrnugget@gmail.com",
+       "Name": "Thorsten Ball",
+       "User": {
+        "AvatarURL": "https://avatars.githubusercontent.com/u/1185253?u=35f048c505007991433b46c9c0616ccbcfbd4bff\u0026v=4",
+        "Login": "mrnugget",
+        "URL": "https://github.com/mrnugget"
+       }
+      },
+      "CommittedDate": "2021-02-22T16:39:56Z",
+      "PushedDate": "2021-02-22T16:40:00Z"
+     }
+    }
+   },
+   {
+    "Type": "MergedEvent",
+    "Item": {
+     "Actor": {
+      "AvatarURL": "https://avatars.githubusercontent.com/u/19534377?v=4",
+      "Login": "eseliger",
+      "URL": "https://github.com/eseliger"
+     },
+     "MergeRefName": "master",
+     "URL": "https://github.com/sourcegraph/automation-testing/pull/424#event-4878235653",
+     "Commit": {
+      "OID": "9e89af1d640a4dfc8b03f27c7e7c228d65b9d13e",
+      "Message": "Push a new branch (#424)\n\nCo-authored-by: Thorsten Ball \u003cmrnugget@gmail.com\u003e",
+      "MessageHeadline": "Push a new branch (#424)",
+      "URL": "https://github.com/sourcegraph/automation-testing/commit/9e89af1d640a4dfc8b03f27c7e7c228d65b9d13e",
+      "Committer": {
+       "AvatarURL": "https://avatars.githubusercontent.com/u/19864447?v=4",
+       "Email": "noreply@github.com",
+       "Name": "GitHub"
+      },
+      "CommittedDate": "2021-06-11T14:08:50Z",
+      "PushedDate": "0001-01-01T00:00:00Z"
+     },
+     "CreatedAt": "2021-06-11T14:08:50Z"
+    }
+   },
+   {
+    "Type": "ClosedEvent",
+    "Item": {
+     "Actor": {
+      "AvatarURL": "https://avatars.githubusercontent.com/u/19534377?v=4",
+      "Login": "eseliger",
+      "URL": "https://github.com/eseliger"
+     },
+     "CreatedAt": "2021-06-11T14:08:50Z",
+     "URL": "https://github.com/sourcegraph/automation-testing/pull/424#event-4878235659"
+    }
+   }
+  ],
+  "Commits": {
+   "Nodes": [
+    {
+     "Commit": {
+      "OID": "81da5d9c265d943d33a6bbed9da18da16f3ac633",
+      "CheckSuites": {
+       "Nodes": [
+        {
+         "ID": "MDEwOkNoZWNrU3VpdGUyMDk2NjY1OTU4",
+         "Status": "COMPLETED",
+         "Conclusion": "STALE",
+         "ReceivedAt": "0001-01-01T00:00:00Z",
+         "CheckRuns": {
+          "Nodes": []
+         }
+        },
+        {
+         "ID": "MDEwOkNoZWNrU3VpdGUyMDk2NjY1OTYx",
+         "Status": "COMPLETED",
+         "Conclusion": "STALE",
+         "ReceivedAt": "0001-01-01T00:00:00Z",
+         "CheckRuns": {
+          "Nodes": []
+         }
+        },
+        {
+         "ID": "MDEwOkNoZWNrU3VpdGUyMDk2NjY1OTYy",
+         "Status": "COMPLETED",
+         "Conclusion": "STALE",
+         "ReceivedAt": "0001-01-01T00:00:00Z",
+         "CheckRuns": {
+          "Nodes": []
+         }
+        }
+       ]
+      },
+      "Status": {
+       "State": "",
+       "Contexts": null
+      },
+      "CommittedDate": "2021-02-22T16:39:56Z"
+     }
+    }
+   ]
+  },
+  "IsDraft": false,
+  "CreatedAt": "2021-02-22T16:40:45Z",
+  "UpdatedAt": "2021-06-11T14:08:50Z"
+ }

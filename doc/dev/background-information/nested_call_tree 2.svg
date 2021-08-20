@@ -1,0 +1,80 @@
+<svg width="440" height="160" viewBox="0 0 440 160" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="0" refY="3" orient="auto" markerUnits="strokeWidth">
+      <path class="arrow" d="M0 0v6l9-3z"></path>
+    </marker>
+  </defs>
+  <style>
+    text {
+      font-family: system-ui, sans-serif;
+    }
+    .control-flow-label {
+      font-size: 8px;
+      fill: darkblue;
+      text-anchor: end;
+      opacity: 0.6;
+    }
+    .control-flow-line {
+      stroke: darkblue;
+      stroke-opacity: 0.6;
+      stroke-width: 0.5;
+      stroke-dasharray: 1.5;
+      fill: none;
+    }
+    .arrow {
+      fill: darkblue;
+      fill-opacity: 0.6;
+    }
+    .unit {
+      fill: lightgrey;
+    }
+    .unit-label {
+      font-size: 16px;
+      text-anchor: middle;
+    }
+    .unit-connection {
+      stroke: darkgrey;
+    }
+  </style>
+
+  <line class="unit-connection" x1="220" x2="140" y1="40" y2="64"></line>
+  <line class="unit-connection" x1="140" x2="100" y1="96" y2="120"></line>
+  <line class="unit-connection" x1="140" x2="180" y1="96" y2="120"></line>
+  <line class="unit-connection" x1="300" x2="260" y1="96" y2="120"></line>
+  <line class="unit-connection" x1="300" x2="340" y1="96" y2="120"></line>
+  <line class="unit-connection" x1="220" x2="300" y1="40" y2="64"></line>
+
+  <g>
+    <rect class="unit" width="64" height="32" x="188" y="8"></rect>
+    <text class="unit-label" x="220" y="30">A</text>
+  </g>
+  <g>
+    <rect class="unit" width="64" height="32" x="108" y="64"></rect>
+    <text class="unit-label" x="140" y="86">B</text>
+  </g>
+  <g>
+    <rect class="unit" width="64" height="32" x="68" y="120"></rect>
+    <text class="unit-label" x="100" y="142">C</text>
+  </g>
+  <g>
+    <rect class="unit" width="64" height="32" x="148" y="120"></rect>
+    <text class="unit-label" x="180" y="142">D</text>
+  </g>
+  <g>
+    <rect class="unit" width="64" height="32" x="268" y="64"></rect>
+    <text class="unit-label" x="300" y="86">E</text>
+  </g>
+  <g>
+    <rect class="unit" width="64" height="32" x="228" y="120"></rect>
+    <text class="unit-label" x="260" y="142">F</text>
+  </g>
+  <g>
+    <rect class="unit" width="64" height="32" x="308" y="120"></rect>
+    <text class="unit-label" x="340" y="142">G</text>
+  </g>
+
+  <g>
+    <path class="control-flow-line" marker-end="url(#arrow)" d="M 195 39 C 170 47 144 55 134 62 C 124 70 126 82 120 92 C 114 102 95 115 93 122 C 90 128 101 131 110 124 C 119 116 131 93 141 93 C 150 92 164 113 172 120 C 180 127 188 126 185 120 C 181 114 165 100 158 91 C 151 83 150 75 160 66 C 170 56 198 39 220 39 C 242 39 272 55 282 65 C 293 75 292 84 285 93 C 277 102 259 116 255 122 C 252 127 262 129 270 123 C 279 118 293 103 303 103 C 312 103 324 118 331 123 C 338 128 343 125 340 119 C 337 113 323 100 318 92 C 313 83 313 73 304 65 C 295 58 272 48 252 40"></path>
+    <text class="control-flow-label" x="168" y="45">control flow</text>
+  </g>
+</svg>
