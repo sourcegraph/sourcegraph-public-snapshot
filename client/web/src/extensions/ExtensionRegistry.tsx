@@ -388,7 +388,19 @@ export const ExtensionRegistry: React.FunctionComponent<Props> = props => {
                             <>
                                 <hr className="mt-5" />
                                 <div className="my-4 justify-content-center">
-                                    You may use the Sourcegraph.com extension registry only with Sourcegraph <a href ="https://about.sourcegraph.com/pricing/">self-hosted or managed instances</a>, <a href="http://sourcegraph.com/">Sourcegraph.com</a>, and Sourcegraph's <a href="https://docs.sourcegraph.com/integration/browser_extension">browser extensions</a> and <a href="https://docs.sourcegraph.com/integration/editor">editor integrations</a>. You may not use the Sourcegraph.com extension registry with Sourcegraph OSS. Learn more about the Sourcegraph.com extension registry and administration options in our extensions documentation.
+                                    You may use the Sourcegraph.com extension registry only with Sourcegraph{' '}
+                                    <a href="https://about.sourcegraph.com/pricing/">
+                                        self-hosted or managed instances
+                                    </a>
+                                    , <a href="http://sourcegraph.com/">Sourcegraph.com</a>, and Sourcegraph's{' '}
+                                    <a href="https://docs.sourcegraph.com/integration/browser_extension">
+                                        browser extensions
+                                    </a>{' '}
+                                    and{' '}
+                                    <a href="https://docs.sourcegraph.com/integration/editor">editor integrations</a>.
+                                    You may not use the Sourcegraph.com extension registry with Sourcegraph OSS. Learn
+                                    more about the Sourcegraph.com extension registry and administration options in our
+                                    extensions documentation.
                                 </div>
                             </>
                         )}
