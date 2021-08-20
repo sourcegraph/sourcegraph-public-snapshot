@@ -9,8 +9,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/inconshreveable/log15"
-
 	"github.com/cockroachdb/errors"
 	"github.com/derision-test/glock"
 	"github.com/keegancsmith/sqlf"
@@ -650,7 +648,6 @@ func (s *store) MarkErrored(ctx context.Context, id int, failureMessage string, 
 	conds = append(conds, options.ToSQLConds(s.formatQuery)...)
 
 	q := s.formatQuery(markErroredQuery, quote(s.options.TableName), s.options.MaxNumRetries, failureMessage, sqlf.Join(conds, "AND"))
-	log15.Info("markerror", "query", q.Query(sqlf.PostgresBindVar), "args", q.Args())
 	_, ok, err := basestore.ScanFirstInt(s.Query(ctx, q))
 	return ok, err
 }
