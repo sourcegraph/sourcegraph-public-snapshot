@@ -91,9 +91,9 @@ func (a *Aggregator) DoSymbolSearch(ctx context.Context, args *search.TextParame
 	return errors.Wrap(err, "symbol search failed")
 }
 
-func (a *Aggregator) DoStructuralSearch(ctx context.Context, args *search.TextParameters, repoFetcher *unindexed.RepoFetcher) (err error) {
+func (a *Aggregator) DoStructuralSearch(ctx context.Context, args *search.SearcherParameters, mode search.GlobalSearchMode, repoFetcher *unindexed.RepoFetcher) (err error) {
 	tr, ctx := trace.New(ctx, "doStructuralSearch", "")
-	tr.LogFields(trace.Stringer("global_search_mode", args.Mode))
+	tr.LogFields(trace.Stringer("global_search_mode", mode))
 	defer func() {
 		a.Error(err)
 		tr.SetErrorIfNotContext(err)

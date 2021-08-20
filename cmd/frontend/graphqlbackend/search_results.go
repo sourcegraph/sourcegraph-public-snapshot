@@ -1572,7 +1572,12 @@ func (r *searchResolver) doResults(ctx context.Context, args *search.TextParamet
 		goroutine.Go(func() {
 			defer wg.Done()
 			repoFetcher := unindexed.NewRepoFetcher(agg, args)
-			_ = agg.DoStructuralSearch(ctx, args, repoFetcher)
+			searcherArgs := &search.SearcherParameters{
+				SearcherURLs:    args.SearcherURLs,
+				PatternInfo:     args.PatternInfo,
+				UseFullDeadline: args.UseFullDeadline,
+			}
+			_ = agg.DoStructuralSearch(ctx, searcherArgs, args.Mode, repoFetcher)
 		})
 	}
 
