@@ -129,7 +129,7 @@ There are [multiple ways to publish a changeset](how-tos/publishing_changesets.m
     <img src="https://sourcegraphstatic.com/docs/images/batch_changes/quickstart/browser_publish_select_changesets.png" class="screenshot">
 1. Choose the "Publish changesets" action from the dropdown.
     <img src="https://sourcegraphstatic.com/docs/images/batch_changes/quickstart/browser_publish_select_action.png" class="screenshot">
-1. Click **Publish changesets**. You'll be prompted to confirm. You may also choose to publish as draft changeset(s), if the code host supports it.
+1. Click **Publish changesets**. You'll be prompted to confirm. You may also choose to publish your changeset(s) as draft(s), if the code host supports it.
     <img src="https://sourcegraphstatic.com/docs/images/batch_changes/quickstart/browser_publish_confirm.png" class="screenshot">
 1. Click **Publish**, and wait for an alert to appear (it may take a couple seconds).
 1. Sit tight---once it's done, the page should update, and you should see something like this:

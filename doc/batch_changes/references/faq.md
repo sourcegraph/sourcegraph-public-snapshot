@@ -79,6 +79,6 @@ Since Sourcegraph 3.31, it is possible to publish many types of changeset when p
 - The changeset is already published (we cannot unpublish a changeset, or convert it back to a draft).
 - The changeset's publication state is being controlled from your batch spec file (i.e. you have the [`published` flag set in your batch spec](batch_spec_yaml_reference.md#changesettemplate-published)); the batch spec takes precedence over the UI.
 - You do not have permission to publish to the repository the changeset would be opened against.
-- The changeset was imported (and therefore, Batch Changes does not own it).
+- The changeset was imported (and was therefore already published by someone or something else).
 
-The changeset may also be in a state that we cannot currently publish from, such as if it initially fails to be pushed to the code host, or if you are actively detaching the changeset from your batch change.
+The changeset may also be in a state that we cannot currently publish from: for example, because a previous push to the code host failed (in which case you should re-apply the batch change), or if you are actively detaching the changeset from your batch change.
