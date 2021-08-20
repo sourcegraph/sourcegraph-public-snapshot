@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
+	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
 )
 
 type CreateBatchSpecer interface {
@@ -17,10 +18,10 @@ func CreateBatchSpec(t *testing.T, ctx context.Context, store CreateBatchSpecer,
 	s := &btypes.BatchSpec{
 		UserID:          userID,
 		NamespaceUserID: userID,
-		Spec: btypes.BatchSpecFields{
+		Spec: &batcheslib.BatchSpec{
 			Name:        name,
 			Description: "the description",
-			ChangesetTemplate: btypes.ChangesetTemplate{
+			ChangesetTemplate: &batcheslib.ChangesetTemplate{
 				Branch: "branch-name",
 			},
 		},

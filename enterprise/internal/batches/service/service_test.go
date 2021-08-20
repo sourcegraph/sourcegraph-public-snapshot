@@ -27,6 +27,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
+	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
 )
 
 func TestServicePermissionLevels(t *testing.T) {
@@ -407,7 +408,7 @@ func TestService(t *testing.T) {
 				t.Fatalf("UserID is %d, want %d", have, want)
 			}
 
-			var wantFields btypes.BatchSpecFields
+			var wantFields *batcheslib.BatchSpec
 			if err := json.Unmarshal([]byte(spec.RawSpec), &wantFields); err != nil {
 				t.Fatal(err)
 			}
@@ -443,7 +444,7 @@ func TestService(t *testing.T) {
 				t.Fatalf("BatchSpec ID is 0")
 			}
 
-			var wantFields btypes.BatchSpecFields
+			var wantFields *batcheslib.BatchSpec
 			if err := json.Unmarshal([]byte(ct.TestRawBatchSpec), &wantFields); err != nil {
 				t.Fatal(err)
 			}
@@ -1117,6 +1118,7 @@ func testBatchChange(user int32, spec *btypes.BatchSpec) *btypes.BatchChange {
 
 func testBatchSpec(user int32) *btypes.BatchSpec {
 	return &btypes.BatchSpec{
+		Spec:            &batcheslib.BatchSpec{},
 		UserID:          user,
 		NamespaceUserID: user,
 	}
