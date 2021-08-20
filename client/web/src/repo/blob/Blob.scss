@@ -14,15 +14,13 @@
         table {
             border-collapse: collapse;
 
-            .theme-redesign & {
-                // Give room to view the last few lines of code
-                // without the floating status bar getting in the way.
-                &::after {
-                    content: '';
-                    display: inline-block;
-                    padding-bottom: calc(var(--blob-status-bar-height) + var(--blob-status-bar-vertical-gap) + 0.5rem);
-                    // Extra 0.5rem padding on top of the minimum required to expose code;
-                }
+            // Give room to view the last few lines of code
+            // without the floating status bar getting in the way.
+            &::after {
+                content: '';
+                display: inline-block;
+                padding-bottom: calc(var(--blob-status-bar-height) + var(--blob-status-bar-vertical-gap) + 0.5rem);
+                // Extra 0.5rem padding on top of the minimum required to expose code;
             }
         }
 
