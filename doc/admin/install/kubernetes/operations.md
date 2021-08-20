@@ -154,13 +154,13 @@ The following instructions are specific to backing up and restoring the sourcegr
 
 These instructions will back up the primary `sourcegraph` database and the [codeintel](../../../code_intelligence/index.md) database.
 
-#### 1. Verify deployment running
+A. Verify deployment running
 
 ```bash
 kubectl get pods -A
 ```
 
-#### 2. Stop all connections to the database by removing the frontend deployment
+B. Stop all connections to the database by removing the frontend deployment
 
 ```bash
 kubectl scale --replicas=0 deployment/sourcegraph-frontend
@@ -168,7 +168,7 @@ kubectl scale --replicas=0 deployment/sourcegraph-frontend
 kubectl delete deployment sourcegraph-frontend
 ```
 
-#### 3. Generate the database dumps
+C. Generate the database dumps
 
 ```bash
 kubectl exec -it $pgsql_POD_NAME -- bash -c 'pg_dump -C --username sg sg' > sourcegraph_db.out
@@ -185,34 +185,34 @@ The following instructions apply only if you are restoring your databases into a
 
 If you are restoring a previously running environment, see the instructions for [restoring a previously running deployment](#restoring-sourcegraph-databases-into-an-existing-environment)
 
-##### 1. Copy the database dump files (eg. `sourcegraph_db.out` and `codeintel_db.out`) into the root of the `deploy-sourcegraph` directory
+A. Copy the database dump files (eg. `sourcegraph_db.out` and `codeintel_db.out`) into the root of the `deploy-sourcegraph` directory
 
-##### 2. Start the database services by running the following command from the root of the [deploy-sourcegraph](https://github.com/sourcegraph/deploy-sourcegraph) directory
+B. Start the database services by running the following command from the root of the [deploy-sourcegraph](https://github.com/sourcegraph/deploy-sourcegraph) directory
 
 ```bash
 kubectl rollout restart deployment pgsql
 kubectl rollout restart deployment codeintel-db
 ```
 
-##### 3. Copy the database files into the pods by running the following command from the root of the [deploy-sourcegraph](https://github.com/sourcegraph/deploy-sourcegraph) directory
+C. Copy the database files into the pods by running the following command from the root of the [deploy-sourcegraph](https://github.com/sourcegraph/deploy-sourcegraph) directory
 
 ```bash
 kubectl cp sourcegraph_db.out $NAMESPACE/$pgsql_POD_NAME:/tmp/sourcegraph_db.out
 kubectl cp codeintel_db.out $NAMESPACE/$codeintel-db_POD_NAME:/tmp/codeintel_db.out
 ```
 
-##### 4. Restore the databases
+D. Restore the databases
 
 ```bash
 kubectl exec -it $pgsql_POD_NAME -- bash -c 'psql -v ERROR_ON_STOP=1 --username sg -f /tmp/sourcegraph_db.out sg'
 kubectl exec -it $codeintel-db_POD_NAME -- bash -c 'psql -v ERROR_ON_STOP=1 --username sg -f /tmp/condeintel_db.out sg'
 ```
 
-##### 5. Start the remaining Sourcegraph services by running the following the command from the root of the [deploy-sourcegraph](https://github.com/sourcegraph/deploy-sourcegraph) directory and following the steps in [Sourcegraph - Kubernetes applying manifests](https://docs.sourcegraph.com/admin/install/kubernetes/configure#applying-manifests)
+E. Start the remaining Sourcegraph services by running the following the command from the root of the [deploy-sourcegraph](https://github.com/sourcegraph/deploy-sourcegraph) directory and following the steps in [Sourcegraph - Kubernetes applying manifests](https://docs.sourcegraph.com/admin/install/kubernetes/configure#applying-manifests)
 
 #### Restoring Sourcegraph databases into an existing environment
 
-##### 1. Stop the existing deployment by removing the frontend deployment
+A. Stop the existing deployment by removing the frontend deployment
 
 ```bash
 kubectl scale --replicas=0 deployment/sourcegraph-frontend
@@ -220,7 +220,7 @@ kubectl scale --replicas=0 deployment/sourcegraph-frontend
 kubectl delete deployment sourcegraph-frontend
 ```
 
-##### 2. Remove any existing volumes for the databases in the existing deployment
+B. Remove any existing volumes for the databases in the existing deployment
  
 ```bash
 kubectl delete pvc pgsql
@@ -229,27 +229,27 @@ kubectl delete pv $pgsql_PV_NAME --force
 kubectl delete pv $codeintel-db_PV_NAME --force
 ```
 
-##### 3. Copy the database dump files (eg. `sourcegraph_db.out` and `codeintel_db.out`) into the root of the `deploy-sourcegraph` directory
+C. Copy the database dump files (eg. `sourcegraph_db.out` and `codeintel_db.out`) into the root of the `deploy-sourcegraph` directory
 
-##### 4. Start the database services only
+D. Start the database services only
 
 ```bash
 kubectl rollout restart deployment pgsql
 kubectl rollout restart deployment codeintel-db
 ```
 
-##### 5. Copy the database files into the pods by running the following command from the root of the [deploy-sourcegraph](https://github.com/sourcegraph/deploy-sourcegraph) directory
+E. Copy the database files into the pods by running the following command from the root of the [deploy-sourcegraph](https://github.com/sourcegraph/deploy-sourcegraph) directory
 
 ```bash
 kubectl cp sourcegraph_db.out $NAMESPACE/$pgsql_POD_NAME:/tmp/sourcegraph_db.out
 kubectl cp codeintel_db.out $NAMESPACE/$codeintel-db_POD_NAME:/tmp/codeintel_db.out
 ```
 
-##### 6. Restore the databases
+F. Restore the databases
 
 ```bash
 kubectl exec -it $pgsql_POD_NAME -- bash -c 'psql -v ERROR_ON_STOP=1 --username sg -f /tmp/sourcegraph_db.out sg'
 kubectl exec -it $codeintel-db_POD_NAME -- bash -c 'psql -v ERROR_ON_STOP=1 --username sg -f /tmp/condeintel_db.out sg'
 ```
 
-##### 7. Start the remaining Sourcegraph services by running the following the command from the root of the [deploy-sourcegraph](https://github.com/sourcegraph/deploy-sourcegraph) directory and following the steps in [Sourcegraph - Kubernetes applying manifests](https://docs.sourcegraph.com/admin/install/kubernetes/configure#applying-manifests)
+G. Start the remaining Sourcegraph services by running the following the command from the root of the [deploy-sourcegraph](https://github.com/sourcegraph/deploy-sourcegraph) directory and following the steps in [Sourcegraph - Kubernetes applying manifests](https://docs.sourcegraph.com/admin/install/kubernetes/configure#applying-manifests)
