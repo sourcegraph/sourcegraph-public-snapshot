@@ -360,3 +360,26 @@ func ScanFirstBatchSpecExecution(rows *sql.Rows, err error) (*btypes.BatchSpecEx
 	}
 	return execs[0], true, nil
 }
+
+// CountBatchSpecExecutionsOpts captures the query options needed for
+// counting batch spec executions.
+type CountBatchSpecExecutionsOpts struct {
+	// Nothing yet.
+}
+
+// CountBatchSpecExecutions returns the number of batch spec executions in the database.
+func (s *Store) CountBatchSpecExecutions(ctx context.Context, opts CountBatchSpecExecutionsOpts) (count int, err error) {
+	return s.queryCount(ctx, countBatchSpecExecutionsQuery(&opts))
+}
+
+var countBatchSpecExecutionsQueryFmtstr = `
+-- source: enterprise/internal/batches/store.go:CountBatchSpecExecutions
+SELECT COUNT(batch_spec_executions.id)
+FROM batch_spec_executions
+WHERE %s
+`
+
+func countBatchSpecExecutionsQuery(opts *CountBatchSpecExecutionsOpts) *sqlf.Query {
+	// Nothing yet.
+	return sqlf.Sprintf(countBatchSpecExecutionsQueryFmtstr, "TRUE")
+}
