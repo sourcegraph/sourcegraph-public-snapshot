@@ -133,7 +133,8 @@ func (c *CommitFilter) FilterFrames(ctx context.Context, frames []Frame, id api.
 			count++
 			continue
 		} else {
-			rev := commits[len(commits)-1]
+			rev := commits[0]
+			log15.Info("caching revision", "rev", rev, "for_time", frame.From, "repo_id", id)
 			// as a small optimization we are collecting this revhash here since we already know this is
 			// the revision for which we need to query against
 			addToPlan(frame, string(rev.Commit))
