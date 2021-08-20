@@ -5,7 +5,12 @@ pushd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null
 
 echo "Compiling..."
 
-export GIT_COMMIT=$(git rev-list -1 HEAD .)
+if [[ $(git diff --stat .) != '' ]]; then
+  export GIT_COMMIT="dev"
+else
+  export GIT_COMMIT=$(git rev-list -1 HEAD .)
+fi
+
 # -mod=mod: default is -mod=readonly. However, because our lib dependency is
 #           not fixed everytime it changes we need to update go.sum. By making
 #           it rw we prevent failing go install.
