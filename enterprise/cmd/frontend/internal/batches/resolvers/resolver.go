@@ -13,6 +13,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/enterprise"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/search"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/service"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
@@ -20,6 +21,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/encryption"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
@@ -29,6 +31,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/usagestats"
+	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
+	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
 )
 
 // Resolver is the GraphQL resolver of all things related to batch changes.
@@ -1498,6 +1502,56 @@ func (r *Resolver) CancelBatchSpecExecution(ctx context.Context, args *graphqlba
 	}
 
 	return r.batchSpecExecutionByID(ctx, marshalBatchSpecExecutionRandID(exec.RandID))
+}
+
+func (r *Resolver) ResolveRepositoriesForBatchSpec(ctx context.Context, args *graphqlbackend.ResolveRepositoriesForBatchSpecArgs) (graphqlbackend.BatchSpecMatchingRepositoryConnectionResolver, error) {
+	spec, err := batcheslib.ParseBatchSpec([]byte(args.BatchSpec), batcheslib.ParseBatchSpecOptions{
+		AllowArrayEnvironments: true,
+		AllowTransformChanges:  true,
+		AllowConditionalExec:   true,
+	})
+	if err != nil {
+		return nil, err
+	}
+	svc := service.New(r.store)
+	results, err := svc.ResolveRepositoriesForBatchSpec(ctx, spec, service.ResolveRepositoriesForBatchSpecOpts{
+		AllowIgnored:     args.AllowIgnored,
+		AllowUnsupported: args.AllowUnsupported,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return &batchSpecMatchingRepositoryConnectionResolver{nodes: results}, nil
+}
+
+type batchSpecMatchingRepositoryConnectionResolver struct {
+	nodes []*service.RepoRevision
+}
+
+func (r *batchSpecMatchingRepositoryConnectionResolver) Nodes(ctx context.Context) ([]graphqlbackend.BatchSpecMatchingRepositoryResolver, error) {
+	resolvers := make([]graphqlbackend.BatchSpecMatchingRepositoryResolver, 0, len(r.nodes))
+	for _, node := range r.nodes {
+		resolvers = append(resolvers, &batchSpecMatchingRepositoryResolver{node})
+	}
+	return resolvers, nil
+}
+func (r *batchSpecMatchingRepositoryConnectionResolver) TotalCount(ctx context.Context) (int32, error) {
+	return int32(len(r.nodes)), nil
+}
+func (r *batchSpecMatchingRepositoryConnectionResolver) PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error) {
+	return graphqlutil.HasNextPage(false), nil
+}
+
+type batchSpecMatchingRepositoryResolver struct {
+	node *service.RepoRevision
+}
+
+func (r *batchSpecMatchingRepositoryResolver) Repository(ctx context.Context) (*graphqlbackend.RepositoryResolver, error) {
+	return graphqlbackend.NewRepositoryResolver(dbconn.Global, r.node.Repo), nil
+}
+
+func (r *batchSpecMatchingRepositoryResolver) Path() string {
+	return git.EnsureRefPrefix(r.node.Branch)
 }
 
 func parseBatchChangeState(s *string) (btypes.BatchChangeState, error) {

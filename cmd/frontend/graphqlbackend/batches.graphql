@@ -2229,6 +2229,23 @@ extend type Query {
         """
         after: String
     ): BatchChangesCodeHostConnection!
+
+    resolveRepositoriesForBatchSpec(
+        batchSpec: String!
+        allowIgnored: Boolean = false
+        allowUnsupported: Boolean = false
+    ): BatchSpecMatchingRepositoryConnection!
+}
+
+type BatchSpecMatchingRepositoryConnection {
+    totalCount: Int!
+    pageInfo: PageInfo!
+    nodes: [BatchSpecMatchingRepository!]!
+}
+
+type BatchSpecMatchingRepository {
+    repository: Repository!
+    path: String!
 }
 
 """

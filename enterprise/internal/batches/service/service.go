@@ -1,8 +1,12 @@
 package service
 
 import (
+	"bytes"
 	"context"
 	"fmt"
+	"os"
+	"regexp"
+	"strings"
 	"time"
 
 	"github.com/cockroachdb/errors"
@@ -14,12 +18,17 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
+	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
 )
 
 // New returns a Service.
@@ -633,4 +642,251 @@ func (s *Service) CreateChangesetJobs(ctx context.Context, batchChangeID int64, 
 	}
 
 	return bulkGroupID, nil
+}
+
+type RepoRevision struct {
+	Repo   *types.Repo
+	Branch string
+	Commit api.CommitID
+}
+
+func (r *RepoRevision) HasBranch() bool {
+	return r.Branch != ""
+}
+
+type ResolveRepositoriesForBatchSpecOpts struct {
+	AllowIgnored     bool
+	AllowUnsupported bool
+}
+
+func (s *Service) ResolveRepositoriesForBatchSpec(ctx context.Context, batchSpec *batcheslib.BatchSpec, opts ResolveRepositoriesForBatchSpecOpts) ([]*RepoRevision, error) {
+	seen := map[api.RepoID]*RepoRevision{}
+	unsupported := UnsupportedRepoSet{}
+	ignored := IgnoredRepoSet{}
+
+	// TODO: this could be trivially parallelised in the future.
+	for _, on := range batchSpec.On {
+		repos, err := s.ResolveRepositoriesOn(ctx, &on)
+		if err != nil {
+			return nil, errors.Wrapf(err, "resolving %q", on.String())
+		}
+
+		for _, repo := range repos {
+			// Skip repos where no branch exists.
+			if !repo.HasBranch() {
+				continue
+			}
+
+			if other, ok := seen[repo.Repo.ID]; !ok {
+				seen[repo.Repo.ID] = repo
+
+				switch st := strings.ToLower(repo.Repo.ExternalRepo.ServiceType); st {
+				case extsvc.TypeGitHub, extsvc.TypeGitLab, extsvc.TypeBitbucketServer:
+				default:
+					if !opts.AllowUnsupported {
+						unsupported.Append(repo.Repo)
+					}
+				}
+			} else {
+				// If we've already seen this repository, we overwrite the
+				// Commit/Branch fields with the latest value we have
+				other.Commit = repo.Commit
+				other.Branch = repo.Branch
+			}
+		}
+	}
+
+	final := make([]*RepoRevision, 0, len(seen))
+	for _, repo := range seen {
+		ignore, err := s.hasBatchIgnoreFile(ctx, repo)
+		if err != nil {
+			return nil, err
+		}
+		if !opts.AllowIgnored && ignore {
+			ignored.Append(repo.Repo)
+		}
+
+		if !unsupported.Includes(repo.Repo) && !ignored.Includes(repo.Repo) {
+			final = append(final, repo)
+		}
+	}
+
+	if unsupported.HasUnsupported() {
+		return final, unsupported
+	}
+
+	if ignored.HasIgnored() {
+		return final, ignored
+	}
+
+	return final, nil
+}
+
+var ErrMalformedOnQueryOrRepository = errors.New("malformed 'on' field; missing either a repository name or a query")
+
+func (s *Service) ResolveRepositoriesOn(ctx context.Context, on *batcheslib.OnQueryOrRepository) ([]*RepoRevision, error) {
+	if on.RepositoriesMatchingQuery != "" {
+		return s.resolveRepositorySearch(ctx, on.RepositoriesMatchingQuery)
+	} else if on.Repository != "" && on.Branch != "" {
+		repo, err := s.resolveRepositoryNameAndBranch(ctx, on.Repository, on.Branch)
+		if err != nil {
+			return nil, err
+		}
+		return []*RepoRevision{repo}, nil
+	} else if on.Repository != "" {
+		repo, err := s.resolveRepositoryName(ctx, on.Repository)
+		if err != nil {
+			return nil, err
+		}
+		return []*RepoRevision{repo}, nil
+	}
+
+	// This shouldn't happen on any batch spec that has passed validation, but,
+	// alas, software.
+	return nil, ErrMalformedOnQueryOrRepository
+}
+
+func (s *Service) resolveRepositoryName(ctx context.Context, name string) (*RepoRevision, error) {
+	repo, err := s.store.Repos().GetByName(ctx, api.RepoName(name))
+	if err != nil {
+		return nil, err
+	}
+
+	repoRev := &RepoRevision{
+		Repo: repo,
+	}
+
+	// TODO: Fill default branch.
+	refBytes, _, exitCode, err := git.ExecSafe(ctx, api.RepoName(name), []string{"symbolic-ref", "HEAD"})
+	repoRev.Branch = string(bytes.TrimSpace(refBytes))
+	if err == nil && exitCode == 0 {
+		// Check that our repo is not empty
+		repoRev.Commit, err = git.ResolveRevision(ctx, api.RepoName(name), "HEAD", git.ResolveRevisionOptions{NoEnsureRevision: true})
+	}
+	// TODO: Handle repoCloneInProgressErr
+
+	return repoRev, err
+}
+
+func (s *Service) resolveRepositoryNameAndBranch(ctx context.Context, name, branch string) (*RepoRevision, error) {
+	repo, err := s.resolveRepositoryName(ctx, name)
+	if err != nil {
+		return repo, err
+	}
+
+	commit, err := git.ResolveRevision(ctx, repo.Repo.Name, branch, git.ResolveRevisionOptions{
+		NoEnsureRevision: true,
+	})
+	if err != nil && errors.HasType(err, &gitserver.RevisionNotFoundError{}) {
+		return repo, fmt.Errorf("no branch matching %q found for repository %s", branch, name)
+	}
+
+	repo.Branch = branch
+	repo.Commit = commit
+
+	return repo, err
+}
+
+func (s *Service) resolveRepositorySearch(ctx context.Context, query string) ([]*RepoRevision, error) {
+	query = setDefaultQueryCount(query)
+	// TODO DO SEARCH
+	return nil, nil
+}
+
+func (s *Service) hasBatchIgnoreFile(ctx context.Context, r *RepoRevision) (bool, error) {
+	path := ".batchignore"
+	stat, err := git.Stat(ctx, r.Repo.Name, r.Commit, path)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return false, nil
+		}
+		return false, err
+	}
+	if !stat.Mode().IsRegular() {
+		return false, errors.Errorf("not a blob: %q", path)
+	}
+	return true, nil
+}
+
+var defaultQueryCountRegex = regexp.MustCompile(`\bcount:(\d+|all)\b`)
+
+const hardCodedCount = " count:999999"
+
+func setDefaultQueryCount(query string) string {
+	if defaultQueryCountRegex.MatchString(query) {
+		return query
+	}
+
+	return query + hardCodedCount
+}
+
+// TODO(mrnugget): Merge these two types (give them an "errorfmt" function,
+// rename "Has*" methods to "NotEmpty" or something)
+
+// UnsupportedRepoSet provides a set to manage repositories that are on
+// unsupported code hosts. This type implements error to allow it to be
+// returned directly as an error value if needed.
+type UnsupportedRepoSet map[*types.Repo]struct{}
+
+func (e UnsupportedRepoSet) Includes(r *types.Repo) bool {
+	_, ok := e[r]
+	return ok
+}
+
+func (e UnsupportedRepoSet) Error() string {
+	repos := []string{}
+	typeSet := map[string]struct{}{}
+	for repo := range e {
+		repos = append(repos, string(repo.Name))
+		typeSet[repo.ExternalRepo.ServiceType] = struct{}{}
+	}
+
+	types := []string{}
+	for t := range typeSet {
+		types = append(types, t)
+	}
+
+	return fmt.Sprintf(
+		"found repositories on unsupported code hosts: %s\nrepositories:\n\t%s",
+		strings.Join(types, ", "),
+		strings.Join(repos, "\n\t"),
+	)
+}
+
+func (e UnsupportedRepoSet) Append(repo *types.Repo) {
+	e[repo] = struct{}{}
+}
+
+func (e UnsupportedRepoSet) HasUnsupported() bool {
+	return len(e) > 0
+}
+
+// IgnoredRepoSet provides a set to manage repositories that are on
+// unsupported code hosts. This type implements error to allow it to be
+// returned directly as an error value if needed.
+type IgnoredRepoSet map[*types.Repo]struct{}
+
+func (e IgnoredRepoSet) Includes(r *types.Repo) bool {
+	_, ok := e[r]
+	return ok
+}
+
+func (e IgnoredRepoSet) Error() string {
+	repos := []string{}
+	for repo := range e {
+		repos = append(repos, string(repo.Name))
+	}
+
+	return fmt.Sprintf(
+		"found repositories containing .batchignore files:\n\t%s",
+		strings.Join(repos, "\n\t"),
+	)
+}
+
+func (e IgnoredRepoSet) Append(repo *types.Repo) {
+	e[repo] = struct{}{}
+}
+
+func (e IgnoredRepoSet) HasIgnored() bool {
+	return len(e) > 0
 }
