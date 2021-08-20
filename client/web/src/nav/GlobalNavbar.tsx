@@ -97,8 +97,7 @@ interface Props
      *
      * 'low-profile-with-logo' renders the low-profile navbar but with the homepage logo. Used on repogroup pages.
      */
-    // TODO: after redesign refresh is done remove no-search-input variant
-    variant: 'default' | 'low-profile' | 'low-profile-with-logo' | 'no-search-input'
+    variant: 'default' | 'low-profile' | 'low-profile-with-logo'
 
     setVersionContext: (versionContext: string | undefined) => Promise<void>
     availableVersionContexts: VersionContext[] | undefined
@@ -135,7 +134,7 @@ export const GlobalNavbar: React.FunctionComponent<Props> = ({
 
     const globalSearchContextSpec = useMemo(() => getGlobalSearchContextFilter(query), [query])
 
-    // Design Refresh will include repositories section as part of the user navigation bar
+    // UI includes repositories section as part of the user navigation bar
     // This filter makes sure repositories feature flag is active.
     const showRepositorySection = useMemo(
         () => !!props.userSettingsSideBarItems?.find(item => item.label === 'Repositories'),

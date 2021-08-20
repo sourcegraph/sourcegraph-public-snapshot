@@ -101,7 +101,6 @@ export const SearchResult: React.FunctionComponent<Props> = ({ result, icon, isL
     return (
         <ResultContainer
             icon={icon}
-            // Don't allow collapsing in the redesign
             collapsible={false}
             defaultExpanded={true}
             title={renderTitle()}

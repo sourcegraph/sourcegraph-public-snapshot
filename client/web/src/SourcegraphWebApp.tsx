@@ -25,7 +25,6 @@ import { filterExists } from '@sourcegraph/shared/src/search/query/validate'
 import { aggregateStreamingSearch } from '@sourcegraph/shared/src/search/stream'
 import { EMPTY_SETTINGS_CASCADE, SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { asError, isErrorLike } from '@sourcegraph/shared/src/util/errors'
-import { REDESIGN_CLASS_NAME } from '@sourcegraph/shared/src/util/useRedesignToggle'
 
 import { authenticatedUser, AuthenticatedUser } from './auth'
 import { client } from './backend/graphql'
@@ -452,7 +451,6 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
         localStorage.setItem(LIGHT_THEME_LOCAL_STORAGE_KEY, this.state.themePreference)
         document.documentElement.classList.toggle('theme-light', this.isLightTheme())
         document.documentElement.classList.toggle('theme-dark', !this.isLightTheme())
-        document.documentElement.classList.toggle(REDESIGN_CLASS_NAME, true)
     }
 
     public render(): React.ReactFragment | null {
