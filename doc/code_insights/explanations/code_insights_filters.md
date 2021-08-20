@@ -26,7 +26,7 @@ We're currently exploring additional filters that would be valuable. If you have
 
 ### Filters are temporary by default
 
-By default, filters are temporary (present until you refresh the page) and local (no one else can see them). You can modify filters without affecting what others see, unless or until you save the filters.
+By default, filters are temporary (present until you refresh the page or switch to a different dashboard) and local (no one else can see them). You can modify filters without affecting what others see, unless or until you save the filters.
 
 ### Saving filters as defaults
 
