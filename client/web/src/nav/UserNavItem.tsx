@@ -1,5 +1,4 @@
 import { Shortcut } from '@slimsag/react-shortcuts'
-import classNames from 'classnames'
 import * as H from 'history'
 import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
 import ChevronUpIcon from 'mdi-react/ChevronUpIcon'
