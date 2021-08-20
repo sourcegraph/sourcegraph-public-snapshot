@@ -26,6 +26,7 @@ All notable changes to Sourcegraph are documented in this file.
 - Perforce: added basic support for Perforce permission table path wildcards. [#23755](https://github.com/sourcegraph/sourcegraph/pull/23755)
 - Added autocompletion and search filtering of branch/tag/commit revisions to the repository compare page. [#23977](https://github.com/sourcegraph/sourcegraph/pull/23977)
 - Batch Changes changesets can now be [set to published when previewing new or updated batch changes](https://docs.sourcegraph.com/batch_changes/how-tos/publishing_changesets#within-the-ui). [#22912](https://github.com/sourcegraph/sourcegraph/issues/22912)
+- Added Python3 to server and gitserver images to enable git-p4 support. [#24204](https://github.com/sourcegraph/sourcegraph/pull/24204)
 
 ### Changed
 
