@@ -970,7 +970,6 @@ func printLogo(out io.Writer) {
 }
 
 func logoExec(ctx context.Context, args []string) error {
-	return nil
 	s1 := rand.NewSource(time.Now().UnixNano())
 	r1 := rand.New(s1)
 	randoColor := func() output.Style { return output.Fg256Color(r1.Intn(256)) }
