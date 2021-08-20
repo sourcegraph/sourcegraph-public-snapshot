@@ -138,15 +138,13 @@ const (
 
 // ZoektParameters contains all the inputs to run a Zoekt indexed search.
 type ZoektParameters struct {
-	RepoOptions      RepoOptions
-	Query            zoektquery.Q
-	Typ              IndexedRequestType
-	FileMatchLimit   int32
-	Enabled          bool
-	Index            query.YesNoOnly
-	Mode             GlobalSearchMode
-	UserPrivateRepos []types.RepoName
-	Select           filter.SelectPath
+	Query          zoektquery.Q
+	Typ            IndexedRequestType
+	FileMatchLimit int32
+	Enabled        bool
+	Index          query.YesNoOnly
+	Mode           GlobalSearchMode
+	Select         filter.SelectPath
 
 	Zoekt *backend.Zoekt
 }
