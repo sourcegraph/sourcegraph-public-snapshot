@@ -4,7 +4,7 @@ Code insights filters allow you to filter a search insight to a subset of reposi
 
 Filters take effect immediately, without needing to re-process the data series of the insight.
 
-> Note: filters are not yet available on language statistics insights. 
+> NOTE: filters are not yet available on language statistics insights. 
 
 ## Filter options
 
