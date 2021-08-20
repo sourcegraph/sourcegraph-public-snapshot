@@ -547,14 +547,14 @@ func withMode(args search.TextParameters, st query.SearchType, versionContext *s
 		return len(args.Query.Values(query.FieldRepo)) == 0 && len(args.Query.Values(query.FieldRepoGroup)) == 0 && len(args.Query.Values(query.FieldRepoHasFile)) == 0
 	}
 
-	isFileOrPath := args.ResultTypes.Has(result.TypeFile) || args.ResultTypes.Has(result.TypePath)
+	hasGlobalSearchResultType := args.ResultTypes.Has(result.TypeFile | result.TypePath | result.TypeSymbol)
 	isIndexedSearch := args.PatternInfo.Index != query.No
 	isEmpty := args.PatternInfo.Pattern == "" && args.PatternInfo.ExcludePattern == "" && len(args.PatternInfo.IncludePatterns) == 0
-	if isGlobalSearch() && isIndexedSearch && isFileOrPath && !isEmpty {
+	if isGlobalSearch() && isIndexedSearch && hasGlobalSearchResultType && !isEmpty {
 		args.Mode = search.ZoektGlobalSearch
 	}
 	if isEmpty {
-		args.Mode = search.SkipContentAndPathSearch
+		args.Mode = search.SkipUnindexed
 	}
 	return args
 }
@@ -1466,16 +1466,27 @@ func (r *searchResolver) doResults(ctx context.Context, args *search.TextParamet
 		}
 
 		wg := waitGroup(true)
-		wg.Add(1)
-		goroutine.Go(func() {
-			defer wg.Done()
-			_ = agg.DoFilePathSearch(ctx, &argsIndexed)
-		})
+		if args.ResultTypes.Has(result.TypeFile | result.TypePath) {
+			wg.Add(1)
+			goroutine.Go(func() {
+				defer wg.Done()
+				_ = agg.DoFilePathSearch(ctx, &argsIndexed)
+			})
+		}
+
+		if args.ResultTypes.Has(result.TypeSymbol) {
+			wg.Add(1)
+			goroutine.Go(func() {
+				defer wg.Done()
+				_ = agg.DoSymbolSearch(ctx, &argsIndexed, limit)
+			})
+		}
+
 		// On sourcegraph.com and for unscoped queries, determineRepos returns the subset
 		// of indexed default searchrepos. No need to call searcher, because
 		// len(searcherRepos) will always be 0.
 		if envvar.SourcegraphDotComMode() {
-			args.Mode = search.SkipContentAndPathSearch
+			args.Mode = search.SkipUnindexed
 		} else {
 			args.Mode = search.SearcherOnly
 		}
@@ -1533,16 +1544,18 @@ func (r *searchResolver) doResults(ctx context.Context, args *search.TextParamet
 	}
 
 	if args.ResultTypes.Has(result.TypeSymbol) && args.PatternInfo.Pattern != "" {
-		wg := waitGroup(args.ResultTypes.Without(result.TypeSymbol) == 0)
-		wg.Add(1)
-		goroutine.Go(func() {
-			defer wg.Done()
-			_ = agg.DoSymbolSearch(ctx, args, limit)
-		})
+		if args.Mode != search.SkipUnindexed {
+			wg := waitGroup(args.ResultTypes.Without(result.TypeSymbol) == 0)
+			wg.Add(1)
+			goroutine.Go(func() {
+				defer wg.Done()
+				_ = agg.DoSymbolSearch(ctx, args, limit)
+			})
+		}
 	}
 
 	if args.ResultTypes.Has(result.TypeFile | result.TypePath) {
-		if args.Mode != search.SkipContentAndPathSearch {
+		if args.Mode != search.SkipUnindexed {
 			wg := waitGroup(true)
 			wg.Add(1)
 			goroutine.Go(func() {

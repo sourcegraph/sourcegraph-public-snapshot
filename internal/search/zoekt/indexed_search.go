@@ -175,14 +175,14 @@ func (s *IndexedUniverseSearchRequest) UnindexedRepos() []*search.RepositoryRevi
 	return nil
 }
 
-func NewIndexedUniverseSearchRequest(ctx context.Context, args *search.TextParameters, repoOptions search.RepoOptions, userPrivateRepos []types.RepoName) (_ *IndexedUniverseSearchRequest, err error) {
+func NewIndexedUniverseSearchRequest(ctx context.Context, args *search.TextParameters, typ search.IndexedRequestType, repoOptions search.RepoOptions, userPrivateRepos []types.RepoName) (_ *IndexedUniverseSearchRequest, err error) {
 	tr, _ := trace.New(ctx, "NewIndexedUniverseSearchRequest", "text")
 	defer func() {
 		tr.SetError(err)
 		tr.Finish()
 	}()
 
-	q, err := search.QueryToZoektQuery(args.PatternInfo, false)
+	q, err := search.QueryToZoektQuery(args.PatternInfo, typ == search.SymbolRequest)
 	if err != nil {
 		return nil, err
 	}
@@ -193,7 +193,7 @@ func NewIndexedUniverseSearchRequest(ctx context.Context, args *search.TextParam
 		Args: &search.ZoektParameters{
 			Repos:          args.Repos,
 			Query:          q,
-			Typ:            search.TextRequest,
+			Typ:            typ,
 			FileMatchLimit: args.PatternInfo.FileMatchLimit,
 			Enabled:        args.Zoekt.Enabled(),
 			Index:          args.PatternInfo.Index,
