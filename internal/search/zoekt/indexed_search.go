@@ -148,13 +148,13 @@ type IndexedSearchRequest interface {
 	UnindexedRepos() []*search.RepositoryRevisions
 }
 
-func NewIndexedSearchRequest(ctx context.Context, args *search.TextParameters, onMissing OnMissingRepoRevs) (IndexedSearchRequest, error) {
+func NewIndexedSearchRequest(ctx context.Context, args *search.TextParameters, typ search.IndexedRequestType, onMissing OnMissingRepoRevs) (IndexedSearchRequest, error) {
 	if args.Mode == search.ZoektGlobalSearch {
 		// performance: optimize global searches where Zoekt searches
 		// all shards anyway.
-		return NewIndexedUniverseSearchRequest(ctx, args, search.TextRequest, args.RepoOptions, args.UserPrivateRepos)
+		return NewIndexedUniverseSearchRequest(ctx, args, typ, args.RepoOptions, args.UserPrivateRepos)
 	}
-	return NewIndexedSubsetSearchRequest(ctx, args, search.TextRequest, onMissing)
+	return NewIndexedSubsetSearchRequest(ctx, args, typ, onMissing)
 }
 
 // IndexedUniverseSearchRequest represents a request to run a search over the universe of indexed repositories.
