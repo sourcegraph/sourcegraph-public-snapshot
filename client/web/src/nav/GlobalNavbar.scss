@@ -6,51 +6,25 @@
     display: flex;
     align-items: center;
     width: 100%;
-    &--bg {
-        background-color: var(--color-bg-2);
-    }
-
-    &__logo-link {
-        outline: 0;
-        margin: 0.25rem 0.5rem;
-        display: flex;
-        width: fit-content;
-        text-decoration: none;
-    }
 
     &__logo {
         height: 1.5rem;
         width: 1.5rem;
     }
 
-    &__search-box-container {
-        min-width: 12rem;
-        flex: 1 1 auto;
-        margin-right: 0.25rem;
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
+    &__link {
+        color: var(--body-color);
+        border-radius: var(--border-radius);
     }
 
-    .theme-redesign & {
-        &__icon {
-            color: var(--header-icon-color);
-        }
+    &__sign-up {
+        border: 1px solid transparent;
+        background-color: var(--brand-secondary);
+        color: var(--white);
 
-        &__link {
-            color: var(--body-color);
-            border-radius: var(--border-radius);
-        }
-
-        &__sign-up {
-            border: 1px solid transparent;
-            background-color: var(--brand-secondary);
+        &:hover {
+            background-color: var(--brand-secondary-3);
             color: var(--white);
-
-            &:hover {
-                background-color: var(--brand-secondary-3);
-                color: var(--white);
-            }
         }
     }
 }
