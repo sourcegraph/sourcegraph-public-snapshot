@@ -226,7 +226,7 @@ type taskExecutionJSONLines struct {
 
 func (ui *taskExecutionJSONLines) Start(tasks []*executor.Task) {
 	ui.linesTasks = make(map[*executor.Task]jsonLinesTask, len(tasks))
-	var linesTasks []jsonLinesTask
+	linesTasks := []jsonLinesTask{}
 	for _, t := range tasks {
 		linesTask := jsonLinesTask{
 			Repository:             t.Repository.Name,
