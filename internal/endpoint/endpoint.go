@@ -3,15 +3,11 @@ package endpoint
 
 import (
 	"fmt"
-	"hash/crc32"
-	"os"
 	"strings"
 	"sync"
 
-	"github.com/cespare/xxhash/v2"
 	"github.com/cockroachdb/errors"
 	"github.com/inconshreveable/log15"
-	"github.com/sourcegraph/go-rendezvous"
 )
 
 // Map is a consistent hash map to URLs. It uses the kubernetes API to watch
@@ -209,16 +205,4 @@ func (m *Map) sync(ch chan endpoints, ready chan struct{}) {
 			close(ready)
 		}
 	}
-}
-
-func newConsistentHash(nodes []string) consistentHash {
-	if os.Getenv("SRC_ENDPOINTS_CONSISTENT_HASH") == "rendezvous" {
-		log15.Info("endpoints: using rendezvous hashing")
-		return rendezvous.New(nodes, xxhash.Sum64String)
-	}
-	// 50 replicas and crc32.ChecksumIEEE are the defaults used by
-	// groupcache.
-	m := hashMapNew(50, crc32.ChecksumIEEE)
-	m.add(nodes...)
-	return m
 }
