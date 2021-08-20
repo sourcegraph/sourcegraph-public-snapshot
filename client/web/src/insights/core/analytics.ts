@@ -4,14 +4,17 @@ import { isEqual } from 'lodash'
 import {
     isSettingsValid,
     mergeSettings,
-    Settings,
     SettingsCascade,
     SettingsCascadeOrError,
 } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryService } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
+import { Settings } from '../../schema/settings.schema'
+
 import { INSIGHTS_ALL_REPOS_SETTINGS_KEY, InsightTypePrefix } from './types'
-import { SearchBasedExtensionInsightSettings } from './types/insight/search-insight'
+import { isLangStatsdInsightId } from './types/insight/lang-stat-insight'
+import { isSearchBasedInsightId, SearchBasedExtensionInsightSettings } from './types/insight/search-insight'
+import { isGlobalSubject, isOrganizationSubject } from './types/subjects'
 
 export function logInsightMetrics(
     oldSettingsCascade: SettingsCascadeOrError<Settings>,
@@ -121,8 +124,8 @@ interface InsightGroups {
 export function getInsightsGroupedByType(settingsCascade: SettingsCascade<Settings>): InsightGroups {
     const { subjects } = settingsCascade
 
-    const globalSubjects = subjects.filter(configuredSubject => configuredSubject.subject.__typename === 'Site')
-    const orgSubjects = subjects.filter(configuredSubject => configuredSubject.subject.__typename === 'Org')
+    const globalSubjects = subjects.filter(configuredSubject => isGlobalSubject(configuredSubject.subject))
+    const orgSubjects = subjects.filter(configuredSubject => isOrganizationSubject(configuredSubject.subject))
 
     const finalSettingsOfAllPublicSubjects = [...globalSubjects, ...orgSubjects].reduce((finalSettings, orgSubject) => {
         const orgSettings = orgSubject.settings
@@ -136,17 +139,15 @@ export function getInsightsGroupedByType(settingsCascade: SettingsCascade<Settin
         return mergedSettings ?? finalSettings
     }, {} as Settings)
 
-    const codeStatsInsightCount = Object.keys(finalSettingsOfAllPublicSubjects).filter(key =>
-        key.startsWith(InsightTypePrefix.langStats)
-    ).length
+    const codeStatsInsightCount = Object.keys(finalSettingsOfAllPublicSubjects).filter(isLangStatsdInsightId).length
 
-    const searchBasedExtensionInsightCount = Object.keys(finalSettingsOfAllPublicSubjects).filter(key =>
-        key.startsWith(InsightTypePrefix.search)
+    const searchBasedExtensionInsightCount = Object.keys(finalSettingsOfAllPublicSubjects).filter(
+        isSearchBasedInsightId
     ).length
 
     const searchBasedBackendInsightCount = Object.keys(
         finalSettingsOfAllPublicSubjects[INSIGHTS_ALL_REPOS_SETTINGS_KEY] ?? {}
-    ).filter(key => key.startsWith(InsightTypePrefix.search)).length
+    ).filter(isSearchBasedInsightId).length
 
     return {
         codeStatsInsights: codeStatsInsightCount,
