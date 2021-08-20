@@ -59,8 +59,11 @@
         &:not(:first-child) {
             padding-left: 0.5rem; // smaller padding if the search context selector is visible
             margin-left: 0.0625rem;
-            border-top-left-radius: 0.25rem;
-            border-bottom-left-radius: 0.25rem;
+
+            @media (--xs-breakpoint-down) {
+                padding-left: 0;
+                margin-left: 0;
+            }
         }
 
         &:focus-within {
