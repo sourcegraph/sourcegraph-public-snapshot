@@ -4,7 +4,7 @@ import React, { useContext, useMemo } from 'react'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
 
 import { DiffStatStack } from '../../../components/diff/DiffStat'
-import { ApplyPreviewStatsFields, BatchSpecFields } from '../../../graphql-operations'
+import { ApplyPreviewStatsFields, DiffStatFields, Scalars } from '../../../graphql-operations'
 
 import { queryApplyPreviewStats as _queryApplyPreviewStats } from './backend'
 import { BatchChangePreviewContext } from './BatchChangePreviewContext'
@@ -27,27 +27,31 @@ const actionClassNames = classNames(
 )
 
 export interface BatchChangePreviewStatsBarProps {
-    batchSpec: BatchSpecFields
+    batchSpec: Scalars['ID']
+    diffStat: DiffStatFields
     /** For testing purposes only. */
     queryApplyPreviewStats?: typeof _queryApplyPreviewStats
 }
 
 export const BatchChangePreviewStatsBar: React.FunctionComponent<BatchChangePreviewStatsBarProps> = ({
     batchSpec,
+    diffStat,
     queryApplyPreviewStats = _queryApplyPreviewStats,
 }) => {
     const { publicationStates } = useContext(BatchChangePreviewContext)
 
     /** We use this to recalculate the stats when the publication states are modified. */
-    const applyPreviewStats = useObservable<ApplyPreviewStatsFields['stats']>(
-        useMemo(() => queryApplyPreviewStats({ batchSpec: batchSpec.id, publicationStates }), [
+    const stats = useObservable<ApplyPreviewStatsFields['stats']>(
+        useMemo(() => queryApplyPreviewStats({ batchSpec, publicationStates }), [
             publicationStates,
-            batchSpec.id,
+            batchSpec,
             queryApplyPreviewStats,
         ])
     )
 
-    const stats = applyPreviewStats || batchSpec.applyPreview.stats
+    if (!stats) {
+        return null
+    }
 
     return (
         <div className="d-flex flex-wrap mb-3 align-items-center">
@@ -55,7 +59,7 @@ export const BatchChangePreviewStatsBar: React.FunctionComponent<BatchChangePrev
                 <span className="badge badge-info text-uppercase mb-0">Preview</span>
             </h2>
             <div className={classNames(styles.batchChangePreviewStatsBarDivider, 'd-none d-sm-block mx-3')} />
-            <DiffStatStack className={styles.batchChangePreviewStatsBarDiff} {...batchSpec.diffStat} />
+            <DiffStatStack className={styles.batchChangePreviewStatsBarDiff} {...diffStat} />
             <div className={classNames(styles.batchChangePreviewStatsBarHorizontalDivider, 'd-block d-sm-none my-3')} />
             <div className={classNames(styles.batchChangePreviewStatsBarDivider, 'mx-3 d-none d-sm-block d-md-none')} />
             <div

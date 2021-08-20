@@ -65,20 +65,7 @@ export const batchSpecFragment = gql`
         originalInput
         applyPreview {
             stats {
-                close
-                detach
                 archive
-                import
-                publish
-                publishDraft
-                push
-                reopen
-                undraft
-                update
-
-                added
-                modified
-                removed
             }
             totalCount
         }

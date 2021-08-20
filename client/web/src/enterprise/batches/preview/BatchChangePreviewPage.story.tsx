@@ -31,22 +31,6 @@ const nodes: ChangesetApplyPreviewFields[] = [
     ...Object.values(hiddenChangesetApplyPreviewStories),
 ]
 
-const APPLY_PREVIEW_STATS: ApplyPreviewStatsFields['stats'] = {
-    close: 10,
-    detach: 10,
-    import: 10,
-    publish: 10,
-    publishDraft: 10,
-    push: 10,
-    reopen: 10,
-    undraft: 10,
-    update: 10,
-    archive: 18,
-    added: 5,
-    modified: 10,
-    removed: 3,
-}
-
 const batchSpec = (): BatchSpecFields => ({
     appliesToBatchChange: null,
     createdAt: subDays(new Date(), 5).toISOString(),
@@ -82,7 +66,9 @@ const batchSpec = (): BatchSpecFields => ({
     },
     originalInput: 'name: awesome-batch-change\ndescription: somestring',
     applyPreview: {
-        stats: APPLY_PREVIEW_STATS,
+        stats: {
+            archive: 18,
+        },
         totalCount: 18,
     },
 })
@@ -117,7 +103,22 @@ const fetchBatchSpecUpdate: typeof fetchBatchSpecById = () =>
         },
     })
 
-const queryApplyPreviewStats = (): Observable<ApplyPreviewStatsFields['stats']> => of(APPLY_PREVIEW_STATS)
+const queryApplyPreviewStats = (): Observable<ApplyPreviewStatsFields['stats']> =>
+    of({
+        close: 10,
+        detach: 10,
+        import: 10,
+        publish: 10,
+        publishDraft: 10,
+        push: 10,
+        reopen: 10,
+        undraft: 10,
+        update: 10,
+        archive: 18,
+        added: 5,
+        modified: 10,
+        removed: 3,
+    })
 
 const queryChangesetApplyPreview = (): Observable<BatchSpecApplyPreviewConnectionFields> =>
     of({

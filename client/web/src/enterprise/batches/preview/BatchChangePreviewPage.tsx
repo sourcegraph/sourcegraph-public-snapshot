@@ -91,7 +91,11 @@ export const BatchChangePreviewPage: React.FunctionComponent<BatchChangePreviewP
                         viewerBatchChangesCodeHosts={spec.viewerBatchChangesCodeHosts}
                     />
                     <SupersedingBatchSpecAlert spec={spec.supersedingBatchSpec} />
-                    <BatchChangePreviewStatsBar batchSpec={spec} queryApplyPreviewStats={queryApplyPreviewStats} />
+                    <BatchChangePreviewStatsBar
+                        batchSpec={spec.id}
+                        diffStat={spec.diffStat}
+                        queryApplyPreviewStats={queryApplyPreviewStats}
+                    />
                     <CreateUpdateBatchChangeAlert
                         history={history}
                         specID={spec.id}
