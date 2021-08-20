@@ -21,7 +21,12 @@ import (
 	"github.com/sourcegraph/src-cli/internal/version"
 )
 
-type dockerVolumeWorkspaceCreator struct{ tempDir string }
+type imageEnsurer func(ctx context.Context, image string) (docker.Image, error)
+
+type dockerVolumeWorkspaceCreator struct {
+	tempDir     string
+	EnsureImage imageEnsurer
+}
 
 var _ Creator = &dockerVolumeWorkspaceCreator{}
 
@@ -37,7 +42,11 @@ func (wc *dockerVolumeWorkspaceCreator) Create(ctx context.Context, repo *graphq
 	ug := docker.UIDGID{}
 	if len(steps) > 0 {
 		var err error
-		if ug, err = steps[0].ImageUIDGID(ctx); err != nil {
+		img, err := wc.EnsureImage(ctx, steps[0].Container)
+		if err != nil {
+			return nil, err
+		}
+		if ug, err = img.UIDGID(ctx); err != nil {
 			return nil, errors.Wrap(err, "getting container UID and GID")
 		}
 	}

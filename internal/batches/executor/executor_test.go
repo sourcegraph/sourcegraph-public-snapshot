@@ -15,9 +15,11 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/pkg/errors"
 	"github.com/sourcegraph/go-diff/diff"
 	"github.com/sourcegraph/src-cli/internal/api"
 	"github.com/sourcegraph/src-cli/internal/batches"
+	"github.com/sourcegraph/src-cli/internal/batches/docker"
 	"github.com/sourcegraph/src-cli/internal/batches/git"
 	"github.com/sourcegraph/src-cli/internal/batches/mock"
 	"github.com/sourcegraph/src-cli/internal/batches/workspace"
@@ -299,12 +301,10 @@ func TestExecutor_Integration(t *testing.T) {
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			// Make sure that the steps and tasks are setup properly
-			for i := range tc.steps {
-				tc.steps[i].SetImage(&mock.Image{
-					RawDigest: tc.steps[i].Container,
-				})
+			images := make(map[string]docker.Image)
+			for _, step := range tc.steps {
+				images[step.Container] = &mock.Image{RawDigest: step.Container}
 			}
-
 			for _, task := range tc.tasks {
 				task.BatchChangeAttributes = defaultBatchChangeAttributes
 				task.Steps = tc.steps
@@ -338,9 +338,10 @@ func TestExecutor_Integration(t *testing.T) {
 
 			// Setup executor
 			opts := newExecutorOpts{
-				Creator: workspace.NewCreator(context.Background(), "bind", testTempDir, testTempDir, []batches.Step{}),
-				Fetcher: batches.NewRepoFetcher(client, testTempDir, false),
-				Logger:  mock.LogNoOpManager{},
+				Creator:     workspace.NewCreator(context.Background(), "bind", testTempDir, testTempDir, images),
+				Fetcher:     batches.NewRepoFetcher(client, testTempDir, false),
+				Logger:      mock.LogNoOpManager{},
+				EnsureImage: imageMapEnsurer(images),
 
 				TempDir:     testTempDir,
 				Parallelism: runtime.GOMAXPROCS(0),
@@ -680,20 +681,21 @@ func testExecuteTasks(t *testing.T, tasks []*Task, archives ...mock.RepoArchive)
 	var clientBuffer bytes.Buffer
 	client := api.NewClient(api.ClientOpts{Endpoint: ts.URL, Out: &clientBuffer})
 
-	// Prepare tasks
+	// Prepare images
+	//
+	images := make(map[string]docker.Image)
 	for _, t := range tasks {
-		for i := range t.Steps {
-			t.Steps[i].SetImage(&mock.Image{
-				RawDigest: t.Steps[i].Container,
-			})
+		for _, step := range t.Steps {
+			images[step.Container] = &mock.Image{RawDigest: step.Container}
 		}
 	}
 
 	// Setup executor
 	executor := newExecutor(newExecutorOpts{
-		Creator: workspace.NewCreator(context.Background(), "bind", testTempDir, testTempDir, []batches.Step{}),
-		Fetcher: batches.NewRepoFetcher(client, testTempDir, false),
-		Logger:  mock.LogNoOpManager{},
+		Creator:     workspace.NewCreator(context.Background(), "bind", testTempDir, testTempDir, images),
+		Fetcher:     batches.NewRepoFetcher(client, testTempDir, false),
+		Logger:      mock.LogNoOpManager{},
+		EnsureImage: imageMapEnsurer(images),
 
 		TempDir:     testTempDir,
 		Parallelism: runtime.GOMAXPROCS(0),
@@ -702,4 +704,13 @@ func testExecuteTasks(t *testing.T, tasks []*Task, archives ...mock.RepoArchive)
 
 	executor.Start(context.Background(), tasks, newDummyTaskExecutionUI())
 	return executor.Wait(context.Background())
+}
+
+func imageMapEnsurer(m map[string]docker.Image) imageEnsurer {
+	return func(_ context.Context, container string) (docker.Image, error) {
+		if i, ok := m[container]; ok {
+			return i, nil
+		}
+		return nil, errors.New(fmt.Sprintf("image for %s not found", container))
+	}
 }

@@ -53,7 +53,8 @@ type executionResult struct {
 }
 
 type executionOpts struct {
-	wc workspace.Creator
+	wc          workspace.Creator
+	ensureImage imageEnsurer
 
 	task *Task
 
@@ -152,8 +153,16 @@ func runSteps(ctx context.Context, opts *executionOpts) (result executionResult,
 			opts.reportProgress(fmt.Sprintf("Skipping step %d", i+1))
 			continue
 		}
-
-		stdoutBuffer, stderrBuffer, err := executeSingleStep(ctx, opts, workspace, i, step, &stepContext)
+		// We need to grab the digest for the exact image we're using.
+		img, err := opts.ensureImage(ctx, step.Container)
+		if err != nil {
+			return execResult, nil, err
+		}
+		digest, err := img.Digest(ctx)
+		if err != nil {
+			return execResult, nil, err
+		}
+		stdoutBuffer, stderrBuffer, err := executeSingleStep(ctx, opts, workspace, i, step, digest, &stepContext)
 		if err != nil {
 			return execResult, nil, err
 		}
@@ -210,6 +219,7 @@ func executeSingleStep(
 	workspace workspace.Workspace,
 	i int,
 	step batches.Step,
+	imageDigest string,
 	stepContext *StepContext,
 ) (bytes.Buffer, bytes.Buffer, error) {
 	// ----------
@@ -223,22 +233,17 @@ func executeSingleStep(
 	}
 	defer cleanup()
 
-	// We need to grab the digest for the exact image we're using.
-	digest, err := step.ImageDigest(ctx)
-	if err != nil {
-		return bytes.Buffer{}, bytes.Buffer{}, errors.Wrapf(err, "getting digest for %v", step.DockerImage())
-	}
-
 	// For now, we only support shell scripts provided via the Run field.
-	shell, containerTemp, err := probeImageForShell(ctx, digest)
+	shell, containerTemp, err := probeImageForShell(ctx, imageDigest)
 	if err != nil {
-		return bytes.Buffer{}, bytes.Buffer{}, errors.Wrapf(err, "probing image %q for shell", step.DockerImage())
+		return bytes.Buffer{}, bytes.Buffer{}, errors.Wrapf(err, "probing image %q for shell", step.Container)
 	}
 
 	runScriptFile, runScript, cleanup, err := createRunScriptFile(ctx, opts.tempDir, step.Run, stepContext)
 	if err != nil {
 		return bytes.Buffer{}, bytes.Buffer{}, err
 	}
+	defer cleanup()
 
 	// Parse and render the step.Files.
 	filesToMount, cleanup, err := createFilesToMount(opts.tempDir, step, stepContext)
@@ -295,7 +300,7 @@ func executeSingleStep(
 	args = append(args, "--entrypoint", shell)
 
 	cmd := exec.CommandContext(ctx, "docker", args...)
-	cmd.Args = append(cmd.Args, "--", digest, containerTemp)
+	cmd.Args = append(cmd.Args, "--", imageDigest, containerTemp)
 	if dir := workspace.WorkDir(); dir != nil {
 		cmd.Dir = *dir
 	}

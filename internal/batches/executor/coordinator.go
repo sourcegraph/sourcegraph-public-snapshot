@@ -10,6 +10,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/src-cli/internal/api"
 	"github.com/sourcegraph/src-cli/internal/batches"
+	"github.com/sourcegraph/src-cli/internal/batches/docker"
 	"github.com/sourcegraph/src-cli/internal/batches/graphql"
 	"github.com/sourcegraph/src-cli/internal/batches/log"
 	"github.com/sourcegraph/src-cli/internal/batches/workspace"
@@ -32,10 +33,12 @@ type Coordinator struct {
 }
 
 type repoNameResolver func(ctx context.Context, name string) (*graphql.Repository, error)
+type imageEnsurer func(ctx context.Context, name string) (docker.Image, error)
 
 type NewCoordinatorOpts struct {
 	// Dependencies
 	ResolveRepoName repoNameResolver
+	EnsureImage     imageEnsurer
 	Creator         workspace.Creator
 	Client          api.Client
 
@@ -62,9 +65,10 @@ func NewCoordinator(opts NewCoordinatorOpts) *Coordinator {
 	logManager := log.NewManager(opts.TempDir, opts.KeepLogs)
 
 	exec := newExecutor(newExecutorOpts{
-		Fetcher: batches.NewRepoFetcher(opts.Client, opts.CacheDir, opts.CleanArchives),
-		Creator: opts.Creator,
-		Logger:  logManager,
+		Fetcher:     batches.NewRepoFetcher(opts.Client, opts.CacheDir, opts.CleanArchives),
+		EnsureImage: opts.EnsureImage,
+		Creator:     opts.Creator,
+		Logger:      logManager,
 
 		AutoAuthorDetails: opts.Features.IncludeAutoAuthorDetails,
 		Parallelism:       opts.Parallelism,

@@ -5,8 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"html/template"
-	"io"
-	"io/ioutil"
 	"os"
 	"os/exec"
 	"path"
@@ -146,30 +144,31 @@ func (svc *Service) CreateChangesetSpec(ctx context.Context, spec *batches.Chang
 	return graphql.ChangesetSpecID(result.CreateChangesetSpec.ID), nil
 }
 
-// SetDockerImages updates the steps within the batch spec to include the exact
-// content digest to be used when running each step, and ensures that all Docker
-// images are available, including any required by the service itself.
+// EnsureDockerImages iterates over the steps within the batch spec to ensure the
+// images exist and to determine the exact content digest to be used when running
+// each step, including any required by the service itself.
 //
 // Progress information is reported back to the given progress function: perc
 // will be a value between 0.0 and 1.0, inclusive.
-func (svc *Service) SetDockerImages(ctx context.Context, spec *batches.BatchSpec, progress func(perc float64)) error {
+func (svc *Service) EnsureDockerImages(ctx context.Context, spec *batches.BatchSpec, progress func(perc float64)) (map[string]docker.Image, error) {
 	total := len(spec.Steps) + 1
 	progress(0)
 
 	// TODO: this _really_ should be parallelised, since the image cache takes
 	// care to only pull the same image once.
+	images := make(map[string]docker.Image)
 	for i := range spec.Steps {
 		img, err := svc.EnsureImage(ctx, spec.Steps[i].Container)
 		if err != nil {
-			return err
+			return nil, err
 		}
-		spec.Steps[i].SetImage(img)
+		images[spec.Steps[i].Container] = img
 
 		progress(float64(i) / float64(total))
 	}
 
 	progress(1)
-	return nil
+	return images, nil
 }
 
 func (svc *Service) EnsureImage(ctx context.Context, name string) (docker.Image, error) {
@@ -183,18 +182,14 @@ func (svc *Service) EnsureImage(ctx context.Context, name string) (docker.Image,
 }
 
 func (svc *Service) BuildTasks(ctx context.Context, repos []*graphql.Repository, spec *batches.BatchSpec) ([]*executor.Task, error) {
-	builder, err := executor.NewTaskBuilder(spec, svc)
-	if err != nil {
-		return nil, err
-	}
-
-	return builder.BuildAll(ctx, repos)
+	return executor.BuildTasks(ctx, spec, svc, repos)
 }
 
 func (svc *Service) NewCoordinator(opts executor.NewCoordinatorOpts) *executor.Coordinator {
 	opts.ResolveRepoName = svc.resolveRepositoryName
 	opts.Client = svc.client
 	opts.Features = svc.features
+	opts.EnsureImage = svc.EnsureImage
 
 	return executor.NewCoordinator(opts)
 }
@@ -263,17 +258,16 @@ func (e *duplicateBranchesErr) Error() string {
 	return out.String()
 }
 
-func (svc *Service) ParseBatchSpec(in io.Reader) (*batches.BatchSpec, string, error) {
-	data, err := ioutil.ReadAll(in)
+func (svc *Service) ParseBatchSpec(data []byte) (*batches.BatchSpec, error) {
+	spec, err := batches.ParseBatchSpec(data, batches.ParseBatchSpecOptions{
+		AllowArrayEnvironments: svc.features.AllowArrayEnvironments,
+		AllowTransformChanges:  svc.features.AllowTransformChanges,
+		AllowConditionalExec:   svc.features.AllowConditionalExec,
+	})
 	if err != nil {
-		return nil, "", errors.Wrap(err, "reading batch spec")
+		return nil, errors.Wrap(err, "parsing batch spec")
 	}
-
-	spec, err := batches.ParseBatchSpec(data, svc.features)
-	if err != nil {
-		return nil, "", errors.Wrap(err, "parsing batch spec")
-	}
-	return spec, string(data), nil
+	return spec, nil
 }
 
 const exampleSpecTmpl = `name: NAME-OF-YOUR-BATCH-CHANGE

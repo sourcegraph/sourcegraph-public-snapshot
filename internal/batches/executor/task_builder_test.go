@@ -120,10 +120,7 @@ func TestTaskBuilder_BuildTask_IfConditions(t *testing.T) {
 
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			builder, err := NewTaskBuilder(tt.spec, nil)
-			if err != nil {
-				t.Fatal(err)
-			}
+			builder := &taskBuilder{spec: tt.spec}
 			task, ok, err := builder.buildTask(testRepo1, "", false)
 			if err != nil {
 				t.Fatalf("unexpected err: %s", err)
@@ -266,12 +263,7 @@ func TestTaskBuilder_BuildAll_Workspaces(t *testing.T) {
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			finder := &mockDirectoryFinder{results: tt.finderResults}
-			tb, err := NewTaskBuilder(tt.spec, finder)
-			if err != nil {
-				t.Fatal(err)
-			}
-
-			tasks, err := tb.BuildAll(context.Background(), repos)
+			tasks, err := BuildTasks(context.Background(), tt.spec, finder, repos)
 			if err != nil {
 				t.Fatalf("unexpected err: %s", err)
 			}

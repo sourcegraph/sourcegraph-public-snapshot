@@ -18,32 +18,33 @@ func TestImage_Digest(t *testing.T) {
 		wantErr      bool
 	}{
 		"success": {
-			expectations: digestSuccess("foo", "bar"),
+			expectations: []*expect.Expectation{inspectSuccess("foo", "digest")},
 			image:        &image{name: "foo"},
-			want:         "bar",
+			want:         "digest",
 		},
 		"inspect invalid output": {
-			expectations: append(
-				ensureSuccess("foo"),
-				expect.NewGlob(
-					expect.Success,
-					// Note the awkward escaping because these arguments are matched by
-					// glob.
-					"docker", "image", "inspect", "--format", `\{\{.Id}}`, "--", "foo",
-				),
-			),
+			expectations: []*expect.Expectation{
+				inspectSuccess("foo", ""),
+			},
 			image:   &image{name: "foo"},
 			wantErr: true,
 		},
-		"inspect failure": {
-			expectations: digestFailure("foo"),
-			image:        &image{name: "foo"},
-			wantErr:      true,
+		"inspect failure first attempt": {
+			expectations: []*expect.Expectation{
+				inspectFailure("foo"),
+				pullSuccess("foo"),
+				inspectSuccess("foo", "digest"),
+			},
+			image: &image{name: "foo"},
+			want:  "digest",
 		},
-		"ensure failure": {
-			expectations: ensureFailure("foo"),
-			image:        &image{name: "foo"},
-			wantErr:      true,
+		"pull failure": {
+			expectations: []*expect.Expectation{
+				inspectFailure("foo"),
+				pullFailure("foo"),
+			},
+			image:   &image{name: "foo"},
+			wantErr: true,
 		},
 	} {
 		t.Run(name, func(t *testing.T) {
@@ -86,29 +87,26 @@ func TestImage_Ensure(t *testing.T) {
 		wantErr      bool
 	}{
 		"no pull required": {
-			expectations: ensureSuccess("foo"),
+			expectations: []*expect.Expectation{inspectSuccess("foo", "digest")},
 			image:        &image{name: "foo"},
 			wantErr:      false,
 		},
 		"pull required": {
 			expectations: []*expect.Expectation{
-				expect.NewGlob(
-					// docker image inspect returns 1 for non-existent images.
-					expect.Behaviour{ExitCode: 1},
-					"docker", "image", "inspect", "--format", "1", "foo",
-				),
-				expect.NewGlob(
-					expect.Success,
-					"docker", "image", "pull", "foo",
-				),
+				inspectFailure("foo"),
+				pullSuccess("foo"),
+				inspectSuccess("foo", "digest"),
 			},
 			image:   &image{name: "foo"},
 			wantErr: false,
 		},
 		"pull failed": {
-			expectations: ensureFailure("foo"),
-			image:        &image{name: "foo"},
-			wantErr:      true,
+			expectations: []*expect.Expectation{
+				inspectFailure("foo"),
+				pullFailure("foo"),
+			},
+			image:   &image{name: "foo"},
+			wantErr: true,
 		},
 	} {
 		t.Run(name, func(t *testing.T) {
@@ -147,20 +145,20 @@ func TestImage_UIDGID(t *testing.T) {
 		wantErr      bool
 	}{
 		"success": {
-			expectations: append(
-				digestSuccess("foo", "bar"),
+			expectations: []*expect.Expectation{
+				inspectSuccess("foo", "bar"),
 				uidGid("bar", expect.Behaviour{Stdout: []byte("1000\n2000\n")}),
-			),
+			},
 			image: &image{name: "foo"},
 			want:  UIDGID{UID: 1000, GID: 2000},
 		},
 		// We should also make sure 0 works. Sometimes it's easy to miss. Just
 		// ask the Romans.
 		"success with zeroes": {
-			expectations: append(
-				digestSuccess("foo", "bar"),
+			expectations: []*expect.Expectation{
+				inspectSuccess("foo", "bar"),
 				uidGid("bar", expect.Behaviour{Stdout: []byte("0\n0\n")}),
-			),
+			},
 			image: &image{name: "foo"},
 			want:  UIDGID{UID: 0, GID: 0},
 		},
@@ -168,49 +166,49 @@ func TestImage_UIDGID(t *testing.T) {
 		// signedness of pid_t and gid_t. We don't really have a reason to
 		// disallow it.
 		"success with negative IDs": {
-			expectations: append(
-				digestSuccess("foo", "bar"),
+			expectations: []*expect.Expectation{
+				inspectSuccess("foo", "bar"),
 				uidGid("bar", expect.Behaviour{Stdout: []byte("-1000\n-2000\n")}),
-			),
+			},
 			image: &image{name: "foo"},
 			want:  UIDGID{UID: -1000, GID: -2000},
 		},
 		// This is technically invalid, but should still succeed. Postel's Law
 		// and all that.
 		"success without trailing newline": {
-			expectations: append(
-				digestSuccess("foo", "bar"),
+			expectations: []*expect.Expectation{
+				inspectSuccess("foo", "bar"),
 				uidGid("bar", expect.Behaviour{Stdout: []byte("1000\n2000")}),
-			),
+			},
 			image: &image{name: "foo"},
 			want:  UIDGID{UID: 1000, GID: 2000},
 		},
 		// As above, this is invalid, but we should still handle it.
 		"success with extra data": {
-			expectations: append(
-				digestSuccess("foo", "bar"),
+			expectations: []*expect.Expectation{
+				inspectSuccess("foo", "bar"),
 				uidGid("bar", expect.Behaviour{Stdout: []byte("1000\n2000\n3000\n")}),
-			),
+			},
 			image: &image{name: "foo"},
 			want:  UIDGID{UID: 1000, GID: 2000},
 		},
 		// Now for some interesting failure cases.
 		"invalid output": {
-			expectations: append(
-				digestSuccess("foo", "bar"),
+			expectations: []*expect.Expectation{
+				inspectSuccess("foo", "bar"),
 				uidGid("bar", expect.Behaviour{Stdout: []byte("")}),
-			),
+			},
 			image:   &image{name: "foo"},
 			wantErr: true,
 		},
 		// This is ripped from the headlines^WDocker.
 		"missing id binary": {
-			expectations: append(
-				digestSuccess("foo", "bar"),
+			expectations: []*expect.Expectation{
+				inspectSuccess("foo", "bar"),
 				uidGid("bar", expect.Behaviour{
 					ExitCode: 127,
 					Stderr:   []byte("sh: id: not found")}),
-			),
+			},
 			image:   &image{name: "foo"},
 			wantErr: true,
 		},
@@ -218,34 +216,37 @@ func TestImage_UIDGID(t *testing.T) {
 		// probably an oversight, but we shouldn't allow string IDs. That would
 		// be a bridge too far.
 		"string uid": {
-			expectations: append(
-				digestSuccess("foo", "bar"),
+			expectations: []*expect.Expectation{
+				inspectSuccess("foo", "bar"),
 				uidGid("bar", expect.Behaviour{Stdout: []byte("X\n2000\n")}),
-			),
+			},
 			image:   &image{name: "foo"},
 			wantErr: true,
 		},
 		"string gid": {
-			expectations: append(
-				digestSuccess("foo", "bar"),
+			expectations: []*expect.Expectation{
+				inspectSuccess("foo", "bar"),
 				uidGid("bar", expect.Behaviour{Stdout: []byte("1000\nX\n")}),
-			),
+			},
 			image:   &image{name: "foo"},
 			wantErr: true,
 		},
 		// Now for some more run of the mill failures.
 		"docker run failure": {
-			expectations: append(
-				digestSuccess("foo", "bar"),
+			expectations: []*expect.Expectation{
+				inspectSuccess("foo", "bar"),
 				uidGid("bar", expect.Behaviour{ExitCode: 1}),
-			),
+			},
 			image:   &image{name: "foo"},
 			wantErr: true,
 		},
-		"digest failure": {
-			expectations: digestFailure("foo"),
-			image:        &image{name: "foo"},
-			wantErr:      true,
+		"inspect and pull failure": {
+			expectations: []*expect.Expectation{
+				inspectFailure("foo"),
+				pullFailure("foo"),
+			},
+			image:   &image{name: "foo"},
+			wantErr: true,
 		},
 	} {
 		t.Run(name, func(t *testing.T) {
@@ -288,54 +289,35 @@ func TestUIDGID(t *testing.T) {
 }
 
 // Set up some helper functions for expectations we'll be reusing.
-
-func digestFailure(name string) []*expect.Expectation {
-	return append(
-		ensureSuccess(name),
-		expect.NewGlob(
-			expect.Behaviour{ExitCode: 1},
-			// Note the awkward escaping because these arguments are matched by
-			// glob.
-			"docker", "image", "inspect", "--format", `\{\{.Id}}`, "--", name,
-		),
+func inspectSuccess(name, digest string) *expect.Expectation {
+	return expect.NewGlob(
+		expect.Behaviour{Stdout: []byte(digest + "\n")},
+		// Note the awkward escaping because these arguments are
+		// matched by glob.
+		"docker", "image", "inspect", "--format", `\{\{ .Id }}`, name,
 	)
 }
 
-func digestSuccess(name, digest string) []*expect.Expectation {
-	return append(
-		ensureSuccess(name),
-		expect.NewGlob(
-			expect.Behaviour{Stdout: []byte(digest + "\n")},
-			// Note the awkward escaping because these arguments are
-			// matched by glob.
-			"docker", "image", "inspect", "--format", `\{\{.Id}}`, "--", name,
-		),
+func inspectFailure(name string) *expect.Expectation {
+	return expect.NewGlob(
+		// docker image inspect returns 1 for non-existent images.
+		expect.Behaviour{ExitCode: 1},
+		"docker", "image", "inspect", "--format", `\{\{ .Id }}`, name,
 	)
 }
 
-func ensureFailure(name string) []*expect.Expectation {
-	return []*expect.Expectation{
-		expect.NewGlob(
-			// docker image inspect returns 1 for non-existent images.
-			expect.Behaviour{ExitCode: 1},
-			"docker", "image", "inspect", "--format", "1", name,
-		),
-		expect.NewGlob(
-			expect.Behaviour{ExitCode: 1},
-			"docker", "image", "pull", name,
-		),
-	}
+func pullFailure(name string) *expect.Expectation {
+	return expect.NewGlob(
+		expect.Behaviour{ExitCode: 1},
+		"docker", "image", "pull", name,
+	)
 }
 
-// ensureSuccess only provides the short circuit success path for Ensure() (that
-// is, where no pull is required).
-func ensureSuccess(name string) []*expect.Expectation {
-	return []*expect.Expectation{
-		expect.NewGlob(
-			expect.Success,
-			"docker", "image", "inspect", "--format", "1", name,
-		),
-	}
+func pullSuccess(name string) *expect.Expectation {
+	return expect.NewGlob(
+		expect.Behaviour{ExitCode: 0},
+		"docker", "image", "pull", name,
+	)
 }
 
 func uidGid(digest string, behaviour expect.Behaviour) *expect.Expectation {

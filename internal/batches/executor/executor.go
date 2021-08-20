@@ -49,9 +49,10 @@ type taskResult struct {
 
 type newExecutorOpts struct {
 	// Dependencies
-	Creator workspace.Creator
-	Fetcher batches.RepoFetcher
-	Logger  log.LogManager
+	Creator     workspace.Creator
+	Fetcher     batches.RepoFetcher
+	EnsureImage imageEnsurer
+	Logger      log.LogManager
 
 	// Config
 	AutoAuthorDetails bool
@@ -167,10 +168,11 @@ func (x *executor) do(ctx context.Context, task *Task, ui TaskExecutionUI) (err 
 
 	// Actually execute the steps.
 	opts := &executionOpts{
-		task:    task,
-		logger:  log,
-		wc:      x.opts.Creator,
-		tempDir: x.opts.TempDir,
+		task:        task,
+		logger:      log,
+		wc:          x.opts.Creator,
+		ensureImage: x.opts.EnsureImage,
+		tempDir:     x.opts.TempDir,
 		reportProgress: func(currentlyExecuting string) {
 			ui.TaskCurrentlyExecuting(task, currentlyExecuting)
 		},

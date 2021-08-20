@@ -39,9 +39,7 @@ type image struct {
 	// hard to prevent performing the same operations on the same image over and
 	// over, since some of them are expensive.
 
-	digest     string
-	digestErr  error
-	digestOnce sync.Once
+	digest string
 
 	ensureErr  error
 	ensureOnce sync.Once
@@ -51,52 +49,52 @@ type image struct {
 	uidGidOnce sync.Once
 }
 
-// Digest gets and returns the content digest for the image. Note that this is
-// different from the "distribution digest" (which is what you can use to
-// specify an image to `docker run`, as in `my/image@sha256:xxx`). We need to
-// use the content digest because the distribution digest is only computed for
-// images that have been pulled from or pushed to a registry. See
-// https://windsock.io/explaining-docker-image-ids/ under "A Final Twist" for a
-// good explanation.
+// Digest returns the content digest for the image. Note that this is different
+// from the "distribution digest" (which is what you can use to specify an image
+// to `docker run`, as in `my/image@sha256:xxx`). We need to use the content digest
+// because the distribution digest is only computed for images that have been pulled
+// from or pushed to a registry. See https://windsock.io/explaining-docker-image-ids/
+// under "A Final Twist" for a good explanation.
 func (image *image) Digest(ctx context.Context) (string, error) {
-	image.digestOnce.Do(func() {
-		image.digest, image.digestErr = func() (string, error) {
-			if err := image.Ensure(ctx); err != nil {
-				return "", err
-			}
-
-			// TODO!(sqs): is image id the right thing to use here? it is NOT
-			// the digest. but the digest is not calculated for all images
-			// (unless they are pulled/pushed from/to a registry), see
-			// https://github.com/moby/moby/issues/32016.
-			out, err := exec.CommandContext(ctx, "docker", "image", "inspect", "--format", "{{.Id}}", "--", image.name).CombinedOutput()
-			if err != nil {
-				return "", errors.Wrapf(err, "inspecting docker image: %s", string(bytes.TrimSpace(out)))
-			}
-			id := string(bytes.TrimSpace(out))
-			if id == "" {
-				return "", errors.Errorf("unexpected empty docker image content ID for %q", image.name)
-			}
-			return id, nil
-		}()
-	})
-
-	return image.digest, image.digestErr
+	ensureErr := image.Ensure(ctx)
+	return image.digest, ensureErr
 }
 
 // Ensure ensures that the image has been pulled by Docker. Note that it does
 // not attempt to pull a newer version of the image if it exists locally.
 func (image *image) Ensure(ctx context.Context) error {
 	image.ensureOnce.Do(func() {
-		image.ensureErr = func() error {
+		image.ensureErr = func() (err error) {
+			inspectDigest := func() (string, error) {
+				// TODO!(sqs): is image id the right thing to use here? it is NOT
+				// the digest. but the digest is not calculated for all images
+				// (unless they are pulled/pushed from/to a registry), see
+				// https://github.com/moby/moby/issues/32016.
+				out, err := exec.CommandContext(ctx, "docker", "image", "inspect", "--format", "{{ .Id }}", image.name).CombinedOutput()
+				id := string(bytes.TrimSpace(out))
+				return id, err
+			}
+
 			// docker image inspect will return a non-zero exit code if the image and
 			// tag don't exist locally, regardless of the format.
-			if err := exec.CommandContext(ctx, "docker", "image", "inspect", "--format", "1", image.name).Run(); err != nil {
+			var digest string
+			if digest, err = inspectDigest(); err != nil {
 				// Let's try pulling the image.
 				if err := exec.CommandContext(ctx, "docker", "image", "pull", image.name).Run(); err != nil {
 					return errors.Wrap(err, "pulling image")
 				}
+				// And try again to get the image digest.
+				digest, err = inspectDigest()
+				if err != nil {
+					return errors.Wrap(err, "not found after pulling image")
+				}
 			}
+
+			if digest == "" {
+				return errors.Errorf("unexpected empty docker image content ID for %q", image.name)
+			}
+
+			image.digest = digest
 
 			return nil
 		}()

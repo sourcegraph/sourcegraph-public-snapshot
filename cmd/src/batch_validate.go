@@ -50,7 +50,7 @@ Examples:
 		}
 
 		out := output.NewOutput(flagSet.Output(), output.OutputOpts{Verbose: *verbose})
-		if _, _, err := batchParseSpec(fileFlag, svc); err != nil {
+		if _, _, err := parseBatchSpec(fileFlag, svc); err != nil {
 			(&ui.TUI{Out: out}).ParsingBatchSpecFailure(err)
 			return err
 		}

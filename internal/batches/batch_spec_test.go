@@ -24,7 +24,7 @@ changesetTemplate:
   published: false
 `
 
-		_, err := ParseBatchSpec([]byte(spec), FeatureFlags{})
+		_, err := ParseBatchSpec([]byte(spec), ParseBatchSpecOptions{})
 		if err != nil {
 			t.Fatalf("parsing valid spec returned error: %s", err)
 		}
@@ -41,7 +41,7 @@ steps:
     container: alpine:3
 `
 
-		_, err := ParseBatchSpec([]byte(spec), FeatureFlags{})
+		_, err := ParseBatchSpec([]byte(spec), ParseBatchSpecOptions{})
 		if err == nil {
 			t.Fatal("no error returned")
 		}
@@ -74,7 +74,7 @@ changesetTemplate:
   published: false
 `
 
-		_, err := ParseBatchSpec([]byte(spec), FeatureFlags{})
+		_, err := ParseBatchSpec([]byte(spec), ParseBatchSpecOptions{})
 		if err == nil {
 			t.Fatal("no error returned")
 		}
@@ -111,7 +111,7 @@ changesetTemplate:
   published: false
 `
 
-		_, err := ParseBatchSpec([]byte(spec), FeatureFlags{})
+		_, err := ParseBatchSpec([]byte(spec), ParseBatchSpecOptions{})
 		if err == nil {
 			t.Fatal("no error returned")
 		}
@@ -159,7 +159,7 @@ changesetTemplate:
 			{raw: `foobar`, want: "foobar"},
 		} {
 			spec := fmt.Sprintf(specTemplate, tt.raw)
-			batchSpec, err := ParseBatchSpec([]byte(spec), FeatureFlags{AllowConditionalExec: true})
+			batchSpec, err := ParseBatchSpec([]byte(spec), ParseBatchSpecOptions{AllowConditionalExec: true})
 			if err != nil {
 				t.Fatal(err)
 			}

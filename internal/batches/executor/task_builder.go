@@ -13,29 +13,18 @@ type DirectoryFinder interface {
 	FindDirectoriesInRepos(ctx context.Context, fileName string, repos ...*graphql.Repository) (map[*graphql.Repository][]string, error)
 }
 
-type TaskBuilder struct {
+type taskBuilder struct {
 	spec   *batches.BatchSpec
 	finder DirectoryFinder
-
-	initializedWorkspaceConfigs []batches.WorkspaceConfiguration
 }
 
-func NewTaskBuilder(spec *batches.BatchSpec, finder DirectoryFinder) (*TaskBuilder, error) {
-	tb := &TaskBuilder{spec: spec, finder: finder}
-
-	for _, conf := range tb.spec.Workspaces {
-		g, err := glob.Compile(conf.In)
-		if err != nil {
-			return nil, err
-		}
-		conf.SetGlob(g)
-		tb.initializedWorkspaceConfigs = append(tb.initializedWorkspaceConfigs, conf)
-	}
-
-	return tb, nil
+// BuildTasks returns tasks for all the workspaces determined for the given spec.
+func BuildTasks(ctx context.Context, spec *batches.BatchSpec, finder DirectoryFinder, repos []*graphql.Repository) ([]*Task, error) {
+	tb := &taskBuilder{spec: spec, finder: finder}
+	return tb.buildAll(ctx, repos)
 }
 
-func (tb *TaskBuilder) buildTask(r *graphql.Repository, path string, onlyWorkspace bool) (*Task, bool, error) {
+func (tb *taskBuilder) buildTask(r *graphql.Repository, path string, onlyWorkspace bool) (*Task, bool, error) {
 	stepCtx := &StepContext{
 		Repository: *r,
 		BatchChange: BatchChangeAttributes{
@@ -90,9 +79,9 @@ func (tb *TaskBuilder) buildTask(r *graphql.Repository, path string, onlyWorkspa
 	}, true, nil
 }
 
-func (tb *TaskBuilder) BuildAll(ctx context.Context, repos []*graphql.Repository) ([]*Task, error) {
+func (tb *taskBuilder) buildAll(ctx context.Context, repos []*graphql.Repository) ([]*Task, error) {
 	// Find workspaces in repositories, if configured
-	workspaces, root, err := tb.findWorkspaces(ctx, repos, tb.initializedWorkspaceConfigs)
+	workspaces, root, err := tb.findWorkspaces(ctx, repos, tb.spec.Workspaces)
 	if err != nil {
 		return nil, err
 	}
@@ -137,7 +126,7 @@ type repoWorkspaces struct {
 // workspaces. root contains the repositories that didn't match a config.
 // If the user didn't specify any workspaces, the repositories are returned as
 // root repositories.
-func (tb *TaskBuilder) findWorkspaces(
+func (tb *taskBuilder) findWorkspaces(
 	ctx context.Context,
 	repos []*graphql.Repository,
 	configs []batches.WorkspaceConfiguration,
@@ -146,13 +135,22 @@ func (tb *TaskBuilder) findWorkspaces(
 		return nil, repos, nil
 	}
 
+	workspaceMatchers := make(map[batches.WorkspaceConfiguration]glob.Glob)
+	for _, conf := range tb.spec.Workspaces {
+		g, err := glob.Compile(conf.In)
+		if err != nil {
+			return nil, nil, err
+		}
+		workspaceMatchers[conf] = g
+	}
+
 	matched := map[int][]*graphql.Repository{}
 
 	for _, repo := range repos {
 		found := false
 
 		for idx, conf := range configs {
-			if !conf.Matches(repo.Name) {
+			if !workspaceMatchers[conf].Match(repo.Name) {
 				continue
 			}
 

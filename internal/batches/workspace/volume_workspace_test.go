@@ -58,16 +58,11 @@ func TestVolumeWorkspaceCreator(t *testing.T) {
 		DefaultBranch: &graphql.Branch{Name: "main"},
 	}
 
-	stepWithImage := func(image docker.Image) batches.Step {
-		s := batches.Step{}
-		s.SetImage(image)
-		return s
-	}
-
 	for name, tc := range map[string]struct {
 		archive      *fakeRepoArchive
 		expectations []*expect.Expectation
 		steps        []batches.Step
+		imageEnsurer imageEnsurer
 		wantErr      bool
 	}{
 		"no steps": {
@@ -104,7 +99,8 @@ func TestVolumeWorkspaceCreator(t *testing.T) {
 					"sh", "/run.sh",
 				),
 			},
-			steps: []batches.Step{},
+			steps:        []batches.Step{},
+			imageEnsurer: func(_ context.Context, _ string) (docker.Image, error) { return nil, nil },
 		},
 		"one root:root step": {
 			expectations: []*expect.Expectation{
@@ -141,7 +137,10 @@ func TestVolumeWorkspaceCreator(t *testing.T) {
 				),
 			},
 			steps: []batches.Step{
-				stepWithImage(&mock.Image{UidGid: docker.Root}),
+				{},
+			},
+			imageEnsurer: func(_ context.Context, _ string) (docker.Image, error) {
+				return &mock.Image{UidGid: docker.Root}, nil
 			},
 		},
 		"one user:user step": {
@@ -179,7 +178,10 @@ func TestVolumeWorkspaceCreator(t *testing.T) {
 				),
 			},
 			steps: []batches.Step{
-				stepWithImage(&mock.Image{UidGid: docker.UIDGID{UID: 1, GID: 2}}),
+				{},
+			},
+			imageEnsurer: func(_ context.Context, _ string) (docker.Image, error) {
+				return &mock.Image{UidGid: docker.UIDGID{UID: 1, GID: 2}}, nil
 			},
 		},
 		"docker volume create failure": {
@@ -190,7 +192,10 @@ func TestVolumeWorkspaceCreator(t *testing.T) {
 				),
 			},
 			steps: []batches.Step{
-				stepWithImage(&mock.Image{UidGid: docker.Root}),
+				{},
+			},
+			imageEnsurer: func(_ context.Context, _ string) (docker.Image, error) {
+				return &mock.Image{UidGid: docker.Root}, nil
 			},
 			wantErr: true,
 		},
@@ -210,7 +215,10 @@ func TestVolumeWorkspaceCreator(t *testing.T) {
 				),
 			},
 			steps: []batches.Step{
-				stepWithImage(&mock.Image{UidGid: docker.Root}),
+				{},
+			},
+			imageEnsurer: func(_ context.Context, _ string) (docker.Image, error) {
+				return &mock.Image{UidGid: docker.Root}, nil
 			},
 			wantErr: true,
 		},
@@ -249,7 +257,10 @@ func TestVolumeWorkspaceCreator(t *testing.T) {
 				),
 			},
 			steps: []batches.Step{
-				stepWithImage(&mock.Image{UidGid: docker.Root}),
+				{},
+			},
+			imageEnsurer: func(_ context.Context, _ string) (docker.Image, error) {
+				return &mock.Image{UidGid: docker.Root}, nil
 			},
 			wantErr: true,
 		},
@@ -279,7 +290,10 @@ func TestVolumeWorkspaceCreator(t *testing.T) {
 				),
 			},
 			steps: []batches.Step{
-				stepWithImage(&mock.Image{UidGid: docker.Root}),
+				{},
+			},
+			imageEnsurer: func(_ context.Context, _ string) (docker.Image, error) {
+				return &mock.Image{UidGid: docker.Root}, nil
 			},
 			wantErr: true,
 		},
@@ -330,7 +344,10 @@ func TestVolumeWorkspaceCreator(t *testing.T) {
 				),
 			},
 			steps: []batches.Step{
-				stepWithImage(&mock.Image{UidGid: docker.Root}),
+				{},
+			},
+			imageEnsurer: func(_ context.Context, _ string) (docker.Image, error) {
+				return &mock.Image{UidGid: docker.Root}, nil
 			},
 		},
 	} {
@@ -341,6 +358,7 @@ func TestVolumeWorkspaceCreator(t *testing.T) {
 				a = tc.archive
 			}
 
+			wc.EnsureImage = tc.imageEnsurer
 			w, err := wc.Create(ctx, repo, tc.steps, a)
 			if tc.wantErr {
 				if err == nil {
