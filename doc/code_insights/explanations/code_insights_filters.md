@@ -1,28 +1,46 @@
 # Code Insights filters
 
-Code insights filters allow you to filter a chart of search insight to a subset of repositories at the time of viewing it.
-Filters are applied immediately without having to recompute the insight and can be reset at any time.
-The filter panel is available through the filter icon in the top right of every search insight.
+Code insights filters allow you to filter a search insight to a subset of repositories. Each search insight has a filter icon that opens the filtering options. 
+
+Filters take effect immediately, without needing to re-process the data series of the insight.
+
+> Note: filters are not yet available on language statistics insights. 
 
 ## Filter options
 
-Repositories are included or excluded from the insight using regular expressions, similar to the `repo:` filter in [Sourcegraph searches](../../code_search/reference/queries#keywords-all-searches).
+### Repo: filters
 
-## Persistance and sharing
+You can include or exclude repositories from your insight using regular expressions, the same way you can with the `repo:` filter in [Sourcegraph searches](../../code_search/reference/queries.md#keywords-all-searches).
 
-Filters you specify are temporary by default and only seen by you.
-Unless you click "Update default filters" or "Save as new view", the filters will not apply to the chart other viewers of the dashboard see and will disappear after a page reload.
+For inclusion, only repositories that have a repository name matching the regular expression will be counted.
 
-### Default filters
+For exclusion, only repositories that have a repository name **not** matching the regular expression will be counted.
 
-By clicking "Update default filters", the filters you entered will be attached to the insight, persist even after a page reload, and be shown to every viewer of the insight/dashboard.
-Viewers can locally modify filters to their liking without affecting what other viewers see, until they click "Update default filters".
+If you combine both filters, the inclusion pattern will be applied first, then the exclusion pattern.
 
-Insights that have default filters applied will be indicated by a small dot at the filter icon. The filter can be reset by opening the filter panel again and clicking "Reset" above each filter or "Reset all filters".
+### Other filtering options
 
-### Insight views
+We're currently exploring additional filters that would be valuable. If you have feedback about a particular filter you'd like for code insights, we would [love to hear your feedback](mailto:feedback@sourcegraph.com).
 
-By clicking "Save as new view", the insight will be forked into a new insight with the specified filters applied.
-The view appears as a separate chart on the dashboard.
-Filters for the newly created view and the original insight can be edited and persisted through "Update default insights" independently.
-Editing the forked insight (e.g. changing the title) will not change the original insight.
+## Filter persistance and sharing
+
+### Filters are temporary by default
+
+By default, filters are temporary (present until you refresh the page) and local (no one else can see them). You can modify filters without affecting what others see, unless or until you save the filters.
+
+### Saving filters as defaults
+
+You can set filters to be persistent, or default, even after a page reload on a code insights in two ways:
+
+1. Create a filter and click "save/update default filters": this will save the filters so they persist for all viewers of this insight, on any dashboard page the insight appears. 
+1. Create a filter and "save as new view": this will create a new insight chart with your filter applied as the default filter on that insight. It will _not_ also save these filters to the existing insight unless you also select "save/update default filters". 
+
+### Filter indicator 
+
+Insights that have any filters applied will have a small dot on their filter icon. The filter can always be reset by opening the filter panel again and clicking "Reset" above each filter or "Reset all filters" – but note that, like any filter edit, you must also then "update default filters" to save that reset state if you want it to persist. 
+
+### Saving a filter as a new view
+
+When you create a filter and "save as new view," it will create a new insight chart with this filter saved as the default filteres. Except the title and filters, all other configuration options will be cloned from the original insight. 
+
+Filters and all other configuration options for the newly created view and the original insight are indpendent. Editing the forked insight (e.g. changing the data series query) will not change the original insight.

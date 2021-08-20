@@ -69,7 +69,7 @@ The code insights prototypes currently show you seven datapoints for each data s
 
 You'll be taken to the sourcegraph.example.com/insights page and can view your insight.
 
-### 10. Filter your insight post-creation (optional)
+### 10. Filter your insight to explore it further 
 
-Click the filter button in the top right of an insight card to open the filters panel that allows you to filter the insight down to a subset of repositories through inclusion or exclusion with regular expressions.
+Click the filter button in the top right of an insight card to open the filters panel. This allows you to filter the insight down to a subset of repositories through inclusion or exclusion using regular expressions.
 For more details, see [How to filter an insight](./how-tos/filtering_an_insight.md).
