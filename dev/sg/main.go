@@ -282,9 +282,9 @@ func checkSgVersion() {
 
 	out = strings.TrimSpace(out)
 	if out != "" {
-		stdout.Out.WriteLine(output.Linef("", output.StyleSearchMatch, "----------------------------------"))
-		stdout.Out.WriteLine(output.Linef("", output.StyleSearchMatch, "New version of sg available. Run `./dev/sg/install.sh` to install it.\n"))
-		stdout.Out.WriteLine(output.Linef("", output.StyleSearchMatch, "----------------------------------"))
+		stdout.Out.WriteLine(output.Linef("", output.StyleSearchMatch, "----------------------------------------------------------------------------------"))
+		stdout.Out.WriteLine(output.Linef("", output.StyleSearchMatch, "HOT HOT HOT: New version of sg available. Run `./dev/sg/install.sh` to install it."))
+		stdout.Out.WriteLine(output.Linef("", output.StyleSearchMatch, "----------------------------------------------------------------------------------"))
 	}
 }
 
