@@ -35,7 +35,7 @@ var textSearchLimiter = mutablelimiter.New(32)
 
 var MockSearchFilesInRepos func(args *search.TextParameters) ([]result.Match, *streaming.Stats, error)
 
-func textSearchRequest(ctx context.Context, args *search.TextParameters, onMissing zoektutil.OnMissingRepoRevs) (zoektutil.IndexedSearchRequest, error) {
+func TextSearchRequest(ctx context.Context, args *search.TextParameters, onMissing zoektutil.OnMissingRepoRevs) (zoektutil.IndexedSearchRequest, error) {
 	if args.Mode == search.ZoektGlobalSearch {
 		// performance: optimize global searches where Zoekt searches
 		// all shards anyway.
@@ -69,7 +69,7 @@ func SearchFilesInRepos(ctx context.Context, args *search.TextParameters, stream
 		trace.Stringer("global_search_mode", args.Mode),
 	)
 
-	request, err := textSearchRequest(ctx, args, zoektutil.MissingRepoRevStatus(stream))
+	request, err := TextSearchRequest(ctx, args, zoektutil.MissingRepoRevStatus(stream))
 	if err != nil {
 		return err
 	}

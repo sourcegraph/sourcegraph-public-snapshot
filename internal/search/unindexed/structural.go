@@ -78,7 +78,7 @@ func streamStructuralSearch(ctx context.Context, args *search.TextParameters, fi
 	ctx, stream, cleanup := streaming.WithLimit(ctx, stream, int(fileMatchLimit))
 	defer cleanup()
 
-	request, err := textSearchRequest(ctx, args, zoektutil.MissingRepoRevStatus(stream))
+	request, err := TextSearchRequest(ctx, args, zoektutil.MissingRepoRevStatus(stream))
 	if err != nil {
 		return err
 	}
