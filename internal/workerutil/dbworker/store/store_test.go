@@ -683,6 +683,49 @@ func TestStoreMarkErrored(t *testing.T) {
 	}
 }
 
+func TestStoreMarkErrored_ResultFailed(t *testing.T) {
+	// A record will exceed the limit of failed retry attempts, and should be set to a terminal 'failed' state instead of 'errored' state
+	db := setupStoreTest(t)
+	if _, err := db.ExecContext(context.Background(), `
+		INSERT INTO workerutil_test (id, state, num_failures)
+		VALUES
+			(1, 'errored', 2)
+	`); err != nil {
+		t.Fatalf("unexpected error inserting records: %s", err)
+	}
+	marked, err := testStore(db, defaultTestStoreOptions(nil)).MarkErrored(context.Background(), 1, "new message", MarkFinalOptions{})
+	if err != nil {
+		t.Fatalf("unexpected error marking record as errored: %s", err)
+	}
+	if !marked {
+		t.Fatalf("expected record to be marked")
+	}
+
+	rows, err := db.QueryContext(context.Background(), `SELECT state, failure_message FROM workerutil_test WHERE id = 1`)
+	if err != nil {
+		t.Fatalf("unexpected error querying record: %s", err)
+	}
+	defer func() { _ = basestore.CloseRows(rows, nil) }()
+
+	if !rows.Next() {
+		t.Fatal("expected record to exist")
+	}
+
+	wantState := "failed"
+
+	var state string
+	var failureMessage *string
+	if err := rows.Scan(&state, &failureMessage); err != nil {
+		t.Fatalf("unexpected error scanning record: %s", err)
+	}
+	if state != wantState {
+		t.Errorf("unexpected state. want=%q have=%q", wantState, state)
+	}
+	if failureMessage == nil || *failureMessage != "new message" {
+		t.Errorf("unexpected failure message. want=%v have=%v", "new message", failureMessage)
+	}
+}
+
 func TestStoreMarkFailed(t *testing.T) {
 	db := setupStoreTest(t)
 
