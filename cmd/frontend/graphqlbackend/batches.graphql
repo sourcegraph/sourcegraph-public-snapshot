@@ -2229,6 +2229,20 @@ extend type Query {
         """
         after: String
     ): BatchChangesCodeHostConnection!
+
+    """
+    A list of batch spec executions.
+    """
+    batchSpecExecutions(
+        """
+        Returns the first n batch spec executions from the list.
+        """
+        first: Int = 50
+        """
+        Opaque pagination cursor.
+        """
+        after: String
+    ): BatchSpecExecutionConnection!
 }
 
 """
@@ -2719,6 +2733,26 @@ type BatchChangeConnection {
 
     """
     The total number of batch changes in the connection.
+    """
+    totalCount: Int!
+
+    """
+    Pagination information.
+    """
+    pageInfo: PageInfo!
+}
+
+"""
+A list of batch spec executions.
+"""
+type BatchSpecExecutionConnection {
+    """
+    A list of batch spec executions.
+    """
+    nodes: [BatchSpecExecution!]!
+
+    """
+    The total number of batch spec executions in the connection.
     """
     totalCount: Int!
 
