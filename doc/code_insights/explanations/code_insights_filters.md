@@ -37,7 +37,7 @@ You can set filters to be persistent, or default, even after a page reload on a 
 
 ### Filter indicator 
 
-Insights that have any filters applied will have a small dot on their filter icon. The filter can always be reset by opening the filter panel again and clicking "Reset" above each filter or "Reset all filters" – but note that, like any filter edit, you must also then "update default filters" to save that reset state if you want it to persist. 
+Insights that have any filters applied will have a small dot on their filter icon. The filter can always be reset by opening the filter panel again and clicking "Reset" above each filter – but note that, like any filter edit, you must also then "update default filters" to save that reset state if you want it to persist. 
 
 ### Saving a filter as a new view
 
