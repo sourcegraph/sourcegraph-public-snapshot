@@ -5,10 +5,11 @@ pushd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null
 
 echo "Compiling..."
 
+export GIT_COMMIT=$(git rev-list -1 HEAD .)
 # -mod=mod: default is -mod=readonly. However, because our lib dependency is
 #           not fixed everytime it changes we need to update go.sum. By making
 #           it rw we prevent failing go install.
-go install -mod=mod .
+go install -ldflags "-X main.BuildCommit=$GIT_COMMIT" -mod=mod .
 
 # Let's find the install target. The documentation at
 #   https://golang.org/cmd/go/#hdr-Compile_and_install_packages_and_dependencies

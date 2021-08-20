@@ -26,6 +26,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
 
+var BuildCommit string = "dev"
+
 var out *output.Output = stdout.Out
 
 var (
@@ -261,6 +263,24 @@ func setMaxOpenFiles() error {
 func main() {
 	if err := rootCommand.Parse(os.Args[1:]); err != nil {
 		os.Exit(1)
+	}
+
+	fmt.Printf("version:%s\n", BuildCommit)
+
+	_, err := root.RepositoryRoot()
+	if err == nil && BuildCommit != "dev" {
+		// Ignore the error, because we only want to check the version if we're
+		// in sourcegraph/sourcegraph
+		out, err := run.GitCmd("rev-list", fmt.Sprintf("%s..HEAD", BuildCommit), "./dev/sg")
+		if err != nil {
+			fmt.Printf("error: %s\n", err)
+			os.Exit(1)
+		}
+		out = strings.TrimSpace(out)
+		fmt.Printf("out: %q\n", out)
+		if out != "" {
+			fmt.Printf("WATCH OUT! New `sg` available!!!!!")
+		}
 	}
 
 	// We always try to set this, since we often want to watch files, start commands, etc.
@@ -938,6 +958,7 @@ func printLogo(out io.Writer) {
 }
 
 func logoExec(ctx context.Context, args []string) error {
+	return nil
 	s1 := rand.NewSource(time.Now().UnixNano())
 	r1 := rand.New(s1)
 	randoColor := func() output.Style { return output.Fg256Color(r1.Intn(256)) }
