@@ -15,6 +15,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	"github.com/sourcegraph/sourcegraph/internal/search/symbol"
 	"github.com/sourcegraph/sourcegraph/internal/search/unindexed"
+	"github.com/sourcegraph/sourcegraph/internal/search/zoekt"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 )
 
@@ -100,7 +101,19 @@ func (a *Aggregator) DoStructuralSearch(ctx context.Context, args *search.TextPa
 		tr.Finish()
 	}()
 
-	err = unindexed.StructuralSearch(ctx, args, args.PatternInfo.FileMatchLimit, a)
+	getRepos := func(ctx context.Context) ([]unindexed.RepoData, error) {
+		request, err := unindexed.TextSearchRequest(ctx, args, zoekt.MissingRepoRevStatus(a))
+		if err != nil {
+			return nil, err
+		}
+		repoSets := []unindexed.RepoData{unindexed.UnindexedList(request.UnindexedRepos())} // unindexed included by default
+		if args.Mode != search.SearcherOnly {
+			repoSets = append(repoSets, unindexed.IndexedMap(request.IndexedRepos()))
+		}
+		return repoSets, nil
+	}
+
+	err = unindexed.StructuralSearch(ctx, args, getRepos, args.PatternInfo.FileMatchLimit, a)
 	return errors.Wrap(err, "structural search failed")
 }
 
