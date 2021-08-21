@@ -25,7 +25,7 @@ var HappinessFeedbackFormID = "417ec50b-39b4-41fa-a267-75da6f56a7cf"
 // https://app.hubspot.com/reports/2762526/events
 var SignupEventID = "000001776813"
 
-// SelfHostedSiteInitEventID is the Hubstpot Event ID for when a new site is created in /site-admin/sites
+// SelfHostedSiteInitEventID is the Hubstpot Event ID for when a new site is created in /site-admin/init.
 var SelfHostedSiteInitEventID = "000010399089"
 
 var client *hubspot.Client
