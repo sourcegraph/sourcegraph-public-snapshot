@@ -60,7 +60,7 @@ func SearchFilesInRepos(ctx context.Context, args *search.TextParameters, stream
 		trace.Stringer("global_search_mode", args.Mode),
 	)
 
-	request, err := zoektutil.NewIndexedSearchRequest(ctx, args, zoektutil.MissingRepoRevStatus(stream))
+	request, err := zoektutil.NewIndexedSearchRequest(ctx, args, search.TextRequest, zoektutil.MissingRepoRevStatus(stream))
 	if err != nil {
 		return err
 	}
