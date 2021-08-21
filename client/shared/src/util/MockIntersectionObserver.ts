@@ -1,7 +1,7 @@
 import { castArray } from 'lodash'
 
-function isDocument(element: any): element is Document {
-    return element?.documentElement !== undefined
+function isElement(element: any): element is Element {
+    return typeof element?.tagName === 'string'
 }
 
 /**
@@ -27,10 +27,7 @@ export class MockIntersectionObserver implements IntersectionObserver {
                     isIntersecting: true,
                     boundingClientRect: target.getBoundingClientRect(),
                     intersectionRect: target.getBoundingClientRect(),
-                    rootBounds: isDocument(this.root)
-                        ? document.documentElement.getBoundingClientRect()
-                        : // Fallback on documentElement in case if root equals to null
-                          (this.root ?? document.documentElement).getBoundingClientRect(),
+                    rootBounds: (isElement(this.root) ? this.root : document.documentElement).getBoundingClientRect(),
                     intersectionRatio: 1,
                     time: 0,
                 },

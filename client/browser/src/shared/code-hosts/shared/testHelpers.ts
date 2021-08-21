@@ -8,7 +8,7 @@ export interface GraphQLResponseMap {
     [requestName: string]: (
         variables: { [k: string]: any },
         mightContainPrivateInfo?: boolean
-    ) => Observable<SuccessGraphQLResult<any>>
+    ) => Observable<GraphQLResult<any>>
 }
 
 export const DEFAULT_GRAPHQL_RESPONSES: GraphQLResponseMap = {
@@ -103,5 +103,5 @@ export const mockRequestGraphQL = (
     if (!requestName || !responseMap[requestName]) {
         return throwError(new Error(`No mock for GraphQL request ${String(requestName)}`))
     }
-    return responseMap[requestName](variables, mightContainPrivateInfo) as Observable<GraphQLResult<R>>
+    return responseMap[requestName](variables, mightContainPrivateInfo)
 }
