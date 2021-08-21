@@ -61,6 +61,7 @@ type EventRepoMatch struct {
 	// Type is always RepoMatchType. Included here for marshalling.
 	Type MatchType `json:"type"`
 
+	RepositoryID    int32      `json:"repositoryID"`
 	Repository      string     `json:"repository"`
 	Branches        []string   `json:"branches,omitempty"`
 	RepoStars       int        `json:"repoStars,omitempty"`

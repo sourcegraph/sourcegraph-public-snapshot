@@ -495,9 +495,10 @@ func fromRepository(rm *result.RepoMatch, repoCache map[api.RepoID]*types.Search
 	}
 
 	repoEvent := &streamhttp.EventRepoMatch{
-		Type:       streamhttp.RepoMatchType,
-		Repository: string(rm.Name),
-		Branches:   branches,
+		Type:         streamhttp.RepoMatchType,
+		RepositoryID: int32(rm.ID),
+		Repository:   string(rm.Name),
+		Branches:     branches,
 	}
 
 	if r, ok := repoCache[rm.ID]; ok {

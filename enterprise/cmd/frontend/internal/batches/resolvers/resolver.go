@@ -1504,7 +1504,13 @@ func (r *Resolver) CancelBatchSpecExecution(ctx context.Context, args *graphqlba
 	return r.batchSpecExecutionByID(ctx, marshalBatchSpecExecutionRandID(exec.RandID))
 }
 
-func (r *Resolver) ResolveRepositoriesForBatchSpec(ctx context.Context, args *graphqlbackend.ResolveRepositoriesForBatchSpecArgs) (graphqlbackend.BatchSpecMatchingRepositoryConnectionResolver, error) {
+func (r *Resolver) ResolveRepositoriesForBatchSpec(ctx context.Context, args *graphqlbackend.ResolveRepositoriesForBatchSpecArgs) (_ graphqlbackend.BatchSpecMatchingRepositoryConnectionResolver, err error) {
+	tr, ctx := trace.New(ctx, "Resolver.ResolveRepositoriesForBatchSpec", fmt.Sprintf("AllowIgnored: %t AllowUnsupported: %t", args.AllowIgnored, args.AllowUnsupported))
+	defer func() {
+		tr.SetError(err)
+		tr.Finish()
+	}()
+
 	spec, err := batcheslib.ParseBatchSpec([]byte(args.BatchSpec), batcheslib.ParseBatchSpecOptions{
 		AllowArrayEnvironments: true,
 		AllowTransformChanges:  true,
