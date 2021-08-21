@@ -101,20 +101,19 @@ export const UserSettingsSidebar: React.FunctionComponent<UserSettingsSidebarPro
                 </SidebarGroup>
             )}
             <SidebarGroup>
-                <SidebarGroupHeader label="Other actions" />
-                {!siteAdminViewingOtherUser && <SidebarNavItem to="/api/console">API console</SidebarNavItem>}
-                {props.authenticatedUser.siteAdmin && <SidebarNavItem to="/site-admin">Site admin</SidebarNavItem>}
+                {!siteAdminViewingOtherUser && <Link to="/api/console">API console</Link>}
+                {props.authenticatedUser.siteAdmin && <Link to="/site-admin">Site admin</Link>}
+                <div>Version: {window.context.version}</div>
                 {props.showOnboardingTour && (
                     <button
                         type="button"
-                        className="btn text-left sidebar__link--inactive d-flex sidebar-nav-link w-100"
+                        className="btn btn-outline-secondary btn-sm align-self-start mt-2"
                         onClick={reEnableSearchTour}
                     >
-                        Show search tour
+                        Reset search tour
                     </button>
                 )}
             </SidebarGroup>
-            <div>Version: {window.context.version}</div>
         </div>
     )
 }

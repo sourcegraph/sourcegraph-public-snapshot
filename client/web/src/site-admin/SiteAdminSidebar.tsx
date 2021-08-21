@@ -1,9 +1,8 @@
 import React from 'react'
-import { Link } from 'react-router-dom'
-import { ListGroup, ListGroupItem } from 'reactstrap'
+import { Link } from '@sourcegraph/shared/src/components/Link'
 
 import { BatchChangesProps } from '../batches'
-import { SidebarCollapseItems, SidebarNavItem } from '../components/Sidebar'
+import { SidebarGroup, SidebarGroupHeader, SidebarNavItem } from '../components/Sidebar'
 import { NavGroupDescriptor } from '../util/contributions'
 
 export interface SiteAdminSideBarGroupContext extends BatchChangesProps {
@@ -26,34 +25,22 @@ export interface SiteAdminSidebarProps extends BatchChangesProps {
  */
 export const SiteAdminSidebar: React.FunctionComponent<SiteAdminSidebarProps> = ({ className, groups, ...props }) => (
     <div className={`site-admin-sidebar ${className}`}>
-        <ListGroup>
-            {groups.map(
-                ({ header, items, condition = () => true }, index) =>
-                    condition(props) &&
-                    (items.length > 1 ? (
-                        <ListGroupItem className="p-0" key={index}>
-                            <SidebarCollapseItems icon={header?.icon} label={header?.label} openByDefault={true}>
-                                {items.map(
-                                    ({ label, to, source = 'client', condition = () => true }) =>
-                                        condition(props) && (
-                                            <SidebarNavItem to={to} exact={true} key={label} source={source}>
-                                                {label}
-                                            </SidebarNavItem>
-                                        )
-                                )}
-                            </SidebarCollapseItems>
-                        </ListGroupItem>
-                    ) : (
-                        <ListGroupItem className="p-0" key={items[0].label}>
-                            <Link to={items[0].to} className="bg-2 border-0 d-flex list-group-item-action p-2 w-100">
-                                <span>
-                                    {header?.icon && <header.icon className="sidebar__icon icon-inline mr-1" />}{' '}
-                                    {items[0].label}
-                                </span>
-                            </Link>
-                        </ListGroupItem>
-                    ))
-            )}
-        </ListGroup>
+        {groups.map(
+            ({ header, items, condition = () => true }, index) =>
+                condition(props) && (
+                    <SidebarGroup key={index}>
+                        <SidebarGroupHeader label={header.label} />
+                        {items.map(
+                            ({ label, to, source = 'client', condition = () => true }) =>
+                                condition(props) && (
+                                    <SidebarNavItem to={to} exact={true} key={label} source={source}>
+                                        {label}
+                                    </SidebarNavItem>
+                                )
+                        )}
+                    </SidebarGroup>
+                )
+        )}
+        <Link to="/api/console">API console</Link>
     </div>
 )

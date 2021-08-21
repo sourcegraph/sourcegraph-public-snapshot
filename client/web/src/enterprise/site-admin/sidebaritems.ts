@@ -1,23 +1,16 @@
-import BrainIcon from 'mdi-react/BrainIcon'
-import BriefcaseIcon from 'mdi-react/BriefcaseIcon'
-import PuzzleOutlineIcon from 'mdi-react/PuzzleOutlineIcon'
-
-import { BatchChangesIcon } from '../../batches/icons'
 import {
-    apiConsoleGroup,
-    configurationGroup as ossConfigurationGroup,
+    siteAdminGroup as ossSiteAdminGroup,
     maintenanceGroup,
-    overviewGroup,
     repositoriesGroup,
     usersGroup,
 } from '../../site-admin/sidebaritems'
 import { SiteAdminSideBarGroup, SiteAdminSideBarGroups } from '../../site-admin/SiteAdminSidebar'
 import { SHOW_BUSINESS_FEATURES } from '../dotcom/productSubscriptions/features'
 
-const configurationGroup: SiteAdminSideBarGroup = {
-    ...ossConfigurationGroup,
+const siteAdminGroup: SiteAdminSideBarGroup = {
+    ...ossSiteAdminGroup,
     items: [
-        ...ossConfigurationGroup.items,
+        ...ossSiteAdminGroup.items,
         {
             label: 'License',
             to: '/site-admin/license',
@@ -25,35 +18,32 @@ const configurationGroup: SiteAdminSideBarGroup = {
     ],
 }
 
-const extensionsGroup: SiteAdminSideBarGroup = {
-    header: {
-        label: 'Extensions',
-        icon: PuzzleOutlineIcon,
-    },
-    items: [
-        {
-            label: 'Extensions',
-            to: '/site-admin/registry/extensions',
-        },
-    ],
-}
-
-export const batchChangesGroup: SiteAdminSideBarGroup = {
-    header: {
-        label: 'Batch Changes',
-        icon: BatchChangesIcon,
-    },
+const featuresGroup: SiteAdminSideBarGroup = {
+    header: { label: 'Features' },
     items: [
         {
             label: 'Batch Changes',
             to: '/site-admin/batch-changes',
+            condition: ({ batchChangesEnabled }) => batchChangesEnabled,
+        },
+        {
+            label: 'Extensions',
+            to: '/site-admin/registry/extensions',
+        },
+        {
+            label: 'Code intelligence',
+            to: '/site-admin/code-intelligence/uploads',
+        },
+        {
+            label: 'Auto indexing',
+            to: '/site-admin/code-intelligence/indexes',
+            condition: () => Boolean(window.context?.codeIntelAutoIndexingEnabled),
         },
     ],
-    condition: ({ batchChangesEnabled }) => batchChangesEnabled,
 }
 
 const businessGroup: SiteAdminSideBarGroup = {
-    header: { label: 'Business', icon: BriefcaseIcon },
+    header: { label: 'Business' },
     items: [
         {
             label: 'Customers',
@@ -74,30 +64,11 @@ const businessGroup: SiteAdminSideBarGroup = {
     condition: () => SHOW_BUSINESS_FEATURES,
 }
 
-const codeIntelGroup: SiteAdminSideBarGroup = {
-    header: { label: 'Code intelligence', icon: BrainIcon },
-    items: [
-        {
-            to: '/site-admin/code-intelligence/uploads',
-            label: 'Uploads',
-        },
-        {
-            to: '/site-admin/code-intelligence/indexes',
-            label: 'Auto indexing',
-            condition: () => Boolean(window.context?.codeIntelAutoIndexingEnabled),
-        },
-    ],
-}
-
 export const enterpriseSiteAdminSidebarGroups: SiteAdminSideBarGroups = [
-    overviewGroup,
-    configurationGroup,
+    siteAdminGroup,
     repositoriesGroup,
-    codeIntelGroup,
     usersGroup,
+    featuresGroup,
     maintenanceGroup,
-    extensionsGroup,
-    batchChangesGroup,
     businessGroup,
-    apiConsoleGroup,
 ]

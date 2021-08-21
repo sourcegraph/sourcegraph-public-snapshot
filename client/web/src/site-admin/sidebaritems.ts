@@ -1,16 +1,8 @@
-import CogsIcon from 'mdi-react/CogsIcon'
-import ConsoleIcon from 'mdi-react/ConsoleIcon'
-import EarthIcon from 'mdi-react/EarthIcon'
-import MonitorStarIcon from 'mdi-react/MonitorStarIcon'
-import SourceRepositoryIcon from 'mdi-react/SourceRepositoryIcon'
-import UsersIcon from 'mdi-react/UsersIcon'
-
 import { SiteAdminSideBarGroup, SiteAdminSideBarGroups } from './SiteAdminSidebar'
 
-export const overviewGroup: SiteAdminSideBarGroup = {
+export const siteAdminGroup: SiteAdminSideBarGroup = {
     header: {
-        label: 'Statistics',
-        icon: EarthIcon,
+        label: 'Site admin',
     },
     items: [
         {
@@ -18,23 +10,6 @@ export const overviewGroup: SiteAdminSideBarGroup = {
             to: '/site-admin',
             exact: true,
         },
-        {
-            label: 'Usage stats',
-            to: '/site-admin/usage-statistics',
-        },
-        {
-            label: 'Feedback survey',
-            to: '/site-admin/surveys',
-        },
-    ],
-}
-
-export const configurationGroup: SiteAdminSideBarGroup = {
-    header: {
-        label: 'Configuration',
-        icon: CogsIcon,
-    },
-    items: [
         {
             label: 'Site configuration',
             to: '/site-admin/configuration',
@@ -49,7 +24,6 @@ export const configurationGroup: SiteAdminSideBarGroup = {
 export const repositoriesGroup: SiteAdminSideBarGroup = {
     header: {
         label: 'Repositories',
-        icon: SourceRepositoryIcon,
     },
     items: [
         {
@@ -66,7 +40,6 @@ export const repositoriesGroup: SiteAdminSideBarGroup = {
 export const usersGroup: SiteAdminSideBarGroup = {
     header: {
         label: 'Users & auth',
-        icon: UsersIcon,
     },
     items: [
         {
@@ -81,13 +54,20 @@ export const usersGroup: SiteAdminSideBarGroup = {
             label: 'Access tokens',
             to: '/site-admin/tokens',
         },
+        {
+            label: 'Usage stats',
+            to: '/site-admin/usage-statistics',
+        },
+        {
+            label: 'Feedback survey',
+            to: '/site-admin/surveys',
+        },
     ],
 }
 
 export const maintenanceGroup: SiteAdminSideBarGroup = {
     header: {
         label: 'Maintenance',
-        icon: MonitorStarIcon,
     },
     items: [
         {
@@ -125,24 +105,9 @@ export const maintenanceGroup: SiteAdminSideBarGroup = {
     ],
 }
 
-export const apiConsoleGroup: SiteAdminSideBarGroup = {
-    header: {
-        label: 'API Console',
-        icon: ConsoleIcon,
-    },
-    items: [
-        {
-            label: 'API Console',
-            to: '/api/console',
-        },
-    ],
-}
-
 export const siteAdminSidebarGroups: SiteAdminSideBarGroups = [
-    overviewGroup,
-    configurationGroup,
+    siteAdminGroup,
     repositoriesGroup,
     usersGroup,
     maintenanceGroup,
-    apiConsoleGroup,
 ]

@@ -65,13 +65,13 @@ interface SiteAdminAreaProps
 }
 
 const AuthenticatedSiteAdminArea: React.FunctionComponent<SiteAdminAreaProps> = props => {
+    // If you've scrolled down on one page and click on a sidebar link to another page, you expect
+    // the browser to scroll to the top of the page. This implements that behavior.
     const { pathname } = useLocation()
-
     const reference = useRef<HTMLDivElement>(null)
-
     useLayoutEffect(() => {
         if (reference.current) {
-            reference.current.scrollIntoView()
+            reference.current.parentElement?.scrollIntoView()
         }
     }, [pathname])
 
@@ -95,10 +95,9 @@ const AuthenticatedSiteAdminArea: React.FunctionComponent<SiteAdminAreaProps> = 
 
     return (
         <Page>
-            <PageHeader path={[{ text: 'Site Admin' }]} />
-            <div className="site-admin-area d-flex my-3" ref={reference}>
+            <div className="site-admin-area d-flex" ref={reference}>
                 <SiteAdminSidebar
-                    className="sidebar flex-0 mr-3"
+                    className="sidebar flex-0 mr-3 mb-3"
                     groups={props.sideBarGroups}
                     isSourcegraphDotCom={props.isSourcegraphDotCom}
                     batchChangesEnabled={props.batchChangesEnabled}

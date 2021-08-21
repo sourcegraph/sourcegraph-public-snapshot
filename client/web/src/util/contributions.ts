@@ -31,7 +31,7 @@ export interface RouteDescriptor<C extends object = {}, P = any> extends Conditi
 }
 
 export interface NavGroupDescriptor<C extends object = {}> extends Conditional<C> {
-    readonly header?: {
+    readonly header: {
         readonly label: string
         readonly icon?: React.ComponentType<{ className?: string }>
         readonly source?: 'server' | 'client'
