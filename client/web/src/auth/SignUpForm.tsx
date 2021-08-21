@@ -2,7 +2,6 @@ import classNames from 'classnames'
 import cookies from 'js-cookie'
 import GithubIcon from 'mdi-react/GithubIcon'
 import GitlabIcon from 'mdi-react/GitlabIcon'
-import HelpCircleOutlineIcon from 'mdi-react/HelpCircleOutlineIcon'
 import React, { useCallback, useMemo, useState } from 'react'
 import { Observable, of } from 'rxjs'
 import { fromFetch } from 'rxjs/fetch'
@@ -20,7 +19,7 @@ import { ErrorAlert } from '../components/alerts'
 import { LoaderButton } from '../components/LoaderButton'
 import { SourcegraphContext } from '../jscontext'
 import { ANONYMOUS_USER_ID_KEY, eventLogger, FIRST_SOURCE_URL_KEY } from '../tracking/eventLogger'
-import { enterpriseTrial, signupTerms } from '../util/features'
+import { signupTerms } from '../util/features'
 
 import { OrDivider } from './OrDivider'
 import { EmailInput, PasswordInput, UsernameInput } from './SignInSignUpCommon'
@@ -29,7 +28,6 @@ export interface SignUpArguments {
     email: string
     username: string
     password: string
-    requestedTrial: boolean
     anonymousUserId?: string
     firstSourceUrl?: string
 }
@@ -43,7 +41,7 @@ interface SignUpFormProps {
     buttonLabel?: string
     context: Pick<SourcegraphContext, 'authProviders' | 'sourcegraphDotComMode'>
 
-    // For use in ExperimentalSignUpPage. Modifies styling and removes terms of service and trial section.
+    // For use in ExperimentalSignUpPage. Modifies styling and removes terms of service section.
     experimental?: boolean
 }
 
@@ -60,7 +58,6 @@ export const SignUpForm: React.FunctionComponent<SignUpFormProps> = ({
     experimental = false,
 }) => {
     const [loading, setLoading] = useState(false)
-    const [requestedTrial, setRequestedTrial] = useState(false)
     const [error, setError] = useState<Error | null>(null)
 
     const signUpFieldValidators: Record<'email' | 'username' | 'password', ValidationOptions> = useMemo(
@@ -106,7 +103,6 @@ export const SignUpForm: React.FunctionComponent<SignUpFormProps> = ({
                 email: emailState.value,
                 username: usernameState.value,
                 password: passwordState.value,
-                requestedTrial,
                 anonymousUserId: cookies.get(ANONYMOUS_USER_ID_KEY),
                 firstSourceUrl: cookies.get(FIRST_SOURCE_URL_KEY),
             }).catch(error => {
@@ -115,12 +111,8 @@ export const SignUpForm: React.FunctionComponent<SignUpFormProps> = ({
             })
             eventLogger.log('InitiateSignUp')
         },
-        [onSignUp, disabled, emailState, usernameState, passwordState, requestedTrial]
+        [onSignUp, disabled, emailState, usernameState, passwordState]
     )
-
-    const onRequestTrialFieldChange = useCallback((event: React.ChangeEvent<HTMLInputElement>): void => {
-        setRequestedTrial(event.target.checked)
-    }, [])
 
     const externalAuthProviders = context.authProviders.filter(provider => !provider.isBuiltin)
 
@@ -240,24 +232,6 @@ export const SignUpForm: React.FunctionComponent<SignUpFormProps> = ({
                         <small className="form-text text-muted">At least 12 characters</small>
                     )}
                 </div>
-                {!experimental && enterpriseTrial && (
-                    <div className="form-group">
-                        <div className="form-check">
-                            <label className="form-check-label">
-                                <input
-                                    className="form-check-input"
-                                    type="checkbox"
-                                    onChange={onRequestTrialFieldChange}
-                                />
-                                Try Sourcegraph Enterprise free for 30 days{' '}
-                                {/* eslint-disable-next-line react/jsx-no-target-blank */}
-                                <a target="_blank" rel="noopener" href="https://about.sourcegraph.com/pricing">
-                                    <HelpCircleOutlineIcon className="icon-inline" />
-                                </a>
-                            </label>
-                        </div>
-                    </div>
-                )}
                 <div className="form-group mb-0">
                     <LoaderButton
                         loading={loading}

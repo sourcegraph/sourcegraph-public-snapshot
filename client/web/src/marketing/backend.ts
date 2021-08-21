@@ -11,8 +11,6 @@ import {
     FetchSurveyResponseAggregatesVariables,
     FetchSurveyResponsesResult,
     FetchSurveyResponsesVariables,
-    RequestTrialResult,
-    RequestTrialVariables,
     SubmitSurveyResult,
     SubmitSurveyVariables,
     UserActivePeriod,
@@ -138,28 +136,4 @@ export function fetchSurveyResponseAggregates(): Observable<FetchSurveyResponseA
         map(dataOrThrowErrors),
         map(data => data.surveyResponses)
     )
-}
-
-/**
- * Submits a request for a Sourcegraph Enterprise trial license.
- */
-export const submitTrialRequest = (email: string): void => {
-    requestGraphQL<RequestTrialResult, RequestTrialVariables>(
-        gql`
-            mutation RequestTrial($email: String!) {
-                requestTrial(email: $email) {
-                    alwaysNil
-                }
-            }
-        `,
-        { email }
-    )
-        .pipe(map(dataOrThrowErrors), mapTo(undefined))
-        // eslint-disable-next-line rxjs/no-ignored-subscription
-        .subscribe({
-            error: () => {
-                // Swallow errors since the form submission is a non-blocking request that happens during site-init
-                // if a trial license key is requested.
-            },
-        })
 }
