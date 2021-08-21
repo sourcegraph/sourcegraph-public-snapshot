@@ -6,10 +6,12 @@ import (
 	"bytes"
 	"context"
 	"crypto/sha256"
+	"encoding/gob"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"io"
+	"math"
 	"net/http"
 	"os"
 	"os/exec"
@@ -24,10 +26,12 @@ import (
 
 	"github.com/cockroachdb/errors"
 	"github.com/inconshreveable/log15"
+	"github.com/libgit2/git2go/v31"
 	"github.com/opentracing/opentracing-go/ext"
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
+	"golang.org/x/sync/errgroup"
 	"golang.org/x/time/rate"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
@@ -38,10 +42,12 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/search"
 	"github.com/sourcegraph/sourcegraph/internal/honey"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/internal/mutablelimiter"
 	"github.com/sourcegraph/sourcegraph/internal/repotrackutil"
+	streamhttp "github.com/sourcegraph/sourcegraph/internal/search/streaming/http"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -276,6 +282,7 @@ func (s *Server) Handler() http.Handler {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/archive", s.handleArchive)
 	mux.HandleFunc("/exec", s.handleExec)
+	mux.HandleFunc("/search", s.handleSearch)
 	mux.HandleFunc("/p4-exec", s.handleP4Exec)
 	mux.HandleFunc("/list", s.handleList)
 	mux.HandleFunc("/list-gitolite", s.handleListGitolite)
@@ -759,6 +766,147 @@ func (s *Server) handleArchive(w http.ResponseWriter, r *http.Request) {
 	req.Args = append(req.Args, paths...)
 
 	s.exec(w, r, req)
+}
+
+func (s *Server) handleSearch(w http.ResponseWriter, r *http.Request) {
+	var req protocol.SearchRequest
+	if err := gob.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	s.search(w, r, &req)
+}
+
+func (s *Server) search(w http.ResponseWriter, r *http.Request, args *protocol.SearchRequest) {
+	ctx := r.Context()
+	args.Repo = protocol.NormalizeRepo(args.Repo)
+	if args.Limit == 0 {
+		args.Limit = math.MaxInt32
+	}
+
+	dir := s.dir(args.Repo)
+	if !repoCloned(dir) {
+		if conf.Get().DisableAutoGitUpdates {
+			log15.Debug("not cloning on demand as DisableAutoGitUpdates is set")
+			w.WriteHeader(http.StatusNotFound)
+			_ = json.NewEncoder(w).Encode(&protocol.NotFoundPayload{})
+			return
+		}
+
+		cloneProgress, cloneInProgress := s.locker.Status(dir)
+		if cloneInProgress {
+			w.WriteHeader(http.StatusNotFound)
+			_ = json.NewEncoder(w).Encode(&protocol.NotFoundPayload{
+				CloneInProgress: true,
+				CloneProgress:   cloneProgress,
+			})
+			return
+		}
+
+		cloneProgress, err := s.cloneRepo(ctx, args.Repo, nil)
+		if err != nil {
+			log15.Debug("error starting repo clone", "repo", args.Repo, "err", err)
+			w.WriteHeader(http.StatusNotFound)
+			_ = json.NewEncoder(w).Encode(&protocol.NotFoundPayload{CloneInProgress: false})
+			return
+		}
+		w.WriteHeader(http.StatusNotFound)
+		_ = json.NewEncoder(w).Encode(&protocol.NotFoundPayload{
+			CloneInProgress: true,
+			CloneProgress:   cloneProgress,
+		})
+		return
+	}
+
+	if !conf.Get().DisableAutoGitUpdates {
+		// ensureRevision may kick off a git fetch operation which we don't want if we've
+		// configured DisableAutoGitUpdates.
+		if s.ensureRevision(ctx, args.Repo, args.Revision, dir) {
+			// ensureRevisionStatus = "fetched"
+		}
+	}
+
+	repo, err := git.OpenRepository(dir.Path())
+	if err != nil {
+		// TODO return an error message
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	eventWriter, err := streamhttp.NewWriter(w)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	matchesBuf := streamhttp.NewJSONArrayBuf(32*1024, func(data []byte) error {
+		return eventWriter.EventBytes("matches", data)
+	})
+
+	g, ctx := errgroup.WithContext(ctx)
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
+
+	resultChan := make(chan *search.Commit, 128)
+	g.Go(func() error {
+		defer close(resultChan)
+		done := ctx.Done()
+		return search.IterCommits(repo, args.Revision, func(commit *search.Commit) bool {
+			if args.Filter.Match(commit) {
+				select {
+				case <-done:
+					return false
+				case resultChan <- commit:
+				}
+			}
+			return true
+		})
+	})
+
+	limitHit := false
+	g.Go(func() error {
+		defer cancel()
+
+		flushTicker := time.NewTicker(50 * time.Millisecond)
+		defer flushTicker.Stop()
+
+		sentCount := 0
+		for {
+			select {
+			case result, ok := <-resultChan:
+				if !ok {
+					return nil
+				}
+
+				if sentCount >= args.Limit {
+					limitHit = true
+					return nil
+				}
+
+				commitMatch := &protocol.CommitMatch{}
+				if err := matchesBuf.Append(commitMatch); err != nil {
+					return err
+				}
+
+			case <-flushTicker.C:
+				if err := matchesBuf.Flush(); err != nil {
+					return err
+				}
+			}
+		}
+	})
+
+	err = g.Wait()
+	doneEvent := protocol.SearchEventDone{
+		LimitHit: limitHit,
+	}
+	if err != nil {
+		doneEvent.Error = err.Error()
+	}
+
+	if err := eventWriter.Event("done", doneEvent); err != nil {
+		log15.Warn("failed to send done event", "error", err)
+	}
 }
 
 func (s *Server) handleExec(w http.ResponseWriter, r *http.Request) {

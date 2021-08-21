@@ -4,7 +4,28 @@ import (
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/search"
 )
+
+type SearchRequest struct {
+	Repo        api.RepoName
+	Revision    string
+	Filter      search.CommitPredicate
+	IncludeDiff bool
+	Limit       int
+}
+
+type SearchEventCommits struct {
+	Matches []CommitMatch
+}
+
+type SearchEventDone struct {
+	LimitHit bool
+	Error    string
+}
+
+type CommitMatch struct {
+}
 
 // ExecRequest is a request to execute a command inside a git repository.
 //
