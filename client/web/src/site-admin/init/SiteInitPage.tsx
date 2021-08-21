@@ -64,6 +64,12 @@ export const SiteInitPage: React.FunctionComponent<Props> = ({
     needsSiteInit = window.context.needsSiteInit,
     context,
 }) => {
+    if (localStorage.getItem('showSiteInit') !== null) {
+        // HACK
+        needsSiteInit = true
+        authenticatedUser = null
+    }
+
     if (!needsSiteInit) {
         return <Redirect to="/search" />
     }
