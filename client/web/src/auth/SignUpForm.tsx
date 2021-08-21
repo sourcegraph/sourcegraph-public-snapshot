@@ -135,7 +135,7 @@ export const SignUpForm: React.FunctionComponent<SignUpFormProps> = ({
     return (
         <>
             {error && <ErrorAlert className="mt-4 mb-0" error={error} />}
-            {/* Using  <form /> to set 'valid' + 'is-invaild' at the input level */}
+            {/* Using  <form /> to set 'valid' + 'is-invalid' at the input level */}
             {/* eslint-disable-next-line react/forbid-elements */}
             <form
                 className={classNames(
