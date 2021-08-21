@@ -8,6 +8,7 @@ import { CodeIntelligenceProps } from './codeintel'
 import { BreadcrumbsProps, BreadcrumbSetters } from './components/Breadcrumbs'
 import type { LayoutProps } from './Layout'
 import type { ExtensionAlertProps } from './repo/RepoContainer'
+import { SITE_INIT_PATH } from './site-admin/init/SiteInitPage'
 import { UserExternalServicesOrRepositoriesUpdateProps } from './util'
 import { lazyComponent } from './util/lazyComponent'
 
@@ -155,7 +156,7 @@ export const routes: readonly LayoutRouteProps<any>[] = [
         render: lazyComponent(() => import('./org/OrgsArea'), 'OrgsArea'),
     },
     {
-        path: '/site-admin/init',
+        path: SITE_INIT_PATH,
         exact: true,
         render: props => <SiteInitPage {...props} context={window.context} />,
     },

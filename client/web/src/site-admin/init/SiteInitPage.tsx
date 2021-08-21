@@ -9,6 +9,9 @@ import { BrandLogo } from '../../components/branding/BrandLogo'
 import { SourcegraphContext } from '../../jscontext'
 import { submitTrialRequest } from '../../marketing/backend'
 
+/** Path to the site initialization page. */
+export const SITE_INIT_PATH = '/site-admin/init'
+
 const initSite = async (args: SignUpArguments): Promise<void> => {
     const pingUrl = new URL('https://sourcegraph.com/ping-from-self-hosted')
     pingUrl.searchParams.set('email', args.email)

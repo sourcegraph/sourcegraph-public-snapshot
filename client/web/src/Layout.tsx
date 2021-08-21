@@ -60,6 +60,7 @@ import {
     getGlobalSearchContextFilter,
 } from './search'
 import { QueryState } from './search/helpers'
+import { SITE_INIT_PATH } from './site-admin/init/SiteInitPage'
 import { SiteAdminAreaRoute } from './site-admin/SiteAdminArea'
 import { SiteAdminSideBarGroups } from './site-admin/SiteAdminSidebar'
 import { ThemePreferenceProps } from './theme'
@@ -218,7 +219,7 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
     // TODO add a component layer as the parent of the Layout component rendering "top-level" routes that do not render the navbar,
     // so that Layout can always render the navbar.
     const needsSiteInit = window.context?.needsSiteInit
-    const isSiteInit = props.location.pathname === '/site-admin/init'
+    const isSiteInit = props.location.pathname === SITE_INIT_PATH
     const isSignInOrUp =
         props.location.pathname === '/sign-in' ||
         props.location.pathname === '/sign-up' ||
