@@ -7,7 +7,7 @@
 #
 # Run it:
 #
-# $ docker run -d -v /var/run/docker.sock:/var/run/docker.sock -v /path/to/sourcegraph/:/opt/sourcegraph --name sgk sgk:latest
+# $ docker run -d -v /var/run/docker.sock:/var/run/docker.sock -v /path/to/sourcegraph/:/opt/sourcegraph --name sgk --privileged sgk:latest
 
 FROM ubuntu:latest
 
@@ -56,4 +56,4 @@ ENV PATH="/root/go/bin:${PATH}"
 RUN /opt/sourcegraph/dev/sg/install.sh
 
 # Start databases
-CMD ["/bin/bash", "-c", "/etc/init.d/redis-server start && /etc/init.d/postgresql start && sleep infinity"]
+CMD ["/bin/bash", "-c", "/etc/init.d/redis-server start && /etc/init.d/postgresql start && /etc/init.d/docker start && sleep infinity"]
