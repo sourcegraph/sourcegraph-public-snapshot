@@ -27,8 +27,9 @@ RUN apt-get update && apt install -y make git-all libpcre3-dev libsqlite3-dev pk
                    golang-go docker-ce docker-ce-cli containerd.io yarn jq redis-server postgresql postgresql-contrib
 
 # Configure database
+# `sourcegraph` user needs to be a super-user to be able to create extensions
 RUN /etc/init.d/postgresql start && \
-  su postgres -c "createuser sourcegraph" && \
+  su postgres -c "createuser sourcegraph --superuser" && \
   su postgres -c "psql -c \"ALTER USER sourcegraph WITH PASSWORD 'sourcegraph';\"" && \
   su postgres -c "createdb --owner=sourcegraph --encoding=UTF8 sourcegraph"
 
