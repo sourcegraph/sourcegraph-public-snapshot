@@ -10,6 +10,14 @@ import { extensionsController } from '@sourcegraph/shared/src/util/searchTestHel
 import { SearchPatternType } from './graphql-operations'
 import { Layout, LayoutProps } from './Layout'
 
+jest.mock('./theme', () => ({
+    useTheme: () => ({
+        isLightTheme: true,
+        themePreference: 'system',
+        onThemePreferenceChange: () => {},
+    }),
+}))
+
 describe('Layout', () => {
     const defaultProps: LayoutProps = ({
         // Parsed query components
@@ -34,16 +42,6 @@ describe('Layout', () => {
         extensionsController,
         platformContext: { forceUpdateTooltip: () => {}, settings: NEVER },
     } as unknown) as LayoutProps
-
-    beforeAll(() => {
-        Object.defineProperty(window, 'matchMedia', {
-            writable: true,
-            value: () => ({
-                matches: false,
-                addEventListener: () => {},
-            }),
-        })
-    })
 
     beforeEach(() => {
         const root = document.createElement('div')
