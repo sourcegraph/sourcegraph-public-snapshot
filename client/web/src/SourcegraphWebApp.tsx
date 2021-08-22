@@ -84,7 +84,6 @@ import { listUserRepositories } from './site-admin/backend'
 import { SiteAdminAreaRoute } from './site-admin/SiteAdminArea'
 import { SiteAdminSideBarGroups } from './site-admin/SiteAdminSidebar'
 import { CodeHostScopeProvider } from './site/CodeHostScopeAlerts/CodeHostScopeProvider'
-import { ThemePreference } from './theme'
 import { eventLogger } from './tracking/eventLogger'
 import { withActivation } from './tracking/withActivation'
 import { UserAreaRoute } from './user/area/UserArea'
@@ -130,15 +129,6 @@ interface SourcegraphWebAppState extends SettingsCascadeProps {
     authenticatedUser?: AuthenticatedUser | null
 
     viewerSubject: LayoutProps['viewerSubject']
-
-    /** The user's preference for the theme (light, dark or following system theme) */
-    themePreference: ThemePreference
-
-    /**
-     * Whether the OS uses light theme, synced from a media query.
-     * If the browser/OS does not this, will default to true.
-     */
-    systemIsLightTheme: boolean
 
     /**
      * The current search query in the navbar.
@@ -234,25 +224,8 @@ const notificationClassNames = {
     [NotificationType.Error]: 'alert alert-danger',
 }
 
-const LIGHT_THEME_LOCAL_STORAGE_KEY = 'light-theme'
 const LAST_VERSION_CONTEXT_KEY = 'sg-last-version-context'
 const LAST_SEARCH_CONTEXT_KEY = 'sg-last-search-context'
-
-/** Reads the stored theme preference from localStorage */
-const readStoredThemePreference = (): ThemePreference => {
-    const value = localStorage.getItem(LIGHT_THEME_LOCAL_STORAGE_KEY)
-    // Handle both old and new preference values
-    switch (value) {
-        case 'true':
-        case 'light':
-            return ThemePreference.Light
-        case 'false':
-        case 'dark':
-            return ThemePreference.Dark
-        default:
-            return ThemePreference.System
-    }
-}
 
 setLinkComponent(RouterLinkOrAnchor)
 
@@ -266,7 +239,6 @@ const history = createBrowserHistory()
 export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, SourcegraphWebAppState> {
     private readonly subscriptions = new Subscription()
     private readonly userRepositoriesUpdates = new Subject<void>()
-    private readonly darkThemeMediaList = window.matchMedia('(prefers-color-scheme: dark)')
     private readonly platformContext: PlatformContext = createPlatformContext()
     private readonly extensionsController: ExtensionsController = createExtensionsController(this.platformContext)
 
@@ -305,8 +277,6 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
             : undefined
 
         this.state = {
-            themePreference: readStoredThemePreference(),
-            systemIsLightTheme: !this.darkThemeMediaList.matches,
             navbarSearchQueryState: { query: '' },
             settingsCascade: EMPTY_SETTINGS_CASCADE,
             viewerSubject: SITE_SUBJECT_NO_ADMIN,
@@ -336,13 +306,6 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
             enableAPIDocs: false,
             featureFlags: new Map<FeatureFlagName, boolean>(),
         }
-    }
-
-    /** Returns whether Sourcegraph should be in light theme */
-    private isLightTheme(): boolean {
-        return this.state.themePreference === 'system'
-            ? this.state.systemIsLightTheme
-            : this.state.themePreference === 'light'
     }
 
     public componentDidMount(): void {
@@ -379,13 +342,6 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
                         logInsightMetrics(oldSettings, newSettings, eventLogger)
                     }
                 })
-        )
-
-        // React to OS theme change
-        this.subscriptions.add(
-            fromEvent<MediaQueryListEvent>(this.darkThemeMediaList, 'change').subscribe(event => {
-                this.setState({ systemIsLightTheme: !event.matches })
-            })
         )
 
         this.subscriptions.add(
@@ -468,13 +424,6 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
 
     public componentWillUnmount(): void {
         this.subscriptions.unsubscribe()
-        document.documentElement.classList.remove('theme', 'theme-light', 'theme-dark')
-    }
-
-    public componentDidUpdate(): void {
-        localStorage.setItem(LIGHT_THEME_LOCAL_STORAGE_KEY, this.state.themePreference)
-        document.documentElement.classList.toggle('theme-light', this.isLightTheme())
-        document.documentElement.classList.toggle('theme-dark', !this.isLightTheme())
     }
 
     public render(): React.ReactFragment | null {
@@ -526,10 +475,6 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
                                                 viewerSubject={this.state.viewerSubject}
                                                 settingsCascade={this.state.settingsCascade}
                                                 batchChangesEnabled={this.props.batchChangesEnabled}
-                                                // Theme
-                                                isLightTheme={this.isLightTheme()}
-                                                themePreference={this.state.themePreference}
-                                                onThemePreferenceChange={this.onThemePreferenceChange}
                                                 // Search query
                                                 navbarSearchQueryState={this.state.navbarSearchQueryState}
                                                 onNavbarQueryChange={this.onNavbarQueryChange}
@@ -601,10 +546,6 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
                 </ErrorBoundary>
             </ApolloProvider>
         )
-    }
-
-    private onThemePreferenceChange = (themePreference: ThemePreference): void => {
-        this.setState({ themePreference })
     }
 
     private onNavbarQueryChange = (navbarSearchQueryState: QueryState): void => {
