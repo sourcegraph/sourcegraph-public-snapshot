@@ -135,8 +135,9 @@ func (p *Provider) FetchUserPermsByToken(ctx context.Context, token string, opts
 
 	// Get repos from groups, cached if possible.
 	for _, group := range groups {
-		// If a valid cached value was found, continue
+		// If a valid cached value was found, use it and continue
 		if len(group.Repositories) > 0 {
+			addRepoToPerms(group.Repositories...)
 			continue
 		}
 		group.Repositories = make([]extsvc.RepoID, 0, repoSetSize)
