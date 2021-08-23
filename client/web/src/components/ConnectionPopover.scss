@@ -21,45 +21,47 @@
         }
     }
 
-    &__nodes {
-        &:empty {
-            display: none;
+    .filtered-connection & {
+        &__nodes {
+            &:empty {
+                display: none;
+            }
+            border-top: solid 1px var(--border-color-2);
+            padding-top: 0.25rem;
+            padding-bottom: 0.25rem;
         }
-        border-top: solid 1px var(--border-color-2);
-        padding-top: 0.25rem;
-        padding-bottom: 0.25rem;
-    }
 
-    &__node {
-        border-bottom: none;
-
-        &:last-child {
+        &__node {
             border-bottom: none;
-        }
-        &-link {
-            display: flex;
-            align-items: center;
-            padding: var(--popover-item-padding-v) var(--popover-item-padding-h);
-            color: var(--text-muted);
-            text-decoration: none;
-            border: none;
 
-            &:hover,
-            &:focus {
-                background-color: var(--primary);
-                color: var(--light-text);
+            &:last-child {
+                border-bottom: none;
             }
+            &-link {
+                display: flex;
+                align-items: center;
+                padding: var(--popover-item-padding-v) var(--popover-item-padding-h);
+                color: var(--text-muted);
+                text-decoration: none;
+                border: none;
 
-            &--active {
-                font-weight: inherit;
-                background-color: var(--color-bg-3);
+                &:hover,
+                &:focus {
+                    background-color: var(--primary);
+                    color: var(--light-text);
+                }
+
+                &--active {
+                    font-weight: inherit;
+                    background-color: var(--color-bg-3);
+                }
             }
         }
-    }
 
-    &__input {
-        margin: 0.5rem;
-        padding-left: 0.5rem;
-        padding-right: 0.5rem;
+        &__input {
+            margin: 0.5rem;
+            padding-left: 0.5rem;
+            padding-right: 0.5rem;
+        }
     }
 }
