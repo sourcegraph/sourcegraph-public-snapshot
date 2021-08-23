@@ -38,7 +38,7 @@ describe('[VISUAL] Code insights page', () => {
 
     async function takeChartSnapshot(name: string): Promise<void> {
         await driver.page.waitForSelector('[data-testid="line-chart__content"] svg circle')
-        await delay(1000)
+        await delay(500)
         await percySnapshotWithVariants(driver.page, name)
     }
 
@@ -51,9 +51,7 @@ describe('[VISUAL] Code insights page', () => {
                 },
             },
             overrides: {
-                /**
-                 * Mock back-end insights with standard gql API handler.
-                 * */
+                // Mock back-end insights with standard gql API handler.
                 Insights: () => ({ insights: { nodes: BACKEND_INSIGHTS } }),
             },
         })
@@ -67,11 +65,9 @@ describe('[VISUAL] Code insights page', () => {
         overrideGraphQLExtensions({
             testContext,
 
-            /**
-             * Since search insight and code stats insight are working via user/org
-             * settings. We have to mock them by mocking user settings and provide
-             * mock data - mocking extension work.
-             * */
+            // Since search insight and code stats insight are working via user/org
+            // settings. We have to mock them by mocking user settings and provide
+            // mock data - mocking extension work.
             userSettings: {
                 'searchInsights.insight.graphQLTypesMigration': {
                     title: 'The First search-based insight',
@@ -90,22 +86,12 @@ describe('[VISUAL] Code insights page', () => {
                 'searchInsights.insight.graphQLTypesMigration': INSIGHT_VIEW_TYPES_MIGRATION,
             },
             overrides: {
-                /**
-                 * Mock back-end insights with standard gql API handler.
-                 * */
+                // Mock back-end insights with standard gql API handler.
                 Insights: () => ({ insights: { nodes: [] } }),
             },
         })
 
         await driver.page.goto(driver.sourcegraphBaseUrl + '/insights/dashboards/all')
-
-        await driver.page.waitForSelector(
-            '[data-testid="insight-card.searchInsights.insight.teamSize"] [data-testid="line-chart__content"] svg circle'
-        )
-        await driver.page.hover(
-            '[data-testid="insight-card.searchInsights.insight.teamSize"] [data-testid="line-chart__content"] circle:first-child'
-        )
-
         await takeChartSnapshot('Code insights page with search-based insights only')
     })
 
@@ -113,11 +99,9 @@ describe('[VISUAL] Code insights page', () => {
         overrideGraphQLExtensions({
             testContext,
 
-            /**
-             * Since search insight and code stats insight are working via user/org
-             * settings. We have to mock them by mocking user settings and provide
-             * mock data - mocking extension work.
-             * */
+            // Since search insight and code stats insight are working via user/org
+            // settings. We have to mock them by mocking user settings and provide
+            // mock data - mocking extension work.
             userSettings: {
                 'searchInsights.insight.graphQLTypesMigration': {
                     title: 'The First search-based insight',
@@ -136,22 +120,12 @@ describe('[VISUAL] Code insights page', () => {
                 'searchInsights.insight.graphQLTypesMigration': INSIGHT_VIEW_TYPES_MIGRATION,
             },
             overrides: {
-                /**
-                 * Mock back-end insights with standard gql API handler.
-                 * */
+                // Mock back-end insights with standard gql API handler.
                 Insights: () => ({ insights: { nodes: [] } }),
             },
         })
 
         await driver.page.goto(driver.sourcegraphBaseUrl + '/insights/dashboards/all')
-
-        await driver.page.waitForSelector(
-            '[data-testid="insight-card.searchInsights.insight.graphQLTypesMigration"] [data-testid="line-chart__content"] svg circle'
-        )
-        await driver.page.hover(
-            '[data-testid="insight-card.searchInsights.insight.graphQLTypesMigration"] [data-testid="line-chart__content"] circle:last-child'
-        )
-
         await takeChartSnapshot('Code insights page with search-based errored insight')
     })
 
@@ -159,11 +133,9 @@ describe('[VISUAL] Code insights page', () => {
         overrideGraphQLExtensions({
             testContext,
 
-            /**
-             * Since search insight and code stats insight are working via user/org
-             * settings. We have to mock them by mocking user settings and provide
-             * mock data - mocking extension work.
-             * */
+            // Since search insight and code stats insight are working via user/org
+            // settings. We have to mock them by mocking user settings and provide
+            // mock data - mocking extension work.
             userSettings: {
                 'searchInsights.insight.graphQLTypesMigration': {
                     title: 'The First search-based insight',
@@ -184,22 +156,12 @@ describe('[VISUAL] Code insights page', () => {
                 'searchInsights.insight.graphQLTypesMigration': INSIGHT_VIEW_TYPES_MIGRATION,
             },
             overrides: {
-                /**
-                 * Mock back-end insights with standard gql API handler.
-                 * */
+                // Mock back-end insights with standard gql API handler.
                 Insights: () => ({ insights: { nodes: BACKEND_INSIGHTS } }),
             },
         })
 
         await driver.page.goto(driver.sourcegraphBaseUrl + '/insights/dashboards/all')
-
-        await driver.page.waitForSelector(
-            '[data-testid="insight-card.searchInsights.insight.graphQLTypesMigration"] [data-testid="line-chart__content"] svg circle'
-        )
-        await driver.page.hover(
-            '[data-testid="insight-card.searchInsights.insight.graphQLTypesMigration"] [data-testid="line-chart__content"] circle:last-child'
-        )
-
         await takeChartSnapshot('Code insights page with all types of insight')
     })
 })

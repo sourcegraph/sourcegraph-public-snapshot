@@ -1,8 +1,16 @@
 import { ParentSize } from '@visx/responsive'
 import { EventEmitterProvider } from '@visx/xychart'
+import classnames from 'classnames'
 import React, { ReactElement } from 'react'
 
 import { getLineStroke, LineChartContent, LineChartContentProps } from './components/LineChartContent'
+
+/**
+ * Check percy test run to be able disable flaky line chart tooltip appearance
+ * by disabling any point events over line chart container.
+ * See https://github.com/sourcegraph/sourcegraph/issues/23669
+ */
+const IS_PERCY_RUN = process.env.PERCY_ON === 'true'
 
 export interface LineChartProps<Datum extends object> extends LineChartContentProps<Datum> {}
 
@@ -26,8 +34,12 @@ export function LineChart<Datum extends object>(props: LineChartProps<Datum>): R
 
     return (
         <EventEmitterProvider>
-            {/* eslint-disable-next-line react/forbid-dom-props */}
-            <div aria-label="Line chart" style={{ width, height }} className="line-chart">
+            <div
+                aria-label="Line chart"
+                /* eslint-disable-next-line react/forbid-dom-props */
+                style={{ width, height }}
+                className={classnames('line-chart', { 'line-chart--no-interaction': IS_PERCY_RUN })}
+            >
                 {/*
                     In case if we have a legend to render we have to have responsive container for chart
                     just to calculate right sizes for chart content = rootContainerSizes - legendSizes
