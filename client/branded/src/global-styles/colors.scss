@@ -86,7 +86,6 @@ $theme-colors: (
     --info: var(--cyan);
     --warning: var(--yellow);
     --danger: var(--red);
-    --danger-2: #e9aaaa;
     --merged: #7048e8;
     --merged-2: #c6b6f6;
     --merged-3: #6b47d6;
@@ -115,6 +114,7 @@ $theme-colors: (
     --warning-2: #fbd999;
     --warning-3: #e09200;
     --warning-4: #fff7e1;
+    --danger-2: #e9aaaa;
     --danger-3: #b52626;
     --danger-4: #fbeaea;
     --body-color: var(--gray-08);
@@ -168,6 +168,7 @@ $theme-colors: (
     --warning-2: #815504;
     --warning-3: #9c6500;
     --warning-4: #3d2904;
+    --danger-2: #6b1515;
     --danger-3: #801b1b;
     --danger-4: #3d0a0a;
     --body-color: var(--gray-04);
