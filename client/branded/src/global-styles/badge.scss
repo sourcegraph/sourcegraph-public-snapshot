@@ -137,28 +137,25 @@ a.badge {
     --badge-border: 1px solid var(--secondary);
 }
 
-.theme-light,
-.theme-dark {
-    // Update secondary text color and focus state for better contrast
-    a.badge-secondary,
-    a.badge-outline-secondary {
-        &:focus,
-        &.focus {
-            box-shadow: var(--focus-box-shadow);
-        }
+// Update secondary text color and focus state for better contrast
+a.badge-secondary,
+a.badge-outline-secondary {
+    &:focus,
+    &.focus {
+        box-shadow: var(--focus-box-shadow);
     }
-    a.badge-secondary {
-        &:hover,
-        &:focus,
-        &.focus {
-            color: var(--body-color);
-        }
+}
+a.badge-secondary {
+    &:hover,
+    &:focus,
+    &.focus {
+        color: var(--body-color);
     }
-    a.badge-outline-secondary {
-        &:hover,
-        &:focus,
-        &.focus {
-            background-color: var(--color-bg-1);
-        }
+}
+a.badge-outline-secondary {
+    &:hover,
+    &:focus,
+    &.focus {
+        background-color: var(--color-bg-1);
     }
 }
