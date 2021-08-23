@@ -3,18 +3,21 @@
 set -euf -o pipefail
 pushd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null
 
-echo "Compiling..."
-
+# The BUILD_COMMIT is baked into the binary (see `go install` below) and
+# contains the latest commit in the `dev/sg` folder. If the directory is
+# "dirty", though, we mark the build as a dev build.
 if [[ $(git diff --stat .) != '' ]]; then
-  export GIT_COMMIT="dev"
+  BUILD_COMMIT="dev"
 else
-  export GIT_COMMIT=$(git rev-list -1 HEAD .)
+  BUILD_COMMIT=$(git rev-list -1 HEAD .)
 fi
+export BUILD_COMMIT
 
+echo "Compiling..."
 # -mod=mod: default is -mod=readonly. However, because our lib dependency is
 #           not fixed everytime it changes we need to update go.sum. By making
 #           it rw we prevent failing go install.
-go install -ldflags "-X main.BuildCommit=$GIT_COMMIT" -mod=mod .
+go install -ldflags "-X main.BuildCommit=$BUILD_COMMIT" -mod=mod .
 
 # Let's find the install target. The documentation at
 #   https://golang.org/cmd/go/#hdr-Compile_and_install_packages_and_dependencies
