@@ -574,19 +574,7 @@ describe('Batches', () => {
                             originalInput: 'name: awesome-batch-change\ndescription: somestring',
                             applyPreview: {
                                 stats: {
-                                    close: 10,
-                                    detach: 10,
-                                    import: 10,
-                                    publish: 10,
-                                    publishDraft: 10,
-                                    push: 10,
-                                    reopen: 10,
-                                    undraft: 10,
-                                    update: 10,
                                     archive: 10,
-                                    added: 5,
-                                    modified: 10,
-                                    removed: 3,
                                 },
                                 totalCount: 10,
                             },
@@ -678,6 +666,30 @@ describe('Batches', () => {
                         createBatchChange: {
                             id: 'change123',
                             url: namespaceURL + '/batch-changes/test-batch-change',
+                        },
+                    }),
+                    QueryApplyPreviewStats: () => ({
+                        node: {
+                            __typename: 'BatchSpec',
+                            id: 'spec123',
+
+                            applyPreview: {
+                                stats: {
+                                    close: 10,
+                                    detach: 10,
+                                    import: 10,
+                                    publish: 10,
+                                    publishDraft: 10,
+                                    push: 10,
+                                    reopen: 10,
+                                    undraft: 10,
+                                    update: 10,
+                                    archive: 18,
+                                    added: 5,
+                                    modified: 10,
+                                    removed: 3,
+                                },
+                            },
                         },
                     }),
                 })

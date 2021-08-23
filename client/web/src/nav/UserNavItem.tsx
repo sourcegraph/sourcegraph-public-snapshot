@@ -1,5 +1,4 @@
 import { Shortcut } from '@slimsag/react-shortcuts'
-import classNames from 'classnames'
 import * as H from 'history'
 import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
 import ChevronUpIcon from 'mdi-react/ChevronUpIcon'
@@ -113,12 +112,7 @@ export const UserNavItem: React.FunctionComponent<UserNavItemProps> = props => {
         <ButtonDropdown isOpen={isOpen} toggle={toggleIsOpen} className="py-0" aria-label="User. Open menu">
             <DropdownToggle className="bg-transparent d-flex align-items-center test-user-nav-item-toggle" nav={true}>
                 <div className="position-relative">
-                    <div
-                        className={classNames('align-items-center d-flex', {
-                            // Temporarily remove user avatar flash animation for redesign
-                            // 'user-nav-item__avatar-background': isExtensionAlertAnimating,
-                        })}
-                    >
+                    <div className="align-items-center d-flex">
                         <UserAvatar
                             user={props.authenticatedUser}
                             targetID={targetID}

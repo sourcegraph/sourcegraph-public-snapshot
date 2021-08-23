@@ -35,15 +35,6 @@ var textSearchLimiter = mutablelimiter.New(32)
 
 var MockSearchFilesInRepos func(args *search.TextParameters) ([]result.Match, *streaming.Stats, error)
 
-func textSearchRequest(ctx context.Context, args *search.TextParameters, onMissing zoektutil.OnMissingRepoRevs) (zoektutil.IndexedSearchRequest, error) {
-	if args.Mode == search.ZoektGlobalSearch {
-		// performance: optimize global searches where Zoekt searches
-		// all shards anyway.
-		return zoektutil.NewIndexedUniverseSearchRequest(ctx, args, args.RepoOptions, args.UserPrivateRepos)
-	}
-	return zoektutil.NewIndexedSubsetSearchRequest(ctx, args, search.TextRequest, onMissing)
-}
-
 // SearchFilesInRepos searches a set of repos for a pattern.
 func SearchFilesInRepos(ctx context.Context, args *search.TextParameters, stream streaming.Sender) (err error) {
 	if MockSearchFilesInRepos != nil {
@@ -69,7 +60,7 @@ func SearchFilesInRepos(ctx context.Context, args *search.TextParameters, stream
 		trace.Stringer("global_search_mode", args.Mode),
 	)
 
-	request, err := textSearchRequest(ctx, args, zoektutil.MissingRepoRevStatus(stream))
+	request, err := zoektutil.NewIndexedSearchRequest(ctx, args, search.TextRequest, zoektutil.MissingRepoRevStatus(stream))
 	if err != nil {
 		return err
 	}
@@ -85,7 +76,12 @@ func SearchFilesInRepos(ctx context.Context, args *search.TextParameters, stream
 
 	// Concurrently run searcher for all unindexed repos regardless whether text or regexp.
 	g.Go(func() error {
-		return callSearcherOverRepos(ctx, args, stream, request.UnindexedRepos(), false)
+		searcherArgs := &search.SearcherParameters{
+			SearcherURLs:    args.SearcherURLs,
+			PatternInfo:     args.PatternInfo,
+			UseFullDeadline: args.UseFullDeadline,
+		}
+		return callSearcherOverRepos(ctx, searcherArgs, stream, request.UnindexedRepos(), false)
 	})
 
 	return g.Wait()
@@ -244,7 +240,7 @@ func matchesToFileMatches(matches []result.Match) ([]*result.FileMatch, error) {
 // callSearcherOverRepos calls searcher on searcherRepos.
 func callSearcherOverRepos(
 	ctx context.Context,
-	args *search.TextParameters,
+	args *search.SearcherParameters,
 	stream streaming.Sender,
 	searcherRepos []*search.RepositoryRevisions,
 	index bool,

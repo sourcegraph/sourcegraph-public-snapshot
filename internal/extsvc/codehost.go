@@ -61,22 +61,18 @@ func NormalizeBaseURL(baseURL *url.URL) *url.URL {
 	return baseURL
 }
 
-// CodeHostOf returns the CodeHost of the given repo, if any. A correct repo name will have three
-// parts separated by a "/":
-// 1. Codehost URL
-// 2. Repo Owner
-// 3. Repo Name
-//
-// For example: github.com/sourcegraph/sourcegraph
-//
-// If "name" does not adhere to this format or the Codehost URL does not match the list of
-// "codehosts" given as the argument to CodeHostOf, it will return nil, otherwise it retuns the
+// CodeHostOf returns the CodeHost of the given repo, if any. If CodeHostOf fails to find a match
+// from the list of "codehosts" in the argument, it will return nil. Otherwise it retuns the
 // matching codehost from the given list.
 func CodeHostOf(name api.RepoName, codehosts ...*CodeHost) *CodeHost {
-	repoNameParts := strings.Split(string(name), "/")
-	if len(repoNameParts) != 3 {
-		return nil
-	}
+	// We do not want to fail in case the name includes query parameteres with a "/" in it. As a
+	// result we only want to retrieve the first substring delimited by a "/" and verify if it is a
+	// valid CodeHost URL.
+	//
+	// This means that the following check will let repo names like github.com/sourcegraph
+	// pass. This function is only reponsible for identifying the CodeHost from a repo name and not
+	// if the repo name points to a valid repo.
+	repoNameParts := strings.SplitN(string(name), "/", 2)
 
 	for _, c := range codehosts {
 		if strings.EqualFold(repoNameParts[0], c.BaseURL.Hostname()) {

@@ -1,9 +1,13 @@
 import classNames from 'classnames'
-import React from 'react'
+import React, { useContext, useMemo } from 'react'
+
+import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
 
 import { DiffStatStack } from '../../../components/diff/DiffStat'
-import { BatchSpecFields } from '../../../graphql-operations'
+import { ApplyPreviewStatsFields, DiffStatFields, Scalars } from '../../../graphql-operations'
 
+import { queryApplyPreviewStats as _queryApplyPreviewStats } from './backend'
+import { BatchChangePreviewContext } from './BatchChangePreviewContext'
 import styles from './BatchChangePreviewStatsBar.module.scss'
 import { ChangesetAddedIcon, ChangesetModifiedIcon, ChangesetRemovedIcon } from './icons'
 import {
@@ -23,45 +27,68 @@ const actionClassNames = classNames(
 )
 
 export interface BatchChangePreviewStatsBarProps {
-    batchSpec: BatchSpecFields
+    batchSpec: Scalars['ID']
+    diffStat: DiffStatFields
+    /** For testing purposes only. */
+    queryApplyPreviewStats?: typeof _queryApplyPreviewStats
 }
 
-export const BatchChangePreviewStatsBar: React.FunctionComponent<BatchChangePreviewStatsBarProps> = ({ batchSpec }) => (
-    <div className="d-flex flex-wrap mb-3 align-items-center">
-        <h2 className="m-0 align-self-center">
-            <span className="badge badge-info text-uppercase mb-0">Preview</span>
-        </h2>
-        <div className={classNames(styles.batchChangePreviewStatsBarDivider, 'd-none d-sm-block mx-3')} />
-        <DiffStatStack className={styles.batchChangePreviewStatsBarDiff} {...batchSpec.diffStat} />
-        <div className={classNames(styles.batchChangePreviewStatsBarHorizontalDivider, 'd-block d-sm-none my-3')} />
-        <div className={classNames(styles.batchChangePreviewStatsBarDivider, 'mx-3 d-none d-sm-block d-md-none')} />
-        <div className={classNames(styles.batchChangePreviewStatsBarMetrics, 'flex-grow-1 d-flex justify-content-end')}>
-            <PreviewStatsAdded count={batchSpec.applyPreview.stats.added} />
-            <PreviewStatsRemoved count={batchSpec.applyPreview.stats.removed} />
-            <PreviewStatsModified count={batchSpec.applyPreview.stats.modified} />
+export const BatchChangePreviewStatsBar: React.FunctionComponent<BatchChangePreviewStatsBarProps> = ({
+    batchSpec,
+    diffStat,
+    queryApplyPreviewStats = _queryApplyPreviewStats,
+}) => {
+    const { publicationStates } = useContext(BatchChangePreviewContext)
+
+    /** We use this to recalculate the stats when the publication states are modified. */
+    const stats = useObservable<ApplyPreviewStatsFields['stats']>(
+        useMemo(() => queryApplyPreviewStats({ batchSpec, publicationStates }), [
+            publicationStates,
+            batchSpec,
+            queryApplyPreviewStats,
+        ])
+    )
+
+    if (!stats) {
+        return null
+    }
+
+    return (
+        <div className="d-flex flex-wrap mb-3 align-items-center">
+            <h2 className="m-0 align-self-center">
+                <span className="badge badge-info text-uppercase mb-0">Preview</span>
+            </h2>
+            <div className={classNames(styles.batchChangePreviewStatsBarDivider, 'd-none d-sm-block mx-3')} />
+            <DiffStatStack className={styles.batchChangePreviewStatsBarDiff} {...diffStat} />
+            <div className={classNames(styles.batchChangePreviewStatsBarHorizontalDivider, 'd-block d-sm-none my-3')} />
+            <div className={classNames(styles.batchChangePreviewStatsBarDivider, 'mx-3 d-none d-sm-block d-md-none')} />
+            <div
+                className={classNames(
+                    styles.batchChangePreviewStatsBarMetrics,
+                    'flex-grow-1 d-flex justify-content-end'
+                )}
+            >
+                <PreviewStatsAdded count={stats.added} />
+                <PreviewStatsRemoved count={stats.removed} />
+                <PreviewStatsModified count={stats.modified} />
+            </div>
+            <div className={classNames(styles.batchChangePreviewStatsBarHorizontalDivider, 'd-block d-md-none my-3')} />
+            <div className={classNames(styles.batchChangePreviewStatsBarDivider, 'd-none d-md-block ml-3 mr-2')} />
+            <div className={classNames(styles.batchChangePreviewStatsBarStates, 'd-flex justify-content-end')}>
+                <PreviewActionReopen className={actionClassNames} label={`${stats.reopen} Reopen`} />
+                <PreviewActionClose className={actionClassNames} label={`${stats.reopen} Close`} />
+                <PreviewActionUpdate className={actionClassNames} label={`${stats.update} Update`} />
+                <PreviewActionUndraft className={actionClassNames} label={`${stats.undraft} Undraft`} />
+                <PreviewActionPublish
+                    className={actionClassNames}
+                    label={`${stats.publish + stats.publishDraft} Publish`}
+                />
+                <PreviewActionImport className={actionClassNames} label={`${stats.import} Import`} />
+                <PreviewActionArchive className={actionClassNames} label={`${stats.archive} Archive`} />
+            </div>
         </div>
-        <div className={classNames(styles.batchChangePreviewStatsBarHorizontalDivider, 'd-block d-md-none my-3')} />
-        <div className={classNames(styles.batchChangePreviewStatsBarDivider, 'd-none d-md-block ml-3 mr-2')} />
-        <div className={classNames(styles.batchChangePreviewStatsBarStates, 'd-flex justify-content-end')}>
-            <PreviewActionReopen className={actionClassNames} label={`${batchSpec.applyPreview.stats.reopen} Reopen`} />
-            <PreviewActionClose className={actionClassNames} label={`${batchSpec.applyPreview.stats.reopen} Close`} />
-            <PreviewActionUpdate className={actionClassNames} label={`${batchSpec.applyPreview.stats.update} Update`} />
-            <PreviewActionUndraft
-                className={actionClassNames}
-                label={`${batchSpec.applyPreview.stats.undraft} Undraft`}
-            />
-            <PreviewActionPublish
-                className={actionClassNames}
-                label={`${batchSpec.applyPreview.stats.publish + batchSpec.applyPreview.stats.publishDraft} Publish`}
-            />
-            <PreviewActionImport className={actionClassNames} label={`${batchSpec.applyPreview.stats.import} Import`} />
-            <PreviewActionArchive
-                className={actionClassNames}
-                label={`${batchSpec.applyPreview.stats.archive} Archive`}
-            />
-        </div>
-    </div>
-)
+    )
+}
 
 export const PreviewStatsAdded: React.FunctionComponent<{ count: number }> = ({ count }) => (
     <div className={classNames(styles.batchChangePreviewStatsBarStat, 'd-flex flex-column mr-2 text-nowrap')}>

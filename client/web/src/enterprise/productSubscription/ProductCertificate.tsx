@@ -34,7 +34,7 @@ export const ProductCertificate: React.FunctionComponent<Props> = ({
         <div className="card-body d-flex align-items-center">
             <img
                 className="product-certificate__logo mr-1 p-2"
-                src="/.assets/img/sourcegraph-mark.svg"
+                src="/.assets/img/sourcegraph-mark.svg?v2"
                 alt="Sourcegraph logo"
             />
             <div>

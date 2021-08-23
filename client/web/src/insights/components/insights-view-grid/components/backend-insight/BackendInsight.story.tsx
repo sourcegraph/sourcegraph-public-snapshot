@@ -1,4 +1,3 @@
-import { boolean } from '@storybook/addon-knobs'
 import { storiesOf } from '@storybook/react'
 import React from 'react'
 import { of, throwError } from 'rxjs'
@@ -12,7 +11,7 @@ import { InsightStillProcessingError } from '../../../../core/backend/api/get-ba
 import { createMockInsightAPI } from '../../../../core/backend/insights-api'
 import { InsightType } from '../../../../core/types'
 import { SearchBackendBasedInsight } from '../../../../core/types/insight/search-insight'
-import { LINE_CHART_CONTENT_MOCK } from '../../../../mocks/charts-content'
+import { LINE_CHART_CONTENT_MOCK, LINE_CHART_CONTENT_MOCK_EMPTY } from '../../../../mocks/charts-content'
 import { SETTINGS_CASCADE_MOCK } from '../../../../mocks/settings-cascade'
 
 import { BackendInsight } from './BackendInsight'
@@ -29,7 +28,12 @@ const INSIGHT_CONFIGURATION_MOCK: SearchBackendBasedInsight = {
     id: 'searchInsights.insight.mock_backend_insight_id',
 }
 
-const mockInsightAPI = ({ isFetchingHistoricalData = false, delayAmount = 0, throwProcessingError = false }) =>
+const mockInsightAPI = ({
+    isFetchingHistoricalData = false,
+    delayAmount = 0,
+    throwProcessingError = false,
+    hasData = true,
+} = {}) =>
     createMockInsightAPI({
         getBackendInsightById: ({ id }) => {
             if (throwProcessingError) {
@@ -41,14 +45,13 @@ const mockInsightAPI = ({ isFetchingHistoricalData = false, delayAmount = 0, thr
                 view: {
                     title: 'Backend Insight Mock',
                     subtitle: 'Backend insight description text',
-                    content: [LINE_CHART_CONTENT_MOCK],
+                    content: [hasData ? LINE_CHART_CONTENT_MOCK : LINE_CHART_CONTENT_MOCK_EMPTY],
                     isFetchingHistoricalData,
                 },
             }).pipe(delay(delayAmount))
         },
     })
 
-const loadingKnob = () => boolean('Backend loading', false)
 const TestBackendInsight: React.FunctionComponent = () => (
     <BackendInsight
         style={{ width: 400, height: 400 }}
@@ -60,18 +63,30 @@ const TestBackendInsight: React.FunctionComponent = () => (
 )
 
 add('Backend Insight Card', () => (
-    <InsightsApiContext.Provider value={mockInsightAPI({ isFetchingHistoricalData: loadingKnob() })}>
+    <InsightsApiContext.Provider value={mockInsightAPI()}>
         <TestBackendInsight />
     </InsightsApiContext.Provider>
 ))
 
 add('Backend Insight Card with delay API', () => (
-    <InsightsApiContext.Provider value={mockInsightAPI({ isFetchingHistoricalData: loadingKnob(), delayAmount: 2000 })}>
+    <InsightsApiContext.Provider value={mockInsightAPI({ delayAmount: 2000 })}>
         <TestBackendInsight />
     </InsightsApiContext.Provider>
 ))
 
-add('Backend Insight Card still processing data', () => (
+add('Backend Insight Card backfilling data', () => (
+    <InsightsApiContext.Provider value={mockInsightAPI({ isFetchingHistoricalData: true })}>
+        <TestBackendInsight />
+    </InsightsApiContext.Provider>
+))
+
+add('Backend Insight Card no data', () => (
+    <InsightsApiContext.Provider value={mockInsightAPI({ hasData: false })}>
+        <TestBackendInsight />
+    </InsightsApiContext.Provider>
+))
+
+add('Backend Insight Card insight syncing', () => (
     <InsightsApiContext.Provider value={mockInsightAPI({ throwProcessingError: true })}>
         <TestBackendInsight />
     </InsightsApiContext.Provider>

@@ -85,7 +85,7 @@ A brief summary of the pros and cons of each workflow is:
             Rapid feedback loop: you can check a specific diff and immediately publish it
           </li>
           <li>
-            Easy to publish random changesets without having to specify rules in the `published` field
+            Easy to publish random changesets without having to specify rules in the <code>published</code> field
           </li>
         </ul>
       </td>
@@ -173,7 +173,27 @@ See [`changesetTemplate.published`](../references/batch_spec_yaml_reference.md#c
 
 > NOTE: This functionality requires Sourcegraph 3.30 or later, and also requires `src` 3.29.2 or later.
 
-To publish from the Sourcegraph UI, you'll need to remove (or omit) the `published` field from your batch spec. When you first apply a batch change without an explicit `published` fields, all changesets are treated as unpublished.
+To publish from the Sourcegraph UI, you'll need to remove (or omit) the `published` field from your batch spec. When you first apply a batch change without an explicit `published` field, all changesets are left unpublished.
+
+#### From the preview
+
+> NOTE: This feature requires Sourcegraph 3.31 or later.
+
+When you run `src batch preview` against your batch spec and open the preview link, you'll see the current states of each of your changesets, as well as a preview of the actions that will be performed when you apply:
+
+<img src="https://sourcegraphstatic.com/docs/images/batch_changes/publish_ui_browser_preview.png" class="screenshot">
+
+For any changesets that are currently unpublished or only published as drafts, you can select the checkbox and choose an action from the dropdown menu to indicate what publication state you want to set the changesets to on apply:
+
+<img src="https://sourcegraphstatic.com/docs/images/batch_changes/publish_ui_browser_select_action_on_apply.png" class="screenshot">
+
+> NOTE: Certain types of changeset cannot be published from the UI and will have their checkbox disabled. Not sure why your changeset is disabled? Check the [FAQ](../references/faq.md#why-is-the-checkbox-on-my-changeset-disabled-when-i-m-previewing-a-batch-change).
+
+Once the preview actions look good, you can click **Apply** to publish the changesets. You should see an alert appear indicating that the publication states actions have updated, and the changesets' "Actions" will reflect the new publication states:
+
+<img src="https://sourcegraphstatic.com/docs/images/batch_changes/publish_ui_browser_preview_update.png" class="screenshot">
+
+#### From an open batch change
 
 Once applied, you can select the changesets you want to publish from the batch change page and publish them using the [publish bulk operation](bulk_operations_on_changesets.md), as demonstrated in this video:
 
