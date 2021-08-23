@@ -1,5 +1,7 @@
 package query
 
+import "github.com/cockroachdb/errors"
+
 /*
 Query processing involves multiple steps to produce a query to evaluate.
 
@@ -47,6 +49,14 @@ func With(enabled bool, step step) step {
 	return step
 }
 
+// normalize is a normalization step that applies to all search queries. It:
+// (1) ensures fields are lowercase so we can reference them consistently internally.
+// (2) labels any `content:` values so that its interpreted according to `searchType`.
+// (3) substitutes `count:all` for a numeric value.
+func normalize(searchType SearchType) step {
+	return succeeds(LowercaseFieldNames, SubstituteAliases(searchType), SubstituteCountAll)
+}
+
 // For runs processing steps for a given search type. This includes
 // normalization, substitution for whitespace, and pattern labeling.
 func For(searchType SearchType) step {
@@ -59,8 +69,7 @@ func For(searchType SearchType) step {
 	case SearchTypeStructural:
 		processType = succeeds(labelStructural, ellipsesForHoles, substituteConcat(space))
 	}
-	normalize := succeeds(LowercaseFieldNames, SubstituteAliases(searchType), SubstituteCountAll)
-	return sequence(normalize, processType)
+	return sequence(normalize(searchType), processType)
 }
 
 // Init creates a step from an input string and search type. It parses the
@@ -85,6 +94,50 @@ func InitRegexp(in string) step {
 // InitStructural is Init where SearchType is Structural.
 func InitStructural(in string) step {
 	return Init(in, SearchTypeStructural)
+}
+
+// InitRegexpStrict is an initializer step for Compute queries.
+// It differs from SearchType queries in:
+// (1) validating that this is a regular expression search.
+// (2) always treating regular expression case sensitively unless `case` is specified.
+// (3) not interpolating `.*` (fuzzyRegexp) between regular expression patterns.
+// (4) requiring strictly correct regular expression syntax (no parentheses heuristics).
+func InitRegexpStrict(in string) step {
+	checkPatternType := func([]Node) ([]Node, error) {
+		literalTerms, err := Parse(in, SearchTypeLiteral)
+		if err != nil {
+			return nil, err
+		}
+		var visitErr error
+		VisitField(literalTerms, FieldPatternType, func(value string, _ bool, _ Annotation) {
+			if value == "structural" {
+				visitErr = errors.New("patterntype:structural is not supported for this kind of query")
+			}
+		})
+		return nil, visitErr
+	}
+	parse := func([]Node) ([]Node, error) {
+		return Parse(in, SearchTypeRegex)
+	}
+	makeCaseSensitive := func(nodes []Node) ([]Node, error) {
+		caseSet := exists(nodes, func(node Node) bool {
+			if p, ok := node.(Parameter); ok && p.Field == FieldCase {
+				return true
+			}
+			return false
+		})
+		if caseSet {
+			return nodes, nil
+		}
+		return newOperator(append(nodes,
+			Parameter{
+				Field:      "case",
+				Value:      "yes",
+				Negated:    false,
+				Annotation: Annotation{},
+			}), And), nil
+	}
+	return sequence(checkPatternType, parse, makeCaseSensitive, normalize(SearchTypeRegex), succeeds(substituteConcat(space)))
 }
 
 func Run(step step) ([]Node, error) {

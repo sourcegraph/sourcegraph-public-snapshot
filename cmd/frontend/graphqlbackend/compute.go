@@ -3,13 +3,17 @@ package graphqlbackend
 import (
 	"context"
 	"regexp"
+	"sync"
 
 	"github.com/cockroachdb/errors"
 	"github.com/sourcegraph/go-langserver/pkg/lsp"
 	"github.com/sourcegraph/sourcegraph/internal/compute"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
+	searchrepos "github.com/sourcegraph/sourcegraph/internal/search/repos"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
+	"github.com/sourcegraph/sourcegraph/internal/search/run"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
@@ -167,11 +171,7 @@ func toComputeResultResolver(r *computeMatchContextResolver) *computeResultResol
 	return &computeResultResolver{result: r}
 }
 
-func regexpFromQuery(q string) (*regexp.Regexp, error) {
-	plan, err := query.Pipeline(query.Init(q, query.SearchTypeRegex))
-	if err != nil {
-		return nil, err
-	}
+func regexpFromPlan(plan query.Plan) (*regexp.Regexp, error) {
 	if len(plan) != 1 {
 		return nil, errors.New("compute endpoint only supports one search pattern currently ('and' or 'or' operators are not supported yet)")
 	}
@@ -210,17 +210,45 @@ func toResultResolverList(pattern *regexp.Regexp, matches []result.Match, db dbu
 // NewComputeImplementer is a function that abstracts away the need to have a
 // handle on (*schemaResolver) Compute.
 func NewComputeImplementer(ctx context.Context, db dbutil.DB, args *ComputeArgs) ([]*computeResultResolver, error) {
-	pattern, err := regexpFromQuery(args.Query)
-	if err != nil {
-		return nil, err
-	}
-	patternType := "regexp"
-	job, err := NewSearchImplementer(ctx, db, &SearchArgs{Query: args.Query, PatternType: &patternType})
+	plan, err := query.Pipeline(query.InitRegexpStrict(args.Query))
 	if err != nil {
 		return nil, err
 	}
 
-	results, err := job.Results(ctx)
+	// ISSUE: if `case:no` is specified, we need to make this regular expression
+	// case _in_sensitive, otherwise it diverges.
+	pattern, err := regexpFromPlan(plan)
+	if err != nil {
+		return nil, err
+	}
+
+	patternType := "literal"
+	// use NewSearchImplementer to set up settings and limits, but use a
+	// placeholder query so it doesn't invalidate our compute plan.
+	job, err := NewSearchImplementer(ctx, db, &SearchArgs{Query: "placeholder", PatternType: &patternType})
+	if err != nil {
+		return nil, err
+	}
+	computeJob := &searchResolver{
+		db: db,
+		SearchInputs: &run.SearchInputs{
+			Plan:          plan,
+			Query:         plan.ToParseTree(),
+			OriginalQuery: args.Query,
+			PatternType:   query.SearchTypeRegex,
+			UserSettings:  job.Inputs().UserSettings,
+			DefaultLimit:  job.Inputs().DefaultLimit,
+		},
+
+		stream: nil,
+
+		zoekt:        search.Indexed(),
+		searcherURLs: search.SearcherURLs(),
+		reposMu:      &sync.Mutex{},
+		resolved:     &searchrepos.Resolved{},
+	}
+
+	results, err := computeJob.Results(ctx)
 	if err != nil {
 		return nil, err
 	}
