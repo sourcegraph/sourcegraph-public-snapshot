@@ -8,9 +8,7 @@
 # sourcegraph's developer tools. In particular this is our databases, which
 # are used by both our tests and development server.
 
-set -eu
-
-cd "$(dirname "${BASH_SOURCE[0]}")"
+pushd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null || exit
 
 # TODO build with nix
 if [ ! -e ../../libsqlite3-pcre.so ]; then
@@ -19,3 +17,9 @@ if [ ! -e ../../libsqlite3-pcre.so ]; then
 fi
 
 . ./start-postgres.sh
+. ./start-redis.sh
+
+# We disable postgres_exporter since it expects postgres to be running on TCP.
+export SRC_DEV_EXCEPT="${SRC_DEV_EXCEPT:-postgres_exporter}"
+
+popd >/dev/null || exit
