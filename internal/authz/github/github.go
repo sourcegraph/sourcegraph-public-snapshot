@@ -22,7 +22,7 @@ type Provider struct {
 	client   client
 	codeHost *extsvc.CodeHost
 	// groupsCache may be nil if group caching is disabled (negative TTL)
-	groupsCache *groupsCache
+	groupsCache *cachedGroups
 }
 
 type ProviderOptions struct {

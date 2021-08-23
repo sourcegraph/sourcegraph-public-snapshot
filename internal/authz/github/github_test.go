@@ -25,8 +25,8 @@ func mustURL(t *testing.T, u string) *url.URL {
 	return parsed
 }
 
-func memGroupsCache() *groupsCache {
-	return &groupsCache{cache: httpcache.NewMemoryCache()}
+func memGroupsCache() *cachedGroups {
+	return &cachedGroups{cache: httpcache.NewMemoryCache()}
 }
 
 func TestProvider_FetchUserPerms(t *testing.T) {
