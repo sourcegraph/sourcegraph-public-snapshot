@@ -6,61 +6,42 @@
     min-width: 25rem;
     max-width: 70vw;
 
-    --popover-item-padding-h: 0.75rem;
-    --popover-item-padding-v: 0.325rem;
-
-    .theme-redesign & {
-        --popover-item-padding-h: 1rem;
-        --popover-item-padding-v: 0.25rem;
-        background-color: var(--color-bg-1);
-    }
+    --popover-item-padding-h: 1rem;
+    --popover-item-padding-v: 0.25rem;
+    background-color: var(--color-bg-1);
 
     &__content {
         flex: 1 1 auto;
         display: flex;
         flex-direction: column;
-
-        min-height: 27rem; // avoid jitter when only loading indicator is shown
-        max-height: 70vh;
-
-        .theme-redesign & {
-            min-height: initial;
-            max-height: calc(min(20rem, 70vh));
-        }
+        max-height: calc(min(20rem, 70vh));
 
         .alert {
             word-break: break-word;
         }
     }
 
-    &__nodes {
-        &:empty {
-            display: none;
-        }
-        .theme-redesign & {
+    .filtered-connection & {
+        &__nodes {
+            &:empty {
+                display: none;
+            }
             border-top: solid 1px var(--border-color-2);
             padding-top: 0.25rem;
             padding-bottom: 0.25rem;
         }
-    }
 
-    &__node {
-        border-bottom: solid 1px var(--border-color);
-
-        .theme-redesign & {
+        &__node {
             border-bottom: none;
-        }
 
-        &:last-child {
-            border-bottom: none;
-        }
-        &-link {
-            display: flex;
-            align-items: center;
-            padding: var(--popover-item-padding-v) var(--popover-item-padding-h);
-            color: var(--text-muted);
-
-            .theme-redesign & {
+            &:last-child {
+                border-bottom: none;
+            }
+            &-link {
+                display: flex;
+                align-items: center;
+                padding: var(--popover-item-padding-v) var(--popover-item-padding-h);
+                color: var(--text-muted);
                 text-decoration: none;
                 border: none;
 
@@ -69,21 +50,15 @@
                     background-color: var(--primary);
                     color: var(--light-text);
                 }
-            }
 
-            &--active {
-                font-weight: bold;
-
-                .theme-redesign & {
+                &--active {
                     font-weight: inherit;
                     background-color: var(--color-bg-3);
                 }
             }
         }
-    }
 
-    &__input {
-        .theme-redesign & {
+        &__input {
             margin: 0.5rem;
             padding-left: 0.5rem;
             padding-right: 0.5rem;

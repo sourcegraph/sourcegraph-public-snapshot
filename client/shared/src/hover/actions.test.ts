@@ -16,7 +16,7 @@ import { FlatExtensionHostAPI } from '../api/contract'
 import { WorkspaceRootWithMetadata } from '../api/extension/extensionHostApi'
 import { integrationTestContext } from '../api/integration-test/testHelpers'
 import { TextDocumentPositionParameters } from '../api/protocol'
-import { SuccessGraphQLResult } from '../graphql/graphql'
+import { GraphQLResult, SuccessGraphQLResult } from '../graphql/graphql'
 import { PlatformContext, URLToFileContext } from '../platform/context'
 import { resetAllMemoizationCaches } from '../util/memoizeObservable'
 import {
@@ -356,7 +356,7 @@ describe('getDefinitionURL', () => {
 
     describe('if there is exactly 1 location result', () => {
         it('resolves the raw repo name and passes it to urlToFile()', async () => {
-            const requestGraphQL = <R>({ variables }: { variables: any }): Observable<SuccessGraphQLResult<R>> =>
+            const requestGraphQL = <R>({ variables }: { variables: any }): Observable<GraphQLResult<R>> =>
                 // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
                 of({
                     data: {
