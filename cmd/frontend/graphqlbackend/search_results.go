@@ -561,17 +561,13 @@ func withMode(args search.TextParameters, st query.SearchType, versionContext *s
 }
 
 func (r *searchResolver) toTextParameters(q query.Q) (*search.TextParameters, error) {
-	forceResultTypes := result.TypeEmpty
-	if r.PatternType == query.SearchTypeStructural {
-		forceResultTypes = result.TypeFile
-	}
-
 	b, err := query.ToBasicQuery(q)
 	if err != nil {
 		return nil, err
 	}
 	p := search.ToTextPatternInfo(b, r.protocol(), query.Identity)
 
+	forceResultTypes := result.TypeEmpty
 	if r.PatternType == query.SearchTypeStructural {
 		if p.Pattern == "" {
 			// Fallback to literal search for searching repos and files if
