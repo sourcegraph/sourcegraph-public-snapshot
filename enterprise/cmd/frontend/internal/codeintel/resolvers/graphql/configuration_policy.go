@@ -3,6 +3,7 @@ package graphql
 import (
 	"time"
 
+	"github.com/cockroachdb/errors"
 	"github.com/graph-gophers/graphql-go"
 
 	gql "github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
@@ -27,18 +28,17 @@ func (r *configurationPolicyResolver) Name() string {
 	return r.configurationPolicy.Name
 }
 
-func (r *configurationPolicyResolver) Type() gql.GitObjectType {
+func (r *configurationPolicyResolver) Type() (gql.GitObjectType, error) {
 	switch r.configurationPolicy.Type {
 	case "GIT_COMMIT":
-		return gql.GitObjectTypeCommit
+		return gql.GitObjectTypeCommit, nil
 	case "GIT_TAG":
-		return gql.GitObjectTypeTag
+		return gql.GitObjectTypeTag, nil
 	case "GIT_TREE":
-		return gql.GitObjectTypeTree
+		return gql.GitObjectTypeTree, nil
 	default:
+		return "", errors.Errorf("Unknown git object type %s", r.configurationPolicy.Type)
 	}
-
-	return ""
 }
 
 func (r *configurationPolicyResolver) Pattern() string {

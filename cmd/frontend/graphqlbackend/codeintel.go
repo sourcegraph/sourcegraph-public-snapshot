@@ -275,7 +275,7 @@ type UpdateRepositoryIndexConfigurationArgs struct {
 type CodeIntelligenceConfigurationPolicyResolver interface {
 	ID() graphql.ID
 	Name() string
-	Type() GitObjectType
+	Type() (GitObjectType, error)
 	Pattern() string
 	RetentionEnabled() bool
 	RetentionDurationHours() int32
