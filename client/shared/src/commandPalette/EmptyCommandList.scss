@@ -1,6 +1,6 @@
 .empty-command-list {
     position: relative;
-    color: var(--gray-08);
+    color: var(--empty-command-list-color);
     padding: 1rem;
     background-color: var(--color-bg-1);
 
@@ -18,11 +18,5 @@
         position: absolute;
         bottom: 1rem;
         right: 1rem;
-    }
-}
-
-.theme-dark {
-    .empty-command-list {
-        color: var(--gray-05);
     }
 }
