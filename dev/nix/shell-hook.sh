@@ -19,3 +19,6 @@ if [ ! -e ../../libsqlite3-pcre.so ]; then
 fi
 
 . ./start-postgres.sh
+
+# We disable postgres_exporter since it expects postgres to be running on TCP.
+export SRC_DEV_EXCEPT="${SRC_DEV_EXCEPT:-postgres_exporter}"
