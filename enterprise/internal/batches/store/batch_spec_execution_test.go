@@ -123,7 +123,7 @@ func testStoreChangesetSpecExecutions(t *testing.T, ctx context.Context, s *Stor
 		}
 
 		t.Run("All", func(t *testing.T) {
-			have, _, err := s.ListBatchSpecExecutions(ctx, ListBatchSpecExecutionsOpts{Cursor: 0, LimitOpts: LimitOpts{Limit: 10000}})
+			have, _, err := s.ListBatchSpecExecutions(ctx, ListBatchSpecExecutionsOpts{})
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -135,8 +135,6 @@ func testStoreChangesetSpecExecutions(t *testing.T, ctx context.Context, s *Stor
 		t.Run("WorkerHostname", func(t *testing.T) {
 			for _, exec := range reversedBatchSpecExecutions {
 				have, _, err := s.ListBatchSpecExecutions(ctx, ListBatchSpecExecutionsOpts{
-					Cursor:         0,
-					LimitOpts:      LimitOpts{Limit: 10000},
 					WorkerHostname: exec.WorkerHostname,
 				})
 				if err != nil {
@@ -151,9 +149,7 @@ func testStoreChangesetSpecExecutions(t *testing.T, ctx context.Context, s *Stor
 		t.Run("State", func(t *testing.T) {
 			for _, exec := range reversedBatchSpecExecutions {
 				have, _, err := s.ListBatchSpecExecutions(ctx, ListBatchSpecExecutionsOpts{
-					Cursor:    0,
-					LimitOpts: LimitOpts{Limit: 10000},
-					State:     exec.State,
+					State: exec.State,
 				})
 				if err != nil {
 					t.Fatal(err)
@@ -167,9 +163,7 @@ func testStoreChangesetSpecExecutions(t *testing.T, ctx context.Context, s *Stor
 		t.Run("Cancel", func(t *testing.T) {
 			for _, exec := range reversedBatchSpecExecutions {
 				have, _, err := s.ListBatchSpecExecutions(ctx, ListBatchSpecExecutionsOpts{
-					Cursor:    0,
-					LimitOpts: LimitOpts{Limit: 10000},
-					Cancel:    &exec.Cancel,
+					Cancel: &exec.Cancel,
 				})
 				if err != nil {
 					t.Fatal(err)

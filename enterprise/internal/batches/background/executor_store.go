@@ -97,8 +97,6 @@ func (s *executorStore) FetchCanceled(ctx context.Context, executorName string) 
 
 	t := true
 	cs, _, err := batchesStore.ListBatchSpecExecutions(ctx, store.ListBatchSpecExecutionsOpts{
-		Cursor:         0,
-		LimitOpts:      store.LimitOpts{Limit: 10000},
 		Cancel:         &t,
 		State:          btypes.BatchSpecExecutionStateProcessing,
 		WorkerHostname: executorName,

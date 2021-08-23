@@ -373,7 +373,7 @@ func (s *Store) CountBatchSpecExecutions(ctx context.Context, opts CountBatchSpe
 }
 
 var countBatchSpecExecutionsQueryFmtstr = `
--- source: enterprise/internal/batches/store.go:CountBatchSpecExecutions
+-- source: enterprise/internal/batches/store/batch_spec_execution.go:CountBatchSpecExecutions
 SELECT COUNT(batch_spec_executions.id)
 FROM batch_spec_executions
 WHERE %s
