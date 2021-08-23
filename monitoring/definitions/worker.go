@@ -159,6 +159,8 @@ func Worker() *monitoring.Container {
 				RecordResetFailures: shared.NoAlertsOption("none"),
 				Errors:              shared.NoAlertsOption("none"),
 			}),
+			shared.CodeInsights.NewInsightsQueryRunnerQueueGroup(containerName),
+			shared.CodeInsights.NewInsightsQueryRunnerWorkerGroup(containerName),
 
 			// Resource monitoring
 			shared.NewFrontendInternalAPIErrorResponseMonitoringGroup(containerName, monitoring.ObservableOwnerCodeIntel, nil),

@@ -3223,6 +3223,72 @@ This panel indicates lsif_dependency_index operation errors every 5m.
 
 <br />
 
+### Worker: Codeinsights: Query Runner Queue
+
+#### worker: insights_search_queue_queue_size
+
+This panel indicates code insights search queue queue size.
+
+<sub>*Managed by the [Sourcegraph Code-insights team](https://about.sourcegraph.com/handbook/engineering/code-insights).*</sub>
+
+<br />
+
+#### worker: insights_search_queue_queue_growth_rate
+
+This panel indicates code insights search queue queue growth rate over 30m.
+
+This value compares the rate of enqueues against the rate of finished jobs.
+
+	- A value < than 1 indicates that process rate > enqueue rate
+	- A value = than 1 indicates that process rate = enqueue rate
+	- A value > than 1 indicates that process rate < enqueue rate
+
+<sub>*Managed by the [Sourcegraph Code-insights team](https://about.sourcegraph.com/handbook/engineering/code-insights).*</sub>
+
+<br />
+
+### Worker: Codeinsights: insights queue processor
+
+#### worker: insights_search_queue_handlers
+
+This panel indicates handler active handlers.
+
+<sub>*Managed by the [Sourcegraph Code-insights team](https://about.sourcegraph.com/handbook/engineering/code-insights).*</sub>
+
+<br />
+
+#### worker: insights_search_queue_processor_total
+
+This panel indicates handler operations every 5m.
+
+<sub>*Managed by the [Sourcegraph Code-insights team](https://about.sourcegraph.com/handbook/engineering/code-insights).*</sub>
+
+<br />
+
+#### worker: insights_search_queue_processor_99th_percentile_duration
+
+This panel indicates 99th percentile successful handler operation duration over 5m.
+
+<sub>*Managed by the [Sourcegraph Code-insights team](https://about.sourcegraph.com/handbook/engineering/code-insights).*</sub>
+
+<br />
+
+#### worker: insights_search_queue_processor_errors_total
+
+This panel indicates handler operation errors every 5m.
+
+<sub>*Managed by the [Sourcegraph Code-insights team](https://about.sourcegraph.com/handbook/engineering/code-insights).*</sub>
+
+<br />
+
+#### worker: insights_search_queue_processor_error_rate
+
+This panel indicates handler operation error rate over 5m.
+
+<sub>*Managed by the [Sourcegraph Code-insights team](https://about.sourcegraph.com/handbook/engineering/code-insights).*</sub>
+
+<br />
+
 ### Worker: Internal service requests
 
 #### worker: frontend_internal_api_error_responses
