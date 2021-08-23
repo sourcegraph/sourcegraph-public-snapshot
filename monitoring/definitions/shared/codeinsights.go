@@ -12,7 +12,7 @@ type codeInsights struct{}
 // src_insights_search_queue_total
 // src_insights_search_queue_processor_total
 func (codeInsights) NewInsightsQueryRunnerQueueGroup(containerName string) monitoring.Group {
-	return Queue.NewGroup(containerName, monitoring.ObservableOwnerCodeIntel, QueueSizeGroupOptions{
+	return Queue.NewGroup(containerName, monitoring.ObservableOwnerCodeInsights, QueueSizeGroupOptions{
 		GroupConstructorOptions: GroupConstructorOptions{
 			Namespace:       namespace,
 			DescriptionRoot: "Query Runner Queue",
@@ -20,7 +20,7 @@ func (codeInsights) NewInsightsQueryRunnerQueueGroup(containerName string) monit
 
 			ObservableConstructorOptions: ObservableConstructorOptions{
 				MetricNameRoot:        "insights_search_queue",
-				MetricDescriptionRoot: "Code Insights search queue",
+				MetricDescriptionRoot: "code insights search queue",
 			},
 		},
 
@@ -40,10 +40,10 @@ func (codeInsights) NewInsightsQueryRunnerQueueGroup(containerName string) monit
 // src_insights_search_queue_processor_errors_total
 // src_insights_search_queue_processor_handlers
 func (codeInsights) NewInsightsQueryRunnerWorkerGroup(containerName string) monitoring.Group {
-	return Workerutil.NewGroup(containerName, monitoring.ObservableOwnerCodeIntel, WorkerutilGroupOptions{
+	return Workerutil.NewGroup(containerName, monitoring.ObservableOwnerCodeInsights, WorkerutilGroupOptions{
 		GroupConstructorOptions: GroupConstructorOptions{
 			Namespace:       namespace,
-			DescriptionRoot: "Insights queue processor",
+			DescriptionRoot: "insights queue processor",
 			Hidden:          true,
 
 			ObservableConstructorOptions: ObservableConstructorOptions{
