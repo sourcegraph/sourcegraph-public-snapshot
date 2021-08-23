@@ -1,7 +1,11 @@
+import CheckIcon from 'mdi-react/CheckIcon'
 import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
 import DeleteIcon from 'mdi-react/DeleteIcon'
+import ErrorIcon from 'mdi-react/ErrorIcon'
+import FileUploadIcon from 'mdi-react/FileUploadIcon'
 import InformationOutlineIcon from 'mdi-react/InformationOutlineIcon'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
+import ProgressClockIcon from 'mdi-react/ProgressClockIcon'
 import React, { FunctionComponent, useCallback, useEffect, useMemo, useState } from 'react'
 import { Redirect, RouteComponentProps } from 'react-router'
 import { Link } from 'react-router-dom'
@@ -17,27 +21,27 @@ import {
     FilteredConnection,
     FilteredConnectionQueryArguments,
 } from '@sourcegraph/web/src/components/FilteredConnection'
+import { Timeline, TimelineStage } from '@sourcegraph/web/src/components/Timeline'
 import { Container, PageHeader } from '@sourcegraph/wildcard'
 
 import { ErrorAlert } from '../../../components/alerts'
 import { PageTitle } from '../../../components/PageTitle'
 import { LsifUploadFields } from '../../../graphql-operations'
-import { fetchLsifUploads as defaultFetchLsifUploads } from '../list/backend'
+import { fetchLsifUploads as defaultFetchLsifUploads } from '../shared/backend'
 import { CodeIntelState } from '../shared/CodeIntelState'
 import { CodeIntelStateBanner } from '../shared/CodeIntelStateBanner'
 import { CodeIntelUploadOrIndexCommit } from '../shared/CodeIntelUploadOrIndexCommit'
 import { CodeIntelUploadOrIndexRepository } from '../shared/CodeIntelUploadOrIndexerRepository'
 import { CodeIntelUploadOrIndexIndexer } from '../shared/CodeIntelUploadOrIndexIndexer'
+import { CodeIntelUploadOrIndexLastActivity } from '../shared/CodeIntelUploadOrIndexLastActivity'
 import { CodeIntelUploadOrIndexRoot } from '../shared/CodeIntelUploadOrIndexRoot'
 
-import { deleteLsifUpload, fetchLsifUpload as defaultFetchUpload } from './backend'
-import { CodeIntelAssociatedIndex } from './CodeIntelAssociatedIndex'
-import { CodeIntelUploadMeta } from './CodeIntelUploadMeta'
-import { CodeIntelUploadTimeline } from './CodeIntelUploadTimeline'
+import { deleteLsifUpload as defaultDeleteLsifUpload, fetchLsifUpload as defaultFetchUpload } from './backend'
 
 export interface CodeIntelUploadPageProps extends RouteComponentProps<{ id: string }>, TelemetryProps {
     fetchLsifUpload?: typeof defaultFetchUpload
     fetchLsifUploads?: typeof defaultFetchLsifUploads
+    deleteLsifUpload?: typeof defaultDeleteLsifUpload
     now?: () => Date
 }
 
@@ -59,6 +63,7 @@ export const CodeIntelUploadPage: FunctionComponent<CodeIntelUploadPageProps> = 
     },
     fetchLsifUpload = defaultFetchUpload,
     fetchLsifUploads = defaultFetchLsifUploads,
+    deleteLsifUpload = defaultDeleteLsifUpload,
     telemetryService,
     now,
     ...props
@@ -106,7 +111,7 @@ export const CodeIntelUploadPage: FunctionComponent<CodeIntelUploadPageProps> = 
         } catch (error) {
             setDeletionOrError(error)
         }
-    }, [id, uploadOrError])
+    }, [id, uploadOrError, deleteLsifUpload])
 
     const queryDependencies = useCallback(
         (args: FilteredConnectionQueryArguments) => {
@@ -265,6 +270,162 @@ function shouldReload(upload: LsifUploadFields | ErrorLike | null | undefined): 
     return !isErrorLike(upload) && !(upload && terminalStates.has(upload.state))
 }
 
+interface CodeIntelUploadMetaProps {
+    node: LsifUploadFields
+    now?: () => Date
+}
+
+const CodeIntelUploadMeta: FunctionComponent<CodeIntelUploadMetaProps> = ({ node, now }) => (
+    <div className="card">
+        <div className="card-body">
+            <div className="card border-0">
+                <div className="card-body">
+                    <h3 className="card-title">
+                        <CodeIntelUploadOrIndexRepository node={node} />
+                    </h3>
+
+                    <p className="card-subtitle mb-2 text-muted">
+                        <CodeIntelUploadOrIndexLastActivity node={{ ...node, queuedAt: null }} now={now} />
+                    </p>
+
+                    <p className="card-text">
+                        Directory <CodeIntelUploadOrIndexRoot node={node} /> indexed at commit{' '}
+                        <CodeIntelUploadOrIndexCommit node={node} /> by <CodeIntelUploadOrIndexIndexer node={node} />
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+)
+
+interface CodeIntelUploadTimelineProps {
+    upload: LsifUploadFields
+    now?: () => Date
+    className?: string
+}
+
+enum FailedStage {
+    UPLOADING,
+    PROCESSING,
+}
+
+const CodeIntelUploadTimeline: FunctionComponent<CodeIntelUploadTimelineProps> = ({ upload, now, className }) => {
+    let failedStage: FailedStage | null = null
+    if (upload.state === LSIFUploadState.ERRORED && upload.startedAt === null) {
+        failedStage = FailedStage.UPLOADING
+    } else if (upload.state === LSIFUploadState.ERRORED && upload.startedAt !== null) {
+        failedStage = FailedStage.PROCESSING
+    }
+
+    const stages = useMemo(
+        () =>
+            [uploadStages, processingStages, terminalStages].flatMap(stageConstructor =>
+                stageConstructor(upload, failedStage)
+            ),
+        [upload, failedStage]
+    )
+
+    return <Timeline stages={stages} now={now} className={className} />
+}
+
+const uploadStages = (upload: LsifUploadFields, failedStage: FailedStage | null): TimelineStage[] => [
+    {
+        icon: <FileUploadIcon />,
+        text:
+            upload.state === LSIFUploadState.UPLOADING ||
+            (LSIFUploadState.ERRORED && failedStage === FailedStage.UPLOADING)
+                ? 'Upload started'
+                : 'Uploaded',
+        date: upload.uploadedAt,
+        className:
+            upload.state === LSIFUploadState.UPLOADING
+                ? 'bg-primary'
+                : upload.state === LSIFUploadState.ERRORED
+                ? failedStage === FailedStage.UPLOADING
+                    ? 'bg-danger'
+                    : 'bg-success'
+                : 'bg-success',
+    },
+]
+
+const processingStages = (upload: LsifUploadFields, failedStage: FailedStage | null): TimelineStage[] => [
+    {
+        icon: <ProgressClockIcon />,
+        text:
+            upload.state === LSIFUploadState.PROCESSING ||
+            (LSIFUploadState.ERRORED && failedStage === FailedStage.PROCESSING)
+                ? 'Processing started'
+                : 'Processed',
+        date: upload.startedAt,
+        className:
+            upload.state === LSIFUploadState.PROCESSING
+                ? 'bg-primary'
+                : upload.state === LSIFUploadState.ERRORED
+                ? 'bg-danger'
+                : 'bg-success',
+    },
+]
+
+const terminalStages = (upload: LsifUploadFields): TimelineStage[] =>
+    upload.state === LSIFUploadState.COMPLETED
+        ? [
+              {
+                  icon: <CheckIcon />,
+                  text: 'Finished',
+                  date: upload.finishedAt,
+                  className: 'bg-success',
+              },
+          ]
+        : upload.state === LSIFUploadState.ERRORED
+        ? [
+              {
+                  icon: <ErrorIcon />,
+                  text: 'Failed',
+                  date: upload.finishedAt,
+                  className: 'bg-danger',
+              },
+          ]
+        : []
+
+const CodeIntelAssociatedIndex: FunctionComponent<CodeIntelAssociatedIndexProps> = ({ node, now }) =>
+    node.associatedIndex && node.projectRoot ? (
+        <>
+            <div className="list-group position-relative">
+                <div className="codeintel-associated-index__grid mb-3">
+                    <div className="d-flex flex-column codeintel-associated-index__information">
+                        <div className="m-0">
+                            <h3 className="m-0 d-block d-md-inline">This upload was created by an auto-indexing job</h3>
+                        </div>
+
+                        <div>
+                            <small className="text-mute">
+                                <CodeIntelUploadOrIndexLastActivity
+                                    node={{ ...node.associatedIndex, uploadedAt: null }}
+                                    now={now}
+                                />
+                            </small>
+                        </div>
+                    </div>
+
+                    <span className="d-none d-md-inline codeintel-associated-index__state">
+                        <CodeIntelState node={node.associatedIndex} className="d-flex flex-column align-items-center" />
+                    </span>
+                    <span>
+                        <Link
+                            to={`/${node.projectRoot.repository.name}/-/settings/code-intelligence/indexes/${node.associatedIndex.id}`}
+                        >
+                            <ChevronRightIcon />
+                        </Link>
+                    </span>
+
+                    <span className="codeintel-associated-index__separator" />
+                </div>
+            </div>
+        </>
+    ) : (
+        <></>
+    )
+
 interface DependencyOrDependentNodeProps {
     node: LsifUploadFields
     now?: () => Date
@@ -272,9 +433,9 @@ interface DependencyOrDependentNodeProps {
 
 const DependencyOrDependentNode: FunctionComponent<DependencyOrDependentNodeProps> = ({ node }) => (
     <>
-        <span className="codeintel-upload-node__separator" />
+        <span className="codeintel-dependency-or-dependent-node__separator" />
 
-        <div className="d-flex flex-column codeintel-upload-node__information">
+        <div className="d-flex flex-column codeintel-dependency-or-dependent-node__information">
             <div className="m-0">
                 <h3 className="m-0 d-block d-md-inline">
                     <CodeIntelUploadOrIndexRepository node={node} />
@@ -289,7 +450,7 @@ const DependencyOrDependentNode: FunctionComponent<DependencyOrDependentNodeProp
             </div>
         </div>
 
-        <span className="d-none d-md-inline codeintel-upload-node__state">
+        <span className="d-none d-md-inline codeintel-dependency-or-dependent-node__state">
             <CodeIntelState node={node} className="d-flex flex-column align-items-center" />
         </span>
         <span>
@@ -345,3 +506,8 @@ const CodeIntelDeleteUpload: FunctionComponent<CodeIntelDeleteUploadProps> = ({
             <DeleteIcon className="icon-inline" /> Delete upload
         </button>
     )
+
+interface CodeIntelAssociatedIndexProps {
+    node: LsifUploadFields
+    now?: () => Date
+}
