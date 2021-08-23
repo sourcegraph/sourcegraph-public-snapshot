@@ -1040,6 +1040,7 @@ export function handleCodeHost({
                                 ...diffOrFileInfo.base,
                                 editor: await initializeModelAndViewerForFileInfo(diffOrFileInfo.base),
                             },
+                            head: undefined,
                         }
                     }
                     return {
@@ -1047,21 +1048,20 @@ export function handleCodeHost({
                             ...diffOrFileInfo.head,
                             editor: await initializeModelAndViewerForFileInfo(diffOrFileInfo.head),
                         },
+                        base: undefined,
                     }
                 }
 
                 const diffOrFileInfoWithEditor = await initializeModelAndViewerForDiffOrFileInfo(diffOrBlobInfo)
 
                 let scopeEditor: CodeEditorWithPartialModel
+
                 if ('blob' in diffOrFileInfoWithEditor) {
                     scopeEditor = diffOrFileInfoWithEditor.blob.editor
-                } else if (diffOrFileInfoWithEditor.head && diffOrFileInfoWithEditor.base) {
-                    // When both editors have been created, default is head
+                } else if (diffOrFileInfoWithEditor.head) {
                     scopeEditor = diffOrFileInfoWithEditor.head.editor
-                } else if (diffOrFileInfoWithEditor.base) {
-                    scopeEditor = diffOrFileInfoWithEditor.base.editor
                 } else {
-                    scopeEditor = diffOrFileInfoWithEditor.head.editor
+                    scopeEditor = diffOrFileInfoWithEditor.base!.editor
                 }
 
                 if (wasRemoved) {
