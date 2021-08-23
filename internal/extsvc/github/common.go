@@ -51,8 +51,8 @@ type Team struct {
 	Slug string `json:"slug"`
 	URL  string `json:"url"`
 
-	ReposCount   int `json:"repos_count"`
-	Organization Org `json:"organization"`
+	ReposCount   int `json:"repos_count,omitempty"`
+	Organization Org `json:"organization,omitempty"`
 }
 
 // A GitActor represents an actor in a Git commit (ie. an author or committer).
