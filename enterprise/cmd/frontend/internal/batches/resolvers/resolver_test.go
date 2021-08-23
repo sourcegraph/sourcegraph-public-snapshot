@@ -31,6 +31,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
+	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
 )
 
 func TestNullIDResilience(t *testing.T) {
@@ -386,19 +387,20 @@ func TestApplyBatchChange(t *testing.T) {
 
 	repoAPIID := graphqlbackend.MarshalRepositoryID(repo.ID)
 
+	falsy := overridable.FromBoolOrString(false)
 	batchSpec := &btypes.BatchSpec{
 		RawSpec: ct.TestRawBatchSpec,
-		Spec: btypes.BatchSpecFields{
+		Spec: &batcheslib.BatchSpec{
 			Name:        "my-batch-change",
 			Description: "My description",
-			ChangesetTemplate: btypes.ChangesetTemplate{
+			ChangesetTemplate: &batcheslib.ChangesetTemplate{
 				Title:  "Hello there",
 				Body:   "This is the body",
 				Branch: "my-branch",
-				Commit: btypes.CommitTemplate{
+				Commit: batcheslib.ExpandedGitCommitDescription{
 					Message: "Add hello world",
 				},
-				Published: overridable.FromBoolOrString(false),
+				Published: &falsy,
 			},
 		},
 		UserID:          userID,
@@ -539,7 +541,7 @@ func TestCreateBatchChange(t *testing.T) {
 
 	batchSpec := &btypes.BatchSpec{
 		RawSpec: ct.TestRawBatchSpec,
-		Spec: btypes.BatchSpecFields{
+		Spec: &batcheslib.BatchSpec{
 			Name:        "my-batch-change",
 			Description: "My description",
 		},
