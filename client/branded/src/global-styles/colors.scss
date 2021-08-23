@@ -148,6 +148,7 @@ $theme-colors: (
     --diff-remove-bg: #ffecec;
     --code-selection-bg: var(--gray-03);
     --sourcegraph-logo-text-color: #000000;
+    --dropdown-shadow-color: rgba(36, 41, 54, 0.2);
 
     // Forms
     --input-bg: var(--white);
@@ -210,6 +211,7 @@ $theme-colors: (
     --diff-remove-bg: #3e1d1d;
     --code-selection-bg: var(--gray-08);
     --sourcegraph-logo-text-color: var(--white);
+    --dropdown-shadow-color: rgba(11, 12, 15, 0.8);
 
     // Forms
     --input-bg: var(--gray-10);
