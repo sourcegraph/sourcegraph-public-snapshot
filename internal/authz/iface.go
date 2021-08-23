@@ -25,7 +25,7 @@ type ExternalUserPermissions struct {
 type FetchPermsOptions struct {
 	// InvalidateCaches indicates that caches added for optimization encountered during
 	// this fetch should be invalidated.
-	InvalidateCaches bool
+	InvalidateCaches bool `json:"invalidate_caches"`
 }
 
 // Provider defines a source of truth of which repositories a user is authorized to view. The
