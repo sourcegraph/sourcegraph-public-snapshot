@@ -2171,11 +2171,15 @@ extend type Mutation {
 
 
     If namespace is not specified, the current user's personal namespace is used.
+
+    Experimental: This API is likely to change in the future.
     """
     createBatchSpecExecution(spec: String!, namespace: ID): BatchSpecExecution!
 
     """
     Attempts to cancel the given batch spec execution. It must not have completed yet.
+
+    Experimental: This API is likely to change in the future.
     """
     cancelBatchSpecExecution(batchSpecExecution: ID!): BatchSpecExecution!
 }
@@ -2232,6 +2236,8 @@ extend type Query {
 
     """
     A list of batch spec executions.
+
+    Experimental: This API is likely to change in the future.
     """
     batchSpecExecutions(
         """
@@ -2744,6 +2750,8 @@ type BatchChangeConnection {
 
 """
 A list of batch spec executions.
+
+Experimental: This API is likely to change in the future.
 """
 type BatchSpecExecutionConnection {
     """
@@ -2962,6 +2970,8 @@ type BatchChangeDescription {
 
 """
 The possible states of a batch spec execution.
+
+Experimental: This API is likely to change in the future.
 """
 enum BatchSpecExecutionState {
     """
@@ -3002,6 +3012,8 @@ enum BatchSpecExecutionState {
 
 """
 A batch spec execution describes one server-side run of a batch change yaml input.
+
+Experimental: This API is likely to change in the future.
 """
 type BatchSpecExecution implements Node {
     """
@@ -3078,6 +3090,8 @@ type BatchSpecExecution implements Node {
 
 """
 Configuration and execution summary of a batch spec execution.
+
+Experimental: This API is likely to change in the future.
 """
 type BatchSpecExecutionSteps {
     """
