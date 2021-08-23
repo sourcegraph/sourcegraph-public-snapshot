@@ -17,12 +17,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
-	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/search/searchcontexts"
-	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
-	"github.com/sourcegraph/sourcegraph/internal/search/symbol"
 )
 
 const maxSearchSuggestions = 100
@@ -380,42 +377,31 @@ func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestion
 			return mockShowSymbolMatches()
 		}
 
-		repoOptions := r.toRepoOptions(r.Query, resolveRepositoriesOpts{})
-		resolved, err := r.resolveRepositories(ctx, repoOptions)
+		b, err := query.ToBasicQuery(r.Query)
 		if err != nil {
 			return nil, err
 		}
-
-		q, err := query.ToBasicQuery(r.Query)
-		if err != nil {
-			return nil, err
-		}
-		if !query.IsPatternAtom(q) {
+		if !query.IsPatternAtom(b) {
 			// Not an atomic pattern, can't guarantee it will behave well.
 			return nil, nil
 		}
-		p := search.ToTextPatternInfo(q, search.Batch, query.Identity)
-		if p.Pattern == "" {
-			return nil, nil
+
+		args, err := r.toTextParameters(r.Query)
+		if err != nil {
+			return nil, err
 		}
+		args.ResultTypes = result.TypeSymbol
 
-		ctx, cancel := context.WithTimeout(ctx, 1*time.Second)
-		defer cancel()
-
-		fileMatches, _, err := streaming.CollectStream(func(stream streaming.Sender) error {
-			return symbol.Search(ctx, &search.TextParameters{
-				PatternInfo:  p,
-				Repos:        resolved.RepoRevs,
-				Query:        r.Query,
-				Zoekt:        r.zoekt,
-				SearcherURLs: r.searcherURLs,
-			}, 7, stream)
-		})
+		res, err := r.doResults(ctx, args)
+		if errors.Is(err, context.DeadlineExceeded) {
+			err = nil
+		}
 		if err != nil {
 			return nil, err
 		}
 
 		results = make([]SearchSuggestionResolver, 0)
+		fileMatches := res.Matches
 		for _, match := range fileMatches {
 			fileMatch, ok := match.(*result.FileMatch)
 			if !ok {
