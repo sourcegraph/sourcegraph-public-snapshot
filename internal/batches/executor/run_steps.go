@@ -17,6 +17,7 @@ import (
 	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
 	"github.com/sourcegraph/src-cli/internal/batches/git"
 	"github.com/sourcegraph/src-cli/internal/batches/log"
+	"github.com/sourcegraph/src-cli/internal/batches/template"
 	"github.com/sourcegraph/src-cli/internal/batches/workspace"
 
 	yamlv3 "gopkg.in/yaml.v3"
@@ -33,7 +34,7 @@ type stepExecutionResult struct {
 	Outputs map[string]interface{} `json:"outputs"`
 	// PreviousStepResult is the StepResult of the step before Step, if Step !=
 	// 0.
-	PreviousStepResult StepResult `json:"previousStepResult"`
+	PreviousStepResult template.StepResult `json:"previousStepResult"`
 }
 
 type executionResult struct {
@@ -86,7 +87,7 @@ func runSteps(ctx context.Context, opts *executionOpts) (result executionResult,
 			Outputs:      make(map[string]interface{}),
 			Path:         opts.task.Path,
 		}
-		previousStepResult StepResult
+		previousStepResult template.StepResult
 		startStep          int
 	)
 
@@ -122,11 +123,11 @@ func runSteps(ctx context.Context, opts *executionOpts) (result executionResult,
 	for i := startStep; i < len(opts.task.Steps); i++ {
 		step := opts.task.Steps[i]
 
-		stepContext := StepContext{
+		stepContext := template.StepContext{
 			BatchChange: *opts.task.BatchChangeAttributes,
 			Repository:  *opts.task.Repository,
 			Outputs:     execResult.Outputs,
-			Steps: StepsContext{
+			Steps: template.StepsContext{
 				Path:    execResult.Path,
 				Changes: previousStepResult.Files,
 			},
@@ -145,7 +146,7 @@ func runSteps(ctx context.Context, opts *executionOpts) (result executionResult,
 			}
 		}
 
-		cond, err := evalStepCondition(step.IfCondition(), &stepContext)
+		cond, err := template.EvalStepCondition(step.IfCondition(), &stepContext)
 		if err != nil {
 			return execResult, nil, errors.Wrap(err, "evaluating step condition")
 		}
@@ -172,7 +173,7 @@ func runSteps(ctx context.Context, opts *executionOpts) (result executionResult,
 			return execResult, nil, errors.Wrap(err, "getting changed files in step")
 		}
 
-		result := StepResult{Files: changes, Stdout: &stdoutBuffer, Stderr: &stderrBuffer}
+		result := template.StepResult{Files: changes, Stdout: &stdoutBuffer, Stderr: &stderrBuffer}
 
 		// Set stepContext.Step to current step's results before rendering outputs
 		stepContext.Step = result
@@ -220,7 +221,7 @@ func executeSingleStep(
 	i int,
 	step batcheslib.Step,
 	imageDigest string,
-	stepContext *StepContext,
+	stepContext *template.StepContext,
 ) (bytes.Buffer, bytes.Buffer, error) {
 	// ----------
 	// PREPARATION
@@ -259,7 +260,7 @@ func executeSingleStep(
 	}
 
 	// Render the step.Env variables as templates.
-	env, err := renderStepMap(stepEnv, stepContext)
+	env, err := template.RenderStepMap(stepEnv, stepContext)
 	if err != nil {
 		return bytes.Buffer{}, bytes.Buffer{}, errors.Wrap(err, "parsing step environment")
 	}
@@ -334,11 +335,11 @@ func executeSingleStep(
 	return stdoutBuffer, stderrBuffer, nil
 }
 
-func setOutputs(stepOutputs batcheslib.Outputs, global map[string]interface{}, stepCtx *StepContext) error {
+func setOutputs(stepOutputs batcheslib.Outputs, global map[string]interface{}, stepCtx *template.StepContext) error {
 	for name, output := range stepOutputs {
 		var value bytes.Buffer
 
-		if err := renderStepTemplate("outputs-"+name, output.Value, &value, stepCtx); err != nil {
+		if err := template.RenderStepTemplate("outputs-"+name, output.Value, &value, stepCtx); err != nil {
 			return errors.Wrap(err, "parsing step run")
 		}
 
@@ -414,9 +415,9 @@ func probeImageForShell(ctx context.Context, image string) (shell, tempfile stri
 
 // createFilesToMount creates temporary files with the contents of Step.Files
 // that are to be mounted into the container that executes the step.
-func createFilesToMount(tempDir string, step batcheslib.Step, stepContext *StepContext) (map[string]*os.File, func(), error) {
+func createFilesToMount(tempDir string, step batcheslib.Step, stepContext *template.StepContext) (map[string]*os.File, func(), error) {
 	// Parse and render the step.Files.
-	files, err := renderStepMap(step.Files, stepContext)
+	files, err := template.RenderStepMap(step.Files, stepContext)
 	if err != nil {
 		return nil, nil, errors.Wrap(err, "parsing step files")
 	}
@@ -455,7 +456,7 @@ func createFilesToMount(tempDir string, step batcheslib.Step, stepContext *StepC
 // createRunScriptFile creates a temporary file and renders stepRun into it.
 //
 // It returns the location of the file, its content, a function to cleanup the file and possible errors.
-func createRunScriptFile(ctx context.Context, tempDir string, stepRun string, stepCtx *StepContext) (string, string, func(), error) {
+func createRunScriptFile(ctx context.Context, tempDir string, stepRun string, stepCtx *template.StepContext) (string, string, func(), error) {
 	// Set up a temporary file on the host filesystem to contain the
 	// script.
 	runScriptFile, err := ioutil.TempFile(tempDir, "")
@@ -468,7 +469,7 @@ func createRunScriptFile(ctx context.Context, tempDir string, stepRun string, st
 	// temp file we just created.
 	var runScript bytes.Buffer
 	out := io.MultiWriter(&runScript, runScriptFile)
-	if err := renderStepTemplate("step-run", stepRun, out, stepCtx); err != nil {
+	if err := template.RenderStepTemplate("step-run", stepRun, out, stepCtx); err != nil {
 		return "", "", nil, errors.Wrap(err, "parsing step run")
 	}
 

@@ -1,4 +1,4 @@
-package executor
+package template
 
 import (
 	"bytes"
@@ -51,7 +51,7 @@ func TestEvalStepCondition(t *testing.T) {
 	}
 
 	for _, tc := range tests {
-		got, err := evalStepCondition(tc.run, stepCtx)
+		got, err := EvalStepCondition(tc.run, stepCtx)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -217,7 +217,7 @@ ${{ steps.path }}
 		t.Run(tc.name, func(t *testing.T) {
 			var out bytes.Buffer
 
-			err := renderStepTemplate("testing", tc.run, &out, tc.stepCtx)
+			err := RenderStepTemplate("testing", tc.run, &out, tc.stepCtx)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -246,7 +246,7 @@ func TestRenderStepMap(t *testing.T) {
 		"/tmp/my-other-file2.txt": `${{ previous_step.deleted_files }}`,
 	}
 
-	have, err := renderStepMap(input, stepCtx)
+	have, err := RenderStepMap(input, stepCtx)
 	if err != nil {
 		t.Fatalf("unexpected error: %s", err)
 	}
@@ -348,7 +348,7 @@ ${{ steps.renamed_files }}
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			out, err := renderChangesetTemplateField("testing", tc.tmpl, tc.tmplCtx)
+			out, err := RenderChangesetTemplateField("testing", tc.tmpl, tc.tmplCtx)
 			if err != nil {
 				t.Fatal(err)
 			}

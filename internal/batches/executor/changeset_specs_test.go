@@ -10,6 +10,7 @@ import (
 	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
 	"github.com/sourcegraph/src-cli/internal/batches"
 	"github.com/sourcegraph/src-cli/internal/batches/git"
+	"github.com/sourcegraph/src-cli/internal/batches/template"
 )
 
 func TestCreateChangesetSpecs(t *testing.T) {
@@ -46,7 +47,7 @@ func TestCreateChangesetSpecs(t *testing.T) {
 	}
 
 	defaultTask := &Task{
-		BatchChangeAttributes: &BatchChangeAttributes{
+		BatchChangeAttributes: &template.BatchChangeAttributes{
 			Name:        "the name",
 			Description: "The description",
 		},

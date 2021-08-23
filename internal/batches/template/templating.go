@@ -1,4 +1,4 @@
-package executor
+package template
 
 import (
 	"bytes"
@@ -41,20 +41,20 @@ func isTrueOutput(output interface{ String() string }) bool {
 	return strings.TrimSpace(output.String()) == "true"
 }
 
-func evalStepCondition(condition string, stepCtx *StepContext) (bool, error) {
+func EvalStepCondition(condition string, stepCtx *StepContext) (bool, error) {
 	if condition == "" {
 		return true, nil
 	}
 
 	var out bytes.Buffer
-	if err := renderStepTemplate("step-condition", condition, &out, stepCtx); err != nil {
+	if err := RenderStepTemplate("step-condition", condition, &out, stepCtx); err != nil {
 		return false, errors.Wrap(err, "parsing step if")
 	}
 
 	return isTrueOutput(&out), nil
 }
 
-func renderStepTemplate(name, tmpl string, out io.Writer, stepCtx *StepContext) error {
+func RenderStepTemplate(name, tmpl string, out io.Writer, stepCtx *StepContext) error {
 	t, err := template.New(name).Delims(startDelim, endDelim).Funcs(builtins).Funcs(stepCtx.ToFuncMap()).Parse(tmpl)
 	if err != nil {
 		return errors.Wrap(err, "parsing step run")
@@ -63,13 +63,13 @@ func renderStepTemplate(name, tmpl string, out io.Writer, stepCtx *StepContext) 
 	return t.Execute(out, stepCtx)
 }
 
-func renderStepMap(m map[string]string, stepCtx *StepContext) (map[string]string, error) {
+func RenderStepMap(m map[string]string, stepCtx *StepContext) (map[string]string, error) {
 	rendered := make(map[string]string, len(m))
 
 	for k, v := range m {
 		var out bytes.Buffer
 
-		if err := renderStepTemplate(k, v, &out, stepCtx); err != nil {
+		if err := RenderStepTemplate(k, v, &out, stepCtx); err != nil {
 			return rendered, err
 		}
 
@@ -270,7 +270,7 @@ func (tmplCtx *ChangesetTemplateContext) ToFuncMap() template.FuncMap {
 	}
 }
 
-func renderChangesetTemplateField(name, tmpl string, tmplCtx *ChangesetTemplateContext) (string, error) {
+func RenderChangesetTemplateField(name, tmpl string, tmplCtx *ChangesetTemplateContext) (string, error) {
 	var out bytes.Buffer
 
 	t, err := template.New(name).Delims(startDelim, endDelim).Funcs(builtins).Funcs(tmplCtx.ToFuncMap()).Parse(tmpl)

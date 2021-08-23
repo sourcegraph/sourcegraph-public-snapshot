@@ -23,6 +23,7 @@ import (
 	"github.com/sourcegraph/src-cli/internal/batches/docker"
 	"github.com/sourcegraph/src-cli/internal/batches/git"
 	"github.com/sourcegraph/src-cli/internal/batches/mock"
+	"github.com/sourcegraph/src-cli/internal/batches/template"
 	"github.com/sourcegraph/src-cli/internal/batches/workspace"
 )
 
@@ -33,7 +34,7 @@ func TestExecutor_Integration(t *testing.T) {
 
 	addToPath(t, "testdata/dummydocker")
 
-	defaultBatchChangeAttributes := &BatchChangeAttributes{
+	defaultBatchChangeAttributes := &template.BatchChangeAttributes{
 		Name:        "integration-test-batch-change",
 		Description: "this is an integration test",
 	}
@@ -488,7 +489,7 @@ index 02a19af..c9644dd 100644
 `)
 
 		task := &Task{
-			BatchChangeAttributes: &BatchChangeAttributes{},
+			BatchChangeAttributes: &template.BatchChangeAttributes{},
 			Steps: []batcheslib.Step{
 				{Run: `echo -e "foobar\n" >> README.md`},
 			},
@@ -497,7 +498,7 @@ index 02a19af..c9644dd 100644
 				StepIndex:          0,
 				Diff:               cachedDiff,
 				Outputs:            map[string]interface{}{},
-				PreviousStepResult: StepResult{},
+				PreviousStepResult: template.StepResult{},
 			},
 			Repository: testRepo1,
 		}
@@ -594,7 +595,7 @@ index 0000000..257ae8e
 
 		task := &Task{
 			Repository:            testRepo1,
-			BatchChangeAttributes: &BatchChangeAttributes{},
+			BatchChangeAttributes: &template.BatchChangeAttributes{},
 			Steps: []batcheslib.Step{
 				{Run: `echo "this is step 1" >> README.txt`},
 				{Run: `echo "this is step 2" >> README.md`},
@@ -615,7 +616,7 @@ echo "previous_step.modified_files=${{ previous_step.modified_files }}" >> READM
 				Outputs: map[string]interface{}{
 					"myOutput": "my-output.txt",
 				},
-				PreviousStepResult: StepResult{
+				PreviousStepResult: template.StepResult{
 					Files: &git.Changes{
 						Modified: []string{"README.md"},
 						Added:    []string{"README.txt"},

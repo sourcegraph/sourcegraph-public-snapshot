@@ -183,7 +183,7 @@ func (svc *Service) EnsureImage(ctx context.Context, name string) (docker.Image,
 }
 
 func (svc *Service) BuildTasks(ctx context.Context, repos []*graphql.Repository, spec *batcheslib.BatchSpec) ([]*executor.Task, error) {
-	return executor.BuildTasks(ctx, spec, svc, repos)
+	return buildTasks(ctx, spec, svc, repos)
 }
 
 func (svc *Service) NewCoordinator(opts executor.NewCoordinatorOpts) *executor.Coordinator {
@@ -195,6 +195,8 @@ func (svc *Service) NewCoordinator(opts executor.NewCoordinatorOpts) *executor.C
 	return executor.NewCoordinator(opts)
 }
 
+// ValidateChangesetSpecs validates that among all branch changesets there are no
+// duplicates in branch names in a single repo.
 func (svc *Service) ValidateChangesetSpecs(repos []*graphql.Repository, specs []*batches.ChangesetSpec) error {
 	repoByID := make(map[string]*graphql.Repository, len(repos))
 	for _, repo := range repos {
@@ -606,26 +608,25 @@ func (svc *Service) resolveRepositorySearch(ctx context.Context, query string) (
 	return repos, nil
 }
 
-const findDirectoryQuery = `
-query DirectoriesContainingFile($query: String!) {
-    search(query: $query, version: V2) {
-        results {
-            results {
-                __typename
-                ... on FileMatch {
-                    file { path }
-                }
-            }
-        }
-    }
-}
-`
-
 // findDirectoriesResult maps the name of the GraphQL query to its results. The
 // name is the repository's ID.
 type findDirectoriesResult map[string]struct {
 	Results struct{ Results []searchResult }
 }
+
+const searchQueryTmpl = `%s: search(query: %q, version: V2) {
+	results {
+		results {
+			__typename
+			... on FileMatch {
+				file { path }
+			}
+		}
+	}
+}
+`
+
+const findDirectoriesInReposBatchSize = 50
 
 // FindDirectoriesInRepos returns a map of repositories and the locations of
 // files matching the given file name in the repository.
@@ -633,8 +634,6 @@ type findDirectoriesResult map[string]struct {
 // No "/" at the beginning.
 // A dot (".") represents the root directory.
 func (svc *Service) FindDirectoriesInRepos(ctx context.Context, fileName string, repos ...*graphql.Repository) (map[*graphql.Repository][]string, error) {
-	const batchSize = 50
-
 	// Build up unique identifiers that are safe to use as GraphQL query aliases.
 	reposByQueryID := map[string]*graphql.Repository{}
 	queryIDByRepo := map[*graphql.Repository]string{}
@@ -645,20 +644,8 @@ func (svc *Service) FindDirectoriesInRepos(ctx context.Context, fileName string,
 	}
 
 	findInBatch := func(batch []*graphql.Repository, results map[*graphql.Repository][]string) error {
-		const searchQueryTmpl = `%s: search(query: %q, version: V2) {
-        results {
-            results {
-                __typename
-                ... on FileMatch {
-                    file { path }
-                }
-            }
-        }
-	}
-`
-
 		var a strings.Builder
-		a.WriteString("query DirectoriesContainingFile() {\n")
+		a.WriteString("query DirectoriesContainingFile {\n")
 
 		for _, repo := range batch {
 			query := fmt.Sprintf(`file:(^|/)%s$ repo:^%s$ type:path count:99999`, regexp.QuoteMeta(fileName), regexp.QuoteMeta(repo.Name))
@@ -704,12 +691,12 @@ func (svc *Service) FindDirectoriesInRepos(ctx context.Context, fileName string,
 
 	results := make(map[*graphql.Repository][]string)
 
-	for start := 0; start < len(repos); start += batchSize {
+	for start := 0; start < len(repos); start += findDirectoriesInReposBatchSize {
 		if err := ctx.Err(); err != nil {
 			return nil, err
 		}
 
-		end := start + batchSize
+		end := start + findDirectoriesInReposBatchSize
 		if end > len(repos) {
 			end = len(repos)
 		}

@@ -1,4 +1,4 @@
-package executor
+package template
 
 import (
 	"testing"
@@ -279,7 +279,7 @@ func TestIsStaticBool(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 
-			isStatic, boolVal, err := isStaticBool(tt.template, partialEvalStepCtx)
+			isStatic, boolVal, err := IsStaticBool(tt.template, partialEvalStepCtx)
 			if err != nil {
 				t.Fatal(err)
 			}

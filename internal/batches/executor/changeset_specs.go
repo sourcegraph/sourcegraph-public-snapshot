@@ -8,6 +8,7 @@ import (
 	"github.com/sourcegraph/go-diff/diff"
 	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
 	"github.com/sourcegraph/src-cli/internal/batches"
+	"github.com/sourcegraph/src-cli/internal/batches/template"
 )
 
 var errOptionalPublishedUnsupported = errors.New(`This Sourcegraph version requires the "published" field to be specified in the batch spec; upgrade to version 3.30.0 or later to be able to omit the published field and control publication from the UI.`)
@@ -15,9 +16,9 @@ var errOptionalPublishedUnsupported = errors.New(`This Sourcegraph version requi
 func createChangesetSpecs(task *Task, result executionResult, features batches.FeatureFlags) ([]*batches.ChangesetSpec, error) {
 	repo := task.Repository.Name
 
-	tmplCtx := &ChangesetTemplateContext{
+	tmplCtx := &template.ChangesetTemplateContext{
 		BatchChangeAttributes: *task.BatchChangeAttributes,
-		Steps: StepsContext{
+		Steps: template.StepsContext{
 			Changes: result.ChangedFiles,
 			Path:    result.Path,
 		},
@@ -36,27 +37,27 @@ func createChangesetSpecs(task *Task, result executionResult, features batches.F
 		}
 	} else {
 		var err error
-		authorName, err = renderChangesetTemplateField("authorName", task.Template.Commit.Author.Name, tmplCtx)
+		authorName, err = template.RenderChangesetTemplateField("authorName", task.Template.Commit.Author.Name, tmplCtx)
 		if err != nil {
 			return nil, err
 		}
-		authorEmail, err = renderChangesetTemplateField("authorEmail", task.Template.Commit.Author.Email, tmplCtx)
+		authorEmail, err = template.RenderChangesetTemplateField("authorEmail", task.Template.Commit.Author.Email, tmplCtx)
 		if err != nil {
 			return nil, err
 		}
 	}
 
-	title, err := renderChangesetTemplateField("title", task.Template.Title, tmplCtx)
+	title, err := template.RenderChangesetTemplateField("title", task.Template.Title, tmplCtx)
 	if err != nil {
 		return nil, err
 	}
 
-	body, err := renderChangesetTemplateField("body", task.Template.Body, tmplCtx)
+	body, err := template.RenderChangesetTemplateField("body", task.Template.Body, tmplCtx)
 	if err != nil {
 		return nil, err
 	}
 
-	message, err := renderChangesetTemplateField("message", task.Template.Commit.Message, tmplCtx)
+	message, err := template.RenderChangesetTemplateField("message", task.Template.Commit.Message, tmplCtx)
 	if err != nil {
 		return nil, err
 	}
@@ -64,7 +65,7 @@ func createChangesetSpecs(task *Task, result executionResult, features batches.F
 	// TODO: As a next step, we should extend the ChangesetTemplateContext to also include
 	// TransformChanges.Group and then change validateGroups and groupFileDiffs to, for each group,
 	// render the branch name *before* grouping the diffs.
-	defaultBranch, err := renderChangesetTemplateField("branch", task.Template.Branch, tmplCtx)
+	defaultBranch, err := template.RenderChangesetTemplateField("branch", task.Template.Branch, tmplCtx)
 	if err != nil {
 		return nil, err
 	}

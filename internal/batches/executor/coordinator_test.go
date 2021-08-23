@@ -15,6 +15,7 @@ import (
 	"github.com/sourcegraph/src-cli/internal/batches/git"
 	"github.com/sourcegraph/src-cli/internal/batches/graphql"
 	"github.com/sourcegraph/src-cli/internal/batches/mock"
+	"github.com/sourcegraph/src-cli/internal/batches/template"
 )
 
 func TestCoordinator_Execute(t *testing.T) {
@@ -266,7 +267,7 @@ func TestCoordinator_Execute(t *testing.T) {
 			for _, t := range tc.tasks {
 				t.TransformChanges = tc.batchSpec.TransformChanges
 				t.Template = tc.batchSpec.ChangesetTemplate
-				t.BatchChangeAttributes = &BatchChangeAttributes{
+				t.BatchChangeAttributes = &template.BatchChangeAttributes{
 					Name:        tc.batchSpec.Name,
 					Description: tc.batchSpec.Description,
 				}
@@ -359,7 +360,7 @@ func TestCoordinator_Execute_StepCaching(t *testing.T) {
 			{Run: `echo "three"`},
 		},
 		Repository:            testRepo1,
-		BatchChangeAttributes: &BatchChangeAttributes{},
+		BatchChangeAttributes: &template.BatchChangeAttributes{},
 	}
 
 	executor := &dummyExecutor{}
@@ -530,9 +531,7 @@ func (d *dummyTaskExecutionUI) TaskFinished(t *Task, err error) {
 	d.mu.Lock()
 	defer d.mu.Unlock()
 
-	if _, ok := d.started[t]; ok {
-		delete(d.started, t)
-	}
+	delete(d.started, t)
 	if err != nil {
 		d.finishedWithErr[t] = struct{}{}
 	} else {

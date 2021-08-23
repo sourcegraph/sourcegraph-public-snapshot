@@ -1,4 +1,4 @@
-package executor
+package template
 
 import (
 	"bytes"
@@ -9,7 +9,7 @@ import (
 	"text/template/parse"
 )
 
-// isStaticBool parses the input as a text/template and attempts to evaluate it
+// IsStaticBool parses the input as a text/template and attempts to evaluate it
 // with only the ahead-of-execution information available in StepContext.
 //
 // To do that it first calls parseAndPartialEval to evaluate the template as
@@ -22,7 +22,7 @@ import (
 //
 // If only text is left we check whether that text equals "true". The result of
 // that check is the second return value.
-func isStaticBool(input string, ctx *StepContext) (isStatic bool, boolVal bool, err error) {
+func IsStaticBool(input string, ctx *StepContext) (isStatic bool, boolVal bool, err error) {
 	t, err := parseAndPartialEval(input, ctx)
 	if err != nil {
 		return false, false, err

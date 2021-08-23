@@ -1,4 +1,4 @@
-package executor
+package service
 
 import (
 	"context"
@@ -6,28 +6,30 @@ import (
 
 	"github.com/gobwas/glob"
 	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
+	"github.com/sourcegraph/src-cli/internal/batches/executor"
 	"github.com/sourcegraph/src-cli/internal/batches/graphql"
+	"github.com/sourcegraph/src-cli/internal/batches/template"
 )
 
-type DirectoryFinder interface {
+type directoryFinder interface {
 	FindDirectoriesInRepos(ctx context.Context, fileName string, repos ...*graphql.Repository) (map[*graphql.Repository][]string, error)
 }
 
 type taskBuilder struct {
 	spec   *batcheslib.BatchSpec
-	finder DirectoryFinder
+	finder directoryFinder
 }
 
-// BuildTasks returns tasks for all the workspaces determined for the given spec.
-func BuildTasks(ctx context.Context, spec *batcheslib.BatchSpec, finder DirectoryFinder, repos []*graphql.Repository) ([]*Task, error) {
+// buildTasks returns tasks for all the workspaces determined for the given spec.
+func buildTasks(ctx context.Context, spec *batcheslib.BatchSpec, finder directoryFinder, repos []*graphql.Repository) ([]*executor.Task, error) {
 	tb := &taskBuilder{spec: spec, finder: finder}
 	return tb.buildAll(ctx, repos)
 }
 
-func (tb *taskBuilder) buildTask(r *graphql.Repository, path string, onlyWorkspace bool) (*Task, bool, error) {
-	stepCtx := &StepContext{
+func (tb *taskBuilder) buildTask(r *graphql.Repository, path string, onlyWorkspace bool) (*executor.Task, bool, error) {
+	stepCtx := &template.StepContext{
 		Repository: *r,
-		BatchChange: BatchChangeAttributes{
+		BatchChange: template.BatchChangeAttributes{
 			Name:        tb.spec.Name,
 			Description: tb.spec.Description,
 		},
@@ -40,7 +42,7 @@ func (tb *taskBuilder) buildTask(r *graphql.Repository, path string, onlyWorkspa
 			continue
 		}
 
-		static, boolVal, err := isStaticBool(step.IfCondition(), stepCtx)
+		static, boolVal, err := template.IsStaticBool(step.IfCondition(), stepCtx)
 		if err != nil {
 			return nil, false, err
 		}
@@ -64,7 +66,7 @@ func (tb *taskBuilder) buildTask(r *graphql.Repository, path string, onlyWorkspa
 		path = ""
 	}
 
-	return &Task{
+	return &executor.Task{
 		Repository:         r,
 		Path:               path,
 		Steps:              taskSteps,
@@ -72,21 +74,21 @@ func (tb *taskBuilder) buildTask(r *graphql.Repository, path string, onlyWorkspa
 
 		TransformChanges: tb.spec.TransformChanges,
 		Template:         tb.spec.ChangesetTemplate,
-		BatchChangeAttributes: &BatchChangeAttributes{
+		BatchChangeAttributes: &template.BatchChangeAttributes{
 			Name:        tb.spec.Name,
 			Description: tb.spec.Description,
 		},
 	}, true, nil
 }
 
-func (tb *taskBuilder) buildAll(ctx context.Context, repos []*graphql.Repository) ([]*Task, error) {
+func (tb *taskBuilder) buildAll(ctx context.Context, repos []*graphql.Repository) ([]*executor.Task, error) {
 	// Find workspaces in repositories, if configured
 	workspaces, root, err := tb.findWorkspaces(ctx, repos, tb.spec.Workspaces)
 	if err != nil {
 		return nil, err
 	}
 
-	var tasks []*Task
+	var tasks []*executor.Task
 	for repo, ws := range workspaces {
 		for _, path := range ws.paths {
 			t, ok, err := tb.buildTask(repo, path, ws.onlyFetchWorkspace)
