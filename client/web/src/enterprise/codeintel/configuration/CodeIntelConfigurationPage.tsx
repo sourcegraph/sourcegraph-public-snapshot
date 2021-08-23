@@ -1,3 +1,4 @@
+import classNames from 'classnames'
 import * as H from 'history'
 import PencilIcon from 'mdi-react/PencilIcon'
 import TrashIcon from 'mdi-react/TrashIcon'
@@ -26,11 +27,15 @@ import {
 } from './backend'
 import allConfigSchema from './schema.json'
 import { formatDurationValue } from './shared'
+import { jsx } from '@storybook/theming'
+import { DirectiveLocation } from 'graphql'
 
 export enum State {
     Idle,
     Deleting,
 }
+
+type SelectedTab = 'globalPolicies' | 'repositoryPolicies' | 'indexConfiguration'
 
 export interface CodeIntelConfigurationPageProps extends RouteComponentProps<{}>, ThemeProps, TelemetryProps {
     repo?: { id: string }
@@ -41,6 +46,9 @@ export interface CodeIntelConfigurationPageProps extends RouteComponentProps<{}>
     getConfigurationForRepository?: typeof defaultGetConfigurationForRepository
     getInferredConfigurationForRepository?: typeof defaultGetInferredConfigurationForRepository
     history: H.History
+
+    /** For testing only. */
+    openTab?: SelectedTab
 }
 
 export const CodeIntelConfigurationPage: FunctionComponent<CodeIntelConfigurationPageProps> = ({
@@ -54,9 +62,13 @@ export const CodeIntelConfigurationPage: FunctionComponent<CodeIntelConfiguratio
     isLightTheme,
     telemetryService,
     history,
+    openTab,
 }) => {
     useEffect(() => telemetryService.logViewEvent('CodeIntelConfigurationPage'), [telemetryService])
 
+    const [selectedTab, setSelectedTab] = useState<SelectedTab>(
+        openTab ?? repo ? 'repositoryPolicies' : 'globalPolicies'
+    )
     const [policies, setPolicies] = useState<CodeIntelligenceConfigurationPolicyFields[]>()
     const [globalPolicies, setGlobalPolicies] = useState<CodeIntelligenceConfigurationPolicyFields[]>()
     const [fetchError, setFetchError] = useState<Error>()
@@ -160,92 +172,139 @@ export const CodeIntelConfigurationPage: FunctionComponent<CodeIntelConfiguratio
                 className="mb-3"
             />
 
-            <Container>
-                <h3>Global policies</h3>
-
-                {repo === undefined && deleteError && (
-                    <ErrorAlert prefix="Error deleting configuration policy" error={deleteError} />
-                )}
-
-                <PoliciesList
-                    policies={globalPolicies}
-                    deletePolicy={repo ? undefined : globalDeletePolicy}
-                    disabled={state !== State.Idle}
-                    indexingEnabled={indexingEnabled}
-                    buttonFragment={repo === undefined ? policyListButtonFragment : undefined}
-                    history={history}
-                />
-            </Container>
-
             {repo && (
-                <RepoConfiguration
-                    repoId={repo.id}
-                    policies={policies}
-                    deletePolicy={deletePolicy}
-                    deleteError={deleteError}
-                    disabled={state !== State.Idle}
-                    indexingEnabled={indexingEnabled}
-                    policyListButtonFragment={policyListButtonFragment}
-                    getConfigurationForRepository={getConfigurationForRepository}
-                    getInferredConfigurationForRepository={getInferredConfigurationForRepository}
-                    updateConfigurationForRepository={updateConfigurationForRepository}
-                    isLightTheme={isLightTheme}
-                    telemetryService={telemetryService}
-                    history={history}
-                />
+                <CodeIntelligenceConfigurationTabHeader selectedTab={selectedTab} setSelectedTab={setSelectedTab} />
             )}
+
+            <Container>
+                {selectedTab === 'globalPolicies' ? (
+                    <>
+                        <h3>Global policies</h3>
+
+                        {repo === undefined && deleteError && (
+                            <ErrorAlert prefix="Error deleting configuration policy" error={deleteError} />
+                        )}
+
+                        <PoliciesList
+                            policies={globalPolicies}
+                            deletePolicy={repo ? undefined : globalDeletePolicy}
+                            disabled={state !== State.Idle}
+                            indexingEnabled={indexingEnabled}
+                            buttonFragment={repo === undefined ? policyListButtonFragment : undefined}
+                            history={history}
+                        />
+                    </>
+                ) : selectedTab === 'repositoryPolicies' ? (
+                    <>
+                        <h3>Repository-specific policies</h3>
+
+                        {deleteError && <ErrorAlert prefix="Error deleting configuration policy" error={deleteError} />}
+
+                        <PoliciesList
+                            policies={policies}
+                            deletePolicy={deletePolicy}
+                            disabled={state !== State.Idle}
+                            indexingEnabled={indexingEnabled}
+                            buttonFragment={policyListButtonFragment}
+                            history={history}
+                        />
+                    </>
+                ) : (
+                    selectedTab === 'indexConfiguration' &&
+                    repo &&
+                    indexingEnabled && (
+                        <>
+                            <h3>Auto-indexing configuration</h3>
+
+                            <ConfigurationEditor
+                                repoId={repo.id}
+                                updateConfigurationForRepository={updateConfigurationForRepository}
+                                getConfigurationForRepository={getConfigurationForRepository}
+                                getInferredConfigurationForRepository={getInferredConfigurationForRepository}
+                                isLightTheme={isLightTheme}
+                                telemetryService={telemetryService}
+                                history={history}
+                            />
+                        </>
+                    )
+                )}
+            </Container>
         </>
     )
 }
 
-interface RepoConfigurationProps extends ThemeProps, TelemetryProps {
-    repoId: string
-    policies?: CodeIntelligenceConfigurationPolicyFields[]
-    deletePolicy: (id: string, name: string) => Promise<void>
-    deleteError?: Error
-    disabled: boolean
-    indexingEnabled: boolean
-    policyListButtonFragment: JSX.Element
-    getConfigurationForRepository: typeof defaultGetConfigurationForRepository
-    getInferredConfigurationForRepository: typeof defaultGetInferredConfigurationForRepository
-    updateConfigurationForRepository: typeof defaultUpdateConfigurationForRepository
-    history: H.History
+const CodeIntelligenceConfigurationTabHeader: React.FunctionComponent<{
+    selectedTab: SelectedTab
+    setSelectedTab: (selectedTab: SelectedTab) => void
+}> = ({ selectedTab, setSelectedTab }) => {
+    const onGlobalPolicies = useCallback<React.MouseEventHandler>(
+        event => {
+            event.preventDefault()
+            setSelectedTab('globalPolicies')
+        },
+        [setSelectedTab]
+    )
+    const onRepositoryPolicies = useCallback<React.MouseEventHandler>(
+        event => {
+            event.preventDefault()
+            setSelectedTab('repositoryPolicies')
+        },
+        [setSelectedTab]
+    )
+    const onIndexConfiguratino = useCallback<React.MouseEventHandler>(
+        event => {
+            event.preventDefault()
+            setSelectedTab('indexConfiguration')
+        },
+        [setSelectedTab]
+    )
+
+    return (
+        <div className="overflow-auto mb-2">
+            <ul className="nav nav-tabs d-inline-flex d-sm-flex flex-nowrap text-nowrap">
+                <li className="nav-item">
+                    {/* eslint-disable-next-line jsx-a11y/anchor-is-valid */}
+                    <a
+                        href=""
+                        onClick={onGlobalPolicies}
+                        className={classNames('nav-link', selectedTab === 'globalPolicies' && 'active')}
+                        role="button"
+                    >
+                        <span className="text-content" data-tab-content="Global policies">
+                            Global policies
+                        </span>
+                    </a>
+                </li>
+                <li className="nav-item">
+                    {/* eslint-disable-next-line jsx-a11y/anchor-is-valid */}
+                    <a
+                        href=""
+                        onClick={onRepositoryPolicies}
+                        className={classNames('nav-link', selectedTab === 'repositoryPolicies' && 'active')}
+                        role="button"
+                    >
+                        <span className="text-content" data-tab-content="Repository-specific policies">
+                            Repository-specific policies
+                        </span>
+                    </a>
+                </li>
+                <li className="nav-item">
+                    {/* eslint-disable-next-line jsx-a11y/anchor-is-valid */}
+                    <a
+                        href=""
+                        onClick={onIndexConfiguratino}
+                        className={classNames('nav-link', selectedTab === 'indexConfiguration' && 'active')}
+                        role="button"
+                    >
+                        <span className="text-content" data-tab-content="Index configuration">
+                            Index configuration
+                        </span>
+                    </a>
+                </li>
+            </ul>
+        </div>
+    )
 }
-
-const RepoConfiguration: FunctionComponent<RepoConfigurationProps> = ({
-    policies,
-    deletePolicy,
-    deleteError,
-    disabled,
-    indexingEnabled,
-    policyListButtonFragment,
-    ...props
-}) => (
-    <>
-        <Container className="mt-2">
-            <h3>Repository-specific policies</h3>
-
-            {deleteError && <ErrorAlert prefix="Error deleting configuration policy" error={deleteError} />}
-
-            <PoliciesList
-                policies={policies}
-                deletePolicy={deletePolicy}
-                disabled={disabled}
-                indexingEnabled={indexingEnabled}
-                buttonFragment={policyListButtonFragment}
-                history={props.history}
-            />
-        </Container>
-
-        {indexingEnabled && (
-            <Container className="mt-2 code-intel-index-configuration">
-                <h3>Auto-indexing configuration</h3>
-
-                <ConfigurationEditor {...props} />
-            </Container>
-        )}
-    </>
-)
 
 interface PoliciesListProps {
     policies?: CodeIntelligenceConfigurationPolicyFields[]
@@ -270,30 +329,23 @@ const PoliciesList: FunctionComponent<PoliciesListProps> = ({ policies, buttonFr
         </>
     )
 
-interface CodeIntelligencePolicyTableProps {
-    indexingEnabled: boolean
-    disabled: boolean
-    policies: CodeIntelligenceConfigurationPolicyFields[]
-    deletePolicy?: (id: string, name: string) => Promise<void>
-    history: H.History
-}
-
 const describeRetentionPolicy: (policy: CodeIntelligenceConfigurationPolicyFields) => JSX.Element = policy =>
     policy.retentionEnabled ? (
         <p>
             <strong>Retention policy:</strong>{' '}
             <span>
                 Retain uploads used to resolve code intelligence queries for{' '}
-                {policy.type === GitObjectType.GIT_TREE
+                {policy.type === GitObjectType.GIT_COMMIT
+                    ? 'the matching commit'
+                    : policy.type === GitObjectType.GIT_TAG
+                    ? 'the matching tags'
+                    : policy.type === GitObjectType.GIT_TREE
                     ? !policy.retainIntermediateCommits
-                        ? 'the tip of this branch'
-                        : 'any commit on this branch'
-                    : `this ${policy.type}`}{' '}
-                {policy.retentionDurationHours === 0 ? (
-                    <></>
-                ) : (
-                    <>for at least {formatDurationValue(policy.retentionDurationHours)} after upload</>
-                )}
+                        ? 'the tip of the matching branches'
+                        : 'any commit on the matching branches'
+                    : ''}
+                {policy.retentionDurationHours !== 0 &&
+                    `for at least ${formatDurationValue(policy.retentionDurationHours)} after upload`}
                 .
             </span>
         </p>
@@ -305,21 +357,30 @@ const describeIndexingPolicy: (policy: CodeIntelligenceConfigurationPolicyFields
     policy.indexingEnabled ? (
         <p>
             <strong>Indexing policy:</strong> Auto-index{' '}
-            {policy.type === GitObjectType.GIT_TREE
-                ? !policy.indexIntermediateCommits
-                    ? 'the tip of this branch'
-                    : 'all commits on this branch'
-                : `this ${policy.type}`}{' '}
-            {policy.indexCommitMaxAgeHours === 0 ? (
-                <></>
-            ) : (
-                <>if the target commit is no older than {formatDurationValue(policy.indexCommitMaxAgeHours)} </>
-            )}
+            {policy.type === GitObjectType.GIT_COMMIT
+                ? 'the matching commit'
+                : policy.type === GitObjectType.GIT_TAG
+                ? 'the matching tags'
+                : policy.type === GitObjectType.GIT_TREE
+                ? !policy.retainIntermediateCommits
+                    ? 'the tip of the matching branches'
+                    : 'any commit on the matching branches'
+                : ''}
+            {policy.indexCommitMaxAgeHours !== 0 &&
+                ` if the target commit is no older than ${formatDurationValue(policy.indexCommitMaxAgeHours)}`}
             .
         </p>
     ) : (
         <p className="text-muted">Auto-indexing disabled.</p>
     )
+
+interface CodeIntelligencePolicyTableProps {
+    indexingEnabled: boolean
+    disabled: boolean
+    policies: CodeIntelligenceConfigurationPolicyFields[]
+    deletePolicy?: (id: string, name: string) => Promise<void>
+    history: H.History
+}
 
 const CodeIntelligencePolicyTable: FunctionComponent<CodeIntelligencePolicyTableProps> = ({
     indexingEnabled,
@@ -328,62 +389,67 @@ const CodeIntelligencePolicyTable: FunctionComponent<CodeIntelligencePolicyTable
     deletePolicy,
     history,
 }) => (
-    <table className="table table-striped table-borderless">
-        <thead>
-            <tr>
-                <th>Rule name</th>
-                <th>Type</th>
-                <th>Pattern</th>
-                <th>Policy</th>
-                {deletePolicy && <th>Actions</th>}
-            </tr>
-        </thead>
-        <tbody>
-            {policies.map(policy => (
-                <tr key={policy.id}>
-                    <td>{policy.name}</td>
-                    <td>
-                        {policy.type === GitObjectType.GIT_COMMIT
-                            ? 'commit'
-                            : policy.type === GitObjectType.GIT_TAG
-                            ? 'tag'
-                            : policy.type === GitObjectType.GIT_TREE
-                            ? 'branch'
-                            : ''}
-                    </td>
-                    <td className="text-monospace">{policy.pattern}</td>
-                    <td>
-                        {indexingEnabled && !policy.retentionEnabled && !policy.indexingEnabled ? (
-                            <p className="text-muted">Data retention and auto-indexing disabled.</p>
-                        ) : (
-                            <>
-                                {describeRetentionPolicy(policy)}
-                                {indexingEnabled && describeIndexingPolicy(policy)}
-                            </>
-                        )}
-                    </td>
+    <div className="codeintel-configuration-policies__grid mb-3">
+        {policies.map(policy => (
+            <>
+                <span className="codeintel-configuration-policy-node__separator" />
+
+                <div className="d-flex flex-column codeintel-configuration-policy-node__name">
+                    <div className="m-0">
+                        <h3 className="m-0 d-block d-md-inline">{policy.name}</h3>
+                    </div>
+
+                    <div>
+                        <div className="mr-2 d-block d-mdinline-block">
+                            Applied to{' '}
+                            {policy.type === GitObjectType.GIT_COMMIT
+                                ? 'commits'
+                                : policy.type === GitObjectType.GIT_TAG
+                                ? 'tags'
+                                : policy.type === GitObjectType.GIT_TREE
+                                ? 'branches'
+                                : ''}{' '}
+                            matching <span className="text-monospace">{policy.pattern}</span>
+                        </div>
+
+                        <div>
+                            {indexingEnabled && !policy.retentionEnabled && !policy.indexingEnabled ? (
+                                <p className="text-muted mt-2">Data retention and auto-indexing disabled.</p>
+                            ) : (
+                                <>
+                                    <p className="mt-2">{describeRetentionPolicy(policy)}</p>
+                                    {indexingEnabled && <p className="mt-2">{describeIndexingPolicy(policy)}</p>}
+                                </>
+                            )}
+                        </div>
+                    </div>
+                </div>
+
+                <span className="d-none d-md-inline codeintel-configuration-policy-node__button">
                     {deletePolicy && (
-                        <td>
-                            <Button
-                                onClick={() => history.push(`./configuration/${policy.id}`)}
-                                className="p-0"
-                                disabled={disabled}
-                            >
-                                <PencilIcon className="icon-inline" />
-                            </Button>
-                            <Button
-                                onClick={() => deletePolicy(policy.id, policy.name)}
-                                className="ml-2 p-0"
-                                disabled={disabled}
-                            >
-                                <TrashIcon className="icon-inline text-danger" />
-                            </Button>
-                        </td>
+                        <Button
+                            onClick={() => history.push(`./configuration/${policy.id}`)}
+                            className="p-0"
+                            disabled={disabled}
+                        >
+                            <PencilIcon className="icon-inline" />
+                        </Button>
                     )}
-                </tr>
-            ))}
-        </tbody>
-    </table>
+                </span>
+                <span className="d-none d-md-inline codeintel-configuration-policy-node__button">
+                    {deletePolicy && (
+                        <Button
+                            onClick={() => deletePolicy(policy.id, policy.name)}
+                            className="ml-2 p-0"
+                            disabled={disabled}
+                        >
+                            <TrashIcon className="icon-inline text-danger" />
+                        </Button>
+                    )}
+                </span>
+            </>
+        ))}
+    </div>
 )
 
 export interface ConfigurationEditorProps extends ThemeProps, TelemetryProps {
