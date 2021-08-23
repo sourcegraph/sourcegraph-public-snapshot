@@ -76,29 +76,30 @@ For next steps, visit the [Docker installation documentation](admin/install/dock
 
 ## Core documentation
 
-- [Install](#getting-started) or [update](admin/updates/index.md) Sourcegraph
-- [Using Sourcegraph](getting-started/index.md)
-- [Administration](admin/index.md)
-- [Extensions](extensions/index.md)
-- [Cloud](code_search/explanations/sourcegraph_cloud.md)
-
-## Cloud documentation
-
-- [Sourcegraph cloud](code_search/explanations/sourcegraph_cloud.md)
-- [Differences between Sourcegraph cloud and self-hosted ](cloud/cloud_ent_on-prem_comparison.md)
-
 ### Features and tutorials
 
 - [Tour](getting-started/tour.md): A walkthrough of Sourcegraph's features, with real-world example use cases.
+- [Using Sourcegraph](getting-started/index.md)
 - [How to run a Sourcegraph trial](adopt/trial/index.md) at your company
 - [Integrations](integration/index.md) with GitHub, GitLab, Bitbucket, etc.
+- [Extensions](extensions/index.md)
 - [Chrome and Firefox browser extensions](integration/browser_extension.md)
+
+### Sourcegraph cloud
+
+- [Sourcegraph cloud](code_search/explanations/sourcegraph_cloud.md)
+- [Differences between Sourcegraph cloud and self-hosted](cloud/cloud_ent_on-prem_comparison.md)
 
 ### Reference
 
 - [Query syntax reference](code_search/reference/queries.md)
 - [GraphQL API](api/graphql/index.md)
 - [Sourcegraph changelog](./CHANGELOG.md)
+
+### Administration
+
+- [Install](#getting-started) or [update](admin/updates/index.md) Sourcegraph
+- [Administration](admin/index.md)
 
 ## Other links
 
