@@ -154,8 +154,10 @@ export const FileMatch: React.FunctionComponent<Props> = props => {
         context,
     ])
 
-    const highlightRangesCount = items.reduce(sumHighlightRanges, 0)
-    const collapsedHighlightRangesCount = collapsedMatchGroups.matches.reduce(sumHighlightRanges, 0)
+    const highlightRangesCount = useMemo(() => items.reduce(sumHighlightRanges, 0), [items])
+    const collapsedHighlightRangesCount = useMemo(() => collapsedMatchGroups.matches.reduce(sumHighlightRanges, 0), [
+        collapsedMatchGroups,
+    ])
 
     const matchCount = highlightRangesCount || (result.type === 'symbol' ? result.symbols?.length : 0)
     const matchCountLabel = matchCount ? `${matchCount} ${pluralize('match', matchCount, 'matches')}` : ''
