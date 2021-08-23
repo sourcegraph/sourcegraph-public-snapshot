@@ -4,10 +4,6 @@
         color: var(--text-muted);
 
         &--active {
-            color: var(--white);
-        }
-
-        .theme-redesign &--active {
             color: var(--text-muted);
         }
     }

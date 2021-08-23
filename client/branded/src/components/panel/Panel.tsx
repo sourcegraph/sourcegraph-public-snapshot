@@ -235,7 +235,7 @@ export const Panel = React.memo<Props>(props => {
 
     return (
         <Tabs className={styles.panel} index={tabIndex} onChange={handleActiveTab}>
-            <div className={classNames('tablist-wrapper d-flex justify-content-between', styles.header)}>
+            <div className={classNames('tablist-wrapper d-flex justify-content-between sticky-top', styles.header)}>
                 <TabList>
                     <div className="d-flex w-100">
                         {items.map(({ label, id }) => (
