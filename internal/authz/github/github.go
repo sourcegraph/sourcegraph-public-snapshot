@@ -76,7 +76,7 @@ func (p *Provider) Validate() (problems []string) {
 // FetchUserPermsByToken fetches all the private repo ids that the token can access.
 //
 // This may return a partial result if an error is encountered, e.g. via rate limits.
-func (p *Provider) FetchUserPermsByToken(ctx context.Context, token string, opts *authz.FetchPermOptions) (*authz.ExternalUserPermissions, error) {
+func (p *Provider) FetchUserPermsByToken(ctx context.Context, token string, opts authz.FetchPermsOptions) (*authz.ExternalUserPermissions, error) {
 	// 🚨 SECURITY: Use user token is required to only list repositories the user has access to.
 	client := p.client.WithToken(token)
 
@@ -92,7 +92,7 @@ func (p *Provider) FetchUserPermsByToken(ctx context.Context, token string, opts
 	addRepoToPerms := func(repos ...extsvc.RepoID) {
 		for _, repo := range repos {
 			if _, exists := seenRepos[repo]; !exists {
-				seenRepos[repo] = true
+				seenRepos[repo] = struct{}{}
 				perms.Exacts = append(perms.Exacts, repo)
 			}
 		}
@@ -177,7 +177,7 @@ func (p *Provider) FetchUserPermsByToken(ctx context.Context, token string, opts
 	for _, group := range groups {
 		groupPerms, exists := p.groupsCache.getGroup(group.Org, group.Team)
 		if exists {
-			if opts != nil && opts.InvalidateCaches {
+			if opts.InvalidateCaches {
 				// invalidate this cache and sync again
 				p.groupsCache.deleteGroup(groupPerms)
 				groupPerms.Repositories = nil
@@ -225,7 +225,7 @@ func (p *Provider) FetchUserPermsByToken(ctx context.Context, token string, opts
 // callers to decide whether to discard.
 //
 // API docs: https://developer.github.com/v3/repos/#list-repositories-for-the-authenticated-user
-func (p *Provider) FetchUserPerms(ctx context.Context, account *extsvc.Account, opts *authz.FetchPermOptions) (*authz.ExternalUserPermissions, error) {
+func (p *Provider) FetchUserPerms(ctx context.Context, account *extsvc.Account, opts authz.FetchPermsOptions) (*authz.ExternalUserPermissions, error) {
 	if account == nil {
 		return nil, errors.New("no account provided")
 	} else if !extsvc.IsHostOfAccount(p.codeHost, account) {

@@ -32,7 +32,7 @@ func memGroupsCache() *groupsCache {
 func TestProvider_FetchUserPerms(t *testing.T) {
 	t.Run("nil account", func(t *testing.T) {
 		p := NewProvider("", ProviderOptions{GitHubURL: mustURL(t, "https://github.com")})
-		_, err := p.FetchUserPerms(context.Background(), nil, nil)
+		_, err := p.FetchUserPerms(context.Background(), nil, authz.FetchPermsOptions{})
 		want := "no account provided"
 		got := fmt.Sprintf("%v", err)
 		if got != want {
@@ -49,7 +49,7 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 					ServiceID:   "https://gitlab.com/",
 				},
 			},
-			nil,
+			authz.FetchPermsOptions{},
 		)
 		want := `not a code host of the account: want "https://gitlab.com/" but have "https://github.com/"`
 		got := fmt.Sprintf("%v", err)
@@ -68,7 +68,7 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 				},
 				AccountData: extsvc.AccountData{},
 			},
-			nil,
+			authz.FetchPermsOptions{},
 		)
 		want := `no token found in the external account data`
 		got := fmt.Sprintf("%v", err)
@@ -166,7 +166,7 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 					AuthData: &authData,
 				},
 			},
-			nil,
+			authz.FetchPermsOptions{},
 		)
 		if err != nil {
 			t.Fatal(err)
@@ -212,7 +212,7 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 					AuthData: &authData,
 				},
 			},
-			nil,
+			authz.FetchPermsOptions{},
 		)
 		if err != nil {
 			t.Fatal(err)
@@ -290,7 +290,7 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 					AuthData: &authData,
 				},
 			},
-			&authz.FetchPermOptions{InvalidateCaches: true},
+			authz.FetchPermsOptions{InvalidateCaches: true},
 		)
 		if err != nil {
 			t.Fatal(err)
@@ -361,7 +361,7 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 		t.Run("first call", func(t *testing.T) {
 			repoIDs, err := p.FetchUserPerms(context.Background(),
 				account,
-				nil,
+				authz.FetchPermsOptions{},
 			)
 			if err != nil {
 				t.Fatal(err)
@@ -381,7 +381,7 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 			callsToListTeamRepos = 0
 			repoIDs, err := p.FetchUserPerms(context.Background(),
 				account,
-				&authz.FetchPermOptions{InvalidateCaches: false},
+				authz.FetchPermsOptions{InvalidateCaches: false},
 			)
 			if err != nil {
 				t.Fatal(err)
@@ -401,7 +401,7 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 			callsToListTeamRepos = 0
 			repoIDs, err := p.FetchUserPerms(context.Background(),
 				account,
-				&authz.FetchPermOptions{InvalidateCaches: true},
+				authz.FetchPermsOptions{InvalidateCaches: true},
 			)
 			if err != nil {
 				t.Fatal(err)
@@ -441,7 +441,7 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 					AuthData: &authData,
 				},
 			},
-			nil,
+			authz.FetchPermsOptions{},
 		)
 		if err != nil {
 			t.Fatal(err)
