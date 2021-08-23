@@ -10,7 +10,8 @@ import { BreadcrumbSetters } from '../../../components/Breadcrumbs'
 import { RepositoryFields } from '../../../graphql-operations'
 import { RouteDescriptor } from '../../../util/contributions'
 import { lazyComponent } from '../../../util/lazyComponent'
-import { CodeIntelIndexConfigurationPageProps } from '../configuration/CodeIntelIndexConfigurationPage'
+import { CodeIntelConfigurationPageProps } from '../configuration/CodeIntelConfigurationPage'
+import { CodeIntelConfigurationPolicyPageProps } from '../configuration/CodeIntelConfigurationPolicyPage'
 import { CodeIntelIndexPageProps } from '../detail/CodeIntelIndexPage'
 import { CodeIntelUploadPageProps } from '../detail/CodeIntelUploadPage'
 import { CodeIntelIndexesPageProps } from '../list/CodeIntelIndexesPage'
@@ -42,10 +43,15 @@ const CodeIntelIndexPage = lazyComponent<CodeIntelIndexPageProps, 'CodeIntelInde
     'CodeIntelIndexPage'
 )
 
-const CodeIntelIndexConfigurationPage = lazyComponent<
-    CodeIntelIndexConfigurationPageProps,
-    'CodeIntelIndexConfigurationPage'
->(() => import('../../codeintel/configuration/CodeIntelIndexConfigurationPage'), 'CodeIntelIndexConfigurationPage')
+const CodeIntelConfigurationPage = lazyComponent<CodeIntelConfigurationPageProps, 'CodeIntelConfigurationPage'>(
+    () => import('../../codeintel/configuration/CodeIntelConfigurationPage'),
+    'CodeIntelConfigurationPage'
+)
+
+const CodeIntelConfigurationPolicyPage = lazyComponent<
+    CodeIntelConfigurationPolicyPageProps,
+    'CodeIntelConfigurationPolicyPage'
+>(() => import('../../codeintel/configuration/CodeIntelConfigurationPolicyPage'), 'CodeIntelConfigurationPolicyPage')
 
 export const routes: readonly CodeIntelAreaRoute[] = [
     {
@@ -76,10 +82,14 @@ export const routes: readonly CodeIntelAreaRoute[] = [
         condition: () => Boolean(window.context?.codeIntelAutoIndexingEnabled),
     },
     {
-        path: '/index-configuration',
+        path: '/configuration',
         exact: true,
-        render: props => <CodeIntelIndexConfigurationPage {...props} />,
-        condition: () => Boolean(window.context?.codeIntelAutoIndexingEnabled),
+        render: props => <CodeIntelConfigurationPage {...props} />,
+    },
+    {
+        path: '/configuration/:id',
+        exact: true,
+        render: props => <CodeIntelConfigurationPolicyPage {...props} />,
     },
 ]
 
@@ -105,24 +115,19 @@ export interface RepositoryCodeIntelAreaPageProps
 
 const sidebarRoutes: CodeIntelSideBarGroups = [
     {
-        header: { label: 'Precise intelligence' },
+        header: { label: 'Code intelligence' },
         items: [
             {
                 to: '/uploads',
                 label: 'Uploads',
             },
-        ],
-    },
-    {
-        header: { label: 'Auto-indexing' },
-        condition: () => Boolean(window.context?.codeIntelAutoIndexingEnabled),
-        items: [
             {
                 to: '/indexes',
-                label: 'Index jobs',
+                label: 'Auto indexing',
+                condition: () => Boolean(window.context?.codeIntelAutoIndexingEnabled),
             },
             {
-                to: '/index-configuration',
+                to: '/configuration',
                 label: 'Configuration',
             },
         ],
