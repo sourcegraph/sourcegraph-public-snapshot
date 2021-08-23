@@ -301,6 +301,10 @@ func (c *V3Client) GetAuthenticatedUserOrgsDetails(ctx context.Context, page int
 	return orgs, hasNextPage, cost + len(orgs), err
 }
 
+// GetAuthenticatedUserTeams lists GitHub teams affiliated with the client token.
+//
+// The page is the page of results to return, and is 1-indexed (so the first call should
+// be for page 1).
 func (c *V3Client) GetAuthenticatedUserTeams(ctx context.Context, page int) (
 	teams []*Team,
 	hasNextPage bool,
@@ -424,9 +428,11 @@ func (c *V3Client) ListPublicRepositories(ctx context.Context, sinceRepoID int64
 	return repos, nil
 }
 
-// ListAffiliatedRepositories lists GitHub repositories affiliated with the client
-// token. page is the page of results to return. Pages are 1-indexed (so the
-// first call should be for page 1).
+// ListAffiliatedRepositories lists GitHub repositories affiliated with the client token.
+//
+// page is the page of results to return, and is 1-indexed (so the first call should be
+// for page 1).
+// visibility and affiliations are filters for which repositories should be returned.
 func (c *V3Client) ListAffiliatedRepositories(ctx context.Context, visibility Visibility, page int, affiliations ...Affiliation) (
 	repos []*Repository,
 	hasNextPage bool,
