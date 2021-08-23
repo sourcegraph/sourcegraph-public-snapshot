@@ -113,7 +113,7 @@ func (p *Provider) FetchUserPermsByToken(ctx context.Context, token string, opts
 		var repos []*github.Repository
 		repos, hasNextPage, _, err = client.ListAffiliatedRepositories(ctx, github.VisibilityPrivate, page, affiliations...)
 		if err != nil {
-			return perms, err
+			return perms, errors.Wrap(err, "list repos for user")
 		}
 
 		for _, r := range repos {
@@ -130,7 +130,7 @@ func (p *Provider) FetchUserPermsByToken(ctx context.Context, token string, opts
 	// repositories.
 	groups, err := p.getAffiliatedGroups(ctx, client, opts)
 	if err != nil {
-		return perms, errors.Wrap(err, "getAffiliatedGroups")
+		return perms, errors.Wrap(err, "get groups affiliated with user")
 	}
 
 	// Get repos from groups, cached if possible.
@@ -139,9 +139,9 @@ func (p *Provider) FetchUserPermsByToken(ctx context.Context, token string, opts
 		if len(group.Repositories) > 0 {
 			continue
 		}
+		group.Repositories = make([]extsvc.RepoID, 0, repoSetSize)
 
 		isOrg := group.Team == ""
-
 		hasNextPage = true
 		for page := 1; hasNextPage; page++ {
 			var repos []*github.Repository
@@ -153,7 +153,7 @@ func (p *Provider) FetchUserPermsByToken(ctx context.Context, token string, opts
 			if err != nil {
 				// track effort so far in cache
 				p.groupsCache.setGroup(group)
-				return perms, err
+				return perms, errors.Wrap(err, "list repos for group")
 			}
 			for _, r := range repos {
 				repoID := extsvc.RepoID(r.ID)
