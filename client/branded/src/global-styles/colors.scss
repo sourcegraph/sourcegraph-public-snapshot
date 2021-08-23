@@ -159,6 +159,10 @@ $theme-colors: (
     --input-group-addon-color: var(--gray-08);
     --input-group-addon-bg: var(--gray-03);
     --input-group-addon-border-color: var(--gray-03);
+
+    // @sourcegraph/react-loading-spinner coloring
+    --loading-spinner-outer-color: var(--gray-05);
+    --loading-spinner-inner-color: var(--gray-08);
 }
 
 .theme-dark {
@@ -222,6 +226,10 @@ $theme-colors: (
     --input-group-addon-color: var(--gray-01);
     --input-group-addon-bg: var(--gray-08);
     --input-group-addon-border-color: var(--gray-08);
+
+    // @sourcegraph/react-loading-spinner coloring
+    --loading-spinner-outer-color: var(--gray-07);
+    --loading-spinner-inner-color: var(--white);
 }
 
 // Additional colors global colors.
