@@ -1,28 +1,4 @@
-.theme-light {
-    --input-bg: var(--white);
-    --input-disabled-bg: var(--gray-04);
-    --input-border-color: var(--gray-04);
-    --input-color: var(--gray-09);
-    --input-placeholder-color: var(--gray-07);
-    --input-group-addon-color: var(--gray-08);
-    --input-group-addon-bg: var(--gray-03);
-    --input-group-addon-border-color: var(--gray-03);
-    --input-focus-border-color: var(--border-active-color);
-    --input-focus-box-shadow: var(--focus-box-shadow);
-
-    // Checkbox margins
-    --form-check-input-margin-y: 0.3rem;
-}
-
-.theme-dark {
-    --input-bg: var(--gray-10);
-    --input-disabled-bg: var(--gray-08);
-    --input-border-color: var(--gray-08);
-    --input-color: var(--gray-04);
-    --input-placeholder-color: var(--gray-05);
-    --input-group-addon-color: var(--gray-01);
-    --input-group-addon-bg: var(--gray-08);
-    --input-group-addon-border-color: var(--gray-08);
+:root {
     --input-focus-border-color: var(--border-active-color);
     --input-focus-box-shadow: var(--focus-box-shadow);
 

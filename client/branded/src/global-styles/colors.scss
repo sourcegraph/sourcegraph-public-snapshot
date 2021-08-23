@@ -148,6 +148,16 @@ $theme-colors: (
     --diff-remove-bg: #ffecec;
     --code-selection-bg: var(--gray-03);
     --sourcegraph-logo-text-color: #000000;
+
+    // Forms
+    --input-bg: var(--white);
+    --input-disabled-bg: var(--gray-04);
+    --input-border-color: var(--gray-04);
+    --input-color: var(--gray-09);
+    --input-placeholder-color: var(--gray-07);
+    --input-group-addon-color: var(--gray-08);
+    --input-group-addon-bg: var(--gray-03);
+    --input-group-addon-border-color: var(--gray-03);
 }
 
 .theme-dark {
@@ -200,6 +210,16 @@ $theme-colors: (
     --diff-remove-bg: #3e1d1d;
     --code-selection-bg: var(--gray-08);
     --sourcegraph-logo-text-color: var(--white);
+
+    // Forms
+    --input-bg: var(--gray-10);
+    --input-disabled-bg: var(--gray-08);
+    --input-border-color: var(--gray-08);
+    --input-color: var(--gray-04);
+    --input-placeholder-color: var(--gray-05);
+    --input-group-addon-color: var(--gray-01);
+    --input-group-addon-bg: var(--gray-08);
+    --input-group-addon-border-color: var(--gray-08);
 }
 
 // Additional colors global colors.
