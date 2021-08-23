@@ -237,11 +237,13 @@ const RepoConfiguration: FunctionComponent<RepoConfigurationProps> = ({
             />
         </Container>
 
-        <Container className="mt-2 code-intel-index-configuration">
-            <h3>Auto-indexing configuration</h3>
+        {indexingEnabled && (
+            <Container className="mt-2 code-intel-index-configuration">
+                <h3>Auto-indexing configuration</h3>
 
-            <ConfigurationEditor {...props} />
-        </Container>
+                <ConfigurationEditor {...props} />
+            </Container>
+        )}
     </>
 )
 
@@ -259,8 +261,11 @@ const PoliciesList: FunctionComponent<PoliciesListProps> = ({ policies, buttonFr
         <LoadingSpinner className="icon-inline" />
     ) : (
         <>
-            <CodeIntelligencePolicyTable {...props} policies={policies} />
-
+            {policies.length === 0 ? (
+                <div>No policies have been defined.</div>
+            ) : (
+                <CodeIntelligencePolicyTable {...props} policies={policies} />
+            )}
             {buttonFragment}
         </>
     )

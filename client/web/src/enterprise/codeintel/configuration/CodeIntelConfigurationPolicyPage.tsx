@@ -197,80 +197,68 @@ const BranchTargetSettings: FunctionComponent<BranchTargetSettingsProps> = ({
     const setPattern = debounce(value => setDebouncedPattern(value), GIT_OBJECT_PREVIEW_DEBOUNCE_TIMEOUT)
 
     return (
-        <div className="row">
-            <div className={repoId ? 'col-6 pr-3' : 'col-12'}>
-                <div className="form-group">
-                    <label htmlFor="name">Name</label>
-                    <input
-                        id="name"
-                        type="text"
-                        className="form-control"
-                        value={policy.name}
-                        onChange={event => setPolicy({ ...policy, name: event.target.value })}
-                    />
-                </div>
+        <>
+            <div className="form-group">
+                <label htmlFor="name">Name</label>
+                <input
+                    id="name"
+                    type="text"
+                    className="form-control"
+                    value={policy.name}
+                    onChange={event => setPolicy({ ...policy, name: event.target.value })}
+                />
+            </div>
 
-                <div className="form-group">
-                    <label htmlFor="type">Type</label>
-                    <select
-                        id="type"
-                        className="form-control"
-                        value={
-                            policy.type === GitObjectType.GIT_COMMIT
-                                ? 'commit'
-                                : policy.type === GitObjectType.GIT_TAG
-                                ? 'tag'
-                                : policy.type === GitObjectType.GIT_TREE
-                                ? 'branch'
-                                : ''
-                        }
-                        onChange={event =>
-                            setPolicy({
-                                ...policy,
-                                type: event.target.value as GitObjectType,
-                                ...(event.target.value !== 'GIT_TREE'
-                                    ? {
-                                          retainIntermediateCommits: false,
-                                          indexIntermediateCommits: false,
-                                      }
-                                    : {}),
-                            })
-                        }
-                    >
-                        <option value="">Select Git object type</option>
-                        {repoId && <option value="GIT_COMMIT">Commit</option>}
-                        <option value="GIT_TAG">Tag</option>
-                        <option value="GIT_TREE">Branch</option>
-                    </select>
-                </div>
-                <div className="form-group">
-                    <label htmlFor="pattern">Pattern</label>
-                    <input
-                        id="pattern"
-                        type="text"
-                        className="form-control text-monospace"
-                        value={policy.pattern}
-                        onChange={event => {
-                            setPolicy({ ...policy, pattern: event.target.value })
-                            setPattern(event.target.value)
-                        }}
-                    />
-                </div>
+            <div className="form-group">
+                <label htmlFor="type">Type</label>
+                <select
+                    id="type"
+                    className="form-control"
+                    value={policy.type}
+                    onChange={event =>
+                        setPolicy({
+                            ...policy,
+                            type: event.target.value as GitObjectType,
+                            ...(event.target.value !== GitObjectType.GIT_TREE
+                                ? {
+                                      retainIntermediateCommits: false,
+                                      indexIntermediateCommits: false,
+                                  }
+                                : {}),
+                        })
+                    }
+                >
+                    <option value="">Select Git object type</option>
+                    {repoId && <option value={GitObjectType.GIT_COMMIT}>Commit</option>}
+                    <option value={GitObjectType.GIT_TAG}>Tag</option>
+                    <option value={GitObjectType.GIT_TREE}>Branch</option>
+                </select>
+            </div>
+            <div className="form-group">
+                <label htmlFor="pattern">Pattern</label>
+                <input
+                    id="pattern"
+                    type="text"
+                    className="form-control text-monospace"
+                    value={policy.pattern}
+                    onChange={event => {
+                        setPolicy({ ...policy, pattern: event.target.value })
+                        setPattern(event.target.value)
+                    }}
+                />
             </div>
 
             {repoId && (
-                <div className="col-6 pl-3">
-                    <GitObjectPreview
-                        pattern={debouncedPattern}
-                        repoId={repoId}
-                        type={policy.type}
-                        repoName={repoName}
-                        searchGitTags={searchGitTags}
-                        searchGitBranches={searchGitBranches}
-                    />
-                </div>
+                <GitObjectPreview
+                    pattern={debouncedPattern}
+                    repoId={repoId}
+                    type={policy.type}
+                    repoName={repoName}
+                    searchGitTags={searchGitTags}
+                    searchGitBranches={searchGitBranches}
+                />
             )}
-        </div>
+        </>
     )
 }
 
@@ -306,7 +294,7 @@ const RetentionSettings: FunctionComponent<RetentionSettingsProps> = ({ policy, 
             />
         </div>
 
-        {policy.type === 'GIT_TREE' && (
+        {policy.type === GitObjectType.GIT_TREE && (
             <div className="form-group">
                 <Toggle
                     id="retain-intermediate-commits"
@@ -354,7 +342,7 @@ const IndexingSettings: FunctionComponent<IndexingSettingsProps> = ({ policy, se
             />
         </div>
 
-        {policy.type === 'GIT_TREE' && (
+        {policy.type === GitObjectType.GIT_TREE && (
             <div className="form-group">
                 <Toggle
                     id="index-intermediate-commits"
@@ -457,18 +445,9 @@ const GitObjectPreview: FunctionComponent<GitObjectPreviewProps> = ({
             setCommitPreviewFetchError(undefined)
 
             const resultFactories = [
-                {
-                    type: GitObjectType.GIT_COMMIT,
-                    factory: () => resultFromCommit(repoId, pattern, repoName),
-                },
-                {
-                    type: GitObjectType.GIT_TAG,
-                    factory: () => resultFromTag(repoId, pattern, searchGitTags),
-                },
-                {
-                    type: GitObjectType.GIT_TREE,
-                    factory: () => resultFromBranch(repoId, pattern, searchGitBranches),
-                },
+                { type: GitObjectType.GIT_COMMIT, factory: () => resultFromCommit(repoId, pattern, repoName) },
+                { type: GitObjectType.GIT_TAG, factory: () => resultFromTag(repoId, pattern, searchGitTags) },
+                { type: GitObjectType.GIT_TREE, factory: () => resultFromBranch(repoId, pattern, searchGitBranches) },
             ]
 
             try {
@@ -492,18 +471,24 @@ const GitObjectPreview: FunctionComponent<GitObjectPreviewProps> = ({
         <>
             <h3>Preview of Git object filter</h3>
 
-            {type && (
+            {type ? (
                 <>
                     <small>
-                        Configuration policy will be applied to the following{' '}
-                        {type === GitObjectType.GIT_COMMIT
-                            ? 'commit'
-                            : type === GitObjectType.GIT_TAG
-                            ? 'tags'
-                            : type === GitObjectType.GIT_TREE
-                            ? 'branches'
-                            : ''}
-                        .
+                        {commitPreview?.preview.length === 0 ? (
+                            <>Configuration policy does not match any known commits.</>
+                        ) : (
+                            <>
+                                Configuration policy will be applied to the following
+                                {type === GitObjectType.GIT_COMMIT
+                                    ? ' commit'
+                                    : type === GitObjectType.GIT_TAG
+                                    ? ' tags'
+                                    : type === GitObjectType.GIT_TREE
+                                    ? ' branches'
+                                    : ''}
+                                .
+                            </>
+                        )}
                     </small>
 
                     {commitPreviewFetchError ? (
@@ -513,27 +498,33 @@ const GitObjectPreview: FunctionComponent<GitObjectPreviewProps> = ({
                         />
                     ) : (
                         <>
-                            {commitPreview !== undefined && (
-                                <div className="mt-2 p-2 bg-secondary">
-                                    {commitPreview.preview.map(tag => (
-                                        <p key={tag.revlike} className="text-monospace p-0 m-0">
-                                            <span className="search-filter-keyword">repo:</span>
-                                            <span>{tag.name}</span>
-                                            <span className="search-filter-keyword">@</span>
-                                            <span>{tag.revlike}</span>
-                                        </p>
-                                    ))}
+                            {commitPreview !== undefined && commitPreview.preview.length !== 0 && (
+                                <div className="mt-2 p-2">
+                                    <div className="bg-dark text-light">
+                                        {commitPreview.preview.map(tag => (
+                                            <p key={tag.revlike} className="text-monospace p-0 m-0">
+                                                <span className="search-filter-keyword">repo:</span>
+                                                <span>{tag.name}</span>
+                                                <span className="search-filter-keyword">@</span>
+                                                <span>{tag.revlike}</span>
+                                            </p>
+                                        ))}
+                                    </div>
 
-                                    {commitPreview.preview.length < commitPreview.totalCount &&
-                                        `...and ${
-                                            commitPreview.totalCount - commitPreview.preview.length
-                                        } other matches`}
+                                    {commitPreview.preview.length < commitPreview.totalCount && (
+                                        <p className="pt-2">
+                                            ...and {commitPreview.totalCount - commitPreview.preview.length} other
+                                            matches
+                                        </p>
+                                    )}
                                 </div>
                             )}
                             {state === PreviewState.LoadingTags && <LoadingSpinner />}
                         </>
                     )}
                 </>
+            ) : (
+                <small>Select a Git object type to preview matching commits.</small>
             )}
         </>
     )
