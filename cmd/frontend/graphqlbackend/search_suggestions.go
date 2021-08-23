@@ -401,8 +401,7 @@ func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestion
 		}
 
 		suggestions := make([]SearchSuggestionResolver, 0)
-		fileMatches := results.Matches
-		for _, match := range fileMatches {
+		for _, match := range results.Matches {
 			fileMatch, ok := match.(*result.FileMatch)
 			if !ok {
 				continue
