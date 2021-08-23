@@ -1,13 +1,100 @@
 import { storiesOf } from '@storybook/react'
-import React from 'react'
-import { Observable, of } from 'rxjs'
+import React, { useCallback } from 'react'
+import { of } from 'rxjs'
 
 import { LSIFIndexState } from '@sourcegraph/shared/src/graphql/schema'
 
-import { LsifUploadConnectionFields, LsifUploadFields, LSIFUploadState } from '../../../graphql-operations'
+import { LsifUploadFields, LSIFUploadState } from '../../../graphql-operations'
 import { EnterpriseWebStory } from '../../components/EnterpriseWebStory'
 
 import { CodeIntelUploadPage } from './CodeIntelUploadPage'
+
+const uploadPrototype: Omit<LsifUploadFields, 'id' | 'state' | 'uploadedAt'> = {
+    __typename: 'LSIFUpload',
+    inputCommit: '9ea5e9f0e0344f8197622df6b36faf48ccd02570',
+    inputRoot: 'web/',
+    inputIndexer: 'lsif-tsc',
+    failure: null,
+    isLatestForRepo: false,
+    startedAt: null,
+    finishedAt: null,
+    placeInQueue: null,
+    projectRoot: {
+        url: '',
+        path: 'web/',
+        repository: {
+            url: '',
+            name: 'github.com/sourcegraph/sourcegraph',
+        },
+        commit: {
+            url: '',
+            oid: '9ea5e9f0e0344f8197622df6b36faf48ccd02570',
+            abbreviatedOID: '9ea5e9f',
+        },
+    },
+    associatedIndex: null,
+}
+
+const dependendentPrototype = {
+    ...uploadPrototype,
+
+    inputCommit: 'a24285d041f0c779b3c60f7937f6508d2474472b',
+    inputRoot: 'lib/',
+    state: LSIFUploadState.COMPLETED,
+    uploadedAt: '2020-06-14T12:10:30+00:00',
+    startedAt: '2020-06-14T12:10:30+00:00',
+    finishedAt: '2020-06-14T12:10:30+00:00',
+    projectRoot: {
+        url: '',
+        path: 'lib/',
+        repository: {
+            url: '',
+            name: 'github.com/sourcegraph/dependent',
+        },
+        commit: {
+            url: '',
+            oid: 'a24285d041f0c779b3c60f7937f6508d2474472b',
+            abbreviatedOID: 'a24285d',
+        },
+    },
+}
+
+const dependents = [
+    { ...dependendentPrototype, id: 'd1' },
+    { ...dependendentPrototype, id: 'd2' },
+]
+
+const dependencyPrototype = {
+    ...uploadPrototype,
+
+    inputCommit: 'f28cec95e8bc5d6b703aa1f953898a45c785db76',
+    inputRoot: 'lib/',
+    state: LSIFUploadState.COMPLETED,
+    uploadedAt: '2020-06-14T12:10:30+00:00',
+    startedAt: '2020-06-14T12:10:30+00:00',
+    finishedAt: '2020-06-14T12:10:30+00:00',
+    projectRoot: {
+        url: '',
+        path: 'lib/',
+        repository: {
+            url: '',
+            name: 'github.com/sourcegraph/dependency',
+        },
+        commit: {
+            url: '',
+            oid: 'f28cec95e8bc5d6b703aa1f953898a45c785db76',
+            abbreviatedOID: 'f28cec9',
+        },
+    },
+}
+
+const dependencies = [
+    { ...dependencyPrototype, id: 'd3' },
+    { ...dependencyPrototype, id: 'd4' },
+    { ...dependencyPrototype, id: 'd5' },
+]
+
+const now = () => new Date('2020-06-15T15:25:00+00:00')
 
 const { add } = storiesOf('web/codeintel/detail/CodeIntelUploadPage', module)
     .addDecorator(story => <div className="p-3 container">{story()}</div>)
@@ -17,262 +104,140 @@ const { add } = storiesOf('web/codeintel/detail/CodeIntelUploadPage', module)
         },
     })
 
-add('Uploading', () => (
-    <EnterpriseWebStory>
-        {props => (
-            <CodeIntelUploadPage
-                {...props}
-                fetchLsifUpload={fetchUpload({
-                    state: LSIFUploadState.UPLOADING,
-                    uploadedAt: '2020-06-15T12:20:30+00:00',
-                    startedAt: null,
-                    finishedAt: null,
-                    failure: null,
-                    placeInQueue: null,
-                    associatedIndex: null,
-                })}
-                fetchLsifUploads={fetchEmptyDependencies}
-                now={now}
-            />
-        )}
-    </EnterpriseWebStory>
-))
-
-add('Queued', () => (
-    <EnterpriseWebStory>
-        {props => (
-            <CodeIntelUploadPage
-                {...props}
-                fetchLsifUpload={fetchUpload({
-                    state: LSIFUploadState.QUEUED,
-                    uploadedAt: '2020-06-15T12:20:30+00:00',
-                    startedAt: null,
-                    finishedAt: null,
-                    placeInQueue: 3,
-                    failure: null,
-                    associatedIndex: null,
-                })}
-                fetchLsifUploads={fetchEmptyDependencies}
-                now={now}
-            />
-        )}
-    </EnterpriseWebStory>
-))
-
-add('Processing', () => (
-    <EnterpriseWebStory>
-        {props => (
-            <CodeIntelUploadPage
-                {...props}
-                fetchLsifUpload={fetchUpload({
-                    state: LSIFUploadState.PROCESSING,
-                    uploadedAt: '2020-06-15T12:20:30+00:00',
-                    startedAt: '2020-06-15T12:25:30+00:00',
-                    finishedAt: null,
-                    failure: null,
-                    placeInQueue: null,
-                    associatedIndex: null,
-                })}
-                fetchLsifUploads={fetchEmptyDependencies}
-                now={now}
-            />
-        )}
-    </EnterpriseWebStory>
-))
-
-add('Completed', () => {
-    const upload = fetchUpload({
-        state: LSIFUploadState.COMPLETED,
-        uploadedAt: '2020-06-15T12:20:30+00:00',
-        startedAt: '2020-06-15T12:25:30+00:00',
-        finishedAt: '2020-06-15T12:30:30+00:00',
-        failure: null,
-        placeInQueue: null,
-        associatedIndex: null,
-    })
-    const uploads = fetchUploads({ id: '1' }, { id: '2' }, { id: '3' }, { id: '4' }, { id: '5' }, { id: '6' })
-
-    return (
-        <EnterpriseWebStory>
-            {props => <CodeIntelUploadPage {...props} fetchLsifUpload={upload} fetchLsifUploads={uploads} now={now} />}
-        </EnterpriseWebStory>
-    )
-})
-
-add('Errored', () => (
-    <EnterpriseWebStory>
-        {props => (
-            <CodeIntelUploadPage
-                {...props}
-                fetchLsifUpload={fetchUpload({
-                    state: LSIFUploadState.ERRORED,
-                    uploadedAt: '2020-06-15T12:20:30+00:00',
-                    startedAt: '2020-06-15T12:25:30+00:00',
-                    finishedAt: '2020-06-15T12:30:30+00:00',
-                    failure:
-                        'Upload failed to complete: dial tcp: lookup gitserver-8.gitserver on 10.165.0.10:53: no such host',
-                    placeInQueue: null,
-                    associatedIndex: null,
-                })}
-                fetchLsifUploads={fetchEmptyDependencies}
-                now={now}
-            />
-        )}
-    </EnterpriseWebStory>
-))
-
-add('Deleting', () => {
-    const upload = fetchUpload({
-        state: LSIFUploadState.DELETING,
-        uploadedAt: '2020-06-15T12:20:30+00:00',
-        startedAt: '2020-06-15T12:25:30+00:00',
-        finishedAt: '2020-06-15T12:30:30+00:00',
-        failure: null,
-        placeInQueue: null,
-        associatedIndex: null,
-    })
-    const uploads = fetchUploads({ id: '1' }, { id: '2' }, { id: '3' }, { id: '4' }, { id: '5' }, { id: '6' })
-
-    return (
-        <EnterpriseWebStory>
-            {props => <CodeIntelUploadPage {...props} fetchLsifUpload={upload} fetchLsifUploads={uploads} now={now} />}
-        </EnterpriseWebStory>
-    )
-})
-
-add('Failed Upload', () => (
-    <EnterpriseWebStory>
-        {props => (
-            <CodeIntelUploadPage
-                {...props}
-                fetchLsifUpload={fetchUpload({
-                    state: LSIFUploadState.ERRORED,
-                    uploadedAt: '2020-06-15T12:20:30+00:00',
-                    startedAt: null,
-                    finishedAt: '2020-06-15T12:30:30+00:00',
-                    failure: 'Upload failed to complete: object store error:\n * XMinioStorageFull etc etc',
-                    placeInQueue: null,
-                    associatedIndex: null,
-                })}
-                fetchLsifUploads={fetchEmptyDependencies}
-                now={now}
-            />
-        )}
-    </EnterpriseWebStory>
-))
-
-add('Associated Index', () => (
-    <EnterpriseWebStory>
-        {props => (
-            <CodeIntelUploadPage
-                {...props}
-                fetchLsifUpload={fetchUpload({
-                    state: LSIFUploadState.PROCESSING,
-                    uploadedAt: '2020-06-15T12:20:30+00:00',
-                    startedAt: '2020-06-15T12:25:30+00:00',
-                    finishedAt: null,
-                    failure: null,
-                    placeInQueue: null,
-                    associatedIndex: {
-                        id: '6789',
-                        state: LSIFIndexState.COMPLETED,
-                        queuedAt: '2020-06-15T12:15:10+00:00',
-                        startedAt: '2020-06-15T12:20:20+00:00',
-                        finishedAt: '2020-06-15T12:25:30+00:00',
-                        placeInQueue: null,
-                    },
-                })}
-                fetchLsifUploads={fetchEmptyDependencies}
-                now={now}
-            />
-        )}
-    </EnterpriseWebStory>
-))
-
-const fetchUpload = (
-    upload: Pick<
-        LsifUploadFields,
-        'state' | 'uploadedAt' | 'startedAt' | 'finishedAt' | 'failure' | 'placeInQueue' | 'associatedIndex'
-    >
-): (() => Observable<LsifUploadFields>) => () =>
-    of({
-        __typename: 'LSIFUpload',
-        id: '1234',
-        projectRoot: {
-            url: '',
-            path: 'web/',
-            repository: {
-                url: '',
-                name: 'github.com/sourcegraph/sourcegraph',
-            },
-            commit: {
-                url: '',
-                oid: '9ea5e9f0e0344f8197622df6b36faf48ccd02570',
-                abbreviatedOID: '9ea5e9f',
-            },
+for (const { description, upload } of [
+    {
+        description: 'Uploading',
+        upload: {
+            ...uploadPrototype,
+            id: '1',
+            state: LSIFUploadState.UPLOADING,
+            uploadedAt: '2020-06-15T15:25:00+00:00',
         },
-        inputCommit: '9ea5e9f0e0344f8197622df6b36faf48ccd02570',
-        inputRoot: 'web/',
-        inputIndexer: 'lsif-tsc',
-        isLatestForRepo: false,
-        ...upload,
-    })
-
-const fetchUploads = (
-    ...uploads: Omit<
-        LsifUploadFields,
-        | '__typename'
-        | 'projectRoot'
-        | 'inputCommit'
-        | 'inputRoot'
-        | 'inputIndexer'
-        | 'isLatestForRepo'
-        | 'state'
-        | 'uploadedAt'
-        | 'startedAt'
-        | 'finishedAt'
-        | 'failure'
-        | 'placeInQueue'
-        | 'associatedIndex'
-    >[]
-): (() => Observable<LsifUploadConnectionFields>) => () =>
-    of({
-        nodes: uploads.map(upload => ({
-            __typename: 'LSIFUpload',
-            projectRoot: {
-                url: '',
-                path: 'web/',
-                repository: {
-                    url: '',
-                    name: 'github.com/sourcegraph/sourcegraph',
-                },
-                commit: {
-                    url: '',
-                    oid: '9ea5e9f0e0344f8197622df6b36faf48ccd02570',
-                    abbreviatedOID: '9ea5e9f',
-                },
-            },
-            inputCommit: '9ea5e9f0e0344f8197622df6b36faf48ccd02570',
-            inputRoot: 'web/',
-            inputIndexer: 'lsif-tsc',
-            isLatestForRepo: false,
-            state: LSIFUploadState.COMPLETED,
+    },
+    {
+        description: 'Queued',
+        upload: {
+            ...uploadPrototype,
+            id: '1',
+            state: LSIFUploadState.QUEUED,
+            uploadedAt: '2020-06-15T12:20:30+00:00',
+            placeInQueue: 1,
+        },
+    },
+    {
+        description: 'Processing',
+        upload: {
+            ...uploadPrototype,
+            id: '1',
+            state: LSIFUploadState.PROCESSING,
             uploadedAt: '2020-06-15T12:20:30+00:00',
             startedAt: '2020-06-15T12:25:30+00:00',
-            finishedAt: '2020-06-15T12:30:30+00:00',
-            failure: null,
-            placeInQueue: null,
-            associatedIndex: null,
-            ...upload,
-        })),
-        totalCount: uploads.length > 0 ? uploads.length + 5 : 0,
-        pageInfo: {
-            __typename: 'PageInfo',
-            endCursor: uploads.length > 0 ? 'fakenextpage' : null,
-            hasNextPage: uploads.length > 0,
         },
+    },
+    {
+        description: 'Completed',
+        upload: {
+            ...uploadPrototype,
+            id: '1',
+            state: LSIFUploadState.COMPLETED,
+            uploadedAt: '2020-06-14T12:20:30+00:00',
+            startedAt: '2020-06-14T12:25:30+00:00',
+            finishedAt: '2020-06-14T12:30:30+00:00',
+        },
+    },
+    {
+        description: 'Errored',
+        upload: {
+            ...uploadPrototype,
+            id: '1',
+            state: LSIFUploadState.ERRORED,
+            uploadedAt: '2020-06-13T12:20:30+00:00',
+            startedAt: '2020-06-13T12:25:30+00:00',
+            finishedAt: '2020-06-13T12:30:30+00:00',
+            failure:
+                'Upload failed to complete: dial tcp: lookup gitserver-8.gitserver on 10.165.0.10:53: no such host',
+        },
+    },
+    {
+        description: 'Deleting',
+        upload: {
+            ...uploadPrototype,
+            id: '1',
+            state: LSIFUploadState.DELETING,
+            uploadedAt: '2020-06-14T12:20:30+00:00',
+            startedAt: '2020-06-14T12:25:30+00:00',
+            finishedAt: '2020-06-14T12:30:30+00:00',
+        },
+    },
+    {
+        description: 'Failed upload',
+        upload: {
+            ...uploadPrototype,
+            id: '1',
+            state: LSIFUploadState.ERRORED,
+            uploadedAt: '2020-06-13T12:20:30+00:00',
+            startedAt: null,
+            finishedAt: '2020-06-13T12:20:31+00:00',
+            failure: 'Upload failed to complete: object store error:\n * XMinioStorageFull etc etc',
+        },
+    },
+    {
+        description: 'Associated index',
+        upload: {
+            ...uploadPrototype,
+            id: '1',
+            state: LSIFUploadState.PROCESSING,
+            uploadedAt: '2020-06-15T12:20:30+00:00',
+            startedAt: '2020-06-15T12:25:30+00:00',
+            associatedIndex: {
+                id: '2',
+                state: LSIFIndexState.COMPLETED,
+                queuedAt: '2020-06-15T12:15:10+00:00',
+                startedAt: '2020-06-15T12:20:20+00:00',
+                finishedAt: '2020-06-15T12:25:30+00:00',
+                placeInQueue: null,
+            },
+        },
+    },
+]) {
+    add(description, () => {
+        const fetchLsifUpload = useCallback(() => of(upload), [])
+        const fetchLsifUploads = useCallback(
+            ({ dependencyOf }: { dependencyOf?: string | null }) =>
+                dependencyOf === undefined
+                    ? of({
+                          nodes: dependents,
+                          totalCount: dependents.length,
+                          pageInfo: {
+                              __typename: 'PageInfo',
+                              endCursor: null,
+                              hasNextPage: false,
+                          },
+                      })
+                    : of({
+                          nodes: dependencies,
+                          totalCount: dependencies.length,
+                          pageInfo: {
+                              __typename: 'PageInfo',
+                              endCursor: null,
+                              hasNextPage: false,
+                          },
+                      }),
+            []
+        )
+
+        return (
+            <EnterpriseWebStory>
+                {props => (
+                    <CodeIntelUploadPage
+                        {...props}
+                        fetchLsifUpload={fetchLsifUpload}
+                        fetchLsifUploads={fetchLsifUploads}
+                        deleteLsifUpload={() => of()}
+                        now={now}
+                    />
+                )}
+            </EnterpriseWebStory>
+        )
     })
-
-const fetchEmptyDependencies = fetchUploads()
-
-const now = () => new Date('2020-06-15T15:25:00+00:00')
+}
