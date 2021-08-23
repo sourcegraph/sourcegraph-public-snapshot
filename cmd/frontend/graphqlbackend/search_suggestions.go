@@ -372,7 +372,7 @@ func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestion
 	}
 	suggesters = append(suggesters, showLangSuggestions)
 
-	showSymbolMatches := func(ctx context.Context) (results []SearchSuggestionResolver, err error) {
+	showSymbolMatches := func(ctx context.Context) ([]SearchSuggestionResolver, error) {
 		if mockShowSymbolMatches != nil {
 			return mockShowSymbolMatches()
 		}
@@ -400,7 +400,7 @@ func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestion
 			return nil, err
 		}
 
-		results = make([]SearchSuggestionResolver, 0)
+		suggestions := make([]SearchSuggestionResolver, 0)
 		fileMatches := res.Matches
 		for _, match := range fileMatches {
 			fileMatch, ok := match.(*result.FileMatch)
@@ -427,7 +427,7 @@ func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestion
 				if len(sm.Symbol.Name) >= 4 && strings.Contains(repoName+fileName, symbolName) {
 					score++
 				}
-				results = append(results, symbolSuggestionResolver{
+				suggestions = append(suggestions, symbolSuggestionResolver{
 					symbol: symbolResolver{
 						db: r.db,
 						commit: toGitCommitResolver(
@@ -443,22 +443,22 @@ func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestion
 			}
 		}
 
-		sortSearchSuggestions(results)
+		sortSearchSuggestions(suggestions)
 		const maxBoostedSymbolResults = 3
 		boost := maxBoostedSymbolResults
-		if len(results) < boost {
-			boost = len(results)
+		if len(suggestions) < boost {
+			boost = len(suggestions)
 		}
 		if boost > 0 {
 			for i := 0; i < boost; i++ {
-				if res, ok := results[i].(symbolSuggestionResolver); ok {
+				if res, ok := suggestions[i].(symbolSuggestionResolver); ok {
 					res.score += 200
-					results[i] = res
+					suggestions[i] = res
 				}
 			}
 		}
 
-		return results, nil
+		return suggestions, nil
 	}
 	suggesters = append(suggesters, showSymbolMatches)
 
