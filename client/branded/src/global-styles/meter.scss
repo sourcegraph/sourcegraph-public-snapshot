@@ -1,13 +1,4 @@
 meter {
-    --meter-background: var(--border-color-2);
-
-    .theme-dark & {
-        --meter-background: var(--gray-07);
-    }
-    .theme-light & {
-        --meter-background: var(--gray-04);
-    }
-
     /* Reset the default appearence */
     -moz-appearance: none;
     // Don't reset -webkit-appearance: https://bugs.chromium.org/p/chromium/issues/detail?id=632510
