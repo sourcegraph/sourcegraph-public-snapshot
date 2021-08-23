@@ -68,7 +68,7 @@ func (s *Store) GetRepositoriesWithIndexConfiguration(ctx context.Context) (_ []
 }
 
 const getRepositoriesWithIndexConfigurationQuery = `
--- source: enterprise/internal/codeintel/stores/dbstore/index_configuration.go:GetRepositoriesWithIndexConfiguration
+-- source: enterprise/internal/codeintel/stores/dbstore/configuration.go:GetRepositoriesWithIndexConfiguration
 SELECT c.repository_id
 FROM lsif_index_configuration c
 LEFT JOIN repo r ON r.id = c.repository_id
@@ -89,7 +89,7 @@ func (s *Store) GetAutoindexDisabledRepositories(ctx context.Context) (_ []int, 
 }
 
 const getAutoIndexDisabledRepositoriesQuery = `
--- source: enterprise/internal/codeintel/stores/dbstore/index_configuration.go:GetAutoindexDisabledRepositories
+-- source: enterprise/internal/codeintel/stores/dbstore/configuration.go:GetAutoindexDisabledRepositories
 SELECT c.repository_id
 FROM lsif_index_configuration c
 LEFT JOIN repo r ON r.id = c.repository_id
@@ -107,7 +107,7 @@ func (s *Store) GetIndexConfigurationByRepositoryID(ctx context.Context, reposit
 }
 
 const getIndexConfigurationByRepositoryIDQuery = `
--- source: enterprise/internal/codeintel/stores/dbstore/index_configuration.go:GetIndexConfigurationByRepositoryID
+-- source: enterprise/internal/codeintel/stores/dbstore/configuration.go:GetIndexConfigurationByRepositoryID
 SELECT
 	c.id,
 	c.repository_id,
@@ -126,7 +126,7 @@ func (s *Store) UpdateIndexConfigurationByRepositoryID(ctx context.Context, repo
 }
 
 const updateIndexConfigurationByRepositoryIDQuery = `
--- source: enterprise/internal/codeintel/stores/dbstore/index_configuration.go:UpdateIndexConfigurationByRepositoryID
+-- source: enterprise/internal/codeintel/stores/dbstore/configuration.go:UpdateIndexConfigurationByRepositoryID
 INSERT INTO lsif_index_configuration (repository_id, data) VALUES (%s, %s)
 	ON CONFLICT (repository_id) DO UPDATE SET data = %s
 `

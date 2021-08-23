@@ -11,7 +11,9 @@ type operations struct {
 	addUploadPart                          *observation.Operation
 	calculateVisibleUploads                *observation.Operation
 	commitGraphMetadata                    *observation.Operation
+	createConfigurationPolicy              *observation.Operation
 	definitionDumps                        *observation.Operation
+	deleteConfigurationPolicyByID          *observation.Operation
 	deleteIndexByID                        *observation.Operation
 	deleteIndexesWithoutRepository         *observation.Operation
 	deleteOldIndexes                       *observation.Operation
@@ -25,6 +27,8 @@ type operations struct {
 	findClosestDumps                       *observation.Operation
 	findClosestDumpsFromGraphFragment      *observation.Operation
 	getAutoindexDisabledRepositories       *observation.Operation
+	getConfigurationPolicies               *observation.Operation
+	getConfigurationPolicyByID             *observation.Operation
 	getDumpsByIDs                          *observation.Operation
 	getIndexByID                           *observation.Operation
 	getIndexConfigurationByRepositoryID    *observation.Operation
@@ -60,6 +64,7 @@ type operations struct {
 	softDeleteOldUploads                   *observation.Operation
 	staleSourcedCommits                    *observation.Operation
 	updateCommitedAt                       *observation.Operation
+	updateConfigurationPolicy              *observation.Operation
 	updateIndexConfigurationByRepositoryID *observation.Operation
 	updatePackageReferences                *observation.Operation
 	updatePackages                         *observation.Operation
@@ -92,7 +97,9 @@ func newOperations(observationContext *observation.Context, metrics *metrics.Ope
 		addUploadPart:                          op("AddUploadPart"),
 		calculateVisibleUploads:                op("CalculateVisibleUploads"),
 		commitGraphMetadata:                    op("CommitGraphMetadata"),
+		createConfigurationPolicy:              op("CreateConfigurationPolicy"),
 		definitionDumps:                        op("DefinitionDumps"),
+		deleteConfigurationPolicyByID:          op("DeleteConfigurationPolicyByID"),
 		deleteIndexByID:                        op("DeleteIndexByID"),
 		deleteIndexesWithoutRepository:         op("DeleteIndexesWithoutRepository"),
 		deleteOldIndexes:                       op("DeleteOldIndexes"),
@@ -106,6 +113,8 @@ func newOperations(observationContext *observation.Context, metrics *metrics.Ope
 		findClosestDumps:                       op("FindClosestDumps"),
 		findClosestDumpsFromGraphFragment:      op("FindClosestDumpsFromGraphFragment"),
 		getAutoindexDisabledRepositories:       op("getAutoindexDisabledRepositories"),
+		getConfigurationPolicies:               op("GetConfigurationPolicies"),
+		getConfigurationPolicyByID:             op("GetConfigurationPolicyByID"),
 		getDumpsByIDs:                          op("GetDumpsByIDs"),
 		getIndexByID:                           op("GetIndexByID"),
 		getIndexConfigurationByRepositoryID:    op("GetIndexConfigurationByRepositoryID"),
@@ -141,6 +150,7 @@ func newOperations(observationContext *observation.Context, metrics *metrics.Ope
 		softDeleteOldUploads:                   op("SoftDeleteOldUploads"),
 		staleSourcedCommits:                    op("StaleSourcedCommits"),
 		updateCommitedAt:                       op("UpdateCommitedAt"),
+		updateConfigurationPolicy:              op("UpdateConfigurationPolicy"),
 		updateIndexConfigurationByRepositoryID: op("UpdateIndexConfigurationByRepositoryID"),
 		updatePackageReferences:                op("UpdatePackageReferences"),
 		updatePackages:                         op("UpdatePackages"),
