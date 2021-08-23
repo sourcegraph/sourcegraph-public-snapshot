@@ -113,14 +113,6 @@ label.text-uppercase small,
     letter-spacing: -(0.25/12) + em;
 }
 
-// Make sure text color utilities are theme-aware
-.theme-light,
-.theme-dark {
-    @each $color, $value in $theme-colors {
-        @include text-emphasis-variant('.text-#{$color}', $value, true);
-    }
-}
-
 .list-dashed {
     list-style: none;
     position: relative;
