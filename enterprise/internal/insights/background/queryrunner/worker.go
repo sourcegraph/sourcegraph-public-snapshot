@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/prometheus/client_golang/prometheus"
+
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
 
 	"github.com/cockroachdb/errors"
@@ -63,6 +65,18 @@ func NewWorker(ctx context.Context, workerBaseStore *basestore.Store, insightsSt
 	})
 
 	sharedCache := make(map[string]*types.InsightSeries)
+
+	prometheus.DefaultRegisterer.MustRegister(prometheus.NewGaugeFunc(prometheus.GaugeOpts{
+		Name: "src_insights_search_queue_total",
+		Help: "Total number of jobs in the queued state.",
+	}, func() float64 {
+		count, err := workerStore.QueuedCount(context.Background(), false, nil)
+		if err != nil {
+			log15.Error("Failed to get queued job count", "error", err)
+		}
+
+		return float64(count)
+	}))
 
 	return dbworker.NewWorker(ctx, workerStore, &workHandler{
 		workerBaseStore: workerBaseStore,
