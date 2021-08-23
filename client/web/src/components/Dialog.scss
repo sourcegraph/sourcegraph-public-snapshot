@@ -1,13 +1,8 @@
 [data-reach-dialog-overlay] {
-    background-color: rgba($gray-04, 0.5);
+    background-color: var(--dialog-overlay-bg);
 }
 [data-reach-dialog-content] {
     background-color: var(--color-bg-1);
-}
-.theme-dark {
-    [data-reach-dialog-overlay] {
-        background-color: rgba($gray-08, 0.5);
-    }
 }
 
 .modal-body {

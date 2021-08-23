@@ -151,6 +151,7 @@ $theme-colors: (
     --dropdown-shadow-color: rgba(36, 41, 54, 0.2);
     --empty-command-list-color: var(--gray-08);
     --meter-background: var(--gray-04);
+    --dialog-overlay-bg: rgba($gray-04, 0.5);
 
     // Forms
     --input-bg: var(--white);
@@ -220,6 +221,7 @@ $theme-colors: (
     --dropdown-shadow-color: rgba(11, 12, 15, 0.8);
     --empty-command-list-color: var(--gray-05);
     --meter-background: var(--gray-07);
+    --dialog-overlay-bg: rgba($gray-08, 0.5);
 
     // Forms
     --input-bg: var(--gray-10);
