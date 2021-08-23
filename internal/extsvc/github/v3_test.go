@@ -2,10 +2,7 @@ package github
 
 import (
 	"context"
-	"flag"
 	"net/url"
-	"os"
-	"regexp"
 	"sort"
 	"testing"
 
@@ -50,8 +47,6 @@ func TestNewRepoCache(t *testing.T) {
 	})
 }
 
-// NOTE: To update VCR for this test, please use the token of "sourcegraph-vcr"
-// for GITHUB_TOKEN, which can be found in 1Password.
 func TestListAffiliatedRepositories(t *testing.T) {
 	tests := []struct {
 		name       string
@@ -149,8 +144,6 @@ func TestListAffiliatedRepositories(t *testing.T) {
 	}
 }
 
-// NOTE: To update VCR for this test, please use the token of "sourcegraph-vcr"
-// for GITHUB_TOKEN, which can be found in 1Password.
 func Test_GetAuthenticatedUserOAuthScopes(t *testing.T) {
 	client, save := newV3TestClient(t, "GetAuthenticatedUserOAuthScopes")
 	defer save()
@@ -220,18 +213,5 @@ func newV3TestClient(t testing.TB, name string) (*V3Client, func()) {
 		t.Fatal(err)
 	}
 
-	cli := NewV3Client(uri, &auth.OAuthBearerToken{
-		Token: os.Getenv("GITHUB_TOKEN"),
-	}, doer)
-
-	return cli, save
-}
-
-var updateRegex = flag.String("update", "", "Update testdata of tests matching the given regex")
-
-func update(name string) bool {
-	if updateRegex == nil || *updateRegex == "" {
-		return false
-	}
-	return regexp.MustCompile(*updateRegex).MatchString(name)
+	return NewV3Client(uri, vcrToken, doer), save
 }
