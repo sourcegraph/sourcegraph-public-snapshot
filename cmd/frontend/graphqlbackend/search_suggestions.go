@@ -392,7 +392,7 @@ func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestion
 		}
 		args.ResultTypes = result.TypeSymbol
 
-		res, err := r.doResults(ctx, args)
+		results, err := r.doResults(ctx, args)
 		if errors.Is(err, context.DeadlineExceeded) {
 			err = nil
 		}
@@ -401,7 +401,7 @@ func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestion
 		}
 
 		suggestions := make([]SearchSuggestionResolver, 0)
-		fileMatches := res.Matches
+		fileMatches := results.Matches
 		for _, match := range fileMatches {
 			fileMatch, ok := match.(*result.FileMatch)
 			if !ok {
