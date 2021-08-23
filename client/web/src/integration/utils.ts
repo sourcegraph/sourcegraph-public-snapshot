@@ -87,8 +87,7 @@ export interface PercySnapshotConfig {
 }
 
 /**
- * Takes a Percy snapshot in 4 variants:
- * dark/dark-redesign/light/light-redesign
+ * Takes a Percy snapshot in 2 variants: dark/light
  */
 export const percySnapshotWithVariants = async (
     page: Page,

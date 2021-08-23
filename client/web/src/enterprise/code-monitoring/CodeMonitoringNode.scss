@@ -8,13 +8,11 @@
         padding: 0;
     }
 
-    .theme-redesign & {
-        &:not(:last-of-type) {
-            margin-bottom: 1rem;
-        }
-        + .code-monitoring-node {
-            padding-top: 1rem;
-            border-top: 1px solid var(--border-color);
-        }
+    &:not(:last-of-type) {
+        margin-bottom: 1rem;
+    }
+    + .code-monitoring-node {
+        padding-top: 1rem;
+        border-top: 1px solid var(--border-color);
     }
 }

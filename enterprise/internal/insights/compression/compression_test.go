@@ -136,6 +136,11 @@ func TestFilterFrames(t *testing.T) {
 			{
 				RepoID:      2,
 				Commit:      "stamp1",
+				CommittedAt: toTime("2021-01-16"),
+			},
+			{
+				RepoID:      2,
+				Commit:      "donotuse",
 				CommittedAt: toTime("2021-01-15"),
 			},
 		}, nil)

@@ -231,13 +231,6 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
     const isSearchAutoFocusRequired = routeMatch === '/survey/:score?' || routeMatch === '/insights'
 
     const authRequired = useObservable(authRequiredObservable)
-
-    const hideGlobalSearchInput: boolean =
-        props.location.pathname === '/stats' ||
-        props.location.pathname === '/search/query-builder' ||
-        props.location.pathname === '/search/console' ||
-        props.location.pathname === '/search/notebook'
-
     const breadcrumbProps = useBreadcrumbs()
 
     // Control browser extension discoverability animation here.
@@ -279,15 +272,7 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
                         !isSearchConsolePage &&
                         !isSearchNotebookPage
                     }
-                    variant={
-                        hideGlobalSearchInput
-                            ? 'no-search-input'
-                            : isSearchHomepage
-                            ? 'low-profile'
-                            : isRepogroupPage
-                            ? 'low-profile-with-logo'
-                            : 'default'
-                    }
+                    variant={isSearchHomepage ? 'low-profile' : isRepogroupPage ? 'low-profile-with-logo' : 'default'}
                     hideNavLinks={false}
                     minimalNavLinks={minimalNavLinks}
                     isSearchAutoFocusRequired={!isSearchAutoFocusRequired}

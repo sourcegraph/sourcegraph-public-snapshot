@@ -41,9 +41,10 @@ export const SearchSidebarSection: React.FunctionComponent<{
     } else {
         visible = children.length > 0
         searchVisible = searchVisible && children.length > 1
+        const childrenList = children as React.ReactElement[]
 
         const filteredChildren = searchVisible
-            ? children.filter(child => {
+            ? childrenList.filter(child => {
                   if (child.type === FilterLink) {
                       const props: FilterLinkProps = child.props as FilterLinkProps
                       return (
@@ -53,7 +54,7 @@ export const SearchSidebarSection: React.FunctionComponent<{
                   }
                   return true
               })
-            : children
+            : childrenList
 
         body = (
             <>

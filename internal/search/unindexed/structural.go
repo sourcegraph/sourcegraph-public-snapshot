@@ -44,7 +44,7 @@ func (UnindexedList) IsIndexed() bool {
 
 // searchRepos represent the arguments to a search called over repositories.
 type searchRepos struct {
-	args    *search.TextParameters
+	args    *search.SearcherParameters
 	repoSet repoData
 	stream  streaming.Sender
 }
@@ -78,14 +78,20 @@ func streamStructuralSearch(ctx context.Context, args *search.TextParameters, st
 	ctx, stream, cleanup := streaming.WithLimit(ctx, stream, int(args.PatternInfo.FileMatchLimit))
 	defer cleanup()
 
-	request, err := textSearchRequest(ctx, args, zoektutil.MissingRepoRevStatus(stream))
+	request, err := zoektutil.NewIndexedSearchRequest(ctx, args, search.TextRequest, zoektutil.MissingRepoRevStatus(stream))
 	if err != nil {
 		return err
 	}
 
 	jobs := []*searchRepos{}
 	for _, repoSet := range repoSets(request, args.Mode) {
-		jobs = append(jobs, &searchRepos{args: args, stream: stream, repoSet: repoSet})
+		searcherArgs := &search.SearcherParameters{
+			SearcherURLs:    args.SearcherURLs,
+			PatternInfo:     args.PatternInfo,
+			UseFullDeadline: args.UseFullDeadline,
+		}
+
+		jobs = append(jobs, &searchRepos{args: searcherArgs, stream: stream, repoSet: repoSet})
 	}
 	return runJobs(ctx, jobs)
 }

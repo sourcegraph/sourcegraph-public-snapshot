@@ -28,7 +28,7 @@ exports[`BrandLogo renders dark sourcegraph symbol 1`] = `
 <img
   alt="Sourcegraph logo"
   className="brand-logo brand-logo--spin"
-  src="/assets/img/sourcegraph-mark.svg"
+  src="/assets/img/sourcegraph-mark.svg?v2"
 />
 `;
 
@@ -60,6 +60,6 @@ exports[`BrandLogo renders light sourcegraph symbol 1`] = `
 <img
   alt="Sourcegraph logo"
   className="brand-logo brand-logo--spin"
-  src="/assets/img/sourcegraph-mark.svg"
+  src="/assets/img/sourcegraph-mark.svg?v2"
 />
 `;

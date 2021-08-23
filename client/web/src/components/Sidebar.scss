@@ -1,21 +1,16 @@
 .sidebar {
     isolation: isolate;
     width: 12rem;
-    .theme-redesign & {
-        display: flex;
-        flex-direction: column;
-    }
-
+    display: flex;
+    flex-direction: column;
     &__chevron {
         color: var(--icon-color);
     }
 
     &__link {
         &--inactive {
-            .theme-redesign & {
-                &:hover {
-                    background-color: var(--color-bg-2);
-                }
+            &:hover {
+                background-color: var(--color-bg-2);
             }
         }
     }
