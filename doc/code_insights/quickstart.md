@@ -23,9 +23,15 @@ For more information about Code Insights see the [Code Insights](index.md) docum
 
 Add the following to either your Sourcegraph user settings `sourcegraph.example.com/users/[username]/settings` or organization settings `sourcegraph.example.com/organizations/[your_org]/settings`:
 
-`"experimentalFeatures": { "codeInsights": true }`
+```javascript
+"experimentalFeatures": { "codeInsights": true },
+ "extensions": {
+      "sourcegraph/code-stats-insights": true,
+      "sourcegraph/search-insights": true,
+    },
+```
 
-If you put this flag in your organization settings, everyone on your Sourcegraph insights will be able to see the "Insights" navbar menu item and create their own code insights. If you put the flag in your user settings, only you will have those abilities.
+If you put this in your organization settings, everyone on your Sourcegraph insights will be able to see the "Insights" navbar menu item and create their own code insights. If you put the flag in your user settings, only you will have those abilities.
 
 (Enabling code insights organization-wide doesn't mean that other users can automatically see the code insights you create, however – you can control that visibility per individual insight.)
 
