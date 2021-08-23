@@ -2,18 +2,42 @@ package codeintel
 
 import (
 	"fmt"
+	"os"
 	"path/filepath"
 	"testing"
 )
 
 func TestInferRepo(t *testing.T) {
-	repo, err := InferRepo()
+	cur, err := os.Getwd()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer os.Chdir(cur)
+
+	tempDir := t.TempDir()
+	err = os.Chdir(tempDir)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	_, err = runGitCommand("init")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	want := "github.com/a/b"
+
+	_, err = runGitCommand("remote", "add", "origin", want)
+	if err != nil {
+		t.Fatal(err)
+	}
+	got, err := InferRepo()
 	if err != nil {
 		t.Fatalf("unexpected error inferring repo: %s", err)
 	}
 
-	if repo != "github.com/sourcegraph/src-cli" {
-		t.Errorf("unexpected remote repo. want=%q have=%q", "github.com/sourcegraph/src-cli", repo)
+	if got != want {
+		t.Errorf("unexpected remote repo. want=%q have=%q", want, got)
 	}
 }
 
