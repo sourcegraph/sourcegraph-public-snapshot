@@ -86,7 +86,7 @@ func (p *Provider) FetchUserPermsByToken(ctx context.Context, token string, opts
 	perms := &authz.ExternalUserPermissions{
 		Exacts: make([]extsvc.RepoID, 0, repoSetSize),
 	}
-	seenRepos := make(map[extsvc.RepoID]bool, repoSetSize)
+	seenRepos := make(map[extsvc.RepoID]struct{}, repoSetSize)
 
 	// addRepoToPerms checks if the given repos are already tracked before adding it to perms.
 	addRepoToPerms := func(repos ...extsvc.RepoID) {
