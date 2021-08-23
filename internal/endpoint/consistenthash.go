@@ -18,14 +18,31 @@ package endpoint
 
 import (
 	"hash/crc32"
+	"os"
 	"sort"
 	"strconv"
+
+	"github.com/cespare/xxhash/v2"
+	"github.com/inconshreveable/log15"
+	"github.com/sourcegraph/go-rendezvous"
 )
 
 type consistentHash interface {
 	Lookup(string) string
 	LookupN(string, int) []string
 	Nodes() []string
+}
+
+func newConsistentHash(nodes []string) consistentHash {
+	if os.Getenv("SRC_ENDPOINTS_CONSISTENT_HASH") != "consistent(crc32ieee)" {
+		log15.Info("endpoints: using rendezvous hashing")
+		return rendezvous.New(nodes, xxhash.Sum64String)
+	}
+	// 50 replicas and crc32.ChecksumIEEE are the defaults used by
+	// groupcache.
+	m := hashMapNew(50, crc32.ChecksumIEEE)
+	m.add(nodes...)
+	return m
 }
 
 type hashFn func(data []byte) uint32
