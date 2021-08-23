@@ -128,64 +128,16 @@ func (p *Provider) FetchUserPermsByToken(ctx context.Context, token string, opts
 
 	// Now, we look for groups this user belongs to that give access to additional
 	// repositories.
-	groups := make([]cachedGroup, 0)
-	seenGroups := make(map[string]bool)
-	syncGroup := func(org, team string) {
-		if team != "" {
-			// if a team's repos is a subset of a organization's, don't sync. if an org
-			// has default read+ permissions, a team's orgs will always be a strict subset
-			// of the org's.
-			if _, exists := seenGroups[team]; exists {
-				return
-			}
-		}
-		g := cachedGroup{Org: org, Team: team}
-		seenGroups[g.key()] = true
-		groups = append(groups, g)
-	}
-	// Get orgs
-	hasNextPage = true
-	for page := 1; hasNextPage; page++ {
-		var orgs []*github.OrgDetails
-		orgs, hasNextPage, _, err = client.GetAuthenticatedUserOrgsDetails(ctx, page)
-		if err != nil {
-			return perms, err
-		}
-		for _, org := range orgs {
-			if canViewOrgRepos(org) {
-				syncGroup(org.Login, "")
-			}
-		}
-	}
-	// Get teams
-	hasNextPage = true
-	for page := 1; hasNextPage; page++ {
-		var teams []*github.Team
-		teams, hasNextPage, _, err = client.GetAuthenticatedUserTeams(ctx, page)
-		if err != nil {
-			return perms, err
-		}
-		for _, team := range teams {
-			// only sync teams with repos
-			if team.ReposCount > 0 {
-				syncGroup(team.Organization.Login, team.Slug)
-			}
-		}
+	groups, err := p.getAffiliatedGroups(ctx, client, opts)
+	if err != nil {
+		return perms, errors.Wrap(err, "getAffiliatedGroups")
 	}
 
 	// Get repos from groups, cached if possible.
 	for _, group := range groups {
-		groupPerms, exists := p.groupsCache.getGroup(group.Org, group.Team)
-		if exists {
-			if opts.InvalidateCaches {
-				// invalidate this cache and sync again
-				p.groupsCache.deleteGroup(groupPerms)
-				groupPerms.Repositories = nil
-			} else {
-				// use cached perms and continue
-				addRepoToPerms(groupPerms.Repositories...)
-				continue
-			}
+		// If a valid cached value was found, continue
+		if len(group.Repositories) > 0 {
+			continue
 		}
 
 		isOrg := group.Team == ""
@@ -200,18 +152,18 @@ func (p *Provider) FetchUserPermsByToken(ctx context.Context, token string, opts
 			}
 			if err != nil {
 				// track effort so far in cache
-				p.groupsCache.setGroup(groupPerms)
+				p.groupsCache.setGroup(group)
 				return perms, err
 			}
 			for _, r := range repos {
 				repoID := extsvc.RepoID(r.ID)
-				groupPerms.Repositories = append(groupPerms.Repositories, repoID)
+				group.Repositories = append(group.Repositories, repoID)
 				addRepoToPerms(repoID)
 			}
 		}
 
 		// add sync'd repos to cache
-		p.groupsCache.setGroup(groupPerms)
+		p.groupsCache.setGroup(group)
 	}
 
 	return perms, nil
@@ -287,4 +239,64 @@ func (p *Provider) FetchRepoPerms(ctx context.Context, repo *extsvc.Repository) 
 	}
 
 	return userIDs, nil
+}
+
+// getAffiliatedGroups retrieves affiliated organizations and teams for the given client
+// with token. Returned groups are populated from cache if a valid value is available.
+func (p *Provider) getAffiliatedGroups(ctx context.Context, clientWithToken client, opts authz.FetchPermsOptions) ([]cachedGroup, error) {
+	groups := make([]cachedGroup, 0)
+	seenGroups := make(map[string]struct{})
+	syncGroup := func(org, team string) {
+		if team != "" {
+			// if a team's repos is a subset of a organization's, don't sync. if an org
+			// has default read+ permissions, a team's orgs will always be a strict subset
+			// of the org's.
+			if _, exists := seenGroups[team]; exists {
+				return
+			}
+		}
+		cachedPerms, exists := p.groupsCache.getGroup(org, team)
+		if exists && opts.InvalidateCaches {
+			// invalidate this cache
+			p.groupsCache.deleteGroup(cachedPerms)
+			cachedPerms.Repositories = nil
+		}
+		group := cachedGroup{Org: org, Team: team, Repositories: cachedPerms.Repositories}
+		seenGroups[group.key()] = struct{}{}
+		groups = append(groups, group)
+	}
+	var err error
+
+	// Get orgs
+	hasNextPage := true
+	for page := 1; hasNextPage; page++ {
+		var orgs []*github.OrgDetails
+		orgs, hasNextPage, _, err = clientWithToken.GetAuthenticatedUserOrgsDetails(ctx, page)
+		if err != nil {
+			return groups, err
+		}
+		for _, org := range orgs {
+			if canViewOrgRepos(org) {
+				syncGroup(org.Login, "")
+			}
+		}
+	}
+
+	// Get teams
+	hasNextPage = true
+	for page := 1; hasNextPage; page++ {
+		var teams []*github.Team
+		teams, hasNextPage, _, err = clientWithToken.GetAuthenticatedUserTeams(ctx, page)
+		if err != nil {
+			return groups, err
+		}
+		for _, team := range teams {
+			// only sync teams with repos
+			if team.ReposCount > 0 {
+				syncGroup(team.Organization.Login, team.Slug)
+			}
+		}
+	}
+
+	return groups, nil
 }
