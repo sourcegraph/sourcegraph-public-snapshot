@@ -1559,7 +1559,7 @@ var (
 func honeySampleRate(cmd string, internal bool) uint {
 	switch {
 	case cmd == "rev-parse" && internal:
-		return 1 << 14
+		return 1 << 14 // 16384
 
 	case internal:
 		// we care more about user requests, so downsample internal more.
