@@ -4280,12 +4280,7 @@
       "Login": "sqs",
       "URL": "https://github.com/sqs"
      },
-     "RequestedTeam": {
-      "name": "",
-      "slug": "",
-      "url": "",
-      "organization": {}
-     },
+     "RequestedTeam": {},
      "CreatedAt": "2018-10-30T05:39:55Z"
     }
    },
@@ -4302,12 +4297,7 @@
       "Login": "slimsag",
       "URL": "https://github.com/slimsag"
      },
-     "RequestedTeam": {
-      "name": "",
-      "slug": "",
-      "url": "",
-      "organization": {}
-     },
+     "RequestedTeam": {},
      "CreatedAt": "2018-10-30T05:39:55Z"
     }
    },
@@ -4324,12 +4314,7 @@
       "Login": "felixfbecker",
       "URL": "https://github.com/felixfbecker"
      },
-     "RequestedTeam": {
-      "name": "",
-      "slug": "",
-      "url": "",
-      "organization": {}
-     },
+     "RequestedTeam": {},
      "CreatedAt": "2018-10-30T05:39:55Z"
     }
    },
@@ -4346,12 +4331,7 @@
       "Login": "ijsnow",
       "URL": "https://github.com/ijsnow"
      },
-     "RequestedTeam": {
-      "name": "",
-      "slug": "",
-      "url": "",
-      "organization": {}
-     },
+     "RequestedTeam": {},
      "CreatedAt": "2018-10-30T05:39:55Z"
     }
    },
@@ -4368,12 +4348,7 @@
       "Login": "keegancsmith",
       "URL": "https://github.com/keegancsmith"
      },
-     "RequestedTeam": {
-      "name": "",
-      "slug": "",
-      "url": "",
-      "organization": {}
-     },
+     "RequestedTeam": {},
      "CreatedAt": "2018-10-30T05:39:55Z"
     }
    },
@@ -4639,12 +4614,7 @@
       "Login": "beyang",
       "URL": "https://github.com/beyang"
      },
-     "RequestedTeam": {
-      "name": "",
-      "slug": "",
-      "url": "",
-      "organization": {}
-     },
+     "RequestedTeam": {},
      "CreatedAt": "2018-10-31T21:56:36Z"
     }
    },
@@ -4886,12 +4856,7 @@
       "Login": "dadlerj",
       "URL": "https://github.com/dadlerj"
      },
-     "RequestedTeam": {
-      "name": "",
-      "slug": "",
-      "url": "",
-      "organization": {}
-     },
+     "RequestedTeam": {},
      "CreatedAt": "2018-11-01T02:34:32Z"
     }
    },

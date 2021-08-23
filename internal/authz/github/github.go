@@ -293,7 +293,7 @@ func (p *Provider) getAffiliatedGroups(ctx context.Context, clientWithToken clie
 		}
 		for _, team := range teams {
 			// only sync teams with repos
-			if team.ReposCount > 0 {
+			if team.ReposCount > 0 && team.Organization != nil {
 				syncGroup(team.Organization.Login, team.Slug)
 			}
 		}

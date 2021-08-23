@@ -239,14 +239,14 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 				case 1:
 					return []*github.Team{
 						// should not get repos from this team because parent org has default read permissions
-						{Organization: mockOrgRead.Org, Name: "ns team", Slug: "ns-team"},
+						{Organization: &mockOrgRead.Org, Name: "ns team", Slug: "ns-team"},
 						// should not get repos from this team since it has no repos
-						{Organization: mockOrgNoRead.Org, Name: "ns team", Slug: "ns-team", ReposCount: 0},
+						{Organization: &mockOrgNoRead.Org, Name: "ns team", Slug: "ns-team", ReposCount: 0},
 					}, true, 1, nil
 				case 2:
 					return []*github.Team{
 						// should get repos from this team
-						{Organization: mockOrgNoRead.Org, Name: "ns team 2", Slug: "ns-team-2", ReposCount: 3},
+						{Organization: &mockOrgNoRead.Org, Name: "ns team 2", Slug: "ns-team-2", ReposCount: 3},
 					}, false, 1, nil
 				}
 				return nil, false, 1, nil
@@ -318,7 +318,7 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 			MockGetAuthenticatedUserOrgsDetails: mockListOrgDetails,
 			MockGetAuthenticatedUserTeams: func(ctx context.Context, page int) (teams []*github.Team, hasNextPage bool, rateLimitCost int, err error) {
 				return []*github.Team{
-					{Organization: mockOrgNoRead.Org, Name: "ns team 2", Slug: "ns-team-2", ReposCount: 3},
+					{Organization: &mockOrgNoRead.Org, Name: "ns team 2", Slug: "ns-team-2", ReposCount: 3},
 				}, false, 1, nil
 			},
 			MockListOrgRepositories: func(ctx context.Context, org string, page int, repoType string) (repos []*github.Repository, hasNextPage bool, rateLimitCost int, err error) {

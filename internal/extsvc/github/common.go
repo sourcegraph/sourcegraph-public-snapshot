@@ -47,12 +47,12 @@ type Actor struct {
 
 // A Team represents a team on Github.
 type Team struct {
-	Name string `json:"name"`
-	Slug string `json:"slug"`
-	URL  string `json:"url"`
+	Name string `json:"name,omitempty"`
+	Slug string `json:"slug,omitempty"`
+	URL  string `json:"url,omitempty"`
 
-	ReposCount   int `json:"repos_count,omitempty"`
-	Organization Org `json:"organization,omitempty"`
+	ReposCount   int  `json:"repos_count,omitempty"`
+	Organization *Org `json:"organization,omitempty"`
 }
 
 // A GitActor represents an actor in a Git commit (ie. an author or committer).
