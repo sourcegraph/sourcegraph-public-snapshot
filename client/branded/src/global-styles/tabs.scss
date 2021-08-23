@@ -3,92 +3,67 @@
     background: transparent;
 }
 
+.tablist-wrapper {
+    min-height: 2rem;
+    border-bottom: 1px solid var(--border-color-2);
+    padding-bottom: 0;
+    display: flex;
+    align-items: stretch;
+    justify-content: space-between;
+}
+
+[data-reach-tabs] {
+    background: var(--body-bg);
+}
+
 [data-reach-tab] {
-    text-transform: uppercase;
+    align-items: center;
+    letter-spacing: normal;
     font-size: 0.75rem;
-    letter-spacing: 1px;
-    border-bottom: 3px solid transparent;
-    margin-bottom: -(3/16) + rem;
-    padding: (5/16) + rem;
-    color: var(--text-muted);
+    margin: 0 0.375rem;
+    padding: 0 0.125rem;
+    color: var(--body-color);
+    text-transform: none;
+    display: inline-flex;
+    flex-direction: column;
+    justify-content: center;
+    border-bottom: 2px solid transparent;
     &:hover {
-        color: var(--body-color);
-        border-bottom: 3px solid var(--link-color);
+        border-bottom: 2px solid var(--border-color);
     }
     &[data-selected] {
         color: var(--body-color);
-        border-bottom: 3px solid var(--primary);
+        font-weight: 700;
+        border-bottom: 2px solid var(--brand-secondary);
     }
-}
-
-.tablist-wrapper {
-    border-bottom: 3px solid var(--border-color);
-    align-items: center;
-}
-
-.theme-redesign {
-    [data-reach-tabs] {
-        background: var(--body-bg);
+    &:active {
+        background-color: transparent;
     }
-
-    [data-reach-tab] {
-        align-items: center;
-        letter-spacing: normal;
-        font-size: 0.75rem;
-        margin: 0 0.375rem;
-        padding: 0 0.125rem;
-        color: var(--body-color);
-        text-transform: none;
-        display: inline-flex;
-        flex-direction: column;
-        justify-content: center;
-        border-bottom: 2px solid transparent;
-        &:active {
-            background-color: transparent;
-        }
-        &:hover {
-            border-bottom: 2px solid var(--border-color);
-        }
-        &[data-selected] {
-            color: var(--body-color);
-            font-weight: 700;
-            border-bottom: 2px solid var(--brand-secondary);
-        }
-        // ::after used here for avoids the CLS when the font-weight change (see: https://css-tricks.com/bold-on-hover-without-the-layout-shift/)
-        &::after {
-            content: attr(data-tab-content);
-            height: 0;
-            text-transform: capitalize;
-            visibility: hidden; // a11y: avoid detection for voice over
-            overflow: hidden;
-            user-select: none;
-            pointer-events: none;
-            font-weight: 700;
-        }
-
-        &:first-of-type {
-            margin-left: 0;
-        }
-
-        &:focus-visible {
-            outline: none;
-            box-shadow: none;
-            > .tablist-wrapper--tab-label {
-                padding: 0.125rem;
-                margin: 0 -0.125rem;
-                border-radius: var(--border-radius);
-                outline: 1px solid transparent;
-                box-shadow: var(--focus-box-shadow);
-            }
-        }
+    // ::after used here for avoids the CLS when the font-weight change (see: https://css-tricks.com/bold-on-hover-without-the-layout-shift/)
+    &::after {
+        content: attr(data-tab-content);
+        height: 0;
+        text-transform: capitalize;
+        visibility: hidden; // a11y: avoid detection for voice over
+        overflow: hidden;
+        user-select: none;
+        pointer-events: none;
+        font-weight: 700;
     }
 
-    .tablist-wrapper {
-        min-height: 2rem;
-        border-bottom: 1px solid var(--border-color-2);
-        padding-bottom: 0;
-        display: flex;
-        align-items: stretch;
-        justify-content: space-between;
+    &:first-of-type {
+        margin-left: 0;
+    }
+
+    &:focus-visible {
+        outline: none;
+        box-shadow: none;
+        > .tablist-wrapper--tab-label {
+            padding: 0.125rem;
+            margin: 0 -0.125rem;
+            border-radius: var(--border-radius);
+            outline: 1px solid transparent;
+            box-shadow: var(--focus-box-shadow);
+        }
     }
 }
