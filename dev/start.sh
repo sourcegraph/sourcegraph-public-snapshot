@@ -33,12 +33,6 @@ if [ -f .env ]; then
 fi
 
 # Verify postgresql config.
-export PGPORT=${PGPORT:-5432}
-export PGHOST=${PGHOST:-localhost}
-export PGUSER=${PGUSER:-sourcegraph}
-export PGPASSWORD=${PGPASSWORD:-sourcegraph}
-export PGDATABASE=${PGDATABASE:-sourcegraph}
-export PGSSLMODE=${PGSSLMODE:-disable}
 hash psql 2>/dev/null || {
   # "brew install postgres" does not put psql on the $PATH by default;
   # try to fix this automatically if we can.
@@ -50,9 +44,18 @@ hash psql 2>/dev/null || {
   }
 }
 if ! psql -wc '\x' >/dev/null; then
-  echo "FAIL: postgreSQL config invalid or missing OR postgreSQL is still starting up."
-  echo "You probably need, at least, PGUSER and PGPASSWORD set in the environment."
-  exit 1
+  export PGPORT=${PGPORT:-5432}
+  export PGHOST=${PGHOST:-localhost}
+  export PGUSER=${PGUSER:-sourcegraph}
+  export PGPASSWORD=${PGPASSWORD:-sourcegraph}
+  export PGDATABASE=${PGDATABASE:-sourcegraph}
+  export PGSSLMODE=${PGSSLMODE:-disable}
+
+  if ! psql -wc '\x' >/dev/null; then
+    echo "FAIL: postgreSQL config invalid or missing OR postgreSQL is still starting up."
+    echo "You probably need, at least, PGUSER and PGPASSWORD set in the environment."
+    exit 1
+  fi
 fi
 
 export PGSSLMODE=disable
