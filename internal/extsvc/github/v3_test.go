@@ -240,8 +240,8 @@ func TestListTeamRepositories(t *testing.T) {
 	}
 
 	testutil.AssertGolden(t,
-		"testdata/golden/ListOrgRepositories",
-		update("ListOrgRepositories"),
+		"testdata/golden/ListTeamRepositories",
+		update("ListTeamRepositories"),
 		repos,
 	)
 }

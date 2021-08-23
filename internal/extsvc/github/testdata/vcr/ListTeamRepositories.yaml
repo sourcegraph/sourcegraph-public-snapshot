@@ -30,7 +30,7 @@ interactions:
       Content-Type:
       - application/json; charset=utf-8
       Date:
-      - Mon, 23 Aug 2021 16:08:25 GMT
+      - Mon, 23 Aug 2021 16:37:42 GMT
       Etag:
       - W/"a4013f65fab3b526047a3441476d51c716f5b171ee535cd01dc2acf620c76af9"
       Referrer-Policy:
@@ -52,7 +52,7 @@ interactions:
       - github.v3; param=jean-grey-preview; format=json, github.mercy-preview; param=machine-man-preview;
         format=json
       X-Github-Request-Id:
-      - 1201:1318:1AC33EC:4A88FE8:6123C7F8
+      - 12A1:102A:2961D2F:5B77C9D:6123CED5
       X-Oauth-Scopes:
       - admin:enterprise, admin:gpg_key, admin:org, admin:org_hook, admin:public_key,
         admin:repo_hook, delete:packages, delete_repo, gist, notifications, repo,
@@ -60,13 +60,13 @@ interactions:
       X-Ratelimit-Limit:
       - "5000"
       X-Ratelimit-Remaining:
-      - "4466"
+      - "4444"
       X-Ratelimit-Reset:
       - "1629737762"
       X-Ratelimit-Resource:
       - core
       X-Ratelimit-Used:
-      - "534"
+      - "556"
       X-Xss-Protection:
       - "0"
     status: 200 OK
@@ -102,7 +102,7 @@ interactions:
       Content-Type:
       - application/json; charset=utf-8
       Date:
-      - Mon, 23 Aug 2021 16:08:25 GMT
+      - Mon, 23 Aug 2021 16:37:42 GMT
       Etag:
       - '"6fe19348564b14513fa4af3c79da2ab5864921bdd3211e7eff3520338d911a76"'
       Link:
@@ -129,7 +129,7 @@ interactions:
       - github.v3; param=jean-grey-preview; format=json, github.mercy-preview; param=machine-man-preview;
         format=json
       X-Github-Request-Id:
-      - 1201:1318:1AC33F6:4A8900D:6123C7F9
+      - 12A1:102A:2961D38:5B77CB2:6123CED5
       X-Oauth-Scopes:
       - admin:enterprise, admin:gpg_key, admin:org, admin:org_hook, admin:public_key,
         admin:repo_hook, delete:packages, delete_repo, gist, notifications, repo,
@@ -137,13 +137,13 @@ interactions:
       X-Ratelimit-Limit:
       - "5000"
       X-Ratelimit-Remaining:
-      - "4465"
+      - "4443"
       X-Ratelimit-Reset:
       - "1629737762"
       X-Ratelimit-Resource:
       - core
       X-Ratelimit-Used:
-      - "535"
+      - "557"
       X-Xss-Protection:
       - "0"
     status: 200 OK
