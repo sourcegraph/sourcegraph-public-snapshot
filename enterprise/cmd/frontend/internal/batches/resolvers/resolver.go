@@ -718,6 +718,12 @@ func (r *Resolver) BatchSpecExecutions(ctx context.Context, args *graphqlbackend
 		return nil, err
 	}
 
+	// These endpoints currently only work for site admins
+	authErr := backend.CheckCurrentUserIsSiteAdmin(ctx, r.store.DB())
+	if authErr != nil {
+		return nil, authErr
+	}
+
 	opts := store.ListBatchSpecExecutionsOpts{}
 
 	if err := validateFirstParamDefaults(args.First); err != nil {
@@ -730,12 +736,6 @@ func (r *Resolver) BatchSpecExecutions(ctx context.Context, args *graphqlbackend
 			return nil, err
 		}
 		opts.Cursor = cursor
-	}
-
-	// These endpoints currently only work for site admins
-	authErr := backend.CheckCurrentUserIsSiteAdmin(ctx, r.store.DB())
-	if authErr != nil {
-		return nil, authErr
 	}
 
 	return &batchSpecExecutionConnectionResolver{
