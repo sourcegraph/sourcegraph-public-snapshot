@@ -814,6 +814,45 @@ Stores data points for a code insight that do not need to be queried directly, b
 
 **recording_time**: The time for which this dependency should be recorded at using the parents value.
 
+# Table "public.lsif_configuration_policies"
+```
+           Column            |  Type   | Collation | Nullable |                         Default                         
+-----------------------------+---------+-----------+----------+---------------------------------------------------------
+ id                          | integer |           | not null | nextval('lsif_configuration_policies_id_seq'::regclass)
+ repository_id               | integer |           |          | 
+ name                        | text    |           |          | 
+ type                        | text    |           | not null | 
+ pattern                     | text    |           | not null | 
+ retention_enabled           | boolean |           | not null | 
+ retention_duration_hours    | integer |           | not null | 
+ retain_intermediate_commits | boolean |           | not null | 
+ indexing_enabled            | boolean |           | not null | 
+ index_commit_max_age_hours  | integer |           | not null | 
+ index_intermediate_commits  | boolean |           | not null | 
+Indexes:
+    "lsif_configuration_policies_pkey" PRIMARY KEY, btree (id)
+    "lsif_configuration_policies_repository_id" btree (repository_id)
+
+```
+
+**index_commit_max_age_hours**: The max age of commits indexed by this configuration policy.
+
+**index_intermediate_commits**: If the matching Git object is a branch, setting this value to true will also index all commits on the matching branches. Setting this value to false will only consider the tip of the branch.
+
+**indexing_enabled**: Whether or not this configuration policy affects auto-indexing schedules.
+
+**pattern**: A pattern used to match` names of the associated Git object type.
+
+**repository_id**: The identifier of the repository to which this configuration policy applies. If absent, this policy is applied globally.
+
+**retain_intermediate_commits**: If the matching Git object is a branch, setting this value to true will also retain all data used to resolve queries for any commit on the matching branches. Setting this value to false will only consider the tip of the branch.
+
+**retention_duration_hours**: The max age of data retained by this configuration policy.
+
+**retention_enabled**: Whether or not this configuration policy affects data retention rules.
+
+**type**: The type of Git object (e.g., COMMIT, BRANCH, TAG).
+
 # Table "public.lsif_dependency_indexing_jobs"
 ```
       Column       |           Type           | Collation | Nullable |                          Default                          

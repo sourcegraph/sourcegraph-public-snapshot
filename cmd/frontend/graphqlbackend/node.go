@@ -239,6 +239,11 @@ func (r *NodeResolver) ToLSIFIndex() (LSIFIndexResolver, bool) {
 	return n, ok
 }
 
+func (r *NodeResolver) ToCodeIntelligenceConfigurationPolicy() (CodeIntelligenceConfigurationPolicyResolver, bool) {
+	n, ok := r.Node.(CodeIntelligenceConfigurationPolicyResolver)
+	return n, ok
+}
+
 func (r *NodeResolver) ToOutOfBandMigration() (*outOfBandMigrationResolver, bool) {
 	n, ok := r.Node.(*outOfBandMigrationResolver)
 	return n, ok
