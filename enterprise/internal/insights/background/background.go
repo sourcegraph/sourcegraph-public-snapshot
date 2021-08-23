@@ -40,7 +40,7 @@ func GetBackgroundJobs(ctx context.Context, mainAppDB *sql.DB, insightsDB *sql.D
 		Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
 		Registerer: prometheus.DefaultRegisterer,
 	}
-	queryRunnerWorkerMetrics, queryRunnerResetterMetrics := newWorkerMetrics(observationContext, "insights_search_queue_processor")
+	queryRunnerWorkerMetrics, queryRunnerResetterMetrics := newWorkerMetrics(observationContext, "search_queue_processor")
 
 	insightsMetadataStore := store.NewInsightStore(insightsDB)
 
