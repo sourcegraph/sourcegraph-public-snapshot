@@ -14,7 +14,7 @@ import (
 
 	"github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
-	"github.com/sourcegraph/src-cli/internal/batches"
+	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
 	"github.com/sourcegraph/src-cli/internal/batches/git"
 	"github.com/sourcegraph/src-cli/internal/batches/log"
 	"github.com/sourcegraph/src-cli/internal/batches/workspace"
@@ -218,7 +218,7 @@ func executeSingleStep(
 	opts *executionOpts,
 	workspace workspace.Workspace,
 	i int,
-	step batches.Step,
+	step batcheslib.Step,
 	imageDigest string,
 	stepContext *StepContext,
 ) (bytes.Buffer, bytes.Buffer, error) {
@@ -334,7 +334,7 @@ func executeSingleStep(
 	return stdoutBuffer, stderrBuffer, nil
 }
 
-func setOutputs(stepOutputs batches.Outputs, global map[string]interface{}, stepCtx *StepContext) error {
+func setOutputs(stepOutputs batcheslib.Outputs, global map[string]interface{}, stepCtx *StepContext) error {
 	for name, output := range stepOutputs {
 		var value bytes.Buffer
 
@@ -414,7 +414,7 @@ func probeImageForShell(ctx context.Context, image string) (shell, tempfile stri
 
 // createFilesToMount creates temporary files with the contents of Step.Files
 // that are to be mounted into the container that executes the step.
-func createFilesToMount(tempDir string, step batches.Step, stepContext *StepContext) (map[string]*os.File, func(), error) {
+func createFilesToMount(tempDir string, step batcheslib.Step, stepContext *StepContext) (map[string]*os.File, func(), error) {
 	// Parse and render the step.Files.
 	files, err := renderStepMap(step.Files, stepContext)
 	if err != nil {

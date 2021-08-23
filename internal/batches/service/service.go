@@ -12,6 +12,7 @@ import (
 	"strings"
 
 	"github.com/pkg/errors"
+	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
 	"github.com/sourcegraph/src-cli/internal/api"
 	"github.com/sourcegraph/src-cli/internal/batches"
 	"github.com/sourcegraph/src-cli/internal/batches/docker"
@@ -150,7 +151,7 @@ func (svc *Service) CreateChangesetSpec(ctx context.Context, spec *batches.Chang
 //
 // Progress information is reported back to the given progress function: perc
 // will be a value between 0.0 and 1.0, inclusive.
-func (svc *Service) EnsureDockerImages(ctx context.Context, spec *batches.BatchSpec, progress func(perc float64)) (map[string]docker.Image, error) {
+func (svc *Service) EnsureDockerImages(ctx context.Context, spec *batcheslib.BatchSpec, progress func(perc float64)) (map[string]docker.Image, error) {
 	total := len(spec.Steps) + 1
 	progress(0)
 
@@ -181,7 +182,7 @@ func (svc *Service) EnsureImage(ctx context.Context, name string) (docker.Image,
 	return img, nil
 }
 
-func (svc *Service) BuildTasks(ctx context.Context, repos []*graphql.Repository, spec *batches.BatchSpec) ([]*executor.Task, error) {
+func (svc *Service) BuildTasks(ctx context.Context, repos []*graphql.Repository, spec *batcheslib.BatchSpec) ([]*executor.Task, error) {
 	return executor.BuildTasks(ctx, spec, svc, repos)
 }
 
@@ -258,8 +259,8 @@ func (e *duplicateBranchesErr) Error() string {
 	return out.String()
 }
 
-func (svc *Service) ParseBatchSpec(data []byte) (*batches.BatchSpec, error) {
-	spec, err := batches.ParseBatchSpec(data, batches.ParseBatchSpecOptions{
+func (svc *Service) ParseBatchSpec(data []byte) (*batcheslib.BatchSpec, error) {
+	spec, err := batcheslib.ParseBatchSpec(data, batcheslib.ParseBatchSpecOptions{
 		AllowArrayEnvironments: svc.features.AllowArrayEnvironments,
 		AllowTransformChanges:  svc.features.AllowTransformChanges,
 		AllowConditionalExec:   svc.features.AllowConditionalExec,
@@ -326,7 +327,7 @@ func (svc *Service) GenerateExampleSpec(ctx context.Context, fileName string) er
 		return err
 	}
 
-	author := batches.GitCommitAuthor{
+	author := batcheslib.GitCommitAuthor{
 		Name:  "Sourcegraph",
 		Email: "batch-changes@sourcegraph.com",
 	}
@@ -408,7 +409,7 @@ func (svc *Service) ResolveNamespace(ctx context.Context, namespace string) (str
 	return "", fmt.Errorf("failed to resolve namespace %q: no user or organization found", namespace)
 }
 
-func (svc *Service) ResolveRepositories(ctx context.Context, spec *batches.BatchSpec) ([]*graphql.Repository, error) {
+func (svc *Service) ResolveRepositories(ctx context.Context, spec *batcheslib.BatchSpec) ([]*graphql.Repository, error) {
 	seen := map[string]*graphql.Repository{}
 	unsupported := batches.UnsupportedRepoSet{}
 	ignored := batches.IgnoredRepoSet{}
@@ -476,7 +477,7 @@ func (svc *Service) ResolveRepositories(ctx context.Context, spec *batches.Batch
 	return final, nil
 }
 
-func (svc *Service) ResolveRepositoriesOn(ctx context.Context, on *batches.OnQueryOrRepository) ([]*graphql.Repository, error) {
+func (svc *Service) ResolveRepositoriesOn(ctx context.Context, on *batcheslib.OnQueryOrRepository) ([]*graphql.Repository, error) {
 	if on.RepositoriesMatchingQuery != "" {
 		return svc.resolveRepositorySearch(ctx, on.RepositoriesMatchingQuery)
 	} else if on.Repository != "" && on.Branch != "" {

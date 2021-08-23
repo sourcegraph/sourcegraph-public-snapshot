@@ -8,6 +8,7 @@ import (
 
 	"github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
+	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
 	"github.com/sourcegraph/src-cli/internal/api"
 	"github.com/sourcegraph/src-cli/internal/batches"
 	"github.com/sourcegraph/src-cli/internal/batches/docker"
@@ -220,7 +221,7 @@ type TaskExecutionUI interface {
 // Execute executes the given Tasks and the importChangeset statements in the
 // given spec. It regularly calls the executionProgressPrinter with the
 // current TaskStatuses.
-func (c *Coordinator) Execute(ctx context.Context, tasks []*Task, spec *batches.BatchSpec, ui TaskExecutionUI) ([]*batches.ChangesetSpec, []string, error) {
+func (c *Coordinator) Execute(ctx context.Context, tasks []*Task, spec *batcheslib.BatchSpec, ui TaskExecutionUI) ([]*batches.ChangesetSpec, []string, error) {
 	var (
 		specs []*batches.ChangesetSpec
 		errs  *multierror.Error

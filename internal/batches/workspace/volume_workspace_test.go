@@ -12,7 +12,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/pkg/errors"
 
-	"github.com/sourcegraph/src-cli/internal/batches"
+	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
 	"github.com/sourcegraph/src-cli/internal/batches/docker"
 	"github.com/sourcegraph/src-cli/internal/batches/git"
 	"github.com/sourcegraph/src-cli/internal/batches/graphql"
@@ -61,7 +61,7 @@ func TestVolumeWorkspaceCreator(t *testing.T) {
 	for name, tc := range map[string]struct {
 		archive      *fakeRepoArchive
 		expectations []*expect.Expectation
-		steps        []batches.Step
+		steps        []batcheslib.Step
 		imageEnsurer imageEnsurer
 		wantErr      bool
 	}{
@@ -99,7 +99,7 @@ func TestVolumeWorkspaceCreator(t *testing.T) {
 					"sh", "/run.sh",
 				),
 			},
-			steps:        []batches.Step{},
+			steps:        []batcheslib.Step{},
 			imageEnsurer: func(_ context.Context, _ string) (docker.Image, error) { return nil, nil },
 		},
 		"one root:root step": {
@@ -136,7 +136,7 @@ func TestVolumeWorkspaceCreator(t *testing.T) {
 					"sh", "/run.sh",
 				),
 			},
-			steps: []batches.Step{
+			steps: []batcheslib.Step{
 				{},
 			},
 			imageEnsurer: func(_ context.Context, _ string) (docker.Image, error) {
@@ -177,7 +177,7 @@ func TestVolumeWorkspaceCreator(t *testing.T) {
 					"sh", "/run.sh",
 				),
 			},
-			steps: []batches.Step{
+			steps: []batcheslib.Step{
 				{},
 			},
 			imageEnsurer: func(_ context.Context, _ string) (docker.Image, error) {
@@ -191,7 +191,7 @@ func TestVolumeWorkspaceCreator(t *testing.T) {
 					"docker", "volume", "create",
 				),
 			},
-			steps: []batches.Step{
+			steps: []batcheslib.Step{
 				{},
 			},
 			imageEnsurer: func(_ context.Context, _ string) (docker.Image, error) {
@@ -214,7 +214,7 @@ func TestVolumeWorkspaceCreator(t *testing.T) {
 					"sh", "-c", "touch /work/*; chown -R 0:0 /work",
 				),
 			},
-			steps: []batches.Step{
+			steps: []batcheslib.Step{
 				{},
 			},
 			imageEnsurer: func(_ context.Context, _ string) (docker.Image, error) {
@@ -256,7 +256,7 @@ func TestVolumeWorkspaceCreator(t *testing.T) {
 					"sh", "/run.sh",
 				),
 			},
-			steps: []batches.Step{
+			steps: []batcheslib.Step{
 				{},
 			},
 			imageEnsurer: func(_ context.Context, _ string) (docker.Image, error) {
@@ -289,7 +289,7 @@ func TestVolumeWorkspaceCreator(t *testing.T) {
 					"sh", "-c", "unzip /tmp/zip; rm /work/*",
 				),
 			},
-			steps: []batches.Step{
+			steps: []batcheslib.Step{
 				{},
 			},
 			imageEnsurer: func(_ context.Context, _ string) (docker.Image, error) {
@@ -343,7 +343,7 @@ func TestVolumeWorkspaceCreator(t *testing.T) {
 					"sh", "/run.sh",
 				),
 			},
-			steps: []batches.Step{
+			steps: []batcheslib.Step{
 				{},
 			},
 			imageEnsurer: func(_ context.Context, _ string) (docker.Image, error) {

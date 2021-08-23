@@ -10,6 +10,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/sourcegraph/batch-change-utils/overridable"
+	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
 	"github.com/sourcegraph/src-cli/internal/batches"
 	"github.com/sourcegraph/src-cli/internal/batches/git"
 	"github.com/sourcegraph/src-cli/internal/batches/graphql"
@@ -54,7 +55,7 @@ func TestCoordinator_Execute(t *testing.T) {
 		opts     NewCoordinatorOpts
 
 		tasks     []*Task
-		batchSpec *batches.BatchSpec
+		batchSpec *batcheslib.BatchSpec
 
 		wantCacheEntries int
 		wantSpecs        []*batches.ChangesetSpec
@@ -65,7 +66,7 @@ func TestCoordinator_Execute(t *testing.T) {
 
 			tasks: []*Task{srcCLITask, sourcegraphTask},
 
-			batchSpec: &batches.BatchSpec{
+			batchSpec: &batcheslib.BatchSpec{
 				Name:              "my-batch-change",
 				Description:       "the description",
 				ChangesetTemplate: testChangesetTemplate,
@@ -93,10 +94,10 @@ func TestCoordinator_Execute(t *testing.T) {
 			name:  "templated changesetTemplate",
 			tasks: []*Task{srcCLITask},
 
-			batchSpec: &batches.BatchSpec{
+			batchSpec: &batcheslib.BatchSpec{
 				Name:        "my-batch-change",
 				Description: "the description",
-				ChangesetTemplate: &batches.ChangesetTemplate{
+				ChangesetTemplate: &batcheslib.ChangesetTemplate{
 					Title: `output1=${{ outputs.output1}}`,
 					Body: `output1=${{ outputs.output1}}
 		output2=${{ outputs.output2.subField }}
@@ -112,9 +113,9 @@ func TestCoordinator_Execute(t *testing.T) {
 		batch_change_description=${{ batch_change.description }}
 		`,
 					Branch: "templated-branch-${{ outputs.output1 }}",
-					Commit: batches.ExpandedGitCommitDescription{
+					Commit: batcheslib.ExpandedGitCommitDescription{
 						Message: "output1=${{ outputs.output1}},output2=${{ outputs.output2.subField }}",
-						Author: &batches.GitCommitAuthor{
+						Author: &batcheslib.GitCommitAuthor{
 							Name:  "output1=${{ outputs.output1}}",
 							Email: "output1=${{ outputs.output1}}",
 						},
@@ -180,10 +181,10 @@ func TestCoordinator_Execute(t *testing.T) {
 
 			tasks: []*Task{srcCLITask, sourcegraphTask},
 
-			batchSpec: &batches.BatchSpec{
+			batchSpec: &batcheslib.BatchSpec{
 				ChangesetTemplate: testChangesetTemplate,
-				TransformChanges: &batches.TransformChanges{
-					Group: []batches.Group{
+				TransformChanges: &batcheslib.TransformChanges{
+					Group: []batcheslib.Group{
 						{Directory: "a/b/c", Branch: "in-directory-c"},
 						{Directory: "a/b", Branch: "in-directory-b", Repository: testRepo2.Name},
 					},
@@ -226,7 +227,7 @@ func TestCoordinator_Execute(t *testing.T) {
 
 			tasks: []*Task{srcCLITask, sourcegraphTask},
 
-			batchSpec: &batches.BatchSpec{
+			batchSpec: &batcheslib.BatchSpec{
 				Name:              "my-batch-change",
 				Description:       "the description",
 				ChangesetTemplate: testChangesetTemplate,
@@ -352,7 +353,7 @@ func TestCoordinator_Execute_StepCaching(t *testing.T) {
 	logManager := mock.LogNoOpManager{}
 
 	task := &Task{
-		Steps: []batches.Step{
+		Steps: []batcheslib.Step{
 			{Run: `echo "one"`},
 			{Run: `echo "two"`},
 			{Run: `echo "three"`},
@@ -430,7 +431,7 @@ func TestCoordinator_Execute_StepCaching(t *testing.T) {
 func execAndEnsure(t *testing.T, coord *Coordinator, exec *dummyExecutor, task *Task, cb startCallback) {
 	t.Helper()
 
-	batchSpec := &batches.BatchSpec{ChangesetTemplate: testChangesetTemplate}
+	batchSpec := &batcheslib.BatchSpec{ChangesetTemplate: testChangesetTemplate}
 	// Set the ChangesetTemplate on Task
 	task.Template = batchSpec.ChangesetTemplate
 

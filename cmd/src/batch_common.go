@@ -16,6 +16,7 @@ import (
 
 	"github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
+	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
 	"github.com/sourcegraph/src-cli/internal/api"
 	"github.com/sourcegraph/src-cli/internal/batches"
 	"github.com/sourcegraph/src-cli/internal/batches/executor"
@@ -366,7 +367,7 @@ func executeBatchSpec(ctx context.Context, opts executeBatchSpecOpts) (err error
 
 // parseBatchSpec parses and validates the given batch spec. If the spec has
 // validation errors, they are returned.
-func parseBatchSpec(file *string, svc *service.Service) (*batches.BatchSpec, string, error) {
+func parseBatchSpec(file *string, svc *service.Service) (*batcheslib.BatchSpec, string, error) {
 	f, err := batchOpenFileFlag(file)
 	if err != nil {
 		return nil, "", err

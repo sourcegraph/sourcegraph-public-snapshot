@@ -7,47 +7,47 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
-	"github.com/sourcegraph/src-cli/internal/batches"
+	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
 	"github.com/sourcegraph/src-cli/internal/batches/graphql"
 )
 
 func TestTaskBuilder_BuildTask_IfConditions(t *testing.T) {
 	tests := map[string]struct {
-		spec *batches.BatchSpec
+		spec *batcheslib.BatchSpec
 
-		wantSteps []batches.Step
+		wantSteps []batcheslib.Step
 	}{
 		"no if": {
-			spec: &batches.BatchSpec{
-				Steps: []batches.Step{
+			spec: &batcheslib.BatchSpec{
+				Steps: []batcheslib.Step{
 					{Run: "echo 1"},
 				},
 			},
-			wantSteps: []batches.Step{
+			wantSteps: []batcheslib.Step{
 				{Run: "echo 1"},
 			},
 		},
 
 		"if has static true value": {
-			spec: &batches.BatchSpec{
-				Steps: []batches.Step{
+			spec: &batcheslib.BatchSpec{
+				Steps: []batcheslib.Step{
 					{Run: "echo 1", If: "true"},
 				},
 			},
-			wantSteps: []batches.Step{
+			wantSteps: []batcheslib.Step{
 				{Run: "echo 1", If: "true"},
 			},
 		},
 
 		"one of many steps has if with static true value": {
-			spec: &batches.BatchSpec{
-				Steps: []batches.Step{
+			spec: &batcheslib.BatchSpec{
+				Steps: []batcheslib.Step{
 					{Run: "echo 1"},
 					{Run: "echo 2", If: "true"},
 					{Run: "echo 3"},
 				},
 			},
-			wantSteps: []batches.Step{
+			wantSteps: []batcheslib.Step{
 				{Run: "echo 1"},
 				{Run: "echo 2", If: "true"},
 				{Run: "echo 3"},
@@ -55,8 +55,8 @@ func TestTaskBuilder_BuildTask_IfConditions(t *testing.T) {
 		},
 
 		"if has static non-true value": {
-			spec: &batches.BatchSpec{
-				Steps: []batches.Step{
+			spec: &batcheslib.BatchSpec{
+				Steps: []batcheslib.Step{
 					{Run: "echo 1", If: "this is not true"},
 				},
 			},
@@ -64,33 +64,33 @@ func TestTaskBuilder_BuildTask_IfConditions(t *testing.T) {
 		},
 
 		"one of many steps has if with static non-true value": {
-			spec: &batches.BatchSpec{
-				Steps: []batches.Step{
+			spec: &batcheslib.BatchSpec{
+				Steps: []batcheslib.Step{
 					{Run: "echo 1"},
 					{Run: "echo 2", If: "every type system needs generics"},
 					{Run: "echo 3"},
 				},
 			},
-			wantSteps: []batches.Step{
+			wantSteps: []batcheslib.Step{
 				{Run: "echo 1"},
 				{Run: "echo 3"},
 			},
 		},
 
 		"if expression that can be partially evaluated to true": {
-			spec: &batches.BatchSpec{
-				Steps: []batches.Step{
+			spec: &batcheslib.BatchSpec{
+				Steps: []batcheslib.Step{
 					{Run: "echo 1", If: `${{ matches repository.name "github.com/sourcegraph/src*" }}`},
 				},
 			},
-			wantSteps: []batches.Step{
+			wantSteps: []batcheslib.Step{
 				{Run: "echo 1", If: `${{ matches repository.name "github.com/sourcegraph/src*" }}`},
 			},
 		},
 
 		"if expression that can be partially evaluated to false": {
-			spec: &batches.BatchSpec{
-				Steps: []batches.Step{
+			spec: &batcheslib.BatchSpec{
+				Steps: []batcheslib.Step{
 					{Run: "echo 1", If: `${{ matches repository.name "horse" }}`},
 				},
 			},
@@ -98,8 +98,8 @@ func TestTaskBuilder_BuildTask_IfConditions(t *testing.T) {
 		},
 
 		"one of many steps has if expression that can be evaluated to true": {
-			spec: &batches.BatchSpec{
-				Steps: []batches.Step{
+			spec: &batcheslib.BatchSpec{
+				Steps: []batcheslib.Step{
 					{Run: "echo 1", If: `${{ matches repository.name "horse" }}`},
 				},
 			},
@@ -107,12 +107,12 @@ func TestTaskBuilder_BuildTask_IfConditions(t *testing.T) {
 		},
 
 		"if expression that can NOT be partially evaluated": {
-			spec: &batches.BatchSpec{
-				Steps: []batches.Step{
+			spec: &batcheslib.BatchSpec{
+				Steps: []batcheslib.Step{
 					{Run: "echo 1", If: `${{ eq outputs.value "foobar" }}`},
 				},
 			},
-			wantSteps: []batches.Step{
+			wantSteps: []batcheslib.Step{
 				{Run: "echo 1", If: `${{ eq outputs.value "foobar" }}`},
 			},
 		},
@@ -133,7 +133,7 @@ func TestTaskBuilder_BuildTask_IfConditions(t *testing.T) {
 				return
 			}
 
-			opts := cmpopts.IgnoreUnexported(batches.Step{})
+			opts := cmpopts.IgnoreUnexported(batcheslib.Step{})
 			if diff := cmp.Diff(tt.wantSteps, task.Steps, opts); diff != "" {
 				t.Errorf("mismatch (-want +got):\n%s", diff)
 			}
@@ -147,7 +147,7 @@ func TestTaskBuilder_BuildAll_Workspaces(t *testing.T) {
 		{ID: "repo-id-1", Name: "github.com/sourcegraph/sourcegraph"},
 		{ID: "repo-id-2", Name: "bitbucket.sgdev.org/SOUR/automation-testing"},
 	}
-	steps := []batches.Step{{Run: "echo 1"}}
+	steps := []batcheslib.Step{{Run: "echo 1"}}
 
 	type finderResults map[*graphql.Repository][]string
 
@@ -157,7 +157,7 @@ func TestTaskBuilder_BuildAll_Workspaces(t *testing.T) {
 	}
 
 	tests := map[string]struct {
-		spec          *batches.BatchSpec
+		spec          *batcheslib.BatchSpec
 		finderResults map[*graphql.Repository][]string
 
 		wantNumTasks int
@@ -166,7 +166,7 @@ func TestTaskBuilder_BuildAll_Workspaces(t *testing.T) {
 		wantTasks map[string][]wantTask
 	}{
 		"no workspace configuration": {
-			spec:          &batches.BatchSpec{Steps: steps},
+			spec:          &batcheslib.BatchSpec{Steps: steps},
 			finderResults: finderResults{},
 			wantNumTasks:  len(repos),
 			wantTasks: map[string][]wantTask{
@@ -177,9 +177,9 @@ func TestTaskBuilder_BuildAll_Workspaces(t *testing.T) {
 		},
 
 		"workspace configuration matching no repos": {
-			spec: &batches.BatchSpec{
+			spec: &batcheslib.BatchSpec{
 				Steps: steps,
-				Workspaces: []batches.WorkspaceConfiguration{
+				Workspaces: []batcheslib.WorkspaceConfiguration{
 					{In: "this-does-not-match", RootAtLocationOf: "package.json"},
 				},
 			},
@@ -193,9 +193,9 @@ func TestTaskBuilder_BuildAll_Workspaces(t *testing.T) {
 		},
 
 		"workspace configuration matching 2 repos with no results": {
-			spec: &batches.BatchSpec{
+			spec: &batcheslib.BatchSpec{
 				Steps: steps,
-				Workspaces: []batches.WorkspaceConfiguration{
+				Workspaces: []batcheslib.WorkspaceConfiguration{
 					{In: "*automation-testing", RootAtLocationOf: "package.json"},
 				},
 			},
@@ -210,9 +210,9 @@ func TestTaskBuilder_BuildAll_Workspaces(t *testing.T) {
 		},
 
 		"workspace configuration matching 2 repos with 3 results each": {
-			spec: &batches.BatchSpec{
+			spec: &batcheslib.BatchSpec{
 				Steps: steps,
-				Workspaces: []batches.WorkspaceConfiguration{
+				Workspaces: []batcheslib.WorkspaceConfiguration{
 					{In: "*automation-testing", RootAtLocationOf: "package.json"},
 				},
 			},
@@ -229,9 +229,9 @@ func TestTaskBuilder_BuildAll_Workspaces(t *testing.T) {
 		},
 
 		"workspace configuration matches repo with OnlyFetchWorkspace": {
-			spec: &batches.BatchSpec{
+			spec: &batcheslib.BatchSpec{
 				Steps: steps,
-				Workspaces: []batches.WorkspaceConfiguration{
+				Workspaces: []batcheslib.WorkspaceConfiguration{
 					{
 						OnlyFetchWorkspace: true,
 						In:                 "*automation-testing",

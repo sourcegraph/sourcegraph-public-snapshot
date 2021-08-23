@@ -7,6 +7,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/mitchellh/copystructure"
 	"github.com/sourcegraph/batch-change-utils/overridable"
+	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
 	"github.com/sourcegraph/src-cli/internal/batches"
 	"github.com/sourcegraph/src-cli/internal/batches/git"
 )
@@ -49,11 +50,11 @@ func TestCreateChangesetSpecs(t *testing.T) {
 			Name:        "the name",
 			Description: "The description",
 		},
-		Template: &batches.ChangesetTemplate{
+		Template: &batcheslib.ChangesetTemplate{
 			Title:  "The title",
 			Body:   "The body",
 			Branch: "my-branch",
-			Commit: batches.ExpandedGitCommitDescription{
+			Commit: batcheslib.ExpandedGitCommitDescription{
 				Message: "git commit message",
 			},
 			Published: parsePublishedFieldString(t, "false"),
@@ -226,12 +227,12 @@ index 0000000..1bd79fb
 	tests := []struct {
 		diff          string
 		defaultBranch string
-		groups        []batches.Group
+		groups        []batcheslib.Group
 		want          map[string]string
 	}{
 		{
 			diff: allDiffs,
-			groups: []batches.Group{
+			groups: []batcheslib.Group{
 				{Directory: "1/2/3", Branch: "everything-in-3"},
 			},
 			want: map[string]string{
@@ -241,7 +242,7 @@ index 0000000..1bd79fb
 		},
 		{
 			diff: allDiffs,
-			groups: []batches.Group{
+			groups: []batcheslib.Group{
 				{Directory: "1/2", Branch: "everything-in-2-and-3"},
 			},
 			want: map[string]string{
@@ -251,7 +252,7 @@ index 0000000..1bd79fb
 		},
 		{
 			diff: allDiffs,
-			groups: []batches.Group{
+			groups: []batcheslib.Group{
 				{Directory: "1", Branch: "everything-in-1-and-2-and-3"},
 			},
 			want: map[string]string{
@@ -261,7 +262,7 @@ index 0000000..1bd79fb
 		},
 		{
 			diff: allDiffs,
-			groups: []batches.Group{
+			groups: []batcheslib.Group{
 				// Each diff is matched against each directory, last match wins
 				{Directory: "1", Branch: "only-in-1"},
 				{Directory: "1/2", Branch: "only-in-2"},
@@ -276,7 +277,7 @@ index 0000000..1bd79fb
 		},
 		{
 			diff: allDiffs,
-			groups: []batches.Group{
+			groups: []batcheslib.Group{
 				// Last one wins here, because it matches every diff
 				{Directory: "1/2/3", Branch: "only-in-3"},
 				{Directory: "1/2", Branch: "only-in-2"},
@@ -289,7 +290,7 @@ index 0000000..1bd79fb
 		},
 		{
 			diff: allDiffs,
-			groups: []batches.Group{
+			groups: []batcheslib.Group{
 				{Directory: "", Branch: "everything"},
 			},
 			want: map[string]string{
@@ -315,25 +316,25 @@ func TestValidateGroups(t *testing.T) {
 
 	tests := []struct {
 		defaultBranch string
-		groups        []batches.Group
+		groups        []batcheslib.Group
 		wantErr       string
 	}{
 		{
-			groups: []batches.Group{
+			groups: []batcheslib.Group{
 				{Directory: "a", Branch: "my-batch-change-a"},
 				{Directory: "b", Branch: "my-batch-change-b"},
 			},
 			wantErr: "",
 		},
 		{
-			groups: []batches.Group{
+			groups: []batcheslib.Group{
 				{Directory: "a", Branch: "my-batch-change-SAME"},
 				{Directory: "b", Branch: "my-batch-change-SAME"},
 			},
 			wantErr: "transformChanges would lead to multiple changesets in repository github.com/sourcegraph/src-cli to have the same branch \"my-batch-change-SAME\"",
 		},
 		{
-			groups: []batches.Group{
+			groups: []batcheslib.Group{
 				{Directory: "a", Branch: "my-batch-change-SAME"},
 				{Directory: "b", Branch: defaultBranch},
 			},

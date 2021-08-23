@@ -1,6 +1,7 @@
 package executor
 
 import (
+	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
 	"github.com/sourcegraph/src-cli/internal/batches"
 	"github.com/sourcegraph/src-cli/internal/batches/graphql"
 )
@@ -17,13 +18,13 @@ type Task struct {
 	// If Path is "" then this setting has no effect.
 	OnlyFetchWorkspace bool
 
-	Steps []batches.Step
+	Steps []batcheslib.Step
 
 	// TODO(mrnugget): this should just be a single BatchSpec field instead, if
 	// we can make it work with caching
-	BatchChangeAttributes *BatchChangeAttributes     `json:"-"`
-	Template              *batches.ChangesetTemplate `json:"-"`
-	TransformChanges      *batches.TransformChanges  `json:"-"`
+	BatchChangeAttributes *BatchChangeAttributes        `json:"-"`
+	Template              *batcheslib.ChangesetTemplate `json:"-"`
+	TransformChanges      *batcheslib.TransformChanges  `json:"-"`
 
 	Archive batches.RepoZip `json:"-"`
 

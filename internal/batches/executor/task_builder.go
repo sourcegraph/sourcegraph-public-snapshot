@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	"github.com/gobwas/glob"
-	"github.com/sourcegraph/src-cli/internal/batches"
+	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
 	"github.com/sourcegraph/src-cli/internal/batches/graphql"
 )
 
@@ -14,12 +14,12 @@ type DirectoryFinder interface {
 }
 
 type taskBuilder struct {
-	spec   *batches.BatchSpec
+	spec   *batcheslib.BatchSpec
 	finder DirectoryFinder
 }
 
 // BuildTasks returns tasks for all the workspaces determined for the given spec.
-func BuildTasks(ctx context.Context, spec *batches.BatchSpec, finder DirectoryFinder, repos []*graphql.Repository) ([]*Task, error) {
+func BuildTasks(ctx context.Context, spec *batcheslib.BatchSpec, finder DirectoryFinder, repos []*graphql.Repository) ([]*Task, error) {
 	tb := &taskBuilder{spec: spec, finder: finder}
 	return tb.buildAll(ctx, repos)
 }
@@ -33,7 +33,7 @@ func (tb *taskBuilder) buildTask(r *graphql.Repository, path string, onlyWorkspa
 		},
 	}
 
-	var taskSteps []batches.Step
+	var taskSteps []batcheslib.Step
 	for _, step := range tb.spec.Steps {
 		if step.IfCondition() == "" {
 			taskSteps = append(taskSteps, step)
@@ -129,13 +129,13 @@ type repoWorkspaces struct {
 func (tb *taskBuilder) findWorkspaces(
 	ctx context.Context,
 	repos []*graphql.Repository,
-	configs []batches.WorkspaceConfiguration,
+	configs []batcheslib.WorkspaceConfiguration,
 ) (workspaces map[*graphql.Repository]repoWorkspaces, root []*graphql.Repository, err error) {
 	if len(configs) == 0 {
 		return nil, repos, nil
 	}
 
-	workspaceMatchers := make(map[batches.WorkspaceConfiguration]glob.Glob)
+	workspaceMatchers := make(map[batcheslib.WorkspaceConfiguration]glob.Glob)
 	for _, conf := range tb.spec.Workspaces {
 		g, err := glob.Compile(conf.In)
 		if err != nil {

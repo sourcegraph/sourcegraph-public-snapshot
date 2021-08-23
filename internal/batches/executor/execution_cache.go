@@ -11,7 +11,7 @@ import (
 	"path/filepath"
 
 	"github.com/pkg/errors"
-	"github.com/sourcegraph/src-cli/internal/batches"
+	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
 )
 
 func UserCacheDir() (string, error) {
@@ -27,7 +27,7 @@ type CacheKeyer interface {
 	Slug() string
 }
 
-func resolveStepsEnvironment(steps []batches.Step) ([]map[string]string, error) {
+func resolveStepsEnvironment(steps []batcheslib.Step) ([]map[string]string, error) {
 	// We have to resolve the step environments and include them in the cache
 	// key to ensure that the cache is properly invalidated when an environment
 	// variable changes.

@@ -7,7 +7,7 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/sourcegraph/src-cli/internal/batches"
+	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
 	"github.com/sourcegraph/src-cli/internal/batches/git"
 	"gopkg.in/yaml.v3"
 )
@@ -17,7 +17,7 @@ const testExecutionCacheKeyEnv = "TEST_EXECUTION_CACHE_KEY_ENV"
 func TestTaskCacheKey(t *testing.T) {
 	// Let's set up an array of steps that we can test with. One step will
 	// depend on an environment variable outside the spec.
-	var steps []batches.Step
+	var steps []batcheslib.Step
 	if err := yaml.Unmarshal([]byte(`
 - run: foo
   env:
@@ -121,14 +121,14 @@ func TestExecutionDiskCache_GetSet(t *testing.T) {
 
 	cacheKey1 := TaskCacheKey{Task: &Task{
 		Repository: testRepo1,
-		Steps: []batches.Step{
+		Steps: []batcheslib.Step{
 			{Run: "echo 'Hello World'", Container: "alpine:3"},
 		},
 	}}
 
 	cacheKey2 := TaskCacheKey{Task: &Task{
 		Repository: testRepo2,
-		Steps: []batches.Step{
+		Steps: []batcheslib.Step{
 			{Run: "echo 'Hello World'", Container: "alpine:3"},
 		},
 	}}

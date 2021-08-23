@@ -5,6 +5,7 @@ import (
 	"runtime"
 
 	"github.com/pkg/errors"
+	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
 	"github.com/sourcegraph/src-cli/internal/batches"
 	"github.com/sourcegraph/src-cli/internal/batches/docker"
 	"github.com/sourcegraph/src-cli/internal/batches/git"
@@ -16,7 +17,7 @@ import (
 // responsible for ultimately generating a diff.
 type Creator interface {
 	// Create creates a new workspace for the given repository and archive file.
-	Create(ctx context.Context, repo *graphql.Repository, steps []batches.Step, archive batches.RepoZip) (Workspace, error)
+	Create(ctx context.Context, repo *graphql.Repository, steps []batcheslib.Step, archive batches.RepoZip) (Workspace, error)
 
 	// Type returns the CreatorType of the Creator.
 	Type() CreatorType

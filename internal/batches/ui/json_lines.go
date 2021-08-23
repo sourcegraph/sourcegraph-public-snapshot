@@ -6,6 +6,7 @@ import (
 	"os"
 	"time"
 
+	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
 	"github.com/sourcegraph/src-cli/internal/batches"
 	"github.com/sourcegraph/src-cli/internal/batches/executor"
 	"github.com/sourcegraph/src-cli/internal/batches/graphql"
@@ -212,7 +213,7 @@ func logEvent(e batchesLogEvent) {
 type jsonLinesTask struct {
 	Repository             string
 	Workspace              string
-	Steps                  []batches.Step
+	Steps                  []batcheslib.Step
 	CachedStepResultsFound bool
 	StartStep              int
 }

@@ -10,6 +10,7 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
+	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
 	"github.com/sourcegraph/src-cli/internal/api"
 	"github.com/sourcegraph/src-cli/internal/batches"
 	"github.com/sourcegraph/src-cli/internal/batches/graphql"
@@ -143,8 +144,8 @@ func TestResolveRepositories_Unsupported(t *testing.T) {
 	client, done := mockGraphQLClient(testResolveRepositoriesUnsupported)
 	defer done()
 
-	spec := &batches.BatchSpec{
-		On: []batches.OnQueryOrRepository{
+	spec := &batcheslib.BatchSpec{
+		On: []batcheslib.OnQueryOrRepository{
 			{RepositoriesMatchingQuery: "testquery"},
 		},
 	}
@@ -223,8 +224,8 @@ const testResolveRepositoriesUnsupported = `{
 `
 
 func TestResolveRepositories_Ignored(t *testing.T) {
-	spec := &batches.BatchSpec{
-		On: []batches.OnQueryOrRepository{
+	spec := &batcheslib.BatchSpec{
+		On: []batcheslib.OnQueryOrRepository{
 			{RepositoriesMatchingQuery: "testquery"},
 		},
 	}

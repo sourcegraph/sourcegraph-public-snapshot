@@ -6,6 +6,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/go-diff/diff"
+	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
 	"github.com/sourcegraph/src-cli/internal/batches"
 )
 
@@ -138,8 +139,8 @@ func createChangesetSpecs(task *Task, result executionResult, features batches.F
 	return specs, nil
 }
 
-func groupsForRepository(repo string, transform *batches.TransformChanges) []batches.Group {
-	var groups []batches.Group
+func groupsForRepository(repo string, transform *batcheslib.TransformChanges) []batcheslib.Group {
+	var groups []batcheslib.Group
 
 	if transform == nil {
 		return groups
@@ -158,7 +159,7 @@ func groupsForRepository(repo string, transform *batches.TransformChanges) []bat
 	return groups
 }
 
-func validateGroups(repo, defaultBranch string, groups []batches.Group) error {
+func validateGroups(repo, defaultBranch string, groups []batcheslib.Group) error {
 	uniqueBranches := make(map[string]struct{}, len(groups))
 
 	for _, g := range groups {
@@ -176,7 +177,7 @@ func validateGroups(repo, defaultBranch string, groups []batches.Group) error {
 	return nil
 }
 
-func groupFileDiffs(completeDiff, defaultBranch string, groups []batches.Group) (map[string]string, error) {
+func groupFileDiffs(completeDiff, defaultBranch string, groups []batcheslib.Group) (map[string]string, error) {
 	fileDiffs, err := diff.ParseMultiFileDiff([]byte(completeDiff))
 	if err != nil {
 		return nil, err

@@ -17,6 +17,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/go-diff/diff"
+	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
 	"github.com/sourcegraph/src-cli/internal/api"
 	"github.com/sourcegraph/src-cli/internal/batches"
 	"github.com/sourcegraph/src-cli/internal/batches/docker"
@@ -48,7 +49,7 @@ func TestExecutor_Integration(t *testing.T) {
 		additionalFiles []mock.MockRepoAdditionalFiles
 
 		// We define the steps only once per test case so there's less duplication
-		steps []batches.Step
+		steps []batcheslib.Step
 		tasks []*Task
 
 		executorTimeout time.Duration
@@ -76,7 +77,7 @@ func TestExecutor_Integration(t *testing.T) {
 					"README.md": "# Sourcegraph README\n",
 				}},
 			},
-			steps: []batches.Step{
+			steps: []batcheslib.Step{
 				{Run: `echo -e "foobar\n" >> README.md`},
 				{Run: `[[ -f "main.go" ]] && go fmt main.go || exit 0`},
 			},
@@ -102,7 +103,7 @@ func TestExecutor_Integration(t *testing.T) {
 					"main.go":   "package main\n\nfunc main() {\n\tfmt.Println(     \"Hello World\")\n}\n",
 				}},
 			},
-			steps: []batches.Step{
+			steps: []batcheslib.Step{
 				{Run: "true"},
 			},
 
@@ -122,7 +123,7 @@ func TestExecutor_Integration(t *testing.T) {
 			archives: []mock.RepoArchive{
 				{Repo: testRepo1, Files: map[string]string{"README.md": "line 1"}},
 			},
-			steps: []batches.Step{
+			steps: []batcheslib.Step{
 				// This needs to be a loop, because when a process goes to sleep
 				// it's not interruptible, meaning that while it will receive SIGKILL
 				// it won't exit until it had its full night of sleep.
@@ -145,14 +146,14 @@ func TestExecutor_Integration(t *testing.T) {
 					"main.go":   "package main\n\nfunc main() {\n\tfmt.Println(     \"Hello World\")\n}\n",
 				}},
 			},
-			steps: []batches.Step{
+			steps: []batcheslib.Step{
 				{Run: `go fmt main.go`},
 				{Run: `touch modified-${{ join previous_step.modified_files " " }}.md`},
 				{Run: `touch added-${{ join previous_step.added_files " " }}`},
 				{
 					Run: `echo "hello.txt"`,
-					Outputs: batches.Outputs{
-						"myOutput": batches.Output{
+					Outputs: batcheslib.Outputs{
+						"myOutput": batcheslib.Output{
 							Value: "${{ step.stdout }}",
 						},
 					},
@@ -200,11 +201,11 @@ func TestExecutor_Integration(t *testing.T) {
 					"a/.gitignore": "node_modules-in-a",
 				}},
 			},
-			steps: []batches.Step{
+			steps: []batcheslib.Step{
 				{
 					Run: "cat message.txt && echo 'Hello' > hello.txt",
-					Outputs: batches.Outputs{
-						"message": batches.Output{
+					Outputs: batcheslib.Outputs{
+						"message": batcheslib.Output{
 							Value: "${{ step.stdout }}",
 						},
 					},
@@ -240,7 +241,7 @@ func TestExecutor_Integration(t *testing.T) {
 					"README.md": "# Sourcegraph README\n",
 				}},
 			},
-			steps: []batches.Step{
+			steps: []batcheslib.Step{
 				{Run: `echo -e "foobar\n" >> README.md`},
 				{
 					Run: `echo "foobar" >> hello.txt`,
@@ -275,7 +276,7 @@ func TestExecutor_Integration(t *testing.T) {
 					"README.md": "# Sourcegraph README\n",
 				}},
 			},
-			steps: []batches.Step{
+			steps: []batcheslib.Step{
 				{Run: `echo -e "foobar\n" >> README.md`},
 				{
 					Run: `exit 1`,
@@ -488,7 +489,7 @@ index 02a19af..c9644dd 100644
 
 		task := &Task{
 			BatchChangeAttributes: &BatchChangeAttributes{},
-			Steps: []batches.Step{
+			Steps: []batcheslib.Step{
 				{Run: `echo -e "foobar\n" >> README.md`},
 			},
 			CachedResultFound: true,
@@ -594,11 +595,11 @@ index 0000000..257ae8e
 		task := &Task{
 			Repository:            testRepo1,
 			BatchChangeAttributes: &BatchChangeAttributes{},
-			Steps: []batches.Step{
+			Steps: []batcheslib.Step{
 				{Run: `echo "this is step 1" >> README.txt`},
 				{Run: `echo "this is step 2" >> README.md`},
-				{Run: `echo "this is step 3" >> README.md`, Outputs: batches.Outputs{
-					"myOutput": batches.Output{
+				{Run: `echo "this is step 3" >> README.md`, Outputs: batcheslib.Outputs{
+					"myOutput": batcheslib.Output{
 						Value: "my-output.txt",
 					},
 				}},
