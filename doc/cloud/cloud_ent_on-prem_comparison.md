@@ -13,9 +13,9 @@ We also offer managed Sourcegraph instances; more details can [be found here](ht
 ## What is Sourcegraph cloud, and who should choose it?
 
 Sourcegraph cloud is a newly-released cloud version of Sourcegraph, which can be accessed at sourcegraph.com. It allows users to:
-+ Search an index of over 1 million open source repositories
-+ Connect to and search their own public repositories
-+ Connect to and search their own private repositories (Public Beta)
+- Search an index of over 1 million open source repositories
+- Connect to and search their own public repositories
+- Connect to and search their own private repositories (Public Beta)
 
 Sourcegraph cloud offers the same core Code Search experience for private and public code as Sourcegraph self-hosted, but it does not support enterprise features such as user management, SAML integration, and batch changes. It is intended for personal use.
 
