@@ -713,7 +713,7 @@ func (r *Resolver) BatchChanges(ctx context.Context, args *graphqlbackend.ListBa
 	}, nil
 }
 
-func (r *Resolver) BatchSpecExecutions(ctx context.Context, args *graphqlbackend.ListBatchSpecExecutionsArgs) (graphqlbackend.BatchSpecExecutionsConnectionResolver, error) {
+func (r *Resolver) BatchSpecExecutions(ctx context.Context, args *graphqlbackend.ListBatchSpecExecutionsArgs) (graphqlbackend.BatchSpecExecutionConnectionResolver, error) {
 	if err := enterprise.BatchChangesEnabledForUser(ctx, r.store.DB()); err != nil {
 		return nil, err
 	}
@@ -734,7 +734,7 @@ func (r *Resolver) BatchSpecExecutions(ctx context.Context, args *graphqlbackend
 		return nil, authErr
 	}
 
-	return &batchSpecExecutionsConnectionResolver{
+	return &batchSpecExecutionConnectionResolver{
 		store: r.store,
 		opts:  opts,
 	}, nil

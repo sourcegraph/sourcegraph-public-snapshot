@@ -308,7 +308,7 @@ type BatchChangesResolver interface {
 	BatchChangesCodeHosts(ctx context.Context, args *ListBatchChangesCodeHostsArgs) (BatchChangesCodeHostConnectionResolver, error)
 	RepoChangesetsStats(ctx context.Context, repo *graphql.ID) (RepoChangesetsStatsResolver, error)
 	RepoDiffStat(ctx context.Context, repo *graphql.ID) (*DiffStat, error)
-	BatchSpecExecutions(ctx context.Context, args *ListBatchSpecExecutionsArgs) (BatchSpecExecutionsConnectionResolver, error)
+	BatchSpecExecutions(ctx context.Context, args *ListBatchSpecExecutionsArgs) (BatchSpecExecutionConnectionResolver, error)
 
 	NodeResolvers() map[string]NodeByIDFunc
 }
@@ -619,7 +619,7 @@ type BatchChangesConnectionResolver interface {
 	PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error)
 }
 
-type BatchSpecExecutionsConnectionResolver interface {
+type BatchSpecExecutionConnectionResolver interface {
 	Nodes(ctx context.Context) ([]BatchSpecExecutionResolver, error)
 	TotalCount(ctx context.Context) (int32, error)
 	PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error)
