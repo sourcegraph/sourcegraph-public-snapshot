@@ -1,9 +1,12 @@
 package run
 
 import (
+	"bufio"
 	"context"
+	"fmt"
 	"io"
 	"os/exec"
+	"sync"
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/stdout"
 	"github.com/sourcegraph/sourcegraph/lib/output"
@@ -80,6 +83,14 @@ type startedCmd struct {
 
 	stdoutBuf *prefixSuffixSaver
 	stderrBuf *prefixSuffixSaver
+
+	outWg *sync.WaitGroup
+}
+
+func (sc *startedCmd) Wait() error {
+	err := sc.Cmd.Wait()
+	sc.outWg.Wait()
+	return err
 }
 
 func (sc *startedCmd) CapturedStdout() string {
@@ -111,23 +122,59 @@ func startCmd(ctx context.Context, dir string, cmd Command, globalEnv map[string
 	sc.Cmd.Dir = dir
 	sc.Cmd.Env = makeEnv(globalEnv, cmd.Env)
 
+	var stdoutWriter, stderrWriter io.Writer
 	logger := newCmdLogger(cmd.Name, stdout.Out)
 	if cmd.IgnoreStdout {
 		stdout.Out.WriteLine(output.Linef("", output.StyleSuggestion, "Ignoring stdout of %s", cmd.Name))
-		sc.Cmd.Stdout = sc.stdoutBuf
+		stdoutWriter = sc.stdoutBuf
 	} else {
-		sc.Cmd.Stdout = io.MultiWriter(logger, sc.stdoutBuf)
+		stdoutWriter = io.MultiWriter(logger, sc.stdoutBuf)
 	}
 	if cmd.IgnoreStderr {
 		stdout.Out.WriteLine(output.Linef("", output.StyleSuggestion, "Ignoring stderr of %s", cmd.Name))
-		sc.Cmd.Stderr = sc.stderrBuf
+		stderrWriter = sc.stderrBuf
 	} else {
-		sc.Cmd.Stderr = io.MultiWriter(logger, sc.stderrBuf)
+		stderrWriter = io.MultiWriter(logger, sc.stderrBuf)
 	}
+
+	wg, err := pipeProcessOutput(sc.Cmd, stdoutWriter, stderrWriter)
+	if err != nil {
+		return nil, err
+	}
+	sc.outWg = wg
 
 	if err := sc.Start(); err != nil {
 		return sc, err
 	}
 
 	return sc, nil
+}
+
+func pipeProcessOutput(c *exec.Cmd, stdoutWriter, stderrWriter io.Writer) (*sync.WaitGroup, error) {
+	stdoutPipe, err := c.StdoutPipe()
+	if err != nil {
+		return nil, err
+	}
+
+	stderrPipe, err := c.StderrPipe()
+	if err != nil {
+		return nil, err
+	}
+
+	wg := &sync.WaitGroup{}
+
+	readIntoBuf := func(w io.Writer, r io.Reader) {
+		defer wg.Done()
+
+		scanner := bufio.NewScanner(r)
+		for scanner.Scan() {
+			fmt.Fprintln(w, scanner.Text())
+		}
+	}
+
+	wg.Add(2)
+	go readIntoBuf(stdoutWriter, stdoutPipe)
+	go readIntoBuf(stderrWriter, stderrPipe)
+
+	return wg, nil
 }
