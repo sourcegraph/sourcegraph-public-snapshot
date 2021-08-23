@@ -15,8 +15,7 @@ import {
 } from './utils/insight-mock-data'
 import { overrideGraphQLExtensions } from './utils/override-graphql-with-extensions'
 
-// eslint-disable-next-line ban/ban
-describe.only('[VISUAL] Code insights page', () => {
+describe('[VISUAL] Code insights page', () => {
     let driver: Driver
     let testContext: WebIntegrationTestContext
 
