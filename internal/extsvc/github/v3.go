@@ -435,7 +435,7 @@ func (c *V3Client) ListAffiliatedRepositories(ctx context.Context, visibility Vi
 ) {
 	path := fmt.Sprintf("user/repos?sort=created&visibility=%s&page=%d&per_page=100", visibility, page)
 	if len(affiliations) > 0 {
-		affilationsStrings := []string{}
+		affilationsStrings := make([]string, 0, len(affiliations))
 		for _, affiliation := range affiliations {
 			affilationsStrings = append(affilationsStrings, string(affiliation))
 		}
