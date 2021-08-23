@@ -1,5 +1,4 @@
 import classNames from 'classnames'
-import CalculatorIcon from 'mdi-react/CalculatorIcon'
 import ClipboardPulseOutlineIcon from 'mdi-react/ClipboardPulseOutlineIcon'
 import * as React from 'react'
 
