@@ -49,9 +49,10 @@ func TestNewRepoCache(t *testing.T) {
 
 func TestListAffiliatedRepositories(t *testing.T) {
 	tests := []struct {
-		name       string
-		visibility Visibility
-		wantRepos  []*Repository
+		name         string
+		visibility   Visibility
+		affiliations []Affiliation
+		wantRepos    []*Repository
 	}{
 		{
 			name:       "list all repositories",
@@ -126,13 +127,33 @@ func TestListAffiliatedRepositories(t *testing.T) {
 				},
 			},
 		},
+		{
+			name:         "list collaborator and owner affiliated repositories",
+			affiliations: []Affiliation{AffiliationCollaborator, AffiliationOwner},
+			wantRepos: []*Repository{
+				{
+					ID:               "MDEwOlJlcG9zaXRvcnkyNjMwMzQwNzM=",
+					DatabaseID:       263034073,
+					NameWithOwner:    "sourcegraph-vcr/private-user-repo-1",
+					URL:              "https://github.com/sourcegraph-vcr/private-user-repo-1",
+					IsPrivate:        true,
+					ViewerPermission: "ADMIN",
+				}, {
+					ID:               "MDEwOlJlcG9zaXRvcnkyNjMwMzM5NDk=",
+					DatabaseID:       263033949,
+					NameWithOwner:    "sourcegraph-vcr/public-user-repo-1",
+					URL:              "https://github.com/sourcegraph-vcr/public-user-repo-1",
+					ViewerPermission: "ADMIN",
+				},
+			},
+		},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			client, save := newV3TestClient(t, "ListAffiliatedRepositories_"+test.name)
 			defer save()
 
-			repos, _, _, err := client.ListAffiliatedRepositories(context.Background(), test.visibility, 1)
+			repos, _, _, err := client.ListAffiliatedRepositories(context.Background(), test.visibility, 1, test.affiliations...)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -174,6 +195,102 @@ func TestGetAuthenticatedUserOrgs(t *testing.T) {
 		"testdata/golden/GetAuthenticatedUserOrgs",
 		update("GetAuthenticatedUserOrgs"),
 		orgs,
+	)
+}
+
+func TestListOrgRepositories(t *testing.T) {
+	cli, save := newV3TestClient(t, "ListOrgRepositories")
+	defer save()
+
+	ctx := context.Background()
+	var err error
+	repos := make([]*Repository, 0)
+	hasNextPage := true
+	for page := 1; hasNextPage; page++ {
+		var pageRepos []*Repository
+		pageRepos, hasNextPage, _, err = cli.ListOrgRepositories(ctx, "sourcegraph-vcr-repos", page, "")
+		if err != nil {
+			t.Fatal(err)
+		}
+		repos = append(repos, pageRepos...)
+	}
+
+	testutil.AssertGolden(t,
+		"testdata/golden/ListOrgRepositories",
+		update("ListOrgRepositories"),
+		repos,
+	)
+}
+
+func TestListTeamRepositories(t *testing.T) {
+	cli, save := newV3TestClient(t, "ListTeamRepositories")
+	defer save()
+
+	ctx := context.Background()
+	var err error
+	repos := make([]*Repository, 0)
+	hasNextPage := true
+	for page := 1; hasNextPage; page++ {
+		var pageRepos []*Repository
+		pageRepos, hasNextPage, _, err = cli.ListTeamRepositories(ctx, "sourcegraph-vcr-repos", "private-access", page)
+		if err != nil {
+			t.Fatal(err)
+		}
+		repos = append(repos, pageRepos...)
+	}
+
+	testutil.AssertGolden(t,
+		"testdata/golden/ListOrgRepositories",
+		update("ListOrgRepositories"),
+		repos,
+	)
+}
+
+func TestGetAuthenticatedUserOrgDetails(t *testing.T) {
+	cli, save := newV3TestClient(t, "GetAuthenticatedUserOrgDetails")
+	defer save()
+
+	ctx := context.Background()
+	var err error
+	orgs := make([]*OrgDetails, 0)
+	hasNextPage := true
+	for page := 1; hasNextPage; page++ {
+		var pageOrgs []*OrgDetails
+		pageOrgs, hasNextPage, _, err = cli.GetAuthenticatedUserOrgsDetails(ctx, page)
+		if err != nil {
+			t.Fatal(err)
+		}
+		orgs = append(orgs, pageOrgs...)
+	}
+
+	testutil.AssertGolden(t,
+		"testdata/golden/GetAuthenticatedUserOrgDetails",
+		update("GetAuthenticatedUserOrgDetails"),
+		orgs,
+	)
+}
+
+func TestGetAuthenticatedUserTeams(t *testing.T) {
+	cli, save := newV3TestClient(t, "GetAuthenticatedUserTeams")
+	defer save()
+
+	ctx := context.Background()
+	var err error
+	teams := make([]*Team, 0)
+	hasNextPage := true
+	for page := 1; hasNextPage; page++ {
+		var pageTeams []*Team
+		pageTeams, hasNextPage, _, err = cli.GetAuthenticatedUserTeams(ctx, page)
+		if err != nil {
+			t.Fatal(err)
+		}
+		teams = append(teams, pageTeams...)
+	}
+
+	testutil.AssertGolden(t,
+		"testdata/golden/GetAuthenticatedUserTeams",
+		update("GetAuthenticatedUserTeams"),
+		teams,
 	)
 }
 

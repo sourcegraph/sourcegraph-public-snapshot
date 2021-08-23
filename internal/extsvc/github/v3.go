@@ -288,14 +288,14 @@ func (c *V3Client) GetAuthenticatedUserOrgsDetails(ctx context.Context, page int
 	rateLimitCost int,
 	err error,
 ) {
-	orgNames, hasNextPage, cost, err := c.getAuthenticatedUserOrgs(ctx, 1)
+	orgNames, hasNextPage, cost, err := c.getAuthenticatedUserOrgs(ctx, page)
 	if err != nil {
 		return
 	}
 	orgs = make([]*OrgDetails, len(orgNames))
 	for i, org := range orgNames {
-		if err = c.requestGet(ctx, "/org/"+org.Login, &orgs[i]); err != nil {
-			return
+		if err = c.requestGet(ctx, "/orgs/"+org.Login, &orgs[i]); err != nil {
+			return nil, false, cost + i, err
 		}
 	}
 	return orgs, hasNextPage, cost + len(orgs), err
