@@ -13,6 +13,7 @@ import { Resizable } from '@sourcegraph/shared/src/components/Resizable'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { VersionContextProps } from '@sourcegraph/shared/src/search/util'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
+import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { asError, ErrorLike, isErrorLike } from '@sourcegraph/shared/src/util/errors'
 import { parseRepoURI } from '@sourcegraph/shared/src/util/url'
 
@@ -27,6 +28,7 @@ const MAXIMUM_LOCATION_RESULTS = 500
 export interface HierarchicalLocationsViewProps
     extends SettingsCascadeProps,
         VersionContextProps,
+        TelemetryProps,
         ExtensionsControllerProps<'extHostAPI'> {
     location: H.Location
     /**
@@ -281,6 +283,7 @@ export class HierarchicalLocationsView extends React.PureComponent<HierarchicalL
                     <FileLocations
                         className={styles.fileLocations}
                         location={this.props.location}
+                        telemetryService={this.props.telemetryService}
                         locations={of(visibleLocations)}
                         onSelect={this.props.onSelectLocation}
                         icon={FileDocumentIcon}
