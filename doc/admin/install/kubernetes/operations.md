@@ -34,9 +34,9 @@ Migrating from another [deployment type](../index.md)? Refer to our [migration g
 
 ### Applying manifests
 
-In general, Sourcegraph with Kubernetes is deployed by applying the manifests in our [deploy-sourcegraph reference repository](/index.md#reference-repository) - see our [configuration guide](./configure.md) for more details.
+In general, Sourcegraph with Kubernetes is deployed by applying the [Kubernetes](./index.md#kubernetes) manifests in our [deploy-sourcegraph reference repository](./index.md#reference-repository) - see our [configuration guide](./configure.md) for more details.
 
-We provide a `kubectl-apply-all.sh` script that you can use to apply Sourcegraph's [Kubernetes](./index.md#kubernetes) manifests to your cluster, usually by running the following from the root directory of the [deploy-sourcegraph reference repository](/index.md#reference-repository):
+We provide a `kubectl-apply-all.sh` script that you can use to do this, usually by running the following from the root directory of the [deploy-sourcegraph reference repository](./index.md#reference-repository):
 
 ```sh
 ./kubectl-apply-all.sh
