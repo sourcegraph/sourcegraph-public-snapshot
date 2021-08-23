@@ -198,6 +198,30 @@ func TestGetAuthenticatedUserOrgs(t *testing.T) {
 	)
 }
 
+func TestGetAuthenticatedUserOrgDetails(t *testing.T) {
+	cli, save := newV3TestClient(t, "GetAuthenticatedUserOrgDetails")
+	defer save()
+
+	ctx := context.Background()
+	var err error
+	orgs := make([]*OrgDetails, 0)
+	hasNextPage := true
+	for page := 1; hasNextPage; page++ {
+		var pageOrgs []*OrgDetails
+		pageOrgs, hasNextPage, _, err = cli.GetAuthenticatedUserOrgsDetails(ctx, page)
+		if err != nil {
+			t.Fatal(err)
+		}
+		orgs = append(orgs, pageOrgs...)
+	}
+
+	testutil.AssertGolden(t,
+		"testdata/golden/GetAuthenticatedUserOrgDetails",
+		update("GetAuthenticatedUserOrgDetails"),
+		orgs,
+	)
+}
+
 func TestListOrgRepositories(t *testing.T) {
 	cli, save := newV3TestClient(t, "ListOrgRepositories")
 	defer save()
@@ -243,30 +267,6 @@ func TestListTeamRepositories(t *testing.T) {
 		"testdata/golden/ListTeamRepositories",
 		update("ListTeamRepositories"),
 		repos,
-	)
-}
-
-func TestGetAuthenticatedUserOrgDetails(t *testing.T) {
-	cli, save := newV3TestClient(t, "GetAuthenticatedUserOrgDetails")
-	defer save()
-
-	ctx := context.Background()
-	var err error
-	orgs := make([]*OrgDetails, 0)
-	hasNextPage := true
-	for page := 1; hasNextPage; page++ {
-		var pageOrgs []*OrgDetails
-		pageOrgs, hasNextPage, _, err = cli.GetAuthenticatedUserOrgsDetails(ctx, page)
-		if err != nil {
-			t.Fatal(err)
-		}
-		orgs = append(orgs, pageOrgs...)
-	}
-
-	testutil.AssertGolden(t,
-		"testdata/golden/GetAuthenticatedUserOrgDetails",
-		update("GetAuthenticatedUserOrgDetails"),
-		orgs,
 	)
 }
 
