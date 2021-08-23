@@ -27,8 +27,6 @@ import {
 } from './backend'
 import allConfigSchema from './schema.json'
 import { formatDurationValue } from './shared'
-import { jsx } from '@storybook/theming'
-import { DirectiveLocation } from 'graphql'
 
 export enum State {
     Idle,
