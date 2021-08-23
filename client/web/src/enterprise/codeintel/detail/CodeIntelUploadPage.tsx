@@ -21,7 +21,7 @@ import {
     FilteredConnection,
     FilteredConnectionQueryArguments,
 } from '@sourcegraph/web/src/components/FilteredConnection'
-import { Timeline } from '@sourcegraph/web/src/components/Timeline'
+import { Timeline, TimelineStage } from '@sourcegraph/web/src/components/Timeline'
 import { Container, PageHeader } from '@sourcegraph/wildcard'
 
 import { ErrorAlert } from '../../../components/alerts'
@@ -310,7 +310,7 @@ enum FailedStage {
 }
 
 const CodeIntelUploadTimeline: FunctionComponent<CodeIntelUploadTimelineProps> = ({ upload, now, className }) => {
-    let failedStage: Maybe<FailedStage> = null
+    let failedStage: FailedStage | null = null
     if (upload.state === LSIFUploadState.ERRORED && upload.startedAt === null) {
         failedStage = FailedStage.UPLOADING
     } else if (upload.state === LSIFUploadState.ERRORED && upload.startedAt !== null) {
@@ -328,7 +328,7 @@ const CodeIntelUploadTimeline: FunctionComponent<CodeIntelUploadTimelineProps> =
     return <Timeline stages={stages} now={now} className={className} />
 }
 
-const uploadStages = (upload: LsifUploadFields, failedStage: Maybe<FailedStage>): TimelineStage[] => [
+const uploadStages = (upload: LsifUploadFields, failedStage: FailedStage | null): TimelineStage[] => [
     {
         icon: <FileUploadIcon />,
         text:
@@ -348,7 +348,7 @@ const uploadStages = (upload: LsifUploadFields, failedStage: Maybe<FailedStage>)
     },
 ]
 
-const processingStages = (upload: LsifUploadFields, failedStage: Maybe<FailedStage>): TimelineStage[] => [
+const processingStages = (upload: LsifUploadFields, failedStage: FailedStage | null): TimelineStage[] => [
     {
         icon: <ProgressClockIcon />,
         text:
