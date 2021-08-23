@@ -382,7 +382,7 @@ type atomicMap struct {
 	atomic.Value
 }
 
-func (m *atomicMap) Endpoints() (map[string]struct{}, error) {
+func (m *atomicMap) Endpoints() ([]string, error) {
 	return m.Value.Load().(EndpointMap).Endpoints()
 }
 

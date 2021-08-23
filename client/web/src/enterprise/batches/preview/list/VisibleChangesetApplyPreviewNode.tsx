@@ -27,7 +27,7 @@ import { Description } from '../../Description'
 import { ChangesetStatusCell } from '../../detail/changesets/ChangesetStatusCell'
 import { ExternalChangesetTitle } from '../../detail/changesets/ExternalChangesetTitle'
 import { PreviewPageAuthenticatedUser } from '../BatchChangePreviewPage'
-import { getPublishableChangesetSpecID } from '../utils'
+import { checkPublishability } from '../utils'
 
 import { queryChangesetSpecFileDiffs as _queryChangesetSpecFileDiffs } from './backend'
 import { GitBranchChangesetDescriptionInfo } from './GitBranchChangesetDescriptionInfo'
@@ -214,38 +214,38 @@ const SelectBox: React.FunctionComponent<{
         isSelected: (id: string) => boolean
     }
 }> = ({ node, selectable }) => {
-    const changesetSpecID = useMemo(() => getPublishableChangesetSpecID(node), [node])
+    const isPublishableResult = useMemo(() => checkPublishability(node), [node])
 
     const toggleSelected = useCallback((): void => {
-        if (changesetSpecID) {
-            selectable.onSelect(changesetSpecID)
+        if (isPublishableResult.publishable) {
+            selectable.onSelect(isPublishableResult.changesetSpecID)
         }
-    }, [selectable, changesetSpecID])
+    }, [selectable, isPublishableResult])
 
-    const input = !changesetSpecID ? (
+    const input = isPublishableResult.publishable ? (
+        <InputTooltip
+            id={`select-changeset-${isPublishableResult.changesetSpecID}`}
+            type="checkbox"
+            className="btn"
+            checked={selectable.isSelected(isPublishableResult.changesetSpecID)}
+            onChange={toggleSelected}
+            tooltip="Click to select changeset for bulk-modifying the publication state"
+        />
+    ) : (
         <InputTooltip
             id="select-changeset-hidden"
             type="checkbox"
             className="btn"
             checked={false}
             disabled={true}
-            tooltip="You cannot currently modify the publication state for this changeset"
-        />
-    ) : (
-        <InputTooltip
-            id={`select-changeset-${changesetSpecID}`}
-            type="checkbox"
-            className="btn"
-            checked={selectable.isSelected(changesetSpecID)}
-            onChange={toggleSelected}
-            tooltip="Click to select changeset for bulk-modifying the publication state"
+            tooltip={isPublishableResult.reason}
         />
     )
 
     return (
         <div className="d-flex p-2 align-items-center">
             {input}
-            {changesetSpecID ? (
+            {isPublishableResult.publishable ? (
                 <span className="pl-2 d-block d-sm-none text-nowrap">Modify publication state</span>
             ) : null}
         </div>

@@ -144,6 +144,22 @@ Any style can be made different on either theme by scoping it to one of those tw
 Where possible, we use CSS variables, but unfortunately they don't work with compile-time color manipulation (`darken()` etc)
 and runtime color manipulation is not yet implemented in CSS (coming in CSS Color Level 4).
 
+Example:
+
+```scss
+.some-component {
+    // ... styles ...
+
+    :global(.theme-dark) & {
+        // ... styles ...
+    }
+    
+    :global(.theme-light) & {
+        // ... styles ...
+    }
+}
+```
+
 ### Colors
 
 The brand color palette is [OpenColor](https://yeun.github.io/open-color/).

@@ -4,6 +4,7 @@ import { AnyD3Scale } from '@visx/scale/lib/types/Scale'
 import { numberFormatter } from '../components/TickComponent'
 
 const APPROXIMATE_SYMBOL_WIDTH = 11
+const MINIMAL_NUMBER_OF_LABEL_SYMBOLS = 2
 
 export function getYAxisWidth<Scale extends AnyD3Scale>(scale: Scale, numberTicks: number): number {
     const ticksValues = getTicks(scale, numberTicks)
@@ -16,7 +17,7 @@ export function getYAxisWidth<Scale extends AnyD3Scale>(scale: Scale, numberTick
                 .filter(symbol => symbol !== '.').length
     )
 
-    const maxNumberSymbolsInTicks = Math.max(...ticksLengths, 0)
+    const maxNumberSymbolsInTicks = Math.max(...ticksLengths, MINIMAL_NUMBER_OF_LABEL_SYMBOLS)
 
     return maxNumberSymbolsInTicks * APPROXIMATE_SYMBOL_WIDTH
 }

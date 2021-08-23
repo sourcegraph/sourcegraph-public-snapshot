@@ -7,9 +7,9 @@ import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/teleme
 import { WebStory } from '../components/WebStory'
 import { SourcegraphContext } from '../jscontext'
 
-import { ExperimentalSignUpPage } from './ExperimentalSignUpPage'
+import { CloudSignUpPage } from './CloudSignUpPage'
 
-const { add } = storiesOf('web/auth/ExperimentalSignUpPage', module)
+const { add } = storiesOf('web/auth/CloudSignUpPage', module)
 
 const context: Pick<SourcegraphContext, 'authProviders'> = {
     authProviders: [
@@ -31,7 +31,7 @@ const context: Pick<SourcegraphContext, 'authProviders'> = {
 add('default', () => (
     <WebStory>
         {({ isLightTheme }) => (
-            <ExperimentalSignUpPage
+            <CloudSignUpPage
                 isLightTheme={isLightTheme}
                 source="Monitor"
                 onSignUp={sinon.stub()}
@@ -46,7 +46,7 @@ add('default', () => (
 add('email form', () => (
     <WebStory>
         {({ isLightTheme }) => (
-            <ExperimentalSignUpPage
+            <CloudSignUpPage
                 isLightTheme={isLightTheme}
                 source="SearchCTA"
                 onSignUp={sinon.stub()}
@@ -61,7 +61,7 @@ add('email form', () => (
 add('invalid source', () => (
     <WebStory>
         {({ isLightTheme }) => (
-            <ExperimentalSignUpPage
+            <CloudSignUpPage
                 isLightTheme={isLightTheme}
                 source="test"
                 onSignUp={sinon.stub()}

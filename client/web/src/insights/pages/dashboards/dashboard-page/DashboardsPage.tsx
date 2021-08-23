@@ -40,8 +40,12 @@ export const DashboardsPage: React.FunctionComponent<DashboardsPageProps> = prop
     const { url } = useRouteMatch()
 
     useEffect(() => {
-        telemetryService.logViewEvent('CodeInsightsDashboardPage')
-    }, [telemetryService])
+        telemetryService.logViewEvent('Insights')
+    }, [telemetryService, dashboardID])
+
+    const handleAddMoreInsightClick = (): void => {
+        telemetryService.log('InsightAddMoreClick')
+    }
 
     if (!dashboardID) {
         // In case if url doesn't have a dashboard id we should fallback on
@@ -60,7 +64,11 @@ export const DashboardsPage: React.FunctionComponent<DashboardsPageProps> = prop
                             <Link to="/insights/add-dashboard" className="btn btn-outline-secondary mr-2">
                                 <PlusIcon className="icon-inline" /> Create new dashboard
                             </Link>
-                            <Link to={`/insights/create?dashboardId=${dashboardID}`} className="btn btn-secondary">
+                            <Link
+                                to={`/insights/create?dashboardId=${dashboardID}`}
+                                className="btn btn-secondary"
+                                onClick={handleAddMoreInsightClick}
+                            >
                                 <PlusIcon className="icon-inline" /> Create new insight
                             </Link>
                         </>

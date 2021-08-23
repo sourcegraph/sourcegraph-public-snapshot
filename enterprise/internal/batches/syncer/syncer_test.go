@@ -27,7 +27,6 @@ func newTestStore() *MockSyncStore {
 }
 
 func TestSyncerRun(t *testing.T) {
-	t.Skip("Flaky test")
 	t.Parallel()
 
 	t.Run("Sync due", func(t *testing.T) {
@@ -156,7 +155,6 @@ func TestSyncerRun(t *testing.T) {
 }
 
 func TestSyncRegistry(t *testing.T) {
-	t.Skip("Flaky test")
 	t.Parallel()
 
 	ctx, cancel := context.WithCancel(context.Background())
@@ -166,8 +164,6 @@ func TestSyncRegistry(t *testing.T) {
 
 	externalServiceID := "https://example.com/"
 
-	codeHosts := []*btypes.CodeHost{{ExternalServiceID: externalServiceID, ExternalServiceType: extsvc.TypeGitHub}}
-
 	syncStore := newTestStore()
 	syncStore.ListChangesetSyncDataFunc.SetDefaultReturn([]*btypes.ChangesetSyncData{
 		{
@@ -176,9 +172,17 @@ func TestSyncRegistry(t *testing.T) {
 			RepoExternalServiceID: externalServiceID,
 		},
 	}, nil)
-	syncStore.ListCodeHostsFunc.SetDefaultHook(func(c context.Context, lcho store.ListCodeHostsOpts) ([]*btypes.CodeHost, error) {
-		return codeHosts, nil
-	})
+
+	setCodeHosts := func(hosts []*btypes.CodeHost) {
+		syncStore.ListCodeHostsFunc.SetDefaultHook(func(c context.Context, lcho store.ListCodeHostsOpts) ([]*btypes.CodeHost, error) {
+			return hosts, nil
+		})
+	}
+
+	codeHosts := []*btypes.CodeHost{
+		{ExternalServiceID: externalServiceID, ExternalServiceType: extsvc.TypeGitHub},
+	}
+	setCodeHosts(codeHosts)
 
 	r := NewSyncRegistry(ctx, syncStore, nil, &observation.TestContext)
 
@@ -203,13 +207,12 @@ func TestSyncRegistry(t *testing.T) {
 	assertSyncerCount(t, 1)
 
 	// Simulate a service being removed
-	oldCodeHosts := codeHosts
-	codeHosts = []*btypes.CodeHost{}
+	setCodeHosts([]*btypes.CodeHost{})
 	r.syncCodeHosts(ctx)
 	assertSyncerCount(t, 0)
-	codeHosts = oldCodeHosts
 
 	// And added again
+	setCodeHosts(codeHosts)
 	r.syncCodeHosts(ctx)
 	assertSyncerCount(t, 1)
 
@@ -251,7 +254,6 @@ func TestSyncRegistry(t *testing.T) {
 }
 
 func TestLoadChangesetSource(t *testing.T) {
-	t.Skip("Flaky test")
 	ctx := context.Background()
 	cf := httpcli.NewFactory(
 		func(cli httpcli.Doer) httpcli.Doer {

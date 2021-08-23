@@ -464,6 +464,7 @@ func (s *updateScheduler) ScheduleInfo(id api.RepoID) *protocol.RepoUpdateSchedu
 
 // updateQueue is a priority queue of repos to update.
 // A repo can't have more than one location in the queue.
+// Implements heap.Interface and sort.Interface.
 type updateQueue struct {
 	mu sync.Mutex
 

@@ -4,6 +4,7 @@ import { Settings } from '@sourcegraph/shared/src/settings/settings'
 
 import { SubmissionErrors } from '../../../../components/form/hooks/useForm'
 import { InsightType, SearchBasedInsight } from '../../../../core/types'
+import { isSearchBackendBasedInsight } from '../../../../core/types/insight/search-insight'
 import { SupportedInsightSubject } from '../../../../core/types/subjects'
 import { createDefaultEditSeries } from '../../creation/search-insight/components/search-insight-creation-content/hooks/use-editable-series'
 import { SearchInsightCreationContent } from '../../creation/search-insight/components/search-insight-creation-content/SearchInsightCreationContent'
@@ -48,6 +49,15 @@ export const EditSearchBasedInsight: React.FunctionComponent<EditSearchBasedInsi
     // Handlers
     const handleSubmit = (values: CreateInsightFormFields): SubmissionErrors | Promise<SubmissionErrors> | void => {
         const sanitizedInsight = getSanitizedSearchInsight(values)
+
+        // Preserve backend insight filters since these filters don't represent in form fields
+        // in case if editing hasn't change type of search insight.
+        if (isSearchBackendBasedInsight(sanitizedInsight) && isSearchBackendBasedInsight(insight)) {
+            return onSubmit({
+                ...sanitizedInsight,
+                filters: insight.filters,
+            })
+        }
 
         return onSubmit(sanitizedInsight)
     }

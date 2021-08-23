@@ -275,7 +275,7 @@ export const SignUpForm: React.FunctionComponent<SignUpFormProps> = ({
                             // here because this list will not be updated during this component's lifetime.
                             <div className="mb-2" key={index}>
                                 <a
-                                    href={provider.authenticationURL}
+                                    href={`${provider.authenticationURL || ''}&redirect=/welcome`}
                                     className="btn btn-secondary btn-block"
                                     onClick={onClickExternalAuthSignup(provider.serviceType)}
                                 >

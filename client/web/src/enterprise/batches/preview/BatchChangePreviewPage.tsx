@@ -15,7 +15,7 @@ import { Description } from '../Description'
 import { SupersedingBatchSpecAlert } from '../detail/SupersedingBatchSpecAlert'
 import { MultiSelectContextProvider } from '../MultiSelectContext'
 
-import { fetchBatchSpecById as _fetchBatchSpecById } from './backend'
+import { fetchBatchSpecById as _fetchBatchSpecById, queryApplyPreviewStats as _queryApplyPreviewStats } from './backend'
 import { BatchChangePreviewContextProvider } from './BatchChangePreviewContext'
 import { BatchChangePreviewStatsBar } from './BatchChangePreviewStatsBar'
 import { BatchChangePreviewProps, BatchChangePreviewTabs } from './BatchChangePreviewTabs'
@@ -28,6 +28,8 @@ export type PreviewPageAuthenticatedUser = Pick<AuthenticatedUser, 'url' | 'disp
 export interface BatchChangePreviewPageProps extends BatchChangePreviewProps {
     /** Used for testing. */
     fetchBatchSpecById?: typeof _fetchBatchSpecById
+    /** Used for testing. */
+    queryApplyPreviewStats?: typeof _queryApplyPreviewStats
 }
 
 export const BatchChangePreviewPage: React.FunctionComponent<BatchChangePreviewPageProps> = props => {
@@ -37,6 +39,7 @@ export const BatchChangePreviewPage: React.FunctionComponent<BatchChangePreviewP
         authenticatedUser,
         telemetryService,
         fetchBatchSpecById = _fetchBatchSpecById,
+        queryApplyPreviewStats,
     } = props
 
     const spec = useObservable(
@@ -88,7 +91,11 @@ export const BatchChangePreviewPage: React.FunctionComponent<BatchChangePreviewP
                         viewerBatchChangesCodeHosts={spec.viewerBatchChangesCodeHosts}
                     />
                     <SupersedingBatchSpecAlert spec={spec.supersedingBatchSpec} />
-                    <BatchChangePreviewStatsBar batchSpec={spec} />
+                    <BatchChangePreviewStatsBar
+                        batchSpec={spec.id}
+                        diffStat={spec.diffStat}
+                        queryApplyPreviewStats={queryApplyPreviewStats}
+                    />
                     <CreateUpdateBatchChangeAlert
                         history={history}
                         specID={spec.id}

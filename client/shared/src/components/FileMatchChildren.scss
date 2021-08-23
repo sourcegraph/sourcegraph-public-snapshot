@@ -1,21 +1,15 @@
 .file-match-children {
-    .theme-redesign & {
-        background-color: var(--code-bg);
-        border: 1px solid var(--border-color);
-        border-radius: var(--border-radius);
-        padding: 0.25rem 0;
-    }
+    background-color: var(--code-bg);
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius);
+    padding: 0.25rem 0;
 
     &__item {
         text-decoration: none; // don't use cascading link style
         display: flex;
         align-items: center;
         padding: 0.25rem 0.5rem;
-        background-color: var(--body-bg);
-
-        .theme-redesign & {
-            background-color: var(--code-bg);
-        }
+        background-color: var(--code-bg);
 
         &-clickable {
             cursor: pointer;
@@ -29,11 +23,7 @@
             position: relative;
             overflow-x: auto;
             &:not(:first-child) {
-                border-top: 1px solid var(--border-color);
-
-                .theme-redesign & {
-                    border-color: var(--border-color-2);
-                }
+                border-top: 1px solid var(--border-color-2);
             }
         }
     }

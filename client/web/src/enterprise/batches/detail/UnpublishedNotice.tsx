@@ -19,10 +19,17 @@ export const UnpublishedNotice: React.FunctionComponent<UnpublishedNoticeProps> 
     }
     return (
         <div className={classNames('alert alert-secondary', className)}>
-            {unpublished} unpublished {pluralize('changeset', unpublished, 'changesets')}. Set{' '}
-            <code className="badge badge-secondary">published: true</code> in the batch spec and re-run{' '}
-            <code className="badge badge-secondary">src batch apply -f $BATCH_SPEC_FILE</code> to publish to your code
-            host.
+            {unpublished} unpublished {pluralize('changeset', unpublished, 'changesets')}. Select changeset(s) and
+            choose the 'Publish changesets' action to publish them, or{' '}
+            <a
+                className="alert-link"
+                href="https://docs.sourcegraph.com/batch_changes/how-tos/publishing_changesets#publishing-changesets"
+                rel="noopener"
+                target="_blank"
+            >
+                read more about publishing changesets
+            </a>
+            .
         </div>
     )
 }

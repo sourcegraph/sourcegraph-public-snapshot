@@ -755,23 +755,10 @@
         }
         .hl-markup.hl-deleted {
             color: var(--hl-white);
-            background: var(--hl-bg-dark-red);
+            background: var(--diff-remove-bg);
         }
         .hl-markup.hl-inserted {
             color: var(--hl-white);
-            background: var(--hl-bg-dark-green);
-        }
-    }
-}
-
-// Redesign theme overrides
-.theme-redesign {
-    .hl-source.hl-diff {
-        .hl-markup.hl-deleted {
-            background: var(--diff-remove-bg);
-        }
-
-        .hl-markup.hl-inserted {
             background: var(--diff-add-bg);
         }
     }

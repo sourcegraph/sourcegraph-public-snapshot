@@ -143,6 +143,7 @@ exports[`SignInPage renders sign in page (cloud) 1`] = `
         >
           <a
             className="btn btn-secondary btn-block"
+            href="&redirect=/welcome"
           >
             <svg
               className="mdi-icon icon-inline"
@@ -311,6 +312,7 @@ exports[`SignInPage renders sign in page (server) 1`] = `
         >
           <a
             className="btn btn-secondary btn-block"
+            href=""
           >
             <svg
               className="mdi-icon icon-inline"

@@ -148,6 +148,15 @@ type IndexedSearchRequest interface {
 	UnindexedRepos() []*search.RepositoryRevisions
 }
 
+func NewIndexedSearchRequest(ctx context.Context, args *search.TextParameters, typ search.IndexedRequestType, onMissing OnMissingRepoRevs) (IndexedSearchRequest, error) {
+	if args.Mode == search.ZoektGlobalSearch {
+		// performance: optimize global searches where Zoekt searches
+		// all shards anyway.
+		return NewIndexedUniverseSearchRequest(ctx, args, typ, args.RepoOptions, args.UserPrivateRepos)
+	}
+	return NewIndexedSubsetSearchRequest(ctx, args, typ, onMissing)
+}
+
 // IndexedUniverseSearchRequest represents a request to run a search over the universe of indexed repositories.
 type IndexedUniverseSearchRequest struct {
 	RepoOptions      search.RepoOptions
@@ -175,14 +184,14 @@ func (s *IndexedUniverseSearchRequest) UnindexedRepos() []*search.RepositoryRevi
 	return nil
 }
 
-func NewIndexedUniverseSearchRequest(ctx context.Context, args *search.TextParameters, repoOptions search.RepoOptions, userPrivateRepos []types.RepoName) (_ *IndexedUniverseSearchRequest, err error) {
+func NewIndexedUniverseSearchRequest(ctx context.Context, args *search.TextParameters, typ search.IndexedRequestType, repoOptions search.RepoOptions, userPrivateRepos []types.RepoName) (_ *IndexedUniverseSearchRequest, err error) {
 	tr, _ := trace.New(ctx, "NewIndexedUniverseSearchRequest", "text")
 	defer func() {
 		tr.SetError(err)
 		tr.Finish()
 	}()
 
-	q, err := search.QueryToZoektQuery(args.PatternInfo, false)
+	q, err := search.QueryToZoektQuery(args.PatternInfo, typ == search.SymbolRequest)
 	if err != nil {
 		return nil, err
 	}
@@ -191,13 +200,9 @@ func NewIndexedUniverseSearchRequest(ctx context.Context, args *search.TextParam
 		RepoOptions:      repoOptions,
 		UserPrivateRepos: userPrivateRepos,
 		Args: &search.ZoektParameters{
-			Repos:          args.Repos,
 			Query:          q,
-			Typ:            search.TextRequest,
+			Typ:            typ,
 			FileMatchLimit: args.PatternInfo.FileMatchLimit,
-			Enabled:        args.Zoekt.Enabled(),
-			Index:          args.PatternInfo.Index,
-			Mode:           args.Mode,
 			Select:         args.PatternInfo.Select,
 			Zoekt:          args.Zoekt,
 		},
@@ -374,17 +379,11 @@ func NewIndexedSubsetSearchRequest(ctx context.Context, args *search.TextParamet
 
 	return &IndexedSubsetSearchRequest{
 		Args: &search.ZoektParameters{
-			Repos:            args.Repos,
-			Query:            q,
-			Typ:              typ,
-			FileMatchLimit:   args.PatternInfo.FileMatchLimit,
-			Enabled:          args.Zoekt.Enabled(),
-			Index:            args.PatternInfo.Index,
-			Mode:             args.Mode,
-			RepoOptions:      args.RepoOptions,
-			UserPrivateRepos: args.UserPrivateRepos,
-			Select:           args.PatternInfo.Select,
-			Zoekt:            args.Zoekt,
+			Query:          q,
+			Typ:            typ,
+			FileMatchLimit: args.PatternInfo.FileMatchLimit,
+			Select:         args.PatternInfo.Select,
+			Zoekt:          args.Zoekt,
 		},
 
 		Unindexed: limitUnindexedRepos(searcherRepos, maxUnindexedRepoRevSearchesPerQuery, onMissing),
@@ -403,11 +402,11 @@ func NewIndexedSubsetSearchRequest(ctx context.Context, args *search.TextParamet
 // have a repo: filter and consequently no rev: filter. This makes the code a bit
 // simpler because we don't have to resolve revisions before sending off (global)
 // requests to Zoekt.
-func zoektGlobalQuery(query zoektquery.Q, repoOptions search.RepoOptions, userPrivateRepos []types.RepoName) zoektquery.Q {
+func zoektGlobalQuery(q zoektquery.Q, repoOptions search.RepoOptions, userPrivateRepos []types.RepoName) zoektquery.Q {
 	var qs []zoektquery.Q
 
-	// Public
-	if !repoOptions.OnlyPrivate {
+	// Public or Any
+	if repoOptions.Visibility == query.Public || repoOptions.Visibility == query.Any {
 		rc := zoektquery.RcOnlyPublic
 		apply := func(f zoektquery.RawConfig, b bool) {
 			if !b {
@@ -420,17 +419,17 @@ func zoektGlobalQuery(query zoektquery.Q, repoOptions search.RepoOptions, userPr
 		apply(zoektquery.RcOnlyForks, repoOptions.OnlyForks)
 		apply(zoektquery.RcNoForks, repoOptions.NoForks)
 
-		qs = append(qs, zoektquery.NewAnd(&zoektquery.Branch{Pattern: "HEAD", Exact: true}, rc, query))
+		qs = append(qs, zoektquery.NewAnd(&zoektquery.Branch{Pattern: "HEAD", Exact: true}, rc, q))
 	}
 
-	// Private
-	if repoOptions.OnlyPublic && len(userPrivateRepos) > 0 {
+	// Private or Any
+	if (repoOptions.Visibility == query.Private || repoOptions.Visibility == query.Any) && len(userPrivateRepos) > 0 {
 		privateRepoSet := make(map[string][]string, len(userPrivateRepos))
 		head := []string{"HEAD"}
 		for _, r := range userPrivateRepos {
 			privateRepoSet[string(r.Name)] = head
 		}
-		qs = append(qs, zoektquery.NewAnd(&zoektquery.RepoBranches{Set: privateRepoSet}, query))
+		qs = append(qs, zoektquery.NewAnd(&zoektquery.RepoBranches{Set: privateRepoSet}, q))
 	}
 
 	return zoektquery.Simplify(zoektquery.NewOr(qs...))

@@ -33,7 +33,7 @@ To give you a rough overview where each part of the code lives, let's take a loo
 
 1. run `src batch preview -f your-batch-spec.yaml`
 1. click on the preview link
-1. click `Apply spec` to publish changesets on the code hosts
+1. click **Apply** to publish changesets on the code hosts
 
 It starts in [`src-cli`](https://github.com/sourcegraph/src-cli):
 
@@ -46,13 +46,13 @@ It starts in [`src-cli`](https://github.com/sourcegraph/src-cli):
 When you then click the "Preview the batch change" link that `src-cli` printed, you'll land on the preview page in the web frontend:
 
 1. The [`BatchChangePreviewPage` component](https://github.com/sourcegraph/sourcegraph/blob/e7f26c0d7bc965892669a5fc9835ec65211943aa/client/web/src/enterprise/batches/preview/BatchChangePreviewPage.tsx#L43) then sends a GraphQL request to the backend to [query the `BatchSpecByID`](https://github.com/sourcegraph/sourcegraph/blob/e7f26c0d7bc965892669a5fc9835ec65211943aa/client/web/src/enterprise/batches/preview/backend.ts#L93-L107).
-1. Once you hit the "Apply spec" button, the component [uses the `applyBatchChange`](https://github.com/sourcegraph/sourcegraph/blob/e7f26c0d7bc965892669a5fc9835ec65211943aa/client/web/src/enterprise/batches/preview/backend.ts#L140-L159) to apply the batch spec and create a batch change.
+1. Once you hit the **Apply** button, the component [uses the `applyBatchChange`](https://github.com/sourcegraph/sourcegraph/blob/e7f26c0d7bc965892669a5fc9835ec65211943aa/client/web/src/enterprise/batches/preview/backend.ts#L140-L159) to apply the batch spec and create a batch change.
 1. You're then redirected to the [`BatchChangeDetailsPage` component](https://github.com/sourcegraph/sourcegraph/blob/e7f26c0d7bc965892669a5fc9835ec65211943aa/client/web/src/enterprise/batches/detail/BatchChangeDetailsPage.tsx#L65) that shows you you're newly-created batch change.
 
 In the backend, all Batch Changes related GraphQL queries and mutations start in the [`Resolver` package](https://github.com/sourcegraph/sourcegraph/blob/8b99439e21aaa000443382f03f92e532b0445858/enterprise/cmd/frontend/internal/batches/resolvers/resolver.go):
 
 1. The [`CreateChangesetSpec`](https://github.com/sourcegraph/sourcegraph/blob/8b99439e21aaa000443382f03f92e532b0445858/enterprise/cmd/frontend/internal/batches/resolvers/resolver.go#L545) and [`CreateBatchSpec`](https://github.com/sourcegraph/sourcegraph/blob/8b99439e21aaa000443382f03f92e532b0445858/enterprise/cmd/frontend/internal/batches/resolvers/resolver.go#L489) mutations that `src-cli` called to create the changeset and batch specs are defined here.
-1. When you clicked "Apply Spec" the [`ApplyBatchChange` resolver](https://github.com/sourcegraph/sourcegraph/blob/8b99439e21aaa000443382f03f92e532b0445858/enterprise/cmd/frontend/internal/batches/resolvers/resolver.go#L404) was executed to create the batch change.
+1. When you clicked **Apply** the [`ApplyBatchChange` resolver](https://github.com/sourcegraph/sourcegraph/blob/8b99439e21aaa000443382f03f92e532b0445858/enterprise/cmd/frontend/internal/batches/resolvers/resolver.go#L404) was executed to create the batch change.
 1. Most of that doesn't happen in the resolver layer, but in the service layer: [here is the `(*Service).ApplyBatchChange` method](https://github.com/sourcegraph/sourcegraph/blob/e7f26c0d7bc965892669a5fc9835ec65211943aa/enterprise/internal/batches/service/service_apply_batch_change.go#L48:19) that talks to the database to create an entry in the `batch_changes` table.
 1. The most important thing that happens in `(*Service).ApplyBatchChange` is that [it calls the `rewirer`](https://github.com/sourcegraph/sourcegraph/blob/e7f26c0d7bc965892669a5fc9835ec65211943aa/enterprise/internal/batches/service/service_apply_batch_change.go#L119-L135) to wire the entries in the `changesets` table to the correct `changeset_specs`.
 1. Once that is done, the `changesets` are created or updated to point to the new `changeset_specs` that you created with `src-cli`.

@@ -10,7 +10,7 @@ import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { BrandLogo } from '../components/branding/BrandLogo'
 import { SourcegraphContext } from '../jscontext'
 
-import styles from './ExperimentalSignUpPage.module.scss'
+import styles from './CloudSignUpPage.module.scss'
 import { SignUpArguments, SignUpForm } from './SignUpForm'
 
 interface Props extends ThemeProps, TelemetryProps {
@@ -26,15 +26,19 @@ const SourceToTitleMap = {
     Saved: 'Create a library of useful searches.',
     Monitor: 'Monitor code for changes.',
     Extend: 'Augment code and workflows via extensions.',
-    SearchCTA: 'Add your public (and soon private) repositories.',
+    SearchCTA: 'Easily search the code you care about.',
+    HomepageCTA: 'Easily search the code you care about.',
     Snippet: 'Easily search the code you care about.',
 }
 
-export type ExperimentalSignUpSource = keyof typeof SourceToTitleMap
+export type CloudSignUpSource = keyof typeof SourceToTitleMap
 
 export const ShowEmailFormQueryParameter = 'showEmail'
 
-export const ExperimentalSignUpPage: React.FunctionComponent<Props> = ({
+/**
+ * Sign up page specifically for Sourcegraph.com
+ */
+export const CloudSignUpPage: React.FunctionComponent<Props> = ({
     isLightTheme,
     source,
     showEmailForm,
@@ -65,7 +69,7 @@ export const ExperimentalSignUpPage: React.FunctionComponent<Props> = ({
     )
 
     const sourceIsValid = source && Object.keys(SourceToTitleMap).includes(source)
-    const title = sourceIsValid ? SourceToTitleMap[source as ExperimentalSignUpSource] : SourceToTitleMap.Context // Use Context as default
+    const title = sourceIsValid ? SourceToTitleMap[source as CloudSignUpSource] : SourceToTitleMap.Context // Use Context as default
 
     const logEvent = (): void => {
         if (sourceIsValid) {
@@ -95,7 +99,12 @@ export const ExperimentalSignUpPage: React.FunctionComponent<Props> = ({
                 <div className={styles.contentsLeft}>
                     With a Sourcegraph account, you can also:
                     <ul className={styles.featureList}>
-                        <li>Search across all your public (and soon private) repositories</li>
+                        <li>
+                            <div className="d-flex align-items-center">
+                                <span className="badge badge-info text-uppercase mr-1">Beta</span> Search across all
+                                your public and private repositories
+                            </div>
+                        </li>
                         <li>Monitor code for changes</li>
                         <li>Navigate through code with IDE like go to references and definition hovers</li>
                         <li>Integrate data, tooling, and code in a single location </li>

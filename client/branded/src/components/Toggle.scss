@@ -2,25 +2,14 @@ $toggle-width: 2rem;
 $box-shadow-spacing: 0 0 0 1px var(--body-bg);
 
 .toggle {
-    --toggle-bar-bg: var(--text-muted);
+    --toggle-bar-bg: var(--icon-color);
     --toggle-bar-bg-on: var(--primary);
-    --toggle-knob-bg: var(--text-muted);
-    --toggle-knob-bg-on: var(--primary);
-    --toggle-bar-opacity: 0.2;
-    --toggle-bar-focus-opacity: 0.5;
-    --toggle-knob-disabled-opacity: 0.2;
-    --toggle-bar-focus-box-shadow: #{$box-shadow-spacing}, 0 0 0 0.1875rem var(--primary);
-
-    .theme-redesign & {
-        --toggle-bar-bg: var(--icon-color);
-        --toggle-bar-bg-on: var(--primary);
-        --toggle-knob-bg: var(--body-bg);
-        --toggle-knob-bg-on: var(--body-bg);
-        --toggle-bar-opacity: 1;
-        --toggle-bar-focus-opacity: 1;
-        --toggle-knob-disabled-opacity: 1;
-        --toggle-bar-focus-box-shadow: #{$box-shadow-spacing}, 0 0 0 0.1875rem var(--primary-2);
-    }
+    --toggle-knob-bg: var(--body-bg);
+    --toggle-knob-bg-on: var(--body-bg);
+    --toggle-bar-opacity: 1;
+    --toggle-bar-focus-opacity: 1;
+    --toggle-knob-disabled-opacity: 1;
+    --toggle-bar-focus-box-shadow: #{$box-shadow-spacing}, 0 0 0 0.1875rem var(--primary-2);
 
     background: none;
     border: none;
@@ -81,7 +70,7 @@ $box-shadow-spacing: 0 0 0 1px var(--body-bg);
         opacity: var(--toggle-bar-focus-opacity);
     }
 
-    .theme-redesign &:disabled {
+    &:disabled {
         --toggle-knob-bg: var(--icon-color);
         --toggle-knob-bg-on: var(--icon-color);
         --toggle-bar-bg: var(--input-disabled-bg);

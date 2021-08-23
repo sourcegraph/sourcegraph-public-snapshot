@@ -74,9 +74,7 @@ export const SearchInsightCreationContent: React.FunctionComponent<SearchInsight
         onSubmit,
     })
 
-    const { editSeries, listen, editRequest, editCommit, cancelEdit, deleteSeries } = useEditableSeries({
-        series,
-    })
+    const { editSeries, listen, editRequest, editCommit, cancelEdit, deleteSeries } = useEditableSeries({ series })
 
     const handleFormReset = (): void => {
         // TODO [VK] Change useForm API in order to implement form.reset method.

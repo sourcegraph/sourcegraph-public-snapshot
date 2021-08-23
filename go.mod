@@ -26,6 +26,7 @@ require (
 	github.com/boj/redistore v0.0.0-20180917114910-cd5dcc76aeff
 	github.com/certifi/gocertifi v0.0.0-20200211180108-c7c1fbc02894 // indirect
 	github.com/cespare/xxhash v1.1.0
+	github.com/cespare/xxhash/v2 v2.1.1
 	github.com/cockroachdb/errors v1.8.4
 	github.com/cockroachdb/redact v1.0.9 // indirect
 	github.com/cockroachdb/sentry-go v0.6.1-cockroachdb.2
@@ -147,7 +148,7 @@ require (
 	github.com/sourcegraph/go-jsonschema v0.0.0-20200907102109-d14e9f2f3a28
 	github.com/sourcegraph/go-langserver v2.0.1-0.20181108233942-4a51fa2e1238+incompatible
 	github.com/sourcegraph/go-lsp v0.0.0-20200429204803-219e11d77f5d
-	github.com/sourcegraph/go-rendezvous v0.0.0-20210817141400-b50ebb50dc8a
+	github.com/sourcegraph/go-rendezvous v0.0.0-20210819140028-cdd914a24376
 	github.com/sourcegraph/gosyntect v0.0.0-20210422223331-645353f16ddc
 	github.com/sourcegraph/jsonx v0.0.0-20200629203448-1a936bd500cf
 	github.com/sourcegraph/sourcegraph/enterprise/dev/ci/images v0.0.0-00010101000000-000000000000

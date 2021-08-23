@@ -1,9 +1,7 @@
-:global(.theme-redesign) {
-    .copy-icon {
-        color: var(--icon-color);
+.copy-icon {
+    color: var(--icon-color);
 
-        &:hover {
-            color: var(--body-color);
-        }
+    &:hover {
+        color: var(--body-color);
     }
 }

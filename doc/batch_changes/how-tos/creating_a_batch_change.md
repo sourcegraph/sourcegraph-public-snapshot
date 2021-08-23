@@ -56,7 +56,7 @@ After writing a batch spec you use the [Sourcegraph CLI (`src`)](https://github.
     <img src="https://sourcegraphstatic.com/docs/images/batch_changes/src_batch_preview_link.png" class="screenshot">
 1. Examine the preview. This is the result of executing the batch spec. Confirm that the changes are what you intended. If not, edit the batch spec and then rerun the command above.
     <img src="https://sourcegraphstatic.com/docs/images/batch_changes/browser_batch_preview.png" class="screenshot">
-1. Click the **Apply spec** button to create the batch change.
+1. Click the **Apply** button to create the batch change.
 
 After you've applied a batch spec, you can [publish changesets](publishing_changesets.md) to the code host when you're ready. This will turn the patches into commits, branches, and changesets (such as GitHub pull requests) for others to review and merge.
 

@@ -57,29 +57,30 @@ func Search(ctx context.Context, args *search.TextParameters, limit int, stream 
 	ctx, stream, cancel := streaming.WithLimit(ctx, stream, limit)
 	defer cancel()
 
-	indexed, err := zoektutil.NewIndexedSubsetSearchRequest(ctx, args, search.SymbolRequest, zoektutil.MissingRepoRevStatus(stream))
+	request, err := zoektutil.NewIndexedSearchRequest(ctx, args, search.SymbolRequest, zoektutil.MissingRepoRevStatus(stream))
 	if err != nil {
 		return err
 	}
 
 	run := parallel.NewRun(conf.SearchSymbolsParallelism())
 
-	run.Acquire()
-	goroutine.Go(func() {
-		defer run.Release()
-
-		err := indexed.Search(ctx, stream)
-		if err != nil {
-			tr.LogFields(otlog.Error(err))
-			// Only record error if we haven't timed out.
-			if ctx.Err() == nil {
-				cancel()
-				run.Error(err)
+	if args.Mode != search.SearcherOnly {
+		run.Acquire()
+		goroutine.Go(func() {
+			defer run.Release()
+			err := request.Search(ctx, stream)
+			if err != nil {
+				tr.LogFields(otlog.Error(err))
+				// Only record error if we haven't timed out.
+				if ctx.Err() == nil {
+					cancel()
+					run.Error(err)
+				}
 			}
-		}
-	})
+		})
+	}
 
-	for _, repoRevs := range indexed.Unindexed {
+	for _, repoRevs := range request.UnindexedRepos() {
 		repoRevs := repoRevs
 		if ctx.Err() != nil {
 			break
