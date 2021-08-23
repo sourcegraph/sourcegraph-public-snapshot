@@ -14,11 +14,9 @@ import {
 } from '../../../components/FilteredConnection'
 import { PageTitle } from '../../../components/PageTitle'
 import { LsifUploadFields, LSIFUploadState } from '../../../graphql-operations'
+import { fetchLsifUploads as defaultFetchLsifUploads } from '../shared/backend'
 
-import {
-    fetchLsifUploads as defaultFetchLsifUploads,
-    fetchCommitGraphMetadata as defaultFetchCommitGraphMetadata,
-} from './backend'
+import { fetchCommitGraphMetadata as defaultFetchCommitGraphMetadata } from './backend'
 import { CodeIntelUploadNode, CodeIntelUploadNodeProps } from './CodeIntelUploadNode'
 import { CommitGraphMetadata } from './CommitGraphMetadata'
 
