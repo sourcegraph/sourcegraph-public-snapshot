@@ -44,6 +44,7 @@ type operations struct {
 	hasRepository                          *observation.Operation
 	indexQueueSize                         *observation.Operation
 	insertDependencyIndexingJob            *observation.Operation
+	insertCloneableDependencyRepo          *observation.Operation
 	insertIndex                            *observation.Operation
 	insertUpload                           *observation.Operation
 	isQueued                               *observation.Operation
@@ -78,9 +79,9 @@ type operations struct {
 func newOperations(observationContext *observation.Context, metrics *metrics.OperationMetrics) *operations {
 	op := func(name string) *observation.Operation {
 		return observationContext.Operation(observation.Op{
-			Name:         fmt.Sprintf("codeintel.dbstore.%s", name),
-			MetricLabels: []string{name},
-			Metrics:      metrics,
+			Name:              fmt.Sprintf("codeintel.dbstore.%s", name),
+			MetricLabelValues: []string{name},
+			Metrics:           metrics,
 		})
 	}
 
@@ -130,6 +131,7 @@ func newOperations(observationContext *observation.Context, metrics *metrics.Ope
 		hasRepository:                          op("HasRepository"),
 		indexQueueSize:                         op("IndexQueueSize"),
 		insertDependencyIndexingJob:            op("InsertDependencyIndexingJob"),
+		insertCloneableDependencyRepo:          op("InsertCloneableDependencyRepo"),
 		insertIndex:                            op("InsertIndex"),
 		insertUpload:                           op("InsertUpload"),
 		isQueued:                               op("IsQueued"),

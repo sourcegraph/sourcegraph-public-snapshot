@@ -11,7 +11,7 @@ import (
 func Worker() *monitoring.Container {
 	const containerName = "worker"
 
-	var workerJobs = []struct {
+	workerJobs := []struct {
 		Name  string
 		Owner monitoring.ObservableOwner
 	}{
@@ -99,6 +99,7 @@ func Worker() *monitoring.Container {
 			shared.CodeIntelligence.NewLSIFStoreGroup(containerName),
 			shared.CodeIntelligence.NewDependencyIndexDBWorkerStoreGroup(containerName),
 			shared.CodeIntelligence.NewGitserverClientGroup(containerName),
+			shared.CodeIntelligence.NewDependencyReposStoreGroup(containerName),
 
 			// src_codeintel_background_upload_resets_total
 			// src_codeintel_background_upload_reset_failures_total
