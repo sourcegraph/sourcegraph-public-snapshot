@@ -49,10 +49,12 @@ func (h *handler) dequeue(ctx context.Context, executorName, executorHostname st
 		return apiclient.Job{}, false, nil
 	}
 
-	job, err := h.RecordTransformer(ctx, record)
+	rec := record[0] // todo: fix lol
+
+	job, err := h.RecordTransformer(ctx, rec)
 	if err != nil {
-		if _, err := h.Store.MarkFailed(ctx, record.RecordID(), fmt.Sprintf("failed to transform record: %s", err), store.MarkFinalOptions{}); err != nil {
-			log15.Error("Failed to mark record as failed", "recordID", record.RecordID(), "error", err)
+		if _, err := h.Store.MarkFailed(ctx, rec.RecordID(), fmt.Sprintf("failed to transform record: %s", err), store.MarkFinalOptions{}); err != nil {
+			log15.Error("Failed to mark record as failed", "recordID", rec.RecordID(), "error", err)
 		}
 
 		return apiclient.Job{}, false, err

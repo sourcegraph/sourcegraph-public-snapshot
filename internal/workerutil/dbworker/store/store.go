@@ -9,6 +9,10 @@ import (
 	"strings"
 	"time"
 
+	"github.com/lib/pq"
+
+	"github.com/inconshreveable/log15"
+
 	"github.com/cockroachdb/errors"
 	"github.com/derision-test/glock"
 	"github.com/keegancsmith/sqlf"
@@ -80,7 +84,7 @@ type Store interface {
 	// will be returned along with a false-valued flag. This method must not be called from within a transaction.
 	//
 	// The supplied conditions may use the alias provided in `ViewName`, if one was supplied.
-	Dequeue(ctx context.Context, workerHostname string, conditions []*sqlf.Query) (workerutil.Record, bool, error)
+	Dequeue(ctx context.Context, workerHostname string, conditions []*sqlf.Query) ([]workerutil.Record, bool, error)
 
 	// Heartbeat marks the given record as currently being processed.
 	Heartbeat(ctx context.Context, ids []int, options HeartbeatOptions) (knownIDs []int, err error)
@@ -242,6 +246,8 @@ type Options struct {
 
 	// clock is used to mock out the wall clock used for heartbeat updates.
 	clock glock.Clock
+
+	BatchSize int
 }
 
 // RecordScanFn is a function that interprets row values as a particular record. This function should
@@ -363,7 +369,7 @@ SELECT COUNT(*) FROM %s WHERE (
 // Most often, this will be when the handler moves the record into a terminal state.
 //
 // The supplied conditions may use the alias provided in `ViewName`, if one was supplied.
-func (s *store) Dequeue(ctx context.Context, workerHostname string, conditions []*sqlf.Query) (_ workerutil.Record, _ bool, err error) {
+func (s *store) Dequeue(ctx context.Context, workerHostname string, conditions []*sqlf.Query) (_ []workerutil.Record, _ bool, err error) {
 	ctx, traceLog, endObservation := s.operations.dequeue.WithAndLogger(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
@@ -373,8 +379,13 @@ func (s *store) Dequeue(ctx context.Context, workerHostname string, conditions [
 
 	now := s.now()
 
-	// Select and "lock" candidate record
-	id, exists, err := basestore.ScanFirstInt(s.Query(ctx, s.formatQuery(
+	batchSize := s.options.BatchSize
+	if batchSize == 0 {
+		batchSize = 5
+	}
+
+	fq := s.formatQuery(
+
 		selectCandidateQuery,
 		quote(s.options.ViewName),
 		now,
@@ -384,35 +395,65 @@ func (s *store) Dequeue(ctx context.Context, workerHostname string, conditions [
 		s.options.MaxNumRetries,
 		makeConditionSuffix(conditions),
 		s.options.OrderByExpression,
+		batchSize,
 		quote(s.options.TableName),
 		now,
 		now,
 		workerHostname,
-	)))
+	)
+	log15.Info("dequeue_select_ids", "query", fq.Query(sqlf.PostgresBindVar), "args", fq.Args())
+
+	// Select and "lock" candidate records
+	ids, err := basestore.ScanInts(s.Query(ctx, fq))
 	if err != nil {
 		return nil, false, err
 	}
-	if !exists {
+	if len(ids) < 1 {
 		return nil, false, nil
 	}
-	traceLog(log.Int("id", id))
+	log15.Info("dequeue id count", "count", len(ids))
 
-	// Scan the actual record after updating its state
-	record, exists, err := s.options.Scan(s.Query(ctx, s.formatQuery(
-		selectRecordQuery,
+	records := make([]workerutil.Record, 0, len(ids))
+
+	q := s.formatQuery(
+		selectBatchRecordQuery,
 		sqlf.Join(s.options.ColumnExpressions, ", "),
 		quote(s.options.ViewName),
-		id,
-	)))
+		pq.Array(ids),
+	)
+	log15.Info("dequeue_query", "query", q.Query(sqlf.PostgresBindVar), "args", q.Args())
+	rows, err := s.Query(ctx, q)
 	if err != nil {
-		return nil, false, err
+		return nil, false, errors.Wrap(err, "SelectBatchRecords")
 	}
-	if !exists {
-		return nil, false, nil
+	for rows.Next() {
+		tmp, exists, err := s.options.Scan(rows, err)
+		if err != nil {
+			return nil, false, err
+		}
+		if !exists {
+			continue
+		}
+		traceLog(log.Int("id", tmp.RecordID())) // todo: fix lol
+		records = append(records, tmp)
 	}
 
-	return record, true, nil
+	// // Scan the actual record after updating its state
+	// record, exists, err := s.options.Scan()
+	// if err != nil {
+	// 	return nil, false, err
+	// }
+	// if !exists {
+	// 	return nil, false, nil
+	// }
+
+	return records, true, nil
 }
+
+const selectBatchRecordQuery = `
+-- source: internal/workerutil/store.go:Dequeue
+SELECT %s FROM %s WHERE {id} = ANY(%s)
+`
 
 const selectCandidateQuery = `
 -- source: internal/workerutil/store.go:Dequeue
@@ -433,7 +474,7 @@ WITH candidate AS (
 		%s
 	ORDER BY %s
 	FOR UPDATE SKIP LOCKED
-	LIMIT 1
+	LIMIT %s
 )
 UPDATE %s
 SET
