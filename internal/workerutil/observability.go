@@ -57,7 +57,7 @@ func NewMetrics(observationContext *observation.Context, prefix string, labels m
 
 	return WorkerMetrics{
 		operations: newOperations(observationContext, prefix, keys, values),
-		numJobs:    newLenientConcurrencyGauge(numJobs),
+		numJobs:    newLenientConcurrencyGauge(numJobs, time.Second * 5),
 	}
 }
 
@@ -82,23 +82,22 @@ func newOperations(observationContext *observation.Context, prefix string, keys,
 	}
 }
 
-// lenientConcurrencyGaugeInterval is the interval at which a lenient
-// concurrency gauge's value is updated with the current window's maximum
-// value.
-const lenientConcurrencyGaugeInterval = time.Second * 5
-
-// newLenientConcurrencyGauge creates a new gauge-like object that emits
-// (into the given gauge) the maximum value over the last five seconds.
+// newLenientConcurrencyGauge creates a new gauge-like object that 
+// emits the maximum value over the last five seconds into the given
+// gauge. Note that this gaugage should be used to track concurrency
+// only, meaning that running the gauge into the negatives may produce 
+// unwanted behaivor.
+//
 // This method begins an immortal background routine.
 //
 // This gauge should be used to smooth-over the randomness sampled by
 // Prometheus by emitting the aggregate we'll likely be using with this
 // type of data directly.
 //
-// Without wrapping the numJobs gauge in this object, we tend to sample
-// zero handlers consistently when jobs are short-lived (< 500ms).
-// Keeping the max in memory gives us the value that we actually want
-// over time, and indicates an accurate level of concurrency.
+// Without wrapping concurrency gauges in this object, we tend to sample
+// zero values consistently when the underlying resource is only occupied
+// for a small amount of time (e.g., less than 500ms). We attribute this
+// to random Prometheus samplying alignments.
 func newLenientConcurrencyGauge(gauge prometheus.Gauge, interval time.Duration) Gauge {
 	ch := make(chan float64)
 	go runLenientConcurrencyGauge(gauge, ch, interval)
