@@ -7,13 +7,10 @@ $default-icon-colors: $oc-grape-7, $oc-violet-7, $oc-cyan-9, $oc-indigo-7, $oc-p
 
     &__bar {
         flex: 0 0 auto;
-        // We won't need hacky container width in the redesign.
-        // Remove this var and use --action-item-width everywhere.
         width: var(--action-item-width);
         background-color: var(--body-bg);
         list-style: none;
 
-        // Only rendered for redesign
         &--collapsed {
             width: 0.5rem;
         }

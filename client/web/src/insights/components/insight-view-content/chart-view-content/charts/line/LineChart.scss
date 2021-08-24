@@ -2,6 +2,10 @@
     display: flex;
     flex-direction: column;
 
+    &--no-interaction {
+        pointer-events: none;
+    }
+
     &__content-parent-size {
         flex-grow: 1;
         position: relative;

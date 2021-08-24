@@ -110,11 +110,11 @@
         cursor: pointer;
         color: var(--text-muted);
 
-        .theme-redesign.theme-light & {
+        .theme-light & {
             color: var(--gray-07);
         }
 
-        .theme-redesign.theme-dark & {
+        .theme-dark & {
             color: var(--gray-05);
         }
     }

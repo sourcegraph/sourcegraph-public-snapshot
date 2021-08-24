@@ -828,12 +828,13 @@ func (s *Server) exec(w http.ResponseWriter, r *http.Request, req *protocol.Exec
 			isSlow := cmdDuration > shortGitCommandSlow(req.Args)
 			isSlowFetch := fetchDuration > 10*time.Second
 			if honey.Enabled() || traceLogs || isSlow || isSlowFetch {
+				actor := r.Header.Get("X-Sourcegraph-Actor")
 				ev := honey.Event("gitserver-exec")
-				ev.SampleRate = honeySampleRate(cmd)
+				ev.SampleRate = honeySampleRate(cmd, actor == "internal")
 				ev.AddField("repo", req.Repo)
 				ev.AddField("cmd", cmd)
 				ev.AddField("args", args)
-				ev.AddField("actor", r.Header.Get("X-Sourcegraph-Actor"))
+				ev.AddField("actor", actor)
 				ev.AddField("ensure_revision", req.EnsureRevision)
 				ev.AddField("ensure_revision_status", ensureRevisionStatus)
 				ev.AddField("client", r.UserAgent())
@@ -1064,12 +1065,13 @@ func (s *Server) p4exec(w http.ResponseWriter, r *http.Request, req *protocol.P4
 
 			isSlow := cmdDuration > 30*time.Second
 			if honey.Enabled() || traceLogs || isSlow {
+				actor := r.Header.Get("X-Sourcegraph-Actor")
 				ev := honey.Event("gitserver-p4exec")
-				ev.SampleRate = honeySampleRate(cmd)
+				ev.SampleRate = honeySampleRate(cmd, actor == "internal")
 				ev.AddField("p4port", req.P4Port)
 				ev.AddField("cmd", cmd)
 				ev.AddField("args", args)
-				ev.AddField("actor", r.Header.Get("X-Sourcegraph-Actor"))
+				ev.AddField("actor", actor)
 				ev.AddField("client", r.UserAgent())
 				ev.AddField("duration_ms", duration.Milliseconds())
 				ev.AddField("stdout_size", stdoutN)
@@ -1547,17 +1549,24 @@ var (
 //
 // 2020-11-02 Dynamically sample. Again hitting very high usage. Same root
 // cause as before, scaling out indexed search cluster. We update our sampling
-// to isntead be dynamic, since "rev-parse" is 12 times more likely than the
+// to instead be dynamic, since "rev-parse" is 12 times more likely than the
 // next most common command.
-func honeySampleRate(cmd string) uint {
-	switch cmd {
-	case "rev-parse":
-		// 1 in 128. In practice 12 times more likely than our next most
-		// common command.
-		return 128
-	default:
-		// 1 in 16
+//
+// 2021-08-20 over two hours we did 128 * 128 * 1e6 rev-parse requests
+// internally. So we update our sampling to heavily downsample internal
+// rev-parse, while upping our sampling for non-internal.
+// https://ui.honeycomb.io/sourcegraph/datasets/gitserver-exec/result/67e4bLvUddg
+func honeySampleRate(cmd string, internal bool) uint {
+	switch {
+	case cmd == "rev-parse" && internal:
+		return 1 << 14 // 16384
+
+	case internal:
+		// we care more about user requests, so downsample internal more.
 		return 16
+
+	default:
+		return 8
 	}
 }
 

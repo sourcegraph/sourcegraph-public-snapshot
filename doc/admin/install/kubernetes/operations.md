@@ -28,22 +28,47 @@ Trying to deploy Sourcegraph with Kubernetes? Refer to our [installation guide](
 
 ## Deploy
 
-Refer to our [installation guide](./index.md#installation) for more details on how to deploy Sourcegraph.
+Refer to our [installation guide](./index.md#installation) for details on how to deploy Sourcegraph.
 
 Migrating from another [deployment type](../index.md)? Refer to our [migration guides](../migrate-backup.md).
 
+### Applying manifests
+
+In general, Sourcegraph with Kubernetes is deployed by applying the [Kubernetes](./index.md#kubernetes) manifests in our [deploy-sourcegraph reference repository](./index.md#reference-repository) - see our [configuration guide](./configure.md) for more details.
+
+We provide a `kubectl-apply-all.sh` script that you can use to do this, usually by running the following from the root directory of the [deploy-sourcegraph reference repository](./index.md#reference-repository):
+
+```sh
+./kubectl-apply-all.sh
+```
+
+> NOTE: By default, this script applies our base manifests using [`kubectl apply`](https://kubernetes.io/docs/reference/generated/kubectl/kubectl-commands#apply) with a variety of arguments specific to the [reference repository](./index.md#reference-repository)'s layout.
+> If you have specific commands that should be run whenever you apply your manifests, you should modify this script as needed. For example, if you use [overlays to make changes to the manifests](./configure.md#overlays), you should modify this script to apply your generated cluster instead.
+
+Once you have applied your changes:
+
+- *Watch* - verify your deployment has started:
+
+  ```bash
+  kubectl get pods -A -o wide --watch
+  ```
+
+- *Port-foward* - verify Sourcegraph is running by temporarily making the frontend port accessible:
+
+  ```sh
+  kubectl port-forward svc/sourcegraph-frontend 3080:30080
+  ```
+
+- *Log in* - browse to your Sourcegraph deployment, login, and verify the instance is working as expected.
+
 ## Configure
 
-Refer to our [Configuration guide](configure.md).
+We strongly recommend referring to our [Configuration guide](configure.md) to learn about how to configure your Sourcegraph with Kubernetes instance.
 
 ## Upgrade
 
 - See the [Updating Sourcegraph docs](update.md) on how to upgrade.<br/>
 - See the [Updating a Kubernetes Sourcegraph instance docs](../../updates/kubernetes.md) for details on changes in each version to determine if manual migration steps are necessary.
-
-## Troubleshoot
-
-See the [Troubleshooting docs](troubleshoot.md).
 
 ## List pods in cluster
 
@@ -154,13 +179,13 @@ The following instructions are specific to backing up and restoring the sourcegr
 
 These instructions will back up the primary `sourcegraph` database and the [codeintel](../../../code_intelligence/index.md) database.
 
-#### 1. Verify deployment running
+A. Verify deployment running
 
 ```bash
 kubectl get pods -A
 ```
 
-#### 2. Stop all connections to the database by removing the frontend deployment
+B. Stop all connections to the database by removing the frontend deployment
 
 ```bash
 kubectl scale --replicas=0 deployment/sourcegraph-frontend
@@ -168,7 +193,7 @@ kubectl scale --replicas=0 deployment/sourcegraph-frontend
 kubectl delete deployment sourcegraph-frontend
 ```
 
-#### 3. Generate the database dumps
+C. Generate the database dumps
 
 ```bash
 kubectl exec -it $pgsql_POD_NAME -- bash -c 'pg_dump -C --username sg sg' > sourcegraph_db.out
@@ -185,34 +210,34 @@ The following instructions apply only if you are restoring your databases into a
 
 If you are restoring a previously running environment, see the instructions for [restoring a previously running deployment](#restoring-sourcegraph-databases-into-an-existing-environment)
 
-##### 1. Copy the database dump files (eg. `sourcegraph_db.out` and `codeintel_db.out`) into the root of the `deploy-sourcegraph` directory
+A. Copy the database dump files (eg. `sourcegraph_db.out` and `codeintel_db.out`) into the root of the `deploy-sourcegraph` directory
 
-##### 2. Start the database services by running the following command from the root of the [deploy-sourcegraph](https://github.com/sourcegraph/deploy-sourcegraph) directory
+B. Start the database services by running the following command from the root of the [deploy-sourcegraph](https://github.com/sourcegraph/deploy-sourcegraph) directory
 
 ```bash
 kubectl rollout restart deployment pgsql
 kubectl rollout restart deployment codeintel-db
 ```
 
-##### 3. Copy the database files into the pods by running the following command from the root of the [deploy-sourcegraph](https://github.com/sourcegraph/deploy-sourcegraph) directory
+C. Copy the database files into the pods by running the following command from the root of the [deploy-sourcegraph](https://github.com/sourcegraph/deploy-sourcegraph) directory
 
 ```bash
 kubectl cp sourcegraph_db.out $NAMESPACE/$pgsql_POD_NAME:/tmp/sourcegraph_db.out
 kubectl cp codeintel_db.out $NAMESPACE/$codeintel-db_POD_NAME:/tmp/codeintel_db.out
 ```
 
-##### 4. Restore the databases
+D. Restore the databases
 
 ```bash
 kubectl exec -it $pgsql_POD_NAME -- bash -c 'psql -v ERROR_ON_STOP=1 --username sg -f /tmp/sourcegraph_db.out sg'
 kubectl exec -it $codeintel-db_POD_NAME -- bash -c 'psql -v ERROR_ON_STOP=1 --username sg -f /tmp/condeintel_db.out sg'
 ```
 
-##### 5. Start the remaining Sourcegraph services by running the following the command from the root of the [deploy-sourcegraph](https://github.com/sourcegraph/deploy-sourcegraph) directory and following the steps in [Sourcegraph - Kubernetes applying manifests](https://docs.sourcegraph.com/admin/install/kubernetes/configure#applying-manifests)
+E. Start the remaining Sourcegraph services by following the steps in [applying manifests](#applying-manifests).
 
 #### Restoring Sourcegraph databases into an existing environment
 
-##### 1. Stop the existing deployment by removing the frontend deployment
+A. Stop the existing deployment by removing the frontend deployment
 
 ```bash
 kubectl scale --replicas=0 deployment/sourcegraph-frontend
@@ -220,7 +245,7 @@ kubectl scale --replicas=0 deployment/sourcegraph-frontend
 kubectl delete deployment sourcegraph-frontend
 ```
 
-##### 2. Remove any existing volumes for the databases in the existing deployment
+B. Remove any existing volumes for the databases in the existing deployment
  
 ```bash
 kubectl delete pvc pgsql
@@ -229,27 +254,31 @@ kubectl delete pv $pgsql_PV_NAME --force
 kubectl delete pv $codeintel-db_PV_NAME --force
 ```
 
-##### 3. Copy the database dump files (eg. `sourcegraph_db.out` and `codeintel_db.out`) into the root of the `deploy-sourcegraph` directory
+C. Copy the database dump files (eg. `sourcegraph_db.out` and `codeintel_db.out`) into the root of the `deploy-sourcegraph` directory
 
-##### 4. Start the database services only
+D. Start the database services only
 
 ```bash
 kubectl rollout restart deployment pgsql
 kubectl rollout restart deployment codeintel-db
 ```
 
-##### 5. Copy the database files into the pods by running the following command from the root of the [deploy-sourcegraph](https://github.com/sourcegraph/deploy-sourcegraph) directory
+E. Copy the database files into the pods by running the following command from the root of the [deploy-sourcegraph](https://github.com/sourcegraph/deploy-sourcegraph) directory
 
 ```bash
 kubectl cp sourcegraph_db.out $NAMESPACE/$pgsql_POD_NAME:/tmp/sourcegraph_db.out
 kubectl cp codeintel_db.out $NAMESPACE/$codeintel-db_POD_NAME:/tmp/codeintel_db.out
 ```
 
-##### 6. Restore the databases
+F. Restore the databases
 
 ```bash
 kubectl exec -it $pgsql_POD_NAME -- bash -c 'psql -v ERROR_ON_STOP=1 --username sg -f /tmp/sourcegraph_db.out sg'
 kubectl exec -it $codeintel-db_POD_NAME -- bash -c 'psql -v ERROR_ON_STOP=1 --username sg -f /tmp/condeintel_db.out sg'
 ```
 
-##### 7. Start the remaining Sourcegraph services by running the following the command from the root of the [deploy-sourcegraph](https://github.com/sourcegraph/deploy-sourcegraph) directory and following the steps in [Sourcegraph - Kubernetes applying manifests](https://docs.sourcegraph.com/admin/install/kubernetes/configure#applying-manifests)
+G. Start the remaining Sourcegraph services by following the steps in [applying manifests](#applying-manifests).
+
+## Troubleshoot
+
+See the [Troubleshooting docs](troubleshoot.md).

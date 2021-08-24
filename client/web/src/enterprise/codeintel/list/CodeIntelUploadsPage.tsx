@@ -1,10 +1,14 @@
+import classNames from 'classnames'
+import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import React, { FunctionComponent, useCallback, useEffect, useMemo } from 'react'
 import { RouteComponentProps } from 'react-router'
 import { of } from 'rxjs'
 
+import { Link } from '@sourcegraph/shared/src/components/Link'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
+import { Timestamp } from '@sourcegraph/web/src/components/time/Timestamp'
 import { Container, PageHeader } from '@sourcegraph/wildcard'
 
 import {
@@ -14,13 +18,15 @@ import {
 } from '../../../components/FilteredConnection'
 import { PageTitle } from '../../../components/PageTitle'
 import { LsifUploadFields, LSIFUploadState } from '../../../graphql-operations'
+import { fetchLsifUploads as defaultFetchLsifUploads } from '../shared/backend'
+import { CodeIntelState } from '../shared/CodeIntelState'
+import { CodeIntelUploadOrIndexCommit } from '../shared/CodeIntelUploadOrIndexCommit'
+import { CodeIntelUploadOrIndexRepository } from '../shared/CodeIntelUploadOrIndexerRepository'
+import { CodeIntelUploadOrIndexIndexer } from '../shared/CodeIntelUploadOrIndexIndexer'
+import { CodeIntelUploadOrIndexLastActivity } from '../shared/CodeIntelUploadOrIndexLastActivity'
+import { CodeIntelUploadOrIndexRoot } from '../shared/CodeIntelUploadOrIndexRoot'
 
-import {
-    fetchLsifUploads as defaultFetchLsifUploads,
-    fetchCommitGraphMetadata as defaultFetchCommitGraphMetadata,
-} from './backend'
-import { CodeIntelUploadNode, CodeIntelUploadNodeProps } from './CodeIntelUploadNode'
-import { CommitGraphMetadata } from './CommitGraphMetadata'
+import { fetchCommitGraphMetadata as defaultFetchCommitGraphMetadata } from './backend'
 
 export interface CodeIntelUploadsPageProps extends RouteComponentProps<{}>, TelemetryProps {
     repo?: { id: string }
@@ -161,4 +167,79 @@ const EmptyLSIFUploadsElement: React.FunctionComponent = () => (
         </a>
         .
     </p>
+)
+
+interface CodeIntelUploadNodeProps {
+    node: LsifUploadFields
+    now?: () => Date
+}
+
+const CodeIntelUploadNode: FunctionComponent<CodeIntelUploadNodeProps> = ({ node, now }) => (
+    <>
+        <span className="codeintel-upload-node__separator" />
+
+        <div className="d-flex flex-column codeintel-upload-node__information">
+            <div className="m-0">
+                <h3 className="m-0 d-block d-md-inline">
+                    <CodeIntelUploadOrIndexRepository node={node} />
+                </h3>
+            </div>
+
+            <div>
+                <span className="mr-2 d-block d-mdinline-block">
+                    Directory <CodeIntelUploadOrIndexRoot node={node} /> indexed at commit{' '}
+                    <CodeIntelUploadOrIndexCommit node={node} /> by <CodeIntelUploadOrIndexIndexer node={node} />
+                </span>
+
+                <small className="text-mute">
+                    <CodeIntelUploadOrIndexLastActivity node={{ ...node, queuedAt: null }} now={now} />
+                </small>
+            </div>
+        </div>
+
+        <span className="d-none d-md-inline codeintel-upload-node__state">
+            <CodeIntelState node={node} className="d-flex flex-column align-items-center" />
+        </span>
+        <span>
+            <Link to={`./uploads/${node.id}`}>
+                <ChevronRightIcon />
+            </Link>
+        </span>
+    </>
+)
+
+interface CommitGraphMetadataProps {
+    stale: boolean
+    updatedAt: Date | null
+    className?: string
+    now?: () => Date
+}
+
+const CommitGraphMetadata: FunctionComponent<CommitGraphMetadataProps> = ({ stale, updatedAt, className, now }) => (
+    <>
+        <div className={classNames('alert', stale ? 'alert-primary' : 'alert-success', className)}>
+            {stale ? <StaleRepository /> : <FreshRepository />}{' '}
+            {updatedAt && <LastUpdated updatedAt={updatedAt} now={now} />}
+        </div>
+    </>
+)
+
+const FreshRepository: FunctionComponent<{}> = () => <>Repository commit graph is currently up to date.</>
+
+const StaleRepository: FunctionComponent<{}> = () => (
+    <>
+        Repository commit graph is currently stale and is queued to be refreshed. Refreshing the commit graph updates
+        which uploads are visible from which commits.
+    </>
+)
+
+interface LastUpdatedProps {
+    updatedAt: Date
+    now?: () => Date
+}
+
+const LastUpdated: FunctionComponent<LastUpdatedProps> = ({ updatedAt, now }) => (
+    <>
+        Last refreshed <Timestamp date={updatedAt} now={now} />.
+    </>
 )

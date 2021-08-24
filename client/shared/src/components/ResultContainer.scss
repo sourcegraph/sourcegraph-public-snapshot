@@ -1,28 +1,18 @@
 .result-container {
-    border: 0 solid var(--border-color);
-    border-top-width: 1px;
+    margin-right: 1rem;
     &:last-child {
         border-bottom-width: 1px;
     }
-
-    .theme-redesign & {
-        border: none;
-        margin-right: 1rem;
-
-        &:not(:last-of-type) {
-            margin-bottom: 0.5rem;
-        }
+    &:not(:last-of-type) {
+        margin-bottom: 0.5rem;
     }
 
     &__header {
-        padding: 0.5rem 0.5rem;
-
+        padding: 0.5rem 0;
+        background-color: transparent;
         display: flex;
         align-items: center;
         white-space: nowrap;
-        $background-color: $card-cap-bg;
-
-        background-color: $background-color;
 
         &-title {
             flex: 1 1 auto;
@@ -31,11 +21,9 @@
         }
 
         &-divider {
-            .theme-redesign & {
-                border-right: 1px solid var(--border-color-2);
-                height: 1rem;
-                margin: 0 0.25rem;
-            }
+            border-right: 1px solid var(--border-color-2);
+            height: 1rem;
+            margin: 0 0.25rem;
         }
 
         p {
@@ -43,28 +31,16 @@
         }
 
         &:not(:only-of-type) {
-            border-bottom: 1px solid var(--border-color);
+            border-bottom: none;
         }
 
-        .theme-redesign & {
-            background-color: transparent;
-            padding: 0.5rem 0;
-
-            &-description {
-                line-height: (14/11);
-            }
-
-            &:not(:only-of-type) {
-                border-bottom: none;
-            }
+        &-description {
+            line-height: (14/11);
         }
     }
 
     &__toggle-matches-container {
         display: flex;
-
-        .theme-redesign & {
-            flex-shrink: 0;
-        }
+        flex-shrink: 0;
     }
 }

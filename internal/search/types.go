@@ -138,17 +138,29 @@ const (
 
 // ZoektParameters contains all the inputs to run a Zoekt indexed search.
 type ZoektParameters struct {
-	RepoOptions      RepoOptions
-	Query            zoektquery.Q
-	Typ              IndexedRequestType
-	FileMatchLimit   int32
-	Enabled          bool
-	Index            query.YesNoOnly
-	Mode             GlobalSearchMode
-	UserPrivateRepos []types.RepoName
-	Select           filter.SelectPath
+	Query          zoektquery.Q
+	Typ            IndexedRequestType
+	FileMatchLimit int32
+	Select         filter.SelectPath
 
 	Zoekt *backend.Zoekt
+}
+
+// SearcherParameters the inputs for a search fulfilled by the Searcher service
+// (cmd/searcher). Searcher fulfills (1) unindexed literal and regexp searches
+// and (2) structural search requests.
+type SearcherParameters struct {
+	SearcherURLs *endpoint.Map
+	PatternInfo  *TextPatternInfo
+
+	// UseFullDeadline indicates that the search should try do as much work as
+	// it can within context.Deadline. If false the search should try and be
+	// as fast as possible, even if a "slow" deadline is set.
+	//
+	// For example searcher will wait to full its archive cache for a
+	// repository if this field is true. Another example is we set this field
+	// to true if the user requests a specific timeout or maximum result size.
+	UseFullDeadline bool
 }
 
 // TextParameters are the parameters passed to a search backend. It contains the Pattern

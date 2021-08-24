@@ -148,6 +148,15 @@ type IndexedSearchRequest interface {
 	UnindexedRepos() []*search.RepositoryRevisions
 }
 
+func NewIndexedSearchRequest(ctx context.Context, args *search.TextParameters, typ search.IndexedRequestType, onMissing OnMissingRepoRevs) (IndexedSearchRequest, error) {
+	if args.Mode == search.ZoektGlobalSearch {
+		// performance: optimize global searches where Zoekt searches
+		// all shards anyway.
+		return NewIndexedUniverseSearchRequest(ctx, args, typ, args.RepoOptions, args.UserPrivateRepos)
+	}
+	return NewIndexedSubsetSearchRequest(ctx, args, typ, onMissing)
+}
+
 // IndexedUniverseSearchRequest represents a request to run a search over the universe of indexed repositories.
 type IndexedUniverseSearchRequest struct {
 	RepoOptions      search.RepoOptions
@@ -194,9 +203,6 @@ func NewIndexedUniverseSearchRequest(ctx context.Context, args *search.TextParam
 			Query:          q,
 			Typ:            typ,
 			FileMatchLimit: args.PatternInfo.FileMatchLimit,
-			Enabled:        args.Zoekt.Enabled(),
-			Index:          args.PatternInfo.Index,
-			Mode:           args.Mode,
 			Select:         args.PatternInfo.Select,
 			Zoekt:          args.Zoekt,
 		},
@@ -373,16 +379,11 @@ func NewIndexedSubsetSearchRequest(ctx context.Context, args *search.TextParamet
 
 	return &IndexedSubsetSearchRequest{
 		Args: &search.ZoektParameters{
-			Query:            q,
-			Typ:              typ,
-			FileMatchLimit:   args.PatternInfo.FileMatchLimit,
-			Enabled:          args.Zoekt.Enabled(),
-			Index:            args.PatternInfo.Index,
-			Mode:             args.Mode,
-			RepoOptions:      args.RepoOptions,
-			UserPrivateRepos: args.UserPrivateRepos,
-			Select:           args.PatternInfo.Select,
-			Zoekt:            args.Zoekt,
+			Query:          q,
+			Typ:            typ,
+			FileMatchLimit: args.PatternInfo.FileMatchLimit,
+			Select:         args.PatternInfo.Select,
+			Zoekt:          args.Zoekt,
 		},
 
 		Unindexed: limitUnindexedRepos(searcherRepos, maxUnindexedRepoRevSearchesPerQuery, onMissing),

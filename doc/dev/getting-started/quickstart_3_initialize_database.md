@@ -1,5 +1,27 @@
-# Quickstart step 2: Initialize your database
+# Quickstart step 3: Initialize your database
 
+## With Docker
+
+The Sourcegraph server reads PostgreSQL connection configuration from the [`PG*` environment variables](http://www.postgresql.org/docs/current/static/libpq-envars.html).
+
+The development server startup script as well as the docker compose file provide default settings, so it will work out of the box.
+To initialize your database, you may have to set the appropriate environment variables before running the `createdb` command:
+
+```sh
+export PGUSER=sourcegraph PGPASSWORD=sourcegraph PGDATABASE=sourcegraph
+createdb --user=sourcegraph --owner=sourcegraph --encoding=UTF8 --template=template0 sourcegraph
+```
+
+You can also use the `PGDATA_DIR` environment variable to specify a local folder (instead of a volume) to store the database files. See the `dev/redis-postgres.yml` file for more details.
+
+This can also be spun up using [`sg start redis-postgres`](https://github.com/sourcegraph/sourcegraph/blob/main/dev/sg/README.md), with the following `sg.config.override.yaml`:
+
+```yaml
+env:
+    PGHOST: localhost
+    PGPASSWORD: sourcegraph
+    PGUSER: sourcegraph
+```
 ## Without Docker
 
 You need a fresh Postgres database and a database user that has full ownership of that database.
@@ -51,33 +73,10 @@ You need a fresh Postgres database and a database user that has full ownership o
     [envdir]: https://cr.yp.to/daemontools/envdir.html
     [dotenv]: https://github.com/joho/godotenv
 
-## With Docker
-
-The Sourcegraph server reads PostgreSQL connection configuration from the [`PG*` environment variables](http://www.postgresql.org/docs/current/static/libpq-envars.html).
-
-The development server startup script as well as the docker compose file provide default settings, so it will work out of the box.
-To initialize your database, you may have to set the appropriate environment variables before running the `createdb` command:
-
-```sh
-export PGUSER=sourcegraph PGPASSWORD=sourcegraph PGDATABASE=sourcegraph
-createdb --user=sourcegraph --owner=sourcegraph --encoding=UTF8 --template=template0 sourcegraph
-```
-
-You can also use the `PGDATA_DIR` environment variable to specify a local folder (instead of a volume) to store the database files. See the `dev/redis-postgres.yml` file for more details.
-
-This can also be spun up using [`sg start redis-postgres`](https://github.com/sourcegraph/sourcegraph/blob/main/dev/sg/README.md), with the following `sg.config.override.yaml`:
-
-```yaml
-env:
-    PGHOST: localhost
-    PGPASSWORD: sourcegraph
-    PGUSER: sourcegraph
-```
-
 ## More info
 
 For more information about data storage, [read our full PostgreSQL page](../background-information/postgresql.md).
 
 Migrations are applied automatically.
 
-[< Previous](quickstart_1_install_dependencies.md) | [Next >](quickstart_3_start_docker.md)
+[< Previous](quickstart_2_start_docker.md) | [Next >](quickstart_4_clone_repository.md)

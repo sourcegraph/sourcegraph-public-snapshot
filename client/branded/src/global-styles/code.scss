@@ -5,12 +5,8 @@ code,
 .text-code {
     font-family: $code-font-family;
     font-size: $code-font-size;
-    line-height: (16/12);
+    line-height: 1rem;
     white-space: pre;
-
-    .theme-redesign & {
-        line-height: 1rem;
-    }
 }
 
 .bg-code {

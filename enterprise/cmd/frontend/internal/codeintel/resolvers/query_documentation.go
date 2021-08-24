@@ -2,6 +2,7 @@ package resolvers
 
 import (
 	"context"
+	"strings"
 	"time"
 
 	"github.com/cockroachdb/errors"
@@ -109,7 +110,10 @@ func (r *queryResolver) Documentation(ctx context.Context, line, character int) 
 		pathIDs, err := r.lsifStore.DocumentationAtPosition(
 			ctx,
 			location.Dump.ID,
-			location.Path,
+			// Note: location.Path here would be relative to the repository root, e.g. "src/encoding/json/stream.go"
+			// instead of relative to the bundle, e.g. "encoding/json/stream.go" - which would
+			// cause a lookup mismatch, so we strip the bundle root first.
+			strings.TrimPrefix(location.Path, location.Dump.Root),
 			target.Start.Line,
 			target.Start.Character,
 		)

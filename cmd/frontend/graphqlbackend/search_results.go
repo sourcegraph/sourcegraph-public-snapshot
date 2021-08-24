@@ -41,6 +41,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/run"
 	"github.com/sourcegraph/sourcegraph/internal/search/searchcontexts"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
+	"github.com/sourcegraph/sourcegraph/internal/search/unindexed"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -560,17 +561,13 @@ func withMode(args search.TextParameters, st query.SearchType, versionContext *s
 }
 
 func (r *searchResolver) toTextParameters(q query.Q) (*search.TextParameters, error) {
-	forceResultTypes := result.TypeEmpty
-	if r.PatternType == query.SearchTypeStructural {
-		forceResultTypes = result.TypeFile
-	}
-
 	b, err := query.ToBasicQuery(q)
 	if err != nil {
 		return nil, err
 	}
 	p := search.ToTextPatternInfo(b, r.protocol(), query.Identity)
 
+	forceResultTypes := result.TypeEmpty
 	if r.PatternType == query.SearchTypeStructural {
 		if p.Pattern == "" {
 			// Fallback to literal search for searching repos and files if
@@ -1570,7 +1567,13 @@ func (r *searchResolver) doResults(ctx context.Context, args *search.TextParamet
 		wg.Add(1)
 		goroutine.Go(func() {
 			defer wg.Done()
-			_ = agg.DoStructuralSearch(ctx, args)
+			repoFetcher := unindexed.NewRepoFetcher(agg, args)
+			searcherArgs := &search.SearcherParameters{
+				SearcherURLs:    args.SearcherURLs,
+				PatternInfo:     args.PatternInfo,
+				UseFullDeadline: args.UseFullDeadline,
+			}
+			_ = agg.DoStructuralSearch(ctx, searcherArgs, args.Mode, repoFetcher)
 		})
 	}
 

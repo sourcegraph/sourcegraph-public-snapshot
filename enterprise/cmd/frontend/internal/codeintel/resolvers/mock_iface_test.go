@@ -27,9 +27,17 @@ type MockDBStore struct {
 	// CommitGraphMetadataFunc is an instance of a mock function object
 	// controlling the behavior of the method CommitGraphMetadata.
 	CommitGraphMetadataFunc *DBStoreCommitGraphMetadataFunc
+	// CreateConfigurationPolicyFunc is an instance of a mock function
+	// object controlling the behavior of the method
+	// CreateConfigurationPolicy.
+	CreateConfigurationPolicyFunc *DBStoreCreateConfigurationPolicyFunc
 	// DefinitionDumpsFunc is an instance of a mock function object
 	// controlling the behavior of the method DefinitionDumps.
 	DefinitionDumpsFunc *DBStoreDefinitionDumpsFunc
+	// DeleteConfigurationPolicyByIDFunc is an instance of a mock function
+	// object controlling the behavior of the method
+	// DeleteConfigurationPolicyByID.
+	DeleteConfigurationPolicyByIDFunc *DBStoreDeleteConfigurationPolicyByIDFunc
 	// DeleteIndexByIDFunc is an instance of a mock function object
 	// controlling the behavior of the method DeleteIndexByID.
 	DeleteIndexByIDFunc *DBStoreDeleteIndexByIDFunc
@@ -43,6 +51,13 @@ type MockDBStore struct {
 	// function object controlling the behavior of the method
 	// FindClosestDumpsFromGraphFragment.
 	FindClosestDumpsFromGraphFragmentFunc *DBStoreFindClosestDumpsFromGraphFragmentFunc
+	// GetConfigurationPoliciesFunc is an instance of a mock function object
+	// controlling the behavior of the method GetConfigurationPolicies.
+	GetConfigurationPoliciesFunc *DBStoreGetConfigurationPoliciesFunc
+	// GetConfigurationPolicyByIDFunc is an instance of a mock function
+	// object controlling the behavior of the method
+	// GetConfigurationPolicyByID.
+	GetConfigurationPolicyByIDFunc *DBStoreGetConfigurationPolicyByIDFunc
 	// GetDumpsByIDsFunc is an instance of a mock function object
 	// controlling the behavior of the method GetDumpsByIDs.
 	GetDumpsByIDsFunc *DBStoreGetDumpsByIDsFunc
@@ -83,6 +98,10 @@ type MockDBStore struct {
 	// RepoNameFunc is an instance of a mock function object controlling the
 	// behavior of the method RepoName.
 	RepoNameFunc *DBStoreRepoNameFunc
+	// UpdateConfigurationPolicyFunc is an instance of a mock function
+	// object controlling the behavior of the method
+	// UpdateConfigurationPolicy.
+	UpdateConfigurationPolicyFunc *DBStoreUpdateConfigurationPolicyFunc
 	// UpdateIndexConfigurationByRepositoryIDFunc is an instance of a mock
 	// function object controlling the behavior of the method
 	// UpdateIndexConfigurationByRepositoryID.
@@ -98,9 +117,19 @@ func NewMockDBStore() *MockDBStore {
 				return false, nil, nil
 			},
 		},
+		CreateConfigurationPolicyFunc: &DBStoreCreateConfigurationPolicyFunc{
+			defaultHook: func(context.Context, dbstore.ConfigurationPolicy) (dbstore.ConfigurationPolicy, error) {
+				return dbstore.ConfigurationPolicy{}, nil
+			},
+		},
 		DefinitionDumpsFunc: &DBStoreDefinitionDumpsFunc{
 			defaultHook: func(context.Context, []precise.QualifiedMonikerData) ([]dbstore.Dump, error) {
 				return nil, nil
+			},
+		},
+		DeleteConfigurationPolicyByIDFunc: &DBStoreDeleteConfigurationPolicyByIDFunc{
+			defaultHook: func(context.Context, int) error {
+				return nil
 			},
 		},
 		DeleteIndexByIDFunc: &DBStoreDeleteIndexByIDFunc{
@@ -121,6 +150,16 @@ func NewMockDBStore() *MockDBStore {
 		FindClosestDumpsFromGraphFragmentFunc: &DBStoreFindClosestDumpsFromGraphFragmentFunc{
 			defaultHook: func(context.Context, int, string, string, bool, string, *gitserver.CommitGraph) ([]dbstore.Dump, error) {
 				return nil, nil
+			},
+		},
+		GetConfigurationPoliciesFunc: &DBStoreGetConfigurationPoliciesFunc{
+			defaultHook: func(context.Context, dbstore.GetConfigurationPoliciesOptions) ([]dbstore.ConfigurationPolicy, error) {
+				return nil, nil
+			},
+		},
+		GetConfigurationPolicyByIDFunc: &DBStoreGetConfigurationPolicyByIDFunc{
+			defaultHook: func(context.Context, int) (dbstore.ConfigurationPolicy, bool, error) {
+				return dbstore.ConfigurationPolicy{}, false, nil
 			},
 		},
 		GetDumpsByIDsFunc: &DBStoreGetDumpsByIDsFunc{
@@ -188,6 +227,11 @@ func NewMockDBStore() *MockDBStore {
 				return "", nil
 			},
 		},
+		UpdateConfigurationPolicyFunc: &DBStoreUpdateConfigurationPolicyFunc{
+			defaultHook: func(context.Context, dbstore.ConfigurationPolicy) error {
+				return nil
+			},
+		},
 		UpdateIndexConfigurationByRepositoryIDFunc: &DBStoreUpdateIndexConfigurationByRepositoryIDFunc{
 			defaultHook: func(context.Context, int, []byte) error {
 				return nil
@@ -203,8 +247,14 @@ func NewMockDBStoreFrom(i DBStore) *MockDBStore {
 		CommitGraphMetadataFunc: &DBStoreCommitGraphMetadataFunc{
 			defaultHook: i.CommitGraphMetadata,
 		},
+		CreateConfigurationPolicyFunc: &DBStoreCreateConfigurationPolicyFunc{
+			defaultHook: i.CreateConfigurationPolicy,
+		},
 		DefinitionDumpsFunc: &DBStoreDefinitionDumpsFunc{
 			defaultHook: i.DefinitionDumps,
+		},
+		DeleteConfigurationPolicyByIDFunc: &DBStoreDeleteConfigurationPolicyByIDFunc{
+			defaultHook: i.DeleteConfigurationPolicyByID,
 		},
 		DeleteIndexByIDFunc: &DBStoreDeleteIndexByIDFunc{
 			defaultHook: i.DeleteIndexByID,
@@ -217,6 +267,12 @@ func NewMockDBStoreFrom(i DBStore) *MockDBStore {
 		},
 		FindClosestDumpsFromGraphFragmentFunc: &DBStoreFindClosestDumpsFromGraphFragmentFunc{
 			defaultHook: i.FindClosestDumpsFromGraphFragment,
+		},
+		GetConfigurationPoliciesFunc: &DBStoreGetConfigurationPoliciesFunc{
+			defaultHook: i.GetConfigurationPolicies,
+		},
+		GetConfigurationPolicyByIDFunc: &DBStoreGetConfigurationPolicyByIDFunc{
+			defaultHook: i.GetConfigurationPolicyByID,
 		},
 		GetDumpsByIDsFunc: &DBStoreGetDumpsByIDsFunc{
 			defaultHook: i.GetDumpsByIDs,
@@ -256,6 +312,9 @@ func NewMockDBStoreFrom(i DBStore) *MockDBStore {
 		},
 		RepoNameFunc: &DBStoreRepoNameFunc{
 			defaultHook: i.RepoName,
+		},
+		UpdateConfigurationPolicyFunc: &DBStoreUpdateConfigurationPolicyFunc{
+			defaultHook: i.UpdateConfigurationPolicy,
 		},
 		UpdateIndexConfigurationByRepositoryIDFunc: &DBStoreUpdateIndexConfigurationByRepositoryIDFunc{
 			defaultHook: i.UpdateIndexConfigurationByRepositoryID,
@@ -375,6 +434,118 @@ func (c DBStoreCommitGraphMetadataFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1, c.Result2}
 }
 
+// DBStoreCreateConfigurationPolicyFunc describes the behavior when the
+// CreateConfigurationPolicy method of the parent MockDBStore instance is
+// invoked.
+type DBStoreCreateConfigurationPolicyFunc struct {
+	defaultHook func(context.Context, dbstore.ConfigurationPolicy) (dbstore.ConfigurationPolicy, error)
+	hooks       []func(context.Context, dbstore.ConfigurationPolicy) (dbstore.ConfigurationPolicy, error)
+	history     []DBStoreCreateConfigurationPolicyFuncCall
+	mutex       sync.Mutex
+}
+
+// CreateConfigurationPolicy delegates to the next hook function in the
+// queue and stores the parameter and result values of this invocation.
+func (m *MockDBStore) CreateConfigurationPolicy(v0 context.Context, v1 dbstore.ConfigurationPolicy) (dbstore.ConfigurationPolicy, error) {
+	r0, r1 := m.CreateConfigurationPolicyFunc.nextHook()(v0, v1)
+	m.CreateConfigurationPolicyFunc.appendCall(DBStoreCreateConfigurationPolicyFuncCall{v0, v1, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the
+// CreateConfigurationPolicy method of the parent MockDBStore instance is
+// invoked and the hook queue is empty.
+func (f *DBStoreCreateConfigurationPolicyFunc) SetDefaultHook(hook func(context.Context, dbstore.ConfigurationPolicy) (dbstore.ConfigurationPolicy, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// CreateConfigurationPolicy method of the parent MockDBStore instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *DBStoreCreateConfigurationPolicyFunc) PushHook(hook func(context.Context, dbstore.ConfigurationPolicy) (dbstore.ConfigurationPolicy, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
+// the given values.
+func (f *DBStoreCreateConfigurationPolicyFunc) SetDefaultReturn(r0 dbstore.ConfigurationPolicy, r1 error) {
+	f.SetDefaultHook(func(context.Context, dbstore.ConfigurationPolicy) (dbstore.ConfigurationPolicy, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushDefaultHook with a function that returns the given
+// values.
+func (f *DBStoreCreateConfigurationPolicyFunc) PushReturn(r0 dbstore.ConfigurationPolicy, r1 error) {
+	f.PushHook(func(context.Context, dbstore.ConfigurationPolicy) (dbstore.ConfigurationPolicy, error) {
+		return r0, r1
+	})
+}
+
+func (f *DBStoreCreateConfigurationPolicyFunc) nextHook() func(context.Context, dbstore.ConfigurationPolicy) (dbstore.ConfigurationPolicy, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *DBStoreCreateConfigurationPolicyFunc) appendCall(r0 DBStoreCreateConfigurationPolicyFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of DBStoreCreateConfigurationPolicyFuncCall
+// objects describing the invocations of this function.
+func (f *DBStoreCreateConfigurationPolicyFunc) History() []DBStoreCreateConfigurationPolicyFuncCall {
+	f.mutex.Lock()
+	history := make([]DBStoreCreateConfigurationPolicyFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// DBStoreCreateConfigurationPolicyFuncCall is an object that describes an
+// invocation of method CreateConfigurationPolicy on an instance of
+// MockDBStore.
+type DBStoreCreateConfigurationPolicyFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 dbstore.ConfigurationPolicy
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 dbstore.ConfigurationPolicy
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c DBStoreCreateConfigurationPolicyFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c DBStoreCreateConfigurationPolicyFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
 // DBStoreDefinitionDumpsFunc describes the behavior when the
 // DefinitionDumps method of the parent MockDBStore instance is invoked.
 type DBStoreDefinitionDumpsFunc struct {
@@ -482,6 +653,116 @@ func (c DBStoreDefinitionDumpsFuncCall) Args() []interface{} {
 // invocation.
 func (c DBStoreDefinitionDumpsFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
+}
+
+// DBStoreDeleteConfigurationPolicyByIDFunc describes the behavior when the
+// DeleteConfigurationPolicyByID method of the parent MockDBStore instance
+// is invoked.
+type DBStoreDeleteConfigurationPolicyByIDFunc struct {
+	defaultHook func(context.Context, int) error
+	hooks       []func(context.Context, int) error
+	history     []DBStoreDeleteConfigurationPolicyByIDFuncCall
+	mutex       sync.Mutex
+}
+
+// DeleteConfigurationPolicyByID delegates to the next hook function in the
+// queue and stores the parameter and result values of this invocation.
+func (m *MockDBStore) DeleteConfigurationPolicyByID(v0 context.Context, v1 int) error {
+	r0 := m.DeleteConfigurationPolicyByIDFunc.nextHook()(v0, v1)
+	m.DeleteConfigurationPolicyByIDFunc.appendCall(DBStoreDeleteConfigurationPolicyByIDFuncCall{v0, v1, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the
+// DeleteConfigurationPolicyByID method of the parent MockDBStore instance
+// is invoked and the hook queue is empty.
+func (f *DBStoreDeleteConfigurationPolicyByIDFunc) SetDefaultHook(hook func(context.Context, int) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// DeleteConfigurationPolicyByID method of the parent MockDBStore instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *DBStoreDeleteConfigurationPolicyByIDFunc) PushHook(hook func(context.Context, int) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
+// the given values.
+func (f *DBStoreDeleteConfigurationPolicyByIDFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(context.Context, int) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushDefaultHook with a function that returns the given
+// values.
+func (f *DBStoreDeleteConfigurationPolicyByIDFunc) PushReturn(r0 error) {
+	f.PushHook(func(context.Context, int) error {
+		return r0
+	})
+}
+
+func (f *DBStoreDeleteConfigurationPolicyByIDFunc) nextHook() func(context.Context, int) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *DBStoreDeleteConfigurationPolicyByIDFunc) appendCall(r0 DBStoreDeleteConfigurationPolicyByIDFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// DBStoreDeleteConfigurationPolicyByIDFuncCall objects describing the
+// invocations of this function.
+func (f *DBStoreDeleteConfigurationPolicyByIDFunc) History() []DBStoreDeleteConfigurationPolicyByIDFuncCall {
+	f.mutex.Lock()
+	history := make([]DBStoreDeleteConfigurationPolicyByIDFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// DBStoreDeleteConfigurationPolicyByIDFuncCall is an object that describes
+// an invocation of method DeleteConfigurationPolicyByID on an instance of
+// MockDBStore.
+type DBStoreDeleteConfigurationPolicyByIDFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 int
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c DBStoreDeleteConfigurationPolicyByIDFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c DBStoreDeleteConfigurationPolicyByIDFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
 }
 
 // DBStoreDeleteIndexByIDFunc describes the behavior when the
@@ -949,6 +1230,233 @@ func (c DBStoreFindClosestDumpsFromGraphFragmentFuncCall) Args() []interface{} {
 // invocation.
 func (c DBStoreFindClosestDumpsFromGraphFragmentFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
+}
+
+// DBStoreGetConfigurationPoliciesFunc describes the behavior when the
+// GetConfigurationPolicies method of the parent MockDBStore instance is
+// invoked.
+type DBStoreGetConfigurationPoliciesFunc struct {
+	defaultHook func(context.Context, dbstore.GetConfigurationPoliciesOptions) ([]dbstore.ConfigurationPolicy, error)
+	hooks       []func(context.Context, dbstore.GetConfigurationPoliciesOptions) ([]dbstore.ConfigurationPolicy, error)
+	history     []DBStoreGetConfigurationPoliciesFuncCall
+	mutex       sync.Mutex
+}
+
+// GetConfigurationPolicies delegates to the next hook function in the queue
+// and stores the parameter and result values of this invocation.
+func (m *MockDBStore) GetConfigurationPolicies(v0 context.Context, v1 dbstore.GetConfigurationPoliciesOptions) ([]dbstore.ConfigurationPolicy, error) {
+	r0, r1 := m.GetConfigurationPoliciesFunc.nextHook()(v0, v1)
+	m.GetConfigurationPoliciesFunc.appendCall(DBStoreGetConfigurationPoliciesFuncCall{v0, v1, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the
+// GetConfigurationPolicies method of the parent MockDBStore instance is
+// invoked and the hook queue is empty.
+func (f *DBStoreGetConfigurationPoliciesFunc) SetDefaultHook(hook func(context.Context, dbstore.GetConfigurationPoliciesOptions) ([]dbstore.ConfigurationPolicy, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// GetConfigurationPolicies method of the parent MockDBStore instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *DBStoreGetConfigurationPoliciesFunc) PushHook(hook func(context.Context, dbstore.GetConfigurationPoliciesOptions) ([]dbstore.ConfigurationPolicy, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
+// the given values.
+func (f *DBStoreGetConfigurationPoliciesFunc) SetDefaultReturn(r0 []dbstore.ConfigurationPolicy, r1 error) {
+	f.SetDefaultHook(func(context.Context, dbstore.GetConfigurationPoliciesOptions) ([]dbstore.ConfigurationPolicy, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushDefaultHook with a function that returns the given
+// values.
+func (f *DBStoreGetConfigurationPoliciesFunc) PushReturn(r0 []dbstore.ConfigurationPolicy, r1 error) {
+	f.PushHook(func(context.Context, dbstore.GetConfigurationPoliciesOptions) ([]dbstore.ConfigurationPolicy, error) {
+		return r0, r1
+	})
+}
+
+func (f *DBStoreGetConfigurationPoliciesFunc) nextHook() func(context.Context, dbstore.GetConfigurationPoliciesOptions) ([]dbstore.ConfigurationPolicy, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *DBStoreGetConfigurationPoliciesFunc) appendCall(r0 DBStoreGetConfigurationPoliciesFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of DBStoreGetConfigurationPoliciesFuncCall
+// objects describing the invocations of this function.
+func (f *DBStoreGetConfigurationPoliciesFunc) History() []DBStoreGetConfigurationPoliciesFuncCall {
+	f.mutex.Lock()
+	history := make([]DBStoreGetConfigurationPoliciesFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// DBStoreGetConfigurationPoliciesFuncCall is an object that describes an
+// invocation of method GetConfigurationPolicies on an instance of
+// MockDBStore.
+type DBStoreGetConfigurationPoliciesFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 dbstore.GetConfigurationPoliciesOptions
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 []dbstore.ConfigurationPolicy
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c DBStoreGetConfigurationPoliciesFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c DBStoreGetConfigurationPoliciesFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// DBStoreGetConfigurationPolicyByIDFunc describes the behavior when the
+// GetConfigurationPolicyByID method of the parent MockDBStore instance is
+// invoked.
+type DBStoreGetConfigurationPolicyByIDFunc struct {
+	defaultHook func(context.Context, int) (dbstore.ConfigurationPolicy, bool, error)
+	hooks       []func(context.Context, int) (dbstore.ConfigurationPolicy, bool, error)
+	history     []DBStoreGetConfigurationPolicyByIDFuncCall
+	mutex       sync.Mutex
+}
+
+// GetConfigurationPolicyByID delegates to the next hook function in the
+// queue and stores the parameter and result values of this invocation.
+func (m *MockDBStore) GetConfigurationPolicyByID(v0 context.Context, v1 int) (dbstore.ConfigurationPolicy, bool, error) {
+	r0, r1, r2 := m.GetConfigurationPolicyByIDFunc.nextHook()(v0, v1)
+	m.GetConfigurationPolicyByIDFunc.appendCall(DBStoreGetConfigurationPolicyByIDFuncCall{v0, v1, r0, r1, r2})
+	return r0, r1, r2
+}
+
+// SetDefaultHook sets function that is called when the
+// GetConfigurationPolicyByID method of the parent MockDBStore instance is
+// invoked and the hook queue is empty.
+func (f *DBStoreGetConfigurationPolicyByIDFunc) SetDefaultHook(hook func(context.Context, int) (dbstore.ConfigurationPolicy, bool, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// GetConfigurationPolicyByID method of the parent MockDBStore instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *DBStoreGetConfigurationPolicyByIDFunc) PushHook(hook func(context.Context, int) (dbstore.ConfigurationPolicy, bool, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
+// the given values.
+func (f *DBStoreGetConfigurationPolicyByIDFunc) SetDefaultReturn(r0 dbstore.ConfigurationPolicy, r1 bool, r2 error) {
+	f.SetDefaultHook(func(context.Context, int) (dbstore.ConfigurationPolicy, bool, error) {
+		return r0, r1, r2
+	})
+}
+
+// PushReturn calls PushDefaultHook with a function that returns the given
+// values.
+func (f *DBStoreGetConfigurationPolicyByIDFunc) PushReturn(r0 dbstore.ConfigurationPolicy, r1 bool, r2 error) {
+	f.PushHook(func(context.Context, int) (dbstore.ConfigurationPolicy, bool, error) {
+		return r0, r1, r2
+	})
+}
+
+func (f *DBStoreGetConfigurationPolicyByIDFunc) nextHook() func(context.Context, int) (dbstore.ConfigurationPolicy, bool, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *DBStoreGetConfigurationPolicyByIDFunc) appendCall(r0 DBStoreGetConfigurationPolicyByIDFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of DBStoreGetConfigurationPolicyByIDFuncCall
+// objects describing the invocations of this function.
+func (f *DBStoreGetConfigurationPolicyByIDFunc) History() []DBStoreGetConfigurationPolicyByIDFuncCall {
+	f.mutex.Lock()
+	history := make([]DBStoreGetConfigurationPolicyByIDFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// DBStoreGetConfigurationPolicyByIDFuncCall is an object that describes an
+// invocation of method GetConfigurationPolicyByID on an instance of
+// MockDBStore.
+type DBStoreGetConfigurationPolicyByIDFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 int
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 dbstore.ConfigurationPolicy
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 bool
+	// Result2 is the value of the 3rd result returned from this method
+	// invocation.
+	Result2 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c DBStoreGetConfigurationPolicyByIDFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c DBStoreGetConfigurationPolicyByIDFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1, c.Result2}
 }
 
 // DBStoreGetDumpsByIDsFunc describes the behavior when the GetDumpsByIDs
@@ -2414,6 +2922,115 @@ func (c DBStoreRepoNameFuncCall) Args() []interface{} {
 // invocation.
 func (c DBStoreRepoNameFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
+}
+
+// DBStoreUpdateConfigurationPolicyFunc describes the behavior when the
+// UpdateConfigurationPolicy method of the parent MockDBStore instance is
+// invoked.
+type DBStoreUpdateConfigurationPolicyFunc struct {
+	defaultHook func(context.Context, dbstore.ConfigurationPolicy) error
+	hooks       []func(context.Context, dbstore.ConfigurationPolicy) error
+	history     []DBStoreUpdateConfigurationPolicyFuncCall
+	mutex       sync.Mutex
+}
+
+// UpdateConfigurationPolicy delegates to the next hook function in the
+// queue and stores the parameter and result values of this invocation.
+func (m *MockDBStore) UpdateConfigurationPolicy(v0 context.Context, v1 dbstore.ConfigurationPolicy) error {
+	r0 := m.UpdateConfigurationPolicyFunc.nextHook()(v0, v1)
+	m.UpdateConfigurationPolicyFunc.appendCall(DBStoreUpdateConfigurationPolicyFuncCall{v0, v1, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the
+// UpdateConfigurationPolicy method of the parent MockDBStore instance is
+// invoked and the hook queue is empty.
+func (f *DBStoreUpdateConfigurationPolicyFunc) SetDefaultHook(hook func(context.Context, dbstore.ConfigurationPolicy) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// UpdateConfigurationPolicy method of the parent MockDBStore instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *DBStoreUpdateConfigurationPolicyFunc) PushHook(hook func(context.Context, dbstore.ConfigurationPolicy) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
+// the given values.
+func (f *DBStoreUpdateConfigurationPolicyFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(context.Context, dbstore.ConfigurationPolicy) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushDefaultHook with a function that returns the given
+// values.
+func (f *DBStoreUpdateConfigurationPolicyFunc) PushReturn(r0 error) {
+	f.PushHook(func(context.Context, dbstore.ConfigurationPolicy) error {
+		return r0
+	})
+}
+
+func (f *DBStoreUpdateConfigurationPolicyFunc) nextHook() func(context.Context, dbstore.ConfigurationPolicy) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *DBStoreUpdateConfigurationPolicyFunc) appendCall(r0 DBStoreUpdateConfigurationPolicyFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of DBStoreUpdateConfigurationPolicyFuncCall
+// objects describing the invocations of this function.
+func (f *DBStoreUpdateConfigurationPolicyFunc) History() []DBStoreUpdateConfigurationPolicyFuncCall {
+	f.mutex.Lock()
+	history := make([]DBStoreUpdateConfigurationPolicyFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// DBStoreUpdateConfigurationPolicyFuncCall is an object that describes an
+// invocation of method UpdateConfigurationPolicy on an instance of
+// MockDBStore.
+type DBStoreUpdateConfigurationPolicyFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 dbstore.ConfigurationPolicy
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c DBStoreUpdateConfigurationPolicyFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c DBStoreUpdateConfigurationPolicyFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
 }
 
 // DBStoreUpdateIndexConfigurationByRepositoryIDFunc describes the behavior

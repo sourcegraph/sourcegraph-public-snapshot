@@ -26,6 +26,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
 
+var BuildCommit string = "dev"
+
 var out *output.Output = stdout.Out
 
 var (
@@ -258,10 +260,40 @@ func setMaxOpenFiles() error {
 	return nil
 }
 
+func checkSgVersion() {
+	_, err := root.RepositoryRoot()
+	if err != nil {
+		// Ignore the error, because we only want to check the version if we're
+		// in sourcegraph/sourcegraph
+		return
+	}
+
+	if BuildCommit == "dev" {
+		// If `sg` was built with a dirty `./dev/sg` directory it's a dev build
+		// and we don't need to display this message.
+		return
+	}
+
+	out, err := run.GitCmd("rev-list", fmt.Sprintf("%s..HEAD", BuildCommit), "./dev/sg")
+	if err != nil {
+		fmt.Printf("error getting new commits in ./dev/sg: %s\n", err)
+		os.Exit(1)
+	}
+
+	out = strings.TrimSpace(out)
+	if out != "" {
+		stdout.Out.WriteLine(output.Linef("", output.StyleSearchMatch, "--------------------------------------------------------------------------"))
+		stdout.Out.WriteLine(output.Linef("", output.StyleSearchMatch, "HEY! New version of sg available. Run `./dev/sg/install.sh` to install it."))
+		stdout.Out.WriteLine(output.Linef("", output.StyleSearchMatch, "--------------------------------------------------------------------------"))
+	}
+}
+
 func main() {
 	if err := rootCommand.Parse(os.Args[1:]); err != nil {
 		os.Exit(1)
 	}
+
+	checkSgVersion()
 
 	// We always try to set this, since we often want to watch files, start commands, etc.
 	if err := setMaxOpenFiles(); err != nil {
