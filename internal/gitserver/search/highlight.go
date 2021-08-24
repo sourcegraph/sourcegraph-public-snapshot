@@ -5,137 +5,126 @@ import (
 )
 
 type CommitHighlights struct {
-	Diff    FileHighlights
+	Diff    DeltaHighlights
 	Message Ranges
-	// TODO we could fairly easily expand highlights to include fields like Author and Committer
+	// TODO we could potentially return highlights for author and committer as well
 	// Author    Ranges
 	// Committer Ranges
 }
 
-func (c *CommitHighlights) Merge(other *CommitHighlights) {
+func (c *CommitHighlights) Merge(other *CommitHighlights) *CommitHighlights {
+	if c == nil {
+		return other
+	}
+
 	if other == nil {
-		return
+		return c
 	}
 
-	if c.Diff == nil {
-		c.Diff = other.Diff
-	} else {
-		c.Diff = c.Diff.Merge(other.Diff)
-	}
-
-	c.Message = append(c.Message, other.Message...)
-	c.Message.MergeOverlapping()
+	c.Diff = c.Diff.Merge(other.Diff)
+	c.Message = c.Message.Merge(other.Message)
+	return c
 }
 
-func (c *CommitHighlights) AddDiffLineMatches(fileNum, hunkNum, lineNum int, ranges Ranges) {
-	if c.Diff == nil {
-		c.Diff = make(FileHighlights)
-	}
-
-	if _, ok := c.Diff[fileNum]; !ok {
-		c.Diff[fileNum] = FileHighlight{
-			Hunk: make(HunkHighlights),
-		}
-	}
-
-	if c.Diff[fileNum].Hunk[hunkNum] == nil {
-		c.Diff[fileNum].Hunk[hunkNum] = make(LineHighlights)
-	}
-
-	c.Diff[fileNum].Hunk[hunkNum][lineNum] = append(c.Diff[fileNum].Hunk[hunkNum][lineNum], ranges...)
+type DeltaHighlight struct {
+	Index             int
+	OldFileHighlights Ranges
+	NewFileHighlights Ranges
+	Hunks             HunkHighlights
 }
 
-func (c *CommitHighlights) AddFileNameHighlights(fileNum int, oldFile, newFile Ranges) {
-	fh, ok := c.Diff[fileNum]
-	if !ok {
-		fh = FileHighlight{}
-		c.Diff[fileNum] = fh
-	}
-	fh.OldFile = append(fh.OldFile, oldFile...)
-	fh.NewFile = append(fh.NewFile, newFile...)
+func (f DeltaHighlight) Merge(other DeltaHighlight) DeltaHighlight {
+	f.OldFileHighlights = f.OldFileHighlights.Merge(other.OldFileHighlights)
+	f.NewFileHighlights = f.NewFileHighlights.Merge(other.NewFileHighlights)
+	f.Hunks = f.Hunks.Merge(other.Hunks)
+	return f
 }
 
-type FileHighlights map[int]FileHighlight
+type DeltaHighlights []DeltaHighlight
 
-func (f FileHighlights) Merge(other FileHighlights) FileHighlights {
-	if len(other) == 0 {
-		return f
-	}
+func (f DeltaHighlights) Len() int           { return len(f) }
+func (f DeltaHighlights) Less(i, j int) bool { return f[i].Index < f[j].Index }
+func (f DeltaHighlights) Swap(i, j int)      { f[i], f[j] = f[j], f[i] }
+func (f DeltaHighlights) Merge(other DeltaHighlights) DeltaHighlights {
+	f = append(f, other...)
+	sort.Sort(f)
 
-	if len(f) == 0 {
-		return other
-	}
-
-	for i, newHunkHighlight := range other {
-		oldHunkHighlight, ok := f[i]
-		if !ok {
-			f[i] = newHunkHighlight
+	unique := 0
+	for i := 1; i < len(f); i++ {
+		if f[unique].Index != f[i].Index {
+			unique++
+			f[unique] = f[i]
 			continue
 		}
 
-		f[i] = oldHunkHighlight.Merge(newHunkHighlight)
+		f[unique] = f[unique].Merge(f[i])
 	}
 	return f
 }
 
-type FileHighlight struct {
-	OldFile Ranges
-	NewFile Ranges
-	Hunk    HunkHighlights
+type HunkHighlight struct {
+	Index int
+	Lines LineHighlights
 }
 
-func (f FileHighlight) Merge(other FileHighlight) FileHighlight {
-	f.OldFile = append(f.OldFile, other.OldFile...)
-	f.NewFile = append(f.NewFile, other.NewFile...)
-	f.Hunk = f.Hunk.Merge(other.Hunk)
-	return f
-}
-
-type HunkHighlights map[int]LineHighlights
-
-func (h HunkHighlights) Merge(other HunkHighlights) HunkHighlights {
-	if len(other) == 0 {
-		return h
-	}
-
-	if len(h) == 0 {
-		return other
-	}
-
-	for i, newLineHighlight := range other {
-		oldLineHighlight, ok := h[i]
-		if !ok {
-			h[i] = newLineHighlight
-			continue
-		}
-
-		h[i] = oldLineHighlight.Merge(newLineHighlight)
-	}
+func (h HunkHighlight) Merge(other HunkHighlight) HunkHighlight {
+	h.Lines = h.Lines.Merge(other.Lines)
 	return h
 }
 
-type LineHighlights map[int]Ranges
+type HunkHighlights []HunkHighlight
 
-func (l LineHighlights) Merge(other LineHighlights) LineHighlights {
-	if len(other) == 0 {
-		return l
-	}
+func (h HunkHighlights) Len() int           { return len(h) }
+func (h HunkHighlights) Less(i, j int) bool { return h[i].Index < h[j].Index }
+func (h HunkHighlights) Swap(i, j int)      { h[i], h[j] = h[j], h[i] }
+func (h HunkHighlights) Merge(other HunkHighlights) HunkHighlights {
+	h = append(h, other...)
+	sort.Sort(h)
 
-	if len(l) == 0 {
-		return other
-	}
-
-	for i, ranges := range other {
-		oldRanges, ok := l[i]
-		if !ok {
-			l[i] = ranges
+	unique := 0
+	for i := 1; i < len(h); i++ {
+		if h[unique].Index != h[i].Index {
+			unique++
+			h[unique] = h[i]
 			continue
 		}
 
-		combined := append(oldRanges, ranges...)
-		combined.MergeOverlapping()
-		l[i] = combined
+		h[unique] = h[unique].Merge(h[i])
 	}
+
+	return h
+}
+
+type LineHighlight struct {
+	Index      int
+	Highlights Ranges
+}
+
+func (l LineHighlight) Merge(other LineHighlight) LineHighlight {
+	l.Highlights = l.Highlights.Merge(other.Highlights)
+	return l
+}
+
+type LineHighlights []LineHighlight
+
+func (l LineHighlights) Len() int           { return len(l) }
+func (l LineHighlights) Less(i, j int) bool { return l[i].Index < l[j].Index }
+func (l LineHighlights) Swap(i, j int)      { l[i], l[j] = l[j], l[i] }
+func (l LineHighlights) Merge(other LineHighlights) LineHighlights {
+	l = append(l, other...)
+	sort.Sort(l)
+
+	unique := 0
+	for i := 1; i < len(l); i++ {
+		if l[unique].Index != l[i].Index {
+			unique++
+			l[unique] = l[i]
+			continue
+		}
+
+		l[unique] = l[unique].Merge(l[i])
+	}
+
 	return l
 }
 
@@ -157,29 +146,11 @@ func (r Ranges) Len() int           { return len(r) }
 func (r Ranges) Less(i, j int) bool { return r[i].Start.Offset < r[j].Start.Offset }
 func (r Ranges) Swap(i, j int)      { r[i], r[j] = r[j], r[i] }
 
-// MergeOverlapping simplifies a set of ranges by merging overlapping ranges
-// into longer ranges. The reusulting set of ranges is guaranteed to be ordered
-// by start offset and non-overlapping.
-// TODO test this, especially around out-of-bounds conditions
-func (r Ranges) MergeOverlapping() {
+func (r Ranges) Merge(other Ranges) Ranges {
+	r = append(r, other...)
 	sort.Sort(r)
 
-	for i := 0; i+1 < len(r); {
-		a := r[i]
-		b := r[i+1]
+	// Do not merge overlapping ranges because we want the result count to be accurate
 
-		if b.Start.Offset <= a.End.Offset {
-			r[i] = Range{
-				Start: a.Start,
-				End:   b.End,
-			}
-
-			// slide remaining elements left
-			copy(r[i+1:], r[i+2:])
-			r = r[:len(r)-1]
-			continue
-		}
-
-		i++
-	}
+	return r
 }

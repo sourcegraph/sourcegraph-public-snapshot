@@ -3,9 +3,6 @@ package search
 import (
 	"regexp"
 	"time"
-
-	"github.com/cockroachdb/errors"
-	"github.com/libgit2/git2go/v31"
 )
 
 type CommitPredicate interface {
@@ -55,56 +52,49 @@ func (m *MessageMatches) Match(commit *Commit) (bool, *CommitHighlights) {
 	}
 }
 
-var diffFoundSentinel = errors.New("found diff")
-
 type DiffMatches Regexp
 
 func (d *DiffMatches) Match(commit *Commit) (bool, *CommitHighlights) {
 	diff, err := commit.Diff()
 	if err != nil {
-		panic(err)
+		// TODO don't ignore error
+		return false, nil
 	}
 
-	var (
-		foundMatch = false
-		fileNum    = -1
-		hunkNum    = -1
-		lineNum    = -1
-		highlights = &CommitHighlights{}
-	)
-
-	lineCallback := func(line git.DiffLine) error {
-		lineNum++
-		if line.Origin == git.DiffLineContext {
-			return nil
+	var deltaHighlights DeltaHighlights
+	var foundMatches bool
+	for i, delta := range diff {
+		var hunkHighlights HunkHighlights
+		for j, hunk := range delta.Hunks {
+			var lineHighlights LineHighlights
+			for k, line := range hunk.Lines {
+				matches := d.FindAllStringIndex(line.Content, -1)
+				if matches != nil {
+					foundMatches = true
+					lineHighlights = append(lineHighlights, LineHighlight{
+						Index:      k,
+						Highlights: matchesToRanges(matches),
+					})
+				}
+			}
+			if len(lineHighlights) > 0 {
+				hunkHighlights = append(hunkHighlights, HunkHighlight{
+					Index: j,
+					Lines: lineHighlights,
+				})
+			}
 		}
-
-		matches := d.FindAllStringIndex(line.Content, -1)
-		if matches != nil {
-			foundMatch = true
-			highlights.AddDiffLineMatches(fileNum, hunkNum, lineNum, matchesToRanges(matches))
+		if len(hunkHighlights) > 0 {
+			deltaHighlights = append(deltaHighlights, DeltaHighlight{
+				Index: i,
+				Hunks: hunkHighlights,
+			})
 		}
-		return nil
 	}
 
-	hunkCallback := func(git.DiffHunk) (git.DiffForEachLineCallback, error) {
-		hunkNum++
-		lineNum = -1
-		return lineCallback, nil
+	return foundMatches, &CommitHighlights{
+		Diff: deltaHighlights,
 	}
-
-	fileCallback := func(git.DiffDelta, float64) (git.DiffForEachHunkCallback, error) {
-		fileNum++
-		hunkNum = -1
-		return hunkCallback, nil
-	}
-
-	if err = diff.ForEach(fileCallback, git.DiffDetailLines); err != nil {
-		panic(err)
-	}
-
-	// TODO again, ignoring errors?
-	return foundMatch, highlights
 }
 
 type DiffModifiesFile Regexp
@@ -116,25 +106,21 @@ func (d *DiffModifiesFile) Match(commit *Commit) (bool, *CommitHighlights) {
 		return false, nil
 	}
 
-	var (
-		foundMatch = false
-		highlights = &CommitHighlights{}
-		fileNum    = 0
-	)
-	err = diff.ForEach(func(delta git.DiffDelta, progress float64) (git.DiffForEachHunkCallback, error) {
-		defer func() { fileNum++ }()
-
+	foundMatch := false
+	var deltaHighlights DeltaHighlights
+	for i, delta := range diff {
 		oldFileMatches := d.FindAllStringIndex(delta.OldFile.Path, -1)
 		newFileMatches := d.FindAllStringIndex(delta.NewFile.Path, -1)
 		if oldFileMatches != nil || newFileMatches != nil {
 			foundMatch = true
-			highlights.AddFileNameHighlights(fileNum, matchesToRanges(oldFileMatches), matchesToRanges(newFileMatches))
+			deltaHighlights = append(deltaHighlights, DeltaHighlight{
+				Index:             i,
+				OldFileHighlights: matchesToRanges(oldFileMatches),
+				NewFileHighlights: matchesToRanges(oldFileMatches),
+			})
 		}
-		return nil, nil
-	}, git.DiffDetailLines)
-
-	// TODO again, ignoring errors?
-	return foundMatch, highlights
+	}
+	return foundMatch, &CommitHighlights{Diff: deltaHighlights}
 }
 
 type And []CommitPredicate
