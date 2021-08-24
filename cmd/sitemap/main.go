@@ -65,7 +65,7 @@ func (g *generator) generate(ctx context.Context) error {
 	if err := g.eachLsifIndex(ctx, func(each gqlLSIFIndex, total uint64) error {
 		queried++
 		if queried%1000 == 0 {
-			log15.Info("queried LSIF indexes", "n", queried, "of", total)
+			log15.Info("discovered LSIF indexes", "n", queried, "of", total)
 		}
 		if strings.Contains(each.InputIndexer, "lsif-go") {
 			repoName := each.ProjectRoot.Repository.Name

@@ -26,6 +26,7 @@ const gqlLSIFIndexesQuery = `
             repository {
                 url
                 name
+                stars
             }
             commit {
                 url
@@ -62,8 +63,9 @@ type gqlLSIFIndex struct {
 	ProjectRoot  struct {
 		URL        string
 		Repository struct {
-			URL  string
-			Name string
+			URL   string
+			Name  string
+			Stars uint64
 		}
 	}
 }
