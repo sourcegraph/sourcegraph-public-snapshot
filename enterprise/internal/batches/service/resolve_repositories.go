@@ -1,7 +1,6 @@
 package service
 
 import (
-	"bytes"
 	"context"
 	"fmt"
 	"os"
@@ -133,7 +132,7 @@ func (s *Service) resolveRepositoriesOn(ctx context.Context, on *batcheslib.OnQu
 	}()
 
 	if on.RepositoriesMatchingQuery != "" {
-		return s.resolveRepositorySearch(ctx, on.RepositoriesMatchingQuery)
+		return s.resolveRepositoriesMatchingQuery(ctx, on.RepositoriesMatchingQuery)
 	} else if on.Repository != "" && on.Branch != "" {
 		repo, err := s.resolveRepositoryNameAndBranch(ctx, on.Repository, on.Branch)
 		if err != nil {
@@ -181,14 +180,7 @@ func (s *Service) repoToRepoRevision(ctx context.Context, repo *types.Repo) (_ *
 		Repo: repo,
 	}
 
-	// TODO: Fill default branch.
-	refBytes, _, exitCode, err := git.ExecSafe(ctx, repo.Name, []string{"symbolic-ref", "HEAD"})
-	repoRev.Branch = string(bytes.TrimSpace(refBytes))
-	if err == nil && exitCode == 0 {
-		// Check that our repo is not empty
-		repoRev.Commit, err = git.ResolveRevision(ctx, repo.Name, "HEAD", git.ResolveRevisionOptions{NoEnsureRevision: true})
-	}
-	// TODO: Handle repoCloneInProgressErr
+	repoRev.Branch, repoRev.Commit, err = git.GetDefaultBranch(ctx, repo.Name)
 	return repoRev, err
 }
 
@@ -218,7 +210,7 @@ func (s *Service) resolveRepositoryNameAndBranch(ctx context.Context, name, bran
 	return repo, err
 }
 
-func (s *Service) resolveRepositorySearch(ctx context.Context, query string) (_ []*RepoRevision, err error) {
+func (s *Service) resolveRepositoriesMatchingQuery(ctx context.Context, query string) (_ []*RepoRevision, err error) {
 	traceTitle := fmt.Sprintf("Query: %q", query)
 	tr, ctx := trace.New(ctx, "service.resolveRepositorySearch", traceTitle)
 	defer func() {
@@ -237,21 +229,26 @@ func (s *Service) resolveRepositorySearch(ctx context.Context, query string) (_ 
 				repoIDs = append(repoIDs, api.RepoID(m.RepositoryID))
 			case *streamhttp.EventContentMatch:
 				repoIDs = append(repoIDs, api.RepoID(m.RepositoryID))
+			case *streamhttp.EventPathMatch:
+				repoIDs = append(repoIDs, api.RepoID(m.RepositoryID))
+			case *streamhttp.EventSymbolMatch:
+				repoIDs = append(repoIDs, api.RepoID(m.RepositoryID))
 			}
 		}
 	})
 
+	// 🚨 SECURITY: We use database.Repos.List to check whether the user has access to
+	// the repositories or not.
 	accessibleRepos, err := s.store.Repos().List(ctx, database.ReposListOptions{IDs: repoIDs})
 	if err != nil {
 		return nil, err
 	}
+
 	revs := make([]*RepoRevision, 0, len(accessibleRepos))
 	for _, repo := range accessibleRepos {
 		rev, err := s.repoToRepoRevision(ctx, repo)
 		if err != nil {
-			{
-				return nil, err
-			}
+			return nil, err
 		}
 		revs = append(revs, rev)
 	}
