@@ -57,7 +57,7 @@ func NewMetrics(observationContext *observation.Context, prefix string, labels m
 
 	return WorkerMetrics{
 		operations: newOperations(observationContext, prefix, keys, values),
-		numJobs:    newLenientConcurrencyGauge(numJobs, time.Second * 5),
+		numJobs:    newLenientConcurrencyGauge(numJobs, time.Second*5),
 	}
 }
 
