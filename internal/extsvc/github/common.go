@@ -1861,8 +1861,10 @@ type Org struct {
 	Login string `json:"login,omitempty"`
 }
 
-// OrgDetails describes the more detailed Org data you can get from the get an organization
-// API (https://docs.github.com/en/rest/reference/orgs#get-an-organization)
+// OrgDetails describes the more detailed Org data you can only get from the
+// get-an-organization API (https://docs.github.com/en/rest/reference/orgs#get-an-organization)
+//
+// It is a superset of the organization field that is embedded in other API responses.
 type OrgDetails struct {
 	Org
 

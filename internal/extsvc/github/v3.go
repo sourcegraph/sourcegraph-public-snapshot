@@ -282,6 +282,9 @@ func (c *V3Client) GetAuthenticatedUserOrgs(ctx context.Context) ([]*Org, error)
 	return orgs, err
 }
 
+// GetAuthenticatedUserOrgs returns the organizations associated with the currently
+// authenticated user as well as additional information about each org by making API
+// requests for each org (see `OrgDetails` docs for more details).
 func (c *V3Client) GetAuthenticatedUserOrgsDetails(ctx context.Context, page int) (
 	orgs []*OrgDetails,
 	hasNextPage bool,
