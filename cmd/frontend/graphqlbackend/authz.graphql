@@ -154,6 +154,9 @@ type PermissionsInfo {
     updatedAt: DateTime!
 }
 
+"""
+Additional options when performing a permissions sync.
+"""
 input FetchPermissionsOptions {
     """
     Indicate that any caches added for optimization encountered during this permissions
