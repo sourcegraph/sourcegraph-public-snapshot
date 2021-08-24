@@ -27,7 +27,7 @@ import (
 
 	"github.com/cockroachdb/errors"
 	"github.com/inconshreveable/log15"
-	"github.com/libgit2/git2go/v31"
+	git "github.com/libgit2/git2go/v31"
 	"github.com/opentracing/opentracing-go/ext"
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/prometheus/client_golang/prometheus"
@@ -967,9 +967,7 @@ func (s *Server) search(w http.ResponseWriter, r *http.Request, args *protocol.S
 	if !conf.Get().DisableAutoGitUpdates {
 		// ensureRevision may kick off a git fetch operation which we don't want if we've
 		// configured DisableAutoGitUpdates.
-		if s.ensureRevision(ctx, args.Repo, args.Revision, dir) {
-			// ensureRevisionStatus = "fetched"
-		}
+		_ = s.ensureRevision(ctx, args.Repo, args.Revision, dir) // TODO what to do on return value
 	}
 
 	repo, err := git.OpenRepository(dir.Path())
@@ -993,16 +991,23 @@ func (s *Server) search(w http.ResponseWriter, r *http.Request, args *protocol.S
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
-	resultChan := make(chan *search.Commit, 128)
+	resultChan := make(chan *protocol.CommitMatch, 128)
 	g.Go(func() error {
 		defer close(resultChan)
 		done := ctx.Done()
-		return search.IterCommits(repo, args.Revision, func(commit *search.Commit) bool {
-			if args.Filter.Match(commit) {
+		obj, err := repo.RevparseSingle(args.Revision)
+		if err != nil {
+			return err
+		}
+
+		return search.IterCommits(repo, obj.Id(), func(commit *search.Commit) bool {
+			foundMatch, highlights := args.Filter.Match(commit)
+			if foundMatch {
+				match := createCommitMatch(commit, highlights)
 				select {
 				case <-done:
 					return false
-				case resultChan <- commit:
+				case resultChan <- match:
 				}
 			}
 			return true
@@ -1029,8 +1034,7 @@ func (s *Server) search(w http.ResponseWriter, r *http.Request, args *protocol.S
 					return nil
 				}
 
-				commitMatch := &protocol.CommitMatch{}
-				if err := matchesBuf.Append(commitMatch); err != nil {
+				if err := matchesBuf.Append(result); err != nil {
 					return err
 				}
 
@@ -1052,6 +1056,31 @@ func (s *Server) search(w http.ResponseWriter, r *http.Request, args *protocol.S
 
 	if err := eventWriter.Event("done", doneEvent); err != nil {
 		log15.Warn("failed to send done event", "error", err)
+	}
+}
+
+func createCommitMatch(commit *search.Commit, highlights *search.CommitHighlights) *protocol.CommitMatch {
+	diff, _ := commit.Diff()
+	formattedDiff, formattedDiffHighlights := search.FormatDiffWithHighlights(diff, highlights.Diff)
+	return &protocol.CommitMatch{
+		Oid: api.CommitID(commit.Id().String()),
+
+		Message:           commit.Message(),
+		MessageHighlights: highlights.Message,
+
+		Diff:           formattedDiff,
+		DiffHighlights: formattedDiffHighlights,
+
+		Author:    gitSignatureToProtocolSignature(commit.Author()),
+		Committer: gitSignatureToProtocolSignature(commit.Committer()),
+	}
+}
+
+func gitSignatureToProtocolSignature(in *git.Signature) protocol.Signature {
+	return protocol.Signature{
+		Name:  in.Name,
+		Email: in.Email,
+		Date:  in.When,
 	}
 }
 

@@ -25,6 +25,22 @@ type SearchEventDone struct {
 }
 
 type CommitMatch struct {
+	Oid api.CommitID
+
+	Message           string        `json:",omitempty"`
+	MessageHighlights search.Ranges `json:",omitempty"`
+
+	Diff           string        `json:",omitempty"`
+	DiffHighlights search.Ranges `json:",omitempty"`
+
+	Author    Signature `json:",omitempty"`
+	Committer Signature `json:",omitempty"`
+}
+
+type Signature struct {
+	Name  string `json:",omitempty"`
+	Email string `json:",omitempty"`
+	Date  time.Time
 }
 
 // ExecRequest is a request to execute a command inside a git repository.
