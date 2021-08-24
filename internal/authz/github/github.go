@@ -88,8 +88,8 @@ func (p *Provider) FetchUserPermsByToken(ctx context.Context, token string, opts
 	}
 	seenRepos := make(map[extsvc.RepoID]struct{}, repoSetSize)
 
-	// addRepoToPerms checks if the given repos are already tracked before adding it to perms.
-	addRepoToPerms := func(repos ...extsvc.RepoID) {
+	// addRepoToUserPerms checks if the given repos are already tracked before adding it to perms.
+	addRepoToUserPerms := func(repos ...extsvc.RepoID) {
 		for _, repo := range repos {
 			if _, exists := seenRepos[repo]; !exists {
 				seenRepos[repo] = struct{}{}
@@ -117,7 +117,7 @@ func (p *Provider) FetchUserPermsByToken(ctx context.Context, token string, opts
 		}
 
 		for _, r := range repos {
-			addRepoToPerms(extsvc.RepoID(r.ID))
+			addRepoToUserPerms(extsvc.RepoID(r.ID))
 		}
 	}
 
@@ -137,7 +137,7 @@ func (p *Provider) FetchUserPermsByToken(ctx context.Context, token string, opts
 	for _, group := range groups {
 		// If a valid cached value was found, use it and continue
 		if len(group.Repositories) > 0 {
-			addRepoToPerms(group.Repositories...)
+			addRepoToUserPerms(group.Repositories...)
 			continue
 		}
 		group.Repositories = make([]extsvc.RepoID, 0, repoSetSize)
@@ -152,18 +152,22 @@ func (p *Provider) FetchUserPermsByToken(ctx context.Context, token string, opts
 				repos, hasNextPage, _, err = p.client.ListTeamRepositories(ctx, group.Org, group.Team, page)
 			}
 			if err != nil {
-				// track effort so far in cache
-				p.groupsCache.setGroup(group)
+				// Add and return what we've found on this page but don't persist group
+				// to cache
+				for _, r := range repos {
+					addRepoToUserPerms(extsvc.RepoID(r.ID))
+				}
 				return perms, errors.Wrap(err, "list repos for group")
 			}
+			// Add results to both group (for persistence) and permissions for user
 			for _, r := range repos {
 				repoID := extsvc.RepoID(r.ID)
 				group.Repositories = append(group.Repositories, repoID)
-				addRepoToPerms(repoID)
+				addRepoToUserPerms(repoID)
 			}
 		}
 
-		// add sync'd repos to cache
+		// Persist repos affiliated with group to cache
 		p.groupsCache.setGroup(group)
 	}
 
