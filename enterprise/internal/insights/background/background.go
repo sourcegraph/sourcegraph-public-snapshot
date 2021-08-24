@@ -44,6 +44,8 @@ func GetBackgroundJobs(ctx context.Context, mainAppDB *sql.DB, insightsDB *sql.D
 
 	insightsMetadataStore := store.NewInsightStore(insightsDB)
 
+	workerStore := queryrunner.CreateDBWorkerStore(workerBaseStore, observationContext)
+
 	// Start background goroutines for all of our workers.
 	routines := []goroutine.BackgroundRoutine{
 		// Register the background goroutine which discovers and enqueues insights work.
@@ -51,8 +53,8 @@ func GetBackgroundJobs(ctx context.Context, mainAppDB *sql.DB, insightsDB *sql.D
 
 		// Register the query-runner worker and resetter, which executes search queries and records
 		// results to TimescaleDB.
-		queryrunner.NewWorker(ctx, workerBaseStore, insightsStore, queryRunnerWorkerMetrics),
-		queryrunner.NewResetter(ctx, workerBaseStore, queryRunnerResetterMetrics),
+		queryrunner.NewWorker(ctx, workerStore, insightsStore, queryRunnerWorkerMetrics),
+		queryrunner.NewResetter(ctx, workerStore, queryRunnerResetterMetrics),
 		// disabling the cleaner job while we debug mismatched results from historical insights
 		queryrunner.NewCleaner(ctx, workerBaseStore, observationContext),
 
