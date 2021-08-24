@@ -253,9 +253,9 @@ func (p *Provider) getAffiliatedGroups(ctx context.Context, clientWithToken clie
 	seenGroups := make(map[string]struct{})
 	syncGroup := func(org, team string) {
 		if team != "" {
-			// if a team's repos is a subset of a organization's, don't sync. if an org
-			// has default read+ permissions, a team's orgs will always be a strict subset
-			// of the org's.
+			// If a team's repos is a subset of an organization's, don't sync. Because when an organization
+			// has at least default read permissions, a team's repos will always be a strict subset
+			// of the organization's.
 			if _, exists := seenGroups[team]; exists {
 				return
 			}
