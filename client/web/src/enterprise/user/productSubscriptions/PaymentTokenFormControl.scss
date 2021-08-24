@@ -11,17 +11,11 @@
         &.StripeElement--webkit-autofill {
             background: transparent !important;
         }
-    }
-}
 
-// The default disabled colors on the light theme look disabled, but on the dark theme they are too vivid, so make
-// them less so.
-.theme-dark {
-    .payment-token-form-control {
-        &__card {
-            &--disabled {
-                opacity: 0.65;
-            }
+        // The default disabled colors on the light theme look disabled, but on the dark theme they are too vivid, so make
+        // them less so.
+        &--disabled {
+            opacity: 0.65;
         }
     }
 }
