@@ -155,6 +155,7 @@ func newGithubSource(svc *types.ExternalService, c *schema.GitHubConnection, cf 
 		}
 	}
 
+	log15.Info("newGithubSource", "service ID", svc.ID, "service display name", svc.DisplayName, "cloud_default", svc.CloudDefault)
 	return &GithubSource{
 		svc:              svc,
 		config:           c,
