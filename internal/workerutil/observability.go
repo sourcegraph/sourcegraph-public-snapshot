@@ -99,17 +99,17 @@ const lenientConcurrencyGaugeInterval = time.Second * 5
 // zero handlers consistently when jobs are short-lived (< 500ms).
 // Keeping the max in memory gives us the value that we actually want
 // over time, and indicates an accurate level of concurrency.
-func newLenientConcurrencyGauge(gauge prometheus.Gauge) Gauge {
+func newLenientConcurrencyGauge(gauge prometheus.Gauge, interval time.Duration) Gauge {
 	ch := make(chan float64)
-	go runLenientConcurrencyGauge(gauge, ch)
+	go runLenientConcurrencyGauge(gauge, ch, interval)
 
 	return &channelGauge{ch: ch}
 }
 
-func runLenientConcurrencyGauge(gauge prometheus.Gauge, ch <-chan float64) {
+func runLenientConcurrencyGauge(gauge prometheus.Gauge, ch <-chan float64, interval time.Duration) {
 	max := float64(0)
 	value := float64(0)
-	ticker := time.NewTicker(lenientConcurrencyGaugeInterval)
+	ticker := time.NewTicker(interval)
 
 	for {
 		select {
