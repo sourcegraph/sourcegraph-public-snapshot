@@ -403,10 +403,11 @@ func fromFileMatch(fm *result.FileMatch, repoCache map[api.RepoID]*types.Searche
 
 func fromPathMatch(fm *result.FileMatch, repoCache map[api.RepoID]*types.SearchedRepo) *streamhttp.EventPathMatch {
 	pathEvent := &streamhttp.EventPathMatch{
-		Type:       streamhttp.PathMatchType,
-		Path:       fm.Path,
-		Repository: string(fm.Repo.Name),
-		Version:    string(fm.CommitID),
+		Type:         streamhttp.PathMatchType,
+		Path:         fm.Path,
+		Repository:   string(fm.Repo.Name),
+		RepositoryID: int32(fm.Repo.ID),
+		Version:      string(fm.CommitID),
 	}
 
 	if r, ok := repoCache[fm.Repo.ID]; ok {
@@ -470,11 +471,12 @@ func fromSymbolMatch(fm *result.FileMatch, repoCache map[api.RepoID]*types.Searc
 	}
 
 	symbolMatch := &streamhttp.EventSymbolMatch{
-		Type:       streamhttp.SymbolMatchType,
-		Path:       fm.Path,
-		Repository: string(fm.Repo.Name),
-		Version:    string(fm.CommitID),
-		Symbols:    symbols,
+		Type:         streamhttp.SymbolMatchType,
+		Path:         fm.Path,
+		Repository:   string(fm.Repo.Name),
+		RepositoryID: int32(fm.Repo.ID),
+		Version:      string(fm.CommitID),
+		Symbols:      symbols,
 	}
 
 	if r, ok := repoCache[fm.Repo.ID]; ok {

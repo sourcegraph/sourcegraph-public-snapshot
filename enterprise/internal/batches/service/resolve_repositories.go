@@ -259,15 +259,19 @@ func (s *Service) resolveRepositorySearch(ctx context.Context, query string) (_ 
 	return revs, nil
 }
 
+const userAgent = "Batch Changes repository resolver"
+
 func (s *Service) runSearch(ctx context.Context, query string, onMatches func(matches []streamhttp.EventMatch)) (err error) {
 	req, err := streamhttp.NewRequest(api.InternalClient.URL+"/.internal", query)
 	if err != nil {
 		return err
 	}
-
 	req.WithContext(ctx)
-	// TODO: Document why it's okay to not pass along the ctx.User here.
-	req.Header.Set("User-Agent", "Batch Changes repository resolver")
+
+	// We don't set an auth token here and don't authenticate on the users
+	// behalf in any way, because we will fetch the repositories from the
+	// database later and check for repository permissions that way.
+	req.Header.Set("User-Agent", userAgent)
 
 	resp, err := httpcli.InternalClient.Do(req)
 	if err != nil {

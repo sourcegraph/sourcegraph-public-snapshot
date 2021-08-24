@@ -41,6 +41,7 @@ type EventPathMatch struct {
 	Type MatchType `json:"type"`
 
 	Path            string     `json:"name"`
+	RepositoryID    int32      `json:"repositoryID"`
 	Repository      string     `json:"repository"`
 	RepoStars       int        `json:"repoStars,omitempty"`
 	RepoLastFetched *time.Time `json:"repoLastFetched,omitempty"`
@@ -81,6 +82,7 @@ type EventSymbolMatch struct {
 	Type MatchType `json:"type"`
 
 	Path            string     `json:"name"`
+	RepositoryID    int32      `json:"repositoryID"`
 	Repository      string     `json:"repository"`
 	RepoStars       int        `json:"repoStars,omitempty"`
 	RepoLastFetched *time.Time `json:"repoLastFetched,omitempty"`
