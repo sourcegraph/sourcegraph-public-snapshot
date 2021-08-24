@@ -154,7 +154,7 @@ type PermissionsInfo {
     updatedAt: DateTime!
 }
 
-type FetchPermissionsOptions {
+input FetchPermissionsOptions {
     """
     Indicate that any caches added for optimization encountered during this permissions
     sync should be invalidated.
