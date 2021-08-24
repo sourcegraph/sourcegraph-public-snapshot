@@ -275,7 +275,11 @@ func executeBatchSpec(ctx context.Context, opts executeBatchSpecOpts) (err error
 	}
 
 	opts.ui.DeterminingWorkspaces()
-	tasks, err := svc.BuildTasks(ctx, repos, batchSpec)
+	workspaces, err := svc.DetermineWorkspaces(ctx, repos, batchSpec)
+	if err != nil {
+		return err
+	}
+	tasks, err := svc.BuildTasks(ctx, repos, batchSpec, workspaces)
 	if err != nil {
 		return err
 	}

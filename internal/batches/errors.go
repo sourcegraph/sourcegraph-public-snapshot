@@ -77,3 +77,9 @@ func (e IgnoredRepoSet) Append(repo *graphql.Repository) {
 func (e IgnoredRepoSet) HasIgnored() bool {
 	return len(e) > 0
 }
+
+type ValidationError struct{ Reason string }
+
+func (e ValidationError) Error() string {
+	return fmt.Sprintf("validation failed: %s", e.Reason)
+}

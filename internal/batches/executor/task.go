@@ -11,7 +11,7 @@ type Task struct {
 	Repository *graphql.Repository
 
 	// Path is the folder relative to the repository's root in which the steps
-	// should be executed.
+	// should be executed. "" means root.
 	Path string
 	// OnlyFetchWorkspace determines whether the repository archive contains
 	// the complete repository or just the files in Path (and additional files,
