@@ -1,35 +1,26 @@
 package search
 
-import (
-	"fmt"
-	"regexp"
-	"testing"
+// "context"
+// "fmt"
+// "regexp"
+// "testing"
 
-	git "github.com/libgit2/git2go/v31"
-	"github.com/stretchr/testify/require"
-)
+// "github.com/stretchr/testify/require"
 
-func TestFormatDiff(t *testing.T) {
-	repo, err := git.OpenRepository("/Users/ccheek/src/sourcegraph/sourcegraph")
-	require.NoError(t, err)
+// func TestFormatDiff(t *testing.T) {
+// 	pred := And{
+// 		&AuthorMatches{regexp.MustCompile(`camden`)},
+// 		&DiffMatches{regexp.MustCompile(`dec\.ReadAll`)},
+// 	}
 
-	pred := And{
-		&AuthorMatches{regexp.MustCompile(`camden`)},
-		&DiffMatches{regexp.MustCompile(`dec\.ReadAll`)},
-	}
+// 	err := IterCommitMatches(context.Background(), "/Users/ccheek/src/sourcegraph/sourcegraph", "HEAD", pred, func(match CommitMatch) bool {
+// 		diff, _ := match.Commit.Diff()
+// 		formatted, ranges := FormatDiffWithHighlights(diff, match.Highlights.Diff)
+// 		println(match.Commit.Id().String())
+// 		print(formatted)
+// 		fmt.Printf("%#v\n", ranges)
+// 		return true
+// 	})
 
-	obj, err := repo.RevparseSingle("decddf8f0")
-	require.NoError(t, err)
-
-	err = IterCommits(repo, obj.Id(), func(commit *Commit) bool {
-		commitMatches, highlights := pred.Match(commit)
-		if commitMatches {
-			diff, _ := commit.Diff()
-			formatted, ranges := FormatDiffWithHighlights(diff, highlights.Diff)
-			print(formatted)
-			fmt.Printf("%#v\n", ranges)
-		}
-		return true
-	})
-	require.NoError(t, err)
-}
+// 	require.NoError(t, err)
+// }

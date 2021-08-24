@@ -9,19 +9,27 @@ import (
 
 type SearchRequest struct {
 	Repo        api.RepoName
-	Revision    string
-	Filter      search.CommitPredicate
+	Revisions   []search.RevisionSpecifier
+	Predicate   search.CommitPredicate
 	IncludeDiff bool
 	Limit       int
 }
 
-type SearchEventCommits struct {
-	Matches []CommitMatch
-}
+type SearchEventMatches []CommitMatch
 
 type SearchEventDone struct {
 	LimitHit bool
 	Error    string
+}
+
+func NewSearchEventDone(limitHit bool, err error) SearchEventDone {
+	e := SearchEventDone{
+		LimitHit: limitHit,
+	}
+	if err != nil {
+		e.Error = err.Error()
+	}
+	return e
 }
 
 type CommitMatch struct {

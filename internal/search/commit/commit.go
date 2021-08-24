@@ -8,6 +8,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"time"
 	"unicode/utf8"
 
 	otlog "github.com/opentracing/opentracing-go/log"
@@ -18,6 +19,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
+	gitsearch "github.com/sourcegraph/sourcegraph/internal/gitserver/search"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/internal/search/repos"
@@ -204,6 +208,187 @@ func commitParametersToDiffParameters(ctx context.Context, db dbutil.DB, op *sea
 			Args:              args,
 		},
 	}, nil
+}
+
+// TODO(camdencheek) rename this
+func searchCommitsNew(ctx context.Context, db dbutil.DB, op search.CommitParameters, s streaming.Sender) (err error) {
+	args := &protocol.SearchRequest{
+		Repo:        op.RepoRevs.Repo.Name,
+		Revisions:   searchRevsToGitserverRevs(op.RepoRevs.Revs),
+		Predicate:   gitsearch.And(queryNodesToPredicates(op.Query, op.Query.IsCaseSensitive(), op.Diff)),
+		IncludeDiff: op.Diff,
+		Limit:       int(op.PatternInfo.FileMatchLimit),
+	}
+
+	onMatches := func(in []protocol.CommitMatch) {
+		res := make([]result.Match, 0, len(in))
+		for _, protocolMatch := range in {
+			res = append(res, protocolMatchToCommitMatch(op.RepoRevs.Repo, op.Diff, protocolMatch))
+		}
+		s.Send(streaming.SearchEvent{
+			Results: res,
+		})
+	}
+
+	limitHit, err := gitserver.DefaultClient.Search(ctx, args, onMatches)
+	_ = limitHit
+	// TODO(camdencheek) use limitHit
+	return err
+}
+
+func searchRevsToGitserverRevs(in []search.RevisionSpecifier) []gitsearch.RevisionSpecifier {
+	out := make([]gitsearch.RevisionSpecifier, 0, len(in))
+	for _, rev := range in {
+		out = append(out, gitsearch.RevisionSpecifier{
+			RevSpec:        rev.RevSpec,
+			RefGlob:        rev.RefGlob,
+			ExcludeRefGlob: rev.ExcludeRefGlob,
+		})
+	}
+	return out
+}
+
+func queryNodesToPredicates(nodes []query.Node, caseSensitive, diff bool) []gitsearch.CommitPredicate {
+	res := make([]gitsearch.CommitPredicate, 0, len(nodes))
+	for _, node := range nodes {
+		var newPred gitsearch.CommitPredicate
+		switch v := node.(type) {
+		case query.Operator:
+			newPred = queryOperatorToPredicate(v, caseSensitive, diff)
+		case query.Pattern:
+			newPred = queryPatternToPredicate(v, caseSensitive, diff)
+		case query.Parameter:
+			newPred = queryParameterToPredicate(v, caseSensitive, diff)
+		}
+		if newPred != nil {
+			res = append(res, newPred)
+		}
+	}
+	return res
+}
+
+func queryOperatorToPredicate(op query.Operator, caseSensitive, diff bool) gitsearch.CommitPredicate {
+	switch op.Kind {
+	case query.And:
+		return gitsearch.And(queryNodesToPredicates(op.Operands, caseSensitive, diff))
+	case query.Or:
+		return gitsearch.Or(queryNodesToPredicates(op.Operands, caseSensitive, diff))
+	default:
+		// I don't think we should have concats at this point, but ignore it if we do
+		return nil
+	}
+}
+
+func queryPatternToPredicate(pattern query.Pattern, caseSensitive, diff bool) gitsearch.CommitPredicate {
+	patString := pattern.Value
+	if pattern.Annotation.Labels.IsSet(query.Literal) {
+		patString = regexp.QuoteMeta(pattern.Value)
+	}
+
+	var newPred gitsearch.CommitPredicate
+	if diff {
+		newPred = &gitsearch.DiffMatches{gitsearch.Regexp{regexp.MustCompile(wrapCaseSensitive(patString, caseSensitive))}}
+	} else {
+		newPred = &gitsearch.MessageMatches{gitsearch.Regexp{regexp.MustCompile(wrapCaseSensitive(patString, caseSensitive))}}
+	}
+
+	if pattern.Negated {
+		return &gitsearch.Not{newPred}
+	}
+	return newPred
+}
+
+func queryParameterToPredicate(parameter query.Parameter, caseSensitive, diff bool) gitsearch.CommitPredicate {
+	var newPred gitsearch.CommitPredicate
+	switch parameter.Field {
+	case query.FieldAuthor:
+		// TODO look up emails
+		newPred = &gitsearch.AuthorMatches{gitsearch.Regexp{regexp.MustCompile(wrapCaseSensitive(parameter.Value, caseSensitive))}}
+	case query.FieldCommitter:
+		newPred = &gitsearch.CommitterMatches{gitsearch.Regexp{regexp.MustCompile(wrapCaseSensitive(parameter.Value, caseSensitive))}}
+	case query.FieldBefore:
+		newPred = &gitsearch.CommitBefore{time.Now()} // TODO parse the time in with go-naturaldate
+	case query.FieldAfter:
+		newPred = &gitsearch.CommitAfter{time.Now()}
+	case query.FieldMessage:
+		newPred = &gitsearch.MessageMatches{gitsearch.Regexp{regexp.MustCompile(wrapCaseSensitive(parameter.Value, caseSensitive))}}
+	case query.FieldContent:
+		if diff {
+			newPred = &gitsearch.DiffMatches{gitsearch.Regexp{regexp.MustCompile(wrapCaseSensitive(parameter.Value, caseSensitive))}}
+		} else {
+			newPred = &gitsearch.MessageMatches{gitsearch.Regexp{regexp.MustCompile(wrapCaseSensitive(parameter.Value, caseSensitive))}}
+		}
+	case query.FieldFile:
+		newPred = &gitsearch.DiffModifiesFile{gitsearch.Regexp{regexp.MustCompile(wrapCaseSensitive(parameter.Value, caseSensitive))}}
+	case query.FieldLang:
+		// TODO(camdencheek)
+		return nil
+	}
+
+	if parameter.Negated {
+		return &gitsearch.Not{newPred}
+	}
+	return newPred
+}
+
+func wrapCaseSensitive(pattern string, caseSensitive bool) string {
+	if caseSensitive {
+		return pattern
+	}
+	return "(?i:" + pattern + ")"
+}
+
+func protocolMatchToCommitMatch(repo types.RepoName, diff bool, in protocol.CommitMatch) *result.CommitMatch {
+	var diffPreview *result.HighlightedString
+	// if in.Diff != "" {
+	// 	// TODO(camdencheek)
+	// }
+
+	var matchBody string
+	var matchHighlights []result.HighlightedRange
+	if diff {
+		return nil
+	} else {
+		matchBody = "```COMMIT_EDITMSG\n" + in.Message + "\n```"
+		matchHighlights = searchRangesToHighlights(in.MessageHighlights)
+	}
+
+	return &result.CommitMatch{
+		Commit: git.Commit{
+			ID: in.Oid,
+			Author: git.Signature{
+				Name:  in.Author.Name,
+				Email: in.Author.Email,
+				Date:  in.Author.Date,
+			},
+			Committer: &git.Signature{
+				Name:  in.Committer.Name,
+				Email: in.Committer.Email,
+				Date:  in.Committer.Date,
+			},
+			Message: git.Message(in.Message),
+		},
+		Repo: repo,
+		MessagePreview: &result.HighlightedString{
+			Value:      in.Message,
+			Highlights: searchRangesToHighlights(in.MessageHighlights),
+		},
+		DiffPreview: diffPreview,
+		Body: result.HighlightedString{
+			Value:      matchBody,
+			Highlights: matchHighlights,
+		},
+	}
+}
+
+func searchRangesToHighlights(in []gitsearch.Range) []result.HighlightedRange {
+	res := make([]result.HighlightedRange, 0, len(in))
+	// for _, _ = range in {
+	// 	res = append(res, result.HighlightedRange{
+	// 		// TODO
+	// 	})
+	// }
+	return res
 }
 
 // searchCommitsInRepoStream searches for commits based on op.
@@ -451,7 +636,11 @@ func searchInRepos(ctx context.Context, db dbutil.DB, args *search.TextParameter
 	repoSearch := func(ctx context.Context, repoRev *search.RepositoryRevisions) error {
 		commitParams := params.CommitParams
 		commitParams.RepoRevs = repoRev
-		return searchCommitsInRepoStream(ctx, db, commitParams, params.ResultChannel)
+		if true {
+			return searchCommitsNew(ctx, db, commitParams, params.ResultChannel)
+		} else {
+			return searchCommitsInRepoStream(ctx, db, commitParams, params.ResultChannel)
+		}
 	}
 
 	g, ctx := errgroup.WithContext(ctx)

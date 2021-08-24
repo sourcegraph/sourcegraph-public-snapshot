@@ -4,6 +4,9 @@ import (
 	"sort"
 )
 
+// CommitHighlights represents a set of highlights associated with a matched Commit.
+// Most of the complexity of this struct and its associated types comes from supporting
+// merging highlights for two different diff results.
 type CommitHighlights struct {
 	Diff    DeltaHighlights
 	Message Ranges
@@ -59,7 +62,7 @@ func (f DeltaHighlights) Merge(other DeltaHighlights) DeltaHighlights {
 
 		f[unique] = f[unique].Merge(f[i])
 	}
-	return f
+	return f[:unique+1]
 }
 
 type HunkHighlight struct {
@@ -92,7 +95,7 @@ func (h HunkHighlights) Merge(other HunkHighlights) HunkHighlights {
 		h[unique] = h[unique].Merge(h[i])
 	}
 
-	return h
+	return h[:unique+1]
 }
 
 type LineHighlight struct {
@@ -125,7 +128,7 @@ func (l LineHighlights) Merge(other LineHighlights) LineHighlights {
 		l[unique] = l[unique].Merge(l[i])
 	}
 
-	return l
+	return l[:unique+1]
 }
 
 type Location struct {
@@ -151,6 +154,5 @@ func (r Ranges) Merge(other Ranges) Ranges {
 	sort.Sort(r)
 
 	// Do not merge overlapping ranges because we want the result count to be accurate
-
 	return r
 }

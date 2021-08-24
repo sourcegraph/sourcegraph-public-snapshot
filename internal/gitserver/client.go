@@ -5,6 +5,7 @@ import (
 	"context"
 	"crypto/md5"
 	"encoding/binary"
+	"encoding/gob"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -32,6 +33,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitolite"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
+	gitsearch "github.com/sourcegraph/sourcegraph/internal/gitserver/search"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/internal/vcs"
@@ -278,6 +280,45 @@ func (c *Cmd) sendExec(ctx context.Context) (_ io.ReadCloser, _ http.Header, err
 		resp.Body.Close()
 		return nil, nil, errors.Errorf("unexpected status code: %d", resp.StatusCode)
 	}
+}
+
+func (c *Client) Search(ctx context.Context, args *protocol.SearchRequest, onMatches func([]protocol.CommitMatch)) (limitHit bool, _ error) {
+	repoName := protocol.NormalizeRepo(args.Repo)
+
+	resp, err := c.doGob(ctx, repoName, "POST", "search", args)
+	if err != nil {
+		return false, err
+	}
+	defer resp.Body.Close()
+
+	var decodeErr error
+	var eventDone protocol.SearchEventDone
+	dec := StreamSearchDecoder{
+		OnMatches: func(e protocol.SearchEventMatches) {
+			onMatches(e)
+		},
+		OnDone: func(e protocol.SearchEventDone) {
+			eventDone = e
+		},
+		OnUnknown: func(event, _ []byte) {
+			decodeErr = errors.Errorf("unknown event %s", event)
+		},
+	}
+
+	if err := dec.ReadAll(resp.Body); err != nil {
+		return false, err
+	}
+
+	if decodeErr != nil {
+		return false, decodeErr
+	}
+
+	var doneErr error
+	if eventDone.Error != "" {
+		doneErr = errors.New(eventDone.Error)
+	}
+
+	return eventDone.LimitHit, doneErr
 }
 
 // P4Exec sends a p4 command with given arguments and returns an io.ReadCloser for the output.
@@ -845,6 +886,60 @@ func (c *Client) Remove(ctx context.Context, repo api.RepoName) error {
 
 func (c *Client) httpPost(ctx context.Context, repo api.RepoName, op string, payload interface{}) (resp *http.Response, err error) {
 	return c.do(ctx, repo, "POST", op, payload)
+}
+
+func init() {
+	gob.Register(gitsearch.And{})
+	gob.Register(gitsearch.Or{})
+	gob.Register(&gitsearch.AuthorMatches{})
+}
+
+// doGob performs a request to a gitserver, sharding based on the given
+// repo name (the repo name is otherwise not used).
+func (c *Client) doGob(ctx context.Context, repo api.RepoName, method, op string, payload interface{}) (resp *http.Response, err error) {
+	span, ctx := ot.StartSpanFromContext(ctx, "Client.doGob")
+	defer func() {
+		span.LogKV("repo", string(repo), "method", method, "op", op)
+		if err != nil {
+			ext.Error.Set(span, true)
+			span.SetTag("err", err.Error())
+		}
+		span.Finish()
+	}()
+
+	var buf bytes.Buffer
+	enc := gob.NewEncoder(&buf)
+	if err := enc.Encode(payload); err != nil {
+		return nil, err
+	}
+
+	uri := op
+	if !strings.HasPrefix(op, "http") {
+		uri = "http://" + c.AddrForRepo(repo) + "/" + op
+	}
+
+	req, err := http.NewRequest(method, uri, &buf)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Set("Content-Type", "application/octet-stream")
+	req.Header.Set("User-Agent", c.UserAgent)
+	req.Header.Set("X-Sourcegraph-Actor", userFromContext(ctx))
+	req = req.WithContext(ctx)
+
+	if c.HTTPLimiter != nil {
+		c.HTTPLimiter.Acquire()
+		defer c.HTTPLimiter.Release()
+		span.LogKV("event", "Acquired HTTP limiter")
+	}
+
+	req, ht := nethttp.TraceRequest(span.Tracer(), req,
+		nethttp.OperationName("Gitserver Client"),
+		nethttp.ClientTrace(false))
+	defer ht.Finish()
+
+	return c.HTTPClient.Do(req)
 }
 
 // do performs a request to a gitserver, sharding based on the given
