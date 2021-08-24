@@ -79,6 +79,7 @@ func NewWorker(ctx context.Context, workerStore dbworkerstore.Store, insightsSto
 	}))
 
 	return dbworker.NewWorker(ctx, workerStore, &workHandler{
+		baseWorkerStore: basestore.NewWithDB(workerStore.Handle().DB(), sql.TxOptions{}),
 		insightsStore:   insightsStore,
 		limiter:         limiter,
 		metadadataStore: store.NewInsightStore(insightsStore.Handle().DB()),

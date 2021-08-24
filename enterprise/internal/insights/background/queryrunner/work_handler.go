@@ -6,6 +6,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
+
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -28,6 +30,7 @@ var _ workerutil.Handler = &workHandler{}
 // workHandler implements the dbworker.Handler interface by executing search queries and
 // inserting insights about them to the insights Timescale database.
 type workHandler struct {
+	baseWorkerStore *basestore.Store
 	insightsStore   *store.Store
 	metadadataStore *store.InsightStore
 	limiter         *rate.Limiter
@@ -77,7 +80,12 @@ func (r *workHandler) Handle(ctx context.Context, record workerutil.Record) (err
 	if err != nil {
 		return err
 	}
-	job := record.(*Job)
+	job, err := dequeueJob(ctx, r.baseWorkerStore, record.RecordID())
+	if err != nil {
+		return err
+	}
+
+	log15.Info("dequeue_job", "job", *job)
 
 	series, err := r.getSeries(ctx, job.SeriesID)
 	if err != nil {
