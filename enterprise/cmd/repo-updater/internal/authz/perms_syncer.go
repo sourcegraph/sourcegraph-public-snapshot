@@ -428,7 +428,10 @@ func (s *PermsSyncer) syncUserPerms(ctx context.Context, userID int32, noPerms b
 		return errors.Wrap(err, "set user permissions")
 	}
 
-	log15.Debug("PermsSyncer.syncUserPerms.synced", "userID", user.ID)
+	log15.Debug("PermsSyncer.syncUserPerms.synced",
+		"userID", user.ID,
+		"count", p.IDs.GetCardinality(),
+		"fetchOpts.invalidateCaches", fetchOpts.InvalidateCaches)
 	return nil
 }
 
