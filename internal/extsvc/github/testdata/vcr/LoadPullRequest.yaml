@@ -72,7 +72,7 @@ interactions:
       Content-Type:
       - application/json; charset=utf-8
       Date:
-      - Mon, 23 Aug 2021 22:49:12 GMT
+      - Tue, 24 Aug 2021 13:29:15 GMT
       Referrer-Policy:
       - origin-when-cross-origin, strict-origin-when-cross-origin
       Server:
@@ -90,7 +90,7 @@ interactions:
       X-Github-Media-Type:
       - github.v4; param=antiope-preview; format=json
       X-Github-Request-Id:
-      - 1303:0600:43E5D84:853FAF8:612425E8
+      - 12D6:1C73:2EB324:6FA73A:6124F42B
       X-Oauth-Scopes:
       - admin:enterprise, admin:gpg_key, admin:org, admin:org_hook, admin:public_key,
         admin:repo_hook, delete:packages, delete_repo, gist, notifications, repo,
@@ -98,13 +98,13 @@ interactions:
       X-Ratelimit-Limit:
       - "5000"
       X-Ratelimit-Remaining:
-      - "4991"
+      - "4942"
       X-Ratelimit-Reset:
-      - "1629762477"
+      - "1629814005"
       X-Ratelimit-Resource:
       - graphql
       X-Ratelimit-Used:
-      - "9"
+      - "58"
       X-Xss-Protection:
       - "0"
     status: 200 OK
@@ -181,7 +181,7 @@ interactions:
       Content-Type:
       - application/json; charset=utf-8
       Date:
-      - Mon, 23 Aug 2021 22:49:12 GMT
+      - Tue, 24 Aug 2021 13:29:15 GMT
       Referrer-Policy:
       - origin-when-cross-origin, strict-origin-when-cross-origin
       Server:
@@ -199,7 +199,7 @@ interactions:
       X-Github-Media-Type:
       - github.v4; param=antiope-preview; format=json
       X-Github-Request-Id:
-      - 1303:0600:43E5D8E:853FB19:612425E8
+      - 12D6:1C73:2EB331:6FA755:6124F42B
       X-Oauth-Scopes:
       - admin:enterprise, admin:gpg_key, admin:org, admin:org_hook, admin:public_key,
         admin:repo_hook, delete:packages, delete_repo, gist, notifications, repo,
@@ -207,13 +207,13 @@ interactions:
       X-Ratelimit-Limit:
       - "5000"
       X-Ratelimit-Remaining:
-      - "4988"
+      - "4939"
       X-Ratelimit-Reset:
-      - "1629762477"
+      - "1629814005"
       X-Ratelimit-Resource:
       - graphql
       X-Ratelimit-Used:
-      - "12"
+      - "61"
       X-Xss-Protection:
       - "0"
     status: 200 OK
@@ -281,15 +281,7 @@ interactions:
       integrations.","state":"MERGED","url":"https://github.com/sourcegraph/sourcegraph/pull/5550","number":5550,"createdAt":"2019-09-12T10:06:09Z","updatedAt":"2019-09-13T09:44:39Z","headRefOid":"30cc0384757b7d2fe9d42cf09ab7744731c8a9ea","baseRefOid":"f7097fe19816d0a9d637dc759722f6f43fd057ea","headRefName":"disable-extension-native-integratin","baseRefName":"master","isDraft":false,"author":{"avatarUrl":"https://avatars.githubusercontent.com/u/1741180?u=d126637129a1c2fae6f79de2c7cf8390059feb85&v=4","login":"lguychard","url":"https://github.com/lguychard"},"participants":{"nodes":[{"avatarUrl":"https://avatars.githubusercontent.com/u/1741180?u=d126637129a1c2fae6f79de2c7cf8390059feb85&v=4","login":"lguychard","url":"https://github.com/lguychard"},{"avatarUrl":"https://avatars.githubusercontent.com/u/2946214?u=f7db4e71ec55cfd9d462c7cdb041e5dfb8174efc&v=4","login":"unknwon","url":"https://github.com/unknwon"},{"avatarUrl":"https://avatars.githubusercontent.com/u/10532611?u=b02bd4f2245dd008c4b549bf84b5a8cb6667b649&v=4","login":"felixfbecker","url":"https://github.com/felixfbecker"}]},"labels":{"nodes":[]},"commits":{"nodes":[{"commit":{"oid":"30cc0384757b7d2fe9d42cf09ab7744731c8a9ea","status":{"state":"SUCCESS","contexts":[{"id":"MDEzOlN0YXR1c0NvbnRleHQ3NjQ0MDU0MzIx","context":"buildkite/sourcegraph","state":"SUCCESS","description":"Build
       #42783 passed (15 minutes, 53 seconds)"},{"id":"MDEzOlN0YXR1c0NvbnRleHQ3NjQ0MDUzMTQ0","context":"percy/Sourcegraph","state":"SUCCESS","description":"Visual
       review automatically approved, no visual changes found."}]},"checkSuites":{"nodes":[{"id":"MDEwOkNoZWNrU3VpdGUyMjMwNzk1ODA=","status":"COMPLETED","conclusion":"STALE","checkRuns":{"nodes":[]}},{"id":"MDEwOkNoZWNrU3VpdGUyMjMwNzk1ODE=","status":"COMPLETED","conclusion":"STALE","checkRuns":{"nodes":[]}},{"id":"MDEwOkNoZWNrU3VpdGUyMjMwNzk1ODI=","status":"COMPLETED","conclusion":"STALE","checkRuns":{"nodes":[]}}]},"committedDate":"2019-09-13T09:13:12Z"}}]},"timelineItems":{"pageInfo":{"hasNextPage":false,"endCursor":"Y3Vyc29yOnYyOpPPAAABbSoCn3ABqjI2MzE3ODE0NzU="},"nodes":[{"__typename":"ReviewRequestedEvent","actor":{"avatarUrl":"https://avatars.githubusercontent.com/u/1741180?u=d126637129a1c2fae6f79de2c7cf8390059feb85&v=4","login":"lguychard","url":"https://github.com/lguychard"},"requestedReviewer":{"avatarUrl":"https://avatars.githubusercontent.com/u/2946214?u=f7db4e71ec55cfd9d462c7cdb041e5dfb8174efc&v=4","login":"unknwon","url":"https://github.com/unknwon"},"requestedTeam":{},"createdAt":"2019-09-12T10:06:09Z"},{"__typename":"ReviewRequestedEvent","actor":{"avatarUrl":"https://avatars.githubusercontent.com/u/1741180?u=d126637129a1c2fae6f79de2c7cf8390059feb85&v=4","login":"lguychard","url":"https://github.com/lguychard"},"requestedReviewer":{"avatarUrl":"https://avatars.githubusercontent.com/u/10532611?u=b02bd4f2245dd008c4b549bf84b5a8cb6667b649&v=4","login":"felixfbecker","url":"https://github.com/felixfbecker"},"requestedTeam":{},"createdAt":"2019-09-12T10:06:09Z"},{"__typename":"PullRequestReview","databaseId":287537086,"author":{"avatarUrl":"https://avatars.githubusercontent.com/u/2946214?u=f7db4e71ec55cfd9d462c7cdb041e5dfb8174efc&v=4","login":"unknwon","url":"https://github.com/unknwon"},"authorAssociation":"CONTRIBUTOR","body":"Thanks
-      for the fix! The chaining logic looks brilliant to me (as a non-FE dev).","state":"APPROVED","url":"https://github.com/sourcegraph/sourcegraph/pull/5550#pullrequestreview-287537086","createdAt":"2019-09-12T15:57:28Z","updatedAt":"2019-09-12T15:57:28Z","commit":{"oid":"36734225c6bf58fb5c499b1489def2a7b65af45d","message":"Fix
-      disableExtension flag for native integrations\n\nThis flag should only be observed
-      in the browser extension. Calling `observeStorageKey()` breaks native integrations.","messageHeadline":"Fix
-      disableExtension flag for native integrations","committedDate":"2019-09-12T10:05:39Z","pushedDate":"2019-09-12T10:05:45Z","url":"https://github.com/sourcegraph/sourcegraph/commit/36734225c6bf58fb5c499b1489def2a7b65af45d","committer":{"avatarUrl":"https://avatars.githubusercontent.com/u/1741180?v=4","email":"loic@sourcegraph.com","name":"Loïc
-      Guychard","user":{"avatarUrl":"https://avatars.githubusercontent.com/u/1741180?u=d126637129a1c2fae6f79de2c7cf8390059feb85&v=4","login":"lguychard","url":"https://github.com/lguychard"}}},"includesCreatedEdit":false},{"__typename":"PullRequestReview","databaseId":287549355,"author":{"avatarUrl":"https://avatars.githubusercontent.com/u/10532611?u=b02bd4f2245dd008c4b549bf84b5a8cb6667b649&v=4","login":"felixfbecker","url":"https://github.com/felixfbecker"},"authorAssociation":"MEMBER","body":"","state":"COMMENTED","url":"https://github.com/sourcegraph/sourcegraph/pull/5550#pullrequestreview-287549355","createdAt":"2019-09-12T16:18:08Z","updatedAt":"2019-09-12T16:18:58Z","commit":{"oid":"36734225c6bf58fb5c499b1489def2a7b65af45d","message":"Fix
-      disableExtension flag for native integrations\n\nThis flag should only be observed
-      in the browser extension. Calling `observeStorageKey()` breaks native integrations.","messageHeadline":"Fix
-      disableExtension flag for native integrations","committedDate":"2019-09-12T10:05:39Z","pushedDate":"2019-09-12T10:05:45Z","url":"https://github.com/sourcegraph/sourcegraph/commit/36734225c6bf58fb5c499b1489def2a7b65af45d","committer":{"avatarUrl":"https://avatars.githubusercontent.com/u/1741180?v=4","email":"loic@sourcegraph.com","name":"Loïc
-      Guychard","user":{"avatarUrl":"https://avatars.githubusercontent.com/u/1741180?u=d126637129a1c2fae6f79de2c7cf8390059feb85&v=4","login":"lguychard","url":"https://github.com/lguychard"}}},"includesCreatedEdit":false},{"__typename":"PullRequestCommit","commit":{"oid":"21d1cd99699e36ab5e2b9be1cc663691d47193ef","message":"Fix
+      for the fix! The chaining logic looks brilliant to me (as a non-FE dev).","state":"APPROVED","url":"https://github.com/sourcegraph/sourcegraph/pull/5550#pullrequestreview-287537086","createdAt":"2019-09-12T15:57:28Z","updatedAt":"2019-09-12T15:57:28Z","commit":null,"includesCreatedEdit":false},{"__typename":"PullRequestReview","databaseId":287549355,"author":{"avatarUrl":"https://avatars.githubusercontent.com/u/10532611?u=b02bd4f2245dd008c4b549bf84b5a8cb6667b649&v=4","login":"felixfbecker","url":"https://github.com/felixfbecker"},"authorAssociation":"MEMBER","body":"","state":"COMMENTED","url":"https://github.com/sourcegraph/sourcegraph/pull/5550#pullrequestreview-287549355","createdAt":"2019-09-12T16:18:08Z","updatedAt":"2019-09-12T16:18:58Z","commit":null,"includesCreatedEdit":false},{"__typename":"PullRequestCommit","commit":{"oid":"21d1cd99699e36ab5e2b9be1cc663691d47193ef","message":"Fix
       disableExtension flag for native integrations\n\nThis flag should only be observed
       in the browser extension. Calling `observeStorageKey()` breaks native integrations.","messageHeadline":"Fix
       disableExtension flag for native integrations","committedDate":"2019-09-13T09:13:12Z","pushedDate":null,"url":"https://github.com/sourcegraph/sourcegraph/commit/21d1cd99699e36ab5e2b9be1cc663691d47193ef","committer":{"avatarUrl":"https://avatars.githubusercontent.com/u/1741180?v=4","email":"loic@sourcegraph.com","name":"Loïc
@@ -324,7 +316,7 @@ interactions:
       Content-Type:
       - application/json; charset=utf-8
       Date:
-      - Mon, 23 Aug 2021 22:49:13 GMT
+      - Tue, 24 Aug 2021 13:29:16 GMT
       Referrer-Policy:
       - origin-when-cross-origin, strict-origin-when-cross-origin
       Server:
@@ -342,7 +334,7 @@ interactions:
       X-Github-Media-Type:
       - github.v4; param=antiope-preview; format=json
       X-Github-Request-Id:
-      - 1303:0600:43E5DA3:853FB38:612425E8
+      - 12D6:1C73:2EB338:6FA76D:6124F42B
       X-Oauth-Scopes:
       - admin:enterprise, admin:gpg_key, admin:org, admin:org_hook, admin:public_key,
         admin:repo_hook, delete:packages, delete_repo, gist, notifications, repo,
@@ -350,13 +342,13 @@ interactions:
       X-Ratelimit-Limit:
       - "5000"
       X-Ratelimit-Remaining:
-      - "4985"
+      - "4936"
       X-Ratelimit-Reset:
-      - "1629762477"
+      - "1629814005"
       X-Ratelimit-Resource:
       - graphql
       X-Ratelimit-Used:
-      - "15"
+      - "64"
       X-Xss-Protection:
       - "0"
     status: 200 OK
@@ -1298,7 +1290,7 @@ interactions:
       Content-Type:
       - application/json; charset=utf-8
       Date:
-      - Mon, 23 Aug 2021 22:49:17 GMT
+      - Tue, 24 Aug 2021 13:29:18 GMT
       Referrer-Policy:
       - origin-when-cross-origin, strict-origin-when-cross-origin
       Server:
@@ -1316,7 +1308,7 @@ interactions:
       X-Github-Media-Type:
       - github.v4; param=antiope-preview; format=json
       X-Github-Request-Id:
-      - 1303:0600:43E5ED1:853FD69:612425E8
+      - 12D6:1C73:2EB365:6FA7C8:6124F42B
       X-Oauth-Scopes:
       - admin:enterprise, admin:gpg_key, admin:org, admin:org_hook, admin:public_key,
         admin:repo_hook, delete:packages, delete_repo, gist, notifications, repo,
@@ -1324,13 +1316,13 @@ interactions:
       X-Ratelimit-Limit:
       - "5000"
       X-Ratelimit-Remaining:
-      - "4982"
+      - "4933"
       X-Ratelimit-Reset:
-      - "1629762477"
+      - "1629814005"
       X-Ratelimit-Resource:
       - graphql
       X-Ratelimit-Used:
-      - "18"
+      - "67"
       X-Xss-Protection:
       - "0"
     status: 200 OK
@@ -1498,7 +1490,7 @@ interactions:
       Content-Type:
       - application/json; charset=utf-8
       Date:
-      - Mon, 23 Aug 2021 22:49:19 GMT
+      - Tue, 24 Aug 2021 13:29:18 GMT
       Referrer-Policy:
       - origin-when-cross-origin, strict-origin-when-cross-origin
       Server:
@@ -1516,7 +1508,7 @@ interactions:
       X-Github-Media-Type:
       - github.v4; param=antiope-preview; format=json
       X-Github-Request-Id:
-      - 1303:0600:43E6031:853FFFD:612425EB
+      - 12D6:1C73:2EB3DD:6FA946:6124F42C
       X-Oauth-Scopes:
       - admin:enterprise, admin:gpg_key, admin:org, admin:org_hook, admin:public_key,
         admin:repo_hook, delete:packages, delete_repo, gist, notifications, repo,
@@ -1524,13 +1516,13 @@ interactions:
       X-Ratelimit-Limit:
       - "5000"
       X-Ratelimit-Remaining:
-      - "4979"
+      - "4930"
       X-Ratelimit-Reset:
-      - "1629762477"
+      - "1629814005"
       X-Ratelimit-Resource:
       - graphql
       X-Ratelimit-Used:
-      - "21"
+      - "70"
       X-Xss-Protection:
       - "0"
     status: 200 OK

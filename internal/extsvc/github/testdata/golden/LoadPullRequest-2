@@ -85,22 +85,17 @@
      "CreatedAt": "2019-09-12T15:57:28Z",
      "UpdatedAt": "2019-09-12T15:57:28Z",
      "Commit": {
-      "OID": "36734225c6bf58fb5c499b1489def2a7b65af45d",
-      "Message": "Fix disableExtension flag for native integrations\n\nThis flag should only be observed in the browser extension. Calling `observeStorageKey()` breaks native integrations.",
-      "MessageHeadline": "Fix disableExtension flag for native integrations",
-      "URL": "https://github.com/sourcegraph/sourcegraph/commit/36734225c6bf58fb5c499b1489def2a7b65af45d",
+      "OID": "",
+      "Message": "",
+      "MessageHeadline": "",
+      "URL": "",
       "Committer": {
-       "AvatarURL": "https://avatars.githubusercontent.com/u/1741180?v=4",
-       "Email": "loic@sourcegraph.com",
-       "Name": "Loïc Guychard",
-       "User": {
-        "AvatarURL": "https://avatars.githubusercontent.com/u/1741180?u=d126637129a1c2fae6f79de2c7cf8390059feb85\u0026v=4",
-        "Login": "lguychard",
-        "URL": "https://github.com/lguychard"
-       }
+       "AvatarURL": "",
+       "Email": "",
+       "Name": ""
       },
-      "CommittedDate": "2019-09-12T10:05:39Z",
-      "PushedDate": "2019-09-12T10:05:45Z"
+      "CommittedDate": "0001-01-01T00:00:00Z",
+      "PushedDate": "0001-01-01T00:00:00Z"
      },
      "IncludesCreatedEdit": false
     }
@@ -121,22 +116,17 @@
      "CreatedAt": "2019-09-12T16:18:08Z",
      "UpdatedAt": "2019-09-12T16:18:58Z",
      "Commit": {
-      "OID": "36734225c6bf58fb5c499b1489def2a7b65af45d",
-      "Message": "Fix disableExtension flag for native integrations\n\nThis flag should only be observed in the browser extension. Calling `observeStorageKey()` breaks native integrations.",
-      "MessageHeadline": "Fix disableExtension flag for native integrations",
-      "URL": "https://github.com/sourcegraph/sourcegraph/commit/36734225c6bf58fb5c499b1489def2a7b65af45d",
+      "OID": "",
+      "Message": "",
+      "MessageHeadline": "",
+      "URL": "",
       "Committer": {
-       "AvatarURL": "https://avatars.githubusercontent.com/u/1741180?v=4",
-       "Email": "loic@sourcegraph.com",
-       "Name": "Loïc Guychard",
-       "User": {
-        "AvatarURL": "https://avatars.githubusercontent.com/u/1741180?u=d126637129a1c2fae6f79de2c7cf8390059feb85\u0026v=4",
-        "Login": "lguychard",
-        "URL": "https://github.com/lguychard"
-       }
+       "AvatarURL": "",
+       "Email": "",
+       "Name": ""
       },
-      "CommittedDate": "2019-09-12T10:05:39Z",
-      "PushedDate": "2019-09-12T10:05:45Z"
+      "CommittedDate": "0001-01-01T00:00:00Z",
+      "PushedDate": "0001-01-01T00:00:00Z"
      },
      "IncludesCreatedEdit": false
     }

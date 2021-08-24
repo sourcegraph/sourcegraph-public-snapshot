@@ -72,7 +72,7 @@ interactions:
       Content-Type:
       - application/json; charset=utf-8
       Date:
-      - Mon, 23 Aug 2021 22:47:58 GMT
+      - Tue, 24 Aug 2021 13:30:13 GMT
       Referrer-Policy:
       - origin-when-cross-origin, strict-origin-when-cross-origin
       Server:
@@ -90,7 +90,7 @@ interactions:
       X-Github-Media-Type:
       - github.v4; param=antiope-preview; format=json
       X-Github-Request-Id:
-      - 1375:6247:3346C3D:9AB3BD3:6124259E
+      - 120C:523D:137491:362668:6124F465
       X-Oauth-Scopes:
       - admin:enterprise, admin:gpg_key, admin:org, admin:org_hook, admin:public_key,
         admin:repo_hook, delete:packages, delete_repo, gist, notifications, repo,
@@ -98,7 +98,7 @@ interactions:
       X-Ratelimit-Resource:
       - graphql
       X-Ratelimit-Used:
-      - "6"
+      - "76"
       X-Xss-Protection:
       - "0"
     status: 200 OK
