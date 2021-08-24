@@ -24,7 +24,7 @@ type queryDatabase struct {
 
 // request performs a request to fetch `key`. If it already exists in the cache, the cached value
 // is returned. Otherwise, fetch is invoked and the result is stored and returned if not an error.
-func (db *queryDatabase) request(key interface{}, fetch func(key interface{}) ([]byte, error)) ([]byte, error) {
+func (db *queryDatabase) request(key interface{}, fetch func() ([]byte, error)) ([]byte, error) {
 	// Our key (i.e. the info needed to perform the request) will be the key in our bucket, as a
 	// JSON string.
 	keyBytes, err := json.Marshal(key)
@@ -35,11 +35,10 @@ func (db *queryDatabase) request(key interface{}, fetch func(key interface{}) ([
 	// Check if the bucket already has the request response or not.
 	var value []byte
 	err = db.handle.View(func(tx *bolt.Tx) error {
-		bucket, err := tx.CreateBucketIfNotExists(requestsBucket)
-		if err != nil {
-			return errors.Wrap(err, "CreateBucketIfNotExists")
+		bucket := tx.Bucket(requestsBucket)
+		if bucket != nil {
+			value = bucket.Get(keyBytes)
 		}
-		value = bucket.Get(keyBytes)
 		return nil
 	})
 	if err != nil {
@@ -54,7 +53,7 @@ func (db *queryDatabase) request(key interface{}, fetch func(key interface{}) ([
 	}
 
 	// Fetch and store the result.
-	result, err := fetch(key)
+	result, err := fetch()
 	if err != nil {
 		return nil, errors.Wrap(err, "fetch")
 	}
