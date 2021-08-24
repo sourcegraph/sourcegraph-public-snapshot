@@ -201,7 +201,7 @@ func (r *Resolver) ScheduleUserPermissionsSync(ctx context.Context, args *graphq
 	req := protocol.PermsSyncRequest{
 		UserIDs: []int32{userID},
 	}
-	if args.Options != nil && args.Options.InvalidateCaches != nil {
+	if args.Options != nil && args.Options.InvalidateCaches != nil && args.Options.InvalidateCaches {
 		req.Options.InvalidateCaches = true
 	}
 

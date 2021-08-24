@@ -43,7 +43,7 @@ func newGroupPermsCache(urn string, codeHost *extsvc.CodeHost, ttl time.Duration
 	}
 }
 
-// setGroup stores the given group in the cache
+// setGroup stores the given group in the cache.
 func (c *cachedGroups) setGroup(group cachedGroup) error {
 	bytes, err := json.Marshal(&group)
 	if err != nil {
