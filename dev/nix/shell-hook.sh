@@ -11,10 +11,7 @@
 pushd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null || exit
 
 # TODO build with nix
-if [ ! -e ../../libsqlite3-pcre.so ]; then
-  echo 'Building libsqlite3-pcre...'
-  NIX_ENFORCE_PURITY=0 ../libsqlite3-pcre/build.sh
-fi
+NIX_ENFORCE_PURITY=0 ../libsqlite3-pcre/build.sh
 
 . ./start-postgres.sh
 . ./start-redis.sh
