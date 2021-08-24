@@ -82,10 +82,10 @@ func newOperations(observationContext *observation.Context, prefix string, keys,
 	}
 }
 
-// newLenientConcurrencyGauge creates a new gauge-like object that 
+// newLenientConcurrencyGauge creates a new gauge-like object that
 // emits the maximum value over the last five seconds into the given
 // gauge. Note that this gaugage should be used to track concurrency
-// only, meaning that running the gauge into the negatives may produce 
+// only, meaning that running the gauge into the negatives may produce
 // unwanted behaivor.
 //
 // This method begins an immortal background routine.
