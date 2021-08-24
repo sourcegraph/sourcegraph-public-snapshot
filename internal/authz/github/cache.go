@@ -11,17 +11,19 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
 )
 
+const cacheVersion = "v1"
+
 type cachedGroup struct {
 	// Org login, required
 	Org string
 	// Team slug, if empty implies group is an org
 	Team string
-
+	// Repositories entities associated with this group has access to
 	Repositories []extsvc.RepoID
 }
 
 func (g cachedGroup) key() string {
-	key := g.Org
+	key := cacheVersion + "/" + g.Org
 	if g.Team != "" {
 		key += "/" + g.Team
 	}
