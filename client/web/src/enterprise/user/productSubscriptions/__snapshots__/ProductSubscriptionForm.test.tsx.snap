@@ -53,15 +53,18 @@ exports[`ProductSubscriptionForm edit existing subscription 1`] = `
         >
           <CardElement
             className="form-control payment-token-form-control__card payment-token-form-control__card--disabled"
-            disabled={true}
-            style={
+            options={
               Object {
-                "base": Object {
-                  ":-webkit-autofill": Object {
+                "disabled": true,
+                "style": Object {
+                  "base": Object {
+                    ":-webkit-autofill": Object {
+                      "color": "white",
+                    },
+                    "backgroundColor": "#1d212f",
                     "color": "white",
+                    "fontFamily": "-apple-system, BlinkMacSystemFont, \\"Segoe UI\\", Roboto, \\"Helvetica Neue\\", Arial, sans-serif",
                   },
-                  "color": "white",
-                  "fontFamily": "-apple-system, BlinkMacSystemFont, \\"Segoe UI\\", Roboto, \\"Helvetica Neue\\", Arial, sans-serif",
                 },
               }
             }
@@ -155,15 +158,18 @@ exports[`ProductSubscriptionForm new subscription for anonymous viewer (no accou
         >
           <CardElement
             className="form-control payment-token-form-control__card payment-token-form-control__card--disabled"
-            disabled={true}
-            style={
+            options={
               Object {
-                "base": Object {
-                  ":-webkit-autofill": Object {
+                "disabled": true,
+                "style": Object {
+                  "base": Object {
+                    ":-webkit-autofill": Object {
+                      "color": "white",
+                    },
+                    "backgroundColor": "#1d212f",
                     "color": "white",
+                    "fontFamily": "-apple-system, BlinkMacSystemFont, \\"Segoe UI\\", Roboto, \\"Helvetica Neue\\", Arial, sans-serif",
                   },
-                  "color": "white",
-                  "fontFamily": "-apple-system, BlinkMacSystemFont, \\"Segoe UI\\", Roboto, \\"Helvetica Neue\\", Arial, sans-serif",
                 },
               }
             }
@@ -233,15 +239,18 @@ exports[`ProductSubscriptionForm new subscription for existing account 1`] = `
         >
           <CardElement
             className="form-control payment-token-form-control__card payment-token-form-control__card--disabled"
-            disabled={true}
-            style={
+            options={
               Object {
-                "base": Object {
-                  ":-webkit-autofill": Object {
+                "disabled": true,
+                "style": Object {
+                  "base": Object {
+                    ":-webkit-autofill": Object {
+                      "color": "white",
+                    },
+                    "backgroundColor": "#1d212f",
                     "color": "white",
+                    "fontFamily": "-apple-system, BlinkMacSystemFont, \\"Segoe UI\\", Roboto, \\"Helvetica Neue\\", Arial, sans-serif",
                   },
-                  "color": "white",
-                  "fontFamily": "-apple-system, BlinkMacSystemFont, \\"Segoe UI\\", Roboto, \\"Helvetica Neue\\", Arial, sans-serif",
                 },
               }
             }

@@ -15,7 +15,11 @@ jest.mock('../../dotcom/billing/StripeWrapper', () => ({
     }) => <Component {...props} stripe={{}} />,
 }))
 
-jest.mock('react-stripe-elements', () => ({ CardElement: 'CardElement' }))
+jest.mock('@stripe/react-stripe-js', () => ({
+    useStripe: () => null,
+    useElements: () => null,
+    CardElement: 'CardElement',
+}))
 
 jest.mock('../../dotcom/productPlans/ProductSubscriptionUserCountFormControl', () => ({
     ProductSubscriptionUserCountFormControl: 'ProductSubscriptionUserCountFormControl',
