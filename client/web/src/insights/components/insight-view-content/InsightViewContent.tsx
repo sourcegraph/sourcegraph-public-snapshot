@@ -19,6 +19,9 @@ export interface InsightViewContentProps extends TelemetryProps {
 
     /** To get container to track hovers for pings */
     containerClassName?: string
+
+    /** Optionally display an alert overlay */
+    alert?: React.ReactNode
 }
 
 /**
@@ -28,6 +31,8 @@ export const InsightViewContent: React.FunctionComponent<InsightViewContentProps
     viewContent,
     viewID,
     containerClassName,
+    children,
+    alert,
     ...props
 }) => {
     // Track user intent to interact with extension-contributed views
@@ -88,13 +93,15 @@ export const InsightViewContent: React.FunctionComponent<InsightViewContentProps
                         )}
                     </React.Fragment>
                 ) : 'chart' in content ? (
-                    <ChartViewContent
-                        key={index}
-                        content={content}
-                        viewID={viewID}
-                        telemetryService={props.telemetryService}
-                        className="view-content__chart"
-                    />
+                    <React.Fragment key={index}>
+                        {alert && <div className="view-content-alert-overlay">{alert}</div>}
+                        <ChartViewContent
+                            content={content}
+                            viewID={viewID}
+                            telemetryService={props.telemetryService}
+                            className="view-content__chart"
+                        />
+                    </React.Fragment>
                 ) : null
             )}
         </div>

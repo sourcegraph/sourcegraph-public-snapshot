@@ -265,20 +265,22 @@ Go,github.com/RoaringBitmap/roaring,v0.5.1,Apache 2.0,"",Approved
 Go,github.com/andres-erbsen/clock,v0.0.0-20160526145045-9e14626cd129,MIT,"",Approved
 Go,github.com/asaskevich/govalidator,v0.0.0-20200907205600-7a23bdc65eef,MIT,"",Approved
 Go,github.com/avelino/slugify,v0.0.0-20180501145920-855f152bd774,MIT,"",Approved
-Go,github.com/aws/aws-sdk-go-v2,v1.3.2,"Apache 2.0,New BSD","",Approved
-Go,github.com/aws/aws-sdk-go-v2/config,v1.1.2,Apache 2.0,"",Approved
-Go,github.com/aws/aws-sdk-go-v2/credentials,v1.1.2,Apache 2.0,"",Approved
-Go,github.com/aws/aws-sdk-go-v2/feature/ec2/imds,v1.0.3,Apache 2.0,"",Approved
+Go,github.com/aws/aws-sdk-go-v2,v1.8.0,"Apache 2.0,New BSD","",Approved
+Go,github.com/aws/aws-sdk-go-v2/config,v1.6.0,Apache 2.0,"",Approved
+Go,github.com/aws/aws-sdk-go-v2/credentials,v1.3.2,Apache 2.0,"",Approved
+Go,github.com/aws/aws-sdk-go-v2/feature/ec2/imds,v1.4.0,Apache 2.0,"",Approved
 Go,github.com/aws/aws-sdk-go-v2/feature/s3/manager,v1.0.3,Apache 2.0,"",Approved
+Go,github.com/aws/aws-sdk-go-v2/internal/ini,v1.2.0,Apache 2.0,"",Approved
+Go,github.com/aws/aws-sdk-go-v2/service/cloudwatch,v1.7.0,Apache 2.0,"",Approved
 Go,github.com/aws/aws-sdk-go-v2/service/codecommit,v1.1.2,Apache 2.0,"",Approved
 Go,github.com/aws/aws-sdk-go-v2/service/internal/accept-encoding,v1.0.2,Apache 2.0,"",Approved
-Go,github.com/aws/aws-sdk-go-v2/service/internal/presigned-url,v1.0.3,Apache 2.0,"",Approved
+Go,github.com/aws/aws-sdk-go-v2/service/internal/presigned-url,v1.2.2,Apache 2.0,"",Approved
 Go,github.com/aws/aws-sdk-go-v2/service/internal/s3shared,v1.1.1,Apache 2.0,"",Approved
 Go,github.com/aws/aws-sdk-go-v2/service/kms,v1.2.2,Apache 2.0,"",Approved
 Go,github.com/aws/aws-sdk-go-v2/service/s3,v1.2.1,Apache 2.0,"",Approved
-Go,github.com/aws/aws-sdk-go-v2/service/sso,v1.1.2,Apache 2.0,"",Approved
-Go,github.com/aws/aws-sdk-go-v2/service/sts,v1.1.2,Apache 2.0,"",Approved
-Go,github.com/aws/smithy-go,v1.3.1,Apache 2.0,"",Approved
+Go,github.com/aws/aws-sdk-go-v2/service/sso,v1.3.2,Apache 2.0,"",Approved
+Go,github.com/aws/aws-sdk-go-v2/service/sts,v1.6.1,Apache 2.0,"",Approved
+Go,github.com/aws/smithy-go,v1.7.0,Apache 2.0,"",Approved
 Go,github.com/aymerick/douceur,v0.2.0,MIT,"",Approved
 Go,github.com/beevik/etree,v1.1.0,New BSD,"",Approved
 Go,github.com/beorn7/perks,v1.0.1,MIT,"",Approved
@@ -336,7 +338,7 @@ Go,github.com/golang/protobuf,v1.5.2,New BSD,"",Approved
 Go,github.com/golang/snappy,v0.0.3,New BSD,"",Approved
 Go,github.com/gomodule/oauth1,v0.0.0-20181215000758-9a59ed3b0a84,Apache 2.0,"",Approved
 Go,github.com/gomodule/redigo,v2.0.0,Apache 2.0,"",Approved
-Go,github.com/google/go-cmp,v0.5.5,New BSD,"",Approved
+Go,github.com/google/go-cmp,v0.5.6,New BSD,"",Approved
 Go,github.com/google/go-github,v17.0.0,New BSD,"",Approved
 Go,github.com/google/go-github/v28,v28.1.1,New BSD,"",Approved
 Go,github.com/google/go-github/v31,v31.0.0,New BSD,"",Approved
@@ -442,6 +444,7 @@ Go,github.com/sourcegraph/go-diff,v0.6.1,MIT,"",Approved
 Go,github.com/sourcegraph/go-jsonschema,v0.0.0-20200907102109-d14e9f2f3a28,MIT,"",Approved
 Go,github.com/sourcegraph/go-langserver,v2.0.1-0.20181108233942-4a51fa2e1238,"MIT,New BSD","",Approved
 Go,github.com/sourcegraph/go-lsp,v0.0.0-20200429204803-219e11d77f5d,MIT,"",Approved
+Go,github.com/sourcegraph/go-rendezvous,v0.0.0-20210819140028-cdd914a24376,MIT,"",Approved
 Go,github.com/sourcegraph/gologin,v1.0.2-0.20181110030308-c6f1b62954d8,MIT,"",Approved
 Go,github.com/sourcegraph/gosaml2,v0.6.1-0.20210128133756-84151d087b10,Apache 2.0,"",Approved
 Go,github.com/sourcegraph/gosyntect,v0.0.0-20210422223331-645353f16ddc,MIT,"",Approved
@@ -687,7 +690,7 @@ Yarn,react-textarea-autosize,8.3.0,MIT,httsps://andreypopp.com/,Approved
 Yarn,react-transition-group,2.9.0,New BSD,https://github.com/reactjs/react-transition-group#readme,Approved
 Yarn,react-use-measure,2.0.4,MIT,Unknown,Approved
 Yarn,react-visibility-sensor,5.1.1,MIT,Unknown,Approved
-Yarn,reactstrap,8.4.1,MIT,https://github.com/reactstrap/reactstrap#readme,Approved
+Yarn,reactstrap,8.9.0,MIT,https://github.com/reactstrap/reactstrap#readme,Approved
 Yarn,recharts,1.8.5,MIT,https://github.com/recharts/recharts,Approved
 Yarn,recharts-scale,0.4.2,MIT,https://github.com/recharts/recharts-scale,Approved
 Yarn,reduce-css-calc,1.3.0,MIT,Unknown,Approved

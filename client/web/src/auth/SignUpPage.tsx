@@ -11,7 +11,7 @@ import { FeatureFlagProps } from '../featureFlags/featureFlags'
 import { SourcegraphContext } from '../jscontext'
 import { eventLogger } from '../tracking/eventLogger'
 
-import { ExperimentalSignUpPage, ShowEmailFormQueryParameter } from './ExperimentalSignUpPage'
+import { CloudSignUpPage, ShowEmailFormQueryParameter } from './CloudSignUpPage'
 import { SourcegraphIcon } from './icons'
 import { getReturnTo } from './SignInSignUpCommon'
 import { SignUpArguments, SignUpForm } from './SignUpForm'
@@ -72,9 +72,9 @@ export const SignUpPage: React.FunctionComponent<SignUpPageProps> = ({
             return Promise.resolve()
         })
 
-    if (context.sourcegraphDotComMode && query.get('src')) {
+    if (context.sourcegraphDotComMode) {
         return (
-            <ExperimentalSignUpPage
+            <CloudSignUpPage
                 source={query.get('src')}
                 onSignUp={handleSignUp}
                 isLightTheme={isLightTheme}

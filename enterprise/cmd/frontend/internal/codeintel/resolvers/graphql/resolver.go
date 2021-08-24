@@ -71,7 +71,7 @@ func (r *Resolver) LSIFUploadByID(ctx context.Context, id graphql.ID) (gql.LSIFU
 		return nil, err
 	}
 
-	return NewUploadResolver(upload, prefetcher, r.locationResolver), nil
+	return NewUploadResolver(r.resolver, upload, prefetcher, r.locationResolver), nil
 }
 
 func (r *Resolver) LSIFUploads(ctx context.Context, args *gql.LSIFUploadsQueryArgs) (gql.LSIFUploadConnectionResolver, error) {
@@ -94,7 +94,7 @@ func (r *Resolver) LSIFUploadsByRepo(ctx context.Context, args *gql.LSIFReposito
 	// the same graphQL request, not across different request.
 	prefetcher := NewPrefetcher(r.resolver)
 
-	return NewUploadConnectionResolver(r.resolver.UploadConnectionResolver(opts), prefetcher, r.locationResolver), nil
+	return NewUploadConnectionResolver(r.resolver, r.resolver.UploadConnectionResolver(opts), prefetcher, r.locationResolver), nil
 }
 
 func (r *Resolver) DeleteLSIFUpload(ctx context.Context, args *struct{ ID graphql.ID }) (*gql.EmptyResponse, error) {
@@ -141,7 +141,7 @@ func (r *Resolver) LSIFIndexByID(ctx context.Context, id graphql.ID) (gql.LSIFIn
 		return nil, err
 	}
 
-	return NewIndexResolver(index, prefetcher, r.locationResolver), nil
+	return NewIndexResolver(r.resolver, index, prefetcher, r.locationResolver), nil
 }
 
 func (r *Resolver) LSIFIndexes(ctx context.Context, args *gql.LSIFIndexesQueryArgs) (gql.LSIFIndexConnectionResolver, error) {
@@ -172,7 +172,7 @@ func (r *Resolver) LSIFIndexesByRepo(ctx context.Context, args *gql.LSIFReposito
 	// the same graphQL request, not across different request.
 	prefetcher := NewPrefetcher(r.resolver)
 
-	return NewIndexConnectionResolver(r.resolver.IndexConnectionResolver(opts), prefetcher, r.locationResolver), nil
+	return NewIndexConnectionResolver(r.resolver, r.resolver.IndexConnectionResolver(opts), prefetcher, r.locationResolver), nil
 }
 
 func (r *Resolver) DeleteLSIFIndex(ctx context.Context, args *struct{ ID graphql.ID }) (*gql.EmptyResponse, error) {
@@ -272,7 +272,7 @@ func (r *Resolver) QueueAutoIndexJobsForRepo(ctx context.Context, args *gql.Queu
 
 	resolvers := make([]gql.LSIFIndexResolver, 0, len(indexes))
 	for i := range indexes {
-		resolvers = append(resolvers, NewIndexResolver(indexes[i], prefetcher, r.locationResolver))
+		resolvers = append(resolvers, NewIndexResolver(r.resolver, indexes[i], prefetcher, r.locationResolver))
 	}
 	return resolvers, nil
 }
@@ -294,6 +294,22 @@ func makeGetUploadsOptions(ctx context.Context, args *gql.LSIFRepositoryUploadsQ
 		return store.GetUploadsOptions{}, err
 	}
 
+	var dependencyOf int64
+	if args.DependencyOf != nil {
+		dependencyOf, err = unmarshalLSIFUploadGQLID(*args.DependencyOf)
+		if err != nil {
+			return store.GetUploadsOptions{}, err
+		}
+	}
+
+	var dependentOf int64
+	if args.DependentOf != nil {
+		dependentOf, err = unmarshalLSIFUploadGQLID(*args.DependentOf)
+		if err != nil {
+			return store.GetUploadsOptions{}, err
+		}
+	}
+
 	offset, err := decodeIntCursor(args.After)
 	if err != nil {
 		return store.GetUploadsOptions{}, err
@@ -304,6 +320,8 @@ func makeGetUploadsOptions(ctx context.Context, args *gql.LSIFRepositoryUploadsQ
 		State:        strings.ToLower(derefString(args.State, "")),
 		Term:         derefString(args.Query, ""),
 		VisibleAtTip: derefBool(args.IsLatestForRepo, false),
+		DependencyOf: int(dependencyOf),
+		DependentOf:  int(dependentOf),
 		Limit:        derefInt32(args.First, DefaultUploadPageSize),
 		Offset:       offset,
 	}, nil

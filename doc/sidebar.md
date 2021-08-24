@@ -50,6 +50,7 @@ Keep it as a single list with at most 2 levels. (Anything else may not render co
   - [Observability](admin/observability/index.md)
   - [FAQ](admin/faq.md)
   - [Troubleshooting](admin/troubleshooting.md)
+  - [How-to guides](admin/how-to/index.md)
 - [Development](dev/index.md)
   - [Getting started](dev/getting-started/index.md)
   - [How-to guides](dev/how-to/index.md)

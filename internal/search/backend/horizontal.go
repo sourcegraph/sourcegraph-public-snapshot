@@ -12,11 +12,10 @@ import (
 	"github.com/google/zoekt"
 	"github.com/google/zoekt/query"
 	"github.com/google/zoekt/stream"
+	"github.com/hashicorp/go-multierror"
 	"github.com/inconshreveable/log15"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
-	"golang.org/x/sync/errgroup"
-
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 )
 
@@ -32,7 +31,7 @@ type HorizontalSearcher struct {
 	// Map is a subset of EndpointMap only using the Endpoints function. We
 	// use this to find the endpoints to dial over time.
 	Map interface {
-		Endpoints() (map[string]struct{}, error)
+		Endpoints() ([]string, error)
 	}
 	Dial func(endpoint string) zoekt.Streamer
 
@@ -73,11 +72,9 @@ func (s *HorizontalSearcher) StreamSearch(ctx context.Context, q query.Q, opts *
 		endpointMaxPendingPriority[endpoint] = math.Inf(1)
 	}
 
-	g, ctx := errgroup.WithContext(ctx)
+	ch := make(chan error, len(clients))
 	for endpoint, c := range clients {
-		endpoint := endpoint
-		c := c
-		g.Go(func() error {
+		go func(endpoint string, c zoekt.Streamer) {
 			err := c.StreamSearch(ctx, q, opts, stream.SenderFunc(func(sr *zoekt.SearchResult) {
 				// This shouldn't happen, but skip event if sr is nil.
 				if sr == nil {
@@ -116,13 +113,20 @@ func (s *HorizontalSearcher) StreamSearch(ctx context.Context, q query.Q, opts *
 			// callback.
 			delete(endpointMaxPendingPriority, endpoint)
 			mu.Unlock()
-			return err
-		})
+
+			ch <- err
+		}(endpoint, c)
 	}
-	err = g.Wait()
-	if err != nil {
+
+	var errs multierror.Error
+	for i := 0; i < cap(ch); i++ {
+		multierror.Append(&errs, <-ch)
+	}
+
+	if err := errs.ErrorOrNil(); err != nil {
 		return err
 	}
+
 	reorderQueueSize.WithLabelValues().Observe(float64(resultQueueMaxLength))
 	if len(resultQueue) > 0 {
 		log15.Warn("HorizontalSearcher.Streamsearch: results not sent in core loop", len(resultQueue))
@@ -305,20 +309,26 @@ func (s *HorizontalSearcher) syncSearchers() (map[string]zoekt.Streamer, error) 
 	if err != nil {
 		return nil, err
 	}
+
 	if equalKeys(s.clients, eps) {
 		return s.clients, nil
 	}
 
+	set := make(map[string]struct{}, len(eps))
+	for _, ep := range eps {
+		set[ep] = struct{}{}
+	}
+
 	// Disconnect first
 	for addr, client := range s.clients {
-		if _, ok := eps[addr]; !ok {
+		if _, ok := set[addr]; !ok {
 			client.Close()
 		}
 	}
 
 	// Use new map to avoid read conflicts
 	clients := make(map[string]zoekt.Streamer, len(eps))
-	for addr := range eps {
+	for _, addr := range eps {
 		// Try re-use
 		client, ok := s.clients[addr]
 		if !ok {
@@ -331,12 +341,12 @@ func (s *HorizontalSearcher) syncSearchers() (map[string]zoekt.Streamer, error) 
 	return s.clients, nil
 }
 
-func equalKeys(a map[string]zoekt.Streamer, b map[string]struct{}) bool {
+func equalKeys(a map[string]zoekt.Streamer, b []string) bool {
 	if len(a) != len(b) {
 		return false
 	}
-	for k := range a {
-		if _, ok := b[k]; !ok {
+	for _, k := range b {
+		if _, ok := a[k]; !ok {
 			return false
 		}
 	}

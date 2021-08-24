@@ -70,7 +70,7 @@ func (c *Client) url(key key) (string, error) {
 			c.endpoint = endpoint.New(c.URL)
 		}
 	})
-	return c.endpoint.Get(string(key.repo)+":"+string(key.commitID), nil)
+	return c.endpoint.Get(string(key.repo) + ":" + string(key.commitID))
 }
 
 // Search performs a symbol search on the symbols service.

@@ -6,11 +6,12 @@ import CheckboxBlankCircleIcon from 'mdi-react/CheckboxBlankCircleIcon'
 import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
 import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
 import FileDocumentEditOutlineIcon from 'mdi-react/FileDocumentEditOutlineIcon'
-import React, { useCallback, useState } from 'react'
+import React, { useCallback, useMemo, useState } from 'react'
 
 import { Link } from '@sourcegraph/shared/src/components/Link'
 import { Maybe } from '@sourcegraph/shared/src/graphql-operations'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
+import { InputTooltip } from '@sourcegraph/web/src/components/InputTooltip'
 
 import { DiffStatStack } from '../../../../components/diff/DiffStat'
 import { FileDiffConnection } from '../../../../components/diff/FileDiffConnection'
@@ -26,6 +27,7 @@ import { Description } from '../../Description'
 import { ChangesetStatusCell } from '../../detail/changesets/ChangesetStatusCell'
 import { ExternalChangesetTitle } from '../../detail/changesets/ExternalChangesetTitle'
 import { PreviewPageAuthenticatedUser } from '../BatchChangePreviewPage'
+import { checkPublishability } from '../utils'
 
 import { queryChangesetSpecFileDiffs as _queryChangesetSpecFileDiffs } from './backend'
 import { GitBranchChangesetDescriptionInfo } from './GitBranchChangesetDescriptionInfo'
@@ -38,6 +40,10 @@ export interface VisibleChangesetApplyPreviewNodeProps extends ThemeProps {
     history: H.History
     location: H.Location
     authenticatedUser: PreviewPageAuthenticatedUser
+    selectable?: {
+        onSelect: (id: string) => void
+        isSelected: (id: string) => boolean
+    }
 
     /** Used for testing. **/
     queryChangesetSpecFileDiffs?: typeof _queryChangesetSpecFileDiffs
@@ -51,7 +57,7 @@ export const VisibleChangesetApplyPreviewNode: React.FunctionComponent<VisibleCh
     history,
     location,
     authenticatedUser,
-
+    selectable,
     queryChangesetSpecFileDiffs,
     expandChangesetDescriptions = false,
 }) => {
@@ -78,6 +84,13 @@ export const VisibleChangesetApplyPreviewNode: React.FunctionComponent<VisibleCh
                     <ChevronRightIcon className="icon-inline" aria-label="Expand section" />
                 )}
             </button>
+            {selectable ? (
+                <SelectBox node={node} selectable={selectable} />
+            ) : (
+                // 0-width empty element to allow us to keep the identical grid template of the parent
+                // list, regardless of whether or not the nodes have the checkbox selector
+                <span />
+            )}
             <VisibleChangesetApplyPreviewNodeStatusCell
                 node={node}
                 className={classNames(
@@ -191,6 +204,51 @@ export const VisibleChangesetApplyPreviewNode: React.FunctionComponent<VisibleCh
                 </>
             )}
         </>
+    )
+}
+
+const SelectBox: React.FunctionComponent<{
+    node: VisibleChangesetApplyPreviewFields
+    selectable: {
+        onSelect: (id: string) => void
+        isSelected: (id: string) => boolean
+    }
+}> = ({ node, selectable }) => {
+    const isPublishableResult = useMemo(() => checkPublishability(node), [node])
+
+    const toggleSelected = useCallback((): void => {
+        if (isPublishableResult.publishable) {
+            selectable.onSelect(isPublishableResult.changesetSpecID)
+        }
+    }, [selectable, isPublishableResult])
+
+    const input = isPublishableResult.publishable ? (
+        <InputTooltip
+            id={`select-changeset-${isPublishableResult.changesetSpecID}`}
+            type="checkbox"
+            className="btn"
+            checked={selectable.isSelected(isPublishableResult.changesetSpecID)}
+            onChange={toggleSelected}
+            tooltip="Click to select changeset for bulk-modifying the publication state"
+        />
+    ) : (
+        <InputTooltip
+            id="select-changeset-hidden"
+            type="checkbox"
+            className="btn"
+            checked={false}
+            disabled={true}
+            tooltip={isPublishableResult.reason}
+        />
+    )
+
+    return (
+        <div className="d-flex p-2 align-items-center">
+            {input}
+            {isPublishableResult.publishable ? (
+                <span className="pl-2 d-block d-sm-none text-nowrap">Modify publication state</span>
+            ) : null}
+        </div>
     )
 }
 

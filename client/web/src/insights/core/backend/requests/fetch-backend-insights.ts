@@ -11,7 +11,7 @@ import {
     SubjectSettingsResult,
     SubjectSettingsVariables,
 } from '../../../../graphql-operations'
-import { BackendInsightFilters } from '../types'
+import { SearchBasedBackendFilters } from '../../types/insight/search-insight'
 
 const insightFieldsFragment = gql`
     fragment InsightFields on Insight {
@@ -24,13 +24,18 @@ const insightFieldsFragment = gql`
                 dateTime
                 value
             }
+            status {
+                pendingJobs
+                completedJobs
+                failedJobs
+            }
         }
     }
 `
 
 export function fetchBackendInsights(
     insightsIds: string[],
-    filters?: BackendInsightFilters
+    filters?: SearchBasedBackendFilters
 ): Observable<InsightFields[]> {
     return requestGraphQL<InsightsResult>(
         gql`

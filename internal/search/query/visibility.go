@@ -2,15 +2,15 @@ package query
 
 import "strings"
 
-type repoVisibility string
+type RepoVisibility string
 
 const (
-	Any     repoVisibility = "any"
-	Private repoVisibility = "private"
-	Public  repoVisibility = "public"
+	Any     RepoVisibility = "Any"
+	Private RepoVisibility = "Private"
+	Public  RepoVisibility = "Public"
 )
 
-func ParseVisibility(s string) repoVisibility {
+func ParseVisibility(s string) RepoVisibility {
 	switch strings.ToLower(s) {
 	case "private":
 		return Private

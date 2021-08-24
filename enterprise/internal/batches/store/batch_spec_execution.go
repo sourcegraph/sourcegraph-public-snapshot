@@ -36,6 +36,7 @@ var BatchSpecExecutionColumns = []*sqlf.Query{
 	sqlf.Sprintf(`batch_spec_executions.user_id`),
 	sqlf.Sprintf(`batch_spec_executions.namespace_user_id`),
 	sqlf.Sprintf(`batch_spec_executions.namespace_org_id`),
+	sqlf.Sprintf(`batch_spec_executions.cancel`),
 }
 
 var batchSpecExecutionInsertColumns = []*sqlf.Query{
@@ -96,6 +97,69 @@ func createBatchSpecExecutionQuery(c *btypes.BatchSpecExecution) (*sqlf.Query, e
 		c.UpdatedAt,
 		sqlf.Join(BatchSpecExecutionColumns, ", "),
 	), nil
+}
+
+// CancelBatchSpecExecution cancels the given BatchSpecExecution.
+func (s *Store) CancelBatchSpecExecution(ctx context.Context, randID string) (exec *btypes.BatchSpecExecution, err error) {
+	ctx, endObservation := s.operations.cancelBatchSpecExecution.With(ctx, &err, observation.Args{LogFields: []log.Field{log.String("randID", randID)}})
+	defer endObservation(1, observation.Args{})
+
+	q := s.cancelBatchSpecExecutionQuery(randID)
+
+	var b btypes.BatchSpecExecution
+	err = s.query(ctx, q, func(sc scanner) error { return scanBatchSpecExecution(&b, sc) })
+	if err != nil {
+		return nil, err
+	}
+
+	if b.ID == 0 {
+		return nil, ErrNoResults
+	}
+
+	return &b, err
+}
+
+var cancelBatchSpecExecutionQueryFmtstr = `
+-- source: enterprise/internal/batches/store/batch_spec_executions.go:CancelBatchSpecExecution
+WITH candidate AS (
+	SELECT
+		id
+	FROM
+		batch_spec_executions
+	WHERE
+		rand_id = %s
+		AND
+		-- It must be queued or processing, we cannot cancel jobs that have already completed.
+		state IN (%s, %s)
+	FOR UPDATE
+)
+UPDATE
+	batch_spec_executions
+SET
+	cancel = TRUE,
+	-- If the execution is still queued, we directly abort, otherwise we keep the
+	-- state, so the worker can to teardown and, at some point, mark it failed itself.
+	state = CASE WHEN batch_spec_executions.state = %s THEN batch_spec_executions.state ELSE %s END,
+	finished_at = CASE WHEN batch_spec_executions.state = %s THEN batch_spec_executions.finished_at ELSE %s END,
+	updated_at = %s
+WHERE
+	id IN (SELECT id FROM candidate)
+RETURNING %s
+`
+
+func (s *Store) cancelBatchSpecExecutionQuery(randID string) *sqlf.Query {
+	return sqlf.Sprintf(
+		cancelBatchSpecExecutionQueryFmtstr,
+		randID,
+		btypes.BatchSpecExecutionStateQueued,
+		btypes.BatchSpecExecutionStateProcessing,
+		btypes.BatchSpecExecutionStateProcessing,
+		btypes.BatchSpecExecutionStateFailed,
+		btypes.BatchSpecExecutionStateProcessing,
+		s.now(),
+		s.now(),
+		sqlf.Join(BatchSpecExecutionColumns, ", "),
+	)
 }
 
 // GetBatchSpecExecutionOpts captures the query options needed for getting a BatchSpecExecution.
@@ -161,6 +225,67 @@ func getBatchSpecExecutionQuery(opts *GetBatchSpecExecutionOpts) (*sqlf.Query, e
 	), nil
 }
 
+// ListBatchSpecExecutionsOpts captures the query options needed for
+// listing batch spec executions.
+type ListBatchSpecExecutionsOpts struct {
+	Cancel         *bool
+	State          btypes.BatchSpecExecutionState
+	WorkerHostname string
+}
+
+// ListBatchSpecExecutions lists batch changes with the given filters.
+func (s *Store) ListBatchSpecExecutions(ctx context.Context, opts ListBatchSpecExecutionsOpts) (cs []*btypes.BatchSpecExecution, err error) {
+	ctx, endObservation := s.operations.listBatchSpecExecutions.With(ctx, &err, observation.Args{})
+	defer endObservation(1, observation.Args{})
+
+	q := listBatchSpecExecutionsQuery(opts)
+
+	cs = make([]*btypes.BatchSpecExecution, 0)
+	err = s.query(ctx, q, func(sc scanner) error {
+		var c btypes.BatchSpecExecution
+		if err := scanBatchSpecExecution(&c, sc); err != nil {
+			return err
+		}
+		cs = append(cs, &c)
+		return nil
+	})
+
+	return cs, err
+}
+
+var listBatchSpecExecutionsQueryFmtstr = `
+-- source: enterprise/internal/batches/store/batch_spec_execution.go:ListBatchSpecExecutions
+SELECT %s FROM batch_spec_executions
+WHERE %s
+ORDER BY id ASC
+`
+
+func listBatchSpecExecutionsQuery(opts ListBatchSpecExecutionsOpts) *sqlf.Query {
+	preds := []*sqlf.Query{}
+
+	if opts.Cancel != nil {
+		preds = append(preds, sqlf.Sprintf("batch_spec_executions.cancel = %s", *opts.Cancel))
+	}
+
+	if opts.State != "" {
+		preds = append(preds, sqlf.Sprintf("batch_spec_executions.state = %s", opts.State))
+	}
+
+	if opts.WorkerHostname != "" {
+		preds = append(preds, sqlf.Sprintf("batch_spec_executions.worker_hostname = %s", opts.WorkerHostname))
+	}
+
+	if len(preds) == 0 {
+		preds = append(preds, sqlf.Sprintf("TRUE"))
+	}
+
+	return sqlf.Sprintf(
+		listBatchSpecExecutionsQueryFmtstr,
+		sqlf.Join(BatchSpecExecutionColumns, ", "),
+		sqlf.Join(preds, "\n AND "),
+	)
+}
+
 func scanBatchSpecExecution(b *btypes.BatchSpecExecution, sc scanner) error {
 	var executionLogs []dbworkerstore.ExecutionLogEntry
 
@@ -183,6 +308,7 @@ func scanBatchSpecExecution(b *btypes.BatchSpecExecution, sc scanner) error {
 		&b.UserID,
 		&dbutil.NullInt32{N: &b.NamespaceUserID},
 		&dbutil.NullInt32{N: &b.NamespaceOrgID},
+		&b.Cancel,
 	); err != nil {
 		return err
 	}

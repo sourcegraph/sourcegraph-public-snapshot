@@ -5,22 +5,30 @@ import * as React from 'react'
 import styles from './DismissibleAlert.module.scss'
 
 interface Props {
-    /** used to build the key that represents the alert in local storage */
-    partialStorageKey: string
+    /**
+     * If provided, used to build the key that represents the alert in local storage. An
+     * alert with a storage key will be permanently dismissed once the user dismisses it.
+     */
+    partialStorageKey?: string
 
     /** class name to be applied to the alert */
     className: string
 }
 
 /**
- * A global site alert that can be dismissed. Once dismissed, it is never shown
- * again.
+ * A global site alert that can be dismissed. If a `partialStorageKey` is provided, the
+ * alert will never be shown again after it is dismissed. Otherwise, it will be shown
+ * whenever unmounted and remounted.
  */
 export const DismissibleAlert: React.FunctionComponent<Props> = ({ partialStorageKey, className, children }) => {
-    const [dismissed, setDismissed] = React.useState<boolean>(isAlertDismissed(partialStorageKey))
+    const [dismissed, setDismissed] = React.useState<boolean>(
+        partialStorageKey ? isAlertDismissed(partialStorageKey) : false
+    )
 
     const onDismiss = React.useCallback(() => {
-        dismissAlert(partialStorageKey)
+        if (partialStorageKey) {
+            dismissAlert(partialStorageKey)
+        }
         setDismissed(true)
     }, [partialStorageKey])
 

@@ -16,7 +16,6 @@ Known limitations:
 - Batch Changes creates changesets in parallel locally. You can set up the maximum number of parallel jobs with [`-j`](../../cli/references/batch/apply.md)
 - Manipulating (commenting, notifying users, etc) changesets at that scale can be clumsy. This is a major area of work for future releases.
 
-
 ### How long does it take to create a batch change?
 A rule of thumb:
 
@@ -72,3 +71,14 @@ Keep in mind the context in which the inner `${{ }}` will be evaluated and be su
 ### How is commit author determined for commits produced from Batch Changes?
 
 Commit author is determined at the time of running `src batch [apply|preview]`. If no [author](./batch_spec_yaml_reference.md#changesettemplate-commit-author) key is defined in the batch spec, `src` will try to use the git config values for `user.name` and `user.email` from your local environment, or "batch-changes@sourcegraph.com" if no user is set.
+
+### Why is the checkbox on my changeset disabled when I'm previewing a batch change?
+
+Since Sourcegraph 3.31, it is possible to publish many types of changeset when previewing a batch change by modifying the publication state for the changeset directly from the UI (see ["Publishing changesets"](../how-tos/publishing_changesets.md#from-the-preview)). However, not every changeset can be published by Sourcegraph. By hovering over your changeset's disabled checkbox, you can see the reason why that specific changeset is not currently publishable. The most common reasons include:
+
+- The changeset is already published (we cannot unpublish a changeset, or convert it back to a draft).
+- The changeset's publication state is being controlled from your batch spec file (i.e. you have the [`published` flag set in your batch spec](batch_spec_yaml_reference.md#changesettemplate-published)); the batch spec takes precedence over the UI.
+- You do not have permission to publish to the repository the changeset would be opened against.
+- The changeset was imported (and was therefore already published by someone or something else).
+
+The changeset may also be in a state that we cannot currently publish from: for example, because a previous push to the code host failed (in which case you should re-apply the batch change), or if you are actively detaching the changeset from your batch change.

@@ -1,6 +1,9 @@
 import classnames from 'classnames'
 import { isEqual } from 'lodash'
+import PlusIcon from 'mdi-react/PlusIcon'
 import React from 'react'
+
+import { Button } from '@sourcegraph/wildcard'
 
 import { ErrorAlert } from '../../../../../../../../../components/alerts'
 import { LoaderButton } from '../../../../../../../../../components/LoaderButton'
@@ -51,10 +54,22 @@ interface DrillDownFiltersFormProps {
      * Fires whenever the user clicks the save/update filter button.
      */
     onFilterSave: (filters: DrillDownFiltersFormValues) => SubmissionResult
+
+    /**
+     * Fires whenever the user clicks the create insight button.
+     */
+    onCreateInsightRequest: () => void
 }
 
 export const DrillDownFiltersForm: React.FunctionComponent<DrillDownFiltersFormProps> = props => {
-    const { className, initialFiltersValue, originalFiltersValue, onFiltersChange, onFilterSave } = props
+    const {
+        className,
+        initialFiltersValue,
+        originalFiltersValue,
+        onFiltersChange,
+        onFilterSave,
+        onCreateInsightRequest,
+    } = props
 
     const { ref, formAPI, handleSubmit, values } = useForm<DrillDownFiltersFormValues>({
         initialValues: initialFiltersValue,
@@ -136,9 +151,9 @@ export const DrillDownFiltersForm: React.FunctionComponent<DrillDownFiltersFormP
 
             <hr className="w-100 m-0" />
 
-            <footer className="px-3 d-flex flex-column py-3">
+            <footer className="px-3 d-flex flex-wrap py-3">
                 {formAPI.submitErrors?.[FORM_ERROR] && (
-                    <ErrorAlert className="mb-3" error={formAPI.submitErrors[FORM_ERROR]} />
+                    <ErrorAlert className="w-100 mb-3" error={formAPI.submitErrors[FORM_ERROR]} />
                 )}
 
                 <LoaderButton
@@ -155,8 +170,13 @@ export const DrillDownFiltersForm: React.FunctionComponent<DrillDownFiltersFormP
                     }
                     type="submit"
                     disabled={formAPI.submitting || !hasFiltersChanged}
-                    className="btn btn-outline-secondary ml-auto"
+                    className="btn btn-outline-secondary ml-auto mr-2"
                 />
+
+                <Button type="button" variant="secondary" onClick={onCreateInsightRequest}>
+                    <PlusIcon className="icon-inline mr-1" />
+                    Save as new view
+                </Button>
             </footer>
         </form>
     )

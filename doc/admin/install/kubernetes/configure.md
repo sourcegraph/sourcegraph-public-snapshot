@@ -56,7 +56,7 @@ We **strongly** recommend you fork the [Sourcegraph with Kubernetes reference re
 - Create a `release` branch to track all of your customizations to Sourcegraph. This branch will be used to [upgrade Sourcegraph](update.md) and [install your Sourcegraph instance](./index.md#installation).
 
   ```bash
-  export SOURCEGRAPH_VERSION="v3.30.3"
+  export SOURCEGRAPH_VERSION="v3.30.4"
   git checkout $SOURCEGRAPH_VERSION -b release
   ```
 
@@ -84,14 +84,30 @@ See the [overlays guide](#overlays) to learn about the [overlays we provide](#pr
 
 Most of our guides will reference a `kubectl-apply-all.sh` script that you run to apply changes to the [Kubernetes](./index.md#kubernetes) manifests to your cluster, for example:
 
+Apply - changes to the [Kubernetes](./index.md#kubernetes) manifests to your cluster:
 ```sh
 ./kubectl-apply-all.sh
 ```
 
-By default, this script applies our base manifests using [`kubectl apply`](https://kubernetes.io/docs/reference/generated/kubectl/kubectl-commands#apply) with a variety of arguments specific to the [reference repository](./index.md#reference-repository)'s layout.
-
-If you have specific commands that should be run whenever you apply your manifests, you should modify this script as needed.
+> By default, this script applies our base manifests using [`kubectl apply`](https://kubernetes.io/docs/reference/generated/kubectl/kubectl-commands#apply) with a variety of arguments specific to the [reference repository](./index.md#reference-repository)'s layout.
+> If you have specific commands that should be run whenever you apply your manifests, you should modify this script as needed.
 For example, if you use [overlays to make changes to the manifests](#overlays), you should modify this script to apply your generated cluster instead.
+
+Our guides also mention commands like the following:
+
+Watch - Next verify the deployment has started:
+
+```bash
+kubectl get pods -A -o wide --watch
+```
+
+Port forward - After deployment is completed, verify Sourcegraph is running by temporarily making the frontend port accessible:
+
+```
+kubectl port-forward svc/sourcegraph-frontend 3080:30080
+```
+
+Login - Browse to your Sourcegraph deployment, login and verify your existing configuration has been restored
 
 ## Overlays
 

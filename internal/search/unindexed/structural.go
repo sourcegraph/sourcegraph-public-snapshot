@@ -42,38 +42,33 @@ func (UnindexedList) IsIndexed() bool {
 	return false
 }
 
-// The following type definitions compose separable concerns for running structural search.
+// searchRepos represent the arguments to a search called over repositories.
+type searchRepos struct {
+	args    *search.SearcherParameters
+	repoSet repoData
+	stream  streaming.Sender
+}
 
-// searchJob is a function that may run in its own Go routine.
-type searchJob func() error
-
-// withContext parameterizes a searchJob by context, making it easy to add ctx for multiple jobs part of an errgroup.
-type withContext func(context.Context) searchJob
-
-// structuralSearchJob creates a composable function for running structural
-// search. It unrolls the context parameter so that multiple jobs can be
-// parameterized by the errgroup context.
-func structuralSearchJob(args *search.TextParameters, stream streaming.Sender, repoData repoData) withContext {
-	return func(ctx context.Context) searchJob {
-		return func() error {
-			return callSearcherOverRepos(ctx, args, stream, repoData.AsList(), repoData.IsIndexed())
-		}
+// getJob returns a function parameterized by ctx to search over repos.
+func (s *searchRepos) getJob(ctx context.Context) func() error {
+	return func() error {
+		return callSearcherOverRepos(ctx, s.args, s.stream, s.repoSet.AsList(), s.repoSet.IsIndexed())
 	}
 }
 
-func runJobs(ctx context.Context, jobs []withContext) error {
+func runJobs(ctx context.Context, jobs []*searchRepos) error {
 	g, ctx := errgroup.WithContext(ctx)
-	for _, job := range jobs {
-		g.Go(job(ctx))
+	for _, j := range jobs {
+		g.Go(j.getJob(ctx))
 	}
 	return g.Wait()
 }
 
 // repoSets returns the set of repositories to search (whether indexed or unindexed) based on search mode.
-func repoSets(indexed *zoektutil.IndexedSearchRequest, mode search.GlobalSearchMode) []repoData {
-	repoSets := []repoData{UnindexedList(indexed.Unindexed)} // unindexed included by default
+func repoSets(request zoektutil.IndexedSearchRequest, mode search.GlobalSearchMode) []repoData {
+	repoSets := []repoData{UnindexedList(request.UnindexedRepos())} // unindexed included by default
 	if mode != search.SearcherOnly {
-		repoSets = append(repoSets, IndexedMap(indexed.Repos()))
+		repoSets = append(repoSets, IndexedMap(request.IndexedRepos()))
 	}
 	return repoSets
 }
@@ -83,14 +78,20 @@ func streamStructuralSearch(ctx context.Context, args *search.TextParameters, st
 	ctx, stream, cleanup := streaming.WithLimit(ctx, stream, int(args.PatternInfo.FileMatchLimit))
 	defer cleanup()
 
-	indexed, err := textSearchRequest(ctx, args, zoektutil.MissingRepoRevStatus(stream))
+	request, err := zoektutil.NewIndexedSearchRequest(ctx, args, search.TextRequest, zoektutil.MissingRepoRevStatus(stream))
 	if err != nil {
 		return err
 	}
 
-	jobs := []withContext{}
-	for _, repoSet := range repoSets(indexed, args.Mode) {
-		jobs = append(jobs, structuralSearchJob(args, stream, repoSet))
+	jobs := []*searchRepos{}
+	for _, repoSet := range repoSets(request, args.Mode) {
+		searcherArgs := &search.SearcherParameters{
+			SearcherURLs:    args.SearcherURLs,
+			PatternInfo:     args.PatternInfo,
+			UseFullDeadline: args.UseFullDeadline,
+		}
+
+		jobs = append(jobs, &searchRepos{args: searcherArgs, stream: stream, repoSet: repoSet})
 	}
 	return runJobs(ctx, jobs)
 }

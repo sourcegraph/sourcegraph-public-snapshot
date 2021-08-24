@@ -66,3 +66,6 @@ export type { SearchBasedInsightSeries, SearchBasedBackendFilters }
  * Example id for the search based insight: "searchInsights.insight.myFirstSearchBasedInsight"
  */
 export const isSearchBasedInsightId = (id: string): boolean => id.startsWith(InsightTypePrefix.search)
+
+export const isSearchBackendBasedInsight = (insight: SearchBasedInsight): insight is SearchBackendBasedInsight =>
+    insight.type === InsightType.Backend

@@ -1,10 +1,7 @@
 import { Shortcut } from '@slimsag/react-shortcuts'
-import classNames from 'classnames'
 import * as H from 'history'
 import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
 import ChevronUpIcon from 'mdi-react/ChevronUpIcon'
-import MenuDownIcon from 'mdi-react/MenuDownIcon'
-import MenuUpIcon from 'mdi-react/MenuUpIcon'
 import OpenInNewIcon from 'mdi-react/OpenInNewIcon'
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
@@ -12,7 +9,6 @@ import { ButtonDropdown, DropdownItem, DropdownMenu, DropdownToggle, Tooltip } f
 
 import { KeyboardShortcut } from '@sourcegraph/shared/src/keyboardShortcuts'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { useRedesignToggle } from '@sourcegraph/shared/src/util/useRedesignToggle'
 import { useTimeoutManager } from '@sourcegraph/shared/src/util/useTimeoutManager'
 
 import { AuthenticatedUser } from '../auth'
@@ -109,34 +105,24 @@ export const UserNavItem: React.FunctionComponent<UserNavItemProps> = props => {
         onThemePreferenceChange(themePreference === ThemePreference.Dark ? ThemePreference.Light : ThemePreference.Dark)
     }, [onThemePreferenceChange, themePreference])
 
-    const [isRedesignEnabled] = useRedesignToggle()
-
     // Target ID for tooltip
     const targetID = 'target-user-avatar'
-
-    const MenuDropdownIcon = (): JSX.Element => {
-        const UpIcon = isRedesignEnabled ? ChevronUpIcon : MenuUpIcon
-        const DownIcon = isRedesignEnabled ? ChevronDownIcon : MenuDownIcon
-
-        return isOpen ? <UpIcon className="icon-inline" /> : <DownIcon className="icon-inline" />
-    }
 
     return (
         <ButtonDropdown isOpen={isOpen} toggle={toggleIsOpen} className="py-0" aria-label="User. Open menu">
             <DropdownToggle className="bg-transparent d-flex align-items-center test-user-nav-item-toggle" nav={true}>
                 <div className="position-relative">
-                    <div
-                        className={classNames('align-items-center d-flex', {
-                            // Temporarily remove user avatar flash animation for redesign
-                            // 'user-nav-item__avatar-background': isExtensionAlertAnimating,
-                        })}
-                    >
+                    <div className="align-items-center d-flex">
                         <UserAvatar
                             user={props.authenticatedUser}
                             targetID={targetID}
                             className="icon-inline user-nav-item__avatar"
                         />
-                        <MenuDropdownIcon />
+                        {isOpen ? (
+                            <ChevronUpIcon className="icon-inline" />
+                        ) : (
+                            <ChevronDownIcon className="icon-inline" />
+                        )}
                     </div>
                 </div>
                 {isExtensionAlertAnimating && (

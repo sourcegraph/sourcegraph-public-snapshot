@@ -18,6 +18,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 )
 
+// canceledJobsPollInterval denotes the time in between calls to the API to get a
+// list of canceled jobs.
+const canceledJobsPollInterval = 1 * time.Second
+
 type Options struct {
 	// VMPrefix is a unique string used to namespace virtual machines controlled by
 	// this executor instance. Different values for executors running on the same host
@@ -61,7 +65,7 @@ type Options struct {
 // as a heartbeat routine that will periodically hit the remote API with the work that is
 // currently being performed, which is necessary so the job queue API doesn't hand out jobs
 // it thinks may have been dropped.
-func NewWorker(nameSet *janitor.NameSet, options Options, observationContext *observation.Context) goroutine.WaitableBackgroundRoutine {
+func NewWorker(nameSet *janitor.NameSet, options Options, observationContext *observation.Context) (worker goroutine.WaitableBackgroundRoutine, canceler goroutine.BackgroundRoutine) {
 	queueStore := apiclient.New(options.ClientOptions, observationContext)
 	store := &storeShim{queueName: options.QueueName, queueStore: queueStore}
 
@@ -77,7 +81,27 @@ func NewWorker(nameSet *janitor.NameSet, options Options, observationContext *ob
 		runnerFactory: command.NewRunner,
 	}
 
-	return workerutil.NewWorker(context.Background(), store, handler, options.WorkerOptions)
+	ctx := context.Background()
+
+	w := workerutil.NewWorker(ctx, store, handler, options.WorkerOptions)
+	canceler = goroutine.NewPeriodicGoroutine(
+		ctx,
+		canceledJobsPollInterval,
+		goroutine.NewHandlerWithErrorMessage("executor.worker.pollCanceled", func(ctx context.Context) error {
+			canceled, err := queueStore.Canceled(ctx, options.QueueName)
+			if err != nil {
+				return err
+			}
+
+			for _, id := range canceled {
+				w.Cancel(id)
+			}
+
+			return nil
+		}),
+	)
+
+	return w, canceler
 }
 
 // connectToFrontend will ping the configured Sourcegraph instance until it receives a 200 response.

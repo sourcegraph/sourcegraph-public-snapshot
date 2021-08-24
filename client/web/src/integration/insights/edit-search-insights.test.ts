@@ -369,7 +369,7 @@ describe('Code insight edit insight page', () => {
 
         // Check redirect URL for edit insight page
         assert.strictEqual(
-            driver.page.url().endsWith('/insights/edit/searchInsights.insight.graphQLTypesMigration'),
+            driver.page.url().endsWith('/insights/edit/searchInsights.insight.graphQLTypesMigration?dashboardId=all'),
             true
         )
 

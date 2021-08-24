@@ -13,8 +13,10 @@ import { HeroPage } from '../../../components/HeroPage'
 import { PageTitle } from '../../../components/PageTitle'
 import { Description } from '../Description'
 import { SupersedingBatchSpecAlert } from '../detail/SupersedingBatchSpecAlert'
+import { MultiSelectContextProvider } from '../MultiSelectContext'
 
-import { fetchBatchSpecById as _fetchBatchSpecById } from './backend'
+import { fetchBatchSpecById as _fetchBatchSpecById, queryApplyPreviewStats as _queryApplyPreviewStats } from './backend'
+import { BatchChangePreviewContextProvider } from './BatchChangePreviewContext'
 import { BatchChangePreviewStatsBar } from './BatchChangePreviewStatsBar'
 import { BatchChangePreviewProps, BatchChangePreviewTabs } from './BatchChangePreviewTabs'
 import { BatchSpecInfoByline } from './BatchSpecInfoByline'
@@ -26,6 +28,8 @@ export type PreviewPageAuthenticatedUser = Pick<AuthenticatedUser, 'url' | 'disp
 export interface BatchChangePreviewPageProps extends BatchChangePreviewProps {
     /** Used for testing. */
     fetchBatchSpecById?: typeof _fetchBatchSpecById
+    /** Used for testing. */
+    queryApplyPreviewStats?: typeof _queryApplyPreviewStats
 }
 
 export const BatchChangePreviewPage: React.FunctionComponent<BatchChangePreviewPageProps> = props => {
@@ -35,6 +39,7 @@ export const BatchChangePreviewPage: React.FunctionComponent<BatchChangePreviewP
         authenticatedUser,
         telemetryService,
         fetchBatchSpecById = _fetchBatchSpecById,
+        queryApplyPreviewStats,
     } = props
 
     const spec = useObservable(
@@ -64,37 +69,45 @@ export const BatchChangePreviewPage: React.FunctionComponent<BatchChangePreviewP
     }
 
     return (
-        <div className="pb-5">
-            <PageTitle title="Apply batch spec" />
-            <PageHeader
-                path={[
-                    {
-                        icon: BatchChangesIcon,
-                        to: '/batch-changes',
-                    },
-                    { to: `${spec.namespace.url}/batch-changes`, text: spec.namespace.namespaceName },
-                    { text: spec.description.name },
-                ]}
-                byline={<BatchSpecInfoByline createdAt={spec.createdAt} creator={spec.creator} />}
-                headingElement="h2"
-                className="test-batch-change-apply-page mb-3"
-            />
-            <MissingCredentialsAlert
-                authenticatedUser={authenticatedUser}
-                viewerBatchChangesCodeHosts={spec.viewerBatchChangesCodeHosts}
-            />
-            <SupersedingBatchSpecAlert spec={spec.supersedingBatchSpec} />
-            <BatchChangePreviewStatsBar batchSpec={spec} />
-            <CreateUpdateBatchChangeAlert
-                history={history}
-                specID={spec.id}
-                toBeArchived={spec.applyPreview.stats.archive}
-                batchChange={spec.appliesToBatchChange}
-                viewerCanAdminister={spec.viewerCanAdminister}
-                telemetryService={telemetryService}
-            />
-            <Description description={spec.description.description} />
-            <BatchChangePreviewTabs spec={spec} {...props} />
-        </div>
+        <MultiSelectContextProvider>
+            <BatchChangePreviewContextProvider>
+                <div className="pb-5">
+                    <PageTitle title="Apply batch spec" />
+                    <PageHeader
+                        path={[
+                            {
+                                icon: BatchChangesIcon,
+                                to: '/batch-changes',
+                            },
+                            { to: `${spec.namespace.url}/batch-changes`, text: spec.namespace.namespaceName },
+                            { text: spec.description.name },
+                        ]}
+                        byline={<BatchSpecInfoByline createdAt={spec.createdAt} creator={spec.creator} />}
+                        headingElement="h2"
+                        className="test-batch-change-apply-page mb-3"
+                    />
+                    <MissingCredentialsAlert
+                        authenticatedUser={authenticatedUser}
+                        viewerBatchChangesCodeHosts={spec.viewerBatchChangesCodeHosts}
+                    />
+                    <SupersedingBatchSpecAlert spec={spec.supersedingBatchSpec} />
+                    <BatchChangePreviewStatsBar
+                        batchSpec={spec.id}
+                        diffStat={spec.diffStat}
+                        queryApplyPreviewStats={queryApplyPreviewStats}
+                    />
+                    <CreateUpdateBatchChangeAlert
+                        history={history}
+                        specID={spec.id}
+                        toBeArchived={spec.applyPreview.stats.archive}
+                        batchChange={spec.appliesToBatchChange}
+                        viewerCanAdminister={spec.viewerCanAdminister}
+                        telemetryService={telemetryService}
+                    />
+                    <Description description={spec.description.description} />
+                    <BatchChangePreviewTabs spec={spec} {...props} />
+                </div>
+            </BatchChangePreviewContextProvider>
+        </MultiSelectContextProvider>
     )
 }

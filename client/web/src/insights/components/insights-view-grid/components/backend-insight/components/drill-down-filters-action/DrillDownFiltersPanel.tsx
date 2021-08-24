@@ -4,9 +4,13 @@ import FilterOutlineIcon from 'mdi-react/FilterOutlineIcon'
 import React, { useCallback, useRef } from 'react'
 import FocusLock from 'react-focus-lock'
 
+import { Settings } from '@sourcegraph/shared/src/settings/settings'
+
 import { SearchBasedBackendFilters } from '../../../../../../core/types/insight/search-insight'
 import { flipRightPosition } from '../../../../../context-menu/utils'
+import { SubmissionResult } from '../../../../../form/hooks/useForm'
 import { hasActiveFilters } from '../drill-down-filters-panel/components/drill-down-filters-form/DrillDownFiltersForm'
+import { DrillDownInsightCreationFormValues } from '../drill-down-filters-panel/components/drill-down-insight-creation-form/DrillDownInsightCreationForm'
 import { DrillDownFiltersPanel } from '../drill-down-filters-panel/DrillDownFiltersPanel'
 
 import styles from './DrillDownFiltersPanel.module.scss'
@@ -15,23 +19,27 @@ import { useOnClickOutside } from './hooks/use-outside-click'
 
 interface DrillDownFiltersProps {
     isOpen: boolean
+    settings: Settings
     initialFiltersValue: SearchBasedBackendFilters
     originalFiltersValue: SearchBasedBackendFilters
     popoverTargetRef: React.RefObject<HTMLElement>
     onFilterChange: (filters: SearchBasedBackendFilters) => void
     onFilterSave: (filters: SearchBasedBackendFilters) => void
+    onInsightCreate: (values: DrillDownInsightCreationFormValues) => SubmissionResult
     onVisibilityChange: (open: boolean) => void
 }
 
 export const DrillDownFiltersAction: React.FunctionComponent<DrillDownFiltersProps> = props => {
     const {
         isOpen,
+        settings,
         popoverTargetRef,
         initialFiltersValue,
         originalFiltersValue,
         onVisibilityChange,
         onFilterChange,
         onFilterSave,
+        onInsightCreate,
     } = props
 
     const targetButtonReference = useRef<HTMLButtonElement>(null)
@@ -94,10 +102,12 @@ export const DrillDownFiltersAction: React.FunctionComponent<DrillDownFiltersPro
                 >
                     <FocusLock returnFocus={true}>
                         <DrillDownFiltersPanel
+                            settings={settings}
                             initialFiltersValue={initialFiltersValue}
                             originalFiltersValue={originalFiltersValue}
                             onFiltersChange={onFilterChange}
                             onFilterSave={onFilterSave}
+                            onInsightCreate={onInsightCreate}
                         />
                     </FocusLock>
                 </Popover>

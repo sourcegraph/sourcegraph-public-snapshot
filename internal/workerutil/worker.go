@@ -211,6 +211,12 @@ func (w *Worker) Wait() {
 	<-w.finished
 }
 
+// Cancel cancels the handler context of the running job with the given record id.
+// It will eventually be marked as failed.
+func (w *Worker) Cancel(id int) {
+	w.runningIDSet.Cancel(id)
+}
+
 // dequeueAndHandle selects a queued record to process. This method returns false if no such record
 // can be dequeued and returns an error only on failure to dequeue a new record - no handler errors
 // will bubble up.
@@ -298,7 +304,7 @@ func (w *Worker) handle(ctx context.Context, record Record) (err error) {
 
 	handleErr := w.handler.Handle(ctx, record)
 
-	if errcode.IsNonRetryable(handleErr) {
+	if errcode.IsNonRetryable(handleErr) || handleErr != nil && w.isJobCanceled(record.RecordID(), handleErr, ctx.Err()) {
 		if marked, markErr := w.store.MarkFailed(w.ctx, record.RecordID(), handleErr.Error()); markErr != nil {
 			return errors.Wrap(markErr, "store.MarkFailed")
 		} else if marked {
@@ -320,6 +326,13 @@ func (w *Worker) handle(ctx context.Context, record Record) (err error) {
 
 	log15.Debug("Handled record", "name", w.options.Name, "id", record.RecordID())
 	return nil
+}
+
+// isJobCanceled returns true if the job has been canceled through the Cancel interface.
+// If the context is canceled, and the job is still part of the running ID set,
+// we know that it has been canceled for that reason.
+func (w *Worker) isJobCanceled(id int, handleErr, ctxErr error) bool {
+	return errors.Is(handleErr, ctxErr) && w.runningIDSet.Has(id)
 }
 
 // preDequeueHook invokes the handler's pre-dequeue hook if it exists.

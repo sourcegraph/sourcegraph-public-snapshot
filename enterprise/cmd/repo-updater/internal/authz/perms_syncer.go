@@ -573,8 +573,7 @@ func (s *PermsSyncer) syncRepoPerms(ctx context.Context, repoID api.RepoID, noPe
 		return errors.Wrap(err, "set repository permissions")
 	}
 
-	// If there is no provider, there would be no pending permissions will be generated.
-	// TODO: add a test case where userID is not empty but provider is nil
+	// If there is no provider, there would be no pending permissions that need to be generated.
 	if provider != nil {
 		accounts := &extsvc.Accounts{
 			ServiceType: provider.ServiceType(),
