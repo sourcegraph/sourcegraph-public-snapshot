@@ -84,3 +84,32 @@ func (codeInsights) NewInsightsQueryRunnerResetterGroup(containerName string) mo
 		Errors:              NoAlertsOption("none"),
 	})
 }
+
+func (codeInsights) NewInsightsQueryRunnerStoreGroup(containerName string) monitoring.Group {
+	return Observation.NewGroup(containerName, monitoring.ObservableOwnerCodeInsights, ObservationGroupOptions{
+		GroupConstructorOptions: GroupConstructorOptions{
+			Namespace:       namespace,
+			DescriptionRoot: "dbstore stats",
+			Hidden:          true,
+
+			ObservableConstructorOptions: ObservableConstructorOptions{
+				MetricNameRoot:        "workerutil_dbworker_store_insights_query_runner_jobs_store",
+				MetricDescriptionRoot: "store",
+				By:                    []string{"op"},
+			},
+		},
+
+		SharedObservationGroupOptions: SharedObservationGroupOptions{
+			Total:     NoAlertsOption("none"),
+			Duration:  NoAlertsOption("none"),
+			Errors:    NoAlertsOption("none"),
+			ErrorRate: NoAlertsOption("none"),
+		},
+		Aggregate: &SharedObservationGroupOptions{
+			Total:     NoAlertsOption("none"),
+			Duration:  NoAlertsOption("none"),
+			Errors:    NoAlertsOption("none"),
+			ErrorRate: NoAlertsOption("none"),
+		},
+	})
+}
