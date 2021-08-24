@@ -37,7 +37,7 @@ We **strongly** recommend you fork the [Sourcegraph with Kubernetes reference re
 
     <span class="virtual-br"></span>
 
-    > NOTE: We do not recommend storing secrets in the repository itself. TODO
+    > NOTE: We do not recommend storing secrets in the repository itself - instead, consider leveraging [Kubernetes's Secret objects](https://kubernetes.io/docs/concepts/configuration/secret).
 
 - Clone your fork using the repository's URL.
 
@@ -65,7 +65,7 @@ Some of the following instructions require cluster access. Ensure you can [acces
 ### Customizations
 
 To make customizations to the Sourcegraph deployment such as resources, replicas or other changes, we recommend using [Kustomize](./index.md#kustomize) and [overlays](./index.md#overlays).
-This means that you define your customizations as patches, and generate a manifest from our provided manifests to [apply](#applying-manifests).
+This means that you define your customizations as patches, and generate a manifest from our provided manifests to [apply](./operations.md#applying-manifests).
 
 In general, we recommend that customizations works like this:
 
@@ -82,32 +82,7 @@ See the [overlays guide](#overlays) to learn about the [overlays we provide](#pr
 
 ### Applying manifests
 
-Most of our guides will reference a `kubectl-apply-all.sh` script that you run to apply changes to the [Kubernetes](./index.md#kubernetes) manifests to your cluster, for example:
-
-Apply - changes to the [Kubernetes](./index.md#kubernetes) manifests to your cluster:
-```sh
-./kubectl-apply-all.sh
-```
-
-> By default, this script applies our base manifests using [`kubectl apply`](https://kubernetes.io/docs/reference/generated/kubectl/kubectl-commands#apply) with a variety of arguments specific to the [reference repository](./index.md#reference-repository)'s layout.
-> If you have specific commands that should be run whenever you apply your manifests, you should modify this script as needed.
-For example, if you use [overlays to make changes to the manifests](#overlays), you should modify this script to apply your generated cluster instead.
-
-Our guides also mention commands like the following:
-
-Watch - Next verify the deployment has started:
-
-```bash
-kubectl get pods -A -o wide --watch
-```
-
-Port forward - After deployment is completed, verify Sourcegraph is running by temporarily making the frontend port accessible:
-
-```
-kubectl port-forward svc/sourcegraph-frontend 3080:30080
-```
-
-Login - Browse to your Sourcegraph deployment, login and verify your existing configuration has been restored
+To deploy your configuration changes, [apply your Kubernetes manifests](./operations.md#applying-manifests).
 
 ## Overlays
 
@@ -136,7 +111,7 @@ kubectl apply --prune -l deploy=sourcegraph -f generated-cluster --recursive
 
 We recommend that you:
 
-- [Update the `./overlay-generate-cluster` script](#applying-manifests) to apply the generated manifests from the `generated-cluster` directory with something like the above snippet
+- [Update the `./overlay-generate-cluster` script](./operations.md#applying-manifests) to apply the generated manifests from the `generated-cluster` directory with something like the above snippet
 - Commit your overlays changes separately - see our [customization guide](#customizations) for more details.
 
 You can now get started with using overlays:

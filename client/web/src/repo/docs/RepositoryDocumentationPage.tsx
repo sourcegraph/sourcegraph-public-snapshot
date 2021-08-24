@@ -168,6 +168,16 @@ export const RepositoryDocumentationPage: React.FunctionComponent<Props> = React
         [setVisiblePathID, setVisibilityEvents]
     )
 
+    // If we switch from rendering the entire page to rendering a specific full path ID (section of
+    // the page), then scroll back to the top of the page as our scroll position would no longer be
+    // meaningful.
+    const onlyPathID = location.search === '' ? undefined : props.pathID + '#' + location.search.slice('?'.length)
+    useEffect(() => {
+        if (onlyPathID && containerReference.current) {
+            containerReference.current.scrollTop = 0
+        }
+    }, [onlyPathID])
+
     return (
         <div className="repository-docs-page">
             <PageTitle title="API docs" />
@@ -262,6 +272,7 @@ export const RepositoryDocumentationPage: React.FunctionComponent<Props> = React
                                 pagePathID={pagePathID}
                                 depth={0}
                                 isFirstChild={true}
+                                onlyPathID={onlyPathID}
                                 excludingTags={excludingTags}
                                 scrollingRoot={containerReference}
                                 onVisible={onVisible}
@@ -279,7 +290,7 @@ function isElementInView(element: HTMLElement, container: HTMLElement, partial: 
     const containerTop = container.scrollTop
     const containerBottom = containerTop + container.clientHeight
 
-    const elementTop = element.offsetTop as number
+    const elementTop = element.offsetTop
     const elementBottom = elementTop + element.clientHeight
 
     if (elementTop >= containerTop && elementBottom <= containerBottom) {

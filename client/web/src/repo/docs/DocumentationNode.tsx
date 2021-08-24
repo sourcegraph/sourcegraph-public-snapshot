@@ -17,11 +17,12 @@ import { ResolvedRevisionSpec, RevisionSpec } from '@sourcegraph/shared/src/util
 import { Badge } from '../../components/Badge'
 import { BreadcrumbSetters } from '../../components/Breadcrumbs'
 import { RepositoryFields } from '../../graphql-operations'
-import { toDocumentationURL } from '../../util/url'
+import { toDocumentationSingleSymbolURL, toDocumentationURL } from '../../util/url'
 
 import { DocumentationExamples } from './DocumentationExamples'
 import { DocumentationIcons } from './DocumentationIcons'
 import { GQLDocumentationNode, Tag, isExcluded } from './graphql'
+import { hasDescendent } from './RepositoryDocumentationSidebar'
 
 interface Props
     extends Partial<RevisionSpec>,
@@ -49,6 +50,9 @@ interface Props
     /** The pathID of the page containing this documentation node */
     pagePathID: string
 
+    /** If specified, only render the documentation node corresponding to this path ID. e.g. "render just this one symbol" */
+    onlyPathID?: string
+
     /** A list of documentation tags, a section will not be rendered if it matches one of these. */
     excludingTags: Tag[]
 
@@ -62,7 +66,7 @@ interface Props
 }
 
 export const DocumentationNode: React.FunctionComponent<Props> = React.memo(
-    ({ useBreadcrumb, node, depth, isFirstChild, scrollingRoot, onVisible, ...props }) => {
+    ({ useBreadcrumb, node, depth, isFirstChild, onlyPathID, scrollingRoot, onVisible, ...props }) => {
         const repoRevision = {
             repoName: props.repo.name,
             revision: props.revision || '',
@@ -72,6 +76,7 @@ export const DocumentationNode: React.FunctionComponent<Props> = React.memo(
         let path = hashIndex !== -1 ? node.pathID.slice(0, hashIndex) : node.pathID
         path = path === '/' ? '' : path
         const thisPage = toDocumentationURL({ ...repoRevision, pathID: path + '#' + hash })
+        const singleSymbolPage = toDocumentationSingleSymbolURL({ ...repoRevision, pathID: path + '#' + hash })
 
         useBreadcrumb(
             useMemo(
@@ -117,68 +122,82 @@ export const DocumentationNode: React.FunctionComponent<Props> = React.memo(
         const topMargin =
             depth === 0
                 ? ' mt-3' // Level 0 header ("Package foo")
+                : onlyPathID
+                ? ' mt-3' // Single-node display margin
                 : depth === 1
                 ? ' mt-5' // Level 1 headers ("Constants", "Variables", etc.)
                 : isFirstChild
                 ? ' mt-4'
                 : ' mt-5' // Lowest level headers
 
+        if (onlyPathID && node.pathID !== onlyPathID && !hasDescendent(node, onlyPathID)) {
+            return null
+        }
+        const renderContent = !onlyPathID || node.pathID === onlyPathID || depth === 0
         return (
             <div className={`documentation-node mb-5${topMargin}`}>
-                <div ref={reference}>
-                    <Heading level={headingLevel} className="d-flex align-items-center documentation-node__heading">
-                        <AnchorLink className="documentation-node__heading-anchor-link" to={thisPage}>
-                            <LinkVariantIcon className="icon-inline" />
-                        </AnchorLink>
-                        {depth !== 0 && <DocumentationIcons className="mr-1" tags={node.documentation.tags} />}
-                        <Link className="h" id={hash} to={thisPage}>
-                            {node.label.value}
-                        </Link>
-                    </Heading>
-                    {depth === 0 && (
-                        <>
-                            <div className="d-flex align-items-center mb-3">
-                                <span className="documentation-node__pill d-flex justify-content-center align-items-center px-2">
-                                    <BookOpenVariantIcon className="icon-inline text-muted mr-1" /> Generated API docs
-                                    <span className="documentation-node__pill-divider mx-2" />
-                                    <a
-                                        // eslint-disable-next-line react/jsx-no-target-blank
-                                        target="_blank"
-                                        rel="noopener"
-                                        href="https://docs.sourcegraph.com/code_intelligence/apidocs"
-                                    >
-                                        Learn more
-                                    </a>
-                                </span>
-                                {/*
+                {renderContent && (
+                    <div ref={reference}>
+                        <Heading level={headingLevel} className="d-flex align-items-center documentation-node__heading">
+                            <AnchorLink className="documentation-node__heading-anchor-link" to={thisPage}>
+                                <LinkVariantIcon className="icon-inline" />
+                            </AnchorLink>
+                            {depth !== 0 && <DocumentationIcons className="mr-1" tags={node.documentation.tags} />}
+                            <Link className="h" id={hash} to={singleSymbolPage}>
+                                {node.label.value}
+                            </Link>
+                        </Heading>
+                        {depth === 0 && (
+                            <>
+                                <div className="d-flex align-items-center mb-3">
+                                    <span className="documentation-node__pill d-flex justify-content-center align-items-center px-2">
+                                        <BookOpenVariantIcon className="icon-inline text-muted mr-1" /> Generated API
+                                        docs
+                                        <span className="documentation-node__pill-divider mx-2" />
+                                        <a
+                                            // eslint-disable-next-line react/jsx-no-target-blank
+                                            target="_blank"
+                                            rel="noopener"
+                                            href="https://docs.sourcegraph.com/code_intelligence/apidocs"
+                                        >
+                                            Learn more
+                                        </a>
+                                    </span>
+                                    {/*
                             TODO(apidocs): add support for indicating time the API docs were updated
                             <span className="ml-2">Last updated 2 days ago</span>
                         */}
-                                <Badge status="experimental" className="text-uppercase ml-2" />
-                            </div>
-                            <hr />
-                        </>
-                    )}
-                    {node.detail.value !== '' && (
-                        <div className="pt-2">
-                            <Markdown dangerousInnerHTML={renderMarkdown(node.detail.value)} />
-                        </div>
-                    )}
-
-                    {!isExcluded(node, ['test', 'benchmark', 'example', 'license', 'owner', 'package']) &&
-                        node.documentation.tags.length !== 0 && (
-                            <>
-                                <h4 className="mt-4">
-                                    Usage examples
-                                    <HelpCircleOutlineIcon
-                                        className="icon-inline ml-1"
-                                        data-tooltip="Usage examples from precise LSIF code intelligence index"
-                                    />
-                                </h4>
-                                <DocumentationExamples {...props} pathID={node.pathID} />
+                                    <Badge status="experimental" className="text-uppercase ml-2" />
+                                </div>
+                                <hr />
+                                {onlyPathID && depth === 0 && (
+                                    <Link className="mb-3 mt-2 d-inline-flex" to={thisPage}>
+                                        ← View all of {node.label.value.toLowerCase()}
+                                    </Link>
+                                )}
                             </>
                         )}
-                </div>
+                        {(!onlyPathID || node.pathID === onlyPathID) && node.detail.value !== '' && (
+                            <div className="pt-2">
+                                <Markdown dangerousInnerHTML={renderMarkdown(node.detail.value)} />
+                            </div>
+                        )}
+
+                        {!isExcluded(node, ['test', 'benchmark', 'example', 'license', 'owner', 'package']) &&
+                            node.documentation.tags.length !== 0 && (
+                                <>
+                                    <h4 className="mt-4">
+                                        Usage examples
+                                        <HelpCircleOutlineIcon
+                                            className="icon-inline ml-1"
+                                            data-tooltip="Usage examples from precise LSIF code intelligence index"
+                                        />
+                                    </h4>
+                                    <DocumentationExamples {...props} pathID={node.pathID} count={onlyPathID ? 3 : 1} />
+                                </>
+                            )}
+                    </div>
+                )}
 
                 {node.children?.map(
                     (child, index) =>
@@ -188,8 +207,11 @@ export const DocumentationNode: React.FunctionComponent<Props> = React.memo(
                                 key={`${depth}-${child.node.pathID}`}
                                 {...props}
                                 node={child.node}
-                                depth={depth + 1}
+                                depth={renderContent ? depth + 1 : depth}
                                 isFirstChild={index === 0}
+                                onlyPathID={
+                                    onlyPathID ? (node.pathID === onlyPathID ? undefined : onlyPathID) : undefined
+                                }
                                 useBreadcrumb={useBreadcrumb}
                                 scrollingRoot={scrollingRoot}
                                 onVisible={onVisible}

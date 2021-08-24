@@ -1,5 +1,47 @@
 extend type Mutation {
     """
+    Creates a new configuration policy with the given attributes.
+    """
+    createCodeIntelligenceConfigurationPolicy(
+        """
+        If supplied, the repository to which this configuration policy applies. If not supplied,
+        this configuration policy is applied to all repositories.
+        """
+        repository: ID
+
+        name: String!
+        type: GitObjectType!
+        pattern: String!
+        retentionEnabled: Boolean!
+        retentionDurationHours: Int!
+        retainIntermediateCommits: Boolean!
+        indexingEnabled: Boolean!
+        indexCommitMaxAgeHours: Int!
+        indexIntermediateCommits: Boolean!
+    ): CodeIntelligenceConfigurationPolicy!
+
+    """
+    Updates the attributes configuration policy with the given identifier.
+    """
+    updateCodeIntelligenceConfigurationPolicy(
+        id: ID!
+        name: String!
+        type: GitObjectType!
+        pattern: String!
+        retentionEnabled: Boolean!
+        retentionDurationHours: Int!
+        retainIntermediateCommits: Boolean!
+        indexingEnabled: Boolean!
+        indexCommitMaxAgeHours: Int!
+        indexIntermediateCommits: Boolean!
+    ): EmptyResponse
+
+    """
+    Deletes the configuration policy with the given identifier.
+    """
+    deleteCodeIntelligenceConfigurationPolicy(policy: ID!): EmptyResponse
+
+    """
     Updates the indexing configuration associated with a repository.
     """
     updateRepositoryIndexConfiguration(repository: ID!, configuration: String!): EmptyResponse
@@ -29,6 +71,13 @@ extend type Mutation {
 }
 
 extend type Query {
+    """
+    Get the complete list of configuration policies. If repository is supplied, then the
+    configuration policies attached to that repository are returned. If repository is not
+    supplied, then all global configuration policies are returned.
+    """
+    codeIntelligenceConfigurationPolicies(repository: ID): [CodeIntelligenceConfigurationPolicy!]!
+
     """
     The repository's LSIF uploads.
     """
@@ -106,6 +155,67 @@ extend type Query {
         """
         after: String
     ): LSIFIndexConnection!
+}
+
+"""
+A configuration policy that applies to a set of Git objects matching an associated
+pattern. Each policy has optional data retention and auto-indexing schedule configuration
+attached. A policy can be applied globally or on a per-repository basis.
+"""
+type CodeIntelligenceConfigurationPolicy implements Node {
+    """
+    The ID.
+    """
+    id: ID!
+
+    """
+    A description of the configuration policy.
+    """
+    name: String!
+
+    """
+    The type of Git object described by the configuration policy.
+    """
+    type: GitObjectType!
+
+    """
+    A pattern matching the name of the matching Git object.
+    """
+    pattern: String!
+
+    """
+    Whether or not this configuration policy affects data retention rules.
+    """
+    retentionEnabled: Boolean!
+
+    """
+    The max age of data retained by this configuration policy.
+    """
+    retentionDurationHours: Int!
+
+    """
+    If the matching Git object is a branch, setting this value to true will also
+    retain all data used to resolve queries for any commit on the matching branches.
+    Setting this value to false will only consider the tip of the branch.
+    """
+    retainIntermediateCommits: Boolean!
+
+    """
+    Whether or not this configuration policy affects auto-indexing schedules.
+    """
+    indexingEnabled: Boolean!
+
+    """
+    The max age of commits indexed by this configuration policy.
+    """
+    indexCommitMaxAgeHours: Int!
+
+    """
+    If the matching Git object is a branch, setting this value to true will also
+    index all commits on the matching branches. Setting this value to false will
+    only consider the tip of the branch.
+    """
+    indexIntermediateCommits: Boolean!
 }
 
 extend type Repository {

@@ -18,6 +18,7 @@ interface Props extends SettingsCascadeProps, VersionContextProps {
     repo: RepositoryFields
     commitID: string
     pathID: string
+    count: number
 }
 
 export const DocumentationExamples: React.FunctionComponent<Props> = props => {

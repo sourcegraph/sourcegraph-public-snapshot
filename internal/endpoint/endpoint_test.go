@@ -37,7 +37,7 @@ func TestGetN(t *testing.T) {
 		t.Fatalf("GetN(foo, 3)[0] != Get(foo): %s != %s", have[0], node)
 	}
 
-	want := []string{"http://test-4", "http://test-2", "http://test-1"}
+	want := []string{"http://test-3", "http://test-2", "http://test-4"}
 	if !reflect.DeepEqual(have, want) {
 		t.Fatalf("GetN(\"foo\", 3):\nhave: %v\nwant: %v", have, want)
 	}
