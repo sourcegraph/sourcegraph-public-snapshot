@@ -432,11 +432,12 @@ func fromContentMatch(fm *result.FileMatch, repoCache map[api.RepoID]*types.Sear
 	}
 
 	contentEvent := &streamhttp.EventContentMatch{
-		Type:        streamhttp.ContentMatchType,
-		Path:        fm.Path,
-		Repository:  string(fm.Repo.Name),
-		Version:     string(fm.CommitID),
-		LineMatches: lineMatches,
+		Type:         streamhttp.ContentMatchType,
+		Path:         fm.Path,
+		RepositoryID: int32(fm.Repo.ID),
+		Repository:   string(fm.Repo.Name),
+		Version:      string(fm.CommitID),
+		LineMatches:  lineMatches,
 	}
 
 	if fm.InputRev != nil {

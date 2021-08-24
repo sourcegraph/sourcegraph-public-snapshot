@@ -853,41 +853,17 @@ func (s *Service) resolveRepositorySearch(ctx context.Context, query string) (_ 
 	query = setDefaultQueryCount(query)
 	query = setDefaultQuerySelect(query)
 
-	// TODO: Duh, why do I need to add .internal here.
-	req, err := streamhttp.NewRequest(api.InternalClient.URL+"/.internal", query)
-	if err != nil {
-		return nil, err
-	}
-	req.WithContext(ctx)
-	// TODO: Document why it's okay to not pass along the ctx.User here.
-	req.Header.Set("User-Agent", "Batch Changes repository resolver")
-
-	resp, err := httpcli.InternalClient.Do(req)
-	if err != nil {
-		return nil, err
-	}
-	defer resp.Body.Close()
-
 	repoIDs := []api.RepoID{}
-	dec := streamhttp.FrontendStreamDecoder{
-		OnMatches: func(matches []streamhttp.EventMatch) {
-			for _, match := range matches {
-				if m, ok := match.(*streamhttp.EventRepoMatch); ok {
-					repoIDs = append(repoIDs, api.RepoID(m.RepositoryID))
-				}
+	s.runSearch(ctx, query, func(matches []streamhttp.EventMatch) {
+		for _, match := range matches {
+			switch m := match.(type) {
+			case *streamhttp.EventRepoMatch:
+				repoIDs = append(repoIDs, api.RepoID(m.RepositoryID))
+			case *streamhttp.EventContentMatch:
+				repoIDs = append(repoIDs, api.RepoID(m.RepositoryID))
 			}
-		},
-		OnError: func(ee *streamhttp.EventError) {
-			err = errors.New(ee.Message)
-		},
-		OnProgress: func(p *streamapi.Progress) {
-			// TODO: Evaluate skipped for values we care about.
-		},
-	}
-
-	if err := dec.ReadAll(resp.Body); err != nil {
-		return nil, err
-	}
+		}
+	})
 
 	accessibleRepos, err := s.store.Repos().List(ctx, database.ReposListOptions{IDs: repoIDs})
 	if err != nil {
@@ -905,6 +881,36 @@ func (s *Service) resolveRepositorySearch(ctx context.Context, query string) (_ 
 	}
 
 	return revs, nil
+}
+
+func (s *Service) runSearch(ctx context.Context, query string, onMatches func(matches []streamhttp.EventMatch)) (err error) {
+	// TODO: Duh, why do I need to add .internal here.
+	req, err := streamhttp.NewRequest(api.InternalClient.URL+"/.internal", query)
+	if err != nil {
+		return err
+	}
+	req.WithContext(ctx)
+	// TODO: Document why it's okay to not pass along the ctx.User here.
+	req.Header.Set("User-Agent", "Batch Changes repository resolver")
+
+	resp, err := httpcli.InternalClient.Do(req)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	dec := streamhttp.FrontendStreamDecoder{
+		OnMatches: func(matches []streamhttp.EventMatch) {
+			onMatches(matches)
+		},
+		OnError: func(ee *streamhttp.EventError) {
+			err = errors.New(ee.Message)
+		},
+		OnProgress: func(p *streamapi.Progress) {
+			// TODO: Evaluate skipped for values we care about.
+		},
+	}
+	return dec.ReadAll(resp.Body)
 }
 
 func (s *Service) hasBatchIgnoreFile(ctx context.Context, r *RepoRevision) (_ bool, err error) {
