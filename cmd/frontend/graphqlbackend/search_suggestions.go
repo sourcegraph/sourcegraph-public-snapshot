@@ -17,9 +17,13 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
+	"github.com/sourcegraph/sourcegraph/internal/featureflag"
+	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/search/searchcontexts"
+	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
+	"github.com/sourcegraph/sourcegraph/internal/search/symbol"
 )
 
 const maxSearchSuggestions = 100
@@ -386,22 +390,53 @@ func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestion
 			return nil, nil
 		}
 
-		args, err := r.toTextParameters(r.Query)
-		if err != nil {
-			return nil, err
-		}
-		args.ResultTypes = result.TypeSymbol
+		var fileMatches []result.Match
+		if featureflag.FromContext(ctx).GetBoolOr("sh_search_suggestions_symbols", false) {
+			args, err := r.toTextParameters(r.Query)
+			if err != nil {
+				return nil, err
+			}
+			args.ResultTypes = result.TypeSymbol
 
-		results, err := r.doResults(ctx, args)
-		if errors.Is(err, context.DeadlineExceeded) {
-			err = nil
-		}
-		if err != nil {
-			return nil, err
+			results, err := r.doResults(ctx, args)
+			if errors.Is(err, context.DeadlineExceeded) {
+				err = nil
+			}
+			if err != nil {
+				return nil, err
+			}
+			fileMatches = results.Matches
+		} else {
+			repoOptions := r.toRepoOptions(r.Query, resolveRepositoriesOpts{})
+			resolved, err := r.resolveRepositories(ctx, repoOptions)
+			if err != nil {
+				return nil, err
+			}
+
+			p := search.ToTextPatternInfo(b, search.Batch, query.Identity)
+			if p.Pattern == "" {
+				return nil, nil
+			}
+
+			ctx, cancel := context.WithTimeout(ctx, 1*time.Second)
+			defer cancel()
+
+			fileMatches, _, err = streaming.CollectStream(func(stream streaming.Sender) error {
+				return symbol.Search(ctx, &search.TextParameters{
+					PatternInfo:  p,
+					Repos:        resolved.RepoRevs,
+					Query:        r.Query,
+					Zoekt:        r.zoekt,
+					SearcherURLs: r.searcherURLs,
+				}, 7, stream)
+			})
+			if err != nil {
+				return nil, err
+			}
 		}
 
 		suggestions := make([]SearchSuggestionResolver, 0)
-		for _, match := range results.Matches {
+		for _, match := range fileMatches {
 			fileMatch, ok := match.(*result.FileMatch)
 			if !ok {
 				continue
