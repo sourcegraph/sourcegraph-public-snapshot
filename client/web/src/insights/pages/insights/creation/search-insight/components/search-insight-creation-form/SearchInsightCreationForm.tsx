@@ -44,13 +44,13 @@ interface CreationSearchInsightFormProps {
     /**
      * Handler to listen latest value form particular series edit form
      * Used to get information for live preview chart.
-     * */
+     */
     onSeriesLiveChange: (liveSeries: EditableDataSeries, isValid: boolean, index: number) => void
 
     /**
      * Handlers for CRUD operation over series. Add, delete, update and cancel
      * series edit form.
-     * */
+     */
     onEditSeriesRequest: (openedCardIndex: number) => void
     onEditSeriesCommit: (seriesIndex: number, editedSeries: EditableDataSeries) => void
     onEditSeriesCancel: (closedCardIndex: number) => void
@@ -131,17 +131,18 @@ export const SearchInsightCreationForm: React.FunctionComponent<CreationSearchIn
                     />
 
                     <span className="pl-2">Run your insight over all your repositories</span>
-                        <small className="w-100 mt-2 text-muted">
-                                This feature is actively in development. Read about the{' '}
-                                <a
-                                    href="https://docs.sourcegraph.com/code_insights/explanations/current_limitations_of_code_insights"
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                >
-                                    beta limitations here.
-                                </a>
-                            </small>
-                        </label>
+
+                    <small className="w-100 mt-2 text-muted">
+                            This feature is actively in development. Read about the{' '}
+                            <a
+                                href="https://docs.sourcegraph.com/code_insights/explanations/current_limitations_of_code_insights"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                            >
+                                beta limitations here.
+                            </a>
+                    </small>
+                </label>
 
                 <hr className={styles.creationInsightFormSeparator} />
             </FormGroup>
