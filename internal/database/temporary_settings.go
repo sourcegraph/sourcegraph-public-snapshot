@@ -1,0 +1,56 @@
+package database
+
+import (
+	"context"
+	"database/sql"
+
+	"github.com/keegancsmith/sqlf"
+
+	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	ts "github.com/sourcegraph/sourcegraph/internal/temporarysettings"
+)
+
+type TemporarySettingsStore struct {
+	*basestore.Store
+}
+
+func TemporarySettings(db dbutil.DB) *TemporarySettingsStore {
+	return &TemporarySettingsStore{Store: basestore.NewWithDB(db, sql.TxOptions{})}
+}
+
+func (f *TemporarySettingsStore) GetTemporarySettings(ctx context.Context, userID int32) (*ts.TemporarySettings, error) {
+	var contents string
+
+	const getTemporarySettingsQuery = `
+		SELECT contents
+		FROM temporary_settings
+		WHERE user_id = %s
+		LIMIT 1;
+	`
+
+	err := f.QueryRow(ctx, sqlf.Sprintf(getTemporarySettingsQuery, userID)).Scan(&contents)
+
+	if err != nil {
+		if err == sql.ErrNoRows {
+			// No settings are saved for this user yet, return an empty settings object.
+			contents = "{}"
+		} else {
+			return nil, err
+		}
+	}
+
+	return &ts.TemporarySettings{Contents: &contents}, nil
+}
+
+func (f *TemporarySettingsStore) UpsertTemporarySettings(ctx context.Context, userID int32, contents string) error {
+	const upsertTemporarySettingsQuery = `
+		INSERT INTO temporary_settings (user_id, contents)
+		VALUES (%s, %s)
+		ON CONFLICT (user_id) DO UPDATE SET
+			contents = %s,
+			updated_at = now();
+	`
+
+	return f.Exec(ctx, sqlf.Sprintf(upsertTemporarySettingsQuery, userID, contents, contents))
+}
