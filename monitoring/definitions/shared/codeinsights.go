@@ -67,7 +67,7 @@ func (codeInsights) NewInsightsQueryRunnerWorkerGroup(containerName string) moni
 // src_insights_search_queue_reset_errors_total
 func (codeInsights) NewInsightsQueryRunnerResetterGroup(containerName string) monitoring.Group {
 
-	return WorkerutilResetter.NewGroup(containerName, monitoring.ObservableOwnerCodeIntel, ResetterGroupOptions{
+	return WorkerutilResetter.NewGroup(containerName, monitoring.ObservableOwnerCodeInsights, ResetterGroupOptions{
 		GroupConstructorOptions: GroupConstructorOptions{
 			Namespace:       namespace,
 			DescriptionRoot: "code insights search queue record resetter",

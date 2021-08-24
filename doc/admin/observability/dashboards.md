@@ -3295,7 +3295,7 @@ This panel indicates handler operation error rate over 5m.
 
 This panel indicates insights_search_queue records reset to queued state every 5m.
 
-<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
+<sub>*Managed by the [Sourcegraph Code-insights team](https://about.sourcegraph.com/handbook/engineering/code-insights).*</sub>
 
 <br />
 
@@ -3303,7 +3303,7 @@ This panel indicates insights_search_queue records reset to queued state every 5
 
 This panel indicates insights_search_queue records reset to errored state every 5m.
 
-<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
+<sub>*Managed by the [Sourcegraph Code-insights team](https://about.sourcegraph.com/handbook/engineering/code-insights).*</sub>
 
 <br />
 
@@ -3311,7 +3311,7 @@ This panel indicates insights_search_queue records reset to errored state every 
 
 This panel indicates insights_search_queue operation errors every 5m.
 
-<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
+<sub>*Managed by the [Sourcegraph Code-insights team](https://about.sourcegraph.com/handbook/engineering/code-insights).*</sub>
 
 <br />
 
