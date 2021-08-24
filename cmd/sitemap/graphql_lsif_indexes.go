@@ -2,7 +2,7 @@ package main
 
 const gqlLSIFIndexesQuery = `
 	query LsifIndexes($state: LSIFIndexState, $first: Int, $after: String, $query: String) {
-		lsifIndexes(query: $query, state: $state, first: $first, after: $after) {
+		lsifIndexes(state: $state, first: $first, after: $after, query: $query) {
 			nodes {
 				...LsifIndexFields
 			}
@@ -33,9 +33,6 @@ const gqlLSIFIndexesQuery = `
                 abbreviatedOID
             }
         }
-        steps {
-            ...LsifIndexStepsFields
-        }
         state
         failure
         queuedAt
@@ -51,40 +48,6 @@ const gqlLSIFIndexesQuery = `
             placeInQueue
         }
     }
-    fragment LsifIndexStepsFields on IndexSteps {
-        setup {
-            ...ExecutionLogEntryFields
-        }
-        preIndex {
-            root
-            image
-            commands
-            logEntry {
-                ...ExecutionLogEntryFields
-            }
-        }
-        index {
-            indexerArgs
-            outfile
-            logEntry {
-                ...ExecutionLogEntryFields
-            }
-        }
-        upload {
-            ...ExecutionLogEntryFields
-        }
-        teardown {
-            ...ExecutionLogEntryFields
-        }
-    }
-    fragment ExecutionLogEntryFields on ExecutionLogEntry {
-        key
-        command
-        startTime
-        exitCode
-        out
-        durationMilliseconds
-    }
 `
 
 type gqlLSIFIndexesVars struct {
@@ -94,15 +57,26 @@ type gqlLSIFIndexesVars struct {
 	Query *string `json:"query"`
 }
 
+type gqlLSIFIndex struct {
+	InputIndexer string
+	ProjectRoot  struct {
+		URL        string
+		Repository struct {
+			URL  string
+			Name string
+		}
+	}
+}
+
 type gqlLSIFIndexesResponse struct {
 	Data struct {
 		LsifIndexes struct {
-			Nodes []interface{}
-		}
-		TotalCount uint64
-		PageInfo   struct {
-			EndCursor   string
-			HasNextPage bool
+			Nodes      []gqlLSIFIndex
+			TotalCount uint64
+			PageInfo   struct {
+				EndCursor   *string
+				HasNextPage bool
+			}
 		}
 	}
 	Errors []interface{}
