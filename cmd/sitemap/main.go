@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/cockroachdb/errors"
 	"github.com/inconshreveable/log15"
@@ -58,22 +59,25 @@ func (g *generator) generate(ctx context.Context) error {
 		Token: g.token,
 	}
 
+	// Build a set of Go repos that have LSIF indexes.
+	indexedGoRepos := map[string][]gqlLSIFIndex{}
 	queried := 0
 	if err := g.eachLsifIndex(ctx, func(each gqlLSIFIndex, total uint64) error {
 		queried++
 		if queried%1000 == 0 {
 			log15.Info("queried LSIF indexes", "n", queried, "of", total)
 		}
+		if strings.Contains(each.InputIndexer, "lsif-go") {
+			repoName := each.ProjectRoot.Repository.Name
+			indexedGoRepos[repoName] = append(indexedGoRepos[repoName], each)
+		}
 		return nil
 	}); err != nil {
 		return err
 	}
-	return nil
-}
 
-type graphQLRequestKey struct {
-	RequestName string
-	Vars        interface{}
+	log15.Info("found indexed Go repositories", "count", len(indexedGoRepos))
+	return nil
 }
 
 func (g *generator) eachLsifIndex(ctx context.Context, each func(index gqlLSIFIndex, total uint64) error) error {
@@ -110,11 +114,7 @@ func (g *generator) eachLsifIndex(ctx context.Context, each func(index gqlLSIFIn
 }
 
 func (g *generator) fetchLsifIndexes(ctx context.Context, vars gqlLSIFIndexesVars) (*gqlLSIFIndexesResponse, error) {
-	key := graphQLRequestKey{
-		RequestName: "LsifIndexes",
-		Vars:        vars,
-	}
-	data, err := g.db.request(key, func() ([]byte, error) {
+	data, err := g.db.request(requestKey{RequestName: "LsifIndexes", Vars: vars}, func() ([]byte, error) {
 		return g.gqlClient.requestGraphQL(ctx, "SitemapLsifIndexes", gqlLSIFIndexesQuery, vars)
 	})
 	if err != nil {

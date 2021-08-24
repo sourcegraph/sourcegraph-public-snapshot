@@ -8,7 +8,10 @@ import (
 	bolt "go.etcd.io/bbolt"
 )
 
-var requestsBucket = []byte("requests")
+type requestKey struct {
+	RequestName string
+	Vars        interface{}
+}
 
 type requestValue struct {
 	Time     time.Time
@@ -24,7 +27,7 @@ type queryDatabase struct {
 
 // request performs a request to fetch `key`. If it already exists in the cache, the cached value
 // is returned. Otherwise, fetch is invoked and the result is stored and returned if not an error.
-func (db *queryDatabase) request(key interface{}, fetch func() ([]byte, error)) ([]byte, error) {
+func (db *queryDatabase) request(key requestKey, fetch func() ([]byte, error)) ([]byte, error) {
 	// Our key (i.e. the info needed to perform the request) will be the key in our bucket, as a
 	// JSON string.
 	keyBytes, err := json.Marshal(key)
@@ -35,7 +38,7 @@ func (db *queryDatabase) request(key interface{}, fetch func() ([]byte, error)) 
 	// Check if the bucket already has the request response or not.
 	var value []byte
 	err = db.handle.View(func(tx *bolt.Tx) error {
-		bucket := tx.Bucket(requestsBucket)
+		bucket := tx.Bucket([]byte("request-" + key.RequestName))
 		if bucket != nil {
 			value = bucket.Get(keyBytes)
 		}
@@ -58,7 +61,7 @@ func (db *queryDatabase) request(key interface{}, fetch func() ([]byte, error)) 
 		return nil, errors.Wrap(err, "fetch")
 	}
 	err = db.handle.Update(func(tx *bolt.Tx) error {
-		bucket, err := tx.CreateBucketIfNotExists(requestsBucket)
+		bucket, err := tx.CreateBucketIfNotExists([]byte("request-" + key.RequestName))
 		if err != nil {
 			return errors.Wrap(err, "CreateBucketIfNotExists")
 		}
