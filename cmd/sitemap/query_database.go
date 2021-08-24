@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/cockroachdb/errors"
+	"go.etcd.io/bbolt"
 	bolt "go.etcd.io/bbolt"
 )
 
@@ -69,6 +70,27 @@ func (db *queryDatabase) request(key requestKey, fetch func() ([]byte, error)) (
 		return nil
 	})
 	return result, nil
+}
+
+// keys returns a list of all bucket names, e.g. distinct GraphQL query types.
+func (db *queryDatabase) keys() ([]string, error) {
+	var keys []string
+	if err := db.handle.View(func(tx *bolt.Tx) error {
+		return tx.ForEach(func(name []byte, b *bbolt.Bucket) error {
+			keys = append(keys, string(name))
+			return nil
+		})
+	}); err != nil {
+		return nil, err
+	}
+	return keys, nil
+}
+
+// delete deletes the bucket with the given key, e.g. a distinct GraphQL query type.
+func (db *queryDatabase) delete(key string) error {
+	return db.handle.Update(func(tx *bolt.Tx) error {
+		return tx.DeleteBucket([]byte(key))
+	})
 }
 
 func (db *queryDatabase) close() error {

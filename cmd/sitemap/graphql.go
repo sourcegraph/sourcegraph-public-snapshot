@@ -7,13 +7,23 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"strconv"
+	"time"
 
+	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 
 	"github.com/cockroachdb/errors"
 )
 
 // This file contains all the methods required to execute Sourcegraph GraphQL API requests.
+
+var (
+	graphQLTimeout, _          = time.ParseDuration(env.Get("GRAPHQL_TIMEOUT", "30s", "Timeout for GraphQL HTTP requests"))
+	graphQLRetryDelayBase, _   = time.ParseDuration(env.Get("GRAPHQL_RETRY_DELAY_BASE", "200ms", "Base retry delay duration for GraphQL HTTP requests"))
+	graphQLRetryDelayMax, _    = time.ParseDuration(env.Get("GRAPHQL_RETRY_DELAY_MAX", "3s", "Max retry delay duration for GraphQL HTTP requests"))
+	graphQLRetryMaxAttempts, _ = strconv.Atoi(env.Get("GRAPHQL_RETRY_MAX_ATTEMPTS", "20", "Max retry attempts for GraphQL HTTP requests"))
+)
 
 // graphQLQuery describes a general GraphQL query and its variables.
 type graphQLQuery struct {
@@ -24,6 +34,8 @@ type graphQLQuery struct {
 type graphQLClient struct {
 	URL   string
 	Token string
+
+	factory *httpcli.Factory
 }
 
 // requestGraphQL performs a GraphQL request with the given query and variables.
@@ -49,7 +61,29 @@ func (c *graphQLClient) requestGraphQL(ctx context.Context, queryName string, qu
 	}
 	req.Header.Set("Content-Type", "application/json")
 
-	resp, err := httpcli.InternalDoer.Do(req.WithContext(ctx))
+	if c.factory == nil {
+		c.factory = httpcli.NewFactory(
+			httpcli.NewMiddleware(
+				httpcli.ContextErrorMiddleware,
+			),
+			httpcli.NewTimeoutOpt(graphQLTimeout),
+			// ExternalTransportOpt needs to be before TracedTransportOpt and
+			// NewCachedTransportOpt since it wants to extract a http.Transport,
+			// not a generic http.RoundTripper.
+			httpcli.ExternalTransportOpt,
+			httpcli.NewErrorResilientTransportOpt(
+				httpcli.NewRetryPolicy(httpcli.MaxRetries(graphQLRetryMaxAttempts)),
+				httpcli.ExpJitterDelay(graphQLRetryDelayBase, graphQLRetryDelayMax),
+			),
+			httpcli.TracedTransportOpt,
+		)
+	}
+
+	doer, err := c.factory.Doer()
+	if err != nil {
+		return nil, errors.Wrap(err, "Doer")
+	}
+	resp, err := doer.Do(req.WithContext(ctx))
 	if err != nil {
 		return nil, errors.Wrap(err, "Post")
 	}
