@@ -5,6 +5,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/prometheus/client_golang/prometheus"
+
 	"github.com/cockroachdb/errors"
 	"github.com/derision-test/glock"
 	"github.com/inconshreveable/log15"
@@ -32,6 +34,8 @@ type Worker struct {
 	wg               sync.WaitGroup  // tracks active handler routines
 	finished         chan struct{}   // signals that Start has finished
 	runningIDSet     *IDSet          // tracks the running job IDs to heartbeat
+	ctr              prometheus.Counter
+	batchSize        int
 }
 
 type WorkerOptions struct {
@@ -95,6 +99,13 @@ func newWorker(ctx context.Context, store Store, handler Handler, options Worker
 		handlerSemaphore <- struct{}{}
 	}
 
+	cname := "src_" + options.Name + "worker_loop_total"
+	ctr := prometheus.NewCounter(prometheus.CounterOpts{
+		Name: cname,
+		Help: "Total number iterations of the worker loop.",
+	})
+	prometheus.DefaultRegisterer.MustRegister(ctr)
+
 	return &Worker{
 		store:            store,
 		handler:          handler,
@@ -107,6 +118,7 @@ func newWorker(ctx context.Context, store Store, handler Handler, options Worker
 		cancel:           cancel,
 		finished:         make(chan struct{}),
 		runningIDSet:     newIDSet(),
+		ctr:              ctr,
 	}
 }
 
@@ -160,14 +172,21 @@ loop:
 			break loop
 		}
 
-		ok, err := w.dequeueAndHandle()
+		records, ok, err := w.dequeueBatch()
 		if err != nil {
-			if w.ctx.Err() != nil && errors.Is(err, w.ctx.Err()) {
-				// If the error is due to the loop being shut down, just break
-				break loop
+			log15.Error("Failed to dequeue records", "name", w.options.Name, "err", err)
+		} else {
+			log15.Info("dequeued batch of records", "name", w.options.Name, "batch_size", len(records))
+			for _, record := range records {
+				_, err := w.handleOne(record)
+				if err != nil {
+					if w.ctx.Err() != nil && errors.Is(err, w.ctx.Err()) {
+						// If the error is due to the loop being shut down, just break
+						break loop
+					}
+					log15.Error("Failed to handle record", "name", w.options.Name, "record_id", record.RecordID(), "err", err)
+				}
 			}
-
-			log15.Error("Failed to dequeue and handle record", "name", w.options.Name, "err", err)
 		}
 
 		delay := w.options.Interval
@@ -181,17 +200,19 @@ loop:
 			// attempts. As we do this on a timed loop, we will end up just
 			// sloppily counting the active time instead of the number of jobs
 			// (with data) that were seen.
-			w.numDequeues++
+			w.numDequeues += len(records)
 		}
 
 		select {
 		case <-w.dequeueClock.After(delay):
 		case <-w.ctx.Done():
+			reason = "worker context closed"
 			break loop
 		case <-shutdownChan:
 			reason = "MaxActiveTime elapsed"
 			break loop
 		}
+		w.ctr.Inc()
 	}
 
 	log15.Info("Shutting down dequeue loop", "name", w.options.Name, "reason", reason)
@@ -217,44 +238,38 @@ func (w *Worker) Cancel(id int) {
 	w.runningIDSet.Cancel(id)
 }
 
+func (w *Worker) dequeueBatch() ([]Record, bool, error) {
+	dequeueable, extraDequeueArguments, err := w.preDequeueHook()
+	if err != nil {
+		return nil, false, errors.Wrap(err, "Handler.PreDequeueHook")
+	}
+	if !dequeueable {
+		// Hook declined to dequeue a record
+		return nil, false, nil
+	}
+
+	// Select a queued record to process and the transaction that holds it
+	records, dequeued, err := w.store.Dequeue(w.ctx, w.options.WorkerHostname, extraDequeueArguments)
+	if err != nil {
+		return nil, false, errors.Wrap(err, "store.Dequeue")
+	}
+	if !dequeued {
+		// Nothing to process
+		return nil, false, nil
+	}
+	return records, true, nil
+}
+
 // dequeueAndHandle selects a queued record to process. This method returns false if no such record
 // can be dequeued and returns an error only on failure to dequeue a new record - no handler errors
 // will bubble up.
-func (w *Worker) dequeueAndHandle() (dequeued bool, err error) {
+func (w *Worker) handleOne(record Record) (handled bool, err error) {
 	select {
 	// If we block here we are waiting for a handler to exit so that we do not
 	// exceed our configured concurrency limit.
 	case <-w.handlerSemaphore:
 	case <-w.ctx.Done():
 		return false, w.ctx.Err()
-	}
-	defer func() {
-		if !dequeued {
-			// Ensure that if we do not dequeue a record successfully we do not
-			// leak from the semaphore. This will happen if the pre dequeue hook
-			// fails, if the dequeue call fails, or if there are no records to
-			// process.
-			w.handlerSemaphore <- struct{}{}
-		}
-	}()
-
-	dequeueable, extraDequeueArguments, err := w.preDequeueHook()
-	if err != nil {
-		return false, errors.Wrap(err, "Handler.PreDequeueHook")
-	}
-	if !dequeueable {
-		// Hook declined to dequeue a record
-		return false, nil
-	}
-
-	// Select a queued record to process and the transaction that holds it
-	record, dequeued, err := w.store.Dequeue(w.ctx, w.options.WorkerHostname, extraDequeueArguments)
-	if err != nil {
-		return false, errors.Wrap(err, "store.Dequeue")
-	}
-	if !dequeued {
-		// Nothing to process
-		return false, nil
 	}
 
 	handleCtx, cancel := context.WithCancel(w.ctx)
