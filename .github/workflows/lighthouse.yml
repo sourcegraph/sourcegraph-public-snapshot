@@ -13,6 +13,8 @@ jobs:
       - uses: actions/setup-node@v2
         with: { node-version: '${{ steps.nvmrc.outputs.NODE_VERSION }}' }
 
+      - run: yarn install && npm install -g @lhci/cli@0.8.x
+
       - name: Build
         env:
           NODE_ENV: production
