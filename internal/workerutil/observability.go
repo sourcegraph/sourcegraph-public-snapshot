@@ -2,6 +2,7 @@ package workerutil
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
 
@@ -11,7 +12,12 @@ import (
 
 type WorkerMetrics struct {
 	operations *operations
-	numJobs    prometheus.Gauge
+	numJobs    Gauge
+}
+
+type Gauge interface {
+	Inc()
+	Dec()
 }
 
 type operations struct {
@@ -51,7 +57,7 @@ func NewMetrics(observationContext *observation.Context, prefix string, labels m
 
 	return WorkerMetrics{
 		operations: newOperations(observationContext, prefix, keys, values),
-		numJobs:    numJobs,
+		numJobs:    newLenientConcurrencyGauge(numJobs),
 	}
 }
 
@@ -75,3 +81,58 @@ func newOperations(observationContext *observation.Context, prefix string, keys,
 		handle: op("Handle"),
 	}
 }
+
+// lenientConcurrencyGaugeInterval is the interval at which a lenient
+// concurrency gauge's value is updated with the current window's maximum
+// value.
+const lenientConcurrencyGaugeInterval = time.Second * 5
+
+// newLenientConcurrencyGauge creates a new gauge-like object that emits
+// (into the given gauge) the maximum value over the last five seconds.
+// This method begins an immortal background routine.
+//
+// This gauge should be used to smooth-over the randomness sampled by
+// Prometheus by emitting the aggregate we'll likely be using with this
+// type of data directly.
+//
+// Without wrapping the numJobs gauge in this object, we tend to sample
+// zero handlers consistently when jobs are short-lived (< 500ms).
+// Keeping the max in memory gives us the value that we actually want
+// over time, and indicates an accurate level of concurrency.
+func newLenientConcurrencyGauge(gauge prometheus.Gauge) Gauge {
+	ch := make(chan float64)
+	go runLenientConcurrencyGauge(gauge, ch)
+
+	return &channelGauge{ch: ch}
+}
+
+func runLenientConcurrencyGauge(gauge prometheus.Gauge, ch <-chan float64) {
+	max := float64(0)
+	value := float64(0)
+	ticker := time.NewTicker(lenientConcurrencyGaugeInterval)
+
+	for {
+		select {
+		case <-ticker.C:
+			gauge.Set(max)
+			max = 0
+
+		case update, ok := <-ch:
+			if !ok {
+				return
+			}
+
+			value += update
+			if value > max {
+				max = value
+			}
+		}
+	}
+}
+
+type channelGauge struct {
+	ch chan<- float64
+}
+
+func (g *channelGauge) Inc() { g.ch <- +1 }
+func (g *channelGauge) Dec() { g.ch <- -1 }
