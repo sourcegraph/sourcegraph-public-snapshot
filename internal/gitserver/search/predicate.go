@@ -5,24 +5,36 @@ import (
 	"time"
 )
 
+// CommitPredicate is an interface representing the queries we can run against a commit.
 type CommitPredicate interface {
+	// Match returns whether the given predicate matches a commit and, if it does,
+	// the portions of the commit that match in the form of *CommitHighlights
 	Match(*Commit) (matched bool, highlights *CommitHighlights)
 }
 
-type AuthorMatches Regexp
+// AuthorMatches is a predicate that matches if the author's name or email address
+// matches the regex pattern.
+type AuthorMatches struct {
+	Regexp
+}
 
 func (a *AuthorMatches) Match(commit *Commit) (bool, *CommitHighlights) {
 	author := commit.Author()
 	return a.MatchString(author.Name) || a.MatchString(author.Email), nil
 }
 
-type CommitterMatches Regexp
+// CommitterMatches is a predicate that matches if the author's name or email address
+// matches the regex pattern.
+type CommitterMatches struct {
+	Regexp
+}
 
 func (c *CommitterMatches) Match(commit *Commit) (bool, *CommitHighlights) {
 	committer := commit.Committer()
 	return c.MatchString(committer.Name) || c.MatchString(committer.Email), nil
 }
 
+// CommitBefore is a predicate that matches if the commit is before the given date
 type CommitBefore struct {
 	time.Time
 }
@@ -31,6 +43,7 @@ func (c *CommitBefore) Match(commit *Commit) (bool, *CommitHighlights) {
 	return commit.Author().When.Before(c.Time), nil
 }
 
+// CommitAfter is a predicate that matches if the commit is after the given date
 type CommitAfter struct {
 	time.Time
 }
@@ -39,7 +52,11 @@ func (c *CommitAfter) Match(commit *Commit) (bool, *CommitHighlights) {
 	return commit.Author().When.After(c.Time), nil
 }
 
-type MessageMatches Regexp
+// MessageMatches is a predicate that matches if the commit message matches
+// the provided regex pattern.
+type MessageMatches struct {
+	Regexp
+}
 
 func (m *MessageMatches) Match(commit *Commit) (bool, *CommitHighlights) {
 	results := m.FindAllStringIndex(commit.Message(), -1) // TODO limit?
@@ -52,12 +69,16 @@ func (m *MessageMatches) Match(commit *Commit) (bool, *CommitHighlights) {
 	}
 }
 
-type DiffMatches Regexp
+// DiffMatches is a a predicate that matches if any of the lines changed by
+// the commit match the given regex pattern.
+type DiffMatches struct {
+	Regexp
+}
 
 func (d *DiffMatches) Match(commit *Commit) (bool, *CommitHighlights) {
 	diff, err := commit.Diff()
 	if err != nil {
-		// TODO don't ignore error
+		// TODO(camdencheek) don't ignore error
 		return false, nil
 	}
 
@@ -97,7 +118,11 @@ func (d *DiffMatches) Match(commit *Commit) (bool, *CommitHighlights) {
 	}
 }
 
-type DiffModifiesFile Regexp
+// DiffModifiesFile is a predicate that matches if the commit modifies any files
+// that match the given regex pattern.
+type DiffModifiesFile struct {
+	Regexp
+}
 
 func (d *DiffModifiesFile) Match(commit *Commit) (bool, *CommitHighlights) {
 	diff, err := commit.Diff()
@@ -123,6 +148,7 @@ func (d *DiffModifiesFile) Match(commit *Commit) (bool, *CommitHighlights) {
 	return foundMatch, &CommitHighlights{Diff: deltaHighlights}
 }
 
+// And is a predicate that matches if all of its children predicates match
 type And []CommitPredicate
 
 func (a And) Match(commit *Commit) (bool, *CommitHighlights) {
@@ -138,6 +164,7 @@ func (a And) Match(commit *Commit) (bool, *CommitHighlights) {
 	return true, highlights
 }
 
+// Or is a predicate that matches if any of its children predicates match
 type Or []CommitPredicate
 
 func (o Or) Match(commit *Commit) (bool, *CommitHighlights) {
@@ -153,6 +180,7 @@ func (o Or) Match(commit *Commit) (bool, *CommitHighlights) {
 	return hasMatch, mergedHighlights
 }
 
+// Not is a predicate that matches if its child predicate does not match
 type Not struct {
 	CommitPredicate
 }
@@ -163,6 +191,7 @@ func (n *Not) Match(commit *Commit) (bool, *CommitHighlights) {
 	return !foundMatch, nil
 }
 
+// Regexp is a thin wrapper around the stdlib Regexp type that enables gob encoding
 type Regexp struct {
 	*regexp.Regexp
 }
@@ -176,6 +205,8 @@ func (r *Regexp) GobDecode(data []byte) (err error) {
 	return err
 }
 
+// matchesToRanges is a helper that takes the return value of regexp.FindAllStringIndex()
+// and converts it to Ranges.
 func matchesToRanges(matches [][]int) Ranges {
 	res := make(Ranges, 0, len(matches))
 	for _, match := range matches {

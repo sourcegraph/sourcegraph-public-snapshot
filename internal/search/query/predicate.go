@@ -7,6 +7,10 @@ import (
 	"github.com/cockroachdb/errors"
 )
 
+func init() {
+
+}
+
 type Predicate interface {
 	// Field is the name of the field that the predicate applies to.
 	// For example, with `file:contains()`, Field returns "file".

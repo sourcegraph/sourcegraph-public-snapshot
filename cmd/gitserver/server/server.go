@@ -771,9 +771,11 @@ func (s *Server) handleArchive(w http.ResponseWriter, r *http.Request) {
 func (s *Server) handleSearch(w http.ResponseWriter, r *http.Request) {
 	var req protocol.SearchRequest
 	if err := gob.NewDecoder(r.Body).Decode(&req); err != nil {
+		println(err.Error())
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
+	fmt.Printf("%#v\n", req)
 	s.search(w, r, &req)
 }
 
@@ -818,18 +820,12 @@ func (s *Server) search(w http.ResponseWriter, r *http.Request, args *protocol.S
 		return
 	}
 
-	if !conf.Get().DisableAutoGitUpdates {
-		// ensureRevision may kick off a git fetch operation which we don't want if we've
-		// configured DisableAutoGitUpdates.
-		_ = s.ensureRevision(ctx, args.Repo, args.Revision, dir) // TODO what to do on return value
-	}
-
-	repo, err := git.OpenRepository(dir.Path())
-	if err != nil {
-		// TODO return an error message
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
+	// TODO how to ensure multiple revspecs?
+	// if !conf.Get().DisableAutoGitUpdates {
+	// 	// ensureRevision may kick off a git fetch operation which we don't want if we've
+	// 	// configured DisableAutoGitUpdates.
+	// 	_ = s.ensureRevision(ctx, args.Repo, args.Revision, dir) // TODO what to do on return value
+	// }
 
 	eventWriter, err := streamhttp.NewWriter(w)
 	if err != nil {
@@ -848,23 +844,15 @@ func (s *Server) search(w http.ResponseWriter, r *http.Request, args *protocol.S
 	resultChan := make(chan *protocol.CommitMatch, 128)
 	g.Go(func() error {
 		defer close(resultChan)
-		done := ctx.Done()
-		obj, err := repo.RevparseSingle(args.Revision)
-		if err != nil {
-			return err
-		}
 
-		return search.IterCommits(repo, obj.Id(), func(commit *search.Commit) bool {
-			foundMatch, highlights := args.Filter.Match(commit)
-			if foundMatch {
-				match := createCommitMatch(commit, highlights)
-				select {
-				case <-done:
-					return false
-				case resultChan <- match:
-				}
+		return search.IterCommitMatches(ctx, dir.Path(), args.Revisions, args.Predicate, func(match search.CommitMatch) bool {
+			res := createCommitMatch(match.Commit, match.Highlights)
+			select {
+			case <-ctx.Done():
+				return false
+			case resultChan <- res:
+				return true
 			}
-			return true
 		})
 	})
 
@@ -887,11 +875,11 @@ func (s *Server) search(w http.ResponseWriter, r *http.Request, args *protocol.S
 					limitHit = true
 					return nil
 				}
+				sentCount++
 
 				if err := matchesBuf.Append(result); err != nil {
 					return err
 				}
-
 			case <-flushTicker.C:
 				if err := matchesBuf.Flush(); err != nil {
 					return err
@@ -901,13 +889,12 @@ func (s *Server) search(w http.ResponseWriter, r *http.Request, args *protocol.S
 	})
 
 	err = g.Wait()
-	doneEvent := protocol.SearchEventDone{
-		LimitHit: limitHit,
-	}
-	if err != nil {
-		doneEvent.Error = err.Error()
-	}
+	doneEvent := protocol.NewSearchEventDone(limitHit, err)
 
+	// Flush buffer before writing done event
+	if err := matchesBuf.Flush(); err != nil {
+		log15.Warn("failed to flush buffer", "error", err)
+	}
 	if err := eventWriter.Event("done", doneEvent); err != nil {
 		log15.Warn("failed to send done event", "error", err)
 	}
