@@ -249,8 +249,7 @@ The events we consume are:
 
 <span class="badge badge-note">Sourcegraph 3.31+</span>
 
-For GitHub providers, Sourcegraph leverages caching of team and organization permissions to reduce the number of API calls used when syncing permissions. This can significantly reduce the amount of time it takes to perform a full 
-permissions sync due to reduced instances of being rate limited by the code host.
+For GitHub providers, Sourcegraph leverages caching of team and organization permissions to reduce the number of API calls used when syncing permissions. This can significantly reduce the amount of time it takes to perform a full permissions sync due to reduced instances of being rate limited by the code host.
 
 Caching behaviour can be configured (or disabled entirely) via the `authorization.groupsCacheTTL` field:
 
