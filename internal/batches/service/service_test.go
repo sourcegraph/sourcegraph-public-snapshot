@@ -327,8 +327,28 @@ func TestService_FindDirectoriesInRepos(t *testing.T) {
 
 	fileName := "package.json"
 	repos := []*graphql.Repository{
-		{ID: "repo-id-0", Name: "github.com/sourcegraph/automation-testing", Branch: graphql.Branch{Name: "main"}},
-		{ID: "repo-id-1", Name: "github.com/sourcegraph/sourcegraph", Branch: graphql.Branch{Name: "dev"}},
+		{
+			ID:     "repo-id-0",
+			Name:   "github.com/sourcegraph/automation-testing",
+			Branch: graphql.Branch{Name: "dev"},
+			DefaultBranch: &graphql.Branch{
+				Name: "main",
+				Target: graphql.Target{
+					OID: "d34db33f",
+				},
+			},
+		},
+		{
+			ID:     "repo-id-1",
+			Name:   "github.com/sourcegraph/sourcegraph",
+			Branch: graphql.Branch{Name: "dev"},
+			DefaultBranch: &graphql.Branch{
+				Name: "main",
+				Target: graphql.Target{
+					OID: "d34db33f",
+				},
+			},
+		},
 	}
 
 	svc := &Service{client: client}

@@ -652,7 +652,7 @@ func (svc *Service) FindDirectoriesInRepos(ctx context.Context, fileName string,
 		a.WriteString("query DirectoriesContainingFile {\n")
 
 		for _, repo := range batch {
-			query := fmt.Sprintf(`file:(^|/)%s$ repo:^%s$ type:path count:99999`, regexp.QuoteMeta(fileName), regexp.QuoteMeta(repo.Name))
+			query := fmt.Sprintf(`file:(^|/)%s$ repo:^%s$@%s type:path count:99999`, regexp.QuoteMeta(fileName), repo.BaseRef(), regexp.QuoteMeta(repo.Name))
 
 			a.WriteString(fmt.Sprintf(searchQueryTmpl, queryIDByRepo[repo], query))
 		}
