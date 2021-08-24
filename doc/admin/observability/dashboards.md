@@ -3421,6 +3421,32 @@ This panel indicates handler operation error rate over 5m.
 
 <br />
 
+### Worker: Codeinsights: code insights search queue record resetter
+
+#### worker: insights_search_queue_record_resets_total
+
+This panel indicates insights_search_queue records reset to queued state every 5m.
+
+<sub>*Managed by the [Sourcegraph Code-insights team](https://about.sourcegraph.com/handbook/engineering/code-insights).*</sub>
+
+<br />
+
+#### worker: insights_search_queue_record_reset_failures_total
+
+This panel indicates insights_search_queue records reset to errored state every 5m.
+
+<sub>*Managed by the [Sourcegraph Code-insights team](https://about.sourcegraph.com/handbook/engineering/code-insights).*</sub>
+
+<br />
+
+#### worker: insights_search_queue_record_reset_errors_total
+
+This panel indicates insights_search_queue operation errors every 5m.
+
+<sub>*Managed by the [Sourcegraph Code-insights team](https://about.sourcegraph.com/handbook/engineering/code-insights).*</sub>
+
+<br />
+
 ### Worker: Internal service requests
 
 #### worker: frontend_internal_api_error_responses
