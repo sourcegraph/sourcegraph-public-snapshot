@@ -89,6 +89,9 @@ const config = {
       ],
     },
   },
+  performance: {
+    hints: 'warning',
+  },
   optimization: {
     minimize: isProduction,
     minimizer: [
