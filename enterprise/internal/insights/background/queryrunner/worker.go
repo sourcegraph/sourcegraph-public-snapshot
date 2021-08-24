@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/sourcegraph/sourcegraph/internal/observation"
+
 	"github.com/prometheus/client_golang/prometheus"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
@@ -37,9 +39,7 @@ import (
 
 // NewWorker returns a worker that will execute search queries and insert information about the
 // results into the code insights database.
-func NewWorker(ctx context.Context, workerBaseStore *basestore.Store, insightsStore *store.Store, metrics workerutil.WorkerMetrics) *workerutil.Worker {
-	workerStore := createDBWorkerStore(workerBaseStore)
-
+func NewWorker(ctx context.Context, workerStore dbworkerstore.Store, insightsStore *store.Store, metrics workerutil.WorkerMetrics) *workerutil.Worker {
 	numHandlers := conf.Get().InsightsQueryWorkerConcurrency
 	if numHandlers <= 0 {
 		numHandlers = 1
@@ -79,7 +79,6 @@ func NewWorker(ctx context.Context, workerBaseStore *basestore.Store, insightsSt
 	}))
 
 	return dbworker.NewWorker(ctx, workerStore, &workHandler{
-		workerBaseStore: workerBaseStore,
 		insightsStore:   insightsStore,
 		limiter:         limiter,
 		metadadataStore: store.NewInsightStore(insightsStore.Handle().DB()),
@@ -104,8 +103,7 @@ func getRateLimit(defaultValue rate.Limit) func() rate.Limit {
 
 // NewResetter returns a resetter that will reset pending query runner jobs if they take too long
 // to complete.
-func NewResetter(ctx context.Context, workerBaseStore *basestore.Store, metrics dbworker.ResetterMetrics) *dbworker.Resetter {
-	workerStore := createDBWorkerStore(workerBaseStore)
+func NewResetter(ctx context.Context, workerStore dbworkerstore.Store, metrics dbworker.ResetterMetrics) *dbworker.Resetter {
 	options := dbworker.ResetterOptions{
 		Name:     "insights_query_runner_worker_resetter",
 		Interval: 1 * time.Minute,
@@ -114,11 +112,11 @@ func NewResetter(ctx context.Context, workerBaseStore *basestore.Store, metrics 
 	return dbworker.NewResetter(workerStore, options)
 }
 
-// createDBWorkerStore creates the dbworker store for the query runner worker.
+// CreateDBWorkerStore creates the dbworker store for the query runner worker.
 //
 // See internal/workerutil/dbworker for more information about dbworkers.
-func createDBWorkerStore(s *basestore.Store) dbworkerstore.Store {
-	return dbworkerstore.New(s.Handle(), dbworkerstore.Options{
+func CreateDBWorkerStore(s *basestore.Store, observationContext *observation.Context) dbworkerstore.Store {
+	return dbworkerstore.NewWithMetrics(s.Handle(), dbworkerstore.Options{
 		Name:              "insights_query_runner_jobs_store",
 		TableName:         "insights_query_runner_jobs",
 		ColumnExpressions: jobsColumns,
@@ -133,7 +131,7 @@ func createDBWorkerStore(s *basestore.Store) dbworkerstore.Store {
 		RetryAfter:        10 * time.Second,
 		MaxNumRetries:     3,
 		OrderByExpression: sqlf.Sprintf("priority, id"),
-	})
+	}, observationContext)
 }
 
 func getDependencies(ctx context.Context, workerBaseStore *basestore.Store, jobID int) (_ []time.Time, err error) {
