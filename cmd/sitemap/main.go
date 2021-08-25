@@ -10,6 +10,8 @@ import (
 
 	"github.com/cockroachdb/errors"
 	"github.com/inconshreveable/log15"
+
+	"github.com/sourcegraph/sourcegraph/lib/codeintel/lsif/protocol"
 )
 
 func main() {
@@ -86,8 +88,8 @@ func (g *generator) generate(ctx context.Context) error {
 	queried := 0
 	if err := g.eachLsifIndex(ctx, func(each gqlLSIFIndex, total uint64) error {
 		queried++
-		if queried%1000 == 0 {
-			log15.Info("discovered LSIF indexes", "n", queried, "of", total)
+		if queried%10000 == 0 {
+			log15.Info("progress: discovered LSIF indexes", "n", queried, "of", total)
 		}
 		if strings.Contains(each.InputIndexer, "lsif-go") {
 			repoName := each.ProjectRoot.Repository.Name
@@ -108,7 +110,9 @@ func (g *generator) generate(ctx context.Context) error {
 	queried = 0
 	for repoName, indexes := range indexedGoRepos {
 		queried++
-		log15.Info("discovered API docs pages for repo", "n", queried, "of", len(indexedGoRepos))
+		if queried%100 == 0 {
+			log15.Info("progress: discovered API docs pages for repo", "n", queried, "of", len(indexedGoRepos))
+		}
 		totalStars += indexes[0].ProjectRoot.Repository.Stars
 		pathInfo, err := g.fetchDocPathInfo(ctx, gqlDocPathInfoVars{RepoName: repoName})
 		if pathInfo == nil || (err != nil && strings.Contains(err.Error(), "page not found")) {
@@ -139,7 +143,7 @@ func (g *generator) generate(ctx context.Context) error {
 	for repoName, pagePathIDs := range pagesByRepo {
 		for _, pathID := range pagePathIDs {
 			page, err := g.fetchDocPage(ctx, gqlDocPageVars{RepoName: repoName, PathID: pathID})
-			if err != nil && strings.Contains(err.Error(), "page not found") {
+			if page == nil || (err != nil && strings.Contains(err.Error(), "page not found")) {
 				log15.Error("unexpected: API docs page missing after reportedly existing", "repo", repoName, "pathID", pathID, "error", err)
 				unexpectedMissingPages++
 				continue
@@ -148,11 +152,15 @@ func (g *generator) generate(ctx context.Context) error {
 				return err
 			}
 			queried++
-			log15.Info("got API docs page", "n", queried, "of", totalPages)
+			if queried%100 == 0 {
+				log15.Info("progress: got API docs page", "n", queried, "of", totalPages)
+			}
 
 			var walk func(node *DocumentationNode)
 			walk = func(node *DocumentationNode) {
-				if len(node.Detail.String()) > 100 {
+				goodDetail := len(node.Detail.String()) > 100
+				goodTags := !nodeIsExcluded(node, protocol.TagPrivate)
+				if goodDetail && goodTags {
 					docsSubPages = append(docsSubPages, repoName+"/-/docs/"+node.PathID)
 				}
 
@@ -259,4 +267,26 @@ func (g *generator) fetchDocPage(ctx context.Context, vars gqlDocPageVars) (*Doc
 		return nil, errors.Wrap(err, "Unmarshal DocumentationNode")
 	}
 	return &result, nil
+}
+
+func (g *generator) fetchDocReferences(ctx context.Context, vars gqlDocReferencesVars) (*gqlDocReferencesResponse, error) {
+	data, err := g.db.request(requestKey{RequestName: "DocReferences", Vars: vars}, func() ([]byte, error) {
+		return g.gqlClient.requestGraphQL(ctx, "SitemapDocReferences", gqlDocReferencesQuery, vars)
+	})
+	if err != nil {
+		return nil, err
+	}
+	var resp gqlDocReferencesResponse
+	return &resp, json.Unmarshal(data, &resp)
+}
+
+func nodeIsExcluded(node *DocumentationNode, excludingTags ...protocol.Tag) bool {
+	for _, tag := range node.Documentation.Tags {
+		for _, excludedTag := range excludingTags {
+			if tag == excludedTag {
+				return true
+			}
+		}
+	}
+	return false
 }
