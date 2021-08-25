@@ -292,7 +292,7 @@ type OrgDetailsAndMembership struct {
 
 // GetAuthenticatedUserOrgsDetailsAndMembership returns the organizations associated with the currently
 // authenticated user as well as additional information about each org by making API
-// requests for each org (see `OrgDetails` docs for more details).
+// requests for each org (see `OrgDetails` and `OrgMembership` docs for more details).
 func (c *V3Client) GetAuthenticatedUserOrgsDetailsAndMembership(ctx context.Context, page int) (
 	orgs []OrgDetailsAndMembership,
 	hasNextPage bool,
@@ -306,13 +306,16 @@ func (c *V3Client) GetAuthenticatedUserOrgsDetailsAndMembership(ctx context.Cont
 	orgs = make([]OrgDetailsAndMembership, len(orgNames))
 	for i, org := range orgNames {
 		if err = c.requestGet(ctx, "/orgs/"+org.Login, &orgs[i].OrgDetails); err != nil {
-			return nil, false, cost + i, err
+			return nil, false, cost + 2*i, err
 		}
 		if err = c.requestGet(ctx, "/user/memberships/orgs/"+org.Login, &orgs[i].OrgMembership); err != nil {
-			return nil, false, cost + i, err
+			return nil, false, cost + 2*i, err
 		}
 	}
-	return orgs, hasNextPage, cost + len(orgs), err
+	return orgs,
+		hasNextPage,
+		cost + 2*len(orgs), // 2 requests per org
+		nil
 }
 
 type restTeam struct {
