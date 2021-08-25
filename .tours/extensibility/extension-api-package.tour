@@ -1,0 +1,68 @@
+{
+    "$schema": "https://aka.ms/codetour-schema",
+    "title": "The Sourcegraph Extension API (npm package)",
+    "steps": [
+        {
+            "title": "Introduction",
+            "description": "Welcome to the extension API tour! If you don't already know what Sourcegraph extensions are, you can read about them [here](https://docs.sourcegraph.com/extensions).\n\nThe Sourcegraph extension API is what enables developers to *extend* the Sourcegraph UI to do cool things, like the code-tour extension you're using right now ;)"
+        },
+        {
+            "file": "client/extension-api/src/sourcegraph.d.ts",
+            "description": "For example, extensions can add contextual information next to lines of code by calling `CodeEditor#setDecorations`. \n\n![Git blame](https://user-images.githubusercontent.com/1976/47624533-f3a1e800-dada-11e8-81d9-3d4bd67fc08a.png)",
+            "line": 726
+        },
+        {
+            "file": "client/extension-api/src/sourcegraph.d.ts",
+            "description": "Or, they can add custom views to pages, like the directory page, through `sourcegraph.app.registerViewProvider`.\n\nCheck out [code insights](https://sourcegraph.com/extensions?category=All&query=category%3A%22Insights%22), which started as a prototype using this API.\n\n![Code insights](https://user-images.githubusercontent.com/10532611/81548695-f642f600-937d-11ea-8e22-6f809a861b5d.gif)",
+            "line": 1157,
+            "selection": {
+                "start": {
+                    "line": 1157,
+                    "character": 25
+                },
+                "end": {
+                    "line": 1157,
+                    "character": 37
+                }
+            }
+        },
+        {
+            "title": "Let's see how extensions work",
+            "description": "Developers integrate the extension API into their extensions through the [`\"sourcegraph\"`](https://www.npmjs.com/package/sourcegraph) npm package. These types seem super cool! Let's check out their implementation"
+        },
+        {
+            "file": "client/extension-api/src/index.js",
+            "description": "...huh? Looks like there's more than meets the eye. Let's take a tour through the Sourcegraph extensions codebase to find out what's going on",
+            "line": 8
+        },
+        {
+            "directory": "client/shared/src/api",
+            "description": "This is where the heart of the extension API actuallly lives. \n\nHere's the documentation for the [Sourcegraph extension architecture](https://docs.sourcegraph.com/dev/background-information/architecture/sourcegraph-extensions). After a quick skim of this, you'll be ready to dive into the code with me!\n\n![RFC 155 APPROVED_ Extension API Architecture](https://user-images.githubusercontent.com/37420160/130723468-c50a69eb-dbde-44ac-a80e-4c662bbbcf19.png)\n"
+        },
+        {
+            "file": "client/shared/src/api/extension/extensionHost.ts",
+            "description": "This is where we initialize the extension host. We'll visit the callers of this function later; for now, we'll keep diving deeper into the extension host to find out what's going on with the extension API.",
+            "line": 42
+        },
+        {
+            "file": "client/shared/src/api/extension/extensionHost.ts",
+            "description": "Look! A reference to the extension API! Let's see where this `createExtensionAPI` factory function ends up being called",
+            "line": 127
+        },
+        {
+            "file": "client/shared/src/api/extension/activation.ts",
+            "description": "Seems like `createExtensionAPI` is called when an extension is activated. What does `replaceAPIRequire` do with the resulting extension API?",
+            "line": 241
+        },
+        {
+            "file": "client/shared/src/api/extension/activation.ts",
+            "description": "The cryptic `\"sourcegraph\"` npm package `index.js` file makes a lot more sense now. When an extension is activated, the extension host replaces `global.require` with a function that returns an extension API instance made for that extension. ",
+            "line": 368
+        },
+        {
+            "file": "client/extension-api/src/index.js",
+            "description": "This `global.require()` call is bundled into extensions that import `\"sourcegraph\"`. We see how the `\"sourcegraph\"` npm package and the extension host work together to provide the implementation for the Sourcegraph extension API types at runtime. ",
+            "line": 8
+        }
+    ]
+}
