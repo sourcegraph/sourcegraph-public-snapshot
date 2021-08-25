@@ -15,6 +15,7 @@ type InsightViewSeries struct {
 	OldestHistoricalAt    time.Time
 	LastRecordedAt        time.Time
 	NextRecordingAfter    time.Time
+	BackfillQueuedAt      *time.Time
 	RecordingIntervalDays int
 	Label                 string
 	Stroke                string
