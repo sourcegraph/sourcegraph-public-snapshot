@@ -69,7 +69,7 @@ type mockProvider struct {
 
 	fetchUserPerms        func(context.Context, *extsvc.Account) (*authz.ExternalUserPermissions, error)
 	fetchUserPermsByToken func(context.Context, string) (*authz.ExternalUserPermissions, error)
-	fetchRepoPerms        func(ctx context.Context, repo *extsvc.Repository) ([]extsvc.AccountID, error)
+	fetchRepoPerms        func(ctx context.Context, repo *extsvc.Repository, opts authz.FetchPermsOptions) ([]extsvc.AccountID, error)
 }
 
 func (*mockProvider) FetchAccount(context.Context, *types.User, []*extsvc.Account, []string) (*extsvc.Account, error) {
@@ -89,8 +89,8 @@ func (p *mockProvider) FetchUserPermsByToken(ctx context.Context, token string, 
 	return p.fetchUserPermsByToken(ctx, token)
 }
 
-func (p *mockProvider) FetchRepoPerms(ctx context.Context, repo *extsvc.Repository) ([]extsvc.AccountID, error) {
-	return p.fetchRepoPerms(ctx, repo)
+func (p *mockProvider) FetchRepoPerms(ctx context.Context, repo *extsvc.Repository, opts authz.FetchPermsOptions) ([]extsvc.AccountID, error) {
+	return p.fetchRepoPerms(ctx, repo, opts)
 }
 
 // NOTE: With the latest set of changes, we will be relying on the external_service_repos
@@ -502,7 +502,7 @@ func TestPermsSyncer_syncRepoPerms(t *testing.T) {
 			id:          1,
 			serviceType: extsvc.TypeGitLab,
 			serviceID:   "https://gitlab.com/",
-			fetchRepoPerms: func(ctx context.Context, repo *extsvc.Repository) ([]extsvc.AccountID, error) {
+			fetchRepoPerms: func(ctx context.Context, repo *extsvc.Repository, opts authz.FetchPermsOptions) ([]extsvc.AccountID, error) {
 				return []extsvc.AccountID{"user"}, nil
 			},
 		}
@@ -510,7 +510,7 @@ func TestPermsSyncer_syncRepoPerms(t *testing.T) {
 			id:          2,
 			serviceType: extsvc.TypeGitLab,
 			serviceID:   "https://gitlab.com/",
-			fetchRepoPerms: func(ctx context.Context, repo *extsvc.Repository) ([]extsvc.AccountID, error) {
+			fetchRepoPerms: func(ctx context.Context, repo *extsvc.Repository, opts authz.FetchPermsOptions) ([]extsvc.AccountID, error) {
 				return nil, errors.New("not supposed to be called")
 			},
 		}
@@ -694,7 +694,7 @@ func TestPermsSyncer_syncRepoPerms(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			p.fetchRepoPerms = func(context.Context, *extsvc.Repository) ([]extsvc.AccountID, error) {
+			p.fetchRepoPerms = func(context.Context, *extsvc.Repository, authz.FetchPermsOptions) ([]extsvc.AccountID, error) {
 				return []extsvc.AccountID{"user", "pending_user"}, test.fetchErr
 			}
 

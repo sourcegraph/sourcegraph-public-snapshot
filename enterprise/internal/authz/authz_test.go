@@ -56,7 +56,7 @@ func (m gitlabAuthzProviderParams) FetchUserPermsByToken(context.Context, string
 	panic("should never be called")
 }
 
-func (m gitlabAuthzProviderParams) FetchRepoPerms(context.Context, *extsvc.Repository) ([]extsvc.AccountID, error) {
+func (m gitlabAuthzProviderParams) FetchRepoPerms(context.Context, *extsvc.Repository, authz.FetchPermsOptions) ([]extsvc.AccountID, error) {
 	panic("should never be called")
 }
 

@@ -501,7 +501,7 @@ func (s *PermsSyncer) syncRepoPerms(ctx context.Context, repoID api.RepoID, noPe
 		extAccountIDs, err := provider.FetchRepoPerms(ctx, &extsvc.Repository{
 			URI:              repo.URI,
 			ExternalRepoSpec: repo.ExternalRepo,
-		})
+		}, authz.FetchPermsOptions{})
 
 		// Detect 404 error (i.e. not authorized to call given APIs) that often happens with GitHub.com
 		// when the owner of the token only has READ access. However, we don't want to fail

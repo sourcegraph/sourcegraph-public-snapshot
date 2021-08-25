@@ -68,6 +68,10 @@ type Provider interface {
 
 	// FetchUserPermsByToken is similar to FetchUserPerms but only requires a token
 	// in order to communicate with the code host.
+	//
+	// Because permissions fetching APIs are often expensive, the implementation should
+	// try to return partial but valid results in case of error, and it is up to callers
+	// to decide whether to discard.
 	FetchUserPermsByToken(ctx context.Context, token string, opts FetchPermsOptions) (*ExternalUserPermissions, error)
 
 	// FetchRepoPerms returns a list of user IDs (on code host) who have read access to
@@ -78,7 +82,7 @@ type Provider interface {
 	// Because permissions fetching APIs are often expensive, the implementation should
 	// try to return partial but valid results in case of error, and it is up to callers
 	// to decide whether to discard.
-	FetchRepoPerms(ctx context.Context, repo *extsvc.Repository) ([]extsvc.AccountID, error)
+	FetchRepoPerms(ctx context.Context, repo *extsvc.Repository, opts FetchPermsOptions) ([]extsvc.AccountID, error)
 
 	// ServiceType returns the service type (e.g., "gitlab") of this authz provider.
 	ServiceType() string

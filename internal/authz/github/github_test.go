@@ -461,7 +461,7 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 func TestProvider_FetchRepoPerms(t *testing.T) {
 	t.Run("nil repository", func(t *testing.T) {
 		p := NewProvider("", ProviderOptions{GitHubURL: mustURL(t, "https://github.com")})
-		_, err := p.FetchRepoPerms(context.Background(), nil)
+		_, err := p.FetchRepoPerms(context.Background(), nil, authz.FetchPermsOptions{})
 		want := "no repository provided"
 		got := fmt.Sprintf("%v", err)
 		if got != want {
@@ -479,6 +479,7 @@ func TestProvider_FetchRepoPerms(t *testing.T) {
 					ServiceID:   "https://gitlab.com/",
 				},
 			},
+			authz.FetchPermsOptions{},
 		)
 		want := `not a code host of the repository: want "https://gitlab.com/" but have "https://github.com/"`
 		got := fmt.Sprintf("%v", err)
@@ -515,6 +516,7 @@ func TestProvider_FetchRepoPerms(t *testing.T) {
 				ServiceID:   "https://github.com/",
 			},
 		},
+		authz.FetchPermsOptions{},
 	)
 	if err != nil {
 		t.Fatal(err)

@@ -402,7 +402,7 @@ func (p *Provider) getGroupMembers(ctx context.Context, group string) ([]string,
 
 // FetchRepoPerms returns a list of users that have access to the given
 // repository on the Perforce Server.
-func (p *Provider) FetchRepoPerms(ctx context.Context, repo *extsvc.Repository) ([]extsvc.AccountID, error) {
+func (p *Provider) FetchRepoPerms(ctx context.Context, repo *extsvc.Repository, opts authz.FetchPermsOptions) ([]extsvc.AccountID, error) {
 	if repo == nil {
 		return nil, errors.New("no repository provided")
 	} else if !extsvc.IsHostOfRepo(p.codeHost, &repo.ExternalRepoSpec) {
