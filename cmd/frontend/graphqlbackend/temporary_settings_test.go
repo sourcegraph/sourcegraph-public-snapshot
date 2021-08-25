@@ -22,8 +22,7 @@ func TestTemporarySettingsNotSignedIn(t *testing.T) {
 	calledGetTemporarySettings := false
 	database.Mocks.TemporarySettings.GetTemporarySettings = func(ctx context.Context, userID int32) (*ts.TemporarySettings, error) {
 		calledGetTemporarySettings = true
-		contents := "{\"search.collapsedSidebarSections\": {\"types\": false}}"
-		return &ts.TemporarySettings{Contents: &contents}, nil
+		return &ts.TemporarySettings{Contents: "{\"search.collapsedSidebarSections\": {\"types\": false}}"}, nil
 	}
 
 	wantErr := errors.New("not authenticated")
@@ -64,8 +63,7 @@ func TestTemporarySettings(t *testing.T) {
 	calledGetTemporarySettings := false
 	database.Mocks.TemporarySettings.GetTemporarySettings = func(ctx context.Context, userID int32) (*ts.TemporarySettings, error) {
 		calledGetTemporarySettings = true
-		contents := "{\"search.collapsedSidebarSections\": {\"types\": false}}"
-		return &ts.TemporarySettings{Contents: &contents}, nil
+		return &ts.TemporarySettings{Contents: "{\"search.collapsedSidebarSections\": {\"types\": false}}"}, nil
 	}
 
 	RunTests(t, []*Test{

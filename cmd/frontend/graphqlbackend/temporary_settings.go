@@ -32,7 +32,7 @@ func (r *schemaResolver) TemporarySettings(ctx context.Context) (*TemporarySetti
 	return &TemporarySettingsResolver{db: r.db, inner: temporarySettings}, nil
 }
 
-func (t *TemporarySettingsResolver) Contents() *string {
+func (t *TemporarySettingsResolver) Contents() string {
 	return t.inner.Contents
 }
 

@@ -6407,5 +6407,5 @@ type TemporarySettings {
     """
     A JSON string representing the temporary settings.
     """
-    contents: String
+    contents: String!
 }

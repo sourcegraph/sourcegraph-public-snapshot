@@ -4,6 +4,8 @@ import (
 	"context"
 	"database/sql"
 
+	"github.com/cockroachdb/errors"
+
 	"github.com/keegancsmith/sqlf"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
@@ -24,8 +26,6 @@ func (f *TemporarySettingsStore) GetTemporarySettings(ctx context.Context, userI
 		return Mocks.TemporarySettings.GetTemporarySettings(ctx, userID)
 	}
 
-	var contents string
-
 	const getTemporarySettingsQuery = `
 		SELECT contents
 		FROM temporary_settings
@@ -33,18 +33,17 @@ func (f *TemporarySettingsStore) GetTemporarySettings(ctx context.Context, userI
 		LIMIT 1;
 	`
 
+	var contents string
 	err := f.QueryRow(ctx, sqlf.Sprintf(getTemporarySettingsQuery, userID)).Scan(&contents)
 
-	if err != nil {
-		if err == sql.ErrNoRows {
-			// No settings are saved for this user yet, return an empty settings object.
-			contents = "{}"
-		} else {
-			return nil, err
-		}
+	if err != nil && errors.Is(err, sql.ErrNoRows) {
+		// No settings are saved for this user yet, return an empty settings object.
+		contents = "{}"
+	} else if err != nil {
+		return nil, err
 	}
 
-	return &ts.TemporarySettings{Contents: &contents}, nil
+	return &ts.TemporarySettings{Contents: contents}, nil
 }
 
 func (f *TemporarySettingsStore) UpsertTemporarySettings(ctx context.Context, userID int32, contents string) error {

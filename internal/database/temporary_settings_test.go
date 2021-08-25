@@ -25,13 +25,12 @@ func testGetEmpty(t *testing.T) {
 
 	ctx := actor.WithInternalActor(context.Background())
 
-	empty := "{}"
-	expected := ts.TemporarySettings{Contents: &empty}
+	expected := ts.TemporarySettings{Contents: "{}"}
 
 	res, err := temporarySettingsStore.GetTemporarySettings(ctx, 1)
 	require.NoError(t, err)
 
-	require.EqualValues(t, res, &expected)
+	require.Equal(t, res, &expected)
 }
 
 func testInsertAndGet(t *testing.T) {
@@ -53,8 +52,8 @@ func testInsertAndGet(t *testing.T) {
 	res, err := temporarySettingsStore.GetTemporarySettings(ctx, user.ID)
 	require.NoError(t, err)
 
-	expected := ts.TemporarySettings{Contents: &contents}
-	require.EqualValues(t, res, &expected)
+	expected := ts.TemporarySettings{Contents: contents}
+	require.Equal(t, res, &expected)
 }
 
 func testUpdateAndGet(t *testing.T) {
@@ -81,8 +80,8 @@ func testUpdateAndGet(t *testing.T) {
 	res, err := temporarySettingsStore.GetTemporarySettings(ctx, user.ID)
 	require.NoError(t, err)
 
-	expected := ts.TemporarySettings{Contents: &contents2}
-	require.EqualValues(t, res, &expected)
+	expected := ts.TemporarySettings{Contents: contents2}
+	require.Equal(t, res, &expected)
 }
 
 func testInsertWithInvalidData(t *testing.T) {
