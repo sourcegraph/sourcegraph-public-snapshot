@@ -83,7 +83,11 @@ func TestIntegration_GitHubPermissions(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	provider := authzGitHub.NewProvider(svc.URN(), uri, token, cli)
+	provider := authzGitHub.NewProvider(svc.URN(), authzGitHub.ProviderOptions{
+		GitHubClient: cli,
+		GitHubURL:    uri,
+		BaseToken:    token,
+	})
 
 	authz.SetProviders(false, []authz.Provider{provider})
 	defer authz.SetProviders(true, nil)

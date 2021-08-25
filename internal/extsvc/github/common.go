@@ -47,8 +47,12 @@ type Actor struct {
 
 // A Team represents a team on Github.
 type Team struct {
-	Name string
-	URL  string
+	Name string `json:"name,omitempty"`
+	Slug string `json:"slug,omitempty"`
+	URL  string `json:"url,omitempty"`
+
+	ReposCount   int  `json:"repos_count,omitempty"`
+	Organization *Org `json:"organization,omitempty"`
 }
 
 // A GitActor represents an actor in a Git commit (ie. an author or committer).
@@ -1788,6 +1792,15 @@ const (
 	VisibilityPrivate Visibility = "private"
 )
 
+// Visibility is the affiliation filter for listing repositories.
+type Affiliation string
+
+const (
+	AffiliationOwner        Affiliation = "owner"
+	AffiliationCollaborator Affiliation = "collaborator"
+	AffiliationOrgMember    Affiliation = "organization_member"
+)
+
 type restSearchResponse struct {
 	TotalCount        int              `json:"total_count"`
 	IncompleteResults bool             `json:"incomplete_results"`
@@ -1846,6 +1859,16 @@ type UserEmail struct {
 
 type Org struct {
 	Login string `json:"login,omitempty"`
+}
+
+// OrgDetails describes the more detailed Org data you can only get from the
+// get-an-organization API (https://docs.github.com/en/rest/reference/orgs#get-an-organization)
+//
+// It is a superset of the organization field that is embedded in other API responses.
+type OrgDetails struct {
+	Org
+
+	DefaultRepositoryPermission string `json:"default_repository_permission,omitempty"`
 }
 
 // Collaborator is a collaborator of a repository.

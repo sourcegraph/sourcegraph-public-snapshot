@@ -17,6 +17,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth/providers"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
@@ -229,7 +230,7 @@ func TestSudoProvider_FetchUserPerms(t *testing.T) {
 		p := newSudoProvider(SudoProviderOp{
 			BaseURL: mustURL(t, "https://gitlab.com"),
 		}, nil)
-		_, err := p.FetchUserPerms(context.Background(), nil)
+		_, err := p.FetchUserPerms(context.Background(), nil, authz.FetchPermsOptions{})
 		want := "no account provided"
 		got := fmt.Sprintf("%v", err)
 		if got != want {
@@ -248,6 +249,7 @@ func TestSudoProvider_FetchUserPerms(t *testing.T) {
 					ServiceID:   "https://github.com/",
 				},
 			},
+			authz.FetchPermsOptions{},
 		)
 		want := `not a code host of the account: want "https://github.com/" but have "https://gitlab.com/"`
 		got := fmt.Sprintf("%v", err)
@@ -306,6 +308,7 @@ func TestSudoProvider_FetchUserPerms(t *testing.T) {
 				Data: &accountData,
 			},
 		},
+		authz.FetchPermsOptions{},
 	)
 	if err != nil {
 		t.Fatal(err)

@@ -127,7 +127,7 @@ func (p *Provider) FetchAccount(ctx context.Context, user *types.User, _ []*exts
 // callers to decide whether to discard.
 //
 // API docs: https://docs.atlassian.com/bitbucket-server/rest/5.16.0/bitbucket-rest.html#idm8296923984
-func (p *Provider) FetchUserPerms(ctx context.Context, account *extsvc.Account) (*authz.ExternalUserPermissions, error) {
+func (p *Provider) FetchUserPerms(ctx context.Context, account *extsvc.Account, opts authz.FetchPermsOptions) (*authz.ExternalUserPermissions, error) {
 	switch {
 	case account == nil:
 		return nil, errors.New("no account provided")
@@ -157,7 +157,7 @@ func (p *Provider) FetchUserPerms(ctx context.Context, account *extsvc.Account) 
 
 // FetchUserPermsByToken is currently only required for syncing permissions for
 // GitHub and GitLab on sourcegraph.com
-func (p *Provider) FetchUserPermsByToken(ctx context.Context, token string) (*authz.ExternalUserPermissions, error) {
+func (p *Provider) FetchUserPermsByToken(ctx context.Context, token string, opts authz.FetchPermsOptions) (*authz.ExternalUserPermissions, error) {
 	return nil, errors.New("not implemented")
 }
 

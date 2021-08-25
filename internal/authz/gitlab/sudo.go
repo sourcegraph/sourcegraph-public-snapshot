@@ -195,7 +195,7 @@ func (p *SudoProvider) fetchAccountByUsername(ctx context.Context, username stri
 // callers to decide whether to discard.
 //
 // API docs: https://docs.gitlab.com/ee/api/projects.html#list-all-projects
-func (p *SudoProvider) FetchUserPerms(ctx context.Context, account *extsvc.Account) (*authz.ExternalUserPermissions, error) {
+func (p *SudoProvider) FetchUserPerms(ctx context.Context, account *extsvc.Account, opts authz.FetchPermsOptions) (*authz.ExternalUserPermissions, error) {
 	if account == nil {
 		return nil, errors.New("no account provided")
 	} else if !extsvc.IsHostOfAccount(p.codeHost, account) {
@@ -214,7 +214,7 @@ func (p *SudoProvider) FetchUserPerms(ctx context.Context, account *extsvc.Accou
 
 // FetchUserPermsByToken is the same as FetchUserPerms but it only requires a
 // token.
-func (p *SudoProvider) FetchUserPermsByToken(ctx context.Context, token string) (*authz.ExternalUserPermissions, error) {
+func (p *SudoProvider) FetchUserPermsByToken(ctx context.Context, token string, opts authz.FetchPermsOptions) (*authz.ExternalUserPermissions, error) {
 	client := p.clientProvider.GetOAuthClient(token)
 	return listProjects(ctx, client)
 }

@@ -1,0 +1,11 @@
+[
+  {
+   "name": "private-access",
+   "slug": "private-access",
+   "url": "https://api.github.com/organizations/65169595/team/3878345",
+   "repos_count": 1,
+   "organization": {
+    "login": "sourcegraph-vcr-repos"
+   }
+  }
+ ]

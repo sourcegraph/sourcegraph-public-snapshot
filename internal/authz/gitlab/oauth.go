@@ -83,7 +83,7 @@ func (p *OAuthProvider) FetchAccount(context.Context, *types.User, []*extsvc.Acc
 // callers to decide whether to discard.
 //
 // API docs: https://docs.gitlab.com/ee/api/projects.html#list-all-projects
-func (p *OAuthProvider) FetchUserPerms(ctx context.Context, account *extsvc.Account) (*authz.ExternalUserPermissions, error) {
+func (p *OAuthProvider) FetchUserPerms(ctx context.Context, account *extsvc.Account, opts authz.FetchPermsOptions) (*authz.ExternalUserPermissions, error) {
 	if account == nil {
 		return nil, errors.New("no account provided")
 	} else if !extsvc.IsHostOfAccount(p.codeHost, account) {
@@ -104,7 +104,7 @@ func (p *OAuthProvider) FetchUserPerms(ctx context.Context, account *extsvc.Acco
 
 // FetchUserPermsByToken is the same as FetchUserPerms but it only requires a
 // token.
-func (p *OAuthProvider) FetchUserPermsByToken(ctx context.Context, token string) (*authz.ExternalUserPermissions, error) {
+func (p *OAuthProvider) FetchUserPermsByToken(ctx context.Context, token string, opts authz.FetchPermsOptions) (*authz.ExternalUserPermissions, error) {
 	client := p.clientProvider.GetOAuthClient(token)
 	return listProjects(ctx, client)
 }

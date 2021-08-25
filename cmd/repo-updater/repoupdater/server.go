@@ -13,6 +13,7 @@ import (
 	otlog "github.com/opentracing/opentracing-go/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
@@ -46,7 +47,7 @@ type Server struct {
 	}
 	PermsSyncer interface {
 		// ScheduleUsers schedules new permissions syncing requests for given users.
-		ScheduleUsers(ctx context.Context, userIDs ...int32)
+		ScheduleUsers(ctx context.Context, opts authz.FetchPermsOptions, userIDs ...int32)
 		// ScheduleRepos schedules new permissions syncing requests for given repositories.
 		ScheduleRepos(ctx context.Context, repoIDs ...api.RepoID)
 	}
@@ -369,7 +370,7 @@ func (s *Server) handleSchedulePermsSync(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	s.PermsSyncer.ScheduleUsers(r.Context(), req.UserIDs...)
+	s.PermsSyncer.ScheduleUsers(r.Context(), req.Options, req.UserIDs...)
 	s.PermsSyncer.ScheduleRepos(r.Context(), req.RepoIDs...)
 
 	respond(w, http.StatusOK, nil)

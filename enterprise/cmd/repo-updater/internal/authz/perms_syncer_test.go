@@ -29,7 +29,7 @@ func TestPermsSyncer_ScheduleUsers(t *testing.T) {
 	defer authz.SetProviders(true, nil)
 
 	s := NewPermsSyncer(nil, nil, nil, nil)
-	s.ScheduleUsers(context.Background(), 1)
+	s.ScheduleUsers(context.Background(), authz.FetchPermsOptions{}, 1)
 
 	expHeap := []*syncRequest{
 		{requestMeta: &requestMeta{
@@ -81,11 +81,11 @@ func (p *mockProvider) ServiceID() string   { return p.serviceID }
 func (p *mockProvider) URN() string         { return extsvc.URN(p.serviceType, p.id) }
 func (*mockProvider) Validate() []string    { return nil }
 
-func (p *mockProvider) FetchUserPerms(ctx context.Context, acct *extsvc.Account) (*authz.ExternalUserPermissions, error) {
+func (p *mockProvider) FetchUserPerms(ctx context.Context, acct *extsvc.Account, opts authz.FetchPermsOptions) (*authz.ExternalUserPermissions, error) {
 	return p.fetchUserPerms(ctx, acct)
 }
 
-func (p *mockProvider) FetchUserPermsByToken(ctx context.Context, token string) (*authz.ExternalUserPermissions, error) {
+func (p *mockProvider) FetchUserPermsByToken(ctx context.Context, token string, opts authz.FetchPermsOptions) (*authz.ExternalUserPermissions, error) {
 	return p.fetchUserPermsByToken(ctx, token)
 }
 
@@ -180,7 +180,7 @@ func TestPermsSyncer_syncUserPerms_unionExternalServiceRepos(t *testing.T) {
 		}, nil
 	}
 
-	err := s.syncUserPerms(context.Background(), 1, true)
+	err := s.syncUserPerms(context.Background(), 1, true, authz.FetchPermsOptions{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -265,7 +265,7 @@ func TestPermsSyncer_syncUserPerms(t *testing.T) {
 				}, test.fetchErr
 			}
 
-			err := s.syncUserPerms(context.Background(), 1, test.noPerms)
+			err := s.syncUserPerms(context.Background(), 1, test.noPerms, authz.FetchPermsOptions{})
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -328,7 +328,7 @@ func TestPermsSyncer_syncUserPerms_tokenExpire(t *testing.T) {
 			return nil, &github.APIError{Code: http.StatusUnauthorized}
 		}
 
-		err := s.syncUserPerms(context.Background(), 1, false)
+		err := s.syncUserPerms(context.Background(), 1, false, authz.FetchPermsOptions{})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -349,7 +349,7 @@ func TestPermsSyncer_syncUserPerms_tokenExpire(t *testing.T) {
 			return nil, gitlab.NewHTTPError(http.StatusForbidden, nil)
 		}
 
-		err := s.syncUserPerms(context.Background(), 1, false)
+		err := s.syncUserPerms(context.Background(), 1, false, authz.FetchPermsOptions{})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -374,7 +374,7 @@ func TestPermsSyncer_syncUserPerms_tokenExpire(t *testing.T) {
 			}
 		}
 
-		err := s.syncUserPerms(context.Background(), 1, false)
+		err := s.syncUserPerms(context.Background(), 1, false, authz.FetchPermsOptions{})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -443,7 +443,7 @@ func TestPermsSyncer_syncUserPerms_prefixSpecs(t *testing.T) {
 		}, nil
 	}
 
-	err := s.syncUserPerms(context.Background(), 1, false)
+	err := s.syncUserPerms(context.Background(), 1, false, authz.FetchPermsOptions{})
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -175,7 +175,7 @@ func (p *Provider) canGrantReadAccess(level string) bool {
 
 // FetchUserPerms returns a list of depot prefixes that the given user has
 // access to on the Perforce Server.
-func (p *Provider) FetchUserPerms(ctx context.Context, account *extsvc.Account) (*authz.ExternalUserPermissions, error) {
+func (p *Provider) FetchUserPerms(ctx context.Context, account *extsvc.Account, opts authz.FetchPermsOptions) (*authz.ExternalUserPermissions, error) {
 	if account == nil {
 		return nil, errors.New("no account provided")
 	} else if !extsvc.IsHostOfAccount(p.codeHost, account) {
@@ -305,7 +305,7 @@ func (p *Provider) FetchUserPerms(ctx context.Context, account *extsvc.Account) 
 
 // FetchUserPermsByToken is currently only required for syncing permissions for
 // GitHub and GitLab on sourcegraph.com
-func (p *Provider) FetchUserPermsByToken(ctx context.Context, token string) (*authz.ExternalUserPermissions, error) {
+func (p *Provider) FetchUserPermsByToken(ctx context.Context, token string, opts authz.FetchPermsOptions) (*authz.ExternalUserPermissions, error) {
 	return nil, errors.New("not implemented")
 }
 

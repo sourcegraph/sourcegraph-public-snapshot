@@ -1,0 +1,6 @@
+[
+  {
+   "login": "sourcegraph-vcr-repos",
+   "default_repository_permission": "read"
+  }
+ ]
