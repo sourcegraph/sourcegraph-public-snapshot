@@ -70,6 +70,7 @@ export const DrillDownInsightCreationForm: React.FunctionComponent<DrillDownInsi
 
             <FormInput
                 title="Name"
+                autoFocus={true}
                 required={true}
                 description="Shown as the title for your insight"
                 placeholder="Example: Migration to React function components"
