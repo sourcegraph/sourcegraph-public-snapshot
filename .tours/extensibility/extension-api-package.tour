@@ -1,6 +1,7 @@
 {
     "$schema": "https://aka.ms/codetour-schema",
     "title": "The Sourcegraph Extension API (npm package)",
+    "description": "Welcome to the Extensibility team! 🎉️🎉️🎉️ (demo tour)",
     "steps": [
         {
             "title": "Introduction",
