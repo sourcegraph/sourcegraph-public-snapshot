@@ -162,7 +162,7 @@ func (c *V3Client) get(ctx context.Context, requestURI string, result interface{
 		//
 		// This is part of COREAPP-218.
 		remaining, reset, retry, known := c.rateLimitMonitor.Get()
-		return nil, errors.Wrapf(errInternalRateLimitExceeded, 
+		return nil, errors.Wrapf(errInternalRateLimitExceeded,
 			"rate limit: %v, monitor state (remaining: %d, reset: %v, retry: %v, known: %t)",
 			c.rateLimit.Limit(),
 			remaining, reset.Minutes(), retry.Minutes(), known,
