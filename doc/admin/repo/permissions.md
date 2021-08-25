@@ -10,9 +10,11 @@ Setting up a unified SSO for code hosts and Sourcegraph is also possible: how to
 
 > NOTE: Site admin users bypass all permission checks and have access to every repository on Sourcegraph.
 
-## GitHub
+<span class="virtual-br"></span>
 
-> WARNING: It takes time to complete mirroring repository permissions from the code host, please read about [background permissions syncing](#background-permissions-syncing) to know what to expect.
+> WARNING: It can take some time to complete mirroring repository permissions from a code host. [Learn more](#permissions-sync-times).
+
+## GitHub
 
 Prerequisite: [Add GitHub as an authentication provider.](../auth/index.md#github)
 
@@ -26,9 +28,42 @@ Then, [add or edit a GitHub connection](../external_service/github.md#repository
 }
 ```
 
-## GitLab
+> WARNING: It can take some time to complete mirroring repository permissions from a code host. [Learn more](#permissions-sync-times).
 
-> WARNING: It takes time to complete mirroring repository permissions from the code host, please read about [background permissions syncing](#background-permissions-syncing) to know what to expect.
+### Faster permissions syncing via GitHub webhooks
+
+<span class="badge badge-note">Sourcegraph 3.22+</span>
+
+Sourcegraph can speed up permissions syncing by receiving webhooks from GitHub for events related to user and repo permissions. To set up webhooks, follow the guide in the [GitHub Code Host Docs](../external_service/github.md#webhooks). These events will enqueue permissions syncs for the repositories or users mentioned, meaning things like publicising / privatising repos, or adding collaborators will be reflected in your Sourcegraph searches more quickly. For this to work the user must have logged in via the [GitHub OAuth provider](../auth.md#github).
+
+The events we consume are:
+
+* [public](https://developer.github.com/webhooks/event-payloads/#public)
+* [repository](https://developer.github.com/webhooks/event-payloads/#repository)
+* [member](https://developer.github.com/webhooks/event-payloads/#member)
+* [membership](https://developer.github.com/webhooks/event-payloads/#membership)
+* [team_add](https://developer.github.com/webhooks/event-payloads/#team_add)
+* [organization](https://developer.github.com/webhooks/event-payloads/#organization)
+
+### Teams and organizations permissions caching
+
+<span class="badge badge-experimental">Experimental</span> <span class="badge badge-note">Sourcegraph 3.31+</span>
+
+For GitHub providers, Sourcegraph can leverage caching of team and organization permissions - [learn more](#permissions-caching).
+
+Caching behaviour can be enabld via the `authorization.groupsCacheTTL` field:
+
+```json
+{
+   "url": "https://github.com",
+   "token": "$PERSONAL_ACCESS_TOKEN",
+   "authorization": {
+     "groupsCacheTTL": 72, // hours
+   }
+}
+```
+
+## GitLab
 
 GitLab permissions can be configured in three ways:
 
@@ -37,6 +72,8 @@ GitLab permissions can be configured in three ways:
    (recommended only if the first option is not possible)
 3. Assume username equivalency between Sourcegraph and GitLab (warning: this is generally unsafe and
    should only be used if you are using strictly `http-header` authentication).
+
+> WARNING: It can take some time to complete mirroring repository permissions from a code host. [Learn more](#permissions-sync-times).
 
 ### OAuth application
 
@@ -109,9 +146,9 @@ because Sourcegraph usernames are mutable.
 
 ## Bitbucket Server
 
-> WARNING: It takes time to complete mirroring repository permissions from the code host, please read about [background permissions syncing](#background-permissions-syncing) to know what to expect.
-
 Enforcing Bitbucket Server permissions can be configured via the `authorization` setting in its configuration.
+
+> WARNING: It can take some time to complete mirroring repository permissions from a code host. [Learn more](#permissions-sync-times).
 
 ### Prerequisites
 
@@ -194,7 +231,16 @@ By installing the [Bitbucket Server plugin](../../../integration/bitbucket_serve
 
 Finally, **save the configuration**. You're done!
 
-## Background permissions syncing
+## Permissions sync times
+
+When syncing permissions from code hosts with large numbers of users and repositories, it can take some time to complete mirroring repository permissions from a code host, typically due to rate limits on a code host that limits how quickly Sourcegraph can query for repository permissions.
+
+To mitigate this, Sourcegraph can leverage:
+
+* [Background permissions syncing](#background-permissions-syncing)
+* [Provider-specific optimizations](#provider-specific-optimizations)
+
+### Background permissions syncing
 
 <span class="badge badge-note">Sourcegraph 3.17+</span>
 
@@ -222,44 +268,31 @@ Considerations when enabling for the first time:
 
 Please contact [support@sourcegraph.com](mailto:support@sourcegraph.com) if you have any concerns/questions about enabling this feature for your Sourcegraph instance.
 
-### Complete sync vs incremental sync
+#### Complete sync vs incremental sync
 
 A complete sync means a repository or user has done a repository-centric or user-centric syncing respectively, which presists the most accurate permissions from code hosts to Sourcegraph.
 
 An incremental sync is in fact a side effect of a complete sync because a user may grant or lose access to repositories and we react to such changes as soon as we know to improve permissions accuracy.
 
-## Permissions syncing optmizations
+### Provider-specific optimizations
 
-### Faster permissions syncing via GitHub webhooks
+Each provider can implement optimizations to improve sync performance - please refer to the relevant provider documentation on this page for more details. For example, [the GitHub provider has support for using webhooks to improve sync speed](#faster-permissions-syncing-via-github-webhooks).
 
-<span class="badge badge-note">Sourcegraph 3.22+</span>
+#### Permissions caching
 
-Sourcegraph can speed up permissions syncing by receiving webhooks from GitHub for events related to user and repo permissions. To set up webhooks, follow the guide in the [GitHub Code Host Docs](../external_service/github.md#webhooks). These events will enqueue permissions syncs for the repositories or users mentioned, meaning things like publicising / privatising repos, or adding collaborators will be reflected in your Sourcegraph searches more quickly. For this to work the user must have logged in via the [GitHub OAuth provider](../auth.md#github).
+<span class="badge badge-experimental">Experimental</span> <span class="badge badge-note">Sourcegraph 3.31+</span>
 
-The events we consume are:
+Some permissions providers in Sourcegraph can leverage caching mechanisms to reduce the number of API calls used when syncing permissions. This can significantly reduce the amount of time it takes to perform a full permissions sync due to reduced instances of being rate limited by the code host, and is useful for code hosts with very large numbers of users and repositories.
 
-* [public](https://developer.github.com/webhooks/event-payloads/#public)
-* [repository](https://developer.github.com/webhooks/event-payloads/#repository)
-* [member](https://developer.github.com/webhooks/event-payloads/#member)
-* [membership](https://developer.github.com/webhooks/event-payloads/#membership)
-* [team_add](https://developer.github.com/webhooks/event-payloads/#team_add)
-* [organization](https://developer.github.com/webhooks/event-payloads/#organization)
+To see if your provider supports permissions caching, please refer to the relevant provider documentation on this page. For example, [the GitHub provider supports teams and organizations permissions caching](#teams-and-organizations-permissions-caching).
 
-### Reduced API usage via permissions caching
+Note that this can mean that permissions can be out of date. To configure caching behaviour, please refer to the relevant provider documentation on this page. To force a bypass of caches during a sync, you can manually queue users or repositories for sync with the `invalidateCaches` options via the Sourcegarph GraphQL API:
 
-<span class="badge badge-note">Sourcegraph 3.31+</span>
-
-For GitHub providers, Sourcegraph leverages caching of team and organization permissions to reduce the number of API calls used when syncing permissions. This can significantly reduce the amount of time it takes to perform a full permissions sync due to reduced instances of being rate limited by the code host.
-
-Caching behaviour can be configured (or disabled entirely) via the `authorization.groupsCacheTTL` field:
-
-```json
-{
-   "url": "https://github.com",
-   "token": "$PERSONAL_ACCESS_TOKEN",
-   "authorization": {
-     "groupsCacheTTL": 72, // hours, set to -1 to disable caching
-   }
+```gql
+mutation {
+  scheduleUserPermissionsSync(user: "userid", options: {invalidateCaches: true}) {
+    alwaysNil
+  }
 }
 ```
 
