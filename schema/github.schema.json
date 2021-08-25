@@ -170,9 +170,7 @@
           "default": 72
         }
       },
-      "examples": [
-        {"groupsCacheTTL": 72}
-      ]
+      "examples": [{ "groupsCacheTTL": 72 }]
     },
     "cloudGlobal": {
       "title": "CloudGlobal",
