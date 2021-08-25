@@ -80,8 +80,9 @@ func (r *insightSeriesResolver) Status(ctx context.Context) (graphqlbackend.Insi
 		// Include errored because they'll be retried before becoming failures
 		pendingJobs: int32(status.Queued + status.Processing + status.Errored),
 
-		completedJobs: int32(status.Completed),
-		failedJobs:    int32(status.Failed),
+		completedJobs:    int32(status.Completed),
+		failedJobs:       int32(status.Failed),
+		backfillQueuedAt: r.series.BackfillQueuedAt,
 	}, nil
 }
 
