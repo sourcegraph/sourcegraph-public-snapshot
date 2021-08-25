@@ -372,39 +372,38 @@ func (s *store) Dequeue(ctx context.Context, workerHostname string, conditions [
 	}
 
 	now := s.now()
+	retryAfter := int(s.options.RetryAfter / time.Second)
 
-	updatedValues := map[string]*sqlf.Query{
-		s.columnReplacer.Replace("state"):             sqlf.Sprintf("'processing'"),
-		s.columnReplacer.Replace("started_at"):        sqlf.Sprintf("%s", now),
-		s.columnReplacer.Replace("last_heartbeat_at"): sqlf.Sprintf("%s", now),
-		s.columnReplacer.Replace("finished_at"):       sqlf.Sprintf("NULL"),
-		s.columnReplacer.Replace("failure_message"):   sqlf.Sprintf("NULL"),
-		s.columnReplacer.Replace("execution_logs"):    sqlf.Sprintf("NULL"),
-		s.columnReplacer.Replace("worker_hostname"):   sqlf.Sprintf("%s", workerHostname),
-	}
-
-	alias := ""
-	if parts := strings.Split(s.options.ViewName, " "); len(parts) > 1 {
-		// If the view name supplied an alias, stash it so we can compare the
-		// column expressions and the updated values for reference equality
-		// below.
-		alias = parts[len(parts)-1] + "."
+	var alias string
+	if parts := strings.Split(s.options.ViewName, " "); len(parts) == 2 {
+		alias = parts[1]
 	}
 
 	// Construct the set of expressions we need to return from the view record
 	selectExpressions := make([]*sqlf.Query, len(s.options.ColumnExpressions))
 	copy(selectExpressions, s.options.ColumnExpressions)
 
+	expressionMatchesColumnReferences := func(expression *sqlf.Query, columnName string) bool {
+		return strings.TrimPrefix(strings.TrimPrefix(expression.Query(sqlf.PostgresBindVar), s.options.ViewName+"."), alias+".") == columnName
+	}
+
+	updatedValues := map[string]*sqlf.Query{
+		s.columnReplacer.Replace("{state}"):             sqlf.Sprintf("%s", "processing"),
+		s.columnReplacer.Replace("{started_at}"):        sqlf.Sprintf("%s::timestamp", now),
+		s.columnReplacer.Replace("{last_heartbeat_at}"): sqlf.Sprintf("%s::timestamp", now),
+		s.columnReplacer.Replace("{finished_at}"):       sqlf.Sprintf("NULL"),
+		s.columnReplacer.Replace("{failure_message}"):   sqlf.Sprintf("NULL"),
+		s.columnReplacer.Replace("{execution_logs}"):    sqlf.Sprintf("NULL"),
+		s.columnReplacer.Replace("{worker_hostname}"):   sqlf.Sprintf("%s", workerHostname),
+	}
+
+	// Replace column expressions on the view with the updated value if the names match.
+	// This is require as if we select from the view we'll get whatever values were in that
+	// row at the snapshot taken at the start of the transaction - updates mid-query are
+	// not refelected by sibling CTEs.
 	for i, expression := range selectExpressions {
 		for columnName, updatedValue := range updatedValues {
-			// Replace column expressions on the view with the updated value if the names match.
-			// This is require as if we select from teh view we'll get whatever values were in that
-			// row at the snapshot taken at the start of the transaction - updates mid-query are
-			// not refelected by sibling CTEs.
-			//
-			// This condition matches queries like `columnName` and `w.columnName` where `w` is the
-			// alias supplied in the supplied view name expression.
-			if v := expression.Query(sqlf.PostgresBindVar); v == columnName || v == alias+columnName {
+			if expressionMatchesColumnReferences(expression, columnName) {
 				selectExpressions[i] = updatedValue
 				break
 			}
@@ -421,9 +420,9 @@ func (s *store) Dequeue(ctx context.Context, workerHostname string, conditions [
 		dequeueQuery,
 		quote(s.options.ViewName),
 		now,
-		int(s.options.RetryAfter/time.Second),
+		retryAfter,
 		now,
-		int(s.options.RetryAfter/time.Second),
+		retryAfter,
 		s.options.MaxNumRetries,
 		makeConditionSuffix(conditions),
 		s.options.OrderByExpression,
