@@ -13,7 +13,7 @@ interactions:
     url: https://api.github.com/user/teams?per_page=100&page=1
     method: GET
   response:
-    body: '[{"name":"private-access","id":3878345,"node_id":"MDQ6VGVhbTM4NzgzNDU=","slug":"private-access","description":"","privacy":"closed","url":"https://api.github.com/organizations/65169595/team/3878345","html_url":"https://github.com/orgs/sourcegraph-vcr-repos/teams/private-access","members_url":"https://api.github.com/organizations/65169595/team/3878345/members{/member}","repositories_url":"https://api.github.com/organizations/65169595/team/3878345/repos","permission":"pull","created_at":"2020-06-05T08:02:22Z","updated_at":"2020-06-05T08:02:22Z","members_count":2,"repos_count":1,"organization":{"login":"sourcegraph-vcr-repos","id":65169595,"node_id":"MDEyOk9yZ2FuaXphdGlvbjY1MTY5NTk1","url":"https://api.github.com/orgs/sourcegraph-vcr-repos","repos_url":"https://api.github.com/orgs/sourcegraph-vcr-repos/repos","events_url":"https://api.github.com/orgs/sourcegraph-vcr-repos/events","hooks_url":"https://api.github.com/orgs/sourcegraph-vcr-repos/hooks","issues_url":"https://api.github.com/orgs/sourcegraph-vcr-repos/issues","members_url":"https://api.github.com/orgs/sourcegraph-vcr-repos/members{/member}","public_members_url":"https://api.github.com/orgs/sourcegraph-vcr-repos/public_members{/member}","avatar_url":"https://avatars.githubusercontent.com/u/65169595?v=4","description":null,"is_verified":false,"has_organization_projects":true,"has_repository_projects":true,"public_repos":1,"public_gists":0,"followers":0,"following":0,"html_url":"https://github.com/sourcegraph-vcr-repos","created_at":"2020-05-11T12:18:26Z","updated_at":"2020-05-11T12:18:26Z","type":"Organization"},"parent":null}]'
+    body: '[{"name":"private-access","id":3878345,"node_id":"MDQ6VGVhbTM4NzgzNDU=","slug":"private-access","description":"","privacy":"closed","url":"https://api.github.com/organizations/65169595/team/3878345","html_url":"https://github.com/orgs/sourcegraph-vcr-repos/teams/private-access","members_url":"https://api.github.com/organizations/65169595/team/3878345/members{/member}","repositories_url":"https://api.github.com/organizations/65169595/team/3878345/repos","permission":"pull","created_at":"2020-06-05T08:02:22Z","updated_at":"2020-06-05T08:02:22Z","members_count":2,"repos_count":1,"organization":{"login":"sourcegraph-vcr-repos","id":65169595,"node_id":"MDEyOk9yZ2FuaXphdGlvbjY1MTY5NTk1","url":"https://api.github.com/orgs/sourcegraph-vcr-repos","repos_url":"https://api.github.com/orgs/sourcegraph-vcr-repos/repos","events_url":"https://api.github.com/orgs/sourcegraph-vcr-repos/events","hooks_url":"https://api.github.com/orgs/sourcegraph-vcr-repos/hooks","issues_url":"https://api.github.com/orgs/sourcegraph-vcr-repos/issues","members_url":"https://api.github.com/orgs/sourcegraph-vcr-repos/members{/member}","public_members_url":"https://api.github.com/orgs/sourcegraph-vcr-repos/public_members{/member}","avatar_url":"https://avatars.githubusercontent.com/u/65169595?v=4","description":null,"is_verified":false,"has_organization_projects":true,"has_repository_projects":true,"public_repos":1,"public_gists":0,"followers":0,"following":0,"html_url":"https://github.com/sourcegraph-vcr-repos","created_at":"2020-05-11T12:18:26Z","updated_at":"2020-05-11T12:18:26Z","type":"Organization"},"parent":null},{"name":"all_read_only","id":5058995,"node_id":"T_kwDOA-Jou84ATTGz","slug":"all_read_only","description":"all_read_only","privacy":"closed","url":"https://api.github.com/organizations/65169595/team/5058995","html_url":"https://github.com/orgs/sourcegraph-vcr-repos/teams/all_read_only","members_url":"https://api.github.com/organizations/65169595/team/5058995/members{/member}","repositories_url":"https://api.github.com/organizations/65169595/team/5058995/repos","permission":"pull","created_at":"2021-08-25T00:52:14Z","updated_at":"2021-08-25T00:52:14Z","members_count":3,"repos_count":0,"organization":{"login":"sourcegraph-vcr-repos","id":65169595,"node_id":"MDEyOk9yZ2FuaXphdGlvbjY1MTY5NTk1","url":"https://api.github.com/orgs/sourcegraph-vcr-repos","repos_url":"https://api.github.com/orgs/sourcegraph-vcr-repos/repos","events_url":"https://api.github.com/orgs/sourcegraph-vcr-repos/events","hooks_url":"https://api.github.com/orgs/sourcegraph-vcr-repos/hooks","issues_url":"https://api.github.com/orgs/sourcegraph-vcr-repos/issues","members_url":"https://api.github.com/orgs/sourcegraph-vcr-repos/members{/member}","public_members_url":"https://api.github.com/orgs/sourcegraph-vcr-repos/public_members{/member}","avatar_url":"https://avatars.githubusercontent.com/u/65169595?v=4","description":null,"is_verified":false,"has_organization_projects":true,"has_repository_projects":true,"public_repos":1,"public_gists":0,"followers":0,"following":0,"html_url":"https://github.com/sourcegraph-vcr-repos","created_at":"2020-05-11T12:18:26Z","updated_at":"2020-05-11T12:18:26Z","type":"Organization"},"parent":null}]'
     headers:
       Access-Control-Allow-Origin:
       - '*'
@@ -29,11 +29,9 @@ interactions:
       Content-Type:
       - application/json; charset=utf-8
       Date:
-      - Tue, 24 Aug 2021 13:15:56 GMT
+      - Wed, 25 Aug 2021 14:53:00 GMT
       Etag:
-      - W/"d495a9c5ccc66e00cde143012fd8c7da8ce963fc5c0e3e84964cd3b3ebd94b28"
-      Github-Authentication-Token-Expiration:
-      - 2021-09-23 13:15:33 UTC
+      - W/"fe4bb75dc293312645074e52c06e954c38e2d11322c67df8baaa9626c4d48323"
       Referrer-Policy:
       - origin-when-cross-origin, strict-origin-when-cross-origin
       Server:
@@ -53,7 +51,7 @@ interactions:
       - github.v3; param=jean-grey-preview; format=json, github.mercy-preview; param=machine-man-preview;
         format=json
       X-Github-Request-Id:
-      - 13D0:1238:2DDD197:68B319F:6124F10C
+      - F098:0D7B:E87CF:1F6D2F:6126594C
       X-Oauth-Scopes:
       - admin:enterprise, admin:gpg_key, admin:org, admin:org_hook, admin:public_key,
         admin:repo_hook, delete:packages, delete_repo, gist, notifications, repo,
@@ -61,13 +59,13 @@ interactions:
       X-Ratelimit-Limit:
       - "5000"
       X-Ratelimit-Remaining:
-      - "4941"
+      - "4971"
       X-Ratelimit-Reset:
-      - "1629813989"
+      - "1629906603"
       X-Ratelimit-Resource:
       - core
       X-Ratelimit-Used:
-      - "59"
+      - "29"
       X-Xss-Protection:
       - "0"
     status: 200 OK
@@ -103,11 +101,9 @@ interactions:
       Content-Type:
       - application/json; charset=utf-8
       Date:
-      - Tue, 24 Aug 2021 13:15:56 GMT
+      - Wed, 25 Aug 2021 14:53:01 GMT
       Etag:
-      - '"ca95b3041167fbe478bcef4a6b69bf1eb1826fcbd96a5e8574381a5cbe6d7013"'
-      Github-Authentication-Token-Expiration:
-      - 2021-09-23 13:15:33 UTC
+      - '"4140b9aeab0aa5805b9a90fe57ccc900c66b631ae2394de0e2238301e85bcb43"'
       Link:
       - <https://api.github.com/user/teams?per_page=100&page=1>; rel="prev", <https://api.github.com/user/teams?per_page=100&page=1>;
         rel="last", <https://api.github.com/user/teams?per_page=100&page=1>; rel="first"
@@ -130,7 +126,7 @@ interactions:
       - github.v3; param=jean-grey-preview; format=json, github.mercy-preview; param=machine-man-preview;
         format=json
       X-Github-Request-Id:
-      - 13D0:1238:2DDD19D:68B31AD:6124F10C
+      - F098:0D7B:E87E0:1F6D62:6126594C
       X-Oauth-Scopes:
       - admin:enterprise, admin:gpg_key, admin:org, admin:org_hook, admin:public_key,
         admin:repo_hook, delete:packages, delete_repo, gist, notifications, repo,
@@ -138,13 +134,13 @@ interactions:
       X-Ratelimit-Limit:
       - "5000"
       X-Ratelimit-Remaining:
-      - "4940"
+      - "4970"
       X-Ratelimit-Reset:
-      - "1629813989"
+      - "1629906603"
       X-Ratelimit-Resource:
       - core
       X-Ratelimit-Used:
-      - "60"
+      - "30"
       X-Xss-Protection:
       - "0"
     status: 200 OK

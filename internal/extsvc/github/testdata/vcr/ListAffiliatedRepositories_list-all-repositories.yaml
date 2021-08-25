@@ -33,11 +33,9 @@ interactions:
       Content-Type:
       - application/json; charset=utf-8
       Date:
-      - Tue, 24 Aug 2021 13:15:54 GMT
+      - Wed, 25 Aug 2021 14:52:59 GMT
       Etag:
-      - W/"0b4167061f8d0050bae93578b97b6b3f345ae69b317845d3d33c322988723a69"
-      Github-Authentication-Token-Expiration:
-      - 2021-09-23 13:15:33 UTC
+      - W/"456b59c48241ac4631979f291214d3b48af34119d89e2a3eee04370236239d89"
       Referrer-Policy:
       - origin-when-cross-origin, strict-origin-when-cross-origin
       Server:
@@ -57,7 +55,7 @@ interactions:
       - github.v3; param=jean-grey-preview; format=json, github.mercy-preview; param=machine-man-preview;
         format=json
       X-Github-Request-Id:
-      - 13D0:1238:2DDD12A:68B30A4:6124F10A
+      - F098:0D7B:E875E:1F6C20:6126594A
       X-Oauth-Scopes:
       - admin:enterprise, admin:gpg_key, admin:org, admin:org_hook, admin:public_key,
         admin:repo_hook, delete:packages, delete_repo, gist, notifications, repo,
@@ -65,13 +63,13 @@ interactions:
       X-Ratelimit-Limit:
       - "5000"
       X-Ratelimit-Remaining:
-      - "4954"
+      - "4984"
       X-Ratelimit-Reset:
-      - "1629813989"
+      - "1629906603"
       X-Ratelimit-Resource:
       - core
       X-Ratelimit-Used:
-      - "46"
+      - "16"
       X-Xss-Protection:
       - "0"
     status: 200 OK
