@@ -725,6 +725,7 @@ func TestPermsSyncer_waitForRateLimit(t *testing.T) {
 		rateLimiterRegistry := ratelimit.NewRegistry()
 		l := rateLimiterRegistry.Get("https://github.com/")
 		l.SetLimit(1)
+		l.SetBurst(1)
 		s := NewPermsSyncer(nil, nil, nil, rateLimiterRegistry)
 
 		ctx, cancel := context.WithTimeout(ctx, time.Second)
