@@ -41,7 +41,7 @@ func (r *schemaResolver) OverwriteTemporarySettings(ctx context.Context, args st
 		return nil, err
 	}
 	if user == nil {
-		return nil, errors.Errorf("not authenticated")
+		return nil, errors.New("not authenticated")
 	}
 
 	return &EmptyResponse{}, database.TemporarySettings(r.db).UpsertTemporarySettings(ctx, user.DatabaseID(), args.Contents)
