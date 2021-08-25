@@ -67,9 +67,8 @@ type mockProvider struct {
 	serviceType string
 	serviceID   string
 
-	fetchUserPerms        func(context.Context, *extsvc.Account) (*authz.ExternalUserPermissions, error)
-	fetchUserPermsByToken func(context.Context, string) (*authz.ExternalUserPermissions, error)
-	fetchRepoPerms        func(ctx context.Context, repo *extsvc.Repository, opts authz.FetchPermsOptions) ([]extsvc.AccountID, error)
+	fetchUserPerms func(context.Context, *extsvc.Account) (*authz.ExternalUserPermissions, error)
+	fetchRepoPerms func(ctx context.Context, repo *extsvc.Repository, opts authz.FetchPermsOptions) ([]extsvc.AccountID, error)
 }
 
 func (*mockProvider) FetchAccount(context.Context, *types.User, []*extsvc.Account, []string) (*extsvc.Account, error) {
@@ -83,10 +82,6 @@ func (*mockProvider) Validate() []string    { return nil }
 
 func (p *mockProvider) FetchUserPerms(ctx context.Context, acct *extsvc.Account, opts authz.FetchPermsOptions) (*authz.ExternalUserPermissions, error) {
 	return p.fetchUserPerms(ctx, acct)
-}
-
-func (p *mockProvider) FetchUserPermsByToken(ctx context.Context, token string, opts authz.FetchPermsOptions) (*authz.ExternalUserPermissions, error) {
-	return p.fetchUserPermsByToken(ctx, token)
 }
 
 func (p *mockProvider) FetchRepoPerms(ctx context.Context, repo *extsvc.Repository, opts authz.FetchPermsOptions) ([]extsvc.AccountID, error) {
@@ -170,11 +165,6 @@ func TestPermsSyncer_syncUserPerms_unionExternalServiceRepos(t *testing.T) {
 	s := NewPermsSyncer(repos.NewStore(&dbtesting.MockDB{}, sql.TxOptions{}), permsStore, timeutil.Now, nil)
 
 	p.fetchUserPerms = func(context.Context, *extsvc.Account) (*authz.ExternalUserPermissions, error) {
-		return &authz.ExternalUserPermissions{
-			Exacts: []extsvc.RepoID{"1"},
-		}, nil
-	}
-	p.fetchUserPermsByToken = func(ctx context.Context, s string) (*authz.ExternalUserPermissions, error) {
 		return &authz.ExternalUserPermissions{
 			Exacts: []extsvc.RepoID{"1"},
 		}, nil
