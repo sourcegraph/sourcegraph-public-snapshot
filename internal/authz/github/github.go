@@ -251,6 +251,9 @@ func (p *Provider) FetchRepoPerms(ctx context.Context, repo *extsvc.Repository, 
 func (p *Provider) getAffiliatedGroups(ctx context.Context, clientWithToken client, opts authz.FetchPermsOptions) ([]cachedGroup, error) {
 	groups := make([]cachedGroup, 0)
 	seenGroups := make(map[string]struct{})
+
+	// syncGroup adds the given group to the list of groups to cache, pulling values from
+	// cache where available.
 	syncGroup := func(org, team string) {
 		if team != "" {
 			// If a team's repos is a subset of an organization's, don't sync. Because when an organization
@@ -281,6 +284,7 @@ func (p *Provider) getAffiliatedGroups(ctx context.Context, clientWithToken clie
 			return groups, err
 		}
 		for _, org := range orgs {
+			// If THIS USER can view this org's repos, we add the entire org to the sync list
 			if canViewOrgRepos(&org) {
 				syncGroup(org.Login, "")
 			}
