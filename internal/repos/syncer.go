@@ -473,6 +473,9 @@ func (s *Syncer) SyncExternalService(
 
 	deleted := 0
 	if err = errs.ErrorOrNil(); err == nil || fatal(err) {
+		s.log().Warn("syncer: deleting not seen repos",
+			"svc", svc.DisplayName, "id", svc.ID, "seen", len(seen), "error", err)
+
 		// Remove associations and any repos that are no longer associated with any external service.
 		//
 		// We don't want to delete all repos that weren't seen if we had a lot of spurious errors since that could
