@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/cockroachdb/errors"
 	"github.com/inconshreveable/log15"
@@ -16,10 +17,11 @@ import (
 
 func main() {
 	gen := &generator{
-		graphQLURL:    "https://sourcegraph.com/.api/graphql",
-		token:         os.Getenv("SRC_ACCESS_TOKEN"),
-		outDir:        "sitemap/",
-		queryDatabase: "sitemap_query.db",
+		graphQLURL:      "https://sourcegraph.com/.api/graphql",
+		token:           os.Getenv("SRC_ACCESS_TOKEN"),
+		outDir:          "sitemap/",
+		queryDatabase:   "sitemap_query.db",
+		progressUpdates: 10 * time.Second,
 	}
 	if err := gen.generate(context.Background()); err != nil {
 		log15.Error("failed to generate", "error", err)
@@ -29,10 +31,11 @@ func main() {
 }
 
 type generator struct {
-	graphQLURL    string
-	token         string
-	outDir        string
-	queryDatabase string
+	graphQLURL      string
+	token           string
+	outDir          string
+	queryDatabase   string
+	progressUpdates time.Duration
 
 	db        *queryDatabase
 	gqlClient *graphQLClient
@@ -85,12 +88,14 @@ func (g *generator) generate(ctx context.Context) error {
 
 	// Build a set of Go repos that have LSIF indexes.
 	indexedGoRepos := map[string][]gqlLSIFIndex{}
+	lastUpdate := time.Now()
 	queried := 0
 	if err := g.eachLsifIndex(ctx, func(each gqlLSIFIndex, total uint64) error {
-		queried++
-		if queried%10000 == 0 {
+		if time.Since(lastUpdate) >= g.progressUpdates {
+			lastUpdate = time.Now()
 			log15.Info("progress: discovered LSIF indexes", "n", queried, "of", total)
 		}
+		queried++
 		if strings.Contains(each.InputIndexer, "lsif-go") {
 			repoName := each.ProjectRoot.Repository.Name
 			indexedGoRepos[repoName] = append(indexedGoRepos[repoName], each)
@@ -107,14 +112,16 @@ func (g *generator) generate(ctx context.Context) error {
 		totalStars     uint64
 		missingAPIDocs = 0
 	)
+	lastUpdate = time.Now()
 	queried = 0
 	for repoName, indexes := range indexedGoRepos {
-		queried++
-		if queried%100 == 0 {
+		if time.Since(lastUpdate) >= g.progressUpdates {
+			lastUpdate = time.Now()
 			log15.Info("progress: discovered API docs pages for repo", "n", queried, "of", len(indexedGoRepos))
 		}
 		totalStars += indexes[0].ProjectRoot.Repository.Stars
 		pathInfo, err := g.fetchDocPathInfo(ctx, gqlDocPathInfoVars{RepoName: repoName})
+		queried++
 		if pathInfo == nil || (err != nil && strings.Contains(err.Error(), "page not found")) {
 			//log15.Error("no API docs pages found", "repo", repoName, "pathInfo==nil", pathInfo == nil, "error", err)
 			if err != nil {
@@ -152,7 +159,8 @@ func (g *generator) generate(ctx context.Context) error {
 				return err
 			}
 			queried++
-			if queried%100 == 0 {
+			if time.Since(lastUpdate) >= g.progressUpdates {
+				lastUpdate = time.Now()
 				log15.Info("progress: got API docs page", "n", queried, "of", totalPages)
 			}
 
