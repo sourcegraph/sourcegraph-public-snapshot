@@ -82,7 +82,7 @@ func NewV4Client(apiURL *url.URL, a auth.Authenticator, cli httpcli.Doer) *V4Cli
 	}
 
 	rl := ratelimit.DefaultRegistry.Get(apiURL.String())
-	log15.Info("NewV4Client", "limit", rl.Limit(), "burst", rl.Burst(), "apiURL", apiURL.String())
+	log15.Debug("NewV4Client", "limit", rl.Limit(), "burst", rl.Burst(), "apiURL", apiURL.String())
 	rlm := ratelimit.DefaultMonitorRegistry.GetOrSet(apiURL.String(), tokenHash, "graphql", &ratelimit.Monitor{HeaderPrefix: "X-"})
 
 	return &V4Client{
