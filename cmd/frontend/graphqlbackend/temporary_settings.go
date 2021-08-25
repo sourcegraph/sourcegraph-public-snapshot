@@ -36,7 +36,7 @@ func (t *TemporarySettingsResolver) Contents() *string {
 	return t.inner.Contents
 }
 
-func (r *schemaResolver) OverwriteTemporarySettings(ctx context.Context, args struct { Contents string }) (*EmptyResponse, error) {
+func (r *schemaResolver) OverwriteTemporarySettings(ctx context.Context, args struct{ Contents string }) (*EmptyResponse, error) {
 	user, err := CurrentUser(ctx, r.db)
 
 	if err != nil {
