@@ -38,6 +38,7 @@ No token scopes are required if you only want to sync public repositories and do
 
 - `repo` to sync private repositories from GitHub to Sourcegraph.
 - `read:org` to use the `"allowOrgs"` setting [with a GitHub authentication provider](../auth/index.md#github).
+- `read:org` or `user` to use [permissions caching](../repo/permissions.md#permissions-caching).
 - `repo`, `read:org`, `user:email`, and `read:discussion` to use [batch changes](../../batch_changes/index.md) with GitHub repositories. See "[Code host interactions in batch changes](../../batch_changes/explanations/permissions_in_batch_changes.md#code-host-interactions-in-batch-changes)" for details.
 
 >NOTE: If you plan to use repository permissions with background syncing, an access token that has admin access to all private repositories is required. It is because only admin can list all collaborators of a repository.
