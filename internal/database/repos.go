@@ -1009,6 +1009,12 @@ type ListIndexableReposOptions struct {
 	*LimitOffset
 }
 
+var listIndexableReposMinStars, _ = strconv.Atoi(env.Get(
+	"SRC_INDEXABLE_REPOS_MIN_STARS",
+	"8",
+	"Minimum stars needed for a public repo to be indexed on sourcegraph.com",
+))
+
 // ListIndexableRepos returns a list of repos to be indexed for search on sourcegraph.com.
 // This includes all repos with >= 20 stars as well as user added repos.
 func (s *RepoStore) ListIndexableRepos(ctx context.Context, opts ListIndexableReposOptions) (results []types.RepoName, err error) {
@@ -1039,8 +1045,14 @@ func (s *RepoStore) ListIndexableRepos(ctx context.Context, opts ListIndexableRe
 		where = append(where, sqlf.Sprintf("TRUE"))
 	}
 
+	minStars := listIndexableReposMinStars
+	if minStars == 0 {
+		minStars = 8
+	}
+
 	q := sqlf.Sprintf(
 		listIndexableReposQuery,
+		minStars,
 		sqlf.Join(joins, "\n"),
 		sqlf.Join(where, "\nAND "),
 		opts.LimitOffset.SQL(),
@@ -1070,7 +1082,7 @@ const listIndexableReposQuery = `
 WITH s AS (
 	SELECT id as repo_id
 	FROM repo
-	WHERE stars >= 13
+	WHERE stars >= %s
 
 	UNION ALL
 
