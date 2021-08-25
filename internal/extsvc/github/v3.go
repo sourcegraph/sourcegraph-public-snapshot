@@ -304,6 +304,25 @@ func (c *V3Client) GetAuthenticatedUserOrgsDetails(ctx context.Context, page int
 	return orgs, hasNextPage, cost + len(orgs), err
 }
 
+type restTeam struct {
+	Name string `json:"name,omitempty"`
+	Slug string `json:"slug,omitempty"`
+	URL  string `json:"url,omitempty"`
+
+	ReposCount   int  `json:"repos_count,omitempty"`
+	Organization *Org `json:"organization,omitempty"`
+}
+
+func (t *restTeam) convert() *Team {
+	return &Team{
+		Name:         t.Name,
+		Slug:         t.Slug,
+		URL:          t.URL,
+		ReposCount:   t.ReposCount,
+		Organization: t.Organization,
+	}
+}
+
 // GetAuthenticatedUserTeams lists GitHub teams affiliated with the client token.
 //
 // The page is the page of results to return, and is 1-indexed (so the first call should
@@ -314,9 +333,14 @@ func (c *V3Client) GetAuthenticatedUserTeams(ctx context.Context, page int) (
 	rateLimitCost int,
 	err error,
 ) {
-	err = c.requestGet(ctx, fmt.Sprintf("/user/teams?per_page=100&page=%d", page), &teams)
+	var restTeams []*restTeam
+	err = c.requestGet(ctx, fmt.Sprintf("/user/teams?per_page=100&page=%d", page), &restTeams)
 	if err != nil {
 		return
+	}
+	teams = make([]*Team, len(restTeams))
+	for i, t := range restTeams {
+		teams[i] = t.convert()
 	}
 	return teams, len(teams) > 0, 1, err
 }
