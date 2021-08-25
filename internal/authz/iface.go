@@ -66,14 +66,6 @@ type Provider interface {
 	// to decide whether to discard.
 	FetchUserPerms(ctx context.Context, account *extsvc.Account, opts FetchPermsOptions) (*ExternalUserPermissions, error)
 
-	// FetchUserPermsByToken is similar to FetchUserPerms but only requires a token
-	// in order to communicate with the code host.
-	//
-	// Because permissions fetching APIs are often expensive, the implementation should
-	// try to return partial but valid results in case of error, and it is up to callers
-	// to decide whether to discard.
-	FetchUserPermsByToken(ctx context.Context, token string, opts FetchPermsOptions) (*ExternalUserPermissions, error)
-
 	// FetchRepoPerms returns a list of user IDs (on code host) who have read access to
 	// the given repository/project on the code host. The user ID should be the same value
 	// as it would be used as extsvc.Account.AccountID. The returned list should
