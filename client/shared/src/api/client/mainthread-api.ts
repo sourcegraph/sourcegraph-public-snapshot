@@ -18,6 +18,7 @@ import { proxySubscribable } from '../extension/api/common'
 import { NotificationType, PlainNotification } from '../extension/extensionHostApi'
 
 import { ProxySubscription } from './api/common'
+import { observeLanguage, preloadExtensions } from './preload'
 import { updateSettings } from './services/settings'
 
 /** A registered command in the command registry. */
@@ -72,6 +73,7 @@ export const initMainThreadAPI = (
         | 'getScriptURLForExtension'
         | 'getStaticExtensions'
         | 'telemetryService'
+        | 'clientApplication'
     >
 ): { api: MainThreadAPI; exposedToClient: ExposedToClient; subscription: Subscription } => {
     const subscription = new Subscription()
@@ -128,6 +130,20 @@ export const initMainThreadAPI = (
         commandErrors,
     }
 
+    const enabledExtensions = getEnabledExtensions(platformContext)
+
+    // Preload extensions whenever user enabled extensions or the viewed language changes.
+    // Only do this on Sourcegraph web app since the HTTP cache is not shared
+    // between the browser extension's content script (which runs in the code host's context)
+    // and background page.
+    if (platformContext.clientApplication === 'sourcegraph') {
+        subscription.add(
+            combineLatest([enabledExtensions, observeLanguage()]).subscribe(([extensions, languageID]) => {
+                preloadExtensions({ extensions, languages: new Set([languageID]) })
+            })
+        )
+    }
+
     const api: MainThreadAPI = {
         applySettingsEdit: edit => updateSettings(platformContext, edit),
         requestGraphQL: (request, variables) =>
@@ -168,7 +184,7 @@ export const initMainThreadAPI = (
                 return proxySubscribable(from(staticExtensions).pipe(publishReplay(1), refCount()))
             }
 
-            return proxySubscribable(getEnabledExtensions(platformContext))
+            return proxySubscribable(enabledExtensions)
         },
         logEvent: (eventName, eventProperties) => platformContext.telemetryService?.log(eventName, eventProperties),
         logExtensionMessage: (...data) => console.log(...data),
