@@ -429,7 +429,12 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 
 	t.Run("disabled cache", func(t *testing.T) {
 		mockClient := &mockClient{
-			MockListAffiliatedRepositories: mockListAffiliatedRepositories,
+			MockListAffiliatedRepositories: func(ctx context.Context, visibility github.Visibility, page int, affiliations ...github.Affiliation) (repos []*github.Repository, hasNextPage bool, rateLimitCost int, err error) {
+				if len(affiliations) != 0 {
+					t.Fatalf("Expected 0 affiliations, got %+v", affiliations)
+				}
+				return mockListAffiliatedRepositories(ctx, visibility, page, affiliations...)
+			},
 		}
 
 		p := NewProvider("", ProviderOptions{
@@ -499,46 +504,52 @@ func TestProvider_FetchRepoPerms(t *testing.T) {
 		}
 	})
 
-	p := NewProvider("", ProviderOptions{GitHubURL: mustURL(t, "https://github.com")})
-	p.client = &mockClient{
-		MockListRepositoryCollaborators: func(ctx context.Context, owner, repo string, page int) ([]*github.Collaborator, bool, error) {
-			switch page {
-			case 1:
-				return []*github.Collaborator{
-					{DatabaseID: 57463526},
-					{DatabaseID: 67471},
-				}, true, nil
-			case 2:
-				return []*github.Collaborator{
-					{DatabaseID: 187831},
-				}, false, nil
-			}
+	t.Run("cache disabled", func(t *testing.T) {
+		p := NewProvider("", ProviderOptions{
+			GitHubURL:      mustURL(t, "https://github.com"),
+			GroupsCacheTTL: -1,
+		})
+		p.client = &mockClient{
+			MockListRepositoryCollaborators: func(ctx context.Context, owner, repo string, page int, affiliations ...github.Affiliation) ([]*github.Collaborator, bool, error) {
+				switch page {
+				case 1:
+					return []*github.Collaborator{
+						{DatabaseID: 57463526},
+						{DatabaseID: 67471},
+					}, true, nil
+				case 2:
+					return []*github.Collaborator{
+						{DatabaseID: 187831},
+					}, false, nil
+				}
 
-			return []*github.Collaborator{}, false, nil
-		},
-	}
-
-	accountIDs, err := p.FetchRepoPerms(context.Background(),
-		&extsvc.Repository{
-			URI: "github.com/user/repo",
-			ExternalRepoSpec: api.ExternalRepoSpec{
-				ID:          "github_project_id",
-				ServiceType: "github",
-				ServiceID:   "https://github.com/",
+				return []*github.Collaborator{}, false, nil
 			},
-		},
-		authz.FetchPermsOptions{},
-	)
-	if err != nil {
-		t.Fatal(err)
-	}
+		}
 
-	wantAccountIDs := []extsvc.AccountID{
-		"57463526",
-		"67471",
-		"187831",
-	}
-	if diff := cmp.Diff(wantAccountIDs, accountIDs); diff != "" {
-		t.Fatalf("AccountIDs mismatch (-want +got):\n%s", diff)
-	}
+		accountIDs, err := p.FetchRepoPerms(context.Background(),
+			&extsvc.Repository{
+				URI: "github.com/user/repo",
+				ExternalRepoSpec: api.ExternalRepoSpec{
+					ID:          "github_project_id",
+					ServiceType: "github",
+					ServiceID:   "https://github.com/",
+				},
+			},
+			authz.FetchPermsOptions{},
+		)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		wantAccountIDs := []extsvc.AccountID{
+			"57463526",
+			"67471",
+			"187831",
+		}
+		if diff := cmp.Diff(wantAccountIDs, accountIDs); diff != "" {
+			t.Fatalf("AccountIDs mismatch (-want +got):\n%s", diff)
+		}
+	})
+
 }

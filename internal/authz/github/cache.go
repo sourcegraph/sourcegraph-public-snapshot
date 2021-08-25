@@ -18,16 +18,29 @@ type cachedGroup struct {
 	Org string
 	// Team slug, if empty implies group is an org
 	Team string
-	// Repositories entities associated with this group has access to
+
+	// Repositories entities associated with this group has access to.
+	//
+	// This should ONLY be populated on a USER-centric sync, but may be appended to if
+	// already populated.
 	Repositories []extsvc.RepoID
+	// Users associated with this group
+	//
+	// This should ONLY be populated on a REPO-centric sync, but maybe to appended to if
+	// already populated.
+	Users []extsvc.AccountID
 }
 
-func (g cachedGroup) key() string {
+func (g *cachedGroup) key() string {
 	key := cacheVersion + "/" + g.Org
 	if g.Team != "" {
 		key += "/" + g.Team
 	}
 	return key
+}
+
+func (g *cachedGroup) isPopulated() bool {
+	return len(g.Repositories) > 0 && len(g.Users) > 0
 }
 
 type cachedGroups struct {
@@ -70,6 +83,8 @@ func (c *cachedGroups) getGroup(org string, team string) (cachedGroup, bool) {
 }
 
 // deleteGroup deletes the given group from the cache.
-func (c *cachedGroups) deleteGroup(group cachedGroup) {
+func (c *cachedGroups) deleteGroup(group *cachedGroup) {
 	c.cache.Delete(group.key())
+	group.Repositories = nil
+	group.Users = nil
 }

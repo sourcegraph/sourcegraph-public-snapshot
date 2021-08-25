@@ -4,6 +4,7 @@ import (
 	"context"
 	"net/url"
 	"sort"
+	"strings"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -307,6 +308,60 @@ func TestGetAuthenticatedUserTeams(t *testing.T) {
 		update("GetAuthenticatedUserTeams"),
 		teams,
 	)
+}
+
+func TestListRepositoryTeams(t *testing.T) {
+	cli, save := newV3TestClient(t, "ListRepositoryTeams")
+	defer save()
+
+	ctx := context.Background()
+	var err error
+	teams := make([]*Team, 0)
+	hasNextPage := true
+	for page := 1; hasNextPage; page++ {
+		var pageTeams []*Team
+		pageTeams, hasNextPage, err = cli.ListRepositoryTeams(ctx, "sourcegraph-vcr-repos", "private-org-repo-1", page)
+		if err != nil {
+			t.Fatal(err)
+		}
+		teams = append(teams, pageTeams...)
+	}
+
+	testutil.AssertGolden(t,
+		"testdata/golden/ListRepositoryTeams",
+		update("ListRepositoryTeams"),
+		teams,
+	)
+}
+
+func TestGetOrganization(t *testing.T) {
+	cli, save := newV3TestClient(t, "GetOrganization")
+	defer save()
+
+	t.Run("real org", func(t *testing.T) {
+		ctx := context.Background()
+		org, err := cli.GetOrganization(ctx, "sourcegraph")
+		if err != nil {
+			t.Fatal(err)
+		}
+		if org == nil {
+			t.Fatal("expected org, got nil")
+		}
+		if org.Login != "sourcegraph" {
+			t.Fatalf("expected org 'sourcegraph', got %+v", org)
+		}
+	})
+
+	t.Run("actually an user", func(t *testing.T) {
+		ctx := context.Background()
+		_, err := cli.GetOrganization(ctx, "sourcegraph-vcr")
+		if err == nil {
+			t.Fatal("expected erorr, got nil")
+		}
+		if !strings.Contains(err.Error(), "404") {
+			t.Fatalf("expected 404, got %q", err.Error())
+		}
+	})
 }
 
 func TestV3Client_WithAuthenticator(t *testing.T) {

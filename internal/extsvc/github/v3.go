@@ -380,16 +380,44 @@ func (c *V3Client) GetAuthenticatedUserOAuthScopes(ctx context.Context) ([]strin
 	return strings.Split(scope, ", "), nil
 }
 
-// ListRepositoryCollaborators lists all GitHub users that has access to the repository.
+// ListRepositoryCollaborators lists GitHub users that has access to the repository based
+// on the provided affiliations.
+//
 // The page is the page of results to return, and is 1-indexed (so the first call should
-// be for page 1).
-func (c *V3Client) ListRepositoryCollaborators(ctx context.Context, owner, repo string, page int) (users []*Collaborator, hasNextPage bool, _ error) {
+// be for page 1). If no affiliations are provided, all users with access to the repository
+// are listed.
+func (c *V3Client) ListRepositoryCollaborators(ctx context.Context, owner, repo string, page int, affiliations ...Affiliation) (users []*Collaborator, hasNextPage bool, _ error) {
 	path := fmt.Sprintf("/repos/%s/%s/collaborators?page=%d&per_page=100", owner, repo, page)
+	if len(affiliations) > 0 {
+		affilationsStrings := make([]string, 0, len(affiliations))
+		for _, affiliation := range affiliations {
+			affilationsStrings = append(affilationsStrings, string(affiliation))
+		}
+		path = fmt.Sprintf("%s&affiliation=%s", path, strings.Join(affilationsStrings, ","))
+	}
 	err := c.requestGet(ctx, path, &users)
 	if err != nil {
 		return nil, false, err
 	}
 	return users, len(users) > 0, nil
+}
+
+// ListRepositoryTeams lists GitHub teams that has access to the repository.
+//
+// The page is the page of results to return, and is 1-indexed (so the first call should
+// be for page 1).
+func (c *V3Client) ListRepositoryTeams(ctx context.Context, owner, repo string, page int) (teams []*Team, hasNextPage bool, _ error) {
+	path := fmt.Sprintf("/repos/%s/%s/teams?page=%d&per_page=100", owner, repo, page)
+	var restTeams []*restTeam
+	err := c.requestGet(ctx, path, &restTeams)
+	if err != nil {
+		return nil, false, err
+	}
+	teams = make([]*Team, len(restTeams))
+	for i, t := range restTeams {
+		teams[i] = t.convert()
+	}
+	return teams, len(teams) > 0, nil
 }
 
 // GetRepository gets a repository from GitHub by owner and repository name.
@@ -407,6 +435,30 @@ func (c *V3Client) GetRepository(ctx context.Context, owner, name string) (*Repo
 		}
 		return repo, keys, err
 	}, false)
+}
+
+// GetOrganization gets an org from GitHub by its login.
+func (c *V3Client) GetOrganization(ctx context.Context, login string) (org *OrgDetails, err error) {
+	err = c.requestGet(ctx, "/orgs/"+login, &org)
+	return
+}
+
+func (c *V3Client) ListOrganizationMembers(ctx context.Context, owner string, page int) (users []*Collaborator, hasNextPage bool, _ error) {
+	path := fmt.Sprintf("/orgs/%s/members?page=%d&per_page=100", owner, page)
+	err := c.requestGet(ctx, path, &users)
+	if err != nil {
+		return nil, false, err
+	}
+	return users, len(users) > 0, nil
+}
+
+func (c *V3Client) ListTeamMembers(ctx context.Context, owner, team string, page int) (users []*Collaborator, hasNextPage bool, _ error) {
+	path := fmt.Sprintf("/orgs/%s/teams/%s/members?page=%d&per_page=100", owner, team, page)
+	err := c.requestGet(ctx, path, &users)
+	if err != nil {
+		return nil, false, err
+	}
+	return users, len(users) > 0, nil
 }
 
 // getRepositoryFromCache attempts to get a response from the redis cache.
