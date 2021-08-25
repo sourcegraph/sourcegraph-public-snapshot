@@ -45,8 +45,12 @@ export const batchChangesGroup: SiteAdminSideBarGroup = {
     },
     items: [
         {
-            label: 'Batch Changes',
+            label: 'Settings',
             to: '/site-admin/batch-changes',
+        },
+        {
+            label: 'Batch spec executions',
+            to: '/site-admin/batch-changes/executions',
         },
     ],
     condition: ({ batchChangesEnabled }) => batchChangesEnabled,
