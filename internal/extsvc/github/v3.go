@@ -282,11 +282,19 @@ func (c *V3Client) GetAuthenticatedUserOrgs(ctx context.Context) ([]*Org, error)
 	return orgs, err
 }
 
-// GetAuthenticatedUserOrgs returns the organizations associated with the currently
+// OrgDetailsAndMembership is a results container for the results from the API calls made
+// in GetAuthenticatedUserOrgsDetailsAndMembership
+type OrgDetailsAndMembership struct {
+	*OrgDetails
+
+	*OrgMembership
+}
+
+// GetAuthenticatedUserOrgsDetailsAndMembership returns the organizations associated with the currently
 // authenticated user as well as additional information about each org by making API
 // requests for each org (see `OrgDetails` docs for more details).
-func (c *V3Client) GetAuthenticatedUserOrgsDetails(ctx context.Context, page int) (
-	orgs []*OrgDetails,
+func (c *V3Client) GetAuthenticatedUserOrgsDetailsAndMembership(ctx context.Context, page int) (
+	orgs []OrgDetailsAndMembership,
 	hasNextPage bool,
 	rateLimitCost int,
 	err error,
@@ -295,9 +303,12 @@ func (c *V3Client) GetAuthenticatedUserOrgsDetails(ctx context.Context, page int
 	if err != nil {
 		return
 	}
-	orgs = make([]*OrgDetails, len(orgNames))
+	orgs = make([]OrgDetailsAndMembership, len(orgNames))
 	for i, org := range orgNames {
-		if err = c.requestGet(ctx, "/orgs/"+org.Login, &orgs[i]); err != nil {
+		if err = c.requestGet(ctx, "/orgs/"+org.Login, &orgs[i].OrgDetails); err != nil {
+			return nil, false, cost + i, err
+		}
+		if err = c.requestGet(ctx, "/user/memberships/orgs/"+org.Login, &orgs[i].OrgMembership); err != nil {
 			return nil, false, cost + i, err
 		}
 	}

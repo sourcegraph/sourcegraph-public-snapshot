@@ -95,19 +95,25 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 		}
 
 		mockOrgNoRead      = &github.OrgDetails{Org: github.Org{Login: "not-sourcegraph"}, DefaultRepositoryPermission: "none"}
+		mockOrgNoRead2     = &github.OrgDetails{Org: github.Org{Login: "not-sourcegraph-2"}, DefaultRepositoryPermission: "none"}
 		mockOrgRead        = &github.OrgDetails{Org: github.Org{Login: "sourcegraph"}, DefaultRepositoryPermission: "read"}
-		mockListOrgDetails = func(ctx context.Context, page int) (orgs []*github.OrgDetails, hasNextPage bool, rateLimitCost int, err error) {
+		mockListOrgDetails = func(ctx context.Context, page int) (orgs []github.OrgDetailsAndMembership, hasNextPage bool, rateLimitCost int, err error) {
 			switch page {
 			case 1:
-				return []*github.OrgDetails{
+				return []github.OrgDetailsAndMembership{{
 					// does not have access to this org
-					mockOrgNoRead,
-				}, true, 1, nil
+					OrgDetails: mockOrgNoRead,
+				}, {
+					// does not have access to this org
+					OrgDetails: mockOrgNoRead2,
+					// but is an admin, so has access to all org repos
+					OrgMembership: &github.OrgMembership{State: "active", Role: "admin"},
+				}}, true, 1, nil
 			case 2:
-				return []*github.OrgDetails{
+				return []github.OrgDetailsAndMembership{{
 					// has access to this org
-					mockOrgRead,
-				}, false, 1, nil
+					OrgDetails: mockOrgRead,
+				}}, false, 1, nil
 			}
 			return nil, false, 1, nil
 		}
@@ -126,6 +132,8 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 						{ID: "MDEwOlJlcG9zaXRvcnkyNDI2NTE5678="},
 					}, false, 1, nil
 				}
+			case mockOrgNoRead2.Login:
+				return []*github.Repository{{ID: "MDEwOlJlcG9zaXRvcnkyNDI2NTadmin="}}, false, 1, nil
 			}
 			t.Fatalf("unexpected call to ListOrgRepositories with org %q page %d", org, page)
 			return nil, false, 1, nil
@@ -135,7 +143,7 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 	t.Run("user has no orgs and teams", func(t *testing.T) {
 		mockClient := &mockClient{
 			MockListAffiliatedRepositories: mockListAffiliatedRepositories,
-			MockGetAuthenticatedUserOrgsDetails: func(ctx context.Context, page int) (orgs []*github.OrgDetails, hasNextPage bool, rateLimitCost int, err error) {
+			MockGetAuthenticatedUserOrgsDetailsAndMembership: func(ctx context.Context, page int) (orgs []github.OrgDetailsAndMembership, hasNextPage bool, rateLimitCost int, err error) {
 				// No orgs
 				return nil, false, 1, nil
 			},
@@ -188,8 +196,8 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 
 	t.Run("user in orgs", func(t *testing.T) {
 		mockClient := &mockClient{
-			MockListAffiliatedRepositories:      mockListAffiliatedRepositories,
-			MockGetAuthenticatedUserOrgsDetails: mockListOrgDetails,
+			MockListAffiliatedRepositories:                   mockListAffiliatedRepositories,
+			MockGetAuthenticatedUserOrgsDetailsAndMembership: mockListOrgDetails,
 			MockGetAuthenticatedUserTeams: func(ctx context.Context, page int) (teams []*github.Team, hasNextPage bool, rateLimitCost int, err error) {
 				// No teams
 				return nil, false, 1, nil
@@ -222,6 +230,7 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 			"MDEwOlJlcG9zaXRvcnkyNTI0MjU2NzE=",
 			"MDEwOlJlcG9zaXRvcnkyNDQ1MTc1MzY=",
 			"MDEwOlJlcG9zaXRvcnkyNDI2NTEwMDA=",
+			"MDEwOlJlcG9zaXRvcnkyNDI2NTadmin=",
 			"MDEwOlJlcG9zaXRvcnkyNDQ1MTc1234=",
 			"MDEwOlJlcG9zaXRvcnkyNDI2NTE5678=",
 		}
@@ -232,8 +241,8 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 
 	t.Run("user in orgs and teams", func(t *testing.T) {
 		mockClient := &mockClient{
-			MockListAffiliatedRepositories:      mockListAffiliatedRepositories,
-			MockGetAuthenticatedUserOrgsDetails: mockListOrgDetails,
+			MockListAffiliatedRepositories:                   mockListAffiliatedRepositories,
+			MockGetAuthenticatedUserOrgsDetailsAndMembership: mockListOrgDetails,
 			MockGetAuthenticatedUserTeams: func(ctx context.Context, page int) (teams []*github.Team, hasNextPage bool, rateLimitCost int, err error) {
 				switch page {
 				case 1:
@@ -270,7 +279,7 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 						}
 					}
 				}
-				t.Fatalf("unexpected call to ListOrgRepositories with org %q team %q page %d", org, team, page)
+				t.Fatalf("unexpected call to ListTeamRepositories with org %q team %q page %d", org, team, page)
 				return nil, false, 1, nil
 			},
 		}
@@ -300,6 +309,7 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 			"MDEwOlJlcG9zaXRvcnkyNTI0MjU2NzE=",
 			"MDEwOlJlcG9zaXRvcnkyNDQ1MTc1MzY=",
 			"MDEwOlJlcG9zaXRvcnkyNDI2NTEwMDA=",
+			"MDEwOlJlcG9zaXRvcnkyNDI2NTadmin=",
 			"MDEwOlJlcG9zaXRvcnkyNDQ1MTc1234=",
 			"MDEwOlJlcG9zaXRvcnkyNDI2NTE5678=",
 			"MDEwOlJlcG9zaXRvcnkyNDQ1nsteam1=",
@@ -314,8 +324,8 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 		callsToListOrgRepos := 0
 		callsToListTeamRepos := 0
 		mockClient := &mockClient{
-			MockListAffiliatedRepositories:      mockListAffiliatedRepositories,
-			MockGetAuthenticatedUserOrgsDetails: mockListOrgDetails,
+			MockListAffiliatedRepositories:                   mockListAffiliatedRepositories,
+			MockGetAuthenticatedUserOrgsDetailsAndMembership: mockListOrgDetails,
 			MockGetAuthenticatedUserTeams: func(ctx context.Context, page int) (teams []*github.Team, hasNextPage bool, rateLimitCost int, err error) {
 				return []*github.Team{
 					{Organization: &mockOrgNoRead.Org, Name: "ns team 2", Slug: "ns-team-2", ReposCount: 3},
@@ -352,6 +362,7 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 			"MDEwOlJlcG9zaXRvcnkyNTI0MjU2NzE=",
 			"MDEwOlJlcG9zaXRvcnkyNDQ1MTc1MzY=",
 			"MDEwOlJlcG9zaXRvcnkyNDI2NTEwMDA=",
+			"MDEwOlJlcG9zaXRvcnkyNDI2NTadmin=",
 			"MDEwOlJlcG9zaXRvcnkyNDQ1MTc1234=",
 			"MDEwOlJlcG9zaXRvcnkyNDI2NTE5678=",
 			"MDEwOlJlcG9zaXRvcnkyNDI2nsteam1=",

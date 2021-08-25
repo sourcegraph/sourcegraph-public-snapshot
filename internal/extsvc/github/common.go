@@ -1871,6 +1871,13 @@ type OrgDetails struct {
 	DefaultRepositoryPermission string `json:"default_repository_permission,omitempty"`
 }
 
+// OrgMembership describes organization membership information for a user.
+// See https://docs.github.com/en/rest/reference/orgs#get-an-organization-membership-for-the-authenticated-user
+type OrgMembership struct {
+	State string `json:"state"`
+	Role  string `json:"role"`
+}
+
 // Collaborator is a collaborator of a repository.
 type Collaborator struct {
 	ID         string `json:"node_id"` // GraphQL ID

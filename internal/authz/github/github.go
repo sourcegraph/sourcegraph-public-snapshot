@@ -275,13 +275,13 @@ func (p *Provider) getAffiliatedGroups(ctx context.Context, clientWithToken clie
 	// Get orgs
 	hasNextPage := true
 	for page := 1; hasNextPage; page++ {
-		var orgs []*github.OrgDetails
-		orgs, hasNextPage, _, err = clientWithToken.GetAuthenticatedUserOrgsDetails(ctx, page)
+		var orgs []github.OrgDetailsAndMembership
+		orgs, hasNextPage, _, err = clientWithToken.GetAuthenticatedUserOrgsDetailsAndMembership(ctx, page)
 		if err != nil {
 			return groups, err
 		}
 		for _, org := range orgs {
-			if canViewOrgRepos(org) {
+			if canViewOrgRepos(&org) {
 				syncGroup(org.Login, "")
 			}
 		}
