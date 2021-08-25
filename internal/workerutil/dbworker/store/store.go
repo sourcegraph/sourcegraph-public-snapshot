@@ -373,9 +373,52 @@ func (s *store) Dequeue(ctx context.Context, workerHostname string, conditions [
 
 	now := s.now()
 
-	// Select and "lock" candidate record
-	id, exists, err := basestore.ScanFirstInt(s.Query(ctx, s.formatQuery(
-		selectCandidateQuery,
+	updatedValues := map[string]*sqlf.Query{
+		s.columnReplacer.Replace("state"):             sqlf.Sprintf("'processing'"),
+		s.columnReplacer.Replace("started_at"):        sqlf.Sprintf("%s", now),
+		s.columnReplacer.Replace("last_heartbeat_at"): sqlf.Sprintf("%s", now),
+		s.columnReplacer.Replace("finished_at"):       sqlf.Sprintf("NULL"),
+		s.columnReplacer.Replace("failure_message"):   sqlf.Sprintf("NULL"),
+		s.columnReplacer.Replace("execution_logs"):    sqlf.Sprintf("NULL"),
+		s.columnReplacer.Replace("worker_hostname"):   sqlf.Sprintf("%s", workerHostname),
+	}
+
+	alias := ""
+	if parts := strings.Split(s.options.ViewName, " "); len(parts) > 1 {
+		// If the view name supplied an alias, stash it so we can compare the
+		// column expressions and the updated values for reference equality
+		// below.
+		alias = parts[len(parts)-1] + "."
+	}
+
+	// Construct the set of expressions we need to return from the view record
+	selectExpressions := make([]*sqlf.Query, len(s.options.ColumnExpressions))
+	copy(selectExpressions, s.options.ColumnExpressions)
+
+	for i, expression := range selectExpressions {
+		for columnName, updatedValue := range updatedValues {
+			// Replace column expressions on the view with the updated value if the names match.
+			// This is require as if we select from teh view we'll get whatever values were in that
+			// row at the snapshot taken at the start of the transaction - updates mid-query are
+			// not refelected by sibling CTEs.
+			//
+			// This condition matches queries like `columnName` and `w.columnName` where `w` is the
+			// alias supplied in the supplied view name expression.
+			if v := expression.Query(sqlf.PostgresBindVar); v == columnName || v == alias+columnName {
+				selectExpressions[i] = updatedValue
+				break
+			}
+		}
+	}
+
+	// Construct the set of statements we assign to the dequeued record
+	updateStatements := make([]*sqlf.Query, 0, len(updatedValues))
+	for columnName, updateValue := range updatedValues {
+		updateStatements = append(updateStatements, sqlf.Sprintf(columnName+" = %s", updateValue))
+	}
+
+	record, exists, err := s.options.Scan(s.Query(ctx, s.formatQuery(
+		dequeueQuery,
 		quote(s.options.ViewName),
 		now,
 		int(s.options.RetryAfter/time.Second),
@@ -385,24 +428,9 @@ func (s *store) Dequeue(ctx context.Context, workerHostname string, conditions [
 		makeConditionSuffix(conditions),
 		s.options.OrderByExpression,
 		quote(s.options.TableName),
-		now,
-		now,
-		workerHostname,
-	)))
-	if err != nil {
-		return nil, false, err
-	}
-	if !exists {
-		return nil, false, nil
-	}
-	traceLog(log.Int("id", id))
-
-	// Scan the actual record after updating its state
-	record, exists, err := s.options.Scan(s.Query(ctx, s.formatQuery(
-		selectRecordQuery,
-		sqlf.Join(s.options.ColumnExpressions, ", "),
+		sqlf.Join(updateStatements, ", "),
+		sqlf.Join(selectExpressions, ", "),
 		quote(s.options.ViewName),
-		id,
 	)))
 	if err != nil {
 		return nil, false, err
@@ -410,11 +438,12 @@ func (s *store) Dequeue(ctx context.Context, workerHostname string, conditions [
 	if !exists {
 		return nil, false, nil
 	}
+	traceLog(log.Int("recordID", record.RecordID()))
 
 	return record, true, nil
 }
 
-const selectCandidateQuery = `
+const dequeueQuery = `
 -- source: internal/workerutil/store.go:Dequeue
 WITH candidate AS (
 	SELECT {id} FROM %s
@@ -434,23 +463,9 @@ WITH candidate AS (
 	ORDER BY %s
 	FOR UPDATE SKIP LOCKED
 	LIMIT 1
-)
-UPDATE %s
-SET
-	{state} = 'processing',
-	{started_at} = %s,
-	{last_heartbeat_at} = %s,
-	{finished_at} = NULL,
-	{failure_message} = NULL,
-	{execution_logs} = NULL,
-	{worker_hostname} = %s
-WHERE {id} IN (SELECT {id} FROM candidate)
-RETURNING {id}
-`
-
-const selectRecordQuery = `
--- source: internal/workerutil/store.go:Dequeue
-SELECT %s FROM %s WHERE {id} = %s
+),
+updated_record AS (UPDATE %s SET %s WHERE {id} IN (SELECT {id} FROM candidate))
+SELECT %s FROM %s WHERE {id} IN (SELECT {id} FROM candidate)
 `
 
 func (s *store) Heartbeat(ctx context.Context, ids []int, options HeartbeatOptions) (knownIDs []int, err error) {
