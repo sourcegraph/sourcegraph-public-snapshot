@@ -67,7 +67,7 @@ func (e *InsufficientAuthorizationError) Unauthorized() bool { return true }
 // It is used when an action on a user can be performed by site admins and the
 // user themselves, but nobody else.
 //
-// Returns an error containing the name of the given user.
+// Returns an error without the name of the given user.
 func CheckSiteAdminOrSameUser(ctx context.Context, db dbutil.DB, subjectUserID int32) error {
 	a := actor.FromContext(ctx)
 	if a.IsInternal() || (a.IsAuthenticated() && a.UID == subjectUserID) {
