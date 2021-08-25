@@ -63,6 +63,8 @@ Caching behaviour can be enabld via the `authorization.groupsCacheTTL` field:
 }
 ```
 
+Note the token associated with the external must have `org:read` or `user` scope in order to read the repo permissions and cache them. 
+
 ## GitLab
 
 GitLab permissions can be configured in three ways:
