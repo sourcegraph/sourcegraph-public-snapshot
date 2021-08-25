@@ -405,7 +405,9 @@ func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestion
 			if err != nil {
 				return nil, err
 			}
-			fileMatches = results.Matches
+			if results != nil {
+				fileMatches = results.Matches
+			}
 		} else {
 			repoOptions := r.toRepoOptions(r.Query, resolveRepositoriesOpts{})
 			resolved, err := r.resolveRepositories(ctx, repoOptions)
