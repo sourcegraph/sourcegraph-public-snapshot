@@ -12,7 +12,7 @@ Setting up a unified SSO for code hosts and Sourcegraph is also possible: how to
 
 <span class="virtual-br"></span>
 
-> WARNING: It can take some time to complete mirroring repository permissions from the code host. [Learn more](#permissions-sync-times).
+> WARNING: It can take some time to complete mirroring repository permissions from a code host. [Learn more](#permissions-sync-times).
 
 ## GitHub
 
@@ -28,7 +28,7 @@ Then, [add or edit a GitHub connection](../external_service/github.md#repository
 }
 ```
 
-> WARNING: It can take some time to complete mirroring repository permissions from the code host. [Learn more](#permissions-sync-times).
+> WARNING: It can take some time to complete mirroring repository permissions from a code host. [Learn more](#permissions-sync-times).
 
 ### Faster permissions syncing via GitHub webhooks
 
@@ -73,7 +73,7 @@ GitLab permissions can be configured in three ways:
 3. Assume username equivalency between Sourcegraph and GitLab (warning: this is generally unsafe and
    should only be used if you are using strictly `http-header` authentication).
 
-> WARNING: It can take some time to complete mirroring repository permissions from the code host. [Learn more](#permissions-sync-times).
+> WARNING: It can take some time to complete mirroring repository permissions from a code host. [Learn more](#permissions-sync-times).
 
 ### OAuth application
 
@@ -148,7 +148,7 @@ because Sourcegraph usernames are mutable.
 
 Enforcing Bitbucket Server permissions can be configured via the `authorization` setting in its configuration.
 
-> WARNING: It can take some time to complete mirroring repository permissions from the code host. [Learn more](#permissions-sync-times).
+> WARNING: It can take some time to complete mirroring repository permissions from a code host. [Learn more](#permissions-sync-times).
 
 ### Prerequisites
 
@@ -233,7 +233,7 @@ Finally, **save the configuration**. You're done!
 
 ## Permissions sync times
 
-When syncing permissions from code hosts with large numbers of users and repositories, it can take some time to complete mirroring repository permissions from the code host, typically due to rate limits on a code host that limits how quickly Sourcegraph can query for repository permissions.
+When syncing permissions from code hosts with large numbers of users and repositories, it can take some time to complete mirroring repository permissions from a code host, typically due to rate limits on a code host that limits how quickly Sourcegraph can query for repository permissions.
 
 To mitigate this, Sourcegraph can leverage:
 
