@@ -273,7 +273,6 @@
     "process": "^0.11.10",
     "puppeteer": "5.5.0",
     "puppeteer-firefox": "^0.5.1",
-    "react-docgen-typescript-webpack-plugin": "^1.1.0",
     "react-refresh": "^0.10.0",
     "react-spring": "^9.0.0",
     "react-test-renderer": "^16.14.0",
