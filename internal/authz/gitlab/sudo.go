@@ -212,13 +212,6 @@ func (p *SudoProvider) FetchUserPerms(ctx context.Context, account *extsvc.Accou
 	return listProjects(ctx, client)
 }
 
-// FetchUserPermsByToken is the same as FetchUserPerms but it only requires a
-// token.
-func (p *SudoProvider) FetchUserPermsByToken(ctx context.Context, token string, opts authz.FetchPermsOptions) (*authz.ExternalUserPermissions, error) {
-	client := p.clientProvider.GetOAuthClient(token)
-	return listProjects(ctx, client)
-}
-
 // listProjects is a helper function to request for all private projects that are accessible
 // (access level: 20 => Reporter access) by the authenticated or impersonated user in the client.
 // It may return partial but valid results in case of error, and it is up to callers to decide
@@ -267,7 +260,7 @@ func listProjects(ctx context.Context, client *gitlab.Client) (*authz.ExternalUs
 // callers to decide whether to discard.
 //
 // API docs: https://docs.gitlab.com/ee/api/members.html#list-all-members-of-a-group-or-project-including-inherited-members
-func (p *SudoProvider) FetchRepoPerms(ctx context.Context, repo *extsvc.Repository) ([]extsvc.AccountID, error) {
+func (p *SudoProvider) FetchRepoPerms(ctx context.Context, repo *extsvc.Repository, opts authz.FetchPermsOptions) ([]extsvc.AccountID, error) {
 	if repo == nil {
 		return nil, errors.New("no repository provided")
 	} else if !extsvc.IsHostOfRepo(p.codeHost, &repo.ExternalRepoSpec) {

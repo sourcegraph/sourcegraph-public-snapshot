@@ -438,7 +438,7 @@ func (s *PermsSyncer) syncUserPerms(ctx context.Context, userID int32, noPerms b
 // syncRepoPerms processes permissions syncing request in repository-centric way.
 // When `noPerms` is true, the method will use partial results to update permissions
 // tables even when error occurs.
-func (s *PermsSyncer) syncRepoPerms(ctx context.Context, repoID api.RepoID, noPerms bool) (err error) {
+func (s *PermsSyncer) syncRepoPerms(ctx context.Context, repoID api.RepoID, noPerms bool, fetchOpts authz.FetchPermsOptions) (err error) {
 	ctx, save := s.observe(ctx, "PermsSyncer.syncRepoPerms", "")
 	defer save(requestTypeRepo, int32(repoID), &err)
 
@@ -501,7 +501,7 @@ func (s *PermsSyncer) syncRepoPerms(ctx context.Context, repoID api.RepoID, noPe
 		extAccountIDs, err := provider.FetchRepoPerms(ctx, &extsvc.Repository{
 			URI:              repo.URI,
 			ExternalRepoSpec: repo.ExternalRepo,
-		})
+		}, fetchOpts)
 
 		// Detect 404 error (i.e. not authorized to call given APIs) that often happens with GitHub.com
 		// when the owner of the token only has READ access. However, we don't want to fail
@@ -594,6 +594,7 @@ func (s *PermsSyncer) syncRepoPerms(ctx context.Context, repoID api.RepoID, noPe
 		"repoID", repo.ID,
 		"name", repo.Name,
 		"count", p.UserIDs.GetCardinality(),
+		"fetchOpts.invalidateCaches", fetchOpts.InvalidateCaches,
 	)
 	return nil
 }
@@ -624,7 +625,7 @@ func (s *PermsSyncer) syncPerms(ctx context.Context, request *syncRequest) error
 	case requestTypeUser:
 		err = s.syncUserPerms(ctx, request.ID, request.NoPerms, request.Options)
 	case requestTypeRepo:
-		err = s.syncRepoPerms(ctx, api.RepoID(request.ID), request.NoPerms)
+		err = s.syncRepoPerms(ctx, api.RepoID(request.ID), request.NoPerms, request.Options)
 	default:
 		err = errors.Errorf("unexpected request type: %v", request.Type)
 	}

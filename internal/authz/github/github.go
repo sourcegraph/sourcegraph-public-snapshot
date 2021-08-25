@@ -73,10 +73,10 @@ func (p *Provider) Validate() (problems []string) {
 	return nil
 }
 
-// FetchUserPermsByToken fetches all the private repo ids that the token can access.
+// fetchUserPermsByToken fetches all the private repo ids that the token can access.
 //
 // This may return a partial result if an error is encountered, e.g. via rate limits.
-func (p *Provider) FetchUserPermsByToken(ctx context.Context, token string, opts authz.FetchPermsOptions) (*authz.ExternalUserPermissions, error) {
+func (p *Provider) fetchUserPermsByToken(ctx context.Context, token string, opts authz.FetchPermsOptions) (*authz.ExternalUserPermissions, error) {
 	// 🚨 SECURITY: Use user token is required to only list repositories the user has access to.
 	client := p.client.WithToken(token)
 
@@ -197,7 +197,7 @@ func (p *Provider) FetchUserPerms(ctx context.Context, account *extsvc.Account, 
 		return nil, errors.New("no token found in the external account data")
 	}
 
-	return p.FetchUserPermsByToken(ctx, tok.AccessToken, opts)
+	return p.fetchUserPermsByToken(ctx, tok.AccessToken, opts)
 }
 
 // FetchRepoPerms returns a list of user IDs (on code host) who have read access to
@@ -209,7 +209,7 @@ func (p *Provider) FetchUserPerms(ctx context.Context, account *extsvc.Account, 
 // callers to decide whether to discard.
 //
 // API docs: https://developer.github.com/v4/object/repositorycollaboratorconnection/
-func (p *Provider) FetchRepoPerms(ctx context.Context, repo *extsvc.Repository) ([]extsvc.AccountID, error) {
+func (p *Provider) FetchRepoPerms(ctx context.Context, repo *extsvc.Repository, opts authz.FetchPermsOptions) ([]extsvc.AccountID, error) {
 	if repo == nil {
 		return nil, errors.New("no repository provided")
 	} else if !extsvc.IsHostOfRepo(p.codeHost, &repo.ExternalRepoSpec) {
