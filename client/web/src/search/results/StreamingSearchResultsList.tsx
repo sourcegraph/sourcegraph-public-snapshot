@@ -24,7 +24,6 @@ import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryServi
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 
 import { SearchResult } from '../../components/SearchResult'
-import { eventLogger } from '../../tracking/eventLogger'
 
 import { StreamingSearchResultFooter } from './StreamingSearchResultsFooter'
 
@@ -79,7 +78,7 @@ export const StreamingSearchResultsList: React.FunctionComponent<StreamingSearch
                     return (
                         <FileMatch
                             location={location}
-                            eventLogger={eventLogger}
+                            telemetryService={telemetryService}
                             icon={getFileMatchIcon(result)}
                             result={result}
                             onSelect={logSearchResultClicked}
@@ -112,7 +111,15 @@ export const StreamingSearchResultsList: React.FunctionComponent<StreamingSearch
                     )
             }
         },
-        [isLightTheme, location, logSearchResultClicked, allExpanded, fetchHighlightedFileLineRanges, settingsCascade]
+        [
+            isLightTheme,
+            location,
+            telemetryService,
+            logSearchResultClicked,
+            allExpanded,
+            fetchHighlightedFileLineRanges,
+            settingsCascade,
+        ]
     )
 
     return (

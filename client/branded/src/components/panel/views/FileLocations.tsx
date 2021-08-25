@@ -14,6 +14,7 @@ import { VirtualList } from '@sourcegraph/shared/src/components/VirtualList'
 import { ContentMatch } from '@sourcegraph/shared/src/search/stream'
 import { VersionContextProps } from '@sourcegraph/shared/src/search/util'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
+import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { asError, ErrorLike, isErrorLike } from '@sourcegraph/shared/src/util/errors'
 import { isDefined, property } from '@sourcegraph/shared/src/util/types'
 import { parseRepoURI } from '@sourcegraph/shared/src/util/url'
@@ -36,7 +37,7 @@ export const FileLocationsNoGroupSelected: React.FunctionComponent = () => (
     </div>
 )
 
-interface Props extends SettingsCascadeProps, VersionContextProps {
+interface Props extends SettingsCascadeProps, VersionContextProps, TelemetryProps {
     location: H.Location
     /**
      * The observable that emits the locations.
@@ -179,6 +180,7 @@ export class FileLocations extends React.PureComponent<Props, State> {
     ): JSX.Element => (
         <FileMatch
             location={this.props.location}
+            telemetryService={this.props.telemetryService}
             expanded={true}
             result={referencesToContentMatch(uri, locationsByURI.get(uri)!)}
             icon={this.props.icon}

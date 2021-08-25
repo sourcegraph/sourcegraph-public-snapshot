@@ -5,6 +5,7 @@ import _VisibilitySensor from 'react-visibility-sensor'
 import { of } from 'rxjs'
 import sinon from 'sinon'
 
+import { NOOP_TELEMETRY_SERVICE } from '../telemetry/telemetryService'
 import {
     RESULT,
     HIGHLIGHTED_FILE_LINES_SIMPLE_REQUEST,
@@ -28,11 +29,19 @@ const onSelect = sinon.spy()
 
 const defaultProps = {
     location: history.location,
-    items: [
+    matches: [
         {
             preview: 'third line of code',
             line: 3,
             highlightRanges: [{ start: 7, highlightLength: 4 }],
+        },
+    ],
+    grouped: [
+        {
+            matches: [{ line: 3, character: 7, highlightLength: 4, isInContext: true }],
+            position: { line: 3, character: 7 },
+            startLine: 3,
+            endLine: 4,
         },
     ],
     result: RESULT,
@@ -43,6 +52,7 @@ const defaultProps = {
     settingsCascade: NOOP_SETTINGS_CASCADE,
     isLightTheme: true,
     versionContext: undefined,
+    telemetryService: NOOP_TELEMETRY_SERVICE,
 }
 
 describe('FileMatchChildren', () => {
@@ -54,30 +64,6 @@ describe('FileMatchChildren', () => {
         expect(item).toBeVisible()
         fireEvent.click(item!)
         expect(onSelect.calledOnce).toBe(true)
-    })
-
-    it('correctly shows number of context lines when search.contextLines setting is set', () => {
-        const settingsCascade = {
-            final: { 'search.contextLines': 3 },
-            subjects: [
-                {
-                    lastID: 1,
-                    settings: { 'search.contextLines': '3' },
-                    extensions: null,
-                    subject: {
-                        __typename: 'User' as const,
-                        username: 'f',
-                        id: 'abc',
-                        settingsURL: '/users/f/settings',
-                        viewerCanAdminister: true,
-                        displayName: 'f',
-                    },
-                },
-            ],
-        }
-        const { container } = render(<FileMatchChildren {...defaultProps} settingsCascade={settingsCascade} />)
-        const tableRows = container.querySelectorAll('.code-excerpt tr')
-        expect(tableRows.length).toBe(7)
     })
 
     it('does not disable the highlighting timeout', () => {
