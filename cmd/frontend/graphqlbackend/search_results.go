@@ -560,10 +560,30 @@ func withMode(args search.TextParameters, st query.SearchType, versionContext *s
 	return args
 }
 
-func (r *searchResolver) toTextParameters(q query.Q) (*search.TextParameters, error) {
+// toSearchInputs converts a query parse tree to the _internal_ representation
+// needed to run a search. To understand why this conversion matters, think
+// about the fact that the query parse tree doesn't know anything about our
+// backends or architecture. It doesn't decide certain defaults, like whether we
+// should return multiple result types (pattern matches content, or a file name,
+// or a repo name). If we want to optimize a Sourcegraph query parse tree for a
+// particular backend (e.g., skip repository resolution and just run a Zoekt
+// query on all indexed repositories) then we need to convert our tree to
+// Zoekt's internal inputs and representation. These concerns are all handled by
+// toSearchInputs.
+//
+// toSearchInputs returns a tuple (args, jobs). `args` represents a large,
+// generic object with many values that drive search logic all over the backend.
+// `jobs` represent search objects with a Run() method that directly runs the
+// search job in question, and the job object comprises only the state to run
+// that search. Currently, both return values may be used to evaluate a search.
+// In time, it is expected that toSearchInputs migrates to return _only_ jobs,
+// where each job contains its separate state for that kind of search and
+// backend. To complete the migration to jobs in phases, `args` is kept
+// backwards compatibility and represents a generic search.
+func (r *searchResolver) toSearchInputs(q query.Q) (*search.TextParameters, []run.Job, error) {
 	b, err := query.ToBasicQuery(q)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	p := search.ToTextPatternInfo(b, r.protocol(), query.Identity)
 
@@ -593,7 +613,7 @@ func (r *searchResolver) toTextParameters(q query.Q) (*search.TextParameters, er
 	}
 	args = withResultTypes(args, forceResultTypes)
 	args = withMode(args, r.PatternType, r.VersionContext)
-	return &args, nil
+	return &args, nil, nil
 }
 
 // evaluateLeaf performs a single search operation and corresponds to the
@@ -800,7 +820,7 @@ func (r *searchResolver) evaluatePatternExpression(ctx context.Context, q query.
 			return r.evaluateOr(ctx, q)
 		case query.Concat:
 			r.invalidateCache()
-			args, err := r.toTextParameters(q.ToParseTree())
+			args, _, err := r.toSearchInputs(q.ToParseTree())
 			if err != nil {
 				return &SearchResults{}, err
 			}
@@ -808,7 +828,7 @@ func (r *searchResolver) evaluatePatternExpression(ctx context.Context, q query.
 		}
 	case query.Pattern:
 		r.invalidateCache()
-		args, err := r.toTextParameters(q.ToParseTree())
+		args, _, err := r.toSearchInputs(q.ToParseTree())
 		if err != nil {
 			return &SearchResults{}, err
 		}
@@ -825,7 +845,7 @@ func (r *searchResolver) evaluatePatternExpression(ctx context.Context, q query.
 func (r *searchResolver) evaluate(ctx context.Context, q query.Basic) (*SearchResults, error) {
 	if q.Pattern == nil {
 		r.invalidateCache()
-		args, err := r.toTextParameters(query.ToNodes(q.Parameters))
+		args, _, err := r.toSearchInputs(query.ToNodes(q.Parameters))
 		if err != nil {
 			return &SearchResults{}, err
 		}
@@ -1295,7 +1315,7 @@ func (r *searchResolver) Stats(ctx context.Context) (stats *searchResultsStats, 
 	for {
 		// Query search results.
 		var err error
-		args, err := r.toTextParameters(r.Query)
+		args, _, err := r.toSearchInputs(r.Query)
 		if err != nil {
 			return nil, err
 		}
