@@ -74,11 +74,11 @@ func TestRepository(t *testing.T) {
 }
 
 func TestRepository_NameWithSpace(t *testing.T) {
-	t.Skip("Test Repo is gone from Azure Devops and only admins can create repos. SQS is on vacation and he's the only admin. We don't know how this repo got deleted.")
-
 	if *azureDevOpsUsername == "" || *azureDevOpsToken == "" {
 		t.Skip("Environment variable AZURE_DEVOPS_USERNAME or AZURE_DEVOPS_TOKEN is not set")
 	}
+
+	t.Skip("Test Repo is gone from Azure Devops and only admins can create repos. SQS is on vacation and he's the only admin. We don't know how this repo got deleted.")
 
 	// Set up external service
 	esID, err := client.AddExternalService(gqltestutil.AddExternalServiceInput{
