@@ -156,11 +156,6 @@ func (c *V3Client) get(ctx context.Context, requestURI string, result interface{
 
 	err = c.rateLimit.Wait(ctx)
 	if err != nil {
-
-		// TEMPORARY: The errors.Wrap is added to observe an ongoing case where we see internal rate
-		// limit exceeded on dotcom, while it should be infinite on dotcom.
-		//
-		// This is part of COREAPP-218.
 		remaining, reset, retry, known := c.rateLimitMonitor.Get()
 		return nil, errors.Wrapf(errInternalRateLimitExceeded,
 			"rate limit: %v, monitor state (remaining: %d, reset: %v, retry: %v, known: %t)",
