@@ -244,35 +244,33 @@ func externalServiceValidate(ctx context.Context, req protocol.ExternalServiceSy
 		return nil
 	}
 
-	ctx, cancel := context.WithCancel(ctx)
-	defer cancel()
-
-	results := make(chan repos.SourceResult)
-
 	if v, ok := src.(repos.UserSource); ok {
-		if err := v.ValidateAuthenticator(ctx); err != nil {
-			return err
-		}
-	} else {
-		go func() {
-			src.ListRepos(ctx, results)
-			close(results)
-		}()
-
-		for res := range results {
-			if res.Err != nil {
-				// Send error to user before waiting for all results, but drain
-				// the rest of the results to not leak a blocked goroutine
-				go func() {
-					for range results {
-					}
-				}()
-				return res.Err
-			}
-		}
+		return v.ValidateAuthenticator(ctx)
 	}
 
-	return nil
+	ctx, cancel := context.WithCancel(ctx)
+	results := make(chan repos.SourceResult)
+
+	defer func() {
+		cancel()
+
+		// We need to drain the rest of the results to not leak a blocked goroutine.
+		for range results {
+		}
+	}()
+
+	go func() {
+		src.ListRepos(ctx, results)
+		close(results)
+	}()
+
+	select {
+	case res := <-results:
+		// As soon as we get the first result back, we've got what we need to validate the external service.
+		return res.Err
+	case <-ctx.Done():
+		return ctx.Err()
+	}
 }
 
 var mockRepoLookup func(protocol.RepoLookupArgs) (*protocol.RepoLookupResult, error)
