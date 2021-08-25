@@ -474,7 +474,7 @@ func TestPermsSyncer_syncRepoPerms(t *testing.T) {
 
 		s := newPermsSyncer(repos.NewStore(&dbtesting.MockDB{}, sql.TxOptions{}))
 
-		err := s.syncRepoPerms(context.Background(), 1, false)
+		err := s.syncRepoPerms(context.Background(), 1, false, authz.FetchPermsOptions{})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -551,7 +551,7 @@ func TestPermsSyncer_syncRepoPerms(t *testing.T) {
 
 		s := newPermsSyncer(repos.NewStore(&dbtesting.MockDB{}, sql.TxOptions{}))
 
-		err := s.syncRepoPerms(context.Background(), 1, false)
+		err := s.syncRepoPerms(context.Background(), 1, false, authz.FetchPermsOptions{})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -602,7 +602,7 @@ func TestPermsSyncer_syncRepoPerms(t *testing.T) {
 
 		s := newPermsSyncer(repos.NewStore(&dbtesting.MockDB{}, sql.TxOptions{}))
 
-		err := s.syncRepoPerms(context.Background(), 1, false)
+		err := s.syncRepoPerms(context.Background(), 1, false, authz.FetchPermsOptions{})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -688,7 +688,7 @@ func TestPermsSyncer_syncRepoPerms(t *testing.T) {
 				return []extsvc.AccountID{"user", "pending_user"}, test.fetchErr
 			}
 
-			err := s.syncRepoPerms(context.Background(), 1, test.noPerms)
+			err := s.syncRepoPerms(context.Background(), 1, test.noPerms, authz.FetchPermsOptions{})
 			if err != nil {
 				t.Fatal(err)
 			}
