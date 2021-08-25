@@ -22,4 +22,9 @@ From 3.26:
 
 - all `<sourcegraph-instance>/campaigns/*` URLs are deprecated. They will still work, and will be removed in the next major release.
 - the CLI prompt `src campaigns` and its alias `src campaign` are deprecated. They will still work, and will be removed in the next major release.
-- `/campaigns` GraphQL API endpoints are deprecated. They are intended to work, so contact us if you are querying the GraphQL API to make sure that we can support you.
+- `campaigns` GraphQL API endpoints are deprecated. They are intended to work, so contact us if you are querying the GraphQL API to make sure that we can support you.
+
+From 3.31:
+- all `<sourcegraph-instance>/campaigns/*` URLs are removed.
+- the CLI prompt `src campaigns` and its alias `src campaign` are deprecated. They will still work, and will be removed in the next major release.
+- `campaigns` GraphQL API endpoints are removed.

@@ -11,94 +11,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 )
 
-// TODO(campaigns-deprecation)
-type CreateCampaignArgs struct {
-	CampaignSpec graphql.ID
-}
-
-// TODO(campaigns-deprecation)
-type CreateCampaignSpecArgs struct {
-	Namespace graphql.ID
-
-	CampaignSpec   string
-	ChangesetSpecs []graphql.ID
-}
-
-// TODO(campaigns-deprecation)
-type ApplyCampaignArgs struct {
-	CampaignSpec   graphql.ID
-	EnsureCampaign *graphql.ID
-}
-
-// TODO(campaigns-deprecation)
-type CloseCampaignArgs struct {
-	Campaign        graphql.ID
-	CloseChangesets bool
-}
-
-// TODO(campaigns-deprecation)
-type MoveCampaignArgs struct {
-	Campaign     graphql.ID
-	NewName      *string
-	NewNamespace *graphql.ID
-}
-
-// TODO(campaigns-deprecation)
-type DeleteCampaignArgs struct {
-	Campaign graphql.ID
-}
-
-// TODO(campaigns-deprecation)
-type CreateCampaignsCredentialArgs struct {
-	ExternalServiceKind string
-	ExternalServiceURL  string
-	User                graphql.ID
-	Credential          string
-}
-
-// TODO(campaigns-deprecation)
-type DeleteCampaignsCredentialArgs struct {
-	CampaignsCredential graphql.ID
-}
-
-// TODO(campaigns-deprecation)
-type ListCampaignsCodeHostsArgs struct {
-	First  int32
-	After  *string
-	UserID int32
-}
-
-// TODO(campaigns-deprecation)
-type ListViewerCampaignsCodeHostsArgs struct {
-	First                 int32
-	After                 *string
-	OnlyWithoutCredential bool
-}
-
-// TODO(campaigns-deprecation)
-type CampaignsCodeHostConnectionResolver interface {
-	Nodes(ctx context.Context) ([]CampaignsCodeHostResolver, error)
-	TotalCount(ctx context.Context) (int32, error)
-	PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error)
-}
-
-// TODO(campaigns-deprecation)
-type CampaignsCodeHostResolver interface {
-	ExternalServiceKind() string
-	ExternalServiceURL() string
-	RequiresSSH() bool
-	Credential() CampaignsCredentialResolver
-}
-
-// TODO(campaigns-deprecation)
-type CampaignsCredentialResolver interface {
-	ID() graphql.ID
-	ExternalServiceKind() string
-	ExternalServiceURL() string
-	SSHPublicKey(ctx context.Context) (*string, error)
-	CreatedAt() DateTime
-}
-
 type CreateBatchChangeArgs struct {
 	BatchSpec         graphql.ID
 	PublicationStates *[]ChangesetSpecPublicationStateInput
@@ -256,19 +168,7 @@ type PublishChangesetsArgs struct {
 }
 
 type BatchChangesResolver interface {
-	//
 	// MUTATIONS
-	//
-	// TODO(campaigns-deprecation)
-	CreateCampaign(ctx context.Context, args *CreateCampaignArgs) (BatchChangeResolver, error)
-	CreateCampaignSpec(ctx context.Context, args *CreateCampaignSpecArgs) (BatchSpecResolver, error)
-	ApplyCampaign(ctx context.Context, args *ApplyCampaignArgs) (BatchChangeResolver, error)
-	CloseCampaign(ctx context.Context, args *CloseCampaignArgs) (BatchChangeResolver, error)
-	MoveCampaign(ctx context.Context, args *MoveCampaignArgs) (BatchChangeResolver, error)
-	DeleteCampaign(ctx context.Context, args *DeleteCampaignArgs) (*EmptyResponse, error)
-	CreateCampaignsCredential(ctx context.Context, args *CreateCampaignsCredentialArgs) (CampaignsCredentialResolver, error)
-	DeleteCampaignsCredential(ctx context.Context, args *DeleteCampaignsCredentialArgs) (*EmptyResponse, error)
-	// New:
 	CreateBatchChange(ctx context.Context, args *CreateBatchChangeArgs) (BatchChangeResolver, error)
 	CreateBatchSpec(ctx context.Context, args *CreateBatchSpecArgs) (BatchSpecResolver, error)
 	ApplyBatchChange(ctx context.Context, args *ApplyBatchChangeArgs) (BatchChangeResolver, error)
@@ -291,12 +191,6 @@ type BatchChangesResolver interface {
 	PublishChangesets(ctx context.Context, args *PublishChangesetsArgs) (BulkOperationResolver, error)
 
 	// Queries
-
-	// TODO(campaigns-deprecation)
-	Campaign(ctx context.Context, args *BatchChangeArgs) (BatchChangeResolver, error)
-	Campaigns(ctx context.Context, args *ListBatchChangesArgs) (BatchChangesConnectionResolver, error)
-	CampaignsCodeHosts(ctx context.Context, args *ListCampaignsCodeHostsArgs) (CampaignsCodeHostConnectionResolver, error)
-	// New:
 	BatchChange(ctx context.Context, args *BatchChangeArgs) (BatchChangeResolver, error)
 	BatchChanges(cx context.Context, args *ListBatchChangesArgs) (BatchChangesConnectionResolver, error)
 
@@ -357,16 +251,6 @@ type BatchSpecResolver interface {
 	SupersedingBatchSpec(context.Context) (BatchSpecResolver, error)
 
 	ViewerBatchChangesCodeHosts(ctx context.Context, args *ListViewerBatchChangesCodeHostsArgs) (BatchChangesCodeHostConnectionResolver, error)
-
-	// TODO(campaigns-deprecation)
-	// Defined so that BatchSpecResolver can act as a CampaignSpec:
-	AppliesToCampaign(ctx context.Context) (BatchChangeResolver, error)
-	SupersedingCampaignSpec(context.Context) (BatchSpecResolver, error)
-	ViewerCampaignsCodeHosts(ctx context.Context, args *ListViewerCampaignsCodeHostsArgs) (CampaignsCodeHostConnectionResolver, error)
-	// This should be removed once we remove batches. It's here so that in
-	// the NodeResolver we can have the same resolver, BatchChangeResolver, act
-	// as a Campaign and a BatchChange.
-	ActAsCampaignSpec() bool
 }
 
 type BatchChangeDescriptionResolver interface {
@@ -569,10 +453,7 @@ type ListChangesetsArgs struct {
 	// ReviewState is a value of type *btypes.ChangesetReviewState.
 	ReviewState *string
 	// CheckState is a value of type *btypes.ChangesetCheckState.
-	CheckState *string
-	// old
-	OnlyPublishedByThisCampaign *bool
-	//new
+	CheckState                     *string
 	OnlyPublishedByThisBatchChange *bool
 	Search                         *string
 
@@ -600,11 +481,6 @@ type BatchChangeResolver interface {
 	DiffStat(ctx context.Context) (*DiffStat, error)
 	CurrentSpec(ctx context.Context) (BatchSpecResolver, error)
 	BulkOperations(ctx context.Context, args *ListBatchChangeBulkOperationArgs) (BulkOperationConnectionResolver, error)
-
-	// TODO(campaigns-deprecation): This should be removed once we remove batches.
-	// It's here so that in the NodeResolver we can have the same resolver,
-	// BatchChangeResolver, act as a Campaign and a BatchChange.
-	ActAsCampaign() bool
 }
 
 type BatchChangesConnectionResolver interface {
@@ -668,9 +544,6 @@ type ChangesetResolver interface {
 
 	ToExternalChangeset() (ExternalChangesetResolver, bool)
 	ToHiddenExternalChangeset() (HiddenExternalChangesetResolver, bool)
-
-	// TODO(campaigns-deprecation):
-	Campaigns(ctx context.Context, args *ListBatchChangesArgs) (BatchChangesConnectionResolver, error)
 }
 
 // HiddenExternalChangesetResolver implements only the common interface,

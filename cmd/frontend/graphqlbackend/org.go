@@ -174,13 +174,6 @@ func (o *OrgResolver) ViewerIsMember(ctx context.Context) (bool, error) {
 
 func (o *OrgResolver) NamespaceName() string { return o.org.Name }
 
-// TODO(campaigns-deprecation):
-func (o *OrgResolver) Campaigns(ctx context.Context, args *ListBatchChangesArgs) (BatchChangesConnectionResolver, error) {
-	id := o.ID()
-	args.Namespace = &id
-	return EnterpriseResolvers.batchChangesResolver.Campaigns(ctx, args)
-}
-
 func (o *OrgResolver) BatchChanges(ctx context.Context, args *ListBatchChangesArgs) (BatchChangesConnectionResolver, error) {
 	id := o.ID()
 	args.Namespace = &id

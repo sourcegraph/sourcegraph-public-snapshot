@@ -18,7 +18,6 @@ import (
 	"github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	uirouter "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/ui/router"
@@ -89,7 +88,6 @@ const (
 	routeLegacyOldRouteDefLanding      = "page.def.landing.old"
 	routeLegacyRepoLanding             = "page.repo.landing"
 	routeLegacyDefRedirectToDefLanding = "page.def.redirect"
-	routeLegacyCampaigns               = "campaigns"
 )
 
 // aboutRedirects contains map entries, each of which indicates that
@@ -177,7 +175,6 @@ func newRouter() *mux.Router {
 	// Legacy redirects
 	r.Path("/login").Methods("GET").Name(routeLegacyLogin)
 	r.Path("/careers").Methods("GET").Name(routeLegacyCareers)
-	r.Path("/campaigns{Path:(?:$|/.*)}").Methods("GET").Name(routeLegacyCampaigns)
 
 	// repo
 	repoRevPath := "/" + routevar.Repo + routevar.RepoRevSuffix
@@ -228,11 +225,6 @@ func initRouter(db dbutil.DB, router *mux.Router) {
 	router.Get(routeHome).Handler(handler(serveHome))
 	router.Get(routeThreads).Handler(handler(serveBrandedPageString("Threads", nil)))
 	router.Get(routeInsights).Handler(handler(serveBrandedPageString("Insights", nil)))
-	router.Get(routeLegacyCampaigns).Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		r.URL.Path = "/batch-changes" + mux.Vars(r)["Path"]
-		// Temporary redirect so at some point we can reuse the /campaigns path, if needed.
-		http.Redirect(w, r, auth.SafeRedirectURL(r.URL.String()), http.StatusTemporaryRedirect)
-	}))
 	router.Get(routeBatchChanges).Handler(handler(serveBrandedPageString("Batch Changes", nil)))
 	router.Get(routeCodeMonitoring).Handler(handler(serveBrandedPageString("Code Monitoring", nil)))
 	router.Get(routeContexts).Handler(handler(serveBrandedPageString("Search Contexts", nil)))
