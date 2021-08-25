@@ -132,7 +132,42 @@ func (g *generator) generate(ctx context.Context) error {
 		totalPages += len(pagesByRepo[repoName])
 	}
 
+	// Fetch all documentation pages.
+	queried = 0
+	unexpectedMissingPages := 0
+	var docsSubPages []string
+	for repoName, pagePathIDs := range pagesByRepo {
+		for _, pathID := range pagePathIDs {
+			page, err := g.fetchDocPage(ctx, gqlDocPageVars{RepoName: repoName, PathID: pathID})
+			if err != nil && strings.Contains(err.Error(), "page not found") {
+				log15.Error("unexpected: API docs page missing after reportedly existing", "repo", repoName, "pathID", pathID, "error", err)
+				unexpectedMissingPages++
+				continue
+			}
+			if err != nil {
+				return err
+			}
+			queried++
+			log15.Info("got API docs page", "n", queried, "of", totalPages)
+
+			var walk func(node *DocumentationNode)
+			walk = func(node *DocumentationNode) {
+				if len(node.Detail.String()) > 100 {
+					docsSubPages = append(docsSubPages, repoName+"/-/docs/"+node.PathID)
+				}
+
+				for _, child := range node.Children {
+					if child.Node != nil {
+						walk(child.Node)
+					}
+				}
+			}
+			walk(page)
+		}
+	}
+
 	log15.Info("found Go API docs pages", "count", totalPages)
+	log15.Info("found Go API docs sub-pages", "count", len(docsSubPages))
 	log15.Info("spanning", "repositories", len(indexedGoRepos), "stars", totalStars)
 	log15.Info("Go repos missing API docs", "count", missingAPIDocs)
 	return nil
@@ -200,6 +235,28 @@ func (g *generator) fetchDocPathInfo(ctx context.Context, vars gqlDocPathInfoVar
 	var result DocumentationPathInfoResult
 	if err := json.Unmarshal([]byte(payload), &result); err != nil {
 		return nil, errors.Wrap(err, "Unmarshal DocumentationPathInfoResult")
+	}
+	return &result, nil
+}
+
+func (g *generator) fetchDocPage(ctx context.Context, vars gqlDocPageVars) (*DocumentationNode, error) {
+	data, err := g.db.request(requestKey{RequestName: "DocPage", Vars: vars}, func() ([]byte, error) {
+		return g.gqlClient.requestGraphQL(ctx, "SitemapDocPage", gqlDocPageQuery, vars)
+	})
+	if err != nil {
+		return nil, err
+	}
+	var resp gqlDocPageResponse
+	if err := json.Unmarshal(data, &resp); err != nil {
+		return nil, errors.Wrap(err, "Unmarshal GraphQL response")
+	}
+	payload := resp.Data.Repository.Commit.Tree.LSIF.DocumentationPage.Tree
+	if payload == "" {
+		return nil, nil
+	}
+	var result DocumentationNode
+	if err := json.Unmarshal([]byte(payload), &result); err != nil {
+		return nil, errors.Wrap(err, "Unmarshal DocumentationNode")
 	}
 	return &result, nil
 }
