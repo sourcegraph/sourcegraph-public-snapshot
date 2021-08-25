@@ -8,12 +8,12 @@
         },
         {
             "file": "client/extension-api/src/sourcegraph.d.ts",
-            "description": "For example, extensions can add contextual information next to lines of code by calling `CodeEditor#setDecorations`. \n\n<img width=\"36rem\" src=\"https://user-images.githubusercontent.com/1976/47624533-f3a1e800-dada-11e8-81d9-3d4bd67fc08a.png\">",
+            "description": "For example, extensions can add contextual information next to lines of code by calling `CodeEditor#setDecorations`. \n\n<img width=\"576\" src=\"https://user-images.githubusercontent.com/1976/47624533-f3a1e800-dada-11e8-81d9-3d4bd67fc08a.png\">",
             "line": 726
         },
         {
             "file": "client/extension-api/src/sourcegraph.d.ts",
-            "description": "Or, they can add custom views to pages, like the directory page, through `sourcegraph.app.registerViewProvider`.\n\nCheck out [code insights](https://sourcegraph.com/extensions?category=All&query=category%3A%22Insights%22), which started as a prototype using this API.\n\n<img width=\"36rem\" src=\"https://user-images.githubusercontent.com/10532611/81548695-f642f600-937d-11ea-8e22-6f809a861b5d.gif\">",
+            "description": "Or, they can add custom views to pages, like the directory page, through `sourcegraph.app.registerViewProvider`.\n\nCheck out [code insights](https://sourcegraph.com/extensions?category=All&query=category%3A%22Insights%22), which started as a prototype using this API.\n\n<img width=\"576\" src=\"https://user-images.githubusercontent.com/10532611/81548695-f642f600-937d-11ea-8e22-6f809a861b5d.gif\">",
             "line": 1157,
             "selection": {
                 "start": {
@@ -37,7 +37,7 @@
         },
         {
             "directory": "client/shared/src/api",
-            "description": "This is where the heart of the extension API actuallly lives. \n\nHere's the documentation for the [Sourcegraph extension architecture](https://docs.sourcegraph.com/dev/background-information/architecture/sourcegraph-extensions). After a quick skim of this, you'll be ready to dive into the code with me!\n\n<img width=\"36rem\" src=\"https://user-images.githubusercontent.com/37420160/130723468-c50a69eb-dbde-44ac-a80e-4c662bbbcf19.png\">\n"
+            "description": "This is where the heart of the extension API actuallly lives. \n\nHere's the documentation for the [Sourcegraph extension architecture](https://docs.sourcegraph.com/dev/background-information/architecture/sourcegraph-extensions). After a quick skim of this, you'll be ready to dive into the code with me!\n\n<img width=\"576\" src=\"https://user-images.githubusercontent.com/37420160/130723468-c50a69eb-dbde-44ac-a80e-4c662bbbcf19.png\">\n"
         },
         {
             "file": "client/shared/src/api/extension/extensionHost.ts",
