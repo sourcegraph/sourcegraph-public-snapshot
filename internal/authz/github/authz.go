@@ -47,12 +47,13 @@ func newAuthzProvider(urn string, a *schema.GitHubAuthorization, instanceURL, to
 	if err != nil {
 		return nil, errors.Errorf("Could not parse URL for GitHub instance %q: %s", instanceURL, err)
 	}
-	ttl := time.Duration(a.GroupsCacheTTL) * time.Hour
-	if a.GroupsCacheTTL == 0 {
-		a.GroupsCacheTTL = 72 // 3 days, sync with github.schema.json default
-	} else if a.GroupsCacheTTL < 0 {
-		ttl = time.Duration(-1) // disable groups caching
+
+	// Disable by default for now
+	if a.GroupsCacheTTL <= 0 {
+		a.GroupsCacheTTL = -1
 	}
+
+	ttl := time.Duration(a.GroupsCacheTTL) * time.Hour
 
 	return NewProvider(urn, ProviderOptions{
 		GitHubURL:      ghURL,
