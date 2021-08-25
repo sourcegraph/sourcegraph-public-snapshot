@@ -20,6 +20,10 @@ func TemporarySettings(db dbutil.DB) *TemporarySettingsStore {
 }
 
 func (f *TemporarySettingsStore) GetTemporarySettings(ctx context.Context, userID int32) (*ts.TemporarySettings, error) {
+	if Mocks.TemporarySettings.GetTemporarySettings != nil {
+		return Mocks.TemporarySettings.GetTemporarySettings(ctx, userID)
+	}
+
 	var contents string
 
 	const getTemporarySettingsQuery = `
@@ -44,6 +48,10 @@ func (f *TemporarySettingsStore) GetTemporarySettings(ctx context.Context, userI
 }
 
 func (f *TemporarySettingsStore) UpsertTemporarySettings(ctx context.Context, userID int32, contents string) error {
+	if Mocks.TemporarySettings.UpsertTemporarySettings != nil {
+		return Mocks.TemporarySettings.UpsertTemporarySettings(ctx, userID, contents)
+	}
+
 	const upsertTemporarySettingsQuery = `
 		INSERT INTO temporary_settings (user_id, contents)
 		VALUES (%s, %s)

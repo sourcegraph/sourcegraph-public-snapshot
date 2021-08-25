@@ -22,7 +22,7 @@ func (r *schemaResolver) TemporarySettings(ctx context.Context) (*TemporarySetti
 		return nil, err
 	}
 	if user == nil {
-		return nil, errors.Errorf("user is not signed in")
+		return nil, errors.New("not authenticated")
 	}
 
 	temporarySettings, err := database.TemporarySettings(r.db).GetTemporarySettings(ctx, user.DatabaseID())
@@ -43,7 +43,7 @@ func (r *schemaResolver) OverwriteTemporarySettings(ctx context.Context, args st
 		return nil, err
 	}
 	if user == nil {
-		return nil, errors.Errorf("user is not signed in")
+		return nil, errors.Errorf("not authenticated")
 	}
 
 	return &EmptyResponse{}, database.TemporarySettings(r.db).UpsertTemporarySettings(ctx, user.DatabaseID(), args.Contents)
