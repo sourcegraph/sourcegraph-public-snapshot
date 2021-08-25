@@ -175,6 +175,7 @@ export function LineChartContent<Datum extends object>(props: LineChartContentPr
 
     const { onPointerMove = noop, onPointerOut = noop, ...otherHandlers } = usePointerEventEmitters({
         source: XYCHART_EVENT_SOURCE,
+        onFocus: true,
     })
 
     // We only need to catch pointerout event on root element - chart
