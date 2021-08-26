@@ -1,5 +1,5 @@
-import { Meta, storiesOf, Story } from '@storybook/react'
-import React, { useCallback } from 'react'
+import { Meta, Story } from '@storybook/react'
+import React from 'react'
 import { of } from 'rxjs'
 
 import { LSIFIndexState } from '@sourcegraph/shared/src/graphql/schema'

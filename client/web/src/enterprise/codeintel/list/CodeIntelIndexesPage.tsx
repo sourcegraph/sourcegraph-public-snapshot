@@ -25,7 +25,6 @@ import { CodeIntelUploadOrIndexRoot } from '../shared/CodeIntelUploadOrIndexRoot
 import { enqueueIndexJob as defaultEnqueueIndexJob, fetchLsifIndexes as defaultFetchLsifIndexes } from './backend'
 import styles from './CodeIntelIndexesPage.module.scss'
 import classNames from 'classnames'
-import { ClassNames } from '@storybook/theming'
 
 export interface CodeIntelIndexesPageProps extends RouteComponentProps<{}>, TelemetryProps {
     repo?: { id: string }
