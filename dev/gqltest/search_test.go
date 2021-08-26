@@ -513,6 +513,11 @@ func testSearchClient(t *testing.T, client searchClient) {
 				name:  `Repohascommitafter, nonzero result`,
 				query: `repo:^github\.com/sgtest/go-diff$ repohascommitafter:"2019-01-01" test patterntype:literal`,
 			},
+			{
+				name: `negated repohascommitafter, nonzero result`,
+				// This query will fail if any commits are added to sgtest/archived, but that seems unlikely
+				query: `repo:sgtest/archived$$ -repohascommitafter:"2020-09-01"`,
+			},
 			// Regex text search
 			{
 				name:  `regex, unindexed, nonzero result`,

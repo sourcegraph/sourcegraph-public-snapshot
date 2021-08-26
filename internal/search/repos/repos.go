@@ -303,7 +303,7 @@ func (r *Resolver) Resolve(ctx context.Context, op search.RepoOptions) (Resolved
 	if op.CommitAfter != "" {
 		start := time.Now()
 		before := len(repoRevs)
-		repoRevs, err = filterRepoHasCommitAfter(ctx, repoRevs, op.CommitAfter)
+		repoRevs, err = filterRepoHasCommitAfter(ctx, repoRevs, op.CommitAfter, op.CommitAfterNegated)
 		tr.LazyPrintf("repohascommitafter removed %d repos in %s", before-len(repoRevs), time.Since(start))
 	}
 
@@ -568,7 +568,7 @@ func searchableRepositories(ctx context.Context, getRawSearchableRepos searchabl
 	return repos, nil
 }
 
-func filterRepoHasCommitAfter(ctx context.Context, revisions []*search.RepositoryRevisions, after string) ([]*search.RepositoryRevisions, error) {
+func filterRepoHasCommitAfter(ctx context.Context, revisions []*search.RepositoryRevisions, after string, negated bool) ([]*search.RepositoryRevisions, error) {
 	var (
 		mut  sync.Mutex
 		pass []*search.RepositoryRevisions
@@ -603,7 +603,7 @@ func filterRepoHasCommitAfter(ctx context.Context, revisions []*search.Repositor
 					run.Error(err)
 					continue
 				}
-				if ok {
+				if (!negated && ok) || (negated && !ok) {
 					specifiers = append(specifiers, rev)
 				}
 			}

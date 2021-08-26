@@ -300,6 +300,7 @@ type RepoOptions struct {
 	NoArchived         bool
 	OnlyArchived       bool
 	CommitAfter        string
+	CommitAfterNegated bool
 	Visibility         query.RepoVisibility
 	Ranked             bool // Return results ordered by rank
 	Limit              int
@@ -329,7 +330,11 @@ func (op *RepoOptions) String() string {
 		_, _ = fmt.Fprintf(&b, " versionContext=%q", op.VersionContextName)
 	}
 	if op.CommitAfter != "" {
-		_, _ = fmt.Fprintf(&b, " CommitAfter=%q", op.CommitAfter)
+		negation := ""
+		if op.CommitAfterNegated {
+			negation = "-"
+		}
+		_, _ = fmt.Fprintf(&b, " %sCommitAfter=%q", negation, op.CommitAfter)
 	}
 
 	if op.NoForks {

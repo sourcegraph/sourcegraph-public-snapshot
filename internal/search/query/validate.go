@@ -307,7 +307,7 @@ func validateField(field, value string, negated bool, seen map[string]struct{}) 
 		return satisfies(isValidRegexp)
 	case
 		FieldRepoHasCommitAfter:
-		return satisfies(isSingular, isNotNegated)
+		return satisfies(isSingular)
 	case
 		FieldBefore,
 		FieldAfter:

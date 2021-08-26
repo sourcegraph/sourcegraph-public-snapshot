@@ -85,6 +85,7 @@ export enum NegatedFilters {
     r = '-r',
     repo = '-repo',
     repohasfile = '-repohasfile',
+    repohascommitafter = '-repohascommitafter',
 }
 
 /** The list of filters that are able to be negated. */
@@ -97,6 +98,7 @@ export type NegatableFilter =
     | FilterType.committer
     | FilterType.author
     | FilterType.message
+    | FilterType.repohascommitafter
 
 export const isNegatableFilter = (filter: FilterType): filter is NegatableFilter =>
     Object.keys(NegatedFilters).includes(filter)
@@ -119,6 +121,7 @@ const negatedFilterToNegatableFilter: { [key: string]: NegatableFilter } = {
     '-r': FilterType.repo,
     '-repo': FilterType.repo,
     '-repohasfile': FilterType.repohasfile,
+    '-repohascommitafter': FilterType.repohascommitafter,
 }
 
 export const resolveNegatedFilter = (filter: NegatedFilters): NegatableFilter => negatedFilterToNegatableFilter[filter]
@@ -266,7 +269,11 @@ export const FILTERS: Record<NegatableFilter, NegatableFilterDefinition> &
         suggestions: 'RepoGroup',
     },
     [FilterType.repohascommitafter]: {
-        description: '"string specifying time frame" (filter out stale repositories without recent commits)',
+        negatable: true,
+        description: negated =>
+            `"string specifying time frame" (filter ${
+                negated ? 'to only' : 'out'
+            } stale repositories without recent commits)`,
         singular: true,
     },
     [FilterType.repohasfile]: {

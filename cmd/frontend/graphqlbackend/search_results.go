@@ -499,7 +499,13 @@ func (r *searchResolver) toRepoOptions(q query.Q, opts resolveRepositoriesOpts) 
 	visibilityStr, _ := q.StringValue(query.FieldVisibility)
 	visibility := query.ParseVisibility(visibilityStr)
 
-	commitAfter, _ := q.StringValue(query.FieldRepoHasCommitAfter)
+	commitAfter, notCommitAfter := q.StringValue(query.FieldRepoHasCommitAfter)
+	commitAfterNegated := false
+	if commitAfter == "" && notCommitAfter != "" {
+		commitAfter = notCommitAfter
+		commitAfterNegated = true
+	}
+
 	searchContextSpec, _ := q.StringValue(query.FieldContext)
 
 	var versionContextName string
@@ -526,6 +532,7 @@ func (r *searchResolver) toRepoOptions(q query.Q, opts resolveRepositoriesOpts) 
 		NoArchived:         archived == query.No,
 		Visibility:         visibility,
 		CommitAfter:        commitAfter,
+		CommitAfterNegated: commitAfterNegated,
 		Query:              q,
 		Ranked:             true,
 		Limit:              opts.limit,
