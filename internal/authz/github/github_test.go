@@ -78,7 +78,7 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 	})
 
 	var (
-		mockListAffiliatedRepositories = func(ctx context.Context, visibility github.Visibility, page int, affiliations ...github.Affiliation) ([]*github.Repository, bool, int, error) {
+		mockListAffiliatedRepositories = func(ctx context.Context, visibility github.Visibility, page int, affiliations ...github.RepositoryAffiliation) ([]*github.Repository, bool, int, error) {
 			switch page {
 			case 1:
 				return []*github.Repository{
@@ -429,7 +429,7 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 
 	t.Run("disabled cache", func(t *testing.T) {
 		mockClient := &mockClient{
-			MockListAffiliatedRepositories: func(ctx context.Context, visibility github.Visibility, page int, affiliations ...github.Affiliation) (repos []*github.Repository, hasNextPage bool, rateLimitCost int, err error) {
+			MockListAffiliatedRepositories: func(ctx context.Context, visibility github.Visibility, page int, affiliations ...github.RepositoryAffiliation) (repos []*github.Repository, hasNextPage bool, rateLimitCost int, err error) {
 				if len(affiliations) != 0 {
 					t.Fatalf("Expected 0 affiliations, got %+v", affiliations)
 				}
@@ -510,7 +510,7 @@ func TestProvider_FetchRepoPerms(t *testing.T) {
 			GroupsCacheTTL: -1,
 		})
 		p.client = &mockClient{
-			MockListRepositoryCollaborators: func(ctx context.Context, owner, repo string, page int, affiliations ...github.Affiliation) ([]*github.Collaborator, bool, error) {
+			MockListRepositoryCollaborators: func(ctx context.Context, owner, repo string, page int, affiliation github.CollaboratorAffiliation) ([]*github.Collaborator, bool, error) {
 				switch page {
 				case 1:
 					return []*github.Collaborator{

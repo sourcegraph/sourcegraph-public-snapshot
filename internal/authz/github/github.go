@@ -100,7 +100,7 @@ func (p *Provider) fetchUserPermsByToken(ctx context.Context, accountID extsvc.A
 
 	// If groups caching is enabled, we sync just a subset of direct affiliations - we let
 	// other permissions ('organization' affiliation) be sync'd by teams/orgs.
-	affiliations := []github.Affiliation{github.AffiliationOwner, github.AffiliationCollaborator}
+	affiliations := []github.RepositoryAffiliation{github.AffiliationOwner, github.AffiliationCollaborator}
 	if p.groupsCache == nil {
 		// Otherwise, sync all direct affiliations.
 		affiliations = nil
@@ -260,12 +260,12 @@ func (p *Provider) FetchRepoPerms(ctx context.Context, repo *extsvc.Repository, 
 		}
 	}
 
-	// If groups caching is enabled, we sync just a subset of direct affiliations - we let
-	// other permissions ('organization' affiliation) be sync'd by teams/orgs.
-	affiliations := []github.Affiliation{github.AffiliationOwner, github.AffiliationCollaborator}
+	// If groups caching is enabled, we sync just direct affiliations, and sync org/team
+	// collaborators separately from cache
+	affiliation := github.AffiliationDirect
 	if p.groupsCache == nil {
-		// Otherwise, sync all direct affiliations.
-		affiliations = nil
+		// Otherwise, sync all affiliations.
+		affiliation = ""
 	}
 
 	// Sync collaborators
@@ -273,7 +273,7 @@ func (p *Provider) FetchRepoPerms(ctx context.Context, repo *extsvc.Repository, 
 	for page := 1; hasNextPage; page++ {
 		var err error
 		var users []*github.Collaborator
-		users, hasNextPage, err = p.client.ListRepositoryCollaborators(ctx, owner, name, page, affiliations...)
+		users, hasNextPage, err = p.client.ListRepositoryCollaborators(ctx, owner, name, page, affiliation)
 		if err != nil {
 			return userIDs, err
 		}

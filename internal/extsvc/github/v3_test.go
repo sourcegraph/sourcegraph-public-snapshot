@@ -52,7 +52,7 @@ func TestListAffiliatedRepositories(t *testing.T) {
 	tests := []struct {
 		name         string
 		visibility   Visibility
-		affiliations []Affiliation
+		affiliations []RepositoryAffiliation
 		wantRepos    []*Repository
 	}{
 		{
@@ -130,7 +130,7 @@ func TestListAffiliatedRepositories(t *testing.T) {
 		},
 		{
 			name:         "list collaborator and owner affiliated repositories",
-			affiliations: []Affiliation{AffiliationCollaborator, AffiliationOwner},
+			affiliations: []RepositoryAffiliation{AffiliationCollaborator, AffiliationOwner},
 			wantRepos: []*Repository{
 				{
 					ID:               "MDEwOlJlcG9zaXRvcnkyNjMwMzQwNzM=",
@@ -179,6 +179,89 @@ func Test_GetAuthenticatedUserOAuthScopes(t *testing.T) {
 	sort.Strings(scopes)
 	if diff := cmp.Diff(want, scopes); diff != "" {
 		t.Fatalf("Scopes mismatch (-want +got):\n%s", diff)
+	}
+}
+
+// NOTE: To update VCR for this test, please use the token of "sourcegraph-vcr"
+// for GITHUB_TOKEN, which can be found in 1Password.
+func TestListRepositoryCollaborators(t *testing.T) {
+	tests := []struct {
+		name        string
+		owner       string
+		repo        string
+		affiliation CollaboratorAffiliation
+		wantUsers   []*Collaborator
+	}{
+		{
+			name:  "public repo",
+			owner: "sourcegraph-vcr-repos",
+			repo:  "public-org-repo-1",
+			wantUsers: []*Collaborator{
+				{
+					ID:         "MDQ6VXNlcjYzMjkwODUx", // sourcegraph-vcr as owner
+					DatabaseID: 63290851,
+				},
+			},
+		},
+		{
+			name:  "private repo",
+			owner: "sourcegraph-vcr-repos",
+			repo:  "private-org-repo-1",
+			wantUsers: []*Collaborator{
+				{
+					ID:         "MDQ6VXNlcjYzMjkwODUx", // sourcegraph-vcr as owner
+					DatabaseID: 63290851,
+				}, {
+					ID:         "MDQ6VXNlcjY2NDY0Nzcz", // sourcegraph-vcr-amy as team member
+					DatabaseID: 66464773,
+				}, {
+					ID:         "MDQ6VXNlcjY2NDY0OTI2", // sourcegraph-vcr-bob as outside collaborator
+					DatabaseID: 66464926,
+				}, {
+					ID:         "MDQ6VXNlcjg5NDk0ODg0", // sourcegraph-vcr-dave as team member
+					DatabaseID: 89494884,
+				},
+			},
+		},
+		{
+			name:        "direct collaborator outside collaborator",
+			owner:       "sourcegraph-vcr-repos",
+			repo:        "private-org-repo-1",
+			affiliation: AffiliationDirect,
+			wantUsers: []*Collaborator{
+				{
+					ID:         "MDQ6VXNlcjY2NDY0OTI2", // sourcegraph-vcr-bob as outside collaborator
+					DatabaseID: 66464926,
+				},
+			},
+		},
+		{
+			name:        "direct collaborator repo owner",
+			owner:       "sourcegraph-vcr",
+			repo:        "public-user-repo-1",
+			affiliation: AffiliationDirect,
+			wantUsers: []*Collaborator{
+				{
+					ID:         "MDQ6VXNlcjYzMjkwODUx", // sourcegraph-vcr as owner
+					DatabaseID: 63290851,
+				},
+			},
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			client, save := newV3TestClient(t, "ListRepositoryCollaborators_"+test.name)
+			defer save()
+
+			users, _, err := client.ListRepositoryCollaborators(context.Background(), test.owner, test.repo, 1, test.affiliation)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if diff := cmp.Diff(test.wantUsers, users); diff != "" {
+				t.Fatalf("Users mismatch (-want +got):\n%s", diff)
+			}
+		})
 	}
 }
 

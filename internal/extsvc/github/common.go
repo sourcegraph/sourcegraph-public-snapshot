@@ -1792,13 +1792,20 @@ const (
 	VisibilityPrivate Visibility = "private"
 )
 
-// Visibility is the affiliation filter for listing repositories.
-type Affiliation string
+// RepositoryAffiliation is the affiliation filter for listing repositories.
+type RepositoryAffiliation string
 
 const (
-	AffiliationOwner        Affiliation = "owner"
-	AffiliationCollaborator Affiliation = "collaborator"
-	AffiliationOrgMember    Affiliation = "organization_member"
+	AffiliationOwner        RepositoryAffiliation = "owner"
+	AffiliationCollaborator RepositoryAffiliation = "collaborator"
+	AffiliationOrgMember    RepositoryAffiliation = "organization_member"
+)
+
+type CollaboratorAffiliation string
+
+const (
+	AffiliationOutside CollaboratorAffiliation = "outside"
+	AffiliationDirect  CollaboratorAffiliation = "direct"
 )
 
 type restSearchResponse struct {

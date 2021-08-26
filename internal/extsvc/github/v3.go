@@ -380,20 +380,15 @@ func (c *V3Client) GetAuthenticatedUserOAuthScopes(ctx context.Context) ([]strin
 	return strings.Split(scope, ", "), nil
 }
 
-// ListRepositoryCollaborators lists GitHub users that has access to the repository based
-// on the provided affiliations.
+// ListRepositoryCollaborators lists GitHub users that has access to the repository.
 //
 // The page is the page of results to return, and is 1-indexed (so the first call should
 // be for page 1). If no affiliations are provided, all users with access to the repository
 // are listed.
-func (c *V3Client) ListRepositoryCollaborators(ctx context.Context, owner, repo string, page int, affiliations ...Affiliation) (users []*Collaborator, hasNextPage bool, _ error) {
+func (c *V3Client) ListRepositoryCollaborators(ctx context.Context, owner, repo string, page int, affiliation CollaboratorAffiliation) (users []*Collaborator, hasNextPage bool, _ error) {
 	path := fmt.Sprintf("/repos/%s/%s/collaborators?page=%d&per_page=100", owner, repo, page)
-	if len(affiliations) > 0 {
-		affilationsStrings := make([]string, 0, len(affiliations))
-		for _, affiliation := range affiliations {
-			affilationsStrings = append(affilationsStrings, string(affiliation))
-		}
-		path = fmt.Sprintf("%s&affiliation=%s", path, strings.Join(affilationsStrings, ","))
+	if len(affiliation) > 0 {
+		path = fmt.Sprintf("%s&affiliation=%s", path, affiliation)
 	}
 	err := c.requestGet(ctx, path, &users)
 	if err != nil {
@@ -443,6 +438,10 @@ func (c *V3Client) GetOrganization(ctx context.Context, login string) (org *OrgD
 	return
 }
 
+// ListOrganizationMembers retrieves collaborators in the given organization.
+//
+// The page is the page of results to return, and is 1-indexed (so the first call should
+// be for page 1).
 func (c *V3Client) ListOrganizationMembers(ctx context.Context, owner string, page int) (users []*Collaborator, hasNextPage bool, _ error) {
 	path := fmt.Sprintf("/orgs/%s/members?page=%d&per_page=100", owner, page)
 	err := c.requestGet(ctx, path, &users)
@@ -452,6 +451,11 @@ func (c *V3Client) ListOrganizationMembers(ctx context.Context, owner string, pa
 	return users, len(users) > 0, nil
 }
 
+// ListTeamMembers retrieves collaborators in the given team.
+//
+// The team should be the team slug, not team name.
+// The page is the page of results to return, and is 1-indexed (so the first call should
+// be for page 1).
 func (c *V3Client) ListTeamMembers(ctx context.Context, owner, team string, page int) (users []*Collaborator, hasNextPage bool, _ error) {
 	path := fmt.Sprintf("/orgs/%s/teams/%s/members?page=%d&per_page=100", owner, team, page)
 	err := c.requestGet(ctx, path, &users)
@@ -526,7 +530,7 @@ func (c *V3Client) ListPublicRepositories(ctx context.Context, sinceRepoID int64
 // page is the page of results to return, and is 1-indexed (so the first call should be
 // for page 1).
 // visibility and affiliations are filters for which repositories should be returned.
-func (c *V3Client) ListAffiliatedRepositories(ctx context.Context, visibility Visibility, page int, affiliations ...Affiliation) (
+func (c *V3Client) ListAffiliatedRepositories(ctx context.Context, visibility Visibility, page int, affiliations ...RepositoryAffiliation) (
 	repos []*Repository,
 	hasNextPage bool,
 	rateLimitCost int,
