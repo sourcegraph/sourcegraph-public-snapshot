@@ -7,7 +7,7 @@ export function createViewContent(
     insight: InsightFields,
     seriesSettings: SearchBasedInsightSeries[] = []
 ): LineChartContent<{ dateTime: number; [seriesKey: string]: number }, 'dateTime'> {
-    const sortedSeriesSettings = seriesSettings.sort((a, b) => a.name.localeCompare(b.name))
+    const sortedSeriesSettings = seriesSettings.sort((a, b) => a.query.localeCompare(b.query))
     const dataByXValue = new Map<string, { dateTime: number; [seriesKey: string]: number }>()
 
     for (const [seriesIndex, series] of insight.series.entries()) {

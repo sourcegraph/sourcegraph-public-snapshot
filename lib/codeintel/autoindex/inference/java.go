@@ -54,6 +54,7 @@ var supportedFilenames = []string{
 	// The "lsif-java.json" file is used to index package repositories such as
 	// the JDK sources and published Java libraries.
 	"lsif-java.json",
+	// "build.sbt",
 	// Maven and Gradle are intentionally excluded from these patterns to
 	// begin with. We want to gain experience with auto-indexing only
 	// package repos, which have a higher likelyhood of indexing

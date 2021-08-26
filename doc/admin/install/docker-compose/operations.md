@@ -154,10 +154,16 @@ When you upgrade, merge the corresponding upstream release tag into your `releas
 git fetch upstream
 # merge the upstream release tag into your release branch
 git checkout release
-git merge upstream v$SOURCEGRAPH_VERSION
+git merge v$SOURCEGRAPH_VERSION
 ```
 
 Address any merge conflicts you might have.
+
+> NOTE: If you have made no changes or only very minimal changes to your configuration, you can also ask git to always select incoming changes in the event of merge conflicts:
+>
+> `git merge -X theirs v$SOURCEGRAPH_VERSION`
+>
+> If you do this, make sure to validate your configuration is correct before proceeding.
 
 If you are upgrading a live deployment, make sure to check the [release upgrade notes](../../updates/docker_compose.md) for any additional actions you need to take **before proceeding**.
 Then, ensure that the current Sourcegraph instance is completely stopped:
