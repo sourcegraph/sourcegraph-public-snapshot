@@ -28,8 +28,6 @@ export const BatchSpecExecutionNode: React.FunctionComponent<BatchSpecExecutionN
     node,
     now = () => new Date(),
 }) => {
-    console.log(node.id)
-
     const [isExpanded, setIsExpanded] = useState(false)
     const toggleIsExpanded = useCallback<React.MouseEventHandler<HTMLButtonElement>>(
         event => {
