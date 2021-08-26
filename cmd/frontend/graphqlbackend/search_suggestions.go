@@ -392,13 +392,13 @@ func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestion
 
 		var fileMatches []result.Match
 		if featureflag.FromContext(ctx).GetBoolOr("sh_search_suggestions_symbols", false) {
-			args, _, err := r.toSearchInputs(r.Query)
+			args, jobs, err := r.toSearchInputs(r.Query)
 			if err != nil {
 				return nil, err
 			}
 			args.ResultTypes = result.TypeSymbol
 
-			results, err := r.doResults(ctx, args)
+			results, err := r.doResults(ctx, args, jobs)
 			if errors.Is(err, context.DeadlineExceeded) {
 				err = nil
 			}
@@ -504,12 +504,12 @@ func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestion
 		ctx, cancel := context.WithTimeout(ctx, 500*time.Millisecond)
 		defer cancel()
 		if len(r.Query.Values(query.FieldDefault)) > 0 {
-			searchArgs, _, err := r.toSearchInputs(r.Query)
+			searchArgs, jobs, err := r.toSearchInputs(r.Query)
 			if err != nil {
 				return nil, err
 			}
 			searchArgs.ResultTypes = result.TypeFile // only "file" result type
-			results, err := r.doResults(ctx, searchArgs)
+			results, err := r.doResults(ctx, searchArgs, jobs)
 			if err == context.DeadlineExceeded {
 				err = nil // don't log as error below
 			}
