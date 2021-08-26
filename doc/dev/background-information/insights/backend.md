@@ -31,7 +31,7 @@ The current version of the backend is an MVP to achieve beta status to unblock t
 
 ## Architecture
 
-The following architecture diagram shows how the backend fits into the two Sourcegraph services "frontend" (the Sourcegraph monolithic service) and "repo-updater" (the Sourcegraph "background-worker" service), click to expand:
+The following architecture diagram shows how the backend fits into the two Sourcegraph services "frontend" (the Sourcegraph monolithic service) and "worker" (the Sourcegraph "background-worker" service), click to expand:
 
 [![](diagrams/architecture.svg)](https://raw.githubusercontent.com/sourcegraph/sourcegraph/main/doc/dev/background-information/insights/diagrams/architecture.svg)
 
@@ -46,6 +46,20 @@ Implementation of this environment variable can be found in the [`frontend`](htt
 This flag should be used judiciously and should generally be considered a last resort for Sourcegraph installations that need to disable Code Insights or remove the database dependency.
 
 With version 3.31 this flag has moved from the `repo-updater` service to the `worker` service.
+
+## Database
+Currently, Code Insights uses a [TImescaleDB](https://www.timescale.com) database running on the OSS license. The original intention was to use
+some of the timeseries query features, as well as the hypertable. Many of these are behind a proprietary license that would require non-trivial
+work to bundle with Sourcegraph.
+
+Additionally, we have many customers running on managed databases for Postgres (RDS, Cloud SQL, etc) that do not support the TimescaleDB plugin.
+Recently our distribution team has started to encourage customers to use managed DB solutions as the product grows. Given entire categories of customers
+would be excluded from using Code Insights, we have decided we must move away from TimescaleDB.
+
+A final decision has not yet been made, but a very likely candidate is falling back to vanilla Postgres. This will simplify our operations, support, and likely
+will not present a performance problem given the primary constraint on Code Insights is search throughput.
+
+It is reasonable to expect this migration to occur some time during the beta period for Code Insights.
 
 ## Life of an insight
 
