@@ -501,7 +501,7 @@ const GitObjectPreview: FunctionComponent<GitObjectPreviewProps> = ({
                         <>
                             {commitPreview !== undefined && commitPreview.preview.length !== 0 && (
                                 <div className="mt-2 p-2">
-                                    <div className="bg-dark text-light">
+                                    <div className="bg-dark text-light p-2">
                                         {commitPreview.preview.map(tag => (
                                             <p key={tag.revlike} className="text-monospace p-0 m-0">
                                                 <span className="search-filter-keyword">repo:</span>
