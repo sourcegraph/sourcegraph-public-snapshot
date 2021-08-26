@@ -15,7 +15,6 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/Masterminds/semver"
 	"github.com/cockroachdb/errors"
 	"github.com/inconshreveable/log15"
 
@@ -198,11 +197,9 @@ func (s *JVMPackagesSyncer) packageDependencies(ctx context.Context, repoUrlPath
 			continue
 		}
 		if module == parsedModule {
-			semVersion, _ := semver.NewVersion(dep.Version)
 			dependency := reposource.MavenDependency{
-				MavenModule:     parsedModule,
-				Version:         dep.Version,
-				SemanticVersion: semVersion,
+				MavenModule: parsedModule,
+				Version:     dep.Version,
 			}
 			// we dont call coursier.Exists here, as existance should be verified by repo-updater
 			totalDBMatched++
