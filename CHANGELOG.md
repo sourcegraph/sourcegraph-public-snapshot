@@ -76,6 +76,7 @@ All notable changes to Sourcegraph are documented in this file.
 - Line content was being duplicated in unindexed search payloads, causing memory instability for some dense search queries. [#23918](https://github.com/sourcegraph/sourcegraph/pull/23918)
 - Updating draft merge requests on GitLab from batch changes no longer removes the draft status. [#23944](https://github.com/sourcegraph/sourcegraph/issues/23944)
 - Report highlight matches instead of line matches in search results. [#21443](https://github.com/sourcegraph/sourcegraph/issues/21443)
+- Force the `codeinsights-db` database to read from the `configMap` configuration file by explicitly setting the `POSTGRESQL_CONF_DIR` environment variable to the `configMap` mount path. [deploy-sourcegraph#3788](https://github.com/sourcegraph/deploy-sourcegraph/pull/3788)
 
 ### Removed
 
