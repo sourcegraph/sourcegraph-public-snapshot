@@ -17,12 +17,15 @@ import styles from './BatchSpecExecutionsPage.module.scss'
 export interface BatchSpecExecutionsPageProps extends Pick<RouteComponentProps, 'history' | 'location'> {
     /** For testing purposes only. */
     queryBatchSpecExecutions?: typeof _queryBatchSpecExecutions
+    /** For testing purposes only. Sets the current date */
+    now?: () => Date
 }
 
 export const BatchSpecExecutionsPage: React.FunctionComponent<BatchSpecExecutionsPageProps> = ({
     history,
     location,
     queryBatchSpecExecutions = _queryBatchSpecExecutions,
+    now,
 }) => {
     const query = useCallback(
         (args: FilteredConnectionQueryArguments) => {
@@ -40,10 +43,11 @@ export const BatchSpecExecutionsPage: React.FunctionComponent<BatchSpecExecution
             <PageTitle title="Batch spec executions" />
             <PageHeader headingElement="h2" path={[{ text: 'Batch spec executions' }]} className="mb-3" />
             <Container>
-                <FilteredConnection<BatchSpecExecutionsFields, BatchSpecExecutionNodeProps>
+                <FilteredConnection<BatchSpecExecutionsFields, Omit<BatchSpecExecutionNodeProps, 'node'>>
                     history={history}
                     location={location}
                     nodeComponent={BatchSpecExecutionNode}
+                    nodeComponentProps={{ now }}
                     queryConnection={query}
                     hideSearch={true}
                     defaultFirst={20}
@@ -55,7 +59,10 @@ export const BatchSpecExecutionsPage: React.FunctionComponent<BatchSpecExecution
                     headComponent={ExecutionsHeader}
                     cursorPaging={true}
                     noSummaryIfAllNodesVisible={true}
-                    emptyElement={<>Nothing here!</>}
+                    // TODO: This list is just for admins and is not public yet but we
+                    // should think about what to show a new Sourcegraph admin when this
+                    // list is empty.
+                    emptyElement={<>There's nothing here yet!</>}
                 />
             </Container>
         </>
