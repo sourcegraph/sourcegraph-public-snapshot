@@ -566,6 +566,17 @@ func testSearchClient(t *testing.T, client searchClient) {
 		}
 	})
 
+	t.Run("timeout search options", func(t *testing.T) {
+		results, err := client.SearchFiles(`router index:no timeout:1ns`)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if results.Alert == nil {
+			t.Fatal("Want search alert but got nil")
+		}
+	})
+
 	t.Run("structural search", func(t *testing.T) {
 		tests := []struct {
 			name       string
