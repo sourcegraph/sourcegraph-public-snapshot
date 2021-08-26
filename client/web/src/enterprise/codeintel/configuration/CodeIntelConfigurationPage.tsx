@@ -327,7 +327,7 @@ const PoliciesList: FunctionComponent<PoliciesListProps> = ({ policies, buttonFr
         </>
     )
 
-const describeRetentionPolicy: (policy: CodeIntelligenceConfigurationPolicyFields) => JSX.Element = policy =>
+const DescribeRetentionPolicy: FunctionComponent<{ policy: CodeIntelligenceConfigurationPolicyFields }> = ({ policy }) =>
     policy.retentionEnabled ? (
         <p>
             <strong>Retention policy:</strong>{' '}
