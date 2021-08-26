@@ -28,11 +28,6 @@ interface CreationSearchInsightFormProps {
     className?: string
     isFormClearActive?: boolean
 
-    /**
-     * Enables the experimental insight mode (run insight on all repositories in the instance)
-     */
-    hasAllReposUI?: boolean
-
     title: useFieldAPI<CreateInsightFormFields['title']>
     repositories: useFieldAPI<CreateInsightFormFields['repositories']>
     allReposMode: useFieldAPI<CreateInsightFormFields['allRepos']>
@@ -49,13 +44,13 @@ interface CreationSearchInsightFormProps {
     /**
      * Handler to listen latest value form particular series edit form
      * Used to get information for live preview chart.
-     * */
+     */
     onSeriesLiveChange: (liveSeries: EditableDataSeries, isValid: boolean, index: number) => void
 
     /**
      * Handlers for CRUD operation over series. Add, delete, update and cancel
      * series edit form.
-     * */
+     */
     onEditSeriesRequest: (openedCardIndex: number) => void
     onEditSeriesCommit: (seriesIndex: number, editedSeries: EditableDataSeries) => void
     onEditSeriesCancel: (closedCardIndex: number) => void
@@ -86,7 +81,6 @@ export const SearchInsightCreationForm: React.FunctionComponent<CreationSearchIn
         step,
         className,
         isFormClearActive,
-        hasAllReposUI,
         onCancel,
         onSeriesLiveChange,
         onEditSeriesRequest,
@@ -128,33 +122,29 @@ export const SearchInsightCreationForm: React.FunctionComponent<CreationSearchIn
                     className="mb-0 d-flex flex-column"
                 />
 
-                {hasAllReposUI && (
-                    <>
-                        <label className="d-flex flex-wrap align-items-center mb-2 mt-3 font-weight-normal">
-                            <input
-                                type="checkbox"
-                                {...allReposMode.input}
-                                value="all-repos-mode"
-                                checked={allReposMode.input.value}
-                            />
+                <label className="d-flex flex-wrap align-items-center mb-2 mt-3 font-weight-normal">
+                    <input
+                        type="checkbox"
+                        {...allReposMode.input}
+                        value="all-repos-mode"
+                        checked={allReposMode.input.value}
+                    />
 
-                            <span className="pl-2">Run your insight over all your repositories</span>
+                    <span className="pl-2">Run your insight over all your repositories</span>
 
-                            <small className="w-100 mt-2 text-muted">
-                                This feature is actively in development. Read about the{' '}
-                                <a
-                                    href="https://docs.sourcegraph.com/code_insights/explanations/current_limitations_of_code_insights"
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                >
-                                    beta limitations here.
-                                </a>
-                            </small>
-                        </label>
+                    <small className="w-100 mt-2 text-muted">
+                        This feature is actively in development. Read about the{' '}
+                        <a
+                            href="https://docs.sourcegraph.com/code_insights/explanations/current_limitations_of_code_insights"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                        >
+                            beta limitations here.
+                        </a>
+                    </small>
+                </label>
 
-                        <hr className={styles.creationInsightFormSeparator} />
-                    </>
-                )}
+                <hr className={styles.creationInsightFormSeparator} />
             </FormGroup>
 
             <FormGroup
@@ -163,7 +153,6 @@ export const SearchInsightCreationForm: React.FunctionComponent<CreationSearchIn
                 subtitle="Add any number of data series to your chart"
                 error={series.meta.touched && series.meta.error}
                 innerRef={series.input.ref}
-                className={!hasAllReposUI ? 'mt-5' : undefined}
             >
                 <FormSeries
                     series={series.input.value}

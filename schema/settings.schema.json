@@ -21,7 +21,8 @@
           }
         },
         "codeInsightsAllRepos": {
-          "description": "Enables the experimental ability to run an insight over all repositories on the instance.",
+          "deprecated": true,
+          "description": "DEPRECATED: Enables the experimental ability to run an insight over all repositories on the instance.",
           "type": "boolean",
           "default": false,
           "!go": {

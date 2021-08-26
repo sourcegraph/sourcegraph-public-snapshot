@@ -14,6 +14,8 @@ Setting up a unified SSO for code hosts and Sourcegraph is also possible: how to
 
 > WARNING: It can take some time to complete mirroring repository permissions from a code host. [Learn more](#permissions-sync-times).
 
+<br />
+
 ## GitHub
 
 Prerequisite: [Add GitHub as an authentication provider.](../auth/index.md#github)
@@ -49,7 +51,7 @@ The events we consume are:
 
 <span class="badge badge-experimental">Experimental</span> <span class="badge badge-note">Sourcegraph 3.31+</span>
 
-For GitHub providers, Sourcegraph can leverage caching of team and organization permissions - [learn more](#permissions-caching).
+For GitHub providers, Sourcegraph can leverage caching of GitHub [team](https://docs.github.com/en/organizations/managing-access-to-your-organizations-repositories/managing-team-access-to-an-organization-repository) and [organization](https://docs.github.com/en/organizations/managing-access-to-your-organizations-repositories/repository-permission-levels-for-an-organization) permissions - [learn more](#permissions-caching).
 
 Caching behaviour can be enabld via the `authorization.groupsCacheTTL` field:
 
@@ -62,6 +64,12 @@ Caching behaviour can be enabld via the `authorization.groupsCacheTTL` field:
    }
 }
 ```
+
+We currently recommend a default of `72` (hours, or 3 days) for the `groupsCacheTTL`. A lower value can be set if your teams and organizations change frequently, though the chosen value must be at least several hours for the cache to be leveraged in the event of being rate-limited (which takes [an hour to recover from](https://docs.github.com/en/rest/overview/resources-in-the-rest-api#rate-limiting)).
+
+Caches can also be [manually invalidated](#permissions-caching) if necessary.
+
+<br />
 
 ## GitLab
 
@@ -144,6 +152,8 @@ because Sourcegraph usernames are mutable.
 }
 ```
 
+<br />
+
 ## Bitbucket Server
 
 Enforcing Bitbucket Server permissions can be configured via the `authorization` setting in its configuration.
@@ -223,13 +233,14 @@ Go to your Sourcegraph's *Manage repositories* page (i.e. `https://sourcegraph.e
 
 Copy the *Consumer Key* you generated before to the `oauth.consumerKey` field and the output of the command `base64 sourcegraph.pem | tr -d '\n'` to the `oauth.signingKey` field. Save your changes.
 
+
+Finally, **save the configuration**. You're done!
+
 ### Fast permission sync with Bitbucket Server plugin
 
 By installing the [Bitbucket Server plugin](../../../integration/bitbucket_server.md), you can make use of the fast permission sync feature that allows using Bitbucket Server permissions on larger instances.
 
----
-
-Finally, **save the configuration**. You're done!
+<br />
 
 ## Permissions sync times
 
@@ -295,6 +306,8 @@ mutation {
   }
 }
 ```
+
+<br />
 
 ## Explicit permissions API
 

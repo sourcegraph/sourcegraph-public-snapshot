@@ -13,7 +13,7 @@ const path = require('path')
 // ugly side effect. (This is especially evident when running tests in-band.)
 process.env.LANG = 'en_US.UTF-8'
 
-/** @type {jest.InitialOptions} */
+/** @type {import('@jest/types').Config.InitialOptions} */
 const config = {
   // uses latest jsdom and exposes jsdom as a global,
   // for example to change the URL in window.location
