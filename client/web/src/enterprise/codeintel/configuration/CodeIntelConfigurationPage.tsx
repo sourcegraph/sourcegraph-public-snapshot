@@ -322,7 +322,7 @@ const DescribeRetentionPolicy: FunctionComponent<{ policy: CodeIntelligenceConfi
     policy,
 }) =>
     policy.retentionEnabled ? (
-        <p>
+        <>
             <strong>Retention policy:</strong>{' '}
             <span>
                 Retain uploads used to resolve code intelligence queries for <DescribeGitObjectTarget policy={policy} />
@@ -331,22 +331,22 @@ const DescribeRetentionPolicy: FunctionComponent<{ policy: CodeIntelligenceConfi
                 )}
                 .
             </span>
-        </p>
+        </>
     ) : (
-        <p className="text-muted">Data retention disabled.</p>
+        <span className="text-muted">Data retention disabled.</span>
     )
 
 const DescribeIndexingPolicy: FunctionComponent<{ policy: CodeIntelligenceConfigurationPolicyFields }> = ({ policy }) =>
     policy.indexingEnabled ? (
-        <p>
+        <>
             <strong>Indexing policy:</strong> Auto-index <DescribeGitObjectTarget policy={policy} />
             {policy.indexCommitMaxAgeHours !== 0 && (
                 <> if the target commit is no older than {formatDurationValue(policy.indexCommitMaxAgeHours)}</>
             )}
             .
-        </p>
+        </>
     ) : (
-        <p className="text-muted">Auto-indexing disabled.</p>
+        <span className="text-muted">Auto-indexing disabled.</span>
     )
 
 const DescribeGitObjectTarget: FunctionComponent<{ policy: CodeIntelligenceConfigurationPolicyFields }> = ({
