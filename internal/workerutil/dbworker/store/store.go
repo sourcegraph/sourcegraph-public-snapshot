@@ -463,8 +463,20 @@ WITH candidate AS (
 	FOR UPDATE SKIP LOCKED
 	LIMIT 1
 ),
-updated_record AS (UPDATE %s SET %s WHERE {id} IN (SELECT {id} FROM candidate))
-SELECT %s FROM %s WHERE {id} IN (SELECT {id} FROM candidate)
+updated_record AS (
+  UPDATE
+    %s
+  SET
+    %s
+  WHERE
+    {id} IN (SELECT {id} FROM candidate)
+)
+SELECT
+  %s
+FROM
+  %s
+WHERE
+  {id} IN (SELECT {id} FROM candidate)
 `
 
 func (s *store) Heartbeat(ctx context.Context, ids []int, options HeartbeatOptions) (knownIDs []int, err error) {
