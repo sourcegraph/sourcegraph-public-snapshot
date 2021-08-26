@@ -39,10 +39,6 @@ func (g *cachedGroup) key() string {
 	return key
 }
 
-func (g *cachedGroup) isPopulated() bool {
-	return len(g.Repositories) > 0 && len(g.Users) > 0
-}
-
 type cachedGroups struct {
 	cache httpcache.Cache
 }
