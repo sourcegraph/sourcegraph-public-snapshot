@@ -118,7 +118,7 @@ const Template: Story<CodeIntelIndexesPageProps> = args => (
 )
 
 const defaults: Partial<CodeIntelIndexesPageProps> = {
-    now: now,
+    now,
     fetchLsifIndexes: () => of(makeResponse([])),
 }
 

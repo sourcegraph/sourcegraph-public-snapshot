@@ -121,7 +121,7 @@ const Template: Story<CodeIntelUploadsPageProps> = args => {
 }
 
 const defaults: Partial<CodeIntelUploadsPageProps> = {
-    now: now,
+    now,
     fetchLsifUploads: () => of(makeResponse([])),
 }
 

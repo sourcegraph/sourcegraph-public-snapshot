@@ -407,8 +407,8 @@ const Template: Story<CodeIntelIndexPageProps> = args => (
 )
 
 const defaults: Partial<CodeIntelIndexPageProps> = {
+    now,
     deleteLsifIndex: () => of(),
-    now: now,
 }
 
 export const Queued = Template.bind({})

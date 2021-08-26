@@ -113,6 +113,8 @@ const Template: Story<CodeIntelUploadPageProps> = args => (
 )
 
 const defaults: Partial<CodeIntelUploadPageProps> = {
+    now,
+    deleteLsifUpload: () => of(),
     fetchLsifUploads: ({ dependencyOf }: { dependencyOf?: string | null }) =>
         dependencyOf === undefined
             ? of({
@@ -133,8 +135,6 @@ const defaults: Partial<CodeIntelUploadPageProps> = {
                       hasNextPage: false,
                   },
               }),
-    deleteLsifUpload: () => of(),
-    now: now,
 }
 
 export const Uploading = Template.bind({})

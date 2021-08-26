@@ -1,12 +1,10 @@
-import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
-import React, { FunctionComponent, useCallback, useEffect, useMemo, useState } from 'react'
+import classNames from 'classnames'
+import React, { FunctionComponent, useCallback, useEffect, useMemo } from 'react'
 import { RouteComponentProps } from 'react-router'
 import { Subject } from 'rxjs'
 
-import { Link } from '@sourcegraph/shared/src/components/Link'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { ErrorAlert } from '@sourcegraph/web/src/components/alerts'
-import { Button, Container, PageHeader } from '@sourcegraph/wildcard'
+import { Container, PageHeader } from '@sourcegraph/wildcard'
 
 import {
     FilteredConnection,
@@ -15,16 +13,11 @@ import {
 } from '../../../components/FilteredConnection'
 import { PageTitle } from '../../../components/PageTitle'
 import { LsifIndexFields, LSIFIndexState } from '../../../graphql-operations'
-import { CodeIntelState } from '../shared/CodeIntelState'
-import { CodeIntelUploadOrIndexCommit } from '../shared/CodeIntelUploadOrIndexCommit'
-import { CodeIntelUploadOrIndexRepository } from '../shared/CodeIntelUploadOrIndexerRepository'
-import { CodeIntelUploadOrIndexIndexer } from '../shared/CodeIntelUploadOrIndexIndexer'
-import { CodeIntelUploadOrIndexLastActivity } from '../shared/CodeIntelUploadOrIndexLastActivity'
-import { CodeIntelUploadOrIndexRoot } from '../shared/CodeIntelUploadOrIndexRoot'
 
 import { enqueueIndexJob as defaultEnqueueIndexJob, fetchLsifIndexes as defaultFetchLsifIndexes } from './backend'
 import styles from './CodeIntelIndexesPage.module.scss'
-import classNames from 'classnames'
+import { CodeIntelIndexNode, CodeIntelIndexNodeProps } from './CodeIntelIndexNode'
+import { EnqueueForm } from './EnqueueForm'
 
 export interface CodeIntelIndexesPageProps extends RouteComponentProps<{}>, TelemetryProps {
     repo?: { id: string }
@@ -120,115 +113,5 @@ export const CodeIntelIndexesPage: FunctionComponent<CodeIntelIndexesPageProps> 
                 </div>
             </Container>
         </div>
-    )
-}
-
-interface CodeIntelIndexNodeProps {
-    node: LsifIndexFields
-    now?: () => Date
-}
-
-const CodeIntelIndexNode: FunctionComponent<CodeIntelIndexNodeProps> = ({ node, now }) => (
-    <>
-        <span className={styles.separator} />
-
-        <div className={classNames(styles.information, 'd-flex flex-column')}>
-            <div className="m-0">
-                <h3 className="m-0 d-block d-md-inline">
-                    <CodeIntelUploadOrIndexRepository node={node} />
-                </h3>
-            </div>
-
-            <div>
-                <span className="mr-2 d-block d-md-inline-block">
-                    Directory <CodeIntelUploadOrIndexRoot node={node} /> indexed at commit{' '}
-                    <CodeIntelUploadOrIndexCommit node={node} /> by <CodeIntelUploadOrIndexIndexer node={node} />
-                </span>
-
-                <small className="text-mute">
-                    <CodeIntelUploadOrIndexLastActivity node={{ ...node, uploadedAt: null }} now={now} />
-                </small>
-            </div>
-        </div>
-
-        <span className={classNames(styles.state, 'd-none d-md-inline')}>
-            <CodeIntelState node={node} className="d-flex flex-column align-items-center" />
-        </span>
-        <span>
-            <Link to={`./indexes/${node.id}`}>
-                <ChevronRightIcon />
-            </Link>
-        </span>
-    </>
-)
-
-enum State {
-    Idle,
-    Queueing,
-    Queued,
-}
-
-interface EnqueueFormProps {
-    repoId: string
-    querySubject: Subject<string>
-    enqueueIndexJob: typeof defaultEnqueueIndexJob
-}
-
-const EnqueueForm: FunctionComponent<EnqueueFormProps> = ({ repoId, querySubject, enqueueIndexJob }) => {
-    const [revlike, setRevlike] = useState('HEAD')
-    const [state, setState] = useState(() => State.Idle)
-    const [queueResult, setQueueResult] = useState<number>()
-    const [enqueueError, setEnqueueError] = useState<Error>()
-
-    const enqueue = useCallback(async () => {
-        setState(State.Queueing)
-        setEnqueueError(undefined)
-        setQueueResult(undefined)
-
-        try {
-            const indexes = await enqueueIndexJob(repoId, revlike).toPromise()
-            setQueueResult(indexes.length)
-            if (indexes.length > 0) {
-                querySubject.next(indexes[0].inputCommit)
-            }
-        } catch (error) {
-            setEnqueueError(error)
-            setQueueResult(undefined)
-        } finally {
-            setState(State.Queued)
-        }
-    }, [repoId, revlike, querySubject, enqueueIndexJob])
-
-    return (
-        <>
-            {enqueueError && <ErrorAlert prefix="Error enqueueing index job" error={enqueueError} />}
-
-            <div className="form-inline">
-                <label htmlFor="revlike">Git revlike</label>
-
-                <input
-                    type="text"
-                    id="revlike"
-                    className="form-control ml-2"
-                    value={revlike}
-                    onChange={event => setRevlike(event.target.value)}
-                />
-
-                <Button
-                    type="button"
-                    title="Enqueue thing"
-                    disabled={state === State.Queueing}
-                    className="ml-2"
-                    variant="primary"
-                    onClick={enqueue}
-                >
-                    Enqueue
-                </Button>
-            </div>
-
-            {state === State.Queued && queueResult !== undefined && (
-                <div className="alert alert-success mt-3 mb-0">{queueResult} index jobs enqueued.</div>
-            )}
-        </>
     )
 }
