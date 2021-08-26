@@ -127,7 +127,7 @@ func (p *Provider) FetchAccount(ctx context.Context, user *types.User, _ []*exts
 // callers to decide whether to discard.
 //
 // API docs: https://docs.atlassian.com/bitbucket-server/rest/5.16.0/bitbucket-rest.html#idm8296923984
-func (p *Provider) FetchUserPerms(ctx context.Context, account *extsvc.Account) (*authz.ExternalUserPermissions, error) {
+func (p *Provider) FetchUserPerms(ctx context.Context, account *extsvc.Account, opts authz.FetchPermsOptions) (*authz.ExternalUserPermissions, error) {
 	switch {
 	case account == nil:
 		return nil, errors.New("no account provided")
@@ -155,12 +155,6 @@ func (p *Provider) FetchUserPerms(ctx context.Context, account *extsvc.Account) 
 	}, err
 }
 
-// FetchUserPermsByToken is currently only required for syncing permissions for
-// GitHub and GitLab on sourcegraph.com
-func (p *Provider) FetchUserPermsByToken(ctx context.Context, token string) (*authz.ExternalUserPermissions, error) {
-	return nil, errors.New("not implemented")
-}
-
 // FetchRepoPerms returns a list of user IDs (on code host) who have read access to
 // the given repo on the code host. The user ID has the same value as it would
 // be used as extsvc.Account.AccountID. The returned list includes both direct access
@@ -170,7 +164,7 @@ func (p *Provider) FetchUserPermsByToken(ctx context.Context, token string) (*au
 // callers to decide whether to discard.
 //
 // API docs: https://docs.atlassian.com/bitbucket-server/rest/5.16.0/bitbucket-rest.html#idm8283203728
-func (p *Provider) FetchRepoPerms(ctx context.Context, repo *extsvc.Repository) ([]extsvc.AccountID, error) {
+func (p *Provider) FetchRepoPerms(ctx context.Context, repo *extsvc.Repository, opts authz.FetchPermsOptions) ([]extsvc.AccountID, error) {
 	switch {
 	case repo == nil:
 		return nil, errors.New("no repo provided")

@@ -87,7 +87,7 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 
 	t.Run("nil account", func(t *testing.T) {
 		p := NewProvider("", "ssl:111.222.333.444:1666", "admin", "password")
-		_, err := p.FetchUserPerms(ctx, nil)
+		_, err := p.FetchUserPerms(ctx, nil, authz.FetchPermsOptions{})
 		want := "no account provided"
 		got := fmt.Sprintf("%v", err)
 		if got != want {
@@ -104,6 +104,7 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 					ServiceID:   "https://gitlab.com/",
 				},
 			},
+			authz.FetchPermsOptions{},
 		)
 		want := `not a code host of the account: want "https://gitlab.com/" but have "ssl:111.222.333.444:1666"`
 		got := fmt.Sprintf("%v", err)
@@ -122,6 +123,7 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 				},
 				AccountData: extsvc.AccountData{},
 			},
+			authz.FetchPermsOptions{},
 		)
 		want := `no user found in the external account data`
 		got := fmt.Sprintf("%v", err)
@@ -237,6 +239,7 @@ open user alice * -//Sourcegraph/*/Handbook/...                      ## sub-matc
 						Data: (*json.RawMessage)(&accountData),
 					},
 				},
+				authz.FetchPermsOptions{},
 			)
 			if err != nil {
 				t.Fatal(err)
@@ -254,7 +257,7 @@ func TestProvider_FetchRepoPerms(t *testing.T) {
 
 	t.Run("nil repository", func(t *testing.T) {
 		p := NewProvider("", "ssl:111.222.333.444:1666", "admin", "password")
-		_, err := p.FetchRepoPerms(ctx, nil)
+		_, err := p.FetchRepoPerms(ctx, nil, authz.FetchPermsOptions{})
 		want := "no repository provided"
 		got := fmt.Sprintf("%v", err)
 		if got != want {
@@ -272,6 +275,7 @@ func TestProvider_FetchRepoPerms(t *testing.T) {
 					ServiceID:   "https://gitlab.com/",
 				},
 			},
+			authz.FetchPermsOptions{},
 		)
 		want := `not a code host of the repository: want "https://gitlab.com/" but have "ssl:111.222.333.444:1666"`
 		got := fmt.Sprintf("%v", err)
@@ -335,6 +339,7 @@ Users:
 				ServiceID:   "ssl:111.222.333.444:1666",
 			},
 		},
+		authz.FetchPermsOptions{},
 	)
 	if err != nil {
 		t.Fatal(err)

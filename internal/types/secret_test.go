@@ -148,7 +148,8 @@ func TestRoundTripRedactExternalServiceConfig(t *testing.T) {
 				Kind:   c.kind,
 				Config: old,
 			}
-			if err := svc.RedactConfigSecrets(); err != nil {
+			redacted, err := svc.RedactConfigSecrets()
+			if err != nil {
 				t.Fatalf("unexpected error: %s", err)
 			}
 
@@ -156,7 +157,7 @@ func TestRoundTripRedactExternalServiceConfig(t *testing.T) {
 			if err := zeroFields(c.config); err != nil {
 				t.Errorf("unexpected error: %s", err)
 			}
-			if err := json.Unmarshal([]byte(svc.Config), &c.config); err != nil {
+			if err := json.Unmarshal([]byte(redacted), &c.config); err != nil {
 				t.Fatalf("unexpected error: %s", err)
 			}
 			if c.secretField != nil {

@@ -399,11 +399,11 @@ describe('Search contexts', () => {
                     })),
                 },
             }),
-            FetchSearchContext: ({ id }) => ({
-                node: {
+            FetchSearchContextBySpec: ({ spec }) => ({
+                searchContextBySpec: {
                     __typename: 'SearchContext',
-                    id,
-                    spec: '@test/context-1',
+                    id: spec,
+                    spec,
                     name: 'context-1',
                     namespace: {
                         __typename: 'User',
@@ -476,11 +476,11 @@ describe('Search contexts', () => {
     test('Cannot edit search context without necessary permissions', async () => {
         testContext.overrideGraphQL({
             ...testContextForSearchContexts,
-            FetchSearchContext: ({ id }) => ({
-                node: {
+            FetchSearchContextBySpec: ({ spec }) => ({
+                searchContextBySpec: {
                     __typename: 'SearchContext',
-                    id,
-                    spec: 'context-1',
+                    id: spec,
+                    spec,
                     name: 'context-1',
                     namespace: null,
                     description: 'description',
@@ -509,11 +509,11 @@ describe('Search contexts', () => {
                     alwaysNil: '',
                 },
             }),
-            FetchSearchContext: ({ id }) => ({
-                node: {
+            FetchSearchContextBySpec: ({ spec }) => ({
+                searchContextBySpec: {
                     __typename: 'SearchContext',
-                    id,
-                    spec: '@test/context-1',
+                    id: spec,
+                    spec,
                     name: 'context-1',
                     namespace: {
                         __typename: 'User',

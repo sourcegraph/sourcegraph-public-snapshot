@@ -48,15 +48,11 @@ func (m gitlabAuthzProviderParams) URN() string {
 
 func (m gitlabAuthzProviderParams) Validate() []string { return nil }
 
-func (m gitlabAuthzProviderParams) FetchUserPerms(context.Context, *extsvc.Account) (*authz.ExternalUserPermissions, error) {
+func (m gitlabAuthzProviderParams) FetchUserPerms(context.Context, *extsvc.Account, authz.FetchPermsOptions) (*authz.ExternalUserPermissions, error) {
 	panic("should never be called")
 }
 
-func (m gitlabAuthzProviderParams) FetchUserPermsByToken(context.Context, string) (*authz.ExternalUserPermissions, error) {
-	panic("should never be called")
-}
-
-func (m gitlabAuthzProviderParams) FetchRepoPerms(context.Context, *extsvc.Repository) ([]extsvc.AccountID, error) {
+func (m gitlabAuthzProviderParams) FetchRepoPerms(context.Context, *extsvc.Repository, authz.FetchPermsOptions) ([]extsvc.AccountID, error) {
 	panic("should never be called")
 }
 

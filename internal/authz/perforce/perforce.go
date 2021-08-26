@@ -175,7 +175,7 @@ func (p *Provider) canGrantReadAccess(level string) bool {
 
 // FetchUserPerms returns a list of depot prefixes that the given user has
 // access to on the Perforce Server.
-func (p *Provider) FetchUserPerms(ctx context.Context, account *extsvc.Account) (*authz.ExternalUserPermissions, error) {
+func (p *Provider) FetchUserPerms(ctx context.Context, account *extsvc.Account, opts authz.FetchPermsOptions) (*authz.ExternalUserPermissions, error) {
 	if account == nil {
 		return nil, errors.New("no account provided")
 	} else if !extsvc.IsHostOfAccount(p.codeHost, account) {
@@ -303,12 +303,6 @@ func (p *Provider) FetchUserPerms(ctx context.Context, account *extsvc.Account) 
 	}, errors.Wrap(scanner.Err(), "scanner.Err")
 }
 
-// FetchUserPermsByToken is currently only required for syncing permissions for
-// GitHub and GitLab on sourcegraph.com
-func (p *Provider) FetchUserPermsByToken(ctx context.Context, token string) (*authz.ExternalUserPermissions, error) {
-	return nil, errors.New("not implemented")
-}
-
 // getAllUserEmails returns a set of username <-> email pairs of all users in the Perforce server.
 func (p *Provider) getAllUserEmails(ctx context.Context) (map[string]string, error) {
 	if p.cachedAllUserEmails != nil {
@@ -402,7 +396,7 @@ func (p *Provider) getGroupMembers(ctx context.Context, group string) ([]string,
 
 // FetchRepoPerms returns a list of users that have access to the given
 // repository on the Perforce Server.
-func (p *Provider) FetchRepoPerms(ctx context.Context, repo *extsvc.Repository) ([]extsvc.AccountID, error) {
+func (p *Provider) FetchRepoPerms(ctx context.Context, repo *extsvc.Repository, opts authz.FetchPermsOptions) ([]extsvc.AccountID, error) {
 	if repo == nil {
 		return nil, errors.New("no repository provided")
 	} else if !extsvc.IsHostOfRepo(p.codeHost, &repo.ExternalRepoSpec) {

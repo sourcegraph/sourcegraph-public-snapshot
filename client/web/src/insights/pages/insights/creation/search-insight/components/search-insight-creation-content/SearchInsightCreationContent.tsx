@@ -6,7 +6,6 @@ import { Settings } from '@sourcegraph/shared/src/settings/settings'
 
 import { FormChangeEvent, SubmissionErrors } from '../../../../../../components/form/hooks/useForm'
 import { SupportedInsightSubject } from '../../../../../../core/types/subjects'
-import { getExperimentalFeatures } from '../../../../../../utils/get-experimental-features'
 import { CreateInsightFormFields } from '../../types'
 import { getSanitizedRepositories } from '../../utils/insight-sanitizer'
 import { SearchInsightLivePreview } from '../live-preview-chart/SearchInsightLivePreview'
@@ -53,8 +52,6 @@ export const SearchInsightCreationContent: React.FunctionComponent<SearchInsight
     } = props
 
     const isEditMode = mode === 'edit'
-
-    const { codeInsightsAllRepos } = getExperimentalFeatures(settings)
 
     const {
         form: { values, formAPI, ref, handleSubmit },
@@ -125,7 +122,6 @@ export const SearchInsightCreationContent: React.FunctionComponent<SearchInsight
                 step={step}
                 stepValue={stepValue}
                 isFormClearActive={hasFilledValue}
-                hasAllReposUI={codeInsightsAllRepos}
                 onSeriesLiveChange={listen}
                 onCancel={onCancel}
                 onEditSeriesRequest={editRequest}
