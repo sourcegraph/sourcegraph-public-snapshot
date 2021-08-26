@@ -408,15 +408,17 @@ func (p *Provider) getRepoAffiliatedGroups(ctx context.Context, owner, name stri
 	org, err := p.client.GetOrganization(ctx, owner)
 	if err != nil {
 		if github.IsNotFound(err) {
-			// Owner is most likely not an org, we are done - don't propagate error.
+			// Owner is most likely not an org. User repos don't have teams or org permissions,
+			// so we are done - this is fine, so don't propagate error.
 			return groups, nil
 		}
 		return
 	}
 
 	// indicate if a group should be sync'd
-	syncGroup := func(group cachedGroup, exists bool) {
-		if opts.InvalidateCaches {
+	syncGroup := func(owner, team string) {
+		group, exists := p.groupsCache.getGroup(owner, team)
+		if exists && opts.InvalidateCaches {
 			// invalidate this cache
 			p.groupsCache.invalidateGroup(&group)
 		}
@@ -426,8 +428,7 @@ func (p *Provider) getRepoAffiliatedGroups(ctx context.Context, owner, name stri
 	if canViewOrgRepos(&github.OrgDetailsAndMembership{OrgDetails: org}) {
 		// If all members of this org can view this repo, retrieve and use the cache if
 		// relevant, otherwise indicate that the group should be sync'd.
-		group, exists := p.groupsCache.getGroup(owner, "")
-		syncGroup(group, exists)
+		syncGroup(org.Login, "")
 	} else {
 		// Check for teams involved in repo, and indicate all groups should be sync'd.
 		hasNextPage := true
@@ -438,8 +439,7 @@ func (p *Provider) getRepoAffiliatedGroups(ctx context.Context, owner, name stri
 				return
 			}
 			for _, t := range teams {
-				group, exists := p.groupsCache.getGroup(owner, t.Slug)
-				syncGroup(group, exists)
+				syncGroup(org.Login, t.Slug)
 			}
 		}
 	}

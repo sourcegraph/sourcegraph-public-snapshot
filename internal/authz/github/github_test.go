@@ -746,5 +746,104 @@ func TestProvider_FetchRepoPerms(t *testing.T) {
 				t.Fatalf("AccountIDs mismatch (-want +got):\n%s", diff)
 			}
 		})
+		t.Run("cache and invalidate", func(t *testing.T) {
+			p := NewProvider("", ProviderOptions{
+				GitHubURL: mustURL(t, "https://github.com"),
+			})
+			callsToListOrgMembers := 0
+			p.client = &mockClient{
+				MockListRepositoryCollaborators: func(ctx context.Context, owner, repo string, page int, affiliation github.CollaboratorAffiliation) (users []*github.Collaborator, hasNextPage bool, _ error) {
+					if affiliation == "" {
+						t.Fatal("expected affiliation filter")
+					}
+					return mockListCollaborators(ctx, owner, repo, page, affiliation)
+				},
+				MockGetOrganization: func(ctx context.Context, login string) (org *github.OrgDetails, err error) {
+					if login == "org" {
+						return &github.OrgDetails{
+							DefaultRepositoryPermission: "read",
+						}, nil
+					}
+					t.Fatalf("unexpected call to GetOrganization with %q", login)
+					return nil, nil
+				},
+				MockListOrganizationMembers: func(ctx context.Context, owner string, page int) (users []*github.Collaborator, hasNextPage bool, _ error) {
+					callsToListOrgMembers++
+
+					switch page {
+					case 1:
+						return []*github.Collaborator{
+							{DatabaseID: 1234},
+						}, true, nil
+					case 2:
+						return []*github.Collaborator{
+							{DatabaseID: 5678},
+						}, false, nil
+					}
+
+					return []*github.Collaborator{}, false, nil
+				},
+			}
+			memCache := memGroupsCache()
+			p.groupsCache = memCache
+
+			wantAccountIDs := []extsvc.AccountID{
+				"57463526",
+				"67471",
+				"187831",
+				"1234",
+				"5678",
+			}
+
+			// first call
+			t.Run("first call", func(t *testing.T) {
+				accountIDs, err := p.FetchRepoPerms(context.Background(), &mockOrgRepo,
+					authz.FetchPermsOptions{})
+				if err != nil {
+					t.Fatal(err)
+				}
+				if callsToListOrgMembers == 0 {
+					t.Fatalf("expected members to be listed: callsToListOrgMembers=%d",
+						callsToListOrgMembers)
+				}
+				if diff := cmp.Diff(wantAccountIDs, accountIDs); diff != "" {
+					t.Fatalf("AccountIDs mismatch (-want +got):\n%s", diff)
+				}
+			})
+
+			// second call should use cache
+			t.Run("second call", func(t *testing.T) {
+				callsToListOrgMembers = 0
+				accountIDs, err := p.FetchRepoPerms(context.Background(), &mockOrgRepo,
+					authz.FetchPermsOptions{})
+				if err != nil {
+					t.Fatal(err)
+				}
+				if callsToListOrgMembers > 0 {
+					t.Fatalf("expected members not to be listed: callsToListOrgMembers=%d",
+						callsToListOrgMembers)
+				}
+				if diff := cmp.Diff(wantAccountIDs, accountIDs); diff != "" {
+					t.Fatalf("AccountIDs mismatch (-want +got):\n%s", diff)
+				}
+			})
+
+			// third call should make a fresh query when invalidating cache
+			t.Run("third call", func(t *testing.T) {
+				callsToListOrgMembers = 0
+				accountIDs, err := p.FetchRepoPerms(context.Background(), &mockOrgRepo,
+					authz.FetchPermsOptions{InvalidateCaches: true})
+				if err != nil {
+					t.Fatal(err)
+				}
+				if callsToListOrgMembers == 0 {
+					t.Fatalf("expected members to be listed: callsToListOrgMembers=%d",
+						callsToListOrgMembers)
+				}
+				if diff := cmp.Diff(wantAccountIDs, accountIDs); diff != "" {
+					t.Fatalf("AccountIDs mismatch (-want +got):\n%s", diff)
+				}
+			})
+		})
 	})
 }
