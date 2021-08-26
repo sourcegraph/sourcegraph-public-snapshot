@@ -310,7 +310,7 @@ func (p *Provider) FetchRepoPerms(ctx context.Context, repo *extsvc.Repository, 
 			}
 			if !hasRepo {
 				group.Repositories = append(group.Repositories, repoID)
-				p.groupsCache.setGroup(group)
+				p.groupsCache.setGroup(group.cachedGroup)
 			}
 		} else {
 			// Cache was invalidated or is not yet populated, perform a sync
@@ -318,7 +318,7 @@ func (p *Provider) FetchRepoPerms(ctx context.Context, repo *extsvc.Repository, 
 			for page := 1; hasNextPage; page++ {
 				var members []*github.Collaborator
 				if group.Team == "" {
-					members, hasNextPage, err = p.client.ListOrganizationMembers(ctx, owner, page)
+					members, hasNextPage, err = p.client.ListOrganizationMembers(ctx, owner, page, group.adminsOnly)
 				} else {
 					members, hasNextPage, err = p.client.ListTeamMembers(ctx, owner, group.Team, page)
 				}
@@ -334,7 +334,7 @@ func (p *Provider) FetchRepoPerms(ctx context.Context, repo *extsvc.Repository, 
 			}
 
 			// Persist group
-			p.groupsCache.setGroup(group)
+			p.groupsCache.setGroup(group.cachedGroup)
 		}
 	}
 
@@ -403,7 +403,10 @@ func (p *Provider) getUserAffiliatedGroups(ctx context.Context, clientWithToken 
 	return groups, nil
 }
 
-func (p *Provider) getRepoAffiliatedGroups(ctx context.Context, owner, name string, opts authz.FetchPermsOptions) (groups []cachedGroup, err error) {
+func (p *Provider) getRepoAffiliatedGroups(ctx context.Context, owner, name string, opts authz.FetchPermsOptions) (groups []struct {
+	cachedGroup
+	adminsOnly bool
+}, err error) {
 	// Check if repo belongs in an org
 	org, err := p.client.GetOrganization(ctx, owner)
 	if err != nil {
@@ -416,21 +419,28 @@ func (p *Provider) getRepoAffiliatedGroups(ctx context.Context, owner, name stri
 	}
 
 	// indicate if a group should be sync'd
-	syncGroup := func(owner, team string) {
+	syncGroup := func(owner, team string, adminsOnly bool) {
 		group, exists := p.groupsCache.getGroup(owner, team)
 		if exists && opts.InvalidateCaches {
 			// invalidate this cache
 			p.groupsCache.invalidateGroup(&group)
 		}
-		groups = append(groups, group)
+		groups = append(groups, struct {
+			cachedGroup
+			adminsOnly bool
+		}{cachedGroup: group, adminsOnly: adminsOnly})
 	}
 
-	if canViewOrgRepos(&github.OrgDetailsAndMembership{OrgDetails: org}) {
-		// If all members of this org can view this repo, retrieve and use the cache if
-		// relevant, otherwise indicate that the group should be sync'd.
-		syncGroup(org.Login, "")
+	allOrgMembersCanRead := canViewOrgRepos(&github.OrgDetailsAndMembership{OrgDetails: org})
+	if allOrgMembersCanRead {
+		// If all members of this org can view this repo, indicate that all members should
+		// be sync'd.
+		syncGroup(org.Login, "", false)
 	} else {
-		// Check for teams involved in repo, and indicate all groups should be sync'd.
+		// Sync only admins of this org
+		syncGroup(org.Login, "", true)
+
+		// Also check for teams involved in repo, and indicate all groups should be sync'd.
 		hasNextPage := true
 		for page := 1; hasNextPage; page++ {
 			var teams []*github.Team
@@ -439,7 +449,7 @@ func (p *Provider) getRepoAffiliatedGroups(ctx context.Context, owner, name stri
 				return
 			}
 			for _, t := range teams {
-				syncGroup(org.Login, t.Slug)
+				syncGroup(org.Login, t.Slug, false)
 			}
 		}
 	}

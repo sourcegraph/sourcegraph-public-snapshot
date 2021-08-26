@@ -634,11 +634,15 @@ func TestProvider_FetchRepoPerms(t *testing.T) {
 					t.Fatalf("unexpected call to GetOrganization with %q", login)
 					return nil, nil
 				},
-				MockListOrganizationMembers: func(ctx context.Context, owner string, page int) (users []*github.Collaborator, hasNextPage bool, _ error) {
+				MockListOrganizationMembers: func(ctx context.Context, owner string, page int, adminOnly bool) (users []*github.Collaborator, hasNextPage bool, _ error) {
+					if adminOnly {
+						t.Fatal("unexpected adminOnly ListOrganizationMembers")
+					}
 					switch page {
 					case 1:
 						return []*github.Collaborator{
 							{DatabaseID: 1234},
+							{DatabaseID: 67471}, // duplicate from collaborators
 						}, true, nil
 					case 2:
 						return []*github.Collaborator{
@@ -689,6 +693,14 @@ func TestProvider_FetchRepoPerms(t *testing.T) {
 					t.Fatalf("unexpected call to GetOrganization with %q", login)
 					return nil, nil
 				},
+				MockListOrganizationMembers: func(ctx context.Context, owner string, page int, adminOnly bool) (users []*github.Collaborator, hasNextPage bool, _ error) {
+					if !adminOnly {
+						t.Fatal("expected adminOnly ListOrganizationMembers")
+					}
+					return []*github.Collaborator{
+						{DatabaseID: 3456},
+					}, false, nil
+				},
 				MockListRepositoryTeams: func(ctx context.Context, owner, repo string, page int) (teams []*github.Team, hasNextPage bool, _ error) {
 					switch page {
 					case 1:
@@ -707,7 +719,7 @@ func TestProvider_FetchRepoPerms(t *testing.T) {
 					switch page {
 					case 1:
 						return []*github.Collaborator{
-							{DatabaseID: 1234},
+							{DatabaseID: 1234}, // duplicate across both teams
 						}, true, nil
 					case 2:
 						switch team {
@@ -738,6 +750,7 @@ func TestProvider_FetchRepoPerms(t *testing.T) {
 				"57463526",
 				"67471",
 				"187831",
+				"3456",
 				"1234",
 				"5678",
 				"6789",
@@ -767,7 +780,7 @@ func TestProvider_FetchRepoPerms(t *testing.T) {
 					t.Fatalf("unexpected call to GetOrganization with %q", login)
 					return nil, nil
 				},
-				MockListOrganizationMembers: func(ctx context.Context, owner string, page int) (users []*github.Collaborator, hasNextPage bool, _ error) {
+				MockListOrganizationMembers: func(ctx context.Context, owner string, page int, adminOnly bool) (users []*github.Collaborator, hasNextPage bool, _ error) {
 					callsToListOrgMembers++
 
 					switch page {

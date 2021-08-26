@@ -446,6 +446,59 @@ func TestGetOrganization(t *testing.T) {
 	})
 }
 
+func TestListMembers(t *testing.T) {
+	tests := []struct {
+		name        string
+		fn          func(*V3Client) ([]*Collaborator, error)
+		wantMembers []*Collaborator
+	}{{
+		name: "org members",
+		fn: func(cli *V3Client) ([]*Collaborator, error) {
+			members, _, err := cli.ListOrganizationMembers(context.Background(), "sourcegraph-vcr-repos", 1, false)
+			return members, err
+		},
+		wantMembers: []*Collaborator{
+			{ID: "MDQ6VXNlcjYzMjkwODUx", DatabaseID: 63290851}, // sourcegraph-vcr as owner
+			{ID: "MDQ6VXNlcjY2NDY0Nzcz", DatabaseID: 66464773}, // sourcegraph-vcr-amy
+			{ID: "MDQ6VXNlcjg5NDk0ODg0", DatabaseID: 89494884}, // sourcegraph-vcr-dave
+		},
+	}, {
+		name: "org admins",
+		fn: func(cli *V3Client) ([]*Collaborator, error) {
+			members, _, err := cli.ListOrganizationMembers(context.Background(), "sourcegraph-vcr-repos", 1, true)
+			return members, err
+		},
+		wantMembers: []*Collaborator{
+			{ID: "MDQ6VXNlcjYzMjkwODUx", DatabaseID: 63290851}, // sourcegraph-vcr as owner
+		},
+	}, {
+		name: "team members",
+		fn: func(cli *V3Client) ([]*Collaborator, error) {
+			members, _, err := cli.ListTeamMembers(context.Background(), "sourcegraph-vcr-repos", "private-access", 1)
+			return members, err
+		},
+		wantMembers: []*Collaborator{
+			{ID: "MDQ6VXNlcjYzMjkwODUx", DatabaseID: 63290851}, // sourcegraph-vcr
+			{ID: "MDQ6VXNlcjY2NDY0Nzcz", DatabaseID: 66464773}, // sourcegraph-vcr-amy
+		},
+	}}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			cli, save := newV3TestClient(t, t.Name())
+			defer save()
+
+			members, err := test.fn(cli)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if diff := cmp.Diff(test.wantMembers, members); diff != "" {
+				t.Fatal(diff)
+			}
+		})
+	}
+}
+
 func TestV3Client_WithAuthenticator(t *testing.T) {
 	uri, err := url.Parse("https://github.com")
 	if err != nil {

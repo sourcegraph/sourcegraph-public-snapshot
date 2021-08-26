@@ -29,7 +29,7 @@ interactions:
       Content-Type:
       - application/json; charset=utf-8
       Date:
-      - Thu, 26 Aug 2021 19:21:03 GMT
+      - Thu, 26 Aug 2021 22:12:25 GMT
       Etag:
       - W/"6b5bb1cf038a223423216ecdf2d1802d5767b3d072b5b00d04b25a90f730e897"
       Github-Authentication-Token-Expiration:
@@ -53,7 +53,7 @@ interactions:
       - github.v3; param=jean-grey-preview; format=json, github.mercy-preview; param=machine-man-preview;
         format=json
       X-Github-Request-Id:
-      - D4EA:607D:BCA5B7:231EB1F:6127E99E
+      - D82B:3ED2:A457E:1C31B4:612811C8
       X-Oauth-Scopes:
       - admin:enterprise, admin:gpg_key, admin:org, admin:org_hook, admin:public_key,
         admin:repo_hook, delete:packages, delete_repo, gist, notifications, repo,
@@ -61,13 +61,13 @@ interactions:
       X-Ratelimit-Limit:
       - "5000"
       X-Ratelimit-Remaining:
-      - "4981"
+      - "4990"
       X-Ratelimit-Reset:
-      - "1630009183"
+      - "1630019132"
       X-Ratelimit-Resource:
       - core
       X-Ratelimit-Used:
-      - "19"
+      - "10"
       X-Xss-Protection:
       - "0"
     status: 200 OK
@@ -103,7 +103,7 @@ interactions:
       Content-Type:
       - application/json; charset=utf-8
       Date:
-      - Thu, 26 Aug 2021 19:21:03 GMT
+      - Thu, 26 Aug 2021 22:12:25 GMT
       Etag:
       - '"e83491e8e7daca72e1fb091193dc660500fdf27f893e8e8385f0857f97a96c21"'
       Github-Authentication-Token-Expiration:
@@ -132,7 +132,7 @@ interactions:
       - github.v3; param=jean-grey-preview; format=json, github.mercy-preview; param=machine-man-preview;
         format=json
       X-Github-Request-Id:
-      - D4EA:607D:BCA5CF:231EB57:6127E99F
+      - D82B:3ED2:A4581:1C31C1:612811C9
       X-Oauth-Scopes:
       - admin:enterprise, admin:gpg_key, admin:org, admin:org_hook, admin:public_key,
         admin:repo_hook, delete:packages, delete_repo, gist, notifications, repo,
@@ -140,13 +140,13 @@ interactions:
       X-Ratelimit-Limit:
       - "5000"
       X-Ratelimit-Remaining:
-      - "4980"
+      - "4989"
       X-Ratelimit-Reset:
-      - "1630009183"
+      - "1630019132"
       X-Ratelimit-Resource:
       - core
       X-Ratelimit-Used:
-      - "20"
+      - "11"
       X-Xss-Protection:
       - "0"
     status: 200 OK

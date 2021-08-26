@@ -445,8 +445,11 @@ func (c *V3Client) GetOrganization(ctx context.Context, login string) (org *OrgD
 //
 // The page is the page of results to return, and is 1-indexed (so the first call should
 // be for page 1).
-func (c *V3Client) ListOrganizationMembers(ctx context.Context, owner string, page int) (users []*Collaborator, hasNextPage bool, _ error) {
+func (c *V3Client) ListOrganizationMembers(ctx context.Context, owner string, page int, adminsOnly bool) (users []*Collaborator, hasNextPage bool, _ error) {
 	path := fmt.Sprintf("/orgs/%s/members?page=%d&per_page=100", owner, page)
+	if adminsOnly {
+		path += "&role=admin"
+	}
 	err := c.requestGet(ctx, path, &users)
 	if err != nil {
 		return nil, false, err

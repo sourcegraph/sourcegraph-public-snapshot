@@ -30,7 +30,7 @@ type client interface {
 	ListRepositoryCollaborators(ctx context.Context, owner, repo string, page int, affiliations github.CollaboratorAffiliation) (users []*github.Collaborator, hasNextPage bool, _ error)
 	ListRepositoryTeams(ctx context.Context, owner, repo string, page int) (teams []*github.Team, hasNextPage bool, _ error)
 
-	ListOrganizationMembers(ctx context.Context, owner string, page int) (users []*github.Collaborator, hasNextPage bool, _ error)
+	ListOrganizationMembers(ctx context.Context, owner string, page int, adminsOnly bool) (users []*github.Collaborator, hasNextPage bool, _ error)
 	ListTeamMembers(ctx context.Context, owner, team string, page int) (users []*github.Collaborator, hasNextPage bool, _ error)
 
 	GetAuthenticatedUserOrgsDetailsAndMembership(ctx context.Context, page int) (orgs []github.OrgDetailsAndMembership, hasNextPage bool, rateLimitCost int, err error)
@@ -61,7 +61,7 @@ type mockClient struct {
 	MockListTeamRepositories                         func(ctx context.Context, org, team string, page int) (repos []*github.Repository, hasNextPage bool, rateLimitCost int, err error)
 	MockListRepositoryCollaborators                  func(ctx context.Context, owner, repo string, page int, affiliation github.CollaboratorAffiliation) (users []*github.Collaborator, hasNextPage bool, _ error)
 	MockListRepositoryTeams                          func(ctx context.Context, owner, repo string, page int) (teams []*github.Team, hasNextPage bool, _ error)
-	MockListOrganizationMembers                      func(ctx context.Context, owner string, page int) (users []*github.Collaborator, hasNextPage bool, _ error)
+	MockListOrganizationMembers                      func(ctx context.Context, owner string, page int, adminOnly bool) (users []*github.Collaborator, hasNextPage bool, _ error)
 	MockListTeamMembers                              func(ctx context.Context, owner, team string, page int) (users []*github.Collaborator, hasNextPage bool, _ error)
 	MockGetAuthenticatedUserOrgsDetailsAndMembership func(ctx context.Context, page int) (orgs []github.OrgDetailsAndMembership, hasNextPage bool, rateLimitCost int, err error)
 	MockGetAuthenticatedUserTeams                    func(ctx context.Context, page int) (teams []*github.Team, hasNextPage bool, rateLimitCost int, err error)
@@ -89,8 +89,8 @@ func (m *mockClient) ListRepositoryTeams(ctx context.Context, owner, repo string
 	return m.MockListRepositoryTeams(ctx, owner, repo, page)
 }
 
-func (m *mockClient) ListOrganizationMembers(ctx context.Context, owner string, page int) (users []*github.Collaborator, hasNextPage bool, _ error) {
-	return m.MockListOrganizationMembers(ctx, owner, page)
+func (m *mockClient) ListOrganizationMembers(ctx context.Context, owner string, page int, adminOnly bool) (users []*github.Collaborator, hasNextPage bool, _ error) {
+	return m.MockListOrganizationMembers(ctx, owner, page, adminOnly)
 }
 
 func (m *mockClient) ListTeamMembers(ctx context.Context, owner, team string, page int) (users []*github.Collaborator, hasNextPage bool, _ error) {
