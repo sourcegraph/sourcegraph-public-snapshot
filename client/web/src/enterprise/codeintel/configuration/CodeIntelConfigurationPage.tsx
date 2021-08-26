@@ -318,9 +318,9 @@ const DescribeRetentionPolicy: FunctionComponent<{ policy: CodeIntelligenceConfi
         <p>
             <strong>Retention policy:</strong>{' '}
             <span>
-                Retain uploads used to resolve code intelligence queries for <DescribeGitObjectTarget policy={policy} />{' '}
+                Retain uploads used to resolve code intelligence queries for <DescribeGitObjectTarget policy={policy} />
                 {policy.retentionDurationHours !== 0 && (
-                    <>for at least {formatDurationValue(policy.retentionDurationHours)} after upload</>
+                    <> for at least {formatDurationValue(policy.retentionDurationHours)} after upload</>
                 )}
                 .
             </span>
@@ -332,9 +332,9 @@ const DescribeRetentionPolicy: FunctionComponent<{ policy: CodeIntelligenceConfi
 const DescribeIndexingPolicy: FunctionComponent<{ policy: CodeIntelligenceConfigurationPolicyFields }> = ({ policy }) =>
     policy.indexingEnabled ? (
         <p>
-            <strong>Indexing policy:</strong> Auto-index <DescribeGitObjectTarget policy={policy} />{' '}
+            <strong>Indexing policy:</strong> Auto-index <DescribeGitObjectTarget policy={policy} />
             {policy.indexCommitMaxAgeHours !== 0 && (
-                <>if the target commit is no older than {formatDurationValue(policy.indexCommitMaxAgeHours)}</>
+                <> if the target commit is no older than {formatDurationValue(policy.indexCommitMaxAgeHours)}</>
             )}
             .
         </p>
