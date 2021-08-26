@@ -154,7 +154,7 @@ When you upgrade, merge the corresponding upstream release tag into your `releas
 git fetch upstream
 # merge the upstream release tag into your release branch
 git checkout release
-git merge upstream v$SOURCEGRAPH_VERSION
+git merge v$SOURCEGRAPH_VERSION
 ```
 
 Address any merge conflicts you might have.
