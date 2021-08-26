@@ -516,7 +516,7 @@ func testSearchClient(t *testing.T, client searchClient) {
 			{
 				name: `negated repohascommitafter, nonzero result`,
 				// This query will fail if any commits are added to sgtest/archived, but that seems unlikely
-				query: `repo:sgtest/archived$$ -repohascommitafter:"2020-09-01"`,
+				query: `repo:sgtest/archived$ -repohascommitafter:"2020-09-01"`,
 			},
 			// Regex text search
 			{
