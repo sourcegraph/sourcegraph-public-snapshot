@@ -374,20 +374,7 @@ func (s *store) Dequeue(ctx context.Context, workerHostname string, conditions [
 	now := s.now()
 	retryAfter := int(s.options.RetryAfter / time.Second)
 
-	var alias string
-	if parts := strings.Split(s.options.ViewName, " "); len(parts) == 2 {
-		alias = parts[1]
-	}
-
-	// Construct the set of expressions we need to return from the view record
-	selectExpressions := make([]*sqlf.Query, len(s.options.ColumnExpressions))
-	copy(selectExpressions, s.options.ColumnExpressions)
-
-	expressionMatchesColumnReferences := func(expression *sqlf.Query, columnName string) bool {
-		return strings.TrimPrefix(strings.TrimPrefix(expression.Query(sqlf.PostgresBindVar), s.options.ViewName+"."), alias+".") == columnName
-	}
-
-	updatedValues := map[string]*sqlf.Query{
+	updatedColumns := map[string]*sqlf.Query{
 		s.columnReplacer.Replace("{state}"):             sqlf.Sprintf("%s", "processing"),
 		s.columnReplacer.Replace("{started_at}"):        sqlf.Sprintf("%s::timestamp", now),
 		s.columnReplacer.Replace("{last_heartbeat_at}"): sqlf.Sprintf("%s::timestamp", now),
@@ -395,25 +382,6 @@ func (s *store) Dequeue(ctx context.Context, workerHostname string, conditions [
 		s.columnReplacer.Replace("{failure_message}"):   sqlf.Sprintf("NULL"),
 		s.columnReplacer.Replace("{execution_logs}"):    sqlf.Sprintf("NULL"),
 		s.columnReplacer.Replace("{worker_hostname}"):   sqlf.Sprintf("%s", workerHostname),
-	}
-
-	// Replace column expressions on the view with the updated value if the names match.
-	// This is require as if we select from the view we'll get whatever values were in that
-	// row at the snapshot taken at the start of the transaction - updates mid-query are
-	// not refelected by sibling CTEs.
-	for i, expression := range selectExpressions {
-		for columnName, updatedValue := range updatedValues {
-			if expressionMatchesColumnReferences(expression, columnName) {
-				selectExpressions[i] = updatedValue
-				break
-			}
-		}
-	}
-
-	// Construct the set of statements we assign to the dequeued record
-	updateStatements := make([]*sqlf.Query, 0, len(updatedValues))
-	for columnName, updateValue := range updatedValues {
-		updateStatements = append(updateStatements, sqlf.Sprintf(columnName+" = %s", updateValue))
 	}
 
 	record, exists, err := s.options.Scan(s.Query(ctx, s.formatQuery(
@@ -427,8 +395,8 @@ func (s *store) Dequeue(ctx context.Context, workerHostname string, conditions [
 		makeConditionSuffix(conditions),
 		s.options.OrderByExpression,
 		quote(s.options.TableName),
-		sqlf.Join(updateStatements, ", "),
-		sqlf.Join(selectExpressions, ", "),
+		sqlf.Join(s.makeDequeueUpdateStatements(updatedColumns), ", "),
+		sqlf.Join(s.makeDequeueSelectExpressions(updatedColumns), ", "),
 		quote(s.options.ViewName),
 	)))
 	if err != nil {
@@ -464,20 +432,84 @@ WITH candidate AS (
 	LIMIT 1
 ),
 updated_record AS (
-  UPDATE
-    %s
-  SET
-    %s
-  WHERE
-    {id} IN (SELECT {id} FROM candidate)
+	UPDATE
+		%s
+	SET
+		%s
+	WHERE
+		{id} IN (SELECT {id} FROM candidate)
 )
 SELECT
-  %s
+	%s
 FROM
-  %s
+	%s
 WHERE
-  {id} IN (SELECT {id} FROM candidate)
+	{id} IN (SELECT {id} FROM candidate)
 `
+
+// makeDequeueSelectExpressions constructs the ordered set of SQL expressions that are returned
+// from the dequeue query. This method returns a copy of the configured column expressions slice
+// where expressions referencing one of the column updated by dequeue are replaced by the updated
+// value.
+//
+// Note that this method only considers select expressions like `alias.ColumnName` and not something
+// more complex like `SomeFunction(alias.ColumnName) + 1`. We issue a warning on construction of a
+// new store configured in this way to indicate this (probably) unwanted behavior.
+func (s *store) makeDequeueSelectExpressions(updatedColumns map[string]*sqlf.Query) []*sqlf.Query {
+	columnPrefixes := makeColumnPrefixes(s.options.ViewName)
+
+	selectExpressions := make([]*sqlf.Query, len(s.options.ColumnExpressions))
+	copy(selectExpressions, s.options.ColumnExpressions)
+
+outer:
+	for i, expression := range selectExpressions {
+		text := expression.Query(sqlf.PostgresBindVar)
+
+		for columnName, updatedValue := range updatedColumns {
+			for _, columnPrefix := range columnPrefixes {
+				if text == columnPrefix+columnName {
+					selectExpressions[i] = updatedValue
+					continue outer
+				}
+			}
+		}
+	}
+
+	return selectExpressions
+}
+
+// makeColumnPrefixes returns the set of prefixes of a column to indicate that the column belongs to a
+// particular table or aliased table. The given name should be the table name  or the aliased table
+// reference: `TableName` or `TableName alias`. The return slice always  includes an empty string for a
+// bare column reference.
+func makeColumnPrefixes(name string) []string {
+	parts := strings.Split(name, " ")
+
+	switch len(parts) {
+	case 1:
+		// name = TableName
+		// prefixes = <empty> and `TableName.`
+		return []string{"", parts[0] + "."}
+	case 2:
+		// name = TableName alias
+		// prefixes = <empty>, `TableName.`, and `alias.`
+		return []string{"", parts[0] + ".", parts[1] + "."}
+
+	default:
+		return []string{""}
+	}
+}
+
+// makeDequeueUpdateStatements constructs the set of SQL statements that update values of the target table
+// in the dequeue query.
+func (s *store) makeDequeueUpdateStatements(updatedColumns map[string]*sqlf.Query) []*sqlf.Query {
+	updateStatements := make([]*sqlf.Query, 0, len(updatedColumns))
+	for columnName, updateValue := range updatedColumns {
+		updateStatements = append(updateStatements, sqlf.Sprintf(columnName+"=%s", updateValue))
+	}
+
+	return updateStatements
+}
 
 func (s *store) Heartbeat(ctx context.Context, ids []int, options HeartbeatOptions) (knownIDs []int, err error) {
 	ctx, endObservation := s.operations.heartbeat.With(ctx, &err, observation.Args{})
