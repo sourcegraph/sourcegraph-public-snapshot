@@ -511,6 +511,10 @@ func TestProvider_FetchRepoPerms(t *testing.T) {
 		})
 		p.client = &mockClient{
 			MockListRepositoryCollaborators: func(ctx context.Context, owner, repo string, page int, affiliation github.CollaboratorAffiliation) ([]*github.Collaborator, bool, error) {
+				if affiliation != "" {
+					t.Fatal("unexpected affiliation filter provided")
+				}
+
 				switch page {
 				case 1:
 					return []*github.Collaborator{
