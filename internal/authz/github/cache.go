@@ -82,8 +82,9 @@ func (c *cachedGroups) getGroup(org string, team string) (cachedGroup, bool) {
 	return cached, ok
 }
 
-// deleteGroup deletes the given group from the cache.
-func (c *cachedGroups) deleteGroup(group *cachedGroup) {
+// invalidateGroup deletes the given group from the cache and invalidates the cached values
+// within the given group.
+func (c *cachedGroups) invalidateGroup(group *cachedGroup) {
 	c.cache.Delete(group.key())
 	group.Repositories = nil
 	group.Users = nil

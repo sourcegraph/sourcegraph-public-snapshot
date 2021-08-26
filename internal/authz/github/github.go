@@ -289,7 +289,7 @@ func (p *Provider) FetchRepoPerms(ctx context.Context, repo *extsvc.Repository, 
 	syncGroup := func(group cachedGroup, exists bool) (invalidated bool) {
 		if opts.InvalidateCaches {
 			// invalidate this cache
-			p.groupsCache.deleteGroup(&group)
+			p.groupsCache.invalidateGroup(&group)
 			return true
 		} else if len(group.Repositories) > 0 {
 			// If this repo's membership in this group is not noted yet, add it
@@ -380,7 +380,7 @@ func (p *Provider) getAffiliatedGroups(ctx context.Context, clientWithToken clie
 		cachedPerms, exists := p.groupsCache.getGroup(org, team)
 		if exists && opts.InvalidateCaches {
 			// invalidate this cache
-			p.groupsCache.deleteGroup(&cachedPerms)
+			p.groupsCache.invalidateGroup(&cachedPerms)
 		}
 		seenGroups[cachedPerms.key()] = struct{}{}
 		groups = append(groups, cachedPerms)
