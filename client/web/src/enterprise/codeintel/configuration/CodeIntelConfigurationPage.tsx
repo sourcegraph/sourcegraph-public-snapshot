@@ -383,7 +383,7 @@ const CodeIntelligencePolicyTable: FunctionComponent<CodeIntelligencePolicyTable
 }) => (
     <div className="codeintel-configuration-policies__grid mb-3">
         {policies.map(policy => (
-            <>
+            <React.Fragment key={policy.id}>
                 <span className="codeintel-configuration-policy-node__separator" />
 
                 <div className="d-flex flex-column codeintel-configuration-policy-node__name">
@@ -445,7 +445,7 @@ const CodeIntelligencePolicyTable: FunctionComponent<CodeIntelligencePolicyTable
                         </Button>
                     )}
                 </span>
-            </>
+            </React.Fragment>
         ))}
     </div>
 )
