@@ -30,7 +30,9 @@ export function getBackendInsightById(insight: SearchBackendBasedInsight): Obser
                 title: insight.title ?? backendInsight.title,
                 subtitle: backendInsight.description,
                 content: [createViewContent(backendInsight, series)],
-                isFetchingHistoricalData: backendInsight.series.some(line => line.status.pendingJobs > 0),
+                isFetchingHistoricalData: backendInsight.series.some(
+                    ({ status: { pendingJobs, backfillQueuedAt } }) => pendingJobs > 0 || backfillQueuedAt === null
+                ),
             },
         }))
     )
