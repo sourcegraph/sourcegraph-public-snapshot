@@ -13,6 +13,7 @@ import (
 	"net/url"
 	"os"
 	"reflect"
+	"sort"
 	"strings"
 	"testing"
 	"time"
@@ -127,6 +128,38 @@ func TestUserFilters(t *testing.T) {
 				t.Error(cmp.Diff(have, want))
 			}
 		})
+	}
+}
+
+func TestClient_Projects(t *testing.T) {
+	cli, save := NewTestClient(t, "Projects", *update)
+	defer save()
+
+	expected := []*Project{{
+		Key:    "Sourcegraph",
+		ID:     1,
+		Name:   "sourcegraph",
+		Public: false, // ?
+		Type:   "bla",
+	}}
+
+	actual, _, err := cli.Projects(context.Background(), &PageToken{})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	assertProjectsEqual(t, actual, expected)
+}
+
+func assertProjectsEqual(t *testing.T, actual, expected []*Project) {
+	t.Helper()
+
+	for _, s := range [][]*Project{actual, expected} {
+		sort.Slice(s, func(i, j int) bool { return s[i].ID < s[j].ID })
+	}
+
+	if diff := cmp.Diff(actual, expected); diff != "" {
+		t.Errorf("non-zero diff (-got + want):\n%s", diff)
 	}
 }
 

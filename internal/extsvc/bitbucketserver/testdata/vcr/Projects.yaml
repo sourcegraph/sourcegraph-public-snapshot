@@ -1,0 +1,44 @@
+---
+version: 1
+interactions:
+- request:
+    body: ""
+    form: {}
+    headers:
+      Content-Type:
+      - application/json; charset=utf-8
+    url: https://bitbucket.sgdev.org/rest/api/1.0/projects
+    method: GET
+  response:
+    body: '{"size":9,"limit":25,"isLastPage":true,"values":[{"key":"IJ","id":24,"name":"ijt-project-testing-sg-3-6","description":"throwaway","public":false,"type":"NORMAL","links":{"self":[{"href":"https://bitbucket.sgdev.org/projects/IJ"}]}},{"key":"K8S","id":29,"name":"K8S","description":"A
+      lot of test repositories for k8s.sgdev.org.","public":false,"type":"NORMAL","links":{"self":[{"href":"https://bitbucket.sgdev.org/projects/K8S"}]}},{"key":"PRIVATE","id":3,"name":"Private","public":false,"type":"NORMAL","links":{"self":[{"href":"https://bitbucket.sgdev.org/projects/PRIVATE"}]}},{"key":"PUBLIC","id":4,"name":"Public","public":false,"type":"NORMAL","links":{"self":[{"href":"https://bitbucket.sgdev.org/projects/PUBLIC"}]}},{"key":"SECRET","id":5,"name":"Secret","public":false,"type":"NORMAL","links":{"self":[{"href":"https://bitbucket.sgdev.org/projects/SECRET"}]}},{"key":"SOUR","id":1,"name":"sourcegraph","public":false,"type":"NORMAL","links":{"self":[{"href":"https://bitbucket.sgdev.org/projects/SOUR"}]}},{"key":"SGDEMO","id":26,"name":"Sourcegraph
+      Demo","public":false,"type":"NORMAL","links":{"self":[{"href":"https://bitbucket.sgdev.org/projects/SGDEMO"}]}},{"key":"SOURCEGRAPH","id":28,"name":"Sourcegraph
+      e2e testing","public":false,"type":"NORMAL","links":{"self":[{"href":"https://bitbucket.sgdev.org/projects/SOURCEGRAPH"}]}},{"key":"SUPERSECRET","id":6,"name":"Super
+      Secret","public":false,"type":"NORMAL","links":{"self":[{"href":"https://bitbucket.sgdev.org/projects/SUPERSECRET"}]}}],"start":0}'
+    headers:
+      Cache-Control:
+      - private, no-cache
+      - no-cache, no-transform
+      Content-Type:
+      - application/json;charset=UTF-8
+      Date:
+      - Thu, 26 Aug 2021 18:35:54 GMT
+      Pragma:
+      - no-cache
+      Server:
+      - Caddy
+      Vary:
+      - accept-encoding,x-auserid,cookie,x-ausername,accept-encoding
+      X-Arequestid:
+      - '@2EDRUKx1115x17295619x0'
+      X-Asessionid:
+      - 15japnt
+      X-Auserid:
+      - "252"
+      X-Ausername:
+      - buildkite
+      X-Content-Type-Options:
+      - nosniff
+    status: 200 OK
+    code: 200
+    duration: ""

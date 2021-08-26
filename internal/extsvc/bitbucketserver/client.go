@@ -321,6 +321,14 @@ func (c *Client) Users(ctx context.Context, pageToken *PageToken, fs ...UserFilt
 	return users, next, err
 }
 
+func (c *Client) Projects(ctx context.Context, pageToken *PageToken) ([]*Project, *PageToken, error) {
+	var projects []*Project
+
+	qry := make(url.Values)
+	next, err := c.page(ctx, "/rest/api/1.0/projects", qry, pageToken, &projects)
+	return projects, next, err
+}
+
 // UserPermissions retrieves the global permissions assigned to the user with the given
 // username. Used to validate that the client is authenticated as an admin.
 func (c *Client) UserPermissions(ctx context.Context, username string) (perms []Perm, _ error) {
