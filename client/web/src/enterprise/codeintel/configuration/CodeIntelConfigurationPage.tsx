@@ -596,10 +596,10 @@ const CodeIntelAutoIndexSaveToolbar: React.FunctionComponent<SaveToolbarProps & 
             <LoadingSpinner className="icon-inline mt-2 ml-2" />
         ) : (
             inferEnabled && (
-                <button
+                <Button
                     type="button"
                     title="Infer index configuration from HEAD"
-                    className="btn btn-link"
+                    variant="link"
                     onClick={onInfer}
                 >
                     Infer index configuration from HEAD
