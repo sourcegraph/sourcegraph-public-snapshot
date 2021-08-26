@@ -172,7 +172,11 @@ export const CodeIntelConfigurationPage: FunctionComponent<CodeIntelConfiguratio
             />
 
             {repo && (
-                <CodeIntelligenceConfigurationTabHeader selectedTab={selectedTab} setSelectedTab={setSelectedTab} />
+                <CodeIntelligenceConfigurationTabHeader
+                    selectedTab={selectedTab}
+                    setSelectedTab={setSelectedTab}
+                    indexingEnabled={indexingEnabled}
+                />
             )}
 
             <Container>
@@ -235,7 +239,8 @@ export const CodeIntelConfigurationPage: FunctionComponent<CodeIntelConfiguratio
 const CodeIntelligenceConfigurationTabHeader: React.FunctionComponent<{
     selectedTab: SelectedTab
     setSelectedTab: (selectedTab: SelectedTab) => void
-}> = ({ selectedTab, setSelectedTab }) => {
+    indexingEnabled: boolean
+}> = ({ selectedTab, setSelectedTab, indexingEnabled }) => {
     const onClick = (selected: SelectedTab): React.MouseEventHandler => event => {
         event.preventDefault()
         setSelectedTab(selected)
@@ -270,19 +275,21 @@ const CodeIntelligenceConfigurationTabHeader: React.FunctionComponent<{
                         </span>
                     </a>
                 </li>
-                <li className="nav-item">
-                    {/* eslint-disable-next-line jsx-a11y/anchor-is-valid */}
-                    <a
-                        href=""
-                        onClick={onClick('indexConfiguration')}
-                        className={classNames('nav-link', selectedTab === 'indexConfiguration' && 'active')}
-                        role="button"
-                    >
-                        <span className="text-content" data-tab-content="Index configuration">
-                            Index configuration
-                        </span>
-                    </a>
-                </li>
+                {indexingEnabled && (
+                    <li className="nav-item">
+                        {/* eslint-disable-next-line jsx-a11y/anchor-is-valid */}
+                        <a
+                            href=""
+                            onClick={onClick('indexConfiguration')}
+                            className={classNames('nav-link', selectedTab === 'indexConfiguration' && 'active')}
+                            role="button"
+                        >
+                            <span className="text-content" data-tab-content="Index configuration">
+                                Index configuration
+                            </span>
+                        </a>
+                    </li>
+                )}
             </ul>
         </div>
     )
