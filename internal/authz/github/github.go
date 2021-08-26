@@ -128,7 +128,7 @@ func (p *Provider) fetchUserPermsByToken(ctx context.Context, accountID extsvc.A
 
 	// Now, we look for groups this user belongs to that give access to additional
 	// repositories.
-	groups, err := p.getAffiliatedGroups(ctx, client, opts)
+	groups, err := p.getUserAffiliatedGroups(ctx, client, opts)
 	if err != nil {
 		return perms, errors.Wrap(err, "get groups affiliated with user")
 	}
@@ -244,6 +244,22 @@ func (p *Provider) FetchRepoPerms(ctx context.Context, repo *extsvc.Repository, 
 		return nil, errors.Wrap(err, "split nameWithOwner")
 	}
 
+	// 100 matches the maximum page size, thus a good default to avoid multiple allocations
+	// when appending the first 100 results to the slice.
+	const userPageSize = 100
+	userIDs := make([]extsvc.AccountID, 0, userPageSize)
+	seenUsers := make(map[extsvc.AccountID]struct{}, userPageSize)
+
+	// addUserToRepoPerms checks if the given users are already tracked before adding it to perms.
+	addUserToRepoPerms := func(users ...extsvc.AccountID) {
+		for _, user := range users {
+			if _, exists := seenUsers[user]; !exists {
+				seenUsers[user] = struct{}{}
+				userIDs = append(userIDs, user)
+			}
+		}
+	}
+
 	// If groups caching is enabled, we sync just a subset of direct affiliations - we let
 	// other permissions ('organization' affiliation) be sync'd by teams/orgs.
 	affiliations := []github.Affiliation{github.AffiliationOwner, github.AffiliationCollaborator}
@@ -252,9 +268,7 @@ func (p *Provider) FetchRepoPerms(ctx context.Context, repo *extsvc.Repository, 
 		affiliations = nil
 	}
 
-	// 100 matches the maximum page size, thus a good default to avoid multiple allocations
-	// when appending the first 100 results to the slice.
-	userIDs := make([]extsvc.AccountID, 0, 100)
+	// Sync collaborators
 	hasNextPage := true
 	for page := 1; hasNextPage; page++ {
 		var err error
@@ -265,7 +279,7 @@ func (p *Provider) FetchRepoPerms(ctx context.Context, repo *extsvc.Repository, 
 		}
 
 		for _, u := range users {
-			userIDs = append(userIDs, extsvc.AccountID(strconv.FormatInt(u.DatabaseID, 10)))
+			addUserToRepoPerms(extsvc.AccountID(strconv.FormatInt(u.DatabaseID, 10)))
 		}
 	}
 
@@ -274,27 +288,20 @@ func (p *Provider) FetchRepoPerms(ctx context.Context, repo *extsvc.Repository, 
 		return userIDs, nil
 	}
 
-	// Check if repo belongs in an org
-	org, err := p.client.GetOrganization(ctx, owner)
+	// Get groups affiliated with this repo.
+	groups, err := p.getRepoAffiliatedGroups(ctx, owner, name, opts)
 	if err != nil {
-		if strings.Contains(err.Error(), "404") {
-			// Owner is most likely not an org, we are done.
-			return userIDs, nil
-		}
-		// If error is unexpected, return what we have so far.
-		return userIDs, err
+		return userIDs, errors.Wrap(err, "get groups affiliated with repos")
 	}
 
-	groups := make([]cachedGroup, 0)
-	syncGroup := func(group cachedGroup, exists bool) (invalidated bool) {
-		if opts.InvalidateCaches {
-			// invalidate this cache
-			p.groupsCache.invalidateGroup(&group)
-			return true
-		} else if len(group.Repositories) > 0 {
+	// Perform a fresh sync with groups that need a sync.
+	repoID := extsvc.RepoID(repo.ID)
+	for _, group := range groups {
+		if len(group.Users) > 0 {
+			// Just use cache if available and not invalidated
+			addUserToRepoPerms(group.Users...)
 			// If this repo's membership in this group is not noted yet, add it
 			hasRepo := false
-			repoID := extsvc.RepoID(repo.ID)
 			for _, user := range group.Repositories {
 				if user == repoID {
 					hasRepo = true
@@ -305,64 +312,38 @@ func (p *Provider) FetchRepoPerms(ctx context.Context, repo *extsvc.Repository, 
 				group.Repositories = append(group.Repositories, repoID)
 				p.groupsCache.setGroup(group)
 			}
-		}
-		groups = append(groups, group)
-		return false
-	}
+		} else {
+			// Cache was invalidated or is not yet populated, perform a sync
+			hasNextPage := true
+			for page := 1; hasNextPage; page++ {
+				var members []*github.Collaborator
+				if group.Team == "" {
+					members, hasNextPage, err = p.client.ListOrganizationMembers(ctx, owner, page)
+				} else {
+					members, hasNextPage, err = p.client.ListTeamMembers(ctx, owner, group.Team, page)
+				}
+				if err != nil {
+					return append(userIDs, group.Users...), err
+				}
+				for _, u := range members {
+					// Add results to both group (for persistence) and permissions for user
+					accountID := extsvc.AccountID(strconv.FormatInt(u.DatabaseID, 10))
+					group.Users = append(group.Users, accountID)
+					addUserToRepoPerms(accountID)
+				}
+			}
 
-	// If all members of this org can view this repo, update
-	if canViewOrgRepos(&github.OrgDetailsAndMembership{OrgDetails: org}) {
-		group, exists := p.groupsCache.getGroup(owner, "")
-		invalidated := syncGroup(group, exists)
-
-		if exists && !invalidated && len(group.Users) > 0 {
-			// Return with cached users, we are done
-			return append(userIDs, group.Users...), nil
+			// Persist group
+			p.groupsCache.setGroup(group)
 		}
-	} else {
-		// Check for teams involved in repo, sync them all
-		hasNextPage = true
-		for page := 1; hasNextPage; page++ {
-			var teams []*github.Team
-			teams, hasNextPage, err = p.client.ListRepositoryTeams(ctx, owner, name, page)
-			if err != nil {
-				return userIDs, nil
-			}
-			for _, t := range teams {
-				group, exists := p.groupsCache.getGroup(owner, t.Slug)
-				syncGroup(group, exists)
-			}
-		}
-	}
-
-	for _, group := range groups {
-		hasNextPage := true
-		for page := 1; hasNextPage; page++ {
-			var members []*github.Collaborator
-			if group.Team == "" {
-				members, hasNextPage, err = p.client.ListOrganizationMembers(ctx, owner, page)
-			} else {
-				members, hasNextPage, err = p.client.ListTeamMembers(ctx, owner, group.Team, page)
-			}
-			if err != nil {
-				return append(userIDs, group.Users...), err
-			}
-			for _, u := range members {
-				account := extsvc.AccountID(strconv.FormatInt(u.DatabaseID, 10))
-				group.Users = append(group.Users, account)
-			}
-		}
-
-		p.groupsCache.setGroup(group)
-		userIDs = append(userIDs, group.Users...)
 	}
 
 	return userIDs, nil
 }
 
-// getAffiliatedGroups retrieves affiliated organizations and teams for the given client
+// getUserAffiliatedGroups retrieves affiliated organizations and teams for the given client
 // with token. Returned groups are populated from cache if a valid value is available.
-func (p *Provider) getAffiliatedGroups(ctx context.Context, clientWithToken client, opts authz.FetchPermsOptions) ([]cachedGroup, error) {
+func (p *Provider) getUserAffiliatedGroups(ctx context.Context, clientWithToken client, opts authz.FetchPermsOptions) ([]cachedGroup, error) {
 	groups := make([]cachedGroup, 0)
 	seenGroups := make(map[string]struct{})
 
@@ -415,6 +396,50 @@ func (p *Provider) getAffiliatedGroups(ctx context.Context, clientWithToken clie
 			// only sync teams with repos
 			if team.ReposCount > 0 && team.Organization != nil {
 				syncGroup(team.Organization.Login, team.Slug)
+			}
+		}
+	}
+
+	return groups, nil
+}
+
+func (p *Provider) getRepoAffiliatedGroups(ctx context.Context, owner, name string, opts authz.FetchPermsOptions) (groups []cachedGroup, err error) {
+	// Check if repo belongs in an org
+	org, err := p.client.GetOrganization(ctx, owner)
+	if err != nil {
+		if strings.Contains(err.Error(), "404") {
+			// Owner is most likely not an org, we are done - don't propagate error.
+			return groups, nil
+		}
+		return
+	}
+
+	// indicate if a group should be sync'd
+	syncGroup := func(group cachedGroup, exists bool) {
+		if opts.InvalidateCaches {
+			// invalidate this cache
+			p.groupsCache.invalidateGroup(&group)
+		}
+		groups = append(groups, group)
+	}
+
+	if canViewOrgRepos(&github.OrgDetailsAndMembership{OrgDetails: org}) {
+		// If all members of this org can view this repo, retrieve and use the cache if
+		// relevant, otherwise indicate that the group should be sync'd.
+		group, exists := p.groupsCache.getGroup(owner, "")
+		syncGroup(group, exists)
+	} else {
+		// Check for teams involved in repo, and indicate all groups should be sync'd.
+		hasNextPage := true
+		for page := 1; hasNextPage; page++ {
+			var teams []*github.Team
+			teams, hasNextPage, err = p.client.ListRepositoryTeams(ctx, owner, name, page)
+			if err != nil {
+				return
+			}
+			for _, t := range teams {
+				group, exists := p.groupsCache.getGroup(owner, t.Slug)
+				syncGroup(group, exists)
 			}
 		}
 	}
