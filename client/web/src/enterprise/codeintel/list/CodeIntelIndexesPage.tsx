@@ -86,7 +86,12 @@ export const CodeIntelIndexesPage: FunctionComponent<CodeIntelIndexesPageProps> 
     return (
         <div className="code-intel-indexes">
             <PageTitle title="Auto-indexing jobs" />
-            <PageHeader headingElement="h2" path={[{ text: 'Auto-indexing jobs' }]} className="mb-3" />
+            <PageHeader
+                headingElement="h2"
+                path={[{ text: 'Auto-indexing jobs' }]}
+                description={`Auto-indexing jobs ${repo ? 'for this repository' : 'over all repositories'}.`}
+                className="mb-3"
+            />
 
             {repo && (
                 <Container className="mb-2">

@@ -159,7 +159,9 @@ export const CodeIntelConfigurationPage: FunctionComponent<CodeIntelConfiguratio
                         text: <>Precise code intelligence configuration</>,
                     },
                 ]}
-                description="Rules that define configuration for precise code intelligence indexes in this repository."
+                description={`Rules that define configuration for precise code intelligence ${
+                    repo ? 'in this repository' : 'over all repositories'
+                }.`}
                 className="mb-3"
             />
 

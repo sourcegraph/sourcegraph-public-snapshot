@@ -118,9 +118,12 @@ export const CodeIntelConfigurationPolicyPage: FunctionComponent<CodeIntelConfig
                 headingElement="h2"
                 path={[
                     {
-                        text: <>{policy?.id === '' ? 'Create configuration policy' : 'Update configuration policy'}</>,
+                        text: <>{policy?.id === '' ? 'Create' : 'Update'} configuration policy</>,
                     },
                 ]}
+                description={`${policy?.id === '' ? 'Create' : 'Update'} a new configuration policy that applies to ${
+                    repo ? 'this repository' : 'all repositories'
+                }.`}
                 className="mb-3"
             />
 

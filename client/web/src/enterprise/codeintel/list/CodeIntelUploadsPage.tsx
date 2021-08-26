@@ -112,7 +112,14 @@ export const CodeIntelUploadsPage: FunctionComponent<CodeIntelUploadsPageProps> 
     return (
         <div className="code-intel-uploads">
             <PageTitle title="Precise code intelligence uploads" />
-            <PageHeader headingElement="h2" path={[{ text: 'Precise code intelligence uploads' }]} className="mb-3" />
+            <PageHeader
+                headingElement="h2"
+                path={[{ text: 'Precise code intelligence uploads' }]}
+                description={`LSIF indexes uploaded to Sourcegraph from CI or from auto-indexing ${
+                    repo ? 'for this repository' : 'over all repositories'
+                }.`}
+                className="mb-3"
+            />
 
             {repo && commitGraphMetadata && (
                 <Container className="mb-2">
