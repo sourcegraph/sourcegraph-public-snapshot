@@ -929,7 +929,7 @@ func matchModifiedColumnExpressions(viewName string, columnExpressions []*sqlf.Q
 					break
 				}
 
-				if regexp.MustCompile(fmt.Sprintf(`\b%s%s\b`, columnPrefix, columnName)).MatchString(columnExpressionText) {
+				if !match && regexp.MustCompile(fmt.Sprintf(`\b%s%s\b`, columnPrefix, columnName)).MatchString(columnExpressionText) {
 					match = true
 				}
 			}
