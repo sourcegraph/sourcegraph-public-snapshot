@@ -1,4 +1,5 @@
-import { storiesOf } from '@storybook/react'
+import { boolean, withKnobs } from '@storybook/addon-knobs'
+import { Meta, Story } from '@storybook/react'
 import React from 'react'
 import { of } from 'rxjs'
 
@@ -7,7 +8,7 @@ import { GitObjectType } from '@sourcegraph/shared/src/graphql-operations'
 import { CodeIntelligenceConfigurationPolicyFields } from '../../../graphql-operations'
 import { EnterpriseWebStory } from '../../components/EnterpriseWebStory'
 
-import { CodeIntelConfigurationPage } from './CodeIntelConfigurationPage'
+import { CodeIntelConfigurationPage, CodeIntelConfigurationPageProps } from './CodeIntelConfigurationPage'
 
 const trim = (value: string) => {
     const firstSignificantLine = value
@@ -160,50 +161,54 @@ const inferredRepositoryConfiguration = {
     },
 }
 
-const { add } = storiesOf('web/codeintel/configuration/CodeIntelConfigurationPage', module)
-    .addDecorator(story => <div className="p-3 container">{story()}</div>)
-    .addParameters({
+const story: Meta = {
+    title: 'web/codeintel/configuration/CodeIntelConfigurationPage',
+    decorators: [story => <div className="p-3 container">{story()}</div>, withKnobs],
+    parameters: {
+        component: CodeIntelConfigurationPage,
         chromatic: {
             viewports: [320, 576, 978, 1440],
         },
-    })
+    },
+}
+export default story
 
-add('Empty', () => (
+const Template: Story<CodeIntelConfigurationPageProps> = args => (
     <EnterpriseWebStory>
         {props => (
-            <CodeIntelConfigurationPage
-                {...props}
-                repo={{ id: '42' }}
-                getPolicies={() => of([])}
-                getConfigurationForRepository={() => of(repositoryConfiguration)}
-                getInferredConfigurationForRepository={() => of(inferredRepositoryConfiguration)}
-                deletePolicyById={() => of()}
-                updateConfigurationForRepository={() => of()}
-            />
+            <CodeIntelConfigurationPage {...props} indexingEnabled={boolean('indexingEnabled', true)} {...args} />
         )}
     </EnterpriseWebStory>
-))
+)
 
-for (const { repo, indexingEnabled } of [
-    { repo: undefined, indexingEnabled: true },
-    { repo: undefined, indexingEnabled: false },
-    { repo: { id: '42' }, indexingEnabled: true },
-    { repo: { id: '42' }, indexingEnabled: false },
-]) {
-    add(`${repo ? 'Repository' : 'Global'}ConfigurationIndexing${indexingEnabled ? 'Enabled' : 'Disabled'}`, () => (
-        <EnterpriseWebStory>
-            {props => (
-                <CodeIntelConfigurationPage
-                    {...props}
-                    repo={repo}
-                    indexingEnabled={indexingEnabled}
-                    getPolicies={(repositoryId?: string) => (repositoryId ? of(policies) : of(globalPolicies))}
-                    getConfigurationForRepository={() => of(repositoryConfiguration)}
-                    getInferredConfigurationForRepository={() => of(inferredRepositoryConfiguration)}
-                    deletePolicyById={() => of()}
-                    updateConfigurationForRepository={() => of()}
-                />
-            )}
-        </EnterpriseWebStory>
-    ))
+const defaults: Partial<CodeIntelConfigurationPageProps> = {
+    getPolicies: () => of([]),
+    getConfigurationForRepository: () => of(repositoryConfiguration),
+    getInferredConfigurationForRepository: () => of(inferredRepositoryConfiguration),
+    updateConfigurationForRepository: () => of(),
+    deletePolicyById: () => of(),
+}
+
+export const EmptyGlobalPage = Template.bind({})
+EmptyGlobalPage.args = {
+    ...defaults,
+}
+
+export const GlobalPage = Template.bind({})
+GlobalPage.args = {
+    ...defaults,
+    getPolicies: (repositoryId?: string) => of(repositoryId ? policies : globalPolicies),
+}
+
+export const EmptyRepositoryPage = Template.bind({})
+EmptyRepositoryPage.args = {
+    ...defaults,
+    repo: { id: 'sourcegraph' },
+}
+
+export const RepositoryPage = Template.bind({})
+RepositoryPage.args = {
+    ...defaults,
+    repo: { id: 'sourcegraph' },
+    getPolicies: (repositoryId?: string) => of(repositoryId ? policies : globalPolicies),
 }
