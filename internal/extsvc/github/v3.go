@@ -435,6 +435,9 @@ func (c *V3Client) GetRepository(ctx context.Context, owner, name string) (*Repo
 // GetOrganization gets an org from GitHub by its login.
 func (c *V3Client) GetOrganization(ctx context.Context, login string) (org *OrgDetails, err error) {
 	err = c.requestGet(ctx, "/orgs/"+login, &org)
+	if err != nil && strings.Contains(err.Error(), "404") {
+		err = &OrgNotFoundError{}
+	}
 	return
 }
 

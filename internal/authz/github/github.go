@@ -291,7 +291,7 @@ func (p *Provider) FetchRepoPerms(ctx context.Context, repo *extsvc.Repository, 
 	// Get groups affiliated with this repo.
 	groups, err := p.getRepoAffiliatedGroups(ctx, owner, name, opts)
 	if err != nil {
-		return userIDs, errors.Wrap(err, "get groups affiliated with repos")
+		return userIDs, errors.Wrap(err, "get groups affiliated with repo")
 	}
 
 	// Perform a fresh sync with groups that need a sync.
@@ -407,7 +407,7 @@ func (p *Provider) getRepoAffiliatedGroups(ctx context.Context, owner, name stri
 	// Check if repo belongs in an org
 	org, err := p.client.GetOrganization(ctx, owner)
 	if err != nil {
-		if strings.Contains(err.Error(), "404") {
+		if github.IsNotFound(err) {
 			// Owner is most likely not an org, we are done - don't propagate error.
 			return groups, nil
 		}

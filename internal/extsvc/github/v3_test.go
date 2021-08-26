@@ -4,7 +4,6 @@ import (
 	"context"
 	"net/url"
 	"sort"
-	"strings"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -439,10 +438,10 @@ func TestGetOrganization(t *testing.T) {
 		ctx := context.Background()
 		_, err := cli.GetOrganization(ctx, "sourcegraph-vcr")
 		if err == nil {
-			t.Fatal("expected erorr, got nil")
+			t.Fatal("expected error, got nil")
 		}
-		if !strings.Contains(err.Error(), "404") {
-			t.Fatalf("expected 404, got %q", err.Error())
+		if !IsNotFound(err) {
+			t.Fatalf("expected not found, got %q", err.Error())
 		}
 	})
 }
