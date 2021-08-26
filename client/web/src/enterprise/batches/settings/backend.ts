@@ -7,7 +7,6 @@ import { requestGraphQL } from '../../../backend/graphql'
 import {
     BatchChangesCodeHostsFields,
     BatchChangesCredentialFields,
-    BatchSpecExecutionsFields,
     BatchSpecExecutionsResult,
     BatchSpecExecutionsVariables,
     CreateBatchChangesCredentialResult,
