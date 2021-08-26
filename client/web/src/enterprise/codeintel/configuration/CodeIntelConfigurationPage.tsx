@@ -236,27 +236,10 @@ const CodeIntelligenceConfigurationTabHeader: React.FunctionComponent<{
     selectedTab: SelectedTab
     setSelectedTab: (selectedTab: SelectedTab) => void
 }> = ({ selectedTab, setSelectedTab }) => {
-    const onGlobalPolicies = useCallback<React.MouseEventHandler>(
-        event => {
-            event.preventDefault()
-            setSelectedTab('globalPolicies')
-        },
-        [setSelectedTab]
-    )
-    const onRepositoryPolicies = useCallback<React.MouseEventHandler>(
-        event => {
-            event.preventDefault()
-            setSelectedTab('repositoryPolicies')
-        },
-        [setSelectedTab]
-    )
-    const onIndexConfiguratino = useCallback<React.MouseEventHandler>(
-        event => {
-            event.preventDefault()
-            setSelectedTab('indexConfiguration')
-        },
-        [setSelectedTab]
-    )
+    const onClick = (selected: SelectedTab): React.MouseEventHandler => event => {
+        event.preventDefault()
+        setSelectedTab(selected)
+    }
 
     return (
         <div className="overflow-auto mb-2">
@@ -265,7 +248,7 @@ const CodeIntelligenceConfigurationTabHeader: React.FunctionComponent<{
                     {/* eslint-disable-next-line jsx-a11y/anchor-is-valid */}
                     <a
                         href=""
-                        onClick={onGlobalPolicies}
+                        onClick={onClick('globalPolicies')}
                         className={classNames('nav-link', selectedTab === 'globalPolicies' && 'active')}
                         role="button"
                     >
@@ -278,7 +261,7 @@ const CodeIntelligenceConfigurationTabHeader: React.FunctionComponent<{
                     {/* eslint-disable-next-line jsx-a11y/anchor-is-valid */}
                     <a
                         href=""
-                        onClick={onRepositoryPolicies}
+                        onClick={onClick('repositoryPolicies')}
                         className={classNames('nav-link', selectedTab === 'repositoryPolicies' && 'active')}
                         role="button"
                     >
@@ -291,7 +274,7 @@ const CodeIntelligenceConfigurationTabHeader: React.FunctionComponent<{
                     {/* eslint-disable-next-line jsx-a11y/anchor-is-valid */}
                     <a
                         href=""
-                        onClick={onIndexConfiguratino}
+                        onClick={onClick('indexConfiguration')}
                         className={classNames('nav-link', selectedTab === 'indexConfiguration' && 'active')}
                         role="button"
                     >
