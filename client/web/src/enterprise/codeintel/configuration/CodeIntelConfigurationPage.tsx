@@ -328,7 +328,9 @@ const PoliciesList: FunctionComponent<PoliciesListProps> = ({ policies, buttonFr
         </>
     )
 
-const DescribeRetentionPolicy: FunctionComponent<{ policy: CodeIntelligenceConfigurationPolicyFields }> = ({ policy }) =>
+const DescribeRetentionPolicy: FunctionComponent<{ policy: CodeIntelligenceConfigurationPolicyFields }> = ({
+    policy,
+}) =>
     policy.retentionEnabled ? (
         <p>
             <strong>Retention policy:</strong>{' '}
@@ -352,7 +354,7 @@ const DescribeRetentionPolicy: FunctionComponent<{ policy: CodeIntelligenceConfi
         <p className="text-muted">Data retention disabled.</p>
     )
 
-const describeIndexingPolicy: (policy: CodeIntelligenceConfigurationPolicyFields) => JSX.Element = policy =>
+const DescribeIndexingPolicy: FunctionComponent<{ policy: CodeIntelligenceConfigurationPolicyFields }> = ({ policy }) =>
     policy.indexingEnabled ? (
         <p>
             <strong>Indexing policy:</strong> Auto-index{' '}
@@ -416,8 +418,14 @@ const CodeIntelligencePolicyTable: FunctionComponent<CodeIntelligencePolicyTable
                                 <p className="text-muted mt-2">Data retention and auto-indexing disabled.</p>
                             ) : (
                                 <>
-                                    <p className="mt-2">{describeRetentionPolicy(policy)}</p>
-                                    {indexingEnabled && <p className="mt-2">{describeIndexingPolicy(policy)}</p>}
+                                    <p className="mt-2">
+                                        <DescribeRetentionPolicy policy={policy} />
+                                    </p>
+                                    {indexingEnabled && (
+                                        <p className="mt-2">
+                                            <DescribeIndexingPolicy policy={policy} />
+                                        </p>
+                                    )}
                                 </>
                             )}
                         </div>
