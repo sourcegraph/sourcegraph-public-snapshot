@@ -29,7 +29,7 @@ export const DependencyOrDependentNode: FunctionComponent<DependencyOrDependentN
             </div>
 
             <div>
-                <span className="mr-2 d-block d-md-inline-block">
+                <span className="mr-2 d-block d-mdinline-block">
                     Directory <CodeIntelUploadOrIndexRoot node={node} /> indexed at commit{' '}
                     <CodeIntelUploadOrIndexCommit node={node} /> by <CodeIntelUploadOrIndexIndexer node={node} />
                 </span>

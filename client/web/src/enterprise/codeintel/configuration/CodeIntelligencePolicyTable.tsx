@@ -39,7 +39,7 @@ export const CodeIntelligencePolicyTable: FunctionComponent<CodeIntelligencePoli
                     </div>
 
                     <div>
-                        <div className="mr-2 d-block d-md-inline-block">
+                        <div className="mr-2 d-block d-mdinline-block">
                             Applied to{' '}
                             {policy.type === GitObjectType.GIT_COMMIT
                                 ? 'commits'
