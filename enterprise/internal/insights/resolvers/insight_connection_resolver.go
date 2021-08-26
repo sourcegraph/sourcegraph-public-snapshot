@@ -4,6 +4,7 @@ import (
 	"context"
 	"sort"
 	"strconv"
+	"strings"
 	"sync"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
@@ -76,7 +77,7 @@ func (r *insightConnectionResolver) compute(ctx context.Context) ([]types.Insigh
 		// until insights has a full graphql api
 		for _, insight := range mapped {
 			sort.Slice(insight.Series, func(i, j int) bool {
-				return insight.Series[i].Query < insight.Series[j].Query
+				return strings.ToUpper(insight.Series[i].Query) < strings.ToUpper(insight.Series[j].Query)
 			})
 		}
 
