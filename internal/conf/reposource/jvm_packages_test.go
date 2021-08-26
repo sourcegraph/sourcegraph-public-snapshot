@@ -33,6 +33,7 @@ func TestGreaterThan(t *testing.T) {
 func TestSortDependencies(t *testing.T) {
 	dependencies := []MavenDependency{
 		ParseMavenDependencyOrPanic(t, "a:c:1.2.0"),
+		ParseMavenDependencyOrPanic(t, "a:b:1.2.0.Final"),
 		ParseMavenDependencyOrPanic(t, "a:a:1.2.0"),
 		ParseMavenDependencyOrPanic(t, "a:b:1.2.0"),
 		ParseMavenDependencyOrPanic(t, "a:b:1.11.0"),
@@ -46,6 +47,7 @@ func TestSortDependencies(t *testing.T) {
 		ParseMavenDependencyOrPanic(t, "a:c:1.2.0"),
 		ParseMavenDependencyOrPanic(t, "a:b:1.11.0"),
 		ParseMavenDependencyOrPanic(t, "a:b:1.2.0"),
+		ParseMavenDependencyOrPanic(t, "a:b:1.2.0.Final"),
 		ParseMavenDependencyOrPanic(t, "a:b:1.2.0-RC11"),
 		ParseMavenDependencyOrPanic(t, "a:b:1.2.0-RC1"),
 		ParseMavenDependencyOrPanic(t, "a:b:1.2.0-M11"),
