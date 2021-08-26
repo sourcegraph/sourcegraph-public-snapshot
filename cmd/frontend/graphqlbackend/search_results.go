@@ -645,7 +645,7 @@ func (r *searchResolver) evaluateLeaf(ctx context.Context, args *search.TextPara
 		tr.Finish()
 	}()
 
-	return r.resultsWithTimeoutSuggestion(ctx, args, jobs)
+	return r.doResults(ctx, args, jobs)
 }
 
 // union returns the union of two sets of search results and merges common search data.
@@ -1147,31 +1147,6 @@ func searchResultsToFileNodes(matches []result.Match) ([]query.Node, error) {
 	}
 
 	return nodes, nil
-}
-
-// resultsWithTimeoutSuggestion calls doResults, and in case of deadline
-// exceeded returns a search alert with a did-you-mean link for the same
-// query with a longer timeout.
-func (r *searchResolver) resultsWithTimeoutSuggestion(ctx context.Context, args *search.TextParameters, jobs []run.Job) (*SearchResults, error) {
-	start := time.Now()
-	rr, err := r.doResults(ctx, args, jobs)
-
-	// If we encountered a context timeout, it indicates one of the many result
-	// type searchers (file, diff, symbol, etc) completely timed out and could not
-	// produce even partial results. Other searcher types may have produced results.
-	//
-	// In this case, or if we got a partial timeout where ALL repositories timed out,
-	// we do not return partial results and instead display a timeout alert.
-	shouldShowAlert := errors.Is(err, context.DeadlineExceeded)
-	if err == nil && rr.Stats.AllReposTimedOut() {
-		shouldShowAlert = true
-	}
-	if shouldShowAlert {
-		usedTime := time.Since(start)
-		suggestTime := longer(2, usedTime)
-		return alertForTimeout(usedTime, suggestTime, r).wrapResults(), nil
-	}
-	return rr, err
 }
 
 // substitutePredicates replaces all the predicates in a query with their expanded form. The predicates
