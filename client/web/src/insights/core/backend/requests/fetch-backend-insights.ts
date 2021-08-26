@@ -28,6 +28,7 @@ const insightFieldsFragment = gql`
                 pendingJobs
                 completedJobs
                 failedJobs
+                backfillQueuedAt
             }
         }
     }

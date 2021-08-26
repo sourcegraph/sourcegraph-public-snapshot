@@ -2,7 +2,9 @@ package resolvers
 
 import (
 	"context"
+	"sort"
 	"strconv"
+	"strings"
 	"sync"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
@@ -70,6 +72,15 @@ func (r *insightConnectionResolver) compute(ctx context.Context) ([]types.Insigh
 			r.err = err
 			return
 		}
+		// currently insight metadata is partially stored in user settings. Series will be joined with their appropriate
+		// metadata by sorting based on query text, and joining in the frontend. This is largely a temporary solution
+		// until insights has a full graphql api
+		for _, insight := range mapped {
+			sort.Slice(insight.Series, func(i, j int) bool {
+				return strings.ToUpper(insight.Series[i].Query) < strings.ToUpper(insight.Series[j].Query)
+			})
+		}
+
 		r.insights = mapped
 	})
 	return r.insights, r.next, r.err

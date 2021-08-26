@@ -211,6 +211,7 @@ export const BACKEND_INSIGHTS = [
                     pendingJobs: 0,
                     completedJobs: 0,
                     failedJobs: 0,
+                    backfillQueuedAt: '2021-02-11T00:00:00Z',
                 },
             },
         ],

@@ -13,6 +13,7 @@ import (
 	"github.com/cockroachdb/errors"
 	"github.com/stretchr/testify/assert"
 
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/jvmpackages/coursier"
 	"github.com/sourcegraph/sourcegraph/internal/vcs"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -130,9 +131,10 @@ func TestJVMCloneCommand(t *testing.T) {
 
 	coursier.CoursierBinary = coursierScript(t, dir)
 
-	s := JVMPackagesSyncer{Config: &schema.JVMPackagesConnection{
-		Maven: &schema.Maven{Dependencies: []string{}},
-	}}
+	s := JVMPackagesSyncer{
+		Config:  &schema.JVMPackagesConnection{Maven: &schema.Maven{Dependencies: []string{}}},
+		DBStore: &simpleJVMPackageDBStoreMock{},
+	}
 	bareGitDirectory := path.Join(dir, "git")
 
 	s.runCloneCommand(t, bareGitDirectory, []string{examplePackageDependency})
@@ -190,4 +192,10 @@ func TestJVMCloneCommand(t *testing.T) {
 		bareGitDirectory,
 		"v1.0.0\n", // verify that the v2.0.0 tag has been removed.
 	)
+}
+
+type simpleJVMPackageDBStoreMock struct{}
+
+func (m *simpleJVMPackageDBStoreMock) GetJVMDependencyRepos(ctx context.Context, filter dbstore.GetJVMDependencyReposOpts) ([]dbstore.JVMDependencyRepo, error) {
+	return []dbstore.JVMDependencyRepo{}, nil
 }

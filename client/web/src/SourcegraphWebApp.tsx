@@ -73,6 +73,7 @@ import {
     updateSearchContext,
     deleteSearchContext,
     getUserSearchContextNamespaces,
+    fetchSearchContextBySpec,
 } from './search/backend'
 import { QueryState } from './search/helpers'
 import { TemporarySettingsProvider } from './settings/temporary/TemporarySettingsProvider'
@@ -536,6 +537,7 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
                                                 getUserSearchContextNamespaces={getUserSearchContextNamespaces}
                                                 fetchAutoDefinedSearchContexts={fetchAutoDefinedSearchContexts}
                                                 fetchSearchContexts={fetchSearchContexts}
+                                                fetchSearchContextBySpec={fetchSearchContextBySpec}
                                                 fetchSearchContext={fetchSearchContext}
                                                 createSearchContext={createSearchContext}
                                                 updateSearchContext={updateSearchContext}

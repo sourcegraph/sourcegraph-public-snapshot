@@ -11,7 +11,7 @@ import (
 func Worker() *monitoring.Container {
 	const containerName = "worker"
 
-	var workerJobs = []struct {
+	workerJobs := []struct {
 		Name  string
 		Owner monitoring.ObservableOwner
 	}{
@@ -99,6 +99,7 @@ func Worker() *monitoring.Container {
 			shared.CodeIntelligence.NewLSIFStoreGroup(containerName),
 			shared.CodeIntelligence.NewDependencyIndexDBWorkerStoreGroup(containerName),
 			shared.CodeIntelligence.NewGitserverClientGroup(containerName),
+			shared.CodeIntelligence.NewDependencyReposStoreGroup(containerName),
 
 			// src_codeintel_background_upload_resets_total
 			// src_codeintel_background_upload_reset_failures_total
@@ -159,6 +160,10 @@ func Worker() *monitoring.Container {
 				RecordResetFailures: shared.NoAlertsOption("none"),
 				Errors:              shared.NoAlertsOption("none"),
 			}),
+			shared.CodeInsights.NewInsightsQueryRunnerQueueGroup(containerName),
+			shared.CodeInsights.NewInsightsQueryRunnerWorkerGroup(containerName),
+			shared.CodeInsights.NewInsightsQueryRunnerResetterGroup(containerName),
+			shared.CodeInsights.NewInsightsQueryRunnerStoreGroup(containerName),
 
 			// Resource monitoring
 			shared.NewFrontendInternalAPIErrorResponseMonitoringGroup(containerName, monitoring.ObservableOwnerCodeIntel, nil),

@@ -38,6 +38,7 @@ export interface ExtensionsAreaRouteContext
     subject: Pick<GQL.ISettingsSubject, 'id' | 'viewerCanAdminister'>
     extensionAreaRoutes: readonly ExtensionAreaRoute[]
     extensionAreaHeaderNavItems: readonly ExtensionAreaHeaderNavItem[]
+    isSourcegraphDotCom: boolean
 }
 
 interface ExtensionsAreaProps
@@ -57,6 +58,7 @@ interface ExtensionsAreaProps
     extensionAreaRoutes: readonly ExtensionAreaRoute[]
     extensionsAreaHeaderActionButtons: readonly ExtensionsAreaHeaderActionButton[]
     extensionAreaHeaderNavItems: readonly ExtensionAreaHeaderNavItem[]
+    isSourcegraphDotCom: boolean
 }
 
 /**
@@ -77,6 +79,7 @@ export const ExtensionsArea: React.FunctionComponent<ExtensionsAreaProps> = prop
         extensionAreaRoutes: props.extensionAreaRoutes,
         extensionAreaHeaderNavItems: props.extensionAreaHeaderNavItems,
         isLightTheme: props.isLightTheme,
+        isSourcegraphDotCom: props.isSourcegraphDotCom,
         telemetryService: props.telemetryService,
         ...childBreadcrumbSetters,
     }

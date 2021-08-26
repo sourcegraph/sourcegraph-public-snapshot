@@ -226,7 +226,7 @@ export const TreePage: React.FunctionComponent<Props> = ({
     const showCodeInsights =
         !isErrorLike(settingsCascade.final) &&
         !!settingsCascade.final?.experimentalFeatures?.codeInsights &&
-        settingsCascade.final['insights.displayLocation.directory'] !== false
+        settingsCascade.final['insights.displayLocation.directory'] === true
 
     // Add DirectoryViewer
     const uri = toURIWithPath({ repoName: repo.name, commitID, filePath })

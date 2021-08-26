@@ -37,9 +37,11 @@ type handler struct {
 	budgetRemaining int64
 }
 
-var _ workerutil.Handler = &handler{}
-var _ workerutil.WithPreDequeue = &handler{}
-var _ workerutil.WithHooks = &handler{}
+var (
+	_ workerutil.Handler        = &handler{}
+	_ workerutil.WithPreDequeue = &handler{}
+	_ workerutil.WithHooks      = &handler{}
+)
 
 func (h *handler) Handle(ctx context.Context, record workerutil.Record) error {
 	_, err := h.handle(ctx, record.(store.Upload))

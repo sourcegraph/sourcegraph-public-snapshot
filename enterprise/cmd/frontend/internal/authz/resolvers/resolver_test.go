@@ -274,7 +274,7 @@ func TestResolver_ScheduleUserPermissionsSync(t *testing.T) {
 		})
 
 		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
-		result, err := (&Resolver{store: edb.Perms(db, timeutil.Now)}).ScheduleUserPermissionsSync(ctx, &graphqlbackend.UserIDArgs{})
+		result, err := (&Resolver{store: edb.Perms(db, timeutil.Now)}).ScheduleUserPermissionsSync(ctx, &graphqlbackend.UserPermissionsSyncArgs{})
 		if want := backend.ErrMustBeSiteAdmin; err != want {
 			t.Errorf("err: want %q but got %v", want, err)
 		}
@@ -290,23 +290,51 @@ func TestResolver_ScheduleUserPermissionsSync(t *testing.T) {
 		database.Mocks.Users = database.MockUsers{}
 	})
 
-	r := &Resolver{
-		store: edb.Perms(db, timeutil.Now),
-		repoupdaterClient: &fakeRepoupdaterClient{
-			mockSchedulePermsSync: func(ctx context.Context, args protocol.PermsSyncRequest) error {
-				if len(args.UserIDs) != 1 {
-					return errors.Errorf("UserIDs: want 1 id but got %d", len(args.UserIDs))
-				}
-				return nil
+	t.Run("queue a user", func(t *testing.T) {
+		r := &Resolver{
+			store: edb.Perms(db, timeutil.Now),
+			repoupdaterClient: &fakeRepoupdaterClient{
+				mockSchedulePermsSync: func(ctx context.Context, args protocol.PermsSyncRequest) error {
+					if len(args.UserIDs) != 1 {
+						return errors.Errorf("UserIDs: want 1 id but got %d", len(args.UserIDs))
+					}
+					return nil
+				},
 			},
-		},
-	}
-	_, err := r.ScheduleUserPermissionsSync(context.Background(), &graphqlbackend.UserIDArgs{
-		User: graphqlbackend.MarshalUserID(1),
+		}
+		_, err := r.ScheduleUserPermissionsSync(context.Background(), &graphqlbackend.UserPermissionsSyncArgs{
+			User: graphqlbackend.MarshalUserID(1),
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
 	})
-	if err != nil {
-		t.Fatal(err)
-	}
+
+	t.Run("queue a user with options", func(t *testing.T) {
+		r := &Resolver{
+			store: edb.Perms(db, timeutil.Now),
+			repoupdaterClient: &fakeRepoupdaterClient{
+				mockSchedulePermsSync: func(ctx context.Context, args protocol.PermsSyncRequest) error {
+					if len(args.UserIDs) != 1 {
+						return errors.Errorf("UserIDs: want 1 id but got %d", len(args.UserIDs))
+					}
+					if !args.Options.InvalidateCaches {
+						return errors.Errorf("Options.InvalidateCaches: expected true but got false")
+					}
+					return nil
+				},
+			},
+		}
+		trueVal := true
+		_, err := r.ScheduleUserPermissionsSync(context.Background(), &graphqlbackend.UserPermissionsSyncArgs{
+			User:    graphqlbackend.MarshalUserID(1),
+			Options: &struct{ InvalidateCaches *bool }{InvalidateCaches: &trueVal},
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+	})
+
 }
 
 type fakeRepoupdaterClient struct {

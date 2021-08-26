@@ -1335,6 +1335,72 @@ Repositories removed due to disk pressure
 
 <br />
 
+### Git Server: Codeintel: Coursier invocation stats
+
+#### gitserver: codeintel_coursier_total
+
+This panel indicates aggregate invocations operations every 5m.
+
+<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
+
+<br />
+
+#### gitserver: codeintel_coursier_99th_percentile_duration
+
+This panel indicates 99th percentile successful aggregate invocations operation duration over 5m.
+
+<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
+
+<br />
+
+#### gitserver: codeintel_coursier_errors_total
+
+This panel indicates aggregate invocations operation errors every 5m.
+
+<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
+
+<br />
+
+#### gitserver: codeintel_coursier_error_rate
+
+This panel indicates aggregate invocations operation error rate over 5m.
+
+<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
+
+<br />
+
+#### gitserver: codeintel_coursier_total
+
+This panel indicates invocations operations every 5m.
+
+<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
+
+<br />
+
+#### gitserver: codeintel_coursier_99th_percentile_duration
+
+This panel indicates 99th percentile successful invocations operation duration over 5m.
+
+<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
+
+<br />
+
+#### gitserver: codeintel_coursier_errors_total
+
+This panel indicates invocations operation errors every 5m.
+
+<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
+
+<br />
+
+#### gitserver: codeintel_coursier_error_rate
+
+This panel indicates invocations operation error rate over 5m.
+
+<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
+
+<br />
+
 ### Git Server: Database connections
 
 #### gitserver: max_open_conns
@@ -3145,6 +3211,72 @@ This panel indicates client operation error rate over 5m.
 
 <br />
 
+### Worker: Codeintel: Dependency repository insert
+
+#### worker: codeintel_dependency_repos_total
+
+This panel indicates aggregate insert operations every 5m.
+
+<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
+
+<br />
+
+#### worker: codeintel_dependency_repos_99th_percentile_duration
+
+This panel indicates 99th percentile successful aggregate insert operation duration over 5m.
+
+<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
+
+<br />
+
+#### worker: codeintel_dependency_repos_errors_total
+
+This panel indicates aggregate insert operation errors every 5m.
+
+<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
+
+<br />
+
+#### worker: codeintel_dependency_repos_error_rate
+
+This panel indicates aggregate insert operation error rate over 5m.
+
+<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
+
+<br />
+
+#### worker: codeintel_dependency_repos_total
+
+This panel indicates insert operations every 5m.
+
+<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
+
+<br />
+
+#### worker: codeintel_dependency_repos_99th_percentile_duration
+
+This panel indicates 99th percentile successful insert operation duration over 5m.
+
+<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
+
+<br />
+
+#### worker: codeintel_dependency_repos_errors_total
+
+This panel indicates insert operation errors every 5m.
+
+<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
+
+<br />
+
+#### worker: codeintel_dependency_repos_error_rate
+
+This panel indicates insert operation error rate over 5m.
+
+<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
+
+<br />
+
 ### Worker: Codeintel: lsif_upload record resetter
 
 #### worker: codeintel_background_upload_record_resets_total
@@ -3220,6 +3352,164 @@ This panel indicates lsif_dependency_index records reset to errored state every 
 This panel indicates lsif_dependency_index operation errors every 5m.
 
 <sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
+
+<br />
+
+### Worker: Codeinsights: Query Runner Queue
+
+#### worker: insights_search_queue_queue_size
+
+This panel indicates code insights search queue queue size.
+
+<sub>*Managed by the [Sourcegraph Code-insights team](https://about.sourcegraph.com/handbook/engineering/code-insights).*</sub>
+
+<br />
+
+#### worker: insights_search_queue_queue_growth_rate
+
+This panel indicates code insights search queue queue growth rate over 30m.
+
+This value compares the rate of enqueues against the rate of finished jobs.
+
+	- A value < than 1 indicates that process rate > enqueue rate
+	- A value = than 1 indicates that process rate = enqueue rate
+	- A value > than 1 indicates that process rate < enqueue rate
+
+<sub>*Managed by the [Sourcegraph Code-insights team](https://about.sourcegraph.com/handbook/engineering/code-insights).*</sub>
+
+<br />
+
+### Worker: Codeinsights: insights queue processor
+
+#### worker: insights_search_queue_handlers
+
+This panel indicates handler active handlers.
+
+<sub>*Managed by the [Sourcegraph Code-insights team](https://about.sourcegraph.com/handbook/engineering/code-insights).*</sub>
+
+<br />
+
+#### worker: insights_search_queue_processor_total
+
+This panel indicates handler operations every 5m.
+
+<sub>*Managed by the [Sourcegraph Code-insights team](https://about.sourcegraph.com/handbook/engineering/code-insights).*</sub>
+
+<br />
+
+#### worker: insights_search_queue_processor_99th_percentile_duration
+
+This panel indicates 99th percentile successful handler operation duration over 5m.
+
+<sub>*Managed by the [Sourcegraph Code-insights team](https://about.sourcegraph.com/handbook/engineering/code-insights).*</sub>
+
+<br />
+
+#### worker: insights_search_queue_processor_errors_total
+
+This panel indicates handler operation errors every 5m.
+
+<sub>*Managed by the [Sourcegraph Code-insights team](https://about.sourcegraph.com/handbook/engineering/code-insights).*</sub>
+
+<br />
+
+#### worker: insights_search_queue_processor_error_rate
+
+This panel indicates handler operation error rate over 5m.
+
+<sub>*Managed by the [Sourcegraph Code-insights team](https://about.sourcegraph.com/handbook/engineering/code-insights).*</sub>
+
+<br />
+
+### Worker: Codeinsights: code insights search queue record resetter
+
+#### worker: insights_search_queue_record_resets_total
+
+This panel indicates insights_search_queue records reset to queued state every 5m.
+
+<sub>*Managed by the [Sourcegraph Code-insights team](https://about.sourcegraph.com/handbook/engineering/code-insights).*</sub>
+
+<br />
+
+#### worker: insights_search_queue_record_reset_failures_total
+
+This panel indicates insights_search_queue records reset to errored state every 5m.
+
+<sub>*Managed by the [Sourcegraph Code-insights team](https://about.sourcegraph.com/handbook/engineering/code-insights).*</sub>
+
+<br />
+
+#### worker: insights_search_queue_record_reset_errors_total
+
+This panel indicates insights_search_queue operation errors every 5m.
+
+<sub>*Managed by the [Sourcegraph Code-insights team](https://about.sourcegraph.com/handbook/engineering/code-insights).*</sub>
+
+<br />
+
+### Worker: Codeinsights: dbstore stats
+
+#### worker: workerutil_dbworker_store_insights_query_runner_jobs_store_total
+
+This panel indicates aggregate store operations every 5m.
+
+<sub>*Managed by the [Sourcegraph Code-insights team](https://about.sourcegraph.com/handbook/engineering/code-insights).*</sub>
+
+<br />
+
+#### worker: workerutil_dbworker_store_insights_query_runner_jobs_store_99th_percentile_duration
+
+This panel indicates 99th percentile successful aggregate store operation duration over 5m.
+
+<sub>*Managed by the [Sourcegraph Code-insights team](https://about.sourcegraph.com/handbook/engineering/code-insights).*</sub>
+
+<br />
+
+#### worker: workerutil_dbworker_store_insights_query_runner_jobs_store_errors_total
+
+This panel indicates aggregate store operation errors every 5m.
+
+<sub>*Managed by the [Sourcegraph Code-insights team](https://about.sourcegraph.com/handbook/engineering/code-insights).*</sub>
+
+<br />
+
+#### worker: workerutil_dbworker_store_insights_query_runner_jobs_store_error_rate
+
+This panel indicates aggregate store operation error rate over 5m.
+
+<sub>*Managed by the [Sourcegraph Code-insights team](https://about.sourcegraph.com/handbook/engineering/code-insights).*</sub>
+
+<br />
+
+#### worker: workerutil_dbworker_store_insights_query_runner_jobs_store_total
+
+This panel indicates store operations every 5m.
+
+<sub>*Managed by the [Sourcegraph Code-insights team](https://about.sourcegraph.com/handbook/engineering/code-insights).*</sub>
+
+<br />
+
+#### worker: workerutil_dbworker_store_insights_query_runner_jobs_store_99th_percentile_duration
+
+This panel indicates 99th percentile successful store operation duration over 5m.
+
+<sub>*Managed by the [Sourcegraph Code-insights team](https://about.sourcegraph.com/handbook/engineering/code-insights).*</sub>
+
+<br />
+
+#### worker: workerutil_dbworker_store_insights_query_runner_jobs_store_errors_total
+
+This panel indicates store operation errors every 5m.
+
+<sub>*Managed by the [Sourcegraph Code-insights team](https://about.sourcegraph.com/handbook/engineering/code-insights).*</sub>
+
+<br />
+
+#### worker: workerutil_dbworker_store_insights_query_runner_jobs_store_error_rate
+
+This panel indicates store operation error rate over 5m.
+
+<sub>*Managed by the [Sourcegraph Code-insights team](https://about.sourcegraph.com/handbook/engineering/code-insights).*</sub>
 
 <br />
 
@@ -3857,6 +4147,72 @@ This panel indicates store operation errors every 5m.
 This panel indicates store operation error rate over 5m.
 
 <sub>*Managed by the [Sourcegraph Batches team](https://about.sourcegraph.com/handbook/engineering/batches).*</sub>
+
+<br />
+
+### Repo Updater: Codeintel: Coursier invocation stats
+
+#### repo-updater: codeintel_coursier_total
+
+This panel indicates aggregate invocations operations every 5m.
+
+<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
+
+<br />
+
+#### repo-updater: codeintel_coursier_99th_percentile_duration
+
+This panel indicates 99th percentile successful aggregate invocations operation duration over 5m.
+
+<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
+
+<br />
+
+#### repo-updater: codeintel_coursier_errors_total
+
+This panel indicates aggregate invocations operation errors every 5m.
+
+<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
+
+<br />
+
+#### repo-updater: codeintel_coursier_error_rate
+
+This panel indicates aggregate invocations operation error rate over 5m.
+
+<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
+
+<br />
+
+#### repo-updater: codeintel_coursier_total
+
+This panel indicates invocations operations every 5m.
+
+<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
+
+<br />
+
+#### repo-updater: codeintel_coursier_99th_percentile_duration
+
+This panel indicates 99th percentile successful invocations operation duration over 5m.
+
+<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
+
+<br />
+
+#### repo-updater: codeintel_coursier_errors_total
+
+This panel indicates invocations operation errors every 5m.
+
+<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
+
+<br />
+
+#### repo-updater: codeintel_coursier_error_rate
+
+This panel indicates invocations operation error rate over 5m.
+
+<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
 
 <br />
 

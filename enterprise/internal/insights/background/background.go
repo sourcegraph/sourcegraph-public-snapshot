@@ -40,9 +40,11 @@ func GetBackgroundJobs(ctx context.Context, mainAppDB *sql.DB, insightsDB *sql.D
 		Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
 		Registerer: prometheus.DefaultRegisterer,
 	}
-	queryRunnerWorkerMetrics, queryRunnerResetterMetrics := newWorkerMetrics(observationContext, "query_runner_worker")
+	queryRunnerWorkerMetrics, queryRunnerResetterMetrics := newWorkerMetrics(observationContext, "insights_search_queue")
 
 	insightsMetadataStore := store.NewInsightStore(insightsDB)
+
+	workerStore := queryrunner.CreateDBWorkerStore(workerBaseStore, observationContext)
 
 	// Start background goroutines for all of our workers.
 	routines := []goroutine.BackgroundRoutine{
@@ -51,8 +53,8 @@ func GetBackgroundJobs(ctx context.Context, mainAppDB *sql.DB, insightsDB *sql.D
 
 		// Register the query-runner worker and resetter, which executes search queries and records
 		// results to TimescaleDB.
-		queryrunner.NewWorker(ctx, workerBaseStore, insightsStore, queryRunnerWorkerMetrics),
-		queryrunner.NewResetter(ctx, workerBaseStore, queryRunnerResetterMetrics),
+		queryrunner.NewWorker(ctx, workerStore, insightsStore, queryRunnerWorkerMetrics),
+		queryrunner.NewResetter(ctx, workerStore, queryRunnerResetterMetrics),
 		// disabling the cleaner job while we debug mismatched results from historical insights
 		queryrunner.NewCleaner(ctx, workerBaseStore, observationContext),
 
@@ -83,29 +85,7 @@ func GetBackgroundJobs(ctx context.Context, mainAppDB *sql.DB, insightsDB *sql.D
 // Individual insights workers may then _also_ want to register their own metrics, if desired, in
 // their NewWorker functions.
 func newWorkerMetrics(observationContext *observation.Context, workerName string) (workerutil.WorkerMetrics, dbworker.ResetterMetrics) {
-	workerResets := prometheus.NewCounter(prometheus.CounterOpts{
-		Name: "src_insights_" + workerName + "_resets_total",
-		Help: "The number of times work took too long and was reset for retry later.",
-	})
-	observationContext.Registerer.MustRegister(workerResets)
-
-	workerResetFailures := prometheus.NewCounter(prometheus.CounterOpts{
-		Name: "src_insights_" + workerName + "_reset_failures_total",
-		Help: "The number of times work took too long so many times that retries will no longer happen.",
-	})
-	observationContext.Registerer.MustRegister(workerResetFailures)
-
-	workerErrors := prometheus.NewCounter(prometheus.CounterOpts{
-		Name: "src_insights_" + workerName + "_reset_errors_total",
-		Help: "The number of errors that occurred during a worker job.",
-	})
-	observationContext.Registerer.MustRegister(workerErrors)
-
-	workerMetrics := workerutil.NewMetrics(observationContext, "insights_"+workerName, nil)
-	resetterMetrics := dbworker.ResetterMetrics{
-		RecordResets:        workerResets,
-		RecordResetFailures: workerResetFailures,
-		Errors:              workerErrors,
-	}
-	return workerMetrics, resetterMetrics
+	workerMetrics := workerutil.NewMetrics(observationContext, workerName+"_processor", nil)
+	resetterMetrics := dbworker.NewMetrics(observationContext, workerName)
+	return workerMetrics, *resetterMetrics
 }

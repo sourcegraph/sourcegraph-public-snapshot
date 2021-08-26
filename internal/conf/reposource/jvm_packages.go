@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"net/url"
 	"sort"
+	"strconv"
 	"strings"
-
-	"github.com/Masterminds/semver"
+	"unicode"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 )
@@ -16,7 +16,7 @@ type MavenModule struct {
 	ArtifactID string
 }
 
-func (m *MavenModule) IsJdk() bool {
+func (m *MavenModule) IsJDK() bool {
 	return *m == jdkModule()
 }
 
@@ -29,13 +29,14 @@ func (m *MavenModule) SortText() string {
 }
 
 func (m *MavenModule) LsifJavaKind() string {
-	if m.IsJdk() {
+	if m.IsJDK() {
 		return "jdk"
 	}
 	return "maven"
 }
+
 func (m *MavenModule) RepoName() api.RepoName {
-	if m.IsJdk() {
+	if m.IsJDK() {
 		return "jdk"
 	}
 	return api.RepoName(fmt.Sprintf("maven/%s/%s", m.GroupID, m.ArtifactID))
@@ -48,8 +49,7 @@ func (m *MavenModule) CloneURL() string {
 
 type MavenDependency struct {
 	MavenModule
-	Version         string
-	SemanticVersion *semver.Version
+	Version string
 }
 
 // SortDependencies sorts the dependencies by the semantic version in descending
@@ -58,54 +58,46 @@ type MavenDependency struct {
 func SortDependencies(dependencies []MavenDependency) {
 	sort.Slice(dependencies, func(i, j int) bool {
 		if dependencies[i].MavenModule == dependencies[j].MavenModule {
-			return dependencies[i].SemanticVersion.GreaterThan(dependencies[j].SemanticVersion)
+			return versionGreaterThan(dependencies[i].Version, dependencies[j].Version)
 		}
 		return dependencies[i].MavenModule.SortText() > dependencies[j].MavenModule.SortText()
 	})
 }
 
-func (d *MavenDependency) IsJdk() bool {
-	return d.MavenModule.IsJdk()
+func (d MavenDependency) IsJDK() bool {
+	return d.MavenModule.IsJDK()
 }
 
-func (d *MavenDependency) CoursierSyntax() string {
+func (d MavenDependency) CoursierSyntax() string {
 	return fmt.Sprintf("%s:%s:%s", d.MavenModule.GroupID, d.MavenModule.ArtifactID, d.Version)
 }
 
-func (d *MavenDependency) GitTagFromVersion() string {
+func (d MavenDependency) GitTagFromVersion() string {
 	return "v" + d.Version
 }
 
-func (m *MavenDependency) LsifJavaDependencies() []string {
-	if m.IsJdk() {
+func (d MavenDependency) LsifJavaDependencies() []string {
+	if d.IsJDK() {
 		return []string{}
 	}
-	return []string{m.CoursierSyntax()}
+	return []string{d.CoursierSyntax()}
 }
 
+// ParseMavenDependency parses a dependency string in the Coursier format (colon seperated group ID, artifact ID and version)
+// into a MavenDependency.
 func ParseMavenDependency(dependency string) (MavenDependency, error) {
 	parts := strings.Split(dependency, ":")
 	if len(parts) < 3 {
 		return MavenDependency{}, fmt.Errorf("dependency %q must contain at least two colon ':' characters", dependency)
-
 	}
 	version := parts[2]
-
-	// Ignore error from semantic version parsing because we only use the
-	// semantic version for sorting dependencies, which falls back to
-	// lexicographical ordering if the semantic version is missing. We can't
-	// guarantee that every published Java package has a valid semantic
-	// version according to the implementation of the Go-lang semver
-	// package.
-	semanticVersion, _ := semver.NewVersion(version)
 
 	return MavenDependency{
 		MavenModule: MavenModule{
 			GroupID:    parts[0],
 			ArtifactID: parts[1],
 		},
-		Version:         version,
-		SemanticVersion: semanticVersion,
+		Version: version,
 	}, nil
 }
 
@@ -139,4 +131,58 @@ func jdkModule() MavenModule {
 		GroupID:    "jdk",
 		ArtifactID: "jdk",
 	}
+}
+
+// versionGreaterThan return true if the version string a is "greater" than the
+// version string b using psuedo semantic versioning. Java package versions can
+// be arbitrary strings so this method must always succeed even if a version is
+// not using the semantic version format. The comparison is lexicographical by
+// default except for the digit parts which are compared numerically. For
+// example, versionGreaterThan return true when comparing 11.2.0 and 2.2.0
+// because the number 11 is larger than 2 (even if "2" is lexicographically
+// larger than "11").
+func versionGreaterThan(version1, version2 string) bool {
+	index := 0
+	end := len(version1)
+	if len(version2) < end {
+		end = len(version2)
+	}
+	for index < end {
+		rune1 := rune(version1[index])
+		rune2 := rune(version2[index])
+		if unicode.IsDigit(rune1) && unicode.IsDigit(rune2) {
+			int1 := versionParseInt(index, version1)
+			int2 := versionParseInt(index, version2)
+			if int1 == int2 {
+				index = versionNextNonDigitOffset(index, version1)
+			} else {
+				return int1 > int2
+			}
+		} else {
+			if rune1 == rune2 {
+				index += 1
+			} else {
+				return rune1 > rune2
+			}
+		}
+	}
+	return len(version1) < len(version2)
+}
+
+// versionParseInt returns the integer value of the number that appears at given
+// index of the given string.
+func versionParseInt(index int, a string) int {
+	end := versionNextNonDigitOffset(index, a)
+	value, _ := strconv.Atoi(a[index:end])
+	return value
+}
+
+// versionNextNonDigitOffset returns the offset of the next non-digit character
+// of the given string starting at the given index.
+func versionNextNonDigitOffset(index int, b string) int {
+	offset := index
+	for offset < len(b) && unicode.IsDigit(rune(b[offset])) {
+		offset += 1
+	}
+	return offset
 }

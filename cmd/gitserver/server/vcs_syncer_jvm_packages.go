@@ -18,8 +18,10 @@ import (
 	"github.com/cockroachdb/errors"
 	"github.com/inconshreveable/log15"
 
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/jvmpackages/coursier"
+	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/vcs"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -35,7 +37,8 @@ const (
 )
 
 type JVMPackagesSyncer struct {
-	Config *schema.JVMPackagesConnection
+	Config  *schema.JVMPackagesConnection
+	DBStore repos.JVMPackagesRepoStore
 }
 
 var _ VCSSyncer = &JVMPackagesSyncer{}
@@ -161,6 +164,7 @@ func (s *JVMPackagesSyncer) packageDependencies(ctx context.Context, repoUrlPath
 		return nil, err
 	}
 
+	var totalConfigMatched int
 	for _, dependency := range s.MavenDependencies() {
 		if module.MatchesDependencyString(dependency) {
 			dependency, err := reposource.ParseMavenDependency(dependency)
@@ -169,6 +173,7 @@ func (s *JVMPackagesSyncer) packageDependencies(ctx context.Context, repoUrlPath
 			}
 
 			if coursier.Exists(ctx, s.Config, dependency) {
+				totalConfigMatched++
 				dependencies = append(dependencies, dependency)
 			}
 			// Silently ignore non-existent dependencies because
@@ -177,10 +182,36 @@ func (s *JVMPackagesSyncer) packageDependencies(ctx context.Context, repoUrlPath
 		}
 	}
 
+	dbDeps, err := s.DBStore.GetJVMDependencyRepos(ctx, dbstore.GetJVMDependencyReposOpts{
+		ArtifactName: repoUrlPath,
+	})
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to get JVM dependency repos from database", "repoPath", repoUrlPath)
+	}
+
+	var totalDBMatched int
+	for _, dep := range dbDeps {
+		parsedModule, err := reposource.ParseMavenModule(dep.Module)
+		if err != nil {
+			log15.Warn("error parsing maven module", "error", err, "module", dep.Module)
+			continue
+		}
+		if module == parsedModule {
+			dependency := reposource.MavenDependency{
+				MavenModule: parsedModule,
+				Version:     dep.Version,
+			}
+			// we dont call coursier.Exists here, as existance should be verified by repo-updater
+			totalDBMatched++
+			dependencies = append(dependencies, dependency)
+		}
+	}
+
 	if len(dependencies) == 0 {
 		return nil, errors.Errorf("no JVM dependencies for URL path %s", repoUrlPath)
 	}
 
+	log15.Info("fetched maven artifact for repo path", "repoPath", repoUrlPath, "totalDB", totalDBMatched, "totalConfig", totalConfigMatched)
 	reposource.SortDependencies(dependencies)
 	return dependencies, nil
 }
@@ -365,7 +396,7 @@ func copyZipFileEntry(reader *zip.ReadCloser, entry *zip.File, outputPath string
 // the bytecode in the given jar file.
 func inferJVMVersionFromByteCode(ctx context.Context, connection *schema.JVMPackagesConnection,
 	dependency reposource.MavenDependency) (string, error) {
-	if dependency.IsJdk() {
+	if dependency.IsJDK() {
 		return dependency.Version, nil
 	}
 

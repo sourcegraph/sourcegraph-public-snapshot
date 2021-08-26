@@ -48,6 +48,7 @@ func (r *RateLimitSyncer) SyncRateLimiters(ctx context.Context) error {
 
 	for {
 		services, err := r.serviceLister.List(ctx, database.ExternalServicesListOptions{
+			NoNamespace: true,
 			LimitOffset: &cursor,
 		})
 		if err != nil {

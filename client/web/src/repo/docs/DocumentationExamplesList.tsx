@@ -25,6 +25,7 @@ interface Props extends SettingsCascadeProps, VersionContextProps {
     repo: RepositoryFields
     commitID: string
     pathID: string
+    count: number
 }
 
 const LOADING = 'loading' as const
@@ -34,6 +35,7 @@ export const DocumentationExamplesList: React.FunctionComponent<Props> = ({
     commitID,
     pathID,
     repo,
+    count,
     ...props
 }) => {
     const referencesLocations =
@@ -44,12 +46,12 @@ export const DocumentationExamplesList: React.FunctionComponent<Props> = ({
                         repo: repo.id,
                         revspec: commitID,
                         pathID,
-                        first: 3,
+                        first: count,
                     }).pipe(
                         catchError(error => [asError(error)]),
                         startWith(LOADING)
                     ),
-                [repo.id, commitID, pathID]
+                [repo.id, commitID, pathID, count]
             )
         ) || LOADING
 

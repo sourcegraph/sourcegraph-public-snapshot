@@ -14,6 +14,7 @@ import (
 
 func TestDependencyIndexingSchedulerHandler(t *testing.T) {
 	mockDBStore := NewMockDBStore()
+	mockExtSvcStore := NewMockExternalServiceStore()
 	mockScanner := NewMockPackageReferenceScanner()
 	mockDBStore.WithFunc.SetDefaultReturn(mockDBStore)
 	mockDBStore.GetUploadByIDFunc.SetDefaultReturn(dbstore.Upload{ID: 42, RepositoryID: 50, Indexer: "lsif-go"}, true, nil)
@@ -32,6 +33,7 @@ func TestDependencyIndexingSchedulerHandler(t *testing.T) {
 	handler := &dependencyIndexingSchedulerHandler{
 		dbStore:       mockDBStore,
 		indexEnqueuer: indexEnqueuer,
+		extsvcStore:   mockExtSvcStore,
 	}
 
 	job := dbstore.DependencyIndexingJob{
@@ -81,6 +83,7 @@ func TestDependencyIndexingSchedulerHandler(t *testing.T) {
 
 func TestDependencyIndexingSchedulerHandlerShouldSkipRepository(t *testing.T) {
 	mockDBStore := NewMockDBStore()
+	mockExtSvcStore := NewMockExternalServiceStore()
 	mockScanner := NewMockPackageReferenceScanner()
 	mockDBStore.WithFunc.SetDefaultReturn(mockDBStore)
 	mockDBStore.GetUploadByIDFunc.SetDefaultReturn(dbstore.Upload{ID: 42, RepositoryID: 51, Indexer: "lsif-tsc"}, true, nil)
@@ -91,6 +94,7 @@ func TestDependencyIndexingSchedulerHandlerShouldSkipRepository(t *testing.T) {
 	handler := &dependencyIndexingSchedulerHandler{
 		dbStore:       mockDBStore,
 		indexEnqueuer: indexEnqueuer,
+		extsvcStore:   mockExtSvcStore,
 	}
 
 	job := dbstore.DependencyIndexingJob{

@@ -67,10 +67,14 @@ export function submitSearch({
 
     // Go to search results page
     const path = '/search?' + searchQueryParameter
-    eventLogger.log('SearchSubmitted', {
-        query: appendContextFilter(query, selectedSearchContextSpec, versionContext),
-        source,
-    })
+    eventLogger.log(
+        'SearchSubmitted',
+        {
+            query: appendContextFilter(query, selectedSearchContextSpec, versionContext),
+            source,
+        },
+        { source }
+    )
     localStorage.setItem(SUBMITTED_SEARCHES_COUNT_KEY, JSON.stringify(getSubmittedSearchesCount() + 1))
     history.push(path, { ...history.location.state, query })
     if (activation) {

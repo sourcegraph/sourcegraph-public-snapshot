@@ -1,20 +1,22 @@
 import * as H from 'history'
-import React, { useEffect, useState } from 'react'
+import React, { useMemo } from 'react'
 import { Observable } from 'rxjs'
 import { AggregableBadge, Badge } from 'sourcegraph'
 
 import { ContentMatch, SymbolMatch, PathMatch, getFileMatchUrl, getRepositoryUrl, getRevision } from '../search/stream'
-import { SettingsCascadeProps } from '../settings/settings'
+import { isSettingsValid, SettingsCascadeProps } from '../settings/settings'
+import { TelemetryProps } from '../telemetry/telemetryService'
 import { pluralize } from '../util/strings'
 
 import { FetchFileParameters } from './CodeExcerpt'
-import { EventLogger, FileMatchChildren } from './FileMatchChildren'
+import { FileMatchChildren } from './FileMatchChildren'
+import { calculateMatchGroups } from './FileMatchContext'
 import { LinkOrSpan } from './LinkOrSpan'
 import { RepoFileLink } from './RepoFileLink'
 import { RepoIcon } from './RepoIcon'
 import { Props as ResultContainerProps, ResultContainer } from './ResultContainer'
 
-const SUBSET_COUNT_KEY = 'fileMatchSubsetCount'
+const SUBSET_MATCHES_COUNT = 10
 
 export interface MatchItem extends Badge {
     highlightRanges: {
@@ -29,9 +31,8 @@ export interface MatchItem extends Badge {
     aggregableBadges?: AggregableBadge[]
 }
 
-interface Props extends SettingsCascadeProps {
+interface Props extends SettingsCascadeProps, TelemetryProps {
     location: H.Location
-    eventLogger?: EventLogger
     /**
      * The file match search result.
      */
@@ -70,28 +71,41 @@ interface Props extends SettingsCascadeProps {
     fetchHighlightedFileLineRanges: (parameters: FetchFileParameters, force?: boolean) => Observable<string[][]>
 }
 
+const sumHighlightRanges = (count: number, item: MatchItem): number => count + item.highlightRanges.length
+
 export const FileMatch: React.FunctionComponent<Props> = props => {
-    const [subsetMatches, setSubsetMatches] = useState(10)
-    useEffect(() => {
-        const subsetMatches = parseInt(localStorage.getItem(SUBSET_COUNT_KEY) || '', 10)
-        if (!isNaN(subsetMatches)) {
-            setSubsetMatches(subsetMatches)
+    // The number of lines of context to show before and after each match.
+    const context = useMemo(() => {
+        if (props.location.pathname === '/search') {
+            // Check if search.contextLines is configured in settings.
+            const contextLinesSetting =
+                isSettingsValid(props.settingsCascade) &&
+                props.settingsCascade.final &&
+                props.settingsCascade.final['search.contextLines']
+
+            if (typeof contextLinesSetting === 'number' && contextLinesSetting >= 0) {
+                return contextLinesSetting
+            }
         }
-    }, [])
+        return 1
+    }, [props.location, props.settingsCascade])
 
     const result = props.result
-    const items: MatchItem[] =
-        result.type === 'content'
-            ? result.lineMatches.map(match => ({
-                  highlightRanges: match.offsetAndLengths.map(([start, highlightLength]) => ({
-                      start,
-                      highlightLength,
-                  })),
-                  preview: match.line,
-                  line: match.lineNumber,
-                  aggregableBadges: match.aggregableBadges,
-              }))
-            : []
+    const items: MatchItem[] = useMemo(
+        () =>
+            result.type === 'content'
+                ? result.lineMatches.map(match => ({
+                      highlightRanges: match.offsetAndLengths.map(([start, highlightLength]) => ({
+                          start,
+                          highlightLength,
+                      })),
+                      preview: match.line,
+                      line: match.lineNumber,
+                      aggregableBadges: match.aggregableBadges,
+                  }))
+                : [],
+        [result]
+    )
 
     const repoAtRevisionURL = getRepositoryUrl(result.repository, result.branches)
     const revisionDisplayName = getRevision(result.branches, result.version)
@@ -134,13 +148,21 @@ export const FileMatch: React.FunctionComponent<Props> = props => {
 
     let containerProps: ResultContainerProps
 
-    const expandedChildren = (
-        <FileMatchChildren {...props} items={items} result={result} allMatches={true} subsetMatches={subsetMatches} />
-    )
+    const expandedMatchGroups = useMemo(() => calculateMatchGroups(items, 0, context), [items, context])
+    const collapsedMatchGroups = useMemo(() => calculateMatchGroups(items, SUBSET_MATCHES_COUNT, context), [
+        items,
+        context,
+    ])
 
-    const matchCount = items.length || (result.type === 'symbol' ? result.symbols?.length : 0)
+    const highlightRangesCount = useMemo(() => items.reduce(sumHighlightRanges, 0), [items])
+    const collapsedHighlightRangesCount = useMemo(() => collapsedMatchGroups.matches.reduce(sumHighlightRanges, 0), [
+        collapsedMatchGroups,
+    ])
+
+    const matchCount = highlightRangesCount || (result.type === 'symbol' ? result.symbols?.length : 0)
     const matchCountLabel = matchCount ? `${matchCount} ${pluralize('match', matchCount, 'matches')}` : ''
 
+    const expandedChildren = <FileMatchChildren {...props} result={result} {...expandedMatchGroups} />
     if (props.showAllMatches) {
         containerProps = {
             collapsible: false,
@@ -154,22 +176,14 @@ export const FileMatch: React.FunctionComponent<Props> = props => {
             repoStars: result.repoStars,
         }
     } else {
-        const length = items.length - subsetMatches
+        const length = highlightRangesCount - collapsedHighlightRangesCount
         containerProps = {
-            collapsible: items.length > subsetMatches,
+            collapsible: items.length > SUBSET_MATCHES_COUNT,
             defaultExpanded: props.expanded,
             icon: props.icon,
             title: renderTitle(),
             description,
-            collapsedChildren: (
-                <FileMatchChildren
-                    {...props}
-                    items={items}
-                    result={result}
-                    allMatches={false}
-                    subsetMatches={subsetMatches}
-                />
-            ),
+            collapsedChildren: <FileMatchChildren {...props} result={result} {...collapsedMatchGroups} />,
             expandedChildren,
             collapseLabel: `Hide ${length}`,
             expandLabel: `${length} more`,

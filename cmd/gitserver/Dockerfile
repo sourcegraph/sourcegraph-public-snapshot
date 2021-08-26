@@ -36,7 +36,8 @@ RUN apk add --no-cache \
     'git>=2.18' \
     openssh-client \
     git-p4 \
-    python2
+    python2 \
+    python3
 
 COPY --from=p4cli /usr/local/bin/p4 /usr/local/bin/p4
 

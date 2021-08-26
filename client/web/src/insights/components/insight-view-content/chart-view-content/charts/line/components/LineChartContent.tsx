@@ -23,6 +23,13 @@ import { NonActiveBackground } from './NonActiveBackground'
 import { dateTickFormatter, numberFormatter, Tick, getTickXProps, getTickYProps } from './TickComponent'
 import { TooltipContent } from './TooltipContent'
 
+/**
+ * Check percy test run to be able disable flaky line chart tooltip appearance
+ * by disabling any point events over line chart container.
+ * See https://github.com/sourcegraph/sourcegraph/issues/23669
+ */
+const IS_PERCY_RUN = process.env.PERCY_ON === 'true'
+
 // Chart configuration
 const WIDTH_PER_TICK = 70
 const HEIGHT_PER_TICK = 40
@@ -64,7 +71,7 @@ export interface LineChartContentProps<Datum extends object>
 
 /**
  * Displays line chart content - line chart, tooltip, active point
- * */
+ */
 export function LineChartContent<Datum extends object>(props: LineChartContentProps<Datum>): ReactElement {
     const { width, height, data, series, xAxis, onDatumZoneClick = noop, onDatumLinkClick = noop } = props
 
@@ -168,6 +175,7 @@ export function LineChartContent<Datum extends object>(props: LineChartContentPr
 
     const { onPointerMove = noop, onPointerOut = noop, ...otherHandlers } = usePointerEventEmitters({
         source: XYCHART_EVENT_SOURCE,
+        onFocus: true,
     })
 
     // We only need to catch pointerout event on root element - chart
@@ -233,7 +241,7 @@ export function LineChartContent<Datum extends object>(props: LineChartContentPr
                 yScale={scalesConfiguration.y}
                 initialDimensions={{ width, height, margin: dynamicMargin }}
             >
-                <TooltipProvider>
+                <TooltipProvider hideTooltipDebounceMs={0}>
                     <XYChart
                         height={height}
                         width={width}
@@ -289,7 +297,7 @@ export function LineChartContent<Datum extends object>(props: LineChartContentPr
                             // eslint-disable-next-line jsx-a11y/aria-role
                             role="graphics-datagroup"
                             aria-label="Chart series"
-                            pointerEvents="bounding-box"
+                            pointerEvents={IS_PERCY_RUN ? 'none' : 'bounding-box'}
                             {...eventEmitters}
                         >
                             {/* Spread size of parent group element by transparent rect with width and height */}
@@ -353,11 +361,9 @@ export function LineChartContent<Datum extends object>(props: LineChartContentPr
                         </Group>
 
                         <Tooltip
-                            className="line-chart__tooltip percy-hide"
+                            className="line-chart__tooltip"
                             showHorizontalCrosshair={false}
                             showVerticalCrosshair={true}
-                            // Fix flaky code insights test https://github.com/sourcegraph/sourcegraph/issues/23669
-                            verticalCrosshairStyle={{ className: 'percy-hide' }}
                             snapTooltipToDatumX={false}
                             snapTooltipToDatumY={false}
                             showDatumGlyph={false}

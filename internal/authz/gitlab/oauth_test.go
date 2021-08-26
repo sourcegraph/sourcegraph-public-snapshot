@@ -13,6 +13,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
@@ -31,7 +32,7 @@ func TestOAuthProvider_FetchUserPerms(t *testing.T) {
 		p := newOAuthProvider(OAuthProviderOp{
 			BaseURL: mustURL(t, "https://gitlab.com"),
 		}, nil)
-		_, err := p.FetchUserPerms(context.Background(), nil)
+		_, err := p.FetchUserPerms(context.Background(), nil, authz.FetchPermsOptions{})
 		want := "no account provided"
 		got := fmt.Sprintf("%v", err)
 		if got != want {
@@ -50,6 +51,7 @@ func TestOAuthProvider_FetchUserPerms(t *testing.T) {
 					ServiceID:   "https://github.com/",
 				},
 			},
+			authz.FetchPermsOptions{},
 		)
 		want := `not a code host of the account: want "https://github.com/" but have "https://gitlab.com/"`
 		got := fmt.Sprintf("%v", err)
@@ -102,6 +104,7 @@ func TestOAuthProvider_FetchUserPerms(t *testing.T) {
 				AuthData: &authData,
 			},
 		},
+		authz.FetchPermsOptions{},
 	)
 	if err != nil {
 		t.Fatal(err)
@@ -118,7 +121,7 @@ func TestOAuthProvider_FetchRepoPerms(t *testing.T) {
 		p := newOAuthProvider(OAuthProviderOp{
 			BaseURL: mustURL(t, "https://gitlab.com"),
 		}, nil)
-		_, err := p.FetchRepoPerms(context.Background(), nil)
+		_, err := p.FetchRepoPerms(context.Background(), nil, authz.FetchPermsOptions{})
 		want := "no repository provided"
 		got := fmt.Sprintf("%v", err)
 		if got != want {
@@ -138,6 +141,7 @@ func TestOAuthProvider_FetchRepoPerms(t *testing.T) {
 					ServiceID:   "https://github.com/",
 				},
 			},
+			authz.FetchPermsOptions{},
 		)
 		want := `not a code host of the repository: want "https://github.com/" but have "https://gitlab.com/"`
 		got := fmt.Sprintf("%v", err)
@@ -195,6 +199,7 @@ func TestOAuthProvider_FetchRepoPerms(t *testing.T) {
 					ID:          "gitlab_project_id",
 				},
 			},
+			authz.FetchPermsOptions{},
 		)
 		if err != nil {
 			t.Fatal(err)
@@ -251,6 +256,7 @@ func TestOAuthProvider_FetchRepoPerms(t *testing.T) {
 					ID:          "gitlab_project_id",
 				},
 			},
+			authz.FetchPermsOptions{},
 		)
 		if err != nil {
 			t.Fatal(err)

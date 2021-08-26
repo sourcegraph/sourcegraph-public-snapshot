@@ -20,7 +20,7 @@ describe('[VISUAL] Code insights page', () => {
     let testContext: WebIntegrationTestContext
 
     before(async () => {
-        driver = await createDriverForTest()
+        driver = await createDriverForTest({ defaultViewport: { width: 1920 } })
     })
 
     after(() => driver?.close())
@@ -37,14 +37,8 @@ describe('[VISUAL] Code insights page', () => {
     afterEach(() => testContext?.dispose())
 
     async function takeChartSnapshot(name: string): Promise<void> {
-        // Move mouse cursor away from charts and click to avoid chart tooltip appearance
-        await driver.page.mouse.move(0, 0)
-        await driver.page.click('body')
-
         await driver.page.waitForSelector('[data-testid="line-chart__content"] svg circle')
-        // Due to autosize of chart we have to wait 1s that window-resize be able
-        // render chart with container size.
-        await delay(1000)
+        await delay(500)
         await percySnapshotWithVariants(driver.page, name)
     }
 
@@ -57,9 +51,7 @@ describe('[VISUAL] Code insights page', () => {
                 },
             },
             overrides: {
-                /**
-                 * Mock back-end insights with standard gql API handler.
-                 * */
+                // Mock back-end insights with standard gql API handler.
                 Insights: () => ({ insights: { nodes: BACKEND_INSIGHTS } }),
             },
         })
@@ -69,17 +61,13 @@ describe('[VISUAL] Code insights page', () => {
         await takeChartSnapshot('Code insights page with back-end insights only')
     })
 
-    // Unmute that test when flaky issue with line chart tooltip will be resolved
-    // see https://github.com/sourcegraph/sourcegraph/issues/23669
-    it.skip('is styled correctly with search-based insights ', async () => {
+    it('is styled correctly with search-based insights ', async () => {
         overrideGraphQLExtensions({
             testContext,
 
-            /**
-             * Since search insight and code stats insight are working via user/org
-             * settings. We have to mock them by mocking user settings and provide
-             * mock data - mocking extension work.
-             * */
+            // Since search insight and code stats insight are working via user/org
+            // settings. We have to mock them by mocking user settings and provide
+            // mock data - mocking extension work.
             userSettings: {
                 'searchInsights.insight.graphQLTypesMigration': {
                     title: 'The First search-based insight',
@@ -91,24 +79,19 @@ describe('[VISUAL] Code insights page', () => {
                     repositories: [],
                     series: [],
                 },
-                'insights.allrepos': {
-                    'searchInsights.insight.backend_ID_001': {},
-                },
+                'insights.allrepos': {},
             },
             insightExtensionsMocks: {
                 'searchInsights.insight.teamSize': INSIGHT_VIEW_TEAM_SIZE,
                 'searchInsights.insight.graphQLTypesMigration': INSIGHT_VIEW_TYPES_MIGRATION,
             },
             overrides: {
-                /**
-                 * Mock back-end insights with standard gql API handler.
-                 * */
+                // Mock back-end insights with standard gql API handler.
                 Insights: () => ({ insights: { nodes: [] } }),
             },
         })
 
         await driver.page.goto(driver.sourcegraphBaseUrl + '/insights/dashboards/all')
-
         await takeChartSnapshot('Code insights page with search-based insights only')
     })
 
@@ -116,11 +99,9 @@ describe('[VISUAL] Code insights page', () => {
         overrideGraphQLExtensions({
             testContext,
 
-            /**
-             * Since search insight and code stats insight are working via user/org
-             * settings. We have to mock them by mocking user settings and provide
-             * mock data - mocking extension work.
-             * */
+            // Since search insight and code stats insight are working via user/org
+            // settings. We have to mock them by mocking user settings and provide
+            // mock data - mocking extension work.
             userSettings: {
                 'searchInsights.insight.graphQLTypesMigration': {
                     title: 'The First search-based insight',
@@ -132,24 +113,19 @@ describe('[VISUAL] Code insights page', () => {
                     repositories: [],
                     series: [],
                 },
-                'insights.allrepos': {
-                    'searchInsights.insight.backend_ID_001': {},
-                },
+                'insights.allrepos': {},
             },
             insightExtensionsMocks: {
                 'searchInsights.insight.teamSize': ({ message: 'Error message', name: 'hello' } as unknown) as View,
                 'searchInsights.insight.graphQLTypesMigration': INSIGHT_VIEW_TYPES_MIGRATION,
             },
             overrides: {
-                /**
-                 * Mock back-end insights with standard gql API handler.
-                 * */
+                // Mock back-end insights with standard gql API handler.
                 Insights: () => ({ insights: { nodes: [] } }),
             },
         })
 
         await driver.page.goto(driver.sourcegraphBaseUrl + '/insights/dashboards/all')
-
         await takeChartSnapshot('Code insights page with search-based errored insight')
     })
 
@@ -157,11 +133,9 @@ describe('[VISUAL] Code insights page', () => {
         overrideGraphQLExtensions({
             testContext,
 
-            /**
-             * Since search insight and code stats insight are working via user/org
-             * settings. We have to mock them by mocking user settings and provide
-             * mock data - mocking extension work.
-             * */
+            // Since search insight and code stats insight are working via user/org
+            // settings. We have to mock them by mocking user settings and provide
+            // mock data - mocking extension work.
             userSettings: {
                 'searchInsights.insight.graphQLTypesMigration': {
                     title: 'The First search-based insight',
@@ -174,9 +148,7 @@ describe('[VISUAL] Code insights page', () => {
                     series: [],
                 },
                 'codeStatsInsights.insight.langUsage': {},
-                'insights.allrepos': {
-                    'searchInsights.insight.backend_ID_001': {},
-                },
+                'insights.allrepos': {},
             },
             insightExtensionsMocks: {
                 'codeStatsInsights.insight.langUsage': CODE_STATS_INSIGHT_LANG_USAGE,
@@ -184,15 +156,12 @@ describe('[VISUAL] Code insights page', () => {
                 'searchInsights.insight.graphQLTypesMigration': INSIGHT_VIEW_TYPES_MIGRATION,
             },
             overrides: {
-                /**
-                 * Mock back-end insights with standard gql API handler.
-                 * */
+                // Mock back-end insights with standard gql API handler.
                 Insights: () => ({ insights: { nodes: BACKEND_INSIGHTS } }),
             },
         })
 
         await driver.page.goto(driver.sourcegraphBaseUrl + '/insights/dashboards/all')
-
         await takeChartSnapshot('Code insights page with all types of insight')
     })
 })
