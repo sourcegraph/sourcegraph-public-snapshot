@@ -27,6 +27,7 @@ All notable changes to Sourcegraph are documented in this file.
 - Added autocompletion and search filtering of branch/tag/commit revisions to the repository compare page. [#23977](https://github.com/sourcegraph/sourcegraph/pull/23977)
 - Batch Changes changesets can now be [set to published when previewing new or updated batch changes](https://docs.sourcegraph.com/batch_changes/how-tos/publishing_changesets#within-the-ui). [#22912](https://github.com/sourcegraph/sourcegraph/issues/22912)
 - Added Python3 to server and gitserver images to enable git-p4 support. [#24204](https://github.com/sourcegraph/sourcegraph/pull/24204)
+- Code Insights drill-down filters now allow filtering insights data on the dashboard page using repo: filters. [#23186](https://github.com/sourcegraph/sourcegraph/issues/23186)
 
 ### Changed
 
@@ -83,6 +84,7 @@ All notable changes to Sourcegraph are documented in this file.
 - The `sg_service` Postgres role and `sg_repo_access_policy` policy on the `repo` table have been removed due to performance concerns. [#23622](https://github.com/sourcegraph/sourcegraph/pull/23622)
 - Deprecated site configuration field `email.smtp.disableTLS` has been removed. [#23639](https://github.com/sourcegraph/sourcegraph/pull/23639)
 - Deprecated language servers have been removed from `deploy-sourcegraph`. [deploy-sourcegraph#3605](https://github.com/sourcegraph/deploy-sourcegraph/pull/3605)
+- The experimental `codeInsightsAllRepos` feature flag has been removed. [#23850](https://github.com/sourcegraph/sourcegraph/pull/23850)
 
 ## 3.30.4
 
