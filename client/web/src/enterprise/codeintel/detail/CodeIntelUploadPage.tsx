@@ -37,6 +37,8 @@ import { CodeIntelUploadOrIndexLastActivity } from '../shared/CodeIntelUploadOrI
 import { CodeIntelUploadOrIndexRoot } from '../shared/CodeIntelUploadOrIndexRoot'
 
 import { deleteLsifUpload as defaultDeleteLsifUpload, fetchLsifUpload as defaultFetchUpload } from './backend'
+import styles from './CodeIntelUploadPage.module.scss'
+import classNames from 'classnames'
 
 export interface CodeIntelUploadPageProps extends RouteComponentProps<{ id: string }>, TelemetryProps {
     fetchLsifUpload?: typeof defaultFetchUpload
@@ -234,7 +236,7 @@ export const CodeIntelUploadPage: FunctionComponent<CodeIntelUploadPageProps> = 
                             {dependencyGraphState === DependencyGraphState.ShowDependencies ? (
                                 <FilteredConnection
                                     listComponent="div"
-                                    listClassName="codeintel-uploads__grid mb-3"
+                                    listClassName={classNames(styles.grid, 'mb-3')}
                                     noun="dependency"
                                     pluralNoun="dependencies"
                                     nodeComponent={DependencyOrDependentNode}
@@ -247,7 +249,7 @@ export const CodeIntelUploadPage: FunctionComponent<CodeIntelUploadPageProps> = 
                             ) : (
                                 <FilteredConnection
                                     listComponent="div"
-                                    listClassName="codeintel-uploads__grid mb-3"
+                                    listClassName={classNames(styles.grid, 'mb-3')}
                                     noun="dependent"
                                     pluralNoun="dependents"
                                     nodeComponent={DependencyOrDependentNode}
@@ -393,8 +395,8 @@ const CodeIntelAssociatedIndex: FunctionComponent<CodeIntelAssociatedIndexProps>
     node.associatedIndex && node.projectRoot ? (
         <>
             <div className="list-group position-relative">
-                <div className="codeintel-associated-index__grid mb-3">
-                    <div className="d-flex flex-column codeintel-associated-index__information">
+                <div className={classNames(styles.grid, 'mb-3')}>
+                    <div className={classNames(styles.information, 'd-flex flex-column')}>
                         <div className="m-0">
                             <h3 className="m-0 d-block d-md-inline">This upload was created by an auto-indexing job</h3>
                         </div>
@@ -409,7 +411,7 @@ const CodeIntelAssociatedIndex: FunctionComponent<CodeIntelAssociatedIndexProps>
                         </div>
                     </div>
 
-                    <span className="d-none d-md-inline codeintel-associated-index__state">
+                    <span className={classNames(styles.state, 'd-none d-md-inline')}>
                         <CodeIntelState node={node.associatedIndex} className="d-flex flex-column align-items-center" />
                     </span>
                     <span>
@@ -420,7 +422,7 @@ const CodeIntelAssociatedIndex: FunctionComponent<CodeIntelAssociatedIndexProps>
                         </Link>
                     </span>
 
-                    <span className="codeintel-associated-index__separator" />
+                    <span className={styles.separator} />
                 </div>
             </div>
         </>
@@ -435,9 +437,9 @@ interface DependencyOrDependentNodeProps {
 
 const DependencyOrDependentNode: FunctionComponent<DependencyOrDependentNodeProps> = ({ node }) => (
     <>
-        <span className="codeintel-dependency-or-dependent-node__separator" />
+        <span className={styles.separator} />
 
-        <div className="d-flex flex-column codeintel-dependency-or-dependent-node__information">
+        <div className={classNames(styles.information, 'd-flex flex-column')}>
             <div className="m-0">
                 <h3 className="m-0 d-block d-md-inline">
                     <CodeIntelUploadOrIndexRepository node={node} />
@@ -445,14 +447,14 @@ const DependencyOrDependentNode: FunctionComponent<DependencyOrDependentNodeProp
             </div>
 
             <div>
-                <span className="mr-2 d-block d-mdinline-block">
+                <span className="mr-2 d-block d-md-inline-block">
                     Directory <CodeIntelUploadOrIndexRoot node={node} /> indexed at commit{' '}
                     <CodeIntelUploadOrIndexCommit node={node} /> by <CodeIntelUploadOrIndexIndexer node={node} />
                 </span>
             </div>
         </div>
 
-        <span className="d-none d-md-inline codeintel-dependency-or-dependent-node__state">
+        <span className={classNames(styles.state, 'd-none d-md-inline')}>
             <CodeIntelState node={node} className="d-flex flex-column align-items-center" />
         </span>
         <span>

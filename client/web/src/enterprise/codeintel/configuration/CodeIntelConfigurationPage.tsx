@@ -18,6 +18,7 @@ import { SaveToolbar, SaveToolbarProps, SaveToolbarPropsGenerator } from '../../
 import { CodeIntelligenceConfigurationPolicyFields } from '../../../graphql-operations'
 import { DynamicallyImportedMonacoSettingsEditor } from '../../../settings/DynamicallyImportedMonacoSettingsEditor'
 
+import styles from './CodeIntelConfigurationPage.module.scss'
 import {
     deletePolicyById as defaultDeletePolicyById,
     getConfigurationForRepository as defaultGetConfigurationForRepository,
@@ -25,8 +26,8 @@ import {
     getPolicies as defaultGetPolicies,
     updateConfigurationForRepository as defaultUpdateConfigurationForRepository,
 } from './backend'
-import allConfigSchema from './schema.json'
 import { formatDurationValue } from './shared'
+import allConfigSchema from './schema.json'
 
 export enum State {
     Idle,
@@ -381,18 +382,18 @@ const CodeIntelligencePolicyTable: FunctionComponent<CodeIntelligencePolicyTable
     deletePolicy,
     history,
 }) => (
-    <div className="codeintel-configuration-policies__grid mb-3">
+    <div className={classNames(styles.grid, 'mb-3')}>
         {policies.map(policy => (
             <React.Fragment key={policy.id}>
-                <span className="codeintel-configuration-policy-node__separator" />
+                <span className={styles.separator} />
 
-                <div className="d-flex flex-column codeintel-configuration-policy-node__name">
+                <div className={classNames(styles.name, 'd-flex flex-column')}>
                     <div className="m-0">
                         <h3 className="m-0 d-block d-md-inline">{policy.name}</h3>
                     </div>
 
                     <div>
-                        <div className="mr-2 d-block d-mdinline-block">
+                        <div className="mr-2 d-block d-md-inline-block">
                             Applied to{' '}
                             {policy.type === GitObjectType.GIT_COMMIT
                                 ? 'commits'
@@ -423,7 +424,7 @@ const CodeIntelligencePolicyTable: FunctionComponent<CodeIntelligencePolicyTable
                     </div>
                 </div>
 
-                <span className="d-none d-md-inline codeintel-configuration-policy-node__button">
+                <span className={classNames(styles.button, 'd-none d-md-inline')}>
                     {deletePolicy && (
                         <Button
                             onClick={() => history.push(`./configuration/${policy.id}`)}
@@ -434,7 +435,7 @@ const CodeIntelligencePolicyTable: FunctionComponent<CodeIntelligencePolicyTable
                         </Button>
                     )}
                 </span>
-                <span className="d-none d-md-inline codeintel-configuration-policy-node__button">
+                <span className={classNames(styles.button, 'd-none d-md-inline')}>
                     {deletePolicy && (
                         <Button
                             onClick={() => deletePolicy(policy.id, policy.name)}

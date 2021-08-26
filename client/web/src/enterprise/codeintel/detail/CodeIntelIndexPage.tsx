@@ -34,6 +34,8 @@ import { CodeIntelUploadOrIndexLastActivity } from '../shared/CodeIntelUploadOrI
 import { CodeIntelUploadOrIndexRoot } from '../shared/CodeIntelUploadOrIndexRoot'
 
 import { deleteLsifIndex as defaultDeleteLsifIndex, fetchLsifIndex as defaultFetchLsifIndex } from './backend'
+import styles from './CodeIntelIndexPage.module.scss'
+import classNames from 'classnames'
 
 export interface CodeIntelIndexPageProps extends RouteComponentProps<{ id: string }>, TelemetryProps {
     fetchLsifIndex?: typeof defaultFetchLsifIndex
@@ -314,18 +316,18 @@ const ExecutionMetaInformation: React.FunctionComponent<{ image: string; command
     root,
 }) => (
     <div className="pt-3">
-        <div className="docker-command-spec py-2 border-top pl-2">
-            <strong className="docker-command-spec__header">Image</strong>
+        <div className={classNames(styles.dockerCommandSpec, 'py-2 border-top pl-2')}>
+            <strong className={styles.header}>Image</strong>
             <div>{image}</div>
         </div>
-        <div className="docker-command-spec py-2 border-top pl-2">
-            <strong className="docker-command-spec__header">Commands</strong>
+        <div className={classNames(styles.dockerCommandSpec, 'py-2 border-top pl-2')}>
+            <strong className={styles.header}>Commands</strong>
             <div>
                 <code>{commands.join(' ')}</code>
             </div>
         </div>
-        <div className="docker-command-spec py-2 border-top pl-2">
-            <strong className="docker-command-spec__header">Root</strong>
+        <div className={classNames(styles.dockerCommandSpec, 'py-2 border-top pl-2')}>
+            <strong className={styles.header}>Root</strong>
             <div>/{root}</div>
         </div>
     </div>
@@ -335,10 +337,10 @@ const CodeIntelAssociatedUpload: FunctionComponent<CodeIntelAssociatedUploadProp
     node.associatedUpload && node.projectRoot ? (
         <>
             <div className="list-group position-relative">
-                <div className="codeintel-associated-upload__grid">
-                    <span className="codeintel-associated-upload__separator" />
+                <div className={styles.grid}>
+                    <span className={styles.separator} />
 
-                    <div className="d-flex flex-column codeintel-associated-upload__information">
+                    <div className={classNames(styles.information, 'd-flex flex-column')}>
                         <div className="m-0">
                             <h3 className="m-0 d-block d-md-inline">
                                 This job uploaded an index{' '}
@@ -356,7 +358,7 @@ const CodeIntelAssociatedUpload: FunctionComponent<CodeIntelAssociatedUploadProp
                         </div>
                     </div>
 
-                    <span className="d-none d-md-inline codeintel-associated-upload__state">
+                    <span className={classNames(styles.state, 'd-none d-md-inline')}>
                         <CodeIntelState
                             node={node.associatedUpload}
                             className="d-flex flex-column align-items-center"

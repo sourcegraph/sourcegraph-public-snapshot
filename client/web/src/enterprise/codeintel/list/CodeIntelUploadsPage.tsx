@@ -27,6 +27,7 @@ import { CodeIntelUploadOrIndexLastActivity } from '../shared/CodeIntelUploadOrI
 import { CodeIntelUploadOrIndexRoot } from '../shared/CodeIntelUploadOrIndexRoot'
 
 import { fetchCommitGraphMetadata as defaultFetchCommitGraphMetadata } from './backend'
+import styles from './CodeIntelUploadsPage.module.scss'
 
 export interface CodeIntelUploadsPageProps extends RouteComponentProps<{}>, TelemetryProps {
     repo?: { id: string }
@@ -135,7 +136,7 @@ export const CodeIntelUploadsPage: FunctionComponent<CodeIntelUploadsPageProps> 
                 <div className="list-group position-relative">
                     <FilteredConnection<LsifUploadFields, Omit<CodeIntelUploadNodeProps, 'node'>>
                         listComponent="div"
-                        listClassName="codeintel-uploads__grid mb-3"
+                        listClassName={classNames(styles.grid, 'mb-3')}
                         noun="upload"
                         pluralNoun="uploads"
                         nodeComponent={CodeIntelUploadNode}
@@ -176,9 +177,9 @@ interface CodeIntelUploadNodeProps {
 
 const CodeIntelUploadNode: FunctionComponent<CodeIntelUploadNodeProps> = ({ node, now }) => (
     <>
-        <span className="codeintel-upload-node__separator" />
+        <span className={styles.separator} />
 
-        <div className="d-flex flex-column codeintel-upload-node__information">
+        <div className={classNames(styles.information, 'd-flex flex-column')}>
             <div className="m-0">
                 <h3 className="m-0 d-block d-md-inline">
                     <CodeIntelUploadOrIndexRepository node={node} />
@@ -186,7 +187,7 @@ const CodeIntelUploadNode: FunctionComponent<CodeIntelUploadNodeProps> = ({ node
             </div>
 
             <div>
-                <span className="mr-2 d-block d-mdinline-block">
+                <span className="mr-2 d-block d-md-inline-block">
                     Directory <CodeIntelUploadOrIndexRoot node={node} /> indexed at commit{' '}
                     <CodeIntelUploadOrIndexCommit node={node} /> by <CodeIntelUploadOrIndexIndexer node={node} />
                 </span>
@@ -197,7 +198,7 @@ const CodeIntelUploadNode: FunctionComponent<CodeIntelUploadNodeProps> = ({ node
             </div>
         </div>
 
-        <span className="d-none d-md-inline codeintel-upload-node__state">
+        <span className={classNames(styles.state, 'd-none d-md-inline')}>
             <CodeIntelState node={node} className="d-flex flex-column align-items-center" />
         </span>
         <span>

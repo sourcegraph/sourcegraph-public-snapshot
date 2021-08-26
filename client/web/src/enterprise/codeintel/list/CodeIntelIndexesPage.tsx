@@ -23,6 +23,9 @@ import { CodeIntelUploadOrIndexLastActivity } from '../shared/CodeIntelUploadOrI
 import { CodeIntelUploadOrIndexRoot } from '../shared/CodeIntelUploadOrIndexRoot'
 
 import { enqueueIndexJob as defaultEnqueueIndexJob, fetchLsifIndexes as defaultFetchLsifIndexes } from './backend'
+import styles from './CodeIntelIndexesPage.module.scss'
+import classNames from 'classnames'
+import { ClassNames } from '@storybook/theming'
 
 export interface CodeIntelIndexesPageProps extends RouteComponentProps<{}>, TelemetryProps {
     repo?: { id: string }
@@ -103,7 +106,7 @@ export const CodeIntelIndexesPage: FunctionComponent<CodeIntelIndexesPageProps> 
                 <div className="list-group position-relative">
                     <FilteredConnection<LsifIndexFields, Omit<CodeIntelIndexNodeProps, 'node'>>
                         listComponent="div"
-                        listClassName="codeintel-indexes__grid mb-3"
+                        listClassName={classNames(styles.grid, 'mb-3')}
                         noun="index"
                         pluralNoun="indexes"
                         querySubject={querySubject}
@@ -128,9 +131,9 @@ interface CodeIntelIndexNodeProps {
 
 const CodeIntelIndexNode: FunctionComponent<CodeIntelIndexNodeProps> = ({ node, now }) => (
     <>
-        <span className="codeintel-index-node__separator" />
+        <span className={styles.separator} />
 
-        <div className="d-flex flex-column codeintel-index-node__information">
+        <div className={classNames(styles.information, 'd-flex flex-column')}>
             <div className="m-0">
                 <h3 className="m-0 d-block d-md-inline">
                     <CodeIntelUploadOrIndexRepository node={node} />
@@ -138,7 +141,7 @@ const CodeIntelIndexNode: FunctionComponent<CodeIntelIndexNodeProps> = ({ node, 
             </div>
 
             <div>
-                <span className="mr-2 d-block d-mdinline-block">
+                <span className="mr-2 d-block d-md-inline-block">
                     Directory <CodeIntelUploadOrIndexRoot node={node} /> indexed at commit{' '}
                     <CodeIntelUploadOrIndexCommit node={node} /> by <CodeIntelUploadOrIndexIndexer node={node} />
                 </span>
@@ -149,7 +152,7 @@ const CodeIntelIndexNode: FunctionComponent<CodeIntelIndexNodeProps> = ({ node, 
             </div>
         </div>
 
-        <span className="d-none d-md-inline codeintel-index-node__state">
+        <span className={classNames(styles.state, 'd-none d-md-inline')}>
             <CodeIntelState node={node} className="d-flex flex-column align-items-center" />
         </span>
         <span>
