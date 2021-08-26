@@ -139,7 +139,8 @@ export const CodeIntelConfigurationPage: FunctionComponent<CodeIntelConfiguratio
     const policyListButtonFragment = (
         <>
             <Button
-                className="btn btn-primary mt-2"
+                className="mt-2"
+                variant="primary"
                 onClick={() => history.push('./configuration/new')}
                 disabled={state !== State.Idle}
             >
@@ -596,14 +597,9 @@ const CodeIntelAutoIndexSaveToolbar: React.FunctionComponent<SaveToolbarProps & 
             <LoadingSpinner className="icon-inline mt-2 ml-2" />
         ) : (
             inferEnabled && (
-                <Button
-                    type="button"
-                    title="Infer index configuration from HEAD"
-                    variant="link"
-                    onClick={onInfer}
-                >
+                <Button type="button" title="Infer index configuration from HEAD" variant="link" onClick={onInfer}>
                     Infer index configuration from HEAD
-                </button>
+                </Button>
             )
         )}
     </SaveToolbar>

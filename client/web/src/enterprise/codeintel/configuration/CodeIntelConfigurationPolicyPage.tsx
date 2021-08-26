@@ -9,7 +9,7 @@ import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryServi
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { ErrorAlert } from '@sourcegraph/web/src/components/alerts'
 import { PageTitle } from '@sourcegraph/web/src/components/PageTitle'
-import { Container, LoadingSpinner, PageHeader } from '@sourcegraph/wildcard'
+import { Button, Container, LoadingSpinner, PageHeader } from '@sourcegraph/wildcard'
 
 import { CodeIntelligenceConfigurationPolicyFields, GitObjectType } from '../../../graphql-operations'
 
@@ -144,23 +144,24 @@ export const CodeIntelConfigurationPolicyPage: FunctionComponent<CodeIntelConfig
                     {indexingEnabled && <IndexingSettings policy={policy} setPolicy={setPolicy} />}
 
                     <Container className="mt-2">
-                        <button
+                        <Button
                             type="submit"
-                            className="btn btn-primary"
+                            variant="primary"
                             onClick={save}
                             disabled={state !== State.Idle || comparePolicies(policy, saved)}
                         >
                             {policy.id === '' ? 'Create' : 'Update'} policy
-                        </button>
+                        </Button>
 
-                        <button
+                        <Button
                             type="button"
-                            className="btn btn-secondary ml-3"
+                            className="ml-3"
+                            variant="secondary"
                             onClick={() => history.push('./')}
                             disabled={state !== State.Idle}
                         >
                             Cancel
-                        </button>
+                        </Button>
 
                         {state === State.Saving && (
                             <span className="ml-2">

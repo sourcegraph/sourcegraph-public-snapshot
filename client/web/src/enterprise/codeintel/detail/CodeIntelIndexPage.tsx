@@ -17,7 +17,7 @@ import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryServi
 import { asError, ErrorLike, isErrorLike } from '@sourcegraph/shared/src/util/errors'
 import { isDefined } from '@sourcegraph/shared/src/util/types'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
-import { Container, PageHeader } from '@sourcegraph/wildcard'
+import { Button, Container, PageHeader } from '@sourcegraph/wildcard'
 
 import { ErrorAlert } from '../../../components/alerts'
 import { ExecutionLogEntry } from '../../../components/ExecutionLogEntry'
@@ -382,16 +382,16 @@ interface CodeIntelDeleteIndexProps {
 }
 
 const CodeIntelDeleteIndex: FunctionComponent<CodeIntelDeleteIndexProps> = ({ deleteIndex, deletionOrError }) => (
-    <button
+    <Button
         type="button"
-        className="btn btn-outline-danger"
+        variant="danger"
         onClick={deleteIndex}
         disabled={deletionOrError === 'loading'}
         aria-describedby="upload-delete-button-help"
         data-tooltip="Deleting this index will remove it from the index queue."
     >
         <DeleteIcon className="icon-inline" /> Delete index
-    </button>
+    </Button>
 )
 
 interface CodeIntelAssociatedUploadProps {

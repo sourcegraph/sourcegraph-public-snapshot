@@ -6,7 +6,7 @@ import { Subject } from 'rxjs'
 import { Link } from '@sourcegraph/shared/src/components/Link'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ErrorAlert } from '@sourcegraph/web/src/components/alerts'
-import { Container, PageHeader } from '@sourcegraph/wildcard'
+import { Button, Container, PageHeader } from '@sourcegraph/wildcard'
 
 import {
     FilteredConnection,
@@ -212,15 +212,16 @@ const EnqueueForm: FunctionComponent<EnqueueFormProps> = ({ repoId, querySubject
                     onChange={event => setRevlike(event.target.value)}
                 />
 
-                <button
+                <Button
                     type="button"
                     title="Enqueue thing"
                     disabled={state === State.Queueing}
-                    className="btn btn-primary ml-2"
+                    className="ml-2"
+                    variant="primary"
                     onClick={enqueue}
                 >
                     Enqueue
-                </button>
+                </Button>
             </div>
 
             {state === State.Queued && queueResult !== undefined && (

@@ -22,7 +22,7 @@ import {
     FilteredConnectionQueryArguments,
 } from '@sourcegraph/web/src/components/FilteredConnection'
 import { Timeline, TimelineStage } from '@sourcegraph/web/src/components/Timeline'
-import { Container, PageHeader } from '@sourcegraph/wildcard'
+import { Button, Container, PageHeader } from '@sourcegraph/wildcard'
 
 import { ErrorAlert } from '../../../components/alerts'
 import { PageTitle } from '../../../components/PageTitle'
@@ -205,26 +205,28 @@ export const CodeIntelUploadPage: FunctionComponent<CodeIntelUploadPageProps> = 
                                 {dependencyGraphState === DependencyGraphState.ShowDependencies ? (
                                     <h3>
                                         Dependencies
-                                        <button
+                                        <Button
                                             type="button"
-                                            className="btn btn-link float-right p-0 mb-2"
+                                            className="float-right p-0 mb-2"
+                                            variant="link"
                                             onClick={() => setDependencyGraphState(DependencyGraphState.ShowDependents)}
                                         >
                                             Show dependents
-                                        </button>
+                                        </Button>
                                     </h3>
                                 ) : (
                                     <h3>
                                         Dependents
-                                        <button
+                                        <Button
                                             type="button"
-                                            className="btn btn-link float-right p-0 mb-2"
+                                            className="float-right p-0 mb-2"
+                                            variant="link"
                                             onClick={() =>
                                                 setDependencyGraphState(DependencyGraphState.ShowDependencies)
                                             }
                                         >
                                             Show dependencies
-                                        </button>
+                                        </Button>
                                     </h3>
                                 )}
                             </div>
@@ -491,9 +493,9 @@ const CodeIntelDeleteUpload: FunctionComponent<CodeIntelDeleteUploadProps> = ({
     state === LSIFUploadState.DELETING ? (
         <></>
     ) : (
-        <button
+        <Button
             type="button"
-            className="btn btn-outline-danger"
+            variant="danger"
             onClick={deleteUpload}
             disabled={deletionOrError === 'loading'}
             aria-describedby="upload-delete-button-help"
@@ -504,7 +506,7 @@ const CodeIntelDeleteUpload: FunctionComponent<CodeIntelDeleteUploadProps> = ({
             }
         >
             <DeleteIcon className="icon-inline" /> Delete upload
-        </button>
+        </Button>
     )
 
 interface CodeIntelAssociatedIndexProps {
