@@ -318,18 +318,10 @@ const DescribeRetentionPolicy: FunctionComponent<{ policy: CodeIntelligenceConfi
         <p>
             <strong>Retention policy:</strong>{' '}
             <span>
-                Retain uploads used to resolve code intelligence queries for{' '}
-                {policy.type === GitObjectType.GIT_COMMIT
-                    ? 'the matching commit'
-                    : policy.type === GitObjectType.GIT_TAG
-                    ? 'the matching tags'
-                    : policy.type === GitObjectType.GIT_TREE
-                    ? !policy.retainIntermediateCommits
-                        ? 'the tip of the matching branches'
-                        : 'any commit on the matching branches'
-                    : ''}
-                {policy.retentionDurationHours !== 0 &&
-                    `for at least ${formatDurationValue(policy.retentionDurationHours)} after upload`}
+                Retain uploads used to resolve code intelligence queries for <DescribeGitObjectTarget policy={policy} />{' '}
+                {policy.retentionDurationHours !== 0 && (
+                    <>for at least {formatDurationValue(policy.retentionDurationHours)} after upload</>
+                )}
                 .
             </span>
         </p>
@@ -340,22 +332,31 @@ const DescribeRetentionPolicy: FunctionComponent<{ policy: CodeIntelligenceConfi
 const DescribeIndexingPolicy: FunctionComponent<{ policy: CodeIntelligenceConfigurationPolicyFields }> = ({ policy }) =>
     policy.indexingEnabled ? (
         <p>
-            <strong>Indexing policy:</strong> Auto-index{' '}
-            {policy.type === GitObjectType.GIT_COMMIT
-                ? 'the matching commit'
-                : policy.type === GitObjectType.GIT_TAG
-                ? 'the matching tags'
-                : policy.type === GitObjectType.GIT_TREE
-                ? !policy.retainIntermediateCommits
-                    ? 'the tip of the matching branches'
-                    : 'any commit on the matching branches'
-                : ''}
-            {policy.indexCommitMaxAgeHours !== 0 &&
-                ` if the target commit is no older than ${formatDurationValue(policy.indexCommitMaxAgeHours)}`}
+            <strong>Indexing policy:</strong> Auto-index <DescribeGitObjectTarget policy={policy} />{' '}
+            {policy.indexCommitMaxAgeHours !== 0 && (
+                <>if the target commit is no older than {formatDurationValue(policy.indexCommitMaxAgeHours)}</>
+            )}
             .
         </p>
     ) : (
         <p className="text-muted">Auto-indexing disabled.</p>
+    )
+
+const DescribeGitObjectTarget: FunctionComponent<{ policy: CodeIntelligenceConfigurationPolicyFields }> = ({
+    policy,
+}) =>
+    policy.type === GitObjectType.GIT_COMMIT ? (
+        <>the matching commit</>
+    ) : policy.type === GitObjectType.GIT_TAG ? (
+        <>the matching tags</>
+    ) : policy.type === GitObjectType.GIT_TREE ? (
+        !policy.retainIntermediateCommits ? (
+            <>the tip of the matching branches</>
+        ) : (
+            <>any commit on the matching branches</>
+        )
+    ) : (
+        <></>
     )
 
 interface CodeIntelligencePolicyTableProps {
