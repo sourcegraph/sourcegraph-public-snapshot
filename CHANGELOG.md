@@ -85,6 +85,7 @@ All notable changes to Sourcegraph are documented in this file.
 - Deprecated site configuration field `email.smtp.disableTLS` has been removed. [#23639](https://github.com/sourcegraph/sourcegraph/pull/23639)
 - Deprecated language servers have been removed from `deploy-sourcegraph`. [deploy-sourcegraph#3605](https://github.com/sourcegraph/deploy-sourcegraph/pull/3605)
 - The experimental `codeInsightsAllRepos` feature flag has been removed. [#23850](https://github.com/sourcegraph/sourcegraph/pull/23850)
+- The "no results found in timeout" search alert has been removed in most circumstances. This alert caused confusion since it was large, would show even if results where returned and duplicated information from the "some results excluded" drop down. [#20319](https://github.com/sourcegraph/sourcegraph/issues/20319)
 
 ## 3.30.4
 
