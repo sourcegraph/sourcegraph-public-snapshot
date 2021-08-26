@@ -16,17 +16,18 @@
         - [Inserting data](#inserting-data)
 - [Creating DB migrations](#creating-db-migrations)
 
-## MVP state of the backend
+## Pre-beta / Beta state of the backend
 
-The current code insights backend is an MVP version contributed by @slimsag - it:
+The current code insights backend is a beta version contributed by @coury-clark (based on previous work by @slimsag) - it:
 
-* Supports search-based insights today, but was designed to support any type of insight in the future.
-* Is backed by a [TImescaleDB](https://www.timescale.com) instance.
-* Follows Sourcegraph architecture pretty well, is as clean as I could make it, has pretty good test coverage, and is generally an OK starting point.
-* Definitely has some work to be done / is very much an MVP.
-* There is a [project board](https://github.com/orgs/sourcegraph/projects/122) with detailed info on what work remains in my eyes.
+* Supports running search-based insights over all indexable repositories on the Sourcegraph installation.
+* Is backed by a [TImescaleDB](https://www.timescale.com) instance. See the database section below for more information.
+* Optimizes unnecessary search queries by using an index of commits to query only for time periods that have had at least one commit.
+* Supports regexp based drilldown on repository name.
+* Provides permissions restrictions by filtering of repositories that are not visible to the user at query time.
+* Does not yet support synchronous insight creation through an API. Read more below in the settings sync section.
 
-Ultimately, if you're reading this you should view this code as a "take it or leave it" offering. My hope is you'll benefit from it (even if just from a "what problems will I face?" explanation) and can use it as a starting point - but you should do what makes you most comfortable and successful. If throwing it all out helps, do that! Happy to help in any way I can, message me @slimsag on GitHub / @stephen on Slack.
+The current version of the backend is an MVP to achieve beta status to unblock the feature request of "running an insight over all my repos".
 
 ## Architecture
 
