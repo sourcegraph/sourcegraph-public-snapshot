@@ -355,6 +355,20 @@ func (c *Client) Projects(ctx context.Context, pageToken *PageToken, filter *Pro
 	return projects, next, err
 }
 
+// Projects retrieves a page of repositories belonging to the project specified by "projectKey".
+func (c *Client) ProjectRepositories(ctx context.Context, pageToken *PageToken, projectKey string) ([]*Repo, *PageToken, error) {
+	if projectKey == "" {
+		return nil, nil, errors.New("project key is empty")
+	}
+
+	var repos []*Repo
+
+	route := fmt.Sprintf("/rest/api/1.0/projects/%s/repos", projectKey)
+
+	next, err := c.page(ctx, route, nil, pageToken, &repos)
+	return repos, next, err
+}
+
 // UserPermissions retrieves the global permissions assigned to the user with the given
 // username. Used to validate that the client is authenticated as an admin.
 func (c *Client) UserPermissions(ctx context.Context, username string) (perms []Perm, _ error) {

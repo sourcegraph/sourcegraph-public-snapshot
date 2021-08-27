@@ -132,9 +132,20 @@ func TestUserFilters(t *testing.T) {
 	}
 }
 
+var privateOnlyUsers *Project = &Project{
+	Key:    "PRIVUSER",
+	ID:     25,
+	Name:   "private-only-users",
+	Public: false,
+	Type:   "NORMAL",
+}
+
 func TestClient_Projects(t *testing.T) {
 	cli, save := NewTestClient(t, "Projects", *update)
 	defer save()
+
+	timeout, cancel := context.WithDeadline(context.Background(), time.Now().Add(-time.Minute))
+	defer cancel()
 
 	public := &Project{
 		Key:    "PUB",
@@ -148,14 +159,6 @@ func TestClient_Projects(t *testing.T) {
 		Key:    "PRIV",
 		ID:     23,
 		Name:   "private",
-		Public: false,
-		Type:   "NORMAL",
-	}
-
-	privateOnlyUsers := &Project{
-		Key:    "PRIVUSER",
-		ID:     25,
-		Name:   "private-only-users",
 		Public: false,
 		Type:   "NORMAL",
 	}
@@ -191,15 +194,23 @@ func TestClient_Projects(t *testing.T) {
 	}
 
 	for _, test := range []struct {
-		name     string
-		filter   *ProjectFilter
-		page     *PageToken
-		expected []*Project
-		nextPage *PageToken
+		description string
+		filter      *ProjectFilter
+		page        *PageToken
+		expected    []*Project
+		nextPage    *PageToken
+
+		ctx context.Context
+		err string
 	}{
 		{
-			name:     "all projects",
-			expected: []*Project{privateWrite, privateOnlyUsers, private, public, privacy, uniqueWrite, uniqueReadOnly},
+			description: "timeout - deadline exceeded",
+			ctx:         timeout,
+			err:         "context deadline exceeded",
+		},
+		{
+			description: "all projects",
+			expected:    []*Project{privateWrite, privateOnlyUsers, private, public, privacy, uniqueWrite, uniqueReadOnly},
 			page: &PageToken{
 				Limit: 100,
 			},
@@ -210,7 +221,7 @@ func TestClient_Projects(t *testing.T) {
 			},
 		},
 		{
-			name: "page: single page",
+			description: "page: single page",
 			page: &PageToken{
 				Limit: 1,
 			},
@@ -222,7 +233,7 @@ func TestClient_Projects(t *testing.T) {
 			},
 		},
 		{
-			name: "page: last page",
+			description: "page: last page",
 			page: &PageToken{
 				Limit: 1,
 				// it turns out that setting "start" directly does nothing, you have to set
@@ -238,7 +249,7 @@ func TestClient_Projects(t *testing.T) {
 			},
 		},
 		{
-			name: "filter by name",
+			description: "filter by name",
 			filter: &ProjectFilter{
 				Name: "private-",
 			},
@@ -250,7 +261,7 @@ func TestClient_Projects(t *testing.T) {
 			},
 		},
 		{
-			name: "filter by permission",
+			description: "filter by permission",
 			filter: &ProjectFilter{
 				Permission: PermProjectWrite,
 			},
@@ -262,7 +273,7 @@ func TestClient_Projects(t *testing.T) {
 			},
 		},
 		{
-			name: "filter by permission and name",
+			description: "filter by permission and name",
 			filter: &ProjectFilter{
 				Name:       "uniq",
 				Permission: PermProjectWrite,
@@ -275,10 +286,18 @@ func TestClient_Projects(t *testing.T) {
 			},
 		},
 	} {
-		t.Run(test.name, func(t *testing.T) {
-			actual, nextPage, err := cli.Projects(context.Background(), test.page, test.filter)
-			if err != nil {
-				t.Fatal(err)
+		t.Run(test.description, func(t *testing.T) {
+			if test.ctx == nil {
+				test.ctx = context.Background()
+			}
+
+			if test.err == "" {
+				test.err = "<nil>"
+			}
+
+			actual, nextPage, err := cli.Projects(test.ctx, test.page, test.filter)
+			if diff := cmp.Diff(fmt.Sprint(err), test.err); diff != "" {
+				t.Fatalf("got unexpected error (-got +want):\n%s", diff)
 			}
 
 			for _, s := range [][]*Project{actual, test.expected} {
@@ -286,16 +305,139 @@ func TestClient_Projects(t *testing.T) {
 			}
 
 			if diff := cmp.Diff(actual, test.expected, cmpopts.IgnoreFields(Project{}, "Links")); diff != "" {
-				t.Errorf("non-zero diff (-got + want):\n%s", diff)
+				t.Errorf("got non-zero diff in list of projects (-got +want):\n%s", diff)
 			}
 
 			if diff := cmp.Diff(nextPage, test.nextPage); diff != "" {
-				t.Errorf("next page token differs (-got want):\n%s", diff)
+				t.Errorf("next page token differs (-got +want):\n%s", diff)
 			}
 		})
 	}
 }
 
+func TestClient_Projects_Repositories(t *testing.T) {
+	cli, save := NewTestClient(t, "Projects_Repositories", *update)
+	defer save()
+
+	timeout, cancel := context.WithDeadline(context.Background(), time.Now().Add(-time.Minute))
+	defer cancel()
+
+	userLand := &Repo{
+		Slug:          "userland",
+		ID:            6,
+		Name:          "userland",
+		SCMID:         "git",
+		State:         "AVAILABLE",
+		StatusMessage: "Available",
+		Forkable:      true,
+		Project:       privateOnlyUsers,
+	}
+
+	userScript := &Repo{
+		Slug:          "userscript",
+		ID:            8,
+		Name:          "UserScript",
+		SCMID:         "git",
+		State:         "AVAILABLE",
+		StatusMessage: "Available",
+		Forkable:      true,
+		Project:       privateOnlyUsers,
+	}
+
+	for _, test := range []struct {
+		description string
+		projectKey  string
+		page        *PageToken
+		expected    []*Repo
+		nextPage    *PageToken
+
+		ctx context.Context
+		err string
+	}{
+		{
+			description: "timeout - deadline exceeded",
+			projectKey:  privateOnlyUsers.Key,
+			ctx:         timeout,
+			err:         "context deadline exceeded",
+		},
+		{
+			description: "all repositories",
+			projectKey:  privateOnlyUsers.Key,
+			expected:    []*Repo{userLand, userScript},
+			page: &PageToken{
+				Limit: 100,
+			},
+			nextPage: &PageToken{
+				Size:       2,
+				Limit:      100,
+				IsLastPage: true,
+			},
+		},
+		{
+			description: "page: single page",
+			projectKey:  privateOnlyUsers.Key,
+			page: &PageToken{
+				Limit: 1,
+			},
+			expected: []*Repo{userLand},
+			nextPage: &PageToken{
+				Size:          1,
+				Limit:         1,
+				NextPageStart: 1,
+			},
+		},
+		{
+			description: "page: last page",
+			projectKey:  privateOnlyUsers.Key,
+			page: &PageToken{
+				Limit: 1,
+				// it turns out that setting "start" directly does nothing, you have to set
+				// NextPageStart (which seems like a mistmatch against bitbucket's API - but I digress)
+				NextPageStart: 1,
+			},
+			expected: []*Repo{userScript},
+			nextPage: &PageToken{
+				Start:      1,
+				Size:       1,
+				Limit:      1,
+				IsLastPage: true,
+			},
+		},
+
+		{
+			description: "error: don't provide project key",
+			projectKey:  "",
+			err:         "project key is empty",
+		},
+	} {
+		t.Run(test.description, func(t *testing.T) {
+			if test.ctx == nil {
+				test.ctx = context.Background()
+			}
+
+			if test.err == "" {
+				test.err = "<nil>"
+			}
+
+			actual, nextPage, err := cli.ProjectRepositories(test.ctx, test.page, test.projectKey)
+			if diff := cmp.Diff(fmt.Sprint(err), test.err); diff != "" {
+				t.Fatalf("got unexpected error (-got +want):\n%s", diff)
+			}
+
+			for _, s := range [][]*Repo{actual, test.expected} {
+				sort.Slice(s, func(i, j int) bool { return s[i].ID < s[j].ID })
+			}
+
+			if diff := cmp.Diff(actual, test.expected, cmpopts.IgnoreFields(Repo{}, "Links", "Project.Links")); diff != "" {
+				t.Errorf("non-zero diff in returned repositories (-got +want):\n%s", diff)
+			}
+
+			if diff := cmp.Diff(nextPage, test.nextPage); diff != "" {
+				t.Errorf("next page token differs (-got +want):\n%s", diff)
+			}
+		})
+	}
+}
 func TestClient_Users(t *testing.T) {
 	cli, save := NewTestClient(t, "Users", *update)
 	defer save()
