@@ -645,7 +645,7 @@ func (r *searchResolver) evaluateLeaf(ctx context.Context, args *search.TextPara
 		tr.Finish()
 	}()
 
-	return r.doResults(ctx, args, jobs)
+	return r.resultsWithTimeoutSuggestion(ctx, args, jobs)
 }
 
 // union returns the union of two sets of search results and merges common search data.
@@ -1147,6 +1147,31 @@ func searchResultsToFileNodes(matches []result.Match) ([]query.Node, error) {
 	}
 
 	return nodes, nil
+}
+
+// resultsWithTimeoutSuggestion calls doResults, and in case of deadline
+// exceeded returns a search alert with a did-you-mean link for the same
+// query with a longer timeout.
+func (r *searchResolver) resultsWithTimeoutSuggestion(ctx context.Context, args *search.TextParameters, jobs []run.Job) (*SearchResults, error) {
+	start := time.Now()
+	rr, err := r.doResults(ctx, args, jobs)
+
+	// We have an alert for context timeouts and we have a progress
+	// notification for timeouts. We don't want to show both, so we only show
+	// it if no repos are marked as timedout. This somewhat couples us to how
+	// progress notifications work, but this is the third attempt at trying to
+	// fix this behaviour so we are accepting that.
+	if errors.Is(err, context.DeadlineExceeded) {
+		if rr == nil || !rr.Stats.Status.Any(search.RepoStatusTimedout) {
+			usedTime := time.Since(start)
+			suggestTime := longer(2, usedTime)
+			return alertForTimeout(usedTime, suggestTime, r).wrapResults(), nil
+		} else {
+			err = nil
+		}
+	}
+
+	return rr, err
 }
 
 // substitutePredicates replaces all the predicates in a query with their expanded form. The predicates
