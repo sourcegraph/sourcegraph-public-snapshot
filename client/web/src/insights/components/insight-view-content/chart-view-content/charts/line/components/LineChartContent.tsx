@@ -11,6 +11,8 @@ import React, { ReactElement, useCallback, useMemo, useState, MouseEvent, useRef
 import { noop } from 'rxjs'
 import { LineChartContent as LineChartContentType } from 'sourcegraph'
 
+import { readEnvironmentBoolean } from '@sourcegraph/shared/src/testing/utils'
+
 import { DEFAULT_LINE_STROKE } from '../constants'
 import { generateAccessors } from '../helpers/generate-accessors'
 import { getYAxisWidth } from '../helpers/get-y-axis-width'
@@ -28,7 +30,7 @@ import { TooltipContent } from './TooltipContent'
  * by disabling any point events over line chart container.
  * See https://github.com/sourcegraph/sourcegraph/issues/23669
  */
-const IS_PERCY_RUN = Boolean(JSON.parse(process.env.PERCY_ON ?? ''))
+const IS_PERCY_RUN = readEnvironmentBoolean({ variable: 'PERCY_ON', defaultValue: false })
 
 console.log({ 'this-is-env': IS_PERCY_RUN })
 
