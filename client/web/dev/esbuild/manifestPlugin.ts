@@ -5,9 +5,11 @@ import * as esbuild from 'esbuild'
 
 import { uiAssetsPath } from './build'
 
+export const assetPathPrefix = '/.assets/'
+
 const writeManifest = async (appJSPath: string): Promise<void> => {
     const manifestPath = path.join(uiAssetsPath, 'webpack.manifest.json')
-    await fs.promises.writeFile(manifestPath, JSON.stringify({ 'app.js': appJSPath }))
+    await fs.promises.writeFile(manifestPath, JSON.stringify({ 'app.js': path.join(assetPathPrefix, appJSPath) }))
 }
 
 export const manifestPlugin: esbuild.Plugin = {
@@ -16,7 +18,7 @@ export const manifestPlugin: esbuild.Plugin = {
         build.onStart(async () => {
             // TODO(sqs): bug https://github.com/evanw/esbuild/issues/1384 means that onEnd isn't
             // called in serve mode, so write it here because we know what it should be.
-            await writeManifest('/web/src/main.js')
+            await writeManifest('web/src/main.js')
         })
 
         // TODO(sqs): bug https://github.com/evanw/esbuild/issues/1384 means that onEnd isn't called
