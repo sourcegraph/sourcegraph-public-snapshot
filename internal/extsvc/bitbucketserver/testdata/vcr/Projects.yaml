@@ -7,14 +7,11 @@ interactions:
     headers:
       Content-Type:
       - application/json; charset=utf-8
-    url: https://bitbucket.sgdev.org/rest/api/1.0/projects
+    url: https://bb.sgdev.org/rest/api/1.0/projects?limit=100
     method: GET
   response:
-    body: '{"size":9,"limit":25,"isLastPage":true,"values":[{"key":"IJ","id":24,"name":"ijt-project-testing-sg-3-6","description":"throwaway","public":false,"type":"NORMAL","links":{"self":[{"href":"https://bitbucket.sgdev.org/projects/IJ"}]}},{"key":"K8S","id":29,"name":"K8S","description":"A
-      lot of test repositories for k8s.sgdev.org.","public":false,"type":"NORMAL","links":{"self":[{"href":"https://bitbucket.sgdev.org/projects/K8S"}]}},{"key":"PRIVATE","id":3,"name":"Private","public":false,"type":"NORMAL","links":{"self":[{"href":"https://bitbucket.sgdev.org/projects/PRIVATE"}]}},{"key":"PUBLIC","id":4,"name":"Public","public":false,"type":"NORMAL","links":{"self":[{"href":"https://bitbucket.sgdev.org/projects/PUBLIC"}]}},{"key":"SECRET","id":5,"name":"Secret","public":false,"type":"NORMAL","links":{"self":[{"href":"https://bitbucket.sgdev.org/projects/SECRET"}]}},{"key":"SOUR","id":1,"name":"sourcegraph","public":false,"type":"NORMAL","links":{"self":[{"href":"https://bitbucket.sgdev.org/projects/SOUR"}]}},{"key":"SGDEMO","id":26,"name":"Sourcegraph
-      Demo","public":false,"type":"NORMAL","links":{"self":[{"href":"https://bitbucket.sgdev.org/projects/SGDEMO"}]}},{"key":"SOURCEGRAPH","id":28,"name":"Sourcegraph
-      e2e testing","public":false,"type":"NORMAL","links":{"self":[{"href":"https://bitbucket.sgdev.org/projects/SOURCEGRAPH"}]}},{"key":"SUPERSECRET","id":6,"name":"Super
-      Secret","public":false,"type":"NORMAL","links":{"self":[{"href":"https://bitbucket.sgdev.org/projects/SUPERSECRET"}]}}],"start":0}'
+    body: '{"size":4,"limit":100,"isLastPage":true,"values":[{"key":"PRIV","id":23,"name":"private","public":false,"type":"NORMAL","links":{"self":[{"href":"https://bb.sgdev.org/projects/PRIV"}]}},{"key":"PRIVUSER","id":25,"name":"private-only-users","public":false,"type":"NORMAL","links":{"self":[{"href":"https://bb.sgdev.org/projects/PRIVUSER"}]}},{"key":"PRIVWRITE","id":26,"name":"private-write","public":false,"type":"NORMAL","links":{"self":[{"href":"https://bb.sgdev.org/projects/PRIVWRITE"}]}},{"key":"PUB","id":22,"name":"public","description":"Public
+      project","public":true,"type":"NORMAL","links":{"self":[{"href":"https://bb.sgdev.org/projects/PUB"}]}}],"start":0}'
     headers:
       Cache-Control:
       - private, no-cache
@@ -22,21 +19,58 @@ interactions:
       Content-Type:
       - application/json;charset=UTF-8
       Date:
-      - Thu, 26 Aug 2021 18:35:54 GMT
+      - Fri, 27 Aug 2021 20:55:50 GMT
       Pragma:
       - no-cache
       Server:
       - Caddy
       Vary:
-      - accept-encoding,x-auserid,cookie,x-ausername,accept-encoding
+      - x-ausername,x-auserid,cookie,accept-encoding
       X-Arequestid:
-      - '@2EDRUKx1115x17295619x0'
+      - '@WRQLR1x1255x1378x0'
       X-Asessionid:
-      - 15japnt
+      - 1asdhcp
       X-Auserid:
-      - "252"
+      - "104"
       X-Ausername:
-      - buildkite
+      - lone-private-user
+      X-Content-Type-Options:
+      - nosniff
+    status: 200 OK
+    code: 200
+    duration: ""
+- request:
+    body: ""
+    form: {}
+    headers:
+      Content-Type:
+      - application/json; charset=utf-8
+    url: https://bb.sgdev.org/rest/api/1.0/projects?limit=1
+    method: GET
+  response:
+    body: '{"size":1,"limit":1,"isLastPage":false,"values":[{"key":"PRIV","id":23,"name":"private","public":false,"type":"NORMAL","links":{"self":[{"href":"https://bb.sgdev.org/projects/PRIV"}]}}],"start":0,"nextPageStart":3}'
+    headers:
+      Cache-Control:
+      - private, no-cache
+      - no-cache, no-transform
+      Content-Type:
+      - application/json;charset=UTF-8
+      Date:
+      - Fri, 27 Aug 2021 20:55:50 GMT
+      Pragma:
+      - no-cache
+      Server:
+      - Caddy
+      Vary:
+      - x-ausername,x-auserid,cookie,accept-encoding
+      X-Arequestid:
+      - '@WRQLR1x1255x1379x0'
+      X-Asessionid:
+      - 1qlq7am
+      X-Auserid:
+      - "104"
+      X-Ausername:
+      - lone-private-user
       X-Content-Type-Options:
       - nosniff
     status: 200 OK

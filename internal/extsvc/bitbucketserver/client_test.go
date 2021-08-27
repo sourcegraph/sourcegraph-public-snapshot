@@ -19,6 +19,7 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/inconshreveable/log15"
 	"github.com/sergi/go-diff/diffmatchpatch"
 	"golang.org/x/time/rate"
@@ -135,20 +136,185 @@ func TestClient_Projects(t *testing.T) {
 	cli, save := NewTestClient(t, "Projects", *update)
 	defer save()
 
-	expected := []*Project{{
-		Key:    "Sourcegraph",
-		ID:     1,
-		Name:   "sourcegraph",
-		Public: false, // ?
-		Type:   "bla",
-	}}
+	// adminOnly := &Project{
+	// 	Key:    "ADMIN",
+	// 	ID:     1,
+	// 	Name:   "admin-only",
+	// 	Public: false,
+	// 	Type:   "NORMAL",
+	// }
 
-	actual, _, err := cli.Projects(context.Background(), &PageToken{})
-	if err != nil {
-		t.Fatal(err)
+	public := &Project{
+		Key:    "PUB",
+		ID:     22,
+		Name:   "public",
+		Public: true,
+		Type:   "NORMAL",
 	}
 
-	assertProjectsEqual(t, actual, expected)
+	private := &Project{
+		Key:    "PRIV",
+		ID:     23,
+		Name:   "private",
+		Public: false,
+		Type:   "NORMAL",
+	}
+
+	privateOnlyUsers := &Project{
+		Key:    "PRIVUSER",
+		ID:     25,
+		Name:   "private-only-users",
+		Public: false,
+		Type:   "NORMAL",
+	}
+
+	// privateOnlyGroups := &Project{
+	// 	Key:    "PRIVGROUP",
+	// 	ID:     24,
+	// 	Name:   "private-only-groups",
+	// 	Public: false,
+	// 	Type:   "NORMAL",
+	// }
+
+	privateWrite := &Project{
+		Key:    "PRIVWRITE",
+		ID:     26,
+		Name:   "private-write",
+		Public: false,
+		Type:   "NORMAL",
+	}
+
+	// projects := map[string]*Project{
+	// 	"admin-only": {
+	// 		Key:    "ADMIN",
+	// 		ID:     1,
+	// 		Name:   "admin-only",
+	// 		Public: false,
+	// 		Type:   "NORMAL",
+	// 	},
+	// 	"public": {
+	// 		Key:    "PUB",
+	// 		ID:     22,
+	// 		Name:   "public",
+	// 		Public: true,
+	// 		Type:   "NORMAL",
+	// 	},
+	// 	"private": {
+	// 		Key:    "PRIV",
+	// 		ID:     23,
+	// 		Name:   "private",
+	// 		Public: false,
+	// 		Type:   "NORMAL",
+	// 	},
+	// 	"private-only-users": {
+	// 		Key:    "PRIVUSER",
+	// 		ID:     25,
+	// 		Name:   "private-only-users",
+	// 		Public: false,
+	// 		Type:   "NORMAL",
+	// 	},
+	// 	"private-only-groups": {
+	// 		Key:    "PRIVGROUP",
+	// 		ID:     24,
+	// 		Name:   "private-only-groups",
+	// 		Public: false,
+	// 		Type:   "NORMAL",
+	// 	},
+	// 	"private-write": {
+	// 		Key:    "PRIVWRITE",
+	// 		ID:     26,
+	// 		Name:   "private-write",
+	// 		Public: false,
+	// 		Type:   "NORMAL",
+	// 	},
+	// }
+
+	for _, test := range []struct {
+		name string
+		// filter   *ProjectFilter
+		page     *PageToken
+		expected []*Project
+		nextPage *PageToken
+	}{
+		{
+			name:     "all projects",
+			expected: []*Project{privateWrite, privateOnlyUsers, private, public},
+			page: &PageToken{
+				Limit: 100,
+			},
+			nextPage: &PageToken{
+				Size:       4,
+				Limit:      100,
+				IsLastPage: true,
+			},
+		},
+		{
+			name: "page: single page",
+			page: &PageToken{
+				Limit: 1,
+			},
+			expected: []*Project{private},
+			nextPage: &PageToken{
+				Size:          1,
+				Limit:         1,
+				NextPageStart: 3, // not sure about this
+			},
+		},
+
+		// }
+		// {
+		// 	name: "filter by name",
+		// 	filter: &ProjectFilter{
+		// 		Name: "private-only",
+		// 	},
+		// 	expected: []*Project{projects["private-only-users"], projects["private-only-groups"]},
+		// },
+		// {
+		// 	name: "get first page",
+		// 	expected: func() []*Project {
+		// 		var out []*Project
+		// 		for _, p := range projects {
+		// 			out = append(out, p)
+		// 		}
+
+		// 		return out
+		// 	}(),
+		// },
+		// {
+		// 	name: "get last page",
+		// 	expected: func() []*Project {
+		// 		var out []*Project
+		// 		for _, p := range projects {
+		// 			out = append(out, p)
+		// 		}
+
+		// 		return out
+		// 	}(),
+		// },
+		// {
+		// 	name: "filter by name",
+		// 	expected: func() []*Project {
+		// 		var out []*Project
+		// 		for _, p := range projects {
+		// 			out = append(out, p)
+		// 		}
+
+		// 		return out
+		// 	}(),
+		// },
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			actual, nextPage, err := cli.Projects(context.Background(), test.page)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			assertProjectsEqual(t, actual, test.expected)
+			if diff := cmp.Diff(nextPage, test.nextPage); diff != "" {
+				t.Errorf("next page token differs (-got want):\n%s", diff)
+			}
+		})
+	}
 }
 
 func assertProjectsEqual(t *testing.T, actual, expected []*Project) {
@@ -158,7 +324,7 @@ func assertProjectsEqual(t *testing.T, actual, expected []*Project) {
 		sort.Slice(s, func(i, j int) bool { return s[i].ID < s[j].ID })
 	}
 
-	if diff := cmp.Diff(actual, expected); diff != "" {
+	if diff := cmp.Diff(actual, expected, cmpopts.IgnoreFields(Project{}, "Links")); diff != "" {
 		t.Errorf("non-zero diff (-got + want):\n%s", diff)
 	}
 }

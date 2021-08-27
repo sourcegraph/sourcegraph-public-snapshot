@@ -324,8 +324,8 @@ func (c *Client) Users(ctx context.Context, pageToken *PageToken, fs ...UserFilt
 func (c *Client) Projects(ctx context.Context, pageToken *PageToken) ([]*Project, *PageToken, error) {
 	var projects []*Project
 
-	qry := make(url.Values)
-	next, err := c.page(ctx, "/rest/api/1.0/projects", qry, pageToken, &projects)
+	// qry := make(url.Values)
+	next, err := c.page(ctx, "/rest/api/1.0/projects", nil, pageToken, &projects)
 	return projects, next, err
 }
 
