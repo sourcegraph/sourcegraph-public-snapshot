@@ -262,6 +262,15 @@ User permissions are currently implemented by negating the set of repos a user d
 of Sourcegraph have access to most repositories. This is a fairly highly validated assumption, and matches the premise of Sourcegraph to begin with (that you can search across all repos).
 This may not be suitable for Sourcegraph installations with highly controlled repository permissions, and may need revisiting.
 
+### Storage Format
+The code insights time series are currently stored entirely within Postgres. 
+
+As a design, insight data is stored as a full vector of match results per unique time point. This means that for some time `T`, all of the unique timeseries that fall under
+one insight series can be aggregated to form the total result. Given that the processing system will execute every query at-least once, the possiblity of duplicates
+exist within a unique timeseries. A simple deduplication is performed at query time.
+
+Read more about the [history](https://github.com/sourcegraph/sourcegraph/issues/23690) of this format.
+
 ## Debugging
 
 This being a pretty complex and slow-moving system, debugging can be tricky. This is definitely one area we need to improve especially from a user experience point of view ([#18964](https://github.com/sourcegraph/sourcegraph/issues/18964)) and general customer debugging point of view ([#18399](https://github.com/sourcegraph/sourcegraph/issues/18399)).
@@ -358,28 +367,19 @@ DESC LIMIT 100;
 
 See https://www.postgresql.org/docs/9.6/functions-json.html for more metadata `jsonb` operator possibilities. Only `?`, `?&`, `?|`, and `@>` operators are indexed (gin index)
 
-##### Query data the way we do for the frontend, but for every series in the last 6mo
+##### Query data the way we do for the frontend, but for every series
 
 ```sql
-SELECT sub.series_id, sub.interval_time, SUM(value) AS value, NULL AS metadata
-FROM (WITH target_times AS (SELECT *
-                            FROM GENERATE_SERIES(CURRENT_TIMESTAMP::DATE - INTERVAL '6 months', CURRENT_TIMESTAMP::DATE,
-                                                 '2 weeks') AS interval_time)
-      SELECT sub.series_id, sub.repo_id, sub.value, interval_time
-      FROM (SELECT DISTINCT repo_id, series_id FROM series_points) AS r
-             CROSS JOIN target_times tt
-             JOIN LATERAL (
-        SELECT sp.*
-        FROM series_points AS sp
-        WHERE sp.repo_id = r.repo_id
-          AND sp.time <= tt.interval_time
-          AND sp.series_id = r.series_id
-        ORDER BY time DESC
-        LIMIT 1
-        ) sub ON sub.repo_id = r.repo_id AND r.series_id = sub.series_id
-      ORDER BY interval_time, repo_id) AS sub
-GROUP BY sub.series_id, sub.interval_time
-ORDER BY interval_time DESC
+SELECT sub.series_id, sub.interval_time, SUM(sub.value) AS value, sub.metadata
+FROM (
+       SELECT sp.repo_name_id, sp.series_id, sp.time AS interval_time, MAX(value) AS value, NULL AS metadata
+       FROM series_points sp
+              JOIN repo_names rn ON sp.repo_name_id = rn.id
+       GROUP BY sp.series_id, interval_time, sp.repo_name_id
+       ORDER BY sp.series_id, interval_time, sp.repo_name_id DESC
+     ) sub
+GROUP BY sub.series_id, sub.interval_time, sub.metadata
+ORDER BY sub.series_id, sub.interval_time DESC
 ```
 
 #### Inserting data
