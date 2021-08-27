@@ -2,9 +2,13 @@ import * as path from 'path'
 
 import * as esbuild from 'esbuild'
 
+import { manifestPlugin } from './manifestPlugin'
+import { packageResolutionPlugin } from './packageResolutionPlugin'
 import { sassPlugin } from './sassPlugin'
+import { workerPlugin } from './workerPlugin'
 
 const rootPath = path.resolve(__dirname, '..', '..', '..', '..')
+export const uiAssetsPath = path.join(rootPath, 'ui', 'assets')
 const isEnterpriseBuild = process.env.ENTERPRISE && Boolean(JSON.parse(process.env.ENTERPRISE))
 const enterpriseDirectory = path.resolve(__dirname, '..', '..', 'src', 'enterprise')
 
@@ -20,10 +24,10 @@ export const BUILD_OPTIONS: esbuild.BuildOptions = {
     ],
     bundle: true,
     format: 'esm',
-    outdir: path.join(rootPath, 'ui/assets/esbuild'),
+    outdir: path.join(uiAssetsPath, 'esbuild'),
     logLevel: 'error',
     splitting: false, // TODO(sqs): need to have splitting:false for main.worker.ts entrypoint
-    plugins: [sassPlugin],
+    plugins: [sassPlugin, workerPlugin, manifestPlugin, packageResolutionPlugin],
     define: {
         'process.env.NODE_ENV': '"development"',
         global: 'window',

@@ -7,7 +7,10 @@ import { BUILD_OPTIONS } from './build'
 
 export const esbuildDevelopmentServer = async (): Promise<void> => {
     // Start esbuild's server on a random local port.
-    const { host: esbuildHost, port: esbuildPort } = await serve({ host: 'localhost' }, BUILD_OPTIONS)
+    const { host: esbuildHost, port: esbuildPort, wait: esbuildStopped } = await serve(
+        { host: 'localhost' },
+        BUILD_OPTIONS
+    )
     const upstreamHost = 'localhost'
     const upstreamPort = 3081
 
@@ -49,7 +52,7 @@ export const esbuildDevelopmentServer = async (): Promise<void> => {
     await new Promise<void>((resolve, reject) => {
         proxyServer.once('listening', () => {
             signale.success('esbuild server is ready')
-            resolve()
+            esbuildStopped.finally(() => proxyServer.close(error => (error ? reject(error) : resolve())))
         })
         proxyServer.once('error', error => reject(error))
     })
