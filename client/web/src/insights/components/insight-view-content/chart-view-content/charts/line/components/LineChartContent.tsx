@@ -11,8 +11,6 @@ import React, { ReactElement, useCallback, useMemo, useState, MouseEvent, useRef
 import { noop } from 'rxjs'
 import { LineChartContent as LineChartContentType } from 'sourcegraph'
 
-import { readEnvironmentBoolean } from '@sourcegraph/shared/src/testing/utils'
-
 import { DEFAULT_LINE_STROKE } from '../constants'
 import { generateAccessors } from '../helpers/generate-accessors'
 import { getYAxisWidth } from '../helpers/get-y-axis-width'
@@ -24,15 +22,6 @@ import { ActiveDatum, GlyphContent } from './GlyphContent'
 import { NonActiveBackground } from './NonActiveBackground'
 import { dateTickFormatter, numberFormatter, Tick, getTickXProps, getTickYProps } from './TickComponent'
 import { TooltipContent } from './TooltipContent'
-
-/**
- * Check percy test run to be able disable flaky line chart tooltip appearance
- * by disabling any point events over line chart container.
- * See https://github.com/sourcegraph/sourcegraph/issues/23669
- */
-const IS_PERCY_RUN = readEnvironmentBoolean({ variable: 'PERCY_ON', defaultValue: false })
-
-console.log({ 'this-is-env': IS_PERCY_RUN })
 
 // Chart configuration
 const WIDTH_PER_TICK = 70
@@ -224,13 +213,11 @@ export function LineChartContent<Datum extends object>(props: LineChartContentPr
     )
 
     // Disable all event listeners explicitly to avoid flaky tooltip appearance
-    const eventEmitters = !IS_PERCY_RUN
-        ? {
-              onPointerMove: handleRootPointerMove,
-              onPointerOut: handleRootPointerOut,
-              ...otherHandlers,
-          }
-        : {}
+    const eventEmitters = {
+        onPointerMove: handleRootPointerMove,
+        onPointerOut: handleRootPointerOut,
+        ...otherHandlers,
+    }
 
     const hoveredDatumLink = hoveredDatum?.line?.linkURLs?.[hoveredDatum?.index]
     const rootClasses = classnames('line-chart__content', { 'line-chart__content--with-cursor': !!hoveredDatumLink })
@@ -305,7 +292,11 @@ export function LineChartContent<Datum extends object>(props: LineChartContentPr
                             // eslint-disable-next-line jsx-a11y/aria-role
                             role="graphics-datagroup"
                             aria-label="Chart series"
-                            pointerEvents={IS_PERCY_RUN ? 'none' : 'bounding-box'}
+                            pointerEvents="bounding-box"
+                            // Check percy test run to be able disable flaky line chart tooltip appearance
+                            // by disabling any point events over line chart container.
+                            // See https://github.com/sourcegraph/sourcegraph/issues/23669
+                            className="percy-inactive-element"
                             {...eventEmitters}
                         >
                             {/* Spread size of parent group element by transparent rect with width and height */}
@@ -358,7 +349,7 @@ export function LineChartContent<Datum extends object>(props: LineChartContentPr
                                                 line={line}
                                                 lineIndex={index}
                                                 totalNumberOfLines={series.length}
-                                                setFocusedDatum={IS_PERCY_RUN ? noop : setFocusedDatum}
+                                                setFocusedDatum={setFocusedDatum}
                                                 onPointerUp={stopPropagation}
                                                 onClick={onDatumLinkClick}
                                             />
@@ -368,18 +359,16 @@ export function LineChartContent<Datum extends object>(props: LineChartContentPr
                             ))}
                         </Group>
 
-                        {!IS_PERCY_RUN && (
-                            <Tooltip
-                                className="line-chart__tooltip"
-                                showHorizontalCrosshair={false}
-                                showVerticalCrosshair={true}
-                                snapTooltipToDatumX={false}
-                                snapTooltipToDatumY={false}
-                                showDatumGlyph={false}
-                                showSeriesGlyphs={false}
-                                renderTooltip={renderTooltip}
-                            />
-                        )}
+                        <Tooltip
+                            className="line-chart__tooltip"
+                            showHorizontalCrosshair={false}
+                            showVerticalCrosshair={true}
+                            snapTooltipToDatumX={false}
+                            snapTooltipToDatumY={false}
+                            showDatumGlyph={false}
+                            showSeriesGlyphs={false}
+                            renderTooltip={renderTooltip}
+                        />
                     </XYChart>
                 </TooltipProvider>
             </DataProvider>
