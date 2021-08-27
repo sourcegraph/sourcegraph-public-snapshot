@@ -25,7 +25,7 @@ The current code insights backend is a beta version contributed by @coury-clark 
 * Optimizes unnecessary search queries by using an index of commits to query only for time periods that have had at least one commit.
 * Supports regexp based drilldown on repository name.
 * Provides permissions restrictions by filtering of repositories that are not visible to the user at query time.
-* Does not yet support synchronous insight creation through an API. Read more below in the settings sync section.
+* Does not yet support synchronous insight creation through an API. Read more below in the Insight Metadata section.
 
 The current version of the backend is an MVP to achieve beta status to unblock the feature request of "running an insight over all my repos".
 
@@ -61,30 +61,56 @@ will not present a performance problem given the primary constraint on Code Insi
 
 It is reasonable to expect this migration to occur some time during the beta period for Code Insights.
 
+## Insight Metadata
+Historically, insights ran entirely within the Sourcegraph extensions API on the browser. These insights are limited to small sets of manually defined repositories
+since they execute in real time on page load with no persistence of the timeseries data. Sourcegraph extensions have access to settings (user / org / global) ,
+so the original storage location for extension based insight metadata (query string, labels, title, etc) was settings.
+
+This storage location persisted for the backend MVP, but is in the process of being deprecated by moving the metadata to the database. Given roadmap constraints
+an API does not currently exist to synchronously interact with the database for metadata. A background process attempts to sync insight metadata that is flagged as
+"backend compatible" on a regular interval.
+
+As expected, this async process causes many strange UX / UI bugs that are difficult or impossible to solve. An API to fully deprecate the settings storage is a priority
+for Q3.
+
+As an additional note, extension based insights are [read](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@43062781be6c648f40b5baec32ce8241c03cbd18/-/blob/internal/usagestats/code_insights.go?L179) from settings for the purposes of sending aggregated pings.
+
 ## Life of an insight
 
 ### (1) User defines insight in settings
 
-A user defines an insight in their user settings (today, only global user settings are supported [#18397](https://github.com/sourcegraph/sourcegraph/issues/18397)), e.g. at https://sourcegraph.com/site-admin/global-settings by adding:
+A user creates a code insight using the creation UI, and selects the option to run the insight over all repositories. The Code Insights will create a JSON object
+in the appropriate settings (user / org)) and place it in the `insights.allrepos` dictionary. Note: only insights placed in the `insights.allrepos` dictionary are considered eligible for 
+sync to prevent conflicts with extensions insights.
 
+An example backend-compatible insight definition in settings:
 ```jsonb
-    "insights": [
-      {
-        "title": "fmt usage",
-        "description": "fmt.Errorf/fmt.Printf usage",
-        "series": [
-          {
-            "label": "fmt.Errorf",
-            "search": "errorf",
-          },
-          {
-            "label": "printf",
-            "search": "fmt.Printf",
-          }
-        ]
-      }
-    ],
+"insights.allrepos": {
+    "searchInsights.insight.soManyInsights": {
+      "title": "So many insights",
+      "series": [
+        {
+          "name": "\"insights\" insights",
+          "stroke": "var(--oc-blue-7)",
+          "query": "insights"
+        }
+      ]
+    },
+}
 ```
+
+### Unique ID
+An Insight View is defined to have a globally unique referencable ID. For the time being to match feature parity with extensions insights the ID is generated as the
+chart title prefixed with `searchInsights.insight.`.
+
+In the above example, the ID is `searchInsights.insight.soManyInsights`.
+
+Read [more](./insight_view.md) about Insight Views
+
+### Sync to the database
+
+The settings sync [job](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@4306278/-/blob/enterprise/internal/insights/discovery/discovery.go?L138:6)
+will execute and attempt to migrate the defined insight. Currently, the sync job does not handle updates and will only sync if the insight 
 
 This defines a single insight called `fmt usage`, with two series of data (the number of search results the queries `errorf` and `fmt.Printf` return, respectively.)
 
