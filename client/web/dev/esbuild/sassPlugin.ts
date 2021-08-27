@@ -180,18 +180,14 @@ export const sassPlugin: esbuild.Plugin = {
             return {
                 resolveDir: resolveDirectory,
                 contents,
+                loader: 'js',
             }
         })
 
         // Handle the `import`ed CSS files from the previous onLoad filter.
-        build.onResolve({ filter: /./, namespace: 'postcss-module' }, args => {
-            if (false) {
-                console.log('LOAD', args.path)
-            }
-            return {
-                path: args.path,
-                namespace: 'file',
-            }
-        })
+        build.onResolve({ filter: /./, namespace: 'postcss-module' }, args => ({
+            path: args.path,
+            namespace: 'file',
+        }))
     },
 }
