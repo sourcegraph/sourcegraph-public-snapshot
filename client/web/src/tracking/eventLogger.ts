@@ -34,7 +34,7 @@ export class EventLogger implements TelemetryService {
         // EventLogger is never teared down
         // eslint-disable-next-line rxjs/no-ignored-subscription
         browserExtensionMessageReceived.subscribe(({ platform }) => {
-            this.log('BrowserExtensionConnectedToServer', { platform })
+            this.log('BrowserExtensionConnectedToServer', { platform }, { platform })
 
             if (localStorage && localStorage.getItem('eventLogDebug') === 'true') {
                 console.debug('%cBrowser extension detected, sync completed', 'color: #aaa')
