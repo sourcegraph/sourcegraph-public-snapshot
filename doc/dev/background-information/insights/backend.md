@@ -181,6 +181,20 @@ There is a rate limit associated with analyzing historical data frames. This lim
 `insights.historical.worker.rateLimit`. As a rule of thumb, this limit should be set as high as possible without performance
 impact to `gitserver`. A likely safe starting point on most Sourcegraph installations is `insights.historical.worker.rateLimit=20`.
 
+#### Limiting to a scope of repositories
+Naturally, some insights will not need or want to execute over all repositories and would prefer to execute over a subset to generate faster. As a trade off to reach beta
+we made the decision that all insights will execute over all repositories. The primary justification was that the most significant blocker for beta was the ability to run
+over all insights, and therefore unlocking that capability also unlocks the capability for users that want to run over a subset, they will just need to wait longer.
+
+This is non-trivial problem to solve, and raises many questions:
+1. How do we represent these sets? Do we list each repository out for each insight? This could result in a very large cardinality and grow the database substantially.
+2. What happens if users change the set of repositories after we have already backfilled?
+3. What does the architecture of this look like internally? How do we balance the priority of backfilling other larger insights with much smaller ones?
+
+This is also a blocker to migrate all functionality away from extensions and to the backend, because the extesions *do* support small numbers of repositories at this time.
+
+This will be an area of work for Q3 - Q4.
+
 #### Detecting if an insight is _complete_
 Given the large possible cardinality of required queries to backfill an insight, it is clear this process can take some time. Through dogfooding we have found
 on a Sourcegraph installation with ~36,000 repositories, we can expect to backfill an average insight in 20-30 minutes. The actual benchmarks of how long 
@@ -225,13 +239,28 @@ installations `Searcher` service.
 
 The webapp frontend invokes a GraphQL API which is served by the Sourcegraph `frontend` monolith backend service in order to query information about backend insights. ([cpde](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+file:enterprise/+lang:go+InsightConnectionResolver&patternType=literal))
 
-* A GraphQL _series_ resolver returns all of the distinct data series in a single insight (UI panel) ([code](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+file:enterprise/+file:resolver+lang:go+Series%28&patternType=literal))
-* A GraphQL resolver ultimately provides data points for a single series of data ([code](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+file:enterprise/+file:resolver+lang:go+Points%28&patternType=literal))
-* The _series points resolver_ merely queries the _insights store_ for the data points it needs, and the store itself merely runs SQL queries against the TimescaleDB database to get the datapoints ([code](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+file:enterprise/+file:store+lang:go+SeriesPoints%28&patternType=literal))
+1. A GraphQL _series_ resolver returns all of the distinct data series in a single insight (UI panel) ([code](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+file:enterprise/+file:resolver+lang:go+Series%28&patternType=literal))
+2. A GraphQL resolver ultimately provides data points for a single series of data ([code](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+file:enterprise/+file:resolver+lang:go+Points%28&patternType=literal))
+3. The _series points resolver_ merely queries the _insights store_ for the data points it needs, and the store itself merely runs SQL queries against the TimescaleDB database to get the datapoints ([code](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+file:enterprise/+file:store+lang:go+SeriesPoints%28&patternType=literal))
 
 Note: There are other better developer docs which explain the general reasoning for why we have a "store" abstraction. Insights usage of it is pretty minimal, we mostly follow it to separate SQL operations from GraphQL resolver code and to remain consistent with the rest of Sourcegraph's architecture.
 
 Once the web client gets data points back, it renders them! For more information, please contact an @codeinsights frontend engineer.
+
+#### User Permissions
+We made the decision to generate data series for all repositories and restrict the information returned to the user at query time. There were a few driving factors
+behind this decision:
+1. We have split feedback between customers that want to share insights globally without regard for permissions, and other customers that want strict permissions mapped to repository visibility.
+  In order to possibly support both (or either), we gain the most flexibility by performing query time limitations.
+2. We can reuse pre-calculated data series across multiple users if they provide the same query to generate an insight. This not only reduces the storage overhead, but makes
+  the user experience substantially better if the data series is already calculated.
+   
+Given the large possible cardinality of the visible repository set, it is not practical to select all repos a user has access to at query time. Additionally, this data does not live
+in the same database as the timeseries data, requiring some network traversal.
+
+User permissions are currently implemented by negating the set of repos a user does *not* have access to. This is based on the assumption that most users
+of Sourcegraph have access to most repositories. This is a fairly highly validated assumption, and matches the premise of Sourcegraph to begin with (that you can search across all repos).
+This may not be suitable for Sourcegraph installations with highly controlled repository permissions, and may need revisiting.
 
 ## Debugging
 
