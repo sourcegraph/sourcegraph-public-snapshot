@@ -56,6 +56,10 @@ func (r *Regexp) FindString(s string) string {
 	return r.re().FindString(s)
 }
 
+func (r *Regexp) FindStringIndex(s string) []int {
+	return r.re().FindStringIndex(s)
+}
+
 func (r *Regexp) FindAllString(s string, n int) []string {
 	return r.re().FindAllString(s, n)
 }

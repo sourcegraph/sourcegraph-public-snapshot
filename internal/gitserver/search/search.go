@@ -7,6 +7,8 @@ import (
 	"github.com/hashicorp/go-multierror"
 	git "github.com/libgit2/git2go/v31"
 	"golang.org/x/sync/errgroup"
+
+	"github.com/sourcegraph/sourcegraph/internal/api"
 )
 
 // Commit wraps a *git.Commit, lazily storing requested fields to avoid re-computing
@@ -17,9 +19,19 @@ type Commit struct {
 	repo *git.Repository
 
 	// These fields may not be initialized, so use their accessor methods instead
-	diff      []DiffDelta    // lazily populated by Diff()
+	diff      Diff           // lazily populated by Diff()
 	author    *git.Signature // lazily populated by Author()
 	committer *git.Signature // lazily populated by Committer()
+	message   *string        // lazily populated by Message()
+}
+
+func (c *Commit) Message() string {
+	if c.message != nil {
+		return *c.message
+	}
+	m := strings.TrimSpace(c.Commit.Message())
+	c.message = &m
+	return m
 }
 
 // Author returns the commit's author signature, using a cached value if it's already been called
@@ -27,7 +39,8 @@ func (c *Commit) Author() *git.Signature {
 	if c.author != nil {
 		return c.author
 	}
-	return c.Commit.Author()
+	c.author = c.Commit.Author()
+	return c.author
 }
 
 // Committer returns the commit's committer signature, using a cached value if it's already been called
@@ -35,12 +48,23 @@ func (c *Commit) Committer() *git.Signature {
 	if c.committer != nil {
 		return c.committer
 	}
-	return c.Commit.Committer()
+	c.committer = c.Commit.Committer()
+	return c.committer
 }
 
-func (c *Commit) Diff() ([]DiffDelta, error) {
+// Parents returns the IDs for this commits parents
+func (c *Commit) Parents() []api.CommitID {
+	parentCount := c.ParentCount()
+	res := make([]api.CommitID, 0, parentCount)
+	for i := uint(0); i < parentCount; i++ {
+		res = append(res, api.CommitID(c.ParentId(i).String()))
+	}
+	return res
+}
+
+func (c *Commit) Diff() (Diff, error) {
 	// If the diff has already been computed, use that
-	if c.diff != nil {
+	if c.diff != "" {
 		return c.diff, nil
 	}
 
@@ -55,13 +79,13 @@ func (c *Commit) Diff() ([]DiffDelta, error) {
 	if c.ParentCount() > 0 {
 		parentTree, err = c.Parent(0).Tree()
 		if err != nil {
-			return nil, err
+			return "", err
 		}
 	}
 
 	tree, err := c.Tree()
 	if err != nil {
-		return nil, err
+		return "", err
 	}
 
 	diffOptions := git.DiffOptions{
@@ -70,82 +94,61 @@ func (c *Commit) Diff() ([]DiffDelta, error) {
 	}
 	diff, err := c.repo.DiffTreeToTree(parentTree, tree, &diffOptions)
 	if err != nil {
-		return nil, err
+		return "", err
 	}
 
-	var (
-		res          []DiffDelta
-		currentDelta *DiffDelta
-		currentHunk  *DiffHunk
-	)
+	var buf strings.Builder
+	buf.Grow(1024)
 
-	// Build a full in-memory representation of the diff because the callbacks here make it _very_
-	// difficult to do any sort of processing on the diff without convoluted detection of when
-	// we finish iterating over a file or a chunk.
-	diff.ForEach(func(delta git.DiffDelta, progress float64) (git.DiffForEachHunkCallback, error) {
-		if currentDelta != nil {
-			res = append(res, *currentDelta)
-		}
-		currentDelta = &DiffDelta{
-			DiffDelta: &delta,
-		}
+	err = diff.ForEach(func(delta git.DiffDelta, progress float64) (git.DiffForEachHunkCallback, error) {
+		buf.WriteString(delta.OldFile.Path)
+		buf.WriteByte(' ')
+		buf.WriteString(delta.NewFile.Path)
+		buf.WriteByte('\n')
+
 		return func(hunk git.DiffHunk) (git.DiffForEachLineCallback, error) {
-			if currentHunk != nil {
-				currentDelta.Hunks = append(currentDelta.Hunks, *currentHunk)
-			}
-			currentHunk = &DiffHunk{
-				DiffHunk: &hunk,
-			}
+			buf.WriteString(hunk.Header)
+			buf.WriteByte('\n')
 			return func(line git.DiffLine) error {
-				currentHunk.Lines = append(currentHunk.Lines, DiffLine{&line})
+				switch line.Origin {
+				case git.DiffLineContext:
+					buf.WriteByte(' ')
+				case git.DiffLineAddition:
+					buf.WriteByte('+')
+				case git.DiffLineDeletion:
+					buf.WriteByte('-')
+				case git.DiffLineContextEOFNL:
+					buf.WriteByte('=')
+				case git.DiffLineAddEOFNL:
+					buf.WriteByte('>')
+				case git.DiffLineDelEOFNL:
+					buf.WriteByte('<')
+				default:
+					return nil
+				}
+
+				buf.WriteString(line.Content)
 				return nil
 			}, nil
 		}, nil
 	}, git.DiffDetailLines)
 
-	// Clean up any in-progress hunks and deltas that weren't closed because iteration doesn't
-	// provide any callbacks for "finished hunk/delta".
-	if currentHunk != nil {
-		currentDelta.Hunks = append(currentDelta.Hunks, *currentHunk)
-	}
-	if currentDelta != nil {
-		res = append(res, *currentDelta)
-	}
-
-	return res, nil
+	return Diff(buf.String()), err
 }
 
-// DiffDelta wraps *git.DiffDelta with the pre-computed hunks associated with that delta
-type DiffDelta struct {
-	*git.DiffDelta
-	Hunks []DiffHunk
-}
-
-// DiffHunk wraps *git.DiffHunk with the pre-computed lines associated with that hunk
-type DiffHunk struct {
-	*git.DiffHunk
-	Lines []DiffLine
-}
-
-// DiffHunk wraps *git.DiffLine
-type DiffLine struct {
-	*git.DiffLine
-}
-
-// CommitMatch represents a matched commit and highlights of the matched fields
 type CommitMatch struct {
-	Commit     *Commit
-	Highlights *CommitHighlights
+	*Commit
+	*HighlightedCommit
 }
 
-func IterCommitMatches(ctx context.Context, repoPath string, revs []RevisionSpecifier, pred CommitPredicate, fn func(CommitMatch) bool) error {
+func IterCommitMatches(ctx context.Context, repoPath string, revs []RevisionSpecifier, pred CommitPredicate, fn func(*Commit, *HighlightedCommit) bool) error {
 	ctx, cancel := context.WithCancel(ctx)
 	g, ctx := errgroup.WithContext(ctx)
 
 	var (
-		batchSize   = 128
+		batchSize   = 256
 		jobs        = make(chan searchJob, 256)
-		resultChans = make(chan chan CommitMatch, 64)
+		resultChans = make(chan chan CommitMatch, 256)
 	)
 
 	// Start job feeder. It will iterate over all commits that match the
@@ -165,6 +168,8 @@ func IterCommitMatches(ctx context.Context, repoPath string, revs []RevisionSpec
 			return err
 		}
 
+		// TODO(camdencheek): figure out a way to replicate git's --source
+		// so we can populate SourceRefs
 		for _, rev := range revs {
 			if rev.RevSpec != "" {
 				if err := walker.PushRange(rev.RevSpec); err != nil {
@@ -184,6 +189,8 @@ func IterCommitMatches(ctx context.Context, repoPath string, revs []RevisionSpec
 				}
 			}
 		}
+
+		walker.SimplifyFirstParent()
 
 		send := func(batch []git.Oid) {
 			resultChan := make(chan CommitMatch, 32)
@@ -249,7 +256,7 @@ func IterCommitMatches(ctx context.Context, repoPath string, revs []RevisionSpec
 		defer cancel()
 		for resultChan := range resultChans {
 			for result := range resultChan {
-				if !fn(result) {
+				if !fn(result.Commit, result.HighlightedCommit) {
 					return nil
 				}
 			}
@@ -286,130 +293,17 @@ func (j searchJob) Run(ctx context.Context, repo *git.Repository) error {
 		}
 		matched, highlights := j.Predicate.Match(wrappedCommit)
 		if matched {
-			commitMatch := CommitMatch{
-				Commit:     wrappedCommit,
-				Highlights: highlights,
-			}
 			select {
 			case <-ctx.Done():
 				return nil
-			case j.ResultChan <- commitMatch:
+			case j.ResultChan <- CommitMatch{wrappedCommit, highlights}:
 			}
 		}
 	}
 	return nil
 }
 
-// FormatDiffWithHighlights formats a diff into a string, keeping only lines that were highlighted
-// and one line of context around them. It returns the formatted diff and a set of new highlights that
-// map to the formatted diff rather than the original []DiffDelta. If we match a delta that has no hunk
-// matches, we include the full diff content for that file.
-func FormatDiffWithHighlights(deltas []DiffDelta, deltaHighlights DeltaHighlights) (string, Ranges) {
-	var buf strings.Builder
-	var ranges Ranges
-	buf.Grow(1024) // conservative minimum to reduce many small allocations
-
-	for _, dh := range deltaHighlights {
-		delta := deltas[dh.Index]
-
-		ranges = append(ranges, offset(dh.OldFileHighlights, buf.Len())...)
-		buf.WriteString(delta.OldFile.Path)
-		buf.WriteByte(' ')
-
-		ranges = append(ranges, offset(dh.NewFileHighlights, buf.Len())...)
-		buf.WriteString(delta.NewFile.Path)
-		buf.WriteByte('\n')
-
-		// if len(dh.Hunks) == 0 {
-		// 	// TODO format all hunks if none of the hunks matched
-		// }
-
-		for _, hh := range dh.Hunks {
-			hunk := delta.Hunks[hh.Index]
-
-			buf.WriteString(hunk.Header)
-
-			contextLinesToWrite := make(map[int]struct{}, len(hh.Lines))
-			// Populate all the possible context line indices
-			for _, lh := range hh.Lines {
-				prev := lh.Index - 1
-				if prev >= 0 {
-					contextLinesToWrite[prev] = struct{}{}
-				}
-				next := lh.Index + 1
-				if next < len(hunk.Lines) {
-					contextLinesToWrite[next] = struct{}{}
-				}
-			}
-
-			// Remove all the requested context lines that are highlighted lines
-			for _, lh := range hh.Lines {
-				delete(contextLinesToWrite, lh.Index)
-			}
-
-			// Write all the lines and the context lines surrounding them
-			for _, lh := range hh.Lines {
-				prev := lh.Index - 1
-				if _, ok := contextLinesToWrite[prev]; ok {
-					writeLine(&buf, hunk.Lines[prev])
-					delete(contextLinesToWrite, prev)
-				}
-
-				// offset by buf.Len()+1 because each line will be prepended with '+', '-', or ' '
-				ranges = append(ranges, offset(lh.Highlights, buf.Len()+1)...)
-				writeLine(&buf, hunk.Lines[lh.Index])
-
-				next := lh.Index + 1
-				if _, ok := contextLinesToWrite[next]; ok {
-					writeLine(&buf, hunk.Lines[next])
-					delete(contextLinesToWrite, next)
-				}
-			}
-
-			if len(contextLinesToWrite) > 0 {
-				// TODO(camdencheek): This isn't actually necessary, but it's a nice safety
-				// check to keep around for a while to check my assumptions.
-				panic("all context lines should have been written")
-			}
-		}
-	}
-	return buf.String(), ranges
-}
-
-// writeLine writes a DiffLine to the builder, prepended with:
-// '+' for an added line
-// '-' for a removed line
-// ' ' for a context line
-func writeLine(buf *strings.Builder, line DiffLine) {
-	switch line.Origin {
-	case git.DiffLineContext:
-		buf.WriteByte(' ')
-		buf.WriteString(line.Content)
-	case git.DiffLineAddition:
-		buf.WriteByte('+')
-		buf.WriteString(line.Content)
-	case git.DiffLineDeletion:
-		buf.WriteByte('-')
-		buf.WriteString(line.Content)
-	}
-}
-
-// offset takes a set of ranges and creates a new set of ranges whose
-// start and end locations are offset by the given amount. Note, we could
-// mutate the ranges in place to avoid an allocation, but it's a relatively
-// small cost, and formatting a diff shouldn't mutate it.
-func offset(ranges Ranges, amount int) Ranges {
-	res := make(Ranges, 0, len(ranges))
-	for _, oldRange := range ranges {
-		res = append(res, Range{
-			Start: Location{Offset: oldRange.Start.Offset + amount},
-			End:   Location{Offset: oldRange.End.Offset + amount},
-		})
-	}
-	return res
-}
-
-// TODO(camdencheek) this is copied straight from internal/search to avoid import cycles
+// TODO(camdencheek): this is copied straight from internal/search to avoid import cycles
 type RevisionSpecifier struct {
 	// RevSpec is a revision range specifier suitable for passing to git. See
 	// the manpage gitrevisions(7).

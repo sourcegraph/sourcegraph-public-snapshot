@@ -1,21 +1,20 @@
 package search
 
 import (
+	"encoding/json"
 	"sort"
 )
 
-// CommitHighlights represents a set of highlights associated with a matched Commit.
-// Most of the complexity of this struct and its associated types comes from supporting
-// merging highlights for two different diff results.
-type CommitHighlights struct {
-	Diff    DeltaHighlights
-	Message Ranges
+type HighlightedCommit struct {
+	Diff    HighlightedString
+	Message HighlightedString
+
 	// TODO we could potentially return highlights for author and committer as well
 	// Author    Ranges
 	// Committer Ranges
 }
 
-func (c *CommitHighlights) Merge(other *CommitHighlights) *CommitHighlights {
+func (c *HighlightedCommit) Merge(other *HighlightedCommit) *HighlightedCommit {
 	if c == nil {
 		return other
 	}
@@ -24,118 +23,54 @@ func (c *CommitHighlights) Merge(other *CommitHighlights) *CommitHighlights {
 		return c
 	}
 
-	c.Diff = c.Diff.Merge(other.Diff)
-	c.Message = c.Message.Merge(other.Message)
+	c.Diff.Merge(other.Diff)
+	c.Message.Merge(other.Message)
 	return c
 }
 
-type DeltaHighlight struct {
-	Index             int
-	OldFileHighlights Ranges
-	NewFileHighlights Ranges
-	Hunks             HunkHighlights
+type HighlightedString struct {
+	Content    string `json:"content"`
+	Highlights Ranges `json:"highlights"`
 }
 
-func (f DeltaHighlight) Merge(other DeltaHighlight) DeltaHighlight {
-	f.OldFileHighlights = f.OldFileHighlights.Merge(other.OldFileHighlights)
-	f.NewFileHighlights = f.NewFileHighlights.Merge(other.NewFileHighlights)
-	f.Hunks = f.Hunks.Merge(other.Hunks)
-	return f
-}
-
-type DeltaHighlights []DeltaHighlight
-
-func (f DeltaHighlights) Len() int           { return len(f) }
-func (f DeltaHighlights) Less(i, j int) bool { return f[i].Index < f[j].Index }
-func (f DeltaHighlights) Swap(i, j int)      { f[i], f[j] = f[j], f[i] }
-func (f DeltaHighlights) Merge(other DeltaHighlights) DeltaHighlights {
-	f = append(f, other...)
-	sort.Sort(f)
-
-	unique := 0
-	for i := 1; i < len(f); i++ {
-		if f[unique].Index != f[i].Index {
-			unique++
-			f[unique] = f[i]
-			continue
-		}
-
-		f[unique] = f[unique].Merge(f[i])
+func (h *HighlightedString) Merge(other HighlightedString) {
+	if h.Content == "" {
+		h.Content = other.Content
 	}
-	return f[:unique+1]
-}
-
-type HunkHighlight struct {
-	Index int
-	Lines LineHighlights
-}
-
-func (h HunkHighlight) Merge(other HunkHighlight) HunkHighlight {
-	h.Lines = h.Lines.Merge(other.Lines)
-	return h
-}
-
-type HunkHighlights []HunkHighlight
-
-func (h HunkHighlights) Len() int           { return len(h) }
-func (h HunkHighlights) Less(i, j int) bool { return h[i].Index < h[j].Index }
-func (h HunkHighlights) Swap(i, j int)      { h[i], h[j] = h[j], h[i] }
-func (h HunkHighlights) Merge(other HunkHighlights) HunkHighlights {
-	h = append(h, other...)
-	sort.Sort(h)
-
-	unique := 0
-	for i := 1; i < len(h); i++ {
-		if h[unique].Index != h[i].Index {
-			unique++
-			h[unique] = h[i]
-			continue
-		}
-
-		h[unique] = h[unique].Merge(h[i])
-	}
-
-	return h[:unique+1]
-}
-
-type LineHighlight struct {
-	Index      int
-	Highlights Ranges
-}
-
-func (l LineHighlight) Merge(other LineHighlight) LineHighlight {
-	l.Highlights = l.Highlights.Merge(other.Highlights)
-	return l
-}
-
-type LineHighlights []LineHighlight
-
-func (l LineHighlights) Len() int           { return len(l) }
-func (l LineHighlights) Less(i, j int) bool { return l[i].Index < l[j].Index }
-func (l LineHighlights) Swap(i, j int)      { l[i], l[j] = l[j], l[i] }
-func (l LineHighlights) Merge(other LineHighlights) LineHighlights {
-	l = append(l, other...)
-	sort.Sort(l)
-
-	unique := 0
-	for i := 1; i < len(l); i++ {
-		if l[unique].Index != l[i].Index {
-			unique++
-			l[unique] = l[i]
-			continue
-		}
-
-		l[unique] = l[unique].Merge(l[i])
-	}
-
-	return l[:unique+1]
+	h.Highlights = append(h.Highlights, other.Highlights...)
+	// TODO(camdencheek): Do we need to guarantee that these are non-overlapping like Zoekt does?
+	sort.Sort(h.Highlights)
 }
 
 type Location struct {
-	Offset int `json:"offset"`
-	// TODO add line and column as well
-	// Line   int `json:"line"`
-	// Column int `json:"column"`
+	Offset int
+	Line   int
+	Column int
+}
+
+func (l Location) Shift(o Location) Location {
+	return Location{
+		Offset: l.Offset + o.Offset,
+		Line:   l.Line + o.Line,
+		Column: l.Column + o.Column,
+	}
+}
+
+// MarshalJSON provides a custom JSON serialization to reduce
+// the size overhead of sending the field names for every location
+func (l Location) MarshalJSON() ([]byte, error) {
+	return json.Marshal([3]int{l.Offset, l.Line, l.Column})
+}
+
+func (l *Location) UnmarshalJSON(data []byte) error {
+	var v [3]int
+	if err := json.Unmarshal(data, &v); err != nil {
+		return err
+	}
+	l.Offset = v[0]
+	l.Line = v[1]
+	l.Column = v[2]
+	return nil
 }
 
 type Range struct {
@@ -155,4 +90,19 @@ func (r Ranges) Merge(other Ranges) Ranges {
 
 	// Do not merge overlapping ranges because we want the result count to be accurate
 	return r
+}
+
+// Shift takes a set of ranges and creates a new set of ranges whose
+// start and end locations are offset by the given amount. Note, we could
+// mutate the ranges in place to avoid an allocation, but it's a relatively
+// small cost for immutability.
+func (r Ranges) Shift(amount Location) Ranges {
+	res := make(Ranges, 0, len(r))
+	for _, oldRange := range r {
+		res = append(res, Range{
+			Start: oldRange.Start.Shift(amount),
+			End:   oldRange.End.Shift(amount),
+		})
+	}
+	return res
 }
