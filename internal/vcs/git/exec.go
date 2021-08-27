@@ -174,7 +174,7 @@ func gitserverCmdFunc(repo api.RepoName) cmdFunc {
 }
 
 // cmdFunc is a func that creates a new executable Git command.
-type cmdFunc func(args []string) cmd
+type cmdFunc func([]string) cmd
 
 // cmd is an executable Git command.
 type cmd interface {

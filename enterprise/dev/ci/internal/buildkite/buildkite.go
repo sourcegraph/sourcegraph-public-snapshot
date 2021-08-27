@@ -99,7 +99,7 @@ func (p *Pipeline) WriteTo(w io.Writer) (int64, error) {
 	return int64(n), err
 }
 
-type StepOpt func(step *Step)
+type StepOpt func(*Step)
 
 func Cmd(command string) StepOpt {
 	return func(step *Step) {

@@ -45,7 +45,7 @@ func newConsistentHash(nodes []string) consistentHash {
 	return m
 }
 
-type hashFn func(data []byte) uint32
+type hashFn func([]byte) uint32
 
 type hashMap struct {
 	hash     hashFn

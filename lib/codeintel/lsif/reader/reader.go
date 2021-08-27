@@ -8,7 +8,7 @@ import (
 )
 
 // ElementMapper is the type of function that is invoked for each parsed element.
-type ElementMapper func(lineContext LineContext)
+type ElementMapper func(LineContext)
 
 // Read consumes the given reader as newline-delimited JSON-encoded LSIF. Each parsed vertex and each
 // parsed edge element is registered to the given Stasher. If vertex or edge mappers are supplied, they

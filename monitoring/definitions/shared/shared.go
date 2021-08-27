@@ -68,7 +68,7 @@ func (o Observable) WithNoAlerts(interpretation string) Observable {
 }
 
 // ObservableOption is a function that transforms an observable.
-type ObservableOption func(observable Observable) Observable
+type ObservableOption func(Observable) Observable
 
 func (f ObservableOption) safeApply(observable Observable) Observable {
 	if f == nil {

@@ -516,7 +516,7 @@ func findPatternRevs(includePatterns []string) (includePatternRevs []patternRevs
 	return
 }
 
-type searchableReposFunc func(ctx context.Context) ([]types.RepoName, error)
+type searchableReposFunc func(context.Context) ([]types.RepoName, error)
 
 // searchableRepositories returns the intersection of calling gettRawSearchableRepos
 // (db) and indexed repos (zoekt), minus repos matching excludePatterns.

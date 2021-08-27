@@ -14,7 +14,7 @@ import (
 )
 
 // FileContentFunc is a closure that returns the contents of a file and is used by the VirtualFileResolver.
-type FileContentFunc func(ctx context.Context) (string, error)
+type FileContentFunc func(context.Context) (string, error)
 
 func NewVirtualFileResolver(stat fs.FileInfo, fileContent FileContentFunc) *virtualFileResolver {
 	return &virtualFileResolver{

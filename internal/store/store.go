@@ -86,7 +86,7 @@ type Store struct {
 // FilterFunc filters tar files based on their header.
 // Tar files for which FilterFunc evaluates to true
 // are not stored in the target zip.
-type FilterFunc func(hdr *tar.Header) bool
+type FilterFunc func(*tar.Header) bool
 
 // Start initializes state and starts background goroutines. It can be called
 // more than once. It is optional to call, but starting it earlier avoids a

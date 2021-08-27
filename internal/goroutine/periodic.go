@@ -50,7 +50,7 @@ type Finalizer interface {
 }
 
 // HandlerFunc wraps a function so it can be used as a Handler.
-type HandlerFunc func(ctx context.Context) error
+type HandlerFunc func(context.Context) error
 
 func (f HandlerFunc) Handle(ctx context.Context) error {
 	return f(ctx)

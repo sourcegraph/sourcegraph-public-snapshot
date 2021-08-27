@@ -10,7 +10,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/dev/depgraph/internal/graph"
 )
 
-type Lint func(graph *graph.DependencyGraph) []lintError
+type Lint func(*graph.DependencyGraph) []lintError
 
 type lintError struct {
 	pkg     string

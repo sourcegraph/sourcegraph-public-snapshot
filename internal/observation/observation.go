@@ -135,7 +135,7 @@ type Operation struct {
 
 // TraceLogger is returned from WithAndLogger and can be used to add timestamped key and
 // value pairs into a related opentracing span.
-type TraceLogger func(fields ...log.Field)
+type TraceLogger func(...log.Field)
 
 // FinishFunc is the shape of the function returned by With and should be invoked within
 // a defer directly before the observed function returns.

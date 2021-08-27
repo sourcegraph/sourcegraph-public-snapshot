@@ -37,7 +37,7 @@ type operationMetricOptions struct {
 }
 
 // OperationMetricsOption alter the default behavior of NewOperationMetrics.
-type OperationMetricsOption func(o *operationMetricOptions)
+type OperationMetricsOption func(*operationMetricOptions)
 
 // WithSubsystem overrides the default subsystem for all metrics.
 func WithSubsystem(subsystem string) OperationMetricsOption {

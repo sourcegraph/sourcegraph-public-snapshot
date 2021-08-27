@@ -45,7 +45,7 @@ type ObservableConstructorOptions struct {
 
 // observableConstructor is a type of constructor function used in this package that creates
 // a shared observable given a set of common observable options.
-type observableConstructor func(options ObservableConstructorOptions) sharedObservable
+type observableConstructor func(ObservableConstructorOptions) sharedObservable
 
 type GroupConstructorOptions struct {
 	// ObservableConstructorOptions are shared between child observables of the group.

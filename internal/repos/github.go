@@ -310,7 +310,7 @@ func (s *GithubSource) excludes(r *github.Repository) bool {
 // - `hasNext` bool: if there is a next page
 // - `cost` int: rate limit cost used to determine recommended wait before next call
 // - `err` error: if something goes wrong
-type repositoryPager func(page int) (repos []*github.Repository, hasNext bool, cost int, err error)
+type repositoryPager func(int) (repos []*github.Repository, hasNext bool, cost int, err error)
 
 // paginate returns all the repositories from the given repositoryPager.
 // It repeatedly calls `pager` with incrementing page count until it

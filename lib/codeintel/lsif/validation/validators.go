@@ -27,7 +27,7 @@ var edgeValidators = map[string]ElementValidator{
 
 // RelationshipValidator validates a specific property across all vertex and edges
 // registered to the given context's stasher.
-type RelationshipValidator func(ctx *ValidationContext) bool
+type RelationshipValidator func(*ValidationContext) bool
 
 // relationshipValidators is the set of validators that operate across the entire LSIF graph.
 var relationshipValidators = []RelationshipValidator{

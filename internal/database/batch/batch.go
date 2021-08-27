@@ -27,7 +27,7 @@ type Inserter struct {
 	returningScanner ReturningScanner
 }
 
-type ReturningScanner func(rows *sql.Rows) error
+type ReturningScanner func(*sql.Rows) error
 
 // InsertValues creates a new batch inserter using the given database handle, table name, and
 // column names, then reads from the given channel as if they specify values for a single row.

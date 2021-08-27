@@ -33,7 +33,7 @@ type Services struct {
 
 // NewCodeIntelUploadHandler creates a new handler for the LSIF upload endpoint. The
 // resulting handler skips auth checks when the internal flag is true.
-type NewCodeIntelUploadHandler func(internal bool) http.Handler
+type NewCodeIntelUploadHandler func(bool) http.Handler
 
 // NewExecutorProxyHandler creates a new proxy handler for routes accessible to the
 // executor services deployed separately from the k8s cluster. This handler is protected
@@ -59,7 +59,7 @@ func makeNotFoundHandler(handlerName string) http.Handler {
 	})
 }
 
-type registerFunc func(webhook *webhooks.GitHubWebhook)
+type registerFunc func(*webhooks.GitHubWebhook)
 
 func (fn registerFunc) Register(w *webhooks.GitHubWebhook) {
 	fn(w)

@@ -98,7 +98,7 @@ type migrationDriver interface {
 }
 
 // driverFunc is the type of MigrateRowUp and MigrateRowDown.
-type driverFunc func(scanner scanner) ([]interface{}, error)
+type driverFunc func(scanner) ([]interface{}, error)
 
 type scanner interface {
 	Scan(dest ...interface{}) error

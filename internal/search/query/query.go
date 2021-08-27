@@ -9,10 +9,10 @@ processing logic driven by external options.
 */
 
 // A step performs a transformation on nodes, which may fail.
-type step func(nodes []Node) ([]Node, error)
+type step func([]Node) ([]Node, error)
 
 // A pass is a step that never fails.
-type pass func(nodes []Node) []Node
+type pass func([]Node) []Node
 
 // sequence sequences zero or more steps to create a single step.
 func sequence(steps ...step) step {

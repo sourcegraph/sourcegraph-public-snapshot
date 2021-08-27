@@ -9,7 +9,7 @@ import (
 	"github.com/cockroachdb/errors"
 )
 
-type GitFunc func(args ...string) (string, error)
+type GitFunc func(...string) (string, error)
 
 func GitGetChildren(gitFunc GitFunc, commit string, dirnames []string) (map[string][]string, error) {
 	out, err := gitFunc(
