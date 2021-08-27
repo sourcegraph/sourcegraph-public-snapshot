@@ -43,6 +43,10 @@ var dsn = flag.String("dsn", "", "Database connection string to use in integrati
 
 // NOTE: To update VCR for theses tests, please use the token of "sourcegraph-vcr"
 // for GITHUB_TOKEN, which can be found in 1Password.
+//
+// We also recommend setting up a new token for "sourcegraph-vcr" using the auth scope
+// guidelines https://docs.sourcegraph.com/admin/external_service/github#github-api-token-and-access
+// to ensure everything works, in case of new scopes being required.
 func TestIntegration_GitHubPermissions(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
