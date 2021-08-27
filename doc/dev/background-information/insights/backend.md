@@ -129,6 +129,14 @@ Once the sync job is complete, the following database rows will have been create
 2. An Insight Series (`insight_series`) with metadata required to generate the data series
 3. A link from the view to the data series (`insight_view_series`)
 
+#### A note about data series
+Currently, data series are defined without scope for specific repositories or any other subset of repositories (all data series iterate over all repos). Data series are uniquely identified
+by [hashing](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@4306278/-/blob/enterprise/internal/insights/discovery/series_id.go?L32:6) the query string, with the `s:` prefix.
+This field is known as the `series_id`. It must be globally unique, and any collisions will be assumed to be the same exact data series.
+
+In the medium term this semantic will change to include repository scopes (assigning specific repos to a datseries), and may possibly change entirely. This is one important area
+of design and work for Q3.
+
 ### (2) The _insight enqueuer_ detects the new insighte
 
 The _insight enqueuer_ ([code](https://sourcegraph.ecoem/search?qe=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+file:insights+lang:go+newInsightEnqueuer&patternType=literal)) is a background goroutine running in the `repo-updater` service of Sourcegraph ([code](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+file:insights+lang:go+StartBackgroundJobs&patternType=literal)), which runs all background goroutines for Sourcegraph - so long as `DISABLE_CODE_INSIGHTS=true` is not set on the repo-updater container/process.
