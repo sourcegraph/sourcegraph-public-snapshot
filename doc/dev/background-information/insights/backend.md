@@ -139,7 +139,9 @@ of design and work for Q3.
 
 The `series_id` for the example Insight data above series would be `s:7F1FE30EF252BF75FAB0C9680C7BCFFF648154165AFE718155091051255A0A99`
 
-The `series_id` is how the underlying data series is referenced throughout the system; however, it is not currently exposed in the GraphQL.
+The `series_id` is how the underlying data series is referenced throughout the system; however, it is not currently exposed in the GraphQL. The current model
+prefers to obfuscate the underlying data series behind an [Insight View](./insight_view.md). This model is not highly validated, and may need to change in the future
+to expose more direct functionality around data series.
 
 ### (2) The _insight enqueuer_ detects the new insighte
 
