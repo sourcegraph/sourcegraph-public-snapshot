@@ -30,7 +30,7 @@ import { TooltipContent } from './TooltipContent'
  */
 const IS_PERCY_RUN = process.env.PERCY_ON === 'true'
 
-console.log({ IS_PERCY_RUN, env: process.env.PERCY_ON })
+console.log({ THIS_IS_ENV: process.env.PERCY_ON, IS_PERCY_RUN })
 
 // Chart configuration
 const WIDTH_PER_TICK = 70
