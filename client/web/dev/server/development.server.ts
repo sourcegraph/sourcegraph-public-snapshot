@@ -1,5 +1,4 @@
 import chalk from 'chalk'
-import { Application } from 'express'
 import { once } from 'lodash'
 import signale from 'signale'
 import createWebpackCompiler, { Configuration } from 'webpack'
@@ -34,9 +33,7 @@ export async function startDevelopmentServer(): Promise<void> {
         }),
     }
 
-    // It's not possible to use `WebpackDevServer.Configuration` here yet, because
-    // type definitions for the `webpack-dev-server` are not updated to match v4.
-    const developmentServerConfig = {
+    const developmentServerConfig: WebpackDevServer.Configuration = {
         // react-refresh plugin triggers page reload if needed.
         liveReload: false,
         hot: IS_HOT_RELOAD_ENABLED,
@@ -53,15 +50,14 @@ export async function startDevelopmentServer(): Promise<void> {
             directory: STATIC_ASSETS_PATH,
             publicPath: [STATIC_ASSETS_URL, '/'],
         },
-        firewall: false,
         proxy: [proxyConfig],
-        onBeforeSetupMiddleware(app: Application) {
-            app.use(getCSRFTokenCookieMiddleware(csrfCookieValue))
+        onBeforeSetupMiddleware: developmentServer => {
+            developmentServer.app.use(getCSRFTokenCookieMiddleware(csrfCookieValue))
         },
     }
 
     const compiler = createWebpackCompiler(webpackConfig)
-    const server = new WebpackDevServer(compiler, developmentServerConfig as WebpackDevServer.Configuration)
+    const server = new WebpackDevServer(developmentServerConfig, compiler)
 
     compiler.hooks.afterEmit.tap(
         'development-server-logger',

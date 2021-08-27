@@ -90,11 +90,11 @@ async function webpackDevelopmentServer() {
     },
   }
 
+  /** @type {import('webpack-dev-server').Configuration} */
   const options = {
     // react-refresh plugin triggers page reload if needed.
     liveReload: false,
     hot: !process.env.NO_HOT,
-    firewall: false,
     host: 'localhost',
     port: 3080,
     client: {
@@ -118,7 +118,7 @@ async function webpackDevelopmentServer() {
     webpackConfig.plugins.push(new DevServerPlugin(options))
   }
 
-  const server = new WebpackDevServer(createWebpackCompiler(webpackConfig), options)
+  const server = new WebpackDevServer(options, createWebpackCompiler(webpackConfig))
   await new Promise((resolve, reject) => {
     signale.await('Waiting for Webpack to compile assets')
     server.listen(3080, '0.0.0.0', error => (error ? reject(error) : resolve()))
