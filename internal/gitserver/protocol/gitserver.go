@@ -33,16 +33,15 @@ func NewSearchEventDone(limitHit bool, err error) SearchEventDone {
 }
 
 type CommitMatch struct {
-	Oid api.CommitID
+	Oid       api.CommitID
+	Author    Signature      `json:",omitempty"`
+	Committer Signature      `json:",omitempty"`
+	Parents   []api.CommitID `json:",omitempty"`
+	// TODO(camdencheek) Refs (this might be difficult)
+	// TODO(camdencheek) SourceRefs (this is difficult)
 
-	Message           string        `json:",omitempty"`
-	MessageHighlights search.Ranges `json:",omitempty"`
-
-	Diff           string        `json:",omitempty"`
-	DiffHighlights search.Ranges `json:",omitempty"`
-
-	Author    Signature `json:",omitempty"`
-	Committer Signature `json:",omitempty"`
+	Message search.HighlightedString `json:",omitempty"`
+	Diff    search.HighlightedString `json:",omitempty"`
 }
 
 type Signature struct {
