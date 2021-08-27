@@ -1024,7 +1024,7 @@ func DetermineStatusForLogs(srr *SearchResultsResolver, err error) string {
 		return "timeout"
 	case err != nil:
 		return "error"
-	case srr.Stats.AllReposTimedOut():
+	case srr.Stats.Status.All(search.RepoStatusTimedout) && srr.Stats.Status.Len() == len(srr.Stats.Repos):
 		return "timeout"
 	case srr.Stats.Status.Any(search.RepoStatusTimedout):
 		return "partial_timeout"
