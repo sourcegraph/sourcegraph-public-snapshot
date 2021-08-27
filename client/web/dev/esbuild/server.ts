@@ -1,15 +1,19 @@
 import http from 'http'
+import path from 'path'
 
 import { serve } from 'esbuild'
 import signale from 'signale'
 
-import { BUILD_OPTIONS } from './build'
+import { buildMonaco, BUILD_OPTIONS, esbuildOutDirectory } from './build'
 import { assetPathPrefix } from './manifestPlugin'
 
 export const esbuildDevelopmentServer = async (): Promise<void> => {
+    // One-time build (these files don't change).
+    await buildMonaco()
+
     // Start esbuild's server on a random local port.
     const { host: esbuildHost, port: esbuildPort, wait: esbuildStopped } = await serve(
-        { host: 'localhost' },
+        { host: 'localhost', servedir: esbuildOutDirectory },
         BUILD_OPTIONS
     )
     const upstreamHost = 'localhost'
@@ -35,7 +39,14 @@ export const esbuildDevelopmentServer = async (): Promise<void> => {
                         path: request.url!.slice(assetPathPrefix.length - 1),
                     },
                     proxyResponse => {
-                        response.writeHead(proxyResponse.statusCode!, proxyResponse.headers)
+                        const isCacheableChunk = path.basename(request.url!).startsWith('chunk-')
+
+                        response.writeHead(proxyResponse.statusCode!, {
+                            ...proxyResponse.headers,
+
+                            // Cache chunks because their filename includes a hash of the content.
+                            'Cache-Control': isCacheableChunk ? 'max-age=3600' : 'no-cache',
+                        })
                         proxyResponse.pipe(response, { end: true })
                     }
                 )

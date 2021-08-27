@@ -7,12 +7,15 @@ import { uiAssetsPath } from './build'
 
 export const assetPathPrefix = '/.assets/'
 
-const writeManifest = async (appJSPath: string): Promise<void> => {
+interface Manifest {
+    'app.js': string
+    'app.css': string
+    isModule: boolean
+}
+
+const writeManifest = async (manifest: Manifest): Promise<void> => {
     const manifestPath = path.join(uiAssetsPath, 'webpack.manifest.json')
-    await fs.promises.writeFile(
-        manifestPath,
-        JSON.stringify({ 'app.js': path.join(assetPathPrefix, appJSPath), isModule: true })
-    )
+    await fs.promises.writeFile(manifestPath, JSON.stringify(manifest, null, 2))
 }
 
 export const manifestPlugin: esbuild.Plugin = {
@@ -20,14 +23,14 @@ export const manifestPlugin: esbuild.Plugin = {
     setup: build => {
         build.onStart(async () => {
             // TODO(sqs): bug https://github.com/evanw/esbuild/issues/1384 means that onEnd isn't
-            // called in serve mode, so write it here because we know what it should be.
-            await writeManifest('web/src/main.js')
-        })
-
-        // TODO(sqs): bug https://github.com/evanw/esbuild/issues/1384 means that onEnd isn't called
-        // in serve mode, so this is never actually called.
-        build.onEnd(async result => {
-            await writeManifest(result.outputFiles[0].path)
+            // called in serve mode, so write it here because we know what it should be. When that
+            // is fixed, add this to an onEnd hook when we know the exact filenames without
+            // hard-coding.
+            await writeManifest({
+                'app.js': path.join(assetPathPrefix, 'app.js'),
+                'app.css': path.join(assetPathPrefix, 'app.css'),
+                isModule: true,
+            })
         })
     },
 }

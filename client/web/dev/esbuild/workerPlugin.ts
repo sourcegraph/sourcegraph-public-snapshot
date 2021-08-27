@@ -1,37 +1,51 @@
-// TODO(sqs): copied from https://sourcegraph.com/github.com/endreymarcell/esbuild-plugin-webworker/-/blob/plugin.js
-import path from 'path'
-
 import * as esbuild from 'esbuild'
 
+import { packageResolutionPlugin } from './packageResolutionPlugin'
+
+async function buildWorker(
+    workerPath: string,
+    extraConfig: Pick<esbuild.BuildOptions, 'target' | 'format'>
+): Promise<string> {
+    const results = await esbuild.build({
+        entryPoints: [workerPath],
+        bundle: true,
+        write: false,
+        plugins: [packageResolutionPlugin],
+        incremental: true,
+        ...extraConfig,
+    })
+    return results.outputFiles[0].text
+}
+
 export const workerPlugin: esbuild.Plugin = {
-    name: 'worker',
+    name: 'esbuild-plugin-inline-worker',
     setup: build => {
-        build.onResolve({ filter: /\.worker\.ts$/ }, args => ({
-            path: args.path,
-            namespace: 'worker',
-            pluginData: { resolveDir: args.resolveDir },
-        }))
-
-        build.onLoad({ filter: /./, namespace: 'worker' }, async args => {
-            const {
-                path: importPath,
-                pluginData: { resolveDir },
-            } = args
-
-            const workerWithFullPath = path.resolve(resolveDir, importPath)
-
-            const result = await esbuild.build({
-                entryPoints: [workerWithFullPath],
-                bundle: true,
-                write: false,
+        build.onLoad({ filter: /\.worker\.ts$/, namespace: 'file' }, async ({ path: workerPath }) => {
+            const workerCode = await buildWorker(workerPath, {
                 target: build.initialOptions.target,
                 format: build.initialOptions.format,
             })
-            const dataURI = `data:text/javascript;base64,${btoa(result.outputFiles[0].text)}`
             return {
-                contents: `export default class { constructor() { return new Worker(${JSON.stringify(dataURI)}) } }`,
+                contents: `import inlineWorker from '__inline-worker'
+export default function Worker() {
+  return inlineWorker(${JSON.stringify(workerCode)})
+}
+`,
                 loader: 'js',
             }
         })
+
+        build.onResolve({ filter: /^__inline-worker$/ }, ({ path }) => ({ path, namespace: 'inline-worker' }))
+        build.onLoad({ filter: /.*/, namespace: 'inline-worker' }, () => ({
+            contents: `
+                export default function inlineWorker(scriptText) {
+                    const blob = new Blob([scriptText], { type: 'text/javascript' })
+                    const url = URL.createObjectURL(blob)
+                    const worker = new Worker(url)
+                    URL.revokeObjectURL(url)
+                    return worker
+                }`,
+            loader: 'js',
+        }))
     },
 }

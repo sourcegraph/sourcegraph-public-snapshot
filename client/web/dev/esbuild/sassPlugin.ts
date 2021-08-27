@@ -170,7 +170,7 @@ export const sassPlugin: esbuild.Plugin = {
             }
         })
 
-        build.onLoad({ filter: /./, namespace: 'postcss-module' }, async args => {
+        build.onLoad({ filter: /./, namespace: 'postcss-module' }, args => {
             const module_ = modulesMap.get(args.pluginData.originalPath)
             const resolveDirectory = path.dirname(args.path)
 
@@ -184,9 +184,14 @@ export const sassPlugin: esbuild.Plugin = {
         })
 
         // Handle the `import`ed CSS files from the previous onLoad filter.
-        build.onResolve({ filter: /./, namespace: 'postcss-module' }, args => ({
-            path: args.path,
-            namespace: 'file',
-        }))
+        build.onResolve({ filter: /./, namespace: 'postcss-module' }, args => {
+            if (false) {
+                console.log('LOAD', args.path)
+            }
+            return {
+                path: args.path,
+                namespace: 'file',
+            }
+        })
     },
 }
