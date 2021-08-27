@@ -10,8 +10,8 @@ interactions:
     url: https://bb.sgdev.org/rest/api/1.0/projects?limit=100
     method: GET
   response:
-    body: '{"size":4,"limit":100,"isLastPage":true,"values":[{"key":"PRIV","id":23,"name":"private","public":false,"type":"NORMAL","links":{"self":[{"href":"https://bb.sgdev.org/projects/PRIV"}]}},{"key":"PRIVUSER","id":25,"name":"private-only-users","public":false,"type":"NORMAL","links":{"self":[{"href":"https://bb.sgdev.org/projects/PRIVUSER"}]}},{"key":"PRIVWRITE","id":26,"name":"private-write","public":false,"type":"NORMAL","links":{"self":[{"href":"https://bb.sgdev.org/projects/PRIVWRITE"}]}},{"key":"PUB","id":22,"name":"public","description":"Public
-      project","public":true,"type":"NORMAL","links":{"self":[{"href":"https://bb.sgdev.org/projects/PUB"}]}}],"start":0}'
+    body: '{"size":7,"limit":100,"isLastPage":true,"values":[{"key":"PRIVACY","id":28,"name":"privacy","public":false,"type":"NORMAL","links":{"self":[{"href":"https://bb.sgdev.org/projects/PRIVACY"}]}},{"key":"PRIV","id":23,"name":"private","public":false,"type":"NORMAL","links":{"self":[{"href":"https://bb.sgdev.org/projects/PRIV"}]}},{"key":"PRIVUSER","id":25,"name":"private-only-users","public":false,"type":"NORMAL","links":{"self":[{"href":"https://bb.sgdev.org/projects/PRIVUSER"}]}},{"key":"PRIVWRITE","id":26,"name":"private-write","public":false,"type":"NORMAL","links":{"self":[{"href":"https://bb.sgdev.org/projects/PRIVWRITE"}]}},{"key":"PUB","id":22,"name":"public","description":"Public
+      project","public":true,"type":"NORMAL","links":{"self":[{"href":"https://bb.sgdev.org/projects/PUB"}]}},{"key":"UNIQ","id":29,"name":"unique","public":false,"type":"NORMAL","links":{"self":[{"href":"https://bb.sgdev.org/projects/UNIQ"}]}},{"key":"UNIQ2","id":30,"name":"unique-write","public":false,"type":"NORMAL","links":{"self":[{"href":"https://bb.sgdev.org/projects/UNIQ2"}]}}],"start":0}'
     headers:
       Cache-Control:
       - private, no-cache
@@ -19,7 +19,7 @@ interactions:
       Content-Type:
       - application/json;charset=UTF-8
       Date:
-      - Fri, 27 Aug 2021 20:55:50 GMT
+      - Fri, 27 Aug 2021 22:21:24 GMT
       Pragma:
       - no-cache
       Server:
@@ -27,9 +27,9 @@ interactions:
       Vary:
       - x-ausername,x-auserid,cookie,accept-encoding
       X-Arequestid:
-      - '@WRQLR1x1255x1378x0'
+      - '@WRQLR1x1341x1784x0'
       X-Asessionid:
-      - 1asdhcp
+      - fg3vv1
       X-Auserid:
       - "104"
       X-Ausername:
@@ -48,7 +48,7 @@ interactions:
     url: https://bb.sgdev.org/rest/api/1.0/projects?limit=1
     method: GET
   response:
-    body: '{"size":1,"limit":1,"isLastPage":false,"values":[{"key":"PRIV","id":23,"name":"private","public":false,"type":"NORMAL","links":{"self":[{"href":"https://bb.sgdev.org/projects/PRIV"}]}}],"start":0,"nextPageStart":3}'
+    body: '{"size":1,"limit":1,"isLastPage":false,"values":[{"key":"PRIVACY","id":28,"name":"privacy","public":false,"type":"NORMAL","links":{"self":[{"href":"https://bb.sgdev.org/projects/PRIVACY"}]}}],"start":0,"nextPageStart":2}'
     headers:
       Cache-Control:
       - private, no-cache
@@ -56,7 +56,7 @@ interactions:
       Content-Type:
       - application/json;charset=UTF-8
       Date:
-      - Fri, 27 Aug 2021 20:55:50 GMT
+      - Fri, 27 Aug 2021 22:21:24 GMT
       Pragma:
       - no-cache
       Server:
@@ -64,9 +64,157 @@ interactions:
       Vary:
       - x-ausername,x-auserid,cookie,accept-encoding
       X-Arequestid:
-      - '@WRQLR1x1255x1379x0'
+      - '@WRQLR1x1341x1785x0'
       X-Asessionid:
-      - 1qlq7am
+      - m2ecuf
+      X-Auserid:
+      - "104"
+      X-Ausername:
+      - lone-private-user
+      X-Content-Type-Options:
+      - nosniff
+    status: 200 OK
+    code: 200
+    duration: ""
+- request:
+    body: ""
+    form: {}
+    headers:
+      Content-Type:
+      - application/json; charset=utf-8
+    url: https://bb.sgdev.org/rest/api/1.0/projects?limit=1&start=8
+    method: GET
+  response:
+    body: '{"size":1,"limit":1,"isLastPage":true,"values":[{"key":"UNIQ2","id":30,"name":"unique-write","public":false,"type":"NORMAL","links":{"self":[{"href":"https://bb.sgdev.org/projects/UNIQ2"}]}}],"start":8}'
+    headers:
+      Cache-Control:
+      - private, no-cache
+      - no-cache, no-transform
+      Content-Type:
+      - application/json;charset=UTF-8
+      Date:
+      - Fri, 27 Aug 2021 22:21:24 GMT
+      Pragma:
+      - no-cache
+      Server:
+      - Caddy
+      Vary:
+      - x-ausername,x-auserid,cookie,accept-encoding
+      X-Arequestid:
+      - '@WRQLR1x1341x1786x0'
+      X-Asessionid:
+      - kznjns
+      X-Auserid:
+      - "104"
+      X-Ausername:
+      - lone-private-user
+      X-Content-Type-Options:
+      - nosniff
+    status: 200 OK
+    code: 200
+    duration: ""
+- request:
+    body: ""
+    form: {}
+    headers:
+      Content-Type:
+      - application/json; charset=utf-8
+    url: https://bb.sgdev.org/rest/api/1.0/projects?name=private-
+    method: GET
+  response:
+    body: '{"size":2,"limit":25,"isLastPage":true,"values":[{"key":"PRIVUSER","id":25,"name":"private-only-users","public":false,"type":"NORMAL","links":{"self":[{"href":"https://bb.sgdev.org/projects/PRIVUSER"}]}},{"key":"PRIVWRITE","id":26,"name":"private-write","public":false,"type":"NORMAL","links":{"self":[{"href":"https://bb.sgdev.org/projects/PRIVWRITE"}]}}],"start":0}'
+    headers:
+      Cache-Control:
+      - private, no-cache
+      - no-cache, no-transform
+      Content-Type:
+      - application/json;charset=UTF-8
+      Date:
+      - Fri, 27 Aug 2021 22:21:24 GMT
+      Pragma:
+      - no-cache
+      Server:
+      - Caddy
+      Vary:
+      - x-ausername,x-auserid,cookie,accept-encoding
+      X-Arequestid:
+      - '@WRQLR1x1341x1787x0'
+      X-Asessionid:
+      - zzsvwn
+      X-Auserid:
+      - "104"
+      X-Ausername:
+      - lone-private-user
+      X-Content-Type-Options:
+      - nosniff
+    status: 200 OK
+    code: 200
+    duration: ""
+- request:
+    body: ""
+    form: {}
+    headers:
+      Content-Type:
+      - application/json; charset=utf-8
+    url: https://bb.sgdev.org/rest/api/1.0/projects?permission=PROJECT_WRITE
+    method: GET
+  response:
+    body: '{"size":2,"limit":25,"isLastPage":true,"values":[{"key":"PRIVWRITE","id":26,"name":"private-write","public":false,"type":"NORMAL","links":{"self":[{"href":"https://bb.sgdev.org/projects/PRIVWRITE"}]}},{"key":"UNIQ2","id":30,"name":"unique-write","public":false,"type":"NORMAL","links":{"self":[{"href":"https://bb.sgdev.org/projects/UNIQ2"}]}}],"start":0}'
+    headers:
+      Cache-Control:
+      - private, no-cache
+      - no-cache, no-transform
+      Content-Type:
+      - application/json;charset=UTF-8
+      Date:
+      - Fri, 27 Aug 2021 22:21:24 GMT
+      Pragma:
+      - no-cache
+      Server:
+      - Caddy
+      Vary:
+      - x-ausername,x-auserid,cookie,accept-encoding
+      X-Arequestid:
+      - '@WRQLR1x1341x1788x0'
+      X-Asessionid:
+      - kk9xyy
+      X-Auserid:
+      - "104"
+      X-Ausername:
+      - lone-private-user
+      X-Content-Type-Options:
+      - nosniff
+    status: 200 OK
+    code: 200
+    duration: ""
+- request:
+    body: ""
+    form: {}
+    headers:
+      Content-Type:
+      - application/json; charset=utf-8
+    url: https://bb.sgdev.org/rest/api/1.0/projects?name=uniq&permission=PROJECT_WRITE
+    method: GET
+  response:
+    body: '{"size":1,"limit":25,"isLastPage":true,"values":[{"key":"UNIQ2","id":30,"name":"unique-write","public":false,"type":"NORMAL","links":{"self":[{"href":"https://bb.sgdev.org/projects/UNIQ2"}]}}],"start":0}'
+    headers:
+      Cache-Control:
+      - private, no-cache
+      - no-cache, no-transform
+      Content-Type:
+      - application/json;charset=UTF-8
+      Date:
+      - Fri, 27 Aug 2021 22:21:24 GMT
+      Pragma:
+      - no-cache
+      Server:
+      - Caddy
+      Vary:
+      - x-ausername,x-auserid,cookie,accept-encoding
+      X-Arequestid:
+      - '@WRQLR1x1341x1789x0'
+      X-Asessionid:
+      - ehokkx
       X-Auserid:
       - "104"
       X-Ausername:

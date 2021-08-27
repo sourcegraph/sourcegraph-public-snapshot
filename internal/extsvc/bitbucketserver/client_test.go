@@ -136,14 +136,6 @@ func TestClient_Projects(t *testing.T) {
 	cli, save := NewTestClient(t, "Projects", *update)
 	defer save()
 
-	// adminOnly := &Project{
-	// 	Key:    "ADMIN",
-	// 	ID:     1,
-	// 	Name:   "admin-only",
-	// 	Public: false,
-	// 	Type:   "NORMAL",
-	// }
-
 	public := &Project{
 		Key:    "PUB",
 		ID:     22,
@@ -168,14 +160,6 @@ func TestClient_Projects(t *testing.T) {
 		Type:   "NORMAL",
 	}
 
-	// privateOnlyGroups := &Project{
-	// 	Key:    "PRIVGROUP",
-	// 	ID:     24,
-	// 	Name:   "private-only-groups",
-	// 	Public: false,
-	// 	Type:   "NORMAL",
-	// }
-
 	privateWrite := &Project{
 		Key:    "PRIVWRITE",
 		ID:     26,
@@ -183,67 +167,44 @@ func TestClient_Projects(t *testing.T) {
 		Public: false,
 		Type:   "NORMAL",
 	}
+	privacy := &Project{
+		Key:    "PRIVACY",
+		ID:     28,
+		Name:   "privacy",
+		Public: false,
+		Type:   "NORMAL",
+	}
 
-	// projects := map[string]*Project{
-	// 	"admin-only": {
-	// 		Key:    "ADMIN",
-	// 		ID:     1,
-	// 		Name:   "admin-only",
-	// 		Public: false,
-	// 		Type:   "NORMAL",
-	// 	},
-	// 	"public": {
-	// 		Key:    "PUB",
-	// 		ID:     22,
-	// 		Name:   "public",
-	// 		Public: true,
-	// 		Type:   "NORMAL",
-	// 	},
-	// 	"private": {
-	// 		Key:    "PRIV",
-	// 		ID:     23,
-	// 		Name:   "private",
-	// 		Public: false,
-	// 		Type:   "NORMAL",
-	// 	},
-	// 	"private-only-users": {
-	// 		Key:    "PRIVUSER",
-	// 		ID:     25,
-	// 		Name:   "private-only-users",
-	// 		Public: false,
-	// 		Type:   "NORMAL",
-	// 	},
-	// 	"private-only-groups": {
-	// 		Key:    "PRIVGROUP",
-	// 		ID:     24,
-	// 		Name:   "private-only-groups",
-	// 		Public: false,
-	// 		Type:   "NORMAL",
-	// 	},
-	// 	"private-write": {
-	// 		Key:    "PRIVWRITE",
-	// 		ID:     26,
-	// 		Name:   "private-write",
-	// 		Public: false,
-	// 		Type:   "NORMAL",
-	// 	},
-	// }
+	uniqueReadOnly := &Project{
+		Key:    "UNIQ",
+		ID:     29,
+		Name:   "unique",
+		Public: false,
+		Type:   "NORMAL",
+	}
+	uniqueWrite := &Project{
+		Key:    "UNIQ2",
+		ID:     30,
+		Name:   "unique-write",
+		Public: false,
+		Type:   "NORMAL",
+	}
 
 	for _, test := range []struct {
-		name string
-		// filter   *ProjectFilter
+		name     string
+		filter   *ProjectFilter
 		page     *PageToken
 		expected []*Project
 		nextPage *PageToken
 	}{
 		{
 			name:     "all projects",
-			expected: []*Project{privateWrite, privateOnlyUsers, private, public},
+			expected: []*Project{privateWrite, privateOnlyUsers, private, public, privacy, uniqueWrite, uniqueReadOnly},
 			page: &PageToken{
 				Limit: 100,
 			},
 			nextPage: &PageToken{
-				Size:       4,
+				Size:       7,
 				Limit:      100,
 				IsLastPage: true,
 			},
@@ -253,79 +214,85 @@ func TestClient_Projects(t *testing.T) {
 			page: &PageToken{
 				Limit: 1,
 			},
-			expected: []*Project{private},
+			expected: []*Project{privacy},
 			nextPage: &PageToken{
 				Size:          1,
 				Limit:         1,
-				NextPageStart: 3, // not sure about this
+				NextPageStart: 2,
 			},
 		},
-
-		// }
-		// {
-		// 	name: "filter by name",
-		// 	filter: &ProjectFilter{
-		// 		Name: "private-only",
-		// 	},
-		// 	expected: []*Project{projects["private-only-users"], projects["private-only-groups"]},
-		// },
-		// {
-		// 	name: "get first page",
-		// 	expected: func() []*Project {
-		// 		var out []*Project
-		// 		for _, p := range projects {
-		// 			out = append(out, p)
-		// 		}
-
-		// 		return out
-		// 	}(),
-		// },
-		// {
-		// 	name: "get last page",
-		// 	expected: func() []*Project {
-		// 		var out []*Project
-		// 		for _, p := range projects {
-		// 			out = append(out, p)
-		// 		}
-
-		// 		return out
-		// 	}(),
-		// },
-		// {
-		// 	name: "filter by name",
-		// 	expected: func() []*Project {
-		// 		var out []*Project
-		// 		for _, p := range projects {
-		// 			out = append(out, p)
-		// 		}
-
-		// 		return out
-		// 	}(),
-		// },
+		{
+			name: "page: last page",
+			page: &PageToken{
+				Limit: 1,
+				// it turns out that setting "start" directly does nothing, you have to set
+				// NextPageStart (which seems like a mistmatch against bitbucket's API - but I digress)
+				NextPageStart: 8,
+			},
+			expected: []*Project{uniqueWrite},
+			nextPage: &PageToken{
+				Start:      8,
+				Size:       1,
+				Limit:      1,
+				IsLastPage: true,
+			},
+		},
+		{
+			name: "filter by name",
+			filter: &ProjectFilter{
+				Name: "private-",
+			},
+			expected: []*Project{privateWrite, privateOnlyUsers},
+			nextPage: &PageToken{
+				Size:       2,
+				Limit:      25,
+				IsLastPage: true,
+			},
+		},
+		{
+			name: "filter by permission",
+			filter: &ProjectFilter{
+				Permission: PermProjectWrite,
+			},
+			expected: []*Project{privateWrite, uniqueWrite},
+			nextPage: &PageToken{
+				Size:       2,
+				Limit:      25,
+				IsLastPage: true,
+			},
+		},
+		{
+			name: "filter by permission and name",
+			filter: &ProjectFilter{
+				Name:       "uniq",
+				Permission: PermProjectWrite,
+			},
+			expected: []*Project{uniqueWrite},
+			nextPage: &PageToken{
+				Size:       1,
+				Limit:      25,
+				IsLastPage: true,
+			},
+		},
 	} {
 		t.Run(test.name, func(t *testing.T) {
-			actual, nextPage, err := cli.Projects(context.Background(), test.page)
+			actual, nextPage, err := cli.Projects(context.Background(), test.page, test.filter)
 			if err != nil {
 				t.Fatal(err)
 			}
 
-			assertProjectsEqual(t, actual, test.expected)
+			for _, s := range [][]*Project{actual, test.expected} {
+				sort.Slice(s, func(i, j int) bool { return s[i].ID < s[j].ID })
+			}
+
+			if diff := cmp.Diff(actual, test.expected, cmpopts.IgnoreFields(Project{}, "Links")); diff != "" {
+				t.Errorf("non-zero diff (-got + want):\n%s", diff)
+			}
+
 			if diff := cmp.Diff(nextPage, test.nextPage); diff != "" {
 				t.Errorf("next page token differs (-got want):\n%s", diff)
 			}
 		})
-	}
-}
-
-func assertProjectsEqual(t *testing.T, actual, expected []*Project) {
-	t.Helper()
-
-	for _, s := range [][]*Project{actual, expected} {
-		sort.Slice(s, func(i, j int) bool { return s[i].ID < s[j].ID })
-	}
-
-	if diff := cmp.Diff(actual, expected, cmpopts.IgnoreFields(Project{}, "Links")); diff != "" {
-		t.Errorf("non-zero diff (-got + want):\n%s", diff)
 	}
 }
 

@@ -321,11 +321,37 @@ func (c *Client) Users(ctx context.Context, pageToken *PageToken, fs ...UserFilt
 	return users, next, err
 }
 
-func (c *Client) Projects(ctx context.Context, pageToken *PageToken) ([]*Project, *PageToken, error) {
+// ProjectFilter defines a sum type of filters to be used when listing projects.
+type ProjectFilter struct {
+	// Name filters the projects' name
+	Name string
+
+	// Permission filters the projects by the specified permission level
+	Permission Perm
+}
+
+func (p *ProjectFilter) EncodeTo(u url.Values) {
+	if p == nil {
+		return
+	}
+
+	if p.Name != "" {
+		u.Set("name", p.Name)
+	}
+
+	if p.Permission != "" {
+		u.Set("permission", string(p.Permission))
+	}
+}
+
+// Projects retrieves a page of projects visible by the current user, optionally filtered via the provided "filter".
+func (c *Client) Projects(ctx context.Context, pageToken *PageToken, filter *ProjectFilter) ([]*Project, *PageToken, error) {
 	var projects []*Project
 
-	// qry := make(url.Values)
-	next, err := c.page(ctx, "/rest/api/1.0/projects", nil, pageToken, &projects)
+	qry := make(url.Values)
+	filter.EncodeTo(qry)
+
+	next, err := c.page(ctx, "/rest/api/1.0/projects", qry, pageToken, &projects)
 	return projects, next, err
 }
 
