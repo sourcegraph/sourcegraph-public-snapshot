@@ -59,7 +59,7 @@ export const sassPlugin: esbuild.Plugin = {
             getJSON: (cssPath: string, json: any) => modulesMap.set(cssPath, json),
         })
 
-        const cssRender = async (sourceFullPath: string, fileContent: string) => {
+        const cssRender = async (sourceFullPath: string, fileContent: string): Promise<string> => {
             const sourceExtension = path.extname(sourceFullPath)
             const sourceBaseName = path.basename(sourceFullPath, sourceExtension)
             const sourceDirectory = path.dirname(sourceFullPath)

@@ -11,7 +11,6 @@ async function buildWorker(
         bundle: true,
         write: false,
         plugins: [packageResolutionPlugin],
-        incremental: true,
         ...extraConfig,
     })
     return results.outputFiles[0].text

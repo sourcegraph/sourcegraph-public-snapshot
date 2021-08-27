@@ -55,3 +55,11 @@ export const buildMonaco = async (): Promise<void> => {
         outdir: esbuildOutDirectory,
     })
 }
+
+export const build = async (): Promise<void> => {
+    await esbuild.build({ ...BUILD_OPTIONS, outdir: esbuildOutDirectory, incremental: false })
+    if (process.env.TODO) {
+        await buildMonaco()
+        // TODO(sqs): always run this, i just gated it in an if-env check for perf while doing some debugging
+    }
+}

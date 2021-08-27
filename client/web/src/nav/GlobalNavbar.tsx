@@ -1,3 +1,4 @@
+/* eslint-disable unicorn/import-index */
 import * as H from 'history'
 import BarChartIcon from 'mdi-react/BarChartIcon'
 import MagnifyIcon from 'mdi-react/MagnifyIcon'
@@ -10,6 +11,7 @@ import { isErrorLike } from '@sourcegraph/codeintellify/lib/errors'
 import { ContributableMenu } from '@sourcegraph/shared/src/api/protocol'
 import { ActivationProps } from '@sourcegraph/shared/src/components/activation/Activation'
 import { ActivationDropdown } from '@sourcegraph/shared/src/components/activation/ActivationDropdown'
+import { EsbuildTest, EsbuildTest2 } from '@sourcegraph/shared/src/components/EsbuildTest'
 import { Link } from '@sourcegraph/shared/src/components/Link'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
@@ -22,7 +24,14 @@ import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
 import { WebCommandListPopoverButton } from '@sourcegraph/web/src/components/shared'
 import { FeedbackPrompt } from '@sourcegraph/web/src/nav/Feedback/FeedbackPrompt'
 import { StatusMessagesNavItem } from '@sourcegraph/web/src/nav/StatusMessagesNavItem'
-import { NavGroup, NavItem, NavBar, NavLink, NavActions, NavAction } from '@sourcegraph/wildcard'
+// eslint-disable unicorn/import-index
+import { NavGroup, NavBar, NavItem, NavLink, NavActions, NavAction } from '@sourcegraph/wildcard/src/components/NavBar'
+// import { NavItem } from '@sourcegraph/wildcard/src/components/NavBar/NavBar'
+
+if (typeof EsbuildTest !== 'undefined') {
+    EsbuildTest()
+    console.log(EsbuildTest2)
+}
 
 import { AuthenticatedUser } from '../auth'
 import { BatchChangesProps } from '../batches'
