@@ -23,13 +23,6 @@ import { NonActiveBackground } from './NonActiveBackground'
 import { dateTickFormatter, numberFormatter, Tick, getTickXProps, getTickYProps } from './TickComponent'
 import { TooltipContent } from './TooltipContent'
 
-/**
- * Check percy test run to be able disable flaky line chart tooltip appearance
- * by disabling any point events over line chart container.
- * See https://github.com/sourcegraph/sourcegraph/issues/23669
- */
-const IS_PERCY_RUN = process.env.PERCY_ON === 'true'
-
 // Chart configuration
 const WIDTH_PER_TICK = 70
 const HEIGHT_PER_TICK = 40
@@ -176,6 +169,7 @@ export function LineChartContent<Datum extends object>(props: LineChartContentPr
     const { onPointerMove = noop, onPointerOut = noop, ...otherHandlers } = usePointerEventEmitters({
         source: XYCHART_EVENT_SOURCE,
         onFocus: true,
+        onBlur: true,
     })
 
     // We only need to catch pointerout event on root element - chart
@@ -218,6 +212,7 @@ export function LineChartContent<Datum extends object>(props: LineChartContentPr
         [focused, onPointerOut, setHoveredDatum]
     )
 
+    // Disable all event listeners explicitly to avoid flaky tooltip appearance
     const eventEmitters = {
         onPointerMove: handleRootPointerMove,
         onPointerOut: handleRootPointerOut,
@@ -297,7 +292,11 @@ export function LineChartContent<Datum extends object>(props: LineChartContentPr
                             // eslint-disable-next-line jsx-a11y/aria-role
                             role="graphics-datagroup"
                             aria-label="Chart series"
-                            pointerEvents={IS_PERCY_RUN ? 'none' : 'bounding-box'}
+                            pointerEvents="bounding-box"
+                            // Check percy test run to be able disable flaky line chart tooltip appearance
+                            // by disabling any point events over line chart container.
+                            // See https://github.com/sourcegraph/sourcegraph/issues/23669
+                            className="percy-inactive-element"
                             {...eventEmitters}
                         >
                             {/* Spread size of parent group element by transparent rect with width and height */}
