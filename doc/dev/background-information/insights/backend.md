@@ -45,7 +45,7 @@ Implementation of this environment variable can be found in the [`frontend`](htt
 
 This flag should be used judiciously and should generally be considered a last resort for Sourcegraph installations that need to disable Code Insights or remove the database dependency.
 
-With version 3.31 this flag has moved from the `worker` service to the `worker` service.
+With version 3.31 this flag has moved from the `repo-updater` service to the `worker` service.
 
 ### Soucegraph Setting
 Code Insights is currently behind an experimental feature on Sourcegraph. You can enable it in settings.
@@ -125,7 +125,7 @@ Until the insight metadata is synced, the GraphQL response will not return any i
 as a transient "Insight is processing" error to solve for this weird UX.
 
 Once the sync job is complete, the following database rows will have been created:
-1. An Insight View (`insight_view`) with UniqueID ``searchInsights.insight.soManyInsights`
+1. An Insight View (`insight_view`) with UniqueID `searchInsights.insight.soManyInsights`
 2. An Insight Series (`insight_series`) with metadata required to generate the data series
 3. A link from the view to the data series (`insight_view_series`)
 
@@ -153,10 +153,10 @@ For example, `insights` might be an indexed recording, where `insights repo:^cod
 You can find these search queries for queued jobs on the (primary postgres) table `insights_query_runner_jobs.search_query`
 
 Insight recordings are scheduled using the database field (codeinsights-db) `insight_series.next_recording_after`, and will only be taken if the field time is less than the execution time of the job.
-Recordings are currently always schedule to occur on the first day of the following month, after `00:00:00`. For example, if a recording was taken at `2021-08-27T15:29:00.000Z` the next
+Recordings are currently always scheduled to occur on the first day of the following month, after `00:00:00`. For example, if a recording was taken at `2021-08-27T15:29:00.000Z` the next
 recording will be scheduled for `2021-09-01T00:00:00.000Z`. The first indexed recording after insight creation will occur on the same interval.
 
-Note: There is a field (codeinsights-db) `insight_series.recording_interval_days` that was intended to provide some configurable value to this recording interval. We have very little
+Note: There is a field (codeinsights-db) `insight_series.recording_interval_days` that was intended to provide some configurable value to this recording interval. We have limited
 product validation with respect to time intervals and the granularity of recordings, so beta has launched with fixed `first-of-month` scheduling. 
 This will be an area of development throughout Q3 and into Q4.
 
