@@ -55,7 +55,7 @@ const useOutsideClickDetector = (
 export const NavBar = ({ children, logo }: NavBarProps): JSX.Element => (
     <nav aria-label="Main Menu" className={navBarStyles.navbar}>
         <h1 className={navBarStyles.logo}>
-            <RouterLink to="/search">{logo}</RouterLink>
+            <RouterLink className='d-flex align-items-center' to="/search">{logo}</RouterLink>
         </h1>
         <hr className={navBarStyles.divider} />
         {children}
