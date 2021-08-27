@@ -176,6 +176,7 @@ export function LineChartContent<Datum extends object>(props: LineChartContentPr
     const { onPointerMove = noop, onPointerOut = noop, ...otherHandlers } = usePointerEventEmitters({
         source: XYCHART_EVENT_SOURCE,
         onFocus: true,
+        onBlur: true,
     })
 
     // We only need to catch pointerout event on root element - chart
@@ -218,11 +219,14 @@ export function LineChartContent<Datum extends object>(props: LineChartContentPr
         [focused, onPointerOut, setHoveredDatum]
     )
 
-    const eventEmitters = {
-        onPointerMove: handleRootPointerMove,
-        onPointerOut: handleRootPointerOut,
-        ...otherHandlers,
-    }
+    // Disable all event listeners explicitly to avoid flaky tooltip appearance
+    const eventEmitters = !IS_PERCY_RUN
+        ? {
+              onPointerMove: handleRootPointerMove,
+              onPointerOut: handleRootPointerOut,
+              ...otherHandlers,
+          }
+        : {}
 
     const hoveredDatumLink = hoveredDatum?.line?.linkURLs?.[hoveredDatum?.index]
     const rootClasses = classnames('line-chart__content', { 'line-chart__content--with-cursor': !!hoveredDatumLink })
@@ -350,7 +354,7 @@ export function LineChartContent<Datum extends object>(props: LineChartContentPr
                                                 line={line}
                                                 lineIndex={index}
                                                 totalNumberOfLines={series.length}
-                                                setFocusedDatum={setFocusedDatum}
+                                                setFocusedDatum={IS_PERCY_RUN ? noop : setFocusedDatum}
                                                 onPointerUp={stopPropagation}
                                                 onClick={onDatumLinkClick}
                                             />
@@ -360,16 +364,18 @@ export function LineChartContent<Datum extends object>(props: LineChartContentPr
                             ))}
                         </Group>
 
-                        <Tooltip
-                            className="line-chart__tooltip"
-                            showHorizontalCrosshair={false}
-                            showVerticalCrosshair={true}
-                            snapTooltipToDatumX={false}
-                            snapTooltipToDatumY={false}
-                            showDatumGlyph={false}
-                            showSeriesGlyphs={false}
-                            renderTooltip={renderTooltip}
-                        />
+                        {!IS_PERCY_RUN && (
+                            <Tooltip
+                                className="line-chart__tooltip"
+                                showHorizontalCrosshair={false}
+                                showVerticalCrosshair={true}
+                                snapTooltipToDatumX={false}
+                                snapTooltipToDatumY={false}
+                                showDatumGlyph={false}
+                                showSeriesGlyphs={false}
+                                renderTooltip={renderTooltip}
+                            />
+                        )}
                     </XYChart>
                 </TooltipProvider>
             </DataProvider>
