@@ -9,16 +9,18 @@ import sass from 'sass'
 
 import postcssConfig from '../../../../postcss.config'
 
+const rootPath = path.resolve(__dirname, '..', '..', '..', '..')
+
 const resolveFile = (modulePath: string, directory: string): string => {
     if (modulePath.startsWith('.')) {
         return path.resolve(directory, modulePath)
     }
 
     if (modulePath.startsWith('wildcard/') || modulePath.startsWith('shared/')) {
-        return path.resolve(`client/${modulePath}`)
+        return path.resolve(rootPath, `client/${modulePath}`)
     }
 
-    let p = path.resolve(`node_modules/${modulePath}`)
+    let p = path.resolve(rootPath, `node_modules/${modulePath}`)
     try {
         p = fs.realpathSync(p)
     } catch {}
@@ -57,14 +59,13 @@ export const sassPlugin: esbuild.Plugin = {
             getJSON: (cssPath: string, json: any) => modulesMap.set(cssPath, json),
         })
 
-        const CWD = process.cwd()
         const cssRender = async (sourceFullPath: string, fileContent: string) => {
             const sourceExtension = path.extname(sourceFullPath)
             const sourceBaseName = path.basename(sourceFullPath, sourceExtension)
             const sourceDirectory = path.dirname(sourceFullPath)
-            const sourceRelDir = path.relative(CWD, sourceDirectory)
+            const sourceRelativeDirectory = path.relative(rootPath, sourceDirectory)
             const isModule = sourceBaseName.endsWith('.module')
-            const temporaryDirectory = path.resolve(temporaryDirectoryPath, sourceRelDir)
+            const temporaryDirectory = path.resolve(temporaryDirectoryPath, sourceRelativeDirectory)
             await fs.promises.mkdir(temporaryDirectory, { recursive: true })
 
             const temporaryFilePath = path.join(temporaryDirectory, `${sourceBaseName}.css`)
@@ -153,7 +154,10 @@ export const sassPlugin: esbuild.Plugin = {
             // TODO(sqs): hack, need to resolve this from the original path
             if (args.path === './codicon.ttf') {
                 return {
-                    path: path.resolve('node_modules/monaco-editor/esm/vs/base/browser/ui/codicons/codicon', args.path),
+                    path: path.resolve(
+                        __dirname + '/../../../../node_modules/monaco-editor/esm/vs/base/browser/ui/codicons/codicon',
+                        args.path
+                    ),
                 }
             }
         })
@@ -161,7 +165,7 @@ export const sassPlugin: esbuild.Plugin = {
             // TODO(sqs): hack, need to resolve this from the original path
             if (args.path === 'img/bg-sprinkles-2x.png') {
                 return {
-                    path: path.resolve('ui/assets', args.path),
+                    path: path.resolve(__dirname + '/../../../../ui/assets', args.path),
                 }
             }
         })
