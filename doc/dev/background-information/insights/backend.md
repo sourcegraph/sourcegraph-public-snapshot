@@ -160,38 +160,53 @@ Note: There is a field (codeinsights-db) `insight_series.recording_interval_days
 product validation with respect to time intervals and the granularity of recordings, so beta has launched with fixed `first-of-month` scheduling. 
 This will be an area of development throughout Q3 and into Q4.
 
-Every 12 hours on and after process startup ([code](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+file:insights+lang:go+file:insight_enqueuer.go+NewPeriodic&patternType=literal)) it does the following:
-e
-1. Discovers insights defined in global/org/user settings ([code](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+file:insights+lang:go+file:insight_enqueuer.go+discovery.Discover&patternType=literal)) by enumerating all settings on the instance and looking for the `insights` key, compiling a list of them (today, just global settings [#18397](https://github.com/sourcegraph/sourcegraph/issues/18397)).
-2. Determines which _series_ are unique. For example, if Jane defines a search insight with `"search": "fmt.Printf"` and Bob does too, there is no reason for us to collect data on those separately since they represent the same exact series of data. Thus, we hash the insight definition ([code](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+file:insights+lang:go+file:insight_enqueuer.go+EncodeSeriesID&patternType=literal)) in order to deduplicate them and produce a _series ID_ string that will uniquely identify that series of data. We also use this ID to identify the series of data in the `series_points` TimescaleDB database table later.
-3. For every unique series, enqueues a job for the _queryrunner_ worker to later run the search query and collect information on it (like the # of search results.) ([code](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+file:insights+lang:go+file:insight_enqueuer.go+enqueueQueryRunnerJob&patternType=literal))
+### (3) The historical data enqueuer gets to work
 
-### (3) The queryrunner worker gets work and runs the search query
+If we only record one data point per repo every month, it would take months or longer for users to get any value out of backend insights. This introduces the need for us to backfill data by running search queries that answer "how many results existed in the past?" so we can populate historical data.
 
-The queryrunner ([code](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+file:insights+lang:go+file:queryrunner&patternType=literal)) is a background goroutine running in the `repo-updater` service of Sourcegraph ([code](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+file:insights+lang:go+StartBackgroundJobs&patternType=literal)), it is responsible for:
+Similar to the _insight enqueuer_, the _historical insight enqueuer_ is a background goroutine ([code](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@55be9054a2609e06a1d916cc2f782827421dd2a3/-/blob/enterprise/internal/insights/background/historical_enqueuer.go?L75:6)) which locates and enqueues work to populate historical data points.
+
+The most naive implementation of backfilling is as follows:
+``` 
+For each relevant repository:
+  For each relevant time point:
+    Execute a search at the most recent revision
+```
+
+Naively implemented, the historical backfiller would take a long time on any reasonably sized Sourcegraph installation. As an optimization,
+the backfiller will only query for data frames that have recorded changes in each repository. This is accomplished by looking
+at an index of commits and determining if that frame is eligible for removal. [code](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@55be9054a2609e06a1d916cc2f782827421dd2a3/-/blob/enterprise/internal/insights/compression/compression.go?L84)
+
+There is a rate limit associated with analyzing historical data frames. This limit can be configured using the site setting
+`insights.historical.worker.rateLimit`. As a rule of thumb, this limit should be set as high as possible without performance
+impact to `gitserver`. A likely safe starting point on most Sourcegraph installations is `insights.historical.worker.rateLimit=20`.
+
+#### Detecting if an insight is _complete_
+Given the large possible cardinality of required queries to backfill an insight, it is clear this process can take some time. Through dogfooding we have found
+on a Sourcegraph installation with ~36,000 repositories, we can expect to backfill an average insight in 20-30 minutes. The actual benchmarks of how long 
+this will take vary greatly depending on the commit patterns and size of the Installation.
+
+One important piece of information that needs to be surfaced to users is the answer to the question `is my insight still processing?`
+This is a non-trivial question to answer:
+1. Work is processed asynchronously, so querying the state of the queue is necessary
+2. Iterating many thousands of repositories can result in some transient errors causing individual repositories to fail, and ultimately not be included in the queue [issue](https://github.com/sourcegraph/sourcegraph/issues/23844)
+3. The current shared state between settings and the database leaves a lot of intermediate undefined states, such as prior to the sync
+
+As a temporary measure to try and answer this question with some degree of accuracy, the historical backfiller applies the following semantic:
+Flag an insight as `completed backfill` if the insight was able to complete one full iteration of all repositories without any `hard` errors (such as low level DB errors, etc).
+This flag is represented as the database field `insight_series.backfill_queued_at` and is [set](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24%4055be905+StampBackfill&patternType=literal) at the end of the complete repository iteration.
+
+This semantic does not fully capture all possible states. For example, if a repository encounters a `soft` error (unable to fetch git metadata, for example)
+it will be skipped and ultimately not populate in the data series. Improving this is an area of design and work for Q3 - Q4.
+
+### (4) The queryrunner worker gets work and runs the search query
+
+The queryrunner ([code](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@55be9054a2609e06a1d916cc2f782827421dd2a3/-/blob/enterprise/internal/insights/background/queryrunner/worker.go)) is a background goroutine running in the `worker` service of Sourcegraph ([code](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@55be9054a2609e06a1d916cc2f782827421dd2a3/-/blob/enterprise/internal/insights/background/queryrunner/worker.go?L42:6)), it is responsible for:
 
 1. Taking work that has been enqueued by the _insight enqueuer_ (specifically, just search-based insights) and dequeueing it. ([code](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+file:insights+lang:go+file:queryrunner+dequeueJob&patternType=literal))
 2. Handling each job ([code](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+file:insights+lang:go+file:queryrunner+content:%22%29+Handle%28%22&patternType=literal)) by running a search query using Sourcegraph's internal/unauthenticated GraphQL API ([code](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+file:insights+lang:go+file:queryrunner+content:%22search%28%22&patternType=literal)) (i.e. getting all results, even if the user doesn't have access to some repos)
 3. Actually recording the number of results and other information we care about into the _insights store_ (i.e. into the `series_points` TimescaleDB table) ([code](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+file:insights+lang:go+file:queryrunner+RecordSeriesPoint&patternType=literal)).
 
-### (4) The historical data enqueuer gets to work
-
-If we record one data point every 12h above, it would take months or longer for users to get any value out of backend insights. This introduces the need for us to backfill data by running search queries that answer "how many results existed in the past?" so we can populate historical data.
-
-Similar to the _insight enqueuer_, the _historical insight enqueuer_ is a background goroutine ([code](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+file:insights+lang:go+newInsightHistoricalEnqueuer&patternType=literal)) which locates and enqueues work to populate historical data points.
-
-It is a moderately complex algorithm, to get an understanding for how it operates see these two explanations:
-
-1. [what it does and general implementation thoughts](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@049b99763b10ddc7ef6f72c22b18f1fa5f4f7259/-/blob/enterprise/internal/insights/background/historical_enqueuer.go#L31-53)
-2. [overview of the algorithm](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/enterprise/internal/insights/background/historical_enqueuer.go?L185#L116-147)
-
-Naively implemented, the historical backfiller would take a long time on any reasonably sized Sourcegraph installation. As an optimization,
-the backfiller will only query for data frames that have recorded changes in each repository. This is accomplished by looking
-at an index of commits and determining if that frame is eligible for removal. [code](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/enterprise/internal/insights/compression/compression.go?L46:1)
-
-There is a rate limit associated with analyzing historical data frames. This limit can be configured using the site setting
-`insights.historical.worker.rateLimit`. As a rule of thumb, this limit should be set as high as possible without performance
-impact to `gitserver`. A likely safe starting point on most Sourcegraph installations is `insights.historical.worker.rateLimit=20`.
 
 ### (5) Query-time and rendering!
 
