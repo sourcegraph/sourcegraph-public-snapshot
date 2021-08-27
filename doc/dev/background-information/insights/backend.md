@@ -137,6 +137,10 @@ This field is known as the `series_id`. It must be globally unique, and any coll
 In the medium term this semantic will change to include repository scopes (assigning specific repos to a datseries), and may possibly change entirely. This is one important area
 of design and work for Q3.
 
+The `series_id` for the example Insight data above series would be `s:7F1FE30EF252BF75FAB0C9680C7BCFFF648154165AFE718155091051255A0A99`
+
+The `series_id` is how the underlying data series is referenced throughout the system; however, it is not currently exposed in the GraphQL.
+
 ### (2) The _insight enqueuer_ detects the new insighte
 
 The _insight enqueuer_ ([code](https://sourcegraph.ecoem/search?qe=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+file:insights+lang:go+newInsightEnqueuer&patternType=literal)) is a background goroutine running in the `repo-updater` service of Sourcegraph ([code](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+file:insights+lang:go+StartBackgroundJobs&patternType=literal)), which runs all background goroutines for Sourcegraph - so long as `DISABLE_CODE_INSIGHTS=true` is not set on the repo-updater container/process.
