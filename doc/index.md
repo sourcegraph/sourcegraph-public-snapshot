@@ -107,7 +107,7 @@ For next steps, visit the [Docker installation documentation](admin/install/dock
 - [Sourcegraph handbook](https://about.sourcegraph.com/handbook)
 - [Sourcegraph blog](https://about.sourcegraph.com/blog/)
 - [@sourcegraph on Twitter](https://twitter.com/sourcegraph)
-- [Product Roadmap](https://about.sourcegraph.com/direction)
+- [Product Roadmap](https://about.sourcegraph.com/handbook/direction)
 
 ## Get help
 
