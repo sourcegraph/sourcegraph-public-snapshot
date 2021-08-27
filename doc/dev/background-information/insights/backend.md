@@ -145,7 +145,20 @@ to expose more direct functionality around data series.
 
 ### (2) The _insight enqueuer_ detects the new insighte
 
-The _insight enqueuer_ ([code](https://sourcegraph.ecoem/search?qe=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+file:insights+lang:go+newInsightEnqueuer&patternType=literal)) is a background goroutine running in the `repo-updater` service of Sourcegraph ([code](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+file:insights+lang:go+StartBackgroundJobs&patternType=literal)), which runs all background goroutines for Sourcegraph - so long as `DISABLE_CODE_INSIGHTS=true` is not set on the repo-updater container/process.
+The _insight enqueuer_ ([code](https://sourcegraph.ecoem/search?qe=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+file:insights+lang:go+newInsightEnqueuer&patternType=literal)) is a background goroutine running in the `worker` service of Sourcegraph ([code](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@55be9054a2609e06a1d916cc2f782827421dd2a3/-/blob/enterprise/internal/insights/background/insight_enqueuer.go?L27:6)), which runs all background goroutines for Sourcegraph - so long as `DISABLE_CODE_INSIGHTS=true` is not set on the `worker` container/process.
+Its job is to periodically schedule a recording of 'current' values for Insights by queuing a snapshot recording using an indexed query. This only requires a single query per insight regardless of the number of repositories,
+and will return results for all the matched repositories. Each repository will still be recorded individually. These queries are placed on the same queue as historical queries (`insights_query_runner_jobs`) and can
+be identified by the lack of a revision and repo filter on the query string. 
+For example, `insights` might be an indexed recording, where `insights repo:^codehost\.com/myorg/somerepo@ref$` would be a historical recording for a specific repo / revision.
+You can find these search queries for queued jobs on the (primary postgres) table `insights_query_runner_jobs.search_query`
+
+Insight recordings are scheduled using the database field (codeinsights-db) `insight_series.next_recording_after`, and will only be taken if the field time is less than the execution time of the job.
+Recordings are currently always schedule to occur on the first day of the following month, after `00:00:00`. For example, if a recording was taken at `2021-08-27T15:29:00.000Z` the next
+recording will be scheduled for `2021-09-01T00:00:00.000Z`. The first indexed recording after insight creation will occur on the same interval.
+
+Note: There is a field (codeinsights-db) `insight_series.recording_interval_days` that was intended to provide some configurable value to this recording interval. We have very little
+product validation with respect to time intervals and the granularity of recordings, so beta has launched with fixed `first-of-month` scheduling. 
+This will be an area of development throughout Q3 and into Q4.
 
 Every 12 hours on and after process startup ([code](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+file:insights+lang:go+file:insight_enqueuer.go+NewPeriodic&patternType=literal)) it does the following:
 e
