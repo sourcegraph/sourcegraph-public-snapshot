@@ -28,9 +28,9 @@ import { TooltipContent } from './TooltipContent'
  * by disabling any point events over line chart container.
  * See https://github.com/sourcegraph/sourcegraph/issues/23669
  */
-const IS_PERCY_RUN = process.env.PERCY_ON === 'true'
+const IS_PERCY_RUN = Boolean(JSON.parse(process.env.PERCY_ON ?? ''))
 
-console.log({ 'this-is-env': process.env.PERCY_ON })
+console.log({ 'this-is-env': IS_PERCY_RUN })
 
 // Chart configuration
 const WIDTH_PER_TICK = 70
