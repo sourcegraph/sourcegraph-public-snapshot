@@ -47,6 +47,15 @@ This flag should be used judiciously and should generally be considered a last r
 
 With version 3.31 this flag has moved from the `repo-updater` service to the `worker` service.
 
+### Soucegraph Setting
+Code Insights is currently behind an experimental feature on Sourcegraph. You can enable it in settings.
+
+```jsonb
+  "experimentalFeatures": {
+    "codeInsights": true
+  },
+```
+
 ## Database
 Currently, Code Insights uses a [TImescaleDB](https://www.timescale.com) database running on the OSS license. The original intention was to use
 some of the timeseries query features, as well as the hypertable. Many of these are behind a proprietary license that would require non-trivial
@@ -109,25 +118,23 @@ Read [more](./insight_view.md) about Insight Views
 
 ### Sync to the database
 
-The settings sync [job](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@4306278/-/blob/enterprise/internal/insights/discovery/discovery.go?L138:6)
-will execute and attempt to migrate the defined insight. Currently, the sync job does not handle updates and will only sync if the insight 
+The settings sync [job](https://sourcegraph.com/github.coem/sourcegraph/sourcegraph@4306278/-/blob/enterprise/internal/insights/discovery/discovery.go?L138:6)
+will execute and attempt to migrate the defined insight. Currently, the sync job does not handle updates and will only sync if the insight view unique ID is not found.
 
-This defines a single insight called `fmt usage`, with two series of data (the number of search results the queries `errorf` and `fmt.Printf` return, respectively.)
+Until the insight metadata is synced, the GraphQL response will not return any information if given the unique ID. Temporarily, the frontend treats all `404` errors
+as a transient "Insight is processing" error to solve for this weird UX.
 
-Once defined in user settings, the insight will immediately show up for users at e.g. https://sourcegraph.com/insights - as long as they have the feature flag turned on in their user/org/global settings:
+Once the sync job is complete, the following database rows will have been created:
+1. An Insight View (`insight_view`) with UniqueID ``searchInsights.insight.soManyInsights`
+2. An Insight Series (`insight_series`) with metadata required to generate the data series
+3. A link from the view to the data series (`insight_view_series`)
 
-```jsonb
-  "experimentalFeatures": {
-    "codeInsights": true
-  },
-```
+### (2) The _insight enqueuer_ detects the new insighte
 
-### (2) The _insight enqueuer_ detects the new insight
-
-The _insight enqueuer_ ([code](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+file:insights+lang:go+newInsightEnqueuer&patternType=literal)) is a background goroutine running in the `repo-updater` service of Sourcegraph ([code](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+file:insights+lang:go+StartBackgroundJobs&patternType=literal)), which runs all background goroutines for Sourcegraph - so long as `DISABLE_CODE_INSIGHTS=true` is not set on the repo-updater container/process.
+The _insight enqueuer_ ([code](https://sourcegraph.ecoem/search?qe=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+file:insights+lang:go+newInsightEnqueuer&patternType=literal)) is a background goroutine running in the `repo-updater` service of Sourcegraph ([code](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+file:insights+lang:go+StartBackgroundJobs&patternType=literal)), which runs all background goroutines for Sourcegraph - so long as `DISABLE_CODE_INSIGHTS=true` is not set on the repo-updater container/process.
 
 Every 12 hours on and after process startup ([code](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+file:insights+lang:go+file:insight_enqueuer.go+NewPeriodic&patternType=literal)) it does the following:
-
+e
 1. Discovers insights defined in global/org/user settings ([code](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+file:insights+lang:go+file:insight_enqueuer.go+discovery.Discover&patternType=literal)) by enumerating all settings on the instance and looking for the `insights` key, compiling a list of them (today, just global settings [#18397](https://github.com/sourcegraph/sourcegraph/issues/18397)).
 2. Determines which _series_ are unique. For example, if Jane defines a search insight with `"search": "fmt.Printf"` and Bob does too, there is no reason for us to collect data on those separately since they represent the same exact series of data. Thus, we hash the insight definition ([code](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+file:insights+lang:go+file:insight_enqueuer.go+EncodeSeriesID&patternType=literal)) in order to deduplicate them and produce a _series ID_ string that will uniquely identify that series of data. We also use this ID to identify the series of data in the `series_points` TimescaleDB database table later.
 3. For every unique series, enqueues a job for the _queryrunner_ worker to later run the search query and collect information on it (like the # of search results.) ([code](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+file:insights+lang:go+file:insight_enqueuer.go+enqueueQueryRunnerJob&patternType=literal))
