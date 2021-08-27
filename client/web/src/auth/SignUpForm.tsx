@@ -45,6 +45,9 @@ interface SignUpFormProps {
 
     // For use in ExperimentalSignUpPage. Modifies styling and removes terms of service and trial section.
     experimental?: boolean
+
+    // To be able to disable submit from a parent component
+    disableSubmit?: boolean
 }
 
 const preventDefault = (event: React.FormEvent): void => event.preventDefault()
@@ -58,6 +61,7 @@ export const SignUpForm: React.FunctionComponent<SignUpFormProps> = ({
     className,
     context,
     experimental = false,
+    disableSubmit = false,
 }) => {
     const [loading, setLoading] = useState(false)
     const [requestedTrial, setRequestedTrial] = useState(false)
@@ -92,7 +96,7 @@ export const SignUpForm: React.FunctionComponent<SignUpFormProps> = ({
 
     const canRegister = emailState.kind === 'VALID' && usernameState.kind === 'VALID' && passwordState.kind === 'VALID'
 
-    const disabled = loading || !canRegister
+    const disabled = loading || !canRegister || disableSubmit
 
     const handleSubmit = useCallback(
         (event: React.FormEvent<HTMLFormElement>): void => {

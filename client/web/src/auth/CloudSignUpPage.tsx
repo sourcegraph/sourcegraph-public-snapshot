@@ -1,7 +1,7 @@
 import classNames from 'classnames'
 import ChevronLeftIcon from 'mdi-react/ChevronLeftIcon'
 import GithubIcon from 'mdi-react/GithubIcon'
-import React from 'react'
+import React, { useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
@@ -12,6 +12,7 @@ import { SourcegraphContext } from '../jscontext'
 
 import styles from './CloudSignUpPage.module.scss'
 import { SignUpArguments, SignUpForm } from './SignUpForm'
+import { Checkbox } from '@sourcegraph/wildcard'
 
 interface Props extends ThemeProps, TelemetryProps {
     source: string | null
@@ -47,6 +48,7 @@ export const CloudSignUpPage: React.FunctionComponent<Props> = ({
     telemetryService,
 }) => {
     const location = useLocation()
+    const [tosAccepted, setTosAccepted] = useState(false)
 
     const queryWithUseEmailToggled = new URLSearchParams(location.search)
     if (showEmailForm) {
@@ -120,69 +122,79 @@ export const CloudSignUpPage: React.FunctionComponent<Props> = ({
 
                 <div className={styles.signUpWrapper}>
                     <h2>Create a free account</h2>
-                    {!showEmailForm ? (
-                        <>
-                            {githubProvider && (
-                                <a
-                                    href={githubProvider.authenticationURL}
-                                    className={classNames(styles.signUpButton, styles.githubButton)}
-                                    onClick={logEvent}
-                                >
-                                    <GithubIcon className="mr-3" /> Continue with GitHub
-                                </a>
-                            )}
-                            {gitlabProvider && (
-                                <a
-                                    href={gitlabProvider.authenticationURL}
-                                    className={classNames(styles.signUpButton, styles.gitlabButton)}
-                                    onClick={logEvent}
-                                >
-                                    <GitlabColorIcon className="mr-3" /> Continue with GitLab
-                                </a>
-                            )}
+                    {tosAccepted &&
+                        (!showEmailForm ? (
+                            <>
+                                {githubProvider && (
+                                    <a
+                                        href={githubProvider.authenticationURL}
+                                        className={classNames(styles.signUpButton, styles.githubButton)}
+                                        onClick={logEvent}
+                                    >
+                                        <GithubIcon className="mr-3" /> Continue with GitHub
+                                    </a>
+                                )}
+                                {gitlabProvider && (
+                                    <a
+                                        href={gitlabProvider.authenticationURL}
+                                        className={classNames(styles.signUpButton, styles.gitlabButton)}
+                                        onClick={logEvent}
+                                    >
+                                        <GitlabColorIcon className="mr-3" /> Continue with GitLab
+                                    </a>
+                                )}
 
-                            <div className="mb-4">
-                                Or,{' '}
-                                <Link to={`${location.pathname}?${queryWithUseEmailToggled.toString()}`}>
-                                    continue with email
-                                </Link>
-                            </div>
-                        </>
-                    ) : (
-                        <>
-                            <small className="d-block mt-3">
-                                <Link
-                                    className="d-flex align-items-center"
-                                    to={`${location.pathname}?${queryWithUseEmailToggled.toString()}`}
-                                >
-                                    <ChevronLeftIcon className={classNames('icon-inline', styles.backIcon)} />
-                                    Go back
-                                </Link>
-                            </small>
+                                <div className="mb-4">
+                                    Or,{' '}
+                                    <Link to={`${location.pathname}?${queryWithUseEmailToggled.toString()}`}>
+                                        continue with email
+                                    </Link>
+                                </div>
+                            </>
+                        ) : (
+                            <>
+                                <small className="d-block mt-3">
+                                    <Link
+                                        className="d-flex align-items-center"
+                                        to={`${location.pathname}?${queryWithUseEmailToggled.toString()}`}
+                                    >
+                                        <ChevronLeftIcon className={classNames('icon-inline', styles.backIcon)} />
+                                        Go back
+                                    </Link>
+                                </small>
 
-                            <SignUpForm
-                                onSignUp={args => {
-                                    logEvent()
-                                    return onSignUp(args)
-                                }}
-                                context={{ authProviders: [], sourcegraphDotComMode: true }}
-                                buttonLabel="Sign up"
-                                experimental={true}
-                                className="my-3"
-                            />
-                        </>
-                    )}
+                                <SignUpForm
+                                    onSignUp={args => {
+                                        logEvent()
+                                        return onSignUp(args)
+                                    }}
+                                    context={{ authProviders: [], sourcegraphDotComMode: true }}
+                                    buttonLabel="Sign up"
+                                    experimental={true}
+                                    disableSubmit={!tosAccepted}
+                                    className="my-3"
+                                />
+                            </>
+                        ))}
 
                     <small className="text-muted">
-                        By registering, you agree to our{' '}
-                        <a href="https://about.sourcegraph.com/terms" target="_blank" rel="noopener">
-                            Terms of Service
-                        </a>{' '}
-                        and{' '}
-                        <a href="https://about.sourcegraph.com/privacy" target="_blank" rel="noopener">
-                            Privacy Policy
-                        </a>
-                        .
+                        <Checkbox
+                            id="tos-checkbox"
+                            label={
+                                <>
+                                    I agree to Sourcegraph{' '}
+                                    <a href="https://about.sourcegraph.com/terms" target="_blank" rel="noopener">
+                                        Terms of Service
+                                    </a>{' '}
+                                    and{' '}
+                                    <a href="https://about.sourcegraph.com/privacy" target="_blank" rel="noopener">
+                                        Privacy Policy
+                                    </a>
+                                </>
+                            }
+                            checked={tosAccepted}
+                            onChange={() => setTosAccepted(!tosAccepted)}
+                        />
                     </small>
 
                     <hr className={styles.separator} />
