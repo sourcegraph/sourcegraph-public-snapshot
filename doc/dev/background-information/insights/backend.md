@@ -45,7 +45,7 @@ Implementation of this environment variable can be found in the [`frontend`](htt
 
 This flag should be used judiciously and should generally be considered a last resort for Sourcegraph installations that need to disable Code Insights or remove the database dependency.
 
-With version 3.31 this flag has moved from the `repo-updater` service to the `worker` service.
+With version 3.31 this flag has moved from the `worker` service to the `worker` service.
 
 ### Soucegraph Setting
 Code Insights is currently behind an experimental feature on Sourcegraph. You can enable it in settings.
@@ -175,11 +175,25 @@ For each relevant repository:
 
 Naively implemented, the historical backfiller would take a long time on any reasonably sized Sourcegraph installation. As an optimization,
 the backfiller will only query for data frames that have recorded changes in each repository. This is accomplished by looking
-at an index of commits and determining if that frame is eligible for removal. [code](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@55be9054a2609e06a1d916cc2f782827421dd2a3/-/blob/enterprise/internal/insights/compression/compression.go?L84)
+at an index of commits and determining if that frame is eligible for removal. 
+Read more [below](#Backfill-compression)
 
 There is a rate limit associated with analyzing historical data frames. This limit can be configured using the site setting
 `insights.historical.worker.rateLimit`. As a rule of thumb, this limit should be set as high as possible without performance
 impact to `gitserver`. A likely safe starting point on most Sourcegraph installations is `insights.historical.worker.rateLimit=20`.
+
+#### Backfill compression
+Read more about the backfilling compression in the proposal [RFC 392](https://docs.google.com/document/d/1VDk5Buks48THxKPwB-b7F42q3tlKuJkmUmaCxv2oEzI/edit#heading=h.3babtpth82k2)
+
+We maintain an index of commits (table `commit_index` in codeinsights-db) that are used to filter out repositories that do not need a search query. This index is 
+periodically [refreshed](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@55be9054a2609e06a1d916cc2f782827421dd2a3/-/blob/enterprise/internal/insights/compression/worker.go?L41) 
+with changes since its previous refresh. Metadata for each repositories refresh is tracked in a table `commit_index_metadata`. 
+
+To avoid race conditions with the index, data frames are only [filtered]([code](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@55be9054a2609e06a1d916cc2f782827421dd2a3/-/blob/enterprise/internal/insights/compression/compression.go?L84)) 
+out if the `commit_index_metadata` is greater than the data point we are attempting to compress.
+
+Currently, we only generate 12 months of history for this commit index to keep it reasonably sized. We do not currently do any pruning, but that is likely an area
+we will need to expand in Q3 - Q4.
 
 #### Limiting to a scope of repositories
 Naturally, some insights will not need or want to execute over all repositories and would prefer to execute over a subset to generate faster. As a trade off to reach beta
@@ -273,7 +287,7 @@ Read more about the [history](https://github.com/sourcegraph/sourcegraph/issues/
 
 ## Debugging
 
-This being a pretty complex and slow-moving system, debugging can be tricky. This is definitely one area we need to improve especially from a user experience point of view ([#18964](https://github.com/sourcegraph/sourcegraph/issues/18964)) and general customer debugging point of view ([#18399](https://github.com/sourcegraph/sourcegraph/issues/18399)).
+This being a pretty complex, high cardinality, and slow-moving system - debugging can be tricky.
 
 In this section, I'll cover useful tips I have for debugging the system when developing it or otherwise using it.
 
@@ -296,9 +310,9 @@ kubectl exec -it deployment/codeinsights-db -- psql -U postgres
 
 ### Finding logs
 
-Since insights runs inside of the `frontend` and `repo-updater` containers/processes, it can be difficult to locate the relevant logs. Best way to do it is to grep for `insights`.
+Since insights runs inside of the `frontend` and `worker` containers/processes, it can be difficult to locate the relevant logs. Best way to do it is to grep for `insights`.
 
-The `frontend` will contain logs about e.g. the GraphQL resolvers and TimescaleDB migrations being ran, while `repo-updater` will have the vast majority of logs coming from the insights background workers.
+The `frontend` will contain logs about e.g. the GraphQL resolvers and TimescaleDB migrations being ran, while `worker` will have the vast majority of logs coming from the insights background workers.
 
 #### Docker compose deployments
 
@@ -309,7 +323,7 @@ docker logs sourcegraph-frontend-0 | grep insights
 and
 
 ```
-docker logs repo-updater | grep insights
+docker logs worker | grep insights
 ```
 
 ### Inspecting the Timescale database
@@ -469,4 +483,4 @@ SELECT time,
 
 Since TimescaleDB is just Postgres (with an extension), we use the same SQL migration framework we use for our other Postgres databases. `migrations/codeinsights` in the root of this repository contains the migrations for the Code Insights Timescale database, they are executed when the frontend starts up (as is the same with e.g. codeintel DB migrations.)
 
-Currently, the migration process blocks `frontend` and `repo-updater` startup - which is one issue [we will need to solve](https://github.com/sourcegraph/sourcegraph/issues/18388).
+Currently, the migration process blocks `frontend` and `worker` startup - which is one issue [we will need to solve](https://github.com/sourcegraph/sourcegraph/issues/18388).
