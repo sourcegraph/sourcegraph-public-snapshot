@@ -20,3 +20,7 @@ export const environmentConfig = {
 const { SOURCEGRAPH_HTTPS_PORT, SOURCEGRAPH_HTTPS_DOMAIN } = environmentConfig
 
 export const WEB_SERVER_URL = `http://${SOURCEGRAPH_HTTPS_DOMAIN}:${SOURCEGRAPH_HTTPS_PORT}`
+
+const webBuilders = ['webpack', 'esbuild'] as const
+type webBuilder = typeof webBuilders[number]
+export const DEV_WEB_BUILDER: webBuilder = process.env.DEV_WEB_BUILDER === 'esbuild' ? 'esbuild' : 'webpack'

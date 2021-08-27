@@ -24,6 +24,8 @@ const {
   watchSchema,
 } = require('../shared/gulpfile')
 
+const {esbuildDevelopmentServer} = require('./dev/esbuild/server')
+const { DEV_WEB_BUILDER } = require('./dev/utils')
 const webpackConfig = require('./webpack.config')
 
 const WEBPACK_STATS_OPTIONS = {
@@ -125,6 +127,8 @@ async function webpackDevelopmentServer() {
   })
 }
 
+const webBuilderDevelopmentServer = DEV_WEB_BUILDER === 'webpack' ? webpackDevelopmentServer : esbuildDevelopmentServer
+
 // Ensure the typings that TypeScript depends on are build to avoid first-time-run errors
 const codeGen = gulp.parallel(schema, graphQlOperations, graphQlSchema)
 
@@ -139,7 +143,7 @@ const build = gulp.series(codeGen, webpack)
 /**
  * Starts a development server without initial code generation, watches everything and rebuilds on file changes.
  */
-const developmentWithoutInitialCodeGen = gulp.parallel(watchCodeGen, webpackDevelopmentServer)
+const developmentWithoutInitialCodeGen = gulp.parallel(watchCodeGen, webBuilderDevelopmentServer)
 
 /**
  * Runs code generation first, then starts a development server, watches everything and rebuilds on file changes.
@@ -168,4 +172,5 @@ module.exports = {
   webpackDevServer: webpackDevelopmentServer,
   webpack,
   watchWebpack,
+  webBuilderDevelopmentServer,
 }

@@ -13,6 +13,7 @@ import {
     STATIC_ASSETS_PATH,
     STATIC_ASSETS_URL,
     WEB_SERVER_URL,
+    DEV_WEB_BUILDER,
 } from '../utils'
 
 // TODO: migrate webpack.config.js to TS to use `import` in this file.
@@ -23,7 +24,7 @@ const { SOURCEGRAPH_API_URL, SOURCEGRAPH_HTTPS_PORT, IS_HOT_RELOAD_ENABLED } = e
 export async function startDevelopmentServer(): Promise<void> {
     // Get CSRF token value from the `SOURCEGRAPH_API_URL`.
     const { csrfContextValue, csrfCookieValue } = await getCSRFTokenAndCookie(SOURCEGRAPH_API_URL)
-    signale.start('Starting webpack-dev-server with environment config:\n', environmentConfig)
+    signale.start(`Starting ${DEV_WEB_BUILDER} development server with environment config:\n`, environmentConfig)
 
     const proxyConfig: ProxyConfigArrayItem = {
         context: PROXY_ROUTES,
@@ -62,13 +63,13 @@ export async function startDevelopmentServer(): Promise<void> {
     compiler.hooks.afterEmit.tap(
         'development-server-logger',
         once(() => {
-            signale.success('Webpack build is ready!')
+            signale.success('Web build is ready!')
         })
     )
 
     server.listen(SOURCEGRAPH_HTTPS_PORT, '0.0.0.0', () => {
         signale.success(`Development server is ready at ${chalk.blue.bold(WEB_SERVER_URL)}`)
-        signale.await('Waiting for Webpack to compile assets')
+        signale.await(`Waiting for ${DEV_WEB_BUILDER}`)
     })
 }
 
