@@ -9,7 +9,10 @@ export const assetPathPrefix = '/.assets/'
 
 const writeManifest = async (appJSPath: string): Promise<void> => {
     const manifestPath = path.join(uiAssetsPath, 'webpack.manifest.json')
-    await fs.promises.writeFile(manifestPath, JSON.stringify({ 'app.js': path.join(assetPathPrefix, appJSPath) }))
+    await fs.promises.writeFile(
+        manifestPath,
+        JSON.stringify({ 'app.js': path.join(assetPathPrefix, appJSPath), isModule: true })
+    )
 }
 
 export const manifestPlugin: esbuild.Plugin = {

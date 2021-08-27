@@ -30,6 +30,7 @@ export const BUILD_OPTIONS: esbuild.BuildOptions = {
     plugins: [sassPlugin, workerPlugin, manifestPlugin, packageResolutionPlugin],
     define: {
         'process.env.NODE_ENV': '"development"',
+        'process.env.PERCY_ON': JSON.stringify(process.env.PERCY_ON),
         global: 'window',
         'process.env.SOURCEGRAPH_API_URL': JSON.stringify(process.env.SOURCEGRAPH_API_URL),
     },
