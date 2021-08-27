@@ -173,7 +173,12 @@ export const DrillDownFiltersForm: React.FunctionComponent<DrillDownFiltersFormP
                     className="btn btn-outline-secondary ml-auto mr-2"
                 />
 
-                <Button type="button" variant="secondary" onClick={onCreateInsightRequest}>
+                <Button
+                    aria-label="Save as new view"
+                    type="button"
+                    variant="secondary"
+                    onClick={onCreateInsightRequest}
+                >
                     <PlusIcon className="icon-inline mr-1" />
                     Save as new view
                 </Button>
