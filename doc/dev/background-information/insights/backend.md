@@ -145,7 +145,7 @@ to expose more direct functionality around data series.
 
 ### (2) The _insight enqueuer_ (indexed recorder) detects the new insight
 
-The _insight enqueuer_ ([code](https://sourcegraph.ecoem/search?qe=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+file:insights+lang:go+newInsightEnqueuer&patternType=literal)) is a background goroutine running in the `worker` service of Sourcegraph ([code](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@55be9054a2609e06a1d916cc2f782827421dd2a3/-/blob/enterprise/internal/insights/background/insight_enqueuer.go?L27:6)), which runs all background goroutines for Sourcegraph - so long as `DISABLE_CODE_INSIGHTS=true` is not set on the `worker` container/process.
+The _insight enqueuer_ ([code](https://sourcegraph.com/search?qe=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+file:insights+lang:go+newInsightEnqueuer&patternType=literal)) is a background goroutine running in the `worker` service of Sourcegraph ([code](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@55be9054a2609e06a1d916cc2f782827421dd2a3/-/blob/enterprise/internal/insights/background/insight_enqueuer.go?L27:6)), which runs all background goroutines for Sourcegraph - so long as `DISABLE_CODE_INSIGHTS=true` is not set on the `worker` container/process.
 Its job is to periodically schedule a recording of 'current' values for Insights by queuing a snapshot recording using an indexed query. This only requires a single query per insight regardless of the number of repositories,
 and will return results for all the matched repositories. Each repository will still be recorded individually. These queries are placed on the same queue as historical queries (`insights_query_runner_jobs`) and can
 be identified by the lack of a revision and repo filter on the query string. 
@@ -189,7 +189,7 @@ We maintain an index of commits (table `commit_index` in codeinsights-db) that a
 periodically [refreshed](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@55be9054a2609e06a1d916cc2f782827421dd2a3/-/blob/enterprise/internal/insights/compression/worker.go?L41) 
 with changes since its previous refresh. Metadata for each repositories refresh is tracked in a table `commit_index_metadata`. 
 
-To avoid race conditions with the index, data frames are only [filtered]([code](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@55be9054a2609e06a1d916cc2f782827421dd2a3/-/blob/enterprise/internal/insights/compression/compression.go?L84)) 
+To avoid race conditions with the index, data frames are only [filtered](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@55be9054a2609e06a1d916cc2f782827421dd2a3/-/blob/enterprise/internal/insights/compression/compression.go?L84)
 out if the `commit_index_metadata` is greater than the data point we are attempting to compress.
 
 Currently, we only generate 12 months of history for this commit index to keep it reasonably sized. We do not currently do any pruning, but that is likely an area
