@@ -190,7 +190,7 @@ periodically [refreshed](https://sourcegraph.com/github.com/sourcegraph/sourcegr
 with changes since its previous refresh. Metadata for each repositories refresh is tracked in a table `commit_index_metadata`. 
 
 To avoid race conditions with the index, data frames are only [filtered](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@55be9054a2609e06a1d916cc2f782827421dd2a3/-/blob/enterprise/internal/insights/compression/compression.go?L84)
-out if the `commit_index_metadata` is greater than the data point we are attempting to compress.
+out if the `commit_index_metadata.last_updated_at` is greater than the data point we are attempting to compress.
 
 Currently, we only generate 12 months of history for this commit index to keep it reasonably sized. We do not currently do any pruning, but that is likely an area
 we will need to expand in Q3 - Q4.
