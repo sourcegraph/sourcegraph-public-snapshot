@@ -133,14 +133,6 @@ func TestUserFilters(t *testing.T) {
 	}
 }
 
-var privateOnlyUsers *Project = &Project{
-	Key:    "PRIVUSER",
-	ID:     25,
-	Name:   "private-only-users",
-	Public: false,
-	Type:   "NORMAL",
-}
-
 func TestClient_Projects(t *testing.T) {
 	cli, save := NewTestClient(t, "Projects", *update)
 	defer save()
@@ -349,125 +341,125 @@ func TestClient_Projects_Repositories(t *testing.T) {
 	cli, save := NewTestClient(t, "Projects_Repositories", *update)
 	defer save()
 
-	timeout, cancel := context.WithDeadline(context.Background(), time.Now().Add(-time.Minute))
-	defer cancel()
-
-	userLand := &Repo{
-		Slug:          "userland",
-		ID:            6,
-		Name:          "userland",
-		SCMID:         "git",
-		State:         "AVAILABLE",
-		StatusMessage: "Available",
-		Forkable:      true,
-		Project:       privateOnlyUsers,
+	project := &Project{
+		Key:    "PRIVUSER",
+		ID:     25,
+		Name:   "private-only-users",
+		Public: false,
+		Type:   "NORMAL",
 	}
 
-	userScript := &Repo{
-		Slug:          "userscript",
-		ID:            8,
-		Name:          "UserScript",
-		SCMID:         "git",
-		State:         "AVAILABLE",
-		StatusMessage: "Available",
-		Forkable:      true,
-		Project:       privateOnlyUsers,
-	}
+	var (
+		userLand = &Repo{
+			Slug:          "userland",
+			ID:            6,
+			Name:          "userland",
+			SCMID:         "git",
+			State:         "AVAILABLE",
+			StatusMessage: "Available",
+			Forkable:      true,
+			Project:       project,
+		}
 
-	for _, test := range []struct {
-		description string
-		projectKey  string
-		page        *PageToken
-		expected    []*Repo
-		nextPage    *PageToken
+		userScript = &Repo{
+			Slug:          "userscript",
+			ID:            8,
+			Name:          "UserScript",
+			SCMID:         "git",
+			State:         "AVAILABLE",
+			StatusMessage: "Available",
+			Forkable:      true,
+			Project:       project,
+		}
+	)
 
-		ctx context.Context
+	t.Run("timeout - deadline exceeded", func(t *testing.T) {
+		ctx, cancel := context.WithDeadline(context.Background(), time.Now().Add(-time.Minute))
+		defer cancel()
 
-		err string
-	}{
-		{
-			description: "timeout - deadline exceeded",
-			projectKey:  privateOnlyUsers.Key,
-			ctx:         timeout,
-			err:         "context deadline exceeded",
-		},
-		{
-			description: "all repositories",
-			projectKey:  privateOnlyUsers.Key,
-			expected:    []*Repo{userLand, userScript},
-			page: &PageToken{
-				Limit: 100,
+		_, _, err := cli.ProjectRepositories(ctx, nil, "some irrelevant key")
+		if !errors.Is(err, context.DeadlineExceeded) {
+			t.Errorf("expected deadline exceeded error, got: %s", err)
+		}
+	})
+
+	t.Run("error - empty project key", func(t *testing.T) {
+		_, _, err := cli.ProjectRepositories(context.Background(), nil, "")
+
+		var e *argumentError
+		if !errors.As(err, &e) {
+			t.Errorf("expected argument error, got: %s", err)
+		}
+	})
+
+	t.Run("paging", func(t *testing.T) {
+		for _, test := range []struct {
+			description string
+
+			page     *PageToken
+			expected []*Repo
+
+			nextPage *PageToken
+		}{
+			{
+				description: "all repositories",
+				expected:    []*Repo{userLand, userScript},
+				page:        &PageToken{Limit: 1000},
+				nextPage: &PageToken{
+					Size:       2,
+					Limit:      1000,
+					IsLastPage: true,
+				},
 			},
-			nextPage: &PageToken{
-				Size:       2,
-				Limit:      100,
-				IsLastPage: true,
+			{
+				description: "limit 1 - first page",
+				page: &PageToken{
+					Limit: 1,
+				},
+				expected: []*Repo{userLand},
+				nextPage: &PageToken{
+					Size:          1,
+					Limit:         1,
+					NextPageStart: 1,
+				},
 			},
-		},
-		{
-			description: "page: single page",
-			projectKey:  privateOnlyUsers.Key,
-			page: &PageToken{
-				Limit: 1,
+			{
+				description: "limit 1 - last page",
+				page: &PageToken{
+					Limit: 1,
+					// it turns out that setting "start" directly does nothing, you have to set
+					// NextPageStart (which seems like a mistmatch against bitbucket's API - but I digress)
+					NextPageStart: 1,
+				},
+				expected: []*Repo{userScript},
+				nextPage: &PageToken{
+					Start:      1,
+					Size:       1,
+					Limit:      1,
+					IsLastPage: true,
+				},
 			},
-			expected: []*Repo{userLand},
-			nextPage: &PageToken{
-				Size:          1,
-				Limit:         1,
-				NextPageStart: 1,
-			},
-		},
-		{
-			description: "page: last page",
-			projectKey:  privateOnlyUsers.Key,
-			page: &PageToken{
-				Limit: 1,
-				// it turns out that setting "start" directly does nothing, you have to set
-				// NextPageStart (which seems like a mistmatch against bitbucket's API - but I digress)
-				NextPageStart: 1,
-			},
-			expected: []*Repo{userScript},
-			nextPage: &PageToken{
-				Start:      1,
-				Size:       1,
-				Limit:      1,
-				IsLastPage: true,
-			},
-		},
+		} {
+			t.Run(test.description, func(t *testing.T) {
+				actual, nextPage, err := cli.ProjectRepositories(context.Background(), test.page, project.Key)
+				if err != nil {
+					t.Fatalf("unexpected error: %s", err)
+				}
 
-		{
-			description: "error: don't provide project key",
-			projectKey:  "",
-			err:         "project key is empty",
-		},
-	} {
-		t.Run(test.description, func(t *testing.T) {
-			if test.ctx == nil {
-				test.ctx = context.Background()
-			}
+				for _, s := range [][]*Repo{actual, test.expected} {
+					sort.Slice(s, func(i, j int) bool { return s[i].ID < s[j].ID })
+				}
 
-			if test.err == "" {
-				test.err = "<nil>"
-			}
+				if diff := cmp.Diff(actual, test.expected, cmpopts.IgnoreFields(Repo{}, "Links", "Project.Links")); diff != "" {
+					t.Errorf("non-zero diff in returned repositories (-got +want):\n%s", diff)
+				}
 
-			actual, nextPage, err := cli.ProjectRepositories(test.ctx, test.page, test.projectKey)
-			if diff := cmp.Diff(fmt.Sprint(err), test.err); diff != "" {
-				t.Fatalf("got unexpected error (-got +want):\n%s", diff)
-			}
-
-			for _, s := range [][]*Repo{actual, test.expected} {
-				sort.Slice(s, func(i, j int) bool { return s[i].ID < s[j].ID })
-			}
-
-			if diff := cmp.Diff(actual, test.expected, cmpopts.IgnoreFields(Repo{}, "Links", "Project.Links")); diff != "" {
-				t.Errorf("non-zero diff in returned repositories (-got +want):\n%s", diff)
-			}
-
-			if diff := cmp.Diff(nextPage, test.nextPage); diff != "" {
-				t.Errorf("next page token differs (-got +want):\n%s", diff)
-			}
-		})
-	}
+				if diff := cmp.Diff(nextPage, test.nextPage); diff != "" {
+					t.Errorf("next page token differs (-got +want):\n%s", diff)
+				}
+			})
+		}
+	})
 }
 func TestClient_Users(t *testing.T) {
 	cli, save := NewTestClient(t, "Users", *update)

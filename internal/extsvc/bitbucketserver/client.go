@@ -330,6 +330,7 @@ type ProjectFilter struct {
 	Permission Perm
 }
 
+// EncodeTo encodes the ProjectFilter to the given url.Values.
 func (p *ProjectFilter) EncodeTo(u url.Values) {
 	if p == nil {
 		return
@@ -358,15 +359,22 @@ func (c *Client) Projects(ctx context.Context, pageToken *PageToken, filter *Pro
 // Projects retrieves a page of repositories belonging to the project specified by "projectKey".
 func (c *Client) ProjectRepositories(ctx context.Context, pageToken *PageToken, projectKey string) ([]*Repo, *PageToken, error) {
 	if projectKey == "" {
-		return nil, nil, errors.New("project key is empty")
+		return nil, nil, &argumentError{message: "project key is empty"}
 	}
+	route := fmt.Sprintf("/rest/api/1.0/projects/%s/repos", projectKey)
 
 	var repos []*Repo
 
-	route := fmt.Sprintf("/rest/api/1.0/projects/%s/repos", projectKey)
-
 	next, err := c.page(ctx, route, nil, pageToken, &repos)
 	return repos, next, err
+}
+
+type argumentError struct {
+	message string
+}
+
+func (e argumentError) Error() string {
+	return e.message
 }
 
 // UserPermissions retrieves the global permissions assigned to the user with the given

@@ -19,7 +19,7 @@ interactions:
       Content-Type:
       - application/json;charset=UTF-8
       Date:
-      - Fri, 27 Aug 2021 23:05:22 GMT
+      - Sat, 28 Aug 2021 00:45:05 GMT
       Pragma:
       - no-cache
       Server:
@@ -27,9 +27,9 @@ interactions:
       Vary:
       - x-ausername,x-auserid,cookie,accept-encoding
       X-Arequestid:
-      - '@WRQLR1x1385x1870x0'
+      - '@WRQLR1x45x1885x0'
       X-Asessionid:
-      - 1h8xqvl
+      - 1jkgfjc
       X-Auserid:
       - "104"
       X-Ausername:
@@ -56,7 +56,7 @@ interactions:
       Content-Type:
       - application/json;charset=UTF-8
       Date:
-      - Fri, 27 Aug 2021 23:05:22 GMT
+      - Sat, 28 Aug 2021 00:45:05 GMT
       Pragma:
       - no-cache
       Server:
@@ -64,9 +64,9 @@ interactions:
       Vary:
       - x-ausername,x-auserid,cookie,accept-encoding
       X-Arequestid:
-      - '@WRQLR1x1385x1871x0'
+      - '@WRQLR1x45x1886x0'
       X-Asessionid:
-      - 18s9pwt
+      - 1svkzf
       X-Auserid:
       - "104"
       X-Ausername:
@@ -93,7 +93,7 @@ interactions:
       Content-Type:
       - application/json;charset=UTF-8
       Date:
-      - Fri, 27 Aug 2021 23:05:22 GMT
+      - Sat, 28 Aug 2021 00:45:05 GMT
       Pragma:
       - no-cache
       Server:
@@ -101,9 +101,9 @@ interactions:
       Vary:
       - x-ausername,x-auserid,cookie,accept-encoding
       X-Arequestid:
-      - '@WRQLR1x1385x1872x0'
+      - '@WRQLR1x45x1887x0'
       X-Asessionid:
-      - 18jhtub
+      - y8shcf
       X-Auserid:
       - "104"
       X-Ausername:
@@ -119,10 +119,10 @@ interactions:
     headers:
       Content-Type:
       - application/json; charset=utf-8
-    url: https://bb.sgdev.org/rest/api/1.0/projects?name=private-
+    url: https://bb.sgdev.org/rest/api/1.0/projects?limit=1000&name=private-
     method: GET
   response:
-    body: '{"size":2,"limit":25,"isLastPage":true,"values":[{"key":"PRIVUSER","id":25,"name":"private-only-users","public":false,"type":"NORMAL","links":{"self":[{"href":"https://bb.sgdev.org/projects/PRIVUSER"}]}},{"key":"PRIVWRITE","id":26,"name":"private-write","public":false,"type":"NORMAL","links":{"self":[{"href":"https://bb.sgdev.org/projects/PRIVWRITE"}]}}],"start":0}'
+    body: '{"size":2,"limit":1000,"isLastPage":true,"values":[{"key":"PRIVUSER","id":25,"name":"private-only-users","public":false,"type":"NORMAL","links":{"self":[{"href":"https://bb.sgdev.org/projects/PRIVUSER"}]}},{"key":"PRIVWRITE","id":26,"name":"private-write","public":false,"type":"NORMAL","links":{"self":[{"href":"https://bb.sgdev.org/projects/PRIVWRITE"}]}}],"start":0}'
     headers:
       Cache-Control:
       - private, no-cache
@@ -130,7 +130,7 @@ interactions:
       Content-Type:
       - application/json;charset=UTF-8
       Date:
-      - Fri, 27 Aug 2021 23:05:22 GMT
+      - Sat, 28 Aug 2021 00:45:05 GMT
       Pragma:
       - no-cache
       Server:
@@ -138,9 +138,9 @@ interactions:
       Vary:
       - x-ausername,x-auserid,cookie,accept-encoding
       X-Arequestid:
-      - '@WRQLR1x1385x1873x0'
+      - '@WRQLR1x45x1888x0'
       X-Asessionid:
-      - 1cr9z7a
+      - 8wisj4
       X-Auserid:
       - "104"
       X-Ausername:
@@ -156,10 +156,10 @@ interactions:
     headers:
       Content-Type:
       - application/json; charset=utf-8
-    url: https://bb.sgdev.org/rest/api/1.0/projects?permission=PROJECT_WRITE
+    url: https://bb.sgdev.org/rest/api/1.0/projects?limit=1000&permission=PROJECT_WRITE
     method: GET
   response:
-    body: '{"size":2,"limit":25,"isLastPage":true,"values":[{"key":"PRIVWRITE","id":26,"name":"private-write","public":false,"type":"NORMAL","links":{"self":[{"href":"https://bb.sgdev.org/projects/PRIVWRITE"}]}},{"key":"UNIQ2","id":30,"name":"unique-write","public":false,"type":"NORMAL","links":{"self":[{"href":"https://bb.sgdev.org/projects/UNIQ2"}]}}],"start":0}'
+    body: '{"size":2,"limit":1000,"isLastPage":true,"values":[{"key":"PRIVWRITE","id":26,"name":"private-write","public":false,"type":"NORMAL","links":{"self":[{"href":"https://bb.sgdev.org/projects/PRIVWRITE"}]}},{"key":"UNIQ2","id":30,"name":"unique-write","public":false,"type":"NORMAL","links":{"self":[{"href":"https://bb.sgdev.org/projects/UNIQ2"}]}}],"start":0}'
     headers:
       Cache-Control:
       - private, no-cache
@@ -167,7 +167,7 @@ interactions:
       Content-Type:
       - application/json;charset=UTF-8
       Date:
-      - Fri, 27 Aug 2021 23:05:22 GMT
+      - Sat, 28 Aug 2021 00:45:05 GMT
       Pragma:
       - no-cache
       Server:
@@ -175,9 +175,9 @@ interactions:
       Vary:
       - x-ausername,x-auserid,cookie,accept-encoding
       X-Arequestid:
-      - '@WRQLR1x1385x1874x0'
+      - '@WRQLR1x45x1889x0'
       X-Asessionid:
-      - 13iap77
+      - 1dtdyvl
       X-Auserid:
       - "104"
       X-Ausername:
@@ -193,10 +193,10 @@ interactions:
     headers:
       Content-Type:
       - application/json; charset=utf-8
-    url: https://bb.sgdev.org/rest/api/1.0/projects?name=uniq&permission=PROJECT_WRITE
+    url: https://bb.sgdev.org/rest/api/1.0/projects?limit=1000&name=uniq&permission=PROJECT_WRITE
     method: GET
   response:
-    body: '{"size":1,"limit":25,"isLastPage":true,"values":[{"key":"UNIQ2","id":30,"name":"unique-write","public":false,"type":"NORMAL","links":{"self":[{"href":"https://bb.sgdev.org/projects/UNIQ2"}]}}],"start":0}'
+    body: '{"size":1,"limit":1000,"isLastPage":true,"values":[{"key":"UNIQ2","id":30,"name":"unique-write","public":false,"type":"NORMAL","links":{"self":[{"href":"https://bb.sgdev.org/projects/UNIQ2"}]}}],"start":0}'
     headers:
       Cache-Control:
       - private, no-cache
@@ -204,7 +204,7 @@ interactions:
       Content-Type:
       - application/json;charset=UTF-8
       Date:
-      - Fri, 27 Aug 2021 23:05:22 GMT
+      - Sat, 28 Aug 2021 00:45:05 GMT
       Pragma:
       - no-cache
       Server:
@@ -212,9 +212,9 @@ interactions:
       Vary:
       - x-ausername,x-auserid,cookie,accept-encoding
       X-Arequestid:
-      - '@WRQLR1x1385x1875x0'
+      - '@WRQLR1x45x1890x0'
       X-Asessionid:
-      - 1ygn5ha
+      - 1ys1txw
       X-Auserid:
       - "104"
       X-Ausername:

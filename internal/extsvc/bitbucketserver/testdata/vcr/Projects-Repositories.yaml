@@ -7,10 +7,10 @@ interactions:
     headers:
       Content-Type:
       - application/json; charset=utf-8
-    url: https://bb.sgdev.org/rest/api/1.0/projects/PRIVUSER/repos?limit=100
+    url: https://bb.sgdev.org/rest/api/1.0/projects/PRIVUSER/repos?limit=1000
     method: GET
   response:
-    body: '{"size":2,"limit":100,"isLastPage":true,"values":[{"slug":"userland","id":6,"name":"userland","hierarchyId":"929e8676f3debd82f27f","scmId":"git","state":"AVAILABLE","statusMessage":"Available","forkable":true,"project":{"key":"PRIVUSER","id":25,"name":"private-only-users","public":false,"type":"NORMAL","links":{"self":[{"href":"https://bb.sgdev.org/projects/PRIVUSER"}]}},"public":false,"links":{"clone":[{"href":"https://bb.sgdev.org/scm/privuser/userland.git","name":"http"},{"href":"ssh://git@bb.sgdev.org:7999/privuser/userland.git","name":"ssh"}],"self":[{"href":"https://bb.sgdev.org/projects/PRIVUSER/repos/userland/browse"}]}},{"slug":"userscript","id":8,"name":"UserScript","hierarchyId":"f60f08eec17849b4e660","scmId":"git","state":"AVAILABLE","statusMessage":"Available","forkable":true,"project":{"key":"PRIVUSER","id":25,"name":"private-only-users","public":false,"type":"NORMAL","links":{"self":[{"href":"https://bb.sgdev.org/projects/PRIVUSER"}]}},"public":false,"links":{"clone":[{"href":"https://bb.sgdev.org/scm/privuser/userscript.git","name":"http"},{"href":"ssh://git@bb.sgdev.org:7999/privuser/userscript.git","name":"ssh"}],"self":[{"href":"https://bb.sgdev.org/projects/PRIVUSER/repos/userscript/browse"}]}}],"start":0}'
+    body: '{"size":2,"limit":1000,"isLastPage":true,"values":[{"slug":"userland","id":6,"name":"userland","hierarchyId":"929e8676f3debd82f27f","scmId":"git","state":"AVAILABLE","statusMessage":"Available","forkable":true,"project":{"key":"PRIVUSER","id":25,"name":"private-only-users","public":false,"type":"NORMAL","links":{"self":[{"href":"https://bb.sgdev.org/projects/PRIVUSER"}]}},"public":false,"links":{"clone":[{"href":"https://bb.sgdev.org/scm/privuser/userland.git","name":"http"},{"href":"ssh://git@bb.sgdev.org:7999/privuser/userland.git","name":"ssh"}],"self":[{"href":"https://bb.sgdev.org/projects/PRIVUSER/repos/userland/browse"}]}},{"slug":"userscript","id":8,"name":"UserScript","hierarchyId":"f60f08eec17849b4e660","scmId":"git","state":"AVAILABLE","statusMessage":"Available","forkable":true,"project":{"key":"PRIVUSER","id":25,"name":"private-only-users","public":false,"type":"NORMAL","links":{"self":[{"href":"https://bb.sgdev.org/projects/PRIVUSER"}]}},"public":false,"links":{"clone":[{"href":"https://bb.sgdev.org/scm/privuser/userscript.git","name":"http"},{"href":"ssh://git@bb.sgdev.org:7999/privuser/userscript.git","name":"ssh"}],"self":[{"href":"https://bb.sgdev.org/projects/PRIVUSER/repos/userscript/browse"}]}}],"start":0}'
     headers:
       Cache-Control:
       - private, no-cache
@@ -18,7 +18,7 @@ interactions:
       Content-Type:
       - application/json;charset=UTF-8
       Date:
-      - Fri, 27 Aug 2021 23:05:22 GMT
+      - Sat, 28 Aug 2021 01:58:30 GMT
       Pragma:
       - no-cache
       Server:
@@ -26,9 +26,9 @@ interactions:
       Vary:
       - x-ausername,x-auserid,cookie,accept-encoding
       X-Arequestid:
-      - '@WRQLR1x1385x1876x0'
+      - '@WRQLR1x118x1913x0'
       X-Asessionid:
-      - xbhnxz
+      - 1ib8mc3
       X-Auserid:
       - "104"
       X-Ausername:
@@ -55,7 +55,7 @@ interactions:
       Content-Type:
       - application/json;charset=UTF-8
       Date:
-      - Fri, 27 Aug 2021 23:05:22 GMT
+      - Sat, 28 Aug 2021 01:58:30 GMT
       Pragma:
       - no-cache
       Server:
@@ -63,9 +63,9 @@ interactions:
       Vary:
       - x-ausername,x-auserid,cookie,accept-encoding
       X-Arequestid:
-      - '@WRQLR1x1385x1877x0'
+      - '@WRQLR1x118x1914x0'
       X-Asessionid:
-      - 3t3d8
+      - 15x174z
       X-Auserid:
       - "104"
       X-Ausername:
@@ -92,7 +92,7 @@ interactions:
       Content-Type:
       - application/json;charset=UTF-8
       Date:
-      - Fri, 27 Aug 2021 23:05:22 GMT
+      - Sat, 28 Aug 2021 01:58:30 GMT
       Pragma:
       - no-cache
       Server:
@@ -100,9 +100,9 @@ interactions:
       Vary:
       - x-ausername,x-auserid,cookie,accept-encoding
       X-Arequestid:
-      - '@WRQLR1x1385x1878x0'
+      - '@WRQLR1x118x1915x0'
       X-Asessionid:
-      - ec2or5
+      - 1377l1i
       X-Auserid:
       - "104"
       X-Ausername:
