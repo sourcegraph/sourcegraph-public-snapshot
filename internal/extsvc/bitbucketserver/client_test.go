@@ -8,6 +8,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"encoding/pem"
+	"errors"
 	"flag"
 	"fmt"
 	"net/url"
@@ -144,174 +145,203 @@ func TestClient_Projects(t *testing.T) {
 	cli, save := NewTestClient(t, "Projects", *update)
 	defer save()
 
-	timeout, cancel := context.WithDeadline(context.Background(), time.Now().Add(-time.Minute))
-	defer cancel()
+	// The collection of projects that are used in the tests.
+	//
+	// This test was created on a fresh bitbucket instance that
+	// had the following setup:
+	//
+	// The running user (e.g. the authenticated user running these queries)
+	// is a non-administrator user that isn't a member of any groups.
+	//
+	// Projects:
+	// - Visible to the running user:
+	// 		- "public": A publically accessible project. Everyone has read access to this.
+	// 		- "private", "privacy", "unique": Private projects that the user has read access to.
+	// 		- "private-write", "unique-write": Private projects that the user had write access to.
+	//
+	// - Not visible to the running user:
+	// 		- "private-only-groups": A private project that only has groups as members
+	// 		  that the user isn't part of.
+	//      - "admin": A private project that only the administrator is a member of.
+	var (
+		public = &Project{
+			Key:    "PUB",
+			ID:     22,
+			Name:   "public",
+			Public: true,
+			Type:   "NORMAL",
+		}
 
-	public := &Project{
-		Key:    "PUB",
-		ID:     22,
-		Name:   "public",
-		Public: true,
-		Type:   "NORMAL",
-	}
+		private = &Project{
+			Key:    "PRIV",
+			ID:     23,
+			Name:   "private",
+			Public: false,
+			Type:   "NORMAL",
+		}
 
-	private := &Project{
-		Key:    "PRIV",
-		ID:     23,
-		Name:   "private",
-		Public: false,
-		Type:   "NORMAL",
-	}
+		privateOnlyUsers = &Project{
+			Key:    "PRIVUSER",
+			ID:     25,
+			Name:   "private-only-users",
+			Public: false,
+			Type:   "NORMAL",
+		}
 
-	privateWrite := &Project{
-		Key:    "PRIVWRITE",
-		ID:     26,
-		Name:   "private-write",
-		Public: false,
-		Type:   "NORMAL",
-	}
-	privacy := &Project{
-		Key:    "PRIVACY",
-		ID:     28,
-		Name:   "privacy",
-		Public: false,
-		Type:   "NORMAL",
-	}
+		privateWrite = &Project{
+			Key:    "PRIVWRITE",
+			ID:     26,
+			Name:   "private-write",
+			Public: false,
+			Type:   "NORMAL",
+		}
 
-	uniqueReadOnly := &Project{
-		Key:    "UNIQ",
-		ID:     29,
-		Name:   "unique",
-		Public: false,
-		Type:   "NORMAL",
-	}
-	uniqueWrite := &Project{
-		Key:    "UNIQ2",
-		ID:     30,
-		Name:   "unique-write",
-		Public: false,
-		Type:   "NORMAL",
-	}
+		privacy = &Project{
+			Key:    "PRIVACY",
+			ID:     28,
+			Name:   "privacy",
+			Public: false,
+			Type:   "NORMAL",
+		}
 
-	for _, test := range []struct {
-		description string
-		filter      *ProjectFilter
-		page        *PageToken
-		expected    []*Project
-		nextPage    *PageToken
+		uniqueReadOnly = &Project{
+			Key:    "UNIQ",
+			ID:     29,
+			Name:   "unique",
+			Public: false,
+			Type:   "NORMAL",
+		}
 
-		ctx context.Context
-		err string
-	}{
-		{
-			description: "timeout - deadline exceeded",
-			ctx:         timeout,
-			err:         "context deadline exceeded",
-		},
-		{
-			description: "all projects",
-			expected:    []*Project{privateWrite, privateOnlyUsers, private, public, privacy, uniqueWrite, uniqueReadOnly},
-			page: &PageToken{
-				Limit: 100,
+		uniqueWrite = &Project{
+			Key:    "UNIQ2",
+			ID:     30,
+			Name:   "unique-write",
+			Public: false,
+			Type:   "NORMAL",
+		}
+	)
+
+	t.Run("timeout - deadline exceeded", func(t *testing.T) {
+		ctx, cancel := context.WithDeadline(context.Background(), time.Now().Add(-time.Minute))
+		defer cancel()
+
+		_, _, err := cli.Projects(ctx, nil, nil)
+		if !errors.Is(err, context.DeadlineExceeded) {
+			t.Errorf("expected deadline exceeded error, got: %s", err)
+		}
+	})
+
+	t.Run("paging", func(t *testing.T) {
+		for _, test := range []struct {
+			description string
+
+			page     *PageToken
+			expected []*Project
+
+			nextPage *PageToken
+		}{
+			{
+				description: "single page - all projects",
+				expected:    []*Project{privateWrite, privateOnlyUsers, private, public, privacy, uniqueWrite, uniqueReadOnly},
+				page:        &PageToken{Limit: 100},
+				nextPage: &PageToken{
+					Size:       7,
+					Limit:      100,
+					IsLastPage: true,
+				},
 			},
-			nextPage: &PageToken{
-				Size:       7,
-				Limit:      100,
-				IsLastPage: true,
+			{
+				description: "limit 1 - first page",
+				expected:    []*Project{privacy},
+				page:        &PageToken{Limit: 1},
+				nextPage: &PageToken{
+					Size:          1,
+					Limit:         1,
+					NextPageStart: 2,
+				},
 			},
-		},
-		{
-			description: "page: single page",
-			page: &PageToken{
-				Limit: 1,
+			{
+				description: "limit 1 - last page",
+				page: &PageToken{
+					Limit: 1,
+					// it turns out that setting "start" directly does nothing, you have to set
+					// NextPageStart (which seems like a mistmatch against bitbucket's API - but I digress)
+					NextPageStart: 8,
+				},
+				expected: []*Project{uniqueWrite},
+				nextPage: &PageToken{
+					Start:      8,
+					Size:       1,
+					Limit:      1,
+					IsLastPage: true,
+				},
 			},
-			expected: []*Project{privacy},
-			nextPage: &PageToken{
-				Size:          1,
-				Limit:         1,
-				NextPageStart: 2,
-			},
-		},
-		{
-			description: "page: last page",
-			page: &PageToken{
-				Limit: 1,
-				// it turns out that setting "start" directly does nothing, you have to set
-				// NextPageStart (which seems like a mistmatch against bitbucket's API - but I digress)
-				NextPageStart: 8,
-			},
-			expected: []*Project{uniqueWrite},
-			nextPage: &PageToken{
-				Start:      8,
-				Size:       1,
-				Limit:      1,
-				IsLastPage: true,
-			},
-		},
-		{
-			description: "filter by name",
-			filter: &ProjectFilter{
-				Name: "private-",
-			},
-			expected: []*Project{privateWrite, privateOnlyUsers},
-			nextPage: &PageToken{
-				Size:       2,
-				Limit:      25,
-				IsLastPage: true,
-			},
-		},
-		{
-			description: "filter by permission",
-			filter: &ProjectFilter{
-				Permission: PermProjectWrite,
-			},
-			expected: []*Project{privateWrite, uniqueWrite},
-			nextPage: &PageToken{
-				Size:       2,
-				Limit:      25,
-				IsLastPage: true,
-			},
-		},
-		{
-			description: "filter by permission and name",
-			filter: &ProjectFilter{
-				Name:       "uniq",
-				Permission: PermProjectWrite,
-			},
-			expected: []*Project{uniqueWrite},
-			nextPage: &PageToken{
-				Size:       1,
-				Limit:      25,
-				IsLastPage: true,
-			},
-		},
-	} {
-		t.Run(test.description, func(t *testing.T) {
-			if test.ctx == nil {
-				test.ctx = context.Background()
+		} {
+			actual, nextPage, err := cli.Projects(context.Background(), test.page, nil)
+			if err != nil {
+				t.Fatalf("got unexpected error: %s", err)
 			}
 
-			if test.err == "" {
-				test.err = "<nil>"
-			}
-
-			actual, nextPage, err := cli.Projects(test.ctx, test.page, test.filter)
-			if diff := cmp.Diff(fmt.Sprint(err), test.err); diff != "" {
-				t.Fatalf("got unexpected error (-got +want):\n%s", diff)
-			}
-
-			for _, s := range [][]*Project{actual, test.expected} {
-				sort.Slice(s, func(i, j int) bool { return s[i].ID < s[j].ID })
-			}
-
-			if diff := cmp.Diff(actual, test.expected, cmpopts.IgnoreFields(Project{}, "Links")); diff != "" {
-				t.Errorf("got non-zero diff in list of projects (-got +want):\n%s", diff)
-			}
+			assertProjectsEqual(t, actual, test.expected)
 
 			if diff := cmp.Diff(nextPage, test.nextPage); diff != "" {
 				t.Errorf("next page token differs (-got +want):\n%s", diff)
 			}
-		})
+		}
+	})
+
+	t.Run("filters", func(t *testing.T) {
+		for _, test := range []struct {
+			description string
+
+			filter   *ProjectFilter
+			expected []*Project
+		}{
+			{
+				description: "name",
+				filter: &ProjectFilter{
+					Name: "private-",
+				},
+				expected: []*Project{privateWrite, privateOnlyUsers},
+			},
+			{
+				description: "permission",
+				filter: &ProjectFilter{
+					Permission: PermProjectWrite,
+				},
+				expected: []*Project{privateWrite, uniqueWrite},
+			},
+			{
+				description: "name and permission",
+				filter: &ProjectFilter{
+					Name:       "uniq",
+					Permission: PermProjectWrite,
+				},
+				expected: []*Project{uniqueWrite},
+			},
+		} {
+			// Large enough page to get all relevant projects in one shot
+			page := &PageToken{Limit: 1000}
+
+			actual, _, err := cli.Projects(context.Background(), page, test.filter)
+			if err != nil {
+				t.Fatalf("got unexpected error: %s", err)
+			}
+
+			assertProjectsEqual(t, actual, test.expected)
+		}
+	})
+}
+
+func assertProjectsEqual(t *testing.T, actual, expected []*Project) {
+	t.Helper()
+
+	for _, s := range [][]*Project{actual, expected} {
+		sort.Slice(s, func(i, j int) bool { return s[i].ID < s[j].ID })
+	}
+
+	if diff := cmp.Diff(actual, expected, cmpopts.IgnoreFields(Project{}, "Links")); diff != "" {
+		t.Errorf("got non-zero diff in list of projects (-got +want):\n%s", diff)
 	}
 }
 
@@ -352,6 +382,7 @@ func TestClient_Projects_Repositories(t *testing.T) {
 		nextPage    *PageToken
 
 		ctx context.Context
+
 		err string
 	}{
 		{
