@@ -1,3 +1,4 @@
+import * as fs from 'fs'
 import * as path from 'path'
 
 import * as esbuild from 'esbuild'
@@ -14,6 +15,7 @@ const enterpriseDirectory = path.resolve(__dirname, '..', '..', 'src', 'enterpri
 
 export const esbuildOutDirectory = path.join(uiAssetsPath, 'esbuild')
 
+// TODO(sqs): look into speeding this up by ignoring node_modules/monaco-editor/... entrypoints
 export const BUILD_OPTIONS: esbuild.BuildOptions = {
     entryPoints: {
         // Enterprise vs. OSS builds use different entrypoints. The enterprise entrypoint imports a
@@ -57,9 +59,27 @@ export const buildMonaco = async (): Promise<void> => {
 }
 
 export const build = async (): Promise<void> => {
-    await esbuild.build({ ...BUILD_OPTIONS, outdir: esbuildOutDirectory, incremental: false })
+    const METAFILE = true // TODO(sqs): remove metafile
+    const result = await esbuild.build({
+        ...BUILD_OPTIONS,
+        outdir: esbuildOutDirectory,
+        incremental: false,
+        metafile: METAFILE,
+    })
+    if (METAFILE) {
+        await fs.promises.writeFile(
+            path.join(esbuildOutDirectory, 'meta.json'),
+            JSON.stringify(result.metafile, null, 2)
+        )
+    }
     if (process.env.TODO) {
         await buildMonaco()
         // TODO(sqs): always run this, i just gated it in an if-env check for perf while doing some debugging
     }
+}
+
+if (require.main === module) {
+    build()
+        .catch(error => console.error('Error:', error))
+        .finally(() => process.exit(0))
 }

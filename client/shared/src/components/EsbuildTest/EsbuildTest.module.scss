@@ -1,9 +1,0 @@
-@import 'wildcard/src/global-styles/breakpoints';
-
-:global(body)::before {
-    content: 'EsbuildTest';
-    color: red !important;
-    font-size: 3rem;
-    text-align: center;
-    padding: 2rem;
-}
