@@ -1,4 +1,3 @@
-import * as fs from 'fs'
 import * as path from 'path'
 
 import * as esbuild from 'esbuild'
@@ -59,23 +58,12 @@ export const buildMonaco = async (): Promise<void> => {
 }
 
 export const build = async (): Promise<void> => {
-    const METAFILE = true // TODO(sqs): remove metafile
-    const result = await esbuild.build({
+    await esbuild.build({
         ...BUILD_OPTIONS,
         outdir: esbuildOutDirectory,
         incremental: false,
-        metafile: METAFILE,
     })
-    if (METAFILE) {
-        await fs.promises.writeFile(
-            path.join(esbuildOutDirectory, 'meta.json'),
-            JSON.stringify(result.metafile, null, 2)
-        )
-    }
-    if (process.env.TODO) {
-        await buildMonaco()
-        // TODO(sqs): always run this, i just gated it in an if-env check for perf while doing some debugging
-    }
+    await buildMonaco()
 }
 
 if (require.main === module) {
