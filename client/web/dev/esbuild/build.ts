@@ -31,6 +31,7 @@ export const BUILD_OPTIONS: esbuild.BuildOptions = {
     logLevel: 'error',
     splitting: true,
     chunkNames: 'chunk-[name]-[hash]',
+    outdir: esbuildOutDirectory,
     plugins: [
         sassPlugin,
         workerPlugin,
@@ -47,10 +48,11 @@ export const BUILD_OPTIONS: esbuild.BuildOptions = {
         '.yaml': 'text',
         '.ttf': 'file',
         '.png': 'file',
+        '.svg': 'file',
     },
     target: 'es2021',
     sourcemap: true,
-    // incremental: true,
+    incremental: true,
 }
 
 export const buildMonaco = async (): Promise<void> => {
