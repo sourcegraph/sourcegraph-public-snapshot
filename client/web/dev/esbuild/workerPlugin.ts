@@ -1,3 +1,4 @@
+import path from 'path'
 import * as esbuild from 'esbuild'
 
 import { packageResolutionPlugin } from './packageResolutionPlugin'
@@ -20,7 +21,15 @@ async function buildWorker(
 export const workerPlugin: esbuild.Plugin = {
     name: 'esbuild-plugin-inline-worker',
     setup: build => {
-        build.onLoad({ filter: /\.worker\.ts$/, namespace: 'file' }, async ({ path: workerPath }) => {
+        build.onResolve(
+            { filter: /\.worker\.ts$/, namespace: 'file' },
+            ({ path: workerPath, importer, resolveDir }) => {
+                // Treat entrypoint workers as module workers.
+                const isEntrypoint = importer === ''
+                return isEntrypoint ? undefined : { path: path.join(resolveDir, workerPath), namespace: 'worker' }
+            }
+        )
+        build.onLoad({ filter: /./, namespace: 'worker' }, async ({ path: workerPath }) => {
             // TODO(sqs): memoize this, and return the metafile deps as the watchDir/watchFiles
             const t0 = Date.now()
             const workerCode = await buildWorker(workerPath, {
@@ -40,7 +49,7 @@ export default function Worker() {
         })
 
         build.onResolve({ filter: /^__inline-worker$/ }, ({ path }) => ({ path, namespace: 'inline-worker' }))
-        build.onLoad({ filter: /.*/, namespace: 'inline-worker' }, () => ({
+        build.onLoad({ filter: /./, namespace: 'inline-worker' }, () => ({
             contents: `
                 export default function inlineWorker(scriptText) {
                     const blob = new Blob([scriptText], { type: 'text/javascript' })

@@ -243,7 +243,18 @@ async function activateExtension(
         const exports = {}
         self.exports = exports
         self.module = { exports }
-        self.importScripts(bundleURL)
+
+        const response = await fetch(bundleURL)
+        const source = await response.text()
+        // TODO(sqs): also support deactivate
+        const transpiledSource = `var global=self;var parcelRequire; \n${source.replace(
+            'var global = arguments[3]',
+            ''
+        )};\nexport const activate=self.exports.activate;\n`
+        await import(`data:application/javascript,${encodeURIComponent(transpiledSource)}`)
+        //
+        // TODO(sqs): for classic workers
+        // self.importScripts(bundleURL)
     } catch (error) {
         throw new Error(
             `error thrown while executing extension ${JSON.stringify(

@@ -25,6 +25,13 @@ export const BUILD_OPTIONS: esbuild.BuildOptions = {
         'scripts/app': isEnterpriseBuild
             ? path.join(enterpriseDirectory, 'main.tsx')
             : path.join(__dirname, '..', '..', 'src', 'main.tsx'),
+        'scripts/extensionHost.worker': path.join(
+            __dirname,
+            '..',
+            '..',
+            '..',
+            'shared/src/api/extension/main.worker.ts'
+        ),
     },
     bundle: true,
     format: 'esm',
@@ -48,7 +55,6 @@ export const BUILD_OPTIONS: esbuild.BuildOptions = {
         '.yaml': 'text',
         '.ttf': 'file',
         '.png': 'file',
-        '.svg': 'file',
     },
     target: 'es2021',
     sourcemap: true,
