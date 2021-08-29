@@ -3,8 +3,6 @@
 // Copyright (c) Microsoft Corporation. All rights reserved. Licensed under the MIT License.
 
 export class PrefixSumIndexOfResult {
-    public _prefixSumIndexOfResultBrand: void
-
     public index: number
     public remainder: number
 
