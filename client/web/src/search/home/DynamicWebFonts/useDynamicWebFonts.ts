@@ -5,25 +5,7 @@ import { useEffect, useState } from 'react'
  * https://github.com/Microsoft/TypeScript/issues/30984#issuecomment-631991019
  */
 declare global {
-    const FontFace: FontFace
-
-    interface Document {
-        fonts: FontFaceSet
-    }
-
     type CSSOMString = string
-    type FontFaceLoadStatus = 'unloaded' | 'loading' | 'loaded' | 'error'
-    type FontFaceSetStatus = 'loading' | 'loaded'
-
-    interface FontFace extends FontFaceDescriptors {
-        // eslint-disable-next-line @typescript-eslint/no-misused-new
-        new (family: string, source: string | ArrayBuffer, descriptors?: FontFaceDescriptors): FontFace
-        readonly status: FontFaceLoadStatus
-        readonly loaded: Promise<FontFace>
-        variationSettings: CSSOMString
-        display: CSSOMString
-        load(): Promise<FontFace>
-    }
 
     interface FontFaceDescriptors {
         family?: CSSOMString
@@ -33,16 +15,6 @@ declare global {
         unicodeRange?: CSSOMString
         variant?: CSSOMString
         featureSettings?: CSSOMString
-    }
-
-    interface FontFaceSet extends Iterable<FontFace> {
-        readonly status: FontFaceSetStatus
-        readonly ready: Promise<FontFaceSet>
-        add(font: FontFace): void
-        check(font: string, text?: string): boolean // throws exception
-        load(font: string, text?: string): Promise<FontFace[]>
-        delete(font: FontFace): void
-        clear(): void
     }
 }
 
