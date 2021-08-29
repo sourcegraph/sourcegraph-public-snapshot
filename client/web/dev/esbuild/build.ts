@@ -3,6 +3,7 @@ import * as path from 'path'
 import * as esbuild from 'esbuild'
 
 import { manifestPlugin } from './manifestPlugin'
+import { monacoPlugin } from './monacoPlugin'
 import { packageResolutionPlugin } from './packageResolutionPlugin'
 import { sassPlugin } from './sassPlugin'
 import { workerPlugin } from './workerPlugin'
@@ -25,10 +26,10 @@ export const BUILD_OPTIONS: esbuild.BuildOptions = {
     },
     bundle: true,
     format: 'esm',
-    logLevel: 'error',
+    logLevel: 'debug',
     splitting: true,
     chunkNames: 'chunk-[name]-[hash]',
-    plugins: [sassPlugin, workerPlugin, manifestPlugin, packageResolutionPlugin],
+    plugins: [sassPlugin, workerPlugin, manifestPlugin, packageResolutionPlugin /* , monacoPlugin */],
     define: {
         'process.env.NODE_ENV': '"development"',
         'process.env.PERCY_ON': JSON.stringify(process.env.PERCY_ON),
@@ -39,9 +40,9 @@ export const BUILD_OPTIONS: esbuild.BuildOptions = {
         '.ttf': 'file',
         '.png': 'file',
     },
-    target: 'es2020',
+    target: 'es2021',
     sourcemap: true,
-    incremental: true,
+    // incremental: true,
 }
 
 export const buildMonaco = async (): Promise<void> => {
@@ -51,7 +52,7 @@ export const buildMonaco = async (): Promise<void> => {
             'scripts/json.worker.bundle': 'monaco-editor/esm/vs/language/json/json.worker.js',
         },
         format: 'iife',
-        target: 'es2020',
+        target: 'es2021',
         bundle: true,
         outdir: esbuildOutDirectory,
     })
@@ -63,7 +64,10 @@ export const build = async (): Promise<void> => {
         outdir: esbuildOutDirectory,
         incremental: false,
     })
-    await buildMonaco()
+    if (process.env.FOO) {
+        // TODO(sqs): reenable
+        await buildMonaco()
+    }
 }
 
 if (require.main === module) {

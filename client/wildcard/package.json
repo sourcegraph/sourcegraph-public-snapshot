@@ -4,7 +4,7 @@
   "version": "0.0.1",
   "description": "Sourcegraph Wildcard component library",
   "main": "./src/index.ts",
-  "sideEffects": ["*.css", "*.scss"],
+  "sideEffects": ["*.css"],
   "license": "Apache-2.0",
   "scripts": {
     "storybook": "STORIES_GLOB=client/wildcard/src/**/*.story.tsx yarn workspace @sourcegraph/storybook run start",

@@ -133,6 +133,9 @@ export const sassPlugin: esbuild.Plugin = {
             if (args.namespace !== 'file' && args.namespace !== '') {
                 return
             }
+            if (args.path.startsWith('/tmp')) {
+                return // exclude from monacoPlugin
+            }
 
             const sourceFullPath = cachedResolveFile(args.path, args.resolveDir)
             const fileContent = await fs.promises.readFile(sourceFullPath, 'utf8')
@@ -151,7 +154,6 @@ export const sassPlugin: esbuild.Plugin = {
         })
 
         build.onResolve({ filter: /\.ttf$/, namespace: 'file' }, args => {
-            // TODO(sqs): hack, need to resolve this from the original path
             if (args.path === './codicon.ttf') {
                 return {
                     path: path.resolve(
