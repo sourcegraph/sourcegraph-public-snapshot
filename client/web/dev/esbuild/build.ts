@@ -2,6 +2,8 @@ import * as path from 'path'
 
 import * as esbuild from 'esbuild'
 
+import { MONACO_LANGUAGES_AND_FEATURES } from '../webpack/monacoWebpack'
+
 import { manifestPlugin } from './manifestPlugin'
 import { monacoPlugin } from './monacoPlugin'
 import { packageResolutionPlugin } from './packageResolutionPlugin'
@@ -26,10 +28,16 @@ export const BUILD_OPTIONS: esbuild.BuildOptions = {
     },
     bundle: true,
     format: 'esm',
-    logLevel: 'debug',
+    logLevel: 'error',
     splitting: true,
     chunkNames: 'chunk-[name]-[hash]',
-    plugins: [sassPlugin, workerPlugin, manifestPlugin, packageResolutionPlugin /* , monacoPlugin */],
+    plugins: [
+        sassPlugin,
+        workerPlugin,
+        manifestPlugin,
+        packageResolutionPlugin,
+        monacoPlugin(MONACO_LANGUAGES_AND_FEATURES),
+    ],
     define: {
         'process.env.NODE_ENV': '"development"',
         'process.env.PERCY_ON': JSON.stringify(process.env.PERCY_ON),
