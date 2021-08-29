@@ -11,6 +11,7 @@ async function buildWorker(
         bundle: true,
         write: false,
         plugins: [packageResolutionPlugin],
+        sourcemap: true,
         ...extraConfig,
     })
     return results.outputFiles[0].text
@@ -20,10 +21,14 @@ export const workerPlugin: esbuild.Plugin = {
     name: 'esbuild-plugin-inline-worker',
     setup: build => {
         build.onLoad({ filter: /\.worker\.ts$/, namespace: 'file' }, async ({ path: workerPath }) => {
+            // TODO(sqs): memoize this, and return the metafile deps as the watchDir/watchFiles
+            const t0 = Date.now()
             const workerCode = await buildWorker(workerPath, {
                 target: build.initialOptions.target,
                 format: build.initialOptions.format,
             })
+            console.log('Worker took', Date.now() - t0)
+
             return {
                 contents: `import inlineWorker from '__inline-worker'
 export default function Worker() {

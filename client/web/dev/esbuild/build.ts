@@ -15,14 +15,14 @@ export const uiAssetsPath = path.join(rootPath, 'ui', 'assets')
 const isEnterpriseBuild = process.env.ENTERPRISE && Boolean(JSON.parse(process.env.ENTERPRISE))
 const enterpriseDirectory = path.resolve(__dirname, '..', '..', 'src', 'enterprise')
 
-export const esbuildOutDirectory = path.join(uiAssetsPath, 'esbuild')
+export const esbuildOutDirectory = uiAssetsPath
 
 // TODO(sqs): look into speeding this up by ignoring node_modules/monaco-editor/... entrypoints
 export const BUILD_OPTIONS: esbuild.BuildOptions = {
     entryPoints: {
         // Enterprise vs. OSS builds use different entrypoints. The enterprise entrypoint imports a
         // strict superset of the OSS entrypoint.
-        app: isEnterpriseBuild
+        'scripts/app': isEnterpriseBuild
             ? path.join(enterpriseDirectory, 'main.tsx')
             : path.join(__dirname, '..', '..', 'src', 'main.tsx'),
     },
@@ -30,7 +30,7 @@ export const BUILD_OPTIONS: esbuild.BuildOptions = {
     format: 'esm',
     logLevel: 'error',
     splitting: true,
-    chunkNames: 'chunk-[name]-[hash]',
+    chunkNames: 'chunks/chunk-[name]-[hash]',
     outdir: esbuildOutDirectory,
     plugins: [
         sassPlugin,

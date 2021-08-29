@@ -27,8 +27,8 @@ export const manifestPlugin: esbuild.Plugin = {
             // is fixed, add this to an onEnd hook when we know the exact filenames without
             // hard-coding.
             await writeManifest({
-                'app.js': path.join(assetPathPrefix, 'app.js'),
-                'app.css': path.join(assetPathPrefix, 'app.css'),
+                'app.js': path.join(assetPathPrefix, 'scripts/app.js'),
+                'app.css': path.join(assetPathPrefix, 'scripts/app.css'),
                 isModule: true,
             })
         })

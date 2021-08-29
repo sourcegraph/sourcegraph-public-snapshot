@@ -70,12 +70,6 @@ import { UserSettingsSidebarItems } from './user/settings/UserSettingsSidebar'
 import { isMacPlatform, UserExternalServicesOrRepositoriesUpdateProps } from './util'
 import { parseBrowserRepoURL } from './util/url'
 
-// TODO(sqs): for some reason, this is needed or else the CSS doesn't get added to any of the chunks
-// (esbuild doesn't include these in a bundle seemingly because they are in wildcard/)
-// import '@sourcegraph/wildcard/src/components/NavBar/NavItem.module.scss'
-// import '@sourcegraph/wildcard/src/components/NavBar/NavBar.module.scss'
-// import '@sourcegraph/wildcard/src/components/NavBar/NavAction.module.scss'
-
 export interface LayoutProps
     extends RouteComponentProps<{}>,
         SettingsCascadeProps<Settings>,
