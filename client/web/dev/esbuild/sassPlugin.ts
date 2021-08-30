@@ -82,7 +82,6 @@ export const sassPlugin: esbuild.Plugin = {
                             file: sourceFullPath,
                             data: fileContent,
                             importer: url => ({ file: cachedResolveFile(url) }),
-                            quiet: true,
                         })
                         .css.toString()
                     break
@@ -107,19 +106,7 @@ export const sassPlugin: esbuild.Plugin = {
             // TODO(sqs): invalidate
             const key = sourceFullPath
             const existing = cssRenderCache.get(key)
-            if (false) {
-                console.log(
-                    'CACHE',
-                    existing ? (existing.originalContent === fileContent ? 'HIT' : 'STALE') : 'MISS',
-                    sourceFullPath
-                )
-            }
             if (existing && existing.originalContent === fileContent) {
-                if (sourceFullPath.includes('UsagePage')) {
-                    if (false) {
-                        console.log('CACHE HIT', sourceFullPath, fileContent)
-                    }
-                }
                 return existing.outPath
             }
 
@@ -144,8 +131,8 @@ export const sassPlugin: esbuild.Plugin = {
             const isModule = sourceFullPath.endsWith('.module.css') || sourceFullPath.endsWith('.module.scss')
 
             return {
-                namespace: isModule ? 'postcss-module' : 'file',
-                path: temporaryFilePath,
+                namespace: isModule ? 'css-module' : 'file',
+                path: isModule ? temporaryFilePath + '.js' : temporaryFilePath,
                 watchFiles: [sourceFullPath],
                 pluginData: {
                     originalPath: sourceFullPath,
@@ -153,43 +140,44 @@ export const sassPlugin: esbuild.Plugin = {
             }
         })
 
-        build.onResolve({ filter: /\.ttf$/, namespace: 'file' }, args => {
-            if (args.path === './codicon.ttf') {
-                return {
-                    path: path.resolve(
-                        __dirname + '/../../../../node_modules/monaco-editor/esm/vs/base/browser/ui/codicons/codicon',
-                        args.path
-                    ),
-                }
+        /*         // Load CSS files resolved by the previous onResolve filter with the original resolveDir so
+        // that url(...) references are resolved correctly.
+        build.onLoad({ filter: /./, namespace: 'css-file' }, async args => {
+            const isRelevant = args.path.includes('enterprise.css')
+            if (isRelevant) {
+                console.log('ON RESOLVE 1111', args)
+            }
+            return {
+                contents: await fs.promises.readFile(args.path, 'utf-8'),
+                resolveDir: path.dirname(args.pluginData.originalPath),
+                loader: 'css',
             }
         })
-        build.onResolve({ filter: /\.png$/, namespace: 'file' }, args => {
-            // TODO(sqs): hack, need to resolve this from the original path
-            if (args.path === 'img/bg-sprinkles-2x.png') {
-                return {
-                    path: path.resolve(__dirname + '/../../../../ui/assets', args.path),
-                }
-            }
-        })
-
-        build.onLoad({ filter: /./, namespace: 'postcss-module' }, args => {
+ */
+        build.onLoad({ filter: /\.js$/, namespace: 'css-module' }, args => {
             const module_ = modulesMap.get(args.pluginData.originalPath)
-            const resolveDirectory = path.dirname(args.path)
 
-            const contents = `import ${JSON.stringify(args.path)}
-            export default ${JSON.stringify(module_ || {})}`
+            const contents = `
+                import ${JSON.stringify(args.path)}
+                ${args.path.includes('NavBar.module') ? 'console.log("NavBar CSS")' : ''}
+                export default ${JSON.stringify(module_ || {})}`
 
             return {
-                resolveDir: resolveDirectory,
+                resolveDir: path.dirname(args.pluginData.originalPath),
                 contents,
                 loader: 'js',
             }
         })
 
         // Handle the `import`ed CSS files from the previous onLoad filter.
-        build.onResolve({ filter: /./, namespace: 'postcss-module' }, args => ({
-            path: args.path,
-            namespace: 'file',
-        }))
+        build.onResolve({ filter: /./, namespace: 'css-module' }, args => {
+            if (false) {
+                console.log('ON RESOLVE 2222')
+            }
+            return {
+                path: args.path,
+                namespace: 'file',
+            }
+        })
     },
 }

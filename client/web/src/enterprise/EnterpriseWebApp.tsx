@@ -1,7 +1,5 @@
 import React from 'react'
 
-import '../SourcegraphWebApp.scss'
-import '../enterprise.scss'
 import { KEYBOARD_SHORTCUTS } from '../keyboardShortcuts/keyboardShortcuts'
 import { SourcegraphWebApp } from '../SourcegraphWebApp'
 
@@ -23,6 +21,9 @@ import { enterpriseUserAreaHeaderNavItems } from './user/navitems'
 import { enterpriseUserAreaRoutes } from './user/routes'
 import { enterpriseUserSettingsAreaRoutes } from './user/settings/routes'
 import { enterpriseUserSettingsSideBarItems } from './user/settings/sidebaritems'
+
+import '../SourcegraphWebApp.scss'
+import '../enterprise.scss'
 
 export const EnterpriseWebApp: React.FunctionComponent = () => (
     <SourcegraphWebApp

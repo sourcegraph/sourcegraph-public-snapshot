@@ -7,7 +7,7 @@ import { MONACO_LANGUAGES_AND_FEATURES } from '../webpack/monacoWebpack'
 import { manifestPlugin } from './manifestPlugin'
 import { monacoPlugin } from './monacoPlugin'
 import { packageResolutionPlugin } from './packageResolutionPlugin'
-import { sassPlugin } from './sassPlugin'
+import { sassPlugin } from './sassPlugin2'
 import { workerPlugin } from './workerPlugin'
 
 const rootPath = path.resolve(__dirname, '..', '..', '..', '..')
