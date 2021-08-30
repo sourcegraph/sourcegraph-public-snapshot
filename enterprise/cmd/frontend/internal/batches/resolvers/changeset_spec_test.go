@@ -194,12 +194,12 @@ func TestChangesetSpecResolver(t *testing.T) {
 					Description: apitest.ChangesetSpecDescription{
 						Typename: "GitBranchChangesetDescription",
 						BaseRepository: apitest.Repository{
-							ID: string(spec.Spec.BaseRepository),
+							ID: spec.Spec.BaseRepository,
 						},
 						ExternalID: "",
 						BaseRef:    git.AbbreviateRef(spec.Spec.BaseRef),
 						HeadRepository: apitest.Repository{
-							ID: string(spec.Spec.HeadRepository),
+							ID: spec.Spec.HeadRepository,
 						},
 						HeadRef: git.AbbreviateRef(spec.Spec.HeadRef),
 						Title:   spec.Spec.Title,
@@ -249,7 +249,7 @@ func TestChangesetSpecResolver(t *testing.T) {
 					Description: apitest.ChangesetSpecDescription{
 						Typename: "ExistingChangesetReference",
 						BaseRepository: apitest.Repository{
-							ID: string(spec.Spec.BaseRepository),
+							ID: spec.Spec.BaseRepository,
 						},
 						ExternalID: spec.Spec.ExternalID,
 					},

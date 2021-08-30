@@ -1,4 +1,4 @@
-package types
+package batches
 
 import (
 	"fmt"
@@ -7,7 +7,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 )
 
-func TestChangesetSpecUnmarshalValidate(t *testing.T) {
+func TestParseChangesetSpec(t *testing.T) {
 	tests := []struct {
 		name    string
 		rawSpec string
@@ -115,8 +115,8 @@ func TestChangesetSpecUnmarshalValidate(t *testing.T) {
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			spec := &ChangesetSpec{RawSpec: tc.rawSpec}
-			haveErr := fmt.Sprintf("%v", spec.UnmarshalValidate())
+			_, err := ParseChangesetSpec([]byte(tc.rawSpec))
+			haveErr := fmt.Sprintf("%v", err)
 			if haveErr == "<nil>" {
 				haveErr = ""
 			}

@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/cockroachdb/errors"
 	"github.com/hashicorp/go-multierror"
-	"github.com/pkg/errors"
 	"github.com/sourcegraph/batch-change-utils/env"
 	"github.com/sourcegraph/batch-change-utils/overridable"
 	"github.com/sourcegraph/batch-change-utils/yaml"
@@ -135,9 +135,9 @@ func parseBatchSpec(schema string, data []byte, opts ParseBatchSpecOptions) (*Ba
 			for _, e := range multiErr.Errors {
 				// In case of `name` we try to make the error message more user-friendly.
 				if strings.Contains(e.Error(), "name: Does not match pattern") {
-					newMultiError = multierror.Append(newMultiError, fmt.Errorf("The batch change name can only contain word characters, dots and dashes. No whitespace or newlines allowed."))
+					newMultiError = multierror.Append(newMultiError, NewValidationError(fmt.Errorf("The batch change name can only contain word characters, dots and dashes. No whitespace or newlines allowed.")))
 				} else {
-					newMultiError = multierror.Append(newMultiError, e)
+					newMultiError = multierror.Append(newMultiError, NewValidationError(e))
 				}
 			}
 
@@ -152,30 +152,30 @@ func parseBatchSpec(schema string, data []byte, opts ParseBatchSpecOptions) (*Ba
 	if !opts.AllowArrayEnvironments {
 		for i, step := range spec.Steps {
 			if !step.Env.IsStatic() {
-				errs = multierror.Append(errs, errors.Errorf("step %d includes one or more dynamic environment variables, which are unsupported in this Sourcegraph version", i+1))
+				errs = multierror.Append(errs, NewValidationError(errors.Errorf("step %d includes one or more dynamic environment variables, which are unsupported in this Sourcegraph version", i+1)))
 			}
 		}
 	}
 
 	if len(spec.Steps) != 0 && spec.ChangesetTemplate == nil {
-		errs = multierror.Append(errs, errors.New("batch spec includes steps but no changesetTemplate"))
+		errs = multierror.Append(errs, NewValidationError(errors.New("batch spec includes steps but no changesetTemplate")))
 	}
 
 	if spec.TransformChanges != nil && !opts.AllowTransformChanges {
-		errs = multierror.Append(errs, errors.New("batch spec includes transformChanges, which is not supported in this Sourcegraph version"))
+		errs = multierror.Append(errs, NewValidationError(errors.New("batch spec includes transformChanges, which is not supported in this Sourcegraph version")))
 	}
 
 	if len(spec.Workspaces) != 0 && !opts.AllowTransformChanges {
-		errs = multierror.Append(errs, errors.New("batch spec includes workspaces, which is not supported in this Sourcegraph version"))
+		errs = multierror.Append(errs, NewValidationError(errors.New("batch spec includes workspaces, which is not supported in this Sourcegraph version")))
 	}
 
 	if !opts.AllowConditionalExec {
 		for i, step := range spec.Steps {
 			if step.IfCondition() != "" {
-				errs = multierror.Append(errs, fmt.Errorf(
+				errs = multierror.Append(errs, NewValidationError(fmt.Errorf(
 					"step %d in batch spec uses the 'if' attribute for conditional execution, which is not supported in this Sourcegraph version",
 					i+1,
-				))
+				)))
 			}
 		}
 	}
@@ -191,4 +191,21 @@ func (on *OnQueryOrRepository) String() string {
 	}
 
 	return fmt.Sprintf("%v", *on)
+}
+
+// BatchSpecValidationError is returned when parsing/using values from the batch spec failed.
+type BatchSpecValidationError struct {
+	err error
+}
+
+func NewValidationError(err error) BatchSpecValidationError {
+	return BatchSpecValidationError{err}
+}
+
+func (e BatchSpecValidationError) Error() string {
+	return e.err.Error()
+}
+
+func IsValidationError(err error) bool {
+	return errors.HasType(err, &BatchSpecValidationError{})
 }
