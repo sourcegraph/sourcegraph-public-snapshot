@@ -178,19 +178,14 @@ func (p *Provider) fetchUserPermsByToken(ctx context.Context, accountID extsvc.A
 		if len(group.Repositories) > 0 {
 			// If a valid cached value was found, use it
 			addRepoToUserPerms(group.Repositories...)
-			// Add to users iff non-empty
+			// Perform partial cache update to users iff non-empty
 			if len(group.Users) > 0 {
-				// If this user's membership in this group is not noted yet, add it
-				hasUser := false
 				for _, user := range group.Users {
 					if user == accountID {
-						hasUser = true
+						group.Users = append(group.Users, accountID)
+						p.groupsCache.setGroup(group)
 						break
 					}
-				}
-				if !hasUser {
-					group.Users = append(group.Users, accountID)
-					p.groupsCache.setGroup(group)
 				}
 			}
 			continue
@@ -210,11 +205,6 @@ func (p *Provider) fetchUserPermsByToken(ctx context.Context, accountID extsvc.A
 				repos, hasNextPage, _, err = p.client.ListTeamRepositories(ctx, group.Org, group.Team, page)
 			}
 			if err != nil {
-				// Add and return what we've found on this page but don't persist group
-				// to cache
-				for _, r := range repos {
-					addRepoToUserPerms(extsvc.RepoID(r.ID))
-				}
 				return perms, errors.Wrap(err, "list repos for group")
 			}
 			// Add results to both group (for persistence) and permissions for user
@@ -341,19 +331,14 @@ func (p *Provider) FetchRepoPerms(ctx context.Context, repo *extsvc.Repository, 
 		if len(group.Users) > 0 {
 			// Just use cache if available and not invalidated
 			addUserToRepoPerms(group.Users...)
-			// Add to repositories iff non-empty
+			// Perform partial cache update to repositories iff non-empty
 			if len(group.Repositories) > 0 {
-				// If this repo's membership in this group is not noted yet, add it
-				hasRepo := false
-				for _, user := range group.Repositories {
-					if user == repoID {
-						hasRepo = true
+				for _, repo := range group.Repositories {
+					if repo == repoID {
+						group.Repositories = append(group.Repositories, repoID)
+						p.groupsCache.setGroup(group.cachedGroup)
 						break
 					}
-				}
-				if !hasRepo {
-					group.Repositories = append(group.Repositories, repoID)
-					p.groupsCache.setGroup(group.cachedGroup)
 				}
 			}
 			continue
@@ -369,7 +354,7 @@ func (p *Provider) FetchRepoPerms(ctx context.Context, repo *extsvc.Repository, 
 				members, hasNextPage, err = p.client.ListTeamMembers(ctx, owner, group.Team, page)
 			}
 			if err != nil {
-				return append(userIDs, group.Users...), err
+				return userIDs, errors.Wrap(err, "list users for group")
 			}
 			for _, u := range members {
 				// Add results to both group (for persistence) and permissions for user
