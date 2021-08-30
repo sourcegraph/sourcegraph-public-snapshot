@@ -356,30 +356,31 @@ func (p *Provider) FetchRepoPerms(ctx context.Context, repo *extsvc.Repository, 
 					p.groupsCache.setGroup(group.cachedGroup)
 				}
 			}
-		} else {
-			// Cache was invalidated or is not yet populated, perform a sync
-			hasNextPage := true
-			for page := 1; hasNextPage; page++ {
-				var members []*github.Collaborator
-				if group.Team == "" {
-					members, hasNextPage, err = p.client.ListOrganizationMembers(ctx, owner, page, group.adminsOnly)
-				} else {
-					members, hasNextPage, err = p.client.ListTeamMembers(ctx, owner, group.Team, page)
-				}
-				if err != nil {
-					return append(userIDs, group.Users...), err
-				}
-				for _, u := range members {
-					// Add results to both group (for persistence) and permissions for user
-					accountID := extsvc.AccountID(strconv.FormatInt(u.DatabaseID, 10))
-					group.Users = append(group.Users, accountID)
-					addUserToRepoPerms(accountID)
-				}
-			}
-
-			// Persist group
-			p.groupsCache.setGroup(group.cachedGroup)
+			continue
 		}
+
+		// Cache was invalidated or is not yet populated, perform a sync
+		hasNextPage := true
+		for page := 1; hasNextPage; page++ {
+			var members []*github.Collaborator
+			if group.Team == "" {
+				members, hasNextPage, err = p.client.ListOrganizationMembers(ctx, owner, page, group.adminsOnly)
+			} else {
+				members, hasNextPage, err = p.client.ListTeamMembers(ctx, owner, group.Team, page)
+			}
+			if err != nil {
+				return append(userIDs, group.Users...), err
+			}
+			for _, u := range members {
+				// Add results to both group (for persistence) and permissions for user
+				accountID := extsvc.AccountID(strconv.FormatInt(u.DatabaseID, 10))
+				group.Users = append(group.Users, accountID)
+				addUserToRepoPerms(accountID)
+			}
+		}
+
+		// Persist group
+		p.groupsCache.setGroup(group.cachedGroup)
 	}
 
 	return userIDs, nil
