@@ -554,11 +554,16 @@ func (s *Store) EnqueueSingleSyncJob(ctx context.Context, id int64) (err error) 
 	q := sqlf.Sprintf(`
 INSERT INTO external_service_sync_jobs (external_service_id)
 SELECT %s
-WHERE NOT EXISTS(
-        SELECT 1
-        FROM external_service_sync_jobs
-        WHERE external_service_id = %s
-          AND state IN ('queued', 'processing'))
+WHERE NOT EXISTS (
+	SELECT
+	FROM external_service_sync_jobs j
+	JOIN external_services es ON es.id = j.external_service_id
+	WHERE j.external_service_id = %s
+	AND (
+		j.state IN ('queued', 'processing')
+		OR es.cloud_default
+	)
+)
 `, id, id)
 	return s.Exec(ctx, q)
 }

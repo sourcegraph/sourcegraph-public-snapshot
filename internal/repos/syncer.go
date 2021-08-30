@@ -386,7 +386,7 @@ func (s *Syncer) SyncExternalService(
 	externalServiceID int64,
 	minSyncInterval time.Duration,
 ) (err error) {
-	s.log().Debug("Syncing external service", "serviceID", externalServiceID)
+	s.log().Info("Syncing external service", "serviceID", externalServiceID)
 
 	var svc *types.ExternalService
 	ctx, save := s.observeSync(ctx, "Syncer.SyncExternalService", "")
@@ -471,8 +471,13 @@ func (s *Syncer) SyncExternalService(
 		modified = modified || len(diff.Modified)+len(diff.Added) > 0
 	}
 
+	// We don't delete any repos of site-level external services if there were any errors during a sync.
+	// Only user external services will delete repos in a sync run with fatal errors.
+	// Site-level external services can own lots of repos and are managed by site admins.
+	// It's preferrable to have them fix any invalidated token manually rather than deleting the repos
+	// automatically.
 	deleted := 0
-	if err = errs.ErrorOrNil(); err == nil || fatal(err) {
+	if err = errs.ErrorOrNil(); err == nil || (svc.NamespaceUserID != 0 && fatal(err)) {
 		s.log().Warn("syncer: deleting not seen repos",
 			"svc", svc.DisplayName, "id", svc.ID, "seen", len(seen), "error", err)
 
