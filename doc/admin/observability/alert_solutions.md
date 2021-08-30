@@ -397,30 +397,6 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 
 <br />
 
-## frontend: hard_timeout_search_api_responses
-
-<p class="subtitle">hard timeout search API responses every 5m</p>
-
-**Descriptions**
-
-- <span class="badge badge-warning">warning</span> frontend: 2%+ hard timeout search API responses every 5m for 15m0s
-- <span class="badge badge-critical">critical</span> frontend: 5%+ hard timeout search API responses every 5m for 15m0s
-
-**Possible solutions**
-
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
-
-```json
-"observability.silenceAlerts": [
-  "warning_frontend_hard_timeout_search_api_responses",
-  "critical_frontend_hard_timeout_search_api_responses"
-]
-```
-
-<sub>*Managed by the [Sourcegraph Search team](https://about.sourcegraph.com/handbook/engineering/search).*</sub>
-
-<br />
-
 ## frontend: hard_error_search_api_responses
 
 <p class="subtitle">hard error search API responses every 5m</p>

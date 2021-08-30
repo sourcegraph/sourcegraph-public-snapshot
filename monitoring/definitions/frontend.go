@@ -248,17 +248,6 @@ func Frontend() *monitoring.Container {
 					},
 					{
 						{
-							Name:        "hard_timeout_search_api_responses",
-							Description: "hard timeout search API responses every 5m",
-							Query:       `(sum(increase(src_graphql_search_response{status="timeout",source="other"}[5m])) + sum(increase(src_graphql_search_response{status="alert",alert_type="timed_out",source="other"}[5m]))) / sum(increase(src_graphql_search_response{source="other"}[5m])) * 100`,
-
-							Warning:           monitoring.Alert().GreaterOrEqual(2, nil).For(15 * time.Minute),
-							Critical:          monitoring.Alert().GreaterOrEqual(5, nil).For(15 * time.Minute),
-							Panel:             monitoring.Panel().LegendFormat("hard timeout").Unit(monitoring.Percentage),
-							Owner:             monitoring.ObservableOwnerSearch,
-							PossibleSolutions: "none",
-						},
-						{
 							Name:        "hard_error_search_api_responses",
 							Description: "hard error search API responses every 5m",
 							Query:       `sum by (status)(increase(src_graphql_search_response{status=~"error",source="other"}[5m])) / ignoring(status) group_left sum(increase(src_graphql_search_response{source="other"}[5m]))`,
