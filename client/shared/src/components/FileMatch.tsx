@@ -174,6 +174,7 @@ export const FileMatch: React.FunctionComponent<Props> = props => {
             allExpanded: props.allExpanded,
             matchCountLabel,
             repoStars: result.repoStars,
+            repoLastFetched: result.repoLastFetched,
         }
     } else {
         const length = highlightRangesCount - collapsedHighlightRangesCount
@@ -190,6 +191,7 @@ export const FileMatch: React.FunctionComponent<Props> = props => {
             allExpanded: props.allExpanded,
             matchCountLabel,
             repoStars: result.repoStars,
+            repoLastFetched: result.repoLastFetched,
         }
     }
 

@@ -79,6 +79,11 @@ export interface Props {
      * The number of stars for the result's associated repo
      */
     repoStars?: number
+
+    /**
+     * The time the repo was last updated from the code host
+     */
+    repoLastFetched?: string
 }
 
 /**

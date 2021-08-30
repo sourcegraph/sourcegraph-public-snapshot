@@ -7,6 +7,7 @@ import React from 'react'
 import { Markdown } from '@sourcegraph/shared/src/components/Markdown'
 import { RepoIcon } from '@sourcegraph/shared/src/components/RepoIcon'
 import { ResultContainer } from '@sourcegraph/shared/src/components/ResultContainer'
+import { LastSyncedIcon } from '@sourcegraph/shared/src/components/LastSyncedIcon'
 import { CommitMatch, getMatchTitle, RepositoryMatch } from '@sourcegraph/shared/src/search/stream'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { renderMarkdown } from '@sourcegraph/shared/src/util/markdown'
@@ -54,6 +55,7 @@ export const SearchResult: React.FunctionComponent<Props> = ({ result, icon, isL
             return (
                 <div>
                     <div className="search-result-match p-2 flex-column">
+                        {result.repoLastFetched && LastSyncedIcon(result.repoLastFetched)}
                         <div className="d-flex align-items-center flex-row">
                             <div className="search-result__match-type">
                                 <small>Repository match</small>

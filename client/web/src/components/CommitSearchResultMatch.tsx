@@ -8,6 +8,7 @@ import sanitizeHtml from 'sanitize-html'
 
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { Markdown } from '@sourcegraph/shared/src/components/Markdown'
+import { LastSyncedIcon } from '@sourcegraph/shared/src/components/LastSyncedIcon'
 import { CommitMatch } from '@sourcegraph/shared/src/search/stream'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { highlightNode } from '@sourcegraph/shared/src/util/dom'
@@ -150,7 +151,8 @@ export class CommitSearchResultMatch extends React.Component<
                 partialVisibility={true}
                 offset={this.visibilitySensorOffset}
             >
-                <>
+                <div className="commit-search-result-match">
+                    {this.props.item.repoLastFetched && LastSyncedIcon(this.props.item.repoLastFetched)}
                     {this.state.HTML !== undefined ? (
                         <Link key={this.props.item.url} to={this.props.item.url} className="search-result-match">
                             <code>
@@ -179,7 +181,7 @@ export class CommitSearchResultMatch extends React.Component<
                             </table>
                         </>
                     )}
-                </>
+                </div>
             </VisibilitySensor>
         )
     }
