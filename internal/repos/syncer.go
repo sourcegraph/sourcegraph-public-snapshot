@@ -386,7 +386,7 @@ func (s *Syncer) SyncExternalService(
 	externalServiceID int64,
 	minSyncInterval time.Duration,
 ) (err error) {
-	s.log().Debug("Syncing external service", "serviceID", externalServiceID)
+	s.log().Info("Syncing external service", "serviceID", externalServiceID)
 
 	var svc *types.ExternalService
 	ctx, save := s.observeSync(ctx, "Syncer.SyncExternalService", "")
@@ -472,7 +472,7 @@ func (s *Syncer) SyncExternalService(
 	}
 
 	deleted := 0
-	if err = errs.ErrorOrNil(); err == nil || fatal(err) {
+	if err = errs.ErrorOrNil(); err == nil || (svc.NamespaceUserID != 0 && fatal(err)) {
 		s.log().Warn("syncer: deleting not seen repos",
 			"svc", svc.DisplayName, "id", svc.ID, "seen", len(seen), "error", err)
 
