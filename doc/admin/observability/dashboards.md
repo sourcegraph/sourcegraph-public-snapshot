@@ -176,16 +176,6 @@ This panel indicates 90th percentile successful search API request duration over
 
 <br />
 
-#### frontend: hard_timeout_search_api_responses
-
-This panel indicates hard timeout search API responses every 5m.
-
-> NOTE: Alerts related to this panel are documented in the [alert solutions reference](./alert_solutions.md#frontend-hard-timeout-search-api-responses).
-
-<sub>*Managed by the [Sourcegraph Search team](https://about.sourcegraph.com/handbook/engineering/search).*</sub>
-
-<br />
-
 #### frontend: hard_error_search_api_responses
 
 This panel indicates hard error search API responses every 5m.
