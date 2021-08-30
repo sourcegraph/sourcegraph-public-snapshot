@@ -1,6 +1,5 @@
 import assert from 'assert'
 
-import delay from 'delay'
 import { Key } from 'ts-key-enum'
 
 import { createDriverForTest, Driver } from '@sourcegraph/shared/src/testing/driver'
@@ -67,9 +66,6 @@ describe('Backend insight drill down filters', () => {
 
         await driver.page.goto(driver.sourcegraphBaseUrl + '/insights/dashboards/all')
         await driver.page.waitForSelector('[data-testid="line-chart__content"] svg circle')
-
-        // Wait until insight grid animation will be finished
-        await delay(1000)
 
         await driver.page.click('button[aria-label="Filters button"]')
         await driver.page.waitForSelector('[role="dialog"][aria-label="Drill-down filters panel"]')
@@ -143,9 +139,6 @@ describe('Backend insight drill down filters', () => {
 
         await driver.page.goto(driver.sourcegraphBaseUrl + '/insights/dashboards/all')
         await driver.page.waitForSelector('[data-testid="line-chart__content"] svg circle')
-
-        // Wait until insight grid animation will be finished
-        await delay(1000)
 
         await driver.page.click('button[aria-label="Active filters button"]')
         await driver.page.waitForSelector('[role="dialog"][aria-label="Drill-down filters panel"]')
