@@ -8,7 +8,7 @@ import { isErrorLike } from '@sourcegraph/codeintellify/lib/errors'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { asError } from '@sourcegraph/shared/src/util/errors'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
-import { Container } from '@sourcegraph/wildcard'
+import { Container, LoadingSpinner } from '@sourcegraph/wildcard'
 
 import batchSpecSchemaJSON from '../../../../../../../schema/batch_spec.schema.json'
 import { ErrorAlert } from '../../../../components/alerts'
@@ -166,6 +166,10 @@ const ExampleTabPanel: React.FunctionComponent<ExampleTabPanelProps> = ({
                                 {item.repository.name} @ {item.path}
                             </li>
                         ))}
+                    {!isErrorLike(preview) && !preview && <LoadingSpinner />}
+                    {!isErrorLike(preview) && preview?.length === 0 && (
+                        <span className="text-muted">No workspaces found</span>
+                    )}
                 </ul>
             </Container>
         </TabPanel>

@@ -15,10 +15,7 @@ export function resolveRepositoriesForBatchSpec(spec: string): Observable<BatchS
         gql`
             query ResolveRepositoriesForBatchSpec($spec: String!) {
                 resolveRepositoriesForBatchSpec(batchSpec: $spec) {
-                    totalCount
-                    nodes {
-                        ...BatchSpecMatchingRepositoryFields
-                    }
+                    ...BatchSpecMatchingRepositoryFields
                 }
             }
 
@@ -34,6 +31,6 @@ export function resolveRepositoriesForBatchSpec(spec: string): Observable<BatchS
         { spec }
     ).pipe(
         map(dataOrThrowErrors),
-        map(result => result.resolveRepositoriesForBatchSpec.nodes)
+        map(result => result.resolveRepositoriesForBatchSpec)
     )
 }
