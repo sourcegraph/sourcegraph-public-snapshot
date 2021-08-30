@@ -398,6 +398,15 @@ func (e IgnoredRepoSet) Includes(r *types.Repo) bool {
 	return ok
 }
 
+func (e IgnoredRepoSet) IncludesRepoWithID(id api.RepoID) bool {
+	for r := range e {
+		if r.ID == id {
+			return true
+		}
+	}
+	return false
+}
+
 func (e IgnoredRepoSet) Error() string {
 	repos := []string{}
 	for repo := range e {

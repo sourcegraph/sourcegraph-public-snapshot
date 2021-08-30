@@ -24,7 +24,7 @@ import (
 	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
 )
 
-func TestService_ResolveRepositoriesMatchingQuery(t *testing.T) {
+func TestService_ResolveRepositoriesForBatchSpec_RepositoriesMatchingQuery(t *testing.T) {
 	ctx := context.Background()
 
 	db := dbtest.NewDB(t, "")
@@ -41,71 +41,132 @@ func TestService_ResolveRepositoriesMatchingQuery(t *testing.T) {
 	buildRepoRev := func(repo *types.Repo) *RepoRevision {
 		return &RepoRevision{Repo: repo, Branch: defaultBranches[repo.Name].branch, Commit: defaultBranches[repo.Name].commit}
 	}
-
 	mockDefaultBranches(t, defaultBranches)
-	mockBatchIgnores(t, map[api.CommitID]bool{
-		defaultBranches[rs[0].Name].commit: false,
-		defaultBranches[rs[1].Name].commit: false,
-		defaultBranches[rs[2].Name].commit: false,
-		defaultBranches[rs[3].Name].commit: false,
+
+	t.Run("repositoriesMatchingQuery, no batchignore", func(t *testing.T) {
+		mockBatchIgnores(t, map[api.CommitID]bool{
+			defaultBranches[rs[0].Name].commit: false,
+			defaultBranches[rs[1].Name].commit: false,
+			defaultBranches[rs[2].Name].commit: false,
+			defaultBranches[rs[3].Name].commit: false,
+		})
+
+		searchMatches := []streamhttp.EventMatch{
+			&streamhttp.EventContentMatch{
+				Type:         streamhttp.ContentMatchType,
+				Path:         "test",
+				RepositoryID: int32(rs[0].ID),
+			},
+			&streamhttp.EventRepoMatch{
+				Type:         streamhttp.RepoMatchType,
+				RepositoryID: int32(rs[1].ID),
+			},
+			&streamhttp.EventPathMatch{
+				Type:         streamhttp.PathMatchType,
+				RepositoryID: int32(rs[2].ID),
+			},
+			&streamhttp.EventSymbolMatch{
+				Type:         streamhttp.SymbolMatchType,
+				RepositoryID: int32(rs[3].ID),
+			},
+		}
+
+		batchSpec := &batcheslib.BatchSpec{
+			On: []batcheslib.OnQueryOrRepository{
+				{RepositoriesMatchingQuery: "repohasfile:horse.txt"},
+			},
+			Workspaces: []batcheslib.WorkspaceConfiguration{},
+		}
+
+		want := []*RepoRevision{
+			buildRepoRev(rs[0]),
+			buildRepoRev(rs[1]),
+			buildRepoRev(rs[2]),
+			buildRepoRev(rs[3]),
+		}
+		wantIgnored := []api.RepoID{}
+
+		resolveRepoRevsAndCompare(t, s, searchMatches, batchSpec, want, wantIgnored)
 	})
 
-	searchMatches := []streamhttp.EventMatch{
-		&streamhttp.EventContentMatch{
-			Type:         streamhttp.ContentMatchType,
-			Path:         "test",
-			RepositoryID: int32(rs[0].ID),
-		},
-		&streamhttp.EventRepoMatch{
-			Type:         streamhttp.RepoMatchType,
-			RepositoryID: int32(rs[1].ID),
-		},
-		&streamhttp.EventPathMatch{
-			Type:         streamhttp.PathMatchType,
-			RepositoryID: int32(rs[2].ID),
-		},
-		&streamhttp.EventSymbolMatch{
-			Type:         streamhttp.SymbolMatchType,
-			RepositoryID: int32(rs[3].ID),
-		},
+	t.Run("repositoriesMatchingQuery, with batchignores", func(t *testing.T) {
+		mockBatchIgnores(t, map[api.CommitID]bool{
+			defaultBranches[rs[0].Name].commit: false,
+			defaultBranches[rs[1].Name].commit: true,
+			defaultBranches[rs[2].Name].commit: true,
+			defaultBranches[rs[3].Name].commit: false,
+		})
+
+		searchMatches := []streamhttp.EventMatch{
+			&streamhttp.EventContentMatch{
+				Type:         streamhttp.ContentMatchType,
+				Path:         "test",
+				RepositoryID: int32(rs[0].ID),
+			},
+			&streamhttp.EventRepoMatch{
+				Type:         streamhttp.RepoMatchType,
+				RepositoryID: int32(rs[1].ID),
+			},
+			&streamhttp.EventPathMatch{
+				Type:         streamhttp.PathMatchType,
+				RepositoryID: int32(rs[2].ID),
+			},
+			&streamhttp.EventSymbolMatch{
+				Type:         streamhttp.SymbolMatchType,
+				RepositoryID: int32(rs[3].ID),
+			},
+		}
+
+		batchSpec := &batcheslib.BatchSpec{
+			On: []batcheslib.OnQueryOrRepository{
+				{RepositoriesMatchingQuery: "repohasfile:horse.txt"},
+			},
+			Workspaces: []batcheslib.WorkspaceConfiguration{},
+		}
+
+		want := []*RepoRevision{buildRepoRev(rs[0]), buildRepoRev(rs[3])}
+		wantIgnored := []api.RepoID{rs[1].ID, rs[2].ID}
+		resolveRepoRevsAndCompare(t, s, searchMatches, batchSpec, want, wantIgnored)
+	})
+}
+
+func resolveRepoRevsAndCompare(t *testing.T, s *store.Store, matches []streamhttp.EventMatch, spec *batcheslib.BatchSpec, want []*RepoRevision, wantIgnored []api.RepoID) {
+	t.Helper()
+
+	wr := &workspaceResolver{
+		store:               s,
+		frontendInternalURL: newStreamSearchTestServer(t, matches),
 	}
-
-	tsURL := newStreamSearchTestServer(t, searchMatches)
-
-	batchSpec := &batcheslib.BatchSpec{
-		On: []batcheslib.OnQueryOrRepository{
-			{RepositoriesMatchingQuery: "repohasfile:horse.txt"},
-		},
-		Workspaces: []batcheslib.WorkspaceConfiguration{},
-	}
-
-	wr := &workspaceResolver{store: s, frontendInternalURL: tsURL}
-
-	repoRevs, err := wr.ResolveRepositoriesForBatchSpec(ctx, batchSpec, ResolveRepositoriesForBatchSpecOpts{
+	have, err := wr.ResolveRepositoriesForBatchSpec(context.Background(), spec, ResolveRepositoriesForBatchSpecOpts{
 		AllowIgnored:     false,
 		AllowUnsupported: false,
 	})
-	if err != nil {
-		t.Fatalf("unexpected error: %s", err)
+	if len(wantIgnored) > 0 {
+		set, ok := err.(IgnoredRepoSet)
+		if !ok {
+			t.Fatalf("unexpected error: %s", err)
+		}
+
+		for _, id := range wantIgnored {
+			if !set.IncludesRepoWithID(id) {
+				t.Fatalf("IgnoredRepoSet does not contain repo with ID %d", id)
+			}
+		}
+	} else {
+		if err != nil {
+			t.Fatalf("unexpected error: %s", err)
+		}
 	}
 
-	if want, have := 4, len(repoRevs); want != have {
-		t.Fatalf("wrong number of repositories returned. want=%d, have=%d", want, have)
-	}
-
-	want := []*RepoRevision{
-		buildRepoRev(rs[0]),
-		buildRepoRev(rs[1]),
-		buildRepoRev(rs[2]),
-		buildRepoRev(rs[3]),
-	}
-
-	sort.Slice(want, func(i, j int) bool { return want[i].Repo.ID < want[j].Repo.ID })
-	sort.Slice(repoRevs, func(i, j int) bool { return repoRevs[i].Repo.ID < repoRevs[j].Repo.ID })
-
-	if diff := cmp.Diff(want, repoRevs); diff != "" {
+	sortRepoRevs(want)
+	sortRepoRevs(have)
+	if diff := cmp.Diff(want, have); diff != "" {
 		t.Fatalf("returned repoRevisions wrong. (-want +got):\n%s", diff)
 	}
+}
+
+func sortRepoRevs(revs []*RepoRevision) {
+	sort.Slice(revs, func(i, j int) bool { return revs[i].Repo.ID < revs[j].Repo.ID })
 }
 
 func newStreamSearchTestServer(t *testing.T, matches []streamhttp.EventMatch) string {
