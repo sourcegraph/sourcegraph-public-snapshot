@@ -98,18 +98,21 @@ async function webpackDevelopmentServer() {
     host: 'localhost',
     port: 3080,
     client: {
-      host: sockHost,
-      port: sockPort,
       overlay: false,
+      webSocketTransport: 'ws',
+      logging: 'verbose',
+      webSocketURL: {
+        hostname: sockHost,
+        port: sockPort,
+        protocol: 'wss',
+      },
     },
     static: {
       directory: './ui/assets',
       publicPath: '/.assets/',
     },
     proxy: proxyConfig,
-    transportMode: {
-      client: 'ws',
-    },
+    webSocketServer: 'ws',
   }
 
   // Based on the update: https://github.com/webpack/webpack-dev-server/pull/2844

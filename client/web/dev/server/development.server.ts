@@ -36,6 +36,7 @@ export async function startDevelopmentServer(): Promise<void> {
     const developmentServerConfig: WebpackDevServer.Configuration = {
         // react-refresh plugin triggers page reload if needed.
         liveReload: false,
+        allowedHosts: 'all',
         hot: IS_HOT_RELOAD_ENABLED,
         // TODO: resolve https://github.com/webpack/webpack-dev-server/issues/2313 and enable HTTPS.
         https: false,
