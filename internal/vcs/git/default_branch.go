@@ -16,6 +16,10 @@ import (
 // If the repository is empty or currently being cloned, empty values and no
 // error are returned.
 func GetDefaultBranch(ctx context.Context, repo api.RepoName) (refName string, commit api.CommitID, err error) {
+	if Mocks.GetDefaultBranch != nil {
+		return Mocks.GetDefaultBranch(repo)
+	}
+
 	refBytes, _, exitCode, err := ExecSafe(ctx, repo, []string{"symbolic-ref", "HEAD"})
 	refName = string(bytes.TrimSpace(refBytes))
 
