@@ -80,12 +80,12 @@ func (p *Provider) Validate() (problems []string) {
 		}
 
 		gotScopes := make(map[string]struct{})
-		for _, value := range scopes {
-			gotScopes[value] = struct{}{}
+		for _, gotScope := range scopes {
+			gotScopes[gotScope] = struct{}{}
 		}
-		for _, value := range required {
-			if _, found := gotScopes[value.scope]; !found {
-				return []string{value.message}
+		for _, requiredScope := range required {
+			if _, found := gotScopes[requiredScope.scope]; !found {
+				problems = append(problems, requiredScope.message)
 			}
 		}
 	}

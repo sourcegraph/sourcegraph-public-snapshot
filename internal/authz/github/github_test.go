@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/url"
+	"strings"
 	"testing"
 	"time"
 
@@ -979,6 +980,53 @@ func TestProvider_FetchRepoPerms(t *testing.T) {
 			}
 			if len(group.Repositories) != 0 {
 				t.Fatal("expected repos not to be updated")
+			}
+		})
+	})
+}
+
+func TestProvider_Validate(t *testing.T) {
+	t.Run("cache disabled: scopes ok", func(t *testing.T) {
+		p := NewProvider("", ProviderOptions{
+			GitHubURL:      mustURL(t, "https://github.com"),
+			GroupsCacheTTL: -1,
+		})
+		problems := p.Validate()
+		if len(problems) > 0 {
+			t.Fatal("expected validate to pass")
+		}
+	})
+
+	t.Run("cache enabled", func(t *testing.T) {
+		p := NewProvider("", ProviderOptions{
+			GitHubURL:      mustURL(t, "https://github.com"),
+			GroupsCacheTTL: 72,
+		})
+
+		t.Run("missing 'read:org'", func(t *testing.T) {
+			p.client = &mockClient{
+				MockGetAuthenticatedUserOAuthScopes: func(ctx context.Context) ([]string, error) {
+					return []string{}, nil
+				},
+			}
+			problems := p.Validate()
+			if len(problems) != 1 {
+				t.Fatal("expected 1 problem")
+			}
+			if !strings.Contains(problems[0], "read:org") {
+				t.Fatalf("unexpected problem: %q", problems[0])
+			}
+		})
+
+		t.Run("scopes ok", func(t *testing.T) {
+			p.client = &mockClient{
+				MockGetAuthenticatedUserOAuthScopes: func(ctx context.Context) ([]string, error) {
+					return []string{"read:org"}, nil
+				},
+			}
+			problems := p.Validate()
+			if len(problems) > 0 {
+				t.Fatal("expected validate to pass")
 			}
 		})
 	})
