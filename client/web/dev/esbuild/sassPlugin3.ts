@@ -64,6 +64,7 @@ export const sassPlugin: esbuild.Plugin = {
                     break
 
                 case '.scss':
+                    // renderSync is ~20% faster than render (because it's blocked on CPU, not IO).
                     css = sass
                         .renderSync({
                             file: sourceFullPath,
@@ -71,6 +72,7 @@ export const sassPlugin: esbuild.Plugin = {
                             importer: (url, directory) => ({ file: resolveFile(url, path.dirname(directory)) }),
                         })
                         .css.toString()
+
                     break
 
                 default:
@@ -117,6 +119,20 @@ export const sassPlugin: esbuild.Plugin = {
             }
         })
 
+        // Resolve CSS modules imported by the next onLoad callback.
+        build.onResolve({ filter: /\.css$/, namespace: 'css' }, args => {
+            if (args.pluginData?.contents !== undefined) {
+                return {
+                    path: args.path.replace(/\.module/, 'RAWCSS'), // TODO(sqs): hack
+                    namespace: 'css',
+                    pluginData: {
+                        contents: args.pluginData.contents,
+                    },
+                }
+            }
+            return
+        })
+
         build.onLoad({ filter: /\.css$/, namespace: 'css' }, args => {
             const isModule = args.path.includes('.module')
             if (isModule) {
@@ -135,20 +151,6 @@ export const sassPlugin: esbuild.Plugin = {
                 resolveDir: path.dirname(args.path),
                 loader: 'css',
             }
-        })
-
-        // Resolve CSS modules imported by the previous onLoad callback.
-        build.onResolve({ filter: /\.css$/, namespace: 'css' }, args => {
-            if (args.pluginData?.contents) {
-                return {
-                    path: args.path.replace(/\.module/, 'RAWCSS'), // TODO(sqs): hack
-                    namespace: 'css',
-                    pluginData: {
-                        contents: args.pluginData.contents,
-                    },
-                }
-            }
-            return
         })
     },
 }
