@@ -140,7 +140,7 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 		}
 	)
 
-	t.Run("disabled cache", func(t *testing.T) {
+	t.Run("cache disabled", func(t *testing.T) {
 		mockClient := &mockClient{
 			MockListAffiliatedRepositories: func(ctx context.Context, visibility github.Visibility, page int, affiliations ...github.RepositoryAffiliation) (repos []*github.Repository, hasNextPage bool, rateLimitCost int, err error) {
 				if len(affiliations) != 0 {
