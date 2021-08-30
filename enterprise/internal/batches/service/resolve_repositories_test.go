@@ -25,6 +25,46 @@ import (
 	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
 )
 
+func TestSetDefaultQueryCount(t *testing.T) {
+	for in, want := range map[string]string{
+		"":                     hardCodedCount,
+		"count:10":             "count:10",
+		"count:all":            "count:all",
+		"r:foo":                "r:foo" + hardCodedCount,
+		"r:foo count:10":       "r:foo count:10",
+		"r:foo count:10 f:bar": "r:foo count:10 f:bar",
+		"r:foo count:":         "r:foo count:" + hardCodedCount,
+		"r:foo count:xyz":      "r:foo count:xyz" + hardCodedCount,
+	} {
+		t.Run(in, func(t *testing.T) {
+			have := setDefaultQueryCount(in)
+			if have != want {
+				t.Errorf("unexpected query: have %q; want %q", have, want)
+			}
+		})
+	}
+}
+
+func TestSetDefaultQuerySelect(t *testing.T) {
+	for in, want := range map[string]string{
+		"":                        hardCodedSelectRepo,
+		"select:file":             "select:file",
+		"select:repo":             "select:repo",
+		"r:foo":                   "r:foo" + hardCodedSelectRepo,
+		"r:foo select:file":       "r:foo select:file",
+		"r:foo select:file f:bar": "r:foo select:file f:bar",
+		"r:foo select:":           "r:foo select:" + hardCodedSelectRepo,
+		"r:foo select:xyz":        "r:foo select:xyz",
+	} {
+		t.Run(in, func(t *testing.T) {
+			have := setDefaultQuerySelect(in)
+			if have != want {
+				t.Errorf("unexpected query: have %q; want %q", have, want)
+			}
+		})
+	}
+}
+
 func TestService_ResolveRepositoriesForBatchSpec(t *testing.T) {
 	ctx := context.Background()
 
