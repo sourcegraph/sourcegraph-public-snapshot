@@ -3,7 +3,7 @@ A Code Insight can be thought of as a few discrete components:
 1. A visualization of time series data with metadata such as title and labels, as well as time range to display
 2. A collection of data series comprised of sample recordings
 
-![](diagrams/insight_example.png)
+![Example insight](diagrams/insight_example.png)
 
 Typically Insights have been thought of as the coupling of these components. When a user creates an Insight using the creation UI, they are prompted to fill out a query to generate recordings as well as the visualization metadata. When these insights are stored, they are stored as a single object that directly couples metadata to the recording series.
 

@@ -21,11 +21,11 @@
 The current code insights backend is a beta version contributed by @coury-clark (based on previous work by @slimsag) - it:
 
 * Supports running search-based insights over all indexable repositories on the Sourcegraph installation.
-* Is backed by a [TImescaleDB](https://www.timescale.com) instance. See the database section below for more information.
+* Is backed by a [TimescaleDB](https://www.timescale.com) instance. See the [database section](#database) below for more information.
 * Optimizes unnecessary search queries by using an index of commits to query only for time periods that have had at least one commit.
 * Supports regexp based drilldown on repository name.
 * Provides permissions restrictions by filtering of repositories that are not visible to the user at query time.
-* Does not yet support synchronous insight creation through an API. Read more below in the Insight Metadata section.
+* Does not yet support synchronous insight creation through an API. Read more below in the [Insight Metadata section](#insight-metadata-section).
 
 The current version of the backend is an MVP to achieve beta status to unblock the feature request of "running an insight over all my repos".
 
@@ -33,7 +33,7 @@ The current version of the backend is an MVP to achieve beta status to unblock t
 
 The following architecture diagram shows how the backend fits into the two Sourcegraph services "frontend" (the Sourcegraph monolithic service) and "worker" (the Sourcegraph "background-worker" service), click to expand:
 
-[![](diagrams/architecture.svg)](https://raw.githubusercontent.com/sourcegraph/sourcegraph/main/doc/dev/background-information/insights/diagrams/architecture.svg)
+[![Architecture diagram](diagrams/architecture.svg)](https://raw.githubusercontent.com/sourcegraph/sourcegraph/main/doc/dev/background-information/insights/diagrams/architecture.svg)
 
 ## Deployment Status
 Code Insights backend is currently disabled on `sourcegraph.com` until solutions can be built to address the large indexed repo count.
@@ -50,14 +50,14 @@ With version 3.31 this flag has moved from the `repo-updater` service to the `wo
 ### Soucegraph Setting
 Code Insights is currently behind an experimental feature on Sourcegraph. You can enable it in settings.
 
-```jsonb
+```json
   "experimentalFeatures": {
     "codeInsights": true
   },
 ```
 
 ## Database
-Currently, Code Insights uses a [TImescaleDB](https://www.timescale.com) database running on the OSS license. The original intention was to use
+Currently, Code Insights uses a [TimescaleDB](https://www.timescale.com) database running on the OSS license. The original intention was to use
 some of the timeseries query features, as well as the hypertable. Many of these are behind a proprietary license that would require non-trivial
 work to bundle with Sourcegraph.
 
@@ -82,18 +82,18 @@ an API does not currently exist to synchronously interact with the database for 
 As expected, this async process causes many strange UX / UI bugs that are difficult or impossible to solve. An API to fully deprecate the settings storage is a priority
 for Q3.
 
-As an additional note, extension based insights are [read](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@43062781be6c648f40b5baec32ce8241c03cbd18/-/blob/internal/usagestats/code_insights.go?L179) from settings for the purposes of sending aggregated pings.
+As an additional note, [extension based insights are read from settings](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@43062781be6c648f40b5baec32ce8241c03cbd18/-/blob/internal/usagestats/code_insights.go?L179) for the purposes of sending aggregated pings.
 
 ## Life of an insight
 
 ### (1) User defines insight in settings
 
 A user creates a code insight using the creation UI, and selects the option to run the insight over all repositories. The Code Insights will create a JSON object
-in the appropriate settings (user / org)) and place it in the `insights.allrepos` dictionary. Note: only insights placed in the `insights.allrepos` dictionary are considered eligible for 
+in the appropriate settings (user / org) and place it in the `insights.allrepos` dictionary. Note: only insights placed in the `insights.allrepos` dictionary are considered eligible for 
 sync to prevent conflicts with extensions insights.
 
 An example backend-compatible insight definition in settings:
-```jsonb
+```json
 "insights.allrepos": {
     "searchInsights.insight.soManyInsights": {
       "title": "So many insights",
@@ -114,7 +114,7 @@ chart title prefixed with `searchInsights.insight.`.
 
 In the above example, the ID is `searchInsights.insight.soManyInsights`.
 
-Read [more](./insight_view.md) about Insight Views
+[Read more about Insight Views](./insight_view.md)
 
 ### Sync to the database
 
@@ -131,7 +131,7 @@ Once the sync job is complete, the following database rows will have been create
 
 #### A note about data series
 Currently, data series are defined without scope for specific repositories or any other subset of repositories (all data series iterate over all repos). Data series are uniquely identified
-by [hashing](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@4306278/-/blob/enterprise/internal/insights/discovery/series_id.go?L32:6) the query string, with the `s:` prefix.
+by [hashing the query string](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@4306278/-/blob/enterprise/internal/insights/discovery/series_id.go?L32:6), with the `s:` prefix.
 This field is known as the `series_id`. It must be globally unique, and any collisions will be assumed to be the same exact data series.
 
 In the medium term this semantic will change to include repository scopes (assigning specific repos to a datseries), and may possibly change entirely. This is one important area
@@ -139,7 +139,7 @@ of design and work for Q3.
 
 The `series_id` for the example Insight data above series would be `s:7F1FE30EF252BF75FAB0C9680C7BCFFF648154165AFE718155091051255A0A99`
 
-The `series_id` is how the underlying data series is referenced throughout the system; however, it is not currently exposed in the GraphQL. The current model
+The `series_id` is how the underlying data series is referenced throughout the system; however, it is not currently exposed in the GraphQL API. The current model
 prefers to obfuscate the underlying data series behind an [Insight View](./insight_view.md). This model is not highly validated, and may need to change in the future
 to expose more direct functionality around data series.
 
@@ -240,7 +240,7 @@ The queryrunner ([code](https://sourcegraph.com/github.com/sourcegraph/sourcegra
 4. Aggregating the search results, per repository (and in the near-future, per unique match to support capture groups) and storing them in the `series_points` table.
 
 The queue is managed by a common executor called `Worker` (note: the naming collision with the `worker` service is confusing, but they are not the same).
-Read more about `Worker` and how it works in [this](https://sourcegraph.com/search/notebook#md:%23%23%20Background%20Workers%0AA%20quick%20introduction%20to%20the%20background%20processing%20system%20in%20the%20Sourcegraph%20codebase.,md:%23%23%23%20Summary%0ASourcegraph%20uses%20a%20persistent%20queueing%20mechanism%20for%20long%20running%20background%20tasks%20called%20%60Worker%60.,query:repo%3A%5Egithub%5C.com%2Fsourcegraph%2Fsourcegraph%24%20dbworker.NewWorker,md:These%20tasks%20are%20stored%20in%20a%20table%20in%20the%20Postgres%20database%20where%20a%20single%20row%20represents%20a%20single%20invocation%20of%20a%20%60Handler%60.%20Each%20%60Worker%60%20uses%20a%20unique%20table.%20A%20background%20process%20will%20periodically%20%60dequeue%60%20records%20from%20the%20associated%20queue%20table%20and%20pass%20them%20to%20the%20provided%20%60Handler%60%20callback.,query:repo%3A%5Egithub%5C.com%2Fsourcegraph%2Fsourcegraph%24%20file%3Aworkerutil%20type%20Handler%20interface,md:See%20implementations%20of%20the%20%60Handler%60%20throughout%20the%20codebase,query:repo%3A%5Egithub%5C.com%2Fsourcegraph%2Fsourcegraph%24%20_%20workerutil.Handler,md:The%20%60Worker%60%20can%20be%20configured%20with%20options%20such%20as%20query%20interval%2C%20heartbeat%20interval%2C%20name%2C%20and%20more.,query:repo%3A%5Egithub%5C.com%2Fsourcegraph%2Fsourcegraph%24%20workerutil.WorkerOptions,md:You%20can%20create%20a%20%60Resetter%60%20to%20periodically%20reset%20any%20records%20that%20might%20have%20stalled.%20This%20is%20useful%20to%20make%20sure%20records%20process%20at%20least%20once%20without%20concern%20for%20transient%20errors%20(such%20as%20pods%20terminating%2C%20etc),query:repo%3A%5Egithub%5C.com%2Fsourcegraph%2Fsourcegraph%24%20dbworker.NewResetter,md:If%20you%20want%20to%20add%20a%20new%20persistent%20queue%2C%20you%20will%20need%20to%20create%20a%20table%20that%20has%20all%20of%20the%20default%20queue%20columns%2C%20and%20any%20additional%20columns%20you%20want.,query:repo%3A%5Egithub%5C.com%2Fsourcegraph%2Fsourcegraph%24%20file%3Amigration%20create%20table%20.*_jobs%20patterntype%3Aregexp%20,md:You%20can%20interact%20with%20the%20queue%20table%20through%20a%20special%20%60Store%60.%20You%20can%20initialize%20the%20%60Store%60%20to%20automatically%20capture%20and%20report%20metrics.%20The%20metrics%20will%20have%20a%20prefix%20%60workerutil_dbworker_store%60.,query:repo%3A%5Egithub%5C.com%2Fsourcegraph%2Fsourcegraph%24%20dbworkerstore.NewWithMetrics,md:%60Worker%60%20%60Handler%60%20can%20be%20configured%20to%20emit%20metrics.%20Note%3A%20the%20provided%20name%20must%20have%20the%20%60_processor%60%20suffix%20to%20use%20a%20generated%20dashboard.,query:repo%3A%5Egithub%5C.com%2Fsourcegraph%2Fsourcegraph%24%20workerutil.NewMetrics,md:%60Resetter%60%20can%20be%20configured%20to%20emit%20metrics.,query:repo%3A%5Egithub%5C.com%2Fsourcegraph%2Fsourcegraph%24%20dbworker.NewMetrics,md:Dashboards%20can%20be%20generated%20for%20%60Worker%60%20%60Handler%60%20operations.,query:repo%3A%5Egithub%5C.com%2Fsourcegraph%2Fsourcegraph%24%20WorkerutilGroupOptions,md:Note%3A%20%60Handler%60%20metrics%20must%20be%20emitted%20with%20a%20postfix%20%60_processor%60%20for%20these%20dashbaords,query:repo%3A%5Egithub%5C.com%2Fsourcegraph%2Fsourcegraph%24%20_processor,md:Dashboards%20can%20be%20generated%20for%20%60Resetter%60%20operations,query:repo%3A%5Egithub%5C.com%2Fsourcegraph%2Fsourcegraph%24%20ResetterGroupOptions,md:Dashboards%20can%20be%20generated%20for%20the%20underlying%20%60Store%60.%20Note%3A%20the%20metrics%20are%20emitted%20with%20a%20prefix%20%60workerutil_dbworker_store%60,query:repo%3A%5Egithub%5C.com%2Fsourcegraph%2Fsourcegraph%24%20workerutil_dbworker_store_) search notebook.
+[Read more about `Worker` and how it works in this search notebook](https://sourcegraph.com/search/notebook#md:%23%23%20Background%20Workers%0AA%20quick%20introduction%20to%20the%20background%20processing%20system%20in%20the%20Sourcegraph%20codebase.,md:%23%23%23%20Summary%0ASourcegraph%20uses%20a%20persistent%20queueing%20mechanism%20for%20long%20running%20background%20tasks%20called%20%60Worker%60.,query:repo%3A%5Egithub%5C.com%2Fsourcegraph%2Fsourcegraph%24%20dbworker.NewWorker,md:These%20tasks%20are%20stored%20in%20a%20table%20in%20the%20Postgres%20database%20where%20a%20single%20row%20represents%20a%20single%20invocation%20of%20a%20%60Handler%60.%20Each%20%60Worker%60%20uses%20a%20unique%20table.%20A%20background%20process%20will%20periodically%20%60dequeue%60%20records%20from%20the%20associated%20queue%20table%20and%20pass%20them%20to%20the%20provided%20%60Handler%60%20callback.,query:repo%3A%5Egithub%5C.com%2Fsourcegraph%2Fsourcegraph%24%20file%3Aworkerutil%20type%20Handler%20interface,md:See%20implementations%20of%20the%20%60Handler%60%20throughout%20the%20codebase,query:repo%3A%5Egithub%5C.com%2Fsourcegraph%2Fsourcegraph%24%20_%20workerutil.Handler,md:The%20%60Worker%60%20can%20be%20configured%20with%20options%20such%20as%20query%20interval%2C%20heartbeat%20interval%2C%20name%2C%20and%20more.,query:repo%3A%5Egithub%5C.com%2Fsourcegraph%2Fsourcegraph%24%20workerutil.WorkerOptions,md:You%20can%20create%20a%20%60Resetter%60%20to%20periodically%20reset%20any%20records%20that%20might%20have%20stalled.%20This%20is%20useful%20to%20make%20sure%20records%20process%20at%20least%20once%20without%20concern%20for%20transient%20errors%20%28such%20as%20pods%20terminating%2C%20etc%28,query:repo%3A%5Egithub%5C.com%2Fsourcegraph%2Fsourcegraph%24%20dbworker.NewResetter,md:If%20you%20want%20to%20add%20a%20new%20persistent%20queue%2C%20you%20will%20need%20to%20create%20a%20table%20that%20has%20all%20of%20the%20default%20queue%20columns%2C%20and%20any%20additional%20columns%20you%20want.,query:repo%3A%5Egithub%5C.com%2Fsourcegraph%2Fsourcegraph%24%20file%3Amigration%20create%20table%20.*_jobs%20patterntype%3Aregexp%20,md:You%20can%20interact%20with%20the%20queue%20table%20through%20a%20special%20%60Store%60.%20You%20can%20initialize%20the%20%60Store%60%20to%20automatically%20capture%20and%20report%20metrics.%20The%20metrics%20will%20have%20a%20prefix%20%60workerutil_dbworker_store%60.,query:repo%3A%5Egithub%5C.com%2Fsourcegraph%2Fsourcegraph%24%20dbworkerstore.NewWithMetrics,md:%60Worker%60%20%60Handler%60%20can%20be%20configured%20to%20emit%20metrics.%20Note%3A%20the%20provided%20name%20must%20have%20the%20%60_processor%60%20suffix%20to%20use%20a%20generated%20dashboard.,query:repo%3A%5Egithub%5C.com%2Fsourcegraph%2Fsourcegraph%24%20workerutil.NewMetrics,md:%60Resetter%60%20can%20be%20configured%20to%20emit%20metrics.,query:repo%3A%5Egithub%5C.com%2Fsourcegraph%2Fsourcegraph%24%20dbworker.NewMetrics,md:Dashboards%20can%20be%20generated%20for%20%60Worker%60%20%60Handler%60%20operations.,query:repo%3A%5Egithub%5C.com%2Fsourcegraph%2Fsourcegraph%24%20WorkerutilGroupOptions,md:Note%3A%20%60Handler%60%20metrics%20must%20be%20emitted%20with%20a%20postfix%20%60_processor%60%20for%20these%20dashbaords,query:repo%3A%5Egithub%5C.com%2Fsourcegraph%2Fsourcegraph%24%20_processor,md:Dashboards%20can%20be%20generated%20for%20%60Resetter%60%20operations,query:repo%3A%5Egithub%5C.com%2Fsourcegraph%2Fsourcegraph%24%20ResetterGroupOptions,md:Dashboards%20can%20be%20generated%20for%20the%20underlying%20%60Store%60.%20Note%3A%20the%20metrics%20are%20emitted%20with%20a%20prefix%20%60workerutil_dbworker_store%60,query:repo%3A%5Egithub%5C.com%2Fsourcegraph%2Fsourcegraph%24%20workerutil_dbworker_store_).
 
 These queries can be executed concurrently by using the site setting `insights.query.worker.concurrency` and providing
 the desired concurrency factor. With `insights.query.worker.concurrency=1` queries will be executed in serial.
