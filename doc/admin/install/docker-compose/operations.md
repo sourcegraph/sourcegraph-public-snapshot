@@ -198,6 +198,15 @@ Guides for managing cloud storage and backups are available in our [cloud-specif
 - [Storage and backups for Google Cloud](./google_cloud.md#storage-and-backups)
 - [Storage and backups for Digital Ocean](./digitalocean.md#storage-and-backups)
 
+## Access a docker-compose database
+
+The following command allows a user to shell into a Sourcegraph database container and run `psql` to interact with the container's postgres database:
+
+```bash
+docker exec -it pgsql psql -U sg #access pgsql container and run psql
+docker exec -it codeintel-db -U sg #access codeintel-db container and run psql
+```
+
 ## Backup and restore
 
 The following instructions are specific to backing up and restoring the sourcegraph databases in a Docker Compose deployment. These do not apply to other deployment types.
