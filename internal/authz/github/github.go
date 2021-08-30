@@ -174,12 +174,13 @@ func (p *Provider) fetchUserPermsByToken(ctx context.Context, accountID extsvc.A
 
 	// Get repos from groups, cached if possible.
 	for _, group := range groups {
-		// Check if we need to perform a fresh sync
+		// If repositories is empty, perform a full sync
 		if len(group.Repositories) > 0 {
 			// If a valid cached value was found, use it
 			addRepoToUserPerms(group.Repositories...)
-			// If this user's membership in this group is not noted yet, add it
+			// Add to users iff non-empty
 			if len(group.Users) > 0 {
+				// If this user's membership in this group is not noted yet, add it
 				hasUser := false
 				for _, user := range group.Users {
 					if user == accountID {
@@ -336,20 +337,24 @@ func (p *Provider) FetchRepoPerms(ctx context.Context, repo *extsvc.Repository, 
 	// Perform a fresh sync with groups that need a sync.
 	repoID := extsvc.RepoID(repo.ID)
 	for _, group := range groups {
+		// If users is empty, perform a full sync
 		if len(group.Users) > 0 {
 			// Just use cache if available and not invalidated
 			addUserToRepoPerms(group.Users...)
-			// If this repo's membership in this group is not noted yet, add it
-			hasRepo := false
-			for _, user := range group.Repositories {
-				if user == repoID {
-					hasRepo = true
-					break
+			// Add to repositories iff non-empty
+			if len(group.Repositories) > 0 {
+				// If this repo's membership in this group is not noted yet, add it
+				hasRepo := false
+				for _, user := range group.Repositories {
+					if user == repoID {
+						hasRepo = true
+						break
+					}
 				}
-			}
-			if !hasRepo {
-				group.Repositories = append(group.Repositories, repoID)
-				p.groupsCache.setGroup(group.cachedGroup)
+				if !hasRepo {
+					group.Repositories = append(group.Repositories, repoID)
+					p.groupsCache.setGroup(group.cachedGroup)
+				}
 			}
 		} else {
 			// Cache was invalidated or is not yet populated, perform a sync

@@ -23,11 +23,17 @@ type cachedGroup struct {
 	//
 	// This should ONLY be populated on a USER-centric sync, but may be appended to if
 	// already populated.
+	//
+	// If nil, a repo-centric sync should treat this cache as unpopulated and fill in this
+	// value.
 	Repositories []extsvc.RepoID
 	// Users associated with this group
 	//
 	// This should ONLY be populated on a REPO-centric sync, but maybe to appended to if
 	// already populated.
+	//
+	// If nil, a user-centric sync should treat this cache as unpopulated and fill in this
+	// value.
 	Users []extsvc.AccountID
 }
 
