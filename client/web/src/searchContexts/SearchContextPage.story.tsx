@@ -91,6 +91,50 @@ add(
 )
 
 add(
+    'public context with search notebook description',
+    () => (
+        <WebStory>
+            {webProps => (
+                <SearchContextPage
+                    {...webProps}
+                    {...searchNotebookProps}
+                    fetchSearchContextBySpec={() =>
+                        of({
+                            ...mockContext,
+                            description: `## Search and review commits
+
+Sourcegraph allows you to search code and code history in a single interface.  To find all TODOs in commit messages, add \`type:commit\` to your query.
+
+\`\`\`sourcegraph
+repo:^github\\.com/sourcegraph/sourcegraph$ type:commit TODO
+\`\`\`
+
+## Search code in commits
+
+You can also search the code in commits by setting the type to \`diff\`.
+
+\`\`\`sourcegraph
+repo:^github\\.com/sourcegraph/sourcegraph$ type:diff TODO
+\`\`\`
+
+## Find code removed in a timeframe
+
+By combining \`before:\` and \`after:\` filters, you can search for a range of time the code may have existed.
+
+\`\`\`sourcegraph
+repo:^github\\.com/sourcegraph/sourcegraph$ type:diff before:yesterday after:"last week" TODO
+\`\`\`
+                            `,
+                        })
+                    }
+                />
+            )}
+        </WebStory>
+    ),
+    {}
+)
+
+add(
     'autodefined context',
     () => (
         <WebStory>
