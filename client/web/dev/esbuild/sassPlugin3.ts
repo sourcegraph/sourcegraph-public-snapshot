@@ -27,88 +27,61 @@ const resolveFile = (modulePath: string, directory: string): string => {
     return p
 }
 
-const temporaryDirectoryPath = fs.mkdtempSync(path.join(os.tmpdir(), 'esbuild-'))
-const cleanup = () => fs.rmdirSync(temporaryDirectoryPath, { recursive: true })
-
 export const sassPlugin: esbuild.Plugin = {
     name: 'sass',
     setup: build => {
-        let buildStarted: number
-        build.onStart(() => {
-            buildStarted = Date.now()
-        })
-        build.onEnd(() => console.log(`> ${Date.now() - buildStarted}ms`))
-
-        const modulesMap = new Map<string, any>()
+        const modulesMap = new Map<string, string>()
         const modulesPlugin = postcssModules({
             generateScopedName: '[name]__[local]', // TODO(sqs): omit hash for local dev
             localsConvention: 'camelCase',
-            getJSON: (cssPath: string, json: any) => modulesMap.set(cssPath, json),
+            getJSON: (cssPath: string, json: any) => modulesMap.set(cssPath, JSON.stringify(json)),
         })
 
         const cssRender = async (sourceFullPath: string, fileContent: string): Promise<string> => {
-            const sourceExtension = path.extname(sourceFullPath)
-            const sourceBaseName = path.basename(sourceFullPath, sourceExtension)
-            const sourceDirectory = path.dirname(sourceFullPath)
-            const sourceRelativeDirectory = path.relative(rootPath, sourceDirectory)
-            const isModule = sourceBaseName.endsWith('.module')
-            const temporaryDirectory = path.resolve(temporaryDirectoryPath, sourceRelativeDirectory)
-            await fs.promises.mkdir(temporaryDirectory, { recursive: true })
-
-            const temporaryFilePath = path.join(temporaryDirectory, `${sourceBaseName}.css`)
-
-            let css: string
-            switch (sourceExtension) {
-                case '.css':
-                    css = fileContent
-                    break
-
-                case '.scss':
-                    // renderSync is ~20% faster than render (because it's blocked on CPU, not IO).
-                    css = sass
-                        .renderSync({
-                            file: sourceFullPath,
-                            data: fileContent,
-                            importer: (url, directory) => ({ file: resolveFile(url, path.dirname(directory)) }),
-                        })
-                        .css.toString()
-
-                    break
-
-                default:
-                    throw new Error(`unknown file extension: ${sourceExtension}`)
-            }
+            const css = sourceFullPath.endsWith('.scss') // renderSync is ~20% faster than render (because it's blocked on CPU, not IO).
+                ? sass
+                      .renderSync({
+                          file: sourceFullPath,
+                          data: fileContent,
+                          importer: (url, directory) => ({ file: resolveFile(url, path.dirname(directory)) }),
+                      })
+                      .css.toString()
+                : fileContent
 
             const result = await postcss({
                 ...postcssConfig,
-                plugins: isModule ? [...postcssConfig.plugins, modulesPlugin] : postcssConfig.plugins,
+                plugins:
+                    sourceFullPath.endsWith('.module.css') || sourceFullPath.endsWith('.module.scss')
+                        ? [...postcssConfig.plugins, modulesPlugin]
+                        : postcssConfig.plugins,
             }).process(css, {
                 from: sourceFullPath,
-                to: temporaryFilePath,
             })
-
-            await fs.promises.writeFile(temporaryFilePath, result.css)
-            return temporaryFilePath
+            return result.css
         }
-        const cssRenderCache = new Map<string, { path: string; originalContent: string; outPath: string }>()
+        const cssRenderCache = new Map<string, { path: string; originalContent: string; output: string }>()
         const cachedCSSRender = async (sourceFullPath: string, fileContent: string): Promise<string> => {
             // TODO(sqs): invalidate
             const key = sourceFullPath
             const existing = cssRenderCache.get(key)
             if (existing && existing.originalContent === fileContent) {
-                return existing.outPath
+                return existing.output
             }
 
-            const outPath = await cssRender(sourceFullPath, fileContent)
-            cssRenderCache.set(key, { path: sourceFullPath, originalContent: fileContent, outPath })
-            return outPath
+            const t0 = Date.now()
+            const output = await cssRender(sourceFullPath, fileContent)
+            if (Date.now() - t0 > 15) {
+                cssRenderCache.set(key, { path: sourceFullPath, originalContent: fileContent, output })
+                // console.log('SLOW', Date.now() - t0)
+            } else {
+                // console.log('FAST', Date.now() - t0)
+            }
+            return output
         }
 
         build.onResolve({ filter: /\.scss$/, namespace: 'file' }, async args => {
             const fullPath = resolveFile(args.path, args.resolveDir)
-            const fileContent = await fs.promises.readFile(fullPath, 'utf8')
-            const temporaryFilePath = await cachedCSSRender(fullPath, fileContent)
-            const contents = await fs.promises.readFile(temporaryFilePath, 'utf8')
+            const contents = await cachedCSSRender(fullPath, await fs.promises.readFile(fullPath, 'utf8'))
 
             return {
                 path: fullPath.replace(/\.scss$/, '.css'),
@@ -138,8 +111,8 @@ export const sassPlugin: esbuild.Plugin = {
             if (isModule) {
                 return {
                     contents: `
-      import ${JSON.stringify(args.path.replace(/\.js$/, ''))}
-      export default ${JSON.stringify(modulesMap.get(args.path.replace(/\.css$/, '.scss')) || {})}`,
+      import ${JSON.stringify(args.path)}
+      export default ${modulesMap.get(args.path.replace(/\.css$/, '.scss')) || '{}'}`,
                     loader: 'js',
                     resolveDir: path.dirname(args.path),
                     pluginData: args.pluginData,

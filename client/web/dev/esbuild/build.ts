@@ -45,6 +45,16 @@ export const BUILD_OPTIONS: esbuild.BuildOptions = {
         manifestPlugin,
         packageResolutionPlugin,
         monacoPlugin(MONACO_LANGUAGES_AND_FEATURES),
+        {
+            name: 'build-timer',
+            setup: build => {
+                let buildStarted: number
+                build.onStart(() => {
+                    buildStarted = Date.now()
+                })
+                build.onEnd(() => console.log(`> ${Date.now() - buildStarted}ms`))
+            },
+        },
     ],
     define: {
         'process.env.NODE_ENV': '"development"',
