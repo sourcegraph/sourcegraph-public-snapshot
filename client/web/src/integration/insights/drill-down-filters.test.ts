@@ -144,7 +144,7 @@ describe('Backend insight drill down filters', () => {
         await driver.page.waitForSelector('[role="dialog"][aria-label="Drill-down filters panel"]')
 
         await driver.page.click(
-            '[role="dialog"][aria-label="Drill-down filters panel"] button[aria-label="Save as new view"]'
+            '[role="dialog"][aria-label="Drill-down filters panel"] button[data-testid="save-as-new-view-button"]'
         )
 
         await driver.page.type('[name="insightName"]', 'Insight with filters')

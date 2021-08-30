@@ -174,7 +174,7 @@ export const DrillDownFiltersForm: React.FunctionComponent<DrillDownFiltersFormP
                 />
 
                 <Button
-                    aria-label="Save as new view"
+                    data-testid="save-as-new-view-button"
                     type="button"
                     variant="secondary"
                     onClick={onCreateInsightRequest}
