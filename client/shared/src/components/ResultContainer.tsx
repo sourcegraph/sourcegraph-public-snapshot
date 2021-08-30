@@ -130,14 +130,14 @@ export const ResultContainer: React.FunctionComponent<Props> = ({
                 </div>
                 {matchCountLabel && (
                     <>
-                        <small className="mr-1">{matchCountLabel}</small>
+                        <small>{matchCountLabel}</small>
                         {collapsible && <div className="result-container__header-divider" />}
                     </>
                 )}
                 {collapsible && (
                     <button
                         type="button"
-                        className="result-container__toggle-matches-container btn btn-sm btn-link px-1 py-0"
+                        className="result-container__toggle-matches-container btn btn-sm btn-link py-0"
                         onClick={toggle}
                     >
                         {expanded ? (
@@ -155,7 +155,9 @@ export const ResultContainer: React.FunctionComponent<Props> = ({
                         )}
                     </button>
                 )}
-                {matchCountLabel && formattedRepositoryStarCount && <div className="search-result__divider" />}
+                {matchCountLabel && formattedRepositoryStarCount && (
+                    <div className="result-container__header-divider" />
+                )}
                 {formattedRepositoryStarCount && (
                     <>
                         <StarIcon className="search-result__star" />
