@@ -303,10 +303,10 @@ async function deactivateExtension(extensionID: string): Promise<void> {
     }
 }
 
-export function extensionsWithMatchedActivationEvent(
-    enabledExtensions: (ConfiguredExtension | ExecutableExtension)[],
+export function extensionsWithMatchedActivationEvent<Extension extends ConfiguredExtension | ExecutableExtension>(
+    enabledExtensions: Extension[],
     visibleTextDocumentLanguages: ReadonlySet<string>
-): (ConfiguredExtension | ExecutableExtension)[] {
+): Extension[] {
     const languageActivationEvents = new Set(
         [...visibleTextDocumentLanguages].map(language => `onLanguage:${language}`)
     )

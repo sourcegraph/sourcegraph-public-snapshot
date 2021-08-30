@@ -49,6 +49,7 @@ export async function createExtensionHostClientConnection(
         | 'telemetryService'
         | 'sideloadedExtensionURL'
         | 'getScriptURLForExtension'
+        | 'clientApplication'
     >
 ): Promise<{
     subscription: Unsubscribable
