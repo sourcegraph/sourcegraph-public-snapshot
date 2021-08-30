@@ -120,7 +120,7 @@ export const ResultContainer: React.FunctionComponent<Props> = ({
         <div className="test-search-result result-container" data-testid="result-container">
             <div className="result-container__header">
                 <Icon className="icon-inline flex-shrink-0" />
-                <div className="result-container__header-divider" />
+                <div className="result-container__header-divider mx-1" />
                 <div
                     className={classNames('result-container__header-title', titleClassName)}
                     data-testid="result-container-header"
@@ -131,7 +131,7 @@ export const ResultContainer: React.FunctionComponent<Props> = ({
                 {matchCountLabel && (
                     <>
                         <small>{matchCountLabel}</small>
-                        {collapsible && <div className="result-container__header-divider" />}
+                        {collapsible && <div className="result-container__header-divider mx-2" />}
                     </>
                 )}
                 {collapsible && (
@@ -156,7 +156,7 @@ export const ResultContainer: React.FunctionComponent<Props> = ({
                     </button>
                 )}
                 {matchCountLabel && formattedRepositoryStarCount && (
-                    <div className="result-container__header-divider" />
+                    <div className="result-container__header-divider mx-2" />
                 )}
                 {formattedRepositoryStarCount && (
                     <>

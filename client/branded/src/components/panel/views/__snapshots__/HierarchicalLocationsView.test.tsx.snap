@@ -36,7 +36,7 @@ exports[`<HierarchicalLocationsView /> displays a single location when complete 
                 />
               </svg>
               <div
-                className="result-container__header-divider"
+                className="result-container__header-divider mx-1"
               />
               <div
                 className="result-container__header-title test-search-result-label"
@@ -276,7 +276,7 @@ exports[`<HierarchicalLocationsView /> displays multiple locations grouped by fi
                 />
               </svg>
               <div
-                className="result-container__header-divider"
+                className="result-container__header-divider mx-1"
               />
               <div
                 className="result-container__header-title test-search-result-label"
@@ -462,7 +462,7 @@ exports[`<HierarchicalLocationsView /> displays partial locations before complet
                 />
               </svg>
               <div
-                className="result-container__header-divider"
+                className="result-container__header-divider mx-1"
               />
               <div
                 className="result-container__header-title test-search-result-label"
