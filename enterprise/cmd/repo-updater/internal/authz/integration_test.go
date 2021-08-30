@@ -41,7 +41,7 @@ func update(name string) bool {
 
 var dsn = flag.String("dsn", "", "Database connection string to use in integration tests")
 
-// NOTE: To update VCR for theses tests, please use the token of "sourcegraph-vcr"
+// NOTE: To update VCR for these tests, please use the token of "sourcegraph-vcr"
 // for GITHUB_TOKEN, which can be found in 1Password.
 //
 // We also recommend setting up a new token for "sourcegraph-vcr" using the auth scope
