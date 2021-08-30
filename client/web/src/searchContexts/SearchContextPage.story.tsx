@@ -4,6 +4,7 @@ import React from 'react'
 import { NEVER, Observable, of, throwError } from 'rxjs'
 
 import { IRepository, ISearchContext, ISearchContextRepositoryRevisions } from '@sourcegraph/shared/src/graphql/schema'
+import { EMPTY_SETTINGS_CASCADE } from '@sourcegraph/shared/src/settings/settings'
 
 import { WebStory } from '../components/WebStory'
 
@@ -48,6 +49,14 @@ const mockContext: ISearchContext = {
     viewerCanManage: true,
 }
 
+const searchNotebookProps = {
+    isMacPlatform: true,
+    globbing: true,
+    streamSearch: () => NEVER,
+    fetchHighlightedFileLineRanges: () => NEVER,
+    settingsCascade: EMPTY_SETTINGS_CASCADE,
+}
+
 const fetchPublicContext = (): Observable<ISearchContext> => of(mockContext)
 
 const fetchPrivateContext = (): Observable<ISearchContext> =>
@@ -69,7 +78,13 @@ add(
     'public context',
     () => (
         <WebStory>
-            {webProps => <SearchContextPage {...webProps} fetchSearchContextBySpec={fetchPublicContext} />}
+            {webProps => (
+                <SearchContextPage
+                    {...webProps}
+                    {...searchNotebookProps}
+                    fetchSearchContextBySpec={fetchPublicContext}
+                />
+            )}
         </WebStory>
     ),
     {}
@@ -79,7 +94,13 @@ add(
     'autodefined context',
     () => (
         <WebStory>
-            {webProps => <SearchContextPage {...webProps} fetchSearchContextBySpec={fetchAutoDefinedContext} />}
+            {webProps => (
+                <SearchContextPage
+                    {...webProps}
+                    {...searchNotebookProps}
+                    fetchSearchContextBySpec={fetchAutoDefinedContext}
+                />
+            )}
         </WebStory>
     ),
     {}
@@ -89,7 +110,13 @@ add(
     'private context',
     () => (
         <WebStory>
-            {webProps => <SearchContextPage {...webProps} fetchSearchContextBySpec={fetchPrivateContext} />}
+            {webProps => (
+                <SearchContextPage
+                    {...webProps}
+                    {...searchNotebookProps}
+                    fetchSearchContextBySpec={fetchPrivateContext}
+                />
+            )}
         </WebStory>
     ),
     {}
@@ -97,7 +124,13 @@ add(
 
 add(
     'loading',
-    () => <WebStory>{webProps => <SearchContextPage {...webProps} fetchSearchContextBySpec={() => NEVER} />}</WebStory>,
+    () => (
+        <WebStory>
+            {webProps => (
+                <SearchContextPage {...webProps} {...searchNotebookProps} fetchSearchContextBySpec={() => NEVER} />
+            )}
+        </WebStory>
+    ),
     {}
 )
 
@@ -108,6 +141,7 @@ add(
             {webProps => (
                 <SearchContextPage
                     {...webProps}
+                    {...searchNotebookProps}
                     fetchSearchContextBySpec={() => throwError(new Error('Failed to fetch search context'))}
                 />
             )}

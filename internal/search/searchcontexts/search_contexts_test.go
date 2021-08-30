@@ -439,9 +439,9 @@ func TestCreatingSearchContexts(t *testing.T) {
 		},
 		{
 			name:          "cannot create search context with description too long",
-			searchContext: &types.SearchContext{Name: "ctx", Description: strings.Repeat("x", 1025)},
+			searchContext: &types.SearchContext{Name: "ctx", Description: strings.Repeat("x", 10001)},
 			userID:        user1.ID,
-			wantErr:       "search context description exceeds maximum allowed length (1024)",
+			wantErr:       "search context description exceeds maximum allowed length (10000)",
 		},
 		{
 			name:          "cannot create search context if it already exists",
@@ -536,8 +536,8 @@ func TestUpdatingSearchContexts(t *testing.T) {
 		},
 		{
 			name:    "cannot update search context with description too long",
-			update:  set(scs[2], func(sc *types.SearchContext) { sc.Description = strings.Repeat("x", 1025) }),
-			wantErr: "search context description exceeds maximum allowed length (1024)",
+			update:  set(scs[2], func(sc *types.SearchContext) { sc.Description = strings.Repeat("x", 10001) }),
+			wantErr: "search context description exceeds maximum allowed length (10000)",
 		},
 		{
 			name:   "cannot update search context with revisions too long",

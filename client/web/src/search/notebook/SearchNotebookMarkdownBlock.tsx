@@ -31,6 +31,7 @@ export const SearchNotebookMarkdownBlock: React.FunctionComponent<SearchNotebook
     isLightTheme,
     isMacPlatform,
     isReadOnly,
+    collapseMenu,
     onRunBlock,
     onSelectBlock,
     ...props
@@ -110,7 +111,9 @@ export const SearchNotebookMarkdownBlock: React.FunctionComponent<SearchNotebook
         return action.concat(commonMenuActions)
     }, [isEditing, modifierKeyLabel, runBlock, onEnterBlock, commonMenuActions])
 
-    const blockMenu = isSelected && !isReadOnly && <SearchNotebookBlockMenu id={id} actions={menuActions} />
+    const blockMenu = isSelected && !isReadOnly && (
+        <SearchNotebookBlockMenu id={id} actions={menuActions} collapseMenu={collapseMenu} />
+    )
 
     if (!isEditing) {
         return (

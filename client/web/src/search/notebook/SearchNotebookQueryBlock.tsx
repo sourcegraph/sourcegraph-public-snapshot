@@ -52,6 +52,7 @@ export const SearchNotebookQueryBlock: React.FunctionComponent<SearchNotebookQue
     isOtherBlockSelected,
     isMacPlatform,
     sourcegraphSearchLanguageId,
+    collapseMenu,
     fetchHighlightedFileLineRanges,
     onRunBlock,
     onSelectBlock,
@@ -186,6 +187,7 @@ export const SearchNotebookQueryBlock: React.FunctionComponent<SearchNotebookQue
                     id={id}
                     mainAction={mainMenuAction}
                     actions={isSelected ? commonMenuActions : linkMenuActions}
+                    collapseMenu={collapseMenu}
                 />
             )}
         </div>

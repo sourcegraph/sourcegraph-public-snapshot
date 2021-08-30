@@ -34,7 +34,7 @@ import {
 } from './SearchContextOwnerDropdown'
 import { SearchContextRepositoriesFormArea } from './SearchContextRepositoriesFormArea'
 
-const MAX_DESCRIPTION_LENGTH = 1024
+const MAX_DESCRIPTION_LENGTH = 10000
 const MAX_NAME_LENGTH = 32
 const VALIDATE_NAME_REGEXP = /^[\w./-]+$/
 

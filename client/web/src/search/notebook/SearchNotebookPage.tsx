@@ -72,7 +72,14 @@ export const SearchNotebookPage: React.FunctionComponent<SearchNotebookPageProps
                     path={[{ text: 'Search Notebook' }]}
                 />
                 <hr className="mt-2 mb-1 mx-3" />
-                <SearchNotebook {...props} blocks={blocks} onSerializeBlocks={onSerializeBlocks} />
+                <div className={styles.notebookWrapper}>
+                    <SearchNotebook
+                        {...props}
+                        blocks={blocks}
+                        onSerializeBlocks={onSerializeBlocks}
+                        collapseMenu={false}
+                    />
+                </div>
             </Page>
         </div>
     )

@@ -1,3 +1,4 @@
+import classNames from 'classnames'
 import * as Monaco from 'monaco-editor'
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
 
@@ -23,6 +24,7 @@ export interface SearchNotebookProps
         ThemeProps,
         TelemetryProps,
         Omit<StreamingSearchResultsListProps, 'location' | 'allExpanded'> {
+    collapseMenu: boolean
     globbing: boolean
     isMacPlatform: boolean
     isReadOnly?: boolean
@@ -220,7 +222,7 @@ export const SearchNotebook: React.FunctionComponent<SearchNotebookProps> = ({
     }
 
     return (
-        <div className={styles.searchNotebook}>
+        <div className={classNames(styles.searchNotebook, props.collapseMenu && 'collapse-menu')}>
             {blocks.map((block, blockIndex) => (
                 <div key={block.id}>
                     {!isReadOnly ? (

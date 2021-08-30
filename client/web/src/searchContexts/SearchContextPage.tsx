@@ -1,6 +1,6 @@
 import classNames from 'classnames'
 import ChevronLeftIcon from 'mdi-react/ChevronLeftIcon'
-import React from 'react'
+import React, { useMemo } from 'react'
 import { RouteComponentProps } from 'react-router'
 import { catchError, startWith } from 'rxjs/operators'
 
@@ -17,12 +17,16 @@ import { Page } from '../components/Page'
 import { PageTitle } from '../components/PageTitle'
 import { Timestamp } from '../components/time/Timestamp'
 import { SearchContextProps } from '../search'
+import { convertMarkdownToBlocks } from '../search/notebook/convertMarkdownToBlocks'
+import { RenderedSearchNotebookMarkdown } from '../search/notebook/RenderedSearchNotebookMarkdown'
+import { SearchNotebookProps } from '../search/notebook/SearchNotebook'
 
 import styles from './SearchContextPage.module.scss'
 
 export interface SearchContextPageProps
     extends Pick<RouteComponentProps<{ spec: Scalars['ID'] }>, 'match'>,
-        Pick<SearchContextProps, 'fetchSearchContextBySpec'> {}
+        Pick<SearchContextProps, 'fetchSearchContextBySpec'>,
+        Omit<SearchNotebookProps, 'onSerializeBlocks' | 'blocks' | 'collapseMenu'> {}
 
 export const SearchContextPage: React.FunctionComponent<SearchContextPageProps> = props => {
     const LOADING = 'loading' as const
@@ -40,10 +44,18 @@ export const SearchContextPage: React.FunctionComponent<SearchContextPageProps> 
         )
     )
 
+    const useSearchNotebookDescription = useMemo(() => {
+        if (!searchContextOrError || isErrorLike(searchContextOrError) || searchContextOrError === LOADING) {
+            return false
+        }
+        const blocks = convertMarkdownToBlocks(searchContextOrError.description)
+        return blocks.length > 1
+    }, [searchContextOrError])
+
     return (
         <div className="w-100">
             <Page>
-                <div className="container col-8">
+                <div className="container col-10">
                     {searchContextOrError === LOADING && (
                         <div className="d-flex justify-content-center">
                             <LoadingSpinner />
@@ -105,7 +117,21 @@ export const SearchContextPage: React.FunctionComponent<SearchContextPageProps> 
                                 </div>
                             )}
                             <div className="my-2">
-                                <Markdown dangerousInnerHTML={renderMarkdown(searchContextOrError.description)} />
+                                {useSearchNotebookDescription ? (
+                                    <div className="card px-3 pb-3">
+                                        <RenderedSearchNotebookMarkdown
+                                            {...props}
+                                            markdown={searchContextOrError.description}
+                                            collapseMenu={true}
+                                        />
+                                    </div>
+                                ) : (
+                                    <div className="card p-3">
+                                        <Markdown
+                                            dangerousInnerHTML={renderMarkdown(searchContextOrError.description)}
+                                        />
+                                    </div>
+                                )}
                             </div>
                             {!searchContextOrError.autoDefined && (
                                 <>

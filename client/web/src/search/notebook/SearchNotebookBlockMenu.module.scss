@@ -1,5 +1,14 @@
 @import 'wildcard/src/global-styles/breakpoints';
 
+@mixin collapsed-menu {
+    width: 2rem;
+}
+
+@mixin hide-on-small-screen {
+    visibility: hidden;
+    display: none;
+}
+
 .block-menu {
     position: absolute;
     margin-left: 0.5rem;
@@ -7,7 +16,11 @@
     width: 12rem;
     // Collapse menu to show just icons on small screens
     @media (--md-breakpoint-down) {
-        width: 2rem;
+        @include collapsed-menu;
+    }
+
+    &:global(.collapse-menu) {
+        @include collapsed-menu;
     }
 
     left: 100%;
@@ -33,7 +46,10 @@
     visibility: visible;
 
     @media (--md-breakpoint-down) {
-        visibility: hidden;
-        display: none;
+        @include hide-on-small-screen;
+    }
+
+    &:global(.collapse-menu) {
+        @include hide-on-small-screen;
     }
 }

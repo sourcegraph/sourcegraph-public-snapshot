@@ -22,7 +22,7 @@ const (
 	GlobalSearchContextName           = "global"
 	searchContextSpecPrefix           = "@"
 	maxSearchContextNameLength        = 32
-	maxSearchContextDescriptionLength = 1024
+	maxSearchContextDescriptionLength = 10000
 	maxRevisionLength                 = 255
 )
 

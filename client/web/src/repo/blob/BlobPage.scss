@@ -19,4 +19,15 @@
         margin-bottom: 0;
         border: none;
     }
+
+    &__search-notebook {
+        background: var(--color-bg-1);
+        overflow: auto;
+        flex: 1;
+
+        &-wrapper {
+            padding: 1rem;
+            max-width: 80rem;
+        }
+    }
 }

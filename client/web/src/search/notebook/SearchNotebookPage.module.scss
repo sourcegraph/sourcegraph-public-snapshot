@@ -2,3 +2,9 @@
     background: var(--color-bg-1);
     overflow: auto;
 }
+
+.notebook-wrapper {
+    // Allows scrolling past last blocks in the notebook
+    // for easier editing.
+    margin-bottom: 30rem;
+}

@@ -34,6 +34,7 @@ add('default', () => (
                 onSerializeBlocks={() => {}}
                 blocks={blocks}
                 settingsCascade={EMPTY_SETTINGS_CASCADE}
+                collapseMenu={false}
             />
         )}
     </WebStory>
@@ -53,6 +54,7 @@ add('default read-only', () => (
                 onSerializeBlocks={() => {}}
                 blocks={blocks}
                 settingsCascade={EMPTY_SETTINGS_CASCADE}
+                collapseMenu={false}
             />
         )}
     </WebStory>

@@ -23,6 +23,10 @@ import { BreadcrumbSetters } from '../../components/Breadcrumbs'
 import { HeroPage } from '../../components/HeroPage'
 import { PageTitle } from '../../components/PageTitle'
 import { SearchStreamingProps } from '../../search'
+import {
+    RenderedSearchNotebookMarkdown,
+    SEARCH_NOTEBOOK_FILE_EXTENSION,
+} from '../../search/notebook/RenderedSearchNotebookMarkdown'
 import { StreamingSearchResultsListProps } from '../../search/results/StreamingSearchResultsList'
 import { toTreeURL } from '../../util/url'
 import { FilePathBreadcrumbs } from '../FilePathBreadcrumbs'
@@ -38,7 +42,6 @@ import { Blob, BlobInfo } from './Blob'
 import { GoToRawAction } from './GoToRawAction'
 import { useBlobPanelViews } from './panel/BlobPanel'
 import { RenderedFile } from './RenderedFile'
-import { RenderedSearchNotebookMarkdown, SEARCH_NOTEBOOK_FILE_EXTENSION } from './RenderedSearchNotebookMarkdown'
 
 interface Props
     extends AbsoluteRepoFile,
@@ -295,7 +298,15 @@ export const BlobPage: React.FunctionComponent<Props> = props => {
                 </RepoHeaderContributionPortal>
             )}
             {isSearchNotebook && renderMode === 'rendered' && (
-                <RenderedSearchNotebookMarkdown {...props} markdown={blobInfoOrError.content} />
+                <div className="blob-page__search-notebook">
+                    <div className="blob-page__search-notebook-wrapper">
+                        <RenderedSearchNotebookMarkdown
+                            {...props}
+                            markdown={blobInfoOrError.content}
+                            collapseMenu={false}
+                        />
+                    </div>
+                </div>
             )}
             {!isSearchNotebook && blobInfoOrError.richHTML && renderMode === 'rendered' && (
                 <RenderedFile dangerousInnerHTML={blobInfoOrError.richHTML} location={props.location} />

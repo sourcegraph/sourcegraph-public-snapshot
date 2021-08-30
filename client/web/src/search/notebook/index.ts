@@ -39,6 +39,7 @@ export interface BlockProps {
     isReadOnly: boolean
     isSelected: boolean
     isOtherBlockSelected: boolean
+    collapseMenu: boolean
     onRunBlock(id: string): void
     onDeleteBlock(id: string): void
     onBlockInputChange(id: string, value: string): void
