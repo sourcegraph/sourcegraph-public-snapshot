@@ -8,10 +8,9 @@ import { Settings } from '../../../../../schema/settings.schema'
 import { FORM_ERROR, SubmissionErrors } from '../../../../components/form/hooks/useForm'
 import { Insight, isVirtualDashboard } from '../../../../core/types'
 import { useDashboard } from '../../../../hooks/use-dashboard'
-import { usePersistEditOperations } from '../../../../hooks/use-persist-edit-operations'
 import { useQueryParameters } from '../../../../hooks/use-query-parameters'
 
-import { getUpdatedSubjectSettings } from './utils'
+import { useUpdateSettingsSubject } from './use-update-settings-subjects/use-update-settings-subjects'
 
 export interface UseHandleSubmitProps extends PlatformContextProps<'updateSettings'>, SettingsCascadeProps<Settings> {
     originalInsight: Insight | null
@@ -23,15 +22,16 @@ export interface useHandleSubmitOutput {
 }
 
 /**
- * Returns submit and cancel handlers for the edit submit page.
+ * Returns submit and cancel handlers for the insight edit submit page.
  */
-export function usePageHandlers(props: UseHandleSubmitProps): useHandleSubmitOutput {
+export function useEditPageHandlers(props: UseHandleSubmitProps): useHandleSubmitOutput {
     const { originalInsight, platformContext, settingsCascade } = props
+
+    const { updateSettingSubjects } = useUpdateSettingsSubject({ platformContext })
     const history = useHistory()
+
     const { dashboardId } = useQueryParameters(['dashboardId'])
     const dashboard = useDashboard({ settingsCascade, dashboardId })
-
-    const { persist } = usePersistEditOperations({ platformContext })
 
     const handleSubmit = async (newInsight: Insight): Promise<SubmissionErrors> => {
         if (!originalInsight) {
@@ -39,13 +39,11 @@ export function usePageHandlers(props: UseHandleSubmitProps): useHandleSubmitOut
         }
 
         try {
-            const editOperations = getUpdatedSubjectSettings({
+            await updateSettingSubjects({
                 oldInsight: originalInsight,
                 newInsight,
                 settingsCascade,
             })
-
-            await persist(editOperations)
 
             if (!dashboard || isVirtualDashboard(dashboard)) {
                 // Navigate user to the dashboard page with new created dashboard
