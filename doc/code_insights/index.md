@@ -16,3 +16,5 @@ Work-in-progress table of contents:
 - [How-tos](how-tos/index.md)
     - [Creating a dashboard of code insights](how-tos/creating_a_custom_dashboard_of_code_insights.md)
     - [Filtering an insight](how-tos/filtering_an_insight.md)
+- [References](references/index.md)
+    - [Common reasons code insights may not match search results](references/common_reasons_code_insights_may_not_match_search_results.md)
