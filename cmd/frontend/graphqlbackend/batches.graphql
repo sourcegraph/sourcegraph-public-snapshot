@@ -2234,13 +2234,7 @@ extend type Query {
         batchSpec: String!
         allowIgnored: Boolean = false
         allowUnsupported: Boolean = false
-    ): BatchSpecMatchingRepositoryConnection!
-}
-
-type BatchSpecMatchingRepositoryConnection {
-    totalCount: Int!
-    pageInfo: PageInfo!
-    nodes: [BatchSpecMatchingRepository!]!
+    ): [BatchSpecMatchingRepository!]!
 }
 
 type BatchSpecMatchingRepository {

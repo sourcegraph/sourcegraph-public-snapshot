@@ -13,7 +13,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/enterprise"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/search"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/service"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
@@ -1504,7 +1503,7 @@ func (r *Resolver) CancelBatchSpecExecution(ctx context.Context, args *graphqlba
 	return r.batchSpecExecutionByID(ctx, marshalBatchSpecExecutionRandID(exec.RandID))
 }
 
-func (r *Resolver) ResolveRepositoriesForBatchSpec(ctx context.Context, args *graphqlbackend.ResolveRepositoriesForBatchSpecArgs) (_ graphqlbackend.BatchSpecMatchingRepositoryConnectionResolver, err error) {
+func (r *Resolver) ResolveRepositoriesForBatchSpec(ctx context.Context, args *graphqlbackend.ResolveRepositoriesForBatchSpecArgs) (_ []graphqlbackend.BatchSpecMatchingRepositoryResolver, err error) {
 	tr, ctx := trace.New(ctx, "Resolver.ResolveRepositoriesForBatchSpec", fmt.Sprintf("AllowIgnored: %t AllowUnsupported: %t", args.AllowIgnored, args.AllowUnsupported))
 	defer func() {
 		tr.SetError(err)
@@ -1527,25 +1526,12 @@ func (r *Resolver) ResolveRepositoriesForBatchSpec(ctx context.Context, args *gr
 	if err != nil {
 		return nil, err
 	}
-	return &batchSpecMatchingRepositoryConnectionResolver{nodes: results}, nil
-}
 
-type batchSpecMatchingRepositoryConnectionResolver struct {
-	nodes []*service.RepoRevision
-}
-
-func (r *batchSpecMatchingRepositoryConnectionResolver) Nodes(ctx context.Context) ([]graphqlbackend.BatchSpecMatchingRepositoryResolver, error) {
-	resolvers := make([]graphqlbackend.BatchSpecMatchingRepositoryResolver, 0, len(r.nodes))
-	for _, node := range r.nodes {
+	resolvers := make([]graphqlbackend.BatchSpecMatchingRepositoryResolver, 0, len(results))
+	for _, node := range results {
 		resolvers = append(resolvers, &batchSpecMatchingRepositoryResolver{node})
 	}
 	return resolvers, nil
-}
-func (r *batchSpecMatchingRepositoryConnectionResolver) TotalCount(ctx context.Context) (int32, error) {
-	return int32(len(r.nodes)), nil
-}
-func (r *batchSpecMatchingRepositoryConnectionResolver) PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error) {
-	return graphqlutil.HasNextPage(false), nil
 }
 
 type batchSpecMatchingRepositoryResolver struct {
