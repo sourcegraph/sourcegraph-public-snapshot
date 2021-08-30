@@ -5,32 +5,45 @@ import { dataOrThrowErrors, gql } from '@sourcegraph/shared/src/graphql/graphql'
 
 import { requestGraphQL } from '../../../../backend/graphql'
 import {
-    BatchSpecMatchingRepositoryFields,
-    ResolveRepositoriesForBatchSpecResult,
-    ResolveRepositoriesForBatchSpecVariables,
+    BatchSpecWorkspaceFields,
+    ResolveWorkspacesForBatchSpecResult,
+    ResolveWorkspacesForBatchSpecVariables,
 } from '../../../../graphql-operations'
 
-export function resolveRepositoriesForBatchSpec(spec: string): Observable<BatchSpecMatchingRepositoryFields[]> {
-    return requestGraphQL<ResolveRepositoriesForBatchSpecResult, ResolveRepositoriesForBatchSpecVariables>(
+export function resolveWorkspacesForBatchSpec(spec: string): Observable<BatchSpecWorkspaceFields[]> {
+    return requestGraphQL<ResolveWorkspacesForBatchSpecResult, ResolveWorkspacesForBatchSpecVariables>(
         gql`
-            query ResolveRepositoriesForBatchSpec($spec: String!) {
-                resolveRepositoriesForBatchSpec(batchSpec: $spec) {
-                    ...BatchSpecMatchingRepositoryFields
+            query ResolveWorkspacesForBatchSpec($spec: String!) {
+                resolveWorkspacesForBatchSpec(batchSpec: $spec) {
+                    ...BatchSpecWorkspaceFields
                 }
             }
 
-            fragment BatchSpecMatchingRepositoryFields on BatchSpecMatchingRepository {
+            fragment BatchSpecWorkspaceFields on BatchSpecWorkspace {
                 repository {
                     id
                     name
                     url
                 }
+                branch {
+                    id
+                    abbrevName
+                    displayName
+                    target {
+                        oid
+                    }
+                }
                 path
+                onlyFetchWorkspace
+                steps {
+                    command
+                    container
+                }
             }
         `,
         { spec }
     ).pipe(
         map(dataOrThrowErrors),
-        map(result => result.resolveRepositoriesForBatchSpec)
+        map(result => result.resolveWorkspacesForBatchSpec)
     )
 }

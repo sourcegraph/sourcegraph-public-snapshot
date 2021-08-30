@@ -11,6 +11,7 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/google/go-cmp/cmp/cmpopts"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
@@ -65,7 +66,7 @@ func TestSetDefaultQuerySelect(t *testing.T) {
 	}
 }
 
-func TestService_ResolveRepositoriesForBatchSpec(t *testing.T) {
+func TestService_ResolveWorkspacesForBatchSpec(t *testing.T) {
 	ctx := context.Background()
 
 	db := dbtest.NewDB(t, "")
@@ -87,7 +88,7 @@ func TestService_ResolveRepositoriesForBatchSpec(t *testing.T) {
 	}
 	mockDefaultBranches(t, defaultBranches)
 
-	defaultOpts := ResolveRepositoriesForBatchSpecOpts{
+	defaultOpts := ResolveWorkspacesForBatchSpecOpts{
 		AllowIgnored:     false,
 		AllowUnsupported: false,
 	}
@@ -298,14 +299,14 @@ func TestService_ResolveRepositoriesForBatchSpec(t *testing.T) {
 	})
 }
 
-func resolveRepoRevsAndCompare(t *testing.T, s *store.Store, opts ResolveRepositoriesForBatchSpecOpts, matches []streamhttp.EventMatch, spec *batcheslib.BatchSpec, want []*RepoRevision, wantIgnored, wantUnsupported []api.RepoID) {
+func resolveRepoRevsAndCompare(t *testing.T, s *store.Store, opts ResolveWorkspacesForBatchSpecOpts, matches []streamhttp.EventMatch, spec *batcheslib.BatchSpec, want []*RepoRevision, wantIgnored, wantUnsupported []api.RepoID) {
 	t.Helper()
 
 	wr := &workspaceResolver{
 		store:               s,
 		frontendInternalURL: newStreamSearchTestServer(t, matches),
 	}
-	have, err := wr.ResolveRepositoriesForBatchSpec(context.Background(), spec, opts)
+	have, err := wr.ResolveWorkspacesForBatchSpec(context.Background(), spec, opts)
 	if len(wantIgnored) > 0 {
 		set, ok := err.(IgnoredRepoSet)
 		if !ok {
@@ -332,15 +333,9 @@ func resolveRepoRevsAndCompare(t *testing.T, s *store.Store, opts ResolveReposit
 		t.Fatalf("unexpected error: %s", err)
 	}
 
-	sortRepoRevs(want)
-	sortRepoRevs(have)
 	if diff := cmp.Diff(want, have); diff != "" {
 		t.Fatalf("returned repoRevisions wrong. (-want +got):\n%s", diff)
 	}
-}
-
-func sortRepoRevs(revs []*RepoRevision) {
-	sort.Slice(revs, func(i, j int) bool { return revs[i].Repo.ID < revs[j].Repo.ID })
 }
 
 func newStreamSearchTestServer(t *testing.T, matches []streamhttp.EventMatch) string {
@@ -404,4 +399,271 @@ func mockResolveRevision(t *testing.T, branches map[string]api.CommitID) {
 		return "", fmt.Errorf("unknown spec: %s", spec)
 	}
 	t.Cleanup(func() { git.Mocks.ResolveRevision = nil })
+}
+
+func TestFindWorkspaces(t *testing.T) {
+	repoRevs := []*RepoRevision{
+		{Repo: &types.Repo{ID: 1, Name: "github.com/sourcegraph/automation-testing"}},
+		{Repo: &types.Repo{ID: 2, Name: "github.com/sourcegraph/sourcegraph"}},
+		{Repo: &types.Repo{ID: 3, Name: "bitbucket.sgdev.org/SOUR/automation-testing"}},
+	}
+	steps := []batcheslib.Step{{Run: "echo 1"}}
+
+	type finderResults map[repoRevKey][]string
+
+	tests := map[string]struct {
+		spec          *batcheslib.BatchSpec
+		finderResults finderResults
+
+		// workspaces in which repo/path they are executed
+		wantWorkspaces []*RepoWorkspace
+	}{
+		"no workspace configuration": {
+			spec:          &batcheslib.BatchSpec{Steps: steps},
+			finderResults: finderResults{},
+			wantWorkspaces: []*RepoWorkspace{
+				{RepoRevision: repoRevs[0], Steps: steps, Path: ""},
+				{RepoRevision: repoRevs[1], Steps: steps, Path: ""},
+				{RepoRevision: repoRevs[2], Steps: steps, Path: ""},
+			},
+		},
+
+		"workspace configuration matching no repos": {
+			spec: &batcheslib.BatchSpec{
+				Steps: steps,
+				Workspaces: []batcheslib.WorkspaceConfiguration{
+					{In: "this-does-not-match", RootAtLocationOf: "package.json"},
+				},
+			},
+			finderResults: finderResults{},
+			wantWorkspaces: []*RepoWorkspace{
+				{RepoRevision: repoRevs[0], Steps: steps, Path: ""},
+				{RepoRevision: repoRevs[1], Steps: steps, Path: ""},
+				{RepoRevision: repoRevs[2], Steps: steps, Path: ""},
+			},
+		},
+
+		"workspace configuration matching 2 repos with no results": {
+			spec: &batcheslib.BatchSpec{
+				Steps: steps,
+				Workspaces: []batcheslib.WorkspaceConfiguration{
+					{In: "*automation-testing", RootAtLocationOf: "package.json"},
+				},
+			},
+			finderResults: finderResults{
+				repoRevs[0].Key(): []string{},
+				repoRevs[2].Key(): []string{},
+			},
+			wantWorkspaces: []*RepoWorkspace{
+				{RepoRevision: repoRevs[1], Steps: steps, Path: ""},
+			},
+		},
+
+		"workspace configuration matching 2 repos with 3 results each": {
+			spec: &batcheslib.BatchSpec{
+				Steps: steps,
+				Workspaces: []batcheslib.WorkspaceConfiguration{
+					{In: "*automation-testing", RootAtLocationOf: "package.json"},
+				},
+			},
+			finderResults: finderResults{
+				repoRevs[0].Key(): {"a/b", "a/b/c", "d/e/f"},
+				repoRevs[2].Key(): {"a/b", "a/b/c", "d/e/f"},
+			},
+			wantWorkspaces: []*RepoWorkspace{
+				{RepoRevision: repoRevs[0], Steps: steps, Path: "a/b"},
+				{RepoRevision: repoRevs[0], Steps: steps, Path: "a/b/c"},
+				{RepoRevision: repoRevs[0], Steps: steps, Path: "d/e/f"},
+				{RepoRevision: repoRevs[1], Steps: steps, Path: ""},
+				{RepoRevision: repoRevs[2], Steps: steps, Path: "a/b"},
+				{RepoRevision: repoRevs[2], Steps: steps, Path: "a/b/c"},
+				{RepoRevision: repoRevs[2], Steps: steps, Path: "d/e/f"},
+			},
+		},
+
+		"workspace configuration matches repo with OnlyFetchWorkspace": {
+			spec: &batcheslib.BatchSpec{
+				Steps: steps,
+				Workspaces: []batcheslib.WorkspaceConfiguration{
+					{
+						OnlyFetchWorkspace: true,
+						In:                 "*automation-testing",
+						RootAtLocationOf:   "package.json",
+					},
+				},
+			},
+			finderResults: finderResults{
+				repoRevs[0].Key(): {"a/b", "a/b/c", "d/e/f"},
+				repoRevs[2].Key(): {"a/b", "a/b/c", "d/e/f"},
+			},
+			wantWorkspaces: []*RepoWorkspace{
+				{RepoRevision: repoRevs[0], Steps: steps, Path: "a/b", OnlyFetchWorkspace: true},
+				{RepoRevision: repoRevs[0], Steps: steps, Path: "a/b/c", OnlyFetchWorkspace: true},
+				{RepoRevision: repoRevs[0], Steps: steps, Path: "d/e/f", OnlyFetchWorkspace: true},
+				{RepoRevision: repoRevs[1], Steps: steps, Path: ""},
+				{RepoRevision: repoRevs[2], Steps: steps, Path: "a/b", OnlyFetchWorkspace: true},
+				{RepoRevision: repoRevs[2], Steps: steps, Path: "a/b/c", OnlyFetchWorkspace: true},
+				{RepoRevision: repoRevs[2], Steps: steps, Path: "d/e/f", OnlyFetchWorkspace: true},
+			},
+		},
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			finder := &mockDirectoryFinder{results: tt.finderResults}
+			workspaces, err := findWorkspaces(context.Background(), tt.spec, finder, repoRevs)
+			if err != nil {
+				t.Fatalf("unexpected err: %s", err)
+			}
+
+			// Sort by ID, easier than by name for tests.
+			sort.Slice(workspaces, func(i, j int) bool {
+				if workspaces[i].Repo.ID == workspaces[j].Repo.ID {
+					return workspaces[i].Path < workspaces[j].Path
+				}
+				return workspaces[i].Repo.ID < workspaces[j].Repo.ID
+			})
+
+			if diff := cmp.Diff(tt.wantWorkspaces, workspaces); diff != "" {
+				t.Errorf("mismatch (-want +got):\n%s", diff)
+			}
+		})
+	}
+}
+
+type mockDirectoryFinder struct {
+	results map[repoRevKey][]string
+}
+
+func (m *mockDirectoryFinder) FindDirectoriesInRepos(ctx context.Context, fileName string, repos ...*RepoRevision) (map[repoRevKey][]string, error) {
+	return m.results, nil
+}
+
+func TestStepsForRepoRevision(t *testing.T) {
+	tests := map[string]struct {
+		spec *batcheslib.BatchSpec
+
+		wantSteps []batcheslib.Step
+	}{
+		"no if": {
+			spec: &batcheslib.BatchSpec{
+				Steps: []batcheslib.Step{
+					{Run: "echo 1"},
+				},
+			},
+			wantSteps: []batcheslib.Step{
+				{Run: "echo 1"},
+			},
+		},
+
+		"if has static true value": {
+			spec: &batcheslib.BatchSpec{
+				Steps: []batcheslib.Step{
+					{Run: "echo 1", If: "true"},
+				},
+			},
+			wantSteps: []batcheslib.Step{
+				{Run: "echo 1", If: "true"},
+			},
+		},
+
+		"one of many steps has if with static true value": {
+			spec: &batcheslib.BatchSpec{
+				Steps: []batcheslib.Step{
+					{Run: "echo 1"},
+					{Run: "echo 2", If: "true"},
+					{Run: "echo 3"},
+				},
+			},
+			wantSteps: []batcheslib.Step{
+				{Run: "echo 1"},
+				{Run: "echo 2", If: "true"},
+				{Run: "echo 3"},
+			},
+		},
+
+		"if has static non-true value": {
+			spec: &batcheslib.BatchSpec{
+				Steps: []batcheslib.Step{
+					{Run: "echo 1", If: "this is not true"},
+				},
+			},
+			wantSteps: []batcheslib.Step{},
+		},
+
+		"one of many steps has if with static non-true value": {
+			spec: &batcheslib.BatchSpec{
+				Steps: []batcheslib.Step{
+					{Run: "echo 1"},
+					{Run: "echo 2", If: "every type system needs generics"},
+					{Run: "echo 3"},
+				},
+			},
+			wantSteps: []batcheslib.Step{
+				{Run: "echo 1"},
+				{Run: "echo 3"},
+			},
+		},
+
+		"if expression that can be partially evaluated to true": {
+			spec: &batcheslib.BatchSpec{
+				Steps: []batcheslib.Step{
+					{Run: "echo 1", If: `${{ matches repository.name "github.com/sourcegraph/src*" }}`},
+				},
+			},
+			wantSteps: []batcheslib.Step{
+				{Run: "echo 1", If: `${{ matches repository.name "github.com/sourcegraph/src*" }}`},
+			},
+		},
+
+		"if expression that can be partially evaluated to false": {
+			spec: &batcheslib.BatchSpec{
+				Steps: []batcheslib.Step{
+					{Run: "echo 1", If: `${{ matches repository.name "horse" }}`},
+				},
+			},
+			wantSteps: []batcheslib.Step{},
+		},
+
+		"one of many steps has if expression that can be evaluated to true": {
+			spec: &batcheslib.BatchSpec{
+				Steps: []batcheslib.Step{
+					{Run: "echo 1", If: `${{ matches repository.name "horse" }}`},
+				},
+			},
+			wantSteps: []batcheslib.Step{},
+		},
+
+		"if expression that can NOT be partially evaluated": {
+			spec: &batcheslib.BatchSpec{
+				Steps: []batcheslib.Step{
+					{Run: "echo 1", If: `${{ eq outputs.value "foobar" }}`},
+				},
+			},
+			wantSteps: []batcheslib.Step{
+				{Run: "echo 1", If: `${{ eq outputs.value "foobar" }}`},
+			},
+		},
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			haveSteps, err := stepsForRepoRevision(tt.spec, &RepoRevision{
+				Repo: &types.Repo{
+					ID:   1,
+					Name: "github.com/sourcegraph/src-cli",
+				},
+				Branch: "main",
+				Commit: "d34db33f",
+			})
+			if err != nil {
+				t.Fatalf("unexpected err: %s", err)
+			}
+
+			opts := cmpopts.IgnoreUnexported(batcheslib.Step{})
+			if diff := cmp.Diff(tt.wantSteps, haveSteps, opts); diff != "" {
+				t.Errorf("mismatch (-want +got):\n%s", diff)
+			}
+		})
+	}
 }
