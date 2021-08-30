@@ -3,6 +3,7 @@ package github
 import (
 	"context"
 	"fmt"
+	"log"
 	"net/url"
 	"strconv"
 	"strings"
@@ -174,11 +175,8 @@ func (p *Provider) fetchUserPermsByToken(ctx context.Context, accountID extsvc.A
 
 	// Get repos from groups, cached if possible.
 	for _, group := range groups {
-		// If repositories is empty, perform a full sync
-		if len(group.Repositories) > 0 {
-			// If a valid cached value was found, use it
-			addRepoToUserPerms(group.Repositories...)
-			// If this user's membership in this group is not noted yet, add it
+		// If this is a partial cache, add self to group
+		if len(group.Users) > 0 {
 			hasUser := false
 			for _, user := range group.Users {
 				if user == accountID {
@@ -186,18 +184,20 @@ func (p *Provider) fetchUserPermsByToken(ctx context.Context, accountID extsvc.A
 					break
 				}
 			}
-			// Only insert if this is a partially updated cache
-			if len(group.Users) > 0 && !hasUser {
+			if !hasUser {
 				group.Users = append(group.Users, accountID)
 				p.groupsCache.setGroup(group)
 			}
+		}
+
+		// If a valid cached value was found, use it and continue
+		if len(group.Repositories) > 0 {
+			addRepoToUserPerms(group.Repositories...)
 			continue
 		}
 
-		// Initialize group for a fresh sync
+		// Perform full sync
 		group.Repositories = make([]extsvc.RepoID, 0, repoSetSize)
-
-		// Sync group
 		isOrg := group.Team == ""
 		hasNextPage = true
 		for page := 1; hasNextPage; page++ {
@@ -335,27 +335,29 @@ func (p *Provider) FetchRepoPerms(ctx context.Context, repo *extsvc.Repository, 
 	// Perform a fresh sync with groups that need a sync.
 	repoID := extsvc.RepoID(repo.ID)
 	for _, group := range groups {
-		// If users is empty, perform a full sync
-		if len(group.Users) > 0 {
-			// Just use cache if available and not invalidated
-			addUserToRepoPerms(group.Users...)
-			// If this repo's membership in this group is not noted yet, add it
+		log.Printf("%+v\n", group)
+		// If this is a partial cache, add self to group
+		if len(group.Repositories) > 0 {
 			hasRepo := false
-			for _, user := range group.Repositories {
-				if user == repoID {
+			for _, repo := range group.Repositories {
+				if repo == repoID {
 					hasRepo = true
 					break
 				}
 			}
-			// Only insert if this is a partially updated cache
-			if len(group.Repositories) > 0 && !hasRepo {
+			if !hasRepo {
 				group.Repositories = append(group.Repositories, repoID)
 				p.groupsCache.setGroup(group.cachedGroup)
 			}
+		}
+
+		// Just use cache if available and not invalidated and continue
+		if len(group.Users) > 0 {
+			addUserToRepoPerms(group.Users...)
 			continue
 		}
 
-		// Cache was invalidated or is not yet populated, perform a sync
+		// Perform full sync
 		hasNextPage := true
 		for page := 1; hasNextPage; page++ {
 			var members []*github.Collaborator
@@ -481,10 +483,10 @@ func (p *Provider) getRepoAffiliatedGroups(ctx context.Context, owner, name stri
 	if allOrgMembersCanRead {
 		// 🚨 SECURITY: Iff all members of this org can view this repo, indicate that all members should
 		// be sync'd.
-		syncGroup(org.Login, "", false)
+		syncGroup(owner, "", false)
 	} else {
 		// 🚨 SECURITY: Sync *only admins* of this org
-		syncGroup(org.Login, "", true)
+		syncGroup(owner, "", true)
 
 		// Also check for teams involved in repo, and indicate all groups should be sync'd.
 		hasNextPage := true
@@ -495,7 +497,7 @@ func (p *Provider) getRepoAffiliatedGroups(ctx context.Context, owner, name stri
 				return
 			}
 			for _, t := range teams {
-				syncGroup(org.Login, t.Slug, false)
+				syncGroup(owner, t.Slug, false)
 			}
 		}
 	}
