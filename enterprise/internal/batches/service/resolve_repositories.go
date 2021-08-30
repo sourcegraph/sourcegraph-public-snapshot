@@ -10,6 +10,7 @@ import (
 
 	"github.com/cockroachdb/errors"
 	"github.com/hashicorp/go-multierror"
+
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -37,7 +38,7 @@ func (s *Service) ResolveRepositoriesForBatchSpec(ctx context.Context, batchSpec
 		tr.Finish()
 	}()
 
-	wr := &workspaceResolver{frontendInternalURL: api.InternalClient.URL + "/.internal"}
+	wr := &workspaceResolver{store: s.store, frontendInternalURL: api.InternalClient.URL + "/.internal"}
 	return wr.ResolveRepositoriesForBatchSpec(ctx, batchSpec, opts)
 }
 
