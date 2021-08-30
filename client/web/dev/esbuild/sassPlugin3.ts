@@ -26,18 +26,6 @@ const resolveFile = (modulePath: string, directory: string): string => {
     } catch {}
     return p
 }
-const resolveCache = new Map()
-const cachedResolveFile = (modulePath: string, directory: string) => {
-    const key = `${modulePath}:${directory}`
-    const existing = resolveCache.get(key)
-    if (existing) {
-        return existing
-    }
-
-    const resolvedPath = resolveFile(modulePath, directory)
-    resolveCache.set(key, resolvedPath)
-    return resolvedPath
-}
 
 const temporaryDirectoryPath = fs.mkdtempSync(path.join(os.tmpdir(), 'esbuild-'))
 const cleanup = () => fs.rmdirSync(temporaryDirectoryPath, { recursive: true })
@@ -53,7 +41,7 @@ export const sassPlugin: esbuild.Plugin = {
 
         const modulesMap = new Map<string, any>()
         const modulesPlugin = postcssModules({
-            generateScopedName: '[name]__[local]___[hash:base64:5]',
+            generateScopedName: '[name]__[local]', // TODO(sqs): omit hash for local dev
             localsConvention: 'camelCase',
             getJSON: (cssPath: string, json: any) => modulesMap.set(cssPath, json),
         })
@@ -80,7 +68,7 @@ export const sassPlugin: esbuild.Plugin = {
                         .renderSync({
                             file: sourceFullPath,
                             data: fileContent,
-                            importer: url => ({ file: cachedResolveFile(url) }),
+                            importer: (url, directory) => ({ file: resolveFile(url, path.dirname(directory)) }),
                         })
                         .css.toString()
                     break
@@ -115,7 +103,7 @@ export const sassPlugin: esbuild.Plugin = {
         }
 
         build.onResolve({ filter: /\.scss$/, namespace: 'file' }, async args => {
-            const fullPath = cachedResolveFile(args.path, args.resolveDir)
+            const fullPath = resolveFile(args.path, args.resolveDir)
             const fileContent = await fs.promises.readFile(fullPath, 'utf8')
             const temporaryFilePath = await cachedCSSRender(fullPath, fileContent)
             const contents = await fs.promises.readFile(temporaryFilePath, 'utf8')
