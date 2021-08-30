@@ -14,7 +14,7 @@ deployed with a dedicated instance of Prometheus and Grafana.
 
 ## How to track a query
 
-Add the query to  [`config.yaml`](https://github.com/sourcegraph/sourcegraph/blob/main/internal/cmd/search-blitz/config.yaml).
+Add the query to [`config.yaml`](https://github.com/sourcegraph/sourcegraph/blob/main/internal/cmd/search-blitz/config.yaml).
 
 ## How to deploy
 
@@ -26,11 +26,13 @@ Add the query to  [`config.yaml`](https://github.com/sourcegraph/sourcegraph/blo
 3. Update the image tag in [deploy-sourcegraph-dot-com](https://github.com/sourcegraph/deploy-sourcegraph-dot-com/blob/release/configure/search-blitz/search-blitz.StatefulSet.yaml#L36)
 
 4. (Optional) Apply the new manifest
+
 ```
 kubectl apply -f ./configure/search-blitz
 ```
 
 ## How to access Search-Blitz's dedicated Grafana
+
 ```
 kubectl port-forward search-blitz-0 3000:3000 -n monitoring
 ```
