@@ -69,7 +69,7 @@ We currently recommend a default of `72` (hours, or 3 days) for the `groupsCache
 
 Caches can also be [manually invalidated](#permissions-caching) if necessary.
 
-> NOTE: The token associated with the external service must have `repo` and `org:read` scope in order to read the repo, orgs, and teams permissions and cache them - [learn more](../external_service/github.md#github-api-token-and-access).
+> NOTE: The token associated with the external service must have `repo` and `read:org` scope in order to read the repo, orgs, and teams permissions and cache them - [learn more](../external_service/github.md#github-api-token-and-access).
 
 <br />
 
