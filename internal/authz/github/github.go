@@ -448,10 +448,16 @@ func (p *Provider) getUserAffiliatedGroups(ctx context.Context, clientWithToken 
 	return groups, nil
 }
 
-func (p *Provider) getRepoAffiliatedGroups(ctx context.Context, owner, name string, opts authz.FetchPermsOptions) (groups []struct {
+type repoAffiliatedGroup struct {
 	cachedGroup
+	// Whether this affiliation is an admin-only affiliation rather than a group-wide
+	// affiliation - affects how a sync is conducted.
 	adminsOnly bool
-}, err error) {
+}
+
+// getUserAffiliatedGroups retrieves affiliated organizations and teams for the given client
+// with token. Returned groups are populated from cache if a valid value is available.
+func (p *Provider) getRepoAffiliatedGroups(ctx context.Context, owner, name string, opts authz.FetchPermsOptions) (groups []repoAffiliatedGroup, err error) {
 	// Check if repo belongs in an org
 	org, err := p.client.GetOrganization(ctx, owner)
 	if err != nil {
@@ -470,10 +476,7 @@ func (p *Provider) getRepoAffiliatedGroups(ctx context.Context, owner, name stri
 			// invalidate this cache
 			p.groupsCache.invalidateGroup(&group)
 		}
-		groups = append(groups, struct {
-			cachedGroup
-			adminsOnly bool
-		}{cachedGroup: group, adminsOnly: adminsOnly})
+		groups = append(groups, repoAffiliatedGroup{cachedGroup: group, adminsOnly: adminsOnly})
 	}
 
 	allOrgMembersCanRead := canViewOrgRepos(&github.OrgDetailsAndMembership{OrgDetails: org})
