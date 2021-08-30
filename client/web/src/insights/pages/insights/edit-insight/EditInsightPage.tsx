@@ -19,7 +19,7 @@ import { findInsightById } from '../../../hooks/use-insight/use-insight'
 import { EditLangStatsInsight } from './components/EditLangStatsInsight'
 import { EditSearchBasedInsight } from './components/EditSearchInsight'
 import styles from './EditInsightPage.module.scss'
-import { usePageHandlers } from './hooks/use-page-handlers'
+import { useEditPageHandlers } from './hooks/use-edit-page-handlers'
 
 export interface EditInsightPageProps extends SettingsCascadeProps, PlatformContextProps<'updateSettings'> {
     /** Normalized insight id <type insight>.insight.<name of insight> */
@@ -43,7 +43,7 @@ export const EditInsightPage: React.FunctionComponent<EditInsightPageProps> = pr
     // (if user changed visibility we remove insight first from previous subject)
     // show the wrong visual state.
     const [insight] = useState(() => findInsightById(settingsCascade, insightID))
-    const { handleSubmit, handleCancel } = usePageHandlers({
+    const { handleSubmit, handleCancel } = useEditPageHandlers({
         originalInsight: insight,
         settingsCascade,
         platformContext,

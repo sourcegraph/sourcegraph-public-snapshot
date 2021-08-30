@@ -155,73 +155,76 @@ export const CODE_STATS_INSIGHT_LANG_USAGE: View = {
 }
 
 /**
- * Mock data for gql api our backend insights.
- * */
-export const BACKEND_INSIGHTS = [
-    {
-        id: 'backend_ID_001',
-        title: 'Testing Insight',
-        description: 'Insight for testing',
-        series: [
-            {
-                label: 'Insight',
-                points: [
-                    {
-                        dateTime: '2021-02-11T00:00:00Z',
-                        value: 9,
-                    },
-                    {
-                        dateTime: '2021-01-27T00:00:00Z',
-                        value: 8,
-                    },
-                    {
-                        dateTime: '2021-01-12T00:00:00Z',
-                        value: 7,
-                    },
-                    {
-                        dateTime: '2020-12-28T00:00:00Z',
-                        value: 6,
-                    },
-                    {
-                        dateTime: '2020-12-13T00:00:00Z',
-                        value: 5,
-                    },
-                    {
-                        dateTime: '2020-11-28T00:00:00Z',
-                        value: 4,
-                    },
-                    {
-                        dateTime: '2020-11-13T00:00:00Z',
-                        value: 3,
-                    },
-                    {
-                        dateTime: '2020-10-29T00:00:00Z',
-                        value: 2,
-                    },
-                    {
-                        dateTime: '2020-10-14T00:00:00Z',
-                        value: 1,
-                    },
-                    {
-                        dateTime: '2020-09-29T00:00:00Z',
-                        value: 0,
-                    },
-                ],
-                status: {
-                    pendingJobs: 0,
-                    completedJobs: 0,
-                    failedJobs: 0,
-                    backfillQueuedAt: '2021-02-11T00:00:00Z',
+ * Backend Insight with linear increasing data
+ */
+export const LINEAR_BACKEND_INSIGHT = {
+    id: 'backend_ID_001',
+    title: 'Testing Insight',
+    description: 'Insight for testing',
+    series: [
+        {
+            label: 'Insight',
+            points: [
+                {
+                    dateTime: '2021-02-11T00:00:00Z',
+                    value: 9,
                 },
+                {
+                    dateTime: '2021-01-27T00:00:00Z',
+                    value: 8,
+                },
+                {
+                    dateTime: '2021-01-12T00:00:00Z',
+                    value: 7,
+                },
+                {
+                    dateTime: '2020-12-28T00:00:00Z',
+                    value: 6,
+                },
+                {
+                    dateTime: '2020-12-13T00:00:00Z',
+                    value: 5,
+                },
+                {
+                    dateTime: '2020-11-28T00:00:00Z',
+                    value: 4,
+                },
+                {
+                    dateTime: '2020-11-13T00:00:00Z',
+                    value: 3,
+                },
+                {
+                    dateTime: '2020-10-29T00:00:00Z',
+                    value: 2,
+                },
+                {
+                    dateTime: '2020-10-14T00:00:00Z',
+                    value: 1,
+                },
+                {
+                    dateTime: '2020-09-29T00:00:00Z',
+                    value: 0,
+                },
+            ],
+            status: {
+                pendingJobs: 0,
+                completedJobs: 0,
+                failedJobs: 0,
+                backfillQueuedAt: '2021-02-11T00:00:00Z',
             },
-        ],
-    },
-]
+        },
+    ],
+}
+
+/**
+ * Mock data for gql api our backend insights.
+ */
+export const BACKEND_INSIGHTS = [LINEAR_BACKEND_INSIGHT]
 
 /**
  * Mock gql api for live preview chart of `INSIGHT_VIEW_TYPES_MIGRATION` insight.
  * {@link INSIGHT_VIEW_TYPES_MIGRATION}
- * */
+ */
 export const INSIGHT_TYPES_MIGRATION_COMMITS = {
     search0: {
         results: {

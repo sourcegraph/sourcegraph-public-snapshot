@@ -258,6 +258,23 @@ func testStoreEnqueueSingleSyncJob(store *repos.Store) func(*testing.T) {
 			t.Fatal(err)
 		}
 		assertCount(t, 2)
+
+		// Test that cloud default external services don't get jobs enqueued (no-ops instead of errors)
+		if err = store.Exec(ctx, sqlf.Sprintf("UPDATE external_service_sync_jobs SET state='completed'")); err != nil {
+			t.Fatal(err)
+		}
+
+		service.CloudDefault = true
+		err = store.ExternalServiceStore.Upsert(ctx, &service)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		err = store.EnqueueSingleSyncJob(ctx, service.ID)
+		if err != nil {
+			t.Fatal(err)
+		}
+		assertCount(t, 2)
 	}
 }
 
@@ -328,6 +345,7 @@ INSERT INTO external_service_repos (external_service_id, repo_id, clone_url, use
 		}
 	}
 }
+
 func testStoreListExternalServicePrivateRepoIDsByUserID(store *repos.Store) func(*testing.T) {
 	return func(t *testing.T) {
 		ctx := context.Background()
