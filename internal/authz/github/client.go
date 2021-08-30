@@ -37,6 +37,7 @@ type client interface {
 	GetAuthenticatedUserTeams(ctx context.Context, page int) (teams []*github.Team, hasNextPage bool, rateLimitCost int, err error)
 	GetOrganization(ctx context.Context, login string) (org *github.OrgDetails, err error)
 
+	GetAuthenticatedUserOAuthScopes(ctx context.Context) ([]string, error)
 	WithToken(token string) client
 }
 
@@ -66,6 +67,7 @@ type mockClient struct {
 	MockGetAuthenticatedUserOrgsDetailsAndMembership func(ctx context.Context, page int) (orgs []github.OrgDetailsAndMembership, hasNextPage bool, rateLimitCost int, err error)
 	MockGetAuthenticatedUserTeams                    func(ctx context.Context, page int) (teams []*github.Team, hasNextPage bool, rateLimitCost int, err error)
 	MockGetOrganization                              func(ctx context.Context, login string) (org *github.OrgDetails, err error)
+	MockGetAuthenticatedUserOAuthScopes              func(ctx context.Context) ([]string, error)
 	MockWithToken                                    func(token string) client
 }
 
@@ -107,6 +109,10 @@ func (m *mockClient) GetAuthenticatedUserTeams(ctx context.Context, page int) (t
 
 func (m *mockClient) GetOrganization(ctx context.Context, login string) (org *github.OrgDetails, err error) {
 	return m.MockGetOrganization(ctx, login)
+}
+
+func (m *mockClient) GetAuthenticatedUserOAuthScopes(ctx context.Context) ([]string, error) {
+	return m.MockGetAuthenticatedUserOAuthScopes(ctx)
 }
 
 func (m *mockClient) WithToken(token string) client {
