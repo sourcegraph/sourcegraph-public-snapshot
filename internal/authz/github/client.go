@@ -7,7 +7,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 )
 
-// 🚨 SECURITY: Callsites should take care to provide this valid values and use the return
+// 🚨 SECURITY: Call sites should take care to provide this valid values and use the return
 // value appropriately to ensure org repo access are only provided to valid users.
 func canViewOrgRepos(org *github.OrgDetailsAndMembership) bool {
 	if org == nil {
