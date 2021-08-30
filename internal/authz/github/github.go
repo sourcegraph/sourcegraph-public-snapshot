@@ -147,8 +147,8 @@ func (p *Provider) fetchUserPermsByToken(ctx context.Context, accountID extsvc.A
 
 	// Sync direct affiliations
 	hasNextPage := true
-	var err error
 	for page := 1; hasNextPage; page++ {
+		var err error
 		var repos []*github.Repository
 		repos, hasNextPage, _, err = client.ListAffiliatedRepositories(ctx, github.VisibilityPrivate, page, affiliations...)
 		if err != nil {
@@ -305,7 +305,7 @@ func (p *Provider) FetchRepoPerms(ctx context.Context, repo *extsvc.Repository, 
 		var users []*github.Collaborator
 		users, hasNextPage, err = p.client.ListRepositoryCollaborators(ctx, owner, name, page, affiliation)
 		if err != nil {
-			return userIDs, err
+			return userIDs, errors.Wrap(err, "list users for repo")
 		}
 
 		for _, u := range users {
