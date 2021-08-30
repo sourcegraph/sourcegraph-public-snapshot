@@ -388,6 +388,8 @@ func (p *Provider) FetchRepoPerms(ctx context.Context, repo *extsvc.Repository, 
 
 // getUserAffiliatedGroups retrieves affiliated organizations and teams for the given client
 // with token. Returned groups are populated from cache if a valid value is available.
+//
+// 🚨 SECURITY: clientWithToken must be authenticated with a user token.
 func (p *Provider) getUserAffiliatedGroups(ctx context.Context, clientWithToken client, opts authz.FetchPermsOptions) ([]cachedGroup, error) {
 	groups := make([]cachedGroup, 0)
 	seenGroups := make(map[string]struct{})
@@ -422,7 +424,7 @@ func (p *Provider) getUserAffiliatedGroups(ctx context.Context, clientWithToken 
 			return groups, err
 		}
 		for _, org := range orgs {
-			// If THIS USER can view this org's repos, we add the entire org to the sync list
+			// 🚨 SECURITY: Iff THIS USER can view this org's repos, we add the entire org to the sync list
 			if canViewOrgRepos(&org) {
 				syncGroup(org.Login, "")
 			}
@@ -481,11 +483,11 @@ func (p *Provider) getRepoAffiliatedGroups(ctx context.Context, owner, name stri
 
 	allOrgMembersCanRead := canViewOrgRepos(&github.OrgDetailsAndMembership{OrgDetails: org})
 	if allOrgMembersCanRead {
-		// If all members of this org can view this repo, indicate that all members should
+		// 🚨 SECURITY: Iff all members of this org can view this repo, indicate that all members should
 		// be sync'd.
 		syncGroup(org.Login, "", false)
 	} else {
-		// Sync only admins of this org
+		// 🚨 SECURITY: Sync *only admins* of this org
 		syncGroup(org.Login, "", true)
 
 		// Also check for teams involved in repo, and indicate all groups should be sync'd.
