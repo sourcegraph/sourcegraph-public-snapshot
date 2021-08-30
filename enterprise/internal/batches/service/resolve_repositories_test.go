@@ -287,10 +287,8 @@ func resolveRepoRevsAndCompare(t *testing.T, s *store.Store, matches []streamhtt
 				t.Fatalf("UnsupportedRepoSet does not contain repo with ID %d", id)
 			}
 		}
-	} else {
-		if err != nil {
-			t.Fatalf("unexpected error: %s", err)
-		}
+	} else if err != nil {
+		t.Fatalf("unexpected error: %s", err)
 	}
 
 	sortRepoRevs(want)
