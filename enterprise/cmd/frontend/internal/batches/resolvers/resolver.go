@@ -1543,7 +1543,7 @@ func (r *batchSpecMatchingRepositoryResolver) Repository(ctx context.Context) (*
 }
 
 func (r *batchSpecMatchingRepositoryResolver) Path() string {
-	return git.EnsureRefPrefix(r.node.Branch)
+	return git.AbbreviateRef(r.node.Branch)
 }
 
 func parseBatchChangeState(s *string) (btypes.BatchChangeState, error) {
