@@ -19,8 +19,8 @@ import {
 import { CodeExcerpt, FetchFileParameters } from './CodeExcerpt'
 import { CodeExcerptUnhighlighted } from './CodeExcerptUnhighlighted'
 import { MatchItem } from './FileMatch'
-import { LastSyncedIcon } from './LastSyncedIcon'
 import { MatchGroup } from './FileMatchContext'
+import { LastSyncedIcon } from './LastSyncedIcon'
 import { Link } from './Link'
 
 interface FileMatchProps extends SettingsCascadeProps, ThemeProps, TelemetryProps {
@@ -117,7 +117,7 @@ export const FileMatchChildren: React.FunctionComponent<FileMatchProps> = props 
 
     return (
         <div className="file-match-children">
-            {result.repoLastFetched && LastSyncedIcon(result.repoLastFetched)}
+            {result.repoLastFetched && LastSyncedIcon({ lastSyncedTime: result.repoLastFetched })}
             {/* Path */}
             {result.type === 'path' && (
                 <div className="file-match-children__item">

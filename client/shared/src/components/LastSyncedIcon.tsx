@@ -1,8 +1,8 @@
+import format from 'date-fns/format'
 import CloudSyncOutlineIcon from 'mdi-react/CloudSyncOutlineIcon'
 import React from 'react'
-import format from 'date-fns/format'
 
-export const LastSyncedIcon = (lastSyncedTime: string) => {
+export const LastSyncedIcon: React.FunctionComponent<{ lastSyncedTime: string }> = ({ lastSyncedTime }) => {
     const formattedTime = format(Date.parse(lastSyncedTime), "yyyy-MM-dd'T'HH:mm:ss")
 
     return (
