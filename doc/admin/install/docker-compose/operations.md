@@ -198,7 +198,7 @@ Guides for managing cloud storage and backups are available in our [cloud-specif
 - [Storage and backups for Google Cloud](./google_cloud.md#storage-and-backups)
 - [Storage and backups for Digital Ocean](./digitalocean.md#storage-and-backups)
 
-## Access a docker-compose database
+## Access the database
 
 The following command allows a user to shell into a Sourcegraph database container and run `psql` to interact with the container's postgres database:
 
