@@ -564,6 +564,7 @@ func TestProvider_FetchRepoPerms(t *testing.T) {
 		}
 
 		wantAccountIDs := []extsvc.AccountID{
+			// mockListCollaborators members
 			"57463526",
 			"67471",
 			"187831",
@@ -606,6 +607,7 @@ func TestProvider_FetchRepoPerms(t *testing.T) {
 			}
 
 			wantAccountIDs := []extsvc.AccountID{
+				// mockListCollaborators members
 				"57463526",
 				"67471",
 				"187831",
@@ -614,6 +616,7 @@ func TestProvider_FetchRepoPerms(t *testing.T) {
 				t.Fatalf("AccountIDs mismatch (-want +got):\n%s", diff)
 			}
 		})
+
 		t.Run("repo in read org", func(t *testing.T) {
 			p := NewProvider("", ProviderOptions{
 				GitHubURL: mustURL(t, "https://github.com"),
@@ -663,9 +666,11 @@ func TestProvider_FetchRepoPerms(t *testing.T) {
 			}
 
 			wantAccountIDs := []extsvc.AccountID{
+				// mockListCollaborators members
 				"57463526",
 				"67471",
 				"187831",
+				// dedpulicated MockListOrganizationMembers users
 				"1234",
 				"5678",
 			}
@@ -673,6 +678,7 @@ func TestProvider_FetchRepoPerms(t *testing.T) {
 				t.Fatalf("AccountIDs mismatch (-want +got):\n%s", diff)
 			}
 		})
+
 		t.Run("repo in non-read org but in teams", func(t *testing.T) {
 			p := NewProvider("", ProviderOptions{
 				GitHubURL: mustURL(t, "https://github.com"),
@@ -693,7 +699,10 @@ func TestProvider_FetchRepoPerms(t *testing.T) {
 					t.Fatalf("unexpected call to GetOrganization with %q", login)
 					return nil, nil
 				},
-				MockListOrganizationMembers: func(ctx context.Context, owner string, page int, adminOnly bool) (users []*github.Collaborator, hasNextPage bool, _ error) {
+				MockListOrganizationMembers: func(ctx context.Context, org string, page int, adminOnly bool) (users []*github.Collaborator, hasNextPage bool, _ error) {
+					if org != "org" {
+						t.Fatalf("unexpected call to list org members with %q", org)
+					}
 					if !adminOnly {
 						t.Fatal("expected adminOnly ListOrganizationMembers")
 					}
@@ -747,10 +756,13 @@ func TestProvider_FetchRepoPerms(t *testing.T) {
 			}
 
 			wantAccountIDs := []extsvc.AccountID{
+				// mockListCollaborators members
 				"57463526",
 				"67471",
 				"187831",
+				// MockListOrganizationMembers users
 				"3456",
+				// deduplicated MockListTeamMembers users
 				"1234",
 				"5678",
 				"6789",
@@ -759,6 +771,7 @@ func TestProvider_FetchRepoPerms(t *testing.T) {
 				t.Fatalf("AccountIDs mismatch (-want +got):\n%s", diff)
 			}
 		})
+
 		t.Run("cache and invalidate", func(t *testing.T) {
 			p := NewProvider("", ProviderOptions{
 				GitHubURL: mustURL(t, "https://github.com"),
@@ -801,9 +814,11 @@ func TestProvider_FetchRepoPerms(t *testing.T) {
 			p.groupsCache = memCache
 
 			wantAccountIDs := []extsvc.AccountID{
+				// mockListCollaborators members
 				"57463526",
 				"67471",
 				"187831",
+				// MockListOrganizationMembers users
 				"1234",
 				"5678",
 			}
