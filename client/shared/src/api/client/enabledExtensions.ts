@@ -39,7 +39,7 @@ export const getConfiguredSideloadedExtension = (baseUrl: string): Observable<Co
 
 /**
  * Returns an Observable of extensions enabled for the user.
- * Is idempotent.
+ * Wrapped with the `once` function from lodash.
  */
 export const getEnabledExtensions = once(
     (
