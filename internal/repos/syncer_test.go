@@ -175,7 +175,6 @@ func testSyncerSync(s *repos.Store) func(*testing.T) {
 			types.Opt.RepoSources(userAddedGitlabSvc.URN()),
 		)
 
-
 		type testCase struct {
 			name    string
 			sourcer repos.Sourcer
