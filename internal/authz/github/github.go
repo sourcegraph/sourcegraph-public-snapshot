@@ -457,8 +457,8 @@ type repoAffiliatedGroup struct {
 	adminsOnly bool
 }
 
-// getUserAffiliatedGroups retrieves affiliated organizations and teams for the given client
-// with token. Returned groups are populated from cache if a valid value is available.
+// getRepoAffiliatedGroups retrieves affiliated organizations and teams for the given repository.
+// Returned groups are populated from cache if a valid value is available.
 func (p *Provider) getRepoAffiliatedGroups(ctx context.Context, owner, name string, opts authz.FetchPermsOptions) (groups []repoAffiliatedGroup, err error) {
 	// Check if repo belongs in an org
 	org, err := p.client.GetOrganization(ctx, owner)
