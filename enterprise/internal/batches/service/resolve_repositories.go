@@ -194,22 +194,23 @@ func (wr *workspaceResolver) resolveRepositoryNameAndBranch(ctx context.Context,
 		tr.Finish()
 	}()
 
-	repo, err := wr.resolveRepositoryName(ctx, name)
+	repo, err := wr.store.Repos().GetByName(ctx, api.RepoName(name))
 	if err != nil {
-		return repo, err
+		return nil, err
 	}
 
-	commit, err := git.ResolveRevision(ctx, repo.Repo.Name, branch, git.ResolveRevisionOptions{
+	commit, err := git.ResolveRevision(ctx, repo.Name, branch, git.ResolveRevisionOptions{
 		NoEnsureRevision: true,
 	})
 	if err != nil && errors.HasType(err, &gitserver.RevisionNotFoundError{}) {
-		return repo, fmt.Errorf("no branch matching %q found for repository %s", branch, name)
+		return nil, fmt.Errorf("no branch matching %q found for repository %s", branch, name)
 	}
 
-	repo.Branch = branch
-	repo.Commit = commit
-
-	return repo, err
+	return &RepoRevision{
+		Repo:   repo,
+		Branch: branch,
+		Commit: commit,
+	}, nil
 }
 
 func (wr *workspaceResolver) resolveRepositoriesMatchingQuery(ctx context.Context, query string) (_ []*RepoRevision, err error) {
@@ -300,7 +301,7 @@ func (wr *workspaceResolver) hasBatchIgnoreFile(ctx context.Context, r *RepoRevi
 		tr.Finish()
 	}()
 
-	path := ".batchignore"
+	const path = ".batchignore"
 	stat, err := git.Stat(ctx, r.Repo.Name, r.Commit, path)
 	if err != nil {
 		if os.IsNotExist(err) {
@@ -361,6 +362,15 @@ func (e UnsupportedRepoSet) Includes(r *types.Repo) bool {
 	return ok
 }
 
+func (e UnsupportedRepoSet) includesRepoWithID(id api.RepoID) bool {
+	for r := range e {
+		if r.ID == id {
+			return true
+		}
+	}
+	return false
+}
+
 func (e UnsupportedRepoSet) Error() string {
 	repos := []string{}
 	typeSet := map[string]struct{}{}
@@ -399,7 +409,7 @@ func (e IgnoredRepoSet) Includes(r *types.Repo) bool {
 	return ok
 }
 
-func (e IgnoredRepoSet) IncludesRepoWithID(id api.RepoID) bool {
+func (e IgnoredRepoSet) includesRepoWithID(id api.RepoID) bool {
 	for r := range e {
 		if r.ID == id {
 			return true

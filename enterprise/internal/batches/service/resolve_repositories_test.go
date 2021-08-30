@@ -11,6 +11,7 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -24,7 +25,7 @@ import (
 	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
 )
 
-func TestService_ResolveRepositoriesForBatchSpec_RepositoriesMatchingQuery(t *testing.T) {
+func TestService_ResolveRepositoriesForBatchSpec(t *testing.T) {
 	ctx := context.Background()
 
 	db := dbtest.NewDB(t, "")
@@ -32,18 +33,113 @@ func TestService_ResolveRepositoriesForBatchSpec_RepositoriesMatchingQuery(t *te
 
 	rs, _ := ct.CreateTestRepos(t, ctx, db, 4)
 
+	unsupported, _ := ct.CreateAWSCodeCommitTestRepos(t, ctx, db, 1)
+
 	defaultBranches := map[api.RepoName]defaultBranch{
-		rs[0].Name: {branch: "branch-1", commit: api.CommitID("6f152ece24b9424edcd4da2b82989c5c2bea64c3")},
-		rs[1].Name: {branch: "branch-2", commit: api.CommitID("2840a42c7809c22b16fda7099c725d1ef197961c")},
-		rs[2].Name: {branch: "branch-3", commit: api.CommitID("aead85d33485e115b33ec4045c55bac97e03fd26")},
-		rs[3].Name: {branch: "branch-4", commit: api.CommitID("26ac0350471daac3401a9314fd64e714370837a6")},
+		rs[0].Name:          {branch: "branch-1", commit: api.CommitID("6f152ece24b9424edcd4da2b82989c5c2bea64c3")},
+		rs[1].Name:          {branch: "branch-2", commit: api.CommitID("2840a42c7809c22b16fda7099c725d1ef197961c")},
+		rs[2].Name:          {branch: "branch-3", commit: api.CommitID("aead85d33485e115b33ec4045c55bac97e03fd26")},
+		rs[3].Name:          {branch: "branch-4", commit: api.CommitID("26ac0350471daac3401a9314fd64e714370837a6")},
+		unsupported[0].Name: {branch: "branch-5", commit: api.CommitID("c167bd633e2868585b86ef129d07f63dee46b84a")},
 	}
 	buildRepoRev := func(repo *types.Repo) *RepoRevision {
 		return &RepoRevision{Repo: repo, Branch: defaultBranches[repo.Name].branch, Commit: defaultBranches[repo.Name].commit}
 	}
 	mockDefaultBranches(t, defaultBranches)
 
-	t.Run("repositoriesMatchingQuery, no batchignore", func(t *testing.T) {
+	t.Run("repositoriesMatchingQuery", func(t *testing.T) {
+		batchSpec := &batcheslib.BatchSpec{
+			On: []batcheslib.OnQueryOrRepository{
+				{RepositoriesMatchingQuery: "repohasfile:horse.txt"},
+				// In our test the search API returns the same results for both
+				{RepositoriesMatchingQuery: "repohasfile:horse.txt duplicate"},
+			},
+		}
+
+		mockBatchIgnores(t, map[api.CommitID]bool{
+			defaultBranches[rs[0].Name].commit: false,
+			defaultBranches[rs[1].Name].commit: true,
+			defaultBranches[rs[2].Name].commit: true,
+			defaultBranches[rs[3].Name].commit: false,
+		})
+
+		searchMatches := []streamhttp.EventMatch{
+			&streamhttp.EventContentMatch{
+				Type:         streamhttp.ContentMatchType,
+				Path:         "test",
+				RepositoryID: int32(rs[0].ID),
+			},
+			&streamhttp.EventContentMatch{
+				Type:         streamhttp.ContentMatchType,
+				Path:         "duplicate-test",
+				RepositoryID: int32(rs[0].ID),
+			},
+			&streamhttp.EventRepoMatch{
+				Type:         streamhttp.RepoMatchType,
+				RepositoryID: int32(rs[1].ID),
+			},
+			&streamhttp.EventPathMatch{
+				Type:         streamhttp.PathMatchType,
+				RepositoryID: int32(rs[2].ID),
+			},
+			&streamhttp.EventSymbolMatch{
+				Type:         streamhttp.SymbolMatchType,
+				RepositoryID: int32(rs[3].ID),
+			},
+		}
+
+		want := []*RepoRevision{buildRepoRev(rs[0]), buildRepoRev(rs[3])}
+		wantIgnored := []api.RepoID{rs[1].ID, rs[2].ID}
+		wantUnsupported := []api.RepoID{}
+		resolveRepoRevsAndCompare(t, s, searchMatches, batchSpec, want, wantIgnored, wantUnsupported)
+	})
+
+	t.Run("repositories", func(t *testing.T) {
+		batchSpec := &batcheslib.BatchSpec{
+			On: []batcheslib.OnQueryOrRepository{
+				{Repository: string(rs[0].Name)},
+				{Repository: string(rs[1].Name), Branch: "non-default-branch"},
+				{Repository: string(rs[2].Name), Branch: "other-non-default-branch"},
+				{Repository: string(rs[3].Name)},
+			},
+		}
+
+		mockResolveRevision(t, map[string]api.CommitID{
+			defaultBranches[rs[0].Name].branch: defaultBranches[rs[0].Name].commit,
+			"non-default-branch":               api.CommitID("d34db33f"),
+			"other-non-default-branch":         api.CommitID("c0ff33"),
+			defaultBranches[rs[3].Name].branch: defaultBranches[rs[3].Name].commit,
+		})
+
+		mockBatchIgnores(t, map[api.CommitID]bool{
+			defaultBranches[rs[0].Name].commit: false,
+			api.CommitID("d34db33f"):           false,
+			api.CommitID("c0ff33"):             false,
+			defaultBranches[rs[3].Name].commit: true,
+		})
+
+		searchMatches := []streamhttp.EventMatch{}
+
+		want := []*RepoRevision{
+			buildRepoRev(rs[0]),
+			{Repo: rs[1], Branch: "non-default-branch", Commit: api.CommitID("d34db33f")},
+			{Repo: rs[2], Branch: "other-non-default-branch", Commit: api.CommitID("c0ff33")},
+		}
+
+		wantIgnored := []api.RepoID{rs[3].ID}
+		wantUnsupported := []api.RepoID{}
+		resolveRepoRevsAndCompare(t, s, searchMatches, batchSpec, want, wantIgnored, wantUnsupported)
+	})
+
+	t.Run("repositoriesMatchingQuery and repositories", func(t *testing.T) {
+		batchSpec := &batcheslib.BatchSpec{
+			On: []batcheslib.OnQueryOrRepository{
+				{RepositoriesMatchingQuery: "repohasfile:horse.txt"},
+				{Repository: string(rs[2].Name)},
+				{Repository: string(rs[3].Name)},
+			},
+		}
+
 		mockBatchIgnores(t, map[api.CommitID]bool{
 			defaultBranches[rs[0].Name].commit: false,
 			defaultBranches[rs[1].Name].commit: false,
@@ -61,22 +157,24 @@ func TestService_ResolveRepositoriesForBatchSpec_RepositoriesMatchingQuery(t *te
 				Type:         streamhttp.RepoMatchType,
 				RepositoryID: int32(rs[1].ID),
 			},
-			&streamhttp.EventPathMatch{
-				Type:         streamhttp.PathMatchType,
+			// Included in the search results and explicitly listed
+			&streamhttp.EventRepoMatch{
+				Type:         streamhttp.RepoMatchType,
 				RepositoryID: int32(rs[2].ID),
-			},
-			&streamhttp.EventSymbolMatch{
-				Type:         streamhttp.SymbolMatchType,
-				RepositoryID: int32(rs[3].ID),
 			},
 		}
 
-		batchSpec := &batcheslib.BatchSpec{
-			On: []batcheslib.OnQueryOrRepository{
-				{RepositoriesMatchingQuery: "repohasfile:horse.txt"},
-			},
-			Workspaces: []batcheslib.WorkspaceConfiguration{},
-		}
+		mockResolveRevision(t, map[string]api.CommitID{
+			defaultBranches[rs[2].Name].branch: defaultBranches[rs[2].Name].commit,
+			defaultBranches[rs[3].Name].branch: defaultBranches[rs[3].Name].commit,
+		})
+
+		mockBatchIgnores(t, map[api.CommitID]bool{
+			defaultBranches[rs[0].Name].commit: false,
+			defaultBranches[rs[1].Name].commit: false,
+			defaultBranches[rs[2].Name].commit: false,
+			defaultBranches[rs[3].Name].commit: false,
+		})
 
 		want := []*RepoRevision{
 			buildRepoRev(rs[0]),
@@ -84,53 +182,39 @@ func TestService_ResolveRepositoriesForBatchSpec_RepositoriesMatchingQuery(t *te
 			buildRepoRev(rs[2]),
 			buildRepoRev(rs[3]),
 		}
-		wantIgnored := []api.RepoID{}
 
-		resolveRepoRevsAndCompare(t, s, searchMatches, batchSpec, want, wantIgnored)
+		wantIgnored := []api.RepoID{}
+		wantUnsupported := []api.RepoID{}
+		resolveRepoRevsAndCompare(t, s, searchMatches, batchSpec, want, wantIgnored, wantUnsupported)
 	})
 
-	t.Run("repositoriesMatchingQuery, with batchignores", func(t *testing.T) {
+	t.Run("unsupported repo type", func(t *testing.T) {
+		batchSpec := &batcheslib.BatchSpec{
+			On: []batcheslib.OnQueryOrRepository{
+				{RepositoriesMatchingQuery: "repohasfile:horse.txt"},
+			},
+		}
+
 		mockBatchIgnores(t, map[api.CommitID]bool{
-			defaultBranches[rs[0].Name].commit: false,
-			defaultBranches[rs[1].Name].commit: true,
-			defaultBranches[rs[2].Name].commit: true,
-			defaultBranches[rs[3].Name].commit: false,
+			defaultBranches[unsupported[0].Name].commit: false,
 		})
 
 		searchMatches := []streamhttp.EventMatch{
 			&streamhttp.EventContentMatch{
 				Type:         streamhttp.ContentMatchType,
 				Path:         "test",
-				RepositoryID: int32(rs[0].ID),
-			},
-			&streamhttp.EventRepoMatch{
-				Type:         streamhttp.RepoMatchType,
-				RepositoryID: int32(rs[1].ID),
-			},
-			&streamhttp.EventPathMatch{
-				Type:         streamhttp.PathMatchType,
-				RepositoryID: int32(rs[2].ID),
-			},
-			&streamhttp.EventSymbolMatch{
-				Type:         streamhttp.SymbolMatchType,
-				RepositoryID: int32(rs[3].ID),
+				RepositoryID: int32(unsupported[0].ID),
 			},
 		}
 
-		batchSpec := &batcheslib.BatchSpec{
-			On: []batcheslib.OnQueryOrRepository{
-				{RepositoriesMatchingQuery: "repohasfile:horse.txt"},
-			},
-			Workspaces: []batcheslib.WorkspaceConfiguration{},
-		}
-
-		want := []*RepoRevision{buildRepoRev(rs[0]), buildRepoRev(rs[3])}
-		wantIgnored := []api.RepoID{rs[1].ID, rs[2].ID}
-		resolveRepoRevsAndCompare(t, s, searchMatches, batchSpec, want, wantIgnored)
+		want := []*RepoRevision{}
+		wantIgnored := []api.RepoID{}
+		wantUnsupported := []api.RepoID{unsupported[0].ID}
+		resolveRepoRevsAndCompare(t, s, searchMatches, batchSpec, want, wantIgnored, wantUnsupported)
 	})
 }
 
-func resolveRepoRevsAndCompare(t *testing.T, s *store.Store, matches []streamhttp.EventMatch, spec *batcheslib.BatchSpec, want []*RepoRevision, wantIgnored []api.RepoID) {
+func resolveRepoRevsAndCompare(t *testing.T, s *store.Store, matches []streamhttp.EventMatch, spec *batcheslib.BatchSpec, want []*RepoRevision, wantIgnored, wantUnsupported []api.RepoID) {
 	t.Helper()
 
 	wr := &workspaceResolver{
@@ -148,8 +232,19 @@ func resolveRepoRevsAndCompare(t *testing.T, s *store.Store, matches []streamhtt
 		}
 
 		for _, id := range wantIgnored {
-			if !set.IncludesRepoWithID(id) {
+			if !set.includesRepoWithID(id) {
 				t.Fatalf("IgnoredRepoSet does not contain repo with ID %d", id)
+			}
+		}
+	} else if len(wantUnsupported) > 0 {
+		set, ok := err.(UnsupportedRepoSet)
+		if !ok {
+			t.Fatalf("unexpected error: %s", err)
+		}
+
+		for _, id := range wantUnsupported {
+			if !set.includesRepoWithID(id) {
+				t.Fatalf("UnsupportedRepoSet does not contain repo with ID %d", id)
 			}
 		}
 	} else {
@@ -220,4 +315,14 @@ func mockBatchIgnores(t *testing.T, m map[api.CommitID]bool) {
 		return nil, os.ErrNotExist
 	}
 	t.Cleanup(func() { git.Mocks.Stat = nil })
+}
+
+func mockResolveRevision(t *testing.T, branches map[string]api.CommitID) {
+	git.Mocks.ResolveRevision = func(spec string, opt git.ResolveRevisionOptions) (api.CommitID, error) {
+		if commit, ok := branches[spec]; ok {
+			return commit, nil
+		}
+		return "", fmt.Errorf("unknown spec: %s", spec)
+	}
+	t.Cleanup(func() { git.Mocks.ResolveRevision = nil })
 }
