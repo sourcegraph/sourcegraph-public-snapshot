@@ -1,4 +1,5 @@
 import { useCallback, useContext } from 'react'
+import { map } from 'rxjs/operators'
 
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
 
@@ -12,14 +13,15 @@ import { TemporarySettingsContext } from './TemporarySettingsProvider'
  * @param key - name of the setting
  */
 export const useTemporarySetting = <K extends keyof TemporarySettings>(
-    key: K
+    key: K,
+    defaultValue?: TemporarySettings[K]
 ): [
     TemporarySettings[K] | null,
     (newValue: TemporarySettings[K] | ((oldValue: TemporarySettings[K]) => TemporarySettings[K])) => void
 ] => {
     const temporarySettings = useContext(TemporarySettingsContext)
 
-    const updatedValue = useObservable(temporarySettings.get(key))
+    const updatedValue = useObservable(temporarySettings.get(key).pipe(map(settings => settings ?? defaultValue)))
 
     const setValueAndSave = useCallback(
         (newValue: TemporarySettings[K] | ((oldValue: TemporarySettings[K]) => TemporarySettings[K])): void => {
