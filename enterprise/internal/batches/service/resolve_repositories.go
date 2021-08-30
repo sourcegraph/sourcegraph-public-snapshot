@@ -266,7 +266,7 @@ func (wr *workspaceResolver) runSearch(ctx context.Context, query string, onMatc
 	if err != nil {
 		return err
 	}
-	req.WithContext(ctx)
+	req = req.WithContext(ctx)
 
 	// We don't set an auth token here and don't authenticate on the users
 	// behalf in any way, because we will fetch the repositories from the
