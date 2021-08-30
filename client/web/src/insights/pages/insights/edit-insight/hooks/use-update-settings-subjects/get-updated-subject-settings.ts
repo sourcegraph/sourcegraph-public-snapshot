@@ -1,7 +1,7 @@
 import { ConfiguredSubjectOrError, SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { isErrorLike } from '@sourcegraph/shared/src/util/errors'
 
-import { Settings } from '../../../../../schema/settings.schema'
+import { Settings } from '../../../../../../schema/settings.schema'
 import {
     AddInsight,
     AddInsightToDashboard,
@@ -9,9 +9,9 @@ import {
     RemoveInsightFromDashboard,
     SettingsOperation,
     SettingsOperationType,
-} from '../../../../core/settings-action/edits'
-import { Insight, INSIGHTS_DASHBOARDS_SETTINGS_KEY } from '../../../../core/types'
-import { SUBJECT_SHARING_LEVELS } from '../../../../core/types/subjects'
+} from '../../../../../core/settings-action/edits'
+import { Insight, INSIGHTS_DASHBOARDS_SETTINGS_KEY } from '../../../../../core/types'
+import { SUBJECT_SHARING_LEVELS } from '../../../../../core/types/subjects'
 
 interface EditInsightProps extends SettingsCascadeProps<Settings> {
     oldInsight: Insight

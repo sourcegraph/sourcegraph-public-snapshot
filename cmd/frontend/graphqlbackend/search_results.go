@@ -1024,7 +1024,7 @@ func DetermineStatusForLogs(srr *SearchResultsResolver, err error) string {
 		return "timeout"
 	case err != nil:
 		return "error"
-	case srr.Stats.AllReposTimedOut():
+	case srr.Stats.Status.All(search.RepoStatusTimedout) && srr.Stats.Status.Len() == len(srr.Stats.Repos):
 		return "timeout"
 	case srr.Stats.Status.Any(search.RepoStatusTimedout):
 		return "partial_timeout"
@@ -1156,21 +1156,21 @@ func (r *searchResolver) resultsWithTimeoutSuggestion(ctx context.Context, args 
 	start := time.Now()
 	rr, err := r.doResults(ctx, args, jobs)
 
-	// If we encountered a context timeout, it indicates one of the many result
-	// type searchers (file, diff, symbol, etc) completely timed out and could not
-	// produce even partial results. Other searcher types may have produced results.
-	//
-	// In this case, or if we got a partial timeout where ALL repositories timed out,
-	// we do not return partial results and instead display a timeout alert.
-	shouldShowAlert := errors.Is(err, context.DeadlineExceeded)
-	if err == nil && rr.Stats.AllReposTimedOut() {
-		shouldShowAlert = true
+	// We have an alert for context timeouts and we have a progress
+	// notification for timeouts. We don't want to show both, so we only show
+	// it if no repos are marked as timedout. This somewhat couples us to how
+	// progress notifications work, but this is the third attempt at trying to
+	// fix this behaviour so we are accepting that.
+	if errors.Is(err, context.DeadlineExceeded) {
+		if rr == nil || !rr.Stats.Status.Any(search.RepoStatusTimedout) {
+			usedTime := time.Since(start)
+			suggestTime := longer(2, usedTime)
+			return alertForTimeout(usedTime, suggestTime, r).wrapResults(), nil
+		} else {
+			err = nil
+		}
 	}
-	if shouldShowAlert {
-		usedTime := time.Since(start)
-		suggestTime := longer(2, usedTime)
-		return alertForTimeout(usedTime, suggestTime, r).wrapResults(), nil
-	}
+
 	return rr, err
 }
 

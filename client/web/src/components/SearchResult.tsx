@@ -1,4 +1,5 @@
 import ArchiveIcon from 'mdi-react/ArchiveIcon'
+import LockIcon from 'mdi-react/LockIcon'
 import SourceForkIcon from 'mdi-react/SourceForkIcon'
 import StarIcon from 'mdi-react/StarIcon'
 import React from 'react'
@@ -76,6 +77,17 @@ export const SearchResult: React.FunctionComponent<Props> = ({ result, icon, isL
                                     </div>
                                     <div>
                                         <small>Archived</small>
+                                    </div>
+                                </>
+                            )}
+                            {result.private && (
+                                <>
+                                    <div className="search-result__divider" />
+                                    <div>
+                                        <LockIcon className="search-result__icon icon-inline flex-shrink-0 text-muted" />
+                                    </div>
+                                    <div>
+                                        <small>Private</small>
                                     </div>
                                 </>
                             )}

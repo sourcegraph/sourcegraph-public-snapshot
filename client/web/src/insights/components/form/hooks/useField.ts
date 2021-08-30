@@ -1,13 +1,12 @@
 import {
     ChangeEvent,
+    Dispatch,
     FocusEventHandler,
     InputHTMLAttributes,
     RefObject,
     useCallback,
-    useEffect,
     useLayoutEffect,
     useRef,
-    useState,
 } from 'react'
 import { noop } from 'rxjs'
 
@@ -33,13 +32,13 @@ interface InputProps<Value> extends Omit<InputHTMLAttributes<HTMLInputElement>, 
  * Public API for input element. Contains all handlers and props for
  * native input element and expose meta state of input like touched,
  * validState and etc.
- * */
+ */
 export interface useFieldAPI<FieldValue> {
     /**
      * Props and handles which should be passed to input component in order
      * to track change of value, set controlled value and set errors by
      * Constraint validation API.
-     * */
+     */
     input: {
         ref: RefObject<HTMLInputElement & HTMLFieldSetElement>
         name: string
@@ -47,16 +46,17 @@ export interface useFieldAPI<FieldValue> {
         onChange: (event: ChangeEvent<HTMLInputElement> | FieldValue) => void
         onBlur: FocusEventHandler<HTMLInputElement>
     } & InputProps<FieldValue>
+
     /**
      * Meta state of form field - like touched, valid state and last
      * native validity state.
-     * */
+     */
     meta: FieldState<FieldValue> & {
         /**
          * Set state handler gives access to set inner state of useField.
          * Useful for complicated cases when need to deal with custom react input
          * component.
-         * */
+         */
         setState: (dispatch: (previousState: FieldState<FieldValue>) => FieldState<FieldValue>) => void
     }
 }
@@ -73,34 +73,21 @@ export type UseFieldProps<FormValues, Key, Value> = {
  * and custom synchronous and asynchronous validators.
  *
  * Should be used with useForm hook to connect field and form component's states.
- * */
+ */
 export function useField<FormValues, Key extends keyof FormAPI<FormValues>['initialValues']>(
     props: UseFieldProps<FormValues, Key, FormValues[Key]>
 ): useFieldAPI<FormValues[Key]> {
     const { formApi, name, validators, onChange = noop, ...inputProps } = props
-    const { setFieldState, initialValues, submitted, touched: formTouched } = formApi
+    const { submitted, touched: formTouched } = formApi
     const { sync = noop, async } = validators ?? {}
     const inputReference = useRef<HTMLInputElement & HTMLFieldSetElement>(null)
 
-    const [state, setState] = useState<FieldState<FormValues[Key]>>({
-        value: initialValues[name],
-        touched: false,
-        dirty: false,
-        validState: 'NOT_VALIDATED',
-        error: '',
-        validity: null,
-    })
-
+    const [state, setState] = useFormFieldState(name, formApi)
     const { start: startAsyncValidation, cancel: cancelAsyncValidation } = useAsyncValidation({
         inputReference,
         asyncValidator: async,
         onValidationChange: asyncState => setState(previousState => ({ ...previousState, ...asyncState })),
     })
-
-    // Use useRef for form api handler in order to avoid unnecessary
-    // calls if API handler has been changed.
-    const setFieldStateReference = useRef<FormAPI<FormValues>['setFieldState']>(setFieldState)
-    setFieldStateReference.current = setFieldState
 
     // Since validation logic wants to use sync state update we use `useLayoutEffect` instead of
     // `useEffect` in order to synchronously re-render after value setState updates, but before
@@ -159,14 +146,9 @@ export function useField<FormValues, Key extends keyof FormAPI<FormValues>['init
             error: '',
             validity,
         }))
-    }, [state.value, sync, startAsyncValidation, async, cancelAsyncValidation])
+    }, [state.value, sync, startAsyncValidation, async, cancelAsyncValidation, setState])
 
-    // Sync field state with state on form level - useForm hook will used this state to run
-    // onSubmit handler and track validation state to prevent onSubmit run when async
-    // validation is going.
-    useEffect(() => setFieldStateReference.current(name, state), [name, state])
-
-    const handleBlur = useCallback(() => setState(state => ({ ...state, touched: true })), [])
+    const handleBlur = useCallback(() => setState(state => ({ ...state, touched: true })), [setState])
     const handleChange = useCallback(
         (event: ChangeEvent<HTMLInputElement> | FormValues[Key]) => {
             const value = getEventValue(event)
@@ -174,7 +156,7 @@ export function useField<FormValues, Key extends keyof FormAPI<FormValues>['init
             setState(state => ({ ...state, value, dirty: true }))
             onChange(value)
         },
-        [onChange]
+        [onChange, setState]
     )
 
     return {
@@ -189,14 +171,36 @@ export function useField<FormValues, Key extends keyof FormAPI<FormValues>['init
         meta: {
             ...state,
             touched: state.touched || submitted || formTouched,
-            /**
-             * Set state dispatcher gives access to set inner state of useField.
-             * Useful for complex cases when you need to deal with custom react input
-             * components.
-             * */
+            // Set state dispatcher gives access to set inner state of useField.
+            // Useful for complex cases when you need to deal with custom react input
+            // components.
             setState: dispatch => {
                 setState(state => ({ ...dispatch(state) }))
             },
         },
     }
+}
+
+type FieldStateTransformer<Value> = (previousState: FieldState<Value>) => FieldState<Value>
+
+function useFormFieldState<FormValues, Key extends keyof FormAPI<FormValues>['initialValues']>(
+    name: Key,
+    formAPI: FormAPI<FormValues>
+): [FieldState<FormValues[Key]>, Dispatch<FieldStateTransformer<FormValues[Key]>>] {
+    const { fields, setFieldState } = formAPI
+    const state = fields[name]
+
+    // Use useRef for form api handler in order to avoid unnecessary
+    // calls if API handler has been changed.
+    const setFieldStateReference = useRef(setFieldState)
+    setFieldStateReference.current = setFieldState
+
+    const setState = useCallback(
+        (trasformer: FieldStateTransformer<FormValues[Key]>) => {
+            setFieldStateReference.current(name, trasformer as FieldStateTransformer<unknown>)
+        },
+        [name]
+    )
+
+    return [state, setState]
 }

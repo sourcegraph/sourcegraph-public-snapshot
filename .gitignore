@@ -119,6 +119,7 @@ libsqlite3-pcre.so
 
 # Direnv
 .envrc
+.direnv
 
 # Docker images
 docker-images/prometheus/config/prometheus_targets.yml
@@ -143,4 +144,3 @@ storybook-static/
 sg.config.overwrite.yaml
 # sg Google Cloud API OAuth token
 .sg.token.json
-
