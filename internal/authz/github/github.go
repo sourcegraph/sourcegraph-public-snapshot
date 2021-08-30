@@ -178,15 +178,18 @@ func (p *Provider) fetchUserPermsByToken(ctx context.Context, accountID extsvc.A
 		if len(group.Repositories) > 0 {
 			// If a valid cached value was found, use it
 			addRepoToUserPerms(group.Repositories...)
-			// Perform partial cache update to users iff non-empty
-			if len(group.Users) > 0 {
-				for _, user := range group.Users {
-					if user == accountID {
-						group.Users = append(group.Users, accountID)
-						p.groupsCache.setGroup(group)
-						break
-					}
+			// If this user's membership in this group is not noted yet, add it
+			hasUser := false
+			for _, user := range group.Users {
+				if user == accountID {
+					hasUser = true
+					break
 				}
+			}
+			// Only insert if this is a partially updated cache
+			if len(group.Users) > 0 && !hasUser {
+				group.Users = append(group.Users, accountID)
+				p.groupsCache.setGroup(group)
 			}
 			continue
 		}
@@ -205,6 +208,11 @@ func (p *Provider) fetchUserPermsByToken(ctx context.Context, accountID extsvc.A
 				repos, hasNextPage, _, err = p.client.ListTeamRepositories(ctx, group.Org, group.Team, page)
 			}
 			if err != nil {
+				// Add and return what we've found on this page but don't persist group
+				// to cache
+				for _, r := range repos {
+					addRepoToUserPerms(extsvc.RepoID(r.ID))
+				}
 				return perms, errors.Wrap(err, "list repos for group")
 			}
 			// Add results to both group (for persistence) and permissions for user
@@ -331,15 +339,18 @@ func (p *Provider) FetchRepoPerms(ctx context.Context, repo *extsvc.Repository, 
 		if len(group.Users) > 0 {
 			// Just use cache if available and not invalidated
 			addUserToRepoPerms(group.Users...)
-			// Perform partial cache update to repositories iff non-empty
-			if len(group.Repositories) > 0 {
-				for _, repo := range group.Repositories {
-					if repo == repoID {
-						group.Repositories = append(group.Repositories, repoID)
-						p.groupsCache.setGroup(group.cachedGroup)
-						break
-					}
+			// If this repo's membership in this group is not noted yet, add it
+			hasRepo := false
+			for _, user := range group.Repositories {
+				if user == repoID {
+					hasRepo = true
+					break
 				}
+			}
+			// Only insert if this is a partially updated cache
+			if len(group.Repositories) > 0 && !hasRepo {
+				group.Repositories = append(group.Repositories, repoID)
+				p.groupsCache.setGroup(group.cachedGroup)
 			}
 			continue
 		}
