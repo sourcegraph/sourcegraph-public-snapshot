@@ -78,6 +78,18 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 	})
 
 	var (
+		authData    = json.RawMessage(`{"access_token": "my_access_token"}`)
+		mockAccount = &extsvc.Account{
+			AccountSpec: extsvc.AccountSpec{
+				AccountID:   "4567",
+				ServiceType: "github",
+				ServiceID:   "https://github.com/",
+			},
+			AccountData: extsvc.AccountData{
+				AuthData: &authData,
+			},
+		}
+
 		mockListAffiliatedRepositories = func(ctx context.Context, visibility github.Visibility, page int, affiliations ...github.RepositoryAffiliation) ([]*github.Repository, bool, int, error) {
 			switch page {
 			case 1:
@@ -159,17 +171,8 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 			t.Fatal("expected nil groupsCache")
 		}
 
-		authData := json.RawMessage(`{"access_token": "my_access_token"}`)
 		repoIDs, err := p.FetchUserPerms(context.Background(),
-			&extsvc.Account{
-				AccountSpec: extsvc.AccountSpec{
-					ServiceType: "github",
-					ServiceID:   "https://github.com/",
-				},
-				AccountData: extsvc.AccountData{
-					AuthData: &authData,
-				},
-			},
+			mockAccount,
 			authz.FetchPermsOptions{},
 		)
 		if err != nil {
@@ -213,19 +216,7 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 			}
 			p.groupsCache = memGroupsCache()
 
-			authData := json.RawMessage(`{"access_token": "my_access_token"}`)
-			repoIDs, err := p.FetchUserPerms(context.Background(),
-				&extsvc.Account{
-					AccountSpec: extsvc.AccountSpec{
-						ServiceType: "github",
-						ServiceID:   "https://github.com/",
-					},
-					AccountData: extsvc.AccountData{
-						AuthData: &authData,
-					},
-				},
-				authz.FetchPermsOptions{},
-			)
+			repoIDs, err := p.FetchUserPerms(context.Background(), mockAccount, authz.FetchPermsOptions{})
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -259,17 +250,8 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 			p.client = mockClient
 			p.groupsCache = memGroupsCache()
 
-			authData := json.RawMessage(`{"access_token": "my_access_token"}`)
 			repoIDs, err := p.FetchUserPerms(context.Background(),
-				&extsvc.Account{
-					AccountSpec: extsvc.AccountSpec{
-						ServiceType: "github",
-						ServiceID:   "https://github.com/",
-					},
-					AccountData: extsvc.AccountData{
-						AuthData: &authData,
-					},
-				},
+				mockAccount,
 				authz.FetchPermsOptions{},
 			)
 			if err != nil {
@@ -338,17 +320,8 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 			p.client = mockClient
 			p.groupsCache = memGroupsCache()
 
-			authData := json.RawMessage(`{"access_token": "my_access_token"}`)
 			repoIDs, err := p.FetchUserPerms(context.Background(),
-				&extsvc.Account{
-					AccountSpec: extsvc.AccountSpec{
-						ServiceType: "github",
-						ServiceID:   "https://github.com/",
-					},
-					AccountData: extsvc.AccountData{
-						AuthData: &authData,
-					},
-				},
+				mockAccount,
 				authz.FetchPermsOptions{InvalidateCaches: true},
 			)
 			if err != nil {
@@ -398,16 +371,6 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 			memCache := memGroupsCache()
 			p.groupsCache = memCache
 
-			authData := json.RawMessage(`{"access_token": "my_access_token"}`)
-			account := &extsvc.Account{
-				AccountSpec: extsvc.AccountSpec{
-					ServiceType: "github",
-					ServiceID:   "https://github.com/",
-				},
-				AccountData: extsvc.AccountData{
-					AuthData: &authData,
-				},
-			}
 			wantRepoIDs := []extsvc.RepoID{
 				"MDEwOlJlcG9zaXRvcnkyNTI0MjU2NzE=",
 				"MDEwOlJlcG9zaXRvcnkyNDQ1MTc1MzY=",
@@ -421,7 +384,7 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 			// first call
 			t.Run("first call", func(t *testing.T) {
 				repoIDs, err := p.FetchUserPerms(context.Background(),
-					account,
+					mockAccount,
 					authz.FetchPermsOptions{},
 				)
 				if err != nil {
@@ -441,7 +404,7 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 				callsToListOrgRepos = 0
 				callsToListTeamRepos = 0
 				repoIDs, err := p.FetchUserPerms(context.Background(),
-					account,
+					mockAccount,
 					authz.FetchPermsOptions{InvalidateCaches: false},
 				)
 				if err != nil {
@@ -461,7 +424,7 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 				callsToListOrgRepos = 0
 				callsToListTeamRepos = 0
 				repoIDs, err := p.FetchUserPerms(context.Background(),
-					account,
+					mockAccount,
 					authz.FetchPermsOptions{InvalidateCaches: true},
 				)
 				if err != nil {
@@ -475,6 +438,72 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 					t.Fatalf("RepoIDs mismatch (-want +got):\n%s", diff)
 				}
 			})
+		})
+
+		t.Run("cache partial update", func(t *testing.T) {
+			mockClient := &mockClient{
+				MockListAffiliatedRepositories:                   mockListAffiliatedRepositories,
+				MockGetAuthenticatedUserOrgsDetailsAndMembership: mockListOrgDetails,
+				MockGetAuthenticatedUserTeams: func(ctx context.Context, page int) (teams []*github.Team, hasNextPage bool, rateLimitCost int, err error) {
+					return []*github.Team{
+						{Organization: &mockOrgNoRead.Org, Name: "ns team 2", Slug: "ns-team-2", ReposCount: 3},
+					}, false, 1, nil
+				},
+				MockListOrgRepositories: mockListOrgRepositories,
+				MockListTeamRepositories: func(ctx context.Context, org, team string, page int) (repos []*github.Repository, hasNextPage bool, rateLimitCost int, err error) {
+					return []*github.Repository{
+						{ID: "MDEwOlJlcG9zaXRvcnkyNDI2nsteam1="},
+					}, false, 1, nil
+				},
+			}
+
+			p := NewProvider("", ProviderOptions{
+				GitHubURL: mustURL(t, "https://github.com"),
+			})
+			p.client = mockClient
+			memCache := memGroupsCache()
+			p.groupsCache = memCache
+
+			// cache populated from repo-centric sync (should add self)
+			p.groupsCache.setGroup(cachedGroup{
+				Org:          mockOrgRead.Login,
+				Users:        []extsvc.AccountID{"1234"},
+				Repositories: []extsvc.RepoID{}},
+			)
+			// cache populated from user-centric sync (should not add self)
+			p.groupsCache.setGroup(cachedGroup{
+				Org:          mockOrgNoRead.Login,
+				Team:         "ns-team-2",
+				Users:        []extsvc.AccountID{},
+				Repositories: []extsvc.RepoID{"MDEwOlJlcG9zaXRvcnkyNTI0MjU2NzE="}},
+			)
+
+			// run a sync
+			_, err := p.FetchUserPerms(context.Background(),
+				mockAccount,
+				authz.FetchPermsOptions{InvalidateCaches: false},
+			)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			// mock user should have added self to complete cache
+			group, found := p.groupsCache.getGroup(mockOrgRead.Login, "")
+			if !found {
+				t.Fatal("expected group")
+			}
+			if len(group.Users) != 2 {
+				t.Fatal("expected an additional user in partial cache group")
+			}
+
+			// mock user should not have added self to incomplete cache
+			group, found = p.groupsCache.getGroup(mockOrgNoRead.Login, "ns-team-2")
+			if !found {
+				t.Fatal("expected group")
+			}
+			if len(group.Users) != 0 {
+				t.Fatal("expected users not to be updated")
+			}
 		})
 	})
 }
@@ -872,6 +901,85 @@ func TestProvider_FetchRepoPerms(t *testing.T) {
 					t.Fatalf("AccountIDs mismatch (-want +got):\n%s", diff)
 				}
 			})
+		})
+
+		t.Run("cache partial update", func(t *testing.T) {
+			p := NewProvider("", ProviderOptions{
+				GitHubURL: mustURL(t, "https://github.com"),
+			})
+			p.client = &mockClient{
+				MockListRepositoryCollaborators: mockListCollaborators,
+				MockGetOrganization: func(ctx context.Context, login string) (org *github.OrgDetails, err error) {
+					// use teams
+					return &github.OrgDetails{DefaultRepositoryPermission: "none"}, nil
+				},
+				MockListOrganizationMembers: func(ctx context.Context, owner string, page int, adminOnly bool) (users []*github.Collaborator, hasNextPage bool, _ error) {
+					return []*github.Collaborator{}, false, nil
+				},
+				MockListRepositoryTeams: func(ctx context.Context, owner, repo string, page int) (teams []*github.Team, hasNextPage bool, _ error) {
+					return []*github.Team{
+						{Slug: "team1"},
+						{Slug: "team2"},
+					}, false, nil
+				},
+				MockListTeamMembers: func(ctx context.Context, owner, team string, page int) (users []*github.Collaborator, hasNextPage bool, _ error) {
+					switch team {
+					case "team1":
+						return []*github.Collaborator{
+							{DatabaseID: 5678},
+						}, false, nil
+					case "team2":
+						return []*github.Collaborator{
+							{DatabaseID: 6789},
+						}, false, nil
+					}
+					return []*github.Collaborator{}, false, nil
+				},
+			}
+			memCache := memGroupsCache()
+			p.groupsCache = memCache
+
+			// cache populated from user-centric sync (should add self)
+			p.groupsCache.setGroup(cachedGroup{
+				Org:          "org",
+				Team:         "team1",
+				Users:        []extsvc.AccountID{},
+				Repositories: []extsvc.RepoID{"MDEwOlJlcG9zaXRvcnkyNTI0MjU2NzE="}},
+			)
+			// cache populated from repo-centric sync (should not add self)
+			p.groupsCache.setGroup(cachedGroup{
+				Org:          "org",
+				Team:         "team2",
+				Users:        []extsvc.AccountID{"1234"},
+				Repositories: []extsvc.RepoID{}},
+			)
+
+			// run a sync
+			_, err := p.FetchRepoPerms(context.Background(),
+				&mockOrgRepo,
+				authz.FetchPermsOptions{InvalidateCaches: false},
+			)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			// mock user should have added self to complete cache
+			group, found := p.groupsCache.getGroup("org", "team1")
+			if !found {
+				t.Fatal("expected group")
+			}
+			if len(group.Repositories) != 2 {
+				t.Fatal("expected an additional repo in partial cache group")
+			}
+
+			// mock user should not have added self to incomplete cache
+			group, found = p.groupsCache.getGroup("org", "team2")
+			if !found {
+				t.Fatal("expected group")
+			}
+			if len(group.Repositories) != 0 {
+				t.Fatal("expected repos not to be updated")
+			}
 		})
 	})
 }
