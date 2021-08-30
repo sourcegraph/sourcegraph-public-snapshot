@@ -114,7 +114,7 @@ func requestedScopes(p *schema.GitHubAuthProvider, extraScopes []string) []strin
 	}
 
 	// Needs extra scope to check organization membership
-	if len(p.AllowOrgs) > 0 {
+	if len(p.AllowOrgs) > 0 || p.AllowGroupsPermissionsSync {
 		scopes = append(scopes, "read:org")
 	}
 
