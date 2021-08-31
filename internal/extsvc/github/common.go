@@ -1546,10 +1546,16 @@ type RepoNotFoundError struct{}
 func (e RepoNotFoundError) Error() string  { return "GitHub repository not found" }
 func (e RepoNotFoundError) NotFound() bool { return true }
 
+// RepoNotFoundError is when the requested GitHub organization is not found.
+type OrgNotFoundError struct{}
+
+func (e OrgNotFoundError) Error() string  { return "GitHub organization not found" }
+func (e OrgNotFoundError) NotFound() bool { return true }
+
 // IsNotFound reports whether err is a GitHub API error of type NOT_FOUND, the equivalent cached
 // response error, or HTTP 404.
 func IsNotFound(err error) bool {
-	if errors.HasType(err, &RepoNotFoundError{}) || errors.HasType(err, ErrPullRequestNotFound(0)) ||
+	if errors.HasType(err, &RepoNotFoundError{}) || errors.HasType(err, &OrgNotFoundError{}) || errors.HasType(err, ErrPullRequestNotFound(0)) ||
 		HTTPErrorCode(err) == http.StatusNotFound {
 		return true
 	}
@@ -1792,13 +1798,20 @@ const (
 	VisibilityPrivate Visibility = "private"
 )
 
-// Visibility is the affiliation filter for listing repositories.
-type Affiliation string
+// RepositoryAffiliation is the affiliation filter for listing repositories.
+type RepositoryAffiliation string
 
 const (
-	AffiliationOwner        Affiliation = "owner"
-	AffiliationCollaborator Affiliation = "collaborator"
-	AffiliationOrgMember    Affiliation = "organization_member"
+	AffiliationOwner        RepositoryAffiliation = "owner"
+	AffiliationCollaborator RepositoryAffiliation = "collaborator"
+	AffiliationOrgMember    RepositoryAffiliation = "organization_member"
+)
+
+type CollaboratorAffiliation string
+
+const (
+	AffiliationOutside CollaboratorAffiliation = "outside"
+	AffiliationDirect  CollaboratorAffiliation = "direct"
 )
 
 type restSearchResponse struct {

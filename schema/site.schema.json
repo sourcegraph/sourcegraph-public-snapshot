@@ -1316,6 +1316,11 @@
             "type": "string",
             "minLength": 1
           }
+        },
+        "allowGroupsPermissionsSync": {
+          "description": "Allows sync of GitHub teams and organizations permissions across all external services associated with this provider to allow enabling of [repository permissions caching](https://docs.sourcegraph.com/admin/repo/permissions#permissions-caching).",
+          "default": false,
+          "type": "boolean"
         }
       }
     },
