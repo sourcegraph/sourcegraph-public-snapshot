@@ -1006,7 +1006,7 @@ func TestProvider_Validate(t *testing.T) {
 
 		t.Run("error getting scopes", func(t *testing.T) {
 			p.client = &mockClient{
-				MockGetAuthenticatedUserOAuthScopes: func(ctx context.Context) ([]string, error) {
+				MockGetAuthenticatedOAuthScopes: func(ctx context.Context) ([]string, error) {
 					return nil, errors.New("scopes error")
 				},
 			}
@@ -1021,7 +1021,7 @@ func TestProvider_Validate(t *testing.T) {
 
 		t.Run("missing 'read:org'", func(t *testing.T) {
 			p.client = &mockClient{
-				MockGetAuthenticatedUserOAuthScopes: func(ctx context.Context) ([]string, error) {
+				MockGetAuthenticatedOAuthScopes: func(ctx context.Context) ([]string, error) {
 					return []string{}, nil
 				},
 			}
@@ -1036,7 +1036,7 @@ func TestProvider_Validate(t *testing.T) {
 
 		t.Run("scopes ok", func(t *testing.T) {
 			p.client = &mockClient{
-				MockGetAuthenticatedUserOAuthScopes: func(ctx context.Context) ([]string, error) {
+				MockGetAuthenticatedOAuthScopes: func(ctx context.Context) ([]string, error) {
 					return []string{"read:org"}, nil
 				},
 			}

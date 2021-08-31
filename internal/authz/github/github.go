@@ -74,7 +74,7 @@ func (p *Provider) ServiceType() string {
 func (p *Provider) Validate() (problems []string) {
 	required := p.requiredAuthScopes()
 	if len(required) > 0 {
-		scopes, err := p.client.GetAuthenticatedUserOAuthScopes(context.Background())
+		scopes, err := p.client.GetAuthenticatedOAuthScopes(context.Background())
 		if err != nil {
 			problems = append(problems, fmt.Sprintf("Additional auth scopes are required, but failed to check authenticated scopes: %+v", err))
 		} else {

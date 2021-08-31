@@ -181,6 +181,22 @@ func Test_GetAuthenticatedUserOAuthScopes(t *testing.T) {
 	}
 }
 
+func Test_GetAuthenticatedOAuthScopes(t *testing.T) {
+	client, save := newV3TestClient(t, "GetAuthenticatedOAuthScopes")
+	defer save()
+
+	scopes, err := client.GetAuthenticatedOAuthScopes(context.Background())
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	want := []string{"admin:enterprise", "admin:gpg_key", "admin:org", "admin:org_hook", "admin:public_key", "admin:repo_hook", "delete:packages", "delete_repo", "gist", "notifications", "repo", "user", "workflow", "write:discussion", "write:packages"}
+	sort.Strings(scopes)
+	if diff := cmp.Diff(want, scopes); diff != "" {
+		t.Fatalf("Scopes mismatch (-want +got):\n%s", diff)
+	}
+}
+
 // NOTE: To update VCR for this test, please use the token of "sourcegraph-vcr"
 // for GITHUB_TOKEN, which can be found in 1Password.
 func TestListRepositoryCollaborators(t *testing.T) {
