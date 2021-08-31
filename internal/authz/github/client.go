@@ -114,7 +114,7 @@ func (m *mockClient) GetOrganization(ctx context.Context, login string) (org *gi
 }
 
 func (m *mockClient) GetAuthenticatedOAuthScopes(ctx context.Context) ([]string, error) {
-	return m.GetAuthenticatedOAuthScopes(ctx)
+	return m.MockGetAuthenticatedOAuthScopes(ctx)
 }
 
 func (m *mockClient) WithToken(token string) client {

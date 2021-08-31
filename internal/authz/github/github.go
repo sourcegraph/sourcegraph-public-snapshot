@@ -82,8 +82,17 @@ func (p *Provider) Validate() (problems []string) {
 			for _, gotScope := range scopes {
 				gotScopes[gotScope] = struct{}{}
 			}
+
+			// check if required scopes are satisfied
 			for _, requiredScope := range required {
-				if _, found := gotScopes[requiredScope.scope]; !found {
+				satisfiesScope := false
+				for _, s := range requiredScope.scopes {
+					if _, found := gotScopes[s]; found {
+						satisfiesScope = true
+						break
+					}
+				}
+				if !satisfiesScope {
 					problems = append(problems, requiredScope.message)
 				}
 			}
@@ -93,7 +102,7 @@ func (p *Provider) Validate() (problems []string) {
 }
 
 type requiredScope struct {
-	scope   string
+	scopes  []string
 	message string
 }
 
@@ -103,8 +112,8 @@ func (p *Provider) requiredAuthScopes() []requiredScope {
 	if p.groupsCache != nil {
 		// Needs extra scope to pull group permissions
 		scopes = append(scopes, requiredScope{
-			scope: "read:org",
-			message: "Scope `read:org` is required to enable `authorization.groupsCacheTTL` - " +
+			scopes: []string{"read:org", "write:org", "admin:org"},
+			message: "Scope `read:org`, `write:org`, or `admin:org` is required to enable `authorization.groupsCacheTTL` - " +
 				"please provide a `token` with the required scopes, or try updating the [**site configuration**](/site-admin/configuration)'s " +
 				"corresponding entry in [`auth.providers`](https://docs.sourcegraph.com/admin/auth) to enable `allowGroupsPermissionsSync`.",
 		})
