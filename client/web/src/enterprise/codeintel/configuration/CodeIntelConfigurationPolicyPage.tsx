@@ -1,5 +1,5 @@
 import * as H from 'history'
-import React, { FunctionComponent, useCallback, useEffect, useState } from 'react'
+import React, { FunctionComponent, useEffect, useState } from 'react'
 import { RouteComponentProps } from 'react-router'
 import { of } from 'rxjs'
 
