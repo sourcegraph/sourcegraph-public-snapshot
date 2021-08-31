@@ -5,6 +5,8 @@ import { Layout as ReactGridLayout, Layouts as ReactGridLayouts, Responsive, Wid
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { isFirefox } from '@sourcegraph/shared/src/util/browserDetection'
 
+import { CodeInsightsPings } from '../../../../telemetry-values'
+
 import styles from './ViewGrid.module.scss'
 
 // TODO use a method to get width that also triggers when file explorer is closed
@@ -69,7 +71,7 @@ export const ViewGrid: React.FunctionComponent<PropsWithChildren<ViewGridProps>>
         (_layout, item) => {
             try {
                 telemetryService.log(
-                    'InsightUICustomization',
+                    CodeInsightsPings.InsightUICustomization,
                     { insightType: item.i.split('.')[0] },
                     { insightType: item.i.split('.')[0] }
                 )

@@ -5,6 +5,8 @@ import { ChartContent } from 'sourcegraph'
 
 import { TelemetryService } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
+import { CodeInsightsPings } from '../../../telemetry-values'
+
 import { BarChart } from './charts/bar/BarChart'
 import { LineChart } from './charts/line/LineChart'
 import { DatumZoneClickEvent } from './charts/line/types'
@@ -28,7 +30,7 @@ export const ChartViewContent: FunctionComponent<ChartViewContentProps> = props 
 
     const handleDatumLinkClick = useCallback((): void => {
         telemetryService.log(
-            'InsightDataPointClick',
+            CodeInsightsPings.InsightDataPointClick,
             { insightType: getInsightTypeByViewId(viewID) },
             { insightType: getInsightTypeByViewId(viewID) }
         )
@@ -44,7 +46,7 @@ export const ChartViewContent: FunctionComponent<ChartViewContentProps> = props 
             }
 
             telemetryService.log(
-                'InsightDataPointClick',
+                CodeInsightsPings.InsightDataPointClick,
                 { insightType: getInsightTypeByViewId(viewID) },
                 { insightType: getInsightTypeByViewId(viewID) }
             )

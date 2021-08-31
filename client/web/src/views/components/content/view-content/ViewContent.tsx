@@ -8,6 +8,8 @@ import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryServi
 import { renderMarkdown } from '@sourcegraph/shared/src/util/markdown'
 import { hasProperty } from '@sourcegraph/shared/src/util/types'
 
+import { CodeInsightsPings } from '../../telemetry-values'
+
 import { ChartViewContent } from './chart-view-content/ChartViewContent'
 
 const isMarkupContent = (input: unknown): input is MarkupContent =>
@@ -49,7 +51,7 @@ export const ViewContent: React.FunctionComponent<ViewContentProps> = ({
             // the view quickly, clear the timeout for logging the event
             timeoutID = window.setTimeout(() => {
                 props.telemetryService.log(
-                    'InsightHover',
+                    CodeInsightsPings.InsightHover,
                     { insightType: viewID.split('.')[0] },
                     { insightType: viewID.split('.')[0] }
                 )

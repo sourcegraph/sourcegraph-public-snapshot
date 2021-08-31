@@ -1,0 +1,17 @@
+export enum CodeInsightsPings {
+    CodeInsightsCodeStatsCreationPageCancelClick = 'CodeInsightsCodeStatsCreationPageCancelClick',
+    CodeInsightsCodeStatsCreationPageSubmitClick = 'CodeInsightsCodeStatsCreationPageSubmitClick',
+    CodeInsightsCreateCodeStatsInsightClick = 'CodeInsightsCreateCodeStatsInsightClick',
+    CodeInsightsCreateSearchBasedInsightClick = 'CodeInsightsCreateSearchBasedInsightClick',
+    CodeInsightsDashboardCreationPageSubmitClick = 'CodeInsightsDashboardCreationPageSubmitClick',
+    CodeInsightsExploreInsightExtensionsClick = 'CodeInsightsExploreInsightExtensionsClick',
+    CodeInsightsSearchBasedCreationPageCancelClick = 'CodeInsightsSearchBasedCreationPageCancelClick',
+    CodeInsightsSearchBasedCreationPageSubmitClick = 'CodeInsightsSearchBasedCreationPageSubmitClick',
+    CodeInsightsSearchBasedFilterInsightCreation = 'CodeInsightsSearchBasedFilterInsightCreation',
+    CodeInsightsSearchBasedFilterUpdating = 'CodeInsightsSearchBasedFilterUpdating',
+    InsightDataPointClick = 'InsightDataPointClick',
+    InsightHover = 'InsightHover',
+    InsightsGroupedCount = 'InsightsGroupedCount',
+    InsightsGroupedStepSizes = 'InsightsGroupedStepSizes',
+    InsightUICustomization = 'InsightUICustomization',
+}

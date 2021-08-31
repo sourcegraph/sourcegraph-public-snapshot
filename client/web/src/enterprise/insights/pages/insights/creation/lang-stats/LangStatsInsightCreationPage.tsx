@@ -11,6 +11,7 @@ import { PageTitle } from '../../../../../../components/PageTitle'
 import { FORM_ERROR, FormChangeEvent } from '../../../../components/form/hooks/useForm'
 import { LangStatsInsight } from '../../../../core/types'
 import { useInsightSubjects } from '../../../../hooks/use-insight-subjects/use-insight-subjects'
+import { CodeInsightsPings } from '../../../../telemetry-values'
 
 import {
     LangStatsInsightCreationContent,
@@ -89,7 +90,7 @@ export const LangStatsInsightCreationPage: React.FunctionComponent<LangStatsInsi
 
                 // Clear initial values if user successfully created search insight
                 setInitialFormValues(undefined)
-                telemetryService.log('CodeInsightsCodeStatsCreationPageSubmitClick')
+                telemetryService.log(CodeInsightsPings.CodeInsightsCodeStatsCreationPageSubmitClick)
 
                 onSuccessfulCreation(insight)
             } catch (error) {
@@ -104,7 +105,7 @@ export const LangStatsInsightCreationPage: React.FunctionComponent<LangStatsInsi
     const handleCancel = useCallback(() => {
         // Clear initial values if user successfully created search insight
         setInitialFormValues(undefined)
-        telemetryService.log('CodeInsightsCodeStatsCreationPageCancelClick')
+        telemetryService.log(CodeInsightsPings.CodeInsightsCodeStatsCreationPageCancelClick)
 
         onCancel()
     }, [setInitialFormValues, telemetryService, onCancel])

@@ -10,6 +10,7 @@ import { PageTitle } from '../../../../../../components/PageTitle'
 import { LineChart } from '../../../../../../views/components/content/view-content/chart-view-content/charts/line/LineChart'
 import { PieChart } from '../../../../../../views/components/content/view-content/chart-view-content/charts/pie/PieChart'
 import { LinkWithQuery } from '../../../../components/link-with-query'
+import { CodeInsightsPings } from '../../../../telemetry-values'
 
 import { LINE_CHART_DATA, PIE_CHART_DATA } from './charts-mock'
 import styles from './IntroCreationPage.module.scss'
@@ -21,15 +22,15 @@ export const IntroCreationPage: React.FunctionComponent<IntroCreationPageProps> 
     const { telemetryService } = props
 
     const logCreateSearchBasedInsightClick = (): void => {
-        telemetryService.log('CodeInsightsCreateSearchBasedInsightClick')
+        telemetryService.log(CodeInsightsPings.CodeInsightsCreateSearchBasedInsightClick)
     }
 
     const logCreateCodeStatsInsightClick = (): void => {
-        telemetryService.log('CodeInsightsCreateCodeStatsInsightClick')
+        telemetryService.log(CodeInsightsPings.CodeInsightsCreateCodeStatsInsightClick)
     }
 
     const logExploreExtensionsClick = (): void => {
-        telemetryService.log('CodeInsightsExploreInsightExtensionsClick')
+        telemetryService.log(CodeInsightsPings.CodeInsightsExploreInsightExtensionsClick)
     }
 
     useEffect(() => {

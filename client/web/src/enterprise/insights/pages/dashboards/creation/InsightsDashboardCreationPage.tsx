@@ -19,6 +19,7 @@ import { FORM_ERROR, SubmissionErrors } from '../../../components/form/hooks/use
 import { InsightsApiContext } from '../../../core/backend/api-provider'
 import { addDashboardToSettings } from '../../../core/settings-action/dashboards'
 import { useInsightSubjects } from '../../../hooks/use-insight-subjects/use-insight-subjects'
+import { CodeInsightsPings } from '../../../telemetry-values'
 
 import {
     DashboardCreationFields,
@@ -54,7 +55,7 @@ export const InsightsDashboardCreationPage: React.FunctionComponent<InsightsDash
 
             await updateSubjectSettings(platformContext, subjectID, editedSettings).toPromise()
 
-            telemetryService.log('CodeInsightsDashboardCreationPageSubmitClick')
+            telemetryService.log(CodeInsightsPings.CodeInsightsDashboardCreationPageSubmitClick)
 
             // Navigate user to the dashboard page with new created dashboard
             history.push(`/insights/dashboards/${camelCase(dashboard.title)}`)

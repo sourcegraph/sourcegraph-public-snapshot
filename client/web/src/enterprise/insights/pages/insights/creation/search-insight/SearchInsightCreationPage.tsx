@@ -11,6 +11,7 @@ import { PageTitle } from '../../../../../../components/PageTitle'
 import { FORM_ERROR, FormChangeEvent } from '../../../../components/form/hooks/useForm'
 import { SearchBasedInsight } from '../../../../core/types'
 import { useInsightSubjects } from '../../../../hooks/use-insight-subjects/use-insight-subjects'
+import { CodeInsightsPings } from '../../../../telemetry-values'
 
 import {
     SearchInsightCreationContent,
@@ -81,7 +82,7 @@ export const SearchInsightCreationPage: React.FunctionComponent<SearchInsightCre
 
                 await onInsightCreateRequest({ subjectId: subjectID, insight })
 
-                telemetryService.log('CodeInsightsSearchBasedCreationPageSubmitClick')
+                telemetryService.log(CodeInsightsPings.CodeInsightsSearchBasedCreationPageSubmitClick)
 
                 // Clear initial values if user successfully created search insight
                 setLocalStorageFormValues(undefined)
@@ -101,7 +102,7 @@ export const SearchInsightCreationPage: React.FunctionComponent<SearchInsightCre
     }
 
     const handleCancel = useCallback(() => {
-        telemetryService.log('CodeInsightsSearchBasedCreationPageCancelClick')
+        telemetryService.log(CodeInsightsPings.CodeInsightsSearchBasedCreationPageCancelClick)
         setLocalStorageFormValues(undefined)
         onCancel()
     }, [telemetryService, setLocalStorageFormValues, onCancel])

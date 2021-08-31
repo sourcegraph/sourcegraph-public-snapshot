@@ -24,6 +24,7 @@ import { useDeleteInsight } from '../../../../hooks/use-delete-insight/use-delet
 import { useDistinctValue } from '../../../../hooks/use-distinct-value'
 import { useParallelRequests } from '../../../../hooks/use-parallel-requests/use-parallel-request'
 import { DashboardInsightsContext } from '../../../../pages/dashboards/dashboard-page/components/dashboards-content/components/dashboard-inisghts/DashboardInsightsContext'
+import { CodeInsightsPings } from '../../../../telemetry-values'
 import { FORM_ERROR, SubmissionErrors } from '../../../form/hooks/useForm'
 import { InsightContextMenu } from '../insight-context-menu/InsightContextMenu'
 
@@ -102,7 +103,7 @@ export const BackendInsight: React.FunctionComponent<BackendInsightProps> = prop
 
             await updateSubjectSettings(platformContext, subjectId, editedSettings).toPromise()
 
-            telemetryService.log('CodeInsightsSearchBasedFilterUpdating')
+            telemetryService.log(CodeInsightsPings.CodeInsightsSearchBasedFilterUpdating)
 
             setOriginalInsightFilters(filters)
             setIsFiltersOpen(false)
@@ -130,7 +131,7 @@ export const BackendInsight: React.FunctionComponent<BackendInsightProps> = prop
                 originalInsight: insight,
             })
 
-            telemetryService.log('CodeInsightsSearchBasedFilterInsightCreation')
+            telemetryService.log(CodeInsightsPings.CodeInsightsSearchBasedFilterInsightCreation)
             setOriginalInsightFilters(filters)
             setIsFiltersOpen(false)
         } catch (error) {

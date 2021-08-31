@@ -14,6 +14,8 @@ import { TelemetryService } from '@sourcegraph/shared/src/telemetry/telemetrySer
 
 import { Settings } from '../schema/settings.schema'
 
+import { CodeInsightsPings } from './telemetry-values'
+
 const BACKEND_INSIGHTS_SETTINGS_KEY = 'insights.allrepos'
 
 enum InsightTypePrefix {
@@ -51,7 +53,7 @@ export function logCodeInsightsCount(
             const newGroupedInsights = getInsightsGroupedByType(newSettings)
 
             if (!isEqual(oldGroupedInsights, newGroupedInsights)) {
-                telemetryService.log('InsightsGroupedCount', newGroupedInsights, newGroupedInsights)
+                telemetryService.log(CodeInsightsPings.InsightsGroupedCount, newGroupedInsights, newGroupedInsights)
             }
         }
     } catch {
@@ -73,7 +75,11 @@ export function logSearchBasedInsightStepSize(
             const newGroupedStepSizes = getGroupedStepSizes(newSettings.final)
 
             if (!isEqual(oldGroupedStepSizes, newGroupedStepSizes)) {
-                telemetryService.log('InsightsGroupedStepSizes', newGroupedStepSizes, newGroupedStepSizes)
+                telemetryService.log(
+                    CodeInsightsPings.InsightsGroupedStepSizes,
+                    newGroupedStepSizes,
+                    newGroupedStepSizes
+                )
             }
         }
     } catch {
