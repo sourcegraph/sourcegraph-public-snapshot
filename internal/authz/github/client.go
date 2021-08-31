@@ -7,6 +7,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 )
 
+// 🚨 SECURITY: Call sites should take care to provide this valid values and use the return
+// value appropriately to ensure org repo access are only provided to valid users.
 func canViewOrgRepos(org *github.OrgDetailsAndMembership) bool {
 	if org == nil {
 		return false
@@ -22,18 +24,22 @@ func canViewOrgRepos(org *github.OrgDetailsAndMembership) bool {
 }
 
 // client defines the set of GitHub API client methods used by the authz provider.
-//
-// NOTE: All methods are sorted in alphabetical order.
 type client interface {
-	ListAffiliatedRepositories(ctx context.Context, visibility github.Visibility, page int, affiliations ...github.Affiliation) (repos []*github.Repository, hasNextPage bool, rateLimitCost int, err error)
+	ListAffiliatedRepositories(ctx context.Context, visibility github.Visibility, page int, affiliations ...github.RepositoryAffiliation) (repos []*github.Repository, hasNextPage bool, rateLimitCost int, err error)
 	ListOrgRepositories(ctx context.Context, org string, page int, repoType string) (repos []*github.Repository, hasNextPage bool, rateLimitCost int, err error)
 	ListTeamRepositories(ctx context.Context, org, team string, page int) (repos []*github.Repository, hasNextPage bool, rateLimitCost int, err error)
 
-	ListRepositoryCollaborators(ctx context.Context, owner, repo string, page int) (users []*github.Collaborator, hasNextPage bool, _ error)
+	ListRepositoryCollaborators(ctx context.Context, owner, repo string, page int, affiliations github.CollaboratorAffiliation) (users []*github.Collaborator, hasNextPage bool, _ error)
+	ListRepositoryTeams(ctx context.Context, owner, repo string, page int) (teams []*github.Team, hasNextPage bool, _ error)
+
+	ListOrganizationMembers(ctx context.Context, owner string, page int, adminsOnly bool) (users []*github.Collaborator, hasNextPage bool, _ error)
+	ListTeamMembers(ctx context.Context, owner, team string, page int) (users []*github.Collaborator, hasNextPage bool, _ error)
 
 	GetAuthenticatedUserOrgsDetailsAndMembership(ctx context.Context, page int) (orgs []github.OrgDetailsAndMembership, hasNextPage bool, rateLimitCost int, err error)
 	GetAuthenticatedUserTeams(ctx context.Context, page int) (teams []*github.Team, hasNextPage bool, rateLimitCost int, err error)
+	GetOrganization(ctx context.Context, login string) (org *github.OrgDetails, err error)
 
+	GetAuthenticatedUserOAuthScopes(ctx context.Context) ([]string, error)
 	WithToken(token string) client
 }
 
@@ -53,17 +59,22 @@ func (c *ClientAdapter) WithToken(token string) client {
 var _ client = (*mockClient)(nil)
 
 type mockClient struct {
-	MockListAffiliatedRepositories                   func(ctx context.Context, visibility github.Visibility, page int, affiliations ...github.Affiliation) (repos []*github.Repository, hasNextPage bool, rateLimitCost int, err error)
+	MockListAffiliatedRepositories                   func(ctx context.Context, visibility github.Visibility, page int, affiliations ...github.RepositoryAffiliation) (repos []*github.Repository, hasNextPage bool, rateLimitCost int, err error)
 	MockListOrgRepositories                          func(ctx context.Context, org string, page int, repoType string) (repos []*github.Repository, hasNextPage bool, rateLimitCost int, err error)
 	MockListTeamRepositories                         func(ctx context.Context, org, team string, page int) (repos []*github.Repository, hasNextPage bool, rateLimitCost int, err error)
-	MockListRepositoryCollaborators                  func(ctx context.Context, owner, repo string, page int) (users []*github.Collaborator, hasNextPage bool, _ error)
+	MockListRepositoryCollaborators                  func(ctx context.Context, owner, repo string, page int, affiliation github.CollaboratorAffiliation) (users []*github.Collaborator, hasNextPage bool, _ error)
+	MockListRepositoryTeams                          func(ctx context.Context, owner, repo string, page int) (teams []*github.Team, hasNextPage bool, _ error)
+	MockListOrganizationMembers                      func(ctx context.Context, owner string, page int, adminOnly bool) (users []*github.Collaborator, hasNextPage bool, _ error)
+	MockListTeamMembers                              func(ctx context.Context, owner, team string, page int) (users []*github.Collaborator, hasNextPage bool, _ error)
 	MockGetAuthenticatedUserOrgsDetailsAndMembership func(ctx context.Context, page int) (orgs []github.OrgDetailsAndMembership, hasNextPage bool, rateLimitCost int, err error)
 	MockGetAuthenticatedUserTeams                    func(ctx context.Context, page int) (teams []*github.Team, hasNextPage bool, rateLimitCost int, err error)
+	MockGetOrganization                              func(ctx context.Context, login string) (org *github.OrgDetails, err error)
+	MockGetAuthenticatedUserOAuthScopes              func(ctx context.Context) ([]string, error)
 	MockWithToken                                    func(token string) client
 }
 
-func (m *mockClient) ListAffiliatedRepositories(ctx context.Context, visibility github.Visibility, page int, affiliations ...github.Affiliation) ([]*github.Repository, bool, int, error) {
-	return m.MockListAffiliatedRepositories(ctx, visibility, page)
+func (m *mockClient) ListAffiliatedRepositories(ctx context.Context, visibility github.Visibility, page int, affiliations ...github.RepositoryAffiliation) ([]*github.Repository, bool, int, error) {
+	return m.MockListAffiliatedRepositories(ctx, visibility, page, affiliations...)
 }
 
 func (m *mockClient) ListOrgRepositories(ctx context.Context, org string, page int, repoType string) (repos []*github.Repository, hasNextPage bool, rateLimitCost int, err error) {
@@ -74,8 +85,20 @@ func (m *mockClient) ListTeamRepositories(ctx context.Context, org, team string,
 	return m.MockListTeamRepositories(ctx, org, team, page)
 }
 
-func (m *mockClient) ListRepositoryCollaborators(ctx context.Context, owner, repo string, page int) ([]*github.Collaborator, bool, error) {
-	return m.MockListRepositoryCollaborators(ctx, owner, repo, page)
+func (m *mockClient) ListRepositoryCollaborators(ctx context.Context, owner, repo string, page int, affiliation github.CollaboratorAffiliation) ([]*github.Collaborator, bool, error) {
+	return m.MockListRepositoryCollaborators(ctx, owner, repo, page, affiliation)
+}
+
+func (m *mockClient) ListRepositoryTeams(ctx context.Context, owner, repo string, page int) ([]*github.Team, bool, error) {
+	return m.MockListRepositoryTeams(ctx, owner, repo, page)
+}
+
+func (m *mockClient) ListOrganizationMembers(ctx context.Context, owner string, page int, adminOnly bool) (users []*github.Collaborator, hasNextPage bool, _ error) {
+	return m.MockListOrganizationMembers(ctx, owner, page, adminOnly)
+}
+
+func (m *mockClient) ListTeamMembers(ctx context.Context, owner, team string, page int) (users []*github.Collaborator, hasNextPage bool, _ error) {
+	return m.MockListTeamMembers(ctx, owner, team, page)
 }
 
 func (m *mockClient) GetAuthenticatedUserOrgsDetailsAndMembership(ctx context.Context, page int) (orgs []github.OrgDetailsAndMembership, hasNextPage bool, rateLimitCost int, err error) {
@@ -84,6 +107,14 @@ func (m *mockClient) GetAuthenticatedUserOrgsDetailsAndMembership(ctx context.Co
 
 func (m *mockClient) GetAuthenticatedUserTeams(ctx context.Context, page int) (teams []*github.Team, hasNextPage bool, rateLimitCost int, err error) {
 	return m.MockGetAuthenticatedUserTeams(ctx, page)
+}
+
+func (m *mockClient) GetOrganization(ctx context.Context, login string) (org *github.OrgDetails, err error) {
+	return m.MockGetOrganization(ctx, login)
+}
+
+func (m *mockClient) GetAuthenticatedUserOAuthScopes(ctx context.Context) ([]string, error) {
+	return m.MockGetAuthenticatedUserOAuthScopes(ctx)
 }
 
 func (m *mockClient) WithToken(token string) client {

@@ -2,6 +2,8 @@ package github
 
 import (
 	"context"
+	"fmt"
+	"log"
 	"net/url"
 	"strconv"
 	"strings"
@@ -70,13 +72,51 @@ func (p *Provider) ServiceType() string {
 }
 
 func (p *Provider) Validate() (problems []string) {
-	return nil
+	required := p.requiredAuthScopes()
+	if len(required) > 0 {
+		scopes, err := p.client.GetAuthenticatedUserOAuthScopes(context.Background())
+		if err != nil {
+			problems = append(problems, fmt.Sprintf("Additional auth scopes are required, but failed to check authenticated scopes: %+v", err))
+		}
+
+		gotScopes := make(map[string]struct{})
+		for _, gotScope := range scopes {
+			gotScopes[gotScope] = struct{}{}
+		}
+		for _, requiredScope := range required {
+			if _, found := gotScopes[requiredScope.scope]; !found {
+				problems = append(problems, requiredScope.message)
+			}
+		}
+	}
+	return problems
+}
+
+type requiredScope struct {
+	scope   string
+	message string
+}
+
+func (p *Provider) requiredAuthScopes() []requiredScope {
+	scopes := []requiredScope{}
+
+	if p.groupsCache != nil {
+		// Needs extra scope to pull group permissions
+		scopes = append(scopes, requiredScope{
+			scope: "read:org",
+			message: "Scope 'read:org' is required to enable `authorization.groupsCacheTTL` - " +
+				"please provide a `token` with the required scopes, or try updating the [**site configuration**](/site-admin/configuration)'s " +
+				"corresponding entry in [`auth.providers`](https://docs.sourcegraph.com/admin/auth) to enable `allowGroupsPermissionsSync`.",
+		})
+	}
+
+	return scopes
 }
 
 // fetchUserPermsByToken fetches all the private repo ids that the token can access.
 //
 // This may return a partial result if an error is encountered, e.g. via rate limits.
-func (p *Provider) fetchUserPermsByToken(ctx context.Context, token string, opts authz.FetchPermsOptions) (*authz.ExternalUserPermissions, error) {
+func (p *Provider) fetchUserPermsByToken(ctx context.Context, accountID extsvc.AccountID, token string, opts authz.FetchPermsOptions) (*authz.ExternalUserPermissions, error) {
 	// 🚨 SECURITY: Use user token is required to only list repositories the user has access to.
 	client := p.client.WithToken(token)
 
@@ -100,16 +140,16 @@ func (p *Provider) fetchUserPermsByToken(ctx context.Context, token string, opts
 
 	// If groups caching is enabled, we sync just a subset of direct affiliations - we let
 	// other permissions ('organization' affiliation) be sync'd by teams/orgs.
-	affiliations := []github.Affiliation{github.AffiliationOwner, github.AffiliationCollaborator}
+	affiliations := []github.RepositoryAffiliation{github.AffiliationOwner, github.AffiliationCollaborator}
 	if p.groupsCache == nil {
 		// Otherwise, sync all direct affiliations.
-		affiliations = append(affiliations, github.AffiliationOrgMember)
+		affiliations = nil
 	}
 
 	// Sync direct affiliations
 	hasNextPage := true
-	var err error
 	for page := 1; hasNextPage; page++ {
+		var err error
 		var repos []*github.Repository
 		repos, hasNextPage, _, err = client.ListAffiliatedRepositories(ctx, github.VisibilityPrivate, page, affiliations...)
 		if err != nil {
@@ -128,20 +168,36 @@ func (p *Provider) fetchUserPermsByToken(ctx context.Context, token string, opts
 
 	// Now, we look for groups this user belongs to that give access to additional
 	// repositories.
-	groups, err := p.getAffiliatedGroups(ctx, client, opts)
+	groups, err := p.getUserAffiliatedGroups(ctx, client, opts)
 	if err != nil {
 		return perms, errors.Wrap(err, "get groups affiliated with user")
 	}
 
 	// Get repos from groups, cached if possible.
 	for _, group := range groups {
+		// If this is a partial cache, add self to group
+		if len(group.Users) > 0 {
+			hasUser := false
+			for _, user := range group.Users {
+				if user == accountID {
+					hasUser = true
+					break
+				}
+			}
+			if !hasUser {
+				group.Users = append(group.Users, accountID)
+				p.groupsCache.setGroup(group)
+			}
+		}
+
 		// If a valid cached value was found, use it and continue
 		if len(group.Repositories) > 0 {
 			addRepoToUserPerms(group.Repositories...)
 			continue
 		}
-		group.Repositories = make([]extsvc.RepoID, 0, repoSetSize)
 
+		// Perform full sync
+		group.Repositories = make([]extsvc.RepoID, 0, repoSetSize)
 		isOrg := group.Team == ""
 		hasNextPage = true
 		for page := 1; hasNextPage; page++ {
@@ -197,7 +253,7 @@ func (p *Provider) FetchUserPerms(ctx context.Context, account *extsvc.Account, 
 		return nil, errors.New("no token found in the external account data")
 	}
 
-	return p.fetchUserPermsByToken(ctx, tok.AccessToken, opts)
+	return p.fetchUserPermsByToken(ctx, extsvc.AccountID(account.AccountID), tok.AccessToken, opts)
 }
 
 // FetchRepoPerms returns a list of user IDs (on code host) who have read access to
@@ -228,27 +284,111 @@ func (p *Provider) FetchRepoPerms(ctx context.Context, repo *extsvc.Repository, 
 
 	// 100 matches the maximum page size, thus a good default to avoid multiple allocations
 	// when appending the first 100 results to the slice.
-	userIDs := make([]extsvc.AccountID, 0, 100)
+	const userPageSize = 100
+	userIDs := make([]extsvc.AccountID, 0, userPageSize)
+	seenUsers := make(map[extsvc.AccountID]struct{}, userPageSize)
+
+	// addUserToRepoPerms checks if the given users are already tracked before adding it to perms.
+	addUserToRepoPerms := func(users ...extsvc.AccountID) {
+		for _, user := range users {
+			if _, exists := seenUsers[user]; !exists {
+				seenUsers[user] = struct{}{}
+				userIDs = append(userIDs, user)
+			}
+		}
+	}
+
+	// If groups caching is enabled, we sync just direct affiliations, and sync org/team
+	// collaborators separately from cache
+	affiliation := github.AffiliationDirect
+	if p.groupsCache == nil {
+		// Otherwise, sync all affiliations.
+		affiliation = ""
+	}
+
+	// Sync collaborators
 	hasNextPage := true
 	for page := 1; hasNextPage; page++ {
 		var err error
 		var users []*github.Collaborator
-		users, hasNextPage, err = p.client.ListRepositoryCollaborators(ctx, owner, name, page)
+		users, hasNextPage, err = p.client.ListRepositoryCollaborators(ctx, owner, name, page, affiliation)
 		if err != nil {
-			return userIDs, err
+			return userIDs, errors.Wrap(err, "list users for repo")
 		}
 
 		for _, u := range users {
-			userIDs = append(userIDs, extsvc.AccountID(strconv.FormatInt(u.DatabaseID, 10)))
+			addUserToRepoPerms(extsvc.AccountID(strconv.FormatInt(u.DatabaseID, 10)))
 		}
+	}
+
+	// If groups caching is disabled, we are done.
+	if p.groupsCache == nil {
+		return userIDs, nil
+	}
+
+	// Get groups affiliated with this repo.
+	groups, err := p.getRepoAffiliatedGroups(ctx, owner, name, opts)
+	if err != nil {
+		return userIDs, errors.Wrap(err, "get groups affiliated with repo")
+	}
+
+	// Perform a fresh sync with groups that need a sync.
+	repoID := extsvc.RepoID(repo.ID)
+	for _, group := range groups {
+		log.Printf("%+v\n", group)
+		// If this is a partial cache, add self to group
+		if len(group.Repositories) > 0 {
+			hasRepo := false
+			for _, repo := range group.Repositories {
+				if repo == repoID {
+					hasRepo = true
+					break
+				}
+			}
+			if !hasRepo {
+				group.Repositories = append(group.Repositories, repoID)
+				p.groupsCache.setGroup(group.cachedGroup)
+			}
+		}
+
+		// Just use cache if available and not invalidated and continue
+		if len(group.Users) > 0 {
+			addUserToRepoPerms(group.Users...)
+			continue
+		}
+
+		// Perform full sync
+		hasNextPage := true
+		for page := 1; hasNextPage; page++ {
+			var members []*github.Collaborator
+			if group.Team == "" {
+				members, hasNextPage, err = p.client.ListOrganizationMembers(ctx, owner, page, group.adminsOnly)
+			} else {
+				members, hasNextPage, err = p.client.ListTeamMembers(ctx, owner, group.Team, page)
+			}
+			if err != nil {
+				return userIDs, errors.Wrap(err, "list users for group")
+			}
+			for _, u := range members {
+				// Add results to both group (for persistence) and permissions for user
+				accountID := extsvc.AccountID(strconv.FormatInt(u.DatabaseID, 10))
+				group.Users = append(group.Users, accountID)
+				addUserToRepoPerms(accountID)
+			}
+		}
+
+		// Persist group
+		p.groupsCache.setGroup(group.cachedGroup)
 	}
 
 	return userIDs, nil
 }
 
-// getAffiliatedGroups retrieves affiliated organizations and teams for the given client
+// getUserAffiliatedGroups retrieves affiliated organizations and teams for the given client
 // with token. Returned groups are populated from cache if a valid value is available.
-func (p *Provider) getAffiliatedGroups(ctx context.Context, clientWithToken client, opts authz.FetchPermsOptions) ([]cachedGroup, error) {
+//
+// 🚨 SECURITY: clientWithToken must be authenticated with a user token.
+func (p *Provider) getUserAffiliatedGroups(ctx context.Context, clientWithToken client, opts authz.FetchPermsOptions) ([]cachedGroup, error) {
 	groups := make([]cachedGroup, 0)
 	seenGroups := make(map[string]struct{})
 
@@ -266,12 +406,10 @@ func (p *Provider) getAffiliatedGroups(ctx context.Context, clientWithToken clie
 		cachedPerms, exists := p.groupsCache.getGroup(org, team)
 		if exists && opts.InvalidateCaches {
 			// invalidate this cache
-			p.groupsCache.deleteGroup(cachedPerms)
-			cachedPerms.Repositories = nil
+			p.groupsCache.invalidateGroup(&cachedPerms)
 		}
-		group := cachedGroup{Org: org, Team: team, Repositories: cachedPerms.Repositories}
-		seenGroups[group.key()] = struct{}{}
-		groups = append(groups, group)
+		seenGroups[cachedPerms.key()] = struct{}{}
+		groups = append(groups, cachedPerms)
 	}
 	var err error
 
@@ -284,7 +422,7 @@ func (p *Provider) getAffiliatedGroups(ctx context.Context, clientWithToken clie
 			return groups, err
 		}
 		for _, org := range orgs {
-			// If THIS USER can view this org's repos, we add the entire org to the sync list
+			// 🚨 SECURITY: Iff THIS USER can view this org's repos, we add the entire org to the sync list
 			if canViewOrgRepos(&org) {
 				syncGroup(org.Login, "")
 			}
@@ -303,6 +441,63 @@ func (p *Provider) getAffiliatedGroups(ctx context.Context, clientWithToken clie
 			// only sync teams with repos
 			if team.ReposCount > 0 && team.Organization != nil {
 				syncGroup(team.Organization.Login, team.Slug)
+			}
+		}
+	}
+
+	return groups, nil
+}
+
+type repoAffiliatedGroup struct {
+	cachedGroup
+	// Whether this affiliation is an admin-only affiliation rather than a group-wide
+	// affiliation - affects how a sync is conducted.
+	adminsOnly bool
+}
+
+// getRepoAffiliatedGroups retrieves affiliated organizations and teams for the given repository.
+// Returned groups are populated from cache if a valid value is available.
+func (p *Provider) getRepoAffiliatedGroups(ctx context.Context, owner, name string, opts authz.FetchPermsOptions) (groups []repoAffiliatedGroup, err error) {
+	// Check if repo belongs in an org
+	org, err := p.client.GetOrganization(ctx, owner)
+	if err != nil {
+		if github.IsNotFound(err) {
+			// Owner is most likely not an org. User repos don't have teams or org permissions,
+			// so we are done - this is fine, so don't propagate error.
+			return groups, nil
+		}
+		return
+	}
+
+	// indicate if a group should be sync'd
+	syncGroup := func(owner, team string, adminsOnly bool) {
+		group, exists := p.groupsCache.getGroup(owner, team)
+		if exists && opts.InvalidateCaches {
+			// invalidate this cache
+			p.groupsCache.invalidateGroup(&group)
+		}
+		groups = append(groups, repoAffiliatedGroup{cachedGroup: group, adminsOnly: adminsOnly})
+	}
+
+	allOrgMembersCanRead := canViewOrgRepos(&github.OrgDetailsAndMembership{OrgDetails: org})
+	if allOrgMembersCanRead {
+		// 🚨 SECURITY: Iff all members of this org can view this repo, indicate that all members should
+		// be sync'd.
+		syncGroup(owner, "", false)
+	} else {
+		// 🚨 SECURITY: Sync *only admins* of this org
+		syncGroup(owner, "", true)
+
+		// Also check for teams involved in repo, and indicate all groups should be sync'd.
+		hasNextPage := true
+		for page := 1; hasNextPage; page++ {
+			var teams []*github.Team
+			teams, hasNextPage, err = p.client.ListRepositoryTeams(ctx, owner, name, page)
+			if err != nil {
+				return
+			}
+			for _, t := range teams {
+				syncGroup(owner, t.Slug, false)
 			}
 		}
 	}

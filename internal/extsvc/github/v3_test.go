@@ -51,7 +51,7 @@ func TestListAffiliatedRepositories(t *testing.T) {
 	tests := []struct {
 		name         string
 		visibility   Visibility
-		affiliations []Affiliation
+		affiliations []RepositoryAffiliation
 		wantRepos    []*Repository
 	}{
 		{
@@ -129,7 +129,7 @@ func TestListAffiliatedRepositories(t *testing.T) {
 		},
 		{
 			name:         "list collaborator and owner affiliated repositories",
-			affiliations: []Affiliation{AffiliationCollaborator, AffiliationOwner},
+			affiliations: []RepositoryAffiliation{AffiliationCollaborator, AffiliationOwner},
 			wantRepos: []*Repository{
 				{
 					ID:               "MDEwOlJlcG9zaXRvcnkyNjMwMzQwNzM=",
@@ -178,6 +178,89 @@ func Test_GetAuthenticatedUserOAuthScopes(t *testing.T) {
 	sort.Strings(scopes)
 	if diff := cmp.Diff(want, scopes); diff != "" {
 		t.Fatalf("Scopes mismatch (-want +got):\n%s", diff)
+	}
+}
+
+// NOTE: To update VCR for this test, please use the token of "sourcegraph-vcr"
+// for GITHUB_TOKEN, which can be found in 1Password.
+func TestListRepositoryCollaborators(t *testing.T) {
+	tests := []struct {
+		name        string
+		owner       string
+		repo        string
+		affiliation CollaboratorAffiliation
+		wantUsers   []*Collaborator
+	}{
+		{
+			name:  "public repo",
+			owner: "sourcegraph-vcr-repos",
+			repo:  "public-org-repo-1",
+			wantUsers: []*Collaborator{
+				{
+					ID:         "MDQ6VXNlcjYzMjkwODUx", // sourcegraph-vcr as owner
+					DatabaseID: 63290851,
+				},
+			},
+		},
+		{
+			name:  "private repo",
+			owner: "sourcegraph-vcr-repos",
+			repo:  "private-org-repo-1",
+			wantUsers: []*Collaborator{
+				{
+					ID:         "MDQ6VXNlcjYzMjkwODUx", // sourcegraph-vcr as owner
+					DatabaseID: 63290851,
+				}, {
+					ID:         "MDQ6VXNlcjY2NDY0Nzcz", // sourcegraph-vcr-amy as team member
+					DatabaseID: 66464773,
+				}, {
+					ID:         "MDQ6VXNlcjY2NDY0OTI2", // sourcegraph-vcr-bob as outside collaborator
+					DatabaseID: 66464926,
+				}, {
+					ID:         "MDQ6VXNlcjg5NDk0ODg0", // sourcegraph-vcr-dave as team member
+					DatabaseID: 89494884,
+				},
+			},
+		},
+		{
+			name:        "direct collaborator outside collaborator",
+			owner:       "sourcegraph-vcr-repos",
+			repo:        "private-org-repo-1",
+			affiliation: AffiliationDirect,
+			wantUsers: []*Collaborator{
+				{
+					ID:         "MDQ6VXNlcjY2NDY0OTI2", // sourcegraph-vcr-bob as outside collaborator
+					DatabaseID: 66464926,
+				},
+			},
+		},
+		{
+			name:        "direct collaborator repo owner",
+			owner:       "sourcegraph-vcr",
+			repo:        "public-user-repo-1",
+			affiliation: AffiliationDirect,
+			wantUsers: []*Collaborator{
+				{
+					ID:         "MDQ6VXNlcjYzMjkwODUx", // sourcegraph-vcr as owner
+					DatabaseID: 63290851,
+				},
+			},
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			client, save := newV3TestClient(t, "ListRepositoryCollaborators_"+test.name)
+			defer save()
+
+			users, _, err := client.ListRepositoryCollaborators(context.Background(), test.owner, test.repo, 1, test.affiliation)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if diff := cmp.Diff(test.wantUsers, users); diff != "" {
+				t.Fatalf("Users mismatch (-want +got):\n%s", diff)
+			}
+		})
 	}
 }
 
@@ -307,6 +390,113 @@ func TestGetAuthenticatedUserTeams(t *testing.T) {
 		update("GetAuthenticatedUserTeams"),
 		teams,
 	)
+}
+
+func TestListRepositoryTeams(t *testing.T) {
+	cli, save := newV3TestClient(t, "ListRepositoryTeams")
+	defer save()
+
+	ctx := context.Background()
+	var err error
+	teams := make([]*Team, 0)
+	hasNextPage := true
+	for page := 1; hasNextPage; page++ {
+		var pageTeams []*Team
+		pageTeams, hasNextPage, err = cli.ListRepositoryTeams(ctx, "sourcegraph-vcr-repos", "private-org-repo-1", page)
+		if err != nil {
+			t.Fatal(err)
+		}
+		teams = append(teams, pageTeams...)
+	}
+
+	testutil.AssertGolden(t,
+		"testdata/golden/ListRepositoryTeams",
+		update("ListRepositoryTeams"),
+		teams,
+	)
+}
+
+func TestGetOrganization(t *testing.T) {
+	cli, save := newV3TestClient(t, "GetOrganization")
+	defer save()
+
+	t.Run("real org", func(t *testing.T) {
+		ctx := context.Background()
+		org, err := cli.GetOrganization(ctx, "sourcegraph")
+		if err != nil {
+			t.Fatal(err)
+		}
+		if org == nil {
+			t.Fatal("expected org, got nil")
+		}
+		if org.Login != "sourcegraph" {
+			t.Fatalf("expected org 'sourcegraph', got %+v", org)
+		}
+	})
+
+	t.Run("actually an user", func(t *testing.T) {
+		ctx := context.Background()
+		_, err := cli.GetOrganization(ctx, "sourcegraph-vcr")
+		if err == nil {
+			t.Fatal("expected error, got nil")
+		}
+		if !IsNotFound(err) {
+			t.Fatalf("expected not found, got %q", err.Error())
+		}
+	})
+}
+
+func TestListMembers(t *testing.T) {
+	tests := []struct {
+		name        string
+		fn          func(*V3Client) ([]*Collaborator, error)
+		wantMembers []*Collaborator
+	}{{
+		name: "org members",
+		fn: func(cli *V3Client) ([]*Collaborator, error) {
+			members, _, err := cli.ListOrganizationMembers(context.Background(), "sourcegraph-vcr-repos", 1, false)
+			return members, err
+		},
+		wantMembers: []*Collaborator{
+			{ID: "MDQ6VXNlcjYzMjkwODUx", DatabaseID: 63290851}, // sourcegraph-vcr as owner
+			{ID: "MDQ6VXNlcjY2NDY0Nzcz", DatabaseID: 66464773}, // sourcegraph-vcr-amy
+			{ID: "MDQ6VXNlcjg5NDk0ODg0", DatabaseID: 89494884}, // sourcegraph-vcr-dave
+		},
+	}, {
+		name: "org admins",
+		fn: func(cli *V3Client) ([]*Collaborator, error) {
+			members, _, err := cli.ListOrganizationMembers(context.Background(), "sourcegraph-vcr-repos", 1, true)
+			return members, err
+		},
+		wantMembers: []*Collaborator{
+			{ID: "MDQ6VXNlcjYzMjkwODUx", DatabaseID: 63290851}, // sourcegraph-vcr as owner
+		},
+	}, {
+		name: "team members",
+		fn: func(cli *V3Client) ([]*Collaborator, error) {
+			members, _, err := cli.ListTeamMembers(context.Background(), "sourcegraph-vcr-repos", "private-access", 1)
+			return members, err
+		},
+		wantMembers: []*Collaborator{
+			{ID: "MDQ6VXNlcjYzMjkwODUx", DatabaseID: 63290851}, // sourcegraph-vcr
+			{ID: "MDQ6VXNlcjY2NDY0Nzcz", DatabaseID: 66464773}, // sourcegraph-vcr-amy
+		},
+	}}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			cli, save := newV3TestClient(t, t.Name())
+			defer save()
+
+			members, err := test.fn(cli)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if diff := cmp.Diff(test.wantMembers, members); diff != "" {
+				t.Fatal(diff)
+			}
+		})
+	}
 }
 
 func TestV3Client_WithAuthenticator(t *testing.T) {
