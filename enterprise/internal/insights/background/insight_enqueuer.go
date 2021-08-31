@@ -41,7 +41,7 @@ func newInsightEnqueuer(ctx context.Context, workerBaseStore *basestore.Store, i
 	//
 	// See also https://github.com/sourcegraph/sourcegraph/pull/17227#issuecomment-779515187 for some very rough
 	// data retention / scale concerns.
-	return goroutine.NewPeriodicGoroutineWithMetrics(ctx, 12*time.Hour, goroutine.NewHandlerWithErrorMessage(
+	return goroutine.NewPeriodicGoroutineWithMetrics(ctx, 1*time.Hour, goroutine.NewHandlerWithErrorMessage(
 		"insights_enqueuer",
 		func(ctx context.Context) error {
 			queryRunnerEnqueueJob := func(ctx context.Context, job *queryrunner.Job) error {
