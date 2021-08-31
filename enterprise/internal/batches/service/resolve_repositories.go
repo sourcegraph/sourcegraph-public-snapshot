@@ -93,59 +93,8 @@ func (wr *workspaceResolver) ResolveRepositoriesForBatchSpec(ctx context.Context
 		}
 	}
 
-	type result struct {
-		repo           *RepoRevision
-		hasBatchIgnore bool
-		err            error
-	}
-
-	input := make(chan *RepoRevision, len(seen))
-	results := make(chan result, len(seen))
-
-	var wg sync.WaitGroup
-	for i := 0; i < 5; i++ {
-		wg.Add(1)
-		go func(in chan *RepoRevision, out chan result) {
-			defer wg.Done()
-			for repo := range in {
-				hasBatchIgnore, err := hasBatchIgnoreFile(ctx, repo)
-				results <- result{repo, hasBatchIgnore, err}
-			}
-		}(input, results)
-	}
-
-	for _, repo := range seen {
-		input <- repo
-	}
-	close(input)
-
-	go func(wg *sync.WaitGroup) {
-		wg.Wait()
-		close(results)
-	}(&wg)
-
-	var (
-		errs    *multierror.Error
-		ignored = IgnoredRepoSet{}
-		final   = make([]*RepoRevision, 0, len(seen))
-	)
-
-	for result := range results {
-		if result.err != nil {
-			errs = multierror.Append(errs, err)
-			continue
-		}
-
-		if !opts.AllowIgnored && result.hasBatchIgnore {
-			ignored.Append(result.repo.Repo)
-		}
-
-		if !unsupported.Includes(result.repo.Repo) && !ignored.Includes(result.repo.Repo) {
-			final = append(final, result.repo)
-		}
-	}
-
-	if err := errs.ErrorOrNil(); err != nil {
+	final, ignored, err := filterIgnoredRepositories(ctx, seen, opts.AllowIgnored, unsupported)
+	if err != nil {
 		return nil, err
 	}
 
@@ -158,6 +107,69 @@ func (wr *workspaceResolver) ResolveRepositoriesForBatchSpec(ctx context.Context
 	}
 
 	return final, nil
+}
+
+func filterIgnoredRepositories(
+	ctx context.Context,
+	repos map[api.RepoID]*RepoRevision,
+	allowIgnored bool,
+	unsupported UnsupportedRepoSet,
+) ([]*RepoRevision, IgnoredRepoSet, error) {
+
+	type result struct {
+		repo           *RepoRevision
+		hasBatchIgnore bool
+		err            error
+	}
+
+	var (
+		final   = make([]*RepoRevision, 0, len(repos))
+		ignored = IgnoredRepoSet{}
+
+		input   = make(chan *RepoRevision, len(repos))
+		results = make(chan result, len(repos))
+
+		wg sync.WaitGroup
+	)
+
+	for i := 0; i < 5; i++ {
+		wg.Add(1)
+		go func(in chan *RepoRevision, out chan result) {
+			defer wg.Done()
+			for repo := range in {
+				hasBatchIgnore, err := hasBatchIgnoreFile(ctx, repo)
+				results <- result{repo, hasBatchIgnore, err}
+			}
+		}(input, results)
+	}
+
+	for _, repo := range repos {
+		input <- repo
+	}
+	close(input)
+
+	go func(wg *sync.WaitGroup) {
+		wg.Wait()
+		close(results)
+	}(&wg)
+
+	var errs *multierror.Error
+	for result := range results {
+		if result.err != nil {
+			errs = multierror.Append(errs, result.err)
+			continue
+		}
+
+		if !allowIgnored && result.hasBatchIgnore {
+			ignored.Append(result.repo.Repo)
+		}
+
+		if !unsupported.Includes(result.repo.Repo) && !ignored.Includes(result.repo.Repo) {
+			final = append(final, result.repo)
+		}
+	}
+
+	return final, ignored, errs.ErrorOrNil()
 }
 
 var ErrMalformedOnQueryOrRepository = errors.New("malformed 'on' field; missing either a repository name or a query")
