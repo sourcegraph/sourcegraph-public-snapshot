@@ -8,7 +8,7 @@ import (
 	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
 )
 
-func TestTaskBuilder_BuildTask_IfConditions(t *testing.T) {
+func TestBuildTask_IfConditions(t *testing.T) {
 	tests := map[string]struct {
 		spec *batcheslib.BatchSpec
 
@@ -117,8 +117,7 @@ func TestTaskBuilder_BuildTask_IfConditions(t *testing.T) {
 
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			builder := &taskBuilder{spec: tt.spec}
-			task, ok, err := builder.buildTask(testRepo1, "", false)
+			task, ok, err := buildTask(tt.spec, testRepo1, "", false)
 			if err != nil {
 				t.Fatalf("unexpected err: %s", err)
 			}

@@ -16,6 +16,10 @@ type RepoWorkspaces struct {
 	OnlyFetchWorkspace bool
 }
 
+type directoryFinder interface {
+	FindDirectoriesInRepos(ctx context.Context, fileName string, repos ...*graphql.Repository) (map[*graphql.Repository][]string, error)
+}
+
 // findWorkspaces matches the given repos to the workspace configs and
 // searches, via the Sourcegraph instance, the locations of the workspaces in
 // each repository.
