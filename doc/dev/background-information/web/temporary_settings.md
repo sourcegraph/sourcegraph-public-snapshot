@@ -54,7 +54,7 @@ Examples of data that should not be stored as temporary settings include:
 Update the interface [`TemporarySettingsSchema` in `TemporarySettings.ts`](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/client/web/src/settings/temporary/TemporarySettings.ts?L8:18) 
 by adding a key for the setting you want to store. The key should be namespaced based on 
 the area of the site that will be using the settings. Example names include `'search.collapsedSidebarSections'` 
-or `'codeInsights.hiddenCharts'`. The value of the settingcan be any JSON-serializable type.
+or `'codeInsights.hiddenCharts'`. The value of the setting can be any JSON-serializable type.
 
 ### Getting and setting settings
 
@@ -63,8 +63,8 @@ to get an up-to-date value of the setting and a function that can update the val
 The value will be updated automatically if the user's authentication state changes 
 or the setting is modified elsewhere in the application.
 
-### Caveats
+### 🚨 Data sync warning
 
 Currently, settings are not kept up-to-date if modified in more than one tab/browser at once.
-This can cause settings to be out of sync and lost. Do not use temporary settings for
-important data. We will address this in the future.
+This can cause settings to be out of sync and lost. **Do not use temporary settings for
+important data.** We will address this in the future.
