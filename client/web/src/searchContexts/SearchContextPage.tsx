@@ -116,23 +116,25 @@ export const SearchContextPage: React.FunctionComponent<SearchContextPageProps> 
                                     </span>
                                 </div>
                             )}
-                            <div className="my-2">
-                                {useSearchNotebookDescription ? (
-                                    <div className="card px-3 pb-3">
-                                        <RenderedSearchNotebookMarkdown
-                                            {...props}
-                                            markdown={searchContextOrError.description}
-                                            collapseMenu={true}
-                                        />
-                                    </div>
-                                ) : (
-                                    <div className="card p-3">
-                                        <Markdown
-                                            dangerousInnerHTML={renderMarkdown(searchContextOrError.description)}
-                                        />
-                                    </div>
-                                )}
-                            </div>
+                            {searchContextOrError.description.length > 0 && (
+                                <div className="my-2">
+                                    {useSearchNotebookDescription ? (
+                                        <div className="card px-3 pb-3">
+                                            <RenderedSearchNotebookMarkdown
+                                                {...props}
+                                                markdown={searchContextOrError.description}
+                                                collapseMenu={true}
+                                            />
+                                        </div>
+                                    ) : (
+                                        <div className="card p-3">
+                                            <Markdown
+                                                dangerousInnerHTML={renderMarkdown(searchContextOrError.description)}
+                                            />
+                                        </div>
+                                    )}
+                                </div>
+                            )}
                             {!searchContextOrError.autoDefined && (
                                 <>
                                     <div className="mt-4 d-flex">

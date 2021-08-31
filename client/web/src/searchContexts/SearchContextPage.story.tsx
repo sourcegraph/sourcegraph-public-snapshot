@@ -91,6 +91,27 @@ add(
 )
 
 add(
+    'empty description',
+    () => (
+        <WebStory>
+            {webProps => (
+                <SearchContextPage
+                    {...webProps}
+                    {...searchNotebookProps}
+                    fetchSearchContextBySpec={() =>
+                        of({
+                            ...mockContext,
+                            description: '',
+                        })
+                    }
+                />
+            )}
+        </WebStory>
+    ),
+    {}
+)
+
+add(
     'public context with search notebook description',
     () => (
         <WebStory>
