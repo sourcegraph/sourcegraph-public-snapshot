@@ -4,19 +4,21 @@ Because code insights is currently a private [beta feature](../../admin/beta_and
 
 If you have strong feedback, please do [let us know](mailto:feedback@sourcegraph.com). 
 
+_Limitations listed here are relevant for Sourcegraph 3.31. Limitations that are no longer current are [documented at the bottom](#older-versions-limitations) for the benefit of customers who have not yet upgraded._
+
 ## Performance speed considerations for a data series running over all repositories
 
 To accurately return historical data for insights running over all of your repositories, the backend service must run a large number of Sourcegraph searches. This means that unlike code insights running over just a few repositories, results are not returned instantly, but more often on the scale of 20-120 minutes, depending on:
 
 * _N_: how many repositories you have connected to your instance; in our tests, we used 26,400 repositories
 * _q_: the performance and resources of your Sourcegraph code insights instance in queries-per-second; in our tests, 7 queries per second was average
-* _c_: how well we can "compress" repositories so we don't need to re-run queries every month (e.g., if a respoitory hasn't changed in two months); in our tests, C = ~4
+* _c_: how well we can "compress" repositories so we don't need to re-run queries every month (e.g., if a respoitory hasn't changed in two months); in our tests, C = ~2
 
 A _very_ general formula for estimating how long an individual data series (query) will take to run on your instance in seconds  _N_ * 1/_c_ * 1/_q_. 
 
-So on our test instance with 26,400 repositories, we find a code insight data series takes approximately:
+On our test instance, we find a code insight data series takes approximately:
 
-26,400 repositories * 1/4 compression factor * 1/7 queries per second = 31 minutes
+26,400 repositories * 1/2 compression factor * 1/7 queries per second = 31 minutes
 
 The number of insights you have does not affect the overall speed at which they run: it will take the same total time to run all of them whether or not you let each one finish before creating the next one. Insights currently [populate in parallel](https://github.com/sourcegraph/sourcegraph/pull/23101), prioritizing most-recent-in-time datapoints first. 
 
@@ -49,8 +51,6 @@ There are currently a few subtle differences in how code insights and Sourcegrap
 Known bugs we plan to fix are tracked in our [GitHub repository here](https://github.com/sourcegraph/sourcegraph/issues?q=is%3Aopen+is%3Aissue+label%3Abug+label%3Ateam%2Fcode-insights). 
 
 ## Older versions' limitations
-
-The current Sourcegraph version is 3.31. Limitations that are no longer current are documented below for the benefit of customers who have not yet upgraded.
 
 ### Version 3.30 (July 2021) or older
 
