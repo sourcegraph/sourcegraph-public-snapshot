@@ -31,9 +31,11 @@ interactions:
       Content-Type:
       - application/json; charset=utf-8
       Date:
-      - Fri, 27 Aug 2021 15:06:13 GMT
+      - Tue, 31 Aug 2021 18:24:34 GMT
       Etag:
-      - W/"71339790db0fe00d47bc792a4db395f0a304655a95053867061eee8db1c2bc8f"
+      - W/"82dfa2259ae20c739daebd02709eee4694d1c80a46ba570c3a860ccc170b6cb0"
+      Github-Authentication-Token-Expiration:
+      - 2021-09-25 19:00:13 UTC
       Referrer-Policy:
       - origin-when-cross-origin, strict-origin-when-cross-origin
       Server:
@@ -53,19 +55,21 @@ interactions:
       - github.v3; param=jean-grey-preview; format=json, github.mercy-preview; param=machine-man-preview;
         format=json
       X-Github-Request-Id:
-      - DEA0:0671:F9782E:2617676:6128FF64
+      - D32C:7D36:E3BE9:283B8F:612E73E0
       X-Oauth-Scopes:
-      - read:org, repo
+      - admin:enterprise, admin:gpg_key, admin:org, admin:org_hook, admin:public_key,
+        admin:repo_hook, delete:packages, delete_repo, gist, notifications, repo,
+        user, workflow, write:discussion, write:packages
       X-Ratelimit-Limit:
       - "5000"
       X-Ratelimit-Remaining:
-      - "4975"
+      - "4954"
       X-Ratelimit-Reset:
-      - "1630080367"
+      - "1630436467"
       X-Ratelimit-Resource:
       - core
       X-Ratelimit-Used:
-      - "25"
+      - "46"
       X-Xss-Protection:
       - "0"
     status: 200 OK
@@ -101,9 +105,11 @@ interactions:
       Content-Type:
       - application/json; charset=utf-8
       Date:
-      - Fri, 27 Aug 2021 15:06:13 GMT
+      - Tue, 31 Aug 2021 18:24:34 GMT
       Etag:
-      - '"29c83384d463e905870e7153e8cdd7298050c4ef8ee029baed1cfbf26ce9ff30"'
+      - '"e83491e8e7daca72e1fb091193dc660500fdf27f893e8e8385f0857f97a96c21"'
+      Github-Authentication-Token-Expiration:
+      - 2021-09-25 19:00:13 UTC
       Link:
       - <https://api.github.com/user/repos?sort=created&visibility=private&page=1&per_page=100>;
         rel="prev", <https://api.github.com/user/repos?sort=created&visibility=private&page=1&per_page=100>;
@@ -128,19 +134,21 @@ interactions:
       - github.v3; param=jean-grey-preview; format=json, github.mercy-preview; param=machine-man-preview;
         format=json
       X-Github-Request-Id:
-      - DEA0:0671:F9783F:2617691:6128FF65
+      - D32C:7D36:E3BFA:283BBF:612E73E2
       X-Oauth-Scopes:
-      - read:org, repo
+      - admin:enterprise, admin:gpg_key, admin:org, admin:org_hook, admin:public_key,
+        admin:repo_hook, delete:packages, delete_repo, gist, notifications, repo,
+        user, workflow, write:discussion, write:packages
       X-Ratelimit-Limit:
       - "5000"
       X-Ratelimit-Remaining:
-      - "4974"
+      - "4953"
       X-Ratelimit-Reset:
-      - "1630080367"
+      - "1630436467"
       X-Ratelimit-Resource:
       - core
       X-Ratelimit-Used:
-      - "26"
+      - "47"
       X-Xss-Protection:
       - "0"
     status: 200 OK
