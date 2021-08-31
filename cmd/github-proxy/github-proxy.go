@@ -36,7 +36,7 @@ var logRequests, _ = strconv.ParseBool(env.Get("LOG_REQUESTS", "", "log HTTP req
 var gracefulShutdownTimeout = func() time.Duration {
 	d, _ := time.ParseDuration(env.Get("SRC_GRACEFUL_SHUTDOWN_TIMEOUT", "10s", "Graceful shutdown timeout"))
 	if d == 0 {
-		d = 10 * time.Secon
+		d = 10 * time.Second
 	}
 	return d
 }()
