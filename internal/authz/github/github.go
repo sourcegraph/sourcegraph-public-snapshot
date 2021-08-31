@@ -77,15 +77,15 @@ func (p *Provider) Validate() (problems []string) {
 		scopes, err := p.client.GetAuthenticatedUserOAuthScopes(context.Background())
 		if err != nil {
 			problems = append(problems, fmt.Sprintf("Additional auth scopes are required, but failed to check authenticated scopes: %+v", err))
-		}
-
-		gotScopes := make(map[string]struct{})
-		for _, gotScope := range scopes {
-			gotScopes[gotScope] = struct{}{}
-		}
-		for _, requiredScope := range required {
-			if _, found := gotScopes[requiredScope.scope]; !found {
-				problems = append(problems, requiredScope.message)
+		} else {
+			gotScopes := make(map[string]struct{})
+			for _, gotScope := range scopes {
+				gotScopes[gotScope] = struct{}{}
+			}
+			for _, requiredScope := range required {
+				if _, found := gotScopes[requiredScope.scope]; !found {
+					problems = append(problems, requiredScope.message)
+				}
 			}
 		}
 	}
@@ -104,7 +104,7 @@ func (p *Provider) requiredAuthScopes() []requiredScope {
 		// Needs extra scope to pull group permissions
 		scopes = append(scopes, requiredScope{
 			scope: "read:org",
-			message: "Scope 'read:org' is required to enable `authorization.groupsCacheTTL` - " +
+			message: "Scope `read:org` is required to enable `authorization.groupsCacheTTL` - " +
 				"please provide a `token` with the required scopes, or try updating the [**site configuration**](/site-admin/configuration)'s " +
 				"corresponding entry in [`auth.providers`](https://docs.sourcegraph.com/admin/auth) to enable `allowGroupsPermissionsSync`.",
 		})
