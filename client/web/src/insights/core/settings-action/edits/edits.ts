@@ -1,10 +1,10 @@
 import { Insight } from '../../types'
 
 export enum SettingsOperationType {
-    addInsight,
-    removeInsight,
-    removeInsightFromDashboard,
-    addInsightToDashboard,
+    addInsight = 'add-insight',
+    removeInsight = 'remove-insight',
+    removeInsightFromDashboard = 'remove-insight-from-dashboard',
+    addInsightToDashboard = 'add-insight-to-dashboard',
 }
 
 export interface RemoveInsight {

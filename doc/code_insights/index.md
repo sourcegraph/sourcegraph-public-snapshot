@@ -1,10 +1,12 @@
-# Code Insights
+# Code Insights <a href="../admin/beta_and_prototype_features"><sup><span class="badge badge-beta">Beta</span></sup></a>
 
-> NOTE: Code insights docs are actively in progress. 
+Code Insights are currently in Private [Beta](../admin/beta_and_prototype_features.md).
 
-If you're a customer who needs support or early access, please [send us an email](mailto:feedback@sourcegraph.com). 
+If you're a customer who wants early access or needs support, please [send us an email](mailto:feedback@sourcegraph.com).
 
-Work-in-progress table of contents:
+> NOTE: Code insights docs are actively in progress.
+
+Table of contents:
 
 - [Quickstart](quickstart.md)
 - [Language Insight Quickstart](language_insight_quickstart.md)
@@ -16,3 +18,5 @@ Work-in-progress table of contents:
 - [How-tos](how-tos/index.md)
     - [Creating a dashboard of code insights](how-tos/creating_a_custom_dashboard_of_code_insights.md)
     - [Filtering an insight](how-tos/filtering_an_insight.md)
+- [References](references/index.md)
+    - [Common reasons code insights may not match search results](references/common_reasons_code_insights_may_not_match_search_results.md)

@@ -58,7 +58,7 @@ We **strongly** recommend that you create and run Sourcegraph from your own fork
 
   ```bash
   # Specify the version you want to install
-  export SOURCEGRAPH_VERSION="v3.30.4"
+  export SOURCEGRAPH_VERSION="v3.31.0"
   # Check out the selected version for use, in a new branch called "release"
   git checkout $SOURCEGRAPH_VERSION -b release
   ```
@@ -197,6 +197,15 @@ Guides for managing cloud storage and backups are available in our [cloud-specif
 - [Storage and backups for Amazon Web Services](./aws.md#storage-and-backups)
 - [Storage and backups for Google Cloud](./google_cloud.md#storage-and-backups)
 - [Storage and backups for Digital Ocean](./digitalocean.md#storage-and-backups)
+
+## Access the database
+
+The following command allows a user to shell into a Sourcegraph database container and run `psql` to interact with the container's postgres database:
+
+```bash
+docker exec -it pgsql psql -U sg #access pgsql container and run psql
+docker exec -it codeintel-db -U sg #access codeintel-db container and run psql
+```
 
 ## Backup and restore
 

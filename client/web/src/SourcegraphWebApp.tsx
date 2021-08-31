@@ -2,14 +2,16 @@ import 'focus-visible'
 
 import { ApolloProvider } from '@apollo/client'
 import { ShortcutProvider } from '@slimsag/react-shortcuts'
+import { createBrowserHistory } from 'history'
 import ServerIcon from 'mdi-react/ServerIcon'
 import * as React from 'react'
-import { Route } from 'react-router'
-import { BrowserRouter } from 'react-router-dom'
+import { Route, Router } from 'react-router'
 import { combineLatest, from, Subscription, fromEvent, of, Subject } from 'rxjs'
-import { bufferCount, catchError, startWith, switchMap } from 'rxjs/operators'
+import { bufferCount, catchError, distinctUntilChanged, map, startWith, switchMap } from 'rxjs/operators'
 
 import { Tooltip } from '@sourcegraph/branded/src/components/tooltip/Tooltip'
+import { getEnabledExtensions } from '@sourcegraph/shared/src/api/client/enabledExtensions'
+import { preloadExtensions } from '@sourcegraph/shared/src/api/client/preload'
 import { NotificationType } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
 import { HTTPStatusError } from '@sourcegraph/shared/src/backend/fetch'
 import { setLinkComponent } from '@sourcegraph/shared/src/components/Link'
@@ -18,6 +20,7 @@ import {
     createController as createExtensionsController,
 } from '@sourcegraph/shared/src/extensions/controller'
 import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
+import { getModeFromPath } from '@sourcegraph/shared/src/languages'
 import { Notifications } from '@sourcegraph/shared/src/notifications/Notifications'
 import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
 import { FilterType } from '@sourcegraph/shared/src/search/query/filters'
@@ -89,6 +92,7 @@ import { UserAreaHeaderNavItem } from './user/area/UserAreaHeader'
 import { UserSettingsAreaRoute } from './user/settings/UserSettingsArea'
 import { UserSettingsSidebarItems } from './user/settings/UserSettingsSidebar'
 import { globbingEnabledFromSettings } from './util/globbing'
+import { observeLocation } from './util/location'
 import {
     SITE_SUBJECT_NO_ADMIN,
     viewerSubjectFromSettings,
@@ -254,6 +258,8 @@ setLinkComponent(RouterLinkOrAnchor)
 
 const LayoutWithActivation = window.context.sourcegraphDotComMode ? Layout : withActivation(Layout)
 
+const history = createBrowserHistory()
+
 /**
  * The root component.
  */
@@ -267,6 +273,23 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
     constructor(props: SourcegraphWebAppProps) {
         super(props)
         this.subscriptions.add(this.extensionsController)
+
+        // Preload extensions whenever user enabled extensions or the viewed language changes.
+        this.subscriptions.add(
+            combineLatest([
+                getEnabledExtensions(this.platformContext),
+                observeLocation(history).pipe(
+                    startWith(location),
+                    map(location => getModeFromPath(location.pathname)),
+                    distinctUntilChanged()
+                ),
+            ]).subscribe(([extensions, languageID]) => {
+                preloadExtensions({
+                    extensions,
+                    languages: new Set([languageID]),
+                })
+            })
+        )
 
         const parsedSearchURL = parseSearchURL(window.location.search)
         // The patternType in the URL query parameter. If none is provided, default to literal.
@@ -491,7 +514,7 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
                 <ErrorBoundary location={null}>
                     <ShortcutProvider>
                         <TemporarySettingsProvider authenticatedUser={authenticatedUser}>
-                            <BrowserRouter key={0}>
+                            <Router history={history} key={0}>
                                 <Route
                                     path="/"
                                     render={routeComponentProps => (
@@ -566,7 +589,7 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
                                         </CodeHostScopeProvider>
                                     )}
                                 />
-                            </BrowserRouter>
+                            </Router>
                             <Tooltip key={1} />
                             <Notifications
                                 key={2}

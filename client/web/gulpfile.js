@@ -90,26 +90,29 @@ async function webpackDevelopmentServer() {
     },
   }
 
+  /** @type {import('webpack-dev-server').Configuration} */
   const options = {
     // react-refresh plugin triggers page reload if needed.
     liveReload: false,
     hot: !process.env.NO_HOT,
-    firewall: false,
     host: 'localhost',
     port: 3080,
     client: {
-      host: sockHost,
-      port: sockPort,
       overlay: false,
+      webSocketTransport: 'ws',
+      logging: 'verbose',
+      webSocketURL: {
+        hostname: sockHost,
+        port: sockPort,
+        protocol: 'wss',
+      },
     },
     static: {
       directory: './ui/assets',
       publicPath: '/.assets/',
     },
     proxy: proxyConfig,
-    transportMode: {
-      client: 'ws',
-    },
+    webSocketServer: 'ws',
   }
 
   // Based on the update: https://github.com/webpack/webpack-dev-server/pull/2844
@@ -118,7 +121,7 @@ async function webpackDevelopmentServer() {
     webpackConfig.plugins.push(new DevServerPlugin(options))
   }
 
-  const server = new WebpackDevServer(createWebpackCompiler(webpackConfig), options)
+  const server = new WebpackDevServer(options, createWebpackCompiler(webpackConfig))
   await new Promise((resolve, reject) => {
     signale.await('Waiting for Webpack to compile assets')
     server.listen(3080, '0.0.0.0', error => (error ? reject(error) : resolve()))

@@ -13,7 +13,6 @@ import (
 	"time"
 
 	"github.com/cockroachdb/errors"
-	"github.com/honeycombio/libhoney-go"
 	"github.com/inconshreveable/log15"
 	"github.com/neelance/parallel"
 	"github.com/opentracing/opentracing-go"
@@ -912,39 +911,6 @@ func logPrometheusBatch(status, alertType, requestSource, requestName string, el
 	).Observe(elapsed.Seconds())
 }
 
-func newHoneyEvent(ctx context.Context, status, alertType, requestSource, requestName, query string, elapsed time.Duration, srr *SearchResultsResolver) *libhoney.Event {
-	var n int
-	if srr != nil {
-		n = len(srr.Matches)
-	}
-	return honey.SearchEvent(ctx, honey.SearchEventArgs{
-		OriginalQuery: query,
-		Typ:           requestName,
-		Source:        requestSource,
-		Status:        status,
-		AlertType:     alertType,
-		DurationMs:    elapsed.Milliseconds(),
-		ResultSize:    n,
-	})
-}
-
-func logHoneyBatch(ctx context.Context, status, alertType, requestSource, requestName string, elapsed time.Duration, query string, start time.Time, srr *SearchResultsResolver) {
-	var ev *libhoney.Event
-	isSlow := time.Since(start) > searchlogs.LogSlowSearchesThreshold()
-
-	if honey.Enabled() || isSlow {
-		ev = newHoneyEvent(ctx, status, alertType, requestSource, requestName, query, elapsed, srr)
-	}
-
-	if honey.Enabled() && ev != nil {
-		_ = ev.Send()
-	}
-
-	if isSlow && ev != nil {
-		log15.Warn("slow search request", searchlogs.MapToLog15Ctx(ev.Fields())...)
-	}
-}
-
 func (r *searchResolver) logBatch(ctx context.Context, srr *SearchResultsResolver, start time.Time, err error) {
 	elapsed := time.Since(start)
 	if srr != nil {
@@ -960,7 +926,32 @@ func (r *searchResolver) logBatch(ctx context.Context, srr *SearchResultsResolve
 	requestSource := string(trace.RequestSource(ctx))
 	requestName := trace.GraphQLRequestName(ctx)
 	logPrometheusBatch(status, alertType, requestSource, requestName, elapsed)
-	logHoneyBatch(ctx, status, alertType, requestSource, requestName, elapsed, r.rawQuery(), start, srr)
+
+	isSlow := time.Since(start) > searchlogs.LogSlowSearchesThreshold()
+	if honey.Enabled() || isSlow {
+		var n int
+		if srr != nil {
+			n = len(srr.Matches)
+		}
+		ev := honey.SearchEvent(ctx, honey.SearchEventArgs{
+			OriginalQuery: r.rawQuery(),
+			Typ:           requestName,
+			Source:        requestSource,
+			Status:        status,
+			AlertType:     alertType,
+			DurationMs:    elapsed.Milliseconds(),
+			ResultSize:    n,
+			Error:         err,
+		})
+
+		if honey.Enabled() {
+			_ = ev.Send()
+		}
+
+		if isSlow {
+			log15.Warn("slow search request", searchlogs.MapToLog15Ctx(ev.Fields())...)
+		}
+	}
 }
 
 func (r *searchResolver) resultsBatch(ctx context.Context) (*SearchResultsResolver, error) {
@@ -1024,7 +1015,7 @@ func DetermineStatusForLogs(srr *SearchResultsResolver, err error) string {
 		return "timeout"
 	case err != nil:
 		return "error"
-	case srr.Stats.AllReposTimedOut():
+	case srr.Stats.Status.All(search.RepoStatusTimedout) && srr.Stats.Status.Len() == len(srr.Stats.Repos):
 		return "timeout"
 	case srr.Stats.Status.Any(search.RepoStatusTimedout):
 		return "partial_timeout"
@@ -1156,21 +1147,21 @@ func (r *searchResolver) resultsWithTimeoutSuggestion(ctx context.Context, args 
 	start := time.Now()
 	rr, err := r.doResults(ctx, args, jobs)
 
-	// If we encountered a context timeout, it indicates one of the many result
-	// type searchers (file, diff, symbol, etc) completely timed out and could not
-	// produce even partial results. Other searcher types may have produced results.
-	//
-	// In this case, or if we got a partial timeout where ALL repositories timed out,
-	// we do not return partial results and instead display a timeout alert.
-	shouldShowAlert := errors.Is(err, context.DeadlineExceeded)
-	if err == nil && rr.Stats.AllReposTimedOut() {
-		shouldShowAlert = true
+	// We have an alert for context timeouts and we have a progress
+	// notification for timeouts. We don't want to show both, so we only show
+	// it if no repos are marked as timedout. This somewhat couples us to how
+	// progress notifications work, but this is the third attempt at trying to
+	// fix this behaviour so we are accepting that.
+	if errors.Is(err, context.DeadlineExceeded) {
+		if rr == nil || !rr.Stats.Status.Any(search.RepoStatusTimedout) {
+			usedTime := time.Since(start)
+			suggestTime := longer(2, usedTime)
+			return alertForTimeout(usedTime, suggestTime, r).wrapResults(), nil
+		} else {
+			err = nil
+		}
 	}
-	if shouldShowAlert {
-		usedTime := time.Since(start)
-		suggestTime := longer(2, usedTime)
-		return alertForTimeout(usedTime, suggestTime, r).wrapResults(), nil
-	}
+
 	return rr, err
 }
 

@@ -29,6 +29,7 @@ The document content can set class names and IDs on elements (for example, Markd
     --critical-badge-color: #f03e3e;
     --experimental-color: #b200f8;
     --feature-color: #38757F;
+    --beta-color: #72dbe8;
 
     --table-row-bg-1: var(--body-bg);
 }
@@ -428,13 +429,14 @@ body > #page > main > #content {
 }
 
 .badge {
+    /* Mirrored from product badge styles */
     display: inline-block;
-    padding: 0.3em;
+    padding: 0.125rem 0.375rem;
+    line-height: 1rem;
     border-radius: 4px;
-    font-size: 85%;
-    font-weight: bold;
+    font-size: 0.75rem;
+    font-weight: 500;
     color: inherit;
-    line-height: 1;
     text-align: center;
     white-space: nowrap;
     vertical-align: baseline;
@@ -443,6 +445,12 @@ body > #page > main > #content {
 .badge-experimental {
     color: #ffffff;
     background-color: var(--experimental-color);
+}
+
+.badge-beta {
+    color: #000000;
+    background-color: var(--beta-color);
+    text-transform: uppercase;
 }
 
 .badge-feature {

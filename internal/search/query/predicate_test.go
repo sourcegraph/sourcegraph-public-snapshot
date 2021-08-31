@@ -73,7 +73,7 @@ func TestParseAsPredicate(t *testing.T) {
 			}
 
 			if params != tc.params {
-				t.Fatalf("expected params %s, got %s", tc.name, name)
+				t.Fatalf("expected params %s, got %s", tc.params, params)
 			}
 		})
 	}

@@ -265,6 +265,7 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			AlertType:     alertType,
 			DurationMs:    time.Since(start).Milliseconds(),
 			ResultSize:    progress.MatchCount,
+			Error:         err,
 		})
 
 		if honey.Enabled() {
@@ -582,6 +583,10 @@ func GuessSource(r *http.Request) trace.SourceType {
 	// We send some automated search requests in order to measure baseline search perf. Track the source of these.
 	if match := searchBlitzUserAgentRegexp.FindStringSubmatch(userAgent); match != nil {
 		return trace.SourceType("searchblitz_" + match[1])
+	}
+
+	if userAgent == "sourcegraph/query-runner" {
+		return trace.SourceQueryRunner
 	}
 
 	return trace.SourceOther

@@ -73,6 +73,8 @@ export const DrillDownFiltersAction: React.FunctionComponent<DrillDownFiltersPro
     // Close popover on escape
     useKeyboard({ detectKeys: ['Escape'] }, handleEscapePress)
 
+    const isFiltered = hasActiveFilters(initialFiltersValue)
+
     return (
         <>
             <button
@@ -80,8 +82,9 @@ export const DrillDownFiltersAction: React.FunctionComponent<DrillDownFiltersPro
                 type="button"
                 className={classnames('btn btn-icon p-1', styles.filterButton, {
                     [styles.filterButtonWithOpenPanel]: isOpen,
-                    [styles.filterButtonActive]: hasActiveFilters(initialFiltersValue),
+                    [styles.filterButtonActive]: isFiltered,
                 })}
+                aria-label={isFiltered ? 'Active filters button' : 'Filters button'}
                 // To prevent grid layout position change animation. Attempts to drag
                 // the filter panel should not trigger react-grid-layout events.
                 onMouseDown={event => event.stopPropagation()}
@@ -96,6 +99,8 @@ export const DrillDownFiltersAction: React.FunctionComponent<DrillDownFiltersPro
                     targetRef={popoverTargetRef}
                     position={flipRightPosition}
                     className={classnames('dropdown-menu', styles.popover)}
+                    role="dialog"
+                    aria-label="Drill-down filters panel"
                     // To prevent grid layout position change animation. Attempts to drag
                     // the filter panel should not trigger react-grid-layout events.
                     onMouseDown={event => event.stopPropagation()}

@@ -3,6 +3,7 @@ package syncer
 import (
 	"context"
 	"net/http"
+	"sync"
 	"testing"
 	"time"
 
@@ -173,10 +174,24 @@ func TestSyncRegistry(t *testing.T) {
 		},
 	}, nil)
 
-	setCodeHosts := func(hosts []*btypes.CodeHost) {
-		syncStore.ListCodeHostsFunc.SetDefaultHook(func(c context.Context, lcho store.ListCodeHostsOpts) ([]*btypes.CodeHost, error) {
-			return hosts, nil
-		})
+	// We put a mutex around `hosts` here because the sync registry will take
+	// the `syncStore` and call the `ListCodeHostsFunc` in a goroutine.
+	// In our tests, though, we want to update which hosts are returned.
+	// To do that safely and to not trigger the race detector we wrap the
+	// `hosts` in a mutex.
+	hosts := []*btypes.CodeHost{}
+	hostsMu := &sync.Mutex{}
+
+	syncStore.ListCodeHostsFunc.SetDefaultHook(func(c context.Context, lcho store.ListCodeHostsOpts) ([]*btypes.CodeHost, error) {
+		hostsMu.Lock()
+		defer hostsMu.Unlock()
+		return hosts, nil
+	})
+
+	setCodeHosts := func(newHosts []*btypes.CodeHost) {
+		hostsMu.Lock()
+		defer hostsMu.Unlock()
+		hosts = newHosts
 	}
 
 	codeHosts := []*btypes.CodeHost{

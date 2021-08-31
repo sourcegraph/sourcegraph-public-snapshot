@@ -2,8 +2,8 @@ import { Menu, MenuButton, MenuItem, MenuItems, MenuLink, MenuPopover } from '@r
 import classnames from 'classnames'
 import CheckIcon from 'mdi-react/CheckIcon'
 import DotsVerticalIcon from 'mdi-react/DotsVerticalIcon'
-import React, { MouseEvent, useContext } from 'react'
-import { useHistory } from 'react-router'
+import React, { useContext } from 'react'
+import { Link } from 'react-router-dom'
 
 import { isSearchBasedInsightId } from '../../../../../../core/types/insight/search-insight'
 import { DashboardInsightsContext } from '../../../../../../pages/dashboards/dashboard-page/components/dashboards-content/components/dashboard-inisghts/DashboardInsightsContext'
@@ -24,26 +24,15 @@ export interface InsightCardMenuProps {
  */
 export const InsightCardMenu: React.FunctionComponent<InsightCardMenuProps> = props => {
     const { insightID, menuButtonClassName, onDelete, onToggleZeroYAxisMin } = props
-    const history = useHistory()
 
     const { zeroYAxisMin } = useContext(LineChartSettingsContext)
 
     // Get dashboard information in case if insight card component
     // is rendered on the dashboard page, otherwise get null value.
     const { dashboard } = useContext(DashboardInsightsContext)
-
-    const handleEditClick = (event: MouseEvent): void => {
-        event.preventDefault()
-
-        const dashboardID = dashboard?.id
-
-        if (dashboardID) {
-            // Redirect to the edit insight page with dashboard id information
-            history.push(`/insights/edit/${insightID}?dashboardId=${dashboardID}`)
-        } else {
-            history.push(`/insights/edit/${insightID}`)
-        }
-    }
+    const editUrl = dashboard?.id
+        ? `/insights/edit/${insightID}?dashboardId=${dashboard.id}`
+        : `/insights/edit/${insightID}`
 
     const showYAxisToggleMenu = isSearchBasedInsightId(insightID) && onToggleZeroYAxisMin
 
@@ -66,9 +55,10 @@ export const InsightCardMenu: React.FunctionComponent<InsightCardMenuProps> = pr
                             className={classnames(styles.panel, 'dropdown-menu')}
                         >
                             <MenuLink
+                                as={Link}
                                 data-testid="InsightContextMenuEditLink"
                                 className={classnames('btn btn-outline', styles.item)}
-                                onClick={handleEditClick}
+                                to={editUrl}
                             >
                                 Edit
                             </MenuLink>

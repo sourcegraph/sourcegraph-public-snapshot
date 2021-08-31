@@ -23,11 +23,11 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Fixed
 
--
+- Code Insights the dashboard page no longer triggers insights re-fetching when insight adding/removing actions happen. [#24375](https://github.com/sourcegraph/sourcegraph/pull/24375)
 
 ### Removed
 
--
+- The "no results found in timeout" search alert is not shown if we indicate timeouts in the progress notifications. This alert caused confusion since it was large, would show even if results where returned and duplicated information from the "some results excluded" drop down. [#24376](https://github.com/sourcegraph/sourcegraph/issues/24376)
 
 ## 3.31.0
 
@@ -36,7 +36,6 @@ All notable changes to Sourcegraph are documented in this file.
 - Backend Code Insights GraphQL queries now support arguments `includeRepoRegex` and `excludeRepoRegex` to filter on repository names. [#23256](https://github.com/sourcegraph/sourcegraph/pull/23256)
 - Code Insights background queries now process in a priority order backwards through time. This will allow insights to populate concurrently. [#23101](https://github.com/sourcegraph/sourcegraph/pull/23101)
 - Operator documentation has been added to the Search Reference sidebar section. [#23116](https://github.com/sourcegraph/sourcegraph/pull/23116)
-- Syntax highlighting support for the [Cue](https://cuelang.org) language.
 - Reintroduced a revised version of the Search Types sidebar section. [#23170](https://github.com/sourcegraph/sourcegraph/pull/23170)
 - Improved usability where filters followed by a space in the search query will warn users that the filter value is empty. [#23646](https://github.com/sourcegraph/sourcegraph/pull/23646)
 - Perforce: [`git p4`'s `--use-client-spec` option](https://git-scm.com/docs/git-p4#Documentation/git-p4.txt---use-client-spec) can now be enabled by configuring the `p4.client` field. [#23833](https://github.com/sourcegraph/sourcegraph/pull/23833), [#23845](https://github.com/sourcegraph/sourcegraph/pull/23845)
