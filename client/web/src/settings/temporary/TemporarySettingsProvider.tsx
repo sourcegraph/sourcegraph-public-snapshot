@@ -1,4 +1,4 @@
-import { ApolloClient, NormalizedCacheObject } from '@apollo/client'
+import { useApolloClient } from '@apollo/client'
 import React, { createContext, useEffect, useState } from 'react'
 
 import { AuthenticatedUser } from '../../auth'
@@ -16,9 +16,10 @@ TemporarySettingsContext.displayName = 'TemporarySettingsContext'
  * The web app needs to be wrapped around this.
  */
 export const TemporarySettingsProvider: React.FunctionComponent<{
-    apolloClient: ApolloClient<NormalizedCacheObject>
     authenticatedUser: AuthenticatedUser | null
-}> = ({ children, apolloClient, authenticatedUser }) => {
+}> = ({ children, authenticatedUser }) => {
+    const apolloClient = useApolloClient()
+
     const [temporarySettingsStorage] = useState<TemporarySettingsStorage>(
         () => new TemporarySettingsStorage(apolloClient, authenticatedUser)
     )

@@ -1,4 +1,4 @@
-import { ApolloClient, gql, NormalizedCacheObject } from '@apollo/client'
+import { ApolloClient, gql } from '@apollo/client'
 import { Observable, Subject, of, Subscription, from } from 'rxjs'
 import { distinctUntilKeyChanged, map, startWith } from 'rxjs/operators'
 
@@ -22,10 +22,7 @@ export class TemporarySettingsStorage {
         this.saveSubscription?.unsubscribe()
     }
 
-    constructor(
-        private apolloClient: ApolloClient<NormalizedCacheObject>,
-        authenticatedUser: AuthenticatedUser | null
-    ) {
+    constructor(private apolloClient: ApolloClient<object>, authenticatedUser: AuthenticatedUser | null) {
         this.setAuthenticatedUser(authenticatedUser)
     }
 
@@ -84,8 +81,8 @@ class LocalStorageSettingsBackend implements SettingsBackend {
                 const parsedSettings = JSON.parse(settings) as TemporarySettings
                 return of(parsedSettings)
             }
-        } catch {
-            // Ignore error
+        } catch (error: unknown) {
+            console.error(error)
         }
 
         return of({})
@@ -95,8 +92,8 @@ class LocalStorageSettingsBackend implements SettingsBackend {
         try {
             const settingsString = JSON.stringify(settings)
             localStorage.setItem(this.TemporarySettingsKey, settingsString)
-        } catch {
-            // Ignore error
+        } catch (error: unknown) {
+            console.error(error)
         }
 
         return of()
@@ -104,36 +101,42 @@ class LocalStorageSettingsBackend implements SettingsBackend {
 }
 
 class ServersideSettingsBackend implements SettingsBackend {
-    constructor(private apolloClient: ApolloClient<NormalizedCacheObject>) {}
+    private readonly GetTemporarySettingsQuery = gql`
+        query GetTemporarySettings {
+            temporarySettings {
+                contents
+            }
+        }
+    `
+
+    private readonly SaveTemporarySettingsMutation = gql`
+        mutation SaveTemporarySettings($contents: String!) {
+            overwriteTemporarySettings(contents: $contents) {
+                alwaysNil
+            }
+        }
+    `
+
+    constructor(private apolloClient: ApolloClient<object>) {}
 
     public load(): Observable<TemporarySettings> {
-        const query = gql`
-            query GetTemporarySettings {
-                temporarySettings {
-                    contents
-                }
-            }
-        `
-
         return new Observable<TemporarySettings>(observer => {
             const subscription = this.apolloClient
-                .watchQuery<GetTemporarySettingsResult>({ query })
+                .watchQuery<GetTemporarySettingsResult>({ query: this.GetTemporarySettingsQuery })
                 .subscribe({
                     next: result => {
                         let parsedSettings: TemporarySettings = {}
                         try {
                             const settings = result.data.temporarySettings.contents
                             parsedSettings = JSON.parse(settings) as TemporarySettings
-                        } catch {
-                            // Ignore error
+                        } catch (error: unknown) {
+                            console.error(error)
                         }
-                        if (parsedSettings) {
-                            observer.next(parsedSettings)
-                        } else {
-                            observer.next({})
-                        }
+
+                        observer.next(parsedSettings || {})
                     },
                     error: error => {
+                        console.error(error)
                         observer.error(error)
                     },
                     complete: () => {
@@ -146,22 +149,20 @@ class ServersideSettingsBackend implements SettingsBackend {
     }
 
     public save(settings: TemporarySettings): Observable<void> {
-        const mutation = gql`
-            mutation SetTemporarySettings($contents: String!) {
-                overwriteTemporarySettings(contents: $contents) {
-                    alwaysNil
-                }
-            }
-        `
-
         try {
             const settingsString = JSON.stringify(settings)
-            return from(this.apolloClient.mutate({ mutation, variables: { contents: settingsString } })).pipe(
+            return from(
+                this.apolloClient.mutate({
+                    mutation: this.SaveTemporarySettingsMutation,
+                    variables: { contents: settingsString },
+                })
+            ).pipe(
                 map(() => {}) // Ignore return value, always empty
             )
-        } catch {
-            // Ignore error
-            return of()
+        } catch (error: unknown) {
+            console.error(error)
         }
+
+        return of()
     }
 }

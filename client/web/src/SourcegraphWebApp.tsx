@@ -513,7 +513,7 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
             <ApolloProvider client={client}>
                 <ErrorBoundary location={null}>
                     <ShortcutProvider>
-                        <TemporarySettingsProvider authenticatedUser={authenticatedUser} apolloClient={client}>
+                        <TemporarySettingsProvider authenticatedUser={authenticatedUser}>
                             <Router history={history} key={0}>
                                 <Route
                                     path="/"
