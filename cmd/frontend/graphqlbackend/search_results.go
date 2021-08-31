@@ -941,6 +941,7 @@ func (r *searchResolver) logBatch(ctx context.Context, srr *SearchResultsResolve
 			AlertType:     alertType,
 			DurationMs:    elapsed.Milliseconds(),
 			ResultSize:    n,
+			Error:         err,
 		})
 
 		if honey.Enabled() {

@@ -265,6 +265,7 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			AlertType:     alertType,
 			DurationMs:    time.Since(start).Milliseconds(),
 			ResultSize:    progress.MatchCount,
+			Error:         err,
 		})
 
 		if honey.Enabled() {
