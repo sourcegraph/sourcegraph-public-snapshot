@@ -433,52 +433,52 @@ func TestService_ValidateChangesetSpecs(t *testing.T) {
 
 	tests := map[string]struct {
 		repos []*graphql.Repository
-		specs []*batches.ChangesetSpec
+		specs []*batcheslib.ChangesetSpec
 
 		wantErrInclude string
 	}{
 		"no errors": {
 			repos: []*graphql.Repository{repo1, repo2},
-			specs: []*batches.ChangesetSpec{
-				{CreatedChangeset: &batches.CreatedChangeset{
-					HeadRepository: repo1.ID, HeadRef: "refs/heads/branch-1"},
+			specs: []*batcheslib.ChangesetSpec{
+				{
+					HeadRepository: repo1.ID, HeadRef: "refs/heads/branch-1",
 				},
-				{CreatedChangeset: &batches.CreatedChangeset{
-					HeadRepository: repo1.ID, HeadRef: "refs/heads/branch-2"},
+				{
+					HeadRepository: repo1.ID, HeadRef: "refs/heads/branch-2",
 				},
-				{CreatedChangeset: &batches.CreatedChangeset{
-					HeadRepository: repo2.ID, HeadRef: "refs/heads/branch-1"},
+				{
+					HeadRepository: repo2.ID, HeadRef: "refs/heads/branch-1",
 				},
-				{CreatedChangeset: &batches.CreatedChangeset{
-					HeadRepository: repo2.ID, HeadRef: "refs/heads/branch-2"},
+				{
+					HeadRepository: repo2.ID, HeadRef: "refs/heads/branch-2",
 				},
 			},
 		},
 
 		"imported changeset": {
 			repos: []*graphql.Repository{repo1},
-			specs: []*batches.ChangesetSpec{
-				{ExternalChangeset: &batches.ExternalChangeset{
+			specs: []*batcheslib.ChangesetSpec{
+				{
 					ExternalID: "123",
-				}},
+				},
 			},
 			// This should not fail validation ever.
 		},
 
 		"duplicate branches": {
 			repos: []*graphql.Repository{repo1, repo2},
-			specs: []*batches.ChangesetSpec{
-				{CreatedChangeset: &batches.CreatedChangeset{
-					HeadRepository: repo1.ID, HeadRef: "refs/heads/branch-1"},
+			specs: []*batcheslib.ChangesetSpec{
+				{
+					HeadRepository: repo1.ID, HeadRef: "refs/heads/branch-1",
 				},
-				{CreatedChangeset: &batches.CreatedChangeset{
-					HeadRepository: repo1.ID, HeadRef: "refs/heads/branch-2"},
+				{
+					HeadRepository: repo1.ID, HeadRef: "refs/heads/branch-2",
 				},
-				{CreatedChangeset: &batches.CreatedChangeset{
-					HeadRepository: repo2.ID, HeadRef: "refs/heads/branch-1"},
+				{
+					HeadRepository: repo2.ID, HeadRef: "refs/heads/branch-1",
 				},
-				{CreatedChangeset: &batches.CreatedChangeset{
-					HeadRepository: repo2.ID, HeadRef: "refs/heads/branch-1"},
+				{
+					HeadRepository: repo2.ID, HeadRef: "refs/heads/branch-1",
 				},
 			},
 			wantErrInclude: `github.com/sourcegraph/sourcegraph: 2 changeset specs have the branch "branch-1"`,

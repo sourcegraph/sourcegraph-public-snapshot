@@ -125,7 +125,7 @@ mutation CreateChangesetSpec($spec: String!) {
 }
 `
 
-func (svc *Service) CreateChangesetSpec(ctx context.Context, spec *batches.ChangesetSpec) (graphql.ChangesetSpecID, error) {
+func (svc *Service) CreateChangesetSpec(ctx context.Context, spec *batcheslib.ChangesetSpec) (graphql.ChangesetSpecID, error) {
 	raw, err := json.Marshal(spec)
 	if err != nil {
 		return "", errors.Wrap(err, "marshalling changeset spec JSON")
@@ -201,21 +201,21 @@ func (svc *Service) NewCoordinator(opts executor.NewCoordinatorOpts) *executor.C
 
 // ValidateChangesetSpecs validates that among all branch changesets there are no
 // duplicates in branch names in a single repo.
-func (svc *Service) ValidateChangesetSpecs(repos []*graphql.Repository, specs []*batches.ChangesetSpec) error {
+func (svc *Service) ValidateChangesetSpecs(repos []*graphql.Repository, specs []*batcheslib.ChangesetSpec) error {
 	repoByID := make(map[string]*graphql.Repository, len(repos))
 	for _, repo := range repos {
 		repoByID[repo.ID] = repo
 	}
 
-	byRepoAndBranch := make(map[string]map[string][]*batches.ChangesetSpec)
+	byRepoAndBranch := make(map[string]map[string][]*batcheslib.ChangesetSpec)
 	for _, spec := range specs {
 		// We don't need to validate imported changesets, as they can
 		// never have a critical branch name overlap.
-		if spec.ExternalChangeset != nil {
+		if spec.Type() == batcheslib.ChangesetSpecDescriptionTypeExisting {
 			continue
 		}
 		if _, ok := byRepoAndBranch[spec.HeadRepository]; !ok {
-			byRepoAndBranch[spec.HeadRepository] = make(map[string][]*batches.ChangesetSpec)
+			byRepoAndBranch[spec.HeadRepository] = make(map[string][]*batcheslib.ChangesetSpec)
 		}
 
 		byRepoAndBranch[spec.HeadRepository][spec.HeadRef] = append(byRepoAndBranch[spec.HeadRepository][spec.HeadRef], spec)

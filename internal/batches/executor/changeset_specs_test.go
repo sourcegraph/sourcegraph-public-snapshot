@@ -14,34 +14,33 @@ import (
 )
 
 func TestCreateChangesetSpecs(t *testing.T) {
-	defaultChangesetSpec := &batches.ChangesetSpec{
+	defaultChangesetSpec := &batcheslib.ChangesetSpec{
 		BaseRepository: testRepo1.ID,
-		CreatedChangeset: &batches.CreatedChangeset{
-			BaseRef:        testRepo1.DefaultBranch.Name,
-			BaseRev:        testRepo1.DefaultBranch.Target.OID,
-			HeadRepository: testRepo1.ID,
-			HeadRef:        "refs/heads/my-branch",
-			Title:          "The title",
-			Body:           "The body",
-			Commits: []batches.GitCommitDescription{
-				{
-					Message:     "git commit message",
-					Diff:        "cool diff",
-					AuthorName:  "Sourcegraph",
-					AuthorEmail: "batch-changes@sourcegraph.com",
-				},
+
+		BaseRef:        testRepo1.DefaultBranch.Name,
+		BaseRev:        testRepo1.DefaultBranch.Target.OID,
+		HeadRepository: testRepo1.ID,
+		HeadRef:        "refs/heads/my-branch",
+		Title:          "The title",
+		Body:           "The body",
+		Commits: []batcheslib.GitCommitDescription{
+			{
+				Message:     "git commit message",
+				Diff:        "cool diff",
+				AuthorName:  "Sourcegraph",
+				AuthorEmail: "batch-changes@sourcegraph.com",
 			},
-			Published: false,
 		},
+		Published: batcheslib.PublishedValue{Val: false},
 	}
 
-	specWith := func(s *batches.ChangesetSpec, f func(s *batches.ChangesetSpec)) *batches.ChangesetSpec {
+	specWith := func(s *batcheslib.ChangesetSpec, f func(s *batcheslib.ChangesetSpec)) *batcheslib.ChangesetSpec {
 		copy, err := copystructure.Copy(s)
 		if err != nil {
 			t.Fatalf("deep copying spec: %+v", err)
 		}
 
-		s = copy.(*batches.ChangesetSpec)
+		s = copy.(*batcheslib.ChangesetSpec)
 		f(s)
 		return s
 	}
@@ -91,7 +90,7 @@ func TestCreateChangesetSpecs(t *testing.T) {
 		features batches.FeatureFlags
 		result   executionResult
 
-		want    []*batches.ChangesetSpec
+		want    []*batcheslib.ChangesetSpec
 		wantErr string
 	}{
 		{
@@ -99,7 +98,7 @@ func TestCreateChangesetSpecs(t *testing.T) {
 			task:     defaultTask,
 			features: featuresAllEnabled(),
 			result:   defaultResult,
-			want: []*batches.ChangesetSpec{
+			want: []*batcheslib.ChangesetSpec{
 				defaultChangesetSpec,
 			},
 			wantErr: "",
@@ -112,9 +111,9 @@ func TestCreateChangesetSpecs(t *testing.T) {
 			}),
 			features: featuresAllEnabled(),
 			result:   defaultResult,
-			want: []*batches.ChangesetSpec{
-				specWith(defaultChangesetSpec, func(s *batches.ChangesetSpec) {
-					s.Published = true
+			want: []*batcheslib.ChangesetSpec{
+				specWith(defaultChangesetSpec, func(s *batcheslib.ChangesetSpec) {
+					s.Published = batcheslib.PublishedValue{Val: true}
 				}),
 			},
 			wantErr: "",
@@ -127,9 +126,9 @@ func TestCreateChangesetSpecs(t *testing.T) {
 			}),
 			features: featuresAllEnabled(),
 			result:   defaultResult,
-			want: []*batches.ChangesetSpec{
-				specWith(defaultChangesetSpec, func(s *batches.ChangesetSpec) {
-					s.Published = nil
+			want: []*batcheslib.ChangesetSpec{
+				specWith(defaultChangesetSpec, func(s *batcheslib.ChangesetSpec) {
+					s.Published = batcheslib.PublishedValue{Val: nil}
 				}),
 			},
 			wantErr: "",
@@ -142,9 +141,9 @@ func TestCreateChangesetSpecs(t *testing.T) {
 			}),
 			features: featuresWithoutOptionalPublished,
 			result:   defaultResult,
-			want: []*batches.ChangesetSpec{
-				specWith(defaultChangesetSpec, func(s *batches.ChangesetSpec) {
-					s.Published = false
+			want: []*batcheslib.ChangesetSpec{
+				specWith(defaultChangesetSpec, func(s *batcheslib.ChangesetSpec) {
+					s.Published = batcheslib.PublishedValue{Val: false}
 				}),
 			},
 			wantErr: "",
@@ -156,9 +155,9 @@ func TestCreateChangesetSpecs(t *testing.T) {
 			}),
 			features: featuresAllEnabled(),
 			result:   defaultResult,
-			want: []*batches.ChangesetSpec{
-				specWith(defaultChangesetSpec, func(s *batches.ChangesetSpec) {
-					s.Published = nil
+			want: []*batcheslib.ChangesetSpec{
+				specWith(defaultChangesetSpec, func(s *batcheslib.ChangesetSpec) {
+					s.Published = batcheslib.PublishedValue{Val: nil}
 				}),
 			},
 			wantErr: "",

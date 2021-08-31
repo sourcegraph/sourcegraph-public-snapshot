@@ -277,7 +277,7 @@ func (ui *taskExecutionJSONLines) TaskFinished(task *executor.Task, err error) {
 	}})
 }
 
-func (ui *taskExecutionJSONLines) TaskChangesetSpecsBuilt(task *executor.Task, specs []*batches.ChangesetSpec) {
+func (ui *taskExecutionJSONLines) TaskChangesetSpecsBuilt(task *executor.Task, specs []*batcheslib.ChangesetSpec) {
 	lt, ok := ui.linesTasks[task]
 	if !ok {
 		panic("unknown task started")

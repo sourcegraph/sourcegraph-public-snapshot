@@ -7,8 +7,8 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
+	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
 	"github.com/sourcegraph/sourcegraph/lib/output"
-	"github.com/sourcegraph/src-cli/internal/batches"
 	"github.com/sourcegraph/src-cli/internal/batches/executor"
 	"github.com/sourcegraph/src-cli/internal/batches/graphql"
 )
@@ -148,24 +148,23 @@ func TestTaskExecTUI_Integration(t *testing.T) {
 	})
 
 	// Mark the last task as finished-building-specs
-	printer.TaskChangesetSpecsBuilt(tasks[2], []*batches.ChangesetSpec{
+	printer.TaskChangesetSpecsBuilt(tasks[2], []*batcheslib.ChangesetSpec{
 		{
 			BaseRepository: "graphql-id",
-			CreatedChangeset: &batches.CreatedChangeset{
-				BaseRef:        "refs/heads/main",
-				BaseRev:        "d34db33f",
-				HeadRepository: "graphql-id",
-				HeadRef:        "refs/heads/my-batch-change",
-				Title:          "This is my batch change",
-				Body:           "This is my batch change",
-				Commits: []batches.GitCommitDescription{
-					{
-						Message: "This is my batch change",
-						Diff:    progressPrinterDiff,
-					},
+
+			BaseRef:        "refs/heads/main",
+			BaseRev:        "d34db33f",
+			HeadRepository: "graphql-id",
+			HeadRef:        "refs/heads/my-batch-change",
+			Title:          "This is my batch change",
+			Body:           "This is my batch change",
+			Commits: []batcheslib.GitCommitDescription{
+				{
+					Message: "This is my batch change",
+					Diff:    progressPrinterDiff,
 				},
-				Published: false,
 			},
+			Published: batcheslib.PublishedValue{Val: false},
 		},
 	})
 

@@ -13,7 +13,7 @@ import (
 
 var errOptionalPublishedUnsupported = errors.New(`This Sourcegraph version requires the "published" field to be specified in the batch spec; upgrade to version 3.30.0 or later to be able to omit the published field and control publication from the UI.`)
 
-func createChangesetSpecs(task *Task, result executionResult, features batches.FeatureFlags) ([]*batches.ChangesetSpec, error) {
+func createChangesetSpecs(task *Task, result executionResult, features batches.FeatureFlags) ([]*batcheslib.ChangesetSpec, error) {
 	repo := task.Repository.Name
 
 	tmplCtx := &template.ChangesetTemplateContext{
@@ -70,7 +70,7 @@ func createChangesetSpecs(task *Task, result executionResult, features batches.F
 		return nil, err
 	}
 
-	newSpec := func(branch, diff string) (*batches.ChangesetSpec, error) {
+	newSpec := func(branch, diff string) (*batcheslib.ChangesetSpec, error) {
 		var published interface{} = nil
 		if task.Template.Published != nil {
 			published = task.Template.Published.ValueWithSuffix(repo, branch)
@@ -85,29 +85,28 @@ func createChangesetSpecs(task *Task, result executionResult, features batches.F
 			return nil, errOptionalPublishedUnsupported
 		}
 
-		return &batches.ChangesetSpec{
+		return &batcheslib.ChangesetSpec{
 			BaseRepository: task.Repository.ID,
-			CreatedChangeset: &batches.CreatedChangeset{
-				BaseRef:        task.Repository.BaseRef(),
-				BaseRev:        task.Repository.Rev(),
-				HeadRepository: task.Repository.ID,
-				HeadRef:        "refs/heads/" + branch,
-				Title:          title,
-				Body:           body,
-				Commits: []batches.GitCommitDescription{
-					{
-						Message:     message,
-						AuthorName:  authorName,
-						AuthorEmail: authorEmail,
-						Diff:        diff,
-					},
+
+			BaseRef:        task.Repository.BaseRef(),
+			BaseRev:        task.Repository.Rev(),
+			HeadRepository: task.Repository.ID,
+			HeadRef:        "refs/heads/" + branch,
+			Title:          title,
+			Body:           body,
+			Commits: []batcheslib.GitCommitDescription{
+				{
+					Message:     message,
+					AuthorName:  authorName,
+					AuthorEmail: authorEmail,
+					Diff:        diff,
 				},
-				Published: published,
 			},
+			Published: batcheslib.PublishedValue{Val: published},
 		}, nil
 	}
 
-	var specs []*batches.ChangesetSpec
+	var specs []*batcheslib.ChangesetSpec
 
 	groups := groupsForRepository(task.Repository.Name, task.TransformChanges)
 	if len(groups) != 0 {

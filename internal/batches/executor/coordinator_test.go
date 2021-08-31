@@ -11,7 +11,6 @@ import (
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/sourcegraph/batch-change-utils/overridable"
 	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
-	"github.com/sourcegraph/src-cli/internal/batches"
 	"github.com/sourcegraph/src-cli/internal/batches/git"
 	"github.com/sourcegraph/src-cli/internal/batches/graphql"
 	"github.com/sourcegraph/src-cli/internal/batches/mock"
@@ -23,26 +22,25 @@ func TestCoordinator_Execute(t *testing.T) {
 	srcCLITask := &Task{Repository: testRepo1}
 	sourcegraphTask := &Task{Repository: testRepo2}
 
-	buildSpecFor := func(repo *graphql.Repository, modify func(*batches.ChangesetSpec)) *batches.ChangesetSpec {
-		spec := &batches.ChangesetSpec{
+	buildSpecFor := func(repo *graphql.Repository, modify func(*batcheslib.ChangesetSpec)) *batcheslib.ChangesetSpec {
+		spec := &batcheslib.ChangesetSpec{
 			BaseRepository: repo.ID,
-			CreatedChangeset: &batches.CreatedChangeset{
-				BaseRef:        repo.BaseRef(),
-				BaseRev:        repo.Rev(),
-				HeadRepository: repo.ID,
-				HeadRef:        "refs/heads/" + testChangesetTemplate.Branch,
-				Title:          testChangesetTemplate.Title,
-				Body:           testChangesetTemplate.Body,
-				Commits: []batches.GitCommitDescription{
-					{
-						Message:     testChangesetTemplate.Commit.Message,
-						AuthorName:  testChangesetTemplate.Commit.Author.Name,
-						AuthorEmail: testChangesetTemplate.Commit.Author.Email,
-						Diff:        `dummydiff1`,
-					},
+
+			BaseRef:        repo.BaseRef(),
+			BaseRev:        repo.Rev(),
+			HeadRepository: repo.ID,
+			HeadRef:        "refs/heads/" + testChangesetTemplate.Branch,
+			Title:          testChangesetTemplate.Title,
+			Body:           testChangesetTemplate.Body,
+			Commits: []batcheslib.GitCommitDescription{
+				{
+					Message:     testChangesetTemplate.Commit.Message,
+					AuthorName:  testChangesetTemplate.Commit.Author.Name,
+					AuthorEmail: testChangesetTemplate.Commit.Author.Email,
+					Diff:        `dummydiff1`,
 				},
-				Published: false,
 			},
+			Published: batcheslib.PublishedValue{Val: false},
 		}
 
 		modify(spec)
@@ -59,7 +57,7 @@ func TestCoordinator_Execute(t *testing.T) {
 		batchSpec *batcheslib.BatchSpec
 
 		wantCacheEntries int
-		wantSpecs        []*batches.ChangesetSpec
+		wantSpecs        []*batcheslib.ChangesetSpec
 		wantErrInclude   string
 	}{
 		{
@@ -82,12 +80,12 @@ func TestCoordinator_Execute(t *testing.T) {
 			opts: NewCoordinatorOpts{Features: featuresAllEnabled()},
 
 			wantCacheEntries: 2,
-			wantSpecs: []*batches.ChangesetSpec{
-				buildSpecFor(testRepo1, func(spec *batches.ChangesetSpec) {
-					spec.CreatedChangeset.Commits[0].Diff = `dummydiff1`
+			wantSpecs: []*batcheslib.ChangesetSpec{
+				buildSpecFor(testRepo1, func(spec *batcheslib.ChangesetSpec) {
+					spec.Commits[0].Diff = `dummydiff1`
 				}),
-				buildSpecFor(testRepo2, func(spec *batches.ChangesetSpec) {
-					spec.CreatedChangeset.Commits[0].Diff = `dummydiff2`
+				buildSpecFor(testRepo2, func(spec *batcheslib.ChangesetSpec) {
+					spec.Commits[0].Diff = `dummydiff2`
 				}),
 			},
 		},
@@ -150,11 +148,11 @@ func TestCoordinator_Execute(t *testing.T) {
 			opts: NewCoordinatorOpts{Features: featuresAllEnabled()},
 
 			wantCacheEntries: 1,
-			wantSpecs: []*batches.ChangesetSpec{
-				buildSpecFor(testRepo1, func(spec *batches.ChangesetSpec) {
-					spec.CreatedChangeset.HeadRef = "refs/heads/templated-branch-myOutputValue1"
-					spec.CreatedChangeset.Title = "output1=myOutputValue1"
-					spec.CreatedChangeset.Body = `output1=myOutputValue1
+			wantSpecs: []*batcheslib.ChangesetSpec{
+				buildSpecFor(testRepo1, func(spec *batcheslib.ChangesetSpec) {
+					spec.HeadRef = "refs/heads/templated-branch-myOutputValue1"
+					spec.Title = "output1=myOutputValue1"
+					spec.Body = `output1=myOutputValue1
 		output2=subFieldValue
 
 		modified_files=[modified.txt]
@@ -166,7 +164,7 @@ func TestCoordinator_Execute(t *testing.T) {
 
 		batch_change_name=my-batch-change
 		batch_change_description=the description`
-					spec.CreatedChangeset.Commits = []batches.GitCommitDescription{
+					spec.Commits = []batcheslib.GitCommitDescription{
 						{
 							Message:     "output1=myOutputValue1,output2=subFieldValue",
 							AuthorName:  "output1=myOutputValue1",
@@ -203,22 +201,22 @@ func TestCoordinator_Execute(t *testing.T) {
 			// We have 4 ChangesetSpecs, but we only want 2 cache entries,
 			// since we cache per Task, not per resulting changeset spec.
 			wantCacheEntries: 2,
-			wantSpecs: []*batches.ChangesetSpec{
-				buildSpecFor(testRepo1, func(spec *batches.ChangesetSpec) {
-					spec.CreatedChangeset.HeadRef = "refs/heads/" + testChangesetTemplate.Branch
-					spec.CreatedChangeset.Commits[0].Diff = nestedChangesDiffSubdirA + nestedChangesDiffSubdirB
+			wantSpecs: []*batcheslib.ChangesetSpec{
+				buildSpecFor(testRepo1, func(spec *batcheslib.ChangesetSpec) {
+					spec.HeadRef = "refs/heads/" + testChangesetTemplate.Branch
+					spec.Commits[0].Diff = nestedChangesDiffSubdirA + nestedChangesDiffSubdirB
 				}),
-				buildSpecFor(testRepo2, func(spec *batches.ChangesetSpec) {
-					spec.CreatedChangeset.HeadRef = "refs/heads/in-directory-b"
-					spec.CreatedChangeset.Commits[0].Diff = nestedChangesDiffSubdirB + nestedChangesDiffSubdirC
+				buildSpecFor(testRepo2, func(spec *batcheslib.ChangesetSpec) {
+					spec.HeadRef = "refs/heads/in-directory-b"
+					spec.Commits[0].Diff = nestedChangesDiffSubdirB + nestedChangesDiffSubdirC
 				}),
-				buildSpecFor(testRepo1, func(spec *batches.ChangesetSpec) {
-					spec.CreatedChangeset.HeadRef = "refs/heads/in-directory-c"
-					spec.CreatedChangeset.Commits[0].Diff = nestedChangesDiffSubdirC
+				buildSpecFor(testRepo1, func(spec *batcheslib.ChangesetSpec) {
+					spec.HeadRef = "refs/heads/in-directory-c"
+					spec.Commits[0].Diff = nestedChangesDiffSubdirC
 				}),
-				buildSpecFor(testRepo2, func(spec *batches.ChangesetSpec) {
-					spec.CreatedChangeset.HeadRef = "refs/heads/" + testChangesetTemplate.Branch
-					spec.CreatedChangeset.Commits[0].Diff = nestedChangesDiffSubdirA
+				buildSpecFor(testRepo2, func(spec *batcheslib.ChangesetSpec) {
+					spec.HeadRef = "refs/heads/" + testChangesetTemplate.Branch
+					spec.Commits[0].Diff = nestedChangesDiffSubdirA
 				}),
 			},
 		},
@@ -251,9 +249,9 @@ func TestCoordinator_Execute(t *testing.T) {
 			wantErrInclude: "run: broken command",
 			// We want 1 cache entry and 1 spec
 			wantCacheEntries: 1,
-			wantSpecs: []*batches.ChangesetSpec{
-				buildSpecFor(testRepo1, func(spec *batches.ChangesetSpec) {
-					spec.CreatedChangeset.Commits[0].Diff = `dummydiff1`
+			wantSpecs: []*batcheslib.ChangesetSpec{
+				buildSpecFor(testRepo1, func(spec *batcheslib.ChangesetSpec) {
+					spec.Commits[0].Diff = `dummydiff1`
 				}),
 			},
 		},
@@ -308,9 +306,9 @@ func TestCoordinator_Execute(t *testing.T) {
 
 				opts := []cmp.Option{
 					cmpopts.EquateEmpty(),
-					cmpopts.SortSlices(func(a, b *batches.ChangesetSpec) bool {
-						if a.BaseRepository == b.BaseRepository && a.CreatedChangeset != nil && b.CreatedChangeset != nil {
-							return a.CreatedChangeset.HeadRef < b.CreatedChangeset.HeadRef
+					cmpopts.SortSlices(func(a, b *batcheslib.ChangesetSpec) bool {
+						if a.BaseRepository == b.BaseRepository {
+							return a.HeadRef < b.HeadRef
 						}
 						return a.BaseRepository < b.BaseRepository
 					}),
@@ -506,7 +504,7 @@ func newDummyTaskExecutionUI() *dummyTaskExecutionUI {
 		started:         map[*Task]struct{}{},
 		finished:        map[*Task]struct{}{},
 		finishedWithErr: map[*Task]struct{}{},
-		specs:           map[*Task][]*batches.ChangesetSpec{},
+		specs:           map[*Task][]*batcheslib.ChangesetSpec{},
 	}
 }
 
@@ -516,7 +514,7 @@ type dummyTaskExecutionUI struct {
 	started         map[*Task]struct{}
 	finished        map[*Task]struct{}
 	finishedWithErr map[*Task]struct{}
-	specs           map[*Task][]*batches.ChangesetSpec
+	specs           map[*Task][]*batcheslib.ChangesetSpec
 }
 
 func (d *dummyTaskExecutionUI) Start([]*Task) {}
@@ -538,7 +536,7 @@ func (d *dummyTaskExecutionUI) TaskFinished(t *Task, err error) {
 		d.finished[t] = struct{}{}
 	}
 }
-func (d *dummyTaskExecutionUI) TaskChangesetSpecsBuilt(t *Task, specs []*batches.ChangesetSpec) {
+func (d *dummyTaskExecutionUI) TaskChangesetSpecsBuilt(t *Task, specs []*batcheslib.ChangesetSpec) {
 	d.mu.Lock()
 	defer d.mu.Unlock()
 

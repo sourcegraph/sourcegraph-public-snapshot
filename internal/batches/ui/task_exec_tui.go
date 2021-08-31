@@ -8,8 +8,8 @@ import (
 	"time"
 
 	"github.com/sourcegraph/go-diff/diff"
+	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
 	"github.com/sourcegraph/sourcegraph/lib/output"
-	"github.com/sourcegraph/src-cli/internal/batches"
 	"github.com/sourcegraph/src-cli/internal/batches/executor"
 )
 
@@ -249,7 +249,7 @@ func (ui *taskExecTUI) TaskFinished(task *executor.Task, err error) {
 	delete(ui.statusBars, bar)
 }
 
-func (ui *taskExecTUI) TaskChangesetSpecsBuilt(task *executor.Task, specs []*batches.ChangesetSpec) {
+func (ui *taskExecTUI) TaskChangesetSpecsBuilt(task *executor.Task, specs []*batcheslib.ChangesetSpec) {
 	if !ui.verbose {
 		return
 	}

@@ -24,7 +24,7 @@ type taskExecutor interface {
 
 // Coordinates coordinates the execution of Tasks. It makes use of an executor,
 // checks the ExecutionCache whether execution is necessary, builds
-// batches.ChangesetSpecs out of the executionResults.
+// batcheslib.ChangesetSpecs out of the executionResults.
 type Coordinator struct {
 	opts NewCoordinatorOpts
 
@@ -89,7 +89,7 @@ func NewCoordinator(opts NewCoordinatorOpts) *Coordinator {
 // CheckCache checks whether the internal ExecutionCache contains
 // ChangesetSpecs for the given Tasks. If cached ChangesetSpecs exist, those
 // are returned, otherwise the Task, to be executed later.
-func (c *Coordinator) CheckCache(ctx context.Context, tasks []*Task) (uncached []*Task, specs []*batches.ChangesetSpec, err error) {
+func (c *Coordinator) CheckCache(ctx context.Context, tasks []*Task) (uncached []*Task, specs []*batcheslib.ChangesetSpec, err error) {
 	for _, t := range tasks {
 		cachedSpecs, found, err := c.checkCacheForTask(ctx, t)
 		if err != nil {
@@ -107,7 +107,7 @@ func (c *Coordinator) CheckCache(ctx context.Context, tasks []*Task) (uncached [
 	return uncached, specs, nil
 }
 
-func (c *Coordinator) checkCacheForTask(ctx context.Context, task *Task) (specs []*batches.ChangesetSpec, found bool, err error) {
+func (c *Coordinator) checkCacheForTask(ctx context.Context, task *Task) (specs []*batcheslib.ChangesetSpec, found bool, err error) {
 	// Check if the task is cached.
 	cacheKey := task.cacheKey()
 	if c.opts.ClearCache {
@@ -174,7 +174,7 @@ func (c *Coordinator) setCachedStepResults(ctx context.Context, task *Task) erro
 	return nil
 }
 
-func (c *Coordinator) cacheAndBuildSpec(ctx context.Context, taskResult taskResult, ui TaskExecutionUI) ([]*batches.ChangesetSpec, error) {
+func (c *Coordinator) cacheAndBuildSpec(ctx context.Context, taskResult taskResult, ui TaskExecutionUI) ([]*batcheslib.ChangesetSpec, error) {
 	// Add to the cache, even if no diff was produced.
 	cacheKey := taskResult.task.cacheKey()
 	if err := c.cache.Set(ctx, cacheKey, taskResult.result); err != nil {
@@ -212,7 +212,7 @@ type TaskExecutionUI interface {
 	TaskStarted(*Task)
 	TaskFinished(*Task, error)
 
-	TaskChangesetSpecsBuilt(*Task, []*batches.ChangesetSpec)
+	TaskChangesetSpecsBuilt(*Task, []*batcheslib.ChangesetSpec)
 
 	// TODO: This should be split up into methods that are more specific.
 	TaskCurrentlyExecuting(*Task, string)
@@ -221,9 +221,9 @@ type TaskExecutionUI interface {
 // Execute executes the given Tasks and the importChangeset statements in the
 // given spec. It regularly calls the executionProgressPrinter with the
 // current TaskStatuses.
-func (c *Coordinator) Execute(ctx context.Context, tasks []*Task, spec *batcheslib.BatchSpec, ui TaskExecutionUI) ([]*batches.ChangesetSpec, []string, error) {
+func (c *Coordinator) Execute(ctx context.Context, tasks []*Task, spec *batcheslib.BatchSpec, ui TaskExecutionUI) ([]*batcheslib.ChangesetSpec, []string, error) {
 	var (
-		specs []*batches.ChangesetSpec
+		specs []*batcheslib.ChangesetSpec
 		errs  *multierror.Error
 	)
 
@@ -289,9 +289,10 @@ func (c *Coordinator) Execute(ctx context.Context, tasks []*Task, spec *batchesl
 				return nil, nil, errors.Errorf("cannot convert value of type %T into a valid external ID: expected string or int", id)
 			}
 
-			specs = append(specs, &batches.ChangesetSpec{
-				BaseRepository:    repo.ID,
-				ExternalChangeset: &batches.ExternalChangeset{ExternalID: sid},
+			specs = append(specs, &batcheslib.ChangesetSpec{
+				BaseRepository: repo.ID,
+
+				ExternalID: sid,
 			})
 		}
 	}
