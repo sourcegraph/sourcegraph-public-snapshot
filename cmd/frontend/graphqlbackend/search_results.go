@@ -13,7 +13,6 @@ import (
 	"time"
 
 	"github.com/cockroachdb/errors"
-	"github.com/honeycombio/libhoney-go"
 	"github.com/inconshreveable/log15"
 	"github.com/neelance/parallel"
 	"github.com/opentracing/opentracing-go"
@@ -913,15 +912,13 @@ func logPrometheusBatch(status, alertType, requestSource, requestName string, el
 }
 
 func logHoneyBatch(ctx context.Context, status, alertType, requestSource, requestName string, elapsed time.Duration, query string, start time.Time, srr *SearchResultsResolver) {
-	var ev *libhoney.Event
 	isSlow := time.Since(start) > searchlogs.LogSlowSearchesThreshold()
-
 	if honey.Enabled() || isSlow {
 		var n int
 		if srr != nil {
 			n = len(srr.Matches)
 		}
-		ev = honey.SearchEvent(ctx, honey.SearchEventArgs{
+		ev := honey.SearchEvent(ctx, honey.SearchEventArgs{
 			OriginalQuery: query,
 			Typ:           requestName,
 			Source:        requestSource,
@@ -930,14 +927,14 @@ func logHoneyBatch(ctx context.Context, status, alertType, requestSource, reques
 			DurationMs:    elapsed.Milliseconds(),
 			ResultSize:    n,
 		})
-	}
 
-	if honey.Enabled() && ev != nil {
-		_ = ev.Send()
-	}
+		if honey.Enabled() {
+			_ = ev.Send()
+		}
 
-	if isSlow && ev != nil {
-		log15.Warn("slow search request", searchlogs.MapToLog15Ctx(ev.Fields())...)
+		if isSlow {
+			log15.Warn("slow search request", searchlogs.MapToLog15Ctx(ev.Fields())...)
+		}
 	}
 }
 
