@@ -584,6 +584,10 @@ func GuessSource(r *http.Request) trace.SourceType {
 		return trace.SourceType("searchblitz_" + match[1])
 	}
 
+	if userAgent == "sourcegraph/query-runner" {
+		return trace.SourceQueryRunner
+	}
+
 	return trace.SourceOther
 }
 
