@@ -22,6 +22,10 @@ jest.mock('./SearchPageInput', () => ({
     SearchPageInput: () => null,
 }))
 
+// Uses import.meta.url, which is a SyntaxError when used outside of ES Modules (Jest runs tests as
+// CommonJS).
+jest.mock('./LoggedOutHomepage.constants', () => ({}))
+
 describe('SearchPage', () => {
     afterAll(cleanup)
 
