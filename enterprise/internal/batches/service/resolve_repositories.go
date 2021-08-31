@@ -60,7 +60,6 @@ type workspaceResolver struct {
 func (wr *workspaceResolver) ResolveRepositoriesForBatchSpec(ctx context.Context, batchSpec *batcheslib.BatchSpec, opts ResolveRepositoriesForBatchSpecOpts) (_ []*RepoRevision, err error) {
 	seen := map[api.RepoID]*RepoRevision{}
 	unsupported := UnsupportedRepoSet{}
-	ignored := IgnoredRepoSet{}
 
 	// TODO: this could be trivially parallelised in the future.
 	for _, on := range batchSpec.On {
@@ -94,30 +93,58 @@ func (wr *workspaceResolver) ResolveRepositoriesForBatchSpec(ctx context.Context
 		}
 	}
 
-	final := make([]*RepoRevision, 0, len(seen))
-	// TODO: Limit concurrency.
-	var wg sync.WaitGroup
-	var errs *multierror.Error
-	for _, repo := range seen {
-		repo := repo
-		wg.Add(1)
-		go func(repo *RepoRevision) {
-			defer wg.Done()
-			ignore, err := hasBatchIgnoreFile(ctx, repo)
-			if err != nil {
-				errs = multierror.Append(errs, err)
-				return
-			}
-			if !opts.AllowIgnored && ignore {
-				ignored.Append(repo.Repo)
-			}
-
-			if !unsupported.Includes(repo.Repo) && !ignored.Includes(repo.Repo) {
-				final = append(final, repo)
-			}
-		}(repo)
+	type result struct {
+		repo           *RepoRevision
+		hasBatchIgnore bool
+		err            error
 	}
-	wg.Wait()
+
+	input := make(chan *RepoRevision, len(seen))
+	results := make(chan result, len(seen))
+
+	var wg sync.WaitGroup
+	for i := 0; i < 5; i++ {
+		wg.Add(1)
+		go func(in chan *RepoRevision, out chan result) {
+			defer wg.Done()
+			for repo := range in {
+				hasBatchIgnore, err := hasBatchIgnoreFile(ctx, repo)
+				results <- result{repo, hasBatchIgnore, err}
+			}
+		}(input, results)
+	}
+
+	for _, repo := range seen {
+		input <- repo
+	}
+	close(input)
+
+	go func(wg *sync.WaitGroup) {
+		wg.Wait()
+		close(results)
+	}(&wg)
+
+	var (
+		errs    *multierror.Error
+		ignored = IgnoredRepoSet{}
+		final   = make([]*RepoRevision, 0, len(seen))
+	)
+
+	for result := range results {
+		if result.err != nil {
+			errs = multierror.Append(errs, err)
+			continue
+		}
+
+		if !opts.AllowIgnored && result.hasBatchIgnore {
+			ignored.Append(result.repo.Repo)
+		}
+
+		if !unsupported.Includes(result.repo.Repo) && !ignored.Includes(result.repo.Repo) {
+			final = append(final, result.repo)
+		}
+	}
+
 	if err := errs.ErrorOrNil(); err != nil {
 		return nil, err
 	}
