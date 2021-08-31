@@ -911,7 +911,22 @@ func logPrometheusBatch(status, alertType, requestSource, requestName string, el
 	).Observe(elapsed.Seconds())
 }
 
-func logHoneyBatch(ctx context.Context, status, alertType, requestSource, requestName string, elapsed time.Duration, query string, start time.Time, srr *SearchResultsResolver) {
+func (r *searchResolver) logBatch(ctx context.Context, srr *SearchResultsResolver, start time.Time, err error) {
+	elapsed := time.Since(start)
+	if srr != nil {
+		srr.elapsed = elapsed
+		LogSearchLatency(ctx, r.db, r.SearchInputs, srr.ElapsedMilliseconds())
+	}
+
+	var status, alertType string
+	status = DetermineStatusForLogs(srr, err)
+	if srr != nil && srr.SearchResults.Alert != nil {
+		alertType = srr.SearchResults.Alert.PrometheusType()
+	}
+	requestSource := string(trace.RequestSource(ctx))
+	requestName := trace.GraphQLRequestName(ctx)
+	logPrometheusBatch(status, alertType, requestSource, requestName, elapsed)
+
 	isSlow := time.Since(start) > searchlogs.LogSlowSearchesThreshold()
 	if honey.Enabled() || isSlow {
 		var n int
@@ -919,7 +934,7 @@ func logHoneyBatch(ctx context.Context, status, alertType, requestSource, reques
 			n = len(srr.Matches)
 		}
 		ev := honey.SearchEvent(ctx, honey.SearchEventArgs{
-			OriginalQuery: query,
+			OriginalQuery: r.rawQuery(),
 			Typ:           requestName,
 			Source:        requestSource,
 			Status:        status,
@@ -936,24 +951,6 @@ func logHoneyBatch(ctx context.Context, status, alertType, requestSource, reques
 			log15.Warn("slow search request", searchlogs.MapToLog15Ctx(ev.Fields())...)
 		}
 	}
-}
-
-func (r *searchResolver) logBatch(ctx context.Context, srr *SearchResultsResolver, start time.Time, err error) {
-	elapsed := time.Since(start)
-	if srr != nil {
-		srr.elapsed = elapsed
-		LogSearchLatency(ctx, r.db, r.SearchInputs, srr.ElapsedMilliseconds())
-	}
-
-	var status, alertType string
-	status = DetermineStatusForLogs(srr, err)
-	if srr != nil && srr.SearchResults.Alert != nil {
-		alertType = srr.SearchResults.Alert.PrometheusType()
-	}
-	requestSource := string(trace.RequestSource(ctx))
-	requestName := trace.GraphQLRequestName(ctx)
-	logPrometheusBatch(status, alertType, requestSource, requestName, elapsed)
-	logHoneyBatch(ctx, status, alertType, requestSource, requestName, elapsed, r.rawQuery(), start, srr)
 }
 
 func (r *searchResolver) resultsBatch(ctx context.Context) (*SearchResultsResolver, error) {
