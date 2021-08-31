@@ -33,6 +33,14 @@ import (
 
 var logRequests, _ = strconv.ParseBool(env.Get("LOG_REQUESTS", "", "log HTTP requests"))
 
+var gracefulShutdownTimeout = func() time.Duration {
+	d, _ := time.ParseDuration(env.Get("SRC_GRACEFUL_SHUTDOWN_TIMEOUT", "10s", "Graceful shutdown timeout"))
+	if d == 0 {
+		d = 10 * time.Secon
+	}
+	return d
+}()
+
 const port = "3180"
 
 var metricWaitingRequestsGauge = promauto.NewGauge(prometheus.GaugeOpts{
@@ -103,7 +111,7 @@ func main() {
 		signal.Notify(c, syscall.SIGINT, syscall.SIGHUP)
 		<-c
 
-		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		ctx, cancel := context.WithTimeout(context.Background(), gracefulShutdownTimeout)
 		if err := s.Shutdown(ctx); err != nil {
 			log15.Error("graceful termination timeout", "error", err)
 		}
