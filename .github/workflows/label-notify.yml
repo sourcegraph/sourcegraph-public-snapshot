@@ -16,6 +16,6 @@ jobs:
                   team/cloud=@tsenart
                   team/search=@lguychard
                   team/code-intelligence=@macraig
-                  team/code-insights=@joelkw @felixfbecker @vovakulikov
+                  team/code-insights=@joelkw @felixfbecker @vovakulikov @unclejustin
                   team/distribution=@davejrt @ggilmore @daxmc99 @dan-mckean
                   team/security=@dan-mckean
