@@ -100,7 +100,7 @@ This panel indicates 99th percentile code-intel successful search request durati
 
 > NOTE: Alerts related to this panel are documented in the [alert solutions reference](./alert_solutions.md#frontend-99th-percentile-search-codeintel-request-duration).
 
-<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
+<sub>*Managed by the [Sourcegraph Search team](https://about.sourcegraph.com/handbook/engineering/search).*</sub>
 
 <br />
 
@@ -110,7 +110,7 @@ This panel indicates 90th percentile code-intel successful search request durati
 
 > NOTE: Alerts related to this panel are documented in the [alert solutions reference](./alert_solutions.md#frontend-90th-percentile-search-codeintel-request-duration).
 
-<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
+<sub>*Managed by the [Sourcegraph Search team](https://about.sourcegraph.com/handbook/engineering/search).*</sub>
 
 <br />
 
@@ -120,7 +120,7 @@ This panel indicates hard timeout search code-intel responses every 5m.
 
 > NOTE: Alerts related to this panel are documented in the [alert solutions reference](./alert_solutions.md#frontend-hard-timeout-search-codeintel-responses).
 
-<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
+<sub>*Managed by the [Sourcegraph Search team](https://about.sourcegraph.com/handbook/engineering/search).*</sub>
 
 <br />
 
@@ -130,7 +130,7 @@ This panel indicates hard error search code-intel responses every 5m.
 
 > NOTE: Alerts related to this panel are documented in the [alert solutions reference](./alert_solutions.md#frontend-hard-error-search-codeintel-responses).
 
-<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
+<sub>*Managed by the [Sourcegraph Search team](https://about.sourcegraph.com/handbook/engineering/search).*</sub>
 
 <br />
 
@@ -140,7 +140,7 @@ This panel indicates partial timeout search code-intel responses every 5m.
 
 > NOTE: Alerts related to this panel are documented in the [alert solutions reference](./alert_solutions.md#frontend-partial-timeout-search-codeintel-responses).
 
-<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
+<sub>*Managed by the [Sourcegraph Search team](https://about.sourcegraph.com/handbook/engineering/search).*</sub>
 
 <br />
 
@@ -150,7 +150,7 @@ This panel indicates search code-intel alert user suggestions shown every 5m.
 
 > NOTE: Alerts related to this panel are documented in the [alert solutions reference](./alert_solutions.md#frontend-search-codeintel-alert-user-suggestions).
 
-<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
+<sub>*Managed by the [Sourcegraph Search team](https://about.sourcegraph.com/handbook/engineering/search).*</sub>
 
 <br />
 
