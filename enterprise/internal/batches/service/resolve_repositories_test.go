@@ -87,6 +87,11 @@ func TestService_ResolveRepositoriesForBatchSpec(t *testing.T) {
 	}
 	mockDefaultBranches(t, defaultBranches)
 
+	defaultOpts := ResolveRepositoriesForBatchSpecOpts{
+		AllowIgnored:     false,
+		AllowUnsupported: false,
+	}
+
 	t.Run("repositoriesMatchingQuery", func(t *testing.T) {
 		batchSpec := &batcheslib.BatchSpec{
 			On: []batcheslib.OnQueryOrRepository{
@@ -131,7 +136,7 @@ func TestService_ResolveRepositoriesForBatchSpec(t *testing.T) {
 		want := []*RepoRevision{buildRepoRev(rs[0]), buildRepoRev(rs[3])}
 		wantIgnored := []api.RepoID{rs[1].ID, rs[2].ID}
 		wantUnsupported := []api.RepoID{}
-		resolveRepoRevsAndCompare(t, s, searchMatches, batchSpec, want, wantIgnored, wantUnsupported)
+		resolveRepoRevsAndCompare(t, s, defaultOpts, searchMatches, batchSpec, want, wantIgnored, wantUnsupported)
 	})
 
 	t.Run("repositories", func(t *testing.T) {
@@ -168,7 +173,7 @@ func TestService_ResolveRepositoriesForBatchSpec(t *testing.T) {
 
 		wantIgnored := []api.RepoID{rs[3].ID}
 		wantUnsupported := []api.RepoID{}
-		resolveRepoRevsAndCompare(t, s, searchMatches, batchSpec, want, wantIgnored, wantUnsupported)
+		resolveRepoRevsAndCompare(t, s, defaultOpts, searchMatches, batchSpec, want, wantIgnored, wantUnsupported)
 	})
 
 	t.Run("repositoriesMatchingQuery and repositories", func(t *testing.T) {
@@ -225,10 +230,10 @@ func TestService_ResolveRepositoriesForBatchSpec(t *testing.T) {
 
 		wantIgnored := []api.RepoID{}
 		wantUnsupported := []api.RepoID{}
-		resolveRepoRevsAndCompare(t, s, searchMatches, batchSpec, want, wantIgnored, wantUnsupported)
+		resolveRepoRevsAndCompare(t, s, defaultOpts, searchMatches, batchSpec, want, wantIgnored, wantUnsupported)
 	})
 
-	t.Run("unsupported repo type", func(t *testing.T) {
+	t.Run("allowUnsupported option", func(t *testing.T) {
 		batchSpec := &batcheslib.BatchSpec{
 			On: []batcheslib.OnQueryOrRepository{
 				{RepositoriesMatchingQuery: "repohasfile:horse.txt"},
@@ -250,21 +255,57 @@ func TestService_ResolveRepositoriesForBatchSpec(t *testing.T) {
 		want := []*RepoRevision{}
 		wantIgnored := []api.RepoID{}
 		wantUnsupported := []api.RepoID{unsupported[0].ID}
-		resolveRepoRevsAndCompare(t, s, searchMatches, batchSpec, want, wantIgnored, wantUnsupported)
+		resolveRepoRevsAndCompare(t, s, defaultOpts, searchMatches, batchSpec, want, wantIgnored, wantUnsupported)
+
+		// with allowUnsupported: true
+		opts := defaultOpts
+		opts.AllowUnsupported = true
+
+		want = []*RepoRevision{buildRepoRev(unsupported[0])}
+		wantUnsupported = []api.RepoID{}
+		resolveRepoRevsAndCompare(t, s, opts, searchMatches, batchSpec, want, wantIgnored, wantUnsupported)
+	})
+
+	t.Run("allowIgnored option", func(t *testing.T) {
+		batchSpec := &batcheslib.BatchSpec{
+			On: []batcheslib.OnQueryOrRepository{
+				{Repository: string(rs[0].Name)},
+			},
+		}
+
+		mockResolveRevision(t, map[string]api.CommitID{
+			defaultBranches[rs[0].Name].branch: defaultBranches[rs[0].Name].commit,
+		})
+
+		mockBatchIgnores(t, map[api.CommitID]bool{
+			defaultBranches[rs[0].Name].commit: true,
+		})
+
+		searchMatches := []streamhttp.EventMatch{}
+
+		want := []*RepoRevision{}
+		wantIgnored := []api.RepoID{rs[0].ID}
+		wantUnsupported := []api.RepoID{}
+		resolveRepoRevsAndCompare(t, s, defaultOpts, searchMatches, batchSpec, want, wantIgnored, wantUnsupported)
+
+		// with allowIgnored: true
+		opts := defaultOpts
+		opts.AllowIgnored = true
+
+		want = []*RepoRevision{buildRepoRev(rs[0])}
+		wantIgnored = []api.RepoID{}
+		resolveRepoRevsAndCompare(t, s, opts, searchMatches, batchSpec, want, wantIgnored, wantUnsupported)
 	})
 }
 
-func resolveRepoRevsAndCompare(t *testing.T, s *store.Store, matches []streamhttp.EventMatch, spec *batcheslib.BatchSpec, want []*RepoRevision, wantIgnored, wantUnsupported []api.RepoID) {
+func resolveRepoRevsAndCompare(t *testing.T, s *store.Store, opts ResolveRepositoriesForBatchSpecOpts, matches []streamhttp.EventMatch, spec *batcheslib.BatchSpec, want []*RepoRevision, wantIgnored, wantUnsupported []api.RepoID) {
 	t.Helper()
 
 	wr := &workspaceResolver{
 		store:               s,
 		frontendInternalURL: newStreamSearchTestServer(t, matches),
 	}
-	have, err := wr.ResolveRepositoriesForBatchSpec(context.Background(), spec, ResolveRepositoriesForBatchSpecOpts{
-		AllowIgnored:     false,
-		AllowUnsupported: false,
-	})
+	have, err := wr.ResolveRepositoriesForBatchSpec(context.Background(), spec, opts)
 	if len(wantIgnored) > 0 {
 		set, ok := err.(IgnoredRepoSet)
 		if !ok {
