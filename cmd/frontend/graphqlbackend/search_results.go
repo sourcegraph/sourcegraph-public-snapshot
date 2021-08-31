@@ -13,7 +13,6 @@ import (
 	"time"
 
 	"github.com/cockroachdb/errors"
-	"github.com/honeycombio/libhoney-go"
 	"github.com/inconshreveable/log15"
 	"github.com/neelance/parallel"
 	"github.com/opentracing/opentracing-go"
@@ -912,39 +911,6 @@ func logPrometheusBatch(status, alertType, requestSource, requestName string, el
 	).Observe(elapsed.Seconds())
 }
 
-func newHoneyEvent(ctx context.Context, status, alertType, requestSource, requestName, query string, elapsed time.Duration, srr *SearchResultsResolver) *libhoney.Event {
-	var n int
-	if srr != nil {
-		n = len(srr.Matches)
-	}
-	return honey.SearchEvent(ctx, honey.SearchEventArgs{
-		OriginalQuery: query,
-		Typ:           requestName,
-		Source:        requestSource,
-		Status:        status,
-		AlertType:     alertType,
-		DurationMs:    elapsed.Milliseconds(),
-		ResultSize:    n,
-	})
-}
-
-func logHoneyBatch(ctx context.Context, status, alertType, requestSource, requestName string, elapsed time.Duration, query string, start time.Time, srr *SearchResultsResolver) {
-	var ev *libhoney.Event
-	isSlow := time.Since(start) > searchlogs.LogSlowSearchesThreshold()
-
-	if honey.Enabled() || isSlow {
-		ev = newHoneyEvent(ctx, status, alertType, requestSource, requestName, query, elapsed, srr)
-	}
-
-	if honey.Enabled() && ev != nil {
-		_ = ev.Send()
-	}
-
-	if isSlow && ev != nil {
-		log15.Warn("slow search request", searchlogs.MapToLog15Ctx(ev.Fields())...)
-	}
-}
-
 func (r *searchResolver) logBatch(ctx context.Context, srr *SearchResultsResolver, start time.Time, err error) {
 	elapsed := time.Since(start)
 	if srr != nil {
@@ -960,7 +926,32 @@ func (r *searchResolver) logBatch(ctx context.Context, srr *SearchResultsResolve
 	requestSource := string(trace.RequestSource(ctx))
 	requestName := trace.GraphQLRequestName(ctx)
 	logPrometheusBatch(status, alertType, requestSource, requestName, elapsed)
-	logHoneyBatch(ctx, status, alertType, requestSource, requestName, elapsed, r.rawQuery(), start, srr)
+
+	isSlow := time.Since(start) > searchlogs.LogSlowSearchesThreshold()
+	if honey.Enabled() || isSlow {
+		var n int
+		if srr != nil {
+			n = len(srr.Matches)
+		}
+		ev := honey.SearchEvent(ctx, honey.SearchEventArgs{
+			OriginalQuery: r.rawQuery(),
+			Typ:           requestName,
+			Source:        requestSource,
+			Status:        status,
+			AlertType:     alertType,
+			DurationMs:    elapsed.Milliseconds(),
+			ResultSize:    n,
+			Error:         err,
+		})
+
+		if honey.Enabled() {
+			_ = ev.Send()
+		}
+
+		if isSlow {
+			log15.Warn("slow search request", searchlogs.MapToLog15Ctx(ev.Fields())...)
+		}
+	}
 }
 
 func (r *searchResolver) resultsBatch(ctx context.Context) (*SearchResultsResolver, error) {
