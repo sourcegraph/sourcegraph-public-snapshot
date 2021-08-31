@@ -368,6 +368,7 @@ const messageHandlers: {
     alert: observeMessages,
 }
 
+
 export interface StreamSearchOptions {
     query: string
     version: string
@@ -375,6 +376,8 @@ export interface StreamSearchOptions {
     caseSensitive: boolean
     versionContext: string | undefined
     trace: string | undefined
+	decorationKinds: string[]
+	decorationContextLines: number
 }
 
 /**
@@ -390,12 +393,17 @@ function search({
     caseSensitive,
     versionContext,
     trace,
+	decorationKinds,
+	decorationContextLines,
 }: StreamSearchOptions): Observable<SearchEvent> {
     return new Observable<SearchEvent>(observer => {
         const parameters = [
             ['q', `${query} ${caseSensitive ? 'case:yes' : ''}`],
             ['v', version],
             ['t', patternType as string],
+            ['decorationLimit', '15'],
+            ['decorationKind', decorationKinds],
+            ['decorationContextLines', decorationContextLines],
             ['display', '1500'],
         ]
         if (versionContext) {

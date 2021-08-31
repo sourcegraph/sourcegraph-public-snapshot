@@ -26,6 +26,8 @@ type EventContentMatch struct {
 	Branches        []string   `json:"branches,omitempty"`
 	Version         string     `json:"version,omitempty"`
 
+	Content []DecoratedHunk
+
 	LineMatches []EventLineMatch `json:"lineMatches"`
 }
 
@@ -48,6 +50,25 @@ type EventPathMatch struct {
 }
 
 func (e *EventPathMatch) eventMatch() {}
+
+type DecoratedHunk struct {
+	Content DecoratedContent // TODO union of plaintext/html/ansi/etc.
+	Start   int
+	Length  int
+	Matches []Range
+}
+
+type Range struct {
+	Offset int
+	Line   int
+	Column int
+}
+
+type DecoratedContent struct {
+	Plaintext string
+	HTML      string
+	// ANSI string
+}
 
 // EventLineMatch is a subset of zoekt.LineMatch for our Event API.
 type EventLineMatch struct {
