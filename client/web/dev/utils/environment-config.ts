@@ -20,3 +20,9 @@ export const environmentConfig = {
 const { SOURCEGRAPH_HTTPS_PORT, SOURCEGRAPH_HTTPS_DOMAIN } = environmentConfig
 
 export const WEB_SERVER_URL = `http://${SOURCEGRAPH_HTTPS_DOMAIN}:${SOURCEGRAPH_HTTPS_PORT}`
+
+// Webpack is the default web build tool, and esbuild is an experimental option (see
+// https://docs.sourcegraph.com/dev/background-information/web/build#esbuild).
+const webBuilders = ['webpack', 'esbuild'] as const
+type webBuilder = typeof webBuilders[number]
+export const DEV_WEB_BUILDER: webBuilder = process.env.DEV_WEB_BUILDER === 'esbuild' ? 'esbuild' : 'webpack'

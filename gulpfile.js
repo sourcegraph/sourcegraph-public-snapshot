@@ -11,7 +11,7 @@ const {
   cssModulesTypings,
   watchCSSModulesTypings,
 } = require('./client/shared/gulpfile')
-const { webpack: webWebpack, webpackDevServer: webWebpackDevServer } = require('./client/web/gulpfile')
+const { webpack: webWebpack, developmentServer } = require('./client/web/gulpfile')
 
 /**
  * Generates files needed for builds.
@@ -36,7 +36,7 @@ const build = gulp.series(generate, webWebpack)
 /**
  * Watches everything and rebuilds on file changes.
  */
-const dev = gulp.series(generate, gulp.parallel(watchGenerators, webWebpackDevServer))
+const dev = gulp.series(generate, gulp.parallel(watchGenerators, developmentServer))
 
 module.exports = {
   generate,
