@@ -11,7 +11,7 @@ export const IndexingPolicyDescription: FunctionComponent<{ policy: CodeIntellig
     policy.indexingEnabled ? (
         <>
             <strong>Indexing policy:</strong> Auto-index <GitObjectTargetDescription policy={policy} />
-            {policy.indexCommitMaxAgeHours !== 0 && (
+            {policy.indexCommitMaxAgeHours && (
                 <> if the target commit is no older than {formatDurationValue(policy.indexCommitMaxAgeHours)}</>
             )}
             .
