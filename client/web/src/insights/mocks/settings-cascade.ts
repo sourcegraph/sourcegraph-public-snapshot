@@ -1,4 +1,4 @@
-import { SettingsCascade } from '@sourcegraph/shared/src/settings/settings'
+import { SettingsCascade, SettingsSubject } from '@sourcegraph/shared/src/settings/settings'
 
 export const SETTINGS_CASCADE_MOCK: SettingsCascade = {
     subjects: [
@@ -37,3 +37,26 @@ export const SETTINGS_CASCADE_MOCK: SettingsCascade = {
     ],
     final: {},
 }
+
+export const createOrgSubject = (id: string): SettingsSubject => ({
+    __typename: 'Org' as const,
+    id,
+    name: `test_org_${id}`,
+    displayName: `Test organization ${id}`,
+    viewerCanAdminister: true,
+})
+
+export const createUserSubject = (id: string): SettingsSubject => ({
+    __typename: 'User' as const,
+    id,
+    username: `test_username_${id}`,
+    displayName: `Test user ${id}`,
+    viewerCanAdminister: true,
+})
+
+export const createGlobalSubject = (id: string): SettingsSubject => ({
+    __typename: 'Site' as const,
+    id,
+    viewerCanAdminister: true,
+    allowSiteSettingsEdits: true,
+})

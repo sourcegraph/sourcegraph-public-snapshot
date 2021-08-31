@@ -1,5 +1,15 @@
-import { debounce, DebouncedFunc } from 'lodash'
-import { EventHandler, FormEventHandler, RefObject, SyntheticEvent, useEffect, useMemo, useRef, useState } from 'react'
+import { debounce, DebouncedFunc, isFunction } from 'lodash'
+import {
+    EventHandler,
+    FormEventHandler,
+    RefObject,
+    SetStateAction,
+    SyntheticEvent,
+    useEffect,
+    useMemo,
+    useRef,
+    useState,
+} from 'react'
 import { noop } from 'rxjs'
 
 import { useDistinctValue } from '../../../hooks/use-distinct-value'
@@ -117,11 +127,13 @@ export interface FormAPI<FormValues> {
      */
     touched: boolean
 
+    fields: FieldsState<FormValues>
+
     /**
      * Public api for register fields to the form from useField hook.
      * By this we have field state withing useField hook and in useField.
      */
-    setFieldState: (name: keyof FormValues, state: FieldState<unknown>) => void
+    setFieldState: (name: keyof FormValues, state: SetStateAction<FieldState<unknown>>) => void
 }
 
 /**
@@ -171,7 +183,9 @@ export interface FieldMetaState {
  * Used below to keep tracking of fields value, touched, validity and other
  * fields state data.
  */
-type FieldsState<FormValues> = Record<keyof FormValues, FieldState<FormValues>>
+type FieldsState<FormValues> = {
+    [P in keyof FormValues]: FieldState<FormValues[P]>
+}
 
 /**
  * Unified form abstraction to track form state and provide form fields management
@@ -187,7 +201,7 @@ export function useForm<FormValues extends object>(props: UseFormProps<FormValue
     const [submitted, setSubmitted] = useState(false)
     const [submitting, setSubmitting] = useState(false)
     const [submitErrors, setSubmitErrors] = useState<SubmissionErrors>()
-    const [fields, setFields] = useState<FieldsState<FormValues>>({} as FieldsState<FormValues>)
+    const [fields, setFields] = useState<FieldsState<FormValues>>(() => generateInitialFieldsState(initialValues))
 
     const formElementReference = useRef<HTMLFormElement>(null)
     const onSubmitReference = useRef<UseFormProps<FormValues>['onSubmit']>()
@@ -199,8 +213,16 @@ export function useForm<FormValues extends object>(props: UseFormProps<FormValue
     // will be resolved after component has been unmounted.
     const isUnmounted = useRef<boolean>(false)
 
-    const setFieldState = (name: keyof FormValues, state: FieldState<unknown>): void => {
-        setFields(fields => ({ ...fields, [name]: state }))
+    const setFieldState = (name: keyof FormValues, stateOrTransformer: SetStateAction<FieldState<unknown>>): void => {
+        setFields(fields => {
+            const filedState = fields[name]
+
+            if (isFunction(stateOrTransformer)) {
+                return { ...fields, [name]: stateOrTransformer(filedState) }
+            }
+
+            return { ...fields, [name]: stateOrTransformer }
+        })
     }
 
     const values = useMemo(() => getFormValues<FormValues>(fields), [fields])
@@ -245,6 +267,7 @@ export function useForm<FormValues extends object>(props: UseFormProps<FormValue
             submitting,
             submitErrors,
             initialValues,
+            fields,
             setFieldState,
             valid: Object.values<FieldState<unknown>>(fields).every(state => state.validState === 'VALID'),
             validating: Object.values<FieldState<unknown>>(fields).some(state => state.validState === 'CHECKING'),
@@ -285,9 +308,24 @@ export function useForm<FormValues extends object>(props: UseFormProps<FormValue
  * Creates form values object and omits all other internal states of a form field.
  * Used to form values for onSubmit and onChange handlers.
  * */
-export function getFormValues<FormValues>(fields: Record<string, Pick<FieldState<FormValues>, 'value'>>): FormValues {
-    return Object.keys(fields).reduce(
+export function getFormValues<FormValues>(fields: FieldsState<FormValues>): FormValues {
+    return (Object.keys(fields) as (keyof FormValues)[]).reduce(
         (values, fieldName) => ({ ...values, [fieldName]: fields[fieldName].value }),
         {} as FormValues
     )
+}
+
+export function generateInitialFieldsState<FormValues extends {}>(initialValues: FormValues): FieldsState<FormValues> {
+    return (Object.keys(initialValues) as (keyof FormValues)[]).reduce((store, key) => {
+        store[key] = {
+            value: initialValues[key],
+            touched: false,
+            dirty: false,
+            validState: 'NOT_VALIDATED',
+            error: '',
+            validity: null,
+        }
+
+        return store
+    }, {} as FieldsState<FormValues>)
 }

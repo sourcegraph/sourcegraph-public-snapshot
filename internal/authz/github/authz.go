@@ -3,6 +3,7 @@ package github
 import (
 	"fmt"
 	"net/url"
+	"time"
 
 	"github.com/cockroachdb/errors"
 
@@ -47,7 +48,18 @@ func newAuthzProvider(urn string, a *schema.GitHubAuthorization, instanceURL, to
 		return nil, errors.Errorf("Could not parse URL for GitHub instance %q: %s", instanceURL, err)
 	}
 
-	return NewProvider(urn, ghURL, token, nil), nil
+	// Disable by default for now
+	if a.GroupsCacheTTL <= 0 {
+		a.GroupsCacheTTL = -1
+	}
+
+	ttl := time.Duration(a.GroupsCacheTTL) * time.Hour
+
+	return NewProvider(urn, ProviderOptions{
+		GitHubURL:      ghURL,
+		BaseToken:      token,
+		GroupsCacheTTL: ttl,
+	}), nil
 }
 
 // ValidateAuthz validates the authorization fields of the given GitHub external

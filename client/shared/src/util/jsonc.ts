@@ -1,5 +1,5 @@
 import { modify as jsoncModify, applyEdits, JSONPath, FormattingOptions } from '@sqs/jsonc-parser'
-import { parse, ParseError, ParseErrorCode } from '@sqs/jsonc-parser/lib/main'
+import { parse, ParseError, ParseErrorCode, format as jsoncFormat } from '@sqs/jsonc-parser/lib/main'
 
 import { asError, createAggregateError, ErrorLike } from './errors'
 
@@ -55,3 +55,14 @@ export const modify = (originalContent: string, path: JSONPath, value: unknown):
 
     return applyEdits(originalContent, addingExtensionKeyEdits)
 }
+
+/**
+ * Format string with jsonc default format options.
+ */
+export const format = (content: string): string => {
+    const formatEdits = jsoncFormat(content, { offset: 0, length: content.length }, defaultFormattingOptions)
+
+    return applyEdits(content, formatEdits)
+}
+
+export const stringify = (object: object | null): string => format(JSON.stringify(object))

@@ -17,6 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
+	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
@@ -375,47 +376,68 @@ func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestion
 	}
 	suggesters = append(suggesters, showLangSuggestions)
 
-	showSymbolMatches := func(ctx context.Context) (results []SearchSuggestionResolver, err error) {
+	showSymbolMatches := func(ctx context.Context) ([]SearchSuggestionResolver, error) {
 		if mockShowSymbolMatches != nil {
 			return mockShowSymbolMatches()
 		}
 
-		repoOptions := r.toRepoOptions(r.Query, resolveRepositoriesOpts{})
-		resolved, err := r.resolveRepositories(ctx, repoOptions)
+		b, err := query.ToBasicQuery(r.Query)
 		if err != nil {
 			return nil, err
 		}
-
-		q, err := query.ToBasicQuery(r.Query)
-		if err != nil {
-			return nil, err
-		}
-		if !query.IsPatternAtom(q) {
+		if !query.IsPatternAtom(b) {
 			// Not an atomic pattern, can't guarantee it will behave well.
 			return nil, nil
 		}
-		p := search.ToTextPatternInfo(q, search.Batch, query.Identity)
-		if p.Pattern == "" {
-			return nil, nil
+
+		var fileMatches []result.Match
+		if featureflag.FromContext(ctx).GetBoolOr("sh_search_suggestions_symbols", false) {
+			args, jobs, err := r.toSearchInputs(r.Query)
+			if err != nil {
+				return nil, err
+			}
+			args.ResultTypes = result.TypeSymbol
+
+			results, err := r.doResults(ctx, args, jobs)
+			if errors.Is(err, context.DeadlineExceeded) {
+				err = nil
+			}
+			if err != nil {
+				return nil, err
+			}
+			if results != nil {
+				fileMatches = results.Matches
+			}
+		} else {
+			repoOptions := r.toRepoOptions(r.Query, resolveRepositoriesOpts{})
+			resolved, err := r.resolveRepositories(ctx, repoOptions)
+			if err != nil {
+				return nil, err
+			}
+
+			p := search.ToTextPatternInfo(b, search.Batch, query.Identity)
+			if p.Pattern == "" {
+				return nil, nil
+			}
+
+			ctx, cancel := context.WithTimeout(ctx, 1*time.Second)
+			defer cancel()
+
+			fileMatches, _, err = streaming.CollectStream(func(stream streaming.Sender) error {
+				return symbol.Search(ctx, &search.TextParameters{
+					PatternInfo:  p,
+					Repos:        resolved.RepoRevs,
+					Query:        r.Query,
+					Zoekt:        r.zoekt,
+					SearcherURLs: r.searcherURLs,
+				}, 7, stream)
+			})
+			if err != nil {
+				return nil, err
+			}
 		}
 
-		ctx, cancel := context.WithTimeout(ctx, 1*time.Second)
-		defer cancel()
-
-		fileMatches, _, err := streaming.CollectStream(func(stream streaming.Sender) error {
-			return symbol.Search(ctx, &search.TextParameters{
-				PatternInfo:  p,
-				Repos:        resolved.RepoRevs,
-				Query:        r.Query,
-				Zoekt:        r.zoekt,
-				SearcherURLs: r.searcherURLs,
-			}, 7, stream)
-		})
-		if err != nil {
-			return nil, err
-		}
-
-		results = make([]SearchSuggestionResolver, 0)
+		suggestions := make([]SearchSuggestionResolver, 0)
 		for _, match := range fileMatches {
 			fileMatch, ok := match.(*result.FileMatch)
 			if !ok {
@@ -441,7 +463,7 @@ func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestion
 				if len(sm.Symbol.Name) >= 4 && strings.Contains(repoName+fileName, symbolName) {
 					score++
 				}
-				results = append(results, symbolSuggestionResolver{
+				suggestions = append(suggestions, symbolSuggestionResolver{
 					symbol: symbolResolver{
 						db: r.db,
 						commit: toGitCommitResolver(
@@ -457,22 +479,22 @@ func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestion
 			}
 		}
 
-		sortSearchSuggestions(results)
+		sortSearchSuggestions(suggestions)
 		const maxBoostedSymbolResults = 3
 		boost := maxBoostedSymbolResults
-		if len(results) < boost {
-			boost = len(results)
+		if len(suggestions) < boost {
+			boost = len(suggestions)
 		}
 		if boost > 0 {
 			for i := 0; i < boost; i++ {
-				if res, ok := results[i].(symbolSuggestionResolver); ok {
+				if res, ok := suggestions[i].(symbolSuggestionResolver); ok {
 					res.score += 200
-					results[i] = res
+					suggestions[i] = res
 				}
 			}
 		}
 
-		return results, nil
+		return suggestions, nil
 	}
 	suggesters = append(suggesters, showSymbolMatches)
 
@@ -482,12 +504,12 @@ func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestion
 		ctx, cancel := context.WithTimeout(ctx, 500*time.Millisecond)
 		defer cancel()
 		if len(r.Query.Values(query.FieldDefault)) > 0 {
-			searchArgs, err := r.toTextParameters(r.Query)
+			searchArgs, jobs, err := r.toSearchInputs(r.Query)
 			if err != nil {
 				return nil, err
 			}
 			searchArgs.ResultTypes = result.TypeFile // only "file" result type
-			results, err := r.doResults(ctx, searchArgs)
+			results, err := r.doResults(ctx, searchArgs, jobs)
 			if err == context.DeadlineExceeded {
 				err = nil // don't log as error below
 			}

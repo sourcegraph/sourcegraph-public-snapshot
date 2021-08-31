@@ -21,6 +21,13 @@ type ExternalUserPermissions struct {
 	ExcludeContains []extsvc.RepoID
 }
 
+// FetchPermsOptions declares options when performing permissions sync.
+type FetchPermsOptions struct {
+	// InvalidateCaches indicates that caches added for optimization encountered during
+	// this fetch should be invalidated.
+	InvalidateCaches bool `json:"invalidate_caches"`
+}
+
 // Provider defines a source of truth of which repositories a user is authorized to view. The
 // user is identified by an extsvc.Account instance. Examples of authz providers include the
 // following:
@@ -57,11 +64,7 @@ type Provider interface {
 	// Because permissions fetching APIs are often expensive, the implementation should
 	// try to return partial but valid results in case of error, and it is up to callers
 	// to decide whether to discard.
-	FetchUserPerms(ctx context.Context, account *extsvc.Account) (*ExternalUserPermissions, error)
-
-	// FetchUserPermsByToken is similar to FetchUserPerms but only requires a token
-	// in order to communicate with the code host.
-	FetchUserPermsByToken(ctx context.Context, token string) (*ExternalUserPermissions, error)
+	FetchUserPerms(ctx context.Context, account *extsvc.Account, opts FetchPermsOptions) (*ExternalUserPermissions, error)
 
 	// FetchRepoPerms returns a list of user IDs (on code host) who have read access to
 	// the given repository/project on the code host. The user ID should be the same value
@@ -71,7 +74,7 @@ type Provider interface {
 	// Because permissions fetching APIs are often expensive, the implementation should
 	// try to return partial but valid results in case of error, and it is up to callers
 	// to decide whether to discard.
-	FetchRepoPerms(ctx context.Context, repo *extsvc.Repository) ([]extsvc.AccountID, error)
+	FetchRepoPerms(ctx context.Context, repo *extsvc.Repository, opts FetchPermsOptions) ([]extsvc.AccountID, error)
 
 	// ServiceType returns the service type (e.g., "gitlab") of this authz provider.
 	ServiceType() string

@@ -23,24 +23,33 @@ interface GlyphContentProps<Datum extends object> extends Omit<GlyphProps<Datum>
      * Just because GlyphProps has a bug with types.
      * GlyphProps key is an index of current datum and
      * GlyphProps index doesn't exist in runtime.
-     * */
+     */
     index: string
+
     /** Hovered point info (datum) to calculate proper styles for particular Glyph */
     hoveredDatum: ActiveDatum<Datum> | null
+
     /** Focused point info (datum) to calculate proper styles for particular Glyph */
     focusedDatum: ActiveDatum<Datum> | null
-    /** Focus handler for glyph (chart point) */
-    setFocusedDatum: (datum: ActiveDatum<Datum> | null) => void
+
     /** Map with getters to have a proper value of by x and y axis value for current point */
     accessors: Accessors<Datum, keyof Datum>
+
     /** Line (series) index of current point */
     lineIndex: number
+
     /** Total number of lines (series) to calculate proper aria-label for glyph content */
     totalNumberOfLines: number
+
     /** Data of particular line of current glyph (chart point) */
     line: LineChartContentProps<Datum>['series'][number]
+
+    /** Focus handler for glyph (chart point) */
+    setFocusedDatum: (datum: ActiveDatum<Datum> | null) => void
+
     /** On click handler for root component of glyph content */
     onClick: MouseEventHandler
+
     /** On pointer up handler for root component of glyph content */
     onPointerUp: PointerEventHandler
 }
@@ -56,11 +65,11 @@ export function GlyphContent<Datum extends object>(props: GlyphContentProps<Datu
         accessors,
         lineIndex,
         totalNumberOfLines,
+        x: xCoordinate,
+        y: yCoordinate,
         onPointerUp,
         onClick,
         setFocusedDatum,
-        x: xCoordinate,
-        y: yCoordinate,
     } = props
 
     const currentDatumIndex = +index

@@ -32,7 +32,7 @@ const calculateGroupPositions = (
         line: number
         character: number
         highlightLength: number
-        IsInContext: boolean
+        isInContext: boolean
     }[],
     context: number,
     highestLineNumberWithinSubsetMatches: number
@@ -87,7 +87,7 @@ export interface MatchGroup {
         line: number
         character: number
         highlightLength: number
-        IsInContext: boolean
+        isInContext: boolean
     }[]
 
     // The 1-based position of where the first match in the group.
@@ -121,7 +121,7 @@ export const calculateMatchGroups = (
     matches: MatchItem[],
     maxMatches: number,
     context: number
-): [MatchItem[], MatchGroup[]] => {
+): { matches: MatchItem[]; grouped: MatchGroup[] } => {
     const sortedMatches = matches.sort((a, b) => {
         if (a.line < b.line) {
             return -1
@@ -155,15 +155,15 @@ export const calculateMatchGroups = (
 
     const grouped = mergeContext(
         context,
-        flatMap(showMatches, (match, index) =>
+        flatMap(showMatches, match =>
             match.highlightRanges.map(range => ({
                 line: match.line,
                 character: range.start,
                 highlightLength: range.highlightLength,
-                IsInContext: maxMatches === 0 ? false : match.line > highestLineNumberWithinSubsetMatches,
+                isInContext: maxMatches === 0 ? false : match.line > highestLineNumberWithinSubsetMatches,
             }))
         )
     ).map(group => calculateGroupPositions(group, context, highestLineNumberWithinSubsetMatches))
 
-    return [showMatches, grouped]
+    return { matches: showMatches, grouped }
 }

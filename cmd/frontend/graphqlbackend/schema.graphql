@@ -729,6 +729,17 @@ type Mutation {
         """
         value: Boolean!
     ): FeatureFlagOverride!
+
+    """
+    Overwrites and saves the temporary settings for the current user.
+    If temporary settings for the user do not exist, they are created.
+    """
+    overwriteTemporarySettings(
+        """
+        The new temporary settings for the current user, as a JSON string.
+        """
+        contents: String!
+    ): EmptyResponse!
 }
 
 """
@@ -1299,6 +1310,10 @@ type Query {
         descending: Boolean = false
     ): SearchContextConnection!
     """
+    Fetch search context by spec (global, @username, @username/ctx, etc.).
+    """
+    searchContextBySpec(spec: String!): SearchContext
+    """
     Determines whether the search context is within the set of search contexts available to the current user.
     The set consists of contexts created by the user, contexts created by the users' organizations, and instance-level contexts.
     """
@@ -1382,6 +1397,11 @@ type Query {
     Retrieve the values of all feature flags for the current user
     """
     viewerFeatureFlags: [EvaluatedFeatureFlag!]!
+
+    """
+    Retrieves the temporary settings for the current user.
+    """
+    temporarySettings: TemporarySettings!
 }
 
 """
@@ -6382,4 +6402,14 @@ type ExecutionLogEntry {
     The duration in milliseconds of the command. Null, if the command has not finished yet.
     """
     durationMilliseconds: Int
+}
+
+"""
+Temporary settings for a user.
+"""
+type TemporarySettings {
+    """
+    A JSON string representing the temporary settings.
+    """
+    contents: String!
 }

@@ -61,3 +61,55 @@ func (codeInsights) NewInsightsQueryRunnerWorkerGroup(containerName string) moni
 		Handlers: NoAlertsOption("none"),
 	})
 }
+
+// src_insights_search_queue_resets_total
+// src_insights_search_queue_reset_failures_total
+// src_insights_search_queue_reset_errors_total
+func (codeInsights) NewInsightsQueryRunnerResetterGroup(containerName string) monitoring.Group {
+
+	return WorkerutilResetter.NewGroup(containerName, monitoring.ObservableOwnerCodeInsights, ResetterGroupOptions{
+		GroupConstructorOptions: GroupConstructorOptions{
+			Namespace:       namespace,
+			DescriptionRoot: "code insights search queue record resetter",
+			Hidden:          true,
+
+			ObservableConstructorOptions: ObservableConstructorOptions{
+				MetricNameRoot:        "insights_search_queue",
+				MetricDescriptionRoot: "insights_search_queue",
+			},
+		},
+
+		RecordResets:        NoAlertsOption("none"),
+		RecordResetFailures: NoAlertsOption("none"),
+		Errors:              NoAlertsOption("none"),
+	})
+}
+
+func (codeInsights) NewInsightsQueryRunnerStoreGroup(containerName string) monitoring.Group {
+	return Observation.NewGroup(containerName, monitoring.ObservableOwnerCodeInsights, ObservationGroupOptions{
+		GroupConstructorOptions: GroupConstructorOptions{
+			Namespace:       namespace,
+			DescriptionRoot: "dbstore stats",
+			Hidden:          true,
+
+			ObservableConstructorOptions: ObservableConstructorOptions{
+				MetricNameRoot:        "workerutil_dbworker_store_insights_query_runner_jobs_store",
+				MetricDescriptionRoot: "store",
+				By:                    []string{"op"},
+			},
+		},
+
+		SharedObservationGroupOptions: SharedObservationGroupOptions{
+			Total:     NoAlertsOption("none"),
+			Duration:  NoAlertsOption("none"),
+			Errors:    NoAlertsOption("none"),
+			ErrorRate: NoAlertsOption("none"),
+		},
+		Aggregate: &SharedObservationGroupOptions{
+			Total:     NoAlertsOption("none"),
+			Duration:  NoAlertsOption("none"),
+			Errors:    NoAlertsOption("none"),
+			ErrorRate: NoAlertsOption("none"),
+		},
+	})
+}

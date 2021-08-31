@@ -16,6 +16,7 @@ import { FlatExtensionHostAPI } from '@sourcegraph/shared/src/api/contract'
 import { pretendProxySubscribable, pretendRemote } from '@sourcegraph/shared/src/api/util'
 import { Controller } from '@sourcegraph/shared/src/extensions/controller'
 import { SettingsCascadeOrError } from '@sourcegraph/shared/src/settings/settings'
+import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
 import { HierarchicalLocationsView, HierarchicalLocationsViewProps } from './HierarchicalLocationsView'
 
@@ -53,6 +54,7 @@ describe('<HierarchicalLocationsView />', () => {
             isLightTheme: true,
             fetchHighlightedFileLineRanges: sinon.spy(),
             versionContext: undefined,
+            telemetryService: NOOP_TELEMETRY_SERVICE,
         }
         return { props, registerContributions }
     }

@@ -18,19 +18,14 @@ let
     exec ${pkgs.universal-ctags}/bin/ctags "$@"
   '';
 
-  # The version required of node is ahead of what is available in the
-  # registry, so we build a custom version.
-  node16_7 =
-    pkgs.callPackage "${<nixpkgs>}/pkgs/development/web/nodejs/nodejs.nix" {
-      python = pkgs.python3;
-    } {
-      enableNpm = true;
-      version = "16.7.0";
-      sha256 = "0drd7zyadjrhng9k0mspz456j3pmr7kli5dd0kx8grbqsgxzv1gs";
-    };
-
-  # Build yarn against the node we use.
-  yarn = pkgs.yarn.override { nodejs = node16_7; };
+  # need unstable to get the latest version of node. We pin a very specific
+  # commit to make this reproducable.
+  unstable = import (pkgs.fetchFromGitHub {
+    owner = "NixOS";
+    repo = "nixpkgs";
+    rev = "f3706ab27f99b2ffdaeb6dd03ee6e2f26511c6db";
+    sha256 = "1fb3z0y08y1jjhzffsg4qa5y9mk434s167n55avcwbqqjwd7kj1c";
+  }) { };
 
 in pkgs.mkShell {
   name = "sourcegraph-dev";
@@ -65,10 +60,11 @@ in pkgs.mkShell {
     pkgs.shfmt
     pkgs.shellcheck
 
-    # Web tools
-    node16_7
-    yarn
-    pkgs.nodePackages.typescript
+    # Web tools. Need node 16.7 so we use unstable. Yarn should also be built
+    # against it.
+    unstable.nodejs-16_x
+    (unstable.yarn.override { nodejs = unstable.nodejs-16_x; })
+    unstable.nodePackages.typescript
   ];
 
   # Startup postgres

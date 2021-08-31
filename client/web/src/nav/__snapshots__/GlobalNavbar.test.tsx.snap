@@ -10,6 +10,7 @@ exports[`GlobalNavbar default 1`] = `
       class="logo"
     >
       <a
+        class="d-flex align-items-center"
         href="/search"
       >
         <brandlogo
@@ -192,6 +193,7 @@ exports[`GlobalNavbar low-profile 1`] = `
       class="logo"
     >
       <a
+        class="d-flex align-items-center"
         href="/search"
       >
         <brandlogo

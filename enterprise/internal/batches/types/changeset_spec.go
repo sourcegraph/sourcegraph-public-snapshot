@@ -5,18 +5,18 @@ import (
 	"strings"
 	"time"
 
-	"github.com/cockroachdb/errors"
-	jsonutil "github.com/sourcegraph/batch-change-utils/json"
 	"github.com/sourcegraph/go-diff/diff"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/schema"
+	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
 )
 
 func NewChangesetSpecFromRaw(rawSpec string) (*ChangesetSpec, error) {
 	c := &ChangesetSpec{RawSpec: rawSpec}
 
-	if err := c.UnmarshalValidate(); err != nil {
+	var err error
+	c.Spec, err = batcheslib.ParseChangesetSpec([]byte(rawSpec))
+	if err != nil {
 		return nil, err
 	}
 
@@ -29,7 +29,7 @@ type ChangesetSpec struct {
 
 	RawSpec string
 	// TODO(mrnugget): should we rename the "spec" column to "description"?
-	Spec *ChangesetSpecDescription
+	Spec *batcheslib.ChangesetSpec
 
 	DiffStatAdded   int32
 	DiffStatChanged int32
@@ -95,28 +95,6 @@ func (cs *ChangesetSpec) DiffStat() diff.Stat {
 	}
 }
 
-// ErrHeadBaseMismatch is returned by (*ChangesetSpec).UnmarshalValidate() if
-// the head and base repositories do not match (a case which we do not support
-// yet).
-var ErrHeadBaseMismatch = errors.New("headRepository does not match baseRepository")
-
-// UnmarshalValidate unmarshals the RawSpec into Spec and validates it against
-// the ChangesetSpec schema and does additional semantic validation.
-func (cs *ChangesetSpec) UnmarshalValidate() error {
-	err := jsonutil.UnmarshalValidate(schema.ChangesetSpecSchemaJSON, []byte(cs.RawSpec), &cs.Spec)
-	if err != nil {
-		return err
-	}
-
-	headRepo := cs.Spec.HeadRepository
-	baseRepo := cs.Spec.BaseRepository
-	if headRepo != "" && baseRepo != "" && headRepo != baseRepo {
-		return ErrHeadBaseMismatch
-	}
-
-	return nil
-}
-
 // ChangesetSpecTTL specifies the TTL of ChangesetSpecs that haven't been
 // attached to a BatchSpec.
 // It's lower than BatchSpecTTL because ChangesetSpecs should be attached to
@@ -129,13 +107,6 @@ const ChangesetSpecTTL = 2 * 24 * time.Hour
 // attached to a BatchSpec.
 func (cs *ChangesetSpec) ExpiresAt() time.Time {
 	return cs.CreatedAt.Add(ChangesetSpecTTL)
-}
-
-type GitCommitDescription struct {
-	Message     string `json:"message,omitempty"`
-	Diff        string `json:"diff,omitempty"`
-	AuthorName  string `json:"authorName,omitempty"`
-	AuthorEmail string `json:"authorEmail,omitempty"`
 }
 
 // ChangesetSpecs is a slice of *ChangesetSpecs.

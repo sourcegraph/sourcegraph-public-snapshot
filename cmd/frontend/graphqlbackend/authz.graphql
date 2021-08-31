@@ -26,7 +26,16 @@ extend type Mutation {
     repository permissions and syncs them to Sourcegraph, so that the current permissions apply to
     the user's operations on Sourcegraph.
     """
-    scheduleUserPermissionsSync(user: ID!): EmptyResponse!
+    scheduleUserPermissionsSync(
+        """
+        User to schedule a sync for.
+        """
+        user: ID!
+        """
+        Additional options when performing a sync.
+        """
+        options: FetchPermissionsOptions
+    ): EmptyResponse!
 }
 
 extend type Query {
@@ -143,4 +152,15 @@ type PermissionsInfo {
     change to the database row (i.e. incremental update).
     """
     updatedAt: DateTime!
+}
+
+"""
+Additional options when performing a permissions sync.
+"""
+input FetchPermissionsOptions {
+    """
+    Indicate that any caches added for optimization encountered during this permissions
+    sync should be invalidated.
+    """
+    invalidateCaches: Boolean
 }

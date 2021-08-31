@@ -35,12 +35,13 @@ import { ExtensionsAreaRouteContext } from './ExtensionsArea'
 import { ExtensionsList } from './ExtensionsList'
 
 interface Props
-    extends Pick<ExtensionsAreaRouteContext, 'authenticatedUser' | 'subject'>,
+    extends Pick<ExtensionsAreaRouteContext, 'authenticatedUser' | 'subject' | 'isSourcegraphDotCom'>,
         PlatformContextProps<'settings' | 'updateSettings' | 'requestGraphQL'>,
         SettingsCascadeProps,
         ThemeProps {
     location: H.Location
     history: H.History
+    isSourcegraphDotCom: boolean
 }
 
 const LOADING = 'loading' as const
@@ -380,6 +381,27 @@ export const ExtensionRegistry: React.FunctionComponent<Props> = props => {
                                 <hr className="mt-5" />
                                 <div className="my-4 justify-content-center">
                                     <ExtensionBanner />
+                                </div>
+                            </>
+                        )}
+                        {props.isSourcegraphDotCom && (
+                            <>
+                                <hr className="mt-5" />
+                                <div className="my-4 justify-content-center">
+                                    You may use the Sourcegraph.com extension registry only with Sourcegraph{' '}
+                                    <a href="https://about.sourcegraph.com/pricing/">
+                                        self-hosted or managed instances
+                                    </a>
+                                    , <a href="http://sourcegraph.com/">Sourcegraph.com</a>, and Sourcegraph's{' '}
+                                    <a href="https://docs.sourcegraph.com/integration/browser_extension">
+                                        browser extensions
+                                    </a>{' '}
+                                    and{' '}
+                                    <a href="https://docs.sourcegraph.com/integration/editor">editor integrations</a>.
+                                    You may not use the Sourcegraph.com extension registry with Sourcegraph OSS. Learn
+                                    more about the Sourcegraph.com extension registry and administration options in our{' '}
+                                    <a href="https://docs.sourcegraph.com/admin/extensions">extensions documentation</a>
+                                    .
                                 </div>
                             </>
                         )}

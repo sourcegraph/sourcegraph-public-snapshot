@@ -1,14 +1,39 @@
-package types
+package batches
 
 import (
 	"github.com/cockroachdb/errors"
-	"github.com/graph-gophers/graphql-go"
 
-	"github.com/sourcegraph/sourcegraph/lib/batches"
+	jsonutil "github.com/sourcegraph/batch-change-utils/json"
+
+	"github.com/sourcegraph/sourcegraph/lib/batches/schema"
 )
 
-type ChangesetSpecDescription struct {
-	BaseRepository graphql.ID `json:"baseRepository,omitempty"`
+// ErrHeadBaseMismatch is returned by (*ChangesetSpec).UnmarshalValidate() if
+// the head and base repositories do not match (a case which we do not support
+// yet).
+var ErrHeadBaseMismatch = errors.New("headRepository does not match baseRepository")
+
+// ParseChangesetSpec unmarshals the RawSpec into Spec and validates it against
+// the ChangesetSpec schema and does additional semantic validation.
+func ParseChangesetSpec(rawSpec []byte) (*ChangesetSpec, error) {
+	spec := &ChangesetSpec{}
+	err := jsonutil.UnmarshalValidate(schema.ChangesetSpecJSON, rawSpec, &spec)
+	if err != nil {
+		return nil, err
+	}
+
+	headRepo := spec.HeadRepository
+	baseRepo := spec.BaseRepository
+	if headRepo != "" && baseRepo != "" && headRepo != baseRepo {
+		return nil, ErrHeadBaseMismatch
+	}
+
+	return spec, nil
+}
+
+type ChangesetSpec struct {
+	// BaseRepository is the GraphQL ID of the base repository.
+	BaseRepository string `json:"baseRepository,omitempty"`
 
 	// If this is not empty, the description is a reference to an existing
 	// changeset and the rest of these fields are empty.
@@ -17,19 +42,27 @@ type ChangesetSpecDescription struct {
 	BaseRev string `json:"baseRev,omitempty"`
 	BaseRef string `json:"baseRef,omitempty"`
 
-	HeadRepository graphql.ID `json:"headRepository,omitempty"`
-	HeadRef        string     `json:"headRef,omitempty"`
+	// HeadRepository is the GraphQL ID of the head repository.
+	HeadRepository string `json:"headRepository,omitempty"`
+	HeadRef        string `json:"headRef,omitempty"`
 
 	Title string `json:"title,omitempty"`
 	Body  string `json:"body,omitempty"`
 
 	Commits []GitCommitDescription `json:"commits,omitempty"`
 
-	Published batches.PublishedValue `json:"published,omitempty"`
+	Published PublishedValue `json:"published,omitempty"`
+}
+
+type GitCommitDescription struct {
+	Message     string `json:"message,omitempty"`
+	Diff        string `json:"diff,omitempty"`
+	AuthorName  string `json:"authorName,omitempty"`
+	AuthorEmail string `json:"authorEmail,omitempty"`
 }
 
 // Type returns the ChangesetSpecDescriptionType of the ChangesetSpecDescription.
-func (d *ChangesetSpecDescription) Type() ChangesetSpecDescriptionType {
+func (d *ChangesetSpec) Type() ChangesetSpecDescriptionType {
 	if d.ExternalID != "" {
 		return ChangesetSpecDescriptionTypeExisting
 	}
@@ -38,13 +71,13 @@ func (d *ChangesetSpecDescription) Type() ChangesetSpecDescriptionType {
 
 // IsExisting returns whether the description is of type
 // ChangesetSpecDescriptionTypeExisting.
-func (d *ChangesetSpecDescription) IsImportingExisting() bool {
+func (d *ChangesetSpec) IsImportingExisting() bool {
 	return d.Type() == ChangesetSpecDescriptionTypeExisting
 }
 
 // IsBranch returns whether the description is of type
 // ChangesetSpecDescriptionTypeBranch.
-func (d *ChangesetSpecDescription) IsBranch() bool {
+func (d *ChangesetSpec) IsBranch() bool {
 	return d.Type() == ChangesetSpecDescriptionTypeBranch
 }
 
@@ -68,7 +101,7 @@ var ErrNoCommits = errors.New("changeset description doesn't contain commit desc
 //
 // We currently only support a single commit in Commits. Once we support more,
 // this method will need to be revisited.
-func (d *ChangesetSpecDescription) Diff() (string, error) {
+func (d *ChangesetSpec) Diff() (string, error) {
 	if len(d.Commits) == 0 {
 		return "", ErrNoCommits
 	}
@@ -80,7 +113,7 @@ func (d *ChangesetSpecDescription) Diff() (string, error) {
 //
 // We currently only support a single commit in Commits. Once we support more,
 // this method will need to be revisited.
-func (d *ChangesetSpecDescription) CommitMessage() (string, error) {
+func (d *ChangesetSpec) CommitMessage() (string, error) {
 	if len(d.Commits) == 0 {
 		return "", ErrNoCommits
 	}
@@ -92,7 +125,7 @@ func (d *ChangesetSpecDescription) CommitMessage() (string, error) {
 //
 // We currently only support a single commit in Commits. Once we support more,
 // this method will need to be revisited.
-func (d *ChangesetSpecDescription) AuthorName() (string, error) {
+func (d *ChangesetSpec) AuthorName() (string, error) {
 	if len(d.Commits) == 0 {
 		return "", ErrNoCommits
 	}
@@ -104,7 +137,7 @@ func (d *ChangesetSpecDescription) AuthorName() (string, error) {
 //
 // We currently only support a single commit in Commits. Once we support more,
 // this method will need to be revisited.
-func (d *ChangesetSpecDescription) AuthorEmail() (string, error) {
+func (d *ChangesetSpec) AuthorEmail() (string, error) {
 	if len(d.Commits) == 0 {
 		return "", ErrNoCommits
 	}

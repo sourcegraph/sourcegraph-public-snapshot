@@ -176,16 +176,6 @@ This panel indicates 90th percentile successful search API request duration over
 
 <br />
 
-#### frontend: hard_timeout_search_api_responses
-
-This panel indicates hard timeout search API responses every 5m.
-
-> NOTE: Alerts related to this panel are documented in the [alert solutions reference](./alert_solutions.md#frontend-hard-timeout-search-api-responses).
-
-<sub>*Managed by the [Sourcegraph Search team](https://about.sourcegraph.com/handbook/engineering/search).*</sub>
-
-<br />
-
 #### frontend: hard_error_search_api_responses
 
 This panel indicates hard error search API responses every 5m.
@@ -3416,6 +3406,98 @@ This panel indicates handler operation errors every 5m.
 #### worker: insights_search_queue_processor_error_rate
 
 This panel indicates handler operation error rate over 5m.
+
+<sub>*Managed by the [Sourcegraph Code-insights team](https://about.sourcegraph.com/handbook/engineering/code-insights).*</sub>
+
+<br />
+
+### Worker: Codeinsights: code insights search queue record resetter
+
+#### worker: insights_search_queue_record_resets_total
+
+This panel indicates insights_search_queue records reset to queued state every 5m.
+
+<sub>*Managed by the [Sourcegraph Code-insights team](https://about.sourcegraph.com/handbook/engineering/code-insights).*</sub>
+
+<br />
+
+#### worker: insights_search_queue_record_reset_failures_total
+
+This panel indicates insights_search_queue records reset to errored state every 5m.
+
+<sub>*Managed by the [Sourcegraph Code-insights team](https://about.sourcegraph.com/handbook/engineering/code-insights).*</sub>
+
+<br />
+
+#### worker: insights_search_queue_record_reset_errors_total
+
+This panel indicates insights_search_queue operation errors every 5m.
+
+<sub>*Managed by the [Sourcegraph Code-insights team](https://about.sourcegraph.com/handbook/engineering/code-insights).*</sub>
+
+<br />
+
+### Worker: Codeinsights: dbstore stats
+
+#### worker: workerutil_dbworker_store_insights_query_runner_jobs_store_total
+
+This panel indicates aggregate store operations every 5m.
+
+<sub>*Managed by the [Sourcegraph Code-insights team](https://about.sourcegraph.com/handbook/engineering/code-insights).*</sub>
+
+<br />
+
+#### worker: workerutil_dbworker_store_insights_query_runner_jobs_store_99th_percentile_duration
+
+This panel indicates 99th percentile successful aggregate store operation duration over 5m.
+
+<sub>*Managed by the [Sourcegraph Code-insights team](https://about.sourcegraph.com/handbook/engineering/code-insights).*</sub>
+
+<br />
+
+#### worker: workerutil_dbworker_store_insights_query_runner_jobs_store_errors_total
+
+This panel indicates aggregate store operation errors every 5m.
+
+<sub>*Managed by the [Sourcegraph Code-insights team](https://about.sourcegraph.com/handbook/engineering/code-insights).*</sub>
+
+<br />
+
+#### worker: workerutil_dbworker_store_insights_query_runner_jobs_store_error_rate
+
+This panel indicates aggregate store operation error rate over 5m.
+
+<sub>*Managed by the [Sourcegraph Code-insights team](https://about.sourcegraph.com/handbook/engineering/code-insights).*</sub>
+
+<br />
+
+#### worker: workerutil_dbworker_store_insights_query_runner_jobs_store_total
+
+This panel indicates store operations every 5m.
+
+<sub>*Managed by the [Sourcegraph Code-insights team](https://about.sourcegraph.com/handbook/engineering/code-insights).*</sub>
+
+<br />
+
+#### worker: workerutil_dbworker_store_insights_query_runner_jobs_store_99th_percentile_duration
+
+This panel indicates 99th percentile successful store operation duration over 5m.
+
+<sub>*Managed by the [Sourcegraph Code-insights team](https://about.sourcegraph.com/handbook/engineering/code-insights).*</sub>
+
+<br />
+
+#### worker: workerutil_dbworker_store_insights_query_runner_jobs_store_errors_total
+
+This panel indicates store operation errors every 5m.
+
+<sub>*Managed by the [Sourcegraph Code-insights team](https://about.sourcegraph.com/handbook/engineering/code-insights).*</sub>
+
+<br />
+
+#### worker: workerutil_dbworker_store_insights_query_runner_jobs_store_error_rate
+
+This panel indicates store operation error rate over 5m.
 
 <sub>*Managed by the [Sourcegraph Code-insights team](https://about.sourcegraph.com/handbook/engineering/code-insights).*</sub>
 

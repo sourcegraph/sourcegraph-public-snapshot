@@ -19,6 +19,7 @@ import (
 	"github.com/opentracing/opentracing-go"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -667,7 +668,7 @@ func (s *fakeScheduler) ScheduleInfo(id api.RepoID) *protocol.RepoUpdateSchedule
 
 type fakePermsSyncer struct{}
 
-func (*fakePermsSyncer) ScheduleUsers(ctx context.Context, userIDs ...int32) {
+func (*fakePermsSyncer) ScheduleUsers(ctx context.Context, opts authz.FetchPermsOptions, userIDs ...int32) {
 }
 
 func (*fakePermsSyncer) ScheduleRepos(ctx context.Context, repoIDs ...api.RepoID) {
