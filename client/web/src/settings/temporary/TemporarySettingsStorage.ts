@@ -1,7 +1,9 @@
-import { Observable, Subject, of, Subscription } from 'rxjs'
+import { ApolloClient, gql } from '@apollo/client'
+import { Observable, Subject, of, Subscription, from } from 'rxjs'
 import { distinctUntilKeyChanged, map, startWith } from 'rxjs/operators'
 
 import { AuthenticatedUser } from '../../auth'
+import { GetTemporarySettingsResult } from '../../graphql-operations'
 
 import { TemporarySettings } from './TemporarySettings'
 
@@ -20,13 +22,16 @@ export class TemporarySettingsStorage {
         this.saveSubscription?.unsubscribe()
     }
 
+    constructor(private apolloClient: ApolloClient<object>, authenticatedUser: AuthenticatedUser | null) {
+        this.setAuthenticatedUser(authenticatedUser)
+    }
+
     public setAuthenticatedUser(user: AuthenticatedUser | null): void {
         if (this.authenticatedUser !== user) {
             this.authenticatedUser = user
 
             if (this.authenticatedUser) {
-                // This will change to GraphQL backend in a future change
-                this.setSettingsBackend(new LocalStorageSettingsBackend())
+                this.setSettingsBackend(new ServersideSettingsBackend(this.apolloClient))
             } else {
                 this.setSettingsBackend(new LocalStorageSettingsBackend())
             }
@@ -76,8 +81,8 @@ class LocalStorageSettingsBackend implements SettingsBackend {
                 const parsedSettings = JSON.parse(settings) as TemporarySettings
                 return of(parsedSettings)
             }
-        } catch {
-            // Ignore error
+        } catch (error: unknown) {
+            console.error(error)
         }
 
         return of({})
@@ -87,8 +92,75 @@ class LocalStorageSettingsBackend implements SettingsBackend {
         try {
             const settingsString = JSON.stringify(settings)
             localStorage.setItem(this.TemporarySettingsKey, settingsString)
-        } catch {
-            // Ignore error
+        } catch (error: unknown) {
+            console.error(error)
+        }
+
+        return of()
+    }
+}
+
+class ServersideSettingsBackend implements SettingsBackend {
+    private readonly GetTemporarySettingsQuery = gql`
+        query GetTemporarySettings {
+            temporarySettings {
+                contents
+            }
+        }
+    `
+
+    private readonly SaveTemporarySettingsMutation = gql`
+        mutation SaveTemporarySettings($contents: String!) {
+            overwriteTemporarySettings(contents: $contents) {
+                alwaysNil
+            }
+        }
+    `
+
+    constructor(private apolloClient: ApolloClient<object>) {}
+
+    public load(): Observable<TemporarySettings> {
+        return new Observable<TemporarySettings>(observer => {
+            const subscription = this.apolloClient
+                .watchQuery<GetTemporarySettingsResult>({ query: this.GetTemporarySettingsQuery })
+                .subscribe({
+                    next: result => {
+                        let parsedSettings: TemporarySettings = {}
+                        try {
+                            const settings = result.data.temporarySettings.contents
+                            parsedSettings = JSON.parse(settings) as TemporarySettings
+                        } catch (error: unknown) {
+                            console.error(error)
+                        }
+
+                        observer.next(parsedSettings || {})
+                    },
+                    error: error => {
+                        console.error(error)
+                        observer.error(error)
+                    },
+                    complete: () => {
+                        observer.complete()
+                    },
+                })
+
+            return () => subscription.unsubscribe()
+        })
+    }
+
+    public save(settings: TemporarySettings): Observable<void> {
+        try {
+            const settingsString = JSON.stringify(settings)
+            return from(
+                this.apolloClient.mutate({
+                    mutation: this.SaveTemporarySettingsMutation,
+                    variables: { contents: settingsString },
+                })
+            ).pipe(
+                map(() => {}) // Ignore return value, always empty
+            )
+        } catch (error: unknown) {
+            console.error(error)
         }
 
         return of()

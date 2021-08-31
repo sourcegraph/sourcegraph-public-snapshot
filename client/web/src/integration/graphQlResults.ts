@@ -213,4 +213,9 @@ export const commonWebGraphQlResults: Partial<WebGraphQlOperations & SharedGraph
     FetchFeatureFlags: () => ({
         viewerFeatureFlags: [],
     }),
+    GetTemporarySettings: () => ({
+        temporarySettings: {
+            contents: '{}',
+        },
+    }),
 }
