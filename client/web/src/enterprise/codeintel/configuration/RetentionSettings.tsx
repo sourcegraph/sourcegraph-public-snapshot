@@ -33,7 +33,7 @@ export const RetentionSettings: FunctionComponent<RetentionSettingsProps> = ({ p
 
             <DurationSelect
                 id="retention-duration"
-                value={`${policy.retentionDurationHours}`}
+                value={policy.retentionDurationHours ? `${policy.retentionDurationHours}` : null}
                 onChange={value => setPolicy({ ...policy, retentionDurationHours: value })}
                 disabled={!policy.retentionEnabled}
             />

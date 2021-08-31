@@ -32,7 +32,7 @@ export const IndexingSettings: FunctionComponent<IndexingSettingsProps> = ({ pol
             <label htmlFor="index-commit-max-age">Commit max age</label>
             <DurationSelect
                 id="index-commit-max-age"
-                value={`${policy.indexCommitMaxAgeHours}`}
+                value={policy.indexCommitMaxAgeHours ? `${policy.indexCommitMaxAgeHours}` : null}
                 disabled={!policy.indexingEnabled}
                 onChange={value => setPolicy({ ...policy, indexCommitMaxAgeHours: value })}
             />
