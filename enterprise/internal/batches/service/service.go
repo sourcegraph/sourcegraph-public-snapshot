@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/cockroachdb/errors"
+	"github.com/graph-gophers/graphql-go"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
@@ -149,7 +150,7 @@ func (s *Service) CreateChangesetSpec(ctx context.Context, rawSpec string, userI
 		return nil, err
 	}
 	spec.UserID = userID
-	spec.RepoID, err = graphqlbackend.UnmarshalRepositoryID(spec.Spec.BaseRepository)
+	spec.RepoID, err = graphqlbackend.UnmarshalRepositoryID(graphql.ID(spec.Spec.BaseRepository))
 	if err != nil {
 		return nil, err
 	}
