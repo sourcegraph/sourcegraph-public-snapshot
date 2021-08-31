@@ -76,7 +76,7 @@ func (p *Provider) Validate() (problems []string) {
 	if len(required) > 0 {
 		scopes, err := p.client.GetAuthenticatedOAuthScopes(context.Background())
 		if err != nil {
-			problems = append(problems, fmt.Sprintf("Additional auth scopes are required, but failed to check authenticated scopes: %+v", err))
+			problems = append(problems, fmt.Sprintf("Additional OAuth scopes are required, but failed to get available scopes: %+v", err))
 		} else {
 			gotScopes := make(map[string]struct{})
 			for _, gotScope := range scopes {
