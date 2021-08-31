@@ -24,6 +24,7 @@ All notable changes to Sourcegraph are documented in this file.
 ### Fixed
 
 - Code Insights the dashboard page no longer triggers insights re-fetching when insight adding/removing actions happen. [#24375](https://github.com/sourcegraph/sourcegraph/pull/24375)
+- Fixed an issue where particular values for subfields in search query predicates triggers a nil dereference. [#24472](https://github.com/sourcegraph/sourcegraph/pull/24472)
 
 ### Removed
 
