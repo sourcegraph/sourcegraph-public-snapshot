@@ -864,7 +864,8 @@ func (l *EventLogStore) codeIntelligenceSettingsPageViewCount(ctx context.Contex
 		"CodeIntelUploadPage",
 		"CodeIntelIndexesPage",
 		"CodeIntelIndexPage",
-		"CodeIntelIndexConfigurationPage",
+		"CodeIntelConfigurationPage",
+		"CodeIntelConfigurationPolicyPage",
 	}
 
 	names := make([]*sqlf.Query, 0, len(pageNames))
