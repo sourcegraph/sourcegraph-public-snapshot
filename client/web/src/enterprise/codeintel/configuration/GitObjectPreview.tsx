@@ -38,7 +38,7 @@ export const GitObjectPreview: FunctionComponent<GitObjectPreviewProps> = ({
     const [commitPreviewFetchError, setCommitPreviewFetchError] = useState<Error>()
 
     useEffect(() => {
-        async function inner(): Promise<void> {
+        async function updateCommitPreview(): Promise<void> {
             setState(PreviewState.LoadingTags)
             setCommitPreviewFetchError(undefined)
 
@@ -49,11 +49,10 @@ export const GitObjectPreview: FunctionComponent<GitObjectPreviewProps> = ({
             ]
 
             try {
-                for (const { type: match, factory } of resultFactories) {
-                    if (type === match) {
-                        setCommitPreview(await factory())
-                        break
-                    }
+                const match = resultFactories.find(({ type: match }) => match === type)
+
+                if (match) {
+                    setCommitPreview(await match.factory())
                 }
             } catch (error) {
                 setCommitPreviewFetchError(error)
@@ -62,7 +61,7 @@ export const GitObjectPreview: FunctionComponent<GitObjectPreviewProps> = ({
             }
         }
 
-        inner().catch(console.error)
+        updateCommitPreview().catch(console.error)
     }, [repoId, type, pattern, repoName, searchGitTags, searchGitBranches])
 
     return (

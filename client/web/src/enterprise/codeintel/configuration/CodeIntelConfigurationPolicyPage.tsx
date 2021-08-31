@@ -87,7 +87,7 @@ export const CodeIntelConfigurationPolicyPage: FunctionComponent<CodeIntelConfig
     const [saveError, setSaveError] = useState<Error>()
     const [state, setState] = useState(() => State.Idle)
 
-    const save = useCallback(async () => {
+    const save = async (): Promise<void> => {
         if (!policy) {
             return
         }
@@ -107,7 +107,7 @@ export const CodeIntelConfigurationPolicyPage: FunctionComponent<CodeIntelConfig
                 setState(State.Idle)
             }
         }
-    }, [repo?.id, policy, updatePolicy, history])
+    }
 
     return fetchError ? (
         <ErrorAlert prefix="Error fetching configuration policy" error={fetchError} />
