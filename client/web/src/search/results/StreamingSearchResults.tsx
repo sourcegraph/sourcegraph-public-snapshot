@@ -90,6 +90,7 @@ export const StreamingSearchResults: React.FunctionComponent<StreamingSearchResu
         authenticatedUser,
         telemetryService,
         codeInsightsEnabled,
+        extensionsController,
     } = props
 
     // Log view event on first load
@@ -130,8 +131,9 @@ export const StreamingSearchResults: React.FunctionComponent<StreamingSearchResu
             caseSensitive,
             versionContext: resolveVersionContext(versionContext, availableVersionContexts),
             trace,
+            extensionsController,
         }),
-        [availableVersionContexts, caseSensitive, patternType, query, trace, versionContext]
+        [availableVersionContexts, caseSensitive, patternType, query, trace, versionContext, extensionsController]
     )
 
     const results = useCachedSearchResults(streamSearch, options, telemetryService)
