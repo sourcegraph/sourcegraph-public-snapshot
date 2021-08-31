@@ -9,5 +9,5 @@ See also our [TypeScript guide](https://about.sourcegraph.com/handbook/engineeri
 - [Wildcard Component Library](wildcard.md)
 - [Styling UI](styling.md)
 - [Accessibility](accessibility.md)
-- [Temporary settings](web/temporary_settings.md)
+- [Temporary settings](temporary_settings.md)
 - [Build process](build.md)
