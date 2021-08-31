@@ -912,28 +912,24 @@ func logPrometheusBatch(status, alertType, requestSource, requestName string, el
 	).Observe(elapsed.Seconds())
 }
 
-func newHoneyEvent(ctx context.Context, status, alertType, requestSource, requestName, query string, elapsed time.Duration, srr *SearchResultsResolver) *libhoney.Event {
-	var n int
-	if srr != nil {
-		n = len(srr.Matches)
-	}
-	return honey.SearchEvent(ctx, honey.SearchEventArgs{
-		OriginalQuery: query,
-		Typ:           requestName,
-		Source:        requestSource,
-		Status:        status,
-		AlertType:     alertType,
-		DurationMs:    elapsed.Milliseconds(),
-		ResultSize:    n,
-	})
-}
-
 func logHoneyBatch(ctx context.Context, status, alertType, requestSource, requestName string, elapsed time.Duration, query string, start time.Time, srr *SearchResultsResolver) {
 	var ev *libhoney.Event
 	isSlow := time.Since(start) > searchlogs.LogSlowSearchesThreshold()
 
 	if honey.Enabled() || isSlow {
-		ev = newHoneyEvent(ctx, status, alertType, requestSource, requestName, query, elapsed, srr)
+		var n int
+		if srr != nil {
+			n = len(srr.Matches)
+		}
+		ev = honey.SearchEvent(ctx, honey.SearchEventArgs{
+			OriginalQuery: query,
+			Typ:           requestName,
+			Source:        requestSource,
+			Status:        status,
+			AlertType:     alertType,
+			DurationMs:    elapsed.Milliseconds(),
+			ResultSize:    n,
+		})
 	}
 
 	if honey.Enabled() && ev != nil {
