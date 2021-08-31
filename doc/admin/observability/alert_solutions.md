@@ -222,7 +222,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
+<sub>*Managed by the [Sourcegraph Search team](https://about.sourcegraph.com/handbook/engineering/search).*</sub>
 
 <br />
 
@@ -248,7 +248,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
+<sub>*Managed by the [Sourcegraph Search team](https://about.sourcegraph.com/handbook/engineering/search).*</sub>
 
 <br />
 
@@ -272,7 +272,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
+<sub>*Managed by the [Sourcegraph Search team](https://about.sourcegraph.com/handbook/engineering/search).*</sub>
 
 <br />
 
@@ -296,7 +296,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
+<sub>*Managed by the [Sourcegraph Search team](https://about.sourcegraph.com/handbook/engineering/search).*</sub>
 
 <br />
 
@@ -318,7 +318,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
+<sub>*Managed by the [Sourcegraph Search team](https://about.sourcegraph.com/handbook/engineering/search).*</sub>
 
 <br />
 
@@ -341,7 +341,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
+<sub>*Managed by the [Sourcegraph Search team](https://about.sourcegraph.com/handbook/engineering/search).*</sub>
 
 <br />
 

@@ -3,7 +3,9 @@ package authz
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 	"flag"
+	"fmt"
 	"net/url"
 	"os"
 	"regexp"
@@ -39,114 +41,410 @@ func update(name string) bool {
 
 var dsn = flag.String("dsn", "", "Database connection string to use in integration tests")
 
-// This integration test performs a repository-centric permissions syncing against
-// https://github.com, then check if permissions are correctly granted for the test
-// user "sourcegraph-vcr-bob", who is a outside collaborator of the repository
-// "sourcegraph-vcr-repos/private-org-repo-1".
-//
-// NOTE: To update VCR for this test, please use the token of "sourcegraph-vcr"
+// NOTE: To update VCR for these tests, please use the token of "sourcegraph-vcr"
 // for GITHUB_TOKEN, which can be found in 1Password.
+//
+// We also recommend setting up a new token for "sourcegraph-vcr" using the auth scope
+// guidelines https://docs.sourcegraph.com/admin/external_service/github#github-api-token-and-access
+// to ensure everything works, in case of new scopes being required.
 func TestIntegration_GitHubPermissions(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
 
-	const name = "Integration_GitHubPermissions"
-	cf, save := httptestutil.NewGitHubRecorderFactory(t, update(name), name)
-	defer save()
-
-	uri, err := url.Parse("https://github.com")
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	doer, err := cf.Doer()
-	if err != nil {
-		t.Fatal(err)
-	}
-
 	token := os.Getenv("GITHUB_TOKEN")
-	cli := extsvcGitHub.NewV3Client(uri, &auth.OAuthBearerToken{Token: token}, doer)
 
-	testDB := dbtest.NewDB(t, *dsn)
-	ctx := actor.WithInternalActor(context.Background())
-
-	reposStore := repos.NewStore(testDB, sql.TxOptions{})
-
-	svc := types.ExternalService{
-		Kind:      extsvc.KindGitHub,
-		CreatedAt: timeutil.Now(),
-		Config:    `{"url": "https://github.com", "authorization": {}}`,
-	}
-	err = reposStore.ExternalServiceStore.Upsert(ctx, &svc)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	provider := authzGitHub.NewProvider(svc.URN(), authzGitHub.ProviderOptions{
-		GitHubClient: cli,
-		GitHubURL:    uri,
-		BaseToken:    token,
-	})
-
-	authz.SetProviders(false, []authz.Provider{provider})
-	defer authz.SetProviders(true, nil)
-
-	repo := types.Repo{
-		Name:    "github.com/sourcegraph-vcr-repos/private-org-repo-1",
-		Private: true,
-		URI:     "github.com/sourcegraph-vcr-repos/private-org-repo-1",
-		ExternalRepo: api.ExternalRepoSpec{
-			ServiceType: extsvc.TypeGitHub,
-			ServiceID:   "https://github.com/",
-		},
-		Sources: map[string]*types.SourceInfo{
-			svc.URN(): {
-				ID: svc.URN(),
-			},
-		},
-	}
-	err = reposStore.RepoStore.Create(ctx, &repo)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	dbconn.Global = testDB
-	newUser := database.NewUser{
-		Email:           "sourcegraph-vcr-bob@sourcegraph.com",
-		Username:        "sourcegraph-vcr-bob",
-		EmailIsVerified: true,
-	}
 	spec := extsvc.AccountSpec{
 		ServiceType: extsvc.TypeGitHub,
 		ServiceID:   "https://github.com/",
 		AccountID:   "66464926",
 	}
-	userID, err := database.ExternalAccounts(testDB).CreateUserAndSave(ctx, newUser, spec, extsvc.AccountData{})
+	svc := types.ExternalService{
+		Kind:      extsvc.KindGitHub,
+		CreatedAt: timeutil.Now(),
+		Config:    `{"url": "https://github.com", "authorization": {}}`,
+	}
+	uri, err := url.Parse("https://github.com")
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	permsStore := edb.Perms(testDB, timeutil.Now)
-	syncer := NewPermsSyncer(reposStore, permsStore, timeutil.Now, nil)
+	// This integration tests performs a repository-centric permissions syncing against
+	// https://github.com, then check if permissions are correctly granted for the test
+	// user "sourcegraph-vcr-bob", who is a outside collaborator of the repository
+	// "sourcegraph-vcr-repos/private-org-repo-1".
+	t.Run("repo-centric", func(t *testing.T) {
+		newUser := database.NewUser{
+			Email:           "sourcegraph-vcr-bob@sourcegraph.com",
+			Username:        "sourcegraph-vcr-bob",
+			EmailIsVerified: true,
+		}
+		t.Run("no-groups", func(t *testing.T) {
+			name := t.Name()
+			cf, save := httptestutil.NewGitHubRecorderFactory(t, update(name), name)
+			defer save()
 
-	err = syncer.syncRepoPerms(ctx, repo.ID, false, authz.FetchPermsOptions{})
-	if err != nil {
-		t.Fatal(err)
-	}
+			doer, err := cf.Doer()
+			if err != nil {
+				t.Fatal(err)
+			}
+			cli := extsvcGitHub.NewV3Client(uri, &auth.OAuthBearerToken{Token: token}, doer)
 
-	p := &authz.UserPermissions{
-		UserID: userID,
-		Perm:   authz.Read,
-		Type:   authz.PermRepos,
-	}
-	err = permsStore.LoadUserPermissions(ctx, p)
-	if err != nil {
-		t.Fatal(err)
-	}
+			testDB := dbtest.NewDB(t, *dsn)
+			ctx := actor.WithInternalActor(context.Background())
 
-	wantIDs := []uint32{1}
-	if diff := cmp.Diff(wantIDs, p.IDs.ToArray()); diff != "" {
-		t.Fatalf("IDs mismatch (-want +got):\n%s", diff)
-	}
+			reposStore := repos.NewStore(testDB, sql.TxOptions{})
+
+			err = reposStore.ExternalServiceStore.Upsert(ctx, &svc)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			provider := authzGitHub.NewProvider(svc.URN(), authzGitHub.ProviderOptions{
+				GitHubClient:   cli,
+				GitHubURL:      uri,
+				BaseToken:      token,
+				GroupsCacheTTL: -1,
+			})
+
+			authz.SetProviders(false, []authz.Provider{provider})
+			defer authz.SetProviders(true, nil)
+
+			repo := types.Repo{
+				Name:    "github.com/sourcegraph-vcr-repos/private-org-repo-1",
+				Private: true,
+				URI:     "github.com/sourcegraph-vcr-repos/private-org-repo-1",
+				ExternalRepo: api.ExternalRepoSpec{
+					ID:          "MDEwOlJlcG9zaXRvcnkzOTk4OTQyODY=",
+					ServiceType: extsvc.TypeGitHub,
+					ServiceID:   "https://github.com/",
+				},
+				Sources: map[string]*types.SourceInfo{
+					svc.URN(): {
+						ID: svc.URN(),
+					},
+				},
+			}
+			err = reposStore.RepoStore.Create(ctx, &repo)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			dbconn.Global = testDB
+			userID, err := database.ExternalAccounts(testDB).CreateUserAndSave(ctx, newUser, spec, extsvc.AccountData{})
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			permsStore := edb.Perms(testDB, timeutil.Now)
+			syncer := NewPermsSyncer(reposStore, permsStore, timeutil.Now, nil)
+
+			err = syncer.syncRepoPerms(ctx, repo.ID, false, authz.FetchPermsOptions{})
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			p := &authz.UserPermissions{
+				UserID: userID,
+				Perm:   authz.Read,
+				Type:   authz.PermRepos,
+			}
+			err = permsStore.LoadUserPermissions(ctx, p)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			wantIDs := []uint32{1}
+			if diff := cmp.Diff(wantIDs, p.IDs.ToArray()); diff != "" {
+				t.Fatalf("IDs mismatch (-want +got):\n%s", diff)
+			}
+		})
+
+		t.Run("groups-enabled", func(t *testing.T) {
+			name := t.Name()
+			cf, save := httptestutil.NewGitHubRecorderFactory(t, update(name), name)
+			defer save()
+
+			doer, err := cf.Doer()
+			if err != nil {
+				t.Fatal(err)
+			}
+			cli := extsvcGitHub.NewV3Client(uri, &auth.OAuthBearerToken{Token: token}, doer)
+
+			testDB := dbtest.NewDB(t, *dsn)
+			ctx := actor.WithInternalActor(context.Background())
+
+			reposStore := repos.NewStore(testDB, sql.TxOptions{})
+
+			err = reposStore.ExternalServiceStore.Upsert(ctx, &svc)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			provider := authzGitHub.NewProvider(svc.URN(), authzGitHub.ProviderOptions{
+				GitHubClient:   cli,
+				GitHubURL:      uri,
+				BaseToken:      token,
+				GroupsCacheTTL: 72,
+			})
+
+			authz.SetProviders(false, []authz.Provider{provider})
+			defer authz.SetProviders(true, nil)
+
+			repo := types.Repo{
+				Name:    "github.com/sourcegraph-vcr-repos/private-org-repo-1",
+				Private: true,
+				URI:     "github.com/sourcegraph-vcr-repos/private-org-repo-1",
+				ExternalRepo: api.ExternalRepoSpec{
+					ID:          "MDEwOlJlcG9zaXRvcnkzOTk4OTQyODY=",
+					ServiceType: extsvc.TypeGitHub,
+					ServiceID:   "https://github.com/",
+				},
+				Sources: map[string]*types.SourceInfo{
+					svc.URN(): {
+						ID: svc.URN(),
+					},
+				},
+			}
+			err = reposStore.RepoStore.Create(ctx, &repo)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			dbconn.Global = testDB
+			userID, err := database.ExternalAccounts(testDB).CreateUserAndSave(ctx, newUser, spec, extsvc.AccountData{})
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			permsStore := edb.Perms(testDB, timeutil.Now)
+			syncer := NewPermsSyncer(reposStore, permsStore, timeutil.Now, nil)
+
+			err = syncer.syncRepoPerms(ctx, repo.ID, false, authz.FetchPermsOptions{})
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			p := &authz.UserPermissions{
+				UserID: userID,
+				Perm:   authz.Read,
+				Type:   authz.PermRepos,
+			}
+			err = permsStore.LoadUserPermissions(ctx, p)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			wantIDs := []uint32{1}
+			if diff := cmp.Diff(wantIDs, p.IDs.ToArray()); diff != "" {
+				t.Fatalf("IDs mismatch (-want +got):\n%s", diff)
+			}
+
+			// sync again and check
+			err = syncer.syncRepoPerms(ctx, repo.ID, false, authz.FetchPermsOptions{})
+			if err != nil {
+				t.Fatal(err)
+			}
+			err = permsStore.LoadUserPermissions(ctx, p)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if diff := cmp.Diff(wantIDs, p.IDs.ToArray()); diff != "" {
+				t.Fatalf("IDs mismatch (-want +got):\n%s", diff)
+			}
+		})
+	})
+
+	// This integration tests performs a repository-centric permissions syncing against
+	// https://github.com, then check if permissions are correctly granted for the test
+	// user "sourcegraph-vcr", who is a collaborator of "sourcegraph-vcr-repos/private-org-repo-1".
+	t.Run("user-centric", func(t *testing.T) {
+		newUser := database.NewUser{
+			Email:           "sourcegraph-vcr@sourcegraph.com",
+			Username:        "sourcegraph-vcr",
+			EmailIsVerified: true,
+		}
+		t.Run("no-groups", func(t *testing.T) {
+			name := t.Name()
+
+			cf, save := httptestutil.NewGitHubRecorderFactory(t, update(name), name)
+			defer save()
+			doer, err := cf.Doer()
+			if err != nil {
+				t.Fatal(err)
+			}
+			cli := extsvcGitHub.NewV3Client(uri, &auth.OAuthBearerToken{Token: token}, doer)
+
+			testDB := dbtest.NewDB(t, *dsn)
+			ctx := actor.WithInternalActor(context.Background())
+
+			reposStore := repos.NewStore(testDB, sql.TxOptions{})
+
+			err = reposStore.ExternalServiceStore.Upsert(ctx, &svc)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			provider := authzGitHub.NewProvider(svc.URN(), authzGitHub.ProviderOptions{
+				GitHubClient:   cli,
+				GitHubURL:      uri,
+				BaseToken:      token,
+				GroupsCacheTTL: -1,
+			})
+
+			authz.SetProviders(false, []authz.Provider{provider})
+			defer authz.SetProviders(true, nil)
+
+			repo := types.Repo{
+				Name:    "github.com/sourcegraph-vcr-repos/private-org-repo-1",
+				Private: true,
+				URI:     "github.com/sourcegraph-vcr-repos/private-org-repo-1",
+				ExternalRepo: api.ExternalRepoSpec{
+					ID:          "MDEwOlJlcG9zaXRvcnkzOTk4OTQyODY=",
+					ServiceType: extsvc.TypeGitHub,
+					ServiceID:   "https://github.com/",
+				},
+				Sources: map[string]*types.SourceInfo{
+					svc.URN(): {
+						ID: svc.URN(),
+					},
+				},
+			}
+			err = reposStore.RepoStore.Create(ctx, &repo)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			dbconn.Global = testDB
+
+			authData := json.RawMessage(fmt.Sprintf(`{"access_token": "%s"}`, token))
+			userID, err := database.ExternalAccounts(testDB).CreateUserAndSave(ctx, newUser, spec, extsvc.AccountData{
+				AuthData: &authData,
+			})
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			permsStore := edb.Perms(testDB, timeutil.Now)
+			syncer := NewPermsSyncer(reposStore, permsStore, timeutil.Now, nil)
+
+			err = syncer.syncUserPerms(ctx, userID, false, authz.FetchPermsOptions{})
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			p := &authz.UserPermissions{
+				UserID: userID,
+				Perm:   authz.Read,
+				Type:   authz.PermRepos,
+			}
+			err = permsStore.LoadUserPermissions(ctx, p)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			wantIDs := []uint32{1}
+			if diff := cmp.Diff(wantIDs, p.IDs.ToArray()); diff != "" {
+				t.Fatalf("IDs mismatch (-want +got):\n%s", diff)
+			}
+		})
+
+		t.Run("groups-enabled", func(t *testing.T) {
+			name := t.Name()
+
+			cf, save := httptestutil.NewGitHubRecorderFactory(t, update(name), name)
+			defer save()
+			doer, err := cf.Doer()
+			if err != nil {
+				t.Fatal(err)
+			}
+			cli := extsvcGitHub.NewV3Client(uri, &auth.OAuthBearerToken{Token: token}, doer)
+
+			testDB := dbtest.NewDB(t, *dsn)
+			ctx := actor.WithInternalActor(context.Background())
+
+			reposStore := repos.NewStore(testDB, sql.TxOptions{})
+
+			err = reposStore.ExternalServiceStore.Upsert(ctx, &svc)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			provider := authzGitHub.NewProvider(svc.URN(), authzGitHub.ProviderOptions{
+				GitHubClient:   cli,
+				GitHubURL:      uri,
+				BaseToken:      token,
+				GroupsCacheTTL: 72,
+			})
+
+			authz.SetProviders(false, []authz.Provider{provider})
+			defer authz.SetProviders(true, nil)
+
+			repo := types.Repo{
+				Name:    "github.com/sourcegraph-vcr-repos/private-org-repo-1",
+				Private: true,
+				URI:     "github.com/sourcegraph-vcr-repos/private-org-repo-1",
+				ExternalRepo: api.ExternalRepoSpec{
+					ID:          "MDEwOlJlcG9zaXRvcnkzOTk4OTQyODY=",
+					ServiceType: extsvc.TypeGitHub,
+					ServiceID:   "https://github.com/",
+				},
+				Sources: map[string]*types.SourceInfo{
+					svc.URN(): {
+						ID: svc.URN(),
+					},
+				},
+			}
+			err = reposStore.RepoStore.Create(ctx, &repo)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			dbconn.Global = testDB
+
+			authData := json.RawMessage(fmt.Sprintf(`{"access_token": "%s"}`, token))
+			userID, err := database.ExternalAccounts(testDB).CreateUserAndSave(ctx, newUser, spec, extsvc.AccountData{
+				AuthData: &authData,
+			})
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			permsStore := edb.Perms(testDB, timeutil.Now)
+			syncer := NewPermsSyncer(reposStore, permsStore, timeutil.Now, nil)
+
+			err = syncer.syncUserPerms(ctx, userID, false, authz.FetchPermsOptions{})
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			p := &authz.UserPermissions{
+				UserID: userID,
+				Perm:   authz.Read,
+				Type:   authz.PermRepos,
+			}
+			err = permsStore.LoadUserPermissions(ctx, p)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			wantIDs := []uint32{1}
+			if diff := cmp.Diff(wantIDs, p.IDs.ToArray()); diff != "" {
+				t.Fatalf("IDs mismatch (-want +got):\n%s", diff)
+			}
+
+			// sync again and check
+			err = syncer.syncUserPerms(ctx, userID, false, authz.FetchPermsOptions{})
+			if err != nil {
+				t.Fatal(err)
+			}
+			err = permsStore.LoadUserPermissions(ctx, p)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if diff := cmp.Diff(wantIDs, p.IDs.ToArray()); diff != "" {
+				t.Fatalf("IDs mismatch (-want +got):\n%s", diff)
+			}
+		})
+	})
 }
