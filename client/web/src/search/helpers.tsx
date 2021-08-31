@@ -22,7 +22,17 @@ export interface SubmitSearchParameters
         Pick<SearchContextProps, 'selectedSearchContextSpec'> {
     history: H.History
     query: string
-    source: 'home' | 'nav' | 'repo' | 'tree' | 'filter' | 'type' | 'scopePage' | 'repogroupPage' | 'excludedResults'
+    source:
+        | 'home'
+        | 'nav'
+        | 'repo'
+        | 'tree'
+        | 'filter'
+        | 'type'
+        | 'scopePage'
+        | 'repogroupPage'
+        | 'excludedResults'
+        | 'searchContextPage'
     searchParameters?: { key: string; value: string }[]
 }
 

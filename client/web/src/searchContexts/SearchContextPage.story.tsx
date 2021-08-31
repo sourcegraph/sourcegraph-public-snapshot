@@ -3,12 +3,24 @@ import { subDays } from 'date-fns'
 import React from 'react'
 import { NEVER, Observable, of, throwError } from 'rxjs'
 
-import { IRepository, ISearchContext, ISearchContextRepositoryRevisions } from '@sourcegraph/shared/src/graphql/schema'
+import {
+    IRepository,
+    ISearchContext,
+    ISearchContextRepositoryRevisions,
+    SearchPatternType,
+} from '@sourcegraph/shared/src/graphql/schema'
 import { EMPTY_SETTINGS_CASCADE } from '@sourcegraph/shared/src/settings/settings'
+import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
 import { WebStory } from '../components/WebStory'
+import { ThemePreference } from '../theme'
 
 import { SearchContextPage } from './SearchContextPage'
+import {
+    mockFetchAutoDefinedSearchContexts,
+    mockFetchSearchContexts,
+    mockGetUserSearchContextNamespaces,
+} from './testHelpers'
 
 const { add } = storiesOf('web/searchContexts/SearchContextPage', module)
     .addParameters({
@@ -49,12 +61,42 @@ const mockContext: ISearchContext = {
     viewerCanManage: true,
 }
 
-const searchNotebookProps = {
+const props = {
     isMacPlatform: true,
     globbing: true,
     streamSearch: () => NEVER,
     fetchHighlightedFileLineRanges: () => NEVER,
     settingsCascade: EMPTY_SETTINGS_CASCADE,
+    isSourcegraphDotCom: false,
+    telemetryService: NOOP_TELEMETRY_SERVICE,
+    authenticatedUser: null,
+    setVersionContext: () => Promise.resolve(undefined),
+    availableVersionContexts: [],
+    parsedSearchQuery: 'r:golang/oauth2 test f:travis',
+    patternType: SearchPatternType.literal,
+    setPatternType: () => undefined,
+    caseSensitive: false,
+    setCaseSensitivity: () => undefined,
+    platformContext: {} as any,
+    keyboardShortcuts: [],
+    versionContext: undefined,
+    showSearchContext: false,
+    showSearchContextManagement: false,
+    selectedSearchContextSpec: '',
+    setSelectedSearchContextSpec: () => {},
+    defaultSearchContextSpec: '',
+    showRepogroupHomepage: false,
+    showEnterpriseHomePanels: false,
+    showOnboardingTour: false,
+    showQueryBuilder: false,
+    fetchAutoDefinedSearchContexts: mockFetchAutoDefinedSearchContexts(),
+    fetchSearchContexts: mockFetchSearchContexts,
+    hasUserAddedRepositories: false,
+    hasUserAddedExternalServices: false,
+    getUserSearchContextNamespaces: mockGetUserSearchContextNamespaces,
+    featureFlags: new Map(),
+    themePreference: ThemePreference.Light,
+    onThemePreferenceChange: () => undefined,
 }
 
 const fetchPublicContext = (): Observable<ISearchContext> => of(mockContext)
@@ -78,13 +120,7 @@ add(
     'public context',
     () => (
         <WebStory>
-            {webProps => (
-                <SearchContextPage
-                    {...webProps}
-                    {...searchNotebookProps}
-                    fetchSearchContextBySpec={fetchPublicContext}
-                />
-            )}
+            {webProps => <SearchContextPage {...webProps} {...props} fetchSearchContextBySpec={fetchPublicContext} />}
         </WebStory>
     ),
     {}
@@ -97,7 +133,7 @@ add(
             {webProps => (
                 <SearchContextPage
                     {...webProps}
-                    {...searchNotebookProps}
+                    {...props}
                     fetchSearchContextBySpec={() =>
                         of({
                             ...mockContext,
@@ -118,7 +154,7 @@ add(
             {webProps => (
                 <SearchContextPage
                     {...webProps}
-                    {...searchNotebookProps}
+                    {...props}
                     fetchSearchContextBySpec={() =>
                         of({
                             ...mockContext,
@@ -156,15 +192,29 @@ repo:^github\\.com/sourcegraph/sourcegraph$ type:diff before:yesterday after:"la
 )
 
 add(
-    'autodefined context',
+    'search box with selected context',
     () => (
         <WebStory>
             {webProps => (
                 <SearchContextPage
                     {...webProps}
-                    {...searchNotebookProps}
-                    fetchSearchContextBySpec={fetchAutoDefinedContext}
+                    {...props}
+                    showSearchContext={true}
+                    selectedSearchContextSpec={mockContext.spec}
+                    fetchSearchContextBySpec={fetchPublicContext}
                 />
+            )}
+        </WebStory>
+    ),
+    {}
+)
+
+add(
+    'autodefined context',
+    () => (
+        <WebStory>
+            {webProps => (
+                <SearchContextPage {...webProps} {...props} fetchSearchContextBySpec={fetchAutoDefinedContext} />
             )}
         </WebStory>
     ),
@@ -175,13 +225,7 @@ add(
     'private context',
     () => (
         <WebStory>
-            {webProps => (
-                <SearchContextPage
-                    {...webProps}
-                    {...searchNotebookProps}
-                    fetchSearchContextBySpec={fetchPrivateContext}
-                />
-            )}
+            {webProps => <SearchContextPage {...webProps} {...props} fetchSearchContextBySpec={fetchPrivateContext} />}
         </WebStory>
     ),
     {}
@@ -191,9 +235,7 @@ add(
     'loading',
     () => (
         <WebStory>
-            {webProps => (
-                <SearchContextPage {...webProps} {...searchNotebookProps} fetchSearchContextBySpec={() => NEVER} />
-            )}
+            {webProps => <SearchContextPage {...webProps} {...props} fetchSearchContextBySpec={() => NEVER} />}
         </WebStory>
     ),
     {}
@@ -206,7 +248,7 @@ add(
             {webProps => (
                 <SearchContextPage
                     {...webProps}
-                    {...searchNotebookProps}
+                    {...props}
                     fetchSearchContextBySpec={() => throwError(new Error('Failed to fetch search context'))}
                 />
             )}
