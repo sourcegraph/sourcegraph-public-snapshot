@@ -335,10 +335,10 @@ func (r *Resolver) CreateCodeIntelligenceConfigurationPolicy(ctx context.Context
 		Type:                      string(args.Type),
 		Pattern:                   args.Pattern,
 		RetentionEnabled:          args.RetentionEnabled,
-		RetentionDuration:         time.Duration(args.RetentionDurationHours) * time.Hour,
+		RetentionDuration:         toDuration(args.RetentionDurationHours),
 		RetainIntermediateCommits: args.RetainIntermediateCommits,
 		IndexingEnabled:           args.IndexingEnabled,
-		IndexCommitMaxAge:         time.Duration(args.IndexCommitMaxAgeHours) * time.Hour,
+		IndexCommitMaxAge:         toDuration(args.IndexCommitMaxAgeHours),
 		IndexIntermediateCommits:  args.IndexIntermediateCommits,
 	})
 	if err != nil {
@@ -346,6 +346,15 @@ func (r *Resolver) CreateCodeIntelligenceConfigurationPolicy(ctx context.Context
 	}
 
 	return NewConfigurationPolicyResolver(configurationPolicy), nil
+}
+
+func toDuration(hours *int32) *time.Duration {
+	if hours == nil {
+		return nil
+	}
+
+	v := time.Duration(*hours) * time.Hour
+	return &v
 }
 
 func (r *Resolver) UpdateCodeIntelligenceConfigurationPolicy(ctx context.Context, args *gql.UpdateCodeIntelligenceConfigurationPolicyArgs) (*gql.EmptyResponse, error) {
@@ -369,10 +378,10 @@ func (r *Resolver) UpdateCodeIntelligenceConfigurationPolicy(ctx context.Context
 		Type:                      string(args.Type),
 		Pattern:                   args.Pattern,
 		RetentionEnabled:          args.RetentionEnabled,
-		RetentionDuration:         time.Duration(args.RetentionDurationHours) * time.Hour,
+		RetentionDuration:         toDuration(args.RetentionDurationHours),
 		RetainIntermediateCommits: args.RetainIntermediateCommits,
 		IndexingEnabled:           args.IndexingEnabled,
-		IndexCommitMaxAge:         time.Duration(args.IndexCommitMaxAgeHours) * time.Hour,
+		IndexCommitMaxAge:         toDuration(args.IndexCommitMaxAgeHours),
 		IndexIntermediateCommits:  args.IndexIntermediateCommits,
 	}); err != nil {
 		return nil, err

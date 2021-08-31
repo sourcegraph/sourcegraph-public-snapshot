@@ -1,5 +1,5 @@
 export const defaultDurationValues = [
-    { value: 0, displayText: 'Forever' },
+    { value: null, displayText: 'Forever' },
     { value: 168, displayText: '1 week' }, // 168 hours
     { value: 672, displayText: '1 month' }, // 168 hours * 4
     { value: 2016, displayText: '3 months' }, // 168 hours * 4 * 3

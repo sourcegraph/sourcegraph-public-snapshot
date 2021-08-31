@@ -825,10 +825,10 @@ Stores data points for a code insight that do not need to be queried directly, b
  type                        | text    |           | not null | 
  pattern                     | text    |           | not null | 
  retention_enabled           | boolean |           | not null | 
- retention_duration_hours    | integer |           | not null | 
+ retention_duration_hours    | integer |           |          | 
  retain_intermediate_commits | boolean |           | not null | 
  indexing_enabled            | boolean |           | not null | 
- index_commit_max_age_hours  | integer |           | not null | 
+ index_commit_max_age_hours  | integer |           |          | 
  index_intermediate_commits  | boolean |           | not null | 
 Indexes:
     "lsif_configuration_policies_pkey" PRIMARY KEY, btree (id)
@@ -836,7 +836,7 @@ Indexes:
 
 ```
 
-**index_commit_max_age_hours**: The max age of commits indexed by this configuration policy.
+**index_commit_max_age_hours**: The max age of commits indexed by this configuration policy. If null, the age is unbounded.
 
 **index_intermediate_commits**: If the matching Git object is a branch, setting this value to true will also index all commits on the matching branches. Setting this value to false will only consider the tip of the branch.
 
@@ -848,7 +848,7 @@ Indexes:
 
 **retain_intermediate_commits**: If the matching Git object is a branch, setting this value to true will also retain all data used to resolve queries for any commit on the matching branches. Setting this value to false will only consider the tip of the branch.
 
-**retention_duration_hours**: The max age of data retained by this configuration policy.
+**retention_duration_hours**: The max age of data retained by this configuration policy. If null, the age is unbounded.
 
 **retention_enabled**: Whether or not this configuration policy affects data retention rules.
 

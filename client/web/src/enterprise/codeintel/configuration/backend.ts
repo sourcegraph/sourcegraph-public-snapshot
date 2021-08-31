@@ -112,10 +112,10 @@ export function updatePolicy(
                 $type: GitObjectType!
                 $pattern: String!
                 $retentionEnabled: Boolean!
-                $retentionDurationHours: Int!
+                $retentionDurationHours: Int
                 $retainIntermediateCommits: Boolean!
                 $indexingEnabled: Boolean!
-                $indexCommitMaxAgeHours: Int!
+                $indexCommitMaxAgeHours: Int
                 $indexIntermediateCommits: Boolean!
             ) {
                 updateCodeIntelligenceConfigurationPolicy(
@@ -153,10 +153,10 @@ export function updatePolicy(
             $type: GitObjectType!
             $pattern: String!
             $retentionEnabled: Boolean!
-            $retentionDurationHours: Int!
+            $retentionDurationHours: Int
             $retainIntermediateCommits: Boolean!
             $indexingEnabled: Boolean!
-            $indexCommitMaxAgeHours: Int!
+            $indexCommitMaxAgeHours: Int
             $indexIntermediateCommits: Boolean!
         ) {
             createCodeIntelligenceConfigurationPolicy(

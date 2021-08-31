@@ -48,10 +48,10 @@ const emptyPolicy: CodeIntelligenceConfigurationPolicyFields = {
     type: GitObjectType.GIT_COMMIT,
     pattern: '',
     retentionEnabled: false,
-    retentionDurationHours: 0,
+    retentionDurationHours: null,
     retainIntermediateCommits: false,
     indexingEnabled: false,
-    indexCommitMaxAgeHours: 0,
+    indexCommitMaxAgeHours: null,
     indexIntermediateCommits: false,
 }
 

@@ -14,7 +14,7 @@ export const RetentionPolicyDescription: FunctionComponent<{ policy: CodeIntelli
             <span>
                 Retain uploads used to resolve code intelligence queries for{' '}
                 <GitObjectTargetDescription policy={policy} />
-                {policy.retentionDurationHours !== 0 && (
+                {policy.retentionDurationHours && (
                     <> for at least {formatDurationValue(policy.retentionDurationHours)} after upload</>
                 )}
                 .

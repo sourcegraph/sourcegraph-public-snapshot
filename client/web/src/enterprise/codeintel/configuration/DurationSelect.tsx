@@ -6,7 +6,7 @@ export interface DurationSelectProps {
     id: string
     value: string
     disabled: boolean
-    onChange?: (value: number) => void
+    onChange?: (value: number | null) => void
     durationValues?: { value: number; displayText: string }[]
 }
 
@@ -22,12 +22,10 @@ export const DurationSelect: FunctionComponent<DurationSelectProps> = ({
         className="form-control"
         value={value}
         disabled={disabled}
-        onChange={event => onChange?.(Math.floor(parseInt(event.target.value, 10)))}
+        onChange={event => onChange?.(!event.target.value ? null : Math.floor(parseInt(event.target.value, 10)))}
     >
-        <option value="">Select duration</option>
-
         {durationValues.map(({ value, displayText }) => (
-            <option key={value} value={value}>
+            <option key={value} value={value || undefined}>
                 {displayText}
             </option>
         ))}

@@ -49,8 +49,8 @@ func (r *configurationPolicyResolver) RetentionEnabled() bool {
 	return r.configurationPolicy.RetentionEnabled
 }
 
-func (r *configurationPolicyResolver) RetentionDurationHours() int32 {
-	return int32(r.configurationPolicy.RetentionDuration / time.Hour)
+func (r *configurationPolicyResolver) RetentionDurationHours() *int32 {
+	return toHours(r.configurationPolicy.RetentionDuration)
 }
 
 func (r *configurationPolicyResolver) RetainIntermediateCommits() bool {
@@ -61,10 +61,19 @@ func (r *configurationPolicyResolver) IndexingEnabled() bool {
 	return r.configurationPolicy.IndexingEnabled
 }
 
-func (r *configurationPolicyResolver) IndexCommitMaxAgeHours() int32 {
-	return int32(r.configurationPolicy.IndexCommitMaxAge / time.Hour)
+func (r *configurationPolicyResolver) IndexCommitMaxAgeHours() *int32 {
+	return toHours(r.configurationPolicy.IndexCommitMaxAge)
 }
 
 func (r *configurationPolicyResolver) IndexIntermediateCommits() bool {
 	return r.configurationPolicy.IndexIntermediateCommits
+}
+
+func toHours(duration *time.Duration) *int32 {
+	if duration == nil {
+		return nil
+	}
+
+	v := int32(*duration / time.Hour)
+	return &v
 }

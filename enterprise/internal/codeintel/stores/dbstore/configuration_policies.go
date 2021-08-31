@@ -19,10 +19,10 @@ type ConfigurationPolicy struct {
 	Type                      string
 	Pattern                   string
 	RetentionEnabled          bool
-	RetentionDuration         time.Duration
+	RetentionDuration         *time.Duration
 	RetainIntermediateCommits bool
 	IndexingEnabled           bool
-	IndexCommitMaxAge         time.Duration
+	IndexCommitMaxAge         *time.Duration
 	IndexIntermediateCommits  bool
 }
 
@@ -36,7 +36,7 @@ func scanConfigurationPolicies(rows *sql.Rows, queryErr error) (_ []Configuratio
 	var configurationPolicies []ConfigurationPolicy
 	for rows.Next() {
 		var configurationPolicy ConfigurationPolicy
-		var retentionDurationHours, indexCommitMaxAgeHours int
+		var retentionDurationHours, indexCommitMaxAgeHours *int
 
 		if err := rows.Scan(
 			&configurationPolicy.ID,
@@ -54,8 +54,14 @@ func scanConfigurationPolicies(rows *sql.Rows, queryErr error) (_ []Configuratio
 			return nil, err
 		}
 
-		configurationPolicy.RetentionDuration = time.Duration(retentionDurationHours) * time.Hour
-		configurationPolicy.IndexCommitMaxAge = time.Duration(indexCommitMaxAgeHours) * time.Hour
+		if retentionDurationHours != nil {
+			duration := time.Duration(*retentionDurationHours) * time.Hour
+			configurationPolicy.RetentionDuration = &duration
+		}
+		if indexCommitMaxAgeHours != nil {
+			duration := time.Duration(*indexCommitMaxAgeHours) * time.Hour
+			configurationPolicy.IndexCommitMaxAge = &duration
+		}
 
 		configurationPolicies = append(configurationPolicies, configurationPolicy)
 	}
@@ -153,6 +159,18 @@ func (s *Store) CreateConfigurationPolicy(ctx context.Context, configurationPoli
 	ctx, endObservation := s.operations.createConfigurationPolicy.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
+	var retentionDurationHours *int
+	if configurationPolicy.RetentionDuration != nil {
+		duration := int(*configurationPolicy.RetentionDuration / time.Hour)
+		retentionDurationHours = &duration
+	}
+
+	var indexingCOmmitMaxAgeHours *int
+	if configurationPolicy.IndexCommitMaxAge != nil {
+		duration := int(*configurationPolicy.IndexCommitMaxAge / time.Hour)
+		indexingCOmmitMaxAgeHours = &duration
+	}
+
 	hydratedConfigurationPolicy, _, err := scanFirstConfigurationPolicy(s.Query(ctx, sqlf.Sprintf(
 		createConfigurationPolicyQuery,
 		configurationPolicy.RepositoryID,
@@ -160,10 +178,10 @@ func (s *Store) CreateConfigurationPolicy(ctx context.Context, configurationPoli
 		configurationPolicy.Type,
 		configurationPolicy.Pattern,
 		configurationPolicy.RetentionEnabled,
-		int(configurationPolicy.RetentionDuration/time.Hour),
+		retentionDurationHours,
 		configurationPolicy.RetainIntermediateCommits,
 		configurationPolicy.IndexingEnabled,
-		int(configurationPolicy.IndexCommitMaxAge/time.Hour),
+		indexingCOmmitMaxAgeHours,
 		configurationPolicy.IndexIntermediateCommits,
 	)))
 	if err != nil {
@@ -208,15 +226,27 @@ func (s *Store) UpdateConfigurationPolicy(ctx context.Context, policy Configurat
 	}})
 	defer endObservation(1, observation.Args{})
 
+	var retentionDuration *int
+	if policy.RetentionDuration != nil {
+		duration := int(*policy.RetentionDuration / time.Hour)
+		retentionDuration = &duration
+	}
+
+	var indexCommitMaxAge *int
+	if policy.IndexCommitMaxAge != nil {
+		duration := int(*policy.IndexCommitMaxAge / time.Hour)
+		indexCommitMaxAge = &duration
+	}
+
 	return s.Store.Exec(ctx, sqlf.Sprintf(updateConfigurationPolicyQuery,
 		policy.Name,
 		policy.Type,
 		policy.Pattern,
 		policy.RetentionEnabled,
-		int(policy.RetentionDuration/time.Hour),
+		retentionDuration,
 		policy.RetainIntermediateCommits,
 		policy.IndexingEnabled,
-		int(policy.IndexCommitMaxAge/time.Hour),
+		indexCommitMaxAge,
 		policy.IndexIntermediateCommits,
 		policy.ID,
 	))
