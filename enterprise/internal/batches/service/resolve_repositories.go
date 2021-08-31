@@ -25,6 +25,16 @@ import (
 	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
 )
 
+type RepoRevision struct {
+	Repo   *types.Repo
+	Branch string
+	Commit api.CommitID
+}
+
+func (r *RepoRevision) HasBranch() bool {
+	return r.Branch != ""
+}
+
 type ResolveRepositoriesForBatchSpecOpts struct {
 	AllowIgnored     bool
 	AllowUnsupported bool
@@ -93,7 +103,7 @@ func (wr *workspaceResolver) ResolveRepositoriesForBatchSpec(ctx context.Context
 		wg.Add(1)
 		go func(repo *RepoRevision) {
 			defer wg.Done()
-			ignore, err := wr.hasBatchIgnoreFile(ctx, repo)
+			ignore, err := hasBatchIgnoreFile(ctx, repo)
 			if err != nil {
 				errs = multierror.Append(errs, err)
 				return
@@ -126,8 +136,7 @@ func (wr *workspaceResolver) ResolveRepositoriesForBatchSpec(ctx context.Context
 var ErrMalformedOnQueryOrRepository = errors.New("malformed 'on' field; missing either a repository name or a query")
 
 func (wr *workspaceResolver) resolveRepositoriesOn(ctx context.Context, on *batcheslib.OnQueryOrRepository) (_ []*RepoRevision, err error) {
-	traceTitle := fmt.Sprintf("On: %+v", on)
-	tr, ctx := trace.New(ctx, "service.resolveRepositoriesOn", traceTitle)
+	tr, ctx := trace.New(ctx, "workspaceResolver.resolveRepositoriesOn", "")
 	defer func() {
 		tr.SetError(err)
 		tr.Finish()
@@ -155,8 +164,7 @@ func (wr *workspaceResolver) resolveRepositoriesOn(ctx context.Context, on *batc
 }
 
 func (wr *workspaceResolver) resolveRepositoryName(ctx context.Context, name string) (_ *RepoRevision, err error) {
-	traceTitle := fmt.Sprintf("Name: %q", name)
-	tr, ctx := trace.New(ctx, "service.resolveRepositoryName", traceTitle)
+	tr, ctx := trace.New(ctx, "workspaceResolver.resolveRepositoryName", "")
 	defer func() {
 		tr.SetError(err)
 		tr.Finish()
@@ -167,28 +175,11 @@ func (wr *workspaceResolver) resolveRepositoryName(ctx context.Context, name str
 		return nil, err
 	}
 
-	return wr.repoToRepoRevision(ctx, repo)
-}
-
-func (wr *workspaceResolver) repoToRepoRevision(ctx context.Context, repo *types.Repo) (_ *RepoRevision, err error) {
-	traceTitle := fmt.Sprintf("Repo: %q", repo.Name)
-	tr, ctx := trace.New(ctx, "service.resolveRepositoriesOn", traceTitle)
-	defer func() {
-		tr.SetError(err)
-		tr.Finish()
-	}()
-
-	repoRev := &RepoRevision{
-		Repo: repo,
-	}
-
-	repoRev.Branch, repoRev.Commit, err = git.GetDefaultBranch(ctx, repo.Name)
-	return repoRev, err
+	return repoToRepoRevision(ctx, repo)
 }
 
 func (wr *workspaceResolver) resolveRepositoryNameAndBranch(ctx context.Context, name, branch string) (_ *RepoRevision, err error) {
-	traceTitle := fmt.Sprintf("Name: %q Branch: %q", name, branch)
-	tr, ctx := trace.New(ctx, "service.resolveRepositoryNameAndBranch", traceTitle)
+	tr, ctx := trace.New(ctx, "workspaceResolver.resolveRepositoryNameAndBranch", "")
 	defer func() {
 		tr.SetError(err)
 		tr.Finish()
@@ -214,8 +205,7 @@ func (wr *workspaceResolver) resolveRepositoryNameAndBranch(ctx context.Context,
 }
 
 func (wr *workspaceResolver) resolveRepositoriesMatchingQuery(ctx context.Context, query string) (_ []*RepoRevision, err error) {
-	traceTitle := fmt.Sprintf("Query: %q", query)
-	tr, ctx := trace.New(ctx, "service.resolveRepositorySearch", traceTitle)
+	tr, ctx := trace.New(ctx, "workspaceResolver.resolveRepositorySearch", "")
 	defer func() {
 		tr.SetError(err)
 		tr.Finish()
@@ -249,7 +239,7 @@ func (wr *workspaceResolver) resolveRepositoriesMatchingQuery(ctx context.Contex
 
 	revs := make([]*RepoRevision, 0, len(accessibleRepos))
 	for _, repo := range accessibleRepos {
-		rev, err := wr.repoToRepoRevision(ctx, repo)
+		rev, err := repoToRepoRevision(ctx, repo)
 		if err != nil {
 			return nil, err
 		}
@@ -259,7 +249,7 @@ func (wr *workspaceResolver) resolveRepositoriesMatchingQuery(ctx context.Contex
 	return revs, nil
 }
 
-const userAgent = "Batch Changes repository resolver"
+const internalSearchClientUserAgent = "Batch Changes repository resolver"
 
 func (wr *workspaceResolver) runSearch(ctx context.Context, query string, onMatches func(matches []streamhttp.EventMatch)) (err error) {
 	req, err := streamhttp.NewRequest(wr.frontendInternalURL, query)
@@ -271,7 +261,7 @@ func (wr *workspaceResolver) runSearch(ctx context.Context, query string, onMatc
 	// We don't set an auth token here and don't authenticate on the users
 	// behalf in any way, because we will fetch the repositories from the
 	// database later and check for repository permissions that way.
-	req.Header.Set("User-Agent", userAgent)
+	req.Header.Set("User-Agent", internalSearchClientUserAgent)
 
 	resp, err := httpcli.InternalClient.Do(req)
 	if err != nil {
@@ -293,9 +283,24 @@ func (wr *workspaceResolver) runSearch(ctx context.Context, query string, onMatc
 	return dec.ReadAll(resp.Body)
 }
 
-func (wr *workspaceResolver) hasBatchIgnoreFile(ctx context.Context, r *RepoRevision) (_ bool, err error) {
-	traceTitle := fmt.Sprintf("Repo: %q Revision: %q", r.Repo.Name, r.Branch)
-	tr, ctx := trace.New(ctx, "service.hasBatchIgnoreFile", traceTitle)
+func repoToRepoRevision(ctx context.Context, repo *types.Repo) (_ *RepoRevision, err error) {
+	tr, ctx := trace.New(ctx, "repoToRepoRevision", "")
+	defer func() {
+		tr.SetError(err)
+		tr.Finish()
+	}()
+
+	repoRev := &RepoRevision{
+		Repo: repo,
+	}
+
+	repoRev.Branch, repoRev.Commit, err = git.GetDefaultBranch(ctx, repo.Name)
+	return repoRev, err
+}
+
+func hasBatchIgnoreFile(ctx context.Context, r *RepoRevision) (_ bool, err error) {
+	traceTitle := fmt.Sprintf("RepoID: %q", r.Repo.ID)
+	tr, ctx := trace.New(ctx, "hasBatchIgnoreFile", traceTitle)
 	defer func() {
 		tr.SetError(err)
 		tr.Finish()
@@ -313,16 +318,6 @@ func (wr *workspaceResolver) hasBatchIgnoreFile(ctx context.Context, r *RepoRevi
 		return false, errors.Errorf("not a blob: %q", path)
 	}
 	return true, nil
-}
-
-type RepoRevision struct {
-	Repo   *types.Repo
-	Branch string
-	Commit api.CommitID
-}
-
-func (r *RepoRevision) HasBranch() bool {
-	return r.Branch != ""
 }
 
 var defaultQueryCountRegex = regexp.MustCompile(`\bcount:(\d+|all)\b`)

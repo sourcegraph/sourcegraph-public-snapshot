@@ -20,7 +20,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/encryption"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
@@ -30,7 +29,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/usagestats"
-	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
 )
 
@@ -1510,6 +1508,15 @@ func (r *Resolver) ResolveRepositoriesForBatchSpec(ctx context.Context, args *gr
 		tr.Finish()
 	}()
 
+	if err := enterprise.BatchChangesEnabledForUser(ctx, r.store.DB()); err != nil {
+		return nil, err
+	}
+
+	// 🚨 SECURITY: Check that the requesting user is admin.
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.store.DB()); err != nil {
+		return nil, err
+	}
+
 	spec, err := batcheslib.ParseBatchSpec([]byte(args.BatchSpec), batcheslib.ParseBatchSpecOptions{
 		AllowArrayEnvironments: true,
 		AllowTransformChanges:  true,
@@ -1529,21 +1536,9 @@ func (r *Resolver) ResolveRepositoriesForBatchSpec(ctx context.Context, args *gr
 
 	resolvers := make([]graphqlbackend.BatchSpecMatchingRepositoryResolver, 0, len(results))
 	for _, node := range results {
-		resolvers = append(resolvers, &batchSpecMatchingRepositoryResolver{node})
+		resolvers = append(resolvers, &batchSpecMatchingRepositoryResolver{node: node, store: r.store})
 	}
 	return resolvers, nil
-}
-
-type batchSpecMatchingRepositoryResolver struct {
-	node *service.RepoRevision
-}
-
-func (r *batchSpecMatchingRepositoryResolver) Repository(ctx context.Context) (*graphqlbackend.RepositoryResolver, error) {
-	return graphqlbackend.NewRepositoryResolver(dbconn.Global, r.node.Repo), nil
-}
-
-func (r *batchSpecMatchingRepositoryResolver) Path() string {
-	return git.AbbreviateRef(r.node.Branch)
 }
 
 func parseBatchChangeState(s *string) (btypes.BatchChangeState, error) {
