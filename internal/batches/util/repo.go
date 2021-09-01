@@ -1,8 +1,8 @@
 package util
 
 import (
+	"github.com/sourcegraph/sourcegraph/lib/batches/template"
 	"github.com/sourcegraph/src-cli/internal/batches/graphql"
-	"github.com/sourcegraph/src-cli/internal/batches/template"
 )
 
 // GraphQLRepoToTemplatingRepo transforms a given *graphql.Repository into a
