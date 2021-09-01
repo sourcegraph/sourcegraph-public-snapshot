@@ -6,7 +6,7 @@ import type MonacoWebpackPlugin from 'monaco-editor-webpack-plugin'
 export const MONACO_LANGUAGES_AND_FEATURES: Required<
     Pick<NonNullable<ConstructorParameters<typeof MonacoWebpackPlugin>[0]>, 'languages' | 'features'>
 > = {
-    languages: ['json'],
+    languages: ['json', 'yaml'],
     features: [
         'bracketMatching',
         'clipboard',
