@@ -55,7 +55,7 @@ export const SearchResult: React.FunctionComponent<Props> = ({ result, icon, isL
             return (
                 <div>
                     <div className="search-result-match p-2 flex-column">
-                        {result.repoLastFetched && LastSyncedIcon({ lastSyncedTime: result.repoLastFetched })}
+                        {result.repoLastFetched && <LastSyncedIcon lastSyncedTime={result.repoLastFetched}/>}
                         <div className="d-flex align-items-center flex-row">
                             <div className="search-result__match-type">
                                 <small>Repository match</small>

@@ -14,6 +14,7 @@ import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { highlightNode } from '@sourcegraph/shared/src/util/dom'
 
 import { highlightCode } from '../search/backend'
+import styles from './CommitSearchResultMatch.module.scss'
 
 interface CommitSearchResultMatchProps extends ThemeProps {
     item: CommitMatch
@@ -151,7 +152,7 @@ export class CommitSearchResultMatch extends React.Component<
                 partialVisibility={true}
                 offset={this.visibilitySensorOffset}
             >
-                <div className="commit-search-result-match">
+                <div className={styles.commitSearchResultMatch}>
                     {this.props.item.repoLastFetched &&
                         LastSyncedIcon({ lastSyncedTime: this.props.item.repoLastFetched })}
                     {this.state.HTML !== undefined ? (
