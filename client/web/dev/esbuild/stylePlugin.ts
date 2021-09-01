@@ -52,11 +52,10 @@ export const stylePlugin: esbuild.Plugin = {
             const outputPath = isSCSS ? inputPath.replace(/\.scss$/, '.css') : inputPath
 
             const isCSSModule = outputPath.endsWith('.module.css')
-            const result = await postcss({
-                ...postcssConfig,
+            const result = await postcss(
                 // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-                plugins: isCSSModule ? [...postcssConfig.plugins, modulesPlugin] : postcssConfig.plugins,
-            }).process(css, {
+                isCSSModule ? [...postcssConfig.plugins, modulesPlugin] : postcssConfig.plugins
+            ).process(css, {
                 from: outputPath,
             })
             return {
