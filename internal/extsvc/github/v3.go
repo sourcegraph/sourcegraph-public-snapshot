@@ -380,7 +380,7 @@ func (c *V3Client) GetAuthenticatedUserOAuthScopes(ctx context.Context) ([]strin
 	return strings.Split(scope, ", "), nil
 }
 
-// GetAuthenticatedUserOAuthScopes gets the list of OAuth scopes granted to the token in use.
+// GetAuthenticatedOAuthScopes gets the list of OAuth scopes granted to the token in use.
 func (c *V3Client) GetAuthenticatedOAuthScopes(ctx context.Context) ([]string, error) {
 	// We only care about headers
 	var dest struct{}
