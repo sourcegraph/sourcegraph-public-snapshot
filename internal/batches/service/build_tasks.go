@@ -11,7 +11,7 @@ import (
 )
 
 // buildTasks returns tasks for all the workspaces determined for the given spec.
-func buildTasks(ctx context.Context, spec *batcheslib.BatchSpec, repos []*graphql.Repository, workspaces []RepoWorkspaces) ([]*executor.Task, error) {
+func buildTasks(ctx context.Context, spec *batcheslib.BatchSpec, repos []*graphql.Repository, workspaces []RepoWorkspace) ([]*executor.Task, error) {
 	repoByID := make(map[string]*graphql.Repository)
 	for _, repo := range repos {
 		repoByID[repo.ID] = repo
@@ -23,19 +23,13 @@ func buildTasks(ctx context.Context, spec *batcheslib.BatchSpec, repos []*graphq
 		if !ok {
 			return nil, errors.New("invalid state, didn't find repo for workspace definition")
 		}
-		for _, path := range ws.Paths {
-			fetchWorkspace := ws.OnlyFetchWorkspace
-			if path == "" {
-				fetchWorkspace = false
-			}
-			t, ok, err := buildTask(spec, repo, path, fetchWorkspace)
-			if err != nil {
-				return nil, err
-			}
+		t, ok, err := buildTask(spec, repo, ws.Path, ws.OnlyFetchWorkspace)
+		if err != nil {
+			return nil, err
+		}
 
-			if ok {
-				tasks = append(tasks, t)
-			}
+		if ok {
+			tasks = append(tasks, t)
 		}
 	}
 

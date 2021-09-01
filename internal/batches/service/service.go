@@ -182,11 +182,11 @@ func (svc *Service) EnsureImage(ctx context.Context, name string) (docker.Image,
 	return img, nil
 }
 
-func (svc *Service) DetermineWorkspaces(ctx context.Context, repos []*graphql.Repository, spec *batcheslib.BatchSpec) ([]RepoWorkspaces, error) {
+func (svc *Service) DetermineWorkspaces(ctx context.Context, repos []*graphql.Repository, spec *batcheslib.BatchSpec) ([]RepoWorkspace, error) {
 	return findWorkspaces(ctx, spec, svc, repos)
 }
 
-func (svc *Service) BuildTasks(ctx context.Context, repos []*graphql.Repository, spec *batcheslib.BatchSpec, workspaces []RepoWorkspaces) ([]*executor.Task, error) {
+func (svc *Service) BuildTasks(ctx context.Context, repos []*graphql.Repository, spec *batcheslib.BatchSpec, workspaces []RepoWorkspace) ([]*executor.Task, error) {
 	return buildTasks(ctx, spec, repos, workspaces)
 }
 

@@ -10,9 +10,9 @@ import (
 	"github.com/sourcegraph/src-cli/internal/batches/graphql"
 )
 
-type RepoWorkspaces struct {
+type RepoWorkspace struct {
 	RepoID             string
-	Paths              []string
+	Path               string
 	OnlyFetchWorkspace bool
 }
 
@@ -30,7 +30,7 @@ func findWorkspaces(
 	spec *batcheslib.BatchSpec,
 	finder directoryFinder,
 	repos []*graphql.Repository,
-) ([]RepoWorkspaces, error) {
+) ([]RepoWorkspace, error) {
 	// Pre-compile all globs.
 	workspaceMatchers := make(map[batcheslib.WorkspaceConfiguration]glob.Glob)
 	for _, conf := range spec.Workspaces {
@@ -69,7 +69,12 @@ func findWorkspaces(
 		}
 	}
 
-	workspacesByID := map[string]RepoWorkspaces{}
+	type repoWorkspaces struct {
+		RepoID             string
+		Paths              []string
+		OnlyFetchWorkspace bool
+	}
+	workspacesByID := map[string]repoWorkspaces{}
 	for idx, repos := range matched {
 		conf := spec.Workspaces[idx]
 		repoDirs, err := finder.FindDirectoriesInRepos(ctx, conf.RootAtLocationOf, repos...)
@@ -82,7 +87,7 @@ func findWorkspaces(
 			if len(dirs) == 0 {
 				continue
 			}
-			workspacesByID[repo.ID] = RepoWorkspaces{
+			workspacesByID[repo.ID] = repoWorkspaces{
 				RepoID:             repo.ID,
 				Paths:              dirs,
 				OnlyFetchWorkspace: conf.OnlyFetchWorkspace,
@@ -94,7 +99,7 @@ func findWorkspaces(
 	for _, repo := range root {
 		conf, ok := workspacesByID[repo.ID]
 		if !ok {
-			workspacesByID[repo.ID] = RepoWorkspaces{
+			workspacesByID[repo.ID] = repoWorkspaces{
 				RepoID:             repo.ID,
 				Paths:              []string{""},
 				OnlyFetchWorkspace: false,
@@ -104,9 +109,20 @@ func findWorkspaces(
 		conf.Paths = append(workspacesByID[repo.ID].Paths, "")
 	}
 
-	workspaces := make([]RepoWorkspaces, 0, len(workspacesByID))
+	workspaces := make([]RepoWorkspace, 0, len(workspacesByID))
 	for _, workspace := range workspacesByID {
-		workspaces = append(workspaces, workspace)
+		for _, path := range workspace.Paths {
+			fetchWorkspace := workspace.OnlyFetchWorkspace
+			if path == "" {
+				fetchWorkspace = false
+			}
+
+			workspaces = append(workspaces, RepoWorkspace{
+				RepoID:             workspace.RepoID,
+				Path:               path,
+				OnlyFetchWorkspace: fetchWorkspace,
+			})
+		}
 	}
 	return workspaces, nil
 }

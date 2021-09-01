@@ -10,7 +10,7 @@ import (
 	"github.com/sourcegraph/src-cli/internal/batches/graphql"
 )
 
-func TestTaskBuilder_BuildAll_Workspaces(t *testing.T) {
+func TestFindWorkspaces(t *testing.T) {
 	repos := []*graphql.Repository{
 		{ID: "repo-id-0", Name: "github.com/sourcegraph/automation-testing"},
 		{ID: "repo-id-1", Name: "github.com/sourcegraph/sourcegraph"},
@@ -24,16 +24,16 @@ func TestTaskBuilder_BuildAll_Workspaces(t *testing.T) {
 		spec          *batcheslib.BatchSpec
 		finderResults map[*graphql.Repository][]string
 
-		// tasks per repository ID and in which path they are executed
-		wantTasks []RepoWorkspaces
+		// workspaces in which repo/path they are executed
+		wantWorkspaces []RepoWorkspace
 	}{
 		"no workspace configuration": {
 			spec:          &batcheslib.BatchSpec{Steps: steps},
 			finderResults: finderResults{},
-			wantTasks: []RepoWorkspaces{
-				{RepoID: repos[0].ID, Paths: []string{""}},
-				{RepoID: repos[1].ID, Paths: []string{""}},
-				{RepoID: repos[2].ID, Paths: []string{""}},
+			wantWorkspaces: []RepoWorkspace{
+				{RepoID: repos[0].ID, Path: ""},
+				{RepoID: repos[1].ID, Path: ""},
+				{RepoID: repos[2].ID, Path: ""},
 			},
 		},
 
@@ -45,10 +45,10 @@ func TestTaskBuilder_BuildAll_Workspaces(t *testing.T) {
 				},
 			},
 			finderResults: finderResults{},
-			wantTasks: []RepoWorkspaces{
-				{RepoID: repos[0].ID, Paths: []string{""}},
-				{RepoID: repos[1].ID, Paths: []string{""}},
-				{RepoID: repos[2].ID, Paths: []string{""}},
+			wantWorkspaces: []RepoWorkspace{
+				{RepoID: repos[0].ID, Path: ""},
+				{RepoID: repos[1].ID, Path: ""},
+				{RepoID: repos[2].ID, Path: ""},
 			},
 		},
 
@@ -63,8 +63,8 @@ func TestTaskBuilder_BuildAll_Workspaces(t *testing.T) {
 				repos[0]: []string{},
 				repos[2]: []string{},
 			},
-			wantTasks: []RepoWorkspaces{
-				{RepoID: repos[1].ID, Paths: []string{""}},
+			wantWorkspaces: []RepoWorkspace{
+				{RepoID: repos[1].ID, Path: ""},
 			},
 		},
 
@@ -79,10 +79,14 @@ func TestTaskBuilder_BuildAll_Workspaces(t *testing.T) {
 				repos[0]: {"a/b", "a/b/c", "d/e/f"},
 				repos[2]: {"a/b", "a/b/c", "d/e/f"},
 			},
-			wantTasks: []RepoWorkspaces{
-				{RepoID: repos[0].ID, Paths: []string{"a/b", "a/b/c", "d/e/f"}},
-				{RepoID: repos[1].ID, Paths: []string{""}},
-				{RepoID: repos[2].ID, Paths: []string{"a/b", "a/b/c", "d/e/f"}},
+			wantWorkspaces: []RepoWorkspace{
+				{RepoID: repos[0].ID, Path: "a/b"},
+				{RepoID: repos[0].ID, Path: "a/b/c"},
+				{RepoID: repos[0].ID, Path: "d/e/f"},
+				{RepoID: repos[1].ID, Path: ""},
+				{RepoID: repos[2].ID, Path: "a/b"},
+				{RepoID: repos[2].ID, Path: "a/b/c"},
+				{RepoID: repos[2].ID, Path: "d/e/f"},
 			},
 		},
 
@@ -101,10 +105,14 @@ func TestTaskBuilder_BuildAll_Workspaces(t *testing.T) {
 				repos[0]: {"a/b", "a/b/c", "d/e/f"},
 				repos[2]: {"a/b", "a/b/c", "d/e/f"},
 			},
-			wantTasks: []RepoWorkspaces{
-				{RepoID: repos[0].ID, Paths: []string{"a/b", "a/b/c", "d/e/f"}, OnlyFetchWorkspace: true},
-				{RepoID: repos[1].ID, Paths: []string{""}},
-				{RepoID: repos[2].ID, Paths: []string{"a/b", "a/b/c", "d/e/f"}, OnlyFetchWorkspace: true},
+			wantWorkspaces: []RepoWorkspace{
+				{RepoID: repos[0].ID, Path: "a/b", OnlyFetchWorkspace: true},
+				{RepoID: repos[0].ID, Path: "a/b/c", OnlyFetchWorkspace: true},
+				{RepoID: repos[0].ID, Path: "d/e/f", OnlyFetchWorkspace: true},
+				{RepoID: repos[1].ID, Path: ""},
+				{RepoID: repos[2].ID, Path: "a/b", OnlyFetchWorkspace: true},
+				{RepoID: repos[2].ID, Path: "a/b/c", OnlyFetchWorkspace: true},
+				{RepoID: repos[2].ID, Path: "d/e/f", OnlyFetchWorkspace: true},
 			},
 		},
 	}
@@ -117,13 +125,14 @@ func TestTaskBuilder_BuildAll_Workspaces(t *testing.T) {
 				t.Fatalf("unexpected err: %s", err)
 			}
 
-			sort.Slice(workspaces, func(i, j int) bool { return workspaces[i].RepoID < workspaces[j].RepoID })
+			sort.Slice(workspaces, func(i, j int) bool {
+				if workspaces[i].RepoID == workspaces[j].RepoID {
+					return workspaces[i].Path < workspaces[j].Path
+				}
+				return workspaces[i].RepoID < workspaces[j].RepoID
+			})
 
-			for _, workspace := range workspaces {
-				sort.Slice(workspace.Paths, func(i, j int) bool { return workspace.Paths[i] < workspace.Paths[j] })
-			}
-
-			if diff := cmp.Diff(tt.wantTasks, workspaces); diff != "" {
+			if diff := cmp.Diff(tt.wantWorkspaces, workspaces); diff != "" {
 				t.Errorf("mismatch (-want +got):\n%s", diff)
 			}
 		})
