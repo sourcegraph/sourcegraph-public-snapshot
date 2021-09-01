@@ -208,7 +208,7 @@ var refPrefixes = map[string]RefType{
 
 // RefDescriptions returns a map from commits to descriptions of the tip of each
 // branch and tag of the given repository.
-func (c *Client) RefDescriptions(ctx context.Context, repositoryID int) (_ map[string]RefDescription, err error) {
+func (c *Client) RefDescriptions(ctx context.Context, repositoryID int) (_ map[string][]RefDescription, err error) {
 	ctx, endObservation := c.operations.refDescriptions.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("repositoryID", repositoryID),
 	}})
@@ -235,8 +235,8 @@ func (c *Client) RefDescriptions(ctx context.Context, repositoryID int) (_ map[s
 // - %(refname) is the name of the tag or branch (prefixed with refs/heads/ or ref/tags/)
 // - %(HEAD) is `*` if the branch is the default branch (and whitesace otherwise)
 // - %(creatordate) is the ISO-formatted date the object was created
-func parseRefDescriptions(lines []string) (map[string]RefDescription, error) {
-	refDescriptions := make(map[string]RefDescription, len(lines))
+func parseRefDescriptions(lines []string) (map[string][]RefDescription, error) {
+	refDescriptions := make(map[string][]RefDescription, len(lines))
 	for _, line := range lines {
 		line = strings.TrimSpace(line)
 		if line == "" {
@@ -269,12 +269,12 @@ func parseRefDescriptions(lines []string) (map[string]RefDescription, error) {
 			return nil, errors.Errorf(`unexpected output from git for-each-ref (bad date format) "%s"`, line)
 		}
 
-		refDescriptions[commit] = RefDescription{
+		refDescriptions[commit] = append(refDescriptions[commit], RefDescription{
 			Name:            name,
 			Type:            refType,
 			IsDefaultBranch: isDefaultBranch,
 			CreatedDate:     createdDate,
-		}
+		})
 	}
 
 	return refDescriptions, nil
