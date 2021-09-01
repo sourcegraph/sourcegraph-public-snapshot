@@ -380,6 +380,21 @@ func (c *V3Client) GetAuthenticatedUserOAuthScopes(ctx context.Context) ([]strin
 	return strings.Split(scope, ", "), nil
 }
 
+// GetAuthenticatedUserOAuthScopes gets the list of OAuth scopes granted to the token in use.
+func (c *V3Client) GetAuthenticatedOAuthScopes(ctx context.Context) ([]string, error) {
+	// We only care about headers
+	var dest struct{}
+	header, err := c.requestGetWithHeader(ctx, "/", &dest)
+	if err != nil {
+		return nil, err
+	}
+	scope := header.Get("x-oauth-scopes")
+	if scope == "" {
+		return []string{}, nil
+	}
+	return strings.Split(scope, ", "), nil
+}
+
 // ListRepositoryCollaborators lists GitHub users that has access to the repository.
 //
 // The page is the page of results to return, and is 1-indexed (so the first call should
