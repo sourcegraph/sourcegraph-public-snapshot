@@ -121,17 +121,12 @@ func searchResultsStatsLanguages(ctx context.Context, matches []result.Match) ([
 				defer run.Release()
 
 				repoName := repoMatch.RepoName()
-				refName, err := getDefaultBranchForRepo(ctx, repoName.Name)
+				_, oid, err := git.GetDefaultBranch(ctx, repoName.Name)
 				if err != nil {
 					run.Error(err)
 					return
 				}
-				oid, _, err := git.GetObject(ctx, repoName.Name, refName)
-				if err != nil {
-					run.Error(err)
-					return
-				}
-				inv, err := backend.Repos.GetInventory(ctx, repoName.ToRepo(), api.CommitID(oid.String()), true)
+				inv, err := backend.Repos.GetInventory(ctx, repoName.ToRepo(), oid, true)
 				if err != nil {
 					run.Error(err)
 					return

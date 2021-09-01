@@ -404,10 +404,11 @@ func fromFileMatch(fm *result.FileMatch, repoCache map[api.RepoID]*types.Searche
 
 func fromPathMatch(fm *result.FileMatch, repoCache map[api.RepoID]*types.SearchedRepo) *streamhttp.EventPathMatch {
 	pathEvent := &streamhttp.EventPathMatch{
-		Type:       streamhttp.PathMatchType,
-		Path:       fm.Path,
-		Repository: string(fm.Repo.Name),
-		Version:    string(fm.CommitID),
+		Type:         streamhttp.PathMatchType,
+		Path:         fm.Path,
+		Repository:   string(fm.Repo.Name),
+		RepositoryID: int32(fm.Repo.ID),
+		Version:      string(fm.CommitID),
 	}
 
 	if r, ok := repoCache[fm.Repo.ID]; ok {
@@ -433,11 +434,12 @@ func fromContentMatch(fm *result.FileMatch, repoCache map[api.RepoID]*types.Sear
 	}
 
 	contentEvent := &streamhttp.EventContentMatch{
-		Type:        streamhttp.ContentMatchType,
-		Path:        fm.Path,
-		Repository:  string(fm.Repo.Name),
-		Version:     string(fm.CommitID),
-		LineMatches: lineMatches,
+		Type:         streamhttp.ContentMatchType,
+		Path:         fm.Path,
+		RepositoryID: int32(fm.Repo.ID),
+		Repository:   string(fm.Repo.Name),
+		Version:      string(fm.CommitID),
+		LineMatches:  lineMatches,
 	}
 
 	if fm.InputRev != nil {
@@ -470,11 +472,12 @@ func fromSymbolMatch(fm *result.FileMatch, repoCache map[api.RepoID]*types.Searc
 	}
 
 	symbolMatch := &streamhttp.EventSymbolMatch{
-		Type:       streamhttp.SymbolMatchType,
-		Path:       fm.Path,
-		Repository: string(fm.Repo.Name),
-		Version:    string(fm.CommitID),
-		Symbols:    symbols,
+		Type:         streamhttp.SymbolMatchType,
+		Path:         fm.Path,
+		Repository:   string(fm.Repo.Name),
+		RepositoryID: int32(fm.Repo.ID),
+		Version:      string(fm.CommitID),
+		Symbols:      symbols,
 	}
 
 	if r, ok := repoCache[fm.Repo.ID]; ok {
@@ -496,9 +499,10 @@ func fromRepository(rm *result.RepoMatch, repoCache map[api.RepoID]*types.Search
 	}
 
 	repoEvent := &streamhttp.EventRepoMatch{
-		Type:       streamhttp.RepoMatchType,
-		Repository: string(rm.Name),
-		Branches:   branches,
+		Type:         streamhttp.RepoMatchType,
+		RepositoryID: int32(rm.ID),
+		Repository:   string(rm.Name),
+		Branches:     branches,
 	}
 
 	if r, ok := repoCache[rm.ID]; ok {

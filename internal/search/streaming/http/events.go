@@ -20,6 +20,7 @@ type EventContentMatch struct {
 	Type MatchType `json:"type"`
 
 	Path            string     `json:"name"`
+	RepositoryID    int32      `json:"repositoryID"`
 	Repository      string     `json:"repository"`
 	RepoStars       int        `json:"repoStars,omitempty"`
 	RepoLastFetched *time.Time `json:"repoLastFetched,omitempty"`
@@ -40,6 +41,7 @@ type EventPathMatch struct {
 	Type MatchType `json:"type"`
 
 	Path            string     `json:"name"`
+	RepositoryID    int32      `json:"repositoryID"`
 	Repository      string     `json:"repository"`
 	RepoStars       int        `json:"repoStars,omitempty"`
 	RepoLastFetched *time.Time `json:"repoLastFetched,omitempty"`
@@ -61,6 +63,7 @@ type EventRepoMatch struct {
 	// Type is always RepoMatchType. Included here for marshalling.
 	Type MatchType `json:"type"`
 
+	RepositoryID    int32      `json:"repositoryID"`
 	Repository      string     `json:"repository"`
 	Branches        []string   `json:"branches,omitempty"`
 	RepoStars       int        `json:"repoStars,omitempty"`
@@ -79,6 +82,7 @@ type EventSymbolMatch struct {
 	Type MatchType `json:"type"`
 
 	Path            string     `json:"name"`
+	RepositoryID    int32      `json:"repositoryID"`
 	Repository      string     `json:"repository"`
 	RepoStars       int        `json:"repoStars,omitempty"`
 	RepoLastFetched *time.Time `json:"repoLastFetched,omitempty"`
