@@ -15,11 +15,7 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Added
 
-- The required authentication scopes required to enable caching behaviour for GitHub repository permissions can now be requested via `allowGroupsPermissionsSync` in GitHub `auth.providers`. [#24328](https://github.com/sourcegraph/sourcegraph/pull/24328)
-
 ### Changed
-
-- Caching behaviour for GitHub repository permissions enabled via the `authorization.groupsCacheTTL` field in the code host config can now leverage additional caching of team and organization permissions for repository permissions syncing (on top of the caching for user permissions syncing introduced in 3.31). [#24328](https://github.com/sourcegraph/sourcegraph/pull/24328)
 
 ### Fixed
 
@@ -28,6 +24,16 @@ All notable changes to Sourcegraph are documented in this file.
 ### Removed
 
 -
+
+## 3.31.1
+
+### Added
+
+- The required authentication scopes required to enable caching behaviour for GitHub repository permissions can now be requested via `allowGroupsPermissionsSync` in GitHub `auth.providers`. [#24328](https://github.com/sourcegraph/sourcegraph/pull/24328)
+
+### Changed
+
+- Caching behaviour for GitHub repository permissions enabled via the `authorization.groupsCacheTTL` field in the code host config can now leverage additional caching of team and organization permissions for repository permissions syncing (on top of the caching for user permissions syncing introduced in 3.31). [#24328](https://github.com/sourcegraph/sourcegraph/pull/24328)
 
 ## 3.31.0
 
