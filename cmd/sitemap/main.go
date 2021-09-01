@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/cockroachdb/errors"
@@ -146,7 +147,7 @@ func (g *generator) generate(ctx context.Context) error {
 	// Fetch all documentation pages.
 	queried = 0
 	unexpectedMissingPages := 0
-	var docsSubPages []string
+	var docsSubPagesByRepo [][2]string
 	for repoName, pagePathIDs := range pagesByRepo {
 		for _, pathID := range pagePathIDs {
 			page, err := g.fetchDocPage(ctx, gqlDocPageVars{RepoName: repoName, PathID: pathID})
@@ -169,7 +170,7 @@ func (g *generator) generate(ctx context.Context) error {
 				goodDetail := len(node.Detail.String()) > 100
 				goodTags := !nodeIsExcluded(node, protocol.TagPrivate)
 				if goodDetail && goodTags {
-					docsSubPages = append(docsSubPages, repoName+"/-/docs/"+node.PathID)
+					docsSubPagesByRepo = append(docsSubPagesByRepo, [2]string{repoName, node.PathID})
 				}
 
 				for _, child := range node.Children {
@@ -180,6 +181,69 @@ func (g *generator) generate(ctx context.Context) error {
 			}
 			walk(page)
 		}
+	}
+
+	var (
+		mu           sync.Mutex
+		docsSubPages []string
+	)
+	queried = 0
+	workers := 100
+	index := 0
+	for i := 0; i < workers; i++ {
+		go func() {
+			for {
+				mu.Lock()
+				if index >= len(docsSubPagesByRepo) {
+					mu.Unlock()
+					return
+				}
+				pair := docsSubPagesByRepo[index]
+				repoName, pathID := pair[0], pair[1]
+				index++
+
+				if time.Since(lastUpdate) >= g.progressUpdates {
+					lastUpdate = time.Now()
+					log15.Info("progress: got API docs usage examples", "n", index, "of", len(docsSubPagesByRepo))
+				}
+				mu.Unlock()
+
+				references, err := g.fetchDocReferences(ctx, gqlDocReferencesVars{
+					RepoName: repoName,
+					PathID:   pathID,
+					First:    intPtr(3),
+				})
+				if err != nil {
+					log15.Error("unexpected: error getting references", "repo", repoName, "pathID", pathID, "error", err)
+				} else {
+					refs := references.Data.Repository.Commit.Tree.LSIF.DocumentationReferences.Nodes
+					if len(refs) >= 1 {
+						externalReferences := 0
+						for _, ref := range refs {
+							if ref.Resource.Repository.Name != repoName {
+								externalReferences++
+							}
+						}
+						// TODO(apidocs): it would be great if more repos had external usage examples. In practice though, less than 2%
+						// do today. This is because we haven't indexed many repos yet.
+						//if externalReferences > 0 {
+						mu.Lock()
+						docsSubPages = append(docsSubPages, repoName+"/-/docs"+pathID)
+						mu.Unlock()
+						//}
+					}
+				}
+			}
+		}()
+	}
+	for {
+		time.Sleep(1 * time.Second)
+		mu.Lock()
+		if index >= len(docsSubPagesByRepo) {
+			mu.Unlock()
+			break
+		}
+		mu.Unlock()
 	}
 
 	log15.Info("found Go API docs pages", "count", totalPages)
