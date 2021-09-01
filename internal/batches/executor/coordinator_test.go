@@ -11,7 +11,7 @@ import (
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/sourcegraph/batch-change-utils/overridable"
 	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
-	"github.com/sourcegraph/src-cli/internal/batches/git"
+	"github.com/sourcegraph/sourcegraph/lib/batches/git"
 	"github.com/sourcegraph/src-cli/internal/batches/graphql"
 	"github.com/sourcegraph/src-cli/internal/batches/mock"
 	"github.com/sourcegraph/src-cli/internal/batches/template"

@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/sourcegraph/src-cli/internal/batches/git"
+	"github.com/sourcegraph/sourcegraph/lib/batches/git"
 	"gopkg.in/yaml.v3"
 )
 

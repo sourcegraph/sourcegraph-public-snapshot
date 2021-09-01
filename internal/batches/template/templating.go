@@ -3,13 +3,13 @@ package template
 import (
 	"bytes"
 	"io"
+	"sort"
 	"strings"
 	"text/template"
 
 	"github.com/gobwas/glob"
 	"github.com/pkg/errors"
-	"github.com/sourcegraph/src-cli/internal/batches/git"
-	"github.com/sourcegraph/src-cli/internal/batches/graphql"
+	"github.com/sourcegraph/sourcegraph/lib/batches/git"
 )
 
 const startDelim = "${{"
@@ -85,6 +85,31 @@ type BatchChangeAttributes struct {
 	Description string
 }
 
+type TemplatingBranch struct {
+	Name      string
+	TargetOID string
+}
+
+type TemplatingRepository struct {
+	ID            string
+	Name          string
+	DefaultBranch TemplatingBranch
+	FileMatches   map[string]bool
+}
+
+func (r TemplatingRepository) SearchResultPaths() (list fileMatchPathList) {
+	var files []string
+	for f := range r.FileMatches {
+		files = append(files, f)
+	}
+	sort.Strings(files)
+	return fileMatchPathList(files)
+}
+
+type fileMatchPathList []string
+
+func (f fileMatchPathList) String() string { return strings.Join(f, " ") }
+
 // StepContext represents the contextual information available when rendering a
 // step's fields, such as "run" or "outputs", as templates.
 type StepContext struct {
@@ -102,7 +127,7 @@ type StepContext struct {
 	// previous step.
 	PreviousStep StepResult
 	// Repository is the Sourcegraph repository in which the steps are executed.
-	Repository graphql.Repository
+	Repository TemplatingRepository
 }
 
 // ToFuncMap returns a template.FuncMap to access fields on the StepContext in a
@@ -232,7 +257,7 @@ type ChangesetTemplateContext struct {
 	Outputs map[string]interface{}
 
 	// Repository is the repository in which the steps were executed.
-	Repository graphql.Repository
+	Repository TemplatingRepository
 }
 
 // ToFuncMap returns a template.FuncMap to access fields on the StepContext in a

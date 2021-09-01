@@ -14,8 +14,8 @@ import (
 	"github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
 	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
+	"github.com/sourcegraph/sourcegraph/lib/batches/git"
 	"github.com/sourcegraph/src-cli/internal/batches"
-	"github.com/sourcegraph/src-cli/internal/batches/git"
 	"github.com/sourcegraph/src-cli/internal/batches/graphql"
 )
 

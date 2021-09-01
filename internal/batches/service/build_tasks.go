@@ -8,6 +8,7 @@ import (
 	"github.com/sourcegraph/src-cli/internal/batches/executor"
 	"github.com/sourcegraph/src-cli/internal/batches/graphql"
 	"github.com/sourcegraph/src-cli/internal/batches/template"
+	"github.com/sourcegraph/src-cli/internal/batches/util"
 )
 
 // buildTasks returns tasks for all the workspaces determined for the given spec.
@@ -37,21 +38,23 @@ func buildTasks(ctx context.Context, spec *batcheslib.BatchSpec, repos []*graphq
 }
 
 func buildTask(spec *batcheslib.BatchSpec, r *graphql.Repository, path string, onlyWorkspace bool) (*executor.Task, bool, error) {
-	stepCtx := &template.StepContext{
-		Repository: *r,
-		BatchChange: template.BatchChangeAttributes{
-			Name:        spec.Name,
-			Description: spec.Description,
-		},
+	batchChange := template.BatchChangeAttributes{
+		Name:        spec.Name,
+		Description: spec.Description,
 	}
 
-	var taskSteps []batcheslib.Step
+	taskSteps := []batcheslib.Step{}
 	for _, step := range spec.Steps {
+		// If no if condition is given, just go ahead and add the step to the list.
 		if step.IfCondition() == "" {
 			taskSteps = append(taskSteps, step)
 			continue
 		}
 
+		stepCtx := &template.StepContext{
+			Repository:  util.GraphQLRepoToTemplatingRepo(r),
+			BatchChange: batchChange,
+		}
 		static, boolVal, err := template.IsStaticBool(step.IfCondition(), stepCtx)
 		if err != nil {
 			return nil, false, err
@@ -82,11 +85,8 @@ func buildTask(spec *batcheslib.BatchSpec, r *graphql.Repository, path string, o
 		Steps:              taskSteps,
 		OnlyFetchWorkspace: onlyWorkspace,
 
-		TransformChanges: spec.TransformChanges,
-		Template:         spec.ChangesetTemplate,
-		BatchChangeAttributes: &template.BatchChangeAttributes{
-			Name:        spec.Name,
-			Description: spec.Description,
-		},
+		TransformChanges:      spec.TransformChanges,
+		Template:              spec.ChangesetTemplate,
+		BatchChangeAttributes: &batchChange,
 	}, true, nil
 }

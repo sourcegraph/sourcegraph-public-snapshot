@@ -8,7 +8,7 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
-	"github.com/sourcegraph/src-cli/internal/batches/git"
+	"github.com/sourcegraph/sourcegraph/lib/batches/git"
 	"gopkg.in/yaml.v3"
 )
 

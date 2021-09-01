@@ -9,6 +9,7 @@ import (
 	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
 	"github.com/sourcegraph/src-cli/internal/batches"
 	"github.com/sourcegraph/src-cli/internal/batches/template"
+	"github.com/sourcegraph/src-cli/internal/batches/util"
 )
 
 var errOptionalPublishedUnsupported = errors.New(`This Sourcegraph version requires the "published" field to be specified in the batch spec; upgrade to version 3.30.0 or later to be able to omit the published field and control publication from the UI.`)
@@ -23,7 +24,7 @@ func createChangesetSpecs(task *Task, result executionResult, features batches.F
 			Path:    result.Path,
 		},
 		Outputs:    result.Outputs,
-		Repository: *task.Repository,
+		Repository: util.GraphQLRepoToTemplatingRepo(task.Repository),
 	}
 
 	var authorName string

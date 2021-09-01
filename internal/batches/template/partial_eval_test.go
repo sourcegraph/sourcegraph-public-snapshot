@@ -4,7 +4,6 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/sourcegraph/src-cli/internal/batches/graphql"
 )
 
 var partialEvalStepCtx = &StepContext{
@@ -13,7 +12,7 @@ var partialEvalStepCtx = &StepContext{
 		Description: "test-description",
 	},
 	// Step is not set when evalStepCondition is called
-	Repository: graphql.Repository{
+	Repository: TemplatingRepository{
 		Name: "github.com/sourcegraph/src-cli",
 		FileMatches: map[string]bool{
 			"README.md": true,

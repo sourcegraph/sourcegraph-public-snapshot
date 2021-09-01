@@ -3,7 +3,6 @@ package graphql
 import (
 	"crypto/sha256"
 	"encoding/base64"
-	"sort"
 	"strings"
 )
 
@@ -93,16 +92,3 @@ func (r *Repository) SlugForPath(path string) string {
 	}
 	return strings.ReplaceAll(name, "/", "-") + "-" + r.Rev()
 }
-
-func (r *Repository) SearchResultPaths() (list fileMatchPathList) {
-	var files []string
-	for f := range r.FileMatches {
-		files = append(files, f)
-	}
-	sort.Strings(files)
-	return fileMatchPathList(files)
-}
-
-type fileMatchPathList []string
-
-func (f fileMatchPathList) String() string { return strings.Join(f, " ") }

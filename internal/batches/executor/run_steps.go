@@ -15,9 +15,10 @@ import (
 	"github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
 	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
-	"github.com/sourcegraph/src-cli/internal/batches/git"
+	"github.com/sourcegraph/sourcegraph/lib/batches/git"
 	"github.com/sourcegraph/src-cli/internal/batches/log"
 	"github.com/sourcegraph/src-cli/internal/batches/template"
+	"github.com/sourcegraph/src-cli/internal/batches/util"
 	"github.com/sourcegraph/src-cli/internal/batches/workspace"
 
 	yamlv3 "gopkg.in/yaml.v3"
@@ -125,7 +126,7 @@ func runSteps(ctx context.Context, opts *executionOpts) (result executionResult,
 
 		stepContext := template.StepContext{
 			BatchChange: *opts.task.BatchChangeAttributes,
-			Repository:  *opts.task.Repository,
+			Repository:  util.GraphQLRepoToTemplatingRepo(opts.task.Repository),
 			Outputs:     execResult.Outputs,
 			Steps: template.StepsContext{
 				Path:    execResult.Path,
