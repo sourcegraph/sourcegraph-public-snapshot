@@ -31,20 +31,23 @@ export const stylePlugin: esbuild.Plugin = {
         interface TransformResult {
             outputPath: string
             outputContents: string
+            includedFiles: string[]
+            mtime: number
         }
         const transform = async ({ inputPath, inputContents }: TransformArguments): Promise<TransformResult> => {
             const isSCSS = inputPath.endsWith('.scss')
-            const css = isSCSS
+            const sassResult = isSCSS
                 ? // renderSync is ~20% faster than render with an async callback (because it's blocked on CPU, not IO).
                   // eslint-disable-next-line no-sync
-                  sass
-                      .renderSync({
-                          file: inputPath,
-                          data: inputContents,
-                          includePaths: [path.resolve(ROOT_PATH, 'node_modules'), path.resolve(ROOT_PATH, 'client')],
-                      })
-                      .css.toString()
-                : inputContents
+                  sass.renderSync({
+                      file: inputPath,
+                      data: inputContents,
+                      includePaths: [path.resolve(ROOT_PATH, 'node_modules'), path.resolve(ROOT_PATH, 'client')],
+                  })
+                : null
+
+            const css = sassResult?.css.toString() ?? inputContents
+            const includedFiles = sassResult?.stats.includedFiles.filter(value => typeof value === 'string') ?? []
 
             const outputPath = isSCSS ? inputPath.replace(/\.scss$/, '.css') : inputPath
 
@@ -59,16 +62,35 @@ export const stylePlugin: esbuild.Plugin = {
             return {
                 outputPath,
                 outputContents: result.css,
+                includedFiles,
+                mtime: Date.now(),
             }
         }
         const transformCache = new Map<
             TransformArguments['inputPath'],
-            { inputContents: string; outputPath: string; outputContents: string }
+            Pick<TransformArguments, 'inputContents'> & TransformResult
         >()
         const cachedTransform = async ({ inputPath, inputContents }: TransformArguments): Promise<TransformResult> => {
             const cached = transformCache.get(inputPath)
+            // If the input file has changed, or any included file has changed, then the cache entry is stale.
             if (cached && cached.inputContents === inputContents) {
-                return cached
+                let allInputFilesFresh = true
+                for (const path of cached.includedFiles) {
+                    try {
+                        const stat = await fs.promises.stat(path)
+                        if (stat.mtimeMs > cached.mtime) {
+                            allInputFilesFresh = false
+                            break // included file has changed since last build
+                        }
+                    } catch {
+                        // Included file was (likely) deleted (or otherwise made inaccessible) since last build.
+                        allInputFilesFresh = false
+                        break
+                    }
+                }
+                if (allInputFilesFresh) {
+                    return cached
+                }
             }
 
             const output = await transform({ inputPath, inputContents })
@@ -78,7 +100,7 @@ export const stylePlugin: esbuild.Plugin = {
 
         build.onResolve({ filter: /\.s?css$/, namespace: 'file' }, async args => {
             const inputPath = path.join(args.resolveDir, args.path)
-            const { outputPath, outputContents } = await cachedTransform({
+            const { outputPath, outputContents, includedFiles } = await cachedTransform({
                 inputPath,
                 inputContents: await fs.promises.readFile(inputPath, 'utf8'),
             })
@@ -88,6 +110,7 @@ export const stylePlugin: esbuild.Plugin = {
                 path: outputPath,
                 namespace: isCSSModule ? 'css-module' : 'css',
                 pluginData: { contents: outputContents },
+                watchFiles: includedFiles,
             }
         })
 
