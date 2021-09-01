@@ -95,48 +95,6 @@ export const FileMatch: React.FunctionComponent<Props> = props => {
         </>
     )
 
-    // If we received pre-highlighted results, use them
-    if (result.type == 'content' && result.content) {
-        const grouped: MatchGroup[] = useMemo(
-            () =>
-                result.content?.map(
-                    hunk =>
-                        ({
-                            blobLines: hunk.content.html?.split(/\r?\n/),
-                            matches: hunk.matches.map(match => ({
-                                line: match.start.line,
-                                character: match.start.column,
-                                highlightLength: match.end.column - match.start.column,
-                                isInContext: false, // TODO(camdencheek) what is this for?
-                            })),
-                            startLine: hunk.start,
-                            endLine: hunk.start + hunk.length,
-                            position: {
-                                line: hunk.matches[0].start.line + hunk.start + 1,
-                                character: hunk.matches[0].start.column + 1,
-                            },
-                        } as MatchGroup)
-                ) || [],
-            [result]
-        )
-
-        // TODO(camdencheek) handle unexpanded
-        const expandedChildren = <FileMatchChildren {...props} result={result} grouped={grouped} />
-        const matchCount = grouped.reduce((prev, group) => prev + group.matches.length, 0)
-        const containerProps: ResultContainerProps = {
-            // TODO(camdencheek) make this collapsible
-            collapsible: false,
-            defaultExpanded: true,
-            icon: props.icon,
-            title: renderTitle(),
-            description: undefined,
-            expandedChildren,
-            matchCountLabel: `${matchCount} ${pluralize('match', matchCount, 'matches')}`,
-            repoStars: result.repoStars,
-        }
-        return <ResultContainer {...containerProps} titleClassName="test-search-result-label" />
-    }
-
     // The number of lines of context to show before and after each match.
     const context = useMemo(() => {
         if (props.location.pathname === '/search') {
@@ -156,7 +114,7 @@ export const FileMatch: React.FunctionComponent<Props> = props => {
     const items: MatchItem[] = useMemo(
         () =>
             result.type === 'content'
-                ? result.lineMatches.map(match => ({
+                ? result.lineMatches?.map(match => ({
                       highlightRanges: match.offsetAndLengths.map(([start, highlightLength]) => ({
                           start,
                           highlightLength,
@@ -164,7 +122,7 @@ export const FileMatch: React.FunctionComponent<Props> = props => {
                       preview: match.line,
                       line: match.lineNumber,
                       aggregableBadges: match.aggregableBadges,
-                  }))
+                  })) || []
                 : [],
         [result]
     )
@@ -204,7 +162,43 @@ export const FileMatch: React.FunctionComponent<Props> = props => {
     const matchCountLabel = matchCount ? `${matchCount} ${pluralize('match', matchCount, 'matches')}` : ''
 
     const expandedChildren = <FileMatchChildren {...props} result={result} {...expandedMatchGroups} />
-    if (props.showAllMatches) {
+
+    if (result.type === 'content' && result.content) {
+        const grouped: MatchGroup[] =
+            result.content?.map(
+                hunk =>
+                    ({
+                        blobLines: hunk.content.html?.split(/\r?\n/),
+                        matches: hunk.matches.map(match => ({
+                            line: match.start.line,
+                            character: match.start.column,
+                            highlightLength: match.end.column - match.start.column,
+                            isInContext: false, // TODO(camdencheek) what is this for?
+                        })),
+                        startLine: hunk.start,
+                        endLine: hunk.start + hunk.length,
+                        position: {
+                            line: hunk.matches[0].start.line + hunk.start + 1,
+                            character: hunk.matches[0].start.column + 1,
+                        },
+                    } as MatchGroup)
+            ) || []
+
+        // TODO(camdencheek) handle unexpanded
+        const expandedChildren = <FileMatchChildren {...props} result={result} grouped={grouped} />
+        const matchCount = grouped.reduce((prev, group) => prev + group.matches.length, 0)
+        containerProps = {
+            // TODO(camdencheek) make this collapsible
+            collapsible: false,
+            defaultExpanded: true,
+            icon: props.icon,
+            title: renderTitle(),
+            description: undefined,
+            expandedChildren,
+            matchCountLabel: `${matchCount} ${pluralize('match', matchCount, 'matches')}`,
+            repoStars: result.repoStars,
+        }
+    } else if (props.showAllMatches) {
         containerProps = {
             collapsible: false,
             defaultExpanded: props.expanded,

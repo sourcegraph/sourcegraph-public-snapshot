@@ -426,7 +426,7 @@ function search({
             ['t', patternType as string],
             ['decorationLimit', '15'],
             ['decorationKind', (decorationKinds || ['html']).join('|')],
-            ['decorationContextLines', decorationContextLines || 1],
+            ['decorationContextLines', (decorationContextLines || '1').toString()],
             ['display', '1500'],
         ]
         if (versionContext) {
