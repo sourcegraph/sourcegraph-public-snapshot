@@ -15,7 +15,7 @@ export const LastSyncedIcon: React.FunctionComponent<Props> = props => {
 
     return (
         <CloudSyncOutlineIcon
-            className={classNames(props.className || styles.lastSyncedIcon, 'icon-inline', 'text-muted')}
+            className={classNames(props.className, styles.lastSyncedIcon, 'icon-inline', 'text-muted')}
             data-tooltip={`Last synced: ${formattedTime}`}
         />
     )
