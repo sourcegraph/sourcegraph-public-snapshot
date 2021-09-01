@@ -313,9 +313,7 @@ mutation {
 
 ## Explicit permissions API
 
-Sourcegraph exposes a GraphQL API to explicitly set repository permissions. This will become the primary
-way to specify permissions in the future and will eventually replace the other repository
-permissions mechanisms.
+Sourcegraph exposes a GraphQL API to explicitly set repository permissions as an alternative to the code-host-specific repository permissions sync mechanisms.
 
 To enable the permissions API, add the following to the [site configuration](../config/site_config.md):
 
