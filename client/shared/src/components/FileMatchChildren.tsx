@@ -17,15 +17,12 @@ import {
 } from '../util/url'
 
 import { CodeExcerpt, FetchFileParameters } from './CodeExcerpt'
-import { CodeExcerptUnhighlighted } from './CodeExcerptUnhighlighted'
-import { MatchItem } from './FileMatch'
 import { MatchGroup } from './FileMatchContext'
 import { Link } from './Link'
 
 interface FileMatchProps extends SettingsCascadeProps, ThemeProps, TelemetryProps {
     location: H.Location
     result: ContentMatch | SymbolMatch | PathMatch
-    matches: MatchItem[]
     grouped: MatchGroup[]
     /* Called when the first result has fully loaded. */
     onFirstResultLoad?: () => void
@@ -36,9 +33,6 @@ interface FileMatchProps extends SettingsCascadeProps, ThemeProps, TelemetryProp
     onSelect: () => void
 }
 
-// Dev flag for disabling syntax highlighting on search results pages.
-const NO_SEARCH_HIGHLIGHTING = localStorage.getItem('noSearchHighlighting') !== null
-
 export const FileMatchChildren: React.FunctionComponent<FileMatchProps> = props => {
     // If optimizeHighlighting is enabled, compile a list of the highlighted file ranges we want to
     // fetch (instead of the entire file.)
@@ -48,15 +42,7 @@ export const FileMatchChildren: React.FunctionComponent<FileMatchProps> = props 
         props.settingsCascade.final.experimentalFeatures &&
         props.settingsCascade.final.experimentalFeatures.enableFastResultLoading
 
-    const {
-        result,
-        isLightTheme,
-        matches,
-        grouped,
-        fetchHighlightedFileLineRanges,
-        telemetryService,
-        onFirstResultLoad,
-    } = props
+    const { result, isLightTheme, grouped, fetchHighlightedFileLineRanges, telemetryService, onFirstResultLoad } = props
     const fetchHighlightedFileRangeLines = React.useCallback(
         (isFirst, startLine, endLine, isLightTheme) => {
             const startTime = Date.now()
@@ -101,16 +87,6 @@ export const FileMatchChildren: React.FunctionComponent<FileMatchProps> = props 
         return appendLineRangeQueryParameter(
             appendSubtreeQueryParameter(getFileMatchUrl(result)),
             positionOrRangeQueryParameter
-        )
-    }
-
-    if (NO_SEARCH_HIGHLIGHTING) {
-        return (
-            <CodeExcerptUnhighlighted
-                urlWithoutPosition={getFileMatchUrl(result)}
-                items={matches}
-                onSelect={props.onSelect}
-            />
         )
     }
 
