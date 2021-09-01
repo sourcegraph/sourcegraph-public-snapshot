@@ -165,22 +165,6 @@ func TestListAffiliatedRepositories(t *testing.T) {
 	}
 }
 
-func Test_GetAuthenticatedUserOAuthScopes(t *testing.T) {
-	client, save := newV3TestClient(t, "GetAuthenticatedUserOAuthScopes")
-	defer save()
-
-	scopes, err := client.GetAuthenticatedUserOAuthScopes(context.Background())
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	want := []string{"admin:enterprise", "admin:gpg_key", "admin:org", "admin:org_hook", "admin:public_key", "admin:repo_hook", "delete:packages", "delete_repo", "gist", "notifications", "repo", "user", "workflow", "write:discussion", "write:packages"}
-	sort.Strings(scopes)
-	if diff := cmp.Diff(want, scopes); diff != "" {
-		t.Fatalf("Scopes mismatch (-want +got):\n%s", diff)
-	}
-}
-
 func Test_GetAuthenticatedOAuthScopes(t *testing.T) {
 	client, save := newV3TestClient(t, "GetAuthenticatedOAuthScopes")
 	defer save()
