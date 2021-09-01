@@ -26,7 +26,8 @@ const {
 
 const { build: buildEsbuild } = require('./dev/esbuild/build')
 const { esbuildDevelopmentServer } = require('./dev/esbuild/server')
-const { DEV_WEB_BUILDER, DEV_SERVER_LISTEN_ADDR, DEV_SERVER_PROXY_TARGET_ADDR } = require('./dev/utils')
+const { DEV_SERVER_LISTEN_ADDR, DEV_SERVER_PROXY_TARGET_ADDR } = require('./dev/utils')
+const { DEV_WEB_BUILDER } = require('./dev/utils/environment-config').environmentConfig
 const webpackConfig = require('./webpack.config')
 
 const WEBPACK_STATS_OPTIONS = {
