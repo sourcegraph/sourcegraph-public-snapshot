@@ -44,23 +44,6 @@ type SnapshotContent struct {
 	Symbols []SymbolCount
 }
 
-type Date time.Time
-
-func (d Date) Format(s string) string {
-	t := time.Time(d)
-	return t.Format(s)
-}
-
-func (d *Date) UnmarshalJSON(bytes []byte) error {
-	s := strings.Trim(string(bytes), "\"")
-	t, err := time.Parse("2006-01-02", s)
-	if err != nil {
-		return err
-	}
-	*d = Date(t)
-	return nil
-}
-
 var generatedFilename = "/files/findme.txt"
 
 var inputFile = flag.String("manifest", "", "path to a manifest json file describing what should be generated")
