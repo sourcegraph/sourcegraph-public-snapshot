@@ -95,7 +95,7 @@ export const FileMatch: React.FunctionComponent<Props> = props => {
         </>
     )
 
-	// If we received pre-highlighted results, use them
+    // If we received pre-highlighted results, use them
     if (result.type == 'content' && result.content) {
         const grouped: MatchGroup[] = useMemo(
             () =>
