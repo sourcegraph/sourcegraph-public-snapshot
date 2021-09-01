@@ -22,6 +22,7 @@ export const SearchSidebarSection: React.FunctionComponent<{
      * Clear the search input whenever this value changes. This is supposed to
      * be used together with function children, which use the search input but
      * handle search on their own.
+     * Defaults to the component's children.
      */
     clearSearchOnChange?: {}
 }> = ({
@@ -36,8 +37,8 @@ export const SearchSidebarSection: React.FunctionComponent<{
 }) => {
     const [filter, setFilter] = useState('')
 
-    // Clears the filter whenever clearSearchOnChange changes or the
-    // component's children
+    // Clears the filter whenever clearSearchOnChange changes (defaults to the
+    // component's children)
     useEffect(() => setFilter(''), [clearSearchOnChange])
 
     let body

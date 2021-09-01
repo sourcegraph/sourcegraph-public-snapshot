@@ -3,6 +3,7 @@ import React, { useCallback, useMemo } from 'react'
 import { useHistory } from 'react-router'
 import StickyBox from 'react-sticky-box'
 
+import { FilterType } from '@sourcegraph/shared/src/search/query/filters'
 import { updateFilter } from '@sourcegraph/shared/src/search/query/transformer'
 import { Filter } from '@sourcegraph/shared/src/search/stream'
 import { VersionContextProps } from '@sourcegraph/shared/src/search/util'
@@ -17,7 +18,7 @@ import { useTemporarySetting } from '../../../settings/temporary/useTemporarySet
 import { QueryState, submitSearch, toggleSearchFilter } from '../../helpers'
 
 import { getDynamicFilterLinks, getRepoFilterLinks, getSearchSnippetLinks } from './FilterLink'
-import { useLastRepoName } from './helpers'
+import { getFiltersOfKind, useLastRepoName } from './helpers'
 import { getQuickLinks } from './QuickLink'
 import { getRevisions } from './Revisions'
 import { getSearchReferenceFactory } from './SearchReference'
@@ -112,19 +113,13 @@ export const SearchSidebar: React.FunctionComponent<SearchSidebarProps> = props 
         [persistToggleState, props.telemetryService]
     )
 
-    const repoFilters = useMemo(
-        () => (props.filters || []).filter(filter => filter.kind === 'repo' && filter.value !== ''),
-        [props.filters]
-    )
+    const repoFilters = useMemo(() => getFiltersOfKind(props.filters, FilterType.repo), [props.filters])
     const repoName = useLastRepoName(props.query, repoFilters)
     const repoFilterLinks = useMemo(() => getRepoFilterLinks(repoFilters, onDynamicFilterClicked), [
         repoFilters,
         onDynamicFilterClicked,
     ])
-    const showRevisionsSection = props.featureFlags.get('search-sidebar-revisions')
-    // If the revisions section feature is enable we only show the repos
-    // section if there is more than one repo
-    const showReposSection = !showRevisionsSection || repoFilterLinks.length > 1
+    const showReposSection = repoFilterLinks.length > 1
 
     return (
         <div className={classNames(styles.searchSidebar, props.className)}>
@@ -162,7 +157,7 @@ export const SearchSidebar: React.FunctionComponent<SearchSidebarProps> = props 
                         {repoFilterLinks}
                     </SearchSidebarSection>
                 ) : null}
-                {showRevisionsSection && repoName ? (
+                {repoName ? (
                     <SearchSidebarSection
                         className={styles.searchSidebarItem}
                         header="Revisions"

@@ -5,7 +5,6 @@ import React from 'react'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { dataOrThrowErrors, gql } from '@sourcegraph/shared/src/graphql/graphql'
 import { GitRefType } from '@sourcegraph/shared/src/graphql/schema'
-import { useLocalStorage } from '@sourcegraph/shared/src/util/useLocalStorage'
 
 import { useConnection } from '../../../components/FilteredConnection/hooks/useConnection'
 import { SyntaxHighlightedSearchQuery } from '../../../components/SyntaxHighlightedSearchQuery'
@@ -14,6 +13,7 @@ import {
     SearchSidebarGitRefsVariables,
     SearchSidebarGitRefFields,
 } from '../../../graphql-operations'
+import { useTemporarySetting } from '../../../settings/temporary/useTemporarySetting'
 
 import { FilterLink } from './FilterLink'
 import styles from './SearchSidebarSection.module.scss'
@@ -144,8 +144,6 @@ const RevisionList: React.FunctionComponent<RevisionListProps> = ({
     )
 }
 
-const REVISION_TAB_KEY = 'SearchProduct.Sidebar.Revisions.Tab'
-
 interface RevisionsProps {
     repoName: string
     onFilterClick: (filter: string, value: string) => void
@@ -153,10 +151,10 @@ interface RevisionsProps {
 }
 
 export const Revisions: React.FunctionComponent<RevisionsProps> = ({ repoName, onFilterClick, query }) => {
-    const [selectedTab, setSelectedTab] = useLocalStorage(REVISION_TAB_KEY, 0)
+    const [selectedTab, setSelectedTab] = useTemporarySetting('search.sidebar.revisions.tab')
     const onRevisionFilterClick = (value: string): void => onFilterClick('rev', value)
     return (
-        <Tabs index={selectedTab} onChange={setSelectedTab}>
+        <Tabs index={selectedTab ?? 0} onChange={setSelectedTab}>
             <TabList className={styles.sidebarSectionTabsHeader}>
                 <Tab>Branches</Tab>
                 <Tab>Tags</Tab>

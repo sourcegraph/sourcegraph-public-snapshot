@@ -29,7 +29,7 @@ export function useLastRepoName(query: string, filters: Filter[] = []): string {
                 repoQuery = repoQueryFilters[0].value?.value ?? ''
             }
         }
-        const repoFilters = getFilters(filters, FilterType.repo)
+        const repoFilters = getFiltersOfKind(filters, FilterType.repo)
         switch (repoFilters.length) {
             case 0:
                 // Reuse last repo name if query contains a repo filter and
@@ -55,6 +55,6 @@ export function useLastRepoName(query: string, filters: Filter[] = []): string {
     return repoName
 }
 
-export function getFilters(filters: Filter[] = [], kind: FilterType): Filter[] {
+export function getFiltersOfKind(filters: Filter[] = [], kind: FilterType): Filter[] {
     return filters.filter(filter => filter.kind === kind && filter.value !== '')
 }
