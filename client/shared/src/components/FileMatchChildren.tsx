@@ -17,14 +17,12 @@ import {
 } from '../util/url'
 
 import { CodeExcerpt, FetchFileParameters } from './CodeExcerpt'
-import { MatchItem } from './FileMatch'
 import { MatchGroup } from './FileMatchContext'
 import { Link } from './Link'
 
 interface FileMatchProps extends SettingsCascadeProps, ThemeProps, TelemetryProps {
     location: H.Location
     result: ContentMatch | SymbolMatch | PathMatch
-    matches: MatchItem[]
     grouped: MatchGroup[]
     /* Called when the first result has fully loaded. */
     onFirstResultLoad?: () => void
