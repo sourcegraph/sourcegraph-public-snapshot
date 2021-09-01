@@ -6,6 +6,7 @@ import (
 	"crypto/x509"
 	"math"
 	"math/rand"
+	"net"
 	"net/http"
 	"net/url"
 	"os"
@@ -376,9 +377,6 @@ var redirectsErrorRe = lazyregexp.New(`stopped after \d+ redirects\z`)
 // specifically so we resort to matching on the error string.
 var schemeErrorRe = lazyregexp.New(`unsupported protocol scheme`)
 
-// A regular expression to match a DNSError no such host.
-var noSuchHostErrorRe = lazyregexp.New(`no such host`)
-
 // MaxRetries returns the max retries to be attempted, which should be passed
 // to NewRetryPolicy. If we're in tests, it returns 1, otherwise it tries to
 // parse SRC_HTTP_CLI_MAX_RETRIES and return that. If it can't, it defaults to 20.
@@ -442,6 +440,14 @@ func NewRetryPolicy(max int) rehttp.RetryFn {
 		case context.DeadlineExceeded, context.Canceled:
 			return false
 		default:
+			// Don't retry more than 3 times for no such host errors.
+			// This affords some resilience to dns unreliability while
+			// preventing 20 attempts with a non existing name.
+			var dnsErr *net.DNSError
+			if a.Index >= 3 && errors.As(a.Error, &dnsErr) && dnsErr.IsNotFound {
+				return false
+			}
+
 			if v, ok := a.Error.(*url.Error); ok {
 				e := v.Error()
 				// Don't retry if the error was due to too many redirects.
@@ -451,13 +457,6 @@ func NewRetryPolicy(max int) rehttp.RetryFn {
 
 				// Don't retry if the error was due to an invalid protocol scheme.
 				if schemeErrorRe.MatchString(e) {
-					return false
-				}
-
-				// Don't retry more than 3 times for no such host errors.
-				// This affords some resilience to dns unreliability while
-				// preventing 20 attempts with a non existing name.
-				if noSuchHostErrorRe.MatchString(e) && a.Index >= 3 {
 					return false
 				}
 
