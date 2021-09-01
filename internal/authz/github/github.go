@@ -74,37 +74,48 @@ func (p *Provider) ServiceType() string {
 func (p *Provider) Validate() (problems []string) {
 	required := p.requiredAuthScopes()
 	if len(required) > 0 {
-		scopes, err := p.client.GetAuthenticatedUserOAuthScopes(context.Background())
+		scopes, err := p.client.GetAuthenticatedOAuthScopes(context.Background())
 		if err != nil {
-			problems = append(problems, fmt.Sprintf("Additional auth scopes are required, but failed to check authenticated scopes: %+v", err))
-		}
+			problems = append(problems, fmt.Sprintf("Additional OAuth scopes are required, but failed to get available scopes: %+v", err))
+		} else {
+			gotScopes := make(map[string]struct{})
+			for _, gotScope := range scopes {
+				gotScopes[gotScope] = struct{}{}
+			}
 
-		gotScopes := make(map[string]struct{})
-		for _, gotScope := range scopes {
-			gotScopes[gotScope] = struct{}{}
-		}
-		for _, requiredScope := range required {
-			if _, found := gotScopes[requiredScope.scope]; !found {
-				problems = append(problems, requiredScope.message)
+			// check if required scopes are satisfied
+			for _, requiredScope := range required {
+				satisfiesScope := false
+				for _, s := range requiredScope.oneOf {
+					if _, found := gotScopes[s]; found {
+						satisfiesScope = true
+						break
+					}
+				}
+				if !satisfiesScope {
+					problems = append(problems, requiredScope.message)
+				}
 			}
 		}
 	}
 	return problems
 }
 
-type requiredScope struct {
-	scope   string
+type requiredAuthScope struct {
+	// at least one of these scopes is required
+	oneOf []string
+	// message to display if this required auth scope is not satisfied
 	message string
 }
 
-func (p *Provider) requiredAuthScopes() []requiredScope {
-	scopes := []requiredScope{}
+func (p *Provider) requiredAuthScopes() []requiredAuthScope {
+	scopes := []requiredAuthScope{}
 
 	if p.groupsCache != nil {
 		// Needs extra scope to pull group permissions
-		scopes = append(scopes, requiredScope{
-			scope: "read:org",
-			message: "Scope 'read:org' is required to enable `authorization.groupsCacheTTL` - " +
+		scopes = append(scopes, requiredAuthScope{
+			oneOf: []string{"read:org", "write:org", "admin:org"},
+			message: "Scope `read:org`, `write:org`, or `admin:org` is required to enable `authorization.groupsCacheTTL` - " +
 				"please provide a `token` with the required scopes, or try updating the [**site configuration**](/site-admin/configuration)'s " +
 				"corresponding entry in [`auth.providers`](https://docs.sourcegraph.com/admin/auth) to enable `allowGroupsPermissionsSync`.",
 		})

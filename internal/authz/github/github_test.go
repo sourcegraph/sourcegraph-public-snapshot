@@ -9,6 +9,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/cockroachdb/errors"
 	"github.com/google/go-cmp/cmp"
 	"github.com/gregjones/httpcache"
 
@@ -1003,9 +1004,24 @@ func TestProvider_Validate(t *testing.T) {
 			GroupsCacheTTL: 72,
 		})
 
-		t.Run("missing 'read:org'", func(t *testing.T) {
+		t.Run("error getting scopes", func(t *testing.T) {
 			p.client = &mockClient{
-				MockGetAuthenticatedUserOAuthScopes: func(ctx context.Context) ([]string, error) {
+				MockGetAuthenticatedOAuthScopes: func(ctx context.Context) ([]string, error) {
+					return nil, errors.New("scopes error")
+				},
+			}
+			problems := p.Validate()
+			if len(problems) != 1 {
+				t.Fatal("expected 1 problem")
+			}
+			if !strings.Contains(problems[0], "scopes error") {
+				t.Fatalf("unexpected problem: %q", problems[0])
+			}
+		})
+
+		t.Run("missing org scope", func(t *testing.T) {
+			p.client = &mockClient{
+				MockGetAuthenticatedOAuthScopes: func(ctx context.Context) ([]string, error) {
 					return []string{}, nil
 				},
 			}
@@ -1018,15 +1034,21 @@ func TestProvider_Validate(t *testing.T) {
 			}
 		})
 
-		t.Run("scopes ok", func(t *testing.T) {
-			p.client = &mockClient{
-				MockGetAuthenticatedUserOAuthScopes: func(ctx context.Context) ([]string, error) {
-					return []string{"read:org"}, nil
-				},
-			}
-			problems := p.Validate()
-			if len(problems) > 0 {
-				t.Fatal("expected validate to pass")
+		t.Run("scopes ok org scope", func(t *testing.T) {
+			for _, testCase := range [][]string{
+				{"read:org"},
+				{"write:org"},
+				{"admin:org"},
+			} {
+				p.client = &mockClient{
+					MockGetAuthenticatedOAuthScopes: func(ctx context.Context) ([]string, error) {
+						return testCase, nil
+					},
+				}
+				problems := p.Validate()
+				if len(problems) != 0 {
+					t.Fatalf("expected validate to pass for scopes=%+v", testCase)
+				}
 			}
 		})
 	})
