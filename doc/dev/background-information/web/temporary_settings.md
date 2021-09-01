@@ -9,7 +9,7 @@ in the `temporary_setings` table and are queried and modified via the GraphQL AP
 
 For unauthenticated users, temporary settings are stored in `localStorage`. 
 
-## Different between temporary settings and site settings
+## Difference between temporary settings and site settings
 
 Site settings are the primary way to handle settings in Sourcegraph. They are accessible as
 global site settings, org settings, and user settings. These are the primary differences
@@ -59,9 +59,24 @@ or `'codeInsights.hiddenCharts'`. The value of the setting can be any JSON-seria
 ### Getting and setting settings
 
 Use the React hook [`useTemporarySetting`](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/client/web/src/settings/temporary/useTemporarySetting.ts?L14:33) 
-to get an up-to-date value of the setting and a function that can update the value. 
-The value will be updated automatically if the user's authentication state changes 
-or the setting is modified elsewhere in the application.
+to get an up-to-date value of the setting and a function that can update the value,
+simlar to other hooks like `useState`. The value will be updated automatically if
+the user's authentication state changes or the setting is modified elsewhere in the
+application.
+
+#### Example usage:
+
+```typescript
+const [modalVisible, setModalVisible] = useTemporarySetting('example.modalVisible')
+
+const toggleModal = () => {
+    setModalVisible(currentVisibility => !currentVisibility)
+}
+
+return <>
+    {modalVisible && <Modal onClose={toggleModal} />}
+</>
+```
 
 ### 🚨 Data sync warning
 
