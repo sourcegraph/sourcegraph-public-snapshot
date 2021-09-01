@@ -42,14 +42,7 @@ export const FileMatchChildren: React.FunctionComponent<FileMatchProps> = props 
         props.settingsCascade.final.experimentalFeatures &&
         props.settingsCascade.final.experimentalFeatures.enableFastResultLoading
 
-    const {
-        result,
-        isLightTheme,
-        grouped,
-        fetchHighlightedFileLineRanges,
-        telemetryService,
-        onFirstResultLoad,
-    } = props
+    const { result, isLightTheme, grouped, fetchHighlightedFileLineRanges, telemetryService, onFirstResultLoad } = props
     const fetchHighlightedFileRangeLines = React.useCallback(
         (isFirst, startLine, endLine, isLightTheme) => {
             const startTime = Date.now()
