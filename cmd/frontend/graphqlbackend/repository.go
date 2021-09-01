@@ -21,6 +21,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
+	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -161,6 +162,10 @@ type RepositoryCommitArgs struct {
 }
 
 func (r *RepositoryResolver) Commit(ctx context.Context, args *RepositoryCommitArgs) (*GitCommitResolver, error) {
+	span, ctx := ot.StartSpanFromContext(ctx, "repository.commit")
+	defer span.Finish()
+	span.SetTag("commit", args.Rev)
+
 	repo, err := r.repo(ctx)
 	if err != nil {
 		return nil, err
