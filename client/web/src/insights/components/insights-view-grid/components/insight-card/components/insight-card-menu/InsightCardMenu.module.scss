@@ -18,6 +18,12 @@
             fill: var(--body-color);
         }
     }
+
+    + [data-reach-menu-popover] {
+        right: 5px;
+        top: 40px;
+        z-index: 2;
+    }
 }
 
 .button-icon {
