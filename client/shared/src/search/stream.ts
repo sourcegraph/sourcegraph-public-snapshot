@@ -38,6 +38,30 @@ export interface ContentMatch {
     branches?: string[]
     version?: string
     lineMatches: LineMatch[]
+    content?: DecoratedHunk[]
+}
+
+export interface DecoratedHunk {
+    content: DecoratedContent
+    start: number
+    length: number
+    matches: Range[]
+}
+
+export interface DecoratedContent {
+    plaintext?: string
+    html?: string
+}
+
+export interface Range {
+    start: Location
+    end: Location
+}
+
+export interface Location {
+    offset: number
+    line: number
+    column: number
 }
 
 interface LineMatch {
@@ -375,6 +399,8 @@ export interface StreamSearchOptions {
     caseSensitive: boolean
     versionContext: string | undefined
     trace: string | undefined
+    decorationKinds?: string[]
+    decorationContextLines?: number
 }
 
 /**
@@ -390,12 +416,17 @@ function search({
     caseSensitive,
     versionContext,
     trace,
+    decorationKinds,
+    decorationContextLines,
 }: StreamSearchOptions): Observable<SearchEvent> {
     return new Observable<SearchEvent>(observer => {
         const parameters = [
             ['q', `${query} ${caseSensitive ? 'case:yes' : ''}`],
             ['v', version],
             ['t', patternType as string],
+            ['decorationLimit', '15'],
+            ['decorationKind', (decorationKinds || ['html']).join('|')],
+            ['decorationContextLines', decorationContextLines || 1],
             ['display', '1500'],
         ]
         if (versionContext) {

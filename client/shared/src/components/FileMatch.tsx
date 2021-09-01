@@ -10,7 +10,7 @@ import { pluralize } from '../util/strings'
 
 import { FetchFileParameters } from './CodeExcerpt'
 import { FileMatchChildren } from './FileMatchChildren'
-import { calculateMatchGroups } from './FileMatchContext'
+import { MatchGroup, calculateMatchGroups } from './FileMatchContext'
 import { LinkOrSpan } from './LinkOrSpan'
 import { RepoFileLink } from './RepoFileLink'
 import { RepoIcon } from './RepoIcon'
@@ -74,42 +74,9 @@ interface Props extends SettingsCascadeProps, TelemetryProps {
 const sumHighlightRanges = (count: number, item: MatchItem): number => count + item.highlightRanges.length
 
 export const FileMatch: React.FunctionComponent<Props> = props => {
-    // The number of lines of context to show before and after each match.
-    const context = useMemo(() => {
-        if (props.location.pathname === '/search') {
-            // Check if search.contextLines is configured in settings.
-            const contextLinesSetting =
-                isSettingsValid(props.settingsCascade) &&
-                props.settingsCascade.final &&
-                props.settingsCascade.final['search.contextLines']
-
-            if (typeof contextLinesSetting === 'number' && contextLinesSetting >= 0) {
-                return contextLinesSetting
-            }
-        }
-        return 1
-    }, [props.location, props.settingsCascade])
-
     const result = props.result
-    const items: MatchItem[] = useMemo(
-        () =>
-            result.type === 'content'
-                ? result.lineMatches.map(match => ({
-                      highlightRanges: match.offsetAndLengths.map(([start, highlightLength]) => ({
-                          start,
-                          highlightLength,
-                      })),
-                      preview: match.line,
-                      line: match.lineNumber,
-                      aggregableBadges: match.aggregableBadges,
-                  }))
-                : [],
-        [result]
-    )
-
     const repoAtRevisionURL = getRepositoryUrl(result.repository, result.branches)
     const revisionDisplayName = getRevision(result.branches, result.version)
-
     const renderTitle = (): JSX.Element => (
         <>
             <RepoIcon repoName={result.repository} className="icon-inline text-muted" />
@@ -126,6 +93,80 @@ export const FileMatch: React.FunctionComponent<Props> = props => {
                 className="ml-1"
             />
         </>
+    )
+
+	// If we received pre-highlighted results, use them
+    if (result.type == 'content' && result.content) {
+        const grouped: MatchGroup[] = useMemo(
+            () =>
+                result.content?.map(
+                    hunk =>
+                        ({
+                            blobLines: hunk.content.html?.split(/\r?\n/),
+                            matches: hunk.matches.map(match => ({
+                                line: match.start.line,
+                                character: match.start.column,
+                                highlightLength: match.end.column - match.start.column,
+                                isInContext: false, // TODO(camdencheek) what is this for?
+                            })),
+                            startLine: hunk.start,
+                            endLine: hunk.start + hunk.length,
+                            position: {
+                                line: hunk.matches[0].start.line + hunk.start + 1,
+                                character: hunk.matches[0].start.column + 1,
+                            },
+                        } as MatchGroup)
+                ) || [],
+            [result]
+        )
+
+        // TODO(camdencheek) handle unexpanded
+        const expandedChildren = <FileMatchChildren {...props} result={result} grouped={grouped} />
+        const matchCount = grouped.reduce((prev, group) => prev + group.matches.length, 0)
+        const containerProps: ResultContainerProps = {
+            // TODO(camdencheek) make this collapsible
+            collapsible: false,
+            defaultExpanded: true,
+            icon: props.icon,
+            title: renderTitle(),
+            description: undefined,
+            expandedChildren,
+            matchCountLabel: `${matchCount} ${pluralize('match', matchCount, 'matches')}`,
+            repoStars: result.repoStars,
+        }
+        return <ResultContainer {...containerProps} titleClassName="test-search-result-label" />
+    }
+
+    // The number of lines of context to show before and after each match.
+    const context = useMemo(() => {
+        if (props.location.pathname === '/search') {
+            // Check if search.contextLines is configured in settings.
+            const contextLinesSetting =
+                isSettingsValid(props.settingsCascade) &&
+                props.settingsCascade.final &&
+                props.settingsCascade.final['search.contextLines']
+
+            if (typeof contextLinesSetting === 'number' && contextLinesSetting >= 0) {
+                return contextLinesSetting
+            }
+        }
+        return 1
+    }, [props.location, props.settingsCascade])
+
+    const items: MatchItem[] = useMemo(
+        () =>
+            result.type === 'content'
+                ? result.lineMatches.map(match => ({
+                      highlightRanges: match.offsetAndLengths.map(([start, highlightLength]) => ({
+                          start,
+                          highlightLength,
+                      })),
+                      preview: match.line,
+                      line: match.lineNumber,
+                      aggregableBadges: match.aggregableBadges,
+                  }))
+                : [],
+        [result]
     )
 
     const description =
