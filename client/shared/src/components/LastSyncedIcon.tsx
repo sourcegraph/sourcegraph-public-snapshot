@@ -2,6 +2,7 @@ import classNames from 'classnames'
 import format from 'date-fns/format'
 import CloudSyncOutlineIcon from 'mdi-react/CloudSyncOutlineIcon'
 import React from 'react'
+
 import styles from './LastSyncedIcon.module.scss'
 
 export interface Props {

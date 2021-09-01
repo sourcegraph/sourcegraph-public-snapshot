@@ -14,6 +14,7 @@ import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { highlightNode } from '@sourcegraph/shared/src/util/dom'
 
 import { highlightCode } from '../search/backend'
+
 import styles from './CommitSearchResultMatch.module.scss'
 
 interface CommitSearchResultMatchProps extends ThemeProps {
