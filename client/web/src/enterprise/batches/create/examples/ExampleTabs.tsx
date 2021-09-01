@@ -1,15 +1,22 @@
 import { Tab, TabList, TabPanel, TabPanels, Tabs, useTabsContext } from '@reach/tabs'
 import classNames from 'classnames'
-import React, { useState, useCallback, useEffect } from 'react'
+import React, { useState, useCallback, useEffect, useMemo } from 'react'
+import { Subject } from 'rxjs'
+import { catchError, debounceTime, startWith, switchMap } from 'rxjs/operators'
 
+import { isErrorLike } from '@sourcegraph/codeintellify/lib/errors'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { Container } from '@sourcegraph/wildcard'
+import { asError } from '@sourcegraph/shared/src/util/errors'
+import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
+import { Container, LoadingSpinner } from '@sourcegraph/wildcard'
 
 import batchSpecSchemaJSON from '../../../../../../../schema/batch_spec.schema.json'
+import { ErrorAlert } from '../../../../components/alerts'
 import { SidebarGroup, SidebarGroupHeader } from '../../../../components/Sidebar'
 import { MonacoSettingsEditor } from '../../../../settings/MonacoSettingsEditor'
 import { BatchSpecDownloadLink, getFileName } from '../../BatchSpec'
 
+import { resolveRepositoriesForBatchSpec } from './backend'
 import combySample from './comby.batch.yaml'
 import helloWorldSample from './empty.batch.yaml'
 import styles from './ExampleTabs.module.scss'
@@ -99,6 +106,27 @@ const ExampleTabPanel: React.FunctionComponent<ExampleTabPanelProps> = ({
 }) => {
     const [code, setCode] = useState<string>(example.code)
 
+    const codeUpdates = useMemo(() => new Subject<string>(), [])
+
+    useEffect(() => {
+        codeUpdates.next(code)
+    }, [codeUpdates, code])
+
+    const preview = useObservable(
+        useMemo(
+            () =>
+                codeUpdates.pipe(
+                    startWith(code),
+                    debounceTime(5000),
+                    switchMap(code => resolveRepositoriesForBatchSpec(code)),
+                    catchError(error => [asError(error)])
+                ),
+            // Don't want to trigger on changes to code, it's just the initial value.
+            // eslint-disable-next-line react-hooks/exhaustive-deps
+            [codeUpdates]
+        )
+    )
+
     const { selectedIndex } = useTabsContext()
 
     // Update the spec in parent state whenever the code changes
@@ -119,7 +147,7 @@ const ExampleTabPanel: React.FunctionComponent<ExampleTabPanelProps> = ({
                 </button>
                 <BatchSpecDownloadLink name={example.name} originalInput={code} />
             </div>
-            <Container>
+            <Container className="mb-3">
                 <MonacoSettingsEditor
                     isLightTheme={isLightTheme}
                     language="yaml"
@@ -127,6 +155,22 @@ const ExampleTabPanel: React.FunctionComponent<ExampleTabPanelProps> = ({
                     jsonSchema={batchSpecSchemaJSON}
                     onChange={setCode}
                 />
+            </Container>
+            <Container>
+                <h3>Preview workspaces</h3>
+                {isErrorLike(preview) && <ErrorAlert error={preview} />}
+                <ul className="list-group p-1 mb-0">
+                    {!isErrorLike(preview) &&
+                        preview?.map(item => (
+                            <li className="list-group-item" key={`${item.repository.id}_${item.path}`}>
+                                {item.repository.name} @ {item.path}
+                            </li>
+                        ))}
+                    {!isErrorLike(preview) && !preview && <LoadingSpinner />}
+                    {!isErrorLike(preview) && preview?.length === 0 && (
+                        <span className="text-muted">No workspaces found</span>
+                    )}
+                </ul>
             </Container>
         </TabPanel>
     )

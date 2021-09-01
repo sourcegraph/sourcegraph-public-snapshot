@@ -2229,6 +2229,41 @@ extend type Query {
         """
         after: String
     ): BatchChangesCodeHostConnection!
+
+    """
+    Resolve repositories matching the given batch spec input.
+
+    Experimental API. Will disappear soon.
+    """
+    resolveRepositoriesForBatchSpec(
+        """
+        The batch spec to evaluate.
+        """
+        batchSpec: String!
+        """
+        If true, repos with a .batchignore file will still be included.
+        """
+        allowIgnored: Boolean = false
+        """
+        If true, repos on unsupported codehosts will be included. These cannot
+        be published.
+        """
+        allowUnsupported: Boolean = false
+    ): [BatchSpecMatchingRepository!]!
+}
+
+"""
+A result for the on: section in the batch spec.
+"""
+type BatchSpecMatchingRepository {
+    """
+    The repository to run over.
+    """
+    repository: Repository!
+    """
+    The path to run in.
+    """
+    path: String!
 }
 
 """

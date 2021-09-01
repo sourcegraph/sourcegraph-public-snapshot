@@ -255,6 +255,12 @@ type PublishChangesetsArgs struct {
 	Draft bool
 }
 
+type ResolveRepositoriesForBatchSpecArgs struct {
+	BatchSpec        string
+	AllowIgnored     bool
+	AllowUnsupported bool
+}
+
 type BatchChangesResolver interface {
 	//
 	// MUTATIONS
@@ -299,6 +305,7 @@ type BatchChangesResolver interface {
 	// New:
 	BatchChange(ctx context.Context, args *BatchChangeArgs) (BatchChangeResolver, error)
 	BatchChanges(cx context.Context, args *ListBatchChangesArgs) (BatchChangesConnectionResolver, error)
+	ResolveRepositoriesForBatchSpec(ctx context.Context, args *ResolveRepositoriesForBatchSpecArgs) ([]BatchSpecMatchingRepositoryResolver, error)
 
 	BatchChangesCodeHosts(ctx context.Context, args *ListBatchChangesCodeHostsArgs) (BatchChangesCodeHostConnectionResolver, error)
 	RepoChangesetsStats(ctx context.Context, repo *graphql.ID) (RepoChangesetsStatsResolver, error)
@@ -754,4 +761,9 @@ type BatchSpecExecutionStepsResolver interface {
 	Setup() []ExecutionLogEntryResolver
 	SrcPreview() ExecutionLogEntryResolver
 	Teardown() []ExecutionLogEntryResolver
+}
+
+type BatchSpecMatchingRepositoryResolver interface {
+	Repository(ctx context.Context) (*RepositoryResolver, error)
+	Path() string
 }

@@ -41,6 +41,7 @@ func TestRepoContainsPredicate(t *testing.T) {
 			{`negated content`, `-content:test`, nil},
 			{`unsupported syntax`, `abc:test`, nil},
 			{`unnamed content`, `test`, nil},
+			{`catch invalid content regexp`, `file:foo content:([)`, nil},
 		}
 
 		for _, tc := range invalid {

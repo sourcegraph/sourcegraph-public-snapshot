@@ -349,7 +349,7 @@ func (j *Job) RecordID() int {
 
 func scanJobs(rows *sql.Rows, err error) (workerutil.Record, bool, error) {
 	records, err := doScanJobs(rows, err)
-	if err != nil {
+	if err != nil || len(records) == 0 {
 		return &Job{}, false, err
 	}
 	return records[0], true, nil

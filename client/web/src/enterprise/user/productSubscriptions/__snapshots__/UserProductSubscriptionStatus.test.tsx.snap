@@ -2,14 +2,14 @@
 
 exports[`UserProductSubscriptionStatus toggle: license key hidden 1`] = `
 <div
-  className="product-certificate test-product-certificate card "
+  className="card test-product-certificate"
 >
   <div
     className="card-body d-flex align-items-center"
   >
     <img
       alt="Sourcegraph logo"
-      className="product-certificate__logo mr-1 p-2"
+      className="logo mr-1 p-2"
       src="/.assets/img/sourcegraph-mark.svg?v2"
     />
     <div>
@@ -37,43 +37,47 @@ exports[`UserProductSubscriptionStatus toggle: license key hidden 1`] = `
     </div>
   </div>
   <div
-    className="product-certificate__bg"
+    className="bg"
   />
   <div
-    className="card-footer d-flex align-items-center justify-content-between flex-wrap"
+    className="footer"
   >
-    <button
-      className="btn btn-primary mr-4 my-1"
-      onClick={[Function]}
-      type="button"
+    <div
+      className="card-footer d-flex align-items-center justify-content-between flex-wrap"
     >
-      <KeyIcon
-        className="icon-inline"
+      <button
+        className="btn btn-primary mr-4 my-1"
+        onClick={[Function]}
+        type="button"
+      >
+        <KeyIcon
+          className="icon-inline"
+        />
+         
+        Reveal
+         license key
+      </button>
+      <div
+        className="flex-fill"
       />
-       
-      Reveal
-       license key
-    </button>
-    <div
-      className="flex-fill"
-    />
-    <div
-      className="my-1"
-    />
+      <div
+        className="my-1"
+      />
+    </div>
   </div>
 </div>
 `;
 
 exports[`UserProductSubscriptionStatus toggle: license key revealed 1`] = `
 <div
-  className="product-certificate test-product-certificate card "
+  className="card test-product-certificate"
 >
   <div
     className="card-body d-flex align-items-center"
   >
     <img
       alt="Sourcegraph logo"
-      className="product-certificate__logo mr-1 p-2"
+      className="logo mr-1 p-2"
       src="/.assets/img/sourcegraph-mark.svg?v2"
     />
     <div>
@@ -101,59 +105,63 @@ exports[`UserProductSubscriptionStatus toggle: license key revealed 1`] = `
     </div>
   </div>
   <div
-    className="product-certificate__bg"
+    className="bg"
   />
   <div
-    className="card-footer d-flex align-items-center justify-content-between flex-wrap"
+    className="footer"
   >
-    <button
-      className="btn btn-primary mr-4 my-1"
-      onClick={[Function]}
-      type="button"
-    >
-      <KeyIcon
-        className="icon-inline"
-      />
-       
-      Hide
-       license key
-    </button>
     <div
-      className="flex-fill"
-    />
-    <div
-      className="my-1"
-    />
-  </div>
-  <div
-    className="card-footer"
-  >
-    <h3>
-      License key
-    </h3>
-    <CopyableText
-      className="d-block"
-      text="lk"
-    />
-    <small
-      className="mt-2 d-flex align-items-center"
+      className="card-footer d-flex align-items-center justify-content-between flex-wrap"
     >
-      <InformationIcon
-        className="icon-inline mr-1"
+      <button
+        className="btn btn-primary mr-4 my-1"
+        onClick={[Function]}
+        type="button"
+      >
+        <KeyIcon
+          className="icon-inline"
+        />
+         
+        Hide
+         license key
+      </button>
+      <div
+        className="flex-fill"
       />
-       
-      <span>
-        Use this license key as the
+      <div
+        className="my-1"
+      />
+    </div>
+    <div
+      className="card-footer"
+    >
+      <h3>
+        License key
+      </h3>
+      <CopyableText
+        className="d-block"
+        text="lk"
+      />
+      <small
+        className="mt-2 d-flex align-items-center"
+      >
+        <InformationIcon
+          className="icon-inline mr-1"
+        />
          
-        <code>
-          <strong>
-            licenseKey
-          </strong>
-        </code>
-         
-        property value in Sourcegraph site configuration.
-      </span>
-    </small>
+        <span>
+          Use this license key as the
+           
+          <code>
+            <strong>
+              licenseKey
+            </strong>
+          </code>
+           
+          property value in Sourcegraph site configuration.
+        </span>
+      </small>
+    </div>
   </div>
 </div>
 `;

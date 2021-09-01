@@ -10,6 +10,7 @@ import (
 	"encoding/pem"
 	"fmt"
 	"math/big"
+	"net"
 	"net/http"
 	"net/http/httptest"
 	"reflect"
@@ -347,6 +348,46 @@ func TestErrorResilience(t *testing.T) {
 
 		if res.StatusCode != 429 {
 			t.Fatalf("want status code 429, got: %d", res.StatusCode)
+		}
+	})
+
+	t.Run("no such host", func(t *testing.T) {
+		// spy on policy so we see what decisions it makes
+		retries := 0
+		policy := NewRetryPolicy(5) // smaller retries for faster failures
+		wrapped := func(a rehttp.Attempt) bool {
+			if policy(a) {
+				retries++
+				return true
+			}
+			return false
+		}
+
+		cli, _ := NewFactory(
+			NewMiddleware(
+				ContextErrorMiddleware,
+			),
+			NewErrorResilientTransportOpt(
+				wrapped,
+				rehttp.ExpJitterDelay(50*time.Millisecond, 5*time.Second),
+			),
+		).Doer()
+
+		// requests to .invalid will fail DNS lookup. (RFC 6761 section 6.4)
+		req, err := http.NewRequest("GET", "http://test.invalid", nil)
+		if err != nil {
+			t.Fatal(err)
+		}
+		_, err = cli.Do(req)
+
+		var dnsErr *net.DNSError
+		if !errors.As(err, &dnsErr) || !dnsErr.IsNotFound {
+			t.Fatalf("expected err to be net.DNSError with IsNotFound true: %v", err)
+		}
+
+		// policy is on DNS failure to retry 3 times
+		if want := 3; retries != want {
+			t.Fatalf("expected %d retries, got %d", want, retries)
 		}
 	})
 }

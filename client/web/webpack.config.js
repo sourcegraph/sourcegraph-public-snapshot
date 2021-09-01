@@ -215,7 +215,6 @@ const config = {
           loader: 'css-loader',
           options: {
             sourceMap: isDevelopment,
-            url: false,
             modules: {
               exportLocalsConvention: 'camelCase',
               localIdentName: '[name]__[local]_[hash:base64:5]',
@@ -245,6 +244,7 @@ const config = {
         use: [{ loader: 'worker-loader', options: { inline: 'no-fallback' } }, babelLoader],
       },
       { test: /\.ya?ml$/, type: 'asset/source' },
+      { test: /\.(png|woff2)$/, type: 'asset/resource' },
     ],
   },
 }
