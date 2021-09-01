@@ -57,9 +57,8 @@ Run `yarn upgrade -L PACKAGE`.
 
 To use esbuild instead of Webpack, set the env var `DEV_WEB_BUILDER=esbuild`:
 
-``` shell
-DEV_WEB_BUILDER=esbuild enterprise/dev/start.sh
-```
+- For the `start.sh` script: `DEV_WEB_BUILDER=esbuild enterprise/dev/start.sh`
+- For `sg`: add `DEV_WEB_BUILDER: esbuild` to the `env` section of the `web` or `enterprise-web` commands (the `web-standalone` and `enterprise-web-standalone` commands aren't yet supported for esbuild)
 
 Comparison vs. Webpack:
 

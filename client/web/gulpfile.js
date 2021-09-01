@@ -26,7 +26,7 @@ const {
 
 const { build: buildEsbuild } = require('./dev/esbuild/build')
 const { esbuildDevelopmentServer } = require('./dev/esbuild/server')
-const { DEV_WEB_BUILDER } = require('./dev/utils')
+const { DEV_WEB_BUILDER, DEV_SERVER_LISTEN_ADDR, DEV_SERVER_PROXY_TARGET_ADDR } = require('./dev/utils')
 const webpackConfig = require('./webpack.config')
 
 const WEBPACK_STATS_OPTIONS = {
@@ -83,7 +83,7 @@ async function webpackDevelopmentServer() {
   /** @type {import('webpack-dev-server').ProxyConfigMap } */
   const proxyConfig = {
     '/': {
-      target: 'http://localhost:3081',
+      target: `http://${DEV_SERVER_PROXY_TARGET_ADDR.host}:${DEV_SERVER_PROXY_TARGET_ADDR.port}`,
       // Avoid crashing on "read ECONNRESET".
       onError: () => undefined,
       // Don't log proxy errors, these usually just contain
@@ -100,8 +100,8 @@ async function webpackDevelopmentServer() {
     // react-refresh plugin triggers page reload if needed.
     liveReload: false,
     hot: !process.env.NO_HOT,
-    host: 'localhost',
-    port: 3080,
+    host: DEV_SERVER_LISTEN_ADDR.host,
+    port: DEV_SERVER_LISTEN_ADDR.port,
     client: {
       overlay: false,
       webSocketTransport: 'ws',

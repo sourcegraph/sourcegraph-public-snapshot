@@ -3,7 +3,7 @@ import path from 'path'
 
 import * as esbuild from 'esbuild'
 
-import { uiAssetsPath } from './build'
+import { STATIC_ASSETS_PATH } from '../utils'
 
 export const assetPathPrefix = '/.assets/'
 
@@ -14,7 +14,7 @@ interface Manifest {
 }
 
 const writeManifest = async (manifest: Manifest): Promise<void> => {
-    const manifestPath = path.join(uiAssetsPath, 'webpack.manifest.json')
+    const manifestPath = path.join(STATIC_ASSETS_PATH, 'webpack.manifest.json')
     await fs.promises.writeFile(manifestPath, JSON.stringify(manifest, null, 2))
 }
 

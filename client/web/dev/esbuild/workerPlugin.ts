@@ -53,10 +53,11 @@ export const workerPlugin: esbuild.Plugin = {
             })
 
             return {
-                contents: `import inlineWorker from '__inline-worker'
-export default function Worker() {
-  return inlineWorker(${JSON.stringify(workerBundle)})
-}
+                contents: `
+                    import inlineWorker from '__inline-worker'
+                    export default function Worker() {
+                        return inlineWorker(${JSON.stringify(workerBundle)})
+                    }
 `,
                 loader: 'js',
                 watchFiles,

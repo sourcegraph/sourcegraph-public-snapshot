@@ -9,8 +9,7 @@ import sass from 'sass'
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore
 import postcssConfig from '../../../../postcss.config'
-
-const rootPath = path.resolve(__dirname, '..', '..', '..', '..')
+import { ROOT_PATH } from '../utils'
 
 /**
  * An esbuild plugin that builds .css and .scss stylesheets (including support for CSS modules).
@@ -42,7 +41,7 @@ export const stylePlugin: esbuild.Plugin = {
                       .renderSync({
                           file: inputPath,
                           data: inputContents,
-                          includePaths: [path.resolve(rootPath, 'node_modules'), path.resolve(rootPath, 'client')],
+                          includePaths: [path.resolve(ROOT_PATH, 'node_modules'), path.resolve(ROOT_PATH, 'client')],
                       })
                       .css.toString()
                 : inputContents

@@ -147,7 +147,7 @@ const config = {
       // Do not [hash] for development -- see https://github.com/webpack/webpack-dev-server/issues/377#issuecomment-241258405
       filename: mode === 'production' ? 'styles/[name].[contenthash].bundle.css' : 'styles/[name].bundle.css',
     }),
-    new MonacoWebpackPlugin({ ...MONACO_LANGUAGES_AND_FEATURES }),
+    new MonacoWebpackPlugin(MONACO_LANGUAGES_AND_FEATURES),
     !shouldServeIndexHTML &&
       new WebpackManifestPlugin({
         writeToFileEmit: true,

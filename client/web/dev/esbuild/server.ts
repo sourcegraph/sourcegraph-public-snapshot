@@ -4,7 +4,9 @@ import path from 'path'
 import { serve } from 'esbuild'
 import signale from 'signale'
 
-import { buildMonaco, BUILD_OPTIONS, esbuildOutDirectory } from './build'
+import { DEV_SERVER_LISTEN_ADDR, DEV_SERVER_PROXY_TARGET_ADDR, STATIC_ASSETS_PATH } from '../utils'
+
+import { buildMonaco, BUILD_OPTIONS } from './build'
 import { assetPathPrefix } from './manifestPlugin'
 
 export const esbuildDevelopmentServer = async (): Promise<void> => {
@@ -14,11 +16,9 @@ export const esbuildDevelopmentServer = async (): Promise<void> => {
 
     // Start esbuild's server on a random local port.
     const { host: esbuildHost, port: esbuildPort, wait: esbuildStopped } = await serve(
-        { host: 'localhost', servedir: esbuildOutDirectory },
+        { host: 'localhost', servedir: STATIC_ASSETS_PATH },
         BUILD_OPTIONS
     )
-    const upstreamHost = 'localhost'
-    const upstreamPort = 3081
 
     // Start a proxy at :3080. Asset requests (underneath /.assets/) go to esbuild; all other
     // requests go to the upstream.
@@ -57,8 +57,8 @@ export const esbuildDevelopmentServer = async (): Promise<void> => {
                 const upstreamRequest = http.request(
                     {
                         ...commonRequestOptions,
-                        hostname: upstreamHost,
-                        port: upstreamPort,
+                        hostname: DEV_SERVER_PROXY_TARGET_ADDR.host,
+                        port: DEV_SERVER_PROXY_TARGET_ADDR.port,
                         path: request.url!,
                     },
                     proxyResponse => {
@@ -69,7 +69,7 @@ export const esbuildDevelopmentServer = async (): Promise<void> => {
                 request.pipe(upstreamRequest, { end: true })
             }
         })
-        .listen({ host: 'localhost', port: 3080 })
+        .listen(DEV_SERVER_LISTEN_ADDR)
     await new Promise<void>((resolve, reject) => {
         proxyServer.once('listening', () => {
             signale.success('esbuild server is ready')

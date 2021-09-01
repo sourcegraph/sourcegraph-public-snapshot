@@ -4,11 +4,12 @@ import * as esbuild from 'esbuild'
 import { EditorFeature, featuresArr } from 'monaco-editor-webpack-plugin/out/features'
 import { EditorLanguage, languagesArr } from 'monaco-editor-webpack-plugin/out/languages'
 
+import { ROOT_PATH } from '../utils'
 import { MONACO_LANGUAGES_AND_FEATURES } from '../webpack/monacoWebpack'
 
 const monacoModulePath = (modulePath: string): string =>
     require.resolve(path.join('monaco-editor/esm', modulePath), {
-        paths: [path.join(__dirname, '../../../../node_modules')],
+        paths: [path.join(ROOT_PATH, 'node_modules')],
     })
 
 /**
