@@ -11,7 +11,7 @@ Provide a manifest file that describes the data series you want to generate.
 {
   "definitions": [
     {
-      "repo_path": "/Users/couryclark/Documents/code/test-data/insights-test-data-repo-1",
+      "repo_path": "path_to_repo",
       "symbols": [
         {
           "symbol": "insights",
