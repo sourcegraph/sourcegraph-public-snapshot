@@ -122,7 +122,7 @@ func ProvidersFromConfig(
 	}
 
 	if len(gitHubConns) > 0 {
-		ghProviders, ghProblems, ghWarnings := github.NewAuthzProviders(gitHubConns)
+		ghProviders, ghProblems, ghWarnings := github.NewAuthzProviders(gitHubConns, cfg.AuthProviders)
 		providers = append(providers, ghProviders...)
 		seriousProblems = append(seriousProblems, ghProblems...)
 		warnings = append(warnings, ghWarnings...)
