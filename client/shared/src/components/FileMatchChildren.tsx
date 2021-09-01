@@ -117,7 +117,7 @@ export const FileMatchChildren: React.FunctionComponent<FileMatchProps> = props 
 
     return (
         <div className="file-match-children">
-			{result.repoLastFetched && <LastSyncedIcon lastSyncedTime={result.repoLastFetched}/>}
+            {result.repoLastFetched && <LastSyncedIcon lastSyncedTime={result.repoLastFetched} />}
             {/* Path */}
             {result.type === 'path' && (
                 <div className="file-match-children__item">

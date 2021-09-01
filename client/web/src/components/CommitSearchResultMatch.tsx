@@ -153,8 +153,12 @@ export class CommitSearchResultMatch extends React.Component<
                 offset={this.visibilitySensorOffset}
             >
                 <div className={styles.commitSearchResultMatch}>
-                    {this.props.item.repoLastFetched &&
-                        LastSyncedIcon({ lastSyncedTime: this.props.item.repoLastFetched })}
+                    {this.props.item.repoLastFetched && (
+                        <LastSyncedIcon
+                            className={styles.lastSyncedIcon}
+                            lastSyncedTime={this.props.item.repoLastFetched}
+                        />
+                    )}
                     {this.state.HTML !== undefined ? (
                         <Link key={this.props.item.url} to={this.props.item.url} className="search-result-match">
                             <code>
