@@ -269,11 +269,11 @@ commands:
       CADDY_VERSION: 2.3.0
 
   web:
-    cmd: ./node_modules/.bin/gulp --silent --color dev
+    cmd: ./node_modules/.bin/gulp --color dev
     install: yarn --no-progress
 
   enterprise-web:
-    cmd: ./node_modules/.bin/gulp --silent --color dev
+    cmd: ./node_modules/.bin/gulp --color dev
     install: yarn --no-progress
     env:
       ENTERPRISE: 1
