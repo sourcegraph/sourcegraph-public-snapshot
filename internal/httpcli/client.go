@@ -19,6 +19,10 @@ import (
 	"github.com/gregjones/httpcache"
 	"github.com/hashicorp/go-multierror"
 	"github.com/inconshreveable/log15"
+	"github.com/opentracing/opentracing-go"
+	otlog "github.com/opentracing/opentracing-go/log"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
 
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
@@ -357,6 +361,11 @@ func MeteredTransportOpt(subsystem string) Opt {
 	}
 }
 
+var metricRetry = promauto.NewCounter(prometheus.CounterOpts{
+	Name: "src_httpcli_retry_total",
+	Help: "Total number of times we retry HTTP requests.",
+})
+
 // A regular expression to match the error returned by net/http when the
 // configured number of redirects is exhausted. This error isn't typed
 // specifically so we resort to matching on the error string.
@@ -387,6 +396,25 @@ func NewRetryPolicy(max int) rehttp.RetryFn {
 		status := 0
 
 		defer func() {
+			if span := opentracing.SpanFromContext(a.Request.Context()); span != nil {
+				fields := []otlog.Field{
+					otlog.Event("request-failed"),
+					otlog.Bool("retry", retry),
+					otlog.Int("attempt", a.Index),
+					otlog.String("method", a.Request.Method),
+					otlog.String("url", a.Request.URL.String()),
+					otlog.Int("status", status),
+				}
+				if a.Error != nil {
+					fields = append(fields, otlog.Error(a.Error))
+				}
+				span.LogFields(fields...)
+			}
+
+			if retry {
+				metricRetry.Inc()
+			}
+
 			if retry || a.Error == nil || a.Index == 0 {
 				return
 			}
