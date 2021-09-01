@@ -7,16 +7,16 @@ import (
 	"sync"
 
 	"github.com/cockroachdb/errors"
+	"github.com/graph-gophers/graphql-go"
+	"github.com/graph-gophers/graphql-go/relay"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/externallink"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
-
-	"github.com/graph-gophers/graphql-go"
-	"github.com/graph-gophers/graphql-go/relay"
 )
 
 func (r *schemaResolver) gitCommitByID(ctx context.Context, id graphql.ID) (*GitCommitResolver, error) {
@@ -196,6 +196,10 @@ func (r *GitCommitResolver) Tree(ctx context.Context, args *struct {
 	Path      string
 	Recursive bool
 }) (*GitTreeEntryResolver, error) {
+	span, ctx := ot.StartSpanFromContext(ctx, "commit.tree")
+	defer span.Finish()
+	span.SetTag("path", args.Path)
+
 	stat, err := git.Stat(ctx, r.gitRepo, api.CommitID(r.oid), args.Path)
 	if err != nil {
 		return nil, err

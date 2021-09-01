@@ -9,6 +9,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
 
@@ -38,6 +39,9 @@ func (r *GitTreeEntryResolver) Files(ctx context.Context, args *gitTreeEntryConn
 }
 
 func (r *GitTreeEntryResolver) entries(ctx context.Context, args *gitTreeEntryConnectionArgs, filter func(fi fs.FileInfo) bool) ([]*GitTreeEntryResolver, error) {
+	span, ctx := ot.StartSpanFromContext(ctx, "tree.entries")
+	defer span.Finish()
+
 	entries, err := git.ReadDir(
 		ctx,
 		r.commit.repoResolver.RepoName(),
