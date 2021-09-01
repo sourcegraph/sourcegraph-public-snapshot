@@ -22,7 +22,7 @@ var DevAndTesting = conftypes.RawUnified{
 	"auth.providers": [
 		{
 			"type": "builtin",
-			"allowSignup": true
+			"allowSignup": false
 		}
 	],
 
@@ -41,7 +41,7 @@ var DockerContainer = conftypes.RawUnified{
 	"auth.providers": [
 		{
 			"type": "builtin",
-			"allowSignup": true
+			"allowSignup": false
 		}
 	],
 

@@ -273,6 +273,10 @@ func IsExternalURLSecure() bool {
 }
 
 func IsBuiltinSignupAllowed() bool {
+	if SingleUserMode {
+		return false
+	}
+
 	provs := Get().AuthProviders
 	for _, prov := range provs {
 		if prov.Builtin != nil {

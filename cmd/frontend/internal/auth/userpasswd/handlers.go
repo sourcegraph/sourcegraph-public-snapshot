@@ -46,7 +46,8 @@ func HandleSignUp(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Signup is not enabled (builtin auth provider allowSignup site configuration option)", http.StatusNotFound)
 		return
 	}
-	handleSignUp(w, r, false)
+
+	handleSignUp(w, r, conf.SingleUserMode)
 }
 
 // HandleSiteInit handles submission of the site initialization form, where the initial site admin user is created.

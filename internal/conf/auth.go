@@ -5,6 +5,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
+var SingleUserMode = true
+
 // AuthProviderType returns the type string for the auth provider.
 func AuthProviderType(p schema.AuthProviders) string {
 	switch {
@@ -30,16 +32,3 @@ func AuthProviderType(p schema.AuthProviders) string {
 // usage it is preferable for all users to have accounts. But on sourcegraph.com, allowing users to
 // opt-in to accounts remains worthwhile, despite the degraded UX.
 func AuthPublic() bool { return envvar.SourcegraphDotComMode() }
-
-// AuthAllowSignup reports whether the site allows signup. Currently only the builtin auth provider
-// allows signup. AuthAllowSignup returns true if auth.providers' builtin provider has allowSignup
-// true (in site config).
-func AuthAllowSignup() bool { return authAllowSignup(Get()) }
-func authAllowSignup(c *Unified) bool {
-	for _, p := range c.AuthProviders {
-		if p.Builtin != nil && p.Builtin.AllowSignup {
-			return true
-		}
-	}
-	return false
-}

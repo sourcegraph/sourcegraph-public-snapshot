@@ -53,6 +53,10 @@ func validateConfig(c conf.Unified) (problems conf.Problems) {
 	for _, p := range c.AuthProviders {
 		if p.Builtin != nil {
 			builtinAuthProviders++
+
+			if p.Builtin.AllowSignup && conf.SingleUserMode {
+				problems = append(problems, conf.NewSiteProblem("`allowSignup` for the builtin auth provider is not allowed in OSS version of Sourcegraph"))
+			}
 		}
 	}
 	if builtinAuthProviders >= 2 {

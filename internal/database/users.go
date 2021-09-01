@@ -119,9 +119,13 @@ type errCannotCreateUser struct {
 const (
 	errorCodeUsernameExists = "err_username_exists"
 	errorCodeEmailExists    = "err_email_exists"
+	errorOssSingleUser      = "err_oss_single_user"
 )
 
 func (err errCannotCreateUser) Error() string {
+	if err.code == errorOssSingleUser {
+		return "Only one account can be created in the OSS version of Sourcegraph."
+	}
 	return fmt.Sprintf("cannot create user: %v", err.code)
 }
 
@@ -280,6 +284,10 @@ func (u *UserStore) create(ctx context.Context, info NewUser) (newUser *types.Us
 	}
 	if alreadyInitialized && info.FailIfNotInitialUser {
 		return nil, errCannotCreateUser{"site_already_initialized"}
+	}
+
+	if alreadyInitialized && conf.SingleUserMode {
+		return nil, errCannotCreateUser{errorOssSingleUser}
 	}
 
 	// Run BeforeCreateUser hook.

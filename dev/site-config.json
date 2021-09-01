@@ -3,7 +3,7 @@
   "auth.providers": [
     {
       "type": "builtin",
-      "allowSignup": false
+      "allowSignup": true
     }
   ],
   "externalURL": "http://localhost:3080/",

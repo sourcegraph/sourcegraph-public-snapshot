@@ -177,7 +177,7 @@ func NewJSContextFromRequest(req *http.Request) JSContext {
 
 		ExternalServicesUserMode: conf.ExternalServiceUserMode().String(),
 
-		AllowSignup: conf.AuthAllowSignup(),
+		AllowSignup: conf.IsBuiltinSignupAllowed(),
 
 		AuthProviders: authProviders,
 
