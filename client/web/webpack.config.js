@@ -14,6 +14,7 @@ const { WebpackManifestPlugin } = require('webpack-manifest-plugin')
 
 const { getCSSLoaders } = require('./dev/webpack/get-css-loaders')
 const { getHTMLWebpackPlugins } = require('./dev/webpack/get-html-webpack-plugins')
+const { MONACO_LANGUAGES_AND_FEATURES } = require('./dev/webpack/monacoWebpack')
 const { isHotReloadEnabled } = require('./src/integration/environment')
 
 const mode = process.env.NODE_ENV === 'production' ? 'production' : 'development'
@@ -146,22 +147,7 @@ const config = {
       // Do not [hash] for development -- see https://github.com/webpack/webpack-dev-server/issues/377#issuecomment-241258405
       filename: mode === 'production' ? 'styles/[name].[contenthash].bundle.css' : 'styles/[name].bundle.css',
     }),
-    new MonacoWebpackPlugin({
-      languages: ['json'],
-      features: [
-        'bracketMatching',
-        'clipboard',
-        'coreCommands',
-        'cursorUndo',
-        'find',
-        'format',
-        'hover',
-        'inPlaceReplace',
-        'iPadShowKeyboard',
-        'links',
-        'suggest',
-      ],
-    }),
+    new MonacoWebpackPlugin(MONACO_LANGUAGES_AND_FEATURES),
     !shouldServeIndexHTML &&
       new WebpackManifestPlugin({
         writeToFileEmit: true,

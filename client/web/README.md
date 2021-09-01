@@ -45,3 +45,7 @@ Build artifacts will be served from `<rootRepoPath>/ui/assets`.
 In both environments, server proxies API requests to `SOURCEGRAPH_API_URL` provided as the `.env` variable.
 To avoid the `CSRF token is invalid` error CSRF token is retrieved from the `SOURCEGRAPH_API_URL` before the server starts.
 Then this value is used for every subsequent request to the API.
+
+### esbuild (experimental)
+
+See https://docs.sourcegraph.com/dev/background-information/web/build#esbuild.

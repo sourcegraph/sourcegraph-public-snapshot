@@ -50,3 +50,28 @@ Run `yarn add PACKAGE` or `yarn add -D PACKAGE` in the root directory.
 #### Upgrade a dependency
 
 Run `yarn upgrade -L PACKAGE`.
+
+### esbuild
+
+[esbuild](https://esbuild.github.io/) is an alternative to Webpack for building `client/web` (the web app). Its usage on our codebase is **EXPERIMENTAL** and optional.
+
+To use esbuild instead of Webpack, set the env var `DEV_WEB_BUILDER=esbuild`:
+
+- For the `start.sh` script: `DEV_WEB_BUILDER=esbuild enterprise/dev/start.sh`
+- For `sg`: add `DEV_WEB_BUILDER: esbuild` to the `env` section of the `web` or `enterprise-web` commands (the `web-standalone` and `enterprise-web-standalone` commands aren't yet supported for esbuild)
+
+Comparison vs. Webpack:
+
+- esbuild: faster initial build (esbuild ~3s vs. Webpack ~53s)
+- esbuild: faster recompilation (esbuild ~900ms vs. Webpack ~5000ms)
+- esbuild: smaller total asset size in dev (Chrome devtools network resources size for `/search`: esbuild ~24.1MB vs. Webpack ~64.1MB)
+- esbuild: faster DOMContentLoaded (on `/search`: esbuild ~1.2s vs. Webpack ~2.3s)
+- Webpack: [fast refresh](https://www.npmjs.com/package/react-refresh) (not supported/implemented yet in esbuild, so you need to manually reload the page after each change)
+
+Notes:
+
+- It's probably possible to configure Webpack to be faster and produce smaller dev bundles, so consider these comparisons as reflecting the current state, not the hypothetical ideal state after more optimization.
+- Webpack is still used for all other web builds (including storybooks and the browser extension).
+- esbuild is not configured to make a production build. Just use it for local dev for now.
+
+Questions or problems with esbuild? Ask in [#frontend-platform](https://app.slack.com/client/T02FSM7DL/C01LTKUHRL3) and mention `@sqs` (who is responsible for this esbuild experiment).

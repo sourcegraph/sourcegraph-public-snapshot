@@ -24,6 +24,10 @@ const {
   watchSchema,
 } = require('../shared/gulpfile')
 
+const { build: buildEsbuild } = require('./dev/esbuild/build')
+const { esbuildDevelopmentServer } = require('./dev/esbuild/server')
+const { DEV_SERVER_LISTEN_ADDR, DEV_SERVER_PROXY_TARGET_ADDR } = require('./dev/utils')
+const { DEV_WEB_BUILDER } = require('./dev/utils/environment-config').environmentConfig
 const webpackConfig = require('./webpack.config')
 
 const WEBPACK_STATS_OPTIONS = {
@@ -53,6 +57,8 @@ async function webpack() {
   }
 }
 
+const webBuild = DEV_WEB_BUILDER === 'webpack' ? webpack : buildEsbuild
+
 /**
  * Watch files and update the webpack bundle on disk without starting a dev server.
  */
@@ -78,7 +84,7 @@ async function webpackDevelopmentServer() {
   /** @type {import('webpack-dev-server').ProxyConfigMap } */
   const proxyConfig = {
     '/': {
-      target: 'http://localhost:3081',
+      target: `http://${DEV_SERVER_PROXY_TARGET_ADDR.host}:${DEV_SERVER_PROXY_TARGET_ADDR.port}`,
       // Avoid crashing on "read ECONNRESET".
       onError: () => undefined,
       // Don't log proxy errors, these usually just contain
@@ -95,8 +101,8 @@ async function webpackDevelopmentServer() {
     // react-refresh plugin triggers page reload if needed.
     liveReload: false,
     hot: !process.env.NO_HOT,
-    host: 'localhost',
-    port: 3080,
+    host: DEV_SERVER_LISTEN_ADDR.host,
+    port: DEV_SERVER_LISTEN_ADDR.port,
     client: {
       overlay: false,
       webSocketTransport: 'ws',
@@ -128,6 +134,8 @@ async function webpackDevelopmentServer() {
   })
 }
 
+const developmentServer = DEV_WEB_BUILDER === 'webpack' ? webpackDevelopmentServer : esbuildDevelopmentServer
+
 // Ensure the typings that TypeScript depends on are build to avoid first-time-run errors
 const codeGen = gulp.parallel(schema, graphQlOperations, graphQlSchema)
 
@@ -137,12 +145,12 @@ const watchCodeGen = gulp.parallel(watchSchema, watchGraphQlSchema, watchGraphQl
 /**
  * Builds everything.
  */
-const build = gulp.series(codeGen, webpack)
+const build = gulp.series(codeGen, webBuild)
 
 /**
  * Starts a development server without initial code generation, watches everything and rebuilds on file changes.
  */
-const developmentWithoutInitialCodeGen = gulp.parallel(watchCodeGen, webpackDevelopmentServer)
+const developmentWithoutInitialCodeGen = gulp.parallel(watchCodeGen, developmentServer)
 
 /**
  * Runs code generation first, then starts a development server, watches everything and rebuilds on file changes.
@@ -171,4 +179,6 @@ module.exports = {
   webpackDevServer: webpackDevelopmentServer,
   webpack,
   watchWebpack,
+  webBuild,
+  developmentServer,
 }

@@ -1,9 +1,18 @@
 /* eslint-disable @typescript-eslint/no-use-before-define */
 /* eslint rxjs/no-internal: warn */
-import { Observable, ObservableInput, of, Operator, PartialObserver, Subscriber, TeardownLogic, zip } from 'rxjs'
-import { fromArray } from 'rxjs/internal/observable/fromArray'
+import {
+    asapScheduler,
+    from,
+    Observable,
+    ObservableInput,
+    of,
+    Operator,
+    PartialObserver,
+    Subscriber,
+    TeardownLogic,
+    zip,
+} from 'rxjs'
 import { OuterSubscriber } from 'rxjs/internal/OuterSubscriber'
-import { asap } from 'rxjs/internal/scheduler/asap'
 import { subscribeToResult } from 'rxjs/internal/util/subscribeToResult'
 
 /**
@@ -41,7 +50,7 @@ export function combineLatestOrDefault<T>(observables: ObservableInput<T>[], def
             // Only one source observable: no need to handle emission accumulation or default values
             return zip(...observables)
         default:
-            return fromArray(observables).lift(new CombineLatestOperator(defaultValue))
+            return from(observables).lift(new CombineLatestOperator(defaultValue))
     }
 }
 
@@ -103,7 +112,7 @@ class CombineLatestSubscriber<T> extends OuterSubscriber<T, T[]> {
         // This makes tests (using expectObservable) easier to write.
         if (!this.scheduled) {
             this.scheduled = true
-            asap.schedule(() => {
+            asapScheduler.schedule(() => {
                 if (this.scheduled && this.destination.next) {
                     this.destination.next(this.values.slice())
                 }
