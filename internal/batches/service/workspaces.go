@@ -3,16 +3,21 @@ package service
 import (
 	"context"
 	"fmt"
+	"sort"
 
 	"github.com/gobwas/glob"
+	"github.com/pkg/errors"
 	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
+	"github.com/sourcegraph/sourcegraph/lib/batches/template"
 	"github.com/sourcegraph/src-cli/internal/batches"
 	"github.com/sourcegraph/src-cli/internal/batches/graphql"
+	"github.com/sourcegraph/src-cli/internal/batches/util"
 )
 
 type RepoWorkspace struct {
 	RepoID             string
 	Path               string
+	Steps              []batcheslib.Step
 	OnlyFetchWorkspace bool
 }
 
@@ -31,6 +36,11 @@ func findWorkspaces(
 	finder directoryFinder,
 	repos []*graphql.Repository,
 ) ([]RepoWorkspace, error) {
+	repoByID := make(map[string]*graphql.Repository)
+	for _, repo := range repos {
+		repoByID[repo.ID] = repo
+	}
+
 	// Pre-compile all globs.
 	workspaceMatchers := make(map[batcheslib.WorkspaceConfiguration]glob.Glob)
 	for _, conf := range spec.Workspaces {
@@ -117,12 +127,71 @@ func findWorkspaces(
 				fetchWorkspace = false
 			}
 
+			repo, ok := repoByID[workspace.RepoID]
+			if !ok {
+				return nil, errors.New("invalid state, repo not found")
+			}
+
+			steps, err := stepsForRepo(spec, repo)
+			if err != nil {
+				return nil, err
+			}
+
+			// If the workspace doesn't have any steps we don't need to include it.
+			if len(steps) == 0 {
+				continue
+			}
+
 			workspaces = append(workspaces, RepoWorkspace{
 				RepoID:             workspace.RepoID,
 				Path:               path,
+				Steps:              steps,
 				OnlyFetchWorkspace: fetchWorkspace,
 			})
 		}
 	}
+
+	// Stable sorting.
+	sort.Slice(workspaces, func(i, j int) bool {
+		if workspaces[i].RepoID == workspaces[j].RepoID {
+			return workspaces[i].Path < workspaces[j].Path
+		}
+		return workspaces[i].RepoID < workspaces[j].RepoID
+	})
+
 	return workspaces, nil
+}
+
+// stepsForRepo calculates the steps required to run on the given repo.
+func stepsForRepo(spec *batcheslib.BatchSpec, r *graphql.Repository) ([]batcheslib.Step, error) {
+	taskSteps := []batcheslib.Step{}
+	for _, step := range spec.Steps {
+		// If no if condition is given, just go ahead and add the step to the list.
+		if step.IfCondition() == "" {
+			taskSteps = append(taskSteps, step)
+			continue
+		}
+
+		batchChange := template.BatchChangeAttributes{
+			Name:        spec.Name,
+			Description: spec.Description,
+		}
+		stepCtx := &template.StepContext{
+			Repository:  util.GraphQLRepoToTemplatingRepo(r),
+			BatchChange: batchChange,
+		}
+		static, boolVal, err := template.IsStaticBool(step.IfCondition(), stepCtx)
+		if err != nil {
+			return nil, err
+		}
+
+		// If we could evaluate the condition statically and the resulting
+		// boolean is false, we don't add that step.
+		if !static {
+			taskSteps = append(taskSteps, step)
+		} else if boolVal {
+			taskSteps = append(taskSteps, step)
+		}
+	}
+	return taskSteps, nil
 }
