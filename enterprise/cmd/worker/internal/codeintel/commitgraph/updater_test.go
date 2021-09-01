@@ -26,9 +26,7 @@ func TestUpdater(t *testing.T) {
 	mockGitserverClient := NewMockGitserverClient()
 	mockGitserverClient.CommitGraphFunc.SetDefaultReturn(graph, nil)
 	mockGitserverClient.RefDescriptionsFunc.SetDefaultReturn(map[string][]gitserver.RefDescription{
-		"b": {
-			{IsDefaultBranch: true},
-		},
+		"b": {{IsDefaultBranch: true}},
 	}, nil)
 
 	updater := &Updater{
