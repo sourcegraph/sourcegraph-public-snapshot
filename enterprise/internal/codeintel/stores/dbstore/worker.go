@@ -87,3 +87,29 @@ var dependencyIndexingJobWorkerStoreOptions = dbworkerstore.Options{
 func WorkerutilDependencyIndexStore(s basestore.ShareableStore, observationContext *observation.Context) dbworkerstore.Store {
 	return dbworkerstore.NewWithMetrics(s.Handle(), dependencyIndexingJobWorkerStoreOptions, observationContext)
 }
+
+// StalledDependencyIndexingQueueingJobMaxAge is the maximum allowable duration between updating
+// the state of a dependency indexing queueing job as "processing" and locking the job row during
+// processing. An unlocked row that is marked as processing likely indicates that the worker
+// that dequeued the job has died. There should be a nearly-zero delay between these states
+// during normal operation.
+const StalledDependencyIndexingQueueingJobMaxAge = time.Second * 25
+
+// DependencyIndexingQueueingJobMaxNumResets is the maximum number of times a dependency indexing
+// job can be reset. If an job's failed attempts counter reaches this threshold, it will be
+// moved into "errored" rather than "queued" on its next reset.
+const DependencyIndexingQueueingJobMaxNumResets = 3
+
+var dependencyIndexingQueueingJobWorkerStoreOptions = dbworkerstore.Options{
+	Name:              "codeintel_dependency_index_queueing",
+	TableName:         "lsif_dependency_indexing_queueing_jobs j",
+	ColumnExpressions: dependencyIndexingQueueingJobColumns,
+	Scan:              scanFirstDependencyIndexingQueueingJobRecord,
+	OrderByExpression: sqlf.Sprintf("j.queued_at, j.upload_id"),
+	StalledMaxAge:     StalledDependencyIndexingQueueingJobMaxAge,
+	MaxNumResets:      DependencyIndexingQueueingJobMaxNumResets,
+}
+
+func WorkerutilDependencyIndexQueueingStore(s basestore.ShareableStore, observationContext *observation.Context) dbworkerstore.Store {
+	return dbworkerstore.NewWithMetrics(s.Handle(), dependencyIndexingQueueingJobWorkerStoreOptions, observationContext)
+}

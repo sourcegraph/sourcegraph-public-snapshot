@@ -19,7 +19,7 @@ func InitDBStore() (*dbstore.Store, error) {
 		return nil, err
 	}
 
-	return conn.(*dbstore.Store), err
+	return conn.(*dbstore.Store), nil
 }
 
 var initDBStore = shared.NewMemoizedConstructor(func() (interface{}, error) {
@@ -44,7 +44,7 @@ func InitDependencyIndexStore() (dbworkerstore.Store, error) {
 		return nil, err
 	}
 
-	return store.(dbworkerstore.Store), err
+	return store.(dbworkerstore.Store), nil
 }
 
 var initDependencyIndexStore = shared.NewMemoizedConstructor(func() (interface{}, error) {
@@ -60,4 +60,28 @@ var initDependencyIndexStore = shared.NewMemoizedConstructor(func() (interface{}
 	}
 
 	return dbstore.WorkerutilDependencyIndexStore(dbStore, observationContext), nil
+})
+
+func InitDependencyIndexQueueingStore() (dbworkerstore.Store, error) {
+	store, err := initDependenyIndexQueueingStore.Init()
+	if err != nil {
+		return nil, err
+	}
+
+	return store.(dbworkerstore.Store), nil
+}
+
+var initDependenyIndexQueueingStore = shared.NewMemoizedConstructor(func() (interface{}, error) {
+	observationContext := &observation.Context{
+		Logger:     log15.Root(),
+		Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
+		Registerer: prometheus.DefaultRegisterer,
+	}
+
+	dbStore, err := InitDBStore()
+	if err != nil {
+		return nil, err
+	}
+
+	return dbstore.WorkerutilDependencyIndexQueueingStore(dbStore, observationContext), nil
 })

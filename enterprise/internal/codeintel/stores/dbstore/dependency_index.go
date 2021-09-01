@@ -92,6 +92,89 @@ func scanFirstDependencyIndexingJobRecord(rows *sql.Rows, err error) (workerutil
 	return scanFirstDependencyIndexingJob(rows, err)
 }
 
+// DependencyIndexingQueueingJob is a subset of the lsif_dependency_indexing_jobs table and acts as the
+// queue and execution record for indexing the dependencies of a particular completed upload.
+type DependencyIndexingQueueingJob struct {
+	ID                  int        `json:"id"`
+	State               string     `json:"state"`
+	FailureMessage      *string    `json:"failureMessage"`
+	StartedAt           *time.Time `json:"startedAt"`
+	FinishedAt          *time.Time `json:"finishedAt"`
+	ProcessAfter        *time.Time `json:"processAfter"`
+	NumResets           int        `json:"numResets"`
+	NumFailures         int        `json:"numFailures"`
+	UploadID            int        `json:"uploadId"`
+	ExternalServiceKind string     `json:"externalServiceKind"`
+	ExternalServiceSync time.Time  `json:"externalServiceSync"`
+}
+
+func (u DependencyIndexingQueueingJob) RecordID() int {
+	return u.ID
+}
+
+// scanDependencyIndexingQueueingJob scans a slice of dependency indexing jobs from the return value of
+// `*Store.query`.
+func scanDependencyIndexingQueueingJobs(rows *sql.Rows, queryErr error) (_ []DependencyIndexingQueueingJob, err error) {
+	if queryErr != nil {
+		return nil, queryErr
+	}
+	defer func() { err = basestore.CloseRows(rows, err) }()
+
+	var jobs []DependencyIndexingQueueingJob
+	for rows.Next() {
+		var job DependencyIndexingQueueingJob
+		if err := rows.Scan(
+			&job.ID,
+			&job.State,
+			&job.FailureMessage,
+			&job.StartedAt,
+			&job.FinishedAt,
+			&job.ProcessAfter,
+			&job.NumResets,
+			&job.NumFailures,
+			&job.UploadID,
+			&job.ExternalServiceKind,
+			&job.ExternalServiceSync,
+		); err != nil {
+			return nil, err
+		}
+
+		jobs = append(jobs, job)
+	}
+
+	return jobs, nil
+}
+
+var dependencyIndexingQueueingJobColumns = []*sqlf.Query{
+	sqlf.Sprintf("j.id"),
+	sqlf.Sprintf("j.state"),
+	sqlf.Sprintf("j.failure_message"),
+	sqlf.Sprintf("j.started_at"),
+	sqlf.Sprintf("j.finished_at"),
+	sqlf.Sprintf("j.process_after"),
+	sqlf.Sprintf("j.num_resets"),
+	sqlf.Sprintf("j.num_failures"),
+	sqlf.Sprintf("j.upload_id"),
+	sqlf.Sprintf("j.external_service_kind"),
+	sqlf.Sprintf("j.external_service_sync"),
+}
+
+// scanFirstDependencyIndexingQueueingJob scans a slice of dependency indexing jobs from the return
+// value of `*Store.query` and returns the first.
+func scanFirstDependencyIndexingQueueingJob(rows *sql.Rows, err error) (DependencyIndexingQueueingJob, bool, error) {
+	jobs, err := scanDependencyIndexingQueueingJobs(rows, err)
+	if err != nil || len(jobs) == 0 {
+		return DependencyIndexingQueueingJob{}, false, err
+	}
+	return jobs[0], true, nil
+}
+
+// scanFirstDependencyIndexingQueueingJobRecord scans a slice of dependency indexing jobs from the
+// return value of `*Store.query` and returns the first.
+func scanFirstDependencyIndexingQueueingJobRecord(rows *sql.Rows, err error) (workerutil.Record, bool, error) {
+	return scanFirstDependencyIndexingQueueingJob(rows, err)
+}
+
 // InsertDependencyIndexingJob inserts a new dependency indexing job and returns its identifier.
 func (s *Store) InsertDependencyIndexingJob(ctx context.Context, uploadID int) (id int, err error) {
 	ctx, endObservation := s.operations.insertDependencyIndexingJob.With(ctx, &err, observation.Args{})
@@ -130,4 +213,26 @@ INSERT INTO lsif_dependency_repos (scheme, name, version)
 VALUES (%s, %s, %s)
 ON CONFLICT DO NOTHING
 RETURNING 1
+`
+
+func (s *Store) InsertDependencyIndexingQueueingJob(ctx context.Context, uploadID int, externalServiceKind string, syncTime time.Time) (id int, err error) {
+	ctx, endObservation := s.operations.insertDependencyIndexingQueueingJob.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.Int("uploadId", uploadID),
+		log.String("extSvcKind", externalServiceKind),
+	}})
+	defer func() {
+		endObservation(1, observation.Args{LogFields: []log.Field{
+			log.Int("id", id),
+		}})
+	}()
+
+	id, _, err = basestore.ScanFirstInt(s.Store.Query(ctx, sqlf.Sprintf(insertDependencyIndexingQueueingJobQuery, uploadID, externalServiceKind, syncTime)))
+	return id, err
+}
+
+const insertDependencyIndexingQueueingJobQuery = `
+-- source: enterprise/internal/codeintel/stores/dbstore/dependency_index.go:InsertDependencyIndexingSubJob
+INSERT INTO lsif_dependency_indexing_queueing_jobs (upload_id, external_service_kind, external_service_sync)
+VALUES (%s, %s, %s)
+RETURNING id
 `
