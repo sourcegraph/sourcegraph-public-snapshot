@@ -34,6 +34,13 @@ export const BUILD_OPTIONS: esbuild.BuildOptions = {
         manifestPlugin,
         packageResolutionPlugin({
             path: require.resolve('path-browserify'),
+
+            // Needed because imports of rxjs/internal/... actually import a different variant of
+            // rxjs in the same package, which leads to observables from combineLatestOrDefault (and
+            // other places that use rxjs/internal/...) not being cross-compatible. See
+            // https://stackoverflow.com/questions/53758889/rxjs-subscribeto-js-observable-check-works-in-chrome-but-fails-in-chrome-incogn.
+            'rxjs/internal/OuterSubscriber': require.resolve('rxjs/_esm5/internal/OuterSubscriber'),
+            'rxjs/internal/util/subscribeToResult': require.resolve('rxjs/_esm5/internal/util/subscribeToResult'),
         }),
         monacoPlugin(MONACO_LANGUAGES_AND_FEATURES),
         {
