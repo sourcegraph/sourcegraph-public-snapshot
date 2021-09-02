@@ -27,7 +27,7 @@ func init() {
 
 func TestRouter(t *testing.T) {
 	db := new(dbtesting.MockDB)
-	InitRouter(db)
+	InitRouter(db, nil)
 	router := Router()
 	tests := []struct {
 		path      string
@@ -213,7 +213,7 @@ func TestRouter(t *testing.T) {
 
 func TestRouter_RootPath(t *testing.T) {
 	db := new(dbtesting.MockDB)
-	InitRouter(db)
+	InitRouter(db, nil)
 	router := Router()
 
 	tests := []struct {
