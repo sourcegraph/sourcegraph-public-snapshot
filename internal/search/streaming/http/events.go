@@ -19,18 +19,28 @@ type EventContentMatch struct {
 	// Type is always FileMatchType. Included here for marshalling.
 	Type MatchType `json:"type"`
 
-	Path            string     `json:"name"`
-	RepositoryID    int32      `json:"repositoryID"`
-	Repository      string     `json:"repository"`
-	RepoStars       int        `json:"repoStars,omitempty"`
-	RepoLastFetched *time.Time `json:"repoLastFetched,omitempty"`
-	Branches        []string   `json:"branches,omitempty"`
-	Version         string     `json:"version,omitempty"`
+	Path            string          `json:"name"`
+	RepositoryID    int32           `json:"repositoryID"`
+	Repository      string          `json:"repository"`
+	RepoStars       int             `json:"repoStars,omitempty"`
+	RepoLastFetched *time.Time      `json:"repoLastFetched,omitempty"`
+	Branches        []string        `json:"branches,omitempty"`
+	Version         string          `json:"version,omitempty"`
+	Hunks           []DecoratedHunk `json:"hunks,omitempty"` // TODO: blocked on merge for wiring.
 
 	LineMatches []EventLineMatch `json:"lineMatches"`
 }
 
 func (e *EventContentMatch) eventMatch() {}
+
+type DecoratedHunk struct {
+	Content DecoratedContent
+}
+
+type DecoratedContent struct {
+	Plaintext string
+	HTML      string
+}
 
 // EventPathMatch is a subset of zoekt.FileMatch for our Event API.
 // It is used for result.FileMatch results with no line matches and

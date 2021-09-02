@@ -20,6 +20,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promauto"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/highlight"
 	searchlogs "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/search/logs"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
@@ -433,6 +434,19 @@ func fromContentMatch(fm *result.FileMatch, repoCache map[api.RepoID]*types.Sear
 		})
 	}
 
+	ctx, cancel := context.WithTimeout(context.TODO(), 5*time.Second) // TODO: context propagation. Discuss: should we propagate parent context to conversion?
+	defer cancel()
+	decoratedContent, err := highlight.Decorate(ctx, fm) // TODO: make Decorate return a value that indicates whether it is highlighted or plaintext HTML.
+	var hunks []streamhttp.DecoratedHunk
+	if err != nil {
+		// TODO: log. Discuss how to log. This implies frontend must use fallback.
+	}
+	// TODO: discuss: decoratedContent may be either successfully
+	// marked-up HTML, or plaintext HTML. When we get plaintext
+	// HTML, should we return that, or nothing (so that client uses
+	// fallback?)
+	hunks = append(hunks, streamhttp.DecoratedHunk{Content: streamhttp.DecoratedContent{HTML: decoratedContent}})
+
 	contentEvent := &streamhttp.EventContentMatch{
 		Type:         streamhttp.ContentMatchType,
 		Path:         fm.Path,
@@ -440,6 +454,7 @@ func fromContentMatch(fm *result.FileMatch, repoCache map[api.RepoID]*types.Sear
 		Repository:   string(fm.Repo.Name),
 		Version:      string(fm.CommitID),
 		LineMatches:  lineMatches,
+		Hunks:        hunks,
 	}
 
 	if fm.InputRev != nil {
