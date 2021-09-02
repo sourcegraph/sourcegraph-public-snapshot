@@ -20,7 +20,7 @@ jobs:
       # Run lsif-go
       - name: Run lsif-go
         working-directory: ${{ matrix.root }}
-        run: lsif-go --no-animation -f dump-go.lsif
+        run: lsif-go --no-animation -o dump-go.lsif
       - name: Upload lsif-go dump
         uses: actions/upload-artifact@v2
         with:
