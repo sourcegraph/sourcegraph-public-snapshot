@@ -617,14 +617,8 @@ func stepsForRepoRevision(spec *batcheslib.BatchSpec, repoRev *RepoRevision) ([]
 			Description: spec.Description,
 		}
 		stepCtx := &template.StepContext{
-			Repository: template.TemplatingRepository{
+			Repository: template.Repository{
 				Name: string(repoRev.Repo.Name),
-				// TODO: It's not always the default branch, this also seems to
-				// be wrong in src-cli.
-				DefaultBranch: template.TemplatingBranch{
-					Name:      repoRev.Branch,
-					TargetOID: string(repoRev.Commit),
-				},
 				// TODO: Reimplement.
 				FileMatches: make(map[string]bool),
 			},
