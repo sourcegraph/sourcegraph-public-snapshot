@@ -20,12 +20,24 @@ jobs:
       # Run lsif-go
       - name: Run lsif-go
         working-directory: ${{ matrix.root }}
-        run: lsif-go --no-animation -o ~/dump-go.lsif
-      - name: Upload lsif-go dump
-        uses: actions/upload-artifact@v2
-        with:
-          name: dump-${{ matrix.root }}-go
-          path: ~/dump-go.lsif
+        run: lsif-go --no-animation
+      
+      # Upload lsif-go data to Cloud, Dogfood, and Demo instances
+      - name: Upload lsif-go dump to Cloud
+        working-directory: ${{ matrix.root }}
+        run: src lsif upload -github-token='${{ secrets.GITHUB_TOKEN }}' -no-progress
+        env:
+          SRC_ENDPOINT: https://sourcegraph.com/
+      - name: Upload lsif-go dump to Dogfood
+        working-directory: ${{ matrix.root }}
+        run: src lsif upload -github-token='${{ secrets.GITHUB_TOKEN }}' -no-progress || true
+        env:
+          SRC_ENDPOINT: https://k8s.sgdev.org/
+      - name: Upload lsif-go dump to Demo
+        working-directory: ${{ matrix.root }}
+        run: src lsif upload -github-token='${{ secrets.GITHUB_TOKEN }}' -no-progress || true
+        env:
+          SRC_ENDPOINT: https://demo.sourcegraph.com/
 
   lsif-tsc-eslint:
     # Skip running on forks
@@ -35,11 +47,11 @@ jobs:
     strategy:
       matrix:
         root:
-          - branded
-          - browser
-          - shared
-          - web
-          - wildcard
+          - client/branded
+          - client/browser
+          - client/shared
+          - client/web
+          - client/wildcard
     steps:
       # Setup
       - name: Checkout
@@ -53,88 +65,46 @@ jobs:
 
       # Run lsif-tsc
       - name: Run lsif-tsc
-        working-directory: client/${{ matrix.root }}
-        run: lsif-tsc -p . -o ~/dump-tsc.lsif
-      - name: Upload lsif-tsc dump
-        uses: actions/upload-artifact@v2
-        with:
-          name: dump-${{ matrix.root }}-tsc
-          path: ~/dump-tsc.lsif
+        working-directory: ${{ matrix.root }}
+        run: lsif-tsc -p .
           
+      # Upload lsif-eslint data to Cloud, Dogfood, and Demo instances
+      - name: Upload lsif-tsc dump to Cloud
+        working-directory: ${{ matrix.root }}
+        run: src lsif upload -github-token='${{ secrets.GITHUB_TOKEN }}' -no-progress -f dump.lsif
+        env:
+          SRC_ENDPOINT: https://sourcegraph.com/
+      - name: Upload lsif-tsc dump to Dogfood
+        working-directory: ${{ matrix.root }}
+        run: src lsif upload -github-token='${{ secrets.GITHUB_TOKEN }}' -no-progress -f dump.lsif || true
+        env:
+          SRC_ENDPOINT: https://k8s.sgdev.org/
+      - name: Upload lsif-tsc dump to Demo
+        working-directory: ${{ matrix.root }}
+        run: src lsif upload -github-token='${{ secrets.GITHUB_TOKEN }}' -no-progress -f dump.lsif || true
+        env:
+          SRC_ENDPOINT: https://demo.sourcegraph.com/
+
       # Run lsif-eslint
       - name: Build TypeScript
         run: yarn run --ignore-engines build-ts
       - name: Run lsif-eslint
-        working-directory: client/${{ matrix.root }}
-        run: yarn eslint -f lsif -o ~/dump-eslint.lsif
-      - name: Upload lsif-eslint dump
-        uses: actions/upload-artifact@v2
-        with:
-          name: dump-${{ matrix.root }}-eslint
-          path: ~/dump-eslint.lsif
+        working-directory: ${{ matrix.root }}
+        run: yarn eslint -f lsif
 
-  lsif-go-upload:
-    # Skip running on forks
-    if: github.repository == 'sourcegraph/sourcegraph'
-    needs: lsif-go
-    runs-on: ubuntu-latest
-    container: sourcegraph/lsif-go
-    # Only fail the job if upload to Cloud fails
-    continue-on-error: ${{ matrix.endpoint != 'https://sourcegraph.com/' }}
-    strategy:
-      matrix:
-        endpoint:
-          - https://sourcegraph.com/
-          - https://k8s.sgdev.org/
-          - https://demo.sourcegraph.com/
-        root:
-          - ''
-          - lib
-    steps:
-      - name: Download lsif-go dump
-        uses: actions/download-artifact@v2
-        with:
-          name: dump-${{ matrix.root }}-go
-      - name: Upload lsif-go data to ${{ matrix.endpoint }}
-        run: src lsif upload -github-token='${{ secrets.GITHUB_TOKEN }}' -no-progress -repo='github.com/sourcegraph/sourcegraph' -commit="${GITHUB_SHA}" -root '${{ matrix.root }}' -file dump-go.lsif
+      # Upload lsif-eslint data to Cloud, Dogfood, and Demo instances
+      - name: Upload lsif-eslint dump to Cloud
+        working-directory: ${{ matrix.root }}
+        run: src lsif upload -github-token='${{ secrets.GITHUB_TOKEN }}' -no-progress -f dump.lsif
         env:
-          SRC_ENDPOINT: ${{ matrix.endpoint }}
-
-  lsif-tsc-eslint-upload:
-    # Skip running on forks
-    if: github.repository == 'sourcegraph/sourcegraph'
-    needs: lsif-tsc-eslint
-    runs-on: ubuntu-latest
-    container: sourcegraph/lsif-node
-    # Only fail the job if upload to Cloud fails
-    continue-on-error: ${{ matrix.endpoint != 'https://sourcegraph.com/' }}
-    strategy:
-      matrix:
-        endpoint:
-          - https://sourcegraph.com/
-          - https://k8s.sgdev.org/
-          - https://demo.sourcegraph.com/
-        root:
-          - branded
-          - browser
-          - shared
-          - web
-          - wildcard
-    steps:
-      - name: Download lsif-tsc dump
-        uses: actions/download-artifact@v2
-        with:
-          name: dump-${{ matrix.root }}-tsc
-      - name: Upload lsif-tsc data to ${{ matrix.endpoint }}
-        run: src lsif upload -github-token='${{ secrets.GITHUB_TOKEN }}' -no-progress -repo='github.com/sourcegraph/sourcegraph' -commit="${GITHUB_SHA}" -root 'client/${{ matrix.root }}' -file dump-tsc.lsif
+          SRC_ENDPOINT: https://sourcegraph.com/
+      - name: Upload lsif-eslint dump to Dogfood
+        working-directory: ${{ matrix.root }}
+        run: src lsif upload -github-token='${{ secrets.GITHUB_TOKEN }}' -no-progress -f dump.lsif || true
         env:
-          SRC_ENDPOINT: ${{ matrix.endpoint }}
-
-      - name: Download lsif-eslint dump
-        uses: actions/download-artifact@v2
-        with:
-          name: dump-${{ matrix.root }}-eslint
-      - name: Upload lsif-eslint data to ${{ matrix.endpoint }}
-        run: src lsif upload -github-token='${{ secrets.GITHUB_TOKEN }}' -no-progress -repo='github.com/sourcegraph/sourcegraph' -commit="${GITHUB_SHA}" -root 'client/${{ matrix.root }}' -file dump-eslint.lsif
+          SRC_ENDPOINT: https://k8s.sgdev.org/
+      - name: Upload lsif-eslint dump to Demo
+        working-directory: ${{ matrix.root }}
+        run: src lsif upload -github-token='${{ secrets.GITHUB_TOKEN }}' -no-progress -f dump.lsif || true
         env:
-          SRC_ENDPOINT: ${{ matrix.endpoint }}
+          SRC_ENDPOINT: https://demo.sourcegraph.com/
