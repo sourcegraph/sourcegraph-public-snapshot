@@ -21,6 +21,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	uirouter "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/ui/router"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/routevar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/search"
@@ -119,9 +120,9 @@ func Router() *mux.Router {
 // InitRouter create the router that serves pages for our web app
 // and assigns it to uirouter.Router.
 // The router can be accessed by calling Router().
-func InitRouter(db dbutil.DB) {
+func InitRouter(db dbutil.DB, codeIntelResolver graphqlbackend.CodeIntelResolver) {
 	router := newRouter()
-	initRouter(db, router)
+	initRouter(db, router, codeIntelResolver)
 }
 
 var mockServeRepo func(w http.ResponseWriter, r *http.Request)
@@ -187,7 +188,7 @@ func newRouter() *mux.Router {
 	repoRev := r.PathPrefix(repoRevPath + "/" + routevar.RepoPathDelim).Subrouter()
 	repoRev.Path("/tree{Path:.*}").Methods("GET").Name(routeTree)
 
-	repoRev.PathPrefix("/docs").Methods("GET").Name(routeRepoDocs)
+	repoRev.PathPrefix("/docs{Path:.*}").Methods("GET").Name(routeRepoDocs)
 	repoRev.PathPrefix("/commits").Methods("GET").Name(routeRepoCommits)
 
 	// blob
@@ -221,7 +222,7 @@ func brandNameSubtitle(titles ...string) string {
 	return strings.Join(append(titles, globals.Branding().BrandName), " - ")
 }
 
-func initRouter(db dbutil.DB, router *mux.Router) {
+func initRouter(db dbutil.DB, router *mux.Router, codeIntelResolver graphqlbackend.CodeIntelResolver) {
 	uirouter.Router = router // make accessible to other packages
 
 	// basic pages with static titles
@@ -249,7 +250,7 @@ func initRouter(db dbutil.DB, router *mux.Router) {
 	router.Get(routeRepoCommit).Handler(handler(serveBrandedPageString("Commit", nil)))
 	router.Get(routeRepoBranches).Handler(handler(serveBrandedPageString("Branches", nil)))
 	router.Get(routeRepoBatchChanges).Handler(handler(serveBrandedPageString("Batch Changes", nil)))
-	router.Get(routeRepoDocs).Handler(handler(serveBrandedPageString("API docs", nil)))
+	router.Get(routeRepoDocs).Handler(handler(serveRepoDocs(codeIntelResolver)))
 	router.Get(routeRepoCommits).Handler(handler(serveBrandedPageString("Commits", nil)))
 	router.Get(routeRepoTags).Handler(handler(serveBrandedPageString("Tags", nil)))
 	router.Get(routeRepoCompare).Handler(handler(serveBrandedPageString("Compare", nil)))

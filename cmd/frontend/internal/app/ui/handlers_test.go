@@ -40,7 +40,7 @@ func TestRedirects(t *testing.T) {
 
 		db := new(dbtesting.MockDB)
 
-		InitRouter(db)
+		InitRouter(db, nil)
 		rw := httptest.NewRecorder()
 		req, err := http.NewRequest("GET", path, nil)
 		if err != nil {
