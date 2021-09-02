@@ -567,20 +567,19 @@ func (s *PermsStore) SetRepoPendingPermissions(ctx context.Context, accounts *ex
 
 	// Insert rows for AccountIDs without one in the "user_pending_permissions"
 	// table. The insert does not store any permission data but uses auto-increment
-	// key to generate unique ID. This help guarantees rows of all AccountIDs exist
-	// when getting user IDs in next load query.
+	// key to generate unique ID. This guarantees that rows of all AccountIDs exist
+	// when getting user IDs in the next load query.
 	updatedAt := txs.clock()
 	p.UpdatedAt = updatedAt
 	if len(accounts.AccountIDs) > 0 {
 		// NOTE: The primary key of "user_pending_permissions" table is
 		//  auto-incremented, and it is monotonically growing even with upsert in
 		//  Postgres (i.e. the primary key is increased internally by one even if the row
-		//  exists). This means with large number of existing rows in the table, the
-		//  primary key will grow very quickly every time we do an upsert, and soon
-		//  reaching the largest number an int4 (32-bit integer) can hold
-		//  (2,147,483,647). Therefore, load existing rows would help us only upsert rows
-		//  that are newly discovered. See reasons dozen lines below for why we do upsert
-		//  not insert.
+		//  exists). This means with large number of AccountIDs, the primary key will
+		//  grow very quickly every time we do an upsert, and soon reaching the largest
+		//  number an int4 (32-bit integer) can hold (2,147,483,647). Therefore, load
+		//  existing rows would help us only upsert rows that are newly discovered. See
+		//  NOTE in dozen lines below for why we do upsert not insert.
 		q = loadExistingUserPendingPermissionsBatchQuery(accounts, p)
 		bindIDsToIDs, err := txs.loadExistingUserPendingPermissionsBatch(ctx, q)
 		if err != nil {
