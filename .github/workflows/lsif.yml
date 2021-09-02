@@ -18,6 +18,28 @@ jobs:
         working-directory: ${{ matrix.root }}
         run: lsif-go --no-animation
 
+  lsif-go-upload:
+    # Skip running on forks
+    if: github.repository == 'sourcegraph/sourcegraph'
+    needs: lsif-go
+    runs-on: ubuntu-latest
+    container: sourcegraph/lsif-go
+    strategy:
+      matrix:
+        root:
+          - ''
+          - lib/
+        endpoint:
+          - https://sourcegraph.com/
+          - https://k8s.sgdev.org/
+          - https://demo.sourcegraph.com/
+    steps:
+      - name: Upload LSIF data to ${{ matrix.endpoint }}
+        working-directory: ${{ matrix.root }}
+        run: src lsif upload -no-progress -github-token=${{ secrets.GITHUB_TOKEN }}
+        env:
+          SRC_ENDPOINT: ${{ matrix.endpoint }}
+
   lsif-tsc:
     # Skip running on forks
     if: github.repository == 'sourcegraph/sourcegraph'
@@ -42,6 +64,31 @@ jobs:
       - name: Generate LSIF data
         working-directory: ${{ matrix.root }}
         run: lsif-tsc -p .
+
+  lsif-tsc-upload:
+    # Skip running on forks
+    if: github.repository == 'sourcegraph/sourcegraph'
+    needs: lsif-tsc
+    runs-on: ubuntu-latest
+    container: sourcegraph/lsif-go
+    strategy:
+      matrix:
+        root:
+          - client/branded/
+          - client/browser/
+          - client/shared/
+          - client/web/
+          - client/wildcard/
+        endpoint:
+          - https://sourcegraph.com/
+          - https://k8s.sgdev.org/
+          - https://demo.sourcegraph.com/
+    steps:
+      - name: Upload LSIF data to ${{ matrix.endpoint }}
+        working-directory: ${{ matrix.root }}
+        run: src lsif upload -no-progress -github-token=${{ secrets.GITHUB_TOKEN }}
+        env:
+          SRC_ENDPOINT: ${{ matrix.endpoint }}
 
   lsif-eslint:
     # Skip running on forks
@@ -70,17 +117,15 @@ jobs:
         working-directory: ${{ matrix.root }}
         run: yarn eslint -f lsif -o dump.lsif
 
-  lsif-upload:
+  lsif-eslint-upload:
     # Skip running on forks
     if: github.repository == 'sourcegraph/sourcegraph'
-    needs: lsif-go # WTF WILL THIS DO?
+    needs: lsif-eslint
     runs-on: ubuntu-latest
     container: sourcegraph/lsif-go
     strategy:
       matrix:
         root:
-          - ''
-          - lib/
           - client/branded/
           - client/browser/
           - client/shared/
