@@ -413,10 +413,11 @@ The recommended approach for inheriting permissions across multiple code hosts i
 > NOTE: This workaround is currently only verified to work when connecting both GitHub Enterprise and Github.com OAuth applications. For other code hosts and configuration options, please reach out to us. 
 Setup and add GitHub Enterprise (GHE) and GitHub.com (GHC) using our standard GitHub [integration](https://docs.sourcegraph.com/admin/external_service/github)
 
-<strong>Configure GitHub Enterprise SSO:</strong>
+**Configure GitHub Enterprise SSO:**
+
 1. Add GHE repos.
 2. Configure auth for GHE using [OAuth](https://docs.sourcegraph.com/admin/auth#github).
-  * <strong>NOTE:</strong> Ensure that the <code>allowSignup</code> field is set to <code>true</code>. This will ensure that users signing in via GHE will have a new user account created on Sourcegraph. 
+  * > NOTE: Ensure that the `allowSignup` field is set to `true`. This will ensure that users signing in via GHE will have a new user account created on Sourcegraph. 
 
 3. Add the [authorization field](https://docs.sourcegraph.com/admin/repo/permissions#github) to the GHE code host connection (this is what enforces repository permissions).
 4. Test that the GitHub Enterprise OAuth is working correctly (users should be able to sign into Sourcegraph using their GitHub Enterprise credentials). 
