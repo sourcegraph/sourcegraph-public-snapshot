@@ -13,44 +13,19 @@ jobs:
           - ''
           - lib
     steps:
-      - uses: actions/checkout@v2
-      - name: Generate LSIF data
+      # Setup
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      # Run lsif-go
+      - name: Run lsif-go
         working-directory: ${{ matrix.root }}
-        run: lsif-go --no-animation
+        run: lsif-go --no-animation -f dump-go.lsif
       - name: Upload lsif-go dump
         uses: actions/upload-artifact@v2
         with:
-          name: ${{ matrix.root }}-dump
-          path: ${{ matrix.root }}/dump.lsif
-
-  lsif-go-upload:
-    # Skip running on forks
-    if: github.repository == 'sourcegraph/sourcegraph'
-    needs: lsif-go
-    runs-on: ubuntu-latest
-    container: sourcegraph/lsif-go
-    continue-on-error: ${{ matrix.experimental }}
-    strategy:
-      matrix:
-        endpoint:
-          - https://sourcegraph.com/
-          - https://k8s.sgdev.org/
-          - https://demo.sourcegraph.com/
-        experimental:
-          - false
-        root:
-          - ''
-          - lib
-    steps:
-      - name: Download lsif-go dump
-        uses: actions/download-artifact@v2
-        with:
-          name: ${{ matrix.root }}-dump
-      - name: Upload lsif-go data to ${{ matrix.endpoint }}
-        working-directory: ${{ matrix.root }}
-        run: src lsif upload -no-progress -github-token=${{ secrets.GITHUB_TOKEN }} -f dump.lsif
-        env:
-          SRC_ENDPOINT: ${{ matrix.endpoint }}
+          name: dump-${{ matrix.root }}-go
+          path: ${{ matrix.root }}/dump-go.lsif
 
   lsif-tsc-eslint:
     # Skip running on forks
@@ -66,31 +41,65 @@ jobs:
           - web
           - wildcard
     steps:
-      - uses: actions/checkout@v2
+      # Setup
+      - name: Checkout
+        uses: actions/checkout@v2
       - name: Install build dependencies
         run: apk --no-cache add python g++ make git
       - name: Install dependencies
         run: yarn --ignore-engines --ignore-scripts
-      - name: Generate
+      - name: Run gulp generate
         run: ./node_modules/.bin/gulp generate
-      - name: Generate LSIF data
+
+      # Run lsif-tsc
+      - name: Run lsif-tsc
         working-directory: client/${{ matrix.root }}
-        run: lsif-tsc -p . -o dump.lsif
-      - name: Build TypeScript
-        run: yarn run --ignore-engines build-ts
-      - name: Generate LSIF data
-        working-directory: client/${{ matrix.root }}
-        run: yarn eslint -f lsif -o dump-lint.lsif
+        run: lsif-tsc -p . -o dump-tsc.lsif
       - name: Upload lsif-tsc dump
         uses: actions/upload-artifact@v2
         with:
-          name: ${{ matrix.root }}-dump
-          path: ${{ matrix.root }}/dump.lsif
+          name: dump-${{ matrix.root }}-tsc
+          path: ${{ matrix.root }}/dump-tsc.lsif
+          
+      # Run lsif-eslint
+      - name: Build TypeScript
+        run: yarn run --ignore-engines build-ts
+      - name: Run lsif-eslint
+        working-directory: client/${{ matrix.root }}
+        run: yarn eslint -f lsif -o dump-eslint.lsif
       - name: Upload lsif-eslint dump
         uses: actions/upload-artifact@v2
         with:
-          name: ${{ matrix.root }}-dump-lint
-          path: ${{ matrix.root }}/dump-lint.lsif
+          name: dump-${{ matrix.root }}-eslint
+          path: ${{ matrix.root }}/dump-eslint.lsif
+
+  lsif-go-upload:
+    # Skip running on forks
+    if: github.repository == 'sourcegraph/sourcegraph'
+    needs: lsif-go
+    runs-on: ubuntu-latest
+    container: sourcegraph/lsif-go
+    # Only fail the job if upload to Cloud fails
+    continue-on-error: ${{ matrix.endpoint != 'https://sourcegraph.com/' }}
+    strategy:
+      matrix:
+        endpoint:
+          - https://sourcegraph.com/
+          - https://k8s.sgdev.org/
+          - https://demo.sourcegraph.com/
+        root:
+          - ''
+          - lib
+    steps:
+      - name: Download lsif-go dump
+        uses: actions/download-artifact@v2
+        with:
+          name: dump-${{ matrix.root }}-go
+      - name: Upload lsif-go data to ${{ matrix.endpoint }}
+        working-directory: ${{ matrix.root }}
+        run: src lsif upload -no-progress -github-token=${{ secrets.GITHUB_TOKEN }} -f dump-go.lsif
+        env:
+          SRC_ENDPOINT: ${{ matrix.endpoint }}
 
   lsif-tsc-eslint-upload:
     # Skip running on forks
@@ -98,15 +107,14 @@ jobs:
     needs: lsif-tsc-eslint
     runs-on: ubuntu-latest
     container: sourcegraph/lsif-node
-    continue-on-error: ${{ matrix.experimental }}
+    # Only fail the job if upload to Cloud fails
+    continue-on-error: ${{ matrix.endpoint != 'https://sourcegraph.com/' }}
     strategy:
       matrix:
         endpoint:
           - https://sourcegraph.com/
           - https://k8s.sgdev.org/
           - https://demo.sourcegraph.com/
-        experimental:
-          - false
         root:
           - branded
           - browser
@@ -117,17 +125,17 @@ jobs:
       - name: Download lsif-tsc dump
         uses: actions/download-artifact@v2
         with:
-          name: ${{ matrix.root }}-dump
+          name: dump-${{ matrix.root }}-tsc
       - name: Upload lsif-tsc data to ${{ matrix.endpoint }}
-        run: src lsif upload -no-progress -github-token=${{ secrets.GITHUB_TOKEN }} -root client/${{ matrix.root }} -f dump.lsif
+        run: src lsif upload -no-progress -github-token=${{ secrets.GITHUB_TOKEN }} -root client/${{ matrix.root }} -f dump-tsc.lsif
         env:
           SRC_ENDPOINT: ${{ matrix.endpoint }}
 
       - name: Download lsif-eslint dump
         uses: actions/download-artifact@v2
         with:
-          name: ${{ matrix.root }}-dump-lint
+          name: dump-${{ matrix.root }}-eslint
       - name: Upload lsif-eslint data to ${{ matrix.endpoint }}
-        run: src lsif upload -no-progress -github-token=${{ secrets.GITHUB_TOKEN }} -root client/${{ matrix.root }} -f dump-lint.lsif
+        run: src lsif upload -no-progress -github-token=${{ secrets.GITHUB_TOKEN }} -root client/${{ matrix.root }} -f dump-eslint.lsif
         env:
           SRC_ENDPOINT: ${{ matrix.endpoint }}
