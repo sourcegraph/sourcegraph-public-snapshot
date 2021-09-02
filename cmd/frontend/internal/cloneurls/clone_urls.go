@@ -12,6 +12,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -22,6 +23,9 @@ import (
 // error if a matching code host could not be found. This function does not actually check the code
 // host to see if the repository actually exists.
 func ReposourceCloneURLToRepoName(ctx context.Context, db dbutil.DB, cloneURL string) (repoName api.RepoName, err error) {
+	span, ctx := ot.StartSpanFromContext(ctx, "ReposourceCloneURLToRepoName")
+	defer span.Finish()
+
 	if repoName := reposource.CustomCloneURLToRepoName(cloneURL); repoName != "" {
 		return repoName, nil
 	}
