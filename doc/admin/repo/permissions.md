@@ -412,7 +412,7 @@ The recommended approach for inheriting permissions across multiple code hosts i
 
 > NOTE: This workaround is currently only verified to work when connecting both GitHub Enterprise and Github.com OAuth applications. For other code hosts and configuration options, please reach out to us.
 
-Setup and add GitHub Enterprise (GHE) and GitHub.com (GHC) using our standard [GitHub integration](../../external_service/github.md).
+Setup and add GitHub Enterprise (GHE) and GitHub.com (GHC) using our standard [GitHub integration](../external_service/github.md).
 
 **Configure GitHub Enterprise SSO:**
 
