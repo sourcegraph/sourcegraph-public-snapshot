@@ -41,6 +41,8 @@ export const BUILD_OPTIONS: esbuild.BuildOptions = {
             // https://stackoverflow.com/questions/53758889/rxjs-subscribeto-js-observable-check-works-in-chrome-but-fails-in-chrome-incogn.
             'rxjs/internal/OuterSubscriber': require.resolve('rxjs/_esm5/internal/OuterSubscriber'),
             'rxjs/internal/util/subscribeToResult': require.resolve('rxjs/_esm5/internal/util/subscribeToResult'),
+            'rxjs/internal/util/subscribeToArray': require.resolve('rxjs/_esm5/internal/util/subscribeToArray'),
+            'rxjs/internal/Observable': require.resolve('rxjs/_esm5/internal/Observable'),
         }),
         monacoPlugin(MONACO_LANGUAGES_AND_FEATURES),
         {
