@@ -330,11 +330,14 @@ func defaultNewSearchResolver(ctx context.Context, db dbutil.DB, args *graphqlba
 }
 
 type args struct {
-	Query          string
-	Version        string
-	PatternType    string
-	VersionContext string
-	Display        int
+	Query                  string
+	Version                string
+	PatternType            string
+	VersionContext         string
+	Display                int
+	DecorationLimit        int
+	DecorationKind         string
+	DecorationContextLines int
 }
 
 func parseURLQuery(q url.Values) (*args, error) {
@@ -351,6 +354,7 @@ func parseURLQuery(q url.Values) (*args, error) {
 		Version:        get("v", "V2"),
 		PatternType:    get("t", ""),
 		VersionContext: get("vc", ""),
+		DecorationKind: get("dk", "html"),
 	}
 
 	if a.Query == "" {
@@ -361,6 +365,16 @@ func parseURLQuery(q url.Values) (*args, error) {
 	var err error
 	if a.Display, err = strconv.Atoi(display); err != nil {
 		return nil, errors.Errorf("display must be an integer, got %q: %w", display, err)
+	}
+
+	decorationLimit := get("dl", "100")
+	if a.DecorationLimit, err = strconv.Atoi(decorationLimit); err != nil {
+		return nil, errors.Errorf("decorationLimit must be an integer, got %q: %w", decorationLimit, err)
+	}
+
+	decorationContextLines := get("dc", "1")
+	if a.DecorationContextLines, err = strconv.Atoi(decorationContextLines); err != nil {
+		return nil, errors.Errorf("decorationLimit must be an integer, got %q: %w", decorationContextLines, err)
 	}
 
 	return &a, nil
