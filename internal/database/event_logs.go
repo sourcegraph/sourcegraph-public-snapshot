@@ -826,7 +826,7 @@ func (l *EventLogStore) CodeIntelligenceRepositoryCountsByLanguage(ctx context.C
 		return nil, err
 	}
 
-	return byLangauge, nil
+	return byLanguage, nil
 }
 
 func safeDerefIntPtr(v *int) int {
