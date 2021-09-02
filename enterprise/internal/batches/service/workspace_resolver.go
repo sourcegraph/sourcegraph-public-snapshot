@@ -12,7 +12,6 @@ import (
 	"github.com/gobwas/glob"
 	"github.com/hashicorp/go-multierror"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -618,15 +617,8 @@ func stepsForRepoRevision(spec *batcheslib.BatchSpec, repoRev *RepoRevision) ([]
 			Description: spec.Description,
 		}
 		stepCtx := &template.StepContext{
-			Repository: template.TemplatingRepository{
-				ID:   string(graphqlbackend.MarshalRepositoryID(repoRev.Repo.ID)),
+			Repository: template.Repository{
 				Name: string(repoRev.Repo.Name),
-				// TODO: It's not always the default branch, this also seems to
-				// be wrong in src-cli.
-				DefaultBranch: template.TemplatingBranch{
-					Name:      repoRev.Branch,
-					TargetOID: string(repoRev.Commit),
-				},
 				// TODO: Reimplement.
 				FileMatches: make(map[string]bool),
 			},
