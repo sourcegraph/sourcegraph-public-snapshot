@@ -795,28 +795,46 @@ func (l *EventLogStore) CodeIntelligenceRepositoryCountsByLanguage(ctx context.C
 	}
 	defer rows.Close()
 
-	byLangauge := map[string]CodeIntelligenceRepositoryCountsForLanguage{}
-	for rows.Next() {
-		var language string
+	var (
+		language string
+		numRepositoriesWithUploadRecords,
+		numRepositoriesWithFreshUploadRecords,
+		numRepositoriesWithIndexRecords,
+		numRepositoriesWithFreshIndexRecords *int
+	)
 
-		var counts CodeIntelligenceRepositoryCountsForLanguage
+	byLanguage := map[string]CodeIntelligenceRepositoryCountsForLanguage{}
+	for rows.Next() {
 		if err := rows.Scan(
 			&language,
-			&counts.NumRepositoriesWithUploadRecords,
-			&counts.NumRepositoriesWithFreshUploadRecords,
-			&counts.NumRepositoriesWithIndexRecords,
-			&counts.NumRepositoriesWithFreshIndexRecords,
+			&numRepositoriesWithUploadRecords,
+			&numRepositoriesWithFreshUploadRecords,
+			&numRepositoriesWithIndexRecords,
+			&numRepositoriesWithFreshIndexRecords,
 		); err != nil {
 			return nil, err
 		}
 
-		byLangauge[language] = counts
+		byLanguage[language] = CodeIntelligenceRepositoryCountsForLanguage{
+			NumRepositoriesWithUploadRecords:      safeDerefIntPtr(numRepositoriesWithUploadRecords),
+			NumRepositoriesWithFreshUploadRecords: safeDerefIntPtr(numRepositoriesWithFreshUploadRecords),
+			NumRepositoriesWithIndexRecords:       safeDerefIntPtr(numRepositoriesWithIndexRecords),
+			NumRepositoriesWithFreshIndexRecords:  safeDerefIntPtr(numRepositoriesWithFreshIndexRecords),
+		}
 	}
 	if err := rows.Err(); err != nil {
 		return nil, err
 	}
 
-	return byLangauge, nil
+	return byLanguage, nil
+}
+
+func safeDerefIntPtr(v *int) int {
+	if v != nil {
+		return *v
+	}
+
+	return 0
 }
 
 var codeIntelligenceRepositoryCountsByLanguageQuery = `
