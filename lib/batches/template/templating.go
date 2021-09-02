@@ -92,7 +92,6 @@ type TemplatingBranch struct {
 }
 
 type TemplatingRepository struct {
-	ID            string
 	Name          string
 	DefaultBranch TemplatingBranch
 	FileMatches   map[string]bool
