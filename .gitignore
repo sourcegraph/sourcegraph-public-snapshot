@@ -144,3 +144,7 @@ storybook-static/
 sg.config.overwrite.yaml
 # sg Google Cloud API OAuth token
 .sg.token.json
+
+# Generated sitemaps are not committed, they're hosted in a GCS bucket.
+sitemap/
+sitemap_query.db
