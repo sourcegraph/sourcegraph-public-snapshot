@@ -424,9 +424,9 @@ function search({
             ['q', `${query} ${caseSensitive ? 'case:yes' : ''}`],
             ['v', version],
             ['t', patternType as string],
-            ['dL', '15'],
-            ['dK', (decorationKinds || ['html']).join('|')],
-            ['dCL', (decorationContextLines || '1').toString()],
+            ['dl', '15'],
+            ['dk', (decorationKinds || ['html']).join('|')],
+            ['dc', (decorationContextLines || '1').toString()],
             ['display', '1500'],
         ]
         if (versionContext) {
