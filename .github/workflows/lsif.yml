@@ -24,6 +24,7 @@ jobs:
     needs: lsif-go
     runs-on: ubuntu-latest
     container: sourcegraph/lsif-go
+    continue-on-error: ${{ matrix.experimental }}
     strategy:
       matrix:
         root:
@@ -33,14 +34,15 @@ jobs:
           - https://sourcegraph.com/
           - https://k8s.sgdev.org/
           - https://demo.sourcegraph.com/
+        experimental: [false]
     steps:
-      - name: Upload LSIF data to ${{ matrix.endpoint }}
+      - name: Upload lsif-go data to ${{ matrix.endpoint }}
         working-directory: ${{ matrix.root }}
         run: src lsif upload -no-progress -github-token=${{ secrets.GITHUB_TOKEN }}
         env:
           SRC_ENDPOINT: ${{ matrix.endpoint }}
-
-  lsif-tsc:
+        
+  lsif-tsc-eslint:
     # Skip running on forks
     if: github.repository == 'sourcegraph/sourcegraph'
     runs-on: ubuntu-latest
@@ -63,64 +65,17 @@ jobs:
         run: ./node_modules/.bin/gulp generate
       - name: Generate LSIF data
         working-directory: ${{ matrix.root }}
-        run: lsif-tsc -p .
-
-  lsif-tsc-upload:
-    # Skip running on forks
-    if: github.repository == 'sourcegraph/sourcegraph'
-    needs: lsif-tsc
-    runs-on: ubuntu-latest
-    container: sourcegraph/lsif-go
-    strategy:
-      matrix:
-        root:
-          - client/branded/
-          - client/browser/
-          - client/shared/
-          - client/web/
-          - client/wildcard/
-        endpoint:
-          - https://sourcegraph.com/
-          - https://k8s.sgdev.org/
-          - https://demo.sourcegraph.com/
-    steps:
-      - name: Upload LSIF data to ${{ matrix.endpoint }}
-        working-directory: ${{ matrix.root }}
-        run: src lsif upload -no-progress -github-token=${{ secrets.GITHUB_TOKEN }}
-        env:
-          SRC_ENDPOINT: ${{ matrix.endpoint }}
-
-  lsif-eslint:
-    # Skip running on forks
-    if: github.repository == 'sourcegraph/sourcegraph'
-    runs-on: ubuntu-latest
-    container: sourcegraph/lsif-node
-    strategy:
-      matrix:
-        root:
-          - client/branded/
-          - client/browser/
-          - client/shared/
-          - client/web/
-          - client/wildcard/
-    steps:
-      - uses: actions/checkout@v2
-      - name: Install build dependencies
-        run: apk --no-cache add python g++ make git
-      - name: Install dependencies
-        run: yarn --ignore-engines --ignore-scripts
-      - name: Generate
-        run: ./node_modules/.bin/gulp generate
+        run: lsif-tsc -p . -o dump.lsif
       - name: Build TypeScript
         run: yarn run --ignore-engines build-ts
       - name: Generate LSIF data
         working-directory: ${{ matrix.root }}
-        run: yarn eslint -f lsif -o dump.lsif
+        run: yarn eslint -f lsif -o dump-lint.lsif
 
-  lsif-eslint-upload:
+  lsif-tsc-eslint-upload:
     # Skip running on forks
     if: github.repository == 'sourcegraph/sourcegraph'
-    needs: lsif-eslint
+    needs: lsif-tsc-eslint
     runs-on: ubuntu-latest
     container: sourcegraph/lsif-go
     strategy:
@@ -135,9 +90,15 @@ jobs:
           - https://sourcegraph.com/
           - https://k8s.sgdev.org/
           - https://demo.sourcegraph.com/
+        experimental: [false]
     steps:
-      - name: Upload LSIF data to ${{ matrix.endpoint }}
+      - name: Upload lsif-tsc data to ${{ matrix.endpoint }}
         working-directory: ${{ matrix.root }}
-        run: src lsif upload -no-progress -github-token=${{ secrets.GITHUB_TOKEN }}
+        run: src lsif upload -no-progress -github-token=${{ secrets.GITHUB_TOKEN }} -f dump-lint.lsif
+        env:
+          SRC_ENDPOINT: ${{ matrix.endpoint }}
+      - name: Upload lsif-eslint data to ${{ matrix.endpoint }}
+        working-directory: ${{ matrix.root }}
+        run: src lsif upload -no-progress -github-token=${{ secrets.GITHUB_TOKEN }} -f dump-lint.lsif
         env:
           SRC_ENDPOINT: ${{ matrix.endpoint }}
