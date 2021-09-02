@@ -11,6 +11,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
+
 	"github.com/sourcegraph/src-cli/internal/api"
 	"github.com/sourcegraph/src-cli/internal/batches"
 	"github.com/sourcegraph/src-cli/internal/batches/graphql"
@@ -492,10 +493,8 @@ func TestService_ValidateChangesetSpecs(t *testing.T) {
 			if tt.wantErrInclude != "" {
 				if haveErr == nil {
 					t.Fatalf("expected %q to be included in error, but got none", tt.wantErrInclude)
-				} else {
-					if !strings.Contains(haveErr.Error(), tt.wantErrInclude) {
-						t.Fatalf("expected %q to be included in error, but was not. error=%q", tt.wantErrInclude, haveErr.Error())
-					}
+				} else if !strings.Contains(haveErr.Error(), tt.wantErrInclude) {
+					t.Fatalf("expected %q to be included in error, but was not. error=%q", tt.wantErrInclude, haveErr.Error())
 				}
 			} else {
 				if haveErr != nil {

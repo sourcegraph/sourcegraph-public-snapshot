@@ -2,10 +2,11 @@ package streaming
 
 import (
 	"encoding/json"
-	"errors"
 	"io"
 	"net/http"
 	"time"
+
+	"github.com/cockroachdb/errors"
 )
 
 type WriterStat struct {

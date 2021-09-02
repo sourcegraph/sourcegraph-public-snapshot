@@ -5,8 +5,9 @@ import (
 	"flag"
 	"fmt"
 
+	"github.com/cockroachdb/errors"
 	multierror "github.com/hashicorp/go-multierror"
-	"github.com/pkg/errors"
+
 	"github.com/sourcegraph/src-cli/internal/api"
 )
 

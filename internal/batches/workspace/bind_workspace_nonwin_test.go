@@ -7,7 +7,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/pkg/errors"
+	"github.com/cockroachdb/errors"
 )
 
 func TestMkdirAllStatError(t *testing.T) {

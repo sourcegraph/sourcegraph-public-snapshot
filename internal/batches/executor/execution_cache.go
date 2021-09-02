@@ -10,7 +10,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/pkg/errors"
+	"github.com/cockroachdb/errors"
 	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
 )
 
@@ -244,6 +244,9 @@ func (c ExecutionDiskCache) GetStepResult(ctx context.Context, key CacheKeyer) (
 	}
 
 	found, err := c.readCacheFile(path, &result)
+	if err != nil {
+		return result, false, err
+	}
 
 	return result, found, nil
 }

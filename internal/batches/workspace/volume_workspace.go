@@ -11,10 +11,11 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/pkg/errors"
+	"github.com/cockroachdb/errors"
 
 	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
 	"github.com/sourcegraph/sourcegraph/lib/batches/git"
+
 	"github.com/sourcegraph/src-cli/internal/batches"
 	"github.com/sourcegraph/src-cli/internal/batches/docker"
 	"github.com/sourcegraph/src-cli/internal/batches/graphql"

@@ -10,8 +10,9 @@ import (
 	"strings"
 	"text/template"
 
-	"github.com/pkg/errors"
+	"github.com/cockroachdb/errors"
 	"github.com/sourcegraph/sourcegraph/lib/output"
+
 	"github.com/sourcegraph/src-cli/internal/cmderrors"
 )
 

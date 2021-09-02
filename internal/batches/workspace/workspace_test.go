@@ -5,7 +5,8 @@ import (
 	"runtime"
 	"testing"
 
-	"github.com/pkg/errors"
+	"github.com/cockroachdb/errors"
+
 	"github.com/sourcegraph/src-cli/internal/batches/docker"
 	"github.com/sourcegraph/src-cli/internal/batches/mock"
 )

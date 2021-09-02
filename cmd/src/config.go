@@ -2,9 +2,10 @@ package main
 
 import (
 	"context"
-	"errors"
 	"flag"
 	"fmt"
+
+	"github.com/cockroachdb/errors"
 
 	"github.com/sourcegraph/src-cli/internal/api"
 )

@@ -15,6 +15,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/upload"
 	"github.com/sourcegraph/sourcegraph/lib/output"
+
 	"github.com/sourcegraph/src-cli/internal/api"
 )
 
@@ -195,7 +196,7 @@ func makeLSIFUploadURL(uploadID int) (string, error) {
 		return "", err
 	}
 
-	graphqlID := string(base64.URLEncoding.EncodeToString([]byte(fmt.Sprintf(`LSIFUpload:"%d"`, uploadID))))
+	graphqlID := base64.URLEncoding.EncodeToString([]byte(fmt.Sprintf(`LSIFUpload:"%d"`, uploadID)))
 	url.Path = lsifUploadFlags.repo + "/-/settings/code-intelligence/lsif-uploads/" + graphqlID
 	url.User = nil
 	return url.String(), nil

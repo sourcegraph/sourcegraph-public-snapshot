@@ -1,12 +1,13 @@
 package main
 
 import (
-	"errors"
 	"flag"
 	"fmt"
 	"log"
 	"os"
 	"strings"
+
+	"github.com/cockroachdb/errors"
 
 	"github.com/sourcegraph/src-cli/internal/cmderrors"
 )

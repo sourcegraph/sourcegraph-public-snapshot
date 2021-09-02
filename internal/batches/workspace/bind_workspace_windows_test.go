@@ -4,7 +4,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/pkg/errors"
+	"github.com/cockroachdb/errors"
 )
 
 func mustHavePerm(t *testing.T, path string, want os.FileMode) error {

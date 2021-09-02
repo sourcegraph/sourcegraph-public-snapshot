@@ -3,8 +3,8 @@ package api
 import (
 	"encoding/json"
 
+	"github.com/cockroachdb/errors"
 	"github.com/hashicorp/go-multierror"
-	"github.com/pkg/errors"
 )
 
 // GraphQlErrors contains one or more GraphQlError instances.

@@ -1,8 +1,9 @@
 package cmderrors
 
 import (
-	"errors"
 	"fmt"
+
+	"github.com/cockroachdb/errors"
 )
 
 // UsageError is an error type that subcommands can return in order to signal

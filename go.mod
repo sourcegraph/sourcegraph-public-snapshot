@@ -4,8 +4,7 @@ go 1.16
 
 require (
 	github.com/Masterminds/semver v1.5.0
-	github.com/cockroachdb/errors v1.8.6 // indirect
-	github.com/cockroachdb/redact v1.1.3 // indirect
+	github.com/cockroachdb/errors v1.8.6
 	github.com/dustin/go-humanize v1.0.0
 	github.com/gobwas/glob v0.2.3
 	github.com/google/go-cmp v0.5.6
@@ -13,15 +12,12 @@ require (
 	github.com/jig/teereadcloser v0.0.0-20181016160506-953720c48e05
 	github.com/json-iterator/go v1.1.11
 	github.com/kballard/go-shellquote v0.0.0-20180428030007-95032a82bc51
-	github.com/kr/pretty v0.3.0 // indirect
 	github.com/mattn/go-isatty v0.0.12
 	github.com/mitchellh/copystructure v1.2.0
 	github.com/neelance/parallel v0.0.0-20160708114440-4de9ce63d14c
 	github.com/olekukonko/tablewriter v0.0.4 // indirect
 	github.com/pkg/browser v0.0.0-20180916011732-0a3d74bf9ce4
-	github.com/pkg/errors v0.9.1
 	github.com/rivo/uniseg v0.2.0 // indirect
-	github.com/rogpeppe/go-internal v1.8.0 // indirect
 	github.com/sourcegraph/batch-change-utils v0.0.0-20210708162152-c9f35b905d94
 	github.com/sourcegraph/go-diff v0.6.1
 	github.com/sourcegraph/jsonx v0.0.0-20200629203448-1a936bd500cf

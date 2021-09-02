@@ -47,7 +47,7 @@ func Search(query string, opts Opts, client api.Client, decoder Decoder) error {
 
 	// Output trace.
 	if opts.Trace {
-		_, err = fmt.Fprintf(os.Stderr, fmt.Sprintf("\nx-trace: %s\n", resp.Header.Get("x-trace")))
+		_, err = fmt.Fprintf(os.Stderr, "\nx-trace: %s\n", resp.Header.Get("x-trace"))
 		if err != nil {
 			return err
 		}

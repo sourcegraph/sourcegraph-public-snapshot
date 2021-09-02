@@ -14,12 +14,13 @@ import (
 	"testing"
 	"time"
 
+	"github.com/cockroachdb/errors"
 	"github.com/google/go-cmp/cmp"
-	"github.com/pkg/errors"
 	"github.com/sourcegraph/go-diff/diff"
 	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
 	"github.com/sourcegraph/sourcegraph/lib/batches/git"
 	"github.com/sourcegraph/sourcegraph/lib/batches/template"
+
 	"github.com/sourcegraph/src-cli/internal/api"
 	"github.com/sourcegraph/src-cli/internal/batches"
 	"github.com/sourcegraph/src-cli/internal/batches/docker"
@@ -368,10 +369,8 @@ func TestExecutor_Integration(t *testing.T) {
 			} else {
 				if err == nil {
 					t.Fatalf("expected error to include %q, but got no error", tc.wantErrInclude)
-				} else {
-					if !strings.Contains(strings.ToLower(err.Error()), strings.ToLower(tc.wantErrInclude)) {
-						t.Errorf("wrong error. have=%q want included=%q", err, tc.wantErrInclude)
-					}
+				} else if !strings.Contains(strings.ToLower(err.Error()), strings.ToLower(tc.wantErrInclude)) {
+					t.Errorf("wrong error. have=%q want included=%q", err, tc.wantErrInclude)
 				}
 			}
 

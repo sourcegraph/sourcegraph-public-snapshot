@@ -6,9 +6,10 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/cockroachdb/errors"
 	"github.com/hashicorp/go-multierror"
-	"github.com/pkg/errors"
 	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
+
 	"github.com/sourcegraph/src-cli/internal/api"
 	"github.com/sourcegraph/src-cli/internal/batches"
 	"github.com/sourcegraph/src-cli/internal/batches/docker"

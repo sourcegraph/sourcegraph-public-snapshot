@@ -3,15 +3,17 @@ package main
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"flag"
 	"fmt"
 	"io/ioutil"
 	"os"
 	"strings"
 
+	"github.com/cockroachdb/errors"
+
 	isatty "github.com/mattn/go-isatty"
 	"github.com/sourcegraph/jsonx"
+
 	"github.com/sourcegraph/src-cli/internal/api"
 	"github.com/sourcegraph/src-cli/internal/cmderrors"
 )

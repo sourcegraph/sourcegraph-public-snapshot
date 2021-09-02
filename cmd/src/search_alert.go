@@ -4,7 +4,7 @@ import (
 	"strings"
 	"text/template"
 
-	"github.com/pkg/errors"
+	"github.com/cockroachdb/errors"
 )
 
 var searchResultsAlertTemplate *template.Template

@@ -15,10 +15,11 @@ import (
 	"time"
 
 	isatty "github.com/mattn/go-isatty"
+	"jaytaylor.com/html2text"
+
 	"github.com/sourcegraph/src-cli/internal/api"
 	"github.com/sourcegraph/src-cli/internal/cmderrors"
 	"github.com/sourcegraph/src-cli/internal/streaming"
-	"jaytaylor.com/html2text"
 )
 
 var dateRegex = regexp.MustCompile(`(\w{4}-\w{2}-\w{2})`)
@@ -390,11 +391,11 @@ func searchHighlightDiffPreview(diffPreview interface{}) string {
 		}
 
 		// Replace our start-of-match token with the color we wish.
-		line = strings.Replace(line, uniqueStartOfMatchToken, ansiColors["search-match"], -1)
+		line = strings.ReplaceAll(line, uniqueStartOfMatchToken, ansiColors["search-match"])
 
 		// Replace our end-of-match token with the color terminator,
 		// and start all colors that were previously started to the left.
-		line = strings.Replace(line, uniqueEndOfMatchToken, ansiColors["nc"]+strings.Join(left, ""), -1)
+		line = strings.ReplaceAll(line, uniqueEndOfMatchToken, ansiColors["nc"]+strings.Join(left, ""))
 
 		final = append(final, line)
 	}

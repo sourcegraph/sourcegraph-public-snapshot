@@ -11,7 +11,7 @@
 [38;5;239m([0m[38;5;237mhttp://127.0.0.1:55128[0m[38;5;239m)
 [0m[0m[38;5;68msourcegraph/sourcegraph-atom > Stephen Gutekanst : all: release v1.0.5[0m[38;5;2m (1 match)[0m
 [38;5;239m--------------------------------------------------------------------------------
-[0m[38;5;239m[0m  oo [38;5;0m[48;5;11mbar[0m
+[0m[38;5;239m[0m  foo[38;5;0m[48;5;11m ba[0mr
 
 [38;5;239m([0m[38;5;237mhttp://127.0.0.1:55128[0m[38;5;239m)
 [0m[0m[38;5;68msourcegraph/sourcegraph-atom > Stephen Gutekanst : all: release v1.0.5[0m[38;5;2m (1 match)[0m

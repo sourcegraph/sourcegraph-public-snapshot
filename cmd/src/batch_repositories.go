@@ -5,8 +5,9 @@ import (
 	"flag"
 	"fmt"
 
-	"github.com/pkg/errors"
+	"github.com/cockroachdb/errors"
 	"github.com/sourcegraph/sourcegraph/lib/output"
+
 	"github.com/sourcegraph/src-cli/internal/api"
 	"github.com/sourcegraph/src-cli/internal/batches/graphql"
 	"github.com/sourcegraph/src-cli/internal/batches/service"

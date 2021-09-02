@@ -12,11 +12,12 @@ import (
 	"strings"
 	"time"
 
+	"github.com/cockroachdb/errors"
 	"github.com/hashicorp/go-multierror"
-	"github.com/pkg/errors"
 	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
 	"github.com/sourcegraph/sourcegraph/lib/batches/git"
 	"github.com/sourcegraph/sourcegraph/lib/batches/template"
+
 	"github.com/sourcegraph/src-cli/internal/batches/log"
 	"github.com/sourcegraph/src-cli/internal/batches/util"
 	"github.com/sourcegraph/src-cli/internal/batches/workspace"
@@ -142,7 +143,7 @@ func runSteps(ctx context.Context, opts *executionOpts) (result executionResult,
 			stepContext.Steps.Changes = previousStepResult.Files
 			stepContext.Outputs = opts.task.CachedResult.Outputs
 
-			if err := workspace.ApplyDiff(ctx, []byte(opts.task.CachedResult.Diff)); err != nil {
+			if err := workspace.ApplyDiff(ctx, opts.task.CachedResult.Diff); err != nil {
 				return execResult, nil, errors.Wrap(err, "getting changed files in step")
 			}
 		}

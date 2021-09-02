@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"errors"
 	"flag"
 	"fmt"
 	"io/ioutil"
@@ -14,11 +13,14 @@ import (
 	"text/template"
 	"time"
 
+	"github.com/cockroachdb/errors"
+
 	jsoniter "github.com/json-iterator/go"
 	"github.com/mattn/go-isatty"
+	"gopkg.in/yaml.v3"
+
 	"github.com/sourcegraph/src-cli/internal/api"
 	"github.com/sourcegraph/src-cli/internal/cmderrors"
-	"gopkg.in/yaml.v3"
 )
 
 type validationSpec struct {

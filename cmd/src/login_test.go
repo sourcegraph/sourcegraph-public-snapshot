@@ -68,7 +68,7 @@ func TestLogin(t *testing.T) {
 			t.Fatal(err)
 		}
 		wantOut := "❌ Problem: Invalid access token.\n\n🛠  To fix: Create an access token at $ENDPOINT/user/settings/tokens, then set the following environment variables:\n\n   SRC_ENDPOINT=$ENDPOINT\n   SRC_ACCESS_TOKEN=(the access token you just created)\n\n   To verify that it's working, run this command again.\n\n   (If you need to supply custom HTTP request headers, see information about SRC_HEADER_* env vars at https://github.com/sourcegraph/src-cli/blob/main/AUTH_PROXY.md.)"
-		wantOut = strings.Replace(wantOut, "$ENDPOINT", endpoint, -1)
+		wantOut = strings.ReplaceAll(wantOut, "$ENDPOINT", endpoint)
 		if out != wantOut {
 			t.Errorf("got output %q, want %q", out, wantOut)
 		}
@@ -87,7 +87,7 @@ func TestLogin(t *testing.T) {
 			t.Fatal(err)
 		}
 		wantOut := "✔️  Authenticated as alice on $ENDPOINT"
-		wantOut = strings.Replace(wantOut, "$ENDPOINT", endpoint, -1)
+		wantOut = strings.ReplaceAll(wantOut, "$ENDPOINT", endpoint)
 		if out != wantOut {
 			t.Errorf("got output %q, want %q", out, wantOut)
 		}

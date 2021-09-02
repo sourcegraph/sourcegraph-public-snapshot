@@ -5,10 +5,11 @@ import (
 	"fmt"
 	"os/exec"
 
+	"github.com/cockroachdb/errors"
 	"github.com/hashicorp/go-multierror"
 	"github.com/neelance/parallel"
-	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/lib/output"
+
 	"github.com/sourcegraph/src-cli/internal/api"
 	"github.com/sourcegraph/src-cli/internal/batches"
 	"github.com/sourcegraph/src-cli/internal/batches/executor"

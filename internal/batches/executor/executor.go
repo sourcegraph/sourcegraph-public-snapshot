@@ -7,8 +7,9 @@ import (
 	"sync"
 	"time"
 
+	"github.com/cockroachdb/errors"
 	"github.com/neelance/parallel"
-	"github.com/pkg/errors"
+
 	"github.com/sourcegraph/src-cli/internal/batches"
 	"github.com/sourcegraph/src-cli/internal/batches/log"
 	"github.com/sourcegraph/src-cli/internal/batches/workspace"

@@ -13,6 +13,7 @@ import (
 	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
 	"github.com/sourcegraph/sourcegraph/lib/batches/git"
 	"github.com/sourcegraph/sourcegraph/lib/batches/template"
+
 	"github.com/sourcegraph/src-cli/internal/batches/graphql"
 	"github.com/sourcegraph/src-cli/internal/batches/mock"
 )
@@ -293,10 +294,9 @@ func TestCoordinator_Execute(t *testing.T) {
 				} else {
 					if err == nil {
 						t.Fatalf("expected error to include %q, but got no error", tc.wantErrInclude)
-					} else {
-						if !strings.Contains(err.Error(), tc.wantErrInclude) {
-							t.Errorf("wrong error. have=%q want included=%q", err, tc.wantErrInclude)
-						}
+					}
+					if !strings.Contains(err.Error(), tc.wantErrInclude) {
+						t.Errorf("wrong error. have=%q want included=%q", err, tc.wantErrInclude)
 					}
 				}
 

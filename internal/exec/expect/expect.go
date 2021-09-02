@@ -24,10 +24,10 @@ import (
 	goexec "os/exec"
 	"testing"
 
+	"github.com/cockroachdb/errors"
 	"github.com/gobwas/glob"
 	"github.com/google/go-cmp/cmp"
 	"github.com/hashicorp/go-multierror"
-	"github.com/pkg/errors"
 
 	"github.com/sourcegraph/src-cli/internal/exec"
 )

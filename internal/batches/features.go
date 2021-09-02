@@ -1,7 +1,8 @@
 package batches
 
 import (
-	"github.com/pkg/errors"
+	"github.com/cockroachdb/errors"
+
 	"github.com/sourcegraph/src-cli/internal/api"
 )
 

@@ -52,7 +52,7 @@ func TestTaskCacheKey(t *testing.T) {
 	if err != nil {
 		t.Errorf("unexpected error: %v", err)
 	}
-	if string(initial) != string(have) {
+	if initial != have {
 		t.Errorf("unexpected change in key: initial=%q have=%q", initial, have)
 	}
 
@@ -65,7 +65,7 @@ func TestTaskCacheKey(t *testing.T) {
 	if err != nil {
 		t.Errorf("unexpected error: %v", err)
 	}
-	if string(initial) == string(have) {
+	if initial == have {
 		t.Errorf("unexpected lack of change in key: %q", have)
 	}
 
@@ -77,7 +77,7 @@ func TestTaskCacheKey(t *testing.T) {
 	if err != nil {
 		t.Errorf("unexpected error: %v", err)
 	}
-	if string(initial) == string(again) || string(have) == string(again) {
+	if initial == again || have == again {
 		t.Errorf("unexpected lack of change in key: %q", again)
 	}
 
@@ -90,7 +90,7 @@ func TestTaskCacheKey(t *testing.T) {
 	if err != nil {
 		t.Errorf("unexpected error: %v", err)
 	}
-	if string(initial) != string(have) {
+	if initial != have {
 		t.Errorf("unexpected change in key: initial=%q have=%q", initial, have)
 	}
 }
@@ -163,17 +163,6 @@ func TestExecutionDiskCache_GetSet(t *testing.T) {
 		t.Fatalf("cache.Get returned unexpected error: %s", err)
 	}
 	assertCacheMiss(t, cache, cacheKey1)
-}
-
-func assertFileDeleted(t *testing.T, path string) {
-	t.Helper()
-	if _, err := os.Stat(path); err == nil {
-		t.Fatalf("file exists: %s", path)
-	} else if os.IsNotExist(err) {
-		// Seems to be deleted, all good
-	} else {
-		t.Fatalf("could not determine whether file exists: %s", err)
-	}
 }
 
 func assertCacheHit(t *testing.T, c ExecutionDiskCache, k TaskCacheKey, want executionResult) {

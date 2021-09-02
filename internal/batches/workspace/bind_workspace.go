@@ -11,10 +11,11 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/cockroachdb/errors"
 	"github.com/hashicorp/go-multierror"
-	"github.com/pkg/errors"
 	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
 	"github.com/sourcegraph/sourcegraph/lib/batches/git"
+
 	"github.com/sourcegraph/src-cli/internal/batches"
 	"github.com/sourcegraph/src-cli/internal/batches/graphql"
 )
@@ -179,17 +180,6 @@ func (w *dockerBindWorkspace) ApplyDiff(ctx context.Context, diff []byte) error 
 	// Add all files to index
 	_, err = runGitCmd(ctx, w.dir, "add", "--all")
 	return err
-}
-
-func fileExists(path string) (bool, error) {
-	_, err := os.Stat(path)
-	if err != nil {
-		if os.IsNotExist(err) {
-			return false, nil
-		}
-		return false, err
-	}
-	return true, nil
 }
 
 func unzipToTempDir(ctx context.Context, zipFile, tempDir, tempFilePrefix string) (string, error) {

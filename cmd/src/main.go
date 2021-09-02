@@ -11,7 +11,8 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/pkg/errors"
+	"github.com/cockroachdb/errors"
+
 	"github.com/sourcegraph/src-cli/internal/api"
 )
 

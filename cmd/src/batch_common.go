@@ -14,9 +14,10 @@ import (
 	"strings"
 	"time"
 
+	"github.com/cockroachdb/errors"
 	"github.com/hashicorp/go-multierror"
-	"github.com/pkg/errors"
 	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
+
 	"github.com/sourcegraph/src-cli/internal/api"
 	"github.com/sourcegraph/src-cli/internal/batches"
 	"github.com/sourcegraph/src-cli/internal/batches/executor"
@@ -338,10 +339,8 @@ func executeBatchSpec(ctx context.Context, opts executeBatchSpecOpts) (err error
 		}
 
 		opts.ui.UploadingChangesetSpecsSuccess()
-	} else {
-		if len(repos) == 0 {
-			opts.ui.NoChangesetSpecs()
-		}
+	} else if len(repos) == 0 {
+		opts.ui.NoChangesetSpecs()
 	}
 
 	opts.ui.CreatingBatchSpec()

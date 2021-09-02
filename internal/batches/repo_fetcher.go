@@ -11,7 +11,8 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/pkg/errors"
+	"github.com/cockroachdb/errors"
+
 	"github.com/sourcegraph/src-cli/internal/api"
 	"github.com/sourcegraph/src-cli/internal/batches/graphql"
 )

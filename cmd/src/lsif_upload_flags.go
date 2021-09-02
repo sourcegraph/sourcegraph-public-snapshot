@@ -1,13 +1,15 @@
 package main
 
 import (
-	"errors"
 	"flag"
 	"fmt"
 	"os"
 	"strings"
 
+	"github.com/cockroachdb/errors"
+
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/upload"
+
 	"github.com/sourcegraph/src-cli/internal/api"
 	"github.com/sourcegraph/src-cli/internal/codeintel"
 )

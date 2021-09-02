@@ -11,8 +11,9 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/pkg/errors"
+	"github.com/cockroachdb/errors"
 	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
+
 	"github.com/sourcegraph/src-cli/internal/api"
 	"github.com/sourcegraph/src-cli/internal/batches"
 	"github.com/sourcegraph/src-cli/internal/batches/docker"

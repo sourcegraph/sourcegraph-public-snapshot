@@ -81,5 +81,5 @@ type SkippedSeverity string
 
 const (
 	SeverityInfo SkippedSeverity = "info"
-	SeverityWarn                 = "warn"
+	SeverityWarn SkippedSeverity = "warn"
 )
