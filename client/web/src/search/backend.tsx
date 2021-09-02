@@ -567,8 +567,7 @@ export const highlightCode = memoizeObservable(
                 return data.highlightCode
             })
         ),
-    context =>
-        `${context.code}:${context.fuzzyLanguage}:${String(context.disableTimeout)}:${String(context.isLightTheme)}`
+    context => `${context.code}:${context.fuzzyLanguage}:${String(context.disableTimeout)}`
 )
 
 export interface EventLogResult {

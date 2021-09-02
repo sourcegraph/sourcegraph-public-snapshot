@@ -173,6 +173,7 @@ export const SearchNotebookQueryBlock: React.FunctionComponent<SearchNotebookQue
                             location={location}
                             allExpanded={false}
                             results={searchResults}
+                            isLightTheme={isLightTheme}
                             fetchHighlightedFileLineRanges={fetchHighlightedFileLineRanges}
                             telemetryService={telemetryService}
                             settingsCascade={settingsCascade}
