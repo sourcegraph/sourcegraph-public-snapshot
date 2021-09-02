@@ -1,9 +1,10 @@
 // For search-related extension API features, such as query transformers
 
+import { Remote } from 'comlink'
 import { from, Observable, of, TimeoutError } from 'rxjs'
 import { catchError, filter, first, switchMap, timeout } from 'rxjs/operators'
 
-import { Controller as ExtensionsController } from '../../extensions/controller'
+import { FlatExtensionHostAPI } from '../contract'
 
 import { wrapRemoteObservable } from './api/common'
 
@@ -14,12 +15,12 @@ const TRANSFORM_QUERY_TIMEOUT = 3000
  */
 export function observeTransformedSearchQuery({
     query,
-    extensionsController,
+    extensionHostAPIPromise,
 }: {
     query: string
-    extensionsController: Pick<ExtensionsController, 'extHostAPI'>
+    extensionHostAPIPromise: Promise<Remote<FlatExtensionHostAPI>>
 }): Observable<string> {
-    return from(extensionsController.extHostAPI).pipe(
+    return from(extensionHostAPIPromise).pipe(
         switchMap(extensionHostAPI =>
             wrapRemoteObservable(extensionHostAPI.haveInitialExtensionsLoaded()).pipe(
                 filter(haveLoaded => haveLoaded),

@@ -1,4 +1,5 @@
 /* eslint-disable id-length */
+import { Remote } from 'comlink'
 import { Observable, fromEvent, Subscription, OperatorFunction, pipe, Subscriber, Notification } from 'rxjs'
 import { defaultIfEmpty, map, materialize, scan, switchMap } from 'rxjs/operators'
 import { AggregableBadge } from 'sourcegraph'
@@ -6,8 +7,8 @@ import { AggregableBadge } from 'sourcegraph'
 import { asError, ErrorLike, isErrorLike } from '@sourcegraph/shared/src/util/errors'
 
 import { observeTransformedSearchQuery } from '../api/client/search'
+import { FlatExtensionHostAPI } from '../api/contract'
 import { displayRepoName } from '../components/RepoFileLink'
-import { Controller as ExtensionsController } from '../extensions/controller'
 import { SearchPatternType } from '../graphql-operations'
 import { SymbolKind } from '../graphql/schema'
 
@@ -403,7 +404,7 @@ export interface StreamSearchOptions {
     trace: string | undefined
     decorationKinds?: string[]
     decorationContextLines?: number
-    extensionsController: Pick<ExtensionsController, 'extHostAPI'>
+    extensionHostAPI: Promise<Remote<FlatExtensionHostAPI>>
 }
 
 /**
@@ -421,9 +422,9 @@ function search({
     trace,
     decorationKinds,
     decorationContextLines,
-    extensionsController,
+    extensionHostAPI,
 }: StreamSearchOptions): Observable<SearchEvent> {
-    return observeTransformedSearchQuery({ query, extensionsController }).pipe(
+    return observeTransformedSearchQuery({ query, extensionHostAPIPromise: extensionHostAPI }).pipe(
         switchMap(
             query =>
                 new Observable<SearchEvent>(observer => {
