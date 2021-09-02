@@ -402,16 +402,17 @@ query {
 
 ## Permissions for multiple code hosts
 
-When integrating multiple code hosts with Sourcegraph, repository permissions typically need to be inherited and enforced across those respective code hosts and repositories. The steps below will walk you through configuring and enforcing repository permissions on a per-user basis across all of the code hosts and repos connected to Sourcegraph. 
+When integrating multiple code hosts with Sourcegraph, repository permissions typically need to be inherited and enforced across those respective code hosts and repositories. The steps below will walk you through configuring and enforcing repository permissions on a per-user basis across all of the code hosts and repos connected to Sourcegraph.
 
 ### Using the explicit permissions API
 
-The recommended approach for inheriting permissions across multiple code hosts is via the [Explicit Permissions API](#explicit-permissions-api). The workaround provided in Option 2 is recommended only if using the Explicit Permissions API is not feasible. 
+The recommended approach for inheriting permissions across multiple code hosts is via the [Explicit Permissions API](#explicit-permissions-api). The workaround provided in below is recommended only if using the Explicit Permissions API is not feasible.
 
 ### Using GitHub Enterprise and GitHub.com
 
-> NOTE: This workaround is currently only verified to work when connecting both GitHub Enterprise and Github.com OAuth applications. For other code hosts and configuration options, please reach out to us. 
-Setup and add GitHub Enterprise (GHE) and GitHub.com (GHC) using our standard GitHub [integration](https://docs.sourcegraph.com/admin/external_service/github)
+> NOTE: This workaround is currently only verified to work when connecting both GitHub Enterprise and Github.com OAuth applications. For other code hosts and configuration options, please reach out to us.
+
+Setup and add GitHub Enterprise (GHE) and GitHub.com (GHC) using our standard [GitHub integration](../../external_service/github.md).
 
 **Configure GitHub Enterprise SSO:**
 
@@ -437,9 +438,9 @@ Setup and add GitHub Enterprise (GHE) and GitHub.com (GHC) using our standard Gi
 
 When multiple code hosts/authentication providers are connected to Sourcegraph, a specific sign-in flow needs to be utilized when users are creating an account and signing into Sourcegraph for the first time.
 
-1. Sign in to Sourcegraph using the GitHub Enterprise button 
+1. Sign in to Sourcegraph using the GitHub Enterprise button
 2. Once signed in, sign out and return to the sign in page
-3. On the sign in page, sign in again using the Github.com button 
+3. On the sign in page, sign in again using the Github.com button
 4. Once signed in via Github.com, users should now have access to repositories on both code hosts and have all repository permissions enforced.
 
 > NOTE: These steps are not required at every sign in - only during the initial account creation.
