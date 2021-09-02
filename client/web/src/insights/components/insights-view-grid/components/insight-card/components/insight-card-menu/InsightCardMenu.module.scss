@@ -18,6 +18,12 @@
             fill: var(--body-color);
         }
     }
+
+    + [data-reach-menu-popover] {
+        right: 5px;
+        top: 2.5rem; // base height + y-padding + margin-bottom from InsightCard.module.scss
+        z-index: 2;
+    }
 }
 
 .button-icon {
