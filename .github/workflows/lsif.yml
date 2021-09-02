@@ -96,7 +96,7 @@ jobs:
         with:
           name: dump-${{ matrix.root }}-go
       - name: Upload lsif-go data to ${{ matrix.endpoint }}
-        run: src lsif upload -no-progress -github-token=${{ secrets.GITHUB_TOKEN }} -root ${{ matrix.root }} -file dump-go.lsif
+        run: src lsif upload -github-token='${{ secrets.GITHUB_TOKEN }}' -no-progress -repo='github.com/sourcegraph/sourcegraph' -commit="${GIT_COMMIT}" -root '${{ matrix.root }}' -file dump-go.lsif
         env:
           SRC_ENDPOINT: ${{ matrix.endpoint }}
 
@@ -126,7 +126,7 @@ jobs:
         with:
           name: dump-${{ matrix.root }}-tsc
       - name: Upload lsif-tsc data to ${{ matrix.endpoint }}
-        run: src lsif upload -no-progress -github-token=${{ secrets.GITHUB_TOKEN }} -root client/${{ matrix.root }} -file dump-tsc.lsif
+        run: src lsif upload -github-token='${{ secrets.GITHUB_TOKEN }}' -no-progress -repo='github.com/sourcegraph/sourcegraph' -commit="${GIT_COMMIT}" -root 'client/${{ matrix.root }}' -file dump-tsc.lsif
         env:
           SRC_ENDPOINT: ${{ matrix.endpoint }}
 
@@ -135,6 +135,6 @@ jobs:
         with:
           name: dump-${{ matrix.root }}-eslint
       - name: Upload lsif-eslint data to ${{ matrix.endpoint }}
-        run: src lsif upload -no-progress -github-token=${{ secrets.GITHUB_TOKEN }} -root client/${{ matrix.root }} -file dump-eslint.lsif
+        run: src lsif upload -github-token='${{ secrets.GITHUB_TOKEN }}' -no-progress -repo='github.com/sourcegraph/sourcegraph' -commit="${GIT_COMMIT}" -root 'client/${{ matrix.root }}' -file dump-eslint.lsif
         env:
           SRC_ENDPOINT: ${{ matrix.endpoint }}
