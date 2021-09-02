@@ -142,6 +142,7 @@ export const FileMatchChildren: React.FunctionComponent<FileMatchProps> = props 
                                     isLightTheme={isLightTheme}
                                     fetchHighlightedFileRangeLines={fetchHighlightedFileRangeLines}
                                     isFirst={index === 0}
+                                    blobLines={group.blobLines}
                                 />
                             </Link>
                         </div>
