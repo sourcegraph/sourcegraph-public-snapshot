@@ -5,6 +5,13 @@ This tool is ran offline to generate the sitemap files served at https://sourceg
 To run it:
 
 ```sh
-go build -o sitemap-generator ./cmd/sitemap && ./sitemap-generator
+export SRC_ACCESS_TOKEN=...
+./run.sh
+```
+
+Once ran, it will output some stats as well as generate the sitemap.xml files to `sitemap/`. You should then upload them:
+
+```sh
+gsutil cp -r sitemap/ gs://sitemap-sourcegraph-com
 ```
 
