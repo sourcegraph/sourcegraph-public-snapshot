@@ -36,6 +36,17 @@ const (
 	jvmMajorVersion0 = 44
 )
 
+// sourcegraphMavenDependency is used to set GIT_AUTHOR_NAME for git commands
+// that don't create commits or tags. The name of this dependency should never
+// be publicly visible so it can have any random value.
+var sourcegraphMavenDependency = reposource.MavenDependency{
+	MavenModule: reposource.MavenModule{
+		GroupID:    "com.sourcegraph",
+		ArtifactID: "sourcegraph",
+	},
+	Version: "1.0.0",
+}
+
 type JVMPackagesSyncer struct {
 	Config  *schema.JVMPackagesConnection
 	DBStore repos.JVMPackagesRepoStore
@@ -87,7 +98,7 @@ func (s *JVMPackagesSyncer) CloneCommand(ctx context.Context, remoteURL *vcs.URL
 	}
 
 	cmd := exec.CommandContext(ctx, "git", "--bare", "init")
-	if _, err := runCommandInDirectory(ctx, cmd, bareGitDirectory); err != nil {
+	if _, err := runCommandInDirectory(ctx, cmd, bareGitDirectory, sourcegraphMavenDependency); err != nil {
 		return nil, err
 	}
 
@@ -110,7 +121,7 @@ func (s *JVMPackagesSyncer) Fetch(ctx context.Context, remoteURL *vcs.URL, dir G
 
 	tags := map[string]bool{}
 
-	out, err := runCommandInDirectory(ctx, exec.CommandContext(ctx, "git", "tag"), string(dir))
+	out, err := runCommandInDirectory(ctx, exec.CommandContext(ctx, "git", "tag"), string(dir), sourcegraphMavenDependency)
 	if err != nil {
 		return err
 	}
@@ -140,7 +151,7 @@ func (s *JVMPackagesSyncer) Fetch(ctx context.Context, remoteURL *vcs.URL, dir G
 	for tag := range tags {
 		if _, isDependencyTag := dependencyTags[tag]; !isDependencyTag {
 			cmd := exec.CommandContext(ctx, "git", "tag", "-d", tag)
-			if _, err := runCommandInDirectory(ctx, cmd, string(dir)); err != nil {
+			if _, err := runCommandInDirectory(ctx, cmd, string(dir), sourcegraphMavenDependency); err != nil {
 				log15.Error("Failed to delete git tag", "error", err, "tag", tag)
 				continue
 			}
@@ -240,7 +251,7 @@ func (s *JVMPackagesSyncer) gitPushDependencyTag(ctx context.Context, bareGitDir
 	sourceCodePath := sourceCodePaths[0]
 
 	cmd := exec.CommandContext(ctx, "git", "init")
-	if _, err := runCommandInDirectory(ctx, cmd, tmpDirectory); err != nil {
+	if _, err := runCommandInDirectory(ctx, cmd, tmpDirectory, dependency); err != nil {
 		return err
 	}
 
@@ -250,24 +261,24 @@ func (s *JVMPackagesSyncer) gitPushDependencyTag(ctx context.Context, bareGitDir
 	}
 
 	cmd = exec.CommandContext(ctx, "git", "remote", "add", "origin", bareGitDirectory)
-	if _, err := runCommandInDirectory(ctx, cmd, tmpDirectory); err != nil {
+	if _, err := runCommandInDirectory(ctx, cmd, tmpDirectory, dependency); err != nil {
 		return err
 	}
 
 	// Use --no-verify for security reasons. See https://github.com/sourcegraph/sourcegraph/pull/23399
 	cmd = exec.CommandContext(ctx, "git", "push", "--no-verify", "--force", "origin", "--tags")
-	if _, err := runCommandInDirectory(ctx, cmd, tmpDirectory); err != nil {
+	if _, err := runCommandInDirectory(ctx, cmd, tmpDirectory, dependency); err != nil {
 		return err
 	}
 
 	if isLatestVersion {
-		defaultBranch, err := runCommandInDirectory(ctx, exec.CommandContext(ctx, "git", "rev-parse", "--abbrev-ref", "HEAD"), tmpDirectory)
+		defaultBranch, err := runCommandInDirectory(ctx, exec.CommandContext(ctx, "git", "rev-parse", "--abbrev-ref", "HEAD"), tmpDirectory, dependency)
 		if err != nil {
 			return err
 		}
 		// Use --no-verify for security reasons. See https://github.com/sourcegraph/sourcegraph/pull/23399
 		cmd = exec.CommandContext(ctx, "git", "push", "--no-verify", "--force", "origin", strings.TrimSpace(defaultBranch)+":latest", dependency.GitTagFromVersion())
-		if _, err := runCommandInDirectory(ctx, cmd, tmpDirectory); err != nil {
+		if _, err := runCommandInDirectory(ctx, cmd, tmpDirectory, dependency); err != nil {
 			return err
 		}
 	}
@@ -309,18 +320,18 @@ func (s *JVMPackagesSyncer) commitJar(ctx context.Context, dependency reposource
 	}
 
 	cmd := exec.CommandContext(ctx, "git", "add", ".")
-	if _, err := runCommandInDirectory(ctx, cmd, workingDirectory); err != nil {
+	if _, err := runCommandInDirectory(ctx, cmd, workingDirectory, dependency); err != nil {
 		return err
 	}
 
 	// Use --no-verify for security reasons. See https://github.com/sourcegraph/sourcegraph/pull/23399
 	cmd = exec.CommandContext(ctx, "git", "commit", "--no-verify", "-m", dependency.CoursierSyntax(), "--date", stableGitCommitDate)
-	if _, err := runCommandInDirectory(ctx, cmd, workingDirectory); err != nil {
+	if _, err := runCommandInDirectory(ctx, cmd, workingDirectory, dependency); err != nil {
 		return err
 	}
 
 	cmd = exec.CommandContext(ctx, "git", "tag", "-m", dependency.CoursierSyntax(), dependency.GitTagFromVersion())
-	if _, err := runCommandInDirectory(ctx, cmd, workingDirectory); err != nil {
+	if _, err := runCommandInDirectory(ctx, cmd, workingDirectory, dependency); err != nil {
 		return err
 	}
 
@@ -468,8 +479,17 @@ func roundJVMVersionToNearestStableVersion(javaVersion int) int {
 	return javaVersion
 }
 
-func runCommandInDirectory(ctx context.Context, cmd *exec.Cmd, workingDirectory string) (string, error) {
+func runCommandInDirectory(ctx context.Context, cmd *exec.Cmd, workingDirectory string, dependency reposource.MavenDependency) (string, error) {
+	gitName := dependency.MavenModule.CoursierSyntax() + " authors"
+	gitEmail := "code-intel@sourcegraph.com"
 	cmd.Dir = workingDirectory
+	cmd.Env = append(cmd.Env, "EMAIL="+gitEmail)
+	cmd.Env = append(cmd.Env, "GIT_AUTHOR_NAME="+gitName)
+	cmd.Env = append(cmd.Env, "GIT_AUTHOR_EMAIL="+gitEmail)
+	cmd.Env = append(cmd.Env, "GIT_AUTHOR_DATE="+stableGitCommitDate)
+	cmd.Env = append(cmd.Env, "COMMITTER_AUTHOR_NAME="+gitName)
+	cmd.Env = append(cmd.Env, "COMMITTER_AUTHOR_EMAIL="+gitEmail)
+	cmd.Env = append(cmd.Env, "COMMITTER_AUTHOR_DATE="+stableGitCommitDate)
 	output, err := runWith(ctx, cmd, false, nil)
 	if err != nil {
 		return "", errors.Wrapf(err, "command %s failed with output %s", cmd.Args, string(output))
