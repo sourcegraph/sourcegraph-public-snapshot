@@ -69,6 +69,9 @@ func (db *queryDatabase) request(key requestKey, fetch func() ([]byte, error)) (
 		bucket.Put(keyBytes, result)
 		return nil
 	})
+	if err != nil {
+		return nil, errors.Wrap(err, "Update")
+	}
 	return result, nil
 }
 
