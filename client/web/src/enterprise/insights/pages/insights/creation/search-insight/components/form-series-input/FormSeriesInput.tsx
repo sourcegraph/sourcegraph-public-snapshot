@@ -1,14 +1,17 @@
 import classnames from 'classnames'
 import React from 'react'
 import { noop } from 'rxjs'
+import { useContextSelector } from 'use-context-selector'
 
 import { Button } from '@sourcegraph/wildcard/src'
 
+import { SearchBox } from '../../../../../../../../search/input/SearchBox'
 import { FormInput } from '../../../../../../components/form/form-input/FormInput'
 import { useField } from '../../../../../../components/form/hooks/useField'
 import { useForm } from '../../../../../../components/form/hooks/useForm'
 import { createRequiredValidator } from '../../../../../../components/form/validators'
 import { SearchBasedInsightSeries } from '../../../../../../core/types/insight/search-insight'
+import { InsightsContext } from '../../../../../../insights-context'
 import { DEFAULT_ACTIVE_COLOR, FormColorInput } from '../form-color-input/FormColorInput'
 
 const requiredNameField = createRequiredValidator('Name is a required field for data series.')
@@ -67,6 +70,8 @@ export const FormSeriesInput: React.FunctionComponent<FormSeriesInputProps> = pr
         onChange = noop,
     } = props
 
+    const searchBoxProps = useContextSelector(InsightsContext, context => context?.searchBoxProps)
+
     const hasNameControlledValue = !!name
     const hasQueryControlledValue = !!query
 
@@ -108,6 +113,7 @@ export const FormSeriesInput: React.FunctionComponent<FormSeriesInputProps> = pr
         formApi: formAPI,
         validators: { sync: validQuery },
         disabled: isSearchQueryDisabled,
+        type: 'hidden',
     })
 
     const colorField = useField({
@@ -161,6 +167,23 @@ export const FormSeriesInput: React.FunctionComponent<FormSeriesInputProps> = pr
                 className="mt-4"
                 {...queryField.input}
             />
+
+            <div className="d-flex">
+                {searchBoxProps && (
+                    <SearchBox
+                        {...searchBoxProps}
+                        hideHelpButton={true}
+                        hideVersionContexts={true}
+                        showSearchContext={false}
+                        onChange={newQueryState => {
+                            queryField.meta.setState(state => ({ ...state, value: newQueryState.query }))
+                        }}
+                        queryState={{ query: query || '' }}
+                        isSearchOnboardingTourVisible={false}
+                        onSubmit={noop}
+                    />
+                )}
+            </div>
 
             <FormColorInput
                 name={`color group of ${index} series`}
