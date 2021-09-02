@@ -16,7 +16,7 @@ import { SidebarGroup, SidebarGroupHeader } from '../../../../components/Sidebar
 import { MonacoSettingsEditor } from '../../../../settings/MonacoSettingsEditor'
 import { BatchSpecDownloadLink, getFileName } from '../../BatchSpec'
 
-import { resolveRepositoriesForBatchSpec } from './backend'
+import { resolveWorkspacesForBatchSpec } from './backend'
 import combySample from './comby.batch.yaml'
 import helloWorldSample from './empty.batch.yaml'
 import styles from './ExampleTabs.module.scss'
@@ -118,7 +118,7 @@ const ExampleTabPanel: React.FunctionComponent<ExampleTabPanelProps> = ({
                 codeUpdates.pipe(
                     startWith(code),
                     debounceTime(5000),
-                    switchMap(code => resolveRepositoriesForBatchSpec(code)),
+                    switchMap(code => resolveWorkspacesForBatchSpec(code)),
                     catchError(error => [asError(error)])
                 ),
             // Don't want to trigger on changes to code, it's just the initial value.
@@ -163,7 +163,19 @@ const ExampleTabPanel: React.FunctionComponent<ExampleTabPanelProps> = ({
                     {!isErrorLike(preview) &&
                         preview?.map(item => (
                             <li className="list-group-item" key={`${item.repository.id}_${item.path}`}>
-                                {item.repository.name} @ {item.path}
+                                <p>
+                                    {item.repository.name}:{item.branch.abbrevName}@{item.branch.target.oid} Path:{' '}
+                                    {item.path}
+                                </p>
+                                <ul>
+                                    {item.steps.map((step, index) => (
+                                        <li key={index}>
+                                            <span className="text-monospace">{step.command}</span>
+                                            <br />
+                                            <span className="text-muted">{step.container}</span>
+                                        </li>
+                                    ))}
+                                </ul>
                             </li>
                         ))}
                     {!isErrorLike(preview) && !preview && <LoadingSpinner />}

@@ -5,13 +5,17 @@ import (
 	"fmt"
 	"os"
 	"regexp"
+	"sort"
 	"strings"
 	"sync"
 
 	"github.com/cockroachdb/errors"
+	"github.com/gobwas/glob"
 	"github.com/hashicorp/go-multierror"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
+	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -23,77 +27,26 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
+	"github.com/sourcegraph/sourcegraph/lib/batches/template"
 )
-
-type RepoRevision struct {
-	Repo   *types.Repo
-	Branch string
-	Commit api.CommitID
-}
-
-func (r *RepoRevision) HasBranch() bool {
-	return r.Branch != ""
-}
-
-type ResolveRepositoriesForBatchSpecOpts struct {
-	AllowIgnored     bool
-	AllowUnsupported bool
-}
-
-func (s *Service) ResolveRepositoriesForBatchSpec(ctx context.Context, batchSpec *batcheslib.BatchSpec, opts ResolveRepositoriesForBatchSpecOpts) (_ []*RepoRevision, err error) {
-	traceTitle := fmt.Sprintf("len(On): %d", len(batchSpec.On))
-	tr, ctx := trace.New(ctx, "service.ResolveRepositoriesForBatchSpec", traceTitle)
-	defer func() {
-		tr.SetError(err)
-		tr.Finish()
-	}()
-
-	wr := &workspaceResolver{store: s.store, frontendInternalURL: api.InternalClient.URL + "/.internal"}
-	return wr.ResolveRepositoriesForBatchSpec(ctx, batchSpec, opts)
-}
 
 type workspaceResolver struct {
 	store               *store.Store
 	frontendInternalURL string
 }
 
-func (wr *workspaceResolver) ResolveRepositoriesForBatchSpec(ctx context.Context, batchSpec *batcheslib.BatchSpec, opts ResolveRepositoriesForBatchSpecOpts) (_ []*RepoRevision, err error) {
-	seen := map[api.RepoID]*RepoRevision{}
-	unsupported := UnsupportedRepoSet{}
-
-	// TODO: this could be trivially parallelised in the future.
-	for _, on := range batchSpec.On {
-		repos, err := wr.resolveRepositoriesOn(ctx, &on)
-		if err != nil {
-			return nil, errors.Wrapf(err, "resolving %q", on.String())
-		}
-
-		for _, repo := range repos {
-			// Skip repos where no branch exists.
-			if !repo.HasBranch() {
-				continue
-			}
-
-			if other, ok := seen[repo.Repo.ID]; !ok {
-				seen[repo.Repo.ID] = repo
-
-				switch st := repo.Repo.ExternalRepo.ServiceType; st {
-				case extsvc.TypeGitHub, extsvc.TypeGitLab, extsvc.TypeBitbucketServer:
-				default:
-					if !opts.AllowUnsupported {
-						unsupported.Append(repo.Repo)
-					}
-				}
-			} else {
-				// If we've already seen this repository, we overwrite the
-				// Commit/Branch fields with the latest value we have
-				other.Commit = repo.Commit
-				other.Branch = repo.Branch
-			}
-		}
+func (wr *workspaceResolver) ResolveWorkspacesForBatchSpec(ctx context.Context, batchSpec *batcheslib.BatchSpec, opts ResolveWorkspacesForBatchSpecOpts) (_ []*RepoWorkspace, err error) {
+	seen, unsupported, err := wr.determineRepositories(ctx, batchSpec, opts)
+	if err != nil {
+		return nil, err
 	}
 
-	final, ignored, err := filterIgnoredRepositories(ctx, seen, opts.AllowIgnored, unsupported)
+	all, ignored, err := filterIgnoredRepositories(ctx, seen, opts.AllowIgnored, unsupported)
+	if err != nil {
+		return nil, err
+	}
+
+	final, err := findWorkspaces(ctx, batchSpec, wr, all)
 	if err != nil {
 		return nil, err
 	}
@@ -109,13 +62,50 @@ func (wr *workspaceResolver) ResolveRepositoriesForBatchSpec(ctx context.Context
 	return final, nil
 }
 
+func (wr *workspaceResolver) determineRepositories(ctx context.Context, batchSpec *batcheslib.BatchSpec, opts ResolveWorkspacesForBatchSpecOpts) (map[api.RepoID]*RepoRevision, UnsupportedRepoSet, error) {
+	seen := map[api.RepoID]*RepoRevision{}
+	unsupported := UnsupportedRepoSet{}
+
+	// TODO: this could be trivially parallelised in the future.
+	for _, on := range batchSpec.On {
+		// TODO: Use multierror.
+		repos, err := wr.resolveRepositoriesOn(ctx, &on)
+		if err != nil {
+			return nil, nil, errors.Wrapf(err, "resolving %q", on.String())
+		}
+
+		for _, repo := range repos {
+			// Skip repos where no branch exists.
+			if !repo.HasBranch() {
+				continue
+			}
+
+			if other, ok := seen[repo.Repo.ID]; !ok {
+				seen[repo.Repo.ID] = repo
+
+				if !btypes.IsKindSupported(extsvc.TypeToKind(repo.Repo.ExternalRepo.ServiceType)) {
+					if !opts.AllowUnsupported {
+						unsupported.Append(repo.Repo)
+					}
+				}
+			} else {
+				// If we've already seen this repository, we overwrite the
+				// Commit/Branch fields with the latest value we have
+				other.Commit = repo.Commit
+				other.Branch = repo.Branch
+			}
+		}
+	}
+
+	return seen, unsupported, nil
+}
+
 func filterIgnoredRepositories(
 	ctx context.Context,
 	repos map[api.RepoID]*RepoRevision,
 	allowIgnored bool,
 	unsupported UnsupportedRepoSet,
 ) ([]*RepoRevision, IgnoredRepoSet, error) {
-
 	type result struct {
 		repo           *RepoRevision
 		hasBatchIgnore bool
@@ -172,7 +162,7 @@ func filterIgnoredRepositories(
 	return final, ignored, errs.ErrorOrNil()
 }
 
-var ErrMalformedOnQueryOrRepository = errors.New("malformed 'on' field; missing either a repository name or a query")
+var ErrMalformedOnQueryOrRepository = batcheslib.NewValidationError(errors.New("malformed 'on' field; missing either a repository name or a query"))
 
 func (wr *workspaceResolver) resolveRepositoriesOn(ctx context.Context, on *batcheslib.OnQueryOrRepository) (_ []*RepoRevision, err error) {
 	tr, ctx := trace.New(ctx, "workspaceResolver.resolveRepositoriesOn", "")
@@ -183,13 +173,17 @@ func (wr *workspaceResolver) resolveRepositoriesOn(ctx context.Context, on *batc
 
 	if on.RepositoriesMatchingQuery != "" {
 		return wr.resolveRepositoriesMatchingQuery(ctx, on.RepositoriesMatchingQuery)
-	} else if on.Repository != "" && on.Branch != "" {
+	}
+
+	if on.Repository != "" && on.Branch != "" {
 		repo, err := wr.resolveRepositoryNameAndBranch(ctx, on.Repository, on.Branch)
 		if err != nil {
 			return nil, err
 		}
 		return []*RepoRevision{repo}, nil
-	} else if on.Repository != "" {
+	}
+
+	if on.Repository != "" {
 		repo, err := wr.resolveRepositoryName(ctx, on.Repository)
 		if err != nil {
 			return nil, err
@@ -214,7 +208,7 @@ func (wr *workspaceResolver) resolveRepositoryName(ctx context.Context, name str
 		return nil, err
 	}
 
-	return repoToRepoRevision(ctx, repo)
+	return repoToRepoRevisionWithDefaultBranch(ctx, repo)
 }
 
 func (wr *workspaceResolver) resolveRepositoryNameAndBranch(ctx context.Context, name, branch string) (_ *RepoRevision, err error) {
@@ -278,7 +272,7 @@ func (wr *workspaceResolver) resolveRepositoriesMatchingQuery(ctx context.Contex
 
 	revs := make([]*RepoRevision, 0, len(accessibleRepos))
 	for _, repo := range accessibleRepos {
-		rev, err := repoToRepoRevision(ctx, repo)
+		rev, err := repoToRepoRevisionWithDefaultBranch(ctx, repo)
 		if err != nil {
 			return nil, err
 		}
@@ -309,9 +303,7 @@ func (wr *workspaceResolver) runSearch(ctx context.Context, query string, onMatc
 	defer resp.Body.Close()
 
 	dec := streamhttp.FrontendStreamDecoder{
-		OnMatches: func(matches []streamhttp.EventMatch) {
-			onMatches(matches)
-		},
+		OnMatches: onMatches,
 		OnError: func(ee *streamhttp.EventError) {
 			err = errors.New(ee.Message)
 		},
@@ -322,19 +314,24 @@ func (wr *workspaceResolver) runSearch(ctx context.Context, query string, onMatc
 	return dec.ReadAll(resp.Body)
 }
 
-func repoToRepoRevision(ctx context.Context, repo *types.Repo) (_ *RepoRevision, err error) {
+func repoToRepoRevisionWithDefaultBranch(ctx context.Context, repo *types.Repo) (_ *RepoRevision, err error) {
 	tr, ctx := trace.New(ctx, "repoToRepoRevision", "")
 	defer func() {
 		tr.SetError(err)
 		tr.Finish()
 	}()
 
-	repoRev := &RepoRevision{
-		Repo: repo,
+	branch, commit, err := git.GetDefaultBranch(ctx, repo.Name)
+	if err != nil {
+		return nil, err
 	}
 
-	repoRev.Branch, repoRev.Commit, err = git.GetDefaultBranch(ctx, repo.Name)
-	return repoRev, err
+	repoRev := &RepoRevision{
+		Repo:   repo,
+		Branch: branch,
+		Commit: commit,
+	}
+	return repoRev, nil
 }
 
 func hasBatchIgnoreFile(ctx context.Context, r *RepoRevision) (_ bool, err error) {
@@ -470,4 +467,269 @@ func (e IgnoredRepoSet) Append(repo *types.Repo) {
 
 func (e IgnoredRepoSet) HasIgnored() bool {
 	return len(e) > 0
+}
+
+// FindDirectoriesInRepos returns a map of repositories and the locations of
+// files matching the given file name in the repository.
+// The locations are paths relative to the root of the directory.
+// No "/" at the beginning.
+// A dot (".") represents the root directory.
+func (wr *workspaceResolver) FindDirectoriesInRepos(ctx context.Context, fileName string, repos ...*RepoRevision) (map[repoRevKey][]string, error) {
+	findForRepoRev := func(repoRev *RepoRevision) ([]string, error) {
+		query := fmt.Sprintf(`file:(^|/)%s$ repo:^%s$@%s type:path count:99999`, regexp.QuoteMeta(fileName), regexp.QuoteMeta(string(repoRev.Repo.Name)), repoRev.Commit)
+
+		results := []string{}
+		err := wr.runSearch(ctx, query, func(matches []streamhttp.EventMatch) {
+			for _, match := range matches {
+				switch m := match.(type) {
+				case (*streamhttp.EventPathMatch):
+					results = append(results, m.Path)
+				}
+			}
+		})
+		if err != nil {
+			return nil, err
+		}
+
+		return results, nil
+	}
+
+	// Limit concurrency.
+	sem := make(chan struct{}, 10)
+	for i := 0; i < 10; i++ {
+		sem <- struct{}{}
+	}
+
+	var (
+		errs    error
+		mu      sync.Mutex
+		results = make(map[repoRevKey][]string)
+	)
+	for _, repoRev := range repos {
+		<-sem
+		go func(repoRev *RepoRevision) {
+			defer func() {
+				sem <- struct{}{}
+			}()
+
+			result, err := findForRepoRev(repoRev)
+			if err != nil {
+				errs = multierror.Append(errs, err)
+				return
+			}
+
+			mu.Lock()
+			results[repoRev.Key()] = result
+			mu.Unlock()
+		}(repoRev)
+	}
+
+	// Wait for all to finish.
+	for i := 0; i < 10; i++ {
+		<-sem
+	}
+
+	return results, errs
+}
+
+type directoryFinder interface {
+	FindDirectoriesInRepos(ctx context.Context, fileName string, repos ...*RepoRevision) (map[repoRevKey][]string, error)
+}
+
+// findWorkspaces matches the given repos to the workspace configs and
+// searches, via the Sourcegraph instance, the locations of the workspaces in
+// each repository.
+// The repositories that were matched by a workspace config and all repos that didn't
+// match a config are returned as workspaces.
+func findWorkspaces(
+	ctx context.Context,
+	spec *batcheslib.BatchSpec,
+	finder directoryFinder,
+	repoRevs []*RepoRevision,
+) ([]*RepoWorkspace, error) {
+	// Pre-compile all globs.
+	workspaceMatchers := make(map[batcheslib.WorkspaceConfiguration]glob.Glob)
+	var errs *multierror.Error
+	for _, conf := range spec.Workspaces {
+		g, err := glob.Compile(conf.In)
+		if err != nil {
+			errs = multierror.Append(errs, batcheslib.NewValidationError(errors.Errorf("failed to compile glob %q: %v", conf.In, err)))
+		}
+		workspaceMatchers[conf] = g
+	}
+	if err := errs.ErrorOrNil(); err != nil {
+		return nil, err
+	}
+
+	root := []*RepoRevision{}
+
+	// Maps workspace config indexes to repositories matching them.
+	matched := map[int][]*RepoRevision{}
+
+	for _, repoRev := range repoRevs {
+		found := false
+
+		// Try to find a workspace configuration matching this repo.
+		for idx, conf := range spec.Workspaces {
+			if !workspaceMatchers[conf].Match(string(repoRev.Repo.Name)) {
+				continue
+			}
+
+			// Don't allow duplicate matches.
+			if found {
+				return nil, batcheslib.NewValidationError(errors.Errorf("repository %s matches multiple workspaces.in globs in the batch spec. glob: %q", repoRev.Repo.Name, conf.In))
+			}
+
+			matched[idx] = append(matched[idx], repoRev)
+			found = true
+		}
+
+		if !found {
+			root = append(root, repoRev)
+		}
+	}
+
+	type repoWorkspaces struct {
+		*RepoRevision
+		Paths              []string
+		OnlyFetchWorkspace bool
+	}
+	workspacesByRepoRev := map[repoRevKey]repoWorkspaces{}
+	for idx, repoRevs := range matched {
+		conf := spec.Workspaces[idx]
+		repoRevDirs, err := finder.FindDirectoriesInRepos(ctx, conf.RootAtLocationOf, repoRevs...)
+		if err != nil {
+			return nil, err
+		}
+
+		repoRevsByKey := map[repoRevKey]*RepoRevision{}
+		for _, repoRev := range repoRevs {
+			repoRevsByKey[repoRev.Key()] = repoRev
+		}
+
+		for repoRevKey, dirs := range repoRevDirs {
+			// Don't add repos that don't have any matched workspaces.
+			if len(dirs) == 0 {
+				continue
+			}
+			workspacesByRepoRev[repoRevKey] = repoWorkspaces{
+				RepoRevision:       repoRevsByKey[repoRevKey],
+				Paths:              dirs,
+				OnlyFetchWorkspace: conf.OnlyFetchWorkspace,
+			}
+		}
+	}
+
+	// And add the root for repos.
+	for _, repoRev := range root {
+		conf, ok := workspacesByRepoRev[repoRev.Key()]
+		if !ok {
+			workspacesByRepoRev[repoRev.Key()] = repoWorkspaces{
+				RepoRevision: repoRev,
+				// Root.
+				Paths:              []string{""},
+				OnlyFetchWorkspace: false,
+			}
+			continue
+		}
+		conf.Paths = append(conf.Paths, "")
+	}
+
+	workspaces := make([]*RepoWorkspace, 0, len(workspacesByRepoRev))
+	for _, workspace := range workspacesByRepoRev {
+		steps, err := stepsForRepoRevision(spec, workspace.RepoRevision)
+		if err != nil {
+			return nil, err
+		}
+
+		// If the workspace doesn't have any steps we don't need to include it.
+		if len(steps) == 0 {
+			continue
+		}
+
+		for _, path := range workspace.Paths {
+			fetchWorkspace := workspace.OnlyFetchWorkspace
+			if path == "" {
+				fetchWorkspace = false
+			}
+
+			workspaces = append(workspaces, &RepoWorkspace{
+				RepoRevision:       workspace.RepoRevision,
+				Path:               path,
+				Steps:              steps,
+				OnlyFetchWorkspace: fetchWorkspace,
+			})
+		}
+	}
+
+	// Stable sorting.
+	sort.Slice(workspaces, func(i, j int) bool {
+		if workspaces[i].Repo.Name == workspaces[j].Repo.Name {
+			return workspaces[i].Path < workspaces[j].Path
+		}
+		return workspaces[i].Repo.Name < workspaces[j].Repo.Name
+	})
+
+	return workspaces, nil
+}
+
+// stepsForRepoRevision calculates the steps required to run on the given repo.
+func stepsForRepoRevision(spec *batcheslib.BatchSpec, repoRev *RepoRevision) ([]batcheslib.Step, error) {
+	taskSteps := []batcheslib.Step{}
+
+	for _, step := range spec.Steps {
+		// If no if condition is given, just go ahead and add the step to the list.
+		if step.IfCondition() == "" {
+			taskSteps = append(taskSteps, step)
+			continue
+		}
+
+		batchChange := template.BatchChangeAttributes{
+			Name:        spec.Name,
+			Description: spec.Description,
+		}
+		stepCtx := &template.StepContext{
+			Repository: template.TemplatingRepository{
+				ID:   string(graphqlbackend.MarshalRepositoryID(repoRev.Repo.ID)),
+				Name: string(repoRev.Repo.Name),
+				// TODO: It's not always the default branch, this also seems to
+				// be wrong in src-cli.
+				DefaultBranch: template.TemplatingBranch{
+					Name:      repoRev.Branch,
+					TargetOID: string(repoRev.Commit),
+				},
+				// TODO: Reimplement.
+				FileMatches: make(map[string]bool),
+			},
+			BatchChange: batchChange,
+		}
+		static, boolVal, err := template.IsStaticBool(step.IfCondition(), stepCtx)
+		if err != nil {
+			return nil, err
+		}
+
+		// If we could evaluate the condition statically and the resulting
+		// boolean is false, we don't add that step.
+		if !static {
+			taskSteps = append(taskSteps, step)
+		} else if boolVal {
+			taskSteps = append(taskSteps, step)
+		}
+	}
+
+	return taskSteps, nil
+}
+
+type repoRevKey struct {
+	RepoID int32
+	Branch string
+	Commit string
+}
+
+func (r *RepoRevision) Key() repoRevKey {
+	return repoRevKey{
+		RepoID: int32(r.Repo.ID),
+		Branch: r.Branch,
+		Commit: string(r.Commit),
+	}
 }

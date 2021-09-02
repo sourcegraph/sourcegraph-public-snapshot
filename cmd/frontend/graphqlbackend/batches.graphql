@@ -2231,11 +2231,11 @@ extend type Query {
     ): BatchChangesCodeHostConnection!
 
     """
-    Resolve repositories matching the given batch spec input.
+    Resolve workspaces matching the given batch spec input.
 
     Experimental API. Will disappear soon.
     """
-    resolveRepositoriesForBatchSpec(
+    resolveWorkspacesForBatchSpec(
         """
         The batch spec to evaluate.
         """
@@ -2249,21 +2249,52 @@ extend type Query {
         be published.
         """
         allowUnsupported: Boolean = false
-    ): [BatchSpecMatchingRepository!]!
+    ): [BatchSpecWorkspace!]!
 }
 
 """
-A result for the on: section in the batch spec.
+A workspace in Batch Changes to run in.
 """
-type BatchSpecMatchingRepository {
+type BatchSpecWorkspace {
     """
     The repository to run over.
     """
     repository: Repository!
+
+    """
+    The branch to run over.
+    """
+    branch: GitRef!
+
     """
     The path to run in.
     """
     path: String!
+
+    """
+    If true, only the files within the workspace will be fetched.
+    """
+    onlyFetchWorkspace: Boolean!
+
+    """
+    List of steps that will need to run over this workspace.
+    """
+    steps: [BatchSpecWorkspaceStep!]!
+}
+
+"""
+Description of one step in the execution of a workspace.
+"""
+type BatchSpecWorkspaceStep {
+    """
+    The command to run.
+    """
+    command: String!
+
+    """
+    The docker container image to use to run this command.
+    """
+    container: String!
 }
 
 """
