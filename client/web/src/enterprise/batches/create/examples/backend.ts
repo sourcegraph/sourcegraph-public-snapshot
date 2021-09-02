@@ -5,17 +5,35 @@ import { dataOrThrowErrors, gql } from '@sourcegraph/shared/src/graphql/graphql'
 
 import { requestGraphQL } from '../../../../backend/graphql'
 import {
-    BatchSpecWorkspaceFields,
+    BatchSpecWorkspacesFields,
     ResolveWorkspacesForBatchSpecResult,
     ResolveWorkspacesForBatchSpecVariables,
 } from '../../../../graphql-operations'
 
-export function resolveWorkspacesForBatchSpec(spec: string): Observable<BatchSpecWorkspaceFields[]> {
+export function resolveWorkspacesForBatchSpec(spec: string): Observable<BatchSpecWorkspacesFields> {
     return requestGraphQL<ResolveWorkspacesForBatchSpecResult, ResolveWorkspacesForBatchSpecVariables>(
         gql`
             query ResolveWorkspacesForBatchSpec($spec: String!) {
                 resolveWorkspacesForBatchSpec(batchSpec: $spec) {
+                    ...BatchSpecWorkspacesFields
+                }
+            }
+
+            fragment BatchSpecWorkspacesFields on BatchSpecWorkspaces {
+                workspaces {
                     ...BatchSpecWorkspaceFields
+                }
+                allowIgnored
+                allowUnsupported
+                unsupported {
+                    id
+                    url
+                    name
+                }
+                ignored {
+                    id
+                    url
+                    name
                 }
             }
 

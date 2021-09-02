@@ -275,11 +275,12 @@ func TestService_ResolveWorkspacesForBatchSpec(t *testing.T) {
 		resolveWorkspacesAndCompare(t, s, defaultOpts, searchMatches, batchSpec, want, wantIgnored, wantUnsupported)
 
 		// with allowUnsupported: true
+		// Now we expect the repo to be returned.
 		opts := defaultOpts
 		opts.AllowUnsupported = true
 
 		want = []*RepoWorkspace{buildRepoWorkspace(unsupported[0], "", "")}
-		wantUnsupported = []api.RepoID{}
+		wantUnsupported = []api.RepoID{unsupported[0].ID}
 		resolveWorkspacesAndCompare(t, s, opts, searchMatches, batchSpec, want, wantIgnored, wantUnsupported)
 	})
 
@@ -307,11 +308,12 @@ func TestService_ResolveWorkspacesForBatchSpec(t *testing.T) {
 		resolveWorkspacesAndCompare(t, s, defaultOpts, searchMatches, batchSpec, want, wantIgnored, wantUnsupported)
 
 		// with allowIgnored: true
+		// Now we expect the repo to be returned.
 		opts := defaultOpts
 		opts.AllowIgnored = true
 
 		want = []*RepoWorkspace{buildRepoWorkspace(rs[0], "", "")}
-		wantIgnored = []api.RepoID{}
+		wantIgnored = []api.RepoID{rs[0].ID}
 		resolveWorkspacesAndCompare(t, s, opts, searchMatches, batchSpec, want, wantIgnored, wantUnsupported)
 	})
 }
@@ -323,31 +325,31 @@ func resolveWorkspacesAndCompare(t *testing.T, s *store.Store, opts ResolveWorks
 		store:               s,
 		frontendInternalURL: newStreamSearchTestServer(t, matches),
 	}
-	have, err := wr.ResolveWorkspacesForBatchSpec(context.Background(), spec, opts)
-	if len(wantIgnored) > 0 {
-		set, ok := err.(IgnoredRepoSet)
-		if !ok {
-			t.Fatalf("unexpected error: %s", err)
-		}
-
-		for _, id := range wantIgnored {
-			if !set.includesRepoWithID(id) {
-				t.Fatalf("IgnoredRepoSet does not contain repo with ID %d", id)
-			}
-		}
-	} else if len(wantUnsupported) > 0 {
-		set, ok := err.(UnsupportedRepoSet)
-		if !ok {
-			t.Fatalf("unexpected error: %s", err)
-		}
-
-		for _, id := range wantUnsupported {
-			if !set.includesRepoWithID(id) {
-				t.Fatalf("UnsupportedRepoSet does not contain repo with ID %d", id)
-			}
-		}
-	} else if err != nil {
+	have, unsupported, ignored, err := wr.ResolveWorkspacesForBatchSpec(context.Background(), spec, opts)
+	if err != nil {
 		t.Fatalf("unexpected error: %s", err)
+	}
+	{
+		repoIDs := make([]api.RepoID, 0, len(ignored))
+		for r := range ignored {
+			repoIDs = append(repoIDs, r.ID)
+		}
+		sort.Slice(repoIDs, func(i, j int) bool { return repoIDs[i] < repoIDs[j] })
+		sort.Slice(wantIgnored, func(i, j int) bool { return wantIgnored[i] < wantIgnored[j] })
+		if diff := cmp.Diff(repoIDs, wantIgnored); diff != "" {
+			t.Fatalf("Invalid ignored repos returned: %s", diff)
+		}
+	}
+	{
+		repoIDs := make([]api.RepoID, 0, len(unsupported))
+		for r := range unsupported {
+			repoIDs = append(repoIDs, r.ID)
+		}
+		sort.Slice(repoIDs, func(i, j int) bool { return repoIDs[i] < repoIDs[j] })
+		sort.Slice(wantUnsupported, func(i, j int) bool { return wantUnsupported[i] < wantUnsupported[j] })
+		if diff := cmp.Diff(repoIDs, wantUnsupported); diff != "" {
+			t.Fatalf("Invalid unsupported repos returned: %s", diff)
+		}
 	}
 
 	if diff := cmp.Diff(want, have); diff != "" {

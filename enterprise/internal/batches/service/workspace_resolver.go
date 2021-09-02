@@ -6,7 +6,6 @@ import (
 	"os"
 	"regexp"
 	"sort"
-	"strings"
 	"sync"
 
 	"github.com/cockroachdb/errors"
@@ -35,43 +34,69 @@ type workspaceResolver struct {
 	frontendInternalURL string
 }
 
-func (wr *workspaceResolver) ResolveWorkspacesForBatchSpec(ctx context.Context, batchSpec *batcheslib.BatchSpec, opts ResolveWorkspacesForBatchSpecOpts) (_ []*RepoWorkspace, err error) {
-	seen, unsupported, err := wr.determineRepositories(ctx, batchSpec, opts)
+func (wr *workspaceResolver) ResolveWorkspacesForBatchSpec(
+	ctx context.Context,
+	batchSpec *batcheslib.BatchSpec,
+	opts ResolveWorkspacesForBatchSpecOpts,
+) (
+	workspaces []*RepoWorkspace,
+	unsupported map[*types.Repo]struct{},
+	ignored map[*types.Repo]struct{},
+	err error,
+) {
+	// First, find all repositories that match the batch spec on definitions.
+	// This list is filtered by permissions using database.Repos.List.
+	// This also returns the list of repos that aren't supported.
+	seen, unsupported, err := wr.determineRepositories(ctx, batchSpec)
 	if err != nil {
-		return nil, err
+		return nil, nil, nil, err
 	}
 
-	all, ignored, err := filterIgnoredRepositories(ctx, seen, opts.AllowIgnored, unsupported)
+	// Next, find the repos that are ignored through a .batchignore file.
+	ignored, err = findIgnoredRepositories(ctx, seen, opts.AllowIgnored, unsupported)
 	if err != nil {
-		return nil, err
+		return nil, nil, nil, err
 	}
 
-	final, err := findWorkspaces(ctx, batchSpec, wr, all)
+	// Now build the list of repoRevs we want to consider for workspaces.
+	repoRevs := make([]*RepoRevision, 0, len(seen))
+	for _, rr := range seen {
+		_, isUnsupported := unsupported[rr.Repo]
+		_, isIgnored := ignored[rr.Repo]
+		// If the repo is unsupported or ignored, we by default don't care about it.
+		// This can be overwritten using the options.
+		if (!isUnsupported || opts.AllowUnsupported) && (!isIgnored || opts.AllowIgnored) {
+			repoRevs = append(repoRevs, rr)
+		}
+	}
+
+	// Now build the workspaces for the repoRevs that are eligible for batch changes.
+	final, err := findWorkspaces(ctx, batchSpec, wr, repoRevs)
 	if err != nil {
-		return nil, err
+		return nil, nil, nil, err
 	}
 
-	if unsupported.HasUnsupported() {
-		return final, unsupported
-	}
-
-	if ignored.HasIgnored() {
-		return final, ignored
-	}
-
-	return final, nil
+	return final, unsupported, ignored, nil
 }
 
-func (wr *workspaceResolver) determineRepositories(ctx context.Context, batchSpec *batcheslib.BatchSpec, opts ResolveWorkspacesForBatchSpecOpts) (map[api.RepoID]*RepoRevision, UnsupportedRepoSet, error) {
+func (wr *workspaceResolver) determineRepositories(
+	ctx context.Context,
+	batchSpec *batcheslib.BatchSpec,
+) (
+	map[api.RepoID]*RepoRevision,
+	map[*types.Repo]struct{},
+	error,
+) {
 	seen := map[api.RepoID]*RepoRevision{}
-	unsupported := UnsupportedRepoSet{}
+	unsupported := make(map[*types.Repo]struct{})
 
+	var errs error
 	// TODO: this could be trivially parallelised in the future.
 	for _, on := range batchSpec.On {
-		// TODO: Use multierror.
 		repos, err := wr.resolveRepositoriesOn(ctx, &on)
 		if err != nil {
-			return nil, nil, errors.Wrapf(err, "resolving %q", on.String())
+			errs = multierror.Append(errs, errors.Wrapf(err, "resolving %q", on.String()))
+			continue
 		}
 
 		for _, repo := range repos {
@@ -84,9 +109,7 @@ func (wr *workspaceResolver) determineRepositories(ctx context.Context, batchSpe
 				seen[repo.Repo.ID] = repo
 
 				if !btypes.IsKindSupported(extsvc.TypeToKind(repo.Repo.ExternalRepo.ServiceType)) {
-					if !opts.AllowUnsupported {
-						unsupported.Append(repo.Repo)
-					}
+					unsupported[repo.Repo] = struct{}{}
 				}
 			} else {
 				// If we've already seen this repository, we overwrite the
@@ -97,15 +120,15 @@ func (wr *workspaceResolver) determineRepositories(ctx context.Context, batchSpe
 		}
 	}
 
-	return seen, unsupported, nil
+	return seen, unsupported, errs
 }
 
-func filterIgnoredRepositories(
+func findIgnoredRepositories(
 	ctx context.Context,
 	repos map[api.RepoID]*RepoRevision,
 	allowIgnored bool,
-	unsupported UnsupportedRepoSet,
-) ([]*RepoRevision, IgnoredRepoSet, error) {
+	unsupported map[*types.Repo]struct{},
+) (map[*types.Repo]struct{}, error) {
 	type result struct {
 		repo           *RepoRevision
 		hasBatchIgnore bool
@@ -113,8 +136,7 @@ func filterIgnoredRepositories(
 	}
 
 	var (
-		final   = make([]*RepoRevision, 0, len(repos))
-		ignored = IgnoredRepoSet{}
+		ignored = make(map[*types.Repo]struct{})
 
 		input   = make(chan *RepoRevision, len(repos))
 		results = make(chan result, len(repos))
@@ -150,16 +172,12 @@ func filterIgnoredRepositories(
 			continue
 		}
 
-		if !allowIgnored && result.hasBatchIgnore {
-			ignored.Append(result.repo.Repo)
-		}
-
-		if !unsupported.Includes(result.repo.Repo) && !ignored.Includes(result.repo.Repo) {
-			final = append(final, result.repo)
+		if result.hasBatchIgnore {
+			ignored[result.repo.Repo] = struct{}{}
 		}
 	}
 
-	return final, ignored, errs.ErrorOrNil()
+	return ignored, errs.ErrorOrNil()
 }
 
 var ErrMalformedOnQueryOrRepository = batcheslib.NewValidationError(errors.New("malformed 'on' field; missing either a repository name or a query"))
@@ -378,95 +396,6 @@ func setDefaultQuerySelect(query string) string {
 	}
 
 	return query + hardCodedSelectRepo
-}
-
-// TODO(mrnugget): Merge these two types (give them an "errorfmt" function,
-// rename "Has*" methods to "NotEmpty" or something)
-
-// UnsupportedRepoSet provides a set to manage repositories that are on
-// unsupported code hosts. This type implements error to allow it to be
-// returned directly as an error value if needed.
-type UnsupportedRepoSet map[*types.Repo]struct{}
-
-func (e UnsupportedRepoSet) Includes(r *types.Repo) bool {
-	_, ok := e[r]
-	return ok
-}
-
-func (e UnsupportedRepoSet) includesRepoWithID(id api.RepoID) bool {
-	for r := range e {
-		if r.ID == id {
-			return true
-		}
-	}
-	return false
-}
-
-func (e UnsupportedRepoSet) Error() string {
-	repos := []string{}
-	typeSet := map[string]struct{}{}
-	for repo := range e {
-		repos = append(repos, string(repo.Name))
-		typeSet[repo.ExternalRepo.ServiceType] = struct{}{}
-	}
-
-	types := []string{}
-	for t := range typeSet {
-		types = append(types, t)
-	}
-
-	return fmt.Sprintf(
-		"found repositories on unsupported code hosts: %s\nrepositories:\n\t%s",
-		strings.Join(types, ", "),
-		strings.Join(repos, "\n\t"),
-	)
-}
-
-func (e UnsupportedRepoSet) Append(repo *types.Repo) {
-	e[repo] = struct{}{}
-}
-
-func (e UnsupportedRepoSet) HasUnsupported() bool {
-	return len(e) > 0
-}
-
-// IgnoredRepoSet provides a set to manage repositories that are on
-// unsupported code hosts. This type implements error to allow it to be
-// returned directly as an error value if needed.
-type IgnoredRepoSet map[*types.Repo]struct{}
-
-func (e IgnoredRepoSet) Includes(r *types.Repo) bool {
-	_, ok := e[r]
-	return ok
-}
-
-func (e IgnoredRepoSet) includesRepoWithID(id api.RepoID) bool {
-	for r := range e {
-		if r.ID == id {
-			return true
-		}
-	}
-	return false
-}
-
-func (e IgnoredRepoSet) Error() string {
-	repos := []string{}
-	for repo := range e {
-		repos = append(repos, string(repo.Name))
-	}
-
-	return fmt.Sprintf(
-		"found repositories containing .batchignore files:\n\t%s",
-		strings.Join(repos, "\n\t"),
-	)
-}
-
-func (e IgnoredRepoSet) Append(repo *types.Repo) {
-	e[repo] = struct{}{}
-}
-
-func (e IgnoredRepoSet) HasIgnored() bool {
-	return len(e) > 0
 }
 
 // FindDirectoriesInRepos returns a map of repositories and the locations of

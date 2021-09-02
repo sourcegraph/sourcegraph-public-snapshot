@@ -305,7 +305,7 @@ type BatchChangesResolver interface {
 	// New:
 	BatchChange(ctx context.Context, args *BatchChangeArgs) (BatchChangeResolver, error)
 	BatchChanges(cx context.Context, args *ListBatchChangesArgs) (BatchChangesConnectionResolver, error)
-	ResolveWorkspacesForBatchSpec(ctx context.Context, args *ResolveWorkspacesForBatchSpecArgs) ([]BatchSpecWorkspaceResolver, error)
+	ResolveWorkspacesForBatchSpec(ctx context.Context, args *ResolveWorkspacesForBatchSpecArgs) (BatchSpecWorkspacesResolver, error)
 
 	BatchChangesCodeHosts(ctx context.Context, args *ListBatchChangesCodeHostsArgs) (BatchChangesCodeHostConnectionResolver, error)
 	RepoChangesetsStats(ctx context.Context, repo *graphql.ID) (RepoChangesetsStatsResolver, error)
@@ -761,6 +761,14 @@ type BatchSpecExecutionStepsResolver interface {
 	Setup() []ExecutionLogEntryResolver
 	SrcPreview() ExecutionLogEntryResolver
 	Teardown() []ExecutionLogEntryResolver
+}
+
+type BatchSpecWorkspacesResolver interface {
+	AllowIgnored() bool
+	AllowUnsupported() bool
+	Workspaces() []BatchSpecWorkspaceResolver
+	Unsupported() []*RepositoryResolver
+	Ignored() []*RepositoryResolver
 }
 
 type BatchSpecWorkspaceResolver interface {
