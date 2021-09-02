@@ -4,6 +4,7 @@ import SourceForkIcon from 'mdi-react/SourceForkIcon'
 import StarIcon from 'mdi-react/StarIcon'
 import React from 'react'
 
+import { LastSyncedIcon } from '@sourcegraph/shared/src/components/LastSyncedIcon'
 import { Markdown } from '@sourcegraph/shared/src/components/Markdown'
 import { RepoIcon } from '@sourcegraph/shared/src/components/RepoIcon'
 import { ResultContainer } from '@sourcegraph/shared/src/components/ResultContainer'
@@ -54,6 +55,7 @@ export const SearchResult: React.FunctionComponent<Props> = ({ result, icon, isL
             return (
                 <div>
                     <div className="search-result-match p-2 flex-column">
+                        {result.repoLastFetched && <LastSyncedIcon lastSyncedTime={result.repoLastFetched} />}
                         <div className="d-flex align-items-center flex-row">
                             <div className="search-result__match-type">
                                 <small>Repository match</small>

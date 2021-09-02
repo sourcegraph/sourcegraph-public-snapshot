@@ -18,6 +18,7 @@ import {
 
 import { CodeExcerpt, FetchFileParameters } from './CodeExcerpt'
 import { MatchGroup } from './FileMatchContext'
+import { LastSyncedIcon } from './LastSyncedIcon'
 import { Link } from './Link'
 
 interface FileMatchProps extends SettingsCascadeProps, ThemeProps, TelemetryProps {
@@ -92,6 +93,7 @@ export const FileMatchChildren: React.FunctionComponent<FileMatchProps> = props 
 
     return (
         <div className="file-match-children">
+            {result.repoLastFetched && <LastSyncedIcon lastSyncedTime={result.repoLastFetched} />}
             {/* Path */}
             {result.type === 'path' && (
                 <div className="file-match-children__item">
@@ -115,31 +117,37 @@ export const FileMatchChildren: React.FunctionComponent<FileMatchProps> = props 
             ))}
 
             {/* Line matches */}
-            {grouped.map((group, index) => (
-                <div
-                    key={`linematch:${getFileMatchUrl(result)}${group.position.line}:${group.position.character}`}
-                    className="file-match-children__item-code-wrapper test-file-match-children-item-wrapper"
-                >
-                    <Link
-                        to={createCodeExcerptLink(group)}
-                        className="file-match-children__item file-match-children__item-clickable test-file-match-children-item"
-                        onClick={props.onSelect}
-                    >
-                        <CodeExcerpt
-                            repoName={result.repository}
-                            commitID={result.version || ''}
-                            filePath={result.name}
-                            startLine={group.startLine}
-                            endLine={group.endLine}
-                            highlightRanges={group.matches}
-                            className="file-match-children__item-code-excerpt"
-                            isLightTheme={isLightTheme}
-                            fetchHighlightedFileRangeLines={fetchHighlightedFileRangeLines}
-                            isFirst={index === 0}
-                        />
-                    </Link>
+            {grouped && (
+                <div>
+                    {grouped.map((group, index) => (
+                        <div
+                            key={`linematch:${getFileMatchUrl(result)}${group.position.line}:${
+                                group.position.character
+                            }`}
+                            className="file-match-children__item-code-wrapper test-file-match-children-item-wrapper"
+                        >
+                            <Link
+                                to={createCodeExcerptLink(group)}
+                                className="file-match-children__item file-match-children__item-clickable test-file-match-children-item"
+                                onClick={props.onSelect}
+                            >
+                                <CodeExcerpt
+                                    repoName={result.repository}
+                                    commitID={result.version || ''}
+                                    filePath={result.name}
+                                    startLine={group.startLine}
+                                    endLine={group.endLine}
+                                    highlightRanges={group.matches}
+                                    className="file-match-children__item-code-excerpt"
+                                    isLightTheme={isLightTheme}
+                                    fetchHighlightedFileRangeLines={fetchHighlightedFileRangeLines}
+                                    isFirst={index === 0}
+                                />
+                            </Link>
+                        </div>
+                    ))}
                 </div>
-            ))}
+            )}
         </div>
     )
 }
