@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"strconv"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/assetsutil"
 	"github.com/sourcegraph/sourcegraph/internal/env"
@@ -25,6 +26,9 @@ func robotsTxtHelper(w io.Writer, allowRobots bool) {
 	fmt.Fprintln(&buf, "User-agent: *")
 	if allowRobots {
 		fmt.Fprintln(&buf, "Allow: /")
+		if envvar.SourcegraphDotComMode() {
+			fmt.Fprintln(&buf, "Sitemap: https://storage.googleapis.com/sitemap-sourcegraph-com/sitemap.xml.gz")
+		}
 	} else {
 		fmt.Fprintln(&buf, "Disallow: /")
 	}
