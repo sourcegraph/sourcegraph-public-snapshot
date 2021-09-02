@@ -1,12 +1,10 @@
 import { Remote } from 'comlink'
 import { from, Observable } from 'rxjs'
-import { map, switchMap } from 'rxjs/operators'
+import { switchMap } from 'rxjs/operators'
 
 import { wrapRemoteObservable } from '@sourcegraph/shared/src/api/client/api/common'
 import { FlatExtensionHostAPI } from '@sourcegraph/shared/src/api/contract'
-
-import { ViewInsightProviderResult } from '../types'
-import { createExtensionInsight } from '../utils/create-extension-insight'
+import { ViewProviderResult } from '@sourcegraph/shared/src/api/extension/extensionHostApi';
 
 /**
  * Returns view provider result data resolved by id.
@@ -17,9 +15,8 @@ import { createExtensionInsight } from '../utils/create-extension-insight'
 export function getExtensionViewById(
     id: string,
     extensionApi: Promise<Remote<FlatExtensionHostAPI>>
-): Observable<ViewInsightProviderResult> {
+): Observable<ViewProviderResult> {
     return from(extensionApi).pipe(
-        switchMap(extensionHostAPI => wrapRemoteObservable(extensionHostAPI.getInsightViewById(id, {}))),
-        map(createExtensionInsight)
+        switchMap(extensionHostAPI => wrapRemoteObservable(extensionHostAPI.getInsightViewById(id, {})))
     )
 }

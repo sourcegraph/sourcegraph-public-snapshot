@@ -13,7 +13,7 @@ export class InsightStillProcessingError extends Error {
     }
 }
 
-export function getBackendInsightById(insight: SearchBackendBasedInsight): Observable<BackendInsightData> {
+export function getBackendInsight(insight: SearchBackendBasedInsight): Observable<BackendInsightData> {
     const { id, filters, series } = insight
 
     return fetchBackendInsights([id], filters).pipe(

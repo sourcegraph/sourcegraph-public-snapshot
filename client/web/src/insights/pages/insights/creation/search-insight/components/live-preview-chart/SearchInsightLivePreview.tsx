@@ -81,7 +81,7 @@ export const SearchInsightLivePreview: React.FunctionComponent<SearchInsightLive
             return
         }
 
-        getSearchInsightContent(liveDebouncedSettings)
+        getSearchInsightContent(liveDebouncedSettings, { where: 'insightsPage', context: {} })
             .then(data => !hasRequestCanceled && setDataOrError(data))
             .catch(error => !hasRequestCanceled && setDataOrError(asError(error)))
             .finally(() => !hasRequestCanceled && setLoading(false))

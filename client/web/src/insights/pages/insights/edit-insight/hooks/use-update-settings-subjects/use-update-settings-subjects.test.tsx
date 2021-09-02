@@ -8,7 +8,7 @@ import { stringify } from '@sourcegraph/shared/src/util/jsonc'
 
 import { Settings } from '../../../../../../schema/settings.schema'
 import { InsightsApiContext } from '../../../../../core/backend/api-provider'
-import { createMockInsightAPI } from '../../../../../core/backend/insights-api'
+import { createMockInsightAPI } from '../../../../../core/backend/create-insights-api'
 import { ApiService } from '../../../../../core/backend/types'
 import { InsightType, LangStatsInsight } from '../../../../../core/types'
 import { createGlobalSubject, createOrgSubject, createUserSubject } from '../../../../../mocks/settings-cascade'

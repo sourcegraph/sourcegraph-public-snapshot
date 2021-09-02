@@ -10,7 +10,7 @@ import { useDebounce } from '@sourcegraph/wildcard'
 
 import { Settings } from '../../../../../schema/settings.schema'
 import { InsightsApiContext } from '../../../../core/backend/api-provider'
-import { InsightStillProcessingError } from '../../../../core/backend/api/get-backend-insight-by-id'
+import { InsightStillProcessingError } from '../../../../core/backend/api/get-backend-insight'
 import { addInsightToSettings } from '../../../../core/settings-action/insights'
 import { SearchBackendBasedInsight, SearchBasedBackendFilters } from '../../../../core/types/insight/search-insight'
 import { useDeleteInsight } from '../../../../hooks/use-delete-insight/use-delete-insight'
@@ -45,7 +45,7 @@ export const BackendInsight: React.FunctionComponent<BackendInsightProps> = prop
     const { telemetryService, insight, platformContext, settingsCascade, ref, ...otherProps } = props
 
     const { dashboard } = useContext(DashboardInsightsContext)
-    const { getBackendInsightById, getSubjectSettings, updateSubjectSettings } = useContext(InsightsApiContext)
+    const { getBackendInsight, getSubjectSettings, updateSubjectSettings } = useContext(InsightsApiContext)
 
     const insightCardReference = useRef<HTMLDivElement>(null)
 
@@ -71,11 +71,11 @@ export const BackendInsight: React.FunctionComponent<BackendInsightProps> = prop
     const { data, loading, error } = useParallelRequests(
         useCallback(
             () =>
-                getBackendInsightById({
+                getBackendInsight({
                     ...cachedInsight,
                     filters: debouncedFilters,
                 }),
-            [cachedInsight, debouncedFilters, getBackendInsightById]
+            [cachedInsight, debouncedFilters, getBackendInsight]
         )
     )
 

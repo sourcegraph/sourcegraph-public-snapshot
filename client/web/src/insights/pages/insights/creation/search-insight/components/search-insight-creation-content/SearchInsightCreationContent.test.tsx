@@ -7,7 +7,7 @@ import { asError } from '@sourcegraph/shared/src/util/errors'
 
 import { FORM_ERROR } from '../../../../../../components/form/hooks/useForm'
 import { InsightsApiContext } from '../../../../../../core/backend/api-provider'
-import { createMockInsightAPI } from '../../../../../../core/backend/insights-api'
+import { createMockInsightAPI } from '../../../../../../core/backend/create-insights-api'
 import { SupportedInsightSubject } from '../../../../../../core/types/subjects'
 
 import { SearchInsightCreationContent, SearchInsightCreationContentProps } from './SearchInsightCreationContent'

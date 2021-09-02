@@ -4,9 +4,10 @@ import { Observable } from 'rxjs'
 import { LineChartContent, PieChartContent } from 'sourcegraph'
 
 import { FlatExtensionHostAPI } from '@sourcegraph/shared/src/api/contract'
-import { ViewProviderResult } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
+import { ViewContexts, ViewProviderResult } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
 import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
 
+import { ExtensionInsight } from '../types';
 import { SearchBackendBasedInsight, SearchBasedInsightSeries } from '../types/insight/search-insight'
 
 import { RepositorySuggestion } from './requests/fetch-repository-suggestions'
@@ -60,7 +61,7 @@ export interface LangStatsInsightsSettings {
     /**
      * The threshold below which a language is counted as part of 'Other'
      */
-    threshold: number
+    otherThreshold: number
 }
 
 export interface ApiService {
@@ -78,9 +79,18 @@ export interface ApiService {
     ) => Observable<ViewInsightProviderResult[]>
 
     /**
-     * Returns backend insight (via gql API handler) by insight id.
+     * Returns backend insight (via gql API handler)
      */
-    getBackendInsightById: (insight: SearchBackendBasedInsight) => Observable<BackendInsightData>
+    getBackendInsight: (insight: SearchBackendBasedInsight) => Observable<BackendInsightData>
+
+    /**
+     * Returns extension like built-in insight that is fetched via frontend
+     * network requests to Sourcegraph search API.
+     */
+    getBuiltInInsight: <D extends keyof ViewContexts>(
+        insight: ExtensionInsight,
+        options: { where: D, context: ViewContexts[D] }
+    ) => Observable<ViewProviderResult>
 
     /**
      * Returns resolved extension provider result by extension view id via extension API.
@@ -88,7 +98,7 @@ export interface ApiService {
     getExtensionViewById: (
         id: string,
         extensionApi: Promise<Remote<FlatExtensionHostAPI>>
-    ) => Observable<ViewInsightProviderResult>
+    ) => Observable<ViewProviderResult>
 
     /**
      * Finds and returns the subject settings by the subject id.
@@ -116,14 +126,20 @@ export interface ApiService {
      *
      * @param insight - An insight configuration (title, repos, data series settings)
      */
-    getSearchInsightContent: (insight: SearchInsightSettings) => Promise<LineChartContent<any, string>>
+    getSearchInsightContent: <D extends keyof ViewContexts>(
+        insight: SearchInsightSettings,
+        options: { where: D, context: ViewContexts[D] }
+    ) => Promise<LineChartContent<any, string>>
 
     /**
      * Returns content for the code stats insight live preview chart.
      *
      * @param insight - An insight configuration (title, repos, data series settings)
      */
-    getLangStatsInsightContent: (insight: LangStatsInsightsSettings) => Promise<PieChartContent<any>>
+    getLangStatsInsightContent: <D extends keyof ViewContexts>(
+        insight: LangStatsInsightsSettings,
+        options: { where: D, context: ViewContexts[D] }
+    ) => Promise<PieChartContent<any>>
 
     /**
      * Returns a list of suggestions for the repositories field in the insight creation UI.

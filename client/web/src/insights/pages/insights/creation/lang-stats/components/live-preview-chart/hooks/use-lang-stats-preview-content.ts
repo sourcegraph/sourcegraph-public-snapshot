@@ -12,7 +12,7 @@ export interface UseLangStatsPreviewContentProps {
     /** Settings which needed to fetch data for live preview. */
     previewSetting: {
         repository: string
-        threshold: number
+        otherThreshold: number
     }
 }
 
@@ -49,7 +49,7 @@ export function useLangStatsPreviewContent(props: UseLangStatsPreviewContentProp
             return
         }
 
-        getLangStatsInsightContent(liveDebouncedSettings)
+        getLangStatsInsightContent(liveDebouncedSettings, { where: 'insightsPage', context: {} })
             .then(data => !hasRequestCanceled && setDataOrError(data))
             .catch(error => !hasRequestCanceled && setDataOrError(asError(error)))
             .finally(() => !hasRequestCanceled && setLoading(false))
