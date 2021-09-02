@@ -96,8 +96,7 @@ jobs:
         with:
           name: dump-${{ matrix.root }}-go
       - name: Upload lsif-go data to ${{ matrix.endpoint }}
-        working-directory: ${{ matrix.root }}
-        run: src lsif upload -no-progress -github-token=${{ secrets.GITHUB_TOKEN }} -f dump-go.lsif
+        run: src lsif upload -no-progress -github-token=${{ secrets.GITHUB_TOKEN }} -root ${{ matrix.root }} -f dump-go.lsif
         env:
           SRC_ENDPOINT: ${{ matrix.endpoint }}
 
