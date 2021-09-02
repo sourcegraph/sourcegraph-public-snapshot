@@ -638,11 +638,7 @@ func (s *Service) CreateChangesetJobs(ctx context.Context, batchChangeID int64, 
 	return bulkGroupID, nil
 }
 
-type ResolveWorkspacesForBatchSpecOpts struct {
-	AllowIgnored     bool
-	AllowUnsupported bool
-}
-
+// RepoRevision describes a repository on a branch at a fixed revision.
 type RepoRevision struct {
 	Repo   *types.Repo
 	Branch string
@@ -661,8 +657,14 @@ type RepoWorkspace struct {
 	OnlyFetchWorkspace bool
 }
 
+type ResolveWorkspacesForBatchSpecOpts struct {
+	AllowIgnored     bool
+	AllowUnsupported bool
+}
+
 // ResolveWorkspacesForBatchSpec takes the given batchSpec, and calculates the
-// RepoWorkspaces matching the `on` part of the spec.
+// RepoWorkspaces matching the `on` part of the spec. For more details on this
+// process, see workspaceResolver.ResolveWorkspacesForBatchSpec.
 func (s *Service) ResolveWorkspacesForBatchSpec(ctx context.Context, batchSpec *batcheslib.BatchSpec, opts ResolveWorkspacesForBatchSpecOpts) (_ []*RepoWorkspace, err error) {
 	tr, ctx := trace.New(ctx, "service.ResolveWorkspacesForBatchSpec", "")
 	defer func() {

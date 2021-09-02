@@ -83,8 +83,20 @@ func TestService_ResolveWorkspacesForBatchSpec(t *testing.T) {
 		rs[3].Name:          {branch: "branch-4", commit: api.CommitID("26ac0350471daac3401a9314fd64e714370837a6")},
 		unsupported[0].Name: {branch: "branch-5", commit: api.CommitID("c167bd633e2868585b86ef129d07f63dee46b84a")},
 	}
-	buildRepoRev := func(repo *types.Repo) *RepoRevision {
-		return &RepoRevision{Repo: repo, Branch: defaultBranches[repo.Name].branch, Commit: defaultBranches[repo.Name].commit}
+	steps := []batcheslib.Step{{Run: "echo 1"}}
+	buildRepoWorkspace := func(repo *types.Repo, branch, commit string) *RepoWorkspace {
+		if branch == "" {
+			branch = defaultBranches[repo.Name].branch
+		}
+		if commit == "" {
+			commit = string(defaultBranches[repo.Name].commit)
+		}
+		return &RepoWorkspace{
+			RepoRevision:       &RepoRevision{Repo: repo, Branch: branch, Commit: api.CommitID(commit)},
+			Path:               "",
+			Steps:              steps,
+			OnlyFetchWorkspace: false,
+		}
 	}
 	mockDefaultBranches(t, defaultBranches)
 
@@ -100,6 +112,7 @@ func TestService_ResolveWorkspacesForBatchSpec(t *testing.T) {
 				// In our test the search API returns the same results for both
 				{RepositoriesMatchingQuery: "repohasfile:horse.txt duplicate"},
 			},
+			Steps: steps,
 		}
 
 		mockBatchIgnores(t, map[api.CommitID]bool{
@@ -134,10 +147,10 @@ func TestService_ResolveWorkspacesForBatchSpec(t *testing.T) {
 			},
 		}
 
-		want := []*RepoRevision{buildRepoRev(rs[0]), buildRepoRev(rs[3])}
+		want := []*RepoWorkspace{buildRepoWorkspace(rs[0], "", ""), buildRepoWorkspace(rs[3], "", "")}
 		wantIgnored := []api.RepoID{rs[1].ID, rs[2].ID}
 		wantUnsupported := []api.RepoID{}
-		resolveRepoRevsAndCompare(t, s, defaultOpts, searchMatches, batchSpec, want, wantIgnored, wantUnsupported)
+		resolveWorkspacesAndCompare(t, s, defaultOpts, searchMatches, batchSpec, want, wantIgnored, wantUnsupported)
 	})
 
 	t.Run("repositories", func(t *testing.T) {
@@ -148,6 +161,7 @@ func TestService_ResolveWorkspacesForBatchSpec(t *testing.T) {
 				{Repository: string(rs[2].Name), Branch: "other-non-default-branch"},
 				{Repository: string(rs[3].Name)},
 			},
+			Steps: steps,
 		}
 
 		mockResolveRevision(t, map[string]api.CommitID{
@@ -166,15 +180,15 @@ func TestService_ResolveWorkspacesForBatchSpec(t *testing.T) {
 
 		searchMatches := []streamhttp.EventMatch{}
 
-		want := []*RepoRevision{
-			buildRepoRev(rs[0]),
-			{Repo: rs[1], Branch: "non-default-branch", Commit: api.CommitID("d34db33f")},
-			{Repo: rs[2], Branch: "other-non-default-branch", Commit: api.CommitID("c0ff33")},
+		want := []*RepoWorkspace{
+			buildRepoWorkspace(rs[0], "", ""),
+			buildRepoWorkspace(rs[1], "non-default-branch", "d34db33f"),
+			buildRepoWorkspace(rs[2], "other-non-default-branch", "c0ff33"),
 		}
 
 		wantIgnored := []api.RepoID{rs[3].ID}
 		wantUnsupported := []api.RepoID{}
-		resolveRepoRevsAndCompare(t, s, defaultOpts, searchMatches, batchSpec, want, wantIgnored, wantUnsupported)
+		resolveWorkspacesAndCompare(t, s, defaultOpts, searchMatches, batchSpec, want, wantIgnored, wantUnsupported)
 	})
 
 	t.Run("repositoriesMatchingQuery and repositories", func(t *testing.T) {
@@ -184,6 +198,7 @@ func TestService_ResolveWorkspacesForBatchSpec(t *testing.T) {
 				{Repository: string(rs[2].Name)},
 				{Repository: string(rs[3].Name)},
 			},
+			Steps: steps,
 		}
 
 		mockBatchIgnores(t, map[api.CommitID]bool{
@@ -222,16 +237,16 @@ func TestService_ResolveWorkspacesForBatchSpec(t *testing.T) {
 			defaultBranches[rs[3].Name].commit: false,
 		})
 
-		want := []*RepoRevision{
-			buildRepoRev(rs[0]),
-			buildRepoRev(rs[1]),
-			buildRepoRev(rs[2]),
-			buildRepoRev(rs[3]),
+		want := []*RepoWorkspace{
+			buildRepoWorkspace(rs[0], "", ""),
+			buildRepoWorkspace(rs[1], "", ""),
+			buildRepoWorkspace(rs[2], "", ""),
+			buildRepoWorkspace(rs[3], "", ""),
 		}
 
 		wantIgnored := []api.RepoID{}
 		wantUnsupported := []api.RepoID{}
-		resolveRepoRevsAndCompare(t, s, defaultOpts, searchMatches, batchSpec, want, wantIgnored, wantUnsupported)
+		resolveWorkspacesAndCompare(t, s, defaultOpts, searchMatches, batchSpec, want, wantIgnored, wantUnsupported)
 	})
 
 	t.Run("allowUnsupported option", func(t *testing.T) {
@@ -239,6 +254,7 @@ func TestService_ResolveWorkspacesForBatchSpec(t *testing.T) {
 			On: []batcheslib.OnQueryOrRepository{
 				{RepositoriesMatchingQuery: "repohasfile:horse.txt"},
 			},
+			Steps: steps,
 		}
 
 		mockBatchIgnores(t, map[api.CommitID]bool{
@@ -253,18 +269,18 @@ func TestService_ResolveWorkspacesForBatchSpec(t *testing.T) {
 			},
 		}
 
-		want := []*RepoRevision{}
+		want := []*RepoWorkspace{}
 		wantIgnored := []api.RepoID{}
 		wantUnsupported := []api.RepoID{unsupported[0].ID}
-		resolveRepoRevsAndCompare(t, s, defaultOpts, searchMatches, batchSpec, want, wantIgnored, wantUnsupported)
+		resolveWorkspacesAndCompare(t, s, defaultOpts, searchMatches, batchSpec, want, wantIgnored, wantUnsupported)
 
 		// with allowUnsupported: true
 		opts := defaultOpts
 		opts.AllowUnsupported = true
 
-		want = []*RepoRevision{buildRepoRev(unsupported[0])}
+		want = []*RepoWorkspace{buildRepoWorkspace(unsupported[0], "", "")}
 		wantUnsupported = []api.RepoID{}
-		resolveRepoRevsAndCompare(t, s, opts, searchMatches, batchSpec, want, wantIgnored, wantUnsupported)
+		resolveWorkspacesAndCompare(t, s, opts, searchMatches, batchSpec, want, wantIgnored, wantUnsupported)
 	})
 
 	t.Run("allowIgnored option", func(t *testing.T) {
@@ -272,6 +288,7 @@ func TestService_ResolveWorkspacesForBatchSpec(t *testing.T) {
 			On: []batcheslib.OnQueryOrRepository{
 				{Repository: string(rs[0].Name)},
 			},
+			Steps: steps,
 		}
 
 		mockResolveRevision(t, map[string]api.CommitID{
@@ -284,22 +301,22 @@ func TestService_ResolveWorkspacesForBatchSpec(t *testing.T) {
 
 		searchMatches := []streamhttp.EventMatch{}
 
-		want := []*RepoRevision{}
+		want := []*RepoWorkspace{}
 		wantIgnored := []api.RepoID{rs[0].ID}
 		wantUnsupported := []api.RepoID{}
-		resolveRepoRevsAndCompare(t, s, defaultOpts, searchMatches, batchSpec, want, wantIgnored, wantUnsupported)
+		resolveWorkspacesAndCompare(t, s, defaultOpts, searchMatches, batchSpec, want, wantIgnored, wantUnsupported)
 
 		// with allowIgnored: true
 		opts := defaultOpts
 		opts.AllowIgnored = true
 
-		want = []*RepoRevision{buildRepoRev(rs[0])}
+		want = []*RepoWorkspace{buildRepoWorkspace(rs[0], "", "")}
 		wantIgnored = []api.RepoID{}
-		resolveRepoRevsAndCompare(t, s, opts, searchMatches, batchSpec, want, wantIgnored, wantUnsupported)
+		resolveWorkspacesAndCompare(t, s, opts, searchMatches, batchSpec, want, wantIgnored, wantUnsupported)
 	})
 }
 
-func resolveRepoRevsAndCompare(t *testing.T, s *store.Store, opts ResolveWorkspacesForBatchSpecOpts, matches []streamhttp.EventMatch, spec *batcheslib.BatchSpec, want []*RepoRevision, wantIgnored, wantUnsupported []api.RepoID) {
+func resolveWorkspacesAndCompare(t *testing.T, s *store.Store, opts ResolveWorkspacesForBatchSpecOpts, matches []streamhttp.EventMatch, spec *batcheslib.BatchSpec, want []*RepoWorkspace, wantIgnored, wantUnsupported []api.RepoID) {
 	t.Helper()
 
 	wr := &workspaceResolver{
@@ -334,7 +351,7 @@ func resolveRepoRevsAndCompare(t *testing.T, s *store.Store, opts ResolveWorkspa
 	}
 
 	if diff := cmp.Diff(want, have); diff != "" {
-		t.Fatalf("returned repoRevisions wrong. (-want +got):\n%s", diff)
+		t.Fatalf("returned workspaces wrong. (-want +got):\n%s", diff)
 	}
 }
 

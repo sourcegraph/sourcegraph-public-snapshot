@@ -469,10 +469,6 @@ func (e IgnoredRepoSet) HasIgnored() bool {
 	return len(e) > 0
 }
 
-type directoryFinder interface {
-	FindDirectoriesInRepos(ctx context.Context, fileName string, repos ...*RepoRevision) (map[repoRevKey][]string, error)
-}
-
 // FindDirectoriesInRepos returns a map of repositories and the locations of
 // files matching the given file name in the repository.
 // The locations are paths relative to the root of the directory.
@@ -534,6 +530,10 @@ func (wr *workspaceResolver) FindDirectoriesInRepos(ctx context.Context, fileNam
 	}
 
 	return results, errs
+}
+
+type directoryFinder interface {
+	FindDirectoriesInRepos(ctx context.Context, fileName string, repos ...*RepoRevision) (map[repoRevKey][]string, error)
 }
 
 // findWorkspaces matches the given repos to the workspace configs and
@@ -632,7 +632,7 @@ func findWorkspaces(
 			}
 			continue
 		}
-		conf.Paths = append(workspacesByRepoRev[repoRev.Key()].Paths, "")
+		conf.Paths = append(conf.Paths, "")
 	}
 
 	workspaces := make([]*RepoWorkspace, 0, len(workspacesByRepoRev))
