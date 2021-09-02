@@ -13,6 +13,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -55,58 +56,7 @@ func ReposourceCloneURLToRepoName(ctx context.Context, db dbutil.DB, cloneURL st
 		opt.AfterID = svcs[len(svcs)-1].ID // Advance the cursor
 
 		for _, svc := range svcs {
-			cfg, err := extsvc.ParseConfig(svc.Kind, svc.Config)
-			if err != nil {
-				return "", errors.Wrap(err, "parse config")
-			}
-
-			var host string
-			var rs reposource.RepoSource
-			switch c := cfg.(type) {
-			case *schema.GitHubConnection:
-				rs = reposource.GitHub{GitHubConnection: c}
-				host = c.Url
-			case *schema.GitLabConnection:
-				rs = reposource.GitLab{GitLabConnection: c}
-				host = c.Url
-			case *schema.BitbucketServerConnection:
-				rs = reposource.BitbucketServer{BitbucketServerConnection: c}
-				host = c.Url
-			case *schema.AWSCodeCommitConnection:
-				rs = reposource.AWS{AWSCodeCommitConnection: c}
-				// AWS type does not have URL
-			case *schema.GitoliteConnection:
-				rs = reposource.Gitolite{GitoliteConnection: c}
-				// Gitolite type does not have URL
-			case *schema.PhabricatorConnection:
-				// If this repository is mirrored by Phabricator, its clone URL should be
-				// handled by a supported code host or an OtherExternalServiceConnection.
-				// If this repository is hosted by Phabricator, it should be handled by
-				// an OtherExternalServiceConnection.
-				continue
-			case *schema.OtherExternalServiceConnection:
-				rs = reposource.Other{OtherExternalServiceConnection: c}
-				host = c.Url
-			default:
-				return "", errors.Errorf("unexpected connection type: %T", cfg)
-			}
-
-			// Submodules are allowed to have relative paths for their .gitmodules URL.
-			// In that case, we default to stripping any relative prefix and crafting
-			// a new URL based on the reposource's host, if available.
-			if strings.HasPrefix(cloneURL, "../") && host != "" {
-				u, err := neturl.Parse(cloneURL)
-				if err != nil {
-					return "", err
-				}
-				base, err := neturl.Parse(host)
-				if err != nil {
-					return "", err
-				}
-				cloneURL = base.ResolveReference(u).String()
-			}
-
-			repoName, err := rs.CloneURLToRepoName(cloneURL)
+			repoName, err := getRepoNameFromService(ctx, cloneURL, svc)
 			if err != nil {
 				return "", err
 			}
@@ -126,5 +76,65 @@ func ReposourceCloneURLToRepoName(ctx context.Context, db dbutil.DB, cloneURL st
 			Url: "https://github.com",
 		},
 	}
+	return rs.CloneURLToRepoName(cloneURL)
+}
+
+func getRepoNameFromService(ctx context.Context, cloneURL string, svc *types.ExternalService) (api.RepoName, error) {
+	span, _ := ot.StartSpanFromContext(ctx, "getRepoNameFromService")
+	defer span.Finish()
+	span.SetTag("ExternalService.ID", svc.ID)
+	span.SetTag("ExternalService.Kind", svc.Kind)
+
+	cfg, err := extsvc.ParseConfig(svc.Kind, svc.Config)
+	if err != nil {
+		return "", errors.Wrap(err, "parse config")
+	}
+
+	var host string
+	var rs reposource.RepoSource
+	switch c := cfg.(type) {
+	case *schema.GitHubConnection:
+		rs = reposource.GitHub{GitHubConnection: c}
+		host = c.Url
+	case *schema.GitLabConnection:
+		rs = reposource.GitLab{GitLabConnection: c}
+		host = c.Url
+	case *schema.BitbucketServerConnection:
+		rs = reposource.BitbucketServer{BitbucketServerConnection: c}
+		host = c.Url
+	case *schema.AWSCodeCommitConnection:
+		rs = reposource.AWS{AWSCodeCommitConnection: c}
+		// AWS type does not have URL
+	case *schema.GitoliteConnection:
+		rs = reposource.Gitolite{GitoliteConnection: c}
+		// Gitolite type does not have URL
+	case *schema.PhabricatorConnection:
+		// If this repository is mirrored by Phabricator, its clone URL should be
+		// handled by a supported code host or an OtherExternalServiceConnection.
+		// If this repository is hosted by Phabricator, it should be handled by
+		// an OtherExternalServiceConnection.
+		return "", nil
+	case *schema.OtherExternalServiceConnection:
+		rs = reposource.Other{OtherExternalServiceConnection: c}
+		host = c.Url
+	default:
+		return "", errors.Errorf("unexpected connection type: %T", cfg)
+	}
+
+	// Submodules are allowed to have relative paths for their .gitmodules URL.
+	// In that case, we default to stripping any relative prefix and crafting
+	// a new URL based on the reposource's host, if available.
+	if strings.HasPrefix(cloneURL, "../") && host != "" {
+		u, err := neturl.Parse(cloneURL)
+		if err != nil {
+			return "", err
+		}
+		base, err := neturl.Parse(host)
+		if err != nil {
+			return "", err
+		}
+		cloneURL = base.ResolveReference(u).String()
+	}
+
 	return rs.CloneURLToRepoName(cloneURL)
 }
