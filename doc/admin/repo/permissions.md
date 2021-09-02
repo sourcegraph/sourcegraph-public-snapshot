@@ -53,11 +53,11 @@ The events we consume are:
 
 For GitHub providers, Sourcegraph can leverage caching of GitHub [team](https://docs.github.com/en/organizations/managing-access-to-your-organizations-repositories/managing-team-access-to-an-organization-repository) and [organization](https://docs.github.com/en/organizations/managing-access-to-your-organizations-repositories/repository-permission-levels-for-an-organization) permissions - [learn more about permissions caching](#permissions-caching).
 
-Caching behaviour can be enabld via the `authorization.groupsCacheTTL` field:
+This caching behaviour can be enabled via the `authorization.groupsCacheTTL` field:
 
 ```json
 {
-   "url": "https://github.com",
+   "url": "https://github.example.com",
    "token": "$PERSONAL_ACCESS_TOKEN",
    "authorization": {
      "groupsCacheTTL": 72, // hours
@@ -65,7 +65,25 @@ Caching behaviour can be enabld via the `authorization.groupsCacheTTL` field:
 }
 ```
 
-We currently recommend a default of `72` (hours, or 3 days) for the `groupsCacheTTL`. A lower value can be set if your teams and organizations change frequently, though the chosen value must be at least several hours for the cache to be leveraged in the event of being rate-limited (which takes [an hour to recover from](https://docs.github.com/en/rest/overview/resources-in-the-rest-api#rate-limiting)).
+In the corresponding [authorization provider](../auth/index.md#github), the `allowGroupsPermissionsSync` field must be set as well for the correct auth scopes to be requested from users:
+
+```json
+{
+  // ...
+  "auth.providers": [
+    {
+      "type": "github",
+      "url": "https://github.example.com",
+      "allowGroupsPermissionsSync": true,
+    }
+  ]
+}
+```
+
+> NOTE: You should only try this if your GitHub setup makes extensive use of GitHub teams and organizations to distribute access to repositories and your number of `users * repos` is greater than 500,000 (which roughly corresponds to the scale at which [GitHub rate limits might become an issue](#permissions-sync-times)).
+<!-- 5,000 requests an hour * 100 items per page = approx. 500,000 items before hitting a limit -->
+
+When enabling this feature, we currently recommend a default of `72` (hours, or 3 days) for `groupsCacheTTL`. A lower value can be set if your teams and organizations change frequently, though the chosen value must be at least several hours for the cache to be leveraged in the event of being rate-limited (which takes [an hour to recover from](https://docs.github.com/en/rest/overview/resources-in-the-rest-api#rate-limiting)).
 
 Caches can also be [manually invalidated](#permissions-caching) if necessary.
 
