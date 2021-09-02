@@ -28,6 +28,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
+	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -590,12 +591,10 @@ func (e *ExternalServiceStore) Create(ctx context.Context, confGet func() *conf.
 // maybeEncryptConfig encrypts and returns externals service config if an encryption.Key is configured
 func (e *ExternalServiceStore) maybeEncryptConfig(ctx context.Context, config string) (string, string, error) {
 	// encrypt the config before writing if we have a key configured
-	var (
-		keyVersion string
-		key        = keyring.Default().ExternalServiceKey
-	)
-	if e.key != nil {
-		key = e.key
+	var keyVersion string
+	key := e.key
+	if key == nil {
+		key = keyring.Default().ExternalServiceKey
 	}
 	if key != nil {
 		encrypted, err := key.Encrypt(ctx, []byte(config))
@@ -613,18 +612,23 @@ func (e *ExternalServiceStore) maybeEncryptConfig(ctx context.Context, config st
 }
 
 func (e *ExternalServiceStore) maybeDecryptConfig(ctx context.Context, config string, keyID string) (string, error) {
+	span, ctx := ot.StartSpanFromContext(ctx, "ExternalServiceStore.maybeDecryptConfig")
+	defer span.Finish()
+
 	if keyID == "" {
 		// config is not encrypted, return plaintext
 		return config, nil
 	}
-	key := keyring.Default().ExternalServiceKey
-	if e.key != nil {
-		key = e.key
+	key := e.key
+	if key == nil {
+		key = keyring.Default().ExternalServiceKey
 	}
 	if key == nil {
 		return config, errors.Errorf("couldn't decrypt encrypted config, key is nil")
 	}
+	decryptSpan, ctx := ot.StartSpanFromContext(ctx, "key.Decrypt")
 	decrypted, err := key.Decrypt(ctx, []byte(config))
+	decryptSpan.Finish()
 	if err != nil {
 		return config, err
 	}
@@ -1168,6 +1172,9 @@ WHERE deleted_at IS NULL
 }
 
 func (e *ExternalServiceStore) list(ctx context.Context, opt ExternalServicesListOptions) ([]*types.ExternalService, error) {
+	span, _ := ot.StartSpanFromContext(ctx, "ExternalServiceStore.list")
+	defer span.Finish()
+
 	if opt.OrderByDirection != "ASC" {
 		opt.OrderByDirection = "DESC"
 	}
