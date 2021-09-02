@@ -550,7 +550,7 @@ RETURNING updated_at
 
 // EnqueueSingleSyncJob enqueues a single sync job for the given external
 // service if it is not already queued or processing.
-func (s *Store) EnqueueSingleSyncJob(ctx context.Context, id int64) (err error) {
+func (s *Store) EnqueueSingleSyncJob(ctx context.Context, extSvcID int64) (err error) {
 	q := sqlf.Sprintf(`
 INSERT INTO external_service_sync_jobs (external_service_id)
 SELECT %s
@@ -564,7 +564,7 @@ WHERE NOT EXISTS (
 		OR es.cloud_default
 	)
 )
-`, id, id)
+`, extSvcID, extSvcID)
 	return s.Exec(ctx, q)
 }
 
