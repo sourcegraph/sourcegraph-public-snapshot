@@ -8,7 +8,6 @@ import { ContentMatch, SymbolMatch, PathMatch, getFileMatchUrl } from '../search
 import { SettingsCascadeProps } from '../settings/settings'
 import { SymbolIcon } from '../symbols/SymbolIcon'
 import { TelemetryProps } from '../telemetry/telemetryService'
-import { ThemeProps } from '../theme'
 import { isErrorLike } from '../util/errors'
 import {
     appendLineRangeQueryParameter,
@@ -21,7 +20,7 @@ import { MatchGroup } from './FileMatchContext'
 import { LastSyncedIcon } from './LastSyncedIcon'
 import { Link } from './Link'
 
-interface FileMatchProps extends SettingsCascadeProps, ThemeProps, TelemetryProps {
+interface FileMatchProps extends SettingsCascadeProps, TelemetryProps {
     location: H.Location
     result: ContentMatch | SymbolMatch | PathMatch
     grouped: MatchGroup[]
@@ -43,9 +42,9 @@ export const FileMatchChildren: React.FunctionComponent<FileMatchProps> = props 
         props.settingsCascade.final.experimentalFeatures &&
         props.settingsCascade.final.experimentalFeatures.enableFastResultLoading
 
-    const { result, isLightTheme, grouped, fetchHighlightedFileLineRanges, telemetryService, onFirstResultLoad } = props
+    const { result, grouped, fetchHighlightedFileLineRanges, telemetryService, onFirstResultLoad } = props
     const fetchHighlightedFileRangeLines = React.useCallback(
-        (isFirst, startLine, endLine, isLightTheme) => {
+        (isFirst, startLine, endLine) => {
             const startTime = Date.now()
             return fetchHighlightedFileLineRanges(
                 {
@@ -53,7 +52,6 @@ export const FileMatchChildren: React.FunctionComponent<FileMatchProps> = props 
                     commitID: result.version || '',
                     filePath: result.name,
                     disableTimeout: false,
-                    isLightTheme,
                     ranges: optimizeHighlighting
                         ? grouped.map(
                               (group): IHighlightLineRange => ({
@@ -139,7 +137,6 @@ export const FileMatchChildren: React.FunctionComponent<FileMatchProps> = props 
                                     endLine={group.endLine}
                                     highlightRanges={group.matches}
                                     className="file-match-children__item-code-excerpt"
-                                    isLightTheme={isLightTheme}
                                     fetchHighlightedFileRangeLines={fetchHighlightedFileRangeLines}
                                     isFirst={index === 0}
                                     blobLines={group.blobLines}

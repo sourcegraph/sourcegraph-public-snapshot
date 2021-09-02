@@ -15,7 +15,6 @@ export interface FetchFileParameters {
     commitID: string
     filePath: string
     disableTimeout?: boolean
-    isLightTheme: boolean
     ranges: GQL.IHighlightLineRange[]
 }
 
@@ -29,16 +28,10 @@ interface Props extends Repo {
     endLine: number
     /** Whether or not this is the first result being shown or not. */
     isFirst: boolean
-    isLightTheme: boolean
     className?: string
     /** A function to fetch the range of lines this code excerpt will display. It will be provided
      * the same start and end lines properties that were provided as component props */
-    fetchHighlightedFileRangeLines: (
-        isFirst: boolean,
-        startLine: number,
-        endLine: number,
-        isLightTheme: boolean
-    ) => Observable<string[]>
+    fetchHighlightedFileRangeLines: (isFirst: boolean, startLine: number, endLine: number) => Observable<string[]>
     blobLines?: string[]
 }
 
@@ -80,10 +73,8 @@ export class CodeExcerpt extends React.PureComponent<Props, State> {
                     filter(([, isVisible]) => isVisible),
                     map(([props]) => props),
                     distinctUntilChanged((a, b) => isEqual(a, b)),
-                    switchMap(({ blobLines, isLightTheme, isFirst, startLine, endLine }) =>
-                        blobLines
-                            ? of(blobLines)
-                            : props.fetchHighlightedFileRangeLines(isFirst, startLine, endLine, isLightTheme)
+                    switchMap(({ blobLines, isFirst, startLine, endLine }) =>
+                        blobLines ? of(blobLines) : props.fetchHighlightedFileRangeLines(isFirst, startLine, endLine)
                     ),
                     catchError(error => [asError(error)])
                 )

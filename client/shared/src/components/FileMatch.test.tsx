@@ -29,7 +29,6 @@ describe('FileMatch', () => {
         onSelect: sinon.spy(),
         expanded: true,
         showAllMatches: true,
-        isLightTheme: true,
         fetchHighlightedFileLineRanges: HIGHLIGHTED_FILE_LINES_REQUEST,
         settingsCascade: NOOP_SETTINGS_CASCADE,
         telemetryService: NOOP_TELEMETRY_SERVICE,

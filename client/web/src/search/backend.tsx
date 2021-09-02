@@ -551,26 +551,11 @@ export function deleteSavedSearch(id: Scalars['ID']): Observable<void> {
 }
 
 export const highlightCode = memoizeObservable(
-    (context: {
-        code: string
-        fuzzyLanguage: string
-        disableTimeout: boolean
-        isLightTheme: boolean
-    }): Observable<string> =>
+    (context: { code: string; fuzzyLanguage: string; disableTimeout: boolean }): Observable<string> =>
         queryGraphQL(
             gql`
-                query highlightCode(
-                    $code: String!
-                    $fuzzyLanguage: String!
-                    $disableTimeout: Boolean!
-                    $isLightTheme: Boolean!
-                ) {
-                    highlightCode(
-                        code: $code
-                        fuzzyLanguage: $fuzzyLanguage
-                        disableTimeout: $disableTimeout
-                        isLightTheme: $isLightTheme
-                    )
+                query highlightCode($code: String!, $fuzzyLanguage: String!, $disableTimeout: Boolean!) {
+                    highlightCode(code: $code, fuzzyLanguage: $fuzzyLanguage, disableTimeout: $disableTimeout)
                 }
             `,
             context

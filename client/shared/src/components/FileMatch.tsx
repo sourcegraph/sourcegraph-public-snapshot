@@ -64,8 +64,6 @@ interface Props extends SettingsCascadeProps, TelemetryProps {
      */
     showAllMatches: boolean
 
-    isLightTheme: boolean
-
     allExpanded?: boolean
 
     fetchHighlightedFileLineRanges: (parameters: FetchFileParameters, force?: boolean) => Observable<string[][]>

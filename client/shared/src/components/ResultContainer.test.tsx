@@ -107,7 +107,6 @@ describe('ResultContainer', () => {
         fetchHighlightedFileLineRanges: HIGHLIGHTED_FILE_LINES_SIMPLE_REQUEST,
         onSelect,
         settingsCascade: NOOP_SETTINGS_CASCADE,
-        isLightTheme: true,
         telemetryService: NOOP_TELEMETRY_SERVICE,
     }
 
