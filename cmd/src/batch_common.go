@@ -279,11 +279,7 @@ func executeBatchSpec(ctx context.Context, opts executeBatchSpecOpts) (err error
 	if err != nil {
 		return err
 	}
-	tasks, err := svc.BuildTasks(ctx, repos, batchSpec, workspaces)
-	if err != nil {
-		return err
-	}
-	opts.ui.DeterminingWorkspacesSuccess(len(tasks))
+	opts.ui.DeterminingWorkspacesSuccess(len(workspaces))
 
 	// EXECUTION OF TASKS
 	coord := svc.NewCoordinator(executor.NewCoordinatorOpts{
@@ -299,6 +295,7 @@ func executeBatchSpec(ctx context.Context, opts executeBatchSpecOpts) (err error
 	})
 
 	opts.ui.CheckingCache()
+	tasks := svc.BuildTasks(ctx, batchSpec, workspaces)
 	uncachedTasks, cachedSpecs, err := coord.CheckCache(ctx, tasks)
 	if err != nil {
 		return err

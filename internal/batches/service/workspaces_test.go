@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"sort"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -31,9 +32,9 @@ func TestFindWorkspaces(t *testing.T) {
 			spec:          &batcheslib.BatchSpec{Steps: steps},
 			finderResults: finderResults{},
 			wantWorkspaces: []RepoWorkspace{
-				{RepoID: repos[0].ID, Steps: steps, Path: ""},
-				{RepoID: repos[1].ID, Steps: steps, Path: ""},
-				{RepoID: repos[2].ID, Steps: steps, Path: ""},
+				{Repo: repos[0], Steps: steps, Path: ""},
+				{Repo: repos[1], Steps: steps, Path: ""},
+				{Repo: repos[2], Steps: steps, Path: ""},
 			},
 		},
 
@@ -46,9 +47,9 @@ func TestFindWorkspaces(t *testing.T) {
 			},
 			finderResults: finderResults{},
 			wantWorkspaces: []RepoWorkspace{
-				{RepoID: repos[0].ID, Steps: steps, Path: ""},
-				{RepoID: repos[1].ID, Steps: steps, Path: ""},
-				{RepoID: repos[2].ID, Steps: steps, Path: ""},
+				{Repo: repos[0], Steps: steps, Path: ""},
+				{Repo: repos[1], Steps: steps, Path: ""},
+				{Repo: repos[2], Steps: steps, Path: ""},
 			},
 		},
 
@@ -64,7 +65,7 @@ func TestFindWorkspaces(t *testing.T) {
 				repos[2]: []string{},
 			},
 			wantWorkspaces: []RepoWorkspace{
-				{RepoID: repos[1].ID, Steps: steps, Path: ""},
+				{Repo: repos[1], Steps: steps, Path: ""},
 			},
 		},
 
@@ -80,13 +81,13 @@ func TestFindWorkspaces(t *testing.T) {
 				repos[2]: {"a/b", "a/b/c", "d/e/f"},
 			},
 			wantWorkspaces: []RepoWorkspace{
-				{RepoID: repos[0].ID, Steps: steps, Path: "a/b"},
-				{RepoID: repos[0].ID, Steps: steps, Path: "a/b/c"},
-				{RepoID: repos[0].ID, Steps: steps, Path: "d/e/f"},
-				{RepoID: repos[1].ID, Steps: steps, Path: ""},
-				{RepoID: repos[2].ID, Steps: steps, Path: "a/b"},
-				{RepoID: repos[2].ID, Steps: steps, Path: "a/b/c"},
-				{RepoID: repos[2].ID, Steps: steps, Path: "d/e/f"},
+				{Repo: repos[0], Steps: steps, Path: "a/b"},
+				{Repo: repos[0], Steps: steps, Path: "a/b/c"},
+				{Repo: repos[0], Steps: steps, Path: "d/e/f"},
+				{Repo: repos[1], Steps: steps, Path: ""},
+				{Repo: repos[2], Steps: steps, Path: "a/b"},
+				{Repo: repos[2], Steps: steps, Path: "a/b/c"},
+				{Repo: repos[2], Steps: steps, Path: "d/e/f"},
 			},
 		},
 
@@ -106,13 +107,13 @@ func TestFindWorkspaces(t *testing.T) {
 				repos[2]: {"a/b", "a/b/c", "d/e/f"},
 			},
 			wantWorkspaces: []RepoWorkspace{
-				{RepoID: repos[0].ID, Steps: steps, Path: "a/b", OnlyFetchWorkspace: true},
-				{RepoID: repos[0].ID, Steps: steps, Path: "a/b/c", OnlyFetchWorkspace: true},
-				{RepoID: repos[0].ID, Steps: steps, Path: "d/e/f", OnlyFetchWorkspace: true},
-				{RepoID: repos[1].ID, Steps: steps, Path: ""},
-				{RepoID: repos[2].ID, Steps: steps, Path: "a/b", OnlyFetchWorkspace: true},
-				{RepoID: repos[2].ID, Steps: steps, Path: "a/b/c", OnlyFetchWorkspace: true},
-				{RepoID: repos[2].ID, Steps: steps, Path: "d/e/f", OnlyFetchWorkspace: true},
+				{Repo: repos[0], Steps: steps, Path: "a/b", OnlyFetchWorkspace: true},
+				{Repo: repos[0], Steps: steps, Path: "a/b/c", OnlyFetchWorkspace: true},
+				{Repo: repos[0], Steps: steps, Path: "d/e/f", OnlyFetchWorkspace: true},
+				{Repo: repos[1], Steps: steps, Path: ""},
+				{Repo: repos[2], Steps: steps, Path: "a/b", OnlyFetchWorkspace: true},
+				{Repo: repos[2], Steps: steps, Path: "a/b/c", OnlyFetchWorkspace: true},
+				{Repo: repos[2], Steps: steps, Path: "d/e/f", OnlyFetchWorkspace: true},
 			},
 		},
 	}
@@ -124,6 +125,14 @@ func TestFindWorkspaces(t *testing.T) {
 			if err != nil {
 				t.Fatalf("unexpected err: %s", err)
 			}
+
+			// Sort by ID, easier than by name for tests.
+			sort.Slice(workspaces, func(i, j int) bool {
+				if workspaces[i].Repo.ID == workspaces[j].Repo.ID {
+					return workspaces[i].Path < workspaces[j].Path
+				}
+				return workspaces[i].Repo.ID < workspaces[j].Repo.ID
+			})
 
 			if diff := cmp.Diff(tt.wantWorkspaces, workspaces); diff != "" {
 				t.Errorf("mismatch (-want +got):\n%s", diff)

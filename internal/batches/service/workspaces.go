@@ -6,7 +6,6 @@ import (
 	"sort"
 
 	"github.com/gobwas/glob"
-	"github.com/pkg/errors"
 	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
 	"github.com/sourcegraph/sourcegraph/lib/batches/template"
 	"github.com/sourcegraph/src-cli/internal/batches"
@@ -15,7 +14,7 @@ import (
 )
 
 type RepoWorkspace struct {
-	RepoID             string
+	Repo               *graphql.Repository
 	Path               string
 	Steps              []batcheslib.Step
 	OnlyFetchWorkspace bool
@@ -80,7 +79,7 @@ func findWorkspaces(
 	}
 
 	type repoWorkspaces struct {
-		RepoID             string
+		Repo               *graphql.Repository
 		Paths              []string
 		OnlyFetchWorkspace bool
 	}
@@ -98,7 +97,7 @@ func findWorkspaces(
 				continue
 			}
 			workspacesByID[repo.ID] = repoWorkspaces{
-				RepoID:             repo.ID,
+				Repo:               repo,
 				Paths:              dirs,
 				OnlyFetchWorkspace: conf.OnlyFetchWorkspace,
 			}
@@ -110,7 +109,7 @@ func findWorkspaces(
 		conf, ok := workspacesByID[repo.ID]
 		if !ok {
 			workspacesByID[repo.ID] = repoWorkspaces{
-				RepoID:             repo.ID,
+				Repo:               repo,
 				Paths:              []string{""},
 				OnlyFetchWorkspace: false,
 			}
@@ -127,12 +126,7 @@ func findWorkspaces(
 				fetchWorkspace = false
 			}
 
-			repo, ok := repoByID[workspace.RepoID]
-			if !ok {
-				return nil, errors.New("invalid state, repo not found")
-			}
-
-			steps, err := stepsForRepo(spec, repo)
+			steps, err := stepsForRepo(spec, workspace.Repo)
 			if err != nil {
 				return nil, err
 			}
@@ -143,7 +137,7 @@ func findWorkspaces(
 			}
 
 			workspaces = append(workspaces, RepoWorkspace{
-				RepoID:             workspace.RepoID,
+				Repo:               workspace.Repo,
 				Path:               path,
 				Steps:              steps,
 				OnlyFetchWorkspace: fetchWorkspace,
@@ -153,10 +147,10 @@ func findWorkspaces(
 
 	// Stable sorting.
 	sort.Slice(workspaces, func(i, j int) bool {
-		if workspaces[i].RepoID == workspaces[j].RepoID {
+		if workspaces[i].Repo.Name == workspaces[j].Repo.Name {
 			return workspaces[i].Path < workspaces[j].Path
 		}
-		return workspaces[i].RepoID < workspaces[j].RepoID
+		return workspaces[i].Repo.Name < workspaces[j].Repo.Name
 	})
 
 	return workspaces, nil

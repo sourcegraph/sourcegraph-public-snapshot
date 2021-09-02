@@ -186,8 +186,8 @@ func (svc *Service) DetermineWorkspaces(ctx context.Context, repos []*graphql.Re
 	return findWorkspaces(ctx, spec, svc, repos)
 }
 
-func (svc *Service) BuildTasks(ctx context.Context, repos []*graphql.Repository, spec *batcheslib.BatchSpec, workspaces []RepoWorkspace) ([]*executor.Task, error) {
-	return buildTasks(ctx, spec, repos, workspaces)
+func (svc *Service) BuildTasks(ctx context.Context, spec *batcheslib.BatchSpec, workspaces []RepoWorkspace) []*executor.Task {
+	return buildTasks(ctx, spec, workspaces)
 }
 
 func (svc *Service) NewCoordinator(opts executor.NewCoordinatorOpts) *executor.Coordinator {
