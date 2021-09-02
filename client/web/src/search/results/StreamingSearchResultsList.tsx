@@ -43,7 +43,6 @@ export interface StreamingSearchResultsListProps extends ThemeProps, SettingsCas
 export const StreamingSearchResultsList: React.FunctionComponent<StreamingSearchResultsListProps> = ({
     results,
     location,
-    isLightTheme,
     allExpanded,
     fetchHighlightedFileLineRanges,
     settingsCascade,
@@ -84,7 +83,6 @@ export const StreamingSearchResultsList: React.FunctionComponent<StreamingSearch
                             onSelect={logSearchResultClicked}
                             expanded={false}
                             showAllMatches={false}
-                            isLightTheme={isLightTheme}
                             allExpanded={allExpanded}
                             fetchHighlightedFileLineRanges={fetchHighlightedFileLineRanges}
                             repoDisplayName={displayRepoName(result.repository)}
@@ -92,27 +90,12 @@ export const StreamingSearchResultsList: React.FunctionComponent<StreamingSearch
                         />
                     )
                 case 'commit':
-                    return (
-                        <SearchResult
-                            icon={SourceCommitIcon}
-                            result={result}
-                            repoName={result.repository}
-                            isLightTheme={isLightTheme}
-                        />
-                    )
+                    return <SearchResult icon={SourceCommitIcon} result={result} repoName={result.repository} />
                 case 'repo':
-                    return (
-                        <SearchResult
-                            icon={SourceRepositoryIcon}
-                            result={result}
-                            repoName={result.repository}
-                            isLightTheme={isLightTheme}
-                        />
-                    )
+                    return <SearchResult icon={SourceRepositoryIcon} result={result} repoName={result.repository} />
             }
         },
         [
-            isLightTheme,
             location,
             telemetryService,
             logSearchResultClicked,

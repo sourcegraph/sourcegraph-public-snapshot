@@ -52,8 +52,6 @@ interface Props extends SettingsCascadeProps, VersionContextProps, TelemetryProp
 
     className?: string
 
-    isLightTheme: boolean
-
     fetchHighlightedFileLineRanges: (parameters: FetchFileParameters, force?: boolean) => Observable<string[][]>
 
     /** Whether or not there are other groups in the parent container with results. */
@@ -186,7 +184,6 @@ export class FileLocations extends React.PureComponent<Props, State> {
             icon={this.props.icon}
             onSelect={this.onSelect}
             showAllMatches={true}
-            isLightTheme={this.props.isLightTheme}
             fetchHighlightedFileLineRanges={this.props.fetchHighlightedFileLineRanges}
             settingsCascade={this.props.settingsCascade}
         />

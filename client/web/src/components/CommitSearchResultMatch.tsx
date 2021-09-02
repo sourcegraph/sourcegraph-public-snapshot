@@ -10,14 +10,13 @@ import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { LastSyncedIcon } from '@sourcegraph/shared/src/components/LastSyncedIcon'
 import { Markdown } from '@sourcegraph/shared/src/components/Markdown'
 import { CommitMatch } from '@sourcegraph/shared/src/search/stream'
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { highlightNode } from '@sourcegraph/shared/src/util/dom'
 
 import { highlightCode } from '../search/backend'
 
 import styles from './CommitSearchResultMatch.module.scss'
 
-interface CommitSearchResultMatchProps extends ThemeProps {
+interface CommitSearchResultMatchProps {
     item: CommitMatch
 }
 
@@ -66,7 +65,6 @@ export class CommitSearchResultMatch extends React.Component<
                                 code: codeContent,
                                 fuzzyLanguage: lang,
                                 disableTimeout: false,
-                                isLightTheme: props.isLightTheme,
                             }).pipe(
                                 // Return the rendered markdown if highlighting fails.
                                 catchError(error => {
