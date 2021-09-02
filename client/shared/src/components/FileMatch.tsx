@@ -163,9 +163,9 @@ export const FileMatch: React.FunctionComponent<Props> = props => {
 
     const expandedChildren = <FileMatchChildren {...props} result={result} {...expandedMatchGroups} />
 
-    if (result.type === 'content' && result.content) {
+    if (result.type === 'content' && result.hunks) {
         const grouped: MatchGroup[] =
-            result.content?.map(
+            result.hunks?.map(
                 hunk =>
                     ({
                         blobLines: hunk.content.html?.split(/\r?\n/),
@@ -175,10 +175,10 @@ export const FileMatch: React.FunctionComponent<Props> = props => {
                             highlightLength: match.end.column - match.start.column,
                             isInContext: false, // TODO(camdencheek) what is this for?
                         })),
-                        startLine: hunk.start,
-                        endLine: hunk.start + hunk.length,
+                        startLine: hunk.lineStart,
+                        endLine: hunk.lineStart + hunk.lineCount,
                         position: {
-                            line: hunk.matches[0].start.line + hunk.start + 1,
+                            line: hunk.matches[0].start.line + hunk.lineStart + 1,
                             character: hunk.matches[0].start.column + 1,
                         },
                     } as MatchGroup)
@@ -186,7 +186,7 @@ export const FileMatch: React.FunctionComponent<Props> = props => {
 
         // TODO(camdencheek) handle unexpanded
         const expandedChildren = <FileMatchChildren {...props} result={result} grouped={grouped} />
-        const matchCount = grouped.reduce((prev, group) => prev + group.matches.length, 0)
+        const matchCount = grouped.reduce((n, group) => n + group.matches.length, 0)
         containerProps = {
             // TODO(camdencheek) make this collapsible
             collapsible: false,

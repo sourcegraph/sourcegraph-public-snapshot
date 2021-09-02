@@ -38,13 +38,13 @@ export interface ContentMatch {
     branches?: string[]
     version?: string
     lineMatches: LineMatch[]
-    content?: DecoratedHunk[]
+    hunks?: DecoratedHunk[]
 }
 
 export interface DecoratedHunk {
     content: DecoratedContent
-    start: number
-    length: number
+    lineStart: number
+    lineCount: number
     matches: Range[]
 }
 
@@ -424,9 +424,9 @@ function search({
             ['q', `${query} ${caseSensitive ? 'case:yes' : ''}`],
             ['v', version],
             ['t', patternType as string],
-            ['decorationLimit', '15'],
-            ['decorationKind', (decorationKinds || ['html']).join('|')],
-            ['decorationContextLines', (decorationContextLines || '1').toString()],
+            ['dL', '15'],
+            ['dK', (decorationKinds || ['html']).join('|')],
+            ['dCL', (decorationContextLines || '1').toString()],
             ['display', '1500'],
         ]
         if (versionContext) {
