@@ -11,7 +11,7 @@ jobs:
       matrix:
         root:
           - ''
-          - lib/
+          - lib
     steps:
       - uses: actions/checkout@v2
       - name: Generate LSIF data
@@ -31,11 +31,11 @@ jobs:
     strategy:
       matrix:
         root:
-          - client/branded/
-          - client/browser/
-          - client/shared/
-          - client/web/
-          - client/wildcard/
+          - branded
+          - browser
+          - shared
+          - web
+          - wildcard
     steps:
       - uses: actions/checkout@v2
       - name: Install build dependencies
@@ -45,12 +45,12 @@ jobs:
       - name: Generate
         run: ./node_modules/.bin/gulp generate
       - name: Generate LSIF data
-        working-directory: ${{ matrix.root }}
+        working-directory: client/${{ matrix.root }}
         run: lsif-tsc -p . -o dump.lsif
       - name: Build TypeScript
         run: yarn run --ignore-engines build-ts
       - name: Generate LSIF data
-        working-directory: ${{ matrix.root }}
+        working-directory: client/${{ matrix.root }}
         run: yarn eslint -f lsif -o dump-lint.lsif
       - name: Upload lsif-tsc dump
         uses: actions/upload-artifact@v2
@@ -80,7 +80,7 @@ jobs:
           - false
         root:
           - ''
-          - lib/
+          - lib
     steps:
       - name: Download lsif-go dump
         uses: actions/download-artifact@v2
@@ -107,18 +107,18 @@ jobs:
         experimental:
           - false
         root:
-          - client/branded/
-          - client/browser/
-          - client/shared/
-          - client/web/
-          - client/wildcard/
+          - branded
+          - browser
+          - shared
+          - web
+          - wildcard
     steps:
       - name: Download lsif-tsc dump
         uses: actions/download-artifact@v2
         with:
           name: ${{ matrix.root }}-dump
       - name: Upload lsif-tsc data to ${{ matrix.endpoint }}
-        working-directory: ${{ matrix.root }}
+        working-directory: client/${{ matrix.root }}
         run: src lsif upload -no-progress -github-token=${{ secrets.GITHUB_TOKEN }} -f dump.lsif
         env:
           SRC_ENDPOINT: ${{ matrix.endpoint }}
@@ -127,7 +127,7 @@ jobs:
         with:
           name: ${{ matrix.root }}-dump-lint
       - name: Upload lsif-eslint data to ${{ matrix.endpoint }}
-        working-directory: ${{ matrix.root }}
+        working-directory: client/${{ matrix.root }}
         run: src lsif upload -no-progress -github-token=${{ secrets.GITHUB_TOKEN }} -f dump-lint.lsif
         env:
           SRC_ENDPOINT: ${{ matrix.endpoint }}
