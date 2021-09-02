@@ -579,11 +579,11 @@ func (s *PermsStore) SetRepoPendingPermissions(ctx context.Context, accounts *ex
 		//  grow very quickly every time we do an upsert, and soon reaching the largest
 		//  number an int4 (32-bit integer) can hold (2,147,483,647). Therefore, load
 		//  existing rows would help us only upsert rows that are newly discovered. See
-		//  NOTE in dozen lines below for why we do upsert not insert.
+		//  NOTE in below for why we do upsert not insert.
 		q = loadExistingUserPendingPermissionsBatchQuery(accounts, p)
 		bindIDsToIDs, err := txs.loadExistingUserPendingPermissionsBatch(ctx, q)
 		if err != nil {
-			return errors.Wrap(err, "load existing user pending permissions")
+			return errors.Wrap(err, "loading existing user pending permissions")
 		}
 
 		missingAccounts := &extsvc.Accounts{
