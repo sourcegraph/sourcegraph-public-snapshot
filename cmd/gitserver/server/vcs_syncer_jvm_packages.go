@@ -128,7 +128,7 @@ func (s *JVMPackagesSyncer) Fetch(ctx context.Context, remoteURL *vcs.URL, dir G
 		}
 		// the gitPushDependencyTag method is reponsible for cleaning up temporary directories.
 		if err := s.gitPushDependencyTag(ctx, string(dir), dependency, i == 0); err != nil {
-			return errors.Wrapf(err, "error pushing dependency %q", dependency)
+			return errors.Wrapf(err, "error pushing dependency %q", dependency.CoursierSyntax())
 		}
 	}
 
@@ -280,7 +280,7 @@ func (s *JVMPackagesSyncer) gitPushDependencyTag(ctx context.Context, bareGitDir
 func (s *JVMPackagesSyncer) commitJar(ctx context.Context, dependency reposource.MavenDependency,
 	workingDirectory, sourceCodeJarPath string, connection *schema.JVMPackagesConnection) error {
 	if err := unzipJarFile(sourceCodeJarPath, workingDirectory); err != nil {
-		return errors.Wrapf(err, "failed to unzip jar file %v", sourceCodeJarPath)
+		return errors.Wrapf(err, "failed to unzip jar file for %s to %v", dependency.CoursierSyntax(), sourceCodeJarPath)
 	}
 
 	file, err := os.Create(filepath.Join(workingDirectory, "lsif-java.json"))
@@ -327,14 +327,26 @@ func (s *JVMPackagesSyncer) commitJar(ctx context.Context, dependency reposource
 	return nil
 }
 
-func unzipJarFile(jarPath, destination string) error {
+func unzipJarFile(jarPath, destination string) (err error) {
 	reader, err := zip.OpenReader(jarPath)
 	if err != nil {
 		return err
 	}
 	defer reader.Close()
 	destinationDirectory := strings.TrimSuffix(destination, string(os.PathSeparator)) + string(os.PathSeparator)
+
+	var (
+		_file      *zip.File
+		outputPath string
+	)
+	defer func() {
+		if r := recover(); r != nil {
+			err = errors.Newf("panic in extracting JAR: jarPath=%s file=%s jarFilesCount=%d outputPath=%s panic=%v", jarPath, _file.Name, len(reader.File), outputPath, r)
+		}
+	}()
+
 	for _, file := range reader.File {
+		_file = file
 		if strings.HasPrefix(file.Name, ".git/") {
 			// For security reasons, don't unzip files under the `.git/`
 			// directory. See https://github.com/sourcegraph/security-issues/issues/163
@@ -346,7 +358,7 @@ func unzipJarFile(jarPath, destination string) error {
 			// `file.Name` docstring.
 			continue
 		}
-		outputPath := path.Join(destination, file.Name)
+		outputPath = path.Join(destination, file.Name)
 		if !strings.HasPrefix(outputPath, destinationDirectory) {
 			// For security reasons, skip file if it's not a child
 			// of the target directory. See "Zip Slip Vulnerability".
