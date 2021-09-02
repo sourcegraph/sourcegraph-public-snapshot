@@ -80,7 +80,7 @@ func ReposourceCloneURLToRepoName(ctx context.Context, db dbutil.DB, cloneURL st
 }
 
 func getRepoNameFromService(ctx context.Context, cloneURL string, svc *types.ExternalService) (api.RepoName, error) {
-	span, ctx := ot.StartSpanFromContext(ctx, "getRepoNameFromService")
+	span, _ := ot.StartSpanFromContext(ctx, "getRepoNameFromService")
 	defer span.Finish()
 	span.SetTag("ExternalService.ID", svc.ID)
 	span.SetTag("ExternalService.Kind", svc.Kind)
