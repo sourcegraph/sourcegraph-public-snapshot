@@ -403,17 +403,14 @@ query {
 
 When integrating multiple code hosts with Sourcegraph, repository permissions typically need to be inherited and enforced across those respective code hosts and repositories. The steps below will walk you through configuring and enforcing repository permissions on a per-user basis across all of the code hosts and repos connected to Sourcegraph. 
 
-### Configuring repository permissions for multiple code hosts:
 
-#### Option 1: 
+### Using the explicit permissions API
 
 The recommended approach for inheriting permissions across multiple code hosts is via the [Explicit Permissions API](#explicit-permissions-api). The workaround provided in Option 2 is recommended only if using the Explicit Permissions API is not feasible. 
 
-#### Option 2: 
+### Using GitHub enterprise
 
-<strong>NOTE:</strong> This workaround is currently only verified to work when connecting both GitHub Enterprise and Github.com OAuth applications. For other code hosts and configuration options, please reach out to us. 
-
-#### Steps:
+> NOTE: This workaround is currently only verified to work when connecting both GitHub Enterprise and Github.com OAuth applications. For other code hosts and configuration options, please reach out to us. 
 Setup and add GitHub Enterprise (GHE) and GitHub.com (GHC) using our standard GitHub [integration](https://docs.sourcegraph.com/admin/external_service/github)
 
 <strong>Configure GitHub Enterprise SSO:</strong>
