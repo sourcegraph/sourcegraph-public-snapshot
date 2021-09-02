@@ -123,7 +123,7 @@ func startCmd(ctx context.Context, dir string, cmd Command, globalEnv map[string
 	sc.Cmd.Env = makeEnv(globalEnv, cmd.Env)
 
 	var stdoutWriter, stderrWriter io.Writer
-	logger := newCmdLogger(cmd.Name, stdout.Out)
+	logger := newCmdLogger(commandCtx, cmd.Name, stdout.Out)
 	if cmd.IgnoreStdout {
 		stdout.Out.WriteLine(output.Linef("", output.StyleSuggestion, "Ignoring stdout of %s", cmd.Name))
 		stdoutWriter = sc.stdoutBuf
