@@ -556,7 +556,8 @@ RETURNING updated_at
 // 2. repos under the cloud_default are lazily synced the first time a user accesses them
 //
 // This is a limitation of our current repo syncing architecture. The cloud_default flag is only set
-// on sourcegraph.com and manages public GitHub  and GitLab repositories that have been lazily synced```
+// on sourcegraph.com and manages public GitHub and GitLab repositories that have been lazily
+// synced.
 func (s *Store) EnqueueSingleSyncJob(ctx context.Context, extSvcID int64) (err error) {
 	q := sqlf.Sprintf(`
 INSERT INTO external_service_sync_jobs (external_service_id)
