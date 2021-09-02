@@ -803,7 +803,7 @@ func (l *EventLogStore) CodeIntelligenceRepositoryCountsByLanguage(ctx context.C
 		numRepositoriesWithFreshIndexRecords *int
 	)
 
-	byLangauge := map[string]CodeIntelligenceRepositoryCountsForLanguage{}
+	byLanguage := map[string]CodeIntelligenceRepositoryCountsForLanguage{}
 	for rows.Next() {
 		if err := rows.Scan(
 			&language,
