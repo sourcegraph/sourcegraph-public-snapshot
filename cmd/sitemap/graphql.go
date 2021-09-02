@@ -66,6 +66,7 @@ func (c *graphQLClient) requestGraphQL(ctx context.Context, queryName string, qu
 			httpcli.NewMiddleware(
 				httpcli.ContextErrorMiddleware,
 			),
+			httpcli.NewMaxIdleConnsPerHostOpt(500),
 			httpcli.NewTimeoutOpt(graphQLTimeout),
 			// ExternalTransportOpt needs to be before TracedTransportOpt and
 			// NewCachedTransportOpt since it wants to extract a http.Transport,
