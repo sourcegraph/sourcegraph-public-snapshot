@@ -186,7 +186,7 @@ export const FileMatch: React.FunctionComponent<Props> = props => {
 
         // TODO(camdencheek) handle unexpanded
         const expandedChildren = <FileMatchChildren {...props} result={result} grouped={grouped} />
-        const matchCount = grouped.reduce((n, group) => n + group.matches.length, 0)
+        const matchCount = grouped.reduce((previous, group) => previous + group.matches.length, 0)
         containerProps = {
             // TODO(camdencheek) make this collapsible
             collapsible: false,
