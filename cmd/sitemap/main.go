@@ -184,12 +184,13 @@ func (g *generator) generate(ctx context.Context) error {
 	}
 
 	var (
-		mu           sync.Mutex
-		docsSubPages []string
+		mu                                  sync.Mutex
+		docsSubPages                        []string
+		workers                             = 32
+		index                               = 0
+		pagesWithOneOrMoreExternalReference = 0
 	)
 	queried = 0
-	workers := 100
-	index := 0
 	for i := 0; i < workers; i++ {
 		go func() {
 			for {
@@ -226,11 +227,12 @@ func (g *generator) generate(ctx context.Context) error {
 						}
 						// TODO(apidocs): it would be great if more repos had external usage examples. In practice though, less than 2%
 						// do today. This is because we haven't indexed many repos yet.
-						//if externalReferences > 0 {
+						if externalReferences > 0 {
+							pagesWithOneOrMoreExternalReference++
+						}
 						mu.Lock()
 						docsSubPages = append(docsSubPages, repoName+"/-/docs"+pathID)
 						mu.Unlock()
-						//}
 					}
 				}
 			}
@@ -248,6 +250,7 @@ func (g *generator) generate(ctx context.Context) error {
 
 	log15.Info("found Go API docs pages", "count", totalPages)
 	log15.Info("found Go API docs sub-pages", "count", len(docsSubPages))
+	log15.Info("Go API docs sub-pages with 1+ external reference", "count", pagesWithOneOrMoreExternalReference)
 	log15.Info("spanning", "repositories", len(indexedGoRepos), "stars", totalStars)
 	log15.Info("Go repos missing API docs", "count", missingAPIDocs)
 	return nil
