@@ -815,7 +815,7 @@ func (l *EventLogStore) CodeIntelligenceRepositoryCountsByLanguage(ctx context.C
 			return nil, err
 		}
 
-		byLangauge[language] = CodeIntelligenceRepositoryCountsForLanguage{
+		byLanguage[language] = CodeIntelligenceRepositoryCountsForLanguage{
 			NumRepositoriesWithUploadRecords:      safeDerefIntPtr(numRepositoriesWithUploadRecords),
 			NumRepositoriesWithFreshUploadRecords: safeDerefIntPtr(numRepositoriesWithFreshUploadRecords),
 			NumRepositoriesWithIndexRecords:       safeDerefIntPtr(numRepositoriesWithIndexRecords),
