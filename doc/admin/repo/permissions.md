@@ -57,11 +57,26 @@ This caching behaviour can be enabled via the `authorization.groupsCacheTTL` fie
 
 ```json
 {
-   "url": "https://github.com",
+   "url": "https://github.example.com",
    "token": "$PERSONAL_ACCESS_TOKEN",
    "authorization": {
      "groupsCacheTTL": 72, // hours
    }
+}
+```
+
+In the corresponding [authorization provider](../auth/index.md#github), the `allowGroupsPermissionsSync` field must be set as well for the correct auth scopes to be requested from users:
+
+```json
+{
+  // ...
+  "auth.providers": [
+    {
+      "type": "github",
+      "url": "https://github.example.com",
+      "allowGroupsPermissionsSync": true,
+    }
+  ]
 }
 ```
 
