@@ -317,7 +317,7 @@ Some permissions providers in Sourcegraph can leverage caching mechanisms to red
 
 To see if your provider supports permissions caching, please refer to the relevant provider documentation on this page. For example, [the GitHub provider supports teams and organizations permissions caching](#teams-and-organizations-permissions-caching).
 
-Note that this can mean that permissions can be out of date. To configure caching behaviour, please refer to the relevant provider documentation on this page. To force a bypass of caches during a sync, you can manually queue users or repositories for sync with the `invalidateCaches` options via the Sourcegarph GraphQL API:
+Note that this can mean that permissions can be out of date. To configure caching behaviour, please refer to the relevant provider documentation on this page. To force a bypass of caches during a sync, you can manually queue users or repositories for sync with the `invalidateCaches` options via the Sourcegraph GraphQL API:
 
 ```gql
 mutation {
