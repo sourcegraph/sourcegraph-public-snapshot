@@ -20,12 +20,12 @@ jobs:
       # Run lsif-go
       - name: Run lsif-go
         working-directory: ${{ matrix.root }}
-        run: lsif-go --no-animation -o dump-go.lsif
+        run: lsif-go --no-animation -o ~/dump-go.lsif
       - name: Upload lsif-go dump
         uses: actions/upload-artifact@v2
         with:
           name: dump-${{ matrix.root }}-go
-          path: ${{ matrix.root }}/dump-go.lsif
+          path: ~/dump-go.lsif
 
   lsif-tsc-eslint:
     # Skip running on forks
@@ -54,24 +54,24 @@ jobs:
       # Run lsif-tsc
       - name: Run lsif-tsc
         working-directory: client/${{ matrix.root }}
-        run: lsif-tsc -p . -o dump-tsc.lsif
+        run: lsif-tsc -p . -o ~/dump-tsc.lsif
       - name: Upload lsif-tsc dump
         uses: actions/upload-artifact@v2
         with:
           name: dump-${{ matrix.root }}-tsc
-          path: ${{ matrix.root }}/dump-tsc.lsif
+          path: ~/dump-tsc.lsif
           
       # Run lsif-eslint
       - name: Build TypeScript
         run: yarn run --ignore-engines build-ts
       - name: Run lsif-eslint
         working-directory: client/${{ matrix.root }}
-        run: yarn eslint -f lsif -o dump-eslint.lsif
+        run: yarn eslint -f lsif -o ~/dump-eslint.lsif
       - name: Upload lsif-eslint dump
         uses: actions/upload-artifact@v2
         with:
           name: dump-${{ matrix.root }}-eslint
-          path: ${{ matrix.root }}/dump-eslint.lsif
+          path: ~/dump-eslint.lsif
 
   lsif-go-upload:
     # Skip running on forks
@@ -96,7 +96,7 @@ jobs:
         with:
           name: dump-${{ matrix.root }}-go
       - name: Upload lsif-go data to ${{ matrix.endpoint }}
-        run: src lsif upload -no-progress -github-token=${{ secrets.GITHUB_TOKEN }} -root ${{ matrix.root }} -f dump-go.lsif
+        run: src lsif upload -no-progress -github-token=${{ secrets.GITHUB_TOKEN }} -root ${{ matrix.root }} -file dump-go.lsif
         env:
           SRC_ENDPOINT: ${{ matrix.endpoint }}
 
@@ -126,7 +126,7 @@ jobs:
         with:
           name: dump-${{ matrix.root }}-tsc
       - name: Upload lsif-tsc data to ${{ matrix.endpoint }}
-        run: src lsif upload -no-progress -github-token=${{ secrets.GITHUB_TOKEN }} -root client/${{ matrix.root }} -f dump-tsc.lsif
+        run: src lsif upload -no-progress -github-token=${{ secrets.GITHUB_TOKEN }} -root client/${{ matrix.root }} -file dump-tsc.lsif
         env:
           SRC_ENDPOINT: ${{ matrix.endpoint }}
 
@@ -135,6 +135,6 @@ jobs:
         with:
           name: dump-${{ matrix.root }}-eslint
       - name: Upload lsif-eslint data to ${{ matrix.endpoint }}
-        run: src lsif upload -no-progress -github-token=${{ secrets.GITHUB_TOKEN }} -root client/${{ matrix.root }} -f dump-eslint.lsif
+        run: src lsif upload -no-progress -github-token=${{ secrets.GITHUB_TOKEN }} -root client/${{ matrix.root }} -file dump-eslint.lsif
         env:
           SRC_ENDPOINT: ${{ matrix.endpoint }}
