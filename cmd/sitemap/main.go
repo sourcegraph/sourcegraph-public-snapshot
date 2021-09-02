@@ -1,10 +1,13 @@
 package main
 
 import (
+	"compress/gzip"
 	"context"
 	"encoding/json"
+	"fmt"
 	"os"
 	"path/filepath"
+	"sort"
 	"strconv"
 	"strings"
 	"sync"
@@ -12,6 +15,8 @@ import (
 
 	"github.com/cockroachdb/errors"
 	"github.com/inconshreveable/log15"
+
+	"github.com/snabb/sitemap"
 
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/lsif/protocol"
 )
@@ -186,7 +191,7 @@ func (g *generator) generate(ctx context.Context) error {
 	var (
 		mu                                     sync.Mutex
 		docsSubPages                           []string
-		workers                                = 32
+		workers                                = 300
 		index                                  = 0
 		subPagesWithZeroReferences             = 0
 		subPagesWithOneOrMoreExternalReference = 0
@@ -257,6 +262,64 @@ func (g *generator) generate(ctx context.Context) error {
 	log15.Info("Go API docs sub-pages with 0 references", "count", subPagesWithZeroReferences)
 	log15.Info("spanning", "repositories", len(indexedGoRepos), "stars", totalStars)
 	log15.Info("Go repos missing API docs", "count", missingAPIDocs)
+
+	sort.Strings(docsSubPages)
+	var (
+		sitemapIndex = sitemap.NewSitemapIndex()
+		addedURLs    = 0
+		sm           = sitemap.New()
+		sitemaps     []*sitemap.Sitemap
+	)
+	for _, docSubPage := range docsSubPages {
+		if addedURLs >= 50000 {
+			addedURLs = 0
+			url := &sitemap.URL{
+				Loc:        fmt.Sprintf("https://storage.googleapis.com/sitemap-sourcegraph-com/sitemap_%03d.xml.gz", len(sitemaps)),
+				ChangeFreq: sitemap.Weekly,
+				Priority:   float32(999 - len(sitemaps)),
+			}
+			sitemapIndex.Add(url)
+			sitemaps = append(sitemaps, sm)
+			sm = sitemap.New()
+		}
+		addedURLs++
+		sm.Add(&sitemap.URL{
+			Loc:        "https://sourcegraph.com" + docSubPage,
+			ChangeFreq: sitemap.Weekly,
+		})
+	}
+	sitemaps = append(sitemaps, sm)
+
+	{
+		outFile, err := os.Create(filepath.Join(g.outDir, "sitemap.xml.gz"))
+		if err != nil {
+			return errors.Wrap(err, "failed to create sitemap.xml.gz file")
+		}
+		defer outFile.Close()
+		writer := gzip.NewWriter(outFile)
+		defer writer.Close()
+		_, err = sitemapIndex.WriteTo(writer)
+		if err != nil {
+			return errors.Wrap(err, "failed to write sitemap.xml.gz")
+		}
+	}
+	for index, sitemap := range sitemaps {
+		fileName := fmt.Sprintf("sitemap_%03d.xml.gz", index)
+		outFile, err := os.Create(filepath.Join(g.outDir, fileName))
+		if err != nil {
+			return errors.Wrap(err, fmt.Sprintf("failed to create %s file", fileName))
+		}
+		defer outFile.Close()
+		writer := gzip.NewWriter(outFile)
+		defer writer.Close()
+		_, err = sitemap.WriteTo(writer)
+		if err != nil {
+			return errors.Wrap(err, fmt.Sprintf("failed to write %s", fileName))
+		}
+	}
+
+	log15.Info("To upload the sitemap, use: $ gsutil cp -r sitemap/ gs://sitemap-sourcegraph-com")
+
 	return nil
 }
 
