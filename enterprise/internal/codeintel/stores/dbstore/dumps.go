@@ -138,6 +138,10 @@ FROM lsif_dumps_with_repository_name u WHERE u.id IN (%s)
 // of visible uploads (ideally, we'd like to return the complete set of visible uploads, or fail). If the graph fragment is complete
 // by depth (e.g. if the graph contains an ancestor at depth d, then the graph also contains all other ancestors up to depth d), then
 // we get the ideal behavior. Only if we contain a partial row of ancestors will we return partial results.
+//
+// It is possible for some dumps to overlap theoretically, e.g. if someone uploads one dump covering the repository root and then later
+// splits the repository into multiple dumps. For this reason, the returned dumps are always sorted in most-recently-finished order to
+// prevent returning data from stale dumps.
 func (s *Store) FindClosestDumps(ctx context.Context, repositoryID int, commit, path string, rootMustEnclosePath bool, indexer string) (_ []Dump, err error) {
 	ctx, traceLog, endObservation := s.operations.findClosestDumps.WithAndLogger(ctx, &err, observation.Args{
 		LogFields: []log.Field{
@@ -186,6 +190,7 @@ SELECT
 FROM visible_uploads vu
 JOIN lsif_dumps_with_repository_name u ON u.id = vu.upload_id
 WHERE %s
+ORDER BY u.finished_at DESC
 `
 
 // FindClosestDumpsFromGraphFragment returns the set of dumps that can most accurately answer queries for the given repository, commit,
