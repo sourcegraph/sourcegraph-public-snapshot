@@ -50,14 +50,14 @@ func NewAuthzProviders(
 	}
 
 	for _, p := range ps {
-		// Permissions require a corresponding GitHub oauth provider. Without one, repos
+		// Permissions require a corresponding GitHub OAuth provider. Without one, repos
 		// with restricted permissions will not be visible to non-admins.
 		if _, exists := githubAuthProviders[p.ServiceID()]; !exists {
 			warnings = append(warnings,
-				fmt.Sprintf("Did not find authentication provider matching %q. "+
+				fmt.Sprintf("Did not find authentication provider matching %[1]q. "+
 					"Check the [**site configuration**](/site-admin/configuration) to "+
-					"verify an entry in [`auth.providers`](https://docs.sourcegraph.com/admin/auth) exists for %s.",
-					p.ServiceID(), p.ServiceID()))
+					"verify an entry in [`auth.providers`](https://docs.sourcegraph.com/admin/auth) exists for %[1]s.",
+					p.ServiceID()))
 		}
 
 		// Check for other validation issues.
