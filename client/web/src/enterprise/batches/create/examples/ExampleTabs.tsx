@@ -7,12 +7,14 @@ import { catchError, debounceTime, startWith, switchMap } from 'rxjs/operators'
 import { isErrorLike } from '@sourcegraph/codeintellify/lib/errors'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { asError } from '@sourcegraph/shared/src/util/errors'
+import { pluralize } from '@sourcegraph/shared/src/util/strings'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
 import { Container, LoadingSpinner } from '@sourcegraph/wildcard'
 
 import batchSpecSchemaJSON from '../../../../../../../schema/batch_spec.schema.json'
 import { ErrorAlert } from '../../../../components/alerts'
 import { SidebarGroup, SidebarGroupHeader } from '../../../../components/Sidebar'
+import { BatchSpecWorkspacesFields } from '../../../../graphql-operations'
 import { MonacoSettingsEditor } from '../../../../settings/MonacoSettingsEditor'
 import { BatchSpecDownloadLink, getFileName } from '../../BatchSpec'
 
@@ -158,32 +160,90 @@ const ExampleTabPanel: React.FunctionComponent<ExampleTabPanelProps> = ({
             </Container>
             <Container>
                 <h3>Preview workspaces</h3>
-                {isErrorLike(preview) && <ErrorAlert error={preview} />}
-                <ul className="list-group p-1 mb-0">
-                    {!isErrorLike(preview) &&
-                        preview?.map(item => (
-                            <li className="list-group-item" key={`${item.repository.id}_${item.path}`}>
-                                <p>
-                                    {item.repository.name}:{item.branch.abbrevName}@{item.branch.target.oid} Path:{' '}
-                                    {item.path}
-                                </p>
-                                <ul>
-                                    {item.steps.map((step, index) => (
-                                        <li key={index}>
-                                            <span className="text-monospace">{step.command}</span>
-                                            <br />
-                                            <span className="text-muted">{step.container}</span>
-                                        </li>
-                                    ))}
-                                </ul>
-                            </li>
-                        ))}
-                    {!isErrorLike(preview) && !preview && <LoadingSpinner />}
-                    {!isErrorLike(preview) && preview?.length === 0 && (
-                        <span className="text-muted">No workspaces found</span>
-                    )}
-                </ul>
+                <PreviewWorkspaces preview={preview} />
             </Container>
         </TabPanel>
+    )
+}
+
+const PreviewWorkspaces: React.FunctionComponent<{ preview: BatchSpecWorkspacesFields | Error | undefined }> = ({
+    preview,
+}) => {
+    if (isErrorLike(preview)) {
+        return <ErrorAlert error={preview} />
+    }
+    if (!preview) {
+        return <LoadingSpinner />
+    }
+    return (
+        <>
+            <p className="text-monospace">
+                allowUnsupported: {JSON.stringify(preview.allowUnsupported)}
+                <br />
+                allowIgnored: {JSON.stringify(preview.allowIgnored)}
+            </p>
+            <ul className="list-group p-1 mb-0">
+                {preview.workspaces.map(item => (
+                    <li
+                        className="list-group-item"
+                        key={`${item.repository.id}_${item.branch.target.oid}_${item.path}`}
+                    >
+                        <p>
+                            {item.repository.name}:{item.branch.abbrevName}@{item.branch.target.oid} Path: {item.path}
+                        </p>
+                        <ul>
+                            {item.steps.map((step, index) => (
+                                <li key={index}>
+                                    <span className="text-monospace">{step.command}</span>
+                                    <br />
+                                    <span className="text-muted">{step.container}</span>
+                                </li>
+                            ))}
+                        </ul>
+                    </li>
+                ))}
+            </ul>
+            {preview.workspaces.length === 0 && <span className="text-muted">No workspaces found</span>}
+            <hr />
+            {preview.ignored.length > 0 && (
+                <>
+                    <p>
+                        {preview.ignored.length} {pluralize('repo is', preview.ignored.length, 'repos are')} ignored
+                        {preview.allowIgnored && (
+                            <>
+                                , but {pluralize('it has', preview.ignored.length, 'they have')} been included, based on
+                                settings
+                            </>
+                        )}
+                        .
+                    </p>
+                    <ul>
+                        {preview.ignored.map(repo => (
+                            <li key={repo.id}>{repo.name}</li>
+                        ))}
+                    </ul>
+                </>
+            )}
+            {preview.unsupported.length > 0 && (
+                <>
+                    <p>
+                        {preview.unsupported.length} {pluralize('repo is', preview.unsupported.length, 'repos are')}{' '}
+                        unsupported
+                        {preview.allowUnsupported && (
+                            <>
+                                , but {pluralize('it has', preview.unsupported.length, 'they have')} been included,
+                                based on settings
+                            </>
+                        )}
+                        .
+                    </p>
+                    <ul>
+                        {preview.unsupported.map(repo => (
+                            <li key={repo.id}>{repo.name}</li>
+                        ))}
+                    </ul>
+                </>
+            )}
+        </>
     )
 }

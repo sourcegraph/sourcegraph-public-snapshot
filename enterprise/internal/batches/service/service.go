@@ -665,7 +665,16 @@ type ResolveWorkspacesForBatchSpecOpts struct {
 // ResolveWorkspacesForBatchSpec takes the given batchSpec, and calculates the
 // RepoWorkspaces matching the `on` part of the spec. For more details on this
 // process, see workspaceResolver.ResolveWorkspacesForBatchSpec.
-func (s *Service) ResolveWorkspacesForBatchSpec(ctx context.Context, batchSpec *batcheslib.BatchSpec, opts ResolveWorkspacesForBatchSpecOpts) (_ []*RepoWorkspace, err error) {
+func (s *Service) ResolveWorkspacesForBatchSpec(
+	ctx context.Context,
+	batchSpec *batcheslib.BatchSpec,
+	opts ResolveWorkspacesForBatchSpecOpts,
+) (
+	workspaces []*RepoWorkspace,
+	unsupported map[*types.Repo]struct{},
+	ignored map[*types.Repo]struct{},
+	err error,
+) {
 	tr, ctx := trace.New(ctx, "service.ResolveWorkspacesForBatchSpec", "")
 	defer func() {
 		tr.SetError(err)

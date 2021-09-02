@@ -2249,7 +2249,38 @@ extend type Query {
         be published.
         """
         allowUnsupported: Boolean = false
-    ): [BatchSpecWorkspace!]!
+    ): BatchSpecWorkspaces!
+}
+
+"""
+A bag for all info around resolving workspaces.
+"""
+type BatchSpecWorkspaces {
+    """
+    If true, repos with a .batchignore file will still be included.
+    """
+    allowIgnored: Boolean!
+
+    """
+    If true, repos on unsupported codehosts will be included. These cannot
+    be published.
+    """
+    allowUnsupported: Boolean!
+
+    """
+    The actual list of determined workspaces.
+    """
+    workspaces: [BatchSpecWorkspace!]!
+
+    """
+    The list of repos that are unsupported.
+    """
+    unsupported: [Repository!]!
+
+    """
+    The list of repos that are ignored.
+    """
+    ignored: [Repository!]!
 }
 
 """

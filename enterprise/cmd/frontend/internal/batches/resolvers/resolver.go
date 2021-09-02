@@ -1501,7 +1501,7 @@ func (r *Resolver) CancelBatchSpecExecution(ctx context.Context, args *graphqlba
 	return r.batchSpecExecutionByID(ctx, marshalBatchSpecExecutionRandID(exec.RandID))
 }
 
-func (r *Resolver) ResolveWorkspacesForBatchSpec(ctx context.Context, args *graphqlbackend.ResolveWorkspacesForBatchSpecArgs) (_ []graphqlbackend.BatchSpecWorkspaceResolver, err error) {
+func (r *Resolver) ResolveWorkspacesForBatchSpec(ctx context.Context, args *graphqlbackend.ResolveWorkspacesForBatchSpecArgs) (_ graphqlbackend.BatchSpecWorkspacesResolver, err error) {
 	tr, ctx := trace.New(ctx, "Resolver.ResolveWorkspacesForBatchSpec", fmt.Sprintf("AllowIgnored: %t AllowUnsupported: %t", args.AllowIgnored, args.AllowUnsupported))
 	defer func() {
 		tr.SetError(err)
@@ -1527,7 +1527,7 @@ func (r *Resolver) ResolveWorkspacesForBatchSpec(ctx context.Context, args *grap
 	}
 
 	svc := service.New(r.store)
-	results, err := svc.ResolveWorkspacesForBatchSpec(ctx, spec, service.ResolveWorkspacesForBatchSpecOpts{
+	workspaces, unsupported, ignored, err := svc.ResolveWorkspacesForBatchSpec(ctx, spec, service.ResolveWorkspacesForBatchSpecOpts{
 		AllowIgnored:     args.AllowIgnored,
 		AllowUnsupported: args.AllowUnsupported,
 	})
@@ -1535,12 +1535,14 @@ func (r *Resolver) ResolveWorkspacesForBatchSpec(ctx context.Context, args *grap
 		return nil, err
 	}
 
-	resolvers := make([]graphqlbackend.BatchSpecWorkspaceResolver, 0, len(results))
-	for _, node := range results {
-		node := node
-		resolvers = append(resolvers, &batchSpecWorkspaceResolver{node: node, store: r.store})
-	}
-	return resolvers, nil
+	return &batchSpecWorkspacesResolver{
+		store:            r.store,
+		allowUnsupported: args.AllowUnsupported,
+		allowIgnored:     args.AllowIgnored,
+		workspaces:       workspaces,
+		unsupported:      unsupported,
+		ignored:          ignored,
+	}, nil
 }
 
 func parseBatchChangeState(s *string) (btypes.BatchChangeState, error) {
