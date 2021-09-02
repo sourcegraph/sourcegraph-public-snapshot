@@ -399,3 +399,45 @@ query {
   }
 }
 ```
+## Permissions for multiple code hosts
+
+When integrating multiple code hosts with Sourcegraph, repository permissions typically need to be inherited and enforced across those respective code hosts and repositories. The steps below will walk you through configuring and enforcing repository permissions on a per-user basis across all of the code hosts and repos connected to Sourcegraph. 
+
+### Configuring repository permissions for multiple code hosts:
+
+#### Option 1: 
+
+The recommended approach for inheriting permissions across multiple code hosts is via the [Explicit Permissions API](#explicit-permissions-api). The workaround provided in Option 2 is recommended only if using the Explicit Permissions API is not feasible. 
+
+#### Option 2: 
+
+<strong>NOTE:</strong> This workaround is currently only verified to work when connecting both GitHub Enterprise and Github.com OAuth applications. For other code hosts and configuration options, please reach out to us. 
+
+#### Steps:
+Setup and add GitHub Enterprise (GHE) and GitHub.com (GHC) using our standard GitHub [integration](https://docs.sourcegraph.com/admin/external_service/github)
+
+<strong>Configure GitHub Enterprise SSO:</strong>
+1. Add GHE repos.
+2. Configure auth for GHE using [OAuth](https://docs.sourcegraph.com/admin/auth#github).
+  * <strong>NOTE:</strong> Ensure that the <code>allowSignup</code> field is set to <code>true</code>. This will ensure that users signing in via GHE will have a new user account created on Sourcegraph. 
+
+3. Add the [authorization field](https://docs.sourcegraph.com/admin/repo/permissions#github) to the GHE code host connection (this is what enforces repository permissions).
+4. Test that the GitHub Enterprise OAuth is working correctly (users should be able to sign into Sourcegraph using their GitHub Enterprise credentials). 
+
+<strong>Configure Github.com SSO:</strong>
+1. Add GHC repos.
+2. Configure auth for GHC using [OAuth](https://docs.sourcegraph.com/admin/auth#github).
+  * <strong>NOTE:</strong> Ensure that the <code>allowSignup</code> field is set to <code>false</code>. This will ensure that users signing in via GHC will not have a new user account created on Sourcegraph. 
+
+3. Add the [authorization field](https://docs.sourcegraph.com/admin/repo/permissions#github) to the GHC code host connection (this is what enforces repository permissions).
+4. Test that the GitHub.com OAuth is working correctly (users should be able to sign into Sourcegraph using their GitHub.com credentials).
+
+#### User sign in flow: 
+When multiple code hosts/authentication providers are connected to Sourcegraph, a specific sign-in flow needs to be utilized when users are creating an account and signing into Sourcegraph for the first time. 
+
+1. Sign in to Sourcegraph using the GitHub Enterprise button 
+2. Once signed in, sign out and return to the sign in page
+3. On the sign in page, sign in again using the Github.com button 
+4. Once signed in via Github.com, users should now have access to repositories on both code hosts and have all repository permissions enforced. 
+
+<strong>NOTE:</strong> These steps are not required at every sign in - only during the initial account creation.
