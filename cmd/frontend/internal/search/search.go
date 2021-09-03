@@ -402,7 +402,7 @@ func fromPathMatch(fm *result.FileMatch, repoCache map[api.RepoID]*types.Searche
 		Path:         fm.Path,
 		Repository:   string(fm.Repo.Name),
 		RepositoryID: int32(fm.Repo.ID),
-		Version:      string(fm.CommitID),
+		Commit:       string(fm.CommitID),
 	}
 
 	if r, ok := repoCache[fm.Repo.ID]; ok {
@@ -432,7 +432,7 @@ func fromContentMatch(fm *result.FileMatch, repoCache map[api.RepoID]*types.Sear
 		Path:         fm.Path,
 		RepositoryID: int32(fm.Repo.ID),
 		Repository:   string(fm.Repo.Name),
-		Version:      string(fm.CommitID),
+		Commit:       string(fm.CommitID),
 		LineMatches:  lineMatches,
 	}
 
@@ -470,7 +470,7 @@ func fromSymbolMatch(fm *result.FileMatch, repoCache map[api.RepoID]*types.Searc
 		Path:         fm.Path,
 		Repository:   string(fm.Repo.Name),
 		RepositoryID: int32(fm.Repo.ID),
-		Version:      string(fm.CommitID),
+		Commit:       string(fm.CommitID),
 		Symbols:      symbols,
 	}
 
