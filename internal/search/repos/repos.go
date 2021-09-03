@@ -35,7 +35,11 @@ import (
 )
 
 type Resolved struct {
-	RepoRevs        []*search.RepositoryRevisions
+	RepoRevs []*search.RepositoryRevisions
+
+	// Perf improvement: we precompute this map during repo resolution to save time
+	// on the critical path.
+	RepoSet         map[api.RepoID]types.RepoName
 	MissingRepoRevs []*search.RepositoryRevisions
 	ExcludedRepos   ExcludedRepos
 	OverLimit       bool
@@ -208,6 +212,7 @@ func (r *Resolver) Resolve(ctx context.Context, op search.RepoOptions) (Resolved
 			return Resolved{}, err
 		}
 	}
+	repoSet := make(map[api.RepoID]types.RepoName, len(repos))
 
 	for _, repo := range repos {
 		var repoRev search.RepositoryRevisions
@@ -296,6 +301,7 @@ func (r *Resolver) Resolve(ctx context.Context, op search.RepoOptions) (Resolved
 			repoRev.Revs = append(repoRev.Revs, rev)
 		}
 		repoRevs = append(repoRevs, &repoRev)
+		repoSet[repoRev.Repo.ID] = repoRev.Repo
 	}
 
 	tr.LazyPrintf("Associate/validate revs - done")
@@ -309,6 +315,7 @@ func (r *Resolver) Resolve(ctx context.Context, op search.RepoOptions) (Resolved
 
 	return Resolved{
 		RepoRevs:        repoRevs,
+		RepoSet:         repoSet,
 		MissingRepoRevs: missingRepoRevs,
 		ExcludedRepos:   excluded,
 		OverLimit:       overLimit,
