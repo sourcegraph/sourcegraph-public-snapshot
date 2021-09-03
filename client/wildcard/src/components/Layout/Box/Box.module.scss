@@ -1,0 +1,113 @@
+@import '../../../global-styles/reset';
+
+:root {
+    --gutter: 1rem;
+    --none: 0;
+    --xxsmall: 0.125rem;
+    --xsmall: 0.25rem;
+    --small: 0.5rem;
+    --medium: 1rem;
+    --large: 1.125rem;
+    --xlarge: 1.25rem;
+    --xxlarge: 1.5rem;
+}
+
+.displayblock {
+    display: block;
+}
+
+.displayflex {
+    display: flex;
+}
+
+.positionrelative {
+    position: relative;
+}
+
+.borderRadiusgutter {
+    border-radius: var(--gutter);
+}
+
+.borderRadiussmall {
+    border-radius: var(--small);
+}
+
+.borderRadiuslarge {
+    border-radius: var(--large);
+}
+
+// padding
+.paddingTopgutter {
+    padding-top: var(--gutter);
+}
+
+.paddingTopsmall {
+    padding-top: var(--small);
+}
+
+.paddingToplarge {
+    padding-top: var(--large);
+}
+
+.paddingBottomgutter {
+    padding-bottom: var(--gutter);
+}
+
+.paddingBottomsmall {
+    padding-bottom: var(--small);
+}
+
+.paddingBottomlarge {
+    padding-bottom: var(--large);
+}
+
+.marginTopgutter {
+    margin-top: var(--gutter);
+}
+
+// margin
+.marginTopsmall {
+    margin-top: var(--small);
+}
+
+.marginToplarge {
+    margin-top: var(--large);
+}
+
+.marginBottomgutter {
+    margin-bottom: var(--gutter);
+}
+
+.marginBottomsmall {
+    margin-bottom: var(--small);
+}
+
+.marginBottomlarge {
+    margin-bottom: var(--large);
+}
+
+.marginLeftgutter {
+    margin-left: var(--gutter);
+}
+
+.marginLeftsmall {
+    margin-left: var(--small);
+}
+
+.marginLeftlarge {
+    margin-left: var(--large);
+}
+
+// flex
+.flexWrapwrap {
+    display: flex;
+    flex-wrap: wrap;
+}
+
+.flexDirectionrow {
+    flex-direction: row;
+}
+
+.widthfull {
+    width: 100%;
+}

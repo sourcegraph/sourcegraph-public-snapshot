@@ -1,0 +1,15 @@
+.stack {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    &::before {
+        content: '';
+        display: table;
+    }
+}
+
+.stackgutter {
+    &::before {
+        margin-top: calc(var(--gutter) * -1);
+    }
+}

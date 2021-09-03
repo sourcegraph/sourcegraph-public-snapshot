@@ -1,0 +1,12 @@
+.columns {
+    display: flex;
+    flex-direction: row;
+}
+
+.columns25 {
+    flex: 0 0 25%;
+}
+
+.columns50 {
+    flex: 0 0 50%;
+}
