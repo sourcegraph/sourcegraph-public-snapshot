@@ -30,7 +30,7 @@ import { BrandLogo } from '../../components/branding/BrandLogo'
 import { FeatureFlagProps } from '../../featureFlags/featureFlags'
 import { InsightsApiContext } from '../../insights'
 import { SmartInsight } from '../../insights/components/insights-view-grid/components/smart-insight/SmartInsight'
-import { StaticView } from '../../insights/components/insights-view-grid/components/static-view/StaticView';
+import { StaticView } from '../../insights/components/insights-view-grid/components/static-view/StaticView'
 import { ViewGrid } from '../../insights/components/insights-view-grid/components/view-grid/ViewGrid'
 import { useAllInsights } from '../../insights/hooks/use-insight/use-insight'
 import { KeyboardShortcutsProps } from '../../keyboardShortcuts/keyboardShortcuts'
