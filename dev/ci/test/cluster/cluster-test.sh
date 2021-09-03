@@ -86,7 +86,14 @@ function e2e() {
   popd
 }
 
+function frontend_logs() {
+  LOGFILE="frontend_logs.log"
+  kubectl --namespace=prod logs deployment/sourcegraph-frontend --all-containers >$LOGFILE
+  chmod 744 $LOGFILE.log
+}
+
 # main
+trap frontend_logs exit
 cluster_setup
 test_setup
 # TODO: Failing tests do not fail the build
