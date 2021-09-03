@@ -280,7 +280,7 @@ func (g *generator) generate(ctx context.Context) error {
 		}
 		addedURLs++
 		sm.Add(&sitemap.URL{
-			Loc:        "https://sourcegraph.com" + docSubPage,
+			Loc:        "https://sourcegraph.com/" + docSubPage,
 			ChangeFreq: sitemap.Weekly,
 		})
 	}
@@ -314,7 +314,7 @@ func (g *generator) generate(ctx context.Context) error {
 		}
 	}
 
-	log15.Info("To upload the sitemap, use: $ gsutil cp -r sitemap/ gs://sitemap-sourcegraph-com")
+	log15.Info("you may now upload the generated sitemap/")
 
 	return nil
 }
