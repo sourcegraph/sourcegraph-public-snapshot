@@ -57,72 +57,58 @@ func TestToHunk(t *testing.T) {
 		},
 	}
 
-	want := []stream.DecoratedHunk{
+	want := [][]stream.Range{
 		{
-			Content:   stream.DecoratedContent{Plaintext: "Placeholder"},
-			LineStart: 1,
-			LineCount: 3,
-			Matches: []stream.Range{
-				{
-					Start: stream.Location{Offset: -1, Line: 1, Column: 0},
-					End:   stream.Location{Offset: -1, Line: 1, Column: 1},
-				},
-				{
-					Start: stream.Location{Offset: -1, Line: 2, Column: 2},
-					End:   stream.Location{Offset: -1, Line: 2, Column: 5},
-				},
-				{
-					Start: stream.Location{Offset: -1, Line: 2, Column: 4},
-					End:   stream.Location{Offset: -1, Line: 2, Column: 9},
-				},
-				{
-					Start: stream.Location{Offset: -1, Line: 3, Column: 6},
-					End:   stream.Location{Offset: -1, Line: 3, Column: 13},
-				},
-				{
-					Start: stream.Location{Offset: -1, Line: 3, Column: 8},
-					End:   stream.Location{Offset: -1, Line: 3, Column: 17},
-				},
+			{
+				Start: stream.Location{Offset: -1, Line: 1, Column: 0},
+				End:   stream.Location{Offset: -1, Line: 1, Column: 1},
+			},
+			{
+				Start: stream.Location{Offset: -1, Line: 2, Column: 2},
+				End:   stream.Location{Offset: -1, Line: 2, Column: 5},
+			},
+			{
+				Start: stream.Location{Offset: -1, Line: 2, Column: 4},
+				End:   stream.Location{Offset: -1, Line: 2, Column: 9},
+			},
+			{
+				Start: stream.Location{Offset: -1, Line: 3, Column: 6},
+				End:   stream.Location{Offset: -1, Line: 3, Column: 13},
+			},
+			{
+				Start: stream.Location{Offset: -1, Line: 3, Column: 8},
+				End:   stream.Location{Offset: -1, Line: 3, Column: 17},
 			},
 		},
 		{
-			Content:   stream.DecoratedContent{Plaintext: "Placeholder"},
-			LineStart: 5,
-			LineCount: 2,
-			Matches: []stream.Range{
-				{
-					Start: stream.Location{Offset: -1, Line: 5, Column: 0},
-					End:   stream.Location{Offset: -1, Line: 5, Column: 1},
-				},
-				{
-					Start: stream.Location{Offset: -1, Line: 6, Column: 2},
-					End:   stream.Location{Offset: -1, Line: 6, Column: 5},
-				},
-				{
-					Start: stream.Location{Offset: -1, Line: 6, Column: 4},
-					End:   stream.Location{Offset: -1, Line: 6, Column: 9},
-				},
+			{
+				Start: stream.Location{Offset: -1, Line: 5, Column: 0},
+				End:   stream.Location{Offset: -1, Line: 5, Column: 1},
+			},
+			{
+				Start: stream.Location{Offset: -1, Line: 6, Column: 2},
+				End:   stream.Location{Offset: -1, Line: 6, Column: 5},
+			},
+			{
+				Start: stream.Location{Offset: -1, Line: 6, Column: 4},
+				End:   stream.Location{Offset: -1, Line: 6, Column: 9},
 			},
 		},
 		{
-			Content:   stream.DecoratedContent{Plaintext: "Placeholder"},
-			LineStart: 8,
-			LineCount: 1,
-			Matches: []stream.Range{
-				{
-					Start: stream.Location{Offset: -1, Line: 8, Column: 6},
-					End:   stream.Location{Offset: -1, Line: 8, Column: 13},
-				},
-				{
-					Start: stream.Location{Offset: -1, Line: 8, Column: 8},
-					End:   stream.Location{Offset: -1, Line: 8, Column: 17},
-				},
-			}},
+			{
+				Start: stream.Location{Offset: -1, Line: 8, Column: 6},
+				End:   stream.Location{Offset: -1, Line: 8, Column: 13},
+			},
+			{
+				Start: stream.Location{Offset: -1, Line: 8, Column: 8},
+				End:   stream.Location{Offset: -1, Line: 8, Column: 17},
+			},
+		},
 	}
 
-	var got []stream.DecoratedHunk
+	var got [][]stream.Range
 	for _, group := range data {
-		got = append(got, toHunk(group))
+		got = append(got, toMatchRanges(group))
 	}
 
 	if diff := cmp.Diff(want, got); diff != "" {
