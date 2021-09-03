@@ -1,16 +1,19 @@
 package ui
 
 import (
+	"context"
 	"fmt"
+	"io"
 	"sort"
 	"strings"
 	"sync"
 	"time"
 
 	"github.com/sourcegraph/go-diff/diff"
+	"github.com/sourcegraph/src-cli/internal/batches/executor"
+
 	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
 	"github.com/sourcegraph/sourcegraph/lib/output"
-	"github.com/sourcegraph/src-cli/internal/batches/executor"
 )
 
 type taskStatus struct {
@@ -213,6 +216,20 @@ func (ui *taskExecTUI) TaskCurrentlyExecuting(task *executor.Task, message strin
 	}
 
 	ui.progress.StatusBarUpdatef(bar, ts.String())
+}
+
+type discardCloser struct {
+	io.Writer
+}
+
+func (discardCloser) Close() error { return nil }
+
+func (ui *taskExecTUI) StepStdoutWriter(ctx context.Context, task *executor.Task, stepidx int) io.WriteCloser {
+	return discardCloser{io.Discard}
+}
+
+func (ui *taskExecTUI) StepStderrWriter(ctx context.Context, task *executor.Task, stepidx int) io.WriteCloser {
+	return discardCloser{io.Discard}
 }
 
 func (ui *taskExecTUI) TaskFinished(task *executor.Task, err error) {

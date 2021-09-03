@@ -177,6 +177,8 @@ func (x *executor) do(ctx context.Context, task *Task, ui TaskExecutionUI) (err 
 		reportProgress: func(currentlyExecuting string) {
 			ui.TaskCurrentlyExecuting(task, currentlyExecuting)
 		},
+		newUiStdoutWriter: ui.StepStdoutWriter,
+		newUiStderrWriter: ui.StepStderrWriter,
 	}
 
 	result, stepResults, err := runSteps(runCtx, opts)
@@ -191,7 +193,6 @@ func (x *executor) do(ctx context.Context, task *Task, ui TaskExecutionUI) (err 
 
 	return nil
 }
-
 func (x *executor) addResult(task *Task, result executionResult, stepResults []stepExecutionResult) {
 	x.resultsMu.Lock()
 	defer x.resultsMu.Unlock()

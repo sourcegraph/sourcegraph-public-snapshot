@@ -22,6 +22,8 @@ import (
 	"github.com/sourcegraph/src-cli/internal/batches/util"
 	"github.com/sourcegraph/src-cli/internal/batches/workspace"
 
+	"github.com/sourcegraph/sourcegraph/lib/process"
+
 	yamlv3 "gopkg.in/yaml.v3"
 )
 
@@ -65,6 +67,9 @@ type executionOpts struct {
 
 	logger         log.TaskLogger
 	reportProgress func(string)
+
+	newUiStdoutWriter func(context.Context, *Task, int) io.WriteCloser
+	newUiStderrWriter func(context.Context, *Task, int) io.WriteCloser
 }
 
 func runSteps(ctx context.Context, opts *executionOpts) (result executionResult, stepResults []stepExecutionResult, err error) {
@@ -310,14 +315,29 @@ func executeSingleStep(
 
 	var stdoutBuffer, stderrBuffer bytes.Buffer
 
-	cmd.Stdout = io.MultiWriter(&stdoutBuffer, opts.logger.PrefixWriter("stdout"))
-	cmd.Stderr = io.MultiWriter(&stderrBuffer, opts.logger.PrefixWriter("stderr"))
+	writerCtx, writerCancel := context.WithCancel(ctx)
+	defer writerCancel()
+	uiStdoutWriter := opts.newUiStdoutWriter(writerCtx, opts.task, i)
+	uiStderrWriter := opts.newUiStderrWriter(writerCtx, opts.task, i)
+	defer func() {
+		uiStdoutWriter.Close()
+		uiStderrWriter.Close()
+	}()
+
+	stdout := io.MultiWriter(&stdoutBuffer, uiStdoutWriter, opts.logger.PrefixWriter("stdout"))
+	stderr := io.MultiWriter(&stderrBuffer, uiStderrWriter, opts.logger.PrefixWriter("stderr"))
+
+	wg, err := process.PipeOutput(cmd, stdout, stderr)
+	if err != nil {
+		return bytes.Buffer{}, bytes.Buffer{}, errors.Wrap(err, "piping process output")
+	}
 
 	opts.logger.Logf("[Step %d] run: %q, container: %q", i+1, step.Run, step.Container)
 	opts.logger.Logf("[Step %d] full command: %q", i+1, strings.Join(cmd.Args, " "))
 
 	t0 := time.Now()
 	err = cmd.Run()
+	wg.Wait()
 	elapsed := time.Since(t0).Round(time.Millisecond)
 	if err != nil {
 		opts.logger.Logf("[Step %d] took %s; error running Docker container: %+v", i+1, elapsed, err)

@@ -1,16 +1,19 @@
 package ui
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"os"
 	"time"
 
-	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
 	"github.com/sourcegraph/src-cli/internal/batches"
 	"github.com/sourcegraph/src-cli/internal/batches/executor"
 	"github.com/sourcegraph/src-cli/internal/batches/graphql"
 	"github.com/sourcegraph/src-cli/internal/batches/workspace"
+
+	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
 )
 
 var _ ExecUI = &JSONLines{}
@@ -292,6 +295,7 @@ func (ui *taskExecutionJSONLines) TaskCurrentlyExecuting(task *executor.Task, me
 	if !ok {
 		panic("unknown task started")
 	}
+
 	logEvent(batchesLogEvent{
 		Operation: "EXECUTING_TASK",
 		Status:    "PROGRESS",
@@ -300,4 +304,49 @@ func (ui *taskExecutionJSONLines) TaskCurrentlyExecuting(task *executor.Task, me
 			"task": lt,
 		},
 	})
+}
+
+const stepFlushDuration = 500 * time.Millisecond
+
+func (ui *taskExecutionJSONLines) StepStdoutWriter(ctx context.Context, task *executor.Task, step int) io.WriteCloser {
+	lt, ok := ui.linesTasks[task]
+	if !ok {
+		panic("unknown task started")
+	}
+
+	sink := func(data string) {
+		logEvent(batchesLogEvent{
+			Operation: "STEP",
+			Status:    "PROGRESS",
+			Message:   data,
+			Metadata: map[string]interface{}{
+				"task":        lt,
+				"step":        step,
+				"output_type": "stdout",
+			},
+		})
+	}
+	return NewIntervalWriter(ctx, stepFlushDuration, sink)
+}
+
+func (ui *taskExecutionJSONLines) StepStderrWriter(ctx context.Context, task *executor.Task, step int) io.WriteCloser {
+	lt, ok := ui.linesTasks[task]
+	if !ok {
+		panic("unknown task started")
+	}
+
+	sink := func(data string) {
+		logEvent(batchesLogEvent{
+			Operation: "STEP",
+			Status:    "PROGRESS",
+			Message:   data,
+			Metadata: map[string]interface{}{
+				"task":        lt,
+				"step":        step,
+				"output_type": "stderr",
+			},
+		})
+	}
+
+	return NewIntervalWriter(ctx, stepFlushDuration, sink)
 }
