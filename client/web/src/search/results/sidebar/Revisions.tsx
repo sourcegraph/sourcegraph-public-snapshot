@@ -18,13 +18,15 @@ import { useTemporarySetting } from '../../../settings/temporary/useTemporarySet
 import { FilterLink } from './FilterLink'
 import styles from './SearchSidebarSection.module.scss'
 
-const GIT_REVS_QUERY = gql`
+const DEFAULT_FIRST = 10
+export const GIT_REVS_QUERY = gql`
     query SearchSidebarGitRefs($repo: String, $first: Int, $query: String, $type: GitRefType) {
         repository(name: $repo) {
             ... on Repository {
                 __typename
                 id
                 gitRefs(first: $first, query: $query, type: $type, orderBy: AUTHORED_OR_COMMITTED_AT) {
+                    __typename
                     nodes {
                         ...SearchSidebarGitRefFields
                     }
@@ -62,14 +64,14 @@ const RevisionList: React.FunctionComponent<RevisionListProps> = ({
     pluralNoun,
     query,
 }) => {
-    const { connection, fetchMore, hasNextPage } = useConnection<
+    const { connection, fetchMore, hasNextPage, loading, error } = useConnection<
         SearchSidebarGitRefsResult,
         SearchSidebarGitRefsVariables,
         SearchSidebarGitRefFields
     >({
         query: GIT_REVS_QUERY,
         variables: {
-            first: 10,
+            first: DEFAULT_FIRST,
             repo: repoName,
             query,
             type,
@@ -83,7 +85,7 @@ const RevisionList: React.FunctionComponent<RevisionListProps> = ({
         },
     })
 
-    if (!connection) {
+    if (loading) {
         return (
             <div className={classNames('d-flex justify-content-center mt-4', styles.sidebarSectionNoResults)}>
                 <LoadingSpinner className="icon-inline" />
@@ -91,7 +93,7 @@ const RevisionList: React.FunctionComponent<RevisionListProps> = ({
         )
     }
 
-    if (connection?.error) {
+    if (error || !connection || connection.error) {
         return (
             <p className={classNames('text-muted', styles.sidebarSectionNoResults)}>
                 <span className="text-muted">Unable to fetch repository revisions.</span>
@@ -122,12 +124,18 @@ const RevisionList: React.FunctionComponent<RevisionListProps> = ({
                     />
                 ))}
             </ul>
-            {hasNextPage || (connection.totalCount ?? 0) > 100 || connection.nodes.length > 100 ? (
+            {connection.totalCount ?? 0 > DEFAULT_FIRST ? (
                 <p className={classNames('text-muted d-flex', styles.sidebarSectionFooter)}>
                     <small className="flex-1">
-                        <span>
-                            {connection?.nodes.length} of {connection?.totalCount} {pluralNoun}
-                        </span>
+                        {hasNextPage ? (
+                            <span>
+                                {connection?.nodes.length} of {connection?.totalCount} {pluralNoun}
+                            </span>
+                        ) : (
+                            <span>
+                                {connection?.totalCount} {pluralNoun}
+                            </span>
+                        )}
                     </small>
                     {hasNextPage ? (
                         <button
@@ -144,20 +152,29 @@ const RevisionList: React.FunctionComponent<RevisionListProps> = ({
     )
 }
 
-interface RevisionsProps {
+export enum TabIndex {
+    BRANCHES,
+    TAGS,
+}
+
+export interface RevisionsProps {
     repoName: string
     onFilterClick: (filter: string, value: string) => void
     query: string
+    /**
+     * This property is only exposed for storybook tests.
+     */
+    _initialTab?: TabIndex
 }
 
-export const Revisions: React.FunctionComponent<RevisionsProps> = ({ repoName, onFilterClick, query }) => {
+export const Revisions: React.FunctionComponent<RevisionsProps> = ({ repoName, onFilterClick, query, _initialTab }) => {
     const [selectedTab, setSelectedTab] = useTemporarySetting('search.sidebar.revisions.tab')
     const onRevisionFilterClick = (value: string): void => onFilterClick('rev', value)
     return (
-        <Tabs index={selectedTab ?? 0} onChange={setSelectedTab}>
+        <Tabs index={_initialTab ?? selectedTab ?? 0} onChange={setSelectedTab}>
             <TabList className={styles.sidebarSectionTabsHeader}>
-                <Tab>Branches</Tab>
-                <Tab>Tags</Tab>
+                <Tab index={TabIndex.BRANCHES}>Branches</Tab>
+                <Tab index={TabIndex.TAGS}>Tags</Tab>
             </TabList>
             <TabPanels>
                 <TabPanel>
