@@ -1,21 +1,11 @@
 # Developing code insights
 
-- [What is it?](#what-is-it)
-- [Webapp frontend](#webapp-frontend)
-- [Backend](#backend)
+- ## What is it?
+  - [Code Insights team page](https://about.sourcegraph.com/handbook/engineering/web/code-insights)
+  - [Code Insights docs](../../../code_insights/index.md)
+- ## Webapp frontend
+  - [Frontend developer docs](frontend.md)
+  - [Frontend learning materials doc](frontend-learning-materials.md)
+- ## Backend
+  - [Backend developer docs](backend.md)
 
-## What is it?
-
-See https://about.sourcegraph.com/handbook/engineering/web/code-insights and the [Code Insights docs](../../../code_insights/index.md). 
-
-## Webapp frontend
-
-Insights has a TypeScript frontend, whose code you can find here:
-
-- [Insights TypeScript code](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+file:insights+lang:ts&patternType=literal)
-
-Much of the functionality is provided via [Sourcegraph extensions](../sourcegraph_extensions.md), whose codebases you can find [here](https://github.com/sourcegraph/?q=insight&type=&language=).
-
-# Backend
-
-See [backend developer docs](backend.md).
