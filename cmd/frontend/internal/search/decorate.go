@@ -1,8 +1,17 @@
 package search
 
 import (
+	"context"
+	"sort"
+	"strings"
+
+	"html/template"
+
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/highlight"
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	stream "github.com/sourcegraph/sourcegraph/internal/search/streaming/http"
+	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
 
 // segmentToRangs converts line match ranges into absolute ranges.
@@ -28,22 +37,14 @@ func segmentToRanges(lineNumber int, segments [][2]int32) []stream.Range {
 // group is a list of contiguous line matches by line number.
 type group []*result.LineMatch
 
-// toHunk converts a group of line matches to a hunk. A hunk comprises:
-// (1) file `Content` (decorated for rendering depending on the request) that
-// spans `LineStart + LineCount`, and
-// (2) a list `Matches` which specify ranges of values to emphasize specially
-// (e.g., with overlay-highlights) within the hunk range.
-func toHunk(group group) stream.DecoratedHunk {
+// toMatch converts a group of line matches to absolute match ranges in the file. These ranges
+// specify matched content to emphasize specially (e.g., with overlay-highlights) within the file.
+func toMatchRanges(group group) []stream.Range {
 	matches := make([]stream.Range, 0, len(group))
 	for _, line := range group {
 		matches = append(matches, segmentToRanges(int(line.LineNumber), line.OffsetAndLengths)...)
 	}
-	return stream.DecoratedHunk{
-		Content:   stream.DecoratedContent{Plaintext: "Placeholder"}, // TODO(rvantonder): populate this with decorated content
-		LineStart: int(group[0].LineNumber),
-		LineCount: len(group),
-		Matches:   matches,
-	}
+	return matches
 }
 
 // groupLineMatches converts a flat slice of line matches to groups of
@@ -73,5 +74,96 @@ func groupLineMatches(lineMatches []*result.LineMatch) []group {
 	if len(currentGroup) > 0 {
 		groups = append(groups, currentGroup)
 	}
+	sort.Slice(groups, func(i, j int) bool {
+		// groups may be out of order, sort them. Invariant:
+		// indexing is safe because if groups is non-nil, then there
+		// exists at least one group with one element.
+		return groups[i][0].LineNumber < groups[j][0].LineNumber
+	})
 	return groups
+}
+
+func fetchContent(ctx context.Context, repo api.RepoName, commit api.CommitID, path string) (content []byte, err error) {
+	content, err = git.ReadFile(ctx, repo, commit, path, 0)
+	if err != nil {
+		return nil, err
+	}
+	return content, nil
+}
+
+// DecorateFileHTML returns decorated HTML rendering of file content. If
+// successful and within bounds of timeout and line size, it returns HTML marked
+// up with highlight classes. In other cases, it returns plaintext HTML.
+func DecorateFileHTML(ctx context.Context, repo api.RepoName, commit api.CommitID, path string) (template.HTML, error) {
+	content, err := fetchContent(ctx, repo, commit, path)
+	if err != nil {
+		return "", err
+	}
+	result, aborted, err := highlight.Code(ctx, highlight.Params{
+		Content:            content,
+		Filepath:           path,
+		DisableTimeout:     false, // use default 3 second timeout
+		HighlightLongLines: false, // use default 2000 character line count
+		Metadata: highlight.Metadata{ // for logging
+			RepoName: string(repo),
+			Revision: string(commit),
+		},
+	})
+	if err != nil {
+		return "", err
+	}
+	if aborted {
+		// code decoration aborted, returns plaintext HTML.
+		return result, nil
+	}
+
+	return result, nil
+}
+
+// DecorateFileHunksHTML returns decorated file hunks given a file match.
+func DecorateFileHunksHTML(ctx context.Context, fm result.FileMatch) []stream.DecoratedHunk {
+	html, err := DecorateFileHTML(ctx, fm.Repo.Name, fm.CommitID, fm.Path)
+	if err != nil {
+		// TODO(rvantonder): log error and swallow if we can't highlight
+		// the entire file.
+		return nil
+	}
+	lines, err := highlight.SplitHighlightedLines(html, true)
+	if err != nil {
+		// TODO(rvantonder): log error and swallow if we can't split the
+		// highlighted file (parse error, malformed HTML).
+		return nil
+	}
+
+	// a closure over lines that allows to splice line ranges.
+	spliceRows := func(lineStart, lineEnd int) []string {
+		if lineStart < 0 {
+			lineStart = 0
+		}
+		if lineEnd > len(lines) {
+			lineEnd = len(lines)
+		}
+		if lineStart > lineEnd {
+			lineStart = 0
+			lineEnd = 0
+		}
+		tableRows := make([]string, 0, lineEnd-lineStart)
+		for _, line := range lines[lineStart:lineEnd] {
+			tableRows = append(tableRows, string(line))
+		}
+		return tableRows
+	}
+
+	groups := groupLineMatches(fm.LineMatches)
+	hunks := make([]stream.DecoratedHunk, 0, len(groups))
+	for _, group := range groups {
+		rows := spliceRows(int(group[0].LineNumber), int(group[0].LineNumber)+len(group))
+		hunks = append(hunks, stream.DecoratedHunk{
+			Content:   stream.DecoratedContent{HTML: strings.Join(rows, "\n")},
+			LineStart: int(group[0].LineNumber),
+			LineCount: len(group),
+			Matches:   toMatchRanges(group),
+		})
+	}
+	return hunks
 }
