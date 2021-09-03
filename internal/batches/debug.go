@@ -1,4 +1,5 @@
 //go:build debug
+// +build debug
 
 package batches
 
