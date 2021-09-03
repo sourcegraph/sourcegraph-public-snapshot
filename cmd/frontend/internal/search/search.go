@@ -132,11 +132,6 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			sendProgress()
 		}
 	}
-	matchesAppend := func(m streamhttp.EventMatch) {
-		// Only possible error is EOF, ignore
-		_ = matchesBuf.Append(m)
-	}
-
 	flushTicker := time.NewTicker(h.flushTickerInternal)
 	defer flushTicker.Stop()
 
@@ -170,7 +165,7 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			if md, ok := repoMetadata[match.RepoName().ID]; !ok || md.Name != match.RepoName().Name {
 				continue
 			}
-			matchesAppend(fromMatch(match, repoMetadata))
+			_ = matchesBuf.Append(fromMatch(match, repoMetadata))
 		}
 
 		// Instantly send results if we have not sent any yet.
