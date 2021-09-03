@@ -23,7 +23,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/search"
-	searchbackend "github.com/sourcegraph/sourcegraph/internal/search/backend"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/internal/search/searchcontexts"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
@@ -35,7 +34,11 @@ import (
 )
 
 type Resolved struct {
-	RepoRevs        []*search.RepositoryRevisions
+	RepoRevs []*search.RepositoryRevisions
+
+	// Perf improvement: we precompute this map during repo resolution to save time
+	// on the critical path.
+	RepoSet         map[api.RepoID]types.RepoName
 	MissingRepoRevs []*search.RepositoryRevisions
 	ExcludedRepos   ExcludedRepos
 	OverLimit       bool
@@ -47,7 +50,6 @@ func (r *Resolved) String() string {
 
 type Resolver struct {
 	DB                  dbutil.DB
-	Zoekt               *searchbackend.Zoekt
 	SearchableReposFunc searchableReposFunc
 }
 
@@ -125,7 +127,7 @@ func (r *Resolver) Resolve(ctx context.Context, op search.RepoOptions) (Resolved
 
 	if envvar.SourcegraphDotComMode() && len(includePatterns) == 0 && !query.HasTypeRepo(op.Query) && searchcontexts.IsGlobalSearchContext(searchContext) {
 		start := time.Now()
-		searchableRepos, err = searchableRepositories(ctx, r.SearchableReposFunc, r.Zoekt, excludePatterns)
+		searchableRepos, err = searchableRepositories(ctx, r.SearchableReposFunc, excludePatterns)
 		if err != nil {
 			return Resolved{}, errors.Wrap(err, "getting list of indexable repos")
 		}
@@ -208,6 +210,7 @@ func (r *Resolver) Resolve(ctx context.Context, op search.RepoOptions) (Resolved
 			return Resolved{}, err
 		}
 	}
+	repoSet := make(map[api.RepoID]types.RepoName, len(repos))
 
 	for _, repo := range repos {
 		var repoRev search.RepositoryRevisions
@@ -296,6 +299,7 @@ func (r *Resolver) Resolve(ctx context.Context, op search.RepoOptions) (Resolved
 			repoRev.Revs = append(repoRev.Revs, rev)
 		}
 		repoRevs = append(repoRevs, &repoRev)
+		repoSet[repoRev.Repo.ID] = repoRev.Repo
 	}
 
 	tr.LazyPrintf("Associate/validate revs - done")
@@ -309,6 +313,7 @@ func (r *Resolver) Resolve(ctx context.Context, op search.RepoOptions) (Resolved
 
 	return Resolved{
 		RepoRevs:        repoRevs,
+		RepoSet:         repoSet,
 		MissingRepoRevs: missingRepoRevs,
 		ExcludedRepos:   excluded,
 		OverLimit:       overLimit,
@@ -520,7 +525,7 @@ type searchableReposFunc func(ctx context.Context) ([]types.RepoName, error)
 
 // searchableRepositories returns the intersection of calling gettRawSearchableRepos
 // (db) and indexed repos (zoekt), minus repos matching excludePatterns.
-func searchableRepositories(ctx context.Context, getRawSearchableRepos searchableReposFunc, z *searchbackend.Zoekt, excludePatterns []string) (_ []types.RepoName, err error) {
+func searchableRepositories(ctx context.Context, getRawSearchableRepos searchableReposFunc, excludePatterns []string) (_ []types.RepoName, err error) {
 	tr, ctx := trace.New(ctx, "searchableRepositories", "")
 	defer func() {
 		tr.SetError(err)
@@ -547,25 +552,7 @@ func searchableRepositories(ctx context.Context, getRawSearchableRepos searchabl
 		tr.LazyPrintf("remove excluded repos - done")
 	}
 
-	// Ask Zoekt which repos it has indexed.
-	ctx, cancel := context.WithTimeout(ctx, time.Second)
-	defer cancel()
-	set, err := z.ListAll(ctx)
-	if err != nil {
-		return nil, err
-	}
-	tr.LazyPrintf("zoekt.ListAll - done")
-
-	// In place filtering of searchableRepos to only include names from set.
-	repos := searchableRepos[:0]
-	for _, r := range searchableRepos {
-		if _, ok := set[string(r.Name)]; ok {
-			repos = append(repos, r)
-		}
-	}
-	tr.LazyPrintf("filtering - done")
-
-	return repos, nil
+	return searchableRepos, nil
 }
 
 func filterRepoHasCommitAfter(ctx context.Context, revisions []*search.RepositoryRevisions, after string) ([]*search.RepositoryRevisions, error) {
