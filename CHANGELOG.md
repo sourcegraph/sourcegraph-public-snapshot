@@ -19,6 +19,7 @@ All notable changes to `src-cli` are documented in this file.
 
 - `src search -stream` displayed the number of lines that contain matches instead of the number of matches.
 - For internal use only: the `EXECUTING_TASKS` JSON log line now always contains an array of `tasks` instead of possibly having `null` as the `tasks` value.
+- src-cli is now built using Go version 1.17.
 
 ### Removed
 
