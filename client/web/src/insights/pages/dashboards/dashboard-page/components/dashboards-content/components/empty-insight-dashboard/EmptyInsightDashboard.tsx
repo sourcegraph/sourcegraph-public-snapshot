@@ -4,6 +4,7 @@ import React from 'react'
 import { Link } from 'react-router-dom'
 
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
+import { Button } from '@sourcegraph/wildcard'
 
 import { Settings } from '../../../../../../../../schema/settings.schema'
 import { InsightDashboard } from '../../../../../../../core/types'
@@ -60,11 +61,12 @@ export const EmptySettingsBasedDashboard: React.FunctionComponent<EmptyInsightDa
 
     return (
         <section className={styles.emptySection}>
-            <button
+            <Button
                 type="button"
                 disabled={!permissions.isConfigurable}
                 onClick={onAddInsight}
-                className="btn btn-secondary p-0 w-100 border-0"
+                variant="secondary"
+                className="p-0 w-100 border-0"
             >
                 <div
                     data-tooltip={!permissions.isConfigurable ? getTooltipMessage(dashboard, permissions) : undefined}
@@ -74,7 +76,7 @@ export const EmptySettingsBasedDashboard: React.FunctionComponent<EmptyInsightDa
                     <PlusIcon size="2rem" />
                     <span>Add insights</span>
                 </div>
-            </button>
+            </Button>
             <span className="d-flex justify-content-center mt-3">
                 <Link to={`/insights/create?dashboardId=${dashboard.id}`}>or, create new insight</Link>
             </span>
