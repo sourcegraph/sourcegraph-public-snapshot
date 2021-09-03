@@ -2,13 +2,13 @@ package service
 
 import (
 	"context"
-	"fmt"
 	"sort"
 
+	"github.com/cockroachdb/errors"
 	"github.com/gobwas/glob"
 	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
 	"github.com/sourcegraph/sourcegraph/lib/batches/template"
-	"github.com/sourcegraph/src-cli/internal/batches"
+
 	"github.com/sourcegraph/src-cli/internal/batches/graphql"
 	"github.com/sourcegraph/src-cli/internal/batches/util"
 )
@@ -45,7 +45,7 @@ func findWorkspaces(
 	for _, conf := range spec.Workspaces {
 		g, err := glob.Compile(conf.In)
 		if err != nil {
-			return nil, batches.ValidationError{Reason: fmt.Sprintf("failed to compile glob %q: %v", conf.In, err)}
+			return nil, batcheslib.NewValidationError(errors.Errorf("failed to compile glob %q: %v", conf.In, err))
 		}
 		workspaceMatchers[conf] = g
 	}
@@ -66,7 +66,7 @@ func findWorkspaces(
 
 			// Don't allow duplicate matches.
 			if found {
-				return nil, batches.ValidationError{Reason: fmt.Sprintf("repository %s matches multiple workspaces.in globs in the batch spec. glob: %q", repo.Name, conf.In)}
+				return nil, batcheslib.NewValidationError(errors.Errorf("repository %s matches multiple workspaces.in globs in the batch spec. glob: %q", repo.Name, conf.In))
 			}
 
 			matched[idx] = append(matched[idx], repo)
@@ -126,7 +126,7 @@ func findWorkspaces(
 				fetchWorkspace = false
 			}
 
-			steps, err := stepsForRepo(spec, workspace.Repo)
+			steps, err := stepsForRepo(spec, util.NewTemplatingRepo(workspace.Repo.Name, workspace.Repo.FileMatches))
 			if err != nil {
 				return nil, err
 			}
@@ -157,7 +157,7 @@ func findWorkspaces(
 }
 
 // stepsForRepo calculates the steps required to run on the given repo.
-func stepsForRepo(spec *batcheslib.BatchSpec, r *graphql.Repository) ([]batcheslib.Step, error) {
+func stepsForRepo(spec *batcheslib.BatchSpec, repo template.Repository) ([]batcheslib.Step, error) {
 	taskSteps := []batcheslib.Step{}
 	for _, step := range spec.Steps {
 		// If no if condition is given, just go ahead and add the step to the list.
@@ -171,7 +171,7 @@ func stepsForRepo(spec *batcheslib.BatchSpec, r *graphql.Repository) ([]batchesl
 			Description: spec.Description,
 		}
 		stepCtx := &template.StepContext{
-			Repository:  util.GraphQLRepoToTemplatingRepo(r),
+			Repository:  repo,
 			BatchChange: batchChange,
 		}
 		static, boolVal, err := template.IsStaticBool(step.IfCondition(), stepCtx)

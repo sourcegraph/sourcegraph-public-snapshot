@@ -3,8 +3,9 @@ package executor
 import (
 	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
 	"github.com/sourcegraph/sourcegraph/lib/batches/template"
-	"github.com/sourcegraph/src-cli/internal/batches"
+
 	"github.com/sourcegraph/src-cli/internal/batches/graphql"
+	"github.com/sourcegraph/src-cli/internal/batches/repozip"
 )
 
 type Task struct {
@@ -27,7 +28,7 @@ type Task struct {
 	Template              *batcheslib.ChangesetTemplate   `json:"-"`
 	TransformChanges      *batcheslib.TransformChanges    `json:"-"`
 
-	Archive batches.RepoZip `json:"-"`
+	Archive repozip.Archive `json:"-"`
 
 	CachedResultFound bool                `json:"-"`
 	CachedResult      stepExecutionResult `json:"-"`

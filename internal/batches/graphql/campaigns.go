@@ -16,15 +16,9 @@ mutation ApplyCampaign($campaignSpec: ID!) {
 }
 
 fragment campaignFields on Campaign {
-    id
-    namespace {
-        ...namespaceFields
-    }
-    name
-    description
     url
 }
-` + NamespaceFieldsFragment
+`
 
 func (cb *campaignsBackend) ApplyBatchChange(ctx context.Context, batchSpecID BatchSpecID) (*BatchChange, error) {
 	var result struct {

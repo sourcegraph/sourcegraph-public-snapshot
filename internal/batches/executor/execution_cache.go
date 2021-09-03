@@ -12,6 +12,7 @@ import (
 
 	"github.com/cockroachdb/errors"
 	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
+	"github.com/sourcegraph/src-cli/internal/batches/util"
 )
 
 func UserCacheDir() (string, error) {
@@ -101,7 +102,9 @@ func (key StepsCacheKey) Key() (string, error) {
 	return fmt.Sprintf("%s-step-%d", hash, key.StepIndex), err
 }
 
-func (key StepsCacheKey) Slug() string { return key.Repository.Slug() }
+func (key StepsCacheKey) Slug() string {
+	return util.SlugForRepo(key.Repository.Name, key.Repository.Rev())
+}
 
 // TaskCacheKey implements the CacheKeyer interface for a Task and all its
 // Steps.
@@ -132,7 +135,9 @@ func (key TaskCacheKey) Key() (string, error) {
 	return base64.RawURLEncoding.EncodeToString(hash[:16]), nil
 }
 
-func (key TaskCacheKey) Slug() string { return key.Repository.Slug() }
+func (key TaskCacheKey) Slug() string {
+	return util.SlugForRepo(key.Repository.Name, key.Repository.Rev())
+}
 
 type ExecutionCache interface {
 	Get(ctx context.Context, key CacheKeyer) (result executionResult, found bool, err error)

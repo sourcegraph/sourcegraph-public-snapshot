@@ -8,9 +8,9 @@ import (
 	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
 	"github.com/sourcegraph/sourcegraph/lib/batches/git"
 
-	"github.com/sourcegraph/src-cli/internal/batches"
 	"github.com/sourcegraph/src-cli/internal/batches/docker"
 	"github.com/sourcegraph/src-cli/internal/batches/graphql"
+	"github.com/sourcegraph/src-cli/internal/batches/repozip"
 )
 
 // Creator implementations are used to create workspaces, which manage
@@ -18,7 +18,7 @@ import (
 // responsible for ultimately generating a diff.
 type Creator interface {
 	// Create creates a new workspace for the given repository and archive file.
-	Create(ctx context.Context, repo *graphql.Repository, steps []batcheslib.Step, archive batches.RepoZip) (Workspace, error)
+	Create(ctx context.Context, repo *graphql.Repository, steps []batcheslib.Step, archive repozip.Archive) (Workspace, error)
 
 	// Type returns the CreatorType of the Creator.
 	Type() CreatorType

@@ -18,15 +18,9 @@ mutation ApplyBatchChange($batchSpec: ID!) {
 }
 
 fragment batchChangeFields on BatchChange {
-    id
-    namespace {
-        ...namespaceFields
-    }
-    name
-    description
     url
 }
-` + NamespaceFieldsFragment
+`
 
 func (bb *batchesBackend) ApplyBatchChange(ctx context.Context, batchSpecID BatchSpecID) (*BatchChange, error) {
 	var result struct {

@@ -8,7 +8,9 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
+
 	"github.com/sourcegraph/src-cli/internal/batches/graphql"
+	"github.com/sourcegraph/src-cli/internal/batches/util"
 )
 
 func TestFindWorkspaces(t *testing.T) {
@@ -258,7 +260,7 @@ func TestStepsForRepo(t *testing.T) {
 
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			haveSteps, err := stepsForRepo(tt.spec, testRepo1)
+			haveSteps, err := stepsForRepo(tt.spec, util.NewTemplatingRepo(testRepo1.Name, testRepo1.FileMatches))
 			if err != nil {
 				t.Fatalf("unexpected err: %s", err)
 			}

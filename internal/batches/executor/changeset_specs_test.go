@@ -17,8 +17,8 @@ func TestCreateChangesetSpecs(t *testing.T) {
 	defaultChangesetSpec := &batcheslib.ChangesetSpec{
 		BaseRepository: testRepo1.ID,
 
-		BaseRef:        testRepo1.DefaultBranch.Name,
-		BaseRev:        testRepo1.DefaultBranch.Target.OID,
+		BaseRef:        testRepo1.BaseRef(),
+		BaseRev:        testRepo1.Rev(),
 		HeadRepository: testRepo1.ID,
 		HeadRef:        "refs/heads/my-branch",
 		Title:          "The title",

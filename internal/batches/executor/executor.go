@@ -10,8 +10,9 @@ import (
 	"github.com/cockroachdb/errors"
 	"github.com/neelance/parallel"
 
-	"github.com/sourcegraph/src-cli/internal/batches"
 	"github.com/sourcegraph/src-cli/internal/batches/log"
+	"github.com/sourcegraph/src-cli/internal/batches/repozip"
+	"github.com/sourcegraph/src-cli/internal/batches/util"
 	"github.com/sourcegraph/src-cli/internal/batches/workspace"
 )
 
@@ -50,16 +51,15 @@ type taskResult struct {
 
 type newExecutorOpts struct {
 	// Dependencies
-	Creator     workspace.Creator
-	Fetcher     batches.RepoFetcher
-	EnsureImage imageEnsurer
-	Logger      log.LogManager
+	Creator             workspace.Creator
+	RepoArchiveRegistry repozip.ArchiveRegistry
+	EnsureImage         imageEnsurer
+	Logger              log.LogManager
 
 	// Config
-	AutoAuthorDetails bool
-	Parallelism       int
-	Timeout           time.Duration
-	TempDir           string
+	Parallelism int
+	Timeout     time.Duration
+	TempDir     string
 }
 
 type executor struct {
@@ -144,7 +144,7 @@ func (x *executor) do(ctx context.Context, task *Task, ui TaskExecutionUI) (err 
 	ui.TaskStarted(task)
 
 	// Let's set up our logging.
-	log, err := x.opts.Logger.AddTask(task.Repository.SlugForPath(task.Path))
+	log, err := x.opts.Logger.AddTask(util.SlugForPathInRepo(task.Repository.Name, task.Repository.Rev(), task.Path))
 	if err != nil {
 		return errors.Wrap(err, "creating log file")
 	}
@@ -160,8 +160,8 @@ func (x *executor) do(ctx context.Context, task *Task, ui TaskExecutionUI) (err 
 		log.Close()
 	}()
 
-	// Now checkout the archive
-	task.Archive = x.opts.Fetcher.Checkout(task.Repository, task.ArchivePathToFetch())
+	// Now checkout the archive.
+	task.Archive = x.opts.RepoArchiveRegistry.Checkout(repozip.RepoRevision{RepoName: task.Repository.Name, Commit: task.Repository.Rev()}, task.ArchivePathToFetch())
 
 	// Set up our timeout.
 	runCtx, cancel := context.WithTimeout(ctx, x.opts.Timeout)

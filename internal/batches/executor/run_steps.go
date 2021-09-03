@@ -74,7 +74,7 @@ type executionOpts struct {
 
 func runSteps(ctx context.Context, opts *executionOpts) (result executionResult, stepResults []stepExecutionResult, err error) {
 	opts.reportProgress("Downloading archive")
-	err = opts.task.Archive.Fetch(ctx)
+	err = opts.task.Archive.Ensure(ctx)
 	if err != nil {
 		return executionResult{}, nil, errors.Wrap(err, "fetching repo")
 	}
@@ -132,7 +132,7 @@ func runSteps(ctx context.Context, opts *executionOpts) (result executionResult,
 
 		stepContext := template.StepContext{
 			BatchChange: *opts.task.BatchChangeAttributes,
-			Repository:  util.GraphQLRepoToTemplatingRepo(opts.task.Repository),
+			Repository:  util.NewTemplatingRepo(opts.task.Repository.Name, opts.task.Repository.FileMatches),
 			Outputs:     execResult.Outputs,
 			Steps: template.StepsContext{
 				Path:    execResult.Path,
@@ -235,7 +235,7 @@ func executeSingleStep(
 	// ----------
 	opts.reportProgress(fmt.Sprintf("Preparing step %d", i+1))
 
-	cidFile, cleanup, err := createCidFile(ctx, opts.tempDir, opts.task.Repository.Slug())
+	cidFile, cleanup, err := createCidFile(ctx, opts.tempDir, util.SlugForRepo(opts.task.Repository.Name, opts.task.Repository.Rev()))
 	if err != nil {
 		return bytes.Buffer{}, bytes.Buffer{}, err
 	}

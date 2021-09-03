@@ -13,11 +13,9 @@ import (
 	"github.com/sourcegraph/src-cli/internal/batches/util"
 )
 
-var errOptionalPublishedUnsupported = errors.New(`This Sourcegraph version requires the "published" field to be specified in the batch spec; upgrade to version 3.30.0 or later to be able to omit the published field and control publication from the UI.`)
+var errOptionalPublishedUnsupported = batcheslib.NewValidationError(errors.New(`This Sourcegraph version requires the "published" field to be specified in the batch spec; upgrade to version 3.30.0 or later to be able to omit the published field and control publication from the UI.`))
 
 func createChangesetSpecs(task *Task, result executionResult, features batches.FeatureFlags) ([]*batcheslib.ChangesetSpec, error) {
-	repo := task.Repository.Name
-
 	tmplCtx := &template.ChangesetTemplateContext{
 		BatchChangeAttributes: *task.BatchChangeAttributes,
 		Steps: template.StepsContext{
@@ -25,7 +23,7 @@ func createChangesetSpecs(task *Task, result executionResult, features batches.F
 			Path:    result.Path,
 		},
 		Outputs:    result.Outputs,
-		Repository: util.GraphQLRepoToTemplatingRepo(task.Repository),
+		Repository: util.NewTemplatingRepo(task.Repository.Name, task.Repository.FileMatches),
 	}
 
 	var authorName string
@@ -75,7 +73,7 @@ func createChangesetSpecs(task *Task, result executionResult, features batches.F
 	newSpec := func(branch, diff string) (*batcheslib.ChangesetSpec, error) {
 		var published interface{} = nil
 		if task.Template.Published != nil {
-			published = task.Template.Published.ValueWithSuffix(repo, branch)
+			published = task.Template.Published.ValueWithSuffix(task.Repository.Name, branch)
 
 			// Backward compatibility: before optional published fields were
 			// allowed, ValueWithSuffix() would fall back to false, not nil. We
@@ -93,7 +91,7 @@ func createChangesetSpecs(task *Task, result executionResult, features batches.F
 			BaseRef:        task.Repository.BaseRef(),
 			BaseRev:        task.Repository.Rev(),
 			HeadRepository: task.Repository.ID,
-			HeadRef:        "refs/heads/" + branch,
+			HeadRef:        util.EnsureRefPrefix(branch),
 			Title:          title,
 			Body:           body,
 			Commits: []batcheslib.GitCommitDescription{
@@ -141,8 +139,8 @@ func createChangesetSpecs(task *Task, result executionResult, features batches.F
 	return specs, nil
 }
 
-func groupsForRepository(repo string, transform *batcheslib.TransformChanges) []batcheslib.Group {
-	var groups []batcheslib.Group
+func groupsForRepository(repoName string, transform *batcheslib.TransformChanges) []batcheslib.Group {
+	groups := []batcheslib.Group{}
 
 	if transform == nil {
 		return groups
@@ -150,7 +148,7 @@ func groupsForRepository(repo string, transform *batcheslib.TransformChanges) []
 
 	for _, g := range transform.Group {
 		if g.Repository != "" {
-			if g.Repository == repo {
+			if g.Repository == repoName {
 				groups = append(groups, g)
 			}
 		} else {
@@ -161,18 +159,18 @@ func groupsForRepository(repo string, transform *batcheslib.TransformChanges) []
 	return groups
 }
 
-func validateGroups(repo, defaultBranch string, groups []batcheslib.Group) error {
+func validateGroups(repoName, defaultBranch string, groups []batcheslib.Group) error {
 	uniqueBranches := make(map[string]struct{}, len(groups))
 
 	for _, g := range groups {
 		if _, ok := uniqueBranches[g.Branch]; ok {
-			return fmt.Errorf("transformChanges would lead to multiple changesets in repository %s to have the same branch %q", repo, g.Branch)
+			return batcheslib.NewValidationError(fmt.Errorf("transformChanges would lead to multiple changesets in repository %s to have the same branch %q", repoName, g.Branch))
 		} else {
 			uniqueBranches[g.Branch] = struct{}{}
 		}
 
 		if g.Branch == defaultBranch {
-			return fmt.Errorf("transformChanges group branch for repository %s is the same as branch %q in changesetTemplate", repo, defaultBranch)
+			return batcheslib.NewValidationError(fmt.Errorf("transformChanges group branch for repository %s is the same as branch %q in changesetTemplate", repoName, defaultBranch))
 		}
 	}
 

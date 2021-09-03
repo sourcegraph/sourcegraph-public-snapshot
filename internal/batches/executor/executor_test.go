@@ -25,6 +25,7 @@ import (
 	"github.com/sourcegraph/src-cli/internal/batches"
 	"github.com/sourcegraph/src-cli/internal/batches/docker"
 	"github.com/sourcegraph/src-cli/internal/batches/mock"
+	"github.com/sourcegraph/src-cli/internal/batches/repozip"
 	"github.com/sourcegraph/src-cli/internal/batches/workspace"
 )
 
@@ -71,11 +72,11 @@ func TestExecutor_Integration(t *testing.T) {
 		{
 			name: "success",
 			archives: []mock.RepoArchive{
-				{Repo: testRepo1, Files: map[string]string{
+				{RepoName: testRepo1.Name, Commit: testRepo1.Rev(), Files: map[string]string{
 					"README.md": "# Welcome to the README\n",
 					"main.go":   "package main\n\nfunc main() {\n\tfmt.Println(     \"Hello World\")\n}\n",
 				}},
-				{Repo: testRepo2, Files: map[string]string{
+				{RepoName: testRepo2.Name, Commit: testRepo2.Rev(), Files: map[string]string{
 					"README.md": "# Sourcegraph README\n",
 				}},
 			},
@@ -100,7 +101,7 @@ func TestExecutor_Integration(t *testing.T) {
 		{
 			name: "empty",
 			archives: []mock.RepoArchive{
-				{Repo: testRepo1, Files: map[string]string{
+				{RepoName: testRepo1.Name, Commit: testRepo1.Rev(), Files: map[string]string{
 					"README.md": "# Welcome to the README\n",
 					"main.go":   "package main\n\nfunc main() {\n\tfmt.Println(     \"Hello World\")\n}\n",
 				}},
@@ -123,7 +124,7 @@ func TestExecutor_Integration(t *testing.T) {
 		{
 			name: "timeout",
 			archives: []mock.RepoArchive{
-				{Repo: testRepo1, Files: map[string]string{"README.md": "line 1"}},
+				{RepoName: testRepo1.Name, Commit: testRepo1.Rev(), Files: map[string]string{"README.md": "line 1"}},
 			},
 			steps: []batcheslib.Step{
 				// This needs to be a loop, because when a process goes to sleep
@@ -143,7 +144,7 @@ func TestExecutor_Integration(t *testing.T) {
 		{
 			name: "templated steps",
 			archives: []mock.RepoArchive{
-				{Repo: testRepo1, Files: map[string]string{
+				{RepoName: testRepo1.Name, Commit: testRepo1.Rev(), Files: map[string]string{
 					"README.md": "# Welcome to the README\n",
 					"main.go":   "package main\n\nfunc main() {\n\tfmt.Println(     \"Hello World\")\n}\n",
 				}},
@@ -181,24 +182,24 @@ func TestExecutor_Integration(t *testing.T) {
 		{
 			name: "workspaces",
 			archives: []mock.RepoArchive{
-				{Repo: testRepo1, Path: "", Files: map[string]string{
+				{RepoName: testRepo1.Name, Commit: testRepo1.Rev(), Path: "", Files: map[string]string{
 					".gitignore":      "node_modules",
 					"message.txt":     "root-dir",
 					"a/message.txt":   "a-dir",
 					"a/.gitignore":    "node_modules-in-a",
 					"a/b/message.txt": "b-dir",
 				}},
-				{Repo: testRepo1, Path: "a", Files: map[string]string{
+				{RepoName: testRepo1.Name, Commit: testRepo1.Rev(), Path: "a", Files: map[string]string{
 					"a/message.txt":   "a-dir",
 					"a/.gitignore":    "node_modules-in-a",
 					"a/b/message.txt": "b-dir",
 				}},
-				{Repo: testRepo1, Path: "a/b", Files: map[string]string{
+				{RepoName: testRepo1.Name, Commit: testRepo1.Rev(), Path: "a/b", Files: map[string]string{
 					"a/b/message.txt": "b-dir",
 				}},
 			},
 			additionalFiles: []mock.MockRepoAdditionalFiles{
-				{Repo: testRepo1, AdditionalFiles: map[string]string{
+				{RepoName: testRepo1.Name, Commit: testRepo1.Rev(), AdditionalFiles: map[string]string{
 					".gitignore":   "node_modules",
 					"a/.gitignore": "node_modules-in-a",
 				}},
@@ -236,10 +237,10 @@ func TestExecutor_Integration(t *testing.T) {
 		{
 			name: "step condition",
 			archives: []mock.RepoArchive{
-				{Repo: testRepo1, Files: map[string]string{
+				{RepoName: testRepo1.Name, Commit: testRepo1.Rev(), Files: map[string]string{
 					"README.md": "# Welcome to the README\n",
 				}},
-				{Repo: testRepo2, Files: map[string]string{
+				{RepoName: testRepo2.Name, Commit: testRepo2.Rev(), Files: map[string]string{
 					"README.md": "# Sourcegraph README\n",
 				}},
 			},
@@ -271,10 +272,10 @@ func TestExecutor_Integration(t *testing.T) {
 		{
 			name: "skips errors",
 			archives: []mock.RepoArchive{
-				{Repo: testRepo1, Files: map[string]string{
+				{RepoName: testRepo1.Name, Commit: testRepo1.Rev(), Files: map[string]string{
 					"README.md": "# Welcome to the README\n",
 				}},
-				{Repo: testRepo2, Files: map[string]string{
+				{RepoName: testRepo2.Name, Commit: testRepo2.Rev(), Files: map[string]string{
 					"README.md": "# Sourcegraph README\n",
 				}},
 			},
@@ -341,10 +342,10 @@ func TestExecutor_Integration(t *testing.T) {
 
 			// Setup executor
 			opts := newExecutorOpts{
-				Creator:     workspace.NewCreator(context.Background(), "bind", testTempDir, testTempDir, images),
-				Fetcher:     batches.NewRepoFetcher(client, testTempDir, false),
-				Logger:      mock.LogNoOpManager{},
-				EnsureImage: imageMapEnsurer(images),
+				Creator:             workspace.NewCreator(context.Background(), "bind", testTempDir, testTempDir, images),
+				RepoArchiveRegistry: repozip.NewArchiveRegistry(client, testTempDir, false),
+				Logger:              mock.LogNoOpManager{},
+				EnsureImage:         imageMapEnsurer(images),
 
 				TempDir:     testTempDir,
 				Parallelism: runtime.GOMAXPROCS(0),
@@ -473,7 +474,7 @@ func featuresAllEnabled() batches.FeatureFlags {
 func TestExecutor_CachedStepResults(t *testing.T) {
 	t.Run("single step cached", func(t *testing.T) {
 		archive := mock.RepoArchive{
-			Repo: testRepo1, Files: map[string]string{
+			RepoName: testRepo1.Name, Commit: testRepo1.Rev(), Files: map[string]string{
 				"README.md": "# Welcome to the README\n",
 			},
 		}
@@ -530,7 +531,7 @@ index 02a19af..c9644dd 100644
 
 	t.Run("one of multiple steps cached", func(t *testing.T) {
 		archive := mock.RepoArchive{
-			Repo: testRepo1,
+			RepoName: testRepo1.Name, Commit: testRepo1.Rev(),
 			Files: map[string]string{
 				"README.md": `# automation-testing
 This repository is used to test opening and closing pull request with Automation
@@ -693,10 +694,10 @@ func testExecuteTasks(t *testing.T, tasks []*Task, archives ...mock.RepoArchive)
 
 	// Setup executor
 	executor := newExecutor(newExecutorOpts{
-		Creator:     workspace.NewCreator(context.Background(), "bind", testTempDir, testTempDir, images),
-		Fetcher:     batches.NewRepoFetcher(client, testTempDir, false),
-		Logger:      mock.LogNoOpManager{},
-		EnsureImage: imageMapEnsurer(images),
+		Creator:             workspace.NewCreator(context.Background(), "bind", testTempDir, testTempDir, images),
+		RepoArchiveRegistry: repozip.NewArchiveRegistry(client, testTempDir, false),
+		Logger:              mock.LogNoOpManager{},
+		EnsureImage:         imageMapEnsurer(images),
 
 		TempDir:     testTempDir,
 		Parallelism: runtime.GOMAXPROCS(0),

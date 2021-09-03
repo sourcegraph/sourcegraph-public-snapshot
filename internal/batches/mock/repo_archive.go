@@ -8,14 +8,13 @@ import (
 	"net/http"
 	"path/filepath"
 	"testing"
-
-	"github.com/sourcegraph/src-cli/internal/batches/graphql"
 )
 
 type RepoArchive struct {
-	Repo  *graphql.Repository
-	Path  string
-	Files map[string]string
+	RepoName string
+	Commit   string
+	Path     string
+	Files    map[string]string
 }
 
 func NewZipArchivesMux(t *testing.T, callback http.HandlerFunc, archives ...RepoArchive) *http.ServeMux {
@@ -23,12 +22,12 @@ func NewZipArchivesMux(t *testing.T, callback http.HandlerFunc, archives ...Repo
 
 	for _, archive := range archives {
 		files := archive.Files
-		path := fmt.Sprintf("/%s@%s/-/raw", archive.Repo.Name, archive.Repo.BaseRef())
+		path := fmt.Sprintf("/%s@%s/-/raw", archive.RepoName, archive.Commit)
 		if archive.Path != "" {
 			path = path + "/" + archive.Path
 		}
 
-		downloadName := filepath.Base(archive.Repo.Name)
+		downloadName := filepath.Base(archive.RepoName)
 		mediaType := mime.FormatMediaType("Attachment", map[string]string{
 			"filename": downloadName,
 		})
@@ -64,13 +63,14 @@ func NewZipArchivesMux(t *testing.T, callback http.HandlerFunc, archives ...Repo
 type middleware func(http.Handler) http.Handler
 
 type MockRepoAdditionalFiles struct {
-	Repo            *graphql.Repository
+	RepoName        string
+	Commit          string
 	AdditionalFiles map[string]string
 }
 
 func HandleAdditionalFiles(mux *http.ServeMux, files MockRepoAdditionalFiles, middle middleware) {
 	for name, content := range files.AdditionalFiles {
-		path := fmt.Sprintf("/%s@%s/-/raw/%s", files.Repo.Name, files.Repo.BaseRef(), name)
+		path := fmt.Sprintf("/%s@%s/-/raw/%s", files.RepoName, files.Commit, name)
 		handler := func(w http.ResponseWriter, r *http.Request) {
 			w.Header().Set("Content-Type", "text/plain")
 

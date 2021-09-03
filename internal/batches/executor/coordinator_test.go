@@ -17,6 +17,7 @@ import (
 
 	"github.com/sourcegraph/src-cli/internal/batches/graphql"
 	"github.com/sourcegraph/src-cli/internal/batches/mock"
+	"github.com/sourcegraph/src-cli/internal/batches/util"
 )
 
 func TestCoordinator_Execute(t *testing.T) {
@@ -31,7 +32,7 @@ func TestCoordinator_Execute(t *testing.T) {
 			BaseRef:        repo.BaseRef(),
 			BaseRev:        repo.Rev(),
 			HeadRepository: repo.ID,
-			HeadRef:        "refs/heads/" + testChangesetTemplate.Branch,
+			HeadRef:        util.EnsureRefPrefix(testChangesetTemplate.Branch),
 			Title:          testChangesetTemplate.Title,
 			Body:           testChangesetTemplate.Body,
 			Commits: []batcheslib.GitCommitDescription{
@@ -217,7 +218,7 @@ func TestCoordinator_Execute(t *testing.T) {
 					spec.Commits[0].Diff = nestedChangesDiffSubdirC
 				}),
 				buildSpecFor(testRepo2, func(spec *batcheslib.ChangesetSpec) {
-					spec.HeadRef = "refs/heads/" + testChangesetTemplate.Branch
+					spec.HeadRef = util.EnsureRefPrefix(testChangesetTemplate.Branch)
 					spec.Commits[0].Diff = nestedChangesDiffSubdirA
 				}),
 			},

@@ -10,11 +10,13 @@ import (
 	"github.com/cockroachdb/errors"
 	"github.com/hashicorp/go-multierror"
 	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
+
 	"github.com/sourcegraph/src-cli/internal/api"
 	"github.com/sourcegraph/src-cli/internal/batches"
 	"github.com/sourcegraph/src-cli/internal/batches/docker"
 	"github.com/sourcegraph/src-cli/internal/batches/graphql"
 	"github.com/sourcegraph/src-cli/internal/batches/log"
+	"github.com/sourcegraph/src-cli/internal/batches/repozip"
 	"github.com/sourcegraph/src-cli/internal/batches/workspace"
 )
 
@@ -67,15 +69,14 @@ func NewCoordinator(opts NewCoordinatorOpts) *Coordinator {
 	logManager := log.NewManager(opts.TempDir, opts.KeepLogs)
 
 	exec := newExecutor(newExecutorOpts{
-		Fetcher:     batches.NewRepoFetcher(opts.Client, opts.CacheDir, opts.CleanArchives),
-		EnsureImage: opts.EnsureImage,
-		Creator:     opts.Creator,
-		Logger:      logManager,
+		RepoArchiveRegistry: repozip.NewArchiveRegistry(opts.Client, opts.CacheDir, opts.CleanArchives),
+		EnsureImage:         opts.EnsureImage,
+		Creator:             opts.Creator,
+		Logger:              logManager,
 
-		AutoAuthorDetails: opts.Features.IncludeAutoAuthorDetails,
-		Parallelism:       opts.Parallelism,
-		Timeout:           opts.Timeout,
-		TempDir:           opts.TempDir,
+		Parallelism: opts.Parallelism,
+		Timeout:     opts.Timeout,
+		TempDir:     opts.TempDir,
 	})
 
 	return &Coordinator{
@@ -290,7 +291,7 @@ func (c *Coordinator) Execute(ctx context.Context, tasks []*Task, spec *batchesl
 			case float64:
 				sid = strconv.FormatFloat(tid, 'f', -1, 64)
 			default:
-				return nil, nil, errors.Errorf("cannot convert value of type %T into a valid external ID: expected string or int", id)
+				return nil, nil, batcheslib.NewValidationError(errors.Errorf("cannot convert value of type %T into a valid external ID: expected string or int", id))
 			}
 
 			specs = append(specs, &batcheslib.ChangesetSpec{

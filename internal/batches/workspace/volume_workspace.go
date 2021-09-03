@@ -16,9 +16,9 @@ import (
 	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
 	"github.com/sourcegraph/sourcegraph/lib/batches/git"
 
-	"github.com/sourcegraph/src-cli/internal/batches"
 	"github.com/sourcegraph/src-cli/internal/batches/docker"
 	"github.com/sourcegraph/src-cli/internal/batches/graphql"
+	"github.com/sourcegraph/src-cli/internal/batches/repozip"
 	"github.com/sourcegraph/src-cli/internal/exec"
 	"github.com/sourcegraph/src-cli/internal/version"
 )
@@ -34,7 +34,7 @@ var _ Creator = &dockerVolumeWorkspaceCreator{}
 
 func (wc *dockerVolumeWorkspaceCreator) Type() CreatorType { return CreatorTypeVolume }
 
-func (wc *dockerVolumeWorkspaceCreator) Create(ctx context.Context, repo *graphql.Repository, steps []batcheslib.Step, archive batches.RepoZip) (Workspace, error) {
+func (wc *dockerVolumeWorkspaceCreator) Create(ctx context.Context, repo *graphql.Repository, steps []batcheslib.Step, archive repozip.Archive) (Workspace, error) {
 	volume, err := wc.createVolume(ctx)
 	if err != nil {
 		return nil, errors.Wrap(err, "creating Docker volume")
