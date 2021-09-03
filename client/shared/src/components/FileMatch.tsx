@@ -191,19 +191,19 @@ export const FileMatch: React.FunctionComponent<Props> = props => {
                 const remaining = SUBSET_MATCHES_COUNT - previous.limitedMatchCount
                 if (remaining <= 0) {
                     return previous
-                } 
+                }
 
-				if (group.matches.length <= remaining) {
+                if (group.matches.length <= remaining) {
                     // We have room for the whole group
                     previous.limitedGrouped.push(group)
                     previous.limitedMatchCount += group.matches.length
                     return previous
-                } 
+                }
 
-				const limitedGroup = limitGroup(group, remaining)
-				previous.limitedGrouped.push(limitedGroup)
-				previous.limitedMatchCount += limitedGroup.matches.length
-				return previous
+                const limitedGroup = limitGroup(group, remaining)
+                previous.limitedGrouped.push(limitedGroup)
+                previous.limitedMatchCount += limitedGroup.matches.length
+                return previous
             },
             { limitedGrouped: [] as MatchGroup[], limitedMatchCount: 0 }
         )
@@ -284,16 +284,20 @@ function aggregateBadges(items: MatchItem[]): AggregableBadge[] {
     return [...aggregatedBadges.values()].sort((a, b) => a.text.localeCompare(b.text))
 }
 
-function limitGroup(group: MatchGroup, limit: number): MatchGroup {
+export function limitGroup(group: MatchGroup, limit: number): MatchGroup {
     if (limit < 1 || group.matches.length === 0) {
         throw new Error('cannot limit a group to less than one match')
+    }
+
+    if (group.matches.length <= limit) {
+        return group
     }
 
     // Do a somewhat deep copy of the group so we can mutate it
     const partialGroup: MatchGroup = {
         blobLines: [...(group.blobLines || [])],
         matches: [...group.matches],
-        position: {...group.position},
+        position: { ...group.position },
         startLine: group.startLine,
         endLine: group.endLine,
     }
