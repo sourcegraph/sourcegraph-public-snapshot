@@ -777,6 +777,7 @@ type BatchSpecWorkspaceResolver interface {
 	Path() string
 	OnlyFetchWorkspace() bool
 	Steps() []BatchSpecWorkspaceStepResolver
+	FileResultPaths() []string
 }
 
 type BatchSpecWorkspaceStepResolver interface {

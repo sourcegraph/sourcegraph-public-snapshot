@@ -2311,6 +2311,12 @@ type BatchSpecWorkspace {
     List of steps that will need to run over this workspace.
     """
     steps: [BatchSpecWorkspaceStep!]!
+
+    """
+    If this workspace was resolved based on a search, this is the list of paths
+    to files that have been included in the search results.
+    """
+    fileResultPaths: [String!]!
 }
 
 """
