@@ -121,7 +121,7 @@ func DecorateFileHTML(ctx context.Context, repo api.RepoName, commit api.CommitI
 }
 
 // DecorateFileHunksHTML returns decorated file hunks given a file match.
-func DecorateFileHunksHTML(ctx context.Context, fm result.FileMatch) []stream.DecoratedHunk {
+func DecorateFileHunksHTML(ctx context.Context, fm *result.FileMatch) []stream.DecoratedHunk {
 	html, err := DecorateFileHTML(ctx, fm.Repo.Name, fm.CommitID, fm.Path)
 	if err != nil {
 		// TODO(rvantonder): log error and swallow if we can't highlight

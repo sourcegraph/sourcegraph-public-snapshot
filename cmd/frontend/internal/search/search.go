@@ -165,7 +165,7 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			if md, ok := repoMetadata[match.RepoName().ID]; !ok || md.Name != match.RepoName().Name {
 				continue
 			}
-			_ = matchesBuf.Append(fromMatch(match, repoMetadata))
+			_ = matchesBuf.Append(fromMatch(ctx, match, repoMetadata))
 		}
 
 		// Instantly send results if we have not sent any yet.
@@ -374,10 +374,10 @@ func fromStrPtr(s *string) string {
 	return *s
 }
 
-func fromMatch(match result.Match, repoCache map[api.RepoID]*types.SearchedRepo) streamhttp.EventMatch {
+func fromMatch(ctx context.Context, match result.Match, repoCache map[api.RepoID]*types.SearchedRepo) streamhttp.EventMatch {
 	switch v := match.(type) {
 	case *result.FileMatch:
-		return fromFileMatch(v, repoCache)
+		return fromFileMatch(ctx, v, repoCache)
 	case *result.RepoMatch:
 		return fromRepository(v, repoCache)
 	case *result.CommitMatch:
@@ -387,11 +387,11 @@ func fromMatch(match result.Match, repoCache map[api.RepoID]*types.SearchedRepo)
 	}
 }
 
-func fromFileMatch(fm *result.FileMatch, repoCache map[api.RepoID]*types.SearchedRepo) streamhttp.EventMatch {
+func fromFileMatch(ctx context.Context, fm *result.FileMatch, repoCache map[api.RepoID]*types.SearchedRepo) streamhttp.EventMatch {
 	if len(fm.Symbols) > 0 {
 		return fromSymbolMatch(fm, repoCache)
 	} else if len(fm.LineMatches) > 0 {
-		return fromContentMatch(fm, repoCache)
+		return fromContentMatch(ctx, fm, repoCache)
 	}
 	return fromPathMatch(fm, repoCache)
 }
@@ -417,7 +417,7 @@ func fromPathMatch(fm *result.FileMatch, repoCache map[api.RepoID]*types.Searche
 	return pathEvent
 }
 
-func fromContentMatch(fm *result.FileMatch, repoCache map[api.RepoID]*types.SearchedRepo) *streamhttp.EventContentMatch {
+func fromContentMatch(ctx context.Context, fm *result.FileMatch, repoCache map[api.RepoID]*types.SearchedRepo) *streamhttp.EventContentMatch {
 	lineMatches := make([]streamhttp.EventLineMatch, 0, len(fm.LineMatches))
 	for _, lm := range fm.LineMatches {
 		lineMatches = append(lineMatches, streamhttp.EventLineMatch{
@@ -427,12 +427,15 @@ func fromContentMatch(fm *result.FileMatch, repoCache map[api.RepoID]*types.Sear
 		})
 	}
 
+	var hunks []streamhttp.DecoratedHunk
+	hunks = DecorateFileHunksHTML(ctx, fm) // TODO(rvantonder): check if args specify HTML rendering
 	contentEvent := &streamhttp.EventContentMatch{
 		Type:         streamhttp.ContentMatchType,
 		Path:         fm.Path,
 		RepositoryID: int32(fm.Repo.ID),
 		Repository:   string(fm.Repo.Name),
 		Version:      string(fm.CommitID),
+		Hunks:        hunks,
 		LineMatches:  lineMatches,
 	}
 
