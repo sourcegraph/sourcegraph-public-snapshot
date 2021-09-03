@@ -41,7 +41,7 @@ func robotsTxtHelper(w io.Writer, allowRobots bool) {
 
 func sitemapXmlGz(w http.ResponseWriter, r *http.Request) {
 	if envvar.SourcegraphDotComMode() || conf.DeployType() == conf.DeployDev {
-		number, _ := mux.Vars(r)["number"]
+		number := mux.Vars(r)["number"]
 		http.Redirect(w, r, fmt.Sprintf("https://storage.googleapis.com/sitemap-sourcegraph-com/sitemap%s.xml.gz", number), http.StatusFound)
 		return
 	}
