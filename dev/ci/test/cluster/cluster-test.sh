@@ -88,13 +88,13 @@ function e2e() {
 
 function frontend_logs() {
   LOGFILE="frontend_logs.log"
-  kubectl --namespace=prod logs deployment/sourcegraph-frontend --all-containers >$LOGFILE
-  chmod 744 $LOGFILE.log
+  kubectl logs deployment/sourcegraph-frontend --all-containers >$LOGFILE
+  chmod 744 $LOGFILE
 }
 
 # main
-trap frontend_logs exit
 cluster_setup
+trap frontend_logs exit
 test_setup
 # TODO: Failing tests do not fail the build
 set +o pipefail
