@@ -156,7 +156,7 @@ func toComputeMatchContextResolver(fm *result.FileMatch, mc *compute.MatchContex
 		computeMatches = append(computeMatches, &computeMatchResolver{m: &mCopy})
 	}
 	return &computeMatchContextResolver{
-		repository: getRepoResolver(fm.Repo, ""),
+		repository: getRepoResolver(*fm.Repo, ""),
 		commit:     string(fm.CommitID),
 		path:       fm.Path,
 		matches:    computeMatches,

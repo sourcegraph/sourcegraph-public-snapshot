@@ -302,6 +302,10 @@ func (p byteSlices) Swap(i, j int)      { p[i], p[j] = p[j], p[i] }
 
 // ListRefs returns a list of all refs in the repository.
 func ListRefs(ctx context.Context, repo api.RepoName) ([]Ref, error) {
+	if Mocks.ListRefs != nil {
+		return Mocks.ListRefs(repo)
+	}
+
 	span, ctx := ot.StartSpanFromContext(ctx, "Git: ListRefs")
 	defer span.Finish()
 	return showRef(ctx, repo)

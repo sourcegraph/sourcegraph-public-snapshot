@@ -13,7 +13,7 @@ import (
 
 type CommitMatch struct {
 	Commit         git.Commit
-	Repo           types.RepoName
+	Repo           *types.RepoName
 	Refs           []string
 	SourceRefs     []string
 	MessagePreview *HighlightedString
@@ -35,7 +35,7 @@ func (r *CommitMatch) ResultCount() int {
 	return 1
 }
 
-func (r *CommitMatch) RepoName() types.RepoName {
+func (r *CommitMatch) RepoName() *types.RepoName {
 	return r.Repo
 }
 

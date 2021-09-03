@@ -28,103 +28,91 @@ import (
 // indexedRepoRevs creates both the Sourcegraph and Zoekt representation of a
 // list of repository and refs to search.
 type IndexedRepoRevs struct {
-	// repoRevs is the Sourcegraph representation of a the list of repoRevs
-	// repository and revisions to search.
-	repoRevs map[string]*search.RepositoryRevisions
+	*search.Repos
 
-	// repoBranches will be used when we query zoekt. The order of branches
-	// must match that in a reporev such that we can map back results. IE this
-	// invariant is maintained:
-	//
-	//  repoBranches[reporev.Repo.Name][i] <-> reporev.Revs[i]
-	repoBranches map[string][]string
+	RevSpecs map[api.RepoName]search.RevSpecs
+	// must be in the same order as Indexed[repo.Name]
+	Branches map[string][]string
 }
 
 // headBranch is used as a singleton of the indexedRepoRevs.repoBranches to save
 // common-case allocations within indexedRepoRevs.Add.
-var headBranch = []string{"HEAD"}
+var (
+	headBranch = []string{"HEAD"}
+)
 
-// add will add reporev and repo to the list of repository and branches to
-// search if reporev's refs are a subset of repo's branches. It will return
-// the revision specifiers it can't add.
-func (rb *IndexedRepoRevs) add(reporev *search.RepositoryRevisions, repo *zoekt.Repository) []search.RevisionSpecifier {
-	// A repo should only appear once in revs. However, in case this
-	// invariant is broken we will treat later revs as if it isn't
-	// indexed.
-	if _, ok := rb.repoBranches[string(reporev.Repo.Name)]; ok {
-		return reporev.Revs
+// add will add the repo and all the indexed revs (as found in branches) to the list of repository
+// and branches to search. It will return the revision specifiers it that aren't indexed.
+func (rb *IndexedRepoRevs) add(repo *types.RepoName, branches []zoekt.RepositoryBranch, revs search.RevSpecs) (unindexed search.RevSpecs) {
+	if len(revs) == 0 {
+		revs = search.DefaultRevSpecs
 	}
 
-	if !reporev.OnlyExplicit() {
-		// Contains a RefGlob or ExcludeRefGlob so we can't do indexed
-		// search on it.
-		//
-		// TODO we could only process the explicit revs and return the non
-		// explicit ones as unindexed.
-		return reporev.Revs
-	}
+	name := string(repo.Name)
 
-	if len(reporev.Revs) == 1 && repo.Branches[0].Name == "HEAD" && (reporev.Revs[0].RevSpec == "" || reporev.Revs[0].RevSpec == "HEAD") {
-		rb.repoRevs[string(reporev.Repo.Name)] = reporev
-		rb.repoBranches[string(reporev.Repo.Name)] = headBranch
+	// fast path
+	if len(revs) == 1 && branches[0].Name == "HEAD" && (revs[0].RevSpec == "" || revs[0].RevSpec == "HEAD") {
+		rb.RevSpecs[repo.Name] = revs
+		rb.Branches[name] = headBranch
 		return nil
 	}
 
-	// Assume for large searches they will mostly involve indexed
-	// revisions, so just allocate that.
-	var unindexed []search.RevisionSpecifier
-	indexed := make([]search.RevisionSpecifier, 0, len(reporev.Revs))
+	// slow path
+	indexedRevs := make(search.RevSpecs, 0, len(revs))
+	indexedBranches := make([]string, 0, len(revs))
+	for _, rev := range revs {
+		if rev.RefGlob != "" || rev.ExcludeRefGlob != "" {
+			unindexed = append(unindexed, rev)
+			continue
+		}
 
-	branches := make([]string, 0, len(reporev.Revs))
-	for _, rev := range reporev.Revs {
 		if rev.RevSpec == "" || rev.RevSpec == "HEAD" {
 			// Zoekt convention that first branch is HEAD
-			branches = append(branches, repo.Branches[0].Name)
-			indexed = append(indexed, rev)
+			indexedBranches = append(indexedBranches, branches[0].Name)
+			indexedRevs = append(indexedRevs, rev)
 			continue
 		}
 
 		found := false
-		for _, branch := range repo.Branches {
+		for _, branch := range branches {
 			if branch.Name == rev.RevSpec {
-				branches = append(branches, branch.Name)
+				indexedBranches = append(indexedBranches, branch.Name)
 				found = true
 				break
 			}
 			// Check if rev is an abbrev commit SHA
 			if len(rev.RevSpec) >= 4 && strings.HasPrefix(branch.Version, rev.RevSpec) {
-				branches = append(branches, branch.Name)
+				indexedBranches = append(indexedBranches, branch.Name)
 				found = true
 				break
 			}
 		}
 
 		if found {
-			indexed = append(indexed, rev)
+			indexedRevs = append(indexedRevs, rev)
 		} else {
 			unindexed = append(unindexed, rev)
 		}
 	}
 
 	// We found indexed branches! Track them.
-	if len(indexed) > 0 {
-		rb.repoRevs[string(reporev.Repo.Name)] = reporev
-		rb.repoBranches[string(reporev.Repo.Name)] = branches
+	if len(indexedRevs) > 0 {
+		rb.RevSpecs[repo.Name] = indexedRevs
+		rb.Branches[name] = indexedBranches
 	}
 
 	return unindexed
 }
 
 // getRepoInputRev returns the repo and inputRev associated with file.
-func (rb *IndexedRepoRevs) getRepoInputRev(file *zoekt.FileMatch) (repo types.RepoName, inputRevs []string) {
-	repoRev := rb.repoRevs[file.Repository]
-
+func (rb *IndexedRepoRevs) getRepoInputRev(file *zoekt.FileMatch) (repo *types.RepoName, inputRevs []string) {
+	revs := rb.RevSpecs[api.RepoName(file.Repository)]
 	inputRevs = make([]string, 0, len(file.Branches))
 	for _, branch := range file.Branches {
-		for i, b := range rb.repoBranches[file.Repository] {
+		for i, b := range rb.Branches[file.Repository] {
 			if branch == b {
 				// RevSpec is guaranteed to be explicit via zoektIndexedRepos
-				inputRevs = append(inputRevs, repoRev.Revs[i].RevSpec)
+				inputRevs = append(inputRevs, revs[i].RevSpec)
 			}
 		}
 	}
@@ -135,7 +123,7 @@ func (rb *IndexedRepoRevs) getRepoInputRev(file *zoekt.FileMatch) (repo types.Re
 		inputRevs = append(inputRevs, file.Version)
 	}
 
-	return repoRev.Repo, inputRevs
+	return rb.GetByName(api.RepoName(file.Repository)), inputRevs
 }
 
 // IndexedSearchRequest exposes a method Search(...) to search over indexed
@@ -144,15 +132,15 @@ func (rb *IndexedRepoRevs) getRepoInputRev(file *zoekt.FileMatch) (repo types.Re
 // (2) IndexedSubsetSearchRequest that searches over an indexed subset of repos in the universe of indexed repositories.
 type IndexedSearchRequest interface {
 	Search(context.Context, streaming.Sender) error
-	IndexedRepos() map[string]*search.RepositoryRevisions
-	UnindexedRepos() []*search.RepositoryRevisions
+	IndexedRepos() *search.Repos
+	UnindexedRepos() *search.Repos
 }
 
-func NewIndexedSearchRequest(ctx context.Context, args *search.TextParameters, typ search.IndexedRequestType, onMissing OnMissingRepoRevs) (IndexedSearchRequest, error) {
+func NewIndexedSearchRequest(ctx context.Context, args *search.TextParameters, typ search.IndexedRequestType, onMissing OnMissingRepos) (IndexedSearchRequest, error) {
 	if args.Mode == search.ZoektGlobalSearch {
 		// performance: optimize global searches where Zoekt searches
 		// all shards anyway.
-		return NewIndexedUniverseSearchRequest(ctx, args, typ, args.RepoOptions, args.UserPrivateRepos)
+		return NewIndexedUniverseSearchRequest(ctx, args, typ, args.RepoOptions, args.Repos.Private)
 	}
 	return NewIndexedSubsetSearchRequest(ctx, args, typ, onMissing)
 }
@@ -160,7 +148,7 @@ func NewIndexedSearchRequest(ctx context.Context, args *search.TextParameters, t
 // IndexedUniverseSearchRequest represents a request to run a search over the universe of indexed repositories.
 type IndexedUniverseSearchRequest struct {
 	RepoOptions      search.RepoOptions
-	UserPrivateRepos []types.RepoName
+	UserPrivateRepos *types.RepoSet
 	Args             *search.ZoektParameters
 }
 
@@ -175,16 +163,16 @@ func (s *IndexedUniverseSearchRequest) Search(ctx context.Context, c streaming.S
 
 // IndexedRepos for a request over the indexed universe cannot answer which
 // repositories are searched. This return value is always empty.
-func (s *IndexedUniverseSearchRequest) IndexedRepos() map[string]*search.RepositoryRevisions {
-	return map[string]*search.RepositoryRevisions{}
-}
-
-// UnindexedRepos over the indexed universe implies that we do not search unindexed repositories.
-func (s *IndexedUniverseSearchRequest) UnindexedRepos() []*search.RepositoryRevisions {
+func (s *IndexedUniverseSearchRequest) IndexedRepos() *search.Repos {
 	return nil
 }
 
-func NewIndexedUniverseSearchRequest(ctx context.Context, args *search.TextParameters, typ search.IndexedRequestType, repoOptions search.RepoOptions, userPrivateRepos []types.RepoName) (_ *IndexedUniverseSearchRequest, err error) {
+// UnindexedRepos over the indexed universe implies that we do not search unindexed repositories.
+func (s *IndexedUniverseSearchRequest) UnindexedRepos() *search.Repos {
+	return nil
+}
+
+func NewIndexedUniverseSearchRequest(ctx context.Context, args *search.TextParameters, typ search.IndexedRequestType, repoOptions search.RepoOptions, userPrivateRepos *types.RepoSet) (_ *IndexedUniverseSearchRequest, err error) {
 	tr, _ := trace.New(ctx, "NewIndexedUniverseSearchRequest", "text")
 	defer func() {
 		tr.SetError(err)
@@ -222,7 +210,7 @@ type IndexedSubsetSearchRequest struct {
 	// If IndexUnavailable is true or the query specifies index:no then all
 	// repository revisions will be listed. Otherwise it will just be
 	// repository revisions not indexed.
-	Unindexed []*search.RepositoryRevisions
+	Unindexed *search.Repos
 
 	// IndexUnavailable is true if zoekt is offline or disabled.
 	IndexUnavailable bool
@@ -244,15 +232,15 @@ type IndexedSubsetSearchRequest struct {
 
 // IndxedRepos is a map of indexed repository revisions will be searched by
 // Zoekt. Do not mutate.
-func (s *IndexedSubsetSearchRequest) IndexedRepos() map[string]*search.RepositoryRevisions {
+func (s *IndexedSubsetSearchRequest) IndexedRepos() *search.Repos {
 	if s.RepoRevs == nil {
 		return nil
 	}
-	return s.RepoRevs.repoRevs
+	return s.RepoRevs.Repos
 }
 
 // UnindexedRepos is a slice of unindexed repositories to search.
-func (s *IndexedSubsetSearchRequest) UnindexedRepos() []*search.RepositoryRevisions {
+func (s *IndexedSubsetSearchRequest) UnindexedRepos() *search.Repos {
 	return s.Unindexed
 }
 
@@ -262,7 +250,7 @@ func (s *IndexedSubsetSearchRequest) Search(ctx context.Context, c streaming.Sen
 		return nil
 	}
 
-	if len(s.IndexedRepos()) == 0 {
+	if s.IndexedRepos().Len() == 0 {
 		return nil
 	}
 
@@ -276,14 +264,15 @@ func (s *IndexedSubsetSearchRequest) Search(ctx context.Context, c streaming.Sen
 
 const maxUnindexedRepoRevSearchesPerQuery = 200
 
-type OnMissingRepoRevs func([]*search.RepositoryRevisions)
+type OnMissingRepos func(*search.Repos)
 
-func MissingRepoRevStatus(stream streaming.Sender) OnMissingRepoRevs {
-	return func(repoRevs []*search.RepositoryRevisions) {
+func MissingRepoRevStatus(stream streaming.Sender) OnMissingRepos {
+	return func(repos *search.Repos) {
 		var status search.RepoStatusMap
-		for _, r := range repoRevs {
-			status.Update(r.Repo.ID, search.RepoStatusMissing)
-		}
+		repos.ForEach(func(r *types.RepoName, _ search.RevSpecs) error {
+			status.Update(r.ID, search.RepoStatusMissing)
+			return nil
+		})
 		stream.Send(streaming.SearchEvent{
 			Stats: streaming.Stats{
 				Status: status,
@@ -292,7 +281,7 @@ func MissingRepoRevStatus(stream streaming.Sender) OnMissingRepoRevs {
 	}
 }
 
-func NewIndexedSubsetSearchRequest(ctx context.Context, args *search.TextParameters, typ search.IndexedRequestType, onMissing OnMissingRepoRevs) (_ *IndexedSubsetSearchRequest, err error) {
+func NewIndexedSubsetSearchRequest(ctx context.Context, args *search.TextParameters, typ search.IndexedRequestType, onMissing OnMissingRepos) (_ *IndexedSubsetSearchRequest, err error) {
 	tr, ctx := trace.New(ctx, "NewIndexedSubsetSearchRequest", string(typ))
 	tr.LogFields(trace.Stringer("global_search_mode", args.Mode))
 	defer func() {
@@ -363,8 +352,8 @@ func NewIndexedSubsetSearchRequest(ctx context.Context, args *search.TextParamet
 	indexed, searcherRepos := zoektIndexedRepos(indexedSet, args.Repos, filter)
 
 	tr.LogFields(
-		log.Int("indexed.size", len(indexed.repoRevs)),
-		log.Int("searcher_repos.size", len(searcherRepos)),
+		log.Int("indexed.size", indexed.Len()),
+		log.Int("searcher_repos.size", searcherRepos.Len()),
 	)
 
 	// Disable unindexed search
@@ -402,7 +391,7 @@ func NewIndexedSubsetSearchRequest(ctx context.Context, args *search.TextParamet
 // have a repo: filter and consequently no rev: filter. This makes the code a bit
 // simpler because we don't have to resolve revisions before sending off (global)
 // requests to Zoekt.
-func zoektGlobalQuery(q zoektquery.Q, repoOptions search.RepoOptions, userPrivateRepos []types.RepoName) zoektquery.Q {
+func zoektGlobalQuery(q zoektquery.Q, repoOptions search.RepoOptions, userPrivateRepos *types.RepoSet) zoektquery.Q {
 	var qs []zoektquery.Q
 
 	// Public or Any
@@ -423,10 +412,10 @@ func zoektGlobalQuery(q zoektquery.Q, repoOptions search.RepoOptions, userPrivat
 	}
 
 	// Private or Any
-	if (repoOptions.Visibility == query.Private || repoOptions.Visibility == query.Any) && len(userPrivateRepos) > 0 {
-		privateRepoSet := make(map[string][]string, len(userPrivateRepos))
+	if (repoOptions.Visibility == query.Private || repoOptions.Visibility == query.Any) && userPrivateRepos.Len() > 0 {
+		privateRepoSet := make(map[string][]string, userPrivateRepos.Len())
 		head := []string{"HEAD"}
-		for _, r := range userPrivateRepos {
+		for _, r := range userPrivateRepos.Repos {
 			privateRepoSet[string(r.Name)] = head
 		}
 		qs = append(qs, zoektquery.NewAnd(&zoektquery.RepoBranches{Set: privateRepoSet}, q))
@@ -483,8 +472,8 @@ func doZoektSearchGlobal(ctx context.Context, q zoektquery.Q, typ search.Indexed
 	}
 
 	return client.StreamSearch(ctx, q, &searchOpts, backend.ZoektStreamFunc(func(event *zoekt.SearchResult) {
-		sendMatches(event, func(file *zoekt.FileMatch) (types.RepoName, []string) {
-			repo := types.RepoName{
+		sendMatches(event, func(file *zoekt.FileMatch) (*types.RepoName, []string) {
+			repo := &types.RepoName{
 				ID:   api.RepoID(file.RepositoryID),
 				Name: api.RepoName(file.Repository),
 			}
@@ -495,16 +484,16 @@ func doZoektSearchGlobal(ctx context.Context, q zoektquery.Q, typ search.Indexed
 
 // zoektSearch searches repositories using zoekt.
 func zoektSearch(ctx context.Context, repos *IndexedRepoRevs, q zoektquery.Q, typ search.IndexedRequestType, client zoekt.Streamer, fileMatchLimit int32, selector filter.SelectPath, since func(t time.Time) time.Duration, c streaming.Sender) error {
-	if len(repos.repoRevs) == 0 {
+	if len(repos.RepoRevs) == 0 {
 		return nil
 	}
 
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
-	finalQuery := zoektquery.NewAnd(&zoektquery.RepoBranches{Set: repos.repoBranches}, q)
+	finalQuery := zoektquery.NewAnd(&zoektquery.RepoBranches{Set: repos.Branches}, q)
 
-	k := ResultCountFactor(len(repos.repoBranches), fileMatchLimit, false)
+	k := ResultCountFactor(len(repos.Branches), fileMatchLimit, false)
 	searchOpts := SearchOpts(ctx, k, fileMatchLimit)
 
 	// Start event stream.
@@ -530,13 +519,7 @@ func zoektSearch(ctx context.Context, repos *IndexedRepoRevs, q zoektquery.Q, ty
 	// PERF: if we are going to be selecting to repo results only anyways, we can just ask
 	// zoekt for only results of type repo.
 	if selector.Root() == filter.Repository {
-		return zoektSearchReposOnly(ctx, client, finalQuery, c, func() map[api.RepoID]*search.RepositoryRevisions {
-			repoRevMap := make(map[api.RepoID]*search.RepositoryRevisions, len(repos.repoRevs))
-			for _, r := range repos.repoRevs {
-				repoRevMap[r.Repo.ID] = r
-			}
-			return repoRevMap
-		})
+		return zoektSearchReposOnly(ctx, client, finalQuery, c, repos.Repos)
 	}
 
 	foundResults := atomic.Bool{}
@@ -550,9 +533,10 @@ func zoektSearch(ctx context.Context, repos *IndexedRepoRevs, q zoektquery.Q, ty
 
 	mkStatusMap := func(mask search.RepoStatus) search.RepoStatusMap {
 		var statusMap search.RepoStatusMap
-		for _, r := range repos.repoRevs {
-			statusMap.Update(r.Repo.ID, mask)
-		}
+		repos.ForEach(func(r *types.RepoName, _ search.RevSpecs) error {
+			statusMap.Update(r.ID, mask)
+			return nil
+		})
 		return statusMap
 	}
 
@@ -614,27 +598,22 @@ func sendMatches(event *zoekt.SearchResult, getRepoInputRev repoRevFunc, typ sea
 // zoektSearchReposOnly is used when select:repo is set, in which case we can ask zoekt
 // only for the repos that contain matches for the query. This is a performance optimization,
 // and not required for proper function of select:repo.
-func zoektSearchReposOnly(ctx context.Context, client zoekt.Streamer, query zoektquery.Q, c streaming.Sender, getRepoRevMap func() map[api.RepoID]*search.RepositoryRevisions) error {
+func zoektSearchReposOnly(ctx context.Context, client zoekt.Streamer, query zoektquery.Q, c streaming.Sender, repos *search.Repos) error {
 	repoList, err := client.List(ctx, query, &zoekt.ListOptions{Minimal: true})
 	if err != nil {
 		return err
 	}
 
-	repoRevMap := getRepoRevMap()
-	if repoRevMap == nil {
-		return nil
-	}
-
 	matches := make([]result.Match, 0, len(repoList.Minimal))
 	for id := range repoList.Minimal {
-		rev, ok := repoRevMap[api.RepoID(id)]
-		if !ok {
+		r := repos.GetByID(api.RepoID(id))
+		if r == nil {
 			continue
 		}
 
 		matches = append(matches, &result.RepoMatch{
-			Name: rev.Repo.Name,
-			ID:   rev.Repo.ID,
+			Name: r.Name,
+			ID:   r.ID,
 		})
 	}
 
@@ -669,7 +648,7 @@ func zoektFileMatchToLineMatches(file *zoekt.FileMatch) []*result.LineMatch {
 	return lines
 }
 
-func zoektFileMatchToSymbolResults(repoName types.RepoName, inputRev string, file *zoekt.FileMatch) []*result.SymbolMatch {
+func zoektFileMatchToSymbolResults(repoName *types.RepoName, inputRev string, file *zoekt.FileMatch) []*result.SymbolMatch {
 	newFile := &result.File{
 		Path:     file.FileName,
 		Repo:     repoName,
@@ -733,29 +712,31 @@ func contextWithoutDeadline(cOld context.Context) (context.Context, context.Canc
 // zoektIndexedRepos splits the revs into two parts: (1) the repository
 // revisions in indexedSet (indexed) and (2) the repositories that are
 // unindexed.
-func zoektIndexedRepos(indexedSet map[string]*zoekt.Repository, revs []*search.RepositoryRevisions, filter func(*zoekt.Repository) bool) (indexed *IndexedRepoRevs, unindexed []*search.RepositoryRevisions) {
+func zoektIndexedRepos(indexedSet map[string]*zoekt.Repository, res *search.Repos, filter func(*zoekt.Repository) bool) (indexed *IndexedRepoRevs, unindexed *search.Repos) {
 	// PERF: If len(revs) is large, we expect to be doing an indexed
 	// search. So set indexed to the max size it can be to avoid growing.
 	indexed = &IndexedRepoRevs{
-		repoRevs:     make(map[string]*search.RepositoryRevisions, len(revs)),
-		repoBranches: make(map[string][]string, len(revs)),
+		Repos:    res,
+		RevSpecs: make(map[api.RepoName]search.RevSpecs, res.Len()),
+		Branches: make(map[string][]string, res.Len()),
 	}
-	unindexed = make([]*search.RepositoryRevisions, 0)
+	unindexed = search.NewRepos()
 
-	for _, reporev := range revs {
-		repo, ok := indexedSet[string(reporev.Repo.Name)]
+	res.ForEach(func(r *types.RepoName, revs search.RevSpecs) error {
+		repo, ok := indexedSet[string(r.Name)]
 		if !ok || (filter != nil && !filter(repo)) {
-			unindexed = append(unindexed, reporev)
-			continue
+			unindexed.Add(r, revs...)
+			indexed.Excluded.Add(r)
+			return nil
 		}
 
-		unindexedRevs := indexed.add(reporev, repo)
+		unindexedRevs := indexed.add(r, repo.Branches, revs)
 		if len(unindexedRevs) > 0 {
-			copy := reporev.Copy()
-			copy.Revs = unindexedRevs
-			unindexed = append(unindexed, copy)
+			unindexed.Add(r, unindexedRevs...)
 		}
-	}
+
+		return nil
+	})
 
 	return indexed, unindexed
 }
@@ -768,23 +749,24 @@ func zoektIndexedRepos(indexedSet map[string]*zoekt.Repository, revs []*search.R
 // It returns the new repositories destined for the unindexed searcher code
 // path, and sends an event to stream for any repositories that are limited /
 // excluded.
-//
-// A slice to the input list is returned, it is not copied.
-func limitUnindexedRepos(unindexed []*search.RepositoryRevisions, limit int, onMissing OnMissingRepoRevs) []*search.RepositoryRevisions {
-	var missing []*search.RepositoryRevisions
+func limitUnindexedRepos(unindexed *search.Repos, limit int, onMissing OnMissingRepos) *search.Repos {
+	limited := search.NewRepos()
+	unindexed.ForEach(func(r *types.RepoName, revs search.RevSpecs) error {
+		limit -= len(revs)
 
-	for i, repoRevs := range unindexed {
-		limit -= len(repoRevs.Revs)
+		limited.Add(r, revs...)
+		unindexed.Excluded.Add(r)
+
 		if limit < 0 {
-			missing = unindexed[i:]
-			unindexed = unindexed[:i]
-			break
+			return errors.New("limit reached")
 		}
+
+		return nil
+	})
+
+	if unindexed.Len() > 0 {
+		onMissing(unindexed)
 	}
 
-	if len(missing) > 0 {
-		onMissing(missing)
-	}
-
-	return unindexed
+	return limited
 }

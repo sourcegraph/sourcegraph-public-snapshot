@@ -24,10 +24,10 @@ func TestSymbolRange(t *testing.T) {
 
 func TestSymbolURL(t *testing.T) {
 	repoA := types.RepoName{Name: "repo/A", ID: 1}
-	fileAA := File{Repo: repoA, Path: "A"}
+	fileAA := File{Repo: &repoA, Path: "A"}
 
 	rev := "testrev"
-	fileAB := File{Repo: repoA, Path: "B", InputRev: &rev}
+	fileAB := File{Repo: &repoA, Path: "B", InputRev: &rev}
 
 	cases := []struct {
 		name   string

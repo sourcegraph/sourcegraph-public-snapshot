@@ -2,9 +2,8 @@ package result
 
 import (
 	"net/url"
-	"strings"
-
 	"path"
+	"strings"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/search/filter"
@@ -16,9 +15,9 @@ type File struct {
 	// InputRev is the Git revspec that the user originally requested to search. It is used to
 	// preserve the original revision specifier from the user instead of navigating them to the
 	// absolute commit ID when they select a result.
-	InputRev *string        `json:"-"`
-	Repo     types.RepoName `json:"-"`
-	CommitID api.CommitID   `json:"-"`
+	InputRev *string         `json:"-"`
+	Repo     *types.RepoName `json:"-"`
+	CommitID api.CommitID    `json:"-"`
 	Path     string
 }
 
@@ -49,7 +48,7 @@ type FileMatch struct {
 	LimitHit bool
 }
 
-func (fm *FileMatch) RepoName() types.RepoName {
+func (fm *FileMatch) RepoName() *types.RepoName {
 	return fm.File.Repo
 }
 

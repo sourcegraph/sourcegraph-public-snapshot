@@ -5,7 +5,6 @@ import (
 	"reflect"
 	"strings"
 
-	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
@@ -18,7 +17,7 @@ type Stats struct {
 
 	// Repos that were matched by the repo-related filters. This should only
 	// be set once by search, when we have resolved Repos.
-	Repos map[api.RepoID]types.RepoName
+	Repos *search.Repos
 
 	// Status is a RepoStatusMap of repository search statuses.
 	Status search.RepoStatusMap
@@ -45,12 +44,14 @@ func (c *Stats) Update(other *Stats) {
 	c.IsLimitHit = c.IsLimitHit || other.IsLimitHit
 	c.IsIndexUnavailable = c.IsIndexUnavailable || other.IsIndexUnavailable
 
-	if c.Repos == nil && len(other.Repos) > 0 {
-		c.Repos = make(map[api.RepoID]types.RepoName, len(other.Repos))
+	if c.Repos == nil && other.Repos.Len() > 0 {
+		c.Repos = search.NewRepos()
 	}
-	for id, r := range other.Repos {
-		c.Repos[id] = r
-	}
+
+	other.Repos.ForEach(func(r *types.RepoName, revs search.RevSpecs) error {
+		c.Repos.Add(r, revs...)
+		return nil
+	})
 
 	c.Status.Union(&other.Status)
 
@@ -66,7 +67,7 @@ func (c *Stats) Zero() bool {
 	}
 
 	return !(c.IsLimitHit ||
-		len(c.Repos) > 0 ||
+		c.Repos.Len() > 0 ||
 		c.Status.Len() > 0 ||
 		c.ExcludedForks > 0 ||
 		c.ExcludedArchived > 0 ||
@@ -85,7 +86,7 @@ func (c *Stats) String() string {
 		name string
 		n    int
 	}{
-		{"repos", len(c.Repos)},
+		{"repos", c.Repos.Len()},
 		{"excludedForks", c.ExcludedForks},
 		{"excludedArchived", c.ExcludedArchived},
 	}

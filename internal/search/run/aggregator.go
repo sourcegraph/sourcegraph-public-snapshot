@@ -100,7 +100,6 @@ func (a *Aggregator) DoSearch(ctx context.Context, job Job, mode search.GlobalSe
 
 	err = job.Run(ctx, a)
 	return errors.Wrap(err, jobName(job)+" search failed")
-
 }
 
 func (a *Aggregator) DoSymbolSearch(ctx context.Context, args *search.TextParameters, limit int) (err error) {
@@ -179,10 +178,10 @@ func checkDiffCommitSearchLimits(ctx context.Context, args *search.TextParameter
 	}
 
 	limits := search.SearchLimits(conf.Get())
-	if max := limits.CommitDiffMaxRepos; !hasTimeFilter && len(args.Repos) > max {
+	if max := limits.CommitDiffMaxRepos; !hasTimeFilter && args.Repos.Len() > max {
 		return &RepoLimitError{ResultType: resultType, Max: max}
 	}
-	if max := limits.CommitDiffWithTimeFilterMaxRepos; hasTimeFilter && len(args.Repos) > max {
+	if max := limits.CommitDiffWithTimeFilterMaxRepos; hasTimeFilter && args.Repos.Len() > max {
 		return &TimeLimitError{ResultType: resultType, Max: max}
 	}
 	return nil
@@ -193,8 +192,10 @@ type DiffCommitError struct {
 	Max        int
 }
 
-type RepoLimitError DiffCommitError
-type TimeLimitError DiffCommitError
+type (
+	RepoLimitError DiffCommitError
+	TimeLimitError DiffCommitError
+)
 
 func (*RepoLimitError) Error() string {
 	return "repo limit error"

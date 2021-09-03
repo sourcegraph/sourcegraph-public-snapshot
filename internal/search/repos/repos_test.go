@@ -30,7 +30,7 @@ func TestMain(m *testing.M) {
 	os.Exit(m.Run())
 }
 
-func TestRevisionValidation(t *testing.T) {
+func TestRevisionValidationAndExpansion(t *testing.T) {
 	// mocks a repo repoFoo with revisions revBar and revBas
 	git.Mocks.ResolveRevision = func(spec string, opt git.ResolveRevisionOptions) (api.CommitID, error) {
 		// trigger errors
@@ -51,113 +51,81 @@ func TestRevisionValidation(t *testing.T) {
 		}
 		return "", &gitserver.RevisionNotFoundError{Repo: "repoFoo", Spec: spec}
 	}
+	git.Mocks.ExpandRefGlobs = func(repo api.RepoName, globs []git.RefGlob) (refs []git.Ref, err error) {
+		for _, glob := range globs {
+			switch {
+			case glob.Include != "":
+				refs = append(refs, git.Ref{Name: glob.Include + "/baz"})
+			}
+		}
+		return refs, nil
+	}
 	defer func() { git.Mocks.ResolveRevision = nil }()
 
-	database.Mocks.Repos.ListRepoNames = func(ctx context.Context, opts database.ReposListOptions) ([]types.RepoName, error) {
-		return []types.RepoName{{Name: "repoFoo"}}, nil
+	database.Mocks.Repos.StreamingListRepoNames = func(ctx context.Context, opts database.ReposListOptions, cb func(*types.RepoName)) error {
+		cb(&types.RepoName{Name: "repoFoo"})
+		return nil
 	}
 	defer func() { database.Mocks.Repos.List = nil }()
 
+	mkSearchRepos := func(r *types.RepoName, revs, missing search.RevSpecs) *search.Repos {
+		rs := search.NewRepos()
+		rs.Add(r, revs...)
+
+		for _, rev := range missing {
+			rs.MissingRepoRevs[r.Name] = append(rs.MissingRepoRevs[r.Name], rev)
+		}
+
+		return rs
+	}
+
 	tests := []struct {
-		repoFilters              []string
-		wantRepoRevs             []*search.RepositoryRevisions
-		wantMissingRepoRevisions []*search.RepositoryRevisions
-		wantErr                  error
+		repoFilters []string
+		want        *search.Repos
+		wantErr     error
 	}{
 		{
 			repoFilters: []string{"repoFoo@revBar:^revBas"},
-			wantRepoRevs: []*search.RepositoryRevisions{{
-				Repo: types.RepoName{Name: "repoFoo"},
-				Revs: []search.RevisionSpecifier{
-					{
-						RevSpec:        "revBar",
-						RefGlob:        "",
-						ExcludeRefGlob: "",
-					},
-					{
-						RevSpec:        "^revBas",
-						RefGlob:        "",
-						ExcludeRefGlob: "",
-					},
-				},
-			}},
-			wantMissingRepoRevisions: nil,
+			want: mkSearchRepos(&types.RepoName{Name: "repoFoo"}, search.RevSpecs{
+				{RevSpec: "revBar"},
+				{RevSpec: "^revBas"},
+			}, nil),
 		},
 		{
 			repoFilters: []string{"repoFoo@*revBar:*!revBas"},
-			wantRepoRevs: []*search.RepositoryRevisions{{
-				Repo: types.RepoName{Name: "repoFoo"},
-				Revs: []search.RevisionSpecifier{
-					{
-						RevSpec:        "",
-						RefGlob:        "revBar",
-						ExcludeRefGlob: "",
-					},
-					{
-						RevSpec:        "",
-						RefGlob:        "",
-						ExcludeRefGlob: "revBas",
-					},
-				},
-			}},
-			wantMissingRepoRevisions: nil,
+			want: mkSearchRepos(&types.RepoName{Name: "repoFoo"}, search.RevSpecs{
+				{RevSpec: "revBar/baz"},
+			}, search.RevSpecs{
+				{ExcludeRefGlob: "revBas"},
+			}),
 		},
 		{
 			repoFilters: []string{"repoFoo@revBar:^revQux"},
-			wantRepoRevs: []*search.RepositoryRevisions{{
-				Repo: types.RepoName{Name: "repoFoo"},
-				Revs: []search.RevisionSpecifier{
-					{
-						RevSpec:        "revBar",
-						RefGlob:        "",
-						ExcludeRefGlob: "",
-					},
-				},
-				ListRefs: nil,
-			}},
-			wantMissingRepoRevisions: []*search.RepositoryRevisions{{
-				Repo: types.RepoName{Name: "repoFoo"},
-				Revs: []search.RevisionSpecifier{
-					{
-						RevSpec:        "^revQux",
-						RefGlob:        "",
-						ExcludeRefGlob: "",
-					},
-				},
-			}},
+			want: mkSearchRepos(&types.RepoName{Name: "repoFoo"}, search.RevSpecs{
+				{RevSpec: "revBar"},
+			}, search.RevSpecs{
+				{RevSpec: "^revQux"},
+			}),
 		},
 		{
-			repoFilters:              []string{"repoFoo@revBar:bad_commit"},
-			wantRepoRevs:             nil,
-			wantMissingRepoRevisions: nil,
-			wantErr:                  git.BadCommitError{},
+			repoFilters: []string{"repoFoo@revBar:bad_commit"},
+			want:        nil,
+			wantErr:     git.BadCommitError{},
 		},
 		{
-			repoFilters:              []string{"repoFoo@revBar:^bad_commit"},
-			wantRepoRevs:             nil,
-			wantMissingRepoRevisions: nil,
-			wantErr:                  git.BadCommitError{},
+			repoFilters: []string{"repoFoo@revBar:^bad_commit"},
+			want:        nil,
+			wantErr:     git.BadCommitError{},
 		},
 		{
-			repoFilters:              []string{"repoFoo@revBar:deadline_exceeded"},
-			wantRepoRevs:             nil,
-			wantMissingRepoRevisions: nil,
-			wantErr:                  context.DeadlineExceeded,
+			repoFilters: []string{"repoFoo@revBar:deadline_exceeded"},
+			want:        nil,
+			wantErr:     context.DeadlineExceeded,
 		},
 		{
 			repoFilters: []string{"repoFoo"},
-			wantRepoRevs: []*search.RepositoryRevisions{{
-				Repo: types.RepoName{Name: "repoFoo"},
-				Revs: []search.RevisionSpecifier{
-					{
-						RevSpec:        "",
-						RefGlob:        "",
-						ExcludeRefGlob: "",
-					},
-				},
-			}},
-			wantMissingRepoRevisions: nil,
-			wantErr:                  nil,
+			want:        mkSearchRepos(&types.RepoName{Name: "repoFoo"}, nil, nil),
+			wantErr:     nil,
 		},
 	}
 
@@ -167,10 +135,7 @@ func TestRevisionValidation(t *testing.T) {
 			repositoryResolver := &Resolver{}
 			resolved, err := repositoryResolver.Resolve(context.Background(), op)
 
-			if diff := cmp.Diff(tt.wantRepoRevs, resolved.RepoRevs); diff != "" {
-				t.Error(diff)
-			}
-			if diff := cmp.Diff(tt.wantMissingRepoRevisions, resolved.MissingRepoRevs); diff != "" {
+			if diff := cmp.Diff(tt.want, resolved); diff != "" {
 				t.Error(diff)
 			}
 			if tt.wantErr != err {
@@ -190,8 +155,8 @@ func TestSearchRevspecs(t *testing.T) {
 		specs    []string
 		repo     string
 		err      error
-		matched  []search.RevisionSpecifier
-		clashing []search.RevisionSpecifier
+		matched  search.RevSpecs
+		clashing search.RevSpecs
 	}
 
 	tests := []testCase{
@@ -200,7 +165,7 @@ func TestSearchRevspecs(t *testing.T) {
 			specs:    []string{"foo"},
 			repo:     "foo",
 			err:      nil,
-			matched:  []search.RevisionSpecifier{{RevSpec: ""}},
+			matched:  search.RevSpecs{{RevSpec: ""}},
 			clashing: nil,
 		},
 		{
@@ -208,7 +173,7 @@ func TestSearchRevspecs(t *testing.T) {
 			specs:    []string{".*o@123456"},
 			repo:     "foo",
 			err:      nil,
-			matched:  []search.RevisionSpecifier{{RevSpec: "123456"}},
+			matched:  search.RevSpecs{{RevSpec: "123456"}},
 			clashing: nil,
 		},
 		{
@@ -216,7 +181,7 @@ func TestSearchRevspecs(t *testing.T) {
 			specs:    []string{".*o@123456", "foo"},
 			repo:     "foo",
 			err:      nil,
-			matched:  []search.RevisionSpecifier{{RevSpec: "123456"}},
+			matched:  search.RevSpecs{{RevSpec: "123456"}},
 			clashing: nil,
 		},
 		{
@@ -224,7 +189,7 @@ func TestSearchRevspecs(t *testing.T) {
 			specs:    []string{".*o", "foo@123456"},
 			repo:     "foo",
 			err:      nil,
-			matched:  []search.RevisionSpecifier{{RevSpec: "123456"}},
+			matched:  search.RevSpecs{{RevSpec: "123456"}},
 			clashing: nil,
 		},
 		{
@@ -233,14 +198,14 @@ func TestSearchRevspecs(t *testing.T) {
 			repo:     "foo",
 			err:      nil,
 			matched:  nil,
-			clashing: []search.RevisionSpecifier{{RevSpec: "123456"}, {RevSpec: "234567"}},
+			clashing: search.RevSpecs{{RevSpec: "123456"}, {RevSpec: "234567"}},
 		},
 		{
 			descr:    "overlapping revspecs",
 			specs:    []string{".*o@a:b", "foo@b:c"},
 			repo:     "foo",
 			err:      nil,
-			matched:  []search.RevisionSpecifier{{RevSpec: "b"}},
+			matched:  search.RevSpecs{{RevSpec: "b"}},
 			clashing: nil,
 		},
 		{
@@ -248,7 +213,7 @@ func TestSearchRevspecs(t *testing.T) {
 			specs:    []string{".*o@a:b:c", "foo@b:c:d"},
 			repo:     "foo",
 			err:      nil,
-			matched:  []search.RevisionSpecifier{{RevSpec: "b"}, {RevSpec: "c"}},
+			matched:  search.RevSpecs{{RevSpec: "b"}, {RevSpec: "c"}},
 			clashing: nil,
 		},
 		{
@@ -303,7 +268,10 @@ func BenchmarkGetRevsForMatchedRepo(b *testing.B) {
 	})
 }
 
-func TestSearchableRepositories(t *testing.T) {
+func TestSearchableRepositoriesExclusion(t *testing.T) {
+	envvar.MockSourcegraphDotComMode(true)
+	t.Cleanup(func() { envvar.MockSourcegraphDotComMode(false) })
+
 	tcs := []struct {
 		name                string
 		defaultsInDb        []string
@@ -341,29 +309,34 @@ func TestSearchableRepositories(t *testing.T) {
 	}
 	for _, tc := range tcs {
 		t.Run(tc.name, func(t *testing.T) {
-			var drs []types.RepoName
+			var drs []*types.RepoName
 			for i, name := range tc.defaultsInDb {
-				r := types.RepoName{
+				r := &types.RepoName{
 					ID:   api.RepoID(i),
 					Name: api.RepoName(name),
 				}
 				drs = append(drs, r)
 			}
-			getRawSearchableRepos := func(ctx context.Context) ([]types.RepoName, error) {
-				return drs, nil
-			}
 
-			ctx := context.Background()
-			drs, err := searchableRepositories(ctx, getRawSearchableRepos, tc.excludePatterns)
+			repositoryResolver := &Resolver{SearchableReposFunc: func(ctx context.Context) (public, private *types.RepoSet, err error) {
+				return types.NewRepoSet(drs...), types.NewRepoSet(), nil
+			}}
+
+			resolved, err := repositoryResolver.Resolve(context.Background(), search.RepoOptions{
+				MinusRepoFilters: tc.excludePatterns,
+			})
 			if err != nil {
 				t.Fatal(err)
 			}
-			var drNames []string
-			for _, dr := range drs {
-				drNames = append(drNames, string(dr.Name))
-			}
-			if !reflect.DeepEqual(drNames, tc.want) {
-				t.Errorf("names of indexable repos = %v, want %v", drNames, tc.want)
+
+			var have []string
+			resolved.ForEach(func(r *types.RepoName, _ search.RevSpecs) error {
+				have = append(have, string(r.Name))
+				return nil
+			})
+
+			if !reflect.DeepEqual(have, tc.want) {
+				t.Errorf("names of indexable repos = %v, want %v", have, tc.want)
 			}
 		})
 	}
@@ -384,14 +357,14 @@ func TestUseIndexableReposIfMissingOrGlobalSearchContext(t *testing.T) {
 		"default/two",
 		"default/three",
 	}
-	searchableRepos := make([]types.RepoName, len(wantIndexableRepos))
+	searchableRepos := make([]*types.RepoName, len(wantIndexableRepos))
 	zoektRepoListEntries := make([]*zoekt.RepoListEntry, len(wantIndexableRepos))
-	mockSearchableReposFunc := func(_ context.Context) ([]types.RepoName, error) {
-		return searchableRepos, nil
+	mockSearchableReposFunc := func(_ context.Context) (public, private *types.RepoSet, err error) {
+		return types.NewRepoSet(searchableRepos...), types.NewRepoSet(), nil
 	}
 
 	for idx, name := range wantIndexableRepos {
-		searchableRepos[idx] = types.RepoName{Name: api.RepoName(name)}
+		searchableRepos[idx] = &types.RepoName{Name: api.RepoName(name)}
 		zoektRepoListEntries[idx] = &zoekt.RepoListEntry{
 			Repository: zoekt.Repository{
 				Name:     name,
@@ -420,9 +393,10 @@ func TestUseIndexableReposIfMissingOrGlobalSearchContext(t *testing.T) {
 				t.Fatal(err)
 			}
 			var repoNames []string
-			for _, repoRev := range resolved.RepoRevs {
-				repoNames = append(repoNames, string(repoRev.Repo.Name))
-			}
+			resolved.ForEach(func(r *types.RepoName, _ search.RevSpecs) error {
+				repoNames = append(repoNames, string(r.Name))
+				return nil
+			})
 			if !reflect.DeepEqual(repoNames, wantIndexableRepos) {
 				t.Errorf("names of indexable repos = %v, want %v", repoNames, wantIndexableRepos)
 			}
@@ -442,11 +416,11 @@ func TestResolveRepositoriesWithUserSearchContext(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	database.Mocks.Repos.ListRepoNames = func(ctx context.Context, op database.ReposListOptions) ([]types.RepoName, error) {
+	database.Mocks.Repos.StreamingListRepoNames = func(ctx context.Context, op database.ReposListOptions, cb func(*types.RepoName)) error {
 		if op.UserID != wantUserID {
 			t.Fatalf("got %q, want %q", op.UserID, wantUserID)
 		}
-		return []types.RepoName{
+		for _, r := range []*types.RepoName{
 			{
 				ID:   1,
 				Name: "example.com/a",
@@ -471,7 +445,10 @@ func TestResolveRepositoriesWithUserSearchContext(t *testing.T) {
 				ID:   6,
 				Name: "external.com/c",
 			},
-		}, nil
+		} {
+			cb(r)
+		}
+		return nil
 	}
 	database.Mocks.Repos.Count = func(ctx context.Context, op database.ReposListOptions) (int, error) { return 6, nil }
 	database.Mocks.Namespaces.GetByName = func(ctx context.Context, name string) (*database.Namespace, error) {
@@ -481,7 +458,7 @@ func TestResolveRepositoriesWithUserSearchContext(t *testing.T) {
 		return &database.Namespace{Name: wantName, User: wantUserID}, nil
 	}
 	defer func() {
-		database.Mocks.Repos.ListRepoNames = nil
+		database.Mocks.Repos.StreamingListRepoNames = nil
 		database.Mocks.Repos.Count = nil
 		database.Mocks.Namespaces.GetByName = nil
 	}()
@@ -496,9 +473,10 @@ func TestResolveRepositoriesWithUserSearchContext(t *testing.T) {
 		t.Fatal(err)
 	}
 	var got []api.RepoName
-	for _, rev := range resolved.RepoRevs {
-		got = append(got, rev.Repo.Name)
-	}
+	resolved.ForEach(func(r *types.RepoName, _ search.RevSpecs) error {
+		got = append(got, r.Name)
+		return nil
+	})
 	sort.Slice(got, func(i, j int) bool {
 		return got[i] < got[j]
 	})
@@ -515,8 +493,8 @@ func TestResolveRepositoriesWithUserSearchContext(t *testing.T) {
 	}
 }
 
-func stringSliceToRevisionSpecifiers(revisions []string) []search.RevisionSpecifier {
-	revisionSpecs := make([]search.RevisionSpecifier, 0, len(revisions))
+func stringSliceToRevisionSpecifiers(revisions []string) search.RevSpecs {
+	revisionSpecs := make(search.RevSpecs, 0, len(revisions))
 	for _, revision := range revisions {
 		revisionSpecs = append(revisionSpecs, search.RevisionSpecifier{RevSpec: revision})
 	}
@@ -536,11 +514,13 @@ func TestResolveRepositoriesWithSearchContext(t *testing.T) {
 	git.Mocks.ResolveRevision = func(spec string, opt git.ResolveRevisionOptions) (api.CommitID, error) {
 		return api.CommitID(spec), nil
 	}
-	database.Mocks.Repos.ListRepoNames = func(ctx context.Context, op database.ReposListOptions) ([]types.RepoName, error) {
+	database.Mocks.Repos.StreamingListRepoNames = func(ctx context.Context, op database.ReposListOptions, cb func(*types.RepoName)) error {
 		if op.SearchContextID != searchContext.ID {
 			t.Fatalf("got %q, want %q", op.SearchContextID, searchContext.ID)
 		}
-		return []types.RepoName{repoA, repoB}, nil
+		cb(&repoA)
+		cb(&repoB)
+		return nil
 	}
 	database.Mocks.Repos.Count = func(ctx context.Context, op database.ReposListOptions) (int, error) { return 2, nil }
 	database.Mocks.SearchContexts.GetSearchContext = func(ctx context.Context, opts database.GetSearchContextOptions) (*types.SearchContext, error) {
@@ -557,7 +537,7 @@ func TestResolveRepositoriesWithSearchContext(t *testing.T) {
 	}
 	defer func() {
 		git.Mocks.ResolveRevision = nil
-		database.Mocks.Repos.ListRepoNames = nil
+		database.Mocks.Repos.StreamingListRepoNames = nil
 		database.Mocks.Repos.Count = nil
 		database.Mocks.SearchContexts.GetSearchContext = nil
 		database.Mocks.SearchContexts.GetSearchContextRepositoryRevisions = nil
@@ -576,11 +556,13 @@ func TestResolveRepositoriesWithSearchContext(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	wantRepositoryRevisions := []*search.RepositoryRevisions{
-		{Repo: repoA, Revs: stringSliceToRevisionSpecifiers(searchContextRepositoryRevisions[0].Revisions)},
-		{Repo: repoB, Revs: stringSliceToRevisionSpecifiers(searchContextRepositoryRevisions[1].Revisions)},
-	}
-	if !reflect.DeepEqual(resolved.RepoRevs, wantRepositoryRevisions) {
-		t.Errorf("got repository revisions %+v, want %+v", resolved.RepoRevs, wantRepositoryRevisions)
+	want := search.NewRepos()
+	want.Add(&repoA, stringSliceToRevisionSpecifiers(searchContextRepositoryRevisions[0].Revisions)...)
+	want.Add(&repoB, stringSliceToRevisionSpecifiers(searchContextRepositoryRevisions[1].Revisions)...)
+	want.Excluded.Forks = 2
+	want.Excluded.Archived = 2
+
+	if diff := cmp.Diff(want, resolved); diff != "" {
+		t.Errorf("mismatch(-want, +got): %s", diff)
 	}
 }

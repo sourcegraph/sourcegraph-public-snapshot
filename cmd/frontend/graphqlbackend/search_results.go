@@ -55,10 +55,12 @@ func (c *SearchResultsResolver) LimitHit() bool {
 
 func (c *SearchResultsResolver) Repositories() []*RepositoryResolver {
 	repos := c.Stats.Repos
-	resolvers := make([]*RepositoryResolver, 0, len(repos))
-	for _, r := range repos {
+	resolvers := make([]*RepositoryResolver, 0, repos.Len())
+	repos.ForEach(func(r *types.RepoName, _ search.RevSpecs) error {
 		resolvers = append(resolvers, NewRepositoryResolver(c.db, r.ToRepo()))
-	}
+		return nil
+	})
+	// TODO(tsenart): Why do we sort by ID here, shouldn't we keep the ordering of results due to ranking?
 	sort.Slice(resolvers, func(a, b int) bool {
 		return resolvers[a].ID() < resolvers[b].ID()
 	})
@@ -66,16 +68,17 @@ func (c *SearchResultsResolver) Repositories() []*RepositoryResolver {
 }
 
 func (c *SearchResultsResolver) RepositoriesCount() int32 {
-	return int32(len(c.Stats.Repos))
+	return int32(c.Stats.Repos.Len())
 }
 
 func (c *SearchResultsResolver) repositoryResolvers(mask search.RepoStatus) []*RepositoryResolver {
 	var resolvers []*RepositoryResolver
 	c.Stats.Status.Filter(mask, func(id api.RepoID) {
-		if r, ok := c.Stats.Repos[id]; ok {
+		if r := c.Stats.Repos.GetByID(id); r != nil {
 			resolvers = append(resolvers, NewRepositoryResolver(c.db, r.ToRepo()))
 		}
 	})
+	// TODO(tsenart): Why do we sort by ID here, shouldn't we keep the ordering of results due to ranking?
 	sort.Slice(resolvers, func(a, b int) bool {
 		return resolvers[a].ID() < resolvers[b].ID()
 	})
@@ -154,10 +157,10 @@ func matchesToResolvers(db dbutil.DB, matches []result.Match) []SearchResultReso
 			resolvers = append(resolvers, &FileMatchResolver{
 				db:           db,
 				FileMatch:    *v,
-				RepoResolver: getRepoResolver(v.Repo, ""),
+				RepoResolver: getRepoResolver(*v.Repo, ""),
 			})
 		case *result.RepoMatch:
-			resolvers = append(resolvers, getRepoResolver(v.RepoName(), v.Rev))
+			resolvers = append(resolvers, getRepoResolver(*v.RepoName(), v.Rev))
 		case *result.CommitMatch:
 			resolvers = append(resolvers, &CommitSearchResultResolver{
 				db:          db,
@@ -461,7 +464,6 @@ func (r *searchResolver) toRepoOptions(q query.Q, opts resolveRepositoriesOpts) 
 	repoFilters, minusRepoFilters := q.Repositories()
 	if opts.effectiveRepoFieldValues != nil {
 		repoFilters = opts.effectiveRepoFieldValues
-
 	}
 	repoGroupFilters, _ := q.StringValues(query.FieldRepoGroup)
 
@@ -818,8 +820,7 @@ func (r *searchResolver) evaluateOr(ctx context.Context, q query.Basic) (*Search
 // subexpressions that require resolving potentially disjoint repository data.
 func (r *searchResolver) invalidateCache() {
 	if r.invalidateRepoCache {
-		r.resolved.RepoRevs = nil
-		r.resolved.MissingRepoRevs = nil
+		r.resolved = search.NewRepos()
 		r.repoErr = nil
 	}
 }
@@ -1015,7 +1016,7 @@ func DetermineStatusForLogs(srr *SearchResultsResolver, err error) string {
 		return "timeout"
 	case err != nil:
 		return "error"
-	case srr.Stats.Status.All(search.RepoStatusTimedout) && srr.Stats.Status.Len() == len(srr.Stats.Repos):
+	case srr.Stats.Status.All(search.RepoStatusTimedout) && srr.Stats.Status.Len() == srr.Stats.Repos.Len():
 		return "timeout"
 	case srr.Stats.Status.Any(search.RepoStatusTimedout):
 		return "partial_timeout"
@@ -1478,19 +1479,21 @@ func (r *searchResolver) doResults(ctx context.Context, args *search.TextParamet
 	// search results with resolved repos.
 	if args.Mode == search.ZoektGlobalSearch {
 		argsIndexed := *args
+		argsIndexed.Repos = search.NewRepos()
 
 		// Get all private repos that are accessible by the current actor.
-		if res, err := database.Repos(r.db).ListRepoNames(ctx, database.ReposListOptions{
+		err := database.Repos(r.db).StreamingListRepoNames(ctx, database.ReposListOptions{
 			OnlyPrivate:  true,
 			LimitOffset:  &database.LimitOffset{Limit: search.SearchLimits(conf.Get()).MaxRepos + 1},
 			OnlyForks:    args.RepoOptions.OnlyForks,
 			NoForks:      args.RepoOptions.NoForks,
 			OnlyArchived: args.RepoOptions.OnlyArchived,
 			NoArchived:   args.RepoOptions.NoArchived,
-		}); err != nil {
+		}, func(r *types.RepoName) {
+			argsIndexed.Repos.Add(r)
+		})
+		if err != nil {
 			tr.LazyPrintf("error resolving private repos: %v", err)
-		} else {
-			argsIndexed.UserPrivateRepos = res
 		}
 
 		wg := waitGroup(true)
@@ -1534,10 +1537,10 @@ func (r *searchResolver) doResults(ctx context.Context, args *search.TextParamet
 		}
 		return nil, err
 	}
-	args.Repos = resolved.RepoRevs
+	args.Repos = resolved
 
-	tr.LazyPrintf("searching %d repos, %d missing", len(args.Repos), len(resolved.MissingRepoRevs))
-	if len(args.Repos) == 0 {
+	tr.LazyPrintf("searching %d repos, %d missing", args.Repos.Len(), len(resolved.MissingRepoRevs))
+	if args.Repos.Len() == 0 {
 		return r.alertForNoResolvedRepos(ctx, args.Query).wrapResults(), nil
 	}
 
@@ -1548,12 +1551,12 @@ func (r *searchResolver) doResults(ctx context.Context, args *search.TextParamet
 
 	agg.Send(streaming.SearchEvent{
 		Stats: streaming.Stats{
-			Repos:            resolved.RepoSet,
-			ExcludedForks:    resolved.ExcludedRepos.Forks,
-			ExcludedArchived: resolved.ExcludedRepos.Archived,
+			Repos:            resolved,
+			ExcludedForks:    resolved.Excluded.Forks,
+			ExcludedArchived: resolved.Excluded.Archived,
 		},
 	})
-	tr.LazyPrintf("sending first stats (repos %d, excluded repos %+v) - done", len(resolved.RepoSet), resolved.ExcludedRepos)
+	tr.LazyPrintf("sending first stats (repos %d, excluded repos %+v) - done", resolved.Len(), resolved.Excluded.Len())
 
 	if args.ResultTypes.Has(result.TypeRepo) {
 		wg := waitGroup(true)

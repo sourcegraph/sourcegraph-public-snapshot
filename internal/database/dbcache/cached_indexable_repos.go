@@ -18,20 +18,20 @@ import (
 const indexableReposMaxAge = time.Minute
 
 type cachedRepos struct {
-	repos   []types.RepoName
+	repos   *types.RepoSet
 	fetched time.Time
 }
 
 // Repos returns the current cached repos and boolean value indicating
 // whether an update is required
-func (c *cachedRepos) Repos() ([]types.RepoName, bool) {
+func (c *cachedRepos) Repos() (*types.RepoSet, bool) {
 	if c == nil {
 		return nil, true
 	}
 	if c.repos == nil {
 		return nil, true
 	}
-	return append([]types.RepoName{}, c.repos...), time.Since(c.fetched) > indexableReposMaxAge
+	return c.repos, time.Since(c.fetched) > indexableReposMaxAge
 }
 
 func NewIndexableReposLister(store *database.RepoStore) *IndexableReposLister {
@@ -56,16 +56,16 @@ type IndexableReposLister struct {
 //
 // The values are cached for up to indexableReposMaxAge. If the cache has expired, we return
 // stale data and start a background refresh.
-func (s *IndexableReposLister) List(ctx context.Context) (results []types.RepoName, err error) {
+func (s *IndexableReposLister) List(ctx context.Context) (repos *types.RepoSet, err error) {
 	return s.list(ctx, false)
 }
 
 // ListPublic is similar to List except that it only includes public repos.
-func (s *IndexableReposLister) ListPublic(ctx context.Context) (results []types.RepoName, err error) {
+func (s *IndexableReposLister) ListPublic(ctx context.Context) (repos *types.RepoSet, err error) {
 	return s.list(ctx, true)
 }
 
-func (s *IndexableReposLister) list(ctx context.Context, onlyPublic bool) (results []types.RepoName, err error) {
+func (s *IndexableReposLister) list(ctx context.Context, onlyPublic bool) (repos *types.RepoSet, err error) {
 	cache := &(s.cacheAllRepos)
 	if onlyPublic {
 		cache = &(s.cachePublicRepos)
@@ -78,7 +78,7 @@ func (s *IndexableReposLister) list(ctx context.Context, onlyPublic bool) (resul
 	}
 
 	// We don't have any repos yet, fetch them
-	if len(repos) == 0 {
+	if repos == nil || repos.Len() == 0 {
 		return s.refreshCache(ctx, onlyPublic)
 	}
 
@@ -95,7 +95,7 @@ func (s *IndexableReposLister) list(ctx context.Context, onlyPublic bool) (resul
 	return repos, nil
 }
 
-func (s *IndexableReposLister) refreshCache(ctx context.Context, onlyPublic bool) ([]types.RepoName, error) {
+func (s *IndexableReposLister) refreshCache(ctx context.Context, onlyPublic bool) (*types.RepoSet, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -115,16 +115,14 @@ func (s *IndexableReposLister) refreshCache(ctx context.Context, onlyPublic bool
 	if !onlyPublic {
 		opts.IncludePrivate = true
 	}
-	repos, err := s.store.ListIndexableRepos(ctx, opts)
+
+	repos = types.NewRepoSet()
+	err := s.store.StreamingListIndexableRepos(ctx, opts, repos.Add)
 	if err != nil {
 		return nil, errors.Wrap(err, "querying for indexable repos")
 	}
 
-	cache.Store(&cachedRepos{
-		// Copy since repos will be mutated by the caller
-		repos:   append([]types.RepoName{}, repos...),
-		fetched: time.Now(),
-	})
+	cache.Store(&cachedRepos{repos: repos, fetched: time.Now()})
 
 	return repos, nil
 }

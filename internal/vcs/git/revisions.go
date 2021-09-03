@@ -93,6 +93,43 @@ func ResolveRevision(ctx context.Context, repo api.RepoName, spec string, opt Re
 	return runRevParse(ctx, cmd, spec)
 }
 
+// ExpandedRefGlobs evaluates all of ref glob expressions and returns the full, current list of
+// refs matched or resolved by them, plus the explicitly listed of Git revspecs. See
+// git.CompileRefGlobs for information on how ref include/exclude globs are handled.
+//
+// Not all callers need to expand ref glob expressions. If a caller is passing the ref globs as
+// command-line args to `git` directly (e.g., to `git log --glob ... --exclude ...`), it does not
+// need to use this function.
+func ExpandRefGlobs(ctx context.Context, repo api.RepoName, globs []RefGlob) ([]Ref, error) {
+	if Mocks.ExpandRefGlobs != nil {
+		return Mocks.ExpandRefGlobs(repo, globs)
+	}
+
+	allRefs, err := ListRefs(ctx, repo)
+	if err != nil {
+		return nil, err
+	}
+
+	rg, err := CompileRefGlobs(globs)
+	if err != nil {
+		return nil, err
+	}
+
+	set := make(map[string]api.CommitID, len(allRefs))
+	for _, ref := range allRefs {
+		if rg.Match(ref.Name) {
+			set[ref.Name] = ref.CommitID
+		}
+	}
+
+	refs := make([]Ref, 0, len(set))
+	for name, commitID := range set {
+		refs = append(refs, Ref{Name: name, CommitID: commitID})
+	}
+
+	return refs, nil
+}
+
 type BadCommitError struct {
 	Spec   string
 	Commit api.CommitID

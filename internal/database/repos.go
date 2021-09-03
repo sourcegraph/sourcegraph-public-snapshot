@@ -692,14 +692,33 @@ func (s *RepoStore) List(ctx context.Context, opt ReposListOptions) (results []*
 
 // ListRepoNames returns a list of repositories names and ids.
 func (s *RepoStore) ListRepoNames(ctx context.Context, opt ReposListOptions) (results []types.RepoName, err error) {
-	tr, ctx := trace.New(ctx, "repos.ListRepoNames", "")
-	defer func() {
-		tr.SetError(err)
-		tr.Finish()
-	}()
 	if Mocks.Repos.ListRepoNames != nil {
 		return Mocks.Repos.ListRepoNames(ctx, opt)
 	}
+
+	return results, s.StreamingListRepoNames(ctx, opt, func(r *types.RepoName) {
+		results = append(results, *r)
+	})
+}
+
+// StreamingListRepoNames list repositories names and ids and calls the given callback function with each parsed record.
+func (s *RepoStore) StreamingListRepoNames(ctx context.Context, opt ReposListOptions, cb func(*types.RepoName)) (err error) {
+	if Mocks.Repos.StreamingListRepoNames != nil {
+		return Mocks.Repos.StreamingListRepoNames(ctx, opt, cb)
+	}
+
+	var privateIDs []api.RepoID
+
+	tr, ctx := trace.New(ctx, "repos.StreamingListRepoNames", "")
+	defer func() {
+		if len(privateIDs) > 0 {
+			counterAccessGranted.Inc()
+			logPrivateRepoAccessGranted(ctx, s.Handle().DB(), privateIDs)
+		}
+
+		tr.SetError(err)
+		tr.Finish()
+	}()
 	s.ensureStore()
 
 	opt.Select = minimalColumns(repoColumns)
@@ -707,35 +726,21 @@ func (s *RepoStore) ListRepoNames(ctx context.Context, opt ReposListOptions) (re
 		opt.OrderBy = append(opt.OrderBy, RepoListSort{Field: RepoListID})
 	}
 
-	var repos []types.RepoName
-	var privateIDs []api.RepoID
-
-	err = s.list(ctx, tr, opt, func(rows *sql.Rows) error {
+	return s.list(ctx, tr, opt, func(rows *sql.Rows) error {
 		var r types.RepoName
-		var private bool
-		err := rows.Scan(&r.ID, &r.Name, &private)
+		err := rows.Scan(&r.ID, &r.Name, &r.Private)
 		if err != nil {
 			return err
 		}
 
-		repos = append(repos, r)
-
-		if private {
+		if r.Private {
 			privateIDs = append(privateIDs, r.ID)
 		}
 
+		cb(&r)
+
 		return nil
 	})
-	if err != nil {
-		return nil, err
-	}
-
-	if len(privateIDs) > 0 {
-		counterAccessGranted.Inc()
-		logPrivateRepoAccessGranted(ctx, s.Handle().DB(), privateIDs)
-	}
-
-	return repos, nil
 }
 
 func (s *RepoStore) listRepos(ctx context.Context, tr *trace.Trace, opt ReposListOptions) (rs []*types.Repo, err error) {
@@ -1017,7 +1022,16 @@ var listIndexableReposMinStars, _ = strconv.Atoi(env.Get(
 
 // ListIndexableRepos returns a list of repos to be indexed for search on sourcegraph.com.
 // This includes all repos with >= 20 stars as well as user added repos.
-func (s *RepoStore) ListIndexableRepos(ctx context.Context, opts ListIndexableReposOptions) (results []types.RepoName, err error) {
+func (s *RepoStore) ListIndexableRepos(ctx context.Context, opts ListIndexableReposOptions) ([]types.RepoName, error) {
+	var repos []types.RepoName
+	return repos, s.StreamingListIndexableRepos(ctx, opts, func(r *types.RepoName) {
+		repos = append(repos, *r)
+	})
+}
+
+// StreamingListIndexableRepos lists repos to be indexed for search on sourcegraph.com, calling the given
+// callback for each parsed record.
+func (s *RepoStore) StreamingListIndexableRepos(ctx context.Context, opts ListIndexableReposOptions, cb func(*types.RepoName)) (err error) {
 	tr, ctx := trace.New(ctx, "repos.ListIndexable", "")
 	defer func() {
 		tr.SetError(err)
@@ -1060,22 +1074,22 @@ func (s *RepoStore) ListIndexableRepos(ctx context.Context, opts ListIndexableRe
 
 	rows, err := s.Query(ctx, q)
 	if err != nil {
-		return nil, errors.Wrap(err, "querying indexable repos")
+		return errors.Wrap(err, "querying indexable repos")
 	}
 	defer rows.Close()
 
 	for rows.Next() {
 		var r types.RepoName
-		if err := rows.Scan(&r.ID, &r.Name); err != nil {
-			return nil, errors.Wrap(err, "scanning indexable repos")
+		if err := rows.Scan(&r.ID, &r.Name, &r.Private); err != nil {
+			return errors.Wrap(err, "scanning indexable repos")
 		}
-		results = append(results, r)
+		cb(&r)
 	}
 	if err = rows.Err(); err != nil {
-		return nil, errors.Wrap(err, "scanning indexable repos")
+		return errors.Wrap(err, "scanning indexable repos")
 	}
 
-	return results, nil
+	return nil
 }
 
 const listIndexableReposQuery = `
@@ -1096,7 +1110,7 @@ WITH s AS (
 	FROM user_public_repos
 )
 
-SELECT DISTINCT ON (stars, id) id, name
+SELECT DISTINCT ON (stars, id) id, name, private
 FROM repo
 JOIN s ON s.repo_id = repo.id
 %s

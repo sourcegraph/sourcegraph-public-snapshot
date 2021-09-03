@@ -26,7 +26,7 @@ import (
 
 // This file contains the root resolver for search. It currently has a lot of
 // logic that spans out into all the other search_* files.
-var mockResolveRepositories func() (resolved searchrepos.Resolved, err error)
+var mockResolveRepositories func() (resolved *search.Repos, err error)
 
 type SearchArgs struct {
 	Version        string
@@ -123,7 +123,7 @@ func NewSearchImplementer(ctx context.Context, db dbutil.DB, args *SearchArgs) (
 		zoekt:        search.Indexed(),
 		searcherURLs: search.SearcherURLs(),
 		reposMu:      &sync.Mutex{},
-		resolved:     &searchrepos.Resolved{},
+		resolved:     &search.Repos{},
 	}, nil
 }
 
@@ -203,7 +203,7 @@ type searchResolver struct {
 	// can copy the resolver, while sharing the mutex. If we didn't use a pointer,
 	// the mutex would lead to unexpected behaviour.
 	reposMu  *sync.Mutex
-	resolved *searchrepos.Resolved
+	resolved *search.Repos
 	repoErr  error
 
 	zoekt        *searchbackend.Zoekt
@@ -263,7 +263,7 @@ type resolveRepositoriesOpts struct {
 
 // resolveRepositories calls ResolveRepositories, caching the result for the common case
 // where opts.effectiveRepoFieldValues == nil.
-func (r *searchResolver) resolveRepositories(ctx context.Context, options search.RepoOptions) (resolved searchrepos.Resolved, err error) {
+func (r *searchResolver) resolveRepositories(ctx context.Context, options search.RepoOptions) (resolved *search.Repos, err error) {
 	if mockResolveRepositories != nil {
 		return mockResolveRepositories()
 	}
@@ -286,12 +286,12 @@ func (r *searchResolver) resolveRepositories(ctx context.Context, options search
 		// hit the database once.
 		r.reposMu.Lock()
 		defer r.reposMu.Unlock()
-		if r.resolved.RepoRevs != nil || r.resolved.MissingRepoRevs != nil || r.repoErr != nil {
+		if r.resolved.Len() > 0 || len(r.resolved.RepoRevs) > 0 || r.repoErr != nil {
 			tr.LazyPrintf("cached")
-			return *r.resolved, r.repoErr
+			return r.resolved, r.repoErr
 		}
 		defer func() {
-			r.resolved = &resolved
+			r.resolved = resolved
 			r.repoErr = err
 		}()
 	}
@@ -344,7 +344,7 @@ func (r *searchResolver) suggestFilePaths(ctx context.Context, limit int) ([]Sea
 		return nil, nil
 	}
 
-	args.Repos = resolved.RepoRevs
+	args.Repos = resolved
 
 	fileMatches, _, err := unindexed.SearchFilesInReposBatch(ctx, &args)
 	if err != nil {

@@ -80,24 +80,25 @@ func TestListIndexableRepos(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			want := []types.RepoName{
-				{
+			want := types.NewRepoSet(
+				&types.RepoName{
 					ID:   api.RepoID(11),
 					Name: "github.com/foo/bar11",
 				},
-				{
+				&types.RepoName{
 					ID:   api.RepoID(10),
 					Name: "github.com/foo/bar10",
 				},
-				{
+				&types.RepoName{
 					ID:   api.RepoID(14),
 					Name: "github.com/foo/bar14",
 				},
-				{
-					ID:   api.RepoID(15),
-					Name: "github.com/foo/bar15",
+				&types.RepoName{
+					ID:      api.RepoID(15),
+					Name:    "github.com/foo/bar15",
+					Private: true,
 				},
-			}
+			)
 			if diff := cmp.Diff(want, repos, cmpopts.EquateEmpty()); diff != "" {
 				t.Errorf("mismatch (-want +got):\n%s", diff)
 			}
@@ -108,20 +109,20 @@ func TestListIndexableRepos(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			want := []types.RepoName{
-				{
+			want := types.NewRepoSet(
+				&types.RepoName{
 					ID:   api.RepoID(11),
 					Name: "github.com/foo/bar11",
 				},
-				{
+				&types.RepoName{
 					ID:   api.RepoID(10),
 					Name: "github.com/foo/bar10",
 				},
-				{
+				&types.RepoName{
 					ID:   api.RepoID(14),
 					Name: "github.com/foo/bar14",
 				},
-			}
+			)
 			if diff := cmp.Diff(want, repos, cmpopts.EquateEmpty()); diff != "" {
 				t.Errorf("mismatch (-want +got):\n%s", diff)
 			}

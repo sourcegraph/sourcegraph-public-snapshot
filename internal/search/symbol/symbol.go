@@ -48,7 +48,7 @@ func Search(ctx context.Context, args *search.TextParameters, limit int, stream 
 		return err
 	}
 
-	tr, ctx := trace.New(ctx, "Search symbols", fmt.Sprintf("query: %+v, numRepoRevs: %d", args.PatternInfo, len(args.Repos)))
+	tr, ctx := trace.New(ctx, "Search symbols", fmt.Sprintf("query: %+v, numRepoRevs: %d", args.PatternInfo, args.Repos.Len()))
 	defer func() {
 		tr.SetError(err)
 		tr.Finish()
@@ -80,26 +80,35 @@ func Search(ctx context.Context, args *search.TextParameters, limit int, stream 
 		})
 	}
 
-	for _, repoRevs := range request.UnindexedRepos() {
-		repoRevs := repoRevs
+	err = request.UnindexedRepos().ForEach(func(r *types.RepoName, revs search.RevSpecs) error {
 		if ctx.Err() != nil {
-			break
+			return ctx.Err()
 		}
-		if len(repoRevs.RevSpecs()) == 0 {
-			continue
+
+		hasRevSpecs := false
+		for _, r := range revs {
+			if !r.IsGlob() {
+				hasRevSpecs = true
+				break
+			}
 		}
+
+		if !hasRevSpecs {
+			return nil
+		}
+
 		run.Acquire()
 		goroutine.Go(func() {
 			defer run.Release()
 
-			matches, err := searchInRepo(ctx, repoRevs, args.PatternInfo, limit)
-			stats, err := searchrepos.HandleRepoSearchResult(repoRevs, len(matches) > limit, false, err)
+			matches, err := searchInRepo(ctx, r, revs, args.PatternInfo, limit)
+			stats, err := searchrepos.HandleRepoSearchResult(r.ID, revs, len(matches) > limit, false, err)
 			stream.Send(streaming.SearchEvent{
 				Results: matches,
 				Stats:   stats,
 			})
 			if err != nil {
-				tr.LogFields(otlog.String("repo", string(repoRevs.Repo.Name)), otlog.Error(err))
+				tr.LogFields(otlog.String("repo", string(r.Name)), otlog.Error(err))
 				// Only record error if we haven't timed out.
 				if ctx.Err() == nil {
 					cancel()
@@ -107,12 +116,17 @@ func Search(ctx context.Context, args *search.TextParameters, limit int, stream 
 				}
 			}
 		})
+
+		return nil
+	})
+	if err != nil {
+		return err
 	}
 
 	return run.Wait()
 }
 
-func searchInRepo(ctx context.Context, repoRevs *search.RepositoryRevisions, patternInfo *search.TextPatternInfo, limit int) (res []result.Match, err error) {
+func searchInRepo(ctx context.Context, r *types.RepoName, revs search.RevSpecs, patternInfo *search.TextPatternInfo, limit int) (res []result.Match, err error) {
 	span, ctx := ot.StartSpanFromContext(ctx, "Search symbols in repo")
 	defer func() {
 		if err != nil {
@@ -121,22 +135,28 @@ func searchInRepo(ctx context.Context, repoRevs *search.RepositoryRevisions, pat
 		}
 		span.Finish()
 	}()
-	span.SetTag("repo", string(repoRevs.Repo.Name))
+	span.SetTag("repo", string(r.Name))
 
-	inputRev := repoRevs.RevSpecs()[0]
+	var inputRev string
+	for _, rev := range revs {
+		if !rev.IsGlob() {
+			inputRev = rev.RevSpec
+		}
+	}
+
 	span.SetTag("rev", inputRev)
 	// Do not trigger a repo-updater lookup (e.g.,
 	// backend.{GitRepo,Repos.ResolveRev}) because that would slow this operation
 	// down by a lot (if we're looping over many repos). This means that it'll fail if a
 	// repo is not on gitserver.
-	commitID, err := git.ResolveRevision(ctx, repoRevs.GitserverRepo(), inputRev, git.ResolveRevisionOptions{})
+	commitID, err := git.ResolveRevision(ctx, r.Name, inputRev, git.ResolveRevisionOptions{})
 	if err != nil {
 		return nil, err
 	}
 	span.SetTag("commit", string(commitID))
 
 	symbols, err := backend.Symbols.ListTags(ctx, search.SymbolsParameters{
-		Repo:            repoRevs.Repo.Name,
+		Repo:            r.Name,
 		CommitID:        commitID,
 		Query:           patternInfo.Pattern,
 		IsCaseSensitive: patternInfo.IsCaseSensitive,
@@ -160,7 +180,7 @@ func searchInRepo(ctx context.Context, repoRevs *search.RepositoryRevisions, pat
 	for path, symbols := range symbolsByPath {
 		file := result.File{
 			Path:     path,
-			Repo:     repoRevs.Repo,
+			Repo:     r,
 			CommitID: commitID,
 			InputRev: &inputRev,
 		}
@@ -214,7 +234,7 @@ func indexedSymbolsBranch(ctx context.Context, repository, commit string) string
 	return ""
 }
 
-func searchZoekt(ctx context.Context, repoName types.RepoName, commitID api.CommitID, inputRev *string, branch string, queryString *string, first *int32, includePatterns *[]string) (res []*result.SymbolMatch, err error) {
+func searchZoekt(ctx context.Context, repoName *types.RepoName, commitID api.CommitID, inputRev *string, branch string, queryString *string, first *int32, includePatterns *[]string) (res []*result.SymbolMatch, err error) {
 	raw := *queryString
 	if raw == "" {
 		raw = ".*"
@@ -304,7 +324,7 @@ func searchZoekt(ctx context.Context, repoName types.RepoName, commitID api.Comm
 	return
 }
 
-func Compute(ctx context.Context, repoName types.RepoName, commitID api.CommitID, inputRev *string, query *string, first *int32, includePatterns *[]string) (res []*result.SymbolMatch, err error) {
+func Compute(ctx context.Context, repoName *types.RepoName, commitID api.CommitID, inputRev *string, query *string, first *int32, includePatterns *[]string) (res []*result.SymbolMatch, err error) {
 	// TODO(keegancsmith) we should be able to use indexedSearchRequest here
 	// and remove indexedSymbolsBranch.
 	if branch := indexedSymbolsBranch(ctx, string(repoName.Name), string(commitID)); branch != "" {
@@ -359,13 +379,12 @@ func Compute(ctx context.Context, repoName types.RepoName, commitID api.CommitID
 
 // GetMatchAtLineCharacter retrieves the shortest matching symbol (if exists) defined
 // at a specific line number and character offset in the provided file.
-func GetMatchAtLineCharacter(ctx context.Context, repo types.RepoName, commitID api.CommitID, filePath string, line int, character int) (*result.SymbolMatch, error) {
+func GetMatchAtLineCharacter(ctx context.Context, repo *types.RepoName, commitID api.CommitID, filePath string, line int, character int) (*result.SymbolMatch, error) {
 	// Should be large enough to include all symbols from a single file
 	first := int32(999999)
 	emptyString := ""
 	includePatterns := []string{regexp.QuoteMeta(filePath)}
 	symbolMatches, err := Compute(ctx, repo, commitID, &emptyString, &emptyString, &first, &includePatterns)
-
 	if err != nil {
 		return nil, err
 	}

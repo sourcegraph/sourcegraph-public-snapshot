@@ -242,7 +242,7 @@ func newCommon(w http.ResponseWriter, r *http.Request, title string, serveError 
 
 			if symbolMatch, _ := symbol.GetMatchAtLineCharacter(
 				ctx,
-				types.RepoName{ID: common.Repo.ID, Name: common.Repo.Name},
+				&types.RepoName{ID: common.Repo.ID, Name: common.Repo.Name},
 				common.CommitID,
 				strings.TrimLeft(blobPath, "/"),
 				lineRange.StartLine-1,

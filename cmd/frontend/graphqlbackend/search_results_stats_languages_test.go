@@ -55,7 +55,7 @@ func TestSearchResultsStatsLanguages(t *testing.T) {
 	defer git.ResetMocks()
 
 	mkResult := func(path string, lineNumbers ...int32) *result.FileMatch {
-		rn := types.RepoName{
+		rn := &types.RepoName{
 			Name: "r",
 		}
 		fm := mkFileMatch(rn, path, lineNumbers...)

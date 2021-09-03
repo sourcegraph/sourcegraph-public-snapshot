@@ -150,12 +150,10 @@ type mockRepos struct {
 	repos          []string
 }
 
-func (r *mockRepos) ListIndexable(context.Context) ([]types.RepoName, error) {
-	var repos []types.RepoName
+func (r *mockRepos) ListIndexable(context.Context) (*types.RepoSet, error) {
+	repos := types.NewRepoSet()
 	for _, name := range r.indexableRepos {
-		repos = append(repos, types.RepoName{
-			Name: api.RepoName(name),
-		})
+		repos.Add(&types.RepoName{Name: api.RepoName(name)})
 	}
 	return repos, nil
 }

@@ -8,11 +8,13 @@ import (
 	"github.com/hexops/autogold"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 func TestToResultResolverList(t *testing.T) {
 	matches := []result.Match{
 		&result.FileMatch{
+			File: result.File{Repo: &types.RepoName{ID: 1, Name: "foo"}},
 			LineMatches: []*result.LineMatch{
 				{Preview: "a"},
 				{Preview: "b"},

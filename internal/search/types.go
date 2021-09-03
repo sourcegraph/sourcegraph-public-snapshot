@@ -28,7 +28,8 @@ func (SymbolsParameters) typeParametersValue() {}
 func (TextParameters) typeParametersValue()    {}
 
 type CommitParameters struct {
-	RepoRevs           *RepositoryRevisions
+	Repo               *types.RepoName
+	Revs               RevSpecs
 	PatternInfo        *CommitPatternInfo
 	Query              query.Q
 	Diff               bool
@@ -172,11 +173,9 @@ type TextParameters struct {
 	ResultTypes result.Types
 	Timeout     time.Duration
 
-	Repos []*RepositoryRevisions
+	Repos *Repos
 
-	// perf: For global queries, we only resolve private repos.
-	UserPrivateRepos []types.RepoName
-	Mode             GlobalSearchMode
+	Mode GlobalSearchMode
 
 	// Query is the parsed query from the user. You should be using Pattern
 	// instead, but Query is useful for checking extra fields that are set and
@@ -202,7 +201,7 @@ type TextParameters struct {
 // commitParameter type definitions will be merged in future.
 type TextParametersForCommitParameters struct {
 	PatternInfo *CommitPatternInfo
-	Repos       []*RepositoryRevisions
+	Repos       *Repos
 	Query       query.Q
 }
 
@@ -349,4 +348,144 @@ func (op *RepoOptions) String() string {
 	}
 
 	return b.String()
+}
+
+// Repos is a set of resolved repositories for a search.
+type Repos struct {
+	Public          *types.RepoSet
+	Private         *types.RepoSet
+	Excluded        ExcludedRepos
+	RepoRevs        map[api.RepoName]RevSpecs
+	MissingRepoRevs map[api.RepoName]RevSpecs
+	RevRepos        map[RevisionSpecifier]map[api.RepoName]struct{}
+	OverLimit       bool
+}
+
+func NewRepos(repos ...*types.RepoName) *Repos {
+	rs := &Repos{
+		Public:          types.NewRepoSet(),
+		Private:         types.NewRepoSet(),
+		Excluded:        ExcludedRepos{RepoSet: types.NewRepoSet()},
+		RepoRevs:        make(map[api.RepoName]RevSpecs),
+		MissingRepoRevs: make(map[api.RepoName]RevSpecs),
+		RevRepos:        make(map[RevisionSpecifier]map[api.RepoName]struct{}),
+	}
+
+	for _, r := range repos {
+		rs.Add(r)
+	}
+
+	return rs
+}
+
+func (r *Repos) GetByName(name api.RepoName) *types.RepoName {
+	_, ok := r.Excluded.Names[name]
+	if ok {
+		return nil
+	}
+
+	repo, ok := r.Private.Names[name]
+	if !ok {
+		repo = r.Public.Names[name]
+	}
+
+	return repo
+}
+
+func (r *Repos) GetByID(id api.RepoID) *types.RepoName {
+	_, ok := r.Excluded.IDs[id]
+	if ok {
+		return nil
+	}
+
+	repo, ok := r.Private.IDs[id]
+	if !ok {
+		repo = r.Public.IDs[id]
+	}
+
+	return repo
+}
+
+func (r *Repos) Add(repo *types.RepoName, revs ...RevisionSpecifier) {
+	if repo == nil {
+		return
+	}
+
+	if repo.Private {
+		r.Private.Add(repo)
+	} else {
+		r.Public.Add(repo)
+	}
+
+	for _, rev := range revs {
+		repos, ok := r.RevRepos[rev]
+		if !ok {
+			repos = make(map[api.RepoName]struct{})
+			r.RevRepos[rev] = repos
+		}
+
+		if _, ok = repos[repo.Name]; !ok {
+			r.RepoRevs[repo.Name] = append(r.RepoRevs[repo.Name], rev)
+			repos[repo.Name] = struct{}{}
+		}
+	}
+}
+
+func (r *Repos) ForEach(cb func(*types.RepoName, RevSpecs) error) error {
+	if r == nil {
+		return nil
+	}
+
+	for _, repo := range r.Private.Repos {
+		if err := r.visit(repo, cb); err != nil {
+			return err
+		}
+	}
+
+	for _, repo := range r.Public.Repos {
+		if err := r.visit(repo, cb); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (r *Repos) Excludes(id api.RepoID) bool {
+	return r.Excluded.Includes(id) || (!r.Private.Includes(id) && !r.Public.Includes(id))
+}
+
+func (r *Repos) visit(repo *types.RepoName, cb func(*types.RepoName, RevSpecs) error) error {
+	if _, excluded := r.Excluded.IDs[repo.ID]; !excluded {
+		return cb(repo, r.RepoRevs[repo.Name])
+	}
+	return nil
+}
+
+func (r *Repos) String() string {
+	if r == nil {
+		return "Repos(nil)"
+	}
+
+	return fmt.Sprintf("Resolved{Public=%d, Private=%d, RepoRevs=%d, MissingRepoRevs=%d, RevRepos=%d, OverLimit=%v, %s}",
+		r.Public.Len(), r.Private.Len(), len(r.RepoRevs), len(r.MissingRepoRevs), len(r.RevRepos), r.OverLimit, r.Excluded)
+}
+
+func (r *Repos) Len() int {
+	if r == nil {
+		return 0
+	}
+	return (r.Public.Len() + r.Private.Len()) - r.Excluded.Len()
+}
+
+// ExcludedRepos is a type that counts how many repos with a certain label were
+// excluded from search results.
+type ExcludedRepos struct {
+	*types.RepoSet
+	Forks    int
+	Archived int
+}
+
+func (r ExcludedRepos) String() string {
+	return fmt.Sprintf("ExcludedRepos{Forks: %d, Archived: %d, RepoSet: %s}", r.Forks, r.Archived, r.RepoSet.String())
 }

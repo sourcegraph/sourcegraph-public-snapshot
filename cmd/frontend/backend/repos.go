@@ -163,12 +163,12 @@ func (s *repos) List(ctx context.Context, opt database.ReposListOptions) (repos 
 
 // ListIndexable calls database.IndexableRepos.List, with tracing. It lists ALL
 // indexable repos which could include private user added repos.
-func (s *repos) ListIndexable(ctx context.Context) (repos []types.RepoName, err error) {
+func (s *repos) ListIndexable(ctx context.Context) (repos *types.RepoSet, err error) {
 	ctx, done := trace(ctx, "Repos", "ListIndexable", nil, &err)
 	defer func() {
 		if err == nil {
 			span := opentracing.SpanFromContext(ctx)
-			span.LogFields(otlog.Int("result.len", len(repos)))
+			span.LogFields(otlog.Int("result.len", repos.Len()))
 		}
 		done()
 	}()
@@ -178,37 +178,36 @@ func (s *repos) ListIndexable(ctx context.Context) (repos []types.RepoName, err 
 // ListSearchable calls database.IndexableRepos.ListPublic, with tracing.
 // It lists all public indexable repos and also any private repos added by the
 // current user. Only used on sourcegraph.com where we don't have every repo indexed.
-func (s *repos) ListSearchable(ctx context.Context) (repos []types.RepoName, err error) {
+func (s *repos) ListSearchable(ctx context.Context) (public, private *types.RepoSet, err error) {
 	ctx, done := trace(ctx, "Repos", "ListSearchable", nil, &err)
 	defer func() {
-		if err == nil {
-			span := opentracing.SpanFromContext(ctx)
-			span.LogFields(otlog.Int("result.len", len(repos)))
+		span := opentracing.SpanFromContext(ctx)
+		span.LogFields(otlog.Int("public.len", public.Len()))
+		span.LogFields(otlog.Int("private.len", private.Len()))
+		if err != nil {
+			span.LogFields(otlog.Error(err))
 		}
 		done()
 	}()
 
-	span := opentracing.SpanFromContext(ctx)
-	repos, err = s.cache.ListPublic(ctx)
+	public, err = s.cache.ListPublic(ctx)
 	if err != nil {
-		return nil, errors.Wrap(err, "listing default public repos")
+		return nil, nil, errors.Wrap(err, "listing default public repos")
 	}
-	span.LogFields(otlog.Int("public.len", len(repos)))
 
+	private = types.NewRepoSet()
 	// For authenticated users we also want to include any private repos they may have added
 	if a := actor.FromContext(ctx); a.IsAuthenticated() {
-		privateRepos, err := database.GlobalRepos.ListRepoNames(ctx, database.ReposListOptions{
+		err = s.store.StreamingListRepoNames(ctx, database.ReposListOptions{
 			UserID:      a.UID,
 			OnlyPrivate: true,
-		})
+		}, private.Add)
 		if err != nil {
-			return nil, errors.Wrap(err, "getting user private repos")
+			return nil, nil, errors.Wrap(err, "getting user private repos")
 		}
-		span.LogFields(otlog.Int("private.len", len(privateRepos)))
-		repos = append(repos, privateRepos...)
 	}
 
-	return repos, nil
+	return public, private, nil
 }
 
 func (s *repos) GetInventory(ctx context.Context, repo *types.Repo, commitID api.CommitID, forceEnhancedLanguageDetection bool) (res *inventory.Inventory, err error) {

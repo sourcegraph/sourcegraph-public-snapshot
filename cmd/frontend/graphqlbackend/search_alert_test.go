@@ -16,7 +16,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
-	searchrepos "github.com/sourcegraph/sourcegraph/internal/search/repos"
 	"github.com/sourcegraph/sourcegraph/internal/search/run"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -228,33 +227,23 @@ func TestErrorToAlertStructuralSearch(t *testing.T) {
 func TestAlertForOverRepoLimit(t *testing.T) {
 	db := new(dbtesting.MockDB)
 
-	generateRepoRevs := func(numRepos int) []*search.RepositoryRevisions {
-		repoRevs := make([]*search.RepositoryRevisions, numRepos)
+	generateRepos := func(numRepos int) *search.Repos {
+		repos := search.NewRepos()
 		chars := []string{"a", "b", "c"} // create some parent names
-		j := 0
-		for i := range repoRevs {
-			repoRevs[i] = &search.RepositoryRevisions{
-				Repo: types.RepoName{
-					ID:   api.RepoID(i),
-					Name: api.RepoName(chars[j] + "/repoName" + strconv.Itoa(i)),
-				},
-			}
-			if j == 2 {
-				j = 0
-			} else {
-				j++
-			}
+		for i := 0; i < numRepos; i++ {
+			repos.Add(&types.RepoName{
+				ID:   api.RepoID(i),
+				Name: api.RepoName(chars[i%len(chars)] + "/repoName" + strconv.Itoa(i)),
+			})
 		}
-		return repoRevs
+		return repos
 	}
 
 	setMockResolveRepositories := func(numRepos int) {
-		mockResolveRepositories = func() (resolved searchrepos.Resolved, err error) {
-			return searchrepos.Resolved{
-				RepoRevs:        generateRepoRevs(numRepos),
-				MissingRepoRevs: make([]*search.RepositoryRevisions, 0),
-				OverLimit:       true,
-			}, nil
+		mockResolveRepositories = func() (resolved *search.Repos, err error) {
+			resolved = generateRepos(numRepos)
+			resolved.OverLimit = true
+			return
 		}
 	}
 	defer func() { mockResolveRepositories = nil }()
@@ -361,7 +350,8 @@ func TestAlertForOverRepoLimit(t *testing.T) {
 					Query:         plan.ToParseTree(),
 					UserSettings: &schema.Settings{
 						SearchGlobbing: &test.globbing,
-					}},
+					},
+				},
 			}
 
 			ctx, cancel := context.WithCancel(context.Background())
@@ -405,12 +395,8 @@ func TestCapFirst(t *testing.T) {
 func TestAlertForNoResolvedReposWithNonGlobalSearchContext(t *testing.T) {
 	db := new(dbtesting.MockDB)
 
-	mockResolveRepositories = func() (resolved searchrepos.Resolved, err error) {
-		return searchrepos.Resolved{
-			RepoRevs:        []*search.RepositoryRevisions{},
-			MissingRepoRevs: make([]*search.RepositoryRevisions, 0),
-			OverLimit:       false,
-		}, nil
+	mockResolveRepositories = func() (*search.Repos, error) {
+		return search.NewRepos(), nil
 	}
 	defer func() {
 		mockResolveRepositories = nil

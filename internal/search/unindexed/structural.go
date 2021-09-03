@@ -12,41 +12,12 @@ import (
 	"golang.org/x/sync/errgroup"
 )
 
-// repoData represents an object of repository revisions to search.
-type repoData interface {
-	AsList() []*search.RepositoryRevisions
-	IsIndexed() bool
-}
-
-type IndexedMap map[string]*search.RepositoryRevisions
-
-func (m IndexedMap) AsList() []*search.RepositoryRevisions {
-	reposList := make([]*search.RepositoryRevisions, 0, len(m))
-	for _, repo := range m {
-		reposList = append(reposList, repo)
-	}
-	return reposList
-}
-
-func (IndexedMap) IsIndexed() bool {
-	return true
-}
-
-type UnindexedList []*search.RepositoryRevisions
-
-func (ul UnindexedList) AsList() []*search.RepositoryRevisions {
-	return ul
-}
-
-func (UnindexedList) IsIndexed() bool {
-	return false
-}
-
 // searchRepos represent the arguments to a search called over repositories.
 type searchRepos struct {
 	args    *search.SearcherParameters
-	repoSet repoData
+	repoSet *search.Repos
 	stream  streaming.Sender
+	indexed bool
 }
 
 // RepoFetcher is an object that exposes an interface to retrieve repos to
@@ -55,7 +26,7 @@ type searchRepos struct {
 type RepoFetcher struct {
 	args              *search.TextParameters
 	mode              search.GlobalSearchMode
-	onMissingRepoRevs zoektutil.OnMissingRepoRevs
+	onMissingRepoRevs zoektutil.OnMissingRepos
 }
 
 func NewRepoFetcher(stream streaming.Sender, args *search.TextParameters) RepoFetcher {
@@ -69,22 +40,23 @@ func NewRepoFetcher(stream streaming.Sender, args *search.TextParameters) RepoFe
 // Get returns the repository data to run structural search on. Importantly, it
 // allows parameterizing the request to specify a context, for when multiple
 // Get() calls are required with different limits or timeouts.
-func (r *RepoFetcher) Get(ctx context.Context) ([]repoData, error) {
+func (r *RepoFetcher) Get(ctx context.Context) (indexed, unindexed *search.Repos, err error) {
 	request, err := zoektutil.NewIndexedSearchRequest(ctx, r.args, search.TextRequest, r.onMissingRepoRevs)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
-	repoSets := []repoData{UnindexedList(request.UnindexedRepos())} // unindexed included by default
-	if r.mode != search.SearcherOnly {
-		repoSets = append(repoSets, IndexedMap(request.IndexedRepos()))
+
+	if r.mode == search.SearcherOnly {
+		return nil, request.UnindexedRepos(), nil
 	}
-	return repoSets, nil
+
+	return request.IndexedRepos(), request.UnindexedRepos(), nil
 }
 
 // getJob returns a function parameterized by ctx to search over repos.
 func (s *searchRepos) getJob(ctx context.Context) func() error {
 	return func() error {
-		return callSearcherOverRepos(ctx, s.args, s.stream, s.repoSet.AsList(), s.repoSet.IsIndexed())
+		return callSearcherOverRepos(ctx, s.args, s.stream, s.repoSet, s.indexed)
 	}
 }
 
@@ -101,21 +73,26 @@ func streamStructuralSearch(ctx context.Context, args *search.SearcherParameters
 	ctx, stream, cleanup := streaming.WithLimit(ctx, stream, int(args.PatternInfo.FileMatchLimit))
 	defer cleanup()
 
-	repos, err := repoFetcher.Get(ctx)
+	indexed, unindexed, err := repoFetcher.Get(ctx)
 	if err != nil {
 		return err
 	}
 
-	jobs := []*searchRepos{}
-	for _, repoSet := range repos {
-		searcherArgs := &search.SearcherParameters{
-			SearcherURLs:    args.SearcherURLs,
-			PatternInfo:     args.PatternInfo,
-			UseFullDeadline: args.UseFullDeadline,
-		}
-
-		jobs = append(jobs, &searchRepos{args: searcherArgs, stream: stream, repoSet: repoSet})
+	jobs := make([]*searchRepos, 0, 2)
+	searcherArgs := &search.SearcherParameters{
+		SearcherURLs:    args.SearcherURLs,
+		PatternInfo:     args.PatternInfo,
+		UseFullDeadline: args.UseFullDeadline,
 	}
+
+	if indexed != nil {
+		jobs = append(jobs, &searchRepos{args: searcherArgs, stream: stream, repoSet: indexed, indexed: true})
+	}
+
+	if unindexed != nil {
+		jobs = append(jobs, &searchRepos{args: searcherArgs, stream: stream, repoSet: unindexed, indexed: false})
+	}
+
 	return runJobs(ctx, jobs)
 }
 

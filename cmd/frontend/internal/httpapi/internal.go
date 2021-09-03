@@ -246,7 +246,7 @@ type reposListServer struct {
 	// interface for testing.
 	Repos interface {
 		// ListIndexable returns the repositories to index on Sourcegraph.com
-		ListIndexable(context.Context) ([]types.RepoName, error)
+		ListIndexable(context.Context) (*types.RepoSet, error)
 		// List returns a list of repositories
 		List(context.Context, database.ReposListOptions) ([]*types.Repo, error)
 	}
@@ -284,8 +284,8 @@ func (h *reposListServer) serveIndex(w http.ResponseWriter, r *http.Request) err
 		if err != nil {
 			return errors.Wrap(err, "listing repos")
 		}
-		names = make([]string, len(res))
-		for i, r := range res {
+		names = make([]string, res.Len())
+		for i, r := range res.Repos {
 			names[i] = string(r.Name)
 		}
 	} else {

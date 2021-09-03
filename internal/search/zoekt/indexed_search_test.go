@@ -29,13 +29,13 @@ func TestIndexedSearch(t *testing.T) {
 		ctx             context.Context
 		query           string
 		patternInfo     *search.TextPatternInfo
-		repos           []*search.RepositoryRevisions
+		repos           *search.Repos
 		useFullDeadline bool
 		results         []zoekt.FileMatch
 		since           func(time.Time) time.Duration
 	}
 
-	reposHEAD := makeRepositoryRevisions("foo/bar", "foo/foobar")
+	reposHEAD := mkSearchRepos("foo/bar", "foo/foobar")
 	zoektRepos := []*zoekt.RepoListEntry{{
 		Repository: zoekt.Repository{
 			Name:     "foo/bar",
@@ -54,7 +54,7 @@ func TestIndexedSearch(t *testing.T) {
 		wantMatchCount     int
 		wantMatchKeys      []result.Key
 		wantMatchInputRevs []string
-		wantUnindexed      []*search.RepositoryRevisions
+		wantUnindexed      *search.Repos
 		wantCommon         streaming.Stats
 		wantErr            bool
 	}{
@@ -101,7 +101,7 @@ func TestIndexedSearch(t *testing.T) {
 			args: args{
 				ctx:             context.Background(),
 				patternInfo:     &search.TextPatternInfo{FileMatchLimit: 100},
-				repos:           makeRepositoryRevisions("foo/bar", "foo/foobar"),
+				repos:           mkSearchRepos("foo/bar", "foo/foobar"),
 				useFullDeadline: false,
 				results: []zoekt.FileMatch{
 					{
@@ -159,7 +159,7 @@ func TestIndexedSearch(t *testing.T) {
 			args: args{
 				ctx:             context.Background(),
 				patternInfo:     &search.TextPatternInfo{FileMatchLimit: 100},
-				repos:           makeRepositoryRevisions("foo/bar@HEAD:dev:main"),
+				repos:           mkSearchRepos("foo/bar@HEAD:dev:main"),
 				useFullDeadline: false,
 				results: []zoekt.FileMatch{
 					{
@@ -199,7 +199,7 @@ func TestIndexedSearch(t *testing.T) {
 			args: args{
 				ctx:             context.Background(),
 				patternInfo:     &search.TextPatternInfo{FileMatchLimit: 100},
-				repos:           makeRepositoryRevisions("foo/bar@HEAD:unindexed"),
+				repos:           mkSearchRepos("foo/bar@HEAD:unindexed"),
 				useFullDeadline: false,
 				results: []zoekt.FileMatch{
 					{
@@ -210,7 +210,7 @@ func TestIndexedSearch(t *testing.T) {
 					},
 				},
 			},
-			wantUnindexed: makeRepositoryRevisions("foo/bar@unindexed"),
+			wantUnindexed: mkSearchRepos("foo/bar@unindexed"),
 			wantMatchKeys: []result.Key{
 				{Repo: "foo/bar", Commit: "1", Path: "baz.go"},
 			},
@@ -224,11 +224,11 @@ func TestIndexedSearch(t *testing.T) {
 				ctx:             context.Background(),
 				query:           "repo:foo/bar@*refs/heads/*",
 				patternInfo:     &search.TextPatternInfo{FileMatchLimit: 100},
-				repos:           makeRepositoryRevisions("foo/bar@HEAD"),
+				repos:           mkSearchRepos("foo/bar@HEAD"),
 				useFullDeadline: false,
 				results:         []zoekt.FileMatch{},
 			},
-			wantUnindexed:      makeRepositoryRevisions("foo/bar@HEAD"),
+			wantUnindexed:      mkSearchRepos("foo/bar@HEAD"),
 			wantMatchKeys:      nil,
 			wantMatchInputRevs: nil,
 		},
@@ -238,11 +238,11 @@ func TestIndexedSearch(t *testing.T) {
 				ctx:             context.Background(),
 				query:           "repo:foo/bar@*refs/tags",
 				patternInfo:     &search.TextPatternInfo{FileMatchLimit: 100},
-				repos:           makeRepositoryRevisions("foo/bar@HEAD"),
+				repos:           mkSearchRepos("foo/bar@HEAD"),
 				useFullDeadline: false,
 				results:         []zoekt.FileMatch{},
 			},
-			wantUnindexed:      makeRepositoryRevisions("foo/bar@HEAD"),
+			wantUnindexed:      mkSearchRepos("foo/bar@HEAD"),
 			wantMatchKeys:      nil,
 			wantMatchInputRevs: nil,
 		},
@@ -273,7 +273,12 @@ func TestIndexedSearch(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			if diff := cmp.Diff(tt.wantUnindexed, indexed.Unindexed, cmpopts.EquateEmpty()); diff != "" {
+			wantUnindexed := tt.wantUnindexed
+			if wantUnindexed == nil {
+				wantUnindexed = search.NewRepos()
+			}
+
+			if diff := cmp.Diff(wantUnindexed, indexed.Unindexed, cmpopts.EquateEmpty()); diff != "" {
 				t.Errorf("unindexed mismatch (-want +got):\n%s", diff)
 			}
 
@@ -331,14 +336,14 @@ func mkStatusMap(m map[string]search.RepoStatus) search.RepoStatusMap {
 }
 
 func TestZoektIndexedRepos(t *testing.T) {
-	repos := makeRepositoryRevisions(
+	repos := []string{
 		"foo/indexed-one@",
 		"foo/indexed-two@",
 		"foo/indexed-three@",
 		"foo/unindexed-one",
 		"foo/unindexed-two",
 		"foo/multi-rev@a:b",
-	)
+	}
 
 	zoektRepos := map[string]*zoekt.Repository{}
 	for _, r := range []*zoekt.Repository{{
@@ -357,45 +362,46 @@ func TestZoektIndexedRepos(t *testing.T) {
 		zoektRepos[r.Name] = r
 	}
 
-	makeIndexed := func(repos []*search.RepositoryRevisions) []*search.RepositoryRevisions {
-		var indexed []*search.RepositoryRevisions
-		for _, r := range repos {
-			rev := &search.RepositoryRevisions{
-				Repo: r.Repo,
-				Revs: r.Revs,
-			}
-			indexed = append(indexed, rev)
+	mkIndexedRepoRevs := func(repos []string) *IndexedRepoRevs {
+		idx := &IndexedRepoRevs{
+			Repos:    mkSearchRepos(repos...),
+			RevSpecs: map[api.RepoName]search.RevSpecs{},
+			Branches: map[string][]string{},
 		}
-		return indexed
+
+		for repo, revs := range idx.RepoRevs {
+			idx.RevSpecs[repo] = revs
+		}
+
+		return idx
 	}
 
 	cases := []struct {
-		name      string
-		repos     []*search.RepositoryRevisions
-		indexed   []*search.RepositoryRevisions
-		unindexed []*search.RepositoryRevisions
+		name             string
+		indexed          *IndexedRepoRevs
+		repos, unindexed *search.Repos
 	}{{
 		name:      "all",
-		repos:     repos,
-		indexed:   makeIndexed(repos[:3]),
-		unindexed: repos[3:],
+		repos:     mkSearchRepos(repos...),
+		indexed:   mkIndexedRepoRevs(repos[:3]),
+		unindexed: mkSearchRepos(repos[3:]...),
 	}, {
 		name:      "one unindexed",
-		repos:     repos[3:4],
-		indexed:   repos[:0],
-		unindexed: repos[3:4],
+		repos:     mkSearchRepos(repos[3:4]...),
+		indexed:   mkIndexedRepoRevs(repos[:0]),
+		unindexed: mkSearchRepos(repos[3:4]...),
 	}, {
 		name:      "one indexed",
-		repos:     repos[:1],
-		indexed:   makeIndexed(repos[:1]),
-		unindexed: repos[:0],
+		repos:     mkSearchRepos(repos[:1]...),
+		indexed:   mkIndexedRepoRevs(repos[:1]),
+		unindexed: mkSearchRepos(repos[:0]...),
 	}}
 
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
 			indexed, unindexed := zoektIndexedRepos(zoektRepos, tc.repos, nil)
 
-			if diff := cmp.Diff(repoRevsSliceToMap(tc.indexed), indexed.repoRevs); diff != "" {
+			if diff := cmp.Diff(tc.indexed.RevSpecs, indexed.RevSpecs); diff != "" {
 				t.Error("unexpected indexed:", diff)
 			}
 			if diff := cmp.Diff(tc.unindexed, unindexed); diff != "" {
@@ -463,14 +469,15 @@ func TestZoektResultCountFactor(t *testing.T) {
 }
 
 func TestZoektIndexedRepos_single(t *testing.T) {
-	repoRev := func(revSpec string) *search.RepositoryRevisions {
-		return &search.RepositoryRevisions{
-			Repo: types.RepoName{ID: api.RepoID(0), Name: "test/repo"},
-			Revs: []search.RevisionSpecifier{
-				{RevSpec: revSpec},
-			},
-		}
+	repoRev := func(revSpec string) *search.Repos {
+		rs := search.NewRepos()
+		rs.Add(
+			&types.RepoName{ID: api.RepoID(0), Name: "test/repo"},
+			search.RevisionSpecifier{RevSpec: revSpec},
+		)
+		return rs
 	}
+
 	zoektRepos := map[string]*zoekt.Repository{
 		"test/repo": {
 			Name: "test/repo",
@@ -488,59 +495,59 @@ func TestZoektIndexedRepos_single(t *testing.T) {
 	}
 	cases := []struct {
 		rev           string
-		wantIndexed   []*search.RepositoryRevisions
-		wantUnindexed []*search.RepositoryRevisions
+		wantIndexed   *search.Repos
+		wantUnindexed *search.Repos
 	}{
 		{
 			rev:           "",
-			wantIndexed:   []*search.RepositoryRevisions{repoRev("")},
-			wantUnindexed: []*search.RepositoryRevisions{},
+			wantIndexed:   repoRev(""),
+			wantUnindexed: search.NewRepos(),
 		},
 		{
 			rev:           "HEAD",
-			wantIndexed:   []*search.RepositoryRevisions{repoRev("HEAD")},
-			wantUnindexed: []*search.RepositoryRevisions{},
+			wantIndexed:   repoRev("HEAD"),
+			wantUnindexed: search.NewRepos(),
 		},
 		{
 			rev:           "df3f4e499698e48152b39cd655d8901eaf583fa5",
-			wantIndexed:   []*search.RepositoryRevisions{repoRev("df3f4e499698e48152b39cd655d8901eaf583fa5")},
-			wantUnindexed: []*search.RepositoryRevisions{},
+			wantIndexed:   repoRev("df3f4e499698e48152b39cd655d8901eaf583fa5"),
+			wantUnindexed: search.NewRepos(),
 		},
 		{
 			rev:           "df3f4e",
-			wantIndexed:   []*search.RepositoryRevisions{repoRev("df3f4e")},
-			wantUnindexed: []*search.RepositoryRevisions{},
+			wantIndexed:   repoRev("df3f4e"),
+			wantUnindexed: search.NewRepos(),
 		},
 		{
 			rev:           "d",
-			wantIndexed:   []*search.RepositoryRevisions{},
-			wantUnindexed: []*search.RepositoryRevisions{repoRev("d")},
+			wantIndexed:   search.NewRepos(),
+			wantUnindexed: repoRev("d"),
 		},
 		{
 			rev:           "HEAD^1",
-			wantIndexed:   []*search.RepositoryRevisions{},
-			wantUnindexed: []*search.RepositoryRevisions{repoRev("HEAD^1")},
+			wantIndexed:   search.NewRepos(),
+			wantUnindexed: repoRev("HEAD^1"),
 		},
 		{
 			rev:           "8ec975423738fe7851676083ebf660a062ed1578",
-			wantUnindexed: []*search.RepositoryRevisions{},
-			wantIndexed:   []*search.RepositoryRevisions{repoRev("8ec975423738fe7851676083ebf660a062ed1578")},
+			wantUnindexed: search.NewRepos(),
+			wantIndexed:   repoRev("8ec975423738fe7851676083ebf660a062ed1578"),
 		},
 	}
 
 	type ret struct {
-		Indexed   map[string]*search.RepositoryRevisions
-		Unindexed []*search.RepositoryRevisions
+		Indexed   map[api.RepoName]search.RevSpecs
+		Unindexed *search.Repos
 	}
 
 	for _, tt := range cases {
-		indexed, unindexed := zoektIndexedRepos(zoektRepos, []*search.RepositoryRevisions{repoRev(tt.rev)}, nil)
+		indexed, unindexed := zoektIndexedRepos(zoektRepos, repoRev(tt.rev), nil)
 		got := ret{
-			Indexed:   indexed.repoRevs,
+			Indexed:   indexed.RevSpecs,
 			Unindexed: unindexed,
 		}
 		want := ret{
-			Indexed:   repoRevsSliceToMap(tt.wantIndexed),
+			Indexed:   tt.wantIndexed.RepoRevs,
 			Unindexed: tt.wantUnindexed,
 		}
 		if !cmp.Equal(want, got) {
@@ -592,29 +599,30 @@ func TestZoektFileMatchToSymbolResults(t *testing.T) {
 		}},
 	}
 
-	results := zoektFileMatchToSymbolResults(types.RepoName{Name: "foo"}, "master", file)
+	results := zoektFileMatchToSymbolResults(&types.RepoName{Name: "foo"}, "master", file)
 	var symbols []result.Symbol
 	for _, res := range results {
 		symbols = append(symbols, res.Symbol)
 	}
 
-	want := []result.Symbol{{
-		Name:    "a",
-		Line:    10,
-		Pattern: "/^symbol a symbol b$/",
-	}, {
-		Name:    "b",
-		Line:    10,
-		Pattern: "/^symbol a symbol b$/",
-	}, {
-		Name:    "c",
-		Line:    15,
-		Pattern: "/^symbol c$/",
-	}, {
-		Name:    "baz",
-		Line:    20,
-		Pattern: `/^bar() { var regex = \/.*\\\/\/; function baz() { }  } $/`,
-	},
+	want := []result.Symbol{
+		{
+			Name:    "a",
+			Line:    10,
+			Pattern: "/^symbol a symbol b$/",
+		}, {
+			Name:    "b",
+			Line:    10,
+			Pattern: "/^symbol a symbol b$/",
+		}, {
+			Name:    "c",
+			Line:    15,
+			Pattern: "/^symbol c$/",
+		}, {
+			Name:    "baz",
+			Line:    20,
+			Pattern: `/^bar() { var regex = \/.*\\\/\/; function baz() { }  } $/`,
+		},
 	}
 	for i := range want {
 		want[i].Kind = "kind"
@@ -627,14 +635,6 @@ func TestZoektFileMatchToSymbolResults(t *testing.T) {
 	if diff := cmp.Diff(want, symbols); diff != "" {
 		t.Fatalf("symbol mismatch (-want +got):\n%s", diff)
 	}
-}
-
-func repoRevsSliceToMap(rs []*search.RepositoryRevisions) map[string]*search.RepositoryRevisions {
-	m := map[string]*search.RepositoryRevisions{}
-	for _, r := range rs {
-		m[string(r.Repo.Name)] = r
-	}
-	return m
 }
 
 func TestContextWithoutDeadline(t *testing.T) {
@@ -681,17 +681,18 @@ func TestContextWithoutDeadline_cancel(t *testing.T) {
 	}
 }
 
-func makeRepositoryRevisions(repos ...string) []*search.RepositoryRevisions {
-	r := make([]*search.RepositoryRevisions, len(repos))
-	for i, repospec := range repos {
+func mkSearchRepos(repos ...string) *search.Repos {
+	resolved := search.NewRepos()
+	for _, repospec := range repos {
 		repoName, revs := search.ParseRepositoryRevisions(repospec)
 		if len(revs) == 0 {
 			// treat empty list as preferring master
-			revs = []search.RevisionSpecifier{{RevSpec: ""}}
+			revs = search.RevSpecs{{RevSpec: ""}}
 		}
-		r[i] = &search.RepositoryRevisions{Repo: mkRepos(repoName)[0], Revs: revs}
+		rs := mkRepos(repoName)
+		resolved.Add(&rs[0], revs...)
 	}
-	return r
+	return resolved
 }
 
 func mkRepos(names ...string) []types.RepoName {

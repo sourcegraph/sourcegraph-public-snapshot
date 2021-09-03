@@ -25,22 +25,24 @@ import (
 )
 
 func TestSearchRepositories(t *testing.T) {
-	repositories := []*search.RepositoryRevisions{
-		{Repo: types.RepoName{ID: 123, Name: "foo/one"}, Revs: []search.RevisionSpecifier{{RevSpec: ""}}},
-		{Repo: types.RepoName{ID: 456, Name: "foo/no-match"}, Revs: []search.RevisionSpecifier{{RevSpec: ""}}},
-		{Repo: types.RepoName{ID: 789, Name: "bar/one"}, Revs: []search.RevisionSpecifier{{RevSpec: ""}}},
+	repos := []*types.RepoName{
+		{ID: 123, Name: "foo/one"},
+		{ID: 456, Name: "foo/no-match"},
+		{ID: 789, Name: "bar/one"},
 	}
+
+	repositories := search.NewRepos(repos...)
 
 	zoekt := &searchbackend.Zoekt{Client: &searchbackend.FakeSearcher{}}
 
 	unindexed.MockSearchFilesInRepos = func(args *search.TextParameters) (matches []result.Match, common *streaming.Stats, err error) {
-		repoName := args.Repos[0].Repo.Name
+		repoName := args.Repos.Public.Repos[0].Name
 		rev := "1a2b3c"
 		switch repoName {
 		case "foo/one":
 			return []result.Match{&result.FileMatch{
 				File: result.File{
-					Repo:     types.RepoName{ID: 123, Name: repoName},
+					Repo:     &types.RepoName{ID: 123, Name: repoName},
 					InputRev: &rev,
 					Path:     "f.go",
 				},
@@ -48,7 +50,7 @@ func TestSearchRepositories(t *testing.T) {
 		case "bar/one":
 			return []result.Match{&result.FileMatch{
 				File: result.File{
-					Repo:     types.RepoName{ID: 789, Name: repoName},
+					Repo:     &types.RepoName{ID: 789, Name: repoName},
 					InputRev: &rev,
 					Path:     "f.go",
 				},
@@ -128,13 +130,13 @@ func searchRepositoriesBatch(ctx context.Context, args *search.TextParameters, l
 
 func TestRepoShouldBeAdded(t *testing.T) {
 	unindexed.MockSearchFilesInRepos = func(args *search.TextParameters) (matches []result.Match, common *streaming.Stats, err error) {
-		repoName := args.Repos[0].Repo.Name
+		repoName := args.Repos.Public.Repos[0].Name
 		rev := "1a2b3c"
 		switch repoName {
 		case "foo/one":
 			return []result.Match{&result.FileMatch{
 				File: result.File{
-					Repo:     types.RepoName{ID: 123, Name: repoName},
+					Repo:     &types.RepoName{ID: 123, Name: repoName},
 					InputRev: &rev,
 					Path:     "foo.go",
 				},
@@ -150,12 +152,12 @@ func TestRepoShouldBeAdded(t *testing.T) {
 	zoekt := &searchbackend.Zoekt{Client: &searchbackend.FakeSearcher{}}
 
 	t.Run("repo should be included in results, query has repoHasFile filter", func(t *testing.T) {
-		repo := &search.RepositoryRevisions{Repo: types.RepoName{ID: 123, Name: "foo/one"}, Revs: []search.RevisionSpecifier{{RevSpec: ""}}}
+		repo := &types.RepoName{ID: 123, Name: "foo/one"}
 		unindexed.MockSearchFilesInRepos = func(args *search.TextParameters) (matches []result.Match, common *streaming.Stats, err error) {
 			rev := "1a2b3c"
 			return []result.Match{&result.FileMatch{
 				File: result.File{
-					Repo:     types.RepoName{ID: 123, Name: repo.Repo.Name},
+					Repo:     &types.RepoName{ID: 123, Name: repo.Name},
 					InputRev: &rev,
 					Path:     "foo.go",
 				},
@@ -172,7 +174,7 @@ func TestRepoShouldBeAdded(t *testing.T) {
 	})
 
 	t.Run("repo shouldn't be included in results, query has repoHasFile filter ", func(t *testing.T) {
-		repo := &search.RepositoryRevisions{Repo: types.RepoName{Name: "foo/no-match"}, Revs: []search.RevisionSpecifier{{RevSpec: ""}}}
+		repo := &types.RepoName{Name: "foo/no-match"}
 		unindexed.MockSearchFilesInRepos = func(args *search.TextParameters) (matches []result.Match, common *streaming.Stats, err error) {
 			return nil, &streaming.Stats{}, nil
 		}
@@ -187,12 +189,12 @@ func TestRepoShouldBeAdded(t *testing.T) {
 	})
 
 	t.Run("repo shouldn't be included in results, query has -repoHasFile filter", func(t *testing.T) {
-		repo := &search.RepositoryRevisions{Repo: types.RepoName{ID: 123, Name: "foo/one"}, Revs: []search.RevisionSpecifier{{RevSpec: ""}}}
+		repo := &types.RepoName{ID: 123, Name: "foo/one"}
 		unindexed.MockSearchFilesInRepos = func(args *search.TextParameters) (matches []result.Match, common *streaming.Stats, err error) {
 			rev := "1a2b3c"
 			return []result.Match{&result.FileMatch{
 				File: result.File{
-					Repo:     types.RepoName{ID: 123, Name: repo.Repo.Name},
+					Repo:     &types.RepoName{ID: 123, Name: repo.Name},
 					InputRev: &rev,
 					Path:     "foo.go",
 				},
@@ -209,7 +211,7 @@ func TestRepoShouldBeAdded(t *testing.T) {
 	})
 
 	t.Run("repo should be included in results, query has -repoHasFile filter", func(t *testing.T) {
-		repo := &search.RepositoryRevisions{Repo: types.RepoName{Name: "foo/no-match"}, Revs: []search.RevisionSpecifier{{RevSpec: ""}}}
+		repo := &types.RepoName{Name: "foo/no-match"}
 		unindexed.MockSearchFilesInRepos = func(args *search.TextParameters) (matches []result.Match, common *streaming.Stats, err error) {
 			return nil, &streaming.Stats{}, nil
 		}
@@ -226,8 +228,8 @@ func TestRepoShouldBeAdded(t *testing.T) {
 
 // repoShouldBeAdded determines whether a repository should be included in the result set based on whether the repository fits in the subset
 // of repostiories specified in the query's `repohasfile` and `-repohasfile` fields if they exist.
-func repoShouldBeAdded(ctx context.Context, zoekt *searchbackend.Zoekt, repo *search.RepositoryRevisions, pattern *search.TextPatternInfo) (bool, error) {
-	repos := []*search.RepositoryRevisions{repo}
+func repoShouldBeAdded(ctx context.Context, zoekt *searchbackend.Zoekt, repo *types.RepoName, pattern *search.TextPatternInfo) (bool, error) {
+	repos := []*types.RepoName{repo}
 	args := search.TextParameters{
 		PatternInfo: pattern,
 		Zoekt:       zoekt,
@@ -240,47 +242,38 @@ func repoShouldBeAdded(ctx context.Context, zoekt *searchbackend.Zoekt, repo *se
 }
 
 func TestMatchRepos(t *testing.T) {
-	want := makeRepositoryRevisions("foo/bar", "abc/foo")
-	in := append(want, makeRepositoryRevisions("beef/bam", "qux/bas")...)
+	want := mkRepos("foo/bar", "abc/foo")
+	in := append(want, mkRepos("beef/bam", "qux/bas")...)
+	resolved := search.NewRepos(in...)
 	pattern := regexp.MustCompile("foo")
 
-	results := make(chan []*search.RepositoryRevisions)
+	results := make(chan []*types.RepoName)
 	go func() {
 		defer close(results)
-		matchRepos(pattern, in, results)
+		matchRepos(pattern, resolved, results)
 	}()
-	var repos []*search.RepositoryRevisions
+	var repos []*types.RepoName
 	for matched := range results {
 		repos = append(repos, matched...)
 	}
 
-	// because of the concurrency we cannot rely on the order of "repos" to be the
-	// same as "want". Hence we create map of repo names and compare those.
-	toMap := func(reporevs []*search.RepositoryRevisions) map[string]struct{} {
-		out := map[string]struct{}{}
-		for _, r := range reporevs {
-			out[string(r.Repo.Name)] = struct{}{}
-		}
-		return out
-	}
-	if !reflect.DeepEqual(toMap(repos), toMap(want)) {
+	if !reflect.DeepEqual(repos, want) {
 		t.Fatalf("expected %v, got %v", want, repos)
 	}
 }
 
 func BenchmarkSearchRepositories(b *testing.B) {
 	n := 200 * 1000
-	repos := make([]*search.RepositoryRevisions, n)
+	repos := make([]*types.RepoName, 0, n)
 	for i := 0; i < n; i++ {
-		repo := types.RepoName{Name: api.RepoName("github.com/org/repo" + strconv.Itoa(i))}
-		repos[i] = &search.RepositoryRevisions{Repo: repo, Revs: []search.RevisionSpecifier{{}}}
+		repos = append(repos, &types.RepoName{Name: api.RepoName("github.com/org/repo" + strconv.Itoa(i))})
 	}
 	q, _ := query.ParseLiteral("context.WithValue")
 	bq, _ := query.ToBasicQuery(q)
 	pattern := search.ToTextPatternInfo(bq, search.Batch, query.Identity)
 	tp := search.TextParameters{
 		PatternInfo: pattern,
-		Repos:       repos,
+		Repos:       search.NewRepos(repos...),
 		Query:       q,
 	}
 	for i := 0; i < b.N; i++ {
@@ -291,21 +284,8 @@ func BenchmarkSearchRepositories(b *testing.B) {
 	}
 }
 
-func makeRepositoryRevisions(repos ...string) []*search.RepositoryRevisions {
-	r := make([]*search.RepositoryRevisions, len(repos))
-	for i, repospec := range repos {
-		repoName, revs := search.ParseRepositoryRevisions(repospec)
-		if len(revs) == 0 {
-			// treat empty list as preferring master
-			revs = []search.RevisionSpecifier{{RevSpec: ""}}
-		}
-		r[i] = &search.RepositoryRevisions{Repo: mkRepos(repoName)[0], Revs: revs}
-	}
-	return r
-}
-
-func mkRepos(names ...string) []types.RepoName {
-	var repos []types.RepoName
+func mkRepos(names ...string) []*types.RepoName {
+	var repos []*types.RepoName
 	for _, name := range names {
 		sum := md5.Sum([]byte(name))
 		id := api.RepoID(binary.BigEndian.Uint64(sum[:]))
@@ -315,7 +295,7 @@ func mkRepos(names ...string) []types.RepoName {
 		if id == 0 {
 			id++
 		}
-		repos = append(repos, types.RepoName{ID: id, Name: api.RepoName(name)})
+		repos = append(repos, &types.RepoName{ID: id, Name: api.RepoName(name)})
 	}
 	return repos
 }

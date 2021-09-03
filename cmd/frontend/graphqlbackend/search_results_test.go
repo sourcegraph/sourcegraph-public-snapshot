@@ -24,7 +24,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	searchbackend "github.com/sourcegraph/sourcegraph/internal/search/backend"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
-	searchrepos "github.com/sourcegraph/sourcegraph/internal/search/repos"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/search/run"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
@@ -99,7 +98,7 @@ func TestSearchResults(t *testing.T) {
 		defer func() { mockDecodedViewerFinalSettings = nil }()
 
 		var calledReposListRepoNames bool
-		database.Mocks.Repos.ListRepoNames = func(_ context.Context, op database.ReposListOptions) ([]types.RepoName, error) {
+		database.Mocks.Repos.StreamingListRepoNames = func(_ context.Context, op database.ReposListOptions, cb func(*types.RepoName)) error {
 			calledReposListRepoNames = true
 
 			// Validate that the following options are invariant
@@ -108,7 +107,9 @@ func TestSearchResults(t *testing.T) {
 			assertEqual(t, op.LimitOffset, limitOffset)
 			assertEqual(t, op.IncludePatterns, []string{"r", "p"})
 
-			return []types.RepoName{{ID: 1, Name: "repo"}}, nil
+			cb(&types.RepoName{ID: 1, Name: "repo"})
+
+			return nil
 		}
 		database.Mocks.Repos.MockGetByName(t, "repo", 1)
 		database.Mocks.Repos.MockGet(t, 1)
@@ -125,7 +126,6 @@ func TestSearchResults(t *testing.T) {
 				t.Error("!calledReposListRepoNames")
 			}
 		}
-
 	})
 
 	t.Run("multiple terms regexp", func(t *testing.T) {
@@ -133,7 +133,7 @@ func TestSearchResults(t *testing.T) {
 		defer func() { mockDecodedViewerFinalSettings = nil }()
 
 		var calledReposListRepoNames bool
-		database.Mocks.Repos.ListRepoNames = func(_ context.Context, op database.ReposListOptions) ([]types.RepoName, error) {
+		database.Mocks.Repos.StreamingListRepoNames = func(_ context.Context, op database.ReposListOptions, cb func(*types.RepoName)) error {
 			calledReposListRepoNames = true
 
 			// Validate that the following options are invariant
@@ -141,7 +141,9 @@ func TestSearchResults(t *testing.T) {
 			// many times it is called for a single Search(...) operation.
 			assertEqual(t, op.LimitOffset, limitOffset)
 
-			return []types.RepoName{{ID: 1, Name: "repo"}}, nil
+			cb(&types.RepoName{ID: 1, Name: "repo"})
+
+			return nil
 		}
 		defer func() { database.Mocks = database.MockStores{} }()
 		database.Mocks.Repos.MockGetByName(t, "repo", 1)
@@ -172,7 +174,7 @@ func TestSearchResults(t *testing.T) {
 			if want := `(foo\d).*?(bar\*)`; args.PatternInfo.Pattern != want {
 				t.Errorf("got %q, want %q", args.PatternInfo.Pattern, want)
 			}
-			repo := types.RepoName{ID: 1, Name: "repo"}
+			repo := &types.RepoName{ID: 1, Name: "repo"}
 			fm := mkFileMatch(repo, "dir/file", 123)
 			return []result.Match{fm}, &streaming.Stats{}, nil
 		}
@@ -198,7 +200,7 @@ func TestSearchResults(t *testing.T) {
 		defer func() { mockDecodedViewerFinalSettings = nil }()
 
 		var calledReposListRepoNames bool
-		database.Mocks.Repos.ListRepoNames = func(_ context.Context, op database.ReposListOptions) ([]types.RepoName, error) {
+		database.Mocks.Repos.StreamingListRepoNames = func(_ context.Context, op database.ReposListOptions, cb func(*types.RepoName)) error {
 			calledReposListRepoNames = true
 
 			// Validate that the following options are invariant
@@ -206,7 +208,9 @@ func TestSearchResults(t *testing.T) {
 			// many times it is called for a single Search(...) operation.
 			assertEqual(t, op.LimitOffset, limitOffset)
 
-			return []types.RepoName{{ID: 1, Name: "repo"}}, nil
+			cb(&types.RepoName{ID: 1, Name: "repo"})
+
+			return nil
 		}
 		defer func() { database.Mocks = database.MockStores{} }()
 		database.Mocks.Repos.MockGetByName(t, "repo", 1)
@@ -237,7 +241,7 @@ func TestSearchResults(t *testing.T) {
 			if want := `foo\\d "bar\*"`; args.PatternInfo.Pattern != want {
 				t.Errorf("got %q, want %q", args.PatternInfo.Pattern, want)
 			}
-			repo := types.RepoName{ID: 1, Name: "repo"}
+			repo := &types.RepoName{ID: 1, Name: "repo"}
 			fm := mkFileMatch(repo, "dir/file", 123)
 			return []result.Match{fm}, &streaming.Stats{}, nil
 		}
@@ -262,7 +266,7 @@ func TestSearchResults(t *testing.T) {
 func TestSearchResolver_DynamicFilters(t *testing.T) {
 	db := new(dbtesting.MockDB)
 
-	repo := types.RepoName{Name: "testRepo"}
+	repo := &types.RepoName{Name: "testRepo"}
 	repoMatch := &result.RepoMatch{Name: "testRepo"}
 	fileMatch := func(path string) *result.FileMatch {
 		return mkFileMatch(repo, path)
@@ -506,7 +510,8 @@ func TestSearchResultsHydration(t *testing.T) {
 			ID:          repoName,
 			ServiceType: extsvc.TypeGitHub,
 			ServiceID:   "https://github.com",
-		}}
+		},
+	}
 
 	hydratedRepo := &types.Repo{
 
@@ -522,11 +527,12 @@ func TestSearchResultsHydration(t *testing.T) {
 		return hydratedRepo, nil
 	}
 
-	database.Mocks.Repos.ListRepoNames = func(_ context.Context, op database.ReposListOptions) ([]types.RepoName, error) {
-		if op.OnlyPrivate {
-			return nil, nil
+	database.Mocks.Repos.StreamingListRepoNames = func(_ context.Context, op database.ReposListOptions, cb func(*types.RepoName)) error {
+		if !op.OnlyPrivate {
+			cb(&types.RepoName{ID: repoWithIDs.ID, Name: repoWithIDs.Name})
 		}
-		return []types.RepoName{{ID: repoWithIDs.ID, Name: repoWithIDs.Name}}, nil
+
+		return nil
 	}
 	database.Mocks.Repos.Count = mockCount
 
@@ -577,7 +583,7 @@ func TestSearchResultsHydration(t *testing.T) {
 		},
 		zoekt:    z,
 		reposMu:  &sync.Mutex{},
-		resolved: &searchrepos.Resolved{},
+		resolved: search.NewRepos(),
 	}
 	results, err := resolver.Results(ctx)
 	if err != nil {
@@ -732,7 +738,7 @@ func TestGetExactFilePatterns(t *testing.T) {
 func TestCompareSearchResults(t *testing.T) {
 	makeResult := func(repo, file string) *result.FileMatch {
 		return &result.FileMatch{File: result.File{
-			Repo: types.RepoName{Name: api.RepoName(repo)},
+			Repo: &types.RepoName{Name: api.RepoName(repo)},
 			Path: file,
 		}}
 	}
@@ -907,12 +913,11 @@ func TestEvaluateAnd(t *testing.T) {
 
 			ctx := context.Background()
 
-			database.Mocks.Repos.ListRepoNames = func(_ context.Context, op database.ReposListOptions) ([]types.RepoName, error) {
-				repoNames := make([]types.RepoName, len(minimalRepos))
+			database.Mocks.Repos.StreamingListRepoNames = func(_ context.Context, op database.ReposListOptions, cb func(*types.RepoName)) error {
 				for i := range minimalRepos {
-					repoNames[i] = types.RepoName{ID: minimalRepos[i].ID, Name: minimalRepos[i].Name}
+					cb(&types.RepoName{ID: minimalRepos[i].ID, Name: minimalRepos[i].Name})
 				}
-				return repoNames, nil
+				return nil
 			}
 			database.Mocks.Repos.Count = func(ctx context.Context, opt database.ReposListOptions) (int, error) {
 				return len(minimalRepos), nil
@@ -932,7 +937,7 @@ func TestEvaluateAnd(t *testing.T) {
 				},
 				zoekt:    z,
 				reposMu:  &sync.Mutex{},
-				resolved: &searchrepos.Resolved{},
+				resolved: search.NewRepos(),
 			}
 			results, err := resolver.Results(ctx)
 			if err != nil {
@@ -989,7 +994,7 @@ func TestSearchContext(t *testing.T) {
 					UserSettings: &schema.Settings{},
 				},
 				reposMu:  &sync.Mutex{},
-				resolved: &searchrepos.Resolved{},
+				resolved: search.NewRepos(),
 				zoekt:    mockZoekt,
 				db:       db,
 			}
@@ -1069,7 +1074,6 @@ func TestIsGlobalSearch(t *testing.T) {
 			}
 		})
 	}
-
 }
 
 func TestZeroElapsedMilliseconds(t *testing.T) {

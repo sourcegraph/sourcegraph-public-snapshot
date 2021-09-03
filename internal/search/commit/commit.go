@@ -99,7 +99,7 @@ func commitParametersToDiffParameters(ctx context.Context, db dbutil.DB, op *sea
 		args = append(args, "--regexp-ignore-case")
 	}
 
-	for _, rev := range op.RepoRevs.Revs {
+	for _, rev := range op.Revs {
 		switch {
 		case rev.RevSpec != "":
 			if strings.HasPrefix(rev.RevSpec, "-") {
@@ -190,7 +190,7 @@ func commitParametersToDiffParameters(ctx context.Context, db dbutil.DB, op *sea
 		IsCaseSensitive: op.PatternInfo.IsCaseSensitive,
 	}
 	return &search.DiffParameters{
-		Repo: op.RepoRevs.GitserverRepo(),
+		Repo: op.Repo.Name,
 		Options: git.RawLogDiffSearchOptions{
 			Query: textSearchOptions,
 			Paths: git.PathOptions{
@@ -210,7 +210,7 @@ func commitParametersToDiffParameters(ctx context.Context, db dbutil.DB, op *sea
 func searchCommitsInRepoStream(ctx context.Context, db dbutil.DB, op search.CommitParameters, s streaming.Sender) (err error) {
 	var timedOut, limitHit bool
 	resultCount := 0
-	tr, ctx := trace.New(ctx, "searchCommitsInRepo", fmt.Sprintf("repoRevs: %v, pattern %+v", op.RepoRevs, op.PatternInfo))
+	tr, ctx := trace.New(ctx, "searchCommitsInRepo", fmt.Sprintf("repoRevs: %v, pattern %+v", op.Revs, op.PatternInfo))
 	defer func() {
 		tr.LazyPrintf("%d results, limitHit=%v, timedOut=%v", resultCount, limitHit, timedOut)
 		tr.SetError(err)
@@ -241,7 +241,7 @@ func searchCommitsInRepoStream(ctx context.Context, db dbutil.DB, op search.Comm
 	for event := range events {
 		timedOut = timedOut || !event.Complete || ctx.Err() == context.DeadlineExceeded
 
-		results = logCommitSearchResultsToMatches(&op, op.RepoRevs.Repo, event.Results)
+		results = logCommitSearchResultsToMatches(&op, op.Repo, event.Results)
 		if len(results) > 0 {
 			resultCount += len(event.Results)
 			limitHit = resultCount > int(op.PatternInfo.FileMatchLimit)
@@ -249,12 +249,12 @@ func searchCommitsInRepoStream(ctx context.Context, db dbutil.DB, op search.Comm
 
 		searchErr := event.Error
 		if searchErr != nil {
-			tr.LogFields(otlog.String("repo", string(op.RepoRevs.Repo.Name)), otlog.String("searchErr", searchErr.Error()), otlog.Bool("timeout", errcode.IsTimeout(searchErr)), otlog.Bool("temporary", errcode.IsTemporary(searchErr)))
+			tr.LogFields(otlog.String("repo", string(op.Repo.Name)), otlog.String("searchErr", searchErr.Error()), otlog.Bool("timeout", errcode.IsTimeout(searchErr)), otlog.Bool("temporary", errcode.IsTemporary(searchErr)))
 		}
 
-		stats, err := repos.HandleRepoSearchResult(op.RepoRevs, limitHit, !event.Complete, searchErr)
+		stats, err := repos.HandleRepoSearchResult(op.Repo.ID, op.Revs, limitHit, !event.Complete, searchErr)
 		if err != nil {
-			return errors.Wrapf(err, "failed to search commit %s %s", errorName(op.Diff), op.RepoRevs.String())
+			return errors.Wrapf(err, "failed to search commit %s %v", errorName(op.Diff), op.Revs)
 		}
 
 		// Only send if we have something to report back.
@@ -293,7 +293,7 @@ func orderedFuzzyRegexp(pieces []string) string {
 	return "(" + strings.Join(pieces, ").*?(") + ")"
 }
 
-func logCommitSearchResultsToMatches(op *search.CommitParameters, repoName types.RepoName, rawResults []*git.LogCommitSearchResult) []*result.CommitMatch {
+func logCommitSearchResultsToMatches(op *search.CommitParameters, repoName *types.RepoName, rawResults []*git.LogCommitSearchResult) []*result.CommitMatch {
 	if len(rawResults) == 0 {
 		return nil
 	}
@@ -442,34 +442,36 @@ type searchCommitsInReposParameters struct {
 }
 
 func searchInRepos(ctx context.Context, db dbutil.DB, args *search.TextParametersForCommitParameters, params searchCommitsInReposParameters) (err error) {
-	tr, ctx := trace.New(ctx, params.TraceName, fmt.Sprintf("query: %+v, numRepoRevs: %d", args.PatternInfo, len(args.Repos)))
+	tr, ctx := trace.New(ctx, params.TraceName, fmt.Sprintf("query: %+v, numRepoRevs: %d", args.PatternInfo, args.Repos.Len()))
 	defer func() {
 		tr.SetError(err)
 		tr.Finish()
 	}()
 
-	repoSearch := func(ctx context.Context, repoRev *search.RepositoryRevisions) error {
+	repoSearch := func(ctx context.Context, repo *types.RepoName, revs search.RevSpecs) error {
 		commitParams := params.CommitParams
-		commitParams.RepoRevs = repoRev
+		commitParams.Repo = repo
+		commitParams.Revs = revs
 		return searchCommitsInRepoStream(ctx, db, commitParams, params.ResultChannel)
 	}
 
 	g, ctx := errgroup.WithContext(ctx)
-	for _, repoRev := range args.Repos {
-		// Skip the repo if no revisions were resolved for it
-		if len(repoRev.Revs) == 0 {
-			continue
+	args.Repos.ForEach(func(r *types.RepoName, revs search.RevSpecs) error {
+		if len(revs) == 0 {
+			revs = search.DefaultRevSpecs
 		}
 
-		rr := repoRev
 		g.Go(func() error {
-			err := repoSearch(ctx, rr)
+			err := repoSearch(ctx, r, revs)
 			if err != nil {
-				tr.LogFields(otlog.String("repo", string(rr.Repo.Name)), otlog.String("err", err.Error()), otlog.Bool("timeout", errcode.IsTimeout(err)), otlog.Bool("temporary", errcode.IsTemporary(err)))
+				tr.LogFields(otlog.String("repo", string(r.Name)), otlog.String("err", err.Error()), otlog.Bool("timeout", errcode.IsTimeout(err)), otlog.Bool("temporary", errcode.IsTemporary(err)))
 			}
 			return err
 		})
-	}
+
+		return nil
+	})
+
 	return g.Wait()
 }
 

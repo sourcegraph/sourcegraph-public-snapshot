@@ -74,7 +74,7 @@ func (p *progressAggregator) Final() api.Progress {
 
 	// We only send RepositoriesCount at the end because the number is
 	// confusing to users to see while searching.
-	if c := len(p.Stats.Repos); c > 0 {
+	if c := p.Stats.Repos.Len(); c > 0 {
 		s.RepositoriesCount = intPtr(c)
 	}
 
@@ -92,8 +92,8 @@ func (n namerFunc) Name() string {
 func getNames(stats streaming.Stats, status searchshared.RepoStatus) []api.Namer {
 	var names []api.Namer
 	stats.Status.Filter(status, func(id sgapi.RepoID) {
-		if name, ok := stats.Repos[id]; ok {
-			names = append(names, namerFunc(name.Name))
+		if r := stats.Repos.GetByID(id); r != nil {
+			names = append(names, namerFunc(r.Name))
 		} else {
 			names = append(names, namerFunc(fmt.Sprintf("UNKNOWN{ID=%d}", id)))
 		}

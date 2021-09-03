@@ -85,7 +85,7 @@ func mustCreate(ctx context.Context, t *testing.T, db *sql.DB, repo *types.Repo,
 func repoNamesFromRepos(repos []*types.Repo) []types.RepoName {
 	rnames := make([]types.RepoName, 0, len(repos))
 	for _, repo := range repos {
-		rnames = append(rnames, types.RepoName{ID: repo.ID, Name: repo.Name})
+		rnames = append(rnames, types.RepoName{ID: repo.ID, Name: repo.Name, Private: repo.Private})
 	}
 
 	return rnames
@@ -94,7 +94,7 @@ func repoNamesFromRepos(repos []*types.Repo) []types.RepoName {
 func reposFromRepoNames(names []types.RepoName) []*types.Repo {
 	repos := make([]*types.Repo, 0, len(names))
 	for _, name := range names {
-		repos = append(repos, &types.Repo{ID: name.ID, Name: name.Name})
+		repos = append(repos, &types.Repo{ID: name.ID, Name: name.Name, Private: name.Private})
 	}
 
 	return repos
@@ -435,7 +435,7 @@ func TestRepos_ListRepoNames_userID(t *testing.T) {
 	}
 
 	want := []types.RepoName{
-		{ID: repo.ID, Name: repo.Name},
+		{ID: repo.ID, Name: repo.Name, Private: repo.Private},
 	}
 
 	have, err := Repos(db).ListRepoNames(ctx, ReposListOptions{UserID: user.ID})
@@ -1045,7 +1045,8 @@ func TestRepos_createRepo(t *testing.T) {
 	// Add a repo.
 	createRepo(ctx, t, db, &types.Repo{
 		Name:        "a/b",
-		Description: "test"})
+		Description: "test",
+	})
 
 	repo, err := Repos(db).GetByName(ctx, "a/b")
 	if err != nil {

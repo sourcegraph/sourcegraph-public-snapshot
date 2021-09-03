@@ -7,6 +7,7 @@ import (
 	"runtime"
 
 	otlog "github.com/opentracing/opentracing-go/log"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/search"
@@ -84,9 +85,9 @@ func SearchRepositories(ctx context.Context, args *search.TextParameters, limit 
 	}
 
 	// Filter args.Repos by matching their names against the query pattern.
-	tr.LogFields(otlog.Int("resolved.len", len(args.Repos)))
+	tr.LogFields(otlog.Int("resolved.len", args.Repos.Len()))
 
-	results := make(chan []*search.RepositoryRevisions)
+	results := make(chan []*types.RepoName)
 	go func() {
 		defer close(results)
 		matchRepos(pattern, args.Repos, results)
@@ -95,25 +96,27 @@ func SearchRepositories(ctx context.Context, args *search.TextParameters, limit 
 	// Filter the repos if there is a repohasfile: or -repohasfile field.
 	if len(args.PatternInfo.FilePatternsReposMustExclude) > 0 || len(args.PatternInfo.FilePatternsReposMustInclude) > 0 {
 		// Fallback to batch for reposToAdd
-		var repos []*search.RepositoryRevisions
-		for matched := range results {
-			repos = append(repos, matched...)
+		var matched []*types.RepoName
+		for repos := range results {
+			matched = append(matched, repos...)
 		}
-		repos, err = reposToAdd(ctx, args, repos)
+
+		matched, err = reposToAdd(ctx, args, matched)
 		if err != nil {
 			return err
 		}
+
 		stream.Send(streaming.SearchEvent{
-			Results: repoRevsToRepoMatches(ctx, repos),
+			Results: toRepoMatches(args.Repos.RepoRevs, matched),
 		})
 		return nil
 	}
 
 	count := 0
-	for repos := range results {
-		count += len(repos)
+	for matched := range results {
+		count += len(matched)
 		stream.Send(streaming.SearchEvent{
-			Results: repoRevsToRepoMatches(ctx, repos),
+			Results: toRepoMatches(args.Repos.RepoRevs, matched),
 		})
 	}
 	tr.LogFields(otlog.Int("matched.len", count))
@@ -121,25 +124,27 @@ func SearchRepositories(ctx context.Context, args *search.TextParameters, limit 
 	return nil
 }
 
-func repoRevsToRepoMatches(ctx context.Context, repos []*search.RepositoryRevisions) []result.Match {
-	matches := make([]result.Match, 0, len(repos))
-	for _, r := range repos {
-		revs, err := r.ExpandedRevSpecs(ctx)
-		if err != nil { // fallback to just return revspecs
-			revs = r.RevSpecs()
+func toRepoMatches(repoRevs map[api.RepoName]search.RevSpecs, matched []*types.RepoName) []result.Match {
+	matches := make([]result.Match, 0, len(matched))
+	for _, r := range matched {
+		revs := repoRevs[r.Name]
+		if len(revs) == 0 {
+			revs = search.DefaultRevSpecs
 		}
 		for _, rev := range revs {
-			matches = append(matches, &result.RepoMatch{
-				Name: r.Repo.Name,
-				ID:   r.Repo.ID,
-				Rev:  rev,
-			})
+			if !rev.IsGlob() {
+				matches = append(matches, &result.RepoMatch{
+					Name: r.Name,
+					ID:   r.ID,
+					Rev:  rev.RevSpec,
+				})
+			}
 		}
 	}
 	return matches
 }
 
-func matchRepos(pattern *regexp.Regexp, resolved []*search.RepositoryRevisions, results chan<- []*search.RepositoryRevisions) {
+func matchRepos(pattern *regexp.Regexp, resolved *search.Repos, results chan<- []*types.RepoName) {
 	/*
 		goos: linux
 		goarch: amd64
@@ -159,42 +164,44 @@ func matchRepos(pattern *regexp.Regexp, resolved []*search.RepositoryRevisions, 
 		ok  	github.com/sourcegraph/sourcegraph/internal/search/run	18.729s
 	*/
 	workers := runtime.NumCPU()
-	limit := len(resolved) / workers
+	for _, repos := range [2][]*types.RepoName{resolved.Private.Repos, resolved.Public.Repos} {
+		limit := len(repos) / workers
 
-	last := make(chan struct{})
-	close(last)
+		last := make(chan struct{})
+		close(last)
 
-	for i := 0; i < workers; i++ {
-		page := resolved[i*limit : i*limit+limit]
-		if i == workers-1 {
-			page = resolved[i*limit:]
-		}
-
-		wait := last
-		done := make(chan struct{})
-		last = done
-
-		go func() {
-			defer close(done)
-
-			var matched []*search.RepositoryRevisions
-			for _, r := range page {
-				if pattern.MatchString(string(r.Repo.Name)) {
-					matched = append(matched, r)
-				}
+		for i := 0; i < workers; i++ {
+			page := repos[i*limit : i*limit+limit]
+			if i == workers-1 {
+				page = repos[i*limit:]
 			}
 
-			// Wait for the previous chunk to send its matches
-			// before sending ours.
-			<-wait
-			results <- matched
-		}()
-	}
+			wait := last
+			done := make(chan struct{})
+			last = done
 
-	<-last
+			go func() {
+				defer close(done)
+
+				var matched []*types.RepoName
+				for _, r := range page {
+					if !resolved.Excludes(r.ID) && pattern.MatchString(string(r.Name)) {
+						matched = append(matched, r)
+					}
+				}
+
+				// Wait for the previous chunk to send its matches
+				// before sending ours.
+				<-wait
+				results <- matched
+			}()
+		}
+
+		<-last
+	}
 }
 
-func reposContainingPath(ctx context.Context, args *search.TextParameters, repos []*search.RepositoryRevisions, pattern string) ([]*result.FileMatch, error) {
+func reposContainingPath(ctx context.Context, args *search.TextParameters, repos []*types.RepoName, pattern string) ([]*result.FileMatch, error) {
 	// Use a max FileMatchLimit to ensure we get all the repo matches we
 	// can. Setting it to len(repos) could mean we miss some repos since
 	// there could be for example len(repos) file matches in the first repo
@@ -213,7 +220,7 @@ func reposContainingPath(ctx context.Context, args *search.TextParameters, repos
 	}
 	newArgs := *args
 	newArgs.PatternInfo = &p
-	newArgs.Repos = repos
+	newArgs.Repos = search.NewRepos(repos...)
 	newArgs.Query = q
 	newArgs.UseFullDeadline = true
 	matches, _, err := unindexed.SearchFilesInReposBatch(ctx, &newArgs)
@@ -225,7 +232,7 @@ func reposContainingPath(ctx context.Context, args *search.TextParameters, repos
 
 // reposToAdd determines which repositories should be included in the result set based on whether they fit in the subset
 // of repostiories specified in the query's `repohasfile` and `-repohasfile` fields if they exist.
-func reposToAdd(ctx context.Context, args *search.TextParameters, repos []*search.RepositoryRevisions) ([]*search.RepositoryRevisions, error) {
+func reposToAdd(ctx context.Context, args *search.TextParameters, repos []*types.RepoName) ([]*types.RepoName, error) {
 	// matchCounts will contain the count of repohasfile patterns that matched.
 	// For negations, we will explicitly set this to -1 if it matches.
 	matchCounts := make(map[api.RepoID]int)
@@ -249,7 +256,7 @@ func reposToAdd(ctx context.Context, args *search.TextParameters, repos []*searc
 	} else {
 		// Default to including all the repos, then excluding some of them below.
 		for _, r := range repos {
-			matchCounts[r.Repo.ID] = 0
+			matchCounts[r.ID] = 0
 		}
 	}
 
@@ -265,12 +272,11 @@ func reposToAdd(ctx context.Context, args *search.TextParameters, repos []*searc
 		}
 	}
 
-	var rsta []*search.RepositoryRevisions
+	var rsta []*types.RepoName
 	for _, r := range repos {
-		if count, ok := matchCounts[r.Repo.ID]; ok && count == len(args.PatternInfo.FilePatternsReposMustInclude) {
+		if count, ok := matchCounts[r.ID]; ok && count == len(args.PatternInfo.FilePatternsReposMustInclude) {
 			rsta = append(rsta, r)
 		}
 	}
-
 	return rsta, nil
 }

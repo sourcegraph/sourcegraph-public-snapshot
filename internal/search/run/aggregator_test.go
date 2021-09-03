@@ -2,6 +2,7 @@ package run
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -61,23 +62,23 @@ func TestCheckDiffCommitSearchLimits(t *testing.T) {
 	}
 
 	for _, test := range cases {
-		repoRevs := make([]*search.RepositoryRevisions, test.numRepoRevs)
-		for i := range repoRevs {
-			repoRevs[i] = &search.RepositoryRevisions{
-				Repo: types.RepoName{ID: api.RepoID(i)},
+		t.Run(test.name, func(t *testing.T) {
+			repos := search.NewRepos()
+			for i := 0; i < test.numRepoRevs; i++ {
+				repos.Add(&types.RepoName{ID: api.RepoID(i), Name: api.RepoName(fmt.Sprintf("repo-%d", i))})
 			}
-		}
 
-		haveErr := checkDiffCommitSearchLimits(
-			context.Background(),
-			&search.TextParameters{
-				Repos: repoRevs,
-				Query: test.fields,
-			},
-			test.resultType)
+			haveErr := checkDiffCommitSearchLimits(
+				context.Background(),
+				&search.TextParameters{
+					Repos: repos,
+					Query: test.fields,
+				},
+				test.resultType)
 
-		if diff := cmp.Diff(test.wantError, haveErr); diff != "" {
-			t.Fatalf("test %s, mismatched error (-want, +got):\n%s", test.name, diff)
-		}
+			if diff := cmp.Diff(test.wantError, haveErr); diff != "" {
+				t.Fatalf("test %s, mismatched error (-want, +got):\n%s", test.name, diff)
+			}
+		})
 	}
 }

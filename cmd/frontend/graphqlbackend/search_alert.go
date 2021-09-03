@@ -14,6 +14,8 @@ import (
 	"github.com/cockroachdb/errors"
 	"github.com/hashicorp/go-multierror"
 	"github.com/inconshreveable/log15"
+	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
@@ -114,7 +116,7 @@ func (r *searchResolver) reposExist(ctx context.Context, options search.RepoOpti
 		SearchableReposFunc: backend.Repos.ListSearchable,
 	}
 	resolved, err := repositoryResolver.Resolve(ctx, options)
-	return err == nil && len(resolved.RepoRevs) > 0
+	return err == nil && resolved.Len() > 0
 }
 
 func (r *searchResolver) alertForNoResolvedRepos(ctx context.Context, q query.Q) *searchAlert {
@@ -298,11 +300,14 @@ func (r *searchResolver) errorForOverRepoLimit(ctx context.Context) *errOverRepo
 
 	repoOptions := r.toRepoOptions(r.Query, resolveRepositoriesOpts{})
 	resolved, _ := r.resolveRepositories(ctx, repoOptions)
-	if len(resolved.RepoRevs) > 0 {
-		paths := make([]string, len(resolved.RepoRevs))
-		for i, repo := range resolved.RepoRevs {
-			paths[i] = string(repo.Repo.Name)
-		}
+	if resolved.Len() > 0 {
+		paths := make([]string, resolved.Len())
+		i := 0
+		resolved.ForEach(func(r *types.RepoName, _ search.RevSpecs) error {
+			paths[i] = string(r.Name)
+			i++
+			return nil
+		})
 
 		// See if we can narrow it down by using filters like
 		// repo:github.com/myorg/.
@@ -390,36 +395,46 @@ func alertForStructuralSearchNotSet(queryString string) *searchAlert {
 }
 
 type missingRepoRevsError struct {
-	Missing []*search.RepositoryRevisions
+	Missing map[api.RepoName]search.RevSpecs
 }
 
 func (*missingRepoRevsError) Error() string {
 	return "missing repo revs"
 }
 
-func alertForMissingRepoRevs(missingRepoRevs []*search.RepositoryRevisions) *searchAlert {
+func alertForMissingRepoRevs(missingRevs map[api.RepoName]search.RevSpecs) *searchAlert {
 	var description string
-	if len(missingRepoRevs) == 1 {
-		if len(missingRepoRevs[0].RevSpecs()) == 1 {
-			description = fmt.Sprintf("The repository %s matched by your repo: filter could not be searched because it does not contain the revision %q.", missingRepoRevs[0].Repo.Name, missingRepoRevs[0].RevSpecs()[0])
-		} else {
-			description = fmt.Sprintf("The repository %s matched by your repo: filter could not be searched because it has multiple specified revisions: @%s.", missingRepoRevs[0].Repo.Name, strings.Join(missingRepoRevs[0].RevSpecs(), ","))
+	if len(missingRevs) == 1 {
+		for repo, revs := range missingRevs {
+			if specs := revs.RevSpecs(); len(specs) == 1 {
+				description = fmt.Sprintf("The repository %s matched by your repo: filter could not be searched because it does not contain the revision %q.", repo, specs[0])
+			} else {
+				description = fmt.Sprintf("The repository %s matched by your repo: filter could not be searched because it has multiple specified revisions: @%s.", repo, strings.Join(specs, ","))
+			}
+
+			break
 		}
 	} else {
 		sampleSize := 10
-		if sampleSize > len(missingRepoRevs) {
-			sampleSize = len(missingRepoRevs)
+		if sampleSize > len(missingRevs) {
+			sampleSize = len(missingRevs)
 		}
+
 		repoRevs := make([]string, 0, sampleSize)
-		for _, r := range missingRepoRevs[:sampleSize] {
-			repoRevs = append(repoRevs, string(r.Repo.Name)+"@"+strings.Join(r.RevSpecs(), ","))
+		for repo, revs := range missingRevs {
+			repoRevs = append(repoRevs, string(repo)+"@"+strings.Join(revs.RevSpecs(), ","))
+			if len(repoRevs) == sampleSize {
+				break
+			}
 		}
+
 		b := strings.Builder{}
-		_, _ = fmt.Fprintf(&b, "%d repositories matched by your repo: filter could not be searched because the following revisions do not exist, or differ but were specified for the same repository:", len(missingRepoRevs))
+		_, _ = fmt.Fprintf(&b, "%d repositories matched by your repo: filter could not be searched because the following revisions do not exist, or differ but were specified for the same repository:", len(missingRevs))
 		for _, rr := range repoRevs {
 			_, _ = fmt.Fprintf(&b, "\n* %s", rr)
 		}
-		if sampleSize < len(missingRepoRevs) {
+
+		if sampleSize < len(missingRevs) {
 			b.WriteString("\n* ...")
 		}
 		description = b.String()

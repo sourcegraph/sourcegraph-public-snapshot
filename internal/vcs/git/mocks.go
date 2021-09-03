@@ -21,6 +21,8 @@ var Mocks, emptyMocks struct {
 	ReadDir          func(commit api.CommitID, name string, recurse bool) ([]fs.FileInfo, error)
 	LsFiles          func(repo api.RepoName, commit api.CommitID) ([]string, error)
 	ResolveRevision  func(spec string, opt ResolveRevisionOptions) (api.CommitID, error)
+	ListRefs         func(repo api.RepoName) ([]Ref, error)
+	ExpandRefGlobs   func(repo api.RepoName, globs []RefGlob) ([]Ref, error)
 	Stat             func(commit api.CommitID, name string) (fs.FileInfo, error)
 	GetObject        func(objectName string) (OID, ObjectType, error)
 	Commits          func(repo api.RepoName, opt CommitsOptions) ([]*Commit, error)

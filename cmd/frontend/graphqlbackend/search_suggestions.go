@@ -13,6 +13,7 @@ import (
 	"github.com/inconshreveable/log15"
 	"github.com/neelance/parallel"
 	"github.com/sourcegraph/go-lsp"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -92,12 +93,15 @@ func (g gitTreeSuggestionResolver) Label() string { return g.gitTreeEntry.Path()
 func (g gitTreeSuggestionResolver) ToFile() (*GitTreeEntryResolver, bool) {
 	return g.gitTreeEntry, true
 }
+
 func (g gitTreeSuggestionResolver) ToGitBlob() (*GitTreeEntryResolver, bool) {
 	return g.gitTreeEntry, g.gitTreeEntry.stat.Mode().IsRegular()
 }
+
 func (g gitTreeSuggestionResolver) ToGitTree() (*GitTreeEntryResolver, bool) {
 	return g.gitTreeEntry, g.gitTreeEntry.stat.Mode().IsDir()
 }
+
 func (g gitTreeSuggestionResolver) Key() suggestionKey {
 	return suggestionKey{
 		repoName: g.gitTreeEntry.Commit().Repository().Name(),
@@ -117,6 +121,7 @@ func (s symbolSuggestionResolver) Score() int { return s.score }
 func (s symbolSuggestionResolver) Length() int {
 	return len(s.symbol.Symbol.Name) + len(s.symbol.Symbol.Parent)
 }
+
 func (s symbolSuggestionResolver) Label() string {
 	return s.symbol.Symbol.Name + " " + s.symbol.Symbol.Parent
 }
@@ -175,6 +180,7 @@ func (s searchContextSuggestionResolver) Label() string { return s.searchContext
 func (s searchContextSuggestionResolver) ToSearchContext() (*searchContextResolver, bool) {
 	return s.searchContext, true
 }
+
 func (s searchContextSuggestionResolver) Key() suggestionKey {
 	return suggestionKey{
 		searchContextSpec: s.searchContext.Spec(),
@@ -248,15 +254,17 @@ func (r *searchResolver) showRepoSuggestions(ctx context.Context) ([]SearchSugge
 			})
 
 		resolved, err := r.resolveRepositories(ctx, repoOptions)
-		resolvers := make([]SearchSuggestionResolver, 0, len(resolved.RepoRevs))
-		for i, rev := range resolved.RepoRevs {
+		resolvers := make([]SearchSuggestionResolver, 0, resolved.Len())
+		i := 0
+		resolved.ForEach(func(repo *types.RepoName, _ search.RevSpecs) error {
 			resolvers = append(resolvers, repositorySuggestionResolver{
-				repo: NewRepositoryResolver(r.db, rev.Repo.ToRepo()),
+				repo: NewRepositoryResolver(r.db, repo.ToRepo()),
 				// Encode the returned order in score.
 				score: math.MaxInt32 - i,
 			})
-		}
-
+			i++
+			return nil
+		})
 		return resolvers, err
 	}
 	return nil, nil
@@ -395,7 +403,7 @@ func (r *searchResolver) showSymbolMatches(ctx context.Context) ([]SearchSuggest
 		fileMatches, _, err = streaming.CollectStream(func(stream streaming.Sender) error {
 			return symbol.Search(ctx, &search.TextParameters{
 				PatternInfo:  p,
-				Repos:        resolved.RepoRevs,
+				Repos:        resolved,
 				Query:        r.Query,
 				Zoekt:        r.zoekt,
 				SearcherURLs: r.searcherURLs,
@@ -541,7 +549,6 @@ func (r *searchResolver) showSearchContextSuggestions(ctx context.Context) ([]Se
 type suggester func(ctx context.Context) ([]SearchSuggestionResolver, error)
 
 func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestionsArgs) ([]SearchSuggestionResolver, error) {
-
 	// If globbing is activated, convert regex patterns of repo, file, and repohasfile
 	// from "field:^foo$" to "field:^foo".
 	globbing := false

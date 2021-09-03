@@ -57,12 +57,12 @@ func TestSearchCommitsInRepo(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	repoRevs := &search.RepositoryRevisions{
-		Repo: types.RepoName{ID: 1, Name: "repo"},
-		Revs: []search.RevisionSpecifier{{RevSpec: "rev"}},
-	}
+
+	repo := &types.RepoName{ID: 1, Name: "repo"}
+	revs := search.RevSpecs{{RevSpec: "rev"}}
 	results, limitHit, timedOut, err := searchCommitsInRepo(ctx, db, search.CommitParameters{
-		RepoRevs:    repoRevs,
+		Repo:        repo,
+		Revs:        revs,
 		PatternInfo: &search.CommitPatternInfo{Pattern: "p", FileMatchLimit: int32(search.DefaultMaxSearchResults)},
 		Query:       q,
 		Diff:        true,
@@ -73,7 +73,7 @@ func TestSearchCommitsInRepo(t *testing.T) {
 
 	want := []*result.CommitMatch{{
 		Commit:      git.Commit{ID: "c1", Author: gitSignatureWithDate},
-		Repo:        types.RepoName{ID: 1, Name: "repo"},
+		Repo:        repo,
 		DiffPreview: &result.HighlightedString{Value: "x", Highlights: []result.HighlightedRange{}},
 		Body:        result.HighlightedString{Value: "```diff\nx```", Highlights: []result.HighlightedRange{}},
 	}}

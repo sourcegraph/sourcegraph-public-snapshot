@@ -389,10 +389,67 @@ func (rs Repos) Filter(pred func(*Repo) bool) (fs Repos) {
 	return fs
 }
 
+// RepoSet contains set of repos.
+type RepoSet struct {
+	Repos []*RepoName // order matters
+	IDs   map[api.RepoID]*RepoName
+	Names map[api.RepoName]*RepoName
+}
+
+func NewRepoSet(rs ...*RepoName) *RepoSet {
+	sr := &RepoSet{
+		Repos: make([]*RepoName, 0, len(rs)),
+		IDs:   make(map[api.RepoID]*RepoName, len(rs)),
+		Names: make(map[api.RepoName]*RepoName, len(rs)),
+	}
+
+	for _, r := range rs {
+		sr.Add(r)
+	}
+
+	return sr
+}
+
+func (rs *RepoSet) String() string {
+	if rs == nil {
+		return "RepoSet(nil)"
+	}
+	return fmt.Sprintf("RepoSet{Repos: %d}", rs.Len())
+}
+
+func (rs *RepoSet) Add(r *RepoName) {
+	if rs == nil {
+		return
+	}
+
+	if _, ok := rs.Names[r.Name]; !ok {
+		rs.Repos = append(rs.Repos, r)
+		rs.IDs[r.ID] = r
+		rs.Names[r.Name] = r
+	}
+}
+
+func (rs *RepoSet) Includes(id api.RepoID) bool {
+	if rs == nil {
+		return false
+	}
+
+	_, ok := rs.IDs[id]
+	return ok
+}
+
+func (rs *RepoSet) Len() int {
+	if rs == nil {
+		return 0
+	}
+	return len(rs.Repos)
+}
+
 // RepoName represents a source code repository name and its ID.
 type RepoName struct {
-	ID   api.RepoID
-	Name api.RepoName
+	ID      api.RepoID
+	Name    api.RepoName
+	Private bool
 }
 
 func (r *RepoName) ToRepo() *Repo {

@@ -17,6 +17,7 @@ import (
 	zoektrpc "github.com/google/zoekt/rpc"
 	"github.com/graph-gophers/graphql-go"
 	"github.com/keegancsmith/sqlf"
+	"github.com/sourcegraph/sourcegraph/internal/search"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -483,27 +484,29 @@ func TestVersionContext(t *testing.T) {
 					UserSettings:   &schema.Settings{},
 				},
 				reposMu:  &sync.Mutex{},
-				resolved: &searchrepos.Resolved{},
+				resolved: search.NewRepos(),
 			}
 
-			database.Mocks.Repos.ListRepoNames = func(ctx context.Context, opts database.ReposListOptions) ([]types.RepoName, error) {
+			database.Mocks.Repos.StreamingListRepoNames = func(_ context.Context, opts database.ReposListOptions, cb func(*types.RepoName)) error {
 				if diff := cmp.Diff(tc.wantReposListOptionsNames, opts.Names, cmpopts.EquateEmpty()); diff != "" {
 					t.Fatalf("database.RepostListOptions.Names mismatch (-want, +got):\n%s", diff)
 				}
-				var repos []types.RepoName
 				for _, name := range tc.reposGetListNames {
-					repos = append(repos, types.RepoName{Name: api.RepoName(name)})
+					cb(&types.RepoName{Name: api.RepoName(name)})
 				}
-				return repos, nil
+				return nil
 			}
 			database.Mocks.Repos.Count = func(context.Context, database.ReposListOptions) (int, error) { return len(tc.reposGetListNames), nil }
 			defer func() {
-				database.Mocks.Repos.ListRepoNames = nil
+				database.Mocks.Repos.StreamingListRepoNames = nil
 				database.Mocks.Repos.Count = nil
 			}()
 			git.Mocks.ResolveRevision = func(rev string, opt git.ResolveRevisionOptions) (api.CommitID, error) {
 				return api.CommitID("deadbeef"), nil
 			}
+			//git.Mocks.ExpandRefGlobs = func(name api.RepoName, globs []git.RefGlob) ([]git.Ref, error) {
+			//	return api.CommitID("deadbeef"), nil
+			//}
 			defer git.ResetMocks()
 
 			repoOptions := resolver.toRepoOptions(resolver.Query, resolveRepositoriesOpts{})
@@ -512,9 +515,10 @@ func TestVersionContext(t *testing.T) {
 				t.Fatal(err)
 			}
 			var got []string
-			for _, repoRev := range gotResult.RepoRevs {
-				got = append(got, string(repoRev.Repo.Name)+"@"+strings.Join(repoRev.RevSpecs(), ":"))
-			}
+			gotResult.ForEach(func(r *types.RepoName, revs search.RevSpecs) error {
+				got = append(got, string(r.Name)+"@"+strings.Join(revs.RevSpecs(), ":"))
+				return nil
+			})
 
 			if diff := cmp.Diff(tc.wantResults, got, cmpopts.EquateEmpty()); diff != "" {
 				t.Fatalf("mismatch (-want, +got):\n%s", diff)
@@ -523,7 +527,7 @@ func TestVersionContext(t *testing.T) {
 	}
 }
 
-func mkFileMatch(repo types.RepoName, path string, lineNumbers ...int32) *result.FileMatch {
+func mkFileMatch(repo *types.RepoName, path string, lineNumbers ...int32) *result.FileMatch {
 	var lines []*result.LineMatch
 	for _, n := range lineNumbers {
 		lines = append(lines, &result.LineMatch{LineNumber: n})
@@ -577,7 +581,7 @@ func BenchmarkSearchResults(b *testing.B) {
 			},
 			zoekt:    z,
 			reposMu:  &sync.Mutex{},
-			resolved: &searchrepos.Resolved{},
+			resolved: search.NewRepos(),
 		}
 		results, err := resolver.Results(ctx)
 		if err != nil {
@@ -655,7 +659,7 @@ func BenchmarkIntegrationSearchResults(b *testing.B) {
 			},
 			zoekt:    z,
 			reposMu:  &sync.Mutex{},
-			resolved: &searchrepos.Resolved{},
+			resolved: search.NewRepos(),
 		}
 		results, err := resolver.Results(ctx)
 		if err != nil {
@@ -682,7 +686,8 @@ func generateRepos(count int) ([]*types.Repo, []*types.Repo, []*zoekt.RepoListEn
 				ID:          name,
 				ServiceType: extsvc.TypeGitHub,
 				ServiceID:   "https://github.com",
-			}}
+			},
+		}
 
 		reposWithIDs = append(reposWithIDs, repoWithIDs)
 

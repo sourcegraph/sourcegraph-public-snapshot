@@ -18,7 +18,7 @@ import (
 
 // IndexableReposLister is a subset of the API exposed by the backend.ListIndexable.
 type IndexableReposLister interface {
-	List(ctx context.Context) ([]types.RepoName, error)
+	List(ctx context.Context) (*types.RepoSet, error)
 }
 
 // RepoStore is a subset of the API exposed by the database.Repos() store.
@@ -82,7 +82,7 @@ func (a *AllReposIterator) ForEach(ctx context.Context, forEach func(repoName st
 			if err != nil {
 				return errors.Wrap(err, "IndexableReposLister.List")
 			}
-			for _, r := range res {
+			for _, r := range res.Repos {
 				a.cachedRepoNames = append(a.cachedRepoNames, string(r.Name))
 			}
 			a.cachedRepoNamesAge = a.Clock()
