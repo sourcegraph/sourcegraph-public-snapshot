@@ -25,16 +25,11 @@ func NewAuthzProviders(
 	githubAuthProviders := make(map[string]*schema.GitHubAuthProvider)
 	for _, p := range authProviders {
 		if p.Github != nil {
-			var id, githubURL string
-			if p.Github.Url != "" {
-				githubURL = p.Github.Url
-			} else {
-				githubURL = schema.DefaultGitHubURL
-			}
-			ghURL, err := url.Parse(githubURL)
+			var id string
+			ghURL, err := url.Parse(p.Github.GetURL())
 			if err != nil {
 				// error reporting for this should happen elsewhere, for now just use what is given
-				id = githubURL
+				id = p.Github.GetURL()
 			} else {
 				// use codehost normalized URL as ID
 				ch := extsvc.NewCodeHost(ghURL, p.Github.Type)
