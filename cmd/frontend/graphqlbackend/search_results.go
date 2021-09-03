@@ -1545,21 +1545,13 @@ func (r *searchResolver) doResults(ctx context.Context, args *search.TextParamet
 		agg.Error(&missingRepoRevsError{Missing: resolved.MissingRepoRevs})
 	}
 
-	// Send down our first bit of progress.
-	{
-		repos := make(map[api.RepoID]types.RepoName, len(args.Repos))
-		for _, repoRev := range args.Repos {
-			repos[repoRev.Repo.ID] = repoRev.Repo
-		}
-
-		agg.Send(streaming.SearchEvent{
-			Stats: streaming.Stats{
-				Repos:            repos,
-				ExcludedForks:    resolved.ExcludedRepos.Forks,
-				ExcludedArchived: resolved.ExcludedRepos.Archived,
-			},
-		})
-	}
+	agg.Send(streaming.SearchEvent{
+		Stats: streaming.Stats{
+			Repos:            resolved.RepoSet,
+			ExcludedForks:    resolved.ExcludedRepos.Forks,
+			ExcludedArchived: resolved.ExcludedRepos.Archived,
+		},
+	})
 
 	if args.ResultTypes.Has(result.TypeRepo) {
 		wg := waitGroup(true)

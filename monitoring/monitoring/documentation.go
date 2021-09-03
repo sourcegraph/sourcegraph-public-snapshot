@@ -78,20 +78,21 @@ func renderDocumentation(containers []*Container) (*documentation, error) {
 	for _, c := range containers {
 		fmt.Fprintf(&docs.dashboards, "## %s\n\n", c.Title)
 		fprintSubtitle(&docs.dashboards, c.Description)
+		fmt.Fprintf(&docs.dashboards, "To see this dashboard, visit `/-/debug/grafana/d/%[1]s/%[1]s` on your Sourcegraph instance.\n\n", c.Name)
 
-		for _, g := range c.Groups {
+		for gIndex, g := range c.Groups {
 			// the "General" group is top-level
 			if g.Title != "General" {
 				fmt.Fprintf(&docs.dashboards, "### %s: %s\n\n", c.Title, g.Title)
 			}
 
-			for _, r := range g.Rows {
-				for _, o := range r {
+			for rIndex, r := range g.Rows {
+				for oIndex, o := range r {
 					if err := docs.renderAlertSolutionEntry(c, o); err != nil {
 						return nil, errors.Errorf("error rendering alert solution entry %q %q: %w",
 							c.Name, o.Name, err)
 					}
-					if err := docs.renderDashboardPanelEntry(c, o); err != nil {
+					if err := docs.renderDashboardPanelEntry(c, g, o, observablePanelID(gIndex, rIndex, oIndex)); err != nil {
 						return nil, errors.Errorf("error rendering dashboard panel entry  %q %q: %w",
 							c.Name, o.Name, err)
 					}
@@ -140,16 +141,20 @@ func (d *documentation) renderAlertSolutionEntry(c *Container, o Observable) err
 		possibleSolutions, _ := toMarkdown(o.PossibleSolutions, true)
 		fmt.Fprintf(&d.alertSolutions, "%s\n", possibleSolutions)
 	}
+	if o.Interpretation != "" && o.Interpretation != "none" {
+		// indicate help is available in dashboards reference
+		fmt.Fprintf(&d.alertSolutions, "- More help interpreting this metric is available in the [dashboards reference](./%s#%s).\n",
+			dashboardsDocsFile, observableDocAnchor(c, o))
+	} else {
+		// just show the panel reference
+		fmt.Fprintf(&d.alertSolutions, "- Learn more about the related dashboard panel in the [dashboards reference](./%s#%s).\n",
+			dashboardsDocsFile, observableDocAnchor(c, o))
+	}
 	// add silencing configuration as another solution
 	fmt.Fprintf(&d.alertSolutions, "- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:\n\n")
 	fmt.Fprintf(&d.alertSolutions, "```json\n%s\n```\n\n", fmt.Sprintf(`"observability.silenceAlerts": [
 %s
 ]`, strings.Join(prometheusAlertNames, ",\n")))
-	// add link to panel information IF there are additional details available
-	if o.Interpretation != "" && o.Interpretation != "none" {
-		fmt.Fprintf(&d.alertSolutions, "> NOTE: More help interpreting this metric is available in the [dashboards reference](./%s#%s).\n\n",
-			dashboardsDocsFile, observableDocAnchor(c, o))
-	}
 	if o.Owner != "" {
 		// add owner
 		fprintOwnedBy(&d.alertSolutions, o.Owner)
@@ -159,23 +164,42 @@ func (d *documentation) renderAlertSolutionEntry(c *Container, o Observable) err
 	return nil
 }
 
-func (d *documentation) renderDashboardPanelEntry(c *Container, o Observable) error {
+func (d *documentation) renderDashboardPanelEntry(c *Container, g Group, o Observable, panelID uint) error {
 	fprintObservableHeader(&d.dashboards, c, &o, 4)
-	fmt.Fprintf(&d.dashboards, "This panel indicates %s.\n\n", o.Description)
+	fprintSubtitle(&d.dashboards, fmt.Sprintf("%s\n\n", upperFirst(o.Description)))
+
 	// render interpretation reference if available
 	if o.Interpretation != "" && o.Interpretation != "none" {
 		interpretation, _ := toMarkdown(o.Interpretation, false)
 		fmt.Fprintf(&d.dashboards, "%s\n\n", interpretation)
 	}
+
 	// add link to alert solutions IF there is an alert attached
 	if !o.NoAlert {
-		fmt.Fprintf(&d.dashboards, "> NOTE: Alerts related to this panel are documented in the [alert solutions reference](./%s#%s).\n\n",
-			alertSolutionsFile, observableDocAnchor(c, o))
+		fmt.Fprintf(&d.dashboards, "Refer to the [alert solutions reference](./%s#%s) for %s related to this panel.\n\n",
+			alertSolutionsFile, observableDocAnchor(c, o), pluralize("alert", o.alertsCount()))
+	} else {
+		fmt.Fprintf(&d.dashboards, "This panel has no related alerts.\n\n")
 	}
+
+	// how to get to this panel
+	fmt.Fprintf(&d.dashboards, "To see this panel, visit `/-/debug/grafana/d/%[1]s/%[1]s?viewPanel=%[2]d` on your Sourcegraph instance.\n\n",
+		c.Name, panelID)
+
 	if o.Owner != "" {
 		// add owner
 		fprintOwnedBy(&d.dashboards, o.Owner)
 	}
+
+	fmt.Fprintf(&d.dashboards, `
+<details>
+<summary>Technical details</summary>
+
+Query: %s
+
+</details>
+`, fmt.Sprintf("`%s`", o.Query))
+
 	// render break for readability
 	fmt.Fprint(&d.dashboards, "\n<br />\n\n")
 	return nil

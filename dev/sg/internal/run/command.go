@@ -1,15 +1,14 @@
 package run
 
 import (
-	"bufio"
 	"context"
-	"fmt"
 	"io"
 	"os/exec"
 	"sync"
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/stdout"
 	"github.com/sourcegraph/sourcegraph/lib/output"
+	"github.com/sourcegraph/sourcegraph/lib/process"
 )
 
 type Command struct {
@@ -123,7 +122,7 @@ func startCmd(ctx context.Context, dir string, cmd Command, globalEnv map[string
 	sc.Cmd.Env = makeEnv(globalEnv, cmd.Env)
 
 	var stdoutWriter, stderrWriter io.Writer
-	logger := newCmdLogger(cmd.Name, stdout.Out)
+	logger := newCmdLogger(commandCtx, cmd.Name, stdout.Out)
 	if cmd.IgnoreStdout {
 		stdout.Out.WriteLine(output.Linef("", output.StyleSuggestion, "Ignoring stdout of %s", cmd.Name))
 		stdoutWriter = sc.stdoutBuf
@@ -137,7 +136,7 @@ func startCmd(ctx context.Context, dir string, cmd Command, globalEnv map[string
 		stderrWriter = io.MultiWriter(logger, sc.stderrBuf)
 	}
 
-	wg, err := pipeProcessOutput(sc.Cmd, stdoutWriter, stderrWriter)
+	wg, err := process.PipeOutput(sc.Cmd, stdoutWriter, stderrWriter)
 	if err != nil {
 		return nil, err
 	}
@@ -148,33 +147,4 @@ func startCmd(ctx context.Context, dir string, cmd Command, globalEnv map[string
 	}
 
 	return sc, nil
-}
-
-func pipeProcessOutput(c *exec.Cmd, stdoutWriter, stderrWriter io.Writer) (*sync.WaitGroup, error) {
-	stdoutPipe, err := c.StdoutPipe()
-	if err != nil {
-		return nil, err
-	}
-
-	stderrPipe, err := c.StderrPipe()
-	if err != nil {
-		return nil, err
-	}
-
-	wg := &sync.WaitGroup{}
-
-	readIntoBuf := func(w io.Writer, r io.Reader) {
-		defer wg.Done()
-
-		scanner := bufio.NewScanner(r)
-		for scanner.Scan() {
-			fmt.Fprintln(w, scanner.Text())
-		}
-	}
-
-	wg.Add(2)
-	go readIntoBuf(stdoutWriter, stdoutPipe)
-	go readIntoBuf(stderrWriter, stderrPipe)
-
-	return wg, nil
 }

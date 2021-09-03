@@ -112,7 +112,7 @@ func Worker() *monitoring.Container {
 
 					ObservableConstructorOptions: shared.ObservableConstructorOptions{
 						MetricNameRoot:        "codeintel_background_upload",
-						MetricDescriptionRoot: "lsif_upload",
+						MetricDescriptionRoot: "lsif upload",
 					},
 				},
 
@@ -132,7 +132,7 @@ func Worker() *monitoring.Container {
 
 					ObservableConstructorOptions: shared.ObservableConstructorOptions{
 						MetricNameRoot:        "codeintel_background_index",
-						MetricDescriptionRoot: "lsif_index",
+						MetricDescriptionRoot: "lsif index",
 					},
 				},
 
@@ -152,7 +152,7 @@ func Worker() *monitoring.Container {
 
 					ObservableConstructorOptions: shared.ObservableConstructorOptions{
 						MetricNameRoot:        "codeintel_background_dependency_index",
-						MetricDescriptionRoot: "lsif_dependency_index",
+						MetricDescriptionRoot: "lsif dependency index",
 					},
 				},
 

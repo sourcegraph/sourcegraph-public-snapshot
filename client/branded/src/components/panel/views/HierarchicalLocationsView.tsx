@@ -287,7 +287,6 @@ export class HierarchicalLocationsView extends React.PureComponent<HierarchicalL
                         locations={of(visibleLocations)}
                         onSelect={this.props.onSelectLocation}
                         icon={FileDocumentIcon}
-                        isLightTheme={this.props.isLightTheme}
                         fetchHighlightedFileLineRanges={this.props.fetchHighlightedFileLineRanges}
                         settingsCascade={this.props.settingsCascade}
                         versionContext={this.props.versionContext}

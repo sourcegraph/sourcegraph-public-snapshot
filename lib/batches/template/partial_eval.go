@@ -363,19 +363,19 @@ func debugParseNode(n parse.Node) string {
 		return fmt.Sprintf("parse.TextNode. n.Text=%q", n.Text)
 
 	case *parse.BoolNode:
-		return fmt.Sprintf("parse.BoolNode")
+		return "parse.BoolNode"
 
 	case *parse.CommandNode:
-		return fmt.Sprintf("parse.CommandNode")
+		return "parse.CommandNode"
 
 	case *parse.NilNode:
-		return fmt.Sprintf("parse.NilNode")
+		return "parse.NilNode"
 
 	case *parse.NumberNode:
-		return fmt.Sprintf("parse.NumberNode")
+		return "parse.NumberNode"
 
 	case *parse.PipeNode:
-		return fmt.Sprintf("parse.PipeNode")
+		return "parse.PipeNode"
 
 	default:
 		return fmt.Sprintf("UNHANDLED parse.Node TYPE: %s", n.String())

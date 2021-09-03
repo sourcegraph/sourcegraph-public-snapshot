@@ -82,6 +82,8 @@ const calculateGroupPositions = (
  * Describes a single group of matches.
  */
 export interface MatchGroup {
+    blobLines?: string[]
+
     // The matches in this group to display.
     matches: {
         line: number

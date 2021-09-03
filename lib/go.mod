@@ -4,7 +4,8 @@ go 1.16
 
 require (
 	github.com/alecthomas/kingpin v2.2.6+incompatible
-	github.com/cockroachdb/errors v1.8.4
+	github.com/cockroachdb/errors v1.8.6
+	github.com/cockroachdb/redact v1.1.3 // indirect
 	github.com/derision-test/go-mockgen v1.1.2
 	github.com/efritz/pentimento v0.0.0-20190429011147-ade47d831101
 	github.com/fatih/color v1.11.0
@@ -19,10 +20,11 @@ require (
 	github.com/json-iterator/go v1.1.11
 	github.com/klauspost/compress v1.12.2 // indirect
 	github.com/klauspost/pgzip v1.2.5
+	github.com/kr/pretty v0.3.0 // indirect
 	github.com/mattn/go-isatty v0.0.12
 	github.com/mattn/go-runewidth v0.0.12
 	github.com/moby/term v0.0.0-20210619224110-3f7ff695adc6
-	github.com/pkg/errors v0.9.1
+	github.com/rogpeppe/go-internal v1.8.0 // indirect
 	github.com/sourcegraph/batch-change-utils v0.0.0-20210708162152-c9f35b905d94
 	github.com/sourcegraph/go-diff v0.6.1
 	github.com/sourcegraph/jsonx v0.0.0-20200629203448-1a936bd500cf

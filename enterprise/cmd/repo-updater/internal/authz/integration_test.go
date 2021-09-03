@@ -13,11 +13,11 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 
+	authzGitHub "github.com/sourcegraph/sourcegraph/enterprise/internal/authz/github"
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
-	authzGitHub "github.com/sourcegraph/sourcegraph/internal/authz/github"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"

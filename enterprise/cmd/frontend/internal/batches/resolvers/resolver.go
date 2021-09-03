@@ -1501,8 +1501,8 @@ func (r *Resolver) CancelBatchSpecExecution(ctx context.Context, args *graphqlba
 	return r.batchSpecExecutionByID(ctx, marshalBatchSpecExecutionRandID(exec.RandID))
 }
 
-func (r *Resolver) ResolveRepositoriesForBatchSpec(ctx context.Context, args *graphqlbackend.ResolveRepositoriesForBatchSpecArgs) (_ []graphqlbackend.BatchSpecMatchingRepositoryResolver, err error) {
-	tr, ctx := trace.New(ctx, "Resolver.ResolveRepositoriesForBatchSpec", fmt.Sprintf("AllowIgnored: %t AllowUnsupported: %t", args.AllowIgnored, args.AllowUnsupported))
+func (r *Resolver) ResolveWorkspacesForBatchSpec(ctx context.Context, args *graphqlbackend.ResolveWorkspacesForBatchSpecArgs) (_ graphqlbackend.BatchSpecWorkspacesResolver, err error) {
+	tr, ctx := trace.New(ctx, "Resolver.ResolveWorkspacesForBatchSpec", fmt.Sprintf("AllowIgnored: %t AllowUnsupported: %t", args.AllowIgnored, args.AllowUnsupported))
 	defer func() {
 		tr.SetError(err)
 		tr.Finish()
@@ -1525,8 +1525,9 @@ func (r *Resolver) ResolveRepositoriesForBatchSpec(ctx context.Context, args *gr
 	if err != nil {
 		return nil, err
 	}
+
 	svc := service.New(r.store)
-	results, err := svc.ResolveRepositoriesForBatchSpec(ctx, spec, service.ResolveRepositoriesForBatchSpecOpts{
+	workspaces, unsupported, ignored, err := svc.ResolveWorkspacesForBatchSpec(ctx, spec, service.ResolveWorkspacesForBatchSpecOpts{
 		AllowIgnored:     args.AllowIgnored,
 		AllowUnsupported: args.AllowUnsupported,
 	})
@@ -1534,11 +1535,14 @@ func (r *Resolver) ResolveRepositoriesForBatchSpec(ctx context.Context, args *gr
 		return nil, err
 	}
 
-	resolvers := make([]graphqlbackend.BatchSpecMatchingRepositoryResolver, 0, len(results))
-	for _, node := range results {
-		resolvers = append(resolvers, &batchSpecMatchingRepositoryResolver{node: node, store: r.store})
-	}
-	return resolvers, nil
+	return &batchSpecWorkspacesResolver{
+		store:            r.store,
+		allowUnsupported: args.AllowUnsupported,
+		allowIgnored:     args.AllowIgnored,
+		workspaces:       workspaces,
+		unsupported:      unsupported,
+		ignored:          ignored,
+	}, nil
 }
 
 func parseBatchChangeState(s *string) (btypes.BatchChangeState, error) {

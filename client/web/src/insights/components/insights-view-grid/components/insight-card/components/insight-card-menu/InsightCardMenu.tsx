@@ -7,7 +7,6 @@ import { Link } from 'react-router-dom'
 
 import { isSearchBasedInsightId } from '../../../../../../core/types/insight/search-insight'
 import { DashboardInsightsContext } from '../../../../../../pages/dashboards/dashboard-page/components/dashboards-content/components/dashboard-inisghts/DashboardInsightsContext'
-import { positionRight } from '../../../../../context-menu/utils'
 import { LineChartSettingsContext } from '../../../../../insight-view-content/chart-view-content/charts/line/line-chart-settings-provider'
 
 import styles from './InsightCardMenu.module.scss'
@@ -49,7 +48,7 @@ export const InsightCardMenu: React.FunctionComponent<InsightCardMenuProps> = pr
                             size={16}
                         />
                     </MenuButton>
-                    <MenuPopover portal={true} position={positionRight}>
+                    <MenuPopover portal={false}>
                         <MenuItems
                             data-testid={`context-menu.${insightID}`}
                             className={classnames(styles.panel, 'dropdown-menu')}

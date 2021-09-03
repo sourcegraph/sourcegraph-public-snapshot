@@ -32,7 +32,6 @@ require (
 	github.com/cespare/xxhash v1.1.0
 	github.com/cespare/xxhash/v2 v2.1.2
 	github.com/cockroachdb/errors v1.8.6
-	github.com/cockroachdb/redact v1.1.3 // indirect
 	github.com/cockroachdb/sentry-go v0.6.1-cockroachdb.2
 	github.com/coreos/go-oidc v2.2.1+incompatible
 	github.com/coreos/go-semver v0.3.0
@@ -110,7 +109,6 @@ require (
 	github.com/keegancsmith/sqlf v1.1.0
 	github.com/keegancsmith/tmpfriend v0.0.0-20180423180255-86e88902a513
 	github.com/klauspost/compress v1.13.4 // indirect
-	github.com/kr/pretty v0.3.0 // indirect
 	github.com/kr/text v0.2.0
 	github.com/kylelemons/godebug v1.1.0
 	github.com/lib/pq v1.10.2
@@ -134,7 +132,6 @@ require (
 	github.com/prometheus/procfs v0.7.3 // indirect
 	github.com/qustavo/sqlhooks/v2 v2.1.0
 	github.com/rainycape/unidecode v0.0.0-20150907023854-cb7f23ec59be
-	github.com/rogpeppe/go-internal v1.8.0 // indirect
 	github.com/russellhaering/gosaml2 v0.6.0
 	github.com/russellhaering/goxmldsig v1.1.1-0.20201210191726-3541f5e554ee
 	github.com/russross/blackfriday v2.0.0+incompatible // indirect
@@ -147,6 +144,7 @@ require (
 	github.com/shurcooL/highlight_go v0.0.0-20191220051317-782971ddf21b // indirect
 	github.com/shurcooL/httpgzip v0.0.0-20190720172056-320755c1c1b0
 	github.com/shurcooL/octicon v0.0.0-20191102190552-cbb32d6a785c // indirect
+	github.com/snabb/sitemap v1.0.0
 	github.com/sourcegraph/annotate v0.0.0-20160123013949-f4cad6c6324d // indirect
 	github.com/sourcegraph/batch-change-utils v0.0.0-20210708162152-c9f35b905d94
 	github.com/sourcegraph/ctxvfs v0.0.0-20180418081416-2b65f1b1ea81
@@ -159,7 +157,7 @@ require (
 	github.com/sourcegraph/gosyntect v0.0.0-20210422223331-645353f16ddc
 	github.com/sourcegraph/jsonx v0.0.0-20200629203448-1a936bd500cf
 	github.com/sourcegraph/sourcegraph/enterprise/dev/ci/images v0.0.0-00010101000000-000000000000
-	github.com/sourcegraph/sourcegraph/lib v0.0.0-20210825111619-07362da90a1c
+	github.com/sourcegraph/sourcegraph/lib v0.0.0-20210902215418-71593bf836f9
 	github.com/sourcegraph/syntaxhighlight v0.0.0-20170531221838-bd320f5d308e // indirect
 	github.com/spaolacci/murmur3 v1.1.0 // indirect
 	github.com/stretchr/objx v0.3.0 // indirect
@@ -181,6 +179,7 @@ require (
 	github.com/xeonx/timeago v1.0.0-rc4
 	github.com/xhit/go-str2duration/v2 v2.0.0
 	github.com/zenazn/goji v1.0.1 // indirect
+	go.etcd.io/bbolt v1.3.6
 	go.uber.org/atomic v1.9.0
 	go.uber.org/automaxprocs v1.4.0
 	go.uber.org/ratelimit v0.2.0
@@ -212,7 +211,7 @@ require (
 // or intentional forks.
 replace (
 	// We maintain our own fork of Zoekt. Update with ./dev/zoekt/update
-	github.com/google/zoekt => github.com/sourcegraph/zoekt v0.0.0-20210902134412-411520f2fe50
+	github.com/google/zoekt => github.com/sourcegraph/zoekt v0.0.0-20210902181939-dbeb24571877
 	// We use a fork of Alertmanager to allow prom-wrapper to better manipulate Alertmanager configuration.
 	// See https://docs.sourcegraph.com/dev/background-information/observability/prometheus
 	github.com/prometheus/alertmanager => github.com/sourcegraph/alertmanager v0.21.1-0.20210809100802-88b656a8713e
