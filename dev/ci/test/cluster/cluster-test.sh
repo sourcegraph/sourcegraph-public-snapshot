@@ -87,14 +87,11 @@ function e2e() {
 }
 
 function frontend_logs() {
+  pushd "$root_dir"
   LOGFILE="frontend_logs.log"
   kubectl logs deployment/sourcegraph-frontend --all-containers >$LOGFILE
   chmod 744 $LOGFILE
-
-  echo "Logs from the frontend deployment"
-  ehco "==="
-  cat $LOGFILE
-  ehco "==="
+  popd
 }
 
 # main
