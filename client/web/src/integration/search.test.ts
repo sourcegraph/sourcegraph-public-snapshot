@@ -223,7 +223,11 @@ describe('Search', () => {
             testContext.overrideGraphQL({
                 ...commonSearchGraphQLResults,
                 RegistryExtensions: () => ({
-                    extensionRegistry: { extensions: { error: null, nodes: [] }, featuredExtensions: null },
+                    extensionRegistry: {
+                        __typename: 'ExtensionRegistry',
+                        extensions: { error: null, nodes: [] },
+                        featuredExtensions: null,
+                    },
                 }),
             })
             testContext.overrideSearchStreamEvents(mockDefaultStreamEvents)
