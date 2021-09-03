@@ -25,7 +25,7 @@ const sessionKey = "githuboauth@0"
 func parseProvider(p *schema.GitHubAuthProvider, db dbutil.DB, sourceCfg schema.AuthProviders) (provider *oauth.Provider, messages []string) {
 	rawURL := p.Url
 	if rawURL == "" {
-		rawURL = "https://github.com/"
+		rawURL = schema.DefaultGitHubURL
 	}
 	parsedURL, err := url.Parse(rawURL)
 	if err != nil {
