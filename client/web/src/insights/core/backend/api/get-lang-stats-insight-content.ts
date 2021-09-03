@@ -4,10 +4,11 @@ import { defer } from 'rxjs'
 import { map, retry } from 'rxjs/operators'
 import { DirectoryViewContext, PieChartContent } from 'sourcegraph'
 
-import { ViewContexts } from '@sourcegraph/shared/src/api/extension/extensionHostApi';
+import { ViewContexts } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
 
 import { fetchLangStatsInsight } from '../requests/fetch-lang-stats-insight'
 import { LangStatsInsightsSettings } from '../types'
+import { resolveDocumentURI } from '../utils/resolve-uri'
 
 const isLinguistLanguage = (language: string): language is keyof typeof linguistLanguages =>
     Object.prototype.hasOwnProperty.call(linguistLanguages, language)
@@ -19,17 +20,16 @@ interface InsightOptions<D extends keyof ViewContexts> {
 
 export async function getLangStatsInsightContent<D extends keyof ViewContexts>(
     insight: LangStatsInsightsSettings,
-    options: InsightOptions<D>): Promise<PieChartContent<any>> {
-
+    options: InsightOptions<D>
+): Promise<PieChartContent<any>> {
     const { where, context } = options
 
     switch (where) {
         case 'directory': {
             const { viewer } = context as DirectoryViewContext
-            const uri = viewer.directory.uri
-            const repoURI =  uri.hostname + uri.pathname
+            const { repo, path } = resolveDocumentURI(viewer.directory.uri)
 
-            return getInsightContent({ insight, repo: repoURI })
+            return getInsightContent({ insight, repo, path })
         }
 
         case 'homepage':
@@ -43,14 +43,20 @@ export async function getLangStatsInsightContent<D extends keyof ViewContexts>(
 
 interface GetInsightContentInputs {
     insight: LangStatsInsightsSettings
-    repo: string,
+    repo: string
     path?: string
 }
 
 async function getInsightContent(inputs: GetInsightContentInputs): Promise<PieChartContent<any>> {
-    const { insight: { otherThreshold }, repo } = inputs
+    const {
+        insight: { otherThreshold },
+        repo,
+        path,
+    } = inputs
 
-    const query = `repo:^${escapeRegExp(repo)}`
+    const pathRegexp = path ? `file:^${escapeRegExp(path)}/` : ''
+    const query = `repo:^${escapeRegExp(repo)} ${pathRegexp}`
+
     const stats = await defer(() => fetchLangStatsInsight(query))
         .pipe(
             // The search may timeout, but a retry is then likely faster because caches are warm

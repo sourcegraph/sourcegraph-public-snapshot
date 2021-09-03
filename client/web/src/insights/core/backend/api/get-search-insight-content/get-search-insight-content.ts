@@ -4,14 +4,14 @@ import { defer } from 'rxjs'
 import { retry } from 'rxjs/operators'
 import type { DirectoryViewContext, LineChartContent } from 'sourcegraph'
 
-import { ViewContexts } from '@sourcegraph/shared/src/api/extension/extensionHostApi';
+import { ViewContexts } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
 
 import { EMPTY_DATA_POINT_VALUE } from '../../../../components/insight-view-content/chart-view-content/charts/line/constants'
 import { fetchRawSearchInsightResults, fetchSearchInsightCommits } from '../../requests/fetch-search-insight'
 import { SearchInsightSettings } from '../../types'
+import { resolveDocumentURI } from '../../utils/resolve-uri'
 
 import { queryHasCountFilter } from './query-has-count-filter'
-import { resolveDocumentURI } from './uri-helpers'
 
 interface RepoCommit {
     date: Date
@@ -29,7 +29,10 @@ interface InsightOptions<D extends keyof ViewContexts> {
     context: ViewContexts[D]
 }
 
-export async function getSearchInsightContent<D extends keyof ViewContexts>(insight: SearchInsightSettings, options: InsightOptions<D>): Promise<LineChartContent<any, string>> {
+export async function getSearchInsightContent<D extends keyof ViewContexts>(
+    insight: SearchInsightSettings,
+    options: InsightOptions<D>
+): Promise<LineChartContent<any, string>> {
     const { where, context } = options
 
     switch (where) {
@@ -50,8 +53,8 @@ export async function getSearchInsightContent<D extends keyof ViewContexts>(insi
 }
 
 interface GetInsightContentInput {
-    insight: SearchInsightSettings,
-    repos: string[],
+    insight: SearchInsightSettings
+    repos: string[]
     path?: string
 }
 
@@ -96,8 +99,10 @@ export async function getInsightContent(inputs: GetInsightContentInput): Promise
             query: [
                 `repo:^${escapeRegExp(repo)}$@${commit}`,
                 pathRegexp && ` file:${pathRegexp}`,
-                `${getQueryWithCount(query)}`
-            ].filter(Boolean).join(' '),
+                `${getQueryWithCount(query)}`,
+            ]
+                .filter(Boolean)
+                .join(' '),
         }))
     )
 

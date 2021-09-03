@@ -48,7 +48,11 @@ import { BreadcrumbSetters } from '../../components/Breadcrumbs'
 import { FilteredConnection } from '../../components/FilteredConnection'
 import { PageTitle } from '../../components/PageTitle'
 import { GitCommitFields, Scalars, TreePageRepositoryFields } from '../../graphql-operations'
-import { InsightsApiContext, StaticInsightsViewGrid } from '../../insights'
+import { InsightsApiContext } from '../../insights'
+import { SmartInsight } from '../../insights/components/insights-view-grid/components/smart-insight/SmartInsight'
+import { ViewGrid } from '../../insights/components/insights-view-grid/components/view-grid/ViewGrid'
+import { StaticInsightView } from '../../insights/components/insights-view-grid/StaticInsightsViewGrid'
+import { useAllInsights } from '../../insights/hooks/use-insight/use-insight'
 import { Settings } from '../../schema/settings.schema'
 import { PatternTypeProps, CaseSensitivityProps, SearchContextProps } from '../../search'
 import { basename } from '../../util/path'
@@ -277,6 +281,23 @@ export const TreePage: React.FunctionComponent<Props> = ({
         !isErrorLike(settingsCascade.final) && settingsCascade.final?.experimentalFeatures?.apiDocs !== false
 
     const { getCombinedViews } = useContext(InsightsApiContext)
+    const directoryPageContext = useMemo(
+        () =>
+            workspaceUri && {
+                viewer: {
+                    type: 'DirectoryViewer' as const,
+                    directory: {
+                        uri: new URL(uri),
+                    },
+                },
+                workspace: {
+                    uri: new URL(workspaceUri),
+                },
+            },
+        [uri, workspaceUri]
+    )
+
+    const insights = useAllInsights({ settingsCascade })
     const views = useObservable(
         useMemo(
             () =>
@@ -304,6 +325,8 @@ export const TreePage: React.FunctionComponent<Props> = ({
             [getCombinedViews, showCodeInsights, workspaceUri, uri, props.extensionsController]
         )
     )
+
+    const allViewIds = useMemo(() => [...(views ?? []), ...insights].map(view => view.id), [views, insights])
 
     const getPageTitle = (): string => {
         const repoString = displayRepoName(repo.name)
@@ -462,11 +485,30 @@ export const TreePage: React.FunctionComponent<Props> = ({
                             )}
                         </header>
                         {views && (
-                            <StaticInsightsViewGrid
-                                telemetryService={props.telemetryService}
-                                className="tree-page__section mb-3"
-                                views={views}
-                            />
+                            <ViewGrid viewIds={allViewIds} telemetryService={props.telemetryService}>
+                                {/* Render extension views for the directory page */}
+                                {views.map(view => (
+                                    <StaticInsightView
+                                        key={view.id}
+                                        view={view}
+                                        telemetryService={props.telemetryService}
+                                    />
+                                ))}
+
+                                {/* Render all code insights with proper directory page context */}
+                                {directoryPageContext &&
+                                    insights.map(insight => (
+                                        <SmartInsight
+                                            key={insight.id}
+                                            insight={insight}
+                                            telemetryService={props.telemetryService}
+                                            platformContext={props.platformContext}
+                                            settingsCascade={settingsCascade}
+                                            where="directory"
+                                            context={directoryPageContext}
+                                        />
+                                    ))}
+                            </ViewGrid>
                         )}
                         <section className="tree-page__section test-tree-entries mb-3">
                             <h2>Files and directories</h2>

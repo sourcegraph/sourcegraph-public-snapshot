@@ -28,7 +28,11 @@ import {
 import { AuthenticatedUser } from '../../auth'
 import { BrandLogo } from '../../components/branding/BrandLogo'
 import { FeatureFlagProps } from '../../featureFlags/featureFlags'
-import { InsightsApiContext, StaticInsightsViewGrid } from '../../insights'
+import { InsightsApiContext } from '../../insights'
+import { SmartInsight } from '../../insights/components/insights-view-grid/components/smart-insight/SmartInsight'
+import { ViewGrid } from '../../insights/components/insights-view-grid/components/view-grid/ViewGrid'
+import { StaticInsightView } from '../../insights/components/insights-view-grid/StaticInsightsViewGrid'
+import { useAllInsights } from '../../insights/hooks/use-insight/use-insight'
 import { KeyboardShortcutsProps } from '../../keyboardShortcuts/keyboardShortcuts'
 import { Settings } from '../../schema/settings.schema'
 import { VersionContext } from '../../schema/site.schema'
@@ -50,7 +54,7 @@ export interface SearchPageProps
         KeyboardShortcutsProps,
         TelemetryProps,
         ExtensionsControllerProps<'extHostAPI' | 'executeCommand'>,
-        PlatformContextProps<'forceUpdateTooltip' | 'settings' | 'sourcegraphURL'>,
+        PlatformContextProps<'forceUpdateTooltip' | 'settings' | 'sourcegraphURL' | 'updateSettings'>,
         VersionContextProps,
         SearchContextInputProps,
         RepogroupHomepageProps,
@@ -82,6 +86,8 @@ export const SearchPage: React.FunctionComponent<SearchPageProps> = props => {
         props.settingsCascade.final['insights.displayLocation.homepage'] === true
 
     const { getCombinedViews } = useContext(InsightsApiContext)
+
+    const insights = useAllInsights({ settingsCascade: props.settingsCascade })
     const views = useObservable(
         useMemo(
             () =>
@@ -95,6 +101,9 @@ export const SearchPage: React.FunctionComponent<SearchPageProps> = props => {
             [getCombinedViews, showCodeInsights, props.extensionsController]
         )
     )
+
+    const allViewIds = useMemo(() => [...(views ?? []), ...insights].map(view => view.id), [views, insights])
+
     return (
         <div className="search-page d-flex flex-column align-items-center px-3">
             <BrandLogo className="search-page__logo" isLightTheme={props.isLightTheme} variant="logo" />
@@ -110,7 +119,27 @@ export const SearchPage: React.FunctionComponent<SearchPageProps> = props => {
                 })}
             >
                 <SearchPageInput {...props} source="home" />
-                {views && <StaticInsightsViewGrid {...props} className="mt-5" views={views} />}
+                {views && (
+                    <ViewGrid viewIds={allViewIds} telemetryService={props.telemetryService}>
+                        {/* Render extension views for the directory page */}
+                        {views.map(view => (
+                            <StaticInsightView key={view.id} view={view} telemetryService={props.telemetryService} />
+                        ))}
+
+                        {/* Render all code insights with proper directory page context */}
+                        {insights.map(insight => (
+                            <SmartInsight
+                                key={insight.id}
+                                insight={insight}
+                                telemetryService={props.telemetryService}
+                                platformContext={props.platformContext}
+                                settingsCascade={props.settingsCascade}
+                                where="homepage"
+                                context={{}}
+                            />
+                        ))}
+                    </ViewGrid>
+                )}
             </div>
             <div className="flex-grow-1">
                 {props.isSourcegraphDotCom &&

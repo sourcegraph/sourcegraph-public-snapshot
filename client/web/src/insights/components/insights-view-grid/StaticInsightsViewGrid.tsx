@@ -58,3 +58,41 @@ export const StaticInsightsViewGrid: React.FunctionComponent<StaticInsightsViewG
         </ViewGrid>
     )
 }
+
+interface StaticInsightViewProps
+    extends TelemetryProps,
+        React.DetailedHTMLProps<React.HTMLAttributes<HTMLElement>, HTMLElement> {
+    view: ViewInsightProviderResult
+}
+
+export const StaticInsightView: React.FunctionComponent<StaticInsightViewProps> = props => {
+    const { view, telemetryService, ...otherProps } = props
+
+    return (
+        <InsightContentCard
+            data-testid={`insight-card.${view.id}`}
+            telemetryService={telemetryService}
+            hasContextMenu={false}
+            insight={view}
+            className="insight-content-card"
+            {...otherProps}
+        >
+            {view.view === undefined ? (
+                <InsightLoadingContent
+                    text="Loading code insight"
+                    subTitle={view.id}
+                    icon={getInsightViewIcon(view.source)}
+                />
+            ) : isErrorLike(view.view) ? (
+                <InsightErrorContent error={view.view} title={view.id} icon={getInsightViewIcon(view.source)} />
+            ) : (
+                <InsightViewContent
+                    telemetryService={telemetryService}
+                    viewContent={view.view.content}
+                    viewID={view.id}
+                    containerClassName="insight-content-card"
+                />
+            )}
+        </InsightContentCard>
+    )
+}

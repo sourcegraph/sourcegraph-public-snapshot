@@ -54,9 +54,6 @@ add('SmartInsightsViewGrid', () => (
             settingsCascade={SETTINGS_CASCADE_MOCK}
             telemetryService={NOOP_TELEMETRY_SERVICE}
             platformContext={{} as any}
-            extensionsController={{} as any}
-            where='insightsPage'
-            context={{}}
         />
     </InsightsApiContext.Provider>
 ))

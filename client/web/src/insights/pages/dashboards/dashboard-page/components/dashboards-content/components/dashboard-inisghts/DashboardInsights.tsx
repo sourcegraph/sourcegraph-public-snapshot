@@ -1,6 +1,5 @@
 import React from 'react'
 
-import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
@@ -17,8 +16,7 @@ import { DashboardInsightsContext } from './DashboardInsightsContext'
 const DEFAULT_INSIGHT_IDS: string[] = []
 
 interface DashboardInsightsProps
-    extends ExtensionsControllerProps,
-        TelemetryProps,
+    extends TelemetryProps,
         SettingsCascadeProps<Settings>,
         PlatformContextProps<'updateSettings'> {
     dashboard: InsightDashboard
@@ -26,14 +24,7 @@ interface DashboardInsightsProps
 }
 
 export const DashboardInsights: React.FunctionComponent<DashboardInsightsProps> = props => {
-    const {
-        telemetryService,
-        extensionsController,
-        dashboard,
-        settingsCascade,
-        platformContext,
-        onAddInsightRequest,
-    } = props
+    const { telemetryService, dashboard, settingsCascade, platformContext, onAddInsightRequest } = props
 
     const dashboardInsightIds = dashboard.insightIds ?? DEFAULT_INSIGHT_IDS
     const insightIds = useDistinctValue(dashboardInsightIds)
@@ -48,9 +39,6 @@ export const DashboardInsights: React.FunctionComponent<DashboardInsightsProps> 
                         telemetryService={telemetryService}
                         settingsCascade={settingsCascade}
                         platformContext={platformContext}
-                        extensionsController={extensionsController}
-                        where="insightsPage"
-                        context={{}}
                     />
                 ) : (
                     <EmptyInsightDashboard

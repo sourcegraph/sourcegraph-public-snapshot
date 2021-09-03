@@ -1,10 +1,11 @@
-import { InsightType } from './common';
+import { InsightType } from './common'
 import { isLangStatsdInsightId, LangStatsInsight, LangStatsInsightConfiguration } from './lang-stat-insight'
 import {
     isSearchBasedInsightId,
     SearchBasedInsight,
     SearchBasedInsightConfiguration,
-    SearchBasedExtensionInsightSettings, SearchExtensionBasedInsight,
+    SearchBasedExtensionInsightSettings,
+    SearchExtensionBasedInsight,
 } from './search-insight'
 
 export * from './common'

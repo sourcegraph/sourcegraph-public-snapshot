@@ -2,6 +2,7 @@ import classnames from 'classnames'
 import PuzzleIcon from 'mdi-react/PuzzleIcon'
 import React, { useContext, useMemo } from 'react'
 
+import { ViewContexts } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
@@ -9,8 +10,8 @@ import { isErrorLike } from '@sourcegraph/shared/src/util/errors'
 
 import { Settings } from '../../../../../schema/settings.schema'
 import { InsightsApiContext } from '../../../../core/backend/api-provider'
-import { LangStatsInsight } from '../../../../core/types';
-import { SearchExtensionBasedInsight } from '../../../../core/types/insight/search-insight';
+import { LangStatsInsight } from '../../../../core/types'
+import { SearchExtensionBasedInsight } from '../../../../core/types/insight/search-insight'
 import { useDeleteInsight } from '../../../../hooks/use-delete-insight/use-delete-insight'
 import { useParallelRequests } from '../../../../hooks/use-parallel-requests/use-parallel-request'
 import { InsightViewContent } from '../../../insight-view-content/InsightViewContent'
@@ -18,13 +19,14 @@ import { InsightErrorContent } from '../insight-card/components/insight-error-co
 import { InsightLoadingContent } from '../insight-card/components/insight-loading-content/InsightLoadingContent'
 import { InsightContentCard } from '../insight-card/InsightContentCard'
 
-interface BuiltInInsightProps
+interface BuiltInInsightProps<D extends keyof ViewContexts>
     extends TelemetryProps,
         PlatformContextProps<'updateSettings'>,
         SettingsCascadeProps<Settings>,
         React.HTMLAttributes<HTMLElement> {
-
     insight: SearchExtensionBasedInsight | LangStatsInsight
+    where: D
+    context: ViewContexts[D]
 }
 
 /**
@@ -35,21 +37,17 @@ interface BuiltInInsightProps
  * Component sends FE network request to get and process information but does that in
  * main work thread instead of using Extension API.
  */
-export const BuiltInInsight: React.FunctionComponent<BuiltInInsightProps> = props => {
-    const {
-        insight,
-        telemetryService,
-        settingsCascade,
-        platformContext,
-        ...otherProps
-    } = props
+export function BuiltInInsight<D extends keyof ViewContexts>(props: BuiltInInsightProps<D>): React.ReactElement {
+    const { insight, telemetryService, settingsCascade, platformContext, where, context, ...otherProps } = props
     const { getBuiltInInsight } = useContext(InsightsApiContext)
 
     const { data, loading } = useParallelRequests(
-        useMemo(() =>
-                () => getBuiltInInsight(insight, { where: 'insightsPage', context: {} }),
-            [getBuiltInInsight, insight]
-        )
+        useMemo(() => () => getBuiltInInsight(insight, { where, context }), [
+            getBuiltInInsight,
+            insight,
+            where,
+            context,
+        ])
     )
 
     const { delete: handleDelete, loading: isDeleting } = useDeleteInsight({ settingsCascade, platformContext })

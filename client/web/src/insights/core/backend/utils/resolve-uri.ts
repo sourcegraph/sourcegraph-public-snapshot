@@ -1,4 +1,3 @@
-
 /**
  * A resolved URI without an identified path.
  */
