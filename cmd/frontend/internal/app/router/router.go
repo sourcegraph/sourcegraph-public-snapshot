@@ -12,9 +12,9 @@ import (
 )
 
 const (
-	RobotsTxt = "robots-txt"
-	Sitemap   = "sitemap"
-	Favicon   = "favicon"
+	RobotsTxt    = "robots-txt"
+	SitemapXmlGz = "sitemap-xml-gz"
+	Favicon      = "favicon"
 
 	OpenSearch = "opensearch"
 
