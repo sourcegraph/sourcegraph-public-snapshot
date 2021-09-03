@@ -101,9 +101,6 @@ describe('Code insight create insight page', () => {
                 repository: 'github.com/sourcegraph/sourcegraph',
                 otherThreshold: 0.03,
             },
-            extensions: {
-                'sourcegraph/code-stats-insights': true,
-            },
         })
     })
 
@@ -207,9 +204,6 @@ describe('Code insight create insight page', () => {
 
         // Check that new org settings config has edited insight
         assert.deepStrictEqual(JSON.parse(addToUserConfigRequest.contents), {
-            extensions: {
-                'sourcegraph/search-insights': true,
-            },
             'searchInsights.insight.testInsightTitle': {
                 title: 'Test insight title',
                 repositories: ['github.com/sourcegraph/sourcegraph'],

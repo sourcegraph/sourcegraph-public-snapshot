@@ -102,7 +102,6 @@ describe('Code insight edit insight page', () => {
         }
 
         const orgSettings = {
-            extensions: {},
             'searchInsights.insight.orgTeamSize': {},
         }
 
@@ -266,9 +265,6 @@ describe('Code insight edit insight page', () => {
 
         // Check that new org settings config has edited insight
         assert.deepStrictEqual(JSON.parse(addToOrgConfigRequest.contents), {
-            extensions: {
-                'sourcegraph/search-insights': true,
-            },
             'searchInsights.insight.orgTeamSize': {},
             'searchInsights.insight.testInsightTitle': {
                 title: 'Test insight title',
