@@ -16,6 +16,9 @@ import {
     createTag,
     ensureTrackingIssues,
     releaseName,
+    commentOnIssue,
+    queryIssues,
+    IssueLabel,
 } from './github'
 import { ensureEvent, getClient, EventOptions, calendarTime } from './google-calendar'
 import { postMessage, slackURL } from './slack'
@@ -186,8 +189,10 @@ ${trackingIssues.map(index => `- ${slackURL(index.title, index.url)}`).join('\n'
                         patchRequestTemplate
                     )}, or it will not be included.`
                 }
-                await postMessage(annoncement, slackAnnounceChannel)
-                console.log(`Posted to Slack channel ${slackAnnounceChannel}`)
+                if (!dryRun.slack) {
+                    await postMessage(annoncement, slackAnnounceChannel)
+                    console.log(`Posted to Slack channel ${slackAnnounceChannel}`)
+                }
             } else {
                 console.log('No tracking issues were created, skipping Slack announcement')
             }
@@ -265,7 +270,9 @@ ${trackingIssues.map(index => `- ${slackURL(index.title, index.url)}`).join('\n'
 
 * Tracking issue: ${trackingIssue.url}
 * ${blockingMessage}: ${blockingIssuesURL}`
-            await postMessage(message, config.slackAnnounceChannel)
+            if (!config.dryRun.slack) {
+                await postMessage(message, config.slackAnnounceChannel)
+            }
         },
     },
     {
@@ -499,12 +506,14 @@ cc @${config.captainGitHubUsername}
                 }
 
                 // Announce release update in Slack
-                await postMessage(
-                    `:captain: *Sourcegraph ${release.version} has been staged.*
+                if (!dryRun.slack) {
+                    await postMessage(
+                        `:captain: *Sourcegraph ${release.version} has been staged.*
 
 Batch change: ${batchChangeURL}`,
-                    slackAnnounceChannel
-                )
+                        slackAnnounceChannel
+                    )
+                }
             }
         },
     },
@@ -537,7 +546,7 @@ Batch change: ${batchChangeURL}`,
     },
     {
         id: 'release:finalize',
-        description: 'Run final tasks for the sourcegraph/sourcegraph release pull request',
+        description: 'Run final tasks for sourcegraph/sourcegraph release pull requests',
         run: async config => {
             const { upcoming: release } = await releaseVersions(config)
             let failed = false
@@ -573,7 +582,7 @@ Batch change: ${batchChangeURL}`,
         id: 'release:close',
         description: 'Mark a release as closed',
         run: async config => {
-            const { slackAnnounceChannel } = config
+            const { slackAnnounceChannel, dryRun } = config
             const { upcoming: release } = await releaseVersions(config)
             const githubClient = await getAuthenticatedGitHubClient()
 
@@ -588,22 +597,36 @@ Batch change: ${batchChangeURL}`,
 * Release batch change: ${batchChangeURL}`
 
             // Slack
-            await postMessage(`:captain: ${releaseMessage}`, slackAnnounceChannel)
-            console.log(`Posted to Slack channel ${slackAnnounceChannel}`)
+            const slackMessage = `:captain: ${releaseMessage}`
+            if (!dryRun.slack) {
+                await postMessage(slackMessage, slackAnnounceChannel)
+                console.log(`Posted to Slack channel ${slackAnnounceChannel}`)
+            } else {
+                console.log(`dryRun enabled, skipping Slack post to ${slackAnnounceChannel}: ${slackMessage}`)
+            }
 
-            // GitHub
+            // GitHub tracking issues
             const trackingIssue = await getTrackingIssue(githubClient, release)
             if (!trackingIssue) {
                 console.warn(`Could not find tracking issue for release ${release.version} - skipping`)
             } else {
-                await githubClient.issues.createComment({
-                    owner: trackingIssue.owner,
-                    repo: trackingIssue.repo,
-                    issue_number: trackingIssue.number,
-                    body: `${releaseMessage}
+                // Note patch release requests if there are any outstanding
+                let comment = `${releaseMessage}
 
-@${config.captainGitHubUsername}: Please complete the post-release steps before closing this issue.`,
-                })
+@${config.captainGitHubUsername}: Please complete the post-release steps before closing this issue.`
+                const patchRequestIssues = await queryIssues(githubClient, '', IssueLabel.PATCH_REQUEST)
+                if (patchRequestIssues && patchRequestIssues.length > 0) {
+                    comment += `
+Please also update outstanding patch requests, if relevant:
+
+${patchRequestIssues.map(issue => `* #${issue.number}`).join('\n')}`
+                }
+                if (!dryRun.trackingIssues) {
+                    const commentURL = await commentOnIssue(githubClient, trackingIssue, comment)
+                    console.log(`Please make sure to follow up on the release issue: ${commentURL}`)
+                } else {
+                    console.log(`dryRun enabled, skipping GitHub comment to ${trackingIssue.url}: ${comment}`)
+                }
             }
         },
     },
@@ -634,8 +657,10 @@ Batch change: ${batchChangeURL}`,
         id: '_test:slack',
         description: 'Test Slack integration',
         argNames: ['channel', 'message'],
-        run: async (_config, channel, message) => {
-            await postMessage(message, channel)
+        run: async ({ dryRun }, channel, message) => {
+            if (!dryRun.slack) {
+                await postMessage(message, channel)
+            }
         },
     },
     {
@@ -673,7 +698,7 @@ Batch change: ${batchChangeURL}`,
     {
         id: '_test:dockerensure',
         description: 'test docker ensure function',
-        run: async config => {
+        run: async () => {
             try {
                 await ensureDocker()
             } catch (error) {

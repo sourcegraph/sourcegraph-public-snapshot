@@ -27,8 +27,18 @@ export function releaseName(release: semver.SemVer): string {
     return `${release.major}.${release.minor}${release.patch !== 0 ? `.${release.patch}` : ''}`
 }
 
-// https://github.com/sourcegraph/sourcegraph/labels/release-tracking
-const labelReleaseTracking = 'release-tracking'
+export enum IssueLabel {
+    // https://github.com/sourcegraph/sourcegraph/labels/release-tracking
+    RELEASE_TRACKING = 'release-tracking',
+    // https://github.com/sourcegraph/sourcegraph/labels/patch-release-request
+    PATCH_REQUEST = 'patch-release-request',
+}
+
+enum IssueTitleSuffix {
+    RELEASE_TRACKING = 'release tracking issue',
+    PATCH_TRACKING = 'patch release tracking issue',
+    MANAGED_TRACKING = 'upgrade managed instances tracking issue',
+}
 
 /**
  * Template used to generate tracking issue
@@ -45,7 +55,7 @@ interface IssueTemplate {
     /**
      * Title for issue.
      */
-    title: (v: semver.SemVer) => string
+    titleSuffix: IssueTitleSuffix
     /**
      * Labels to apply on issues.
      */
@@ -108,22 +118,22 @@ const getTemplates = () => {
         owner: 'sourcegraph',
         repo: 'about',
         path: 'handbook/engineering/releases/release_issue_template.md',
-        title: trackingIssueTitle,
-        labels: [labelReleaseTracking],
+        titleSuffix: IssueTitleSuffix.RELEASE_TRACKING,
+        labels: [IssueLabel.RELEASE_TRACKING],
     }
     const patchReleaseIssue: IssueTemplate = {
         owner: 'sourcegraph',
         repo: 'about',
         path: 'handbook/engineering/releases/patch_release_issue_template.md',
-        title: trackingIssueTitle,
-        labels: [labelReleaseTracking],
+        titleSuffix: IssueTitleSuffix.PATCH_TRACKING,
+        labels: [IssueLabel.RELEASE_TRACKING],
     }
     const upgradeManagedInstanceIssue: IssueTemplate = {
         owner: 'sourcegraph',
         repo: 'about',
         path: 'handbook/engineering/releases/upgrade_managed_issue_template.md',
-        title: (version: semver.SemVer) => `${version.version} upgrade managed instances tracking issue`,
-        labels: [labelReleaseTracking, 'managed-instances'],
+        titleSuffix: IssueTitleSuffix.MANAGED_TRACKING,
+        labels: [IssueLabel.RELEASE_TRACKING, 'managed-instances'],
     }
     return { releaseIssue, patchReleaseIssue, upgradeManagedInstanceIssue }
 }
@@ -131,6 +141,7 @@ const getTemplates = () => {
 interface MaybeIssue {
     title: string
     url: string
+    number: number
     created: boolean
 }
 
@@ -192,7 +203,7 @@ export async function ensureTrackingIssues({
         const issue = await ensureIssue(
             octokit,
             {
-                title: template.title(version),
+                title: trackingIssueTitle(version, template),
                 labels: template.labels,
                 body: parentIssue ? `${body}\n\n---\n\nAlso see [${parentIssue.title}](${parentIssue.url})` : body,
                 assignees,
@@ -207,6 +218,20 @@ export async function ensureTrackingIssues({
             parentIssue = { ...issue }
         }
         created.push({ ...issue })
+
+        // close previous iterations of this issue
+        const previous = await queryIssues(octokit, template.titleSuffix, template.labels[0])
+        for (const previousIssue of previous) {
+            if (dryRun) {
+                console.log(`dryRun enabled, skipping closure of #${previousIssue.number} '${previousIssue.title}'`)
+                continue
+            }
+            const comment = await commentOnIssue(octokit, previousIssue, `Superseded by #${issue.number}`)
+            console.log(
+                `Closing #${previousIssue.number} '${previousIssue.title}' - commented with an update: ${comment}`
+            )
+            await closeIssue(octokit, previousIssue)
+        }
     }
     return created
 }
@@ -243,7 +268,7 @@ async function ensureIssue(
         assignees: string[]
         body: string
         milestone?: number
-        labels?: string[]
+        labels: string[]
     },
     dryRun: boolean
 ): Promise<MaybeIssue> {
@@ -255,18 +280,18 @@ async function ensureIssue(
         milestone,
         labels,
     }
-    const issue = await getIssueByTitle(octokit, title)
+    const issue = await getIssueByTitle(octokit, title, labels[0])
     if (issue) {
-        return { title, url: issue.url, created: false }
+        return { title, url: issue.url, number: issue.number, created: false }
     }
     if (dryRun) {
         console.log('Dry run enabled, skipping issue creation')
         console.log(`Issue that would have been created:\n${JSON.stringify(issueData, null, 1)}`)
         console.log(`With body: ${body}`)
-        return { title, url: '', created: false }
+        return { title, url: '', number: 0, created: false }
     }
     const createdIssue = await octokit.issues.create({ body, ...issueData })
-    return { title, url: createdIssue.data.html_url, created: true }
+    return { title, url: createdIssue.data.html_url, number: createdIssue.data.number, created: true }
 }
 
 export async function listIssues(
@@ -277,6 +302,7 @@ export async function listIssues(
 }
 
 export interface Issue {
+    title: string
     number: number
     url: string
 
@@ -286,7 +312,32 @@ export interface Issue {
 }
 
 export async function getTrackingIssue(client: Octokit, release: semver.SemVer): Promise<Issue | null> {
-    return getIssueByTitle(client, trackingIssueTitle(release))
+    const templates = getTemplates()
+    const template = release.patch ? templates.patchReleaseIssue : templates.releaseIssue
+    return getIssueByTitle(client, trackingIssueTitle(release, template), template.labels[0])
+}
+
+function trackingIssueTitle(release: semver.SemVer, template: IssueTemplate): string {
+    return `${release.version} ${template.titleSuffix}`
+}
+
+export async function commentOnIssue(client: Octokit, issue: Issue, body: string): Promise<string> {
+    const comment = await client.issues.createComment({
+        body,
+        issue_number: issue.number,
+        owner: issue.owner,
+        repo: issue.repo,
+    })
+    return comment.data.url
+}
+
+async function closeIssue(client: Octokit, issue: Issue): Promise<void> {
+    await client.issues.update({
+        state: 'closed',
+        issue_number: issue.number,
+        owner: issue.owner,
+        repo: issue.repo,
+    })
 }
 
 interface Milestone {
@@ -319,29 +370,31 @@ async function getReleaseMilestone(client: Octokit, release: semver.SemVer): Pro
         : null
 }
 
-function trackingIssueTitle(version: semver.SemVer): string {
-    if (!version.patch) {
-        return `${version.major}.${version.minor} release tracking issue`
-    }
-    return `${version.version} patch release tracking issue`
-}
-
-async function getIssueByTitle(octokit: Octokit, title: string): Promise<Issue | null> {
+export async function queryIssues(octokit: Octokit, titleQuery: string, label: string): Promise<Issue[]> {
     const owner = 'sourcegraph'
     const repo = 'sourcegraph'
     const response = await octokit.search.issuesAndPullRequests({
         per_page: 100,
-        q: `type:issue repo:${owner}/${repo} is:open ${JSON.stringify(title)}`,
+        q: `type:issue repo:${owner}/${repo} is:open label:${label} ${JSON.stringify(titleQuery)}`,
     })
+    return response.data.items.map(item => ({
+        title: item.title,
+        number: item.number,
+        url: item.html_url,
+        owner,
+        repo,
+    }))
+}
 
-    const matchingIssues = response.data.items.filter(issue => issue.title === title)
+async function getIssueByTitle(octokit: Octokit, title: string, label: string): Promise<Issue | null> {
+    const matchingIssues = (await queryIssues(octokit, title, label)).filter(issue => issue.title === title)
     if (matchingIssues.length === 0) {
         return null
     }
     if (matchingIssues.length > 1) {
         throw new Error(`Multiple issues matched issue title ${JSON.stringify(title)}`)
     }
-    return { number: matchingIssues[0].number, url: matchingIssues[0].html_url, owner, repo }
+    return matchingIssues[0]
 }
 
 export type EditFunc = (d: string) => void
