@@ -7,7 +7,7 @@ import { FlatExtensionHostAPI } from '@sourcegraph/shared/src/api/contract'
 import { ViewContexts, ViewProviderResult } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
 import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
 
-import { ExtensionInsight } from '../types';
+import { ExtensionInsight } from '../types'
 import { SearchBackendBasedInsight, SearchBasedInsightSeries } from '../types/insight/search-insight'
 
 import { RepositorySuggestion } from './requests/fetch-repository-suggestions'
@@ -89,7 +89,7 @@ export interface ApiService {
      */
     getBuiltInInsight: <D extends keyof ViewContexts>(
         insight: ExtensionInsight,
-        options: { where: D, context: ViewContexts[D] }
+        options: { where: D; context: ViewContexts[D] }
     ) => Observable<ViewProviderResult>
 
     /**
@@ -128,7 +128,7 @@ export interface ApiService {
      */
     getSearchInsightContent: <D extends keyof ViewContexts>(
         insight: SearchInsightSettings,
-        options: { where: D, context: ViewContexts[D] }
+        options: { where: D; context: ViewContexts[D] }
     ) => Promise<LineChartContent<any, string>>
 
     /**
@@ -138,7 +138,7 @@ export interface ApiService {
      */
     getLangStatsInsightContent: <D extends keyof ViewContexts>(
         insight: LangStatsInsightsSettings,
-        options: { where: D, context: ViewContexts[D] }
+        options: { where: D; context: ViewContexts[D] }
     ) => Promise<PieChartContent<any>>
 
     /**

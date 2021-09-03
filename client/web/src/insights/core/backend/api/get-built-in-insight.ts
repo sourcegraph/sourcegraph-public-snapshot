@@ -11,14 +11,14 @@ import { getSearchInsightContent } from './get-search-insight-content/get-search
 
 export function getBuiltInInsight<D extends keyof ViewContexts>(
     insight: ExtensionInsight,
-    context: { where: D; context: ViewContexts[D] }
+    options: { where: D; context: ViewContexts[D] }
 ): Observable<ViewProviderResult> {
     return of(insight).pipe(
         // TODO Implement declarative fetchers map by insight type
         switchMap(insight =>
             isSearchBasedInsight(insight)
-                ? getSearchInsightContent(insight, context)
-                : getLangStatsInsightContent(insight, context)
+                ? getSearchInsightContent(insight, options)
+                : getLangStatsInsightContent(insight, options)
         ),
         map(data => ({
             id: insight.id,

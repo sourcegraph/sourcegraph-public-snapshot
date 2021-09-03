@@ -4,7 +4,7 @@ import { switchMap } from 'rxjs/operators'
 
 import { wrapRemoteObservable } from '@sourcegraph/shared/src/api/client/api/common'
 import { FlatExtensionHostAPI } from '@sourcegraph/shared/src/api/contract'
-import { ViewProviderResult } from '@sourcegraph/shared/src/api/extension/extensionHostApi';
+import { ViewProviderResult } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
 
 /**
  * Returns view provider result data resolved by id.

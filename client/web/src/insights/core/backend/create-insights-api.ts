@@ -1,7 +1,7 @@
 import { of, throwError } from 'rxjs'
 
 import { getBackendInsight } from './api/get-backend-insight'
-import { getBuiltInInsight } from './api/get-built-in-insight';
+import { getBuiltInInsight } from './api/get-built-in-insight'
 import { getCombinedViews } from './api/get-combined-views'
 import { getExtensionViewById } from './api/get-extension-view-by-id'
 import { getLangStatsInsightContent } from './api/get-lang-stats-insight-content'
