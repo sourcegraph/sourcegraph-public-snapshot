@@ -36,6 +36,10 @@ All notable changes to Sourcegraph are documented in this file.
 
 - Caching behaviour for GitHub repository permissions enabled via the `authorization.groupsCacheTTL` field in the code host config can now leverage additional caching of team and organization permissions for repository permissions syncing (on top of the caching for user permissions syncing introduced in 3.31). [#24328](https://github.com/sourcegraph/sourcegraph/pull/24328)
 
+### Fixed
+
+- Fixed a panic in the worker service preventing code insights from populating with data. [#24475](https://github.com/sourcegraph/sourcegraph/pull/24475)
+
 ## 3.31.0
 
 ### Added
