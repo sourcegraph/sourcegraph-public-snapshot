@@ -73,6 +73,13 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 	// Generate pipeline steps. This statement outlines the pipeline steps for each CI case.
 	var pipelineOperations []func(*bk.Pipeline)
 	switch {
+	case c.branch == "cluster-test-debug":
+		pipelineOperations = []func(*bk.Pipeline){
+			addDockerImages(c, false), // ~8m (candidate images)
+			wait,                      // wait for all steps to pass
+			triggerE2EandQA(c, env),   // trigger e2e late so that it can leverage candidate images
+		}
+
 	case c.isPR() && c.isDocsOnly():
 		// If this is a docs-only PR, run only the steps necessary to verify the docs.
 		pipelineOperations = []func(*bk.Pipeline){
