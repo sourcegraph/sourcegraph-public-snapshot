@@ -186,24 +186,19 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	}
 
+LOOP:
 	for {
-		var event streaming.SearchEvent
-		var ok bool
 		select {
-		case event, ok = <-events:
+		case event, ok := <-events:
+			if !ok {
+				break LOOP
+			}
+			handleEvent(event)
 		case <-flushTicker.C:
-			ok = true
 			matchesFlush()
 		case <-pingTicker.C:
-			ok = true
 			sendProgress()
 		}
-
-		if !ok {
-			break
-		}
-
-		handleEvent(event)
 	}
 
 	matchesFlush()
