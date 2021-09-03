@@ -614,7 +614,7 @@ Batch change: ${batchChangeURL}`,
                 let comment = `${releaseMessage}
 
 @${config.captainGitHubUsername}: Please complete the post-release steps before closing this issue.`
-                const patchRequestIssues = await queryIssues(githubClient, '', IssueLabel.PATCH_REQUEST)
+                const patchRequestIssues = await queryIssues(githubClient, '', [IssueLabel.PATCH_REQUEST])
                 if (patchRequestIssues && patchRequestIssues.length > 0) {
                     comment += `
 Please also update outstanding patch requests, if relevant:

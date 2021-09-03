@@ -32,6 +32,11 @@ export enum IssueLabel {
     RELEASE_TRACKING = 'release-tracking',
     // https://github.com/sourcegraph/sourcegraph/labels/patch-release-request
     PATCH_REQUEST = 'patch-release-request',
+
+    // New labels to better distinguish release-tracking issues
+    RELEASE = 'release',
+    PATCH = 'patch',
+    MANAGED = 'managed-instances',
 }
 
 enum IssueTitleSuffix {
@@ -84,6 +89,37 @@ interface IssueTemplateArguments {
     oneWorkingDayAfterRelease: Date
 }
 
+/**
+ * Configure templates for the release tool to generate issues with.
+ *
+ * Ensure these templates are up to date with the state of the tooling and release processes.
+ */
+// eslint-disable-next-line @typescript-eslint/explicit-function-return-type
+const getTemplates = () => {
+    const releaseIssue: IssueTemplate = {
+        owner: 'sourcegraph',
+        repo: 'about',
+        path: 'handbook/engineering/releases/release_issue_template.md',
+        titleSuffix: IssueTitleSuffix.RELEASE_TRACKING,
+        labels: [IssueLabel.RELEASE_TRACKING, IssueLabel.RELEASE],
+    }
+    const patchReleaseIssue: IssueTemplate = {
+        owner: 'sourcegraph',
+        repo: 'about',
+        path: 'handbook/engineering/releases/patch_release_issue_template.md',
+        titleSuffix: IssueTitleSuffix.PATCH_TRACKING,
+        labels: [IssueLabel.RELEASE_TRACKING, IssueLabel.PATCH],
+    }
+    const upgradeManagedInstanceIssue: IssueTemplate = {
+        owner: 'sourcegraph',
+        repo: 'about',
+        path: 'handbook/engineering/releases/upgrade_managed_issue_template.md',
+        titleSuffix: IssueTitleSuffix.MANAGED_TRACKING,
+        labels: [IssueLabel.RELEASE_TRACKING, IssueLabel.MANAGED],
+    }
+    return { releaseIssue, patchReleaseIssue, upgradeManagedInstanceIssue }
+}
+
 async function execTemplate(
     octokit: Octokit,
     template: IssueTemplate,
@@ -105,37 +141,6 @@ async function execTemplate(
             /\$ONE_WORKING_DAY_AFTER_RELEASE/g,
             dateMarkdown(oneWorkingDayAfterRelease, `One working day after ${name} release`)
         )
-}
-
-/**
- * Configure templates for the release tool to generate issues with.
- *
- * Ensure these templates are up to date with the state of the tooling and release processes.
- */
-// eslint-disable-next-line @typescript-eslint/explicit-function-return-type
-const getTemplates = () => {
-    const releaseIssue: IssueTemplate = {
-        owner: 'sourcegraph',
-        repo: 'about',
-        path: 'handbook/engineering/releases/release_issue_template.md',
-        titleSuffix: IssueTitleSuffix.RELEASE_TRACKING,
-        labels: [IssueLabel.RELEASE_TRACKING],
-    }
-    const patchReleaseIssue: IssueTemplate = {
-        owner: 'sourcegraph',
-        repo: 'about',
-        path: 'handbook/engineering/releases/patch_release_issue_template.md',
-        titleSuffix: IssueTitleSuffix.PATCH_TRACKING,
-        labels: [IssueLabel.RELEASE_TRACKING],
-    }
-    const upgradeManagedInstanceIssue: IssueTemplate = {
-        owner: 'sourcegraph',
-        repo: 'about',
-        path: 'handbook/engineering/releases/upgrade_managed_issue_template.md',
-        titleSuffix: IssueTitleSuffix.MANAGED_TRACKING,
-        labels: [IssueLabel.RELEASE_TRACKING, 'managed-instances'],
-    }
-    return { releaseIssue, patchReleaseIssue, upgradeManagedInstanceIssue }
 }
 
 interface MaybeIssue {
@@ -220,7 +225,7 @@ export async function ensureTrackingIssues({
         created.push({ ...issue })
 
         // close previous iterations of this issue
-        const previous = await queryIssues(octokit, template.titleSuffix, template.labels[0])
+        const previous = await queryIssues(octokit, template.titleSuffix, template.labels)
         for (const previousIssue of previous) {
             if (dryRun) {
                 console.log(`dryRun enabled, skipping closure of #${previousIssue.number} '${previousIssue.title}'`)
@@ -280,7 +285,7 @@ async function ensureIssue(
         milestone,
         labels,
     }
-    const issue = await getIssueByTitle(octokit, title, labels[0])
+    const issue = await getIssueByTitle(octokit, title, labels)
     if (issue) {
         return { title, url: issue.url, number: issue.number, created: false }
     }
@@ -314,7 +319,7 @@ export interface Issue {
 export async function getTrackingIssue(client: Octokit, release: semver.SemVer): Promise<Issue | null> {
     const templates = getTemplates()
     const template = release.patch ? templates.patchReleaseIssue : templates.releaseIssue
-    return getIssueByTitle(client, trackingIssueTitle(release, template), template.labels[0])
+    return getIssueByTitle(client, trackingIssueTitle(release, template), template.labels)
 }
 
 function trackingIssueTitle(release: semver.SemVer, template: IssueTemplate): string {
@@ -370,12 +375,14 @@ async function getReleaseMilestone(client: Octokit, release: semver.SemVer): Pro
         : null
 }
 
-export async function queryIssues(octokit: Octokit, titleQuery: string, label: string): Promise<Issue[]> {
+export async function queryIssues(octokit: Octokit, titleQuery: string, labels: string[]): Promise<Issue[]> {
     const owner = 'sourcegraph'
     const repo = 'sourcegraph'
     const response = await octokit.search.issuesAndPullRequests({
         per_page: 100,
-        q: `type:issue repo:${owner}/${repo} is:open label:${label} ${JSON.stringify(titleQuery)}`,
+        q: `type:issue repo:${owner}/${repo} is:open ${labels
+            .map(label => `label:${label}`)
+            .join(' ')} ${JSON.stringify(titleQuery)}`,
     })
     return response.data.items.map(item => ({
         title: item.title,
@@ -386,8 +393,8 @@ export async function queryIssues(octokit: Octokit, titleQuery: string, label: s
     }))
 }
 
-async function getIssueByTitle(octokit: Octokit, title: string, label: string): Promise<Issue | null> {
-    const matchingIssues = (await queryIssues(octokit, title, label)).filter(issue => issue.title === title)
+async function getIssueByTitle(octokit: Octokit, title: string, labels: string[]): Promise<Issue | null> {
+    const matchingIssues = (await queryIssues(octokit, title, labels)).filter(issue => issue.title === title)
     if (matchingIssues.length === 0) {
         return null
     }
