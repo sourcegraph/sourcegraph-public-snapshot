@@ -23,6 +23,10 @@ import { WebCommandListPopoverButton } from '@sourcegraph/web/src/components/sha
 import { FeedbackPrompt } from '@sourcegraph/web/src/nav/Feedback/FeedbackPrompt'
 import { StatusMessagesNavItem } from '@sourcegraph/web/src/nav/StatusMessagesNavItem'
 import { NavGroup, NavItem, NavBar, NavLink, NavActions, NavAction } from '@sourcegraph/wildcard'
+import { Box } from '@sourcegraph/wildcard/src/components/Layout/Box/Box'
+import { Columns, Column } from '@sourcegraph/wildcard/src/components/Layout/Columns/Columns'
+import { Inline } from '@sourcegraph/wildcard/src/components/Layout/Inline/Inline'
+import { Stack } from '@sourcegraph/wildcard/src/components/Layout/Stack/Stack'
 
 import { AuthenticatedUser } from '../auth'
 import { BatchChangesProps } from '../batches'
@@ -204,130 +208,37 @@ export const GlobalNavbar: React.FunctionComponent<Props> = ({
     )
 
     return (
-        <>
-            <NavBar
-                logo={
-                    <BrandLogo
-                        branding={branding}
-                        isLightTheme={isLightTheme}
-                        variant="symbol"
-                        className="global-navbar__logo"
-                    />
-                }
-            >
-                <NavGroup>
-                    <NavItem icon={MagnifyIcon}>
-                        <NavLink to="/search">Code Search</NavLink>
-                    </NavItem>
-                    {props.enableCodeMonitoring && (
-                        <NavItem icon={CodeMonitoringLogo}>
-                            <NavLink to="/code-monitoring">Monitoring</NavLink>
-                        </NavItem>
-                    )}
-                    {/* This is the only circumstance where we show something
-                         batch-changes-related even if the instance does not have batch
-                         changes enabled, for marketing purposes on sourcegraph.com */}
-                    {(props.batchChangesEnabled || isSourcegraphDotCom) && <BatchChangesNavItem />}
-                    {codeInsights && (
-                        <NavItem icon={BarChartIcon}>
-                            <NavLink to="/insights/dashboards/all">Insights</NavLink>
-                        </NavItem>
-                    )}
-                    <NavItem icon={PuzzleOutlineIcon}>
-                        <NavLink to="/extensions">Extensions</NavLink>
-                    </NavItem>
-                    {props.activation && (
-                        <NavItem>
-                            <ActivationDropdown activation={props.activation} history={history} />
-                        </NavItem>
-                    )}
-                </NavGroup>
-                <NavActions>
-                    {!props.authenticatedUser && (
-                        <>
-                            <NavAction>
-                                <Link className="global-navbar__link" to="https://about.sourcegraph.com">
-                                    About <span className="d-none d-sm-inline">Sourcegraph</span>
-                                </Link>
-                            </NavAction>
-
-                            {showDotComMarketing && (
-                                <NavAction>
-                                    <Link className="global-navbar__link font-weight-medium" to="/help" target="_blank">
-                                        Docs
-                                    </Link>
-                                </NavAction>
-                            )}
-                        </>
-                    )}
-                    {props.authenticatedUser && (
-                        <NavAction>
-                            <FeedbackPrompt routes={props.routes} />
-                        </NavAction>
-                    )}
-                    {props.authenticatedUser && (
-                        <NavAction>
-                            <WebCommandListPopoverButton
-                                {...props}
-                                location={location}
-                                buttonClassName="btn btn-link p-0 m-0"
-                                menu={ContributableMenu.CommandPalette}
-                                keyboardShortcutForShow={KEYBOARD_SHORTCUT_SHOW_COMMAND_PALETTE}
-                            />
-                        </NavAction>
-                    )}
-                    {props.authenticatedUser &&
-                        (props.authenticatedUser.siteAdmin ||
-                            userExternalServicesEnabledFromTags(props.authenticatedUser.tags)) && (
-                            <NavAction>
-                                <StatusMessagesNavItem
-                                    user={{
-                                        id: props.authenticatedUser.id,
-                                        username: props.authenticatedUser.username,
-                                        isSiteAdmin: props.authenticatedUser?.siteAdmin || false,
-                                    }}
-                                    history={history}
-                                />
-                            </NavAction>
-                        )}
-                    {!props.authenticatedUser ? (
-                        <>
-                            <NavAction>
-                                <div>
-                                    <Link className="btn btn-sm btn-outline-secondary mr-1" to="/sign-in">
-                                        Log in
-                                    </Link>
-                                    <Link className="btn btn-sm global-navbar__sign-up" to="/sign-up">
-                                        Sign up
-                                    </Link>
-                                </div>
-                            </NavAction>
-                        </>
-                    ) : (
-                        <NavAction>
-                            <UserNavItem
-                                {...props}
-                                location={location}
+        <Stack align="left" space="gutter" dividers={false}>
+            <Box paddingLeft="gutter" paddingRight="gutter">
+                <Columns>
+                    <Column>
+                        <Box paddingRight="gutter">
+                            <BrandLogo
+                                branding={branding}
                                 isLightTheme={isLightTheme}
-                                authenticatedUser={props.authenticatedUser}
-                                showDotComMarketing={showDotComMarketing}
-                                showRepositorySection={showRepositorySection}
-                                codeHostIntegrationMessaging={
-                                    (!isErrorLike(props.settingsCascade.final) &&
-                                        props.settingsCascade.final?.['alerts.codeHostIntegrationMessaging']) ||
-                                    'browser-extension'
-                                }
-                                keyboardShortcutForSwitchTheme={KEYBOARD_SHORTCUT_SWITCH_THEME}
+                                variant="symbol"
+                                className="global-navbar__logo"
                             />
-                        </NavAction>
-                    )}
-                </NavActions>
-            </NavBar>
-            {showSearchBox && (
-                <div className="w-100 px-3 pt-2">
-                    <div className="pb-2 border-bottom">{searchNavBar}</div>
-                </div>
-            )}
-        </>
+                        </Box>
+                        <Box component="nav" gap="gutter" flexDirection="row">
+                            <Inline component="ul" space="gutter" alignY="center">
+                                <Box component="li">Home</Box>
+                                <Box component="li">Contact</Box>
+                                <Box component="li">Info</Box>
+                            </Inline>
+                        </Box>
+                    </Column>
+                    <Column width="content">
+                        <Box component="nav" gap="gutter" flexDirection="row">
+                            <Inline component="ul" space="gutter">
+                                <Box component="li">Feedback</Box>
+                                <Box component="li">Settings</Box>
+                                <Box component="li">Sign Out</Box>
+                            </Inline>
+                        </Box>
+                    </Column>
+                </Columns>
+            </Box>
+        </Stack>
     )
 }

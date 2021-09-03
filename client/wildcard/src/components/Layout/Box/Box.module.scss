@@ -24,6 +24,10 @@
     position: relative;
 }
 
+.gapgutter {
+    gap: var(--gutter);
+}
+
 .borderRadiusgutter {
     border-radius: var(--gutter);
 }
@@ -59,6 +63,30 @@
 
 .paddingBottomlarge {
     padding-bottom: var(--large);
+}
+
+.paddingRightgutter {
+    padding-right: var(--gutter);
+}
+
+.paddingRightsmall {
+    padding-right: var(--small);
+}
+
+.paddingRightlarge {
+    padding-right: var(--large);
+}
+
+.paddingLeftgutter {
+    padding-left: var(--gutter);
+}
+
+.paddingLeftsmall {
+    padding-left: var(--small);
+}
+
+.paddingLeftlarge {
+    padding-left: var(--large);
 }
 
 .marginTopgutter {
@@ -102,6 +130,11 @@
 .flexWrapwrap {
     display: flex;
     flex-wrap: wrap;
+}
+
+.flexWrapnowrap {
+    display: flex;
+    flex-wrap: nowrap;
 }
 
 .flexDirectionrow {

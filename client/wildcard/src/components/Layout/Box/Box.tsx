@@ -22,6 +22,7 @@ interface Styles {
     marginRight: SpaceTokens
     marginLeft: SpaceTokens
     marginTop: SpaceTokens
+    gap: SpaceTokens
     alignItems: 'center' | 'flexEnd' | 'flexStart'
     justifyContent: 'center' | 'flexEnd' | 'flexStart' | 'spaceBetween'
     flexGrow: 0 | 1

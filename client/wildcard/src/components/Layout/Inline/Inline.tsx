@@ -16,19 +16,13 @@ interface Inline {
 }
 
 export const Inline: React.FunctionComponent<Inline> = ({ children, space, component, align, alignY, reverse }) => (
-    <Box className={classNames(stackStyles.stack, stackStyles[`stack${space}`])}>
-        {/* Is this box needed? */}
-        <Box
-            component={component}
-            flexWrap="wrap"
-            flexDirection="row"
-            className={classNames(alignY && inlineStyles[alignY])}
-        >
-            {React.Children.map(children, child => (
-                <Box marginLeft={space} marginTop={space} minWidth={0}>
-                    {child}
-                </Box>
-            ))}
-        </Box>
+    <Box
+        component={component}
+        flexWrap="nowrap"
+        flexDirection="row"
+        gap={space}
+        className={classNames(stackStyles[`stack${space}`], alignY && inlineStyles[alignY])}
+    >
+        {children}
     </Box>
 )
