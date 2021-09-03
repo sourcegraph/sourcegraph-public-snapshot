@@ -16,6 +16,7 @@ const (
 	tagOwner   = "owner"
 	tagID      = "id"
 	tagSuccess = "success"
+	tagState   = "state"
 )
 
 var (
@@ -43,6 +44,11 @@ var (
 		Name: "src_repoupdater_syncer_sync_duration_seconds",
 		Help: "Time spent syncing",
 	}, []string{tagSuccess, tagFamily})
+
+	syncedTotal = promauto.NewCounterVec(prometheus.CounterOpts{
+		Name: "src_repoupdater_syncer_synced_repos_total",
+		Help: "Total number of synced repositories",
+	}, []string{tagState})
 
 	purgeSuccess = promauto.NewCounter(prometheus.CounterOpts{
 		Name: "src_repoupdater_purge_success",

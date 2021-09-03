@@ -11,6 +11,7 @@ import (
 	"github.com/hashicorp/go-multierror"
 	"github.com/inconshreveable/log15"
 	"github.com/prometheus/client_golang/prometheus"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -471,11 +472,11 @@ func (s *Syncer) SyncExternalService(
 		modified = modified || len(diff.Modified)+len(diff.Added) > 0
 	}
 
-	// We don't delete any repos of site-level external services if there were any errors during a sync.
-	// Only user external services will delete repos in a sync run with fatal errors.
-	// Site-level external services can own lots of repos and are managed by site admins.
-	// It's preferrable to have them fix any invalidated token manually rather than deleting the repos
-	// automatically.
+	// We don't delete any repos of site-level external services if there were any
+	// errors during a sync. Only user external services will delete repos in a sync
+	// run with fatal errors. Site-level external services can own lots of repos and
+	// are managed by site admins. It's preferable to have them fix any invalidated
+	// token manually rather than deleting the repos automatically.
 	deleted := 0
 	if err = errs.ErrorOrNil(); err == nil || (svc.NamespaceUserID != 0 && fatal(err)) {
 		s.log().Warn("syncer: deleting not seen repos",
@@ -530,6 +531,7 @@ func (s *Syncer) sync(ctx context.Context, svc *types.ExternalService, sourced *
 	}
 
 	defer func() {
+		observeDiff(d)
 		// We must commit the transaction before publishing to s.Synced
 		// so that gitserver finds the repo in the database.
 		if txerr := tx.Done(err); txerr != nil {
@@ -628,6 +630,7 @@ func (s *Syncer) delete(ctx context.Context, svc *types.ExternalService, seen ma
 	for _, id := range deleted {
 		d.Deleted = append(d.Deleted, &types.Repo{ID: id})
 	}
+	observeDiff(d)
 
 	if s.Synced != nil && d.Len() > 0 {
 		select {
@@ -650,6 +653,17 @@ func (s *Syncer) log() log15.Logger {
 		return discardLogger
 	}
 	return s.Logger
+}
+
+func observeDiff(diff Diff) {
+	for state, repos := range map[string]types.Repos{
+		"added":      diff.Added,
+		"modified":   diff.Modified,
+		"deleted":    diff.Deleted,
+		"unmodified": diff.Unmodified,
+	} {
+		syncedTotal.WithLabelValues(state).Add(float64(len(repos)))
+	}
 }
 
 func calcSyncInterval(
