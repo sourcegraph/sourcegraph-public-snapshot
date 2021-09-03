@@ -207,3 +207,73 @@ func TestParseRefDescriptions(t *testing.T) {
 		t.Errorf("unexpected ref descriptions (-want +got):\n%s", diff)
 	}
 }
+
+func TestParseBranchesContaining(t *testing.T) {
+	names := parseBranchesContaining([]string{
+		"refs/tags/v0.7.0",
+		"refs/tags/v0.5.1",
+		"refs/tags/v1.1.4",
+		"refs/heads/symbols", "refs/heads/bl/symbols",
+		"refs/tags/v1.2.0",
+		"refs/tags/v1.1.0",
+		"refs/tags/v0.10.0",
+		"refs/tags/v1.0.0",
+		"refs/heads/garo/index-specific-files",
+		"refs/heads/bl/symbols-2",
+		"refs/tags/v1.3.1",
+		"refs/tags/v0.5.2",
+		"refs/tags/v1.1.2",
+		"refs/tags/v0.8.0",
+		"refs/heads/ef/wtf",
+		"refs/tags/v1.5.0",
+		"refs/tags/v0.9.0",
+		"refs/heads/garo/go-and-typescript-lsif-indexing",
+		"refs/heads/master",
+		"refs/heads/sg/document-symbols",
+		"refs/tags/v1.1.1",
+		"refs/tags/v1.4.0",
+		"refs/heads/nsc/bump-go-version",
+		"refs/heads/nsc/random",
+		"refs/heads/nsc/markupcontent",
+		"refs/tags/v0.6.0",
+		"refs/tags/v1.1.3",
+		"refs/tags/v0.5.3",
+		"refs/tags/v1.3.0",
+	})
+
+	expectedNames := []string{
+		"bl/symbols",
+		"bl/symbols-2",
+		"ef/wtf",
+		"garo/go-and-typescript-lsif-indexing",
+		"garo/index-specific-files",
+		"master",
+		"nsc/bump-go-version",
+		"nsc/markupcontent",
+		"nsc/random",
+		"sg/document-symbols",
+		"symbols",
+		"v0.10.0",
+		"v0.5.1",
+		"v0.5.2",
+		"v0.5.3",
+		"v0.6.0",
+		"v0.7.0",
+		"v0.8.0",
+		"v0.9.0",
+		"v1.0.0",
+		"v1.1.0",
+		"v1.1.1",
+		"v1.1.2",
+		"v1.1.3",
+		"v1.1.4",
+		"v1.2.0",
+		"v1.3.0",
+		"v1.3.1",
+		"v1.4.0",
+		"v1.5.0",
+	}
+	if diff := cmp.Diff(expectedNames, names); diff != "" {
+		t.Errorf("unexpected names (-want +got):\n%s", diff)
+	}
+}
