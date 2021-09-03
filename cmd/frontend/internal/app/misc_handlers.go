@@ -27,13 +27,21 @@ func robotsTxtHelper(w io.Writer, allowRobots bool) {
 	if allowRobots {
 		fmt.Fprintln(&buf, "Allow: /")
 		if envvar.SourcegraphDotComMode() {
-			fmt.Fprintln(&buf, "Sitemap: https://storage.googleapis.com/sitemap-sourcegraph-com/sitemap.xml.gz")
+			fmt.Fprintln(&buf, "Sitemap: https://sourcegraph.com/sitemap.xml.gz")
 		}
 	} else {
 		fmt.Fprintln(&buf, "Disallow: /")
 	}
 	fmt.Fprintln(&buf)
 	_, _ = buf.WriteTo(w)
+}
+
+func sitemapXmlGz(w http.ResponseWriter, r *http.Request) {
+	if envvar.SourcegraphDotComMode() {
+		http.Redirect(w, r, "https://storage.googleapis.com/sitemap-sourcegraph-com/sitemap.xml.gz", http.StatusFound)
+		return
+	}
+	w.WriteHeader(http.StatusNotFound)
 }
 
 func favicon(w http.ResponseWriter, r *http.Request) {
