@@ -157,7 +157,7 @@ require (
 	github.com/sourcegraph/gosyntect v0.0.0-20210422223331-645353f16ddc
 	github.com/sourcegraph/jsonx v0.0.0-20200629203448-1a936bd500cf
 	github.com/sourcegraph/sourcegraph/enterprise/dev/ci/images v0.0.0-00010101000000-000000000000
-	github.com/sourcegraph/sourcegraph/lib v0.0.0-20210825111619-07362da90a1c
+	github.com/sourcegraph/sourcegraph/lib v0.0.0-20210902215418-71593bf836f9
 	github.com/sourcegraph/syntaxhighlight v0.0.0-20170531221838-bd320f5d308e // indirect
 	github.com/spaolacci/murmur3 v1.1.0 // indirect
 	github.com/stretchr/objx v0.3.0 // indirect

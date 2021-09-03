@@ -3099,7 +3099,7 @@ type FileDiffHunk {
         """
         DEPRECATED: isLightTheme will be ignored since all highlights are done with CSS classes now
         """
-        isLightTheme: Boolean!
+        isLightTheme: Boolean
         """
         If highlightLongLines is true, lines which are longer than 2000 bytes are highlighted.
         2000 bytes is enabled. This may produce a significant amount of HTML
