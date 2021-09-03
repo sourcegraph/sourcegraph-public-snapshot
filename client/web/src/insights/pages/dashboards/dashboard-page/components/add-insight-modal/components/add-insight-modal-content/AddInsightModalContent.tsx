@@ -3,6 +3,8 @@ import { escapeRegExp } from 'lodash'
 import React from 'react'
 import { Link } from 'react-router-dom'
 
+import { Button } from '@sourcegraph/wildcard'
+
 import { ErrorAlert } from '../../../../../../../../components/alerts'
 import { LoaderButton } from '../../../../../../../../components/LoaderButton'
 import { FormInput } from '../../../../../../../components/form/form-input/FormInput'
@@ -89,9 +91,9 @@ export const AddInsightModalContent: React.FunctionComponent<AddInsightModalCont
             )}
 
             <div className="d-flex justify-content-end mt-4">
-                <button type="button" className="btn btn-outline-secondary mr-2" onClick={onCancel}>
+                <Button type="button" className="mr-2" variant="secondary" outline={true} onClick={onCancel}>
                     Cancel
-                </button>
+                </Button>
 
                 <LoaderButton
                     alwaysShowLabel={true}

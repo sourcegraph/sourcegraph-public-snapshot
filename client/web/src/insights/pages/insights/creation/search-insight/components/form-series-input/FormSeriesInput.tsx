@@ -2,6 +2,8 @@ import classnames from 'classnames'
 import React from 'react'
 import { noop } from 'rxjs'
 
+import { Button } from '@sourcegraph/wildcard'
+
 import { FormInput } from '../../../../../../components/form/form-input/FormInput'
 import { useField } from '../../../../../../components/form/hooks/useField'
 import { useForm } from '../../../../../../components/form/hooks/useForm'
@@ -169,19 +171,19 @@ export const FormSeriesInput: React.FunctionComponent<FormSeriesInputProps> = pr
             />
 
             <div className="mt-4">
-                <button
+                <Button
                     aria-label="Submit button for data series"
                     type="button"
+                    variant="secondary"
                     onClick={handleSubmit}
-                    className="btn btn-secondary"
                 >
                     Done
-                </button>
+                </Button>
 
                 {cancel && (
-                    <button type="button" onClick={onCancel} className="btn btn-outline-secondary ml-2">
+                    <Button type="button" onClick={onCancel} variant="secondary" outline={true} className="ml-2">
                         Cancel
-                    </button>
+                    </Button>
                 )}
             </div>
         </div>
