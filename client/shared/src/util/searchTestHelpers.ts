@@ -9,7 +9,7 @@ import { AggregateStreamingSearchResults, ContentMatch, RepositoryMatch } from '
 
 export const RESULT: ContentMatch = {
     type: 'content',
-    name: '.travis.yml',
+    path: '.travis.yml',
     repository: 'github.com/golang/oauth2',
     lineMatches: [
         {
@@ -27,7 +27,7 @@ export const REPO_MATCH_RESULT: RepositoryMatch = {
 
 export const MULTIPLE_MATCH_RESULT: ContentMatch = {
     type: 'content',
-    name: 'clientcredentials/clientcredentials_test.go',
+    path: 'clientcredentials/clientcredentials_test.go',
     repository: 'github.com/golang/oauth2',
     lineMatches: [
         {
@@ -120,8 +120,8 @@ export const MULTIPLE_SEARCH_RESULT: AggregateStreamingSearchResults = {
         MULTIPLE_MATCH_RESULT,
         {
             type: 'content',
-            name: 'example_test.go',
-            version: 'some-branch',
+            path: 'example_test.go',
+            commit: 'abcd1234',
             repository: 'github.com/golang/oauth2',
             lineMatches: [
                 {

@@ -19,13 +19,13 @@ type EventContentMatch struct {
 	// Type is always FileMatchType. Included here for marshalling.
 	Type MatchType `json:"type"`
 
-	Path            string           `json:"name"`
+	Path            string           `json:"path"`
 	RepositoryID    int32            `json:"repositoryID"`
 	Repository      string           `json:"repository"`
 	RepoStars       int              `json:"repoStars,omitempty"`
 	RepoLastFetched *time.Time       `json:"repoLastFetched,omitempty"`
 	Branches        []string         `json:"branches,omitempty"`
-	Version         string           `json:"version,omitempty"`
+	Version         string           `json:"commit,omitempty"`
 	Hunks           []DecoratedHunk  `json:"hunks"`
 	LineMatches     []EventLineMatch `json:"lineMatches"`
 }
@@ -40,13 +40,13 @@ type EventPathMatch struct {
 	// Type is always PathMatchType. Included here for marshalling.
 	Type MatchType `json:"type"`
 
-	Path            string     `json:"name"`
+	Path            string     `json:"path"`
 	RepositoryID    int32      `json:"repositoryID"`
 	Repository      string     `json:"repository"`
 	RepoStars       int        `json:"repoStars,omitempty"`
 	RepoLastFetched *time.Time `json:"repoLastFetched,omitempty"`
 	Branches        []string   `json:"branches,omitempty"`
-	Version         string     `json:"version,omitempty"`
+	Version         string     `json:"commit,omitempty"`
 }
 
 func (e *EventPathMatch) eventMatch() {}
@@ -104,13 +104,13 @@ type EventSymbolMatch struct {
 	// Type is always SymbolMatchType. Included here for marshalling.
 	Type MatchType `json:"type"`
 
-	Path            string     `json:"name"`
+	Path            string     `json:"path"`
 	RepositoryID    int32      `json:"repositoryID"`
 	Repository      string     `json:"repository"`
 	RepoStars       int        `json:"repoStars,omitempty"`
 	RepoLastFetched *time.Time `json:"repoLastFetched,omitempty"`
 	Branches        []string   `json:"branches,omitempty"`
-	Version         string     `json:"version,omitempty"`
+	Version         string     `json:"commit,omitempty"`
 
 	Symbols []Symbol `json:"symbols"`
 }
