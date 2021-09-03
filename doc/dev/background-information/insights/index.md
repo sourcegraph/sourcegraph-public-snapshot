@@ -1,17 +1,11 @@
 # Developing code insights
 
-- [What is it?](#what-is-it)
-- [Webapp frontend](#webapp-frontend)
-- [Backend](#backend)
+- ## What is it?
+  - [Code Insights team page](https://about.sourcegraph.com/handbook/engineering/web/code-insights)
+  - [Code Insights docs](../../../code_insights/index.md)
+- ## Webapp frontend
+  - [Frontend developer docs](frontend.md)
+  - [Frontend learning materials doc](frontend-learning-materials.md)
+- ## Backend
+  - [Backend developer docs](backend.md)
 
-## What is it?
-
-See https://about.sourcegraph.com/handbook/engineering/web/code-insights and the [Code Insights docs](../../../code_insights/index.md). 
-
-## Webapp frontend
-
-See [frontend developer docs](frontend.md) and [frontend learning materials doc](frontend-learning-materials.md)
-
-# Backend
-
-See [backend developer docs](backend.md).
