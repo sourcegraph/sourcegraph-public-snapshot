@@ -2,7 +2,6 @@ package executor
 
 import (
 	"context"
-	"io/ioutil"
 	"os"
 	"testing"
 
@@ -110,7 +109,7 @@ func TestExecutionDiskCache_GetSet(t *testing.T) {
 	ctx := context.Background()
 
 	cacheTmpDir := func(t *testing.T) string {
-		testTempDir, err := ioutil.TempDir("", "execution-disk-cache-test-*")
+		testTempDir, err := os.MkdirTemp("", "execution-disk-cache-test-*")
 		if err != nil {
 			t.Fatal(err)
 		}

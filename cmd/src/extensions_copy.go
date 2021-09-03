@@ -4,7 +4,7 @@ import (
 	"context"
 	"flag"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"strings"
 
@@ -106,7 +106,7 @@ Copy an extension from Sourcegraph.com to your private registry.
 			return err
 		}
 		defer response.Body.Close()
-		bundle, err := ioutil.ReadAll(response.Body)
+		bundle, err := io.ReadAll(response.Body)
 		if err != nil {
 			return err
 		}

@@ -6,12 +6,12 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 
 	"github.com/cockroachdb/errors"
 	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
+
 	"github.com/sourcegraph/src-cli/internal/batches/util"
 )
 
@@ -190,7 +190,7 @@ func (c ExecutionDiskCache) readCacheFile(path string, result interface{}) (bool
 		return false, nil
 	}
 
-	data, err := ioutil.ReadFile(path)
+	data, err := os.ReadFile(path)
 	if err != nil {
 		return false, err
 	}
@@ -216,7 +216,7 @@ func (c ExecutionDiskCache) writeCacheFile(path string, result interface{}) erro
 		return err
 	}
 
-	return ioutil.WriteFile(path, raw, 0600)
+	return os.WriteFile(path, raw, 0600)
 }
 
 func (c ExecutionDiskCache) Set(ctx context.Context, key CacheKeyer, result executionResult) error {

@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"flag"
 	"io"
-	"io/ioutil"
 	"log"
 	"os"
 	"os/user"
@@ -114,7 +113,7 @@ func readConfig() (*config, error) {
 	} else if strings.HasPrefix(cfgPath, "~/") {
 		cfgPath = filepath.Join(homeDir, cfgPath[2:])
 	}
-	data, err := ioutil.ReadFile(os.ExpandEnv(cfgPath))
+	data, err := os.ReadFile(os.ExpandEnv(cfgPath))
 	if err != nil && (!os.IsNotExist(err) || userSpecified) {
 		return nil, err
 	}

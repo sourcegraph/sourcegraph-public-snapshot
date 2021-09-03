@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -67,7 +66,7 @@ Notes:
 		}
 		manifestDir := filepath.Dir(manifestPath)
 
-		manifest, err := ioutil.ReadFile(manifestPath)
+		manifest, err := os.ReadFile(manifestPath)
 		if err != nil {
 			return fmt.Errorf("%s\n\nRun this command in a directory with a %s file for an extension.\n\nSee 'src extensions %s -h' for help", err, *manifestFlag, flagSet.Name())
 		}
@@ -256,7 +255,7 @@ func addReadmeToManifest(manifest []byte, dir string) ([]byte, error) {
 	var readme string
 	filenames := []string{"README.md", "README.txt", "README", "readme.md", "readme.txt", "readme", "Readme.md", "Readme.txt", "Readme"}
 	for _, f := range filenames {
-		data, err := ioutil.ReadFile(filepath.Join(dir, f))
+		data, err := os.ReadFile(filepath.Join(dir, f))
 		if err != nil {
 			continue
 		}
@@ -292,7 +291,7 @@ func readExtensionArtifacts(manifest []byte, dir string) (bundle, sourceMap *str
 
 	mainPath := filepath.Join(dir, o.Main)
 
-	data, err := ioutil.ReadFile(mainPath)
+	data, err := os.ReadFile(mainPath)
 	if err != nil {
 		return nil, nil, fmt.Errorf(`extension manifest "main" bundle file: %s`, err)
 	}
@@ -303,7 +302,7 @@ func readExtensionArtifacts(manifest []byte, dir string) (bundle, sourceMap *str
 
 	// Guess that source map is the main file with a ".map" extension.
 	sourceMapPath := strings.TrimSuffix(mainPath, filepath.Ext(mainPath)) + ".map"
-	data, err = ioutil.ReadFile(sourceMapPath)
+	data, err = os.ReadFile(sourceMapPath)
 	if err == nil {
 		tmp := string(data)
 		sourceMap = &tmp

@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"os"
 	"strings"
 
@@ -68,7 +68,7 @@ Examples:
 			if isatty.IsTerminal(os.Stdin.Fd()) {
 				return cmderrors.Usage("expected query to be piped into 'src api' or -query flag to be specified")
 			}
-			data, err := ioutil.ReadAll(os.Stdin)
+			data, err := io.ReadAll(os.Stdin)
 			if err != nil {
 				return err
 			}

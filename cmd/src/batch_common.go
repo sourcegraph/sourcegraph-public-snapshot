@@ -5,7 +5,6 @@ import (
 	"flag"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 	"os/exec"
 	"os/signal"
@@ -374,7 +373,7 @@ func parseBatchSpec(file *string, svc *service.Service) (*batcheslib.BatchSpec, 
 	}
 	defer f.Close()
 
-	data, err := ioutil.ReadAll(f)
+	data, err := io.ReadAll(f)
 	if err != nil {
 		return nil, "", errors.Wrap(err, "reading batch spec")
 	}

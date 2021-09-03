@@ -8,7 +8,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"os"
 	"strings"
@@ -248,7 +247,7 @@ func (r *request) do(ctx context.Context, result interface{}) (bool, error) {
 			fmt.Println("See https://github.com/sourcegraph/src-cli#readme")
 			fmt.Println("")
 		}
-		body, err := ioutil.ReadAll(resp.Body)
+		body, err := io.ReadAll(resp.Body)
 		if err != nil {
 			return false, err
 		}

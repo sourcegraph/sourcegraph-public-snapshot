@@ -3,7 +3,6 @@ package workspace
 import (
 	"archive/zip"
 	"context"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
@@ -22,7 +21,7 @@ var repo = &graphql.Repository{
 }
 
 func zipUpFiles(t *testing.T, dir string, files map[string]string) string {
-	f, err := ioutil.TempFile(dir, "repo-zip-*")
+	f, err := os.CreateTemp(dir, "repo-zip-*")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -46,7 +45,7 @@ func zipUpFiles(t *testing.T, dir string, files map[string]string) string {
 }
 
 func workspaceTmpDir(t *testing.T) string {
-	testTempDir, err := ioutil.TempDir("", "bind-workspace-test-*")
+	testTempDir, err := os.MkdirTemp("", "bind-workspace-test-*")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -70,7 +69,7 @@ func TestDockerBindWorkspaceCreator_Create(t *testing.T) {
 	}
 	additionalFilePaths := map[string]string{}
 	for name, content := range additionalFiles {
-		f, err := ioutil.TempFile(fakeFilesTmpDir, name+"-*")
+		f, err := os.CreateTemp(fakeFilesTmpDir, name+"-*")
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -109,7 +108,7 @@ func TestDockerBindWorkspaceCreator_Create(t *testing.T) {
 		testTempDir := workspaceTmpDir(t)
 
 		// Create an empty file (which is therefore a bad zip file).
-		badZip, err := ioutil.TempFile(testTempDir, "bad-zip-*")
+		badZip, err := os.CreateTemp(testTempDir, "bad-zip-*")
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -327,7 +326,7 @@ func TestEnsureAll(t *testing.T) {
 }
 
 func mustCreateWorkspace(t *testing.T) string {
-	base, err := ioutil.TempDir("", "")
+	base, err := os.MkdirTemp("", "")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -375,7 +374,7 @@ func readWorkspaceFiles(workspace Workspace) (map[string]string, error) {
 			return nil
 		}
 
-		content, err := ioutil.ReadFile(path)
+		content, err := os.ReadFile(path)
 		if err != nil {
 			return err
 		}

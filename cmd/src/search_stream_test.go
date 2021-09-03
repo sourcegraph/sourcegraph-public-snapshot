@@ -2,7 +2,7 @@ package main
 
 import (
 	"flag"
-	"io/ioutil"
+	"io"
 	"net"
 	"net/http"
 	"net/http/httptest"
@@ -147,11 +147,11 @@ func TestSearchStream(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			got, err := ioutil.ReadAll(r)
+			got, err := io.ReadAll(r)
 			if err != nil {
 				t.Fatal(err)
 			}
-			want, err := ioutil.ReadFile(c.want)
+			want, err := os.ReadFile(c.want)
 			if err != nil {
 				t.Fatal(err)
 			}

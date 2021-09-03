@@ -19,7 +19,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"os"
 	goexec "os/exec"
 	"testing"
@@ -95,7 +94,7 @@ func Commands(t *testing.T, exp ...*Expectation) {
 		cmd.Args = []string{}
 
 		// Actually create the behaviour file.
-		f, err := ioutil.TempFile(os.TempDir(), "behaviour")
+		f, err := os.CreateTemp(os.TempDir(), "behaviour")
 		if err != nil {
 			t.Fatalf("error creating behaviour file: %v", err)
 		}
@@ -143,7 +142,7 @@ func Handle(m interface{ Run() int }) int {
 		}
 
 		// Load up the expected behaviour of this command.
-		data, err := ioutil.ReadFile(file)
+		data, err := os.ReadFile(file)
 		if err != nil {
 			panicErr(err)
 		}

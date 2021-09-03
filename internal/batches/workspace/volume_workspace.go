@@ -6,7 +6,6 @@ import (
 	"crypto/rand"
 	"encoding/hex"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"sort"
 	"strings"
@@ -313,7 +312,7 @@ func init() {
 // container started from the dockerWorkspaceImage, then run it and return the
 // output.
 func (w *dockerVolumeWorkspace) runScript(ctx context.Context, target, script string) ([]byte, error) {
-	f, err := ioutil.TempFile(w.tempDir, "src-run-*")
+	f, err := os.CreateTemp(w.tempDir, "src-run-*")
 	if err != nil {
 		return nil, errors.Wrap(err, "creating run script")
 	}

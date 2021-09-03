@@ -3,7 +3,6 @@ package workspace
 import (
 	"bytes"
 	"context"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
@@ -29,7 +28,7 @@ func TestVolumeWorkspaceCreator(t *testing.T) {
 
 	// Create an empty file. It doesn't matter that it's an invalid zip, since
 	// we're mocking the unzip command anyway.
-	f, err := ioutil.TempFile(os.TempDir(), "volume-workspace-*")
+	f, err := os.CreateTemp(os.TempDir(), "volume-workspace-*")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -644,7 +643,7 @@ func TestVolumeWorkspace_runScript(t *testing.T) {
 				// mount options. Let's go get it!
 				values := strings.Split(arg[6], ",")
 				source := strings.SplitN(values[1], "=", 2)
-				have, err := ioutil.ReadFile(source[1])
+				have, err := os.ReadFile(source[1])
 				if err != nil {
 					return errors.Errorf("error reading temporary file %q: %v", source[1], err)
 				}

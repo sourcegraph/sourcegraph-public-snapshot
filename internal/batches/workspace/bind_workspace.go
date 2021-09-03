@@ -5,7 +5,6 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 	"path"
 	"path/filepath"
@@ -159,7 +158,7 @@ func (w *dockerBindWorkspace) Diff(ctx context.Context) ([]byte, error) {
 
 func (w *dockerBindWorkspace) ApplyDiff(ctx context.Context, diff []byte) error {
 	// Write the diff to a temp file so we can pass it to `git apply`
-	tmp, err := ioutil.TempFile(w.tempDir, "bind-workspace-test-*")
+	tmp, err := os.CreateTemp(w.tempDir, "bind-workspace-test-*")
 	if err != nil {
 		return errors.Wrap(err, "saving cached diff to temporary file")
 	}
@@ -184,7 +183,7 @@ func (w *dockerBindWorkspace) ApplyDiff(ctx context.Context, diff []byte) error 
 }
 
 func unzipToTempDir(ctx context.Context, zipFile, tempDir, tempFilePrefix string) (string, error) {
-	volumeDir, err := ioutil.TempDir(tempDir, tempFilePrefix)
+	volumeDir, err := os.MkdirTemp(tempDir, tempFilePrefix)
 	if err != nil {
 		return "", err
 	}

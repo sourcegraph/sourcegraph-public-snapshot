@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 	"time"
 
@@ -30,7 +29,7 @@ type FileTaskLogger struct {
 func newTaskLogger(slug string, keep bool, dir string) (*FileTaskLogger, error) {
 	prefix := "changeset-" + slug
 
-	f, err := ioutil.TempFile(dir, prefix+".*.log")
+	f, err := os.CreateTemp(dir, prefix+".*.log")
 	if err != nil {
 		return nil, errors.Wrapf(err, "creating temporary file with prefix %q", prefix)
 	}

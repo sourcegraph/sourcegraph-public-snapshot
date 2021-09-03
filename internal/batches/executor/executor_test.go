@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -334,7 +333,7 @@ func TestExecutor_Integration(t *testing.T) {
 			client := api.NewClient(api.ClientOpts{Endpoint: ts.URL, Out: &clientBuffer})
 
 			// Temp dir for log files and downloaded archives
-			testTempDir, err := ioutil.TempDir("", "executor-integration-test-*")
+			testTempDir, err := os.MkdirTemp("", "executor-integration-test-*")
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -666,7 +665,7 @@ func testExecuteTasks(t *testing.T, tasks []*Task, archives ...mock.RepoArchive)
 		t.Skip("Test doesn't work on Windows because dummydocker is written in bash")
 	}
 
-	testTempDir, err := ioutil.TempDir("", "executor-integration-test-*")
+	testTempDir, err := os.MkdirTemp("", "executor-integration-test-*")
 	if err != nil {
 		t.Fatal(err)
 	}

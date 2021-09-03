@@ -3,7 +3,6 @@ package repozip
 import (
 	"bytes"
 	"context"
-	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -23,7 +22,7 @@ import (
 
 func TestArchive_Ensure(t *testing.T) {
 	workspaceTmpDir := func(t *testing.T) string {
-		testTempDir, err := ioutil.TempDir("", "executor-integration-test-*")
+		testTempDir, err := os.MkdirTemp("", "executor-integration-test-*")
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -310,7 +309,7 @@ func TestArchive_Ensure(t *testing.T) {
 func sortStrings(a, b string) bool { return a < b }
 
 func dirContains(dir, filename string) (bool, error) {
-	files, err := ioutil.ReadDir(dir)
+	files, err := os.ReadDir(dir)
 	if err != nil {
 		return false, err
 	}

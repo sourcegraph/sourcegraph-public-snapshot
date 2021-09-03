@@ -5,7 +5,6 @@ import (
 	"flag"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 	"strings"
 
@@ -53,7 +52,7 @@ Examples:
 			return cmderrors.Usage("expected exactly one argument: the Sourcegraph URL, or SRC_ENDPOINT to be set")
 		}
 
-		client := cfg.apiClient(apiFlags, ioutil.Discard)
+		client := cfg.apiClient(apiFlags, io.Discard)
 
 		return loginCmd(context.Background(), cfg, client, endpoint, os.Stdout)
 	}

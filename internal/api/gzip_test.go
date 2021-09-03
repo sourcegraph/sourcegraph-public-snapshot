@@ -3,7 +3,7 @@ package api
 import (
 	"bytes"
 	"compress/gzip"
-	"io/ioutil"
+	"io"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -15,7 +15,7 @@ func TestGzipReader(t *testing.T) {
 		uncompressed = append(uncompressed, byte(i))
 	}
 
-	contents, err := ioutil.ReadAll(gzipReader(bytes.NewReader(uncompressed)))
+	contents, err := io.ReadAll(gzipReader(bytes.NewReader(uncompressed)))
 	if err != nil {
 		t.Fatalf("unexpected error reading from gzip reader: %s", err)
 	}
@@ -24,7 +24,7 @@ func TestGzipReader(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unexpected error creating gzip.Reader: %s", err)
 	}
-	decompressed, err := ioutil.ReadAll(gzipReader)
+	decompressed, err := io.ReadAll(gzipReader)
 	if err != nil {
 		t.Fatalf("unexpected error reading from gzip.Reader: %s", err)
 	}
