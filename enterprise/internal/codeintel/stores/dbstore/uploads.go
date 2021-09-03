@@ -688,7 +688,7 @@ func (s *Store) HardDeleteUploadByID(ctx context.Context, ids ...int) (err error
 	defer func() { err = tx.Done(err) }()
 
 	// Before deleting the record, ensure that we decrease the number
-	// of existant references to all of this uploadd's dependencies.
+	// of existant references to all of this upload's dependencies.
 	if err := tx.UpdateDependencyNumReferences(ctx, ids, true); err != nil {
 		return err
 	}
