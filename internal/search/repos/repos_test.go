@@ -353,11 +353,6 @@ func TestSearchableRepositories(t *testing.T) {
 				return drs, nil
 			}
 
-			var indexed []*zoekt.RepoListEntry
-			for name := range tc.searchableRepoNames {
-				indexed = append(indexed, &zoekt.RepoListEntry{Repository: zoekt.Repository{Name: name}})
-			}
-
 			ctx := context.Background()
 			drs, err := searchableRepositories(ctx, getRawSearchableRepos, tc.excludePatterns)
 			if err != nil {
