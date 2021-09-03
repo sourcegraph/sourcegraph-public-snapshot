@@ -273,11 +273,7 @@ func (g *generator) generate(ctx context.Context) error {
 	for _, docSubPage := range docsSubPages {
 		if addedURLs >= 50000 {
 			addedURLs = 0
-			url := &sitemap.URL{
-				Loc:        fmt.Sprintf("https://storage.googleapis.com/sitemap-sourcegraph-com/sitemap_%03d.xml.gz", len(sitemaps)),
-				ChangeFreq: sitemap.Weekly,
-				Priority:   float32(999 - len(sitemaps)),
-			}
+			url := &sitemap.URL{Loc: fmt.Sprintf("https://storage.googleapis.com/sitemap-sourcegraph-com/sitemap_%03d.xml.gz", len(sitemaps))}
 			sitemapIndex.Add(url)
 			sitemaps = append(sitemaps, sm)
 			sm = sitemap.New()
