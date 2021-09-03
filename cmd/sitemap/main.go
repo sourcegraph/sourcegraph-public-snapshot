@@ -237,7 +237,16 @@ func (g *generator) generate(ctx context.Context) error {
 							subPagesWithOneOrMoreExternalReference++
 						}
 						mu.Lock()
-						docsSubPages = append(docsSubPages, repoName+"/-/docs"+pathID)
+						docsPath := pathID
+						if strings.Contains(docsPath, "#") {
+							split := strings.Split(docsPath, "#")
+							if split[0] == "/" {
+								docsPath = "?" + split[1]
+							} else {
+								docsPath = split[0] + "?" + split[1]
+							}
+						}
+						docsSubPages = append(docsSubPages, repoName+"/-/docs"+docsPath)
 						mu.Unlock()
 					} else {
 						subPagesWithZeroReferences++
@@ -273,14 +282,14 @@ func (g *generator) generate(ctx context.Context) error {
 	for _, docSubPage := range docsSubPages {
 		if addedURLs >= 50000 {
 			addedURLs = 0
-			url := &sitemap.URL{Loc: fmt.Sprintf("https://storage.googleapis.com/sitemap-sourcegraph-com/sitemap_%03d.xml.gz", len(sitemaps))}
+			url := &sitemap.URL{Loc: fmt.Sprintf("https://sourcegraph.com/sitemap_%03d.xml.gz", len(sitemaps))}
 			sitemapIndex.Add(url)
 			sitemaps = append(sitemaps, sm)
 			sm = sitemap.New()
 		}
 		addedURLs++
 		sm.Add(&sitemap.URL{
-			Loc:        "https://sourcegraph.com" + docSubPage,
+			Loc:        "https://sourcegraph.com/" + docSubPage,
 			ChangeFreq: sitemap.Weekly,
 		})
 	}
@@ -314,7 +323,7 @@ func (g *generator) generate(ctx context.Context) error {
 		}
 	}
 
-	log15.Info("To upload the sitemap, use: $ gsutil cp -r sitemap/ gs://sitemap-sourcegraph-com")
+	log15.Info("you may now upload the generated sitemap/")
 
 	return nil
 }

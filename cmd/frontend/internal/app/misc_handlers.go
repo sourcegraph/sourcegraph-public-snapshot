@@ -7,9 +7,12 @@ import (
 	"net/http"
 	"strconv"
 
+	"github.com/gorilla/mux"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/assetsutil"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 )
 
@@ -37,8 +40,9 @@ func robotsTxtHelper(w io.Writer, allowRobots bool) {
 }
 
 func sitemapXmlGz(w http.ResponseWriter, r *http.Request) {
-	if envvar.SourcegraphDotComMode() {
-		http.Redirect(w, r, "https://storage.googleapis.com/sitemap-sourcegraph-com/sitemap.xml.gz", http.StatusFound)
+	if envvar.SourcegraphDotComMode() || conf.DeployType() == conf.DeployDev {
+		number := mux.Vars(r)["number"]
+		http.Redirect(w, r, fmt.Sprintf("https://storage.googleapis.com/sitemap-sourcegraph-com/sitemap%s.xml.gz", number), http.StatusFound)
 		return
 	}
 	w.WriteHeader(http.StatusNotFound)

@@ -65,7 +65,7 @@ func newRouter() *mux.Router {
 	base.StrictSlash(true)
 
 	base.Path("/robots.txt").Methods("GET").Name(RobotsTxt)
-	base.Path("/sitemap.xml.gz").Methods("GET").Name(SitemapXmlGz)
+	base.Path("/sitemap{number:(?:_(?:[0-9]+))?}.xml.gz").Methods("GET").Name(SitemapXmlGz)
 	base.Path("/favicon.ico").Methods("GET").Name(Favicon)
 	base.Path("/opensearch.xml").Methods("GET").Name(OpenSearch)
 
