@@ -237,7 +237,16 @@ func (g *generator) generate(ctx context.Context) error {
 							subPagesWithOneOrMoreExternalReference++
 						}
 						mu.Lock()
-						docsSubPages = append(docsSubPages, repoName+"/-/docs"+pathID)
+						docsPath := pathID
+						if strings.Contains(docsPath, "#") {
+							split := strings.Split(docsPath, "#")
+							if split[0] == "/" {
+								docsPath = "?" + split[1]
+							} else {
+								docsPath = split[0] + "?" + split[1]
+							}
+						}
+						docsSubPages = append(docsSubPages, repoName+"/-/docs"+docsPath)
 						mu.Unlock()
 					} else {
 						subPagesWithZeroReferences++
