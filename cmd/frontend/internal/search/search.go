@@ -144,24 +144,7 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	defer pingTicker.Stop()
 
 	first := true
-
-	for {
-		var event streaming.SearchEvent
-		var ok bool
-		select {
-		case event, ok = <-events:
-		case <-flushTicker.C:
-			ok = true
-			matchesFlush()
-		case <-pingTicker.C:
-			ok = true
-			sendProgress()
-		}
-
-		if !ok {
-			break
-		}
-
+	handleEvent := func(event streaming.SearchEvent) {
 		progress.Update(event)
 		filters.Update(event)
 
@@ -178,7 +161,7 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		repoMetadata, err := getEventRepoMetadata(ctx, h.db, event)
 		if err != nil {
 			log15.Error("failed to get repo metadata", "error", err)
-			continue
+			return
 		}
 		for _, match := range event.Results {
 			// Don't send matches which we cannot map to a repo the actor has access to. This
@@ -200,6 +183,27 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 			graphqlbackend.LogSearchLatency(ctx, h.db, &inputs, int32(time.Since(start).Milliseconds()))
 		}
+
+	}
+
+	for {
+		var event streaming.SearchEvent
+		var ok bool
+		select {
+		case event, ok = <-events:
+		case <-flushTicker.C:
+			ok = true
+			matchesFlush()
+		case <-pingTicker.C:
+			ok = true
+			sendProgress()
+		}
+
+		if !ok {
+			break
+		}
+
+		handleEvent(event)
 	}
 
 	matchesFlush()
