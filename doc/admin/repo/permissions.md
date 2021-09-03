@@ -65,7 +65,7 @@ This caching behaviour can be enabled via the `authorization.groupsCacheTTL` fie
 }
 ```
 
-In the corresponding [authorization provider](../auth/index.md#github), the `allowGroupsPermissionsSync` field must be set as well for the correct auth scopes to be requested from users:
+In the corresponding [authorization provider](../auth/index.md#github) in [site configuration](./../config/site_config.md), the `allowGroupsPermissionsSync` field must be set as well for the correct auth scopes to be requested from users:
 
 ```json
 {
