@@ -30,8 +30,8 @@ import { BrandLogo } from '../../components/branding/BrandLogo'
 import { FeatureFlagProps } from '../../featureFlags/featureFlags'
 import { InsightsApiContext } from '../../insights'
 import { SmartInsight } from '../../insights/components/insights-view-grid/components/smart-insight/SmartInsight'
+import { StaticView } from '../../insights/components/insights-view-grid/components/static-view/StaticView';
 import { ViewGrid } from '../../insights/components/insights-view-grid/components/view-grid/ViewGrid'
-import { StaticInsightView } from '../../insights/components/insights-view-grid/StaticInsightsViewGrid'
 import { useAllInsights } from '../../insights/hooks/use-insight/use-insight'
 import { KeyboardShortcutsProps } from '../../keyboardShortcuts/keyboardShortcuts'
 import { Settings } from '../../schema/settings.schema'
@@ -123,7 +123,7 @@ export const SearchPage: React.FunctionComponent<SearchPageProps> = props => {
                     <ViewGrid viewIds={allViewIds} telemetryService={props.telemetryService}>
                         {/* Render extension views for the directory page */}
                         {views.map(view => (
-                            <StaticInsightView key={view.id} view={view} telemetryService={props.telemetryService} />
+                            <StaticView key={view.id} view={view} telemetryService={props.telemetryService} />
                         ))}
 
                         {/* Render all code insights with proper directory page context */}

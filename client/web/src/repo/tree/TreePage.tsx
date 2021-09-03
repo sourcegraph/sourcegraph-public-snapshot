@@ -50,8 +50,8 @@ import { PageTitle } from '../../components/PageTitle'
 import { GitCommitFields, Scalars, TreePageRepositoryFields } from '../../graphql-operations'
 import { InsightsApiContext } from '../../insights'
 import { SmartInsight } from '../../insights/components/insights-view-grid/components/smart-insight/SmartInsight'
+import { StaticView } from '../../insights/components/insights-view-grid/components/static-view/StaticView';
 import { ViewGrid } from '../../insights/components/insights-view-grid/components/view-grid/ViewGrid'
-import { StaticInsightView } from '../../insights/components/insights-view-grid/StaticInsightsViewGrid'
 import { useAllInsights } from '../../insights/hooks/use-insight/use-insight'
 import { Settings } from '../../schema/settings.schema'
 import { PatternTypeProps, CaseSensitivityProps, SearchContextProps } from '../../search'
@@ -488,7 +488,7 @@ export const TreePage: React.FunctionComponent<Props> = ({
                             <ViewGrid viewIds={allViewIds} telemetryService={props.telemetryService}>
                                 {/* Render extension views for the directory page */}
                                 {views.map(view => (
-                                    <StaticInsightView
+                                    <StaticView
                                         key={view.id}
                                         view={view}
                                         telemetryService={props.telemetryService}
