@@ -3,7 +3,6 @@ package executor
 import (
 	"context"
 	"fmt"
-	"io"
 	"strings"
 	"sync"
 	"testing"
@@ -11,6 +10,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/sourcegraph/batch-change-utils/overridable"
+
 	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
 	"github.com/sourcegraph/sourcegraph/lib/batches/git"
 	"github.com/sourcegraph/sourcegraph/lib/batches/template"
@@ -545,18 +545,8 @@ func (d *dummyTaskExecutionUI) TaskChangesetSpecsBuilt(t *Task, specs []*batches
 	d.specs[t] = specs
 }
 
-type discardCloser struct {
-	io.Writer
-}
-
-func (discardCloser) Close() error { return nil }
-
-func (d *dummyTaskExecutionUI) TaskCurrentlyExecuting(*Task, string) {}
-func (d *dummyTaskExecutionUI) StepStdoutWriter(ctx context.Context, task *Task, step int) io.WriteCloser {
-	return discardCloser{io.Discard}
-}
-func (d *dummyTaskExecutionUI) StepStderrWriter(ctx context.Context, task *Task, step int) io.WriteCloser {
-	return discardCloser{io.Discard}
+func (d *dummyTaskExecutionUI) StepsExecutionUI(t *Task) StepsExecutionUI {
+	return NoopStepsExecUI{}
 }
 
 var _ taskExecutor = &dummyExecutor{}

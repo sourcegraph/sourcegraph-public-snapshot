@@ -2,13 +2,13 @@ package executor
 
 import (
 	"context"
-	"io"
 	"reflect"
 	"strconv"
 	"time"
 
 	"github.com/cockroachdb/errors"
 	"github.com/hashicorp/go-multierror"
+
 	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
 
 	"github.com/sourcegraph/src-cli/internal/api"
@@ -205,22 +205,6 @@ func (c *Coordinator) cacheAndBuildSpec(ctx context.Context, taskResult taskResu
 
 	ui.TaskChangesetSpecsBuilt(taskResult.task, specs)
 	return specs, nil
-}
-
-type TaskExecutionUI interface {
-	Start([]*Task)
-	Success()
-
-	TaskStarted(*Task)
-	TaskFinished(*Task, error)
-
-	TaskChangesetSpecsBuilt(*Task, []*batcheslib.ChangesetSpec)
-
-	// TODO: This should be split up into methods that are more specific.
-	TaskCurrentlyExecuting(*Task, string)
-
-	StepStdoutWriter(context.Context, *Task, int) io.WriteCloser
-	StepStderrWriter(context.Context, *Task, int) io.WriteCloser
 }
 
 // Execute executes the given Tasks and the importChangeset statements in the

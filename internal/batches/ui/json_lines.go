@@ -14,6 +14,7 @@ import (
 	"github.com/sourcegraph/src-cli/internal/batches/workspace"
 
 	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
+	"github.com/sourcegraph/sourcegraph/lib/batches/git"
 )
 
 var _ ExecUI = &JSONLines{}
@@ -290,37 +291,97 @@ func (ui *taskExecutionJSONLines) TaskChangesetSpecsBuilt(task *executor.Task, s
 	}})
 }
 
-func (ui *taskExecutionJSONLines) TaskCurrentlyExecuting(task *executor.Task, message string) {
+func (ui *taskExecutionJSONLines) StepsExecutionUI(task *executor.Task) executor.StepsExecutionUI {
 	lt, ok := ui.linesTasks[task]
 	if !ok {
 		panic("unknown task started")
 	}
 
-	logEvent(batchesLogEvent{
-		Operation: "EXECUTING_TASK",
-		Status:    "PROGRESS",
-		Message:   message,
-		Metadata: map[string]interface{}{
-			"task": lt,
-		},
-	})
+	return &stepsExecutionJSONLines{linesTask: &lt}
+}
+
+type stepsExecutionJSONLines struct {
+	linesTask *jsonLinesTask
 }
 
 const stepFlushDuration = 500 * time.Millisecond
 
-func (ui *taskExecutionJSONLines) StepStdoutWriter(ctx context.Context, task *executor.Task, step int) io.WriteCloser {
-	lt, ok := ui.linesTasks[task]
-	if !ok {
-		panic("unknown task started")
-	}
+func (ui *stepsExecutionJSONLines) ArchiveDownloadStarted() {
+	logEvent(batchesLogEvent{
+		Operation: "TASK_DOWNLOADING_ARCHIVE",
+		Status:    "STARTED",
+		Message:   "Downloading archive",
+		Metadata:  map[string]interface{}{"task": ui.linesTask},
+	})
+}
 
+func (ui *stepsExecutionJSONLines) ArchiveDownloadFinished() {
+	logEvent(batchesLogEvent{
+		Operation: "TASK_DOWNLOADING_ARCHIVE",
+		Status:    "FINISHED",
+		Metadata:  map[string]interface{}{"task": ui.linesTask},
+	})
+}
+func (ui *stepsExecutionJSONLines) WorkspaceInitializationStarted() {
+	logEvent(batchesLogEvent{
+		Operation: "TASK_INITIALIZING_WORKSPACE",
+		Status:    "STARTED",
+		Message:   "Initializing workspace",
+		Metadata:  map[string]interface{}{"task": ui.linesTask},
+	})
+}
+func (ui *stepsExecutionJSONLines) WorkspaceInitializationFinished() {
+	logEvent(batchesLogEvent{
+		Operation: "TASK_INITIALIZING_WORKSPACE",
+		Status:    "FINISHED",
+		Metadata:  map[string]interface{}{"task": ui.linesTask},
+	})
+}
+
+func (ui *stepsExecutionJSONLines) SkippingStepsUpto(startStep int) {
+	logEvent(batchesLogEvent{
+		Operation: "TASK_SKIPPING_STEPS",
+		Status:    "PROGRESS",
+		Message:   fmt.Sprintf("Skipping steps. Starting at %d.", startStep),
+		Metadata:  map[string]interface{}{"task": ui.linesTask, "startStep": startStep},
+	})
+}
+
+func (ui *stepsExecutionJSONLines) StepSkipped(step int) {
+	logEvent(batchesLogEvent{
+		Operation: "TASK_STEP_SKIPPED",
+		Status:    "PROGRESS",
+		Message:   fmt.Sprintf("Skipping step %d.", step),
+		Metadata:  map[string]interface{}{"task": ui.linesTask, "step": step},
+	})
+}
+
+func (ui *stepsExecutionJSONLines) StepPreparing(step int) {
+	logEvent(batchesLogEvent{
+		Operation: "TASK_PREPARING_STEP",
+		Status:    "PROGRESS",
+		Message:   fmt.Sprintf("Preparing step %d.", step),
+		Metadata:  map[string]interface{}{"task": ui.linesTask, "step": step},
+	})
+}
+
+func (ui *stepsExecutionJSONLines) StepStarted(step int, runScript string) {
+	logEvent(batchesLogEvent{
+		Operation: "STEP",
+		Status:    "STARTED",
+		Message:   fmt.Sprintf("Starting step %d", step),
+		Metadata:  map[string]interface{}{"task": ui.linesTask, "step": step, "runScript": runScript},
+	})
+}
+
+func (ui *stepsExecutionJSONLines) StepStdoutWriter(ctx context.Context, task *executor.Task, step int) io.WriteCloser {
 	sink := func(data string) {
 		logEvent(batchesLogEvent{
 			Operation: "STEP",
 			Status:    "PROGRESS",
 			Message:   data,
 			Metadata: map[string]interface{}{
-				"task":        lt,
+				"task":        ui.linesTask,
 				"step":        step,
 				"output_type": "stdout",
 			},
@@ -329,19 +390,14 @@ func (ui *taskExecutionJSONLines) StepStdoutWriter(ctx context.Context, task *ex
 	return NewIntervalWriter(ctx, stepFlushDuration, sink)
 }
 
-func (ui *taskExecutionJSONLines) StepStderrWriter(ctx context.Context, task *executor.Task, step int) io.WriteCloser {
-	lt, ok := ui.linesTasks[task]
-	if !ok {
-		panic("unknown task started")
-	}
-
+func (ui *stepsExecutionJSONLines) StepStderrWriter(ctx context.Context, task *executor.Task, step int) io.WriteCloser {
 	sink := func(data string) {
 		logEvent(batchesLogEvent{
 			Operation: "STEP",
 			Status:    "PROGRESS",
 			Message:   data,
 			Metadata: map[string]interface{}{
-				"task":        lt,
+				"task":        ui.linesTask,
 				"step":        step,
 				"output_type": "stderr",
 			},
@@ -349,4 +405,34 @@ func (ui *taskExecutionJSONLines) StepStderrWriter(ctx context.Context, task *ex
 	}
 
 	return NewIntervalWriter(ctx, stepFlushDuration, sink)
+}
+
+func (ui *stepsExecutionJSONLines) StepFinished(step int, diff []byte, changes *git.Changes, outputs map[string]interface{}) {
+	logEvent(batchesLogEvent{
+		Operation: "STEP",
+		Status:    "SUCCESS",
+		Message:   fmt.Sprintf("Finished step %d", step),
+		Metadata: map[string]interface{}{
+			"task":    ui.linesTask,
+			"step":    step,
+			"diff":    string(diff),
+			"changes": changes,
+			"outputs": outputs,
+		},
+	})
+}
+
+func (ui *stepsExecutionJSONLines) CalculatingDiffStarted() {
+	logEvent(batchesLogEvent{
+		Operation: "TASK_CALCULATING_DIFF",
+		Status:    "STARTED",
+		Metadata:  map[string]interface{}{"task": ui.linesTask},
+	})
+}
+func (ui *stepsExecutionJSONLines) CalculatingDiffFinished() {
+	logEvent(batchesLogEvent{
+		Operation: "TASK_CALCULATING_DIFF",
+		Status:    "SUCCESS",
+		Metadata:  map[string]interface{}{"task": ui.linesTask},
+	})
 }

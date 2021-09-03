@@ -174,11 +174,8 @@ func (x *executor) do(ctx context.Context, task *Task, ui TaskExecutionUI) (err 
 		wc:          x.opts.Creator,
 		ensureImage: x.opts.EnsureImage,
 		tempDir:     x.opts.TempDir,
-		reportProgress: func(currentlyExecuting string) {
-			ui.TaskCurrentlyExecuting(task, currentlyExecuting)
-		},
-		newUiStdoutWriter: ui.StepStdoutWriter,
-		newUiStderrWriter: ui.StepStderrWriter,
+
+		ui: ui.StepsExecutionUI(task),
 	}
 
 	result, stepResults, err := runSteps(runCtx, opts)

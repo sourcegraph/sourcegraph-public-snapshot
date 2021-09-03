@@ -13,6 +13,7 @@ import (
 	"github.com/sourcegraph/src-cli/internal/batches/executor"
 
 	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
+	"github.com/sourcegraph/sourcegraph/lib/batches/git"
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
 
@@ -218,18 +219,29 @@ func (ui *taskExecTUI) TaskCurrentlyExecuting(task *executor.Task, message strin
 	ui.progress.StatusBarUpdatef(bar, ts.String())
 }
 
-type discardCloser struct {
-	io.Writer
-}
+func (ui *taskExecTUI) StepsExecutionUI(task *executor.Task) executor.StepsExecutionUI {
+	ui.mu.Lock()
+	defer ui.mu.Unlock()
 
-func (discardCloser) Close() error { return nil }
+	ts, ok := ui.statuses[task]
+	if !ok {
+		ui.out.Verbose("warning: task not found in internal 'statuses'")
+		return executor.NoopStepsExecUI{}
+	}
 
-func (ui *taskExecTUI) StepStdoutWriter(ctx context.Context, task *executor.Task, stepidx int) io.WriteCloser {
-	return discardCloser{io.Discard}
-}
+	bar, found := ui.findStatusBar(ts)
+	if !found {
+		ui.out.Verbose("warning: no free status bar found to display task status")
+		return executor.NoopStepsExecUI{}
+	}
 
-func (ui *taskExecTUI) StepStderrWriter(ctx context.Context, task *executor.Task, stepidx int) io.WriteCloser {
-	return discardCloser{io.Discard}
+	return &stepsExecTUI{
+		task: task,
+		updateStatusBar: func(message string) {
+			ts.currentlyExecuting = message
+			ui.progress.StatusBarUpdatef(bar, ts.String())
+		},
+	}
 }
 
 func (ui *taskExecTUI) TaskFinished(task *executor.Task, err error) {
@@ -413,3 +425,55 @@ func diffStatDiagram(stat diff.Stat) string {
 		output.StyleReset,
 	)
 }
+
+type stepsExecTUI struct {
+	task            *executor.Task
+	updateStatusBar func(string)
+}
+
+func (ui stepsExecTUI) ArchiveDownloadStarted() {
+	ui.updateStatusBar("Downloading archive")
+}
+func (ui stepsExecTUI) ArchiveDownloadFinished() {}
+func (ui stepsExecTUI) WorkspaceInitializationStarted() {
+	ui.updateStatusBar("Initializing workspace")
+}
+func (ui stepsExecTUI) WorkspaceInitializationFinished() {}
+func (ui stepsExecTUI) SkippingStepsUpto(startStep int) {
+	switch startStep {
+	case 1:
+		ui.updateStatusBar("Skipping step 1. Found cached result.")
+	default:
+		ui.updateStatusBar(fmt.Sprintf("Skipping steps 1 to %d. Found cached results.", startStep))
+	}
+}
+
+func (ui stepsExecTUI) StepSkipped(step int) {
+	ui.updateStatusBar(fmt.Sprintf("Skipping step %d", step))
+}
+func (ui stepsExecTUI) StepPreparing(step int) {
+	ui.updateStatusBar(fmt.Sprintf("Preparing %d", step))
+}
+func (ui stepsExecTUI) StepStarted(step int, runScript string) {
+	ui.updateStatusBar(runScript)
+}
+
+func (ui stepsExecTUI) StepStdoutWriter(ctx context.Context, task *executor.Task, step int) io.WriteCloser {
+	return discardCloser{io.Discard}
+}
+func (ui stepsExecTUI) StepStderrWriter(ctx context.Context, task *executor.Task, step int) io.WriteCloser {
+	return discardCloser{io.Discard}
+}
+func (ui stepsExecTUI) CalculatingDiffStarted() {
+	ui.updateStatusBar("Calculating diff")
+}
+func (ui stepsExecTUI) CalculatingDiffFinished() {
+	// noop right now
+}
+func (ui stepsExecTUI) StepFinished(idx int, diff []byte, changes *git.Changes, outputs map[string]interface{}) {
+	// noop right now
+}
+
+type discardCloser struct{ io.Writer }
+
+func (discardCloser) Close() error { return nil }
