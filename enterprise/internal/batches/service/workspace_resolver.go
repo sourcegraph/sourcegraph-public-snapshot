@@ -429,7 +429,14 @@ func (wr *workspaceResolver) FindDirectoriesInRepos(ctx context.Context, fileNam
 					// src-cli might be executed on Windows, we need the paths to
 					// be Unix paths, since they will be used inside Docker
 					// containers.
-					results = append(results, path.Dir(m.Path))
+					dir := path.Dir(m.Path)
+
+					// "." means the path is root, but in the executor we use "" to signify root.
+					if dir == "." {
+						dir = ""
+					}
+
+					results = append(results, dir)
 				}
 			}
 		})

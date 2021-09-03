@@ -36,7 +36,7 @@ func (r *batchSpecWorkspaceResolver) OnlyFetchWorkspace() bool {
 	return r.node.OnlyFetchWorkspace
 }
 
-func (r *batchSpecWorkspaceResolver) FileResultPaths() []string {
+func (r *batchSpecWorkspaceResolver) SearchResultPaths() []string {
 	return r.node.FileMatches
 }
 
