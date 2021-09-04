@@ -131,8 +131,10 @@ const githubInstructions = (isEnterprise: boolean): JSX.Element => (
                 >
                     instructions
                 </a>
-                ) with <b>repo</b> scope, and set it to be the value of the <Field>token</Field> field in the
-                configuration below.
+                ) with <b>repo</b> scope.
+                <li>
+                    Set the value of the <Field>token</Field> field as your access token, in the configuration below.
+                </li>
             </li>
             <li>
                 Specify which repositories Sourcegraph should index using one of the following fields:
