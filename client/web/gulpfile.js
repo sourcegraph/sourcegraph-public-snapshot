@@ -8,6 +8,7 @@ require('ts-node').register({
 
 const log = require('fancy-log')
 const gulp = require('gulp')
+const { createProxyMiddleware } = require('http-proxy-middleware')
 const signale = require('signale')
 const createWebpackCompiler = require('webpack')
 const WebpackDevServer = require('webpack-dev-server')
@@ -134,7 +135,22 @@ async function webpackDevelopmentServer() {
   await server.start()
 }
 
-const developmentServer = DEV_WEB_BUILDER === 'webpack' ? webpackDevelopmentServer : esbuildDevelopmentServer
+const esbuildDevelopmentProxy = () =>
+  esbuildDevelopmentServer(DEV_SERVER_LISTEN_ADDR, app => {
+    app.use(
+      '/',
+      createProxyMiddleware({
+        target: {
+          protocol: 'http:',
+          host: DEV_SERVER_PROXY_TARGET_ADDR.host,
+          port: DEV_SERVER_PROXY_TARGET_ADDR.port,
+        },
+        logLevel: 'error',
+      })
+    )
+  })
+
+const developmentServer = DEV_WEB_BUILDER === 'webpack' ? webpackDevelopmentServer : esbuildDevelopmentProxy
 
 // Ensure the typings that TypeScript depends on are build to avoid first-time-run errors
 const generate = gulp.parallel(schema, graphQlSchema, graphQlOperations, cssModulesTypings)

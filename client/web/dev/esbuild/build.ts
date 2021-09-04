@@ -65,7 +65,6 @@ export const BUILD_OPTIONS: esbuild.BuildOptions = {
         },
     ],
     define: Object.fromEntries(
-        // esbuild is not yet usable with SOURCEGRAPH_API_URL, so omit that.
         Object.entries({ ...environmentConfig, SOURCEGRAPH_API_URL: undefined }).map(([key, value]) => [
             `process.env.${key}`,
             JSON.stringify(value),
