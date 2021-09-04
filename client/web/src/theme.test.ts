@@ -8,7 +8,7 @@ import { ThemePreference, useTheme } from './theme'
 // Don't test reacting to system-wide theme changes, for simplicity. This means that
 // observeSystemIsLightTheme's initial value will be used, but it will not monitor for subsequent
 // changes.
-jest.mock('../../shared/src/util/useObservable', () => ({
+jest.mock('@sourcegraph/shared/src/util/useObservable', () => ({
     useObservable: () => undefined,
 }))
 
