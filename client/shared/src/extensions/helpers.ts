@@ -1,33 +1,12 @@
-import { isEqual } from 'lodash'
-import { from, Observable, of, throwError } from 'rxjs'
-import { catchError, distinctUntilChanged, map, shareReplay, switchMap } from 'rxjs/operators'
+import { from, Observable, of } from 'rxjs'
+import { map } from 'rxjs/operators'
 
 import { gql } from '../graphql/graphql'
 import * as GQL from '../graphql/schema'
 import { PlatformContext } from '../platform/context'
-import { asError, createAggregateError } from '../util/errors'
+import { createAggregateError } from '../util/errors'
 
-import { ConfiguredRegistryExtension, extensionIDsFromSettings, toConfiguredRegistryExtension } from './extension'
-
-/**
- * @returns An observable that emits the list of extensions configured in the viewer's final settings upon
- * subscription and each time it changes.
- */
-export function viewerConfiguredExtensions({
-    settings,
-    requestGraphQL,
-}: Pick<PlatformContext, 'settings' | 'requestGraphQL'>): Observable<ConfiguredRegistryExtension[]> {
-    return from(settings).pipe(
-        map(settings => extensionIDsFromSettings(settings)),
-        distinctUntilChanged((a, b) => isEqual(a, b)),
-        switchMap(extensionIDs => queryConfiguredRegistryExtensions({ requestGraphQL }, extensionIDs)),
-        catchError(error => throwError(asError(error))),
-        // TODO: Restore reference counter after refactoring contributions service
-        // to not unsubscribe from existing entries when new entries are registered,
-        // in order to ensure that the source is unsubscribed from.
-        shareReplay(1)
-    )
-}
+import { ConfiguredRegistryExtension, toConfiguredRegistryExtension } from './extension'
 
 /**
  * Query the GraphQL API for registry metadata about the extensions given in {@link extensionIDs}.
