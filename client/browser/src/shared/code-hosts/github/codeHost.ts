@@ -347,7 +347,7 @@ export const githubCodeHost: CodeHost = {
     isLightTheme: defer(() => {
         const mode = document.documentElement.dataset.colorMode as 'auto' | 'light' | 'dark' | undefined
         if (mode === 'auto') {
-            return observeSystemIsLightTheme()
+            return observeSystemIsLightTheme().observable
         }
         return of(mode !== 'dark')
     }),
