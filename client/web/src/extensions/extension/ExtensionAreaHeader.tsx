@@ -78,7 +78,7 @@ export const ExtensionAreaHeader: React.FunctionComponent<ExtensionAreaHeaderPro
     }, [ctaTimeoutManager, showCta, props.authenticatedUser])
 
     return (
-        <div className={`extension-area-header ${props.className || ''}`}>
+        <div className={classNames('extension-area-header', props.className)}>
             <div className="container">
                 {props.extension && (
                     <>
