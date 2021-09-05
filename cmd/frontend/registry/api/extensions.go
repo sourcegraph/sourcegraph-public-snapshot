@@ -249,6 +249,12 @@ func IsWorkInProgressExtension(manifest *string) bool {
 		return true
 	}
 
+	// jsonc-parsing the manifest can be slow, so do a first pass. If the manifest doesn't even
+	// contain `"wip"`, then there is no way that it could be WIP.
+	if !strings.Contains(*manifest, `"wip"`) {
+		return false
+	}
+
 	var result schema.SourcegraphExtensionManifest
 	if err := jsonc.Unmarshal(*manifest, &result); err != nil {
 		// An extension whose manifest fails to parse is problematic for other reasons (and an error
