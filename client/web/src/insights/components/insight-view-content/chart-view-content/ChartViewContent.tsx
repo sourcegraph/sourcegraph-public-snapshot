@@ -9,6 +9,7 @@ import { LineChart } from './charts/line/LineChart'
 import { DatumZoneClickEvent } from './charts/line/types'
 import { PieChart } from './charts/pie/PieChart'
 import { getInsightTypeByViewId } from './utils/get-insight-type-by-view-id'
+import classNames from "classnames";
 
 /**
  * Displays chart view content.
@@ -57,7 +58,7 @@ export const ChartViewContent: FunctionComponent<ChartViewContentProps> = props 
     )
 
     return (
-        <div className={`chart-view-content ${className}`}>
+        <div className={classNames("chart-view-content", className)}>
             <ParentSize className="chart-view-content__chart">
                 {({ width, height }) => {
                     if (content.chart === 'line') {

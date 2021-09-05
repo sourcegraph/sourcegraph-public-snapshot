@@ -1,3 +1,4 @@
+import classNames from 'classnames'
 import React, { useState, FunctionComponent, useCallback } from 'react'
 
 import { Form } from '@sourcegraph/branded/src/components/Form'
@@ -70,7 +71,7 @@ export const SetUserPrimaryEmailForm: FunctionComponent<Props> = ({ user, emails
     )
 
     return (
-        <div className={`add-user-email-form ${className || ''}`}>
+        <div className={classNames('add-user-email-form', className)}>
             <label htmlFor="setUserPrimaryEmailForm-email">Primary email address</label>
             <Form className="form-inline" onSubmit={onSubmit}>
                 <select
