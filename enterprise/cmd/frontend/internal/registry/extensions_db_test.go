@@ -271,27 +271,13 @@ func TestRegistryExtensions(t *testing.T) {
 	})
 
 	t.Run("List sort non-WIP first", func(t *testing.T) {
-		// xwip1 is a WIP extension because its title begins with "WIP:".
+		// xwip1 is a WIP extension because it has no published releases.
 		xwip1 := createAndGet(t, user.ID, 0, "wiptest1")
-		_, err := dbReleases{}.Create(ctx, &dbRelease{
-			RegistryExtensionID: xwip1.ID,
-			CreatorUserID:       user.ID,
-			ReleaseTag:          "release",
-			Manifest:            `{"title": "WIP: x"}`,
-			Bundle:              strptr(""),
-			SourceMap:           strptr(""),
-		})
-		if err != nil {
-			t.Fatal(err)
-		}
 
-		// xwip2 is a WIP extension because it has no published releases.
+		// xwip2 is a WIP extension because it has a "wip": true property.
 		xwip2 := createAndGet(t, user.ID, 0, "wiptest2")
-
-		// xwip3 is a WIP extension because it has a "wip": true property.
-		xwip3 := createAndGet(t, user.ID, 0, "wiptest3")
 		_, err = dbReleases{}.Create(ctx, &dbRelease{
-			RegistryExtensionID: xwip3.ID,
+			RegistryExtensionID: xwip2.ID,
 			CreatorUserID:       user.ID,
 			ReleaseTag:          "release",
 			Manifest:            `{"wip": true}`,
@@ -303,7 +289,7 @@ func TestRegistryExtensions(t *testing.T) {
 		}
 
 		// xnonwip1 is a non-WIP extension.
-		xnonwip1 := createAndGet(t, user.ID, 0, "wiptest4")
+		xnonwip1 := createAndGet(t, user.ID, 0, "wiptest3")
 		_, err = dbReleases{}.Create(ctx, &dbRelease{
 			RegistryExtensionID: xnonwip1.ID,
 			CreatorUserID:       user.ID,
@@ -318,7 +304,7 @@ func TestRegistryExtensions(t *testing.T) {
 		xnonwip1.NonCanonicalIsWorkInProgress = false
 
 		// xnonwip2 is a non-WIP extension because its wip property is not true.
-		xnonwip2 := createAndGet(t, user.ID, 0, "wiptest5")
+		xnonwip2 := createAndGet(t, user.ID, 0, "wiptest4")
 		_, err = dbReleases{}.Create(ctx, &dbRelease{
 			RegistryExtensionID: xnonwip2.ID,
 			CreatorUserID:       user.ID,
@@ -333,7 +319,7 @@ func TestRegistryExtensions(t *testing.T) {
 		xnonwip2.NonCanonicalIsWorkInProgress = false
 
 		// The non-WIP extension should be sorted first.
-		testList(t, dbExtensionsListOptions{Query: "wiptest", LimitOffset: &database.LimitOffset{Limit: 5}}, []*dbExtension{xnonwip1, xnonwip2, xwip1, xwip2, xwip3})
+		testList(t, dbExtensionsListOptions{Query: "wiptest", LimitOffset: &database.LimitOffset{Limit: 5}}, []*dbExtension{xnonwip1, xnonwip2, xwip1, xwip2})
 	})
 }
 
