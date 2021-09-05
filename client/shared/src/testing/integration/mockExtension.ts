@@ -71,13 +71,10 @@ export function setupExtensionMocking({
             // Mutate mock data objects
             extensionSettings[id] = true
             extensionsResult.extensionRegistry.extensions.nodes.push({
-                id: `TestExtensionID${internalID}`,
                 extensionID: id,
                 manifest: {
                     raw: JSON.stringify(extensionManifest),
                 },
-                url: `/extensions/${id}`,
-                viewerCanAdminister: false,
             })
 
             pollyServer.get(bundleURL).intercept((request, response) => {
