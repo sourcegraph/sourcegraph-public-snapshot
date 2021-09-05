@@ -103,6 +103,7 @@ func httpGet(ctx context.Context, op, urlStr string, result interface{}) (err er
 	if err != nil {
 		return err
 	}
+	defer resp.Body.Close()
 	if v := strings.TrimSpace(resp.Header.Get(MediaTypeHeaderName)); v != MediaType {
 		return &url.Error{Op: op, URL: urlStr, Err: errors.Errorf("not a valid Sourcegraph registry (invalid media type %q, expected %q)", v, MediaType)}
 	}
