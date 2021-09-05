@@ -1,5 +1,5 @@
 import { from, Observable, of } from 'rxjs'
-import { map } from 'rxjs/operators'
+import { map, switchMap } from 'rxjs/operators'
 
 import { gql } from '../graphql/graphql'
 import * as GQL from '../graphql/schema'
@@ -25,14 +25,14 @@ export function queryConfiguredRegistryExtensions(
     }
     const variables: GQL.IExtensionsOnExtensionRegistryArguments = {
         first: extensionIDs.length,
-        prioritizeExtensionIDs: extensionIDs,
+        extensionIDs,
     }
     return from(
         requestGraphQL<GQL.IQuery>({
             request: gql`
-                query Extensions($first: Int!, $prioritizeExtensionIDs: [String!]!) {
+                query Extensions($first: Int!, $extensionIDs: [String!]!) {
                     extensionRegistry {
-                        extensions(first: $first, prioritizeExtensionIDs: $prioritizeExtensionIDs) {
+                        extensions(first: $first, extensionIDs: $extensionIDs) {
                             nodes {
                                 extensionID
                                 manifest {
@@ -47,6 +47,37 @@ export function queryConfiguredRegistryExtensions(
             mightContainPrivateInfo: false,
         })
     ).pipe(
+        switchMap(({ data, errors }) => {
+            // BACKCOMPAT: The `extensionIDs` param to Query.extensionRegistry.extensions was added
+            // in 2021-09 and is not supported by older Sourcegraph instances, so we need to catch
+            // the error and retry using the older (and less-optimized) GraphQL query using the
+            // `prioritizeExtensionIDs` param instead.
+            const hasUnknownArgumentExtensionIDsError = errors?.some(
+                error =>
+                    error.message ===
+                    'Unknown argument "extensionIDs" on field "extensions" of type "ExtensionRegistry".'
+            )
+            return hasUnknownArgumentExtensionIDsError
+                ? requestGraphQL<GQL.IQuery>({
+                      request: gql`
+                          query ExtensionsWithPrioritizeExtensionIDsParam($first: Int!, $extensionIDs: [String!]!) {
+                              extensionRegistry {
+                                  extensions(first: $first, prioritizeExtensionIDs: $extensionIDs) {
+                                      nodes {
+                                          extensionID
+                                          manifest {
+                                              raw
+                                          }
+                                      }
+                                  }
+                              }
+                          }
+                      `,
+                      variables,
+                      mightContainPrivateInfo: false,
+                  })
+                : of({ data, errors })
+        }),
         map(({ data, errors }) => {
             if (!data?.extensionRegistry?.extensions?.nodes) {
                 throw createAggregateError(errors)
@@ -56,7 +87,6 @@ export function queryConfiguredRegistryExtensions(
                 .map<ConfiguredExtension>(({ extensionID, manifest }) => ({
                     id: extensionID,
                     manifest: manifest ? parseExtensionManifestOrError(manifest.raw) : null,
-                    rawManifest: manifest?.raw ?? null,
                 }))
         })
     )

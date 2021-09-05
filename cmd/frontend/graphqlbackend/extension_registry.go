@@ -62,6 +62,7 @@ type RegistryExtensionConnectionArgs struct {
 	Publisher              *graphql.ID
 	Local                  bool
 	Remote                 bool
+	ExtensionIDs           *[]string
 	PrioritizeExtensionIDs *[]string
 }
 

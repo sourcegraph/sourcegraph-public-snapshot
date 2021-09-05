@@ -5824,9 +5824,11 @@ type ExtensionRegistry {
         """
         remote: Boolean = true
         """
+        Returns only extensions with the given IDs.
+        """
+        extensionIDs: [String!]
+        """
         Sorts the list of extension results such that the extensions with these IDs are first in the result set.
-        Typically, the client passes the list of added and enabled extension IDs in this parameter so that the
-        results include those extensions first (which is typically what the user prefers).
         """
         prioritizeExtensionIDs: [String!]
     ): RegistryExtensionConnection!
