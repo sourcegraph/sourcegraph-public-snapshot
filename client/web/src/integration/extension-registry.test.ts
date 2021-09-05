@@ -94,21 +94,15 @@ const registryExtensionNodes: RegistryExtensionFieldsForList[] = [
 const extensionNodes: ExtensionsResult['extensionRegistry']['extensions']['nodes'] = [
     {
         extensionID: 'sourcegraph/typescript',
-        id: 'test-extension-1',
         manifest: {
             raw: typescriptRawManifest,
         },
-        url: '/extensions/sourcegraph/typescript',
-        viewerCanAdminister: false,
     },
     {
         extensionID: 'sqs/word-count',
-        id: 'test-extension-2',
         manifest: {
             raw: wordCountRawManifest,
         },
-        url: '/extensions/sqs/word-count',
-        viewerCanAdminister: false,
     },
 ]
 

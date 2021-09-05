@@ -71,17 +71,11 @@ const codeStatsInsightRawManifest = JSON.stringify({
 const extensionNodes: ExtensionsResult['extensionRegistry']['extensions']['nodes'] = [
     {
         extensionID: 'search-based-insight',
-        id: 'test-search-extension',
         manifest: { raw: searchBasedInsightRawManifest },
-        url: '/extensions/search-based-insight',
-        viewerCanAdminister: false,
     },
     {
         extensionID: 'code-stats-insight',
-        id: 'test-code-stats-extension',
         manifest: { raw: codeStatsInsightRawManifest },
-        url: '/extensions/code-stats-insight',
-        viewerCanAdminister: false,
     },
 ]
 
