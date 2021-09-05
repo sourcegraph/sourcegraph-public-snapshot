@@ -50,7 +50,7 @@ exports[`SignInPage renders sign in page (cloud) 1`] = `
         className="signin-signup-form signin-form test-signin-form rounded p-4 my-3 mt-4"
       >
         <form
-          className=" "
+          className=""
           onInvalid={[Function]}
           onSubmit={[Function]}
         >
@@ -219,7 +219,7 @@ exports[`SignInPage renders sign in page (server) 1`] = `
         className="signin-signup-form signin-form test-signin-form rounded p-4 my-3 mt-4"
       >
         <form
-          className=" "
+          className=""
           onInvalid={[Function]}
           onSubmit={[Function]}
         >

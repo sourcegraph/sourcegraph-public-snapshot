@@ -31,7 +31,7 @@ exports[`SearchStatsPage limitHit 1`] = `
     </h2>
   </header>
   <form
-    className="form "
+    className="form"
     onInvalid={[Function]}
     onSubmit={[Function]}
   >
@@ -99,7 +99,7 @@ exports[`SearchStatsPage renders 1`] = `
     </h2>
   </header>
   <form
-    className="form "
+    className="form"
     onInvalid={[Function]}
     onSubmit={[Function]}
   >
