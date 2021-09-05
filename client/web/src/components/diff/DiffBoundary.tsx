@@ -1,3 +1,4 @@
+import classNames from 'classnames'
 import React from 'react'
 
 import { FileDiffHunkFields } from '../../graphql-operations'
@@ -16,7 +17,7 @@ interface DiffBoundaryContentProps extends DiffBoundaryProps {
 const DiffBoundaryContent: React.FunctionComponent<DiffBoundaryContentProps> = props => (
     <>
         {props.lineNumbers && <td className="diff-boundary__num" colSpan={props.colspan} />}
-        <td className={`diff-boundary__content ${props.contentClassName}`} data-diff-marker=" ">
+        <td className={classNames('diff-boundary__content', props.contentClassName)} data-diff-marker=" ">
             {props.oldRange.lines !== undefined && props.newRange.lines !== undefined && (
                 <code className="diff-hunk__line--code diff-hunk__content">
                     @@ -{props.oldRange.startLine},{props.oldRange.lines} +{props.newRange.startLine},

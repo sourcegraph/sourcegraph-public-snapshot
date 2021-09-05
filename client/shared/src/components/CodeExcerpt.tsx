@@ -1,3 +1,4 @@
+import classNames from 'classnames'
 import { range, isEqual } from 'lodash'
 import ErrorIcon from 'mdi-react/ErrorIcon'
 import React from 'react'
@@ -124,9 +125,11 @@ export class CodeExcerpt extends React.PureComponent<Props, State> {
                 offset={this.visibilitySensorOffset}
             >
                 <code
-                    className={`code-excerpt ${this.props.className || ''}${
-                        isErrorLike(this.state.blobLinesOrError) ? ' code-excerpt-error' : ''
-                    }`}
+                    className={classNames(
+                        'code-excerpt',
+                        this.props.className,
+                        isErrorLike(this.state.blobLinesOrError) && 'code-excerpt-error'
+                    )}
                 >
                     {this.state.blobLinesOrError && !isErrorLike(this.state.blobLinesOrError) && (
                         <div
