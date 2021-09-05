@@ -4,12 +4,7 @@ import { fromFetch } from 'rxjs/fetch'
 import { catchError, distinctUntilChanged, map, publishReplay, refCount, shareReplay, switchMap } from 'rxjs/operators'
 
 import { checkOk } from '../../backend/fetch'
-import {
-    ConfiguredExtension,
-    ConfiguredRegistryExtension,
-    extensionIDsFromSettings,
-    isExtensionEnabled,
-} from '../../extensions/extension'
+import { ConfiguredExtension, extensionIDsFromSettings, isExtensionEnabled } from '../../extensions/extension'
 import { ExtensionManifest } from '../../extensions/extensionManifest'
 import { areExtensionsSame } from '../../extensions/extensions'
 import { queryConfiguredRegistryExtensions } from '../../extensions/helpers'
@@ -23,7 +18,7 @@ import { asError, isErrorLike } from '../../util/errors'
 function viewerConfiguredExtensions({
     settings,
     requestGraphQL,
-}: Pick<PlatformContext, 'settings' | 'requestGraphQL'>): Observable<ConfiguredRegistryExtension[]> {
+}: Pick<PlatformContext, 'settings' | 'requestGraphQL'>): Observable<ConfiguredExtension[]> {
     return from(settings).pipe(
         map(settings => extensionIDsFromSettings(settings)),
         distinctUntilChanged((a, b) => isEqual(a, b)),

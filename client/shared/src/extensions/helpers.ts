@@ -6,7 +6,8 @@ import * as GQL from '../graphql/schema'
 import { PlatformContext } from '../platform/context'
 import { createAggregateError } from '../util/errors'
 
-import { ConfiguredRegistryExtension, toConfiguredRegistryExtension } from './extension'
+import { ConfiguredExtension } from './extension'
+import { parseExtensionManifestOrError } from './extensionManifest'
 
 /**
  * Query the GraphQL API for registry metadata about the extensions given in {@link extensionIDs}.
@@ -18,7 +19,7 @@ export function queryConfiguredRegistryExtensions(
     // with mainThreadAPI.requestGraphQL
     { requestGraphQL }: Pick<PlatformContext, 'requestGraphQL'>,
     extensionIDs: string[]
-): Observable<ConfiguredRegistryExtension[]> {
+): Observable<ConfiguredExtension[]> {
     if (extensionIDs.length === 0) {
         return of([])
     }
@@ -33,13 +34,10 @@ export function queryConfiguredRegistryExtensions(
                     extensionRegistry {
                         extensions(first: $first, prioritizeExtensionIDs: $prioritizeExtensionIDs) {
                             nodes {
-                                id
                                 extensionID
-                                url
                                 manifest {
                                     raw
                                 }
-                                viewerCanAdminister
                             }
                         }
                     }
@@ -53,27 +51,13 @@ export function queryConfiguredRegistryExtensions(
             if (!data?.extensionRegistry?.extensions?.nodes) {
                 throw createAggregateError(errors)
             }
-            return data.extensionRegistry.extensions.nodes.map(
-                ({ id, extensionID, url, manifest, viewerCanAdminister }) => ({
-                    id,
-                    extensionID,
-                    url,
-                    manifest: manifest ? { raw: manifest.raw } : null,
-                    viewerCanAdminister,
-                })
-            )
-        }),
-        map(registryExtensions => {
-            const configuredExtensions: ConfiguredRegistryExtension[] = []
-            for (const extensionID of extensionIDs) {
-                const registryExtension = registryExtensions.find(extension => extension.extensionID === extensionID)
-                configuredExtensions.push(
-                    registryExtension
-                        ? toConfiguredRegistryExtension(registryExtension)
-                        : { id: extensionID, manifest: null, rawManifest: null, registryExtension: undefined }
-                )
-            }
-            return configuredExtensions
+            return data.extensionRegistry.extensions.nodes
+                .filter(({ extensionID }) => extensionIDs.includes(extensionID))
+                .map<ConfiguredExtension>(({ extensionID, manifest }) => ({
+                    id: extensionID,
+                    manifest: manifest ? parseExtensionManifestOrError(manifest.raw) : null,
+                    rawManifest: manifest?.raw ?? null,
+                }))
         })
     )
 }
