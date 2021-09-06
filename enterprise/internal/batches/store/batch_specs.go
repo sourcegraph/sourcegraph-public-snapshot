@@ -2,6 +2,7 @@ package store
 
 import (
 	"context"
+	"database/sql"
 	"encoding/json"
 
 	"github.com/cockroachdb/errors"
@@ -14,9 +15,9 @@ import (
 	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
 )
 
-// batchSpecColumns are used by the batchSpec related Store methods to insert,
+// BatchSpecColumns are used by the batchSpec related Store methods to insert,
 // update and query batch specs.
-var batchSpecColumns = []*sqlf.Query{
+var BatchSpecColumns = []*sqlf.Query{
 	sqlf.Sprintf("batch_specs.id"),
 	sqlf.Sprintf("batch_specs.rand_id"),
 	sqlf.Sprintf("batch_specs.raw_spec"),
@@ -92,7 +93,7 @@ func (s *Store) createBatchSpecQuery(c *btypes.BatchSpec) (*sqlf.Query, error) {
 		nullInt32Column(c.UserID),
 		c.CreatedAt,
 		c.UpdatedAt,
-		sqlf.Join(batchSpecColumns, ", "),
+		sqlf.Join(BatchSpecColumns, ", "),
 	), nil
 }
 
@@ -140,7 +141,7 @@ func (s *Store) updateBatchSpecQuery(c *btypes.BatchSpec) (*sqlf.Query, error) {
 		c.CreatedAt,
 		c.UpdatedAt,
 		c.ID,
-		sqlf.Join(batchSpecColumns, ", "),
+		sqlf.Join(BatchSpecColumns, ", "),
 	), nil
 }
 
@@ -227,7 +228,7 @@ func getBatchSpecQuery(opts *GetBatchSpecOpts) *sqlf.Query {
 
 	return sqlf.Sprintf(
 		getBatchSpecsQueryFmtstr,
-		sqlf.Join(batchSpecColumns, ", "),
+		sqlf.Join(BatchSpecColumns, ", "),
 		sqlf.Join(preds, "\n AND "),
 	)
 }
@@ -295,7 +296,7 @@ func getNewestBatchSpecQuery(opts *GetNewestBatchSpecOpts) *sqlf.Query {
 
 	return sqlf.Sprintf(
 		getNewestBatchSpecQueryFmtstr,
-		sqlf.Join(batchSpecColumns, ", "),
+		sqlf.Join(BatchSpecColumns, ", "),
 		sqlf.Join(preds, "\n AND "),
 	)
 }
@@ -346,7 +347,7 @@ func listBatchSpecsQuery(opts *ListBatchSpecsOpts) *sqlf.Query {
 
 	return sqlf.Sprintf(
 		listBatchSpecsQueryFmtstr+opts.LimitOpts.ToDB(),
-		sqlf.Join(batchSpecColumns, ", "),
+		sqlf.Join(BatchSpecColumns, ", "),
 		sqlf.Join(preds, "\n AND "),
 	)
 }
@@ -406,4 +407,29 @@ func scanBatchSpec(c *btypes.BatchSpec, s scanner) error {
 	c.Spec = &batchSpec
 
 	return nil
+}
+
+func ScanFirstBatchSpec(rows *sql.Rows, err error) (*btypes.BatchSpec, bool, error) {
+	specs, err := scanBatchSpecs(rows, err)
+	if err != nil || len(specs) == 0 {
+		return &btypes.BatchSpec{}, false, err
+	}
+	return specs[0], true, nil
+}
+
+func scanBatchSpecs(rows *sql.Rows, queryErr error) ([]*btypes.BatchSpec, error) {
+	if queryErr != nil {
+		return nil, queryErr
+	}
+
+	var cs []*btypes.BatchSpec
+
+	return cs, scanAll(rows, func(sc scanner) (err error) {
+		var c btypes.BatchSpec
+		if err = scanBatchSpec(&c, sc); err != nil {
+			return err
+		}
+		cs = append(cs, &c)
+		return nil
+	})
 }

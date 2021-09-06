@@ -53,13 +53,14 @@ type BatchSpecWorkspaceJob struct {
 	Path   string
 
 	// workerutil fields
-	State          BatchSpecWorkspaceJobState
-	FailureMessage *string
-	StartedAt      time.Time
-	FinishedAt     time.Time
-	ProcessAfter   time.Time
-	NumResets      int64
-	NumFailures    int64
+	State           BatchSpecWorkspaceJobState
+	FailureMessage  *string
+	StartedAt       time.Time
+	FinishedAt      time.Time
+	ProcessAfter    time.Time
+	NumResets       int64
+	NumFailures     int64
+	LastHeartbeatAt time.Time
 
 	ExecutionLogs  []workerutil.ExecutionLogEntry
 	WorkerHostname string
