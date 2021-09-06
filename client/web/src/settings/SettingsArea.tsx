@@ -1,3 +1,4 @@
+import classNames from 'classnames'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import * as React from 'react'
@@ -165,7 +166,7 @@ export class SettingsArea extends React.Component<Props, State> {
         }
 
         return (
-            <div className={`h-100 d-flex flex-column ${this.props.className || ''}`}>
+            <div className={classNames('h-100 d-flex flex-column', this.props.className)}>
                 <PageHeader headingElement="h2" path={[{ text: `${term} settings` }]} className="mb-3" />
                 {this.props.extraHeader}
                 <Switch>

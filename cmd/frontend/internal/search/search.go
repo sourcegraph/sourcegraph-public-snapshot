@@ -132,11 +132,6 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			sendProgress()
 		}
 	}
-	matchesAppend := func(m streamhttp.EventMatch) {
-		// Only possible error is EOF, ignore
-		_ = matchesBuf.Append(m)
-	}
-
 	flushTicker := time.NewTicker(h.flushTickerInternal)
 	defer flushTicker.Stop()
 
@@ -144,24 +139,7 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	defer pingTicker.Stop()
 
 	first := true
-
-	for {
-		var event streaming.SearchEvent
-		var ok bool
-		select {
-		case event, ok = <-events:
-		case <-flushTicker.C:
-			ok = true
-			matchesFlush()
-		case <-pingTicker.C:
-			ok = true
-			sendProgress()
-		}
-
-		if !ok {
-			break
-		}
-
+	handleEvent := func(event streaming.SearchEvent) {
 		progress.Update(event)
 		filters.Update(event)
 
@@ -178,7 +156,7 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		repoMetadata, err := getEventRepoMetadata(ctx, h.db, event)
 		if err != nil {
 			log15.Error("failed to get repo metadata", "error", err)
-			continue
+			return
 		}
 		for _, match := range event.Results {
 			// Don't send matches which we cannot map to a repo the actor has access to. This
@@ -187,7 +165,7 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			if md, ok := repoMetadata[match.RepoName().ID]; !ok || md.Name != match.RepoName().Name {
 				continue
 			}
-			matchesAppend(fromMatch(match, repoMetadata))
+			_ = matchesBuf.Append(fromMatch(match, repoMetadata))
 		}
 
 		// Instantly send results if we have not sent any yet.
@@ -199,6 +177,22 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 				Observe(time.Since(start).Seconds())
 
 			graphqlbackend.LogSearchLatency(ctx, h.db, &inputs, int32(time.Since(start).Milliseconds()))
+		}
+
+	}
+
+LOOP:
+	for {
+		select {
+		case event, ok := <-events:
+			if !ok {
+				break LOOP
+			}
+			handleEvent(event)
+		case <-flushTicker.C:
+			matchesFlush()
+		case <-pingTicker.C:
+			sendProgress()
 		}
 	}
 

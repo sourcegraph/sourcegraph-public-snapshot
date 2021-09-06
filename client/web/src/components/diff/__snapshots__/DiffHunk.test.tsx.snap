@@ -30,7 +30,7 @@ Array [
     </td>
   </tr>,
   <tr
-    className="diff-hunk__line diff-hunk__line--both   "
+    className="diff-hunk__line diff-hunk__line--both"
   >
     <td
       className="diff-hunk__num"
@@ -76,7 +76,7 @@ Array [
     </td>
   </tr>,
   <tr
-    className="diff-hunk__line diff-hunk__line--both   "
+    className="diff-hunk__line diff-hunk__line--both"
   >
     <td
       className="diff-hunk__num"
@@ -122,7 +122,7 @@ Array [
     </td>
   </tr>,
   <tr
-    className="diff-hunk__line diff-hunk__line--both   "
+    className="diff-hunk__line diff-hunk__line--both"
   >
     <td
       className="diff-hunk__num"
@@ -168,7 +168,7 @@ Array [
     </td>
   </tr>,
   <tr
-    className="diff-hunk__line  diff-hunk__line--deletion  "
+    className="diff-hunk__line diff-hunk__line--deletion"
   >
     <td
       className="diff-hunk__num"
@@ -203,7 +203,7 @@ Array [
     </td>
   </tr>,
   <tr
-    className="diff-hunk__line   diff-hunk__line--addition "
+    className="diff-hunk__line diff-hunk__line--addition"
   >
     <td
       className="diff-hunk__num diff-hunk__num--empty"
@@ -238,7 +238,7 @@ Array [
     </td>
   </tr>,
   <tr
-    className="diff-hunk__line diff-hunk__line--both   "
+    className="diff-hunk__line diff-hunk__line--both"
   >
     <td
       className="diff-hunk__num"
@@ -284,7 +284,7 @@ Array [
     </td>
   </tr>,
   <tr
-    className="diff-hunk__line diff-hunk__line--both   "
+    className="diff-hunk__line diff-hunk__line--both"
   >
     <td
       className="diff-hunk__num"
@@ -330,7 +330,7 @@ Array [
     </td>
   </tr>,
   <tr
-    className="diff-hunk__line diff-hunk__line--both   "
+    className="diff-hunk__line diff-hunk__line--both"
   >
     <td
       className="diff-hunk__num"
@@ -408,7 +408,7 @@ Array [
     </td>
   </tr>,
   <tr
-    className="diff-hunk__line diff-hunk__line--both   "
+    className="diff-hunk__line diff-hunk__line--both"
   >
     <td
       className="diff-hunk__num"
@@ -471,7 +471,7 @@ Array [
     </td>
   </tr>,
   <tr
-    className="diff-hunk__line diff-hunk__line--both   "
+    className="diff-hunk__line diff-hunk__line--both"
   >
     <td
       className="diff-hunk__num"
@@ -517,7 +517,7 @@ Array [
     </td>
   </tr>,
   <tr
-    className="diff-hunk__line diff-hunk__line--both   "
+    className="diff-hunk__line diff-hunk__line--both"
   >
     <td
       className="diff-hunk__num"
@@ -563,7 +563,7 @@ Array [
     </td>
   </tr>,
   <tr
-    className="diff-hunk__line  diff-hunk__line--deletion  "
+    className="diff-hunk__line diff-hunk__line--deletion"
   >
     <td
       className="diff-hunk__num"
@@ -615,7 +615,7 @@ Array [
     </td>
   </tr>,
   <tr
-    className="diff-hunk__line   diff-hunk__line--addition "
+    className="diff-hunk__line diff-hunk__line--addition"
   >
     <td
       className="diff-hunk__num diff-hunk__num--empty"
@@ -650,7 +650,7 @@ Array [
     </td>
   </tr>,
   <tr
-    className="diff-hunk__line diff-hunk__line--both   "
+    className="diff-hunk__line diff-hunk__line--both"
   >
     <td
       className="diff-hunk__num"
@@ -696,7 +696,7 @@ Array [
     </td>
   </tr>,
   <tr
-    className="diff-hunk__line diff-hunk__line--both   "
+    className="diff-hunk__line diff-hunk__line--both"
   >
     <td
       className="diff-hunk__num"
@@ -742,7 +742,7 @@ Array [
     </td>
   </tr>,
   <tr
-    className="diff-hunk__line diff-hunk__line--both   "
+    className="diff-hunk__line diff-hunk__line--both"
   >
     <td
       className="diff-hunk__num"
@@ -820,7 +820,7 @@ Array [
     </td>
   </tr>,
   <tr
-    className="diff-hunk__line diff-hunk__line--both   "
+    className="diff-hunk__line diff-hunk__line--both"
   >
     <td
       className="diff-hunk__num"
@@ -882,7 +882,7 @@ Array [
     </td>
   </tr>,
   <tr
-    className="diff-hunk__line diff-hunk__line--both   "
+    className="diff-hunk__line diff-hunk__line--both"
   >
     <td
       className="diff-hunk__num"
@@ -928,7 +928,7 @@ Array [
     </td>
   </tr>,
   <tr
-    className="diff-hunk__line diff-hunk__line--both   "
+    className="diff-hunk__line diff-hunk__line--both"
   >
     <td
       className="diff-hunk__num"
@@ -974,7 +974,7 @@ Array [
     </td>
   </tr>,
   <tr
-    className="diff-hunk__line  diff-hunk__line--deletion  "
+    className="diff-hunk__line diff-hunk__line--deletion"
   >
     <td
       className="diff-hunk__num"
@@ -1025,7 +1025,7 @@ Array [
     </td>
   </tr>,
   <tr
-    className="diff-hunk__line   diff-hunk__line--addition "
+    className="diff-hunk__line diff-hunk__line--addition"
   >
     <td
       className="diff-hunk__num diff-hunk__num--empty"
@@ -1060,7 +1060,7 @@ Array [
     </td>
   </tr>,
   <tr
-    className="diff-hunk__line diff-hunk__line--both   "
+    className="diff-hunk__line diff-hunk__line--both"
   >
     <td
       className="diff-hunk__num"
@@ -1106,7 +1106,7 @@ Array [
     </td>
   </tr>,
   <tr
-    className="diff-hunk__line diff-hunk__line--both   "
+    className="diff-hunk__line diff-hunk__line--both"
   >
     <td
       className="diff-hunk__num"
@@ -1152,7 +1152,7 @@ Array [
     </td>
   </tr>,
   <tr
-    className="diff-hunk__line diff-hunk__line--both   "
+    className="diff-hunk__line diff-hunk__line--both"
   >
     <td
       className="diff-hunk__num"

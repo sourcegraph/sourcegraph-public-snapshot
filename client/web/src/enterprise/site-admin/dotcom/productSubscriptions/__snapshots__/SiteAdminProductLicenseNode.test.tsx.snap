@@ -37,7 +37,7 @@ exports[`SiteAdminProductLicenseNode active 1`] = `
         )
       </span>
       <div
-        className="d-inline-block mr-3 "
+        className="d-inline-block mr-3"
         data-tooltip="Jan 1, 2021, 12:00:00 AM"
       >
         <strong
@@ -45,7 +45,8 @@ exports[`SiteAdminProductLicenseNode active 1`] = `
         >
           Valid
         </strong>
-         (
+         
+        (
         15 years remaining
         )
       </div>

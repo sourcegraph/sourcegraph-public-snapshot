@@ -1,3 +1,4 @@
+import classNames from 'classnames'
 import { kebabCase } from 'lodash'
 import { MdiReactIconComponentType } from 'mdi-react'
 import CodeArrayIcon from 'mdi-react/CodeArrayIcon'
@@ -103,7 +104,7 @@ export const SymbolIcon: React.FunctionComponent<SymbolIconProps> = ({ kind, cla
     const Icon = getSymbolIconComponent(kind)
     return (
         <Icon
-            className={`symbol-icon symbol-icon--kind-${kebabCase(kind)} ${className}`}
+            className={classNames(`symbol-icon symbol-icon--kind-${kebabCase(kind)}`, className)}
             data-tooltip={kind.toLowerCase()}
         />
     )

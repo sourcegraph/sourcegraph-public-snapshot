@@ -1,3 +1,4 @@
+import classNames from 'classnames'
 import React from 'react'
 import { Link } from 'react-router-dom'
 import { ListGroup, ListGroupItem } from 'reactstrap'
@@ -25,7 +26,7 @@ export interface SiteAdminSidebarProps extends BatchChangesProps {
  * Sidebar for the site admin area.
  */
 export const SiteAdminSidebar: React.FunctionComponent<SiteAdminSidebarProps> = ({ className, groups, ...props }) => (
-    <div className={`site-admin-sidebar ${className}`}>
+    <div className={classNames('site-admin-sidebar', className)}>
         <ListGroup>
             {groups.map(
                 ({ header, items, condition = () => true }, index) =>

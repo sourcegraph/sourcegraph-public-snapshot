@@ -14,6 +14,7 @@ type batchSpecWorkspacesResolver struct {
 	unsupported      map[*types.Repo]struct{}
 	ignored          map[*types.Repo]struct{}
 	workspaces       []*service.RepoWorkspace
+	rawSpec          string
 }
 
 var _ graphqlbackend.BatchSpecWorkspacesResolver = &batchSpecWorkspacesResolver{}
@@ -24,6 +25,10 @@ func (r *batchSpecWorkspacesResolver) AllowIgnored() bool {
 
 func (r *batchSpecWorkspacesResolver) AllowUnsupported() bool {
 	return r.allowUnsupported
+}
+
+func (r *batchSpecWorkspacesResolver) RawSpec() string {
+	return r.rawSpec
 }
 
 func (r *batchSpecWorkspacesResolver) Workspaces() []graphqlbackend.BatchSpecWorkspaceResolver {

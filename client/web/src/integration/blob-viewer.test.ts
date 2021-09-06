@@ -168,6 +168,7 @@ describe('Blob viewer', () => {
                 ...commonBlobGraphQlResults,
                 ViewerSettings: () => ({
                     viewerSettings: {
+                        __typename: 'SettingsCascade',
                         final: JSON.stringify(userSettings),
                         subjects: [
                             {
@@ -218,6 +219,7 @@ describe('Blob viewer', () => {
                 }),
                 Extensions: () => ({
                     extensionRegistry: {
+                        __typename: 'ExtensionRegistry',
                         extensions: {
                             nodes: [
                                 {
@@ -454,6 +456,7 @@ describe('Blob viewer', () => {
                 ...commonBlobGraphQlResults,
                 ViewerSettings: () => ({
                     viewerSettings: {
+                        __typename: 'SettingsCascade',
                         final: JSON.stringify(userSettings),
                         subjects: [
                             {
@@ -506,6 +509,7 @@ describe('Blob viewer', () => {
                 }),
                 Extensions: () => ({
                     extensionRegistry: {
+                        __typename: 'ExtensionRegistry',
                         extensions: {
                             nodes: mockExtensions.map(mockExtension => ({
                                 ...mockExtension,
@@ -716,6 +720,7 @@ describe('Blob viewer', () => {
                     createTreeEntriesResult(repositorySourcegraphUrl, ['README.md', 'test.ts', 'fake.ts']),
                 ViewerSettings: () => ({
                     viewerSettings: {
+                        __typename: 'SettingsCascade',
                         final: JSON.stringify(userSettings),
                         subjects: [
                             {
@@ -771,6 +776,7 @@ describe('Blob viewer', () => {
                 },
                 Extensions: () => ({
                     extensionRegistry: {
+                        __typename: 'ExtensionRegistry',
                         extensions: {
                             nodes: [
                                 {
@@ -890,6 +896,7 @@ describe('Blob viewer', () => {
                 ...commonBlobGraphQlResults,
                 ViewerSettings: () => ({
                     viewerSettings: {
+                        __typename: 'SettingsCascade',
                         final: JSON.stringify(userSettings),
                         subjects: [
                             {
@@ -909,6 +916,7 @@ describe('Blob viewer', () => {
                 }),
                 Extensions: () => ({
                     extensionRegistry: {
+                        __typename: 'ExtensionRegistry',
                         extensions: {
                             nodes: [
                                 {

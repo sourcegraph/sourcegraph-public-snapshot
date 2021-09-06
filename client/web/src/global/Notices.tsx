@@ -1,3 +1,4 @@
+import classNames from 'classnames'
 import * as React from 'react'
 
 import { Markdown } from '@sourcegraph/shared/src/components/Markdown'
@@ -11,11 +12,14 @@ const NoticeAlert: React.FunctionComponent<{ notice: Notice; className?: string 
     const content = <Markdown dangerousInnerHTML={renderMarkdown(notice.message)} />
     const baseClassName = notice.location === 'top' ? 'alert-info' : 'bg-transparent border'
     return notice.dismissible ? (
-        <DismissibleAlert className={`${baseClassName} ${className}`} partialStorageKey={`notice.${notice.message}`}>
+        <DismissibleAlert
+            className={classNames(baseClassName, className)}
+            partialStorageKey={`notice.${notice.message}`}
+        >
             {content}
         </DismissibleAlert>
     ) : (
-        <div className={`alert ${baseClassName} ${className}`}>{content}</div>
+        <div className={classNames('alert', baseClassName, className)}>{content}</div>
     )
 }
 
@@ -50,7 +54,7 @@ export const Notices: React.FunctionComponent<Props> = ({
         return null
     }
     return (
-        <div className={`notices ${className}`}>
+        <div className={classNames('notices', className)}>
             {notices.map((notice, index) => (
                 <NoticeAlert key={index} className={alertClassName} notice={notice} />
             ))}

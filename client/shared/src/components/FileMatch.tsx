@@ -162,6 +162,7 @@ export const FileMatch: React.FunctionComponent<Props> = props => {
     const expandedChildren = <FileMatchChildren {...props} result={result} {...expandedMatchGroups} />
 
     if (result.type === 'content' && result.hunks) {
+        // We should only get here if the new streamed highlight format is sent
         const grouped: MatchGroup[] =
             result.hunks?.map(
                 hunk =>
@@ -182,19 +183,62 @@ export const FileMatch: React.FunctionComponent<Props> = props => {
                     } as MatchGroup)
             ) || []
 
-        // TODO(camdencheek) handle unexpanded
-        const expandedChildren = <FileMatchChildren {...props} result={result} grouped={grouped} />
         const matchCount = grouped.reduce((previous, group) => previous + group.matches.length, 0)
-        containerProps = {
-            // TODO(camdencheek) make this collapsible
-            collapsible: false,
-            defaultExpanded: true,
-            icon: props.icon,
-            title: renderTitle(),
-            description: undefined,
-            expandedChildren,
-            matchCountLabel: `${matchCount} ${pluralize('match', matchCount, 'matches')}`,
-            repoStars: result.repoStars,
+        const matchCountLabel = `${matchCount} ${pluralize('match', matchCount, 'matches')}`
+
+        const { limitedGrouped, limitedMatchCount } = grouped.reduce(
+            (previous, group) => {
+                const remaining = SUBSET_MATCHES_COUNT - previous.limitedMatchCount
+                if (remaining <= 0) {
+                    return previous
+                }
+
+                if (group.matches.length <= remaining) {
+                    // We have room for the whole group
+                    previous.limitedGrouped.push(group)
+                    previous.limitedMatchCount += group.matches.length
+                    return previous
+                }
+
+                const limitedGroup = limitGroup(group, remaining)
+                previous.limitedGrouped.push(limitedGroup)
+                previous.limitedMatchCount += limitedGroup.matches.length
+                return previous
+            },
+            { limitedGrouped: [] as MatchGroup[], limitedMatchCount: 0 }
+        )
+
+        if (props.showAllMatches) {
+            containerProps = {
+                collapsible: false,
+                defaultExpanded: props.expanded,
+                icon: props.icon,
+                title: renderTitle(),
+                description: undefined, // TODO we need badges for the descripiton
+                allExpanded: props.allExpanded,
+                collapsedChildren: <FileMatchChildren {...props} result={result} grouped={limitedGrouped} />,
+                expandedChildren: <FileMatchChildren {...props} result={result} grouped={grouped} />,
+                matchCountLabel,
+                repoStars: result.repoStars,
+                repoLastFetched: result.repoLastFetched,
+            }
+        } else {
+            const hideCount = matchCount - limitedMatchCount
+            containerProps = {
+                collapsible: limitedMatchCount < matchCount,
+                defaultExpanded: props.expanded,
+                icon: props.icon,
+                title: renderTitle(),
+                description: undefined,
+                collapsedChildren: <FileMatchChildren {...props} result={result} grouped={limitedGrouped} />,
+                expandedChildren: <FileMatchChildren {...props} result={result} grouped={grouped} />,
+                collapseLabel: `Hide ${hideCount}`,
+                expandLabel: `${hideCount} more`,
+                allExpanded: props.allExpanded,
+                matchCountLabel,
+                repoStars: result.repoStars,
+                repoLastFetched: result.repoLastFetched,
+            }
         }
     } else if (props.showAllMatches) {
         containerProps = {
@@ -238,4 +282,39 @@ function aggregateBadges(items: MatchItem[]): AggregableBadge[] {
     }
 
     return [...aggregatedBadges.values()].sort((a, b) => a.text.localeCompare(b.text))
+}
+
+export function limitGroup(group: MatchGroup, limit: number): MatchGroup {
+    if (limit < 1 || group.matches.length === 0) {
+        throw new Error('cannot limit a group to less than one match')
+    }
+
+    if (group.matches.length <= limit) {
+        return group
+    }
+
+    // Do a somewhat deep copy of the group so we can mutate it
+    const partialGroup: MatchGroup = {
+        blobLines: [...(group.blobLines || [])],
+        matches: [...group.matches],
+        position: { ...group.position },
+        startLine: group.startLine,
+        endLine: group.endLine,
+    }
+
+    partialGroup.matches = partialGroup.matches.slice(0, limit)
+
+    // Add matches on the same line and next line (context line) as the limited match
+    const [lastMatch] = partialGroup.matches.slice(-1)
+    for (const match of group.matches.slice(limit, undefined)) {
+        if (match.line <= lastMatch.line + 1) {
+            // include an extra context line
+            partialGroup.matches.push(match)
+            continue
+        }
+        break
+    }
+    partialGroup.endLine = lastMatch.line + 2 // include an extra context line
+    partialGroup.blobLines = partialGroup.blobLines?.slice(0, partialGroup.endLine - partialGroup.startLine)
+    return partialGroup
 }

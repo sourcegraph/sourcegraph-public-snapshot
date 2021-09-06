@@ -1,4 +1,5 @@
 /* eslint jsx-a11y/click-events-have-key-events: warn, jsx-a11y/no-noninteractive-element-interactions: warn */
+import classNames from 'classnames'
 import * as React from 'react'
 import { useLocation } from 'react-router'
 import { Link } from 'react-router-dom'
@@ -76,16 +77,15 @@ export const DiffHunk: React.FunctionComponent<DiffHunkProps> = ({
                 return (
                     <tr
                         key={index}
-                        className={`diff-hunk__line ${
-                            line.kind === DiffHunkLineType.UNCHANGED ? 'diff-hunk__line--both' : ''
-                        } ${line.kind === DiffHunkLineType.DELETED ? 'diff-hunk__line--deletion' : ''} ${
-                            line.kind === DiffHunkLineType.ADDED ? 'diff-hunk__line--addition' : ''
-                        } ${
-                            (line.kind !== DiffHunkLineType.ADDED && location.hash === '#' + oldAnchor) ||
-                            (line.kind !== DiffHunkLineType.DELETED && location.hash === '#' + newAnchor)
-                                ? 'diff-hunk__line--active'
-                                : ''
-                        }`}
+                        className={classNames(
+                            'diff-hunk__line',
+                            line.kind === DiffHunkLineType.UNCHANGED && 'diff-hunk__line--both',
+                            line.kind === DiffHunkLineType.DELETED && 'diff-hunk__line--deletion',
+                            line.kind === DiffHunkLineType.ADDED && 'diff-hunk__line--addition',
+                            ((line.kind !== DiffHunkLineType.ADDED && location.hash === '#' + oldAnchor) ||
+                                (line.kind !== DiffHunkLineType.DELETED && location.hash === '#' + newAnchor)) &&
+                                'diff-hunk__line--active'
+                        )}
                     >
                         {lineNumbers && (
                             <>

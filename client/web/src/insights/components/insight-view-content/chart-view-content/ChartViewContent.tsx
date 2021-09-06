@@ -1,4 +1,5 @@
 import { ParentSize } from '@visx/responsive'
+import classNames from 'classnames'
 import React, { FunctionComponent, useCallback } from 'react'
 import { ChartContent } from 'sourcegraph'
 
@@ -57,7 +58,7 @@ export const ChartViewContent: FunctionComponent<ChartViewContentProps> = props 
     )
 
     return (
-        <div className={`chart-view-content ${className}`}>
+        <div className={classNames('chart-view-content', className)}>
             <ParentSize className="chart-view-content__chart">
                 {({ width, height }) => {
                     if (content.chart === 'line') {

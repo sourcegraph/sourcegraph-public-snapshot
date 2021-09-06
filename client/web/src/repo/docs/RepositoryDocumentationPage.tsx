@@ -1,3 +1,4 @@
+import classNames from 'classnames'
 import * as H from 'history'
 import { upperFirst } from 'lodash'
 import BookOpenVariantIcon from 'mdi-react/BookOpenVariantIcon'
@@ -250,9 +251,10 @@ export const RepositoryDocumentationPage: React.FunctionComponent<Props> = React
                     />
                     <div className="repository-docs-page__container" ref={containerReference}>
                         <div
-                            className={`repository-docs-page__container-content${
-                                sidebarVisible ? ' repository-docs-page__container-content--sidebar-visible' : ''
-                            }`}
+                            className={classNames(
+                                'repository-docs-page__container-content',
+                                sidebarVisible && 'repository-docs-page__container-content--sidebar-visible'
+                            )}
                         >
                             {/*
                                 TODO(apidocs): Eventually this welcome alert should go away entirely, but for now

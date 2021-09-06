@@ -160,6 +160,7 @@ export function overrideGraphQLExtensions(props: OverrideGraphQLExtensionsProps)
         }),
         ViewerSettings: () => ({
             viewerSettings: {
+                __typename: 'SettingsCascade',
                 subjects: [
                     {
                         __typename: 'DefaultSettings',
@@ -223,6 +224,7 @@ export function overrideGraphQLExtensions(props: OverrideGraphQLExtensionsProps)
         }),
         Extensions: () => ({
             extensionRegistry: {
+                __typename: 'ExtensionRegistry',
                 extensions: {
                     nodes: extensionNodes,
                 },

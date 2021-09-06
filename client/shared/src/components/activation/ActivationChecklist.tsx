@@ -63,7 +63,7 @@ export const ActivationChecklist: React.FunctionComponent<ActivationChecklistPro
     }
 
     return (
-        <div className={`activation-checklist list-group list-group-flush ${className || ''}`}>
+        <div className={classNames('activation-checklist list-group list-group-flush', className)}>
             <Accordion collapsible={true}>
                 {steps.map(step => (
                     <AccordionItem key={step.id} className="activation-checklist__container list-group-item">

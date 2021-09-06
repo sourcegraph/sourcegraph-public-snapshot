@@ -1,3 +1,4 @@
+import classNames from 'classnames'
 import copy from 'copy-to-clipboard'
 import ContentCopyIcon from 'mdi-react/ContentCopyIcon'
 import * as React from 'react'
@@ -31,7 +32,7 @@ export class CopyableText extends React.PureComponent<Props, State> {
 
     public render(): JSX.Element | null {
         return (
-            <div className={`copyable-text form-inline ${this.props.className || ''}`}>
+            <div className={classNames('copyable-text form-inline', this.props.className)}>
                 <div className="input-group">
                     <input
                         type={this.props.password ? 'password' : 'text'}
