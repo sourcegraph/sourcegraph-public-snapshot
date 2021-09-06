@@ -1,8 +1,10 @@
+import { ApolloClient, NormalizedCacheObject } from '@apollo/client'
+import { once } from 'lodash'
 import { combineLatest, Observable, ReplaySubject } from 'rxjs'
 import { map, switchMap, take } from 'rxjs/operators'
 
 import { isHTTPAuthError } from '@sourcegraph/shared/src/backend/fetch'
-import { GraphQLResult } from '@sourcegraph/shared/src/graphql/graphql'
+import { GraphQLResult, getGraphQLClient } from '@sourcegraph/shared/src/graphql/graphql'
 import * as GQL from '@sourcegraph/shared/src/graphql/schema'
 import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
 import { mutateSettings, updateSettings } from '@sourcegraph/shared/src/settings/edit'
@@ -13,7 +15,8 @@ import { toPrettyBlobURL } from '@sourcegraph/shared/src/util/url'
 
 import { ExtensionStorageSubject } from '../../browser-extension/web-extension-api/ExtensionStorageSubject'
 import { background } from '../../browser-extension/web-extension-api/runtime'
-import { requestGraphQlHelper, getBrowserGraphQLClient } from '../backend/requestGraphQl'
+import { getHeaders } from '../backend/headers'
+import { requestGraphQlHelper } from '../backend/requestGraphQl'
 import { CodeHost } from '../code-hosts/shared/codeHost'
 import { isInPage } from '../context'
 import { observeSourcegraphURL } from '../util/context'
@@ -70,6 +73,15 @@ export function createPlatformContext(
             take(1),
             switchMap(sourcegraphURL => requestGraphQlHelper(isExtension, sourcegraphURL)<T, V>({ request, variables }))
         )
+
+    /**
+     * Memoized Apollo Client getter. It should be executed once to restore the cache from the local storage.
+     * After that, the same instance should be used by all consumers.
+     */
+    const getBrowserGraphQLClient = once(
+        (): Promise<ApolloClient<NormalizedCacheObject>> =>
+            getGraphQLClient({ headers: getHeaders(), baseUrl: sourcegraphURL })
+    )
 
     const context: BrowserPlatformContext = {
         /**

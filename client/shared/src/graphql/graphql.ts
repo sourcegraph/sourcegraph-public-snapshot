@@ -105,14 +105,16 @@ export const graphQLClient = ({ headers }: { headers: RequestInit['headers'] }):
 
 interface GetGraphqlClientOptions {
     headers: RequestInit['headers']
+    baseUrl?: string
 }
 
 export const getGraphQLClient = once(
     async (options: GetGraphqlClientOptions): Promise<ApolloClient<NormalizedCacheObject>> => {
-        const { headers } = options
+        const { headers, baseUrl } = options
+        const uri = baseUrl ? new URL(GRAPHQL_URI, baseUrl).href : GRAPHQL_URI
 
         const apolloClient = new ApolloClient({
-            uri: GRAPHQL_URI,
+            uri,
             cache,
             defaultOptions: {
                 /**
@@ -137,7 +139,7 @@ export const getGraphQLClient = once(
                 },
             },
             link: createHttpLink({
-                uri: ({ operationName }) => `${GRAPHQL_URI}?${operationName}`,
+                uri: ({ operationName }) => `${uri}?${operationName}`,
                 headers,
             }),
         })
