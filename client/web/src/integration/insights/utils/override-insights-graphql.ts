@@ -136,7 +136,7 @@ export function overrideGraphQLExtensions(props: OverrideGraphQLExtensionsProps)
                 final: JSON.stringify({}),
             },
         }),
-        Extensions: () => ({ extensionRegistry: {__typename: 'ExtensionRegistry', extensions: { nodes: [] } } }),
+        Extensions: () => ({ extensionRegistry: { __typename: 'ExtensionRegistry', extensions: { nodes: [] } } }),
         ...overrides,
     })
 }
