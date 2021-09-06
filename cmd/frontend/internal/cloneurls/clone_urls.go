@@ -32,6 +32,15 @@ func ReposourceCloneURLToRepoName(ctx context.Context, db dbutil.DB, cloneURL st
 		return repoName, nil
 	}
 
+	// Fast path for repos we already have in our database
+	name, err := database.Repos(db).GetFirstRepoNamesByCloneURL(ctx, cloneURL)
+	if err != nil {
+		return "", err
+	}
+	if name != "" {
+		return name, nil
+	}
+
 	opt := database.ExternalServicesListOptions{
 		Kinds: []string{
 			extsvc.KindGitHub,
