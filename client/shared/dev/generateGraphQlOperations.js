@@ -53,7 +53,6 @@ async function generateGraphQlOperations() {
         preResolveTypes: true,
         operationResultSuffix: 'Result',
         omitOperationSuffix: true,
-        skipTypename: true,
         namingConvention: {
           typeNames: 'keep',
           enumValues: 'keep',
