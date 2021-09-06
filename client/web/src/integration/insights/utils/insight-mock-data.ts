@@ -1,5 +1,135 @@
 import { View } from 'sourcegraph'
 
+import { BulkSearchCommits } from '../../../graphql-operations';
+
+export const SEARCH_INSIGHT_COMMITS_MOCK: Record<string, BulkSearchCommits> = {
+    'search0': {
+        'results': {
+            'results': [
+                {
+                    'commit': {
+                        'oid': '0b81b624c24f5fc4d53fd10651eb84d67072e74e',
+                        'committer': {
+                            'date': '2009-09-04T05:00:34Z'
+                        }
+                    }
+                }
+            ]
+        }
+    },
+    'search1': {
+        'results': {
+            'results': [
+                {
+                    'commit': {
+                        'oid': '03956c5dde9dcb22a53e7d3f259a0e98dd50704b',
+                        'committer': {
+                            'date': '2011-09-05T19:10:27Z'
+                        }
+                    }
+                }
+            ]
+        }
+    },
+    'search2': {
+        'results': {
+            'results': [
+                {
+                    'commit': {
+                        'oid': '948698c42a2a05b1ebebf3cda5945b0764426f57',
+                        'committer': {
+                            'date': '2013-09-04T22:25:47Z'
+                        }
+                    }
+                }
+            ]
+        }
+    },
+    'search3': {
+        'results': {
+            'results': [
+                {
+                    'commit': {
+                        'oid': 'db37595dc3a4ceb7953dd89b2122a974ff70b311',
+                        'committer': {
+                            'date': '2015-09-05T18:20:08Z'
+                        }
+                    }
+                }
+            ]
+        }
+    },
+    'search4': {
+        'results': {
+            'results': [
+                {
+                    'commit': {
+                        'oid': '4472874fb5fddb44d402f4fdf064149b68dce68c',
+                        'committer': {
+                            'date': '2017-09-05T16:16:25Z'
+                        }
+                    }
+                }
+            ]
+        }
+    },
+    'search5': {
+        'results': {
+            'results': [
+                {
+                    'commit': {
+                        'oid': '6f34ec9377091a1665d554a54bc58812813c7c1a',
+                        'committer': {
+                            'date': '2019-07-09T19:59:43Z'
+                        }
+                    }
+                }
+            ]
+        }
+    },
+    'search6': {
+        'results': {
+            'results': [
+                {
+                    'commit': {
+                        'oid': '6f34ec9377091a1665d554a54bc58812813c7c1a',
+                        'committer': {
+                            'date': '2019-07-09T19:59:43Z'
+                        }
+                    }
+                }
+            ]
+        }
+    }
+}
+
+export const SEARCH_INSIGHT_RESULT_MOCK = {
+    'search0': { 'results': { 'matchCount': 10245 } },
+    'search1': { 'results': { 'matchCount': 16502 } },
+    'search2': { 'results': { 'matchCount': 17207 } },
+    'search3': { 'results': { 'matchCount': 23165 } },
+    'search4': { 'results': { 'matchCount': 24728 } },
+    'search5': { 'results': { 'matchCount': 41029 } },
+    'search6': { 'results': { 'matchCount': 41029 } }
+}
+
+export const CODE_STATS_RESULT_MOCK = {
+    'search': {
+        'results': { 'limitHit': false },
+        'stats': {
+            'languages': [
+                { 'name': 'Go', 'totalLines': 4498 },
+                { 'name': 'JavaScript', 'totalLines': 948 },
+                { 'name': 'Markdown', 'totalLines': 557 },
+                { 'name': 'CSS', 'totalLines': 338 },
+                { 'name': 'HTML', 'totalLines': 48 },
+                { 'name': 'Text', 'totalLines': 21 },
+                { 'name': 'YAML', 'totalLines': 1 }
+            ]
+        }
+    }
+}
+
 /**
  * Mock result data of search based insight extension - team size,
  * See https://github.com/sourcegraph/sourcegraph-search-insights
