@@ -87,9 +87,8 @@ type startedCmd struct {
 }
 
 func (sc *startedCmd) Wait() error {
-	err := sc.Cmd.Wait()
 	sc.outWg.Wait()
-	return err
+	return sc.Cmd.Wait()
 }
 
 func (sc *startedCmd) CapturedStdout() string {
