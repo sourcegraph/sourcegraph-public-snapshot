@@ -209,6 +209,10 @@ type operations struct {
 	getSiteCredential    *observation.Operation
 	listSiteCredentials  *observation.Operation
 	updateSiteCredential *observation.Operation
+
+	createBatchSpecWorkspaceJob *observation.Operation
+	getBatchSpecWorkspaceJob    *observation.Operation
+	listBatchSpecWorkspaceJobs  *observation.Operation
 }
 
 var (
@@ -314,6 +318,10 @@ func newOperations(observationContext *observation.Context) *operations {
 			getSiteCredential:    op("GetSiteCredential"),
 			listSiteCredentials:  op("ListSiteCredentials"),
 			updateSiteCredential: op("UpdateSiteCredential"),
+
+			createBatchSpecWorkspaceJob: op("CreateBatchSpecWorkspaceJob"),
+			getBatchSpecWorkspaceJob:    op("GetBatchSpecWorkspaceJob"),
+			listBatchSpecWorkspaceJobs:  op("ListBatchSpecWorkspaceJobs"),
 		}
 	})
 
