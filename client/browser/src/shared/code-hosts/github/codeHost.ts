@@ -318,9 +318,15 @@ const notificationClassNames = {
     [NotificationType.Error]: 'flash flash-error',
 }
 
+const searchEnhancementViewResolver: ViewResolver<{ element: HTMLElement }> = {
+    selector: '#jump-to-suggestion-search-global',
+    resolveView: element => ({ element }),
+}
+
 export const githubCodeHost: CodeHost = {
     type: 'github',
     name: checkIsGitHubEnterprise() ? 'GitHub Enterprise' : 'GitHub',
+    globalViewResolvers: [searchEnhancementViewResolver],
     codeViewResolvers: [genericCodeViewResolver, fileLineContainerResolver, searchResultCodeViewResolver],
     contentViewResolvers: [markdownBodyViewResolver],
     nativeTooltipResolvers: [nativeTooltipResolver],

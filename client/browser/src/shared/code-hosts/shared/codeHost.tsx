@@ -112,7 +112,7 @@ import {
 } from './nativeTooltips'
 import { resolveRepoNamesForDiffOrFileInfo, defaultRevisionToCommitID } from './util/fileInfo'
 import { ViewOnSourcegraphButtonClassProps, ViewOnSourcegraphButton } from './ViewOnSourcegraphButton'
-import { delayUntilIntersecting, ViewResolver } from './views'
+import { delayUntilIntersecting, trackViews, ViewResolver } from './views'
 
 registerHighlightContributions()
 
@@ -198,6 +198,11 @@ export interface CodeHost extends ApplyLinkPreviewOptions {
      * Resolve {@link CodeView}s from the DOM.
      */
     codeViewResolvers: ViewResolver<CodeView>[]
+
+    /**
+     * TODO: add description
+     */
+    globalViewResolvers?: ViewResolver<{ element: HTMLElement }>[]
 
     /**
      * Resolve {@link ContentView}s from the DOM.
@@ -812,6 +817,61 @@ export function handleCodeHost({
                 )
             })
         )
+    }
+
+    if (codeHost.globalViewResolvers) {
+        // TODO: move to a separate function
+        // TODO: remove when input is filtered
+        const globalViews = mutations
+            .pipe(trackViews(codeHost.globalViewResolvers), observeOn(asyncScheduler))
+            .subscribe(({ element: ghElement }) => {
+                console.log({ ghElement })
+                const SOURCEGRAPH_ITEM_ID = 'jump-to-sourcegraph-search-global'
+
+                const updateContent = (element: HTMLElement): void => {
+                    const value = ghElement.querySelector<HTMLElement>('.jump-to-suggestion-name')?.textContent || ''
+
+                    // Update to reflect search value
+                    const sgValue = element.querySelector<HTMLElement>('.jump-to-suggestion-name') as HTMLElement
+                    sgValue.textContent = value
+                    sgValue.setAttribute('aria-label', value)
+
+                    // Update link url
+                    const sgLink = element.querySelector<HTMLElement>('a') as HTMLLinkElement
+                    sgLink.setAttribute('href', `https://sourcegraph.com//search?q=${encodeURIComponent(value)}`)
+                    sgLink.setAttribute('target', '_blank')
+                }
+
+                let sgElement = document.querySelector<HTMLElement>(`#${SOURCEGRAPH_ITEM_ID}`)
+
+                if (!sgElement) {
+                    // SG Base element on top of GH "All Github" element
+                    const sgNewElement = ghElement.cloneNode(true) as HTMLElement
+                    sgNewElement.id = SOURCEGRAPH_ITEM_ID
+
+                    // Update text
+                    const textTag = sgNewElement.querySelector('.js-jump-to-badge-search-text-global') as HTMLElement
+                    textTag.textContent = 'Sourcegraph'
+
+                    // Add sourcegraph logo
+                    const logo = document.createElement('img')
+                    logo.src = 'https://sourcegraph.com/.assets/img/sourcegraph-mark.svg'
+                    logo.setAttribute('style', 'width: 16px; height: 20px; float: left; margin-right: 2px;')
+                    logo.setAttribute('alt', 'Sourcegraph Logo Image')
+
+                    textTag.parentNode?.insertBefore(logo, textTag)
+
+                    // Add sourcegraph item after GH item
+                    ghElement.parentNode?.insertBefore(sgNewElement, ghElement.nextElementSibling)
+
+                    updateContent(sgNewElement)
+
+                    sgElement = document.querySelector(`#${SOURCEGRAPH_ITEM_ID}`)
+                } else {
+                    updateContent(sgElement)
+                }
+            })
+        subscriptions.add(globalViews)
     }
 
     /** A stream of added or removed code views with the resolved file info */
