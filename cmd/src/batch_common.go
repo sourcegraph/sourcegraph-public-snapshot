@@ -337,7 +337,7 @@ func executeBatchSpec(ctx context.Context, opts executeBatchSpecOpts) (err error
 			opts.ui.UploadingChangesetSpecsProgress(i+1, len(specs))
 		}
 
-		opts.ui.UploadingChangesetSpecsSuccess()
+		opts.ui.UploadingChangesetSpecsSuccess(ids)
 	} else if len(repos) == 0 {
 		opts.ui.NoChangesetSpecs()
 	}

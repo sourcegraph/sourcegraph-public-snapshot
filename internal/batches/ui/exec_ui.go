@@ -16,7 +16,7 @@ type ExecUI interface {
 	ResolvingNamespaceSuccess(namespace string)
 
 	PreparingContainerImages()
-	PreparingContainerImagesProgress(percent float64)
+	PreparingContainerImagesProgress(done, total int)
 	PreparingContainerImagesSuccess()
 
 	DeterminingWorkspaceCreatorType()
@@ -39,7 +39,7 @@ type ExecUI interface {
 	NoChangesetSpecs()
 	UploadingChangesetSpecs(num int)
 	UploadingChangesetSpecsProgress(done, total int)
-	UploadingChangesetSpecsSuccess()
+	UploadingChangesetSpecsSuccess(ids []graphql.ChangesetSpecID)
 
 	CreatingBatchSpec()
 	CreatingBatchSpecSuccess()

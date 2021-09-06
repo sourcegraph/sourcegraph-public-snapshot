@@ -7,6 +7,7 @@ require (
 	github.com/cockroachdb/errors v1.8.6
 	github.com/cockroachdb/redact v1.1.3 // indirect
 	github.com/derision-test/glock v0.0.0-20210316032053-f5b74334bb29
+	github.com/dineshappavoo/basex v0.0.0-20170425072625-481a6f6dc663
 	github.com/dustin/go-humanize v1.0.0
 	github.com/gobwas/glob v0.2.3
 	github.com/google/go-cmp v0.5.6

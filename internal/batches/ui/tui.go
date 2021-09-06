@@ -68,8 +68,8 @@ func (ui *TUI) PreparingContainerImages() {
 	}}, nil)
 }
 
-func (ui *TUI) PreparingContainerImagesProgress(percent float64) {
-	ui.progress.SetValue(0, percent)
+func (ui *TUI) PreparingContainerImagesProgress(done, total int) {
+	ui.progress.SetValue(0, float64(done)/float64(total))
 }
 
 func (ui *TUI) PreparingContainerImagesSuccess() {
@@ -181,7 +181,7 @@ func (ui *TUI) UploadingChangesetSpecsProgress(done, total int) {
 	ui.progress.SetValue(0, float64(done))
 }
 
-func (ui *TUI) UploadingChangesetSpecsSuccess() {
+func (ui *TUI) UploadingChangesetSpecsSuccess(ids []graphql.ChangesetSpecID) {
 	ui.progress.Complete()
 }
 
