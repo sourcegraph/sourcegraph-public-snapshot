@@ -34,36 +34,38 @@ func serveRepoDocs(codeIntelResolver graphqlbackend.CodeIntelResolver) handlerFu
 			if err != nil {
 				return errors.Wrap(err, "GitBlobLSIFData")
 			}
-			documentationPage, err := lsifTreeResolver.DocumentationPage(r.Context(), &graphqlbackend.LSIFDocumentationPageArgs{
-				PathID: path,
-			})
-			if err == nil {
-				treeJSON := []byte(documentationPage.Tree().Value.(string))
-				var tree precise.DocumentationNode
-				if err := json.Unmarshal(treeJSON, &tree); err != nil {
-					return errors.Wrap(err, "Unmarshal")
-				}
-				target := &tree
-				if r.URL.RawQuery != "" {
-					target = findDocumentationNode(&tree, path+"#"+r.URL.RawQuery)
-					if target == nil {
-						target = &tree
+			if lsifTreeResolver != nil {
+				documentationPage, err := lsifTreeResolver.DocumentationPage(r.Context(), &graphqlbackend.LSIFDocumentationPageArgs{
+					PathID: path,
+				})
+				if err == nil {
+					treeJSON := []byte(documentationPage.Tree().Value.(string))
+					var tree precise.DocumentationNode
+					if err := json.Unmarshal(treeJSON, &tree); err != nil {
+						return errors.Wrap(err, "Unmarshal")
 					}
+					target := &tree
+					if r.URL.RawQuery != "" {
+						target = findDocumentationNode(&tree, path+"#"+r.URL.RawQuery)
+						if target == nil {
+							target = &tree
+						}
+					}
+					title := markdownToDescriptionText(target.Label.String())
+					if len(title) > 40 {
+						title = title[:39] + "…"
+					}
+					common.Title = title
+					common.Metadata.ShowPreview = true
+					common.Metadata.Title = title
+					desc := markdownToDescriptionText(target.Detail.String())
+					desc = strings.Replace(desc, "\n", " ", -1)
+					desc = strings.Replace(desc, "\t", " ", -1)
+					if len(desc) > 200 {
+						desc = desc[:199] + "…"
+					}
+					common.Metadata.Description = desc
 				}
-				title := markdownToDescriptionText(target.Label.String())
-				if len(title) > 40 {
-					title = title[:39] + "…"
-				}
-				common.Title = title
-				common.Metadata.ShowPreview = true
-				common.Metadata.Title = title
-				desc := markdownToDescriptionText(target.Detail.String())
-				desc = strings.Replace(desc, "\n", " ", -1)
-				desc = strings.Replace(desc, "\t", " ", -1)
-				if len(desc) > 200 {
-					desc = desc[:199] + "…"
-				}
-				common.Metadata.Description = desc
 			}
 		}
 
