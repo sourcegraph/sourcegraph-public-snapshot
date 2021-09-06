@@ -364,7 +364,7 @@ func TestService_FindDirectoriesInRepos(t *testing.T) {
 
 	want := map[*graphql.Repository][]string{
 		repos[0]: {"examples/project3", "project1", "project2"},
-		repos[1]: {"docs/client1", ".", "docs/client2/examples"},
+		repos[1]: {"docs/client1", "", "docs/client2/examples"},
 	}
 
 	if !cmp.Equal(want, results, cmpopts.SortSlices(sortStrings)) {

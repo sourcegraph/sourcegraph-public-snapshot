@@ -681,11 +681,16 @@ func (svc *Service) FindDirectoriesInRepos(ctx context.Context, fileName string,
 
 			var dirs []string
 			for f := range files {
+				dir := path.Dir(f)
+				// "." means the path is root, but in the executor we use "" to signify root.
+				if dir == "." {
+					dir = ""
+				}
 				// We use path.Dir and not filepath.Dir here, because while
 				// src-cli might be executed on Windows, we need the paths to
 				// be Unix paths, since they will be used inside Docker
 				// containers.
-				dirs = append(dirs, path.Dir(f))
+				dirs = append(dirs, dir)
 			}
 
 			results[repo] = dirs

@@ -14,32 +14,21 @@ func buildTasks(ctx context.Context, spec *batcheslib.BatchSpec, workspaces []Re
 	tasks := make([]*executor.Task, 0, len(workspaces))
 
 	for _, ws := range workspaces {
-		tasks = append(tasks, buildTask(spec, ws))
+		task := &executor.Task{
+			Repository:         ws.Repo,
+			Path:               ws.Path,
+			Steps:              ws.Steps,
+			OnlyFetchWorkspace: ws.OnlyFetchWorkspace,
+
+			TransformChanges: spec.TransformChanges,
+			Template:         spec.ChangesetTemplate,
+			BatchChangeAttributes: &template.BatchChangeAttributes{
+				Name:        spec.Name,
+				Description: spec.Description,
+			},
+		}
+		tasks = append(tasks, task)
 	}
 
 	return tasks
-}
-
-func buildTask(spec *batcheslib.BatchSpec, workspace RepoWorkspace) *executor.Task {
-	batchChange := template.BatchChangeAttributes{
-		Name:        spec.Name,
-		Description: spec.Description,
-	}
-
-	// "." means the path is root, but in the executor we use "" to signify root.
-	path := workspace.Path
-	if path == "." {
-		path = ""
-	}
-
-	return &executor.Task{
-		Repository:         workspace.Repo,
-		Path:               path,
-		Steps:              workspace.Steps,
-		OnlyFetchWorkspace: workspace.OnlyFetchWorkspace,
-
-		TransformChanges:      spec.TransformChanges,
-		Template:              spec.ChangesetTemplate,
-		BatchChangeAttributes: &batchChange,
-	}
 }
