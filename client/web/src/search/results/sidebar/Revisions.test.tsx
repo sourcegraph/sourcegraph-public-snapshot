@@ -1,4 +1,4 @@
-import { cleanup, within, fireEvent, act, RenderResult } from '@testing-library/react'
+import { cleanup, within, fireEvent } from '@testing-library/react'
 import React from 'react'
 
 import { MockedTestProvider, waitForNextApolloResponse } from '@sourcegraph/shared/src/testing/apollo'
