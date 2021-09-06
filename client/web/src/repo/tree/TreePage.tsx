@@ -479,30 +479,32 @@ export const TreePage: React.FunctionComponent<Props> = ({
                                 />
                             )}
                         </header>
-                        <ViewGrid
-                            viewIds={allViewIds}
-                            telemetryService={props.telemetryService}
-                            className="tree-page__section mb-3"
-                        >
-                            {/* Render extension views for the directory page */}
-                            {extensionView.map(view => (
-                                <StaticView key={view.id} view={view} telemetryService={props.telemetryService} />
-                            ))}
-
-                            {/* Render all code insights with proper directory page context */}
-                            {directoryPageContext &&
-                                insights.map(insight => (
-                                    <SmartInsight
-                                        key={insight.id}
-                                        insight={insight}
-                                        telemetryService={props.telemetryService}
-                                        platformContext={props.platformContext}
-                                        settingsCascade={settingsCascade}
-                                        where="directory"
-                                        context={directoryPageContext}
-                                    />
+                        {showCodeInsights && (
+                            <ViewGrid
+                                viewIds={allViewIds}
+                                telemetryService={props.telemetryService}
+                                className="tree-page__section mb-3"
+                            >
+                                {/* Render extension views for the directory page */}
+                                {extensionView.map(view => (
+                                    <StaticView key={view.id} view={view} telemetryService={props.telemetryService} />
                                 ))}
-                        </ViewGrid>
+
+                                {/* Render all code insights with proper directory page context */}
+                                {directoryPageContext &&
+                                    insights.map(insight => (
+                                        <SmartInsight
+                                            key={insight.id}
+                                            insight={insight}
+                                            telemetryService={props.telemetryService}
+                                            platformContext={props.platformContext}
+                                            settingsCascade={settingsCascade}
+                                            where="directory"
+                                            context={directoryPageContext}
+                                        />
+                                    ))}
+                            </ViewGrid>
+                        )}
                         <section className="tree-page__section test-tree-entries mb-3">
                             <h2>Files and directories</h2>
                             <TreeEntriesSection

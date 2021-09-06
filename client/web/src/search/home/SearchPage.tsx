@@ -117,25 +117,27 @@ export const SearchPage: React.FunctionComponent<SearchPageProps> = props => {
                 })}
             >
                 <SearchPageInput {...props} source="home" />
-                <ViewGrid viewIds={allViewIds} telemetryService={props.telemetryService} className="mt-5">
-                    {/* Render extension views for the directory page */}
-                    {extensionViews.map(view => (
-                        <StaticView key={view.id} view={view} telemetryService={props.telemetryService} />
-                    ))}
+                {showCodeInsights && (
+                    <ViewGrid viewIds={allViewIds} telemetryService={props.telemetryService} className="mt-5">
+                        {/* Render extension views for the search page */}
+                        {extensionViews.map(view => (
+                            <StaticView key={view.id} view={view} telemetryService={props.telemetryService} />
+                        ))}
 
-                    {/* Render all code insights with proper directory page context */}
-                    {insights.map(insight => (
-                        <SmartInsight
-                            key={insight.id}
-                            insight={insight}
-                            telemetryService={props.telemetryService}
-                            platformContext={props.platformContext}
-                            settingsCascade={props.settingsCascade}
-                            where="homepage"
-                            context={{}}
-                        />
-                    ))}
-                </ViewGrid>
+                        {/* Render all code insights with proper directory page context */}
+                        {insights.map(insight => (
+                            <SmartInsight
+                                key={insight.id}
+                                insight={insight}
+                                telemetryService={props.telemetryService}
+                                platformContext={props.platformContext}
+                                settingsCascade={props.settingsCascade}
+                                where="homepage"
+                                context={{}}
+                            />
+                        ))}
+                    </ViewGrid>
+                )}
             </div>
             <div className="flex-grow-1">
                 {props.isSourcegraphDotCom &&
