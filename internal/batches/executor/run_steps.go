@@ -313,8 +313,6 @@ func executeSingleStep(
 		cmd.Dir = *dir
 	}
 
-	var stdoutBuffer, stderrBuffer bytes.Buffer
-
 	writerCtx, writerCancel := context.WithCancel(ctx)
 	defer writerCancel()
 	uiStdoutWriter := opts.ui.StepStdoutWriter(writerCtx, opts.task, i)
@@ -324,26 +322,19 @@ func executeSingleStep(
 		uiStderrWriter.Close()
 	}()
 
+	var stdoutBuffer, stderrBuffer bytes.Buffer
 	stdout := io.MultiWriter(&stdoutBuffer, uiStdoutWriter, opts.logger.PrefixWriter("stdout"))
 	stderr := io.MultiWriter(&stderrBuffer, uiStderrWriter, opts.logger.PrefixWriter("stderr"))
 
+	// Setup readers that pipe the output into the given buffers
 	wg, err := process.PipeOutput(cmd, stdout, stderr)
 	if err != nil {
 		return bytes.Buffer{}, bytes.Buffer{}, errors.Wrap(err, "piping process output")
 	}
 
-	opts.logger.Logf("[Step %d] run: %q, container: %q", i+1, step.Run, step.Container)
-	opts.logger.Logf("[Step %d] full command: %q", i+1, strings.Join(cmd.Args, " "))
-
-	t0 := time.Now()
-	err = cmd.Run()
-	wg.Wait()
-	elapsed := time.Since(t0).Round(time.Millisecond)
-	if err != nil {
-		opts.logger.Logf("[Step %d] took %s; error running Docker container: %+v", i+1, elapsed, err)
-
-		return stdoutBuffer, stderrBuffer, stepFailedErr{
-			Err:         err,
+	newStepFailedErr := func(wrappedErr error) stepFailedErr {
+		return stepFailedErr{
+			Err:         wrappedErr,
 			Args:        cmd.Args,
 			Run:         runScript,
 			Container:   step.Container,
@@ -351,6 +342,27 @@ func executeSingleStep(
 			Stdout:      strings.TrimSpace(stdoutBuffer.String()),
 			Stderr:      strings.TrimSpace(stderrBuffer.String()),
 		}
+	}
+
+	opts.logger.Logf("[Step %d] run: %q, container: %q", i+1, step.Run, step.Container)
+	opts.logger.Logf("[Step %d] full command: %q", i+1, strings.Join(cmd.Args, " "))
+
+	// Start the command
+	t0 := time.Now()
+	if err := cmd.Start(); err != nil {
+		opts.logger.Logf("[Step %d] error starting Docker container: %+v", i+1, err)
+		return stdoutBuffer, stderrBuffer, newStepFailedErr(err)
+	}
+
+	// Wait for the readers, because the pipes used by PipeOutput under the
+	// hood are closed when the command exits
+	wg.Wait()
+	// Now wait for the command
+	err = cmd.Wait()
+	elapsed := time.Since(t0).Round(time.Millisecond)
+	if err != nil {
+		opts.logger.Logf("[Step %d] took %s; error running Docker container: %+v", i+1, elapsed, err)
+		return stdoutBuffer, stderrBuffer, newStepFailedErr(err)
 	}
 
 	opts.logger.Logf("[Step %d] complete in %s", i+1, elapsed)
