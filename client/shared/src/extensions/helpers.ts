@@ -6,8 +6,12 @@ import * as GQL from '../graphql/schema'
 import { PlatformContext } from '../platform/context'
 import { createAggregateError } from '../util/errors'
 
-import { ConfiguredExtension } from './extension'
-import { parseExtensionManifestOrError } from './extensionManifest'
+import {
+    ConfiguredExtension,
+    ConfiguredExtensionManifestDefaultFields,
+    CONFIGURED_EXTENSION_DEFAULT_MANIFEST_FIELDS,
+} from './extension'
+import { parseExtensionManifestOrError, ExtensionManifest } from './extensionManifest'
 
 /**
  * Query the GraphQL API for registry metadata about the extensions given in {@link extensionIDs}.
@@ -30,37 +34,41 @@ export function queryConfiguredRegistryExtensions(
     return from(
         requestGraphQL<GQL.IQuery>({
             request: gql`
-                query Extensions($first: Int!, $extensionIDs: [String!]!) {
+                query Extensions($first: Int!, $extensionIDs: [String!]!, $extensionManifestFields: [String!]!) {
                     extensionRegistry {
                         extensions(first: $first, extensionIDs: $extensionIDs) {
                             nodes {
                                 extensionID
                                 manifest {
-                                    raw
+                                    jsonFields(fields: $extensionManifestFields)
                                 }
                             }
                         }
                     }
                 }
             `,
-            variables,
+            variables: { ...variables, extensionManifestFields: CONFIGURED_EXTENSION_DEFAULT_MANIFEST_FIELDS },
             mightContainPrivateInfo: false,
         })
     ).pipe(
         switchMap(({ data, errors }) => {
-            // BACKCOMPAT: The `extensionIDs` param to Query.extensionRegistry.extensions was added
-            // in 2021-09 and is not supported by older Sourcegraph instances, so we need to catch
-            // the error and retry using the older (and less-optimized) GraphQL query using the
-            // `prioritizeExtensionIDs` param instead.
+            // BACKCOMPAT: The `extensionIDs` param to Query.extensionRegistry.extensions and the
+            // ExtensionManifest#jsonFields field were added in 2021-09 and are not supported by
+            // older Sourcegraph instances, so we need to catch the error and retry using the older
+            // (and less-optimized) GraphQL query instead.
             const hasUnknownArgumentExtensionIDsError = errors?.some(
                 error =>
                     error.message ===
-                    'Unknown argument "extensionIDs" on field "extensions" of type "ExtensionRegistry".'
+                        'Unknown argument "extensionIDs" on field "extensions" of type "ExtensionRegistry".' ||
+                    error.message === 'Cannot query field "jsonFields" on type "ExtensionManifest".'
             )
             return hasUnknownArgumentExtensionIDsError
                 ? requestGraphQL<GQL.IQuery>({
                       request: gql`
-                          query ExtensionsWithPrioritizeExtensionIDsParam($first: Int!, $extensionIDs: [String!]!) {
+                          query ExtensionsWithPrioritizeExtensionIDsParamAndNoJSONFields(
+                              $first: Int!
+                              $extensionIDs: [String!]!
+                          ) {
                               extensionRegistry {
                                   extensions(first: $first, prioritizeExtensionIDs: $extensionIDs) {
                                       nodes {
@@ -84,9 +92,12 @@ export function queryConfiguredRegistryExtensions(
             }
             return data.extensionRegistry.extensions.nodes
                 .filter(({ extensionID }) => extensionIDs.includes(extensionID))
-                .map<ConfiguredExtension>(({ extensionID, manifest }) => ({
+                .map(({ extensionID, manifest }) => ({
                     id: extensionID,
-                    manifest: manifest ? parseExtensionManifestOrError(manifest.raw) : null,
+                    manifest: manifest
+                        ? (manifest.jsonFields as Pick<ExtensionManifest, ConfiguredExtensionManifestDefaultFields>) ||
+                          parseExtensionManifestOrError(manifest.raw)
+                        : null,
                 }))
         })
     )

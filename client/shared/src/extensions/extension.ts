@@ -5,9 +5,19 @@ import { asError, ErrorLike, isErrorLike } from '../util/errors'
 import { ExtensionManifest, parseExtensionManifestOrError } from './extensionManifest'
 
 /**
- * Describes a configured extension.
+ * The default fields in the {@link ConfiguredExtension} manifest (i.e., the default value of the
+ * `K` type parameter).
  */
-export interface ConfiguredExtension {
+export const CONFIGURED_EXTENSION_DEFAULT_MANIFEST_FIELDS = ['contributes', 'activationEvents', 'url'] as const
+export type ConfiguredExtensionManifestDefaultFields = typeof CONFIGURED_EXTENSION_DEFAULT_MANIFEST_FIELDS[number]
+
+/**
+ * Describes a configured extension.
+ *
+ * @template K To reduce API surface, by default the manifest only contains the small subset of
+ * extension manifest fields that are needed to execute the extension.
+ */
+export interface ConfiguredExtension<K extends keyof ExtensionManifest = ConfiguredExtensionManifestDefaultFields> {
     /**
      * The extension's extension ID.
      *
@@ -16,7 +26,7 @@ export interface ConfiguredExtension {
     readonly id: string
 
     /** The parsed extension manifest, null if there is none, or a parse error. */
-    readonly manifest: ExtensionManifest | null | ErrorLike
+    readonly manifest: Pick<ExtensionManifest, K> | null | ErrorLike
 }
 
 /**
@@ -30,7 +40,7 @@ export interface ConfiguredRegistryExtension<
         GQL.IRegistryExtension,
         'id' | 'url' | 'viewerCanAdminister'
     >
-> extends ConfiguredExtension {
+> extends ConfiguredExtension<keyof ExtensionManifest> {
     /** The extension's metadata on the registry, if this is a registry extension. */
     readonly registryExtension?: X
 

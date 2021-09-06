@@ -13,8 +13,6 @@ describe('mergeSettingsSchemas', () => {
             mergeSettingsSchemas([
                 {
                     manifest: {
-                        url: '',
-                        activationEvents: [],
                         contributes: {
                             configuration: { additionalProperties: false, properties: { a: { type: 'string' } } },
                         },
@@ -22,8 +20,6 @@ describe('mergeSettingsSchemas', () => {
                 },
                 {
                     manifest: {
-                        url: '',
-                        activationEvents: [],
                         contributes: {
                             configuration: { required: ['b'], properties: { b: { type: 'string' } } },
                         },
@@ -43,8 +39,6 @@ describe('mergeSettingsSchemas', () => {
             mergeSettingsSchemas([
                 {
                     manifest: {
-                        url: '',
-                        activationEvents: [],
                         contributes: {
                             configuration: { additionalProperties: false, properties: { a: { type: 'string' } } },
                         },
@@ -57,10 +51,10 @@ describe('mergeSettingsSchemas', () => {
                     manifest: null,
                 },
                 {
-                    manifest: { url: '', activationEvents: [] },
+                    manifest: {},
                 },
                 {
-                    manifest: { url: '', activationEvents: [], contributes: {} },
+                    manifest: { contributes: {} },
                 },
             ])
         ).toEqual({
