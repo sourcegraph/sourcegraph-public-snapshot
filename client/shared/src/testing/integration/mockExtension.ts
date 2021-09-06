@@ -35,6 +35,12 @@ interface ExtensionMockingUtils {
     extensionSettings: Settings['extensions']
 }
 
+interface ExtensionsResultMock {
+    extensionRegistry: ExtensionsResult['extensionRegistry'] & {
+        __typename: 'ExtensionRegistry'
+    }
+}
+
 /**
  * Set up Sourcegraph extension mocking for an integration test.
  */
@@ -45,8 +51,9 @@ export function setupExtensionMocking({
     let internalID = 0
 
     const extensionSettings: Settings['extensions'] = {}
-    const extensionsResult: ExtensionsResult = {
+    const extensionsResult: ExtensionsResultMock = {
         extensionRegistry: {
+            __typename: 'ExtensionRegistry',
             extensions: {
                 nodes: [],
             },
