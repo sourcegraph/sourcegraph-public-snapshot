@@ -9,9 +9,9 @@ import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing
 import { createWebIntegrationTestContext, WebIntegrationTestContext } from '../context'
 
 import { BACKEND_INSIGHTS } from './utils/insight-mock-data'
-import { overrideGraphQLExtensions } from './utils/override-graphql-with-extensions'
+import { overrideGraphQLExtensions } from './utils/override-insights-graphql'
 
-describe.skip('Backend insight drill down filters', () => {
+describe('Backend insight drill down filters', () => {
     let driver: Driver
     let testContext: WebIntegrationTestContext
 
@@ -185,9 +185,6 @@ describe.skip('Backend insight drill down filters', () => {
                         excludeRepoRegexp: 'github.com/sourcegraph/sourcegraph',
                     },
                 },
-            },
-            extensions: {
-                'sourcegraph/search-insights': true,
             },
         })
     })
