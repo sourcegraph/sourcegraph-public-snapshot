@@ -1,9 +1,7 @@
-import { of, throwError } from 'rxjs'
+import { throwError } from 'rxjs'
 
 import { getBackendInsight } from './api/get-backend-insight'
 import { getBuiltInInsight } from './api/get-built-in-insight'
-import { getCombinedViews } from './api/get-combined-views'
-import { getExtensionViewById } from './api/get-extension-view-by-id'
 import { getLangStatsInsightContent } from './api/get-lang-stats-insight-content'
 import { getRepositorySuggestions } from './api/get-repository-suggestions'
 import { getResolvedSearchRepositories } from './api/get-resolved-search-repositories'
@@ -18,10 +16,8 @@ import { ApiService } from './types'
  */
 export const createInsightAPI = (overrides: Partial<ApiService> = {}): ApiService => ({
     // Insights loading
-    getCombinedViews,
     getBackendInsight,
     getBuiltInInsight,
-    getExtensionViewById,
 
     // Subject operations
     getSubjectSettings,
@@ -42,10 +38,8 @@ export const createInsightAPI = (overrides: Partial<ApiService> = {}): ApiServic
  * storybook stories.
  */
 export const createMockInsightAPI = (overrideRequests: Partial<ApiService>): ApiService => ({
-    getCombinedViews: () => of([]),
     getBackendInsight: () => throwError(new Error('Implement getBackendInsightById handler first')),
     getBuiltInInsight: () => throwError(new Error('Implement getBuiltInInsight handler first')),
-    getExtensionViewById: () => throwError(new Error('Implement getExtensionViewById handler first')),
     getSubjectSettings: () => throwError(new Error('Implement getSubjectSettings handler first')),
     updateSubjectSettings: () => throwError(new Error('Implement getSubjectSettings handler first')),
     getSearchInsightContent: () => Promise.reject(new Error('Implement getSubjectSettings handler first')),

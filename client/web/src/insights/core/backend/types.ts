@@ -1,9 +1,7 @@
-import { Remote } from 'comlink'
 import { Duration } from 'date-fns'
 import { Observable } from 'rxjs'
 import { LineChartContent, PieChartContent } from 'sourcegraph'
 
-import { FlatExtensionHostAPI } from '@sourcegraph/shared/src/api/contract'
 import { ViewContexts, ViewProviderResult } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
 import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
 
@@ -66,19 +64,6 @@ export interface LangStatsInsightsSettings {
 
 export interface ApiService {
     /**
-     * Basic method to get backend and extension based insights together.
-     * Used by the insights page and other non-insights specific consumers
-     * homepage, directory pages.
-     *
-     * @param getExtensionsInsights - extensions based insights getter via extension API.
-     * @param backendInsightsIds - specific dashboard subset of BE-like insight ids.
-     */
-    getCombinedViews: (
-        getExtensionsInsights: () => Observable<ViewProviderResult[]>,
-        backendInsightsIds?: string[]
-    ) => Observable<ViewInsightProviderResult[]>
-
-    /**
      * Returns backend insight (via gql API handler)
      */
     getBackendInsight: (insight: SearchBackendBasedInsight) => Observable<BackendInsightData>
@@ -90,14 +75,6 @@ export interface ApiService {
     getBuiltInInsight: <D extends keyof ViewContexts>(
         insight: ExtensionInsight,
         options: { where: D; context: ViewContexts[D] }
-    ) => Observable<ViewProviderResult>
-
-    /**
-     * Returns resolved extension provider result by extension view id via extension API.
-     */
-    getExtensionViewById: (
-        id: string,
-        extensionApi: Promise<Remote<FlatExtensionHostAPI>>
     ) => Observable<ViewProviderResult>
 
     /**
