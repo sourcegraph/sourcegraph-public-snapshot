@@ -334,8 +334,27 @@ func parseConf(confFile, overwriteFile string) (bool, output.FancyLine) {
 	return true, output.FancyLine{}
 }
 
+var deprecationStyle = output.CombineStyles(output.Fg256Color(255), output.Bg256Color(124))
+
 func runSetExec(ctx context.Context, args []string) error {
-	return errors.New("'sg run-set' is deprecated. Please use 'sg start' instead")
+	stdout.Out.WriteLine(output.Linef("", deprecationStyle, " _______________________________________________________________________ "))
+	stdout.Out.WriteLine(output.Linef("", deprecationStyle, "/         `sg run-set` is deprecated - use `sg start` instead!          \\"))
+	stdout.Out.WriteLine(output.Linef("", deprecationStyle, "!                                                                       !"))
+	stdout.Out.WriteLine(output.Linef("", deprecationStyle, "!         Run `sg start -help` for usage information.                   !"))
+	stdout.Out.WriteLine(output.Linef("", deprecationStyle, "\\_______________________________________________________________________/"))
+	stdout.Out.WriteLine(output.Linef("", deprecationStyle, "                               !  !                                      "))
+	stdout.Out.WriteLine(output.Linef("", deprecationStyle, "                               !  !                                      "))
+	stdout.Out.WriteLine(output.Linef("", deprecationStyle, "                               L_ !                                      "))
+	stdout.Out.WriteLine(output.Linef("", deprecationStyle, "                              / _)!                                      "))
+	stdout.Out.WriteLine(output.Linef("", deprecationStyle, "                             / /__L                                      "))
+	stdout.Out.WriteLine(output.Linef("", deprecationStyle, "                       _____/ (____)                                     "))
+	stdout.Out.WriteLine(output.Linef("", deprecationStyle, "                              (____)                                     "))
+	stdout.Out.WriteLine(output.Linef("", deprecationStyle, "                       _____  (____)                                     "))
+	stdout.Out.WriteLine(output.Linef("", deprecationStyle, "                            \\_(____)                                     "))
+	stdout.Out.WriteLine(output.Linef("", deprecationStyle, "                               !  !                                      "))
+	stdout.Out.WriteLine(output.Linef("", deprecationStyle, "                               !  !                                      "))
+	stdout.Out.WriteLine(output.Linef("", deprecationStyle, "                               \\__/                                      "))
+	return startExec(ctx, args)
 }
 
 // enrichWithLogLevels will add any logger level overrides to a given command if they have been specified.
