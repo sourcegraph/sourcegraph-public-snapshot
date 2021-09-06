@@ -4,8 +4,8 @@
   - [Code Insights team page](https://about.sourcegraph.com/handbook/engineering/web/code-insights)
   - [Code Insights docs](../../../code_insights/index.md)
 - Frontend
-  - [Frontend developer docs](frontend.md)
-  - [Frontend learning materials doc](frontend-learning-materials.md)
+  - [Architecture overview](frontend.md)
+  - [Reading materials](frontend-learning-materials.md)
 - Backend
   - [Backend developer docs](backend.md)
 
