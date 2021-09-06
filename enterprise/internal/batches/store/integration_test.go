@@ -35,6 +35,7 @@ func TestIntegration(t *testing.T) {
 		t.Run("ChangesetJobs", storeTest(db, nil, testStoreChangesetJobs))
 		t.Run("BulkOperations", storeTest(db, nil, testStoreBulkOperations))
 		t.Run("BatchSpecExecutions", storeTest(db, nil, testStoreChangesetSpecExecutions))
+		t.Run("BatchSpecWorkspaceJobs", storeTest(db, nil, testStoreBatchSpecWorkspaceJobs))
 
 		for name, key := range map[string]encryption.Key{
 			"no key":   nil,
