@@ -45,7 +45,7 @@ export const getEnabledExtensions = once(
     (
         context: Pick<
             PlatformContext,
-            'settings' | 'requestGraphQL' | 'sideloadedExtensionURL' | 'getScriptURLForExtension'
+            'settings' | 'requestGraphQL' | 'getGraphQLClient' | 'sideloadedExtensionURL' | 'getScriptURLForExtension'
         >
     ): Observable<ConfiguredExtension[]> => {
         const sideloadedExtension: Observable<ConfiguredExtension | null> = from(context.sideloadedExtensionURL).pipe(
