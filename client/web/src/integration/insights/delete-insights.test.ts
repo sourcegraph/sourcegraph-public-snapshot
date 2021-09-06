@@ -67,9 +67,8 @@ describe('Code insights page', () => {
         overrideGraphQLExtensions({
             testContext,
 
-            // Since search insight and code stats insight are working via user/org
-            // settings. We have to mock them by mocking user settings and provide
-            // mock data - mocking extension work.
+            // Since search insight and code stats insights work via user/org
+            // settings. We have to mock them by mocking user settings cascade.
             userSettings: settings,
             overrides: {
                 // Mock back-end insights with standard gql API handler.
