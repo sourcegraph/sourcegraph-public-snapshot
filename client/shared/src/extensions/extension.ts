@@ -17,9 +17,6 @@ export interface ConfiguredExtension {
 
     /** The parsed extension manifest, null if there is none, or a parse error. */
     readonly manifest: ExtensionManifest | null | ErrorLike
-
-    /** The raw extension manifest (JSON), or null if there is none. */
-    readonly rawManifest: string | null
 }
 
 /**
@@ -36,6 +33,9 @@ export interface ConfiguredRegistryExtension<
 > extends ConfiguredExtension {
     /** The extension's metadata on the registry, if this is a registry extension. */
     readonly registryExtension?: X
+
+    /** The raw extension manifest (JSON), or null if there is none. */
+    readonly rawManifest: string | null
 }
 
 type MinimalRegistryExtension = Pick<GQL.IRegistryExtension, 'extensionID' | 'id' | 'url' | 'viewerCanAdminister'> & {

@@ -52,7 +52,6 @@ export const getConfiguredSideloadedExtension = (baseUrl: string): Observable<Co
                     ...response,
                     url: `${baseUrl}/${response.main.replace('dist/', '')}`,
                 },
-                rawManifest: null,
             })
         )
     )
