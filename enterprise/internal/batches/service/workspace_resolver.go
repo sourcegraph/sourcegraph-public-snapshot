@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"path"
 	"regexp"
 	"sort"
 	"sync"
@@ -225,7 +226,12 @@ func (wr *workspaceResolver) resolveRepositoryName(ctx context.Context, name str
 		return nil, err
 	}
 
-	return repoToRepoRevisionWithDefaultBranch(ctx, repo)
+	return repoToRepoRevisionWithDefaultBranch(
+		ctx,
+		repo,
+		// Directly resolved repos don't have any file matches.
+		[]string{},
+	)
 }
 
 func (wr *workspaceResolver) resolveRepositoryNameAndBranch(ctx context.Context, name, branch string) (_ *RepoRevision, err error) {
@@ -251,6 +257,8 @@ func (wr *workspaceResolver) resolveRepositoryNameAndBranch(ctx context.Context,
 		Repo:   repo,
 		Branch: branch,
 		Commit: commit,
+		// Directly resolved repos don't have any file matches.
+		FileMatches: []string{},
 	}, nil
 }
 
@@ -262,9 +270,19 @@ func (wr *workspaceResolver) resolveRepositoriesMatchingQuery(ctx context.Contex
 	}()
 
 	query = setDefaultQueryCount(query)
-	query = setDefaultQuerySelect(query)
 
 	repoIDs := []api.RepoID{}
+	repoFileMatches := make(map[api.RepoID]map[string]bool)
+	addRepoFilePatch := func(repoID api.RepoID, path string) {
+		repoMap, ok := repoFileMatches[repoID]
+		if !ok {
+			repoMap = make(map[string]bool)
+			repoFileMatches[repoID] = repoMap
+		}
+		if _, ok := repoMap[path]; !ok {
+			repoMap[path] = true
+		}
+	}
 	wr.runSearch(ctx, query, func(matches []streamhttp.EventMatch) {
 		for _, match := range matches {
 			switch m := match.(type) {
@@ -272,10 +290,13 @@ func (wr *workspaceResolver) resolveRepositoriesMatchingQuery(ctx context.Contex
 				repoIDs = append(repoIDs, api.RepoID(m.RepositoryID))
 			case *streamhttp.EventContentMatch:
 				repoIDs = append(repoIDs, api.RepoID(m.RepositoryID))
+				addRepoFilePatch(api.RepoID(m.RepositoryID), m.Path)
 			case *streamhttp.EventPathMatch:
 				repoIDs = append(repoIDs, api.RepoID(m.RepositoryID))
+				addRepoFilePatch(api.RepoID(m.RepositoryID), m.Path)
 			case *streamhttp.EventSymbolMatch:
 				repoIDs = append(repoIDs, api.RepoID(m.RepositoryID))
+				addRepoFilePatch(api.RepoID(m.RepositoryID), m.Path)
 			}
 		}
 	})
@@ -289,7 +310,11 @@ func (wr *workspaceResolver) resolveRepositoriesMatchingQuery(ctx context.Contex
 
 	revs := make([]*RepoRevision, 0, len(accessibleRepos))
 	for _, repo := range accessibleRepos {
-		rev, err := repoToRepoRevisionWithDefaultBranch(ctx, repo)
+		fileMatches := make([]string, 0, len(repoFileMatches[repo.ID]))
+		for path := range repoFileMatches[repo.ID] {
+			fileMatches = append(fileMatches, path)
+		}
+		rev, err := repoToRepoRevisionWithDefaultBranch(ctx, repo, fileMatches)
 		if err != nil {
 			return nil, err
 		}
@@ -331,7 +356,7 @@ func (wr *workspaceResolver) runSearch(ctx context.Context, query string, onMatc
 	return dec.ReadAll(resp.Body)
 }
 
-func repoToRepoRevisionWithDefaultBranch(ctx context.Context, repo *types.Repo) (_ *RepoRevision, err error) {
+func repoToRepoRevisionWithDefaultBranch(ctx context.Context, repo *types.Repo, fileMatches []string) (_ *RepoRevision, err error) {
 	tr, ctx := trace.New(ctx, "repoToRepoRevision", "")
 	defer func() {
 		tr.SetError(err)
@@ -344,9 +369,10 @@ func repoToRepoRevisionWithDefaultBranch(ctx context.Context, repo *types.Repo) 
 	}
 
 	repoRev := &RepoRevision{
-		Repo:   repo,
-		Branch: branch,
-		Commit: commit,
+		Repo:        repo,
+		Branch:      branch,
+		Commit:      commit,
+		FileMatches: fileMatches,
 	}
 	return repoRev, nil
 }
@@ -385,18 +411,6 @@ func setDefaultQueryCount(query string) string {
 	return query + hardCodedCount
 }
 
-var selectRegex = regexp.MustCompile(`\bselect:(.+)\b`)
-
-const hardCodedSelectRepo = " select:repo"
-
-func setDefaultQuerySelect(query string) string {
-	if selectRegex.MatchString(query) {
-		return query
-	}
-
-	return query + hardCodedSelectRepo
-}
-
 // FindDirectoriesInRepos returns a map of repositories and the locations of
 // files matching the given file name in the repository.
 // The locations are paths relative to the root of the directory.
@@ -411,7 +425,18 @@ func (wr *workspaceResolver) FindDirectoriesInRepos(ctx context.Context, fileNam
 			for _, match := range matches {
 				switch m := match.(type) {
 				case (*streamhttp.EventPathMatch):
-					results = append(results, m.Path)
+					// We use path.Dir and not filepath.Dir here, because while
+					// src-cli might be executed on Windows, we need the paths to
+					// be Unix paths, since they will be used inside Docker
+					// containers.
+					dir := path.Dir(m.Path)
+
+					// "." means the path is root, but in the executor we use "" to signify root.
+					if dir == "." {
+						dir = ""
+					}
+
+					results = append(results, dir)
 				}
 			}
 		})
@@ -565,7 +590,11 @@ func findWorkspaces(
 
 	workspaces := make([]*RepoWorkspace, 0, len(workspacesByRepoRev))
 	for _, workspace := range workspacesByRepoRev {
-		steps, err := stepsForRepoRevision(spec, workspace.RepoRevision)
+		steps, err := stepsForRepo(
+			spec,
+			string(workspace.RepoRevision.Repo.Name),
+			workspace.RepoRevision.FileMatches,
+		)
 		if err != nil {
 			return nil, err
 		}
@@ -601,8 +630,8 @@ func findWorkspaces(
 	return workspaces, nil
 }
 
-// stepsForRepoRevision calculates the steps required to run on the given repo.
-func stepsForRepoRevision(spec *batcheslib.BatchSpec, repoRev *RepoRevision) ([]batcheslib.Step, error) {
+// stepsForRepo calculates the steps required to run on the given repo.
+func stepsForRepo(spec *batcheslib.BatchSpec, repoName string, fileMatches []string) ([]batcheslib.Step, error) {
 	taskSteps := []batcheslib.Step{}
 
 	for _, step := range spec.Steps {
@@ -618,9 +647,8 @@ func stepsForRepoRevision(spec *batcheslib.BatchSpec, repoRev *RepoRevision) ([]
 		}
 		stepCtx := &template.StepContext{
 			Repository: template.Repository{
-				Name: string(repoRev.Repo.Name),
-				// TODO: Reimplement.
-				FileMatches: make(map[string]bool),
+				Name:        repoName,
+				FileMatches: fileMatches,
 			},
 			BatchChange: batchChange,
 		}

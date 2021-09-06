@@ -1537,6 +1537,7 @@ func (r *Resolver) ResolveWorkspacesForBatchSpec(ctx context.Context, args *grap
 
 	return &batchSpecWorkspacesResolver{
 		store:            r.store,
+		rawSpec:          args.BatchSpec,
 		allowUnsupported: args.AllowUnsupported,
 		allowIgnored:     args.AllowIgnored,
 		workspaces:       workspaces,

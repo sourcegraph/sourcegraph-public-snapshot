@@ -191,6 +191,7 @@ const PreviewWorkspaces: React.FunctionComponent<{ preview: BatchSpecWorkspacesF
                         <p>
                             {item.repository.name}:{item.branch.abbrevName}@{item.branch.target.oid} Path: {item.path}
                         </p>
+                        <p>{item.searchResultPaths.join(', ')}</p>
                         <ul>
                             {item.steps.map((step, index) => (
                                 <li key={index}>

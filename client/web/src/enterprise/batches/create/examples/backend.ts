@@ -57,6 +57,7 @@ export function resolveWorkspacesForBatchSpec(spec: string): Observable<BatchSpe
                     command
                     container
                 }
+                searchResultPaths
             }
         `,
         { spec }

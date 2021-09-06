@@ -36,6 +36,10 @@ func (r *batchSpecWorkspaceResolver) OnlyFetchWorkspace() bool {
 	return r.node.OnlyFetchWorkspace
 }
 
+func (r *batchSpecWorkspaceResolver) SearchResultPaths() []string {
+	return r.node.FileMatches
+}
+
 func (r *batchSpecWorkspaceResolver) Steps() []graphqlbackend.BatchSpecWorkspaceStepResolver {
 	resolvers := make([]graphqlbackend.BatchSpecWorkspaceStepResolver, 0, len(r.node.Steps))
 	for _, step := range r.node.Steps {
