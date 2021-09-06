@@ -78,7 +78,12 @@ func serveRepoDocs(codeIntelResolver graphqlbackend.CodeIntelResolver) handlerFu
 					if len(desc) > 200 {
 						desc = desc[:199] + "…"
 					}
-					common.Metadata.Description = desc
+					if len(desc) > 0 {
+						runes := []rune(desc)
+						runes[0] = []rune(strings.ToLower(string(runes[0])))[0]
+						desc = string(runes)
+					}
+					common.Metadata.Description = fmt.Sprintf("%s %s API docs & usage examples; %s", repoShortName(common.Repo.Name), target.Documentation.SearchKey, desc)
 				}
 			}
 		}
