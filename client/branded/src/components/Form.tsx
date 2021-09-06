@@ -1,5 +1,5 @@
+import classNames from 'classnames'
 import * as React from 'react'
-import classNames from "classnames";
 
 interface FormProps extends React.DetailedHTMLProps<React.FormHTMLAttributes<HTMLFormElement>, HTMLFormElement> {
     children: React.ReactNode
