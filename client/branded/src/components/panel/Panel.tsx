@@ -310,21 +310,25 @@ export const ResizablePanel: React.FunctionComponent<Props> = props => (
  * Temporary solution to code intel extensions all contributing the same panel actions.
  */
 function transformPanelContributions(contributions: Evaluated<Contributions>): Evaluated<Contributions> {
-    const panelMenuItems = contributions.menus?.['panel/toolbar']
-    if (!panelMenuItems || panelMenuItems.length === 0) {
-        return contributions
-    }
-    // This won't dedup e.g. [{action: 'a', when: 'b'}, {when: 'b', action: 'a'}], but should
-    // work for the case this is hackily trying to prevent: multiple extensions generated with the
-    // same manifest.
-    const strings = new Set(panelMenuItems.map(menuItem => JSON.stringify(menuItem)))
-    const uniquePanelMenuItems = [...strings].map(string => JSON.parse(string))
+    try {
+        const panelMenuItems = contributions.menus?.['panel/toolbar']
+        if (!panelMenuItems || panelMenuItems.length === 0) {
+            return contributions
+        }
+        // This won't dedup e.g. [{action: 'a', when: 'b'}, {when: 'b', action: 'a'}], but should
+        // work for the case this is hackily trying to prevent: multiple extensions generated with the
+        // same manifest.
+        const strings = new Set(panelMenuItems.map(menuItem => JSON.stringify(menuItem)))
+        const uniquePanelMenuItems = [...strings].map(string => JSON.parse(string))
 
-    return {
-        ...contributions,
-        menus: {
-            ...contributions.menus,
-            'panel/toolbar': uniquePanelMenuItems,
-        },
+        return {
+            ...contributions,
+            menus: {
+                ...contributions.menus,
+                'panel/toolbar': uniquePanelMenuItems,
+            },
+        }
+    } catch {
+        return contributions
     }
 }
