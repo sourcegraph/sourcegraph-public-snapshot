@@ -191,10 +191,7 @@ export const GitCommitNode: React.FunctionComponent<GitCommitNodeProps> = ({
 
     const oidElement = <code className="git-commit-node__oid">{node.abbreviatedOID}</code>
     return (
-        <div
-            key={node.id}
-            className={`git-commit-node ${compact ? 'git-commit-node--compact' : ''} ${className || ''}`}
-        >
+        <div key={node.id} className={classNames('git-commit-node', compact && 'git-commit-node--compact', className)}>
             <>
                 {!compact ? (
                     <>
