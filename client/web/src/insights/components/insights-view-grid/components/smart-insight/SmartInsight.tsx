@@ -41,7 +41,7 @@ export function SmartInsight<D extends keyof ViewContexts>(props: SmartInsightPr
         )
     }
 
-    // Search based extension and lang stats insight are handled by built-int fetchers
+    // Search based extension and lang stats insight are handled by built-in fetchers
     return (
         <BuiltInInsight
             insight={insight}
