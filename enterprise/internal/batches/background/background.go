@@ -19,6 +19,7 @@ func Routines(ctx context.Context, batchesStore *store.Store, cf *httpcli.Factor
 	reconcilerWorkerStore := NewReconcilerDBWorkerStore(batchesStore.Handle(), observationContext)
 	bulkProcessorWorkerStore := NewBulkOperationDBWorkerStore(batchesStore.Handle(), observationContext)
 	specExecutionWorkerStore := NewExecutorStore(batchesStore.Handle(), observationContext)
+	batchSpecWorkerStore := NewBatchSpecDBWorkerStore(batchesStore.Handle(), observationContext)
 
 	routines := []goroutine.BackgroundRoutine{
 		newReconcilerWorker(ctx, batchesStore, reconcilerWorkerStore, gitserver.DefaultClient, sourcer, metrics),
@@ -32,6 +33,9 @@ func Routines(ctx context.Context, batchesStore *store.Store, cf *httpcli.Factor
 		newBulkOperationWorkerResetter(bulkProcessorWorkerStore, metrics),
 
 		newBatchSpecExecutionResetter(specExecutionWorkerStore, metrics),
+
+		newBatchSpecWorker(ctx, batchesStore, batchSpecWorkerStore, metrics),
+		newBatchSpecWorkerResetter(batchSpecWorkerStore, metrics),
 	}
 	return routines
 }

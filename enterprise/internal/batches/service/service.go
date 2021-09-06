@@ -139,6 +139,42 @@ func (s *Service) CreateBatchSpec(ctx context.Context, opts CreateBatchSpecOpts)
 	return spec, nil
 }
 
+type EnqueueBatchSpecOpts struct {
+	RawSpec string `json:"raw_spec"`
+
+	NamespaceUserID int32 `json:"namespace_user_id"`
+	NamespaceOrgID  int32 `json:"namespace_org_id"`
+}
+
+// EnqueueBatchSpec creates a pending BatchSpec that will be picked up by a worker in the background.
+func (s *Service) EnqueueBatchSpec(ctx context.Context, opts EnqueueBatchSpecOpts) (spec *btypes.BatchSpec, err error) {
+	actor := actor.FromContext(ctx)
+	tr, ctx := trace.New(ctx, "Service.CreateBatchSpec", fmt.Sprintf("Actor %s", actor))
+	defer func() {
+		tr.SetError(err)
+		tr.Finish()
+	}()
+
+	spec, err = btypes.NewBatchSpecFromRaw(opts.RawSpec)
+	if err != nil {
+		return nil, err
+	}
+
+	// Check whether the current user has access to either one of the namespaces.
+	err = s.CheckNamespaceAccess(ctx, opts.NamespaceUserID, opts.NamespaceOrgID)
+	if err != nil {
+		return nil, err
+	}
+	spec.NamespaceOrgID = opts.NamespaceOrgID
+	spec.NamespaceUserID = opts.NamespaceUserID
+	spec.UserID = actor.UID
+
+	// Set the state to "queued" so that it will be picked up
+	spec.State = btypes.BatchSpecStateQueued
+
+	return spec, s.store.CreateBatchSpec(ctx, spec)
+}
+
 // CreateChangesetSpec validates the given raw spec input and creates the ChangesetSpec.
 func (s *Service) CreateChangesetSpec(ctx context.Context, rawSpec string, userID int32) (spec *btypes.ChangesetSpec, err error) {
 	tr, ctx := trace.New(ctx, "Service.CreateChangesetSpec", fmt.Sprintf("User %d", userID))
