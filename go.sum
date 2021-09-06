@@ -261,8 +261,8 @@ github.com/sourcegraph/go-diff v0.6.1 h1:hmA1LzxW0n1c3Q4YbrFgg4P99GSnebYa3x8gr0H
 github.com/sourcegraph/go-diff v0.6.1/go.mod h1:iBszgVvyxdc8SFZ7gm69go2KDdt3ag071iBaWPF6cjs=
 github.com/sourcegraph/jsonx v0.0.0-20200629203448-1a936bd500cf h1:oAdWFqhStsWiiMP/vkkHiMXqFXzl1XfUNOdxKJbd6bI=
 github.com/sourcegraph/jsonx v0.0.0-20200629203448-1a936bd500cf/go.mod h1:ppFaPm6kpcHnZGqQTFhUIAQRIEhdQDWP1PCv4/ON354=
-github.com/sourcegraph/sourcegraph/lib v0.0.0-20210903080558-3f16affc1edc h1:iMV2Nc/fCn3PrG9vgFgXN2LdY6mDfcGuzQe9ObCT/U4=
-github.com/sourcegraph/sourcegraph/lib v0.0.0-20210903080558-3f16affc1edc/go.mod h1:ZK8mHKWdapYI8iIQwsO7QUxf44RjiNGKkOZa9aYIjTc=
+github.com/sourcegraph/sourcegraph/lib v0.0.0-20210906124104-d18be6b57521 h1:buaBM1YCjWt6+DlXESM5EAmZ+SvlUteXpnyQmGa07HA=
+github.com/sourcegraph/sourcegraph/lib v0.0.0-20210906124104-d18be6b57521/go.mod h1:ZK8mHKWdapYI8iIQwsO7QUxf44RjiNGKkOZa9aYIjTc=
 github.com/sourcegraph/yaml v1.0.1-0.20200714132230-56936252f152 h1:z/MpntplPaW6QW95pzcAR/72Z5TWDyDnSo0EOcyij9o=
 github.com/sourcegraph/yaml v1.0.1-0.20200714132230-56936252f152/go.mod h1:GIjDIg/heH5DOkXY3YJ/wNhfHsQHoXGjl8G8amsYQ1I=
 github.com/spf13/afero v1.1.2/go.mod h1:j4pytiNVoe2o6bmDsKpLACNPDBIoEAkihy7loJ1B0CQ=
