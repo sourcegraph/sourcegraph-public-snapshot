@@ -19,6 +19,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
+	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
 )
 
 // executorStalledJobMaximumAge is the maximum allowable duration between updating the state of a
@@ -154,14 +155,22 @@ func extractBatchSpecRandID(logs []workerutil.ExecutionLogEntry) (string, error)
 
 		jsonPart := l[len(outputLinePrefix):]
 
-		var e srcCLILogLine
+		var e batcheslib.LogEvent
 		if err := json.Unmarshal([]byte(jsonPart), &e); err != nil {
 			// If we can't unmarshal the line as JSON we skip it
 			continue
 		}
 
-		if e.Operation == operationCreatingBatchSpec && e.Status == "SUCCESS" {
-			parts := strings.Split(e.Message, "/")
+		if e.Operation == batcheslib.LogEventOperationCreatingBatchSpec && e.Status == batcheslib.LogEventStatusSuccess {
+			url, ok := e.Metadata["batchSpecURL"]
+			if !ok {
+				return "", ErrNoBatchSpecRandID
+			}
+			urlStr, ok := url.(string)
+			if !ok {
+				return "", ErrNoBatchSpecRandID
+			}
+			parts := strings.Split(urlStr, "/")
 			if len(parts) == 0 {
 				return "", ErrNoBatchSpecRandID
 			}
@@ -178,19 +187,6 @@ func extractBatchSpecRandID(logs []workerutil.ExecutionLogEntry) (string, error)
 
 	return batchSpecRandID, ErrNoBatchSpecRandID
 }
-
-// srcCLILogLine matches the definition of log entries that are printed by
-// src-cli when used with the `-text-only` flag.
-type srcCLILogLine struct {
-	Operation string `json:"operation"` // "PREPARING_DOCKER_IMAGES"
-
-	Timestamp time.Time `json:"timestamp"`
-
-	Status  string `json:"status"`            // "STARTED", "PROGRESS", "SUCCESS", "FAILURE"
-	Message string `json:"message,omitempty"` // "70% done"
-}
-
-const operationCreatingBatchSpec = "CREATING_BATCH_SPEC"
 
 // scanFirstExecutionRecord scans a slice of batch change executions and returns the first.
 func scanFirstExecutionRecord(rows *sql.Rows, err error) (workerutil.Record, bool, error) {
