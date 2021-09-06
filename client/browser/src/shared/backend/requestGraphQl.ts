@@ -1,5 +1,5 @@
 import { ApolloClient, NormalizedCacheObject } from '@apollo/client'
-import { memoize } from 'lodash'
+import { once } from 'lodash'
 import { from } from 'rxjs'
 
 import { requestGraphQLCommon, getGraphQLClient } from '@sourcegraph/shared/src/graphql/graphql'
@@ -38,6 +38,6 @@ export const requestGraphQlHelper = (isExtension: boolean, baseUrl: string) => <
  * Memoized Apollo Client getter. It should be executed once to restore the cache from the local storage.
  * After that, the same instance should be used by all consumers.
  */
-export const getBrowserGraphQLClient = memoize(
+export const getBrowserGraphQLClient = once(
     (): Promise<ApolloClient<NormalizedCacheObject>> => getGraphQLClient({ headers: getHeaders() })
 )

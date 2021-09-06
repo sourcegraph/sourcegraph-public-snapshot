@@ -15,7 +15,7 @@ import {
     QueryTuple,
 } from '@apollo/client'
 import { GraphQLError } from 'graphql'
-import { memoize } from 'lodash'
+import { once } from 'lodash'
 import { useMemo } from 'react'
 import { Observable } from 'rxjs'
 import { fromFetch } from 'rxjs/fetch'
@@ -107,7 +107,7 @@ interface GetGraphqlClientOptions {
     headers: RequestInit['headers']
 }
 
-export const getGraphQLClient = memoize(
+export const getGraphQLClient = once(
     async (options: GetGraphqlClientOptions): Promise<ApolloClient<NormalizedCacheObject>> => {
         const { headers } = options
 
