@@ -13,6 +13,7 @@ import {
     Unsubscribable,
     concat,
     BehaviorSubject,
+    fromEvent,
 } from 'rxjs'
 import {
     catchError,
@@ -823,15 +824,25 @@ export function handleCodeHost({
         // TODO: move to a separate function
         // TODO: remove when input is filtered
         const globalViews = mutations
-            .pipe(trackViews(codeHost.globalViewResolvers), observeOn(asyncScheduler))
-            .subscribe(({ element: ghElement }) => {
-                console.log({ ghElement })
+            .pipe(
+                trackViews(codeHost.globalViewResolvers),
+                observeOn(asyncScheduler),
+                switchMap(({ element }) => fromEvent(element, 'input'))
+            )
+            .subscribe(event => {
+                const ghElement = document.querySelector<HTMLElement>('#jump-to-suggestion-search-global')
+                if (!ghElement) {
+                    return
+                }
+
                 const SOURCEGRAPH_ITEM_ID = 'jump-to-sourcegraph-search-global'
 
                 const updateContent = (element: HTMLElement): void => {
-                    const value = ghElement.querySelector<HTMLElement>('.jump-to-suggestion-name')?.textContent || ''
-
                     // Update to reflect search value
+                    if (!(event.target instanceof HTMLInputElement)) {
+                        return
+                    }
+                    const value = event.target?.value
                     const sgValue = element.querySelector<HTMLElement>('.jump-to-suggestion-name') as HTMLElement
                     sgValue.textContent = value
                     sgValue.setAttribute('aria-label', value)
@@ -840,6 +851,7 @@ export function handleCodeHost({
                     const sgLink = element.querySelector<HTMLElement>('a') as HTMLLinkElement
                     sgLink.setAttribute('href', `https://sourcegraph.com//search?q=${encodeURIComponent(value)}`)
                     sgLink.setAttribute('target', '_blank')
+                    element.setAttribute('style', `display: ${value ? 'initial' : 'none !important'}`)
                 }
 
                 let sgElement = document.querySelector<HTMLElement>(`#${SOURCEGRAPH_ITEM_ID}`)

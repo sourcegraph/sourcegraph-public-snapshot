@@ -319,7 +319,7 @@ const notificationClassNames = {
 }
 
 const searchEnhancementViewResolver: ViewResolver<{ element: HTMLElement }> = {
-    selector: '#jump-to-suggestion-search-global',
+    selector: '.js-site-search-form input[type="text"]',
     resolveView: element => ({ element }),
 }
 
