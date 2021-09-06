@@ -12,78 +12,58 @@ import (
 	"github.com/hashicorp/go-multierror"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/dev/ci/images"
-	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 )
 
 // Config is the set of configuration parameters that determine the structure of the CI build. These
 // parameters are extracted from the build environment (branch name, commit hash, timestamp, etc.)
 type Config struct {
+	// runType indicates what kind of pipeline run should be generated, based on various
+	// bits of metadata
+	runType RunType
+
+	// Build metadata
 	now         time.Time
 	branch      string
 	version     string
 	commit      string
 	buildNumber int
 
-	// mustIncludeCommit, if non-empty, is a list of commits at least one of which must be present
-	// in the branch. If empty, then no check is enforced.
-	mustIncludeCommit []string
-
 	// changedFiles is the list of files that have changed since the
-	// merge-base with origin/master.
-	changedFiles []string
-
-	taggedRelease         bool
-	releaseBranch         bool
-	isBextReleaseBranch   bool
-	isBextNightly         bool
-	isRenovateBranch      bool
-	patch                 bool
-	patchNoTest           bool
-	buildCandidatesNoTest bool
-	isQuick               bool
-	isMainDryRun          bool
-	isBackendDryRun       bool
-	isCodeFreeze          bool
+	// merge-base with origin/main.
+	changedFiles ChangedFiles
 
 	// profilingEnabled, if true, tells buildkite to print timing and resource utilization information
 	// for each command
 	profilingEnabled bool
+
+	// mustIncludeCommit, if non-empty, is a list of commits at least one of which must be present
+	// in the branch. If empty, then no check is enforced.
+	mustIncludeCommit []string
 }
 
 func ComputeConfig() Config {
 	now := time.Now()
 	branch := os.Getenv("BUILDKITE_BRANCH")
-	version := os.Getenv("BUILDKITE_TAG")
+	tag := os.Getenv("BUILDKITE_TAG")
 	commit := os.Getenv("BUILDKITE_COMMIT")
 	if commit == "" {
 		commit = "1234567890123456789012345678901234567890" // for testing
 	}
 	buildNumber, _ := strconv.Atoi(os.Getenv("BUILDKITE_BUILD_NUMBER"))
+	runType := computeRunType(tag, branch)
 
-	taggedRelease := true // true if this is a tagged release
 	switch {
-	case strings.HasPrefix(version, "v"):
+	case runType.is(TaggedRelease):
 		// The Git tag "v1.2.3" should map to the Docker image "1.2.3" (without v prefix).
-		version = strings.TrimPrefix(version, "v")
+		tag = strings.TrimPrefix(tag, "v")
 	default:
-		taggedRelease = false
-		version = fmt.Sprintf("%05d_%s_%.7s", buildNumber, now.Format("2006-01-02"), commit)
+		tag = fmt.Sprintf("%05d_%s_%.7s", buildNumber, now.Format("2006-01-02"), commit)
 	}
 
-	patchNoTest := strings.HasPrefix(branch, "docker-images-patch-notest/")
-	patch := strings.HasPrefix(branch, "docker-images-patch/")
-	if patchNoTest || patch {
-		version = version + "_patch"
+	if runType.is(ImagePatch, ImagePatchNoTest) {
+		// Add additional patch suffix
+		tag = tag + "_patch"
 	}
-	buildCandidatesNoTest := branch == "docker-images-candidates-notest-all"
-
-	isBackendDryRun := strings.HasPrefix(branch, "backend-dry-run/")
-
-	isMainDryRun := strings.HasPrefix(branch, "main-dry-run/") || strings.HasPrefix(branch, "master-dry-run/")
-
-	isQuick := strings.HasPrefix(branch, "quick/")
-
-	profilingEnabled := strings.HasPrefix(branch, "enable-profiling/")
 
 	var mustIncludeCommits []string
 	if rawMustIncludeCommit := os.Getenv("MUST_INCLUDE_COMMIT"); rawMustIncludeCommit != "" {
@@ -101,28 +81,19 @@ func ComputeConfig() Config {
 	}
 
 	return Config{
+		runType: runType,
+
 		now:               now,
 		branch:            branch,
-		version:           version,
+		version:           tag,
 		commit:            commit,
 		mustIncludeCommit: mustIncludeCommits,
 		changedFiles:      changedFiles,
 		buildNumber:       buildNumber,
 
-		taggedRelease:         taggedRelease,
-		releaseBranch:         lazyregexp.New(`^[0-9]+\.[0-9]+$`).MatchString(branch),
-		isBextReleaseBranch:   branch == "bext/release",
-		isRenovateBranch:      strings.HasPrefix(branch, "renovate/"),
-		patch:                 patch,
-		patchNoTest:           patchNoTest,
-		buildCandidatesNoTest: buildCandidatesNoTest,
-		isQuick:               isQuick,
-		isMainDryRun:          isMainDryRun,
-		isBackendDryRun:       isBackendDryRun,
-		profilingEnabled:      profilingEnabled,
-		isBextNightly:         os.Getenv("BEXT_NIGHTLY") == "true",
-		isCodeFreeze:          branch == "release/2021-08-19",
+		profilingEnabled: strings.Contains(branch, "buildkite-enable-profiling"),
 	}
+
 }
 
 func (c Config) shortCommit() string {
@@ -132,10 +103,6 @@ func (c Config) shortCommit() string {
 	}
 
 	return c.commit[:12]
-}
-
-func (c *Config) isMainBranch() bool {
-	return c.branch == "main"
 }
 
 func (c Config) ensureCommit() error {
@@ -160,49 +127,6 @@ func (c Config) ensureCommit() error {
 		return errs
 	}
 	return nil
-}
-
-func (c Config) isPR() bool {
-	return !c.isBextReleaseBranch &&
-		!c.releaseBranch &&
-		!c.taggedRelease &&
-		c.branch != "master" &&
-		!c.isMainBranch() &&
-		!c.isMainDryRun &&
-		!c.patch &&
-		!c.isCodeFreeze
-}
-
-func (c Config) isDocsOnly() bool {
-	for _, p := range c.changedFiles {
-		if !strings.HasPrefix(p, "doc/") && p != "CHANGELOG.md" {
-			return false
-		}
-	}
-	return true
-}
-
-// isSgOnly returns whether the changedFiles are only in the ./dev/sg folder.
-func (c Config) isSgOnly() bool {
-	for _, p := range c.changedFiles {
-		if !strings.HasPrefix(p, "dev/sg/") {
-			return false
-		}
-	}
-	return true
-}
-
-func (c Config) isGoOnly() bool {
-	for _, p := range c.changedFiles {
-		if !strings.HasSuffix(p, ".go") && p != "go.sum" && p != "go.mod" {
-			return false
-		}
-	}
-	return true
-}
-
-func (c Config) shouldRunE2EandQA() bool {
-	return c.releaseBranch || c.taggedRelease || c.isBextReleaseBranch || c.patch || c.isMainBranch() || c.isMainDryRun || c.isCodeFreeze
 }
 
 // candidateImageTag provides the tag for a candidate image built for this Buildkite run.

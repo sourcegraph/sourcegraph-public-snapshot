@@ -12,6 +12,31 @@ import (
 	bk "github.com/sourcegraph/sourcegraph/enterprise/dev/ci/internal/buildkite"
 )
 
+// coreTestOperations is a core set of tests that should be run in most CI cases.
+func coreTestOperations(c Config, buildOptions bk.BuildOptions) []func(*bk.Pipeline) {
+	operations := []func(*bk.Pipeline){
+		triggerAsync(buildOptions), // triggers a slow pipeline, so do it first.
+		addLint,                    // ~4.5m
+		addSharedFrontendTests(c),  // ~4.5m
+		addWebApp,                  // ~3m
+		addBrowserExt,              // ~2m
+		addBrandedTests,            // ~1.5m
+		addGoTests,                 // ~1.5m
+		addCheck,                   // ~1m
+		addGoBuild,                 // ~0.5m
+		addPostgresBackcompat,      // ~0.25m
+		addDockerfileLint,          // ~0.2m
+		wait,                       // wait for all steps to pass
+	}
+	if !c.runType.is(BackendDryRun, MainDryRun, MainBranch) {
+		// Add backend integration tests first because it is slow
+		operations = append([]func(*bk.Pipeline){
+			addBackendIntegrationTests, // ~11m
+		}, operations...)
+	}
+	return operations
+}
+
 // Verifies the docs formatting and builds the `docsite` command.
 func addDocs(pipeline *bk.Pipeline) {
 	pipeline.AddStep(":memo: Check and build docsite",
@@ -93,7 +118,7 @@ func addBrowserExt(pipeline *bk.Pipeline) {
 }
 
 // Adds the shared frontend tests (shared between the web app and browser extension).
-func addSharedTests(c Config) func(pipeline *bk.Pipeline) {
+func addSharedFrontendTests(c Config) func(pipeline *bk.Pipeline) {
 	return func(pipeline *bk.Pipeline) {
 		// Client integration tests
 		pipeline.AddStep(":puppeteer::electric_plug: Puppeteer tests",
@@ -107,10 +132,10 @@ func addSharedTests(c Config) func(pipeline *bk.Pipeline) {
 			bk.Cmd("dev/ci/codecov.sh -c -F typescript -F integration"),
 			bk.ArtifactPaths("./puppeteer/*.png"))
 
-		if c.isMainDryRun || c.isStorybookAffected() {
+		if c.runType.is(MainDryRun) || c.changedFiles.isStorybookAffected() {
 			// Upload storybook to Chromatic
 			chromaticCommand := "yarn chromatic --exit-zero-on-changes --exit-once-uploaded"
-			if c.isMainBranch() {
+			if c.runType.is(MainBranch) {
 				chromaticCommand += " --auto-accept-changes"
 			}
 			pipeline.AddStep(":chromatic: Upload storybook to Chromatic",
@@ -165,21 +190,15 @@ func addDockerfileLint(pipeline *bk.Pipeline) {
 }
 
 // Adds backend integration tests step.
-func addBackendIntegrationTests(c Config) func(*bk.Pipeline) {
-	return func(pipeline *bk.Pipeline) {
-		if !c.isBackendDryRun && !c.isMainDryRun && c.branch != "master" && !c.isMainBranch() {
-			return
-		}
-
-		pipeline.AddStep(":chains: Backend integration tests",
-			bk.Cmd("pushd enterprise"),
-			bk.Cmd("./cmd/server/pre-build.sh"),
-			bk.Cmd("./cmd/server/build.sh"),
-			bk.Cmd("popd"),
-			bk.Cmd("./dev/ci/backend-integration.sh"),
-			bk.Cmd(`docker image rm -f "$IMAGE"`),
-		)
-	}
+func addBackendIntegrationTests(pipeline *bk.Pipeline) {
+	pipeline.AddStep(":chains: Backend integration tests",
+		bk.Cmd("pushd enterprise"),
+		bk.Cmd("./cmd/server/pre-build.sh"),
+		bk.Cmd("./cmd/server/build.sh"),
+		bk.Cmd("popd"),
+		bk.Cmd("./dev/ci/backend-integration.sh"),
+		bk.Cmd(`docker image rm -f "$IMAGE"`),
+	)
 }
 
 func addBrowserExtensionE2ESteps(pipeline *bk.Pipeline) {
@@ -237,40 +256,22 @@ func wait(pipeline *bk.Pipeline) {
 }
 
 // Trigger the async pipeline to run.
-func triggerAsync(c Config) func(*bk.Pipeline) {
-	env := copyEnv(
-		"BUILDKITE_PULL_REQUEST",
-		"BUILDKITE_PULL_REQUEST_BASE_BRANCH",
-		"BUILDKITE_PULL_REQUEST_REPO",
-	)
-
+func triggerAsync(buildOptions bk.BuildOptions) func(*bk.Pipeline) {
 	return func(pipeline *bk.Pipeline) {
-		pipeline.AddTrigger(":snail: Trigger Async",
+		pipeline.AddTrigger(":snail: Trigger async",
 			bk.Trigger("sourcegraph-async"),
 			bk.Async(true),
-			bk.Build(bk.BuildOptions{
-				Message: os.Getenv("BUILDKITE_MESSAGE"),
-				Commit:  c.commit,
-				Branch:  c.branch,
-				Env:     env,
-			}),
+			bk.Build(buildOptions),
 		)
 	}
 }
 
-func triggerUpdaterPipeline(c Config) func(*bk.Pipeline) {
-	if !c.isMainBranch() {
-		// no-op
-		return func(*bk.Pipeline) {}
-	}
-
-	return func(pipeline *bk.Pipeline) {
-		pipeline.AddStep(":github: :date: :k8s: Trigger k8s updates if current commit is tip of 'main'",
-			bk.Cmd(".buildkite/updater/trigger-if-tip-of-main.sh"),
-			bk.Concurrency(1),
-			bk.ConcurrencyGroup("sourcegraph/sourcegraph-k8s-update-trigger"),
-		)
-	}
+func triggerUpdaterPipeline(pipeline *bk.Pipeline) {
+	pipeline.AddStep(":github: :date: :k8s: Trigger k8s updates if current commit is tip of 'main'",
+		bk.Cmd(".buildkite/updater/trigger-if-tip-of-main.sh"),
+		bk.Concurrency(1),
+		bk.ConcurrencyGroup("sourcegraph/sourcegraph-k8s-update-trigger"),
+	)
 }
 
 // images used by cluster-qa test
@@ -285,73 +286,59 @@ func clusterDockerImages(images []string) string {
 	return strings.Join(clusterImages, "\n")
 }
 
-func triggerE2EandQA(c Config, commonEnv map[string]string) func(*bk.Pipeline) {
-	var async bool
-	if c.isMainBranch() {
-		async = true
-	} else {
-		async = false
-	}
+type e2eAndQAOptions struct {
+	candidateImage string
+	buildOptions   bk.BuildOptions
+	async          bool
+}
 
-	env := copyEnv(
-		"BUILDKITE_PULL_REQUEST",
-		"BUILDKITE_PULL_REQUEST_BASE_BRANCH",
-		"BUILDKITE_PULL_REQUEST_REPO",
-	)
-	env["COMMIT_SHA"] = commonEnv["COMMIT_SHA"]
-	env["DATE"] = commonEnv["DATE"]
-	env["VERSION"] = commonEnv["VERSION"]
-	env["CI_DEBUG_PROFILE"] = commonEnv["CI_DEBUG_PROFILE"]
+func triggerE2EandQA(opts e2eAndQAOptions) func(*bk.Pipeline) {
+	customOptions := bk.BuildOptions{
+		Message: opts.buildOptions.Message,
+		Branch:  opts.buildOptions.Branch,
+		Commit:  opts.buildOptions.Commit,
+		Env: copyEnv(opts.buildOptions.Env,
+			"BUILDKITE_PULL_REQUEST",
+			"BUILDKITE_PULL_REQUEST_BASE_BRANCH",
+			"BUILDKITE_PULL_REQUEST_REPO",
+			"COMMIT_SHA",
+			"DATE",
+			"VERSION",
+			"CI_DEBUG_PROFILE",
+		),
+	}
 
 	// Set variables that indicate the tag for 'us.gcr.io/sourcegraph-dev' images built
 	// from this CI run's commit, and credentials to access them.
-	env["CANDIDATE_VERSION"] = c.candidateImageTag()
-	env["VAGRANT_SERVICE_ACCOUNT"] = "buildkite@sourcegraph-ci.iam.gserviceaccount.com"
+	customOptions.Env["CANDIDATE_VERSION"] = opts.candidateImage
+	customOptions.Env["VAGRANT_SERVICE_ACCOUNT"] = "buildkite@sourcegraph-ci.iam.gserviceaccount.com"
 
 	// Test upgrades from mininum upgradeable Sourcegraph version - updated by release tool
-	env["MINIMUM_UPGRADEABLE_VERSION"] = "3.31.1"
+	customOptions.Env["MINIMUM_UPGRADEABLE_VERSION"] = "3.31.1"
 
-	env["DOCKER_CLUSTER_IMAGES_TXT"] = clusterDockerImages(images.SourcegraphDockerImages)
+	// Docker images used in cluster tests
+	customOptions.Env["DOCKER_CLUSTER_IMAGES_TXT"] = clusterDockerImages(images.SourcegraphDockerImages)
 
 	return func(pipeline *bk.Pipeline) {
-		if !c.shouldRunE2EandQA() {
-			return
-		}
-
 		pipeline.AddTrigger(":chromium: Trigger E2E",
 			bk.Trigger("sourcegraph-e2e"),
-			bk.Async(async),
-			bk.Build(bk.BuildOptions{
-				Message: os.Getenv("BUILDKITE_MESSAGE"),
-				Commit:  c.commit,
-				Branch:  c.branch,
-				Env:     env,
-			}),
+			bk.Async(opts.async),
+			bk.Build(customOptions),
 		)
 		pipeline.AddTrigger(":chromium: Trigger QA",
 			bk.Trigger("qa"),
-			bk.Async(async),
-			bk.Build(bk.BuildOptions{
-				Message: os.Getenv("BUILDKITE_MESSAGE"),
-				Commit:  c.commit,
-				Branch:  c.branch,
-				Env:     env,
-			}),
+			bk.Async(opts.async),
+			bk.Build(customOptions),
 		)
 		pipeline.AddTrigger(":chromium: Trigger Code Intel QA",
 			bk.Trigger("code-intel-qa"),
-			bk.Async(async),
-			bk.Build(bk.BuildOptions{
-				Message: os.Getenv("BUILDKITE_MESSAGE"),
-				Commit:  c.commit,
-				Branch:  c.branch,
-				Env:     env,
-			}),
+			bk.Async(opts.async),
+			bk.Build(customOptions),
 		)
 	}
 }
 
-func copyEnv(keys ...string) map[string]string {
+func copyEnv(source map[string]string, keys ...string) map[string]string {
 	m := map[string]string{}
 	for _, k := range keys {
 		if v, ok := os.LookupEnv(k); ok {
@@ -361,56 +348,18 @@ func copyEnv(keys ...string) map[string]string {
 	return m
 }
 
-// Build all relevant Docker images for Sourcegraph (for example, candidates and final
-// images), given the current CI case (e.g., "tagged release", "release branch",
-// "master branch", etc.)
-//
-// Notes:
-//
-// - Publishing of `insiders` implies deployment
-// - See `images.go` for more details on what images get built and where they get published
-func addDockerImages(c Config, final bool) func(*bk.Pipeline) {
-	addDockerImage := func(c Config, app string, insiders bool) func(*bk.Pipeline) {
-		if !final {
-			return addCandidateDockerImage(c, app)
-		}
-		return addFinalDockerImage(c, app, insiders)
-	}
-
-	return func(pipeline *bk.Pipeline) {
-		switch {
-		// build candidate images and deploy `insiders` images
-		case c.isMainBranch():
-			for _, dockerImage := range images.SourcegraphDockerImages {
-				addDockerImage(c, dockerImage, true)(pipeline)
-			}
-
-		// build candidate images but do not deploy `insiders` images
-		case c.taggedRelease || c.isBackendDryRun || c.shouldRunE2EandQA() || c.buildCandidatesNoTest:
-			for _, dockerImage := range images.SourcegraphDockerImages {
-				addDockerImage(c, dockerImage, false)(pipeline)
-			}
-
-		// only build candidate image for the specified image in the branch name
-		// see https://about.sourcegraph.com/handbook/engineering/deployments/testing#building-docker-images-for-a-specific-branch
-		case strings.HasPrefix(c.branch, "docker-images-patch/"):
-			addDockerImage(c, c.branch[20:], false)(pipeline)
-		}
-	}
-}
-
 // Build a candidate docker image that will re-tagged with the final
 // tags once the e2e tests pass.
-func addCandidateDockerImage(c Config, app string) func(*bk.Pipeline) {
+func buildCandidateDockerImage(app, version, tag string) func(*bk.Pipeline) {
 	return func(pipeline *bk.Pipeline) {
 		image := strings.ReplaceAll(app, "/", "-")
-		localImage := "sourcegraph/" + image + ":" + c.version
+		localImage := "sourcegraph/" + image + ":" + version
 
 		cmds := []bk.StepOpt{
 			bk.Cmd(fmt.Sprintf(`echo "Building candidate %s image..."`, app)),
 			bk.Env("DOCKER_BUILDKIT", "1"),
 			bk.Env("IMAGE", localImage),
-			bk.Env("VERSION", c.version),
+			bk.Env("VERSION", version),
 			bk.Cmd("yes | gcloud auth configure-docker"),
 		}
 
@@ -434,53 +383,20 @@ func addCandidateDockerImage(c Config, app string) func(*bk.Pipeline) {
 		}
 
 		devImage := fmt.Sprintf("%s/%s", images.SourcegraphDockerDevRegistry, image)
-		devTag := c.candidateImageTag()
 		cmds = append(cmds,
 			// Retag the local image for dev registry
-			bk.Cmd(fmt.Sprintf("docker tag %s %s:%s", localImage, devImage, devTag)),
+			bk.Cmd(fmt.Sprintf("docker tag %s %s:%s", localImage, devImage, tag)),
 			// Publish tagged image
-			bk.Cmd(fmt.Sprintf("docker push %s:%s", devImage, devTag)),
+			bk.Cmd(fmt.Sprintf("docker push %s:%s", devImage, tag)),
 		)
 
 		pipeline.AddStep(fmt.Sprintf(":docker: :construction: %s", app), cmds...)
 	}
 }
 
-var currentBuildTimestamp = strconv.Itoa(int(time.Now().UTC().Unix()))
-
-func addExecutorPackerStep(c Config, final bool) func(*bk.Pipeline) {
-	return func(pipeline *bk.Pipeline) {
-		if !c.isMainBranch() && !c.isMainDryRun {
-			return
-		}
-
-		if final {
-			if !c.isMainDryRun {
-				cmds := []bk.StepOpt{
-					bk.Cmd(`echo "Releasing executor cloud image..."`),
-					bk.Env("VERSION", c.version),
-					bk.Env("BUILD_TIMESTAMP", currentBuildTimestamp),
-					bk.Cmd("./enterprise/cmd/executor/release.sh"),
-				}
-
-				pipeline.AddStep(":packer: :white_check_mark: executor image", cmds...)
-			}
-		} else {
-			cmds := []bk.StepOpt{
-				bk.Cmd(`echo "Building executor cloud image..."`),
-				bk.Env("VERSION", c.version),
-				bk.Env("BUILD_TIMESTAMP", currentBuildTimestamp),
-				bk.Cmd("./enterprise/cmd/executor/build.sh"),
-			}
-
-			pipeline.AddStep(":packer: :construction: executor image", cmds...)
-		}
-	}
-}
-
 // Tag and push final Docker image for the service defined by `app`
 // after the e2e tests pass.
-func addFinalDockerImage(c Config, app string, insiders bool) func(*bk.Pipeline) {
+func publishFinalDockerImage(c Config, app string, insiders bool) func(*bk.Pipeline) {
 	return func(pipeline *bk.Pipeline) {
 		image := strings.ReplaceAll(app, "/", "-")
 		devImage := fmt.Sprintf("%s/%s", images.SourcegraphDockerDevRegistry, image)
@@ -488,11 +404,11 @@ func addFinalDockerImage(c Config, app string, insiders bool) func(*bk.Pipeline)
 
 		var images []string
 		for _, image := range []string{publishImage, devImage} {
-			if app != "server" || c.taggedRelease || c.patch || c.patchNoTest {
+			if app != "server" || c.runType.is(TaggedRelease, ImagePatch, ImagePatchNoTest) {
 				images = append(images, fmt.Sprintf("%s:%s", image, c.version))
 			}
 
-			if app == "server" && c.releaseBranch {
+			if app == "server" && c.runType.is(ReleaseBranch) {
 				images = append(images, fmt.Sprintf("%s:%s-insiders", image, c.branch))
 			}
 
@@ -520,5 +436,31 @@ func addFinalDockerImage(c Config, app string, insiders bool) func(*bk.Pipeline)
 		cmd := fmt.Sprintf("./dev/ci/docker-publish.sh %s %s", candidateImage, strings.Join(images, " "))
 
 		pipeline.AddStep(fmt.Sprintf(":docker: :white_check_mark: %s", app), bk.Cmd(cmd))
+	}
+}
+
+func buildExecutor(timestamp time.Time, version string) func(*bk.Pipeline) {
+	return func(pipeline *bk.Pipeline) {
+		cmds := []bk.StepOpt{
+			bk.Cmd(`echo "Building executor cloud image..."`),
+			bk.Env("VERSION", version),
+			bk.Env("BUILD_TIMESTAMP", strconv.Itoa(int(timestamp.UTC().Unix()))),
+			bk.Cmd("./enterprise/cmd/executor/build.sh"),
+		}
+
+		pipeline.AddStep(":packer: :construction: executor image", cmds...)
+	}
+}
+
+func publishExecutor(timestamp time.Time, version string) func(*bk.Pipeline) {
+	return func(pipeline *bk.Pipeline) {
+		cmds := []bk.StepOpt{
+			bk.Cmd(`echo "Releasing executor cloud image..."`),
+			bk.Env("VERSION", version),
+			bk.Env("BUILD_TIMESTAMP", strconv.Itoa(int(timestamp.UTC().Unix()))),
+			bk.Cmd("./enterprise/cmd/executor/release.sh"),
+		}
+
+		pipeline.AddStep(":packer: :white_check_mark: executor image", cmds...)
 	}
 }
