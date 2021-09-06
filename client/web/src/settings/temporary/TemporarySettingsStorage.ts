@@ -2,6 +2,8 @@ import { ApolloClient, gql } from '@apollo/client'
 import { Observable, Subject, of, Subscription, from } from 'rxjs'
 import { distinctUntilKeyChanged, map, startWith } from 'rxjs/operators'
 
+import { fromObservableQuery } from '@sourcegraph/shared/src/graphql/fromObservableQuery'
+
 import { AuthenticatedUser } from '../../auth'
 import { GetTemporarySettingsResult } from '../../graphql-operations'
 
@@ -124,32 +126,24 @@ class ServersideSettingsBackend implements SettingsBackend {
     constructor(private apolloClient: ApolloClient<object>) {}
 
     public load(): Observable<TemporarySettings> {
-        return new Observable<TemporarySettings>(observer => {
-            const subscription = this.apolloClient
-                .watchQuery<GetTemporarySettingsResult>({ query: this.GetTemporarySettingsQuery })
-                .subscribe({
-                    next: result => {
-                        let parsedSettings: TemporarySettings = {}
-                        try {
-                            const settings = result.data.temporarySettings.contents
-                            parsedSettings = JSON.parse(settings) as TemporarySettings
-                        } catch (error: unknown) {
-                            console.error(error)
-                        }
-
-                        observer.next(parsedSettings || {})
-                    },
-                    error: error => {
-                        console.error(error)
-                        observer.error(error)
-                    },
-                    complete: () => {
-                        observer.complete()
-                    },
-                })
-
-            return () => subscription.unsubscribe()
+        const temporarySettingsQuery = this.apolloClient.watchQuery<GetTemporarySettingsResult>({
+            query: this.GetTemporarySettingsQuery,
         })
+
+        return fromObservableQuery(temporarySettingsQuery).pipe(
+            map(({ data }) => {
+                let parsedSettings: TemporarySettings = {}
+
+                try {
+                    const settings = data.temporarySettings.contents
+                    parsedSettings = JSON.parse(settings) as TemporarySettings
+                } catch (error: unknown) {
+                    console.error(error)
+                }
+
+                return parsedSettings || {}
+            })
+        )
     }
 
     public save(settings: TemporarySettings): Observable<void> {
