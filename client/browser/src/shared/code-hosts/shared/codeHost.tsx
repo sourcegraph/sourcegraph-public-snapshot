@@ -201,9 +201,14 @@ export interface CodeHost extends ApplyLinkPreviewOptions {
     codeViewResolvers: ViewResolver<CodeView>[]
 
     /**
-     * TODO: add description
+     * Configuration for built-in search input enhancement
      */
-    globalViewResolvers?: ViewResolver<{ element: HTMLElement }>[]
+    searchEnhancement?: {
+        /** Input element resolver */
+        viewResolver: ViewResolver<{ element: HTMLElement }>
+        /** Callback to trigger on input element change */
+        onChange: (value: string) => void
+    }
 
     /**
      * Resolve {@link ContentView}s from the DOM.
@@ -820,70 +825,17 @@ export function handleCodeHost({
         )
     }
 
-    if (codeHost.globalViewResolvers) {
-        // TODO: move to a separate function
-        // TODO: remove when input is filtered
-        const globalViews = mutations
+    if (codeHost.searchEnhancement) {
+        const { viewResolver, onChange } = codeHost.searchEnhancement
+        const searchEnhancementSubscription = mutations
             .pipe(
-                trackViews(codeHost.globalViewResolvers),
-                observeOn(asyncScheduler),
-                switchMap(({ element }) => fromEvent(element, 'input'))
+                trackViews([viewResolver]),
+                switchMap(({ element }) => fromEvent(element, 'input')),
+                map(event => (event.target as HTMLInputElement).value),
+                observeOn(asyncScheduler)
             )
-            .subscribe(event => {
-                const ghElement = document.querySelector<HTMLElement>('#jump-to-suggestion-search-global')
-                if (!ghElement) {
-                    return
-                }
-
-                const SOURCEGRAPH_ITEM_ID = 'jump-to-sourcegraph-search-global'
-
-                const updateContent = (element: HTMLElement): void => {
-                    // Update to reflect search value
-                    if (!(event.target instanceof HTMLInputElement)) {
-                        return
-                    }
-                    const value = event.target?.value
-                    const sgValue = element.querySelector<HTMLElement>('.jump-to-suggestion-name') as HTMLElement
-                    sgValue.textContent = value
-                    sgValue.setAttribute('aria-label', value)
-
-                    // Update link url
-                    const sgLink = element.querySelector<HTMLElement>('a') as HTMLLinkElement
-                    sgLink.setAttribute('href', `https://sourcegraph.com//search?q=${encodeURIComponent(value)}`)
-                    sgLink.setAttribute('target', '_blank')
-                    element.setAttribute('style', `display: ${value ? 'initial' : 'none !important'}`)
-                }
-
-                let sgElement = document.querySelector<HTMLElement>(`#${SOURCEGRAPH_ITEM_ID}`)
-
-                if (!sgElement) {
-                    // SG Base element on top of GH "All Github" element
-                    const sgNewElement = ghElement.cloneNode(true) as HTMLElement
-                    sgNewElement.id = SOURCEGRAPH_ITEM_ID
-
-                    // Update text
-                    const textTag = sgNewElement.querySelector('.js-jump-to-badge-search-text-global') as HTMLElement
-                    textTag.textContent = 'Sourcegraph'
-
-                    // Add sourcegraph logo
-                    const logo = document.createElement('img')
-                    logo.src = 'https://sourcegraph.com/.assets/img/sourcegraph-mark.svg'
-                    logo.setAttribute('style', 'width: 16px; height: 20px; float: left; margin-right: 2px;')
-                    logo.setAttribute('alt', 'Sourcegraph Logo Image')
-
-                    textTag.parentNode?.insertBefore(logo, textTag)
-
-                    // Add sourcegraph item after GH item
-                    ghElement.parentNode?.insertBefore(sgNewElement, ghElement.nextElementSibling)
-
-                    updateContent(sgNewElement)
-
-                    sgElement = document.querySelector(`#${SOURCEGRAPH_ITEM_ID}`)
-                } else {
-                    updateContent(sgElement)
-                }
-            })
-        subscriptions.add(globalViews)
+            .subscribe(onChange)
+        subscriptions.add(searchEnhancementSubscription)
     }
 
     /** A stream of added or removed code views with the resolved file info */

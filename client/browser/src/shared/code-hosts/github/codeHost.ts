@@ -318,15 +318,64 @@ const notificationClassNames = {
     [NotificationType.Error]: 'flash flash-error',
 }
 
-const searchEnhancementViewResolver: ViewResolver<{ element: HTMLElement }> = {
-    selector: '.js-site-search-form input[type="text"]',
-    resolveView: element => ({ element }),
+const searchEnhancement: CodeHost['searchEnhancement'] = {
+    viewResolver: {
+        selector: '.js-site-search-form input[type="text"]',
+        resolveView: element => ({ element }),
+    },
+    onChange: value => {
+        const SEARCH_IN_GITHUB_SELECTOR = '#jump-to-suggestion-search-global'
+        const SEARCH_IN_SOURCEGRAPH_SELECTOR = '#jump-to-sourcegraph-search-global'
+
+        const ghElement = document.querySelector<HTMLElement>(SEARCH_IN_GITHUB_SELECTOR)
+        if (!ghElement) {
+            return
+        }
+
+        /** Create "Search in Sourcegraph" element based on GH element */
+        const createElement = (): HTMLElement => {
+            /** SG Base element on top of GH "All Github" element */
+            const sgNewElement = ghElement.cloneNode(true) as HTMLElement
+            sgNewElement.id = SEARCH_IN_SOURCEGRAPH_SELECTOR.replace('#', '')
+
+            /** Add sourcegraph logo */
+            const logo = document.createElement('img')
+            logo.src = 'https://sourcegraph.com/.assets/img/sourcegraph-mark.svg'
+            logo.setAttribute('style', 'width: 16px; height: 20px; float: left; margin-right: 2px;')
+            logo.setAttribute('alt', 'Sourcegraph Logo Image')
+
+            /** Update badge text */
+            const badge = sgNewElement.querySelector('.js-jump-to-badge-search-text-global') as HTMLElement
+            badge.textContent = 'Sourcegraph'
+            badge.parentNode?.insertBefore(logo, badge)
+
+            /** Add sourcegraph item after GH item */
+            ghElement.parentNode?.insertBefore(sgNewElement, ghElement.nextElementSibling)
+
+            return sgNewElement
+        }
+
+        /** Update link and display value */
+        const updateContent = (element: HTMLElement): void => {
+            const displayValue = element.querySelector<HTMLElement>('.jump-to-suggestion-name') as HTMLElement
+            displayValue.textContent = value
+            displayValue.setAttribute('aria-label', value)
+
+            /** Update link url */
+            const link = element.querySelector<HTMLElement>('a') as HTMLLinkElement
+            link.setAttribute('href', `https://sourcegraph.com//search?q=${encodeURIComponent(value)}`)
+            link.setAttribute('target', '_blank')
+            element.setAttribute('style', `display: ${value ? 'initial' : 'none !important'}`)
+        }
+
+        updateContent(document.querySelector<HTMLElement>(SEARCH_IN_SOURCEGRAPH_SELECTOR) ?? createElement())
+    },
 }
 
 export const githubCodeHost: CodeHost = {
     type: 'github',
     name: checkIsGitHubEnterprise() ? 'GitHub Enterprise' : 'GitHub',
-    globalViewResolvers: [searchEnhancementViewResolver],
+    searchEnhancement,
     codeViewResolvers: [genericCodeViewResolver, fileLineContainerResolver, searchResultCodeViewResolver],
     contentViewResolvers: [markdownBodyViewResolver],
     nativeTooltipResolvers: [nativeTooltipResolver],
