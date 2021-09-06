@@ -134,6 +134,7 @@ describe('Extension Registry', () => {
             ...commonWebGraphQlResults,
             ViewerSettings: () => ({
                 viewerSettings: {
+                    __typename: 'SettingsCascade',
                     subjects: [
                         {
                             __typename: 'DefaultSettings',
@@ -192,6 +193,7 @@ describe('Extension Registry', () => {
             }),
             RegistryExtensions: () => ({
                 extensionRegistry: {
+                    __typename: 'ExtensionRegistry',
                     extensions: {
                         error: null,
                         nodes: registryExtensionNodes,
@@ -201,6 +203,7 @@ describe('Extension Registry', () => {
             }),
             Extensions: () => ({
                 extensionRegistry: {
+                    __typename: 'ExtensionRegistry',
                     extensions: {
                         nodes: extensionNodes,
                     },
