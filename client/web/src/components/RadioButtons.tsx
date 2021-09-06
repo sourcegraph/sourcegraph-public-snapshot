@@ -1,3 +1,4 @@
+import classNames from 'classnames'
 import React from 'react'
 
 /**
@@ -55,7 +56,7 @@ export const RadioButtons: React.FunctionComponent<Props> = ({ nodes, onChange, 
         {nodes.map(node => (
             <label key={node.key ? node.key : node.id.toString()} className="radio-buttons__item" title={node.tooltip}>
                 <input
-                    className={`radio-buttons__input ${className || ''}`}
+                    className={classNames('radio-buttons__input', className)}
                     name="filter"
                     type="radio"
                     onChange={onChange}

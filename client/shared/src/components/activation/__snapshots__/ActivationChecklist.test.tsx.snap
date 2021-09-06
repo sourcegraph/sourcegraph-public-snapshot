@@ -2,7 +2,7 @@
 
 exports[`ActivationChecklist render 0/1 complete 1`] = `
 <div
-  className="activation-checklist list-group list-group-flush "
+  className="activation-checklist list-group list-group-flush"
 >
   <div
     data-reach-accordion=""
@@ -99,7 +99,7 @@ exports[`ActivationChecklist render 0/1 complete 1`] = `
 
 exports[`ActivationChecklist render 0/1 complete 2`] = `
 <div
-  className="activation-checklist list-group list-group-flush "
+  className="activation-checklist list-group list-group-flush"
 >
   <div
     data-reach-accordion=""
@@ -196,7 +196,7 @@ exports[`ActivationChecklist render 0/1 complete 2`] = `
 
 exports[`ActivationChecklist render 1/1 complete 1`] = `
 <div
-  className="activation-checklist list-group list-group-flush "
+  className="activation-checklist list-group list-group-flush"
 >
   <div
     data-reach-accordion=""
