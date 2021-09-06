@@ -13,6 +13,10 @@ interface StaticView extends TelemetryProps, React.DetailedHTMLProps<React.HTMLA
     view: ViewInsightProviderResult
 }
 
+/**
+ * Component that renders insight-like extension card. Used by extension views in extension
+ * consumers that have insight section (the search and the directory page).
+ */
 export const StaticView: React.FunctionComponent<StaticView> = props => {
     const { view, telemetryService, ...otherProps } = props
 
