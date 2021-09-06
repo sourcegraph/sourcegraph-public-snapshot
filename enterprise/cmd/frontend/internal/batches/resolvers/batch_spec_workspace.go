@@ -26,9 +26,6 @@ func (r *batchSpecWorkspaceResolver) Branch(ctx context.Context) (*graphqlbacken
 }
 
 func (r *batchSpecWorkspaceResolver) Path() string {
-	if r.node.Path == "" {
-		return "/"
-	}
 	return r.node.Path
 }
 

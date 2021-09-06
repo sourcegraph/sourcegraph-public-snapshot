@@ -186,10 +186,11 @@ const PreviewWorkspaces: React.FunctionComponent<{ preview: BatchSpecWorkspacesF
                 {preview.workspaces.map(item => (
                     <li
                         className="list-group-item"
-                        key={`${item.repository.id}_${item.branch.target.oid}_${item.path}`}
+                        key={`${item.repository.id}_${item.branch.target.oid}_${item.path || '/'}`}
                     >
                         <p>
-                            {item.repository.name}:{item.branch.abbrevName}@{item.branch.target.oid} Path: {item.path}
+                            {item.repository.name}:{item.branch.abbrevName}@{item.branch.target.oid} Path:{' '}
+                            {item.path || '/'}
                         </p>
                         <p>{item.searchResultPaths.join(', ')}</p>
                         <ul>
