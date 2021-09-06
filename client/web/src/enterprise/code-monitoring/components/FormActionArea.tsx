@@ -152,9 +152,10 @@ export const FormActionArea: React.FunctionComponent<ActionAreaProps> = ({
                     <div className="flex mt-1">
                         <button
                             type="button"
-                            className={`btn btn-sm mr-2 ${
+                            className={classNames(
+                                'btn btn-sm mr-2',
                                 isSendTestEmailButtonDisabled ? 'btn-secondary' : 'btn-outline-secondary'
-                            }`}
+                            )}
                             disabled={isSendTestEmailButtonDisabled}
                             onClick={triggerTestEmailActionRequest}
                         >

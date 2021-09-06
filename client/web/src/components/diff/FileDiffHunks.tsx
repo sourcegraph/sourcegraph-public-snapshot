@@ -252,7 +252,7 @@ export const FileDiffHunks: React.FunctionComponent<FileHunksProps> = ({
                     />
                 </div>
             )}
-            <div className={`file-diff-hunks ${className}`} ref={nextBlobElement}>
+            <div className={classNames('file-diff-hunks', className)} ref={nextBlobElement}>
                 {hunks.length === 0 ? (
                     <div className="text-muted m-2">No changes</div>
                 ) : (

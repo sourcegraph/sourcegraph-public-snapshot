@@ -1,3 +1,4 @@
+import classNames from 'classnames'
 import * as React from 'react'
 import { useLocation } from 'react-router'
 
@@ -173,9 +174,9 @@ export const DiffSplitHunk: React.FunctionComponent<DiffHunkProps> = ({
                                     lineNumber={next.newLine}
                                     anchor={next.anchor}
                                     html={next.html}
-                                    className={
-                                        location.hash === `#${next.anchor}` ? 'diff-hunk--split__line--active' : ''
-                                    }
+                                    className={classNames(
+                                        location.hash === `#${next.anchor}` && 'diff-hunk--split__line--active'
+                                    )}
                                     dataPart="head"
                                 />
                             </tr>
