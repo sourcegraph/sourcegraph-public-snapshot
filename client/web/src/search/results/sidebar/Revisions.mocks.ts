@@ -1,9 +1,9 @@
 import { MockedResponse } from '@apollo/client/testing'
+import { GraphQLError } from 'graphql'
 
 import { getDocumentNode } from '@sourcegraph/shared/src/graphql/graphql'
-import { GraphQLError } from 'graphql'
-import { GitRefType } from '../../../../../shared/src/graphql-operations'
 
+import { GitRefType } from '../../../../../shared/src/graphql-operations'
 import {
     SearchSidebarGitRefsResult,
     // SearchSidebarGitRefsVariables,
@@ -55,7 +55,7 @@ function generateMockedResponses(
         }
     })
     return Array.from({ length: Math.max(1, Math.ceil(totalCount / 10)) }, (_value, index) => {
-        const first = Math.min((index + 1) * 10, Math.max(totalCount, 10))
+        const first = (index + 1) * 10
         return {
             request: generateMockedRequest(type, first, query),
             result: {
@@ -65,7 +65,7 @@ function generateMockedResponses(
                         id: 'repo',
                         gitRefs: {
                             __typename: 'GitRefConnection',
-                            nodes: nodes.slice(0, first),
+                            nodes: nodes.slice(0, Math.min(first, totalCount)),
                             totalCount,
                             pageInfo: {
                                 hasNextPage: first < totalCount,
@@ -80,7 +80,6 @@ function generateMockedResponses(
 
 // For empty state tests
 const emptyBranchesMocks = generateMockedResponses(GitRefType.GIT_BRANCH, 0)
-console.log(emptyBranchesMocks)
 const emptyTagsMocks = generateMockedResponses(GitRefType.GIT_TAG, 0)
 
 // For tests with multiple fetches

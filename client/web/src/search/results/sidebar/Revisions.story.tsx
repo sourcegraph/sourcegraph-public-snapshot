@@ -1,12 +1,12 @@
+import { MockedProviderProps } from '@apollo/client/testing'
 import { Meta, Story } from '@storybook/react'
 import React from 'react'
+
+import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 
 import { WebStory } from '../../../components/WebStory'
 
 import { Revisions, RevisionsProps, TabIndex } from './Revisions'
-import { MockedProviderProps } from '@apollo/client/testing'
-import sidebarStyles from './SearchSidebar.module.scss'
-
 import {
     EMPTY_MOCKS,
     FEW_RESULTS_MOCKS,
@@ -18,7 +18,7 @@ import {
     NETWORK_ERROR_MOCKS,
     GRAPHQL_ERROR_MOCKS,
 } from './Revisions.mocks'
-import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
+import sidebarStyles from './SearchSidebar.module.scss'
 
 export default {
     title: 'web/search/results/sidebar/Revisions',

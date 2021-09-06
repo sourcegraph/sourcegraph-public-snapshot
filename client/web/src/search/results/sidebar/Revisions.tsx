@@ -124,18 +124,10 @@ const RevisionList: React.FunctionComponent<RevisionListProps> = ({
                     />
                 ))}
             </ul>
-            {connection.totalCount ?? 0 > DEFAULT_FIRST ? (
+            {(connection.totalCount ?? 0) > DEFAULT_FIRST ? (
                 <p className={classNames('text-muted d-flex', styles.sidebarSectionFooter)}>
-                    <small className="flex-1">
-                        {hasNextPage ? (
-                            <span>
-                                {connection?.nodes.length} of {connection?.totalCount} {pluralNoun}
-                            </span>
-                        ) : (
-                            <span>
-                                {connection?.totalCount} {pluralNoun}
-                            </span>
-                        )}
+                    <small className="flex-1" data-testid="summary">
+                        {connection?.nodes.length} of {connection?.totalCount} {pluralNoun}
                     </small>
                     {hasNextPage ? (
                         <button

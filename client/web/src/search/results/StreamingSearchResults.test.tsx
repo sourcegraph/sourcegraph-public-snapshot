@@ -11,8 +11,8 @@ import { VirtualList } from '@sourcegraph/shared/src/components/VirtualList'
 import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
 import * as GQL from '@sourcegraph/shared/src/graphql/schema'
 import { AggregateStreamingSearchResults } from '@sourcegraph/shared/src/search/stream'
-import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 import {
     extensionsController,
     HIGHLIGHTED_FILE_LINES_REQUEST,
