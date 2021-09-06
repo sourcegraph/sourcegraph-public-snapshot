@@ -252,8 +252,9 @@ const _ProductSubscriptionForm: React.FunctionComponent<Props & ReactStripeEleme
                                 type="submit"
                                 disabled={disableForm || !accountID}
                                 className={classNames(
-                                    'btn btn-l w-100 d-flex align-items-center justify-content-center',
-                                    disableForm || !accountID ? 'btn-secondary' : 'btn-success'
+                                    'btn btn-lg',
+                                    disableForm || !accountID ? 'btn-secondary' : 'btn-success',
+                                    'w-100 d-flex align-items-center justify-content-center'
                                 )}
                             >
                                 {paymentToken === LOADING || submissionState === LOADING ? (
