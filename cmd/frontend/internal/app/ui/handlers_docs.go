@@ -48,7 +48,23 @@ func serveRepoDocs(codeIntelResolver graphqlbackend.CodeIntelResolver) handlerFu
 					if r.URL.RawQuery != "" {
 						target = findDocumentationNode(&tree, path+"#"+r.URL.RawQuery)
 						if target == nil {
-							target = &tree
+							// The section/symbol specified by the ?Query parameter does not exist.
+							// This could happen for a few reasons:
+							//
+							// 1. It actually doesn't exist, e.g. it was removed in a commit to the repo.
+							// 2. A URL parameter API docs does not understand has been injected. This is
+							//    stupidly common, e.g.:
+							//     a. `?toast=integrations` being injected after navigating to an API docs page
+							//        and having to sign in first.
+							//     b. `?_ga=2.892337.1256632002....` being injected by Google Analytics from the
+							//        Sourcegraph blog or other sites.
+							//     c. `?utm_source` being injected by marketing in various locations.
+							//
+							// Either way, we don't know what the URL query is at this point. We know it's not a
+							// section/symbol of documentation we're aware of right now, so remove it from the URL.
+							r.URL.RawQuery = ""
+							http.Redirect(w, r, r.URL.String(), http.StatusMovedPermanently)
+							return nil
 						}
 					}
 					title := markdownToDescriptionText(target.Label.String())
