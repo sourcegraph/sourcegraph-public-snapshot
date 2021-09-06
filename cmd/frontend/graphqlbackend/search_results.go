@@ -1543,6 +1543,7 @@ func (r *searchResolver) doResults(ctx context.Context, args *search.TextParamet
 
 	if len(resolved.MissingRepoRevs) > 0 {
 		agg.Error(&missingRepoRevsError{Missing: resolved.MissingRepoRevs})
+		tr.LazyPrintf("adding error for missing repo revs - done")
 	}
 
 	agg.Send(streaming.SearchEvent{
@@ -1552,6 +1553,7 @@ func (r *searchResolver) doResults(ctx context.Context, args *search.TextParamet
 			ExcludedArchived: resolved.ExcludedRepos.Archived,
 		},
 	})
+	tr.LazyPrintf("sending first stats (repos %d, excluded repos %+v) - done", len(resolved.RepoSet), resolved.ExcludedRepos)
 
 	if args.ResultTypes.Has(result.TypeRepo) {
 		wg := waitGroup(true)
