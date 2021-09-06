@@ -9,7 +9,7 @@ import { createWebIntegrationTestContext, WebIntegrationTestContext } from '../c
 import { INSIGHT_VIEW_TEAM_SIZE, INSIGHT_VIEW_TYPES_MIGRATION } from './utils/insight-mock-data'
 import { overrideGraphQLExtensions } from './utils/override-graphql-with-extensions'
 
-describe('Code insights page', () => {
+describe.skip('Code insights page', () => {
     let driver: Driver
     let testContext: WebIntegrationTestContext
 
@@ -37,11 +37,6 @@ describe('Code insights page', () => {
                 repositories: [],
                 series: [],
             },
-            'searchInsights.insight.teamSize': {
-                title: 'The Second search-based insight',
-                repositories: [],
-                series: [],
-            },
         }
 
         overrideGraphQLExtensions({
@@ -51,7 +46,7 @@ describe('Code insights page', () => {
              * Since search insight and code stats insight are working via user/org
              * settings. We have to mock them by mocking user settings and provide
              * mock data - mocking extension work.
-             * */
+             */
             userSettings: settings,
             insightExtensionsMocks: {
                 'searchInsights.insight.graphQLTypesMigration': {

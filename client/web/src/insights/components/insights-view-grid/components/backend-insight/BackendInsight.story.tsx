@@ -7,8 +7,8 @@ import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/teleme
 
 import { WebStory } from '../../../../../components/WebStory'
 import { InsightsApiContext } from '../../../../core/backend/api-provider'
-import { InsightStillProcessingError } from '../../../../core/backend/api/get-backend-insight-by-id'
-import { createMockInsightAPI } from '../../../../core/backend/insights-api'
+import { InsightStillProcessingError } from '../../../../core/backend/api/get-backend-insight'
+import { createMockInsightAPI } from '../../../../core/backend/create-insights-api'
 import { InsightType } from '../../../../core/types'
 import { SearchBackendBasedInsight } from '../../../../core/types/insight/search-insight'
 import { LINE_CHART_CONTENT_MOCK, LINE_CHART_CONTENT_MOCK_EMPTY } from '../../../../mocks/charts-content'
@@ -35,7 +35,7 @@ const mockInsightAPI = ({
     hasData = true,
 } = {}) =>
     createMockInsightAPI({
-        getBackendInsightById: ({ id }) => {
+        getBackendInsight: ({ id }) => {
             if (throwProcessingError) {
                 return throwError(new InsightStillProcessingError())
             }

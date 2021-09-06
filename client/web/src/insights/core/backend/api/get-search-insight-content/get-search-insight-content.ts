@@ -2,11 +2,14 @@ import { formatISO, isAfter, startOfDay, sub, Duration } from 'date-fns'
 import escapeRegExp from 'lodash/escapeRegExp'
 import { defer } from 'rxjs'
 import { retry } from 'rxjs/operators'
-import type { LineChartContent } from 'sourcegraph'
+import type { DirectoryViewContext, LineChartContent } from 'sourcegraph'
+
+import { ViewContexts } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
 
 import { EMPTY_DATA_POINT_VALUE } from '../../../../components/insight-view-content/chart-view-content/charts/line/constants'
 import { fetchRawSearchInsightResults, fetchSearchInsightCommits } from '../../requests/fetch-search-insight'
 import { SearchInsightSettings } from '../../types'
+import { resolveDocumentURI } from '../../utils/resolve-uri'
 
 import { queryHasCountFilter } from './query-has-count-filter'
 
@@ -21,17 +24,48 @@ interface InsightSeriesData {
     [seriesName: string]: number
 }
 
-/**
- * This logic is a copy of fetch logic of search-based code insight extension.
- * See https://github.com/sourcegraph/sourcegraph-search-insights/blob/master/src/search-insights.ts
- * In order to have live preview for creation UI we had to copy this logic from
- * extension.
- * */
-export async function getSearchInsightContent(insight: SearchInsightSettings): Promise<LineChartContent<any, string>> {
+interface InsightOptions<D extends keyof ViewContexts> {
+    where: D
+    context: ViewContexts[D]
+}
+
+export async function getSearchInsightContent<D extends keyof ViewContexts>(
+    insight: SearchInsightSettings,
+    options: InsightOptions<D>
+): Promise<LineChartContent<any, string>> {
+    const { where, context } = options
+
+    switch (where) {
+        case 'directory': {
+            const { viewer } = context as DirectoryViewContext
+            const { repo, path } = resolveDocumentURI(viewer.directory.uri)
+
+            return getInsightContent({ insight, repos: [repo], path })
+        }
+
+        case 'homepage':
+        case 'insightsPage': {
+            return getInsightContent({ insight, repos: insight.repositories })
+        }
+    }
+
+    throw new Error(`This context is not supported for search insight: context: ${where}`)
+}
+
+interface GetInsightContentInput {
+    insight: SearchInsightSettings
+    repos: string[]
+    path?: string
+}
+
+export async function getInsightContent(inputs: GetInsightContentInput): Promise<LineChartContent<any, string>> {
+    const { insight, repos, path } = inputs
     const step = insight.step || { days: 1 }
-    const { repositories: repos } = insight
+    const pathRegexp = path ? `^${escapeRegExp(path)}/` : undefined
+
     const dates = getDaysToQuery(step)
 
+    // -------- Initialize data ---------
     const data: InsightSeriesData[] = []
 
     for (const date of dates) {
@@ -62,7 +96,13 @@ export async function getSearchInsightContent(insight: SearchInsightSettings): P
             date,
             repo,
             commit,
-            query: `repo:^${escapeRegExp(repo)}$@${commit} ${getQueryWithCount(query)}`,
+            query: [
+                `repo:^${escapeRegExp(repo)}$@${commit}`,
+                pathRegexp && ` file:${pathRegexp}`,
+                `${getQueryWithCount(query)}`,
+            ]
+                .filter(Boolean)
+                .join(' '),
         }))
     )
 

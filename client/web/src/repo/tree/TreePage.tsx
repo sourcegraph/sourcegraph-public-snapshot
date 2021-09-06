@@ -10,7 +10,7 @@ import SourceCommitIcon from 'mdi-react/SourceCommitIcon'
 import SourceRepositoryIcon from 'mdi-react/SourceRepositoryIcon'
 import TagIcon from 'mdi-react/TagIcon'
 import UserIcon from 'mdi-react/UserIcon'
-import React, { useState, useMemo, useCallback, useEffect, useContext } from 'react'
+import React, { useState, useMemo, useCallback, useEffect } from 'react'
 import { Link, Redirect } from 'react-router-dom'
 import { Observable, EMPTY, from } from 'rxjs'
 import { catchError, map, switchMap } from 'rxjs/operators'
@@ -48,7 +48,11 @@ import { BreadcrumbSetters } from '../../components/Breadcrumbs'
 import { FilteredConnection } from '../../components/FilteredConnection'
 import { PageTitle } from '../../components/PageTitle'
 import { GitCommitFields, Scalars, TreePageRepositoryFields } from '../../graphql-operations'
-import { InsightsApiContext, StaticInsightsViewGrid } from '../../insights'
+import { SmartInsight } from '../../insights/components/insights-view-grid/components/smart-insight/SmartInsight'
+import { StaticView } from '../../insights/components/insights-view-grid/components/static-view/StaticView'
+import { ViewGrid } from '../../insights/components/insights-view-grid/components/view-grid/ViewGrid'
+import { createExtensionInsight } from '../../insights/core/backend/utils/create-extension-insight'
+import { useAllInsights } from '../../insights/hooks/use-insight/use-insight'
 import { Settings } from '../../schema/settings.schema'
 import { PatternTypeProps, CaseSensitivityProps, SearchContextProps } from '../../search'
 import { basename } from '../../util/path'
@@ -276,34 +280,48 @@ export const TreePage: React.FunctionComponent<Props> = ({
     const enableAPIDocs =
         !isErrorLike(settingsCascade.final) && settingsCascade.final?.experimentalFeatures?.apiDocs !== false
 
-    const { getCombinedViews } = useContext(InsightsApiContext)
+    const directoryPageContext = useMemo(
+        () =>
+            workspaceUri && {
+                viewer: {
+                    type: 'DirectoryViewer' as const,
+                    directory: {
+                        uri: new URL(uri),
+                    },
+                },
+                workspace: {
+                    uri: new URL(workspaceUri),
+                },
+            },
+        [uri, workspaceUri]
+    )
+
+    const insights = useAllInsights({ settingsCascade })
     const views = useObservable(
         useMemo(
             () =>
                 showCodeInsights && workspaceUri
-                    ? getCombinedViews(() =>
-                          from(props.extensionsController.extHostAPI).pipe(
-                              switchMap(extensionHostAPI =>
-                                  wrapRemoteObservable(
-                                      extensionHostAPI.getDirectoryViews({
-                                          viewer: {
-                                              type: 'DirectoryViewer',
-                                              directory: {
-                                                  uri,
-                                              },
-                                          },
-                                          workspace: {
-                                              uri: workspaceUri,
-                                          },
-                                      })
-                                  )
+                    ? from(props.extensionsController.extHostAPI).pipe(
+                          switchMap(extensionHostAPI =>
+                              wrapRemoteObservable(
+                                  extensionHostAPI.getDirectoryViews({
+                                      viewer: {
+                                          type: 'DirectoryViewer',
+                                          directory: { uri },
+                                      },
+                                      workspace: { uri: workspaceUri },
+                                  })
                               )
-                          )
+                          ),
+                          map(extensionViews => extensionViews.map(createExtensionInsight))
                       )
                     : EMPTY,
-            [getCombinedViews, showCodeInsights, workspaceUri, uri, props.extensionsController]
+            [showCodeInsights, workspaceUri, uri, props.extensionsController]
         )
     )
+
+    const extensionView = views ?? []
+    const allViewIds = useMemo(() => [...(views ?? []), ...insights].map(view => view.id), [views, insights])
 
     const getPageTitle = (): string => {
         const repoString = displayRepoName(repo.name)
@@ -461,12 +479,31 @@ export const TreePage: React.FunctionComponent<Props> = ({
                                 />
                             )}
                         </header>
-                        {views && (
-                            <StaticInsightsViewGrid
+                        {showCodeInsights && (
+                            <ViewGrid
+                                viewIds={allViewIds}
                                 telemetryService={props.telemetryService}
                                 className="tree-page__section mb-3"
-                                views={views}
-                            />
+                            >
+                                {/* Render extension views for the directory page */}
+                                {extensionView.map(view => (
+                                    <StaticView key={view.id} view={view} telemetryService={props.telemetryService} />
+                                ))}
+
+                                {/* Render all code insights with proper directory page context */}
+                                {directoryPageContext &&
+                                    insights.map(insight => (
+                                        <SmartInsight
+                                            key={insight.id}
+                                            insight={insight}
+                                            telemetryService={props.telemetryService}
+                                            platformContext={props.platformContext}
+                                            settingsCascade={settingsCascade}
+                                            where="directory"
+                                            context={directoryPageContext}
+                                        />
+                                    ))}
+                            </ViewGrid>
                         )}
                         <section className="tree-page__section test-tree-entries mb-3">
                             <h2>Files and directories</h2>

@@ -11,7 +11,7 @@ import { createWebIntegrationTestContext, WebIntegrationTestContext } from '../c
 import { BACKEND_INSIGHTS } from './utils/insight-mock-data'
 import { overrideGraphQLExtensions } from './utils/override-graphql-with-extensions'
 
-describe('Backend insight drill down filters', () => {
+describe.skip('Backend insight drill down filters', () => {
     let driver: Driver
     let testContext: WebIntegrationTestContext
 

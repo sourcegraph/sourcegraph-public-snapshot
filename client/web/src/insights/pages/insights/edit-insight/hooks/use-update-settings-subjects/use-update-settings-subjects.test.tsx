@@ -8,7 +8,7 @@ import { stringify } from '@sourcegraph/shared/src/util/jsonc'
 
 import { Settings } from '../../../../../../schema/settings.schema'
 import { InsightsApiContext } from '../../../../../core/backend/api-provider'
-import { createMockInsightAPI } from '../../../../../core/backend/insights-api'
+import { createMockInsightAPI } from '../../../../../core/backend/create-insights-api'
 import { ApiService } from '../../../../../core/backend/types'
 import { InsightType, LangStatsInsight } from '../../../../../core/types'
 import { createGlobalSubject, createOrgSubject, createUserSubject } from '../../../../../mocks/settings-cascade'
@@ -194,9 +194,6 @@ describe('useUpdateSettingsSubject', () => {
                             insightIds: [],
                         },
                     },
-                    extensions: {
-                        'sourcegraph/code-stats-insights': true,
-                    },
                     'codeStatsInsights.insight.newExtensionLangStatsInsight': {
                         title: 'new extension lang stats insight',
                         repository: '',
@@ -250,9 +247,6 @@ describe('useUpdateSettingsSubject', () => {
                             title: 'Some global dashboard',
                             insightIds: [],
                         },
-                    },
-                    extensions: {
-                        'sourcegraph/code-stats-insights': true,
                     },
                     'codeStatsInsights.insight.newExtensionLangStatsInsight': {
                         title: 'new extension lang stats insight',
@@ -362,9 +356,6 @@ describe('useUpdateSettingsSubject', () => {
                             // insight dashboard visibility levels
                             insightIds: ['codeStatsInsights.insight.someAnotherLangInsight'],
                         },
-                    },
-                    extensions: {
-                        'sourcegraph/code-stats-insights': true,
                     },
                     'codeStatsInsights.insight.newExtensionLangStatsInsight': {
                         title: 'new extension lang stats insight',
@@ -483,9 +474,6 @@ describe('useUpdateSettingsSubject', () => {
                             title: 'Some second organization dashboard',
                             insightIds: [],
                         },
-                    },
-                    extensions: {
-                        'sourcegraph/code-stats-insights': true,
                     },
                     'codeStatsInsights.insight.newExtensionLangStatsInsight': {
                         title: 'new extension lang stats insight',
