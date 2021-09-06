@@ -2,6 +2,7 @@ package ui
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"strings"
 
@@ -67,10 +68,7 @@ func serveRepoDocs(codeIntelResolver graphqlbackend.CodeIntelResolver) handlerFu
 							return nil
 						}
 					}
-					title := markdownToDescriptionText(target.Label.String())
-					if len(title) > 40 {
-						title = title[:39] + "…"
-					}
+					title := brandNameSubtitle(fmt.Sprintf("%s - %s API docs", target.Documentation.SearchKey, repoShortName(common.Repo.Name)))
 					common.Title = title
 					common.Metadata.ShowPreview = true
 					common.Metadata.Title = title
