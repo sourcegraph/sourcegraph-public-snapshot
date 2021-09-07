@@ -36,12 +36,12 @@ jobs:
       GITHUB_TOKEN: ${{ secrets.LABELER_GITHUB_TOKEN }}
     steps:
     - name: Get issue if relevant
-      if: ${{ github.event.issue && contains(github.event.issue.labels.*.name, 'team/distribution') }}
+      if: ${{ contains(github.event.issue.labels.*.name, 'team/distribution') }}
       env:
         NODE_ID: ${{ github.event.issue.node_id }}
       run: echo 'NODE_ID='$NODE_ID >> $GITHUB_ENV
     - name: Get pull request if relevant
-      if: ${{ github.event.pull_request && contains(github.event.pull_request.labels.*.name, 'team/distribution') }}
+      if: ${{ contains(github.event.pull_request.labels.*.name, 'team/distribution') }}
       env:
         NODE_ID: ${{ github.event.pull_request.node_id }}
       run: echo 'NODE_ID='$NODE_ID >> $GITHUB_ENV
