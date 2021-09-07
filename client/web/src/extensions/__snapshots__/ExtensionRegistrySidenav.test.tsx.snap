@@ -174,7 +174,7 @@ exports[`ExtensionsQueryInputToolbar renders 1`] = `
     </h4>
     <small>
       You can improve your workflow by creating custom extensions. See
-
+       
       <a
         href="https://docs.sourcegraph.com/extensions/authoring"
         rel="noreferrer"
@@ -182,7 +182,7 @@ exports[`ExtensionsQueryInputToolbar renders 1`] = `
       >
         Sourcegraph Docs
       </a>
-
+       
       for details about writing and publishing.
     </small>
   </div>
