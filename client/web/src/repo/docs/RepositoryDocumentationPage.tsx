@@ -303,6 +303,7 @@ function findDocumentationNode(node: GQLDocumentationNode, pathID: string): GQLD
             }
         }
     }
+    return undefined
 }
 
 /** Checks if an element is in view of the scrolling container. */
