@@ -49,8 +49,8 @@ export const FileMatchChildren: React.FunctionComponent<FileMatchProps> = props 
             return fetchHighlightedFileLineRanges(
                 {
                     repoName: result.repository,
-                    commitID: result.version || '',
-                    filePath: result.name,
+                    commitID: result.commit || '',
+                    filePath: result.path,
                     disableTimeout: false,
                     ranges: optimizeHighlighting
                         ? grouped.map(
@@ -131,8 +131,8 @@ export const FileMatchChildren: React.FunctionComponent<FileMatchProps> = props 
                             >
                                 <CodeExcerpt
                                     repoName={result.repository}
-                                    commitID={result.version || ''}
-                                    filePath={result.name}
+                                    commitID={result.commit || ''}
+                                    filePath={result.path}
                                     startLine={group.startLine}
                                     endLine={group.endLine}
                                     highlightRanges={group.matches}

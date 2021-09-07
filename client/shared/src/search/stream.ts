@@ -21,22 +21,22 @@ export type SearchMatch = ContentMatch | RepositoryMatch | CommitMatch | SymbolM
 
 export interface PathMatch {
     type: 'path'
-    name: string
+    path: string
     repository: string
     repoStars?: number
     repoLastFetched?: string
     branches?: string[]
-    version?: string
+    commit?: string
 }
 
 export interface ContentMatch {
     type: 'content'
-    name: string
+    path: string
     repository: string
     repoStars?: number
     repoLastFetched?: string
     branches?: string[]
-    version?: string
+    commit?: string
     lineMatches: LineMatch[]
     hunks?: DecoratedHunk[]
 }
@@ -73,12 +73,12 @@ interface LineMatch {
 
 export interface SymbolMatch {
     type: 'symbol'
-    name: string
+    path: string
     repository: string
     repoStars?: number
     repoLastFetched?: string
     branches?: string[]
-    version?: string
+    commit?: string
     symbols: MatchedSymbol[]
 }
 
@@ -478,8 +478,8 @@ export function getRevision(branches?: string[], version?: string): string {
 }
 
 export function getFileMatchUrl(fileMatch: ContentMatch | SymbolMatch | PathMatch): string {
-    const revision = getRevision(fileMatch.branches, fileMatch.version)
-    return `/${fileMatch.repository}${revision ? '@' + revision : ''}/-/blob/${fileMatch.name}`
+    const revision = getRevision(fileMatch.branches, fileMatch.commit)
+    return `/${fileMatch.repository}${revision ? '@' + revision : ''}/-/blob/${fileMatch.path}`
 }
 
 export function getRepoMatchLabel(repoMatch: RepositoryMatch): string {
