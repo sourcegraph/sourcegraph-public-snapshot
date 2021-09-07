@@ -47,7 +47,7 @@ The following are two recommendations for installing these dependencies:
 
 4. (without docker) Install PostgreSQL and Redis
 
-    If you want to run Redis and/or PostgreSQL directly on your system install them with the follwing command:
+    If you want to run Redis and/or PostgreSQL directly on your system install them with the following command:
 
     ```
     brew install postgresql
