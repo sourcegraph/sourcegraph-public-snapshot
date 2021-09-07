@@ -27,6 +27,7 @@ export const proxySubscribable = <T>(subscribable: Subscribable<T>): ProxySubscr
             // access Symbol properties that cannot be proxied
             subscribable.subscribe({
                 next: value => {
+                    console.log('proxy next value', value)
                     // eslint-disable-next-line @typescript-eslint/no-floating-promises
                     observer.next(value as UnproxyOrClone<T>)
                 },
