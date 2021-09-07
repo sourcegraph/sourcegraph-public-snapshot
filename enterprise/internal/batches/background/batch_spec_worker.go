@@ -108,6 +108,7 @@ func (e *evaluator) HandlerFunc() workerutil.HandlerFunc {
 
 func (r *evaluator) process(ctx context.Context, tx *store.Store, spec *btypes.BatchSpec) error {
 	fmt.Println("-----------------------------------------------------------------")
+	defer fmt.Println("------------------------- DONE ------------------------------")
 	fmt.Printf("---- PROCESSING BATCH SPEC %d ----\n", spec.ID)
 
 	evaluatableSpec, err := batcheslib.ParseBatchSpec([]byte(spec.RawSpec), batcheslib.ParseBatchSpecOptions{
@@ -135,11 +136,15 @@ func (r *evaluator) process(ctx context.Context, tx *store.Store, spec *btypes.B
 		workspaceJobs = append(workspaceJobs, &btypes.BatchSpecWorkspaceJob{
 			BatchSpecID:      spec.ID,
 			ChangesetSpecIDs: []int64{},
-			RepoID:           w.Repo.ID,
-			Branch:           w.Branch,
-			Commit:           string(w.Commit),
-			Path:             w.Path,
-			State:            btypes.BatchSpecWorkspaceJobStatePending,
+
+			RepoID:             w.Repo.ID,
+			Branch:             w.Branch,
+			Commit:             string(w.Commit),
+			Path:               w.Path,
+			FileMatches:        w.FileMatches,
+			OnlyFetchWorkspace: w.OnlyFetchWorkspace,
+
+			State: btypes.BatchSpecWorkspaceJobStatePending,
 		})
 	}
 
