@@ -490,18 +490,19 @@ export const TreePage: React.FunctionComponent<Props> = ({
                                 ))}
 
                                 {/* Render all code insights with proper directory page context */}
-                                {directoryPageContext &&
-                                    insights.map(insight => (
-                                        <SmartInsight
-                                            key={insight.id}
-                                            insight={insight}
-                                            telemetryService={props.telemetryService}
-                                            platformContext={props.platformContext}
-                                            settingsCascade={settingsCascade}
-                                            where="directory"
-                                            context={directoryPageContext}
-                                        />
-                                    ))}
+                                {directoryPageContext
+                                    ? insights.map(insight => (
+                                          <SmartInsight
+                                              key={insight.id}
+                                              insight={insight}
+                                              telemetryService={props.telemetryService}
+                                              platformContext={props.platformContext}
+                                              settingsCascade={settingsCascade}
+                                              where="directory"
+                                              context={directoryPageContext}
+                                          />
+                                      ))
+                                    : []}
                             </ViewGrid>
                         )}
                         <section className="tree-page__section test-tree-entries mb-3">
