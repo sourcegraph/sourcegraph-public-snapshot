@@ -1,16 +1,17 @@
+import PuzzleIcon from 'mdi-react/PuzzleIcon'
 import React from 'react'
 
+import { ViewProviderResult } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { isErrorLike } from '@sourcegraph/shared/src/util/errors'
 
-import { ViewInsightProviderResult } from '../../../../core/backend/types'
-import { InsightViewContent } from '../../../insight-view-content/InsightViewContent'
-import { InsightErrorContent } from '../insight-card/components/insight-error-content/InsightErrorContent'
-import { InsightLoadingContent } from '../insight-card/components/insight-loading-content/InsightLoadingContent'
-import { getInsightViewIcon, InsightContentCard } from '../insight-card/InsightContentCard'
+import { ViewCard } from './card/view-card/ViewCard'
+import { ViewContent } from './content/view-content/ViewContent'
+import { ViewErrorContent } from './content/view-error-content/ViewErrorContent'
+import { ViewLoadingContent } from './content/view-loading-content/ViewLoadingContent'
 
 interface StaticView extends TelemetryProps, React.DetailedHTMLProps<React.HTMLAttributes<HTMLElement>, HTMLElement> {
-    view: ViewInsightProviderResult
+    view: ViewProviderResult
 }
 
 /**
@@ -21,30 +22,24 @@ export const StaticView: React.FunctionComponent<StaticView> = props => {
     const { view, telemetryService, ...otherProps } = props
 
     return (
-        <InsightContentCard
+        <ViewCard
             data-testid={`insight-card.${view.id}`}
-            telemetryService={telemetryService}
-            hasContextMenu={false}
             insight={view}
             className="insight-content-card"
             {...otherProps}
         >
             {view.view === undefined ? (
-                <InsightLoadingContent
-                    text="Loading code insight"
-                    subTitle={view.id}
-                    icon={getInsightViewIcon(view.source)}
-                />
+                <ViewLoadingContent text="Loading code insight" subTitle={view.id} icon={PuzzleIcon} />
             ) : isErrorLike(view.view) ? (
-                <InsightErrorContent error={view.view} title={view.id} icon={getInsightViewIcon(view.source)} />
+                <ViewErrorContent error={view.view} title={view.id} icon={PuzzleIcon} />
             ) : (
-                <InsightViewContent
+                <ViewContent
                     telemetryService={telemetryService}
                     viewContent={view.view.content}
                     viewID={view.id}
                     containerClassName="insight-content-card"
                 />
             )}
-        </InsightContentCard>
+        </ViewCard>
     )
 }

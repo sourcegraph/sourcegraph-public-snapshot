@@ -6,10 +6,10 @@ import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
 import { Settings } from '../../../schema/settings.schema'
+import { ViewGrid } from '../../../views'
 import { Insight } from '../../core/types'
 
 import { SmartInsight } from './components/smart-insight/SmartInsight'
-import { ViewGrid } from './components/view-grid/ViewGrid'
 
 interface SmartInsightsViewGridProps
     extends TelemetryProps,

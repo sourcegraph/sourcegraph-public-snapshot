@@ -4,42 +4,40 @@ import React from 'react'
 
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
-import { WebStory } from '../../../../../components/WebStory'
+import { WebStory } from '../../../../components/WebStory'
+import { ViewErrorContent } from '../../content/view-error-content/ViewErrorContent'
+import { ViewLoadingContent } from '../../content/view-loading-content/ViewLoadingContent'
 
-import { InsightErrorContent } from './components/insight-error-content/InsightErrorContent'
-import { InsightLoadingContent } from './components/insight-loading-content/InsightLoadingContent'
-import { InsightContentCard } from './InsightContentCard'
+import { ViewCard } from './ViewCard'
 
 const { add } = storiesOf('web/insights/InsightContentCard', module).addDecorator(story => (
     <WebStory>{() => story()}</WebStory>
 ))
 
 add('Loading insight', () => (
-    <InsightContentCard
+    <ViewCard
         style={{ width: '400px', height: '400px' }}
         insight={{ id: 'searchInsights.insight.id', view: undefined }}
         onDelete={() => Promise.resolve()}
-        hasContextMenu={true}
         telemetryService={NOOP_TELEMETRY_SERVICE}
     >
-        <InsightLoadingContent text="Loading insight" subTitle="searchInsights.insight.id" icon={PuzzleIcon} />
-    </InsightContentCard>
+        <ViewLoadingContent text="Loading insight" subTitle="searchInsights.insight.id" icon={PuzzleIcon} />
+    </ViewCard>
 ))
 
 add('Errored insight', () => (
-    <InsightContentCard
+    <ViewCard
         style={{ width: '400px', height: '400px' }}
         insight={{
             id: 'searchInsights.insight.id',
             view: new Error("BE couldn't load this Insight"),
         }}
-        hasContextMenu={true}
         telemetryService={NOOP_TELEMETRY_SERVICE}
     >
-        <InsightErrorContent
+        <ViewErrorContent
             title="searchInsights.insight.id"
             error={new Error("We couldn't find code insight")}
             icon={PuzzleIcon}
         />
-    </InsightContentCard>
+    </ViewCard>
 ))

@@ -2,9 +2,9 @@ import classnames from 'classnames'
 import { MdiReactIconComponentType } from 'mdi-react'
 import React from 'react'
 
-import styles from './InsightCardDescription.module.scss'
+import styles from './ViewCardDescription.module.scss'
 
-interface InsightDescriptionProps {
+interface ViewCardDescriptionProps {
     title: string
     icon: MdiReactIconComponentType
     className?: string
@@ -16,14 +16,14 @@ interface InsightDescriptionProps {
 // default behavior and the text will become unavailable for selection
 const stopPropagation: React.MouseEventHandler<HTMLElement> = event => event.stopPropagation()
 
-export const InsightDescription: React.FunctionComponent<InsightDescriptionProps> = props => {
+export const ViewCardDescription: React.FunctionComponent<ViewCardDescriptionProps> = props => {
     const { icon: Icon, title, className = '' } = props
 
     return (
         // eslint-disable-next-line jsx-a11y/no-static-element-interactions
         <small
             title={title}
-            className={classnames(styles.insightDescription, 'text-muted', className)}
+            className={classnames(styles.viewDescription, 'text-muted', className)}
             onMouseDown={stopPropagation}
         >
             <Icon className="icon-inline" /> {title}
