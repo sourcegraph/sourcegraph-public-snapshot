@@ -31,6 +31,7 @@ var batchSpecWorkspaceJobInsertColumns = []string{
 	"path",
 	"file_matches",
 	"only_fetch_workspace",
+	"steps",
 
 	"state",
 
@@ -52,6 +53,7 @@ var BatchSpecWorkspaceJobColumns = SQLColumns{
 	"batch_spec_workspace_jobs.path",
 	"batch_spec_workspace_jobs.file_matches",
 	"batch_spec_workspace_jobs.only_fetch_workspace",
+	"batch_spec_workspace_jobs.steps",
 
 	"batch_spec_workspace_jobs.state",
 	"batch_spec_workspace_jobs.failure_message",
@@ -98,6 +100,11 @@ func (s *Store) CreateBatchSpecWorkspaceJob(ctx context.Context, ws ...*btypes.B
 				wj.FileMatches = []string{}
 			}
 
+			marshaledSteps, err := json.Marshal(wj.Steps)
+			if err != nil {
+				return err
+			}
+
 			if err := inserter.Insert(
 				ctx,
 				wj.BatchSpecID,
@@ -108,6 +115,7 @@ func (s *Store) CreateBatchSpecWorkspaceJob(ctx context.Context, ws ...*btypes.B
 				wj.Path,
 				pq.Array(wj.FileMatches),
 				wj.OnlyFetchWorkspace,
+				marshaledSteps,
 				wj.State.ToDB(),
 				wj.CreatedAt,
 				wj.UpdatedAt,
@@ -244,6 +252,7 @@ func listBatchSpecWorkspaceJobsQuery(opts ListBatchSpecWorkspaceJobsOpts) *sqlf.
 func scanBatchSpecWorkspaceJob(wj *btypes.BatchSpecWorkspaceJob, s scanner) error {
 	var executionLogs []dbworkerstore.ExecutionLogEntry
 	var failureMessage string
+	var steps json.RawMessage
 
 	if err := s.Scan(
 		&wj.ID,
@@ -255,6 +264,7 @@ func scanBatchSpecWorkspaceJob(wj *btypes.BatchSpecWorkspaceJob, s scanner) erro
 		&wj.Path,
 		pq.Array(&wj.FileMatches),
 		&wj.OnlyFetchWorkspace,
+		&steps,
 		&wj.State,
 		&dbutil.NullString{S: &failureMessage},
 		&dbutil.NullTime{Time: &wj.StartedAt},
@@ -268,6 +278,10 @@ func scanBatchSpecWorkspaceJob(wj *btypes.BatchSpecWorkspaceJob, s scanner) erro
 		&wj.UpdatedAt,
 	); err != nil {
 		return err
+	}
+
+	if err := json.Unmarshal(steps, &wj.Steps); err != nil {
+		return errors.Wrap(err, "scanBatchSpecWorkspaceJob: failed to unmarshal Steps")
 	}
 
 	if failureMessage != "" {

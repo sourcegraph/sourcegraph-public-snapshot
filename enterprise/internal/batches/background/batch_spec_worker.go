@@ -3,10 +3,10 @@ package background
 import (
 	"context"
 	"database/sql"
-	"fmt"
 	"time"
 
 	"github.com/hashicorp/go-multierror"
+	"github.com/inconshreveable/log15"
 	"github.com/keegancsmith/sqlf"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/service"
@@ -107,10 +107,6 @@ func (e *evaluator) HandlerFunc() workerutil.HandlerFunc {
 }
 
 func (r *evaluator) process(ctx context.Context, tx *store.Store, spec *btypes.BatchSpec) error {
-	fmt.Println("-----------------------------------------------------------------")
-	defer fmt.Println("------------------------- DONE ------------------------------")
-	fmt.Printf("---- PROCESSING BATCH SPEC %d ----\n", spec.ID)
-
 	evaluatableSpec, err := batcheslib.ParseBatchSpec([]byte(spec.RawSpec), batcheslib.ParseBatchSpecOptions{
 		AllowArrayEnvironments: true,
 		AllowTransformChanges:  true,
@@ -121,7 +117,7 @@ func (r *evaluator) process(ctx context.Context, tx *store.Store, spec *btypes.B
 	}
 
 	workspaces, unsupported, ignored, err := service.New(tx).ResolveWorkspacesForBatchSpec(ctx, evaluatableSpec, service.ResolveWorkspacesForBatchSpecOpts{
-		// TODO: Do we need to persist those on the batch spec?
+		// TODO: Persist these also on batch_spec
 		AllowIgnored:     true,
 		AllowUnsupported: true,
 	})
@@ -129,7 +125,7 @@ func (r *evaluator) process(ctx context.Context, tx *store.Store, spec *btypes.B
 		return err
 	}
 
-	fmt.Printf("----  len(workspaces)=%d, len(unsupported)=%d, len(ignored)=%d \n", len(workspaces), len(unsupported), len(ignored))
+	log15.Info("resolved workspaces for batch spec", "spec", spec.ID, "workspaces", len(workspaces), "unsupported", len(unsupported), "ignored", len(ignored))
 
 	var workspaceJobs []*btypes.BatchSpecWorkspaceJob
 	for _, w := range workspaces {
@@ -143,6 +139,7 @@ func (r *evaluator) process(ctx context.Context, tx *store.Store, spec *btypes.B
 			Path:               w.Path,
 			FileMatches:        w.FileMatches,
 			OnlyFetchWorkspace: w.OnlyFetchWorkspace,
+			Steps:              w.Steps,
 
 			State: btypes.BatchSpecWorkspaceJobStatePending,
 		})

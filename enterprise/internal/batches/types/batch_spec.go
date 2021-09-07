@@ -40,6 +40,14 @@ type BatchSpec struct {
 	UpdatedAt time.Time
 }
 
+// func (cs *BatchSpec) ResolvingState() string {
+// 	return string(cs.State)
+// }
+
+// func (cs *BatchSpec) ExecutionState() string {
+// 	return cs.workspaces.all(|state| state == 'completed')
+// }
+
 // Clone returns a clone of a BatchSpec.
 func (cs *BatchSpec) Clone() *BatchSpec {
 	cc := *cs

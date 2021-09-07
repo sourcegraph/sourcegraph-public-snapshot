@@ -89,8 +89,7 @@ func (s *batchSpecWorkspaceStore) MarkComplete(ctx context.Context, id int, opti
 		return false, err
 	}
 
-	fmt.Printf("job %d resulted in following changeset spec IDs: %#v\n", id, changesetSpecIDs)
-
+	// TODO: Save batch_spec_id on changeset_specs
 	_, ok, err := basestore.ScanFirstInt(batchesStore.Query(ctx, sqlf.Sprintf(markBatchSpecWorkspaceJobCompleteQuery, marshaledIDs, id, options.WorkerHostname)))
 	return ok, err
 }
