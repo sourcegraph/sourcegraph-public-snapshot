@@ -17,10 +17,10 @@ type EventContentMatch struct {
 	// Type is always ContentMatchType. Included here for marshalling.
 	Type MatchType `json:"type"`
 
-	Path       string   `json:"name"`
+	Path       string   `json:"path"`
 	Repository string   `json:"repository"`
 	Branches   []string `json:"branches,omitempty"`
-	Version    string   `json:"version,omitempty"`
+	Commit     string   `json:"commit,omitempty"`
 
 	LineMatches []EventLineMatch `json:"lineMatches"`
 }
@@ -32,10 +32,10 @@ type EventPathMatch struct {
 	// Type is always PathMatchType. Included here for marshalling.
 	Type MatchType `json:"type"`
 
-	Path       string   `json:"name"`
+	Path       string   `json:"path"`
 	Repository string   `json:"repository"`
 	Branches   []string `json:"branches,omitempty"`
-	Version    string   `json:"version,omitempty"`
+	Commit     string   `json:"commit,omitempty"`
 }
 
 func (e *EventPathMatch) eventMatch() {}
@@ -63,10 +63,10 @@ type EventSymbolMatch struct {
 	// Type is always SymbolMatchType. Included here for marshalling.
 	Type MatchType `json:"type"`
 
-	Path       string   `json:"name"`
+	Path       string   `json:"path"`
 	Repository string   `json:"repository"`
 	Branches   []string `json:"branches,omitempty"`
-	Version    string   `json:"version,omitempty"`
+	Commit     string   `json:"commit,omitempty"`
 
 	Symbols []Symbol `json:"symbols"`
 }

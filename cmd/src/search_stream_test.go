@@ -42,7 +42,7 @@ var event = []streaming.EventMatch{
 		Path:       "path/to/file",
 		Repository: "org/repo",
 		Branches:   nil,
-		Version:    "",
+		Commit:     "",
 		LineMatches: []streaming.EventLineMatch{
 			{
 				Line:             "foo bar foo",
@@ -61,7 +61,7 @@ var event = []streaming.EventMatch{
 		Path:       "path/to/file",
 		Repository: "org/repo",
 		Branches:   []string{},
-		Version:    "",
+		Commit:     "",
 		Symbols: []streaming.Symbol{
 			{
 				URL:           "github.com/sourcegraph/sourcegraph/-/blob/cmd/frontend/graphqlbackend/search_results.go#L1591:26-1591:35",
