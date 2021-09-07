@@ -8,6 +8,7 @@ import (
 	"log"
 	"os"
 	"os/exec"
+	"sort"
 	"strings"
 	"time"
 
@@ -45,6 +46,7 @@ type SnapshotContent struct {
 }
 
 var generatedFilename = "/files/findme.txt"
+var generatedFolder = "/files"
 
 var inputFile = flag.String("manifest", "", "path to a manifest json file describing what should be generated")
 
@@ -78,17 +80,27 @@ func main() {
 		contents = append(contents, mapToDates(repoDef.RepoPath, repoDef.Symbols)...)
 	}
 
+	sort.Slice(contents, func(i, j int) bool {
+		return contents[i].Instant.Before(contents[j].Instant)
+	})
+
 	for _, snapshot := range contents {
 		content := generateFileContent(snapshot)
+
+		err := preparePath(snapshot)
+		if err != nil {
+			log.Fatal(errors.Wrap(err, "unable to prepare repo path"))
+		}
 		path := buildPath(snapshot)
+
 		log.Printf("Writing content: %v @ %v", path, snapshot.Instant)
-		err := writeContent(path, content)
+		err = writeContent(path, content)
 		if err != nil {
 			log.Fatal(err)
 		}
 		err = inDir(snapshot.Repo, func() error {
 			log.Printf("Adding...")
-			err := run("git", "add", ".")
+			err := run("git", "add", "files/findme.txt")
 			if err != nil {
 				return errors.Wrap(err, "failed to add file to git repository")
 			}
@@ -108,7 +120,7 @@ func main() {
 func commit(commitTime time.Time) error {
 	AD := fmt.Sprintf("GIT_AUTHOR_DATE=\"%s\"", commitTime.Format(time.RFC3339))
 	CD := fmt.Sprintf("GIT_COMMITTER_DATE=\"%s\"", commitTime.Format(time.RFC3339))
-	return runWithEnv(AD, CD)("git", "commit", "-m", "autogen")
+	return runWithEnv(AD, CD)("git", "commit", "-m", "autogen", "--allow-empty")
 }
 
 func mapToDates(repo string, defs []SymbolDefinition) []SnapshotContent {
@@ -133,6 +145,16 @@ func mapToDates(repo string, defs []SymbolDefinition) []SnapshotContent {
 	}
 
 	return results
+}
+
+func preparePath(snapshot SnapshotContent) error {
+	if _, err := os.Stat(snapshot.Repo + generatedFolder); errors.Is(err, os.ErrNotExist) {
+		// the race here is fine
+		log.Printf("Creating path: %v", snapshot.Repo+generatedFolder)
+		return os.MkdirAll(snapshot.Repo+generatedFolder, 0755)
+	}
+	log.Printf("path found: %v", snapshot.Repo+generatedFolder)
+	return nil
 }
 
 func buildPath(snapshot SnapshotContent) string {
@@ -188,14 +210,15 @@ func runWithEnv(vars ...string) func(args ...string) error {
 }
 
 // inDir runs function f in directory d.
-func inDir(d string, f func() error) error {
+func inDir(d string, f func() error) (err error) {
 	d0, err := os.Getwd()
 	if err != nil {
 		return errors.Wrapf(err, "getting working dir: %s", d0)
 	}
 	defer func() {
 		if err := os.Chdir(d0); err != nil {
-			log.Println(err)
+			err = errors.Wrapf(err, "changing dir to %s", d0)
+			return
 		}
 	}()
 	if err := os.Chdir(d); err != nil {
