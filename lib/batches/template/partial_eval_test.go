@@ -14,9 +14,8 @@ var partialEvalStepCtx = &StepContext{
 	// Step is not set when evalStepCondition is called
 	Repository: Repository{
 		Name: "github.com/sourcegraph/src-cli",
-		FileMatches: map[string]bool{
-			"README.md": true,
-			"main.go":   true,
+		FileMatches: []string{
+			"main.go", "README.md",
 		},
 	},
 }

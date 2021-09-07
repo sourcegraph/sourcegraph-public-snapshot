@@ -20,6 +20,7 @@ export function resolveWorkspacesForBatchSpec(spec: string): Observable<BatchSpe
             }
 
             fragment BatchSpecWorkspacesFields on BatchSpecWorkspaces {
+                rawSpec
                 workspaces {
                     ...BatchSpecWorkspaceFields
                 }
@@ -57,6 +58,7 @@ export function resolveWorkspacesForBatchSpec(spec: string): Observable<BatchSpe
                     command
                     container
                 }
+                searchResultPaths
             }
         `,
         { spec }

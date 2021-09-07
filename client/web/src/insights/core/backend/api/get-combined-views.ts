@@ -1,4 +1,4 @@
-import { combineLatest, Observable } from 'rxjs'
+import { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
 
 import { ViewProviderResult } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
@@ -6,17 +6,11 @@ import { ViewProviderResult } from '@sourcegraph/shared/src/api/extension/extens
 import { ViewInsightProviderResult } from '../types'
 import { createExtensionInsight } from '../utils/create-extension-insight'
 
-import { getBackendInsights } from './get-backend-insights'
-
 /**
  * Get combined (backend and extension) code insights unified method.
  * Used for fetching insights in different places (home (search) page, directory pages)
  */
 export const getCombinedViews = (
-    getExtensionsInsights: () => Observable<ViewProviderResult[]>,
-    insightIds?: string[]
+    getExtensionsInsights: () => Observable<ViewProviderResult[]>
 ): Observable<ViewInsightProviderResult[]> =>
-    combineLatest([
-        getBackendInsights(insightIds),
-        getExtensionsInsights().pipe(map(extensionInsights => extensionInsights.map(createExtensionInsight))),
-    ]).pipe(map(([backendInsights, extensionViews]) => [...backendInsights, ...extensionViews]))
+    getExtensionsInsights().pipe(map(extensionInsights => extensionInsights.map(createExtensionInsight)))

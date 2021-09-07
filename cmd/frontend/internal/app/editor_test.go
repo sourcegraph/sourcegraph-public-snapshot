@@ -59,6 +59,13 @@ func TestEditorRev(t *testing.T) {
 }
 
 func TestEditorRedirect(t *testing.T) {
+	database.Mocks.Repos.GetFirstRepoNamesByCloneURL = func(ctx context.Context, cloneURL string) (api.RepoName, error) {
+		return "", nil
+	}
+	t.Cleanup(func() {
+		database.Mocks.Repos = database.MockRepos{}
+	})
+
 	database.Mocks.ExternalServices.List = func(database.ExternalServicesListOptions) ([]*types.ExternalService, error) {
 		return []*types.ExternalService{
 			{
@@ -96,7 +103,9 @@ func TestEditorRedirect(t *testing.T) {
 			},
 		}, nil
 	}
-	defer func() { database.Mocks.ExternalServices = database.MockExternalServices{} }()
+	t.Cleanup(func() {
+		database.Mocks.ExternalServices = database.MockExternalServices{}
+	})
 
 	cases := []struct {
 		name            string

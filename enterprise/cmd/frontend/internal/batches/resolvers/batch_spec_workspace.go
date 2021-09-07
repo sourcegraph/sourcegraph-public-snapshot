@@ -26,14 +26,15 @@ func (r *batchSpecWorkspaceResolver) Branch(ctx context.Context) (*graphqlbacken
 }
 
 func (r *batchSpecWorkspaceResolver) Path() string {
-	if r.node.Path == "" {
-		return "/"
-	}
 	return r.node.Path
 }
 
 func (r *batchSpecWorkspaceResolver) OnlyFetchWorkspace() bool {
 	return r.node.OnlyFetchWorkspace
+}
+
+func (r *batchSpecWorkspaceResolver) SearchResultPaths() []string {
+	return r.node.FileMatches
 }
 
 func (r *batchSpecWorkspaceResolver) Steps() []graphqlbackend.BatchSpecWorkspaceStepResolver {

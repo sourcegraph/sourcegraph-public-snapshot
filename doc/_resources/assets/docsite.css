@@ -489,8 +489,10 @@ body > #page > main > #content {
 .markdown-body hr {
   border: solid 1px var(--border-color);
 }
-.markdown-body img {
+.markdown-body :is(img, picture, video, object, iframe) {
     max-width: 100%;
+    height: auto;
+    aspect-ratio: attr(width) / attr(height);
 }
 .markdown-body a:not([href]) {
   color: inherit;

@@ -67,7 +67,9 @@ type operations struct {
 	staleSourcedCommits                    *observation.Operation
 	updateCommitedAt                       *observation.Operation
 	updateConfigurationPolicy              *observation.Operation
+	updateDependencyNumReferences          *observation.Operation
 	updateIndexConfigurationByRepositoryID *observation.Operation
+	updateNumReferences                    *observation.Operation
 	updatePackageReferences                *observation.Operation
 	updatePackages                         *observation.Operation
 
@@ -155,7 +157,9 @@ func newOperations(observationContext *observation.Context, metrics *metrics.Ope
 		staleSourcedCommits:                    op("StaleSourcedCommits"),
 		updateCommitedAt:                       op("UpdateCommitedAt"),
 		updateConfigurationPolicy:              op("UpdateConfigurationPolicy"),
+		updateDependencyNumReferences:          op("UpdateDependencyNumReferences"),
 		updateIndexConfigurationByRepositoryID: op("UpdateIndexConfigurationByRepositoryID"),
+		updateNumReferences:                    op("UpdateNumReferences"),
 		updatePackageReferences:                op("UpdatePackageReferences"),
 		updatePackages:                         op("UpdatePackages"),
 

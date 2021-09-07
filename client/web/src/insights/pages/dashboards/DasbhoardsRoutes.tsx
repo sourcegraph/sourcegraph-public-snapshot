@@ -1,7 +1,6 @@
 import React from 'react'
 import { Route, RouteComponentProps, Switch, useRouteMatch } from 'react-router'
 
-import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
@@ -16,7 +15,6 @@ import { EditDashboardPage } from './edit-dashboard/EditDashobardPage'
 export interface DashboardsRoutesProps
     extends TelemetryProps,
         SettingsCascadeProps<Settings>,
-        ExtensionsControllerProps,
         PlatformContextProps<'updateSettings'> {
     authenticatedUser: AuthenticatedUser
 }
@@ -25,7 +23,7 @@ export interface DashboardsRoutesProps
  * Displays Code Insights dashboard area.
  */
 export const DashboardsRoutes: React.FunctionComponent<DashboardsRoutesProps> = props => {
-    const { authenticatedUser, settingsCascade, platformContext, telemetryService, extensionsController } = props
+    const { authenticatedUser, settingsCascade, platformContext, telemetryService } = props
     const match = useRouteMatch()
 
     return (
@@ -48,7 +46,6 @@ export const DashboardsRoutes: React.FunctionComponent<DashboardsRoutesProps> = 
                     <DashboardsPage
                         platformContext={platformContext}
                         telemetryService={telemetryService}
-                        extensionsController={extensionsController}
                         settingsCascade={settingsCascade}
                         dashboardID={routeProps.match.params.dashboardId}
                     />

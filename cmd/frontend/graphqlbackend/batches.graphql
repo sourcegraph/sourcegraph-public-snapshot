@@ -2257,6 +2257,11 @@ A bag for all info around resolving workspaces.
 """
 type BatchSpecWorkspaces {
     """
+    The raw input given to produce this preview.
+    """
+    rawSpec: String!
+
+    """
     If true, repos with a .batchignore file will still be included.
     """
     allowIgnored: Boolean!
@@ -2311,6 +2316,12 @@ type BatchSpecWorkspace {
     List of steps that will need to run over this workspace.
     """
     steps: [BatchSpecWorkspaceStep!]!
+
+    """
+    If this workspace was resolved based on a search, this is the list of paths
+    to files that have been included in the search results.
+    """
+    searchResultPaths: [String!]!
 }
 
 """

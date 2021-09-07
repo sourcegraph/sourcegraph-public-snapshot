@@ -71,7 +71,7 @@ export const SearchBox: React.FunctionComponent<SearchBoxProps> = props => {
                     className={styles.searchBoxVersionContextDropdown}
                 />
             )}
-            <div className={`${styles.searchBoxBackgroundContainer} flex-shrink-past-contents`}>
+            <div className={classNames(styles.searchBoxBackgroundContainer, 'flex-shrink-past-contents')}>
                 {props.showSearchContext && (
                     <>
                         <SearchContextDropdown
@@ -83,7 +83,7 @@ export const SearchBox: React.FunctionComponent<SearchBoxProps> = props => {
                         <div className={styles.searchBoxSeparator} />
                     </>
                 )}
-                <div className={`${styles.searchBoxFocusContainer} flex-shrink-past-contents`}>
+                <div className={classNames(styles.searchBoxFocusContainer, 'flex-shrink-past-contents')}>
                     <LazyMonacoQueryInput {...props} className={styles.searchBoxInput} />
                     <Toggles {...props} navbarSearchQuery={queryState.query} className={styles.searchBoxToggles} />
                 </div>

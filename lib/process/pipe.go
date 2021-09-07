@@ -2,6 +2,7 @@ package process
 
 import (
 	"bufio"
+	"context"
 	"fmt"
 	"io"
 	"os/exec"
@@ -15,7 +16,7 @@ import (
 // WaitGroup after waiting for the *exec.Cmd to finish.
 //
 // See this issue for more details: https://github.com/golang/go/issues/21922
-func PipeOutput(c *exec.Cmd, stdoutWriter, stderrWriter io.Writer) (*sync.WaitGroup, error) {
+func PipeOutput(ctx context.Context, c *exec.Cmd, stdoutWriter, stderrWriter io.Writer) (*sync.WaitGroup, error) {
 	stdoutPipe, err := c.StdoutPipe()
 	if err != nil {
 		return nil, err
@@ -25,6 +26,16 @@ func PipeOutput(c *exec.Cmd, stdoutWriter, stderrWriter io.Writer) (*sync.WaitGr
 	if err != nil {
 		return nil, err
 	}
+
+	go func() {
+		// We start a goroutine here to make sure that our pipes are closed
+		// when the context is canceled.
+		//
+		// See enterprise/cmd/executor/internal/command/run.go for more details.
+		<-ctx.Done()
+		stdoutPipe.Close()
+		stderrPipe.Close()
+	}()
 
 	wg := &sync.WaitGroup{}
 

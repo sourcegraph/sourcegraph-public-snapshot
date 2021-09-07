@@ -6,7 +6,7 @@ import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/teleme
 
 import { WebStory } from '../../../components/WebStory'
 import { InsightsApiContext } from '../../core/backend/api-provider'
-import { createMockInsightAPI } from '../../core/backend/insights-api'
+import { createMockInsightAPI } from '../../core/backend/create-insights-api'
 import { Insight, InsightType } from '../../core/types'
 import { LINE_CHART_CONTENT_MOCK } from '../../mocks/charts-content'
 import { SETTINGS_CASCADE_MOCK } from '../../mocks/settings-cascade'
@@ -35,7 +35,7 @@ const insights: Insight[] = [
 ]
 
 const mockInsightAPI = createMockInsightAPI({
-    getBackendInsightById: ({ id }) =>
+    getBackendInsight: ({ id }) =>
         of({
             id,
             view: {
@@ -54,7 +54,6 @@ add('SmartInsightsViewGrid', () => (
             settingsCascade={SETTINGS_CASCADE_MOCK}
             telemetryService={NOOP_TELEMETRY_SERVICE}
             platformContext={{} as any}
-            extensionsController={{} as any}
         />
     </InsightsApiContext.Provider>
 ))

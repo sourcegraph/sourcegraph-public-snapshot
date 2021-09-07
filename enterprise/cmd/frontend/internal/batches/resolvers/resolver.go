@@ -494,7 +494,7 @@ func (r *Resolver) applyOrCreateBatchChange(ctx context.Context, args *graphqlba
 
 func (r *Resolver) CreateBatchSpec(ctx context.Context, args *graphqlbackend.CreateBatchSpecArgs) (graphqlbackend.BatchSpecResolver, error) {
 	var err error
-	tr, ctx := trace.New(ctx, "CreateBatchSpec", fmt.Sprintf("Resolver.CreateBatchspace %s, Spec %q", args.Namespace, args.BatchSpec))
+	tr, ctx := trace.New(ctx, "CreateBatchSpec", fmt.Sprintf("Resolver.CreateBatchSpec %s, Spec %q", args.Namespace, args.BatchSpec))
 	defer func() {
 		tr.SetError(err)
 		tr.Finish()
@@ -1537,6 +1537,7 @@ func (r *Resolver) ResolveWorkspacesForBatchSpec(ctx context.Context, args *grap
 
 	return &batchSpecWorkspacesResolver{
 		store:            r.store,
+		rawSpec:          args.BatchSpec,
 		allowUnsupported: args.AllowUnsupported,
 		allowIgnored:     args.AllowIgnored,
 		workspaces:       workspaces,
