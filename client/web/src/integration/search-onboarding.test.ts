@@ -27,6 +27,7 @@ describe('Search onboarding', () => {
             SearchSidebarGitRefs: () => ({
                 repository: {
                     __typename: 'Repository',
+                    id: 'repo',
                     gitRefs: {
                         __typename: 'GitRefConnection',
                         nodes: [],
