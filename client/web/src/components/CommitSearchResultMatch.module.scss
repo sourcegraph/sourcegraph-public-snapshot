@@ -1,8 +1,122 @@
+.search-result-match {
+    text-decoration: none; /* don't use cascading link style */
+    display: flex;
+    align-items: flex-start;
+    overflow-x: auto;
+    overflow-y: hidden;
+    background-color: var(--code-bg);
+    border: 1px solid var(--border-color-2);
+    border-radius: var(--border-radius);
+    border-top: 1px solid var(--border-color);
+    padding: 0.25rem 0;
+    position: relative;
+
+    &-clickable {
+        cursor: pointer;
+    }
+
+    &:hover {
+        background-color: var(--color-bg-1);
+        text-decoration: none;
+    }
+
+    &:not(:first-child) {
+        border-top: 1px solid var(--border-color);
+    }
+
+    pre,
+    code {
+        width: 100%;
+        padding: 0;
+        margin-bottom: 0;
+    }
+
+    table,
+    tr,
+    td {
+        display: flex;
+        flex-grow: 1;
+        padding: 0;
+        margin-bottom: 0;
+        :global(.code) {
+            padding: 0;
+        }
+        span:last-child {
+            width: 100%;
+        }
+    }
+
+    tbody {
+        display: flex;
+        flex-grow: 1;
+        flex-direction: column;
+    }
+}
+
+.loader {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    left: 50%;
+}
+
+.line {
+    &--hidden {
+        visibility: hidden;
+    }
+}
+
+.code-excerpt {
+    padding: 0 0.5rem;
+    color: var(--body-color);
+
+    table {
+        margin-bottom: 0 !important; /* Override docsite Markdown table CSS. A currently open PR removes that CSS and lets us remove this override. */
+    }
+    td:global(.line) {
+        display: none;
+    }
+    td:global(.code) > span:first-child {
+        padding-left: 1rem;
+    }
+
+    td:global(.code) > span:last-child {
+        padding-right: 1rem;
+    }
+}
+
+.markdown {
+    padding: 0.25rem 0.5rem;
+    display: flex;
+    flex-direction: column;
+    flex-grow: 1;
+
+    table,
+    th,
+    td {
+        border: none;
+        padding: 0;
+    }
+
+    code,
+    pre {
+        background-color: transparent;
+        padding: 0;
+    }
+
+    p,
+    li {
+        code {
+            display: inline;
+        }
+    }
+}
+
 .commit-search-result-match {
     position: relative;
 }
 
 .last-synced-icon {
-    // Override top spacing for smaller padding on commit/diff results
+    /* Override top spacing for smaller padding on commit/diff results */
     top: 0.25rem;
 }

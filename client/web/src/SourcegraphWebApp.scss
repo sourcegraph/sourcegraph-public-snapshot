@@ -117,7 +117,6 @@ body,
 @import './repo/actions/InstallBrowserExtensionAlert.scss';
 @import './components/CopyableText';
 @import './components/FilteredConnection';
-@import './components/SaveToolbar';
 @import './components/HeroPage';
 @import './components/ModalPage';
 @import './components/RadioButtons';
@@ -131,15 +130,10 @@ body,
 @import './org/OrgsArea';
 @import './components/Badge';
 @import './components/Collapsible';
-@import './components/Timeline';
 @import './marketing/SurveyPage';
 @import './components/branding/BrandLogo';
-@import './components/SingleValueCard';
-@import './components/SearchResult';
-@import './components/SearchResultMatch';
 @import './components/diff/FileDiffNode';
 @import './components/externalServices/AddExternalServicesPage';
-@import './components/Sidebar';
 @import '../../branded/src/components/panel/views/FileLocations';
 @import '../../branded/src/components/LoaderInput';
 

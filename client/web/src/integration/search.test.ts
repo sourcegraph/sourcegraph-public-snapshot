@@ -427,7 +427,7 @@ describe('Search', () => {
                 waitUntil: 'networkidle0',
             })
             await hideCreateCodeMonitorFeatureTour()
-            await driver.page.waitForSelector('.search-result-match__code-excerpt .selection-highlight', {
+            await driver.page.waitForSelector('[data-testid="search-result-match-code-excerpt"] .selection-highlight', {
                 visible: true,
             })
             await driver.page.waitForSelector('#monaco-query-input', { visible: true })
@@ -448,7 +448,7 @@ describe('Search', () => {
                 waitUntil: 'networkidle0',
             })
             await hideCreateCodeMonitorFeatureTour()
-            await driver.page.waitForSelector('.search-result-match__code-excerpt .selection-highlight', {
+            await driver.page.waitForSelector('[data-testid="search-result-match-code-excerpt"] .selection-highlight', {
                 visible: true,
             })
             await driver.page.waitForSelector('#monaco-query-input', { visible: true })

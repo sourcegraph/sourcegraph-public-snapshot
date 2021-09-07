@@ -1,0 +1,18 @@
+.sidebar {
+    isolation: isolate;
+    width: 12rem;
+    display: flex;
+    flex-direction: column;
+}
+
+.link {
+    &--inactive {
+        &:hover {
+            background-color: var(--color-bg-2);
+        }
+    }
+}
+
+.chevron {
+    color: var(--icon-color);
+}

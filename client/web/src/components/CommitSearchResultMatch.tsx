@@ -1,3 +1,4 @@
+import classNames from 'classnames'
 import { isEqual, range } from 'lodash'
 import React from 'react'
 import { Link } from 'react-router-dom'
@@ -159,24 +160,25 @@ export class CommitSearchResultMatch extends React.Component<
                         />
                     )}
                     {this.state.HTML !== undefined ? (
-                        <Link key={this.props.item.url} to={this.props.item.url} className="search-result-match">
+                        <Link key={this.props.item.url} to={this.props.item.url} className={styles.searchResultMatch}>
                             <code>
                                 <Markdown
                                     refFn={this.setTableContainerElement}
-                                    className="search-result-match__markdown search-result-match__code-excerpt"
+                                    data-testid="search-result-match-code-excerpt"
+                                    className={classNames(styles.markdown, styles.codeExcerpt)}
                                     dangerousInnerHTML={this.state.HTML}
                                 />
                             </code>
                         </Link>
                     ) : (
                         <>
-                            <LoadingSpinner className="icon-inline search-result-match__loader" />
+                            <LoadingSpinner className={classNames('icon-inline', styles.loader)} />
                             <table>
                                 <tbody>
                                     {range(firstLine, lastLine).map(index => (
                                         <tr key={`${this.props.item.url}#${index}`}>
                                             {/* create empty space to fill viewport (as if the blob content were already fetched, otherwise we'll overfetch) */}
-                                            <td className="line search-result-match__line--hidden">
+                                            <td className={styles.lineHidden}>
                                                 <code>{index}</code>
                                             </td>
                                             <td className="code"> </td>
