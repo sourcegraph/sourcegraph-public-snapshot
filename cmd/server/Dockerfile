@@ -49,7 +49,7 @@ RUN apk update && apk add --no-cache \
     'git>=2.18' \
     git-p4 \
     python2 \
-    'python3>=3.9.5' --repository=http://dl-cdn.alpinelinux.org/alpine/edge/main \
+    python3 \
     'nginx>=1.18.0' openssh-client pcre sqlite-libs su-exec 'nodejs-current=14.5.0-r0' \
     postgresql=12.8-r0 \
     postgresql-contrib

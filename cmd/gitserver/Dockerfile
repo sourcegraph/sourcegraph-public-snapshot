@@ -37,7 +37,7 @@ RUN apk add --no-cache \
     openssh-client \
     git-p4 \
     python2 \
-    'python3>=3.9.5' --repository=http://dl-cdn.alpinelinux.org/alpine/edge/main
+    python3
 
 COPY --from=p4cli /usr/local/bin/p4 /usr/local/bin/p4
 
