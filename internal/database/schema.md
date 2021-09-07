@@ -113,6 +113,37 @@ Foreign-key constraints:
 
 ```
 
+# Table "public.batch_spec_workspace_jobs"
+```
+       Column       |           Type           | Collation | Nullable |                        Default                        
+--------------------+--------------------------+-----------+----------+-------------------------------------------------------
+ id                 | bigint                   |           | not null | nextval('batch_spec_workspace_jobs_id_seq'::regclass)
+ batch_spec_id      | integer                  |           |          | 
+ changeset_spec_ids | jsonb                    |           |          | '{}'::jsonb
+ repo_id            | integer                  |           |          | 
+ branch             | text                     |           | not null | 
+ commit             | text                     |           | not null | 
+ path               | text                     |           | not null | 
+ state              | text                     |           |          | 'pending'::text
+ failure_message    | text                     |           |          | 
+ started_at         | timestamp with time zone |           |          | 
+ finished_at        | timestamp with time zone |           |          | 
+ process_after      | timestamp with time zone |           |          | 
+ num_resets         | integer                  |           | not null | 0
+ num_failures       | integer                  |           | not null | 0
+ execution_logs     | json[]                   |           |          | 
+ worker_hostname    | text                     |           | not null | ''::text
+ last_heartbeat_at  | timestamp with time zone |           |          | 
+ created_at         | timestamp with time zone |           | not null | now()
+ updated_at         | timestamp with time zone |           | not null | now()
+Indexes:
+    "batch_spec_workspace_jobs_pkey" PRIMARY KEY, btree (id)
+Foreign-key constraints:
+    "batch_spec_workspace_jobs_batch_spec_id_fkey" FOREIGN KEY (batch_spec_id) REFERENCES batch_specs(id) ON DELETE CASCADE DEFERRABLE
+    "batch_spec_workspace_jobs_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) DEFERRABLE
+
+```
+
 # Table "public.batch_specs"
 ```
       Column       |           Type           | Collation | Nullable |                 Default                 
@@ -126,6 +157,16 @@ Foreign-key constraints:
  user_id           | integer                  |           |          | 
  created_at        | timestamp with time zone |           | not null | now()
  updated_at        | timestamp with time zone |           | not null | now()
+ state             | text                     |           |          | 
+ failure_message   | text                     |           |          | 
+ started_at        | timestamp with time zone |           |          | 
+ finished_at       | timestamp with time zone |           |          | 
+ process_after     | timestamp with time zone |           |          | 
+ last_heartbeat_at | timestamp with time zone |           |          | 
+ num_resets        | integer                  |           | not null | 0
+ num_failures      | integer                  |           | not null | 0
+ execution_logs    | json[]                   |           |          | 
+ worker_hsotname   | text                     |           | not null | ''::text
 Indexes:
     "batch_specs_pkey" PRIMARY KEY, btree (id)
     "batch_specs_rand_id" btree (rand_id)
@@ -136,6 +177,7 @@ Foreign-key constraints:
 Referenced by:
     TABLE "batch_changes" CONSTRAINT "batch_changes_batch_spec_id_fkey" FOREIGN KEY (batch_spec_id) REFERENCES batch_specs(id) DEFERRABLE
     TABLE "batch_spec_executions" CONSTRAINT "batch_spec_executions_batch_spec_id_fkey" FOREIGN KEY (batch_spec_id) REFERENCES batch_specs(id) DEFERRABLE
+    TABLE "batch_spec_workspace_jobs" CONSTRAINT "batch_spec_workspace_jobs_batch_spec_id_fkey" FOREIGN KEY (batch_spec_id) REFERENCES batch_specs(id) ON DELETE CASCADE DEFERRABLE
     TABLE "changeset_specs" CONSTRAINT "changeset_specs_batch_spec_id_fkey" FOREIGN KEY (batch_spec_id) REFERENCES batch_specs(id) DEFERRABLE
 
 ```
@@ -1576,6 +1618,7 @@ Check constraints:
     "check_name_nonempty" CHECK (name <> ''::citext)
     "repo_metadata_check" CHECK (jsonb_typeof(metadata) = 'object'::text)
 Referenced by:
+    TABLE "batch_spec_workspace_jobs" CONSTRAINT "batch_spec_workspace_jobs_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) DEFERRABLE
     TABLE "changeset_specs" CONSTRAINT "changeset_specs_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) DEFERRABLE
     TABLE "changesets" CONSTRAINT "changesets_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE DEFERRABLE
     TABLE "discussion_threads_target_repo" CONSTRAINT "discussion_threads_target_repo_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE
