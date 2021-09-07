@@ -50,11 +50,8 @@ export function handleContentViews(
                 merge(
                     of(contentViewEvent).pipe(
                         tap(() => {
-                            console.log('Content view added', { contentViewEvent })
                             linkPreviewSubscriptions.set(contentViewEvent.element, new Subscription())
                             contentViewEvent.subscriptions.add(() => {
-                                console.log('Content view removed', { contentViewEvent })
-
                                 // Clean up current link preview subscriptions when the content view is removed
                                 const subscriptions = linkPreviewSubscriptions.get(contentViewEvent.element)
                                 if (!subscriptions) {
@@ -77,7 +74,6 @@ export function handleContentViews(
                         observeOn(asyncScheduler),
                         map(() => contentViewEvent.element.innerHTML),
                         distinctUntilChanged(),
-                        tap(() => console.log('Content view updated', { contentViewEvent })),
                         mapTo(contentViewEvent),
                         throttleTime(2000, undefined, { leading: true, trailing: true }) // reduce the harm from an infinite loop bug
                     )

@@ -204,10 +204,12 @@ export interface CodeHost extends ApplyLinkPreviewOptions {
      * Configuration for built-in search input enhancement
      */
     searchEnhancement?: {
-        /** Input element resolver */
-        viewResolver: ViewResolver<{ element: HTMLElement }>
+        /** Search input element resolver */
+        searchViewResolver: ViewResolver<{ element: HTMLElement }>
+        /** Search result element resolver */
+        resultViewResolver: ViewResolver<{ element: HTMLElement }>
         /** Callback to trigger on input element change */
-        onChange: (args: { value: string; baseURL: string }) => void
+        onChange: (args: { value: string; baseURL: string; searchResultElement: HTMLElement }) => void
     }
 
     /**
@@ -615,7 +617,6 @@ export function observeHoverOverlayMountLocation(
 
 export interface HandleCodeHostOptions extends CodeIntelligenceProps {
     mutations: Observable<MutationRecordLike[]>
-    sourcegraphURL: string
     render: typeof reactDOMRender
     minimalUI: boolean
     hideActions?: boolean
@@ -628,7 +629,6 @@ export function handleCodeHost({
     extensionsController,
     platformContext,
     showGlobalDebug,
-    sourcegraphURL,
     telemetryService,
     render,
     minimalUI,
@@ -637,7 +637,7 @@ export function handleCodeHost({
 }: HandleCodeHostOptions): Subscription {
     const history = H.createBrowserHistory()
     const subscriptions = new Subscription()
-    const { requestGraphQL } = platformContext
+    const { requestGraphQL, sourcegraphURL } = platformContext
 
     const addedElements = mutations.pipe(
         concatAll(),
@@ -826,17 +826,21 @@ export function handleCodeHost({
     }
 
     if (codeHost.searchEnhancement) {
-        const { viewResolver, onChange } = codeHost.searchEnhancement
-        const searchEnhancementSubscription = mutations
-            .pipe(
-                trackViews([viewResolver]),
-                switchMap(({ element }) => fromEvent(element, 'input')),
-                map(event => ({
-                    value: (event.target as HTMLInputElement).value,
-                    baseURL: sourcegraphURL,
-                })),
-                observeOn(asyncScheduler)
-            )
+        const { searchViewResolver, resultViewResolver, onChange } = codeHost.searchEnhancement
+
+        const searchView = mutations.pipe(
+            trackViews([searchViewResolver]),
+            switchMap(({ element }) => fromEvent(element, 'input')),
+            map(event => ({
+                value: (event.target as HTMLInputElement).value,
+                baseURL: sourcegraphURL,
+            })),
+            observeOn(asyncScheduler)
+        )
+        const resultView = mutations.pipe(trackViews([resultViewResolver])).pipe(observeOn(asyncScheduler))
+
+        const searchEnhancementSubscription = combineLatest([searchView, resultView])
+            .pipe(map(([search, { element: searchResultElement }]) => ({ ...search, searchResultElement })))
             .subscribe(onChange)
         subscriptions.add(searchEnhancementSubscription)
     }
@@ -964,8 +968,6 @@ export function handleCodeHost({
 
     subscriptions.add(
         codeViews.subscribe(codeViewEvent => {
-            console.log('Code view added')
-
             // This code view could have left the DOM between the time that
             // 1) it entered the DOM
             // 2) requests to Sourcegraph instance for repo name + file info fulfilled
@@ -975,7 +977,6 @@ export function handleCodeHost({
             let wasRemoved = false
             codeViewEvent.subscriptions.add(() => {
                 wasRemoved = true
-                console.log('Code view removed')
             })
 
             if (wasRemoved) {
@@ -1327,7 +1328,6 @@ export function injectCodeIntelligenceToCodeHost(
                     extensionsController,
                     platformContext,
                     showGlobalDebug,
-                    sourcegraphURL,
                     telemetryService,
                     render: reactDOMRender,
                     minimalUI,

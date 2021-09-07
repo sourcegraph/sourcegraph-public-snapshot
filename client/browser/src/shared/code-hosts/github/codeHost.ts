@@ -320,24 +320,22 @@ const notificationClassNames = {
 }
 
 const searchEnhancement: CodeHost['searchEnhancement'] = {
-    viewResolver: {
+    searchViewResolver: {
         selector: '.js-site-search-form input[type="text"]',
         resolveView: element => ({ element }),
     },
-    onChange: ({ value, baseURL }) => {
-        const SEARCH_IN_GITHUB_SELECTOR = '#jump-to-suggestion-search-global'
+    resultViewResolver: {
+        selector: '#jump-to-suggestion-search-global',
+        resolveView: element => ({ element }),
+    },
+    onChange: ({ value, baseURL, searchResultElement: ghElement }) => {
         const SEARCH_IN_SOURCEGRAPH_SELECTOR = '#jump-to-sourcegraph-search-global'
-
-        const ghElement = document.querySelector<HTMLElement>(SEARCH_IN_GITHUB_SELECTOR)
-        if (!ghElement) {
-            return
-        }
 
         /** Create "Search in Sourcegraph" element based on GH element */
         const createElement = (): HTMLElement => {
             /** SG Base element on top of GH "All Github" element */
-            const sgNewElement = ghElement.cloneNode(true) as HTMLElement
-            sgNewElement.id = SEARCH_IN_SOURCEGRAPH_SELECTOR.replace('#', '')
+            const sgElement = ghElement.cloneNode(true) as HTMLElement
+            sgElement.id = SEARCH_IN_SOURCEGRAPH_SELECTOR.replace('#', '')
 
             /** Add sourcegraph logo */
             const logo = document.createElement('img')
@@ -346,27 +344,24 @@ const searchEnhancement: CodeHost['searchEnhancement'] = {
             logo.setAttribute('alt', 'Sourcegraph Logo Image')
 
             /** Update badge text */
-            const badge = sgNewElement.querySelector('.js-jump-to-badge-search-text-global') as HTMLElement
+            const badge = sgElement.querySelector('.js-jump-to-badge-search-text-global') as HTMLElement
             badge.textContent = 'Sourcegraph'
             badge.parentNode?.insertBefore(logo, badge)
 
             /** Add sourcegraph item after GH item */
-            ghElement.parentNode?.insertBefore(sgNewElement, ghElement.nextElementSibling)
-
-            return sgNewElement
+            return ghElement.parentNode?.insertBefore(sgElement, ghElement.nextElementSibling) as HTMLElement
         }
 
         /** Update link and display value */
-        const updateContent = (element: HTMLElement): void => {
-            const displayValue = element.querySelector<HTMLElement>('.jump-to-suggestion-name') as HTMLElement
+        const updateContent = (sgElement: HTMLElement): void => {
+            const displayValue = sgElement.querySelector<HTMLElement>('.jump-to-suggestion-name') as HTMLElement
             displayValue.textContent = value
             displayValue.setAttribute('aria-label', value)
 
-            /** Update link url */
-            const link = element.querySelector<HTMLElement>('a') as HTMLLinkElement
+            const link = sgElement.querySelector<HTMLElement>('a') as HTMLLinkElement
             link.setAttribute('href', `${baseURL}/search?q=${encodeURIComponent(value)}`)
             link.setAttribute('target', '_blank')
-            element.setAttribute('style', `display: ${value ? 'initial' : 'none !important'}`)
+            sgElement.setAttribute('style', `display: ${value ? 'initial' : 'none !important'}`)
         }
 
         updateContent(document.querySelector<HTMLElement>(SEARCH_IN_SOURCEGRAPH_SELECTOR) ?? createElement())
