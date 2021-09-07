@@ -40,7 +40,7 @@ function generateMockedRequest(
     }
 }
 
-function generateMockedResponses(
+export function generateMockedResponses(
     type: GitRefType,
     totalCount: number,
     query = ''
