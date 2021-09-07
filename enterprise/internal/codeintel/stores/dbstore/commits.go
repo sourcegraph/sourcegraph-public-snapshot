@@ -149,13 +149,18 @@ SELECT lsif_dirty_repositories.repository_id, lsif_dirty_repositories.dirty_toke
 `
 
 // CommitsVisibleToUpload returns the set of commits for which the given upload can answer code intelligence queries.
-func (s *Store) CommitsVisibleToUpload(ctx context.Context, uploadID, limit, offset int) (_ []string, err error) {
+func (s *Store) CommitsVisibleToUpload(ctx context.Context, uploadID, limit int, after *string) (_ []string, err error) {
 	ctx, endObservation := s.operations.commitsVisibleToUpload.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("uploadID", uploadID),
 	}})
 	defer endObservation(1, observation.Args{})
 
-	return basestore.ScanStrings(s.Query(ctx, sqlf.Sprintf(commitsVisibleToUploadQuery, strconv.Itoa(uploadID), limit, offset)))
+	afterStr := ""
+	if after != nil {
+		afterStr = *after
+	}
+
+	return basestore.ScanStrings(s.Query(ctx, sqlf.Sprintf(commitsVisibleToUploadQuery, strconv.Itoa(uploadID), afterStr, limit)))
 }
 
 const commitsVisibleToUploadQuery = `
@@ -178,7 +183,9 @@ FROM (
 		ORDER BY ul.commit_bytea
 	)
 ) commits
-LIMIT %s OFFSET %s
+WHERE decode(%s, 'hex') < commits.commit_bytea
+ORDER BY commits.commit_bytea
+LIMIT %s
 `
 
 // CommitGraphMetadata returns whether or not the commit graph for the given repository is stale, along with the date of

@@ -789,13 +789,29 @@ func assertCommitsVisibleFromUploads(t *testing.T, store *Store, uploads []Uploa
 		sort.Strings(commits)
 	}
 
+	// Test pagination by requesting only a couple of
+	// results at a time in this assertion helper.
+	testPageSize := 2
+
 	for _, upload := range uploads {
-		commits, err := store.CommitsVisibleToUpload(context.Background(), upload.ID, 100, 0)
-		if err != nil {
-			t.Fatalf("unexpected error getting commits visible to upload %d: %s", upload.ID, err)
+		var after *string
+		var allCommits []string
+
+		for {
+			commits, err := store.CommitsVisibleToUpload(context.Background(), upload.ID, testPageSize, after)
+			if err != nil {
+				t.Fatalf("unexpected error getting commits visible to upload %d: %s", upload.ID, err)
+			}
+			if len(commits) == 0 {
+				break
+			}
+
+			last := commits[len(commits)-1]
+			allCommits = append(allCommits, commits...)
+			after = &last
 		}
 
-		if diff := cmp.Diff(expectedVisibleCommits[upload.ID], commits); diff != "" {
+		if diff := cmp.Diff(expectedVisibleCommits[upload.ID], allCommits); diff != "" {
 			t.Errorf("unexpected commits visible to upload %d (-want +got):\n%s", upload.ID, diff)
 		}
 	}
