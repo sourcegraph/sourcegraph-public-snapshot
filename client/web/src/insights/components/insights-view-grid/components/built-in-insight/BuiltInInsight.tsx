@@ -1,6 +1,6 @@
 import classnames from 'classnames'
 import PuzzleIcon from 'mdi-react/PuzzleIcon'
-import React, { useContext, useMemo } from 'react'
+import React, { useContext, useMemo, useState } from 'react'
 
 import { ViewContexts } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
@@ -9,15 +9,19 @@ import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryServi
 import { isErrorLike } from '@sourcegraph/shared/src/util/errors'
 
 import { Settings } from '../../../../../schema/settings.schema'
+import {
+    ViewCard,
+    ViewLoadingContent,
+    ViewErrorContent,
+    ViewContent,
+    LineChartSettingsContext,
+} from '../../../../../views'
 import { InsightsApiContext } from '../../../../core/backend/api-provider'
 import { LangStatsInsight } from '../../../../core/types'
 import { SearchExtensionBasedInsight } from '../../../../core/types/insight/search-insight'
 import { useDeleteInsight } from '../../../../hooks/use-delete-insight/use-delete-insight'
 import { useParallelRequests } from '../../../../hooks/use-parallel-requests/use-parallel-request'
-import { InsightViewContent } from '../../../insight-view-content/InsightViewContent'
-import { InsightErrorContent } from '../insight-card/components/insight-error-content/InsightErrorContent'
-import { InsightLoadingContent } from '../insight-card/components/insight-loading-content/InsightLoadingContent'
-import { InsightContentCard } from '../insight-card/InsightContentCard'
+import { InsightContextMenu } from '../insight-context-menu/InsightContextMenu'
 
 interface BuiltInInsightProps<D extends keyof ViewContexts>
     extends TelemetryProps,
@@ -50,33 +54,43 @@ export function BuiltInInsight<D extends keyof ViewContexts>(props: BuiltInInsig
         ])
     )
 
+    // Visual line chart settings
+    const [zeroYAxisMin, setZeroYAxisMin] = useState(false)
     const { delete: handleDelete, loading: isDeleting } = useDeleteInsight({ settingsCascade, platformContext })
 
     return (
-        <InsightContentCard
-            telemetryService={telemetryService}
-            hasContextMenu={true}
-            insight={{ id: insight.id, view: data?.view }}
-            onDelete={() => handleDelete({ id: insight.id, title: insight.title })}
+        <ViewCard
             {...otherProps}
+            insight={{ id: insight.id, view: data?.view }}
             className={classnames('extension-insight-card', otherProps.className)}
+            contextMenu={
+                <InsightContextMenu
+                    insightID={insight.id}
+                    menuButtonClassName="ml-1 mr-n2 d-inline-flex"
+                    zeroYAxisMin={zeroYAxisMin}
+                    onToggleZeroYAxisMin={() => setZeroYAxisMin(!zeroYAxisMin)}
+                    onDelete={() => handleDelete(insight)}
+                />
+            }
         >
             {!data || loading || isDeleting ? (
-                <InsightLoadingContent
+                <ViewLoadingContent
                     text={isDeleting ? 'Deleting code insight' : 'Loading code insight'}
                     subTitle={insight.id}
                     icon={PuzzleIcon}
                 />
             ) : isErrorLike(data.view) ? (
-                <InsightErrorContent error={data.view} title={insight.id} icon={PuzzleIcon} />
+                <ViewErrorContent error={data.view} title={insight.id} icon={PuzzleIcon} />
             ) : (
                 data.view && (
-                    <InsightViewContent
-                        telemetryService={telemetryService}
-                        viewContent={data.view.content}
-                        viewID={insight.id}
-                        containerClassName="extension-insight-card"
-                    />
+                    <LineChartSettingsContext.Provider value={{ zeroYAxisMin }}>
+                        <ViewContent
+                            telemetryService={telemetryService}
+                            viewContent={data.view.content}
+                            viewID={insight.id}
+                            containerClassName="extension-insight-card"
+                        />
+                    </LineChartSettingsContext.Provider>
                 )
             )}
             {
@@ -84,6 +98,6 @@ export function BuiltInInsight<D extends keyof ViewContexts>(props: BuiltInInsig
                 // resize-handler from the react-grid-layout library
                 otherProps.children
             }
-        </InsightContentCard>
+        </ViewCard>
     )
 }

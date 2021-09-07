@@ -11,9 +11,6 @@ import { DatumZoneClickEvent } from './charts/line/types'
 import { PieChart } from './charts/pie/PieChart'
 import { getInsightTypeByViewId } from './utils/get-insight-type-by-view-id'
 
-/**
- * Displays chart view content.
- */
 export interface ChartViewContentProps {
     /** Data for chart (lines, bar, pie arcs)*/
     content: ChartContent

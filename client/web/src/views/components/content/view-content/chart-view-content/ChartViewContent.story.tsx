@@ -5,8 +5,8 @@ import React from 'react'
 
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
-import { WebStory } from '../../../../components/WebStory'
-import { LINE_CHART_CONTENT_MOCK } from '../../../mocks/charts-content'
+import { WebStory } from '../../../../../components/WebStory'
+import { LINE_CHART_CONTENT_MOCK } from '../../../../../insights/mocks/charts-content'
 
 import { ChartViewContent } from './ChartViewContent'
 

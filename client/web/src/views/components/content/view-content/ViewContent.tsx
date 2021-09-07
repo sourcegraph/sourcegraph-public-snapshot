@@ -13,7 +13,7 @@ import { ChartViewContent } from './chart-view-content/ChartViewContent'
 const isMarkupContent = (input: unknown): input is MarkupContent =>
     isObject(input) && hasProperty('value')(input) && typeof input.value === 'string'
 
-export interface InsightViewContentProps extends TelemetryProps {
+export interface ViewContentProps extends TelemetryProps {
     viewContent: View['content']
     viewID: string
 
@@ -27,7 +27,7 @@ export interface InsightViewContentProps extends TelemetryProps {
 /**
  * Renders the content of an extension-contributed view.
  */
-export const InsightViewContent: React.FunctionComponent<InsightViewContentProps> = ({
+export const ViewContent: React.FunctionComponent<ViewContentProps> = ({
     viewContent,
     viewID,
     containerClassName,
