@@ -25,7 +25,7 @@ type EventContentMatch struct {
 	RepoStars       int              `json:"repoStars,omitempty"`
 	RepoLastFetched *time.Time       `json:"repoLastFetched,omitempty"`
 	Branches        []string         `json:"branches,omitempty"`
-	Version         string           `json:"commit,omitempty"`
+	Commit          string           `json:"commit,omitempty"`
 	Hunks           []DecoratedHunk  `json:"hunks"`
 	LineMatches     []EventLineMatch `json:"lineMatches"`
 }
@@ -46,7 +46,7 @@ type EventPathMatch struct {
 	RepoStars       int        `json:"repoStars,omitempty"`
 	RepoLastFetched *time.Time `json:"repoLastFetched,omitempty"`
 	Branches        []string   `json:"branches,omitempty"`
-	Version         string     `json:"commit,omitempty"`
+	Commit          string     `json:"commit,omitempty"`
 }
 
 func (e *EventPathMatch) eventMatch() {}
@@ -110,7 +110,7 @@ type EventSymbolMatch struct {
 	RepoStars       int        `json:"repoStars,omitempty"`
 	RepoLastFetched *time.Time `json:"repoLastFetched,omitempty"`
 	Branches        []string   `json:"branches,omitempty"`
-	Version         string     `json:"commit,omitempty"`
+	Commit          string     `json:"commit,omitempty"`
 
 	Symbols []Symbol `json:"symbols"`
 }
