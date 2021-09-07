@@ -1,5 +1,4 @@
 import delay from 'delay'
-import { View } from 'sourcegraph'
 
 import { createDriverForTest, Driver } from '@sourcegraph/shared/src/testing/driver'
 import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'
@@ -9,11 +8,11 @@ import { percySnapshotWithVariants } from '../utils'
 
 import {
     BACKEND_INSIGHTS,
-    CODE_STATS_INSIGHT_LANG_USAGE,
-    INSIGHT_VIEW_TEAM_SIZE,
-    INSIGHT_VIEW_TYPES_MIGRATION,
+    CODE_STATS_RESULT_MOCK,
+    SEARCH_INSIGHT_COMMITS_MOCK,
+    SEARCH_INSIGHT_RESULT_MOCK,
 } from './utils/insight-mock-data'
-import { overrideGraphQLExtensions } from './utils/override-graphql-with-extensions'
+import { overrideGraphQLExtensions } from './utils/override-insights-graphql'
 
 describe.skip('[VISUAL] Code insights page', () => {
     let driver: Driver
@@ -73,23 +72,37 @@ describe.skip('[VISUAL] Code insights page', () => {
             userSettings: {
                 'searchInsights.insight.graphQLTypesMigration': {
                     title: 'The First search-based insight',
-                    repositories: [],
-                    series: [],
+                    repositories: ['github.com/sourcegraph/sourcegraph'],
+                    series: [
+                        {
+                            name: 'The first series of the first chart',
+                            stroke: 'var(--oc-grape-7)',
+                            query: 'Kapica',
+                        },
+                    ],
+                    step: {
+                        months: 8,
+                    },
                 },
                 'searchInsights.insight.teamSize': {
                     title: 'The Second search-based insight',
-                    repositories: [],
-                    series: [],
+                    repositories: ['github.com/sourcegraph/sourcegraph'],
+                    series: [
+                        {
+                            name: 'The second series of the second chart',
+                            stroke: 'var(--oc-blue-7)',
+                            query: 'Korolev',
+                        },
+                    ],
+                    step: {
+                        months: 8,
+                    },
                 },
                 'insights.allrepos': {},
             },
-            insightExtensionsMocks: {
-                'searchInsights.insight.teamSize': INSIGHT_VIEW_TEAM_SIZE,
-                'searchInsights.insight.graphQLTypesMigration': INSIGHT_VIEW_TYPES_MIGRATION,
-            },
             overrides: {
-                // Mock back-end insights with standard gql API handler.
-                Insights: () => ({ insights: { nodes: [] } }),
+                BulkSearchCommits: () => SEARCH_INSIGHT_COMMITS_MOCK,
+                BulkSearch: () => SEARCH_INSIGHT_RESULT_MOCK,
             },
         })
 
@@ -101,29 +114,31 @@ describe.skip('[VISUAL] Code insights page', () => {
         overrideGraphQLExtensions({
             testContext,
 
-            // Since search insight and code stats insight are working via user/org
+            // Since search insight and code stats insights work via user/org
             // settings. We have to mock them by mocking user settings and provide
-            // mock data - mocking extension work.
+            // mock settings cascade data.
             userSettings: {
                 'searchInsights.insight.graphQLTypesMigration': {
                     title: 'The First search-based insight',
-                    repositories: [],
-                    series: [],
+                    repositories: ['github.com/sourcegraph/sourcegraph'],
+                    series: [
+                        {
+                            name: 'The first series of the first chart',
+                            stroke: 'var(--oc-grape-7)',
+                            query: 'Kapica',
+                        },
+                    ],
+                    step: {
+                        months: 8,
+                    },
                 },
-                'searchInsights.insight.teamSize': {
-                    title: 'The Second search-based insight',
-                    repositories: [],
-                    series: [],
+                'insights.allrepos': {
+                    'searchInsights.insight.backend_ID_001': {},
                 },
-                'insights.allrepos': {},
-            },
-            insightExtensionsMocks: {
-                'searchInsights.insight.teamSize': ({ message: 'Error message', name: 'hello' } as unknown) as View,
-                'searchInsights.insight.graphQLTypesMigration': INSIGHT_VIEW_TYPES_MIGRATION,
             },
             overrides: {
-                // Mock back-end insights with standard gql API handler.
-                Insights: () => ({ insights: { nodes: [] } }),
+                Insights: () => ({ insights: { nodes: BACKEND_INSIGHTS } }),
+                BulkSearchCommits: () => ({ error: 'Inappropriate data shape will cause an insight error' } as any),
             },
         })
 
@@ -141,25 +156,37 @@ describe.skip('[VISUAL] Code insights page', () => {
             userSettings: {
                 'searchInsights.insight.graphQLTypesMigration': {
                     title: 'The First search-based insight',
-                    repositories: [],
-                    series: [],
+                    repositories: ['github.com/sourcegraph/sourcegraph'],
+                    series: [
+                        {
+                            name: 'The first series of the first chart',
+                            stroke: 'var(--oc-grape-7)',
+                            query: 'Kapica',
+                        },
+                    ],
+                    step: {
+                        months: 8,
+                    },
                 },
-                'searchInsights.insight.teamSize': {
-                    title: 'The Second search-based insight',
-                    repositories: [],
-                    series: [],
+                'codeStatsInsights.insight.langUsage': {
+                    title: 'Adobe lang stats usage',
+                    repository: 'ghe.sgdev.org/sourcegraph/adobe-adobe.github.com',
+                    otherThreshold: 0.03,
                 },
-                'codeStatsInsights.insight.langUsage': {},
-                'insights.allrepos': {},
-            },
-            insightExtensionsMocks: {
-                'codeStatsInsights.insight.langUsage': CODE_STATS_INSIGHT_LANG_USAGE,
-                'searchInsights.insight.teamSize': INSIGHT_VIEW_TEAM_SIZE,
-                'searchInsights.insight.graphQLTypesMigration': INSIGHT_VIEW_TYPES_MIGRATION,
+                'insights.allrepos': {
+                    'searchInsights.insight.backend_ID_001': {},
+                },
             },
             overrides: {
-                // Mock back-end insights with standard gql API handler.
+                // Backend insight mock
                 Insights: () => ({ insights: { nodes: BACKEND_INSIGHTS } }),
+
+                // Search built-in insight mock
+                BulkSearchCommits: () => SEARCH_INSIGHT_COMMITS_MOCK,
+                BulkSearch: () => SEARCH_INSIGHT_RESULT_MOCK,
+
+                // Code stats built-in insight mock
+                LangStatsInsightContent: () => CODE_STATS_RESULT_MOCK,
             },
         })
 
