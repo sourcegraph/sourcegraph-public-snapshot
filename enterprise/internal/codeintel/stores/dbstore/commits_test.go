@@ -794,7 +794,7 @@ func assertCommitsVisibleFromUploads(t *testing.T, store *Store, uploads []Uploa
 	testPageSize := 2
 
 	for _, upload := range uploads {
-		var token *CommitsPageToken
+		var token *string
 		var allCommits []string
 
 		for {

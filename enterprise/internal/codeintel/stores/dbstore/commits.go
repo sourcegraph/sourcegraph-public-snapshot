@@ -148,49 +148,31 @@ SELECT lsif_dirty_repositories.repository_id, lsif_dirty_repositories.dirty_toke
     AND repo.deleted_at IS NULL
 `
 
-type CommitsPageToken struct {
-	index int
-	after string
-}
-
 // CommitsVisibleToUpload returns the set of commits for which the given upload can answer code intelligence queries.
-// To paginate, supply the returned token to the next invocation of the method.
-func (s *Store) CommitsVisibleToUpload(ctx context.Context, uploadID, limit int, token *CommitsPageToken) (_ []string, _ *CommitsPageToken, err error) {
+// To paginate, supply the token returned from this method to the invocation for the next page.
+func (s *Store) CommitsVisibleToUpload(ctx context.Context, uploadID, limit int, token *string) (_ []string, nextToken *string, err error) {
 	ctx, endObservation := s.operations.commitsVisibleToUpload.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("uploadID", uploadID),
 		log.Int("limit", limit),
 	}})
 	defer endObservation(1, observation.Args{})
 
-	if token == nil {
-		token = &CommitsPageToken{}
+	after := ""
+	if token != nil {
+		after = *token
 	}
 
-	commits, err := basestore.ScanStrings(s.Query(ctx, sqlf.Sprintf(
-		commitsVisibleToUploadQuery,
-		strconv.Itoa(uploadID),
-		token.index, token.after,
-		token.index, token.after,
-		limit,
-	)))
+	commits, err := basestore.ScanStrings(s.Query(ctx, sqlf.Sprintf(commitsVisibleToUploadQuery, strconv.Itoa(uploadID), after, limit)))
 	if err != nil {
 		return nil, nil, err
 	}
 
-	index := token.index
-	after := ""
-
-	if len(commits) == 0 {
-		index++
-
-		if index > 1 {
-			return commits, nil, nil
-		}
-	} else {
-		after = commits[len(commits)-1]
+	if len(commits) > 0 {
+		last := commits[len(commits)-1]
+		nextToken = &last
 	}
 
-	return commits, &CommitsPageToken{index: index, after: after}, nil
+	return commits, nextToken, nil
 }
 
 const commitsVisibleToUploadQuery = `
@@ -200,7 +182,6 @@ direct_commits AS (
 	SELECT nu.repository_id, nu.commit_bytea
 	FROM lsif_nearest_uploads nu
 	WHERE nu.uploads ? %s
-	ORDER BY nu.commit_bytea
 ),
 linked_commits AS (
 	SELECT ul.commit_bytea
@@ -209,15 +190,16 @@ linked_commits AS (
 	ON
 		ul.repository_id = dc.repository_id AND
 		ul.ancestor_commit_bytea = dc.commit_bytea
-	ORDER BY ul.commit_bytea
 ),
 combined_commits AS (
-	SELECT dc.commit_bytea FROM direct_commits dc WHERE %s = 0 AND decode(%s, 'hex') < dc.commit_bytea
+	SELECT dc.commit_bytea FROM direct_commits dc
 	UNION ALL
-	SELECT lc.commit_bytea FROM linked_commits lc WHERE %s = 1 AND decode(%s, 'hex') < lc.commit_bytea
+	SELECT lc.commit_bytea FROM linked_commits lc
 )
-SELECT encode(commits.commit_bytea, 'hex') as commit
-FROM combined_commits commits
+SELECT encode(c.commit_bytea, 'hex') as commit
+FROM combined_commits c
+WHERE decode(%s, 'hex') < c.commit_bytea
+ORDER BY c.commit_bytea
 LIMIT %s
 `
 
