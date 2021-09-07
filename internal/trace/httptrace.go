@@ -216,7 +216,7 @@ func HTTPTraceMiddleware(next http.Handler) http.Handler {
 		if minDuration == 0 {
 			minDuration = time.Second
 		}
-		if customDuration, ok := slowPaths[r.URL.String()]; ok {
+		if customDuration, ok := slowPaths[r.URL.Path]; ok {
 			minDuration = customDuration
 		}
 
