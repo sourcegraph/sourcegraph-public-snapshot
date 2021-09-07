@@ -124,7 +124,7 @@ func RequestSource(ctx context.Context) SourceType {
 
 // slowPaths is a list of endpoints that are slower than the average and for
 // which we only want to log a message if the duration is slower than the
-// threshold here..
+// threshold here.
 var slowPaths = map[string]time.Duration{
 	"/repo-update": 5 * time.Second,
 }
