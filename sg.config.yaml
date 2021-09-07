@@ -15,6 +15,9 @@ env:
   # Enable sharded indexed search mode:
   INDEXED_SEARCH_SERVERS: localhost:3070 localhost:3071
 
+  # The profiler is a GCP feature and so is not supported locally.
+  SRC_DISABLE_PROFILER: 'true'
+
   GO111MODULE: 'on'
 
   DEPLOY_TYPE: dev
