@@ -52,7 +52,6 @@ export const ChangesetFileDiff: React.FunctionComponent<ChangesetFileDiffProps> 
                 after: args.after ?? null,
                 first: args.first ?? null,
                 externalChangeset: changesetID,
-                isLightTheme,
             }).pipe(
                 map(changeset => changeset.diff),
                 tap(diff => {
@@ -74,7 +73,7 @@ export const ChangesetFileDiff: React.FunctionComponent<ChangesetFileDiffProps> 
                         }
                 )
             ),
-        [changesetID, isLightTheme, queryExternalChangesetWithFileDiffs]
+        [changesetID, queryExternalChangesetWithFileDiffs]
     )
 
     const hydratedExtensionInfo = useMemo(() => {

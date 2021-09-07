@@ -1211,9 +1211,14 @@ type Query {
     renderMarkdown(markdown: String!, options: MarkdownOptions): String!
     """
     EXPERIMENTAL: Syntax highlights a code string.
-    The isLightTheme argument is deprecated and ignored. It may be removed in the future.
     """
-    highlightCode(code: String!, fuzzyLanguage: String!, disableTimeout: Boolean!, isLightTheme: Boolean): String!
+    highlightCode(
+        code: String!
+        fuzzyLanguage: String!
+        disableTimeout: Boolean!
+        isLightTheme: Boolean
+            @deprecated(reason: "Not required anymore, highlighting is based on dynamic CSS variables now.")
+    ): String!
     """
     Looks up an instance of a type that implements SettingsSubject (i.e., something that has settings). This can
     be a site (which has global settings), an organization, or a user.
@@ -3096,10 +3101,8 @@ type FileDiffHunk {
     """
     highlight(
         disableTimeout: Boolean!
-        """
-        DEPRECATED: isLightTheme will be ignored since all highlights are done with CSS classes now
-        """
         isLightTheme: Boolean
+            @deprecated(reason: "Not required anymore, highlighting is based on dynamic CSS variables now.")
         """
         If highlightLongLines is true, lines which are longer than 2000 bytes are highlighted.
         2000 bytes is enabled. This may produce a significant amount of HTML
@@ -4098,10 +4101,8 @@ interface File2 {
     """
     highlight(
         disableTimeout: Boolean!
-        """
-        DEPRECATED: isLightTheme will be ignored since all highlights are done with CSS classes now
-        """
         isLightTheme: Boolean
+            @deprecated(reason: "Not required anymore, highlighting is based on dynamic CSS variables now.")
         """
         If highlightLongLines is true, lines which are longer than 2000 bytes are highlighted.
         2000 bytes is enabled. This may produce a significant amount of HTML
@@ -4163,10 +4164,8 @@ type VirtualFile implements File2 {
     """
     highlight(
         disableTimeout: Boolean!
-        """
-        DEPRECATED: isLightTheme will be ignored since all highlights are done with CSS classes now
-        """
         isLightTheme: Boolean
+            @deprecated(reason: "Not required anymore, highlighting is based on dynamic CSS variables now.")
         """
         If highlightLongLines is true, lines which are longer than 2000 bytes are highlighted.
         2000 bytes is enabled. This may produce a significant amount of HTML
@@ -4266,10 +4265,8 @@ type GitBlob implements TreeEntry & File2 {
     """
     highlight(
         disableTimeout: Boolean!
-        """
-        DEPRECATED: isLightTheme will be ignored since all highlights are done with CSS classes now
-        """
         isLightTheme: Boolean
+            @deprecated(reason: "Not required anymore, highlighting is based on dynamic CSS variables now.")
         """
         If highlightLongLines is true, lines which are longer than 2000 bytes are highlighted.
         2000 bytes is enabled. This may produce a significant amount of HTML
