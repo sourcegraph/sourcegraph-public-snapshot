@@ -137,27 +137,27 @@ async function webpackDevelopmentServer() {
 const developmentServer = DEV_WEB_BUILDER === 'webpack' ? webpackDevelopmentServer : esbuildDevelopmentServer
 
 // Ensure the typings that TypeScript depends on are build to avoid first-time-run errors
-const codeGen = gulp.parallel(schema, graphQlSchema, graphQlOperations, cssModulesTypings)
+const generate = gulp.parallel(schema, graphQlSchema, graphQlOperations, cssModulesTypings)
 
 // Watches code generation only, rebuilds on file changes
-const watchCodeGen = gulp.parallel(watchSchema, watchGraphQlSchema, watchGraphQlOperations, watchCSSModulesTypings)
+const watchGenerators = gulp.parallel(watchSchema, watchGraphQlSchema, watchGraphQlOperations, watchCSSModulesTypings)
 
 /**
  * Builds everything.
  */
-const build = gulp.series(codeGen, webBuild)
+const build = gulp.series(generate, webBuild)
 
 /**
  * Starts a development server without initial code generation, watches everything and rebuilds on file changes.
  */
-const developmentWithoutInitialCodeGen = gulp.parallel(watchCodeGen, developmentServer)
+const developmentWithoutInitialCodeGen = gulp.parallel(watchGenerators, developmentServer)
 
 /**
  * Runs code generation first, then starts a development server, watches everything and rebuilds on file changes.
  */
 const development = gulp.series(
   // Ensure the typings that TypeScript depends on are build to avoid first-time-run errors
-  codeGen,
+  generate,
   developmentWithoutInitialCodeGen
 )
 
@@ -167,8 +167,8 @@ const development = gulp.series(
  */
 const watch = gulp.series(
   // Ensure the typings that TypeScript depends on are build to avoid first-time-run errors
-  codeGen,
-  gulp.parallel(watchCodeGen, watchWebpack)
+  generate,
+  gulp.parallel(watchGenerators, watchWebpack)
 )
 
 module.exports = {
@@ -181,6 +181,6 @@ module.exports = {
   watchWebpack,
   webBuild,
   developmentServer,
-  codeGen,
-  watchCodeGen,
+  generate,
+  watchGenerators,
 }
