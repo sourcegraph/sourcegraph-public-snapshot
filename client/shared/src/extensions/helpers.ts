@@ -2,8 +2,7 @@ import { isEqual } from 'lodash'
 import { from, Observable, of, throwError } from 'rxjs'
 import { catchError, distinctUntilChanged, map, shareReplay, switchMap } from 'rxjs/operators'
 
-import { fromObservableQueryPromise } from '../graphql/fromObservableQuery'
-import { getDocumentNode, gql } from '../graphql/graphql'
+import { gql } from '../graphql/graphql'
 import * as GQL from '../graphql/schema'
 import { PlatformContext } from '../platform/context'
 import { asError, createAggregateError } from '../util/errors'
@@ -16,12 +15,12 @@ import { ConfiguredRegistryExtension, extensionIDsFromSettings, toConfiguredRegi
  */
 export function viewerConfiguredExtensions({
     settings,
-    getGraphQLClient,
-}: Pick<PlatformContext, 'settings' | 'getGraphQLClient'>): Observable<ConfiguredRegistryExtension[]> {
+    requestGraphQL,
+}: Pick<PlatformContext, 'settings' | 'requestGraphQL'>): Observable<ConfiguredRegistryExtension[]> {
     return from(settings).pipe(
         map(settings => extensionIDsFromSettings(settings)),
         distinctUntilChanged((a, b) => isEqual(a, b)),
-        switchMap(extensionIDs => queryConfiguredRegistryExtensions({ getGraphQLClient }, extensionIDs)),
+        switchMap(extensionIDs => queryConfiguredRegistryExtensions({ requestGraphQL }, extensionIDs)),
         catchError(error => throwError(asError(error))),
         // TODO: Restore reference counter after refactoring contributions service
         // to not unsubscribe from existing entries when new entries are registered,
@@ -38,18 +37,19 @@ export function viewerConfiguredExtensions({
 export function queryConfiguredRegistryExtensions(
     // TODO(tj): can copy this over to extension host, just replace platformContext.requestGraphQL
     // with mainThreadAPI.requestGraphQL
-    { getGraphQLClient }: Pick<PlatformContext, 'getGraphQLClient'>,
+    { requestGraphQL }: Pick<PlatformContext, 'requestGraphQL'>,
     extensionIDs: string[]
 ): Observable<ConfiguredRegistryExtension[]> {
     if (extensionIDs.length === 0) {
         return of([])
     }
-
-    const queryObservablePromise = getGraphQLClient().then(client =>
-        client.watchQuery<GQL.IQuery, GQL.IExtensionsOnExtensionRegistryArguments>({
-            fetchPolicy: 'cache-and-network',
-            variables: { first: extensionIDs.length, prioritizeExtensionIDs: extensionIDs },
-            query: getDocumentNode(gql`
+    const variables: GQL.IExtensionsOnExtensionRegistryArguments = {
+        first: extensionIDs.length,
+        prioritizeExtensionIDs: extensionIDs,
+    }
+    return from(
+        requestGraphQL<GQL.IQuery>({
+            request: gql`
                 query Extensions($first: Int!, $prioritizeExtensionIDs: [String!]!) {
                     extensionRegistry {
                         extensions(first: $first, prioritizeExtensionIDs: $prioritizeExtensionIDs) {
@@ -65,11 +65,11 @@ export function queryConfiguredRegistryExtensions(
                         }
                     }
                 }
-            `),
+            `,
+            variables,
+            mightContainPrivateInfo: false,
         })
-    )
-
-    return fromObservableQueryPromise(queryObservablePromise).pipe(
+    ).pipe(
         map(({ data, errors }) => {
             if (!data?.extensionRegistry?.extensions?.nodes) {
                 throw createAggregateError(errors)
