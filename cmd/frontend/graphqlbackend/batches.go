@@ -764,6 +764,7 @@ type BatchSpecExecutionStepsResolver interface {
 }
 
 type BatchSpecWorkspacesResolver interface {
+	RawSpec() string
 	AllowIgnored() bool
 	AllowUnsupported() bool
 	Workspaces() []BatchSpecWorkspaceResolver
@@ -777,6 +778,7 @@ type BatchSpecWorkspaceResolver interface {
 	Path() string
 	OnlyFetchWorkspace() bool
 	Steps() []BatchSpecWorkspaceStepResolver
+	SearchResultPaths() []string
 }
 
 type BatchSpecWorkspaceStepResolver interface {

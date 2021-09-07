@@ -17,6 +17,10 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Changed
 
+- `allowGroupsPermissionsSync` in the GitHub authorization provider is now required to enable the experimental GitHub teams and organization permissions caching. [#24561](https://github.com/sourcegraph/sourcegraph/pull/24561)
+- GitHub external code hosts now validate if a corresponding authorization provider is set, and emits a warning if not. [#24526](https://github.com/sourcegraph/sourcegraph/pull/24526)
+- Sourcegraph is now built with Go 1.17. [#24566](https://github.com/sourcegraph/sourcegraph/pull/24566)
+
 ### Fixed
 
 - Code Insights the dashboard page no longer triggers insights re-fetching when insight adding/removing actions happen. [#24375](https://github.com/sourcegraph/sourcegraph/pull/24375)
@@ -35,6 +39,10 @@ All notable changes to Sourcegraph are documented in this file.
 ### Changed
 
 - Caching behaviour for GitHub repository permissions enabled via the `authorization.groupsCacheTTL` field in the code host config can now leverage additional caching of team and organization permissions for repository permissions syncing (on top of the caching for user permissions syncing introduced in 3.31). [#24328](https://github.com/sourcegraph/sourcegraph/pull/24328)
+
+### Fixed
+
+- Fixed a panic in the worker service preventing code insights from populating with data. [#24475](https://github.com/sourcegraph/sourcegraph/pull/24475)
 
 ## 3.31.0
 

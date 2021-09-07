@@ -394,9 +394,11 @@ func NewRetryPolicy(max int) rehttp.RetryFn {
 		status := 0
 
 		defer func() {
-			if span := opentracing.SpanFromContext(a.Request.Context()); span != nil {
+			// Avoid trace log spam if we haven't invoked the retry policy.
+			shouldTraceLog := retry || a.Index > 0
+			if span := opentracing.SpanFromContext(a.Request.Context()); span != nil && shouldTraceLog {
 				fields := []otlog.Field{
-					otlog.Event("request-failed"),
+					otlog.Event("request-retry-decision"),
 					otlog.Bool("retry", retry),
 					otlog.Int("attempt", a.Index),
 					otlog.String("method", a.Request.Method),

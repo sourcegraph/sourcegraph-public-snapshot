@@ -2,12 +2,11 @@ import { useApolloClient } from '@apollo/client'
 import React, { createContext, useEffect, useState } from 'react'
 
 import { AuthenticatedUser } from '../../auth'
-import { client } from '../../backend/graphql'
 
 import { TemporarySettingsStorage } from './TemporarySettingsStorage'
 
 export const TemporarySettingsContext = createContext<TemporarySettingsStorage>(
-    new TemporarySettingsStorage(client, null)
+    new TemporarySettingsStorage(null, null)
 )
 TemporarySettingsContext.displayName = 'TemporarySettingsContext'
 

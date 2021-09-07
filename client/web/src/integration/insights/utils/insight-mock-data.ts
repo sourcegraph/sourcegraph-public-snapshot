@@ -1,157 +1,131 @@
-import { View } from 'sourcegraph'
+import { BulkSearchCommits } from '../../../graphql-operations'
 
-/**
- * Mock result data of search based insight extension - team size,
- * See https://github.com/sourcegraph/sourcegraph-search-insights
- * basically line chart with one grown data series.
- * */
-export const INSIGHT_VIEW_TEAM_SIZE: View = {
-    title: 'Team size',
-    content: [
-        {
-            chart: 'line',
-            data: [
-                { date: 1574802000000, 'team members': 22 },
-                { date: 1582750800000, 'team members': 29 },
-                { date: 1590526800000, 'team members': 40 },
-                { date: 1598475600000, 'team members': 58 },
-                { date: 1606424400000, 'team members': 65 },
-                { date: 1614373200000, 'team members': 97 },
-                { date: 1622062800000, 'team members': 100 },
-            ],
-            series: [
+export const SEARCH_INSIGHT_COMMITS_MOCK: Record<string, BulkSearchCommits> = {
+    search0: {
+        results: {
+            results: [
                 {
-                    dataKey: 'team members',
-                    name: 'team members',
-                    stroke: 'var(--oc-teal-7)',
+                    commit: {
+                        oid: '0b81b624c24f5fc4d53fd10651eb84d67072e74e',
+                        committer: {
+                            date: '2009-09-04T05:00:34Z',
+                        },
+                    },
                 },
             ],
-            xAxis: { dataKey: 'date', type: 'number', scale: 'time' },
         },
-    ],
+    },
+    search1: {
+        results: {
+            results: [
+                {
+                    commit: {
+                        oid: '03956c5dde9dcb22a53e7d3f259a0e98dd50704b',
+                        committer: {
+                            date: '2011-09-05T19:10:27Z',
+                        },
+                    },
+                },
+            ],
+        },
+    },
+    search2: {
+        results: {
+            results: [
+                {
+                    commit: {
+                        oid: '948698c42a2a05b1ebebf3cda5945b0764426f57',
+                        committer: {
+                            date: '2013-09-04T22:25:47Z',
+                        },
+                    },
+                },
+            ],
+        },
+    },
+    search3: {
+        results: {
+            results: [
+                {
+                    commit: {
+                        oid: 'db37595dc3a4ceb7953dd89b2122a974ff70b311',
+                        committer: {
+                            date: '2015-09-05T18:20:08Z',
+                        },
+                    },
+                },
+            ],
+        },
+    },
+    search4: {
+        results: {
+            results: [
+                {
+                    commit: {
+                        oid: '4472874fb5fddb44d402f4fdf064149b68dce68c',
+                        committer: {
+                            date: '2017-09-05T16:16:25Z',
+                        },
+                    },
+                },
+            ],
+        },
+    },
+    search5: {
+        results: {
+            results: [
+                {
+                    commit: {
+                        oid: '6f34ec9377091a1665d554a54bc58812813c7c1a',
+                        committer: {
+                            date: '2019-07-09T19:59:43Z',
+                        },
+                    },
+                },
+            ],
+        },
+    },
+    search6: {
+        results: {
+            results: [
+                {
+                    commit: {
+                        oid: '6f34ec9377091a1665d554a54bc58812813c7c1a',
+                        committer: {
+                            date: '2019-07-09T19:59:43Z',
+                        },
+                    },
+                },
+            ],
+        },
+    },
 }
 
-/**
- * Mock result of search based insight extension types migration
- * See https://github.com/sourcegraph/sourcegraph-search-insights
- * Line chart example with two data series.
- * */
-export const INSIGHT_VIEW_TYPES_MIGRATION: View = {
-    title: 'Migration to new GraphQL TS types',
-    content: [
-        {
-            chart: 'line',
-            data: [
-                {
-                    date: 1600203600000,
-                    'Imports of old GQL.* types': 188,
-                    'Imports of new graphql-operations types': 203,
-                },
-                {
-                    date: 1603832400000,
-                    'Imports of old GQL.* types': 178,
-                    'Imports of new graphql-operations types': 234,
-                },
-                {
-                    date: 1607461200000,
-                    'Imports of old GQL.* types': 162,
-                    'Imports of new graphql-operations types': 282,
-                },
-                {
-                    date: 1611090000000,
-                    'Imports of old GQL.* types': 139,
-                    'Imports of new graphql-operations types': 340,
-                },
-                {
-                    date: 1614718800000,
-                    'Imports of old GQL.* types': 139,
-                    'Imports of new graphql-operations types': 354,
-                },
-                {
-                    date: 1618347600000,
-                    'Imports of old GQL.* types': 139,
-                    'Imports of new graphql-operations types': 369,
-                },
-                {
-                    date: 1621976400000,
-                    'Imports of old GQL.* types': 131,
-                    'Imports of new graphql-operations types': 427,
-                },
-            ],
-            series: [
-                {
-                    dataKey: 'Imports of old GQL.* types',
-                    name: 'Imports of old GQL.* types',
-                    stroke: 'var(--oc-red-7)',
-                },
-                {
-                    dataKey: 'Imports of new graphql-operations types',
-                    name: 'Imports of new graphql-operations types',
-                    stroke: 'var(--oc-blue-7)',
-                },
-            ],
-            xAxis: { dataKey: 'date', type: 'number', scale: 'time' },
-        },
-    ],
+export const SEARCH_INSIGHT_RESULT_MOCK = {
+    search0: { results: { matchCount: 10245 } },
+    search1: { results: { matchCount: 16502 } },
+    search2: { results: { matchCount: 17207 } },
+    search3: { results: { matchCount: 23165 } },
+    search4: { results: { matchCount: 24728 } },
+    search5: { results: { matchCount: 41029 } },
+    search6: { results: { matchCount: 41029 } },
 }
 
-/**
- * Mock result from code stats insight extension
- * See https://github.com/sourcegraph/sourcegraph-code-stats-insights
- * Pie chart with language usage.
- * */
-export const CODE_STATS_INSIGHT_LANG_USAGE: View = {
-    title: 'Example sourcegraph lang usage',
-    content: [
-        {
-            chart: 'pie',
-            pies: [
-                {
-                    data: [
-                        {
-                            name: 'Go',
-                            totalLines: 392208,
-                            fill: '#00ADD8',
-                        },
-                        {
-                            name: 'HTML',
-                            totalLines: 225121,
-                            fill: '#e34c26',
-                        },
-                        {
-                            name: 'TypeScript',
-                            totalLines: 201214,
-                            fill: '#2b7489',
-                        },
-                        {
-                            name: 'YAML',
-                            totalLines: 163177,
-                            fill: '#cb171e',
-                        },
-                        {
-                            name: 'JSON',
-                            totalLines: 107794,
-                            fill: 'gray',
-                        },
-                        {
-                            name: 'Markdown',
-                            totalLines: 52111,
-                            fill: '#083fa1',
-                        },
-                        {
-                            name: 'Other',
-                            totalLines: 60779,
-                            fill: 'gray',
-                        },
-                    ],
-                    dataKey: 'totalLines',
-                    nameKey: 'name',
-                    fillKey: 'fill',
-                    linkURLKey: 'linkURL',
-                },
+export const CODE_STATS_RESULT_MOCK = {
+    search: {
+        results: { limitHit: false },
+        stats: {
+            languages: [
+                { name: 'Go', totalLines: 4498 },
+                { name: 'JavaScript', totalLines: 948 },
+                { name: 'Markdown', totalLines: 557 },
+                { name: 'CSS', totalLines: 338 },
+                { name: 'HTML', totalLines: 48 },
+                { name: 'Text', totalLines: 21 },
+                { name: 'YAML', totalLines: 1 },
             ],
         },
-    ],
+    },
 }
 
 /**

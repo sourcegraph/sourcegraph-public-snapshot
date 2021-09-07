@@ -640,9 +640,10 @@ func (s *Service) CreateChangesetJobs(ctx context.Context, batchChangeID int64, 
 
 // RepoRevision describes a repository on a branch at a fixed revision.
 type RepoRevision struct {
-	Repo   *types.Repo
-	Branch string
-	Commit api.CommitID
+	Repo        *types.Repo
+	Branch      string
+	Commit      api.CommitID
+	FileMatches []string
 }
 
 func (r *RepoRevision) HasBranch() bool {

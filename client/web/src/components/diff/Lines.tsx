@@ -1,3 +1,4 @@
+import classNames from 'classnames'
 import * as React from 'react'
 import { Link } from 'react-router-dom'
 import { DecorationAttachmentRenderOptions, ThemableDecorationStyle } from 'sourcegraph'
@@ -81,7 +82,7 @@ export const Line: React.FunctionComponent<Line> = ({
         <>
             {lineNumbers && (
                 <td
-                    className={`diff-hunk__num ${hunkStyles.hunkContent}-num ${className}-num`}
+                    className={classNames('diff-hunk__num', `${hunkStyles.hunkContent}-num`, `${className}-num`)}
                     data-line={lineNumber}
                     data-part={dataPart}
                     id={id || anchor}
@@ -94,7 +95,11 @@ export const Line: React.FunctionComponent<Line> = ({
                 </td>
             )}
             <td
-                className={`diff-hunk--split__line align-baseline diff-hunk__content ${hunkStyles.hunkContent} ${className}`}
+                className={classNames(
+                    'diff-hunk--split__line align-baseline diff-hunk__content',
+                    hunkStyles.hunkContent,
+                    className
+                )}
                 // eslint-disable-next-line react/forbid-dom-props
                 style={lineStyle}
                 data-diff-marker={diffHunkTypeIndicators[kind]}

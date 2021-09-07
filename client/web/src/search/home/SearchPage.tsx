@@ -1,8 +1,8 @@
 import classNames from 'classnames'
 import * as H from 'history'
-import React, { useContext, useEffect, useMemo } from 'react'
+import React, { useEffect, useMemo } from 'react'
 import { EMPTY, from } from 'rxjs'
-import { switchMap } from 'rxjs/operators'
+import { map, switchMap } from 'rxjs/operators'
 
 import { wrapRemoteObservable } from '@sourcegraph/shared/src/api/client/api/common'
 import { ActivationProps } from '@sourcegraph/shared/src/components/activation/Activation'
@@ -28,7 +28,11 @@ import {
 import { AuthenticatedUser } from '../../auth'
 import { BrandLogo } from '../../components/branding/BrandLogo'
 import { FeatureFlagProps } from '../../featureFlags/featureFlags'
-import { InsightsApiContext, StaticInsightsViewGrid } from '../../insights'
+import { SmartInsight } from '../../insights/components/insights-view-grid/components/smart-insight/SmartInsight'
+import { StaticView } from '../../insights/components/insights-view-grid/components/static-view/StaticView'
+import { ViewGrid } from '../../insights/components/insights-view-grid/components/view-grid/ViewGrid'
+import { createExtensionInsight } from '../../insights/core/backend/utils/create-extension-insight'
+import { useAllInsights } from '../../insights/hooks/use-insight/use-insight'
 import { KeyboardShortcutsProps } from '../../keyboardShortcuts/keyboardShortcuts'
 import { Settings } from '../../schema/settings.schema'
 import { VersionContext } from '../../schema/site.schema'
@@ -50,7 +54,7 @@ export interface SearchPageProps
         KeyboardShortcutsProps,
         TelemetryProps,
         ExtensionsControllerProps<'extHostAPI' | 'executeCommand'>,
-        PlatformContextProps<'forceUpdateTooltip' | 'settings' | 'sourcegraphURL'>,
+        PlatformContextProps<'forceUpdateTooltip' | 'settings' | 'sourcegraphURL' | 'updateSettings'>,
         VersionContextProps,
         SearchContextInputProps,
         RepogroupHomepageProps,
@@ -81,20 +85,23 @@ export const SearchPage: React.FunctionComponent<SearchPageProps> = props => {
         !!props.settingsCascade.final?.experimentalFeatures?.codeInsights &&
         props.settingsCascade.final['insights.displayLocation.homepage'] === true
 
-    const { getCombinedViews } = useContext(InsightsApiContext)
+    const insights = useAllInsights({ settingsCascade: props.settingsCascade })
     const views = useObservable(
         useMemo(
             () =>
                 showCodeInsights
-                    ? getCombinedViews(() =>
-                          from(props.extensionsController.extHostAPI).pipe(
-                              switchMap(extensionHostAPI => wrapRemoteObservable(extensionHostAPI.getHomepageViews({})))
-                          )
+                    ? from(props.extensionsController.extHostAPI).pipe(
+                          switchMap(extensionHostAPI => wrapRemoteObservable(extensionHostAPI.getHomepageViews({}))),
+                          map(extensionViews => extensionViews.map(createExtensionInsight))
                       )
                     : EMPTY,
-            [getCombinedViews, showCodeInsights, props.extensionsController]
+            [showCodeInsights, props.extensionsController]
         )
     )
+
+    const extensionViews = views ?? []
+    const allViewIds = useMemo(() => [...(views ?? []), ...insights].map(view => view.id), [views, insights])
+
     return (
         <div className="search-page d-flex flex-column align-items-center px-3">
             <BrandLogo className="search-page__logo" isLightTheme={props.isLightTheme} variant="logo" />
@@ -110,7 +117,27 @@ export const SearchPage: React.FunctionComponent<SearchPageProps> = props => {
                 })}
             >
                 <SearchPageInput {...props} source="home" />
-                {views && <StaticInsightsViewGrid {...props} className="mt-5" views={views} />}
+                {showCodeInsights && (
+                    <ViewGrid viewIds={allViewIds} telemetryService={props.telemetryService} className="mt-5">
+                        {/* Render extension views for the search page */}
+                        {extensionViews.map(view => (
+                            <StaticView key={view.id} view={view} telemetryService={props.telemetryService} />
+                        ))}
+
+                        {/* Render all code insights with proper directory page context */}
+                        {insights.map(insight => (
+                            <SmartInsight
+                                key={insight.id}
+                                insight={insight}
+                                telemetryService={props.telemetryService}
+                                platformContext={props.platformContext}
+                                settingsCascade={props.settingsCascade}
+                                where="homepage"
+                                context={{}}
+                            />
+                        ))}
+                    </ViewGrid>
+                )}
             </div>
             <div className="flex-grow-1">
                 {props.isSourcegraphDotCom &&

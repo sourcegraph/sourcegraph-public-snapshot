@@ -156,6 +156,12 @@ func (c *V3Client) get(ctx context.Context, requestURI string, result interface{
 
 	err = c.rateLimit.Wait(ctx)
 	if err != nil {
+		// We don't want to return a misleading rate limit exceeded error if the error is coming
+		// from the context.
+		if ctx.Err() != nil {
+			return nil, ctx.Err()
+		}
+
 		return nil, errInternalRateLimitExceeded
 	}
 

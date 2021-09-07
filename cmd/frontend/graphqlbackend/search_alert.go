@@ -111,7 +111,6 @@ func (r *searchResolver) reposExist(ctx context.Context, options search.RepoOpti
 	options.UserSettings = r.UserSettings
 	repositoryResolver := &searchrepos.Resolver{
 		DB:                  r.db,
-		Zoekt:               r.zoekt,
 		SearchableReposFunc: backend.Repos.ListSearchable,
 	}
 	resolved, err := repositoryResolver.Resolve(ctx, options)
@@ -178,7 +177,6 @@ func (r *searchResolver) alertForNoResolvedRepos(ctx context.Context, q query.Q)
 					title:       "No repositories or code hosts configured",
 					description: "To start searching code, first go to site admin to configure repositories and code hosts.",
 				}
-
 			} else {
 				return &searchAlert{
 					title:       "No repositories or code hosts configured",

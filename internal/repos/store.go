@@ -548,8 +548,16 @@ WHERE id = %s
 RETURNING updated_at
 `
 
-// EnqueueSingleSyncJob enqueues a single sync job for the given external
-// service if it is not already queued or processing.
+// EnqueueSingleSyncJob enqueues a single sync job for the given external service if it is not
+// already queued or processing. Additionally, it also skips queueing up a sync job for
+// cloud_default external services. This is done to avoid the sync job for the cloud_default
+// triggering a deletion of repos because:
+// 1. cloud_default does not define any repos in its config
+// 2. repos under the cloud_default are lazily synced the first time a user accesses them
+//
+// This is a limitation of our current repo syncing architecture. The cloud_default flag is only set
+// on sourcegraph.com and manages public GitHub and GitLab repositories that have been lazily
+// synced.
 func (s *Store) EnqueueSingleSyncJob(ctx context.Context, extSvcID int64) (err error) {
 	q := sqlf.Sprintf(`
 INSERT INTO external_service_sync_jobs (external_service_id)

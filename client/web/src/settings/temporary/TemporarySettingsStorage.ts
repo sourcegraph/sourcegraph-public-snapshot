@@ -22,7 +22,7 @@ export class TemporarySettingsStorage {
         this.saveSubscription?.unsubscribe()
     }
 
-    constructor(private apolloClient: ApolloClient<object>, authenticatedUser: AuthenticatedUser | null) {
+    constructor(private apolloClient: ApolloClient<object> | null, authenticatedUser: AuthenticatedUser | null) {
         this.setAuthenticatedUser(authenticatedUser)
     }
 
@@ -31,6 +31,10 @@ export class TemporarySettingsStorage {
             this.authenticatedUser = user
 
             if (this.authenticatedUser) {
+                if (!this.apolloClient) {
+                    throw new Error('Apollo-Client should be initialized for authenticated user')
+                }
+
                 this.setSettingsBackend(new ServersideSettingsBackend(this.apolloClient))
             } else {
                 this.setSettingsBackend(new LocalStorageSettingsBackend())

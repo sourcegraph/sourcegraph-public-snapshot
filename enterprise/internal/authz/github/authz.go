@@ -21,49 +21,61 @@ func NewAuthzProviders(
 	conns []*types.GitHubConnection,
 	authProviders []schema.AuthProviders,
 ) (ps []authz.Provider, problems []string, warnings []string) {
-	// Permissions providers
-	for _, c := range conns {
-		p, err := newAuthzProvider(c.URN, c.Authorization, c.Url, c.Token)
-		if err != nil {
-			problems = append(problems, err.Error())
-		} else if p != nil {
-			ps = append(ps, p)
-		}
-	}
-
 	// Auth providers (i.e. login mechanisms)
-	githubAuthProviders := make(map[string]struct{})
+	githubAuthProviders := make(map[string]*schema.GitHubAuthProvider)
 	for _, p := range authProviders {
 		if p.Github != nil {
 			var id string
-			ghURL, err := url.Parse(p.Github.Url)
+			ghURL, err := url.Parse(p.Github.GetURL())
 			if err != nil {
 				// error reporting for this should happen elsewhere, for now just use what is given
-				id = p.Github.Url
+				id = p.Github.GetURL()
 			} else {
 				// use codehost normalized URL as ID
 				ch := extsvc.NewCodeHost(ghURL, p.Github.Type)
 				id = ch.ServiceID
 			}
-			githubAuthProviders[id] = struct{}{}
+			githubAuthProviders[id] = p.Github
 		}
 	}
 
-	for _, p := range ps {
+	for _, c := range conns {
+		// Initialize authz (permissions) provider.
+		p, err := newAuthzProvider(c.URN, c.Authorization, c.Url, c.Token)
+		if err != nil {
+			problems = append(problems, err.Error())
+		} else if p == nil {
+			continue
+		}
+
 		// Permissions require a corresponding GitHub OAuth provider. Without one, repos
 		// with restricted permissions will not be visible to non-admins.
-		if _, exists := githubAuthProviders[p.ServiceID()]; !exists {
+		if authProvider, exists := githubAuthProviders[p.ServiceID()]; !exists {
 			warnings = append(warnings,
-				fmt.Sprintf("Did not find authentication provider matching %[1]q. "+
+				fmt.Sprintf("GitHub config for %[1]s has `authorization` enabled, "+
+					"but no authentication provider matching %[1]q was found. "+
 					"Check the [**site configuration**](/site-admin/configuration) to "+
 					"verify an entry in [`auth.providers`](https://docs.sourcegraph.com/admin/auth) exists for %[1]s.",
 					p.ServiceID()))
+		} else if p.groupsCache != nil && !authProvider.AllowGroupsPermissionsSync {
+			// Groups permissions requires auth provider to request the correct scopes.
+			warnings = append(warnings,
+				fmt.Sprintf("GitHub config for %[1]s has `authorization.groupsCacheTTL` enabled, but "+
+					"the authentication provider matching %[1]q does not have `allowGroupsPermissionsSync` enabled. "+
+					"Update the [**site configuration**](/site-admin/configuration) in the appropriate entry "+
+					"in [`auth.providers`](https://docs.sourcegraph.com/admin/auth) to enable this.",
+					p.ServiceID()))
+			// Forcibly disable groups cache.
+			p.groupsCache = nil
 		}
 
 		// Check for other validation issues.
 		for _, problem := range p.Validate() {
 			warnings = append(warnings, fmt.Sprintf("GitHub config for %s was invalid: %s", p.ServiceID(), problem))
 		}
+
+		// Register this provider.
+		ps = append(ps, p)
 	}
 
 	return ps, problems, warnings
@@ -71,7 +83,7 @@ func NewAuthzProviders(
 
 // newAuthzProvider instantiates a provider, or returns nil if authorization is disabled.
 // Errors returned are "serious problems".
-func newAuthzProvider(urn string, a *schema.GitHubAuthorization, instanceURL, token string) (authz.Provider, error) {
+func newAuthzProvider(urn string, a *schema.GitHubAuthorization, instanceURL, token string) (*Provider, error) {
 	if a == nil {
 		return nil, nil
 	}
