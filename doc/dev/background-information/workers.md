@@ -96,7 +96,7 @@ The store relies on a jobs table _specific to your worker_ to exist with the fol
 | `num_failures`      | integer                  | Updated when the job enters the `failed` state |
 | `last_heartbeat_at` | timestamp with time zone | Updated periodically to ensure that the handler didn't die processing the job |
 | `execution_logs`    | json[]                   | A list of log entries from the most recent processing attempt |
-| `worker_hostname`   | text                     | Hostname of the `executor` that picked up the job. Used only when using executor. |
+| `worker_hostname`   | text                     | Hostname of the worker that picked up the job. |
 
 The target jobs table may have additional columns as the store only selects and updates records. Again, inserting/enqueueing job records is a task that is **not** handled by the worker, thus columns with non-null constraints are safe to add here as well.
 
