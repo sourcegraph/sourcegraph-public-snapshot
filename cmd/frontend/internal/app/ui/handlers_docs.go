@@ -83,7 +83,7 @@ func serveRepoDocs(codeIntelResolver graphqlbackend.CodeIntelResolver) handlerFu
 						runes[0] = []rune(strings.ToLower(string(runes[0])))[0]
 						desc = string(runes)
 					}
-					common.Metadata.Description = fmt.Sprintf("%s %s API docs & usage examples; %s", repoShortName(common.Repo.Name), target.Documentation.SearchKey, desc)
+					common.Metadata.Description = fmt.Sprintf("%s API docs & usage examples; %s", target.Documentation.SearchKey, desc)
 				}
 			}
 		}
