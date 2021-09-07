@@ -247,7 +247,8 @@ func HTTPTraceMiddleware(next http.Handler) http.Handler {
 			var parts []string
 			if m.Duration >= minDuration {
 				parts = append(parts, "slow http request")
-			} else if m.Code >= minCode {
+			}
+			if m.Code >= minCode {
 				parts = append(parts, "unexpected status code")
 			}
 			log15.Warn(strings.Join(parts, ", "), kvs...)
