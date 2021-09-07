@@ -139,6 +139,14 @@ export const config = subtypeOf<webpack.Configuration>()({
                 }),
             },
             {
+                test: /\.svg$/i,
+                use: [
+                    {
+                        loader: 'url-loader',
+                    },
+                ],
+            },
+            {
                 test: extensionHostWorker,
                 use: [
                     {

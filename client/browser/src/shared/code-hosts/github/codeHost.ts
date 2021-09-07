@@ -15,6 +15,7 @@ import {
     toAbsoluteBlobURL,
 } from '@sourcegraph/shared/src/util/url'
 
+import LogoSVG from '../../../../assets/img/sourcegraph-mark.svg'
 import { fetchBlobContentLines } from '../../repo/backend'
 import { querySelectorAllOrSelf, querySelectorOrSelf } from '../../util/dom'
 import { CodeHost, MountGetter } from '../shared/codeHost'
@@ -323,7 +324,7 @@ const searchEnhancement: CodeHost['searchEnhancement'] = {
         selector: '.js-site-search-form input[type="text"]',
         resolveView: element => ({ element }),
     },
-    onChange: value => {
+    onChange: ({ value, baseURL }) => {
         const SEARCH_IN_GITHUB_SELECTOR = '#jump-to-suggestion-search-global'
         const SEARCH_IN_SOURCEGRAPH_SELECTOR = '#jump-to-sourcegraph-search-global'
 
@@ -340,7 +341,7 @@ const searchEnhancement: CodeHost['searchEnhancement'] = {
 
             /** Add sourcegraph logo */
             const logo = document.createElement('img')
-            logo.src = 'https://sourcegraph.com/.assets/img/sourcegraph-mark.svg'
+            logo.src = LogoSVG
             logo.setAttribute('style', 'width: 16px; height: 20px; float: left; margin-right: 2px;')
             logo.setAttribute('alt', 'Sourcegraph Logo Image')
 
@@ -363,7 +364,7 @@ const searchEnhancement: CodeHost['searchEnhancement'] = {
 
             /** Update link url */
             const link = element.querySelector<HTMLElement>('a') as HTMLLinkElement
-            link.setAttribute('href', `https://sourcegraph.com//search?q=${encodeURIComponent(value)}`)
+            link.setAttribute('href', `${baseURL}/search?q=${encodeURIComponent(value)}`)
             link.setAttribute('target', '_blank')
             element.setAttribute('style', `display: ${value ? 'initial' : 'none !important'}`)
         }
