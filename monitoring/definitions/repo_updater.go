@@ -115,7 +115,7 @@ func RepoUpdater() *monitoring.Container {
 							Warning:           monitoring.Alert().LessOrEqual(0, monitoring.StringPtr("max")).For(syncDurationThreshold),
 							Panel:             monitoring.Panel().LegendFormat("{{state}}").Unit(monitoring.Number),
 							Owner:             monitoring.ObservableOwnerCoreApplication,
-							PossibleSolutions: "Check network connectivity to code hosts",
+							PossibleSolutions: "**As of 3.29.1** The metric behind this warning is not working as intended.",
 						},
 						{
 							Name:              "sourced_repos",
