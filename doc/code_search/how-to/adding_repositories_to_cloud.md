@@ -23,9 +23,9 @@ If you want to sync all the repositories you have access to and have Sourcegraph
 1. Press the **Save** button.
 
 
-## Adding only select repositories  
+## Adding specific repositories  
 
-If you only want to add select repositories to Sourcegraph cloud, follow the below steps:
+If you only want to add specific repositories to Sourcegraph cloud, follow the below steps:
 
 1. Go to **User menu > Settings** in the top navigation bar.
 1. Go to **Repositories** in the sidebar navigation.
