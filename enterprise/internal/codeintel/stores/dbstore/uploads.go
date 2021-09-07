@@ -681,12 +681,133 @@ func (s *Store) HardDeleteUploadByID(ctx context.Context, ids ...int) (err error
 		idQueries = append(idQueries, sqlf.Sprintf("%s", id))
 	}
 
-	return s.Store.Exec(ctx, sqlf.Sprintf(hardDeleteUploadByIDQuery, sqlf.Join(idQueries, ", ")))
+	tx, err := s.Transact(ctx)
+	if err != nil {
+		return err
+	}
+	defer func() { err = tx.Done(err) }()
+
+	// Before deleting the record, ensure that we decrease the number
+	// of existant references to all of this upload's dependencies.
+	if err := tx.UpdateDependencyNumReferences(ctx, ids, true); err != nil {
+		return err
+	}
+
+	if err := tx.Exec(ctx, sqlf.Sprintf(hardDeleteUploadByIDQuery, sqlf.Join(idQueries, ", "))); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 const hardDeleteUploadByIDQuery = `
 -- source: enterprise/internal/codeintel/stores/dbstore/uploads.go:HardDeleteUploadByID
 DELETE FROM lsif_uploads WHERE id IN (%s)
+`
+
+// UpdateNumReferences calculates the number of existant uploads that reference any
+// of the given upload identifiers and updates the num_references field of each
+// upload.
+func (s *Store) UpdateNumReferences(ctx context.Context, ids []int) (err error) {
+	ctx, endObservation := s.operations.updateNumReferences.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.Int("numIDs", len(ids)),
+		log.String("ids", intsToString(ids)),
+	}})
+	defer endObservation(1, observation.Args{})
+
+	if len(ids) == 0 {
+		return nil
+	}
+
+	queries := make([]*sqlf.Query, 0, len(ids))
+	for _, id := range ids {
+		queries = append(queries, sqlf.Sprintf("%s", id))
+	}
+
+	return s.Exec(ctx, sqlf.Sprintf(updateNumReferencesQuery, sqlf.Join(queries, ", ")))
+}
+
+var updateNumReferencesQuery = `
+-- source: enterprise/internal/codeintel/stores/dbstore/uploads.go:UpdateNumReferences
+WITH locked_uploads AS (
+	SELECT u.id
+	FROM lsif_uploads u
+	WHERE u.id in (%s)
+	ORDER BY u.id FOR UPDATE
+),
+reference_counts AS (
+	SELECT
+		p.dump_id,
+		count(*) AS count
+	FROM lsif_packages p
+	JOIN lsif_references r
+	ON
+		p.scheme = r.scheme AND
+		p.name = r.name AND
+		p.version = r.version AND
+		p.dump_id != r.dump_id
+	WHERE p.dump_id IN (SELECT id FROM locked_uploads)
+	GROUP BY p.dump_id
+)
+UPDATE lsif_uploads u
+SET num_references = COALESCE((SELECT rc.count FROM reference_counts rc WHERE rc.dump_id = u.id), 0)
+WHERE u.id IN (SELECT id FROM locked_uploads)
+`
+
+// UpdateDependencyNumReferences increments (or decrements) the number of references for
+// each dependency of the uploads with any of the given identifiers.
+func (s *Store) UpdateDependencyNumReferences(ctx context.Context, ids []int, decrement bool) (err error) {
+	ctx, endObservation := s.operations.updateDependencyNumReferences.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.Int("numIDs", len(ids)),
+		log.String("ids", intsToString(ids)),
+		log.Bool("decrement", decrement),
+	}})
+	defer endObservation(1, observation.Args{})
+
+	if len(ids) == 0 {
+		return nil
+	}
+
+	queries := make([]*sqlf.Query, 0, len(ids))
+	for _, id := range ids {
+		queries = append(queries, sqlf.Sprintf("%s", id))
+	}
+
+	delta := 1
+	if decrement {
+		delta = -1
+	}
+
+	return s.Exec(ctx, sqlf.Sprintf(updateDependencyNumReferencesQuery, sqlf.Join(queries, ", "), delta))
+}
+
+var updateDependencyNumReferencesQuery = `
+-- source: enterprise/internal/codeintel/stores/dbstore/uploads.go:UpdateDependencyNumReferences
+WITH reference_counts AS (
+	SELECT
+		p.dump_id,
+		count(*) AS count
+	FROM lsif_packages p
+	JOIN lsif_references r
+	ON
+		p.scheme = r.scheme AND
+		p.name = r.name AND
+		p.version = r.version AND
+		p.dump_id != r.dump_id
+	WHERE r.dump_id IN (%s)
+	GROUP BY p.dump_id
+),
+locked_uploads AS (
+	SELECT
+		u.id,
+		(SELECT rc.count FROM reference_counts rc WHERE rc.dump_id = u.id) AS count
+	FROM lsif_uploads u
+	WHERE u.id in (SELECT rc.dump_id FROM reference_counts rc)
+	ORDER BY u.id FOR UPDATE
+)
+UPDATE lsif_uploads u
+SET num_references = num_references + ((SELECT lu.count FROM locked_uploads lu WHERE lu.id = u.id) * %s)
+WHERE u.id IN (SELECT id FROM locked_uploads)
 `
 
 // SoftDeleteOldUploads marks uploads older than the given age that are not visible at the tip of the default branch
