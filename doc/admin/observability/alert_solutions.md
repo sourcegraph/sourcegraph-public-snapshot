@@ -2810,9 +2810,10 @@ with your code hosts connections or networking issues affecting communication wi
 
 - <span class="badge badge-warning">warning</span> repo-updater: less than 0 repositories synced for 9h0m0s
 
+
 **Possible solutions**
 
-- Check network connectivity to code hosts
+- **As of 3.29.1** The metric behind this warning is not working as intended. Please feel free to silence the alert as folllows.
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
