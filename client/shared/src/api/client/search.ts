@@ -11,7 +11,11 @@ import { wrapRemoteObservable } from './api/common'
 const TRANSFORM_QUERY_TIMEOUT = 3000
 
 /**
- * TODO
+ * Executes search query transformers contributed by Sourcegraph extensions.
+ *
+ * Runs one time before completing/yielding value to streaming search.
+ * i.e. extensions that contribute search query transformers that are activated during search
+ * will not cause the query to be re-computed.
  */
 export function observeTransformedSearchQuery({
     query,
@@ -22,13 +26,16 @@ export function observeTransformedSearchQuery({
 }): Observable<string> {
     return from(extensionHostAPIPromise).pipe(
         switchMap(extensionHostAPI =>
+            // Since we won't re-compute on subsequent extension activation, ensure that
+            // at least the initial set of extensions, which should include always-activated
+            // query-transforming extensions, have been loaded to ensure that the initial
+            // search query is transformed
             wrapRemoteObservable(extensionHostAPI.haveInitialExtensionsLoaded()).pipe(
                 filter(haveLoaded => haveLoaded),
-                first(),
+                first(), // Ensure that it only emits once
                 switchMap(() =>
                     wrapRemoteObservable(extensionHostAPI.transformSearchQuery(query)).pipe(
-                        // TODO: explain why
-                        first()
+                        first() // Ensure that it only emits once
                     )
                 )
             )
