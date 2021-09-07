@@ -463,6 +463,8 @@ func startExec(ctx context.Context, args []string) error {
 		return nil
 	}
 
+	env := run.MakeEnv(globalConf.Env, set.Env)
+
 	cmds := make([]run.Command, 0, len(set.Commands))
 	for _, name := range set.Commands {
 		cmd, ok := globalConf.Commands[name]
@@ -477,7 +479,8 @@ func startExec(ctx context.Context, args []string) error {
 	for _, cmd := range cmds {
 		enrichWithLogLevels(&cmd, levelOverrides)
 	}
-	return run.Commands(ctx, globalConf.Env, cmds...)
+
+	return run.Commands(ctx, env, cmds...)
 }
 
 func runExec(ctx context.Context, args []string) error {

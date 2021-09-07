@@ -709,6 +709,11 @@ commandsets:
 
   default: *enterprise_set
 
+  dotcom:
+    <<: *enterprise_set
+    env:
+      SOURCEGRAPHDOTCOM_MODE: true
+
   enterprise-codeintel:
     checks:
       - docker

@@ -193,7 +193,7 @@ func runWatch(ctx context.Context, cmd Command, root string, globalEnv map[strin
 		if cmd.Install != "" {
 			stdout.Out.WriteLine(output.Linef("", output.StylePending, "Installing %s...", cmd.Name))
 
-			cmdOut, err := BashInRoot(ctx, cmd.Install, makeEnv(globalEnv, cmd.Env))
+			cmdOut, err := BashInRoot(ctx, cmd.Install, MakeEnv(globalEnv, cmd.Env))
 			if err != nil {
 				if !startedOnce {
 					return installErr{cmdName: cmd.Name, output: string(cmdOut)}
@@ -289,7 +289,7 @@ func runWatch(ctx context.Context, cmd Command, root string, globalEnv map[strin
 	}
 }
 
-func makeEnv(envs ...map[string]string) []string {
+func MakeEnv(envs ...map[string]string) []string {
 	combined := os.Environ()
 
 	expandedEnv := map[string]string{}
@@ -455,7 +455,7 @@ func Test(ctx context.Context, cmd Command, args []string, globalEnv map[string]
 
 	c := exec.CommandContext(commandCtx, "bash", "-c", strings.Join(cmdArgs, " "))
 	c.Dir = root
-	c.Env = makeEnv(globalEnv, cmd.Env)
+	c.Env = MakeEnv(globalEnv, cmd.Env)
 	c.Stdout = os.Stdout
 	c.Stderr = os.Stderr
 
@@ -472,7 +472,7 @@ func Checks(ctx context.Context, globalEnv map[string]string, checks ...Check) (
 		defer cancel()
 
 		c := exec.CommandContext(commandCtx, "bash", "-c", check.Cmd)
-		c.Env = makeEnv(globalEnv)
+		c.Env = MakeEnv(globalEnv)
 
 		p := stdout.Out.Pending(output.Linef(output.EmojiLightbulb, output.StylePending, "Running check %q...", check.Name))
 
