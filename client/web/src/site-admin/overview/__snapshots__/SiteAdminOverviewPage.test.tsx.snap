@@ -112,7 +112,7 @@ exports[`SiteAdminOverviewPage >= 2 users 1`] = `
         </span>
         <button
           aria-label="Collapse section"
-          className="d-flex btn btn-icon collapsible__expand-btn stretched-link"
+          className="d-flex btn btn-icon expandBtn stretched-link"
           onClick={[Function]}
           type="button"
         >
@@ -209,7 +209,7 @@ exports[`SiteAdminOverviewPage activation in progress 1`] = `
         </div>
         <button
           aria-label="Collapse section"
-          className="d-flex btn btn-icon collapsible__expand-btn stretched-link"
+          className="d-flex btn btn-icon expandBtn stretched-link"
           onClick={[Function]}
           type="button"
         >
