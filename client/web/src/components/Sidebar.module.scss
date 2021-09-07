@@ -5,11 +5,11 @@
     flex-direction: column;
 }
 
-.link {
-    &--inactive {
-        &:hover {
-            background-color: var(--color-bg-2);
-        }
+// TODO: remove global `.sidebar__link--inactive` usage and drop this selector.
+:global(.sidebar__link--inactive),
+.link--inactive {
+    &:hover {
+        background-color: var(--color-bg-2);
     }
 }
 

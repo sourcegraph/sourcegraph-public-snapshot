@@ -18,7 +18,7 @@ export const SidebarNavItem: React.FunctionComponent<{
     exact?: boolean
     source?: string
 }> = ({ children, className, to, exact, source }) => {
-    const buttonClassNames = classNames('btn text-left d-flex sidebar-nav-link', styles.linkInactive)
+    const buttonClassNames = classNames('btn text-left d-flex', styles.linkInactive)
 
     if (source === 'server') {
         return (
@@ -81,9 +81,13 @@ export const SidebarCollapseItems: React.FunctionComponent<{
     )
 }
 
+interface SidebarGroupProps {
+    className?: string
+}
+
 /**
  * A box of items in the side bar. Use `SideBarGroupHeader` as children.
  */
-export const SidebarGroup: React.FunctionComponent = ({ children }) => (
-    <div className={classNames('mb-3', styles.sidebar)}>{children}</div>
+export const SidebarGroup: React.FunctionComponent<SidebarGroupProps> = ({ children, className }) => (
+    <div className={classNames('mb-3', styles.sidebar, className)}>{children}</div>
 )
