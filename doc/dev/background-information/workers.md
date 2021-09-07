@@ -248,6 +248,9 @@ func scanFirstExampleJob(rows *sql.Rows, queryErr error) (_ workerutil.Record, e
 			&job.ProcessAfter,
 			&job.NumResets,
 			&job.NumFailures,
+			&job.LastHeartbeatAt,
+			pq.Array(&executionLogs),
+			&job.WorkerHostname,
 			&job.RepositoryID,
 			&job.RepositoryName,
 		); err != nil {
