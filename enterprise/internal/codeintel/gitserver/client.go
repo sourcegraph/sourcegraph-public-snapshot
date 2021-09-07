@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"regexp"
+	"sort"
 	"strings"
 	"time"
 
@@ -32,7 +33,7 @@ func New(dbStore DBStore, observationContext *observation.Context) *Client {
 	}
 }
 
-// Head determines the tip commit of the default branch for the given repository.
+// CommitExists determines if the given commit exists in the given repository.
 func (c *Client) CommitExists(ctx context.Context, repositoryID int, commit string) (_ bool, err error) {
 	ctx, endObservation := c.operations.commitExists.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("repositoryID", repositoryID),
@@ -278,6 +279,41 @@ func parseRefDescriptions(lines []string) (map[string][]RefDescription, error) {
 	}
 
 	return refDescriptions, nil
+}
+
+// BranchesContaining returns a map from branch names to branch tip hashes for each brach
+// containing the given commit.
+func (c *Client) BranchesContaining(ctx context.Context, repositoryID int, commit string) ([]string, error) {
+	out, err := c.execGitCommand(ctx, repositoryID, "branch", "--contains", commit, "--format", "%(refname)")
+	if err != nil {
+		return nil, err
+	}
+
+	return parseBranchesContaining(strings.Split(out, "\n")), nil
+}
+
+func parseBranchesContaining(lines []string) []string {
+	names := make([]string, 0, len(lines))
+	for _, line := range lines {
+		line = strings.TrimSpace(line)
+		if line == "" {
+			continue
+		}
+
+		refname := line
+
+		// Remove refs/heads/ or ref/tags/ prefix
+		for prefix := range refPrefixes {
+			if strings.HasPrefix(line, prefix) {
+				refname = line[len(prefix):]
+			}
+		}
+
+		names = append(names, refname)
+	}
+	sort.Strings(names)
+
+	return names
 }
 
 // RawContents returns the contents of a file in a particular commit of a repository.
