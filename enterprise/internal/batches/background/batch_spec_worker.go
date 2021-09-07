@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/hashicorp/go-multierror"
+	"github.com/keegancsmith/sqlf"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/service"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
@@ -66,6 +67,8 @@ func NewBatchSpecDBWorkerStore(handle *basestore.TransactableHandle, observation
 		TableName:         "batch_specs",
 		ColumnExpressions: store.BatchSpecColumns,
 		Scan:              scanFirstBatchSpecRecord,
+
+		OrderByExpression: sqlf.Sprintf("batch_specs.state = 'errored', batch_specs.updated_at DESC"),
 
 		StalledMaxAge: 60 * time.Second,
 		MaxNumResets:  batchspecMaxNumResets,
