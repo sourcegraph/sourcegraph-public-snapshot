@@ -1,3 +1,4 @@
+import classNames from 'classnames'
 import * as React from 'react'
 import { Link } from 'react-router-dom'
 
@@ -14,7 +15,7 @@ const PublishNewManifestAlert: React.FunctionComponent<{
     buttonLabel: string
     alertClass: 'alert-info' | 'alert-danger'
 }> = ({ extension, text, buttonLabel, alertClass }) => (
-    <div className={`alert ${alertClass}`}>
+    <div className={classNames('alert', alertClass)}>
         {text}
         {extension.registryExtension?.viewerCanAdminister && (
             <>

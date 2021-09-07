@@ -30,7 +30,7 @@ export const LangStatsInsightLivePreview: React.FunctionComponent<LangStatsInsig
     const previewSetting = useMemo(
         () => ({
             repository: repository.trim(),
-            threshold: threshold / 100,
+            otherThreshold: threshold / 100,
         }),
         [repository, threshold]
     )

@@ -84,6 +84,12 @@ export function getScriptURLFromExtensionManifest(extension: ConfiguredExtension
 }
 
 /**
+ * List of insight-like extension ids. These insights worked via extensions before,
+ * but at the moment they work via insight built-in data-fetchers.
+ */
+const DEPRECATED_EXTENSION_IDS = new Set(['sourcegraph/code-stats-insights', 'sourcegraph/search-insights'])
+
+/**
  * @throws An error if the final settings has an error.
  * @returns An array of extension IDs configured in the settings.
  */
@@ -94,7 +100,12 @@ export function extensionIDsFromSettings(settings: SettingsCascadeOrError): stri
     if (!settings.final?.extensions) {
         return []
     }
-    return Object.keys(settings.final.extensions)
+
+    return (
+        Object.keys(settings.final.extensions)
+            // Filter out deprecated extensions
+            .filter(extensionId => !DEPRECATED_EXTENSION_IDS.has(extensionId))
+    )
 }
 
 /**

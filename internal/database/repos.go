@@ -1475,6 +1475,31 @@ func (s *RepoStore) ExternalServices(ctx context.Context, repoID api.RepoID) ([]
 	return ExternalServicesWith(s).List(ctx, opts)
 }
 
+// GetFirstRepoNamesByCloneURL returns the first repo name in our database that
+// match the given clone url. If not repo is found, an empty string and nil error
+// are returned.
+func (s *RepoStore) GetFirstRepoNamesByCloneURL(ctx context.Context, cloneURL string) (api.RepoName, error) {
+	if Mocks.Repos.GetFirstRepoNamesByCloneURL != nil {
+		return Mocks.Repos.GetFirstRepoNamesByCloneURL(ctx, cloneURL)
+	}
+
+	s.ensureStore()
+
+	name, _, err := basestore.ScanFirstString(
+		s.Query(ctx, sqlf.Sprintf(`
+SELECT name
+FROM repo r
+JOIN external_service_repos esr ON r.id = esr.repo_id
+WHERE clone_url = %s
+ORDER BY r.updated_at desc
+LIMIT 1
+`, cloneURL)))
+	if err != nil {
+		return "", err
+	}
+	return api.RepoName(name), nil
+}
+
 func parsePattern(p string) ([]*sqlf.Query, error) {
 	exact, like, pattern, err := parseIncludePattern(p)
 	if err != nil {

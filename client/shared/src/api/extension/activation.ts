@@ -50,6 +50,12 @@ export function observeActiveExtensions(
     }
 }
 
+/**
+ * List of insight-like extension ids. These insights worked via extensions before,
+ * but at the moment they work via insight built-in data-fetchers.
+ */
+const DEPRECATED_EXTENSION_IDS = new Set(['sourcegraph/code-stats-insights', 'sourcegraph/search-insights'])
+
 export function activateExtensions(
     state: Pick<ExtensionHostState, 'activeExtensions' | 'contributions' | 'haveInitialExtensionsLoaded' | 'settings'>,
     mainAPI: Remote<Pick<MainThreadAPI, 'getScriptURLForExtension' | 'logEvent'>>,
@@ -90,6 +96,11 @@ export function activateExtensions(
                 const activeExtensionIDs = new Set<string>()
 
                 for (const extension of activeExtensions) {
+                    // Ignore extensions that now work via built-in insights fetchers
+                    if (DEPRECATED_EXTENSION_IDS.has(extension.id)) {
+                        continue
+                    }
+
                     // Populate set of currently active extension IDs
                     activeExtensionIDs.add(extension.id)
                     // Populate map of extensions to activate

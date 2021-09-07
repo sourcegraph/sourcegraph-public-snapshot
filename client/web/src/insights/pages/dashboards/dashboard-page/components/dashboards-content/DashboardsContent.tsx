@@ -3,7 +3,6 @@ import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import React, { useRef, useState } from 'react'
 import { useHistory } from 'react-router-dom'
 
-import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
@@ -27,7 +26,6 @@ import { isDashboardConfigurable } from './utils/is-dashboard-configurable'
 
 export interface DashboardsContentProps
     extends SettingsCascadeProps<Settings>,
-        ExtensionsControllerProps,
         TelemetryProps,
         PlatformContextProps<'updateSettings'> {
     /**
@@ -40,7 +38,7 @@ export interface DashboardsContentProps
 }
 
 export const DashboardsContent: React.FunctionComponent<DashboardsContentProps> = props => {
-    const { extensionsController, settingsCascade, dashboardID, telemetryService, platformContext } = props
+    const { settingsCascade, dashboardID, telemetryService, platformContext } = props
 
     const history = useHistory()
     const dashboards = useDashboards(settingsCascade)
@@ -115,7 +113,6 @@ export const DashboardsContent: React.FunctionComponent<DashboardsContentProps> 
             {currentDashboard ? (
                 <DashboardInsights
                     dashboard={currentDashboard}
-                    extensionsController={extensionsController}
                     telemetryService={telemetryService}
                     platformContext={platformContext}
                     settingsCascade={settingsCascade}

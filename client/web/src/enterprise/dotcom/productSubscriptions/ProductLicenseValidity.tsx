@@ -1,3 +1,4 @@
+import classNames from 'classnames'
 import { parseISO } from 'date-fns'
 import format from 'date-fns/format'
 import React from 'react'
@@ -18,11 +19,13 @@ export const ProductLicenseValidity: React.FunctionComponent<{
     const validityClass = isExpired ? 'danger' : 'success'
     return (
         <div
-            className={`${className} ${primary ? `alert alert-${validityClass} py-1 px-2` : ''}`}
+            className={classNames(className, primary && `alert alert-${validityClass} py-1 px-2`)}
             data-tooltip={format(parseISO(expiresAt), 'PPpp')}
         >
-            <strong className={primary ? '' : `text-${validityClass}`}>{isExpired ? 'Expired' : 'Valid'}</strong> (
-            {formatRelativeExpirationDate(expiresAt)})
+            <strong className={classNames(!primary && `text-${validityClass}`)}>
+                {isExpired ? 'Expired' : 'Valid'}
+            </strong>{' '}
+            ({formatRelativeExpirationDate(expiresAt)})
         </div>
     )
 }

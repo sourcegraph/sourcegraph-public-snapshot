@@ -11,6 +11,7 @@ import {
     INSIGHTS_ALL_REPOS_SETTINGS_KEY,
     InsightType,
 } from '../../core/types'
+import { getInsightIdsFromSettings } from '../use-dashboards/utils'
 import { useDistinctValue } from '../use-distinct-value'
 
 export interface UseInsightProps extends SettingsCascadeProps<Settings> {
@@ -36,6 +37,19 @@ export function useInsights(props: UseInsightsProps): Insight[] {
     const ids = useDistinctValue(insightIds)
 
     return useMemo(() => ids.map(id => findInsightById(settingsCascade, id)).filter(isDefined), [settingsCascade, ids])
+}
+
+export function useAllInsights(props: SettingsCascadeProps<Settings>): Insight[] {
+    const {
+        settingsCascade: { final },
+    } = props
+    const insightIds = useMemo(() => {
+        const normalizedFinalSettings = !final || isErrorLike(final) ? {} : final
+
+        return getInsightIdsFromSettings(normalizedFinalSettings)
+    }, [final])
+
+    return useInsights({ settingsCascade: props.settingsCascade, insightIds })
 }
 
 export function findInsightById(settingsCascade: SettingsCascadeOrError<Settings>, insightId: string): Insight | null {

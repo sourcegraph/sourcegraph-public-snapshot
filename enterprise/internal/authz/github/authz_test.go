@@ -35,7 +35,7 @@ func TestNewAuthzProviders(t *testing.T) {
 		providers, problems, warnings := NewAuthzProviders(
 			[]*types.GitHubConnection{{
 				GitHubConnection: &schema.GitHubConnection{
-					Url:           "https://github.com/my-org",
+					Url:           "https://github.com/my-org", // incorrect
 					Authorization: &schema.GitHubAuthorization{},
 				},
 			}},
@@ -50,7 +50,7 @@ func TestNewAuthzProviders(t *testing.T) {
 		if len(problems) != 0 {
 			t.Fatalf("unexpected problems: %+v", problems)
 		}
-		if len(warnings) != 1 || !strings.Contains(warnings[0], "not find authentication provider") {
+		if len(warnings) != 1 || !strings.Contains(warnings[0], "no authentication provider") {
 			t.Fatalf("unexpected warnings: %+v", warnings)
 		}
 	})
@@ -60,14 +60,13 @@ func TestNewAuthzProviders(t *testing.T) {
 			providers, problems, warnings := NewAuthzProviders(
 				[]*types.GitHubConnection{{
 					GitHubConnection: &schema.GitHubConnection{
-						Url:           "https://github.com/",
+						Url:           schema.DefaultGitHubURL,
 						Authorization: &schema.GitHubAuthorization{},
 					},
 				}},
 				[]schema.AuthProviders{{
-					Github: &schema.GitHubAuthProvider{
-						Url: "https://github.com",
-					},
+					// falls back to schema.DefaultGitHubURL
+					Github: &schema.GitHubAuthProvider{},
 				}})
 			if len(providers) != 1 || providers[0] == nil {
 				t.Fatal("expected a provider")

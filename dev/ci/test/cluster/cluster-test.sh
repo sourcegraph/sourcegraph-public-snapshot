@@ -86,8 +86,22 @@ function e2e() {
   popd
 }
 
+# Capture information about the state of the test cluster before cleanup
+function capture_state() {
+  # Get status of all pods
+  kubectl get pods
+
+  # Get logs for some deployments
+  pushd "$root_dir"
+  FRONTEND_LOGS="frontend_logs.log"
+  kubectl logs deployment/sourcegraph-frontend --all-containers >$FRONTEND_LOGS
+  chmod 744 $FRONTEND_LOGS
+  popd
+}
+
 # main
 cluster_setup
+trap capture_state exit
 test_setup
 # TODO: Failing tests do not fail the build
 set +o pipefail

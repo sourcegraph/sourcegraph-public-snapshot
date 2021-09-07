@@ -2,6 +2,7 @@ package ui
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"strings"
 
@@ -34,36 +35,56 @@ func serveRepoDocs(codeIntelResolver graphqlbackend.CodeIntelResolver) handlerFu
 			if err != nil {
 				return errors.Wrap(err, "GitBlobLSIFData")
 			}
-			documentationPage, err := lsifTreeResolver.DocumentationPage(r.Context(), &graphqlbackend.LSIFDocumentationPageArgs{
-				PathID: path,
-			})
-			if err == nil {
-				treeJSON := []byte(documentationPage.Tree().Value.(string))
-				var tree precise.DocumentationNode
-				if err := json.Unmarshal(treeJSON, &tree); err != nil {
-					return errors.Wrap(err, "Unmarshal")
-				}
-				target := &tree
-				if r.URL.RawQuery != "" {
-					target = findDocumentationNode(&tree, path+"#"+r.URL.RawQuery)
-					if target == nil {
-						target = &tree
+			if lsifTreeResolver != nil {
+				documentationPage, err := lsifTreeResolver.DocumentationPage(r.Context(), &graphqlbackend.LSIFDocumentationPageArgs{
+					PathID: path,
+				})
+				if err == nil {
+					treeJSON := []byte(documentationPage.Tree().Value.(string))
+					var tree precise.DocumentationNode
+					if err := json.Unmarshal(treeJSON, &tree); err != nil {
+						return errors.Wrap(err, "Unmarshal")
 					}
+					target := &tree
+					if r.URL.RawQuery != "" {
+						target = findDocumentationNode(&tree, path+"#"+r.URL.RawQuery)
+						if target == nil {
+							// The section/symbol specified by the ?Query parameter does not exist.
+							// This could happen for a few reasons:
+							//
+							// 1. It actually doesn't exist, e.g. it was removed in a commit to the repo.
+							// 2. A URL parameter API docs does not understand has been injected. This is
+							//    stupidly common, e.g.:
+							//     a. `?toast=integrations` being injected after navigating to an API docs page
+							//        and having to sign in first.
+							//     b. `?_ga=2.892337.1256632002....` being injected by Google Analytics from the
+							//        Sourcegraph blog or other sites.
+							//     c. `?utm_source` being injected by marketing in various locations.
+							//
+							// Either way, we don't know what the URL query is at this point. We know it's not a
+							// section/symbol of documentation we're aware of right now, so remove it from the URL.
+							r.URL.RawQuery = ""
+							http.Redirect(w, r, r.URL.String(), http.StatusMovedPermanently)
+							return nil
+						}
+					}
+					title := brandNameSubtitle(fmt.Sprintf("%s - %s API docs", target.Documentation.SearchKey, repoShortName(common.Repo.Name)))
+					common.Title = title
+					common.Metadata.ShowPreview = true
+					common.Metadata.Title = title
+					desc := markdownToDescriptionText(target.Detail.String())
+					desc = strings.Replace(desc, "\n", " ", -1)
+					desc = strings.Replace(desc, "\t", " ", -1)
+					if len(desc) > 200 {
+						desc = desc[:199] + "…"
+					}
+					if len(desc) > 0 {
+						runes := []rune(desc)
+						runes[0] = []rune(strings.ToLower(string(runes[0])))[0]
+						desc = string(runes)
+					}
+					common.Metadata.Description = fmt.Sprintf("%s API docs & usage examples; %s", target.Documentation.SearchKey, desc)
 				}
-				title := markdownToDescriptionText(target.Label.String())
-				if len(title) > 40 {
-					title = title[:39] + "…"
-				}
-				common.Title = title
-				common.Metadata.ShowPreview = true
-				common.Metadata.Title = title
-				desc := markdownToDescriptionText(target.Detail.String())
-				desc = strings.Replace(desc, "\n", " ", -1)
-				desc = strings.Replace(desc, "\t", " ", -1)
-				if len(desc) > 200 {
-					desc = desc[:199] + "…"
-				}
-				common.Metadata.Description = desc
 			}
 		}
 
