@@ -19,7 +19,7 @@ If you want to sync all the repositories you have access to and have Sourcegraph
 1. Go to **User menu > Settings** in the top navigation bar.
 1. Go to **Repositories** in the sidebar navigation.
 1. Press the **Manage Repositories** button.
-1. Choose the 'Sync All' option. This 
+1. Choose the 'Sync All' option.
 1. Press the **Save** button.
 
 
