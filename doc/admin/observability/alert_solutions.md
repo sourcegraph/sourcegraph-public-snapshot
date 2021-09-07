@@ -2813,7 +2813,7 @@ with your code hosts connections or networking issues affecting communication wi
 
 **Possible solutions**
 
-- **As of 3.29.1** The metric behind this warning is not working as intended. Please feel free to silence the alert as folllows.
+- Check network connectivity to code hosts
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
