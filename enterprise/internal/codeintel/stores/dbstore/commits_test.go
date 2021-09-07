@@ -794,21 +794,20 @@ func assertCommitsVisibleFromUploads(t *testing.T, store *Store, uploads []Uploa
 	testPageSize := 2
 
 	for _, upload := range uploads {
-		var after *string
+		var token *CommitsPageToken
 		var allCommits []string
 
 		for {
-			commits, err := store.CommitsVisibleToUpload(context.Background(), upload.ID, testPageSize, after)
+			commits, nextToken, err := store.CommitsVisibleToUpload(context.Background(), upload.ID, testPageSize, token)
 			if err != nil {
 				t.Fatalf("unexpected error getting commits visible to upload %d: %s", upload.ID, err)
 			}
-			if len(commits) == 0 {
+			if nextToken == nil {
 				break
 			}
 
-			last := commits[len(commits)-1]
 			allCommits = append(allCommits, commits...)
-			after = &last
+			token = nextToken
 		}
 
 		if diff := cmp.Diff(expectedVisibleCommits[upload.ID], allCommits); diff != "" {
