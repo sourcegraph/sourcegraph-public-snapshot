@@ -164,7 +164,7 @@ export class CommitSearchResultMatch extends React.Component<
                             <code>
                                 <Markdown
                                     refFn={this.setTableContainerElement}
-                                    data-testid="search-result-match-code-excerpt"
+                                    testId="search-result-match-code-excerpt"
                                     className={classNames(styles.markdown, styles.codeExcerpt)}
                                     dangerousInnerHTML={this.state.HTML}
                                 />
