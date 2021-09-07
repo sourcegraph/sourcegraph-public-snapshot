@@ -65,6 +65,7 @@ func TestService_ResolveWorkspacesForBatchSpec(t *testing.T) {
 	}
 	steps := []batcheslib.Step{{Run: "echo 1"}}
 	buildRepoWorkspace := func(repo *types.Repo, branch, commit string, fileMatches []string) *RepoWorkspace {
+		sort.Strings(fileMatches)
 		if branch == "" {
 			branch = defaultBranches[repo.Name].branch
 		}
