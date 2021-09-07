@@ -1238,11 +1238,12 @@ func (e *ExternalServiceStore) list(ctx context.Context, opt ExternalServicesLis
 	group, ctx := errgroup.WithContext(ctx)
 	for i := range results {
 		s := results[i]
+		var groupErr error
 		group.Go(func() error {
 			keyID := keyIDs[s.ID]
-			s.Config, err = e.maybeDecryptConfig(ctx, s.Config, keyID)
-			if err != nil {
-				return err
+			s.Config, groupErr = e.maybeDecryptConfig(ctx, s.Config, keyID)
+			if groupErr != nil {
+				return groupErr
 			}
 			return nil
 		})
