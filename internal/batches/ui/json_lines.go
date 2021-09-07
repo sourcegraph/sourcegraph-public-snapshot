@@ -21,126 +21,81 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/batches/git"
 )
 
-type BatchesLogEvent struct {
-	Operation LogEventOperation `json:"operation"`
-
-	Timestamp time.Time `json:"timestamp"`
-
-	Status   LogEventStatus         `json:"status"`
-	Metadata map[string]interface{} `json:"metadata,omitempty"`
-}
-
-type LogEventOperation string
-
-const (
-	LogEventOperationParsingBatchSpec          LogEventOperation = "PARSING_BATCH_SPEC"
-	LogEventOperationResolvingNamespace        LogEventOperation = "RESOLVING_NAMESPACE"
-	LogEventOperationPreparingDockerImages     LogEventOperation = "PREPARING_DOCKER_IMAGES"
-	LogEventOperationDeterminingWorkspaceType  LogEventOperation = "DETERMINING_WORKSPACE_TYPE"
-	LogEventOperationResolvingRepositories     LogEventOperation = "RESOLVING_REPOSITORIES"
-	LogEventOperationDeterminingWorkspaces     LogEventOperation = "DETERMINING_WORKSPACES"
-	LogEventOperationCheckingCache             LogEventOperation = "CHECKING_CACHE"
-	LogEventOperationExecutingTasks            LogEventOperation = "EXECUTING_TASKS"
-	LogEventOperationLogFileKept               LogEventOperation = "LOG_FILE_KEPT"
-	LogEventOperationUploadingChangesetSpecs   LogEventOperation = "UPLOADING_CHANGESET_SPECS"
-	LogEventOperationCreatingBatchSpec         LogEventOperation = "CREATING_BATCH_SPEC"
-	LogEventOperationApplyingBatchSpec         LogEventOperation = "APPLYING_BATCH_SPEC"
-	LogEventOperationBatchSpecExecution        LogEventOperation = "BATCH_SPEC_EXECUTION"
-	LogEventOperationExecutingTask             LogEventOperation = "EXECUTING_TASK"
-	LogEventOperationTaskBuildChangesetSpecs   LogEventOperation = "TASK_BUILD_CHANGESET_SPECS"
-	LogEventOperationTaskDownloadingArchive    LogEventOperation = "TASK_DOWNLOADING_ARCHIVE"
-	LogEventOperationTaskInitializingWorkspace LogEventOperation = "TASK_INITIALIZING_WORKSPACE"
-	LogEventOperationTaskSkippingSteps         LogEventOperation = "TASK_SKIPPING_STEPS"
-	LogEventOperationTaskStepSkipped           LogEventOperation = "TASK_STEP_SKIPPED"
-	LogEventOperationTaskPreparingStep         LogEventOperation = "TASK_PREPARING_STEP"
-	LogEventOperationTaskStep                  LogEventOperation = "TASK_STEP"
-	LogEventOperationTaskCalculatingDiff       LogEventOperation = "TASK_CALCULATING_DIFF"
-)
-
-type LogEventStatus string
-
-const (
-	LogEventStatusStarted  LogEventStatus = "STARTED"
-	LogEventStatusSuccess  LogEventStatus = "SUCCESS"
-	LogEventStatusFailure  LogEventStatus = "FAILURE"
-	LogEventStatusProgress LogEventStatus = "PROGRESS"
-)
-
 var _ ExecUI = &JSONLines{}
 
 type JSONLines struct{}
 
 func (ui *JSONLines) ParsingBatchSpec() {
-	logOperationStart(LogEventOperationParsingBatchSpec, nil)
+	logOperationStart(batcheslib.LogEventOperationParsingBatchSpec, nil)
 }
 func (ui *JSONLines) ParsingBatchSpecSuccess() {
-	logOperationSuccess(LogEventOperationParsingBatchSpec, nil)
+	logOperationSuccess(batcheslib.LogEventOperationParsingBatchSpec, nil)
 }
 func (ui *JSONLines) ParsingBatchSpecFailure(err error) {
-	logOperationFailure(LogEventOperationParsingBatchSpec, map[string]interface{}{"error": err.Error()})
+	logOperationFailure(batcheslib.LogEventOperationParsingBatchSpec, map[string]interface{}{"error": err.Error()})
 }
 
 func (ui *JSONLines) ResolvingNamespace() {
-	logOperationStart(LogEventOperationResolvingNamespace, nil)
+	logOperationStart(batcheslib.LogEventOperationResolvingNamespace, nil)
 }
 func (ui *JSONLines) ResolvingNamespaceSuccess(namespace string) {
-	logOperationSuccess(LogEventOperationResolvingNamespace, map[string]interface{}{"namespaceID": namespace})
+	logOperationSuccess(batcheslib.LogEventOperationResolvingNamespace, map[string]interface{}{"namespaceID": namespace})
 }
 
 func (ui *JSONLines) PreparingContainerImages() {
-	logOperationStart(LogEventOperationPreparingDockerImages, nil)
+	logOperationStart(batcheslib.LogEventOperationPreparingDockerImages, nil)
 }
 func (ui *JSONLines) PreparingContainerImagesProgress(done, total int) {
-	logOperationProgress(LogEventOperationPreparingDockerImages, map[string]interface{}{"done": done, "total": total})
+	logOperationProgress(batcheslib.LogEventOperationPreparingDockerImages, map[string]interface{}{"done": done, "total": total})
 }
 func (ui *JSONLines) PreparingContainerImagesSuccess() {
-	logOperationSuccess(LogEventOperationPreparingDockerImages, nil)
+	logOperationSuccess(batcheslib.LogEventOperationPreparingDockerImages, nil)
 }
 
 func (ui *JSONLines) DeterminingWorkspaceCreatorType() {
-	logOperationStart(LogEventOperationDeterminingWorkspaceType, nil)
+	logOperationStart(batcheslib.LogEventOperationDeterminingWorkspaceType, nil)
 }
 func (ui *JSONLines) DeterminingWorkspaceCreatorTypeSuccess(wt workspace.CreatorType) {
 	switch wt {
 	case workspace.CreatorTypeVolume:
-		logOperationSuccess(LogEventOperationDeterminingWorkspaceType, map[string]interface{}{"type": "VOLUME"})
+		logOperationSuccess(batcheslib.LogEventOperationDeterminingWorkspaceType, map[string]interface{}{"type": "VOLUME"})
 	case workspace.CreatorTypeBind:
-		logOperationSuccess(LogEventOperationDeterminingWorkspaceType, map[string]interface{}{"type": "BIND"})
+		logOperationSuccess(batcheslib.LogEventOperationDeterminingWorkspaceType, map[string]interface{}{"type": "BIND"})
 	}
 }
 
 func (ui *JSONLines) ResolvingRepositories() {
-	logOperationStart(LogEventOperationResolvingRepositories, nil)
+	logOperationStart(batcheslib.LogEventOperationResolvingRepositories, nil)
 }
 func (ui *JSONLines) ResolvingRepositoriesDone(repos []*graphql.Repository, unsupported batches.UnsupportedRepoSet, ignored batches.IgnoredRepoSet) {
 	if unsupported != nil && len(unsupported) != 0 {
-		logOperationSuccess(LogEventOperationResolvingRepositories, map[string]interface{}{"unsupported": len(unsupported)})
+		logOperationSuccess(batcheslib.LogEventOperationResolvingRepositories, map[string]interface{}{"unsupported": len(unsupported)})
 	} else if ignored != nil && len(ignored) != 0 {
-		logOperationSuccess(LogEventOperationResolvingRepositories, map[string]interface{}{"ignored": len(ignored)})
+		logOperationSuccess(batcheslib.LogEventOperationResolvingRepositories, map[string]interface{}{"ignored": len(ignored)})
 	} else {
-		logOperationSuccess(LogEventOperationResolvingRepositories, map[string]interface{}{"count": len(repos)})
+		logOperationSuccess(batcheslib.LogEventOperationResolvingRepositories, map[string]interface{}{"count": len(repos)})
 	}
 }
 
 func (ui *JSONLines) DeterminingWorkspaces() {
-	logOperationStart(LogEventOperationDeterminingWorkspaces, nil)
+	logOperationStart(batcheslib.LogEventOperationDeterminingWorkspaces, nil)
 }
 func (ui *JSONLines) DeterminingWorkspacesSuccess(num int) {
 	metadata := map[string]interface{}{
 		"count": num,
 	}
-	logOperationSuccess(LogEventOperationDeterminingWorkspaces, metadata)
+	logOperationSuccess(batcheslib.LogEventOperationDeterminingWorkspaces, metadata)
 }
 
 func (ui *JSONLines) CheckingCache() {
-	logOperationStart(LogEventOperationCheckingCache, nil)
+	logOperationStart(batcheslib.LogEventOperationCheckingCache, nil)
 }
 func (ui *JSONLines) CheckingCacheSuccess(cachedSpecsFound int, tasksToExecute int) {
 	metadata := map[string]interface{}{
 		"cachedSpecsFound": cachedSpecsFound,
 		"tasksToExecute":   tasksToExecute,
 	}
-	logOperationSuccess(LogEventOperationCheckingCache, metadata)
+	logOperationSuccess(batcheslib.LogEventOperationCheckingCache, metadata)
 }
 
 func (ui *JSONLines) ExecutingTasks(verbose bool, parallelism int) executor.TaskExecutionUI {
@@ -148,12 +103,12 @@ func (ui *JSONLines) ExecutingTasks(verbose bool, parallelism int) executor.Task
 }
 
 func (ui *JSONLines) ExecutingTasksSkippingErrors(err error) {
-	logOperationSuccess(LogEventOperationExecutingTasks, map[string]interface{}{"skipped": true, "error": err.Error()})
+	logOperationSuccess(batcheslib.LogEventOperationExecutingTasks, map[string]interface{}{"skipped": true, "error": err.Error()})
 }
 
 func (ui *JSONLines) LogFilesKept(files []string) {
 	for _, file := range files {
-		logOperationSuccess(LogEventOperationLogFileKept, map[string]interface{}{"path": file})
+		logOperationSuccess(batcheslib.LogEventOperationLogFileKept, map[string]interface{}{"path": file})
 	}
 }
 
@@ -162,26 +117,26 @@ func (ui *JSONLines) NoChangesetSpecs() {
 }
 
 func (ui *JSONLines) UploadingChangesetSpecs(num int) {
-	logOperationStart(LogEventOperationUploadingChangesetSpecs, map[string]interface{}{
+	logOperationStart(batcheslib.LogEventOperationUploadingChangesetSpecs, map[string]interface{}{
 		"total": num,
 	})
 }
 
 func (ui *JSONLines) UploadingChangesetSpecsProgress(done, total int) {
-	logOperationProgress(LogEventOperationUploadingChangesetSpecs, map[string]interface{}{
+	logOperationProgress(batcheslib.LogEventOperationUploadingChangesetSpecs, map[string]interface{}{
 		"done":  done,
 		"total": total,
 	})
 }
 
 func (ui *JSONLines) UploadingChangesetSpecsSuccess(ids []graphql.ChangesetSpecID) {
-	logOperationSuccess(LogEventOperationUploadingChangesetSpecs, map[string]interface{}{
+	logOperationSuccess(batcheslib.LogEventOperationUploadingChangesetSpecs, map[string]interface{}{
 		"ids": ids,
 	})
 }
 
 func (ui *JSONLines) CreatingBatchSpec() {
-	logOperationStart(LogEventOperationCreatingBatchSpec, nil)
+	logOperationStart(batcheslib.LogEventOperationCreatingBatchSpec, nil)
 }
 
 func (ui *JSONLines) CreatingBatchSpecSuccess() {
@@ -192,38 +147,38 @@ func (ui *JSONLines) CreatingBatchSpecError(err error) error {
 }
 
 func (ui *JSONLines) PreviewBatchSpec(batchSpecURL string) {
-	logOperationSuccess(LogEventOperationCreatingBatchSpec, map[string]interface{}{"batchSpecURL": batchSpecURL})
+	logOperationSuccess(batcheslib.LogEventOperationCreatingBatchSpec, map[string]interface{}{"batchSpecURL": batchSpecURL})
 }
 
 func (ui *JSONLines) ApplyingBatchSpec() {
-	logOperationStart(LogEventOperationApplyingBatchSpec, nil)
+	logOperationStart(batcheslib.LogEventOperationApplyingBatchSpec, nil)
 }
 
 func (ui *JSONLines) ApplyingBatchSpecSuccess(batchChangeURL string) {
-	logOperationSuccess(LogEventOperationApplyingBatchSpec, map[string]interface{}{"batchChangeURL": batchChangeURL})
+	logOperationSuccess(batcheslib.LogEventOperationApplyingBatchSpec, map[string]interface{}{"batchChangeURL": batchChangeURL})
 }
 
 func (ui *JSONLines) ExecutionError(err error) {
-	logOperationFailure(LogEventOperationBatchSpecExecution, map[string]interface{}{"error": err.Error()})
+	logOperationFailure(batcheslib.LogEventOperationBatchSpecExecution, map[string]interface{}{"error": err.Error()})
 }
 
-func logOperationStart(op LogEventOperation, metadata map[string]interface{}) {
-	logEvent(BatchesLogEvent{Operation: op, Status: LogEventStatusStarted, Metadata: metadata})
+func logOperationStart(op batcheslib.LogEventOperation, metadata map[string]interface{}) {
+	logEvent(batcheslib.LogEvent{Operation: op, Status: batcheslib.LogEventStatusStarted, Metadata: metadata})
 }
 
-func logOperationSuccess(op LogEventOperation, metadata map[string]interface{}) {
-	logEvent(BatchesLogEvent{Operation: op, Status: LogEventStatusSuccess, Metadata: metadata})
+func logOperationSuccess(op batcheslib.LogEventOperation, metadata map[string]interface{}) {
+	logEvent(batcheslib.LogEvent{Operation: op, Status: batcheslib.LogEventStatusSuccess, Metadata: metadata})
 }
 
-func logOperationFailure(op LogEventOperation, metadata map[string]interface{}) {
-	logEvent(BatchesLogEvent{Operation: op, Status: LogEventStatusFailure, Metadata: metadata})
+func logOperationFailure(op batcheslib.LogEventOperation, metadata map[string]interface{}) {
+	logEvent(batcheslib.LogEvent{Operation: op, Status: batcheslib.LogEventStatusFailure, Metadata: metadata})
 }
 
-func logOperationProgress(op LogEventOperation, metadata map[string]interface{}) {
-	logEvent(BatchesLogEvent{Operation: op, Status: LogEventStatusProgress, Metadata: metadata})
+func logOperationProgress(op batcheslib.LogEventOperation, metadata map[string]interface{}) {
+	logEvent(batcheslib.LogEvent{Operation: op, Status: batcheslib.LogEventStatusProgress, Metadata: metadata})
 }
 
-func logEvent(e BatchesLogEvent) {
+func logEvent(e batcheslib.LogEvent) {
 	e.Timestamp = time.Now().UTC().Truncate(time.Millisecond)
 	err := json.NewEncoder(os.Stdout).Encode(e)
 	if err != nil {
@@ -277,12 +232,12 @@ func (ui *taskExecutionJSONLines) Start(tasks []*executor.Task) {
 		linesTasks = append(linesTasks, linesTask)
 	}
 
-	logOperationStart(LogEventOperationExecutingTasks, map[string]interface{}{
+	logOperationStart(batcheslib.LogEventOperationExecutingTasks, map[string]interface{}{
 		"tasks": linesTasks,
 	})
 }
 func (ui *taskExecutionJSONLines) Success() {
-	logOperationSuccess(LogEventOperationExecutingTasks, nil)
+	logOperationSuccess(batcheslib.LogEventOperationExecutingTasks, nil)
 }
 
 func (ui *taskExecutionJSONLines) TaskStarted(task *executor.Task) {
@@ -291,7 +246,7 @@ func (ui *taskExecutionJSONLines) TaskStarted(task *executor.Task) {
 		panic("unknown task started")
 	}
 
-	logOperationStart(LogEventOperationExecutingTask, map[string]interface{}{
+	logOperationStart(batcheslib.LogEventOperationExecutingTask, map[string]interface{}{
 		"taskID": lt.ID,
 	})
 }
@@ -303,14 +258,14 @@ func (ui *taskExecutionJSONLines) TaskFinished(task *executor.Task, err error) {
 	}
 
 	if err != nil {
-		logOperationFailure(LogEventOperationExecutingTask, map[string]interface{}{
+		logOperationFailure(batcheslib.LogEventOperationExecutingTask, map[string]interface{}{
 			"taskID": lt.ID,
 			"error":  err,
 		})
 		return
 	}
 
-	logOperationSuccess(LogEventOperationExecutingTask, map[string]interface{}{
+	logOperationSuccess(batcheslib.LogEventOperationExecutingTask, map[string]interface{}{
 		"taskID": lt.ID,
 	})
 }
@@ -320,7 +275,7 @@ func (ui *taskExecutionJSONLines) TaskChangesetSpecsBuilt(task *executor.Task, s
 	if !ok {
 		panic("unknown task started")
 	}
-	logOperationSuccess(LogEventOperationTaskBuildChangesetSpecs, map[string]interface{}{
+	logOperationSuccess(batcheslib.LogEventOperationTaskBuildChangesetSpecs, map[string]interface{}{
 		"taskID": lt.ID,
 	})
 }
@@ -341,39 +296,39 @@ type stepsExecutionJSONLines struct {
 const stepFlushDuration = 500 * time.Millisecond
 
 func (ui *stepsExecutionJSONLines) ArchiveDownloadStarted() {
-	logOperationStart(LogEventOperationTaskDownloadingArchive, map[string]interface{}{"taskID": ui.linesTask.ID})
+	logOperationStart(batcheslib.LogEventOperationTaskDownloadingArchive, map[string]interface{}{"taskID": ui.linesTask.ID})
 }
 
 func (ui *stepsExecutionJSONLines) ArchiveDownloadFinished() {
-	logOperationSuccess(LogEventOperationTaskDownloadingArchive, map[string]interface{}{"taskID": ui.linesTask.ID})
+	logOperationSuccess(batcheslib.LogEventOperationTaskDownloadingArchive, map[string]interface{}{"taskID": ui.linesTask.ID})
 }
 func (ui *stepsExecutionJSONLines) WorkspaceInitializationStarted() {
-	logOperationStart(LogEventOperationTaskInitializingWorkspace, map[string]interface{}{"taskID": ui.linesTask.ID})
+	logOperationStart(batcheslib.LogEventOperationTaskInitializingWorkspace, map[string]interface{}{"taskID": ui.linesTask.ID})
 }
 func (ui *stepsExecutionJSONLines) WorkspaceInitializationFinished() {
-	logOperationSuccess(LogEventOperationTaskInitializingWorkspace, map[string]interface{}{"taskID": ui.linesTask.ID})
+	logOperationSuccess(batcheslib.LogEventOperationTaskInitializingWorkspace, map[string]interface{}{"taskID": ui.linesTask.ID})
 }
 
 func (ui *stepsExecutionJSONLines) SkippingStepsUpto(startStep int) {
-	logOperationProgress(LogEventOperationTaskSkippingSteps, map[string]interface{}{"taskID": ui.linesTask.ID, "startStep": startStep})
+	logOperationProgress(batcheslib.LogEventOperationTaskSkippingSteps, map[string]interface{}{"taskID": ui.linesTask.ID, "startStep": startStep})
 }
 
 func (ui *stepsExecutionJSONLines) StepSkipped(step int) {
-	logOperationProgress(LogEventOperationTaskStepSkipped, map[string]interface{}{"taskID": ui.linesTask.ID, "step": step})
+	logOperationProgress(batcheslib.LogEventOperationTaskStepSkipped, map[string]interface{}{"taskID": ui.linesTask.ID, "step": step})
 }
 
 func (ui *stepsExecutionJSONLines) StepPreparing(step int) {
-	logOperationProgress(LogEventOperationTaskPreparingStep, map[string]interface{}{"taskID": ui.linesTask.ID, "step": step})
+	logOperationProgress(batcheslib.LogEventOperationTaskPreparingStep, map[string]interface{}{"taskID": ui.linesTask.ID, "step": step})
 }
 
 func (ui *stepsExecutionJSONLines) StepStarted(step int, runScript string) {
-	logOperationStart(LogEventOperationTaskStep, map[string]interface{}{"taskID": ui.linesTask.ID, "step": step, "runScript": runScript})
+	logOperationStart(batcheslib.LogEventOperationTaskStep, map[string]interface{}{"taskID": ui.linesTask.ID, "step": step, "runScript": runScript})
 }
 
 func (ui *stepsExecutionJSONLines) StepStdoutWriter(ctx context.Context, task *executor.Task, step int) io.WriteCloser {
 	sink := func(data string) {
 		logOperationProgress(
-			LogEventOperationTaskStep,
+			batcheslib.LogEventOperationTaskStep,
 			map[string]interface{}{
 				"taskID":      ui.linesTask.ID,
 				"step":        step,
@@ -388,7 +343,7 @@ func (ui *stepsExecutionJSONLines) StepStdoutWriter(ctx context.Context, task *e
 func (ui *stepsExecutionJSONLines) StepStderrWriter(ctx context.Context, task *executor.Task, step int) io.WriteCloser {
 	sink := func(data string) {
 		logOperationProgress(
-			LogEventOperationTaskStep,
+			batcheslib.LogEventOperationTaskStep,
 			map[string]interface{}{
 				"taskID":      ui.linesTask.ID,
 				"step":        step,
@@ -403,9 +358,9 @@ func (ui *stepsExecutionJSONLines) StepStderrWriter(ctx context.Context, task *e
 
 func (ui *stepsExecutionJSONLines) StepFinished(step int, diff []byte, changes *git.Changes, outputs map[string]interface{}) {
 	logOperationSuccess(
-		LogEventOperationTaskStep,
+		batcheslib.LogEventOperationTaskStep,
 		map[string]interface{}{
-			"task":    ui.linesTask,
+			"taskID":  ui.linesTask.ID,
 			"step":    step,
 			"diff":    string(diff),
 			"changes": changes,
@@ -415,8 +370,8 @@ func (ui *stepsExecutionJSONLines) StepFinished(step int, diff []byte, changes *
 }
 
 func (ui *stepsExecutionJSONLines) CalculatingDiffStarted() {
-	logOperationStart(LogEventOperationTaskCalculatingDiff, map[string]interface{}{"taskID": ui.linesTask.ID})
+	logOperationStart(batcheslib.LogEventOperationTaskCalculatingDiff, map[string]interface{}{"taskID": ui.linesTask.ID})
 }
 func (ui *stepsExecutionJSONLines) CalculatingDiffFinished() {
-	logOperationSuccess(LogEventOperationTaskCalculatingDiff, map[string]interface{}{"taskID": ui.linesTask.ID})
+	logOperationSuccess(batcheslib.LogEventOperationTaskCalculatingDiff, map[string]interface{}{"taskID": ui.linesTask.ID})
 }
