@@ -182,9 +182,18 @@ export const RepositoryDocumentationPage: React.FunctionComponent<Props> = React
 
     return (
         <div className="repository-docs-page">
-            {page !== LOADING && !isErrorLike(page) ? <PageTitle title={onlyPathID ?
-                `${findDocumentationNode(page.tree, onlyPathID)?.documentation.searchKey || page.tree.documentation.searchKey} - ${displayRepoName(props.repo.name)} API docs`
-                : `${page.tree.documentation.searchKey} - ${displayRepoName(props.repo.name)} API docs`} /> : null}
+            {page !== LOADING && !isErrorLike(page) ? (
+                <PageTitle
+                    title={
+                        onlyPathID
+                            ? `${
+                                  findDocumentationNode(page.tree, onlyPathID)?.documentation.searchKey ||
+                                  page.tree.documentation.searchKey
+                              } - ${displayRepoName(props.repo.name)} API docs`
+                            : `${page.tree.documentation.searchKey} - ${displayRepoName(props.repo.name)} API docs`
+                    }
+                />
+            ) : null}
             {loading ? <LoadingSpinner className="icon-inline m-1" /> : null}
             {error && error.message === 'page not found' ? <PageNotFound /> : null}
             {error && (error.message === 'no LSIF data' || error.message === 'no LSIF documentation') ? (
@@ -297,9 +306,9 @@ function findDocumentationNode(node: GQLDocumentationNode, pathID: string): GQLD
     }
     for (const child of node.children) {
         if (child.node) {
-            const found = findDocumentationNode(child.node, pathID);
+            const found = findDocumentationNode(child.node, pathID)
             if (found) {
-                return found;
+                return found
             }
         }
     }
