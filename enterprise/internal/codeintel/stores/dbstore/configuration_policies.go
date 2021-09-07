@@ -80,7 +80,9 @@ func scanFirstConfigurationPolicy(rows *sql.Rows, err error) (ConfigurationPolic
 }
 
 type GetConfigurationPoliciesOptions struct {
-	RepositoryID int
+	RepositoryID     int
+	ForDataRetention bool
+	ForIndexing      bool
 }
 
 // GetConfigurationPolicies retrieves the set of configuration policies matching the the given options.
@@ -90,11 +92,17 @@ func (s *Store) GetConfigurationPolicies(ctx context.Context, opts GetConfigurat
 	}})
 	defer endObservation(1, observation.Args{})
 
-	conds := make([]*sqlf.Query, 0, 1)
+	conds := make([]*sqlf.Query, 0, 3)
 	if opts.RepositoryID == 0 {
 		conds = append(conds, sqlf.Sprintf("repository_id IS NULL"))
 	} else {
 		conds = append(conds, sqlf.Sprintf("repository_id = %s", opts.RepositoryID))
+	}
+	if opts.ForDataRetention {
+		conds = append(conds, sqlf.Sprintf("retention_enabled"))
+	}
+	if opts.ForIndexing {
+		conds = append(conds, sqlf.Sprintf("indexing_enabled"))
 	}
 
 	configurationPolicies, err := scanConfigurationPolicies(s.Store.Query(ctx, sqlf.Sprintf(getConfigurationPoliciesQuery, sqlf.Join(conds, "AND"))))
