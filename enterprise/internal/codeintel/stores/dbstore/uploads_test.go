@@ -861,17 +861,44 @@ func TestHardDeleteUploadByID(t *testing.T) {
 	db := dbtesting.GetDB(t)
 	store := testStore(db)
 
-	insertUploads(t, db, Upload{ID: 1, State: "deleted"})
+	insertUploads(t, db,
+		Upload{ID: 51, State: "completed"},
+		Upload{ID: 52, State: "completed"},
+		Upload{ID: 53, State: "completed"},
+		Upload{ID: 54, State: "completed"},
+	)
+	insertPackages(t, store, []lsifstore.Package{
+		{DumpID: 52, Scheme: "test", Name: "p1", Version: "1.2.3"},
+		{DumpID: 53, Scheme: "test", Name: "p2", Version: "1.2.3"},
+	})
+	insertPackageReferences(t, store, []lsifstore.PackageReference{
+		{Package: lsifstore.Package{DumpID: 51, Scheme: "test", Name: "p1", Version: "1.2.3"}},
+		{Package: lsifstore.Package{DumpID: 51, Scheme: "test", Name: "p2", Version: "1.2.3"}},
+		{Package: lsifstore.Package{DumpID: 54, Scheme: "test", Name: "p1", Version: "1.2.3"}},
+		{Package: lsifstore.Package{DumpID: 54, Scheme: "test", Name: "p2", Version: "1.2.3"}},
+	})
 
-	if err := store.HardDeleteUploadByID(context.Background(), 1); err != nil {
+	if err := store.UpdateNumReferences(context.Background(), []int{51, 52, 53, 54}); err != nil {
+		t.Fatalf("unexpected error updating num references: %s", err)
+	}
+
+	if err := store.HardDeleteUploadByID(context.Background(), 51); err != nil {
 		t.Fatalf("unexpected error deleting upload: %s", err)
 	}
 
-	// Ensure records were deleted
-	if states, err := getUploadStates(db, 1); err != nil {
-		t.Fatalf("unexpected error getting states: %s", err)
-	} else if len(states) != 0 {
-		t.Fatalf("unexpected record")
+	numReferencesByID, err := scanIntPairs(store.Query(context.Background(), sqlf.Sprintf(`SELECT id, num_references FROM lsif_uploads`)))
+	if err != nil {
+		t.Fatalf("unexpected error querying num_references: %s", err)
+	}
+
+	expectedNumReferencesByID := map[int]int{
+		// 51 was deleted
+		52: 1,
+		53: 1,
+		54: 0,
+	}
+	if diff := cmp.Diff(expectedNumReferencesByID, numReferencesByID); diff != "" {
+		t.Errorf("unexpected reference count (-want +got):\n%s", diff)
 	}
 }
 
