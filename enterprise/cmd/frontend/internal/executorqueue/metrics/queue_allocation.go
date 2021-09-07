@@ -11,7 +11,7 @@ type QueueAllocation struct {
 }
 
 var (
-	validQueueNames         = []string{"batches", "codeintel"}
+	validQueueNames         = []string{"batches", "codeintel", "batches-workspaces"}
 	validCloudProviderNames = []string{"aws", "gcp"}
 )
 

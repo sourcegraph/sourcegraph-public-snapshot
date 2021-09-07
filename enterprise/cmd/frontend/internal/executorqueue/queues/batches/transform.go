@@ -2,15 +2,19 @@ package batches
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"net/url"
 	"os"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	apiclient "github.com/sourcegraph/sourcegraph/enterprise/internal/executor"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
 )
 
 // transformRecord transforms a *btypes.BatchSpecExecution into an apiclient.Job.
@@ -129,4 +133,151 @@ func makeURL(base, username, password string) (string, error) {
 
 	u.User = url.UserPassword(username, password)
 	return u.String(), nil
+}
+
+// transformBatchSpecWorkspaceJobRecord transforms a *btypes.BatchSpecWorkspaceJob into an apiclient.Job.
+func transformBatchSpecWorkspaceJobRecord(ctx context.Context, s *store.Store, job *btypes.BatchSpecWorkspaceJob, config *Config) (apiclient.Job, error) {
+	batchSpec, err := s.GetBatchSpec(ctx, store.GetBatchSpecOpts{ID: job.BatchSpecID})
+	if err != nil {
+		return apiclient.Job{}, err
+	}
+
+	repo, err := database.Repos(s.DB()).Get(ctx, job.RepoID)
+	if err != nil {
+		return apiclient.Job{}, err
+	}
+
+	token, err := createAccessToken(ctx, s.DB(), batchSpec.UserID)
+	if err != nil {
+		return apiclient.Job{}, err
+	}
+
+	frontendURL := conf.Get().ExternalURL
+
+	srcEndpoint, err := makeURL(frontendURL, config.Shared.FrontendUsername, config.Shared.FrontendPassword)
+	if err != nil {
+		return apiclient.Job{}, err
+	}
+
+	redactedSrcEndpoint, err := makeURL(frontendURL, "USERNAME_REMOVED", "PASSWORD_REMOVED")
+	if err != nil {
+		return apiclient.Job{}, err
+	}
+
+	cliEnv := []string{
+		fmt.Sprintf("SRC_ENDPOINT=%s", srcEndpoint),
+		fmt.Sprintf("SRC_ACCESS_TOKEN=%s", token),
+
+		// TODO: This is wrong here, it should be set on the executor machine
+		fmt.Sprintf("HOME=%s", os.Getenv("HOME")),
+		fmt.Sprintf("PATH=%s", os.Getenv("PATH")),
+	}
+
+	var namespaceName string
+	if batchSpec.NamespaceUserID != 0 {
+		user, err := database.Users(s.DB()).GetByID(ctx, batchSpec.NamespaceUserID)
+		if err != nil {
+			return apiclient.Job{}, err
+		}
+		namespaceName = user.Username
+	} else {
+		org, err := database.Orgs(s.DB()).GetByID(ctx, batchSpec.NamespaceOrgID)
+		if err != nil {
+			return apiclient.Job{}, err
+		}
+		namespaceName = org.Name
+	}
+
+	input := SrcCLIBatchExecInput{
+		RawSpec: batchSpec.RawSpec,
+		Workspaces: SerializeableWorkspaces{
+			{
+				Repository: serializableRepo{ID: string(graphqlbackend.MarshalRepositoryID(repo.ID)), Name: string(repo.Name)},
+				Branch: serializableBranch{
+					Name:   job.Branch,
+					Target: serializableCommit{OID: job.Commit},
+				},
+				Path:               job.Path,
+				OnlyFetchWorkspace: job.OnlyFetchWorkspace,
+				// TODO: PERSIST THIS AND USE IT HERE!!!
+				Steps: []batcheslib.Step{
+					{Run: "echo step1 >> README.md", Container: "alpine:3"},
+					{Run: "echo step2 >> README.md", Container: "alpine:3"},
+					{Run: "echo step3 >> README.md", Container: "alpine:3"},
+				},
+				SearchResultPaths: job.FileMatches,
+			},
+		},
+	}
+
+	marshaledInput, err := json.Marshal(input)
+	if err != nil {
+		return apiclient.Job{}, err
+	}
+
+	return apiclient.Job{
+		ID:                  int(job.ID),
+		VirtualMachineFiles: map[string]string{"input.json": string(marshaledInput)},
+		CliSteps: []apiclient.CliStep{
+			{
+				Commands: []string{
+					"batch",
+					"exec",
+					"-f", "input.json",
+					"-text-only",
+					"-skip-errors",
+					"-n", namespaceName,
+				},
+				Dir: ".",
+				Env: cliEnv,
+			},
+		},
+		RedactedValues: map[string]string{
+			// 🚨 SECURITY: Catch leak of upload endpoint. This is necessary in addition
+			// to the below in case the username or password contains illegal URL characters,
+			// which are then urlencoded and are not replaceable via byte comparison.
+			srcEndpoint: redactedSrcEndpoint,
+
+			// 🚨 SECURITY: Catch uses of fragments pulled from URL to construct another target
+			// (in src-cli). We only pass the constructed URL to src-cli, which we trust not to
+			// ship the values to a third party, but not to trust to ensure the values are absent
+			// from the command's stdout or stderr streams.
+			config.Shared.FrontendUsername: "USERNAME_REMOVED",
+			config.Shared.FrontendPassword: "PASSWORD_REMOVED",
+
+			// 🚨 SECURITY: Redact the access token used for src-cli to talk to
+			// Sourcegraph instance.
+			token: "SRC_ACCESS_TOKEN_REMOVED",
+		},
+	}, nil
+}
+
+type SrcCLIBatchExecInput struct {
+	RawSpec    string                  `json:"rawSpec"`
+	Workspaces SerializeableWorkspaces `json:"workspaces"`
+}
+
+type SerializeableWorkspaces []*SerializeableWorkspace
+
+type SerializeableWorkspace struct {
+	Repository         serializableRepo   `json:"repository"`
+	Branch             serializableBranch `json:"branch"`
+	Path               string             `json:"path"`
+	OnlyFetchWorkspace bool               `json:"onlyFetchWorkspace"`
+	Steps              []batcheslib.Step  `json:"steps"`
+	SearchResultPaths  []string           `json:"searchResultPaths"`
+}
+
+type serializableRepo struct {
+	ID   string `json:"id"`
+	Name string `json:"name"`
+}
+
+type serializableBranch struct {
+	Name   string             `json:"name"`
+	Target serializableCommit `json:"target"`
+}
+
+type serializableCommit struct {
+	OID string `json:"oid"`
 }
