@@ -26,7 +26,7 @@ const DiffBoundaryContent: React.FunctionComponent<DiffBoundaryContentProps> = p
             data-diff-marker=" "
         >
             {props.oldRange.lines !== undefined && props.newRange.lines !== undefined && (
-                <code className={classNames(diffHunkStyles.content)}>
+                <code className={diffHunkStyles.content}>
                     @@ -{props.oldRange.startLine},{props.oldRange.lines} +{props.newRange.startLine},
                     {props.newRange.lines} {props.section && `@@ ${props.section}`}
                 </code>
