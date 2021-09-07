@@ -3,6 +3,7 @@ import classNames from 'classnames'
 import { isEqual } from 'lodash'
 import React, { useCallback, useEffect, useState, FunctionComponent, Dispatch, SetStateAction } from 'react'
 
+import { Link } from '@sourcegraph/shared/src/components/Link'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ErrorLike } from '@sourcegraph/shared/src/util/errors'
 import { Container, PageSelector } from '@sourcegraph/wildcard'
@@ -19,7 +20,6 @@ import {
     SiteAdminRepositoryFields,
     SetExternalServiceReposResult,
 } from '../../../graphql-operations'
-import { externalServiceUserModeFromTags } from '../cloud-ga'
 
 import { CheckboxRepositoryNode } from './RepositoryNode'
 export interface AffiliatedReposReference {
@@ -309,8 +309,16 @@ export const SelectAffiliatedRepos: FunctionComponent<Props> = ({
                 <input type="radio" value="all" checked={selectionState.radio === 'all'} onChange={handleRadioSelect} />
                 <div className="d-flex flex-column ml-2">
                     <p className="mb-0">Sync all repositories</p>
-                    <p className="user-settings-repos__text-light">
-                        Will sync all current and future public and private repositories
+                    <p className="user-settings-repos__text-light text-muted">
+                        Will sync all current and future public and private repositories,
+                        <Link
+                            to="https://docs.sourcegraph.com/code_search/how-to/adding_repositories_to_cloud#adding-repositories-by-selecting-sync-all-recommended"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                        >
+                            {' '}
+                            learn more
+                        </Link>
                     </p>
                 </div>
             </label>
