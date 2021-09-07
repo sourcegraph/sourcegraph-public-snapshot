@@ -327,7 +327,7 @@ func executeSingleStep(
 	stderr := io.MultiWriter(&stderrBuffer, uiStderrWriter, opts.logger.PrefixWriter("stderr"))
 
 	// Setup readers that pipe the output into the given buffers
-	wg, err := process.PipeOutput(cmd, stdout, stderr)
+	wg, err := process.PipeOutput(ctx, cmd, stdout, stderr)
 	if err != nil {
 		return bytes.Buffer{}, bytes.Buffer{}, errors.Wrap(err, "piping process output")
 	}
