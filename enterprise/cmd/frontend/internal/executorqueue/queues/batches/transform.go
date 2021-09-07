@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/url"
-	"os"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
@@ -54,10 +53,6 @@ func transformRecord(ctx context.Context, db dbutil.DB, exec *btypes.BatchSpecEx
 	cliEnv := []string{
 		fmt.Sprintf("SRC_ENDPOINT=%s", srcEndpoint),
 		fmt.Sprintf("SRC_ACCESS_TOKEN=%s", token),
-
-		// TODO: This is wrong here, it should be set on the executor machine
-		fmt.Sprintf("HOME=%s", os.Getenv("HOME")),
-		fmt.Sprintf("PATH=%s", os.Getenv("PATH")),
 	}
 
 	var namespaceName string
@@ -137,11 +132,15 @@ func makeURL(base, username, password string) (string, error) {
 
 // transformBatchSpecWorkspaceJobRecord transforms a *btypes.BatchSpecWorkspaceJob into an apiclient.Job.
 func transformBatchSpecWorkspaceJobRecord(ctx context.Context, s *store.Store, job *btypes.BatchSpecWorkspaceJob, config *Config) (apiclient.Job, error) {
+	// MAYBE: We could create a view in which batch_spec and repo are joined
+	// against the batch_spec_workspace_job so we don't have to load them
+	// separately.
 	batchSpec, err := s.GetBatchSpec(ctx, store.GetBatchSpecOpts{ID: job.BatchSpecID})
 	if err != nil {
 		return apiclient.Job{}, err
 	}
 
+	// TODO: Set actor here
 	repo, err := database.Repos(s.DB()).Get(ctx, job.RepoID)
 	if err != nil {
 		return apiclient.Job{}, err
@@ -167,10 +166,6 @@ func transformBatchSpecWorkspaceJobRecord(ctx context.Context, s *store.Store, j
 	cliEnv := []string{
 		fmt.Sprintf("SRC_ENDPOINT=%s", srcEndpoint),
 		fmt.Sprintf("SRC_ACCESS_TOKEN=%s", token),
-
-		// TODO: This is wrong here, it should be set on the executor machine
-		fmt.Sprintf("HOME=%s", os.Getenv("HOME")),
-		fmt.Sprintf("PATH=%s", os.Getenv("PATH")),
 	}
 
 	var namespaceName string
@@ -192,20 +187,18 @@ func transformBatchSpecWorkspaceJobRecord(ctx context.Context, s *store.Store, j
 		RawSpec: batchSpec.RawSpec,
 		Workspaces: SerializeableWorkspaces{
 			{
-				Repository: serializableRepo{ID: string(graphqlbackend.MarshalRepositoryID(repo.ID)), Name: string(repo.Name)},
+				Repository: serializableRepo{
+					ID:   string(graphqlbackend.MarshalRepositoryID(repo.ID)),
+					Name: string(repo.Name),
+				},
 				Branch: serializableBranch{
 					Name:   job.Branch,
 					Target: serializableCommit{OID: job.Commit},
 				},
 				Path:               job.Path,
 				OnlyFetchWorkspace: job.OnlyFetchWorkspace,
-				// TODO: PERSIST THIS AND USE IT HERE!!!
-				Steps: []batcheslib.Step{
-					{Run: "echo step1 >> README.md", Container: "alpine:3"},
-					{Run: "echo step2 >> README.md", Container: "alpine:3"},
-					{Run: "echo step3 >> README.md", Container: "alpine:3"},
-				},
-				SearchResultPaths: job.FileMatches,
+				Steps:              job.Steps,
+				SearchResultPaths:  job.FileMatches,
 			},
 		},
 	}

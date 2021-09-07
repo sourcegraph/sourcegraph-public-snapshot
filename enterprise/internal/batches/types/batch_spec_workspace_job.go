@@ -6,6 +6,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
+	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
 )
 
 // BatchSpecWorkspaceJobState defines the possible states of a changeset job.
@@ -51,6 +52,7 @@ type BatchSpecWorkspaceJob struct {
 	Branch             string
 	Commit             string
 	Path               string
+	Steps              []batcheslib.Step
 	FileMatches        []string
 	OnlyFetchWorkspace bool
 

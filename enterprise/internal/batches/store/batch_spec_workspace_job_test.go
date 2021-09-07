@@ -14,6 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
 )
 
 func intPtr(n int) *int { return &n }
@@ -45,6 +46,19 @@ func testStoreBatchSpecWorkspaceJobs(t *testing.T, ctx context.Context, s *Store
 				"a.go",
 				"a/b/horse.go",
 				"a/b/c.go",
+			},
+			Steps: []batcheslib.Step{
+				{
+					Run:       "complex command that changes code",
+					Container: "alpine:3",
+					Files: map[string]string{
+						"/tmp/foobar.go": "package main",
+					},
+					Outputs: map[string]batcheslib.Output{
+						"myOutput": {Value: `${{ step.stdout }}`},
+					},
+					If: `${{ eq repository.name "github.com/sourcegraph/sourcegraph" }}`,
+				},
 			},
 			OnlyFetchWorkspace: true,
 		}
@@ -156,7 +170,7 @@ func testStoreBatchSpecWorkspaceJobs(t *testing.T, ctx context.Context, s *Store
 					t.Fatal(err)
 				}
 				if diff := cmp.Diff(have, []*btypes.BatchSpecWorkspaceJob{job}); diff != "" {
-					t.Fatalf("invalid executions returned: %s", diff)
+					t.Fatalf("invalid batch spec workspace jobs returned: %s", diff)
 				}
 			}
 		})
@@ -177,7 +191,7 @@ func testStoreBatchSpecWorkspaceJobs(t *testing.T, ctx context.Context, s *Store
 					t.Fatal(err)
 				}
 				if diff := cmp.Diff(have, []*btypes.BatchSpecWorkspaceJob{job}); diff != "" {
-					t.Fatalf("invalid executions returned: %s", diff)
+					t.Fatalf("invalid batch spec workspace jobs returned: %s", diff)
 				}
 			}
 		})

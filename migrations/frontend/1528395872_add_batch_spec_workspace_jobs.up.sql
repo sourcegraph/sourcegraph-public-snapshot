@@ -1,5 +1,6 @@
 BEGIN;
 
+-- TODO: Remove _job suffix
 CREATE TABLE IF NOT EXISTS batch_spec_workspace_jobs (
   id              BIGSERIAL PRIMARY KEY,
 
@@ -12,6 +13,7 @@ CREATE TABLE IF NOT EXISTS batch_spec_workspace_jobs (
   path                 TEXT NOT NULL,
   file_matches         TEXT[] NOT NULL,
   only_fetch_workspace BOOLEAN NOT NULL DEFAULT FALSE,
+  steps                JSONB DEFAULT '[]'::jsonb,
 
   state             TEXT DEFAULT 'pending',
   failure_message   TEXT,
@@ -42,6 +44,8 @@ ALTER TABLE IF EXISTS batch_specs
   ADD COLUMN IF NOT EXISTS num_failures      INTEGER NOT NULL DEFAULT 0,
   ADD COLUMN IF NOT EXISTS execution_logs    JSON[],
   ADD COLUMN IF NOT EXISTS worker_hostname   TEXT NOT NULL DEFAULT ''
+
+  -- TODO: add two "allow unsupported, ignored" options here as booleans
   ;
 
 COMMIT;
