@@ -47,10 +47,12 @@ type BatchSpecWorkspaceJob struct {
 	BatchSpecID      int64
 	ChangesetSpecIDs []int64
 
-	RepoID api.RepoID
-	Branch string
-	Commit string
-	Path   string
+	RepoID             api.RepoID
+	Branch             string
+	Commit             string
+	Path               string
+	FileMatches        []string
+	OnlyFetchWorkspace bool
 
 	// workerutil fields
 	State           BatchSpecWorkspaceJobState

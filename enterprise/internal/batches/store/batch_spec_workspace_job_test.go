@@ -41,6 +41,12 @@ func testStoreBatchSpecWorkspaceJobs(t *testing.T, ctx context.Context, s *Store
 			Branch:           "master",
 			Commit:           "d34db33f",
 			Path:             "sub/dir/ectory",
+			FileMatches: []string{
+				"a.go",
+				"a/b/horse.go",
+				"a/b/c.go",
+			},
+			OnlyFetchWorkspace: true,
 		}
 
 		switch i {

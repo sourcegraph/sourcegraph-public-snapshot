@@ -115,27 +115,29 @@ Foreign-key constraints:
 
 # Table "public.batch_spec_workspace_jobs"
 ```
-       Column       |           Type           | Collation | Nullable |                        Default                        
---------------------+--------------------------+-----------+----------+-------------------------------------------------------
- id                 | bigint                   |           | not null | nextval('batch_spec_workspace_jobs_id_seq'::regclass)
- batch_spec_id      | integer                  |           |          | 
- changeset_spec_ids | jsonb                    |           |          | '{}'::jsonb
- repo_id            | integer                  |           |          | 
- branch             | text                     |           | not null | 
- commit             | text                     |           | not null | 
- path               | text                     |           | not null | 
- state              | text                     |           |          | 'pending'::text
- failure_message    | text                     |           |          | 
- started_at         | timestamp with time zone |           |          | 
- finished_at        | timestamp with time zone |           |          | 
- process_after      | timestamp with time zone |           |          | 
- num_resets         | integer                  |           | not null | 0
- num_failures       | integer                  |           | not null | 0
- execution_logs     | json[]                   |           |          | 
- worker_hostname    | text                     |           | not null | ''::text
- last_heartbeat_at  | timestamp with time zone |           |          | 
- created_at         | timestamp with time zone |           | not null | now()
- updated_at         | timestamp with time zone |           | not null | now()
+        Column        |           Type           | Collation | Nullable |                        Default                        
+----------------------+--------------------------+-----------+----------+-------------------------------------------------------
+ id                   | bigint                   |           | not null | nextval('batch_spec_workspace_jobs_id_seq'::regclass)
+ batch_spec_id        | integer                  |           |          | 
+ changeset_spec_ids   | jsonb                    |           |          | '{}'::jsonb
+ repo_id              | integer                  |           |          | 
+ branch               | text                     |           | not null | 
+ commit               | text                     |           | not null | 
+ path                 | text                     |           | not null | 
+ file_matches         | text[]                   |           | not null | 
+ only_fetch_workspace | boolean                  |           | not null | false
+ state                | text                     |           |          | 'pending'::text
+ failure_message      | text                     |           |          | 
+ started_at           | timestamp with time zone |           |          | 
+ finished_at          | timestamp with time zone |           |          | 
+ process_after        | timestamp with time zone |           |          | 
+ num_resets           | integer                  |           | not null | 0
+ num_failures         | integer                  |           | not null | 0
+ execution_logs       | json[]                   |           |          | 
+ worker_hostname      | text                     |           | not null | ''::text
+ last_heartbeat_at    | timestamp with time zone |           |          | 
+ created_at           | timestamp with time zone |           | not null | now()
+ updated_at           | timestamp with time zone |           | not null | now()
 Indexes:
     "batch_spec_workspace_jobs_pkey" PRIMARY KEY, btree (id)
 Foreign-key constraints:
@@ -166,7 +168,7 @@ Foreign-key constraints:
  num_resets        | integer                  |           | not null | 0
  num_failures      | integer                  |           | not null | 0
  execution_logs    | json[]                   |           |          | 
- worker_hsotname   | text                     |           | not null | ''::text
+ worker_hostname   | text                     |           | not null | ''::text
 Indexes:
     "batch_specs_pkey" PRIMARY KEY, btree (id)
     "batch_specs_rand_id" btree (rand_id)

@@ -6,10 +6,12 @@ CREATE TABLE IF NOT EXISTS batch_spec_workspace_jobs (
   batch_spec_id      INTEGER REFERENCES batch_specs(id) ON DELETE CASCADE DEFERRABLE,
   changeset_spec_ids JSONB DEFAULT '{}'::jsonb,
 
-  repo_id integer REFERENCES repo(id) DEFERRABLE,
-  branch TEXT NOT NULL,
-  commit TEXT NOT NULL,
-  path TEXT NOT NULL,
+  repo_id integer      REFERENCES repo(id) DEFERRABLE,
+  branch               TEXT NOT NULL,
+  commit               TEXT NOT NULL,
+  path                 TEXT NOT NULL,
+  file_matches         TEXT[] NOT NULL,
+  only_fetch_workspace BOOLEAN NOT NULL DEFAULT FALSE,
 
   state             TEXT DEFAULT 'pending',
   failure_message   TEXT,

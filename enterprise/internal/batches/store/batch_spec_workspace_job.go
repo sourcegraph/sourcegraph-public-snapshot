@@ -29,6 +29,8 @@ var batchSpecWorkspaceJobInsertColumns = []string{
 	"branch",
 	"commit",
 	"path",
+	"file_matches",
+	"only_fetch_workspace",
 
 	"state",
 
@@ -48,6 +50,8 @@ var BatchSpecWorkspaceJobColumns = SQLColumns{
 	"batch_spec_workspace_jobs.branch",
 	"batch_spec_workspace_jobs.commit",
 	"batch_spec_workspace_jobs.path",
+	"batch_spec_workspace_jobs.file_matches",
+	"batch_spec_workspace_jobs.only_fetch_workspace",
 
 	"batch_spec_workspace_jobs.state",
 	"batch_spec_workspace_jobs.failure_message",
@@ -90,6 +94,10 @@ func (s *Store) CreateBatchSpecWorkspaceJob(ctx context.Context, ws ...*btypes.B
 				return err
 			}
 
+			if wj.FileMatches == nil {
+				wj.FileMatches = []string{}
+			}
+
 			if err := inserter.Insert(
 				ctx,
 				wj.BatchSpecID,
@@ -98,6 +106,8 @@ func (s *Store) CreateBatchSpecWorkspaceJob(ctx context.Context, ws ...*btypes.B
 				wj.Branch,
 				wj.Commit,
 				wj.Path,
+				pq.Array(wj.FileMatches),
+				wj.OnlyFetchWorkspace,
 				wj.State.ToDB(),
 				wj.CreatedAt,
 				wj.UpdatedAt,
@@ -243,6 +253,8 @@ func scanBatchSpecWorkspaceJob(wj *btypes.BatchSpecWorkspaceJob, s scanner) erro
 		&wj.Branch,
 		&wj.Commit,
 		&wj.Path,
+		pq.Array(&wj.FileMatches),
+		&wj.OnlyFetchWorkspace,
 		&wj.State,
 		&dbutil.NullString{S: &failureMessage},
 		&dbutil.NullTime{Time: &wj.StartedAt},

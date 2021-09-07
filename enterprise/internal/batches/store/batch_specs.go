@@ -38,11 +38,12 @@ var batchSpecInsertColumns = []*sqlf.Query{
 	sqlf.Sprintf("namespace_user_id"),
 	sqlf.Sprintf("namespace_org_id"),
 	sqlf.Sprintf("user_id"),
+	sqlf.Sprintf("state"),
 	sqlf.Sprintf("created_at"),
 	sqlf.Sprintf("updated_at"),
 }
 
-const batchSpecInsertColsFmt = `(%s, %s, %s, %s, %s, %s, %s, %s)`
+const batchSpecInsertColsFmt = `(%s, %s, %s, %s, %s, %s, %s, %s, %s)`
 
 // CreateBatchSpec creates the given BatchSpec.
 func (s *Store) CreateBatchSpec(ctx context.Context, c *btypes.BatchSpec) (err error) {
@@ -82,6 +83,8 @@ func (s *Store) createBatchSpecQuery(c *btypes.BatchSpec) (*sqlf.Query, error) {
 		}
 	}
 
+	state := c.State.ToDB()
+
 	return sqlf.Sprintf(
 		createBatchSpecQueryFmtstr,
 		sqlf.Join(batchSpecInsertColumns, ", "),
@@ -91,6 +94,7 @@ func (s *Store) createBatchSpecQuery(c *btypes.BatchSpec) (*sqlf.Query, error) {
 		nullInt32Column(c.NamespaceUserID),
 		nullInt32Column(c.NamespaceOrgID),
 		nullInt32Column(c.UserID),
+		&dbutil.NullString{S: &state},
 		c.CreatedAt,
 		c.UpdatedAt,
 		sqlf.Join(BatchSpecColumns, ", "),
@@ -129,6 +133,8 @@ func (s *Store) updateBatchSpecQuery(c *btypes.BatchSpec) (*sqlf.Query, error) {
 
 	c.UpdatedAt = s.now()
 
+	state := c.State.ToDB()
+
 	return sqlf.Sprintf(
 		updateBatchSpecQueryFmtstr,
 		sqlf.Join(batchSpecInsertColumns, ", "),
@@ -138,6 +144,7 @@ func (s *Store) updateBatchSpecQuery(c *btypes.BatchSpec) (*sqlf.Query, error) {
 		nullInt32Column(c.NamespaceUserID),
 		nullInt32Column(c.NamespaceOrgID),
 		nullInt32Column(c.UserID),
+		&dbutil.NullString{S: &state},
 		c.CreatedAt,
 		c.UpdatedAt,
 		c.ID,
