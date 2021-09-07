@@ -14,7 +14,7 @@ import {
 } from './utils/insight-mock-data'
 import { overrideGraphQLExtensions } from './utils/override-insights-graphql'
 
-describe.skip('[VISUAL] Code insights page', () => {
+describe('[VISUAL] Code insights page', () => {
     let driver: Driver
     let testContext: WebIntegrationTestContext
 
