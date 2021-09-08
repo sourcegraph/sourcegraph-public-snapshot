@@ -5,6 +5,7 @@ import (
 
 	"github.com/cockroachdb/errors"
 
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	ts "github.com/sourcegraph/sourcegraph/internal/temporarysettings"
@@ -16,15 +17,12 @@ type TemporarySettingsResolver struct {
 }
 
 func (r *schemaResolver) TemporarySettings(ctx context.Context) (*TemporarySettingsResolver, error) {
-	user, err := CurrentUser(ctx, r.db)
-	if err != nil {
-		return nil, err
-	}
-	if user == nil {
+	a := actor.FromContext(ctx)
+	if !a.IsAuthenticated() {
 		return nil, errors.New("not authenticated")
 	}
 
-	temporarySettings, err := database.TemporarySettings(r.db).GetTemporarySettings(ctx, user.DatabaseID())
+	temporarySettings, err := database.TemporarySettings(r.db).GetTemporarySettings(ctx, a.UID)
 	if err != nil {
 		return nil, err
 	}
@@ -36,13 +34,10 @@ func (t *TemporarySettingsResolver) Contents() string {
 }
 
 func (r *schemaResolver) OverwriteTemporarySettings(ctx context.Context, args struct{ Contents string }) (*EmptyResponse, error) {
-	user, err := CurrentUser(ctx, r.db)
-	if err != nil {
-		return nil, err
-	}
-	if user == nil {
+	a := actor.FromContext(ctx)
+	if !a.IsAuthenticated() {
 		return nil, errors.New("not authenticated")
 	}
 
-	return &EmptyResponse{}, database.TemporarySettings(r.db).UpsertTemporarySettings(ctx, user.DatabaseID(), args.Contents)
+	return &EmptyResponse{}, database.TemporarySettings(r.db).UpsertTemporarySettings(ctx, a.UID, args.Contents)
 }

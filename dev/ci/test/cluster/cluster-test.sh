@@ -7,6 +7,27 @@ DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)""
 root_dir="$(dirname "${BASH_SOURCE[0]}")/../../../.."
 cd "$root_dir"
 
+export NAMESPACE="cluster-ci-$BUILDKITE_BUILD_NUMBER"
+
+# Capture information about the state of the test cluster
+function cluster_capture_state() {
+  # Get status of all pods
+  kubectl get pods
+
+  # Get logs for some deployments
+  pushd "$root_dir"
+  FRONTEND_LOGS="frontend_logs.log"
+  kubectl logs deployment/sourcegraph-frontend --all-containers >$FRONTEND_LOGS
+  chmod 744 $FRONTEND_LOGS
+  popd
+}
+
+# Cleanup the cluster
+function cluster_cleanup() {
+  cluster_capture_state
+  kubectl delete namespace "$NAMESPACE"
+}
+
 function cluster_setup() {
   git clone --depth 1 \
     https://github.com/sourcegraph/deploy-sourcegraph.git \
@@ -14,10 +35,8 @@ function cluster_setup() {
 
   gcloud container clusters get-credentials default-buildkite --zone=us-central1-c --project=sourcegraph-ci
 
-  export NAMESPACE="cluster-ci-$BUILDKITE_BUILD_NUMBER"
   kubectl create ns "$NAMESPACE" -oyaml --dry-run | kubectl apply -f -
-  #shellcheck disable=SC2064
-  trap "kubectl delete namespace $NAMESPACE" EXIT
+  trap cluster_cleanup exit
   kubectl apply -f "$DIR/storageClass.yaml"
   kubectl config set-context --current --namespace="$NAMESPACE"
   kubectl config current-context
@@ -86,22 +105,8 @@ function e2e() {
   popd
 }
 
-# Capture information about the state of the test cluster before cleanup
-function capture_state() {
-  # Get status of all pods
-  kubectl get pods
-
-  # Get logs for some deployments
-  pushd "$root_dir"
-  FRONTEND_LOGS="frontend_logs.log"
-  kubectl logs deployment/sourcegraph-frontend --all-containers >$FRONTEND_LOGS
-  chmod 744 $FRONTEND_LOGS
-  popd
-}
-
 # main
 cluster_setup
-trap capture_state exit
 test_setup
 # TODO: Failing tests do not fail the build
 set +o pipefail

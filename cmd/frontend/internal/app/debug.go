@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/cockroachdb/errors"
+	zoektweb "github.com/google/zoekt/web"
 	"github.com/gorilla/mux"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
@@ -19,6 +20,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/debugserver"
 	"github.com/sourcegraph/sourcegraph/internal/env"
+	"github.com/sourcegraph/sourcegraph/internal/search"
 	srcprometheus "github.com/sourcegraph/sourcegraph/internal/src-prometheus"
 )
 
@@ -42,6 +44,7 @@ func addNoK8sClientHandler(r *mux.Router, db dbutil.DB) {
 func addDebugHandlers(r *mux.Router, db dbutil.DB) {
 	addGrafana(r, db)
 	addJaeger(r, db)
+	addZoekt(r, db)
 
 	var rph debugproxies.ReverseProxyHandler
 
@@ -151,6 +154,20 @@ func addJaeger(r *mux.Router, db dbutil.DB) {
 	} else {
 		addNoJaegerHandler(r, db)
 	}
+}
+
+func addZoekt(r *mux.Router, db dbutil.DB) {
+	h, err := zoektweb.NewMux(&zoektweb.Server{
+		Searcher: search.Indexed().Client,
+		Top:      zoektweb.Top,
+		Print:    true,
+		HTML:     true,
+	})
+	if err != nil {
+		log.Printf("debugserver: failed to create zoekt web: %v", err)
+		return
+	}
+	r.PathPrefix("/zoekt/").Handler(adminOnly(http.StripPrefix("/-/debug/zoekt", h), db))
 }
 
 // adminOnly is a HTTP middleware which only allows requests by admins.

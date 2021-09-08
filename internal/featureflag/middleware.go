@@ -3,6 +3,7 @@ package featureflag
 import (
 	"context"
 	"net/http"
+	"sync"
 
 	"github.com/sourcegraph/sourcegraph/internal/cookie"
 
@@ -27,34 +28,56 @@ func Middleware(ffs Store, next http.Handler) http.Handler {
 }
 
 func contextWithFeatureFlags(ffs Store, r *http.Request) context.Context {
-	if a := actor.FromContext(r.Context()); a.IsAuthenticated() {
-		flags, err := ffs.GetUserFlags(r.Context(), a.UID)
-		if err == nil {
-			return context.WithValue(r.Context(), flagContextKey{}, FlagSet(flags))
-		}
-		// Continue if err != nil
-	}
+	fetcher := &flagSetFetcher{ffs: ffs, r: r}
+	return context.WithValue(r.Context(), flagContextKey{}, fetcher)
+}
 
-	if uid, ok := cookie.AnonymousUID(r); ok {
-		flags, err := ffs.GetAnonymousUserFlags(r.Context(), uid)
-		if err == nil {
-			return context.WithValue(r.Context(), flagContextKey{}, FlagSet(flags))
-		}
-		// Continue if err != nil
-	}
+// flagSetFetcher is a lazy fetcher for a FlagSet, given an *http.Request. It
+// will fetch the flags as required, once they're loaded from the context. This
+// pattern prevents us from loading feature flags on every request, even when
+// we don't end up using them.
+type flagSetFetcher struct {
+	r   *http.Request
+	ffs Store
 
-	flags, err := ffs.GetGlobalFeatureFlags(r.Context())
-	if err != nil {
-		return r.Context()
-	}
-	return context.WithValue(r.Context(), flagContextKey{}, FlagSet(flags))
+	once    sync.Once
+	flagSet FlagSet
+}
+
+func (f *flagSetFetcher) Fetch(ctx context.Context) FlagSet {
+	f.once.Do(func() {
+		if a := actor.FromContext(ctx); a.IsAuthenticated() {
+			flags, err := f.ffs.GetUserFlags(ctx, a.UID)
+			if err == nil {
+				f.flagSet = FlagSet(flags)
+				return
+			}
+			// Continue if err != nil
+		}
+
+		if uid, ok := cookie.AnonymousUID(f.r); ok {
+			flags, err := f.ffs.GetAnonymousUserFlags(ctx, uid)
+			if err == nil {
+				f.flagSet = FlagSet(flags)
+				return
+			}
+			// Continue if err != nil
+		}
+
+		flags, err := f.ffs.GetGlobalFeatureFlags(ctx)
+		if err == nil {
+			f.flagSet = FlagSet(flags)
+		}
+	})
+
+	return f.flagSet
 }
 
 // FromContext retrieves the current set of flags from the current
 // request's context.
 func FromContext(ctx context.Context) FlagSet {
 	if flags := ctx.Value(flagContextKey{}); flags != nil {
-		return flags.(FlagSet)
+		return flags.(*flagSetFetcher).Fetch(ctx)
 	}
 	return nil
 }
