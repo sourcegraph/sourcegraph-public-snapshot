@@ -531,6 +531,12 @@ describe('Search', () => {
                     ) !== null
             )
 
+        beforeEach(() => {
+            testContext.overrideGraphQL({
+                ...commonSearchGraphQLResults,
+            })
+        })
+
         test('Do not show create code monitor button feature tour with missing search type', async () => {
             testContext.overrideSearchStreamEvents(mockDefaultStreamEvents)
             await driver.page.goto(driver.sourcegraphBaseUrl + '/search?q=test', {
