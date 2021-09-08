@@ -16,6 +16,7 @@ import { highlightNode } from '@sourcegraph/shared/src/util/dom'
 import { highlightCode } from '../search/backend'
 
 import styles from './CommitSearchResultMatch.module.scss'
+import searchResultStyles from './SearchResult.module.scss'
 
 interface CommitSearchResultMatchProps {
     item: CommitMatch
@@ -160,7 +161,11 @@ export class CommitSearchResultMatch extends React.Component<
                         />
                     )}
                     {this.state.HTML !== undefined ? (
-                        <Link key={this.props.item.url} to={this.props.item.url} className={styles.searchResultMatch}>
+                        <Link
+                            key={this.props.item.url}
+                            to={this.props.item.url}
+                            className={searchResultStyles.searchResultMatch}
+                        >
                             <code>
                                 <Markdown
                                     refFn={this.setTableContainerElement}

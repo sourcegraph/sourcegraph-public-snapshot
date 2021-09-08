@@ -14,7 +14,6 @@ import { renderMarkdown } from '@sourcegraph/shared/src/util/markdown'
 import { formatRepositoryStarCount } from '@sourcegraph/shared/src/util/stars'
 
 import { CommitSearchResultMatch } from './CommitSearchResultMatch'
-import commitSearchResultMatchStyles from './CommitSearchResultMatch.module.scss'
 import styles from './SearchResult.module.scss'
 
 interface Props {
@@ -56,7 +55,7 @@ export const SearchResult: React.FunctionComponent<Props> = ({ result, icon, rep
         if (result.type === 'repo') {
             return (
                 <div>
-                    <div className={classNames(commitSearchResultMatchStyles.searchResultMatch, 'p-2 flex-column')}>
+                    <div className={classNames(styles.searchResultMatch, 'p-2 flex-column')}>
                         {result.repoLastFetched && <LastSyncedIcon lastSyncedTime={result.repoLastFetched} />}
                         <div className="d-flex align-items-center flex-row">
                             <div className={styles.matchType}>
