@@ -796,7 +796,7 @@ source_references AS MATERIALIZED (
 -- Trick Postgres into using the better set of indexes here.
 --
 -- If we do not materialize the CTE above, then we have a join over package
--- and reference tables, which Postgres like to use a strange index for. By
+-- and reference tables, which Postgres likes to use a strange index for. By
 -- default, Postgres wants to do a parallel (full) index scan over packages
 -- then join to references.
 --
@@ -804,7 +804,7 @@ source_references AS MATERIALIZED (
 -- on lsif_reference(dump_id). Then, the following query will use the index
 -- on lsif_packages(scheme, name, version, dump_id).
 --
--- Note that each index operation in the latter case is targetted, i.e., has
+-- Note that each index operation in the latter case is targeted, i.e., has
 -- a specific b-tree target value. These perform better than full index scans
 -- which take time proportional to the entire database size and not the size
 -- of the result set, which is what we generally expect.
