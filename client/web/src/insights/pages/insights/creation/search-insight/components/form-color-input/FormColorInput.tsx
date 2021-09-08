@@ -4,17 +4,19 @@ import openColor from 'open-color'
 import React, { ChangeEventHandler, memo } from 'react'
 import { noop } from 'rxjs'
 
+import { RadioButton } from '@sourcegraph/wildcard'
+
 import styles from './FormColorInput.module.scss'
 
 interface FormColorInputProps {
     /** Name of data series color */
-    name?: string
+    name: string
     /** Title of color input. */
     title?: string
     /** Value of data series color ()*/
     value?: string
     /** Different values of preset color. */
-    colours?: { color: string; name?: string }[]
+    colours?: { color: string; name: string }[]
     /** Change listener to track changes of color radio group. */
     onChange?: ChangeEventHandler<HTMLInputElement>
     /** Custom class name. */
@@ -37,25 +39,26 @@ export const FormColorInput: React.FunctionComponent<FormColorInputProps> = memo
 
             <div>
                 {colours.map(colorInfo => (
-                    <label
+                    <span
                         key={colorInfo.color}
-                        /* eslint-disable-next-line react/forbid-dom-props */
+                        // eslint-disable-next-line react/forbid-dom-props
                         style={{ color: colorInfo.color }}
-                        title={colorInfo.name}
                         className={styles.formColorPickerColorBlock}
                     >
-                        <input
-                            type="radio"
+                        <RadioButton
                             name={name}
+                            labelProps={{
+                                title: colorInfo.name,
+                            }}
                             aria-label={colorInfo.name}
                             value={colorInfo.color}
                             checked={value === colorInfo.color}
                             className={styles.formColorPickerNativeRadioControl}
                             onChange={onChange}
-                        />
-
-                        <span className={styles.formColorPickerRadioControl} />
-                    </label>
+                        >
+                            <span className={styles.formColorPickerRadioControl} />
+                        </RadioButton>
+                    </span>
                 ))}
             </div>
         </fieldset>

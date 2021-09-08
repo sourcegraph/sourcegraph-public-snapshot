@@ -1,7 +1,11 @@
 import classnames from 'classnames'
 import React, { InputHTMLAttributes } from 'react'
 
+import { RadioButton } from '@sourcegraph/wildcard'
+
 interface RadioInputProps extends InputHTMLAttributes<HTMLInputElement> {
+    /** Name of radio input. */
+    name: string
     /** Title of radio input. */
     title: string
     /** Description text for radio input. */
@@ -15,18 +19,32 @@ interface RadioInputProps extends InputHTMLAttributes<HTMLInputElement> {
 }
 
 /** Displays form radio input for code insight creation form. */
-export const FormRadioInput: React.FunctionComponent<RadioInputProps> = props => {
-    const { title, description, className, labelTooltipText, labelTooltipPosition, ...otherProps } = props
-
+export const FormRadioInput: React.FunctionComponent<RadioInputProps> = ({
+    title,
+    description,
+    className,
+    labelTooltipText,
+    labelTooltipPosition,
+    name,
+    value,
+    checked,
+    onChange,
+    disabled,
+}) => {
+    const radioProps = { name, value, checked, onChange, disabled }
     return (
-        <label
+        <span
             data-placement={labelTooltipPosition}
             data-tooltip={labelTooltipText}
-            className={classnames('d-flex flex-wrap align-items-center', className, {
-                'text-muted': otherProps.disabled,
-            })}
+            className={classnames('d-flex flex-wrap align-items-center', className)}
         >
-            <input type="radio" {...otherProps} />
+            <RadioButton
+                aria-label={title}
+                {...radioProps}
+                labelProps={{
+                    className: classnames({ 'text-muted': disabled }),
+                }}
+            />
 
             <span className="pl-2">{title}</span>
 
@@ -36,6 +54,6 @@ export const FormRadioInput: React.FunctionComponent<RadioInputProps> = props =>
                     <span className="text-muted">{description}</span>
                 </>
             )}
-        </label>
+        </span>
     )
 }
