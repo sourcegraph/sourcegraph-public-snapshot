@@ -6,7 +6,9 @@ to define deterministic data sets, and let the utility handle building the repos
 This is a use at your own discretion utility. If you find value, please use it.
 
 ## Usage
+
 Provide a manifest file that describes the data series you want to generate.
+
 ```json
 {
   "definitions": [
@@ -51,8 +53,6 @@ Provide a manifest file that describes the data series you want to generate.
     }
   ]
 }
-
-
 ```
 
 Point the `repo_path` field at a git repository (that is already initialized, and on the primary branch).
@@ -80,6 +80,7 @@ salami
 ```
 
 ### Future Improvements
+
 1. Handle the git repo automatically (init, branch, etc)
 2. Launch `src-cli` and mount generated repos to Sourcegraph
 3. Gracefully handle duplicate commits
