@@ -4,7 +4,7 @@ import { Link } from 'react-router-dom'
 import { ListGroup, ListGroupItem } from 'reactstrap'
 
 import { BatchChangesProps } from '../batches'
-import { SidebarCollapseItems, SidebarNavItem } from '../components/Sidebar'
+import { SidebarGroup, SidebarCollapseItems, SidebarNavItem } from '../components/Sidebar'
 import { NavGroupDescriptor } from '../util/contributions'
 
 export interface SiteAdminSideBarGroupContext extends BatchChangesProps {
@@ -26,7 +26,7 @@ export interface SiteAdminSidebarProps extends BatchChangesProps {
  * Sidebar for the site admin area.
  */
 export const SiteAdminSidebar: React.FunctionComponent<SiteAdminSidebarProps> = ({ className, groups, ...props }) => (
-    <div className={classNames('site-admin-sidebar', className)}>
+    <SidebarGroup className={classNames('site-admin-sidebar', className)}>
         <ListGroup>
             {groups.map(
                 ({ header, items, condition = () => true }, index) =>
@@ -56,5 +56,5 @@ export const SiteAdminSidebar: React.FunctionComponent<SiteAdminSidebarProps> = 
                     ))
             )}
         </ListGroup>
-    </div>
+    </SidebarGroup>
 )

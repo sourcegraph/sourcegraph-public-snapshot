@@ -116,7 +116,6 @@ body,
 @import './repo/actions/InstallBrowserExtensionPopover.scss';
 @import './repo/actions/InstallBrowserExtensionAlert.scss';
 @import './components/FilteredConnection';
-@import './components/SaveToolbar';
 @import './components/Dialog';
 @import './user/settings/UserSettingsArea';
 @import './site-admin/SiteAdminAlert';
@@ -124,12 +123,7 @@ body,
 @import './user/UserAvatar';
 @import './user/area/UserArea';
 @import './org/OrgsArea';
-@import './components/Timeline';
 @import './marketing/SurveyPage';
-@import './components/SingleValueCard';
-@import './components/SearchResult';
-@import './components/SearchResultMatch';
-@import './components/Sidebar';
 @import '../../branded/src/components/panel/views/FileLocations';
 @import '../../branded/src/components/LoaderInput';
 
