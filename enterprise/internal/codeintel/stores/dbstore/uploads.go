@@ -793,21 +793,25 @@ source_references AS MATERIALIZED (
 	FROM lsif_references r
 	WHERE r.dump_id IN (%s)
 ),
--- Trick Postgres into using the better set of indexes here.
+-- Trick Postgres into using a better set of indexes here.
 --
--- If we do not materialize the CTE above, then we have a join over package
--- and reference tables, which Postgres likes to use a strange index for. By
--- default, Postgres wants to do a parallel (full) index scan over packages
--- then join to references.
+-- If we do a join between lsif_packages and lsif_references directly, which
+-- is the more obvious way to write this query, then Postgres will tend to 
+-- choose to perform a parallel index-only scan over the package table's 
+-- (scheme, name, version, dump_id) index, then perform subsequent index only 
+-- scans over the reference table's (scheme, name, version, dump_id) index.
 --
--- Instead, we materialize the CTE above to force Postgres to use the index
--- on lsif_reference(dump_id). Then, the following query will use the index
--- on lsif_packages(scheme, name, version, dump_id).
+-- The first index operation touches the entire index. Despite being an index
+-- _only_ scan, this also touches a large number of heap pages, where the tuple
+-- visibility map is stored.
 --
--- Note that each index operation in the latter case is targeted, i.e., has
--- a specific b-tree target value. These perform better than full index scans
--- which take time proportional to the entire database size and not the size
--- of the result set, which is what we generally expect.
+-- We materialize the query above to force it to use better indexes for the
+-- distribution of data we expect (and analyze on the table did not help).
+-- The query above will use the reference table's (dump_id) index, which is
+-- a very specific target that will only read relevant areas of the index.
+-- The query below can then efficiently use the package table's index on
+-- (scheme, name, version, dump_id), which also only touches the relevant
+-- fraction of the index.
 reference_counts AS (
 	SELECT
 		p.dump_id,
