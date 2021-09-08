@@ -1,3 +1,4 @@
+import classNames from 'classnames'
 import React, { useCallback } from 'react'
 
 interface Props {
@@ -39,7 +40,7 @@ export const ProductSubscriptionUserCountFormControl: React.FunctionComponent<Pr
     )
 
     return (
-        <div className={`product-subscription-user-count-control form-group align-items-center ${className}`}>
+        <div className={classNames('product-subscription-user-count-control form-group align-items-center', className)}>
             <label htmlFor="product-subscription-user-count-control__userCount" className="mb-0 mr-2 font-weight-bold">
                 Users
             </label>

@@ -4,7 +4,6 @@ import { useRouteMatch } from 'react-router'
 import { Redirect } from 'react-router-dom'
 
 import { Link } from '@sourcegraph/shared/src/components/Link'
-import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
@@ -21,8 +20,7 @@ import { DashboardsContent } from './components/dashboards-content/DashboardsCon
 export interface DashboardsPageProps
     extends PlatformContextProps<'updateSettings'>,
         TelemetryProps,
-        SettingsCascadeProps<Settings>,
-        ExtensionsControllerProps {
+        SettingsCascadeProps<Settings> {
     /**
      * Possible dashboard id. All insights on the page will be get from
      * dashboard's info from the user or org settings by the dashboard id.
@@ -36,7 +34,7 @@ export interface DashboardsPageProps
  * Displays insights dashboard page - dashboard selector and grid of dashboard insights.
  */
 export const DashboardsPage: React.FunctionComponent<DashboardsPageProps> = props => {
-    const { dashboardID, settingsCascade, extensionsController, telemetryService, platformContext } = props
+    const { dashboardID, settingsCascade, telemetryService, platformContext } = props
     const { url } = useRouteMatch()
 
     useEffect(() => {
@@ -78,7 +76,6 @@ export const DashboardsPage: React.FunctionComponent<DashboardsPageProps> = prop
 
                 <DashboardsContent
                     platformContext={platformContext}
-                    extensionsController={extensionsController}
                     telemetryService={telemetryService}
                     settingsCascade={settingsCascade}
                     dashboardID={dashboardID}

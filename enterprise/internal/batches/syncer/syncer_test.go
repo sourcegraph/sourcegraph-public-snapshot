@@ -3,7 +3,6 @@ package syncer
 import (
 	"context"
 	"net/http"
-	"sync"
 	"testing"
 	"time"
 
@@ -155,14 +154,10 @@ func TestSyncerRun(t *testing.T) {
 	})
 }
 
-func TestSyncRegistry(t *testing.T) {
-	t.Skip("Flaky test")
+func TestSyncRegistry_SyncCodeHosts(t *testing.T) {
 	t.Parallel()
 
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-
-	now := time.Now()
+	ctx := context.Background()
 
 	externalServiceID := "https://example.com/"
 
@@ -170,102 +165,100 @@ func TestSyncRegistry(t *testing.T) {
 	syncStore.ListChangesetSyncDataFunc.SetDefaultReturn([]*btypes.ChangesetSyncData{
 		{
 			ChangesetID:           1,
-			UpdatedAt:             now,
+			UpdatedAt:             time.Now(),
 			RepoExternalServiceID: externalServiceID,
 		},
 	}, nil)
 
-	// We put a mutex around `hosts` here because the sync registry will take
-	// the `syncStore` and call the `ListCodeHostsFunc` in a goroutine.
-	// In our tests, though, we want to update which hosts are returned.
-	// To do that safely and to not trigger the race detector we wrap the
-	// `hosts` in a mutex.
-	hosts := []*btypes.CodeHost{}
-	hostsMu := &sync.Mutex{}
-
+	codeHost := &btypes.CodeHost{ExternalServiceID: externalServiceID, ExternalServiceType: extsvc.TypeGitHub}
+	codeHosts := []*btypes.CodeHost{codeHost}
 	syncStore.ListCodeHostsFunc.SetDefaultHook(func(c context.Context, lcho store.ListCodeHostsOpts) ([]*btypes.CodeHost, error) {
-		hostsMu.Lock()
-		defer hostsMu.Unlock()
-		return hosts, nil
+		return codeHosts, nil
 	})
 
-	setCodeHosts := func(newHosts []*btypes.CodeHost) {
-		hostsMu.Lock()
-		defer hostsMu.Unlock()
-		hosts = newHosts
-	}
-
-	codeHosts := []*btypes.CodeHost{
-		{ExternalServiceID: externalServiceID, ExternalServiceType: extsvc.TypeGitHub},
-	}
-	setCodeHosts(codeHosts)
-
-	r := NewSyncRegistry(ctx, syncStore, nil, &observation.TestContext)
-
-	go r.Start()
-	t.Cleanup(r.Stop)
-	r.syncCodeHosts(ctx)
+	reg := NewSyncRegistry(ctx, syncStore, nil, &observation.TestContext)
 
 	assertSyncerCount := func(t *testing.T, want int) {
 		t.Helper()
 
-		r.mu.Lock()
-		if len(r.syncers) != want {
-			t.Fatalf("Expected %d syncer, got %d", want, len(r.syncers))
+		if len(reg.syncers) != want {
+			t.Fatalf("Expected %d syncer, got %d", want, len(reg.syncers))
 		}
-		r.mu.Unlock()
 	}
 
+	reg.syncCodeHosts(ctx)
 	assertSyncerCount(t, 1)
 
 	// Adding it again should have no effect
-	r.addCodeHostSyncer(&btypes.CodeHost{ExternalServiceID: externalServiceID, ExternalServiceType: extsvc.TypeGitHub})
+	reg.addCodeHostSyncer(&btypes.CodeHost{ExternalServiceID: externalServiceID, ExternalServiceType: extsvc.TypeGitHub})
 	assertSyncerCount(t, 1)
 
 	// Simulate a service being removed
-	setCodeHosts([]*btypes.CodeHost{})
-	r.syncCodeHosts(ctx)
+	codeHosts = []*btypes.CodeHost{}
+	reg.syncCodeHosts(ctx)
 	assertSyncerCount(t, 0)
 
 	// And added again
-	setCodeHosts(codeHosts)
-	r.syncCodeHosts(ctx)
+	codeHosts = []*btypes.CodeHost{codeHost}
+	reg.syncCodeHosts(ctx)
 	assertSyncerCount(t, 1)
+}
 
-	syncChan := make(chan int64, 1)
+func TestSyncRegistry_EnqueueChangesetSyncs(t *testing.T) {
+	t.Parallel()
+
+	codeHostURL := "https://example.com/"
+
+	ctx, cancel := context.WithCancel(context.Background())
+	t.Cleanup(cancel)
+
+	syncStore := newTestStore()
+	syncStore.ListChangesetSyncDataFunc.SetDefaultReturn([]*btypes.ChangesetSyncData{
+		{ChangesetID: 1, UpdatedAt: time.Now(), RepoExternalServiceID: codeHostURL},
+		{ChangesetID: 3, UpdatedAt: time.Now(), RepoExternalServiceID: codeHostURL},
+	}, nil)
+
+	syncChan := make(chan int64)
 
 	// In order to test that priority items are delivered we'll inject our own syncer
 	// with a custom sync func
+	syncerCtx, syncerCancel := context.WithCancel(ctx)
+	t.Cleanup(syncerCancel)
+
 	syncer := &changesetSyncer{
 		syncStore:   syncStore,
-		codeHostURL: "https://example.com/",
+		codeHostURL: codeHostURL,
 		syncFunc: func(ctx context.Context, id int64) error {
 			syncChan <- id
 			return nil
 		},
 		priorityNotify: make(chan []int64, 1),
 		metrics:        makeMetrics(&observation.TestContext),
+		cancel:         syncerCancel,
 	}
-	go syncer.Run(ctx)
+	go syncer.Run(syncerCtx)
 
-	// Set the syncer
-	r.mu.Lock()
-	r.syncers["https://example.com/"] = syncer
-	r.mu.Unlock()
+	reg := NewSyncRegistry(ctx, syncStore, nil, &observation.TestContext)
+	reg.syncers[codeHostURL] = syncer
 
-	// Send priority items
-	err := r.EnqueueChangesetSyncs(ctx, []int64{1, 2})
-	if err != nil {
+	// Start handler in background, will be canceled when ctx is canceled
+	go reg.handlePriorityItems()
+
+	// Enqueue priority items, but only 1, 3 have valid ChangesetSyncData
+	if err := reg.EnqueueChangesetSyncs(ctx, []int64{1, 2, 3}); err != nil {
 		t.Fatal(err)
 	}
 
-	select {
-	case id := <-syncChan:
-		if id != 1 {
-			t.Fatalf("Expected 1, got %d", id)
+	// They should be delivered to the changesetSyncer
+	for _, wantId := range []int64{1, 3} {
+		select {
+		case id := <-syncChan:
+			if id != wantId {
+				t.Fatalf("Expected %d, got %d", wantId, id)
+			}
+		case <-time.After(1 * time.Second):
+			t.Fatal("Timed out waiting for sync")
 		}
-	case <-time.After(1 * time.Second):
-		t.Fatal("Timed out waiting for sync")
 	}
 }
 

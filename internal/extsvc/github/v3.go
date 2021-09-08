@@ -156,6 +156,12 @@ func (c *V3Client) get(ctx context.Context, requestURI string, result interface{
 
 	err = c.rateLimit.Wait(ctx)
 	if err != nil {
+		// We don't want to return a misleading rate limit exceeded error if the error is coming
+		// from the context.
+		if ctx.Err() != nil {
+			return nil, ctx.Err()
+		}
+
 		return nil, errInternalRateLimitExceeded
 	}
 
@@ -359,29 +365,13 @@ func (c *V3Client) GetAuthenticatedUserTeams(ctx context.Context, page int) (
 	return teams, len(teams) > 0, 1, err
 }
 
-var MockGetAuthenticatedUserOAuthScopes func(ctx context.Context) ([]string, error)
+var MockGetAuthenticatedOAuthScopes func(ctx context.Context) ([]string, error)
 
-// GetAuthenticatedUserOAuthScopes gets the list of OAuth scopes granted to the
-// currently authenticate user.
-func (c *V3Client) GetAuthenticatedUserOAuthScopes(ctx context.Context) ([]string, error) {
-	if MockGetAuthenticatedUserOAuthScopes != nil {
-		return MockGetAuthenticatedUserOAuthScopes(ctx)
-	}
-	// We only care about headers
-	var dest struct{}
-	header, err := c.requestGetWithHeader(ctx, "/user", &dest)
-	if err != nil {
-		return nil, err
-	}
-	scope := header.Get("x-oauth-scopes")
-	if scope == "" {
-		return []string{}, nil
-	}
-	return strings.Split(scope, ", "), nil
-}
-
-// GetAuthenticatedUserOAuthScopes gets the list of OAuth scopes granted to the token in use.
+// GetAuthenticatedOAuthScopes gets the list of OAuth scopes granted to the token in use.
 func (c *V3Client) GetAuthenticatedOAuthScopes(ctx context.Context) ([]string, error) {
+	if MockGetAuthenticatedOAuthScopes != nil {
+		return MockGetAuthenticatedOAuthScopes(ctx)
+	}
 	// We only care about headers
 	var dest struct{}
 	header, err := c.requestGetWithHeader(ctx, "/", &dest)

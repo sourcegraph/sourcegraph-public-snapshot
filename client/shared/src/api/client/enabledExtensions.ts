@@ -1,15 +1,35 @@
-import { once } from 'lodash'
-import { combineLatest, from, Observable, of } from 'rxjs'
+import { isEqual, once } from 'lodash'
+import { combineLatest, from, Observable, of, throwError } from 'rxjs'
 import { fromFetch } from 'rxjs/fetch'
-import { catchError, distinctUntilChanged, map, publishReplay, refCount, switchMap } from 'rxjs/operators'
+import { catchError, distinctUntilChanged, map, publishReplay, refCount, shareReplay, switchMap } from 'rxjs/operators'
 
 import { checkOk } from '../../backend/fetch'
-import { ConfiguredExtension, isExtensionEnabled } from '../../extensions/extension'
+import { ConfiguredExtension, extensionIDsFromSettings, isExtensionEnabled } from '../../extensions/extension'
 import { ExtensionManifest } from '../../extensions/extensionManifest'
 import { areExtensionsSame } from '../../extensions/extensions'
-import { viewerConfiguredExtensions } from '../../extensions/helpers'
+import { queryConfiguredRegistryExtensions } from '../../extensions/helpers'
 import { PlatformContext } from '../../platform/context'
-import { isErrorLike } from '../../util/errors'
+import { asError, isErrorLike } from '../../util/errors'
+
+/**
+ * @returns An observable that emits the list of extensions configured in the viewer's final settings upon
+ * subscription and each time it changes.
+ */
+function viewerConfiguredExtensions({
+    settings,
+    requestGraphQL,
+}: Pick<PlatformContext, 'settings' | 'requestGraphQL'>): Observable<ConfiguredExtension[]> {
+    return from(settings).pipe(
+        map(settings => extensionIDsFromSettings(settings)),
+        distinctUntilChanged((a, b) => isEqual(a, b)),
+        switchMap(extensionIDs => queryConfiguredRegistryExtensions({ requestGraphQL }, extensionIDs)),
+        catchError(error => throwError(asError(error))),
+        // TODO: Restore reference counter after refactoring contributions service
+        // to not unsubscribe from existing entries when new entries are registered,
+        // in order to ensure that the source is unsubscribed from.
+        shareReplay(1)
+    )
+}
 
 /**
  * The manifest of an extension sideloaded during local development.
@@ -32,7 +52,6 @@ export const getConfiguredSideloadedExtension = (baseUrl: string): Observable<Co
                     ...response,
                     url: `${baseUrl}/${response.main.replace('dist/', '')}`,
                 },
-                rawManifest: null,
             })
         )
     )

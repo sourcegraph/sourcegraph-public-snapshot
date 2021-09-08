@@ -223,7 +223,11 @@ describe('Search', () => {
             testContext.overrideGraphQL({
                 ...commonSearchGraphQLResults,
                 RegistryExtensions: () => ({
-                    extensionRegistry: { extensions: { error: null, nodes: [] }, featuredExtensions: null },
+                    extensionRegistry: {
+                        __typename: 'ExtensionRegistry',
+                        extensions: { error: null, nodes: [] },
+                        featuredExtensions: null,
+                    },
                 }),
             })
             testContext.overrideSearchStreamEvents(mockDefaultStreamEvents)
@@ -342,20 +346,20 @@ describe('Search', () => {
                         {
                             type: 'content',
                             lineMatches: [],
-                            name: 'stream.ts',
+                            path: 'stream.ts',
                             repository: 'github.com/sourcegraph/sourcegraph',
                         },
                         {
                             type: 'content',
                             lineMatches: [],
-                            name: 'stream.ts',
+                            path: 'stream.ts',
                             repository: 'github.com/sourcegraph/sourcegraph',
-                            version: 'abcd',
+                            commit: 'abcd',
                         },
                         {
                             type: 'content',
                             lineMatches: [],
-                            name: 'stream.ts',
+                            path: 'stream.ts',
                             repository: 'github.com/sourcegraph/sourcegraph',
                             branches: ['test/branch'],
                         },

@@ -17,9 +17,6 @@ export interface ConfiguredExtension {
 
     /** The parsed extension manifest, null if there is none, or a parse error. */
     readonly manifest: ExtensionManifest | null | ErrorLike
-
-    /** The raw extension manifest (JSON), or null if there is none. */
-    readonly rawManifest: string | null
 }
 
 /**
@@ -36,6 +33,9 @@ export interface ConfiguredRegistryExtension<
 > extends ConfiguredExtension {
     /** The extension's metadata on the registry, if this is a registry extension. */
     readonly registryExtension?: X
+
+    /** The raw extension manifest (JSON), or null if there is none. */
+    readonly rawManifest: string | null
 }
 
 type MinimalRegistryExtension = Pick<GQL.IRegistryExtension, 'extensionID' | 'id' | 'url' | 'viewerCanAdminister'> & {
@@ -84,6 +84,12 @@ export function getScriptURLFromExtensionManifest(extension: ConfiguredExtension
 }
 
 /**
+ * List of insight-like extension ids. These insights worked via extensions before,
+ * but at the moment they work via insight built-in data-fetchers.
+ */
+const DEPRECATED_EXTENSION_IDS = new Set(['sourcegraph/code-stats-insights', 'sourcegraph/search-insights'])
+
+/**
  * @throws An error if the final settings has an error.
  * @returns An array of extension IDs configured in the settings.
  */
@@ -94,7 +100,12 @@ export function extensionIDsFromSettings(settings: SettingsCascadeOrError): stri
     if (!settings.final?.extensions) {
         return []
     }
-    return Object.keys(settings.final.extensions)
+
+    return (
+        Object.keys(settings.final.extensions)
+            // Filter out deprecated extensions
+            .filter(extensionId => !DEPRECATED_EXTENSION_IDS.has(extensionId))
+    )
 }
 
 /**

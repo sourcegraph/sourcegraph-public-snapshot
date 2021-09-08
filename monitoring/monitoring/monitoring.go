@@ -422,19 +422,21 @@ const (
 
 // toMarkdown returns a Markdown string that also links to the owner's team page
 func (o ObservableOwner) toMarkdown() string {
-	var teamName string
+	var slug string
 	// special cases for differences in how a team is named in ObservableOwner and how
 	// they are named in the handbook.
 	// see https://about.sourcegraph.com/company/team/org_chart#engineering
 	switch o {
 	case ObservableOwnerCodeIntel:
-		teamName = "code-intelligence"
+		slug = "code-intelligence"
+	case ObservableOwnerCodeInsights:
+		slug = "developer-insights/code-insights"
 	default:
-		teamName = string(o)
+		slug = strings.ReplaceAll(string(o), " ", "-")
 	}
 
-	slug := strings.ReplaceAll(teamName, " ", "-")
-	return fmt.Sprintf("[Sourcegraph %s team](https://about.sourcegraph.com/handbook/engineering/%s)", upperFirst(teamName), slug)
+	return fmt.Sprintf("[Sourcegraph %s team](https://about.sourcegraph.com/handbook/engineering/%s)",
+		upperFirst(string(o)), slug)
 }
 
 // Observable describes a metric about a container that can be observed. For example, memory usage.
@@ -574,7 +576,7 @@ func (o Observable) validate() error {
 		return errors.New(`Panel.panelType must be "graph" or "heatmap"`)
 	}
 
-	allAlertsEmpty := o.Warning.isEmpty() && o.Critical.isEmpty()
+	allAlertsEmpty := o.alertsCount() == 0
 	if allAlertsEmpty || o.NoAlert {
 		// Ensure lack of alerts is intentional
 		if allAlertsEmpty && !o.NoAlert {
@@ -617,6 +619,16 @@ func (o Observable) validate() error {
 	}
 
 	return nil
+}
+
+func (o Observable) alertsCount() (count int) {
+	if !o.Warning.isEmpty() {
+		count++
+	}
+	if !o.Critical.isEmpty() {
+		count++
+	}
+	return
 }
 
 // Alert provides a builder for defining alerting on an Observable.

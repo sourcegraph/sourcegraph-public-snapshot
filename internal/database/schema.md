@@ -1137,6 +1137,7 @@ Stores the retention policy of code intellience data for a repository.
  worker_hostname        | text                     |           | not null | ''::text
  last_heartbeat_at      | timestamp with time zone |           |          | 
  execution_logs         | json[]                   |           |          | 
+ num_references         | integer                  |           |          | 
 Indexes:
     "lsif_uploads_pkey" PRIMARY KEY, btree (id)
     "lsif_uploads_repository_id_commit_root_indexer" UNIQUE, btree (repository_id, commit, root, indexer) WHERE state = 'completed'::text
@@ -1163,6 +1164,8 @@ Stores metadata about an LSIF index uploaded by a user.
 **indexer**: The name of the indexer that produced the index file. If not supplied by the user it will be pulled from the index metadata.
 
 **num_parts**: The number of parts src-cli split the upload file into.
+
+**num_references**: The number of references to this upload data from other upload records (via lsif_references).
 
 **root**: The path for which the index can resolve code intelligence relative to the repository root.
 

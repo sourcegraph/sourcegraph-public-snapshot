@@ -86,6 +86,7 @@ Clarification and discussion about key concepts, architecture, and development s
   - [Wildcard Component Library](background-information/web/wildcard.md)
   - [Styling UI](background-information/web/styling.md)
   - [Accessibility](background-information/web/accessibility.md)
+  - [Temporary settings](background-information/web/temporary_settings.md)
   - [Build process](background-information/web/build.md)
 - [Developing the GraphQL API](background-information/graphql_api.md)
 - [Developing batch changes](background-information/batch_changes/index.md)

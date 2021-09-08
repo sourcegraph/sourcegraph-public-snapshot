@@ -75,7 +75,7 @@ func (codeInsights) NewInsightsQueryRunnerResetterGroup(containerName string) mo
 
 			ObservableConstructorOptions: ObservableConstructorOptions{
 				MetricNameRoot:        "insights_search_queue",
-				MetricDescriptionRoot: "insights_search_queue",
+				MetricDescriptionRoot: "insights search queue",
 			},
 		},
 

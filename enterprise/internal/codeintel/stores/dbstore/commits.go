@@ -4,7 +4,9 @@ import (
 	"bytes"
 	"context"
 	"database/sql"
+	"sort"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/keegancsmith/sqlf"
@@ -200,7 +202,7 @@ func (s *Store) CalculateVisibleUploads(
 	ctx context.Context,
 	repositoryID int,
 	commitGraph *gitserver.CommitGraph,
-	refDescriptions map[string]gitserver.RefDescription,
+	refDescriptions map[string][]gitserver.RefDescription,
 	maxAgeForNonStaleBranches time.Duration,
 	maxAgeForNonStaleTags time.Duration,
 	dirtyToken int,
@@ -725,7 +727,7 @@ type sanitizedCommitInput struct {
 func sanitizeCommitInput(
 	ctx context.Context,
 	graph *commitgraph.Graph,
-	refDescriptions map[string]gitserver.RefDescription,
+	refDescriptions map[string][]gitserver.RefDescription,
 	maxAgeForNonStaleBranches time.Duration,
 	maxAgeForNonStaleTags time.Duration,
 ) *sanitizedCommitInput {
@@ -780,12 +782,26 @@ func sanitizeCommitInput(
 			}
 		}
 
-		for commit, refDescription := range refDescriptions {
-			if !refDescription.IsDefaultBranch {
-				maxAge, ok := maxAges[refDescription.Type]
-				if !ok || time.Since(refDescription.CreatedDate) > maxAge {
-					continue
+		for commit, refDescriptions := range refDescriptions {
+			isDefaultBranch := false
+			names := make([]string, 0, len(refDescriptions))
+
+			for _, refDescription := range refDescriptions {
+				if refDescription.IsDefaultBranch {
+					isDefaultBranch = true
+				} else {
+					maxAge, ok := maxAges[refDescription.Type]
+					if !ok || time.Since(refDescription.CreatedDate) > maxAge {
+						continue
+					}
 				}
+
+				names = append(names, refDescription.Name)
+			}
+			sort.Strings(names)
+
+			if len(names) == 0 {
+				continue
 			}
 
 			for _, uploadMeta := range graph.UploadsVisibleAtCommit(commit) {
@@ -795,8 +811,8 @@ func sanitizeCommitInput(
 					&sanitized.numUploadsVisibleAtTipRecords,
 					// row values
 					uploadMeta.UploadID,
-					refDescription.Name,
-					refDescription.IsDefaultBranch,
+					strings.Join(names, ","),
+					isDefaultBranch,
 				) {
 					return
 				}

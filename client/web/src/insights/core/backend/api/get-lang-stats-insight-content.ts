@@ -2,24 +2,61 @@ import linguistLanguages from 'linguist-languages'
 import { escapeRegExp, partition, sum } from 'lodash'
 import { defer } from 'rxjs'
 import { map, retry } from 'rxjs/operators'
-import { PieChartContent } from 'sourcegraph'
+import { DirectoryViewContext, PieChartContent } from 'sourcegraph'
+
+import { ViewContexts } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
 
 import { fetchLangStatsInsight } from '../requests/fetch-lang-stats-insight'
 import { LangStatsInsightsSettings } from '../types'
+import { resolveDocumentURI } from '../utils/resolve-uri'
 
 const isLinguistLanguage = (language: string): language is keyof typeof linguistLanguages =>
     Object.prototype.hasOwnProperty.call(linguistLanguages, language)
 
-/**
- * This logic is a simplified copy of fetch logic of lang-stats-based code insight extension.
- * In order to have live preview for creation UI we had to copy this logic from
- * extension.
- * See https://github.com/sourcegraph/sourcegraph-code-stats-insights/blob/master/src/code-stats-insights.ts
- * */
-export async function getLangStatsInsightContent(settings: LangStatsInsightsSettings): Promise<PieChartContent<any>> {
-    const { repository, threshold = 0.03 } = settings
+interface InsightOptions<D extends keyof ViewContexts> {
+    where: D
+    context: ViewContexts[D]
+}
 
-    const query = `repo:^${escapeRegExp(repository)}`
+export async function getLangStatsInsightContent<D extends keyof ViewContexts>(
+    insight: LangStatsInsightsSettings,
+    options: InsightOptions<D>
+): Promise<PieChartContent<any>> {
+    const { where, context } = options
+
+    switch (where) {
+        case 'directory': {
+            const { viewer } = context as DirectoryViewContext
+            const { repo, path } = resolveDocumentURI(viewer.directory.uri)
+
+            return getInsightContent({ insight, repo, path })
+        }
+
+        case 'homepage':
+        case 'insightsPage': {
+            return getInsightContent({ insight, repo: insight.repository })
+        }
+    }
+
+    throw new Error(`This context is not supported for code-stats insight: context: ${where}`)
+}
+
+interface GetInsightContentInputs {
+    insight: LangStatsInsightsSettings
+    repo: string
+    path?: string
+}
+
+async function getInsightContent(inputs: GetInsightContentInputs): Promise<PieChartContent<any>> {
+    const {
+        insight: { otherThreshold },
+        repo,
+        path,
+    } = inputs
+
+    const pathRegexp = path ? `file:^${escapeRegExp(path)}/` : ''
+    const query = `repo:^${escapeRegExp(repo)} ${pathRegexp}`
+
     const stats = await defer(() => fetchLangStatsInsight(query))
         .pipe(
             // The search may timeout, but a retry is then likely faster because caches are warm
@@ -37,7 +74,8 @@ export async function getLangStatsInsightContent(settings: LangStatsInsightsSett
 
     linkURL.searchParams.set('q', query)
 
-    const [notOther, other] = partition(stats.languages, language => language.totalLines / totalLines >= threshold)
+    const [notOther, other] = partition(stats.languages, language => language.totalLines / totalLines >= otherThreshold)
+
     return {
         chart: 'pie' as const,
         pies: [

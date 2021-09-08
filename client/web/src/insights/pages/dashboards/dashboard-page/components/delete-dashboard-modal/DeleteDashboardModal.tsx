@@ -7,6 +7,7 @@ import { useHistory } from 'react-router-dom'
 
 import { isErrorLike } from '@sourcegraph/codeintellify/lib/errors'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
+import { Button } from '@sourcegraph/wildcard'
 
 import { ErrorAlert } from '../../../../../../components/alerts'
 import { LoaderButton } from '../../../../../../components/LoaderButton'
@@ -53,9 +54,9 @@ export const DeleteDashboardModal: React.FunctionComponent<DeleteDashboardModalP
             {isErrorLike(loadingOrError) && <ErrorAlert className='className="mt-3"' error={loadingOrError} />}
 
             <div className="d-flex justify-content-end mt-4">
-                <button type="button" className="btn btn-secondary mr-2" onClick={onClose}>
+                <Button type="button" className="mr-2" variant="secondary" onClick={onClose}>
                     Cancel
-                </button>
+                </Button>
 
                 <LoaderButton
                     type="button"

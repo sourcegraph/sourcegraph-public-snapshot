@@ -633,6 +633,13 @@ export function handleCodeHost({
         filter(isInstanceOf(HTMLElement))
     )
 
+    // Handle theming
+    subscriptions.add(
+        (codeHost.isLightTheme ?? of(true)).subscribe(isLightTheme => {
+            document.body.classList.toggle('theme-light', isLightTheme)
+            document.body.classList.toggle('theme-dark', !isLightTheme)
+        })
+    )
     const nativeTooltipsEnabled = codeHost.nativeTooltipResolvers
         ? nativeTooltipsEnabledFromSettings(platformContext.settings)
         : of(false)
@@ -1061,7 +1068,7 @@ export function handleCodeHost({
                 } else if (diffOrFileInfoWithEditor.head) {
                     scopeEditor = diffOrFileInfoWithEditor.head.editor
                 } else {
-                    scopeEditor = diffOrFileInfoWithEditor.base!.editor
+                    scopeEditor = diffOrFileInfoWithEditor.base.editor
                 }
 
                 if (wasRemoved) {

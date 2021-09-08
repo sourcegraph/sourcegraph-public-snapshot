@@ -7,8 +7,8 @@ import (
 	"strings"
 	"text/template"
 
+	"github.com/cockroachdb/errors"
 	"github.com/gobwas/glob"
-	"github.com/pkg/errors"
 
 	"github.com/sourcegraph/sourcegraph/lib/batches/git"
 )
@@ -86,25 +86,14 @@ type BatchChangeAttributes struct {
 	Description string
 }
 
-type TemplatingBranch struct {
-	Name      string
-	TargetOID string
+type Repository struct {
+	Name        string
+	FileMatches []string
 }
 
-type TemplatingRepository struct {
-	ID            string
-	Name          string
-	DefaultBranch TemplatingBranch
-	FileMatches   map[string]bool
-}
-
-func (r TemplatingRepository) SearchResultPaths() (list fileMatchPathList) {
-	var files []string
-	for f := range r.FileMatches {
-		files = append(files, f)
-	}
-	sort.Strings(files)
-	return fileMatchPathList(files)
+func (r Repository) SearchResultPaths() (list fileMatchPathList) {
+	sort.Strings(r.FileMatches)
+	return fileMatchPathList(r.FileMatches)
 }
 
 type fileMatchPathList []string
@@ -128,7 +117,7 @@ type StepContext struct {
 	// previous step.
 	PreviousStep StepResult
 	// Repository is the Sourcegraph repository in which the steps are executed.
-	Repository TemplatingRepository
+	Repository Repository
 }
 
 // ToFuncMap returns a template.FuncMap to access fields on the StepContext in a
@@ -258,7 +247,7 @@ type ChangesetTemplateContext struct {
 	Outputs map[string]interface{}
 
 	// Repository is the repository in which the steps were executed.
-	Repository TemplatingRepository
+	Repository Repository
 }
 
 // ToFuncMap returns a template.FuncMap to access fields on the StepContext in a

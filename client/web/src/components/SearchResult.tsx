@@ -4,23 +4,23 @@ import SourceForkIcon from 'mdi-react/SourceForkIcon'
 import StarIcon from 'mdi-react/StarIcon'
 import React from 'react'
 
+import { LastSyncedIcon } from '@sourcegraph/shared/src/components/LastSyncedIcon'
 import { Markdown } from '@sourcegraph/shared/src/components/Markdown'
 import { RepoIcon } from '@sourcegraph/shared/src/components/RepoIcon'
 import { ResultContainer } from '@sourcegraph/shared/src/components/ResultContainer'
 import { CommitMatch, getMatchTitle, RepositoryMatch } from '@sourcegraph/shared/src/search/stream'
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { renderMarkdown } from '@sourcegraph/shared/src/util/markdown'
 import { formatRepositoryStarCount } from '@sourcegraph/shared/src/util/stars'
 
 import { CommitSearchResultMatch } from './CommitSearchResultMatch'
 
-interface Props extends ThemeProps {
+interface Props {
     result: CommitMatch | RepositoryMatch
     repoName: string
     icon: React.ComponentType<{ className?: string }>
 }
 
-export const SearchResult: React.FunctionComponent<Props> = ({ result, icon, isLightTheme, repoName }) => {
+export const SearchResult: React.FunctionComponent<Props> = ({ result, icon, repoName }) => {
     const renderTitle = (): JSX.Element => {
         const formattedRepositoryStarCount = formatRepositoryStarCount(result.repoStars)
         return (
@@ -54,6 +54,7 @@ export const SearchResult: React.FunctionComponent<Props> = ({ result, icon, isL
             return (
                 <div>
                     <div className="search-result-match p-2 flex-column">
+                        {result.repoLastFetched && <LastSyncedIcon lastSyncedTime={result.repoLastFetched} />}
                         <div className="d-flex align-items-center flex-row">
                             <div className="search-result__match-type">
                                 <small>Repository match</small>
@@ -107,7 +108,7 @@ export const SearchResult: React.FunctionComponent<Props> = ({ result, icon, isL
             )
         }
 
-        return <CommitSearchResultMatch key={result.url} item={result} isLightTheme={isLightTheme} />
+        return <CommitSearchResultMatch key={result.url} item={result} />
     }
 
     return (

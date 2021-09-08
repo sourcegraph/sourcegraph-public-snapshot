@@ -12,7 +12,6 @@ import (
 	"github.com/keegancsmith/sqlf"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
-	registry "github.com/sourcegraph/sourcegraph/cmd/frontend/registry/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
 )
@@ -238,9 +237,7 @@ type dbExtensionsListOptions struct {
 }
 
 // extensionIsWIPExpr is the SQL expression for whether the extension is a WIP extension.
-//
-// BACKCOMPAT: It still reads the title property even though extensions no longer have titles.
-var extensionIsWIPExpr = sqlf.Sprintf(`rer.manifest IS NULL OR COALESCE((rer.manifest->>'wip')::jsonb = 'true'::jsonb, rer.manifest->>'title' SIMILAR TO %s, false)`, registry.WorkInProgressExtensionTitlePostgreSQLPattern)
+var extensionIsWIPExpr = sqlf.Sprintf(`rer.manifest IS NULL OR COALESCE((rer.manifest->>'wip')::jsonb = 'true'::jsonb, false)`)
 
 func (o dbExtensionsListOptions) sqlConditions() []*sqlf.Query {
 	var conds []*sqlf.Query

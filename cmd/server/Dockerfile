@@ -49,10 +49,13 @@ RUN apk update && apk add --no-cache \
     'git>=2.18' \
     git-p4 \
     python2 \
-    python3 \
     'nginx>=1.18.0' openssh-client pcre sqlite-libs su-exec 'nodejs-current=14.5.0-r0' \
     postgresql=12.8-r0 \
     postgresql-contrib
+
+# This is installed separately due to the upstream edge repo requirement
+RUN apk update && apk add --no-cache \
+    'python3>=3.9.5' --repository=http://dl-cdn.alpinelinux.org/alpine/edge/main
 
 # IMPORTANT: If you update the syntect_server version below, you MUST confirm
 # the ENV variables from its Dockerfile (https://github.com/sourcegraph/syntect_server/blob/master/Dockerfile)

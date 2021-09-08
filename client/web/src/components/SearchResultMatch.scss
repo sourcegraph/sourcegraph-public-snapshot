@@ -9,6 +9,7 @@
     border-radius: var(--border-radius);
     border-top: 1px solid var(--border-color);
     padding: 0.25rem 0;
+    position: relative;
 
     &-clickable {
         cursor: pointer;

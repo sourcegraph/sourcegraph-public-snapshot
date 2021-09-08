@@ -143,8 +143,6 @@ func Main(enterpriseSetupHook func(db dbutil.DB, outOfBandMigrationRunner *oobmi
 		log.Fatalf("ERROR: %v", err)
 	}
 
-	ui.InitRouter(db)
-
 	// override site config first
 	if err := overrideSiteConfig(ctx); err != nil {
 		log.Fatalf("failed to apply site config overrides: %v", err)
@@ -195,6 +193,8 @@ func Main(enterpriseSetupHook func(db dbutil.DB, outOfBandMigrationRunner *oobmi
 
 	// Run enterprise setup hook
 	enterprise := enterpriseSetupHook(db, outOfBandMigrationRunner)
+
+	ui.InitRouter(db, enterprise.CodeIntelResolver)
 
 	if len(os.Args) >= 2 {
 		switch os.Args[1] {

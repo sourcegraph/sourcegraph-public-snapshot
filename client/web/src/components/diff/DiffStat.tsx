@@ -103,7 +103,7 @@ export const DiffStatSquares: React.FunctionComponent<DiffProps> = React.memo(fu
         <div className="diff-stat__squares">
             {squares.map((className, index) => (
                 // eslint-disable-next-line react/no-array-index-key
-                <div key={index} className={`diff-stat__square ${className}`} />
+                <div key={index} className={classNames('diff-stat__square', className)} />
             ))}
         </div>
     )

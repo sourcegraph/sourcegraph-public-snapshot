@@ -19,15 +19,15 @@ type EventContentMatch struct {
 	// Type is always FileMatchType. Included here for marshalling.
 	Type MatchType `json:"type"`
 
-	Path            string     `json:"name"`
-	RepositoryID    int32      `json:"repositoryID"`
-	Repository      string     `json:"repository"`
-	RepoStars       int        `json:"repoStars,omitempty"`
-	RepoLastFetched *time.Time `json:"repoLastFetched,omitempty"`
-	Branches        []string   `json:"branches,omitempty"`
-	Version         string     `json:"version,omitempty"`
-
-	LineMatches []EventLineMatch `json:"lineMatches"`
+	Path            string           `json:"path"`
+	RepositoryID    int32            `json:"repositoryID"`
+	Repository      string           `json:"repository"`
+	RepoStars       int              `json:"repoStars,omitempty"`
+	RepoLastFetched *time.Time       `json:"repoLastFetched,omitempty"`
+	Branches        []string         `json:"branches,omitempty"`
+	Commit          string           `json:"commit,omitempty"`
+	Hunks           []DecoratedHunk  `json:"hunks"`
+	LineMatches     []EventLineMatch `json:"lineMatches"`
 }
 
 func (e *EventContentMatch) eventMatch() {}
@@ -40,16 +40,39 @@ type EventPathMatch struct {
 	// Type is always PathMatchType. Included here for marshalling.
 	Type MatchType `json:"type"`
 
-	Path            string     `json:"name"`
+	Path            string     `json:"path"`
 	RepositoryID    int32      `json:"repositoryID"`
 	Repository      string     `json:"repository"`
 	RepoStars       int        `json:"repoStars,omitempty"`
 	RepoLastFetched *time.Time `json:"repoLastFetched,omitempty"`
 	Branches        []string   `json:"branches,omitempty"`
-	Version         string     `json:"version,omitempty"`
+	Commit          string     `json:"commit,omitempty"`
 }
 
 func (e *EventPathMatch) eventMatch() {}
+
+type DecoratedHunk struct {
+	Content   DecoratedContent `json:"content"`
+	LineStart int              `json:"lineStart"`
+	LineCount int              `json:"lineCount"`
+	Matches   []Range          `json:"matches,omitempty"`
+}
+
+type Range struct {
+	Start Location `json:"start"`
+	End   Location `json:"end"`
+}
+
+type Location struct {
+	Offset int `json:"offset"`
+	Line   int `json:"line"`
+	Column int `json:"column"`
+}
+
+type DecoratedContent struct {
+	Plaintext string `json:"plaintext,omitempty"`
+	HTML      string `json:"html,omitempty"`
+}
 
 // EventLineMatch is a subset of zoekt.LineMatch for our Event API.
 type EventLineMatch struct {
@@ -81,13 +104,13 @@ type EventSymbolMatch struct {
 	// Type is always SymbolMatchType. Included here for marshalling.
 	Type MatchType `json:"type"`
 
-	Path            string     `json:"name"`
+	Path            string     `json:"path"`
 	RepositoryID    int32      `json:"repositoryID"`
 	Repository      string     `json:"repository"`
 	RepoStars       int        `json:"repoStars,omitempty"`
 	RepoLastFetched *time.Time `json:"repoLastFetched,omitempty"`
 	Branches        []string   `json:"branches,omitempty"`
-	Version         string     `json:"version,omitempty"`
+	Commit          string     `json:"commit,omitempty"`
 
 	Symbols []Symbol `json:"symbols"`
 }
@@ -112,6 +135,7 @@ type EventCommitMatch struct {
 	Label           string     `json:"label"`
 	URL             string     `json:"url"`
 	Detail          string     `json:"detail"`
+	RepositoryID    int32      `json:"repositoryID"`
 	Repository      string     `json:"repository"`
 	RepoStars       int        `json:"repoStars,omitempty"`
 	RepoLastFetched *time.Time `json:"repoLastFetched,omitempty"`

@@ -228,7 +228,7 @@ exports[`SiteAdminOverviewPage activation in progress 1`] = `
         </button>
       </div>
       <div
-        className="activation-checklist list-group list-group-flush "
+        className="activation-checklist list-group list-group-flush"
       >
         <div
           data-reach-accordion=""

@@ -27,3 +27,32 @@ jobs:
         column-name: "Triage"
         label-name: "team/batchers"
         columns-to-ignore: "*"
+
+  # Uses issues beta API - see https://docs.github.com/en/issues/trying-out-the-new-projects-experience/automating-projects#example-workflow
+  distribution-board:
+    runs-on: ubuntu-latest
+    env:
+      PROJECT: MDExOlByb2plY3ROZXh0MzIxNw== # https://github.com/orgs/sourcegraph/projects/197
+      GITHUB_TOKEN: ${{ secrets.LABELER_GITHUB_TOKEN }}
+    steps:
+    - name: Get issue if relevant
+      if: ${{ contains(github.event.issue.labels.*.name, 'team/distribution') }}
+      env:
+        NODE_ID: ${{ github.event.issue.node_id }}
+      run: echo 'NODE_ID='$NODE_ID >> $GITHUB_ENV
+    - name: Get pull request if relevant
+      if: ${{ contains(github.event.pull_request.labels.*.name, 'team/distribution') }}
+      env:
+        NODE_ID: ${{ github.event.pull_request.node_id }}
+      run: echo 'NODE_ID='$NODE_ID >> $GITHUB_ENV
+    - name: Add to Distribution board
+      if: ${{ env.NODE_ID != '' }}
+      run: |
+        gh api graphql --header 'GraphQL-Features: projects_next_graphql' -f query='
+          mutation($project:ID!, $node_id:ID!) {
+            addProjectNextItem(input: {projectId: $project, contentId: $node_id}) {
+              projectNextItem {
+                id
+              }
+            }
+          }' -f project=$PROJECT_ID -f node_id=$NODE_ID
