@@ -102,13 +102,13 @@ func (c *Commit) Diff() (Diff, error) {
 
 	err = diff.ForEach(func(delta git.DiffDelta, progress float64) (git.DiffForEachHunkCallback, error) {
 		buf.WriteString(delta.OldFile.Path)
-		buf.WriteByte(' ')
+		buf.WriteByte('\t')
 		buf.WriteString(delta.NewFile.Path)
 		buf.WriteByte('\n')
 
 		return func(hunk git.DiffHunk) (git.DiffForEachLineCallback, error) {
 			buf.WriteString(hunk.Header)
-			buf.WriteByte('\n')
+
 			return func(line git.DiffLine) error {
 				switch line.Origin {
 				case git.DiffLineContext:
@@ -117,12 +117,6 @@ func (c *Commit) Diff() (Diff, error) {
 					buf.WriteByte('+')
 				case git.DiffLineDeletion:
 					buf.WriteByte('-')
-				case git.DiffLineContextEOFNL:
-					buf.WriteByte('=')
-				case git.DiffLineAddEOFNL:
-					buf.WriteByte('>')
-				case git.DiffLineDelEOFNL:
-					buf.WriteByte('<')
 				default:
 					return nil
 				}

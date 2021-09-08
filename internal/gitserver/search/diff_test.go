@@ -17,7 +17,7 @@ type hunkResult struct {
 }
 
 func TestDiffIter(t *testing.T) {
-	diff := `a b
+	diff := `a` + "\t" + `b
 @@ c
  d
 -ef
@@ -26,7 +26,7 @@ func TestDiffIter(t *testing.T) {
 @@ k
 -lm
 +no
-p q
+p` + "\t" + `q
 @@ rs
  t
 -u

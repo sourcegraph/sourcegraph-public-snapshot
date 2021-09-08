@@ -16,7 +16,7 @@ func (d Diff) ForEachDelta(f func(Delta) bool) {
 		newlineIdx := strings.IndexByte(delta, '\n')
 		fileNameLine := delta[:newlineIdx]
 		hunks := delta[newlineIdx+1:]
-		fileNames := strings.Split(fileNameLine, " ")
+		fileNames := strings.Split(fileNameLine, "\t")
 		oldFile, newFile := fileNames[0], fileNames[1]
 
 		if cont := f(Delta{
@@ -167,5 +167,5 @@ func (l Line) Origin() byte {
 }
 
 func (l Line) Content() (string, Location) {
-	return l.fullLine[1 : len(l.fullLine)-2], l.location.Shift(Location{Column: 1, Offset: 1})
+	return l.fullLine[1:], l.location.Shift(Location{Column: 1, Offset: 1})
 }
