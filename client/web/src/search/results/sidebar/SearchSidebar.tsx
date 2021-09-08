@@ -57,7 +57,7 @@ export const SearchSidebar: React.FunctionComponent<SearchSidebarProps> = props 
     const history = useHistory()
     const [collapsedSections, setCollapsedSections] = useTemporarySetting('search.collapsedSidebarSections')
 
-    const onFilterClicked = useCallback(
+    const toggleFilter = useCallback(
         (value: string) => {
             const newQuery = toggleSearchFilter(props.query, value)
             submitSearch({ ...props, query: newQuery, source: 'filter', history })
@@ -66,7 +66,7 @@ export const SearchSidebar: React.FunctionComponent<SearchSidebarProps> = props 
     )
 
     // Unlike onFilterClicked, this function will always append or update a filter
-    const updateSearchQuery = useCallback(
+    const updateOrAppendFilter = useCallback(
         (filter: string, value: string) => {
             const newQuery = updateFilter(props.query, filter, value)
             submitSearch({ ...props, query: newQuery, source: 'filter', history })
@@ -80,17 +80,17 @@ export const SearchSidebar: React.FunctionComponent<SearchSidebarProps> = props 
                 search_filter: { value },
             })
 
-            onFilterClicked(value)
+            toggleFilter(value)
         },
-        [onFilterClicked, props.telemetryService]
+        [toggleFilter, props.telemetryService]
     )
 
     const onSnippetClicked = useCallback(
         (value: string) => {
             props.telemetryService.log('SearchSnippetClicked')
-            onFilterClicked(value)
+            toggleFilter(value)
         },
-        [onFilterClicked, props.telemetryService]
+        [toggleFilter, props.telemetryService]
     )
 
     const persistToggleState = useCallback(
@@ -166,7 +166,7 @@ export const SearchSidebar: React.FunctionComponent<SearchSidebarProps> = props 
                         showSearch={true}
                         clearSearchOnChange={repoName}
                     >
-                        {getRevisions({ repoName, onFilterClick: updateSearchQuery })}
+                        {getRevisions({ repoName, onFilterClick: updateOrAppendFilter })}
                     </SearchSidebarSection>
                 ) : null}
                 <SearchSidebarSection
