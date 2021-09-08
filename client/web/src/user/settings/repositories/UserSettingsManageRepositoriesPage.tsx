@@ -452,12 +452,20 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
     const submit = useCallback(
         async (event: FormEvent<HTMLFormElement>): Promise<void> => {
             event.preventDefault()
-            eventLogger.log('UserManageRepositoriesSave')
 
-            let publicRepos = publicRepoState.repos.split('\n').filter((row): boolean => row !== '')
-            if (!publicRepoState.enabled) {
-                publicRepos = []
+            const publicRepos = publicRepoState.enabled
+                ? publicRepoState.repos.split('\n').filter((row): boolean => row !== '')
+                : []
+
+            const loggerPayload = {
+                userReposSelection: selectionState.radio
+                    ? selectionState.radio === 'selected'
+                        ? 'specific'
+                        : 'all'
+                    : null,
+                didAddReposByURL: !!publicRepos.length,
             }
+            eventLogger.log('UserManageRepositoriesSave', loggerPayload, loggerPayload)
 
             setFetchingRepos('loading')
             onSyncedPublicRepositoriesUpdate(publicRepos.length)
