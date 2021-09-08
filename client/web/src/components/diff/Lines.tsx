@@ -85,6 +85,7 @@ export const Line: React.FunctionComponent<Line> = ({
                     data-line={lineNumber}
                     data-part={dataPart}
                     id={id || anchor}
+                    data-hunk-num=" "
                 >
                     {persistLines && (
                         <Link className={diffHunkStyles.numLine} to={{ hash: anchor }}>
