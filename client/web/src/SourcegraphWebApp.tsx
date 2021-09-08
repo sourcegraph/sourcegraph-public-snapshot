@@ -295,19 +295,6 @@ class SourcegraphWebAppOldClassComponent extends React.Component<
     public componentDidMount(): void {
         document.documentElement.classList.add('theme')
 
-        // Track static metrics fo code insights.
-        // Insight count, insights settings, observe settings mutations for analytics
-        // Track add delete and update events of code insights via
-        this.subscriptions.add(
-            combineLatest([from(this.props.platformContext.settings), authenticatedUser])
-                .pipe(bufferCount(2, 1))
-                .subscribe(([[oldSettings], [newSettings, authUser]]) => {
-                    if (authUser) {
-                        logInsightMetrics(oldSettings, newSettings, eventLogger)
-                    }
-                })
-        )
-
         this.subscriptions.add(
             combineLatest([this.userRepositoriesUpdates, authenticatedUser])
                 .pipe(
@@ -626,6 +613,24 @@ export const SourcegraphWebApp: React.FunctionComponent<SourcegraphWebAppProps> 
                     }))
                 ),
             [platformContext.settings, searchCaseSensitivity, searchPatternType]
+        )
+    )
+
+    // Track static metrics for code insights.
+    // Insight count, insights settings, observe settings mutations for analytics
+    // Track add delete and update events of code insights via
+    useObservable(
+        useMemo(
+            () =>
+                combineLatest([from(platformContext.settings), authenticatedUser]).pipe(
+                    bufferCount(2, 1),
+                    tap(([[oldSettings], [newSettings, authUser]]) => {
+                        if (authUser) {
+                            logInsightMetrics(oldSettings, newSettings, eventLogger)
+                        }
+                    })
+                ),
+            [platformContext.settings]
         )
     )
 
