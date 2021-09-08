@@ -98,6 +98,7 @@ export const InsightsDashboardCreationContent: React.FunctionComponent<InsightsD
 
             <FormGroup name="visibility" title="Visibility" contentClassName="d-flex flex-column" className="mb-0 mt-4">
                 <FormRadioInput
+                    id={userSubject.id}
                     name="visibility"
                     value={userSubject.id}
                     title="Private"
@@ -116,6 +117,7 @@ export const InsightsDashboardCreationContent: React.FunctionComponent<InsightsD
                 {organizationSubjects.map(org => (
                     <FormRadioInput
                         key={org.id}
+                        id={org.id}
                         name="visibility"
                         value={org.id}
                         title={org.displayName ?? org.name}
@@ -127,6 +129,7 @@ export const InsightsDashboardCreationContent: React.FunctionComponent<InsightsD
 
                 {organizationSubjects.length === 0 && (
                     <FormRadioInput
+                        id="organization"
                         name="visibility"
                         value="organization"
                         disabled={true}
@@ -139,6 +142,7 @@ export const InsightsDashboardCreationContent: React.FunctionComponent<InsightsD
                 )}
 
                 <FormRadioInput
+                    id="visibility-global"
                     name="visibility"
                     value={globalSubject?.id}
                     title="Global"

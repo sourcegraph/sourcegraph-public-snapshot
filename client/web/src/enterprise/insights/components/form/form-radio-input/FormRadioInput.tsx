@@ -1,7 +1,13 @@
 import classnames from 'classnames'
 import React, { InputHTMLAttributes } from 'react'
 
+import { RadioButton } from '@sourcegraph/wildcard'
+
 interface RadioInputProps extends InputHTMLAttributes<HTMLInputElement> {
+    /** Id of radio input. */
+    id: string
+    /** Name of radio input. */
+    name: string
     /** Title of radio input. */
     title: string
     /** Description text for radio input. */
@@ -16,26 +22,33 @@ interface RadioInputProps extends InputHTMLAttributes<HTMLInputElement> {
 
 /** Displays form radio input for code insight creation form. */
 export const FormRadioInput: React.FunctionComponent<RadioInputProps> = props => {
-    const { title, description, className, labelTooltipText, labelTooltipPosition, ...otherProps } = props
+    const radioProps = {
+        value: props.value,
+        checked: props.checked,
+        onChange: props.onChange,
+        disabled: props.disabled,
+    }
 
-    return (
-        <label
-            data-placement={labelTooltipPosition}
-            data-tooltip={labelTooltipText}
-            className={classnames('d-flex flex-wrap align-items-center', className, {
-                'text-muted': otherProps.disabled,
-            })}
-        >
-            <input type="radio" {...otherProps} />
-
-            <span className="pl-2">{title}</span>
-
-            {description && (
+    const label = (
+        <>
+            <span className="pl-2">{props.title}</span>
+            {props.description && (
                 <>
                     <span className="pl-2 pr-2">—</span>
-                    <span className="text-muted">{description}</span>
+                    <span className="text-muted">{props.description}</span>
                 </>
             )}
-        </label>
+        </>
+    )
+    return (
+        <RadioButton
+            data-placement={props.labelTooltipPosition}
+            data-tooltip={props.labelTooltipText}
+            id={props.id}
+            inputProps={{ ...radioProps }}
+            labelProps={{ className: classnames('', props.className, { 'text-muted': props.disabled }) }}
+            label={label}
+            name={props.name}
+        />
     )
 }

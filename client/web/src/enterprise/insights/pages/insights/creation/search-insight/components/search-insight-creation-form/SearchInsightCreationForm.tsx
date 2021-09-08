@@ -210,6 +210,7 @@ export const SearchInsightCreationForm: React.FunctionComponent<CreationSearchIn
                     />
 
                     <FormRadioInput
+                        id="hours"
                         title="Hours"
                         name="step"
                         value="hours"
@@ -219,6 +220,7 @@ export const SearchInsightCreationForm: React.FunctionComponent<CreationSearchIn
                         className="mr-3"
                     />
                     <FormRadioInput
+                        id="days"
                         title="Days"
                         name="step"
                         value="days"
@@ -228,6 +230,7 @@ export const SearchInsightCreationForm: React.FunctionComponent<CreationSearchIn
                         className="mr-3"
                     />
                     <FormRadioInput
+                        id="weeks"
                         title="Weeks"
                         name="step"
                         value="weeks"
@@ -237,6 +240,7 @@ export const SearchInsightCreationForm: React.FunctionComponent<CreationSearchIn
                         className="mr-3"
                     />
                     <FormRadioInput
+                        id="months"
                         title="Months"
                         name="step"
                         value="months"
@@ -246,6 +250,7 @@ export const SearchInsightCreationForm: React.FunctionComponent<CreationSearchIn
                         className="mr-3"
                     />
                     <FormRadioInput
+                        id="years"
                         title="Years"
                         name="step"
                         value="years"

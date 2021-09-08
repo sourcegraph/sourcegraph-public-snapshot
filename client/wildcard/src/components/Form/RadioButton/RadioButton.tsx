@@ -8,6 +8,10 @@ export type RadioButtonProps = {
      * If you do not need this prop, consider if a checkbox is better suited for your use case.
      */
     name: string
+    /**
+     * The id of the radio button. Used to associate with it's label.
+     */
+    id: string
 } & ControlInputProps
 
 /**

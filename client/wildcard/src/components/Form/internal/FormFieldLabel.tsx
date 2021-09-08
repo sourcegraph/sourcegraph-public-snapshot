@@ -11,8 +11,13 @@ export interface FormFieldLabelProps {
 /**
  * A simple label to render alongside a form field.
  */
-export const FormFieldLabel: React.FunctionComponent<FormFieldLabelProps> = ({ htmlFor, className, children }) => (
-    <label htmlFor={htmlFor} className={className}>
+export const FormFieldLabel: React.FunctionComponent<FormFieldLabelProps> = ({
+    htmlFor,
+    className,
+    children,
+    ...props
+}) => (
+    <label htmlFor={htmlFor} className={className} {...props}>
         {children}
     </label>
 )

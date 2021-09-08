@@ -65,6 +65,7 @@ export const VisibilityPicker: React.FunctionComponent<VisibilityPickerProps> = 
             contentClassName="d-flex flex-wrap mb-n2"
         >
             <FormRadioInput
+                id={userSubject.id}
                 name="visibility"
                 value={userSubject.id}
                 title="Private"
@@ -76,6 +77,7 @@ export const VisibilityPicker: React.FunctionComponent<VisibilityPickerProps> = 
 
             {organizationSubjects.map(org => (
                 <FormRadioInput
+                    id={org.id}
                     key={org.id}
                     name="visibility"
                     value={org.id}
@@ -89,6 +91,7 @@ export const VisibilityPicker: React.FunctionComponent<VisibilityPickerProps> = 
 
             {organizationSubjects.length === 0 && (
                 <FormRadioInput
+                    id="organization"
                     name="visibility"
                     value="organization"
                     disabled={true}
@@ -100,6 +103,7 @@ export const VisibilityPicker: React.FunctionComponent<VisibilityPickerProps> = 
             )}
 
             <FormRadioInput
+                id={globalSubject.id}
                 name="visibility"
                 value={globalSubject.id}
                 title="Global"

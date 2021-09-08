@@ -45,8 +45,8 @@
     }
 
     // Checked state
-    &__native-radio-control:checked + &__radio-control {
-        &::before {
+    &__native-radio-control:checked + label {
+        .form-color-picker__radio-control::before {
             opacity: 1;
             border: solid 2px currentColor;
         }

@@ -11,25 +11,44 @@ export const BASE_CONTROL_TYPES = ['radio', 'checkbox'] as const
 export type ControlInputProps = AccessibleFieldProps<React.InputHTMLAttributes<HTMLInputElement>> &
     React.RefAttributes<HTMLInputElement> & {
         /**
+         * The id used to match the label to the input.
+         */
+        id: string
+        /**
+         * The label for this input.
+         */
+        label: React.ReactNode
+        /**
          * The <input> type. Use one of the currently supported types.
          */
         type?: typeof BASE_CONTROL_TYPES[number]
+        /**
+         * Used to pass props through to the input element.
+         */
+        inputProps?: React.InputHTMLAttributes<HTMLInputElement>
+        /**
+         * Used to pass props through to the label element.
+         */
+        labelProps?: React.LabelHTMLAttributes<HTMLLabelElement>
     }
 
 export const BaseControlInput: React.FunctionComponent<ControlInputProps> = React.forwardRef(
-    ({ children, className, message, isValid, type, ...props }, reference) => (
-        <div className="form-check">
+    ({ id, label, className, message, isValid, type, labelProps, inputProps, ...props }, reference) => (
+        <div {...props} className={classNames('form-check', className)}>
             <input
+                id={id}
                 ref={reference}
                 type={type}
-                className={classNames('form-check-input', getValidStyle(isValid), className)}
-                {...props}
+                className={classNames('form-check-input', getValidStyle(isValid), inputProps?.className)}
+                {...inputProps}
             />
-            {'label' in props && (
-                <FormFieldLabel htmlFor={props.id} className="form-check-label">
-                    {props.label}
-                </FormFieldLabel>
-            )}
+            <FormFieldLabel
+                {...labelProps}
+                htmlFor={id}
+                className={classNames('form-check-label', labelProps?.className)}
+            >
+                {label}
+            </FormFieldLabel>
             {message && <FormFieldMessage isValid={isValid}>{message}</FormFieldMessage>}
         </div>
     )
