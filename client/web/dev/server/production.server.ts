@@ -17,6 +17,10 @@ import {
 const { SOURCEGRAPH_API_URL, SOURCEGRAPH_HTTPS_PORT } = environmentConfig
 
 async function startProductionServer(): Promise<void> {
+    if (!SOURCEGRAPH_API_URL) {
+        throw new Error('production.server.ts only supports *web-standalone* usage')
+    }
+
     // Get CSRF token value from the `SOURCEGRAPH_API_URL`.
     const { csrfContextValue, csrfCookieValue } = await getCSRFTokenAndCookie(SOURCEGRAPH_API_URL)
     signale.await('Production server', { ...environmentConfig, csrfContextValue, csrfCookieValue })
