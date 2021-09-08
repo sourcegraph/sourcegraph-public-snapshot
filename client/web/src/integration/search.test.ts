@@ -55,6 +55,20 @@ const commonSearchGraphQLResults: Partial<WebGraphQlOperations & SharedGraphQlOp
     RepoGroups: (): RepoGroupsResult => ({
         repoGroups: [],
     }),
+    SearchSidebarGitRefs: () => ({
+        repository: {
+            __typename: 'Repository',
+            id: 'repo',
+            gitRefs: {
+                __typename: 'GitRefConnection',
+                nodes: [],
+                pageInfo: {
+                    hasNextPage: false,
+                },
+                totalCount: 0,
+            },
+        },
+    }),
 }
 
 describe('Search', () => {
