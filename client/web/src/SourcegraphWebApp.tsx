@@ -243,9 +243,12 @@ const LayoutWithActivation = window.context.sourcegraphDotComMode ? Layout : wit
 const history = createBrowserHistory()
 
 /**
- * The root component.
+ * The old class component for the root component. This class component's behavior is being migrated
+ * to the {@link SourcegraphWebApp} function component, which uses React hooks.
+ *
+ * @deprecated Add behavior to {@link SourcegraphWebApp} instead.
  */
-export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, SourcegraphWebAppState> {
+class SourcegraphWebAppOldClassComponent extends React.Component<SourcegraphWebAppProps, SourcegraphWebAppState> {
     private readonly subscriptions = new Subscription()
     private readonly userRepositoriesUpdates = new Subject<void>()
     private readonly platformContext: PlatformContext = createPlatformContext()
@@ -649,3 +652,7 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
         await extensionHostAPI.setSearchContext(spec)
     }
 }
+
+export const SourcegraphWebApp: React.FunctionComponent<SourcegraphWebAppProps> = props => (
+    <SourcegraphWebAppOldClassComponent {...props} />
+)
