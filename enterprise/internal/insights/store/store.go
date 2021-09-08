@@ -8,6 +8,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
+
 	"github.com/cockroachdb/errors"
 	"github.com/keegancsmith/sqlf"
 
@@ -162,7 +164,11 @@ const fullVectorSeriesAggregation = `
 -- source: enterprise/internal/insights/store/store.go:SeriesPoints
 SELECT sub.series_id, sub.interval_time, SUM(sub.value) as value, sub.metadata FROM (
 	SELECT sp.repo_name_id, sp.series_id, sp.time AS interval_time, MAX(value) as value, null as metadata
-	FROM series_points sp JOIN repo_names rn ON sp.repo_name_id = rn.id
+	FROM (  select * from series_points
+			union
+			select * from series_points_snapshots
+	) AS sp
+	JOIN repo_names rn ON sp.repo_name_id = rn.id
 	WHERE %s
 	GROUP BY sp.series_id, interval_time, sp.repo_name_id
 	ORDER BY sp.series_id, interval_time, sp.repo_name_id DESC
@@ -293,11 +299,26 @@ func countDataQuery(opts CountDataOpts) *sqlf.Query {
 	)
 }
 
+func (s *Store) DeleteSnapshots(ctx context.Context, series *types.InsightSeries) error {
+	err := s.Exec(ctx, sqlf.Sprintf(deleteSnapshotsSql, sqlf.Sprintf(snapshotsTable), series.SeriesID))
+	if err != nil {
+		return errors.Wrapf(err, "failed to delete insights snapshots for series_id: %s", series.SeriesID)
+	}
+	return nil
+}
+
+const deleteSnapshotsSql = `
+-- source: enterprise/internal/insights/store/store.go:DeleteSnapshots
+delete from %s where series_id = %s;
+`
+
 type PersistMode string
 
 const (
-	RecordMode   PersistMode = "record"
-	SnapshotMode PersistMode = "snapshot"
+	RecordMode     PersistMode = "record"
+	SnapshotMode   PersistMode = "snapshot"
+	recordingTable string      = "series_points"
+	snapshotsTable string      = "series_points_snapshots"
 )
 
 // RecordSeriesPointArgs describes arguments for the RecordSeriesPoint method.
@@ -374,9 +395,9 @@ func (s *Store) RecordSeriesPoint(ctx context.Context, v RecordSeriesPointArgs) 
 	var tableName string
 	switch v.PersistMode {
 	case RecordMode:
-		tableName = "series_points"
+		tableName = recordingTable
 	case SnapshotMode:
-		tableName = "series_points_snapshots"
+		tableName = snapshotsTable
 	default:
 		return errors.Newf("unsupported insights series point persist mode: %v", v.PersistMode)
 	}
