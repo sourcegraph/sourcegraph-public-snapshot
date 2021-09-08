@@ -25,6 +25,12 @@ All notable changes to Sourcegraph are documented in this file.
 
 -
 
+## 3.31.2
+
+### Fixed
+
+- Fixed multiple CVEs for [libssl](https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2021-3711) and [Python3](https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2021-29921). [#24700](https://github.com/sourcegraph/sourcegraph/pull/24700) [#24620](https://github.com/sourcegraph/sourcegraph/pull/24620) [#24695](https://github.com/sourcegraph/sourcegraph/pull/24695)
+
 ## 3.31.1
 
 ### Added
