@@ -295,26 +295,6 @@ class SourcegraphWebAppOldClassComponent extends React.Component<
     }
 
     public componentDidMount(): void {
-        /**
-         * Listens for uncaught 401 errors when a user when a user was previously authenticated.
-         *
-         * Don't subscribe to this event when there wasn't an authenticated user,
-         * as it could lead to an infinite loop of 401 -> reload -> 401
-         */
-        this.subscriptions.add(
-            authenticatedUser
-                .pipe(
-                    switchMap(authenticatedUser =>
-                        authenticatedUser ? fromEvent<ErrorEvent>(window, 'error') : of(null)
-                    )
-                )
-                .subscribe(event => {
-                    if (event?.error instanceof HTTPStatusError && event.error.status === 401) {
-                        location.reload()
-                    }
-                })
-        )
-
         if (this.props.parsedSearchQuery && !filterExists(this.props.parsedSearchQuery, FilterType.context)) {
             // If a context filter does not exist in the query, we have to switch the selected context
             // to global to match the UI with the backend semantics (if no context is specified in the query,
@@ -630,6 +610,29 @@ export const SourcegraphWebApp: React.FunctionComponent<SourcegraphWebAppProps> 
     const featureFlags = useObservable(useMemo(() => fetchFeatureFlags(), [])) ?? new Map<FeatureFlagName, boolean>()
 
     const [navbarSearchQueryState, onNavbarQueryChange] = useState<QueryState>({ query: '' })
+
+    /**
+     * Listens for uncaught 401 errors when a user when a user was previously authenticated.
+     *
+     * Don't subscribe to this event when there wasn't an authenticated user,
+     * as it could lead to an infinite loop of 401 -> reload -> 401
+     */
+    useObservable(
+        useMemo(
+            () =>
+                authenticatedUser.pipe(
+                    switchMap(authenticatedUser =>
+                        authenticatedUser ? fromEvent<ErrorEvent>(window, 'error') : of(null)
+                    ),
+                    tap(event => {
+                        if (event?.error instanceof HTTPStatusError && event.error.status === 401) {
+                            window.location.reload()
+                        }
+                    })
+                ),
+            []
+        )
+    )
 
     return userAndSettingsProps ? (
         <SourcegraphWebAppOldClassComponent
