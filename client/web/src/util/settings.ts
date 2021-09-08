@@ -45,7 +45,7 @@ export function defaultPatternTypeFromSettings(settingsCascade: SettingsCascadeO
     return
 }
 
-export function defaultCaseSensitiveFromSettings(settingsCascade: SettingsCascadeOrError): boolean {
+export function defaultCaseSensitiveFromSettings(settingsCascade: SettingsCascadeOrError): boolean | undefined {
     // Analogous to defaultPatternTypeFromSettings, but for case sensitivity.
     if (!parseSearchURLPatternType(window.location.search)) {
         const defaultCaseSensitive =
@@ -54,7 +54,7 @@ export function defaultCaseSensitiveFromSettings(settingsCascade: SettingsCascad
             (settingsCascade.final['search.defaultCaseSensitive'] as boolean)
         return defaultCaseSensitive || false
     }
-    return false
+    return undefined
 }
 
 export function experimentalFeaturesFromSettings(

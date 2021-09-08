@@ -4,7 +4,7 @@ import { ApolloClient, ApolloProvider, NormalizedCacheObject } from '@apollo/cli
 import { ShortcutProvider } from '@slimsag/react-shortcuts'
 import H, { createBrowserHistory } from 'history'
 import ServerIcon from 'mdi-react/ServerIcon'
-import React, { useMemo, useEffect } from 'react'
+import React, { useMemo, useEffect, useState } from 'react'
 import { Route, Router } from 'react-router'
 import { combineLatest, from, Subscription, fromEvent, of, Subject } from 'rxjs'
 import { bufferCount, catchError, distinctUntilChanged, map, startWith, switchMap, tap } from 'rxjs/operators'
@@ -26,7 +26,7 @@ import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
 import { FilterType } from '@sourcegraph/shared/src/search/query/filters'
 import { filterExists } from '@sourcegraph/shared/src/search/query/validate'
 import { aggregateStreamingSearch } from '@sourcegraph/shared/src/search/stream'
-import { EMPTY_SETTINGS_CASCADE, SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
+import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { asError, isErrorLike } from '@sourcegraph/shared/src/util/errors'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
 
@@ -94,7 +94,6 @@ import { UserSettingsSidebarItems } from './user/settings/UserSettingsSidebar'
 import { globbingEnabledFromSettings } from './util/globbing'
 import { observeLocation } from './util/location'
 import {
-    SITE_SUBJECT_NO_ADMIN,
     viewerSubjectFromSettings,
     defaultCaseSensitiveFromSettings,
     defaultPatternTypeFromSettings,
@@ -128,7 +127,7 @@ export interface SourcegraphWebAppProps extends CodeIntelligenceProps, BatchChan
  * Only used during the migration from the old class component; will be removed when the migration
  * is complete.
  */
-interface SourcegraphWebAppOldClassComponentExtraProps {
+interface SourcegraphWebAppOldClassComponentExtraProps extends SettingsCascadeProps {
     history: H.History
     location: H.Location
 
@@ -137,20 +136,21 @@ interface SourcegraphWebAppOldClassComponentExtraProps {
 
     /** GraphQL client initialized asynchronously to restore persisted cache. */
     graphqlClient?: ApolloClient<NormalizedCacheObject>
-}
-
-interface SourcegraphWebAppState extends SettingsCascadeProps {
-    error?: Error
-
-    /** The currently authenticated user (or null if the viewer is anonymous). */
-    authenticatedUser?: AuthenticatedUser | null
-
-    viewerSubject: LayoutProps['viewerSubject']
 
     /**
-     * The current search query in the navbar.
+     * Whether globbing is enabled for filters.
      */
-    navbarSearchQueryState: QueryState
+    globbing: boolean
+
+    /**
+     * Whether the current search is case sensitive.
+     */
+    caseSensitive: boolean
+
+    /**
+     * The current search pattern type.
+     */
+    patternType: SearchPatternType
 
     /**
      * The current parsed search query, with all UI-configurable parameters
@@ -158,15 +158,57 @@ interface SourcegraphWebAppState extends SettingsCascadeProps {
      */
     parsedSearchQuery: string
 
-    /**
-     * The current search pattern type.
-     */
-    searchPatternType: SearchPatternType
+    setParsedSearchQuery: (value: string) => void
+    setPatternType: (value: SearchPatternType) => void
+    setCaseSensitivity: (value: boolean) => void
+
+    viewerSubject: LayoutProps['viewerSubject']
+
+    showRepogroupHomepage: boolean
+
+    showOnboardingTour: boolean
+
+    showEnterpriseHomePanels: boolean
 
     /**
-     * Whether the current search is case sensitive.
+     * Whether we show the mulitiline editor at /search/console
      */
-    searchCaseSensitivity: boolean
+    showMultilineSearchConsole: boolean
+
+    /**
+     * Whether we show the search notebook.
+     */
+    showSearchNotebook: boolean
+
+    showSearchContext: boolean
+    showSearchContextManagement: boolean
+
+    /**
+     * Whether we show the mulitiline editor at /search/query-builder
+     */
+    showQueryBuilder: boolean
+
+    /**
+     * Whether the code monitoring feature flag is enabled.
+     */
+    enableCodeMonitoring: boolean
+
+    /**
+     * Whether the API docs feature flag is enabled.
+     */
+    enableAPIDocs: boolean
+
+    /** The currently authenticated user (or null if the viewer is anonymous). */
+    authenticatedUser?: AuthenticatedUser | null
+}
+
+interface SourcegraphWebAppState {
+    error?: Error
+
+    /**
+     * The current search query in the navbar.
+     */
+    navbarSearchQueryState: QueryState
 
     /*
      * The version context the instance is in. If undefined, it means no version context is selected.
@@ -183,49 +225,11 @@ interface SourcegraphWebAppState extends SettingsCascadeProps {
      */
     previousVersionContext: string | null
 
-    showRepogroupHomepage: boolean
-
-    showOnboardingTour: boolean
-
-    showEnterpriseHomePanels: boolean
-
-    showSearchContext: boolean
-    showSearchContextManagement: boolean
     selectedSearchContextSpec?: string
     defaultSearchContextSpec: string
     hasUserAddedRepositories: boolean
     hasUserSyncedPublicRepositories: boolean
     hasUserAddedExternalServices: boolean
-
-    /**
-     * Whether globbing is enabled for filters.
-     */
-    globbing: boolean
-
-    /**
-     * Whether we show the mulitiline editor at /search/console
-     */
-    showMultilineSearchConsole: boolean
-
-    /**
-     * Whether we show the search notebook.
-     */
-    showSearchNotebook: boolean
-
-    /**
-     * Whether we show the mulitiline editor at /search/query-builder
-     */
-    showQueryBuilder: boolean
-
-    /**
-     * Whether the code monitoring feature flag is enabled.
-     */
-    enableCodeMonitoring: boolean
-
-    /**
-     * Whether the API docs feature flag is enabled.
-     */
-    enableAPIDocs: boolean
 
     /**
      * Evaluated feature flags for the current viewer
@@ -267,10 +271,6 @@ class SourcegraphWebAppOldClassComponent extends React.Component<
         super(props)
 
         const parsedSearchURL = parseSearchURL(window.location.search)
-        // The patternType in the URL query parameter. If none is provided, default to literal.
-        // This will be updated with the default in settings when the web app mounts.
-        const urlPatternType = parsedSearchURL.patternType || SearchPatternType.literal
-        const urlCase = parsedSearchURL.caseSensitive
         const availableVersionContexts = window.context.experimentalFeatures.versionContexts
         const previousVersionContext = localStorage.getItem(LAST_VERSION_CONTEXT_KEY)
         const resolvedVersionContext = availableVersionContexts
@@ -281,59 +281,19 @@ class SourcegraphWebAppOldClassComponent extends React.Component<
 
         this.state = {
             navbarSearchQueryState: { query: '' },
-            settingsCascade: EMPTY_SETTINGS_CASCADE,
-            viewerSubject: SITE_SUBJECT_NO_ADMIN,
-            parsedSearchQuery: parsedSearchURL.query || '',
-            searchPatternType: urlPatternType,
-            searchCaseSensitivity: urlCase,
             versionContext: resolvedVersionContext,
             availableVersionContexts,
             previousVersionContext,
-            showRepogroupHomepage: false,
-            showOnboardingTour: false,
-            showSearchContext: false,
-            showSearchContextManagement: false,
             defaultSearchContextSpec: 'global', // global is default for now, user will be able to change this at some point
             hasUserAddedRepositories: false,
             hasUserSyncedPublicRepositories: false,
             hasUserAddedExternalServices: false,
-            showEnterpriseHomePanels: false,
-            globbing: false,
-            showMultilineSearchConsole: false,
-            showSearchNotebook: false,
-            showQueryBuilder: false,
-            enableCodeMonitoring: false,
-            // Disabling linter here as otherwise the application fails to compile. Bad lint?
-            // See 7a137b201330eb2118c746f8cc5acddf63c1f039
-            // eslint-disable-next-line react/no-unused-state
-            enableAPIDocs: false,
             featureFlags: new Map<FeatureFlagName, boolean>(),
         }
     }
 
     public componentDidMount(): void {
         document.documentElement.classList.add('theme')
-
-        this.subscriptions.add(
-            combineLatest([
-                from(this.props.platformContext.settings),
-                authenticatedUser.pipe(startWith(null)),
-            ]).subscribe(
-                ([settingsCascade, authenticatedUser]) => {
-                    this.setState(state => ({
-                        settingsCascade,
-                        authenticatedUser,
-                        ...experimentalFeaturesFromSettings(settingsCascade),
-                        globbing: globbingEnabledFromSettings(settingsCascade),
-                        searchCaseSensitivity:
-                            defaultCaseSensitiveFromSettings(settingsCascade) || state.searchCaseSensitivity,
-                        searchPatternType: defaultPatternTypeFromSettings(settingsCascade) || state.searchPatternType,
-                        viewerSubject: viewerSubjectFromSettings(settingsCascade, authenticatedUser),
-                    }))
-                },
-                () => this.setState({ authenticatedUser: null })
-            )
-        )
 
         // Track static metrics fo code insights.
         // Insight count, insights settings, observe settings mutations for analytics
@@ -401,13 +361,13 @@ class SourcegraphWebAppOldClassComponent extends React.Component<
             })
         )
 
-        if (this.state.parsedSearchQuery && !filterExists(this.state.parsedSearchQuery, FilterType.context)) {
+        if (this.props.parsedSearchQuery && !filterExists(this.props.parsedSearchQuery, FilterType.context)) {
             // If a context filter does not exist in the query, we have to switch the selected context
             // to global to match the UI with the backend semantics (if no context is specified in the query,
             // the query is run in global context).
             this.setSelectedSearchContextSpec('global')
         }
-        if (!this.state.parsedSearchQuery) {
+        if (!this.props.parsedSearchQuery) {
             // If no query is present (e.g. search page, settings page), select the last saved
             // search context from localStorage as currently selected search context.
             const lastSelectedSearchContextSpec = localStorage.getItem(LAST_SEARCH_CONTEXT_KEY) || 'global'
@@ -455,8 +415,7 @@ class SourcegraphWebAppOldClassComponent extends React.Component<
             return <HeroPage icon={ServerIcon} title={`${statusCode}: ${statusText}`} subtitle={subtitle} />
         }
 
-        const { authenticatedUser } = this.state
-        const graphqlClient = this.props.graphqlClient
+        const { authenticatedUser, graphqlClient } = this.props
         if (authenticatedUser === undefined || graphqlClient === undefined) {
             return null
         }
@@ -477,19 +436,11 @@ class SourcegraphWebAppOldClassComponent extends React.Component<
                                                 {...props}
                                                 {...routeComponentProps}
                                                 authenticatedUser={authenticatedUser}
-                                                viewerSubject={this.state.viewerSubject}
-                                                settingsCascade={this.state.settingsCascade}
                                                 batchChangesEnabled={this.props.batchChangesEnabled}
                                                 // Search query
                                                 navbarSearchQueryState={this.state.navbarSearchQueryState}
                                                 onNavbarQueryChange={this.onNavbarQueryChange}
                                                 fetchHighlightedFileLineRanges={fetchHighlightedFileLineRanges}
-                                                parsedSearchQuery={this.state.parsedSearchQuery}
-                                                setParsedSearchQuery={this.setParsedSearchQuery}
-                                                patternType={this.state.searchPatternType}
-                                                setPatternType={this.setPatternType}
-                                                caseSensitive={this.state.searchCaseSensitivity}
-                                                setCaseSensitivity={this.setCaseSensitivity}
                                                 versionContext={this.state.versionContext}
                                                 setVersionContext={this.setVersionContext}
                                                 availableVersionContexts={this.state.availableVersionContexts}
@@ -497,12 +448,8 @@ class SourcegraphWebAppOldClassComponent extends React.Component<
                                                 // Extensions
                                                 telemetryService={eventLogger}
                                                 isSourcegraphDotCom={window.context.sourcegraphDotComMode}
-                                                showRepogroupHomepage={this.state.showRepogroupHomepage}
-                                                showOnboardingTour={this.state.showOnboardingTour}
-                                                showSearchContext={this.state.showSearchContext}
                                                 hasUserAddedRepositories={this.hasUserAddedRepositories()}
                                                 hasUserAddedExternalServices={this.state.hasUserAddedExternalServices}
-                                                showSearchContextManagement={this.state.showSearchContextManagement}
                                                 selectedSearchContextSpec={this.getSelectedSearchContextSpec()}
                                                 setSelectedSearchContextSpec={this.setSelectedSearchContextSpec}
                                                 getUserSearchContextNamespaces={getUserSearchContextNamespaces}
@@ -518,12 +465,6 @@ class SourcegraphWebAppOldClassComponent extends React.Component<
                                                 }
                                                 isSearchContextSpecAvailable={isSearchContextSpecAvailable}
                                                 defaultSearchContextSpec={this.state.defaultSearchContextSpec}
-                                                showEnterpriseHomePanels={this.state.showEnterpriseHomePanels}
-                                                globbing={this.state.globbing}
-                                                showMultilineSearchConsole={this.state.showMultilineSearchConsole}
-                                                showSearchNotebook={this.state.showSearchNotebook}
-                                                showQueryBuilder={this.state.showQueryBuilder}
-                                                enableCodeMonitoring={this.state.enableCodeMonitoring}
                                                 fetchSavedSearches={fetchSavedSearches}
                                                 fetchRecentSearches={fetchRecentSearches}
                                                 fetchRecentFileViews={fetchRecentFileViews}
@@ -553,22 +494,6 @@ class SourcegraphWebAppOldClassComponent extends React.Component<
 
     private onNavbarQueryChange = (navbarSearchQueryState: QueryState): void => {
         this.setState({ navbarSearchQueryState })
-    }
-
-    private setParsedSearchQuery = (query: string): void => {
-        this.setState({ parsedSearchQuery: query })
-    }
-
-    private setPatternType = (patternType: SearchPatternType): void => {
-        this.setState({
-            searchPatternType: patternType,
-        })
-    }
-
-    private setCaseSensitivity = (caseSensitive: boolean): void => {
-        this.setState({
-            searchCaseSensitivity: caseSensitive,
-        })
     }
 
     private setVersionContext = async (versionContext: string | undefined): Promise<void> => {
@@ -608,7 +533,7 @@ class SourcegraphWebAppOldClassComponent extends React.Component<
         this.state.hasUserAddedRepositories || this.state.hasUserSyncedPublicRepositories
 
     private getSelectedSearchContextSpec = (): string | undefined =>
-        this.state.showSearchContext ? this.state.selectedSearchContextSpec : undefined
+        this.props.showSearchContext ? this.state.selectedSearchContextSpec : undefined
 
     private setSelectedSearchContextSpec = (spec: string): void => {
         const { defaultSearchContextSpec } = this.state
@@ -679,7 +604,32 @@ export const SourcegraphWebApp: React.FunctionComponent<SourcegraphWebAppProps> 
         updateUserSessionStores()
     }, [])
 
-    return (
+    const parsedSearchURL = useMemo(() => parseSearchURL(location.search), [location.search])
+    const [parsedSearchQuery, setParsedSearchQuery] = useState(parsedSearchURL.query || '')
+    // The search patternType, and case in the URL query parameter. If none is provided, default to
+    // literal, and these will be updated with the defaults in settings when the web app mounts.
+    const [searchPatternType, setPatternType] = useState(parsedSearchURL.patternType || SearchPatternType.literal)
+    const [searchCaseSensitivity, setCaseSensitivity] = useState(parsedSearchURL.caseSensitive)
+
+    const userAndSettingsProps = useObservable(
+        useMemo(
+            () =>
+                combineLatest([from(platformContext.settings), authenticatedUser.pipe(startWith(null))]).pipe(
+                    map(([settingsCascade, authenticatedUser]) => ({
+                        settingsCascade,
+                        authenticatedUser,
+                        ...experimentalFeaturesFromSettings(settingsCascade),
+                        globbing: globbingEnabledFromSettings(settingsCascade),
+                        caseSensitive: defaultCaseSensitiveFromSettings(settingsCascade) ?? searchCaseSensitivity,
+                        patternType: defaultPatternTypeFromSettings(settingsCascade) ?? searchPatternType,
+                        viewerSubject: viewerSubjectFromSettings(settingsCascade, authenticatedUser),
+                    }))
+                ),
+            [platformContext.settings, searchCaseSensitivity, searchPatternType]
+        )
+    )
+
+    return userAndSettingsProps ? (
         <SourcegraphWebAppOldClassComponent
             {...props}
             history={history}
@@ -687,6 +637,11 @@ export const SourcegraphWebApp: React.FunctionComponent<SourcegraphWebAppProps> 
             platformContext={platformContext}
             extensionsController={extensionsController}
             graphqlClient={graphqlClient}
+            {...userAndSettingsProps}
+            parsedSearchQuery={parsedSearchQuery}
+            setParsedSearchQuery={setParsedSearchQuery}
+            setPatternType={setPatternType}
+            setCaseSensitivity={setCaseSensitivity}
         />
-    )
+    ) : null
 }
