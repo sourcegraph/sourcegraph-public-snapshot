@@ -95,8 +95,8 @@ func addBrowserExt(pipeline *bk.Pipeline) {
 // Adds the shared frontend tests (shared between the web app and browser extension).
 func addSharedTests(c Config) func(pipeline *bk.Pipeline) {
 	return func(pipeline *bk.Pipeline) {
-		// Client integration tests
 		if c.isMainDryRun || c.isClientAffected() {
+			// Client integration tests
 			pipeline.AddStep(":puppeteer::electric_plug: Puppeteer tests",
 				bk.Env("PUPPETEER_SKIP_CHROMIUM_DOWNLOAD", "true"), // Don't download browser, we use "download-puppeteer-browser" script instead
 				bk.Env("ENTERPRISE", "1"),
