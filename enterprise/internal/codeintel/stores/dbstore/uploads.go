@@ -286,7 +286,6 @@ type GetUploadsOptions struct {
 	DependentOf    int
 	UploadedBefore *time.Time
 	UploadedAfter  *time.Time
-	AllowExpired   bool
 	OldestFirst    bool
 	Limit          int
 	Offset         int
@@ -303,7 +302,6 @@ func (s *Store) GetUploads(ctx context.Context, opts GetUploadsOptions) (_ []Upl
 		log.Int("dependentOf", opts.DependentOf),
 		log.String("uploadedBefore", nilTimeToString(opts.UploadedBefore)),
 		log.String("uploadedAfter", nilTimeToString(opts.UploadedAfter)),
-		log.Bool("allowExpired", opts.AllowExpired),
 		log.Bool("oldestFirst", opts.OldestFirst),
 		log.Int("limit", opts.Limit),
 		log.Int("offset", opts.Offset),
@@ -316,7 +314,7 @@ func (s *Store) GetUploads(ctx context.Context, opts GetUploadsOptions) (_ []Upl
 	}
 	defer func() { err = tx.Done(err) }()
 
-	conds := make([]*sqlf.Query, 0, 10)
+	conds := make([]*sqlf.Query, 0, 9)
 	if opts.RepositoryID != 0 {
 		conds = append(conds, sqlf.Sprintf("u.repository_id = %s", opts.RepositoryID))
 	}
@@ -352,9 +350,6 @@ func (s *Store) GetUploads(ctx context.Context, opts GetUploadsOptions) (_ []Upl
 	}
 	if opts.UploadedAfter != nil {
 		conds = append(conds, sqlf.Sprintf("u.uploaded_at > %s", *opts.UploadedAfter))
-	}
-	if !opts.AllowExpired {
-		conds = append(conds, sqlf.Sprintf("NOT u.expired"))
 	}
 
 	authzConds, err := database.AuthzQueryConds(ctx, tx.Store.Handle().DB())
