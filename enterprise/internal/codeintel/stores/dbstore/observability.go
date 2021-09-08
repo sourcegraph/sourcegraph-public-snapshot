@@ -61,6 +61,7 @@ type operations struct {
 	referencesForUpload                    *observation.Operation
 	refreshCommitResolvability             *observation.Operation
 	repoName                               *observation.Operation
+	repositoryIDsForRetentionScan          *observation.Operation
 	requeue                                *observation.Operation
 	requeueIndex                           *observation.Operation
 	softDeleteOldUploads                   *observation.Operation
@@ -151,6 +152,7 @@ func newOperations(observationContext *observation.Context, metrics *metrics.Ope
 		referencesForUpload:                    op("ReferencesForUpload"),
 		refreshCommitResolvability:             op("RefreshCommitResolvability"),
 		repoName:                               op("RepoName"),
+		repositoryIDsForRetentionScan:          op("RepositoryIDsForRetentionScan"),
 		requeue:                                op("Requeue"),
 		requeueIndex:                           op("RequeueIndex"),
 		softDeleteOldUploads:                   op("SoftDeleteOldUploads"),
