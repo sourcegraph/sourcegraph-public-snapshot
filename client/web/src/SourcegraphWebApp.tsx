@@ -1,12 +1,12 @@
 import 'focus-visible'
 
-import { ApolloClient, ApolloProvider, NormalizedCacheObject } from '@apollo/client'
+import { ApolloProvider } from '@apollo/client'
 import { ShortcutProvider } from '@slimsag/react-shortcuts'
-import H, { createBrowserHistory } from 'history'
+import { createBrowserHistory } from 'history'
 import ServerIcon from 'mdi-react/ServerIcon'
 import React, { useMemo, useEffect, useState, useCallback } from 'react'
 import { Route, Router } from 'react-router'
-import { combineLatest, from, Subscription, fromEvent, of, Subject } from 'rxjs'
+import { combineLatest, from, fromEvent, of, Subject } from 'rxjs'
 import { bufferCount, catchError, distinctUntilChanged, map, startWith, switchMap, tap } from 'rxjs/operators'
 
 import { Tooltip } from '@sourcegraph/branded/src/components/tooltip/Tooltip'
@@ -15,22 +15,17 @@ import { preloadExtensions } from '@sourcegraph/shared/src/api/client/preload'
 import { NotificationType } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
 import { HTTPStatusError } from '@sourcegraph/shared/src/backend/fetch'
 import { setLinkComponent } from '@sourcegraph/shared/src/components/Link'
-import {
-    Controller as ExtensionsController,
-    createController as createExtensionsController,
-} from '@sourcegraph/shared/src/extensions/controller'
+import { createController as createExtensionsController } from '@sourcegraph/shared/src/extensions/controller'
 import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
 import { getModeFromPath } from '@sourcegraph/shared/src/languages'
 import { Notifications } from '@sourcegraph/shared/src/notifications/Notifications'
-import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
 import { FilterType } from '@sourcegraph/shared/src/search/query/filters'
 import { filterExists } from '@sourcegraph/shared/src/search/query/validate'
 import { aggregateStreamingSearch } from '@sourcegraph/shared/src/search/stream'
-import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { asError, isErrorLike } from '@sourcegraph/shared/src/util/errors'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
 
-import { authenticatedUser, AuthenticatedUser } from './auth'
+import { authenticatedUser } from './auth'
 import { getWebGraphQLClient } from './backend/graphql'
 import { BatchChangesProps } from './batches'
 import { CodeIntelligenceProps } from './codeintel'
@@ -43,10 +38,10 @@ import { ExtensionAreaRoute } from './extensions/extension/ExtensionArea'
 import { ExtensionAreaHeaderNavItem } from './extensions/extension/ExtensionAreaHeader'
 import { ExtensionsAreaRoute } from './extensions/ExtensionsArea'
 import { ExtensionsAreaHeaderActionButton } from './extensions/ExtensionsAreaHeader'
-import { FeatureFlagName, fetchFeatureFlags, FlagSet } from './featureFlags/featureFlags'
+import { FeatureFlagName, fetchFeatureFlags } from './featureFlags/featureFlags'
 import { logInsightMetrics } from './insights'
 import { KeyboardShortcutsProps } from './keyboardShortcuts/keyboardShortcuts'
-import { Layout, LayoutProps } from './Layout'
+import { Layout } from './Layout'
 import { updateUserSessionStores } from './marketing/util'
 import { OrgAreaRoute } from './org/area/OrgArea'
 import { OrgAreaHeaderNavItem } from './org/area/OrgHeader'
@@ -90,7 +85,6 @@ import { UserAreaRoute } from './user/area/UserArea'
 import { UserAreaHeaderNavItem } from './user/area/UserAreaHeader'
 import { UserSettingsAreaRoute } from './user/settings/UserSettingsArea'
 import { UserSettingsSidebarItems } from './user/settings/UserSettingsSidebar'
-import { UserExternalServicesOrRepositoriesUpdateProps } from './util'
 import { globbingEnabledFromSettings } from './util/globbing'
 import { observeLocation } from './util/location'
 import {
@@ -122,114 +116,6 @@ export interface SourcegraphWebAppProps extends CodeIntelligenceProps, BatchChan
     routes: readonly LayoutRouteProps<any>[]
 }
 
-/**
- * Props passed from the {@link SourcegraphWebApp} function component to the old class component.
- * Only used during the migration from the old class component; will be removed when the migration
- * is complete.
- */
-interface SourcegraphWebAppOldClassComponentExtraProps
-    extends SettingsCascadeProps,
-        UserExternalServicesOrRepositoriesUpdateProps,
-        Pick<
-            React.ComponentProps<typeof Layout>,
-            | 'versionContext'
-            | 'setVersionContext'
-            | 'availableVersionContexts'
-            | 'previousVersionContext'
-            | 'selectedSearchContextSpec'
-            | 'setSelectedSearchContextSpec'
-            | 'defaultSearchContextSpec'
-        > {
-    history: H.History
-    location: H.Location
-
-    platformContext: PlatformContext
-    extensionsController: ExtensionsController
-
-    /** GraphQL client initialized asynchronously to restore persisted cache. */
-    graphqlClient?: ApolloClient<NormalizedCacheObject>
-
-    /**
-     * Whether globbing is enabled for filters.
-     */
-    globbing: boolean
-
-    /**
-     * Whether the current search is case sensitive.
-     */
-    caseSensitive: boolean
-
-    /**
-     * The current search pattern type.
-     */
-    patternType: SearchPatternType
-
-    /**
-     * The current parsed search query, with all UI-configurable parameters
-     * (eg. pattern type, case sensitivity, version context) removed
-     */
-    parsedSearchQuery: string
-
-    setParsedSearchQuery: (value: string) => void
-    setPatternType: (value: SearchPatternType) => void
-    setCaseSensitivity: (value: boolean) => void
-
-    viewerSubject: LayoutProps['viewerSubject']
-
-    showRepogroupHomepage: boolean
-
-    showOnboardingTour: boolean
-
-    showEnterpriseHomePanels: boolean
-
-    /**
-     * Whether we show the mulitiline editor at /search/console
-     */
-    showMultilineSearchConsole: boolean
-
-    /**
-     * Whether we show the search notebook.
-     */
-    showSearchNotebook: boolean
-
-    showSearchContext: boolean
-    showSearchContextManagement: boolean
-
-    /**
-     * Whether we show the mulitiline editor at /search/query-builder
-     */
-    showQueryBuilder: boolean
-
-    /**
-     * Whether the code monitoring feature flag is enabled.
-     */
-    enableCodeMonitoring: boolean
-
-    /**
-     * Whether the API docs feature flag is enabled.
-     */
-    enableAPIDocs: boolean
-
-    /** The currently authenticated user (or null if the viewer is anonymous). */
-    authenticatedUser?: AuthenticatedUser | null
-
-    hasUserAddedRepositories: boolean
-    hasUserAddedExternalServices: boolean
-
-    /**
-     * Evaluated feature flags for the current viewer
-     */
-    featureFlags: FlagSet
-
-    /**
-     * The current search query in the navbar.
-     */
-    navbarSearchQueryState: QueryState
-    onNavbarQueryChange: (queryState: QueryState) => void
-}
-
-interface SourcegraphWebAppState {}
-
 const notificationClassNames = {
     [NotificationType.Log]: 'alert alert-secondary',
     [NotificationType.Success]: 'alert alert-success',
@@ -248,109 +134,9 @@ const LayoutWithActivation = window.context.sourcegraphDotComMode ? Layout : wit
 const history = createBrowserHistory()
 
 /**
- * The old class component for the root component. This class component's behavior is being migrated
- * to the {@link SourcegraphWebApp} function component, which uses React hooks.
- *
- * @deprecated Add behavior to {@link SourcegraphWebApp} instead.
+ * The root component.
  */
-class SourcegraphWebAppOldClassComponent extends React.Component<
-    SourcegraphWebAppProps & SourcegraphWebAppOldClassComponentExtraProps,
-    SourcegraphWebAppState
-> {
-    private readonly subscriptions = new Subscription()
-
-    public componentWillUnmount(): void {
-        this.subscriptions.unsubscribe()
-    }
-
-    public render(): React.ReactFragment | null {
-        if (window.pageError && window.pageError.statusCode !== 404) {
-            const statusCode = window.pageError.statusCode
-            const statusText = window.pageError.statusText
-            const errorMessage = window.pageError.error
-            const errorID = window.pageError.errorID
-
-            let subtitle: JSX.Element | undefined
-            if (errorID) {
-                subtitle = <FeedbackText headerText="Sorry, there's been a problem." />
-            }
-            if (errorMessage) {
-                subtitle = (
-                    <div className="app__error">
-                        {subtitle}
-                        {subtitle && <hr className="my-3" />}
-                        <pre>{errorMessage}</pre>
-                    </div>
-                )
-            } else {
-                subtitle = <div className="app__error">{subtitle}</div>
-            }
-            return <HeroPage icon={ServerIcon} title={`${statusCode}: ${statusText}`} subtitle={subtitle} />
-        }
-
-        const { authenticatedUser, graphqlClient } = this.props
-        if (authenticatedUser === undefined || graphqlClient === undefined) {
-            return null
-        }
-
-        const { children, ...props } = this.props
-
-        return (
-            <ApolloProvider client={graphqlClient}>
-                <ErrorBoundary location={null}>
-                    <ShortcutProvider>
-                        <TemporarySettingsProvider authenticatedUser={authenticatedUser}>
-                            <Router history={history} key={0}>
-                                <Route
-                                    path="/"
-                                    render={routeComponentProps => (
-                                        <CodeHostScopeProvider authenticatedUser={authenticatedUser}>
-                                            <LayoutWithActivation
-                                                {...props}
-                                                {...routeComponentProps}
-                                                authenticatedUser={authenticatedUser}
-                                                batchChangesEnabled={this.props.batchChangesEnabled}
-                                                // Search query
-                                                fetchHighlightedFileLineRanges={fetchHighlightedFileLineRanges}
-                                                // Extensions
-                                                telemetryService={eventLogger}
-                                                isSourcegraphDotCom={window.context.sourcegraphDotComMode}
-                                                getUserSearchContextNamespaces={getUserSearchContextNamespaces}
-                                                fetchAutoDefinedSearchContexts={fetchAutoDefinedSearchContexts}
-                                                fetchSearchContexts={fetchSearchContexts}
-                                                fetchSearchContextBySpec={fetchSearchContextBySpec}
-                                                fetchSearchContext={fetchSearchContext}
-                                                createSearchContext={createSearchContext}
-                                                updateSearchContext={updateSearchContext}
-                                                deleteSearchContext={deleteSearchContext}
-                                                convertVersionContextToSearchContext={
-                                                    convertVersionContextToSearchContext
-                                                }
-                                                isSearchContextSpecAvailable={isSearchContextSpecAvailable}
-                                                fetchSavedSearches={fetchSavedSearches}
-                                                fetchRecentSearches={fetchRecentSearches}
-                                                fetchRecentFileViews={fetchRecentFileViews}
-                                                streamSearch={aggregateStreamingSearch}
-                                            />
-                                        </CodeHostScopeProvider>
-                                    )}
-                                />
-                            </Router>
-                            <Tooltip key={1} />
-                            <Notifications
-                                key={2}
-                                extensionsController={this.props.extensionsController}
-                                notificationClassNames={notificationClassNames}
-                            />
-                        </TemporarySettingsProvider>
-                    </ShortcutProvider>
-                </ErrorBoundary>
-            </ApolloProvider>
-        )
-    }
-}
-
-export const SourcegraphWebApp: React.FunctionComponent<SourcegraphWebAppProps> = props => {
+export const SourcegraphWebApp: React.FunctionComponent<SourcegraphWebAppProps> = ({ children, ...props }) => {
     const location = history.location
 
     const platformContext = useMemo(() => createPlatformContext(), [])
@@ -613,33 +399,109 @@ export const SourcegraphWebApp: React.FunctionComponent<SourcegraphWebAppProps> 
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [])
 
-    return userAndSettingsProps ? (
-        <SourcegraphWebAppOldClassComponent
-            {...props}
-            history={history}
-            location={location}
-            platformContext={platformContext}
-            extensionsController={extensionsController}
-            graphqlClient={graphqlClient}
-            {...userAndSettingsProps}
-            parsedSearchQuery={parsedSearchQuery}
-            setParsedSearchQuery={setParsedSearchQuery}
-            setPatternType={setPatternType}
-            setCaseSensitivity={setCaseSensitivity}
-            hasUserAddedRepositories={hasUserAddedRepositories}
-            hasUserAddedExternalServices={hasUserAddedExternalServices}
-            onUserExternalServicesOrRepositoriesUpdate={onUserExternalServicesOrRepositoriesUpdate}
-            onSyncedPublicRepositoriesUpdate={onSyncedPublicRepositoriesUpdate}
-            featureFlags={featureFlags}
-            navbarSearchQueryState={navbarSearchQueryState}
-            onNavbarQueryChange={onNavbarQueryChange}
-            versionContext={versionContext}
-            setVersionContext={setVersionContext2}
-            availableVersionContexts={availableVersionContexts}
-            previousVersionContext={previousVersionContext}
-            defaultSearchContextSpec={defaultSearchContextSpec}
-            selectedSearchContextSpec={getSelectedSearchContextSpec()}
-            setSelectedSearchContextSpec={setSelectedSearchContextSpec2}
-        />
-    ) : null
+    if (!userAndSettingsProps) {
+        return null
+    }
+    if (!graphqlClient) {
+        return null
+    }
+
+    if (window.pageError && window.pageError.statusCode !== 404) {
+        const statusCode = window.pageError.statusCode
+        const statusText = window.pageError.statusText
+        const errorMessage = window.pageError.error
+        const errorID = window.pageError.errorID
+
+        let subtitle: JSX.Element | undefined
+        if (errorID) {
+            subtitle = <FeedbackText headerText="Sorry, there's been a problem." />
+        }
+        if (errorMessage) {
+            subtitle = (
+                <div className="app__error">
+                    {subtitle}
+                    {subtitle && <hr className="my-3" />}
+                    <pre>{errorMessage}</pre>
+                </div>
+            )
+        } else {
+            subtitle = <div className="app__error">{subtitle}</div>
+        }
+        return <HeroPage icon={ServerIcon} title={`${statusCode}: ${statusText}`} subtitle={subtitle} />
+    }
+
+    return (
+        <ApolloProvider client={graphqlClient}>
+            <ErrorBoundary location={null}>
+                <ShortcutProvider>
+                    <TemporarySettingsProvider authenticatedUser={userAndSettingsProps.authenticatedUser}>
+                        <Router history={history} key={0}>
+                            <Route
+                                path="/"
+                                render={routeComponentProps => (
+                                    <CodeHostScopeProvider authenticatedUser={userAndSettingsProps.authenticatedUser}>
+                                        <LayoutWithActivation
+                                            {...props}
+                                            {...routeComponentProps}
+                                            history={history}
+                                            location={location}
+                                            platformContext={platformContext}
+                                            extensionsController={extensionsController}
+                                            {...userAndSettingsProps}
+                                            parsedSearchQuery={parsedSearchQuery}
+                                            setParsedSearchQuery={setParsedSearchQuery}
+                                            setPatternType={setPatternType}
+                                            setCaseSensitivity={setCaseSensitivity}
+                                            hasUserAddedRepositories={hasUserAddedRepositories}
+                                            hasUserAddedExternalServices={hasUserAddedExternalServices}
+                                            onUserExternalServicesOrRepositoriesUpdate={
+                                                onUserExternalServicesOrRepositoriesUpdate
+                                            }
+                                            onSyncedPublicRepositoriesUpdate={onSyncedPublicRepositoriesUpdate}
+                                            featureFlags={featureFlags}
+                                            navbarSearchQueryState={navbarSearchQueryState}
+                                            onNavbarQueryChange={onNavbarQueryChange}
+                                            versionContext={versionContext}
+                                            setVersionContext={setVersionContext2}
+                                            availableVersionContexts={availableVersionContexts}
+                                            previousVersionContext={previousVersionContext}
+                                            defaultSearchContextSpec={defaultSearchContextSpec}
+                                            selectedSearchContextSpec={getSelectedSearchContextSpec()}
+                                            setSelectedSearchContextSpec={setSelectedSearchContextSpec2}
+                                            authenticatedUser={userAndSettingsProps.authenticatedUser}
+                                            // Search query
+                                            fetchHighlightedFileLineRanges={fetchHighlightedFileLineRanges}
+                                            // Extensions
+                                            telemetryService={eventLogger}
+                                            isSourcegraphDotCom={window.context.sourcegraphDotComMode}
+                                            getUserSearchContextNamespaces={getUserSearchContextNamespaces}
+                                            fetchAutoDefinedSearchContexts={fetchAutoDefinedSearchContexts}
+                                            fetchSearchContexts={fetchSearchContexts}
+                                            fetchSearchContextBySpec={fetchSearchContextBySpec}
+                                            fetchSearchContext={fetchSearchContext}
+                                            createSearchContext={createSearchContext}
+                                            updateSearchContext={updateSearchContext}
+                                            deleteSearchContext={deleteSearchContext}
+                                            convertVersionContextToSearchContext={convertVersionContextToSearchContext}
+                                            isSearchContextSpecAvailable={isSearchContextSpecAvailable}
+                                            fetchSavedSearches={fetchSavedSearches}
+                                            fetchRecentSearches={fetchRecentSearches}
+                                            fetchRecentFileViews={fetchRecentFileViews}
+                                            streamSearch={aggregateStreamingSearch}
+                                        />
+                                    </CodeHostScopeProvider>
+                                )}
+                            />
+                        </Router>
+                        <Tooltip key={1} />
+                        <Notifications
+                            key={2}
+                            extensionsController={extensionsController}
+                            notificationClassNames={notificationClassNames}
+                        />
+                    </TemporarySettingsProvider>
+                </ShortcutProvider>
+            </ErrorBoundary>
+        </ApolloProvider>
+    )
 }
