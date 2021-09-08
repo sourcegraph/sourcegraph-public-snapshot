@@ -202,7 +202,6 @@ func transformBatchSpecWorkspaceJobRecord(ctx context.Context, s *store.Store, j
 					"batch",
 					"exec",
 					"-f", "input.json",
-					"-text-only",
 					"-skip-errors",
 				},
 				Dir: ".",
