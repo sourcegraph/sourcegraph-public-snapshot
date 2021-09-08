@@ -2102,6 +2102,7 @@ Triggers:
  upload_size         | bigint                   |           |          | 
  num_failures        | integer                  |           |          | 
  associated_index_id | bigint                   |           |          | 
+ expired             | boolean                  |           |          | 
  processed_at        | timestamp with time zone |           |          | 
 
 ```
@@ -2126,6 +2127,7 @@ Triggers:
     u.upload_size,
     u.num_failures,
     u.associated_index_id,
+    u.expired,
     u.finished_at AS processed_at
    FROM lsif_uploads u
   WHERE ((u.state = 'completed'::text) OR (u.state = 'deleting'::text));
@@ -2152,6 +2154,7 @@ Triggers:
  upload_size         | bigint                   |           |          | 
  num_failures        | integer                  |           |          | 
  associated_index_id | bigint                   |           |          | 
+ expired             | boolean                  |           |          | 
  processed_at        | timestamp with time zone |           |          | 
  repository_name     | citext                   |           |          | 
 
@@ -2177,6 +2180,7 @@ Triggers:
     u.upload_size,
     u.num_failures,
     u.associated_index_id,
+    u.expired,
     u.processed_at,
     r.name AS repository_name
    FROM (lsif_dumps u
@@ -2260,6 +2264,7 @@ Triggers:
  upload_size         | bigint                   |           |          | 
  num_failures        | integer                  |           |          | 
  associated_index_id | bigint                   |           |          | 
+ expired             | boolean                  |           |          | 
  repository_name     | citext                   |           |          | 
 
 ```
@@ -2284,6 +2289,7 @@ Triggers:
     u.upload_size,
     u.num_failures,
     u.associated_index_id,
+    u.expired,
     r.name AS repository_name
    FROM (lsif_uploads u
      JOIN repo r ON ((r.id = u.repository_id)))
