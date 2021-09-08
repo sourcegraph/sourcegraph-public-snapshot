@@ -59,7 +59,6 @@ import { RepoRevisionContainerRoute } from './repo/RepoRevisionContainer'
 import { RepoSettingsAreaRoute } from './repo/settings/RepoSettingsArea'
 import { RepoSettingsSideBarGroup } from './repo/settings/RepoSettingsSidebar'
 import { LayoutRouteProps } from './routes'
-import { VersionContext } from './schema/site.schema'
 import {
     resolveVersionContext,
     parseSearchURL,
@@ -136,7 +135,17 @@ export interface SourcegraphWebAppProps
  */
 interface SourcegraphWebAppOldClassComponentExtraProps
     extends SettingsCascadeProps,
-        UserExternalServicesOrRepositoriesUpdateProps {
+        UserExternalServicesOrRepositoriesUpdateProps,
+        Pick<
+            React.ComponentProps<typeof Layout>,
+            | 'versionContext'
+            | 'setVersionContext'
+            | 'availableVersionContexts'
+            | 'previousVersionContext'
+            | 'selectedSearchContextSpec'
+            | 'setSelectedSearchContextSpec'
+            | 'defaultSearchContextSpec'
+        > {
     history: H.History
     location: H.Location
 
@@ -225,25 +234,7 @@ interface SourcegraphWebAppOldClassComponentExtraProps
     onNavbarQueryChange: (queryState: QueryState) => void
 }
 
-interface SourcegraphWebAppState {
-    /*
-     * The version context the instance is in. If undefined, it means no version context is selected.
-     */
-    versionContext?: string
-
-    /**
-     * Available version contexts defined in the site configuration.
-     */
-    availableVersionContexts?: VersionContext[]
-
-    /**
-     * The previously used version context, as specified in localStorage.
-     */
-    previousVersionContext: string | null
-
-    selectedSearchContextSpec?: string
-    defaultSearchContextSpec: string
-}
+interface SourcegraphWebAppState {}
 
 const notificationClassNames = {
     [NotificationType.Log]: 'alert alert-secondary',
@@ -273,50 +264,6 @@ class SourcegraphWebAppOldClassComponent extends React.Component<
     SourcegraphWebAppState
 > {
     private readonly subscriptions = new Subscription()
-
-    constructor(props: SourcegraphWebAppProps & SourcegraphWebAppOldClassComponentExtraProps) {
-        super(props)
-
-        const parsedSearchURL = parseSearchURL(window.location.search)
-        const availableVersionContexts = window.context.experimentalFeatures.versionContexts
-        const previousVersionContext = localStorage.getItem(LAST_VERSION_CONTEXT_KEY)
-        const resolvedVersionContext = availableVersionContexts
-            ? resolveVersionContext(parsedSearchURL.versionContext || undefined, availableVersionContexts) ||
-              resolveVersionContext(previousVersionContext || undefined, availableVersionContexts) ||
-              undefined
-            : undefined
-
-        this.state = {
-            versionContext: resolvedVersionContext,
-            availableVersionContexts,
-            previousVersionContext,
-            defaultSearchContextSpec: 'global', // global is default for now, user will be able to change this at some point
-        }
-    }
-
-    public componentDidMount(): void {
-        if (this.props.parsedSearchQuery && !filterExists(this.props.parsedSearchQuery, FilterType.context)) {
-            // If a context filter does not exist in the query, we have to switch the selected context
-            // to global to match the UI with the backend semantics (if no context is specified in the query,
-            // the query is run in global context).
-            this.setSelectedSearchContextSpec('global')
-        }
-        if (!this.props.parsedSearchQuery) {
-            // If no query is present (e.g. search page, settings page), select the last saved
-            // search context from localStorage as currently selected search context.
-            const lastSelectedSearchContextSpec = localStorage.getItem(LAST_SEARCH_CONTEXT_KEY) || 'global'
-            this.setSelectedSearchContextSpec(lastSelectedSearchContextSpec)
-        }
-
-        // Send initial versionContext to extensions
-        this.setVersionContext(this.state.versionContext).catch(error => {
-            console.error('Error sending initial version context to extensions', error)
-        })
-
-        this.setWorkspaceSearchContext(this.state.selectedSearchContextSpec).catch(error => {
-            console.error('Error sending search context to extensions', error)
-        })
-    }
 
     public componentWillUnmount(): void {
         this.subscriptions.unsubscribe()
@@ -372,15 +319,9 @@ class SourcegraphWebAppOldClassComponent extends React.Component<
                                                     batchChangesEnabled={this.props.batchChangesEnabled}
                                                     // Search query
                                                     fetchHighlightedFileLineRanges={fetchHighlightedFileLineRanges}
-                                                    versionContext={this.state.versionContext}
-                                                    setVersionContext={this.setVersionContext}
-                                                    availableVersionContexts={this.state.availableVersionContexts}
-                                                    previousVersionContext={this.state.previousVersionContext}
                                                     // Extensions
                                                     telemetryService={eventLogger}
                                                     isSourcegraphDotCom={window.context.sourcegraphDotComMode}
-                                                    selectedSearchContextSpec={this.getSelectedSearchContextSpec()}
-                                                    setSelectedSearchContextSpec={this.setSelectedSearchContextSpec}
                                                     getUserSearchContextNamespaces={getUserSearchContextNamespaces}
                                                     fetchAutoDefinedSearchContexts={fetchAutoDefinedSearchContexts}
                                                     fetchSearchContexts={fetchSearchContexts}
@@ -393,7 +334,6 @@ class SourcegraphWebAppOldClassComponent extends React.Component<
                                                         convertVersionContextToSearchContext
                                                     }
                                                     isSearchContextSpecAvailable={isSearchContextSpecAvailable}
-                                                    defaultSearchContextSpec={this.state.defaultSearchContextSpec}
                                                     fetchSavedSearches={fetchSavedSearches}
                                                     fetchRecentSearches={fetchRecentSearches}
                                                     fetchRecentFileViews={fetchRecentFileViews}
@@ -415,47 +355,6 @@ class SourcegraphWebAppOldClassComponent extends React.Component<
                 </ErrorBoundary>
             </ApolloProvider>
         )
-    }
-
-    private setVersionContext = async (versionContext: string | undefined): Promise<void> => {
-        const resolvedVersionContext = resolveVersionContext(versionContext, this.state.availableVersionContexts)
-        if (!resolvedVersionContext) {
-            localStorage.removeItem(LAST_VERSION_CONTEXT_KEY)
-            this.setState({ versionContext: undefined, previousVersionContext: null })
-        } else {
-            localStorage.setItem(LAST_VERSION_CONTEXT_KEY, resolvedVersionContext)
-            this.setState({ versionContext: resolvedVersionContext, previousVersionContext: resolvedVersionContext })
-        }
-
-        const extensionHostAPI = await this.props.extensionsController.extHostAPI
-        // Note: `setVersionContext` is now asynchronous since the version context
-        // is sent directly to extensions in the worker thread. This means that when the Promise
-        // is in a fulfilled state, we know that extensions have received the latest version context
-        await extensionHostAPI.setVersionContext(resolvedVersionContext)
-    }
-
-    private getSelectedSearchContextSpec = (): string | undefined =>
-        this.props.showSearchContext ? this.state.selectedSearchContextSpec : undefined
-
-    private setSelectedSearchContextSpec = (spec: string): void => {
-        const { defaultSearchContextSpec } = this.state
-        this.subscriptions.add(
-            getAvailableSearchContextSpecOrDefault({ spec, defaultSpec: defaultSearchContextSpec }).subscribe(
-                availableSearchContextSpecOrDefault => {
-                    this.setState({ selectedSearchContextSpec: availableSearchContextSpecOrDefault })
-                    localStorage.setItem(LAST_SEARCH_CONTEXT_KEY, availableSearchContextSpecOrDefault)
-
-                    this.setWorkspaceSearchContext(availableSearchContextSpecOrDefault).catch(error => {
-                        console.error('Error sending search context to extensions', error)
-                    })
-                }
-            )
-        )
-    }
-
-    private async setWorkspaceSearchContext(spec: string | undefined): Promise<void> {
-        const extensionHostAPI = await this.props.extensionsController.extHostAPI
-        await extensionHostAPI.setSearchContext(spec)
     }
 }
 
@@ -634,6 +533,94 @@ export const SourcegraphWebApp: React.FunctionComponent<SourcegraphWebAppProps> 
         )
     )
 
+    const setWorkspaceSearchContext = useCallback(
+        async (spec: string | undefined): Promise<void> => {
+            const extensionHostAPI = await extensionsController.extHostAPI
+            await extensionHostAPI.setSearchContext(spec)
+        },
+        [extensionsController.extHostAPI]
+    )
+    const availableVersionContexts = window.context.experimentalFeatures.versionContexts
+    const [previousVersionContext, setPreviousVersionContext] = useState(localStorage.getItem(LAST_VERSION_CONTEXT_KEY))
+    const resolvedVersionContext = availableVersionContexts
+        ? resolveVersionContext(parsedSearchURL.versionContext || undefined, availableVersionContexts) ||
+          resolveVersionContext(previousVersionContext || undefined, availableVersionContexts) ||
+          undefined
+        : undefined
+    const [versionContext, setVersionContext] = useState(resolvedVersionContext)
+    const [selectedSearchContextSpec, setSelectedSearchContextSpec] = useState<string>()
+    const defaultSearchContextSpec = 'global' // global is default for now, user will be able to change this at some point
+    const getSelectedSearchContextSpec = useCallback(
+        (): string | undefined => (userAndSettingsProps?.showSearchContext ? selectedSearchContextSpec : undefined),
+        [selectedSearchContextSpec, userAndSettingsProps?.showSearchContext]
+    )
+    const setSelectedSearchContextSpec2 = useCallback(
+        async (spec: string): Promise<void> => {
+            const availableSearchContextSpecOrDefault = await getAvailableSearchContextSpecOrDefault({
+                spec,
+                defaultSpec: defaultSearchContextSpec,
+            }).toPromise()
+            setSelectedSearchContextSpec(availableSearchContextSpecOrDefault)
+            localStorage.setItem(LAST_SEARCH_CONTEXT_KEY, availableSearchContextSpecOrDefault)
+
+            setWorkspaceSearchContext(availableSearchContextSpecOrDefault).catch(error => {
+                console.error('Error sending search context to extensions', error)
+            })
+        },
+        [setWorkspaceSearchContext]
+    )
+    const setVersionContext2 = useCallback(
+        async (versionContext: string | undefined): Promise<void> => {
+            const resolvedVersionContext = resolveVersionContext(versionContext, availableVersionContexts)
+            if (!resolvedVersionContext) {
+                localStorage.removeItem(LAST_VERSION_CONTEXT_KEY)
+                setVersionContext(undefined)
+                setPreviousVersionContext(null)
+            } else {
+                localStorage.setItem(LAST_VERSION_CONTEXT_KEY, resolvedVersionContext)
+                setVersionContext(resolvedVersionContext)
+                setPreviousVersionContext(resolvedVersionContext)
+            }
+
+            const extensionHostAPI = await extensionsController.extHostAPI
+            // Note: `setVersionContext` is now asynchronous since the version context
+            // is sent directly to extensions in the worker thread. This means that when the Promise
+            // is in a fulfilled state, we know that extensions have received the latest version context
+            await extensionHostAPI.setVersionContext(resolvedVersionContext)
+        },
+        [availableVersionContexts, extensionsController.extHostAPI]
+    )
+    useEffect(() => {
+        if (parsedSearchQuery && !filterExists(parsedSearchQuery, FilterType.context)) {
+            // If a context filter does not exist in the query, we have to switch the selected context
+            // to global to match the UI with the backend semantics (if no context is specified in the query,
+            // the query is run in global context).
+            setSelectedSearchContextSpec2('global').catch(error => {
+                console.error('Error setting selected search context', error)
+            })
+        }
+        if (!parsedSearchQuery) {
+            // If no query is present (e.g. search page, settings page), select the last saved
+            // search context from localStorage as currently selected search context.
+            const lastSelectedSearchContextSpec = localStorage.getItem(LAST_SEARCH_CONTEXT_KEY) || 'global'
+            setSelectedSearchContextSpec2(lastSelectedSearchContextSpec).catch(error => {
+                console.error('Error setting selected search context', error)
+            })
+        }
+
+        // Send initial versionContext to extensions
+        setVersionContext2(versionContext).catch(error => {
+            console.error('Error sending initial version context to extensions', error)
+        })
+
+        setWorkspaceSearchContext(selectedSearchContextSpec).catch(error => {
+            console.error('Error sending search context to extensions', error)
+        })
+
+        // Only run on the initial render.
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [])
+
     return userAndSettingsProps ? (
         <SourcegraphWebAppOldClassComponent
             {...props}
@@ -654,6 +641,13 @@ export const SourcegraphWebApp: React.FunctionComponent<SourcegraphWebAppProps> 
             featureFlags={featureFlags}
             navbarSearchQueryState={navbarSearchQueryState}
             onNavbarQueryChange={onNavbarQueryChange}
+            versionContext={versionContext}
+            setVersionContext={setVersionContext2}
+            availableVersionContexts={availableVersionContexts}
+            previousVersionContext={previousVersionContext}
+            defaultSearchContextSpec={defaultSearchContextSpec}
+            selectedSearchContextSpec={getSelectedSearchContextSpec()}
+            setSelectedSearchContextSpec={setSelectedSearchContextSpec2}
         />
     ) : null
 }
