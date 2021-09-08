@@ -37,7 +37,7 @@ func (r *configurationPolicyResolver) Type() (gql.GitObjectType, error) {
 	case "GIT_TREE":
 		return gql.GitObjectTypeTree, nil
 	default:
-		return "", errors.Errorf("Unknown git object type %s", r.configurationPolicy.Type)
+		return "", errors.Errorf("unknown git object type %s", r.configurationPolicy.Type)
 	}
 }
 
