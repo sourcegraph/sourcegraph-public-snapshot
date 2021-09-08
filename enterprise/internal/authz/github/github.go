@@ -140,25 +140,23 @@ func (p *Provider) fetchUserPermsByToken(ctx context.Context, accountID extsvc.A
 		perms = &authz.ExternalUserPermissions{
 			Exacts: make([]extsvc.RepoID, 0, repoSetSize),
 		}
-		// seenRepos helps prevent duplication if necessary for groupsCache
+		// seenRepos helps prevent duplication if necessary for groupsCache. Left unset
+		// indicates it is unused.
 		seenRepos map[extsvc.RepoID]struct{}
 		// addRepoToUserPerms checks if the given repos are already tracked before adding
 		// it to perms for groupsCache, otherwise just adds directly
 		addRepoToUserPerms func(repos ...extsvc.RepoID)
-		// Repository affiliations to list for - groupsCache only lists for a subset
+		// Repository affiliations to list for - groupsCache only lists for a subset. Left
+		// unset indicates all affiliations should be sync'd.
 		affiliations []github.RepositoryAffiliation
 	)
 
 	// If cache is disabled the code path is simpler, avoid allocating memory
 	if p.groupsCache == nil { // Groups cache is disabled
-		// seenRepos is unused
-		seenRepos = nil
 		// addRepoToUserPerms just appends
 		addRepoToUserPerms = func(repos ...extsvc.RepoID) {
 			perms.Exacts = append(perms.Exacts, repos...)
 		}
-		// Sync all direct affiliations.
-		affiliations = nil
 	} else { // Groups cache is enabled
 		// Instantiate map for deduplicating repos
 		seenRepos = make(map[extsvc.RepoID]struct{}, repoSetSize)
@@ -319,25 +317,23 @@ func (p *Provider) FetchRepoPerms(ctx context.Context, repo *extsvc.Repository, 
 	var (
 		// userIDs tracks users with access to this repo
 		userIDs = make([]extsvc.AccountID, 0, userPageSize)
-		// seenUsers helps deduplication of userIDs for groupsCache
+		// seenUsers helps deduplication of userIDs for groupsCache. Left unset indicates
+		// it is unused.
 		seenUsers map[extsvc.AccountID]struct{}
 		// addUserToRepoPerms checks if the given users are already tracked before adding
 		// it to perms for groupsCache, otherwise just adds directly
 		addUserToRepoPerms func(users ...extsvc.AccountID)
-		// affiliations to list for - groupCache only lists for a subset
+		// affiliations to list for - groupCache only lists for a subset. Left unset indicates
+		// all affiliations should be sync'd.
 		affiliation github.CollaboratorAffiliation
 	)
 
 	// If cache is disabled the code path is simpler, avoid allocating memory
 	if p.groupsCache == nil { // groups cache is disabled
-		// seenUsers is unused
-		seenUsers = nil
 		// addUserToRepoPerms just adds to perms.
 		addUserToRepoPerms = func(users ...extsvc.AccountID) {
 			userIDs = append(userIDs, users...)
 		}
-		// Sync all affiliations.
-		affiliation = ""
 	} else { // groups cache is enabled
 		// instantiate map to help with deduplication
 		seenUsers = make(map[extsvc.AccountID]struct{}, userPageSize)
