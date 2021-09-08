@@ -14,7 +14,7 @@
       "reviewers": ["beyang"]
     },
     {
-      "packageNames": ["^@visx/"],
+      "packagePatterns": ["^@visx/"],
       "reviewers": ["team:code-insights-frontend"]
     },
     {
