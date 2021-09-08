@@ -51,6 +51,7 @@ export const batchChangesGroup: SiteAdminSideBarGroup = {
         {
             label: 'Batch spec executions',
             to: '/site-admin/batch-changes/executions',
+            condition: props => props.batchChangesExecutionEnabled,
         },
     ],
     condition: ({ batchChangesEnabled }) => batchChangesEnabled,

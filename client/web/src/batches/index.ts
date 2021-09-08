@@ -17,5 +17,6 @@ export const isBatchChangesExecutionEnabled = (settingsCascade: SettingsCascadeO
  * Changes
  */
 export interface BatchChangesProps {
+    batchChangesExecutionEnabled: boolean
     batchChangesEnabled: boolean
 }
