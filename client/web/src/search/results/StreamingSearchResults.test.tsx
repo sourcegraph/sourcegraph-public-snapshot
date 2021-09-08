@@ -66,6 +66,7 @@ describe('StreamingSearchResults', () => {
         isLightTheme: true,
         enableCodeMonitoring: false,
         featureFlags: EMPTY_FEATURE_FLAGS,
+        extensionViews: () => null,
     }
 
     it('should call streaming search API with the right parameters from URL', () => {

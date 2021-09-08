@@ -1,6 +1,7 @@
 import React from 'react'
 import { Redirect } from 'react-router'
 
+import { isCodeInsightsEnabled } from '../insights/utils/is-code-insights-enabled'
 import { LayoutRouteProps, routes } from '../routes'
 import { lazyComponent } from '../util/lazyComponent'
 
@@ -43,6 +44,11 @@ export const enterpriseRoutes: readonly LayoutRouteProps<{}>[] = [
             () => import('./code-monitoring/global/GlobalCodeMonitoringArea'),
             'GlobalCodeMonitoringArea'
         ),
+    },
+    {
+        path: '/insights',
+        render: lazyComponent(() => import('./insights/InsightsRouter'), 'InsightsRouter'),
+        condition: props => isCodeInsightsEnabled(props.settingsCascade, { insightsPage: true }),
     },
     ...routes,
 ]

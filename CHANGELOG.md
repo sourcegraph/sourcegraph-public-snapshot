@@ -17,6 +17,11 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Changed
 
+- `allowGroupsPermissionsSync` in the GitHub authorization provider is now required to enable the experimental GitHub teams and organization permissions caching. [#24561](https://github.com/sourcegraph/sourcegraph/pull/24561)
+- GitHub external code hosts now validate if a corresponding authorization provider is set, and emits a warning if not. [#24526](https://github.com/sourcegraph/sourcegraph/pull/24526)
+- Sourcegraph is now built with Go 1.17. [#24566](https://github.com/sourcegraph/sourcegraph/pull/24566)
+- Code Insights is now available only in the Sourcegraph enterprise. [#24741](https://github.com/sourcegraph/sourcegraph/pull/24741)
+
 ### Fixed
 
 -

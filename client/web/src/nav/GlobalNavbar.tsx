@@ -30,6 +30,7 @@ import { BatchChangesNavItem } from '../batches/BatchChangesNavItem'
 import { CodeMonitoringProps } from '../code-monitoring'
 import { CodeMonitoringLogo } from '../code-monitoring/CodeMonitoringLogo'
 import { BrandLogo } from '../components/branding/BrandLogo'
+import { CodeInsightsProps } from '../insights/types'
 import {
     KeyboardShortcutsProps,
     KEYBOARD_SHORTCUT_SHOW_COMMAND_PALETTE,
@@ -71,6 +72,7 @@ interface Props
         VersionContextProps,
         SearchContextInputProps,
         CodeMonitoringProps,
+        CodeInsightsProps,
         OnboardingTourProps,
         BatchChangesProps {
     history: H.History
@@ -122,6 +124,7 @@ export const GlobalNavbar: React.FunctionComponent<Props> = ({
     history,
     minimalNavLinks,
     isSourcegraphDotCom,
+    codeInsightsEnabled,
     ...props
 }) => {
     // Workaround: can't put this in optional parameter value because of https://github.com/babel/babel/issues/11166
@@ -183,7 +186,9 @@ export const GlobalNavbar: React.FunctionComponent<Props> = ({
 
     const settings = !isErrorLike(props.settingsCascade.final) ? props.settingsCascade.final : null
     const codeInsights =
-        settings?.experimentalFeatures?.codeInsights && settings?.['insights.displayLocation.insightsPage'] !== false
+        codeInsightsEnabled &&
+        settings?.experimentalFeatures?.codeInsights &&
+        settings?.['insights.displayLocation.insightsPage'] !== false
 
     const searchNavBar = (
         <SearchNavbarItem
