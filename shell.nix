@@ -8,7 +8,7 @@
 #
 # Status: go test ./... and yarn works
 
-{ pkgs ? import <nixpkgs> { }, ... }:
+{ pkgs ? import (fetchTarball "https://github.com/NixOS/nixpkgs/archive/nixos-21.05.tar.gz") { }, ... }:
 
 let
   # pkgs.universal-ctags installs the binary as "ctags", not "universal-ctags"
@@ -21,7 +21,7 @@ let
   # go1.17 is not yet available in nixpkgs and is held up due to go requiring
   # macOS 10.13 or later. So we use official go releases.
   go_1_17 =
-    pkgs.callPackage "${<nixpkgs>}/pkgs/development/compilers/go/binary.nix" {
+    pkgs.callPackage "${pkgs.path}/pkgs/development/compilers/go/binary.nix" {
       version = "1.17";
       hashes = {
         linux-amd64 =
@@ -33,23 +33,26 @@ let
 
   # need unstable to get the latest version of node. We pin a very specific
   # commit to make this reproducable.
-  unstable = import (pkgs.fetchFromGitHub {
-    owner = "NixOS";
-    repo = "nixpkgs";
-    rev = "f3706ab27f99b2ffdaeb6dd03ee6e2f26511c6db";
-    sha256 = "1fb3z0y08y1jjhzffsg4qa5y9mk434s167n55avcwbqqjwd7kj1c";
-  }) { };
+  unstable = import
+    (pkgs.fetchFromGitHub {
+      owner = "NixOS";
+      repo = "nixpkgs";
+      rev = "f3706ab27f99b2ffdaeb6dd03ee6e2f26511c6db";
+      sha256 = "1fb3z0y08y1jjhzffsg4qa5y9mk434s167n55avcwbqqjwd7kj1c";
+    })
+    { };
 
-in pkgs.mkShell {
+in
+pkgs.mkShell {
   name = "sourcegraph-dev";
 
   # The packages in the `buildInputs` list will be added to the PATH in our shell
   nativeBuildInputs = with pkgs; [
     # Our core DB.
-    pkgs.postgresql_13
+    postgresql_13
 
     # Cache and some store data
-    pkgs.redis
+    redis
 
     # Used by symbols and zoekt-git-index to extract symbols from
     # sourcecode.
@@ -59,19 +62,19 @@ in pkgs.mkShell {
     go_1_17
 
     # Lots of our tooling and go tests rely on git.
-    pkgs.git
+    git
 
     # cgo dependency for symbols. TODO build with nix?
-    pkgs.pcre
-    pkgs.sqlite
-    pkgs.pkg-config
+    pcre
+    sqlite
+    pkg-config
 
     # monitors src files to restart dev services
-    pkgs.watchman
+    watchman
 
     # CI lint tools you need locally
-    pkgs.shfmt
-    pkgs.shellcheck
+    shfmt
+    shellcheck
 
     # Web tools. Need node 16.7 so we use unstable. Yarn should also be built
     # against it.
