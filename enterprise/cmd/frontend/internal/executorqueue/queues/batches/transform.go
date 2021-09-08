@@ -168,21 +168,6 @@ func transformBatchSpecWorkspaceJobRecord(ctx context.Context, s *store.Store, j
 		fmt.Sprintf("SRC_ACCESS_TOKEN=%s", token),
 	}
 
-	var namespaceName string
-	if batchSpec.NamespaceUserID != 0 {
-		user, err := database.Users(s.DB()).GetByID(ctx, batchSpec.NamespaceUserID)
-		if err != nil {
-			return apiclient.Job{}, err
-		}
-		namespaceName = user.Username
-	} else {
-		org, err := database.Orgs(s.DB()).GetByID(ctx, batchSpec.NamespaceOrgID)
-		if err != nil {
-			return apiclient.Job{}, err
-		}
-		namespaceName = org.Name
-	}
-
 	input := batcheslib.WorkspacesExecutionInput{
 		RawSpec: batchSpec.RawSpec,
 		Workspaces: []*batcheslib.Workspace{
@@ -219,7 +204,6 @@ func transformBatchSpecWorkspaceJobRecord(ctx context.Context, s *store.Store, j
 					"-f", "input.json",
 					"-text-only",
 					"-skip-errors",
-					"-n", namespaceName,
 				},
 				Dir: ".",
 				Env: cliEnv,
