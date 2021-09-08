@@ -1,6 +1,8 @@
 import classnames from 'classnames'
 import React, { FormEventHandler, RefObject } from 'react'
 
+import { Button } from '@sourcegraph/wildcard'
+
 import { ErrorAlert } from '../../../../../../../components/alerts'
 import { LoaderButton } from '../../../../../../../components/LoaderButton'
 import { FormGroup } from '../../../../../../components/form/form-group/FormGroup'
@@ -270,13 +272,19 @@ export const SearchInsightCreationForm: React.FunctionComponent<CreationSearchIn
                     className="btn btn-primary mr-2 mb-2"
                 />
 
-                <button type="button" className="btn btn-outline-secondary mb-2 mr-auto" onClick={onCancel}>
+                <Button type="button" variant="secondary" outline={true} className="mb-2 mr-auto" onClick={onCancel}>
                     Cancel
-                </button>
+                </Button>
 
-                <button type="reset" disabled={!isFormClearActive} className="btn btn-outline-secondary border-0">
+                <Button
+                    type="reset"
+                    disabled={!isFormClearActive}
+                    variant="secondary"
+                    outline={true}
+                    className="border-0"
+                >
                     Clear all fields
-                </button>
+                </Button>
             </div>
         </form>
     )
