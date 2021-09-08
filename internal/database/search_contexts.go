@@ -518,42 +518,62 @@ func (s *SearchContextsStore) GetSearchContextRepositoryRevisions(ctx context.Co
 	return out, nil
 }
 
-var getAllRevisionsForRepoFmtStr = `
-SELECT DISTINCT scr.revision
-FROM search_context_repos scr
+var getAllRevisionsForReposFmtStr = `
+-- source:internal/database/search_contexts.go:GetAllRevisionsForRepos
+SELECT DISTINCT
+	scr.repo_id,
+	scr.revision
+FROM
+	search_context_repos scr
 -- Only return revisions whose search context has not been soft-deleted
 INNER JOIN (
-  SELECT id
-  FROM search_contexts
-  WHERE deleted_at IS NULL
+  SELECT
+  	id
+  FROM
+  	search_contexts
+  WHERE
+  	deleted_at IS NULL
 ) sc
-ON sc.id = scr.search_context_id
-WHERE scr.repo_id = %d
-ORDER BY scr.revision;
+ON
+	sc.id = scr.search_context_id
+WHERE
+	scr.repo_id IN (%s)
+ORDER BY
+	scr.revision
 `
 
-// GetAllRevisionsForRepo returns the list of revisions that are used in search contexts for a given repo ID.
-func (s *SearchContextsStore) GetAllRevisionsForRepo(ctx context.Context, repoID int32) ([]string, error) {
-	if a := actor.FromContext(ctx); a == nil || !a.Internal {
-		return nil, errors.New("GetAllRevisionsForRepo can only be accessed by an internal actor")
+// GetAllRevisionsForRepos returns the list of revisions that are used in search
+// contexts for each given repo ID.
+func (s *SearchContextsStore) GetAllRevisionsForRepos(ctx context.Context, repoIDs []int32) (map[int32][]string, error) {
+	if a := actor.FromContext(ctx); !a.IsInternal() {
+		return nil, errors.New("GetAllRevisionsForRepos can only be accessed by an internal actor")
 	}
 
-	rows, err := s.Query(ctx, sqlf.Sprintf(
-		getAllRevisionsForRepoFmtStr,
-		repoID,
-	))
+	ids := make([]*sqlf.Query, 0, len(repoIDs))
+	for _, repoID := range repoIDs {
+		ids = append(ids, sqlf.Sprintf("%s", repoID))
+	}
+	q := sqlf.Sprintf(
+		getAllRevisionsForReposFmtStr,
+		ids,
+	)
+
+	rows, err := s.Query(ctx, q)
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() { err = basestore.CloseRows(rows, err) }()
 
-	revs := make([]string, 0)
+	revs := make(map[int32][]string, len(repoIDs))
 	for rows.Next() {
-		var rev string
-		if err = rows.Scan(&rev); err != nil {
+		var (
+			repoID int32
+			rev    string
+		)
+		if err = rows.Scan(&repoID, &rev); err != nil {
 			return nil, err
 		}
-		revs = append(revs, rev)
+		revs[repoID] = append(revs[repoID], rev)
 	}
 
 	return revs, nil
