@@ -4,7 +4,7 @@ import { ApolloClient, ApolloProvider, NormalizedCacheObject } from '@apollo/cli
 import { ShortcutProvider } from '@slimsag/react-shortcuts'
 import H, { createBrowserHistory } from 'history'
 import ServerIcon from 'mdi-react/ServerIcon'
-import React, { useMemo } from 'react'
+import React, { useMemo, useEffect } from 'react'
 import { Route, Router } from 'react-router'
 import { combineLatest, from, Subscription, fromEvent, of, Subject } from 'rxjs'
 import { bufferCount, catchError, distinctUntilChanged, map, startWith, switchMap, tap } from 'rxjs/operators'
@@ -318,8 +318,6 @@ class SourcegraphWebAppOldClassComponent extends React.Component<
     }
 
     public componentDidMount(): void {
-        updateUserSessionStores()
-
         document.documentElement.classList.add('theme')
 
         this.subscriptions.add(
@@ -688,6 +686,10 @@ export const SourcegraphWebApp: React.FunctionComponent<SourcegraphWebAppProps> 
             []
         )
     )
+
+    useEffect(() => {
+        updateUserSessionStores()
+    }, [])
 
     return (
         <SourcegraphWebAppOldClassComponent
