@@ -53,7 +53,7 @@ func isAllowedRootFile(p string) bool {
 }
 
 // Run Storybook workflow only if related files were changed.
-func (c Config) isStorybookAffected() bool {
+func (c Config) isClientAffected() bool {
 	for _, p := range c.changedFiles {
 		if !strings.HasSuffix(p, ".md") && (strings.HasPrefix(p, "client/") || isAllowedRootFile(p)) {
 			return true
