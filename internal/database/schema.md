@@ -1002,6 +1002,7 @@ Stores metadata about a code intel index job.
  uploads       | jsonb   |           | not null | 
 Indexes:
     "lsif_nearest_uploads_repository_id_commit_bytea" btree (repository_id, commit_bytea)
+    "lsif_nearest_uploads_uploads" gin (uploads)
 
 ```
 
@@ -1020,6 +1021,7 @@ Associates commits with the complete set of uploads visible from that commit. Ev
  ancestor_commit_bytea | bytea   |           | not null | 
  distance              | integer |           | not null | 
 Indexes:
+    "lsif_nearest_uploads_links_repository_id_ancestor_commit_bytea" btree (repository_id, ancestor_commit_bytea)
     "lsif_nearest_uploads_links_repository_id_commit_bytea" btree (repository_id, commit_bytea)
 
 ```

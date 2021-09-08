@@ -148,6 +148,61 @@ SELECT lsif_dirty_repositories.repository_id, lsif_dirty_repositories.dirty_toke
     AND repo.deleted_at IS NULL
 `
 
+// CommitsVisibleToUpload returns the set of commits for which the given upload can answer code intelligence queries.
+// To paginate, supply the token returned from this method to the invocation for the next page.
+func (s *Store) CommitsVisibleToUpload(ctx context.Context, uploadID, limit int, token *string) (_ []string, nextToken *string, err error) {
+	ctx, endObservation := s.operations.commitsVisibleToUpload.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.Int("uploadID", uploadID),
+		log.Int("limit", limit),
+	}})
+	defer endObservation(1, observation.Args{})
+
+	after := ""
+	if token != nil {
+		after = *token
+	}
+
+	commits, err := basestore.ScanStrings(s.Query(ctx, sqlf.Sprintf(commitsVisibleToUploadQuery, strconv.Itoa(uploadID), after, limit)))
+	if err != nil {
+		return nil, nil, err
+	}
+
+	if len(commits) > 0 {
+		last := commits[len(commits)-1]
+		nextToken = &last
+	}
+
+	return commits, nextToken, nil
+}
+
+const commitsVisibleToUploadQuery = `
+-- source: enterprise/internal/codeintel/stores/dbstore/commits.go:CommitsVisibleToUpload
+WITH
+direct_commits AS (
+	SELECT nu.repository_id, nu.commit_bytea
+	FROM lsif_nearest_uploads nu
+	WHERE nu.uploads ? %s
+),
+linked_commits AS (
+	SELECT ul.commit_bytea
+	FROM direct_commits dc
+	JOIN lsif_nearest_uploads_links ul
+	ON
+		ul.repository_id = dc.repository_id AND
+		ul.ancestor_commit_bytea = dc.commit_bytea
+),
+combined_commits AS (
+	SELECT dc.commit_bytea FROM direct_commits dc
+	UNION ALL
+	SELECT lc.commit_bytea FROM linked_commits lc
+)
+SELECT encode(c.commit_bytea, 'hex') as commit
+FROM combined_commits c
+WHERE decode(%s, 'hex') < c.commit_bytea
+ORDER BY c.commit_bytea
+LIMIT %s
+`
+
 // CommitGraphMetadata returns whether or not the commit graph for the given repository is stale, along with the date of
 // the most recent commit graph refresh for the given repository.
 func (s *Store) CommitGraphMetadata(ctx context.Context, repositoryID int) (stale bool, updatedAt *time.Time, err error) {
