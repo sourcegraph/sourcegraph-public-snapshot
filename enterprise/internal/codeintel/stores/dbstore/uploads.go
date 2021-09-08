@@ -768,9 +768,9 @@ func (s *Store) UpdateDependencyNumReferences(ctx context.Context, ids []int, de
 		return nil
 	}
 
-	queries := make([]*sqlf.Query, 0, len(ids))
+	idQueries := make([]*sqlf.Query, 0, len(ids))
 	for _, id := range ids {
-		queries = append(queries, sqlf.Sprintf("%s", id))
+		idQueries = append(idQueries, sqlf.Sprintf("%s", id))
 	}
 
 	delta := 1
@@ -778,36 +778,65 @@ func (s *Store) UpdateDependencyNumReferences(ctx context.Context, ids []int, de
 		delta = -1
 	}
 
-	return s.Exec(ctx, sqlf.Sprintf(updateDependencyNumReferencesQuery, sqlf.Join(queries, ", "), delta))
+	return s.Exec(ctx, sqlf.Sprintf(updateDependencyNumReferencesQuery, sqlf.Join(idQueries, ", "), delta))
 }
 
 var updateDependencyNumReferencesQuery = `
 -- source: enterprise/internal/codeintel/stores/dbstore/uploads.go:UpdateDependencyNumReferences
-WITH reference_counts AS (
+WITH
+source_references AS MATERIALIZED (
+	SELECT
+		r.scheme,
+		r.name,
+		r.version,
+		r.dump_id
+	FROM lsif_references r
+	WHERE r.dump_id IN (%s)
+),
+-- Trick Postgres into using a better set of indexes here.
+--
+-- If we do a join between lsif_packages and lsif_references directly, which
+-- is the more obvious way to write this query, then Postgres will tend to 
+-- choose to perform a parallel index-only scan over the package table's 
+-- (scheme, name, version, dump_id) index, then perform subsequent index only 
+-- scans over the reference table's (scheme, name, version, dump_id) index.
+--
+-- The first index operation touches the entire index. Despite being an index
+-- _only_ scan, this also touches a large number of heap pages, where the tuple
+-- visibility map is stored.
+--
+-- We materialize the query above to force it to use better indexes for the
+-- distribution of data we expect (and analyze on the table did not help).
+-- The query above will use the reference table's (dump_id) index, which is
+-- a very specific target that will only read relevant areas of the index.
+-- The query below can then efficiently use the package table's index on
+-- (scheme, name, version, dump_id), which also only touches the relevant
+-- fraction of the index.
+reference_counts AS (
 	SELECT
 		p.dump_id,
 		count(*) AS count
 	FROM lsif_packages p
-	JOIN lsif_references r
+	JOIN source_references r
 	ON
-		p.scheme = r.scheme AND
-		p.name = r.name AND
-		p.version = r.version AND
-		p.dump_id != r.dump_id
-	WHERE r.dump_id IN (%s)
+		r.scheme = p.scheme AND
+		r.name = p.name AND
+		r.version = p.version AND
+		r.dump_id != p.dump_id
 	GROUP BY p.dump_id
 ),
 locked_uploads AS (
 	SELECT
 		u.id,
-		(SELECT rc.count FROM reference_counts rc WHERE rc.dump_id = u.id) AS count
+		rc.count
 	FROM lsif_uploads u
-	WHERE u.id in (SELECT rc.dump_id FROM reference_counts rc)
+	JOIN reference_counts rc
+	ON rc.dump_id = u.id
 	ORDER BY u.id FOR UPDATE
 )
 UPDATE lsif_uploads u
-SET num_references = num_references + ((SELECT lu.count FROM locked_uploads lu WHERE lu.id = u.id) * %s)
-WHERE u.id IN (SELECT id FROM locked_uploads)
+SET num_references = num_references + (lu.count * %s)
+FROM locked_uploads lu WHERE lu.id = u.id
 `
 
 // SoftDeleteOldUploads marks uploads older than the given age that are not visible at the tip of the default branch
