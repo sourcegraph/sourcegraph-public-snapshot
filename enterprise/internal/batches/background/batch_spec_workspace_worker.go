@@ -21,17 +21,17 @@ import (
 	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 )
 
-const batchSpecWorkspaceJobStalledJobMaximumAge = time.Second * 25
-const batchSpecWorkspaceJobMaximumNumResets = 3
+const batchSpecWorkspaceStalledJobMaximumAge = time.Second * 25
+const batchSpecWorkspaceMaximumNumResets = 3
 
 var batchSpecWorkspaceWorkerStoreOptions = dbworkerstore.Options{
 	Name:              "batch_spec_workspace_worker_store",
-	TableName:         "batch_spec_workspace_jobs",
-	ColumnExpressions: store.BatchSpecWorkspaceJobColumns.ToSqlf(),
-	Scan:              scanFirstBatchSpecWorkspaceJobRecord,
-	OrderByExpression: sqlf.Sprintf("batch_spec_workspace_jobs.created_at, batch_spec_workspace_jobs.id"),
-	StalledMaxAge:     batchSpecWorkspaceJobStalledJobMaximumAge,
-	MaxNumResets:      batchSpecWorkspaceJobMaximumNumResets,
+	TableName:         "batch_spec_workspaces",
+	ColumnExpressions: store.BatchSpecWorkspaceColums.ToSqlf(),
+	Scan:              scanFirstBatchSpecWorkspaceRecord,
+	OrderByExpression: sqlf.Sprintf("batch_spec_workspaces.created_at, batch_spec_workspaces.id"),
+	StalledMaxAge:     batchSpecWorkspaceStalledJobMaximumAge,
+	MaxNumResets:      batchSpecWorkspaceMaximumNumResets,
 	// Explicitly disable retries.
 	MaxNumRetries: 0,
 }
@@ -63,8 +63,8 @@ type batchSpecWorkspaceStore struct {
 // markCompleteQuery is taken from internal/workerutil/dbworker/store/store.go
 //
 // If that one changes we need to update this one here too.
-const markBatchSpecWorkspaceJobCompleteQuery = `
-UPDATE batch_spec_workspace_jobs
+const markBatchSpecWorkspaceCompleteQuery = `
+UPDATE batch_spec_workspaces
 SET state = 'completed', finished_at = clock_timestamp(), changeset_spec_ids = %s
 WHERE id = %s AND state = 'processing' AND worker_hostname = %s
 RETURNING id
@@ -91,12 +91,12 @@ func (s *batchSpecWorkspaceStore) MarkComplete(ctx context.Context, id int, opti
 	}
 
 	// TODO: Save batch_spec_id on changeset_specs
-	_, ok, err := basestore.ScanFirstInt(batchesStore.Query(ctx, sqlf.Sprintf(markBatchSpecWorkspaceJobCompleteQuery, marshaledIDs, id, options.WorkerHostname)))
+	_, ok, err := basestore.ScanFirstInt(batchesStore.Query(ctx, sqlf.Sprintf(markBatchSpecWorkspaceCompleteQuery, marshaledIDs, id, options.WorkerHostname)))
 	return ok, err
 }
 
 func loadAndExtractChangesetSpecIDs(ctx context.Context, s *store.Store, id int64) ([]int64, error) {
-	exec, err := s.GetBatchSpecWorkspaceJob(ctx, store.GetBatchSpecWorkspaceJobOpts{ID: id})
+	exec, err := s.GetBatchSpecWorkspace(ctx, store.GetBatchSpecWorkspaceOpts{ID: id})
 	if err != nil {
 		return []int64{}, err
 	}
@@ -188,8 +188,8 @@ type changesetSpecsUploadedLogLine struct {
 
 const operationUploadingChangesetSpecs = "UPLOADING_CHANGESET_SPECS"
 
-func scanFirstBatchSpecWorkspaceJobRecord(rows *sql.Rows, err error) (workerutil.Record, bool, error) {
-	return store.ScanFirstBatchSpecWorkspaceJob(rows, err)
+func scanFirstBatchSpecWorkspaceRecord(rows *sql.Rows, err error) (workerutil.Record, bool, error) {
+	return store.ScanFirstBatchSpecWorkspace(rows, err)
 }
 
 // newBatchSpecWorkspaceResetter creates a dbworker.Resetter that re-enqueues

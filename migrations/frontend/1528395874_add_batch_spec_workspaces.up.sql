@@ -1,7 +1,6 @@
 BEGIN;
 
--- TODO: Remove _job suffix
-CREATE TABLE IF NOT EXISTS batch_spec_workspace_jobs (
+CREATE TABLE IF NOT EXISTS batch_spec_workspaces (
   id              BIGSERIAL PRIMARY KEY,
 
   batch_spec_id      INTEGER REFERENCES batch_specs(id) ON DELETE CASCADE DEFERRABLE,

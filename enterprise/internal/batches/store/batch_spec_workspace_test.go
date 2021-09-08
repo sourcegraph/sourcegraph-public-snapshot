@@ -19,7 +19,7 @@ import (
 
 func intPtr(n int) *int { return &n }
 
-func testStoreBatchSpecWorkspaceJobs(t *testing.T, ctx context.Context, s *Store, clock ct.Clock) {
+func testStoreBatchSpecWorkspaces(t *testing.T, ctx context.Context, s *Store, clock ct.Clock) {
 	repoStore := database.ReposWith(s)
 	esStore := database.ExternalServicesWith(s)
 
@@ -33,9 +33,9 @@ func testStoreBatchSpecWorkspaceJobs(t *testing.T, ctx context.Context, s *Store
 		t.Fatal(err)
 	}
 
-	jobs := make([]*btypes.BatchSpecWorkspaceJob, 0, 3)
+	jobs := make([]*btypes.BatchSpecWorkspace, 0, 3)
 	for i := 0; i < cap(jobs); i++ {
-		job := &btypes.BatchSpecWorkspaceJob{
+		job := &btypes.BatchSpecWorkspace{
 			BatchSpecID:      int64(i + 567),
 			ChangesetSpecIDs: []int64{int64(i + 456), int64(i + 678)},
 			RepoID:           repo.ID,
@@ -65,11 +65,11 @@ func testStoreBatchSpecWorkspaceJobs(t *testing.T, ctx context.Context, s *Store
 
 		switch i {
 		case 0:
-			job.State = btypes.BatchSpecWorkspaceJobStatePending
+			job.State = btypes.BatchSpecWorkspaceStatePending
 		case 1:
-			job.State = btypes.BatchSpecWorkspaceJobStateProcessing
+			job.State = btypes.BatchSpecWorkspaceStateProcessing
 		case 2:
-			job.State = btypes.BatchSpecWorkspaceJobStateFailed
+			job.State = btypes.BatchSpecWorkspaceStateFailed
 		}
 		if i == cap(jobs)-1 {
 			job.RepoID = deletedRepo.ID
@@ -80,7 +80,7 @@ func testStoreBatchSpecWorkspaceJobs(t *testing.T, ctx context.Context, s *Store
 
 	t.Run("Create", func(t *testing.T) {
 		for _, job := range jobs {
-			if err := s.CreateBatchSpecWorkspaceJob(ctx, job); err != nil {
+			if err := s.CreateBatchSpecWorkspace(ctx, job); err != nil {
 				t.Fatal(err)
 			}
 
@@ -103,7 +103,7 @@ func testStoreBatchSpecWorkspaceJobs(t *testing.T, ctx context.Context, s *Store
 		t.Run("GetByID", func(t *testing.T) {
 			for i, job := range jobs {
 				t.Run(strconv.Itoa(i), func(t *testing.T) {
-					have, err := s.GetBatchSpecWorkspaceJob(ctx, GetBatchSpecWorkspaceJobOpts{ID: job.ID})
+					have, err := s.GetBatchSpecWorkspace(ctx, GetBatchSpecWorkspaceOpts{ID: job.ID})
 
 					if job.RepoID == deletedRepo.ID {
 						if err != ErrNoResults {
@@ -124,9 +124,9 @@ func testStoreBatchSpecWorkspaceJobs(t *testing.T, ctx context.Context, s *Store
 		})
 
 		t.Run("NoResults", func(t *testing.T) {
-			opts := GetBatchSpecWorkspaceJobOpts{ID: 0xdeadbeef}
+			opts := GetBatchSpecWorkspaceOpts{ID: 0xdeadbeef}
 
-			_, have := s.GetBatchSpecWorkspaceJob(ctx, opts)
+			_, have := s.GetBatchSpecWorkspace(ctx, opts)
 			want := ErrNoResults
 
 			if have != want {
@@ -138,13 +138,13 @@ func testStoreBatchSpecWorkspaceJobs(t *testing.T, ctx context.Context, s *Store
 	t.Run("List", func(t *testing.T) {
 		for i, job := range jobs {
 			job.WorkerHostname = fmt.Sprintf("worker-hostname-%d", i)
-			if err := s.Exec(ctx, sqlf.Sprintf("UPDATE batch_spec_workspace_jobs SET worker_hostname = %s, state = %s WHERE id = %s", job.WorkerHostname, job.State, job.ID)); err != nil {
+			if err := s.Exec(ctx, sqlf.Sprintf("UPDATE batch_spec_workspaces SET worker_hostname = %s, state = %s WHERE id = %s", job.WorkerHostname, job.State, job.ID)); err != nil {
 				t.Fatal(err)
 			}
 		}
 
 		t.Run("All", func(t *testing.T) {
-			have, err := s.ListBatchSpecWorkspaceJobs(ctx, ListBatchSpecWorkspaceJobsOpts{})
+			have, err := s.ListBatchSpecWorkspaces(ctx, ListBatchSpecWorkspacesOpts{})
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -155,7 +155,7 @@ func testStoreBatchSpecWorkspaceJobs(t *testing.T, ctx context.Context, s *Store
 
 		t.Run("WorkerHostname", func(t *testing.T) {
 			for _, job := range jobs {
-				have, err := s.ListBatchSpecWorkspaceJobs(ctx, ListBatchSpecWorkspaceJobsOpts{
+				have, err := s.ListBatchSpecWorkspaces(ctx, ListBatchSpecWorkspacesOpts{
 					WorkerHostname: job.WorkerHostname,
 				})
 
@@ -169,7 +169,7 @@ func testStoreBatchSpecWorkspaceJobs(t *testing.T, ctx context.Context, s *Store
 				if err != nil {
 					t.Fatal(err)
 				}
-				if diff := cmp.Diff(have, []*btypes.BatchSpecWorkspaceJob{job}); diff != "" {
+				if diff := cmp.Diff(have, []*btypes.BatchSpecWorkspace{job}); diff != "" {
 					t.Fatalf("invalid batch spec workspace jobs returned: %s", diff)
 				}
 			}
@@ -177,7 +177,7 @@ func testStoreBatchSpecWorkspaceJobs(t *testing.T, ctx context.Context, s *Store
 
 		t.Run("State", func(t *testing.T) {
 			for _, job := range jobs {
-				have, err := s.ListBatchSpecWorkspaceJobs(ctx, ListBatchSpecWorkspaceJobsOpts{
+				have, err := s.ListBatchSpecWorkspaces(ctx, ListBatchSpecWorkspacesOpts{
 					State: job.State,
 				})
 
@@ -190,7 +190,7 @@ func testStoreBatchSpecWorkspaceJobs(t *testing.T, ctx context.Context, s *Store
 				if err != nil {
 					t.Fatal(err)
 				}
-				if diff := cmp.Diff(have, []*btypes.BatchSpecWorkspaceJob{job}); diff != "" {
+				if diff := cmp.Diff(have, []*btypes.BatchSpecWorkspace{job}); diff != "" {
 					t.Fatalf("invalid batch spec workspace jobs returned: %s", diff)
 				}
 			}

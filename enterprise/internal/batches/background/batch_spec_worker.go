@@ -127,9 +127,9 @@ func (r *evaluator) process(ctx context.Context, tx *store.Store, spec *btypes.B
 
 	log15.Info("resolved workspaces for batch spec", "spec", spec.ID, "workspaces", len(workspaces), "unsupported", len(unsupported), "ignored", len(ignored))
 
-	var workspaceJobs []*btypes.BatchSpecWorkspaceJob
+	var ws []*btypes.BatchSpecWorkspace
 	for _, w := range workspaces {
-		workspaceJobs = append(workspaceJobs, &btypes.BatchSpecWorkspaceJob{
+		ws = append(ws, &btypes.BatchSpecWorkspace{
 			BatchSpecID:      spec.ID,
 			ChangesetSpecIDs: []int64{},
 
@@ -141,9 +141,9 @@ func (r *evaluator) process(ctx context.Context, tx *store.Store, spec *btypes.B
 			OnlyFetchWorkspace: w.OnlyFetchWorkspace,
 			Steps:              w.Steps,
 
-			State: btypes.BatchSpecWorkspaceJobStatePending,
+			State: btypes.BatchSpecWorkspaceStatePending,
 		})
 	}
 
-	return tx.CreateBatchSpecWorkspaceJob(ctx, workspaceJobs...)
+	return tx.CreateBatchSpecWorkspace(ctx, ws...)
 }
