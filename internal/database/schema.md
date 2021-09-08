@@ -113,6 +113,33 @@ Foreign-key constraints:
 
 ```
 
+# Table "public.batch_spec_resolution_jobs"
+```
+      Column       |           Type           | Collation | Nullable |                        Default                         
+-------------------+--------------------------+-----------+----------+--------------------------------------------------------
+ id                | bigint                   |           | not null | nextval('batch_spec_resolution_jobs_id_seq'::regclass)
+ batch_spec_id     | integer                  |           |          | 
+ allow_unsupported | boolean                  |           | not null | false
+ allow_ignored     | boolean                  |           | not null | false
+ state             | text                     |           |          | 'pending'::text
+ failure_message   | text                     |           |          | 
+ started_at        | timestamp with time zone |           |          | 
+ finished_at       | timestamp with time zone |           |          | 
+ process_after     | timestamp with time zone |           |          | 
+ num_resets        | integer                  |           | not null | 0
+ num_failures      | integer                  |           | not null | 0
+ execution_logs    | json[]                   |           |          | 
+ worker_hostname   | text                     |           | not null | ''::text
+ last_heartbeat_at | timestamp with time zone |           |          | 
+ created_at        | timestamp with time zone |           | not null | now()
+ updated_at        | timestamp with time zone |           | not null | now()
+Indexes:
+    "batch_spec_resolution_jobs_pkey" PRIMARY KEY, btree (id)
+Foreign-key constraints:
+    "batch_spec_resolution_jobs_batch_spec_id_fkey" FOREIGN KEY (batch_spec_id) REFERENCES batch_specs(id) ON DELETE CASCADE DEFERRABLE
+
+```
+
 # Table "public.batch_spec_workspaces"
 ```
         Column        |           Type           | Collation | Nullable |                      Default                      
@@ -160,16 +187,6 @@ Foreign-key constraints:
  user_id           | integer                  |           |          | 
  created_at        | timestamp with time zone |           | not null | now()
  updated_at        | timestamp with time zone |           | not null | now()
- state             | text                     |           |          | 
- failure_message   | text                     |           |          | 
- started_at        | timestamp with time zone |           |          | 
- finished_at       | timestamp with time zone |           |          | 
- process_after     | timestamp with time zone |           |          | 
- last_heartbeat_at | timestamp with time zone |           |          | 
- num_resets        | integer                  |           | not null | 0
- num_failures      | integer                  |           | not null | 0
- execution_logs    | json[]                   |           |          | 
- worker_hostname   | text                     |           | not null | ''::text
 Indexes:
     "batch_specs_pkey" PRIMARY KEY, btree (id)
     "batch_specs_rand_id" btree (rand_id)
@@ -180,6 +197,7 @@ Foreign-key constraints:
 Referenced by:
     TABLE "batch_changes" CONSTRAINT "batch_changes_batch_spec_id_fkey" FOREIGN KEY (batch_spec_id) REFERENCES batch_specs(id) DEFERRABLE
     TABLE "batch_spec_executions" CONSTRAINT "batch_spec_executions_batch_spec_id_fkey" FOREIGN KEY (batch_spec_id) REFERENCES batch_specs(id) DEFERRABLE
+    TABLE "batch_spec_resolution_jobs" CONSTRAINT "batch_spec_resolution_jobs_batch_spec_id_fkey" FOREIGN KEY (batch_spec_id) REFERENCES batch_specs(id) ON DELETE CASCADE DEFERRABLE
     TABLE "batch_spec_workspaces" CONSTRAINT "batch_spec_workspaces_batch_spec_id_fkey" FOREIGN KEY (batch_spec_id) REFERENCES batch_specs(id) ON DELETE CASCADE DEFERRABLE
     TABLE "changeset_specs" CONSTRAINT "changeset_specs_batch_spec_id_fkey" FOREIGN KEY (batch_spec_id) REFERENCES batch_specs(id) DEFERRABLE
 

@@ -15,12 +15,12 @@ import (
 	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 )
 
-const batchspecMaxNumRetries = 60
-const batchspecMaxNumResets = 60
+const batchSpecResolutionMaxNumRetries = 60
+const batchSpecResolutionMaxNumResets = 60
 
-// newBatchSpecWorker creates a dbworker.newWorker that fetches enqueued batch
+// newBatchSpecResolutionWorker creates a dbworker.newWorker that fetches BatchSpecResolutionJobs
 // specs and passes them to the batchSpecWorkspaceCreator.
-func newBatchSpecWorker(
+func newBatchSpecResolutionWorker(
 	ctx context.Context,
 	s *store.Store,
 	workerStore dbworkerstore.Store,
@@ -29,7 +29,7 @@ func newBatchSpecWorker(
 	e := &batchSpecWorkspaceCreator{store: s}
 
 	options := workerutil.WorkerOptions{
-		Name:              "batches_batchspec_worker",
+		Name:              "batches_batch_spec_resolution_worker",
 		NumHandlers:       5,
 		Interval:          5 * time.Second,
 		HeartbeatInterval: 15 * time.Second,
@@ -40,9 +40,9 @@ func newBatchSpecWorker(
 	return worker
 }
 
-func newBatchSpecWorkerResetter(workerStore dbworkerstore.Store, metrics batchChangesMetrics) *dbworker.Resetter {
+func newBatchSpecResolutionWorkerResetter(workerStore dbworkerstore.Store, metrics batchChangesMetrics) *dbworker.Resetter {
 	options := dbworker.ResetterOptions{
-		Name:     "batches_batch_spec_worker_resetter",
+		Name:     "batches_batch_spec_resolution_worker_resetter",
 		Interval: 1 * time.Minute,
 		Metrics:  metrics.batchSpecWorkerResetterMetrics,
 	}
@@ -51,24 +51,24 @@ func newBatchSpecWorkerResetter(workerStore dbworkerstore.Store, metrics batchCh
 	return resetter
 }
 
-func scanFirstBatchSpecRecord(rows *sql.Rows, err error) (workerutil.Record, bool, error) {
-	return store.ScanFirstBatchSpec(rows, err)
+func scanFirstBatchSpecResolutionJobRecord(rows *sql.Rows, err error) (workerutil.Record, bool, error) {
+	return store.ScanFirstBatchSpecResolutionJob(rows, err)
 }
 
-func NewBatchSpecDBWorkerStore(handle *basestore.TransactableHandle, observationContext *observation.Context) dbworkerstore.Store {
+func NewBatchSpecResolutionWorkerStore(handle *basestore.TransactableHandle, observationContext *observation.Context) dbworkerstore.Store {
 	options := dbworkerstore.Options{
-		Name:              "batches_batch_spec_worker_store",
-		TableName:         "batch_specs",
-		ColumnExpressions: store.BatchSpecColumns,
-		Scan:              scanFirstBatchSpecRecord,
+		Name:              "batches_batch_spec_resolution_worker_store",
+		TableName:         "batch_spec_resolution_jobs",
+		ColumnExpressions: store.BatchSpecResolutionJobColums.ToSqlf(),
+		Scan:              scanFirstBatchSpecResolutionJobRecord,
 
-		OrderByExpression: sqlf.Sprintf("batch_specs.state = 'errored', batch_specs.updated_at DESC"),
+		OrderByExpression: sqlf.Sprintf("batch_spec_resolution_job.state = 'errored', batch_specs.updated_at DESC"),
 
 		StalledMaxAge: 60 * time.Second,
-		MaxNumResets:  batchspecMaxNumResets,
+		MaxNumResets:  batchSpecResolutionMaxNumResets,
 
 		RetryAfter:    5 * time.Second,
-		MaxNumRetries: batchspecMaxNumRetries,
+		MaxNumRetries: batchSpecResolutionMaxNumRetries,
 	}
 
 	return dbworkerstore.NewWithMetrics(handle, options, observationContext)

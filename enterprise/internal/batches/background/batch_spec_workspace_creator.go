@@ -36,11 +36,16 @@ func (e *batchSpecWorkspaceCreator) HandlerFunc() workerutil.HandlerFunc {
 			}
 		}()
 
-		return e.process(ctx, tx, record.(*btypes.BatchSpec))
+		return e.process(ctx, tx, record.(*btypes.BatchSpecResolutionJob))
 	}
 }
 
-func (r *batchSpecWorkspaceCreator) process(ctx context.Context, tx *store.Store, spec *btypes.BatchSpec) error {
+func (r *batchSpecWorkspaceCreator) process(ctx context.Context, tx *store.Store, job *btypes.BatchSpecResolutionJob) error {
+	spec, err := tx.GetBatchSpec(ctx, store.GetBatchSpecOpts{ID: job.BatchSpecID})
+	if err != nil {
+		return err
+	}
+
 	evaluatableSpec, err := batcheslib.ParseBatchSpec([]byte(spec.RawSpec), batcheslib.ParseBatchSpecOptions{
 		AllowArrayEnvironments: true,
 		AllowTransformChanges:  true,
@@ -59,7 +64,7 @@ func (r *batchSpecWorkspaceCreator) process(ctx context.Context, tx *store.Store
 		return err
 	}
 
-	log15.Info("resolved workspaces for batch spec", "spec", spec.ID, "workspaces", len(workspaces), "unsupported", len(unsupported), "ignored", len(ignored))
+	log15.Info("resolved workspaces for batch spec", "job", job.ID, "spec", spec.ID, "workspaces", len(workspaces), "unsupported", len(unsupported), "ignored", len(ignored))
 
 	var ws []*btypes.BatchSpecWorkspace
 	for _, w := range workspaces {
