@@ -24,20 +24,6 @@ describe('Search onboarding', () => {
         })
         testContext.overrideGraphQL({
             ...commonWebGraphQlResults,
-            SearchSidebarGitRefs: () => ({
-                repository: {
-                    __typename: 'Repository',
-                    id: 'repo',
-                    gitRefs: {
-                        __typename: 'GitRefConnection',
-                        nodes: [],
-                        pageInfo: {
-                            hasNextPage: false,
-                        },
-                        totalCount: 0,
-                    },
-                },
-            }),
             SearchSuggestions: () => ({
                 search: {
                     suggestions: [{ __typename: 'Repository', name: '^github\\.com/sourcegraph/sourcegraph$' }],
@@ -76,6 +62,20 @@ describe('Search onboarding', () => {
                         },
                     ],
                     final: JSON.stringify({}),
+                },
+            }),
+            SearchSidebarGitRefs: () => ({
+                repository: {
+                    __typename: 'Repository',
+                    id: 'repo',
+                    gitRefs: {
+                        __typename: 'GitRefConnection',
+                        nodes: [],
+                        pageInfo: {
+                            hasNextPage: false,
+                        },
+                        totalCount: 0,
+                    },
                 },
             }),
         })
