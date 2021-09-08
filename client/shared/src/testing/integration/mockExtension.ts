@@ -73,7 +73,7 @@ export function setupExtensionMocking({
             extensionsResult.extensionRegistry.extensions.nodes.push({
                 extensionID: id,
                 manifest: {
-                    raw: JSON.stringify(extensionManifest),
+                    jsonFields: extensionManifest,
                 },
             })
 

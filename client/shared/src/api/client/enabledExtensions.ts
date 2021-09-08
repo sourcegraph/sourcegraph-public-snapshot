@@ -4,7 +4,12 @@ import { fromFetch } from 'rxjs/fetch'
 import { catchError, distinctUntilChanged, map, publishReplay, refCount, shareReplay, switchMap } from 'rxjs/operators'
 
 import { checkOk } from '../../backend/fetch'
-import { ConfiguredExtension, extensionIDsFromSettings, isExtensionEnabled } from '../../extensions/extension'
+import {
+    ConfiguredExtension,
+    ConfiguredExtensionManifestDefaultFields,
+    extensionIDsFromSettings,
+    isExtensionEnabled,
+} from '../../extensions/extension'
 import { ExtensionManifest } from '../../extensions/extensionManifest'
 import { areExtensionsSame } from '../../extensions/extensions'
 import { queryConfiguredRegistryExtensions } from '../../extensions/helpers'
@@ -43,7 +48,9 @@ interface SideloadedExtensionManifest extends Omit<ExtensionManifest, 'url'> {
     main: string
 }
 
-export const getConfiguredSideloadedExtension = (baseUrl: string): Observable<ConfiguredExtension> =>
+export const getConfiguredSideloadedExtension = (
+    baseUrl: string
+): Observable<ConfiguredExtension<ConfiguredExtensionManifestDefaultFields | 'publisher'>> =>
     fromFetch(`${baseUrl}/package.json`, { selector: response => checkOk(response).json() }).pipe(
         map(
             (response: SideloadedExtensionManifest): ConfiguredExtension => ({
@@ -67,7 +74,7 @@ export const getEnabledExtensions = once(
             'settings' | 'requestGraphQL' | 'sideloadedExtensionURL' | 'getScriptURLForExtension'
         >
     ): Observable<ConfiguredExtension[]> => {
-        const sideloadedExtension: Observable<ConfiguredExtension | null> = from(context.sideloadedExtensionURL).pipe(
+        const sideloadedExtension = from(context.sideloadedExtensionURL).pipe(
             switchMap(url => (url ? getConfiguredSideloadedExtension(url) : of(null))),
             catchError(error => {
                 console.error('Error sideloading extension', error)

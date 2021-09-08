@@ -95,13 +95,13 @@ const extensionNodes: ExtensionsResult['extensionRegistry']['extensions']['nodes
     {
         extensionID: 'sourcegraph/typescript',
         manifest: {
-            raw: typescriptRawManifest,
+            jsonFields: typescriptRawManifest,
         },
     },
     {
         extensionID: 'sqs/word-count',
         manifest: {
-            raw: wordCountRawManifest,
+            jsonFields: wordCountRawManifest,
         },
     },
 ]

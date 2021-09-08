@@ -226,6 +226,10 @@ func TestRegistryExtensions(t *testing.T) {
 			t.Run("List/Count by Publisher.Query one", func(t *testing.T) {
 				testListCount(t, dbExtensionsListOptions{Query: c.publisherName + "/" + x.Name}, wantByCurrent)
 			})
+			t.Run("List/Count with ExtensionIDs", func(t *testing.T) {
+				testList(t, dbExtensionsListOptions{ExtensionIDs: []string{xu.NonCanonicalExtensionID}}, []*dbExtension{xu})
+				testList(t, dbExtensionsListOptions{ExtensionIDs: []string{xo.NonCanonicalExtensionID}}, []*dbExtension{xo})
+			})
 			t.Run("List/Count with prioritizeExtensionIDs", func(t *testing.T) {
 				testList(t, dbExtensionsListOptions{PrioritizeExtensionIDs: []string{xu.NonCanonicalExtensionID}, LimitOffset: &database.LimitOffset{Limit: 1}}, []*dbExtension{xu})
 				testList(t, dbExtensionsListOptions{PrioritizeExtensionIDs: []string{xo.NonCanonicalExtensionID}, LimitOffset: &database.LimitOffset{Limit: 1}}, []*dbExtension{xo})
