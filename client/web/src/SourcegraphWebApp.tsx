@@ -217,15 +217,16 @@ interface SourcegraphWebAppOldClassComponentExtraProps
      * Evaluated feature flags for the current viewer
      */
     featureFlags: FlagSet
-}
-
-interface SourcegraphWebAppState {
-    error?: Error
 
     /**
      * The current search query in the navbar.
      */
     navbarSearchQueryState: QueryState
+    onNavbarQueryChange: (queryState: QueryState) => void
+}
+
+interface SourcegraphWebAppState {
+    error?: Error
 
     /*
      * The version context the instance is in. If undefined, it means no version context is selected.
@@ -288,7 +289,6 @@ class SourcegraphWebAppOldClassComponent extends React.Component<
             : undefined
 
         this.state = {
-            navbarSearchQueryState: { query: '' },
             versionContext: resolvedVersionContext,
             availableVersionContexts,
             previousVersionContext,
@@ -393,8 +393,6 @@ class SourcegraphWebAppOldClassComponent extends React.Component<
                                                     authenticatedUser={authenticatedUser}
                                                     batchChangesEnabled={this.props.batchChangesEnabled}
                                                     // Search query
-                                                    navbarSearchQueryState={this.state.navbarSearchQueryState}
-                                                    onNavbarQueryChange={this.onNavbarQueryChange}
                                                     fetchHighlightedFileLineRanges={fetchHighlightedFileLineRanges}
                                                     versionContext={this.state.versionContext}
                                                     setVersionContext={this.setVersionContext}
@@ -439,10 +437,6 @@ class SourcegraphWebAppOldClassComponent extends React.Component<
                 </ErrorBoundary>
             </ApolloProvider>
         )
-    }
-
-    private onNavbarQueryChange = (navbarSearchQueryState: QueryState): void => {
-        this.setState({ navbarSearchQueryState })
     }
 
     private setVersionContext = async (versionContext: string | undefined): Promise<void> => {
@@ -637,6 +631,8 @@ export const SourcegraphWebApp: React.FunctionComponent<SourcegraphWebAppProps> 
 
     const featureFlags = useObservable(useMemo(() => fetchFeatureFlags(), [])) ?? new Map<FeatureFlagName, boolean>()
 
+    const [navbarSearchQueryState, onNavbarQueryChange] = useState<QueryState>({ query: '' })
+
     return userAndSettingsProps ? (
         <SourcegraphWebAppOldClassComponent
             {...props}
@@ -655,6 +651,8 @@ export const SourcegraphWebApp: React.FunctionComponent<SourcegraphWebAppProps> 
             onUserExternalServicesOrRepositoriesUpdate={onUserExternalServicesOrRepositoriesUpdate}
             onSyncedPublicRepositoriesUpdate={onSyncedPublicRepositoriesUpdate}
             featureFlags={featureFlags}
+            navbarSearchQueryState={navbarSearchQueryState}
+            onNavbarQueryChange={onNavbarQueryChange}
         />
     ) : null
 }
