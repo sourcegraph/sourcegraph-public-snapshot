@@ -1,14 +1,14 @@
 import { storiesOf } from '@storybook/react'
 import { noop } from 'lodash'
 import React from 'react'
-import { WebStory } from 'src/components/WebStory'
 
+import { EnterpriseWebStory } from '../../../../../../../../components/EnterpriseWebStory'
 import { InsightDashboard, InsightsDashboardType } from '../../../../../../../core/types'
 
 import { EmptyInsightDashboard } from './EmptyInsightDashboard'
 
 const { add } = storiesOf('web/insights/EmptyInsightDashboard', module)
-    .addDecorator(story => <WebStory>{() => story()}</WebStory>)
+    .addDecorator(story => <EnterpriseWebStory>{() => story()}</EnterpriseWebStory>)
     .addParameters({
         chromatic: {
             viewports: [576, 1440],
