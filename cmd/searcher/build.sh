@@ -14,7 +14,7 @@ trap cleanup EXIT
 export GO111MODULE=on
 export GOARCH=amd64
 export GOOS=linux
-export CGO_ENABLED=0
+export CGO_ENABLED=1
 
 pkg="github.com/sourcegraph/sourcegraph/cmd/searcher"
 go build -trimpath -ldflags "-X github.com/sourcegraph/sourcegraph/internal/version.version=$VERSION  -X github.com/sourcegraph/sourcegraph/internal/version.timestamp=$(date +%s)" -buildmode exe -tags dist -o "$OUTPUT/$(basename $pkg)" "$pkg"

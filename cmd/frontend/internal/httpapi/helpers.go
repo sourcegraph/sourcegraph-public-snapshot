@@ -17,6 +17,6 @@ func writeJSON(w http.ResponseWriter, v interface{}) error {
 	// MarshalIndent takes about 30-50% longer, which
 	// significantly increases the time it takes to handle and return
 	// large HTTP API responses.
-	w.Header().Set("content-type", "application/json; charset=utf-8")
+	w.Header().Set("type", "application/json; charset=utf-8")
 	return json.NewEncoder(w).Encode(v)
 }

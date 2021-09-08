@@ -1,5 +1,6 @@
 // @ts-check
 
+// This change should not trigger Puppeteer tests.
 /** @type {import('@jest/types').Config.InitialOptions} */
 const config = require('./jest.config.base')
 
