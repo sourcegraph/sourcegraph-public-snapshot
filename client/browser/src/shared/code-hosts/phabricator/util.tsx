@@ -121,6 +121,7 @@ export function getPhabricatorState(
                 const comparisonBase = comparisonMatch?.[1]
                 if (comparisonBase && comparisonBase !== 'on') {
                     baseDiffID = parseInt(comparisonBase, 10)
+                    console.log(`comparison diffID ${diffID} baseDiffID ${baseDiffID}`)
                 }
             }
 

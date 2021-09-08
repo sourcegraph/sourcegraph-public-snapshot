@@ -301,7 +301,6 @@
     "ts-node": "^9.1.1",
     "typed-scss-modules": "^4.1.1",
     "typescript": "^4.4.2",
-    "url-loader": "^4.1.1",
     "utc-version": "^2.0.2",
     "web-ext": "^4.2.0",
     "webpack": "^5.45.1",

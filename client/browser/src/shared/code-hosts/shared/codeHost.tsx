@@ -90,7 +90,7 @@ import { isExtension, isInPage } from '../../context'
 import { SourcegraphIntegrationURLs, BrowserPlatformContext } from '../../platform/context'
 import { resolveRevision, retryWhenCloneInProgressError } from '../../repo/backend'
 import { EventLogger, ConditionalTelemetryService } from '../../tracking/eventLogger'
-import { DEFAULT_SOURCEGRAPH_URL, observeSourcegraphURL } from '../../util/context'
+import { DEFAULT_SOURCEGRAPH_URL, getPlatformName, observeSourcegraphURL } from '../../util/context'
 import { MutationRecordLike, querySelectorOrSelf } from '../../util/dom'
 import { featureFlags } from '../../util/featureFlags'
 import { shouldOverrideSendTelemetry, observeOptionFlag } from '../../util/optionFlags'
@@ -209,7 +209,7 @@ export interface CodeHost extends ApplyLinkPreviewOptions {
         /** Search result element resolver */
         resultViewResolver: ViewResolver<{ element: HTMLElement }>
         /** Callback to trigger on input element change */
-        onChange: (args: { value: string; baseURL: string; searchResultElement: HTMLElement }) => void
+        onChange: (args: { value: string; searchURL: URL; resultElement: HTMLElement }) => void
     }
 
     /**
@@ -827,20 +827,23 @@ export function handleCodeHost({
 
     if (codeHost.searchEnhancement) {
         const { searchViewResolver, resultViewResolver, onChange } = codeHost.searchEnhancement
+        const searchURL = new URL('/search', sourcegraphURL)
+        searchURL.searchParams.append('utm_source', getPlatformName())
+        searchURL.searchParams.append('utm_campaign', 'global-search')
 
         const searchView = mutations.pipe(
             trackViews([searchViewResolver]),
             switchMap(({ element }) => fromEvent(element, 'input')),
             map(event => ({
                 value: (event.target as HTMLInputElement).value,
-                baseURL: sourcegraphURL,
+                searchURL,
             })),
             observeOn(asyncScheduler)
         )
         const resultView = mutations.pipe(trackViews([resultViewResolver])).pipe(observeOn(asyncScheduler))
 
         const searchEnhancementSubscription = combineLatest([searchView, resultView])
-            .pipe(map(([search, { element: searchResultElement }]) => ({ ...search, searchResultElement })))
+            .pipe(map(([search, { element: resultElement }]) => ({ ...search, resultElement })))
             .subscribe(onChange)
         subscriptions.add(searchEnhancementSubscription)
     }
@@ -968,6 +971,7 @@ export function handleCodeHost({
 
     subscriptions.add(
         codeViews.subscribe(codeViewEvent => {
+            console.log('Code view added')
             // This code view could have left the DOM between the time that
             // 1) it entered the DOM
             // 2) requests to Sourcegraph instance for repo name + file info fulfilled
@@ -977,6 +981,7 @@ export function handleCodeHost({
             let wasRemoved = false
             codeViewEvent.subscriptions.add(() => {
                 wasRemoved = true
+                console.log('Code view removed')
             })
 
             if (wasRemoved) {

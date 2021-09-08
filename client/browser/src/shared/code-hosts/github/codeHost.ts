@@ -328,7 +328,7 @@ const searchEnhancement: CodeHost['searchEnhancement'] = {
         selector: '#jump-to-suggestion-search-global',
         resolveView: element => ({ element }),
     },
-    onChange: ({ value, baseURL, searchResultElement: ghElement }) => {
+    onChange: ({ value, searchURL, resultElement: ghElement }) => {
         const SEARCH_IN_SOURCEGRAPH_SELECTOR = '#jump-to-sourcegraph-search-global'
 
         /** Create "Search in Sourcegraph" element based on GH element */
@@ -359,7 +359,8 @@ const searchEnhancement: CodeHost['searchEnhancement'] = {
             displayValue.setAttribute('aria-label', value)
 
             const link = sgElement.querySelector<HTMLElement>('a') as HTMLLinkElement
-            link.setAttribute('href', `${baseURL}/search?q=${encodeURIComponent(value)}`)
+            searchURL.searchParams.append('q', value)
+            link.setAttribute('href', searchURL.href)
             link.setAttribute('target', '_blank')
             sgElement.setAttribute('style', `display: ${value ? 'initial' : 'none !important'}`)
         }
