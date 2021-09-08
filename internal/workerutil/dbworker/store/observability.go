@@ -30,9 +30,9 @@ func newOperations(storeName string, observationContext *observation.Context) *o
 
 	op := func(opName string) *observation.Operation {
 		return observationContext.Operation(observation.Op{
-			Name:         fmt.Sprintf("workerutil.dbworker.store.%s.%s", storeName, opName),
-			MetricLabels: []string{opName},
-			Metrics:      metrics,
+			Name:              fmt.Sprintf("workerutil.dbworker.store.%s.%s", storeName, opName),
+			MetricLabelValues: []string{opName},
+			Metrics:           metrics,
 		})
 	}
 

@@ -10,6 +10,7 @@ import (
 
 	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
+	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
 )
 
 func testStoreBatchSpecs(t *testing.T, ctx context.Context, s *Store, clock ct.Clock) {
@@ -17,19 +18,20 @@ func testStoreBatchSpecs(t *testing.T, ctx context.Context, s *Store, clock ct.C
 
 	t.Run("Create", func(t *testing.T) {
 		for i := 0; i < cap(batchSpecs); i++ {
+			falsy := overridable.FromBoolOrString(false)
 			c := &btypes.BatchSpec{
 				RawSpec: `{"name": "Foobar", "description": "My description"}`,
-				Spec: btypes.BatchSpecFields{
+				Spec: &batcheslib.BatchSpec{
 					Name:        "Foobar",
 					Description: "My description",
-					ChangesetTemplate: btypes.ChangesetTemplate{
+					ChangesetTemplate: &batcheslib.ChangesetTemplate{
 						Title:  "Hello there",
 						Body:   "This is the body",
 						Branch: "my-branch",
-						Commit: btypes.CommitTemplate{
+						Commit: batcheslib.ExpandedGitCommitDescription{
 							Message: "commit message",
 						},
-						Published: overridable.FromBoolOrString(false),
+						Published: &falsy,
 					},
 				},
 				UserID: int32(i + 1234),

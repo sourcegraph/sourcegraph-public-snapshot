@@ -1,4 +1,5 @@
 /* eslint jsx-a11y/click-events-have-key-events: warn, jsx-a11y/no-noninteractive-element-interactions: warn */
+import classNames from 'classnames'
 import * as React from 'react'
 import { useLocation } from 'react-router'
 import { Link } from 'react-router-dom'
@@ -15,6 +16,7 @@ import { isDefined, property } from '@sourcegraph/shared/src/util/types'
 import { DiffHunkLineType, FileDiffHunkFields } from '../../graphql-operations'
 
 import { DiffBoundary } from './DiffBoundary'
+import styles from './DiffHunk.module.scss'
 
 const diffHunkTypeIndicators: Record<DiffHunkLineType, string> = {
     ADDED: '+',
@@ -48,12 +50,7 @@ export const DiffHunk: React.FunctionComponent<DiffHunkProps> = ({
     const location = useLocation()
     return (
         <>
-            <DiffBoundary
-                diffMode="unified"
-                {...hunk}
-                contentClassName="diff-hunk__content"
-                lineNumbers={lineNumbers}
-            />
+            <DiffBoundary diffMode="unified" {...hunk} contentClassName={styles.content} lineNumbers={lineNumbers} />
             {hunk.highlight.lines.map((line, index) => {
                 if (line.kind !== DiffHunkLineType.ADDED) {
                     oldLine++
@@ -76,58 +73,47 @@ export const DiffHunk: React.FunctionComponent<DiffHunkProps> = ({
                 return (
                     <tr
                         key={index}
-                        className={`diff-hunk__line ${
-                            line.kind === DiffHunkLineType.UNCHANGED ? 'diff-hunk__line--both' : ''
-                        } ${line.kind === DiffHunkLineType.DELETED ? 'diff-hunk__line--deletion' : ''} ${
-                            line.kind === DiffHunkLineType.ADDED ? 'diff-hunk__line--addition' : ''
-                        } ${
-                            (line.kind !== DiffHunkLineType.ADDED && location.hash === '#' + oldAnchor) ||
-                            (line.kind !== DiffHunkLineType.DELETED && location.hash === '#' + newAnchor)
-                                ? 'diff-hunk__line--active'
-                                : ''
-                        }`}
+                        data-hunk-line-kind={line.kind}
+                        className={classNames(
+                            line.kind === DiffHunkLineType.UNCHANGED && styles.lineBoth,
+                            line.kind === DiffHunkLineType.DELETED && styles.lineDeletion,
+                            line.kind === DiffHunkLineType.ADDED && styles.lineAddition,
+                            ((line.kind !== DiffHunkLineType.ADDED && location.hash === '#' + oldAnchor) ||
+                                (line.kind !== DiffHunkLineType.DELETED && location.hash === '#' + newAnchor)) &&
+                                styles.lineActive
+                        )}
                     >
                         {lineNumbers && (
                             <>
                                 {line.kind !== DiffHunkLineType.ADDED ? (
-                                    <td
-                                        className="diff-hunk__num"
-                                        data-line={oldLine - 1}
-                                        data-part="base"
-                                        id={oldAnchor}
-                                    >
+                                    <td className={styles.num} data-line={oldLine - 1} data-part="base" id={oldAnchor}>
                                         {persistLines && (
-                                            <Link className="diff-hunk__num--line" to={{ hash: oldAnchor }}>
+                                            <Link className={styles.numLine} to={{ hash: oldAnchor }}>
                                                 {oldLine - 1}
                                             </Link>
                                         )}
                                     </td>
                                 ) : (
-                                    <td className="diff-hunk__num diff-hunk__num--empty" />
+                                    <td className={classNames(styles.num, styles.numEmpty)} />
                                 )}
 
                                 {line.kind !== DiffHunkLineType.DELETED ? (
-                                    <td
-                                        className="diff-hunk__num"
-                                        data-line={newLine - 1}
-                                        data-part="head"
-                                        id={newAnchor}
-                                    >
+                                    <td className={styles.num} data-line={newLine - 1} data-part="head" id={newAnchor}>
                                         {persistLines && (
-                                            <Link className="diff-hunk__num--line" to={{ hash: newAnchor }}>
+                                            <Link className={styles.numLine} to={{ hash: newAnchor }}>
                                                 {newLine - 1}
                                             </Link>
                                         )}
                                     </td>
                                 ) : (
-                                    <td className="diff-hunk__num diff-hunk__num--empty" />
+                                    <td className={classNames(styles.num, styles.numEmpty)} />
                                 )}
                             </>
                         )}
 
                         {/* Needed for decorations */}
                         <td
-                            className="diff-hunk__content"
+                            className={styles.content}
                             /* eslint-disable-next-line react/forbid-dom-props */
                             style={lineStyle}
                             data-diff-marker={diffHunkTypeIndicators[line.kind]}

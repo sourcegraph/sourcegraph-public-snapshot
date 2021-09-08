@@ -160,7 +160,7 @@ export const GettingStarted: React.FunctionComponent<GettingStartedProps> = ({ f
                             View the product marketing page for a high-level overview of benefits and customer use
                             cases.
                         </p>
-                        <a href="https://about.sourcegraph.com/batch_changes" rel="noopener">
+                        <a href="https://about.sourcegraph.com/batch-changes" rel="noopener">
                             Batch Changes marketing page
                         </a>
                     </div>

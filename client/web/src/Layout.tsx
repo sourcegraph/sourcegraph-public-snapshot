@@ -11,7 +11,6 @@ import * as GQL from '@sourcegraph/shared/src/graphql/schema'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { parseQueryAndHash } from '@sourcegraph/shared/src/util/url'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
 
@@ -62,7 +61,7 @@ import {
 import { QueryState } from './search/helpers'
 import { SiteAdminAreaRoute } from './site-admin/SiteAdminArea'
 import { SiteAdminSideBarGroups } from './site-admin/SiteAdminSidebar'
-import { ThemePreferenceProps } from './theme'
+import { useTheme } from './theme'
 import { UserAreaRoute } from './user/area/UserArea'
 import { UserAreaHeaderNavItem } from './user/area/UserAreaHeader'
 import { UserSettingsAreaRoute } from './user/settings/UserSettingsArea'
@@ -76,9 +75,7 @@ export interface LayoutProps
         PlatformContextProps,
         ExtensionsControllerProps,
         KeyboardShortcutsProps,
-        ThemeProps,
         TelemetryProps,
-        ThemePreferenceProps,
         ActivationProps,
         ParsedSearchQueryProps,
         PatternTypeProps,
@@ -232,11 +229,7 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
 
     const authRequired = useObservable(authRequiredObservable)
 
-    const hideGlobalSearchInput: boolean =
-        props.location.pathname === '/stats' ||
-        props.location.pathname === '/search/query-builder' ||
-        props.location.pathname === '/search/console' ||
-        props.location.pathname === '/search/notebook'
+    const themeProps = useTheme()
 
     const breadcrumbProps = useBreadcrumbs()
 
@@ -255,6 +248,7 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
 
     const context: LayoutRouteComponentProps<any> = {
         ...props,
+        ...themeProps,
         ...breadcrumbProps,
         onExtensionAlertDismissed,
         isMacPlatform,
@@ -271,6 +265,7 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
             {!isSiteInit && !isSignInOrUp && (
                 <GlobalNavbar
                     {...props}
+                    {...themeProps}
                     authRequired={!!authRequired}
                     showSearchBox={
                         isSearchRelatedPage &&
@@ -279,15 +274,7 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
                         !isSearchConsolePage &&
                         !isSearchNotebookPage
                     }
-                    variant={
-                        hideGlobalSearchInput
-                            ? 'no-search-input'
-                            : isSearchHomepage
-                            ? 'low-profile'
-                            : isRepogroupPage
-                            ? 'low-profile-with-logo'
-                            : 'default'
-                    }
+                    variant={isSearchHomepage ? 'low-profile' : isRepogroupPage ? 'low-profile-with-logo' : 'default'}
                     hideNavLinks={false}
                     minimalNavLinks={minimalNavLinks}
                     isSearchAutoFocusRequired={!isSearchAutoFocusRequired}
@@ -326,6 +313,7 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
                 props.location.pathname !== '/sign-in' && (
                     <ResizablePanel
                         {...props}
+                        {...themeProps}
                         repoName={`git://${parseBrowserRepoURL(props.location.pathname).repoName}`}
                         fetchHighlightedFileLineRanges={fetchHighlightedFileLineRanges}
                     />

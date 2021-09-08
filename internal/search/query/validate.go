@@ -89,6 +89,16 @@ func forAll(nodes []Node, fn func(node Node) bool) bool {
 	return sat
 }
 
+// returns true if the query contains a predicate value.
+func ContainsPredicate(nodes []Node) bool {
+	return exists(nodes, func(node Node) bool {
+		if v, ok := node.(Parameter); ok && v.Annotation.Labels.IsSet(IsPredicate) {
+			return true
+		}
+		return false
+	})
+}
+
 // isPatternExpression returns true if every leaf node in nodes is a search
 // pattern expression.
 func isPatternExpression(nodes []Node) bool {

@@ -8,7 +8,8 @@ import (
 )
 
 type Operations struct {
-	repoName *observation.Operation
+	repoName           *observation.Operation
+	getJVMDependencies *observation.Operation
 }
 
 func NewOperationsMetrics(observationContext *observation.Context) *metrics.OperationMetrics {
@@ -23,13 +24,14 @@ func NewOperationsMetrics(observationContext *observation.Context) *metrics.Oper
 func NewOperationsFromMetrics(observationContext *observation.Context, metrics *metrics.OperationMetrics) *Operations {
 	op := func(name string) *observation.Operation {
 		return observationContext.Operation(observation.Op{
-			Name:         fmt.Sprintf("codeintel.dbstore.%s", name),
-			MetricLabels: []string{name},
-			Metrics:      metrics,
+			Name:              fmt.Sprintf("codeintel.dbstore.%s", name),
+			MetricLabelValues: []string{name},
+			Metrics:           metrics,
 		})
 	}
 
 	return &Operations{
-		repoName: op("RepoName"),
+		repoName:           op("RepoName"),
+		getJVMDependencies: op("GetJVMDependencies"),
 	}
 }

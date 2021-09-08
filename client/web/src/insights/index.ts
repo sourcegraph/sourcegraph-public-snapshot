@@ -3,7 +3,6 @@ export { InsightsApiContext } from './core/backend/api-provider'
 export * from './core/analytics'
 
 // Public Insights components
-export { StaticInsightsViewGrid } from './components'
 export { InsightsRouter } from './InsightsRouter'
 
 // Guard

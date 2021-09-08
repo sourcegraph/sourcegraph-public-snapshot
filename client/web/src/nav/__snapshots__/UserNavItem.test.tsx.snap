@@ -137,11 +137,9 @@ exports[`UserNavItem simple 1`] = `
                               ad
                             </div>
                           </UserAvatar>
-                          <MenuDropdownIcon>
-                            <Memo(ChevronDownIcon)
-                              className="icon-inline"
-                            />
-                          </MenuDropdownIcon>
+                          <Memo(ChevronDownIcon)
+                            className="icon-inline"
+                          />
                         </div>
                       </div>
                     </a>
@@ -245,7 +243,7 @@ exports[`UserNavItem simple 1`] = `
                           status="new"
                         >
                           <span
-                            className="badge badge--capitalized d-inline-flex align-items-center badge-info ml-1"
+                            className="badge badgeCapitalized d-inline-flex align-items-center badge-info ml-1"
                           >
                             new
                           </span>
@@ -273,7 +271,7 @@ exports[`UserNavItem simple 1`] = `
                           status="new"
                         >
                           <span
-                            className="badge badge--capitalized d-inline-flex align-items-center badge-info ml-1"
+                            className="badge badgeCapitalized d-inline-flex align-items-center badge-info ml-1"
                           >
                             new
                           </span>

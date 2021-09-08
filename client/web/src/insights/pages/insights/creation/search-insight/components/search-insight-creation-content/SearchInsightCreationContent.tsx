@@ -6,7 +6,6 @@ import { Settings } from '@sourcegraph/shared/src/settings/settings'
 
 import { FormChangeEvent, SubmissionErrors } from '../../../../../../components/form/hooks/useForm'
 import { SupportedInsightSubject } from '../../../../../../core/types/subjects'
-import { getExperimentalFeatures } from '../../../../../../utils/get-experimental-features'
 import { CreateInsightFormFields } from '../../types'
 import { getSanitizedRepositories } from '../../utils/insight-sanitizer'
 import { SearchInsightLivePreview } from '../live-preview-chart/SearchInsightLivePreview'
@@ -26,7 +25,7 @@ export interface SearchInsightCreationContentProps {
     subjects?: SupportedInsightSubject[]
 
     /** Initial value for all form fields. */
-    initialValue?: CreateInsightFormFields
+    initialValue?: Partial<CreateInsightFormFields>
     /** Custom class name for root form element. */
     className?: string
     /** Test id for the root content element (form element). */
@@ -54,8 +53,6 @@ export const SearchInsightCreationContent: React.FunctionComponent<SearchInsight
 
     const isEditMode = mode === 'edit'
 
-    const { codeInsightsAllRepos } = getExperimentalFeatures(settings)
-
     const {
         form: { values, formAPI, ref, handleSubmit },
         title,
@@ -74,9 +71,7 @@ export const SearchInsightCreationContent: React.FunctionComponent<SearchInsight
         onSubmit,
     })
 
-    const { editSeries, listen, editRequest, editCommit, cancelEdit, deleteSeries } = useEditableSeries({
-        series,
-    })
+    const { editSeries, listen, editRequest, editCommit, cancelEdit, deleteSeries } = useEditableSeries({ series })
 
     const handleFormReset = (): void => {
         // TODO [VK] Change useForm API in order to implement form.reset method.
@@ -127,7 +122,6 @@ export const SearchInsightCreationContent: React.FunctionComponent<SearchInsight
                 step={step}
                 stepValue={stepValue}
                 isFormClearActive={hasFilledValue}
-                hasAllReposUI={codeInsightsAllRepos}
                 onSeriesLiveChange={listen}
                 onCancel={onCancel}
                 onEditSeriesRequest={editRequest}
@@ -140,6 +134,7 @@ export const SearchInsightCreationContent: React.FunctionComponent<SearchInsight
             <SearchInsightLivePreview
                 disabled={!allFieldsForPreviewAreValid}
                 repositories={repositories.meta.value}
+                isAllReposMode={allReposMode.input.value}
                 series={editSeries}
                 step={step.meta.value}
                 stepValue={stepValue.meta.value}

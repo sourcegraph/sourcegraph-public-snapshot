@@ -29,6 +29,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/usagestats"
+	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
 )
 
 // Resolver is the GraphQL resolver of all things related to batch changes.
@@ -88,14 +89,19 @@ type batchChangeEventArg struct {
 	BatchChangeID int64 `json:"batch_change_id"`
 }
 
-func logBackendEvent(ctx context.Context, db dbutil.DB, name string, args interface{}) error {
+func logBackendEvent(ctx context.Context, db dbutil.DB, name string, args interface{}, publicArgs interface{}) error {
 	actor := actor.FromContext(ctx)
 	jsonArg, err := json.Marshal(args)
 	if err != nil {
 		return err
 	}
+	jsonPublicArg, err := json.Marshal(publicArgs)
+	if err != nil {
+		return err
+	}
+
 	featureFlags := featureflag.FromContext(ctx)
-	return usagestats.LogBackendEvent(db, actor.UID, name, jsonArg, featureFlags, nil)
+	return usagestats.LogBackendEvent(db, actor.UID, name, jsonArg, jsonPublicArg, featureFlags, nil)
 }
 
 func (r *Resolver) NodeResolvers() map[string]graphqlbackend.NodeByIDFunc {
@@ -393,7 +399,7 @@ func (r *Resolver) CreateBatchChange(ctx context.Context, args *graphqlbackend.C
 	}
 
 	arg := &batchChangeEventArg{BatchChangeID: batchChange.ID}
-	err = logBackendEvent(ctx, r.store.DB(), "BatchChangeCreated", arg)
+	err = logBackendEvent(ctx, r.store.DB(), "BatchChangeCreated", arg, arg)
 	if err != nil {
 		return nil, err
 	}
@@ -415,7 +421,7 @@ func (r *Resolver) ApplyBatchChange(ctx context.Context, args *graphqlbackend.Ap
 	}
 
 	arg := &batchChangeEventArg{BatchChangeID: batchChange.ID}
-	err = logBackendEvent(ctx, r.store.DB(), "BatchChangeCreatedOrUpdated", arg)
+	err = logBackendEvent(ctx, r.store.DB(), "BatchChangeCreatedOrUpdated", arg, arg)
 	if err != nil {
 		return nil, err
 	}
@@ -488,7 +494,7 @@ func (r *Resolver) applyOrCreateBatchChange(ctx context.Context, args *graphqlba
 
 func (r *Resolver) CreateBatchSpec(ctx context.Context, args *graphqlbackend.CreateBatchSpecArgs) (graphqlbackend.BatchSpecResolver, error) {
 	var err error
-	tr, ctx := trace.New(ctx, "CreateBatchSpec", fmt.Sprintf("Resolver.CreateBatchspace %s, Spec %q", args.Namespace, args.BatchSpec))
+	tr, ctx := trace.New(ctx, "CreateBatchSpec", fmt.Sprintf("Resolver.CreateBatchSpec %s, Spec %q", args.Namespace, args.BatchSpec))
 	defer func() {
 		tr.SetError(err)
 		tr.Finish()
@@ -530,7 +536,7 @@ func (r *Resolver) CreateBatchSpec(ctx context.Context, args *graphqlbackend.Cre
 	}
 
 	eventArg := &batchSpecCreatedArg{ChangesetSpecsCount: len(opts.ChangesetSpecRandIDs)}
-	if err := logBackendEvent(ctx, r.store.DB(), "BatchSpecCreated", eventArg); err != nil {
+	if err := logBackendEvent(ctx, r.store.DB(), "BatchSpecCreated", eventArg, eventArg); err != nil {
 		return nil, err
 	}
 
@@ -644,7 +650,7 @@ func (r *Resolver) DeleteBatchChange(ctx context.Context, args *graphqlbackend.D
 	}
 
 	arg := &batchChangeEventArg{BatchChangeID: batchChangeID}
-	if err := logBackendEvent(ctx, r.store.DB(), "BatchChangeDeleted", arg); err != nil {
+	if err := logBackendEvent(ctx, r.store.DB(), "BatchChangeDeleted", arg, arg); err != nil {
 		return nil, err
 	}
 
@@ -926,7 +932,7 @@ func (r *Resolver) CloseBatchChange(ctx context.Context, args *graphqlbackend.Cl
 	}
 
 	arg := &batchChangeEventArg{BatchChangeID: batchChangeID}
-	if err := logBackendEvent(ctx, r.store.DB(), "BatchChangeClosed", arg); err != nil {
+	if err := logBackendEvent(ctx, r.store.DB(), "BatchChangeClosed", arg, arg); err != nil {
 		return nil, err
 	}
 
@@ -1460,6 +1466,84 @@ func (r *Resolver) CreateBatchSpecExecution(ctx context.Context, args *graphqlba
 	}
 
 	return r.batchSpecExecutionByID(ctx, marshalBatchSpecExecutionRandID(exec.RandID))
+}
+
+func (r *Resolver) CancelBatchSpecExecution(ctx context.Context, args *graphqlbackend.CancelBatchSpecExecutionArgs) (_ graphqlbackend.BatchSpecExecutionResolver, err error) {
+	tr, ctx := trace.New(ctx, "Resolver.CancelBatchSpecExecution", fmt.Sprintf("BatchSpecExecution: %q", args.BatchSpecExecution))
+	defer func() {
+		tr.SetError(err)
+		tr.Finish()
+	}()
+
+	if err := enterprise.BatchChangesEnabledForUser(ctx, r.store.DB()); err != nil {
+		return nil, err
+	}
+
+	// 🚨 SECURITY: Check that the requesting user is admin.
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.store.DB()); err != nil {
+		return nil, err
+	}
+
+	dbID, err := unmarshalBatchSpecExecutionRandID(args.BatchSpecExecution)
+	if err != nil {
+		return nil, err
+	}
+
+	if dbID == "" {
+		return nil, ErrIDIsZero{}
+	}
+
+	exec, err := r.store.CancelBatchSpecExecution(ctx, dbID)
+	if err != nil {
+		return nil, err
+	}
+
+	return r.batchSpecExecutionByID(ctx, marshalBatchSpecExecutionRandID(exec.RandID))
+}
+
+func (r *Resolver) ResolveWorkspacesForBatchSpec(ctx context.Context, args *graphqlbackend.ResolveWorkspacesForBatchSpecArgs) (_ graphqlbackend.BatchSpecWorkspacesResolver, err error) {
+	tr, ctx := trace.New(ctx, "Resolver.ResolveWorkspacesForBatchSpec", fmt.Sprintf("AllowIgnored: %t AllowUnsupported: %t", args.AllowIgnored, args.AllowUnsupported))
+	defer func() {
+		tr.SetError(err)
+		tr.Finish()
+	}()
+
+	if err := enterprise.BatchChangesEnabledForUser(ctx, r.store.DB()); err != nil {
+		return nil, err
+	}
+
+	// 🚨 SECURITY: Check that the requesting user is admin.
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.store.DB()); err != nil {
+		return nil, err
+	}
+
+	spec, err := batcheslib.ParseBatchSpec([]byte(args.BatchSpec), batcheslib.ParseBatchSpecOptions{
+		AllowArrayEnvironments: true,
+		AllowTransformChanges:  true,
+		AllowConditionalExec:   true,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	svc := service.New(r.store)
+	workspaces, unsupported, ignored, err := svc.ResolveWorkspacesForBatchSpec(ctx, spec, service.ResolveWorkspacesForBatchSpecOpts{
+		AllowIgnored:     args.AllowIgnored,
+		AllowUnsupported: args.AllowUnsupported,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return &batchSpecWorkspacesResolver{
+		store:            r.store,
+		rawSpec:          args.BatchSpec,
+		allowUnsupported: args.AllowUnsupported,
+		allowIgnored:     args.AllowIgnored,
+		workspaces:       workspaces,
+		unsupported:      unsupported,
+		ignored:          ignored,
+	}, nil
 }
 
 func parseBatchChangeState(s *string) (btypes.BatchChangeState, error) {

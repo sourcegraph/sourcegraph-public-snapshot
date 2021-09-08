@@ -93,8 +93,8 @@ type Op struct {
 	// format {GroupName}.{OperationName}, where both sections are title cased
 	// (e.g. Store.GetRepoByID).
 	Name string
-	// MetricLabels that apply for every invocation of this operation.
-	MetricLabels []string
+	// MetricLabelValues that apply for every invocation of this operation.
+	MetricLabelValues []string
 	// LogFields that apply for for every invocation of this operation.
 	LogFields []log.Field
 	// ErrorFilter returns true for any error that should be converted to nil
@@ -116,7 +116,7 @@ func (c *Context) Operation(args Op) *Operation {
 		metrics:      args.Metrics,
 		name:         args.Name,
 		kebabName:    kebabCase(args.Name),
-		metricLabels: args.MetricLabels,
+		metricLabels: args.MetricLabelValues,
 		logFields:    args.LogFields,
 		errorFilter:  args.ErrorFilter,
 	}
@@ -143,8 +143,8 @@ type FinishFunc func(count float64, args Args)
 
 // Args configures the observation behavior of an invocation of an operation.
 type Args struct {
-	// MetricLabels that apply only to this invocation of the operation.
-	MetricLabels []string
+	// MetricLabelValues that apply only to this invocation of the operation.
+	MetricLabelValues []string
 	// LogFields that apply only to this invocation of the operation.
 	LogFields []log.Field
 }
@@ -197,7 +197,7 @@ func (op *Operation) WithAndLogger(ctx context.Context, err *error, args Args) (
 		elapsed := time.Since(start).Seconds()
 		defaultFinishFields := []log.Field{log.Float64("count", count), log.Float64("elapsed", elapsed)}
 		logFields := mergeLogFields(defaultFinishFields, finishArgs.LogFields)
-		metricLabels := mergeLabels(op.metricLabels, args.MetricLabels, finishArgs.MetricLabels)
+		metricLabels := mergeLabels(op.metricLabels, args.MetricLabelValues, finishArgs.MetricLabelValues)
 
 		var (
 			logErr     = op.applyErrorFilter(err, EmitForLogs)

@@ -58,7 +58,7 @@ We **strongly** recommend that you create and run Sourcegraph from your own fork
 
   ```bash
   # Specify the version you want to install
-  export SOURCEGRAPH_VERSION="v3.30.3"
+  export SOURCEGRAPH_VERSION="v3.31.1"
   # Check out the selected version for use, in a new branch called "release"
   git checkout $SOURCEGRAPH_VERSION -b release
   ```
@@ -154,10 +154,16 @@ When you upgrade, merge the corresponding upstream release tag into your `releas
 git fetch upstream
 # merge the upstream release tag into your release branch
 git checkout release
-git merge upstream v$SOURCEGRAPH_VERSION
+git merge v$SOURCEGRAPH_VERSION
 ```
 
 Address any merge conflicts you might have.
+
+> NOTE: If you have made no changes or only very minimal changes to your configuration, you can also ask git to always select incoming changes in the event of merge conflicts:
+>
+> `git merge -X theirs v$SOURCEGRAPH_VERSION`
+>
+> If you do this, make sure to validate your configuration is correct before proceeding.
 
 If you are upgrading a live deployment, make sure to check the [release upgrade notes](../../updates/docker_compose.md) for any additional actions you need to take **before proceeding**.
 Then, ensure that the current Sourcegraph instance is completely stopped:
@@ -191,6 +197,15 @@ Guides for managing cloud storage and backups are available in our [cloud-specif
 - [Storage and backups for Amazon Web Services](./aws.md#storage-and-backups)
 - [Storage and backups for Google Cloud](./google_cloud.md#storage-and-backups)
 - [Storage and backups for Digital Ocean](./digitalocean.md#storage-and-backups)
+
+## Access the database
+
+The following command allows a user to shell into a Sourcegraph database container and run `psql` to interact with the container's postgres database:
+
+```bash
+docker exec -it pgsql psql -U sg #access pgsql container and run psql
+docker exec -it codeintel-db -U sg #access codeintel-db container and run psql
+```
 
 ## Backup and restore
 

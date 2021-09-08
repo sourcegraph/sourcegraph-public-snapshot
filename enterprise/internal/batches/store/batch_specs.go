@@ -11,6 +11,7 @@ import (
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
 )
 
 // batchSpecColumns are used by the batchSpec related Store methods to insert,
@@ -398,9 +399,11 @@ func scanBatchSpec(c *btypes.BatchSpec, s scanner) error {
 		return errors.Wrap(err, "scanning batch spec")
 	}
 
-	if err = json.Unmarshal(spec, &c.Spec); err != nil {
+	var batchSpec batcheslib.BatchSpec
+	if err = json.Unmarshal(spec, &batchSpec); err != nil {
 		return errors.Wrap(err, "scanBatchSpec: failed to unmarshal spec")
 	}
+	c.Spec = &batchSpec
 
 	return nil
 }

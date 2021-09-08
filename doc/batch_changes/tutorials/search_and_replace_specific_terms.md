@@ -68,7 +68,7 @@ changesetTemplate:
     <img src="https://sourcegraphstatic.com/docs/images/batch_changes/use_allowlist_denylist_wording_click_url.png" class="screenshot">
 1. Examine the preview. Confirm that the changes are what you intended. If not, edit your batch spec and then rerun the command above.
     <img src="https://sourcegraphstatic.com/docs/images/batch_changes/use_allowlist_denylist_wording_preview.png" class="screenshot">
-1. Click the **Apply spec** button to create the batch change.
+1. Click the **Apply** button to create the batch change.
 1. Feel free to then publish the changesets (i.e. create pull requests and merge requests) by [modifying the `published` attribute in the batch spec](../references/batch_spec_yaml_reference.md#changesettemplate-published) and re-running the `src batch preview` command.
 
 ### Using `ruplacer` to replace terms in multiple case styles

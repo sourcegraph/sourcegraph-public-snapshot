@@ -1,3 +1,4 @@
+import classNames from 'classnames'
 import React from 'react'
 
 import * as GQL from '@sourcegraph/shared/src/graphql/schema'
@@ -10,7 +11,10 @@ export const AccountEmailAddresses: React.FunctionComponent<{
 }> = ({ emails }) => (
     <>
         {emails.map(({ email, verified }, index) => (
-            <span key={index} className={`text-nowrap d-inline-block mr-2 ${verified ? '' : 'text-muted font-italic'}`}>
+            <span
+                key={index}
+                className={classNames('text-nowrap d-inline-block mr-2', !verified && 'text-muted font-italic')}
+            >
                 <a href={`mailto:${email}`}>{email}</a> {verified ? '(verified)' : '(unverified)'}
             </span>
         ))}

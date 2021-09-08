@@ -1,6 +1,8 @@
 import classnames from 'classnames'
 import React, { FormEventHandler, RefObject } from 'react'
 
+import { Button } from '@sourcegraph/wildcard'
+
 import { ErrorAlert } from '../../../../../../../components/alerts'
 import { LoaderButton } from '../../../../../../../components/LoaderButton'
 import { FormInput } from '../../../../../../components/form/form-input/FormInput'
@@ -118,13 +120,19 @@ export const LangStatsInsightCreationForm: React.FunctionComponent<LangStatsInsi
                     className="btn btn-primary mr-2 mb-2"
                 />
 
-                <button type="button" className="btn btn-outline-secondary mb-2 mr-auto" onClick={onCancel}>
+                <Button type="button" variant="secondary" outline={true} className="mb-2 mr-auto" onClick={onCancel}>
                     Cancel
-                </button>
+                </Button>
 
-                <button type="reset" disabled={!isFormClearActive} className="btn btn-outline-secondary border-0">
+                <Button
+                    type="reset"
+                    variant="secondary"
+                    outline={true}
+                    disabled={!isFormClearActive}
+                    className="border-0"
+                >
                     Clear all fields
-                </button>
+                </Button>
             </div>
         </form>
     )

@@ -2,6 +2,8 @@ import classnames from 'classnames'
 import React from 'react'
 import { noop } from 'rxjs'
 
+import { Button } from '@sourcegraph/wildcard'
+
 import { FormInput } from '../../../../../../components/form/form-input/FormInput'
 import { useField } from '../../../../../../components/form/hooks/useField'
 import { useForm } from '../../../../../../components/form/hooks/useForm'
@@ -15,9 +17,18 @@ const validQuery = createRequiredValidator('Query is a required field for data s
 interface FormSeriesInputProps {
     /** Series index. */
     index: number
+
+    /**
+     * This prop represents the case whenever the edit insight UI page
+     * deals with backend insight. We need to disable our search insight
+     * query field since our backend insight can't update BE data according
+     * to the latest insight configuration.
+     */
+    isSearchQueryDisabled: boolean
+
     /**
      * Show all validation error of all fields within the form.
-     * */
+     */
     showValidationErrorsOnMount?: boolean
     /** Name of series. */
     name?: string
@@ -43,6 +54,7 @@ interface FormSeriesInputProps {
 export const FormSeriesInput: React.FunctionComponent<FormSeriesInputProps> = props => {
     const {
         index,
+        isSearchQueryDisabled,
         showValidationErrorsOnMount = false,
         name,
         query,
@@ -95,6 +107,7 @@ export const FormSeriesInput: React.FunctionComponent<FormSeriesInputProps> = pr
         name: 'seriesQuery',
         formApi: formAPI,
         validators: { sync: validQuery },
+        disabled: isSearchQueryDisabled,
     })
 
     const colorField = useField({
@@ -121,8 +134,26 @@ export const FormSeriesInput: React.FunctionComponent<FormSeriesInputProps> = pr
                 placeholder="Example: patternType:regexp const\s\w+:\s(React\.)?FunctionComponent"
                 description={
                     <span>
-                        Do not include the <code>repo:</code> filter as it will be added automatically for the
-                        repositories you included above.
+                        {!isSearchQueryDisabled ? (
+                            <>
+                                Do not include the <code>repo:</code> filter; if needed, it will be added automatically.
+                                <br />
+                                Tip: include <code>archived:no</code> and <code>fork:no</code> if you don't want results
+                                from archived or forked repos.
+                            </>
+                        ) : (
+                            <>
+                                We don't yet allow editing queries for insights over all repos. To change the query,
+                                make a new insight. This is a known{' '}
+                                <a
+                                    href="https://docs.sourcegraph.com/code_insights/explanations/current_limitations_of_code_insights"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                >
+                                    beta limitation
+                                </a>
+                            </>
+                        )}
                     </span>
                 }
                 valid={(hasQueryControlledValue || queryField.meta.touched) && queryField.meta.validState === 'VALID'}
@@ -140,19 +171,19 @@ export const FormSeriesInput: React.FunctionComponent<FormSeriesInputProps> = pr
             />
 
             <div className="mt-4">
-                <button
+                <Button
                     aria-label="Submit button for data series"
                     type="button"
+                    variant="secondary"
                     onClick={handleSubmit}
-                    className="btn btn-secondary"
                 >
                     Done
-                </button>
+                </Button>
 
                 {cancel && (
-                    <button type="button" onClick={onCancel} className="btn btn-outline-secondary ml-2">
+                    <Button type="button" onClick={onCancel} variant="secondary" outline={true} className="ml-2">
                         Cancel
-                    </button>
+                    </Button>
                 )}
             </div>
         </div>

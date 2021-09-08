@@ -5,11 +5,14 @@ import (
 	"flag"
 	"fmt"
 	"io"
+	"math/rand"
 	"net/url"
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
 	"syscall"
+	"time"
 
 	"github.com/Masterminds/semver"
 	"github.com/cockroachdb/errors"
@@ -24,6 +27,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
 
+var BuildCommit string = "dev"
+
 var out *output.Output = stdout.Out
 
 var (
@@ -32,34 +37,34 @@ var (
 		Name:       "run",
 		ShortUsage: "sg run <command>...",
 		ShortHelp:  "Run the given commands.",
+		LongHelp:   constructRunCmdLongHelp(),
 		FlagSet:    runFlagSet,
 		Exec:       runExec,
-		UsageFunc:  printRunUsage,
 	}
 
-	runSetFlagSet       = flag.NewFlagSet("sg run-set", flag.ExitOnError)
-	debugRunSetServices = runSetFlagSet.String("debug", "", "Comma separated list of services to set at debug log level.")
-	infoRunSetServices  = runSetFlagSet.String("info", "", "Comma separated list of services to set at info log level.")
-	warnRunSetServices  = runSetFlagSet.String("warn", "", "Comma separated list of services to set at warn log level.")
-	errorRunSetServices = runSetFlagSet.String("error", "", "Comma separated list of services to set at error log level.")
-	critRunSetServices  = runSetFlagSet.String("crit", "", "Comma separated list of services to set at crit log level.")
-	runSetCommand       = &ffcli.Command{
+	runSetFlagSet = flag.NewFlagSet("sg run-set", flag.ExitOnError)
+	runSetCommand = &ffcli.Command{
 		Name:       "run-set",
 		ShortUsage: "sg run-set <commandset>",
-		ShortHelp:  "Run the given command set.",
+		ShortHelp:  "DEPRECATED. Use 'sg start' instead. Run the given commandset.",
 		FlagSet:    runSetFlagSet,
 		Exec:       runSetExec,
-		UsageFunc:  printRunSetUsage,
 	}
 
-	startFlagSet = flag.NewFlagSet("sg start", flag.ExitOnError)
-	startCommand = &ffcli.Command{
+	startFlagSet       = flag.NewFlagSet("sg start", flag.ExitOnError)
+	debugStartServices = startFlagSet.String("debug", "", "Comma separated list of services to set at debug log level.")
+	infoStartServices  = startFlagSet.String("info", "", "Comma separated list of services to set at info log level.")
+	warnStartServices  = startFlagSet.String("warn", "", "Comma separated list of services to set at warn log level.")
+	errorStartServices = startFlagSet.String("error", "", "Comma separated list of services to set at error log level.")
+	critStartServices  = startFlagSet.String("crit", "", "Comma separated list of services to set at crit log level.")
+	startCommand       = &ffcli.Command{
 		Name:       "start",
-		ShortUsage: "sg start",
-		ShortHelp:  "Runs the commandset with the name 'start'.",
-		FlagSet:    startFlagSet,
-		Exec:       startExec,
-		UsageFunc:  printStartUsage,
+		ShortUsage: "sg start [commandset]",
+		ShortHelp:  "🌟Starts the given commandset. Without a commandset it starts the default Sourcegraph dev environment.",
+		LongHelp:   constructStartCmdLongHelp(),
+
+		FlagSet: startFlagSet,
+		Exec:    startExec,
 	}
 
 	testFlagSet = flag.NewFlagSet("sg test", flag.ExitOnError)
@@ -67,19 +72,21 @@ var (
 		Name:       "test",
 		ShortUsage: "sg test <testsuite>",
 		ShortHelp:  "Run the given test suite.",
+		LongHelp:   "Run the given test suite.",
 		FlagSet:    testFlagSet,
 		Exec:       testExec,
-		UsageFunc:  printTestUsage,
 	}
 
 	doctorFlagSet = flag.NewFlagSet("sg doctor", flag.ExitOnError)
 	doctorCommand = &ffcli.Command{
 		Name:       "doctor",
 		ShortUsage: "sg doctor",
-		ShortHelp:  "Run the checks defined in the config file to make sure your system is healthy.",
-		FlagSet:    doctorFlagSet,
-		Exec:       doctorExec,
-		UsageFunc:  printDoctorUsage,
+		ShortHelp:  "Run the checks defined in the sg config file.",
+		LongHelp: `Run the checks defined in the sg config file to make sure your system is healthy.
+
+See the "checks:" in the configuration file.`,
+		FlagSet: doctorFlagSet,
+		Exec:    doctorExec,
 	}
 
 	liveFlagSet = flag.NewFlagSet("sg live", flag.ExitOnError)
@@ -87,9 +94,9 @@ var (
 		Name:       "live",
 		ShortUsage: "sg live <environment>",
 		ShortHelp:  "Reports which version of Sourcegraph is currently live in the given environment",
+		LongHelp:   constructLiveCmdLongHelp(),
 		FlagSet:    liveFlagSet,
 		Exec:       liveExec,
-		UsageFunc:  printLiveUsage,
 	}
 
 	migrationAddFlagSet          = flag.NewFlagSet("sg migration add", flag.ExitOnError)
@@ -100,7 +107,7 @@ var (
 		ShortHelp:  "Add a new migration file",
 		FlagSet:    migrationAddFlagSet,
 		Exec:       migrationAddExec,
-		UsageFunc:  printMigrationAddUsage,
+		LongHelp:   constructMigrationSubcmdLongHelp(),
 	}
 
 	migrationUpFlagSet          = flag.NewFlagSet("sg migration up", flag.ExitOnError)
@@ -112,7 +119,7 @@ var (
 		ShortHelp:  "Run up migration files",
 		FlagSet:    migrationUpFlagSet,
 		Exec:       migrationUpExec,
-		UsageFunc:  printMigrationUpUsage,
+		LongHelp:   constructMigrationSubcmdLongHelp(),
 	}
 
 	migrationDownFlagSet          = flag.NewFlagSet("sg migration down", flag.ExitOnError)
@@ -124,7 +131,7 @@ var (
 		ShortHelp:  "Run down migration files",
 		FlagSet:    migrationDownFlagSet,
 		Exec:       migrationDownExec,
-		UsageFunc:  printMigrationDownUsage,
+		LongHelp:   constructMigrationSubcmdLongHelp(),
 	}
 
 	migrationSquashFlagSet          = flag.NewFlagSet("sg migration squash", flag.ExitOnError)
@@ -135,7 +142,7 @@ var (
 		ShortHelp:  "Collapse migration files from historic releases together",
 		FlagSet:    migrationSquashFlagSet,
 		Exec:       migrationSquashExec,
-		UsageFunc:  printMigrationSquashUsage,
+		LongHelp:   constructMigrationSubcmdLongHelp(),
 	}
 
 	migrationFixupFlagSet          = flag.NewFlagSet("sg migration fixup", flag.ExitOnError)
@@ -148,7 +155,7 @@ var (
 		ShortHelp:  "Find and fix any conflicting migration names from rebasing on main. Also properly migrates your local database",
 		FlagSet:    migrationFixupFlagSet,
 		Exec:       migrationFixupExec,
-		UsageFunc:  printMigrationFixupUsage,
+		LongHelp:   constructMigrationSubcmdLongHelp(),
 	}
 
 	migrationFlagSet = flag.NewFlagSet("sg migration", flag.ExitOnError)
@@ -160,7 +167,6 @@ var (
 		Exec: func(ctx context.Context, args []string) error {
 			return flag.ErrHelp
 		},
-		UsageFunc: printMigrationUsage,
 		Subcommands: []*ffcli.Command{
 			migrationAddCommand,
 			migrationUpCommand,
@@ -175,9 +181,18 @@ var (
 		Name:       "rfc",
 		ShortUsage: "sg rfc [list|search|open]",
 		ShortHelp:  "Run the given RFC command to manage RFCs.",
+		LongHelp:   `List, search and open Sourcegraph RFCs`,
 		FlagSet:    rfcFlagSet,
 		Exec:       rfcExec,
-		UsageFunc:  printRFCUsage,
+	}
+
+	funkyLogoFlagSet = flag.NewFlagSet("sg logo", flag.ExitOnError)
+	funkLogoCommand  = &ffcli.Command{
+		Name:       "logo",
+		ShortUsage: "sg logo",
+		ShortHelp:  "Print the sg logo",
+		FlagSet:    funkyLogoFlagSet,
+		Exec:       logoExec,
 	}
 )
 
@@ -197,24 +212,6 @@ var (
 		Exec: func(ctx context.Context, args []string) error {
 			return flag.ErrHelp
 		},
-		UsageFunc: func(c *ffcli.Command) string {
-			var out strings.Builder
-
-			printLogo(&out)
-
-			fmt.Fprintf(&out, "USAGE\n")
-			fmt.Fprintf(&out, "  sg <subcommand>\n")
-
-			fmt.Fprintf(&out, "\n")
-			fmt.Fprintf(&out, "AVAILABLE COMMANDS\n")
-			for _, sub := range c.Subcommands {
-				fmt.Fprintf(&out, "  %s\n", sub.Name)
-			}
-
-			fmt.Fprintf(&out, "\nRun 'sg <subcommand> -help' to get help output for each subcommand\n")
-
-			return out.String()
-		},
 		Subcommands: []*ffcli.Command{
 			runCommand,
 			runSetCommand,
@@ -224,6 +221,7 @@ var (
 			liveCommand,
 			migrationCommand,
 			rfcCommand,
+			funkLogoCommand,
 		},
 	}
 )
@@ -246,10 +244,40 @@ func setMaxOpenFiles() error {
 	return nil
 }
 
+func checkSgVersion() {
+	_, err := root.RepositoryRoot()
+	if err != nil {
+		// Ignore the error, because we only want to check the version if we're
+		// in sourcegraph/sourcegraph
+		return
+	}
+
+	if BuildCommit == "dev" {
+		// If `sg` was built with a dirty `./dev/sg` directory it's a dev build
+		// and we don't need to display this message.
+		return
+	}
+
+	out, err := run.GitCmd("rev-list", fmt.Sprintf("%s..HEAD", BuildCommit), "./dev/sg")
+	if err != nil {
+		fmt.Printf("error getting new commits in ./dev/sg: %s\n", err)
+		os.Exit(1)
+	}
+
+	out = strings.TrimSpace(out)
+	if out != "" {
+		stdout.Out.WriteLine(output.Linef("", output.StyleSearchMatch, "--------------------------------------------------------------------------"))
+		stdout.Out.WriteLine(output.Linef("", output.StyleSearchMatch, "HEY! New version of sg available. Run `./dev/sg/install.sh` to install it."))
+		stdout.Out.WriteLine(output.Linef("", output.StyleSearchMatch, "--------------------------------------------------------------------------"))
+	}
+}
+
 func main() {
 	if err := rootCommand.Parse(os.Args[1:]); err != nil {
 		os.Exit(1)
 	}
+
+	checkSgVersion()
 
 	// We always try to set this, since we often want to watch files, start commands, etc.
 	if err := setMaxOpenFiles(); err != nil {
@@ -306,7 +334,73 @@ func parseConf(confFile, overwriteFile string) (bool, output.FancyLine) {
 	return true, output.FancyLine{}
 }
 
+var deprecationStyle = output.CombineStyles(output.Fg256Color(255), output.Bg256Color(124))
+
 func runSetExec(ctx context.Context, args []string) error {
+	stdout.Out.WriteLine(output.Linef("", deprecationStyle, " _______________________________________________________________________ "))
+	stdout.Out.WriteLine(output.Linef("", deprecationStyle, "/         `sg run-set` is deprecated - use `sg start` instead!          \\"))
+	stdout.Out.WriteLine(output.Linef("", deprecationStyle, "!                                                                       !"))
+	stdout.Out.WriteLine(output.Linef("", deprecationStyle, "!         Run `sg start -help` for usage information.                   !"))
+	stdout.Out.WriteLine(output.Linef("", deprecationStyle, "\\_______________________________________________________________________/"))
+	stdout.Out.WriteLine(output.Linef("", deprecationStyle, "                               !  !                                      "))
+	stdout.Out.WriteLine(output.Linef("", deprecationStyle, "                               !  !                                      "))
+	stdout.Out.WriteLine(output.Linef("", deprecationStyle, "                               L_ !                                      "))
+	stdout.Out.WriteLine(output.Linef("", deprecationStyle, "                              / _)!                                      "))
+	stdout.Out.WriteLine(output.Linef("", deprecationStyle, "                             / /__L                                      "))
+	stdout.Out.WriteLine(output.Linef("", deprecationStyle, "                       _____/ (____)                                     "))
+	stdout.Out.WriteLine(output.Linef("", deprecationStyle, "                              (____)                                     "))
+	stdout.Out.WriteLine(output.Linef("", deprecationStyle, "                       _____  (____)                                     "))
+	stdout.Out.WriteLine(output.Linef("", deprecationStyle, "                            \\_(____)                                     "))
+	stdout.Out.WriteLine(output.Linef("", deprecationStyle, "                               !  !                                      "))
+	stdout.Out.WriteLine(output.Linef("", deprecationStyle, "                               !  !                                      "))
+	stdout.Out.WriteLine(output.Linef("", deprecationStyle, "                               \\__/                                      "))
+	return startExec(ctx, args)
+}
+
+// enrichWithLogLevels will add any logger level overrides to a given command if they have been specified.
+func enrichWithLogLevels(cmd *run.Command, overrides map[string]string) {
+	logLevelVariable := "SRC_LOG_LEVEL"
+
+	if level, ok := overrides[cmd.Name]; ok {
+		out.WriteLine(output.Linef("", output.StylePending, "Setting log level: %s for command %s.", level, cmd.Name))
+		if cmd.Env == nil {
+			cmd.Env = make(map[string]string, 1)
+			cmd.Env[logLevelVariable] = level
+		}
+		cmd.Env[logLevelVariable] = level
+	}
+}
+
+// parseCsv takes an input comma seperated string and returns a list of tokens each trimmed for whitespace
+func parseCsv(input string) []string {
+	tokens := strings.Split(input, ",")
+	results := make([]string, 0, len(tokens))
+	for _, token := range tokens {
+		results = append(results, strings.TrimSpace(token))
+	}
+	return results
+}
+
+// logLevelOverrides builds a map of commands -> log level that should be overridden in the environment.
+func logLevelOverrides() map[string]string {
+	levelServices := make(map[string][]string)
+	levelServices["debug"] = parseCsv(*debugStartServices)
+	levelServices["info"] = parseCsv(*infoStartServices)
+	levelServices["warn"] = parseCsv(*warnStartServices)
+	levelServices["error"] = parseCsv(*errorStartServices)
+	levelServices["crit"] = parseCsv(*critStartServices)
+
+	overrides := make(map[string]string)
+	for level, services := range levelServices {
+		for _, service := range services {
+			overrides[service] = level
+		}
+	}
+
+	return overrides
+}
+
+func testExec(ctx context.Context, args []string) error {
 	ok, errLine := parseConf(*configFlag, *overwriteConfigFlag)
 	if !ok {
 		out.WriteLine(errLine)
@@ -314,13 +408,33 @@ func runSetExec(ctx context.Context, args []string) error {
 	}
 
 	if len(args) == 0 {
-		out.WriteLine(output.Linef("", output.StyleWarning, "No commandset specified\n"))
+		out.WriteLine(output.Linef("", output.StyleWarning, "No test suite specified\n"))
 		return flag.ErrHelp
+	}
+
+	cmd, ok := globalConf.Tests[args[0]]
+	if !ok {
+		out.WriteLine(output.Linef("", output.StyleWarning, "ERROR: test suite %q not found :(\n", args[0]))
+		return flag.ErrHelp
+	}
+
+	return run.Test(ctx, cmd, args[1:], globalConf.Env)
+}
+
+func startExec(ctx context.Context, args []string) error {
+	ok, errLine := parseConf(*configFlag, *overwriteConfigFlag)
+	if !ok {
+		out.WriteLine(errLine)
+		os.Exit(1)
 	}
 
 	if len(args) > 2 {
 		out.WriteLine(output.Linef("", output.StyleWarning, "ERROR: too many arguments\n"))
 		return flag.ErrHelp
+	}
+
+	if len(args) == 0 {
+		args = append(args, "default")
 	}
 
 	set, ok := globalConf.Commandsets[args[0]]
@@ -363,86 +477,13 @@ func runSetExec(ctx context.Context, args []string) error {
 	for _, cmd := range cmds {
 		enrichWithLogLevels(&cmd, levelOverrides)
 	}
-	return run.Commands(ctx, globalConf.Env, cmds...)
-}
 
-// enrichWithLogLevels will add any logger level overrides to a given command if they have been specified.
-func enrichWithLogLevels(cmd *run.Command, overrides map[string]string) {
-	logLevelVariable := "SRC_LOG_LEVEL"
-
-	if level, ok := overrides[cmd.Name]; ok {
-		out.WriteLine(output.Linef("", output.StylePending, "Setting log level: %s for command %s.", level, cmd.Name))
-		if cmd.Env == nil {
-			cmd.Env = make(map[string]string, 1)
-			cmd.Env[logLevelVariable] = level
-		}
-		cmd.Env[logLevelVariable] = level
-	}
-}
-
-// parseCsv takes an input comma seperated string and returns a list of tokens each trimmed for whitespace
-func parseCsv(input string) []string {
-	tokens := strings.Split(input, ",")
-	results := make([]string, 0, len(tokens))
-	for _, token := range tokens {
-		results = append(results, strings.TrimSpace(token))
-	}
-	return results
-}
-
-// logLevelOverrides builds a map of commands -> log level that should be overridden in the environment.
-func logLevelOverrides() map[string]string {
-	levelServices := make(map[string][]string)
-	levelServices["debug"] = parseCsv(*debugRunSetServices)
-	levelServices["info"] = parseCsv(*infoRunSetServices)
-	levelServices["warn"] = parseCsv(*warnRunSetServices)
-	levelServices["error"] = parseCsv(*errorRunSetServices)
-	levelServices["crit"] = parseCsv(*critRunSetServices)
-
-	overrides := make(map[string]string)
-	for level, services := range levelServices {
-		for _, service := range services {
-			overrides[service] = level
-		}
+	env := globalConf.Env
+	for k, v := range set.Env {
+		env[k] = v
 	}
 
-	return overrides
-}
-
-func testExec(ctx context.Context, args []string) error {
-	ok, errLine := parseConf(*configFlag, *overwriteConfigFlag)
-	if !ok {
-		out.WriteLine(errLine)
-		os.Exit(1)
-	}
-
-	if len(args) == 0 {
-		out.WriteLine(output.Linef("", output.StyleWarning, "No test suite specified\n"))
-		return flag.ErrHelp
-	}
-
-	cmd, ok := globalConf.Tests[args[0]]
-	if !ok {
-		out.WriteLine(output.Linef("", output.StyleWarning, "ERROR: test suite %q not found :(\n", args[0]))
-		return flag.ErrHelp
-	}
-
-	return run.Test(ctx, cmd, args[1:], globalConf.Env)
-}
-
-func startExec(ctx context.Context, args []string) error {
-	ok, errLine := parseConf(*configFlag, *overwriteConfigFlag)
-	if !ok {
-		out.WriteLine(errLine)
-		os.Exit(1)
-	}
-
-	if len(args) != 0 {
-		out.WriteLine(output.Linef("", output.StyleWarning, "ERROR: too many arguments\n"))
-		return flag.ErrHelp
-	}
-
-	return runSetExec(ctx, []string{"default"})
+	return run.Commands(ctx, env, cmds...)
 }
 
 func runExec(ctx context.Context, args []string) error {
@@ -628,12 +669,9 @@ func migrationSquashExec(ctx context.Context, args []string) (err error) {
 	return squash.Run(database, commit)
 }
 
-func printRunUsage(c *ffcli.Command) string {
+func constructRunCmdLongHelp() string {
 	var out strings.Builder
 
-	fmt.Fprintf(&out, "USAGE\n")
-	fmt.Fprintf(&out, "  sg %s <command>...\n", c.Name)
-	fmt.Fprintln(&out, "")
 	fmt.Fprintf(&out, "  Runs the given command. If given a whitespace-separated list of commands it runs the set of commands.\n")
 
 	// Attempt to parse config to list available commands, but don't fail on
@@ -647,6 +685,42 @@ func printRunUsage(c *ffcli.Command) string {
 		for name := range globalConf.Commands {
 			fmt.Fprintf(&out, "  %s\n", name)
 		}
+	}
+
+	return out.String()
+}
+
+func constructStartCmdLongHelp() string {
+	var out strings.Builder
+
+	fmt.Fprintf(&out, `Runs the given commandset.
+
+If no commandset is specified, it starts the commandset with the name 'default'.
+
+Use this to start your Sourcegraph environment!
+`)
+
+	// Attempt to parse config to list available commands, but don't fail on
+	// error, because we should never error when the user wants --help output.
+	_, _ = parseConf(*configFlag, *overwriteConfigFlag)
+
+	if globalConf != nil {
+		fmt.Fprintf(&out, "\n")
+		fmt.Fprintf(&out, "AVAILABLE COMMANDSETS IN %s%s%s\n", output.StyleBold, *configFlag, output.StyleReset)
+
+		var names []string
+		for name := range globalConf.Commandsets {
+			switch name {
+			case "enterprise-codeintel":
+				names = append(names, fmt.Sprintf("  %s 🧠", name))
+			case "batches":
+				names = append(names, fmt.Sprintf("  %s 🦡", name))
+			default:
+				names = append(names, fmt.Sprintf("  %s", name))
+			}
+		}
+		sort.Strings(names)
+		fmt.Fprintf(&out, strings.Join(names, "\n"))
 	}
 
 	return out.String()
@@ -709,8 +783,16 @@ func printTestUsage(c *ffcli.Command) string {
 func printRunSetUsage(c *ffcli.Command) string {
 	var out strings.Builder
 
+	fmt.Fprintf(&out, "DEPRECATED! 'sg run-set' has been deprecated. Please use 'sg start' instead.\n")
+
+	return out.String()
+}
+
+func printStartUsage(c *ffcli.Command) string {
+	var out strings.Builder
+
 	fmt.Fprintf(&out, "USAGE\n")
-	fmt.Fprintf(&out, "  sg %s <commandset>\n", c.Name)
+	fmt.Fprintf(&out, "  sg %s [commandset]\n", c.Name)
 
 	// Attempt to parse config so we can list available sets, but don't fail on
 	// error, because we should never error when the user wants --help output.
@@ -727,29 +809,11 @@ func printRunSetUsage(c *ffcli.Command) string {
 	return out.String()
 }
 
-func printStartUsage(c *ffcli.Command) string {
+func constructLiveCmdLongHelp() string {
 	var out strings.Builder
 
-	fmt.Fprintf(&out, "USAGE\n")
-	fmt.Fprintln(&out, "  sg start")
-
-	return out.String()
-}
-
-func printDoctorUsage(c *ffcli.Command) string {
-	var out strings.Builder
-
-	fmt.Fprintf(&out, "USAGE\n")
-	fmt.Fprintf(&out, "  sg doctor\n")
-
-	return out.String()
-}
-
-func printLiveUsage(c *ffcli.Command) string {
-	var out strings.Builder
-
-	fmt.Fprintf(&out, "USAGE\n")
-	fmt.Fprintf(&out, "  sg live <environment|url>\n")
+	fmt.Fprintf(&out, "Prints the Sourcegraph version deployed to the given environment.")
+	fmt.Fprintf(&out, "\n")
 	fmt.Fprintf(&out, "\n")
 	fmt.Fprintf(&out, "AVAILABLE PRESET ENVIRONMENTS\n")
 
@@ -760,96 +824,15 @@ func printLiveUsage(c *ffcli.Command) string {
 	return out.String()
 }
 
-func printMigrationUsage(c *ffcli.Command) string {
+func constructMigrationSubcmdLongHelp() string {
 	var out strings.Builder
 
-	printLogo(&out)
-
-	fmt.Fprintf(&out, "USAGE\n")
-	fmt.Fprintf(&out, "  sg migration <subcommand>\n")
-
-	fmt.Fprintf(&out, "\n")
-	fmt.Fprintf(&out, "AVAILABLE COMMANDS\n")
-	for _, sub := range c.Subcommands {
-		fmt.Fprintf(&out, "  %s\n", sub.Name)
-	}
-
-	fmt.Fprintf(&out, "\nRun 'sg migration <subcommand> -help' to get help output for each subcommand\n")
-
-	return out.String()
-}
-
-func printMigrationAddUsage(c *ffcli.Command) string {
-	var out strings.Builder
-
-	fmt.Fprintf(&out, "USAGE\n")
-	fmt.Fprintf(&out, "  %s", c.ShortUsage)
-	fmt.Fprintf(&out, "\n")
 	fmt.Fprintf(&out, "AVAILABLE DATABASES\n")
-
+	var names []string
 	for _, name := range db.DatabaseNames() {
-		fmt.Fprintf(&out, "  %s\n", name)
+		names = append(names, fmt.Sprintf("  %s", name))
 	}
-
-	return out.String()
-}
-
-func printMigrationUpUsage(c *ffcli.Command) string {
-	var out strings.Builder
-
-	fmt.Fprintf(&out, "USAGE\n")
-	fmt.Fprintf(&out, "  sg migration up [-db=%s] [-n]\n", db.DefaultDatabase.Name)
-	fmt.Fprintf(&out, "\n")
-	fmt.Fprintf(&out, "AVAILABLE DATABASES\n")
-
-	for _, name := range db.DatabaseNames() {
-		fmt.Fprintf(&out, "  %s\n", name)
-	}
-
-	return out.String()
-}
-
-func printMigrationDownUsage(c *ffcli.Command) string {
-	var out strings.Builder
-
-	fmt.Fprintf(&out, "USAGE\n")
-	fmt.Fprintf(&out, "  sg migration down [-db=%s] [-n=1]\n", db.DefaultDatabase.Name)
-	fmt.Fprintf(&out, "\n")
-	fmt.Fprintf(&out, "AVAILABLE DATABASES\n")
-
-	for _, name := range db.DatabaseNames() {
-		fmt.Fprintf(&out, "  %s\n", name)
-	}
-
-	return out.String()
-}
-
-func printMigrationSquashUsage(c *ffcli.Command) string {
-	var out strings.Builder
-
-	fmt.Fprintf(&out, "USAGE\n")
-	fmt.Fprintf(&out, "  sg migration squash [-db=%s] <current-release>\n", db.DefaultDatabase.Name)
-	fmt.Fprintf(&out, "\n")
-	fmt.Fprintf(&out, "AVAILABLE DATABASES\n")
-
-	for _, name := range db.DatabaseNames() {
-		fmt.Fprintf(&out, "  %s\n", name)
-	}
-
-	return out.String()
-}
-
-func printMigrationFixupUsage(c *ffcli.Command) string {
-	var out strings.Builder
-
-	fmt.Fprintf(&out, "USAGE\n")
-	fmt.Fprintf(&out, "  sg migration fixup [-db=%s] [-main=%s] [-run=true]\n", db.DefaultDatabase.Name, "main")
-	fmt.Fprintf(&out, "\n")
-	fmt.Fprintf(&out, "AVAILABLE DATABASES\n")
-
-	for _, name := range db.DatabaseNames() {
-		fmt.Fprintf(&out, "  %s\n", name)
-	}
+	fmt.Fprintf(&out, strings.Join(names, "\n"))
 
 	return out.String()
 }
@@ -923,4 +906,56 @@ func printLogo(out io.Writer) {
 	fmt.Fprintln(out)
 	fmt.Fprintln(out, `         \/____/`)
 	fmt.Fprintf(out, "%s", output.StyleReset)
+}
+
+func logoExec(ctx context.Context, args []string) error {
+	s1 := rand.NewSource(time.Now().UnixNano())
+	r1 := rand.New(s1)
+	randoColor := func() output.Style { return output.Fg256Color(r1.Intn(256)) }
+
+	var (
+		color1a = randoColor()
+		color1b = randoColor()
+		color1c = randoColor()
+		color2  = output.StyleLogo
+	)
+
+	times := 20
+	for i := 0; i < times; i++ {
+		const linesPrinted = 23
+
+		stdout.Out.Writef("%s", color2)
+		stdout.Out.Write(`          _____                    _____`)
+		stdout.Out.Write(`         /\    \                  /\    \`)
+		stdout.Out.Writef(`        /%s::%s\    \                /%s::%s\    \`, color1a, color2, color1b, color2)
+		stdout.Out.Writef(`       /%s::::%s\    \              /%s::::%s\    \`, color1a, color2, color1b, color2)
+		stdout.Out.Writef(`      /%s::::::%s\    \            /%s::::::%s\    \`, color1a, color2, color1b, color2)
+		stdout.Out.Writef(`     /%s:::%s/\%s:::%s\    \          /%s:::%s/\%s:::%s\    \`, color1a, color2, color1b, color2, color1c, color2, color1a, color2)
+		stdout.Out.Writef(`    /%s:::%s/__\%s:::%s\    \        /%s:::%s/  \%s:::%s\    \`, color1a, color2, color1b, color2, color1c, color2, color1a, color2)
+		stdout.Out.Writef(`    \%s:::%s\   \%s:::%s\    \      /%s:::%s/    \%s:::%s\    \`, color1a, color2, color1b, color2, color1c, color2, color1a, color2)
+		stdout.Out.Writef(`  ___\%s:::%s\   \%s:::%s\    \    /%s:::%s/    / \%s:::%s\    \`, color1a, color2, color1b, color2, color1c, color2, color1a, color2)
+		stdout.Out.Writef(` /\   \%s:::%s\   \%s:::%s\    \  /%s:::%s/    /   \%s:::%s\ ___\`, color1a, color2, color1b, color2, color1c, color2, color1a, color2)
+		stdout.Out.Writef(`/%s::%s\   \%s:::%s\   \%s:::%s\____\/%s:::%s/____/  ___\%s:::%s|    |`, color1a, color2, color1b, color2, color1c, color2, color1a, color2, color1b, color2)
+		stdout.Out.Writef(`\%s:::%s\   \%s:::%s\   \%s::%s/    /\%s:::%s\    \ /\  /%s:::%s|____|`, color1a, color2, color1b, color2, color1c, color2, color1a, color2, color1b, color2)
+		stdout.Out.Writef(` \%s:::%s\   \%s:::%s\   \/____/  \%s:::%s\    /%s::%s\ \%s::%s/    /`, color1a, color2, color1b, color2, color1c, color2, color1a, color2, color1b, color2)
+		stdout.Out.Writef(`  \%s:::%s\   \%s:::%s\    \       \%s:::%s\   \%s:::%s\ \/____/`, color1a, color2, color1b, color2, color1c, color2, color1a, color2)
+		stdout.Out.Writef(`   \%s:::%s\   \%s:::%s\____\       \%s:::%s\   \%s:::%s\____\`, color1a, color2, color1b, color2, color1c, color2, color1a, color2)
+		stdout.Out.Writef(`    \%s:::%s\  /%s:::%s/    /        \%s:::%s\  /%s:::%s/    /`, color1a, color2, color1b, color2, color1c, color2, color1a, color2)
+		stdout.Out.Writef(`     \%s:::%s\/%s:::%s/    /          \%s:::%s\/%s:::%s/    /`, color1a, color2, color1b, color2, color1c, color2, color1a, color2)
+		stdout.Out.Writef(`      \%s::::::%s/    /            \%s::::::%s/    /`, color1a, color2, color1b, color2)
+		stdout.Out.Writef(`       \%s::::%s/    /              \%s::::%s/    /`, color1a, color2, color1b, color2)
+		stdout.Out.Writef(`        \%s::%s/    /                \%s::%s/____/`, color1a, color2, color1b, color2)
+		stdout.Out.Write(`         \/____/`)
+		stdout.Out.Writef("%s", output.StyleReset)
+
+		time.Sleep(200 * time.Millisecond)
+
+		color1a, color1b, color1c, color2 = randoColor(), color1a, color1b, color1c
+
+		if i != times-1 {
+			stdout.Out.MoveUpLines(linesPrinted)
+		}
+	}
+
+	return nil
 }

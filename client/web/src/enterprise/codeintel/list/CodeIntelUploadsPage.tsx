@@ -1,4 +1,4 @@
-import MapSearchIcon from 'mdi-react/MapSearchIcon'
+import classNames from 'classnames'
 import React, { FunctionComponent, useCallback, useEffect, useMemo } from 'react'
 import { RouteComponentProps } from 'react-router'
 import { of } from 'rxjs'
@@ -14,13 +14,13 @@ import {
 } from '../../../components/FilteredConnection'
 import { PageTitle } from '../../../components/PageTitle'
 import { LsifUploadFields, LSIFUploadState } from '../../../graphql-operations'
+import { fetchLsifUploads as defaultFetchLsifUploads } from '../shared/backend'
 
-import {
-    fetchLsifUploads as defaultFetchLsifUploads,
-    fetchCommitGraphMetadata as defaultFetchCommitGraphMetadata,
-} from './backend'
+import { fetchCommitGraphMetadata as defaultFetchCommitGraphMetadata } from './backend'
 import { CodeIntelUploadNode, CodeIntelUploadNodeProps } from './CodeIntelUploadNode'
+import styles from './CodeIntelUploadsPage.module.scss'
 import { CommitGraphMetadata } from './CommitGraphMetadata'
+import { EmptyUploads } from './EmptyUploads'
 
 export interface CodeIntelUploadsPageProps extends RouteComponentProps<{}>, TelemetryProps {
     repo?: { id: string }
@@ -112,7 +112,14 @@ export const CodeIntelUploadsPage: FunctionComponent<CodeIntelUploadsPageProps> 
     return (
         <div className="code-intel-uploads">
             <PageTitle title="Precise code intelligence uploads" />
-            <PageHeader headingElement="h2" path={[{ text: 'Precise code intelligence uploads' }]} className="mb-3" />
+            <PageHeader
+                headingElement="h2"
+                path={[{ text: 'Precise code intelligence uploads' }]}
+                description={`LSIF indexes uploaded to Sourcegraph from CI or from auto-indexing ${
+                    repo ? 'for this repository' : 'over all repositories'
+                }.`}
+                className="mb-3"
+            />
 
             {repo && commitGraphMetadata && (
                 <Container className="mb-2">
@@ -129,7 +136,7 @@ export const CodeIntelUploadsPage: FunctionComponent<CodeIntelUploadsPageProps> 
                 <div className="list-group position-relative">
                     <FilteredConnection<LsifUploadFields, Omit<CodeIntelUploadNodeProps, 'node'>>
                         listComponent="div"
-                        listClassName="codeintel-uploads__grid mb-3"
+                        listClassName={classNames(styles.grid, 'mb-3')}
                         noun="upload"
                         pluralNoun="uploads"
                         nodeComponent={CodeIntelUploadNode}
@@ -139,26 +146,10 @@ export const CodeIntelUploadsPage: FunctionComponent<CodeIntelUploadsPageProps> 
                         location={props.location}
                         cursorPaging={true}
                         filters={filters}
-                        emptyElement={<EmptyLSIFUploadsElement />}
+                        emptyElement={<EmptyUploads />}
                     />
                 </div>
             </Container>
         </div>
     )
 }
-
-const EmptyLSIFUploadsElement: React.FunctionComponent = () => (
-    <p className="text-muted text-center w-100 mb-0 mt-1">
-        <MapSearchIcon className="mb-2" />
-        <br />
-        No uploads yet. Enable precise code intelligence by{' '}
-        <a
-            href="https://docs.sourcegraph.com/code_intelligence/explanations/precise_code_intelligence"
-            target="_blank"
-            rel="noreferrer noopener"
-        >
-            uploading LSIF data
-        </a>
-        .
-    </p>
-)

@@ -729,6 +729,17 @@ type Mutation {
         """
         value: Boolean!
     ): FeatureFlagOverride!
+
+    """
+    Overwrites and saves the temporary settings for the current user.
+    If temporary settings for the user do not exist, they are created.
+    """
+    overwriteTemporarySettings(
+        """
+        The new temporary settings for the current user, as a JSON string.
+        """
+        contents: String!
+    ): EmptyResponse!
 }
 
 """
@@ -1201,7 +1212,13 @@ type Query {
     """
     EXPERIMENTAL: Syntax highlights a code string.
     """
-    highlightCode(code: String!, fuzzyLanguage: String!, disableTimeout: Boolean!, isLightTheme: Boolean!): String!
+    highlightCode(
+        code: String!
+        fuzzyLanguage: String!
+        disableTimeout: Boolean!
+        isLightTheme: Boolean
+            @deprecated(reason: "Not required anymore, highlighting is based on dynamic CSS variables now.")
+    ): String!
     """
     Looks up an instance of a type that implements SettingsSubject (i.e., something that has settings). This can
     be a site (which has global settings), an organization, or a user.
@@ -1299,6 +1316,10 @@ type Query {
         descending: Boolean = false
     ): SearchContextConnection!
     """
+    Fetch search context by spec (global, @username, @username/ctx, etc.).
+    """
+    searchContextBySpec(spec: String!): SearchContext
+    """
     Determines whether the search context is within the set of search contexts available to the current user.
     The set consists of contexts created by the user, contexts created by the users' organizations, and instance-level contexts.
     """
@@ -1382,6 +1403,11 @@ type Query {
     Retrieve the values of all feature flags for the current user
     """
     viewerFeatureFlags: [EvaluatedFeatureFlag!]!
+
+    """
+    Retrieves the temporary settings for the current user.
+    """
+    temporarySettings: TemporarySettings!
 }
 
 """
@@ -3075,7 +3101,8 @@ type FileDiffHunk {
     """
     highlight(
         disableTimeout: Boolean!
-        isLightTheme: Boolean!
+        isLightTheme: Boolean
+            @deprecated(reason: "Not required anymore, highlighting is based on dynamic CSS variables now.")
         """
         If highlightLongLines is true, lines which are longer than 2000 bytes are highlighted.
         2000 bytes is enabled. This may produce a significant amount of HTML
@@ -4074,7 +4101,8 @@ interface File2 {
     """
     highlight(
         disableTimeout: Boolean!
-        isLightTheme: Boolean!
+        isLightTheme: Boolean
+            @deprecated(reason: "Not required anymore, highlighting is based on dynamic CSS variables now.")
         """
         If highlightLongLines is true, lines which are longer than 2000 bytes are highlighted.
         2000 bytes is enabled. This may produce a significant amount of HTML
@@ -4136,7 +4164,8 @@ type VirtualFile implements File2 {
     """
     highlight(
         disableTimeout: Boolean!
-        isLightTheme: Boolean!
+        isLightTheme: Boolean
+            @deprecated(reason: "Not required anymore, highlighting is based on dynamic CSS variables now.")
         """
         If highlightLongLines is true, lines which are longer than 2000 bytes are highlighted.
         2000 bytes is enabled. This may produce a significant amount of HTML
@@ -4236,7 +4265,8 @@ type GitBlob implements TreeEntry & File2 {
     """
     highlight(
         disableTimeout: Boolean!
-        isLightTheme: Boolean!
+        isLightTheme: Boolean
+            @deprecated(reason: "Not required anymore, highlighting is based on dynamic CSS variables now.")
         """
         If highlightLongLines is true, lines which are longer than 2000 bytes are highlighted.
         2000 bytes is enabled. This may produce a significant amount of HTML
@@ -5794,9 +5824,11 @@ type ExtensionRegistry {
         """
         remote: Boolean = true
         """
+        Returns only extensions with the given IDs.
+        """
+        extensionIDs: [String!]
+        """
         Sorts the list of extension results such that the extensions with these IDs are first in the result set.
-        Typically, the client passes the list of added and enabled extension IDs in this parameter so that the
-        results include those extensions first (which is typically what the user prefers).
         """
         prioritizeExtensionIDs: [String!]
     ): RegistryExtensionConnection!
@@ -6035,9 +6067,19 @@ A description of the extension, how to run or access it, and when to activate it
 """
 type ExtensionManifest {
     """
-    The raw JSON contents of the manifest.
+    The raw JSON (or JSONC) contents of the manifest. This value may be large (because many
+    manifests contain README and icon data), and it is JSONC (not strict JSON), which means
+    it must be parsed with a JSON parser that supports trailing commas and comments. Consider
+    using jsonFields instead.
     """
     raw: String!
+    """
+    The manifest as JSON (not JSONC, even if the raw manifest is JSONC) with only the
+    specified fields. This is useful for callers that only need certain fields and want
+    to avoid fetching a large amount of data (because many manifests contain README
+    and icon data).
+    """
+    jsonFields(fields: [String!]!): JSONValue!
     """
     The description specified in the manifest, if any.
     """
@@ -6382,4 +6424,14 @@ type ExecutionLogEntry {
     The duration in milliseconds of the command. Null, if the command has not finished yet.
     """
     durationMilliseconds: Int
+}
+
+"""
+Temporary settings for a user.
+"""
+type TemporarySettings {
+    """
+    A JSON string representing the temporary settings.
+    """
+    contents: String!
 }

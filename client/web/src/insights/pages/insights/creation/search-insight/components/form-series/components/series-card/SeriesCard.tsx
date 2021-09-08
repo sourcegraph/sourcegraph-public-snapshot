@@ -1,11 +1,15 @@
 import classnames from 'classnames'
 import React, { ReactElement } from 'react'
 
+import { Button } from '@sourcegraph/wildcard'
+
 import { DEFAULT_ACTIVE_COLOR } from '../../../form-color-input/FormColorInput'
 
 import styles from './SeriesCard.module.scss'
 
 interface SeriesCardProps {
+    isRemoveSeriesAvailable: boolean
+
     /** Name of series. */
     name: string
     /** Query value of series. */
@@ -24,7 +28,15 @@ interface SeriesCardProps {
  * Renders series card component, visual list item of series (name, color, query)
  * */
 export function SeriesCard(props: SeriesCardProps): ReactElement {
-    const { name, query, stroke: color = DEFAULT_ACTIVE_COLOR, className, onEdit, onRemove } = props
+    const {
+        isRemoveSeriesAvailable,
+        name,
+        query,
+        stroke: color = DEFAULT_ACTIVE_COLOR,
+        className,
+        onEdit,
+        onRemove,
+    } = props
 
     return (
         <li
@@ -51,23 +63,28 @@ export function SeriesCard(props: SeriesCardProps): ReactElement {
             </div>
 
             <div className="d-flex align-items-center">
-                <button
+                <Button
                     data-testid="series-edit-button"
                     type="button"
                     onClick={onEdit}
-                    className="border-0 btn btn-outline-primary"
+                    variant="primary"
+                    outline={true}
+                    className="border-0"
                 >
                     Edit
-                </button>
+                </Button>
 
-                <button
+                <Button
                     data-testid="series-delete-button"
                     type="button"
                     onClick={onRemove}
-                    className="border-0 btn btn-outline-danger ml-1"
+                    disabled={!isRemoveSeriesAvailable}
+                    className="border-0 ml-1"
+                    variant="danger"
+                    outline={true}
                 >
                     Remove
-                </button>
+                </Button>
             </div>
         </li>
     )

@@ -10,23 +10,23 @@
   "BaseRefName": "master",
   "Number": 5550,
   "Author": {
-   "AvatarURL": "https://avatars2.githubusercontent.com/u/1741180?u=d126637129a1c2fae6f79de2c7cf8390059feb85\u0026v=4",
+   "AvatarURL": "https://avatars.githubusercontent.com/u/1741180?u=d126637129a1c2fae6f79de2c7cf8390059feb85\u0026v=4",
    "Login": "lguychard",
    "URL": "https://github.com/lguychard"
   },
   "Participants": [
    {
-    "AvatarURL": "https://avatars2.githubusercontent.com/u/1741180?u=d126637129a1c2fae6f79de2c7cf8390059feb85\u0026v=4",
+    "AvatarURL": "https://avatars.githubusercontent.com/u/1741180?u=d126637129a1c2fae6f79de2c7cf8390059feb85\u0026v=4",
     "Login": "lguychard",
     "URL": "https://github.com/lguychard"
    },
    {
-    "AvatarURL": "https://avatars3.githubusercontent.com/u/2946214?u=0cdcf6f1d7de3a06e649fd5f1c40763dcc031e98\u0026v=4",
+    "AvatarURL": "https://avatars.githubusercontent.com/u/2946214?u=f7db4e71ec55cfd9d462c7cdb041e5dfb8174efc\u0026v=4",
     "Login": "unknwon",
     "URL": "https://github.com/unknwon"
    },
    {
-    "AvatarURL": "https://avatars2.githubusercontent.com/u/10532611?u=b02bd4f2245dd008c4b549bf84b5a8cb6667b649\u0026v=4",
+    "AvatarURL": "https://avatars.githubusercontent.com/u/10532611?u=b02bd4f2245dd008c4b549bf84b5a8cb6667b649\u0026v=4",
     "Login": "felixfbecker",
     "URL": "https://github.com/felixfbecker"
    }
@@ -39,19 +39,16 @@
     "Type": "ReviewRequestedEvent",
     "Item": {
      "Actor": {
-      "AvatarURL": "https://avatars2.githubusercontent.com/u/1741180?u=d126637129a1c2fae6f79de2c7cf8390059feb85\u0026v=4",
+      "AvatarURL": "https://avatars.githubusercontent.com/u/1741180?u=d126637129a1c2fae6f79de2c7cf8390059feb85\u0026v=4",
       "Login": "lguychard",
       "URL": "https://github.com/lguychard"
      },
      "RequestedReviewer": {
-      "AvatarURL": "https://avatars3.githubusercontent.com/u/2946214?u=0cdcf6f1d7de3a06e649fd5f1c40763dcc031e98\u0026v=4",
+      "AvatarURL": "https://avatars.githubusercontent.com/u/2946214?u=f7db4e71ec55cfd9d462c7cdb041e5dfb8174efc\u0026v=4",
       "Login": "unknwon",
       "URL": "https://github.com/unknwon"
      },
-     "RequestedTeam": {
-      "Name": "",
-      "URL": ""
-     },
+     "RequestedTeam": {},
      "CreatedAt": "2019-09-12T10:06:09Z"
     }
    },
@@ -59,19 +56,16 @@
     "Type": "ReviewRequestedEvent",
     "Item": {
      "Actor": {
-      "AvatarURL": "https://avatars2.githubusercontent.com/u/1741180?u=d126637129a1c2fae6f79de2c7cf8390059feb85\u0026v=4",
+      "AvatarURL": "https://avatars.githubusercontent.com/u/1741180?u=d126637129a1c2fae6f79de2c7cf8390059feb85\u0026v=4",
       "Login": "lguychard",
       "URL": "https://github.com/lguychard"
      },
      "RequestedReviewer": {
-      "AvatarURL": "https://avatars2.githubusercontent.com/u/10532611?u=b02bd4f2245dd008c4b549bf84b5a8cb6667b649\u0026v=4",
+      "AvatarURL": "https://avatars.githubusercontent.com/u/10532611?u=b02bd4f2245dd008c4b549bf84b5a8cb6667b649\u0026v=4",
       "Login": "felixfbecker",
       "URL": "https://github.com/felixfbecker"
      },
-     "RequestedTeam": {
-      "Name": "",
-      "URL": ""
-     },
+     "RequestedTeam": {},
      "CreatedAt": "2019-09-12T10:06:09Z"
     }
    },
@@ -80,33 +74,28 @@
     "Item": {
      "DatabaseID": 287537086,
      "Author": {
-      "AvatarURL": "https://avatars3.githubusercontent.com/u/2946214?u=0cdcf6f1d7de3a06e649fd5f1c40763dcc031e98\u0026v=4",
+      "AvatarURL": "https://avatars.githubusercontent.com/u/2946214?u=f7db4e71ec55cfd9d462c7cdb041e5dfb8174efc\u0026v=4",
       "Login": "unknwon",
       "URL": "https://github.com/unknwon"
      },
-     "AuthorAssociation": "MEMBER",
+     "AuthorAssociation": "CONTRIBUTOR",
      "Body": "Thanks for the fix! The chaining logic looks brilliant to me (as a non-FE dev).",
      "State": "APPROVED",
      "URL": "https://github.com/sourcegraph/sourcegraph/pull/5550#pullrequestreview-287537086",
      "CreatedAt": "2019-09-12T15:57:28Z",
      "UpdatedAt": "2019-09-12T15:57:28Z",
      "Commit": {
-      "OID": "36734225c6bf58fb5c499b1489def2a7b65af45d",
-      "Message": "Fix disableExtension flag for native integrations\n\nThis flag should only be observed in the browser extension. Calling `observeStorageKey()` breaks native integrations.",
-      "MessageHeadline": "Fix disableExtension flag for native integrations",
-      "URL": "https://github.com/sourcegraph/sourcegraph/commit/36734225c6bf58fb5c499b1489def2a7b65af45d",
+      "OID": "",
+      "Message": "",
+      "MessageHeadline": "",
+      "URL": "",
       "Committer": {
-       "AvatarURL": "https://avatars1.githubusercontent.com/u/1741180?v=4",
-       "Email": "loic@sourcegraph.com",
-       "Name": "Loïc Guychard",
-       "User": {
-        "AvatarURL": "https://avatars2.githubusercontent.com/u/1741180?u=d126637129a1c2fae6f79de2c7cf8390059feb85\u0026v=4",
-        "Login": "lguychard",
-        "URL": "https://github.com/lguychard"
-       }
+       "AvatarURL": "",
+       "Email": "",
+       "Name": ""
       },
-      "CommittedDate": "2019-09-12T10:05:39Z",
-      "PushedDate": "2019-09-12T10:05:45Z"
+      "CommittedDate": "0001-01-01T00:00:00Z",
+      "PushedDate": "0001-01-01T00:00:00Z"
      },
      "IncludesCreatedEdit": false
     }
@@ -116,7 +105,7 @@
     "Item": {
      "DatabaseID": 287549355,
      "Author": {
-      "AvatarURL": "https://avatars2.githubusercontent.com/u/10532611?u=b02bd4f2245dd008c4b549bf84b5a8cb6667b649\u0026v=4",
+      "AvatarURL": "https://avatars.githubusercontent.com/u/10532611?u=b02bd4f2245dd008c4b549bf84b5a8cb6667b649\u0026v=4",
       "Login": "felixfbecker",
       "URL": "https://github.com/felixfbecker"
      },
@@ -127,22 +116,17 @@
      "CreatedAt": "2019-09-12T16:18:08Z",
      "UpdatedAt": "2019-09-12T16:18:58Z",
      "Commit": {
-      "OID": "36734225c6bf58fb5c499b1489def2a7b65af45d",
-      "Message": "Fix disableExtension flag for native integrations\n\nThis flag should only be observed in the browser extension. Calling `observeStorageKey()` breaks native integrations.",
-      "MessageHeadline": "Fix disableExtension flag for native integrations",
-      "URL": "https://github.com/sourcegraph/sourcegraph/commit/36734225c6bf58fb5c499b1489def2a7b65af45d",
+      "OID": "",
+      "Message": "",
+      "MessageHeadline": "",
+      "URL": "",
       "Committer": {
-       "AvatarURL": "https://avatars1.githubusercontent.com/u/1741180?v=4",
-       "Email": "loic@sourcegraph.com",
-       "Name": "Loïc Guychard",
-       "User": {
-        "AvatarURL": "https://avatars2.githubusercontent.com/u/1741180?u=d126637129a1c2fae6f79de2c7cf8390059feb85\u0026v=4",
-        "Login": "lguychard",
-        "URL": "https://github.com/lguychard"
-       }
+       "AvatarURL": "",
+       "Email": "",
+       "Name": ""
       },
-      "CommittedDate": "2019-09-12T10:05:39Z",
-      "PushedDate": "2019-09-12T10:05:45Z"
+      "CommittedDate": "0001-01-01T00:00:00Z",
+      "PushedDate": "0001-01-01T00:00:00Z"
      },
      "IncludesCreatedEdit": false
     }
@@ -156,11 +140,11 @@
       "MessageHeadline": "Fix disableExtension flag for native integrations",
       "URL": "https://github.com/sourcegraph/sourcegraph/commit/21d1cd99699e36ab5e2b9be1cc663691d47193ef",
       "Committer": {
-       "AvatarURL": "https://avatars1.githubusercontent.com/u/1741180?v=4",
+       "AvatarURL": "https://avatars.githubusercontent.com/u/1741180?v=4",
        "Email": "loic@sourcegraph.com",
        "Name": "Loïc Guychard",
        "User": {
-        "AvatarURL": "https://avatars2.githubusercontent.com/u/1741180?u=d126637129a1c2fae6f79de2c7cf8390059feb85\u0026v=4",
+        "AvatarURL": "https://avatars.githubusercontent.com/u/1741180?u=d126637129a1c2fae6f79de2c7cf8390059feb85\u0026v=4",
         "Login": "lguychard",
         "URL": "https://github.com/lguychard"
        }
@@ -179,11 +163,11 @@
       "MessageHeadline": "No need to explicitly remove the subscription",
       "URL": "https://github.com/sourcegraph/sourcegraph/commit/30cc0384757b7d2fe9d42cf09ab7744731c8a9ea",
       "Committer": {
-       "AvatarURL": "https://avatars1.githubusercontent.com/u/1741180?v=4",
+       "AvatarURL": "https://avatars.githubusercontent.com/u/1741180?v=4",
        "Email": "loic@sourcegraph.com",
        "Name": "Loïc Guychard",
        "User": {
-        "AvatarURL": "https://avatars2.githubusercontent.com/u/1741180?u=d126637129a1c2fae6f79de2c7cf8390059feb85\u0026v=4",
+        "AvatarURL": "https://avatars.githubusercontent.com/u/1741180?u=d126637129a1c2fae6f79de2c7cf8390059feb85\u0026v=4",
         "Login": "lguychard",
         "URL": "https://github.com/lguychard"
        }
@@ -198,7 +182,7 @@
     "Item": {
      "DatabaseID": 531172813,
      "Author": {
-      "AvatarURL": "https://avatars2.githubusercontent.com/in/254?v=4",
+      "AvatarURL": "https://avatars.githubusercontent.com/in/254?v=4",
       "Login": "codecov",
       "URL": "https://github.com/apps/codecov"
      },
@@ -215,7 +199,7 @@
     "Type": "MergedEvent",
     "Item": {
      "Actor": {
-      "AvatarURL": "https://avatars2.githubusercontent.com/u/1741180?u=d126637129a1c2fae6f79de2c7cf8390059feb85\u0026v=4",
+      "AvatarURL": "https://avatars.githubusercontent.com/u/1741180?u=d126637129a1c2fae6f79de2c7cf8390059feb85\u0026v=4",
       "Login": "lguychard",
       "URL": "https://github.com/lguychard"
      },
@@ -227,7 +211,7 @@
       "MessageHeadline": "Fix disableExtension flag for native integrations (#5550)",
       "URL": "https://github.com/sourcegraph/sourcegraph/commit/f66b0addcbeb51d29350f3abc2af7ffb238af48a",
       "Committer": {
-       "AvatarURL": "https://avatars3.githubusercontent.com/u/19864447?v=4",
+       "AvatarURL": "https://avatars.githubusercontent.com/u/19864447?v=4",
        "Email": "noreply@github.com",
        "Name": "GitHub"
       },
@@ -241,7 +225,7 @@
     "Type": "ClosedEvent",
     "Item": {
      "Actor": {
-      "AvatarURL": "https://avatars2.githubusercontent.com/u/1741180?u=d126637129a1c2fae6f79de2c7cf8390059feb85\u0026v=4",
+      "AvatarURL": "https://avatars.githubusercontent.com/u/1741180?u=d126637129a1c2fae6f79de2c7cf8390059feb85\u0026v=4",
       "Login": "lguychard",
       "URL": "https://github.com/lguychard"
      },
@@ -259,8 +243,8 @@
        "Nodes": [
         {
          "ID": "MDEwOkNoZWNrU3VpdGUyMjMwNzk1ODA=",
-         "Status": "QUEUED",
-         "Conclusion": "",
+         "Status": "COMPLETED",
+         "Conclusion": "STALE",
          "ReceivedAt": "0001-01-01T00:00:00Z",
          "CheckRuns": {
           "Nodes": []
@@ -268,8 +252,8 @@
         },
         {
          "ID": "MDEwOkNoZWNrU3VpdGUyMjMwNzk1ODE=",
-         "Status": "QUEUED",
-         "Conclusion": "",
+         "Status": "COMPLETED",
+         "Conclusion": "STALE",
          "ReceivedAt": "0001-01-01T00:00:00Z",
          "CheckRuns": {
           "Nodes": []
@@ -277,8 +261,8 @@
         },
         {
          "ID": "MDEwOkNoZWNrU3VpdGUyMjMwNzk1ODI=",
-         "Status": "QUEUED",
-         "Conclusion": "",
+         "Status": "COMPLETED",
+         "Conclusion": "STALE",
          "ReceivedAt": "0001-01-01T00:00:00Z",
          "CheckRuns": {
           "Nodes": []

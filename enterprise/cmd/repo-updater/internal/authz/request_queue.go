@@ -4,6 +4,8 @@ import (
 	"container/heap"
 	"sync"
 	"time"
+
+	"github.com/sourcegraph/sourcegraph/internal/authz"
 )
 
 // priority defines how urgent the permissions syncing request is.
@@ -39,6 +41,7 @@ type requestMeta struct {
 	Priority   priority
 	Type       requestType
 	ID         int32
+	Options    authz.FetchPermsOptions
 	NextSyncAt time.Time
 	NoPerms    bool
 }

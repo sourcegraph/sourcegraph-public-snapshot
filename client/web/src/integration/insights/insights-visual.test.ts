@@ -1,5 +1,4 @@
 import delay from 'delay'
-import { View } from 'sourcegraph'
 
 import { createDriverForTest, Driver } from '@sourcegraph/shared/src/testing/driver'
 import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'
@@ -9,18 +8,20 @@ import { percySnapshotWithVariants } from '../utils'
 
 import {
     BACKEND_INSIGHTS,
-    CODE_STATS_INSIGHT_LANG_USAGE,
-    INSIGHT_VIEW_TEAM_SIZE,
-    INSIGHT_VIEW_TYPES_MIGRATION,
+    CODE_STATS_RESULT_MOCK,
+    SEARCH_INSIGHT_COMMITS_MOCK,
+    SEARCH_INSIGHT_RESULT_MOCK,
 } from './utils/insight-mock-data'
-import { overrideGraphQLExtensions } from './utils/override-graphql-with-extensions'
+import { overrideGraphQLExtensions } from './utils/override-insights-graphql'
 
 describe('[VISUAL] Code insights page', () => {
     let driver: Driver
     let testContext: WebIntegrationTestContext
 
     before(async () => {
-        driver = await createDriverForTest()
+        driver = await createDriverForTest({
+            defaultViewport: { width: 1920 },
+        })
     })
 
     after(() => driver?.close())
@@ -37,14 +38,8 @@ describe('[VISUAL] Code insights page', () => {
     afterEach(() => testContext?.dispose())
 
     async function takeChartSnapshot(name: string): Promise<void> {
-        // Move mouse cursor away from charts and click to avoid chart tooltip appearance
-        await driver.page.mouse.move(0, 0)
-        await driver.page.click('body')
-
         await driver.page.waitForSelector('[data-testid="line-chart__content"] svg circle')
-        // Due to autosize of chart we have to wait 1s that window-resize be able
-        // render chart with container size.
-        await delay(1000)
+        await delay(500)
         await percySnapshotWithVariants(driver.page, name)
     }
 
@@ -57,9 +52,7 @@ describe('[VISUAL] Code insights page', () => {
                 },
             },
             overrides: {
-                /**
-                 * Mock back-end insights with standard gql API handler.
-                 * */
+                // Mock back-end insights with standard gql API handler.
                 Insights: () => ({ insights: { nodes: BACKEND_INSIGHTS } }),
             },
         })
@@ -69,46 +62,51 @@ describe('[VISUAL] Code insights page', () => {
         await takeChartSnapshot('Code insights page with back-end insights only')
     })
 
-    // Unmute that test when flaky issue with line chart tooltip will be resolved
-    // see https://github.com/sourcegraph/sourcegraph/issues/23669
-    it.skip('is styled correctly with search-based insights ', async () => {
+    it('is styled correctly with search-based insights ', async () => {
         overrideGraphQLExtensions({
             testContext,
 
-            /**
-             * Since search insight and code stats insight are working via user/org
-             * settings. We have to mock them by mocking user settings and provide
-             * mock data - mocking extension work.
-             * */
+            // Since search insight and code stats insight are working via user/org
+            // settings. We have to mock them by mocking user settings and provide
+            // mock data - mocking extension work.
             userSettings: {
                 'searchInsights.insight.graphQLTypesMigration': {
                     title: 'The First search-based insight',
-                    repositories: [],
-                    series: [],
+                    repositories: ['github.com/sourcegraph/sourcegraph'],
+                    series: [
+                        {
+                            name: 'The first series of the first chart',
+                            stroke: 'var(--oc-grape-7)',
+                            query: 'Kapica',
+                        },
+                    ],
+                    step: {
+                        months: 8,
+                    },
                 },
                 'searchInsights.insight.teamSize': {
                     title: 'The Second search-based insight',
-                    repositories: [],
-                    series: [],
+                    repositories: ['github.com/sourcegraph/sourcegraph'],
+                    series: [
+                        {
+                            name: 'The second series of the second chart',
+                            stroke: 'var(--oc-blue-7)',
+                            query: 'Korolev',
+                        },
+                    ],
+                    step: {
+                        months: 8,
+                    },
                 },
-                'insights.allrepos': {
-                    'searchInsights.insight.backend_ID_001': {},
-                },
-            },
-            insightExtensionsMocks: {
-                'searchInsights.insight.teamSize': INSIGHT_VIEW_TEAM_SIZE,
-                'searchInsights.insight.graphQLTypesMigration': INSIGHT_VIEW_TYPES_MIGRATION,
+                'insights.allrepos': {},
             },
             overrides: {
-                /**
-                 * Mock back-end insights with standard gql API handler.
-                 * */
-                Insights: () => ({ insights: { nodes: [] } }),
+                BulkSearchCommits: () => SEARCH_INSIGHT_COMMITS_MOCK,
+                BulkSearch: () => SEARCH_INSIGHT_RESULT_MOCK,
             },
         })
 
         await driver.page.goto(driver.sourcegraphBaseUrl + '/insights/dashboards/all')
-
         await takeChartSnapshot('Code insights page with search-based insights only')
     })
 
@@ -116,40 +114,35 @@ describe('[VISUAL] Code insights page', () => {
         overrideGraphQLExtensions({
             testContext,
 
-            /**
-             * Since search insight and code stats insight are working via user/org
-             * settings. We have to mock them by mocking user settings and provide
-             * mock data - mocking extension work.
-             * */
+            // Since search insight and code stats insights work via user/org
+            // settings. We have to mock them by mocking user settings and provide
+            // mock settings cascade data.
             userSettings: {
                 'searchInsights.insight.graphQLTypesMigration': {
                     title: 'The First search-based insight',
-                    repositories: [],
-                    series: [],
-                },
-                'searchInsights.insight.teamSize': {
-                    title: 'The Second search-based insight',
-                    repositories: [],
-                    series: [],
+                    repositories: ['github.com/sourcegraph/sourcegraph'],
+                    series: [
+                        {
+                            name: 'The first series of the first chart',
+                            stroke: 'var(--oc-grape-7)',
+                            query: 'Kapica',
+                        },
+                    ],
+                    step: {
+                        months: 8,
+                    },
                 },
                 'insights.allrepos': {
                     'searchInsights.insight.backend_ID_001': {},
                 },
             },
-            insightExtensionsMocks: {
-                'searchInsights.insight.teamSize': ({ message: 'Error message', name: 'hello' } as unknown) as View,
-                'searchInsights.insight.graphQLTypesMigration': INSIGHT_VIEW_TYPES_MIGRATION,
-            },
             overrides: {
-                /**
-                 * Mock back-end insights with standard gql API handler.
-                 * */
-                Insights: () => ({ insights: { nodes: [] } }),
+                Insights: () => ({ insights: { nodes: BACKEND_INSIGHTS } }),
+                BulkSearchCommits: () => ({ error: 'Inappropriate data shape will cause an insight error' } as any),
             },
         })
 
         await driver.page.goto(driver.sourcegraphBaseUrl + '/insights/dashboards/all')
-
         await takeChartSnapshot('Code insights page with search-based errored insight')
     })
 
@@ -157,42 +150,47 @@ describe('[VISUAL] Code insights page', () => {
         overrideGraphQLExtensions({
             testContext,
 
-            /**
-             * Since search insight and code stats insight are working via user/org
-             * settings. We have to mock them by mocking user settings and provide
-             * mock data - mocking extension work.
-             * */
+            // Since search insight and code stats insight are working via user/org
+            // settings. We have to mock them by mocking user settings and provide
+            // mock data - mocking extension work.
             userSettings: {
                 'searchInsights.insight.graphQLTypesMigration': {
                     title: 'The First search-based insight',
-                    repositories: [],
-                    series: [],
+                    repositories: ['github.com/sourcegraph/sourcegraph'],
+                    series: [
+                        {
+                            name: 'The first series of the first chart',
+                            stroke: 'var(--oc-grape-7)',
+                            query: 'Kapica',
+                        },
+                    ],
+                    step: {
+                        months: 8,
+                    },
                 },
-                'searchInsights.insight.teamSize': {
-                    title: 'The Second search-based insight',
-                    repositories: [],
-                    series: [],
+                'codeStatsInsights.insight.langUsage': {
+                    title: 'Adobe lang stats usage',
+                    repository: 'ghe.sgdev.org/sourcegraph/adobe-adobe.github.com',
+                    otherThreshold: 0.03,
                 },
-                'codeStatsInsights.insight.langUsage': {},
                 'insights.allrepos': {
                     'searchInsights.insight.backend_ID_001': {},
                 },
             },
-            insightExtensionsMocks: {
-                'codeStatsInsights.insight.langUsage': CODE_STATS_INSIGHT_LANG_USAGE,
-                'searchInsights.insight.teamSize': INSIGHT_VIEW_TEAM_SIZE,
-                'searchInsights.insight.graphQLTypesMigration': INSIGHT_VIEW_TYPES_MIGRATION,
-            },
             overrides: {
-                /**
-                 * Mock back-end insights with standard gql API handler.
-                 * */
+                // Backend insight mock
                 Insights: () => ({ insights: { nodes: BACKEND_INSIGHTS } }),
+
+                // Search built-in insight mock
+                BulkSearchCommits: () => SEARCH_INSIGHT_COMMITS_MOCK,
+                BulkSearch: () => SEARCH_INSIGHT_RESULT_MOCK,
+
+                // Code stats built-in insight mock
+                LangStatsInsightContent: () => CODE_STATS_RESULT_MOCK,
             },
         })
 
         await driver.page.goto(driver.sourcegraphBaseUrl + '/insights/dashboards/all')
-
         await takeChartSnapshot('Code insights page with all types of insight')
     })
 })

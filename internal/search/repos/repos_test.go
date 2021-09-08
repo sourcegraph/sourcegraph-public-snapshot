@@ -18,7 +18,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/search"
-	searchbackend "github.com/sourcegraph/sourcegraph/internal/search/backend"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
@@ -319,24 +318,18 @@ func TestSearchableRepositories(t *testing.T) {
 			want:                nil,
 		},
 		{
-			name:                "two in database, one indexed => indexed repo returned",
-			defaultsInDb:        []string{"unindexedrepo", "indexedrepo"},
-			searchableRepoNames: map[string]bool{"indexedrepo": true},
-			want:                []string{"indexedrepo"},
-		},
-		{
 			name:                "should not return excluded repo",
 			defaultsInDb:        []string{"unindexedrepo1", "indexedrepo1", "indexedrepo2", "indexedrepo3"},
 			searchableRepoNames: map[string]bool{"indexedrepo1": true, "indexedrepo2": true, "indexedrepo3": true},
 			excludePatterns:     []string{"indexedrepo3"},
-			want:                []string{"indexedrepo1", "indexedrepo2"},
+			want:                []string{"unindexedrepo1", "indexedrepo1", "indexedrepo2"},
 		},
 		{
 			name:                "should not return excluded repo (case insensitive)",
 			defaultsInDb:        []string{"unindexedrepo1", "indexedrepo1", "indexedrepo2", "Indexedrepo3"},
 			searchableRepoNames: map[string]bool{"indexedrepo1": true, "indexedrepo2": true, "Indexedrepo3": true},
 			excludePatterns:     []string{"indexedrepo3"},
-			want:                []string{"indexedrepo1", "indexedrepo2"},
+			want:                []string{"unindexedrepo1", "indexedrepo1", "indexedrepo2"},
 		},
 		{
 			name:                "should not return excluded repos ending in `test`",
@@ -360,17 +353,8 @@ func TestSearchableRepositories(t *testing.T) {
 				return drs, nil
 			}
 
-			var indexed []*zoekt.RepoListEntry
-			for name := range tc.searchableRepoNames {
-				indexed = append(indexed, &zoekt.RepoListEntry{Repository: zoekt.Repository{Name: name}})
-			}
-			z := &searchbackend.Zoekt{
-				Client:       &searchbackend.FakeSearcher{Repos: indexed},
-				DisableCache: true,
-			}
-
 			ctx := context.Background()
-			drs, err := searchableRepositories(ctx, getRawSearchableRepos, z, tc.excludePatterns)
+			drs, err := searchableRepositories(ctx, getRawSearchableRepos, tc.excludePatterns)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -416,11 +400,6 @@ func TestUseIndexableReposIfMissingOrGlobalSearchContext(t *testing.T) {
 		}
 	}
 
-	mockZoekt := &searchbackend.Zoekt{
-		Client:       &searchbackend.FakeSearcher{Repos: zoektRepoListEntries},
-		DisableCache: true,
-	}
-
 	tests := []struct {
 		name              string
 		searchContextSpec string
@@ -435,7 +414,7 @@ func TestUseIndexableReposIfMissingOrGlobalSearchContext(t *testing.T) {
 				SearchContextSpec: tt.searchContextSpec,
 				Query:             queryInfo,
 			}
-			repositoryResolver := &Resolver{Zoekt: mockZoekt, SearchableReposFunc: mockSearchableReposFunc}
+			repositoryResolver := &Resolver{SearchableReposFunc: mockSearchableReposFunc}
 			resolved, err := repositoryResolver.Resolve(context.Background(), op)
 			if err != nil {
 				t.Fatal(err)

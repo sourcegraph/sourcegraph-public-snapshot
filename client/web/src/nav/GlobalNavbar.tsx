@@ -22,7 +22,7 @@ import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
 import { WebCommandListPopoverButton } from '@sourcegraph/web/src/components/shared'
 import { FeedbackPrompt } from '@sourcegraph/web/src/nav/Feedback/FeedbackPrompt'
 import { StatusMessagesNavItem } from '@sourcegraph/web/src/nav/StatusMessagesNavItem'
-import { NavGroup, NavItem, NavBar, NavLink, NavActions, NavAction } from '@sourcegraph/wildcard/src/components/NavBar'
+import { NavGroup, NavItem, NavBar, NavLink, NavActions, NavAction } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
 import { BatchChangesProps } from '../batches'
@@ -51,7 +51,6 @@ import { QueryState } from '../search/helpers'
 import { SearchNavbarItem } from '../search/input/SearchNavbarItem'
 import { ThemePreferenceProps } from '../theme'
 import { userExternalServicesEnabledFromTags } from '../user/settings/cloud-ga'
-import { UserSettingsSidebarItems } from '../user/settings/UserSettingsSidebar'
 import { showDotComMarketing } from '../util/features'
 
 import { ExtensionAlertAnimationProps, UserNavItem } from './UserNavItem'
@@ -87,8 +86,6 @@ interface Props
     // Whether globbing is enabled for filters.
     globbing: boolean
 
-    userSettingsSideBarItems?: UserSettingsSidebarItems
-
     /**
      * Which variation of the global navbar to render.
      *
@@ -97,8 +94,7 @@ interface Props
      *
      * 'low-profile-with-logo' renders the low-profile navbar but with the homepage logo. Used on repogroup pages.
      */
-    // TODO: after redesign refresh is done remove no-search-input variant
-    variant: 'default' | 'low-profile' | 'low-profile-with-logo' | 'no-search-input'
+    variant: 'default' | 'low-profile' | 'low-profile-with-logo'
 
     setVersionContext: (versionContext: string | undefined) => Promise<void>
     availableVersionContexts: VersionContext[] | undefined
@@ -135,12 +131,11 @@ export const GlobalNavbar: React.FunctionComponent<Props> = ({
 
     const globalSearchContextSpec = useMemo(() => getGlobalSearchContextFilter(query), [query])
 
-    // Design Refresh will include repositories section as part of the user navigation bar
+    // UI includes repositories section as part of the user navigation bar
     // This filter makes sure repositories feature flag is active.
-    const showRepositorySection = useMemo(
-        () => !!props.userSettingsSideBarItems?.find(item => item.label === 'Repositories'),
-        [props.userSettingsSideBarItems]
-    )
+    const showRepositorySection = props.authenticatedUser
+        ? userExternalServicesEnabledFromTags(props.authenticatedUser.tags)
+        : false
 
     const isSearchContextAvailable = useObservable(
         useMemo(
@@ -246,6 +241,12 @@ export const GlobalNavbar: React.FunctionComponent<Props> = ({
                 <NavActions>
                     {!props.authenticatedUser && (
                         <>
+                            <NavAction>
+                                <Link className="global-navbar__link" to="https://about.sourcegraph.com">
+                                    About <span className="d-none d-sm-inline">Sourcegraph</span>
+                                </Link>
+                            </NavAction>
+
                             {showDotComMarketing && (
                                 <NavAction>
                                     <Link className="global-navbar__link font-weight-medium" to="/help" target="_blank">
@@ -253,17 +254,6 @@ export const GlobalNavbar: React.FunctionComponent<Props> = ({
                                     </Link>
                                 </NavAction>
                             )}
-
-                            <NavAction>
-                                <Link
-                                    className="global-navbar__link"
-                                    to="https://about.sourcegraph.com"
-                                    rel="noreferrer noopener"
-                                    target="_blank"
-                                >
-                                    About
-                                </Link>
-                            </NavAction>
                         </>
                     )}
                     {props.authenticatedUser && (
@@ -271,15 +261,17 @@ export const GlobalNavbar: React.FunctionComponent<Props> = ({
                             <FeedbackPrompt routes={props.routes} />
                         </NavAction>
                     )}
-                    <NavAction>
-                        <WebCommandListPopoverButton
-                            {...props}
-                            location={location}
-                            buttonClassName="btn btn-link p-0 m-0"
-                            menu={ContributableMenu.CommandPalette}
-                            keyboardShortcutForShow={KEYBOARD_SHORTCUT_SHOW_COMMAND_PALETTE}
-                        />
-                    </NavAction>
+                    {props.authenticatedUser && (
+                        <NavAction>
+                            <WebCommandListPopoverButton
+                                {...props}
+                                location={location}
+                                buttonClassName="btn btn-link p-0 m-0"
+                                menu={ContributableMenu.CommandPalette}
+                                keyboardShortcutForShow={KEYBOARD_SHORTCUT_SHOW_COMMAND_PALETTE}
+                            />
+                        </NavAction>
+                    )}
                     {props.authenticatedUser &&
                         (props.authenticatedUser.siteAdmin ||
                             userExternalServicesEnabledFromTags(props.authenticatedUser.tags)) && (
@@ -301,10 +293,7 @@ export const GlobalNavbar: React.FunctionComponent<Props> = ({
                                     <Link className="btn btn-sm btn-outline-secondary mr-1" to="/sign-in">
                                         Log in
                                     </Link>
-                                    <Link
-                                        className="btn btn-sm btn-outline-secondary global-navbar__sign-up"
-                                        to="/sign-up"
-                                    >
+                                    <Link className="btn btn-sm global-navbar__sign-up" to="/sign-up">
                                         Sign up
                                     </Link>
                                 </div>

@@ -4,6 +4,7 @@ import React from 'react'
 import { Link } from 'react-router-dom'
 
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
+import { Button } from '@sourcegraph/wildcard'
 
 import { Settings } from '../../../../../../../../schema/settings.schema'
 import { InsightDashboard } from '../../../../../../../core/types'
@@ -27,7 +28,7 @@ export const EmptyInsightDashboard: React.FunctionComponent<EmptyInsightDashboar
             onAddInsight={onAddInsight}
         />
     ) : (
-        <EmptyBuiltInDashboard />
+        <EmptyBuiltInDashboard dashboard={dashboard} />
     )
 }
 
@@ -36,9 +37,9 @@ export const EmptyInsightDashboard: React.FunctionComponent<EmptyInsightDashboar
  * Since all insights within built-in dashboards are calculated there's no ability to add insight to
  * this type of dashboard.
  */
-export const EmptyBuiltInDashboard: React.FunctionComponent = () => (
+export const EmptyBuiltInDashboard: React.FunctionComponent<{ dashboard: InsightDashboard }> = props => (
     <section className={styles.emptySection}>
-        <Link to="/insights/create" className={classnames(styles.itemCard, 'card')}>
+        <Link to={`/insights/create?dashboardId=${props.dashboard.id}`} className={classnames(styles.itemCard, 'card')}>
             <PlusIcon size="2rem" />
             <span>Create new insight</span>
         </Link>
@@ -60,11 +61,12 @@ export const EmptySettingsBasedDashboard: React.FunctionComponent<EmptyInsightDa
 
     return (
         <section className={styles.emptySection}>
-            <button
+            <Button
                 type="button"
                 disabled={!permissions.isConfigurable}
                 onClick={onAddInsight}
-                className="btn btn-secondary p-0 w-100 border-0"
+                variant="secondary"
+                className="p-0 w-100 border-0"
             >
                 <div
                     data-tooltip={!permissions.isConfigurable ? getTooltipMessage(dashboard, permissions) : undefined}
@@ -74,9 +76,9 @@ export const EmptySettingsBasedDashboard: React.FunctionComponent<EmptyInsightDa
                     <PlusIcon size="2rem" />
                     <span>Add insights</span>
                 </div>
-            </button>
+            </Button>
             <span className="d-flex justify-content-center mt-3">
-                <Link to="/insights/create">or, create new insight</Link>
+                <Link to={`/insights/create?dashboardId=${dashboard.id}`}>or, create new insight</Link>
             </span>
         </section>
     )

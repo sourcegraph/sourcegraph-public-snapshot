@@ -13,7 +13,7 @@ import {
     INSIGHT_TYPES_MIGRATION_COMMITS,
     LangStatsInsightContent,
 } from './utils/insight-mock-data'
-import { overrideGraphQLExtensions } from './utils/override-graphql-with-extensions'
+import { overrideGraphQLExtensions } from './utils/override-insights-graphql'
 
 describe('Code insight create insight page', () => {
     let driver: Driver
@@ -101,9 +101,6 @@ describe('Code insight create insight page', () => {
                 repository: 'github.com/sourcegraph/sourcegraph',
                 otherThreshold: 0.03,
             },
-            extensions: {
-                'sourcegraph/code-stats-insights': true,
-            },
         })
     })
 
@@ -135,20 +132,16 @@ describe('Code insight create insight page', () => {
                     },
                 }),
 
-                /**
-                 * Mock for async repositories field validation.
-                 * */
+                // Mock for async repositories field validation.
                 BulkRepositoriesSearch: () => ({
                     repoSearch0: { name: 'github.com/sourcegraph/sourcegraph' },
                 }),
 
-                /**
-                 * Mocks of commits searching and data search itself for live preview chart
-                 * */
+                // Mocks of commits searching and data search itself for live preview chart
                 BulkSearchCommits: () => INSIGHT_TYPES_MIGRATION_COMMITS,
                 BulkSearch: () => INSIGHT_TYPES_MIGRATION_BULK_SEARCH,
 
-                /** Mock for repository suggest component. */
+                // Mock for repository suggest component
                 RepositorySearchSuggestions: () => ({
                     repositories: { nodes: [] },
                 }),
@@ -207,9 +200,6 @@ describe('Code insight create insight page', () => {
 
         // Check that new org settings config has edited insight
         assert.deepStrictEqual(JSON.parse(addToUserConfigRequest.contents), {
-            extensions: {
-                'sourcegraph/search-insights': true,
-            },
             'searchInsights.insight.testInsightTitle': {
                 title: 'Test insight title',
                 repositories: ['github.com/sourcegraph/sourcegraph'],

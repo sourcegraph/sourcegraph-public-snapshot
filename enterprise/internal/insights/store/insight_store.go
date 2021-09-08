@@ -258,6 +258,7 @@ func scanInsightViewSeries(rows *sql.Rows, queryErr error) (_ []types.InsightVie
 			&temp.OldestHistoricalAt,
 			&temp.LastRecordedAt,
 			&temp.NextRecordingAfter,
+			&temp.BackfillQueuedAt,
 			&temp.RecordingIntervalDays,
 		); err != nil {
 			return []types.InsightViewSeries{}, err
@@ -399,7 +400,7 @@ const getInsightByViewSql = `
 -- source: enterprise/internal/insights/store/insight_store.go:Get
 SELECT iv.unique_id, iv.title, iv.description, ivs.label, ivs.stroke,
 i.series_id, i.query, i.created_at, i.oldest_historical_at, i.last_recorded_at,
-i.next_recording_after, i.recording_interval_days
+i.next_recording_after, i.backfill_queued_at, i.recording_interval_days
 FROM insight_view iv
          JOIN insight_view_series ivs ON iv.id = ivs.insight_view_id
          JOIN insight_series i ON ivs.insight_series_id = i.id

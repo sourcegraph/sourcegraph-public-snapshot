@@ -13,6 +13,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/awscodecommit"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
@@ -240,6 +241,46 @@ func createBbsRepos(t *testing.T, ctx context.Context, db dbutil.DB, ext *types.
 			Href: cloneBaseURL + "/" + string(r.Name),
 		})
 		r.Metadata = &metadata
+		rs = append(rs, r)
+	}
+
+	err := repoStore.Create(ctx, rs...)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	return rs, ext
+}
+
+func CreateAWSCodeCommitTestRepos(t *testing.T, ctx context.Context, db *sql.DB, count int) ([]*types.Repo, *types.ExternalService) {
+	t.Helper()
+
+	repoStore := database.Repos(db)
+	esStore := database.ExternalServices(db)
+
+	ext := &types.ExternalService{
+		Kind:        extsvc.KindAWSCodeCommit,
+		DisplayName: "AWS CodeCommit",
+		Config: MarshalJSON(t, &schema.AWSCodeCommitConnection{
+			AccessKeyID: "horse-key",
+			Region:      "horse-town",
+		}),
+	}
+	if err := esStore.Upsert(ctx, ext); err != nil {
+		t.Fatal(err)
+	}
+
+	var rs []*types.Repo
+	for i := 0; i < count; i++ {
+		r := TestRepoWithService(t, esStore, fmt.Sprintf("repo-%d-%d", ext.ID, i+1), ext)
+		r.Metadata = &awscodecommit.Repository{
+			ARN:          fmt.Sprintf("arn:aws:codecommit:us-west-1:%d:%s", i, r.Name),
+			AccountID:    "999999999999",
+			ID:           "%s",
+			Name:         string(r.Name),
+			HTTPCloneURL: fmt.Sprintf("https://git-codecommit.us-west-1.amazonaws.com/v1/repos/%s", r.Name),
+		}
+
 		rs = append(rs, r)
 	}
 

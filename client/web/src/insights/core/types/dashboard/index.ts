@@ -26,8 +26,9 @@ export const isPersonalDashboard = (dashboard: InsightDashboard | undefined): da
 export const isGlobalDashboard = (dashboard: InsightDashboard | undefined): dashboard is RealInsightDashboard =>
     dashboard?.type === InsightsDashboardType.Global
 
-export const isVirtualDashboard = (dashboard: InsightDashboard | undefined): dashboard is VirtualInsightsDashboard =>
-    dashboard?.type === InsightsDashboardType.All
+export const isVirtualDashboard = (
+    dashboard: InsightDashboard | undefined | null
+): dashboard is VirtualInsightsDashboard => dashboard?.type === InsightsDashboardType.All
 
 export const isRealDashboard = (dashboard: InsightDashboard | undefined): dashboard is RealInsightDashboard =>
     isOrganizationDashboard(dashboard) || isPersonalDashboard(dashboard) || isGlobalDashboard(dashboard)

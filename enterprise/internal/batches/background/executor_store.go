@@ -14,10 +14,12 @@ import (
 	"github.com/keegancsmith/sqlf"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
+	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
+	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
 )
 
 // executorStalledJobMaximumAge is the maximum allowable duration between updating the state of a
@@ -43,9 +45,14 @@ var executorWorkerStoreOptions = dbworkerstore.Options{
 	MaxNumRetries: 0,
 }
 
+type ExecutorStore interface {
+	dbworkerstore.Store
+	FetchCanceled(ctx context.Context, executorName string) (canceledIDs []int, err error)
+}
+
 // NewExecutorStore creates a dbworker store that wraps the batch_spec_executions
 // table.
-func NewExecutorStore(handle *basestore.TransactableHandle, observationContext *observation.Context) dbworkerstore.Store {
+func NewExecutorStore(handle *basestore.TransactableHandle, observationContext *observation.Context) ExecutorStore {
 	return &executorStore{
 		Store:              dbworkerstore.NewWithMetrics(handle, executorWorkerStoreOptions, observationContext),
 		observationContext: observationContext,
@@ -84,6 +91,26 @@ func (s *executorStore) MarkComplete(ctx context.Context, id int, options dbwork
 
 	_, ok, err := basestore.ScanFirstInt(batchesStore.Query(ctx, sqlf.Sprintf(markCompleteQuery, batchSpecRandID, id, options.WorkerHostname)))
 	return ok, err
+}
+
+func (s *executorStore) FetchCanceled(ctx context.Context, executorName string) (canceledIDs []int, err error) {
+	batchesStore := store.New(s.Store.Handle().DB(), s.observationContext, nil)
+
+	t := true
+	cs, err := batchesStore.ListBatchSpecExecutions(ctx, store.ListBatchSpecExecutionsOpts{
+		Cancel:         &t,
+		State:          btypes.BatchSpecExecutionStateProcessing,
+		WorkerHostname: executorName,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	ids := make([]int, 0, len(cs))
+	for _, c := range cs {
+		ids = append(ids, c.RecordID())
+	}
+	return ids, nil
 }
 
 func loadAndExtractBatchSpecRandID(ctx context.Context, s *store.Store, id int64) (string, error) {
@@ -128,14 +155,22 @@ func extractBatchSpecRandID(logs []workerutil.ExecutionLogEntry) (string, error)
 
 		jsonPart := l[len(outputLinePrefix):]
 
-		var e srcCLILogLine
+		var e batcheslib.LogEvent
 		if err := json.Unmarshal([]byte(jsonPart), &e); err != nil {
 			// If we can't unmarshal the line as JSON we skip it
 			continue
 		}
 
-		if e.Operation == operationCreatingBatchSpec && e.Status == "SUCCESS" {
-			parts := strings.Split(e.Message, "/")
+		if e.Operation == batcheslib.LogEventOperationCreatingBatchSpec && e.Status == batcheslib.LogEventStatusSuccess {
+			url, ok := e.Metadata["batchSpecURL"]
+			if !ok {
+				return "", ErrNoBatchSpecRandID
+			}
+			urlStr, ok := url.(string)
+			if !ok {
+				return "", ErrNoBatchSpecRandID
+			}
+			parts := strings.Split(urlStr, "/")
 			if len(parts) == 0 {
 				return "", ErrNoBatchSpecRandID
 			}
@@ -152,19 +187,6 @@ func extractBatchSpecRandID(logs []workerutil.ExecutionLogEntry) (string, error)
 
 	return batchSpecRandID, ErrNoBatchSpecRandID
 }
-
-// srcCLILogLine matches the definition of log entries that are printed by
-// src-cli when used with the `-text-only` flag.
-type srcCLILogLine struct {
-	Operation string `json:"operation"` // "PREPARING_DOCKER_IMAGES"
-
-	Timestamp time.Time `json:"timestamp"`
-
-	Status  string `json:"status"`            // "STARTED", "PROGRESS", "SUCCESS", "FAILURE"
-	Message string `json:"message,omitempty"` // "70% done"
-}
-
-const operationCreatingBatchSpec = "CREATING_BATCH_SPEC"
 
 // scanFirstExecutionRecord scans a slice of batch change executions and returns the first.
 func scanFirstExecutionRecord(rows *sql.Rows, err error) (workerutil.Record, bool, error) {

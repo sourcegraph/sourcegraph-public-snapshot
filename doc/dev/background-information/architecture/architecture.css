@@ -1,0 +1,18 @@
+@import url('https://fonts.googleapis.com/css2?family=Source+Code+Pro:wght@400;600&display=swap');
+
+@media (prefers-color-scheme: dark) {
+    [stroke="black"] {
+        stroke: #ccc;
+    }
+    /* Background */
+    .graph > polygon:first-of-type {
+        fill: #000018;
+    }
+    text {
+        fill: white;
+        font-weight: 600;
+    }
+    .node :is(polygon, ellipse, path, polyline), .edge > polygon {
+        fill-opacity: 0.45;
+    }
+}

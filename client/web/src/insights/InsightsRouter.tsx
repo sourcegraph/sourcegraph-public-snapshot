@@ -3,7 +3,6 @@ import React from 'react'
 import { RouteComponentProps, Switch, Route, useRouteMatch } from 'react-router'
 import { Redirect } from 'react-router-dom'
 
-import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
@@ -28,11 +27,7 @@ const NotFoundPage: React.FunctionComponent = () => <HeroPage icon={MapSearchIco
  * Because we need to pass all required prop from main Sourcegraph.tsx component to
  * sub-components withing app tree.
  */
-export interface InsightsRouterProps
-    extends SettingsCascadeProps,
-        PlatformContextProps,
-        TelemetryProps,
-        ExtensionsControllerProps {
+export interface InsightsRouterProps extends SettingsCascadeProps, PlatformContextProps, TelemetryProps {
     /**
      * Authenticated user info, Used to decide where code insight will appears
      * in personal dashboard (private) or in organisation dashboard (public)
@@ -44,7 +39,7 @@ export interface InsightsRouterProps
  * Main Insight routing component. Main entry point to code insights UI.
  */
 export const InsightsRouter = withAuthenticatedUser<InsightsRouterProps>(props => {
-    const { platformContext, settingsCascade, telemetryService, extensionsController, authenticatedUser } = props
+    const { platformContext, settingsCascade, telemetryService, authenticatedUser } = props
 
     const match = useRouteMatch()
 
@@ -76,7 +71,6 @@ export const InsightsRouter = withAuthenticatedUser<InsightsRouterProps>(props =
             <DashboardsRoutes
                 authenticatedUser={authenticatedUser}
                 telemetryService={telemetryService}
-                extensionsController={extensionsController}
                 platformContext={platformContext}
                 settingsCascade={settingsCascade}
             />

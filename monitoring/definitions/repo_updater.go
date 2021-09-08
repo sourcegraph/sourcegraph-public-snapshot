@@ -16,7 +16,7 @@ func RepoUpdater() *monitoring.Container {
 		syncDurationThreshold = 9 * time.Hour
 	)
 
-	var containerMonitoringOptions = &shared.ContainerMonitoringGroupOptions{
+	containerMonitoringOptions := &shared.ContainerMonitoringGroupOptions{
 		MemoryUsage: func(observable shared.Observable) shared.Observable {
 			return observable.WithWarning(nil).WithCritical(monitoring.Alert().GreaterOrEqual(90, nil).For(10 * time.Minute))
 		},
@@ -64,7 +64,8 @@ func RepoUpdater() *monitoring.Container {
 							Name:        "src_repoupdater_syncer_sync_errors_total",
 							Description: "site level external service sync error rate",
 							Query:       `max by (family) (rate(src_repoupdater_syncer_sync_errors_total{owner!="user"}[5m]))`,
-							Critical:    monitoring.Alert().Greater(0, nil).For(10 * time.Minute),
+							Warning:     monitoring.Alert().Greater(0.5, nil).For(10 * time.Minute),
+							Critical:    monitoring.Alert().Greater(1, nil).For(10 * time.Minute),
 							Panel:       monitoring.Panel().Unit(monitoring.Number).With(monitoring.PanelOptions.ZeroIfNoData()),
 							Owner:       monitoring.ObservableOwnerCoreApplication,
 							PossibleSolutions: `
@@ -421,6 +422,8 @@ func RepoUpdater() *monitoring.Container {
 			},
 
 			shared.Batches.NewDBStoreGroup(containerName),
+
+			shared.CodeIntelligence.NewCoursierGroup(containerName),
 
 			shared.NewFrontendInternalAPIErrorResponseMonitoringGroup(containerName, monitoring.ObservableOwnerCoreApplication, nil),
 			shared.NewDatabaseConnectionsMonitoringGroup(containerName),

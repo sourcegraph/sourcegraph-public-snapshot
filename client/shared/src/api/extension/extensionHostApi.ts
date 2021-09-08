@@ -563,6 +563,20 @@ export function callProviders<TRegisteredProvider, TProviderResult, TMergedResul
     mergeResult: (providerResults: readonly (TProviderResult | 'loading' | null | undefined)[]) => TMergedResult,
     logErrors: boolean = true
 ): Observable<MaybeLoadingResult<TMergedResult>> {
+    const logError = (...args: any): void => {
+        if (logErrors) {
+            console.error('Provider errored:', ...args)
+        }
+    }
+    const safeInvokeProvider = (provider: TRegisteredProvider): sourcegraph.ProviderResult<TProviderResult> => {
+        try {
+            return invokeProvider(provider)
+        } catch (error) {
+            logError(error)
+            return null
+        }
+    }
+
     return providersObservable
         .pipe(
             map(providers => filterProviders(providers)),
@@ -572,12 +586,10 @@ export function callProviders<TRegisteredProvider, TProviderResult, TMergedResul
                     providers.map(provider =>
                         concat(
                             [LOADING],
-                            providerResultToObservable(invokeProvider(provider)).pipe(
+                            providerResultToObservable(safeInvokeProvider(provider)).pipe(
                                 defaultIfEmpty<typeof LOADING | TProviderResult | null | undefined>(null),
                                 catchError(error => {
-                                    if (logErrors) {
-                                        console.error('Provider errored:', error)
-                                    }
+                                    logError(error)
                                     return [null]
                                 })
                             )

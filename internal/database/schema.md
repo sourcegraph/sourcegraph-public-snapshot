@@ -99,6 +99,7 @@ Indexes:
  namespace_org_id  | integer                  |           |          | 
  rand_id           | text                     |           | not null | 
  last_heartbeat_at | timestamp with time zone |           |          | 
+ cancel            | boolean                  |           |          | false
 Indexes:
     "batch_spec_executions_pkey" PRIMARY KEY, btree (id)
     "batch_spec_executions_rand_id" btree (rand_id)
@@ -780,6 +781,7 @@ Indexes:
     "insights_query_runner_jobs_pkey" PRIMARY KEY, btree (id)
     "insights_query_runner_jobs_cost_idx" btree (cost)
     "insights_query_runner_jobs_priority_idx" btree (priority)
+    "insights_query_runner_jobs_processable_priority_id" btree (priority, id) WHERE state = 'queued'::text OR state = 'errored'::text
     "insights_query_runner_jobs_state_btree" btree (state)
 Referenced by:
     TABLE "insights_query_runner_jobs_dependencies" CONSTRAINT "insights_query_runner_jobs_dependencies_fk_job_id" FOREIGN KEY (job_id) REFERENCES insights_query_runner_jobs(id) ON DELETE CASCADE
@@ -801,6 +803,7 @@ See [enterprise/internal/insights/background/queryrunner/worker.go:Job](https://
  recording_time | timestamp without time zone |           | not null | 
 Indexes:
     "insights_query_runner_jobs_dependencies_pkey" PRIMARY KEY, btree (id)
+    "insights_query_runner_jobs_dependencies_job_id_fk_idx" btree (job_id)
 Foreign-key constraints:
     "insights_query_runner_jobs_dependencies_fk_job_id" FOREIGN KEY (job_id) REFERENCES insights_query_runner_jobs(id) ON DELETE CASCADE
 
@@ -811,6 +814,45 @@ Stores data points for a code insight that do not need to be queried directly, b
 **job_id**: Foreign key to the job that owns this record.
 
 **recording_time**: The time for which this dependency should be recorded at using the parents value.
+
+# Table "public.lsif_configuration_policies"
+```
+           Column            |  Type   | Collation | Nullable |                         Default                         
+-----------------------------+---------+-----------+----------+---------------------------------------------------------
+ id                          | integer |           | not null | nextval('lsif_configuration_policies_id_seq'::regclass)
+ repository_id               | integer |           |          | 
+ name                        | text    |           |          | 
+ type                        | text    |           | not null | 
+ pattern                     | text    |           | not null | 
+ retention_enabled           | boolean |           | not null | 
+ retention_duration_hours    | integer |           |          | 
+ retain_intermediate_commits | boolean |           | not null | 
+ indexing_enabled            | boolean |           | not null | 
+ index_commit_max_age_hours  | integer |           |          | 
+ index_intermediate_commits  | boolean |           | not null | 
+Indexes:
+    "lsif_configuration_policies_pkey" PRIMARY KEY, btree (id)
+    "lsif_configuration_policies_repository_id" btree (repository_id)
+
+```
+
+**index_commit_max_age_hours**: The max age of commits indexed by this configuration policy. If null, the age is unbounded.
+
+**index_intermediate_commits**: If the matching Git object is a branch, setting this value to true will also index all commits on the matching branches. Setting this value to false will only consider the tip of the branch.
+
+**indexing_enabled**: Whether or not this configuration policy affects auto-indexing schedules.
+
+**pattern**: A pattern used to match` names of the associated Git object type.
+
+**repository_id**: The identifier of the repository to which this configuration policy applies. If absent, this policy is applied globally.
+
+**retain_intermediate_commits**: If the matching Git object is a branch, setting this value to true will also retain all data used to resolve queries for any commit on the matching branches. Setting this value to false will only consider the tip of the branch.
+
+**retention_duration_hours**: The max age of data retained by this configuration policy. If null, the age is unbounded.
+
+**retention_enabled**: Whether or not this configuration policy affects data retention rules.
+
+**type**: The type of Git object (e.g., COMMIT, BRANCH, TAG).
 
 # Table "public.lsif_dependency_indexing_jobs"
 ```
@@ -839,6 +881,20 @@ Foreign-key constraints:
 Tracks jobs that scan imports of indexes to schedule auto-index jobs.
 
 **upload_id**: The identifier of the triggering upload record.
+
+# Table "public.lsif_dependency_repos"
+```
+ Column  |  Type  | Collation | Nullable |                      Default                      
+---------+--------+-----------+----------+---------------------------------------------------
+ id      | bigint |           | not null | nextval('lsif_dependency_repos_id_seq'::regclass)
+ name    | text   |           | not null | 
+ version | text   |           | not null | 
+ scheme  | text   |           | not null | 
+Indexes:
+    "lsif_dependency_repos_pkey" PRIMARY KEY, btree (id)
+    "lsif_dependency_repos_unique_triplet" UNIQUE CONSTRAINT, btree (scheme, name, version)
+
+```
 
 # Table "public.lsif_dirty_repositories"
 ```
@@ -946,6 +1002,7 @@ Stores metadata about a code intel index job.
  uploads       | jsonb   |           | not null | 
 Indexes:
     "lsif_nearest_uploads_repository_id_commit_bytea" btree (repository_id, commit_bytea)
+    "lsif_nearest_uploads_uploads" gin (uploads)
 
 ```
 
@@ -964,6 +1021,7 @@ Associates commits with the complete set of uploads visible from that commit. Ev
  ancestor_commit_bytea | bytea   |           | not null | 
  distance              | integer |           | not null | 
 Indexes:
+    "lsif_nearest_uploads_links_repository_id_ancestor_commit_bytea" btree (repository_id, ancestor_commit_bytea)
     "lsif_nearest_uploads_links_repository_id_commit_bytea" btree (repository_id, commit_bytea)
 
 ```
@@ -1081,6 +1139,7 @@ Stores the retention policy of code intellience data for a repository.
  worker_hostname        | text                     |           | not null | ''::text
  last_heartbeat_at      | timestamp with time zone |           |          | 
  execution_logs         | json[]                   |           |          | 
+ num_references         | integer                  |           |          | 
 Indexes:
     "lsif_uploads_pkey" PRIMARY KEY, btree (id)
     "lsif_uploads_repository_id_commit_root_indexer" UNIQUE, btree (repository_id, commit, root, indexer) WHERE state = 'completed'::text
@@ -1107,6 +1166,8 @@ Stores metadata about an LSIF index uploaded by a user.
 **indexer**: The name of the indexer that produced the index file. If not supplied by the user it will be pulled from the index metadata.
 
 **num_parts**: The number of parts src-cli split the upload file into.
+
+**num_references**: The number of references to this upload data from other upload records (via lsif_references).
 
 **root**: The path for which the index can resolve code intelligence relative to the repository root.
 

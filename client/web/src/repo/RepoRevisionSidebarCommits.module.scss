@@ -1,27 +1,25 @@
-:global(.theme-redesign) {
-    .list {
-        padding-top: 0.5rem;
-    }
+.list {
+    padding-top: 0.5rem;
+}
 
-    .commit-container {
-        border: none;
-        border-bottom: 1px solid var(--border-color-2);
-    }
+.commit-container {
+    border: none;
+    border-bottom: 1px solid var(--border-color-2);
+}
 
-    .commit-node {
-        padding: 0.25rem 0;
-    }
+.commit-node {
+    padding: 0.25rem 0;
+}
 
-    .loader {
-        border-top: none;
-    }
+.loader {
+    border-top: none;
+}
 
-    .summary {
-        padding: 0;
-        border-top: none;
-    }
+.summary {
+    padding: 0;
+    border-top: none;
+}
 
-    .file-icon {
-        color: var(--icon-color);
-    }
+.file-icon {
+    color: var(--icon-color);
 }

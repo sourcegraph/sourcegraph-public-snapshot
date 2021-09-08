@@ -26,7 +26,7 @@ import (
 
 var (
 	searchDoer, _ = httpcli.NewInternalClientFactory("search").Doer()
-	MockSearch    func(ctx context.Context, repo api.RepoName, commit api.CommitID, p *search.TextPatternInfo, fetchTimeout time.Duration) (matches []*protocol.FileMatch, limitHit bool, err error)
+	MockSearch    func(ctx context.Context, repo api.RepoName, commit api.CommitID, p *search.TextPatternInfo, fetchTimeout time.Duration, onMatches func([]*protocol.FileMatch)) (limitHit bool, err error)
 )
 
 // Search searches repo@commit with p.
@@ -41,9 +41,9 @@ func Search(
 	fetchTimeout time.Duration,
 	indexerEndpoints []string,
 	onMatches func([]*protocol.FileMatch),
-) (matches []*protocol.FileMatch, limitHit bool, err error) {
+) (limitHit bool, err error) {
 	if MockSearch != nil {
-		return MockSearch(ctx, repo, commit, p, fetchTimeout)
+		return MockSearch(ctx, repo, commit, p, fetchTimeout, onMatches)
 	}
 
 	tr, ctx := trace.New(ctx, "searcher.client", fmt.Sprintf("%s@%s", repo, commit))
@@ -82,16 +82,13 @@ func Search(
 	if deadline, ok := ctx.Deadline(); ok {
 		t, err := deadline.MarshalText()
 		if err != nil {
-			return nil, false, err
+			return false, err
 		}
 		r.Deadline = string(t)
 	}
-	if onMatches != nil {
-		r.Stream = true
-	}
 	body, err := json.Marshal(r)
 	if err != nil {
-		return nil, false, err
+		return false, err
 	}
 
 	// Searcher caches the file contents for repo@commit since it is
@@ -100,56 +97,39 @@ func Search(
 	consistentHashKey := string(repo) + "@" + string(commit)
 	tr.LazyPrintf("%s", consistentHashKey)
 
-	var (
-		// When we retry do not use a host we already tried.
-		excludedSearchURLs = map[string]bool{}
-		attempt            = 0
-		maxAttempts        = 2
-	)
-	for {
-		attempt++
+	nodes, err := searcherURLs.Endpoints()
+	if err != nil {
+		return false, err
+	}
 
-		url, err := searcherURLs.Get(consistentHashKey, excludedSearchURLs)
-		if err != nil {
-			return nil, false, err
-		}
+	urls, err := searcherURLs.GetN(consistentHashKey, len(nodes))
+	if err != nil {
+		return false, err
+	}
 
-		// Fallback to a bad host if nothing is left
-		if url == "" {
-			tr.LazyPrintf("failed to find endpoint, trying again without excludes")
-			url, err = searcherURLs.Get(consistentHashKey, nil)
-			if err != nil {
-				return nil, false, err
-			}
-		}
+	for attempt := 0; attempt < 2; attempt++ {
+		url := urls[attempt%len(urls)]
 
 		tr.LazyPrintf("attempt %d: %s", attempt, url)
-		if onMatches != nil {
-			limitHit, err = textSearchStream(ctx, url, body, onMatches)
-			if err == nil || errcode.IsTimeout(err) {
-				return nil, limitHit, err
-			}
-		} else {
-			matches, limitHit, err = textSearch(ctx, url, body)
-			if err == nil || errcode.IsTimeout(err) {
-				return matches, limitHit, err
-			}
+		limitHit, err = textSearchStream(ctx, url, body, onMatches)
+		if err == nil || errcode.IsTimeout(err) {
+			return limitHit, err
 		}
 
 		// If we are canceled, return that error.
-		if err := ctx.Err(); err != nil {
-			return nil, false, err
+		if err = ctx.Err(); err != nil {
+			return false, err
 		}
 
 		// If not temporary or our last attempt then don't try again.
-		if !errcode.IsTemporary(err) || attempt == maxAttempts {
-			return nil, false, err
+		if !errcode.IsTemporary(err) {
+			return false, err
 		}
 
 		tr.LazyPrintf("transient error %s", err.Error())
-		// Retry search on another searcher instance (if possible)
-		excludedSearchURLs[url] = true
 	}
+
+	return false, err
 }
 
 func textSearchStream(ctx context.Context, url string, body []byte, cb func([]*protocol.FileMatch)) (bool, error) {
@@ -205,54 +185,6 @@ func textSearchStream(ctx context.Context, url string, body []byte, cb func([]*p
 		err = context.DeadlineExceeded
 	}
 	return ed.LimitHit, err
-}
-
-func textSearch(ctx context.Context, url string, body []byte) ([]*protocol.FileMatch, bool, error) {
-	req, err := http.NewRequest("GET", url, bytes.NewReader(body))
-	if err != nil {
-		return nil, false, err
-	}
-	req = req.WithContext(ctx)
-
-	req, ht := nethttp.TraceRequest(ot.GetTracer(ctx), req,
-		nethttp.OperationName("Searcher Client"),
-		nethttp.ClientTrace(false))
-	defer ht.Finish()
-
-	// Do not lose the context returned by TraceRequest
-	ctx = req.Context()
-
-	resp, err := searchDoer.Do(req)
-	if err != nil {
-		// If we failed due to cancellation or timeout (with no partial results in the response
-		// body), return just that.
-		if ctx.Err() != nil {
-			err = ctx.Err()
-		}
-		return nil, false, errors.Wrap(err, "searcher request failed")
-	}
-	defer resp.Body.Close()
-	if resp.StatusCode != 200 {
-		body, err := io.ReadAll(resp.Body)
-		if err != nil {
-			return nil, false, err
-		}
-		return nil, false, errors.WithStack(&searcherError{StatusCode: resp.StatusCode, Message: string(body)})
-	}
-
-	r := struct {
-		Matches     []*protocol.FileMatch
-		LimitHit    bool
-		DeadlineHit bool
-	}{}
-	err = json.NewDecoder(resp.Body).Decode(&r)
-	if err != nil {
-		return nil, false, errors.Wrap(err, "searcher response invalid")
-	}
-	if r.DeadlineHit {
-		err = context.DeadlineExceeded
-	}
-	return r.Matches, r.LimitHit, err
 }
 
 type searcherError struct {

@@ -19,13 +19,11 @@ import (
 	"math"
 	"net/http"
 	"strconv"
-	"sync"
 	"time"
 
 	nettrace "golang.org/x/net/trace"
 
 	"github.com/cockroachdb/errors"
-	"github.com/gorilla/schema"
 	"github.com/inconshreveable/log15"
 	"github.com/opentracing/opentracing-go/ext"
 	otlog "github.com/opentracing/opentracing-go/log"
@@ -41,12 +39,6 @@ import (
 )
 
 const (
-	// maxLimit is a hard-coded maximum for total number of matches we return.
-	// This may be increased in the future pending stability evaluation, or may
-	// be removed entirely once streaming is in place and we don't need to buffer
-	// the whole result set in memory.
-	maxLimit = 20000
-
 	// numWorkers is how many concurrent readerGreps run in the case of
 	// regexSearch, and the number of parallel workers in the case of
 	// structuralSearch.
@@ -57,12 +49,6 @@ const (
 type Service struct {
 	Store *store.Store
 	Log   log15.Logger
-}
-
-var decoder = schema.NewDecoder()
-
-func init() {
-	decoder.IgnoreUnknownKeys(true)
 }
 
 // ServeHTTP handles HTTP based search requests
@@ -98,43 +84,7 @@ func (s *Service) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if p.Stream {
-		s.streamSearch(ctx, w, p)
-		return
-	}
-
-	if p.Limit == 0 || p.Limit > maxLimit {
-		p.Limit = maxLimit
-	}
-
-	ctx, cancel, stream := newLimitedStreamCollector(ctx, p.Limit)
-	defer cancel()
-
-	deadlineHit, err := s.search(ctx, &p, stream)
-	if err != nil {
-		code := http.StatusInternalServerError
-		if errcode.IsBadRequest(err) || errors.Is(ctx.Err(), context.Canceled) {
-			code = http.StatusBadRequest
-		} else if errcode.IsTemporary(err) {
-			code = http.StatusServiceUnavailable
-		} else {
-			log.Printf("internal error serving %#+v: %s", p, err)
-		}
-		http.Error(w, err.Error(), code)
-		return
-	}
-
-	w.Header().Set("Content-Type", "application/json")
-	resp := protocol.Response{
-		Matches:     stream.Collected(),
-		LimitHit:    stream.LimitHit(),
-		DeadlineHit: deadlineHit,
-	}
-	// The only reasonable error is the client going away now since we know we
-	// can encode resp. This happens relatively often due to our
-	// graphqlbackend regularly cancelling in-flight requests. We can't send
-	// an error response, so we just ignore.
-	_ = json.NewEncoder(w).Encode(&resp)
+	s.streamSearch(ctx, w, p)
 }
 
 func (s *Service) streamSearch(ctx context.Context, w http.ResponseWriter, p protocol.Request) {
@@ -150,16 +100,13 @@ func (s *Service) streamSearch(ctx context.Context, w http.ResponseWriter, p pro
 		return
 	}
 
-	var bufMux sync.Mutex
 	matchesBuf := streamhttp.NewJSONArrayBuf(32*1024, func(data []byte) error {
 		return eventWriter.EventBytes("matches", data)
 	})
 	onMatches := func(match protocol.FileMatch) {
-		bufMux.Lock()
 		if err := matchesBuf.Append(match); err != nil {
 			log.Printf("failed appending match to buffer: %s", err)
 		}
-		bufMux.Unlock()
 	}
 
 	ctx, cancel, stream := newLimitedStream(ctx, p.Limit, onMatches)

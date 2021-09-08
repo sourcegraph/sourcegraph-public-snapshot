@@ -282,6 +282,8 @@ type GetUploadsOptions struct {
 	State          string
 	Term           string
 	VisibleAtTip   bool
+	DependencyOf   int
+	DependentOf    int
 	UploadedBefore *time.Time
 	UploadedAfter  *time.Time
 	OldestFirst    bool
@@ -296,6 +298,8 @@ func (s *Store) GetUploads(ctx context.Context, opts GetUploadsOptions) (_ []Upl
 		log.String("state", opts.State),
 		log.String("term", opts.Term),
 		log.Bool("visibleAtTip", opts.VisibleAtTip),
+		log.Int("dependencyOf", opts.DependencyOf),
+		log.Int("dependentOf", opts.DependentOf),
 		log.String("uploadedBefore", nilTimeToString(opts.UploadedBefore)),
 		log.String("uploadedAfter", nilTimeToString(opts.UploadedAfter)),
 		log.Bool("oldestFirst", opts.OldestFirst),
@@ -324,6 +328,22 @@ func (s *Store) GetUploads(ctx context.Context, opts GetUploadsOptions) (_ []Upl
 	}
 	if opts.VisibleAtTip {
 		conds = append(conds, sqlf.Sprintf("EXISTS ("+visibleAtTipSubselectQuery+")"))
+	}
+	if opts.DependencyOf != 0 {
+		conds = append(conds, sqlf.Sprintf(`
+			u.id IN (
+				SELECT dump_id FROM lsif_packages
+				WHERE (scheme, name, version) IN (SELECT scheme, name, version FROM lsif_references WHERE dump_id = %s)
+			)
+		`, opts.DependencyOf))
+	}
+	if opts.DependentOf != 0 {
+		conds = append(conds, sqlf.Sprintf(`
+			u.id IN (
+				SELECT dump_id FROM lsif_references
+				WHERE (scheme, name, version) IN (SELECT scheme, name, version FROM lsif_packages WHERE dump_id = %s)
+			)
+		`, opts.DependentOf))
 	}
 	if opts.UploadedBefore != nil {
 		conds = append(conds, sqlf.Sprintf("u.uploaded_at < %s", *opts.UploadedBefore))
@@ -661,12 +681,162 @@ func (s *Store) HardDeleteUploadByID(ctx context.Context, ids ...int) (err error
 		idQueries = append(idQueries, sqlf.Sprintf("%s", id))
 	}
 
-	return s.Store.Exec(ctx, sqlf.Sprintf(hardDeleteUploadByIDQuery, sqlf.Join(idQueries, ", ")))
+	tx, err := s.Transact(ctx)
+	if err != nil {
+		return err
+	}
+	defer func() { err = tx.Done(err) }()
+
+	// Before deleting the record, ensure that we decrease the number
+	// of existant references to all of this upload's dependencies.
+	if err := tx.UpdateDependencyNumReferences(ctx, ids, true); err != nil {
+		return err
+	}
+
+	if err := tx.Exec(ctx, sqlf.Sprintf(hardDeleteUploadByIDQuery, sqlf.Join(idQueries, ", "))); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 const hardDeleteUploadByIDQuery = `
 -- source: enterprise/internal/codeintel/stores/dbstore/uploads.go:HardDeleteUploadByID
 DELETE FROM lsif_uploads WHERE id IN (%s)
+`
+
+// UpdateNumReferences calculates the number of existant uploads that reference any
+// of the given upload identifiers and updates the num_references field of each
+// upload.
+func (s *Store) UpdateNumReferences(ctx context.Context, ids []int) (err error) {
+	ctx, endObservation := s.operations.updateNumReferences.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.Int("numIDs", len(ids)),
+		log.String("ids", intsToString(ids)),
+	}})
+	defer endObservation(1, observation.Args{})
+
+	if len(ids) == 0 {
+		return nil
+	}
+
+	queries := make([]*sqlf.Query, 0, len(ids))
+	for _, id := range ids {
+		queries = append(queries, sqlf.Sprintf("%s", id))
+	}
+
+	return s.Exec(ctx, sqlf.Sprintf(updateNumReferencesQuery, sqlf.Join(queries, ", ")))
+}
+
+var updateNumReferencesQuery = `
+-- source: enterprise/internal/codeintel/stores/dbstore/uploads.go:UpdateNumReferences
+WITH locked_uploads AS (
+	SELECT u.id
+	FROM lsif_uploads u
+	WHERE u.id in (%s)
+	ORDER BY u.id FOR UPDATE
+),
+reference_counts AS (
+	SELECT
+		p.dump_id,
+		count(*) AS count
+	FROM lsif_packages p
+	JOIN lsif_references r
+	ON
+		p.scheme = r.scheme AND
+		p.name = r.name AND
+		p.version = r.version AND
+		p.dump_id != r.dump_id
+	WHERE p.dump_id IN (SELECT id FROM locked_uploads)
+	GROUP BY p.dump_id
+)
+UPDATE lsif_uploads u
+SET num_references = COALESCE((SELECT rc.count FROM reference_counts rc WHERE rc.dump_id = u.id), 0)
+WHERE u.id IN (SELECT id FROM locked_uploads)
+`
+
+// UpdateDependencyNumReferences increments (or decrements) the number of references for
+// each dependency of the uploads with any of the given identifiers.
+func (s *Store) UpdateDependencyNumReferences(ctx context.Context, ids []int, decrement bool) (err error) {
+	ctx, endObservation := s.operations.updateDependencyNumReferences.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.Int("numIDs", len(ids)),
+		log.String("ids", intsToString(ids)),
+		log.Bool("decrement", decrement),
+	}})
+	defer endObservation(1, observation.Args{})
+
+	if len(ids) == 0 {
+		return nil
+	}
+
+	idQueries := make([]*sqlf.Query, 0, len(ids))
+	for _, id := range ids {
+		idQueries = append(idQueries, sqlf.Sprintf("%s", id))
+	}
+
+	delta := 1
+	if decrement {
+		delta = -1
+	}
+
+	return s.Exec(ctx, sqlf.Sprintf(updateDependencyNumReferencesQuery, sqlf.Join(idQueries, ", "), delta))
+}
+
+var updateDependencyNumReferencesQuery = `
+-- source: enterprise/internal/codeintel/stores/dbstore/uploads.go:UpdateDependencyNumReferences
+WITH
+source_references AS MATERIALIZED (
+	SELECT
+		r.scheme,
+		r.name,
+		r.version,
+		r.dump_id
+	FROM lsif_references r
+	WHERE r.dump_id IN (%s)
+),
+-- Trick Postgres into using a better set of indexes here.
+--
+-- If we do a join between lsif_packages and lsif_references directly, which
+-- is the more obvious way to write this query, then Postgres will tend to 
+-- choose to perform a parallel index-only scan over the package table's 
+-- (scheme, name, version, dump_id) index, then perform subsequent index only 
+-- scans over the reference table's (scheme, name, version, dump_id) index.
+--
+-- The first index operation touches the entire index. Despite being an index
+-- _only_ scan, this also touches a large number of heap pages, where the tuple
+-- visibility map is stored.
+--
+-- We materialize the query above to force it to use better indexes for the
+-- distribution of data we expect (and analyze on the table did not help).
+-- The query above will use the reference table's (dump_id) index, which is
+-- a very specific target that will only read relevant areas of the index.
+-- The query below can then efficiently use the package table's index on
+-- (scheme, name, version, dump_id), which also only touches the relevant
+-- fraction of the index.
+reference_counts AS (
+	SELECT
+		p.dump_id,
+		count(*) AS count
+	FROM lsif_packages p
+	JOIN source_references r
+	ON
+		r.scheme = p.scheme AND
+		r.name = p.name AND
+		r.version = p.version AND
+		r.dump_id != p.dump_id
+	GROUP BY p.dump_id
+),
+locked_uploads AS (
+	SELECT
+		u.id,
+		rc.count
+	FROM lsif_uploads u
+	JOIN reference_counts rc
+	ON rc.dump_id = u.id
+	ORDER BY u.id FOR UPDATE
+)
+UPDATE lsif_uploads u
+SET num_references = num_references + (lu.count * %s)
+FROM locked_uploads lu WHERE lu.id = u.id
 `
 
 // SoftDeleteOldUploads marks uploads older than the given age that are not visible at the tip of the default branch

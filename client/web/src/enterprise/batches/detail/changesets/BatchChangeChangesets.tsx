@@ -25,6 +25,7 @@ import { getLSPTextDocumentPositionParameters } from '../../utils'
 import {
     queryChangesets as _queryChangesets,
     queryExternalChangesetWithFileDiffs as _queryExternalChangesetWithFileDiffs,
+    queryAllChangesetIDs as _queryAllChangesetIDs,
 } from '../backend'
 
 import styles from './BatchChangeChangesets.module.scss'
@@ -50,19 +51,21 @@ interface Props extends ThemeProps, PlatformContextProps, TelemetryProps, Extens
     /** For testing only. */
     queryExternalChangesetWithFileDiffs?: typeof _queryExternalChangesetWithFileDiffs
     /** For testing only. */
+    queryAllChangesetIDs?: typeof _queryAllChangesetIDs
+    /** For testing only. */
     expandByDefault?: boolean
 }
 
+/**
+ * A list of a batch change's changesets.
+ */
 export const BatchChangeChangesets: React.FunctionComponent<Props> = props => (
     <MultiSelectContextProvider>
         <BatchChangeChangesetsImpl {...props} />
     </MultiSelectContextProvider>
 )
 
-/**
- * A list of a batch change's changesets.
- */
-export const BatchChangeChangesetsImpl: React.FunctionComponent<Props> = ({
+const BatchChangeChangesetsImpl: React.FunctionComponent<Props> = ({
     batchChangeID,
     viewerCanAdminister,
     history,
@@ -73,6 +76,7 @@ export const BatchChangeChangesetsImpl: React.FunctionComponent<Props> = ({
     telemetryService,
     hideFilters = false,
     queryChangesets = _queryChangesets,
+    queryAllChangesetIDs = _queryAllChangesetIDs,
     queryExternalChangesetWithFileDiffs,
     expandByDefault,
     onlyArchived,
@@ -85,34 +89,12 @@ export const BatchChangeChangesetsImpl: React.FunctionComponent<Props> = ({
     const {
         selected,
         deselectAll,
-        deselectSingle,
-        deselectVisible,
         areAllVisibleSelected,
         isSelected,
-        selectSingle,
-        selectVisible,
-        setTotalCount,
+        toggleSingle,
+        toggleVisible,
         setVisible,
     } = useContext(MultiSelectContext)
-
-    const onSelect = useCallback(
-        (id: string, isSelected: boolean): void => {
-            if (isSelected) {
-                selectSingle(id)
-            } else {
-                deselectSingle(id)
-            }
-        },
-        [deselectSingle, selectSingle]
-    )
-
-    const toggleSelectVisible = useCallback(() => {
-        if (areAllVisibleSelected()) {
-            deselectVisible()
-        } else {
-            selectVisible()
-        }
-    }, [areAllVisibleSelected, deselectVisible, selectVisible])
 
     const [changesetFilters, setChangesetFilters] = useState<ChangesetFilters>({
         checkState: null,
@@ -154,8 +136,6 @@ export const BatchChangeChangesetsImpl: React.FunctionComponent<Props> = ({
                         setVisible(
                             data.nodes.filter(node => node.__typename === 'ExternalChangeset').map(node => node.id)
                         )
-                        // Remember the totalCount.
-                        setTotalCount(data.totalCount)
                     })
                 )
                 .pipe(repeatWhen(notifier => notifier.pipe(delay(5000))))
@@ -169,7 +149,6 @@ export const BatchChangeChangesetsImpl: React.FunctionComponent<Props> = ({
             onlyArchived,
             queryChangesets,
             setVisible,
-            setTotalCount,
         ]
     )
 
@@ -242,6 +221,7 @@ export const BatchChangeChangesetsImpl: React.FunctionComponent<Props> = ({
                 <ChangesetSelectRow
                     batchChangeID={batchChangeID}
                     onSubmit={deselectAll}
+                    queryAllChangesetIDs={queryAllChangesetIDs}
                     queryArguments={queryArguments}
                 />
             )}
@@ -256,7 +236,7 @@ export const BatchChangeChangesetsImpl: React.FunctionComponent<Props> = ({
                         extensionInfo: { extensionsController, hoverifier },
                         expandByDefault,
                         queryExternalChangesetWithFileDiffs,
-                        selectable: { onSelect, isSelected },
+                        selectable: { onSelect: toggleSingle, isSelected },
                     }}
                     queryConnection={queryChangesetsConnection}
                     hideSearch={true}
@@ -271,8 +251,8 @@ export const BatchChangeChangesetsImpl: React.FunctionComponent<Props> = ({
                     className="filtered-connection__centered-summary"
                     headComponent={BatchChangeChangesetsHeader}
                     headComponentProps={{
-                        allSelected: areAllVisibleSelected(),
-                        toggleSelectAll: toggleSelectVisible,
+                        allSelected: showSelectRow && areAllVisibleSelected(),
+                        toggleSelectAll: toggleVisible,
                         disabled: !viewerCanAdminister,
                     }}
                     // Only show the empty element, if no filters are selected.

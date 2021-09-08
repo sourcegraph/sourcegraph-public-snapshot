@@ -8,7 +8,7 @@ import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/teleme
 import { isErrorLike } from '@sourcegraph/shared/src/util/errors'
 
 import { ErrorAlert } from '../../../components/alerts'
-import { ChartViewContent } from '../insight-view-content/chart-view-content/ChartViewContent'
+import { ChartViewContent } from '../../../views/components/content/view-content/chart-view-content/ChartViewContent'
 
 import styles from './LivePreviewContainer.module.scss'
 
@@ -20,10 +20,11 @@ export interface LivePreviewContainerProps {
     dataOrError: ChartContent | Error | undefined
     defaultMock: ChartContent
     mockMessage: ReactNode
+    description?: ReactNode
 }
 
 export function LivePreviewContainer(props: LivePreviewContainerProps): ReactElement {
-    const { disabled, loading, dataOrError, defaultMock, onUpdateClick, className, mockMessage } = props
+    const { disabled, loading, dataOrError, defaultMock, onUpdateClick, className, mockMessage, description } = props
 
     return (
         <section className={classnames(styles.livePreview, className)}>
@@ -61,6 +62,8 @@ export function LivePreviewContainer(props: LivePreviewContainerProps): ReactEle
                     {!dataOrError && <p className={styles.livePreviewLoadingChartInfo}>{mockMessage}</p>}
                 </div>
             )}
+
+            {description && <span className="mt-2 text-muted">{description}</span>}
         </section>
     )
 }

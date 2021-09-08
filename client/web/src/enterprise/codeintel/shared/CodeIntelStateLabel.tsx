@@ -3,13 +3,15 @@ import React, { FunctionComponent } from 'react'
 
 import { LSIFIndexState, LSIFUploadState } from '../../../graphql-operations'
 
+import styles from './CodeIntelStateLabel.module.scss'
+
 export interface CodeIntelStateLabelProps {
     state: LSIFUploadState | LSIFIndexState
     placeInQueue?: number | null
     className?: string
 }
 
-const labelClassNames = 'codeintel-state__label text-muted'
+const labelClassNames = classNames(styles.label, 'text-muted')
 
 export const CodeIntelStateLabel: FunctionComponent<CodeIntelStateLabelProps> = ({ state, placeInQueue, className }) =>
     state === LSIFUploadState.UPLOADING ? (
@@ -35,4 +37,4 @@ export interface CodeIntelStateLabelPlaceInQueueProps {
 }
 
 const CodeIntelStateLabelPlaceInQueue: FunctionComponent<CodeIntelStateLabelPlaceInQueueProps> = ({ placeInQueue }) =>
-    placeInQueue ? <span className="codeintel-state__label--block">(#{placeInQueue} in line)</span> : <></>
+    placeInQueue ? <span className={styles.block}>(#{placeInQueue} in line)</span> : <></>

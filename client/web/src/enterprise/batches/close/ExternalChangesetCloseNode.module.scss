@@ -33,10 +33,7 @@
         }
     }
     &__expanded-section {
-        background-color: var(--oc-blue-0);
-        :global(.theme-redesign) & {
-            background-color: var(--body-bg);
-        }
+        background-color: var(--body-bg);
         // Make it full width in the current row.
         grid-column: 2 / -1;
     }

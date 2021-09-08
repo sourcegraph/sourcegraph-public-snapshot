@@ -215,7 +215,7 @@ export const RepositoryDocumentationSidebar: React.FunctionComponent<Props> = ({
     )
 }
 
-function hasDescendent(node: GQLDocumentationNode, descendentPathID: string): boolean {
+export function hasDescendent(node: GQLDocumentationNode, descendentPathID: string): boolean {
     return !!node.children.find(child => {
         if (child.pathID === descendentPathID || child.node?.pathID === descendentPathID) {
             return true

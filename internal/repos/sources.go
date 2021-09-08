@@ -8,6 +8,7 @@ import (
 	"github.com/cockroachdb/errors"
 	"github.com/hashicorp/go-multierror"
 
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
@@ -80,6 +81,23 @@ type Source interface {
 // on sourcegraph.com to lazily sync individual repos.
 type RepoGetter interface {
 	GetRepo(context.Context, string) (*types.Repo, error)
+}
+
+type DBSource interface {
+	Source
+	SetDB(dbutil.DB)
+}
+
+// WithDB returns a decorator used in NewSourcer that calls SetDB on Sources that
+// can be upgraded to it.
+func WithDB(db dbutil.DB) func(Source) Source {
+	return func(src Source) Source {
+		if s, ok := src.(DBSource); ok {
+			s.SetDB(db)
+			return s
+		}
+		return src
+	}
 }
 
 // A UserSource is a source that can use a custom authenticator (such as one

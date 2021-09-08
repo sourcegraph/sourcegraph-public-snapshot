@@ -466,7 +466,7 @@ func (s *GithubSource) listRepos(ctx context.Context, repos []string, results ch
 		// resulted in EOF errors while testing. And since we rely on fetching
 		// to work, we fall back to the (slower) sequential fetching in case we
 		// run into an GraphQL API error
-		log15.Warn("github sync: fetching in batches failed. falling back to sequential fetch", "error", err)
+		log15.Warn("github sync: fetching in batches failed, falling back to sequential fetch", "error", err)
 	}
 
 	// Admins normally add to end of lists, so end of list most likely has new

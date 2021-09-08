@@ -55,6 +55,7 @@ const (
 	SearchConfiguration    = "internal.search-configuration"
 	ExternalServiceConfigs = "internal.external-services.configs"
 	ExternalServicesList   = "internal.external-services.list"
+	StreamingSearch        = "internal.stream-search"
 )
 
 // New creates a new API router with route URL pattern definitions but
@@ -127,6 +128,7 @@ func NewInternal(base *mux.Router) *mux.Router {
 	base.Path("/search/configuration").Methods("GET", "POST").Name(SearchConfiguration)
 	base.Path("/telemetry").Methods("POST").Name(Telemetry)
 	base.Path("/lsif/upload").Methods("POST").Name(LSIFUpload)
+	base.Path("/search/stream").Methods("GET").Name(StreamingSearch)
 	addRegistryRoute(base)
 	addGraphQLRoute(base)
 

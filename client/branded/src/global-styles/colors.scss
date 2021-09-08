@@ -1,5 +1,8 @@
-@import 'open-color/open-color.scss'; // Sass variables
-@import '~open-color/open-color.css'; // CSS variables
+// We need to import *both* SCSS variables (e.g., $oc-red-9) *and* CSS variables (e.g.,
+// var(--oc-red-9). The SCSS variables are used for SCSS color math at build time, and the CSS
+// variables are used at runtime.
+@import 'open-color/open-color.scss';
+@import 'open-color/open-color.css';
 
 // Tell Bootstrap to use our colors.
 $blue: #0b70db;
@@ -80,6 +83,7 @@ $theme-colors: (
     --primary-3: var(--indigo);
     --brand-secondary: var(--purple);
     --brand-secondary-2: var(--pink);
+    --brand-secondary-3: #8900bf;
     --success: var(--green);
     --success-2: #afe0b8;
     --info: var(--cyan);

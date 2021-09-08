@@ -5,7 +5,7 @@ import { ButtonDropdown, DropdownMenu, DropdownToggle } from 'reactstrap'
 import { Link } from '@sourcegraph/shared/src/components/Link'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
-import { ExperimentalSignUpSource } from '../../auth/ExperimentalSignUpPage'
+import { CloudSignUpSource } from '../../auth/CloudSignUpPage'
 
 import styles from './ButtonDropdownCta.module.scss'
 
@@ -14,7 +14,7 @@ export interface ButtonDropdownCtaProps extends TelemetryProps {
     icon: JSX.Element
     title: string
     copyText: string
-    source: ExperimentalSignUpSource
+    source: CloudSignUpSource
     viewEventName: string
     returnTo: string
     onToggle?: () => void

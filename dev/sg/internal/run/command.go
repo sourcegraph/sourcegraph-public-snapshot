@@ -4,9 +4,11 @@ import (
 	"context"
 	"io"
 	"os/exec"
+	"sync"
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/stdout"
 	"github.com/sourcegraph/sourcegraph/lib/output"
+	"github.com/sourcegraph/sourcegraph/lib/process"
 )
 
 type Command struct {
@@ -80,6 +82,13 @@ type startedCmd struct {
 
 	stdoutBuf *prefixSuffixSaver
 	stderrBuf *prefixSuffixSaver
+
+	outWg *sync.WaitGroup
+}
+
+func (sc *startedCmd) Wait() error {
+	sc.outWg.Wait()
+	return sc.Cmd.Wait()
 }
 
 func (sc *startedCmd) CapturedStdout() string {
@@ -111,19 +120,26 @@ func startCmd(ctx context.Context, dir string, cmd Command, globalEnv map[string
 	sc.Cmd.Dir = dir
 	sc.Cmd.Env = makeEnv(globalEnv, cmd.Env)
 
-	logger := newCmdLogger(cmd.Name, stdout.Out)
+	var stdoutWriter, stderrWriter io.Writer
+	logger := newCmdLogger(commandCtx, cmd.Name, stdout.Out)
 	if cmd.IgnoreStdout {
 		stdout.Out.WriteLine(output.Linef("", output.StyleSuggestion, "Ignoring stdout of %s", cmd.Name))
-		sc.Cmd.Stdout = sc.stdoutBuf
+		stdoutWriter = sc.stdoutBuf
 	} else {
-		sc.Cmd.Stdout = io.MultiWriter(logger, sc.stdoutBuf)
+		stdoutWriter = io.MultiWriter(logger, sc.stdoutBuf)
 	}
 	if cmd.IgnoreStderr {
 		stdout.Out.WriteLine(output.Linef("", output.StyleSuggestion, "Ignoring stderr of %s", cmd.Name))
-		sc.Cmd.Stderr = sc.stderrBuf
+		stderrWriter = sc.stderrBuf
 	} else {
-		sc.Cmd.Stderr = io.MultiWriter(logger, sc.stderrBuf)
+		stderrWriter = io.MultiWriter(logger, sc.stderrBuf)
 	}
+
+	wg, err := process.PipeOutput(ctx, sc.Cmd, stdoutWriter, stderrWriter)
+	if err != nil {
+		return nil, err
+	}
+	sc.outWg = wg
 
 	if err := sc.Start(); err != nil {
 		return sc, err

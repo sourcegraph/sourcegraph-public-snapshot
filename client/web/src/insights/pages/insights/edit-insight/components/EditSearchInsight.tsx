@@ -1,10 +1,10 @@
 import React, { useMemo } from 'react'
-import { useHistory } from 'react-router-dom'
 
 import { Settings } from '@sourcegraph/shared/src/settings/settings'
 
 import { SubmissionErrors } from '../../../../components/form/hooks/useForm'
 import { InsightType, SearchBasedInsight } from '../../../../core/types'
+import { isSearchBackendBasedInsight } from '../../../../core/types/insight/search-insight'
 import { SupportedInsightSubject } from '../../../../core/types/subjects'
 import { createDefaultEditSeries } from '../../creation/search-insight/components/search-insight-creation-content/hooks/use-editable-series'
 import { SearchInsightCreationContent } from '../../creation/search-insight/components/search-insight-creation-content/SearchInsightCreationContent'
@@ -13,14 +13,14 @@ import { getSanitizedSearchInsight } from '../../creation/search-insight/utils/i
 
 interface EditSearchBasedInsightProps {
     insight: SearchBasedInsight
-    onSubmit: (insight: SearchBasedInsight) => SubmissionErrors | Promise<SubmissionErrors> | void
     finalSettings: Settings
     subjects: SupportedInsightSubject[]
+    onSubmit: (insight: SearchBasedInsight) => SubmissionErrors | Promise<SubmissionErrors> | void
+    onCancel: () => void
 }
 
 export const EditSearchBasedInsight: React.FunctionComponent<EditSearchBasedInsightProps> = props => {
-    const { insight, finalSettings = {}, subjects, onSubmit } = props
-    const history = useHistory()
+    const { insight, finalSettings = {}, subjects, onSubmit, onCancel } = props
 
     const insightFormValues = useMemo<CreateInsightFormFields>(() => {
         if (insight.type === InsightType.Backend) {
@@ -50,11 +50,16 @@ export const EditSearchBasedInsight: React.FunctionComponent<EditSearchBasedInsi
     const handleSubmit = (values: CreateInsightFormFields): SubmissionErrors | Promise<SubmissionErrors> | void => {
         const sanitizedInsight = getSanitizedSearchInsight(values)
 
-        return onSubmit(sanitizedInsight)
-    }
+        // Preserve backend insight filters since these filters don't represent in form fields
+        // in case if editing hasn't change type of search insight.
+        if (isSearchBackendBasedInsight(sanitizedInsight) && isSearchBackendBasedInsight(insight)) {
+            return onSubmit({
+                ...sanitizedInsight,
+                filters: insight.filters,
+            })
+        }
 
-    const handleCancel = (): void => {
-        history.push(`/insights/dashboards/${insight.visibility}`)
+        return onSubmit(sanitizedInsight)
     }
 
     return (
@@ -66,7 +71,7 @@ export const EditSearchBasedInsight: React.FunctionComponent<EditSearchBasedInsi
             subjects={subjects}
             dataTestId="search-insight-edit-page-content"
             onSubmit={handleSubmit}
-            onCancel={handleCancel}
+            onCancel={onCancel}
         />
     )
 }
