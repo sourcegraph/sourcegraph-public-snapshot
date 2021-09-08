@@ -2786,6 +2786,7 @@ with your code hosts connections or networking issues affecting communication wi
 **Descriptions**
 
 - <span class="badge badge-warning">warning</span> repo-updater: 30s+ 95th repositories source duration for 5m0s
+
 **Possible solutions**
 
 - Check the network latency is reasonable (<50ms) between the Sourcegraph and the code host
