@@ -993,6 +993,17 @@ Stores metadata about a code intel index job.
 
 **root**: The working directory of the indexer image relative to the repository root.
 
+# Table "public.lsif_last_retention_scan"
+```
+         Column         |           Type           | Collation | Nullable | Default 
+------------------------+--------------------------+-----------+----------+---------
+ repository_id          | integer                  |           | not null | 
+ last_retention_scan_at | timestamp with time zone |           | not null | 
+Indexes:
+    "lsif_last_retention_scan_pkey" PRIMARY KEY, btree (repository_id)
+
+```
+
 # Table "public.lsif_nearest_uploads"
 ```
     Column     |  Type   | Collation | Nullable | Default 
@@ -1141,6 +1152,7 @@ Stores the retention policy of code intellience data for a repository.
  execution_logs         | json[]                   |           |          | 
  num_references         | integer                  |           |          | 
  expired                | boolean                  |           | not null | false
+ last_retention_scan_at | timestamp with time zone |           |          | 
 Indexes:
     "lsif_uploads_pkey" PRIMARY KEY, btree (id)
     "lsif_uploads_repository_id_commit_root_indexer" UNIQUE, btree (repository_id, commit, root, indexer) WHERE state = 'completed'::text
@@ -1167,6 +1179,8 @@ Stores metadata about an LSIF index uploaded by a user.
 **id**: Used as a logical foreign key with the (disjoint) codeintel database.
 
 **indexer**: The name of the indexer that produced the index file. If not supplied by the user it will be pulled from the index metadata.
+
+**last_retention_scan_at**: The last time this upload was checked against data retention policies.
 
 **num_parts**: The number of parts src-cli split the upload file into.
 
