@@ -4,7 +4,7 @@ import { ApolloClient, ApolloProvider, NormalizedCacheObject } from '@apollo/cli
 import { ShortcutProvider } from '@slimsag/react-shortcuts'
 import H, { createBrowserHistory } from 'history'
 import ServerIcon from 'mdi-react/ServerIcon'
-import React, { useMemo, useEffect, useState } from 'react'
+import React, { useMemo, useEffect, useState, useCallback } from 'react'
 import { Route, Router } from 'react-router'
 import { combineLatest, from, Subscription, fromEvent, of, Subject } from 'rxjs'
 import { bufferCount, catchError, distinctUntilChanged, map, startWith, switchMap, tap } from 'rxjs/operators'
@@ -93,6 +93,7 @@ import { UserAreaRoute } from './user/area/UserArea'
 import { UserAreaHeaderNavItem } from './user/area/UserAreaHeader'
 import { UserSettingsAreaRoute } from './user/settings/UserSettingsArea'
 import { UserSettingsSidebarItems } from './user/settings/UserSettingsSidebar'
+import { UserExternalServicesOrRepositoriesUpdateProps } from './util'
 import { globbingEnabledFromSettings } from './util/globbing'
 import { observeLocation } from './util/location'
 import {
@@ -133,7 +134,9 @@ export interface SourcegraphWebAppProps
  * Only used during the migration from the old class component; will be removed when the migration
  * is complete.
  */
-interface SourcegraphWebAppOldClassComponentExtraProps extends SettingsCascadeProps {
+interface SourcegraphWebAppOldClassComponentExtraProps
+    extends SettingsCascadeProps,
+        UserExternalServicesOrRepositoriesUpdateProps {
     history: H.History
     location: H.Location
 
@@ -206,6 +209,9 @@ interface SourcegraphWebAppOldClassComponentExtraProps extends SettingsCascadePr
 
     /** The currently authenticated user (or null if the viewer is anonymous). */
     authenticatedUser?: AuthenticatedUser | null
+
+    hasUserAddedRepositories: boolean
+    hasUserAddedExternalServices: boolean
 }
 
 interface SourcegraphWebAppState {
@@ -233,9 +239,6 @@ interface SourcegraphWebAppState {
 
     selectedSearchContextSpec?: string
     defaultSearchContextSpec: string
-    hasUserAddedRepositories: boolean
-    hasUserSyncedPublicRepositories: boolean
-    hasUserAddedExternalServices: boolean
 
     /**
      * Evaluated feature flags for the current viewer
@@ -271,7 +274,6 @@ class SourcegraphWebAppOldClassComponent extends React.Component<
     SourcegraphWebAppState
 > {
     private readonly subscriptions = new Subscription()
-    private readonly userRepositoriesUpdates = new Subject<void>()
 
     constructor(props: SourcegraphWebAppProps & SourcegraphWebAppOldClassComponentExtraProps) {
         super(props)
@@ -291,39 +293,12 @@ class SourcegraphWebAppOldClassComponent extends React.Component<
             availableVersionContexts,
             previousVersionContext,
             defaultSearchContextSpec: 'global', // global is default for now, user will be able to change this at some point
-            hasUserAddedRepositories: false,
-            hasUserSyncedPublicRepositories: false,
-            hasUserAddedExternalServices: false,
             featureFlags: new Map<FeatureFlagName, boolean>(),
         }
     }
 
     public componentDidMount(): void {
         document.documentElement.classList.add('theme')
-
-        this.subscriptions.add(
-            combineLatest([this.userRepositoriesUpdates, authenticatedUser])
-                .pipe(
-                    switchMap(([, authenticatedUser]) =>
-                        authenticatedUser
-                            ? combineLatest([
-                                  listUserRepositories({ id: authenticatedUser.id, first: 1 }),
-                                  queryExternalServices({ namespace: authenticatedUser.id, first: 1, after: null }),
-                              ])
-                            : of(null)
-                    ),
-                    catchError(error => [asError(error)])
-                )
-                .subscribe(result => {
-                    if (!isErrorLike(result) && result !== null) {
-                        const [userRepositoriesResult, externalServicesResult] = result
-                        this.setState({
-                            hasUserAddedRepositories: userRepositoriesResult.nodes.length > 0,
-                            hasUserAddedExternalServices: externalServicesResult.nodes.length > 0,
-                        })
-                    }
-                })
-        )
 
         /**
          * Listens for uncaught 401 errors when a user when a user was previously authenticated.
@@ -375,8 +350,6 @@ class SourcegraphWebAppOldClassComponent extends React.Component<
         this.setWorkspaceSearchContext(this.state.selectedSearchContextSpec).catch(error => {
             console.error('Error sending search context to extensions', error)
         })
-
-        this.userRepositoriesUpdates.next()
     }
 
     public componentWillUnmount(): void {
@@ -442,10 +415,6 @@ class SourcegraphWebAppOldClassComponent extends React.Component<
                                                     // Extensions
                                                     telemetryService={eventLogger}
                                                     isSourcegraphDotCom={window.context.sourcegraphDotComMode}
-                                                    hasUserAddedRepositories={this.hasUserAddedRepositories()}
-                                                    hasUserAddedExternalServices={
-                                                        this.state.hasUserAddedExternalServices
-                                                    }
                                                     selectedSearchContextSpec={this.getSelectedSearchContextSpec()}
                                                     setSelectedSearchContextSpec={this.setSelectedSearchContextSpec}
                                                     getUserSearchContextNamespaces={getUserSearchContextNamespaces}
@@ -465,12 +434,6 @@ class SourcegraphWebAppOldClassComponent extends React.Component<
                                                     fetchRecentSearches={fetchRecentSearches}
                                                     fetchRecentFileViews={fetchRecentFileViews}
                                                     streamSearch={aggregateStreamingSearch}
-                                                    onUserExternalServicesOrRepositoriesUpdate={
-                                                        this.onUserExternalServicesOrRepositoriesUpdate
-                                                    }
-                                                    onSyncedPublicRepositoriesUpdate={
-                                                        this.onSyncedPublicRepositoriesUpdate
-                                                    }
                                                     featureFlags={this.state.featureFlags}
                                                 />
                                             </CodeHostScopeProvider>
@@ -511,25 +474,6 @@ class SourcegraphWebAppOldClassComponent extends React.Component<
         // is in a fulfilled state, we know that extensions have received the latest version context
         await extensionHostAPI.setVersionContext(resolvedVersionContext)
     }
-
-    private onUserExternalServicesOrRepositoriesUpdate = (
-        externalServicesCount: number,
-        userRepoCount: number
-    ): void => {
-        this.setState({
-            hasUserAddedExternalServices: externalServicesCount > 0,
-            hasUserAddedRepositories: userRepoCount > 0,
-        })
-    }
-
-    private onSyncedPublicRepositoriesUpdate = (publicReposCount: number): void => {
-        this.setState({
-            hasUserSyncedPublicRepositories: publicReposCount > 0,
-        })
-    }
-
-    private hasUserAddedRepositories = (): boolean =>
-        this.state.hasUserAddedRepositories || this.state.hasUserSyncedPublicRepositories
 
     private getSelectedSearchContextSpec = (): string | undefined =>
         this.props.showSearchContext ? this.state.selectedSearchContextSpec : undefined
@@ -646,6 +590,62 @@ export const SourcegraphWebApp: React.FunctionComponent<SourcegraphWebAppProps> 
         )
     )
 
+    const userRepositoriesUpdates = useMemo(() => new Subject<void>(), [])
+    interface HasUserAddedProps {
+        hasUserAddedRepositories: boolean
+        hasUserAddedExternalServices: boolean
+    }
+    const hasUserAddedProps: HasUserAddedProps | undefined = useObservable(
+        useMemo(
+            () =>
+                combineLatest([userRepositoriesUpdates, authenticatedUser]).pipe(
+                    switchMap(([, authenticatedUser]) =>
+                        authenticatedUser
+                            ? combineLatest([
+                                  listUserRepositories({ id: authenticatedUser.id, first: 1 }),
+                                  queryExternalServices({ namespace: authenticatedUser.id, first: 1, after: null }),
+                              ])
+                            : of(null)
+                    ),
+                    catchError(error => [asError(error)]),
+                    map(result => {
+                        if (!isErrorLike(result) && result !== null) {
+                            const [userRepositoriesResult, externalServicesResult] = result
+                            return {
+                                hasUserAddedRepositories: userRepositoriesResult.nodes.length > 0,
+                                hasUserAddedExternalServices: externalServicesResult.nodes.length > 0,
+                            }
+                        }
+                        return undefined
+                    })
+                ),
+            [userRepositoriesUpdates]
+        )
+    )
+    useEffect(() => userRepositoriesUpdates.next(), [userRepositoriesUpdates])
+    const [hasUserAddedProps2, setHasUserAddedProps2] = useState<HasUserAddedProps>()
+    const onUserExternalServicesOrRepositoriesUpdate = useCallback(
+        (externalServicesCount: number, userRepoCount: number): void => {
+            setHasUserAddedProps2({
+                hasUserAddedExternalServices: externalServicesCount > 0,
+                hasUserAddedRepositories: userRepoCount > 0,
+            })
+        },
+        []
+    )
+    const [hasUserSyncedPublicRepositories, setHasUserSyncedPublicRepositories] = useState(false)
+    const onSyncedPublicRepositoriesUpdate = useCallback(
+        (publicReposCount: number): void => setHasUserSyncedPublicRepositories(publicReposCount > 0),
+        []
+    )
+    const hasUserAddedRepositories =
+        hasUserAddedProps2?.hasUserAddedRepositories ||
+        hasUserAddedProps?.hasUserAddedRepositories ||
+        hasUserSyncedPublicRepositories ||
+        false
+    const hasUserAddedExternalServices =
+        hasUserAddedProps2?.hasUserAddedExternalServices || hasUserAddedProps?.hasUserAddedExternalServices || false
+
     return userAndSettingsProps ? (
         <SourcegraphWebAppOldClassComponent
             {...props}
@@ -659,6 +659,10 @@ export const SourcegraphWebApp: React.FunctionComponent<SourcegraphWebAppProps> 
             setParsedSearchQuery={setParsedSearchQuery}
             setPatternType={setPatternType}
             setCaseSensitivity={setCaseSensitivity}
+            hasUserAddedRepositories={hasUserAddedRepositories}
+            hasUserAddedExternalServices={hasUserAddedExternalServices}
+            onUserExternalServicesOrRepositoriesUpdate={onUserExternalServicesOrRepositoriesUpdate}
+            onSyncedPublicRepositoriesUpdate={onSyncedPublicRepositoriesUpdate}
         />
     ) : null
 }
