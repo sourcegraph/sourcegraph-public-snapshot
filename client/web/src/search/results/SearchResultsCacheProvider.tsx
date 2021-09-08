@@ -1,5 +1,5 @@
 import { isEqual } from 'lodash'
-import React, { createContext, Dispatch, SetStateAction, useContext, useMemo, useState } from 'react'
+import React, { createContext, Dispatch, SetStateAction, useContext, useEffect, useMemo, useState } from 'react'
 import { of } from 'rxjs'
 import { throttleTime } from 'rxjs/operators'
 
@@ -43,12 +43,13 @@ export function useCachedSearchResults(
         }, [cachedResults?.options, cachedResults?.results, options, streamSearch])
     )
 
-    if (results?.state === 'complete') {
-        // Must be set asynchronously to avoid React errors
-        // of updating the state of a component inside another
-        // component's render function.
-        setTimeout(() => setCachedResults({ results, options }), 0)
-    }
+    useEffect(() => {
+        if (results?.state === 'complete') {
+            setCachedResults({ results, options })
+        }
+        // Only update cached results if the results change
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [results])
 
     return results
 }
