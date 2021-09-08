@@ -2802,30 +2802,6 @@ with your code hosts connections or networking issues affecting communication wi
 
 <br />
 
-## repo-updater: syncer_synced_repos
-
-<p class="subtitle">repositories synced</p>
-
-**Descriptions**
-
-- <span class="badge badge-warning">warning</span> repo-updater: less than 0 repositories synced for 9h0m0s
-
-
-**Possible solutions**
-
-- **As of 3.29.1** The metric behind this warning is not working as intended. Please feel free to silence the alert as folllows.
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
-
-```json
-"observability.silenceAlerts": [
-  "warning_repo-updater_syncer_synced_repos"
-]
-```
-
-<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
-
-<br />
-
 ## repo-updater: sourced_repos
 
 <p class="subtitle">repositories sourced</p>

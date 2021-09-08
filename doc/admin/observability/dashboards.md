@@ -3499,16 +3499,6 @@ This panel indicates 95th repositories source duration.
 
 <br />
 
-#### repo-updater: syncer_synced_repos
-
-This panel indicates repositories synced.
-
-> NOTE: Alerts related to this panel are documented in the [alert solutions reference](./alert_solutions.md#repo-updater-syncer-synced-repos).
-
-<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
-
-<br />
-
 #### repo-updater: sourced_repos
 
 This panel indicates repositories sourced.
