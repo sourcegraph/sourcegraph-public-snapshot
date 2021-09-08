@@ -2,12 +2,12 @@ import 'focus-visible'
 
 import { ApolloClient, ApolloProvider, NormalizedCacheObject } from '@apollo/client'
 import { ShortcutProvider } from '@slimsag/react-shortcuts'
-import { createBrowserHistory } from 'history'
+import H, { createBrowserHistory } from 'history'
 import ServerIcon from 'mdi-react/ServerIcon'
-import * as React from 'react'
+import React, { useMemo } from 'react'
 import { Route, Router } from 'react-router'
 import { combineLatest, from, Subscription, fromEvent, of, Subject } from 'rxjs'
-import { bufferCount, catchError, distinctUntilChanged, map, startWith, switchMap } from 'rxjs/operators'
+import { bufferCount, catchError, distinctUntilChanged, map, startWith, switchMap, tap } from 'rxjs/operators'
 
 import { Tooltip } from '@sourcegraph/branded/src/components/tooltip/Tooltip'
 import { getEnabledExtensions } from '@sourcegraph/shared/src/api/client/enabledExtensions'
@@ -28,6 +28,7 @@ import { filterExists } from '@sourcegraph/shared/src/search/query/validate'
 import { aggregateStreamingSearch } from '@sourcegraph/shared/src/search/stream'
 import { EMPTY_SETTINGS_CASCADE, SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { asError, isErrorLike } from '@sourcegraph/shared/src/util/errors'
+import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
 
 import { authenticatedUser, AuthenticatedUser } from './auth'
 import { getWebGraphQLClient } from './backend/graphql'
@@ -126,6 +127,19 @@ export interface SourcegraphWebAppProps
     repoSettingsAreaRoutes: readonly RepoSettingsAreaRoute[]
     repoSettingsSidebarGroups: readonly RepoSettingsSideBarGroup[]
     routes: readonly LayoutRouteProps<any>[]
+}
+
+/**
+ * Props passed from the {@link SourcegraphWebApp} function component to the old class component.
+ * Only used during the migration from the old class component; will be removed when the migration
+ * is complete.
+ */
+interface SourcegraphWebAppOldClassComponentExtraProps {
+    history: H.History
+    location: H.Location
+
+    platformContext: PlatformContext
+    extensionsController: ExtensionsController
 }
 
 interface SourcegraphWebAppState extends SettingsCascadeProps {
@@ -248,32 +262,15 @@ const history = createBrowserHistory()
  *
  * @deprecated Add behavior to {@link SourcegraphWebApp} instead.
  */
-class SourcegraphWebAppOldClassComponent extends React.Component<SourcegraphWebAppProps, SourcegraphWebAppState> {
+class SourcegraphWebAppOldClassComponent extends React.Component<
+    SourcegraphWebAppProps & SourcegraphWebAppOldClassComponentExtraProps,
+    SourcegraphWebAppState
+> {
     private readonly subscriptions = new Subscription()
     private readonly userRepositoriesUpdates = new Subject<void>()
-    private readonly platformContext: PlatformContext = createPlatformContext()
-    private readonly extensionsController: ExtensionsController = createExtensionsController(this.platformContext)
 
-    constructor(props: SourcegraphWebAppProps) {
+    constructor(props: SourcegraphWebAppProps & SourcegraphWebAppOldClassComponentExtraProps) {
         super(props)
-        this.subscriptions.add(this.extensionsController)
-
-        // Preload extensions whenever user enabled extensions or the viewed language changes.
-        this.subscriptions.add(
-            combineLatest([
-                getEnabledExtensions(this.platformContext),
-                observeLocation(history).pipe(
-                    startWith(location),
-                    map(location => getModeFromPath(location.pathname)),
-                    distinctUntilChanged()
-                ),
-            ]).subscribe(([extensions, languageID]) => {
-                preloadExtensions({
-                    extensions,
-                    languages: new Set([languageID]),
-                })
-            })
-        )
 
         const parsedSearchURL = parseSearchURL(window.location.search)
         // The patternType in the URL query parameter. If none is provided, default to literal.
@@ -332,7 +329,10 @@ class SourcegraphWebAppOldClassComponent extends React.Component<SourcegraphWebA
             })
 
         this.subscriptions.add(
-            combineLatest([from(this.platformContext.settings), authenticatedUser.pipe(startWith(null))]).subscribe(
+            combineLatest([
+                from(this.props.platformContext.settings),
+                authenticatedUser.pipe(startWith(null)),
+            ]).subscribe(
                 ([settingsCascade, authenticatedUser]) => {
                     this.setState(state => ({
                         settingsCascade,
@@ -353,7 +353,7 @@ class SourcegraphWebAppOldClassComponent extends React.Component<SourcegraphWebA
         // Insight count, insights settings, observe settings mutations for analytics
         // Track add delete and update events of code insights via
         this.subscriptions.add(
-            combineLatest([from(this.platformContext.settings), authenticatedUser])
+            combineLatest([from(this.props.platformContext.settings), authenticatedUser])
                 .pipe(bufferCount(2, 1))
                 .subscribe(([[oldSettings], [newSettings, authUser]]) => {
                     if (authUser) {
@@ -509,8 +509,6 @@ class SourcegraphWebAppOldClassComponent extends React.Component<SourcegraphWebA
                                                     availableVersionContexts={this.state.availableVersionContexts}
                                                     previousVersionContext={this.state.previousVersionContext}
                                                     // Extensions
-                                                    platformContext={this.platformContext}
-                                                    extensionsController={this.extensionsController}
                                                     telemetryService={eventLogger}
                                                     isSourcegraphDotCom={window.context.sourcegraphDotComMode}
                                                     showRepogroupHomepage={this.state.showRepogroupHomepage}
@@ -561,7 +559,7 @@ class SourcegraphWebAppOldClassComponent extends React.Component<SourcegraphWebA
                                 <Tooltip key={1} />
                                 <Notifications
                                     key={2}
-                                    extensionsController={this.extensionsController}
+                                    extensionsController={this.props.extensionsController}
                                     notificationClassNames={notificationClassNames}
                                 />
                             </SearchResultsCacheProvider>
@@ -602,7 +600,7 @@ class SourcegraphWebAppOldClassComponent extends React.Component<SourcegraphWebA
             this.setState({ versionContext: resolvedVersionContext, previousVersionContext: resolvedVersionContext })
         }
 
-        const extensionHostAPI = await this.extensionsController.extHostAPI
+        const extensionHostAPI = await this.props.extensionsController.extHostAPI
         // Note: `setVersionContext` is now asynchronous since the version context
         // is sent directly to extensions in the worker thread. This means that when the Promise
         // is in a fulfilled state, we know that extensions have received the latest version context
@@ -648,11 +646,48 @@ class SourcegraphWebAppOldClassComponent extends React.Component<SourcegraphWebA
     }
 
     private async setWorkspaceSearchContext(spec: string | undefined): Promise<void> {
-        const extensionHostAPI = await this.extensionsController.extHostAPI
+        const extensionHostAPI = await this.props.extensionsController.extHostAPI
         await extensionHostAPI.setSearchContext(spec)
     }
 }
 
-export const SourcegraphWebApp: React.FunctionComponent<SourcegraphWebAppProps> = props => (
-    <SourcegraphWebAppOldClassComponent {...props} />
-)
+export const SourcegraphWebApp: React.FunctionComponent<SourcegraphWebAppProps> = props => {
+    const location = history.location
+
+    const platformContext = useMemo(() => createPlatformContext(), [])
+    const extensionsController = useMemo(() => createExtensionsController(platformContext), [platformContext])
+    useEffect(() => () => extensionsController.unsubscribe(), [extensionsController])
+
+    // Preload extensions whenever user enabled extensions or the viewed language changes.
+    useObservable(
+        useMemo(
+            () =>
+                combineLatest([
+                    getEnabledExtensions(platformContext),
+                    observeLocation(history).pipe(
+                        startWith(location),
+                        map(location => getModeFromPath(location.pathname)),
+                        distinctUntilChanged()
+                    ),
+                ]).pipe(
+                    tap(([extensions, languageID]) => {
+                        preloadExtensions({
+                            extensions,
+                            languages: new Set([languageID]),
+                        })
+                    })
+                ),
+            [location, platformContext]
+        )
+    )
+
+    return (
+        <SourcegraphWebAppOldClassComponent
+            {...props}
+            history={history}
+            location={location}
+            platformContext={platformContext}
+            extensionsController={extensionsController}
+        />
+    )
+}
