@@ -314,7 +314,7 @@ func (s *Store) GetUploads(ctx context.Context, opts GetUploadsOptions) (_ []Upl
 	}
 	defer func() { err = tx.Done(err) }()
 
-	var conds []*sqlf.Query
+	conds := make([]*sqlf.Query, 0, 9)
 	if opts.RepositoryID != 0 {
 		conds = append(conds, sqlf.Sprintf("u.repository_id = %s", opts.RepositoryID))
 	}
@@ -796,9 +796,9 @@ source_references AS MATERIALIZED (
 -- Trick Postgres into using a better set of indexes here.
 --
 -- If we do a join between lsif_packages and lsif_references directly, which
--- is the more obvious way to write this query, then Postgres will tend to 
--- choose to perform a parallel index-only scan over the package table's 
--- (scheme, name, version, dump_id) index, then perform subsequent index only 
+-- is the more obvious way to write this query, then Postgres will tend to
+-- choose to perform a parallel index-only scan over the package table's
+-- (scheme, name, version, dump_id) index, then perform subsequent index only
 -- scans over the reference table's (scheme, name, version, dump_id) index.
 --
 -- The first index operation touches the entire index. Despite being an index
