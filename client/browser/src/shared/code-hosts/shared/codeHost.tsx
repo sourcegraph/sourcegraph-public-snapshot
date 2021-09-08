@@ -209,7 +209,7 @@ export interface CodeHost extends ApplyLinkPreviewOptions {
         /** Search result element resolver */
         resultViewResolver: ViewResolver<{ element: HTMLElement }>
         /** Callback to trigger on input element change */
-        onChange: (args: { value: string; searchURL: URL; resultElement: HTMLElement }) => void
+        onChange: (args: { value: string; searchURL: string; resultElement: HTMLElement }) => void
     }
 
     /**
@@ -836,7 +836,7 @@ export function handleCodeHost({
             switchMap(({ element }) => fromEvent(element, 'input')),
             map(event => ({
                 value: (event.target as HTMLInputElement).value,
-                searchURL,
+                searchURL: searchURL.href,
             })),
             observeOn(asyncScheduler)
         )

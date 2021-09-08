@@ -359,8 +359,9 @@ const searchEnhancement: CodeHost['searchEnhancement'] = {
             displayValue.setAttribute('aria-label', value)
 
             const link = sgElement.querySelector<HTMLElement>('a') as HTMLLinkElement
-            searchURL.searchParams.append('q', value)
-            link.setAttribute('href', searchURL.href)
+            const url = new URL(searchURL)
+            url.searchParams.append('q', value)
+            link.setAttribute('href', url.href)
             link.setAttribute('target', '_blank')
             sgElement.setAttribute('style', `display: ${value ? 'initial' : 'none !important'}`)
         }
