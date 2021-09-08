@@ -183,17 +183,17 @@ func transformBatchSpecWorkspaceJobRecord(ctx context.Context, s *store.Store, j
 		namespaceName = org.Name
 	}
 
-	input := SrcCLIBatchExecInput{
+	input := batcheslib.WorkspacesExecutionInput{
 		RawSpec: batchSpec.RawSpec,
-		Workspaces: SerializeableWorkspaces{
+		Workspaces: []*batcheslib.Workspace{
 			{
-				Repository: serializableRepo{
+				Repository: batcheslib.WorkspaceRepo{
 					ID:   string(graphqlbackend.MarshalRepositoryID(repo.ID)),
 					Name: string(repo.Name),
 				},
-				Branch: serializableBranch{
+				Branch: batcheslib.WorkspaceBranch{
 					Name:   job.Branch,
-					Target: serializableCommit{OID: job.Commit},
+					Target: batcheslib.Commit{OID: job.Commit},
 				},
 				Path:               job.Path,
 				OnlyFetchWorkspace: job.OnlyFetchWorkspace,
@@ -243,34 +243,4 @@ func transformBatchSpecWorkspaceJobRecord(ctx context.Context, s *store.Store, j
 			token: "SRC_ACCESS_TOKEN_REMOVED",
 		},
 	}, nil
-}
-
-type SrcCLIBatchExecInput struct {
-	RawSpec    string                  `json:"rawSpec"`
-	Workspaces SerializeableWorkspaces `json:"workspaces"`
-}
-
-type SerializeableWorkspaces []*SerializeableWorkspace
-
-type SerializeableWorkspace struct {
-	Repository         serializableRepo   `json:"repository"`
-	Branch             serializableBranch `json:"branch"`
-	Path               string             `json:"path"`
-	OnlyFetchWorkspace bool               `json:"onlyFetchWorkspace"`
-	Steps              []batcheslib.Step  `json:"steps"`
-	SearchResultPaths  []string           `json:"searchResultPaths"`
-}
-
-type serializableRepo struct {
-	ID   string `json:"id"`
-	Name string `json:"name"`
-}
-
-type serializableBranch struct {
-	Name   string             `json:"name"`
-	Target serializableCommit `json:"target"`
-}
-
-type serializableCommit struct {
-	OID string `json:"oid"`
 }
