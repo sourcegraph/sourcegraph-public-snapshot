@@ -1140,6 +1140,7 @@ Stores the retention policy of code intellience data for a repository.
  last_heartbeat_at      | timestamp with time zone |           |          | 
  execution_logs         | json[]                   |           |          | 
  num_references         | integer                  |           |          | 
+ expired                | boolean                  |           | not null | false
 Indexes:
     "lsif_uploads_pkey" PRIMARY KEY, btree (id)
     "lsif_uploads_repository_id_commit_root_indexer" UNIQUE, btree (repository_id, commit, root, indexer) WHERE state = 'completed'::text
@@ -1160,6 +1161,8 @@ Referenced by:
 Stores metadata about an LSIF index uploaded by a user.
 
 **commit**: A 40-char revhash. Note that this commit may not be resolvable in the future.
+
+**expired**: Whether or not this upload data is no longer protected by any data retention policy.
 
 **id**: Used as a logical foreign key with the (disjoint) codeintel database.
 
