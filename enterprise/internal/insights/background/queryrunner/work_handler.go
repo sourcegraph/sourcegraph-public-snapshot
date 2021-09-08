@@ -201,8 +201,9 @@ func ToRecording(record *Job, value float64, recordTime time.Time, repoName stri
 			Time:     recordTime,
 			Value:    value,
 		},
-		RepoName: &repoName,
-		RepoID:   &repoID,
+		RepoName:    &repoName,
+		RepoID:      &repoID,
+		PersistMode: store.PersistMode(record.PersistMode),
 	}
 	args = append(args, base)
 	for _, dependent := range record.DependentFrames {

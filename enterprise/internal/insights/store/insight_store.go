@@ -181,6 +181,7 @@ group by for_time, reason;
 type GetDataSeriesArgs struct {
 	// NextRecordingBefore will filter for results for which the next_recording_after field falls before the specified time.
 	NextRecordingBefore time.Time
+	NextSnapshotBefore  time.Time
 	Deleted             bool
 	BackfillIncomplete  bool
 	SeriesID            string
@@ -191,6 +192,9 @@ func (s *InsightStore) GetDataSeries(ctx context.Context, args GetDataSeriesArgs
 
 	if !args.NextRecordingBefore.IsZero() {
 		preds = append(preds, sqlf.Sprintf("next_recording_after < %s", args.NextRecordingBefore))
+	}
+	if !args.NextSnapshotBefore.IsZero() {
+		preds = append(preds, sqlf.Sprintf("next_snapshot_after < %s", args.NextSnapshotBefore))
 	}
 	if args.Deleted {
 		preds = append(preds, sqlf.Sprintf("deleted_at IS NOT NULL"))
@@ -340,6 +344,7 @@ func (s *InsightStore) CreateSeries(ctx context.Context, series types.InsightSer
 type DataSeriesStore interface {
 	GetDataSeries(ctx context.Context, args GetDataSeriesArgs) ([]types.InsightSeries, error)
 	StampRecording(ctx context.Context, series types.InsightSeries) (types.InsightSeries, error)
+	StampSnapshot(ctx context.Context, series types.InsightSeries) (types.InsightSeries, error)
 	StampBackfill(ctx context.Context, series types.InsightSeries) (types.InsightSeries, error)
 }
 
@@ -354,6 +359,18 @@ func (s *InsightStore) StampRecording(ctx context.Context, series types.InsightS
 	current := s.Now()
 	next := insights.NextRecording(current)
 	if err := s.Exec(ctx, sqlf.Sprintf(stampRecordingSql, current, next, series.ID)); err != nil {
+		return types.InsightSeries{}, err
+	}
+	series.LastRecordedAt = current
+	series.NextRecordingAfter = next
+	return series, nil
+}
+
+// StampSnapshot will update the recording metadata for this series and return the InsightSeries struct with updated values.
+func (s *InsightStore) StampSnapshot(ctx context.Context, series types.InsightSeries) (types.InsightSeries, error) {
+	current := s.Now()
+	next := insights.NextSnapshot(current)
+	if err := s.Exec(ctx, sqlf.Sprintf(stampSnapshotSql, current, next, series.ID)); err != nil {
 		return types.InsightSeries{}, err
 	}
 	series.LastRecordedAt = current
@@ -383,6 +400,14 @@ const stampRecordingSql = `
 UPDATE insight_series
 SET last_recorded_at = %s,
     next_recording_after = %s
+WHERE id = %s;
+`
+
+const stampSnapshotSql = `
+-- source: enterprise/internal/insights/store/insight_store.go:StampSnapshot
+UPDATE insight_series
+SET last_snapshot_at = %s,
+    next_snapshot_after = %s
 WHERE id = %s;
 `
 

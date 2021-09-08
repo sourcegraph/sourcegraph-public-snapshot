@@ -293,6 +293,13 @@ func countDataQuery(opts CountDataOpts) *sqlf.Query {
 	)
 }
 
+type PersistMode string
+
+const (
+	RecordMode   PersistMode = "record"
+	SnapshotMode PersistMode = "snapshot"
+)
+
 // RecordSeriesPointArgs describes arguments for the RecordSeriesPoint method.
 type RecordSeriesPointArgs struct {
 	// SeriesID is the unique series ID to query. It should describe the series of data uniquely,
@@ -313,6 +320,8 @@ type RecordSeriesPointArgs struct {
 	// See the DB schema comments for intended use cases. This should generally be small,
 	// low-cardinality data to avoid inflating the table.
 	Metadata interface{}
+
+	PersistMode PersistMode
 }
 
 // RecordSeriesPoint records a data point for the specfied series ID (which is a unique ID for the
@@ -362,9 +371,20 @@ func (s *Store) RecordSeriesPoint(ctx context.Context, v RecordSeriesPointArgs) 
 		metadataID = &metadataIDValue
 	}
 
+	var tableName string
+	switch v.PersistMode {
+	case RecordMode:
+		tableName = "series_points"
+	case SnapshotMode:
+		tableName = "series_points_snapshots"
+	default:
+		return errors.Newf("unsupported insights series point persist mode: %v", v.PersistMode)
+	}
+
 	// Insert the actual data point.
 	return txStore.Exec(ctx, sqlf.Sprintf(
 		recordSeriesPointFmtstr,
+		tableName,
 		v.SeriesID,         // series_id
 		v.Point.Time.UTC(), // time
 		v.Point.Value,      // value
@@ -420,7 +440,7 @@ UNION
 
 const recordSeriesPointFmtstr = `
 -- source: enterprise/internal/insights/store/store.go:RecordSeriesPoint
-INSERT INTO series_points(
+INSERT INTO %s(
 	series_id,
 	time,
 	value,
