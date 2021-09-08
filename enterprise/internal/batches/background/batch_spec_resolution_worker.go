@@ -62,7 +62,7 @@ func NewBatchSpecResolutionWorkerStore(handle *basestore.TransactableHandle, obs
 		ColumnExpressions: store.BatchSpecResolutionJobColums.ToSqlf(),
 		Scan:              scanFirstBatchSpecResolutionJobRecord,
 
-		OrderByExpression: sqlf.Sprintf("batch_spec_resolution_job.state = 'errored', batch_specs.updated_at DESC"),
+		OrderByExpression: sqlf.Sprintf("batch_spec_resolution_jobs.state = 'errored', batch_spec_resolution_jobs.updated_at DESC"),
 
 		StalledMaxAge: 60 * time.Second,
 		MaxNumResets:  batchSpecResolutionMaxNumResets,
