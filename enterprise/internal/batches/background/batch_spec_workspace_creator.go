@@ -56,9 +56,8 @@ func (r *batchSpecWorkspaceCreator) process(ctx context.Context, tx *store.Store
 	}
 
 	workspaces, unsupported, ignored, err := service.New(tx).ResolveWorkspacesForBatchSpec(ctx, evaluatableSpec, service.ResolveWorkspacesForBatchSpecOpts{
-		// TODO: Persist these also on batch_spec
-		AllowIgnored:     true,
-		AllowUnsupported: true,
+		AllowUnsupported: job.AllowUnsupported,
+		AllowIgnored:     job.AllowIgnored,
 	})
 	if err != nil {
 		return err
