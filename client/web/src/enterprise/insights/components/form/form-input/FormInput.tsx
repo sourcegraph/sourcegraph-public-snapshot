@@ -2,7 +2,7 @@ import classnames from 'classnames'
 import React, { useRef, forwardRef, InputHTMLAttributes, ReactNode } from 'react'
 import { useMergeRefs } from 'use-callback-ref'
 
-import { LoaderInput } from '@sourcegraph/branded/out/src/components/LoaderInput'
+import { LoaderInput } from '@sourcegraph/branded/src/components/LoaderInput'
 import { useAutoFocus } from '@sourcegraph/wildcard/src'
 
 import styles from './FormInput.module.scss'

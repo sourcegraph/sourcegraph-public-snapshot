@@ -24,8 +24,7 @@ enum InsightTypePrefix {
 const isSearchBasedInsightId = (id: string): boolean => id.startsWith(InsightTypePrefix.search)
 const isLangStatsdInsightId = (id: string): boolean => id.startsWith(InsightTypePrefix.langStats)
 
-const isGlobalSubject = (subject: SettingsSubject): subject is SettingsSiteSubject => subject.__typename === 'User'
-
+const isGlobalSubject = (subject: SettingsSubject): subject is SettingsSiteSubject => subject.__typename === 'Site'
 const isOrganizationSubject = (subject: SettingsSubject): subject is SettingsOrgSubject => subject.__typename === 'Org'
 
 export function logInsightMetrics(

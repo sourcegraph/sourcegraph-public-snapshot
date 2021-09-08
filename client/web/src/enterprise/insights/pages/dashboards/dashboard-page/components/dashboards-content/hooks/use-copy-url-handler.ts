@@ -3,7 +3,7 @@ import { useCallback } from 'react'
 import { merge, Observable, of } from 'rxjs'
 import { delay, startWith, switchMapTo, tap } from 'rxjs/operators'
 
-import { Tooltip } from '@sourcegraph/branded/out/src/components/tooltip/Tooltip'
+import { Tooltip } from '@sourcegraph/branded/src/components/tooltip/Tooltip'
 import { useEventObservable } from '@sourcegraph/shared/src/util/useObservable'
 
 type useCopiedHandlerReturn = [() => void, boolean | undefined]
