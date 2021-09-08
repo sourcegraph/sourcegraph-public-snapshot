@@ -221,8 +221,9 @@ INSERT INTO insights_query_runner_jobs (
 	state,
 	process_after,
 	cost,
-	priority
-) VALUES (%s, %s, %s, %s, %s, %s, %s)
+	priority,
+	persist_mode
+) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
 RETURNING id
 `
 
@@ -263,6 +264,7 @@ SELECT
 	record_time,
 	cost,
 	priority,
+	persist_mode,
 	id,
 	state,
 	failure_message,
@@ -324,6 +326,7 @@ type Job struct {
 	RecordTime  *time.Time // If non-nil, record results at this time instead of the time at which search results were found.
 	Cost        int
 	Priority    int
+	PersistMode string
 
 	DependentFrames []time.Time // This field isn't part of the job table, but maps to a table one-many on this job.
 
@@ -370,6 +373,7 @@ func doScanJobs(rows *sql.Rows, err error) ([]*Job, error) {
 			&j.RecordTime,
 			&j.Cost,
 			&j.Priority,
+			&j.PersistMode,
 
 			// Standard/required dbworker fields.
 			&j.ID,
@@ -402,6 +406,7 @@ var jobsColumns = []*sqlf.Query{
 	sqlf.Sprintf("insights_query_runner_jobs.record_time"),
 	sqlf.Sprintf("insights_query_runner_jobs.cost"),
 	sqlf.Sprintf("insights_query_runner_jobs.priority"),
+	sqlf.Sprintf("insights_query_runner_jobs.persist_mode"),
 	sqlf.Sprintf("id"),
 	sqlf.Sprintf("state"),
 	sqlf.Sprintf("failure_message"),
