@@ -1,6 +1,6 @@
 import { useContext, useEffect, useMemo, useState } from 'react'
 
-import { useDebounce } from '@sourcegraph/wildcard/src'
+import { useDebounce } from '@sourcegraph/wildcard'
 
 import { InsightsApiContext } from '../../../../core/backend/api-provider'
 import { RepositorySuggestion } from '../../../../core/backend/requests/fetch-repository-suggestions'

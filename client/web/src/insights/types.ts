@@ -1,6 +1,6 @@
 import React from 'react'
 
-import { ExtensionViewsSectionProps } from './sections/EtenstionViewsSection'
+import { ExtensionViewsSectionProps } from './sections/ExtenstionViewsSection'
 
 /**
  * Common props for components (the homepage, the directory page) needing to render

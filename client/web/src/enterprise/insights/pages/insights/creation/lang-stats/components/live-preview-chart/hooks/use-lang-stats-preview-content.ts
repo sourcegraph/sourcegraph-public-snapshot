@@ -2,7 +2,7 @@ import { useContext, useEffect, useState } from 'react'
 import { PieChartContent } from 'sourcegraph'
 
 import { asError } from '@sourcegraph/shared/src/util/errors'
-import { useDebounce } from '@sourcegraph/wildcard/src'
+import { useDebounce } from '@sourcegraph/wildcard'
 
 import { InsightsApiContext } from '../../../../../../../core/backend/api-provider'
 

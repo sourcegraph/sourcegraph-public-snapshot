@@ -2,7 +2,7 @@ import classnames from 'classnames'
 import React, { useMemo } from 'react'
 
 import { Settings } from '@sourcegraph/shared/src/settings/settings'
-import { Button } from '@sourcegraph/wildcard/src'
+import { Button } from '@sourcegraph/wildcard'
 
 import { ErrorAlert } from '../../../../../../../../../../components/alerts'
 import { LoaderButton } from '../../../../../../../../../../components/LoaderButton'

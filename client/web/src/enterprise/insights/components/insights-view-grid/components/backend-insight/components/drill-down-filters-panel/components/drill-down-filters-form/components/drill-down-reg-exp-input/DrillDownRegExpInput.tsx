@@ -1,7 +1,7 @@
 import classnames from 'classnames'
 import React, { forwardRef, InputHTMLAttributes, PropsWithChildren, Ref } from 'react'
 
-import { Button } from '@sourcegraph/wildcard/src'
+import { Button } from '@sourcegraph/wildcard'
 
 import { TruncatedText } from '../../../../../../../../../../pages/dashboards/dashboard-page/components/dashboard-select/components/trancated-text/TrancatedText'
 import { FlexTextArea } from '../../../../../../../../../form/repositories-field/components/flex-textarea/FlexTextArea'

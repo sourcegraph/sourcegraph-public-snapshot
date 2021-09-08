@@ -9,7 +9,7 @@ import { enterpriseExtensionAreaHeaderNavItems } from './extensions/extension/ex
 import { enterpriseExtensionAreaRoutes } from './extensions/extension/routes'
 import { enterpriseExtensionsAreaHeaderActionButtons } from './extensions/extensionsAreaHeaderActionButtons'
 import { enterpriseExtensionsAreaRoutes } from './extensions/routes'
-import { ExtensionViewsSection } from './insights/sections/EtenstionViewsSection'
+import { ExtensionViewsSection } from './insights/sections/ExtenstionViewsSection'
 import { enterpriseOrgAreaHeaderNavItems } from './organizations/navitems'
 import { enterpriseOrganizationAreaRoutes } from './organizations/routes'
 import { enterpriseRepoHeaderActionButtons } from './repo/repoHeaderActionButtons'

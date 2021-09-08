@@ -3,7 +3,7 @@ import { isEqual } from 'lodash'
 import PlusIcon from 'mdi-react/PlusIcon'
 import React from 'react'
 
-import { Button } from '@sourcegraph/wildcard/src'
+import { Button } from '@sourcegraph/wildcard'
 
 import { ErrorAlert } from '../../../../../../../../../../components/alerts'
 import { LoaderButton } from '../../../../../../../../../../components/LoaderButton'

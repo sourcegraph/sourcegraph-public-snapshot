@@ -3,7 +3,7 @@ import { escapeRegExp } from 'lodash'
 import React from 'react'
 import { Link } from 'react-router-dom'
 
-import { Button } from '@sourcegraph/wildcard/src'
+import { Button } from '@sourcegraph/wildcard'
 
 import { ErrorAlert } from '../../../../../../../../../components/alerts'
 import { LoaderButton } from '../../../../../../../../../components/LoaderButton'

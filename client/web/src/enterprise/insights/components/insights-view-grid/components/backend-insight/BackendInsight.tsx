@@ -6,7 +6,7 @@ import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { asError, isErrorLike } from '@sourcegraph/shared/src/util/errors'
-import { useDebounce } from '@sourcegraph/wildcard/src'
+import { useDebounce } from '@sourcegraph/wildcard'
 
 import { Settings } from '../../../../../../schema/settings.schema'
 import {

@@ -7,7 +7,7 @@ import { useHistory } from 'react-router-dom'
 
 import { isErrorLike } from '@sourcegraph/codeintellify/lib/errors'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
-import { Button } from '@sourcegraph/wildcard/src'
+import { Button } from '@sourcegraph/wildcard'
 
 import { ErrorAlert } from '../../../../../../../components/alerts'
 import { LoaderButton } from '../../../../../../../components/LoaderButton'

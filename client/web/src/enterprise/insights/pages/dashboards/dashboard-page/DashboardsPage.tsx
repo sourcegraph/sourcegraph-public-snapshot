@@ -7,7 +7,7 @@ import { Link } from '@sourcegraph/shared/src/components/Link'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { PageHeader } from '@sourcegraph/wildcard/src'
+import { PageHeader } from '@sourcegraph/wildcard'
 
 import { FeedbackBadge } from '../../../../../components/FeedbackBadge'
 import { Page } from '../../../../../components/Page'

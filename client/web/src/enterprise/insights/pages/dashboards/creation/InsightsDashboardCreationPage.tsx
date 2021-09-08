@@ -7,7 +7,7 @@ import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { asError } from '@sourcegraph/shared/src/util/errors'
-import { PageHeader, Container, Button } from '@sourcegraph/wildcard/src'
+import { PageHeader, Container, Button } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../../../auth'
 import { LoaderButton } from '../../../../../components/LoaderButton'

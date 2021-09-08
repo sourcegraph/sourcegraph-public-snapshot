@@ -14,7 +14,7 @@ import { TelemetryService } from '@sourcegraph/shared/src/telemetry/telemetrySer
 
 import { Settings } from '../schema/settings.schema'
 
-const BACKEND_INSIHGTS_SETTINGS_KEY = 'insights.allrepos'
+const BACKEND_INSIGHTS_SETTINGS_KEY = 'insights.allrepos'
 
 enum InsightTypePrefix {
     search = 'searchInsights.insight',
@@ -157,7 +157,7 @@ export function getInsightsGroupedByType(settingsCascade: SettingsCascade<Settin
     ).length
 
     const searchBasedBackendInsightCount = Object.keys(
-        finalSettingsOfAllPublicSubjects[BACKEND_INSIHGTS_SETTINGS_KEY] ?? {}
+        finalSettingsOfAllPublicSubjects[BACKEND_INSIGHTS_SETTINGS_KEY] ?? {}
     ).filter(isSearchBasedInsightId).length
 
     return {
