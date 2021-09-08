@@ -13,6 +13,8 @@ All notable changes to `src-cli` are documented in this file.
 
 ### Added
 
+- For internal use only: the `src batch exec` command executes the provided batch spec in the given workspaces.
+
 ### Changed
 
 ### Fixed

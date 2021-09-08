@@ -28,7 +28,7 @@ Examples:
 `
 
 	flagSet := flag.NewFlagSet("apply", flag.ExitOnError)
-	flags := newBatchExecuteFlags(flagSet, batchDefaultCacheDir(), batchDefaultTempDirPrefix())
+	flags := newBatchExecuteFlags(flagSet, false, batchDefaultCacheDir(), batchDefaultTempDirPrefix())
 
 	handler := func(args []string) error {
 		if err := flagSet.Parse(args); err != nil {

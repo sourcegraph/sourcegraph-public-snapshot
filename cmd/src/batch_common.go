@@ -48,27 +48,39 @@ type batchExecuteFlags struct {
 	textOnly bool
 }
 
-func newBatchExecuteFlags(flagSet *flag.FlagSet, cacheDir, tempDir string) *batchExecuteFlags {
+func newBatchExecuteFlags(flagSet *flag.FlagSet, workspaceExecution bool, cacheDir, tempDir string) *batchExecuteFlags {
 	caf := &batchExecuteFlags{
 		api: api.NewFlags(flagSet),
 	}
 
-	flagSet.BoolVar(
-		&caf.textOnly, "text-only", false,
-		"INTERNAL USE ONLY. EXPERIMENTAL. Switches off the TUI to only print JSON lines.",
-	)
-	flagSet.BoolVar(
-		&caf.allowUnsupported, "allow-unsupported", false,
-		"Allow unsupported code hosts.",
-	)
-	flagSet.BoolVar(
-		&caf.allowIgnored, "force-override-ignore", false,
-		"Do not ignore repositories that have a .batchignore file.",
-	)
-	flagSet.BoolVar(
-		&caf.apply, "apply", false,
-		"Ignored.",
-	)
+	if !workspaceExecution {
+		flagSet.BoolVar(
+			&caf.textOnly, "text-only", false,
+			"INTERNAL USE ONLY. EXPERIMENTAL. Switches off the TUI to only print JSON lines.",
+		)
+		flagSet.BoolVar(
+			&caf.allowUnsupported, "allow-unsupported", false,
+			"Allow unsupported code hosts.",
+		)
+		flagSet.BoolVar(
+			&caf.allowIgnored, "force-override-ignore", false,
+			"Do not ignore repositories that have a .batchignore file.",
+		)
+		flagSet.BoolVar(
+			&caf.apply, "apply", false,
+			"Ignored.",
+		)
+		flagSet.BoolVar(
+			&caf.keepLogs, "keep-logs", false,
+			"Retain logs after executing steps.",
+		)
+		flagSet.StringVar(
+			&caf.namespace, "namespace", "",
+			"The user or organization namespace to place the batch change within. Default is the currently authenticated user.",
+		)
+		flagSet.StringVar(&caf.namespace, "n", "", "Alias for -namespace.")
+	}
+
 	flagSet.StringVar(
 		&caf.cacheDir, "cache", cacheDir,
 		"Directory for caching results and repository archives.",
@@ -81,19 +93,11 @@ func newBatchExecuteFlags(flagSet *flag.FlagSet, cacheDir, tempDir string) *batc
 		&caf.tempDir, "tmp", tempDir,
 		"Directory for storing temporary data, such as log files. Default is /tmp. Can also be set with environment variable SRC_BATCH_TMP_DIR; if both are set, this flag will be used and not the environment variable.",
 	)
+
 	flagSet.StringVar(
 		&caf.file, "f", "",
 		"The batch spec file to read.",
 	)
-	flagSet.BoolVar(
-		&caf.keepLogs, "keep-logs", false,
-		"Retain logs after executing steps.",
-	)
-	flagSet.StringVar(
-		&caf.namespace, "namespace", "",
-		"The user or organization namespace to place the batch change within. Default is the currently authenticated user.",
-	)
-	flagSet.StringVar(&caf.namespace, "n", "", "Alias for -namespace.")
 
 	flagSet.IntVar(
 		&caf.parallelism, "j", runtime.GOMAXPROCS(0),
