@@ -7,7 +7,7 @@ import { Link } from 'react-router-dom'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { isErrorLike } from '@sourcegraph/shared/src/util/errors'
-import { Container, PageHeader } from '@sourcegraph/wildcard'
+import { Button, Container, PageHeader } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../../auth'
 import { HeroPage } from '../../../../components/HeroPage'
@@ -123,9 +123,15 @@ export const EditDashboardPage: React.FunctionComponent<EditDashboardPageProps> 
                 >
                     {formAPI => (
                         <>
-                            <button type="button" className="btn btn-outline-secondary mb-2" onClick={handleCancel}>
+                            <Button
+                                type="button"
+                                variant="secondary"
+                                outline={true}
+                                className="mb-2"
+                                onClick={handleCancel}
+                            >
                                 Cancel
-                            </button>
+                            </Button>
 
                             <LoaderButton
                                 alwaysShowLabel={true}

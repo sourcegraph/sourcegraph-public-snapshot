@@ -71,6 +71,12 @@ body,
     min-width: 0;
 }
 
+// Global styles provided by @reach packages. Should be imported once in the global scope.
+@import '@reach/dialog/styles.css';
+@import '@reach/combobox/styles.css';
+@import '@reach/menu-button/styles.css';
+@import '@reach/listbox/styles.css';
+
 // Pages
 @import './Layout';
 @import './api/ApiConsole';
@@ -82,7 +88,7 @@ body,
 @import './global/GlobalDebug';
 @import './global/Notices';
 @import './savedSearches/index';
-@import './search/input/SearchPage';
+@import './search/home/SearchPage';
 @import './search/SearchConsolePage';
 @import './search/ShepherdTour';
 @import './repogroups/RepogroupPage';
@@ -95,7 +101,7 @@ body,
 @import './site-admin/init/SiteInitPage';
 @import './site-admin/SiteAdmin';
 @import './tree/Tree';
-@import './insights/insights-global-styles';
+@import './views/view-global-styles';
 @import './nav/GlobalNavbar';
 @import './nav/Feedback/FeedbackPrompt.scss';
 @import './nav/UserNavItem.scss';
@@ -109,31 +115,15 @@ body,
 @import './repo/settings/RepoSettingsArea';
 @import './repo/actions/InstallBrowserExtensionPopover.scss';
 @import './repo/actions/InstallBrowserExtensionAlert.scss';
-@import './components/CopyableText';
 @import './components/FilteredConnection';
-@import './components/SaveToolbar';
-@import './components/HeroPage';
-@import './components/ModalPage';
-@import './components/RadioButtons';
 @import './components/Dialog';
-@import './components/CtaBanner.scss';
 @import './user/settings/UserSettingsArea';
 @import './site-admin/SiteAdminAlert';
 @import './site/DockerForMacAlert';
 @import './user/UserAvatar';
 @import './user/area/UserArea';
 @import './org/OrgsArea';
-@import './components/Badge';
-@import './components/Collapsible';
-@import './components/Timeline';
 @import './marketing/SurveyPage';
-@import './components/branding/BrandLogo';
-@import './components/SingleValueCard';
-@import './components/SearchResult';
-@import './components/SearchResultMatch';
-@import './components/diff/FileDiffNode';
-@import './components/externalServices/AddExternalServicesPage';
-@import './components/Sidebar';
 @import '../../branded/src/components/panel/views/FileLocations';
 @import '../../branded/src/components/LoaderInput';
 

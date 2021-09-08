@@ -372,25 +372,28 @@ describe('Batches', () => {
             batchChanges: true,
         }),
     }
+    const batchChangesListResults = {
+        BatchChanges: () => ({
+            batchChanges: {
+                nodes: [batchChangeListNode],
+                pageInfo: {
+                    endCursor: null,
+                    hasNextPage: false,
+                },
+                totalCount: 1,
+            },
+            allBatchChanges: {
+                totalCount: 1,
+            },
+        }),
+    }
 
     describe('Batch changes list', () => {
         it('lists global batch changes', async () => {
             testContext.overrideGraphQL({
                 ...commonWebGraphQlResults,
                 ...batchChangeLicenseGraphQlResults,
-                BatchChanges: () => ({
-                    batchChanges: {
-                        nodes: [batchChangeListNode],
-                        pageInfo: {
-                            endCursor: null,
-                            hasNextPage: false,
-                        },
-                        totalCount: 1,
-                    },
-                    allBatchChanges: {
-                        totalCount: 1,
-                    },
-                }),
+                ...batchChangesListResults,
             })
             await driver.page.goto(driver.sourcegraphBaseUrl + '/batch-changes')
             await driver.page.waitForSelector('.test-batches-list-page')
@@ -414,6 +417,7 @@ describe('Batches', () => {
             testContext.overrideGraphQL({
                 ...commonWebGraphQlResults,
                 ...batchChangeLicenseGraphQlResults,
+                ...batchChangesListResults,
                 ...mockCommonGraphQLResponses('user'),
             })
             await driver.page.goto(driver.sourcegraphBaseUrl + '/users/alice/batch-changes')
@@ -431,6 +435,7 @@ describe('Batches', () => {
             testContext.overrideGraphQL({
                 ...commonWebGraphQlResults,
                 ...batchChangeLicenseGraphQlResults,
+                ...batchChangesListResults,
                 ...mockCommonGraphQLResponses('org'),
             })
             await driver.page.goto(driver.sourcegraphBaseUrl + '/batch-changes')
@@ -452,6 +457,7 @@ describe('Batches', () => {
                 testContext.overrideGraphQL({
                     ...commonWebGraphQlResults,
                     ...batchChangeLicenseGraphQlResults,
+                    ...batchChangesListResults,
                     ...mockCommonGraphQLResponses(entityType),
                     BatchChangeChangesets,
                     ChangesetCountsOverTime,
@@ -574,19 +580,7 @@ describe('Batches', () => {
                             originalInput: 'name: awesome-batch-change\ndescription: somestring',
                             applyPreview: {
                                 stats: {
-                                    close: 10,
-                                    detach: 10,
-                                    import: 10,
-                                    publish: 10,
-                                    publishDraft: 10,
-                                    push: 10,
-                                    reopen: 10,
-                                    undraft: 10,
-                                    update: 10,
                                     archive: 10,
-                                    added: 5,
-                                    modified: 10,
-                                    removed: 3,
                                 },
                                 totalCount: 10,
                             },
@@ -678,6 +672,30 @@ describe('Batches', () => {
                         createBatchChange: {
                             id: 'change123',
                             url: namespaceURL + '/batch-changes/test-batch-change',
+                        },
+                    }),
+                    QueryApplyPreviewStats: () => ({
+                        node: {
+                            __typename: 'BatchSpec',
+                            id: 'spec123',
+
+                            applyPreview: {
+                                stats: {
+                                    close: 10,
+                                    detach: 10,
+                                    import: 10,
+                                    publish: 10,
+                                    publishDraft: 10,
+                                    push: 10,
+                                    reopen: 10,
+                                    undraft: 10,
+                                    update: 10,
+                                    archive: 18,
+                                    added: 5,
+                                    modified: 10,
+                                    removed: 3,
+                                },
+                            },
                         },
                     }),
                 })

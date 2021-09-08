@@ -12,8 +12,8 @@ Sourcegraph development is open source at:
 A hands-on introduction for setting up your local development environment.
 
 - [Step 1: Install dependencies](getting-started/quickstart_1_install_dependencies.md)
-- [Step 2: Initialize your database](getting-started/quickstart_2_initialize_database.md)
-- [Step 3: (macOS) Start Docker](getting-started/quickstart_3_start_docker.md)
+- [Step 2: Start Docker](getting-started/quickstart_2_start_docker.md)
+- [Step 3: Initialize your database](getting-started/quickstart_3_initialize_database.md)
 - [Step 4: Get the code](getting-started/quickstart_4_clone_repository.md)
 - [Step 5: Configure HTTPS reverse proxy](getting-started/quickstart_5_configure_https_reverse_proxy.md)
 - [Step 6: Start the server](getting-started/quickstart_6_start_server.md)
@@ -86,10 +86,12 @@ Clarification and discussion about key concepts, architecture, and development s
   - [Wildcard Component Library](background-information/web/wildcard.md)
   - [Styling UI](background-information/web/styling.md)
   - [Accessibility](background-information/web/accessibility.md)
+  - [Temporary settings](background-information/web/temporary_settings.md)
   - [Build process](background-information/web/build.md)
 - [Developing the GraphQL API](background-information/graphql_api.md)
 - [Developing batch changes](background-information/batch_changes/index.md)
 - [Developing code intelligence](background-information/codeintel/index.md)
+- [Developing code insights](background-information/insights/index.md)
 - [Developing code monitoring](background-information/codemonitoring/index.md)
 - [Developing observability](background-information/observability/index.md)
 - [Developing Sourcegraph extensions](background-information/sourcegraph_extensions.md)

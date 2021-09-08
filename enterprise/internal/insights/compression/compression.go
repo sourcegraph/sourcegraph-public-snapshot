@@ -109,6 +109,7 @@ func (c *CommitFilter) FilterFrames(ctx context.Context, frames []Frame, id api.
 	// horizon of the indexer
 	addToPlan(frames[0], "")
 	for i := 1; i < len(frames); i++ {
+		previous := frames[i-1]
 		frame := frames[i]
 		if metadata.LastIndexedAt.Before(frame.To) {
 			// The commit indexer is not up to date enough to understand if this frame can be dropped
@@ -116,7 +117,8 @@ func (c *CommitFilter) FilterFrames(ctx context.Context, frames []Frame, id api.
 			continue
 		}
 
-		commits, err := c.store.Get(ctx, id, frame.From, frame.To)
+		// We have to diff the commits in the previous frame to determine if we should query at the start of this frame
+		commits, err := c.store.Get(ctx, id, previous.From, previous.To)
 		if err != nil {
 			log15.Error("insights: compression.go/FilterFrames unable to retrieve commits\n", "repo_id", id, "from", frame.From, "to", frame.To)
 			addToPlan(frame, "")
@@ -127,11 +129,13 @@ func (c *CommitFilter) FilterFrames(ctx context.Context, frames []Frame, id api.
 			// 1. the commit index is sufficiently up to date
 			// 2. this time range [from, to) doesn't have any commits
 			// so we can skip this frame for this repo
+			log15.Info("insights: skipping query based on no commits", "for_time", frame.From, "repo_id", id)
 			prev.SharedRecordings = append(prev.SharedRecordings, frame.From)
 			count++
 			continue
 		} else {
-			rev := commits[len(commits)-1]
+			rev := commits[0]
+			log15.Info("insights: generating query with commit index revision", "rev", rev, "for_time", frame.From, "repo_id", id)
 			// as a small optimization we are collecting this revhash here since we already know this is
 			// the revision for which we need to query against
 			addToPlan(frame, string(rev.Commit))

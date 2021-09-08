@@ -13,7 +13,6 @@ import (
 	"time"
 
 	"github.com/cockroachdb/errors"
-	"github.com/honeycombio/libhoney-go"
 	"github.com/inconshreveable/log15"
 	"github.com/neelance/parallel"
 	"github.com/opentracing/opentracing-go"
@@ -21,12 +20,12 @@ import (
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	searchlogs "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/search/logs"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
@@ -41,6 +40,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/run"
 	"github.com/sourcegraph/sourcegraph/internal/search/searchcontexts"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
+	"github.com/sourcegraph/sourcegraph/internal/search/unindexed"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -448,7 +448,7 @@ func LogSearchLatency(ctx context.Context, db dbutil.DB, si *run.SearchInputs, d
 			eventName := fmt.Sprintf("search.latencies.%s", types[0])
 			featureFlags := featureflag.FromContext(ctx)
 			go func() {
-				err := usagestats.LogBackendEvent(db, a.UID, eventName, json.RawMessage(value), featureFlags, nil)
+				err := usagestats.LogBackendEvent(db, a.UID, eventName, json.RawMessage(value), json.RawMessage(value), featureFlags, nil)
 				if err != nil {
 					log15.Warn("Could not log search latency", "err", err)
 				}
@@ -523,8 +523,7 @@ func (r *searchResolver) toRepoOptions(q query.Q, opts resolveRepositoriesOpts) 
 		NoForks:            fork == query.No,
 		OnlyArchived:       archived == query.Only,
 		NoArchived:         archived == query.No,
-		OnlyPrivate:        visibility == query.Private,
-		OnlyPublic:         visibility == query.Public,
+		Visibility:         visibility,
 		CommitAfter:        commitAfter,
 		Query:              q,
 		Ranked:             true,
@@ -548,30 +547,46 @@ func withMode(args search.TextParameters, st query.SearchType, versionContext *s
 		return len(args.Query.Values(query.FieldRepo)) == 0 && len(args.Query.Values(query.FieldRepoGroup)) == 0 && len(args.Query.Values(query.FieldRepoHasFile)) == 0
 	}
 
-	isFileOrPath := args.ResultTypes.Has(result.TypeFile) || args.ResultTypes.Has(result.TypePath)
+	hasGlobalSearchResultType := args.ResultTypes.Has(result.TypeFile | result.TypePath | result.TypeSymbol)
 	isIndexedSearch := args.PatternInfo.Index != query.No
 	isEmpty := args.PatternInfo.Pattern == "" && args.PatternInfo.ExcludePattern == "" && len(args.PatternInfo.IncludePatterns) == 0
-	if isGlobalSearch() && isIndexedSearch && isFileOrPath && !isEmpty {
+	if isGlobalSearch() && isIndexedSearch && hasGlobalSearchResultType && !isEmpty {
 		args.Mode = search.ZoektGlobalSearch
 	}
 	if isEmpty {
-		args.Mode = search.SkipContentAndPathSearch
+		args.Mode = search.SkipUnindexed
 	}
 	return args
 }
 
-func (r *searchResolver) toTextParameters(q query.Q) (*search.TextParameters, error) {
-	forceResultTypes := result.TypeEmpty
-	if r.PatternType == query.SearchTypeStructural {
-		forceResultTypes = result.TypeFile
-	}
-
+// toSearchInputs converts a query parse tree to the _internal_ representation
+// needed to run a search. To understand why this conversion matters, think
+// about the fact that the query parse tree doesn't know anything about our
+// backends or architecture. It doesn't decide certain defaults, like whether we
+// should return multiple result types (pattern matches content, or a file name,
+// or a repo name). If we want to optimize a Sourcegraph query parse tree for a
+// particular backend (e.g., skip repository resolution and just run a Zoekt
+// query on all indexed repositories) then we need to convert our tree to
+// Zoekt's internal inputs and representation. These concerns are all handled by
+// toSearchInputs.
+//
+// toSearchInputs returns a tuple (args, jobs). `args` represents a large,
+// generic object with many values that drive search logic all over the backend.
+// `jobs` represent search objects with a Run() method that directly runs the
+// search job in question, and the job object comprises only the state to run
+// that search. Currently, both return values may be used to evaluate a search.
+// In time, it is expected that toSearchInputs migrates to return _only_ jobs,
+// where each job contains its separate state for that kind of search and
+// backend. To complete the migration to jobs in phases, `args` is kept
+// backwards compatibility and represents a generic search.
+func (r *searchResolver) toSearchInputs(q query.Q) (*search.TextParameters, []run.Job, error) {
 	b, err := query.ToBasicQuery(q)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	p := search.ToTextPatternInfo(b, r.protocol(), query.Identity)
 
+	forceResultTypes := result.TypeEmpty
 	if r.PatternType == query.SearchTypeStructural {
 		if p.Pattern == "" {
 			// Fallback to literal search for searching repos and files if
@@ -597,19 +612,39 @@ func (r *searchResolver) toTextParameters(q query.Q) (*search.TextParameters, er
 	}
 	args = withResultTypes(args, forceResultTypes)
 	args = withMode(args, r.PatternType, r.VersionContext)
-	return &args, nil
+
+	var jobs []run.Job
+	{
+		// This code block creates search jobs under specific
+		// conditions, and depending on generic process of `args` above.
+		// It which specializes search logic in doResults. In time, all
+		// of the above logic should be used to create search jobs
+		// across all of Sourcegraph.
+		if r.PatternType == query.SearchTypeStructural && p.Pattern != "" {
+			jobs = append(jobs, &unindexed.StructuralSearch{
+				RepoFetcher: unindexed.NewRepoFetcher(r.stream, &args),
+				Mode:        args.Mode,
+				SearcherArgs: search.SearcherParameters{
+					SearcherURLs:    args.SearcherURLs,
+					PatternInfo:     args.PatternInfo,
+					UseFullDeadline: args.UseFullDeadline,
+				},
+			})
+		}
+	}
+	return &args, jobs, nil
 }
 
 // evaluateLeaf performs a single search operation and corresponds to the
 // evaluation of leaf expression in a query.
-func (r *searchResolver) evaluateLeaf(ctx context.Context, args *search.TextParameters) (_ *SearchResults, err error) {
+func (r *searchResolver) evaluateLeaf(ctx context.Context, args *search.TextParameters, jobs []run.Job) (_ *SearchResults, err error) {
 	tr, ctx := trace.New(ctx, "evaluateLeaf", "")
 	defer func() {
 		tr.SetError(err)
 		tr.Finish()
 	}()
 
-	return r.resultsWithTimeoutSuggestion(ctx, args)
+	return r.resultsWithTimeoutSuggestion(ctx, args, jobs)
 }
 
 // union returns the union of two sets of search results and merges common search data.
@@ -804,19 +839,19 @@ func (r *searchResolver) evaluatePatternExpression(ctx context.Context, q query.
 			return r.evaluateOr(ctx, q)
 		case query.Concat:
 			r.invalidateCache()
-			args, err := r.toTextParameters(q.ToParseTree())
+			args, jobs, err := r.toSearchInputs(q.ToParseTree())
 			if err != nil {
 				return &SearchResults{}, err
 			}
-			return r.evaluateLeaf(ctx, args)
+			return r.evaluateLeaf(ctx, args, jobs)
 		}
 	case query.Pattern:
 		r.invalidateCache()
-		args, err := r.toTextParameters(q.ToParseTree())
+		args, jobs, err := r.toSearchInputs(q.ToParseTree())
 		if err != nil {
 			return &SearchResults{}, err
 		}
-		return r.evaluateLeaf(ctx, args)
+		return r.evaluateLeaf(ctx, args, jobs)
 	case query.Parameter:
 		// evaluatePatternExpression does not process Parameter nodes.
 		return &SearchResults{}, nil
@@ -829,11 +864,11 @@ func (r *searchResolver) evaluatePatternExpression(ctx context.Context, q query.
 func (r *searchResolver) evaluate(ctx context.Context, q query.Basic) (*SearchResults, error) {
 	if q.Pattern == nil {
 		r.invalidateCache()
-		args, err := r.toTextParameters(query.ToNodes(q.Parameters))
+		args, jobs, err := r.toSearchInputs(query.ToNodes(q.Parameters))
 		if err != nil {
 			return &SearchResults{}, err
 		}
-		return r.evaluateLeaf(ctx, args)
+		return r.evaluateLeaf(ctx, args, jobs)
 	}
 	return r.evaluatePatternExpression(ctx, q)
 }
@@ -876,39 +911,6 @@ func logPrometheusBatch(status, alertType, requestSource, requestName string, el
 	).Observe(elapsed.Seconds())
 }
 
-func newHoneyEvent(ctx context.Context, status, alertType, requestSource, requestName, query string, elapsed time.Duration, srr *SearchResultsResolver) *libhoney.Event {
-	var n int
-	if srr != nil {
-		n = len(srr.Matches)
-	}
-	return honey.SearchEvent(ctx, honey.SearchEventArgs{
-		OriginalQuery: query,
-		Typ:           requestName,
-		Source:        requestSource,
-		Status:        status,
-		AlertType:     alertType,
-		DurationMs:    elapsed.Milliseconds(),
-		ResultSize:    n,
-	})
-}
-
-func logHoneyBatch(ctx context.Context, status, alertType, requestSource, requestName string, elapsed time.Duration, query string, start time.Time, srr *SearchResultsResolver) {
-	var ev *libhoney.Event
-	isSlow := time.Since(start) > searchlogs.LogSlowSearchesThreshold()
-
-	if honey.Enabled() || isSlow {
-		ev = newHoneyEvent(ctx, status, alertType, requestSource, requestName, query, elapsed, srr)
-	}
-
-	if honey.Enabled() && ev != nil {
-		_ = ev.Send()
-	}
-
-	if isSlow && ev != nil {
-		log15.Warn("slow search request", searchlogs.MapToLog15Ctx(ev.Fields())...)
-	}
-}
-
 func (r *searchResolver) logBatch(ctx context.Context, srr *SearchResultsResolver, start time.Time, err error) {
 	elapsed := time.Since(start)
 	if srr != nil {
@@ -924,7 +926,32 @@ func (r *searchResolver) logBatch(ctx context.Context, srr *SearchResultsResolve
 	requestSource := string(trace.RequestSource(ctx))
 	requestName := trace.GraphQLRequestName(ctx)
 	logPrometheusBatch(status, alertType, requestSource, requestName, elapsed)
-	logHoneyBatch(ctx, status, alertType, requestSource, requestName, elapsed, r.rawQuery(), start, srr)
+
+	isSlow := time.Since(start) > searchlogs.LogSlowSearchesThreshold()
+	if honey.Enabled() || isSlow {
+		var n int
+		if srr != nil {
+			n = len(srr.Matches)
+		}
+		ev := honey.SearchEvent(ctx, honey.SearchEventArgs{
+			OriginalQuery: r.rawQuery(),
+			Typ:           requestName,
+			Source:        requestSource,
+			Status:        status,
+			AlertType:     alertType,
+			DurationMs:    elapsed.Milliseconds(),
+			ResultSize:    n,
+			Error:         err,
+		})
+
+		if honey.Enabled() {
+			_ = ev.Send()
+		}
+
+		if isSlow {
+			log15.Warn("slow search request", searchlogs.MapToLog15Ctx(ev.Fields())...)
+		}
+	}
 }
 
 func (r *searchResolver) resultsBatch(ctx context.Context) (*SearchResultsResolver, error) {
@@ -988,7 +1015,7 @@ func DetermineStatusForLogs(srr *SearchResultsResolver, err error) string {
 		return "timeout"
 	case err != nil:
 		return "error"
-	case srr.Stats.AllReposTimedOut():
+	case srr.Stats.Status.All(search.RepoStatusTimedout) && srr.Stats.Status.Len() == len(srr.Stats.Repos):
 		return "timeout"
 	case srr.Stats.Status.Any(search.RepoStatusTimedout):
 		return "partial_timeout"
@@ -1116,25 +1143,25 @@ func searchResultsToFileNodes(matches []result.Match) ([]query.Node, error) {
 // resultsWithTimeoutSuggestion calls doResults, and in case of deadline
 // exceeded returns a search alert with a did-you-mean link for the same
 // query with a longer timeout.
-func (r *searchResolver) resultsWithTimeoutSuggestion(ctx context.Context, args *search.TextParameters) (*SearchResults, error) {
+func (r *searchResolver) resultsWithTimeoutSuggestion(ctx context.Context, args *search.TextParameters, jobs []run.Job) (*SearchResults, error) {
 	start := time.Now()
-	rr, err := r.doResults(ctx, args)
+	rr, err := r.doResults(ctx, args, jobs)
 
-	// If we encountered a context timeout, it indicates one of the many result
-	// type searchers (file, diff, symbol, etc) completely timed out and could not
-	// produce even partial results. Other searcher types may have produced results.
-	//
-	// In this case, or if we got a partial timeout where ALL repositories timed out,
-	// we do not return partial results and instead display a timeout alert.
-	shouldShowAlert := errors.Is(err, context.DeadlineExceeded)
-	if err == nil && rr.Stats.AllReposTimedOut() {
-		shouldShowAlert = true
+	// We have an alert for context timeouts and we have a progress
+	// notification for timeouts. We don't want to show both, so we only show
+	// it if no repos are marked as timedout. This somewhat couples us to how
+	// progress notifications work, but this is the third attempt at trying to
+	// fix this behaviour so we are accepting that.
+	if errors.Is(err, context.DeadlineExceeded) {
+		if rr == nil || !rr.Stats.Status.Any(search.RepoStatusTimedout) {
+			usedTime := time.Since(start)
+			suggestTime := longer(2, usedTime)
+			return alertForTimeout(usedTime, suggestTime, r).wrapResults(), nil
+		} else {
+			err = nil
+		}
 	}
-	if shouldShowAlert {
-		usedTime := time.Since(start)
-		suggestTime := longer(2, usedTime)
-		return alertForTimeout(usedTime, suggestTime, r).wrapResults(), nil
-	}
+
 	return rr, err
 }
 
@@ -1299,11 +1326,11 @@ func (r *searchResolver) Stats(ctx context.Context) (stats *searchResultsStats, 
 	for {
 		// Query search results.
 		var err error
-		args, err := r.toTextParameters(r.Query)
+		args, jobs, err := r.toSearchInputs(r.Query)
 		if err != nil {
 			return nil, err
 		}
-		results, err := r.doResults(ctx, args)
+		results, err := r.doResults(ctx, args, jobs)
 		if err != nil {
 			return nil, err // do not cache errors.
 		}
@@ -1387,7 +1414,7 @@ func withResultTypes(args search.TextParameters, forceTypes result.Types) search
 // regardless of what `type:` is specified in the query string.
 //
 // Partial results AND an error may be returned.
-func (r *searchResolver) doResults(ctx context.Context, args *search.TextParameters) (res *SearchResults, err error) {
+func (r *searchResolver) doResults(ctx context.Context, args *search.TextParameters, jobs []run.Job) (res *SearchResults, err error) {
 	tr, ctx := trace.New(ctx, "doResults", r.rawQuery())
 	defer func() {
 		tr.SetError(err)
@@ -1467,16 +1494,27 @@ func (r *searchResolver) doResults(ctx context.Context, args *search.TextParamet
 		}
 
 		wg := waitGroup(true)
-		wg.Add(1)
-		goroutine.Go(func() {
-			defer wg.Done()
-			_ = agg.DoFilePathSearch(ctx, &argsIndexed)
-		})
+		if args.ResultTypes.Has(result.TypeFile | result.TypePath) {
+			wg.Add(1)
+			goroutine.Go(func() {
+				defer wg.Done()
+				_ = agg.DoFilePathSearch(ctx, &argsIndexed)
+			})
+		}
+
+		if args.ResultTypes.Has(result.TypeSymbol) {
+			wg.Add(1)
+			goroutine.Go(func() {
+				defer wg.Done()
+				_ = agg.DoSymbolSearch(ctx, &argsIndexed, limit)
+			})
+		}
+
 		// On sourcegraph.com and for unscoped queries, determineRepos returns the subset
 		// of indexed default searchrepos. No need to call searcher, because
 		// len(searcherRepos) will always be 0.
 		if envvar.SourcegraphDotComMode() {
-			args.Mode = search.SkipContentAndPathSearch
+			args.Mode = search.SkipUnindexed
 		} else {
 			args.Mode = search.SearcherOnly
 		}
@@ -1505,23 +1543,17 @@ func (r *searchResolver) doResults(ctx context.Context, args *search.TextParamet
 
 	if len(resolved.MissingRepoRevs) > 0 {
 		agg.Error(&missingRepoRevsError{Missing: resolved.MissingRepoRevs})
+		tr.LazyPrintf("adding error for missing repo revs - done")
 	}
 
-	// Send down our first bit of progress.
-	{
-		repos := make(map[api.RepoID]types.RepoName, len(args.Repos))
-		for _, repoRev := range args.Repos {
-			repos[repoRev.Repo.ID] = repoRev.Repo
-		}
-
-		agg.Send(streaming.SearchEvent{
-			Stats: streaming.Stats{
-				Repos:            repos,
-				ExcludedForks:    resolved.ExcludedRepos.Forks,
-				ExcludedArchived: resolved.ExcludedRepos.Archived,
-			},
-		})
-	}
+	agg.Send(streaming.SearchEvent{
+		Stats: streaming.Stats{
+			Repos:            resolved.RepoSet,
+			ExcludedForks:    resolved.ExcludedRepos.Forks,
+			ExcludedArchived: resolved.ExcludedRepos.Archived,
+		},
+	})
+	tr.LazyPrintf("sending first stats (repos %d, excluded repos %+v) - done", len(resolved.RepoSet), resolved.ExcludedRepos)
 
 	if args.ResultTypes.Has(result.TypeRepo) {
 		wg := waitGroup(true)
@@ -1534,16 +1566,18 @@ func (r *searchResolver) doResults(ctx context.Context, args *search.TextParamet
 	}
 
 	if args.ResultTypes.Has(result.TypeSymbol) && args.PatternInfo.Pattern != "" {
-		wg := waitGroup(args.ResultTypes.Without(result.TypeSymbol) == 0)
-		wg.Add(1)
-		goroutine.Go(func() {
-			defer wg.Done()
-			_ = agg.DoSymbolSearch(ctx, args, limit)
-		})
+		if args.Mode != search.SkipUnindexed {
+			wg := waitGroup(args.ResultTypes.Without(result.TypeSymbol) == 0)
+			wg.Add(1)
+			goroutine.Go(func() {
+				defer wg.Done()
+				_ = agg.DoSymbolSearch(ctx, args, limit)
+			})
+		}
 	}
 
 	if args.ResultTypes.Has(result.TypeFile | result.TypePath) {
-		if args.Mode != search.SkipContentAndPathSearch {
+		if args.Mode != search.SkipUnindexed {
 			wg := waitGroup(true)
 			wg.Add(1)
 			goroutine.Go(func() {
@@ -1551,15 +1585,6 @@ func (r *searchResolver) doResults(ctx context.Context, args *search.TextParamet
 				_ = agg.DoFilePathSearch(ctx, args)
 			})
 		}
-	}
-
-	if args.ResultTypes.Has(result.TypeStructural) {
-		wg := waitGroup(true)
-		wg.Add(1)
-		goroutine.Go(func() {
-			defer wg.Done()
-			_ = agg.DoStructuralSearch(ctx, args)
-		})
 	}
 
 	if args.ResultTypes.Has(result.TypeDiff) {
@@ -1579,6 +1604,16 @@ func (r *searchResolver) doResults(ctx context.Context, args *search.TextParamet
 			_ = agg.DoCommitSearch(ctx, args)
 		})
 
+	}
+
+	// Start all specific search jobs, if any.
+	for _, job := range jobs {
+		wg := waitGroup(true)
+		wg.Add(1)
+		goroutine.Go(func() {
+			defer wg.Done()
+			_ = agg.DoSearch(ctx, job, args.Mode)
+		})
 	}
 
 	hasStartedAllBackends = true

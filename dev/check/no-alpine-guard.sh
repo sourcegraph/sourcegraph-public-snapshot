@@ -18,6 +18,7 @@ ALPINE_MATCHES=$(git grep -e '\salpine\:' --and --not -e '^\s*//' --and --not -e
   ':(exclude)docker-images/alpine-3.12/' \
   ':(exclude)doc/batch_changes/' \
   ':(exclude)web/src/enterprise/batches/create/CreateBatchChangePage.tsx' \
+  ':(exclude)*_test.go' \
   ':(exclude)*vendor*' \
   ':(exclude)*testdata*')
 set -e

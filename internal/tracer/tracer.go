@@ -18,6 +18,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
+	"github.com/sourcegraph/sourcegraph/internal/version"
 
 	"github.com/opentracing/opentracing-go"
 	"github.com/uber/jaeger-client-go"
@@ -147,6 +148,7 @@ func newTracer(opts *jaegerOpts) (opentracing.Tracer, io.Closer, error) {
 	if err != nil {
 		return nil, nil, errors.Wrap(err, "jaegercfg.FromEnv failed")
 	}
+	cfg.Tags = append(cfg.Tags, opentracing.Tag{Key: "service.version", Value: version.Version()})
 	if reflect.DeepEqual(cfg.Sampler, &jaegercfg.SamplerConfig{}) {
 		// Default sampler configuration for when it is not specified via
 		// JAEGER_SAMPLER_* env vars. In most cases, this is sufficient

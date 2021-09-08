@@ -27,6 +27,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -1112,7 +1113,7 @@ func TestRepositoryPermissions(t *testing.T) {
 		batchSpec := &btypes.BatchSpec{
 			UserID:          userID,
 			NamespaceUserID: userID,
-			Spec:            btypes.BatchSpecFields{Name: "batch-spec-and-changeset-specs"},
+			Spec:            &batcheslib.BatchSpec{Name: "batch-spec-and-changeset-specs"},
 		}
 		if err := cstore.CreateBatchSpec(ctx, batchSpec); err != nil {
 			t.Fatal(err)

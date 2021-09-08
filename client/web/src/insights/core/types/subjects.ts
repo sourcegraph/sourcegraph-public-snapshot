@@ -32,11 +32,11 @@ export const SUPPORTED_TYPES_OF_SUBJECT = new Set<string>(Object.values(Supporte
 export const isSubjectInsightSupported = (subject: SettingsSubject): subject is SupportedInsightSubject =>
     SUPPORTED_TYPES_OF_SUBJECT.has(subject.__typename)
 
-export const isGlobalSubject = (subject: SupportedInsightSubject): subject is SettingsSiteSubject =>
+export const isGlobalSubject = (subject: SettingsSubject): subject is SettingsSiteSubject =>
     subject.__typename === SupportedInsightSubjectType.Global
 
-export const isOrganizationSubject = (subject: SupportedInsightSubject): subject is SettingsOrgSubject =>
+export const isOrganizationSubject = (subject: SettingsSubject): subject is SettingsOrgSubject =>
     subject.__typename === SupportedInsightSubjectType.Organization
 
-export const isUserSubject = (subject: SupportedInsightSubject): subject is SettingsUserSubject =>
+export const isUserSubject = (subject: SettingsSubject): subject is SettingsUserSubject =>
     subject.__typename === SupportedInsightSubjectType.User

@@ -37,7 +37,7 @@ _Any major modifications outside of what we ship in the [standard deployment](ht
 
 ### Sourcegraph Server (single Docker container)
 
-Sourcegraph Server is best used for trying out Sourcegraph. It&#39;s not intended for enterprise production deployments for the following reasons:
+Sourcegraph Server is best used for trying out Sourcegraph. It's not intended for enterprise production deployments for the following reasons:
 
 - Limited logging information for debugging
 - Performance issues with:

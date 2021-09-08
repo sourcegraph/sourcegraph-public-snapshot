@@ -29,9 +29,6 @@ func unmarshalLSIFUploadGQLID(id graphql.ID) (uploadID int64, err error) {
 	return uploadID, err
 }
 
-//
-//
-
 func marshalLSIFIndexGQLID(indexID int64) graphql.ID {
 	return relay.MarshalID("LSIFIndex", indexID)
 }
@@ -39,4 +36,18 @@ func marshalLSIFIndexGQLID(indexID int64) graphql.ID {
 func unmarshalLSIFIndexGQLID(id graphql.ID) (indexID int64, err error) {
 	err = relay.UnmarshalSpec(id, &indexID)
 	return indexID, err
+}
+
+func marshalConfigurationPolicyGQLID(configurationPolicyID int64) graphql.ID {
+	return relay.MarshalID("CodeIntelligenceConfigurationPolicy", configurationPolicyID)
+}
+
+func unmarshalConfigurationPolicyGQLID(id graphql.ID) (configurationPolicyID int64, err error) {
+	err = relay.UnmarshalSpec(id, &configurationPolicyID)
+	return configurationPolicyID, err
+}
+
+func unmarshalRepositoryID(id graphql.ID) (repositoryID int64, err error) {
+	err = relay.UnmarshalSpec(id, &repositoryID)
+	return repositoryID, err
 }

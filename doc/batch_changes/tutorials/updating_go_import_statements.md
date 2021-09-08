@@ -80,5 +80,5 @@ changesetTemplate:
 1. Wait for it to run and compute the changes for each repository.
 1. Open the preview URL that the command printed out.
 1. Examine the preview. Confirm that the changesets are the ones you intended to track. If not, edit the batch spec and then rerun the command above.
-1. Click the **Apply spec** button to create the batch change.
+1. Click the **Apply** button to create the batch change.
 1. Feel free to then publish the changesets (i.e. create pull requests and merge requests) by [modifying the `published` attribute in the batch spec](../references/batch_spec_yaml_reference.md#changesettemplate-published) and re-running the `src batch preview` command.

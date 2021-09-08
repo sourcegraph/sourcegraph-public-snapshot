@@ -33,12 +33,6 @@ if [ -f .env ]; then
 fi
 
 # Verify postgresql config.
-export PGPORT=${PGPORT:-5432}
-export PGHOST=${PGHOST:-localhost}
-export PGUSER=${PGUSER:-sourcegraph}
-export PGPASSWORD=${PGPASSWORD:-sourcegraph}
-export PGDATABASE=${PGDATABASE:-sourcegraph}
-export PGSSLMODE=${PGSSLMODE:-disable}
 hash psql 2>/dev/null || {
   # "brew install postgres" does not put psql on the $PATH by default;
   # try to fix this automatically if we can.
@@ -50,9 +44,18 @@ hash psql 2>/dev/null || {
   }
 }
 if ! psql -wc '\x' >/dev/null; then
-  echo "FAIL: postgreSQL config invalid or missing OR postgreSQL is still starting up."
-  echo "You probably need, at least, PGUSER and PGPASSWORD set in the environment."
-  exit 1
+  export PGPORT=${PGPORT:-5432}
+  export PGHOST=${PGHOST:-localhost}
+  export PGUSER=${PGUSER:-sourcegraph}
+  export PGPASSWORD=${PGPASSWORD:-sourcegraph}
+  export PGDATABASE=${PGDATABASE:-sourcegraph}
+  export PGSSLMODE=${PGSSLMODE:-disable}
+
+  if ! psql -wc '\x' >/dev/null; then
+    echo "FAIL: postgreSQL config invalid or missing OR postgreSQL is still starting up."
+    echo "You probably need, at least, PGUSER and PGPASSWORD set in the environment."
+    exit 1
+  fi
 fi
 
 export PGSSLMODE=disable
@@ -123,6 +126,7 @@ export DISABLE_CODE_INSIGHTS_HISTORICAL="${DISABLE_CODE_INSIGHTS_HISTORICAL:-"tr
 # having port 3080.
 export SRC_HTTP_ADDR=":3082"
 export WEBPACK_DEV_SERVER=1
+export DEV_WEB_BUILDER=${DEV_WEB_BUILDER:-webpack}
 
 if [ -z "${DEV_NO_CONFIG-}" ]; then
   export SITE_CONFIG_FILE=${SITE_CONFIG_FILE:-./dev/site-config.json}

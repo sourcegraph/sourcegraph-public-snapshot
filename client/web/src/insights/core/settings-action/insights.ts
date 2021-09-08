@@ -3,29 +3,7 @@ import { get } from 'lodash'
 import { isErrorLike } from '@sourcegraph/shared/src/util/errors'
 import { modify, parseJSONCOrError } from '@sourcegraph/shared/src/util/jsonc'
 
-import {
-    Insight,
-    INSIGHTS_ALL_REPOS_SETTINGS_KEY,
-    InsightType,
-    InsightTypePrefix,
-    isLangStatsInsight,
-    isSearchBasedInsight,
-} from '../types'
-
-/**
- * Returns insights extension name based on insight id.
- */
-const getExtensionNameByInsight = (insight: Insight): string | undefined => {
-    if (isSearchBasedInsight(insight)) {
-        return 'sourcegraph/search-insights'
-    }
-
-    if (isLangStatsInsight(insight)) {
-        return 'sourcegraph/code-stats-insights'
-    }
-
-    return undefined
-}
+import { Insight, INSIGHTS_ALL_REPOS_SETTINGS_KEY, InsightType, InsightTypePrefix, isLangStatsInsight } from '../types'
 
 /**
  * Returns insight settings key. Since different types of insight live in different
@@ -61,19 +39,10 @@ const getInsightSettingKey = (insight: Insight): string[] => {
 export const addInsightToSettings = (settings: string, insight: Insight): string => {
     // remove all synthetic properties from the insight object
     const { id, visibility, type, ...originalInsight } = insight
-
-    const extensionName = getExtensionNameByInsight(insight)
-
-    if (!extensionName) {
-        return settings
-    }
-
-    // Turn on extension if user in creation code insight.
-    const settingsWithExtension = modify(settings, ['extensions', extensionName], true)
     const insightSettingsKey = getInsightSettingKey(insight)
 
     // Add insight to the user settings
-    return modify(settingsWithExtension, insightSettingsKey, originalInsight)
+    return modify(settings, insightSettingsKey, originalInsight)
 }
 
 interface RemoveInsightFromSettingsInputs {

@@ -3,12 +3,21 @@
 set -euf -o pipefail
 pushd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null
 
-echo "Compiling..."
+# The BUILD_COMMIT is baked into the binary (see `go install` below) and
+# contains the latest commit in the `dev/sg` folder. If the directory is
+# "dirty", though, we mark the build as a dev build.
+if [[ $(git diff --stat .) != '' ]]; then
+  BUILD_COMMIT="dev"
+else
+  BUILD_COMMIT=$(git rev-list -1 HEAD .)
+fi
+export BUILD_COMMIT
 
+echo "Compiling..."
 # -mod=mod: default is -mod=readonly. However, because our lib dependency is
 #           not fixed everytime it changes we need to update go.sum. By making
 #           it rw we prevent failing go install.
-go install -mod=mod .
+go install -ldflags "-X main.BuildCommit=$BUILD_COMMIT" -mod=mod .
 
 # Let's find the install target. The documentation at
 #   https://golang.org/cmd/go/#hdr-Compile_and_install_packages_and_dependencies
@@ -80,8 +89,17 @@ if [ "$sg_in_path" != "$target" ]; then
     echo "  running sg will run '$sg_in_path' instead."
   fi
   echo
+  echo
   echo "  Consider adding $(dirname "$target") to your \$PATH for easier"
   echo "  sg-ing!"
+  echo
+  echo "  For example: append the following to your ~/.bashrc file:"
+  echo
+  echo "      export PATH=\"$(dirname "$target"):\$PATH\""
+  echo
+  echo "  and reload your shell/terminal."
+  echo
+  echo "  If you use ZSH use ~/.zshrc, etc."
 fi
 
 echo "                                                  "

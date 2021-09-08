@@ -1,6 +1,7 @@
 import * as React from 'react'
 import { Redirect, RouteComponentProps } from 'react-router'
 
+import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { isErrorLike } from '@sourcegraph/shared/src/util/errors'
 
 import { BatchChangesProps } from './batches'
@@ -8,10 +9,11 @@ import { CodeIntelligenceProps } from './codeintel'
 import { BreadcrumbsProps, BreadcrumbSetters } from './components/Breadcrumbs'
 import type { LayoutProps } from './Layout'
 import type { ExtensionAlertProps } from './repo/RepoContainer'
+import { ThemePreferenceProps } from './theme'
 import { UserExternalServicesOrRepositoriesUpdateProps } from './util'
 import { lazyComponent } from './util/lazyComponent'
 
-const SearchPage = lazyComponent(() => import('./search/input/SearchPage'), 'SearchPage')
+const SearchPage = lazyComponent(() => import('./search/home/SearchPage'), 'SearchPage')
 const StreamingSearchResults = lazyComponent(
     () => import('./search/results/StreamingSearchResults'),
     'StreamingSearchResults'
@@ -35,6 +37,8 @@ const CncfRepogroupPage = lazyComponent(() => import('./repogroups/cncf'), 'Cncf
 export interface LayoutRouteComponentProps<RouteParameters extends { [K in keyof RouteParameters]?: string }>
     extends RouteComponentProps<RouteParameters>,
         Omit<LayoutProps, 'match'>,
+        ThemeProps,
+        ThemePreferenceProps,
         BreadcrumbsProps,
         BreadcrumbSetters,
         ExtensionAlertProps,
@@ -73,12 +77,7 @@ function passThroughToServer(): React.ReactNode {
 export const routes: readonly LayoutRouteProps<any>[] = [
     {
         path: '/',
-        render: props =>
-            window.context.sourcegraphDotComMode && !props.authenticatedUser ? (
-                <Redirect to="https://about.sourcegraph.com" />
-            ) : (
-                <Redirect to="/search" />
-            ),
+        render: () => <Redirect to="/search" />,
         exact: true,
     },
     {
@@ -245,7 +244,7 @@ export const routes: readonly LayoutRouteProps<any>[] = [
             !!props.settingsCascade.final?.experimentalFeatures?.showSearchContextManagement,
     },
     {
-        path: '/contexts/:id/edit',
+        path: '/contexts/:spec+/edit',
         render: lazyComponent(() => import('./searchContexts/EditSearchContextPage'), 'EditSearchContextPage'),
         condition: props =>
             !isErrorLike(props.settingsCascade.final) &&
@@ -253,7 +252,7 @@ export const routes: readonly LayoutRouteProps<any>[] = [
             !!props.settingsCascade.final?.experimentalFeatures?.showSearchContextManagement,
     },
     {
-        path: '/contexts/:id',
+        path: '/contexts/:spec+',
         render: lazyComponent(() => import('./searchContexts/SearchContextPage'), 'SearchContextPage'),
         condition: props =>
             !isErrorLike(props.settingsCascade.final) &&

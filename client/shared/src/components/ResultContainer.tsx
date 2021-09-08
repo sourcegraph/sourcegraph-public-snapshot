@@ -79,6 +79,11 @@ export interface Props {
      * The number of stars for the result's associated repo
      */
     repoStars?: number
+
+    /**
+     * The time the repo was last updated from the code host
+     */
+    repoLastFetched?: string
 }
 
 /**
@@ -115,7 +120,7 @@ export const ResultContainer: React.FunctionComponent<Props> = ({
         <div className="test-search-result result-container" data-testid="result-container">
             <div className="result-container__header">
                 <Icon className="icon-inline flex-shrink-0" />
-                <div className="result-container__header-divider" />
+                <div className="result-container__header-divider mx-1" />
                 <div
                     className={classNames('result-container__header-title', titleClassName)}
                     data-testid="result-container-header"
@@ -125,14 +130,14 @@ export const ResultContainer: React.FunctionComponent<Props> = ({
                 </div>
                 {matchCountLabel && (
                     <>
-                        <small className="mr-1">{matchCountLabel}</small>
-                        {collapsible && <div className="result-container__header-divider" />}
+                        <small>{matchCountLabel}</small>
+                        {collapsible && <div className="result-container__header-divider mx-2" />}
                     </>
                 )}
                 {collapsible && (
                     <button
                         type="button"
-                        className="result-container__toggle-matches-container btn btn-sm btn-link px-1 py-0"
+                        className="result-container__toggle-matches-container btn btn-sm btn-link py-0"
                         onClick={toggle}
                     >
                         {expanded ? (
@@ -150,7 +155,9 @@ export const ResultContainer: React.FunctionComponent<Props> = ({
                         )}
                     </button>
                 )}
-                {matchCountLabel && formattedRepositoryStarCount && <div className="search-result__divider" />}
+                {matchCountLabel && formattedRepositoryStarCount && (
+                    <div className="result-container__header-divider mx-2" />
+                )}
                 {formattedRepositoryStarCount && (
                     <>
                         <StarIcon className="search-result__star" />

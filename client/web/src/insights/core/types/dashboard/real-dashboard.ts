@@ -36,7 +36,7 @@ export interface SettingsBasedInsightDashboard extends ExtendedInsightDashboard 
 export type RealInsightDashboard = SettingsBasedInsightDashboard | BuiltInInsightDashboard
 
 export function isSettingsBasedInsightsDashboard(
-    dashboard: RealInsightDashboard | undefined
+    dashboard: RealInsightDashboard | undefined | null
 ): dashboard is SettingsBasedInsightDashboard {
     return !!dashboard?.settingsKey
 }

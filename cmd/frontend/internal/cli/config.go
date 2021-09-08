@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -8,6 +9,8 @@ import (
 	"net/url"
 	"os"
 	"os/user"
+	"path/filepath"
+	"sort"
 	"strings"
 	"sync"
 
@@ -16,6 +19,7 @@ import (
 	"github.com/inconshreveable/log15"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
+	"github.com/sourcegraph/sourcegraph/internal/endpoint"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/confdb"
@@ -47,24 +51,68 @@ func printConfigValidation() {
 	}
 }
 
-var (
-	metricConfigOverrideUpdates = promauto.NewCounterVec(prometheus.CounterOpts{
-		Name: "src_frontend_config_file_watcher_updates",
-		Help: "Incremented each time the config file is updated.",
-	}, []string{"status"})
-)
+var metricConfigOverrideUpdates = promauto.NewCounterVec(prometheus.CounterOpts{
+	Name: "src_frontend_config_file_watcher_updates",
+	Help: "Incremented each time the config file is updated.",
+}, []string{"status"})
+
+// readSiteConfigFile reads and merges the paths. paths is the value of the
+// envvar SITE_CONFIG_FILE seperated by os.ListPathSeparator (":"). The
+// merging just concats the objects together. So does not check for things
+// like duplicate keys between files.
+func readSiteConfigFile(paths []string) ([]byte, error) {
+	// special case 1
+	if len(paths) == 1 {
+		return os.ReadFile(paths[0])
+	}
+
+	var merged bytes.Buffer
+	merged.WriteString("// merged SITE_CONFIG_FILE\n{\n")
+
+	for _, p := range paths {
+		b, err := os.ReadFile(p)
+		if err != nil {
+			return nil, err
+		}
+
+		var m map[string]*json.RawMessage
+		err = jsonc.Unmarshal(string(b), &m)
+		if err != nil {
+			return nil, errors.Wrapf(err, "failed to parse JSON in %s", p)
+		}
+
+		var keys []string
+		for k := range m {
+			keys = append(keys, k)
+		}
+		sort.Strings(keys)
+
+		_, _ = fmt.Fprintf(&merged, "\n// BEGIN %s\n", p)
+		for _, k := range keys {
+			keyB, _ := json.Marshal(k)
+			valB, _ := json.Marshal(m[k])
+			_, _ = fmt.Fprintf(&merged, "  %s: %s,\n", keyB, valB)
+		}
+		_, _ = fmt.Fprintf(&merged, "// END %s\n", p)
+	}
+
+	merged.WriteString("}\n")
+
+	return merged.Bytes(), nil
+}
 
 func overrideSiteConfig(ctx context.Context) error {
 	path := os.Getenv("SITE_CONFIG_FILE")
 	if path == "" {
 		return nil
 	}
-	var updateFunc = func(ctx context.Context) error {
+	paths := filepath.SplitList(path)
+	updateFunc := func(ctx context.Context) error {
 		raw, err := (&configurationSource{}).Read(ctx)
 		if err != nil {
 			return err
 		}
-		site, err := os.ReadFile(path)
+		site, err := readSiteConfigFile(paths)
 		if err != nil {
 			return errors.Wrap(err, "reading SITE_CONFIG_FILE")
 		}
@@ -91,7 +139,7 @@ func overrideGlobalSettings(ctx context.Context, db dbutil.DB) error {
 		return nil
 	}
 	settings := database.Settings(db)
-	var update = func(ctx context.Context) error {
+	update := func(ctx context.Context) error {
 		globalSettingsBytes, err := os.ReadFile(path)
 		if err != nil {
 			return errors.Wrap(err, "reading GLOBAL_SETTINGS_FILE")
@@ -131,7 +179,7 @@ func overrideExtSvcConfig(ctx context.Context, db dbutil.DB) error {
 	}
 	extsvcs := database.ExternalServices(db)
 
-	var update = func(ctx context.Context) error {
+	update := func(ctx context.Context) error {
 		raw, err := (&configurationSource{}).Read(ctx)
 		if err != nil {
 			return err
@@ -349,6 +397,7 @@ func (c configurationSource) Read(ctx context.Context) (conftypes.RawUnified, er
 	if err != nil {
 		return conftypes.RawUnified{}, errors.Wrap(err, "confdb.SiteGetLatest")
 	}
+
 	return conftypes.RawUnified{
 		Site:               site.Contents,
 		ServiceConnections: serviceConnections(),
@@ -371,6 +420,19 @@ func (c configurationSource) Write(ctx context.Context, input conftypes.RawUnifi
 var (
 	serviceConnectionsVal  conftypes.ServiceConnections
 	serviceConnectionsOnce sync.Once
+
+	gitservers = endpoint.New(func() string {
+		v := os.Getenv("SRC_GIT_SERVERS")
+		if v == "" {
+			// Detect 'go test' and setup default addresses in that case.
+			p, err := os.Executable()
+			if err == nil && strings.HasSuffix(p, ".test") {
+				return "gitserver:3178"
+			}
+			return "k8s+rpc://gitserver:3178?kind=sts"
+		}
+		return v
+	}())
 )
 
 func serviceConnections() conftypes.ServiceConnections {
@@ -381,7 +443,6 @@ func serviceConnections() conftypes.ServiceConnections {
 		}
 
 		serviceConnectionsVal = conftypes.ServiceConnections{
-			GitServers:               gitServers(),
 			PostgresDSN:              dbutil.PostgresDSN("", username, os.Getenv),
 			CodeIntelPostgresDSN:     dbutil.PostgresDSN("codeintel", username, os.Getenv),
 			CodeInsightsTimescaleDSN: dbutil.PostgresDSN("codeinsights", username, os.Getenv),
@@ -398,19 +459,17 @@ func serviceConnections() conftypes.ServiceConnections {
 		}
 	})
 
-	return serviceConnectionsVal
-}
-
-func gitServers() []string {
-	v := os.Getenv("SRC_GIT_SERVERS")
-	if v == "" {
-		// Detect 'go test' and setup default addresses in that case.
-		p, err := os.Executable()
-		if err == nil && strings.HasSuffix(p, ".test") {
-			v = "gitserver:3178"
-		}
+	addrs, err := gitservers.Endpoints()
+	if err != nil {
+		log15.Error("serviceConnections", "error", err)
 	}
-	return strings.Fields(v)
+
+	return conftypes.ServiceConnections{
+		GitServers:               addrs,
+		PostgresDSN:              serviceConnectionsVal.PostgresDSN,
+		CodeIntelPostgresDSN:     serviceConnectionsVal.CodeIntelPostgresDSN,
+		CodeInsightsTimescaleDSN: serviceConnectionsVal.CodeInsightsTimescaleDSN,
+	}
 }
 
 // comparePostgresDSNs returns an error if one of the given Postgres DSN values are

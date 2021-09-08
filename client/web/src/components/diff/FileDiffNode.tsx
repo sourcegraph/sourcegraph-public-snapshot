@@ -1,4 +1,4 @@
-import classnames from 'classnames'
+import classNames from 'classnames'
 import * as H from 'history'
 import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
 import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
@@ -9,7 +9,6 @@ import { Observable } from 'rxjs'
 import { ViewerId } from '@sourcegraph/shared/src/api/viewerTypes'
 import { Link } from '@sourcegraph/shared/src/components/Link'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { useRedesignToggle } from '@sourcegraph/shared/src/util/useRedesignToggle'
 
 import { FileDiffFields } from '../../graphql-operations'
 import { DiffMode } from '../../repo/commit/RepositoryCommitPage'
@@ -18,6 +17,7 @@ import { dirname } from '../../util/path'
 import { DiffStat, DiffStatSquares } from './DiffStat'
 import { ExtensionInfo } from './FileDiffConnection'
 import { FileDiffHunks } from './FileDiffHunks'
+import styles from './FileDiffNode.module.scss'
 
 export interface FileDiffNodeProps extends ThemeProps {
     node: FileDiffFields
@@ -49,7 +49,6 @@ export const FileDiffNode: React.FunctionComponent<FileDiffNodeProps> = ({
 }) => {
     const [expanded, setExpanded] = useState<boolean>(true)
     const [renderDeleted, setRenderDeleted] = useState<boolean>(false)
-    const [isRedesignEnabled] = useRedesignToggle()
 
     const toggleExpand = useCallback((): void => {
         setExpanded(!expanded)
@@ -81,7 +80,7 @@ export const FileDiffNode: React.FunctionComponent<FileDiffNodeProps> = ({
     if (node.oldFile?.binary || node.newFile?.binary) {
         const sizeChange = (node.newFile?.byteSize ?? 0) - (node.oldFile?.byteSize ?? 0)
         const className = sizeChange >= 0 ? 'text-success' : 'text-danger'
-        stat = <strong className={classnames(className, 'code')}>{prettyBytes(sizeChange)}</strong>
+        stat = <strong className={classNames(className, 'code')}>{prettyBytes(sizeChange)}</strong>
     } else {
         stat = (
             <>
@@ -98,8 +97,8 @@ export const FileDiffNode: React.FunctionComponent<FileDiffNodeProps> = ({
             {/* The empty <a> tag is to allow users to anchor links to the top of this file diff node */}
             {/* eslint-disable-next-line jsx-a11y/anchor-has-content, jsx-a11y/anchor-is-valid */}
             <a id={anchor} aria-hidden={true} />
-            <div className={classnames('file-diff-node test-file-diff-node', { card: !isRedesignEnabled }, className)}>
-                <div className={classnames('file-diff-node__header', { 'card-header': !isRedesignEnabled })}>
+            <div className={classNames('test-file-diff-node', styles.fileDiffNode, className)}>
+                <div className={styles.header}>
                     <button type="button" className="btn btn-sm btn-icon mr-2" onClick={toggleExpand}>
                         {expanded ? (
                             <ChevronDownIcon className="icon-inline" />
@@ -107,7 +106,7 @@ export const FileDiffNode: React.FunctionComponent<FileDiffNodeProps> = ({
                             <ChevronRightIcon className="icon-inline" />
                         )}
                     </button>
-                    <div className="file-diff-node__header-path-stat align-items-baseline">
+                    <div className={classNames('align-items-baseline', styles.headerPathStat)}>
                         {!node.oldPath && <span className="badge badge-success text-uppercase mr-2">Added</span>}
                         {!node.newPath && <span className="badge badge-danger text-uppercase mr-2">Deleted</span>}
                         {node.newPath && node.oldPath && node.newPath !== node.oldPath && (
@@ -116,11 +115,11 @@ export const FileDiffNode: React.FunctionComponent<FileDiffNodeProps> = ({
                             </span>
                         )}
                         {stat}
-                        <Link to={{ ...location, hash: anchor }} className="file-diff-node__header-path ml-2">
+                        <Link to={{ ...location, hash: anchor }} className={classNames('ml-2', styles.headerPath)}>
                             {path}
                         </Link>
                     </div>
-                    <div className="file-diff-node__header-actions">
+                    <div className={styles.headerActions}>
                         {/* We only have a 'view' component for GitBlobs, but not for `VirtualFile`s. */}
                         {node.mostRelevantFile.__typename === 'GitBlob' && (
                             <Link
@@ -145,7 +144,7 @@ export const FileDiffNode: React.FunctionComponent<FileDiffNodeProps> = ({
                         </div>
                     ) : (
                         <FileDiffHunks
-                            className="file-diff-node__hunks"
+                            className={styles.hunks}
                             fileDiffAnchor={anchor}
                             history={history}
                             isLightTheme={isLightTheme}

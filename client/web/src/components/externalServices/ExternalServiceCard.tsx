@@ -1,3 +1,4 @@
+import classNames from 'classnames'
 import * as H from 'history'
 import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
 import UserIcon from 'mdi-react/UserIcon'
@@ -41,7 +42,7 @@ export const ExternalServiceCard: React.FunctionComponent<ExternalServiceCardPro
     className = '',
 }) => {
     const children = (
-        <div className={`p-3 d-flex align-items-start border ${className}`}>
+        <div className={classNames('p-3 d-flex align-items-start border', className)}>
             <Icon className="icon-inline h3 mb-0 mr-3" />
             <div className="flex-1">
                 <h3 className={shortDescription ? 'mb-0' : 'mt-1 mb-0'}>

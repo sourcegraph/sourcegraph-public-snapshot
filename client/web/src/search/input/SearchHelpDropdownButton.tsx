@@ -1,10 +1,7 @@
-import classNames from 'classnames'
 import ExternalLinkIcon from 'mdi-react/ExternalLinkIcon'
 import HelpCircleOutlineIcon from 'mdi-react/HelpCircleOutlineIcon'
 import React, { useCallback, useState } from 'react'
 import { DropdownItem, DropdownMenu, DropdownToggle, ButtonDropdown } from 'reactstrap'
-
-import { useRedesignToggle } from '@sourcegraph/shared/src/util/useRedesignToggle'
 
 import { eventLogger } from '../../tracking/eventLogger'
 
@@ -19,7 +16,6 @@ export const SearchHelpDropdownButton: React.FunctionComponent = () => {
         eventLogger.log('SearchHelpDropdownQueryDocsLinkClicked')
         toggleIsOpen()
     }, [toggleIsOpen])
-    const [isRedesignEnabled] = useRedesignToggle()
     const documentationUrlPrefix = window.context?.sourcegraphDotComMode ? 'https://docs.sourcegraph.com' : '/help'
 
     return (
@@ -121,12 +117,7 @@ export const SearchHelpDropdownButton: React.FunctionComponent = () => {
                     <ExternalLinkIcon className="icon-inline small" /> All search keywords
                 </a>
                 {window.context?.sourcegraphDotComMode && (
-                    <div
-                        className={classNames(
-                            'alert alert-info small rounded-0 mb-0 mt-1',
-                            !isRedesignEnabled && 'p-2'
-                        )}
-                    >
+                    <div className="alert alert-info small rounded-0 mb-0 mt-1">
                         On Sourcegraph.com, use a <code>repo:</code> filter to narrow your search to &le;500
                         repositories.
                     </div>

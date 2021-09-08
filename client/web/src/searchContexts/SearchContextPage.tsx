@@ -21,22 +21,22 @@ import { SearchContextProps } from '../search'
 import styles from './SearchContextPage.module.scss'
 
 export interface SearchContextPageProps
-    extends Pick<RouteComponentProps<{ id: Scalars['ID'] }>, 'match'>,
-        Pick<SearchContextProps, 'fetchSearchContext'> {}
+    extends Pick<RouteComponentProps<{ spec: Scalars['ID'] }>, 'match'>,
+        Pick<SearchContextProps, 'fetchSearchContextBySpec'> {}
 
 export const SearchContextPage: React.FunctionComponent<SearchContextPageProps> = props => {
     const LOADING = 'loading' as const
 
-    const { match, fetchSearchContext } = props
+    const { match, fetchSearchContextBySpec } = props
 
     const searchContextOrError = useObservable(
         React.useMemo(
             () =>
-                fetchSearchContext(match.params.id).pipe(
+                fetchSearchContextBySpec(match.params.spec).pipe(
                     startWith(LOADING),
                     catchError(error => [asError(error)])
                 ),
-            [match.params.id, fetchSearchContext]
+            [match.params.spec, fetchSearchContextBySpec]
         )
     )
 
@@ -84,7 +84,7 @@ export const SearchContextPage: React.FunctionComponent<SearchContextPageProps> 
                                 actions={
                                     searchContextOrError.viewerCanManage && (
                                         <Link
-                                            to={`/contexts/${searchContextOrError.id}/edit`}
+                                            to={`/contexts/${searchContextOrError.spec}/edit`}
                                             className="btn btn-secondary"
                                             data-testid="edit-search-context-link"
                                         >

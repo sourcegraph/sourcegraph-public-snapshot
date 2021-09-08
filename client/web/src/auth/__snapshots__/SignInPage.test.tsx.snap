@@ -7,10 +7,10 @@ exports[`SignInPage renders sign in page (cloud) 1`] = `
   className="signin-signup-page sign-in-page"
 >
   <div
-    className="hero-page hero-page__less-padding"
+    className="heroPage lessPadding"
   >
     <div
-      className="hero-page__icon bg-transparent"
+      className="icon bg-transparent"
     >
       <a
         href="/search"
@@ -39,7 +39,7 @@ exports[`SignInPage renders sign in page (cloud) 1`] = `
       </a>
     </div>
     <div
-      className="hero-page__title"
+      className="title"
     >
       Sign in to Sourcegraph Cloud
     </div>
@@ -50,7 +50,7 @@ exports[`SignInPage renders sign in page (cloud) 1`] = `
         className="signin-signup-form signin-form test-signin-form rounded p-4 my-3 mt-4"
       >
         <form
-          className=" "
+          className=""
           onInvalid={[Function]}
           onSubmit={[Function]}
         >
@@ -143,6 +143,7 @@ exports[`SignInPage renders sign in page (cloud) 1`] = `
         >
           <a
             className="btn btn-secondary btn-block"
+            href="&redirect=/welcome"
           >
             <svg
               className="mdi-icon icon-inline"
@@ -180,10 +181,10 @@ exports[`SignInPage renders sign in page (server) 1`] = `
   className="signin-signup-page sign-in-page"
 >
   <div
-    className="hero-page hero-page__less-padding"
+    className="heroPage lessPadding"
   >
     <div
-      className="hero-page__icon bg-transparent"
+      className="icon bg-transparent"
     >
       <svg
         fill="none"
@@ -207,7 +208,7 @@ exports[`SignInPage renders sign in page (server) 1`] = `
       </svg>
     </div>
     <div
-      className="hero-page__title"
+      className="title"
     >
       Sign in to Sourcegraph Server
     </div>
@@ -218,7 +219,7 @@ exports[`SignInPage renders sign in page (server) 1`] = `
         className="signin-signup-form signin-form test-signin-form rounded p-4 my-3 mt-4"
       >
         <form
-          className=" "
+          className=""
           onInvalid={[Function]}
           onSubmit={[Function]}
         >
@@ -311,6 +312,7 @@ exports[`SignInPage renders sign in page (server) 1`] = `
         >
           <a
             className="btn btn-secondary btn-block"
+            href=""
           >
             <svg
               className="mdi-icon icon-inline"

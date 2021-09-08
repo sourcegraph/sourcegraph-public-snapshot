@@ -21,6 +21,7 @@ import {
     fetchSearchContexts,
     convertVersionContextToSearchContext,
     fetchSearchContext,
+    fetchSearchContextBySpec,
     createSearchContext,
     updateSearchContext,
     deleteSearchContext,
@@ -203,6 +204,7 @@ export interface SearchContextProps {
     convertVersionContextToSearchContext: typeof convertVersionContextToSearchContext
     isSearchContextSpecAvailable: typeof isSearchContextSpecAvailable
     fetchSearchContext: typeof fetchSearchContext
+    fetchSearchContextBySpec: typeof fetchSearchContextBySpec
     createSearchContext: typeof createSearchContext
     updateSearchContext: typeof updateSearchContext
     deleteSearchContext: typeof deleteSearchContext

@@ -1,3 +1,4 @@
+import classNames from 'classnames'
 import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
 import React, { FunctionComponent } from 'react'
 
@@ -8,6 +9,8 @@ import { LsifIndexFields } from '../../../graphql-operations'
 import { CodeIntelState } from '../shared/CodeIntelState'
 import { CodeIntelUploadOrIndexLastActivity } from '../shared/CodeIntelUploadOrIndexLastActivity'
 
+import styles from './CodeIntelAssociatedUpload.module.scss'
+
 export interface CodeIntelAssociatedUploadProps {
     node: LsifIndexFields
     now?: () => Date
@@ -17,10 +20,10 @@ export const CodeIntelAssociatedUpload: FunctionComponent<CodeIntelAssociatedUpl
     node.associatedUpload && node.projectRoot ? (
         <>
             <div className="list-group position-relative">
-                <div className="codeintel-associated-upload__grid mb-3">
-                    <span className="codeintel-associated-upload__separator" />
+                <div className={styles.grid}>
+                    <span className={styles.separator} />
 
-                    <div className="d-flex flex-column codeintel-associated-upload__information">
+                    <div className={classNames(styles.information, 'd-flex flex-column')}>
                         <div className="m-0">
                             <h3 className="m-0 d-block d-md-inline">
                                 This job uploaded an index{' '}
@@ -38,7 +41,7 @@ export const CodeIntelAssociatedUpload: FunctionComponent<CodeIntelAssociatedUpl
                         </div>
                     </div>
 
-                    <span className="d-none d-md-inline codeintel-associated-upload__state">
+                    <span className={classNames(styles.state, 'd-none d-md-inline')}>
                         <CodeIntelState
                             node={node.associatedUpload}
                             className="d-flex flex-column align-items-center"
@@ -51,8 +54,6 @@ export const CodeIntelAssociatedUpload: FunctionComponent<CodeIntelAssociatedUpl
                             <ChevronRightIcon />
                         </Link>
                     </span>
-
-                    <span className="codeintel-associated-upload__separator" />
                 </div>
             </div>
         </>

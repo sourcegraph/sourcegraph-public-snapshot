@@ -1,21 +1,10 @@
-import { IOrg } from '@sourcegraph/shared/src/graphql/schema'
 import { Settings, SettingsCascade } from '@sourcegraph/shared/src/settings/settings'
-import { authUser } from '@sourcegraph/web/src/search/panels/utils'
-
-import { AuthenticatedUser } from '../../auth'
 
 import { diffCodeInsightsSettings, getGroupedStepSizes, getInsightsGroupedByType } from './analytics'
 
 describe('Code Insight Analytics', () => {
     describe('getInsightsGroupedByType()', () => {
         test('with insights in org and in user settings', () => {
-            const authUserWithOrgs: AuthenticatedUser = {
-                ...authUser,
-                organizations: {
-                    nodes: [{ id: 'Org ID', settingsURL: '#', displayName: 'Acme Corp' }] as IOrg[],
-                },
-            }
-
             const SETTINGS_CASCADE: SettingsCascade<Settings> = {
                 subjects: [
                     {
@@ -84,9 +73,11 @@ describe('Code Insight Analytics', () => {
                 final: {},
             }
 
-            expect(getInsightsGroupedByType(SETTINGS_CASCADE, authUserWithOrgs)).toStrictEqual({
+            expect(getInsightsGroupedByType(SETTINGS_CASCADE)).toStrictEqual({
                 codeStatsInsights: 1,
                 searchBasedInsights: 1,
+                searchBasedBackendInsights: 0,
+                searchBasedExtensionInsights: 1,
             })
         })
     })
@@ -118,7 +109,9 @@ describe('Code Insight Analytics', () => {
     describe('diffCodeInsightsSettings()', () => {
         test('addition', () => {
             const oldSettings = {}
-            const newSettings = { 'codeStatsInsights.query': 'repo:^github\\.com/sourcegraph/sourcegraph$' }
+            const newSettings = {
+                'codeStatsInsights.insight.Title': { query: 'repo:^github\\.com/sourcegraph/sourcegraph$' },
+            }
 
             expect(diffCodeInsightsSettings(oldSettings, newSettings)).toStrictEqual([
                 { action: 'Addition', insightType: 'codeStatsInsights' },
@@ -126,7 +119,9 @@ describe('Code Insight Analytics', () => {
         })
 
         test('removal', () => {
-            const oldSettings = { 'codeStatsInsights.query': 'repo:^github\\.com/sourcegraph/sourcegraph$' }
+            const oldSettings = {
+                'codeStatsInsights.insight.Title': { query: 'repo:^github\\.com/sourcegraph/sourcegraph$' },
+            }
             const newSettings = {}
 
             expect(diffCodeInsightsSettings(oldSettings, newSettings)).toStrictEqual([

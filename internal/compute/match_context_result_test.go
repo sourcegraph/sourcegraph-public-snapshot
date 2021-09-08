@@ -25,7 +25,7 @@ func environment(r *MatchContext) interface{} {
 	return env
 }
 
-func TestOfLineMatches(t *testing.T) {
+func TestFromLineMatches(t *testing.T) {
 	data := &result.FileMatch{
 		File: result.File{Path: "bedge"},
 		LineMatches: []*result.LineMatch{

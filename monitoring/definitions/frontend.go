@@ -134,7 +134,7 @@ func Frontend() *monitoring.Container {
 						{
 							Name:        "99th_percentile_search_codeintel_request_duration",
 							Description: "99th percentile code-intel successful search request duration over 5m",
-							Owner:       monitoring.ObservableOwnerCodeIntel,
+							Owner:       monitoring.ObservableOwnerSearch,
 							Query:       `histogram_quantile(0.99, sum by (le)(rate(src_graphql_field_seconds_bucket{type="Search",field="results",error="false",source="browser",request_name="CodeIntelSearch"}[5m])))`,
 
 							Warning: monitoring.Alert().GreaterOrEqual(20, nil),
@@ -153,7 +153,7 @@ func Frontend() *monitoring.Container {
 
 							Warning: monitoring.Alert().GreaterOrEqual(15, nil),
 							Panel:   monitoring.Panel().LegendFormat("duration").Unit(monitoring.Seconds),
-							Owner:   monitoring.ObservableOwnerCodeIntel,
+							Owner:   monitoring.ObservableOwnerSearch,
 							PossibleSolutions: `
 								- **Get details on the exact queries that are slow** by configuring '"observability.logSlowSearches": 15,' in the site configuration and looking for 'frontend' warning logs prefixed with 'slow search request' for additional details.
 								- **Check that most repositories are indexed** by visiting https://sourcegraph.example.com/site-admin/repositories?filter=needs-index (it should show few or no results.)
@@ -171,7 +171,7 @@ func Frontend() *monitoring.Container {
 							Warning:           monitoring.Alert().GreaterOrEqual(2, nil).For(15 * time.Minute),
 							Critical:          monitoring.Alert().GreaterOrEqual(5, nil).For(15 * time.Minute),
 							Panel:             monitoring.Panel().LegendFormat("hard timeout").Unit(monitoring.Percentage),
-							Owner:             monitoring.ObservableOwnerCodeIntel,
+							Owner:             monitoring.ObservableOwnerSearch,
 							PossibleSolutions: "none",
 						},
 						{
@@ -182,7 +182,7 @@ func Frontend() *monitoring.Container {
 							Warning:           monitoring.Alert().GreaterOrEqual(2, nil).For(15 * time.Minute),
 							Critical:          monitoring.Alert().GreaterOrEqual(5, nil).For(15 * time.Minute),
 							Panel:             monitoring.Panel().LegendFormat("hard error").Unit(monitoring.Percentage),
-							Owner:             monitoring.ObservableOwnerCodeIntel,
+							Owner:             monitoring.ObservableOwnerSearch,
 							PossibleSolutions: "none",
 						},
 						{
@@ -192,7 +192,7 @@ func Frontend() *monitoring.Container {
 
 							Warning:           monitoring.Alert().GreaterOrEqual(5, nil).For(15 * time.Minute),
 							Panel:             monitoring.Panel().LegendFormat("partial timeout").Unit(monitoring.Percentage),
-							Owner:             monitoring.ObservableOwnerCodeIntel,
+							Owner:             monitoring.ObservableOwnerSearch,
 							PossibleSolutions: "none",
 						},
 						{
@@ -202,7 +202,7 @@ func Frontend() *monitoring.Container {
 
 							Warning: monitoring.Alert().GreaterOrEqual(5, nil).For(15 * time.Minute),
 							Panel:   monitoring.Panel().LegendFormat("{{alert_type}}").Unit(monitoring.Percentage),
-							Owner:   monitoring.ObservableOwnerCodeIntel,
+							Owner:   monitoring.ObservableOwnerSearch,
 							PossibleSolutions: `
 								- This indicates a bug in Sourcegraph, please [open an issue](https://github.com/sourcegraph/sourcegraph/issues/new/choose).
 							`,
@@ -247,17 +247,6 @@ func Frontend() *monitoring.Container {
 						},
 					},
 					{
-						{
-							Name:        "hard_timeout_search_api_responses",
-							Description: "hard timeout search API responses every 5m",
-							Query:       `(sum(increase(src_graphql_search_response{status="timeout",source="other"}[5m])) + sum(increase(src_graphql_search_response{status="alert",alert_type="timed_out",source="other"}[5m]))) / sum(increase(src_graphql_search_response{source="other"}[5m])) * 100`,
-
-							Warning:           monitoring.Alert().GreaterOrEqual(2, nil).For(15 * time.Minute),
-							Critical:          monitoring.Alert().GreaterOrEqual(5, nil).For(15 * time.Minute),
-							Panel:             monitoring.Panel().LegendFormat("hard timeout").Unit(monitoring.Percentage),
-							Owner:             monitoring.ObservableOwnerSearch,
-							PossibleSolutions: "none",
-						},
 						{
 							Name:        "hard_error_search_api_responses",
 							Description: "hard error search API responses every 5m",

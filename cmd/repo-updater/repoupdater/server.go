@@ -13,6 +13,7 @@ import (
 	otlog "github.com/opentracing/opentracing-go/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
@@ -46,7 +47,7 @@ type Server struct {
 	}
 	PermsSyncer interface {
 		// ScheduleUsers schedules new permissions syncing requests for given users.
-		ScheduleUsers(ctx context.Context, userIDs ...int32)
+		ScheduleUsers(ctx context.Context, opts authz.FetchPermsOptions, userIDs ...int32)
 		// ScheduleRepos schedules new permissions syncing requests for given repositories.
 		ScheduleRepos(ctx context.Context, repoIDs ...api.RepoID)
 	}
@@ -189,12 +190,14 @@ func (s *Server) handleExternalServiceSync(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	src, err := repos.NewSource(&types.ExternalService{
+	sourcer := repos.NewSourcer(httpcli.ExternalClientFactory, repos.WithDB(s.Handle().DB()))
+
+	src, err := sourcer(&types.ExternalService{
 		ID:          req.ExternalService.ID,
 		Kind:        req.ExternalService.Kind,
 		DisplayName: req.ExternalService.DisplayName,
 		Config:      req.ExternalService.Config,
-	}, httpcli.ExternalClientFactory)
+	})
 	if err != nil {
 		log15.Error("server.external-service-sync", "kind", req.ExternalService.Kind, "error", err)
 		return
@@ -241,35 +244,33 @@ func externalServiceValidate(ctx context.Context, req protocol.ExternalServiceSy
 		return nil
 	}
 
-	ctx, cancel := context.WithCancel(ctx)
-	defer cancel()
-
-	results := make(chan repos.SourceResult)
-
 	if v, ok := src.(repos.UserSource); ok {
-		if err := v.ValidateAuthenticator(ctx); err != nil {
-			return err
-		}
-	} else {
-		go func() {
-			src.ListRepos(ctx, results)
-			close(results)
-		}()
-
-		for res := range results {
-			if res.Err != nil {
-				// Send error to user before waiting for all results, but drain
-				// the rest of the results to not leak a blocked goroutine
-				go func() {
-					for range results {
-					}
-				}()
-				return res.Err
-			}
-		}
+		return v.ValidateAuthenticator(ctx)
 	}
 
-	return nil
+	ctx, cancel := context.WithCancel(ctx)
+	results := make(chan repos.SourceResult)
+
+	defer func() {
+		cancel()
+
+		// We need to drain the rest of the results to not leak a blocked goroutine.
+		for range results {
+		}
+	}()
+
+	go func() {
+		src.ListRepos(ctx, results)
+		close(results)
+	}()
+
+	select {
+	case res := <-results:
+		// As soon as we get the first result back, we've got what we need to validate the external service.
+		return res.Err
+	case <-ctx.Done():
+		return ctx.Err()
+	}
 }
 
 var mockRepoLookup func(protocol.RepoLookupArgs) (*protocol.RepoLookupResult, error)
@@ -367,7 +368,7 @@ func (s *Server) handleSchedulePermsSync(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	s.PermsSyncer.ScheduleUsers(r.Context(), req.UserIDs...)
+	s.PermsSyncer.ScheduleUsers(r.Context(), req.Options, req.UserIDs...)
 	s.PermsSyncer.ScheduleRepos(r.Context(), req.RepoIDs...)
 
 	respond(w, http.StatusOK, nil)

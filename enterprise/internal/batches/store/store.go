@@ -148,6 +148,8 @@ type operations struct {
 
 	createBatchSpecExecution *observation.Operation
 	getBatchSpecExecution    *observation.Operation
+	cancelBatchSpecExecution *observation.Operation
+	listBatchSpecExecutions  *observation.Operation
 
 	createBatchSpec         *observation.Operation
 	updateBatchSpec         *observation.Operation
@@ -227,9 +229,9 @@ func newOperations(observationContext *observation.Context) *operations {
 
 		op := func(name string) *observation.Operation {
 			return observationContext.Operation(observation.Op{
-				Name:         fmt.Sprintf("batches.dbstore.%s", name),
-				MetricLabels: []string{name},
-				Metrics:      m,
+				Name:              fmt.Sprintf("batches.dbstore.%s", name),
+				MetricLabelValues: []string{name},
+				Metrics:           m,
 				ErrorFilter: func(err error) observation.ErrorFilterBehaviour {
 					if errors.Is(err, ErrNoResults) {
 						return observation.EmitForNone
@@ -251,6 +253,8 @@ func newOperations(observationContext *observation.Context) *operations {
 
 			createBatchSpecExecution: op("CreateBatchSpecExecution"),
 			getBatchSpecExecution:    op("GetBatchSpecExecution"),
+			cancelBatchSpecExecution: op("CancelBatchSpecExecution"),
+			listBatchSpecExecutions:  op("ListBatchSpecExecutions"),
 
 			createBatchSpec:         op("CreateBatchSpec"),
 			updateBatchSpec:         op("UpdateBatchSpec"),

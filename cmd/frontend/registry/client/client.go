@@ -11,8 +11,10 @@ import (
 
 	"github.com/cockroachdb/errors"
 	"github.com/google/uuid"
+	"github.com/opentracing/opentracing-go/ext"
 
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
+	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 )
 
 const (
@@ -31,14 +33,27 @@ const (
 )
 
 // List lists extensions on the remote registry matching the query (or all if the query is empty).
-func List(ctx context.Context, registry *url.URL, query string) ([]*Extension, error) {
+func List(ctx context.Context, registry *url.URL, query string) (xs []*Extension, err error) {
+	span, ctx := ot.StartSpanFromContext(ctx, "registry/client.List")
+	span.SetTag("registry", registry.String())
+	span.SetTag("query", query)
+	defer func() {
+		if xs != nil {
+			span.SetTag("results", len(xs))
+		}
+		if err != nil {
+			ext.Error.Set(span, true)
+			span.SetTag("error", err.Error())
+		}
+		span.Finish()
+	}()
+
 	var q url.Values
 	if query != "" {
 		q = url.Values{"q": []string{query}}
 	}
 
-	var xs []*Extension
-	err := httpGet(ctx, "registry.List", toURL(registry, "extensions", q), &xs)
+	err = httpGet(ctx, "registry.List", toURL(registry, "extensions", q), &xs)
 	return xs, err
 }
 
@@ -103,6 +118,7 @@ func httpGet(ctx context.Context, op, urlStr string, result interface{}) (err er
 	if err != nil {
 		return err
 	}
+	defer resp.Body.Close()
 	if v := strings.TrimSpace(resp.Header.Get(MediaTypeHeaderName)); v != MediaType {
 		return &url.Error{Op: op, URL: urlStr, Err: errors.Errorf("not a valid Sourcegraph registry (invalid media type %q, expected %q)", v, MediaType)}
 	}

@@ -31,6 +31,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
+	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
 )
 
 func TestNullIDResilience(t *testing.T) {
@@ -90,6 +91,7 @@ func TestNullIDResilience(t *testing.T) {
 		fmt.Sprintf(`mutation { closeChangesets(batchChange: %q, changesets: [%q]) { id } }`, marshalBatchChangeID(1), marshalChangesetID(0)),
 		fmt.Sprintf(`mutation { publishChangesets(batchChange: %q, changesets: []) { id } }`, marshalBatchChangeID(0)),
 		fmt.Sprintf(`mutation { publishChangesets(batchChange: %q, changesets: [%q]) { id } }`, marshalBatchChangeID(1), marshalChangesetID(0)),
+		fmt.Sprintf(`mutation { cancelBatchSpecExecution(batchSpecExecution: %q) { id } }`, marshalBatchSpecExecutionRandID("")),
 	}
 
 	for _, m := range mutations {
@@ -128,8 +130,8 @@ func TestCreateBatchSpec(t *testing.T) {
 	changesetSpecs := make([]*btypes.ChangesetSpec, maxUnlicensedChangesets+1)
 	for i := range changesetSpecs {
 		changesetSpecs[i] = &btypes.ChangesetSpec{
-			Spec: &btypes.ChangesetSpecDescription{
-				BaseRepository: graphqlbackend.MarshalRepositoryID(repo.ID),
+			Spec: &batcheslib.ChangesetSpec{
+				BaseRepository: string(graphqlbackend.MarshalRepositoryID(repo.ID)),
 			},
 			RepoID: repo.ID,
 			UserID: userID,
@@ -385,19 +387,20 @@ func TestApplyBatchChange(t *testing.T) {
 
 	repoAPIID := graphqlbackend.MarshalRepositoryID(repo.ID)
 
+	falsy := overridable.FromBoolOrString(false)
 	batchSpec := &btypes.BatchSpec{
 		RawSpec: ct.TestRawBatchSpec,
-		Spec: btypes.BatchSpecFields{
+		Spec: &batcheslib.BatchSpec{
 			Name:        "my-batch-change",
 			Description: "My description",
-			ChangesetTemplate: btypes.ChangesetTemplate{
+			ChangesetTemplate: &batcheslib.ChangesetTemplate{
 				Title:  "Hello there",
 				Body:   "This is the body",
 				Branch: "my-branch",
-				Commit: btypes.CommitTemplate{
+				Commit: batcheslib.ExpandedGitCommitDescription{
 					Message: "Add hello world",
 				},
-				Published: overridable.FromBoolOrString(false),
+				Published: &falsy,
 			},
 		},
 		UserID:          userID,
@@ -409,8 +412,8 @@ func TestApplyBatchChange(t *testing.T) {
 
 	changesetSpec := &btypes.ChangesetSpec{
 		BatchSpecID: batchSpec.ID,
-		Spec: &btypes.ChangesetSpecDescription{
-			BaseRepository: repoAPIID,
+		Spec: &batcheslib.ChangesetSpec{
+			BaseRepository: string(repoAPIID),
 		},
 		RepoID: repo.ID,
 		UserID: userID,
@@ -538,7 +541,7 @@ func TestCreateBatchChange(t *testing.T) {
 
 	batchSpec := &btypes.BatchSpec{
 		RawSpec: ct.TestRawBatchSpec,
-		Spec: btypes.BatchSpecFields{
+		Spec: &batcheslib.BatchSpec{
 			Name:        "my-batch-change",
 			Description: "My description",
 		},

@@ -1,6 +1,8 @@
 import classnames from 'classnames'
 import React, { FormEventHandler, RefObject } from 'react'
 
+import { Button } from '@sourcegraph/wildcard'
+
 import { ErrorAlert } from '../../../../../../../components/alerts'
 import { LoaderButton } from '../../../../../../../components/LoaderButton'
 import { FormGroup } from '../../../../../../components/form/form-group/FormGroup'
@@ -28,11 +30,6 @@ interface CreationSearchInsightFormProps {
     className?: string
     isFormClearActive?: boolean
 
-    /**
-     * Enables the experimental insight mode (run insight on all repositories in the instance)
-     */
-    hasAllReposUI?: boolean
-
     title: useFieldAPI<CreateInsightFormFields['title']>
     repositories: useFieldAPI<CreateInsightFormFields['repositories']>
     allReposMode: useFieldAPI<CreateInsightFormFields['allRepos']>
@@ -49,13 +46,13 @@ interface CreationSearchInsightFormProps {
     /**
      * Handler to listen latest value form particular series edit form
      * Used to get information for live preview chart.
-     * */
+     */
     onSeriesLiveChange: (liveSeries: EditableDataSeries, isValid: boolean, index: number) => void
 
     /**
      * Handlers for CRUD operation over series. Add, delete, update and cancel
      * series edit form.
-     * */
+     */
     onEditSeriesRequest: (openedCardIndex: number) => void
     onEditSeriesCommit: (seriesIndex: number, editedSeries: EditableDataSeries) => void
     onEditSeriesCancel: (closedCardIndex: number) => void
@@ -67,7 +64,7 @@ interface CreationSearchInsightFormProps {
 /**
  * Displays creation code insight form (title, visibility, series, etc.)
  * UI layer only, all controlled data should be managed by consumer of this component.
- * */
+ */
 export const SearchInsightCreationForm: React.FunctionComponent<CreationSearchInsightFormProps> = props => {
     const {
         mode,
@@ -86,7 +83,6 @@ export const SearchInsightCreationForm: React.FunctionComponent<CreationSearchIn
         step,
         className,
         isFormClearActive,
-        hasAllReposUI,
         onCancel,
         onSeriesLiveChange,
         onEditSeriesRequest,
@@ -109,15 +105,18 @@ export const SearchInsightCreationForm: React.FunctionComponent<CreationSearchIn
         >
             <FormGroup
                 name="insight repositories"
-                title="Repositories"
+                title="Targeted repositories"
                 subtitle="Create a list of repositories to run your search over"
             >
                 <FormInput
                     as={RepositoriesField}
                     autoFocus={true}
                     required={true}
+                    title="Repositories"
                     description="Separate repositories with commas"
-                    placeholder="Example: github.com/sourcegraph/sourcegraph"
+                    placeholder={
+                        allReposMode.input.value ? 'All repositories' : 'Example: github.com/sourcegraph/sourcegraph'
+                    }
                     loading={repositories.meta.validState === 'CHECKING'}
                     valid={repositories.meta.touched && repositories.meta.validState === 'VALID'}
                     error={repositories.meta.touched && repositories.meta.error}
@@ -125,22 +124,29 @@ export const SearchInsightCreationForm: React.FunctionComponent<CreationSearchIn
                     className="mb-0 d-flex flex-column"
                 />
 
-                {hasAllReposUI && (
-                    <>
-                        <label className="d-flex align-items-center mb-2 mt-2 font-weight-normal">
-                            <input
-                                type="checkbox"
-                                {...allReposMode.input}
-                                value="all-repos-mode"
-                                checked={allReposMode.input.value}
-                            />
+                <label className="d-flex flex-wrap align-items-center mb-2 mt-3 font-weight-normal">
+                    <input
+                        type="checkbox"
+                        {...allReposMode.input}
+                        value="all-repos-mode"
+                        checked={allReposMode.input.value}
+                    />
 
-                            <span className="pl-2">Run your insight over all your repositories</span>
-                        </label>
+                    <span className="pl-2">Run your insight over all your repositories</span>
 
-                        <hr className={styles.creationInsightFormSeparator} />
-                    </>
-                )}
+                    <small className="w-100 mt-2 text-muted">
+                        This feature is actively in development. Read about the{' '}
+                        <a
+                            href="https://docs.sourcegraph.com/code_insights/explanations/current_limitations_of_code_insights"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                        >
+                            beta limitations here.
+                        </a>
+                    </small>
+                </label>
+
+                <hr className={styles.creationInsightFormSeparator} />
             </FormGroup>
 
             <FormGroup
@@ -149,10 +155,10 @@ export const SearchInsightCreationForm: React.FunctionComponent<CreationSearchIn
                 subtitle="Add any number of data series to your chart"
                 error={series.meta.touched && series.meta.error}
                 innerRef={series.input.ref}
-                className={!hasAllReposUI ? 'mt-5' : undefined}
             >
                 <FormSeries
                     series={series.input.value}
+                    isBackendInsightEdit={isEditMode && allReposMode.input.value}
                     showValidationErrorsOnMount={submitted}
                     onLiveChange={onSeriesLiveChange}
                     onEditSeriesRequest={onEditSeriesRequest}
@@ -266,13 +272,19 @@ export const SearchInsightCreationForm: React.FunctionComponent<CreationSearchIn
                     className="btn btn-primary mr-2 mb-2"
                 />
 
-                <button type="button" className="btn btn-outline-secondary mb-2 mr-auto" onClick={onCancel}>
+                <Button type="button" variant="secondary" outline={true} className="mb-2 mr-auto" onClick={onCancel}>
                     Cancel
-                </button>
+                </Button>
 
-                <button type="reset" disabled={!isFormClearActive} className="btn btn-outline-secondary border-0">
+                <Button
+                    type="reset"
+                    disabled={!isFormClearActive}
+                    variant="secondary"
+                    outline={true}
+                    className="border-0"
+                >
                     Clear all fields
-                </button>
+                </Button>
             </div>
         </form>
     )

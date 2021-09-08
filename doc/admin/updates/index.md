@@ -4,7 +4,7 @@
 
 A new version of Sourcegraph is released every month (with patch releases in between, released as needed). Check the [Sourcegraph blog](https://about.sourcegraph.com/blog) or the site admin updates page to learn about updates. We actively maintain the two most recent monthly releases of Sourcegraph.
 
-⚠️ **Regardless of your deployment type:** ⚠️
+**Regardless of your deployment type**, the following rules apply:
 
 - **Upgrade one minor version at a time**, e.g. v3.26 --> v3.27 --> v3.28.
   - Patches (e.g. vX.X.4 vs. vX.X.5) do not have to be adopted when moving between vX.X versions.
@@ -15,10 +15,10 @@ A new version of Sourcegraph is released every month (with patch releases in bet
 
 Please see the instructions for your deployment type:
 
-- [Single-container `sourcegraph/server` deployments](server.md)
-- [Docker Compose single-machine deployments](docker_compose.md)
-- [Kubernetes cluster deployments](kubernetes.md)
-- [pure-Docker custom deployments](pure_docker.md)
+- [Sourcegraph with Docker Compose](docker_compose.md)
+- [Sourcegraph with Kubernetes](kubernetes.md)
+- [Single-container Sourcegraph with Docker](server.md)
+- [Pure-Docker custom deployments](pure_docker.md)
 
 For product update notes, please refer to the [changelog](../../CHANGELOG.md).
 

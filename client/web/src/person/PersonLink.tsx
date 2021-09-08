@@ -1,3 +1,4 @@
+import classNames from 'classnames'
 import * as React from 'react'
 
 import { LinkOrSpan } from '@sourcegraph/shared/src/components/LinkOrSpan'
@@ -39,7 +40,7 @@ export const PersonLink: React.FunctionComponent<{
 }> = ({ person, className = '', userClassName = '' }) => (
     <LinkOrSpan
         to={person.user?.url}
-        className={`${className} ${person.user ? userClassName : ''}`}
+        className={classNames(className, person.user && userClassName)}
         data-tooltip={
             person.user && (person.user.displayName || person.displayName)
                 ? `${person.user.displayName || person.displayName} <${person.email}>`

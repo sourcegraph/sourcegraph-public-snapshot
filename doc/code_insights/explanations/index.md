@@ -8,4 +8,5 @@ The following articles explain different parts of [Sourcegraph Code Insights](..
 - [Administration and Security of Code Insights](administration_and_security_of_code_insights.md)
 - [Current limitations of Code Insights](current_limitations_of_code_insights.md)
 - [Viewing code insights](viewing_code_insights.md)
+- [Code Insights filters](code_insights_filters.md)
 <!-- - [How Code Insights work](explanations/how_code_insights_work.md) -->

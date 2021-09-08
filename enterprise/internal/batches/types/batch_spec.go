@@ -3,17 +3,22 @@ package types
 import (
 	"time"
 
-	"github.com/sourcegraph/batch-change-utils/env"
-	"github.com/sourcegraph/batch-change-utils/overridable"
-	"github.com/sourcegraph/batch-change-utils/yaml"
-
-	"github.com/sourcegraph/sourcegraph/schema"
+	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
 )
 
-func NewBatchSpecFromRaw(rawSpec string) (*BatchSpec, error) {
+// NewBatchSpecFromRaw parses and validates the given rawSpec, and returns a BatchSpec
+// containing the result.
+func NewBatchSpecFromRaw(rawSpec string) (_ *BatchSpec, err error) {
 	c := &BatchSpec{RawSpec: rawSpec}
 
-	return c, c.UnmarshalValidate()
+	c.Spec, err = batcheslib.ParseBatchSpec([]byte(rawSpec), batcheslib.ParseBatchSpecOptions{
+		// Backend always supports all latest features.
+		AllowArrayEnvironments: true,
+		AllowTransformChanges:  true,
+		AllowConditionalExec:   true,
+	})
+
+	return c, err
 }
 
 type BatchSpec struct {
@@ -21,7 +26,7 @@ type BatchSpec struct {
 	RandID string
 
 	RawSpec string
-	Spec    BatchSpecFields
+	Spec    *batcheslib.BatchSpec
 
 	NamespaceUserID int32
 	NamespaceOrgID  int32
@@ -38,12 +43,6 @@ func (cs *BatchSpec) Clone() *BatchSpec {
 	return &cc
 }
 
-// UnmarshalValidate unmarshals the RawSpec into Spec and validates it against
-// the BatchSpec schema and does additional semantic validation.
-func (cs *BatchSpec) UnmarshalValidate() error {
-	return yaml.UnmarshalValidate(schema.BatchSpecSchemaJSON, []byte(cs.RawSpec), &cs.Spec)
-}
-
 // BatchSpecTTL specifies the TTL of BatchSpecs that haven't been applied
 // yet. It's set to 1 week.
 const BatchSpecTTL = 7 * 24 * time.Hour
@@ -52,41 +51,4 @@ const BatchSpecTTL = 7 * 24 * time.Hour
 // applied.
 func (cs *BatchSpec) ExpiresAt() time.Time {
 	return cs.CreatedAt.Add(BatchSpecTTL)
-}
-
-type BatchSpecFields struct {
-	Name              string                       `json:"name" yaml:"name"`
-	Description       string                       `json:"description,omitempty" yaml:"description,omitempty"`
-	On                []BatchSpecOn                `json:"on,omitempty" yaml:"on,omitempty"`
-	Steps             []BatchSpecStep              `json:"steps,omitempty" yaml:"steps,omitempty"`
-	ImportChangeset   []BatchChangeImportChangeset `json:"importChangesets,omitempty" yaml:"importChangesets,omitempty"`
-	ChangesetTemplate ChangesetTemplate            `json:"changesetTemplate,omitempty" yaml:"changesetTemplate,omitempty"`
-}
-
-type BatchSpecOn struct {
-	RepositoriesMatchingQuery string `json:"repositoriesMatchingQuery,omitempty" yaml:"repositoriesMatchingQuery,omitempty"`
-	Repository                string `json:"repository,omitempty" yaml:"repository,omitempty"`
-}
-
-type BatchSpecStep struct {
-	Run       string          `json:"run" yaml:"run"`
-	Container string          `json:"container" yaml:"container"`
-	Env       env.Environment `json:"env,omitempty" yaml:"env,omitempty"`
-}
-
-type BatchChangeImportChangeset struct {
-	Repository  string        `json:"repository" yaml:"repository"`
-	ExternalIDs []interface{} `json:"externalIDs" yaml:"externalIDs"`
-}
-
-type ChangesetTemplate struct {
-	Title     string                   `json:"title,omitempty" yaml:"title,omitempty"`
-	Body      string                   `json:"body,omitempty" yaml:"body,omitempty"`
-	Branch    string                   `json:"branch,omitempty" yaml:"branch,omitempty"`
-	Commit    CommitTemplate           `json:"commit,omitempty" yaml:"commit,omitempty"`
-	Published overridable.BoolOrString `json:"published,omitempty" yaml:"published,omitempty"`
-}
-
-type CommitTemplate struct {
-	Message string `json:"message,omitempty" yaml:"message,omitempty"`
 }

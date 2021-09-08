@@ -37,6 +37,7 @@ describe('Search onboarding', () => {
             }),
             ViewerSettings: () => ({
                 viewerSettings: {
+                    __typename: 'SettingsCascade',
                     subjects: [
                         {
                             __typename: 'DefaultSettings',

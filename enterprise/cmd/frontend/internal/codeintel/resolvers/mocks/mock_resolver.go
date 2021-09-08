@@ -20,12 +20,27 @@ type MockResolver struct {
 	// CommitGraphFunc is an instance of a mock function object controlling
 	// the behavior of the method CommitGraph.
 	CommitGraphFunc *ResolverCommitGraphFunc
+	// CreateConfigurationPolicyFunc is an instance of a mock function
+	// object controlling the behavior of the method
+	// CreateConfigurationPolicy.
+	CreateConfigurationPolicyFunc *ResolverCreateConfigurationPolicyFunc
+	// DeleteConfigurationPolicyByIDFunc is an instance of a mock function
+	// object controlling the behavior of the method
+	// DeleteConfigurationPolicyByID.
+	DeleteConfigurationPolicyByIDFunc *ResolverDeleteConfigurationPolicyByIDFunc
 	// DeleteIndexByIDFunc is an instance of a mock function object
 	// controlling the behavior of the method DeleteIndexByID.
 	DeleteIndexByIDFunc *ResolverDeleteIndexByIDFunc
 	// DeleteUploadByIDFunc is an instance of a mock function object
 	// controlling the behavior of the method DeleteUploadByID.
 	DeleteUploadByIDFunc *ResolverDeleteUploadByIDFunc
+	// GetConfigurationPoliciesFunc is an instance of a mock function object
+	// controlling the behavior of the method GetConfigurationPolicies.
+	GetConfigurationPoliciesFunc *ResolverGetConfigurationPoliciesFunc
+	// GetConfigurationPolicyByIDFunc is an instance of a mock function
+	// object controlling the behavior of the method
+	// GetConfigurationPolicyByID.
+	GetConfigurationPolicyByIDFunc *ResolverGetConfigurationPolicyByIDFunc
 	// GetIndexByIDFunc is an instance of a mock function object controlling
 	// the behavior of the method GetIndexByID.
 	GetIndexByIDFunc *ResolverGetIndexByIDFunc
@@ -55,6 +70,10 @@ type MockResolver struct {
 	// object controlling the behavior of the method
 	// QueueAutoIndexJobsForRepo.
 	QueueAutoIndexJobsForRepoFunc *ResolverQueueAutoIndexJobsForRepoFunc
+	// UpdateConfigurationPolicyFunc is an instance of a mock function
+	// object controlling the behavior of the method
+	// UpdateConfigurationPolicy.
+	UpdateConfigurationPolicyFunc *ResolverUpdateConfigurationPolicyFunc
 	// UpdateIndexConfigurationByRepositoryIDFunc is an instance of a mock
 	// function object controlling the behavior of the method
 	// UpdateIndexConfigurationByRepositoryID.
@@ -73,6 +92,16 @@ func NewMockResolver() *MockResolver {
 				return nil, nil
 			},
 		},
+		CreateConfigurationPolicyFunc: &ResolverCreateConfigurationPolicyFunc{
+			defaultHook: func(context.Context, dbstore.ConfigurationPolicy) (dbstore.ConfigurationPolicy, error) {
+				return dbstore.ConfigurationPolicy{}, nil
+			},
+		},
+		DeleteConfigurationPolicyByIDFunc: &ResolverDeleteConfigurationPolicyByIDFunc{
+			defaultHook: func(context.Context, int) error {
+				return nil
+			},
+		},
 		DeleteIndexByIDFunc: &ResolverDeleteIndexByIDFunc{
 			defaultHook: func(context.Context, int) error {
 				return nil
@@ -81,6 +110,16 @@ func NewMockResolver() *MockResolver {
 		DeleteUploadByIDFunc: &ResolverDeleteUploadByIDFunc{
 			defaultHook: func(context.Context, int) error {
 				return nil
+			},
+		},
+		GetConfigurationPoliciesFunc: &ResolverGetConfigurationPoliciesFunc{
+			defaultHook: func(context.Context, dbstore.GetConfigurationPoliciesOptions) ([]dbstore.ConfigurationPolicy, error) {
+				return nil, nil
+			},
+		},
+		GetConfigurationPolicyByIDFunc: &ResolverGetConfigurationPolicyByIDFunc{
+			defaultHook: func(context.Context, int) (dbstore.ConfigurationPolicy, bool, error) {
+				return dbstore.ConfigurationPolicy{}, false, nil
 			},
 		},
 		GetIndexByIDFunc: &ResolverGetIndexByIDFunc{
@@ -128,6 +167,11 @@ func NewMockResolver() *MockResolver {
 				return nil, nil
 			},
 		},
+		UpdateConfigurationPolicyFunc: &ResolverUpdateConfigurationPolicyFunc{
+			defaultHook: func(context.Context, dbstore.ConfigurationPolicy) error {
+				return nil
+			},
+		},
 		UpdateIndexConfigurationByRepositoryIDFunc: &ResolverUpdateIndexConfigurationByRepositoryIDFunc{
 			defaultHook: func(context.Context, int, string) error {
 				return nil
@@ -148,11 +192,23 @@ func NewMockResolverFrom(i resolvers.Resolver) *MockResolver {
 		CommitGraphFunc: &ResolverCommitGraphFunc{
 			defaultHook: i.CommitGraph,
 		},
+		CreateConfigurationPolicyFunc: &ResolverCreateConfigurationPolicyFunc{
+			defaultHook: i.CreateConfigurationPolicy,
+		},
+		DeleteConfigurationPolicyByIDFunc: &ResolverDeleteConfigurationPolicyByIDFunc{
+			defaultHook: i.DeleteConfigurationPolicyByID,
+		},
 		DeleteIndexByIDFunc: &ResolverDeleteIndexByIDFunc{
 			defaultHook: i.DeleteIndexByID,
 		},
 		DeleteUploadByIDFunc: &ResolverDeleteUploadByIDFunc{
 			defaultHook: i.DeleteUploadByID,
+		},
+		GetConfigurationPoliciesFunc: &ResolverGetConfigurationPoliciesFunc{
+			defaultHook: i.GetConfigurationPolicies,
+		},
+		GetConfigurationPolicyByIDFunc: &ResolverGetConfigurationPolicyByIDFunc{
+			defaultHook: i.GetConfigurationPolicyByID,
 		},
 		GetIndexByIDFunc: &ResolverGetIndexByIDFunc{
 			defaultHook: i.GetIndexByID,
@@ -180,6 +236,9 @@ func NewMockResolverFrom(i resolvers.Resolver) *MockResolver {
 		},
 		QueueAutoIndexJobsForRepoFunc: &ResolverQueueAutoIndexJobsForRepoFunc{
 			defaultHook: i.QueueAutoIndexJobsForRepo,
+		},
+		UpdateConfigurationPolicyFunc: &ResolverUpdateConfigurationPolicyFunc{
+			defaultHook: i.UpdateConfigurationPolicy,
 		},
 		UpdateIndexConfigurationByRepositoryIDFunc: &ResolverUpdateIndexConfigurationByRepositoryIDFunc{
 			defaultHook: i.UpdateIndexConfigurationByRepositoryID,
@@ -297,6 +356,228 @@ func (c ResolverCommitGraphFuncCall) Args() []interface{} {
 // invocation.
 func (c ResolverCommitGraphFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
+}
+
+// ResolverCreateConfigurationPolicyFunc describes the behavior when the
+// CreateConfigurationPolicy method of the parent MockResolver instance is
+// invoked.
+type ResolverCreateConfigurationPolicyFunc struct {
+	defaultHook func(context.Context, dbstore.ConfigurationPolicy) (dbstore.ConfigurationPolicy, error)
+	hooks       []func(context.Context, dbstore.ConfigurationPolicy) (dbstore.ConfigurationPolicy, error)
+	history     []ResolverCreateConfigurationPolicyFuncCall
+	mutex       sync.Mutex
+}
+
+// CreateConfigurationPolicy delegates to the next hook function in the
+// queue and stores the parameter and result values of this invocation.
+func (m *MockResolver) CreateConfigurationPolicy(v0 context.Context, v1 dbstore.ConfigurationPolicy) (dbstore.ConfigurationPolicy, error) {
+	r0, r1 := m.CreateConfigurationPolicyFunc.nextHook()(v0, v1)
+	m.CreateConfigurationPolicyFunc.appendCall(ResolverCreateConfigurationPolicyFuncCall{v0, v1, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the
+// CreateConfigurationPolicy method of the parent MockResolver instance is
+// invoked and the hook queue is empty.
+func (f *ResolverCreateConfigurationPolicyFunc) SetDefaultHook(hook func(context.Context, dbstore.ConfigurationPolicy) (dbstore.ConfigurationPolicy, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// CreateConfigurationPolicy method of the parent MockResolver instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *ResolverCreateConfigurationPolicyFunc) PushHook(hook func(context.Context, dbstore.ConfigurationPolicy) (dbstore.ConfigurationPolicy, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
+// the given values.
+func (f *ResolverCreateConfigurationPolicyFunc) SetDefaultReturn(r0 dbstore.ConfigurationPolicy, r1 error) {
+	f.SetDefaultHook(func(context.Context, dbstore.ConfigurationPolicy) (dbstore.ConfigurationPolicy, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushDefaultHook with a function that returns the given
+// values.
+func (f *ResolverCreateConfigurationPolicyFunc) PushReturn(r0 dbstore.ConfigurationPolicy, r1 error) {
+	f.PushHook(func(context.Context, dbstore.ConfigurationPolicy) (dbstore.ConfigurationPolicy, error) {
+		return r0, r1
+	})
+}
+
+func (f *ResolverCreateConfigurationPolicyFunc) nextHook() func(context.Context, dbstore.ConfigurationPolicy) (dbstore.ConfigurationPolicy, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *ResolverCreateConfigurationPolicyFunc) appendCall(r0 ResolverCreateConfigurationPolicyFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of ResolverCreateConfigurationPolicyFuncCall
+// objects describing the invocations of this function.
+func (f *ResolverCreateConfigurationPolicyFunc) History() []ResolverCreateConfigurationPolicyFuncCall {
+	f.mutex.Lock()
+	history := make([]ResolverCreateConfigurationPolicyFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// ResolverCreateConfigurationPolicyFuncCall is an object that describes an
+// invocation of method CreateConfigurationPolicy on an instance of
+// MockResolver.
+type ResolverCreateConfigurationPolicyFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 dbstore.ConfigurationPolicy
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 dbstore.ConfigurationPolicy
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c ResolverCreateConfigurationPolicyFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c ResolverCreateConfigurationPolicyFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// ResolverDeleteConfigurationPolicyByIDFunc describes the behavior when the
+// DeleteConfigurationPolicyByID method of the parent MockResolver instance
+// is invoked.
+type ResolverDeleteConfigurationPolicyByIDFunc struct {
+	defaultHook func(context.Context, int) error
+	hooks       []func(context.Context, int) error
+	history     []ResolverDeleteConfigurationPolicyByIDFuncCall
+	mutex       sync.Mutex
+}
+
+// DeleteConfigurationPolicyByID delegates to the next hook function in the
+// queue and stores the parameter and result values of this invocation.
+func (m *MockResolver) DeleteConfigurationPolicyByID(v0 context.Context, v1 int) error {
+	r0 := m.DeleteConfigurationPolicyByIDFunc.nextHook()(v0, v1)
+	m.DeleteConfigurationPolicyByIDFunc.appendCall(ResolverDeleteConfigurationPolicyByIDFuncCall{v0, v1, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the
+// DeleteConfigurationPolicyByID method of the parent MockResolver instance
+// is invoked and the hook queue is empty.
+func (f *ResolverDeleteConfigurationPolicyByIDFunc) SetDefaultHook(hook func(context.Context, int) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// DeleteConfigurationPolicyByID method of the parent MockResolver instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *ResolverDeleteConfigurationPolicyByIDFunc) PushHook(hook func(context.Context, int) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
+// the given values.
+func (f *ResolverDeleteConfigurationPolicyByIDFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(context.Context, int) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushDefaultHook with a function that returns the given
+// values.
+func (f *ResolverDeleteConfigurationPolicyByIDFunc) PushReturn(r0 error) {
+	f.PushHook(func(context.Context, int) error {
+		return r0
+	})
+}
+
+func (f *ResolverDeleteConfigurationPolicyByIDFunc) nextHook() func(context.Context, int) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *ResolverDeleteConfigurationPolicyByIDFunc) appendCall(r0 ResolverDeleteConfigurationPolicyByIDFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// ResolverDeleteConfigurationPolicyByIDFuncCall objects describing the
+// invocations of this function.
+func (f *ResolverDeleteConfigurationPolicyByIDFunc) History() []ResolverDeleteConfigurationPolicyByIDFuncCall {
+	f.mutex.Lock()
+	history := make([]ResolverDeleteConfigurationPolicyByIDFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// ResolverDeleteConfigurationPolicyByIDFuncCall is an object that describes
+// an invocation of method DeleteConfigurationPolicyByID on an instance of
+// MockResolver.
+type ResolverDeleteConfigurationPolicyByIDFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 int
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c ResolverDeleteConfigurationPolicyByIDFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c ResolverDeleteConfigurationPolicyByIDFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
 }
 
 // ResolverDeleteIndexByIDFunc describes the behavior when the
@@ -509,6 +790,233 @@ func (c ResolverDeleteUploadByIDFuncCall) Args() []interface{} {
 // invocation.
 func (c ResolverDeleteUploadByIDFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
+}
+
+// ResolverGetConfigurationPoliciesFunc describes the behavior when the
+// GetConfigurationPolicies method of the parent MockResolver instance is
+// invoked.
+type ResolverGetConfigurationPoliciesFunc struct {
+	defaultHook func(context.Context, dbstore.GetConfigurationPoliciesOptions) ([]dbstore.ConfigurationPolicy, error)
+	hooks       []func(context.Context, dbstore.GetConfigurationPoliciesOptions) ([]dbstore.ConfigurationPolicy, error)
+	history     []ResolverGetConfigurationPoliciesFuncCall
+	mutex       sync.Mutex
+}
+
+// GetConfigurationPolicies delegates to the next hook function in the queue
+// and stores the parameter and result values of this invocation.
+func (m *MockResolver) GetConfigurationPolicies(v0 context.Context, v1 dbstore.GetConfigurationPoliciesOptions) ([]dbstore.ConfigurationPolicy, error) {
+	r0, r1 := m.GetConfigurationPoliciesFunc.nextHook()(v0, v1)
+	m.GetConfigurationPoliciesFunc.appendCall(ResolverGetConfigurationPoliciesFuncCall{v0, v1, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the
+// GetConfigurationPolicies method of the parent MockResolver instance is
+// invoked and the hook queue is empty.
+func (f *ResolverGetConfigurationPoliciesFunc) SetDefaultHook(hook func(context.Context, dbstore.GetConfigurationPoliciesOptions) ([]dbstore.ConfigurationPolicy, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// GetConfigurationPolicies method of the parent MockResolver instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *ResolverGetConfigurationPoliciesFunc) PushHook(hook func(context.Context, dbstore.GetConfigurationPoliciesOptions) ([]dbstore.ConfigurationPolicy, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
+// the given values.
+func (f *ResolverGetConfigurationPoliciesFunc) SetDefaultReturn(r0 []dbstore.ConfigurationPolicy, r1 error) {
+	f.SetDefaultHook(func(context.Context, dbstore.GetConfigurationPoliciesOptions) ([]dbstore.ConfigurationPolicy, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushDefaultHook with a function that returns the given
+// values.
+func (f *ResolverGetConfigurationPoliciesFunc) PushReturn(r0 []dbstore.ConfigurationPolicy, r1 error) {
+	f.PushHook(func(context.Context, dbstore.GetConfigurationPoliciesOptions) ([]dbstore.ConfigurationPolicy, error) {
+		return r0, r1
+	})
+}
+
+func (f *ResolverGetConfigurationPoliciesFunc) nextHook() func(context.Context, dbstore.GetConfigurationPoliciesOptions) ([]dbstore.ConfigurationPolicy, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *ResolverGetConfigurationPoliciesFunc) appendCall(r0 ResolverGetConfigurationPoliciesFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of ResolverGetConfigurationPoliciesFuncCall
+// objects describing the invocations of this function.
+func (f *ResolverGetConfigurationPoliciesFunc) History() []ResolverGetConfigurationPoliciesFuncCall {
+	f.mutex.Lock()
+	history := make([]ResolverGetConfigurationPoliciesFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// ResolverGetConfigurationPoliciesFuncCall is an object that describes an
+// invocation of method GetConfigurationPolicies on an instance of
+// MockResolver.
+type ResolverGetConfigurationPoliciesFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 dbstore.GetConfigurationPoliciesOptions
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 []dbstore.ConfigurationPolicy
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c ResolverGetConfigurationPoliciesFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c ResolverGetConfigurationPoliciesFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// ResolverGetConfigurationPolicyByIDFunc describes the behavior when the
+// GetConfigurationPolicyByID method of the parent MockResolver instance is
+// invoked.
+type ResolverGetConfigurationPolicyByIDFunc struct {
+	defaultHook func(context.Context, int) (dbstore.ConfigurationPolicy, bool, error)
+	hooks       []func(context.Context, int) (dbstore.ConfigurationPolicy, bool, error)
+	history     []ResolverGetConfigurationPolicyByIDFuncCall
+	mutex       sync.Mutex
+}
+
+// GetConfigurationPolicyByID delegates to the next hook function in the
+// queue and stores the parameter and result values of this invocation.
+func (m *MockResolver) GetConfigurationPolicyByID(v0 context.Context, v1 int) (dbstore.ConfigurationPolicy, bool, error) {
+	r0, r1, r2 := m.GetConfigurationPolicyByIDFunc.nextHook()(v0, v1)
+	m.GetConfigurationPolicyByIDFunc.appendCall(ResolverGetConfigurationPolicyByIDFuncCall{v0, v1, r0, r1, r2})
+	return r0, r1, r2
+}
+
+// SetDefaultHook sets function that is called when the
+// GetConfigurationPolicyByID method of the parent MockResolver instance is
+// invoked and the hook queue is empty.
+func (f *ResolverGetConfigurationPolicyByIDFunc) SetDefaultHook(hook func(context.Context, int) (dbstore.ConfigurationPolicy, bool, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// GetConfigurationPolicyByID method of the parent MockResolver instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *ResolverGetConfigurationPolicyByIDFunc) PushHook(hook func(context.Context, int) (dbstore.ConfigurationPolicy, bool, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
+// the given values.
+func (f *ResolverGetConfigurationPolicyByIDFunc) SetDefaultReturn(r0 dbstore.ConfigurationPolicy, r1 bool, r2 error) {
+	f.SetDefaultHook(func(context.Context, int) (dbstore.ConfigurationPolicy, bool, error) {
+		return r0, r1, r2
+	})
+}
+
+// PushReturn calls PushDefaultHook with a function that returns the given
+// values.
+func (f *ResolverGetConfigurationPolicyByIDFunc) PushReturn(r0 dbstore.ConfigurationPolicy, r1 bool, r2 error) {
+	f.PushHook(func(context.Context, int) (dbstore.ConfigurationPolicy, bool, error) {
+		return r0, r1, r2
+	})
+}
+
+func (f *ResolverGetConfigurationPolicyByIDFunc) nextHook() func(context.Context, int) (dbstore.ConfigurationPolicy, bool, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *ResolverGetConfigurationPolicyByIDFunc) appendCall(r0 ResolverGetConfigurationPolicyByIDFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of ResolverGetConfigurationPolicyByIDFuncCall
+// objects describing the invocations of this function.
+func (f *ResolverGetConfigurationPolicyByIDFunc) History() []ResolverGetConfigurationPolicyByIDFuncCall {
+	f.mutex.Lock()
+	history := make([]ResolverGetConfigurationPolicyByIDFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// ResolverGetConfigurationPolicyByIDFuncCall is an object that describes an
+// invocation of method GetConfigurationPolicyByID on an instance of
+// MockResolver.
+type ResolverGetConfigurationPolicyByIDFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 int
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 dbstore.ConfigurationPolicy
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 bool
+	// Result2 is the value of the 3rd result returned from this method
+	// invocation.
+	Result2 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c ResolverGetConfigurationPolicyByIDFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c ResolverGetConfigurationPolicyByIDFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1, c.Result2}
 }
 
 // ResolverGetIndexByIDFunc describes the behavior when the GetIndexByID
@@ -1525,6 +2033,115 @@ func (c ResolverQueueAutoIndexJobsForRepoFuncCall) Args() []interface{} {
 // invocation.
 func (c ResolverQueueAutoIndexJobsForRepoFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
+}
+
+// ResolverUpdateConfigurationPolicyFunc describes the behavior when the
+// UpdateConfigurationPolicy method of the parent MockResolver instance is
+// invoked.
+type ResolverUpdateConfigurationPolicyFunc struct {
+	defaultHook func(context.Context, dbstore.ConfigurationPolicy) error
+	hooks       []func(context.Context, dbstore.ConfigurationPolicy) error
+	history     []ResolverUpdateConfigurationPolicyFuncCall
+	mutex       sync.Mutex
+}
+
+// UpdateConfigurationPolicy delegates to the next hook function in the
+// queue and stores the parameter and result values of this invocation.
+func (m *MockResolver) UpdateConfigurationPolicy(v0 context.Context, v1 dbstore.ConfigurationPolicy) error {
+	r0 := m.UpdateConfigurationPolicyFunc.nextHook()(v0, v1)
+	m.UpdateConfigurationPolicyFunc.appendCall(ResolverUpdateConfigurationPolicyFuncCall{v0, v1, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the
+// UpdateConfigurationPolicy method of the parent MockResolver instance is
+// invoked and the hook queue is empty.
+func (f *ResolverUpdateConfigurationPolicyFunc) SetDefaultHook(hook func(context.Context, dbstore.ConfigurationPolicy) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// UpdateConfigurationPolicy method of the parent MockResolver instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *ResolverUpdateConfigurationPolicyFunc) PushHook(hook func(context.Context, dbstore.ConfigurationPolicy) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
+// the given values.
+func (f *ResolverUpdateConfigurationPolicyFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(context.Context, dbstore.ConfigurationPolicy) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushDefaultHook with a function that returns the given
+// values.
+func (f *ResolverUpdateConfigurationPolicyFunc) PushReturn(r0 error) {
+	f.PushHook(func(context.Context, dbstore.ConfigurationPolicy) error {
+		return r0
+	})
+}
+
+func (f *ResolverUpdateConfigurationPolicyFunc) nextHook() func(context.Context, dbstore.ConfigurationPolicy) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *ResolverUpdateConfigurationPolicyFunc) appendCall(r0 ResolverUpdateConfigurationPolicyFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of ResolverUpdateConfigurationPolicyFuncCall
+// objects describing the invocations of this function.
+func (f *ResolverUpdateConfigurationPolicyFunc) History() []ResolverUpdateConfigurationPolicyFuncCall {
+	f.mutex.Lock()
+	history := make([]ResolverUpdateConfigurationPolicyFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// ResolverUpdateConfigurationPolicyFuncCall is an object that describes an
+// invocation of method UpdateConfigurationPolicy on an instance of
+// MockResolver.
+type ResolverUpdateConfigurationPolicyFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 dbstore.ConfigurationPolicy
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c ResolverUpdateConfigurationPolicyFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c ResolverUpdateConfigurationPolicyFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
 }
 
 // ResolverUpdateIndexConfigurationByRepositoryIDFunc describes the behavior

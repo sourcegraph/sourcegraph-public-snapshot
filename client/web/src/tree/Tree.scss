@@ -13,13 +13,14 @@
     &__cell {
         padding-left: 0;
         padding-right: 0;
+        border-radius: var(--border-radius);
     }
 
     &__row {
         color: var(--body-color);
         width: 100%;
         &:hover {
-            background-color: var(--color-bg-3);
+            background-color: var(--color-bg-2);
         }
 
         &--selected {
@@ -33,13 +34,20 @@
 
         &--active {
             width: 100%;
-            background-color: var(--primary);
-            color: var(--white);
+            background-color: var(--color-bg-3);
+            color: var(--body-color);
         }
 
-        .theme-light.theme-redesign &--active,
-        .theme-light.theme-redesign &--selected,
-        .theme-light.theme-redesign &:hover {
+        &-contents,
+        &-label {
+            &:hover {
+                text-decoration: none;
+            }
+        }
+
+        .theme-light &--active,
+        .theme-light &--selected,
+        .theme-light &:hover {
             meter {
                 --meter-background: var(--gray-05);
             }
@@ -54,7 +62,7 @@
     }
 
     &__row-icon {
-        color: inherit;
+        color: var(--link-color);
         // stylelint-disable-next-line declaration-property-unit-whitelist
         width: 1.1em;
     }
@@ -91,30 +99,4 @@
 .tree-layer {
     width: 100%;
     outline: none;
-}
-
-.theme-redesign {
-    .tree {
-        &__row {
-            &:hover {
-                background-color: var(--color-bg-2);
-            }
-            &--active {
-                background-color: var(--color-bg-3);
-                color: var(--body-color);
-            }
-            &-contents,
-            &-label {
-                &:hover {
-                    text-decoration: none;
-                }
-            }
-        }
-        &__row-icon {
-            color: var(--link-color);
-        }
-        &__cell {
-            border-radius: var(--border-radius);
-        }
-    }
 }

@@ -1,3 +1,4 @@
+import classNames from 'classnames'
 import LockIcon from 'mdi-react/LockIcon'
 import * as React from 'react'
 
@@ -8,7 +9,7 @@ export const SiteAdminAlert: React.FunctionComponent<{ children: React.ReactFrag
     children,
     className = '',
 }) => (
-    <div className={`alert alert-warning site-admin-alert ${className}`}>
+    <div className={classNames('alert alert-warning site-admin-alert', className)}>
         <h5>
             <LockIcon className="icon-inline" /> Site admin
         </h5>

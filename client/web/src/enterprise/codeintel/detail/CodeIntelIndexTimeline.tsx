@@ -5,11 +5,14 @@ import ProgressClockIcon from 'mdi-react/ProgressClockIcon'
 import TimerSandIcon from 'mdi-react/TimerSandIcon'
 import React, { FunctionComponent, useMemo } from 'react'
 
+import { LSIFIndexState } from '@sourcegraph/shared/src/graphql-operations'
 import { isDefined } from '@sourcegraph/shared/src/util/types'
 
 import { ExecutionLogEntry } from '../../../components/ExecutionLogEntry'
 import { Timeline, TimelineStage } from '../../../components/Timeline'
-import { LsifIndexFields, LSIFIndexState } from '../../../graphql-operations'
+import { LsifIndexFields } from '../../../graphql-operations'
+
+import { ExecutionMetaInformation } from './ExecutionMetaInformation'
 
 export interface CodeIntelIndexTimelineProps {
     index: LsifIndexFields
@@ -131,26 +134,3 @@ const genericStage = <E extends { startTime: string; exitCode: number | null }>(
         expanded: !(success || !finished),
     }
 }
-
-const ExecutionMetaInformation: React.FunctionComponent<{ image: string; commands: string[]; root: string }> = ({
-    image,
-    commands,
-    root,
-}) => (
-    <div className="pt-3">
-        <div className="docker-command-spec py-2 border-top pl-2">
-            <strong className="docker-command-spec__header">Image</strong>
-            <div>{image}</div>
-        </div>
-        <div className="docker-command-spec py-2 border-top pl-2">
-            <strong className="docker-command-spec__header">Commands</strong>
-            <div>
-                <code>{commands.join(' ')}</code>
-            </div>
-        </div>
-        <div className="docker-command-spec py-2 border-top pl-2">
-            <strong className="docker-command-spec__header">Root</strong>
-            <div>/{root}</div>
-        </div>
-    </div>
-)

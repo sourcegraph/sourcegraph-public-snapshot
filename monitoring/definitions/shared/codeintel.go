@@ -663,21 +663,21 @@ func (codeIntelligence) NewJanitorGroup(containerName string) monitoring.Group {
 			{
 				Standard.Count("records deleted")(ObservableConstructorOptions{
 					MetricNameRoot:        "codeintel_background_upload_records_removed",
-					MetricDescriptionRoot: "lsif_upload",
+					MetricDescriptionRoot: "lsif upload",
 				})(containerName, monitoring.ObservableOwnerCodeIntel).WithNoAlerts(`
 					Number of LSIF upload records deleted due to expiration or unreachability every 5m
 				`).Observable(),
 
 				Standard.Count("records deleted")(ObservableConstructorOptions{
 					MetricNameRoot:        "codeintel_background_index_records_removed",
-					MetricDescriptionRoot: "lsif_index",
+					MetricDescriptionRoot: "lsif index",
 				})(containerName, monitoring.ObservableOwnerCodeIntel).WithNoAlerts(`
 					Number of LSIF index records deleted due to expiration or unreachability every 5m
 				`).Observable(),
 
 				Standard.Count("data bundles deleted")(ObservableConstructorOptions{
 					MetricNameRoot:        "codeintel_background_uploads_purged",
-					MetricDescriptionRoot: "lsif_upload",
+					MetricDescriptionRoot: "lsif upload",
 				})(containerName, monitoring.ObservableOwnerCodeIntel).WithNoAlerts(`
 					Number of LSIF upload data bundles purged from the codeintel-db database every 5m
 				`).Observable(),
@@ -691,4 +691,60 @@ func (codeIntelligence) NewJanitorGroup(containerName string) monitoring.Group {
 			},
 		},
 	}
+}
+
+func (codeIntelligence) NewCoursierGroup(containerName string) monitoring.Group {
+	return Observation.NewGroup(containerName, monitoring.ObservableOwnerCodeIntel, ObservationGroupOptions{
+		GroupConstructorOptions: GroupConstructorOptions{
+			Namespace:       "codeintel",
+			DescriptionRoot: "Coursier invocation stats",
+			Hidden:          true,
+			ObservableConstructorOptions: ObservableConstructorOptions{
+				MetricNameRoot:        "codeintel_coursier",
+				MetricDescriptionRoot: "invocations",
+				Filters:               []string{`op!="RunCommand"`},
+				By:                    []string{"op"},
+			},
+		},
+		SharedObservationGroupOptions: SharedObservationGroupOptions{
+			Total:     NoAlertsOption("none"),
+			Duration:  NoAlertsOption("none"),
+			Errors:    NoAlertsOption("none"),
+			ErrorRate: NoAlertsOption("none"),
+		},
+		Aggregate: &SharedObservationGroupOptions{
+			Total:     NoAlertsOption("none"),
+			Duration:  NoAlertsOption("none"),
+			Errors:    NoAlertsOption("none"),
+			ErrorRate: NoAlertsOption("none"),
+		},
+	})
+}
+
+func (codeIntelligence) NewDependencyReposStoreGroup(containerName string) monitoring.Group {
+	return Observation.NewGroup(containerName, monitoring.ObservableOwnerCodeIntel, ObservationGroupOptions{
+		GroupConstructorOptions: GroupConstructorOptions{
+			Namespace:       "codeintel",
+			DescriptionRoot: "Dependency repository insert",
+			Hidden:          true,
+			ObservableConstructorOptions: ObservableConstructorOptions{
+				MetricNameRoot:        "codeintel_dependency_repos",
+				MetricDescriptionRoot: "insert",
+				Filters:               []string{},
+				By:                    []string{"scheme", "new"}, // TODO  add 'op' if more operations added
+			},
+		},
+		SharedObservationGroupOptions: SharedObservationGroupOptions{
+			Total:     NoAlertsOption("none"),
+			Duration:  NoAlertsOption("none"),
+			Errors:    NoAlertsOption("none"),
+			ErrorRate: NoAlertsOption("none"),
+		},
+		Aggregate: &SharedObservationGroupOptions{
+			Total:     NoAlertsOption("none"),
+			Duration:  NoAlertsOption("none"),
+			Errors:    NoAlertsOption("none"),
+			ErrorRate: NoAlertsOption("none"),
+		},
+	})
 }

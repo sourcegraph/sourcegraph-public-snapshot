@@ -5,7 +5,6 @@ import React, { useCallback, useEffect, useState, FunctionComponent, Dispatch, S
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ErrorLike } from '@sourcegraph/shared/src/util/errors'
-import { useRedesignToggle } from '@sourcegraph/shared/src/util/useRedesignToggle'
 import { Container, PageSelector } from '@sourcegraph/wildcard'
 
 import { RepoSelectionMode } from '../../../auth/PostSignUpPage'
@@ -36,6 +35,7 @@ interface authenticatedUser {
 interface Props extends TelemetryProps {
     authenticatedUser: authenticatedUser
     onRepoSelectionModeChange: Dispatch<SetStateAction<RepoSelectionMode>>
+    repoSelectionMode: RepoSelectionMode
     onError: (error: ErrorLike) => void
 }
 
@@ -86,6 +86,7 @@ const initialSelectionState = {
 export const SelectAffiliatedRepos: FunctionComponent<Props> = ({
     authenticatedUser,
     onRepoSelectionModeChange,
+    repoSelectionMode,
     telemetryService,
     onError,
 }) => {
@@ -93,12 +94,11 @@ export const SelectAffiliatedRepos: FunctionComponent<Props> = ({
         telemetryService.logViewEvent('UserSettingsRepositories')
     }, [telemetryService])
 
-    const { setComplete, currentIndex } = useSteps()
-    const { externalServices, errorServices, loadingServices } = useExternalServices(authenticatedUser.id)
-    const { affiliatedRepos, errorAffiliatedRepos, loadingAffiliatedRepos } = useAffiliatedRepos(authenticatedUser.id)
-    const { selectedRepos, errorSelectedRepos, loadingSelectedRepos } = useSelectedRepos(authenticatedUser.id)
+    const { setComplete, resetToTheRight, currentIndex } = useSteps()
+    const { externalServices, errorServices } = useExternalServices(authenticatedUser.id)
+    const { affiliatedRepos, errorAffiliatedRepos } = useAffiliatedRepos(authenticatedUser.id)
+    const { selectedRepos, errorSelectedRepos } = useSelectedRepos(authenticatedUser.id)
 
-    const isLoading = loadingServices || loadingAffiliatedRepos || loadingSelectedRepos
     const fetchingError = errorServices || errorAffiliatedRepos || errorSelectedRepos
 
     useEffect(() => {
@@ -109,13 +109,9 @@ export const SelectAffiliatedRepos: FunctionComponent<Props> = ({
 
     // if we should tweak UI messaging and copy
     const ALLOW_PRIVATE_CODE = externalServiceUserModeFromTags(authenticatedUser.tags) === 'all'
-
-    // if 'sync all' radio button is enabled and users can sync all repos from code hosts
     const ALLOW_SYNC_ALL = authenticatedUser.tags.includes('AllowUserExternalServiceSyncAll')
 
     // set up state hooks
-    const [isRedesignEnabled] = useRedesignToggle()
-
     const [currentPage, setPage] = useState(1)
     const [repoState, setRepoState] = useState(initialRepoState)
     const [onloadSelectedRepos, setOnloadSelectedRepos] = useState<string[]>([])
@@ -167,7 +163,7 @@ export const SelectAffiliatedRepos: FunctionComponent<Props> = ({
             const selectedAffiliatedRepos = new Map<string, Repo>()
 
             const cachedSelectedRepos = selectedReposVar()
-            const userSelectedRepos = cachedSelectedRepos || selectedRepos || []
+            const userSelectedRepos = repoSelectionMode === 'all' ? [] : cachedSelectedRepos || selectedRepos || []
 
             const affiliatedReposWithMirrorInfo = affiliatedRepos.map(affiliatedRepo => {
                 let foundInSelected: SiteAdminRepositoryFields | MinSelectedRepo | null = null
@@ -223,14 +219,14 @@ export const SelectAffiliatedRepos: FunctionComponent<Props> = ({
              */
 
             const radioSelectOption =
-                ALLOW_SYNC_ALL &&
-                ((externalServices.length === codeHostsHaveSyncAllQuery.length &&
-                    codeHostsHaveSyncAllQuery.every(Boolean)) ||
-                    affiliatedReposWithMirrorInfo.length === selectedAffiliatedRepos.size)
+                repoSelectionMode ||
+                (ALLOW_SYNC_ALL &&
+                externalServices.length === codeHostsHaveSyncAllQuery.length &&
+                codeHostsHaveSyncAllQuery.every(Boolean)
                     ? 'all'
                     : selectedAffiliatedRepos.size > 0
                     ? 'selected'
-                    : ''
+                    : '')
 
             onRepoSelectionModeChange(radioSelectOption as RepoSelectionMode)
 
@@ -247,7 +243,16 @@ export const SelectAffiliatedRepos: FunctionComponent<Props> = ({
                 loaded: true,
             })
         }
-    }, [externalServices, affiliatedRepos, selectedRepos, ALLOW_SYNC_ALL, onRepoSelectionModeChange])
+    }, [
+        externalServices,
+        affiliatedRepos,
+        selectedRepos,
+        onRepoSelectionModeChange,
+        setComplete,
+        currentIndex,
+        repoSelectionMode,
+        ALLOW_SYNC_ALL,
+    ])
 
     // select repos by code host and query
     useEffect(() => {
@@ -284,6 +289,24 @@ export const SelectAffiliatedRepos: FunctionComponent<Props> = ({
         onRepoSelectionModeChange(changeEvent.currentTarget.value as RepoSelectionMode)
     }
 
+    // calculate if the current step is completed based on repo selection when
+    // we toggle between "Sync all" and individual repo selection checkboxes
+    useEffect(() => {
+        if (selectionState.radio) {
+            if (selectionState.radio === 'all') {
+                setComplete(currentIndex, true)
+            } else {
+                const hasSelectedRepos = selectionState.repos.size !== 0
+                if (hasSelectedRepos) {
+                    setComplete(currentIndex, true)
+                } else {
+                    setComplete(currentIndex, false)
+                    resetToTheRight(currentIndex)
+                }
+            }
+        }
+    }, [currentIndex, resetToTheRight, selectionState.radio, selectionState.repos.size, setComplete])
+
     const hasCodeHosts = Array.isArray(externalServices) && externalServices.length > 0
 
     const modeSelect: JSX.Element = (
@@ -299,7 +322,6 @@ export const SelectAffiliatedRepos: FunctionComponent<Props> = ({
                 <div className="d-flex flex-column ml-2">
                     <p
                         className={classNames('mb-0', {
-                            'user-settings-repos__text': ALLOW_SYNC_ALL,
                             'user-settings-repos__text-disabled': !ALLOW_SYNC_ALL,
                         })}
                     >
@@ -307,7 +329,7 @@ export const SelectAffiliatedRepos: FunctionComponent<Props> = ({
                     </p>
                     <p
                         className={classNames({
-                            'user-settings-repos__text': ALLOW_SYNC_ALL,
+                            'user-settings-repos__text-light': true,
                             'user-settings-repos__text-disabled': !ALLOW_SYNC_ALL,
                         })}
                     >
@@ -368,6 +390,23 @@ export const SelectAffiliatedRepos: FunctionComponent<Props> = ({
         </div>
     )
 
+    const saveRepoSelection = (repos: Repo[]): void => {
+        // save off last selected repos
+        const selection = repos.reduce((accumulator, repo) => {
+            const serviceType = repo.codeHost?.kind.toLowerCase()
+            const serviceName = serviceType ? `${serviceType}.com` : 'unknown'
+
+            accumulator.push({
+                name: `${serviceName}/${repo.name}`,
+                externalRepository: { serviceType: serviceType || 'unknown', id: repo.codeHost?.id },
+            })
+            return accumulator
+        }, [] as MinSelectedRepo[])
+
+        // safe off repo selection to apollo
+        selectedReposVar(selection)
+    }
+
     const onRepoClicked = useCallback(
         (repo: Repo) => (): void => {
             const clickedRepo = getRepoServiceAndName(repo)
@@ -387,22 +426,10 @@ export const SelectAffiliatedRepos: FunctionComponent<Props> = ({
                 setDidSelectionChange(true)
             } else {
                 setComplete(currentIndex, false)
+                resetToTheRight(currentIndex)
             }
 
-            // save off last selected repos
-            const selection = [...newSelection.values()].reduce((accumulator, repo) => {
-                const serviceType = repo.codeHost?.kind.toLowerCase()
-                const serviceName = serviceType ? `${serviceType}.com` : 'unknown'
-
-                accumulator.push({
-                    name: `${serviceName}/${repo.name}`,
-                    externalRepository: { serviceType: serviceType || 'unknown', id: repo.codeHost?.id },
-                })
-                return accumulator
-            }, [] as MinSelectedRepo[])
-
-            // safe off repo selection to apollo
-            selectedReposVar(selection)
+            saveRepoSelection([...newSelection.values()])
 
             // set new selection state
             setSelectionState({
@@ -414,6 +441,7 @@ export const SelectAffiliatedRepos: FunctionComponent<Props> = ({
         [
             currentIndex,
             onloadSelectedRepos,
+            resetToTheRight,
             selectionState.loaded,
             selectionState.radio,
             selectionState.repos,
@@ -421,17 +449,35 @@ export const SelectAffiliatedRepos: FunctionComponent<Props> = ({
         ]
     )
 
+    const getSelectedReposByCodeHost = (codeHostId: string = ''): Repo[] => {
+        const selectedRepos = [...selectionState.repos.values()]
+        // if no specific code host selected, return all selected repos
+        return codeHostId ? selectedRepos.filter(({ codeHost }) => codeHost?.id === codeHostId) : selectedRepos
+    }
+
+    const areAllReposSelected = (): boolean => {
+        if (selectionState.repos.size === 0) {
+            return false
+        }
+
+        const selectedRepos = getSelectedReposByCodeHost(codeHostFilter)
+        return selectedRepos.length === filteredRepos.length
+    }
+
     const selectAll = (): void => {
-        const newMap = new Map<string, Repo>()
+        const newSelection = new Map<string, Repo>()
         // if not all repos are selected, we should select all, otherwise empty the selection
 
         if (selectionState.repos.size !== filteredRepos.length) {
             for (const repo of filteredRepos) {
-                newMap.set(getRepoServiceAndName(repo), repo)
+                newSelection.set(getRepoServiceAndName(repo), repo)
             }
         }
+
+        saveRepoSelection([...newSelection.values()])
+
         setSelectionState({
-            repos: newMap,
+            repos: newSelection,
             loaded: selectionState.loaded,
             radio: selectionState.radio,
         })
@@ -445,7 +491,7 @@ export const SelectAffiliatedRepos: FunctionComponent<Props> = ({
                         id="select-all-repos"
                         className="mr-3"
                         type="checkbox"
-                        checked={selectionState.repos.size !== 0 && selectionState.repos.size === filteredRepos.length}
+                        checked={areAllReposSelected()}
                         onChange={selectAll}
                     />
                     <label
@@ -506,34 +552,29 @@ export const SelectAffiliatedRepos: FunctionComponent<Props> = ({
             <Container>
                 <ul className="list-group">
                     <li className="list-group-item user-settings-repos__container" key="from-code-hosts">
-                        <div className={classNames(!isRedesignEnabled && 'p-4')}>
-                            {(isLoading || fetchingError) && modeSelectShimmer}
+                        <div>
+                            {/* display type of repo sync radio buttons or shimmer when appropriate */}
+                            {hasCodeHosts && selectionState.loaded ? modeSelect : modeSelectShimmer}
 
-                            {/* display type of repo sync radio buttons */}
-                            {hasCodeHosts && selectionState.loaded && modeSelect}
-
-                            {
-                                // if we're in 'selected' mode, show a list of all the repos on the code hosts to select from
-                                hasCodeHosts && selectionState.radio === 'selected' && (
-                                    <div className="ml-4">
-                                        {filterControls}
-                                        <table role="grid" className="table">
-                                            {
-                                                // if the repos are loaded display the rows of repos
-                                                repoState.loaded && rows
-                                            }
-                                        </table>
-                                        {filteredRepos.length > 0 && (
-                                            <PageSelector
-                                                currentPage={currentPage}
-                                                onPageChange={setPage}
-                                                totalPages={Math.ceil(filteredRepos.length / PER_PAGE)}
-                                                className="pt-4"
-                                            />
-                                        )}
-                                    </div>
-                                )
-                            }
+                            {hasCodeHosts && selectionState.radio === 'selected' && (
+                                <div className="ml-4">
+                                    {filterControls}
+                                    <table role="grid" className="table">
+                                        {
+                                            // if the repos are loaded display the rows of repos
+                                            repoState.loaded && rows
+                                        }
+                                    </table>
+                                    {filteredRepos.length > 0 && (
+                                        <PageSelector
+                                            currentPage={currentPage}
+                                            onPageChange={setPage}
+                                            totalPages={Math.ceil(filteredRepos.length / PER_PAGE)}
+                                            className="pt-4"
+                                        />
+                                    )}
+                                </div>
+                            )}
                         </div>
                     </li>
                 </ul>

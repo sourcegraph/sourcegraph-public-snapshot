@@ -29,7 +29,7 @@ func TestPermsSyncer_ScheduleUsers(t *testing.T) {
 	defer authz.SetProviders(true, nil)
 
 	s := NewPermsSyncer(nil, nil, nil, nil)
-	s.ScheduleUsers(context.Background(), 1)
+	s.ScheduleUsers(context.Background(), authz.FetchPermsOptions{}, 1)
 
 	expHeap := []*syncRequest{
 		{requestMeta: &requestMeta{
@@ -67,9 +67,8 @@ type mockProvider struct {
 	serviceType string
 	serviceID   string
 
-	fetchUserPerms        func(context.Context, *extsvc.Account) (*authz.ExternalUserPermissions, error)
-	fetchUserPermsByToken func(context.Context, string) (*authz.ExternalUserPermissions, error)
-	fetchRepoPerms        func(ctx context.Context, repo *extsvc.Repository) ([]extsvc.AccountID, error)
+	fetchUserPerms func(context.Context, *extsvc.Account) (*authz.ExternalUserPermissions, error)
+	fetchRepoPerms func(ctx context.Context, repo *extsvc.Repository, opts authz.FetchPermsOptions) ([]extsvc.AccountID, error)
 }
 
 func (*mockProvider) FetchAccount(context.Context, *types.User, []*extsvc.Account, []string) (*extsvc.Account, error) {
@@ -81,16 +80,12 @@ func (p *mockProvider) ServiceID() string   { return p.serviceID }
 func (p *mockProvider) URN() string         { return extsvc.URN(p.serviceType, p.id) }
 func (*mockProvider) Validate() []string    { return nil }
 
-func (p *mockProvider) FetchUserPerms(ctx context.Context, acct *extsvc.Account) (*authz.ExternalUserPermissions, error) {
+func (p *mockProvider) FetchUserPerms(ctx context.Context, acct *extsvc.Account, opts authz.FetchPermsOptions) (*authz.ExternalUserPermissions, error) {
 	return p.fetchUserPerms(ctx, acct)
 }
 
-func (p *mockProvider) FetchUserPermsByToken(ctx context.Context, token string) (*authz.ExternalUserPermissions, error) {
-	return p.fetchUserPermsByToken(ctx, token)
-}
-
-func (p *mockProvider) FetchRepoPerms(ctx context.Context, repo *extsvc.Repository) ([]extsvc.AccountID, error) {
-	return p.fetchRepoPerms(ctx, repo)
+func (p *mockProvider) FetchRepoPerms(ctx context.Context, repo *extsvc.Repository, opts authz.FetchPermsOptions) ([]extsvc.AccountID, error) {
+	return p.fetchRepoPerms(ctx, repo, opts)
 }
 
 // NOTE: With the latest set of changes, we will be relying on the external_service_repos
@@ -174,13 +169,8 @@ func TestPermsSyncer_syncUserPerms_unionExternalServiceRepos(t *testing.T) {
 			Exacts: []extsvc.RepoID{"1"},
 		}, nil
 	}
-	p.fetchUserPermsByToken = func(ctx context.Context, s string) (*authz.ExternalUserPermissions, error) {
-		return &authz.ExternalUserPermissions{
-			Exacts: []extsvc.RepoID{"1"},
-		}, nil
-	}
 
-	err := s.syncUserPerms(context.Background(), 1, true)
+	err := s.syncUserPerms(context.Background(), 1, true, authz.FetchPermsOptions{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -265,7 +255,7 @@ func TestPermsSyncer_syncUserPerms(t *testing.T) {
 				}, test.fetchErr
 			}
 
-			err := s.syncUserPerms(context.Background(), 1, test.noPerms)
+			err := s.syncUserPerms(context.Background(), 1, test.noPerms, authz.FetchPermsOptions{})
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -328,7 +318,7 @@ func TestPermsSyncer_syncUserPerms_tokenExpire(t *testing.T) {
 			return nil, &github.APIError{Code: http.StatusUnauthorized}
 		}
 
-		err := s.syncUserPerms(context.Background(), 1, false)
+		err := s.syncUserPerms(context.Background(), 1, false, authz.FetchPermsOptions{})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -349,7 +339,7 @@ func TestPermsSyncer_syncUserPerms_tokenExpire(t *testing.T) {
 			return nil, gitlab.NewHTTPError(http.StatusForbidden, nil)
 		}
 
-		err := s.syncUserPerms(context.Background(), 1, false)
+		err := s.syncUserPerms(context.Background(), 1, false, authz.FetchPermsOptions{})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -374,7 +364,7 @@ func TestPermsSyncer_syncUserPerms_tokenExpire(t *testing.T) {
 			}
 		}
 
-		err := s.syncUserPerms(context.Background(), 1, false)
+		err := s.syncUserPerms(context.Background(), 1, false, authz.FetchPermsOptions{})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -443,7 +433,7 @@ func TestPermsSyncer_syncUserPerms_prefixSpecs(t *testing.T) {
 		}, nil
 	}
 
-	err := s.syncUserPerms(context.Background(), 1, false)
+	err := s.syncUserPerms(context.Background(), 1, false, authz.FetchPermsOptions{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -484,7 +474,7 @@ func TestPermsSyncer_syncRepoPerms(t *testing.T) {
 
 		s := newPermsSyncer(repos.NewStore(&dbtesting.MockDB{}, sql.TxOptions{}))
 
-		err := s.syncRepoPerms(context.Background(), 1, false)
+		err := s.syncRepoPerms(context.Background(), 1, false, authz.FetchPermsOptions{})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -502,7 +492,7 @@ func TestPermsSyncer_syncRepoPerms(t *testing.T) {
 			id:          1,
 			serviceType: extsvc.TypeGitLab,
 			serviceID:   "https://gitlab.com/",
-			fetchRepoPerms: func(ctx context.Context, repo *extsvc.Repository) ([]extsvc.AccountID, error) {
+			fetchRepoPerms: func(ctx context.Context, repo *extsvc.Repository, opts authz.FetchPermsOptions) ([]extsvc.AccountID, error) {
 				return []extsvc.AccountID{"user"}, nil
 			},
 		}
@@ -510,7 +500,7 @@ func TestPermsSyncer_syncRepoPerms(t *testing.T) {
 			id:          2,
 			serviceType: extsvc.TypeGitLab,
 			serviceID:   "https://gitlab.com/",
-			fetchRepoPerms: func(ctx context.Context, repo *extsvc.Repository) ([]extsvc.AccountID, error) {
+			fetchRepoPerms: func(ctx context.Context, repo *extsvc.Repository, opts authz.FetchPermsOptions) ([]extsvc.AccountID, error) {
 				return nil, errors.New("not supposed to be called")
 			},
 		}
@@ -561,7 +551,58 @@ func TestPermsSyncer_syncRepoPerms(t *testing.T) {
 
 		s := newPermsSyncer(repos.NewStore(&dbtesting.MockDB{}, sql.TxOptions{}))
 
-		err := s.syncRepoPerms(context.Background(), 1, false)
+		err := s.syncRepoPerms(context.Background(), 1, false, authz.FetchPermsOptions{})
+		if err != nil {
+			t.Fatal(err)
+		}
+	})
+
+	t.Run("repo sync with external service userid but no providers", func(t *testing.T) {
+		edb.Mocks.Perms.Transact = func(context.Context) (*edb.PermsStore, error) {
+			return &edb.PermsStore{}, nil
+		}
+
+		edb.Mocks.Perms.GetUserIDsByExternalAccounts = func(context.Context, *extsvc.Accounts) (map[string]int32, error) {
+			return map[string]int32{"user": 1}, nil
+		}
+
+		edb.Mocks.Perms.SetRepoPermissions = func(_ context.Context, p *authz.RepoPermissions) error {
+			if p.RepoID != 1 {
+				return errors.Errorf("RepoID: want 1 but got %d", p.RepoID)
+			}
+
+			wantUserIDs := []uint32{1}
+			if diff := cmp.Diff(wantUserIDs, p.UserIDs.ToArray()); diff != "" {
+				return errors.Errorf("UserIDs mismatch (-want +got):\n%s", diff)
+			}
+			return nil
+		}
+
+		edb.Mocks.Perms.SetRepoPendingPermissions = func(ctx context.Context, accounts *extsvc.Accounts, p *authz.RepoPermissions) error {
+			return errors.Errorf("SetRepoPendingPermissions should not be invoked in this test case")
+		}
+
+		database.Mocks.Repos.List = func(context.Context, database.ReposListOptions) ([]*types.Repo, error) {
+			return []*types.Repo{
+				{
+					ID:      1,
+					Private: true,
+				},
+			}, nil
+		}
+
+		database.Mocks.Repos.ListExternalServiceUserIDsByRepoID = func(ctx context.Context, repoID api.RepoID) ([]int32, error) {
+			return []int32{1}, nil
+		}
+
+		defer func() {
+			edb.Mocks.Perms = edb.MockPerms{}
+			database.Mocks.Repos = database.MockRepos{}
+		}()
+
+		s := newPermsSyncer(repos.NewStore(&dbtesting.MockDB{}, sql.TxOptions{}))
+
+		err := s.syncRepoPerms(context.Background(), 1, false, authz.FetchPermsOptions{})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -643,11 +684,11 @@ func TestPermsSyncer_syncRepoPerms(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			p.fetchRepoPerms = func(context.Context, *extsvc.Repository) ([]extsvc.AccountID, error) {
+			p.fetchRepoPerms = func(context.Context, *extsvc.Repository, authz.FetchPermsOptions) ([]extsvc.AccountID, error) {
 				return []extsvc.AccountID{"user", "pending_user"}, test.fetchErr
 			}
 
-			err := s.syncRepoPerms(context.Background(), 1, test.noPerms)
+			err := s.syncRepoPerms(context.Background(), 1, test.noPerms, authz.FetchPermsOptions{})
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -684,6 +725,7 @@ func TestPermsSyncer_waitForRateLimit(t *testing.T) {
 		rateLimiterRegistry := ratelimit.NewRegistry()
 		l := rateLimiterRegistry.Get("https://github.com/")
 		l.SetLimit(1)
+		l.SetBurst(1)
 		s := NewPermsSyncer(nil, nil, nil, rateLimiterRegistry)
 
 		ctx, cancel := context.WithTimeout(ctx, time.Second)

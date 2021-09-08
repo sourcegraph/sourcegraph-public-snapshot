@@ -1,8 +1,6 @@
 import classnames from 'classnames'
-import React, { useCallback, useContext, useEffect } from 'react'
-import { useHistory } from 'react-router-dom'
+import React, { useCallback, useEffect } from 'react'
 
-import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { asError } from '@sourcegraph/shared/src/util/errors'
@@ -11,8 +9,7 @@ import { useLocalStorage } from '@sourcegraph/shared/src/util/useLocalStorage'
 import { Page } from '../../../../../components/Page'
 import { PageTitle } from '../../../../../components/PageTitle'
 import { FORM_ERROR, FormChangeEvent } from '../../../../components/form/hooks/useForm'
-import { InsightsApiContext } from '../../../../core/backend/api-provider'
-import { addInsightToSettings } from '../../../../core/settings-action/insights'
+import { LangStatsInsight } from '../../../../core/types'
 import { useInsightSubjects } from '../../../../hooks/use-insight-subjects/use-insight-subjects'
 
 import {
@@ -25,22 +22,54 @@ import { getSanitizedLangStatsInsight } from './utils/insight-sanitizer'
 
 const DEFAULT_FINAL_SETTINGS = {}
 
-export interface LangStatsInsightCreationPageProps
-    extends PlatformContextProps<'updateSettings'>,
-        SettingsCascadeProps,
-        TelemetryProps {}
+export interface InsightCreateEvent {
+    subjectId: string
+    insight: LangStatsInsight
+}
+
+export interface LangStatsInsightCreationPageProps extends SettingsCascadeProps, TelemetryProps {
+    /**
+     * Set initial value for insight visibility setting.
+     */
+    visibility: string
+
+    /**
+     * Whenever the user submit form and clicks on save/submit button
+     *
+     * @param event - creation event with subject id and updated settings content
+     * info.
+     */
+    onInsightCreateRequest: (event: InsightCreateEvent) => Promise<void>
+
+    /**
+     * Whenever insight was created and all operations after creation were completed.
+     */
+    onSuccessfulCreation: (insight: LangStatsInsight) => void
+
+    /**
+     * Whenever the user click on cancel button
+     */
+    onCancel: () => void
+}
 
 export const LangStatsInsightCreationPage: React.FunctionComponent<LangStatsInsightCreationPageProps> = props => {
-    const { settingsCascade, platformContext, telemetryService } = props
-    const { getSubjectSettings, updateSubjectSettings } = useContext(InsightsApiContext)
-    const history = useHistory()
+    const {
+        visibility,
+        settingsCascade,
+        telemetryService,
+        onInsightCreateRequest,
+        onCancel,
+        onSuccessfulCreation,
+    } = props
 
+    const insightSubjects = useInsightSubjects({ settingsCascade })
     const [initialFormValues, setInitialFormValues] = useLocalStorage<LangStatsCreationFormFields | undefined>(
         'insights.code-stats-creation-ui',
         undefined
     )
 
-    const insightSubjects = useInsightSubjects({ settingsCascade })
+    // Set the top-level scope value as initial value for the insight visibility
+    const mergedInitialValues = { ...(initialFormValues ?? {}), visibility }
 
     useEffect(() => {
         telemetryService.logViewEvent('CodeInsightsCodeStatsCreationPage')
@@ -51,34 +80,34 @@ export const LangStatsInsightCreationPage: React.FunctionComponent<LangStatsInsi
             const subjectID = values.visibility
 
             try {
-                const settings = await getSubjectSettings(subjectID).toPromise()
-
                 const insight = getSanitizedLangStatsInsight(values)
-                const editedSettings = addInsightToSettings(settings.contents, insight)
 
-                await updateSubjectSettings(platformContext, subjectID, editedSettings).toPromise()
+                await onInsightCreateRequest({
+                    subjectId: subjectID,
+                    insight,
+                })
 
                 // Clear initial values if user successfully created search insight
                 setInitialFormValues(undefined)
                 telemetryService.log('CodeInsightsCodeStatsCreationPageSubmitClick')
 
-                // Navigate user to the dashboard page with new created dashboard
-                history.push(`/insights/dashboards/${insight.visibility}`)
+                onSuccessfulCreation(insight)
             } catch (error) {
                 return { [FORM_ERROR]: asError(error) }
             }
 
             return
         },
-        [getSubjectSettings, updateSubjectSettings, platformContext, setInitialFormValues, telemetryService, history]
+        [onInsightCreateRequest, onSuccessfulCreation, setInitialFormValues, telemetryService]
     )
 
     const handleCancel = useCallback(() => {
         // Clear initial values if user successfully created search insight
         setInitialFormValues(undefined)
         telemetryService.log('CodeInsightsCodeStatsCreationPageCancelClick')
-        history.push('/insights/dashboards/all')
-    }, [history, setInitialFormValues, telemetryService])
+
+        onCancel()
+    }, [setInitialFormValues, telemetryService, onCancel])
 
     const handleChange = (event: FormChangeEvent<LangStatsCreationFormFields>): void => {
         setInitialFormValues(event.values)
@@ -102,7 +131,7 @@ export const LangStatsInsightCreationPage: React.FunctionComponent<LangStatsInsi
             <LangStatsInsightCreationContent
                 className="pb-5"
                 settings={settingsCascade.final ?? DEFAULT_FINAL_SETTINGS}
-                initialValues={initialFormValues}
+                initialValues={mergedInitialValues}
                 subjects={insightSubjects}
                 onSubmit={handleSubmit}
                 onCancel={handleCancel}

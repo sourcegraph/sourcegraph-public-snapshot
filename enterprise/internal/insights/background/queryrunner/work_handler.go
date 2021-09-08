@@ -6,6 +6,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
+
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -20,7 +22,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
-	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 )
 
@@ -29,7 +30,7 @@ var _ workerutil.Handler = &workHandler{}
 // workHandler implements the dbworker.Handler interface by executing search queries and
 // inserting insights about them to the insights Timescale database.
 type workHandler struct {
-	workerBaseStore *basestore.Store
+	baseWorkerStore *basestore.Store
 	insightsStore   *store.Store
 	metadadataStore *store.InsightStore
 	limiter         *rate.Limiter
@@ -75,16 +76,16 @@ func (r *workHandler) Handle(ctx context.Context, record workerutil.Record) (err
 		}
 	}()
 
-	// Dequeue the job to get information about it, like what search query to perform.
-	job, err := dequeueJob(ctx, r.workerBaseStore, record.RecordID())
-	if err != nil {
-		return err
-	}
-
 	err = r.limiter.Wait(ctx)
 	if err != nil {
 		return err
 	}
+	job, err := dequeueJob(ctx, r.baseWorkerStore, record.RecordID())
+	if err != nil {
+		return err
+	}
+
+	log15.Info("dequeue_job", "job", *job)
 
 	series, err := r.getSeries(ctx, job.SeriesID)
 	if err != nil {

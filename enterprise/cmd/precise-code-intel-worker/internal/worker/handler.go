@@ -37,9 +37,11 @@ type handler struct {
 	budgetRemaining int64
 }
 
-var _ workerutil.Handler = &handler{}
-var _ workerutil.WithPreDequeue = &handler{}
-var _ workerutil.WithHooks = &handler{}
+var (
+	_ workerutil.Handler        = &handler{}
+	_ workerutil.WithPreDequeue = &handler{}
+	_ workerutil.WithHooks      = &handler{}
+)
 
 func (h *handler) Handle(ctx context.Context, record workerutil.Record) error {
 	_, err := h.handle(ctx, record.(store.Upload))
@@ -139,6 +141,17 @@ func (h *handler) handle(ctx context.Context, upload store.Upload) (requeued boo
 			}
 			if err := tx.UpdatePackageReferences(ctx, upload.ID, groupedBundleData.PackageReferences); err != nil {
 				return errors.Wrap(err, "store.UpdatePackageReferences")
+			}
+
+			// When inserting a new completed upload record, update the reference counts both to it from
+			// existing uploads, as well as the reference counts to all of this new upload's dependencies.
+			// We decrement reference counts of dependencies on upload deletion, so this count should
+			// always be up to date as records are created and removed.
+			if err := tx.UpdateNumReferences(ctx, []int{upload.ID}); err != nil {
+				return errors.Wrap(err, "store.UpdateNumReferences")
+			}
+			if err := tx.UpdateDependencyNumReferences(ctx, []int{upload.ID}, false); err != nil {
+				return errors.Wrap(err, "store.UpdateDependencyNumReferences")
 			}
 
 			// Before we mark the upload as complete, we need to delete any existing completed uploads

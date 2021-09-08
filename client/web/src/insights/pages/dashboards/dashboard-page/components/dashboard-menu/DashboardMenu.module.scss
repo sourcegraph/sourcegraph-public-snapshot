@@ -1,5 +1,3 @@
-@import '~@reach/menu-button/styles.css';
-
 .trigger-button {
     padding: 0.25rem;
 }
@@ -8,18 +6,18 @@
     font-size: inherit;
     overflow: hidden;
     padding: 0.25rem 0;
-    background-color: var(--dropdown-bg);
-
-    // Explicit override @reach ui border styles
-    border: 1px solid var(--dropdown-border-color);
 
     // The .dropdown-menu class adds absolute position to the element
     // that makes parent of this element wrong width/height settled
     // Therefore this breaks popover position of reach-ui popover
     position: static;
+    // The .dropdown-menu is hidden by default
+    display: block;
 }
 
 .menu-item[data-reach-menu-item] {
+    // Override default Bootstrap button style
+    display: block;
     padding: 0.25rem 0.75rem;
     text-align: right;
     width: 100%;

@@ -86,13 +86,4 @@ describe('GlobalNavbar', () => {
         )
         expect(asFragment()).toMatchSnapshot()
     })
-
-    test('no-search-input', () => {
-        const { asFragment } = render(
-            <MemoryRouter>
-                <GlobalNavbar {...PROPS} variant="no-search-input" />
-            </MemoryRouter>
-        )
-        expect(asFragment()).toMatchSnapshot()
-    })
 })

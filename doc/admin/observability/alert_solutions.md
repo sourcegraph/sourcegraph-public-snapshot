@@ -21,6 +21,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 - **Check that most repositories are indexed** by visiting https://sourcegraph.example.com/site-admin/repositories?filter=needs-index (it should show few or no results.)
 - **Kubernetes:** Check CPU usage of zoekt-webserver in the indexed-search pod, consider increasing CPU limits in the `indexed-search.Deployment.yaml` if regularly hitting max CPU utilization.
 - **Docker Compose:** Check CPU usage on the Zoekt Web Server dashboard, consider increasing `cpus:` of the zoekt-webserver container in `docker-compose.yml` if regularly hitting max CPU utilization.
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#frontend-99th-percentile-search-request-duration).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -47,6 +48,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 - **Check that most repositories are indexed** by visiting https://sourcegraph.example.com/site-admin/repositories?filter=needs-index (it should show few or no results.)
 - **Kubernetes:** Check CPU usage of zoekt-webserver in the indexed-search pod, consider increasing CPU limits in the `indexed-search.Deployment.yaml` if regularly hitting max CPU utilization.
 - **Docker Compose:** Check CPU usage on the Zoekt Web Server dashboard, consider increasing `cpus:` of the zoekt-webserver container in `docker-compose.yml` if regularly hitting max CPU utilization.
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#frontend-90th-percentile-search-request-duration).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -70,6 +72,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 
 **Possible solutions**
 
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#frontend-hard-timeout-search-responses).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -94,6 +97,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 
 **Possible solutions**
 
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#frontend-hard-error-search-responses).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -117,6 +121,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 
 **Possible solutions**
 
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#frontend-partial-timeout-search-responses).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -140,6 +145,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 **Possible solutions**
 
 - This indicates your user`s are making syntax errors or similar user errors.
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#frontend-search-alert-user-suggestions).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -164,6 +170,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 
 - Confirm that the Sourcegraph frontend has enough CPU/memory using the provisioning panels.
 - Trace a request to see what the slowest part is: https://docs.sourcegraph.com/admin/observability/tracing
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#frontend-page-load-latency).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -188,6 +195,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 
 - Confirm that the Sourcegraph frontend has enough CPU/memory using the provisioning panels.
 - Trace a request to see what the slowest part is: https://docs.sourcegraph.com/admin/observability/tracing
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#frontend-blob-load-latency).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -214,6 +222,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 - **Check that most repositories are indexed** by visiting https://sourcegraph.example.com/site-admin/repositories?filter=needs-index (it should show few or no results.)
 - **Kubernetes:** Check CPU usage of zoekt-webserver in the indexed-search pod, consider increasing CPU limits in the `indexed-search.Deployment.yaml` if regularly hitting max CPU utilization.
 - **Docker Compose:** Check CPU usage on the Zoekt Web Server dashboard, consider increasing `cpus:` of the zoekt-webserver container in `docker-compose.yml` if regularly hitting max CPU utilization.
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#frontend-99th-percentile-search-codeintel-request-duration).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -222,7 +231,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
+<sub>*Managed by the [Sourcegraph Search team](https://about.sourcegraph.com/handbook/engineering/search).*</sub>
 
 <br />
 
@@ -240,6 +249,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 - **Check that most repositories are indexed** by visiting https://sourcegraph.example.com/site-admin/repositories?filter=needs-index (it should show few or no results.)
 - **Kubernetes:** Check CPU usage of zoekt-webserver in the indexed-search pod, consider increasing CPU limits in the `indexed-search.Deployment.yaml` if regularly hitting max CPU utilization.
 - **Docker Compose:** Check CPU usage on the Zoekt Web Server dashboard, consider increasing `cpus:` of the zoekt-webserver container in `docker-compose.yml` if regularly hitting max CPU utilization.
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#frontend-90th-percentile-search-codeintel-request-duration).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -248,7 +258,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
+<sub>*Managed by the [Sourcegraph Search team](https://about.sourcegraph.com/handbook/engineering/search).*</sub>
 
 <br />
 
@@ -263,6 +273,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 
 **Possible solutions**
 
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#frontend-hard-timeout-search-codeintel-responses).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -272,7 +283,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
+<sub>*Managed by the [Sourcegraph Search team](https://about.sourcegraph.com/handbook/engineering/search).*</sub>
 
 <br />
 
@@ -287,6 +298,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 
 **Possible solutions**
 
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#frontend-hard-error-search-codeintel-responses).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -296,7 +308,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
+<sub>*Managed by the [Sourcegraph Search team](https://about.sourcegraph.com/handbook/engineering/search).*</sub>
 
 <br />
 
@@ -310,6 +322,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 
 **Possible solutions**
 
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#frontend-partial-timeout-search-codeintel-responses).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -318,7 +331,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
+<sub>*Managed by the [Sourcegraph Search team](https://about.sourcegraph.com/handbook/engineering/search).*</sub>
 
 <br />
 
@@ -333,6 +346,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 **Possible solutions**
 
 - This indicates a bug in Sourcegraph, please [open an issue](https://github.com/sourcegraph/sourcegraph/issues/new/choose).
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#frontend-search-codeintel-alert-user-suggestions).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -341,7 +355,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
+<sub>*Managed by the [Sourcegraph Search team](https://about.sourcegraph.com/handbook/engineering/search).*</sub>
 
 <br />
 
@@ -359,6 +373,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 - **Check that most repositories are indexed** by visiting https://sourcegraph.example.com/site-admin/repositories?filter=needs-index (it should show few or no results.)
 - **Kubernetes:** Check CPU usage of zoekt-webserver in the indexed-search pod, consider increasing CPU limits in the `indexed-search.Deployment.yaml` if regularly hitting max CPU utilization.
 - **Docker Compose:** Check CPU usage on the Zoekt Web Server dashboard, consider increasing `cpus:` of the zoekt-webserver container in `docker-compose.yml` if regularly hitting max CPU utilization.
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#frontend-99th-percentile-search-api-request-duration).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -385,35 +400,12 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 - **Check that most repositories are indexed** by visiting https://sourcegraph.example.com/site-admin/repositories?filter=needs-index (it should show few or no results.)
 - **Kubernetes:** Check CPU usage of zoekt-webserver in the indexed-search pod, consider increasing CPU limits in the `indexed-search.Deployment.yaml` if regularly hitting max CPU utilization.
 - **Docker Compose:** Check CPU usage on the Zoekt Web Server dashboard, consider increasing `cpus:` of the zoekt-webserver container in `docker-compose.yml` if regularly hitting max CPU utilization.
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#frontend-90th-percentile-search-api-request-duration).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
   "warning_frontend_90th_percentile_search_api_request_duration"
-]
-```
-
-<sub>*Managed by the [Sourcegraph Search team](https://about.sourcegraph.com/handbook/engineering/search).*</sub>
-
-<br />
-
-## frontend: hard_timeout_search_api_responses
-
-<p class="subtitle">hard timeout search API responses every 5m</p>
-
-**Descriptions**
-
-- <span class="badge badge-warning">warning</span> frontend: 2%+ hard timeout search API responses every 5m for 15m0s
-- <span class="badge badge-critical">critical</span> frontend: 5%+ hard timeout search API responses every 5m for 15m0s
-
-**Possible solutions**
-
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
-
-```json
-"observability.silenceAlerts": [
-  "warning_frontend_hard_timeout_search_api_responses",
-  "critical_frontend_hard_timeout_search_api_responses"
 ]
 ```
 
@@ -432,6 +424,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 
 **Possible solutions**
 
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#frontend-hard-error-search-api-responses).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -455,6 +448,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 
 **Possible solutions**
 
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#frontend-partial-timeout-search-api-responses).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -478,6 +472,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 **Possible solutions**
 
 - This indicates your user`s search API requests have syntax errors or a similar user error. Check the responses the API sends back for an explanation.
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#frontend-search-api-alert-user-suggestions).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -501,6 +496,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 **Possible solutions**
 
 - Check the Zoekt Web Server dashboard for indications it might be unhealthy.
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#frontend-internal-indexed-search-error-responses).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -524,6 +520,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 **Possible solutions**
 
 - Check the Searcher dashboard for indications it might be unhealthy.
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#frontend-internal-unindexed-search-error-responses).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -547,6 +544,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 **Possible solutions**
 
 - May not be a substantial issue, check the `frontend` logs for potential causes.
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#frontend-internal-api-error-responses).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -569,6 +567,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 
 **Possible solutions**
 
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#frontend-99th-percentile-gitserver-duration).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -591,6 +590,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 
 **Possible solutions**
 
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#frontend-gitserver-error-responses).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -614,6 +614,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 **Possible solutions**
 
 - This alert is triggered via the `triggerObservabilityTestAlert` GraphQL endpoint, and will automatically resolve itself.
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#frontend-observability-test-alert-warning).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -637,6 +638,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 **Possible solutions**
 
 - This alert is triggered via the `triggerObservabilityTestAlert` GraphQL endpoint, and will automatically resolve itself.
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#frontend-observability-test-alert-critical).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -662,6 +664,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 
 - Increase SRC_PGSQL_MAX_OPEN together with giving more memory to the database if needed
 - Scale up Postgres memory / cpus [See our scaling guide](https://docs.sourcegraph.com/admin/config/postgres-conf)
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#frontend-mean-blocked-seconds-per-conn-request).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -687,6 +690,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 
 - **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `cpus:` of the (frontend|sourcegraph-frontend) container in `docker-compose.yml`.
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#frontend-container-cpu-usage).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -711,6 +715,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 
 - **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `memory:` of (frontend|sourcegraph-frontend) container in `docker-compose.yml`.
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#frontend-container-memory-usage).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -735,6 +740,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 
 - **Kubernetes:** Consider increasing CPU limits in the `Deployment.yaml` for the (frontend|sourcegraph-frontend) service.
 - **Docker Compose:** Consider increasing `cpus:` of the (frontend|sourcegraph-frontend) container in `docker-compose.yml`.
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#frontend-provisioning-container-cpu-usage-long-term).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -759,6 +765,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 
 - **Kubernetes:** Consider increasing memory limits in the `Deployment.yaml` for the (frontend|sourcegraph-frontend) service.
 - **Docker Compose:** Consider increasing `memory:` of the (frontend|sourcegraph-frontend) container in `docker-compose.yml`.
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#frontend-provisioning-container-memory-usage-long-term).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -783,6 +790,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 
 - **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `cpus:` of the (frontend|sourcegraph-frontend) container in `docker-compose.yml`.
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#frontend-provisioning-container-cpu-usage-short-term).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -807,6 +815,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 
 - **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `memory:` of (frontend|sourcegraph-frontend) container in `docker-compose.yml`.
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#frontend-provisioning-container-memory-usage-short-term).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -829,6 +838,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 
 **Possible solutions**
 
+- More help interpreting this metric is available in the [dashboards reference](./dashboards.md#frontend-go-goroutines).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -836,8 +846,6 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
   "warning_frontend_go_goroutines"
 ]
 ```
-
-> NOTE: More help interpreting this metric is available in the [dashboards reference](./dashboards.md#frontend-go-goroutines).
 
 <sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
 
@@ -853,6 +861,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 
 **Possible solutions**
 
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#frontend-go-gc-duration-seconds).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -875,6 +884,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 
 **Possible solutions**
 
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#frontend-pods-available-percentage).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -901,6 +911,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 - Look at the breakdown by query to determine if a specific query type is being affected
 - Check for high CPU usage on zoekt-webserver
 - Check Honeycomb for unusual activity
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#frontend-mean-successful-sentinel-duration-5m).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -928,6 +939,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 - Look at the breakdown by query to determine if a specific query type is being affected
 - Check for high CPU usage on zoekt-webserver
 - Check Honeycomb for unusual activity
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#frontend-mean-sentinel-stream-latency-5m).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -955,6 +967,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 - Look at the breakdown by query to determine if a specific query type is being affected
 - Check for high CPU usage on zoekt-webserver
 - Check Honeycomb for unusual activity
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#frontend-90th-percentile-successful-sentinel-duration-5m).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -982,6 +995,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 - Look at the breakdown by query to determine if a specific query type is being affected
 - Check for high CPU usage on zoekt-webserver
 - Check Honeycomb for unusual activity
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#frontend-90th-percentile-sentinel-stream-latency-5m).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -1007,6 +1021,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 **Possible solutions**
 
 - **Provision more disk space:** Sourcegraph will begin deleting least-used repository clones at 10% disk space remaining which may result in decreased performance, users having to wait for repositories to clone, etc.
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#gitserver-disk-space-remaining).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -1034,6 +1049,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 - **Check if the problem may be an intermittent and temporary peak** using the "Container monitoring" section at the bottom of the Git Server dashboard.
 - **Single container deployments:** Consider upgrading to a [Docker Compose deployment](../install/docker-compose/migrate.md) which offers better scalability and resource isolation.
 - **Kubernetes and Docker Compose:** Check that you are running a similar number of git server replicas and that their CPU/memory limits are allocated according to what is shown in the [Sourcegraph resource estimator](../install/resource_estimator.md).
+- More help interpreting this metric is available in the [dashboards reference](./dashboards.md#gitserver-running-git-commands).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -1042,8 +1058,6 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
   "critical_gitserver_running_git_commands"
 ]
 ```
-
-> NOTE: More help interpreting this metric is available in the [dashboards reference](./dashboards.md#gitserver-running-git-commands).
 
 <sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
 
@@ -1061,6 +1075,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 
 - **If you just added several repositories**, the warning may be expected.
 - **Check which repositories need cloning**, by visiting e.g. https://sourcegraph.example.com/site-admin/repositories?filter=not-cloned
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#gitserver-repository-clone-queue-size).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -1086,6 +1101,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 - **Check the code host status indicator for errors:** on the Sourcegraph app homepage, when signed in as an admin click the cloud icon in the top right corner of the page.
 - **Check if the issue continues to happen after 30 minutes**, it may be temporary.
 - **Check the gitserver logs for more information.**
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#gitserver-repository-existence-check-queue-size).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -1115,6 +1131,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 - **Docker Compose:**
 	- Confirm that `docker ps` shows the `frontend-internal` container is healthy.
 	- Check `docker logs gitserver` for logs indicating request failures to `frontend` or `frontend-internal`.
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#gitserver-frontend-internal-api-error-responses).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -1140,6 +1157,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 
 - Increase SRC_PGSQL_MAX_OPEN together with giving more memory to the database if needed
 - Scale up Postgres memory / cpus [See our scaling guide](https://docs.sourcegraph.com/admin/config/postgres-conf)
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#gitserver-mean-blocked-seconds-per-conn-request).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -1165,6 +1183,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 
 - **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `cpus:` of the gitserver container in `docker-compose.yml`.
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#gitserver-container-cpu-usage).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -1189,6 +1208,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 
 - **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `memory:` of gitserver container in `docker-compose.yml`.
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#gitserver-container-memory-usage).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -1213,6 +1233,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 
 - **Kubernetes:** Consider increasing CPU limits in the `Deployment.yaml` for the gitserver service.
 - **Docker Compose:** Consider increasing `cpus:` of the gitserver container in `docker-compose.yml`.
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#gitserver-provisioning-container-cpu-usage-long-term).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -1237,6 +1258,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 
 - **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `cpus:` of the gitserver container in `docker-compose.yml`.
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#gitserver-provisioning-container-cpu-usage-short-term).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -1259,6 +1281,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 
 **Possible solutions**
 
+- More help interpreting this metric is available in the [dashboards reference](./dashboards.md#gitserver-go-goroutines).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -1266,8 +1289,6 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
   "warning_gitserver_go_goroutines"
 ]
 ```
-
-> NOTE: More help interpreting this metric is available in the [dashboards reference](./dashboards.md#gitserver-go-goroutines).
 
 <sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
 
@@ -1283,6 +1304,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 
 **Possible solutions**
 
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#gitserver-go-gc-duration-seconds).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -1305,6 +1327,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 
 **Possible solutions**
 
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#gitserver-pods-available-percentage).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -1329,6 +1352,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 
 - 								- **Check github-proxy logs for network connection issues.
 								- **Check github status.
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#github-proxy-github-proxy-waiting-requests).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -1353,6 +1377,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 
 - **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `cpus:` of the github-proxy container in `docker-compose.yml`.
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#github-proxy-container-cpu-usage).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -1377,6 +1402,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 
 - **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `memory:` of github-proxy container in `docker-compose.yml`.
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#github-proxy-container-memory-usage).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -1401,6 +1427,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 
 - **Kubernetes:** Consider increasing CPU limits in the `Deployment.yaml` for the github-proxy service.
 - **Docker Compose:** Consider increasing `cpus:` of the github-proxy container in `docker-compose.yml`.
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#github-proxy-provisioning-container-cpu-usage-long-term).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -1425,6 +1452,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 
 - **Kubernetes:** Consider increasing memory limits in the `Deployment.yaml` for the github-proxy service.
 - **Docker Compose:** Consider increasing `memory:` of the github-proxy container in `docker-compose.yml`.
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#github-proxy-provisioning-container-memory-usage-long-term).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -1449,6 +1477,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 
 - **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `cpus:` of the github-proxy container in `docker-compose.yml`.
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#github-proxy-provisioning-container-cpu-usage-short-term).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -1473,6 +1502,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 
 - **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `memory:` of github-proxy container in `docker-compose.yml`.
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#github-proxy-provisioning-container-memory-usage-short-term).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -1495,6 +1525,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 
 **Possible solutions**
 
+- More help interpreting this metric is available in the [dashboards reference](./dashboards.md#github-proxy-go-goroutines).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -1502,8 +1533,6 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
   "warning_github-proxy_go_goroutines"
 ]
 ```
-
-> NOTE: More help interpreting this metric is available in the [dashboards reference](./dashboards.md#github-proxy-go-goroutines).
 
 <sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
 
@@ -1519,6 +1548,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 
 **Possible solutions**
 
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#github-proxy-go-gc-duration-seconds).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -1541,6 +1571,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 
 **Possible solutions**
 
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#github-proxy-pods-available-percentage).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -1563,6 +1594,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 
 **Possible solutions**
 
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#postgres-connections).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -1586,6 +1618,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 
 **Possible solutions**
 
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#postgres-transaction-durations).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -1609,6 +1642,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 
 **Possible solutions**
 
+- More help interpreting this metric is available in the [dashboards reference](./dashboards.md#postgres-postgres-up).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -1616,8 +1650,6 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
   "critical_postgres_postgres_up"
 ]
 ```
-
-> NOTE: More help interpreting this metric is available in the [dashboards reference](./dashboards.md#postgres-postgres-up).
 
 <sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
 
@@ -1634,6 +1666,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 **Possible solutions**
 
 - Drop and re-create the invalid trigger - please contact Sourcegraph to supply the trigger definition.
+- More help interpreting this metric is available in the [dashboards reference](./dashboards.md#postgres-invalid-indexes).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -1641,8 +1674,6 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
   "critical_postgres_invalid_indexes"
 ]
 ```
-
-> NOTE: More help interpreting this metric is available in the [dashboards reference](./dashboards.md#postgres-invalid-indexes).
 
 <sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
 
@@ -1659,6 +1690,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 **Possible solutions**
 
 - Ensure the Postgres exporter can access the Postgres database. Also, check the Postgres exporter logs for errors.
+- More help interpreting this metric is available in the [dashboards reference](./dashboards.md#postgres-pg-exporter-err).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -1666,8 +1698,6 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
   "warning_postgres_pg_exporter_err"
 ]
 ```
-
-> NOTE: More help interpreting this metric is available in the [dashboards reference](./dashboards.md#postgres-pg-exporter-err).
 
 <sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
 
@@ -1684,6 +1714,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 **Possible solutions**
 
 - The database migration has been in progress for 5 or more minutes - please contact Sourcegraph if this persists.
+- More help interpreting this metric is available in the [dashboards reference](./dashboards.md#postgres-migration-in-progress).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -1691,8 +1722,6 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
   "critical_postgres_migration_in_progress"
 ]
 ```
-
-> NOTE: More help interpreting this metric is available in the [dashboards reference](./dashboards.md#postgres-migration-in-progress).
 
 <sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
 
@@ -1710,6 +1739,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 
 - **Kubernetes:** Consider increasing CPU limits in the `Deployment.yaml` for the (pgsql|codeintel-db) service.
 - **Docker Compose:** Consider increasing `cpus:` of the (pgsql|codeintel-db) container in `docker-compose.yml`.
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#postgres-provisioning-container-cpu-usage-long-term).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -1734,6 +1764,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 
 - **Kubernetes:** Consider increasing memory limits in the `Deployment.yaml` for the (pgsql|codeintel-db) service.
 - **Docker Compose:** Consider increasing `memory:` of the (pgsql|codeintel-db) container in `docker-compose.yml`.
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#postgres-provisioning-container-memory-usage-long-term).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -1758,6 +1789,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 
 - **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `cpus:` of the (pgsql|codeintel-db) container in `docker-compose.yml`.
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#postgres-provisioning-container-cpu-usage-short-term).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -1782,6 +1814,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 
 - **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `memory:` of (pgsql|codeintel-db) container in `docker-compose.yml`.
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#postgres-provisioning-container-memory-usage-short-term).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -1804,6 +1837,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 
 **Possible solutions**
 
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#postgres-pods-available-percentage).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -1833,6 +1867,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 - **Docker Compose:**
 	- Confirm that `docker ps` shows the `frontend-internal` container is healthy.
 	- Check `docker logs precise-code-intel-worker` for logs indicating request failures to `frontend` or `frontend-internal`.
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#precise-code-intel-worker-frontend-internal-api-error-responses).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -1841,7 +1876,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
+<sub>*Managed by the [Sourcegraph Code-intel team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
 
 <br />
 
@@ -1858,6 +1893,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 
 - Increase SRC_PGSQL_MAX_OPEN together with giving more memory to the database if needed
 - Scale up Postgres memory / cpus [See our scaling guide](https://docs.sourcegraph.com/admin/config/postgres-conf)
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#precise-code-intel-worker-mean-blocked-seconds-per-conn-request).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -1883,6 +1919,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 
 - **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `cpus:` of the precise-code-intel-worker container in `docker-compose.yml`.
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#precise-code-intel-worker-container-cpu-usage).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -1891,7 +1928,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
+<sub>*Managed by the [Sourcegraph Code-intel team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
 
 <br />
 
@@ -1907,6 +1944,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 
 - **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `memory:` of precise-code-intel-worker container in `docker-compose.yml`.
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#precise-code-intel-worker-container-memory-usage).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -1915,7 +1953,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
+<sub>*Managed by the [Sourcegraph Code-intel team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
 
 <br />
 
@@ -1931,6 +1969,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 
 - **Kubernetes:** Consider increasing CPU limits in the `Deployment.yaml` for the precise-code-intel-worker service.
 - **Docker Compose:** Consider increasing `cpus:` of the precise-code-intel-worker container in `docker-compose.yml`.
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#precise-code-intel-worker-provisioning-container-cpu-usage-long-term).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -1939,7 +1978,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
+<sub>*Managed by the [Sourcegraph Code-intel team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
 
 <br />
 
@@ -1955,6 +1994,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 
 - **Kubernetes:** Consider increasing memory limits in the `Deployment.yaml` for the precise-code-intel-worker service.
 - **Docker Compose:** Consider increasing `memory:` of the precise-code-intel-worker container in `docker-compose.yml`.
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#precise-code-intel-worker-provisioning-container-memory-usage-long-term).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -1963,7 +2003,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
+<sub>*Managed by the [Sourcegraph Code-intel team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
 
 <br />
 
@@ -1979,6 +2019,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 
 - **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `cpus:` of the precise-code-intel-worker container in `docker-compose.yml`.
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#precise-code-intel-worker-provisioning-container-cpu-usage-short-term).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -1987,7 +2028,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
+<sub>*Managed by the [Sourcegraph Code-intel team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
 
 <br />
 
@@ -2003,6 +2044,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 
 - **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `memory:` of precise-code-intel-worker container in `docker-compose.yml`.
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#precise-code-intel-worker-provisioning-container-memory-usage-short-term).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -2011,7 +2053,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
+<sub>*Managed by the [Sourcegraph Code-intel team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
 
 <br />
 
@@ -2025,6 +2067,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 
 **Possible solutions**
 
+- More help interpreting this metric is available in the [dashboards reference](./dashboards.md#precise-code-intel-worker-go-goroutines).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -2033,9 +2076,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-> NOTE: More help interpreting this metric is available in the [dashboards reference](./dashboards.md#precise-code-intel-worker-go-goroutines).
-
-<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
+<sub>*Managed by the [Sourcegraph Code-intel team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
 
 <br />
 
@@ -2049,6 +2090,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 
 **Possible solutions**
 
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#precise-code-intel-worker-go-gc-duration-seconds).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -2057,7 +2099,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
+<sub>*Managed by the [Sourcegraph Code-intel team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
 
 <br />
 
@@ -2071,6 +2113,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 
 **Possible solutions**
 
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#precise-code-intel-worker-pods-available-percentage).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -2079,7 +2122,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
+<sub>*Managed by the [Sourcegraph Code-intel team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
 
 <br />
 
@@ -2100,6 +2143,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 - **Docker Compose:**
 	- Confirm that `docker ps` shows the `frontend-internal` container is healthy.
 	- Check `docker logs query-runner` for logs indicating request failures to `frontend` or `frontend-internal`.
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#query-runner-frontend-internal-api-error-responses).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -2124,6 +2168,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 
 - **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `cpus:` of the query-runner container in `docker-compose.yml`.
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#query-runner-container-cpu-usage).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -2148,6 +2193,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 
 - **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `memory:` of query-runner container in `docker-compose.yml`.
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#query-runner-container-memory-usage).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -2172,6 +2218,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 
 - **Kubernetes:** Consider increasing CPU limits in the `Deployment.yaml` for the query-runner service.
 - **Docker Compose:** Consider increasing `cpus:` of the query-runner container in `docker-compose.yml`.
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#query-runner-provisioning-container-cpu-usage-long-term).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -2196,6 +2243,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 
 - **Kubernetes:** Consider increasing memory limits in the `Deployment.yaml` for the query-runner service.
 - **Docker Compose:** Consider increasing `memory:` of the query-runner container in `docker-compose.yml`.
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#query-runner-provisioning-container-memory-usage-long-term).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -2220,6 +2268,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 
 - **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `cpus:` of the query-runner container in `docker-compose.yml`.
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#query-runner-provisioning-container-cpu-usage-short-term).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -2244,6 +2293,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 
 - **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `memory:` of query-runner container in `docker-compose.yml`.
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#query-runner-provisioning-container-memory-usage-short-term).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -2266,6 +2316,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 
 **Possible solutions**
 
+- More help interpreting this metric is available in the [dashboards reference](./dashboards.md#query-runner-go-goroutines).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -2273,8 +2324,6 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
   "warning_query-runner_go_goroutines"
 ]
 ```
-
-> NOTE: More help interpreting this metric is available in the [dashboards reference](./dashboards.md#query-runner-go-goroutines).
 
 <sub>*Managed by the [Sourcegraph Search team](https://about.sourcegraph.com/handbook/engineering/search).*</sub>
 
@@ -2290,6 +2339,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 
 **Possible solutions**
 
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#query-runner-go-gc-duration-seconds).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -2312,6 +2362,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 
 **Possible solutions**
 
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#query-runner-pods-available-percentage).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -2339,6 +2390,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 	- `WORKER_JOB_ALLOWLIST` contains "codeintel-janitor" (or "all"), and
 	- `WORKER_JOB_BLOCKLIST` does not contain "codeintel-janitor"
 - Ensure that such a container is not failing to start or stay active
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#worker-worker-job-codeintel-janitor-count).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -2348,7 +2400,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
+<sub>*Managed by the [Sourcegraph Code-intel team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
 
 <br />
 
@@ -2367,6 +2419,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 	- `WORKER_JOB_ALLOWLIST` contains "codeintel-commitgraph" (or "all"), and
 	- `WORKER_JOB_BLOCKLIST` does not contain "codeintel-commitgraph"
 - Ensure that such a container is not failing to start or stay active
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#worker-worker-job-codeintel-commitgraph-count).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -2376,7 +2429,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
+<sub>*Managed by the [Sourcegraph Code-intel team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
 
 <br />
 
@@ -2395,6 +2448,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 	- `WORKER_JOB_ALLOWLIST` contains "codeintel-auto-indexing" (or "all"), and
 	- `WORKER_JOB_BLOCKLIST` does not contain "codeintel-auto-indexing"
 - Ensure that such a container is not failing to start or stay active
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#worker-worker-job-codeintel-auto-indexing-count).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -2404,7 +2458,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
+<sub>*Managed by the [Sourcegraph Code-intel team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
 
 <br />
 
@@ -2425,6 +2479,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 - **Docker Compose:**
 	- Confirm that `docker ps` shows the `frontend-internal` container is healthy.
 	- Check `docker logs worker` for logs indicating request failures to `frontend` or `frontend-internal`.
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#worker-frontend-internal-api-error-responses).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -2433,7 +2488,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
+<sub>*Managed by the [Sourcegraph Code-intel team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
 
 <br />
 
@@ -2450,6 +2505,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 
 - Increase SRC_PGSQL_MAX_OPEN together with giving more memory to the database if needed
 - Scale up Postgres memory / cpus [See our scaling guide](https://docs.sourcegraph.com/admin/config/postgres-conf)
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#worker-mean-blocked-seconds-per-conn-request).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -2475,6 +2531,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 
 - **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `cpus:` of the worker container in `docker-compose.yml`.
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#worker-container-cpu-usage).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -2483,7 +2540,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
+<sub>*Managed by the [Sourcegraph Code-intel team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
 
 <br />
 
@@ -2499,6 +2556,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 
 - **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `memory:` of worker container in `docker-compose.yml`.
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#worker-container-memory-usage).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -2507,7 +2565,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
+<sub>*Managed by the [Sourcegraph Code-intel team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
 
 <br />
 
@@ -2523,6 +2581,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 
 - **Kubernetes:** Consider increasing CPU limits in the `Deployment.yaml` for the worker service.
 - **Docker Compose:** Consider increasing `cpus:` of the worker container in `docker-compose.yml`.
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#worker-provisioning-container-cpu-usage-long-term).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -2531,7 +2590,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
+<sub>*Managed by the [Sourcegraph Code-intel team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
 
 <br />
 
@@ -2547,6 +2606,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 
 - **Kubernetes:** Consider increasing memory limits in the `Deployment.yaml` for the worker service.
 - **Docker Compose:** Consider increasing `memory:` of the worker container in `docker-compose.yml`.
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#worker-provisioning-container-memory-usage-long-term).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -2555,7 +2615,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
+<sub>*Managed by the [Sourcegraph Code-intel team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
 
 <br />
 
@@ -2571,6 +2631,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 
 - **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `cpus:` of the worker container in `docker-compose.yml`.
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#worker-provisioning-container-cpu-usage-short-term).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -2579,7 +2640,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
+<sub>*Managed by the [Sourcegraph Code-intel team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
 
 <br />
 
@@ -2595,6 +2656,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 
 - **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `memory:` of worker container in `docker-compose.yml`.
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#worker-provisioning-container-memory-usage-short-term).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -2603,7 +2665,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
+<sub>*Managed by the [Sourcegraph Code-intel team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
 
 <br />
 
@@ -2617,6 +2679,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 
 **Possible solutions**
 
+- More help interpreting this metric is available in the [dashboards reference](./dashboards.md#worker-go-goroutines).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -2625,9 +2688,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-> NOTE: More help interpreting this metric is available in the [dashboards reference](./dashboards.md#worker-go-goroutines).
-
-<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
+<sub>*Managed by the [Sourcegraph Code-intel team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
 
 <br />
 
@@ -2641,6 +2702,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 
 **Possible solutions**
 
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#worker-go-gc-duration-seconds).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -2649,7 +2711,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
+<sub>*Managed by the [Sourcegraph Code-intel team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
 
 <br />
 
@@ -2663,6 +2725,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 
 **Possible solutions**
 
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#worker-pods-available-percentage).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -2671,7 +2734,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
+<sub>*Managed by the [Sourcegraph Code-intel team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
 
 <br />
 
@@ -2692,6 +2755,7 @@ with your code hosts connections or networking issues affecting communication wi
 - Check the repo-updater logs for errors about syncing.
 - Confirm that outbound network connections are allowed where repo-updater is deployed.
 - Check back in an hour to see if the issue has resolved itself.
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#repo-updater-src-repoupdater-max-sync-backoff).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -2710,7 +2774,8 @@ with your code hosts connections or networking issues affecting communication wi
 
 **Descriptions**
 
-- <span class="badge badge-critical">critical</span> repo-updater: 0+ site level external service sync error rate for 10m0s
+- <span class="badge badge-warning">warning</span> repo-updater: 0.5+ site level external service sync error rate for 10m0s
+- <span class="badge badge-critical">critical</span> repo-updater: 1+ site level external service sync error rate for 10m0s
 
 **Possible solutions**
 
@@ -2721,10 +2786,12 @@ with your code hosts connections or networking issues affecting communication wi
 - Check the repo-updater logs for errors about syncing.
 - Confirm that outbound network connections are allowed where repo-updater is deployed.
 - Check back in an hour to see if the issue has resolved itself.
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#repo-updater-src-repoupdater-syncer-sync-errors-total).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
+  "warning_repo-updater_src_repoupdater_syncer_sync_errors_total",
   "critical_repo-updater_src_repoupdater_syncer_sync_errors_total"
 ]
 ```
@@ -2744,6 +2811,7 @@ with your code hosts connections or networking issues affecting communication wi
 **Possible solutions**
 
 - Check repo-updater logs for errors.
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#repo-updater-syncer-sync-start).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -2767,6 +2835,7 @@ with your code hosts connections or networking issues affecting communication wi
 **Possible solutions**
 
 - Check the network latency is reasonable (<50ms) between the Sourcegraph and the code host
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#repo-updater-syncer-sync-duration).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -2790,6 +2859,7 @@ with your code hosts connections or networking issues affecting communication wi
 **Possible solutions**
 
 - Check the network latency is reasonable (<50ms) between the Sourcegraph and the code host
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#repo-updater-source-duration).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -2802,6 +2872,8 @@ with your code hosts connections or networking issues affecting communication wi
 
 <br />
 
+
+
 ## repo-updater: sourced_repos
 
 <p class="subtitle">repositories sourced</p>
@@ -2813,6 +2885,7 @@ with your code hosts connections or networking issues affecting communication wi
 **Possible solutions**
 
 - Check network connectivity to code hosts
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#repo-updater-sourced-repos).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -2836,6 +2909,7 @@ with your code hosts connections or networking issues affecting communication wi
 **Possible solutions**
 
 - Check for unusual spikes in user added repos. Each user is only allowed to add 2000
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#repo-updater-user-added-repos).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -2859,6 +2933,7 @@ with your code hosts connections or networking issues affecting communication wi
 **Possible solutions**
 
 - Check repo-updater`s connectivity with gitserver and gitserver logs
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#repo-updater-purge-failed).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -2882,6 +2957,7 @@ with your code hosts connections or networking issues affecting communication wi
 **Possible solutions**
 
 - Check repo-updater logs. This is expected to fire if there are no user added code hosts
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#repo-updater-sched-auto-fetch).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -2905,6 +2981,7 @@ with your code hosts connections or networking issues affecting communication wi
 **Possible solutions**
 
 - Check repo-updater logs. This is expected to fire if there are no user added code hosts
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#repo-updater-sched-known-repos).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -2928,6 +3005,7 @@ with your code hosts connections or networking issues affecting communication wi
 **Possible solutions**
 
 - Check repo-updater logs for indications that the queue is not being processed. The queue length should trend downwards over time as items are sent to GitServer
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#repo-updater-sched-update-queue-length).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -2951,6 +3029,7 @@ with your code hosts connections or networking issues affecting communication wi
 **Possible solutions**
 
 - Check repo-updater logs for errors. This is expected to fire if there are no user added code hosts
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#repo-updater-sched-loops).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -2974,6 +3053,7 @@ with your code hosts connections or networking issues affecting communication wi
 **Possible solutions**
 
 - Check repo-updater logs for errors
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#repo-updater-sched-error).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -2997,6 +3077,7 @@ with your code hosts connections or networking issues affecting communication wi
 **Possible solutions**
 
 - Increase the API rate limit to [GitHub](https://docs.sourcegraph.com/admin/external_service/github#github-com-rate-limits), [GitLab](https://docs.sourcegraph.com/admin/external_service/gitlab#internal-rate-limits) or [Bitbucket Server](https://docs.sourcegraph.com/admin/external_service/bitbucket_server#internal-rate-limits).
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#repo-updater-perms-syncer-perms).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -3020,6 +3101,7 @@ with your code hosts connections or networking issues affecting communication wi
 **Possible solutions**
 
 - Increase the API rate limit to [GitHub](https://docs.sourcegraph.com/admin/external_service/github#github-com-rate-limits), [GitLab](https://docs.sourcegraph.com/admin/external_service/gitlab#internal-rate-limits) or [Bitbucket Server](https://docs.sourcegraph.com/admin/external_service/bitbucket_server#internal-rate-limits).
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#repo-updater-perms-syncer-stale-perms).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -3044,6 +3126,7 @@ with your code hosts connections or networking issues affecting communication wi
 
 - **Enabled permissions for the first time:** Wait for few minutes and see if the number goes down.
 - **Otherwise:** Increase the API rate limit to [GitHub](https://docs.sourcegraph.com/admin/external_service/github#github-com-rate-limits), [GitLab](https://docs.sourcegraph.com/admin/external_service/gitlab#internal-rate-limits) or [Bitbucket Server](https://docs.sourcegraph.com/admin/external_service/bitbucket_server#internal-rate-limits).
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#repo-updater-perms-syncer-no-perms).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -3067,6 +3150,7 @@ with your code hosts connections or networking issues affecting communication wi
 **Possible solutions**
 
 - Check the network latency is reasonable (<50ms) between the Sourcegraph and the code host.
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#repo-updater-perms-syncer-sync-duration).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -3091,6 +3175,7 @@ with your code hosts connections or networking issues affecting communication wi
 
 - **Enabled permissions for the first time:** Wait for few minutes and see if the number goes down.
 - **Otherwise:** Increase the API rate limit to [GitHub](https://docs.sourcegraph.com/admin/external_service/github#github-com-rate-limits), [GitLab](https://docs.sourcegraph.com/admin/external_service/gitlab#internal-rate-limits) or [Bitbucket Server](https://docs.sourcegraph.com/admin/external_service/bitbucket_server#internal-rate-limits).
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#repo-updater-perms-syncer-queue-size).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -3115,6 +3200,7 @@ with your code hosts connections or networking issues affecting communication wi
 
 - Check the network connectivity the Sourcegraph and the code host.
 - Check if API rate limit quota is exhausted on the code host.
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#repo-updater-perms-syncer-sync-errors).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -3138,6 +3224,7 @@ with your code hosts connections or networking issues affecting communication wi
 **Possible solutions**
 
 - Check for spikes in external services, could be abuse
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#repo-updater-src-repoupdater-external-services-total).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -3161,6 +3248,7 @@ with your code hosts connections or networking issues affecting communication wi
 **Possible solutions**
 
 - Check for spikes in external services, could be abuse
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#repo-updater-src-repoupdater-user-external-services-total).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -3185,6 +3273,7 @@ with your code hosts connections or networking issues affecting communication wi
 
 - **Check if jobs are failing to sync:** "SELECT * FROM external_service_sync_jobs WHERE state = `errored`";
 - **Increase the number of workers** using the `repoConcurrentExternalServiceSyncers` site config.
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#repo-updater-repoupdater-queued-sync-jobs-total).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -3208,6 +3297,7 @@ with your code hosts connections or networking issues affecting communication wi
 **Possible solutions**
 
 - Check repo-updater logs. Jobs older than 1 day should have been removed.
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#repo-updater-repoupdater-completed-sync-jobs-total).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -3231,6 +3321,7 @@ with your code hosts connections or networking issues affecting communication wi
 **Possible solutions**
 
 - Check repo-updater logs. Check code host connectivity
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#repo-updater-repoupdater-errored-sync-jobs-percentage).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -3254,6 +3345,7 @@ with your code hosts connections or networking issues affecting communication wi
 **Possible solutions**
 
 - Try restarting the pod to get a different public IP.
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#repo-updater-github-graphql-rate-limit-remaining).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -3277,6 +3369,7 @@ with your code hosts connections or networking issues affecting communication wi
 **Possible solutions**
 
 - Try restarting the pod to get a different public IP.
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#repo-updater-github-rest-rate-limit-remaining).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -3300,6 +3393,7 @@ with your code hosts connections or networking issues affecting communication wi
 **Possible solutions**
 
 - Try restarting the pod to get a different public IP.
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#repo-updater-github-search-rate-limit-remaining).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -3323,6 +3417,7 @@ with your code hosts connections or networking issues affecting communication wi
 **Possible solutions**
 
 - Try restarting the pod to get a different public IP.
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#repo-updater-gitlab-rest-rate-limit-remaining).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -3352,6 +3447,7 @@ with your code hosts connections or networking issues affecting communication wi
 - **Docker Compose:**
 	- Confirm that `docker ps` shows the `frontend-internal` container is healthy.
 	- Check `docker logs repo-updater` for logs indicating request failures to `frontend` or `frontend-internal`.
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#repo-updater-frontend-internal-api-error-responses).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -3377,6 +3473,7 @@ with your code hosts connections or networking issues affecting communication wi
 
 - Increase SRC_PGSQL_MAX_OPEN together with giving more memory to the database if needed
 - Scale up Postgres memory / cpus [See our scaling guide](https://docs.sourcegraph.com/admin/config/postgres-conf)
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#repo-updater-mean-blocked-seconds-per-conn-request).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -3402,6 +3499,7 @@ with your code hosts connections or networking issues affecting communication wi
 
 - **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `cpus:` of the repo-updater container in `docker-compose.yml`.
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#repo-updater-container-cpu-usage).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -3426,6 +3524,7 @@ with your code hosts connections or networking issues affecting communication wi
 
 - **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `memory:` of repo-updater container in `docker-compose.yml`.
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#repo-updater-container-memory-usage).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -3450,6 +3549,7 @@ with your code hosts connections or networking issues affecting communication wi
 
 - **Kubernetes:** Consider increasing CPU limits in the `Deployment.yaml` for the repo-updater service.
 - **Docker Compose:** Consider increasing `cpus:` of the repo-updater container in `docker-compose.yml`.
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#repo-updater-provisioning-container-cpu-usage-long-term).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -3474,6 +3574,7 @@ with your code hosts connections or networking issues affecting communication wi
 
 - **Kubernetes:** Consider increasing memory limits in the `Deployment.yaml` for the repo-updater service.
 - **Docker Compose:** Consider increasing `memory:` of the repo-updater container in `docker-compose.yml`.
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#repo-updater-provisioning-container-memory-usage-long-term).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -3498,6 +3599,7 @@ with your code hosts connections or networking issues affecting communication wi
 
 - **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `cpus:` of the repo-updater container in `docker-compose.yml`.
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#repo-updater-provisioning-container-cpu-usage-short-term).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -3522,6 +3624,7 @@ with your code hosts connections or networking issues affecting communication wi
 
 - **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `memory:` of repo-updater container in `docker-compose.yml`.
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#repo-updater-provisioning-container-memory-usage-short-term).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -3544,6 +3647,7 @@ with your code hosts connections or networking issues affecting communication wi
 
 **Possible solutions**
 
+- More help interpreting this metric is available in the [dashboards reference](./dashboards.md#repo-updater-go-goroutines).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -3551,8 +3655,6 @@ with your code hosts connections or networking issues affecting communication wi
   "warning_repo-updater_go_goroutines"
 ]
 ```
-
-> NOTE: More help interpreting this metric is available in the [dashboards reference](./dashboards.md#repo-updater-go-goroutines).
 
 <sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
 
@@ -3568,6 +3670,7 @@ with your code hosts connections or networking issues affecting communication wi
 
 **Possible solutions**
 
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#repo-updater-go-gc-duration-seconds).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -3590,6 +3693,7 @@ with your code hosts connections or networking issues affecting communication wi
 
 **Possible solutions**
 
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#repo-updater-pods-available-percentage).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -3612,6 +3716,7 @@ with your code hosts connections or networking issues affecting communication wi
 
 **Possible solutions**
 
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#searcher-unindexed-search-request-errors).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -3634,6 +3739,7 @@ with your code hosts connections or networking issues affecting communication wi
 
 **Possible solutions**
 
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#searcher-replica-traffic).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -3663,6 +3769,7 @@ with your code hosts connections or networking issues affecting communication wi
 - **Docker Compose:**
 	- Confirm that `docker ps` shows the `frontend-internal` container is healthy.
 	- Check `docker logs searcher` for logs indicating request failures to `frontend` or `frontend-internal`.
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#searcher-frontend-internal-api-error-responses).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -3687,6 +3794,7 @@ with your code hosts connections or networking issues affecting communication wi
 
 - **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `cpus:` of the searcher container in `docker-compose.yml`.
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#searcher-container-cpu-usage).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -3711,6 +3819,7 @@ with your code hosts connections or networking issues affecting communication wi
 
 - **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `memory:` of searcher container in `docker-compose.yml`.
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#searcher-container-memory-usage).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -3735,6 +3844,7 @@ with your code hosts connections or networking issues affecting communication wi
 
 - **Kubernetes:** Consider increasing CPU limits in the `Deployment.yaml` for the searcher service.
 - **Docker Compose:** Consider increasing `cpus:` of the searcher container in `docker-compose.yml`.
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#searcher-provisioning-container-cpu-usage-long-term).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -3759,6 +3869,7 @@ with your code hosts connections or networking issues affecting communication wi
 
 - **Kubernetes:** Consider increasing memory limits in the `Deployment.yaml` for the searcher service.
 - **Docker Compose:** Consider increasing `memory:` of the searcher container in `docker-compose.yml`.
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#searcher-provisioning-container-memory-usage-long-term).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -3783,6 +3894,7 @@ with your code hosts connections or networking issues affecting communication wi
 
 - **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `cpus:` of the searcher container in `docker-compose.yml`.
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#searcher-provisioning-container-cpu-usage-short-term).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -3807,6 +3919,7 @@ with your code hosts connections or networking issues affecting communication wi
 
 - **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `memory:` of searcher container in `docker-compose.yml`.
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#searcher-provisioning-container-memory-usage-short-term).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -3829,6 +3942,7 @@ with your code hosts connections or networking issues affecting communication wi
 
 **Possible solutions**
 
+- More help interpreting this metric is available in the [dashboards reference](./dashboards.md#searcher-go-goroutines).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -3836,8 +3950,6 @@ with your code hosts connections or networking issues affecting communication wi
   "warning_searcher_go_goroutines"
 ]
 ```
-
-> NOTE: More help interpreting this metric is available in the [dashboards reference](./dashboards.md#searcher-go-goroutines).
 
 <sub>*Managed by the [Sourcegraph Search team](https://about.sourcegraph.com/handbook/engineering/search).*</sub>
 
@@ -3853,6 +3965,7 @@ with your code hosts connections or networking issues affecting communication wi
 
 **Possible solutions**
 
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#searcher-go-gc-duration-seconds).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -3875,6 +3988,7 @@ with your code hosts connections or networking issues affecting communication wi
 
 **Possible solutions**
 
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#searcher-pods-available-percentage).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -3897,6 +4011,7 @@ with your code hosts connections or networking issues affecting communication wi
 
 **Possible solutions**
 
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#symbols-store-fetch-failures).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -3905,7 +4020,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
+<sub>*Managed by the [Sourcegraph Code-intel team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
 
 <br />
 
@@ -3919,6 +4034,7 @@ with your code hosts connections or networking issues affecting communication wi
 
 **Possible solutions**
 
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#symbols-current-fetch-queue-size).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -3927,7 +4043,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
+<sub>*Managed by the [Sourcegraph Code-intel team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
 
 <br />
 
@@ -3948,6 +4064,7 @@ with your code hosts connections or networking issues affecting communication wi
 - **Docker Compose:**
 	- Confirm that `docker ps` shows the `frontend-internal` container is healthy.
 	- Check `docker logs symbols` for logs indicating request failures to `frontend` or `frontend-internal`.
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#symbols-frontend-internal-api-error-responses).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -3956,7 +4073,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
+<sub>*Managed by the [Sourcegraph Code-intel team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
 
 <br />
 
@@ -3972,6 +4089,7 @@ with your code hosts connections or networking issues affecting communication wi
 
 - **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `cpus:` of the symbols container in `docker-compose.yml`.
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#symbols-container-cpu-usage).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -3980,7 +4098,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
+<sub>*Managed by the [Sourcegraph Code-intel team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
 
 <br />
 
@@ -3996,6 +4114,7 @@ with your code hosts connections or networking issues affecting communication wi
 
 - **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `memory:` of symbols container in `docker-compose.yml`.
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#symbols-container-memory-usage).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -4004,7 +4123,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
+<sub>*Managed by the [Sourcegraph Code-intel team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
 
 <br />
 
@@ -4020,6 +4139,7 @@ with your code hosts connections or networking issues affecting communication wi
 
 - **Kubernetes:** Consider increasing CPU limits in the `Deployment.yaml` for the symbols service.
 - **Docker Compose:** Consider increasing `cpus:` of the symbols container in `docker-compose.yml`.
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#symbols-provisioning-container-cpu-usage-long-term).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -4028,7 +4148,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
+<sub>*Managed by the [Sourcegraph Code-intel team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
 
 <br />
 
@@ -4044,6 +4164,7 @@ with your code hosts connections or networking issues affecting communication wi
 
 - **Kubernetes:** Consider increasing memory limits in the `Deployment.yaml` for the symbols service.
 - **Docker Compose:** Consider increasing `memory:` of the symbols container in `docker-compose.yml`.
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#symbols-provisioning-container-memory-usage-long-term).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -4052,7 +4173,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
+<sub>*Managed by the [Sourcegraph Code-intel team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
 
 <br />
 
@@ -4068,6 +4189,7 @@ with your code hosts connections or networking issues affecting communication wi
 
 - **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `cpus:` of the symbols container in `docker-compose.yml`.
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#symbols-provisioning-container-cpu-usage-short-term).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -4076,7 +4198,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
+<sub>*Managed by the [Sourcegraph Code-intel team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
 
 <br />
 
@@ -4092,6 +4214,7 @@ with your code hosts connections or networking issues affecting communication wi
 
 - **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `memory:` of symbols container in `docker-compose.yml`.
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#symbols-provisioning-container-memory-usage-short-term).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -4100,7 +4223,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
+<sub>*Managed by the [Sourcegraph Code-intel team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
 
 <br />
 
@@ -4114,6 +4237,7 @@ with your code hosts connections or networking issues affecting communication wi
 
 **Possible solutions**
 
+- More help interpreting this metric is available in the [dashboards reference](./dashboards.md#symbols-go-goroutines).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -4122,9 +4246,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-> NOTE: More help interpreting this metric is available in the [dashboards reference](./dashboards.md#symbols-go-goroutines).
-
-<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
+<sub>*Managed by the [Sourcegraph Code-intel team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
 
 <br />
 
@@ -4138,6 +4260,7 @@ with your code hosts connections or networking issues affecting communication wi
 
 **Possible solutions**
 
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#symbols-go-gc-duration-seconds).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -4146,7 +4269,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
+<sub>*Managed by the [Sourcegraph Code-intel team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
 
 <br />
 
@@ -4160,6 +4283,7 @@ with your code hosts connections or networking issues affecting communication wi
 
 **Possible solutions**
 
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#symbols-pods-available-percentage).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -4168,7 +4292,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
+<sub>*Managed by the [Sourcegraph Code-intel team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
 
 <br />
 
@@ -4184,6 +4308,7 @@ with your code hosts connections or networking issues affecting communication wi
 
 - **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `cpus:` of the syntect-server container in `docker-compose.yml`.
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#syntect-server-container-cpu-usage).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -4208,6 +4333,7 @@ with your code hosts connections or networking issues affecting communication wi
 
 - **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `memory:` of syntect-server container in `docker-compose.yml`.
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#syntect-server-container-memory-usage).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -4232,6 +4358,7 @@ with your code hosts connections or networking issues affecting communication wi
 
 - **Kubernetes:** Consider increasing CPU limits in the `Deployment.yaml` for the syntect-server service.
 - **Docker Compose:** Consider increasing `cpus:` of the syntect-server container in `docker-compose.yml`.
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#syntect-server-provisioning-container-cpu-usage-long-term).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -4256,6 +4383,7 @@ with your code hosts connections or networking issues affecting communication wi
 
 - **Kubernetes:** Consider increasing memory limits in the `Deployment.yaml` for the syntect-server service.
 - **Docker Compose:** Consider increasing `memory:` of the syntect-server container in `docker-compose.yml`.
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#syntect-server-provisioning-container-memory-usage-long-term).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -4280,6 +4408,7 @@ with your code hosts connections or networking issues affecting communication wi
 
 - **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `cpus:` of the syntect-server container in `docker-compose.yml`.
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#syntect-server-provisioning-container-cpu-usage-short-term).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -4304,6 +4433,7 @@ with your code hosts connections or networking issues affecting communication wi
 
 - **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `memory:` of syntect-server container in `docker-compose.yml`.
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#syntect-server-provisioning-container-memory-usage-short-term).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -4326,6 +4456,7 @@ with your code hosts connections or networking issues affecting communication wi
 
 **Possible solutions**
 
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#syntect-server-pods-available-percentage).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -4349,6 +4480,7 @@ with your code hosts connections or networking issues affecting communication wi
 
 **Possible solutions**
 
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#zoekt-indexserver-average-resolve-revision-duration).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -4374,6 +4506,7 @@ with your code hosts connections or networking issues affecting communication wi
 
 - **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `cpus:` of the zoekt-indexserver container in `docker-compose.yml`.
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#zoekt-indexserver-container-cpu-usage).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -4398,6 +4531,7 @@ with your code hosts connections or networking issues affecting communication wi
 
 - **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `memory:` of zoekt-indexserver container in `docker-compose.yml`.
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#zoekt-indexserver-container-memory-usage).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -4422,6 +4556,7 @@ with your code hosts connections or networking issues affecting communication wi
 
 - **Kubernetes:** Consider increasing CPU limits in the `Deployment.yaml` for the zoekt-indexserver service.
 - **Docker Compose:** Consider increasing `cpus:` of the zoekt-indexserver container in `docker-compose.yml`.
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#zoekt-indexserver-provisioning-container-cpu-usage-long-term).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -4446,6 +4581,7 @@ with your code hosts connections or networking issues affecting communication wi
 
 - **Kubernetes:** Consider increasing memory limits in the `Deployment.yaml` for the zoekt-indexserver service.
 - **Docker Compose:** Consider increasing `memory:` of the zoekt-indexserver container in `docker-compose.yml`.
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#zoekt-indexserver-provisioning-container-memory-usage-long-term).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -4470,6 +4606,7 @@ with your code hosts connections or networking issues affecting communication wi
 
 - **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `cpus:` of the zoekt-indexserver container in `docker-compose.yml`.
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#zoekt-indexserver-provisioning-container-cpu-usage-short-term).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -4494,6 +4631,7 @@ with your code hosts connections or networking issues affecting communication wi
 
 - **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `memory:` of zoekt-indexserver container in `docker-compose.yml`.
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#zoekt-indexserver-provisioning-container-memory-usage-short-term).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -4516,6 +4654,7 @@ with your code hosts connections or networking issues affecting communication wi
 
 **Possible solutions**
 
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#zoekt-indexserver-pods-available-percentage).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -4538,6 +4677,7 @@ with your code hosts connections or networking issues affecting communication wi
 
 **Possible solutions**
 
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#zoekt-webserver-indexed-search-request-errors).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -4562,6 +4702,7 @@ with your code hosts connections or networking issues affecting communication wi
 
 - **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `cpus:` of the zoekt-webserver container in `docker-compose.yml`.
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#zoekt-webserver-container-cpu-usage).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -4586,6 +4727,7 @@ with your code hosts connections or networking issues affecting communication wi
 
 - **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `memory:` of zoekt-webserver container in `docker-compose.yml`.
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#zoekt-webserver-container-memory-usage).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -4610,6 +4752,7 @@ with your code hosts connections or networking issues affecting communication wi
 
 - **Kubernetes:** Consider increasing CPU limits in the `Deployment.yaml` for the zoekt-webserver service.
 - **Docker Compose:** Consider increasing `cpus:` of the zoekt-webserver container in `docker-compose.yml`.
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#zoekt-webserver-provisioning-container-cpu-usage-long-term).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -4634,6 +4777,7 @@ with your code hosts connections or networking issues affecting communication wi
 
 - **Kubernetes:** Consider increasing memory limits in the `Deployment.yaml` for the zoekt-webserver service.
 - **Docker Compose:** Consider increasing `memory:` of the zoekt-webserver container in `docker-compose.yml`.
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#zoekt-webserver-provisioning-container-memory-usage-long-term).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -4658,6 +4802,7 @@ with your code hosts connections or networking issues affecting communication wi
 
 - **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `cpus:` of the zoekt-webserver container in `docker-compose.yml`.
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#zoekt-webserver-provisioning-container-cpu-usage-short-term).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -4682,6 +4827,7 @@ with your code hosts connections or networking issues affecting communication wi
 
 - **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `memory:` of zoekt-webserver container in `docker-compose.yml`.
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#zoekt-webserver-provisioning-container-memory-usage-short-term).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -4707,6 +4853,7 @@ with your code hosts connections or networking issues affecting communication wi
 - Check the Container monitoring (not available on server) panels and try increasing resources for Prometheus if necessary.
 - If the rule group taking a long time to evaluate belongs to `/sg_prometheus_addons`, try reducing the complexity of any custom Prometheus rules provided.
 - If the rule group taking a long time to evaluate belongs to `/sg_config_prometheus`, please [open an issue](https://github.com/sourcegraph/sourcegraph/issues/new?assignees=&labels=&template=bug_report.md&title=).
+- More help interpreting this metric is available in the [dashboards reference](./dashboards.md#prometheus-prometheus-rule-eval-duration).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -4714,8 +4861,6 @@ with your code hosts connections or networking issues affecting communication wi
   "warning_prometheus_prometheus_rule_eval_duration"
 ]
 ```
-
-> NOTE: More help interpreting this metric is available in the [dashboards reference](./dashboards.md#prometheus-prometheus-rule-eval-duration).
 
 <sub>*Managed by the [Sourcegraph Distribution team](https://about.sourcegraph.com/handbook/engineering/distribution).*</sub>
 
@@ -4734,6 +4879,7 @@ with your code hosts connections or networking issues affecting communication wi
 - Check Prometheus logs for messages related to rule group evaluation (generally with log field `component="rule manager"`).
 - If the rule group failing to evaluate belongs to `/sg_prometheus_addons`, ensure any custom Prometheus configuration provided is valid.
 - If the rule group taking a long time to evaluate belongs to `/sg_config_prometheus`, please [open an issue](https://github.com/sourcegraph/sourcegraph/issues/new?assignees=&labels=&template=bug_report.md&title=).
+- More help interpreting this metric is available in the [dashboards reference](./dashboards.md#prometheus-prometheus-rule-eval-failures).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -4741,8 +4887,6 @@ with your code hosts connections or networking issues affecting communication wi
   "warning_prometheus_prometheus_rule_eval_failures"
 ]
 ```
-
-> NOTE: More help interpreting this metric is available in the [dashboards reference](./dashboards.md#prometheus-prometheus-rule-eval-failures).
 
 <sub>*Managed by the [Sourcegraph Distribution team](https://about.sourcegraph.com/handbook/engineering/distribution).*</sub>
 
@@ -4761,6 +4905,7 @@ with your code hosts connections or networking issues affecting communication wi
 - Check the Container monitoring (not available on server) panels and try increasing resources for Prometheus if necessary.
 - Ensure that your [`observability.alerts` configuration](https://docs.sourcegraph.com/admin/observability/alerting#setting-up-alerting) (in site configuration) is valid.
 - Check if the relevant alert integration service is experiencing downtime or issues.
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#prometheus-alertmanager-notification-latency).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -4785,6 +4930,7 @@ with your code hosts connections or networking issues affecting communication wi
 
 - Ensure that your [`observability.alerts` configuration](https://docs.sourcegraph.com/admin/observability/alerting#setting-up-alerting) (in site configuration) is valid.
 - Check if the relevant alert integration service is experiencing downtime or issues.
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#prometheus-alertmanager-notification-failures).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -4809,6 +4955,7 @@ with your code hosts connections or networking issues affecting communication wi
 
 - Check Prometheus logs for messages related to configuration loading.
 - Ensure any [custom configuration you have provided Prometheus](https://docs.sourcegraph.com/admin/observability/metrics#prometheus-configuration) is valid.
+- More help interpreting this metric is available in the [dashboards reference](./dashboards.md#prometheus-prometheus-config-status).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -4816,8 +4963,6 @@ with your code hosts connections or networking issues affecting communication wi
   "warning_prometheus_prometheus_config_status"
 ]
 ```
-
-> NOTE: More help interpreting this metric is available in the [dashboards reference](./dashboards.md#prometheus-prometheus-config-status).
 
 <sub>*Managed by the [Sourcegraph Distribution team](https://about.sourcegraph.com/handbook/engineering/distribution).*</sub>
 
@@ -4834,6 +4979,7 @@ with your code hosts connections or networking issues affecting communication wi
 **Possible solutions**
 
 - Ensure that your [`observability.alerts` configuration](https://docs.sourcegraph.com/admin/observability/alerting#setting-up-alerting) (in site configuration) is valid.
+- More help interpreting this metric is available in the [dashboards reference](./dashboards.md#prometheus-alertmanager-config-status).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -4841,8 +4987,6 @@ with your code hosts connections or networking issues affecting communication wi
   "warning_prometheus_alertmanager_config_status"
 ]
 ```
-
-> NOTE: More help interpreting this metric is available in the [dashboards reference](./dashboards.md#prometheus-alertmanager-config-status).
 
 <sub>*Managed by the [Sourcegraph Distribution team](https://about.sourcegraph.com/handbook/engineering/distribution).*</sub>
 
@@ -4859,6 +5003,7 @@ with your code hosts connections or networking issues affecting communication wi
 **Possible solutions**
 
 - Check Prometheus logs for messages related to the failing operation.
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#prometheus-prometheus-tsdb-op-failure).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -4882,6 +5027,7 @@ with your code hosts connections or networking issues affecting communication wi
 **Possible solutions**
 
 - Check Prometheus logs for messages related to target scrape failures.
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#prometheus-prometheus-target-sample-exceeded).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -4905,6 +5051,7 @@ with your code hosts connections or networking issues affecting communication wi
 **Possible solutions**
 
 - Check Prometheus logs for messages related to target scrape failures.
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#prometheus-prometheus-target-sample-duplicate).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -4929,6 +5076,7 @@ with your code hosts connections or networking issues affecting communication wi
 
 - **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `cpus:` of the prometheus container in `docker-compose.yml`.
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#prometheus-container-cpu-usage).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -4953,6 +5101,7 @@ with your code hosts connections or networking issues affecting communication wi
 
 - **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `memory:` of prometheus container in `docker-compose.yml`.
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#prometheus-container-memory-usage).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -4977,6 +5126,7 @@ with your code hosts connections or networking issues affecting communication wi
 
 - **Kubernetes:** Consider increasing CPU limits in the `Deployment.yaml` for the prometheus service.
 - **Docker Compose:** Consider increasing `cpus:` of the prometheus container in `docker-compose.yml`.
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#prometheus-provisioning-container-cpu-usage-long-term).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -5001,6 +5151,7 @@ with your code hosts connections or networking issues affecting communication wi
 
 - **Kubernetes:** Consider increasing memory limits in the `Deployment.yaml` for the prometheus service.
 - **Docker Compose:** Consider increasing `memory:` of the prometheus container in `docker-compose.yml`.
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#prometheus-provisioning-container-memory-usage-long-term).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -5025,6 +5176,7 @@ with your code hosts connections or networking issues affecting communication wi
 
 - **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `cpus:` of the prometheus container in `docker-compose.yml`.
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#prometheus-provisioning-container-cpu-usage-short-term).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -5049,6 +5201,7 @@ with your code hosts connections or networking issues affecting communication wi
 
 - **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `memory:` of prometheus container in `docker-compose.yml`.
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#prometheus-provisioning-container-memory-usage-short-term).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -5071,6 +5224,7 @@ with your code hosts connections or networking issues affecting communication wi
 
 **Possible solutions**
 
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#prometheus-pods-available-percentage).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -5095,6 +5249,7 @@ with your code hosts connections or networking issues affecting communication wi
 
 - **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `cpus:` of the (executor|sourcegraph-code-intel-indexers|executor-batches) container in `docker-compose.yml`.
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#executor-container-cpu-usage).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -5103,7 +5258,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
+<sub>*Managed by the [Sourcegraph Code-intel team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
 
 <br />
 
@@ -5119,6 +5274,7 @@ with your code hosts connections or networking issues affecting communication wi
 
 - **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `memory:` of (executor|sourcegraph-code-intel-indexers|executor-batches) container in `docker-compose.yml`.
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#executor-container-memory-usage).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -5127,7 +5283,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
+<sub>*Managed by the [Sourcegraph Code-intel team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
 
 <br />
 
@@ -5143,6 +5299,7 @@ with your code hosts connections or networking issues affecting communication wi
 
 - **Kubernetes:** Consider increasing CPU limits in the `Deployment.yaml` for the (executor|sourcegraph-code-intel-indexers|executor-batches) service.
 - **Docker Compose:** Consider increasing `cpus:` of the (executor|sourcegraph-code-intel-indexers|executor-batches) container in `docker-compose.yml`.
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#executor-provisioning-container-cpu-usage-long-term).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -5151,7 +5308,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
+<sub>*Managed by the [Sourcegraph Code-intel team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
 
 <br />
 
@@ -5167,6 +5324,7 @@ with your code hosts connections or networking issues affecting communication wi
 
 - **Kubernetes:** Consider increasing memory limits in the `Deployment.yaml` for the (executor|sourcegraph-code-intel-indexers|executor-batches) service.
 - **Docker Compose:** Consider increasing `memory:` of the (executor|sourcegraph-code-intel-indexers|executor-batches) container in `docker-compose.yml`.
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#executor-provisioning-container-memory-usage-long-term).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -5175,7 +5333,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
+<sub>*Managed by the [Sourcegraph Code-intel team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
 
 <br />
 
@@ -5191,6 +5349,7 @@ with your code hosts connections or networking issues affecting communication wi
 
 - **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `cpus:` of the (executor|sourcegraph-code-intel-indexers|executor-batches) container in `docker-compose.yml`.
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#executor-provisioning-container-cpu-usage-short-term).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -5199,7 +5358,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
+<sub>*Managed by the [Sourcegraph Code-intel team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
 
 <br />
 
@@ -5215,6 +5374,7 @@ with your code hosts connections or networking issues affecting communication wi
 
 - **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
 - **Docker Compose:** Consider increasing `memory:` of (executor|sourcegraph-code-intel-indexers|executor-batches) container in `docker-compose.yml`.
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#executor-provisioning-container-memory-usage-short-term).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -5223,7 +5383,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
+<sub>*Managed by the [Sourcegraph Code-intel team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
 
 <br />
 
@@ -5237,6 +5397,7 @@ with your code hosts connections or networking issues affecting communication wi
 
 **Possible solutions**
 
+- More help interpreting this metric is available in the [dashboards reference](./dashboards.md#executor-go-goroutines).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -5245,9 +5406,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-> NOTE: More help interpreting this metric is available in the [dashboards reference](./dashboards.md#executor-go-goroutines).
-
-<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
+<sub>*Managed by the [Sourcegraph Code-intel team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
 
 <br />
 
@@ -5261,6 +5420,7 @@ with your code hosts connections or networking issues affecting communication wi
 
 **Possible solutions**
 
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#executor-go-gc-duration-seconds).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -5269,7 +5429,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
+<sub>*Managed by the [Sourcegraph Code-intel team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
 
 <br />
 
@@ -5283,6 +5443,7 @@ with your code hosts connections or networking issues affecting communication wi
 
 **Possible solutions**
 
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#executor-pods-available-percentage).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -5291,7 +5452,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
+<sub>*Managed by the [Sourcegraph Code-intel team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
 
 <br />
 

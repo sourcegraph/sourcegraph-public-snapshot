@@ -99,8 +99,8 @@ func (s *IndexEnqueuer) QueueIndexes(ctx context.Context, repositoryID int, rev,
 	return s.queueIndexForRepositoryAndCommit(ctx, repositoryID, commit, configuration, force, traceLog)
 }
 
-// QueueIndexesForPackage enqueues index jobs for a dependency of a recently-processed precise code intelligence
-// index. Currently we only support recognition of "gomod" import monikers.
+// QueueIndexesForPackage enqueues index jobs for a dependency of a recently-processed precise code
+// intelligence index.
 func (s *IndexEnqueuer) QueueIndexesForPackage(ctx context.Context, pkg precise.Package) (err error) {
 	ctx, traceLog, endObservation := s.operations.QueueIndexForPackage.WithAndLogger(ctx, &err, observation.Args{
 		LogFields: []log.Field{
@@ -111,7 +111,7 @@ func (s *IndexEnqueuer) QueueIndexesForPackage(ctx context.Context, pkg precise.
 	})
 	defer endObservation(1, observation.Args{})
 
-	repoName, revision, ok := InferGoRepositoryAndRevision(pkg)
+	repoName, revision, ok := InferRepositoryAndRevision(pkg)
 	if !ok {
 		return nil
 	}

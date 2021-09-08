@@ -242,6 +242,10 @@ type CreateBatchSpecExecutionArgs struct {
 	Namespace *graphql.ID
 }
 
+type CancelBatchSpecExecutionArgs struct {
+	BatchSpecExecution graphql.ID
+}
+
 type CloseChangesetsArgs struct {
 	BulkOperationBaseArgs
 }
@@ -249,6 +253,12 @@ type CloseChangesetsArgs struct {
 type PublishChangesetsArgs struct {
 	BulkOperationBaseArgs
 	Draft bool
+}
+
+type ResolveWorkspacesForBatchSpecArgs struct {
+	BatchSpec        string
+	AllowIgnored     bool
+	AllowUnsupported bool
 }
 
 type BatchChangesResolver interface {
@@ -282,6 +292,7 @@ type BatchChangesResolver interface {
 	ReenqueueChangesets(ctx context.Context, args *ReenqueueChangesetsArgs) (BulkOperationResolver, error)
 	MergeChangesets(ctx context.Context, args *MergeChangesetsArgs) (BulkOperationResolver, error)
 	CreateBatchSpecExecution(ctx context.Context, args *CreateBatchSpecExecutionArgs) (BatchSpecExecutionResolver, error)
+	CancelBatchSpecExecution(ctx context.Context, args *CancelBatchSpecExecutionArgs) (BatchSpecExecutionResolver, error)
 	CloseChangesets(ctx context.Context, args *CloseChangesetsArgs) (BulkOperationResolver, error)
 	PublishChangesets(ctx context.Context, args *PublishChangesetsArgs) (BulkOperationResolver, error)
 
@@ -294,6 +305,7 @@ type BatchChangesResolver interface {
 	// New:
 	BatchChange(ctx context.Context, args *BatchChangeArgs) (BatchChangeResolver, error)
 	BatchChanges(cx context.Context, args *ListBatchChangesArgs) (BatchChangesConnectionResolver, error)
+	ResolveWorkspacesForBatchSpec(ctx context.Context, args *ResolveWorkspacesForBatchSpecArgs) (BatchSpecWorkspacesResolver, error)
 
 	BatchChangesCodeHosts(ctx context.Context, args *ListBatchChangesCodeHostsArgs) (BatchChangesCodeHostConnectionResolver, error)
 	RepoChangesetsStats(ctx context.Context, repo *graphql.ID) (RepoChangesetsStatsResolver, error)
@@ -749,4 +761,27 @@ type BatchSpecExecutionStepsResolver interface {
 	Setup() []ExecutionLogEntryResolver
 	SrcPreview() ExecutionLogEntryResolver
 	Teardown() []ExecutionLogEntryResolver
+}
+
+type BatchSpecWorkspacesResolver interface {
+	RawSpec() string
+	AllowIgnored() bool
+	AllowUnsupported() bool
+	Workspaces() []BatchSpecWorkspaceResolver
+	Unsupported() []*RepositoryResolver
+	Ignored() []*RepositoryResolver
+}
+
+type BatchSpecWorkspaceResolver interface {
+	Repository(ctx context.Context) (*RepositoryResolver, error)
+	Branch(ctx context.Context) (*GitRefResolver, error)
+	Path() string
+	OnlyFetchWorkspace() bool
+	Steps() []BatchSpecWorkspaceStepResolver
+	SearchResultPaths() []string
+}
+
+type BatchSpecWorkspaceStepResolver interface {
+	Command() string
+	Container() string
 }

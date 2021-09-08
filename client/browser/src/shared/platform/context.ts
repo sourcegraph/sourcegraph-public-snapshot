@@ -13,7 +13,7 @@ import { toPrettyBlobURL } from '@sourcegraph/shared/src/util/url'
 
 import { ExtensionStorageSubject } from '../../browser-extension/web-extension-api/ExtensionStorageSubject'
 import { background } from '../../browser-extension/web-extension-api/runtime'
-import { requestGraphQlHelper } from '../backend/requestGraphQl'
+import { requestGraphQlHelper, getBrowserGraphQLClient } from '../backend/requestGraphQl'
 import { CodeHost } from '../code-hosts/shared/codeHost'
 import { isInPage } from '../context'
 import { observeSourcegraphURL } from '../util/context'
@@ -130,6 +130,7 @@ export function createPlatformContext(
             await context.refreshSettings()
         },
         requestGraphQL,
+        getGraphQLClient: getBrowserGraphQLClient,
         forceUpdateTooltip: () => {
             // TODO(sqs): implement tooltips on the browser extension
         },

@@ -6,6 +6,7 @@ import (
 	"strings"
 	"time"
 
+	zoektquery "github.com/google/zoekt/query"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/endpoint"
 	"github.com/sourcegraph/sourcegraph/internal/search/backend"
@@ -109,16 +110,16 @@ const (
 	// optimised code path.
 	SearcherOnly
 
-	// Disables content and file path search. Used:
+	// SkipUnindexed disables content, path, and symbol search. Used:
 	// (1) in conjunction with ZoektGlobalSearch on Sourcegraph.com.
-	// (2) when a query does not specify any patterns for a content or file path search.
-	SkipContentAndPathSearch
+	// (2) when a query does not specify any patterns, include patterns, or exclude pattern.
+	SkipUnindexed
 )
 
 var globalSearchModeStrings = map[GlobalSearchMode]string{
-	ZoektGlobalSearch:        "ZoektGlobalSearch",
-	SearcherOnly:             "SearcherOnly",
-	SkipContentAndPathSearch: "SkipContentAndPathSearch",
+	ZoektGlobalSearch: "ZoektGlobalSearch",
+	SearcherOnly:      "SearcherOnly",
+	SkipUnindexed:     "SkipUnindexed",
 }
 
 func (m GlobalSearchMode) String() string {
@@ -126,6 +127,40 @@ func (m GlobalSearchMode) String() string {
 		return s
 	}
 	return "None"
+}
+
+type IndexedRequestType string
+
+const (
+	TextRequest   IndexedRequestType = "text"
+	SymbolRequest IndexedRequestType = "symbol"
+)
+
+// ZoektParameters contains all the inputs to run a Zoekt indexed search.
+type ZoektParameters struct {
+	Query          zoektquery.Q
+	Typ            IndexedRequestType
+	FileMatchLimit int32
+	Select         filter.SelectPath
+
+	Zoekt *backend.Zoekt
+}
+
+// SearcherParameters the inputs for a search fulfilled by the Searcher service
+// (cmd/searcher). Searcher fulfills (1) unindexed literal and regexp searches
+// and (2) structural search requests.
+type SearcherParameters struct {
+	SearcherURLs *endpoint.Map
+	PatternInfo  *TextPatternInfo
+
+	// UseFullDeadline indicates that the search should try do as much work as
+	// it can within context.Deadline. If false the search should try and be
+	// as fast as possible, even if a "slow" deadline is set.
+	//
+	// For example searcher will wait to full its archive cache for a
+	// repository if this field is true. Another example is we set this field
+	// to true if the user requests a specific timeout or maximum result size.
+	UseFullDeadline bool
 }
 
 // TextParameters are the parameters passed to a search backend. It contains the Pattern
@@ -265,8 +300,7 @@ type RepoOptions struct {
 	NoArchived         bool
 	OnlyArchived       bool
 	CommitAfter        string
-	OnlyPrivate        bool
-	OnlyPublic         bool
+	Visibility         query.RepoVisibility
 	Ranked             bool // Return results ordered by rank
 	Limit              int
 	CacheLookup        bool
@@ -310,11 +344,8 @@ func (op *RepoOptions) String() string {
 	if op.OnlyArchived {
 		b.WriteString(" OnlyArchived")
 	}
-	if op.OnlyPrivate {
-		b.WriteString(" OnlyPrivate")
-	}
-	if op.OnlyPublic {
-		b.WriteString(" OnlyPublic")
+	if op.Visibility != query.Any {
+		b.WriteString(" Visibility" + string(op.Visibility))
 	}
 
 	return b.String()

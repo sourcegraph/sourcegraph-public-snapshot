@@ -11,7 +11,6 @@ import (
 	"os"
 	"sort"
 	"strconv"
-	"strings"
 	"testing"
 	"time"
 
@@ -20,6 +19,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/searcher/protocol"
 	"github.com/sourcegraph/sourcegraph/cmd/searcher/search"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/search/searcher"
 	"github.com/sourcegraph/sourcegraph/internal/store"
 	"github.com/sourcegraph/sourcegraph/internal/testutil"
 )
@@ -395,9 +395,6 @@ func TestSearch_badrequest(t *testing.T) {
 		if err == nil {
 			t.Fatalf("%v expected to fail", p)
 		}
-		if !strings.HasPrefix(err.Error(), "non-200 response: code=400 ") {
-			t.Fatalf("%v expected to have HTTP 400 response. Got %s", p, err)
-		}
 	}
 }
 
@@ -411,20 +408,39 @@ func doSearch(u string, p *protocol.Request) ([]protocol.FileMatch, error) {
 		return nil, err
 	}
 
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return nil, err
-	}
 	if resp.StatusCode != 200 {
+		body, err := io.ReadAll(resp.Body)
+		if err != nil {
+			return nil, err
+		}
 		return nil, errors.Errorf("non-200 response: code=%d body=%s", resp.StatusCode, string(body))
 	}
 
-	var r protocol.Response
-	err = json.Unmarshal(body, &r)
-	if err != nil {
+	var ed searcher.EventDone
+	var matches []protocol.FileMatch
+	dec := searcher.StreamDecoder{
+		OnMatches: func(newMatches []*protocol.FileMatch) {
+			for _, match := range newMatches {
+				matches = append(matches, *match)
+			}
+		},
+		OnDone: func(e searcher.EventDone) {
+			ed = e
+		},
+		OnUnknown: func(event []byte, _ []byte) {
+			panic("unknown event")
+		},
+	}
+	if err := dec.ReadAll(resp.Body); err != nil {
 		return nil, err
 	}
-	return r.Matches, err
+	if ed.Error != "" {
+		return nil, errors.New(ed.Error)
+	}
+	if ed.DeadlineHit {
+		err = context.DeadlineExceeded
+	}
+	return matches, err
 }
 
 func newStore(files map[string]string) (*store.Store, func(), error) {

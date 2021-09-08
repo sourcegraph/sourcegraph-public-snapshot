@@ -1,10 +1,8 @@
-import classNames from 'classnames'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import CheckCircleIcon from 'mdi-react/CheckCircleIcon'
 import React, { useState, useCallback } from 'react'
 
 import { ErrorLike } from '@sourcegraph/shared/src/util/errors'
-import { useRedesignToggle } from '@sourcegraph/shared/src/util/useRedesignToggle'
 
 import { CircleDashedIcon } from '../../../components/CircleDashedIcon'
 import { LoaderButton } from '../../../components/LoaderButton'
@@ -37,7 +35,6 @@ export const CodeHostItem: React.FunctionComponent<CodeHostItemProps> = ({
     onDidRemove,
     onDidError,
 }) => {
-    const [isRedesignEnabled] = useRedesignToggle()
     const [isRemoveConnectionModalOpen, setIsRemoveConnectionModalOpen] = useState(false)
     const toggleRemoveConnectionModal = useCallback(
         () => setIsRemoveConnectionModalOpen(!isRemoveConnectionModalOpen),
@@ -55,7 +52,7 @@ export const CodeHostItem: React.FunctionComponent<CodeHostItemProps> = ({
     }, [kind, navigateToAuthProvider])
 
     return (
-        <div className={classNames('d-flex align-items-start', !isRedesignEnabled && 'p-2')}>
+        <div className="d-flex align-items-start">
             {service && isRemoveConnectionModalOpen && (
                 <RemoveCodeHostConnectionModal
                     id={service.id}
@@ -97,26 +94,14 @@ export const CodeHostItem: React.FunctionComponent<CodeHostItemProps> = ({
                     oauthInFlight ? (
                         <LoaderButton
                             type="button"
-                            className={classNames(
-                                'btn',
-                                !isRedesignEnabled && 'btn-primary',
-                                isRedesignEnabled && 'btn-success'
-                            )}
+                            className="btn btn-success"
                             loading={true}
                             disabled={true}
                             label="Connecting..."
                             alwaysShowLabel={true}
                         />
                     ) : (
-                        <button
-                            type="button"
-                            className={classNames(
-                                'btn',
-                                !isRedesignEnabled && 'btn-primary',
-                                isRedesignEnabled && 'btn-success'
-                            )}
-                            onClick={toAuthProvider}
-                        >
+                        <button type="button" className="btn btn-success" onClick={toAuthProvider}>
                             Connect
                         </button>
                     )

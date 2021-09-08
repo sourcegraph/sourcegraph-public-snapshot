@@ -113,6 +113,24 @@ export const enterpriseSiteAdminAreaRoutes: readonly SiteAdminAreaRoute[] = [
         condition: () => Boolean(window.context?.codeIntelAutoIndexingEnabled),
     },
 
+    // Code intelligence configuration
+    {
+        path: '/code-intelligence/configuration',
+        render: lazyComponent(
+            () => import('../codeintel/configuration/CodeIntelConfigurationPage'),
+            'CodeIntelConfigurationPage'
+        ),
+        exact: true,
+    },
+    {
+        path: '/code-intelligence/configuration/:id',
+        render: lazyComponent(
+            () => import('../codeintel/configuration/CodeIntelConfigurationPolicyPage'),
+            'CodeIntelConfigurationPolicyPage'
+        ),
+        exact: true,
+    },
+
     // Legacy routes
     {
         path: '/lsif-uploads/:id',

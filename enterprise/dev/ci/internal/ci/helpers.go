@@ -43,6 +43,7 @@ type Config struct {
 	isQuick               bool
 	isMainDryRun          bool
 	isBackendDryRun       bool
+	isCodeFreeze          bool
 
 	// profilingEnabled, if true, tells buildkite to print timing and resource utilization information
 	// for each command
@@ -120,6 +121,7 @@ func ComputeConfig() Config {
 		isBackendDryRun:       isBackendDryRun,
 		profilingEnabled:      profilingEnabled,
 		isBextNightly:         os.Getenv("BEXT_NIGHTLY") == "true",
+		isCodeFreeze:          branch == "release/2021-08-19",
 	}
 }
 
@@ -167,7 +169,8 @@ func (c Config) isPR() bool {
 		c.branch != "master" &&
 		!c.isMainBranch() &&
 		!c.isMainDryRun &&
-		!c.patch
+		!c.patch &&
+		!c.isCodeFreeze
 }
 
 func (c Config) isDocsOnly() bool {
@@ -199,7 +202,7 @@ func (c Config) isGoOnly() bool {
 }
 
 func (c Config) shouldRunE2EandQA() bool {
-	return c.releaseBranch || c.taggedRelease || c.isBextReleaseBranch || c.patch || c.isMainBranch() || c.isMainDryRun
+	return c.releaseBranch || c.taggedRelease || c.isBextReleaseBranch || c.patch || c.isMainBranch() || c.isMainDryRun || c.isCodeFreeze
 }
 
 // candidateImageTag provides the tag for a candidate image built for this Buildkite run.

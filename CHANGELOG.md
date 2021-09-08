@@ -15,16 +15,52 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Added
 
+### Changed
+
+- `allowGroupsPermissionsSync` in the GitHub authorization provider is now required to enable the experimental GitHub teams and organization permissions caching. [#24561](https://github.com/sourcegraph/sourcegraph/pull/24561)
+- GitHub external code hosts now validate if a corresponding authorization provider is set, and emits a warning if not. [#24526](https://github.com/sourcegraph/sourcegraph/pull/24526)
+- Sourcegraph is now built with Go 1.17. [#24566](https://github.com/sourcegraph/sourcegraph/pull/24566)
+
+### Fixed
+
+- Code Insights the dashboard page no longer triggers insights re-fetching when insight adding/removing actions happen. [#24375](https://github.com/sourcegraph/sourcegraph/pull/24375)
+- Fixed an issue where particular values for subfields in search query predicates triggers a nil dereference. [#24472](https://github.com/sourcegraph/sourcegraph/pull/24472)
+
+### Removed
+
+- The "no results found in timeout" search alert is not shown if we indicate timeouts in the progress notifications. This alert caused confusion since it was large, would show even if results where returned and duplicated information from the "some results excluded" drop down. [#24376](https://github.com/sourcegraph/sourcegraph/issues/24376)
+
+## 3.31.1
+
+### Added
+
+- The required authentication scopes required to enable caching behaviour for GitHub repository permissions can now be requested via `allowGroupsPermissionsSync` in GitHub `auth.providers`. [#24328](https://github.com/sourcegraph/sourcegraph/pull/24328)
+
+### Changed
+
+- Caching behaviour for GitHub repository permissions enabled via the `authorization.groupsCacheTTL` field in the code host config can now leverage additional caching of team and organization permissions for repository permissions syncing (on top of the caching for user permissions syncing introduced in 3.31). [#24328](https://github.com/sourcegraph/sourcegraph/pull/24328)
+
+### Fixed
+
+- Fixed a panic in the worker service preventing code insights from populating with data. [#24475](https://github.com/sourcegraph/sourcegraph/pull/24475)
+
+## 3.31.0
+
+### Added
+
 - Backend Code Insights GraphQL queries now support arguments `includeRepoRegex` and `excludeRepoRegex` to filter on repository names. [#23256](https://github.com/sourcegraph/sourcegraph/pull/23256)
 - Code Insights background queries now process in a priority order backwards through time. This will allow insights to populate concurrently. [#23101](https://github.com/sourcegraph/sourcegraph/pull/23101)
 - Operator documentation has been added to the Search Reference sidebar section. [#23116](https://github.com/sourcegraph/sourcegraph/pull/23116)
-- Syntax highlighting support for the [Cue](https://cuelang.org) language.
 - Reintroduced a revised version of the Search Types sidebar section. [#23170](https://github.com/sourcegraph/sourcegraph/pull/23170)
-- Add a new environment variable `SRC_HTTP_CLI_EXTERNAL_TIMEOUT` to control the timeout for all external HTTP requests. [#23620](https://github.com/sourcegraph/sourcegraph/pull/23620)
 - Improved usability where filters followed by a space in the search query will warn users that the filter value is empty. [#23646](https://github.com/sourcegraph/sourcegraph/pull/23646)
 - Perforce: [`git p4`'s `--use-client-spec` option](https://git-scm.com/docs/git-p4#Documentation/git-p4.txt---use-client-spec) can now be enabled by configuring the `p4.client` field. [#23833](https://github.com/sourcegraph/sourcegraph/pull/23833), [#23845](https://github.com/sourcegraph/sourcegraph/pull/23845)
 - Code Insights will do a one-time reset of ephemeral insights specific database tables to clean up stale and invalid data. Insight data will regenerate automatically. [23791](https://github.com/sourcegraph/sourcegraph/pull/23791)
 - Perforce: added basic support for Perforce permission table path wildcards. [#23755](https://github.com/sourcegraph/sourcegraph/pull/23755)
+- Added autocompletion and search filtering of branch/tag/commit revisions to the repository compare page. [#23977](https://github.com/sourcegraph/sourcegraph/pull/23977)
+- Batch Changes changesets can now be [set to published when previewing new or updated batch changes](https://docs.sourcegraph.com/batch_changes/how-tos/publishing_changesets#within-the-ui). [#22912](https://github.com/sourcegraph/sourcegraph/issues/22912)
+- Added Python3 to server and gitserver images to enable git-p4 support. [#24204](https://github.com/sourcegraph/sourcegraph/pull/24204)
+- Code Insights drill-down filters now allow filtering insights data on the dashboard page using repo: filters. [#23186](https://github.com/sourcegraph/sourcegraph/issues/23186)
+- GitHub repository permissions can now leverage caching of team and organization permissions for user permissions syncing. Caching behaviour can be enabled via the `authorization.groupsCacheTTL` field in the code host config. This can significantly reduce the amount of time it takes to perform a full permissions sync due to reduced instances of being rate limited by the code host. [#23978](https://github.com/sourcegraph/sourcegraph/pull/23978)
 
 ### Changed
 
@@ -50,6 +86,13 @@ All notable changes to Sourcegraph are documented in this file.
 - Code Insights GraphQL query `insights` will now fetch 12 months of data instead of 6 if a specific time range is not provided. [#23786](https://github.com/sourcegraph/sourcegraph/pull/23786)
 - Code Insights will now generate 12 months of historical data during a backfill instead of 6. [#23860](https://github.com/sourcegraph/sourcegraph/pull/23860)
 - The `sourcegraph-frontend.Role` in Kubernetes deployments was updated to permit statefulsets access in the Kubernetes API. This is needed to better support stable service discovery for stateful sets during deployments, which isn't currently possible by using service endpoints. [#3670](https://github.com/sourcegraph/deploy-sourcegraph/pull/3670) [#23889](https://github.com/sourcegraph/sourcegraph/pull/23889)
+- For Docker-Compose and Kubernetes users, the built-in main Postgres and codeintel databases have switched to an alpine Docker image. This requires re-indexing the entire database. This process can take up to a few hours on systems with large datasets. [#23697](https://github.com/sourcegraph/sourcegraph/pull/23697)
+- Results are now streamed from searcher by default, improving memory usage and latency for large, unindexed searches. [#23754](https://github.com/sourcegraph/sourcegraph/pull/23754)
+- [`deploy-sourcegraph` overlays](https://docs.sourcegraph.com/admin/install/kubernetes/configure#overlays) now use `resources:` instead of the [deprecated `bases:` field](https://kubectl.docs.kubernetes.io/references/kustomize/kustomization/bases/) for referencing Kustomize bases. [deploy-sourcegraph#3606](https://github.com/sourcegraph/deploy-sourcegraph/pull/3606)
+- The `deploy-sourcegraph-docker` Pure Docker deployment scripts and configuration has been moved to the `./pure-docker` subdirectory. [deploy-sourcegraph-docker#454](https://github.com/sourcegraph/deploy-sourcegraph-docker/pull/454)
+- In Kubernetes deployments, setting the `SRC_GIT_SERVERS` environment variable explicitly is no longer needed. Addresses of the gitserver pods will be discovered automatically and in the same numerical order as with the static list. Unset the env var in your `frontend.Deployment.yaml` to make use of this feature. [#24094](https://github.com/sourcegraph/sourcegraph/pull/24094)
+- The consistent hashing scheme used to distribute repositories across indexed-search replicas has changed to improve distribution and reduce load discrepancies. In the next upgrade, indexed-search pods will re-index the majority of repositories since the repo to replica assignments will change. This can take a few hours in large instances, but searches should succeed during that time since a replica will only delete a repo once it has been indexed in the new replica that owns it. You can monitor this process in the Zoekt Index Server Grafana dashboard - the "assigned" repos in "Total number of repos" will spike and then reduce until it becomes the same as "indexed". As a fail-safe, the old consistent hashing scheme can be enabled by setting the `SRC_ENDPOINTS_CONSISTENT_HASH` env var to `consistent(crc32ieee)` in the `sourcegraph-frontend` deployment. [#23921](https://github.com/sourcegraph/sourcegraph/pull/23921)
+- In Kubernetes deployments an emptyDir (`/dev/shm`) is now mounted in the `pgsql` deployment to allow Postgres to access more than 64KB shared memory. This value should be configured to match the `shared_buffers` value in your Postgres configuration. [deploy-sourcegraph#3784](https://github.com/sourcegraph/deploy-sourcegraph/pull/3784/)
 
 ### Fixed
 
@@ -61,7 +104,11 @@ All notable changes to Sourcegraph are documented in this file.
 - Clicking on symbols in the left search pane now renders hover tooltips for indexed repositories. [#23664](https://github.com/sourcegraph/sourcegraph/pull/23664)
 - Fixed a result streaming throttling issue that was causing significantly increased latency for some searches. [#23736](https://github.com/sourcegraph/sourcegraph/pull/23736)
 - GitCredentials passwords stored in AWS CodeCommit configuration is now redacted. [#23832](https://github.com/sourcegraph/sourcegraph/pull/23832)
-- Patched a vulnerability ni `apk-tools`. [#23917](https://github.com/sourcegraph/sourcegraph/pull/23917)
+- Patched a vulnerability in `apk-tools`. [#23917](https://github.com/sourcegraph/sourcegraph/pull/23917)
+- Line content was being duplicated in unindexed search payloads, causing memory instability for some dense search queries. [#23918](https://github.com/sourcegraph/sourcegraph/pull/23918)
+- Updating draft merge requests on GitLab from batch changes no longer removes the draft status. [#23944](https://github.com/sourcegraph/sourcegraph/issues/23944)
+- Report highlight matches instead of line matches in search results. [#21443](https://github.com/sourcegraph/sourcegraph/issues/21443)
+- Force the `codeinsights-db` database to read from the `configMap` configuration file by explicitly setting the `POSTGRESQL_CONF_DIR` environment variable to the `configMap` mount path. [deploy-sourcegraph#3788](https://github.com/sourcegraph/deploy-sourcegraph/pull/3788)
 
 ### Removed
 
@@ -69,6 +116,18 @@ All notable changes to Sourcegraph are documented in this file.
 - Email notifications for saved searches are now deprecated in favor of Code Monitoring. Email notifications can no longer be enabled for saved searches. Saved searches that already have notifications enabled will continue to work, but there is now a button users can click to migrate to code monitors. Notifications for saved searches will be removed entirely in the future. [#23275](https://github.com/sourcegraph/sourcegraph/pull/23275)
 - The `sg_service` Postgres role and `sg_repo_access_policy` policy on the `repo` table have been removed due to performance concerns. [#23622](https://github.com/sourcegraph/sourcegraph/pull/23622)
 - Deprecated site configuration field `email.smtp.disableTLS` has been removed. [#23639](https://github.com/sourcegraph/sourcegraph/pull/23639)
+- Deprecated language servers have been removed from `deploy-sourcegraph`. [deploy-sourcegraph#3605](https://github.com/sourcegraph/deploy-sourcegraph/pull/3605)
+- The experimental `codeInsightsAllRepos` feature flag has been removed. [#23850](https://github.com/sourcegraph/sourcegraph/pull/23850)
+
+## 3.30.4
+
+### Added
+
+- Add a new environment variable `SRC_HTTP_CLI_EXTERNAL_TIMEOUT` to control the timeout for all external HTTP requests. [#23620](https://github.com/sourcegraph/sourcegraph/pull/23620)
+
+### Changed
+
+- Postgres has been upgraded to `12.8` in the single-server Sourcegraph image [#23999](https://github.com/sourcegraph/sourcegraph/pull/23999)
 
 ## 3.30.3
 

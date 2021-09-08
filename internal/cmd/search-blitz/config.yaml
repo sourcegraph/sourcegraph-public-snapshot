@@ -88,3 +88,8 @@ groups:
                 repo:^github\.com/sgtest/cockroach-gen$
                 file:^pkg/ccl/importccl/read_import_csv\.go
                 p.record
+
+          # Symbol search
+          - name: symbol_small # ~72 results
+            query: >
+                type:symbol IndexFormatVersion

@@ -24,15 +24,16 @@ export const CodeHostsConnection: React.FunctionComponent<CodeHostsConnection> =
     onNavigation,
     onError,
 }) => {
-    const { setComplete, currentIndex } = useSteps()
+    const { setComplete, currentIndex, resetToTheRight } = useSteps()
 
     useEffect(() => {
         if (Array.isArray(externalServices) && externalServices.length > 0) {
             setComplete(currentIndex, true)
         } else {
             setComplete(currentIndex, false)
+            resetToTheRight(currentIndex)
         }
-    }, [currentIndex, externalServices, setComplete])
+    }, [currentIndex, externalServices, resetToTheRight, setComplete])
 
     if (loading || !externalServices) {
         return (

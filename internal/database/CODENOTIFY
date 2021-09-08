@@ -1,4 +1,6 @@
+# See https://github.com/sourcegraph/codenotify for documentation.
+
 external* @eseliger
 namespaces* @eseliger
-repos* @eseliger
-repos_perm* @unknwon
+repos* @eseliger @unknwon
+external_services* @unknwon

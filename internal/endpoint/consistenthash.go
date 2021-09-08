@@ -18,9 +18,32 @@ package endpoint
 
 import (
 	"hash/crc32"
+	"os"
 	"sort"
 	"strconv"
+
+	"github.com/cespare/xxhash/v2"
+	"github.com/inconshreveable/log15"
+	"github.com/sourcegraph/go-rendezvous"
 )
+
+type consistentHash interface {
+	Lookup(string) string
+	LookupN(string, int) []string
+	Nodes() []string
+}
+
+func newConsistentHash(nodes []string) consistentHash {
+	if os.Getenv("SRC_ENDPOINTS_CONSISTENT_HASH") != "consistent(crc32ieee)" {
+		log15.Info("endpoints: using rendezvous hashing")
+		return rendezvous.New(nodes, xxhash.Sum64String)
+	}
+	// 50 replicas and crc32.ChecksumIEEE are the defaults used by
+	// groupcache.
+	m := hashMapNew(50, crc32.ChecksumIEEE)
+	m.add(nodes...)
+	return m
+}
 
 type hashFn func(data []byte) uint32
 
@@ -29,7 +52,7 @@ type hashMap struct {
 	replicas int
 	keys     []int // Sorted
 	hashMap  map[int]string
-	values   map[string]struct{}
+	nodes    []string
 }
 
 func hashMapNew(replicas int, fn hashFn) *hashMap {
@@ -37,7 +60,6 @@ func hashMapNew(replicas int, fn hashFn) *hashMap {
 		replicas: replicas,
 		hash:     fn,
 		hashMap:  make(map[int]string),
-		values:   make(map[string]struct{}),
 	}
 	if m.hash == nil {
 		m.hash = crc32.ChecksumIEEE
@@ -50,22 +72,20 @@ func (m *hashMap) isEmpty() bool {
 	return len(m.keys) == 0
 }
 
-// Adds some keys to the hash.
-func (m *hashMap) add(keys ...string) {
-	for _, key := range keys {
-		m.values[key] = struct{}{}
+// Adds some nodes to the hash.
+func (m *hashMap) add(nodes ...string) {
+	for _, node := range nodes {
+		m.nodes = append(m.nodes, node)
 		for i := 0; i < m.replicas; i++ {
-			hash := int(m.hash([]byte(strconv.Itoa(i) + key)))
+			hash := int(m.hash([]byte(strconv.Itoa(i) + node)))
 			m.keys = append(m.keys, hash)
-			m.hashMap[hash] = key
+			m.hashMap[hash] = node
 		}
 	}
 	sort.Ints(m.keys)
 }
 
-// Gets the closest item in the hash to the provided key that is not in
-// exclude.
-func (m *hashMap) get(key string, exclude map[string]bool) string {
+func (m *hashMap) Lookup(key string) string {
 	if m.isEmpty() {
 		return ""
 	}
@@ -75,22 +95,27 @@ func (m *hashMap) get(key string, exclude map[string]bool) string {
 	// Binary search for appropriate replica.
 	idx := sort.Search(len(m.keys), func(i int) bool { return m.keys[i] >= hash })
 
-	// Means we have cycled back to the first replica.
-	if idx == len(m.keys) {
-		idx = 0
+	return m.hashMap[m.keys[idx%len(m.keys)]]
+}
+
+func (m *hashMap) LookupN(key string, n int) []string {
+	if m.isEmpty() {
+		return nil
 	}
 
-	if exclude == nil {
-		return m.hashMap[m.keys[idx]]
+	hash := int(m.hash([]byte(key)))
+
+	// Binary search for appropriate replica.
+	idx := sort.Search(len(m.keys), func(i int) bool { return m.keys[i] >= hash })
+
+	nodes := make([]string, 0, n)
+	for offset := 0; offset < n; offset++ {
+		nodes = append(nodes, m.hashMap[m.keys[(idx+offset)%len(m.keys)]])
 	}
 
-	// This will return the same key our binary search would if we excluded
-	// all keys in exclude.
-	for offset := 0; offset < len(m.keys); offset++ {
-		item := m.hashMap[m.keys[(idx+offset)%len(m.keys)]]
-		if _, ok := exclude[item]; !ok {
-			return item
-		}
-	}
-	return ""
+	return nodes
+}
+
+func (m *hashMap) Nodes() []string {
+	return m.nodes
 }
