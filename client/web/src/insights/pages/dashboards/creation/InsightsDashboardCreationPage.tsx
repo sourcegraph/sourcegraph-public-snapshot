@@ -7,7 +7,7 @@ import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { asError } from '@sourcegraph/shared/src/util/errors'
-import { PageHeader, Container } from '@sourcegraph/wildcard/src'
+import { PageHeader, Container, Button } from '@sourcegraph/wildcard/src'
 
 import { AuthenticatedUser } from '../../../../auth'
 import { LoaderButton } from '../../../../components/LoaderButton'
@@ -92,9 +92,15 @@ export const InsightsDashboardCreationPage: React.FunctionComponent<InsightsDash
                 >
                     {formAPI => (
                         <>
-                            <button type="button" className="btn btn-outline-secondary mb-2" onClick={handleCancel}>
+                            <Button
+                                type="button"
+                                variant="secondary"
+                                outline={true}
+                                className="mb-2"
+                                onClick={handleCancel}
+                            >
                                 Cancel
-                            </button>
+                            </Button>
 
                             <LoaderButton
                                 alwaysShowLabel={true}

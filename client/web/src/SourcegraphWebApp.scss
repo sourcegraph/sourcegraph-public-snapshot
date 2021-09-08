@@ -101,7 +101,7 @@ body,
 @import './site-admin/init/SiteInitPage';
 @import './site-admin/SiteAdmin';
 @import './tree/Tree';
-@import './insights/insights-global-styles';
+@import './views/view-global-styles';
 @import './nav/GlobalNavbar';
 @import './nav/Feedback/FeedbackPrompt.scss';
 @import './nav/UserNavItem.scss';
@@ -132,7 +132,6 @@ body,
 @import './components/Collapsible';
 @import './marketing/SurveyPage';
 @import './components/branding/BrandLogo';
-@import './components/diff/FileDiffNode';
 @import './components/externalServices/AddExternalServicesPage';
 @import '../../branded/src/components/panel/views/FileLocations';
 @import '../../branded/src/components/LoaderInput';

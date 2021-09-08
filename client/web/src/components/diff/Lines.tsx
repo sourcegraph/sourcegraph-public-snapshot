@@ -9,6 +9,9 @@ import { LinkOrSpan } from '@sourcegraph/shared/src/components/LinkOrSpan'
 
 import { DiffHunkLineType } from '../../graphql-operations'
 
+import diffHunkStyles from './DiffHunk.module.scss'
+import styles from './Lines.module.scss'
+
 const diffHunkTypeIndicators: Record<DiffHunkLineType, string> = {
     ADDED: '+',
     UNCHANGED: ' ',
@@ -38,15 +41,11 @@ const lineType = (kind: DiffHunkLineType): LineType => {
     switch (kind) {
         case DiffHunkLineType.DELETED:
             return {
-                hunkContent: 'diff-hunk--split__line--deletion',
-            }
-        case DiffHunkLineType.UNCHANGED:
-            return {
-                hunkContent: 'diff-hunk--split__line--both',
+                hunkContent: styles.lineDeletion,
             }
         case DiffHunkLineType.ADDED:
             return {
-                hunkContent: 'diff-hunk--split__line--addition',
+                hunkContent: styles.lineAddition,
             }
         default:
             return {
@@ -57,8 +56,8 @@ const lineType = (kind: DiffHunkLineType): LineType => {
 
 export const EmptyLine: React.FunctionComponent = () => (
     <>
-        <td className="diff-hunk__num diff-hunk__num--empty" />
-        <td className="diff-hunk__content--empty" />
+        <td data-hunk-num={true} className={classNames(diffHunkStyles.numEmpty, diffHunkStyles.num)} />
+        <td data-hunk-content-empty={true} className={diffHunkStyles.contentEmpty} />
     </>
 )
 
@@ -82,29 +81,25 @@ export const Line: React.FunctionComponent<Line> = ({
         <>
             {lineNumbers && (
                 <td
-                    className={classNames('diff-hunk__num', `${hunkStyles.hunkContent}-num`, `${className}-num`)}
+                    className={classNames(diffHunkStyles.num, hunkStyles.hunkContent, className)}
                     data-line={lineNumber}
                     data-part={dataPart}
                     id={id || anchor}
                 >
                     {persistLines && (
-                        <Link className="diff-hunk__num--line" to={{ hash: anchor }}>
+                        <Link className={diffHunkStyles.numLine} to={{ hash: anchor }}>
                             {lineNumber}
                         </Link>
                     )}
                 </td>
             )}
             <td
-                className={classNames(
-                    'diff-hunk--split__line align-baseline diff-hunk__content',
-                    hunkStyles.hunkContent,
-                    className
-                )}
+                className={classNames('align-baseline', diffHunkStyles.content, hunkStyles.hunkContent, className)}
                 // eslint-disable-next-line react/forbid-dom-props
                 style={lineStyle}
                 data-diff-marker={diffHunkTypeIndicators[kind]}
             >
-                <div className="diff-hunk--split__line--code d-inline">
+                <div className={classNames('d-inline', styles.lineCode)}>
                     <div dangerouslySetInnerHTML={{ __html: html }} data-diff-marker={diffHunkTypeIndicators[kind]} />
                     {decorations.map((decoration, index) => {
                         const style = decorationAttachmentStyleForTheme(decoration.after, isLightTheme)

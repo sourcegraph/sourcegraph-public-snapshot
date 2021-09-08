@@ -25,18 +25,24 @@ func makePrioritizeExtensionIDsSet(args graphqlbackend.RegistryExtensionConnecti
 }
 
 func (r *extensionRegistryResolver) Extensions(ctx context.Context, args *graphqlbackend.RegistryExtensionConnectionArgs) (graphqlbackend.RegistryExtensionConnection, error) {
-	return &registryExtensionConnectionResolver{args: *args, db: r.db}, nil
+	return &registryExtensionConnectionResolver{
+		args:                         *args,
+		db:                           r.db,
+		listRemoteRegistryExtensions: listRemoteRegistryExtensions,
+	}, nil
 }
 
 // registryExtensionConnectionResolver resolves a list of registry extensions.
 type registryExtensionConnectionResolver struct {
 	args graphqlbackend.RegistryExtensionConnectionArgs
 
+	db                           dbutil.DB
+	listRemoteRegistryExtensions func(_ context.Context, query string) ([]*registry.Extension, error)
+
 	// cache results because they are used by multiple fields
 	once               sync.Once
 	registryExtensions []graphqlbackend.RegistryExtension
 	err                error
-	db                 dbutil.DB
 }
 
 var (
@@ -76,13 +82,29 @@ func (r *registryExtensionConnectionResolver) compute(ctx context.Context) ([]gr
 		// Query remote registry extensions, if filters would match any.
 		var remote []*registry.Extension
 		if args2.Publisher == nil && r.args.Remote {
-			xs, err := listRemoteRegistryExtensions(ctx, query)
+			xs, err := r.listRemoteRegistryExtensions(ctx, query)
 			if err != nil {
 				// Continue execution even if r.err != nil so that partial (local) results are returned
 				// even when the remote registry is inaccessible.
 				r.err = err
 			}
-			remote = append(remote, xs...)
+
+			if r.args.ExtensionIDs == nil {
+				remote = append(remote, xs...)
+			} else {
+				// The ExtensionIDs arg ("only include extensions specified by these IDs") is only
+				// applied at query time for local extensions, not remote extensions, so apply it
+				// here.
+				include := map[string]struct{}{}
+				for _, id := range *r.args.ExtensionIDs {
+					include[id] = struct{}{}
+				}
+				for _, x := range xs {
+					if _, ok := include[x.ExtensionID]; ok {
+						remote = append(remote, x)
+					}
+				}
+			}
 		}
 
 		r.registryExtensions = make([]graphqlbackend.RegistryExtension, len(local)+len(remote))
@@ -96,7 +118,9 @@ func (r *registryExtensionConnectionResolver) compute(ctx context.Context) ([]gr
 		})
 
 		// Sort WIP extensions last. (The local extensions list is already sorted in that way, but
-		// the remote extensions list isn't, so therefore the combined list isn't.)
+		// the remote extensions list isn't, so therefore the combined list isn't.) Determining
+		// whether an extension is WIP is slow because it requires jsonc-parsing the manifest, so we
+		// precompute it for each element to avoid incurring the cost for each sort comparison.
 		sort.SliceStable(r.registryExtensions, func(i, j int) bool {
 			return !r.registryExtensions[i].IsWorkInProgress() && r.registryExtensions[j].IsWorkInProgress()
 		})

@@ -158,14 +158,18 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			log15.Error("failed to get repo metadata", "error", err)
 			return
 		}
-		for _, match := range event.Results {
+		for i, match := range event.Results {
 			// Don't send matches which we cannot map to a repo the actor has access to. This
 			// check is expected to always pass. Missing metadata is a sign that we have
 			// searched repos that user shouldn't have access to.
 			if md, ok := repoMetadata[match.RepoName().ID]; !ok || md.Name != match.RepoName().Name {
 				continue
 			}
-			_ = matchesBuf.Append(fromMatch(match, repoMetadata))
+			eventMatch := fromMatch(match, repoMetadata)
+			if args.DecorationLimit == -1 || args.DecorationLimit > i {
+				eventMatch = withDecoration(ctx, eventMatch, match, args.DecorationKind, args.DecorationContextLines)
+			}
+			_ = matchesBuf.Append(eventMatch)
 		}
 
 		// Instantly send results if we have not sent any yet.
@@ -329,6 +333,13 @@ type args struct {
 	PatternType    string
 	VersionContext string
 	Display        int
+
+	// Optional decoration parameters for server-side rendering a result set
+	// or subset. Decorations may specify, e.g., highlighting results with
+	// HTML markup up-front, and/or including context lines around file results.
+	DecorationLimit        int    // The initial number of files to decorate in the result set.
+	DecorationKind         string // The kind of decoration to apply (HTML highlighting, plaintext, etc.)
+	DecorationContextLines int    // The number of lines of context to include around lines with matches.
 }
 
 func parseURLQuery(q url.Values) (*args, error) {
@@ -345,6 +356,7 @@ func parseURLQuery(q url.Values) (*args, error) {
 		Version:        get("v", "V2"),
 		PatternType:    get("t", ""),
 		VersionContext: get("vc", ""),
+		DecorationKind: get("dk", "html"),
 	}
 
 	if a.Query == "" {
@@ -355,6 +367,16 @@ func parseURLQuery(q url.Values) (*args, error) {
 	var err error
 	if a.Display, err = strconv.Atoi(display); err != nil {
 		return nil, errors.Errorf("display must be an integer, got %q: %w", display, err)
+	}
+
+	decorationLimit := get("dl", "0")
+	if a.DecorationLimit, err = strconv.Atoi(decorationLimit); err != nil {
+		return nil, errors.Errorf("decorationLimit must be an integer, got %q: %w", decorationLimit, err)
+	}
+
+	decorationContextLines := get("dc", "1")
+	if a.DecorationContextLines, err = strconv.Atoi(decorationContextLines); err != nil {
+		return nil, errors.Errorf("decorationContextLines must be an integer, got %q: %w", decorationContextLines, err)
 	}
 
 	return &a, nil
@@ -372,6 +394,25 @@ func fromStrPtr(s *string) string {
 		return ""
 	}
 	return *s
+}
+
+// withDecoration hydrates event match with decorated hunks for a corresponding file match.
+func withDecoration(ctx context.Context, eventMatch streamhttp.EventMatch, internalResult result.Match, kind string, contextLines int) streamhttp.EventMatch {
+	if _, ok := internalResult.(*result.FileMatch); !ok {
+		return eventMatch
+	}
+
+	event, ok := eventMatch.(*streamhttp.EventContentMatch)
+	if !ok {
+		return eventMatch
+	}
+
+	if kind == "html" {
+		event.Hunks = DecorateFileHunksHTML(ctx, internalResult.(*result.FileMatch))
+	}
+
+	// TODO(team/search-product): support additional decoration for terminal clients #24617.
+	return eventMatch
 }
 
 func fromMatch(match result.Match, repoCache map[api.RepoID]*types.SearchedRepo) streamhttp.EventMatch {

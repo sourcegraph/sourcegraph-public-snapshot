@@ -3,6 +3,7 @@
 const { spawn } = require('child_process')
 const path = require('path')
 
+const REPO_ROOT = path.join(__dirname, '../../..')
 const CSS_MODULES_GLOB = path.resolve(__dirname, '../../*/src/**/*.module.scss')
 const TSM_COMMAND = `yarn --silent --ignore-engines --ignore-scripts tsm --logLevel error "${CSS_MODULES_GLOB}" --includePaths node_modules client`
 const [BIN, ...ARGS] = TSM_COMMAND.split(' ')
@@ -14,6 +15,7 @@ function cssModulesTypings() {
   return spawn(BIN, ARGS, {
     stdio: 'inherit',
     shell: true,
+    cwd: REPO_ROOT,
   })
 }
 
@@ -24,6 +26,7 @@ function watchCSSModulesTypings() {
   return spawn(BIN, [...ARGS, '--watch'], {
     stdio: 'inherit',
     shell: true,
+    cwd: REPO_ROOT,
   })
 }
 

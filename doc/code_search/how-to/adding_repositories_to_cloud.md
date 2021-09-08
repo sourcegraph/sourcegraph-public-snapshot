@@ -2,7 +2,7 @@
 
 Sourcegraph cloud lets you add repositories to search with Sourcegraph without needing to self-host. You can add repositories you own or collaborate on from GitHub.com or GitLab.com.
 
-## Adding repositories you own or collaborate on from GitHub.com or GitLab.com
+## Adding a code host connection
 
 > NOTE: If you're adding organization repositories from GitHub.com, the Sourcegraph.com OAuth application needs to [get approval from the organization owner for granting access](https://docs.github.com/en/organizations/restricting-access-to-your-organizations-data/approving-oauth-apps-for-your-organization).
 
@@ -12,12 +12,25 @@ To add repositories you own or collaborate on from GitHub or GitLab, you must fi
 1. Go to **Code host connections** in the sidebar navigation.
 1. Connect with GitHub and/or Gitlab using OAuth.
 
-Once you've connected with a code host, you can add repositories:
+## Adding repositories by selecting Sync All (Recommended)
+
+If you want to sync all the repositories you have access to and have Sourcegraph automatically sync all new repositories on the code host in the future, follow the below steps: 
 
 1. Go to **User menu > Settings** in the top navigation bar.
 1. Go to **Repositories** in the sidebar navigation.
 1. Press the **Manage Repositories** button.
-1. Choose the public repositories you own or collaborate on from your connected code hosts that you want to search with Sourcegraph.
+1. Choose the 'Sync All' option.
+1. Press the **Save** button.
+
+
+## Adding specific repositories  
+
+If you only want to add specific repositories to Sourcegraph cloud, follow the below steps:
+
+1. Go to **User menu > Settings** in the top navigation bar.
+1. Go to **Repositories** in the sidebar navigation.
+1. Press the **Manage Repositories** button.
+1. Choose the 'Sync select repositories' option. This will display a list of all repositories, public or private, which you have access to. Sourcegraph will only sync the repositories you select. This can be changed at a later time. 
 1. Press the **Save** button.
 
 ## Adding other public repositories from GitHub.com or GitLab.com

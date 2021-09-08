@@ -107,7 +107,7 @@ export class GlobalAlerts extends React.PureComponent<Props, State> {
                     >
                         <div>
                             <strong>Warning!</strong> This build uses data from the proxied API:{' '}
-                            <a target="__blank" href="process.env.SOURCEGRAPH_API_URL">
+                            <a target="__blank" href={process.env.SOURCEGRAPH_API_URL}>
                                 {process.env.SOURCEGRAPH_API_URL}
                             </a>
                         </div>
