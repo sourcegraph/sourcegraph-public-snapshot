@@ -10,6 +10,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	apiclient "github.com/sourcegraph/sourcegraph/enterprise/internal/executor"
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
@@ -140,12 +141,50 @@ func transformBatchSpecWorkspaceJobRecord(ctx context.Context, s *store.Store, j
 		return apiclient.Job{}, err
 	}
 
-	// TODO: Set actor here
+	// 🚨 SECURITY: Set the actor on the context so we check for permissions
+	// when loading the repository.
+	ctx = actor.WithActor(ctx, actor.FromUser(batchSpec.UserID))
+
 	repo, err := database.Repos(s.DB()).Get(ctx, job.RepoID)
 	if err != nil {
 		return apiclient.Job{}, err
 	}
 
+	executionInput := batcheslib.WorkspacesExecutionInput{
+		RawSpec: batchSpec.RawSpec,
+		Workspaces: []*batcheslib.Workspace{
+			{
+				Repository: batcheslib.WorkspaceRepo{
+					ID:   string(graphqlbackend.MarshalRepositoryID(repo.ID)),
+					Name: string(repo.Name),
+				},
+				Branch: batcheslib.WorkspaceBranch{
+					Name:   job.Branch,
+					Target: batcheslib.Commit{OID: job.Commit},
+				},
+				Path:               job.Path,
+				OnlyFetchWorkspace: job.OnlyFetchWorkspace,
+				Steps:              job.Steps,
+				SearchResultPaths:  job.FileMatches,
+			},
+		},
+	}
+
+	// TODO: createAccessToken is a bit of technical debt until we figure out a
+	// better solution. The problem is that src-cli needs to make requests to
+	// the Sourcegraph instance *on behalf of the user*.
+	//
+	// Ideally we'd have something like one-time tokens that
+	// * we could hand to src-cli
+	// * are not visible to the user in the Sourcegraph web UI
+	// * valid only for the duration of the batch spec execution
+	// * and cleaned up after batch spec is executed
+	//
+	// Until then we create a fresh access token every time.
+	//
+	// GetOrCreate doesn't work because once an access token has been created
+	// in the database Sourcegraph can't access the plain-text token anymore.
+	// Only a hash for verification is kept in the database.
 	token, err := createAccessToken(ctx, s.DB(), batchSpec.UserID)
 	if err != nil {
 		return apiclient.Job{}, err
@@ -168,27 +207,7 @@ func transformBatchSpecWorkspaceJobRecord(ctx context.Context, s *store.Store, j
 		fmt.Sprintf("SRC_ACCESS_TOKEN=%s", token),
 	}
 
-	input := batcheslib.WorkspacesExecutionInput{
-		RawSpec: batchSpec.RawSpec,
-		Workspaces: []*batcheslib.Workspace{
-			{
-				Repository: batcheslib.WorkspaceRepo{
-					ID:   string(graphqlbackend.MarshalRepositoryID(repo.ID)),
-					Name: string(repo.Name),
-				},
-				Branch: batcheslib.WorkspaceBranch{
-					Name:   job.Branch,
-					Target: batcheslib.Commit{OID: job.Commit},
-				},
-				Path:               job.Path,
-				OnlyFetchWorkspace: job.OnlyFetchWorkspace,
-				Steps:              job.Steps,
-				SearchResultPaths:  job.FileMatches,
-			},
-		},
-	}
-
-	marshaledInput, err := json.Marshal(input)
+	marshaledInput, err := json.Marshal(executionInput)
 	if err != nil {
 		return apiclient.Job{}, err
 	}
