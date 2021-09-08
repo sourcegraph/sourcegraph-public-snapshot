@@ -6,7 +6,7 @@ import type { DirectoryViewContext, LineChartContent } from 'sourcegraph'
 
 import { ViewContexts } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
 
-import { EMPTY_DATA_POINT_VALUE } from '../../../../components/insight-view-content/chart-view-content/charts/line/constants'
+import { EMPTY_DATA_POINT_VALUE } from '../../../../../views/components/content/view-content/chart-view-content/charts/line/constants'
 import { fetchRawSearchInsightResults, fetchSearchInsightCommits } from '../../requests/fetch-search-insight'
 import { SearchInsightSettings } from '../../types'
 import { resolveDocumentURI } from '../../utils/resolve-uri'

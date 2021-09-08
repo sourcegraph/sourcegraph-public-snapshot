@@ -314,6 +314,7 @@ func (wr *workspaceResolver) resolveRepositoriesMatchingQuery(ctx context.Contex
 		for path := range repoFileMatches[repo.ID] {
 			fileMatches = append(fileMatches, path)
 		}
+		sort.Strings(fileMatches)
 		rev, err := repoToRepoRevisionWithDefaultBranch(ctx, repo, fileMatches)
 		if err != nil {
 			return nil, err

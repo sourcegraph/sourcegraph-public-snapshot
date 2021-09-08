@@ -66,6 +66,10 @@ func TestToDBExtensionsListOptions(t *testing.T) {
 			args: graphqlbackend.RegistryExtensionConnectionArgs{Query: strptr(`a b tag:"T🚀" c`)},
 			want: dbExtensionsListOptions{Query: "a b c", Tag: "T🚀"},
 		},
+		"ExensionIDs": {
+			args: graphqlbackend.RegistryExtensionConnectionArgs{ExtensionIDs: strarrayptr([]string{"a", "b"})},
+			want: dbExtensionsListOptions{ExtensionIDs: []string{"a", "b"}},
+		},
 		"PrioritizeExensionIDs": {
 			args: graphqlbackend.RegistryExtensionConnectionArgs{PrioritizeExtensionIDs: strarrayptr([]string{"a", "b"})},
 			want: dbExtensionsListOptions{PrioritizeExtensionIDs: []string{"a", "b"}},

@@ -12,7 +12,7 @@ import { ActionsNavItems } from '@sourcegraph/shared/src/actions/ActionsNavItems
 import { wrapRemoteObservable } from '@sourcegraph/shared/src/api/client/api/common'
 import { PanelViewData } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
 import { haveInitialExtensionsLoaded } from '@sourcegraph/shared/src/api/features'
-import { ContributableMenu } from '@sourcegraph/shared/src/api/protocol'
+import { ContributableMenu, Contributions, Evaluated } from '@sourcegraph/shared/src/api/protocol'
 import { ActivationProps } from '@sourcegraph/shared/src/components/activation/Activation'
 import { FetchFileParameters } from '@sourcegraph/shared/src/components/CodeExcerpt'
 import { Resizable } from '@sourcegraph/shared/src/components/Resizable'
@@ -264,6 +264,7 @@ export const Panel = React.memo<Props>(props => {
                                 }}
                                 wrapInList={true}
                                 location={location}
+                                transformContributions={transformPanelContributions}
                             />
                         )}
                     </small>
@@ -304,3 +305,30 @@ export const ResizablePanel: React.FunctionComponent<Props> = props => (
         element={<Panel {...props} />}
     />
 )
+
+/**
+ * Temporary solution to code intel extensions all contributing the same panel actions.
+ */
+function transformPanelContributions(contributions: Evaluated<Contributions>): Evaluated<Contributions> {
+    try {
+        const panelMenuItems = contributions.menus?.['panel/toolbar']
+        if (!panelMenuItems || panelMenuItems.length === 0) {
+            return contributions
+        }
+        // This won't dedup e.g. [{action: 'a', when: 'b'}, {when: 'b', action: 'a'}], but should
+        // work for the case this is hackily trying to prevent: multiple extensions generated with the
+        // same manifest.
+        const strings = new Set(panelMenuItems.map(menuItem => JSON.stringify(menuItem)))
+        const uniquePanelMenuItems = [...strings].map(string => JSON.parse(string))
+
+        return {
+            ...contributions,
+            menus: {
+                ...contributions.menus,
+                'panel/toolbar': uniquePanelMenuItems,
+            },
+        }
+    } catch {
+        return contributions
+    }
+}

@@ -49,13 +49,12 @@ import { FilteredConnection } from '../../components/FilteredConnection'
 import { PageTitle } from '../../components/PageTitle'
 import { GitCommitFields, Scalars, TreePageRepositoryFields } from '../../graphql-operations'
 import { SmartInsight } from '../../insights/components/insights-view-grid/components/smart-insight/SmartInsight'
-import { StaticView } from '../../insights/components/insights-view-grid/components/static-view/StaticView'
-import { ViewGrid } from '../../insights/components/insights-view-grid/components/view-grid/ViewGrid'
 import { createExtensionInsight } from '../../insights/core/backend/utils/create-extension-insight'
 import { useAllInsights } from '../../insights/hooks/use-insight/use-insight'
 import { Settings } from '../../schema/settings.schema'
 import { PatternTypeProps, CaseSensitivityProps, SearchContextProps } from '../../search'
 import { basename } from '../../util/path'
+import { StaticView, ViewGrid } from '../../views'
 import { fetchTreeEntries } from '../backend'
 import { GitCommitNode, GitCommitNodeProps } from '../commits/GitCommitNode'
 import { gitCommitFragment } from '../commits/RepositoryCommitsPage'
@@ -491,18 +490,19 @@ export const TreePage: React.FunctionComponent<Props> = ({
                                 ))}
 
                                 {/* Render all code insights with proper directory page context */}
-                                {directoryPageContext &&
-                                    insights.map(insight => (
-                                        <SmartInsight
-                                            key={insight.id}
-                                            insight={insight}
-                                            telemetryService={props.telemetryService}
-                                            platformContext={props.platformContext}
-                                            settingsCascade={settingsCascade}
-                                            where="directory"
-                                            context={directoryPageContext}
-                                        />
-                                    ))}
+                                {directoryPageContext
+                                    ? insights.map(insight => (
+                                          <SmartInsight
+                                              key={insight.id}
+                                              insight={insight}
+                                              telemetryService={props.telemetryService}
+                                              platformContext={props.platformContext}
+                                              settingsCascade={settingsCascade}
+                                              where="directory"
+                                              context={directoryPageContext}
+                                          />
+                                      ))
+                                    : []}
                             </ViewGrid>
                         )}
                         <section className="tree-page__section test-tree-entries mb-3">

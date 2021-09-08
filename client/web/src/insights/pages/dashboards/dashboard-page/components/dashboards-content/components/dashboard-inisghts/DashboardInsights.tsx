@@ -5,7 +5,7 @@ import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
 import { Settings } from '../../../../../../../../schema/settings.schema'
-import { SmartInsightsViewGrid } from '../../../../../../../components/insights-view-grid'
+import { SmartInsightsViewGrid } from '../../../../../../../components/insights-view-grid/SmartInsightsViewGrid'
 import { InsightDashboard } from '../../../../../../../core/types'
 import { useDistinctValue } from '../../../../../../../hooks/use-distinct-value'
 import { useInsights } from '../../../../../../../hooks/use-insight/use-insight'

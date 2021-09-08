@@ -142,9 +142,7 @@ function evaluateActionContributions<T>(
 }
 
 /**
- * Evaluates expressions in contribution definitions against the given context.
- * TODO(tj): wrong description, fix
- * also, make sure to parse on extension host side, even for builtin contributions!
+ * Parses expressions in contribution defitions so that they can be evaluated against various contexts.
  */
 export function parseContributionExpressions(contributions: Raw<Contributions>): Contributions {
     return {

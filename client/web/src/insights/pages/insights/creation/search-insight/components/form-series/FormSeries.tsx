@@ -1,6 +1,8 @@
 import classnames from 'classnames'
 import React from 'react'
 
+import { Button } from '@sourcegraph/wildcard'
+
 import { EditableDataSeries } from '../../types'
 import { FormSeriesInput } from '../form-series-input/FormSeriesInput'
 
@@ -104,15 +106,16 @@ export const FormSeries: React.FunctionComponent<FormSeriesProps> = props => {
                 )
             )}
 
-            <button
+            <Button
                 data-testid="add-series-button"
                 type="button"
                 disabled={isBackendInsightEdit}
                 onClick={() => onEditSeriesRequest(series.length)}
-                className={classnames(styles.formSeriesItem, styles.formSeriesAddButton, 'btn btn-link p-3')}
+                variant="link"
+                className={classnames(styles.formSeriesItem, styles.formSeriesAddButton, 'p-3')}
             >
                 + Add another data series
-            </button>
+            </Button>
         </ul>
     )
 }

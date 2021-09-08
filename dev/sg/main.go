@@ -477,7 +477,13 @@ func startExec(ctx context.Context, args []string) error {
 	for _, cmd := range cmds {
 		enrichWithLogLevels(&cmd, levelOverrides)
 	}
-	return run.Commands(ctx, globalConf.Env, cmds...)
+
+	env := globalConf.Env
+	for k, v := range set.Env {
+		env[k] = v
+	}
+
+	return run.Commands(ctx, env, cmds...)
 }
 
 func runExec(ctx context.Context, args []string) error {
