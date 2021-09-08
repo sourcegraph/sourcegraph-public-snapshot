@@ -17,6 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
+	"github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker"
 	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 )
 
@@ -189,4 +190,17 @@ const operationUploadingChangesetSpecs = "UPLOADING_CHANGESET_SPECS"
 
 func scanFirstBatchSpecWorkspaceJobRecord(rows *sql.Rows, err error) (workerutil.Record, bool, error) {
 	return store.ScanFirstBatchSpecWorkspaceJob(rows, err)
+}
+
+// newBatchSpecWorkspaceResetter creates a dbworker.Resetter that re-enqueues
+// lost batch_spec_workspace jobs for processing.
+func newBatchSpecWorkspaceResetter(workerStore dbworkerstore.Store, metrics batchChangesMetrics) *dbworker.Resetter {
+	options := dbworker.ResetterOptions{
+		Name:     "batch_spec_workspace_resetter",
+		Interval: 1 * time.Minute,
+		Metrics:  metrics.executionResetterMetrics,
+	}
+
+	resetter := dbworker.NewResetter(workerStore, options)
+	return resetter
 }

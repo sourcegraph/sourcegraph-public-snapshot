@@ -37,8 +37,7 @@ func Routines(ctx context.Context, batchesStore *store.Store, cf *httpcli.Factor
 		newBatchSpecWorker(ctx, batchesStore, batchSpecWorkerStore, metrics),
 		newBatchSpecWorkerResetter(batchSpecWorkerStore, metrics),
 
-		// TODO: Create a resetter for the batch spec workspace job 
-		// newBatchSpecWorkspaceResetter(specExecutionWorkerStore, metrics),
+		newBatchSpecWorkspaceResetter(batchSpecWorkerStore, metrics),
 	}
 	return routines
 }
