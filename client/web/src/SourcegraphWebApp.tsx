@@ -220,8 +220,6 @@ interface SourcegraphWebAppOldClassComponentExtraProps
 }
 
 interface SourcegraphWebAppState {
-    error?: Error
-
     /*
      * The version context the instance is in. If undefined, it means no version context is selected.
      */
