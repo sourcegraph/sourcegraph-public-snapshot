@@ -68,7 +68,7 @@ exports[`SignUpPage renders sign up page (cloud) 1`] = `
           Navigate through code with IDE like go to references and definition hovers
         </li>
         <li>
-          Integrate data, tooling, and code in a single location 
+          Integrate data, tooling, and code in a single location
         </li>
       </ul>
       <div
@@ -91,7 +91,7 @@ exports[`SignUpPage renders sign up page (cloud) 1`] = `
         className="mb-4"
       >
         Or,
-         
+
         <a
           href="/?showEmail=true"
           onClick={[Function]}
@@ -103,7 +103,7 @@ exports[`SignUpPage renders sign up page (cloud) 1`] = `
         className="text-muted"
       >
         By registering, you agree to our
-         
+
         <a
           href="https://about.sourcegraph.com/terms"
           rel="noopener"
@@ -111,9 +111,9 @@ exports[`SignUpPage renders sign up page (cloud) 1`] = `
         >
           Terms of Service
         </a>
-         
+
         and
-         
+
         <a
           href="https://about.sourcegraph.com/privacy"
           rel="noopener"
@@ -127,7 +127,7 @@ exports[`SignUpPage renders sign up page (cloud) 1`] = `
         className="separator"
       />
       <div>
-        Already have an account? 
+        Already have an account?
         <a
           href="/sign-in"
           onClick={[Function]}
@@ -142,7 +142,7 @@ exports[`SignUpPage renders sign up page (cloud) 1`] = `
 
 exports[`SignUpPage renders sign up page (server) 1`] = `
 <div
-  className="signin-signup-page sign-up-page"
+  className="signin-signup-page"
 >
   <div
     className="heroPage lessPadding"
@@ -291,7 +291,7 @@ exports[`SignUpPage renders sign up page (server) 1`] = `
       <p
         className="mt-3"
       >
-        Already have an account? 
+        Already have an account?
         <a
           href="/sign-in"
           onClick={[Function]}
