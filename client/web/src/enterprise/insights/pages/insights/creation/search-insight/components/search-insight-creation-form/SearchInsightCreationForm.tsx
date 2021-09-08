@@ -1,7 +1,7 @@
 import classnames from 'classnames'
 import React, { FormEventHandler, RefObject } from 'react'
 
-import { Button } from '@sourcegraph/wildcard'
+import { Button, Checkbox } from '@sourcegraph/wildcard'
 
 import { ErrorAlert } from '../../../../../../../../components/alerts'
 import { LoaderButton } from '../../../../../../../../components/LoaderButton'
@@ -125,11 +125,14 @@ export const SearchInsightCreationForm: React.FunctionComponent<CreationSearchIn
                 />
 
                 <label className="d-flex flex-wrap align-items-center mb-2 mt-3 font-weight-normal">
-                    <input
-                        type="checkbox"
-                        {...allReposMode.input}
+                    <Checkbox
+                        aria-label="Run your insight over all your repositories"
                         value="all-repos-mode"
                         checked={allReposMode.input.value}
+                        ref={allReposMode.input.ref}
+                        name={allReposMode.input.name}
+                        onChange={allReposMode.input.onChange}
+                        onBlur={allReposMode.input.onBlur}
                     />
 
                     <span className="pl-2">Run your insight over all your repositories</span>

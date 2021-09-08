@@ -5,6 +5,7 @@ import { BrandedStory } from '@sourcegraph/branded/src/components/BrandedStory'
 import webStyles from '@sourcegraph/web/src/SourcegraphWebApp.scss'
 
 import { Grid } from '../../Grid'
+import { FormFieldLabel } from '../internal/FormFieldLabel'
 
 import { Checkbox, CheckboxProps } from './Checkbox'
 
@@ -38,16 +39,22 @@ const BaseCheckbox = ({ name, ...props }: { name: string } & Pick<CheckboxProps,
     }, [])
 
     return (
-        <Checkbox
-            name={name}
-            id={name}
-            value="first"
-            checked={isChecked}
-            onChange={handleChange}
-            label="Check me!"
-            message="Hello world!"
-            {...props}
-        />
+        <div className="form-check">
+            <Checkbox
+                name={name}
+                id={name}
+                value="first"
+                checked={isChecked}
+                onChange={handleChange}
+                aria-label="Check me!"
+                message="Hello world!"
+                {...props}
+                className="form-check-input"
+            />
+            <FormFieldLabel htmlFor={name} className="form-check-label">
+                Check me!
+            </FormFieldLabel>
+        </div>
     )
 }
 

@@ -3,7 +3,7 @@ import { escapeRegExp } from 'lodash'
 import React from 'react'
 import { Link } from 'react-router-dom'
 
-import { Button } from '@sourcegraph/wildcard'
+import { Button, Checkbox } from '@sourcegraph/wildcard'
 
 import { ErrorAlert } from '../../../../../../../../../components/alerts'
 import { LoaderButton } from '../../../../../../../../../components/LoaderButton'
@@ -68,8 +68,8 @@ export const AddInsightModalContent: React.FunctionComponent<AddInsightModalCont
             <fieldset className={classnames('mt-2', styles.insightsContainer)}>
                 {filteredInsights.map(insight => (
                     <label key={insight.id} className={styles.insightItem}>
-                        <input
-                            type="checkbox"
+                        <Checkbox
+                            aria-label={insight.title}
                             name="insightIds"
                             checked={isChecked(insight.id)}
                             value={insight.id}

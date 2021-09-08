@@ -1,6 +1,8 @@
+import classNames from 'classnames'
 import React from 'react'
 
-import { BaseControlInput, ControlInputProps } from '../internal/BaseControlInput'
+import { ControlInputProps } from '../internal/BaseControlInput'
+import { getValidStyle } from '../internal/utils'
 
 export type CheckboxProps = ControlInputProps
 
@@ -14,6 +16,8 @@ export type CheckboxProps = ControlInputProps
  *
  * Useful article comparing checkboxes to radio buttons: https://www.nngroup.com/articles/checkboxes-vs-radio-buttons/
  */
-export const Checkbox: React.FunctionComponent<CheckboxProps> = React.forwardRef((props, reference) => (
-    <BaseControlInput {...props} type="checkbox" ref={reference} />
-))
+export const Checkbox: React.FunctionComponent<CheckboxProps> = React.forwardRef(
+    ({ isValid, className, ...props }, reference) => (
+        <input ref={reference} type="checkbox" className={classNames(getValidStyle(isValid), className)} {...props} />
+    )
+)
