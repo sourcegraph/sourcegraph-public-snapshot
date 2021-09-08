@@ -33,7 +33,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       PROJECT: MDExOlByb2plY3ROZXh0MzIxNw== # https://github.com/orgs/sourcegraph/projects/197
-      GITHUB_TOKEN: ${{ secrets.LABELER_GITHUB_TOKEN }}
+      GITHUB_TOKEN: ${{ secrets.GH_PROJECTS_ACTION_TOKEN }}
     steps:
     - name: Get issue if relevant
       if: ${{ contains(github.event.issue.labels.*.name, 'team/distribution') }}
