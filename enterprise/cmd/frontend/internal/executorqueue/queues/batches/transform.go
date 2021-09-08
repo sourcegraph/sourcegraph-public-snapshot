@@ -131,8 +131,8 @@ func makeURL(base, username, password string) (string, error) {
 	return u.String(), nil
 }
 
-// transformBatchSpecWorkspaceJobRecord transforms a *btypes.BatchSpecWorkspaceJob into an apiclient.Job.
-func transformBatchSpecWorkspaceJobRecord(ctx context.Context, s *store.Store, job *btypes.BatchSpecWorkspaceJob, config *Config) (apiclient.Job, error) {
+// transformBatchSpecWorkspaceRecord transforms a *btypes.BatchSpecWorkspace into an apiclient.Job.
+func transformBatchSpecWorkspaceRecord(ctx context.Context, s *store.Store, job *btypes.BatchSpecWorkspace, config *Config) (apiclient.Job, error) {
 	// MAYBE: We could create a view in which batch_spec and repo are joined
 	// against the batch_spec_workspace_job so we don't have to load them
 	// separately.

@@ -9,28 +9,28 @@ import (
 	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
 )
 
-// BatchSpecWorkspaceJobState defines the possible states of a changeset job.
-type BatchSpecWorkspaceJobState string
+// BatchSpecWorkspaceState defines the possible states of a changeset job.
+type BatchSpecWorkspaceState string
 
-// BatchSpecWorkspaceJobState constants.
+// BatchSpecWorkspaceState constants.
 const (
-	BatchSpecWorkspaceJobStatePending BatchSpecWorkspaceJobState = "PENDING"
+	BatchSpecWorkspaceStatePending BatchSpecWorkspaceState = "PENDING"
 
-	BatchSpecWorkspaceJobStateQueued     BatchSpecWorkspaceJobState = "QUEUED"
-	BatchSpecWorkspaceJobStateProcessing BatchSpecWorkspaceJobState = "PROCESSING"
-	BatchSpecWorkspaceJobStateErrored    BatchSpecWorkspaceJobState = "ERRORED"
-	BatchSpecWorkspaceJobStateFailed     BatchSpecWorkspaceJobState = "FAILED"
-	BatchSpecWorkspaceJobStateCompleted  BatchSpecWorkspaceJobState = "COMPLETED"
+	BatchSpecWorkspaceStateQueued     BatchSpecWorkspaceState = "QUEUED"
+	BatchSpecWorkspaceStateProcessing BatchSpecWorkspaceState = "PROCESSING"
+	BatchSpecWorkspaceStateErrored    BatchSpecWorkspaceState = "ERRORED"
+	BatchSpecWorkspaceStateFailed     BatchSpecWorkspaceState = "FAILED"
+	BatchSpecWorkspaceStateCompleted  BatchSpecWorkspaceState = "COMPLETED"
 )
 
-// Valid returns true if the given BatchSpecWorkspaceJobState is valid.
-func (s BatchSpecWorkspaceJobState) Valid() bool {
+// Valid returns true if the given BatchSpecWorkspaceState is valid.
+func (s BatchSpecWorkspaceState) Valid() bool {
 	switch s {
-	case BatchSpecWorkspaceJobStateQueued,
-		BatchSpecWorkspaceJobStateProcessing,
-		BatchSpecWorkspaceJobStateErrored,
-		BatchSpecWorkspaceJobStateFailed,
-		BatchSpecWorkspaceJobStateCompleted:
+	case BatchSpecWorkspaceStateQueued,
+		BatchSpecWorkspaceStateProcessing,
+		BatchSpecWorkspaceStateErrored,
+		BatchSpecWorkspaceStateFailed,
+		BatchSpecWorkspaceStateCompleted:
 		return true
 	default:
 		return false
@@ -40,9 +40,9 @@ func (s BatchSpecWorkspaceJobState) Valid() bool {
 // ToDB returns the database representation of the worker state. That's
 // needed because we want to use UPPERCASE in the application and GraphQL layer,
 // but need to use lowercase in the database to make it work with workerutil.Worker.
-func (s BatchSpecWorkspaceJobState) ToDB() string { return strings.ToLower(string(s)) }
+func (s BatchSpecWorkspaceState) ToDB() string { return strings.ToLower(string(s)) }
 
-type BatchSpecWorkspaceJob struct {
+type BatchSpecWorkspace struct {
 	ID int64
 
 	BatchSpecID      int64
@@ -57,7 +57,7 @@ type BatchSpecWorkspaceJob struct {
 	OnlyFetchWorkspace bool
 
 	// workerutil fields
-	State           BatchSpecWorkspaceJobState
+	State           BatchSpecWorkspaceState
 	FailureMessage  *string
 	StartedAt       time.Time
 	FinishedAt      time.Time
@@ -73,6 +73,6 @@ type BatchSpecWorkspaceJob struct {
 	UpdatedAt time.Time
 }
 
-func (j *BatchSpecWorkspaceJob) RecordID() int {
+func (j *BatchSpecWorkspace) RecordID() int {
 	return int(j.ID)
 }

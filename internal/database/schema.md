@@ -113,11 +113,11 @@ Foreign-key constraints:
 
 ```
 
-# Table "public.batch_spec_workspace_jobs"
+# Table "public.batch_spec_workspaces"
 ```
-        Column        |           Type           | Collation | Nullable |                        Default                        
-----------------------+--------------------------+-----------+----------+-------------------------------------------------------
- id                   | bigint                   |           | not null | nextval('batch_spec_workspace_jobs_id_seq'::regclass)
+        Column        |           Type           | Collation | Nullable |                      Default                      
+----------------------+--------------------------+-----------+----------+---------------------------------------------------
+ id                   | bigint                   |           | not null | nextval('batch_spec_workspaces_id_seq'::regclass)
  batch_spec_id        | integer                  |           |          | 
  changeset_spec_ids   | jsonb                    |           |          | '{}'::jsonb
  repo_id              | integer                  |           |          | 
@@ -126,6 +126,7 @@ Foreign-key constraints:
  path                 | text                     |           | not null | 
  file_matches         | text[]                   |           | not null | 
  only_fetch_workspace | boolean                  |           | not null | false
+ steps                | jsonb                    |           |          | '[]'::jsonb
  state                | text                     |           |          | 'pending'::text
  failure_message      | text                     |           |          | 
  started_at           | timestamp with time zone |           |          | 
@@ -139,10 +140,10 @@ Foreign-key constraints:
  created_at           | timestamp with time zone |           | not null | now()
  updated_at           | timestamp with time zone |           | not null | now()
 Indexes:
-    "batch_spec_workspace_jobs_pkey" PRIMARY KEY, btree (id)
+    "batch_spec_workspaces_pkey" PRIMARY KEY, btree (id)
 Foreign-key constraints:
-    "batch_spec_workspace_jobs_batch_spec_id_fkey" FOREIGN KEY (batch_spec_id) REFERENCES batch_specs(id) ON DELETE CASCADE DEFERRABLE
-    "batch_spec_workspace_jobs_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) DEFERRABLE
+    "batch_spec_workspaces_batch_spec_id_fkey" FOREIGN KEY (batch_spec_id) REFERENCES batch_specs(id) ON DELETE CASCADE DEFERRABLE
+    "batch_spec_workspaces_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) DEFERRABLE
 
 ```
 
@@ -179,7 +180,7 @@ Foreign-key constraints:
 Referenced by:
     TABLE "batch_changes" CONSTRAINT "batch_changes_batch_spec_id_fkey" FOREIGN KEY (batch_spec_id) REFERENCES batch_specs(id) DEFERRABLE
     TABLE "batch_spec_executions" CONSTRAINT "batch_spec_executions_batch_spec_id_fkey" FOREIGN KEY (batch_spec_id) REFERENCES batch_specs(id) DEFERRABLE
-    TABLE "batch_spec_workspace_jobs" CONSTRAINT "batch_spec_workspace_jobs_batch_spec_id_fkey" FOREIGN KEY (batch_spec_id) REFERENCES batch_specs(id) ON DELETE CASCADE DEFERRABLE
+    TABLE "batch_spec_workspaces" CONSTRAINT "batch_spec_workspaces_batch_spec_id_fkey" FOREIGN KEY (batch_spec_id) REFERENCES batch_specs(id) ON DELETE CASCADE DEFERRABLE
     TABLE "changeset_specs" CONSTRAINT "changeset_specs_batch_spec_id_fkey" FOREIGN KEY (batch_spec_id) REFERENCES batch_specs(id) DEFERRABLE
 
 ```
@@ -1620,7 +1621,7 @@ Check constraints:
     "check_name_nonempty" CHECK (name <> ''::citext)
     "repo_metadata_check" CHECK (jsonb_typeof(metadata) = 'object'::text)
 Referenced by:
-    TABLE "batch_spec_workspace_jobs" CONSTRAINT "batch_spec_workspace_jobs_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) DEFERRABLE
+    TABLE "batch_spec_workspaces" CONSTRAINT "batch_spec_workspaces_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) DEFERRABLE
     TABLE "changeset_specs" CONSTRAINT "changeset_specs_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) DEFERRABLE
     TABLE "changesets" CONSTRAINT "changesets_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE DEFERRABLE
     TABLE "discussion_threads_target_repo" CONSTRAINT "discussion_threads_target_repo_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE

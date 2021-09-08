@@ -19,9 +19,9 @@ import (
 	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 )
 
-// batchSpecWorkspaceJobInsertColumns is the list of changeset_jobs columns that are
+// batchSpecWorkspaceInsertColumns is the list of changeset_jobs columns that are
 // modified in CreateChangesetJob.
-var batchSpecWorkspaceJobInsertColumns = []string{
+var batchSpecWorkspaceInsertColumns = []string{
 	"batch_spec_id",
 	"changeset_spec_ids",
 
@@ -41,37 +41,37 @@ var batchSpecWorkspaceJobInsertColumns = []string{
 
 // ChangesetJobColumns are used by the changeset job related Store methods to query
 // and create changeset jobs.
-var BatchSpecWorkspaceJobColumns = SQLColumns{
-	"batch_spec_workspace_jobs.id",
+var BatchSpecWorkspaceColums = SQLColumns{
+	"batch_spec_workspaces.id",
 
-	"batch_spec_workspace_jobs.batch_spec_id",
-	"batch_spec_workspace_jobs.changeset_spec_ids",
+	"batch_spec_workspaces.batch_spec_id",
+	"batch_spec_workspaces.changeset_spec_ids",
 
-	"batch_spec_workspace_jobs.repo_id",
-	"batch_spec_workspace_jobs.branch",
-	"batch_spec_workspace_jobs.commit",
-	"batch_spec_workspace_jobs.path",
-	"batch_spec_workspace_jobs.file_matches",
-	"batch_spec_workspace_jobs.only_fetch_workspace",
-	"batch_spec_workspace_jobs.steps",
+	"batch_spec_workspaces.repo_id",
+	"batch_spec_workspaces.branch",
+	"batch_spec_workspaces.commit",
+	"batch_spec_workspaces.path",
+	"batch_spec_workspaces.file_matches",
+	"batch_spec_workspaces.only_fetch_workspace",
+	"batch_spec_workspaces.steps",
 
-	"batch_spec_workspace_jobs.state",
-	"batch_spec_workspace_jobs.failure_message",
-	"batch_spec_workspace_jobs.started_at",
-	"batch_spec_workspace_jobs.finished_at",
-	"batch_spec_workspace_jobs.process_after",
-	"batch_spec_workspace_jobs.num_resets",
-	"batch_spec_workspace_jobs.num_failures",
-	"batch_spec_workspace_jobs.execution_logs",
-	"batch_spec_workspace_jobs.worker_hostname",
+	"batch_spec_workspaces.state",
+	"batch_spec_workspaces.failure_message",
+	"batch_spec_workspaces.started_at",
+	"batch_spec_workspaces.finished_at",
+	"batch_spec_workspaces.process_after",
+	"batch_spec_workspaces.num_resets",
+	"batch_spec_workspaces.num_failures",
+	"batch_spec_workspaces.execution_logs",
+	"batch_spec_workspaces.worker_hostname",
 
-	"batch_spec_workspace_jobs.created_at",
-	"batch_spec_workspace_jobs.updated_at",
+	"batch_spec_workspaces.created_at",
+	"batch_spec_workspaces.updated_at",
 }
 
-// CreateBatchSpecWorkspaceJob creates the given batch spec workspace jobs.
-func (s *Store) CreateBatchSpecWorkspaceJob(ctx context.Context, ws ...*btypes.BatchSpecWorkspaceJob) (err error) {
-	ctx, endObservation := s.operations.createBatchSpecWorkspaceJob.With(ctx, &err, observation.Args{LogFields: []log.Field{
+// CreateBatchSpecWorkspace creates the given batch spec workspace jobs.
+func (s *Store) CreateBatchSpecWorkspace(ctx context.Context, ws ...*btypes.BatchSpecWorkspace) (err error) {
+	ctx, endObservation := s.operations.createBatchSpecWorkspace.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("count", len(ws)),
 	}})
 	defer endObservation(1, observation.Args{})
@@ -130,33 +130,33 @@ func (s *Store) CreateBatchSpecWorkspaceJob(ctx context.Context, ws ...*btypes.B
 	return batch.WithInserterWithReturn(
 		ctx,
 		s.Handle().DB(),
-		"batch_spec_workspace_jobs",
-		batchSpecWorkspaceJobInsertColumns,
-		BatchSpecWorkspaceJobColumns,
+		"batch_spec_workspaces",
+		batchSpecWorkspaceInsertColumns,
+		BatchSpecWorkspaceColums,
 		func(rows *sql.Rows) error {
 			i++
-			return scanBatchSpecWorkspaceJob(ws[i], rows)
+			return scanBatchSpecWorkspace(ws[i], rows)
 		},
 		inserter,
 	)
 }
 
-// GetBatchSpecWorkspaceJobOpts captures the query options needed for getting a BatchSpecWorkspaceJob
-type GetBatchSpecWorkspaceJobOpts struct {
+// GetBatchSpecWorkspaceOpts captures the query options needed for getting a BatchSpecWorkspace
+type GetBatchSpecWorkspaceOpts struct {
 	ID int64
 }
 
-// GetBatchSpecWorkspaceJob gets a BatchSpecWorkspaceJob matching the given options.
-func (s *Store) GetBatchSpecWorkspaceJob(ctx context.Context, opts GetBatchSpecWorkspaceJobOpts) (job *btypes.BatchSpecWorkspaceJob, err error) {
-	ctx, endObservation := s.operations.getBatchSpecWorkspaceJob.With(ctx, &err, observation.Args{LogFields: []log.Field{
+// GetBatchSpecWorkspace gets a BatchSpecWorkspace matching the given options.
+func (s *Store) GetBatchSpecWorkspace(ctx context.Context, opts GetBatchSpecWorkspaceOpts) (job *btypes.BatchSpecWorkspace, err error) {
+	ctx, endObservation := s.operations.getBatchSpecWorkspace.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("ID", int(opts.ID)),
 	}})
 	defer endObservation(1, observation.Args{})
 
-	q := getBatchSpecWorkspaceJobQuery(&opts)
-	var c btypes.BatchSpecWorkspaceJob
+	q := getBatchSpecWorkspaceQuery(&opts)
+	var c btypes.BatchSpecWorkspace
 	err = s.query(ctx, q, func(sc scanner) (err error) {
-		return scanBatchSpecWorkspaceJob(&c, sc)
+		return scanBatchSpecWorkspace(&c, sc)
 	})
 	if err != nil {
 		return nil, err
@@ -169,45 +169,45 @@ func (s *Store) GetBatchSpecWorkspaceJob(ctx context.Context, opts GetBatchSpecW
 	return &c, nil
 }
 
-var getBatchSpecWorkspaceJobsQueryFmtstr = `
--- source: enterprise/internal/batches/store/batch_spec_workspace_jobs.go:GetBatchSpecWorkspaceJob
-SELECT %s FROM batch_spec_workspace_jobs
-INNER JOIN repo ON repo.id = batch_spec_workspace_jobs.repo_id
+var getBatchSpecWorkspacesQueryFmtstr = `
+-- source: enterprise/internal/batches/store/batch_spec_workspaces.go:GetBatchSpecWorkspace
+SELECT %s FROM batch_spec_workspaces
+INNER JOIN repo ON repo.id = batch_spec_workspaces.repo_id
 WHERE %s
 LIMIT 1
 `
 
-func getBatchSpecWorkspaceJobQuery(opts *GetBatchSpecWorkspaceJobOpts) *sqlf.Query {
+func getBatchSpecWorkspaceQuery(opts *GetBatchSpecWorkspaceOpts) *sqlf.Query {
 	preds := []*sqlf.Query{
 		sqlf.Sprintf("repo.deleted_at IS NULL"),
-		sqlf.Sprintf("batch_spec_workspace_jobs.id = %s", opts.ID),
+		sqlf.Sprintf("batch_spec_workspaces.id = %s", opts.ID),
 	}
 
 	return sqlf.Sprintf(
-		getBatchSpecWorkspaceJobsQueryFmtstr,
-		sqlf.Join(BatchSpecWorkspaceJobColumns.ToSqlf(), ", "),
+		getBatchSpecWorkspacesQueryFmtstr,
+		sqlf.Join(BatchSpecWorkspaceColums.ToSqlf(), ", "),
 		sqlf.Join(preds, "\n AND "),
 	)
 }
 
-// ListBatchSpecWorkspaceJobsOpts captures the query options needed for
+// ListBatchSpecWorkspacesOpts captures the query options needed for
 // listing batch spec workspace jobs.
-type ListBatchSpecWorkspaceJobsOpts struct {
-	State          btypes.BatchSpecWorkspaceJobState
+type ListBatchSpecWorkspacesOpts struct {
+	State          btypes.BatchSpecWorkspaceState
 	WorkerHostname string
 }
 
-// ListBatchSpecWorkspaceJobs lists batch changes with the given filters.
-func (s *Store) ListBatchSpecWorkspaceJobs(ctx context.Context, opts ListBatchSpecWorkspaceJobsOpts) (cs []*btypes.BatchSpecWorkspaceJob, err error) {
-	ctx, endObservation := s.operations.listBatchSpecWorkspaceJobs.With(ctx, &err, observation.Args{})
+// ListBatchSpecWorkspaces lists batch changes with the given filters.
+func (s *Store) ListBatchSpecWorkspaces(ctx context.Context, opts ListBatchSpecWorkspacesOpts) (cs []*btypes.BatchSpecWorkspace, err error) {
+	ctx, endObservation := s.operations.listBatchSpecWorkspaces.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
-	q := listBatchSpecWorkspaceJobsQuery(opts)
+	q := listBatchSpecWorkspacesQuery(opts)
 
-	cs = make([]*btypes.BatchSpecWorkspaceJob, 0)
+	cs = make([]*btypes.BatchSpecWorkspace, 0)
 	err = s.query(ctx, q, func(sc scanner) error {
-		var c btypes.BatchSpecWorkspaceJob
-		if err := scanBatchSpecWorkspaceJob(&c, sc); err != nil {
+		var c btypes.BatchSpecWorkspace
+		if err := scanBatchSpecWorkspace(&c, sc); err != nil {
 			return err
 		}
 		cs = append(cs, &c)
@@ -217,25 +217,25 @@ func (s *Store) ListBatchSpecWorkspaceJobs(ctx context.Context, opts ListBatchSp
 	return cs, err
 }
 
-var listBatchSpecWorkspaceJobsQueryFmtstr = `
--- source: enterprise/internal/batches/store/batch_spec_workspace_job.go:ListBatchSpecWorkspaceJobs
-SELECT %s FROM batch_spec_workspace_jobs
-INNER JOIN repo ON repo.id = batch_spec_workspace_jobs.repo_id
+var listBatchSpecWorkspacesQueryFmtstr = `
+-- source: enterprise/internal/batches/store/batch_spec_workspace_job.go:ListBatchSpecWorkspaces
+SELECT %s FROM batch_spec_workspaces
+INNER JOIN repo ON repo.id = batch_spec_workspaces.repo_id
 WHERE %s
 ORDER BY id ASC
 `
 
-func listBatchSpecWorkspaceJobsQuery(opts ListBatchSpecWorkspaceJobsOpts) *sqlf.Query {
+func listBatchSpecWorkspacesQuery(opts ListBatchSpecWorkspacesOpts) *sqlf.Query {
 	preds := []*sqlf.Query{
 		sqlf.Sprintf("repo.deleted_at IS NULL"),
 	}
 
 	if opts.State != "" {
-		preds = append(preds, sqlf.Sprintf("batch_spec_workspace_jobs.state = %s", opts.State))
+		preds = append(preds, sqlf.Sprintf("batch_spec_workspaces.state = %s", opts.State))
 	}
 
 	if opts.WorkerHostname != "" {
-		preds = append(preds, sqlf.Sprintf("batch_spec_workspace_jobs.worker_hostname = %s", opts.WorkerHostname))
+		preds = append(preds, sqlf.Sprintf("batch_spec_workspaces.worker_hostname = %s", opts.WorkerHostname))
 	}
 
 	if len(preds) == 0 {
@@ -243,13 +243,13 @@ func listBatchSpecWorkspaceJobsQuery(opts ListBatchSpecWorkspaceJobsOpts) *sqlf.
 	}
 
 	return sqlf.Sprintf(
-		listBatchSpecWorkspaceJobsQueryFmtstr,
-		sqlf.Join(BatchSpecWorkspaceJobColumns.ToSqlf(), ", "),
+		listBatchSpecWorkspacesQueryFmtstr,
+		sqlf.Join(BatchSpecWorkspaceColums.ToSqlf(), ", "),
 		sqlf.Join(preds, "\n AND "),
 	)
 }
 
-func scanBatchSpecWorkspaceJob(wj *btypes.BatchSpecWorkspaceJob, s scanner) error {
+func scanBatchSpecWorkspace(wj *btypes.BatchSpecWorkspace, s scanner) error {
 	var executionLogs []dbworkerstore.ExecutionLogEntry
 	var failureMessage string
 	var steps json.RawMessage
@@ -281,7 +281,7 @@ func scanBatchSpecWorkspaceJob(wj *btypes.BatchSpecWorkspaceJob, s scanner) erro
 	}
 
 	if err := json.Unmarshal(steps, &wj.Steps); err != nil {
-		return errors.Wrap(err, "scanBatchSpecWorkspaceJob: failed to unmarshal Steps")
+		return errors.Wrap(err, "scanBatchSpecWorkspace: failed to unmarshal Steps")
 	}
 
 	if failureMessage != "" {
@@ -295,24 +295,24 @@ func scanBatchSpecWorkspaceJob(wj *btypes.BatchSpecWorkspaceJob, s scanner) erro
 	return nil
 }
 
-func ScanFirstBatchSpecWorkspaceJob(rows *sql.Rows, err error) (*btypes.BatchSpecWorkspaceJob, bool, error) {
-	jobs, err := scanBatchSpecWorkspaceJobs(rows, err)
+func ScanFirstBatchSpecWorkspace(rows *sql.Rows, err error) (*btypes.BatchSpecWorkspace, bool, error) {
+	jobs, err := scanBatchSpecWorkspaces(rows, err)
 	if err != nil || len(jobs) == 0 {
 		return nil, false, err
 	}
 	return jobs[0], true, nil
 }
 
-func scanBatchSpecWorkspaceJobs(rows *sql.Rows, queryErr error) ([]*btypes.BatchSpecWorkspaceJob, error) {
+func scanBatchSpecWorkspaces(rows *sql.Rows, queryErr error) ([]*btypes.BatchSpecWorkspace, error) {
 	if queryErr != nil {
 		return nil, queryErr
 	}
 
-	var jobs []*btypes.BatchSpecWorkspaceJob
+	var jobs []*btypes.BatchSpecWorkspace
 
 	return jobs, scanAll(rows, func(sc scanner) (err error) {
-		var j btypes.BatchSpecWorkspaceJob
-		if err = scanBatchSpecWorkspaceJob(&j, sc); err != nil {
+		var j btypes.BatchSpecWorkspace
+		if err = scanBatchSpecWorkspace(&j, sc); err != nil {
 			return err
 		}
 		jobs = append(jobs, &j)

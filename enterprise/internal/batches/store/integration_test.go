@@ -34,8 +34,8 @@ func TestIntegration(t *testing.T) {
 		t.Run("UserDeleteCascades", storeTest(db, nil, testUserDeleteCascades))
 		t.Run("ChangesetJobs", storeTest(db, nil, testStoreChangesetJobs))
 		t.Run("BulkOperations", storeTest(db, nil, testStoreBulkOperations))
-		t.Run("BatchSpecExecutions", storeTest(db, nil, testStoreChangesetSpecExecutions))
-		t.Run("BatchSpecWorkspaceJobs", storeTest(db, nil, testStoreBatchSpecWorkspaceJobs))
+		t.Run("BatchSpecExecutions", storeTest(db, nil, testStoreBatchSpecExecutions))
+		t.Run("BatchSpecWorkspaces", storeTest(db, nil, testStoreBatchSpecWorkspaces))
 
 		for name, key := range map[string]encryption.Key{
 			"no key":   nil,
