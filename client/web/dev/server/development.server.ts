@@ -37,6 +37,10 @@ async function startDevelopmentServer(): Promise<void> {
         environmentConfig
     )
 
+    if (!SOURCEGRAPH_API_URL) {
+        throw new Error('development.server.ts only supports *web-standalone* usage')
+    }
+
     // Get CSRF token value from the `SOURCEGRAPH_API_URL`.
     const { csrfContextValue, csrfCookieValue } = await getCSRFTokenAndCookie(SOURCEGRAPH_API_URL)
 
