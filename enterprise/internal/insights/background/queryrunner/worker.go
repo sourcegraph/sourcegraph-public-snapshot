@@ -200,6 +200,7 @@ func EnqueueJob(ctx context.Context, workerBaseStore *basestore.Store, job *Job)
 			job.ProcessAfter,
 			job.Cost,
 			job.Priority,
+			job.PersistMode,
 		),
 	))
 	if err != nil {

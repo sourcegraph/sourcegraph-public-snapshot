@@ -5,6 +5,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/inconshreveable/log15"
+
 	"github.com/sourcegraph/sourcegraph/internal/insights/priority"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
@@ -52,6 +54,7 @@ func newInsightEnqueuer(ctx context.Context, workerBaseStore *basestore.Store, i
 
 			var multi error
 
+			log15.Info("enqueuing indexed insight recordings")
 			// this job will do the work of both recording (permanent) queries, and snapshot (ephemeral) queries. We want to try both, so if either has a soft-failure we will attempt both.
 			recordingSeries, err := insightStore.GetDataSeries(ctx, store.GetDataSeriesArgs{NextRecordingBefore: now()})
 			if err != nil {
@@ -62,6 +65,7 @@ func newInsightEnqueuer(ctx context.Context, workerBaseStore *basestore.Store, i
 				multi = multierror.Append(multi, err)
 			}
 
+			log15.Info("enqueuing indexed insight snapshots")
 			snapshotSeries, err := insightStore.GetDataSeries(ctx, store.GetDataSeriesArgs{NextSnapshotBefore: now()})
 			if err != nil {
 				return errors.Wrap(err, "indexed insight recorder: unable to fetch series for snapshots")
@@ -103,14 +107,15 @@ func enqueue(ctx context.Context, dataSeries []types.InsightSeries, mode store.P
 			PersistMode: string(mode),
 		})
 		if err != nil {
-			multi = multierror.Append(multi, err)
+			multi = multierror.Append(multi, errors.Wrapf(err, "failed to enqueue insight series_id: %s", seriesID))
+			continue
 		}
 
 		// The timestamp update can't be transactional because this is a separate database currently, so we will use
 		// at-least-once semantics by waiting until the queue transaction is complete and without error.
 		_, err = stampFunc(ctx, series)
 		if err != nil {
-			multi = multierror.Append(multi, err)
+			multi = multierror.Append(multi, errors.Wrapf(err, "failed to stamp insight series_id: %s", seriesID))
 			continue // might as well try the other insights and just skip this one
 		}
 	}

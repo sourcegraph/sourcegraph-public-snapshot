@@ -381,10 +381,9 @@ func (s *Store) RecordSeriesPoint(ctx context.Context, v RecordSeriesPointArgs) 
 		return errors.Newf("unsupported insights series point persist mode: %v", v.PersistMode)
 	}
 
-	// Insert the actual data point.
-	return txStore.Exec(ctx, sqlf.Sprintf(
+	q := sqlf.Sprintf(
 		recordSeriesPointFmtstr,
-		tableName,
+		sqlf.Sprintf(tableName),
 		v.SeriesID,         // series_id
 		v.Point.Time.UTC(), // time
 		v.Point.Value,      // value
@@ -392,7 +391,9 @@ func (s *Store) RecordSeriesPoint(ctx context.Context, v RecordSeriesPointArgs) 
 		v.RepoID,           // repo_id
 		repoNameID,         // repo_name_id
 		repoNameID,         // original_repo_name_id
-	))
+	)
+	// Insert the actual data point.
+	return txStore.Exec(ctx, q)
 }
 
 // RecordSeriesPoints stores multiple data points atomically.
@@ -440,7 +441,7 @@ UNION
 
 const recordSeriesPointFmtstr = `
 -- source: enterprise/internal/insights/store/store.go:RecordSeriesPoint
-INSERT INTO %s(
+INSERT INTO %s (
 	series_id,
 	time,
 	value,
