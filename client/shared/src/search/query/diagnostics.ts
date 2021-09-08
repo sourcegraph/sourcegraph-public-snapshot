@@ -4,7 +4,7 @@ import { SearchPatternType } from '../../graphql-operations'
 
 import { validateFilter } from './filters'
 import { toMonacoSingleLineRange } from './monaco'
-import { PatternOf, each, matchesValue, eachOf } from './patternMatcher'
+import { PatternOf, each, matchesValue, eachOf, allOf, some, oneOf, every, not } from './patternMatcher'
 import { Filter, Token } from './token'
 
 type FilterCheck = (f: Filter) => Monaco.editor.IMarkerData[]
@@ -51,6 +51,20 @@ const rules: PatternOf<Token[], Monaco.editor.IMarkerData[]>[] = [
             context.data.push(...checkFilter(token as Filter))
         },
     }),
+    allOf(
+        not(some({ type: 'filter', field: { value: 'type' }, value: { value: oneOf('diff', 'commit') } })),
+        each({
+            type: 'filter',
+            field: { value: oneOf('author', 'before', 'after', 'message') },
+            $data: (token, context) => {
+                context.data.push({
+                    severity: Monaco.MarkerSeverity.Error,
+                    message: `Error: this filter requires 'type:commit' or 'type:diff' in the query`,
+                    ...toMonacoSingleLineRange((token as Filter).field.range),
+                })
+            },
+        })
+    ),
 ]
 
 /**
