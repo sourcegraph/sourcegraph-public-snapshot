@@ -709,6 +709,11 @@ commandsets:
 
   default: *enterprise_set
 
+  dotcom:
+    <<: *enterprise_set
+    env:
+      SOURCEGRAPHDOTCOM_MODE: true
+
   enterprise-codeintel:
     checks:
       - docker
@@ -736,13 +741,6 @@ commandsets:
       - codeintel-executor
 
   enterprise-codeinsights:
-    # Add the following overwrites to your sg.config.overwrite.yaml to get
-    # codeinsights working:
-    #
-    #   env:
-    #     DISABLE_CODE_INSIGHTS_HISTORICAL: false
-    #     DISABLE_CODE_INSIGHTS: false
-    #
     checks:
       - docker
       - redis
@@ -765,6 +763,9 @@ commandsets:
       - zoekt-webserver-0
       - zoekt-webserver-1
       - codeinsights-db
+    env:
+      DISABLE_CODE_INSIGHTS_HISTORICAL: false
+      DISABLE_CODE_INSIGHTS: false
 
   api-only:
     checks:
