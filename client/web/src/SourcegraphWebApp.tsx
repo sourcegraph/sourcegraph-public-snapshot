@@ -140,6 +140,9 @@ interface SourcegraphWebAppOldClassComponentExtraProps {
 
     platformContext: PlatformContext
     extensionsController: ExtensionsController
+
+    /** GraphQL client initialized asynchronously to restore persisted cache. */
+    graphqlClient?: ApolloClient<NormalizedCacheObject>
 }
 
 interface SourcegraphWebAppState extends SettingsCascadeProps {
@@ -147,9 +150,6 @@ interface SourcegraphWebAppState extends SettingsCascadeProps {
 
     /** The currently authenticated user (or null if the viewer is anonymous). */
     authenticatedUser?: AuthenticatedUser | null
-
-    /** GraphQL client initialized asynchronously to restore persisted cache. */
-    graphqlClient?: ApolloClient<NormalizedCacheObject>
 
     viewerSubject: LayoutProps['viewerSubject']
 
@@ -322,12 +322,6 @@ class SourcegraphWebAppOldClassComponent extends React.Component<
 
         document.documentElement.classList.add('theme')
 
-        getWebGraphQLClient()
-            .then(graphqlClient => this.setState({ graphqlClient }))
-            .catch(error => {
-                console.error('Error initalizing GraphQL client', error)
-            })
-
         this.subscriptions.add(
             combineLatest([
                 from(this.props.platformContext.settings),
@@ -469,7 +463,8 @@ class SourcegraphWebAppOldClassComponent extends React.Component<
             return <HeroPage icon={ServerIcon} title={`${statusCode}: ${statusText}`} subtitle={subtitle} />
         }
 
-        const { authenticatedUser, graphqlClient } = this.state
+        const { authenticatedUser } = this.state
+        const graphqlClient = this.props.graphqlClient
         if (authenticatedUser === undefined || graphqlClient === undefined) {
             return null
         }
@@ -681,6 +676,19 @@ export const SourcegraphWebApp: React.FunctionComponent<SourcegraphWebAppProps> 
         )
     )
 
+    const graphqlClient = useObservable(
+        useMemo(
+            () =>
+                from(getWebGraphQLClient()).pipe(
+                    catchError(error => {
+                        console.error('Error initalizing GraphQL client', error)
+                        return of(undefined)
+                    })
+                ),
+            []
+        )
+    )
+
     return (
         <SourcegraphWebAppOldClassComponent
             {...props}
@@ -688,6 +696,7 @@ export const SourcegraphWebApp: React.FunctionComponent<SourcegraphWebAppProps> 
             location={location}
             platformContext={platformContext}
             extensionsController={extensionsController}
+            graphqlClient={graphqlClient}
         />
     )
 }
