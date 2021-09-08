@@ -1,7 +1,6 @@
 package types
 
 import (
-	"strings"
 	"time"
 
 	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
@@ -34,19 +33,9 @@ type BatchSpec struct {
 
 	UserID int32
 
-	State BatchSpecState
-
 	CreatedAt time.Time
 	UpdatedAt time.Time
 }
-
-// func (cs *BatchSpec) ResolvingState() string {
-// 	return string(cs.State)
-// }
-
-// func (cs *BatchSpec) ExecutionState() string {
-// 	return cs.workspaces.all(|state| state == 'completed')
-// }
 
 // Clone returns a clone of a BatchSpec.
 func (cs *BatchSpec) Clone() *BatchSpec {
@@ -66,34 +55,3 @@ const BatchSpecTTL = 7 * 24 * time.Hour
 func (cs *BatchSpec) ExpiresAt() time.Time {
 	return cs.CreatedAt.Add(BatchSpecTTL)
 }
-
-// BatchSpecState defines the possible states of a batch spec.
-type BatchSpecState string
-
-// BatchSpecState constants.
-const (
-	BatchSpecStateQueued     BatchSpecState = "QUEUED"
-	BatchSpecStateProcessing BatchSpecState = "PROCESSING"
-	BatchSpecStateErrored    BatchSpecState = "ERRORED"
-	BatchSpecStateFailed     BatchSpecState = "FAILED"
-	BatchSpecStateCompleted  BatchSpecState = "COMPLETED"
-)
-
-// Valid returns true if the given BatchSpecState is valid.
-func (s BatchSpecState) Valid() bool {
-	switch s {
-	case BatchSpecStateQueued,
-		BatchSpecStateProcessing,
-		BatchSpecStateErrored,
-		BatchSpecStateFailed,
-		BatchSpecStateCompleted:
-		return true
-	default:
-		return false
-	}
-}
-
-// ToDB returns the database representation of the worker state. That's
-// needed because we want to use UPPERCASE in the application and GraphQL layer,
-// but need to use lowercase in the database to make it work with workerutil.Worker.
-func (s BatchSpecState) ToDB() string { return strings.ToLower(string(s)) }

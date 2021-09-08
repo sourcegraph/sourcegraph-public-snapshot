@@ -1577,42 +1577,6 @@ func (r *Resolver) ResolveWorkspacesForBatchSpec(ctx context.Context, args *grap
 	}, nil
 }
 
-func (r *Resolver) EnqueueBatchSpec(ctx context.Context, args *graphqlbackend.EnqueueBatchSpecArgs) (graphqlbackend.BatchSpecResolver, error) {
-	var err error
-	tr, ctx := trace.New(ctx, "CreatePendingBatchSpec", fmt.Sprintf("Resolver.CreatePendingBatchSpec %s, Spec %q", args.Namespace, args.BatchSpec))
-	defer func() {
-		tr.SetError(err)
-		tr.Finish()
-	}()
-
-	if err := batchChangesCreateAccess(ctx, r.store.DB()); err != nil {
-		return nil, err
-	}
-
-	// TODO for SSBC: we only allow admin access right now
-	// 🚨 SECURITY: Check that the requesting user is admin.
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.store.DB()); err != nil {
-		return nil, err
-	}
-
-	opts := service.EnqueueBatchSpecOpts{RawSpec: args.BatchSpec}
-
-	err = graphqlbackend.UnmarshalNamespaceID(args.Namespace, &opts.NamespaceUserID, &opts.NamespaceOrgID)
-	if err != nil {
-		return nil, err
-	}
-
-	batchSpec, err := service.New(r.store).EnqueueBatchSpec(ctx, opts)
-	if err != nil {
-		return nil, err
-	}
-
-	return &batchSpecResolver{
-		store:     r.store,
-		batchSpec: batchSpec,
-	}, nil
-}
-
 func parseBatchChangeState(s *string) (btypes.BatchChangeState, error) {
 	if s == nil {
 		return btypes.BatchChangeStateAny, nil

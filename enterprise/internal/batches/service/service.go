@@ -139,40 +139,40 @@ func (s *Service) CreateBatchSpec(ctx context.Context, opts CreateBatchSpecOpts)
 	return spec, nil
 }
 
-type EnqueueBatchSpecOpts struct {
-	RawSpec string `json:"raw_spec"`
+type EnqueueBatchSpecResolutionOpts struct {
+	BatchSpecID int64
 
-	NamespaceUserID int32 `json:"namespace_user_id"`
-	NamespaceOrgID  int32 `json:"namespace_org_id"`
+	AllowIgnored     bool
+	AllowUnsupported bool
 }
 
-// EnqueueBatchSpec creates a pending BatchSpec that will be picked up by a worker in the background.
-func (s *Service) EnqueueBatchSpec(ctx context.Context, opts EnqueueBatchSpecOpts) (spec *btypes.BatchSpec, err error) {
+// EnqueueBatchSpecResolution creates a pending BatchSpec that will be picked up by a worker in the background.
+func (s *Service) EnqueueBatchSpecResolution(ctx context.Context, opts EnqueueBatchSpecResolutionOpts) (err error) {
 	actor := actor.FromContext(ctx)
-	tr, ctx := trace.New(ctx, "Service.CreateBatchSpec", fmt.Sprintf("Actor %s", actor))
+	tr, ctx := trace.New(ctx, "Service.EnqueueBatchSpecResolution", fmt.Sprintf("Actor %s", actor))
 	defer func() {
 		tr.SetError(err)
 		tr.Finish()
 	}()
 
-	spec, err = btypes.NewBatchSpecFromRaw(opts.RawSpec)
+	tx, err := s.store.Transact(ctx)
 	if err != nil {
-		return nil, err
+		return err
+	}
+	defer func() { err = tx.Done(err) }()
+
+	spec, err := tx.GetBatchSpec(ctx, store.GetBatchSpecOpts{ID: opts.BatchSpecID})
+	if err != nil {
+		return err
 	}
 
-	// Check whether the current user has access to either one of the namespaces.
-	err = s.CheckNamespaceAccess(ctx, opts.NamespaceUserID, opts.NamespaceOrgID)
-	if err != nil {
-		return nil, err
+	resolution := &btypes.BatchSpecResolutionJob{
+		BatchSpecID:      spec.ID,
+		AllowIgnored:     opts.AllowIgnored,
+		AllowUnsupported: opts.AllowUnsupported,
 	}
-	spec.NamespaceOrgID = opts.NamespaceOrgID
-	spec.NamespaceUserID = opts.NamespaceUserID
-	spec.UserID = actor.UID
 
-	// Set the state to "queued" so that it will be picked up
-	spec.State = btypes.BatchSpecStateQueued
-
-	return spec, s.store.CreateBatchSpec(ctx, spec)
+	return tx.CreateBatchSpecResolutionJob(ctx, resolution)
 }
 
 // CreateChangesetSpec validates the given raw spec input and creates the ChangesetSpec.

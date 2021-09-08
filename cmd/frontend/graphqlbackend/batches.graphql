@@ -2182,29 +2182,6 @@ extend type Mutation {
     Experimental: This API is likely to change in the future.
     """
     cancelBatchSpecExecution(batchSpecExecution: ID!): BatchSpecExecution!
-
-
-    """
-    Enqueues a batch spec to be picked up in the background, where it will get
-    evaluated and workspace jobs will be attached to it.
-
-    These workspace jobs can then be inspected and enqueued by changing their
-    state from "pending" to "queued", which starts execution.
-    """
-    enqueueBatchSpec(
-        """
-        The namespace (either a user or organization). A batch spec can only be applied to (or
-        used to create) batch changes in this namespace.
-        """
-        namespace: ID!
-
-        """
-        The batch spec as YAML (or the equivalent JSON). See
-        https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/schema/batch_spec.schema.json
-        for the JSON Schema that describes the structure of this input.
-        """
-        batchSpec: String!
-    ): BatchSpec!
 }
 
 extend type Query {

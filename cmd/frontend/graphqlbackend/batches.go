@@ -164,11 +164,6 @@ type CreateBatchSpecArgs struct {
 	ChangesetSpecs []graphql.ID
 }
 
-type EnqueueBatchSpecArgs struct {
-	Namespace graphql.ID
-	BatchSpec string
-}
-
 type ChangesetSpecsConnectionArgs struct {
 	First int32
 	After *string
@@ -305,8 +300,6 @@ type BatchChangesResolver interface {
 	CancelBatchSpecExecution(ctx context.Context, args *CancelBatchSpecExecutionArgs) (BatchSpecExecutionResolver, error)
 	CloseChangesets(ctx context.Context, args *CloseChangesetsArgs) (BulkOperationResolver, error)
 	PublishChangesets(ctx context.Context, args *PublishChangesetsArgs) (BulkOperationResolver, error)
-
-	EnqueueBatchSpec(ctx context.Context, args *EnqueueBatchSpecArgs) (BatchSpecResolver, error)
 
 	// Queries
 
