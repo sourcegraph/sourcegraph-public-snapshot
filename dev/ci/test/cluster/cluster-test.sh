@@ -107,7 +107,6 @@ function e2e() {
 
 # main
 cluster_setup
-trap capture_state exit
 test_setup
 # TODO: Failing tests do not fail the build
 set +o pipefail
