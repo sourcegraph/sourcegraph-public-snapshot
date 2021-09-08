@@ -51,7 +51,6 @@ import { QueryState } from '../search/helpers'
 import { SearchNavbarItem } from '../search/input/SearchNavbarItem'
 import { ThemePreferenceProps } from '../theme'
 import { userExternalServicesEnabledFromTags } from '../user/settings/cloud-ga'
-import { UserSettingsSidebarItems } from '../user/settings/UserSettingsSidebar'
 import { showDotComMarketing } from '../util/features'
 
 import { ExtensionAlertAnimationProps, UserNavItem } from './UserNavItem'
@@ -86,8 +85,6 @@ interface Props
 
     // Whether globbing is enabled for filters.
     globbing: boolean
-
-    userSettingsSideBarItems?: UserSettingsSidebarItems
 
     /**
      * Which variation of the global navbar to render.
@@ -136,10 +133,9 @@ export const GlobalNavbar: React.FunctionComponent<Props> = ({
 
     // UI includes repositories section as part of the user navigation bar
     // This filter makes sure repositories feature flag is active.
-    const showRepositorySection = useMemo(
-        () => !!props.userSettingsSideBarItems?.find(item => item.label === 'Repositories'),
-        [props.userSettingsSideBarItems]
-    )
+    const showRepositorySection = props.authenticatedUser
+        ? userExternalServicesEnabledFromTags(props.authenticatedUser.tags)
+        : false
 
     const isSearchContextAvailable = useObservable(
         useMemo(
