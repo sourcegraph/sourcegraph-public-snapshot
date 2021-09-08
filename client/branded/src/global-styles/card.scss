@@ -1,12 +1,14 @@
-.card {
-    --card-bg: var(--color-bg-1);
-    --card-border-color: var(--border-color);
-}
-
 $card-spacer-y: 0.5rem;
 $card-spacer-x: 0.5rem;
 $card-bg: var(--card-bg);
 $card-border-color: var(--card-border-color);
 $card-cap-bg: var(--color-bg-2);
+
+.card {
+    --card-bg: var(--color-bg-1);
+    --card-border-color: var(--border-color);
+    --card-spacer-y: $card-spacer-y;
+    --card-spacer-x: $card-spacer-x;
+}
 
 @import 'bootstrap/scss/card';
