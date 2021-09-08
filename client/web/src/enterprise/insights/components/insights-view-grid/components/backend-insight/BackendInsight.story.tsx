@@ -6,12 +6,12 @@ import { delay } from 'rxjs/operators'
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
 import { WebStory } from '../../../../../../components/WebStory'
+import { LINE_CHART_CONTENT_MOCK, LINE_CHART_CONTENT_MOCK_EMPTY } from '../../../../../../views/mocks/charts-content'
 import { InsightsApiContext } from '../../../../core/backend/api-provider'
 import { InsightStillProcessingError } from '../../../../core/backend/api/get-backend-insight'
 import { createMockInsightAPI } from '../../../../core/backend/create-insights-api'
 import { InsightType } from '../../../../core/types'
 import { SearchBackendBasedInsight } from '../../../../core/types/insight/search-insight'
-import { LINE_CHART_CONTENT_MOCK, LINE_CHART_CONTENT_MOCK_EMPTY } from '../../../../mocks/charts-content'
 import { SETTINGS_CASCADE_MOCK } from '../../../../mocks/settings-cascade'
 
 import { BackendInsight } from './BackendInsight'

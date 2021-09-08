@@ -8,5 +8,6 @@ import { ExtensionViewsSectionProps } from './sections/EtenstionViewsSection'
  * only for the OSS version.
  */
 export interface CodeInsightsProps {
+    codeInsightsEnabled?: boolean
     extensionViews: React.FunctionComponent<ExtensionViewsSectionProps>
 }

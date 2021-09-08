@@ -1,10 +1,10 @@
 import { storiesOf } from '@storybook/react'
-import BarChartIcon from 'mdi-react/BarChartIcon';
+import BarChartIcon from 'mdi-react/BarChartIcon'
 import React from 'react'
 
 import { BatchChangesNavItem } from '../batches/BatchChangesNavItem'
 import { CodeMonitoringNavItem } from '../code-monitoring/CodeMonitoringNavItem'
-import { LinkWithIcon } from '../components/LinkWithIcon';
+import { LinkWithIcon } from '../components/LinkWithIcon'
 import { WebStory } from '../components/WebStory'
 
 import { MenuNavItem } from './MenuNavItem'

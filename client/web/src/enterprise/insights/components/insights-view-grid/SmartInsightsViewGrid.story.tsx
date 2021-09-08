@@ -5,10 +5,10 @@ import { of } from 'rxjs'
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
 import { WebStory } from '../../../../components/WebStory'
+import { LINE_CHART_CONTENT_MOCK } from '../../../../views/mocks/charts-content'
 import { InsightsApiContext } from '../../core/backend/api-provider'
 import { createMockInsightAPI } from '../../core/backend/create-insights-api'
 import { Insight, InsightType } from '../../core/types'
-import { LINE_CHART_CONTENT_MOCK } from '../../mocks/charts-content'
 import { SETTINGS_CASCADE_MOCK } from '../../mocks/settings-cascade'
 
 import { SmartInsightsViewGrid } from './SmartInsightsViewGrid'

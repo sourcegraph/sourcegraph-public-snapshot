@@ -49,6 +49,7 @@ export const EnterpriseWebApp: React.FunctionComponent = () => (
         extensionViews={ExtensionViewsSection}
         keyboardShortcuts={KEYBOARD_SHORTCUTS}
         codeIntelligenceEnabled={true}
+        codeInsightsEnabled={true}
         batchChangesEnabled={window.context.batchChangesEnabled}
     />
 )
