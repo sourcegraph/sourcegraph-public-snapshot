@@ -376,7 +376,7 @@ func parseURLQuery(q url.Values) (*args, error) {
 
 	decorationContextLines := get("dc", "1")
 	if a.DecorationContextLines, err = strconv.Atoi(decorationContextLines); err != nil {
-		return nil, errors.Errorf("decorationLimit must be an integer, got %q: %w", decorationContextLines, err)
+		return nil, errors.Errorf("decorationContextLines must be an integer, got %q: %w", decorationContextLines, err)
 	}
 
 	return &a, nil
@@ -401,12 +401,16 @@ func withDecoration(ctx context.Context, eventMatch streamhttp.EventMatch, inter
 	if _, ok := internalResult.(*result.FileMatch); !ok {
 		return eventMatch
 	}
-	if _, ok := eventMatch.(*streamhttp.EventContentMatch); !ok {
+
+	event, ok := eventMatch.(*streamhttp.EventContentMatch)
+	if !ok {
 		return eventMatch
 	}
+
 	if kind == "html" {
-		eventMatch.(*streamhttp.EventContentMatch).Hunks = DecorateFileHunksHTML(ctx, internalResult.(*result.FileMatch))
+		event.Hunks = DecorateFileHunksHTML(ctx, internalResult.(*result.FileMatch))
 	}
+
 	// TODO(team/search-product): support additional decoration for terminal clients #24617.
 	return eventMatch
 }
