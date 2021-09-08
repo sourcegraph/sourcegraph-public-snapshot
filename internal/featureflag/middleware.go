@@ -44,10 +44,10 @@ type flagSetFetcher struct {
 	flagSet FlagSet
 }
 
-func (f *flagSetFetcher) Fetch() FlagSet {
+func (f *flagSetFetcher) Fetch(ctx context.Context) FlagSet {
 	f.once.Do(func() {
-		if a := actor.FromContext(f.r.Context()); a.IsAuthenticated() {
-			flags, err := f.ffs.GetUserFlags(f.r.Context(), a.UID)
+		if a := actor.FromContext(ctx); a.IsAuthenticated() {
+			flags, err := f.ffs.GetUserFlags(ctx, a.UID)
 			if err == nil {
 				f.flagSet = FlagSet(flags)
 				return
@@ -56,7 +56,7 @@ func (f *flagSetFetcher) Fetch() FlagSet {
 		}
 
 		if uid, ok := cookie.AnonymousUID(f.r); ok {
-			flags, err := f.ffs.GetAnonymousUserFlags(f.r.Context(), uid)
+			flags, err := f.ffs.GetAnonymousUserFlags(ctx, uid)
 			if err == nil {
 				f.flagSet = FlagSet(flags)
 				return
@@ -64,7 +64,7 @@ func (f *flagSetFetcher) Fetch() FlagSet {
 			// Continue if err != nil
 		}
 
-		flags, err := f.ffs.GetGlobalFeatureFlags(f.r.Context())
+		flags, err := f.ffs.GetGlobalFeatureFlags(ctx)
 		if err == nil {
 			f.flagSet = FlagSet(flags)
 		}
@@ -77,7 +77,7 @@ func (f *flagSetFetcher) Fetch() FlagSet {
 // request's context.
 func FromContext(ctx context.Context) FlagSet {
 	if flags := ctx.Value(flagContextKey{}); flags != nil {
-		return flags.(*flagSetFetcher).Fetch()
+		return flags.(*flagSetFetcher).Fetch(ctx)
 	}
 	return nil
 }
