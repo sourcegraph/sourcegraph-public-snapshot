@@ -5,34 +5,28 @@ import (
 	"database/sql"
 	"time"
 
-	"github.com/hashicorp/go-multierror"
-	"github.com/inconshreveable/log15"
 	"github.com/keegancsmith/sqlf"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/service"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
-	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker"
 	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
-	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
 )
 
 const batchspecMaxNumRetries = 60
 const batchspecMaxNumResets = 60
 
-// newBatchSpecWorker creates a dbworker.newWorker that fetches enqueued changesets
-// from the database and passes them to the changeset batchspec for
-// processing.
+// newBatchSpecWorker creates a dbworker.newWorker that fetches enqueued batch
+// specs and passes them to the batchSpecWorkspaceCreator.
 func newBatchSpecWorker(
 	ctx context.Context,
 	s *store.Store,
 	workerStore dbworkerstore.Store,
 	metrics batchChangesMetrics,
 ) *workerutil.Worker {
-	e := &evaluator{store: s}
+	e := &batchSpecWorkspaceCreator{store: s}
 
 	options := workerutil.WorkerOptions{
 		Name:              "batches_batchspec_worker",
@@ -78,72 +72,4 @@ func NewBatchSpecDBWorkerStore(handle *basestore.TransactableHandle, observation
 	}
 
 	return dbworkerstore.NewWithMetrics(handle, options, observationContext)
-}
-
-type evaluator struct {
-	store *store.Store
-}
-
-// HandlerFunc returns a dbworker.HandlerFunc that can be passed to a
-// workerutil.Worker to process queued changesets.
-func (e *evaluator) HandlerFunc() workerutil.HandlerFunc {
-	return func(ctx context.Context, record workerutil.Record) (err error) {
-		tx, err := e.store.Transact(ctx)
-		if err != nil {
-			return err
-		}
-		defer func() {
-			doneErr := tx.Done(nil)
-			if err != nil && doneErr != nil {
-				err = multierror.Append(err, doneErr)
-			}
-			if doneErr != nil {
-				err = doneErr
-			}
-		}()
-
-		return e.process(ctx, tx, record.(*btypes.BatchSpec))
-	}
-}
-
-func (r *evaluator) process(ctx context.Context, tx *store.Store, spec *btypes.BatchSpec) error {
-	evaluatableSpec, err := batcheslib.ParseBatchSpec([]byte(spec.RawSpec), batcheslib.ParseBatchSpecOptions{
-		AllowArrayEnvironments: true,
-		AllowTransformChanges:  true,
-		AllowConditionalExec:   true,
-	})
-	if err != nil {
-		return err
-	}
-
-	workspaces, unsupported, ignored, err := service.New(tx).ResolveWorkspacesForBatchSpec(ctx, evaluatableSpec, service.ResolveWorkspacesForBatchSpecOpts{
-		// TODO: Persist these also on batch_spec
-		AllowIgnored:     true,
-		AllowUnsupported: true,
-	})
-	if err != nil {
-		return err
-	}
-
-	log15.Info("resolved workspaces for batch spec", "spec", spec.ID, "workspaces", len(workspaces), "unsupported", len(unsupported), "ignored", len(ignored))
-
-	var ws []*btypes.BatchSpecWorkspace
-	for _, w := range workspaces {
-		ws = append(ws, &btypes.BatchSpecWorkspace{
-			BatchSpecID:      spec.ID,
-			ChangesetSpecIDs: []int64{},
-
-			RepoID:             w.Repo.ID,
-			Branch:             w.Branch,
-			Commit:             string(w.Commit),
-			Path:               w.Path,
-			FileMatches:        w.FileMatches,
-			OnlyFetchWorkspace: w.OnlyFetchWorkspace,
-			Steps:              w.Steps,
-
-			State: btypes.BatchSpecWorkspaceStatePending,
-		})
-	}
-
-	return tx.CreateBatchSpecWorkspace(ctx, ws...)
 }
