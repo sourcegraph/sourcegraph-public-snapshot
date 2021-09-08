@@ -15,6 +15,7 @@ type Workspace struct {
 }
 
 type WorkspaceRepo struct {
+	// ID is the GraphQL ID of the repository.
 	ID   string `json:"id"`
 	Name string `json:"name"`
 }
