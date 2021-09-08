@@ -1004,6 +1004,10 @@ Indexes:
 
 ```
 
+Tracks the last time uploads a repository were checked against data retention policies.
+
+**last_retention_scan_at**: The last time uploads of this repository were checked against data retention policies.
+
 # Table "public.lsif_nearest_uploads"
 ```
     Column     |  Type   | Collation | Nullable | Default 

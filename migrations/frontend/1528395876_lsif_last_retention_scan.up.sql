@@ -12,6 +12,8 @@ CREATE TABLE lsif_last_retention_scan (
 
     PRIMARY KEY(repository_id)
 );
+COMMENT ON TABLE lsif_last_retention_scan IS 'Tracks the last time uploads a repository were checked against data retention policies.';
+COMMENT ON COLUMN lsif_last_retention_scan.last_retention_scan_at IS 'The last time uploads of this repository were checked against data retention policies.';
 
 -- Add column to rate limit scanning of individual upload records
 ALTER TABLE lsif_uploads ADD COLUMN last_retention_scan_at timestamp with time zone;
