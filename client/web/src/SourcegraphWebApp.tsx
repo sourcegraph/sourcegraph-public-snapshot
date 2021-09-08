@@ -298,8 +298,6 @@ class SourcegraphWebAppOldClassComponent extends React.Component<
     }
 
     public componentDidMount(): void {
-        document.documentElement.classList.add('theme')
-
         /**
          * Listens for uncaught 401 errors when a user when a user was previously authenticated.
          *
@@ -645,6 +643,8 @@ export const SourcegraphWebApp: React.FunctionComponent<SourcegraphWebAppProps> 
         false
     const hasUserAddedExternalServices =
         hasUserAddedProps2?.hasUserAddedExternalServices || hasUserAddedProps?.hasUserAddedExternalServices || false
+
+    useEffect(() => document.documentElement.classList.add('theme'), [])
 
     return userAndSettingsProps ? (
         <SourcegraphWebAppOldClassComponent
