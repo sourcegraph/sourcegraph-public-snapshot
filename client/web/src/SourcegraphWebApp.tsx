@@ -212,6 +212,11 @@ interface SourcegraphWebAppOldClassComponentExtraProps
 
     hasUserAddedRepositories: boolean
     hasUserAddedExternalServices: boolean
+
+    /**
+     * Evaluated feature flags for the current viewer
+     */
+    featureFlags: FlagSet
 }
 
 interface SourcegraphWebAppState {
@@ -239,11 +244,6 @@ interface SourcegraphWebAppState {
 
     selectedSearchContextSpec?: string
     defaultSearchContextSpec: string
-
-    /**
-     * Evaluated feature flags for the current viewer
-     */
-    featureFlags: FlagSet
 }
 
 const notificationClassNames = {
@@ -293,7 +293,6 @@ class SourcegraphWebAppOldClassComponent extends React.Component<
             availableVersionContexts,
             previousVersionContext,
             defaultSearchContextSpec: 'global', // global is default for now, user will be able to change this at some point
-            featureFlags: new Map<FeatureFlagName, boolean>(),
         }
     }
 
@@ -316,15 +315,6 @@ class SourcegraphWebAppOldClassComponent extends React.Component<
                         location.reload()
                     }
                 })
-        )
-
-        this.subscriptions.add(
-            fetchFeatureFlags().subscribe(event => {
-                // Disabling linter here because this is not yet used anywhere.
-                // This can be re-enabled as soon as feature flags are leveraged.
-                // eslint-disable-next-line react/no-unused-state
-                this.setState({ featureFlags: event })
-            })
         )
 
         if (this.props.parsedSearchQuery && !filterExists(this.props.parsedSearchQuery, FilterType.context)) {
@@ -432,7 +422,6 @@ class SourcegraphWebAppOldClassComponent extends React.Component<
                                                     fetchRecentSearches={fetchRecentSearches}
                                                     fetchRecentFileViews={fetchRecentFileViews}
                                                     streamSearch={aggregateStreamingSearch}
-                                                    featureFlags={this.state.featureFlags}
                                                 />
                                             </CodeHostScopeProvider>
                                         )}
@@ -646,6 +635,8 @@ export const SourcegraphWebApp: React.FunctionComponent<SourcegraphWebAppProps> 
 
     useEffect(() => document.documentElement.classList.add('theme'), [])
 
+    const featureFlags = useObservable(useMemo(() => fetchFeatureFlags(), [])) ?? new Map<FeatureFlagName, boolean>()
+
     return userAndSettingsProps ? (
         <SourcegraphWebAppOldClassComponent
             {...props}
@@ -663,6 +654,7 @@ export const SourcegraphWebApp: React.FunctionComponent<SourcegraphWebAppProps> 
             hasUserAddedExternalServices={hasUserAddedExternalServices}
             onUserExternalServicesOrRepositoriesUpdate={onUserExternalServicesOrRepositoriesUpdate}
             onSyncedPublicRepositoriesUpdate={onSyncedPublicRepositoriesUpdate}
+            featureFlags={featureFlags}
         />
     ) : null
 }
