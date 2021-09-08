@@ -1,10 +1,7 @@
 import classNames from 'classnames'
 import * as H from 'history'
-import React, { useEffect, useMemo } from 'react'
-import { EMPTY, from } from 'rxjs'
-import { map, switchMap } from 'rxjs/operators'
+import React, { useEffect } from 'react'
 
-import { wrapRemoteObservable } from '@sourcegraph/shared/src/api/client/api/common'
 import { ActivationProps } from '@sourcegraph/shared/src/components/activation/Activation'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
@@ -12,8 +9,6 @@ import { VersionContextProps } from '@sourcegraph/shared/src/search/util'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { isErrorLike } from '@sourcegraph/shared/src/util/errors'
-import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
 
 import {
     PatternTypeProps,
@@ -28,14 +23,11 @@ import {
 import { AuthenticatedUser } from '../../auth'
 import { BrandLogo } from '../../components/branding/BrandLogo'
 import { FeatureFlagProps } from '../../featureFlags/featureFlags'
-import { SmartInsight } from '../../insights/components/insights-view-grid/components/smart-insight/SmartInsight'
-import { createExtensionInsight } from '../../insights/core/backend/utils/create-extension-insight'
-import { useAllInsights } from '../../insights/hooks/use-insight/use-insight'
+import { CodeInsightsProps } from '../../insights/types'
 import { KeyboardShortcutsProps } from '../../keyboardShortcuts/keyboardShortcuts'
 import { Settings } from '../../schema/settings.schema'
 import { VersionContext } from '../../schema/site.schema'
 import { ThemePreferenceProps } from '../../theme'
-import { StaticView, ViewGrid } from '../../views'
 import { HomePanels } from '../panels/HomePanels'
 
 import { LoggedOutHomepage } from './LoggedOutHomepage'
@@ -60,6 +52,7 @@ export interface SearchPageProps
         OnboardingTourProps,
         HomePanelsProps,
         ShowQueryBuilderProps,
+        CodeInsightsProps,
         FeatureFlagProps {
     authenticatedUser: AuthenticatedUser | null
     location: H.Location
@@ -77,29 +70,8 @@ export interface SearchPageProps
  * The search page
  */
 export const SearchPage: React.FunctionComponent<SearchPageProps> = props => {
+    const { extensionViews: ExtensionViewsSection } = props
     useEffect(() => props.telemetryService.logViewEvent('Home'), [props.telemetryService])
-
-    const showCodeInsights =
-        !isErrorLike(props.settingsCascade.final) &&
-        !!props.settingsCascade.final?.experimentalFeatures?.codeInsights &&
-        props.settingsCascade.final['insights.displayLocation.homepage'] === true
-
-    const insights = useAllInsights({ settingsCascade: props.settingsCascade })
-    const views = useObservable(
-        useMemo(
-            () =>
-                showCodeInsights
-                    ? from(props.extensionsController.extHostAPI).pipe(
-                          switchMap(extensionHostAPI => wrapRemoteObservable(extensionHostAPI.getHomepageViews({}))),
-                          map(extensionViews => extensionViews.map(createExtensionInsight))
-                      )
-                    : EMPTY,
-            [showCodeInsights, props.extensionsController]
-        )
-    )
-
-    const extensionViews = views ?? []
-    const allViewIds = useMemo(() => [...(views ?? []), ...insights].map(view => view.id), [views, insights])
 
     return (
         <div className="search-page d-flex flex-column align-items-center px-3">
@@ -116,27 +88,14 @@ export const SearchPage: React.FunctionComponent<SearchPageProps> = props => {
                 })}
             >
                 <SearchPageInput {...props} source="home" />
-                {showCodeInsights && (
-                    <ViewGrid viewIds={allViewIds} telemetryService={props.telemetryService} className="mt-5">
-                        {/* Render extension views for the search page */}
-                        {extensionViews.map(view => (
-                            <StaticView key={view.id} view={view} telemetryService={props.telemetryService} />
-                        ))}
-
-                        {/* Render all code insights with proper directory page context */}
-                        {insights.map(insight => (
-                            <SmartInsight
-                                key={insight.id}
-                                insight={insight}
-                                telemetryService={props.telemetryService}
-                                platformContext={props.platformContext}
-                                settingsCascade={props.settingsCascade}
-                                where="homepage"
-                                context={{}}
-                            />
-                        ))}
-                    </ViewGrid>
-                )}
+                <ExtensionViewsSection
+                    className="mt-5"
+                    telemetryService={props.telemetryService}
+                    extensionsController={props.extensionsController}
+                    platformContext={props.platformContext}
+                    settingsCascade={props.settingsCascade}
+                    where="homepage"
+                />
             </div>
             <div className="flex-grow-1">
                 {props.isSourcegraphDotCom &&

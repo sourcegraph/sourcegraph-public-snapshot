@@ -9,6 +9,7 @@ import { enterpriseExtensionAreaHeaderNavItems } from './extensions/extension/ex
 import { enterpriseExtensionAreaRoutes } from './extensions/extension/routes'
 import { enterpriseExtensionsAreaHeaderActionButtons } from './extensions/extensionsAreaHeaderActionButtons'
 import { enterpriseExtensionsAreaRoutes } from './extensions/routes'
+import { ExtensionViewsSection } from './insights/sections/EtenstionViewsSection'
 import { enterpriseOrgAreaHeaderNavItems } from './organizations/navitems'
 import { enterpriseOrganizationAreaRoutes } from './organizations/routes'
 import { enterpriseRepoHeaderActionButtons } from './repo/repoHeaderActionButtons'
@@ -45,6 +46,7 @@ export const EnterpriseWebApp: React.FunctionComponent = () => (
         repoSettingsAreaRoutes={enterpriseRepoSettingsAreaRoutes}
         repoSettingsSidebarGroups={enterpriseRepoSettingsSidebarGroups}
         routes={enterpriseRoutes}
+        extensionViews={ExtensionViewsSection}
         keyboardShortcuts={KEYBOARD_SHORTCUTS}
         codeIntelligenceEnabled={true}
         batchChangesEnabled={window.context.batchChangesEnabled}
