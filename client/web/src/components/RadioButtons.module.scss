@@ -1,0 +1,23 @@
+.radio-buttons {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+
+    margin: 0 -0.25rem;
+}
+
+.label {
+    display: flex;
+    user-select: none;
+    cursor: pointer;
+
+    padding: 0.25rem 0.5rem;
+}
+
+.item {
+    margin: 0.25rem;
+    flex: 0 1 auto;
+    display: flex;
+    align-items: center;
+    white-space: nowrap;
+}
