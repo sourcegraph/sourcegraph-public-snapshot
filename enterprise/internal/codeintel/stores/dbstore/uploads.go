@@ -768,9 +768,9 @@ func (s *Store) UpdateDependencyNumReferences(ctx context.Context, ids []int, de
 		return nil
 	}
 
-	queries := make([]*sqlf.Query, 0, len(ids))
+	idQueries := make([]*sqlf.Query, 0, len(ids))
 	for _, id := range ids {
-		queries = append(queries, sqlf.Sprintf("%s", id))
+		idQueries = append(idQueries, sqlf.Sprintf("%s", id))
 	}
 
 	delta := 1
@@ -778,36 +778,61 @@ func (s *Store) UpdateDependencyNumReferences(ctx context.Context, ids []int, de
 		delta = -1
 	}
 
-	return s.Exec(ctx, sqlf.Sprintf(updateDependencyNumReferencesQuery, sqlf.Join(queries, ", "), delta))
+	return s.Exec(ctx, sqlf.Sprintf(updateDependencyNumReferencesQuery, sqlf.Join(idQueries, ", "), delta))
 }
 
 var updateDependencyNumReferencesQuery = `
 -- source: enterprise/internal/codeintel/stores/dbstore/uploads.go:UpdateDependencyNumReferences
-WITH reference_counts AS (
+WITH
+source_references AS MATERIALIZED (
+	SELECT
+		r.scheme,
+		r.name,
+		r.version,
+		r.dump_id
+	FROM lsif_references r
+	WHERE r.dump_id IN (%s)
+),
+-- Trick Postgres into using the better set of indexes here.
+--
+-- If we do not materialize the CTE above, then we have a join over package
+-- and reference tables, which Postgres like to use a strange index for. By
+-- default, Postgres wants to do a parallel (full) index scan over packages
+-- then join to references.
+--
+-- Instead, we materialize the CTE above to force Postgres to use the index
+-- on lsif_reference(dump_id). Then, the following query will use the index
+-- on lsif_packages(scheme, name, version, dump_id).
+--
+-- Note that each index operation in the latter case is targetted, i.e., has
+-- a specific b-tree target value. These perform better than full index scans
+-- which take time proportional to the entire database size and not the size
+-- of the result set, which is what we generally expect.
+reference_counts AS (
 	SELECT
 		p.dump_id,
 		count(*) AS count
 	FROM lsif_packages p
-	JOIN lsif_references r
+	JOIN source_references r
 	ON
-		p.scheme = r.scheme AND
-		p.name = r.name AND
-		p.version = r.version AND
-		p.dump_id != r.dump_id
-	WHERE r.dump_id IN (%s)
+		r.scheme = p.scheme AND
+		r.name = p.name AND
+		r.version = p.version AND
+		r.dump_id != p.dump_id
 	GROUP BY p.dump_id
 ),
 locked_uploads AS (
 	SELECT
 		u.id,
-		(SELECT rc.count FROM reference_counts rc WHERE rc.dump_id = u.id) AS count
+		rc.count
 	FROM lsif_uploads u
-	WHERE u.id in (SELECT rc.dump_id FROM reference_counts rc)
+	JOIN reference_counts rc
+	ON rc.dump_id = u.id
 	ORDER BY u.id FOR UPDATE
 )
 UPDATE lsif_uploads u
-SET num_references = num_references + ((SELECT lu.count FROM locked_uploads lu WHERE lu.id = u.id) * %s)
-WHERE u.id IN (SELECT id FROM locked_uploads)
+SET num_references = num_references + (lu.count * %s)
+FROM locked_uploads lu WHERE lu.id = u.id
 `
 
 // SoftDeleteOldUploads marks uploads older than the given age that are not visible at the tip of the default branch
