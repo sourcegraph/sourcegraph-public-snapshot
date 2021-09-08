@@ -38,7 +38,7 @@ func SearchCommitDiffsInRepos(ctx context.Context, db dbutil.DB, args *search.Te
 			CommitParams: search.CommitParameters{
 				PatternInfo: args.PatternInfo,
 				Query:       args.Query,
-				Diff:        false,
+				Diff:        true,
 			},
 		})
 	}
