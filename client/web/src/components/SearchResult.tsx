@@ -2,13 +2,13 @@ import classNames from 'classnames'
 import ArchiveIcon from 'mdi-react/ArchiveIcon'
 import LockIcon from 'mdi-react/LockIcon'
 import SourceForkIcon from 'mdi-react/SourceForkIcon'
-import StarIcon from 'mdi-react/StarIcon'
 import React from 'react'
 
 import { LastSyncedIcon } from '@sourcegraph/shared/src/components/LastSyncedIcon'
 import { Markdown } from '@sourcegraph/shared/src/components/Markdown'
 import { RepoIcon } from '@sourcegraph/shared/src/components/RepoIcon'
 import { ResultContainer } from '@sourcegraph/shared/src/components/ResultContainer'
+import { SearchResultStar } from '@sourcegraph/shared/src/components/SearchResultStar'
 import { CommitMatch, getMatchTitle, RepositoryMatch } from '@sourcegraph/shared/src/search/stream'
 import { renderMarkdown } from '@sourcegraph/shared/src/util/markdown'
 import { formatRepositoryStarCount } from '@sourcegraph/shared/src/util/stars'
@@ -43,7 +43,7 @@ export const SearchResult: React.FunctionComponent<Props> = ({ result, icon, rep
                 )}
                 {formattedRepositoryStarCount && (
                     <>
-                        <StarIcon className={styles.star} />
+                        <SearchResultStar />
                         {formattedRepositoryStarCount}
                     </>
                 )}
