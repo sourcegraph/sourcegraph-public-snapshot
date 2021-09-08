@@ -561,15 +561,7 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
                 <div className="d-flex flex-column ml-2">
                     <p className="mb-0">Sync all repositories</p>
                     <p className="user-settings-repos__text-light text-muted">
-                        Will sync all current and future public and private repositories,
-                        <Link
-                            to="https://docs.sourcegraph.com/code_search/how-to/adding_repositories_to_cloud#adding-repositories-by-selecting-sync-all-recommended"
-                            target="_blank"
-                            rel="noopener noreferrer"
-                        >
-                            {' '}
-                            learn more
-                        </Link>
+                        Will sync all current and future public and private repositories
                     </p>
                 </div>
             </label>
@@ -753,7 +745,15 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
                 Manage Repositories <Badge status="beta" className="ml-2" />
             </h2>
             <p className="text-muted">
-                Choose repositories to sync with Sourcegraph to search code you care about all in one place
+                Choose which repositories to sync with Sourcegraph to search all your code in one place.
+                <Link
+                    to="https://docs.sourcegraph.com/code_search/how-to/adding_repositories_to_cloud"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                >
+                    {' '}
+                    Learn more
+                </Link>
             </p>
             <Container>
                 <ul className="list-group">
