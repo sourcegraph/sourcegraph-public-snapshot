@@ -5,7 +5,7 @@ DROP VIEW lsif_dumps_with_repository_name;
 DROP VIEW lsif_dumps;
 DROP VIEW lsif_uploads_with_repository_name;
 
--- Drop new column and tables
+-- Drop new column and table
 ALTER TABLE lsif_uploads DROP COLUMN last_retention_scan_at;
 DROP TABLE lsif_last_retention_scan;
 
