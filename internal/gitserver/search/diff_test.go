@@ -36,7 +36,7 @@ p` + "\t" + `q
 
 	var results []deltaResult
 
-	Diff(diff).ForEachDelta(func(d Delta) bool {
+	FormattedDiff(diff).ForEachDelta(func(d Delta) bool {
 		dr := deltaResult{Delta: d}
 		d.ForEachHunk(func(h Hunk) bool {
 			hunk := hunkResult{Hunk: h}

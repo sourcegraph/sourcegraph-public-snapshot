@@ -905,6 +905,10 @@ func (s *Server) search(w http.ResponseWriter, r *http.Request, args *protocol.S
 	}
 }
 
+// matchCount returns either:
+// 1) the number of diff matches if there are any
+// 2) the number of messsage matches if there are any
+// 3) one, to represent matching the commit, but nothing inside it
 func matchCount(cm *protocol.CommitMatch) int {
 	if len(cm.Diff.Highlights) > 0 {
 		return len(cm.Diff.Highlights)

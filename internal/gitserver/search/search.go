@@ -19,12 +19,14 @@ type LazyCommit struct {
 	repo *git.Repository
 
 	// These fields may not be initialized, so use their accessor methods instead
-	diff      Diff           // lazily populated by Diff()
+	diff      FormattedDiff  // lazily populated by Diff()
 	author    *git.Signature // lazily populated by Author()
 	committer *git.Signature // lazily populated by Committer()
 	message   *string        // lazily populated by Message()
 }
 
+// Message returns the commit's message, trimmed of any leading or trailing whitespace,
+// using a cached value if it's already been calculated
 func (c *LazyCommit) Message() string {
 	if c.message != nil {
 		return *c.message
@@ -62,7 +64,8 @@ func (c *LazyCommit) Parents() []api.CommitID {
 	return res
 }
 
-func (c *LazyCommit) Diff() (Diff, error) {
+// Diff returns a formatted diff, or a cached value it's already been called
+func (c *LazyCommit) Diff() (FormattedDiff, error) {
 	// If the diff has already been computed, use that
 	if c.diff != "" {
 		return c.diff, nil
@@ -90,44 +93,14 @@ func (c *LazyCommit) Diff() (Diff, error) {
 
 	diffOptions := git.DiffOptions{
 		ContextLines:   1,
-		InterhunkLines: 0,
+		InterhunkLines: 2,
 	}
 	diff, err := c.repo.DiffTreeToTree(parentTree, tree, &diffOptions)
 	if err != nil {
 		return "", err
 	}
 
-	var buf strings.Builder
-	buf.Grow(1024)
-
-	err = diff.ForEach(func(delta git.DiffDelta, progress float64) (git.DiffForEachHunkCallback, error) {
-		buf.WriteString(delta.OldFile.Path)
-		buf.WriteByte('\t')
-		buf.WriteString(delta.NewFile.Path)
-		buf.WriteByte('\n')
-
-		return func(hunk git.DiffHunk) (git.DiffForEachLineCallback, error) {
-			buf.WriteString(hunk.Header)
-
-			return func(line git.DiffLine) error {
-				switch line.Origin {
-				case git.DiffLineContext:
-					buf.WriteByte(' ')
-				case git.DiffLineAddition:
-					buf.WriteByte('+')
-				case git.DiffLineDeletion:
-					buf.WriteByte('-')
-				default:
-					return nil
-				}
-
-				buf.WriteString(line.Content)
-				return nil
-			}, nil
-		}, nil
-	}, git.DiffDetailLines)
-
-	return Diff(buf.String()), err
+	return FormatDiff(diff)
 }
 
 type CommitMatch struct {
