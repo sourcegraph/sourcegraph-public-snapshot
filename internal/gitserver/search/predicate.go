@@ -12,7 +12,7 @@ import (
 type CommitPredicate interface {
 	// Match returns whether the given predicate matches a commit and, if it does,
 	// the portions of the commit that match in the form of *CommitHighlights
-	Match(*Commit) (matched bool, highlights *HighlightedCommit)
+	Match(*LazyCommit) (matched bool, highlights *HighlightedCommit)
 }
 
 // AuthorMatches is a predicate that matches if the author's name or email address
@@ -21,7 +21,7 @@ type AuthorMatches struct {
 	Regexp
 }
 
-func (a *AuthorMatches) Match(commit *Commit) (bool, *HighlightedCommit) {
+func (a *AuthorMatches) Match(commit *LazyCommit) (bool, *HighlightedCommit) {
 	author := commit.Author()
 	return a.MatchString(author.Name) || a.MatchString(author.Email), nil
 }
@@ -32,7 +32,7 @@ type CommitterMatches struct {
 	Regexp
 }
 
-func (c *CommitterMatches) Match(commit *Commit) (bool, *HighlightedCommit) {
+func (c *CommitterMatches) Match(commit *LazyCommit) (bool, *HighlightedCommit) {
 	committer := commit.Committer()
 	return c.MatchString(committer.Name) || c.MatchString(committer.Email), nil
 }
@@ -42,7 +42,7 @@ type CommitBefore struct {
 	time.Time
 }
 
-func (c *CommitBefore) Match(commit *Commit) (bool, *HighlightedCommit) {
+func (c *CommitBefore) Match(commit *LazyCommit) (bool, *HighlightedCommit) {
 	return commit.Author().When.Before(c.Time), nil
 }
 
@@ -51,7 +51,7 @@ type CommitAfter struct {
 	time.Time
 }
 
-func (c *CommitAfter) Match(commit *Commit) (bool, *HighlightedCommit) {
+func (c *CommitAfter) Match(commit *LazyCommit) (bool, *HighlightedCommit) {
 	return commit.Author().When.After(c.Time), nil
 }
 
@@ -61,7 +61,7 @@ type MessageMatches struct {
 	Regexp
 }
 
-func (m *MessageMatches) Match(commit *Commit) (bool, *HighlightedCommit) {
+func (m *MessageMatches) Match(commit *LazyCommit) (bool, *HighlightedCommit) {
 	results := m.FindAllStringIndex(commit.Message(), -1) // TODO limit?
 	if results == nil {
 		return false, nil
@@ -81,7 +81,7 @@ type DiffMatches struct {
 	Regexp
 }
 
-func (dm *DiffMatches) Match(commit *Commit) (bool, *HighlightedCommit) {
+func (dm *DiffMatches) Match(commit *LazyCommit) (bool, *HighlightedCommit) {
 	diff, err := commit.Diff()
 	if err != nil {
 		// TODO(camdencheek) don't ignore error
@@ -122,7 +122,7 @@ type DiffModifiesFile struct {
 	Regexp
 }
 
-func (dmf *DiffModifiesFile) Match(commit *Commit) (bool, *HighlightedCommit) {
+func (dmf *DiffModifiesFile) Match(commit *LazyCommit) (bool, *HighlightedCommit) {
 	diff, err := commit.Diff()
 	if err != nil {
 		// TODO is ignoring okay, or should the Match() signature return an error?
@@ -158,7 +158,7 @@ type And struct {
 	Children []CommitPredicate
 }
 
-func (a *And) Match(commit *Commit) (bool, *HighlightedCommit) {
+func (a *And) Match(commit *LazyCommit) (bool, *HighlightedCommit) {
 	highlights := &HighlightedCommit{}
 	for _, child := range a.Children {
 		childMatched, childHighlights := child.Match(commit)
@@ -176,7 +176,7 @@ type Or struct {
 	Children []CommitPredicate
 }
 
-func (o *Or) Match(commit *Commit) (bool, *HighlightedCommit) {
+func (o *Or) Match(commit *LazyCommit) (bool, *HighlightedCommit) {
 	hasMatch := false
 	mergedHighlights := &HighlightedCommit{}
 	for _, child := range o.Children {
@@ -194,7 +194,7 @@ type Not struct {
 	Child CommitPredicate
 }
 
-func (n *Not) Match(commit *Commit) (bool, *HighlightedCommit) {
+func (n *Not) Match(commit *LazyCommit) (bool, *HighlightedCommit) {
 	// Even if the child highlights, since we're negating, the match shouldn't be highlighted
 	foundMatch, _ := n.Child.Match(commit)
 	return !foundMatch, nil
