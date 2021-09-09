@@ -88,10 +88,28 @@ WHERE id = %s AND state = 'processing' AND worker_hostname = %s
 RETURNING id
 `
 
+const setChangesetSpecIDsOnBatchSpecWorkspace = `
+UPDATE batch_spec_workspaces
+SET changeset_spec_ids = %s
+WHERE id = %s
+`
+
+const setBatchSpecIDOnChangesetSpecs = `
+UPDATE changeset_specs
+SET batch_spec_id = (SELECT batch_spec_id FROM batch_spec_workspaces WHERE id = %s LIMIT 1)
+WHERE id IN (%s)
+`
+
 func (s *batchSpecWorkspaceExecutionWorkerStore) MarkComplete(ctx context.Context, id int, options dbworkerstore.MarkFinalOptions) (_ bool, err error) {
 	batchesStore := store.New(s.Store.Handle().DB(), s.observationContext, nil)
 
-	changesetSpecIDs, err := loadAndExtractChangesetSpecIDs(ctx, batchesStore, int64(id))
+	tx, err := batchesStore.Transact(ctx)
+	if err != nil {
+		return false, err
+	}
+	defer func() { err = tx.Done(err) }()
+
+	changesetSpecIDs, err := loadAndExtractChangesetSpecIDs(ctx, tx, int64(id))
 	if err != nil {
 		// If we couldn't extract the changeset IDs, we mark the job as failed
 		return s.Store.MarkFailed(ctx, id, fmt.Sprintf("failed to extract changeset IDs ID: %s", err), options)
@@ -107,8 +125,28 @@ func (s *batchSpecWorkspaceExecutionWorkerStore) MarkComplete(ctx context.Contex
 		return false, err
 	}
 
-	// TODO: Save batch_spec_id on changeset_specs
-	_, ok, err := basestore.ScanFirstInt(batchesStore.Query(ctx, sqlf.Sprintf(markBatchSpecWorkspaceExecutionJobCompleteQuery, marshaledIDs, id, options.WorkerHostname)))
+	job, err := tx.GetBatchSpecWorkspaceExecutionJob(ctx, store.GetBatchSpecWorkspaceExecutionJobOpts{ID: int64(id)})
+	if err != nil {
+		return false, err
+	}
+
+	ids := []*sqlf.Query{}
+	for _, id := range changesetSpecIDs {
+		ids = append(ids, sqlf.Sprintf("%s", id))
+	}
+	err = tx.Exec(ctx, sqlf.Sprintf(setBatchSpecIDOnChangesetSpecs, job.BatchSpecWorkspaceID, sqlf.Join(ids, ",")))
+	if err != nil {
+		return false, err
+	}
+
+	// Set changeset_spec_ids on the batch_spec_workspace
+	err = tx.Exec(ctx, sqlf.Sprintf(setChangesetSpecIDsOnBatchSpecWorkspace, marshaledIDs, job.BatchSpecWorkspaceID))
+	if err != nil {
+		return false, err
+	}
+
+	// Mark batch_spec_workspace_execution_jobs as completed
+	_, ok, err := basestore.ScanFirstInt(tx.Query(ctx, sqlf.Sprintf(markBatchSpecWorkspaceExecutionJobCompleteQuery, id, options.WorkerHostname)))
 	return ok, err
 }
 
