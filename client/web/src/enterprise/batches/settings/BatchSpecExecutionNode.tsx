@@ -36,10 +36,10 @@ export const BatchSpecExecutionNode: React.FunctionComponent<BatchSpecExecutionN
         [isExpanded]
     )
 
-    const executionTime = useMemo(
-        () => (node.finishedAt ? new Date(node.finishedAt).getTime() - new Date(node.createdAt).getTime() : 0),
-        [node.finishedAt, node.createdAt]
-    )
+    const executionDuration = useMemo(() => {
+        const endTime = node.finishedAt ? new Date(node.finishedAt).getTime() : now().getTime()
+        return endTime - new Date(node.createdAt).getTime()
+    }, [node.finishedAt, node.createdAt, now])
 
     return (
         <>
@@ -72,7 +72,7 @@ export const BatchSpecExecutionNode: React.FunctionComponent<BatchSpecExecutionN
                     Executed by <strong>{node.initiator.username}</strong> <Timestamp date={node.createdAt} now={now} />
                 </small>
             </div>
-            <div className="text-center pb-1">{(executionTime / 1000).toFixed(0)}s</div>
+            <div className="text-center pb-1">{(executionDuration / 1000).toFixed(0)}s</div>
             {isExpanded && (
                 <div className={styles.nodeExpandedSection}>
                     <h4>Input spec</h4>
