@@ -327,23 +327,6 @@ func TestRecordSeriesPoints(t *testing.T) {
 	if diff := cmp.Diff(want[3], points[3]); diff != "" {
 		t.Errorf("points[3].String(): %v", diff)
 	}
-
-	// TODO: future: once querying by RepoName and/or OriginalRepoName is possible, test that here:
-	// // Confirm querying by repo name works as expected.
-	// forRepoNamePoints, err := store.SeriesPoints(ctx, SeriesPointsOpts{RepoName: optionalString("repo1")})
-	// if err != nil {
-	// 	t.Fatal(err)
-	// }
-	// autogold.Want("len(forRepoNamePoints)", nil).Equal(t, len(forRepoNamePoints))
-	// autogold.Want("forRepoNamePoints[0].String()", nil).Equal(t, forRepoNamePoints[0].String())
-	//
-	// // Confirm querying by original repo name works as expected.
-	// forOriginalRepoNamePoints, err := store.SeriesPoints(ctx, SeriesPointsOpts{OriginalRepoName: optionalString("repo1")})
-	// if err != nil {
-	// 	t.Fatal(err)
-	// }
-	// autogold.Want("len(forOriginalRepoNamePoints)", nil).Equal(t, len(forOriginalRepoNamePoints))
-	// autogold.Want("forOriginalRepoNamePoints[0].String()", nil).Equal(t, forOriginalRepoNamePoints[0].String())
 }
 
 func TestValues(t *testing.T) {
