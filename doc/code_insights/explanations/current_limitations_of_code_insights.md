@@ -12,7 +12,7 @@ To accurately return historical data for insights running over all of your repos
 
 * _N_: how many repositories you have connected to your instance; in our tests, we used 26,400 repositories
 * _q_: the performance and resources of your Sourcegraph code insights instance in queries-per-second; in our tests, 7 queries per second was average
-* _c_: how well we can "compress" repositories so we don't need to re-run queries every month (e.g., if a respoitory hasn't changed in two months); in our tests, C = ~2
+* _c_: how well we can "compress" repositories so we don't need to re-run queries every month (e.g., if a repository hasn't changed in two months); in our tests, C = ~2
 
 A _very_ general formula for estimating how long an individual data series (query) will take to run on your instance in seconds  _N_ * 1/_c_ * 1/_q_. 
 
