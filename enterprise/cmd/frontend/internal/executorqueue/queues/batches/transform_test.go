@@ -3,7 +3,6 @@ package batches
 import (
 	"context"
 	"encoding/json"
-	"os"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -29,14 +28,6 @@ func TestTransformRecord(t *testing.T) {
 		return 1234, accessToken, nil
 	}
 	t.Cleanup(func() { database.Mocks.AccessTokens.Create = nil })
-
-	overwriteEnv := func(k, v string) {
-		old := os.Getenv(k)
-		os.Setenv(k, v)
-		t.Cleanup(func() { os.Setenv(k, old) })
-	}
-	overwriteEnv("HOME", "/home/the-test-user")
-	overwriteEnv("PATH", "/home/the-test-user/bin")
 
 	testBatchSpec := `batchSpec: yeah`
 	index := &btypes.BatchSpecExecution{
@@ -86,8 +77,6 @@ func TestTransformRecord(t *testing.T) {
 				Env: []string{
 					"SRC_ENDPOINT=https://test%2A:hunter2@test.io",
 					"SRC_ACCESS_TOKEN=" + accessToken,
-					"HOME=/home/the-test-user",
-					"PATH=/home/the-test-user/bin",
 				},
 			},
 		},
