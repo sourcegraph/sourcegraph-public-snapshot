@@ -21,7 +21,7 @@ jobs:
       - name: Run lsif-go
         working-directory: ${{ matrix.root }}
         run: lsif-go --no-animation
-      
+
       # Upload lsif-go data to Cloud, Dogfood, and Demo instances
       - name: Upload lsif-go dump to Cloud
         working-directory: ${{ matrix.root }}
@@ -33,11 +33,11 @@ jobs:
         run: src lsif upload -github-token='${{ secrets.GITHUB_TOKEN }}' -no-progress || true
         env:
           SRC_ENDPOINT: https://k8s.sgdev.org/
-      - name: Upload lsif-go dump to Demo
-        working-directory: ${{ matrix.root }}
-        run: src lsif upload -github-token='${{ secrets.GITHUB_TOKEN }}' -no-progress || true
-        env:
-          SRC_ENDPOINT: https://demo.sourcegraph.com/
+      # - name: Upload lsif-go dump to Demo
+      #   working-directory: ${{ matrix.root }}
+      #   run: src lsif upload -github-token='${{ secrets.GITHUB_TOKEN }}' -no-progress || true
+      #   env:
+      #     SRC_ENDPOINT: https://demo.sourcegraph.com/
 
   lsif-tsc-eslint:
     # Skip running on forks
@@ -67,7 +67,7 @@ jobs:
       - name: Run lsif-tsc
         working-directory: ${{ matrix.root }}
         run: lsif-tsc -p .
-          
+
       # Upload lsif-tsc data to Cloud, Dogfood, and Demo instances
       - name: Upload lsif-tsc dump to Cloud
         working-directory: ${{ matrix.root }}
@@ -79,11 +79,11 @@ jobs:
         run: src lsif upload -github-token='${{ secrets.GITHUB_TOKEN }}' -no-progress || true
         env:
           SRC_ENDPOINT: https://k8s.sgdev.org/
-      - name: Upload lsif-tsc dump to Demo
-        working-directory: ${{ matrix.root }}
-        run: src lsif upload -github-token='${{ secrets.GITHUB_TOKEN }}' -no-progress || true
-        env:
-          SRC_ENDPOINT: https://demo.sourcegraph.com/
+      # - name: Upload lsif-tsc dump to Demo
+      #   working-directory: ${{ matrix.root }}
+      #   run: src lsif upload -github-token='${{ secrets.GITHUB_TOKEN }}' -no-progress || true
+      #   env:
+      #     SRC_ENDPOINT: https://demo.sourcegraph.com/
 
       # Run lsif-eslint
       - name: Build TypeScript
@@ -103,8 +103,8 @@ jobs:
         run: src lsif upload -github-token='${{ secrets.GITHUB_TOKEN }}' -no-progress || true
         env:
           SRC_ENDPOINT: https://k8s.sgdev.org/
-      - name: Upload lsif-eslint dump to Demo
-        working-directory: ${{ matrix.root }}
-        run: src lsif upload -github-token='${{ secrets.GITHUB_TOKEN }}' -no-progress || true
-        env:
-          SRC_ENDPOINT: https://demo.sourcegraph.com/
+      # - name: Upload lsif-eslint dump to Demo
+      #   working-directory: ${{ matrix.root }}
+      #   run: src lsif upload -github-token='${{ secrets.GITHUB_TOKEN }}' -no-progress || true
+      #   env:
+      #     SRC_ENDPOINT: https://demo.sourcegraph.com/
