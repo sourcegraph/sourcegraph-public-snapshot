@@ -820,12 +820,15 @@ func (s *Server) search(w http.ResponseWriter, r *http.Request, args *protocol.S
 		return
 	}
 
-	// TODO(camdencheek): how to ensure multiple revspecs?
-	// if !conf.Get().DisableAutoGitUpdates {
-	// 	// ensureRevision may kick off a git fetch operation which we don't want if we've
-	// 	// configured DisableAutoGitUpdates.
-	// 	_ = s.ensureRevision(ctx, args.Repo, args.Revision, dir) // TODO what to do on return value
-	// }
+	if !conf.Get().DisableAutoGitUpdates {
+		for _, rev := range args.Revisions {
+			if rev.RevSpec != "" {
+				_ = s.ensureRevision(ctx, args.Repo, rev.RevSpec, dir) // TODO what to do on return value
+			} else if rev.RefGlob != "" {
+				_ = s.ensureRevision(ctx, args.Repo, rev.RefGlob, dir) // TODO what to do on return value
+			}
+		}
+	}
 
 	eventWriter, err := streamhttp.NewWriter(w)
 	if err != nil {
