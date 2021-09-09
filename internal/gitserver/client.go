@@ -282,6 +282,8 @@ func (c *Cmd) sendExec(ctx context.Context) (_ io.ReadCloser, _ http.Header, err
 	}
 }
 
+// Search executes a search as specified by args, streaming the results as it goes by calling onMatches with each set of results it
+// receives in response.
 func (c *Client) Search(ctx context.Context, args *protocol.SearchRequest, onMatches func([]protocol.CommitMatch)) (limitHit bool, _ error) {
 	repoName := protocol.NormalizeRepo(args.Repo)
 
