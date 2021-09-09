@@ -7,7 +7,6 @@ import (
 	"encoding/binary"
 	"encoding/json"
 	"io"
-	"io/ioutil"
 	"os"
 	"os/exec"
 	"path"
@@ -15,7 +14,6 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/Masterminds/semver"
 	"github.com/cockroachdb/errors"
 	"github.com/inconshreveable/log15"
 
@@ -36,6 +34,17 @@ const (
 
 	jvmMajorVersion0 = 44
 )
+
+// sourcegraphMavenDependency is used to set GIT_AUTHOR_NAME for git commands
+// that don't create commits or tags. The name of this dependency should never
+// be publicly visible so it can have any random value.
+var sourcegraphMavenDependency = reposource.MavenDependency{
+	MavenModule: reposource.MavenModule{
+		GroupID:    "com.sourcegraph",
+		ArtifactID: "sourcegraph",
+	},
+	Version: "1.0.0",
+}
 
 type JVMPackagesSyncer struct {
 	Config  *schema.JVMPackagesConnection
@@ -88,7 +97,7 @@ func (s *JVMPackagesSyncer) CloneCommand(ctx context.Context, remoteURL *vcs.URL
 	}
 
 	cmd := exec.CommandContext(ctx, "git", "--bare", "init")
-	if _, err := runCommandInDirectory(ctx, cmd, bareGitDirectory); err != nil {
+	if _, err := runCommandInDirectory(ctx, cmd, bareGitDirectory, sourcegraphMavenDependency); err != nil {
 		return nil, err
 	}
 
@@ -111,7 +120,7 @@ func (s *JVMPackagesSyncer) Fetch(ctx context.Context, remoteURL *vcs.URL, dir G
 
 	tags := map[string]bool{}
 
-	out, err := runCommandInDirectory(ctx, exec.CommandContext(ctx, "git", "tag"), string(dir))
+	out, err := runCommandInDirectory(ctx, exec.CommandContext(ctx, "git", "tag"), string(dir), sourcegraphMavenDependency)
 	if err != nil {
 		return err
 	}
@@ -129,7 +138,7 @@ func (s *JVMPackagesSyncer) Fetch(ctx context.Context, remoteURL *vcs.URL, dir G
 		}
 		// the gitPushDependencyTag method is reponsible for cleaning up temporary directories.
 		if err := s.gitPushDependencyTag(ctx, string(dir), dependency, i == 0); err != nil {
-			return errors.Wrapf(err, "error pushing dependency %q", dependency)
+			return errors.Wrapf(err, "error pushing dependency %q", dependency.CoursierSyntax())
 		}
 	}
 
@@ -141,7 +150,7 @@ func (s *JVMPackagesSyncer) Fetch(ctx context.Context, remoteURL *vcs.URL, dir G
 	for tag := range tags {
 		if _, isDependencyTag := dependencyTags[tag]; !isDependencyTag {
 			cmd := exec.CommandContext(ctx, "git", "tag", "-d", tag)
-			if _, err := runCommandInDirectory(ctx, cmd, string(dir)); err != nil {
+			if _, err := runCommandInDirectory(ctx, cmd, string(dir), sourcegraphMavenDependency); err != nil {
 				log15.Error("Failed to delete git tag", "error", err, "tag", tag)
 				continue
 			}
@@ -198,11 +207,9 @@ func (s *JVMPackagesSyncer) packageDependencies(ctx context.Context, repoUrlPath
 			continue
 		}
 		if module == parsedModule {
-			semVersion, _ := semver.NewVersion(dep.Version)
 			dependency := reposource.MavenDependency{
-				MavenModule:     parsedModule,
-				Version:         dep.Version,
-				SemanticVersion: semVersion,
+				MavenModule: parsedModule,
+				Version:     dep.Version,
 			}
 			// we dont call coursier.Exists here, as existance should be verified by repo-updater
 			totalDBMatched++
@@ -224,7 +231,7 @@ func (s *JVMPackagesSyncer) packageDependencies(ctx context.Context, repoUrlPath
 // isMainBranch is true, the main branch of the bare git directory will also be
 // updated to point to the same commit as the git tag.
 func (s *JVMPackagesSyncer) gitPushDependencyTag(ctx context.Context, bareGitDirectory string, dependency reposource.MavenDependency, isLatestVersion bool) error {
-	tmpDirectory, err := ioutil.TempDir("", "maven")
+	tmpDirectory, err := os.MkdirTemp("", "maven")
 	if err != nil {
 		return err
 	}
@@ -243,7 +250,7 @@ func (s *JVMPackagesSyncer) gitPushDependencyTag(ctx context.Context, bareGitDir
 	sourceCodePath := sourceCodePaths[0]
 
 	cmd := exec.CommandContext(ctx, "git", "init")
-	if _, err := runCommandInDirectory(ctx, cmd, tmpDirectory); err != nil {
+	if _, err := runCommandInDirectory(ctx, cmd, tmpDirectory, dependency); err != nil {
 		return err
 	}
 
@@ -253,24 +260,24 @@ func (s *JVMPackagesSyncer) gitPushDependencyTag(ctx context.Context, bareGitDir
 	}
 
 	cmd = exec.CommandContext(ctx, "git", "remote", "add", "origin", bareGitDirectory)
-	if _, err := runCommandInDirectory(ctx, cmd, tmpDirectory); err != nil {
+	if _, err := runCommandInDirectory(ctx, cmd, tmpDirectory, dependency); err != nil {
 		return err
 	}
 
 	// Use --no-verify for security reasons. See https://github.com/sourcegraph/sourcegraph/pull/23399
 	cmd = exec.CommandContext(ctx, "git", "push", "--no-verify", "--force", "origin", "--tags")
-	if _, err := runCommandInDirectory(ctx, cmd, tmpDirectory); err != nil {
+	if _, err := runCommandInDirectory(ctx, cmd, tmpDirectory, dependency); err != nil {
 		return err
 	}
 
 	if isLatestVersion {
-		defaultBranch, err := runCommandInDirectory(ctx, exec.CommandContext(ctx, "git", "rev-parse", "--abbrev-ref", "HEAD"), tmpDirectory)
+		defaultBranch, err := runCommandInDirectory(ctx, exec.CommandContext(ctx, "git", "rev-parse", "--abbrev-ref", "HEAD"), tmpDirectory, dependency)
 		if err != nil {
 			return err
 		}
 		// Use --no-verify for security reasons. See https://github.com/sourcegraph/sourcegraph/pull/23399
 		cmd = exec.CommandContext(ctx, "git", "push", "--no-verify", "--force", "origin", strings.TrimSpace(defaultBranch)+":latest", dependency.GitTagFromVersion())
-		if _, err := runCommandInDirectory(ctx, cmd, tmpDirectory); err != nil {
+		if _, err := runCommandInDirectory(ctx, cmd, tmpDirectory, dependency); err != nil {
 			return err
 		}
 	}
@@ -283,7 +290,7 @@ func (s *JVMPackagesSyncer) gitPushDependencyTag(ctx context.Context, bareGitDir
 func (s *JVMPackagesSyncer) commitJar(ctx context.Context, dependency reposource.MavenDependency,
 	workingDirectory, sourceCodeJarPath string, connection *schema.JVMPackagesConnection) error {
 	if err := unzipJarFile(sourceCodeJarPath, workingDirectory); err != nil {
-		return errors.Wrapf(err, "failed to unzip jar file %v", sourceCodeJarPath)
+		return errors.Wrapf(err, "failed to unzip jar file for %s to %v", dependency.CoursierSyntax(), sourceCodeJarPath)
 	}
 
 	file, err := os.Create(filepath.Join(workingDirectory, "lsif-java.json"))
@@ -312,31 +319,32 @@ func (s *JVMPackagesSyncer) commitJar(ctx context.Context, dependency reposource
 	}
 
 	cmd := exec.CommandContext(ctx, "git", "add", ".")
-	if _, err := runCommandInDirectory(ctx, cmd, workingDirectory); err != nil {
+	if _, err := runCommandInDirectory(ctx, cmd, workingDirectory, dependency); err != nil {
 		return err
 	}
 
 	// Use --no-verify for security reasons. See https://github.com/sourcegraph/sourcegraph/pull/23399
 	cmd = exec.CommandContext(ctx, "git", "commit", "--no-verify", "-m", dependency.CoursierSyntax(), "--date", stableGitCommitDate)
-	if _, err := runCommandInDirectory(ctx, cmd, workingDirectory); err != nil {
+	if _, err := runCommandInDirectory(ctx, cmd, workingDirectory, dependency); err != nil {
 		return err
 	}
 
 	cmd = exec.CommandContext(ctx, "git", "tag", "-m", dependency.CoursierSyntax(), dependency.GitTagFromVersion())
-	if _, err := runCommandInDirectory(ctx, cmd, workingDirectory); err != nil {
+	if _, err := runCommandInDirectory(ctx, cmd, workingDirectory, dependency); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func unzipJarFile(jarPath, destination string) error {
+func unzipJarFile(jarPath, destination string) (err error) {
 	reader, err := zip.OpenReader(jarPath)
 	if err != nil {
 		return err
 	}
 	defer reader.Close()
 	destinationDirectory := strings.TrimSuffix(destination, string(os.PathSeparator)) + string(os.PathSeparator)
+
 	for _, file := range reader.File {
 		if strings.HasPrefix(file.Name, ".git/") {
 			// For security reasons, don't unzip files under the `.git/`
@@ -349,6 +357,11 @@ func unzipJarFile(jarPath, destination string) error {
 			// `file.Name` docstring.
 			continue
 		}
+		if strings.HasPrefix(file.Name, "/") {
+			// Skip absolute paths. While they are extracted relative to `destination`,
+			// they should be unimportant. Related issue https://github.com/golang/go/issues/48085#issuecomment-912659635
+			continue
+		}
 		outputPath := path.Join(destination, file.Name)
 		if !strings.HasPrefix(outputPath, destinationDirectory) {
 			// For security reasons, skip file if it's not a child
@@ -356,7 +369,7 @@ func unzipJarFile(jarPath, destination string) error {
 			continue
 		}
 
-		err := copyZipFileEntry(reader, file, outputPath)
+		err := copyZipFileEntry(file, outputPath)
 		if err != nil {
 			return err
 		}
@@ -365,8 +378,8 @@ func unzipJarFile(jarPath, destination string) error {
 	return nil
 }
 
-func copyZipFileEntry(reader *zip.ReadCloser, entry *zip.File, outputPath string) (err error) {
-	inputFile, err := reader.Open(entry.Name)
+func copyZipFileEntry(entry *zip.File, outputPath string) (err error) {
+	inputFile, err := entry.Open()
 	if err != nil {
 		return err
 	}
@@ -459,8 +472,17 @@ func roundJVMVersionToNearestStableVersion(javaVersion int) int {
 	return javaVersion
 }
 
-func runCommandInDirectory(ctx context.Context, cmd *exec.Cmd, workingDirectory string) (string, error) {
+func runCommandInDirectory(ctx context.Context, cmd *exec.Cmd, workingDirectory string, dependency reposource.MavenDependency) (string, error) {
+	gitName := dependency.MavenModule.CoursierSyntax() + " authors"
+	gitEmail := "code-intel@sourcegraph.com"
 	cmd.Dir = workingDirectory
+	cmd.Env = append(cmd.Env, "EMAIL="+gitEmail)
+	cmd.Env = append(cmd.Env, "GIT_AUTHOR_NAME="+gitName)
+	cmd.Env = append(cmd.Env, "GIT_AUTHOR_EMAIL="+gitEmail)
+	cmd.Env = append(cmd.Env, "GIT_AUTHOR_DATE="+stableGitCommitDate)
+	cmd.Env = append(cmd.Env, "COMMITTER_AUTHOR_NAME="+gitName)
+	cmd.Env = append(cmd.Env, "COMMITTER_AUTHOR_EMAIL="+gitEmail)
+	cmd.Env = append(cmd.Env, "COMMITTER_AUTHOR_DATE="+stableGitCommitDate)
 	output, err := runWith(ctx, cmd, false, nil)
 	if err != nil {
 		return "", errors.Wrapf(err, "command %s failed with output %s", cmd.Args, string(output))

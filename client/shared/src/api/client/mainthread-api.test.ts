@@ -1,7 +1,7 @@
 import { BehaviorSubject, EMPTY, of, Subject } from 'rxjs'
 import sinon from 'sinon'
 
-import { SuccessGraphQLResult } from '../../graphql/graphql'
+import { getGraphQLClient as getGraphQLClientBase, SuccessGraphQLResult } from '../../graphql/graphql'
 import { PlatformContext } from '../../platform/context'
 import { SettingsCascade } from '../../settings/settings'
 import { FlatExtensionHostAPI } from '../contract'
@@ -12,6 +12,7 @@ import { SettingsEdit } from './services/settings'
 
 describe('MainThreadAPI', () => {
     // TODO(tj): commands, notifications
+    const getGraphQLClient = () => getGraphQLClientBase({ headers: {} })
 
     describe('graphQL', () => {
         test('PlatformContext#requestGraphQL is called with the correct arguments', async () => {
@@ -19,13 +20,21 @@ describe('MainThreadAPI', () => {
 
             const platformContext: Pick<
                 PlatformContext,
-                'updateSettings' | 'settings' | 'requestGraphQL' | 'getScriptURLForExtension' | 'sideloadedExtensionURL'
+                | 'updateSettings'
+                | 'settings'
+                | 'getGraphQLClient'
+                | 'requestGraphQL'
+                | 'getScriptURLForExtension'
+                | 'sideloadedExtensionURL'
+                | 'clientApplication'
             > = {
                 settings: EMPTY,
+                getGraphQLClient,
                 updateSettings: () => Promise.resolve(),
                 requestGraphQL,
                 getScriptURLForExtension: () => undefined,
                 sideloadedExtensionURL: new BehaviorSubject<string | null>(null),
+                clientApplication: 'other',
             }
 
             const { api } = initMainThreadAPI(pretendRemote({}), platformContext)
@@ -52,13 +61,21 @@ describe('MainThreadAPI', () => {
 
             const platformContext: Pick<
                 PlatformContext,
-                'updateSettings' | 'settings' | 'requestGraphQL' | 'getScriptURLForExtension' | 'sideloadedExtensionURL'
+                | 'updateSettings'
+                | 'settings'
+                | 'getGraphQLClient'
+                | 'requestGraphQL'
+                | 'getScriptURLForExtension'
+                | 'sideloadedExtensionURL'
+                | 'clientApplication'
             > = {
                 settings: EMPTY,
+                getGraphQLClient,
                 updateSettings: () => Promise.resolve(),
                 requestGraphQL,
                 getScriptURLForExtension: () => undefined,
                 sideloadedExtensionURL: new BehaviorSubject<string | null>(null),
+                clientApplication: 'other',
             }
 
             const { api } = initMainThreadAPI(pretendRemote({}), platformContext)
@@ -78,7 +95,13 @@ describe('MainThreadAPI', () => {
             }
             const platformContext: Pick<
                 PlatformContext,
-                'updateSettings' | 'settings' | 'requestGraphQL' | 'getScriptURLForExtension' | 'sideloadedExtensionURL'
+                | 'updateSettings'
+                | 'settings'
+                | 'requestGraphQL'
+                | 'getGraphQLClient'
+                | 'getScriptURLForExtension'
+                | 'sideloadedExtensionURL'
+                | 'clientApplication'
             > = {
                 settings: of({
                     subjects: [
@@ -97,9 +120,11 @@ describe('MainThreadAPI', () => {
                     final: { a: 'value' },
                 }),
                 updateSettings,
+                getGraphQLClient,
                 requestGraphQL: () => EMPTY,
                 getScriptURLForExtension: () => undefined,
                 sideloadedExtensionURL: new BehaviorSubject<string | null>(null),
+                clientApplication: 'other',
             }
 
             const { api } = initMainThreadAPI(pretendRemote({}), platformContext)
@@ -128,13 +153,21 @@ describe('MainThreadAPI', () => {
 
             const platformContext: Pick<
                 PlatformContext,
-                'updateSettings' | 'settings' | 'requestGraphQL' | 'getScriptURLForExtension' | 'sideloadedExtensionURL'
+                | 'updateSettings'
+                | 'settings'
+                | 'getGraphQLClient'
+                | 'requestGraphQL'
+                | 'getScriptURLForExtension'
+                | 'sideloadedExtensionURL'
+                | 'clientApplication'
             > = {
+                getGraphQLClient,
                 settings: of(...values),
                 updateSettings: () => Promise.resolve(),
                 requestGraphQL: () => EMPTY,
                 getScriptURLForExtension: () => undefined,
                 sideloadedExtensionURL: new BehaviorSubject<string | null>(null),
+                clientApplication: 'other',
             }
 
             const passedToExtensionHost: SettingsCascade<object>[] = []
@@ -154,13 +187,21 @@ describe('MainThreadAPI', () => {
             const values = new Subject<SettingsCascade<{ a: string }>>()
             const platformContext: Pick<
                 PlatformContext,
-                'updateSettings' | 'settings' | 'requestGraphQL' | 'getScriptURLForExtension' | 'sideloadedExtensionURL'
+                | 'updateSettings'
+                | 'settings'
+                | 'getGraphQLClient'
+                | 'requestGraphQL'
+                | 'getScriptURLForExtension'
+                | 'sideloadedExtensionURL'
+                | 'clientApplication'
             > = {
                 settings: values.asObservable(),
                 updateSettings: () => Promise.resolve(),
+                getGraphQLClient,
                 requestGraphQL: () => EMPTY,
                 getScriptURLForExtension: () => undefined,
                 sideloadedExtensionURL: new BehaviorSubject<string | null>(null),
+                clientApplication: 'other',
             }
             const passedToExtensionHost: SettingsCascade<object>[] = []
             const { subscription } = initMainThreadAPI(

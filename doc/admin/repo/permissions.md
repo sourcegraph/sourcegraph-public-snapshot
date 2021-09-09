@@ -14,6 +14,8 @@ Setting up a unified SSO for code hosts and Sourcegraph is also possible: how to
 
 > WARNING: It can take some time to complete mirroring repository permissions from a code host. [Learn more](#permissions-sync-times).
 
+<br />
+
 ## GitHub
 
 Prerequisite: [Add GitHub as an authentication provider.](../auth/index.md#github)
@@ -49,19 +51,46 @@ The events we consume are:
 
 <span class="badge badge-experimental">Experimental</span> <span class="badge badge-note">Sourcegraph 3.31+</span>
 
-For GitHub providers, Sourcegraph can leverage caching of team and organization permissions - [learn more](#permissions-caching).
+For GitHub providers, Sourcegraph can leverage caching of GitHub [team](https://docs.github.com/en/organizations/managing-access-to-your-organizations-repositories/managing-team-access-to-an-organization-repository) and [organization](https://docs.github.com/en/organizations/managing-access-to-your-organizations-repositories/repository-permission-levels-for-an-organization) permissions - [learn more about permissions caching](#permissions-caching).
 
-Caching behaviour can be enabld via the `authorization.groupsCacheTTL` field:
+> NOTE: You should only try this if your GitHub setup makes extensive use of GitHub teams and organizations to distribute access to repositories and your number of `users * repos` is greater than 500,000 (which roughly corresponds to the scale at which [GitHub rate limits might become an issue](#permissions-sync-times)).
+<!-- 5,000 requests an hour * 100 items per page = approx. 500,000 items before hitting a limit -->
+
+This caching behaviour can be enabled via the `authorization.groupsCacheTTL` field:
 
 ```json
 {
-   "url": "https://github.com",
+   "url": "https://github.example.com",
    "token": "$PERSONAL_ACCESS_TOKEN",
    "authorization": {
      "groupsCacheTTL": 72, // hours
    }
 }
 ```
+
+In the corresponding [authorization provider](../auth/index.md#github) in [site configuration](./../config/site_config.md), the `allowGroupsPermissionsSync` field must be set as well for the correct auth scopes to be requested from users:
+
+```json
+{
+  // ...
+  "auth.providers": [
+    {
+      "type": "github",
+      "url": "https://github.example.com",
+      "allowGroupsPermissionsSync": true,
+    }
+  ]
+}
+```
+
+When enabling this feature, we currently recommend a default of `72` (hours, or 3 days) for `groupsCacheTTL`. A lower value can be set if your teams and organizations change frequently, though the chosen value must be at least several hours for the cache to be leveraged in the event of being rate-limited (which takes [an hour to recover from](https://docs.github.com/en/rest/overview/resources-in-the-rest-api#rate-limiting)).
+
+Caches can also be [manually invalidated](#permissions-caching) if necessary.
+Cache invaldiation also happens automatically on certain [webhook events](#faster-permissions-syncing-via-github-webhooks).
+
+> NOTE: The token associated with the external service must have `repo` and `read:org` scope in order to read the repo, orgs, and teams permissions and cache them - [learn more](../external_service/github.md#github-api-token-and-access).
+
+<br />
 
 ## GitLab
 
@@ -144,6 +173,8 @@ because Sourcegraph usernames are mutable.
 }
 ```
 
+<br />
+
 ## Bitbucket Server
 
 Enforcing Bitbucket Server permissions can be configured via the `authorization` setting in its configuration.
@@ -223,13 +254,14 @@ Go to your Sourcegraph's *Manage repositories* page (i.e. `https://sourcegraph.e
 
 Copy the *Consumer Key* you generated before to the `oauth.consumerKey` field and the output of the command `base64 sourcegraph.pem | tr -d '\n'` to the `oauth.signingKey` field. Save your changes.
 
+
+Finally, **save the configuration**. You're done!
+
 ### Fast permission sync with Bitbucket Server plugin
 
 By installing the [Bitbucket Server plugin](../../../integration/bitbucket_server.md), you can make use of the fast permission sync feature that allows using Bitbucket Server permissions on larger instances.
 
----
-
-Finally, **save the configuration**. You're done!
+<br />
 
 ## Permissions sync times
 
@@ -286,7 +318,7 @@ Some permissions providers in Sourcegraph can leverage caching mechanisms to red
 
 To see if your provider supports permissions caching, please refer to the relevant provider documentation on this page. For example, [the GitHub provider supports teams and organizations permissions caching](#teams-and-organizations-permissions-caching).
 
-Note that this can mean that permissions can be out of date. To configure caching behaviour, please refer to the relevant provider documentation on this page. To force a bypass of caches during a sync, you can manually queue users or repositories for sync with the `invalidateCaches` options via the Sourcegarph GraphQL API:
+Note that this can mean that permissions can be out of date. To configure caching behaviour, please refer to the relevant provider documentation on this page. To force a bypass of caches during a sync, you can manually queue users or repositories for sync with the `invalidateCaches` options via the Sourcegraph GraphQL API:
 
 ```gql
 mutation {
@@ -296,11 +328,11 @@ mutation {
 }
 ```
 
+<br />
+
 ## Explicit permissions API
 
-Sourcegraph exposes a GraphQL API to explicitly set repository permissions. This will become the primary
-way to specify permissions in the future and will eventually replace the other repository
-permissions mechanisms.
+Sourcegraph exposes a GraphQL API to explicitly set repository permissions as an alternative to the code-host-specific repository permissions sync mechanisms.
 
 To enable the permissions API, add the following to the [site configuration](../config/site_config.md):
 
@@ -368,3 +400,48 @@ query {
   }
 }
 ```
+
+## Permissions for multiple code hosts
+
+When integrating multiple code hosts with Sourcegraph, repository permissions typically need to be inherited and enforced across those respective code hosts and repositories. The steps below will walk you through configuring and enforcing repository permissions on a per-user basis across all of the code hosts and repos connected to Sourcegraph.
+
+### Using the explicit permissions API
+
+The recommended approach for inheriting permissions across multiple code hosts is via the [Explicit Permissions API](#explicit-permissions-api). The workaround provided in below is recommended only if using the Explicit Permissions API is not feasible.
+
+### Using GitHub Enterprise and GitHub.com
+
+> NOTE: This workaround is currently only verified to work when connecting both GitHub Enterprise and Github.com OAuth applications. For other code hosts and configuration options, please reach out to us.
+
+Setup and add GitHub Enterprise (GHE) and GitHub.com (GHC) using our standard [GitHub integration](../external_service/github.md).
+
+**Configure GitHub Enterprise SSO:**
+
+1. Add GHE repos.
+2. Configure auth for GHE using [OAuth](../auth/index.md#github).
+
+    > NOTE: Ensure that the `allowSignup` field is set to `true`. This will ensure that users signing in via GHE will have a new user account created on Sourcegraph.
+
+3. Add the [authorization field](#github) to the GHE code host connection (this is what enforces repository permissions).
+4. Test that the GitHub Enterprise OAuth is working correctly (users should be able to sign into Sourcegraph using their GitHub Enterprise credentials).
+
+**Configure Github.com SSO:**
+
+1. Add GHC repos.
+2. Configure auth for GHC using [OAuth](../auth/index.md#github).
+  
+    > NOTE: Ensure that the `allowSignup` field is set to `false`. This will ensure that users signing in via GHC will not have a new user account created on Sourcegraph.
+
+3. Add the [authorization field](#github) to the GHC code host connection (this is what enforces repository permissions).
+4. Test that the GitHub.com OAuth is working correctly (users should be able to sign into Sourcegraph using their GitHub.com credentials).
+
+#### User sign in flow
+
+When multiple code hosts/authentication providers are connected to Sourcegraph, a specific sign-in flow needs to be utilized when users are creating an account and signing into Sourcegraph for the first time.
+
+1. Sign in to Sourcegraph using the GitHub Enterprise button
+2. Once signed in, sign out and return to the sign in page
+3. On the sign in page, sign in again using the Github.com button
+4. Once signed in via Github.com, users should now have access to repositories on both code hosts and have all repository permissions enforced.
+
+> NOTE: These steps are not required at every sign in - only during the initial account creation.

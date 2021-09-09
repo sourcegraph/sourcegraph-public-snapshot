@@ -5,7 +5,7 @@ exports[`ProductSubscriptionForm edit existing subscription 1`] = `
   className="product-subscription-form"
 >
   <form
-    className=" "
+    className=""
     onInvalid={[Function]}
     onSubmit={[Function]}
   >
@@ -89,7 +89,7 @@ exports[`ProductSubscriptionForm new subscription for anonymous viewer (no accou
   className="product-subscription-form"
 >
   <form
-    className=" "
+    className=""
     onInvalid={[Function]}
     onSubmit={[Function]}
   >
@@ -191,7 +191,7 @@ exports[`ProductSubscriptionForm new subscription for existing account 1`] = `
   className="product-subscription-form"
 >
   <form
-    className=" "
+    className=""
     onInvalid={[Function]}
     onSubmit={[Function]}
   >

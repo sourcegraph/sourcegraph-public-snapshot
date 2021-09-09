@@ -1,3 +1,4 @@
+import classNames from 'classnames'
 import * as H from 'history'
 import { upperFirst } from 'lodash'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
@@ -51,8 +52,6 @@ interface Props extends SettingsCascadeProps, VersionContextProps, TelemetryProp
     onSelect?: () => void
 
     className?: string
-
-    isLightTheme: boolean
 
     fetchHighlightedFileLineRanges: (parameters: FetchFileParameters, force?: boolean) => Observable<string[][]>
 
@@ -149,7 +148,7 @@ export class FileLocations extends React.PureComponent<Props, State> {
         }
 
         return (
-            <div className={`file-locations ${this.props.className || ''}`}>
+            <div className={classNames('file-locations', this.props.className)}>
                 <VirtualList<OrderedURI, { locationsByURI: Map<string, Location[]> }>
                     itemsToShow={this.state.itemsToShow}
                     onShowMoreItems={this.onShowMoreItems}
@@ -186,7 +185,6 @@ export class FileLocations extends React.PureComponent<Props, State> {
             icon={this.props.icon}
             onSelect={this.onSelect}
             showAllMatches={true}
-            isLightTheme={this.props.isLightTheme}
             fetchHighlightedFileLineRanges={this.props.fetchHighlightedFileLineRanges}
             settingsCascade={this.props.settingsCascade}
         />
@@ -197,8 +195,8 @@ function referencesToContentMatch(uri: string, references: Badged<Location>[]): 
     const parsedUri = parseRepoURI(uri)
     return {
         type: 'content',
-        name: parsedUri.filePath || '',
-        version: (parsedUri.commitID || parsedUri.revision)!,
+        path: parsedUri.filePath || '',
+        commit: (parsedUri.commitID || parsedUri.revision)!,
         repository: parsedUri.repoName,
         lineMatches: references.filter(property('range', isDefined)).map(reference => ({
             line: '',

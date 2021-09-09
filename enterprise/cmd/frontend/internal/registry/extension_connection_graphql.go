@@ -66,6 +66,9 @@ func toDBExtensionsListOptions(args graphqlbackend.RegistryExtensionConnectionAr
 	if args.Query != nil {
 		opt.Query, opt.Category, opt.Tag = parseExtensionQuery(*args.Query)
 	}
+	if args.ExtensionIDs != nil {
+		opt.ExtensionIDs = *args.ExtensionIDs
+	}
 	if args.PrioritizeExtensionIDs != nil {
 		opt.PrioritizeExtensionIDs = *args.PrioritizeExtensionIDs
 	}

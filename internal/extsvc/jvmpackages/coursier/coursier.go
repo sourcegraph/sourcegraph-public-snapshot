@@ -4,15 +4,17 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"log"
 	"os"
 	"os/exec"
 	"path"
+	"path/filepath"
 	"strings"
 
 	"github.com/cockroachdb/errors"
 	"github.com/inconshreveable/log15"
 	"github.com/opentracing/opentracing-go"
-	"github.com/opentracing/opentracing-go/log"
+	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/prometheus/client_golang/prometheus"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
@@ -24,6 +26,7 @@ import (
 var CoursierBinary = "coursier"
 
 var (
+	coursierCacheDir   string
 	observationContext *observation.Context
 	operations         *Operations
 )
@@ -35,11 +38,21 @@ func init() {
 		Registerer: prometheus.DefaultRegisterer,
 	}
 	operations = NewOperationsFromMetrics(observationContext)
+
+	// Should only be set for gitserver for persistence, repo-updater will use ephemeral storage.
+	// repo-updater only performs existence checks which doesnt involve downloading any JARs (except for JDK),
+	// only POM files which are much lighter.
+	if reposDir := os.Getenv("SRC_REPOS_DIR"); reposDir != "" {
+		coursierCacheDir = filepath.Join(reposDir, "coursier")
+		if err := os.MkdirAll(coursierCacheDir, os.ModePerm); err != nil {
+			log.Fatalf("failed to create coursier cache dir in %s: %s", coursierCacheDir, err)
+		}
+	}
 }
 
 func FetchSources(ctx context.Context, config *schema.JVMPackagesConnection, dependency reposource.MavenDependency) (_ []string, err error) {
-	ctx, endObservation := operations.fetchSources.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.String("dependency", dependency.CoursierSyntax()),
+	ctx, endObservation := operations.fetchSources.With(ctx, &err, observation.Args{LogFields: []otlog.Field{
+		otlog.String("dependency", dependency.CoursierSyntax()),
 	}})
 	defer endObservation(1, observation.Args{})
 
@@ -99,8 +112,8 @@ func FetchByteCode(ctx context.Context, config *schema.JVMPackagesConnection, de
 
 func Exists(ctx context.Context, config *schema.JVMPackagesConnection, dependency reposource.MavenDependency) bool {
 	var err error
-	ctx, endObservation := operations.exists.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.String("dependency", dependency.CoursierSyntax()),
+	ctx, endObservation := operations.exists.With(ctx, &err, observation.Args{LogFields: []otlog.Field{
+		otlog.String("dependency", dependency.CoursierSyntax()),
 	}})
 	defer endObservation(1, observation.Args{})
 
@@ -120,9 +133,9 @@ func Exists(ctx context.Context, config *schema.JVMPackagesConnection, dependenc
 }
 
 func runCoursierCommand(ctx context.Context, config *schema.JVMPackagesConnection, args ...string) (_ []string, err error) {
-	ctx, traceLog, endObservation := operations.runCommand.WithAndLogger(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.String("repositories", strings.Join(config.Maven.Repositories, "|")),
-		log.String("args", strings.Join(args, ", ")),
+	ctx, traceLog, endObservation := operations.runCommand.WithAndLogger(ctx, &err, observation.Args{LogFields: []otlog.Field{
+		otlog.String("repositories", strings.Join(config.Maven.Repositories, "|")),
+		otlog.String("args", strings.Join(args, ", ")),
 	}})
 	defer endObservation(1, observation.Args{})
 
@@ -136,13 +149,17 @@ func runCoursierCommand(ctx context.Context, config *schema.JVMPackagesConnectio
 			fmt.Sprintf("COURSIER_REPOSITORIES=%v", strings.Join(config.Maven.Repositories, "|")),
 		)
 	}
+	if coursierCacheDir != "" {
+		cmd.Env = append(cmd.Env, "COURSIER_CACHE="+coursierCacheDir)
+	}
+
 	var stdout, stderr bytes.Buffer
 	cmd.Stdout = &stdout
 	cmd.Stderr = &stderr
 	if err := cmd.Run(); err != nil {
 		return nil, errors.Wrapf(err, "coursier command %q failed with stderr %q and stdout %q", cmd, stderr, &stdout)
 	}
-	traceLog(log.String("stdout", stdout.String()), log.String("stderr", stderr.String()))
+	traceLog(otlog.String("stdout", stdout.String()), otlog.String("stderr", stderr.String()))
 
 	if stdout.String() == "" {
 		return []string{}, nil

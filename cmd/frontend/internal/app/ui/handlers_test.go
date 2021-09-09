@@ -40,7 +40,7 @@ func TestRedirects(t *testing.T) {
 
 		db := new(dbtesting.MockDB)
 
-		InitRouter(db)
+		InitRouter(db, nil)
 		rw := httptest.NewRecorder()
 		req, err := http.NewRequest("GET", path, nil)
 		if err != nil {
@@ -175,7 +175,7 @@ func TestNewCommon_repo_error(t *testing.T) {
 				code = statusCode
 			}
 
-			_, err = newCommon(httptest.NewRecorder(), req, "test", serveError)
+			_, err = newCommon(httptest.NewRecorder(), req, "test", index, serveError)
 			if err != nil {
 				if got != "" || code != 200 {
 					t.Fatal("serveError called and error returned from newCommon")

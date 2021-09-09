@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -8,6 +9,8 @@ import (
 	"net/url"
 	"os"
 	"os/user"
+	"path/filepath"
+	"sort"
 	"strings"
 	"sync"
 
@@ -53,17 +56,63 @@ var metricConfigOverrideUpdates = promauto.NewCounterVec(prometheus.CounterOpts{
 	Help: "Incremented each time the config file is updated.",
 }, []string{"status"})
 
+// readSiteConfigFile reads and merges the paths. paths is the value of the
+// envvar SITE_CONFIG_FILE seperated by os.ListPathSeparator (":"). The
+// merging just concats the objects together. So does not check for things
+// like duplicate keys between files.
+func readSiteConfigFile(paths []string) ([]byte, error) {
+	// special case 1
+	if len(paths) == 1 {
+		return os.ReadFile(paths[0])
+	}
+
+	var merged bytes.Buffer
+	merged.WriteString("// merged SITE_CONFIG_FILE\n{\n")
+
+	for _, p := range paths {
+		b, err := os.ReadFile(p)
+		if err != nil {
+			return nil, err
+		}
+
+		var m map[string]*json.RawMessage
+		err = jsonc.Unmarshal(string(b), &m)
+		if err != nil {
+			return nil, errors.Wrapf(err, "failed to parse JSON in %s", p)
+		}
+
+		var keys []string
+		for k := range m {
+			keys = append(keys, k)
+		}
+		sort.Strings(keys)
+
+		_, _ = fmt.Fprintf(&merged, "\n// BEGIN %s\n", p)
+		for _, k := range keys {
+			keyB, _ := json.Marshal(k)
+			valB, _ := json.Marshal(m[k])
+			_, _ = fmt.Fprintf(&merged, "  %s: %s,\n", keyB, valB)
+		}
+		_, _ = fmt.Fprintf(&merged, "// END %s\n", p)
+	}
+
+	merged.WriteString("}\n")
+
+	return merged.Bytes(), nil
+}
+
 func overrideSiteConfig(ctx context.Context) error {
 	path := os.Getenv("SITE_CONFIG_FILE")
 	if path == "" {
 		return nil
 	}
+	paths := filepath.SplitList(path)
 	updateFunc := func(ctx context.Context) error {
 		raw, err := (&configurationSource{}).Read(ctx)
 		if err != nil {
 			return err
 		}
-		site, err := os.ReadFile(path)
+		site, err := readSiteConfigFile(paths)
 		if err != nil {
 			return errors.Wrap(err, "reading SITE_CONFIG_FILE")
 		}

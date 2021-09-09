@@ -1,11 +1,12 @@
-import { storiesOf } from '@storybook/react'
-import React, { useCallback } from 'react'
+import { boolean } from '@storybook/addon-knobs'
+import { Meta, Story } from '@storybook/react'
+import React from 'react'
 import { of } from 'rxjs'
 
 import { LsifUploadFields, LSIFUploadState } from '../../../graphql-operations'
 import { EnterpriseWebStory } from '../../components/EnterpriseWebStory'
 
-import { CodeIntelUploadsPage } from './CodeIntelUploadsPage'
+import { CodeIntelUploadsPage, CodeIntelUploadsPageProps } from './CodeIntelUploadsPage'
 
 const uploadPrototype: Omit<LsifUploadFields, 'id' | 'state' | 'uploadedAt'> = {
     __typename: 'LSIFUpload',
@@ -83,91 +84,67 @@ const testUploads: LsifUploadFields[] = [
 
 const now = () => new Date('2020-06-15T15:25:00+00:00')
 
-const { add } = storiesOf('web/codeintel/list/CodeIntelUploadPage', module)
-    .addDecorator(story => <div className="p-3 container">{story()}</div>)
-    .addParameters({
+const makeResponse = (uploads: LsifUploadFields[]) => ({
+    nodes: uploads,
+    totalCount: uploads.length,
+    pageInfo: {
+        __typename: 'PageInfo',
+        endCursor: null,
+        hasNextPage: false,
+    },
+})
+
+const story: Meta = {
+    title: 'web/codeintel/list/CodeIntelUploadPage',
+    decorators: [story => <div className="p-3 container">{story()}</div>],
+    parameters: {
+        component: CodeIntelUploadsPage,
         chromatic: {
             viewports: [320, 576, 978, 1440],
         },
-    })
+    },
+}
+export default story
 
-add('Empty', () => {
-    const fetchLsifUploads = useCallback(
-        () =>
-            of({
-                nodes: [],
-                totalCount: 0,
-                pageInfo: {
-                    __typename: 'PageInfo',
-                    endCursor: null,
-                    hasNextPage: false,
-                },
-            }),
-        []
-    )
+const Template: Story<CodeIntelUploadsPageProps> = args => {
+    const fetchCommitGraphMetadata = () =>
+        of({
+            stale: boolean('staleCommitGraph', false),
+            updatedAt: boolean('previouslyUpdatedCommitGraph', true) ? now() : null,
+        })
 
     return (
         <EnterpriseWebStory>
-            {props => <CodeIntelUploadsPage {...props} now={now} fetchLsifUploads={fetchLsifUploads} />}
+            {props => <CodeIntelUploadsPage {...props} fetchCommitGraphMetadata={fetchCommitGraphMetadata} {...args} />}
         </EnterpriseWebStory>
     )
-})
+}
 
-add('SiteAdminPage', () => {
-    const fetchLsifUploads = useCallback(
-        () =>
-            of({
-                nodes: testUploads,
-                totalCount: testUploads.length,
-                pageInfo: {
-                    __typename: 'PageInfo',
-                    endCursor: null,
-                    hasNextPage: false,
-                },
-            }),
-        []
-    )
+const defaults: Partial<CodeIntelUploadsPageProps> = {
+    now,
+    fetchLsifUploads: () => of(makeResponse([])),
+}
 
-    return (
-        <EnterpriseWebStory>
-            {props => <CodeIntelUploadsPage {...props} now={now} fetchLsifUploads={fetchLsifUploads} />}
-        </EnterpriseWebStory>
-    )
-})
+export const EmptyGlobalPage = Template.bind({})
+EmptyGlobalPage.args = {
+    ...defaults,
+}
 
-for (const { fresh, updated } of [
-    { fresh: true, updated: true },
-    { fresh: true, updated: false },
-    { fresh: false, updated: true },
-    { fresh: false, updated: false },
-]) {
-    add(`${fresh ? 'Fresh' : 'Stale'}${updated ? '' : 'Unupdated'}RepositoryPage`, () => {
-        const fetchLsifUploads = useCallback(
-            () =>
-                of({
-                    nodes: testUploads,
-                    totalCount: testUploads.length,
-                    pageInfo: {
-                        __typename: 'PageInfo',
-                        endCursor: null,
-                        hasNextPage: false,
-                    },
-                }),
-            []
-        )
+export const GlobalPage = Template.bind({})
+GlobalPage.args = {
+    ...defaults,
+    fetchLsifUploads: () => of(makeResponse(testUploads)),
+}
 
-        return (
-            <EnterpriseWebStory>
-                {props => (
-                    <CodeIntelUploadsPage
-                        {...props}
-                        repo={{ id: 'sourcegraph' }}
-                        now={now}
-                        fetchLsifUploads={fetchLsifUploads}
-                        fetchCommitGraphMetadata={() => of({ stale: !fresh, updatedAt: updated ? null : now() })}
-                    />
-                )}
-            </EnterpriseWebStory>
-        )
-    })
+export const EmptyRepositoryPage = Template.bind({})
+EmptyRepositoryPage.args = {
+    ...defaults,
+    repo: { id: 'sourcegraph' },
+}
+
+export const RepositoryPage = Template.bind({})
+RepositoryPage.args = {
+    ...defaults,
+    repo: { id: 'sourcegraph' },
+    fetchLsifUploads: () => of(makeResponse(testUploads)),
 }

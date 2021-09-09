@@ -1,6 +1,7 @@
 import * as React from 'react'
 import { Redirect, RouteComponentProps } from 'react-router'
 
+import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { isErrorLike } from '@sourcegraph/shared/src/util/errors'
 
 import { BatchChangesProps } from './batches'
@@ -8,6 +9,7 @@ import { CodeIntelligenceProps } from './codeintel'
 import { BreadcrumbsProps, BreadcrumbSetters } from './components/Breadcrumbs'
 import type { LayoutProps } from './Layout'
 import type { ExtensionAlertProps } from './repo/RepoContainer'
+import { ThemePreferenceProps } from './theme'
 import { UserExternalServicesOrRepositoriesUpdateProps } from './util'
 import { lazyComponent } from './util/lazyComponent'
 
@@ -35,6 +37,8 @@ const CncfRepogroupPage = lazyComponent(() => import('./repogroups/cncf'), 'Cncf
 export interface LayoutRouteComponentProps<RouteParameters extends { [K in keyof RouteParameters]?: string }>
     extends RouteComponentProps<RouteParameters>,
         Omit<LayoutProps, 'match'>,
+        ThemeProps,
+        ThemePreferenceProps,
         BreadcrumbsProps,
         BreadcrumbSetters,
         ExtensionAlertProps,
@@ -199,14 +203,6 @@ export const routes: readonly LayoutRouteProps<any>[] = [
     {
         path: '/-/debug/*',
         render: passThroughToServer,
-    },
-    {
-        path: '/insights',
-        render: lazyComponent(() => import('./insights/InsightsRouter'), 'InsightsRouter'),
-        condition: props =>
-            !isErrorLike(props.settingsCascade.final) &&
-            !!props.settingsCascade.final?.experimentalFeatures?.codeInsights &&
-            props.settingsCascade.final['insights.displayLocation.insightsPage'] !== false,
     },
     {
         path: '/contexts',

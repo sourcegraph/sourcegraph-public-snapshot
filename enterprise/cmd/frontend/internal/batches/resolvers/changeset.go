@@ -23,6 +23,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
 )
 
 type changesetResolver struct {
@@ -279,7 +280,7 @@ func (r *changesetResolver) Body(ctx context.Context) (*string, error) {
 	return &desc.Body, nil
 }
 
-func (r *changesetResolver) getBranchSpecDescription(ctx context.Context) (*btypes.ChangesetSpecDescription, error) {
+func (r *changesetResolver) getBranchSpecDescription(ctx context.Context) (*batcheslib.ChangesetSpec, error) {
 	spec, err := r.computeSpec(ctx)
 	if err != nil {
 		return nil, err

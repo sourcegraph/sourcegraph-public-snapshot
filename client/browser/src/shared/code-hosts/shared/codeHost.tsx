@@ -101,6 +101,7 @@ import { phabricatorCodeHost } from '../phabricator/codeHost'
 
 import { CodeView, trackCodeViews, fetchFileContentForDiffOrFileInfo } from './codeViews'
 import { ContentView, handleContentViews } from './contentViews'
+import { RepoURLParseError } from './errors'
 import { applyDecorations, initializeExtensions, renderCommandPalette, renderGlobalDebug } from './extensions'
 import { createPrivateCodeHoverAlert, getActiveHoverAlerts, onHoverAlertDismissed } from './hoverAlerts'
 import {
@@ -633,6 +634,13 @@ export function handleCodeHost({
         filter(isInstanceOf(HTMLElement))
     )
 
+    // Handle theming
+    subscriptions.add(
+        (codeHost.isLightTheme ?? of(true)).subscribe(isLightTheme => {
+            document.body.classList.toggle('theme-light', isLightTheme)
+            document.body.classList.toggle('theme-dark', !isLightTheme)
+        })
+    )
     const nativeTooltipsEnabled = codeHost.nativeTooltipResolvers
         ? nativeTooltipsEnabledFromSettings(platformContext.settings)
         : of(false)
@@ -747,14 +755,14 @@ export function handleCodeHost({
                 return resolveRevision({ repoName: rawRepoName, revision, requestGraphQL }).pipe(
                     retryWhenCloneInProgressError(),
                     mapTo(true),
-                    catchError(error => {
-                        if (isRepoNotFoundErrorLike(error)) {
-                            return [false]
-                        }
-                        return [asError(error)]
-                    }),
                     startWith(undefined)
                 )
+            }),
+            catchError(error => {
+                if (isRepoNotFoundErrorLike(error) || error instanceof RepoURLParseError) {
+                    return [false]
+                }
+                return [asError(error)]
             })
         )
         const onConfigureSourcegraphClick: React.MouseEventHandler<HTMLAnchorElement> = async event => {
@@ -1061,7 +1069,7 @@ export function handleCodeHost({
                 } else if (diffOrFileInfoWithEditor.head) {
                     scopeEditor = diffOrFileInfoWithEditor.head.editor
                 } else {
-                    scopeEditor = diffOrFileInfoWithEditor.base!.editor
+                    scopeEditor = diffOrFileInfoWithEditor.base.editor
                 }
 
                 if (wasRemoved) {

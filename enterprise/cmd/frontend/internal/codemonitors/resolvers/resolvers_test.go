@@ -10,6 +10,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
+	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	batchesApitest "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/batches/resolvers/apitest"
@@ -226,6 +227,23 @@ func TestIsAllowedToEdit(t *testing.T) {
 			}
 		})
 	}
+
+	t.Run("cannot change namespace to one not editable by caller", func(t *testing.T) {
+		ctx := actor.WithActor(context.Background(), actor.FromUser(member))
+		notMemberNamespace := relay.MarshalID("User", notMember)
+		args := &graphqlbackend.UpdateCodeMonitorArgs{
+			Monitor: &graphqlbackend.EditMonitorArgs{
+				Id: m.ID(),
+				Update: &graphqlbackend.CreateMonitorArgs{
+					Namespace:   notMemberNamespace,
+					Description: "updated",
+				},
+			},
+		}
+
+		_, err = r.UpdateCodeMonitor(ctx, args)
+		require.EqualError(t, err, "update namespace: must be authenticated as the authorized user or as an admin (must be site admin)")
+	})
 }
 
 func TestIsAllowedToCreate(t *testing.T) {

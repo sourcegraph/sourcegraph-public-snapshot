@@ -1,46 +1,49 @@
+import classNames from 'classnames'
 import ArchiveIcon from 'mdi-react/ArchiveIcon'
+import LockIcon from 'mdi-react/LockIcon'
 import SourceForkIcon from 'mdi-react/SourceForkIcon'
-import StarIcon from 'mdi-react/StarIcon'
 import React from 'react'
 
+import { LastSyncedIcon } from '@sourcegraph/shared/src/components/LastSyncedIcon'
 import { Markdown } from '@sourcegraph/shared/src/components/Markdown'
 import { RepoIcon } from '@sourcegraph/shared/src/components/RepoIcon'
 import { ResultContainer } from '@sourcegraph/shared/src/components/ResultContainer'
+import { SearchResultStar } from '@sourcegraph/shared/src/components/SearchResultStar'
 import { CommitMatch, getMatchTitle, RepositoryMatch } from '@sourcegraph/shared/src/search/stream'
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { renderMarkdown } from '@sourcegraph/shared/src/util/markdown'
 import { formatRepositoryStarCount } from '@sourcegraph/shared/src/util/stars'
 
 import { CommitSearchResultMatch } from './CommitSearchResultMatch'
+import styles from './SearchResult.module.scss'
 
-interface Props extends ThemeProps {
+interface Props {
     result: CommitMatch | RepositoryMatch
     repoName: string
     icon: React.ComponentType<{ className?: string }>
 }
 
-export const SearchResult: React.FunctionComponent<Props> = ({ result, icon, isLightTheme, repoName }) => {
+export const SearchResult: React.FunctionComponent<Props> = ({ result, icon, repoName }) => {
     const renderTitle = (): JSX.Element => {
         const formattedRepositoryStarCount = formatRepositoryStarCount(result.repoStars)
         return (
-            <div className="search-result__title">
+            <div className={styles.title}>
                 <RepoIcon repoName={repoName} className="icon-inline text-muted flex-shrink-0" />
                 <Markdown
                     className="test-search-result-label ml-1 flex-shrink-past-contents text-truncate"
                     dangerousInnerHTML={renderMarkdown(getMatchTitle(result))}
                 />
-                <span className="search-result__spacer" />
+                <span className={styles.spacer} />
                 {result.type === 'commit' && result.detail && (
                     <>
                         <Markdown className="flex-shrink-0" dangerousInnerHTML={renderMarkdown(result.detail)} />
                     </>
                 )}
                 {result.type === 'commit' && result.detail && formattedRepositoryStarCount && (
-                    <div className="search-result__divider" />
+                    <div className={styles.divider} />
                 )}
                 {formattedRepositoryStarCount && (
                     <>
-                        <StarIcon className="search-result__star" />
+                        <SearchResultStar />
                         {formattedRepositoryStarCount}
                     </>
                 )}
@@ -52,16 +55,19 @@ export const SearchResult: React.FunctionComponent<Props> = ({ result, icon, isL
         if (result.type === 'repo') {
             return (
                 <div>
-                    <div className="search-result-match p-2 flex-column">
+                    <div className={classNames(styles.searchResultMatch, 'p-2 flex-column')}>
+                        {result.repoLastFetched && <LastSyncedIcon lastSyncedTime={result.repoLastFetched} />}
                         <div className="d-flex align-items-center flex-row">
-                            <div className="search-result__match-type">
+                            <div className={styles.matchType}>
                                 <small>Repository match</small>
                             </div>
                             {result.fork && (
                                 <>
-                                    <div className="search-result__divider" />
+                                    <div className={styles.divider} />
                                     <div>
-                                        <SourceForkIcon className="search-result__icon icon-inline flex-shrink-0 text-muted" />
+                                        <SourceForkIcon
+                                            className={classNames('icon-inline flex-shrink-0 text-muted', styles.icon)}
+                                        />
                                     </div>
                                     <div>
                                         <small>Fork</small>
@@ -70,20 +76,35 @@ export const SearchResult: React.FunctionComponent<Props> = ({ result, icon, isL
                             )}
                             {result.archived && (
                                 <>
-                                    <div className="search-result__divider" />
+                                    <div className={styles.divider} />
                                     <div>
-                                        <ArchiveIcon className="search-result__icon icon-inline flex-shrink-0 text-muted" />
+                                        <ArchiveIcon
+                                            className={classNames('icon-inline flex-shrink-0 text-muted', styles.icon)}
+                                        />
                                     </div>
                                     <div>
                                         <small>Archived</small>
                                     </div>
                                 </>
                             )}
+                            {result.private && (
+                                <>
+                                    <div className={styles.divider} />
+                                    <div>
+                                        <LockIcon
+                                            className={classNames('icon-inline flex-shrink-0 text-muted', styles.icon)}
+                                        />
+                                    </div>
+                                    <div>
+                                        <small>Private</small>
+                                    </div>
+                                </>
+                            )}
                         </div>
                         {result.description && (
                             <>
-                                <div className="search-result__divider-vertical" />
-                                <div className="search-result__description">
+                                <div className={styles.dividerVertical} />
+                                <div>
                                     <small>
                                         <em>{result.description}</em>
                                     </small>
@@ -95,7 +116,7 @@ export const SearchResult: React.FunctionComponent<Props> = ({ result, icon, isL
             )
         }
 
-        return <CommitSearchResultMatch key={result.url} item={result} isLightTheme={isLightTheme} />
+        return <CommitSearchResultMatch key={result.url} item={result} />
     }
 
     return (

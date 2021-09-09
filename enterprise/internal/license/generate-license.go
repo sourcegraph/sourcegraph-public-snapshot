@@ -1,3 +1,4 @@
+//go:build ignore
 // +build ignore
 
 // Command generate-license generates a signed Sourcegraph license key.

@@ -20,7 +20,7 @@ import {
     appendSubtreeQueryParameter,
 } from '@sourcegraph/shared/src/util/url'
 
-import { queryGraphQL, requestGraphQL } from '../backend/graphql'
+import { getWebGraphQLClient, queryGraphQL, requestGraphQL } from '../backend/graphql'
 import { eventLogger } from '../tracking/eventLogger'
 
 /**
@@ -61,6 +61,7 @@ export function createPlatformContext(): PlatformContext {
             }
             updatedSettings.next(await fetchViewerSettings().toPromise())
         },
+        getGraphQLClient: getWebGraphQLClient,
         requestGraphQL: ({ request, variables }) => requestGraphQL(request, variables),
         forceUpdateTooltip: () => Tooltip.forceUpdate(),
         createExtensionHost: () => Promise.resolve(createExtensionHost()),

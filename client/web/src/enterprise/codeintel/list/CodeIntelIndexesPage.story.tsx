@@ -1,11 +1,11 @@
-import { storiesOf } from '@storybook/react'
-import React, { useCallback } from 'react'
+import { Meta, Story } from '@storybook/react'
+import React from 'react'
 import { of } from 'rxjs'
 
 import { ExecutionLogEntryFields, LsifIndexFields, LSIFIndexState } from '../../../graphql-operations'
 import { EnterpriseWebStory } from '../../components/EnterpriseWebStory'
 
-import { CodeIntelIndexesPage } from './CodeIntelIndexesPage'
+import { CodeIntelIndexesPage, CodeIntelIndexesPageProps } from './CodeIntelIndexesPage'
 
 const executionLogPrototype: ExecutionLogEntryFields = {
     key: 'log',
@@ -91,86 +91,59 @@ const testIndexes: LsifIndexFields[] = [
 
 const now = () => new Date('2020-06-15T15:25:00+00:00')
 
-const { add } = storiesOf('web/codeintel/list/CodeIntelIndexesPage', module)
-    .addDecorator(story => <div className="p-3 container">{story()}</div>)
-    .addParameters({
+const makeResponse = (indexes: LsifIndexFields[]) => ({
+    nodes: indexes,
+    totalCount: indexes.length,
+    pageInfo: {
+        __typename: 'PageInfo',
+        endCursor: null,
+        hasNextPage: false,
+    },
+})
+
+const story: Meta = {
+    title: 'web/codeintel/list/CodeIntelIndexesPage',
+    decorators: [story => <div className="p-3 container">{story()}</div>],
+    parameters: {
+        component: CodeIntelIndexesPage,
         chromatic: {
             viewports: [320, 576, 978, 1440],
         },
-    })
+    },
+}
+export default story
 
-add('Empty', () => {
-    const fetchLsifIndexes = useCallback(
-        () =>
-            of({
-                nodes: [],
-                totalCount: 0,
-                pageInfo: {
-                    __typename: 'PageInfo',
-                    endCursor: null,
-                    hasNextPage: false,
-                },
-            }),
-        []
-    )
+const Template: Story<CodeIntelIndexesPageProps> = args => (
+    <EnterpriseWebStory>{props => <CodeIntelIndexesPage {...props} {...args} />}</EnterpriseWebStory>
+)
 
-    return (
-        <EnterpriseWebStory>
-            {props => <CodeIntelIndexesPage {...props} now={now} fetchLsifIndexes={fetchLsifIndexes} />}
-        </EnterpriseWebStory>
-    )
-})
+const defaults: Partial<CodeIntelIndexesPageProps> = {
+    now,
+    fetchLsifIndexes: () => of(makeResponse([])),
+}
 
-add('SiteAdminPage', () => {
-    const fetchLsifIndexes = useCallback(
-        () =>
-            of({
-                nodes: testIndexes,
-                totalCount: testIndexes.length,
-                pageInfo: {
-                    __typename: 'PageInfo',
-                    endCursor: null,
-                    hasNextPage: false,
-                },
-            }),
-        []
-    )
+export const EmptyGlobalPage = Template.bind({})
+EmptyGlobalPage.args = {
+    ...defaults,
+}
 
-    return (
-        <EnterpriseWebStory>
-            {props => <CodeIntelIndexesPage {...props} now={now} fetchLsifIndexes={fetchLsifIndexes} />}
-        </EnterpriseWebStory>
-    )
-})
+export const GlobalPage = Template.bind({})
+GlobalPage.args = {
+    ...defaults,
+    fetchLsifIndexes: () => of(makeResponse(testIndexes)),
+}
 
-add('RepositoryPage', () => {
-    const fetchLsifIndexes = useCallback(
-        () =>
-            of({
-                nodes: testIndexes,
-                totalCount: testIndexes.length,
-                pageInfo: {
-                    __typename: 'PageInfo',
-                    endCursor: null,
-                    hasNextPage: false,
-                },
-            }),
-        []
-    )
+export const EmptyRepositoryPage = Template.bind({})
+EmptyRepositoryPage.args = {
+    ...defaults,
+    repo: { id: 'sourcegraph' },
+    enqueueIndexJob: () => of([]),
+}
 
-    const enqueueIndexJob = useCallback(() => of([]), [])
-
-    return (
-        <EnterpriseWebStory>
-            {props => (
-                <CodeIntelIndexesPage
-                    {...props}
-                    repo={{ id: 'sourcegraph' }}
-                    now={now}
-                    fetchLsifIndexes={fetchLsifIndexes}
-                    enqueueIndexJob={enqueueIndexJob}
-                />
-            )}
-        </EnterpriseWebStory>
-    )
-})
+export const RepositoryPage = Template.bind({})
+RepositoryPage.args = {
+    ...defaults,
+    repo: { id: 'sourcegraph' },
+    enqueueIndexJob: () => of([]),
+    fetchLsifIndexes: () => of(makeResponse(testIndexes)),
+}

@@ -130,7 +130,7 @@ func search(ctx context.Context, query string) (*gqlSearchResponse, error) {
 		return nil, errors.Wrap(err, "Encode")
 	}
 
-	url, err := gqlURL("Search")
+	url, err := gqlURL("QueryRunnerSearch")
 	if err != nil {
 		return nil, errors.Wrap(err, "constructing frontend URL")
 	}
@@ -141,6 +141,7 @@ func search(ctx context.Context, query string) (*gqlSearchResponse, error) {
 	}
 
 	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("User-Agent", "sourcegraph/query-runner")
 
 	resp, err := httpcli.InternalDoer.Do(req.WithContext(ctx))
 	if err != nil {

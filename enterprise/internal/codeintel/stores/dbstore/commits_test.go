@@ -237,8 +237,8 @@ func TestCalculateVisibleUploads(t *testing.T) {
 		strings.Join([]string{makeCommit(1)}, " "),
 	})
 
-	refDescriptions := map[string]gitserver.RefDescription{
-		makeCommit(8): {IsDefaultBranch: true},
+	refDescriptions := map[string][]gitserver.RefDescription{
+		makeCommit(8): {{IsDefaultBranch: true}},
 	}
 
 	if err := store.CalculateVisibleUploads(context.Background(), 50, graph, refDescriptions, time.Hour, time.Hour, 0, time.Time{}); err != nil {
@@ -258,6 +258,9 @@ func TestCalculateVisibleUploads(t *testing.T) {
 	if diff := cmp.Diff(expectedVisibleUploads, getVisibleUploads(t, db, 50, keysOf(expectedVisibleUploads))); diff != "" {
 		t.Errorf("unexpected visible uploads (-want +got):\n%s", diff)
 	}
+
+	// Ensure data can be queried in reverse direction as well
+	assertCommitsVisibleFromUploads(t, store, uploads, expectedVisibleUploads)
 
 	if diff := cmp.Diff([]int{1}, getUploadsVisibleAtTip(t, db, 50)); diff != "" {
 		t.Errorf("unexpected uploads visible at tip (-want +got):\n%s", diff)
@@ -295,8 +298,8 @@ func TestCalculateVisibleUploadsAlternateCommitGraph(t *testing.T) {
 		strings.Join([]string{makeCommit(1)}, " "),
 	})
 
-	refDescriptions := map[string]gitserver.RefDescription{
-		makeCommit(3): {IsDefaultBranch: true},
+	refDescriptions := map[string][]gitserver.RefDescription{
+		makeCommit(3): {{IsDefaultBranch: true}},
 	}
 
 	if err := store.CalculateVisibleUploads(context.Background(), 50, graph, refDescriptions, time.Hour, time.Hour, 0, time.Time{}); err != nil {
@@ -310,6 +313,9 @@ func TestCalculateVisibleUploadsAlternateCommitGraph(t *testing.T) {
 	if diff := cmp.Diff(expectedVisibleUploads, getVisibleUploads(t, db, 50, keysOf(expectedVisibleUploads))); diff != "" {
 		t.Errorf("unexpected visible uploads (-want +got):\n%s", diff)
 	}
+
+	// Ensure data can be queried in reverse direction as well
+	assertCommitsVisibleFromUploads(t, store, uploads, expectedVisibleUploads)
 
 	if diff := cmp.Diff([]int{1}, getUploadsVisibleAtTip(t, db, 50)); diff != "" {
 		t.Errorf("unexpected uploads visible at tip (-want +got):\n%s", diff)
@@ -338,8 +344,8 @@ func TestCalculateVisibleUploadsDistinctRoots(t *testing.T) {
 		strings.Join([]string{makeCommit(1)}, " "),
 	})
 
-	refDescriptions := map[string]gitserver.RefDescription{
-		makeCommit(2): {IsDefaultBranch: true},
+	refDescriptions := map[string][]gitserver.RefDescription{
+		makeCommit(2): {{IsDefaultBranch: true}},
 	}
 
 	if err := store.CalculateVisibleUploads(context.Background(), 50, graph, refDescriptions, time.Hour, time.Hour, 0, time.Time{}); err != nil {
@@ -352,6 +358,9 @@ func TestCalculateVisibleUploadsDistinctRoots(t *testing.T) {
 	if diff := cmp.Diff(expectedVisibleUploads, getVisibleUploads(t, db, 50, keysOf(expectedVisibleUploads))); diff != "" {
 		t.Errorf("unexpected visible uploads (-want +got):\n%s", diff)
 	}
+
+	// Ensure data can be queried in reverse direction as well
+	assertCommitsVisibleFromUploads(t, store, uploads, expectedVisibleUploads)
 
 	if diff := cmp.Diff([]int{1, 2}, getUploadsVisibleAtTip(t, db, 50)); diff != "" {
 		t.Errorf("unexpected uploads visible at tip (-want +got):\n%s", diff)
@@ -407,8 +416,8 @@ func TestCalculateVisibleUploadsOverlappingRoots(t *testing.T) {
 		strings.Join([]string{makeCommit(1)}, " "),
 	})
 
-	refDescriptions := map[string]gitserver.RefDescription{
-		makeCommit(6): {IsDefaultBranch: true},
+	refDescriptions := map[string][]gitserver.RefDescription{
+		makeCommit(6): {{IsDefaultBranch: true}},
 	}
 
 	if err := store.CalculateVisibleUploads(context.Background(), 50, graph, refDescriptions, time.Hour, time.Hour, 0, time.Time{}); err != nil {
@@ -426,6 +435,9 @@ func TestCalculateVisibleUploadsOverlappingRoots(t *testing.T) {
 	if diff := cmp.Diff(expectedVisibleUploads, getVisibleUploads(t, db, 50, keysOf(expectedVisibleUploads))); diff != "" {
 		t.Errorf("unexpected visible uploads (-want +got):\n%s", diff)
 	}
+
+	// Ensure data can be queried in reverse direction as well
+	assertCommitsVisibleFromUploads(t, store, uploads, expectedVisibleUploads)
 
 	if diff := cmp.Diff([]int{1, 2, 7, 8, 9}, getUploadsVisibleAtTip(t, db, 50)); diff != "" {
 		t.Errorf("unexpected uploads visible at tip (-want +got):\n%s", diff)
@@ -463,8 +475,8 @@ func TestCalculateVisibleUploadsIndexerName(t *testing.T) {
 		strings.Join([]string{makeCommit(1)}, " "),
 	})
 
-	refDescriptions := map[string]gitserver.RefDescription{
-		makeCommit(5): {IsDefaultBranch: true},
+	refDescriptions := map[string][]gitserver.RefDescription{
+		makeCommit(5): {{IsDefaultBranch: true}},
 	}
 
 	if err := store.CalculateVisibleUploads(context.Background(), 50, graph, refDescriptions, time.Hour, time.Hour, 0, time.Time{}); err != nil {
@@ -481,6 +493,9 @@ func TestCalculateVisibleUploadsIndexerName(t *testing.T) {
 	if diff := cmp.Diff(expectedVisibleUploads, getVisibleUploads(t, db, 50, keysOf(expectedVisibleUploads))); diff != "" {
 		t.Errorf("unexpected visible uploads (-want +got):\n%s", diff)
 	}
+
+	// Ensure data can be queried in reverse direction as well
+	assertCommitsVisibleFromUploads(t, store, uploads, expectedVisibleUploads)
 
 	if diff := cmp.Diff([]int{1, 2, 3, 4, 5, 6, 7, 8}, getUploadsVisibleAtTip(t, db, 50)); diff != "" {
 		t.Errorf("unexpected uploads visible at tip (-want +got):\n%s", diff)
@@ -507,8 +522,8 @@ func TestCalculateVisibleUploadsResetsDirtyFlag(t *testing.T) {
 		strings.Join([]string{makeCommit(1)}, " "),
 	})
 
-	refDescriptions := map[string]gitserver.RefDescription{
-		makeCommit(3): {IsDefaultBranch: true},
+	refDescriptions := map[string][]gitserver.RefDescription{
+		makeCommit(3): {{IsDefaultBranch: true}},
 	}
 
 	for i := 0; i < 3; i++ {
@@ -605,16 +620,16 @@ func TestCalculateVisibleUploadsNonDefaultBranches(t *testing.T) {
 	t1 := time.Now().Add(-time.Minute * 90) // > 1 hr
 	t2 := time.Now().Add(-time.Minute * 30) // < 1 hr
 
-	refDescriptions := map[string]gitserver.RefDescription{
+	refDescriptions := map[string][]gitserver.RefDescription{
 		// stale
-		makeCommit(2): {Name: "v1", Type: gitserver.RefTypeTag, CreatedDate: t1},
-		makeCommit(9): {Name: "feat1", Type: gitserver.RefTypeBranch, CreatedDate: t1},
+		makeCommit(2): {{Name: "v1", Type: gitserver.RefTypeTag, CreatedDate: t1}},
+		makeCommit(9): {{Name: "feat1", Type: gitserver.RefTypeBranch, CreatedDate: t1}},
 
 		// fresh
-		makeCommit(4):  {Name: "v2", Type: gitserver.RefTypeTag, CreatedDate: t2},
-		makeCommit(5):  {Name: "v3", Type: gitserver.RefTypeTag, CreatedDate: t2},
-		makeCommit(7):  {Name: "main", Type: gitserver.RefTypeBranch, IsDefaultBranch: true, CreatedDate: t2},
-		makeCommit(12): {Name: "feat2", Type: gitserver.RefTypeBranch, CreatedDate: t2},
+		makeCommit(4):  {{Name: "v2", Type: gitserver.RefTypeTag, CreatedDate: t2}},
+		makeCommit(5):  {{Name: "v3", Type: gitserver.RefTypeTag, CreatedDate: t2}},
+		makeCommit(7):  {{Name: "main", Type: gitserver.RefTypeBranch, IsDefaultBranch: true, CreatedDate: t2}},
+		makeCommit(12): {{Name: "feat2", Type: gitserver.RefTypeBranch, CreatedDate: t2}},
 	}
 
 	if err := store.CalculateVisibleUploads(context.Background(), 50, graph, refDescriptions, time.Hour, time.Hour, 0, time.Time{}); err != nil {
@@ -638,6 +653,9 @@ func TestCalculateVisibleUploadsNonDefaultBranches(t *testing.T) {
 	if diff := cmp.Diff(expectedVisibleUploads, getVisibleUploads(t, db, 50, keysOf(expectedVisibleUploads))); diff != "" {
 		t.Errorf("unexpected visible uploads (-want +got):\n%s", diff)
 	}
+
+	// Ensure data can be queried in reverse direction as well
+	assertCommitsVisibleFromUploads(t, store, uploads, expectedVisibleUploads)
 
 	if diff := cmp.Diff([]int{3}, getUploadsVisibleAtTip(t, db, 50)); diff != "" {
 		t.Errorf("unexpected uploads visible at tip (-want +got):\n%s", diff)
@@ -714,16 +732,16 @@ func TestCalculateVisibleUploadsNonDefaultBranchesWithCustomRetentionConfigurati
 	t1 := time.Now().Add(-time.Minute * 90) // > 1 hr
 	t2 := time.Now().Add(-time.Minute * 30) // < 1 hr
 
-	refDescriptions := map[string]gitserver.RefDescription{
+	refDescriptions := map[string][]gitserver.RefDescription{
 		// stale
-		makeCommit(2): {Name: "v1", Type: gitserver.RefTypeTag, CreatedDate: t1},
-		makeCommit(9): {Name: "feat1", Type: gitserver.RefTypeBranch, CreatedDate: t1},
+		makeCommit(2): {{Name: "v1", Type: gitserver.RefTypeTag, CreatedDate: t1}},
+		makeCommit(9): {{Name: "feat1", Type: gitserver.RefTypeBranch, CreatedDate: t1}},
 
 		// fresh
-		makeCommit(4):  {Name: "v2", Type: gitserver.RefTypeTag, CreatedDate: t2},
-		makeCommit(5):  {Name: "v3", Type: gitserver.RefTypeTag, CreatedDate: t2},
-		makeCommit(7):  {Name: "main", Type: gitserver.RefTypeBranch, IsDefaultBranch: true, CreatedDate: t2},
-		makeCommit(12): {Name: "feat2", Type: gitserver.RefTypeBranch, CreatedDate: t2},
+		makeCommit(4):  {{Name: "v2", Type: gitserver.RefTypeTag, CreatedDate: t2}},
+		makeCommit(5):  {{Name: "v3", Type: gitserver.RefTypeTag, CreatedDate: t2}},
+		makeCommit(7):  {{Name: "main", Type: gitserver.RefTypeBranch, IsDefaultBranch: true, CreatedDate: t2}},
+		makeCommit(12): {{Name: "feat2", Type: gitserver.RefTypeBranch, CreatedDate: t2}},
 	}
 
 	if err := store.CalculateVisibleUploads(context.Background(), 50, graph, refDescriptions, time.Second, time.Second, 0, time.Time{}); err != nil {
@@ -748,12 +766,53 @@ func TestCalculateVisibleUploadsNonDefaultBranchesWithCustomRetentionConfigurati
 		t.Errorf("unexpected visible uploads (-want +got):\n%s", diff)
 	}
 
+	// Ensure data can be queried in reverse direction as well
+	assertCommitsVisibleFromUploads(t, store, uploads, expectedVisibleUploads)
+
 	if diff := cmp.Diff([]int{3}, getUploadsVisibleAtTip(t, db, 50)); diff != "" {
 		t.Errorf("unexpected uploads visible at tip (-want +got):\n%s", diff)
 	}
 
 	if diff := cmp.Diff([]int{2, 3, 5}, getProtectedUploads(t, db, 50)); diff != "" {
 		t.Errorf("unexpected protected uploads (-want +got):\n%s", diff)
+	}
+}
+
+func assertCommitsVisibleFromUploads(t *testing.T, store *Store, uploads []Upload, expectedVisibleUploads map[string][]int) {
+	expectedVisibleCommits := map[int][]string{}
+	for commit, uploadIDs := range expectedVisibleUploads {
+		for _, uploadID := range uploadIDs {
+			expectedVisibleCommits[uploadID] = append(expectedVisibleCommits[uploadID], commit)
+		}
+	}
+	for _, commits := range expectedVisibleCommits {
+		sort.Strings(commits)
+	}
+
+	// Test pagination by requesting only a couple of
+	// results at a time in this assertion helper.
+	testPageSize := 2
+
+	for _, upload := range uploads {
+		var token *string
+		var allCommits []string
+
+		for {
+			commits, nextToken, err := store.CommitsVisibleToUpload(context.Background(), upload.ID, testPageSize, token)
+			if err != nil {
+				t.Fatalf("unexpected error getting commits visible to upload %d: %s", upload.ID, err)
+			}
+			if nextToken == nil {
+				break
+			}
+
+			allCommits = append(allCommits, commits...)
+			token = nextToken
+		}
+
+		if diff := cmp.Diff(expectedVisibleCommits[upload.ID], allCommits); diff != "" {
+			t.Errorf("unexpected commits visible to upload %d (-want +got):\n%s", upload.ID, diff)
+		}
 	}
 }
 
@@ -778,8 +837,8 @@ func BenchmarkCalculateVisibleUploads(b *testing.B) {
 		b.Fatalf("unexpected error reading benchmark commit graph: %s", err)
 	}
 
-	refDescriptions := map[string]gitserver.RefDescription{
-		makeCommit(3): {IsDefaultBranch: true},
+	refDescriptions := map[string][]gitserver.RefDescription{
+		makeCommit(3): {{IsDefaultBranch: true}},
 	}
 
 	uploads, err := readBenchmarkCommitGraphView()

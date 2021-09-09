@@ -22,7 +22,7 @@ import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
 import { WebCommandListPopoverButton } from '@sourcegraph/web/src/components/shared'
 import { FeedbackPrompt } from '@sourcegraph/web/src/nav/Feedback/FeedbackPrompt'
 import { StatusMessagesNavItem } from '@sourcegraph/web/src/nav/StatusMessagesNavItem'
-import { NavGroup, NavItem, NavBar, NavLink, NavActions, NavAction } from '@sourcegraph/wildcard/src/components/NavBar'
+import { NavGroup, NavItem, NavBar, NavLink, NavActions, NavAction } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
 import { BatchChangesProps } from '../batches'
@@ -30,6 +30,7 @@ import { BatchChangesNavItem } from '../batches/BatchChangesNavItem'
 import { CodeMonitoringProps } from '../code-monitoring'
 import { CodeMonitoringLogo } from '../code-monitoring/CodeMonitoringLogo'
 import { BrandLogo } from '../components/branding/BrandLogo'
+import { CodeInsightsProps } from '../insights/types'
 import {
     KeyboardShortcutsProps,
     KEYBOARD_SHORTCUT_SHOW_COMMAND_PALETTE,
@@ -51,7 +52,6 @@ import { QueryState } from '../search/helpers'
 import { SearchNavbarItem } from '../search/input/SearchNavbarItem'
 import { ThemePreferenceProps } from '../theme'
 import { userExternalServicesEnabledFromTags } from '../user/settings/cloud-ga'
-import { UserSettingsSidebarItems } from '../user/settings/UserSettingsSidebar'
 import { showDotComMarketing } from '../util/features'
 
 import { ExtensionAlertAnimationProps, UserNavItem } from './UserNavItem'
@@ -72,6 +72,7 @@ interface Props
         VersionContextProps,
         SearchContextInputProps,
         CodeMonitoringProps,
+        CodeInsightsProps,
         OnboardingTourProps,
         BatchChangesProps {
     history: H.History
@@ -86,8 +87,6 @@ interface Props
 
     // Whether globbing is enabled for filters.
     globbing: boolean
-
-    userSettingsSideBarItems?: UserSettingsSidebarItems
 
     /**
      * Which variation of the global navbar to render.
@@ -125,6 +124,7 @@ export const GlobalNavbar: React.FunctionComponent<Props> = ({
     history,
     minimalNavLinks,
     isSourcegraphDotCom,
+    codeInsightsEnabled,
     ...props
 }) => {
     // Workaround: can't put this in optional parameter value because of https://github.com/babel/babel/issues/11166
@@ -136,10 +136,9 @@ export const GlobalNavbar: React.FunctionComponent<Props> = ({
 
     // UI includes repositories section as part of the user navigation bar
     // This filter makes sure repositories feature flag is active.
-    const showRepositorySection = useMemo(
-        () => !!props.userSettingsSideBarItems?.find(item => item.label === 'Repositories'),
-        [props.userSettingsSideBarItems]
-    )
+    const showRepositorySection = props.authenticatedUser
+        ? userExternalServicesEnabledFromTags(props.authenticatedUser.tags)
+        : false
 
     const isSearchContextAvailable = useObservable(
         useMemo(
@@ -187,7 +186,9 @@ export const GlobalNavbar: React.FunctionComponent<Props> = ({
 
     const settings = !isErrorLike(props.settingsCascade.final) ? props.settingsCascade.final : null
     const codeInsights =
-        settings?.experimentalFeatures?.codeInsights && settings?.['insights.displayLocation.insightsPage'] !== false
+        codeInsightsEnabled &&
+        settings?.experimentalFeatures?.codeInsights &&
+        settings?.['insights.displayLocation.insightsPage'] !== false
 
     const searchNavBar = (
         <SearchNavbarItem

@@ -3,10 +3,10 @@ package database
 import (
 	"database/sql"
 
-	"github.com/sourcegraph/sourcegraph/internal/authz/bitbucketserver"
-	"github.com/sourcegraph/sourcegraph/internal/authz/github"
-	"github.com/sourcegraph/sourcegraph/internal/authz/gitlab"
-	"github.com/sourcegraph/sourcegraph/internal/authz/perforce"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/authz/bitbucketserver"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/authz/github"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/authz/gitlab"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/authz/perforce"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"

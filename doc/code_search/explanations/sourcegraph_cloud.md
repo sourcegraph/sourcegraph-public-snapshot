@@ -29,7 +29,8 @@ Sourcegraph cloud is designed for individual developers to connect and search pe
 [A local Sourcegraph instance](../../../admin/install/index.md) is a better fit for you if:
 
 - You have source code stored on-premises
-- You are interested in using [Batch Changes](https://about.sourcegraph.com/batch-changes/) to make large-scale code 
+- You would like to create an organization for teammates who need to share code
+- You are interested in enterprise solutions such as [Batch Changes](https://about.sourcegraph.com/batch-changes/) to make large-scale code 
 - You require more robust admin and user management tooling
 
 Learn more about [how to run your own Sourcegraph instance](../../../admin/install/index.md).

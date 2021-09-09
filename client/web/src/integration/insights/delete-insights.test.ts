@@ -1,22 +1,22 @@
 import assert from 'assert'
 
-import delay from 'delay'
-
 import { createDriverForTest, Driver } from '@sourcegraph/shared/src/testing/driver'
 import { emptyResponse } from '@sourcegraph/shared/src/testing/integration/graphQlResults'
 import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'
 
 import { createWebIntegrationTestContext, WebIntegrationTestContext } from '../context'
 
-import { INSIGHT_VIEW_TEAM_SIZE, INSIGHT_VIEW_TYPES_MIGRATION } from './utils/insight-mock-data'
-import { overrideGraphQLExtensions } from './utils/override-graphql-with-extensions'
+import { SEARCH_INSIGHT_COMMITS_MOCK, SEARCH_INSIGHT_RESULT_MOCK } from './utils/insight-mock-data'
+import { overrideGraphQLExtensions } from './utils/override-insights-graphql'
 
 describe('Code insights page', () => {
     let driver: Driver
     let testContext: WebIntegrationTestContext
 
     before(async () => {
-        driver = await createDriverForTest()
+        driver = await createDriverForTest({
+            devtools: true,
+        })
     })
 
     after(() => driver?.close())
@@ -36,37 +36,48 @@ describe('Code insights page', () => {
         const settings = {
             'searchInsights.insight.graphQLTypesMigration': {
                 title: 'The First search-based insight',
-                repositories: [],
-                series: [],
+                repositories: ['github.com/sourcegraph/sourcegraph'],
+                series: [
+                    {
+                        name: 'The first series of the first chart',
+                        stroke: 'var(--oc-grape-7)',
+                        query: 'Kapica',
+                    },
+                ],
+                step: {
+                    months: 8,
+                },
             },
             'searchInsights.insight.teamSize': {
                 title: 'The Second search-based insight',
-                repositories: [],
-                series: [],
+                repositories: ['github.com/sourcegraph/sourcegraph'],
+                series: [
+                    {
+                        name: 'The second series of the second chart',
+                        stroke: 'var(--oc-blue-7)',
+                        query: 'Korolev',
+                    },
+                ],
+                step: {
+                    months: 8,
+                },
             },
         }
 
         overrideGraphQLExtensions({
             testContext,
 
-            /**
-             * Since search insight and code stats insight are working via user/org
-             * settings. We have to mock them by mocking user settings and provide
-             * mock data - mocking extension work.
-             * */
+            // Since search insight and code stats insights work via user/org
+            // settings. We have to mock them by mocking user settings cascade.
             userSettings: settings,
-            insightExtensionsMocks: {
-                'searchInsights.insight.graphQLTypesMigration': {
-                    ...INSIGHT_VIEW_TYPES_MIGRATION,
-                    title: 'Migration to new GraphQL TS types',
-                },
-                'searchInsights.insight.teamSize': INSIGHT_VIEW_TEAM_SIZE,
-            },
             overrides: {
-                /**
-                 * Mock back-end insights with standard gql API handler.
-                 * */
+                // Mock back-end insights with standard gql API handler.
                 Insights: () => ({ insights: { nodes: [] } }),
+
+                // Mock built-in search-based insight
+                BulkSearchCommits: () => SEARCH_INSIGHT_COMMITS_MOCK,
+                BulkSearch: () => SEARCH_INSIGHT_RESULT_MOCK,
+
                 OverwriteSettings: () => ({
                     settingsMutation: {
                         overwriteSettings: {
@@ -89,9 +100,6 @@ describe('Code insights page', () => {
         await driver.page.goto(driver.sourcegraphBaseUrl + '/insights/dashboards/all')
         await driver.page.waitForSelector('[data-testid="line-chart__content"] svg circle')
 
-        // Wait until insight grid animation will be finished
-        await delay(1000)
-
         const variables = await testContext.waitForGraphQLRequest(async () => {
             await driver.page.click(
                 '[data-testid="insight-card.searchInsights.insight.graphQLTypesMigration"] [data-testid="InsightContextMenuButton"]'
@@ -106,8 +114,17 @@ describe('Code insights page', () => {
         assert.deepStrictEqual(JSON.parse(variables.contents), {
             'searchInsights.insight.teamSize': {
                 title: 'The Second search-based insight',
-                repositories: [],
-                series: [],
+                repositories: ['github.com/sourcegraph/sourcegraph'],
+                series: [
+                    {
+                        name: 'The second series of the second chart',
+                        stroke: 'var(--oc-blue-7)',
+                        query: 'Korolev',
+                    },
+                ],
+                step: {
+                    months: 8,
+                },
             },
         })
     })

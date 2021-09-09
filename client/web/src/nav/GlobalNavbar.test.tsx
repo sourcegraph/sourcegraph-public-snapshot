@@ -63,6 +63,7 @@ const PROPS: React.ComponentProps<typeof GlobalNavbar> = {
     hasUserAddedRepositories: false,
     hasUserAddedExternalServices: false,
     getUserSearchContextNamespaces: mockGetUserSearchContextNamespaces,
+    extensionViews: () => null,
 }
 
 describe('GlobalNavbar', () => {

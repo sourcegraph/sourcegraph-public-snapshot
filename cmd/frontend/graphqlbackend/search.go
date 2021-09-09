@@ -228,8 +228,10 @@ func (r *searchResolver) protocol() search.Protocol {
 	return search.Batch
 }
 
-const defaultMaxSearchResults = 30
-const defaultMaxSearchResultsStreaming = 500
+const (
+	defaultMaxSearchResults          = 30
+	defaultMaxSearchResultsStreaming = 500
+)
 
 var mockDecodedViewerFinalSettings *schema.Settings
 
@@ -299,7 +301,6 @@ func (r *searchResolver) resolveRepositories(ctx context.Context, options search
 
 	repositoryResolver := &searchrepos.Resolver{
 		DB:                  r.db,
-		Zoekt:               r.zoekt,
 		SearchableReposFunc: backend.Repos.ListSearchable,
 	}
 

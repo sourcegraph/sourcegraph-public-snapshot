@@ -1,17 +1,17 @@
-FROM sourcegraph/alpine-3.12:104987_2021-08-13_a2974ca@sha256:6a602f7ea397a0b44a79596768b13017a5c71f735936989f80e891aebc31e600 as libsqlite3-pcre
+FROM sourcegraph/alpine-3.12:106643_2021-08-30_7f4b12a@sha256:5176711adb03e08bed6f231255aa408f1e1dc67429346e6d5a6811e352e06b88 as libsqlite3-pcre
 
 COPY libsqlite3-pcre-install-alpine.sh /libsqlite3-pcre-install-alpine.sh
 RUN /libsqlite3-pcre-install-alpine.sh
 
 # Install p4 CLI (keep this up to date with cmd/gitserver/Dockerfile)
-FROM sourcegraph/alpine-3.12:104987_2021-08-13_a2974ca@sha256:6a602f7ea397a0b44a79596768b13017a5c71f735936989f80e891aebc31e600 AS p4cli
+FROM sourcegraph/alpine-3.12:106643_2021-08-30_7f4b12a@sha256:5176711adb03e08bed6f231255aa408f1e1dc67429346e6d5a6811e352e06b88 AS p4cli
 
 # hadolint ignore=DL3003
 RUN wget http://cdist2.perforce.com/perforce/r20.1/bin.linux26x86_64/p4 && \
     mv p4 /usr/local/bin/p4 && \
     chmod +x /usr/local/bin/p4
 
-FROM sourcegraph/alpine-3.12:104987_2021-08-13_a2974ca@sha256:6a602f7ea397a0b44a79596768b13017a5c71f735936989f80e891aebc31e600 AS coursier
+FROM sourcegraph/alpine-3.12:106643_2021-08-30_7f4b12a@sha256:5176711adb03e08bed6f231255aa408f1e1dc67429346e6d5a6811e352e06b88 AS coursier
 
 # TODO(code-intel): replace with official streams when musl builds are upstreamed
 RUN wget -O coursier.zip https://github.com/sourcegraph/lsif-java/releases/download/v0.5.6/cs-musl.zip && \
@@ -19,7 +19,7 @@ RUN wget -O coursier.zip https://github.com/sourcegraph/lsif-java/releases/downl
     mv cs-musl /usr/local/bin/coursier && \
     chmod +x /usr/local/bin/coursier
 
-FROM sourcegraph/alpine-3.12:104987_2021-08-13_a2974ca@sha256:6a602f7ea397a0b44a79596768b13017a5c71f735936989f80e891aebc31e600
+FROM sourcegraph/alpine-3.12:106643_2021-08-30_7f4b12a@sha256:5176711adb03e08bed6f231255aa408f1e1dc67429346e6d5a6811e352e06b88
 # TODO(security): This container should not be running as root!
 #
 # The default user in sourcegraph/alpine is a non-root `sourcegraph` user but because old deployments
@@ -49,10 +49,13 @@ RUN apk update && apk add --no-cache \
     'git>=2.18' \
     git-p4 \
     python2 \
-    python3 \
     'nginx>=1.18.0' openssh-client pcre sqlite-libs su-exec 'nodejs-current=14.5.0-r0' \
     postgresql=12.8-r0 \
     postgresql-contrib
+
+# This is installed separately due to the upstream edge repo requirement
+RUN apk update && apk add --no-cache \
+    'python3>=3.9.5' --repository=http://dl-cdn.alpinelinux.org/alpine/edge/main
 
 # IMPORTANT: If you update the syntect_server version below, you MUST confirm
 # the ENV variables from its Dockerfile (https://github.com/sourcegraph/syntect_server/blob/master/Dockerfile)
@@ -60,11 +63,11 @@ RUN apk update && apk add --no-cache \
 # hadolint ignore=DL3022
 COPY --from=comby/comby:0.18.4@sha256:b47ce282778bfea7f80d45f5ef0cc546ba0d6347baccebaf171a7866143b2593 /usr/local/bin/comby /usr/local/bin/comby
 # hadolint ignore=DL3022
-COPY --from=docker.io/sourcegraph/syntect_server:32d880d@sha256:899661691c3a6f8d587186bed73c3224b065d1e1c3485aff2ea208c261c010f6 /syntect_server /usr/local/bin/
+COPY --from=docker.io/sourcegraph/syntect_server:21-08-31_c330964@sha256:759f331a474d2a67b811a1b374b0b24a4661446a2d8e9b211f51ea8ae95e1130 /syntect_server /usr/local/bin/
 
 
 # install minio (keep this up to date with docker-images/minio/Dockerfile)
-ENV MINIO_VERSION=RELEASE.2021-04-22T15-44-28Z
+ENV MINIO_VERSION=RELEASE.2021-08-31T05-46-54Z
 RUN wget "https://dl.min.io/server/minio/release/linux-amd64/archive/minio.$MINIO_VERSION" && \
     chmod +x "minio.$MINIO_VERSION" && \
     mv "minio.$MINIO_VERSION" /usr/local/bin/minio

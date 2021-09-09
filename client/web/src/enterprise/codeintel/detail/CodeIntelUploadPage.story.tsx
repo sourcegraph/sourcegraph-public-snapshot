@@ -1,5 +1,5 @@
-import { storiesOf } from '@storybook/react'
-import React, { useCallback } from 'react'
+import { Meta, Story } from '@storybook/react'
+import React from 'react'
 import { of } from 'rxjs'
 
 import { LSIFIndexState } from '@sourcegraph/shared/src/graphql/schema'
@@ -7,7 +7,7 @@ import { LSIFIndexState } from '@sourcegraph/shared/src/graphql/schema'
 import { LsifUploadFields, LSIFUploadState } from '../../../graphql-operations'
 import { EnterpriseWebStory } from '../../components/EnterpriseWebStory'
 
-import { CodeIntelUploadPage } from './CodeIntelUploadPage'
+import { CodeIntelUploadPage, CodeIntelUploadPageProps } from './CodeIntelUploadPage'
 
 const uploadPrototype: Omit<LsifUploadFields, 'id' | 'state' | 'uploadedAt'> = {
     __typename: 'LSIFUpload',
@@ -96,58 +96,104 @@ const dependencies = [
 
 const now = () => new Date('2020-06-15T15:25:00+00:00')
 
-const { add } = storiesOf('web/codeintel/detail/CodeIntelUploadPage', module)
-    .addDecorator(story => <div className="p-3 container">{story()}</div>)
-    .addParameters({
+const story: Meta = {
+    title: 'web/codeintel/detail/CodeIntelUploadPage',
+    decorators: [story => <div className="p-3 container">{story()}</div>],
+    parameters: {
+        component: CodeIntelUploadPage,
         chromatic: {
             viewports: [320, 576, 978, 1440],
         },
-    })
+    },
+}
+export default story
 
-for (const { description, upload } of [
-    {
-        description: 'Uploading',
-        upload: {
+const Template: Story<CodeIntelUploadPageProps> = args => (
+    <EnterpriseWebStory>{props => <CodeIntelUploadPage {...props} {...args} />}</EnterpriseWebStory>
+)
+
+const defaults: Partial<CodeIntelUploadPageProps> = {
+    now,
+    deleteLsifUpload: () => of(),
+    fetchLsifUploads: ({ dependencyOf }: { dependencyOf?: string | null }) =>
+        dependencyOf === undefined
+            ? of({
+                  nodes: dependents,
+                  totalCount: dependents.length,
+                  pageInfo: {
+                      __typename: 'PageInfo',
+                      endCursor: null,
+                      hasNextPage: false,
+                  },
+              })
+            : of({
+                  nodes: dependencies,
+                  totalCount: dependencies.length,
+                  pageInfo: {
+                      __typename: 'PageInfo',
+                      endCursor: null,
+                      hasNextPage: false,
+                  },
+              }),
+}
+
+export const Uploading = Template.bind({})
+Uploading.args = {
+    ...defaults,
+    fetchLsifUpload: () =>
+        of({
             ...uploadPrototype,
             id: '1',
             state: LSIFUploadState.UPLOADING,
             uploadedAt: '2020-06-15T15:25:00+00:00',
-        },
-    },
-    {
-        description: 'Queued',
-        upload: {
+        }),
+}
+
+export const Queued = Template.bind({})
+Queued.args = {
+    ...defaults,
+    fetchLsifUpload: () =>
+        of({
             ...uploadPrototype,
             id: '1',
             state: LSIFUploadState.QUEUED,
             uploadedAt: '2020-06-15T12:20:30+00:00',
             placeInQueue: 1,
-        },
-    },
-    {
-        description: 'Processing',
-        upload: {
+        }),
+}
+
+export const Processing = Template.bind({})
+Processing.args = {
+    ...defaults,
+    fetchLsifUpload: () =>
+        of({
             ...uploadPrototype,
             id: '1',
             state: LSIFUploadState.PROCESSING,
             uploadedAt: '2020-06-15T12:20:30+00:00',
             startedAt: '2020-06-15T12:25:30+00:00',
-        },
-    },
-    {
-        description: 'Completed',
-        upload: {
+        }),
+}
+
+export const Completed = Template.bind({})
+Completed.args = {
+    ...defaults,
+    fetchLsifUpload: () =>
+        of({
             ...uploadPrototype,
             id: '1',
             state: LSIFUploadState.COMPLETED,
             uploadedAt: '2020-06-14T12:20:30+00:00',
             startedAt: '2020-06-14T12:25:30+00:00',
             finishedAt: '2020-06-14T12:30:30+00:00',
-        },
-    },
-    {
-        description: 'Errored',
-        upload: {
+        }),
+}
+
+export const Errored = Template.bind({})
+Errored.args = {
+    ...defaults,
+    fetchLsifUpload: () =>
+        of({
             ...uploadPrototype,
             id: '1',
             state: LSIFUploadState.ERRORED,
@@ -156,22 +202,28 @@ for (const { description, upload } of [
             finishedAt: '2020-06-13T12:30:30+00:00',
             failure:
                 'Upload failed to complete: dial tcp: lookup gitserver-8.gitserver on 10.165.0.10:53: no such host',
-        },
-    },
-    {
-        description: 'Deleting',
-        upload: {
+        }),
+}
+
+export const Deleting = Template.bind({})
+Deleting.args = {
+    ...defaults,
+    fetchLsifUpload: () =>
+        of({
             ...uploadPrototype,
             id: '1',
             state: LSIFUploadState.DELETING,
             uploadedAt: '2020-06-14T12:20:30+00:00',
             startedAt: '2020-06-14T12:25:30+00:00',
             finishedAt: '2020-06-14T12:30:30+00:00',
-        },
-    },
-    {
-        description: 'Failed upload',
-        upload: {
+        }),
+}
+
+export const FailedUpload = Template.bind({})
+FailedUpload.args = {
+    ...defaults,
+    fetchLsifUpload: () =>
+        of({
             ...uploadPrototype,
             id: '1',
             state: LSIFUploadState.ERRORED,
@@ -179,11 +231,14 @@ for (const { description, upload } of [
             startedAt: null,
             finishedAt: '2020-06-13T12:20:31+00:00',
             failure: 'Upload failed to complete: object store error:\n * XMinioStorageFull etc etc',
-        },
-    },
-    {
-        description: 'Associated index',
-        upload: {
+        }),
+}
+
+export const AssociatedIndex = Template.bind({})
+AssociatedIndex.args = {
+    ...defaults,
+    fetchLsifUpload: () =>
+        of({
             ...uploadPrototype,
             id: '1',
             state: LSIFUploadState.PROCESSING,
@@ -197,47 +252,5 @@ for (const { description, upload } of [
                 finishedAt: '2020-06-15T12:25:30+00:00',
                 placeInQueue: null,
             },
-        },
-    },
-]) {
-    add(description, () => {
-        const fetchLsifUpload = useCallback(() => of(upload), [])
-        const fetchLsifUploads = useCallback(
-            ({ dependencyOf }: { dependencyOf?: string | null }) =>
-                dependencyOf === undefined
-                    ? of({
-                          nodes: dependents,
-                          totalCount: dependents.length,
-                          pageInfo: {
-                              __typename: 'PageInfo',
-                              endCursor: null,
-                              hasNextPage: false,
-                          },
-                      })
-                    : of({
-                          nodes: dependencies,
-                          totalCount: dependencies.length,
-                          pageInfo: {
-                              __typename: 'PageInfo',
-                              endCursor: null,
-                              hasNextPage: false,
-                          },
-                      }),
-            []
-        )
-
-        return (
-            <EnterpriseWebStory>
-                {props => (
-                    <CodeIntelUploadPage
-                        {...props}
-                        fetchLsifUpload={fetchLsifUpload}
-                        fetchLsifUploads={fetchLsifUploads}
-                        deleteLsifUpload={() => of()}
-                        now={now}
-                    />
-                )}
-            </EnterpriseWebStory>
-        )
-    })
+        }),
 }

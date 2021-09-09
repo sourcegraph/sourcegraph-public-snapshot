@@ -663,21 +663,21 @@ func (codeIntelligence) NewJanitorGroup(containerName string) monitoring.Group {
 			{
 				Standard.Count("records deleted")(ObservableConstructorOptions{
 					MetricNameRoot:        "codeintel_background_upload_records_removed",
-					MetricDescriptionRoot: "lsif_upload",
+					MetricDescriptionRoot: "lsif upload",
 				})(containerName, monitoring.ObservableOwnerCodeIntel).WithNoAlerts(`
 					Number of LSIF upload records deleted due to expiration or unreachability every 5m
 				`).Observable(),
 
 				Standard.Count("records deleted")(ObservableConstructorOptions{
 					MetricNameRoot:        "codeintel_background_index_records_removed",
-					MetricDescriptionRoot: "lsif_index",
+					MetricDescriptionRoot: "lsif index",
 				})(containerName, monitoring.ObservableOwnerCodeIntel).WithNoAlerts(`
 					Number of LSIF index records deleted due to expiration or unreachability every 5m
 				`).Observable(),
 
 				Standard.Count("data bundles deleted")(ObservableConstructorOptions{
 					MetricNameRoot:        "codeintel_background_uploads_purged",
-					MetricDescriptionRoot: "lsif_upload",
+					MetricDescriptionRoot: "lsif upload",
 				})(containerName, monitoring.ObservableOwnerCodeIntel).WithNoAlerts(`
 					Number of LSIF upload data bundles purged from the codeintel-db database every 5m
 				`).Observable(),

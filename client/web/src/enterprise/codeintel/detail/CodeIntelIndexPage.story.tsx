@@ -1,5 +1,5 @@
-import { storiesOf } from '@storybook/react'
-import React, { useCallback } from 'react'
+import { Meta, Story } from '@storybook/react'
+import React from 'react'
 import { of } from 'rxjs'
 
 import { LSIFUploadState } from '@sourcegraph/shared/src/graphql/schema'
@@ -7,7 +7,7 @@ import { LSIFUploadState } from '@sourcegraph/shared/src/graphql/schema'
 import { LsifIndexFields, LSIFIndexState, LsifIndexStepsFields } from '../../../graphql-operations'
 import { EnterpriseWebStory } from '../../components/EnterpriseWebStory'
 
-import { CodeIntelIndexPage } from './CodeIntelIndexPage'
+import { CodeIntelIndexPage, CodeIntelIndexPageProps } from './CodeIntelIndexPage'
 
 const trim = (value: string) => {
     const firstSignificantLine = value
@@ -390,40 +390,60 @@ const indexPrototype: Omit<LsifIndexFields, 'id' | 'state' | 'queuedAt' | 'steps
 
 const now = () => new Date('2020-06-15T19:25:00+00:00')
 
-const { add } = storiesOf('web/codeintel/detail/CodeIntelIndexPage', module)
-    .addDecorator(story => <div className="p-3 container">{story()}</div>)
-    .addParameters({
+const story: Meta = {
+    title: 'web/codeintel/detail/CodeIntelIndexPage',
+    decorators: [story => <div className="p-3 container">{story()}</div>],
+    parameters: {
+        component: CodeIntelIndexPage,
         chromatic: {
             viewports: [320, 576, 978, 1440],
         },
-    })
+    },
+}
+export default story
 
-for (const { description, index } of [
-    {
-        description: 'Queued',
-        index: {
+const Template: Story<CodeIntelIndexPageProps> = args => (
+    <EnterpriseWebStory>{props => <CodeIntelIndexPage {...props} {...args} />}</EnterpriseWebStory>
+)
+
+const defaults: Partial<CodeIntelIndexPageProps> = {
+    now,
+    deleteLsifIndex: () => of(),
+}
+
+export const Queued = Template.bind({})
+Queued.args = {
+    ...defaults,
+    fetchLsifIndex: () =>
+        of({
             ...indexPrototype,
             id: '1',
             state: LSIFIndexState.QUEUED,
             queuedAt: '2020-06-15T17:50:01+00:00',
             placeInQueue: 1,
             steps: stepsPrototype,
-        },
-    },
-    {
-        description: 'Processing',
-        index: {
+        }),
+}
+
+export const Processing = Template.bind({})
+Processing.args = {
+    ...defaults,
+    fetchLsifIndex: () =>
+        of({
             ...indexPrototype,
             id: '1',
             state: LSIFIndexState.PROCESSING,
             queuedAt: '2020-06-15T17:50:01+00:00',
             startedAt: '2020-06-15T17:56:01+00:00',
             steps: processingSteps,
-        },
-    },
-    {
-        description: 'Completed',
-        index: {
+        }),
+}
+
+export const Completed = Template.bind({})
+Completed.args = {
+    ...defaults,
+    fetchLsifIndex: () =>
+        of({
             ...indexPrototype,
             id: '1',
             state: LSIFIndexState.COMPLETED,
@@ -431,11 +451,14 @@ for (const { description, index } of [
             startedAt: '2020-06-15T17:56:01+00:00',
             finishedAt: '2020-06-15T18:00:10+00:00',
             steps: completedSteps,
-        },
-    },
-    {
-        description: 'Errored',
-        index: {
+        }),
+}
+
+export const Errored = Template.bind({})
+Errored.args = {
+    ...defaults,
+    fetchLsifIndex: () =>
+        of({
             ...indexPrototype,
             id: '1',
             state: LSIFIndexState.ERRORED,
@@ -445,11 +468,14 @@ for (const { description, index } of [
             failure:
                 'Upload failed to complete: dial tcp: lookup gitserver-8.gitserver on 10.165.0.10:53: no such host',
             steps: failedSteps,
-        },
-    },
-    {
-        description: 'Associated upload',
-        index: {
+        }),
+}
+
+export const AssociatedUpload = Template.bind({})
+AssociatedUpload.args = {
+    ...defaults,
+    fetchLsifIndex: () =>
+        of({
             ...indexPrototype,
             id: '1',
             state: LSIFIndexState.COMPLETED,
@@ -465,23 +491,5 @@ for (const { description, index } of [
                 finishedAt: '2020-06-15T18:10:00+00:00',
                 placeInQueue: null,
             },
-        },
-    },
-]) {
-    add(description, () => {
-        const fetchLsifIndex = useCallback(() => of(index), [])
-
-        return (
-            <EnterpriseWebStory>
-                {props => (
-                    <CodeIntelIndexPage
-                        {...props}
-                        fetchLsifIndex={fetchLsifIndex}
-                        deleteLsifIndex={() => of()}
-                        now={now}
-                    />
-                )}
-            </EnterpriseWebStory>
-        )
-    })
+        }),
 }

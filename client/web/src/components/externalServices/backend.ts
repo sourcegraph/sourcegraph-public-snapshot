@@ -227,25 +227,7 @@ export const EXTERNAL_SERVICES = gql`
 export function queryExternalServices(
     variables: ExternalServicesVariables
 ): Observable<ExternalServicesResult['externalServices']> {
-    return requestGraphQL<ExternalServicesResult, ExternalServicesVariables>(
-        gql`
-            query ExternalServices($first: Int, $after: String, $namespace: ID) {
-                externalServices(first: $first, after: $after, namespace: $namespace) {
-                    nodes {
-                        ...ListExternalServiceFields
-                    }
-                    totalCount
-                    pageInfo {
-                        endCursor
-                        hasNextPage
-                    }
-                }
-            }
-
-            ${listExternalServiceFragment}
-        `,
-        variables
-    ).pipe(
+    return requestGraphQL<ExternalServicesResult, ExternalServicesVariables>(EXTERNAL_SERVICES, variables).pipe(
         map(({ data, errors }) => {
             if (!data || !data.externalServices || errors) {
                 throw createAggregateError(errors)

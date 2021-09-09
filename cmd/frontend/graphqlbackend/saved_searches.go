@@ -114,18 +114,17 @@ func (r *schemaResolver) toSavedSearchResolver(entry types.SavedSearch) *savedSe
 }
 
 func (r *schemaResolver) SavedSearches(ctx context.Context) ([]*savedSearchResolver, error) {
-	var savedSearches []*savedSearchResolver
-	currentUser, err := CurrentUser(ctx, r.db)
-	if currentUser == nil {
+	a := actor.FromContext(ctx)
+	if !a.IsAuthenticated() {
 		return nil, errors.New("no currently authenticated user")
 	}
+
+	allSavedSearches, err := database.SavedSearches(r.db).ListSavedSearchesByUserID(ctx, a.UID)
 	if err != nil {
 		return nil, err
 	}
-	allSavedSearches, err := database.SavedSearches(r.db).ListSavedSearchesByUserID(ctx, currentUser.DatabaseID())
-	if err != nil {
-		return nil, err
-	}
+
+	var savedSearches []*savedSearchResolver
 	for _, savedSearch := range allSavedSearches {
 		savedSearches = append(savedSearches, r.toSavedSearchResolver(*savedSearch))
 	}
