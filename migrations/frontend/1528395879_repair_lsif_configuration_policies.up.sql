@@ -1,5 +1,7 @@
 BEGIN;
 
+DROP TABLE lsif_configuration_policies;
+
 CREATE TABLE lsif_configuration_policies (
     id SERIAL PRIMARY KEY,
     repository_id int,
