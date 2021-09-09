@@ -949,7 +949,7 @@ func TestRepositoryIDsForRetentionScan(t *testing.T) {
 		t.Fatalf("unexpected repository list (-want +got):\n%s", diff)
 	}
 
-	// Make repository 54 newly visible
+	// Make repository 5 newly visible
 	if _, err := db.Exec(`UPDATE lsif_uploads SET state = 'completed' WHERE id = 5`); err != nil {
 		t.Fatalf("unexpected error updating upload: %s", err)
 	}
