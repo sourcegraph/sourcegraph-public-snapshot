@@ -7,7 +7,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/sourcegraph/sourcegraph/internal/testutil"
+	storetest "github.com/sourcegraph/sourcegraph/internal/store/testutil"
 )
 
 func TestMatchesUnmarshalling(t *testing.T) {
@@ -30,7 +30,7 @@ func main() {
 `,
 	}
 
-	zipPath, cleanup, err := testutil.TempZipFromFiles(files)
+	zipPath, cleanup, err := storetest.TempZipFromFiles(files)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -88,7 +88,7 @@ func main() {
 `,
 	}
 
-	zipPath, cleanup, err := testutil.TempZipFromFiles(files)
+	zipPath, cleanup, err := storetest.TempZipFromFiles(files)
 	if err != nil {
 		t.Fatal(err)
 	}
