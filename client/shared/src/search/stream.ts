@@ -429,7 +429,6 @@ function search({
 
         // Call extension-contributed search query transformers
         transformSearchQuery({ query, extensionHostAPIPromise: extensionHostAPI })
-            .then(transformedQuery => transformedQuery)
             .catch(error => {
                 // Fallback: use original query
                 console.error('Extension query transformer error:', error)
