@@ -28,7 +28,7 @@ func TestSavedSearches(t *testing.T) {
 		return []*types.SavedSearch{{ID: key, Description: "test query", Query: "test type:diff patternType:regexp", Notify: true, NotifySlack: false, UserID: &userID, OrgID: nil}}, nil
 	}
 
-	savedSearches, err := (&schemaResolver{db: db}).SavedSearches(ctx)
+	savedSearches, err := (&schemaResolver{db: db}).SavedSearches(actor.WithActor(ctx, actor.FromUser(key)))
 	if err != nil {
 		t.Fatal(err)
 	}

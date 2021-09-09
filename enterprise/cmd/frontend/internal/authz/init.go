@@ -19,6 +19,7 @@ import (
 	eiauthz "github.com/sourcegraph/sourcegraph/enterprise/internal/authz"
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -116,27 +117,46 @@ func Init(ctx context.Context, db dbutil.DB, outOfBandMigrationRunner *oobmigrat
 	// (due to an error in parsing or verification, or because the license has expired).
 	hooks.PostAuthMiddleware = func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			// Site admins are exempt from license enforcement screens so that they can
-			// easily update the license key. Also ignore backend.ErrNotAuthenticated
-			// because we need to allow site admins to sign in.
-			err := backend.CheckCurrentUserIsSiteAdmin(r.Context(), db)
-			if err == nil || err == backend.ErrNotAuthenticated {
+			a := actor.FromContext(ctx)
+			// Ignore not authenticated users, because we need to allow site admins
+			// to sign in to set a license.
+			if !a.IsAuthenticated() {
 				next.ServeHTTP(w, r)
-				return
-			} else if err != backend.ErrMustBeSiteAdmin {
-				log15.Error("Error checking current user is site admin", "err", err)
-				http.Error(w, "Error checking current user is site admin. Site admins may check the logs for more information.", http.StatusInternalServerError)
 				return
 			}
 
+			siteadminOrHandler := func(handler func()) {
+				err := backend.CheckCurrentUserIsSiteAdmin(r.Context(), db)
+				if err == nil {
+					// User is site admin, let them proceed.
+					next.ServeHTTP(w, r)
+					return
+				}
+				if err != backend.ErrMustBeSiteAdmin {
+					log15.Error("Error checking current user is site admin", "err", err)
+					http.Error(w, "Error checking current user is site admin. Site admins may check the logs for more information.", http.StatusInternalServerError)
+					return
+				}
+
+				handler()
+			}
+
+			// Check if there are any license issues. If so, don't let the request go through.
+			// Exception: Site admins are exempt from license enforcement screens so that they
+			// can easily update the license key. We only fetch the user if we don't have a license,
+			// to save that DB lookup in most cases.
 			info, err := licensing.GetConfiguredProductLicenseInfo()
 			if err != nil {
 				log15.Error("Error reading license key for Sourcegraph subscription.", "err", err)
-				enforcement.WriteSubscriptionErrorResponse(w, http.StatusInternalServerError, "Error reading Sourcegraph license key", "Site admins may check the logs for more information. Update the license key in the [**site configuration**](/site-admin/configuration).")
+				siteadminOrHandler(func() {
+					enforcement.WriteSubscriptionErrorResponse(w, http.StatusInternalServerError, "Error reading Sourcegraph license key", "Site admins may check the logs for more information. Update the license key in the [**site configuration**](/site-admin/configuration).")
+				})
 				return
 			}
 			if info != nil && info.IsExpiredWithGracePeriod() {
-				enforcement.WriteSubscriptionErrorResponse(w, http.StatusForbidden, "Sourcegraph license expired", "To continue using Sourcegraph, a site admin must renew the Sourcegraph license (or downgrade to only using Sourcegraph Free features). Update the license key in the [**site configuration**](/site-admin/configuration).")
+				siteadminOrHandler(func() {
+					enforcement.WriteSubscriptionErrorResponse(w, http.StatusForbidden, "Sourcegraph license expired", "To continue using Sourcegraph, a site admin must renew the Sourcegraph license (or downgrade to only using Sourcegraph Free features). Update the license key in the [**site configuration**](/site-admin/configuration).")
+				})
 				return
 			}
 

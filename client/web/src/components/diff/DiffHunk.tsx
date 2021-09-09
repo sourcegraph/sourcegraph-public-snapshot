@@ -86,7 +86,13 @@ export const DiffHunk: React.FunctionComponent<DiffHunkProps> = ({
                         {lineNumbers && (
                             <>
                                 {line.kind !== DiffHunkLineType.ADDED ? (
-                                    <td className={styles.num} data-line={oldLine - 1} data-part="base" id={oldAnchor}>
+                                    <td
+                                        className={styles.num}
+                                        data-line={oldLine - 1}
+                                        data-part="base"
+                                        id={oldAnchor}
+                                        data-hunk-num=" "
+                                    >
                                         {persistLines && (
                                             <Link className={styles.numLine} to={{ hash: oldAnchor }}>
                                                 {oldLine - 1}
@@ -98,7 +104,13 @@ export const DiffHunk: React.FunctionComponent<DiffHunkProps> = ({
                                 )}
 
                                 {line.kind !== DiffHunkLineType.DELETED ? (
-                                    <td className={styles.num} data-line={newLine - 1} data-part="head" id={newAnchor}>
+                                    <td
+                                        className={styles.num}
+                                        data-line={newLine - 1}
+                                        data-part="head"
+                                        id={newAnchor}
+                                        data-hunk-num=" "
+                                    >
                                         {persistLines && (
                                             <Link className={styles.numLine} to={{ hash: newAnchor }}>
                                                 {newLine - 1}

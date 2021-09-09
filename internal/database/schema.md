@@ -993,6 +993,21 @@ Stores metadata about a code intel index job.
 
 **root**: The working directory of the indexer image relative to the repository root.
 
+# Table "public.lsif_last_retention_scan"
+```
+         Column         |           Type           | Collation | Nullable | Default 
+------------------------+--------------------------+-----------+----------+---------
+ repository_id          | integer                  |           | not null | 
+ last_retention_scan_at | timestamp with time zone |           | not null | 
+Indexes:
+    "lsif_last_retention_scan_pkey" PRIMARY KEY, btree (repository_id)
+
+```
+
+Tracks the last time uploads a repository were checked against data retention policies.
+
+**last_retention_scan_at**: The last time uploads of this repository were checked against data retention policies.
+
 # Table "public.lsif_nearest_uploads"
 ```
     Column     |  Type   | Collation | Nullable | Default 
@@ -1140,6 +1155,8 @@ Stores the retention policy of code intellience data for a repository.
  last_heartbeat_at      | timestamp with time zone |           |          | 
  execution_logs         | json[]                   |           |          | 
  num_references         | integer                  |           |          | 
+ expired                | boolean                  |           | not null | false
+ last_retention_scan_at | timestamp with time zone |           |          | 
 Indexes:
     "lsif_uploads_pkey" PRIMARY KEY, btree (id)
     "lsif_uploads_repository_id_commit_root_indexer" UNIQUE, btree (repository_id, commit, root, indexer) WHERE state = 'completed'::text
@@ -1161,9 +1178,13 @@ Stores metadata about an LSIF index uploaded by a user.
 
 **commit**: A 40-char revhash. Note that this commit may not be resolvable in the future.
 
+**expired**: Whether or not this upload data is no longer protected by any data retention policy.
+
 **id**: Used as a logical foreign key with the (disjoint) codeintel database.
 
 **indexer**: The name of the indexer that produced the index file. If not supplied by the user it will be pulled from the index metadata.
+
+**last_retention_scan_at**: The last time this upload was checked against data retention policies.
 
 **num_parts**: The number of parts src-cli split the upload file into.
 
@@ -2099,6 +2120,7 @@ Triggers:
  upload_size         | bigint                   |           |          | 
  num_failures        | integer                  |           |          | 
  associated_index_id | bigint                   |           |          | 
+ expired             | boolean                  |           |          | 
  processed_at        | timestamp with time zone |           |          | 
 
 ```
@@ -2123,6 +2145,7 @@ Triggers:
     u.upload_size,
     u.num_failures,
     u.associated_index_id,
+    u.expired,
     u.finished_at AS processed_at
    FROM lsif_uploads u
   WHERE ((u.state = 'completed'::text) OR (u.state = 'deleting'::text));
@@ -2149,6 +2172,7 @@ Triggers:
  upload_size         | bigint                   |           |          | 
  num_failures        | integer                  |           |          | 
  associated_index_id | bigint                   |           |          | 
+ expired             | boolean                  |           |          | 
  processed_at        | timestamp with time zone |           |          | 
  repository_name     | citext                   |           |          | 
 
@@ -2174,6 +2198,7 @@ Triggers:
     u.upload_size,
     u.num_failures,
     u.associated_index_id,
+    u.expired,
     u.processed_at,
     r.name AS repository_name
    FROM (lsif_dumps u
@@ -2257,6 +2282,7 @@ Triggers:
  upload_size         | bigint                   |           |          | 
  num_failures        | integer                  |           |          | 
  associated_index_id | bigint                   |           |          | 
+ expired             | boolean                  |           |          | 
  repository_name     | citext                   |           |          | 
 
 ```
@@ -2281,6 +2307,7 @@ Triggers:
     u.upload_size,
     u.num_failures,
     u.associated_index_id,
+    u.expired,
     r.name AS repository_name
    FROM (lsif_uploads u
      JOIN repo r ON ((r.id = u.repository_id)))
