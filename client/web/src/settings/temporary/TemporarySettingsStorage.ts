@@ -57,8 +57,8 @@ export class TemporarySettingsStorage {
     ): Observable<TemporarySettings[K]> {
         return this.onChange.pipe(
             distinctUntilKeyChanged(key),
-            map(settings => (key in settings ? settings[key] : defaultValue)),
-            startWith(this.settings[key])
+            startWith(this.settings),
+            map(settings => (key in settings ? settings[key] : defaultValue))
         )
     }
 }
