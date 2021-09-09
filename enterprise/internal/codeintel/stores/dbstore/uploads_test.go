@@ -903,6 +903,65 @@ func TestHardDeleteUploadByID(t *testing.T) {
 	}
 }
 
+func TestRepositoryIDsForRetentionScan(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+	db := dbtesting.GetDB(t)
+	store := testStore(db)
+
+	insertUploads(t, db,
+		Upload{ID: 1, RepositoryID: 50, State: "completed"},
+		Upload{ID: 2, RepositoryID: 51, State: "completed"},
+		Upload{ID: 3, RepositoryID: 52, State: "completed"},
+		Upload{ID: 4, RepositoryID: 53, State: "completed"},
+		Upload{ID: 5, RepositoryID: 54, State: "errored"},
+		Upload{ID: 6, RepositoryID: 54, State: "deleted"},
+	)
+
+	now := timeutil.Now()
+
+	// Can return nulls
+	if repositoryIDs, err := store.repositoryIDsForRetentionScan(context.Background(), time.Hour, 2, now); err != nil {
+		t.Fatalf("unexpected error fetching repositories for retention scan: %s", err)
+	} else if diff := cmp.Diff([]int{50, 51}, repositoryIDs); diff != "" {
+		t.Fatalf("unexpected repository list (-want +got):\n%s", diff)
+	}
+
+	// 20 minutes later, first two repositories are still on cooldown
+	if repositoryIDs, err := store.repositoryIDsForRetentionScan(context.Background(), time.Hour, 100, now.Add(time.Minute*20)); err != nil {
+		t.Fatalf("unexpected error fetching repositories for retention scan: %s", err)
+	} else if diff := cmp.Diff([]int{52, 53}, repositoryIDs); diff != "" {
+		t.Fatalf("unexpected repository list (-want +got):\n%s", diff)
+	}
+
+	// 30 minutes later, all repositories are still on cooldown
+	if repositoryIDs, err := store.repositoryIDsForRetentionScan(context.Background(), time.Hour, 100, now.Add(time.Minute*30)); err != nil {
+		t.Fatalf("unexpected error fetching repositories for retention scan: %s", err)
+	} else if diff := cmp.Diff([]int(nil), repositoryIDs); diff != "" {
+		t.Fatalf("unexpected repository list (-want +got):\n%s", diff)
+	}
+
+	// 90 minutes later, all repositories are visible
+	if repositoryIDs, err := store.repositoryIDsForRetentionScan(context.Background(), time.Hour, 100, now.Add(time.Minute*90)); err != nil {
+		t.Fatalf("unexpected error fetching repositories for retention scan: %s", err)
+	} else if diff := cmp.Diff([]int{50, 51, 52, 53}, repositoryIDs); diff != "" {
+		t.Fatalf("unexpected repository list (-want +got):\n%s", diff)
+	}
+
+	// Make repository 5 newly visible
+	if _, err := db.Exec(`UPDATE lsif_uploads SET state = 'completed' WHERE id = 5`); err != nil {
+		t.Fatalf("unexpected error updating upload: %s", err)
+	}
+
+	// 95 minutes later, only new repository is visible
+	if repositoryIDs, err := store.repositoryIDsForRetentionScan(context.Background(), time.Hour, 100, now.Add(time.Minute*95)); err != nil {
+		t.Fatalf("unexpected error fetching repositories for retention scan: %s", err)
+	} else if diff := cmp.Diff([]int{54}, repositoryIDs); diff != "" {
+		t.Fatalf("unexpected repository list (-want +got):\n%s", diff)
+	}
+}
+
 func TestUpdateUploadRetention(t *testing.T) {
 	if testing.Short() {
 		t.Skip()

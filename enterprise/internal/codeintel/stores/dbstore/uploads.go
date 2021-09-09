@@ -715,6 +715,53 @@ const hardDeleteUploadByIDQuery = `
 DELETE FROM lsif_uploads WHERE id IN (%s)
 `
 
+// RepositoryIDsForRetentionScan returns a set of identifiers of repositories that are
+// due to be scanned for removable code intelligence data. Repositories that were returned
+// previously from this call within the given process delay are not returned.
+func (s *Store) RepositoryIDsForRetentionScan(ctx context.Context, processDelay time.Duration, limit int) (_ []int, err error) {
+	return s.repositoryIDsForRetentionScan(ctx, processDelay, limit, time.Now())
+}
+
+func (s *Store) repositoryIDsForRetentionScan(ctx context.Context, processDelay time.Duration, limit int, now time.Time) (_ []int, err error) {
+	ctx, endObservation := s.operations.repositoryIDsForRetentionScan.With(ctx, &err, observation.Args{})
+	defer endObservation(1, observation.Args{})
+
+	return basestore.ScanInts(s.Query(ctx, sqlf.Sprintf(
+		repositoryIDsForRetentionScanQuery,
+		now,
+		int(processDelay/time.Second),
+		limit,
+		now,
+		now,
+	)))
+}
+
+const repositoryIDsForRetentionScanQuery = `
+-- source: enterprise/internal/codeintel/stores/dbstore/uploads.go:repositoryIDsForRetentionScan
+WITH candidate_repositories AS (
+	SELECT DISTINCT u.repository_id AS id
+	FROM lsif_uploads u
+	WHERE u.state = 'completed'
+),
+repositories AS (
+	SELECT cr.id FROM candidate_repositories cr
+	LEFT JOIN lsif_last_retention_scan lrs
+	ON lrs.repository_id = cr.id
+	-- Ignore records that have been checked recently. Note this condition is
+	-- true for a null last_retention_scan_at (which has never been checked).
+	WHERE (%s - lrs.last_retention_scan_at > (%s * '1 second'::interval)) IS DISTINCT FROM FALSE
+	ORDER BY
+		lrs.last_retention_scan_at NULLS FIRST,
+		cr.id -- tie breaker
+	LIMIT %s
+)
+INSERT INTO lsif_last_retention_scan (repository_id, last_retention_scan_at)
+SELECT id, %s::timestamp FROM repositories
+ON CONFLICT (repository_id) DO UPDATE
+SET last_retention_scan_at = %s
+RETURNING repository_id
+`
+
 // UpdateUploadRetention updates the last data retention scan timestamp on the upload
 // records with the given protected identifiers and sets the expired field on the upload
 // records with the given expired identifiers.
