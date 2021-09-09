@@ -821,10 +821,11 @@ func (s *Server) search(w http.ResponseWriter, r *http.Request, args *protocol.S
 
 	if !conf.Get().DisableAutoGitUpdates {
 		for _, rev := range args.Revisions {
+			// TODO add result to trace
 			if rev.RevSpec != "" {
-				_ = s.ensureRevision(ctx, args.Repo, rev.RevSpec, dir) // TODO what to do on return value
+				_ = s.ensureRevision(ctx, args.Repo, rev.RevSpec, dir)
 			} else if rev.RefGlob != "" {
-				_ = s.ensureRevision(ctx, args.Repo, rev.RefGlob, dir) // TODO what to do on return value
+				_ = s.ensureRevision(ctx, args.Repo, rev.RefGlob, dir)
 			}
 		}
 	}
@@ -843,14 +844,16 @@ func (s *Server) search(w http.ResponseWriter, r *http.Request, args *protocol.S
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
+	// Search all commits, sending matching commits down resultChan
 	resultChan := make(chan *protocol.CommitMatch, 128)
 	g.Go(func() error {
 		defer close(resultChan)
+		done := ctx.Done()
 
-		return search.IterCommitMatches(ctx, dir.Path(), args.Revisions, args.Predicate, func(match *search.LazyCommit, highlights *search.HighlightedCommit) bool {
+		return search.IterCommitMatches(dir.Path(), args.Revisions, args.Predicate, func(match *search.LazyCommit, highlights *search.HighlightedCommit) bool {
 			res := createCommitMatch(match, highlights, args.IncludeDiff)
 			select {
-			case <-ctx.Done():
+			case <-done:
 				return false
 			case resultChan <- res:
 				return true
@@ -858,6 +861,7 @@ func (s *Server) search(w http.ResponseWriter, r *http.Request, args *protocol.S
 		})
 	})
 
+	// Write matching commits to the stream, flushing occasionally
 	limitHit := false
 	g.Go(func() error {
 		defer cancel()
@@ -879,7 +883,7 @@ func (s *Server) search(w http.ResponseWriter, r *http.Request, args *protocol.S
 					limitHit = true
 					return nil
 				}
-				sentCount++
+				sentCount += matchCount(result)
 
 				_ = matchesBuf.Append(result) // EOF only
 
@@ -899,6 +903,16 @@ func (s *Server) search(w http.ResponseWriter, r *http.Request, args *protocol.S
 	if err := eventWriter.Event("done", doneEvent); err != nil {
 		log15.Warn("failed to send done event", "error", err)
 	}
+}
+
+func matchCount(cm *protocol.CommitMatch) int {
+	if len(cm.Diff.Highlights) > 0 {
+		return len(cm.Diff.Highlights)
+	}
+	if len(cm.Message.Highlights) > 0 {
+		return len(cm.Message.Highlights)
+	}
+	return 1
 }
 
 func createCommitMatch(commit *search.LazyCommit, highlights *search.HighlightedCommit, includeDiff bool) *protocol.CommitMatch {
