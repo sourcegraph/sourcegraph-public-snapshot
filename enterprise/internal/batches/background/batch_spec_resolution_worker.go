@@ -15,7 +15,10 @@ import (
 	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 )
 
-const batchSpecResolutionMaxNumRetries = 60
+// batchSpecResolutionMaxNumRetries sets the number of retries for batch spec
+// resolutions to 0. Wedon't want to retry automatically and instead wait for
+// user input
+const batchSpecResolutionMaxNumRetries = 0
 const batchSpecResolutionMaxNumResets = 60
 
 // newBatchSpecResolutionWorker creates a dbworker.newWorker that fetches BatchSpecResolutionJobs
