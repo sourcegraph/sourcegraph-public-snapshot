@@ -115,6 +115,9 @@ func (s *batchSpecWorkspaceExecutionWorkerStore) MarkComplete(ctx context.Contex
 		return s.Store.MarkFailed(ctx, id, fmt.Sprintf("failed to extract changeset IDs ID: %s", err), options)
 	}
 
+	// TODO: What's happening after this point should probably be moved to the
+	// batchesStore.
+
 	m := make(map[int64]struct{}, len(changesetSpecIDs))
 	for _, id := range changesetSpecIDs {
 		m[id] = struct{}{}
