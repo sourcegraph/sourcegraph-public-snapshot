@@ -70,31 +70,21 @@ exports[`ExtensionCard renders 1`] = `
         </span>
         <button
           aria-checked={false}
-          className="toggleBig container mx-2"
+          className="toggle mx-2"
           data-test="extension-toggle-x/y"
           disabled={false}
           onClick={[Function]}
-          onFocus={[Function]}
-          onMouseOver={[Function]}
           role="switch"
           title="Click to enable"
           type="button"
           value={0}
         >
           <span
-            className="bar"
+            className="toggle__bar"
           />
           <span
-            className="barShadow"
+            className="toggle__knob"
           />
-          <span
-            className="d-flex flex-column justify-content-center align-items-center knob"
-          />
-          <span
-            className="text"
-          >
-            Disabled
-          </span>
         </button>
       </div>
     </div>
