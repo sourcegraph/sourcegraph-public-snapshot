@@ -37,7 +37,7 @@ export function isCodeInsightsEnabled(
 
     return viewsKeys.every(viewKey => {
         if (views[viewKey]) {
-            return final?.[`insights.displayLocation.${viewKey}`] !== false
+            return !!final?.[`insights.displayLocation.${viewKey}`]
         }
 
         return true
