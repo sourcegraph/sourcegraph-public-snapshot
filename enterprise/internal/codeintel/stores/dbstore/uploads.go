@@ -953,7 +953,7 @@ WITH candidates AS (
 ),
 updated AS (
 	UPDATE lsif_uploads u
-	SET state = CASE WHEN u.state = 'completed' THEN 'deleting' ELSE 'deleted' END
+	SET state = 'deleting'
 	WHERE u.id IN (SELECT id FROM candidates)
 	RETURNING u.id, u.repository_id
 )
