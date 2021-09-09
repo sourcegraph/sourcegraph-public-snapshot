@@ -1,6 +1,6 @@
 import { ApolloClient, gql } from '@apollo/client'
-import { Observable, Subject, of, Subscription, from } from 'rxjs'
-import { distinctUntilKeyChanged, map, startWith } from 'rxjs/operators'
+import { Observable, Subject, of, Subscription, from, merge } from 'rxjs'
+import { distinctUntilKeyChanged, map, startWith, tap, shareReplay, switchMap } from 'rxjs/operators'
 
 import { AuthenticatedUser } from '../../auth'
 import { GetTemporarySettingsResult } from '../../graphql-operations'
@@ -11,15 +11,29 @@ export class TemporarySettingsStorage {
     private authenticatedUser: AuthenticatedUser | null = null
     private settingsBackend: SettingsBackend = new LocalStorageSettingsBackend()
     private settings: TemporarySettings = {}
-
-    private onChange = new Subject<TemporarySettings>()
-
-    private loadSubscription: Subscription | null = null
+    private onSettingsChange = new Subject<TemporarySettings>()
+    private onBackendChange = new Subject<SettingsBackend>()
+    private onChange = merge(
+        this.onBackendChange.pipe(
+            tap(backend => {
+                this.saveSubscription?.unsubscribe()
+                this.settingsBackend = backend
+            }),
+            switchMap(backend => backend.load())
+        ),
+        this.onSettingsChange
+    ).pipe(
+        tap(settings => {
+            this.settings = settings
+        }),
+        shareReplay(1)
+    )
+    private settingsSubscription = this.onChange.subscribe()
     private saveSubscription: Subscription | null = null
 
     public dispose(): void {
-        this.loadSubscription?.unsubscribe()
         this.saveSubscription?.unsubscribe()
+        this.settingsSubscription.unsubscribe()
     }
 
     constructor(private apolloClient: ApolloClient<object> | null, authenticatedUser: AuthenticatedUser | null) {
@@ -35,37 +49,32 @@ export class TemporarySettingsStorage {
                     throw new Error('Apollo-Client should be initialized for authenticated user')
                 }
 
-                this.setSettingsBackend(new ServersideSettingsBackend(this.apolloClient))
+                this.onBackendChange.next(new ServersideSettingsBackend(this.apolloClient))
             } else {
-                this.setSettingsBackend(new LocalStorageSettingsBackend())
+                this.onBackendChange.next(new LocalStorageSettingsBackend())
             }
         }
     }
 
     // This is public for testing purposes only so mocks can be provided.
     public setSettingsBackend(backend: SettingsBackend): void {
-        this.loadSubscription?.unsubscribe()
         this.saveSubscription?.unsubscribe()
-
-        this.settingsBackend = backend
-
-        this.loadSubscription = this.settingsBackend.load().subscribe(settings => {
-            this.settings = settings
-            this.onChange.next(settings)
-        })
+        this.onBackendChange.next(backend)
     }
 
     public set<K extends keyof TemporarySettings>(key: K, value: TemporarySettings[K]): void {
         this.settings[key] = value
-        this.onChange.next(this.settings)
         this.saveSubscription = this.settingsBackend.save(this.settings).subscribe()
+        this.onSettingsChange.next(this.settings)
     }
 
-    public get<K extends keyof TemporarySettings>(key: K): Observable<TemporarySettings[K]> {
+    public get<K extends keyof TemporarySettings>(
+        key: K,
+        defaultValue?: TemporarySettings[K]
+    ): Observable<TemporarySettings[K]> {
         return this.onChange.pipe(
             distinctUntilKeyChanged(key),
-            map(settings => settings[key]),
-            startWith(this.settings[key])
+            map(settings => (key in settings ? settings[key] : defaultValue))
         )
     }
 }

@@ -3,6 +3,7 @@ import { createMockClient } from '@apollo/client/testing'
 import { renderHook, act } from '@testing-library/react-hooks'
 import React from 'react'
 import { Observable, of } from 'rxjs'
+import { delay } from 'rxjs/operators'
 
 import { TemporarySettings } from './TemporarySettings'
 import { TemporarySettingsContext } from './TemporarySettingsProvider'
@@ -13,7 +14,12 @@ describe('useTemporarySetting', () => {
     class InMemoryMockSettingsBackend implements SettingsBackend {
         constructor(private settings: TemporarySettings) {}
         public load(): Observable<TemporarySettings> {
-            return of(this.settings)
+            return new Observable(subscribe => {
+                setTimeout(() => {
+                    subscribe.next(this.settings)
+                    subscribe.complete()
+                }, 100)
+            })
         }
         public save(settings: TemporarySettings): Observable<void> {
             this.settings = settings
@@ -32,31 +38,31 @@ describe('useTemporarySetting', () => {
         `
     )
 
-    it('should get correct data from storage', () => {
+    it('should get correct data from storage', async () => {
         const settingsBackend = new InMemoryMockSettingsBackend({
             'search.collapsedSidebarSections': { filters: true, reference: false },
         })
         const settingsStorage = new TemporarySettingsStorage(mockClient, null)
         settingsStorage.setSettingsBackend(settingsBackend)
 
-        const { result } = renderHook(() => useTemporarySetting('search.collapsedSidebarSections'), {
+        const { result, waitFor } = renderHook(() => useTemporarySetting('search.collapsedSidebarSections'), {
             wrapper: ({ children }) => (
                 <TemporarySettingsContext.Provider value={settingsStorage}>
                     {children}
                 </TemporarySettingsContext.Provider>
             ),
         })
-
+        await waitFor(() => !!result.current[0])
         const [value] = result.current
         expect(value).toEqual({ filters: true, reference: false })
     })
 
-    it('should get undefined if data does not exist in storage', () => {
+    it('should get undefined if data does not exist in storage', async () => {
         const settingsBackend = new InMemoryMockSettingsBackend({})
         const settingsStorage = new TemporarySettingsStorage(mockClient, null)
         settingsStorage.setSettingsBackend(settingsBackend)
 
-        const { result } = renderHook(() => useTemporarySetting('search.collapsedSidebarSections'), {
+        const { result, waitFor } = renderHook(() => useTemporarySetting('search.collapsedSidebarSections'), {
             wrapper: ({ children }) => (
                 <TemporarySettingsContext.Provider value={settingsStorage}>
                     {children}
@@ -64,11 +70,12 @@ describe('useTemporarySetting', () => {
             ),
         })
 
+        await waitFor(() => !!result.current[0])
         const [value] = result.current
         expect(value).toBe(undefined)
     })
 
-    it('should save data and update value', () => {
+    it('should save data and update value', async () => {
         const settingsBackend = new InMemoryMockSettingsBackend({})
         const settingsStorage = new TemporarySettingsStorage(mockClient, null)
         settingsStorage.setSettingsBackend(settingsBackend)
@@ -88,7 +95,7 @@ describe('useTemporarySetting', () => {
         expect(value).toEqual({ filters: true, reference: false })
     })
 
-    it('should update other hook values if changed in another hook', () => {
+    it('should update other hook values if changed in another hook', async () => {
         const settingsBackend = new InMemoryMockSettingsBackend({})
         const settingsStorage = new TemporarySettingsStorage(mockClient, null)
         settingsStorage.setSettingsBackend(settingsBackend)
@@ -116,7 +123,7 @@ describe('useTemporarySetting', () => {
         expect(value).toEqual({ filters: true, reference: false })
     })
 
-    it('should update data if backend changed', () => {
+    it('should update data if backend changed', async () => {
         const settingsBackend1 = new InMemoryMockSettingsBackend({
             'search.collapsedSidebarSections': { filters: true, reference: false },
         })
