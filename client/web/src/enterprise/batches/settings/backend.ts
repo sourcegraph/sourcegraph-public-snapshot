@@ -186,6 +186,7 @@ export const queryBatchSpecExecutions = ({
                 state
                 finishedAt
                 createdAt
+                name
                 namespace {
                     namespaceName
                     url

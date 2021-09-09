@@ -2,6 +2,7 @@ package resolvers
 
 import (
 	"context"
+	"regexp"
 	"strings"
 
 	"github.com/graph-gophers/graphql-go"
@@ -38,6 +39,23 @@ func (r *batchSpecExecutionResolver) ID() graphql.ID {
 
 func (r *batchSpecExecutionResolver) InputSpec() string {
 	return r.exec.BatchSpec
+}
+
+func (r *batchSpecExecutionResolver) Name(ctx context.Context) (*string, error) {
+	if r.exec.BatchSpecID == 0 {
+		re := regexp.MustCompile(`name:\s*(\S*)`)
+		nameMatch := re.FindStringSubmatch(r.exec.BatchSpec)
+		if len(nameMatch) == 2 {
+			return &nameMatch[1], nil
+		}
+		return nil, nil
+	}
+	spec, err := r.store.GetBatchSpec(ctx, store.GetBatchSpecOpts{ID: r.exec.BatchSpecID})
+	if err != nil {
+		return nil, err
+	}
+
+	return &spec.Spec.Name, nil
 }
 
 func (r *batchSpecExecutionResolver) State() string {

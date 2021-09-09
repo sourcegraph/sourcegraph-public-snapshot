@@ -16,7 +16,6 @@ import { BatchSpecExecutionsFields, BatchSpecExecutionState } from '../../../gra
 
 import { queryBatchSpecExecutions as _queryBatchSpecExecutions } from './backend'
 import styles from './BatchSpecExecutionNode.module.scss'
-import { parseNameFromSpec } from './utils'
 
 export interface BatchSpecExecutionNodeProps {
     node: BatchSpecExecutionsFields
@@ -67,9 +66,7 @@ export const BatchSpecExecutionNode: React.FunctionComponent<BatchSpecExecutionN
                         {node.namespace.namespaceName}
                     </Link>
                     <span className="text-muted d-inline-block mx-1">/</span>
-                    <Link to={`${node.namespace.url}/batch-changes/executions/${node.id}`}>
-                        {parseNameFromSpec(node.inputSpec)}
-                    </Link>
+                    <Link to={`${node.namespace.url}/batch-changes/executions/${node.id}`}>{node.name || '-'}</Link>
                 </h3>
                 <small className="text-muted d-block">
                     Executed by <strong>{node.initiator.username}</strong> <Timestamp date={node.createdAt} now={now} />
