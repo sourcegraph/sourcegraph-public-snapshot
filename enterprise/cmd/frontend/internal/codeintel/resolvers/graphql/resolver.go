@@ -486,6 +486,7 @@ func makeGetUploadsOptions(ctx context.Context, args *gql.LSIFRepositoryUploadsQ
 		DependentOf:  int(dependentOf),
 		Limit:        derefInt32(args.First, DefaultUploadPageSize),
 		Offset:       offset,
+		AllowExpired: true,
 	}, nil
 }
 

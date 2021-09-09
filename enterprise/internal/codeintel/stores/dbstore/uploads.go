@@ -278,17 +278,19 @@ SELECT count(*) FROM deleted
 `
 
 type GetUploadsOptions struct {
-	RepositoryID   int
-	State          string
-	Term           string
-	VisibleAtTip   bool
-	DependencyOf   int
-	DependentOf    int
-	UploadedBefore *time.Time
-	UploadedAfter  *time.Time
-	OldestFirst    bool
-	Limit          int
-	Offset         int
+	RepositoryID            int
+	State                   string
+	Term                    string
+	VisibleAtTip            bool
+	DependencyOf            int
+	DependentOf             int
+	UploadedBefore          *time.Time
+	UploadedAfter           *time.Time
+	LastRetentionScanBefore *time.Time
+	AllowExpired            bool
+	OldestFirst             bool
+	Limit                   int
+	Offset                  int
 }
 
 // GetUploads returns a list of uploads and the total count of records matching the given conditions.
@@ -302,6 +304,8 @@ func (s *Store) GetUploads(ctx context.Context, opts GetUploadsOptions) (_ []Upl
 		log.Int("dependentOf", opts.DependentOf),
 		log.String("uploadedBefore", nilTimeToString(opts.UploadedBefore)),
 		log.String("uploadedAfter", nilTimeToString(opts.UploadedAfter)),
+		log.String("lastRetentionScanBefore", nilTimeToString(opts.LastRetentionScanBefore)),
+		log.Bool("allowExpired", opts.AllowExpired),
 		log.Bool("oldestFirst", opts.OldestFirst),
 		log.Int("limit", opts.Limit),
 		log.Int("offset", opts.Offset),
@@ -314,7 +318,7 @@ func (s *Store) GetUploads(ctx context.Context, opts GetUploadsOptions) (_ []Upl
 	}
 	defer func() { err = tx.Done(err) }()
 
-	conds := make([]*sqlf.Query, 0, 9)
+	conds := make([]*sqlf.Query, 0, 11)
 	if opts.RepositoryID != 0 {
 		conds = append(conds, sqlf.Sprintf("u.repository_id = %s", opts.RepositoryID))
 	}
@@ -350,6 +354,12 @@ func (s *Store) GetUploads(ctx context.Context, opts GetUploadsOptions) (_ []Upl
 	}
 	if opts.UploadedAfter != nil {
 		conds = append(conds, sqlf.Sprintf("u.uploaded_at > %s", *opts.UploadedAfter))
+	}
+	if opts.LastRetentionScanBefore != nil {
+		conds = append(conds, sqlf.Sprintf("(u.last_retention_scan_at IS NULL OR u.last_retention_scan_at < %s)", *opts.LastRetentionScanBefore))
+	}
+	if !opts.AllowExpired {
+		conds = append(conds, sqlf.Sprintf("NOT u.expired"))
 	}
 
 	authzConds, err := database.AuthzQueryConds(ctx, tx.Store.Handle().DB())
