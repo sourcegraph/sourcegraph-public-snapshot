@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/url"
 
+	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
@@ -131,19 +132,26 @@ func makeURL(base, username, password string) (string, error) {
 	return u.String(), nil
 }
 
+type batchesStore interface {
+	GetBatchSpecWorkspace(context.Context, store.GetBatchSpecWorkspaceOpts) (*btypes.BatchSpecWorkspace, error)
+	GetBatchSpec(context.Context, store.GetBatchSpecOpts) (*btypes.BatchSpec, error)
+
+	DB() dbutil.DB
+}
+
 // transformBatchSpecWorkspaceExecutionJobRecord transforms a *btypes.BatchSpecWorkspaceExecutionJob into an apiclient.Job.
-func transformBatchSpecWorkspaceExecutionJobRecord(ctx context.Context, s *store.Store, job *btypes.BatchSpecWorkspaceExecutionJob, config *Config) (apiclient.Job, error) {
+func transformBatchSpecWorkspaceExecutionJobRecord(ctx context.Context, s batchesStore, job *btypes.BatchSpecWorkspaceExecutionJob, config *Config) (apiclient.Job, error) {
 	// MAYBE: We could create a view in which batch_spec and repo are joined
 	// against the batch_spec_workspace_job so we don't have to load them
 	// separately.
 	workspace, err := s.GetBatchSpecWorkspace(ctx, store.GetBatchSpecWorkspaceOpts{ID: job.BatchSpecWorkspaceID})
 	if err != nil {
-		return apiclient.Job{}, err
+		return apiclient.Job{}, errors.Wrapf(err, "fetching workspace %d", job.BatchSpecWorkspaceID)
 	}
 
 	batchSpec, err := s.GetBatchSpec(ctx, store.GetBatchSpecOpts{ID: workspace.BatchSpecID})
 	if err != nil {
-		return apiclient.Job{}, err
+		return apiclient.Job{}, errors.Wrap(err, "fetching batch spec")
 	}
 
 	// 🚨 SECURITY: Set the actor on the context so we check for permissions
@@ -152,7 +160,7 @@ func transformBatchSpecWorkspaceExecutionJobRecord(ctx context.Context, s *store
 
 	repo, err := database.Repos(s.DB()).Get(ctx, workspace.RepoID)
 	if err != nil {
-		return apiclient.Job{}, err
+		return apiclient.Job{}, errors.Wrap(err, "fetching repo")
 	}
 
 	executionInput := batcheslib.WorkspacesExecutionInput{
