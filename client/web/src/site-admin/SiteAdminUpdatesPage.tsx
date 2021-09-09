@@ -36,10 +36,10 @@ export const SiteAdminUpdatesPage: React.FunctionComponent<Props> = ({ telemetry
     const updateCheck = state.updateCheck
 
     return (
-        <div className="site-admin-updates-page">
+        <div>
             <PageTitle title="Updates - Admin" />
             <h2>Updates</h2>
-            {isErrorLike(state) && <ErrorAlert className="site-admin-updates-page__error" error={state} />}
+            {isErrorLike(state) && <ErrorAlert error={state} />}
             {updateCheck && (updateCheck.pending || updateCheck.checkedAt) && (
                 <div>
                     {updateCheck.pending && (

@@ -42,7 +42,7 @@ interface UsageChartPageProps {
 }
 
 export const UsageChart: React.FunctionComponent<UsageChartPageProps> = (props: UsageChartPageProps) => (
-    <div className="site-admin-usage-statistics-page">
+    <div>
         {props.header ? props.header : <h3>{chartGeneratorOptions[props.chartID].label}</h3>}
         <BarChart
             showLabels={true}
@@ -242,7 +242,7 @@ export class SiteAdminUsageStatisticsPage extends React.Component<
 
     public render(): JSX.Element | null {
         return (
-            <div className="site-admin-usage-statistics-page">
+            <div>
                 <PageTitle title="Usage statistics - Admin" />
                 <h2>Usage statistics</h2>
                 {this.state.error && <ErrorAlert className="mb-3" error={this.state.error} />}

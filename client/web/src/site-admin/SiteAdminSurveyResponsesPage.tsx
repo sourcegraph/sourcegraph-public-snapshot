@@ -230,7 +230,7 @@ class SiteAdminSurveyResponsesSummary extends React.PureComponent<{}, SiteAdminS
                 : 'text-info'
         const roundAvg = Math.round(this.state.summary.averageScore * 10) / 10
         return (
-            <div className="msite-admin-survey-responses-summary mb-2">
+            <div className="mb-2">
                 <h3>Summary</h3>
                 <div className={styles.container}>
                     <SingleValueCard
