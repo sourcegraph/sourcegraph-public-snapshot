@@ -20,7 +20,7 @@ func Routines(ctx context.Context, batchesStore *store.Store, cf *httpcli.Factor
 	bulkProcessorWorkerStore := NewBulkOperationDBWorkerStore(batchesStore.Handle(), observationContext)
 	specExecutionWorkerStore := NewExecutorStore(batchesStore.Handle(), observationContext)
 
-	batchSpecWorkspaceStore := NewBatchSpecWorkspaceStore(batchesStore.Handle(), observationContext)
+	batchSpecWorkspaceExecutionWorkerStore := NewBatchSpecWorkspaceExecutionWorkerStore(batchesStore.Handle(), observationContext)
 	batchSpecResolutionWorkerStore := newBatchSpecResolutionWorkerStore(batchesStore.Handle(), observationContext)
 
 	routines := []goroutine.BackgroundRoutine{
@@ -39,7 +39,7 @@ func Routines(ctx context.Context, batchesStore *store.Store, cf *httpcli.Factor
 		newBatchSpecResolutionWorker(ctx, batchesStore, batchSpecResolutionWorkerStore, metrics),
 		newBatchSpecResolutionWorkerResetter(batchSpecResolutionWorkerStore, metrics),
 
-		newBatchSpecWorkspaceResetter(batchSpecWorkspaceStore, metrics),
+		newBatchSpecWorkspaceResetter(batchSpecWorkspaceExecutionWorkerStore, metrics),
 	}
 	return routines
 }

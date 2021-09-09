@@ -28,13 +28,13 @@ func QueueOptions(db dbutil.DB, config *Config, observationContext *observation.
 	}
 }
 
-func WorkspaceQueueOptions(db dbutil.DB, config *Config, observationContext *observation.Context) handler.QueueOptions {
+func WorkspaceExecutionQueueOptions(db dbutil.DB, config *Config, observationContext *observation.Context) handler.QueueOptions {
 	recordTransformer := func(ctx context.Context, record workerutil.Record) (apiclient.Job, error) {
 		batchesStore := store.New(db, observationContext, nil)
-		return transformBatchSpecWorkspaceRecord(ctx, batchesStore, record.(*btypes.BatchSpecWorkspace), config)
+		return transformBatchSpecWorkspaceExecutionJobRecord(ctx, batchesStore, record.(*btypes.BatchSpecWorkspaceExecutionJob), config)
 	}
 
-	store := background.NewBatchSpecWorkspaceStore(basestore.NewHandleWithDB(db, sql.TxOptions{}), observationContext)
+	store := background.NewBatchSpecWorkspaceExecutionWorkerStore(basestore.NewHandleWithDB(db, sql.TxOptions{}), observationContext)
 	return handler.QueueOptions{
 		Store:             store,
 		RecordTransformer: recordTransformer,

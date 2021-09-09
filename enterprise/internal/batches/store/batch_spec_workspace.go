@@ -13,14 +13,11 @@ import (
 
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/database/batch"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/workerutil"
-	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 )
 
-// batchSpecWorkspaceInsertColumns is the list of changeset_jobs columns that are
-// modified in CreateChangesetJob.
+// batchSpecWorkspaceInsertColumns is the list of batch_spec_workspaces columns
+// that are modified in CreateBatchSpecWorkspace
 var batchSpecWorkspaceInsertColumns = []string{
 	"batch_spec_id",
 	"changeset_spec_ids",
@@ -33,13 +30,11 @@ var batchSpecWorkspaceInsertColumns = []string{
 	"only_fetch_workspace",
 	"steps",
 
-	"state",
-
 	"created_at",
 	"updated_at",
 }
 
-// ChangesetJobColumns are used by the changeset job related Store methods to query
+// BatchSpecWorkspaceColums are used by the changeset job related Store methods to query
 // and create changeset jobs.
 var BatchSpecWorkspaceColums = SQLColumns{
 	"batch_spec_workspaces.id",
@@ -54,16 +49,6 @@ var BatchSpecWorkspaceColums = SQLColumns{
 	"batch_spec_workspaces.file_matches",
 	"batch_spec_workspaces.only_fetch_workspace",
 	"batch_spec_workspaces.steps",
-
-	"batch_spec_workspaces.state",
-	"batch_spec_workspaces.failure_message",
-	"batch_spec_workspaces.started_at",
-	"batch_spec_workspaces.finished_at",
-	"batch_spec_workspaces.process_after",
-	"batch_spec_workspaces.num_resets",
-	"batch_spec_workspaces.num_failures",
-	"batch_spec_workspaces.execution_logs",
-	"batch_spec_workspaces.worker_hostname",
 
 	"batch_spec_workspaces.created_at",
 	"batch_spec_workspaces.updated_at",
@@ -116,7 +101,6 @@ func (s *Store) CreateBatchSpecWorkspace(ctx context.Context, ws ...*btypes.Batc
 				pq.Array(wj.FileMatches),
 				wj.OnlyFetchWorkspace,
 				marshaledSteps,
-				wj.State,
 				wj.CreatedAt,
 				wj.UpdatedAt,
 			); err != nil {
@@ -192,10 +176,7 @@ func getBatchSpecWorkspaceQuery(opts *GetBatchSpecWorkspaceOpts) *sqlf.Query {
 
 // ListBatchSpecWorkspacesOpts captures the query options needed for
 // listing batch spec workspace jobs.
-type ListBatchSpecWorkspacesOpts struct {
-	State          btypes.BatchSpecWorkspaceState
-	WorkerHostname string
-}
+type ListBatchSpecWorkspacesOpts struct{}
 
 // ListBatchSpecWorkspaces lists batch changes with the given filters.
 func (s *Store) ListBatchSpecWorkspaces(ctx context.Context, opts ListBatchSpecWorkspacesOpts) (cs []*btypes.BatchSpecWorkspace, err error) {
@@ -230,18 +211,6 @@ func listBatchSpecWorkspacesQuery(opts ListBatchSpecWorkspacesOpts) *sqlf.Query 
 		sqlf.Sprintf("repo.deleted_at IS NULL"),
 	}
 
-	if opts.State != "" {
-		preds = append(preds, sqlf.Sprintf("batch_spec_workspaces.state = %s", opts.State))
-	}
-
-	if opts.WorkerHostname != "" {
-		preds = append(preds, sqlf.Sprintf("batch_spec_workspaces.worker_hostname = %s", opts.WorkerHostname))
-	}
-
-	if len(preds) == 0 {
-		preds = append(preds, sqlf.Sprintf("TRUE"))
-	}
-
 	return sqlf.Sprintf(
 		listBatchSpecWorkspacesQueryFmtstr,
 		sqlf.Join(BatchSpecWorkspaceColums.ToSqlf(), ", "),
@@ -250,8 +219,6 @@ func listBatchSpecWorkspacesQuery(opts ListBatchSpecWorkspacesOpts) *sqlf.Query 
 }
 
 func scanBatchSpecWorkspace(wj *btypes.BatchSpecWorkspace, s scanner) error {
-	var executionLogs []dbworkerstore.ExecutionLogEntry
-	var failureMessage string
 	var steps json.RawMessage
 
 	if err := s.Scan(
@@ -265,15 +232,6 @@ func scanBatchSpecWorkspace(wj *btypes.BatchSpecWorkspace, s scanner) error {
 		pq.Array(&wj.FileMatches),
 		&wj.OnlyFetchWorkspace,
 		&steps,
-		&wj.State,
-		&dbutil.NullString{S: &failureMessage},
-		&dbutil.NullTime{Time: &wj.StartedAt},
-		&dbutil.NullTime{Time: &wj.FinishedAt},
-		&dbutil.NullTime{Time: &wj.ProcessAfter},
-		&wj.NumResets,
-		&wj.NumFailures,
-		pq.Array(&executionLogs),
-		&wj.WorkerHostname,
 		&wj.CreatedAt,
 		&wj.UpdatedAt,
 	); err != nil {
@@ -282,14 +240,6 @@ func scanBatchSpecWorkspace(wj *btypes.BatchSpecWorkspace, s scanner) error {
 
 	if err := json.Unmarshal(steps, &wj.Steps); err != nil {
 		return errors.Wrap(err, "scanBatchSpecWorkspace: failed to unmarshal Steps")
-	}
-
-	if failureMessage != "" {
-		wj.FailureMessage = &failureMessage
-	}
-
-	for _, entry := range executionLogs {
-		wj.ExecutionLogs = append(wj.ExecutionLogs, workerutil.ExecutionLogEntry(entry))
 	}
 
 	return nil

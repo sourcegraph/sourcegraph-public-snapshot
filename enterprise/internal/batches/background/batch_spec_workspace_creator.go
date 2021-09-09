@@ -78,8 +78,6 @@ func (r *batchSpecWorkspaceCreator) process(ctx context.Context, tx *store.Store
 			FileMatches:        w.FileMatches,
 			OnlyFetchWorkspace: w.OnlyFetchWorkspace,
 			Steps:              w.Steps,
-
-			State: btypes.BatchSpecWorkspaceStatePending,
 		})
 	}
 

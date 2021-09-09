@@ -2,12 +2,10 @@ package store
 
 import (
 	"context"
-	"fmt"
 	"strconv"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/keegancsmith/sqlf"
 
 	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
@@ -31,8 +29,8 @@ func testStoreBatchSpecWorkspaces(t *testing.T, ctx context.Context, s *Store, c
 		t.Fatal(err)
 	}
 
-	jobs := make([]*btypes.BatchSpecWorkspace, 0, 3)
-	for i := 0; i < cap(jobs); i++ {
+	workspaces := make([]*btypes.BatchSpecWorkspace, 0, 3)
+	for i := 0; i < cap(workspaces); i++ {
 		job := &btypes.BatchSpecWorkspace{
 			BatchSpecID:      int64(i + 567),
 			ChangesetSpecIDs: []int64{int64(i + 456), int64(i + 678)},
@@ -61,23 +59,15 @@ func testStoreBatchSpecWorkspaces(t *testing.T, ctx context.Context, s *Store, c
 			OnlyFetchWorkspace: true,
 		}
 
-		switch i {
-		case 0:
-			job.State = btypes.BatchSpecWorkspaceStatePending
-		case 1:
-			job.State = btypes.BatchSpecWorkspaceStateProcessing
-		case 2:
-			job.State = btypes.BatchSpecWorkspaceStateFailed
-		}
-		if i == cap(jobs)-1 {
+		if i == cap(workspaces)-1 {
 			job.RepoID = deletedRepo.ID
 		}
 
-		jobs = append(jobs, job)
+		workspaces = append(workspaces, job)
 	}
 
 	t.Run("Create", func(t *testing.T) {
-		for _, job := range jobs {
+		for _, job := range workspaces {
 			if err := s.CreateBatchSpecWorkspace(ctx, job); err != nil {
 				t.Fatal(err)
 			}
@@ -99,7 +89,7 @@ func testStoreBatchSpecWorkspaces(t *testing.T, ctx context.Context, s *Store, c
 
 	t.Run("Get", func(t *testing.T) {
 		t.Run("GetByID", func(t *testing.T) {
-			for i, job := range jobs {
+			for i, job := range workspaces {
 				t.Run(strconv.Itoa(i), func(t *testing.T) {
 					have, err := s.GetBatchSpecWorkspace(ctx, GetBatchSpecWorkspaceOpts{ID: job.ID})
 
@@ -134,63 +124,13 @@ func testStoreBatchSpecWorkspaces(t *testing.T, ctx context.Context, s *Store, c
 	})
 
 	t.Run("List", func(t *testing.T) {
-		for i, job := range jobs {
-			job.WorkerHostname = fmt.Sprintf("worker-hostname-%d", i)
-			if err := s.Exec(ctx, sqlf.Sprintf("UPDATE batch_spec_workspaces SET worker_hostname = %s, state = %s WHERE id = %s", job.WorkerHostname, job.State, job.ID)); err != nil {
-				t.Fatal(err)
-			}
-		}
-
 		t.Run("All", func(t *testing.T) {
 			have, err := s.ListBatchSpecWorkspaces(ctx, ListBatchSpecWorkspacesOpts{})
 			if err != nil {
 				t.Fatal(err)
 			}
-			if diff := cmp.Diff(have, jobs[:len(jobs)-1]); diff != "" {
+			if diff := cmp.Diff(have, workspaces[:len(workspaces)-1]); diff != "" {
 				t.Fatalf("invalid jobs returned: %s", diff)
-			}
-		})
-
-		t.Run("WorkerHostname", func(t *testing.T) {
-			for _, job := range jobs {
-				have, err := s.ListBatchSpecWorkspaces(ctx, ListBatchSpecWorkspacesOpts{
-					WorkerHostname: job.WorkerHostname,
-				})
-
-				if job.RepoID == deletedRepo.ID {
-					if len(have) != 0 {
-						t.Fatalf("expected no jobs to be returned, but got %d", len(have))
-					}
-					return
-				}
-
-				if err != nil {
-					t.Fatal(err)
-				}
-				if diff := cmp.Diff(have, []*btypes.BatchSpecWorkspace{job}); diff != "" {
-					t.Fatalf("invalid batch spec workspace jobs returned: %s", diff)
-				}
-			}
-		})
-
-		t.Run("State", func(t *testing.T) {
-			for _, job := range jobs {
-				have, err := s.ListBatchSpecWorkspaces(ctx, ListBatchSpecWorkspacesOpts{
-					State: job.State,
-				})
-
-				if job.RepoID == deletedRepo.ID {
-					if len(have) != 0 {
-						t.Fatalf("expected no jobs to be returned, but got %d", len(have))
-					}
-					return
-				}
-				if err != nil {
-					t.Fatal(err)
-				}
-				if diff := cmp.Diff(have, []*btypes.BatchSpecWorkspace{job}); diff != "" {
-					t.Fatalf("invalid batch spec workspace jobs returned: %s", diff)
-				}
 			}
 		})
 	})

@@ -131,12 +131,17 @@ func makeURL(base, username, password string) (string, error) {
 	return u.String(), nil
 }
 
-// transformBatchSpecWorkspaceRecord transforms a *btypes.BatchSpecWorkspace into an apiclient.Job.
-func transformBatchSpecWorkspaceRecord(ctx context.Context, s *store.Store, job *btypes.BatchSpecWorkspace, config *Config) (apiclient.Job, error) {
+// transformBatchSpecWorkspaceExecutionJobRecord transforms a *btypes.BatchSpecWorkspaceExecutionJob into an apiclient.Job.
+func transformBatchSpecWorkspaceExecutionJobRecord(ctx context.Context, s *store.Store, job *btypes.BatchSpecWorkspaceExecutionJob, config *Config) (apiclient.Job, error) {
 	// MAYBE: We could create a view in which batch_spec and repo are joined
 	// against the batch_spec_workspace_job so we don't have to load them
 	// separately.
-	batchSpec, err := s.GetBatchSpec(ctx, store.GetBatchSpecOpts{ID: job.BatchSpecID})
+	workspace, err := s.GetBatchSpecWorkspace(ctx, store.GetBatchSpecWorkspaceOpts{ID: job.BatchSpecWorkspaceID})
+	if err != nil {
+		return apiclient.Job{}, err
+	}
+
+	batchSpec, err := s.GetBatchSpec(ctx, store.GetBatchSpecOpts{ID: workspace.BatchSpecID})
 	if err != nil {
 		return apiclient.Job{}, err
 	}
@@ -145,7 +150,7 @@ func transformBatchSpecWorkspaceRecord(ctx context.Context, s *store.Store, job 
 	// when loading the repository.
 	ctx = actor.WithActor(ctx, actor.FromUser(batchSpec.UserID))
 
-	repo, err := database.Repos(s.DB()).Get(ctx, job.RepoID)
+	repo, err := database.Repos(s.DB()).Get(ctx, workspace.RepoID)
 	if err != nil {
 		return apiclient.Job{}, err
 	}
@@ -159,13 +164,13 @@ func transformBatchSpecWorkspaceRecord(ctx context.Context, s *store.Store, job 
 					Name: string(repo.Name),
 				},
 				Branch: batcheslib.WorkspaceBranch{
-					Name:   job.Branch,
-					Target: batcheslib.Commit{OID: job.Commit},
+					Name:   workspace.Branch,
+					Target: batcheslib.Commit{OID: workspace.Commit},
 				},
-				Path:               job.Path,
-				OnlyFetchWorkspace: job.OnlyFetchWorkspace,
-				Steps:              job.Steps,
-				SearchResultPaths:  job.FileMatches,
+				Path:               workspace.Path,
+				OnlyFetchWorkspace: workspace.OnlyFetchWorkspace,
+				Steps:              workspace.Steps,
+				SearchResultPaths:  workspace.FileMatches,
 			},
 		},
 	}
