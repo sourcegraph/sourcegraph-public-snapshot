@@ -39,7 +39,7 @@ func Routines(ctx context.Context, batchesStore *store.Store, cf *httpcli.Factor
 		newBatchSpecResolutionWorker(ctx, batchesStore, batchSpecResolutionWorkerStore, metrics),
 		newBatchSpecResolutionWorkerResetter(batchSpecResolutionWorkerStore, metrics),
 
-		newBatchSpecWorkspaceResetter(batchSpecWorkspaceExecutionWorkerStore, metrics),
+		newBatchSpecWorkspaceExecutionWorkerResetter(batchSpecWorkspaceExecutionWorkerStore, metrics),
 	}
 	return routines
 }

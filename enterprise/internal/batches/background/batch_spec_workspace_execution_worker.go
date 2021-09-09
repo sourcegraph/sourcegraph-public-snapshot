@@ -28,11 +28,11 @@ func scanFirstBatchSpecWorkspaceExecutionJobRecord(rows *sql.Rows, err error) (w
 	return store.ScanFirstBatchSpecWorkspaceExecutionJob(rows, err)
 }
 
-// newBatchSpecWorkspaceResetter creates a dbworker.Resetter that re-enqueues
-// lost batch_spec_workspace jobs for processing.
-func newBatchSpecWorkspaceResetter(workerStore dbworkerstore.Store, metrics batchChangesMetrics) *dbworker.Resetter {
+// newBatchSpecWorkspaceExecutionWorkerResetter creates a dbworker.Resetter that re-enqueues
+// lost batch_spec_workspace_execution_jobs for processing.
+func newBatchSpecWorkspaceExecutionWorkerResetter(workerStore dbworkerstore.Store, metrics batchChangesMetrics) *dbworker.Resetter {
 	options := dbworker.ResetterOptions{
-		Name:     "batch_spec_workspace_resetter",
+		Name:     "batch_spec_workspace_execution_worker_resetter",
 		Interval: 1 * time.Minute,
 		Metrics:  metrics.executionResetterMetrics,
 	}
@@ -44,7 +44,7 @@ func newBatchSpecWorkspaceResetter(workerStore dbworkerstore.Store, metrics batc
 var batchSpecWorkspaceExecutionWorkerStoreOptions = dbworkerstore.Options{
 	Name:              "batch_spec_workspace_execution_worker_store",
 	TableName:         "batch_spec_workspace_execution_jobs",
-	ColumnExpressions: store.BatchSpecWorkspaceColums.ToSqlf(),
+	ColumnExpressions: store.BatchSpecWorkspaceExecutionJobColums.ToSqlf(),
 	Scan:              scanFirstBatchSpecWorkspaceExecutionJobRecord,
 	OrderByExpression: sqlf.Sprintf("batch_spec_workspace_execution_jobs.created_at, batch_spec_workspace_execution_jobs.id"),
 	StalledMaxAge:     batchSpecWorkspaceExecutionJobStalledJobMaximumAge,
@@ -82,7 +82,7 @@ type batchSpecWorkspaceExecutionWorkerStore struct {
 //
 // If that one changes we need to update this one here too.
 const markBatchSpecWorkspaceExecutionJobCompleteQuery = `
-UPDATE batch_spec_workspaces
+UPDATE batch_spec_workspace_execution_jobs
 SET state = 'completed', finished_at = clock_timestamp()
 WHERE id = %s AND state = 'processing' AND worker_hostname = %s
 RETURNING id

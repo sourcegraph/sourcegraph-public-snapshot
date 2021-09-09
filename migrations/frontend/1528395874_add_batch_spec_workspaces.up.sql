@@ -7,7 +7,7 @@ CREATE TABLE IF NOT EXISTS batch_spec_resolution_jobs (
   allow_unsupported BOOLEAN NOT NULL DEFAULT FALSE,
   allow_ignored     BOOLEAN NOT NULL DEFAULT FALSE,
 
-  state             TEXT DEFAULT 'pending',
+  state             TEXT DEFAULT 'queued',
   failure_message   TEXT,
   started_at        TIMESTAMP WITH TIME ZONE,
   finished_at       TIMESTAMP WITH TIME ZONE,

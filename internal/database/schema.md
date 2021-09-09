@@ -121,7 +121,7 @@ Foreign-key constraints:
  batch_spec_id     | integer                  |           |          | 
  allow_unsupported | boolean                  |           | not null | false
  allow_ignored     | boolean                  |           | not null | false
- state             | text                     |           |          | 'pending'::text
+ state             | text                     |           |          | 'queued'::text
  failure_message   | text                     |           |          | 
  started_at        | timestamp with time zone |           |          | 
  finished_at       | timestamp with time zone |           |          | 
