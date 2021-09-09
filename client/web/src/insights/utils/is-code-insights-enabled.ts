@@ -8,7 +8,6 @@ import { SettingsExperimentalFeatures } from '../../schema/settings.schema'
  * to show code insights components.
  */
 interface CodeInsightsDisplayLocation {
-    insightsPage: boolean
     homepage: boolean
     directory: boolean
 }
