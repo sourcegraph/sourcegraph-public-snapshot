@@ -903,8 +903,6 @@ func TestHardDeleteUploadByID(t *testing.T) {
 	}
 }
 
-
-
 func TestUpdateUploadRetention(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
@@ -935,7 +933,6 @@ func TestUpdateUploadRetention(t *testing.T) {
 		t.Fatalf("unexpected count. want=%d have=%d", 3, count)
 	}
 }
-
 
 func TestUpdateNumReferences(t *testing.T) {
 	if testing.Short() {
