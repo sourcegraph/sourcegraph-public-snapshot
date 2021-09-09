@@ -23,8 +23,7 @@ export const chakraui: RepogroupMetadata = {
         },
     ],
     homepageDescription: 'Search within the Chakra UI organization.',
-    homepageIcon:
-        'https://raw.githubusercontent.com/chakra-ui/chakra-ui/main/logo/logomark-colored.svg',
+    homepageIcon: 'https://raw.githubusercontent.com/chakra-ui/chakra-ui/main/logo/logomark-colored.svg',
 }
 
 export const ChakraUIRepogroupPage: React.FunctionComponent<Omit<RepogroupPageProps, 'repogroupMetadata'>> = props => (
