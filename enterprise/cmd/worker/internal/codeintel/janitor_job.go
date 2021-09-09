@@ -71,7 +71,7 @@ func (j *janitorJob) Routines(ctx context.Context) ([]goroutine.BackgroundRoutin
 	}
 
 	if !envvar.SourcegraphDotComMode() {
-		routines = append(routines, janitor.NewRecordExpirer(dbStoreShim, janitorConfigInst.DataTTL, janitorConfigInst.CleanupTaskInterval, metrics))
+		routines = append(routines, janitor.NewExpiredUploadDeleter(dbStoreShim, janitorConfigInst.CleanupTaskInterval, metrics))
 	}
 
 	return routines, nil
