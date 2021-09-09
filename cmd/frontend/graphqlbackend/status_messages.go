@@ -2,6 +2,7 @@ package graphqlbackend
 
 import (
 	"context"
+	"time"
 
 	"github.com/cockroachdb/errors"
 
@@ -27,10 +28,12 @@ func (r *schemaResolver) StatusMessages(ctx context.Context) ([]*statusMessageRe
 		return nil, err
 	}
 
-	var messageResolvers []*statusMessageResolver
+	messageResolvers := make([]*statusMessageResolver, 0, len(messages))
 	for _, m := range messages {
 		messageResolvers = append(messageResolvers, &statusMessageResolver{db: r.db, message: m})
 	}
+
+	time.Sleep(10 * time.Second)
 
 	return messageResolvers, nil
 }

@@ -9,85 +9,29 @@ import SyncIcon from 'mdi-react/SyncIcon'
 import React from 'react'
 import { ButtonDropdown, DropdownMenu, DropdownToggle } from 'reactstrap'
 import { Observable, Subscription, of } from 'rxjs'
-import { catchError, map, repeatWhen, delay, distinctUntilChanged, switchMap } from 'rxjs/operators'
+import { catchError, repeatWhen, delay, distinctUntilChanged, switchMap } from 'rxjs/operators'
 
 import {
     CloudAlertIconRefresh,
     CloudSyncIconRefresh,
     CloudCheckIconRefresh,
 } from '@sourcegraph/shared/src/components/icons'
+import { Link } from '@sourcegraph/shared/src/components/Link'
+import { asError, ErrorLike, isErrorLike } from '@sourcegraph/shared/src/util/errors'
+import { repeatUntil } from '@sourcegraph/shared/src/util/rxjs/repeatUntil'
+import { ErrorAlert } from '@sourcegraph/web/src/components/alerts'
+import { CircleDashedIcon } from '@sourcegraph/web/src/components/CircleDashedIcon'
+import { queryExternalServices } from '@sourcegraph/web/src/components/externalServices/backend'
+import { LoadingSpinner } from '@sourcegraph/wildcard'
 
-import { Link } from '../../../shared/src/components/Link'
-import { dataOrThrowErrors, gql } from '../../../shared/src/graphql/graphql'
-import { asError, ErrorLike, isErrorLike } from '../../../shared/src/util/errors'
-import { repeatUntil } from '../../../shared/src/util/rxjs/repeatUntil'
-import { requestGraphQL } from '../backend/graphql'
-import { ErrorAlert } from '../components/alerts'
-import { CircleDashedIcon } from '../components/CircleDashedIcon'
-import { queryExternalServices } from '../components/externalServices/backend'
-import { StatusMessagesResult } from '../graphql-operations'
-
-function fetchAllStatusMessages(): Observable<StatusMessagesResult['statusMessages']> {
-    return requestGraphQL<StatusMessagesResult>(
-        gql`
-            query StatusMessages {
-                statusMessages {
-                    ...StatusMessageFields
-                }
-            }
-
-            fragment StatusMessageFields on StatusMessage {
-                type: __typename
-
-                ... on CloningProgress {
-                    message
-                }
-
-                ... on IndexingProgress {
-                    message
-                }
-
-                ... on SyncError {
-                    message
-                }
-
-                ... on IndexingError {
-                    message
-                }
-
-                ... on ExternalServiceSyncError {
-                    message
-                    externalService {
-                        id
-                        displayName
-                    }
-                }
-            }
-        `
-    ).pipe(
-        map(dataOrThrowErrors),
-        map(data => data.statusMessages)
-    )
-}
+import { StatusMessageFields, StatusMessagesResult } from '../../graphql-operations'
 
 type EntryType = 'not-active' | 'progress' | 'warning' | 'success' | 'error'
 
-interface StatusMessageEntryProps {
-    message: string
-    linkTo: string
-    linkText: string
-    entryType: EntryType
-    linkOnClick: (event: React.MouseEvent<HTMLAnchorElement, MouseEvent>) => void
-    messageHint?: string
-    progressHint?: string
-    title?: string
-}
-
-function entryIcon(entryType: EntryType): JSX.Element {
+const EntryIcon: React.FunctionComponent<{ entryType: EntryType }> = ({ entryType }) => {
     switch (entryType) {
-        case 'error': {
+        case 'error':
             return <InformationCircleIcon size={14} className="text-danger status-messages-nav-item__entry-icon" />
-        }
         case 'warning':
             return <AlertIcon size={14} className="text-warning status-messages-nav-item__entry-icon" />
         case 'success':
@@ -116,10 +60,21 @@ const getMessageColor = (entryType: EntryType): string => {
     return ''
 }
 
+interface StatusMessageEntryProps {
+    message: string
+    linkTo: string
+    linkText: string
+    entryType: EntryType
+    linkOnClick: (event: React.MouseEvent<HTMLAnchorElement, MouseEvent>) => void
+    messageHint?: string
+    progressHint?: string
+    title?: string
+}
+
 const StatusMessagesNavItemEntry: React.FunctionComponent<StatusMessageEntryProps> = props => (
     <div key={props.message} className="status-messages-nav-item__entry">
         <h4 className="d-flex align-items-center mb-0">
-            {entryIcon(props.entryType)}
+            <EntryIcon entryType={props.entryType} />
             {props.title ? props.title : 'Your repositories'}
         </h4>
         {props.entryType === 'not-active' ? (
@@ -163,7 +118,7 @@ interface User {
 interface Props {
     user: User
     history: H.History
-    fetchMessages?: () => Observable<StatusMessagesResult['statusMessages']>
+    fetchMessages?: () => Observable<StatusMessageFields[]>
 }
 
 enum ExternalServiceNoActivityReasons {
@@ -173,7 +128,7 @@ enum ExternalServiceNoActivityReasons {
 
 type ExternalServiceNoActivityReason = keyof typeof ExternalServiceNoActivityReasons
 type Message = StatusMessagesResult['statusMessages'] | ExternalServiceNoActivityReason
-type MessageOrError = Message | ErrorLike
+type MessageOrError = undefined | Message | ErrorLike
 
 const isNoActivityReason = (status: MessageOrError): status is ExternalServiceNoActivityReason =>
     typeof status === 'string'
@@ -193,7 +148,7 @@ const REFRESH_INTERVAL_MS = 60000
 export class StatusMessagesNavItem extends React.PureComponent<Props, State> {
     private subscriptions = new Subscription()
 
-    public state: State = { isOpen: false, messagesOrError: [] }
+    public state: State = { isOpen: false, messagesOrError: undefined }
 
     private toggleIsOpen = (): void => this.setState(previousState => ({ isOpen: !previousState.isOpen }))
 
@@ -222,7 +177,7 @@ export class StatusMessagesNavItem extends React.PureComponent<Props, State> {
                         return (this.props.fetchMessages ?? fetchAllStatusMessages)()
                     }),
                     catchError(error => [asError(error) as ErrorLike]),
-                    // Poll on REFRESH_INTERVAL_MS, or REFRESH_INTERVAL_AFTER_ERROR_MS if there is an error.
+                    // Poll on REFRESH_INTERVAL_MS after success or error.
                     repeatUntil(messagesOrError => isErrorLike(messagesOrError), { delay: REFRESH_INTERVAL_MS }),
                     repeatWhen(completions => completions.pipe(delay(REFRESH_INTERVAL_MS))),
                     distinctUntilChanged((a, b) => isEqual(a, b))
@@ -374,6 +329,9 @@ export class StatusMessagesNavItem extends React.PureComponent<Props, State> {
     }
 
     private renderIcon(): JSX.Element | null {
+        if (this.state.messagesOrError === undefined) {
+            return <LoadingSpinner />
+        }
         if (isErrorLike(this.state.messagesOrError)) {
             return (
                 <CloudAlertIconRefresh
@@ -429,7 +387,7 @@ export class StatusMessagesNavItem extends React.PureComponent<Props, State> {
             <ButtonDropdown
                 isOpen={this.state.isOpen}
                 toggle={this.toggleIsOpen}
-                className="nav-link py-0 px-0 percy-hide chromatic-ignore"
+                className="nav-link p-0 percy-hide chromatic-ignore"
             >
                 <DropdownToggle caret={false} className="btn btn-link" nav={true}>
                     {this.renderIcon()}
@@ -446,6 +404,11 @@ export class StatusMessagesNavItem extends React.PureComponent<Props, State> {
                                 prefix="Failed to load status messages"
                                 error={this.state.messagesOrError}
                             />
+                        ) : this.state.messagesOrError === undefined ? (
+                            <div className="mb-4">
+                                <LoadingSpinner className="icon-inline" />{' '}
+                                <span className="text-muted">Fetching status</span>
+                            </div>
                         ) : (
                             this.renderMessage(this.state.messagesOrError, this.props.user.isSiteAdmin)
                         )}
