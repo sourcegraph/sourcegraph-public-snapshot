@@ -346,20 +346,20 @@ describe('Search', () => {
                         {
                             type: 'content',
                             lineMatches: [],
-                            name: 'stream.ts',
+                            path: 'stream.ts',
                             repository: 'github.com/sourcegraph/sourcegraph',
                         },
                         {
                             type: 'content',
                             lineMatches: [],
-                            name: 'stream.ts',
+                            path: 'stream.ts',
                             repository: 'github.com/sourcegraph/sourcegraph',
-                            version: 'abcd',
+                            commit: 'abcd',
                         },
                         {
                             type: 'content',
                             lineMatches: [],
-                            name: 'stream.ts',
+                            path: 'stream.ts',
                             repository: 'github.com/sourcegraph/sourcegraph',
                             branches: ['test/branch'],
                         },
@@ -427,7 +427,7 @@ describe('Search', () => {
                 waitUntil: 'networkidle0',
             })
             await hideCreateCodeMonitorFeatureTour()
-            await driver.page.waitForSelector('.search-result-match__code-excerpt .selection-highlight', {
+            await driver.page.waitForSelector('[data-testid="search-result-match-code-excerpt"] .selection-highlight', {
                 visible: true,
             })
             await driver.page.waitForSelector('#monaco-query-input', { visible: true })
@@ -448,7 +448,7 @@ describe('Search', () => {
                 waitUntil: 'networkidle0',
             })
             await hideCreateCodeMonitorFeatureTour()
-            await driver.page.waitForSelector('.search-result-match__code-excerpt .selection-highlight', {
+            await driver.page.waitForSelector('[data-testid="search-result-match-code-excerpt"] .selection-highlight', {
                 visible: true,
             })
             await driver.page.waitForSelector('#monaco-query-input', { visible: true })

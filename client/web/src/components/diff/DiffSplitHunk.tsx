@@ -11,7 +11,9 @@ import { DiffHunkLineType, FileDiffHunkFields } from '../../graphql-operations'
 
 import { addLineNumberToHunks } from './addLineNumberToHunks'
 import { DiffBoundary } from './DiffBoundary'
+import diffHunkStyles from './DiffHunk.module.scss'
 import { EmptyLine, Line } from './Lines'
+import linesStyles from './Lines.module.scss'
 
 type HunkZipped = [Hunk[], Hunk | undefined, number]
 
@@ -117,8 +119,8 @@ export const DiffSplitHunk: React.FunctionComponent<DiffHunkProps> = ({
                 const { lineStyle, decorationsWithAfterProperty } = addDecorations(isLightTheme, decorationsForLine)
 
                 const rowProps = {
-                    className: 'file-diff-hunks__table--split-row',
                     key: current.anchor,
+                    'data-split-mode': 'split',
                     'data-testid': current.anchor,
                 }
 
@@ -126,7 +128,7 @@ export const DiffSplitHunk: React.FunctionComponent<DiffHunkProps> = ({
                     persistLines,
                     lineStyle,
                     decorations: decorationsWithAfterProperty,
-                    className: active ? 'diff-hunk--split__line--active' : '',
+                    className: active ? linesStyles.lineActive : '',
                     lineNumbers,
                     html: current.html,
                     anchor: current.anchor,
@@ -175,7 +177,7 @@ export const DiffSplitHunk: React.FunctionComponent<DiffHunkProps> = ({
                                     anchor={next.anchor}
                                     html={next.html}
                                     className={classNames(
-                                        location.hash === `#${next.anchor}` && 'diff-hunk--split__line--active'
+                                        location.hash === `#${next.anchor}` && linesStyles.lineActive
                                     )}
                                     dataPart="head"
                                 />
@@ -217,7 +219,12 @@ export const DiffSplitHunk: React.FunctionComponent<DiffHunkProps> = ({
 
     return (
         <>
-            <DiffBoundary {...hunk} contentClassName="diff-hunk__content" lineNumbers={lineNumbers} diffMode="split" />
+            <DiffBoundary
+                {...hunk}
+                contentClassName={diffHunkStyles.content}
+                lineNumbers={lineNumbers}
+                diffMode="split"
+            />
             {diffView}
         </>
     )

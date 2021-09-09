@@ -134,27 +134,44 @@ func (p *Provider) fetchUserPermsByToken(ctx context.Context, accountID extsvc.A
 	// 100 matches the maximum page size, thus a good default to avoid multiple allocations
 	// when appending the first 100 results to the slice.
 	const repoSetSize = 100
-	perms := &authz.ExternalUserPermissions{
-		Exacts: make([]extsvc.RepoID, 0, repoSetSize),
-	}
-	seenRepos := make(map[extsvc.RepoID]struct{}, repoSetSize)
 
-	// addRepoToUserPerms checks if the given repos are already tracked before adding it to perms.
-	addRepoToUserPerms := func(repos ...extsvc.RepoID) {
-		for _, repo := range repos {
-			if _, exists := seenRepos[repo]; !exists {
-				seenRepos[repo] = struct{}{}
-				perms.Exacts = append(perms.Exacts, repo)
+	var (
+		// perms tracks repos this user has access to
+		perms = &authz.ExternalUserPermissions{
+			Exacts: make([]extsvc.RepoID, 0, repoSetSize),
+		}
+		// seenRepos helps prevent duplication if necessary for groupsCache. Left unset
+		// indicates it is unused.
+		seenRepos map[extsvc.RepoID]struct{}
+		// addRepoToUserPerms checks if the given repos are already tracked before adding
+		// it to perms for groupsCache, otherwise just adds directly
+		addRepoToUserPerms func(repos ...extsvc.RepoID)
+		// Repository affiliations to list for - groupsCache only lists for a subset. Left
+		// unset indicates all affiliations should be sync'd.
+		affiliations []github.RepositoryAffiliation
+	)
+
+	// If cache is disabled the code path is simpler, avoid allocating memory
+	if p.groupsCache == nil { // Groups cache is disabled
+		// addRepoToUserPerms just appends
+		addRepoToUserPerms = func(repos ...extsvc.RepoID) {
+			perms.Exacts = append(perms.Exacts, repos...)
+		}
+	} else { // Groups cache is enabled
+		// Instantiate map for deduplicating repos
+		seenRepos = make(map[extsvc.RepoID]struct{}, repoSetSize)
+		// addRepoToUserPerms checks for duplicates before appending
+		addRepoToUserPerms = func(repos ...extsvc.RepoID) {
+			for _, repo := range repos {
+				if _, exists := seenRepos[repo]; !exists {
+					seenRepos[repo] = struct{}{}
+					perms.Exacts = append(perms.Exacts, repo)
+				}
 			}
 		}
-	}
-
-	// If groups caching is enabled, we sync just a subset of direct affiliations - we let
-	// other permissions ('organization' affiliation) be sync'd by teams/orgs.
-	affiliations := []github.RepositoryAffiliation{github.AffiliationOwner, github.AffiliationCollaborator}
-	if p.groupsCache == nil {
-		// Otherwise, sync all direct affiliations.
-		affiliations = nil
+		// We sync just a subset of direct affiliations - we let other permissions
+		// ('organization' affiliation) be sync'd by teams/orgs.
+		affiliations = []github.RepositoryAffiliation{github.AffiliationOwner, github.AffiliationCollaborator}
 	}
 
 	// Sync direct affiliations
@@ -296,25 +313,42 @@ func (p *Provider) FetchRepoPerms(ctx context.Context, repo *extsvc.Repository, 
 	// 100 matches the maximum page size, thus a good default to avoid multiple allocations
 	// when appending the first 100 results to the slice.
 	const userPageSize = 100
-	userIDs := make([]extsvc.AccountID, 0, userPageSize)
-	seenUsers := make(map[extsvc.AccountID]struct{}, userPageSize)
 
-	// addUserToRepoPerms checks if the given users are already tracked before adding it to perms.
-	addUserToRepoPerms := func(users ...extsvc.AccountID) {
-		for _, user := range users {
-			if _, exists := seenUsers[user]; !exists {
-				seenUsers[user] = struct{}{}
-				userIDs = append(userIDs, user)
+	var (
+		// userIDs tracks users with access to this repo
+		userIDs = make([]extsvc.AccountID, 0, userPageSize)
+		// seenUsers helps deduplication of userIDs for groupsCache. Left unset indicates
+		// it is unused.
+		seenUsers map[extsvc.AccountID]struct{}
+		// addUserToRepoPerms checks if the given users are already tracked before adding
+		// it to perms for groupsCache, otherwise just adds directly
+		addUserToRepoPerms func(users ...extsvc.AccountID)
+		// affiliations to list for - groupCache only lists for a subset. Left unset indicates
+		// all affiliations should be sync'd.
+		affiliation github.CollaboratorAffiliation
+	)
+
+	// If cache is disabled the code path is simpler, avoid allocating memory
+	if p.groupsCache == nil { // groups cache is disabled
+		// addUserToRepoPerms just adds to perms.
+		addUserToRepoPerms = func(users ...extsvc.AccountID) {
+			userIDs = append(userIDs, users...)
+		}
+	} else { // groups cache is enabled
+		// instantiate map to help with deduplication
+		seenUsers = make(map[extsvc.AccountID]struct{}, userPageSize)
+		// addUserToRepoPerms checks if the given users are already tracked before adding it to perms.
+		addUserToRepoPerms = func(users ...extsvc.AccountID) {
+			for _, user := range users {
+				if _, exists := seenUsers[user]; !exists {
+					seenUsers[user] = struct{}{}
+					userIDs = append(userIDs, user)
+				}
 			}
 		}
-	}
-
-	// If groups caching is enabled, we sync just direct affiliations, and sync org/team
-	// collaborators separately from cache
-	affiliation := github.AffiliationDirect
-	if p.groupsCache == nil {
-		// Otherwise, sync all affiliations.
-		affiliation = ""
+		// If groups caching is enabled, we sync just direct affiliations, and sync org/team
+		// collaborators separately from cache
+		affiliation = github.AffiliationDirect
 	}
 
 	// Sync collaborators

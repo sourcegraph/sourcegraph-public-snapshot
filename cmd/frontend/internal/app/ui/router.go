@@ -227,53 +227,53 @@ func initRouter(db dbutil.DB, router *mux.Router, codeIntelResolver graphqlbacke
 
 	// basic pages with static titles
 	router.Get(routeHome).Handler(handler(serveHome))
-	router.Get(routeThreads).Handler(handler(serveBrandedPageString("Threads", nil)))
-	router.Get(routeInsights).Handler(handler(serveBrandedPageString("Insights", nil)))
+	router.Get(routeThreads).Handler(handler(serveBrandedPageString("Threads", nil, noIndex)))
+	router.Get(routeInsights).Handler(handler(serveBrandedPageString("Insights", nil, index)))
 	router.Get(routeLegacyCampaigns).Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		r.URL.Path = "/batch-changes" + mux.Vars(r)["Path"]
 		// Temporary redirect so at some point we can reuse the /campaigns path, if needed.
 		http.Redirect(w, r, auth.SafeRedirectURL(r.URL.String()), http.StatusTemporaryRedirect)
 	}))
-	router.Get(routeBatchChanges).Handler(handler(serveBrandedPageString("Batch Changes", nil)))
-	router.Get(routeCodeMonitoring).Handler(handler(serveBrandedPageString("Code Monitoring", nil)))
-	router.Get(routeContexts).Handler(handler(serveBrandedPageString("Search Contexts", nil)))
+	router.Get(routeBatchChanges).Handler(handler(serveBrandedPageString("Batch Changes", nil, index)))
+	router.Get(routeCodeMonitoring).Handler(handler(serveBrandedPageString("Code Monitoring", nil, index)))
+	router.Get(routeContexts).Handler(handler(serveBrandedPageString("Search Contexts", nil, noIndex)))
 	router.Get(uirouter.RouteSignIn).Handler(handler(serveSignIn))
-	router.Get(uirouter.RouteSignUp).Handler(handler(serveBrandedPageString("Sign up", nil)))
-	router.Get(routeWelcome).Handler(handler(serveBrandedPageString("Welcome", nil)))
-	router.Get(routeOrganizations).Handler(handler(serveBrandedPageString("Organization", nil)))
-	router.Get(routeSettings).Handler(handler(serveBrandedPageString("Settings", nil)))
-	router.Get(routeSiteAdmin).Handler(handler(serveBrandedPageString("Admin", nil)))
-	router.Get(uirouter.RoutePasswordReset).Handler(handler(serveBrandedPageString("Reset password", nil)))
-	router.Get(routeAPIConsole).Handler(handler(serveBrandedPageString("API console", nil)))
-	router.Get(routeRepoSettings).Handler(handler(serveBrandedPageString("Repository settings", nil)))
-	router.Get(routeRepoCodeIntelligence).Handler(handler(serveBrandedPageString("Code intelligence", nil)))
-	router.Get(routeRepoCommit).Handler(handler(serveBrandedPageString("Commit", nil)))
-	router.Get(routeRepoBranches).Handler(handler(serveBrandedPageString("Branches", nil)))
-	router.Get(routeRepoBatchChanges).Handler(handler(serveBrandedPageString("Batch Changes", nil)))
+	router.Get(uirouter.RouteSignUp).Handler(handler(serveBrandedPageString("Sign up", nil, index)))
+	router.Get(routeWelcome).Handler(handler(serveBrandedPageString("Welcome", nil, noIndex)))
+	router.Get(routeOrganizations).Handler(handler(serveBrandedPageString("Organization", nil, noIndex)))
+	router.Get(routeSettings).Handler(handler(serveBrandedPageString("Settings", nil, noIndex)))
+	router.Get(routeSiteAdmin).Handler(handler(serveBrandedPageString("Admin", nil, noIndex)))
+	router.Get(uirouter.RoutePasswordReset).Handler(handler(serveBrandedPageString("Reset password", nil, noIndex)))
+	router.Get(routeAPIConsole).Handler(handler(serveBrandedPageString("API console", nil, index)))
+	router.Get(routeRepoSettings).Handler(handler(serveBrandedPageString("Repository settings", nil, noIndex)))
+	router.Get(routeRepoCodeIntelligence).Handler(handler(serveBrandedPageString("Code intelligence", nil, noIndex)))
+	router.Get(routeRepoCommit).Handler(handler(serveBrandedPageString("Commit", nil, noIndex)))
+	router.Get(routeRepoBranches).Handler(handler(serveBrandedPageString("Branches", nil, noIndex)))
+	router.Get(routeRepoBatchChanges).Handler(handler(serveBrandedPageString("Batch Changes", nil, index)))
 	router.Get(routeRepoDocs).Handler(handler(serveRepoDocs(codeIntelResolver)))
-	router.Get(routeRepoCommits).Handler(handler(serveBrandedPageString("Commits", nil)))
-	router.Get(routeRepoTags).Handler(handler(serveBrandedPageString("Tags", nil)))
-	router.Get(routeRepoCompare).Handler(handler(serveBrandedPageString("Compare", nil)))
-	router.Get(routeRepoStats).Handler(handler(serveBrandedPageString("Stats", nil)))
-	router.Get(routeSurvey).Handler(handler(serveBrandedPageString("Survey", nil)))
-	router.Get(routeSurveyScore).Handler(handler(serveBrandedPageString("Survey", nil)))
-	router.Get(routeRegistry).Handler(handler(serveBrandedPageString("Registry", nil)))
-	router.Get(routeExtensions).Handler(handler(serveBrandedPageString("Extensions", nil)))
+	router.Get(routeRepoCommits).Handler(handler(serveBrandedPageString("Commits", nil, noIndex)))
+	router.Get(routeRepoTags).Handler(handler(serveBrandedPageString("Tags", nil, noIndex)))
+	router.Get(routeRepoCompare).Handler(handler(serveBrandedPageString("Compare", nil, noIndex)))
+	router.Get(routeRepoStats).Handler(handler(serveBrandedPageString("Stats", nil, noIndex)))
+	router.Get(routeSurvey).Handler(handler(serveBrandedPageString("Survey", nil, noIndex)))
+	router.Get(routeSurveyScore).Handler(handler(serveBrandedPageString("Survey", nil, noIndex)))
+	router.Get(routeRegistry).Handler(handler(serveBrandedPageString("Registry", nil, noIndex)))
+	router.Get(routeExtensions).Handler(handler(serveBrandedPageString("Extensions", nil, index)))
 	router.Get(routeHelp).HandlerFunc(serveHelp)
-	router.Get(routeSnippets).Handler(handler(serveBrandedPageString("Snippets", nil)))
-	router.Get(routeSubscriptions).Handler(handler(serveBrandedPageString("Subscriptions", nil)))
-	router.Get(routeStats).Handler(handler(serveBrandedPageString("Stats", nil)))
-	router.Get(routeViews).Handler(handler(serveBrandedPageString("View", nil)))
+	router.Get(routeSnippets).Handler(handler(serveBrandedPageString("Snippets", nil, noIndex)))
+	router.Get(routeSubscriptions).Handler(handler(serveBrandedPageString("Subscriptions", nil, noIndex)))
+	router.Get(routeStats).Handler(handler(serveBrandedPageString("Stats", nil, noIndex)))
+	router.Get(routeViews).Handler(handler(serveBrandedPageString("View", nil, noIndex)))
 	router.Get(uirouter.RoutePingFromSelfHosted).Handler(handler(servePingFromSelfHosted))
 
-	router.Get(routeUserSettings).Handler(handler(serveBrandedPageString("User settings", nil)))
-	router.Get(routeUserRedirect).Handler(handler(serveBrandedPageString("User", nil)))
+	router.Get(routeUserSettings).Handler(handler(serveBrandedPageString("User settings", nil, noIndex)))
+	router.Get(routeUserRedirect).Handler(handler(serveBrandedPageString("User", nil, noIndex)))
 	router.Get(routeUser).Handler(handler(serveBasicPage(func(c *Common, r *http.Request) string {
 		return brandNameSubtitle(mux.Vars(r)["username"])
-	}, nil)))
-	router.Get(routeSearchQueryBuilder).Handler(handler(serveBrandedPageString("Query builder", nil)))
-	router.Get(routeSearchConsole).Handler(handler(serveBrandedPageString("Search console", nil)))
-	router.Get(routeSearchNotebook).Handler(handler(serveBrandedPageString("Search Notebook", nil)))
+	}, nil, noIndex)))
+	router.Get(routeSearchQueryBuilder).Handler(handler(serveBrandedPageString("Query builder", nil, index)))
+	router.Get(routeSearchConsole).Handler(handler(serveBrandedPageString("Search console", nil, index)))
+	router.Get(routeSearchNotebook).Handler(handler(serveBrandedPageString("Search Notebook", nil, index)))
 
 	// Legacy redirects
 	if envvar.SourcegraphDotComMode() {
@@ -293,7 +293,7 @@ func initRouter(db dbutil.DB, router *mux.Router, codeIntelResolver graphqlbacke
 		}
 		// e.g. "myquery - Sourcegraph"
 		return brandNameSubtitle(shortQuery)
-	}, nil)))
+	}, nil, index)))
 
 	// streaming search
 	router.Get(routeSearchStream).Handler(search.StreamHandler(db))
@@ -310,9 +310,9 @@ func initRouter(db dbutil.DB, router *mux.Router, codeIntelResolver graphqlbacke
 			r.URL.Path = "/" + aboutRedirects[mux.Vars(r)["Path"]]
 			http.Redirect(w, r, r.URL.String(), http.StatusTemporaryRedirect)
 		}))
-		router.Get(routeRepoGroups).Handler(handler(serveBrandedPageString("Repogroup", nil)))
+		router.Get(routeRepoGroups).Handler(handler(serveBrandedPageString("Repogroup", nil, noIndex)))
 		cncfDescription := "Search all repositories in the Cloud Native Computing Foundation (CNCF)."
-		router.Get(routeCncf).Handler(handler(serveBrandedPageString("CNCF code search", &cncfDescription)))
+		router.Get(routeCncf).Handler(handler(serveBrandedPageString("CNCF code search", &cncfDescription, index)))
 		router.Get(routeDevToolTime).Handler(staticRedirectHandler("https://info.sourcegraph.com/dev-tool-time", http.StatusMovedPermanently))
 	}
 
@@ -497,7 +497,7 @@ func serveErrorNoDebug(w http.ResponseWriter, r *http.Request, err error, status
 	delete(mux.Vars(r), "Repo")
 	var commonServeErr error
 	title := brandNameSubtitle(fmt.Sprintf("%v %s", statusCode, http.StatusText(statusCode)))
-	common, commonErr := newCommon(w, r, title, func(w http.ResponseWriter, r *http.Request, err error, statusCode int) {
+	common, commonErr := newCommon(w, r, title, index, func(w http.ResponseWriter, r *http.Request, err error, statusCode int) {
 		// Stub out serveError to newCommon so that it is not reentrant.
 		commonServeErr = err
 	})

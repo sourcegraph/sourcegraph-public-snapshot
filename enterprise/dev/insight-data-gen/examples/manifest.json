@@ -1,0 +1,121 @@
+{
+  "definitions": [
+    {
+      "repo_path": "/Users/couryclark/Documents/code/test-data/insights-test-data-repo-1",
+      "symbols": [
+        {
+          "symbol": "insights",
+          "snapshots": [
+            {
+              "instant": "2021-05-01T00:00:00Z",
+              "count": 5
+            },
+            {
+              "instant": "2021-06-01T00:00:00Z",
+              "count": 8
+            },
+            {
+              "instant": "2021-07-01T00:00:00Z",
+              "count": 14
+            }
+          ]
+        },
+        {
+          "symbol": "salami",
+          "snapshots": [
+            {
+              "instant": "2021-05-01T00:00:00Z",
+              "count": 5
+            },
+            {
+              "instant": "2021-06-01T00:00:00Z",
+              "count": 3
+            },
+            {
+              "instant": "2021-07-01T00:00:00Z",
+              "count": 0
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "repo_path": "/Users/couryclark/Documents/code/test-data/insights-test-data-repo-2",
+      "symbols": [
+        {
+          "symbol": "insights",
+          "snapshots": [
+            {
+              "instant": "2020-10-01T00:00:00Z",
+              "count": 1
+            },
+            {
+              "instant": "2021-06-01T00:00:00Z",
+              "count": 88
+            },
+            {
+              "instant": "2021-07-01T00:00:00Z",
+              "count": 500
+            }
+          ]
+        },
+        {
+          "symbol": "salami",
+          "snapshots": [
+            {
+              "instant": "2021-01-02T00:00:00Z",
+              "count": 1
+            },
+            {
+              "instant": "2021-03-02T00:00:00Z",
+              "count": 1
+            },
+            {
+              "instant": "2021-07-01T00:00:00Z",
+              "count": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "repo_path": "/Users/couryclark/Documents/code/test-data/insights-test-data-repo-3",
+      "symbols": [
+        {
+          "symbol": "insights",
+          "snapshots": [
+            {
+              "instant": "2020-10-01T00:00:00Z",
+              "count": 1
+            },
+            {
+              "instant": "2021-06-01T00:00:00Z",
+              "count": 88
+            },
+            {
+              "instant": "2021-07-01T00:00:00Z",
+              "count": 500
+            }
+          ]
+        },
+        {
+          "symbol": "salmon",
+          "snapshots": [
+            {
+              "instant": "2021-05-02T00:00:00Z",
+              "count": 55
+            },
+            {
+              "instant": "2021-06-02T00:00:00Z",
+              "count": 56
+            },
+            {
+              "instant": "2021-07-02T00:00:00Z",
+              "count": 57
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

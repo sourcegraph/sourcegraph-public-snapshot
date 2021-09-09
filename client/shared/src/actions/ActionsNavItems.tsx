@@ -1,11 +1,13 @@
 import classNames from 'classnames'
+import { identity } from 'lodash'
 import React, { useMemo, useRef } from 'react'
 import { combineLatest, from, ReplaySubject } from 'rxjs'
-import { switchMap } from 'rxjs/operators'
+import { map, switchMap } from 'rxjs/operators'
 import { useDeepCompareEffectNoCheck } from 'use-deep-compare-effect'
 
 import { wrapRemoteObservable } from '../api/client/api/common'
 import { Context, ContributionScope } from '../api/extension/api/context/context'
+import { Contributions, Evaluated } from '../api/protocol'
 import { getContributedActionItems } from '../contributions/contributions'
 import { TelemetryProps } from '../telemetry/telemetryService'
 import { useObservable } from '../util/useObservable'
@@ -48,6 +50,12 @@ export interface ActionsNavItemsProps
      */
 
     listClass?: string
+
+    /**
+     * Transform function called when latest contributions from extensions are received.
+     * Likely temporary: quick fix to dedup panel actions from various code intel extensions.
+     */
+    transformContributions?: (contributions: Evaluated<Contributions>) => Evaluated<Contributions>
 }
 
 /**
@@ -55,7 +63,7 @@ export interface ActionsNavItemsProps
  * class="nav"> or <ul class="navbar-nav">.
  */
 export const ActionsNavItems: React.FunctionComponent<ActionsNavItemsProps> = props => {
-    const { scope, extraContext, extensionsController, menu, wrapInList } = props
+    const { scope, extraContext, extensionsController, menu, wrapInList, transformContributions = identity } = props
 
     const scopeChanges = useMemo(() => new ReplaySubject<ContributionScope>(1), [])
     useDeepCompareEffectNoCheck(() => {
@@ -73,9 +81,10 @@ export const ActionsNavItems: React.FunctionComponent<ActionsNavItemsProps> = pr
                 combineLatest([scopeChanges, extraContextChanges, from(extensionsController.extHostAPI)]).pipe(
                     switchMap(([scope, extraContext, extensionHostAPI]) =>
                         wrapRemoteObservable(extensionHostAPI.getContributions({ scope, extraContext }))
-                    )
+                    ),
+                    map(transformContributions)
                 ),
-            [scopeChanges, extraContextChanges, extensionsController]
+            [scopeChanges, extraContextChanges, extensionsController, transformContributions]
         )
     )
 

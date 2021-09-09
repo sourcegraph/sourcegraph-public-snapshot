@@ -72,13 +72,13 @@ exports[`SiteAdminProductLicenseNode active 1`] = `
     </div>
   </div>
   <div
-    className="copyable-text form-inline mt-2 d-block"
+    className="form-inline mt-2 d-block"
   >
     <div
       className="input-group"
     >
       <input
-        className="copyable-text__input form-control"
+        className="form-control input"
         onClick={[Function]}
         readOnly={true}
         type="text"
@@ -177,13 +177,13 @@ exports[`SiteAdminProductLicenseNode inactive 1`] = `
     </div>
   </div>
   <div
-    className="copyable-text form-inline mt-2 d-block"
+    className="form-inline mt-2 d-block"
   >
     <div
       className="input-group"
     >
       <input
-        className="copyable-text__input form-control"
+        className="form-control input"
         onClick={[Function]}
         readOnly={true}
         type="text"

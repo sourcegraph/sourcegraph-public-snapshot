@@ -12,7 +12,6 @@ import (
 	"github.com/keegancsmith/sqlf"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
-	registry "github.com/sourcegraph/sourcegraph/cmd/frontend/registry/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
 )
@@ -233,14 +232,13 @@ type dbExtensionsListOptions struct {
 	Query                  string // matches the extension ID and latest release's manifest's title
 	Category               string // matches the latest release's manifest's categories array
 	Tag                    string // matches the latest release's manifest's tags array
+	ExtensionIDs           []string
 	PrioritizeExtensionIDs []string
 	*database.LimitOffset
 }
 
 // extensionIsWIPExpr is the SQL expression for whether the extension is a WIP extension.
-//
-// BACKCOMPAT: It still reads the title property even though extensions no longer have titles.
-var extensionIsWIPExpr = sqlf.Sprintf(`rer.manifest IS NULL OR COALESCE((rer.manifest->>'wip')::jsonb = 'true'::jsonb, rer.manifest->>'title' SIMILAR TO %s, false)`, registry.WorkInProgressExtensionTitlePostgreSQLPattern)
+var extensionIsWIPExpr = sqlf.Sprintf(`rer.manifest IS NULL OR COALESCE((rer.manifest->>'wip')::jsonb = 'true'::jsonb, false)`)
 
 func (o dbExtensionsListOptions) sqlConditions() []*sqlf.Query {
 	var conds []*sqlf.Query
@@ -276,6 +274,14 @@ func (o dbExtensionsListOptions) sqlConditions() []*sqlf.Query {
 	}
 	if o.Tag != "" {
 		conds = append(conds, sqlf.Sprintf(`CASE WHEN rer.manifest IS NOT NULL THEN (rer.manifest->>'tags')::jsonb @> to_json(%s::text)::jsonb ELSE false END`, o.Tag))
+	}
+	if o.ExtensionIDs != nil {
+		ids := make([]*sqlf.Query, len(o.ExtensionIDs)+1)
+		for i, id := range o.ExtensionIDs {
+			ids[i] = sqlf.Sprintf("%v", id)
+		}
+		ids[len(o.ExtensionIDs)] = sqlf.Sprintf("NULL")
+		conds = append(conds, sqlf.Sprintf(extensionIDExpr+` IN (%v)`, sqlf.Join(ids, ",")))
 	}
 	if len(conds) == 0 {
 		conds = append(conds, sqlf.Sprintf("TRUE"))

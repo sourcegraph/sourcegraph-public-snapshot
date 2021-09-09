@@ -458,9 +458,8 @@ const ChangesetSpecFileDiffConnection: React.FunctionComponent<
                 after: args.after ?? null,
                 first: args.first ?? null,
                 changesetSpec: spec.id,
-                isLightTheme,
             }),
-        [spec.id, isLightTheme, queryChangesetSpecFileDiffs]
+        [spec.id, queryChangesetSpecFileDiffs]
     )
     return (
         <FileDiffConnection
