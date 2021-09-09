@@ -52,32 +52,41 @@ func newInsightEnqueuer(ctx context.Context, workerBaseStore *basestore.Store, i
 			}
 			now := time.Now
 
-			var multi error
-
-			log15.Info("enqueuing indexed insight recordings")
-			// this job will do the work of both recording (permanent) queries, and snapshot (ephemeral) queries. We want to try both, so if either has a soft-failure we will attempt both.
-			recordingSeries, err := insightStore.GetDataSeries(ctx, store.GetDataSeriesArgs{NextRecordingBefore: now()})
-			if err != nil {
-				return errors.Wrap(err, "indexed insight recorder: unable to fetch series for recordings")
-			}
-			err = enqueue(ctx, recordingSeries, store.RecordMode, insightStore.StampRecording, queryRunnerEnqueueJob)
-			if err != nil {
-				multi = multierror.Append(multi, err)
-			}
-
-			log15.Info("enqueuing indexed insight snapshots")
-			snapshotSeries, err := insightStore.GetDataSeries(ctx, store.GetDataSeriesArgs{NextSnapshotBefore: now()})
-			if err != nil {
-				return errors.Wrap(err, "indexed insight recorder: unable to fetch series for snapshots")
-			}
-			err = enqueue(ctx, snapshotSeries, store.SnapshotMode, insightStore.StampSnapshot, queryRunnerEnqueueJob)
-			if err != nil {
-				multi = multierror.Append(multi, err)
-			}
-
-			return multi
+			return discoverAndEnqueueInsights(ctx, now, insightStore, queryRunnerEnqueueJob)
 		},
 	), operation)
+}
+
+func discoverAndEnqueueInsights(
+	ctx context.Context,
+	now func() time.Time,
+	insightStore store.DataSeriesStore,
+	queryRunnerEnqueueJob func(ctx context.Context, job *queryrunner.Job) error) error {
+
+	var multi error
+
+	log15.Info("enqueuing indexed insight recordings")
+	// this job will do the work of both recording (permanent) queries, and snapshot (ephemeral) queries. We want to try both, so if either has a soft-failure we will attempt both.
+	recordingSeries, err := insightStore.GetDataSeries(ctx, store.GetDataSeriesArgs{NextRecordingBefore: now()})
+	if err != nil {
+		return errors.Wrap(err, "indexed insight recorder: unable to fetch series for recordings")
+	}
+	err = enqueue(ctx, recordingSeries, store.RecordMode, insightStore.StampRecording, queryRunnerEnqueueJob)
+	if err != nil {
+		multi = multierror.Append(multi, err)
+	}
+
+	log15.Info("enqueuing indexed insight snapshots")
+	snapshotSeries, err := insightStore.GetDataSeries(ctx, store.GetDataSeriesArgs{NextSnapshotBefore: now()})
+	if err != nil {
+		return errors.Wrap(err, "indexed insight recorder: unable to fetch series for snapshots")
+	}
+	err = enqueue(ctx, snapshotSeries, store.SnapshotMode, insightStore.StampSnapshot, queryRunnerEnqueueJob)
+	if err != nil {
+		multi = multierror.Append(multi, err)
+	}
+
+	return multi
 }
 
 func enqueue(ctx context.Context, dataSeries []types.InsightSeries, mode store.PersistMode,
