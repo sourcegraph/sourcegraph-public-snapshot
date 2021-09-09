@@ -1618,6 +1618,26 @@ func (c DBStoreTransactFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 
+// MockGitserverClient is a mock implementation of the GitserverClient
+// interface (from the package
+// github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/codeintel/janitor)
+// used for unit testing.
+type MockGitserverClient struct{}
+
+// NewMockGitserverClient creates a new mock of the GitserverClient
+// interface. All methods return zero values for all results, unless
+// overwritten.
+func NewMockGitserverClient() *MockGitserverClient {
+	return &MockGitserverClient{}
+}
+
+// NewMockGitserverClientFrom creates a new mock of the MockGitserverClient
+// interface. All methods delegate to the given implementation, unless
+// overwritten.
+func NewMockGitserverClientFrom(i GitserverClient) *MockGitserverClient {
+	return &MockGitserverClient{}
+}
+
 // MockLSIFStore is a mock implementation of the LSIFStore interface (from
 // the package
 // github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/codeintel/janitor)
