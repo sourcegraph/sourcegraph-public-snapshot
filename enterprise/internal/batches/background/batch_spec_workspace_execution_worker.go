@@ -178,7 +178,7 @@ func loadAndExtractChangesetSpecIDs(ctx context.Context, s *store.Store, id int6
 	return ids, nil
 }
 
-var ErrNoChangesetIDs = errors.New("no changeset ids found in execution logs")
+var ErrNoChangesetSpecIDs = errors.New("no changeset ids found in execution logs")
 
 func extractChangesetSpecRandIDs(logs []workerutil.ExecutionLogEntry) ([]string, error) {
 	var (
@@ -195,7 +195,7 @@ func extractChangesetSpecRandIDs(logs []workerutil.ExecutionLogEntry) ([]string,
 		}
 	}
 	if !found {
-		return randIDs, ErrNoChangesetIDs
+		return randIDs, ErrNoChangesetSpecIDs
 	}
 
 	for _, l := range strings.Split(entry.Out, "\n") {
@@ -216,7 +216,7 @@ func extractChangesetSpecRandIDs(logs []workerutil.ExecutionLogEntry) ([]string,
 		if e.Operation == operationUploadingChangesetSpecs && e.Status == "SUCCESS" {
 			rawIDs := e.Metadata.IDs
 			if len(rawIDs) == 0 {
-				return randIDs, ErrNoChangesetIDs
+				return randIDs, ErrNoChangesetSpecIDs
 			}
 
 			var randIDs []string
@@ -233,7 +233,7 @@ func extractChangesetSpecRandIDs(logs []workerutil.ExecutionLogEntry) ([]string,
 		}
 	}
 
-	return randIDs, ErrNoBatchSpecRandID
+	return randIDs, ErrNoChangesetSpecIDs
 }
 
 type changesetSpecsUploadedLogLine struct {
