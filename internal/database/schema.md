@@ -777,6 +777,7 @@ Indexes:
  last_heartbeat_at | timestamp with time zone |           |          | 
  priority          | integer                  |           | not null | 1
  cost              | integer                  |           | not null | 500
+ persist_mode      | persistmode              |           | not null | 'record'::persistmode
 Indexes:
     "insights_query_runner_jobs_pkey" PRIMARY KEY, btree (id)
     "insights_query_runner_jobs_cost_idx" btree (cost)
@@ -791,6 +792,8 @@ Referenced by:
 See [enterprise/internal/insights/background/queryrunner/worker.go:Job](https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+file:enterprise/internal/insights/background/queryrunner/worker.go+type+Job&patternType=literal)
 
 **cost**: Integer representing a cost approximation of executing this search query.
+
+**persist_mode**: The persistence level for this query. This value will determine the lifecycle of the resulting value.
 
 **priority**: Integer representing a category of priority for this query. Priority in this context is ambiguously defined for consumers to decide an interpretation.
 
@@ -2496,4 +2499,9 @@ Triggers:
 - errored
 - deleted
 - failed
+
+# Type persistmode
+
+- record
+- snapshot
 
