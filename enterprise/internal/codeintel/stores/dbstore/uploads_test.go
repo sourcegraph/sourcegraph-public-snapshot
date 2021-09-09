@@ -1058,6 +1058,90 @@ func TestUpdateDependencyNumReferences(t *testing.T) {
 	}
 }
 
+func TestSoftDeleteExpiredUploads(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+	db := dbtesting.GetDB(t)
+	store := testStore(db)
+
+	insertUploads(t, db,
+		Upload{ID: 50, State: "completed"},
+		Upload{ID: 51, State: "completed"},
+		Upload{ID: 52, State: "completed"},
+		Upload{ID: 53, State: "completed"}, // referenced by 51, 52, 54, 55, 56
+		Upload{ID: 54, State: "completed"}, // referenced by 52
+		Upload{ID: 55, State: "completed"}, // referenced by 51
+		Upload{ID: 56, State: "completed"}, // referenced by 52, 53
+	)
+	insertPackages(t, store, []lsifstore.Package{
+		{DumpID: 53, Scheme: "test", Name: "p1", Version: "1.2.3"},
+		{DumpID: 54, Scheme: "test", Name: "p2", Version: "1.2.3"},
+		{DumpID: 55, Scheme: "test", Name: "p3", Version: "1.2.3"},
+		{DumpID: 56, Scheme: "test", Name: "p4", Version: "1.2.3"},
+	})
+	insertPackageReferences(t, store, []lsifstore.PackageReference{
+		// References removed
+		{Package: lsifstore.Package{DumpID: 51, Scheme: "test", Name: "p1", Version: "1.2.3"}},
+		{Package: lsifstore.Package{DumpID: 51, Scheme: "test", Name: "p2", Version: "1.2.3"}},
+		{Package: lsifstore.Package{DumpID: 51, Scheme: "test", Name: "p3", Version: "1.2.3"}},
+		{Package: lsifstore.Package{DumpID: 52, Scheme: "test", Name: "p1", Version: "1.2.3"}},
+		{Package: lsifstore.Package{DumpID: 52, Scheme: "test", Name: "p4", Version: "1.2.3"}},
+
+		// Remaining references
+		{Package: lsifstore.Package{DumpID: 53, Scheme: "test", Name: "p4", Version: "1.2.3"}},
+		{Package: lsifstore.Package{DumpID: 54, Scheme: "test", Name: "p1", Version: "1.2.3"}},
+		{Package: lsifstore.Package{DumpID: 55, Scheme: "test", Name: "p1", Version: "1.2.3"}},
+		{Package: lsifstore.Package{DumpID: 56, Scheme: "test", Name: "p1", Version: "1.2.3"}},
+	})
+
+	if err := store.UpdateUploadRetention(context.Background(), []int{}, []int{51, 52, 53, 54}); err != nil {
+		t.Fatalf("unexpected error marking uploads as expired: %s", err)
+	}
+
+	if err := store.UpdateNumReferences(context.Background(), []int{50, 51, 52, 53, 54, 55, 56}); err != nil {
+		t.Fatalf("unexpected error updating num references: %s", err)
+	}
+
+	if count, err := store.SoftDeleteExpiredUploads(context.Background()); err != nil {
+		t.Fatalf("unexpected error soft deleting uploads: %s", err)
+	} else if count != 2 {
+		t.Fatalf("unexpected number of uploads deleted: want=%d have=%d", 2, count)
+	}
+
+	// Ensure records were deleted
+	expectedStates := map[int]string{
+		50: "completed",
+		51: "deleting",
+		52: "deleting",
+		53: "completed",
+		54: "completed",
+		55: "completed",
+		56: "completed",
+	}
+	if states, err := getUploadStates(db, 50, 51, 52, 53, 54, 55, 56); err != nil {
+		t.Fatalf("unexpected error getting states: %s", err)
+	} else if diff := cmp.Diff(expectedStates, states); diff != "" {
+		t.Errorf("unexpected upload states (-want +got):\n%s", diff)
+	}
+
+	// Ensure repository was marked as dirty
+	repositoryIDs, err := store.DirtyRepositories(context.Background())
+	if err != nil {
+		t.Fatalf("unexpected error listing dirty repositories: %s", err)
+	}
+
+	var keys []int
+	for repositoryID := range repositoryIDs {
+		keys = append(keys, repositoryID)
+	}
+	sort.Ints(keys)
+
+	if len(keys) != 1 || keys[0] != 50 {
+		t.Errorf("expected repository to be marked dirty")
+	}
+}
+
 func TestSoftDeleteOldUploads(t *testing.T) {
 	if testing.Short() {
 		t.Skip()

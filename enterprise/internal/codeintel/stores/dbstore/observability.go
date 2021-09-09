@@ -63,6 +63,7 @@ type operations struct {
 	repoName                               *observation.Operation
 	requeue                                *observation.Operation
 	requeueIndex                           *observation.Operation
+	softDeleteExpiredUploads               *observation.Operation
 	softDeleteOldUploads                   *observation.Operation
 	staleSourcedCommits                    *observation.Operation
 	updateCommitedAt                       *observation.Operation
@@ -154,6 +155,7 @@ func newOperations(observationContext *observation.Context, metrics *metrics.Ope
 		repoName:                               op("RepoName"),
 		requeue:                                op("Requeue"),
 		requeueIndex:                           op("RequeueIndex"),
+		softDeleteExpiredUploads:               op("SoftDeleteExpiredUploads"),
 		softDeleteOldUploads:                   op("SoftDeleteOldUploads"),
 		staleSourcedCommits:                    op("StaleSourcedCommits"),
 		updateCommitedAt:                       op("UpdateCommitedAt"),

@@ -906,6 +906,60 @@ SET num_references = num_references + (lu.count * %s)
 FROM locked_uploads lu WHERE lu.id = u.id
 `
 
+// SoftDeleteExpiredUploads marks upload records that are both expired and have no references
+// as deleted. The associated repositories will be marked as dirty so that their commit graphs
+// are updated in the near future.
+func (s *Store) SoftDeleteExpiredUploads(ctx context.Context) (count int, err error) {
+	ctx, traceLog, endObservation := s.operations.softDeleteExpiredUploads.WithAndLogger(ctx, &err, observation.Args{})
+	defer endObservation(1, observation.Args{})
+
+	tx, err := s.transact(ctx)
+	if err != nil {
+		return 0, err
+	}
+	defer func() { err = tx.Done(err) }()
+
+	repositories, err := scanCounts(tx.Store.Query(ctx, sqlf.Sprintf(softDeleteExpiredUploadsQuery)))
+	if err != nil {
+		return 0, err
+	}
+
+	for _, numUpdated := range repositories {
+		count += numUpdated
+	}
+	traceLog(
+		log.Int("count", count),
+		log.Int("numRepositories", len(repositories)),
+	)
+
+	for repositoryID := range repositories {
+		if err := tx.MarkRepositoryAsDirty(ctx, repositoryID); err != nil {
+			return 0, err
+		}
+	}
+
+	return count, nil
+}
+
+const softDeleteExpiredUploadsQuery = `
+-- source: enterprise/internal/codeintel/stores/dbstore/uploads.go:SoftDeleteExpiredUploads
+WITH candidates AS (
+	SELECT u.id
+	FROM lsif_uploads u
+	WHERE u.state = 'completed' AND u.expired AND u.num_references = 0
+	-- Lock these rows in a deterministic order so that we don't
+	-- deadlock with other processes updating the lsif_uploads table.
+	ORDER BY u.id FOR UPDATE
+),
+updated AS (
+	UPDATE lsif_uploads u
+	SET state = 'deleting'
+	WHERE u.id IN (SELECT id FROM candidates)
+	RETURNING u.id, u.repository_id
+)
+SELECT u.repository_id, count(*) FROM updated u GROUP BY u.repository_id
+`
+
 // SoftDeleteOldUploads marks uploads older than the given age that are not visible at the tip of the default branch
 // as deleted. The associated repositories will be marked as dirty so that their commit graphs are updated in the
 // background.
