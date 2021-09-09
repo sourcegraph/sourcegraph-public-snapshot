@@ -11,10 +11,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 )
 
-// Commit wraps a *git.Commit, lazily storing requested fields to avoid re-computing
-// expensive fields like diff. Additionally, it holds a reference to the repo so the
+// LazyCommit wraps a *git.Commit, lazily storing requested fields to avoid re-computing
+// expensive fields and dropping into cgo. Additionally, it holds a reference to the repo so the
 // commit can compute its own diff with its parent.
-type Commit struct {
+type LazyCommit struct {
 	*git.Commit
 	repo *git.Repository
 
@@ -25,7 +25,7 @@ type Commit struct {
 	message   *string        // lazily populated by Message()
 }
 
-func (c *Commit) Message() string {
+func (c *LazyCommit) Message() string {
 	if c.message != nil {
 		return *c.message
 	}
@@ -35,7 +35,7 @@ func (c *Commit) Message() string {
 }
 
 // Author returns the commit's author signature, using a cached value if it's already been called
-func (c *Commit) Author() *git.Signature {
+func (c *LazyCommit) Author() *git.Signature {
 	if c.author != nil {
 		return c.author
 	}
@@ -44,7 +44,7 @@ func (c *Commit) Author() *git.Signature {
 }
 
 // Committer returns the commit's committer signature, using a cached value if it's already been called
-func (c *Commit) Committer() *git.Signature {
+func (c *LazyCommit) Committer() *git.Signature {
 	if c.committer != nil {
 		return c.committer
 	}
@@ -53,7 +53,7 @@ func (c *Commit) Committer() *git.Signature {
 }
 
 // Parents returns the IDs for this commits parents
-func (c *Commit) Parents() []api.CommitID {
+func (c *LazyCommit) Parents() []api.CommitID {
 	parentCount := c.ParentCount()
 	res := make([]api.CommitID, 0, parentCount)
 	for i := uint(0); i < parentCount; i++ {
@@ -62,7 +62,7 @@ func (c *Commit) Parents() []api.CommitID {
 	return res
 }
 
-func (c *Commit) Diff() (Diff, error) {
+func (c *LazyCommit) Diff() (Diff, error) {
 	// If the diff has already been computed, use that
 	if c.diff != "" {
 		return c.diff, nil
@@ -131,11 +131,11 @@ func (c *Commit) Diff() (Diff, error) {
 }
 
 type CommitMatch struct {
-	*Commit
+	*LazyCommit
 	*HighlightedCommit
 }
 
-func IterCommitMatches(ctx context.Context, repoPath string, revs []RevisionSpecifier, pred CommitPredicate, fn func(*Commit, *HighlightedCommit) bool) error {
+func IterCommitMatches(ctx context.Context, repoPath string, revs []RevisionSpecifier, pred CommitPredicate, fn func(*LazyCommit, *HighlightedCommit) bool) error {
 	ctx, cancel := context.WithCancel(ctx)
 	g, ctx := errgroup.WithContext(ctx)
 
@@ -250,7 +250,7 @@ func IterCommitMatches(ctx context.Context, repoPath string, revs []RevisionSpec
 		defer cancel()
 		for resultChan := range resultChans {
 			for result := range resultChan {
-				if !fn(result.Commit, result.HighlightedCommit) {
+				if !fn(result.LazyCommit, result.HighlightedCommit) {
 					return nil
 				}
 			}
@@ -281,7 +281,7 @@ func (j searchJob) Run(ctx context.Context, repo *git.Repository) error {
 			return err
 		}
 
-		wrappedCommit := &Commit{
+		wrappedCommit := &LazyCommit{
 			Commit: commit,
 			repo:   repo,
 		}

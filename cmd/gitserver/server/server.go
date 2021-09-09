@@ -845,7 +845,7 @@ func (s *Server) search(w http.ResponseWriter, r *http.Request, args *protocol.S
 	g.Go(func() error {
 		defer close(resultChan)
 
-		return search.IterCommitMatches(ctx, dir.Path(), args.Revisions, args.Predicate, func(match *search.Commit, highlights *search.HighlightedCommit) bool {
+		return search.IterCommitMatches(ctx, dir.Path(), args.Revisions, args.Predicate, func(match *search.LazyCommit, highlights *search.HighlightedCommit) bool {
 			res := createCommitMatch(match, highlights, args.IncludeDiff)
 			select {
 			case <-ctx.Done():
@@ -899,7 +899,7 @@ func (s *Server) search(w http.ResponseWriter, r *http.Request, args *protocol.S
 	}
 }
 
-func createCommitMatch(commit *search.Commit, highlights *search.HighlightedCommit, includeDiff bool) *protocol.CommitMatch {
+func createCommitMatch(commit *search.LazyCommit, highlights *search.HighlightedCommit, includeDiff bool) *protocol.CommitMatch {
 	cm := &protocol.CommitMatch{
 		Oid: api.CommitID(commit.Id().String()),
 
@@ -910,8 +910,16 @@ func createCommitMatch(commit *search.Commit, highlights *search.HighlightedComm
 		Parents:   commit.Parents(),
 	}
 
+	// Populate these since they might not have been populated during the search
+	if cm.Message.Content == "" {
+		cm.Message.Content = commit.Message()
+	}
+
 	if includeDiff {
 		cm.Diff = highlights.Diff
+		if cm.Diff.Content == "" {
+			cm.Diff.Content = commit.Message()
+		}
 	}
 
 	return cm
