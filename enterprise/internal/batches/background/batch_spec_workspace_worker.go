@@ -110,6 +110,10 @@ func loadAndExtractChangesetSpecIDs(ctx context.Context, s *store.Store, id int6
 	}
 
 	specs, _, err := s.ListChangesetSpecs(ctx, store.ListChangesetSpecsOpts{LimitOpts: store.LimitOpts{Limit: 0}, RandIDs: randIDs})
+	if err != nil {
+		return []int64{}, err
+	}
+
 	var ids []int64
 	for _, spec := range specs {
 		ids = append(ids, spec.ID)

@@ -17,8 +17,6 @@ import (
 	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
 )
 
-func intPtr(n int) *int { return &n }
-
 func testStoreBatchSpecWorkspaces(t *testing.T, ctx context.Context, s *Store, clock ct.Clock) {
 	repoStore := database.ReposWith(s)
 	esStore := database.ExternalServicesWith(s)
