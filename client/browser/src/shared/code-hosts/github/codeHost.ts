@@ -336,6 +336,8 @@ const searchEnhancement: CodeHost['searchEnhancement'] = {
             /** SG Base element on top of GH "All Github" element */
             const sgElement = ghElement.cloneNode(true) as HTMLElement
             sgElement.id = SEARCH_IN_SOURCEGRAPH_SELECTOR.replace('#', '')
+            sgElement.classList.remove('navigation-focus')
+            sgElement.setAttribute('aria-selected', 'false')
 
             /** Add sourcegraph logo */
             const logo = document.createElement('img')
