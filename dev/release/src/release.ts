@@ -324,8 +324,7 @@ ${trackingIssues.map(index => `- ${slackURL(index.title, index.url)}`).join('\n'
             const batchChangeURL = batchChanges.batchChangeURL(batchChange)
             const trackingIssue = await getTrackingIssue(await getAuthenticatedGitHubClient(), release)
             if (!trackingIssue) {
-                // Do not block release staging on lack of tracking issue
-                console.error(`Tracking issue for version ${release.version} not found - has it been created yet?`)
+                throw new Error(`Tracking issue for version ${release.version} not found - has it been created yet?`)
             }
 
             // default PR content
@@ -499,7 +498,11 @@ cc @${config.captainGitHubUsername}
                 // Create batch change to track changes
                 try {
                     console.log(`Creating batch change in ${batchChange.cliConfig.SRC_ENDPOINT}`)
-                    await batchChanges.createBatchChange(createdChanges, batchChange)
+                    await batchChanges.createBatchChange(
+                        createdChanges,
+                        batchChange,
+                        `Track publishing of sourcegraph v${release.version}: ${trackingIssue?.url}`
+                    )
                 } catch (error) {
                     console.error(error)
                     console.error('Failed to create batch change for this release, continuing with announcement')
@@ -684,7 +687,11 @@ ${patchRequestIssues.map(issue => `* #${issue.number}`).join('\n')}`
                 cliConfig: await batchChanges.sourcegraphCLIConfig(),
             }
 
-            await batchChanges.createBatchChange(batchChangeConfig.changes, batchChange)
+            await batchChanges.createBatchChange(
+                batchChangeConfig.changes,
+                batchChange,
+                'release tool testing batch change'
+            )
             console.log(`Created batch change ${batchChanges.batchChangeURL(batchChange)}`)
         },
     },
