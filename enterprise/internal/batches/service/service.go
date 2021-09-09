@@ -155,24 +155,11 @@ func (s *Service) EnqueueBatchSpecResolution(ctx context.Context, opts EnqueueBa
 		tr.Finish()
 	}()
 
-	tx, err := s.store.Transact(ctx)
-	if err != nil {
-		return err
-	}
-	defer func() { err = tx.Done(err) }()
-
-	spec, err := tx.GetBatchSpec(ctx, store.GetBatchSpecOpts{ID: opts.BatchSpecID})
-	if err != nil {
-		return err
-	}
-
-	resolution := &btypes.BatchSpecResolutionJob{
-		BatchSpecID:      spec.ID,
+	return s.store.CreateBatchSpecResolutionJob(ctx, &btypes.BatchSpecResolutionJob{
+		BatchSpecID:      opts.BatchSpecID,
 		AllowIgnored:     opts.AllowIgnored,
 		AllowUnsupported: opts.AllowUnsupported,
-	}
-
-	return tx.CreateBatchSpecResolutionJob(ctx, resolution)
+	})
 }
 
 // CreateChangesetSpec validates the given raw spec input and creates the ChangesetSpec.
