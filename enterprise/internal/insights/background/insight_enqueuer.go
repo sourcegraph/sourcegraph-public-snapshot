@@ -37,7 +37,7 @@ func newInsightEnqueuer(ctx context.Context, workerBaseStore *basestore.Store, i
 		Metrics: metrics,
 	})
 
-	// Note: We run this goroutine once every 10 minutes, and StalledMaxAge in queryrunner/ is
+	// Note: We run this goroutine once every hour, and StalledMaxAge in queryrunner/ is
 	// set to 60s. If you change this, make sure the StalledMaxAge is less than this period
 	// otherwise there is a fair chance we could enqueue work faster than it can be completed.
 	//
