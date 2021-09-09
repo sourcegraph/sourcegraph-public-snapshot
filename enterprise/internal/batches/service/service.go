@@ -64,7 +64,7 @@ type CreateBatchSpecOpts struct {
 // CreateBatchSpec creates the BatchSpec.
 func (s *Service) CreateBatchSpec(ctx context.Context, opts CreateBatchSpecOpts) (spec *btypes.BatchSpec, err error) {
 	actor := actor.FromContext(ctx)
-	tr, ctx := trace.New(ctx, "Service.CreateBatchSpec", fmt.Sprintf("Actor %s", actor))
+	tr, ctx := trace.New(ctx, "Service.CreateBatchSpec", fmt.Sprintf("Actor %d", actor.UID))
 	defer func() {
 		tr.SetError(err)
 		tr.Finish()
@@ -149,7 +149,7 @@ type EnqueueBatchSpecResolutionOpts struct {
 // EnqueueBatchSpecResolution creates a pending BatchSpec that will be picked up by a worker in the background.
 func (s *Service) EnqueueBatchSpecResolution(ctx context.Context, opts EnqueueBatchSpecResolutionOpts) (err error) {
 	actor := actor.FromContext(ctx)
-	tr, ctx := trace.New(ctx, "Service.EnqueueBatchSpecResolution", fmt.Sprintf("Actor %s", actor))
+	tr, ctx := trace.New(ctx, "Service.EnqueueBatchSpecResolution", fmt.Sprintf("Actor %d", actor.UID))
 	defer func() {
 		tr.SetError(err)
 		tr.Finish()
