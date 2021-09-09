@@ -67,10 +67,11 @@ func (j *janitorJob) Routines(ctx context.Context) ([]goroutine.BackgroundRoutin
 		janitor.NewIndexResetter(indexWorkerStore, janitorConfigInst.CleanupTaskInterval, metrics, observationContext),
 		janitor.NewDependencyIndexResetter(dependencyIndexStore, janitorConfigInst.CleanupTaskInterval, metrics, observationContext),
 		janitor.NewUnknownCommitJanitor(dbStoreShim, janitorConfigInst.CommitResolverMinimumTimeSinceLastCheck, janitorConfigInst.CommitResolverBatchSize, janitorConfigInst.CommitResolverTaskInterval, metrics),
+		janitor.NewUploadExpirer(dbStoreShim, gitserverClient, janitorConfigInst.RepositoryProcessDelay, janitorConfigInst.RepositoryBatchSize, janitorConfigInst.UploadProcessDelay, janitorConfigInst.UploadBatchSize, janitorConfigInst.CleanupTaskInterval, metrics),
 	}
 
 	if !envvar.SourcegraphDotComMode() {
-		routines = append(routines, janitor.NewUploadExpirer(dbStoreShim, janitorConfigInst.DataTTL, janitorConfigInst.CleanupTaskInterval, metrics))
+		routines = append(routines, janitor.NewRecordExpirer(dbStoreShim, janitorConfigInst.DataTTL, janitorConfigInst.CleanupTaskInterval, metrics))
 	}
 
 	return routines, nil
