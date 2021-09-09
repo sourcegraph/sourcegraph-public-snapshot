@@ -52,8 +52,8 @@ func isAllowedRootFile(p string) bool {
 	return filepath.Dir(p) == "." && !contains(ignoredRootFiles, p)
 }
 
-// Run Storybook workflow only if related files were changed.
-func (c Config) isStorybookAffected() bool {
+// Check if files that affect client code were changed. Used to detect if we need to run Puppeteer or Chromatic tests.
+func (c Config) isClientAffected() bool {
 	for _, p := range c.changedFiles {
 		if !strings.HasSuffix(p, ".md") && (strings.HasPrefix(p, "client/") || isAllowedRootFile(p)) {
 			return true

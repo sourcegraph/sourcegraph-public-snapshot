@@ -520,7 +520,7 @@ export interface RegisteredProvider<T> {
 
 // TODO (loic, felix) it might make sense to port tests with the rest of provider registries.
 /**
- * Filt ers a list of Providers (P type) based on their selectors and a document
+ * Filters a list of Providers (P type) based on their selectors and a document
  *
  * @param document to use for filtering
  * @param entries array of providers (P[])

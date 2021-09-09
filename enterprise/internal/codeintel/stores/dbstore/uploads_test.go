@@ -962,6 +962,37 @@ func TestRepositoryIDsForRetentionScan(t *testing.T) {
 	}
 }
 
+func TestUpdateUploadRetention(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+	db := dbtesting.GetDB(t)
+	store := testStore(db)
+
+	insertUploads(t, db,
+		Upload{ID: 1, State: "completed"},
+		Upload{ID: 2, State: "completed"},
+		Upload{ID: 3, State: "completed"},
+		Upload{ID: 4, State: "completed"},
+		Upload{ID: 5, State: "completed"},
+	)
+
+	now := timeutil.Now()
+
+	if err := store.updateUploadRetention(context.Background(), []int{}, []int{2, 3, 4}, now); err != nil {
+		t.Fatalf("unexpected error marking uploads as expired: %s", err)
+	}
+
+	count, _, err := basestore.ScanFirstInt(db.Query(`SELECT COUNT(*) FROM lsif_uploads WHERE expired`))
+	if err != nil {
+		t.Fatalf("unexpected error counting uploads: %s", err)
+	}
+
+	if count != 3 {
+		t.Fatalf("unexpected count. want=%d have=%d", 3, count)
+	}
+}
+
 func TestUpdateNumReferences(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
