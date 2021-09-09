@@ -1,5 +1,4 @@
 import { useCallback, useContext, useMemo } from 'react'
-import { tap } from 'rxjs/operators'
 
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
 
@@ -28,8 +27,7 @@ export const useTemporarySetting = <K extends keyof TemporarySettings>(
 
     const updatedValue = useObservable(
         useMemo(
-            () =>
-                temporarySettings.get(key, defaultValue).pipe(tap(value => console.log('useTemporarySetting', value))),
+            () => temporarySettings.get(key, defaultValue),
             // 'defaultValue' should not be a dependency, otherwise the
             // observable would be recomputed if the caller used e.g. an object
             // literal as default value. 'useTemporarySetting' works more like

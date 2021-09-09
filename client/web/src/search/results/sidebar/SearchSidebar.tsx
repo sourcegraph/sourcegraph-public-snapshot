@@ -51,7 +51,6 @@ export enum SectionID {
 export const SearchSidebar: React.FunctionComponent<SearchSidebarProps> = props => {
     const history = useHistory()
     const [collapsedSections, setCollapsedSections] = useTemporarySetting('search.collapsedSidebarSections', {})
-    console.log('collapsedSections', collapsedSections)
 
     const onFilterClicked = useCallback(
         (value: string) => {

@@ -476,7 +476,7 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
             <ApolloProvider client={graphqlClient}>
                 <ErrorBoundary location={null}>
                     <ShortcutProvider>
-                        <TemporarySettingsProvider authenticatedUser={authenticatedUser}>
+                        <TemporarySettingsProvider isAuthenticatedUser={window.context?.isAuthenticatedUser}>
                             <Router history={history} key={0}>
                                 <Route
                                     path="/"

@@ -1,71 +1,54 @@
 import { ApolloClient, gql } from '@apollo/client'
-import { Observable, Subject, of, Subscription, from, merge } from 'rxjs'
-import { distinctUntilKeyChanged, map, startWith, tap, shareReplay, switchMap } from 'rxjs/operators'
+import { Observable, Subject, of, Subscription, from } from 'rxjs'
+import { distinctUntilKeyChanged, map, startWith } from 'rxjs/operators'
 
-import { AuthenticatedUser } from '../../auth'
 import { GetTemporarySettingsResult } from '../../graphql-operations'
 
 import { TemporarySettings } from './TemporarySettings'
 
 export class TemporarySettingsStorage {
-    private authenticatedUser: AuthenticatedUser | null = null
     private settingsBackend: SettingsBackend = new LocalStorageSettingsBackend()
     private settings: TemporarySettings = {}
-    private onSettingsChange = new Subject<TemporarySettings>()
-    private onBackendChange = new Subject<SettingsBackend>()
-    private onChange = merge(
-        this.onBackendChange.pipe(
-            tap(backend => {
-                this.saveSubscription?.unsubscribe()
-                this.settingsBackend = backend
-            }),
-            switchMap(backend => backend.load())
-        ),
-        this.onSettingsChange
-    ).pipe(
-        tap(settings => {
-            this.settings = settings
-        }),
-        shareReplay(1)
-    )
-    private settingsSubscription = this.onChange.subscribe()
+
+    private onChange = new Subject<TemporarySettings>()
+
+    private loadSubscription: Subscription | null = null
     private saveSubscription: Subscription | null = null
 
     public dispose(): void {
+        this.loadSubscription?.unsubscribe()
         this.saveSubscription?.unsubscribe()
-        this.settingsSubscription.unsubscribe()
     }
 
-    constructor(private apolloClient: ApolloClient<object> | null, authenticatedUser: AuthenticatedUser | null) {
-        this.setAuthenticatedUser(authenticatedUser)
-    }
-
-    public setAuthenticatedUser(user: AuthenticatedUser | null): void {
-        if (this.authenticatedUser !== user) {
-            this.authenticatedUser = user
-
-            if (this.authenticatedUser) {
-                if (!this.apolloClient) {
-                    throw new Error('Apollo-Client should be initialized for authenticated user')
-                }
-
-                this.onBackendChange.next(new ServersideSettingsBackend(this.apolloClient))
-            } else {
-                this.onBackendChange.next(new LocalStorageSettingsBackend())
+    constructor(private apolloClient: ApolloClient<object> | null, isAuthenticatedUser: boolean) {
+        if (isAuthenticatedUser) {
+            if (!this.apolloClient) {
+                throw new Error('Apollo-Client should be initialized for authenticated user')
             }
+
+            this.setSettingsBackend(new ServersideSettingsBackend(this.apolloClient))
+        } else {
+            this.setSettingsBackend(new LocalStorageSettingsBackend())
         }
     }
 
     // This is public for testing purposes only so mocks can be provided.
     public setSettingsBackend(backend: SettingsBackend): void {
+        this.loadSubscription?.unsubscribe()
         this.saveSubscription?.unsubscribe()
-        this.onBackendChange.next(backend)
+
+        this.settingsBackend = backend
+
+        this.loadSubscription = this.settingsBackend.load().subscribe(settings => {
+            this.settings = settings
+            this.onChange.next(settings)
+        })
     }
 
     public set<K extends keyof TemporarySettings>(key: K, value: TemporarySettings[K]): void {
         this.settings[key] = value
+        this.onChange.next(this.settings)
         this.saveSubscription = this.settingsBackend.save(this.settings).subscribe()
-        this.onSettingsChange.next(this.settings)
     }
 
     public get<K extends keyof TemporarySettings>(
@@ -74,7 +57,8 @@ export class TemporarySettingsStorage {
     ): Observable<TemporarySettings[K]> {
         return this.onChange.pipe(
             distinctUntilKeyChanged(key),
-            map(settings => (key in settings ? settings[key] : defaultValue))
+            map(settings => (key in settings ? settings[key] : defaultValue)),
+            startWith(this.settings[key])
         )
     }
 }
