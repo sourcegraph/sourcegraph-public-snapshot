@@ -129,8 +129,8 @@ func CreateDBWorkerStore(s *basestore.Store, observationContext *observation.Con
 		// If you change this, be sure to adjust the interval that work is enqueued in
 		// enterprise/internal/insights/background:newInsightEnqueuer.
 		StalledMaxAge:     60 * time.Second,
-		RetryAfter:        10 * time.Second,
-		MaxNumRetries:     3,
+		RetryAfter:        30 * time.Minute,
+		MaxNumRetries:     100,
 		OrderByExpression: sqlf.Sprintf("priority, id"),
 	}, observationContext)
 }
