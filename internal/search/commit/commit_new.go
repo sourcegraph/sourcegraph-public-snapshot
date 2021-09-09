@@ -54,8 +54,11 @@ func searchInReposNew(ctx context.Context, db dbutil.DB, textParams *search.Text
 
 		g.Go(func() error {
 			limitHit, err := gitserver.DefaultClient.Search(ctx, args, onMatches)
-			_ = limitHit
-			// TODO(camdencheek) use limitHit
+			params.ResultChannel.Send(streaming.SearchEvent{
+				Stats: streaming.Stats{
+					IsLimitHit: limitHit,
+				},
+			})
 			return err
 		})
 	}
