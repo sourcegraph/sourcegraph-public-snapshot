@@ -3,6 +3,8 @@ package protocol
 import (
 	"time"
 
+	"github.com/cockroachdb/errors"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/search"
 )
@@ -20,6 +22,13 @@ type SearchEventMatches []CommitMatch
 type SearchEventDone struct {
 	LimitHit bool
 	Error    string
+}
+
+func (s SearchEventDone) Err() error {
+	if s.Error != "" {
+		return errors.New(s.Error)
+	}
+	return nil
 }
 
 func NewSearchEventDone(limitHit bool, err error) SearchEventDone {

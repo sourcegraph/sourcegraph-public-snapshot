@@ -298,8 +298,10 @@ func (c *Client) Search(ctx context.Context, args *protocol.SearchRequest, onMat
 	}
 	defer resp.Body.Close()
 
-	var decodeErr error
-	var eventDone protocol.SearchEventDone
+	var (
+		decodeErr error
+		eventDone protocol.SearchEventDone
+	)
 	dec := StreamSearchDecoder{
 		OnMatches: func(e protocol.SearchEventMatches) {
 			onMatches(e)
@@ -320,12 +322,7 @@ func (c *Client) Search(ctx context.Context, args *protocol.SearchRequest, onMat
 		return false, decodeErr
 	}
 
-	var doneErr error
-	if eventDone.Error != "" {
-		doneErr = errors.New(eventDone.Error)
-	}
-
-	return eventDone.LimitHit, doneErr
+	return eventDone.LimitHit, eventDone.Err()
 }
 
 // P4Exec sends a p4 command with given arguments and returns an io.ReadCloser for the output.
