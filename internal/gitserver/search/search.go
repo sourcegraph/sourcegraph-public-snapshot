@@ -135,8 +135,8 @@ type CommitMatch struct {
 	*HighlightedCommit
 }
 
-func IterCommitMatches(ctx context.Context, repoPath string, revs []RevisionSpecifier, pred CommitPredicate, fn func(*LazyCommit, *HighlightedCommit) bool) error {
-	ctx, cancel := context.WithCancel(ctx)
+func IterCommitMatches(repoPath string, revs []RevisionSpecifier, pred CommitPredicate, fn func(*LazyCommit, *HighlightedCommit) bool) error {
+	ctx, cancel := context.WithCancel(context.Background())
 	g, ctx := errgroup.WithContext(ctx)
 
 	var (
