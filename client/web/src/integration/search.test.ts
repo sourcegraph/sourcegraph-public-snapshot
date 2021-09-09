@@ -33,9 +33,17 @@ const mockDefaultStreamEvents: SearchEvent[] = [
         data: [
             { label: 'archived:yes', value: 'archived:yes', count: 5, kind: 'generic', limitHit: true },
             { label: 'fork:yes', value: 'fork:yes', count: 46, kind: 'generic', limitHit: true },
+            // Two repo filters to trigger the repository sidebar section
             {
                 label: 'github.com/Algorilla/manta-ray',
                 value: 'repo:^github\\.com/Algorilla/manta-ray$',
+                count: 1,
+                kind: 'repo',
+                limitHit: true,
+            },
+            {
+                label: 'github.com/Algorilla/manta-ray2',
+                value: 'repo:^github\\.com/Algorilla/manta-ray2$',
                 count: 1,
                 kind: 'repo',
                 limitHit: true,
@@ -54,20 +62,6 @@ const commonSearchGraphQLResults: Partial<WebGraphQlOperations & SharedGraphQlOp
     }),
     RepoGroups: (): RepoGroupsResult => ({
         repoGroups: [],
-    }),
-    SearchSidebarGitRefs: () => ({
-        repository: {
-            __typename: 'Repository',
-            id: 'repo',
-            gitRefs: {
-                __typename: 'GitRefConnection',
-                nodes: [],
-                pageInfo: {
-                    hasNextPage: false,
-                },
-                totalCount: 0,
-            },
-        },
     }),
 }
 
