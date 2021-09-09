@@ -772,7 +772,6 @@ func (s *Server) handleSearch(w http.ResponseWriter, r *http.Request) {
 	search.RegisterGob()
 	var req protocol.SearchRequest
 	if err := gob.NewDecoder(r.Body).Decode(&req); err != nil {
-		println(err.Error())
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
