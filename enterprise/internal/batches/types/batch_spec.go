@@ -43,9 +43,6 @@ func (cs *BatchSpec) Clone() *BatchSpec {
 	return &cc
 }
 
-// RecordID is needed to implement the workerutil.Record interface.
-func (bs *BatchSpec) RecordID() int { return int(bs.ID) }
-
 // BatchSpecTTL specifies the TTL of BatchSpecs that haven't been applied
 // yet. It's set to 1 week.
 const BatchSpecTTL = 7 * 24 * time.Hour
