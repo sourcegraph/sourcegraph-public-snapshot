@@ -122,6 +122,13 @@ func RequestSource(ctx context.Context) SourceType {
 	return v.(SourceType)
 }
 
+// slowPaths is a list of endpoints that are slower than the average and for
+// which we only want to log a message if the duration is slower than the
+// threshold here.
+var slowPaths = map[string]time.Duration{
+	"/repo-update": 5 * time.Second,
+}
+
 // HTTPTraceMiddleware captures and exports metrics to Prometheus, etc.
 //
 // 🚨 SECURITY: This handler is served to all clients, even on private servers to clients who have
@@ -209,6 +216,9 @@ func HTTPTraceMiddleware(next http.Handler) http.Handler {
 		if minDuration == 0 {
 			minDuration = time.Second
 		}
+		if customDuration, ok := slowPaths[r.URL.Path]; ok {
+			minDuration = customDuration
+		}
 
 		if m.Duration >= minDuration || m.Code >= minCode {
 			kvs := make([]interface{}, 0, 20)
@@ -234,8 +244,14 @@ func HTTPTraceMiddleware(next http.Handler) http.Handler {
 			if gqlErr {
 				kvs = append(kvs, "graphql_error", gqlErr)
 			}
-
-			log15.Warn("http", kvs...)
+			var parts []string
+			if m.Duration >= minDuration {
+				parts = append(parts, "slow http request")
+			}
+			if m.Code >= minCode {
+				parts = append(parts, "unexpected status code")
+			}
+			log15.Warn(strings.Join(parts, ", "), kvs...)
 		}
 
 		// Notify sentry if the status code indicates our system had an error (e.g. 5xx).

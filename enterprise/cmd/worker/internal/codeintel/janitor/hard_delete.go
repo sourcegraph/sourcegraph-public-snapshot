@@ -42,8 +42,9 @@ const uploadsBatchSize = 100
 
 func (d *hardDeleter) Handle(ctx context.Context) error {
 	options := store.GetUploadsOptions{
-		State: "deleted",
-		Limit: uploadsBatchSize,
+		State:        "deleted",
+		Limit:        uploadsBatchSize,
+		AllowExpired: true,
 	}
 
 	for {

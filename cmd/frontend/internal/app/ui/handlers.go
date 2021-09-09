@@ -112,7 +112,7 @@ var mockNewCommon func(w http.ResponseWriter, r *http.Request, title string, ser
 // In the event of the repository having been renamed, the request is handled
 // by newCommon and nil, nil is returned. Basic usage looks like:
 //
-// 	common, err := newCommon(w, r, serveError)
+// 	common, err := newCommon(w, r, noIndex, serveError)
 // 	if err != nil {
 // 		return err
 // 	}
@@ -122,7 +122,7 @@ var mockNewCommon func(w http.ResponseWriter, r *http.Request, title string, ser
 //
 // In the case of a repository that is cloning, a Common data structure is
 // returned but it has an incomplete RevSpec.
-func newCommon(w http.ResponseWriter, r *http.Request, title string, serveError serveErrorHandler) (*Common, error) {
+func newCommon(w http.ResponseWriter, r *http.Request, title string, indexed bool, serveError serveErrorHandler) (*Common, error) {
 	if mockNewCommon != nil {
 		return mockNewCommon(w, r, title, serveError)
 	}
@@ -130,6 +130,10 @@ func newCommon(w http.ResponseWriter, r *http.Request, title string, serveError 
 	manifest, err := assets.LoadWebpackManifest()
 	if err != nil {
 		return nil, errors.Wrap(err, "loading webpack manifest")
+	}
+
+	if !indexed {
+		w.Header().Set("X-Robots-Tag", "noindex")
 	}
 
 	common := &Common{
@@ -263,15 +267,20 @@ func newCommon(w http.ResponseWriter, r *http.Request, title string, serveError 
 
 type handlerFunc func(w http.ResponseWriter, r *http.Request) error
 
-func serveBrandedPageString(titles string, description *string) handlerFunc {
+const (
+	index   = true
+	noIndex = false
+)
+
+func serveBrandedPageString(titles string, description *string, indexed bool) handlerFunc {
 	return serveBasicPage(func(c *Common, r *http.Request) string {
 		return brandNameSubtitle(titles)
-	}, description)
+	}, description, indexed)
 }
 
-func serveBasicPage(title func(c *Common, r *http.Request) string, description *string) handlerFunc {
+func serveBasicPage(title func(c *Common, r *http.Request) string, description *string, indexed bool) handlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) error {
-		common, err := newCommon(w, r, "", serveError)
+		common, err := newCommon(w, r, "", indexed, serveError)
 		if err != nil {
 			return err
 		}
@@ -287,7 +296,7 @@ func serveBasicPage(title func(c *Common, r *http.Request) string, description *
 }
 
 func serveHome(w http.ResponseWriter, r *http.Request) error {
-	common, err := newCommon(w, r, globals.Branding().BrandName, serveError)
+	common, err := newCommon(w, r, globals.Branding().BrandName, index, serveError)
 	if err != nil {
 		return err
 	}
@@ -302,7 +311,7 @@ func serveHome(w http.ResponseWriter, r *http.Request) error {
 }
 
 func serveSignIn(w http.ResponseWriter, r *http.Request) error {
-	common, err := newCommon(w, r, "", serveError)
+	common, err := newCommon(w, r, "", index, serveError)
 	if err != nil {
 		return err
 	}
@@ -359,12 +368,20 @@ func redirectTreeOrBlob(routeName, path string, common *Common, w http.ResponseW
 // serveTree serves the tree (directory) pages.
 func serveTree(title func(c *Common, r *http.Request) string) handlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) error {
-		common, err := newCommon(w, r, "", serveError)
+		common, err := newCommon(w, r, "", index, serveError)
 		if err != nil {
 			return err
 		}
 		if common == nil {
 			return nil // request was handled
+		}
+
+		// File, directory, and repository pages with a revision ("@foobar") should not be indexed, only
+		// the default revision should be indexed. Leading people to such pages through Google is harmful
+		// as the person is often looking for a specific file/dir/repository and the indexed commit or
+		// branch is outdated, leading to them getting the wrong result.
+		if common.Rev != "" {
+			w.Header().Set("X-Robots-Tag", "noindex")
 		}
 
 		handled, err := redirectTreeOrBlob(routeTree, mux.Vars(r)["Path"], common, w, r)
@@ -382,12 +399,20 @@ func serveTree(title func(c *Common, r *http.Request) string) handlerFunc {
 
 func serveRepoOrBlob(routeName string, title func(c *Common, r *http.Request) string) handlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) error {
-		common, err := newCommon(w, r, "", serveError)
+		common, err := newCommon(w, r, "", index, serveError)
 		if err != nil {
 			return err
 		}
 		if common == nil {
 			return nil // request was handled
+		}
+
+		// File, directory, and repository pages with a revision ("@foobar") should not be indexed, only
+		// the default revision should be indexed. Leading people to such pages through Google is harmful
+		// as the person is often looking for a specific file/dir/repository and the indexed commit or
+		// branch is outdated, leading to them getting the wrong result.
+		if common.Rev != "" {
+			w.Header().Set("X-Robots-Tag", "noindex")
 		}
 
 		handled, err := redirectTreeOrBlob(routeName, mux.Vars(r)["Path"], common, w, r)

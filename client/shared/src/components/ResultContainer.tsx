@@ -4,10 +4,11 @@ import ArrowCollapseUpIcon from 'mdi-react/ArrowCollapseUpIcon'
 import ArrowExpandDownIcon from 'mdi-react/ArrowExpandDownIcon'
 import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
 import ChevronLeftIcon from 'mdi-react/ChevronLeftIcon'
-import StarIcon from 'mdi-react/StarIcon'
 import React, { useEffect, useState } from 'react'
 
 import { formatRepositoryStarCount } from '@sourcegraph/shared/src/util/stars'
+
+import { SearchResultStar } from './SearchResultStar'
 
 export interface Props {
     /**
@@ -160,7 +161,7 @@ export const ResultContainer: React.FunctionComponent<Props> = ({
                 )}
                 {formattedRepositoryStarCount && (
                     <>
-                        <StarIcon className="search-result__star" />
+                        <SearchResultStar />
                         {formattedRepositoryStarCount}
                     </>
                 )}

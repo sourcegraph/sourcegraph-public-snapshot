@@ -15,6 +15,7 @@ import {
     toAbsoluteBlobURL,
 } from '@sourcegraph/shared/src/util/url'
 
+import LogoSVG from '../../../../assets/img/sourcegraph-mark.svg'
 import { fetchBlobContentLines } from '../../repo/backend'
 import { querySelectorAllOrSelf, querySelectorOrSelf } from '../../util/dom'
 import { CodeHost, MountGetter } from '../shared/codeHost'
@@ -318,9 +319,63 @@ const notificationClassNames = {
     [NotificationType.Error]: 'flash flash-error',
 }
 
+const searchEnhancement: CodeHost['searchEnhancement'] = {
+    searchViewResolver: {
+        selector: '.js-site-search-form input[type="text"]',
+        resolveView: element => ({ element }),
+    },
+    resultViewResolver: {
+        selector: '#jump-to-suggestion-search-global',
+        resolveView: element => ({ element }),
+    },
+    onChange: ({ value, searchURL, resultElement: ghElement }) => {
+        const SEARCH_IN_SOURCEGRAPH_SELECTOR = '#jump-to-sourcegraph-search-global'
+
+        /** Create "Search in Sourcegraph" element based on GH element */
+        const createElement = (): HTMLElement => {
+            /** SG Base element on top of GH "All Github" element */
+            const sgElement = ghElement.cloneNode(true) as HTMLElement
+            sgElement.id = SEARCH_IN_SOURCEGRAPH_SELECTOR.replace('#', '')
+            sgElement.classList.remove('navigation-focus')
+            sgElement.setAttribute('aria-selected', 'false')
+
+            /** Add sourcegraph logo */
+            const logo = document.createElement('img')
+            logo.src = LogoSVG
+            logo.setAttribute('style', 'width: 16px; height: 20px; float: left; margin-right: 2px;')
+            logo.setAttribute('alt', 'Sourcegraph Logo Image')
+
+            /** Update badge text */
+            const badge = sgElement.querySelector('.js-jump-to-badge-search-text-global') as HTMLElement
+            badge.textContent = 'Sourcegraph'
+            badge.parentNode?.insertBefore(logo, badge)
+
+            /** Add sourcegraph item after GH item */
+            return ghElement.parentNode?.insertBefore(sgElement, ghElement.nextElementSibling) as HTMLElement
+        }
+
+        /** Update link and display value */
+        const updateContent = (sgElement: HTMLElement): void => {
+            const displayValue = sgElement.querySelector<HTMLElement>('.jump-to-suggestion-name') as HTMLElement
+            displayValue.textContent = value
+            displayValue.setAttribute('aria-label', value)
+
+            const link = sgElement.querySelector<HTMLElement>('a') as HTMLLinkElement
+            const url = new URL(searchURL)
+            url.searchParams.append('q', value)
+            link.setAttribute('href', url.href)
+            link.setAttribute('target', '_blank')
+            sgElement.setAttribute('style', `display: ${value ? 'initial' : 'none !important'}`)
+        }
+
+        updateContent(document.querySelector<HTMLElement>(SEARCH_IN_SOURCEGRAPH_SELECTOR) ?? createElement())
+    },
+}
+
 export const githubCodeHost: CodeHost = {
     type: 'github',
     name: checkIsGitHubEnterprise() ? 'GitHub Enterprise' : 'GitHub',
+    searchEnhancement,
     codeViewResolvers: [genericCodeViewResolver, fileLineContainerResolver, searchResultCodeViewResolver],
     contentViewResolvers: [markdownBodyViewResolver],
     nativeTooltipResolvers: [nativeTooltipResolver],

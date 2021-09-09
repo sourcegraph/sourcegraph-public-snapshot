@@ -205,14 +205,6 @@ export const routes: readonly LayoutRouteProps<any>[] = [
         render: passThroughToServer,
     },
     {
-        path: '/insights',
-        render: lazyComponent(() => import('./insights/InsightsRouter'), 'InsightsRouter'),
-        condition: props =>
-            !isErrorLike(props.settingsCascade.final) &&
-            !!props.settingsCascade.final?.experimentalFeatures?.codeInsights &&
-            props.settingsCascade.final['insights.displayLocation.insightsPage'] !== false,
-    },
-    {
         path: '/contexts',
         render: lazyComponent(() => import('./searchContexts/SearchContextsListPage'), 'SearchContextsListPage'),
         exact: true,

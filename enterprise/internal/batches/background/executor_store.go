@@ -97,7 +97,7 @@ func (s *executorStore) FetchCanceled(ctx context.Context, executorName string) 
 	batchesStore := store.New(s.Store.Handle().DB(), s.observationContext, nil)
 
 	t := true
-	cs, err := batchesStore.ListBatchSpecExecutions(ctx, store.ListBatchSpecExecutionsOpts{
+	cs, _, err := batchesStore.ListBatchSpecExecutions(ctx, store.ListBatchSpecExecutionsOpts{
 		Cancel:         &t,
 		State:          btypes.BatchSpecExecutionStateProcessing,
 		WorkerHostname: executorName,

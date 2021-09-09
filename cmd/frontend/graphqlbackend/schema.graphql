@@ -5824,9 +5824,11 @@ type ExtensionRegistry {
         """
         remote: Boolean = true
         """
+        Returns only extensions with the given IDs.
+        """
+        extensionIDs: [String!]
+        """
         Sorts the list of extension results such that the extensions with these IDs are first in the result set.
-        Typically, the client passes the list of added and enabled extension IDs in this parameter so that the
-        results include those extensions first (which is typically what the user prefers).
         """
         prioritizeExtensionIDs: [String!]
     ): RegistryExtensionConnection!
@@ -6065,9 +6067,19 @@ A description of the extension, how to run or access it, and when to activate it
 """
 type ExtensionManifest {
     """
-    The raw JSON contents of the manifest.
+    The raw JSON (or JSONC) contents of the manifest. This value may be large (because many
+    manifests contain README and icon data), and it is JSONC (not strict JSON), which means
+    it must be parsed with a JSON parser that supports trailing commas and comments. Consider
+    using jsonFields instead.
     """
     raw: String!
+    """
+    The manifest as JSON (not JSONC, even if the raw manifest is JSONC) with only the
+    specified fields. This is useful for callers that only need certain fields and want
+    to avoid fetching a large amount of data (because many manifests contain README
+    and icon data).
+    """
+    jsonFields(fields: [String!]!): JSONValue!
     """
     The description specified in the manifest, if any.
     """

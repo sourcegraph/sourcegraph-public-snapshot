@@ -15,7 +15,7 @@ import (
 
 func serveRepoDocs(codeIntelResolver graphqlbackend.CodeIntelResolver) handlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) error {
-		common, err := newCommon(w, r, "", serveError)
+		common, err := newCommon(w, r, "", index, serveError)
 		if err != nil {
 			return err
 		}
