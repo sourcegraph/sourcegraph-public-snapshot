@@ -762,9 +762,6 @@ SET last_retention_scan_at = %s
 RETURNING repository_id
 `
 
-
-
-
 // UpdateUploadRetention updates the last data retention scan timestamp on the upload
 // records with the given protected identifiers and sets the expired field on the upload
 // records with the given expired identifiers.
@@ -822,7 +819,6 @@ const updateUploadRetentionQuery = `
 -- source: enterprise/internal/codeintel/stores/dbstore/uploads.go:UpdateUploadRetention
 UPDATE lsif_uploads SET %s WHERE id IN (%s)`
 
->>>>>>> main
 // UpdateNumReferences calculates the number of existant uploads that reference any
 // of the given upload identifiers and updates the num_references field of each
 // upload.
