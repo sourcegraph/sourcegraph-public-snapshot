@@ -29,11 +29,11 @@ func newBatchSpecResolutionWorker(
 	e := &batchSpecWorkspaceCreator{store: s}
 
 	options := workerutil.WorkerOptions{
-		Name:              "batches_batch_spec_resolution_worker",
+		Name:              "batch_changes_batch_spec_resolution_worker",
 		NumHandlers:       5,
 		Interval:          5 * time.Second,
 		HeartbeatInterval: 15 * time.Second,
-		Metrics:           metrics.reconcilerWorkerMetrics,
+		Metrics:           metrics.batchSpecResolutionWorkerMetrics,
 	}
 
 	worker := dbworker.NewWorker(ctx, workerStore, e.HandlerFunc(), options)
@@ -42,9 +42,9 @@ func newBatchSpecResolutionWorker(
 
 func newBatchSpecResolutionWorkerResetter(workerStore dbworkerstore.Store, metrics batchChangesMetrics) *dbworker.Resetter {
 	options := dbworker.ResetterOptions{
-		Name:     "batches_batch_spec_resolution_worker_resetter",
+		Name:     "batch_changes_batch_spec_resolution_worker_resetter",
 		Interval: 1 * time.Minute,
-		Metrics:  metrics.batchSpecWorkerResetterMetrics,
+		Metrics:  metrics.batchSpecResolutionWorkerResetterMetrics,
 	}
 
 	resetter := dbworker.NewResetter(workerStore, options)
@@ -55,9 +55,9 @@ func scanFirstBatchSpecResolutionJobRecord(rows *sql.Rows, err error) (workeruti
 	return store.ScanFirstBatchSpecResolutionJob(rows, err)
 }
 
-func NewBatchSpecResolutionWorkerStore(handle *basestore.TransactableHandle, observationContext *observation.Context) dbworkerstore.Store {
+func newBatchSpecResolutionWorkerStore(handle *basestore.TransactableHandle, observationContext *observation.Context) dbworkerstore.Store {
 	options := dbworkerstore.Options{
-		Name:              "batches_batch_spec_resolution_worker_store",
+		Name:              "batch_changes_batch_spec_resolution_worker_store",
 		TableName:         "batch_spec_resolution_jobs",
 		ColumnExpressions: store.BatchSpecResolutionJobColums.ToSqlf(),
 		Scan:              scanFirstBatchSpecResolutionJobRecord,

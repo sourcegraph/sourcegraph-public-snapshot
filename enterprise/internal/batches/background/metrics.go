@@ -17,8 +17,8 @@ type batchChangesMetrics struct {
 	bulkProcessorWorkerResetterMetrics dbworker.ResetterMetrics
 	executionResetterMetrics           dbworker.ResetterMetrics
 
-	batchSpecWorkerMetrics         workerutil.WorkerMetrics
-	batchSpecWorkerResetterMetrics dbworker.ResetterMetrics
+	batchSpecResolutionWorkerMetrics         workerutil.WorkerMetrics
+	batchSpecResolutionWorkerResetterMetrics dbworker.ResetterMetrics
 }
 
 func newMetrics(observationContext *observation.Context) batchChangesMetrics {
@@ -29,8 +29,8 @@ func newMetrics(observationContext *observation.Context) batchChangesMetrics {
 		bulkProcessorWorkerResetterMetrics: makeResetterMetrics(observationContext, "batch_changes_bulk_processor"),
 		executionResetterMetrics:           makeResetterMetrics(observationContext, "batch_spec_executor"),
 
-		batchSpecWorkerMetrics:         workerutil.NewMetrics(observationContext, "batch_spec_worker", nil),
-		batchSpecWorkerResetterMetrics: makeResetterMetrics(observationContext, "batch_spec_worker"),
+		batchSpecResolutionWorkerMetrics:         workerutil.NewMetrics(observationContext, "batch_changes_batch_spec_resolution_worker", nil),
+		batchSpecResolutionWorkerResetterMetrics: makeResetterMetrics(observationContext, "batch_changes_batch_spec_resolution_worker_resetter"),
 	}
 }
 
