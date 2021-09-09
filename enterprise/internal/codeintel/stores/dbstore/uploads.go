@@ -705,6 +705,63 @@ const hardDeleteUploadByIDQuery = `
 DELETE FROM lsif_uploads WHERE id IN (%s)
 `
 
+// UpdateUploadRetention updates the last data retention scan timestamp on the upload
+// records with the given protected identifiers and sets the expired field on the upload
+// records with the given expired identifiers.
+func (s *Store) UpdateUploadRetention(ctx context.Context, protectedIDs, expiredIDs []int) error {
+	return s.updateUploadRetention(ctx, protectedIDs, expiredIDs, time.Now())
+}
+
+func (s *Store) updateUploadRetention(ctx context.Context, protectedIDs, expiredIDs []int, now time.Time) (err error) {
+	ctx, endObservation := s.operations.updateUploadRetention.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.Int("numProtectedIDs", len(protectedIDs)),
+		log.String("protectedIDs", intsToString(protectedIDs)),
+		log.Int("numExpiredIDs", len(expiredIDs)),
+		log.String("expiredIDs", intsToString(expiredIDs)),
+	}})
+	defer endObservation(1, observation.Args{})
+
+	// Ensure ids are sorted so that we take row locks during the UPDATE
+	// query in a determinstic order. This should prevent deadlocks with
+	// other queries that mass update lsif_uploads.
+	sort.Ints(protectedIDs)
+	sort.Ints(expiredIDs)
+
+	tx, err := s.transact(ctx)
+	if err != nil {
+		return err
+	}
+	defer func() { err = tx.Done(err) }()
+
+	if len(protectedIDs) > 0 {
+		queries := make([]*sqlf.Query, 0, len(protectedIDs))
+		for _, id := range protectedIDs {
+			queries = append(queries, sqlf.Sprintf("%s", id))
+		}
+
+		if err := tx.Exec(ctx, sqlf.Sprintf(updateUploadRetentionQuery, sqlf.Sprintf("last_retention_scan_at = %s", now), sqlf.Join(queries, ","))); err != nil {
+			return err
+		}
+	}
+
+	if len(expiredIDs) > 0 {
+		queries := make([]*sqlf.Query, 0, len(expiredIDs))
+		for _, id := range expiredIDs {
+			queries = append(queries, sqlf.Sprintf("%s", id))
+		}
+
+		if err := tx.Exec(ctx, sqlf.Sprintf(updateUploadRetentionQuery, sqlf.Sprintf("expired = TRUE"), sqlf.Join(queries, ","))); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+const updateUploadRetentionQuery = `
+-- source: enterprise/internal/codeintel/stores/dbstore/uploads.go:UpdateUploadRetention
+UPDATE lsif_uploads SET %s WHERE id IN (%s)`
+
 // UpdateNumReferences calculates the number of existant uploads that reference any
 // of the given upload identifiers and updates the num_references field of each
 // upload.
