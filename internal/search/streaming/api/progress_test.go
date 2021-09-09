@@ -1,15 +1,12 @@
 package api
 
 import (
-	"encoding/json"
 	"flag"
 	"fmt"
 	"math"
-	"os"
-	"path/filepath"
 	"testing"
 
-	"github.com/google/go-cmp/cmp"
+	"github.com/sourcegraph/sourcegraph/internal/testutil"
 )
 
 var updateGolden = flag.Bool("update", false, "Updastdata goldens")
@@ -59,49 +56,8 @@ func TestSearchProgress(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			got := BuildProgressEvent(c)
 			got.DurationMs = 0 // clear out non-deterministic field
-			AssertGolden(t, "testdata/golden/"+t.Name()+".json", *updateGolden, got)
+			testutil.AssertGolden(t, "testdata/golden/"+t.Name()+".json", *updateGolden, got)
 		})
-	}
-}
-
-// TODO(camdencheek) this is copied out of testutil, but we can't import testutil because of its dependencies on store
-func AssertGolden(t testing.TB, path string, update bool, want interface{}) {
-	t.Helper()
-
-	marshal := func(t testing.TB, v interface{}) []byte {
-		t.Helper()
-
-		switch v2 := v.(type) {
-		case string:
-			return []byte(v2)
-		case []byte:
-			return v2
-		default:
-			data, err := json.MarshalIndent(v, " ", " ")
-			if err != nil {
-				t.Fatal(err)
-			}
-			return data
-		}
-	}
-	data := marshal(t, want)
-
-	if update {
-		if err := os.MkdirAll(filepath.Dir(path), 0o700); err != nil {
-			t.Fatalf("failed to update golden file %q: %s", path, err)
-		}
-		if err := os.WriteFile(path, data, 0o640); err != nil {
-			t.Fatalf("failed to update golden file %q: %s", path, err)
-		}
-	}
-
-	golden, err := os.ReadFile(path)
-	if err != nil {
-		t.Fatalf("failed to read golden file %q: %s", path, err)
-	}
-
-	if diff := cmp.Diff(string(golden), string(data)); diff != "" {
-		t.Errorf("(-want, +got):\n%s", diff)
 	}
 }
 
