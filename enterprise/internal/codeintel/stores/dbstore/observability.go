@@ -72,6 +72,7 @@ type operations struct {
 	updateNumReferences                    *observation.Operation
 	updatePackageReferences                *observation.Operation
 	updatePackages                         *observation.Operation
+	updateUploadRetention                  *observation.Operation
 
 	persistNearestUploads      *observation.Operation
 	persistNearestUploadsLinks *observation.Operation
@@ -117,7 +118,7 @@ func newOperations(observationContext *observation.Context, metrics *metrics.Ope
 		dirtyRepositories:                      op("DirtyRepositories"),
 		findClosestDumps:                       op("FindClosestDumps"),
 		findClosestDumpsFromGraphFragment:      op("FindClosestDumpsFromGraphFragment"),
-		getAutoindexDisabledRepositories:       op("getAutoindexDisabledRepositories"),
+		getAutoindexDisabledRepositories:       op("GetAutoindexDisabledRepositories"),
 		getConfigurationPolicies:               op("GetConfigurationPolicies"),
 		getConfigurationPolicyByID:             op("GetConfigurationPolicyByID"),
 		getDumpsByIDs:                          op("GetDumpsByIDs"),
@@ -162,6 +163,7 @@ func newOperations(observationContext *observation.Context, metrics *metrics.Ope
 		updateNumReferences:                    op("UpdateNumReferences"),
 		updatePackageReferences:                op("UpdatePackageReferences"),
 		updatePackages:                         op("UpdatePackages"),
+		updateUploadRetention:                  op("UpdateUploadRetention"),
 
 		persistNearestUploads:      subOp("persistNearestUploads"),
 		persistNearestUploadsLinks: subOp("persistNearestUploadsLinks"),
