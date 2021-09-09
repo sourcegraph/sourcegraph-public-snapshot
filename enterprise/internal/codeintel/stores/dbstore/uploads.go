@@ -278,17 +278,19 @@ SELECT count(*) FROM deleted
 `
 
 type GetUploadsOptions struct {
-	RepositoryID   int
-	State          string
-	Term           string
-	VisibleAtTip   bool
-	DependencyOf   int
-	DependentOf    int
-	UploadedBefore *time.Time
-	UploadedAfter  *time.Time
-	OldestFirst    bool
-	Limit          int
-	Offset         int
+	RepositoryID            int
+	State                   string
+	Term                    string
+	VisibleAtTip            bool
+	DependencyOf            int
+	DependentOf             int
+	UploadedBefore          *time.Time
+	UploadedAfter           *time.Time
+	LastRetentionScanBefore *time.Time
+	AllowExpired            bool
+	OldestFirst             bool
+	Limit                   int
+	Offset                  int
 }
 
 // GetUploads returns a list of uploads and the total count of records matching the given conditions.
@@ -302,6 +304,8 @@ func (s *Store) GetUploads(ctx context.Context, opts GetUploadsOptions) (_ []Upl
 		log.Int("dependentOf", opts.DependentOf),
 		log.String("uploadedBefore", nilTimeToString(opts.UploadedBefore)),
 		log.String("uploadedAfter", nilTimeToString(opts.UploadedAfter)),
+		log.String("lastRetentionScanBefore", nilTimeToString(opts.LastRetentionScanBefore)),
+		log.Bool("allowExpired", opts.AllowExpired),
 		log.Bool("oldestFirst", opts.OldestFirst),
 		log.Int("limit", opts.Limit),
 		log.Int("offset", opts.Offset),
@@ -314,7 +318,7 @@ func (s *Store) GetUploads(ctx context.Context, opts GetUploadsOptions) (_ []Upl
 	}
 	defer func() { err = tx.Done(err) }()
 
-	conds := make([]*sqlf.Query, 0, 9)
+	conds := make([]*sqlf.Query, 0, 11)
 	if opts.RepositoryID != 0 {
 		conds = append(conds, sqlf.Sprintf("u.repository_id = %s", opts.RepositoryID))
 	}
@@ -350,6 +354,12 @@ func (s *Store) GetUploads(ctx context.Context, opts GetUploadsOptions) (_ []Upl
 	}
 	if opts.UploadedAfter != nil {
 		conds = append(conds, sqlf.Sprintf("u.uploaded_at > %s", *opts.UploadedAfter))
+	}
+	if opts.LastRetentionScanBefore != nil {
+		conds = append(conds, sqlf.Sprintf("(u.last_retention_scan_at IS NULL OR u.last_retention_scan_at < %s)", *opts.LastRetentionScanBefore))
+	}
+	if !opts.AllowExpired {
+		conds = append(conds, sqlf.Sprintf("NOT u.expired"))
 	}
 
 	authzConds, err := database.AuthzQueryConds(ctx, tx.Store.Handle().DB())
@@ -704,6 +714,63 @@ const hardDeleteUploadByIDQuery = `
 -- source: enterprise/internal/codeintel/stores/dbstore/uploads.go:HardDeleteUploadByID
 DELETE FROM lsif_uploads WHERE id IN (%s)
 `
+
+// UpdateUploadRetention updates the last data retention scan timestamp on the upload
+// records with the given protected identifiers and sets the expired field on the upload
+// records with the given expired identifiers.
+func (s *Store) UpdateUploadRetention(ctx context.Context, protectedIDs, expiredIDs []int) error {
+	return s.updateUploadRetention(ctx, protectedIDs, expiredIDs, time.Now())
+}
+
+func (s *Store) updateUploadRetention(ctx context.Context, protectedIDs, expiredIDs []int, now time.Time) (err error) {
+	ctx, endObservation := s.operations.updateUploadRetention.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.Int("numProtectedIDs", len(protectedIDs)),
+		log.String("protectedIDs", intsToString(protectedIDs)),
+		log.Int("numExpiredIDs", len(expiredIDs)),
+		log.String("expiredIDs", intsToString(expiredIDs)),
+	}})
+	defer endObservation(1, observation.Args{})
+
+	// Ensure ids are sorted so that we take row locks during the UPDATE
+	// query in a determinstic order. This should prevent deadlocks with
+	// other queries that mass update lsif_uploads.
+	sort.Ints(protectedIDs)
+	sort.Ints(expiredIDs)
+
+	tx, err := s.transact(ctx)
+	if err != nil {
+		return err
+	}
+	defer func() { err = tx.Done(err) }()
+
+	if len(protectedIDs) > 0 {
+		queries := make([]*sqlf.Query, 0, len(protectedIDs))
+		for _, id := range protectedIDs {
+			queries = append(queries, sqlf.Sprintf("%s", id))
+		}
+
+		if err := tx.Exec(ctx, sqlf.Sprintf(updateUploadRetentionQuery, sqlf.Sprintf("last_retention_scan_at = %s", now), sqlf.Join(queries, ","))); err != nil {
+			return err
+		}
+	}
+
+	if len(expiredIDs) > 0 {
+		queries := make([]*sqlf.Query, 0, len(expiredIDs))
+		for _, id := range expiredIDs {
+			queries = append(queries, sqlf.Sprintf("%s", id))
+		}
+
+		if err := tx.Exec(ctx, sqlf.Sprintf(updateUploadRetentionQuery, sqlf.Sprintf("expired = TRUE"), sqlf.Join(queries, ","))); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+const updateUploadRetentionQuery = `
+-- source: enterprise/internal/codeintel/stores/dbstore/uploads.go:UpdateUploadRetention
+UPDATE lsif_uploads SET %s WHERE id IN (%s)`
 
 // UpdateNumReferences calculates the number of existant uploads that reference any
 // of the given upload identifiers and updates the num_references field of each
