@@ -168,6 +168,8 @@ Foreign-key constraints:
  updated_at           | timestamp with time zone |           | not null | now()
 Indexes:
     "batch_spec_workspaces_pkey" PRIMARY KEY, btree (id)
+Check constraints:
+    "batch_spec_workspaces_steps_check" CHECK (jsonb_typeof(steps) = 'array'::text)
 Foreign-key constraints:
     "batch_spec_workspaces_batch_spec_id_fkey" FOREIGN KEY (batch_spec_id) REFERENCES batch_specs(id) ON DELETE CASCADE DEFERRABLE
     "batch_spec_workspaces_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) DEFERRABLE

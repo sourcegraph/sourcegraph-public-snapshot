@@ -12,7 +12,7 @@ CREATE TABLE IF NOT EXISTS batch_spec_workspaces (
   path                 TEXT NOT NULL,
   file_matches         TEXT[] NOT NULL,
   only_fetch_workspace BOOLEAN NOT NULL DEFAULT FALSE,
-  steps                JSONB DEFAULT '[]'::jsonb,
+  steps                JSONB DEFAULT '[]'::jsonb CHECK (jsonb_typeof(steps) = 'array'),
 
   state             TEXT DEFAULT 'pending',
   failure_message   TEXT,
