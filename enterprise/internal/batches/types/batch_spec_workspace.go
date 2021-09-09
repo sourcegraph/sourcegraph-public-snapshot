@@ -14,19 +14,20 @@ type BatchSpecWorkspaceState string
 
 // BatchSpecWorkspaceState constants.
 const (
-	BatchSpecWorkspaceStatePending BatchSpecWorkspaceState = "PENDING"
+	BatchSpecWorkspaceStatePending BatchSpecWorkspaceState = "pending"
 
-	BatchSpecWorkspaceStateQueued     BatchSpecWorkspaceState = "QUEUED"
-	BatchSpecWorkspaceStateProcessing BatchSpecWorkspaceState = "PROCESSING"
-	BatchSpecWorkspaceStateErrored    BatchSpecWorkspaceState = "ERRORED"
-	BatchSpecWorkspaceStateFailed     BatchSpecWorkspaceState = "FAILED"
-	BatchSpecWorkspaceStateCompleted  BatchSpecWorkspaceState = "COMPLETED"
+	BatchSpecWorkspaceStateQueued     BatchSpecWorkspaceState = "queued"
+	BatchSpecWorkspaceStateProcessing BatchSpecWorkspaceState = "processing"
+	BatchSpecWorkspaceStateErrored    BatchSpecWorkspaceState = "errored"
+	BatchSpecWorkspaceStateFailed     BatchSpecWorkspaceState = "failed"
+	BatchSpecWorkspaceStateCompleted  BatchSpecWorkspaceState = "completed"
 )
 
 // Valid returns true if the given BatchSpecWorkspaceState is valid.
 func (s BatchSpecWorkspaceState) Valid() bool {
 	switch s {
-	case BatchSpecWorkspaceStateQueued,
+	case BatchSpecWorkspaceStatePending,
+		BatchSpecWorkspaceStateQueued,
 		BatchSpecWorkspaceStateProcessing,
 		BatchSpecWorkspaceStateErrored,
 		BatchSpecWorkspaceStateFailed,
@@ -37,10 +38,8 @@ func (s BatchSpecWorkspaceState) Valid() bool {
 	}
 }
 
-// ToDB returns the database representation of the worker state. That's
-// needed because we want to use UPPERCASE in the application and GraphQL layer,
-// but need to use lowercase in the database to make it work with workerutil.Worker.
-func (s BatchSpecWorkspaceState) ToDB() string { return strings.ToLower(string(s)) }
+// ToGraphQL returns the GraphQL representation of the worker state.
+func (s BatchSpecWorkspaceState) ToGraphQL() string { return strings.ToUpper(string(s)) }
 
 type BatchSpecWorkspace struct {
 	ID int64
