@@ -35,6 +35,10 @@ export const ExtensionViewsHomepageSection: React.FunctionComponent<ExtensionVie
             )
         ) ?? []
 
+    if (!showCodeInsights) {
+        return null
+    }
+
     return (
         <ViewGrid
             viewIds={extensionViews.map(view => view.id)}
