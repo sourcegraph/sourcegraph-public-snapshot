@@ -16,6 +16,7 @@ import { Timestamp } from '../components/time/Timestamp'
 import { eventLogger } from '../tracking/eventLogger'
 
 import { fetchSiteUsageStatistics, fetchUserUsageStatistics } from './backend'
+import styles from './SiteAdminUsageStatisticsPage.module.scss'
 
 interface ChartData {
     label: string
@@ -60,7 +61,7 @@ export const UsageChart: React.FunctionComponent<UsageChartPageProps> = (props: 
                 },
             }))}
         />
-        <small className="site-admin-usage-statistics-page__tz-note">
+        <small className={styles.tzNote}>
             <i>GMT/UTC time</i>
         </small>
     </div>
@@ -79,10 +80,8 @@ class UserUsageStatisticsHeader extends React.PureComponent<UserUsageStatisticsH
                     <th>Page views</th>
                     <th>Search queries</th>
                     <th>Code intelligence actions</th>
-                    <th className="site-admin-usage-statistics-page__date-column">Last active</th>
-                    <th className="site-admin-usage-statistics-page__date-column">
-                        Last active in code host or code review
-                    </th>
+                    <th className={styles.dateColumn}>Last active</th>
+                    <th className={styles.dateColumn}>Last active in code host or code review</th>
                 </tr>
             </thead>
         )
@@ -114,8 +113,8 @@ class UserUsageStatisticsFooter extends React.PureComponent<UserUsageStatisticsH
                             0
                         )}
                     </td>
-                    <td className="site-admin-usage-statistics-page__date-column" />
-                    <td className="site-admin-usage-statistics-page__date-column" />
+                    <td className={styles.dateColumn} />
+                    <td className={styles.dateColumn} />
                 </tr>
             </tfoot>
         )
@@ -139,14 +138,14 @@ class UserUsageStatisticsNode extends React.PureComponent<UserUsageStatisticsNod
                 <td>
                     {this.props.node.usageStatistics ? this.props.node.usageStatistics.codeIntelligenceActions : 'n/a'}
                 </td>
-                <td className="site-admin-usage-statistics-page__date-column">
+                <td className={styles.dateColumn}>
                     {this.props.node.usageStatistics?.lastActiveTime ? (
                         <Timestamp date={this.props.node.usageStatistics.lastActiveTime} />
                     ) : (
                         'never'
                     )}
                 </td>
-                <td className="site-admin-usage-statistics-page__date-column">
+                <td className={styles.dateColumn}>
                     {this.props.node.usageStatistics?.lastActiveCodeHostIntegrationTime ? (
                         <Timestamp date={this.props.node.usageStatistics.lastActiveCodeHostIntegrationTime} />
                     ) : (

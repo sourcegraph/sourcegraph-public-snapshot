@@ -2,10 +2,10 @@
 
 exports[`SiteInitPage normal 1`] = `
 <div
-  className="site-init-page"
+  className="siteInitPage"
 >
   <div
-    className="site-init-page__content card"
+    className="card content"
   >
     <div
       className="card-body p-4"
@@ -139,10 +139,10 @@ exports[`SiteInitPage normal 1`] = `
 
 exports[`SiteInitPage unexpected authed user 1`] = `
 <div
-  className="site-init-page"
+  className="siteInitPage"
 >
   <div
-    className="site-init-page__content card"
+    className="card content"
   >
     <div
       className="card-body p-4"

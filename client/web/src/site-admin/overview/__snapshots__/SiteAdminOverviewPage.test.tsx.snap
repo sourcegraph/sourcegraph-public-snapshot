@@ -164,7 +164,7 @@ exports[`SiteAdminOverviewPage >= 2 users 1`] = `
           viewBox="0 0 500 200"
         />
         <small
-          className="site-admin-usage-statistics-page__tz-note"
+          className="tzNote"
         >
           <i>
             GMT/UTC time
