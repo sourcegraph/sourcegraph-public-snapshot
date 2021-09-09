@@ -88,16 +88,12 @@ type BatchChangeAttributes struct {
 
 type Repository struct {
 	Name        string
-	FileMatches map[string]bool
+	FileMatches []string
 }
 
 func (r Repository) SearchResultPaths() (list fileMatchPathList) {
-	var files []string
-	for f := range r.FileMatches {
-		files = append(files, f)
-	}
-	sort.Strings(files)
-	return fileMatchPathList(files)
+	sort.Strings(r.FileMatches)
+	return fileMatchPathList(r.FileMatches)
 }
 
 type fileMatchPathList []string

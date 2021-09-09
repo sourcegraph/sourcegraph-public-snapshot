@@ -12,6 +12,14 @@
     {
       "packageNames": ["@octokit/rest", "@slack/web-api", "googleapis"],
       "reviewers": ["beyang"]
+    },
+    {
+      "packagePatterns": ["^@visx/"],
+      "reviewers": ["team:code-insights-frontend"]
+    },
+    {
+      "packageNames": ["react-grid-layout"],
+      "reviewers": ["team:code-insights-frontend"]
     }
   ]
 }

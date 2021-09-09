@@ -191,11 +191,8 @@ func (r *schemaResolver) CreateOrganization(ctx context.Context, args *struct {
 	Name        string
 	DisplayName *string
 }) (*OrgResolver, error) {
-	currentUser, err := CurrentUser(ctx, r.db)
-	if err != nil {
-		return nil, err
-	}
-	if currentUser == nil {
+	a := actor.FromContext(ctx)
+	if !a.IsAuthenticated() {
 		return nil, errors.New("no current user")
 	}
 
@@ -208,7 +205,7 @@ func (r *schemaResolver) CreateOrganization(ctx context.Context, args *struct {
 	}
 
 	// Add the current user as the first member of the new org.
-	_, err = database.OrgMembers(r.db).Create(ctx, newOrg.ID, currentUser.user.ID)
+	_, err = database.OrgMembers(r.db).Create(ctx, newOrg.ID, a.UID)
 	if err != nil {
 		return nil, err
 	}

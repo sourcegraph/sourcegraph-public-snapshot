@@ -87,9 +87,8 @@ type startedCmd struct {
 }
 
 func (sc *startedCmd) Wait() error {
-	err := sc.Cmd.Wait()
 	sc.outWg.Wait()
-	return err
+	return sc.Cmd.Wait()
 }
 
 func (sc *startedCmd) CapturedStdout() string {
@@ -136,7 +135,7 @@ func startCmd(ctx context.Context, dir string, cmd Command, globalEnv map[string
 		stderrWriter = io.MultiWriter(logger, sc.stderrBuf)
 	}
 
-	wg, err := process.PipeOutput(sc.Cmd, stdoutWriter, stderrWriter)
+	wg, err := process.PipeOutput(ctx, sc.Cmd, stdoutWriter, stderrWriter)
 	if err != nil {
 		return nil, err
 	}

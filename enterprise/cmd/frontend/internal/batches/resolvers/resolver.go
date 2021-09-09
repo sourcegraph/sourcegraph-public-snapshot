@@ -494,7 +494,7 @@ func (r *Resolver) applyOrCreateBatchChange(ctx context.Context, args *graphqlba
 
 func (r *Resolver) CreateBatchSpec(ctx context.Context, args *graphqlbackend.CreateBatchSpecArgs) (graphqlbackend.BatchSpecResolver, error) {
 	var err error
-	tr, ctx := trace.New(ctx, "CreateBatchSpec", fmt.Sprintf("Resolver.CreateBatchspace %s, Spec %q", args.Namespace, args.BatchSpec))
+	tr, ctx := trace.New(ctx, "CreateBatchSpec", fmt.Sprintf("Resolver.CreateBatchSpec %s, Spec %q", args.Namespace, args.BatchSpec))
 	defer func() {
 		tr.SetError(err)
 		tr.Finish()
@@ -709,6 +709,37 @@ func (r *Resolver) BatchChanges(ctx context.Context, args *graphqlbackend.ListBa
 	}
 
 	return &batchChangesConnectionResolver{
+		store: r.store,
+		opts:  opts,
+	}, nil
+}
+
+func (r *Resolver) BatchSpecExecutions(ctx context.Context, args *graphqlbackend.ListBatchSpecExecutionsArgs) (graphqlbackend.BatchSpecExecutionConnectionResolver, error) {
+	if err := enterprise.BatchChangesEnabledForUser(ctx, r.store.DB()); err != nil {
+		return nil, err
+	}
+
+	// These endpoints currently only work for site admins
+	authErr := backend.CheckCurrentUserIsSiteAdmin(ctx, r.store.DB())
+	if authErr != nil {
+		return nil, authErr
+	}
+
+	opts := store.ListBatchSpecExecutionsOpts{}
+
+	if err := validateFirstParamDefaults(args.First); err != nil {
+		return nil, err
+	}
+	opts.Limit = int(args.First)
+	if args.After != nil {
+		cursor, err := strconv.ParseInt(*args.After, 10, 32)
+		if err != nil {
+			return nil, err
+		}
+		opts.Cursor = cursor
+	}
+
+	return &batchSpecExecutionConnectionResolver{
 		store: r.store,
 		opts:  opts,
 	}, nil
@@ -1537,6 +1568,7 @@ func (r *Resolver) ResolveWorkspacesForBatchSpec(ctx context.Context, args *grap
 
 	return &batchSpecWorkspacesResolver{
 		store:            r.store,
+		rawSpec:          args.BatchSpec,
 		allowUnsupported: args.AllowUnsupported,
 		allowIgnored:     args.AllowIgnored,
 		workspaces:       workspaces,

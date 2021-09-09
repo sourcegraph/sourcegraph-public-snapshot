@@ -260,9 +260,20 @@ enum JSONLogLineOperation {
     DETERMINING_WORKSPACES = 'DETERMINING_WORKSPACES',
     CHECKING_CACHE = 'CHECKING_CACHE',
     EXECUTING_TASKS = 'EXECUTING_TASKS',
-    EXECUTING_TASK = 'EXECUTING_TASK',
+    LOG_FILE_KEPT = 'LOG_FILE_KEPT',
     UPLOADING_CHANGESET_SPECS = 'UPLOADING_CHANGESET_SPECS',
     CREATING_BATCH_SPEC = 'CREATING_BATCH_SPEC',
+    APPLYING_BATCH_SPEC = 'APPLYING_BATCH_SPEC',
+    BATCH_SPEC_EXECUTION = 'BATCH_SPEC_EXECUTION',
+    EXECUTING_TASK = 'EXECUTING_TASK',
+    TASK_BUILD_CHANGESET_SPECS = 'TASK_BUILD_CHANGESET_SPECS',
+    TASK_DOWNLOADING_ARCHIVE = 'TASK_DOWNLOADING_ARCHIVE',
+    TASK_INITIALIZING_WORKSPACE = 'TASK_INITIALIZING_WORKSPACE',
+    TASK_SKIPPING_STEPS = 'TASK_SKIPPING_STEPS',
+    TASK_STEP_SKIPPED = 'TASK_STEP_SKIPPED',
+    TASK_PREPARING_STEP = 'TASK_PREPARING_STEP',
+    TASK_STEP = 'TASK_STEP',
+    TASK_CALCULATING_DIFF = 'TASK_CALCULATING_DIFF',
 }
 
 const prettyOperationNames: Record<JSONLogLineOperation, string> = {
@@ -277,20 +288,30 @@ const prettyOperationNames: Record<JSONLogLineOperation, string> = {
     EXECUTING_TASK: 'Executing task',
     UPLOADING_CHANGESET_SPECS: 'Uploading changeset specs',
     CREATING_BATCH_SPEC: 'Creating batch spec',
+    APPLYING_BATCH_SPEC: 'Applying batch spec',
+    BATCH_SPEC_EXECUTION: 'Batch spec execution',
+    LOG_FILE_KEPT: 'Log file kept',
+    TASK_BUILD_CHANGESET_SPECS: 'Building changeset specs',
+    TASK_CALCULATING_DIFF: 'Calculating diff',
+    TASK_DOWNLOADING_ARCHIVE: 'Downloading archive',
+    TASK_INITIALIZING_WORKSPACE: 'Initializing workspace',
+    TASK_PREPARING_STEP: 'Preparing step',
+    TASK_SKIPPING_STEPS: 'Skipping steps',
+    TASK_STEP: 'Running step',
+    TASK_STEP_SKIPPED: 'Step skipped',
 }
 
 enum JSONLogLineStatus {
     STARTED = 'STARTED',
     PROGRESS = 'PROGRESS',
     SUCCESS = 'SUCCESS',
-    FAILED = 'FAILED',
+    FAILURE = 'FAILURE',
 }
 
 interface ExecutingTaskJSONLogLine {
     operation: JSONLogLineOperation.EXECUTING_TASK
     timestamp: string
     status: JSONLogLineStatus
-    message?: string
     metadata: {
         task: Task
     }
@@ -301,11 +322,6 @@ type JSONLogLine =
           operation: JSONLogLineOperation
           timestamp: string
           status: JSONLogLineStatus
-          message?: string
-          metadata: {
-              task?: Task
-              tasks?: Task[]
-          }
       }
     | ExecutingTaskJSONLogLine
 
@@ -315,10 +331,10 @@ interface Step {
 }
 
 interface Task {
-    Repository: string
-    Workspace: string
-    Steps: Step[]
-    CachedStepResultsFound: boolean
+    repository: string
+    workspace: string
+    steps: Step[]
+    cachedStepResultsFound: boolean
 }
 
 const ParsedJsonOutput: React.FunctionComponent<{ out: string }> = ({ out }) => {
@@ -361,7 +377,7 @@ const ParsedJsonOutput: React.FunctionComponent<{ out: string }> = ({ out }) => 
                                 {completionStatus === JSONLogLineStatus.SUCCESS && (
                                     <CheckCircleIcon className="icon-inline text-success mr-1" />
                                 )}
-                                {completionStatus === JSONLogLineStatus.FAILED && (
+                                {completionStatus === JSONLogLineStatus.FAILURE && (
                                     <ErrorIcon className="icon-inline text-danger mr-1" />
                                 )}
                                 {prettyOperationNames[tuple[0].operation]}
@@ -377,9 +393,6 @@ const ParsedJsonOutput: React.FunctionComponent<{ out: string }> = ({ out }) => 
                         {operation === JSONLogLineOperation.EXECUTING_TASKS && (
                             <ParsedTaskExecutionOutput lines={parsedExecutingTaskLines} />
                         )}
-                        <code className="d-block">
-                            {[tuple[0].message, tuple[1]?.message].filter(line => !!line).join('\n')}
-                        </code>
                     </li>
                 )
             })}
@@ -390,14 +403,14 @@ const ParsedJsonOutput: React.FunctionComponent<{ out: string }> = ({ out }) => 
 const ParsedTaskExecutionOutput: React.FunctionComponent<{ lines: ExecutingTaskJSONLogLine[] }> = ({ lines }) => (
     <ul className="list-group w-100 mt-3">
         {lines.map((line, index) => {
-            const repo = line.metadata.task.Repository
+            const repo = line.metadata.task.repository
             const key = `${repo}-${index}`
 
             if (line.status === JSONLogLineStatus.STARTED) {
                 return (
                     <li className="list-group-item p-2" key={key}>
                         <InformationIcon className="icon-inline mr-1" />
-                        <b>{repo}</b>: Starting execution of {line.metadata?.task?.Steps?.length}
+                        <b>{repo}</b>: Starting execution of {line.metadata?.task?.steps?.length}
                     </li>
                 )
             }
@@ -409,7 +422,7 @@ const ParsedTaskExecutionOutput: React.FunctionComponent<{ lines: ExecutingTaskJ
                     </li>
                 )
             }
-            if (line.status === JSONLogLineStatus.FAILED) {
+            if (line.status === JSONLogLineStatus.FAILURE) {
                 return (
                     <li className="list-group-item p-2" key={key}>
                         <ErrorIcon className="icon-inline text-danger mr-1" />
@@ -417,11 +430,7 @@ const ParsedTaskExecutionOutput: React.FunctionComponent<{ lines: ExecutingTaskJ
                     </li>
                 )
             }
-            return (
-                <li className="list-group-item p-2" key={key}>
-                    <b>{repo}</b>: <code>{line.message}</code>
-                </li>
-            )
+            return null
         })}
     </ul>
 )
@@ -444,7 +453,7 @@ function findLogLineTuple(
     }
     let end = findLogLine(lines, operation, JSONLogLineStatus.SUCCESS)
     if (!end) {
-        end = findLogLine(lines, operation, JSONLogLineStatus.FAILED)
+        end = findLogLine(lines, operation, JSONLogLineStatus.FAILURE)
     }
     if (end) {
         return [start, end]

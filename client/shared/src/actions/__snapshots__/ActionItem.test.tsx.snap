@@ -114,7 +114,7 @@ exports[`ActionItem non-pressed actionItem 1`] = `
 
 exports[`ActionItem noop command 1`] = `
 <span
-  className="action-item  "
+  className="action-item"
   data-tooltip="d"
 >
   <img

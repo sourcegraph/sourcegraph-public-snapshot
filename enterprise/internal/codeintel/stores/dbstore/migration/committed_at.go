@@ -130,8 +130,8 @@ const committedAtProcesshandleCommitQuery = `
 UPDATE lsif_uploads SET committed_at = %s WHERE state = 'completed' AND repository_id = %s AND commit = %s AND committed_at IS NULL
 `
 
-// Down runs a batch of the migration in reverse. This method simply sets the committed_at column
-// to null for a number of records matching the configured batch size.
+// Down runs a batch of the migration in reverse. This method simply sets the committed_at
+// column to null for a number of records matching the configured batch size.
 func (m *committedAtMigrator) Down(ctx context.Context) error {
 	return m.store.Exec(ctx, sqlf.Sprintf(committedAtDownQuery, m.batchSize))
 }

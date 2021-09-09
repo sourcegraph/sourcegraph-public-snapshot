@@ -1,9 +1,12 @@
+import classNames from 'classnames'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import CheckIcon from 'mdi-react/CheckIcon'
 import CloseIcon from 'mdi-react/CloseIcon'
 import * as React from 'react'
 
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
+
+import styles from './SaveToolbar.module.scss'
 
 export interface SaveToolbarProps {
     dirty?: boolean
@@ -53,17 +56,22 @@ export const SaveToolbar: React.FunctionComponent<React.PropsWithChildren<SaveTo
     return (
         <>
             {error && willShowError() && (
-                <div className="save-toolbar__error">
-                    <AlertCircleIcon className="icon-inline save-toolbar__error-icon" />
+                <div className={styles.error}>
+                    <AlertCircleIcon className={classNames('icon-inline', styles.errorIcon)} />
                     {error.message}
                 </div>
             )}
-            <div className="save-toolbar__actions">
+            <div className={styles.actions}>
                 <button
                     type="button"
                     disabled={disabled}
                     title={saveDiscardTitle || 'Save changes'}
-                    className="btn btn-sm btn-success save-toolbar__item save-toolbar__btn save-toolbar__btn-first test-save-toolbar-save"
+                    className={classNames(
+                        'btn btn-sm btn-success test-save-toolbar-save',
+                        styles.item,
+                        styles.btn,
+                        styles.btnFirst
+                    )}
                     onClick={onSave}
                 >
                     <CheckIcon className="icon-inline" style={{ marginRight: '0.1em' }} /> Save changes
@@ -72,14 +80,19 @@ export const SaveToolbar: React.FunctionComponent<React.PropsWithChildren<SaveTo
                     type="button"
                     disabled={disabled}
                     title={saveDiscardTitle || 'Discard changes'}
-                    className="btn btn-sm btn-secondary save-toolbar__item save-toolbar__btn save-toolbar__btn-last test-save-toolbar-discard"
+                    className={classNames(
+                        'btn btn-sm btn-secondary test-save-toolbar-discard',
+                        styles.item,
+                        styles.btn,
+                        styles.btnLast
+                    )}
                     onClick={onDiscard}
                 >
                     <CloseIcon className="icon-inline" /> Discard
                 </button>
                 {children}
                 {saving && (
-                    <span className="save-toolbar__item save-toolbar__message">
+                    <span className={classNames(styles.item, styles.message)}>
                         <LoadingSpinner className="icon-inline" /> Saving...
                     </span>
                 )}

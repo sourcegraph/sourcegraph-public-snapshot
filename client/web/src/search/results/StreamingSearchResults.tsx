@@ -29,7 +29,8 @@ import { AuthenticatedUser } from '../../auth'
 import { CodeMonitoringProps } from '../../code-monitoring'
 import { PageTitle } from '../../components/PageTitle'
 import { FeatureFlagProps } from '../../featureFlags/featureFlags'
-import { isCodeInsightsEnabled } from '../../insights'
+import { CodeInsightsProps } from '../../insights/types'
+import { isCodeInsightsEnabled } from '../../insights/utils/is-code-insights-enabled'
 import { SavedSearchModal } from '../../savedSearches/SavedSearchModal'
 import { SearchBetaIcon } from '../CtaIcons'
 import { getSubmittedSearchesCount, QueryState, submitSearch } from '../helpers'
@@ -54,6 +55,7 @@ export interface StreamingSearchResultsProps
         TelemetryProps,
         ThemeProps,
         CodeMonitoringProps,
+        CodeInsightsProps,
         FeatureFlagProps {
     authenticatedUser: AuthenticatedUser | null
     location: H.Location
@@ -86,6 +88,7 @@ export const StreamingSearchResults: React.FunctionComponent<StreamingSearchResu
         previousVersionContext,
         authenticatedUser,
         telemetryService,
+        codeInsightsEnabled,
     } = props
 
     // Log view event on first load
@@ -248,7 +251,7 @@ export const StreamingSearchResults: React.FunctionComponent<StreamingSearchResu
             <SearchResultsInfoBar
                 {...props}
                 query={query}
-                enableCodeInsights={isCodeInsightsEnabled(props.settingsCascade)}
+                enableCodeInsights={codeInsightsEnabled && isCodeInsightsEnabled(props.settingsCascade)}
                 resultsFound={resultsFound}
                 className={classNames('flex-grow-1', styles.streamingSearchResultsInfobar)}
                 allExpanded={allExpanded}

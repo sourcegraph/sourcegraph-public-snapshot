@@ -53,10 +53,6 @@ type Request struct {
 	// Whether the revision to be searched is indexed or unindexed. This matters for
 	// structural search because it will query Zoekt for indexed structural search.
 	Indexed bool
-
-	// (Experimental) Whether to stream results to the client with server sent events
-	// rather than returning them as a batch
-	Stream bool
 }
 
 // PatternInfo describes a search request on a repo. Most of the fields

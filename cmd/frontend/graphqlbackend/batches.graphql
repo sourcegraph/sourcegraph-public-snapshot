@@ -2171,11 +2171,15 @@ extend type Mutation {
 
 
     If namespace is not specified, the current user's personal namespace is used.
+
+    Experimental: This API is likely to change in the future.
     """
     createBatchSpecExecution(spec: String!, namespace: ID): BatchSpecExecution!
 
     """
     Attempts to cancel the given batch spec execution. It must not have completed yet.
+
+    Experimental: This API is likely to change in the future.
     """
     cancelBatchSpecExecution(batchSpecExecution: ID!): BatchSpecExecution!
 }
@@ -2231,6 +2235,22 @@ extend type Query {
     ): BatchChangesCodeHostConnection!
 
     """
+    A list of batch spec executions.
+
+    Experimental: This API is likely to change in the future.
+    """
+    batchSpecExecutions(
+        """
+        Returns the first n batch spec executions from the list.
+        """
+        first: Int = 50
+        """
+        Opaque pagination cursor.
+        """
+        after: String
+    ): BatchSpecExecutionConnection!
+
+    """
     Resolve workspaces matching the given batch spec input.
 
     Experimental API. Will disappear soon.
@@ -2256,6 +2276,11 @@ extend type Query {
 A bag for all info around resolving workspaces.
 """
 type BatchSpecWorkspaces {
+    """
+    The raw input given to produce this preview.
+    """
+    rawSpec: String!
+
     """
     If true, repos with a .batchignore file will still be included.
     """
@@ -2311,6 +2336,12 @@ type BatchSpecWorkspace {
     List of steps that will need to run over this workspace.
     """
     steps: [BatchSpecWorkspaceStep!]!
+
+    """
+    If this workspace was resolved based on a search, this is the list of paths
+    to files that have been included in the search results.
+    """
+    searchResultPaths: [String!]!
 }
 
 """
@@ -2825,6 +2856,28 @@ type BatchChangeConnection {
     pageInfo: PageInfo!
 }
 
+"""
+A list of batch spec executions.
+
+Experimental: This API is likely to change in the future.
+"""
+type BatchSpecExecutionConnection {
+    """
+    A list of batch spec executions.
+    """
+    nodes: [BatchSpecExecution!]!
+
+    """
+    The total number of batch spec executions in the connection.
+    """
+    totalCount: Int!
+
+    """
+    Pagination information.
+    """
+    pageInfo: PageInfo!
+}
+
 extend type Org {
     """
     A list of batch changes initially applied in this organization.
@@ -3025,6 +3078,8 @@ type BatchChangeDescription {
 
 """
 The possible states of a batch spec execution.
+
+Experimental: This API is likely to change in the future.
 """
 enum BatchSpecExecutionState {
     """
@@ -3065,6 +3120,8 @@ enum BatchSpecExecutionState {
 
 """
 A batch spec execution describes one server-side run of a batch change yaml input.
+
+Experimental: This API is likely to change in the future.
 """
 type BatchSpecExecution implements Node {
     """
@@ -3141,6 +3198,8 @@ type BatchSpecExecution implements Node {
 
 """
 Configuration and execution summary of a batch spec execution.
+
+Experimental: This API is likely to change in the future.
 """
 type BatchSpecExecutionSteps {
     """

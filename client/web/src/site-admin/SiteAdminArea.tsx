@@ -98,7 +98,7 @@ const AuthenticatedSiteAdminArea: React.FunctionComponent<SiteAdminAreaProps> = 
             <PageHeader path={[{ text: 'Site Admin' }]} />
             <div className="site-admin-area d-flex my-3" ref={reference}>
                 <SiteAdminSidebar
-                    className="sidebar flex-0 mr-3"
+                    className="flex-0 mr-3"
                     groups={props.sideBarGroups}
                     isSourcegraphDotCom={props.isSourcegraphDotCom}
                     batchChangesEnabled={props.batchChangesEnabled}

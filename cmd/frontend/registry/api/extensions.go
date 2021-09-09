@@ -241,13 +241,7 @@ func GetFeaturedExtensions(ctx context.Context, db dbutil.DB) ([]graphqlbackend.
 }
 
 // IsWorkInProgressExtension reports whether the extension manifest indicates that this extension is
-// marked as a work-in-progress extension (by having a "wip": true property, or (for backcompat) a
-// title that begins with "WIP:" or "[WIP]").
-//
-// BACKCOMPAT: This still supports titles even though extensions no longer have titles. In Feb 2019
-// it will probably be safe to remove the title handling.
-//
-// NOTE: Keep this pattern in sync with WorkInProgressExtensionTitlePostgreSQLPattern.
+// marked as a work-in-progress extension (by having a "wip": true property).
 func IsWorkInProgressExtension(manifest *string) bool {
 	if manifest == nil {
 		// Extensions with no manifest (== no releases published yet) are considered
@@ -255,22 +249,18 @@ func IsWorkInProgressExtension(manifest *string) bool {
 		return true
 	}
 
-	var result struct {
-		schema.SourcegraphExtensionManifest
-		Title string
+	// jsonc-parsing the manifest can be slow, so do a first pass. If the manifest doesn't even
+	// contain `"wip"`, then there is no way that it could be WIP.
+	if !strings.Contains(*manifest, `"wip"`) {
+		return false
 	}
+
+	var result schema.SourcegraphExtensionManifest
 	if err := jsonc.Unmarshal(*manifest, &result); err != nil {
 		// An extension whose manifest fails to parse is problematic for other reasons (and an error
 		// will be displayed), but it isn't helpful to also consider it work-in-progress.
 		return false
 	}
 
-	return result.Wip || strings.HasPrefix(result.Title, "WIP:") || strings.HasPrefix(result.Title, "[WIP]")
+	return result.Wip
 }
-
-// WorkInProgressExtensionTitlePostgreSQLPattern is the PostgreSQL "SIMILAR TO" pattern that matches
-// the extension manifest's "title" property. See
-// https://www.postgresql.org/docs/9.3/functions-matching.html.
-//
-// NOTE: Keep this pattern in sync with IsWorkInProgressExtension.
-const WorkInProgressExtensionTitlePostgreSQLPattern = `(\[WIP]|WIP:)%`

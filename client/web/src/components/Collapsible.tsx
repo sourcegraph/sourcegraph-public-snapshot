@@ -3,6 +3,8 @@ import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
 import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
 import React, { useCallback, useState } from 'react'
 
+import styles from './Collapsible.module.scss'
+
 interface Props {
     /**
      * Content in the always-visible title bar.
@@ -90,7 +92,8 @@ export const Collapsible: React.FunctionComponent<Props> = ({
                 <button
                     type="button"
                     className={classNames(
-                        'd-flex btn btn-icon collapsible__expand-btn',
+                        'd-flex btn btn-icon',
+                        styles.expandBtn,
                         wholeTitleClickable && 'stretched-link'
                     )}
                     aria-label={isExpanded ? 'Collapse section' : 'Expand section'}

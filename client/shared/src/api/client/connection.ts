@@ -45,6 +45,7 @@ export async function createExtensionHostClientConnection(
         PlatformContext,
         | 'settings'
         | 'updateSettings'
+        | 'getGraphQLClient'
         | 'requestGraphQL'
         | 'telemetryService'
         | 'sideloadedExtensionURL'

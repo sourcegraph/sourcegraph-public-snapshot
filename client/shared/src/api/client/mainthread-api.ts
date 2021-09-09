@@ -60,6 +60,7 @@ export const initMainThreadAPI = (
         PlatformContext,
         | 'updateSettings'
         | 'settings'
+        | 'getGraphQLClient'
         | 'requestGraphQL'
         | 'showMessage'
         | 'showInputBox'

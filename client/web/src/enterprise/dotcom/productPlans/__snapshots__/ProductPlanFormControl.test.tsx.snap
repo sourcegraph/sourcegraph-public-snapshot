@@ -2,7 +2,7 @@
 
 exports[`ProductPlanFormControl new subscription 1`] = `
 <div
-  className="product-plan-form-control "
+  className="product-plan-form-control"
 >
   <div
     className="list-group"

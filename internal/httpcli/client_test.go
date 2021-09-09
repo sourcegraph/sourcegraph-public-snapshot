@@ -13,6 +13,7 @@ import (
 	"net"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"reflect"
 	"strings"
 	"sync/atomic"
@@ -367,6 +368,16 @@ func TestErrorResilience(t *testing.T) {
 			NewMiddleware(
 				ContextErrorMiddleware,
 			),
+			func(cli *http.Client) error {
+				// Some DNS servers do not respect RFC 6761 section 6.4, so we
+				// hardcode what go returns for DNS not found to avoid
+				// flakiness across machines. However, CI correctly respects
+				// this so we continue to run against a real DNS server on CI.
+				if os.Getenv("CI") == "" {
+					cli.Transport = notFoundTransport{}
+				}
+				return nil
+			},
 			NewErrorResilientTransportOpt(
 				wrapped,
 				rehttp.ExpJitterDelay(50*time.Millisecond, 5*time.Second),
@@ -390,6 +401,12 @@ func TestErrorResilience(t *testing.T) {
 			t.Fatalf("expected %d retries, got %d", want, retries)
 		}
 	})
+}
+
+type notFoundTransport struct{}
+
+func (notFoundTransport) RoundTrip(*http.Request) (*http.Response, error) {
+	return nil, &net.DNSError{IsNotFound: true}
 }
 
 func TestExpJitterDelay(t *testing.T) {

@@ -30,6 +30,7 @@ export const commonWebGraphQlResults: Partial<WebGraphQlOperations & SharedGraph
     }),
     ViewerSettings: () => ({
         viewerSettings: {
+            __typename: 'SettingsCascade',
             subjects: [
                 {
                     __typename: 'DefaultSettings',
@@ -93,6 +94,8 @@ export const commonWebGraphQlResults: Partial<WebGraphQlOperations & SharedGraph
         },
         repositories: { totalCount: 9 },
         viewerSettings: {
+            __typename: 'SettingsCascade',
+            subjects: [],
             final: JSON.stringify({}),
         },
         users: { totalCount: 2 },
@@ -109,6 +112,8 @@ export const commonWebGraphQlResults: Partial<WebGraphQlOperations & SharedGraph
         // externalServices: { totalCount: 3 },
         // repositories: { totalCount: 9 },
         // viewerSettings: {
+        //     __typename: 'SettingsCascade',
+        //     subjects: [],
         //     final: JSON.stringify({}),
         // },
         // users: { totalCount: 2 },
