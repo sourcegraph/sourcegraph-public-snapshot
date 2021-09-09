@@ -9,6 +9,7 @@ const COMMON_NODE_FIELDS = {
     createdAt: subSeconds(new Date(), 30).toISOString(),
     finishedAt: new Date().toISOString(),
     inputSpec: 'name: super-cool-spec',
+    name: 'super-cool-spec',
     namespace: {
         url: '/users/courier-new',
         namespaceName: 'courier-new',
