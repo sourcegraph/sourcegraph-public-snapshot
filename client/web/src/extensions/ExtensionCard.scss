@@ -40,6 +40,8 @@
             // horizontally center icon over ::before pseudo-element background
             left: calc(50% - (var(--icon-width) / 2));
             margin-left: 0;
+            width: 4rem;
+            height: 4rem;
         }
     }
 
