@@ -12,7 +12,7 @@ exports[`SiteInitPage normal 1`] = `
     >
       <img
         alt="Sourcegraph logo"
-        className="brand-logo w-100 mb-3"
+        className="w-100 mb-3"
         src="/img/sourcegraph-logo-light.svg"
       />
       <h2
@@ -149,7 +149,7 @@ exports[`SiteInitPage unexpected authed user 1`] = `
     >
       <img
         alt="Sourcegraph logo"
-        className="brand-logo w-100 mb-3"
+        className="w-100 mb-3"
         src="/img/sourcegraph-logo-light.svg"
       />
       <p>

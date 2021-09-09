@@ -29,6 +29,7 @@ import { ExtensionsAreaHeaderActionButton } from './extensions/ExtensionsAreaHea
 import { FeatureFlagProps } from './featureFlags/featureFlags'
 import { GlobalAlerts } from './global/GlobalAlerts'
 import { GlobalDebug } from './global/GlobalDebug'
+import { CodeInsightsProps } from './insights/types'
 import { KeyboardShortcutsProps, KEYBOARD_SHORTCUT_SHOW_HELP } from './keyboardShortcuts/keyboardShortcuts'
 import { KeyboardShortcutsHelp } from './keyboardShortcuts/KeyboardShortcutsHelp'
 import { SurveyToast } from './marketing/SurveyToast'
@@ -91,6 +92,7 @@ export interface LayoutProps
         UserExternalServicesOrRepositoriesUpdateProps,
         CodeIntelligenceProps,
         BatchChangesProps,
+        CodeInsightsProps,
         FeatureFlagProps {
     extensionAreaRoutes: readonly ExtensionAreaRoute[]
     extensionAreaHeaderNavItems: readonly ExtensionAreaHeaderNavItem[]

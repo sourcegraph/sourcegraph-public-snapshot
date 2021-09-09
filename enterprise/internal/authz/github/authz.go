@@ -26,10 +26,10 @@ func NewAuthzProviders(
 	for _, p := range authProviders {
 		if p.Github != nil {
 			var id string
-			ghURL, err := url.Parse(p.Github.Url)
+			ghURL, err := url.Parse(p.Github.GetURL())
 			if err != nil {
 				// error reporting for this should happen elsewhere, for now just use what is given
-				id = p.Github.Url
+				id = p.Github.GetURL()
 			} else {
 				// use codehost normalized URL as ID
 				ch := extsvc.NewCodeHost(ghURL, p.Github.Type)
@@ -52,7 +52,8 @@ func NewAuthzProviders(
 		// with restricted permissions will not be visible to non-admins.
 		if authProvider, exists := githubAuthProviders[p.ServiceID()]; !exists {
 			warnings = append(warnings,
-				fmt.Sprintf("Did not find authentication provider matching %[1]q. "+
+				fmt.Sprintf("GitHub config for %[1]s has `authorization` enabled, "+
+					"but no authentication provider matching %[1]q was found. "+
 					"Check the [**site configuration**](/site-admin/configuration) to "+
 					"verify an entry in [`auth.providers`](https://docs.sourcegraph.com/admin/auth) exists for %[1]s.",
 					p.ServiceID()))

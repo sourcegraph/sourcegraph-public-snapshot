@@ -36,8 +36,11 @@ RUN apk add --no-cache \
     'git>=2.18' \
     openssh-client \
     git-p4 \
-    python2 \
-    python3
+    python2
+
+# This is installed separately due to the upstream edge repo requirement
+RUN apk update && apk add --no-cache \
+    'python3>=3.9.5' --repository=http://dl-cdn.alpinelinux.org/alpine/edge/main
 
 COPY --from=p4cli /usr/local/bin/p4 /usr/local/bin/p4
 

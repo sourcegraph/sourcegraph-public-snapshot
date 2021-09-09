@@ -70,6 +70,7 @@ const defaultProps: StreamingSearchResultsProps = {
     fetchHighlightedFileLineRanges: () => of(HIGHLIGHTED_FILE_LINES_LONG),
     enableCodeMonitoring: true,
     featureFlags: EMPTY_FEATURE_FLAGS,
+    extensionViews: () => null,
 }
 
 const { add } = storiesOf('web/search/results/StreamingSearchResults', module).addParameters({

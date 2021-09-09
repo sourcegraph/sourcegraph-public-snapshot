@@ -43,3 +43,7 @@ func (s *DBStoreShim) Transact(ctx context.Context) (DBStore, error) {
 type LSIFStore interface {
 	Clear(ctx context.Context, bundleIDs ...int) error
 }
+
+type GitserverClient interface {
+	// TODO - fill out
+}

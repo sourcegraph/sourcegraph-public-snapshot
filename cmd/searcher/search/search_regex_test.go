@@ -17,6 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/searcher/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/pathmatch"
 	"github.com/sourcegraph/sourcegraph/internal/store"
+	storetest "github.com/sourcegraph/sourcegraph/internal/store/testutil"
 	"github.com/sourcegraph/sourcegraph/internal/testutil"
 )
 
@@ -448,7 +449,7 @@ func TestMaxMatches(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	zf, err := store.MockZipFile(buf.Bytes())
+	zf, err := storetest.MockZipFile(buf.Bytes())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -481,7 +482,7 @@ func TestMaxMatches(t *testing.T) {
 // - A path must match all (not any) of the IncludePatterns
 // - An empty pattern is allowed
 func TestPathMatches(t *testing.T) {
-	zipData, err := testutil.CreateZip(map[string]string{
+	zipData, err := storetest.CreateZip(map[string]string{
 		"a":   "",
 		"a/b": "",
 		"a/c": "",
@@ -493,7 +494,7 @@ func TestPathMatches(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	zf, err := store.MockZipFile(zipData)
+	zf, err := storetest.MockZipFile(zipData)
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -777,6 +777,7 @@ Indexes:
  last_heartbeat_at | timestamp with time zone |           |          | 
  priority          | integer                  |           | not null | 1
  cost              | integer                  |           | not null | 500
+ persist_mode      | persistmode              |           | not null | 'record'::persistmode
 Indexes:
     "insights_query_runner_jobs_pkey" PRIMARY KEY, btree (id)
     "insights_query_runner_jobs_cost_idx" btree (cost)
@@ -791,6 +792,8 @@ Referenced by:
 See [enterprise/internal/insights/background/queryrunner/worker.go:Job](https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+file:enterprise/internal/insights/background/queryrunner/worker.go+type+Job&patternType=literal)
 
 **cost**: Integer representing a cost approximation of executing this search query.
+
+**persist_mode**: The persistence level for this query. This value will determine the lifecycle of the resulting value.
 
 **priority**: Integer representing a category of priority for this query. Priority in this context is ambiguously defined for consumers to decide an interpretation.
 
@@ -968,6 +971,7 @@ Stores the configuration used for code intel index jobs for a repository.
 Indexes:
     "lsif_indexes_pkey" PRIMARY KEY, btree (id)
     "lsif_indexes_commit_last_checked_at" btree (commit_last_checked_at) WHERE state <> 'deleted'::text
+    "lsif_indexes_repository_id_commit" btree (repository_id, commit)
 Check constraints:
     "lsif_uploads_commit_valid_chars" CHECK (commit ~ '^[a-z0-9]{40}$'::text)
 
@@ -993,6 +997,21 @@ Stores metadata about a code intel index job.
 
 **root**: The working directory of the indexer image relative to the repository root.
 
+# Table "public.lsif_last_retention_scan"
+```
+         Column         |           Type           | Collation | Nullable | Default 
+------------------------+--------------------------+-----------+----------+---------
+ repository_id          | integer                  |           | not null | 
+ last_retention_scan_at | timestamp with time zone |           | not null | 
+Indexes:
+    "lsif_last_retention_scan_pkey" PRIMARY KEY, btree (repository_id)
+
+```
+
+Tracks the last time uploads a repository were checked against data retention policies.
+
+**last_retention_scan_at**: The last time uploads of this repository were checked against data retention policies.
+
 # Table "public.lsif_nearest_uploads"
 ```
     Column     |  Type   | Collation | Nullable | Default 
@@ -1002,6 +1021,7 @@ Stores metadata about a code intel index job.
  uploads       | jsonb   |           | not null | 
 Indexes:
     "lsif_nearest_uploads_repository_id_commit_bytea" btree (repository_id, commit_bytea)
+    "lsif_nearest_uploads_uploads" gin (uploads)
 
 ```
 
@@ -1020,6 +1040,7 @@ Associates commits with the complete set of uploads visible from that commit. Ev
  ancestor_commit_bytea | bytea   |           | not null | 
  distance              | integer |           | not null | 
 Indexes:
+    "lsif_nearest_uploads_links_repository_id_ancestor_commit_bytea" btree (repository_id, ancestor_commit_bytea)
     "lsif_nearest_uploads_links_repository_id_commit_bytea" btree (repository_id, commit_bytea)
 
 ```
@@ -1137,12 +1158,16 @@ Stores the retention policy of code intellience data for a repository.
  worker_hostname        | text                     |           | not null | ''::text
  last_heartbeat_at      | timestamp with time zone |           |          | 
  execution_logs         | json[]                   |           |          | 
+ num_references         | integer                  |           |          | 
+ expired                | boolean                  |           | not null | false
+ last_retention_scan_at | timestamp with time zone |           |          | 
 Indexes:
     "lsif_uploads_pkey" PRIMARY KEY, btree (id)
     "lsif_uploads_repository_id_commit_root_indexer" UNIQUE, btree (repository_id, commit, root, indexer) WHERE state = 'completed'::text
     "lsif_uploads_associated_index_id" btree (associated_index_id)
     "lsif_uploads_commit_last_checked_at" btree (commit_last_checked_at) WHERE state <> 'deleted'::text
     "lsif_uploads_committed_at" btree (committed_at) WHERE state = 'completed'::text
+    "lsif_uploads_repository_id" btree (repository_id)
     "lsif_uploads_state" btree (state)
     "lsif_uploads_uploaded_at" btree (uploaded_at)
 Check constraints:
@@ -1158,11 +1183,17 @@ Stores metadata about an LSIF index uploaded by a user.
 
 **commit**: A 40-char revhash. Note that this commit may not be resolvable in the future.
 
+**expired**: Whether or not this upload data is no longer protected by any data retention policy.
+
 **id**: Used as a logical foreign key with the (disjoint) codeintel database.
 
 **indexer**: The name of the indexer that produced the index file. If not supplied by the user it will be pulled from the index metadata.
 
+**last_retention_scan_at**: The last time this upload was checked against data retention policies.
+
 **num_parts**: The number of parts src-cli split the upload file into.
+
+**num_references**: The number of references to this upload data from other upload records (via lsif_references).
 
 **root**: The path for which the index can resolve code intelligence relative to the repository root.
 
@@ -2094,6 +2125,7 @@ Triggers:
  upload_size         | bigint                   |           |          | 
  num_failures        | integer                  |           |          | 
  associated_index_id | bigint                   |           |          | 
+ expired             | boolean                  |           |          | 
  processed_at        | timestamp with time zone |           |          | 
 
 ```
@@ -2118,6 +2150,7 @@ Triggers:
     u.upload_size,
     u.num_failures,
     u.associated_index_id,
+    u.expired,
     u.finished_at AS processed_at
    FROM lsif_uploads u
   WHERE ((u.state = 'completed'::text) OR (u.state = 'deleting'::text));
@@ -2144,6 +2177,7 @@ Triggers:
  upload_size         | bigint                   |           |          | 
  num_failures        | integer                  |           |          | 
  associated_index_id | bigint                   |           |          | 
+ expired             | boolean                  |           |          | 
  processed_at        | timestamp with time zone |           |          | 
  repository_name     | citext                   |           |          | 
 
@@ -2169,6 +2203,7 @@ Triggers:
     u.upload_size,
     u.num_failures,
     u.associated_index_id,
+    u.expired,
     u.processed_at,
     r.name AS repository_name
    FROM (lsif_dumps u
@@ -2252,6 +2287,7 @@ Triggers:
  upload_size         | bigint                   |           |          | 
  num_failures        | integer                  |           |          | 
  associated_index_id | bigint                   |           |          | 
+ expired             | boolean                  |           |          | 
  repository_name     | citext                   |           |          | 
 
 ```
@@ -2276,6 +2312,7 @@ Triggers:
     u.upload_size,
     u.num_failures,
     u.associated_index_id,
+    u.expired,
     r.name AS repository_name
    FROM (lsif_uploads u
      JOIN repo r ON ((r.id = u.repository_id)))
@@ -2462,4 +2499,9 @@ Triggers:
 - errored
 - deleted
 - failed
+
+# Type persistmode
+
+- record
+- snapshot
 

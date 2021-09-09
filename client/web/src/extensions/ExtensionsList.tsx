@@ -172,12 +172,16 @@ export const ExtensionsList: React.FunctionComponent<Props> = ({
             return applyWIPFilter(enablementFilteredExtensionIDs, showExperimentalExtensions, extensions)
         })
 
-        categorySections = ORDERED_EXTENSION_CATEGORIES.filter(
-            category =>
-                filteredExtensionIDsByCategory[category].length > 0 &&
-                // Only show Programming Languages when it is the selected category
-                category !== 'Programming languages'
-        ).map(category => {
+        categorySections = ORDERED_EXTENSION_CATEGORIES.filter(category => {
+            // Hide category if there are no results
+            if (filteredExtensionIDsByCategory[category].length === 0) {
+                return false
+            }
+            // Only show Programming Languages when it is the selected category
+            // AND there is no search query. We shouldn't hide language extensions
+            // if users are looking for them.
+            return category !== 'Programming languages' || !!query.trim()
+        }).map(category => {
             const extensionIDsForCategory = filteredExtensionIDsByCategory[category]
 
             return (

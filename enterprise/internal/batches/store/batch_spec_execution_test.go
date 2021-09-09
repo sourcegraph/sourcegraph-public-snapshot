@@ -116,19 +116,25 @@ func testStoreChangesetSpecExecutions(t *testing.T, ctx context.Context, s *Stor
 			t.Fatal(err)
 		}
 
+		// The batch spec execution store returns the executions in reversed order.
+		reversedBatchSpecExecutions := make([]*btypes.BatchSpecExecution, len(execs))
+		for i, c := range execs {
+			reversedBatchSpecExecutions[len(execs)-i-1] = c
+		}
+
 		t.Run("All", func(t *testing.T) {
-			have, err := s.ListBatchSpecExecutions(ctx, ListBatchSpecExecutionsOpts{})
+			have, _, err := s.ListBatchSpecExecutions(ctx, ListBatchSpecExecutionsOpts{})
 			if err != nil {
 				t.Fatal(err)
 			}
-			if diff := cmp.Diff(have, execs); diff != "" {
+			if diff := cmp.Diff(have, reversedBatchSpecExecutions); diff != "" {
 				t.Fatalf("invalid executions returned: %s", diff)
 			}
 		})
 
 		t.Run("WorkerHostname", func(t *testing.T) {
-			for _, exec := range execs {
-				have, err := s.ListBatchSpecExecutions(ctx, ListBatchSpecExecutionsOpts{
+			for _, exec := range reversedBatchSpecExecutions {
+				have, _, err := s.ListBatchSpecExecutions(ctx, ListBatchSpecExecutionsOpts{
 					WorkerHostname: exec.WorkerHostname,
 				})
 				if err != nil {
@@ -141,8 +147,8 @@ func testStoreChangesetSpecExecutions(t *testing.T, ctx context.Context, s *Stor
 		})
 
 		t.Run("State", func(t *testing.T) {
-			for _, exec := range execs {
-				have, err := s.ListBatchSpecExecutions(ctx, ListBatchSpecExecutionsOpts{
+			for _, exec := range reversedBatchSpecExecutions {
+				have, _, err := s.ListBatchSpecExecutions(ctx, ListBatchSpecExecutionsOpts{
 					State: exec.State,
 				})
 				if err != nil {
@@ -155,8 +161,8 @@ func testStoreChangesetSpecExecutions(t *testing.T, ctx context.Context, s *Stor
 		})
 
 		t.Run("Cancel", func(t *testing.T) {
-			for _, exec := range execs {
-				have, err := s.ListBatchSpecExecutions(ctx, ListBatchSpecExecutionsOpts{
+			for _, exec := range reversedBatchSpecExecutions {
+				have, _, err := s.ListBatchSpecExecutions(ctx, ListBatchSpecExecutionsOpts{
 					Cancel: &exec.Cancel,
 				})
 				if err != nil {
@@ -167,6 +173,56 @@ func testStoreChangesetSpecExecutions(t *testing.T, ctx context.Context, s *Stor
 				}
 			}
 		})
+
+		t.Run("With Limit", func(t *testing.T) {
+			for i := 1; i <= len(reversedBatchSpecExecutions); i++ {
+				cs, next, err := s.ListBatchSpecExecutions(ctx, ListBatchSpecExecutionsOpts{LimitOpts: LimitOpts{Limit: i}})
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				{
+					have, want := next, int64(0)
+					if i < len(reversedBatchSpecExecutions) {
+						want = reversedBatchSpecExecutions[i].ID
+					}
+
+					if have != want {
+						t.Fatalf("limit: %v: have next %v, want %v", i, have, want)
+					}
+				}
+
+				{
+					have, want := cs, reversedBatchSpecExecutions[:i]
+					if len(have) != len(want) {
+						t.Fatalf("listed %d batch changes, want: %d", len(have), len(want))
+					}
+
+					if diff := cmp.Diff(have, want); diff != "" {
+						t.Fatal(diff)
+					}
+				}
+			}
+		})
+
+		t.Run("With Cursor", func(t *testing.T) {
+			var cursor int64
+			for i := 1; i <= len(reversedBatchSpecExecutions); i++ {
+				opts := ListBatchSpecExecutionsOpts{Cursor: cursor, LimitOpts: LimitOpts{Limit: 1}}
+				have, next, err := s.ListBatchSpecExecutions(ctx, opts)
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				want := reversedBatchSpecExecutions[i-1 : i]
+				if diff := cmp.Diff(have, want); diff != "" {
+					t.Fatalf("opts: %+v, diff: %s", opts, diff)
+				}
+
+				cursor = next
+			}
+		})
+
 	})
 
 	t.Run("CancelBatchSpecExecution", func(t *testing.T) {

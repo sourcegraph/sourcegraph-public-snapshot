@@ -135,7 +135,7 @@ func startCmd(ctx context.Context, dir string, cmd Command, globalEnv map[string
 		stderrWriter = io.MultiWriter(logger, sc.stderrBuf)
 	}
 
-	wg, err := process.PipeOutput(sc.Cmd, stdoutWriter, stderrWriter)
+	wg, err := process.PipeOutput(ctx, sc.Cmd, stdoutWriter, stderrWriter)
 	if err != nil {
 		return nil, err
 	}

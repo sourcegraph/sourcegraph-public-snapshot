@@ -22,7 +22,7 @@
     "generate": "gulp generate",
     "watch-generate": "gulp watchGenerate",
     "test": "jest --testPathIgnorePatterns end-to-end regression integration storybook",
-    "test-integration": "TS_NODE_PROJECT=client/web/src/integration/tsconfig.json NODE_NO_WARNINGS=1 mocha --parallel=$CI --retries=1 --jobs=2  \"./client/web/src/integration/**/*.test.ts\"",
+    "test-integration": "TS_NODE_PROJECT=client/web/src/integration/tsconfig.json NODE_NO_WARNINGS=1 mocha --parallel=$CI --retries=1 --jobs=2 \"./client/web/src/integration/**/*.test.ts\"",
     "test-browser-integration": "yarn --cwd client/browser run test-integration",
     "cover-integration": "nyc --hook-require=false yarn test-integration",
     "cover-browser-integration": "nyc --hook-require=false yarn --cwd client/browser test-integration",

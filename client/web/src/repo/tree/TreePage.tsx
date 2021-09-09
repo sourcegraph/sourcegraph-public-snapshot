@@ -10,15 +10,14 @@ import SourceCommitIcon from 'mdi-react/SourceCommitIcon'
 import SourceRepositoryIcon from 'mdi-react/SourceRepositoryIcon'
 import TagIcon from 'mdi-react/TagIcon'
 import UserIcon from 'mdi-react/UserIcon'
-import React, { useState, useMemo, useCallback, useEffect, useContext } from 'react'
+import React, { useState, useMemo, useCallback, useEffect } from 'react'
 import { Link, Redirect } from 'react-router-dom'
-import { Observable, EMPTY, from } from 'rxjs'
-import { catchError, map, switchMap } from 'rxjs/operators'
+import { Observable, EMPTY } from 'rxjs'
+import { catchError, map } from 'rxjs/operators'
 
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { ActionItem } from '@sourcegraph/shared/src/actions/ActionItem'
 import { ActionsContainer } from '@sourcegraph/shared/src/actions/ActionsContainer'
-import { wrapRemoteObservable } from '@sourcegraph/shared/src/api/client/api/common'
 import { FileDecorationsByPath } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
 import { ContributableMenu } from '@sourcegraph/shared/src/api/protocol'
 import { ActivationProps } from '@sourcegraph/shared/src/components/activation/Activation'
@@ -48,7 +47,7 @@ import { BreadcrumbSetters } from '../../components/Breadcrumbs'
 import { FilteredConnection } from '../../components/FilteredConnection'
 import { PageTitle } from '../../components/PageTitle'
 import { GitCommitFields, Scalars, TreePageRepositoryFields } from '../../graphql-operations'
-import { InsightsApiContext, StaticInsightsViewGrid } from '../../insights'
+import { CodeInsightsProps } from '../../insights/types'
 import { Settings } from '../../schema/settings.schema'
 import { PatternTypeProps, CaseSensitivityProps, SearchContextProps } from '../../search'
 import { basename } from '../../util/path'
@@ -119,6 +118,7 @@ interface Props
         VersionContextProps,
         CodeIntelligenceProps,
         BatchChangesProps,
+        CodeInsightsProps,
         Pick<SearchContextProps, 'selectedSearchContextSpec'>,
         BreadcrumbSetters {
     repo: TreePageRepositoryFields
@@ -151,6 +151,7 @@ export const TreePage: React.FunctionComponent<Props> = ({
     useBreadcrumb,
     codeIntelligenceEnabled,
     batchChangesEnabled,
+    extensionViews: ExtensionViewsSection,
     ...props
 }) => {
     useEffect(() => {
@@ -230,6 +231,7 @@ export const TreePage: React.FunctionComponent<Props> = ({
 
     // Add DirectoryViewer
     const uri = toURIWithPath({ repoName: repo.name, commitID, filePath })
+
     useEffect(() => {
         if (!showCodeInsights) {
             return
@@ -260,50 +262,9 @@ export const TreePage: React.FunctionComponent<Props> = ({
         }
     }, [uri, showCodeInsights, props.extensionsController])
 
-    // Observe directory views
-    const workspaceUri = useObservable(
-        useMemo(
-            () =>
-                from(props.extensionsController.extHostAPI).pipe(
-                    switchMap(extensionHostAPI => wrapRemoteObservable(extensionHostAPI.getWorkspaceRoots())),
-                    map(workspaceRoots => workspaceRoots[0]?.uri)
-                ),
-            [props.extensionsController]
-        )
-    )
-
     // eslint-disable-next-line unicorn/prevent-abbreviations
     const enableAPIDocs =
         !isErrorLike(settingsCascade.final) && settingsCascade.final?.experimentalFeatures?.apiDocs !== false
-
-    const { getCombinedViews } = useContext(InsightsApiContext)
-    const views = useObservable(
-        useMemo(
-            () =>
-                showCodeInsights && workspaceUri
-                    ? getCombinedViews(() =>
-                          from(props.extensionsController.extHostAPI).pipe(
-                              switchMap(extensionHostAPI =>
-                                  wrapRemoteObservable(
-                                      extensionHostAPI.getDirectoryViews({
-                                          viewer: {
-                                              type: 'DirectoryViewer',
-                                              directory: {
-                                                  uri,
-                                              },
-                                          },
-                                          workspace: {
-                                              uri: workspaceUri,
-                                          },
-                                      })
-                                  )
-                              )
-                          )
-                      )
-                    : EMPTY,
-            [getCombinedViews, showCodeInsights, workspaceUri, uri, props.extensionsController]
-        )
-    )
 
     const getPageTitle = (): string => {
         const repoString = displayRepoName(repo.name)
@@ -461,13 +422,17 @@ export const TreePage: React.FunctionComponent<Props> = ({
                                 />
                             )}
                         </header>
-                        {views && (
-                            <StaticInsightsViewGrid
-                                telemetryService={props.telemetryService}
-                                className="tree-page__section mb-3"
-                                views={views}
-                            />
-                        )}
+
+                        <ExtensionViewsSection
+                            className="tree-page__section mb-3"
+                            telemetryService={props.telemetryService}
+                            settingsCascade={settingsCascade}
+                            platformContext={props.platformContext}
+                            extensionsController={props.extensionsController}
+                            where="directory"
+                            uri={uri}
+                        />
+
                         <section className="tree-page__section test-tree-entries mb-3">
                             <h2>Files and directories</h2>
                             <TreeEntriesSection
