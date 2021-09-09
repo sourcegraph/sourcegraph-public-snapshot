@@ -726,10 +726,6 @@ func (s *Store) repositoryIDsForRetentionScan(ctx context.Context, processDelay 
 	)))
 }
 
-//
-// TODO - should not return dirty repositories
-//
-
 const repositoryIDsForRetentionScanQuery = `
 -- source: enterprise/internal/codeintel/stores/dbstore/uploads.go:repositoryIDsForRetentionScan
 WITH candidate_repositories AS (
@@ -744,7 +740,9 @@ repositories AS (
 	-- Ignore records that have been checked recently. Note this condition is
 	-- true for a null last_retention_scan_at (which has never been checked).
 	WHERE (%s - lrs.last_retention_scan_at > (%s * '1 second'::interval)) IS DISTINCT FROM FALSE
-	ORDER BY lrs.last_retention_scan_at NULLS FIRST, cr.id
+	ORDER BY
+		lrs.last_retention_scan_at NULLS FIRST,
+		cr.id -- tie breaker
 	LIMIT %s
 )
 INSERT INTO lsif_last_retention_scan (repository_id, last_retention_scan_at)
