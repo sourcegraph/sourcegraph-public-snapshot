@@ -116,7 +116,7 @@ func (s *Store) CreateBatchSpecWorkspace(ctx context.Context, ws ...*btypes.Batc
 				pq.Array(wj.FileMatches),
 				wj.OnlyFetchWorkspace,
 				marshaledSteps,
-				wj.State.ToDB(),
+				wj.State,
 				wj.CreatedAt,
 				wj.UpdatedAt,
 			); err != nil {
