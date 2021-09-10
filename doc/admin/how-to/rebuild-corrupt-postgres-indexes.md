@@ -7,7 +7,6 @@ There are multiple databases to rebuild indexes in. Repeat the below process for
 1. `pgsql`
 2. `codeintel-db`
 
-
 We need to ensure there's nothing writing or reading from/to the database before performing the next steps.
 
 In Kubernetes, you can accomplish this by deleting the database service to prevent new connections from being established, followed by a query to terminate existing connections.
