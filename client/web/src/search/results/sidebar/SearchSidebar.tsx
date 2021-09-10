@@ -3,6 +3,8 @@ import React, { useCallback, useMemo } from 'react'
 import { useHistory } from 'react-router'
 import StickyBox from 'react-sticky-box'
 
+import { FilterType } from '@sourcegraph/shared/src/search/query/filters'
+import { updateFilter } from '@sourcegraph/shared/src/search/query/transformer'
 import { Filter } from '@sourcegraph/shared/src/search/stream'
 import { VersionContextProps } from '@sourcegraph/shared/src/search/util'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
@@ -16,7 +18,9 @@ import { useTemporarySetting } from '../../../settings/temporary/useTemporarySet
 import { QueryState, submitSearch, toggleSearchFilter } from '../../helpers'
 
 import { getDynamicFilterLinks, getRepoFilterLinks, getSearchSnippetLinks } from './FilterLink'
+import { getFiltersOfKind, useLastRepoName } from './helpers'
 import { getQuickLinks } from './QuickLink'
+import { getRevisions } from './Revisions'
 import { getSearchReferenceFactory } from './SearchReference'
 import styles from './SearchSidebar.module.scss'
 import { SearchSidebarSection } from './SearchSidebarSection'
@@ -46,15 +50,25 @@ export enum SectionID {
     REPOSITORIES = 'repositories',
     SEARCH_SNIPPETS = 'snippets',
     QUICK_LINKS = 'quicklinks',
+    REVISIONS = 'revisions',
 }
 
 export const SearchSidebar: React.FunctionComponent<SearchSidebarProps> = props => {
     const history = useHistory()
     const [collapsedSections, setCollapsedSections] = useTemporarySetting('search.collapsedSidebarSections')
 
-    const onFilterClicked = useCallback(
+    const toggleFilter = useCallback(
         (value: string) => {
             const newQuery = toggleSearchFilter(props.query, value)
+            submitSearch({ ...props, query: newQuery, source: 'filter', history })
+        },
+        [history, props]
+    )
+
+    // Unlike onFilterClicked, this function will always append or update a filter
+    const updateOrAppendFilter = useCallback(
+        (filter: string, value: string) => {
+            const newQuery = updateFilter(props.query, filter, value)
             submitSearch({ ...props, query: newQuery, source: 'filter', history })
         },
         [history, props]
@@ -66,17 +80,17 @@ export const SearchSidebar: React.FunctionComponent<SearchSidebarProps> = props 
                 search_filter: { value },
             })
 
-            onFilterClicked(value)
+            toggleFilter(value)
         },
-        [onFilterClicked, props.telemetryService]
+        [toggleFilter, props.telemetryService]
     )
 
     const onSnippetClicked = useCallback(
         (value: string) => {
             props.telemetryService.log('SearchSnippetClicked')
-            onFilterClicked(value)
+            toggleFilter(value)
         },
-        [onFilterClicked, props.telemetryService]
+        [toggleFilter, props.telemetryService]
     )
 
     const persistToggleState = useCallback(
@@ -99,10 +113,13 @@ export const SearchSidebar: React.FunctionComponent<SearchSidebarProps> = props 
         [persistToggleState, props.telemetryService]
     )
 
-    const repoFilterLinks = useMemo(() => getRepoFilterLinks(props.filters, onDynamicFilterClicked), [
-        props.filters,
+    const repoFilters = useMemo(() => getFiltersOfKind(props.filters, FilterType.repo), [props.filters])
+    const repoName = useLastRepoName(props.query, repoFilters)
+    const repoFilterLinks = useMemo(() => getRepoFilterLinks(repoFilters, onDynamicFilterClicked), [
+        repoFilters,
         onDynamicFilterClicked,
     ])
+    const showReposSection = repoFilterLinks.length > 1
 
     return (
         <div className={classNames(styles.searchSidebar, props.className)}>
@@ -117,35 +134,52 @@ export const SearchSidebar: React.FunctionComponent<SearchSidebarProps> = props 
                 </SearchSidebarSection>
                 <SearchSidebarSection
                     className={styles.searchSidebarItem}
-                    header="Search reference"
-                    showSearch={true}
-                    startCollapsed={collapsedSections?.[SectionID.SEARCH_REFERENCE]}
-                    onToggle={onSearchReferenceToggle}
-                >
-                    {getSearchReferenceFactory(props)}
-                </SearchSidebarSection>
-                <SearchSidebarSection
-                    className={styles.searchSidebarItem}
                     header="Dynamic filters"
                     startCollapsed={collapsedSections?.[SectionID.DYNAMIC_FILTERS]}
                     onToggle={open => persistToggleState(SectionID.DYNAMIC_FILTERS, open)}
                 >
                     {getDynamicFilterLinks(props.filters, onDynamicFilterClicked)}
                 </SearchSidebarSection>
+                {showReposSection ? (
+                    <SearchSidebarSection
+                        className={styles.searchSidebarItem}
+                        header="Repositories"
+                        startCollapsed={collapsedSections?.[SectionID.REPOSITORIES]}
+                        onToggle={open => persistToggleState(SectionID.REPOSITORIES, open)}
+                        showSearch={true}
+                        noResultText={
+                            <span>
+                                None of the top {repoFilterLinks.length} repositories in your results match this filter.
+                                Try a <code>repo:</code> search in the main search bar instead.
+                            </span>
+                        }
+                    >
+                        {repoFilterLinks}
+                    </SearchSidebarSection>
+                ) : null}
+                {repoName ? (
+                    <SearchSidebarSection
+                        className={styles.searchSidebarItem}
+                        header="Revisions"
+                        startCollapsed={collapsedSections?.[SectionID.REVISIONS]}
+                        onToggle={open => persistToggleState(SectionID.REVISIONS, open)}
+                        showSearch={true}
+                        clearSearchOnChange={repoName}
+                    >
+                        {getRevisions({ repoName, onFilterClick: updateOrAppendFilter })}
+                    </SearchSidebarSection>
+                ) : null}
                 <SearchSidebarSection
                     className={styles.searchSidebarItem}
-                    header="Repositories"
-                    startCollapsed={collapsedSections?.[SectionID.REPOSITORIES]}
-                    onToggle={open => persistToggleState(SectionID.REPOSITORIES, open)}
+                    header="Search reference"
                     showSearch={true}
-                    noResultText={
-                        <span>
-                            None of the top {repoFilterLinks.length} repositories in your results match this filter. Try
-                            a <code>repo:</code> search in the main search bar instead.
-                        </span>
-                    }
+                    startCollapsed={collapsedSections?.[SectionID.SEARCH_REFERENCE]}
+                    onToggle={onSearchReferenceToggle}
+                    // search reference should always preserve the filter
+                    // (false is just an arbitrary but static value)
+                    clearSearchOnChange={false}
                 >
-                    {repoFilterLinks}
+                    {getSearchReferenceFactory(props)}
                 </SearchSidebarSection>
                 <SearchSidebarSection
                     className={styles.searchSidebarItem}
