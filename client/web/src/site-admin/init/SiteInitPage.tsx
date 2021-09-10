@@ -1,3 +1,4 @@
+import classNames from 'classnames'
 import React from 'react'
 import { Redirect } from 'react-router'
 
@@ -8,6 +9,8 @@ import { SignUpArguments, SignUpForm } from '../../auth/SignUpForm'
 import { BrandLogo } from '../../components/branding/BrandLogo'
 import { SourcegraphContext } from '../../jscontext'
 import { submitTrialRequest } from '../../marketing/backend'
+
+import styles from './SiteInitPage.module.scss'
 
 const initSite = async (args: SignUpArguments): Promise<void> => {
     const pingUrl = new URL('https://sourcegraph.com/ping-from-self-hosted')
@@ -66,8 +69,8 @@ export const SiteInitPage: React.FunctionComponent<Props> = ({
     }
 
     return (
-        <div className="site-init-page">
-            <div className="site-init-page__content card">
+        <div className={styles.siteInitPage}>
+            <div className={classNames('card', styles.content)}>
                 <div className="card-body p-4">
                     <BrandLogo className="w-100 mb-3" isLightTheme={isLightTheme} variant="logo" />
                     {authenticatedUser ? (

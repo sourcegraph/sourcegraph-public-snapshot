@@ -135,7 +135,7 @@ export const ExternalServicePage: React.FunctionComponent<Props> = ({
     }
 
     return (
-        <div className="site-admin-configuration-page">
+        <div>
             {externalService ? (
                 <PageTitle title={`External service - ${externalService.displayName}`} />
             ) : (

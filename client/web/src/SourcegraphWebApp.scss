@@ -95,8 +95,6 @@ body,
 @import './search/results/progress/StreamingProgress.scss';
 @import './settings/MonacoSettingsEditor';
 @import './settings/SettingsFile';
-@import './site-admin/init/SiteInitPage';
-@import './site-admin/SiteAdmin';
 @import './tree/Tree';
 @import './views/view-global-styles';
 @import './nav/GlobalNavbar';
@@ -111,7 +109,6 @@ body,
 @import './components/FilteredConnection';
 @import './components/Dialog';
 @import './user/settings/UserSettingsArea';
-@import './site-admin/SiteAdminAlert';
 @import './site/DockerForMacAlert';
 @import './user/UserAvatar';
 @import './user/area/UserArea';
