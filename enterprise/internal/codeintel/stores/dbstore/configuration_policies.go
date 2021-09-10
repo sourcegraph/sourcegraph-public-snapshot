@@ -26,6 +26,7 @@ type ConfigurationPolicy struct {
 	Name                      string
 	Type                      GitObjectType
 	Pattern                   string
+	Protected                 bool
 	RetentionEnabled          bool
 	RetentionDuration         *time.Duration
 	RetainIntermediateCommits bool
@@ -52,6 +53,7 @@ func scanConfigurationPolicies(rows *sql.Rows, queryErr error) (_ []Configuratio
 			&configurationPolicy.Name,
 			&configurationPolicy.Type,
 			&configurationPolicy.Pattern,
+			&configurationPolicy.Protected,
 			&configurationPolicy.RetentionEnabled,
 			&retentionDurationHours,
 			&configurationPolicy.RetainIntermediateCommits,
@@ -130,6 +132,7 @@ SELECT
 	name,
 	type,
 	pattern,
+	protected,
 	retention_enabled,
 	retention_duration_hours,
 	retain_intermediate_commits,
@@ -159,6 +162,7 @@ SELECT
 	name,
 	type,
 	pattern,
+	protected,
 	retention_enabled,
 	retention_duration_hours,
 	retain_intermediate_commits,
@@ -227,6 +231,7 @@ RETURNING
 	name,
 	type,
 	pattern,
+	false as protected,
 	retention_enabled,
 	retention_duration_hours,
 	retain_intermediate_commits,
