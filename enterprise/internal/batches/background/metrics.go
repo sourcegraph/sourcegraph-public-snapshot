@@ -19,6 +19,8 @@ type batchChangesMetrics struct {
 
 	batchSpecResolutionWorkerMetrics         workerutil.WorkerMetrics
 	batchSpecResolutionWorkerResetterMetrics dbworker.ResetterMetrics
+
+	batchSpecWorkspaceExecutionWorkerResetterMetrics dbworker.ResetterMetrics
 }
 
 func newMetrics(observationContext *observation.Context) batchChangesMetrics {
@@ -31,6 +33,8 @@ func newMetrics(observationContext *observation.Context) batchChangesMetrics {
 
 		batchSpecResolutionWorkerMetrics:         workerutil.NewMetrics(observationContext, "batch_changes_batch_spec_resolution_worker", nil),
 		batchSpecResolutionWorkerResetterMetrics: makeResetterMetrics(observationContext, "batch_changes_batch_spec_resolution_worker_resetter"),
+
+		batchSpecWorkspaceExecutionWorkerResetterMetrics: makeResetterMetrics(observationContext, "batch_spec_workspace_execution_worker_resetter"),
 	}
 }
 

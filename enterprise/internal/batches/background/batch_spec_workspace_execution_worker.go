@@ -34,7 +34,7 @@ func newBatchSpecWorkspaceExecutionWorkerResetter(workerStore dbworkerstore.Stor
 	options := dbworker.ResetterOptions{
 		Name:     "batch_spec_workspace_execution_worker_resetter",
 		Interval: 1 * time.Minute,
-		Metrics:  metrics.executionResetterMetrics,
+		Metrics:  metrics.batchSpecWorkspaceExecutionWorkerResetterMetrics,
 	}
 
 	resetter := dbworker.NewResetter(workerStore, options)
