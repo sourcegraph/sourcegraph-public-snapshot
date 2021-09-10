@@ -14,6 +14,7 @@ type State struct {
 	ResultSetData          map[int]ResultSet
 	DefinitionData         map[int]*datastructures.DefaultIDSetMap
 	ReferenceData          map[int]*datastructures.DefaultIDSetMap
+	ImplementationData     map[int]*datastructures.DefaultIDSetMap
 	HoverData              map[int]string
 	MonikerData            map[int]Moniker
 	PackageInformationData map[int]PackageInformation
@@ -44,6 +45,7 @@ func newState() *State {
 		ResultSetData:          map[int]ResultSet{},
 		DefinitionData:         map[int]*datastructures.DefaultIDSetMap{},
 		ReferenceData:          map[int]*datastructures.DefaultIDSetMap{},
+		ImplementationData:     map[int]*datastructures.DefaultIDSetMap{},
 		HoverData:              map[int]string{},
 		MonikerData:            map[int]Moniker{},
 		PackageInformationData: map[int]PackageInformation{},

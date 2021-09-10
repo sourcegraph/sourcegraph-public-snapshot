@@ -183,6 +183,9 @@ func mergeNextRangeData(state *State, itemID int, item Range, nextID int, nextIt
 	if item.ReferenceResultID == 0 {
 		item = item.SetReferenceResultID(nextItem.ReferenceResultID)
 	}
+	if item.ImplementationResultID == 0 {
+		item = item.SetImplementationResultID(nextItem.ImplementationResultID)
+	}
 	if item.HoverResultID == 0 {
 		item = item.SetHoverResultID(nextItem.HoverResultID)
 	}

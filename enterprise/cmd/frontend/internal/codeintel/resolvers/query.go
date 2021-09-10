@@ -53,6 +53,7 @@ type QueryResolver interface {
 	Ranges(ctx context.Context, startLine, endLine int) ([]AdjustedCodeIntelligenceRange, error)
 	Definitions(ctx context.Context, line, character int) ([]AdjustedLocation, error)
 	References(ctx context.Context, line, character, limit int, rawCursor string) ([]AdjustedLocation, string, error)
+	Implementations(ctx context.Context, line, character, limit int, rawCursor string) ([]AdjustedLocation, string, error)
 	Hover(ctx context.Context, line, character int) (string, lsifstore.Range, bool, error)
 	Diagnostics(ctx context.Context, limit int) ([]AdjustedDiagnostic, int, error)
 	DocumentationPage(ctx context.Context, pathID string) (*precise.DocumentationPageData, error)

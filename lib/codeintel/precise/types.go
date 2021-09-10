@@ -25,15 +25,16 @@ type DocumentData struct {
 // that was reachable via a result set has been collapsed into this object during
 // conversion.
 type RangeData struct {
-	StartLine             int  // 0-indexed, inclusive
-	StartCharacter        int  // 0-indexed, inclusive
-	EndLine               int  // 0-indexed, inclusive
-	EndCharacter          int  // 0-indexed, inclusive
-	DefinitionResultID    ID   // possibly empty
-	ReferenceResultID     ID   // possibly empty
-	HoverResultID         ID   // possibly empty
-	DocumentationResultID ID   // possibly empty
-	MonikerIDs            []ID // possibly empty
+	StartLine              int  // 0-indexed, inclusive
+	StartCharacter         int  // 0-indexed, inclusive
+	EndLine                int  // 0-indexed, inclusive
+	EndCharacter           int  // 0-indexed, inclusive
+	DefinitionResultID     ID   // possibly empty
+	ReferenceResultID      ID   // possibly empty
+	ImplementationResultID ID   // possibly empty
+	HoverResultID          ID   // possibly empty
+	DocumentationResultID  ID   // possibly empty
+	MonikerIDs             []ID // possibly empty
 }
 
 // MonikerData represent a unique name (eventually) attached to a range.
