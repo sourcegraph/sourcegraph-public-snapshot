@@ -144,7 +144,6 @@ async function watchViewerSettingsQuery(): Promise<ObservableQuery<ViewerSetting
     const graphQLClient = await getWebGraphQLClient()
 
     return graphQLClient.watchQuery<ViewerSettingsResult, ViewerSettingsVariables>({
-        fetchPolicy: 'cache-and-network',
         query: getDocumentNode(gql`
             query ViewerSettings {
                 viewerSettings {

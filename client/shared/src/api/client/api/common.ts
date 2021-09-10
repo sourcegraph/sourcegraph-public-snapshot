@@ -68,7 +68,6 @@ export const wrapRemoteObservable = <T>(
                         return this
                     },
                     subscribe(...args: any[]): Subscription {
-                        console.log('proxy subscribe')
                         // Always subscribe with an object because the other side
                         // is unable to tell if a Proxy is a function or an observer object
                         // (they always appear as functions)

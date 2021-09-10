@@ -1,6 +1,10 @@
+import assert from 'assert'
+
 import { Settings } from '@sourcegraph/shared/src/settings/settings'
 import { createDriverForTest, Driver } from '@sourcegraph/shared/src/testing/driver'
 import { setupExtensionMocking, simpleHoverProvider } from '@sourcegraph/shared/src/testing/integration/mockExtension'
+import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'
+import { retry } from '@sourcegraph/shared/src/testing/utils'
 
 import { BrowserIntegrationTestContext, createBrowserIntegrationTestContext } from './context'
 import { closeInstallPageTab } from './shared'
@@ -14,7 +18,7 @@ describe('GitLab', () => {
             await driver.setExtensionSourcegraphUrl()
         }
     })
-    // after(() => driver?.close())
+    after(() => driver?.close())
 
     let testContext: BrowserIntegrationTestContext
     beforeEach(async function () {
@@ -69,8 +73,27 @@ describe('GitLab', () => {
         // Ensure that the same assets are requested in all environments.
         await driver.page.emulateMediaFeatures([{ name: 'prefers-color-scheme', value: 'light' }])
     })
-    // afterEachSaveScreenshotIfFailed(() => driver.page)
-    // afterEach(() => testContext?.dispose())
+    afterEachSaveScreenshotIfFailed(() => driver.page)
+    afterEach(() => testContext?.dispose())
+
+    it('adds "view on Sourcegraph" buttons to files', async () => {
+        const repoName = 'gitlab.com/sourcegraph/jsonrpc2'
+
+        const url = 'https://gitlab.com/sourcegraph/jsonrpc2/blob/4fb7cd90793ee6ab445f466b900e6bffb9b63d78/call_opt.go'
+        await driver.page.goto(url)
+
+        await driver.page.waitForSelector('.code-view-toolbar .open-on-sourcegraph', { timeout: 10000 })
+        assert.strictEqual((await driver.page.$$('.code-view-toolbar .open-on-sourcegraph')).length, 1)
+
+        await retry(async () => {
+            assert.strictEqual(
+                await driver.page.evaluate(
+                    () => document.querySelector<HTMLAnchorElement>('.code-view-toolbar .open-on-sourcegraph')?.href
+                ),
+                `${driver.sourcegraphBaseUrl}/${repoName}@4fb7cd90793ee6ab445f466b900e6bffb9b63d78/-/blob/call_opt.go?utm_source=${driver.browserType}-extension`
+            )
+        })
+    })
 
     it('shows hover tooltips when hovering a token', async () => {
         const { mockExtension, Extensions, extensionSettings } = setupExtensionMocking({

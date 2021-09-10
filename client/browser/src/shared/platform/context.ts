@@ -1,4 +1,5 @@
 import { ApolloClient, NormalizedCacheObject } from '@apollo/client'
+import { print } from 'graphql'
 import { once } from 'lodash'
 import { combineLatest, Observable, ReplaySubject } from 'rxjs'
 import { map, switchMap, take } from 'rxjs/operators'
@@ -18,7 +19,7 @@ import { background } from '../../browser-extension/web-extension-api/runtime'
 import { getHeaders } from '../backend/headers'
 import { requestGraphQlHelper } from '../backend/requestGraphQl'
 import { CodeHost } from '../code-hosts/shared/codeHost'
-import { isInPage } from '../context'
+import { isBackground, isInPage } from '../context'
 import { observeSourcegraphURL } from '../util/context'
 
 import { createExtensionHost } from './extensionHost'
@@ -79,8 +80,24 @@ export function createPlatformContext(
      * After that, the same instance should be used by all consumers.
      */
     const getBrowserGraphQLClient = once(
-        (): Promise<ApolloClient<NormalizedCacheObject>> =>
-            getGraphQLClient({ headers: getHeaders(), baseUrl: sourcegraphURL })
+        (): Promise<ApolloClient<NormalizedCacheObject>> => {
+            if (isExtension && !isBackground) {
+                // eslint-disable-next-line @typescript-eslint/no-unsafe-return
+                return Promise.resolve({
+                    watchQuery: ({ variables, query }: any) => {
+                        console.log({ variables, query: print(query) })
+
+                        return requestGraphQL<any>({
+                            request: print(query),
+                            variables,
+                            mightContainPrivateInfo: false,
+                        })
+                    },
+                }) as any
+            }
+
+            return getGraphQLClient({ headers: getHeaders(), baseUrl: sourcegraphURL })
+        }
     )
 
     const context: BrowserPlatformContext = {
