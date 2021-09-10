@@ -70,7 +70,7 @@ setting hasn't been set yet.
 NOTE: Settings might be loaded asynchronously, in which case the initial value
 of the setting will be `undefined`. You might have to account for this in your
 component to prevent a flash of content. The optional default value is only used
-if the setting hasn't been set yet, it is *not* used as initial value.
+if the setting hasn't been set yet; it is *not* used as an initial value.
 
 #### Example usage:
 
