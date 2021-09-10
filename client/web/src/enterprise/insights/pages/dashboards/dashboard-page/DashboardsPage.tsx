@@ -11,6 +11,7 @@ import { PageHeader } from '@sourcegraph/wildcard'
 
 import { FeedbackBadge } from '../../../../../components/FeedbackBadge'
 import { Page } from '../../../../../components/Page'
+import { CodeInsightsPings } from '../../../../../insights/telemetry-values'
 import { Settings } from '../../../../../schema/settings.schema'
 import { CodeInsightsIcon } from '../../../components'
 import { InsightsDashboardType } from '../../../core/types'
@@ -38,11 +39,11 @@ export const DashboardsPage: React.FunctionComponent<DashboardsPageProps> = prop
     const { url } = useRouteMatch()
 
     useEffect(() => {
-        telemetryService.logViewEvent('Insights')
+        telemetryService.logViewEvent(CodeInsightsPings.Insights)
     }, [telemetryService, dashboardID])
 
     const handleAddMoreInsightClick = (): void => {
-        telemetryService.log('InsightAddMoreClick')
+        telemetryService.log(CodeInsightsPings.InsightAddMoreClick)
     }
 
     if (!dashboardID) {

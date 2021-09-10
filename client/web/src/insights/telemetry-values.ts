@@ -14,4 +14,6 @@ export enum CodeInsightsPings {
     InsightsGroupedCount = 'InsightsGroupedCount',
     InsightsGroupedStepSizes = 'InsightsGroupedStepSizes',
     InsightUICustomization = 'InsightUICustomization',
+    InsightAddMoreClick = 'InsightAddMoreClick',
+    Insights = 'Insights',
 }
