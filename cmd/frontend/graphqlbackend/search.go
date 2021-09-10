@@ -2,7 +2,6 @@ package graphqlbackend
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"sync"
 
@@ -244,15 +243,7 @@ func decodedViewerFinalSettings(ctx context.Context, db dbutil.DB) (_ *schema.Se
 	if mockDecodedViewerFinalSettings != nil {
 		return mockDecodedViewerFinalSettings, nil
 	}
-	merged, err := viewerFinalSettings(ctx, db)
-	if err != nil {
-		return nil, err
-	}
-	var settings schema.Settings
-	if err := json.Unmarshal([]byte(merged.Contents()), &settings); err != nil {
-		return nil, err
-	}
-	return &settings, nil
+	return viewerFinalSettings(ctx, db)
 }
 
 type resolveRepositoriesOpts struct {
