@@ -15,6 +15,8 @@ type InsightViewSeries struct {
 	OldestHistoricalAt    time.Time
 	LastRecordedAt        time.Time
 	NextRecordingAfter    time.Time
+	LastSnapshotAt        time.Time
+	NextSnapshotAfter     time.Time
 	BackfillQueuedAt      *time.Time
 	RecordingIntervalDays int
 	Label                 string
@@ -52,6 +54,8 @@ type InsightSeries struct {
 	OldestHistoricalAt    time.Time
 	LastRecordedAt        time.Time
 	NextRecordingAfter    time.Time
+	LastSnapshotAt        time.Time
+	NextSnapshotAfter     time.Time
 	BackfillQueuedAt      time.Time
 	RecordingIntervalDays int
 }

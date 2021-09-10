@@ -181,6 +181,7 @@ group by for_time, reason;
 type GetDataSeriesArgs struct {
 	// NextRecordingBefore will filter for results for which the next_recording_after field falls before the specified time.
 	NextRecordingBefore time.Time
+	NextSnapshotBefore  time.Time
 	Deleted             bool
 	BackfillIncomplete  bool
 	SeriesID            string
@@ -191,6 +192,9 @@ func (s *InsightStore) GetDataSeries(ctx context.Context, args GetDataSeriesArgs
 
 	if !args.NextRecordingBefore.IsZero() {
 		preds = append(preds, sqlf.Sprintf("next_recording_after < %s", args.NextRecordingBefore))
+	}
+	if !args.NextSnapshotBefore.IsZero() {
+		preds = append(preds, sqlf.Sprintf("next_snapshot_after < %s", args.NextSnapshotBefore))
 	}
 	if args.Deleted {
 		preds = append(preds, sqlf.Sprintf("deleted_at IS NOT NULL"))
@@ -229,6 +233,8 @@ func scanDataSeries(rows *sql.Rows, queryErr error) (_ []types.InsightSeries, er
 			&temp.LastRecordedAt,
 			&temp.NextRecordingAfter,
 			&temp.RecordingIntervalDays,
+			&temp.LastSnapshotAt,
+			&temp.NextSnapshotAfter,
 		); err != nil {
 			return []types.InsightSeries{}, err
 		}
@@ -260,6 +266,8 @@ func scanInsightViewSeries(rows *sql.Rows, queryErr error) (_ []types.InsightVie
 			&temp.NextRecordingAfter,
 			&temp.BackfillQueuedAt,
 			&temp.RecordingIntervalDays,
+			&temp.LastSnapshotAt,
+			&temp.NextSnapshotAfter,
 		); err != nil {
 			return []types.InsightViewSeries{}, err
 		}
@@ -306,6 +314,9 @@ func (s *InsightStore) CreateSeries(ctx context.Context, series types.InsightSer
 	if series.NextRecordingAfter.IsZero() {
 		series.NextRecordingAfter = s.Now()
 	}
+	if series.NextSnapshotAfter.IsZero() {
+		series.NextSnapshotAfter = s.Now()
+	}
 	if series.OldestHistoricalAt.IsZero() {
 		// TODO(insights): this value should probably somewhere more discoverable / obvious than here
 		series.OldestHistoricalAt = s.Now().Add(-time.Hour * 24 * 7 * 26)
@@ -318,6 +329,8 @@ func (s *InsightStore) CreateSeries(ctx context.Context, series types.InsightSer
 		series.LastRecordedAt,
 		series.NextRecordingAfter,
 		series.RecordingIntervalDays,
+		series.LastSnapshotAt,
+		series.NextSnapshotAfter,
 	))
 	var id int
 	err := row.Scan(&id)
@@ -331,6 +344,7 @@ func (s *InsightStore) CreateSeries(ctx context.Context, series types.InsightSer
 type DataSeriesStore interface {
 	GetDataSeries(ctx context.Context, args GetDataSeriesArgs) ([]types.InsightSeries, error)
 	StampRecording(ctx context.Context, series types.InsightSeries) (types.InsightSeries, error)
+	StampSnapshot(ctx context.Context, series types.InsightSeries) (types.InsightSeries, error)
 	StampBackfill(ctx context.Context, series types.InsightSeries) (types.InsightSeries, error)
 }
 
@@ -345,6 +359,18 @@ func (s *InsightStore) StampRecording(ctx context.Context, series types.InsightS
 	current := s.Now()
 	next := insights.NextRecording(current)
 	if err := s.Exec(ctx, sqlf.Sprintf(stampRecordingSql, current, next, series.ID)); err != nil {
+		return types.InsightSeries{}, err
+	}
+	series.LastRecordedAt = current
+	series.NextRecordingAfter = next
+	return series, nil
+}
+
+// StampSnapshot will update the recording metadata for this series and return the InsightSeries struct with updated values.
+func (s *InsightStore) StampSnapshot(ctx context.Context, series types.InsightSeries) (types.InsightSeries, error) {
+	current := s.Now()
+	next := insights.NextSnapshot(current)
+	if err := s.Exec(ctx, sqlf.Sprintf(stampSnapshotSql, current, next, series.ID)); err != nil {
 		return types.InsightSeries{}, err
 	}
 	series.LastRecordedAt = current
@@ -377,6 +403,14 @@ SET last_recorded_at = %s,
 WHERE id = %s;
 `
 
+const stampSnapshotSql = `
+-- source: enterprise/internal/insights/store/insight_store.go:StampSnapshot
+UPDATE insight_series
+SET last_snapshot_at = %s,
+    next_snapshot_after = %s
+WHERE id = %s;
+`
+
 const attachSeriesToViewSql = `
 -- source: enterprise/internal/insights/store/insight_store.go:AttachSeriesToView
 INSERT INTO insight_view_series (insight_series_id, insight_view_id, label, stroke)
@@ -392,15 +426,15 @@ returning id;`
 const createInsightSeriesSql = `
 -- source: enterprise/internal/insights/store/insight_store.go:CreateSeries
 INSERT INTO insight_series (series_id, query, created_at, oldest_historical_at, last_recorded_at,
-                            next_recording_after, recording_interval_days)
-VALUES (%s, %s, %s, %s, %s, %s, %s)
+                            next_recording_after, recording_interval_days, last_snapshot_at, next_snapshot_after)
+VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
 RETURNING id;`
 
 const getInsightByViewSql = `
 -- source: enterprise/internal/insights/store/insight_store.go:Get
 SELECT iv.unique_id, iv.title, iv.description, ivs.label, ivs.stroke,
 i.series_id, i.query, i.created_at, i.oldest_historical_at, i.last_recorded_at,
-i.next_recording_after, i.backfill_queued_at, i.recording_interval_days
+i.next_recording_after, i.backfill_queued_at, i.recording_interval_days, i.last_snapshot_at, i.next_snapshot_after
 FROM insight_view iv
          JOIN insight_view_series ivs ON iv.id = ivs.insight_view_id
          JOIN insight_series i ON ivs.insight_series_id = i.id
@@ -410,6 +444,6 @@ ORDER BY iv.unique_id, i.series_id
 
 const getInsightDataSeriesSql = `
 -- source: enterprise/internal/insights/store/insight_store.go:GetDataSeries
-select id, series_id, query, created_at, oldest_historical_at, last_recorded_at, next_recording_after, recording_interval_days from insight_series
+select id, series_id, query, created_at, oldest_historical_at, last_recorded_at, next_recording_after, recording_interval_days, last_snapshot_at, next_snapshot_after from insight_series
 WHERE %s
 `

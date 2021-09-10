@@ -1271,7 +1271,34 @@ const CODE_HOSTS: CodeHost[] = [
     phabricatorCodeHost,
     gerritCodeHost,
 ]
-export const determineCodeHost = (): CodeHost | undefined => CODE_HOSTS.find(codeHost => codeHost.check())
+
+const CLOUD_CODE_HOST_HOSTS = ['github.com', 'gitlab.com']
+
+export const determineCodeHost = (sourcegraphURL?: string): CodeHost | undefined => {
+    const codeHost = CODE_HOSTS.find(codeHost => codeHost.check())
+
+    if (!codeHost) {
+        return undefined
+    }
+
+    // Prevent repo lookups for code hosts that we know cannot have repositories
+    // cloned on sourcegraph.com. Repo lookups trigger cloning, which will
+    // inevitably fail in this case.
+    if (sourcegraphURL === DEFAULT_SOURCEGRAPH_URL) {
+        const { hostname } = new URL(location.href)
+        const validCodeHost = CLOUD_CODE_HOST_HOSTS.some(cloudHost => cloudHost === hostname)
+        if (!validCodeHost) {
+            console.log(
+                `Sourcegraph code host integration: stopped initialization since ${hostname} is not a supported code host when Sourcegraph URL is ${DEFAULT_SOURCEGRAPH_URL}.\n List of supported code hosts on ${DEFAULT_SOURCEGRAPH_URL}: ${CLOUD_CODE_HOST_HOSTS.join(
+                    ', '
+                )}`
+            )
+            return undefined
+        }
+    }
+
+    return codeHost
+}
 
 export function injectCodeIntelligenceToCodeHost(
     mutations: Observable<MutationRecordLike[]>,
