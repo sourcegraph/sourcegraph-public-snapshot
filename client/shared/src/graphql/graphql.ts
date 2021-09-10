@@ -93,16 +93,6 @@ export function requestGraphQLCommon<T, V = object>({
     })
 }
 
-export const graphQLClient = ({ headers }: { headers: RequestInit['headers'] }): ApolloClient<NormalizedCacheObject> =>
-    new ApolloClient({
-        uri: GRAPHQL_URI,
-        cache,
-        link: createHttpLink({
-            uri: ({ operationName }) => `${GRAPHQL_URI}?${operationName}`,
-            headers,
-        }),
-    })
-
 interface GetGraphqlClientOptions {
     headers: RequestInit['headers']
 }
