@@ -95,7 +95,7 @@ require (
 	github.com/kr/text v0.2.0
 	github.com/kylelemons/godebug v1.1.0
 	github.com/lib/pq v1.10.2
-	github.com/libgit2/git2go/v31 v31.4.14 // indirect
+	github.com/libgit2/git2go/v31 v31.4.14
 	github.com/machinebox/graphql v0.2.2
 	github.com/mattn/go-sqlite3 v1.14.8
 	github.com/mcuadros/go-version v0.0.0-20190830083331-035f6764e8d2
