@@ -111,10 +111,8 @@ const requestGraphQL = <T, V = object>({
     request: string
     variables: V
     sourcegraphURL?: string
-}): Observable<GraphQLResult<T>> => {
-    console.log('requests gql in extension')
-
-    return (sourcegraphURL ? of(sourcegraphURL) : observeSourcegraphURL(IS_EXTENSION)).pipe(
+}): Observable<GraphQLResult<T>> =>
+    (sourcegraphURL ? of(sourcegraphURL) : observeSourcegraphURL(IS_EXTENSION)).pipe(
         take(1),
         switchMap(sourcegraphURL =>
             requestGraphQLCommon<T, V>({
@@ -126,7 +124,6 @@ const requestGraphQL = <T, V = object>({
             })
         )
     )
-}
 
 async function main(): Promise<void> {
     const subscriptions = new Subscription()
@@ -256,7 +253,6 @@ async function main(): Promise<void> {
 
     // Handle calls from other scripts
     browser.runtime.onMessage.addListener(async (message: { type: keyof BackgroundPageApi; payload: any }, sender) => {
-        console.log('onMessage', message.type)
         const method = message.type
 
         if (!handlers[method]) {
