@@ -1,0 +1,18 @@
+.line {
+    &--code {
+        word-wrap: break-word;
+        white-space: pre-wrap;
+        div {
+            display: inline;
+        }
+    }
+    &--active {
+        background-color: var(--code-line-highlight-color) !important;
+    }
+    &--addition {
+        background-color: var(--diff-add-bg);
+    }
+    &--deletion {
+        background-color: var(--diff-remove-bg);
+    }
+}

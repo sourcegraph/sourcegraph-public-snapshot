@@ -1,12 +1,12 @@
 # Developing the code insights backend
 
-- [MVP state of the backend](#mvp-state-of-the-backend)
+- [Beta state of the backend](#beta-state-of-the-backend)
 - [Architecture](#architecture)
 - [Life of an insight](#life-of-an-insight)
     - [(1) User defines insight in settings](#1-user-defines-insight-in-settings)
-    - [(2) The _insight enqueuer_ detects the new insight](#2-the-insight-enqueuer-detects-the-new-insight)
-    - [(3) The queryrunner worker gets work and runs the search query](#3-the-queryrunner-worker-gets-work-and-runs-the-search-query)
-    - [(4) The historical data enqueuer gets to work](#4-the-historical-data-enqueuer-gets-to-work)
+    - [(2) The _insight enqueuer_ detects the new insight](#2-the-insight-enqueuer-indexed-recorder-detects-the-new-insight)
+    - [(3) The queryrunner worker gets work and runs the search query](#3-the-historical-data-enqueuer-historical-recorder-gets-to-work)
+    - [(4) The historical data enqueuer gets to work](#4-the-queryrunner-worker-gets-work-and-runs-the-search-query)
     - [(5) Query-time and rendering!](#5-query-time-and-rendering)
 - [Debugging](#debugging)
     - [Accessing the TimescaleDB instance](#accessing-the-timescaledb-instance)
@@ -16,9 +16,9 @@
         - [Inserting data](#inserting-data)
 - [Creating DB migrations](#creating-db-migrations)
 
-## Pre-beta / Beta state of the backend
+## Beta state of the backend
 
-The current code insights backend is a beta version contributed by @coury-clark (based on previous work by @slimsag) - it:
+The current code insights backend is a beta version contributed by [Coury](https://about.sourcegraph.com/handbook/company/team#coury-clark-he-him) (based on previous work by [Stephen](https://about.sourcegraph.com/handbook/company/team#stephen-gutekanst)) - it:
 
 * Supports running search-based insights over all indexable repositories on the Sourcegraph installation.
 * Is backed by a [TimescaleDB](https://www.timescale.com) instance. See the [database section](#database) below for more information.

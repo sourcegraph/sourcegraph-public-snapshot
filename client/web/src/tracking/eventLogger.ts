@@ -3,9 +3,9 @@ import * as uuid from 'uuid'
 
 import { TelemetryService } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
-import { browserExtensionMessageReceived, handleQueryEvents, pageViewQueryParameters } from './analyticsUtils'
+import { browserExtensionMessageReceived } from './analyticsUtils'
 import { serverAdmin } from './services/serverAdminWrapper'
-import { getPreviousMonday, redactSensitiveInfoFromAppURL } from './util'
+import { getPreviousMonday, redactSensitiveInfoFromAppURL, stripURLParameters } from './util'
 
 export const ANONYMOUS_USER_ID_KEY = 'sourcegraphAnonymousUid'
 export const COHORT_ID_KEY = 'sourcegraphCohortId'
@@ -162,3 +162,46 @@ export class EventLogger implements TelemetryService {
 }
 
 export const eventLogger = new EventLogger()
+
+/**
+ * Log events associated with URL query string parameters, and remove those parameters as necessary
+ * Note that this is a destructive operation (it changes the page URL and replaces browser state) by
+ * calling stripURLParameters
+ */
+function handleQueryEvents(url: string): void {
+    const parsedUrl = new URL(url)
+    const isBadgeRedirect = !!parsedUrl.searchParams.get('badge')
+    if (isBadgeRedirect) {
+        eventLogger.log('RepoBadgeRedirected')
+    }
+
+    stripURLParameters(url, ['utm_campaign', 'utm_source', 'utm_medium', 'badge'])
+}
+
+interface EventQueryParameters {
+    utm_campaign?: string
+    utm_source?: string
+    utm_medium?: string
+}
+
+/**
+ * Get pageview-specific event properties from URL query string parameters
+ */
+function pageViewQueryParameters(url: string): EventQueryParameters {
+    const parsedUrl = new URL(url)
+
+    const utmSource = parsedUrl.searchParams.get('utm_source')
+    if (utmSource === 'saved-search-email') {
+        eventLogger.log('SavedSearchEmailClicked')
+    } else if (utmSource === 'saved-search-slack') {
+        eventLogger.log('SavedSearchSlackClicked')
+    } else if (utmSource === 'code-monitoring-email') {
+        eventLogger.log('CodeMonitorEmailLinkClicked')
+    }
+
+    return {
+        utm_campaign: parsedUrl.searchParams.get('utm_campaign') || undefined,
+        utm_source: parsedUrl.searchParams.get('utm_source') || undefined,
+        utm_medium: parsedUrl.searchParams.get('utm_medium') || undefined,
+    }
+}

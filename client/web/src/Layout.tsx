@@ -11,7 +11,6 @@ import * as GQL from '@sourcegraph/shared/src/graphql/schema'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { parseQueryAndHash } from '@sourcegraph/shared/src/util/url'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
 
@@ -30,6 +29,7 @@ import { ExtensionsAreaHeaderActionButton } from './extensions/ExtensionsAreaHea
 import { FeatureFlagProps } from './featureFlags/featureFlags'
 import { GlobalAlerts } from './global/GlobalAlerts'
 import { GlobalDebug } from './global/GlobalDebug'
+import { CodeInsightsProps } from './insights/types'
 import { KeyboardShortcutsProps, KEYBOARD_SHORTCUT_SHOW_HELP } from './keyboardShortcuts/keyboardShortcuts'
 import { KeyboardShortcutsHelp } from './keyboardShortcuts/KeyboardShortcutsHelp'
 import { SurveyToast } from './marketing/SurveyToast'
@@ -62,7 +62,7 @@ import {
 import { QueryState } from './search/helpers'
 import { SiteAdminAreaRoute } from './site-admin/SiteAdminArea'
 import { SiteAdminSideBarGroups } from './site-admin/SiteAdminSidebar'
-import { ThemePreferenceProps } from './theme'
+import { useTheme } from './theme'
 import { UserAreaRoute } from './user/area/UserArea'
 import { UserAreaHeaderNavItem } from './user/area/UserAreaHeader'
 import { UserSettingsAreaRoute } from './user/settings/UserSettingsArea'
@@ -76,9 +76,7 @@ export interface LayoutProps
         PlatformContextProps,
         ExtensionsControllerProps,
         KeyboardShortcutsProps,
-        ThemeProps,
         TelemetryProps,
-        ThemePreferenceProps,
         ActivationProps,
         ParsedSearchQueryProps,
         PatternTypeProps,
@@ -94,6 +92,7 @@ export interface LayoutProps
         UserExternalServicesOrRepositoriesUpdateProps,
         CodeIntelligenceProps,
         BatchChangesProps,
+        CodeInsightsProps,
         FeatureFlagProps {
     extensionAreaRoutes: readonly ExtensionAreaRoute[]
     extensionAreaHeaderNavItems: readonly ExtensionAreaHeaderNavItem[]
@@ -212,7 +211,7 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
     ])
 
     // Hack! Hardcode these routes into cmd/frontend/internal/app/ui/router.go
-    const repogroupPages = ['/kubernetes', '/stanford', '/stackstorm', '/temporal', '/o3de', '/cncf']
+    const repogroupPages = ['/kubernetes', '/stanford', '/stackstorm', '/temporal', '/o3de', '/chakraui', '/cncf']
     const isRepogroupPage = repogroupPages.includes(props.location.pathname)
 
     // TODO add a component layer as the parent of the Layout component rendering "top-level" routes that do not render the navbar,
@@ -231,6 +230,9 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
     const isSearchAutoFocusRequired = routeMatch === '/survey/:score?' || routeMatch === '/insights'
 
     const authRequired = useObservable(authRequiredObservable)
+
+    const themeProps = useTheme()
+
     const breadcrumbProps = useBreadcrumbs()
 
     // Control browser extension discoverability animation here.
@@ -248,6 +250,7 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
 
     const context: LayoutRouteComponentProps<any> = {
         ...props,
+        ...themeProps,
         ...breadcrumbProps,
         onExtensionAlertDismissed,
         isMacPlatform,
@@ -264,6 +267,7 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
             {!isSiteInit && !isSignInOrUp && (
                 <GlobalNavbar
                     {...props}
+                    {...themeProps}
                     authRequired={!!authRequired}
                     showSearchBox={
                         isSearchRelatedPage &&
@@ -311,6 +315,7 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
                 props.location.pathname !== '/sign-in' && (
                     <ResizablePanel
                         {...props}
+                        {...themeProps}
                         repoName={`git://${parseBrowserRepoURL(props.location.pathname).repoName}`}
                         fetchHighlightedFileLineRanges={fetchHighlightedFileLineRanges}
                     />

@@ -566,7 +566,7 @@ func TestService(t *testing.T) {
 				t.Fatalf("ChangesetSpec ID is 0")
 			}
 
-			wantFields := &btypes.ChangesetSpecDescription{}
+			wantFields := &batcheslib.ChangesetSpec{}
 			if err := json.Unmarshal([]byte(spec.RawSpec), wantFields); err != nil {
 				t.Fatal(err)
 			}

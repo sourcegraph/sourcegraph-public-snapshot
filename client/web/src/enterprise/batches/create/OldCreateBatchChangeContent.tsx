@@ -31,10 +31,7 @@ const SampleTabHeader: React.FunctionComponent<SampleTabHeaderProps> = ({ sample
         <button
             type="button"
             onClick={onClick}
-            className={classNames(
-                'btn text-left sidebar__link--inactive d-flex sidebar-nav-link w-100',
-                active && 'btn-primary'
-            )}
+            className={classNames('btn text-left sidebar__link--inactive d-flex w-100', active && 'btn-primary')}
         >
             {sample.name}
         </button>

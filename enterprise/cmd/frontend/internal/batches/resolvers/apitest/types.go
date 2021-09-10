@@ -381,3 +381,9 @@ type BatchSpecExecution struct {
 	Initiator    User
 	Namespace    UserOrg
 }
+
+type BatchSpecExecutionConnection struct {
+	Nodes      []BatchSpecExecution
+	TotalCount int
+	PageInfo   PageInfo
+}

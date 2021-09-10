@@ -1,3 +1,4 @@
+import classNames from 'classnames'
 import { Remote } from 'comlink'
 import * as H from 'history'
 import iterate from 'iterare'
@@ -96,7 +97,7 @@ interface BlobProps
     blobInfo: BlobInfo
 }
 
-export interface BlobInfo extends AbsoluteRepoFile, ThemeProps, ModeSpec {
+export interface BlobInfo extends AbsoluteRepoFile, ModeSpec {
     /** The raw content of the blob. */
     content: string
 
@@ -597,9 +598,9 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
 
     return (
         <>
-            <div className={`blob ${props.className}`} ref={nextBlobElement}>
+            <div className={classNames('blob', props.className)} ref={nextBlobElement}>
                 <code
-                    className={`blob__code ${props.wrapCode ? ' blob__code--wrapped' : ''} test-blob`}
+                    className={classNames('blob__code test-blob', props.wrapCode && 'blob__code--wrapped')}
                     ref={nextCodeViewElement}
                     dangerouslySetInnerHTML={{
                         __html: blobInfo.html,

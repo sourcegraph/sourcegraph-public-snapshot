@@ -23,7 +23,7 @@ describe('Extension activation', () => {
             const FIXTURE_EXTENSION: ExecutableExtension = {
                 scriptURL: 'https://fixture.extension',
                 id: 'sourcegraph/fixture-extension',
-                manifest: { url: 'a', activationEvents: ['*'] },
+                manifest: { url: 'a', contributes: {}, activationEvents: ['*'] },
             }
 
             const haveInitialExtensionsLoaded = new BehaviorSubject<boolean>(false)

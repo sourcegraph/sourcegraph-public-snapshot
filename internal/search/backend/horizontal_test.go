@@ -3,6 +3,7 @@ package backend
 import (
 	"context"
 	"fmt"
+	"net"
 	"sort"
 	"strconv"
 	"strings"
@@ -188,6 +189,80 @@ func TestSyncSearchers(t *testing.T) {
 		if got, want := m["a"].(*mock).dialNum, 1; got != want {
 			t.Fatalf("expected immutable dail num %d, got %d", want, got)
 		}
+	}
+}
+
+func TestIgnoreDownEndpoints(t *testing.T) {
+	var endpoints atomicMap
+	endpoints.Store(prefixMap{"down", "up"})
+
+	searcher := &HorizontalSearcher{
+		Map: &endpoints,
+		Dial: func(endpoint string) zoekt.Streamer {
+			var client zoekt.Searcher
+			switch endpoint {
+			case "down":
+				err := &net.DNSError{
+					Err:        "no such host",
+					Name:       "down",
+					IsNotFound: true,
+				}
+				client = &mockSearcher{
+					searchError: err,
+					listError:   err,
+				}
+			case "up":
+				var rle zoekt.RepoListEntry
+				rle.Repository.Name = "repo"
+
+				client = &mockSearcher{
+					searchResult: &zoekt.SearchResult{
+						Files: []zoekt.FileMatch{{
+							Repository: "repo",
+						}},
+					},
+					listResult: &zoekt.RepoList{
+						Repos: []*zoekt.RepoListEntry{&rle},
+					},
+				}
+			case "error":
+				client = &mockSearcher{
+					searchError: errors.New("boom"),
+					listError:   errors.New("boom"),
+				}
+			}
+
+			return NewMeteredSearcher(endpoint, &StreamSearchAdapter{client})
+		},
+	}
+	defer searcher.Close()
+
+	sr, err := searcher.Search(context.Background(), nil, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(sr.Files) == 0 {
+		t.Fatal("Search: expected results")
+	}
+
+	rle, err := searcher.List(context.Background(), nil, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(rle.Repos) == 0 {
+		t.Fatal("List: expected results")
+	}
+
+	// now test we do return errors if they occur
+	endpoints.Store(prefixMap{"down", "up", "error"})
+	_, err = searcher.Search(context.Background(), nil, nil)
+	if err == nil {
+		t.Fatal("Search: expected error")
+	}
+
+	_, err = searcher.List(context.Background(), nil, nil)
+	if err == nil {
+		t.Fatal("List: expected error")
 	}
 }
 

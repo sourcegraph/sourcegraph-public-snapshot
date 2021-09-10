@@ -9,9 +9,11 @@ assignees: ''
 
 @sourcegraph/distribution I am requesting the following commits be included in a patch release. They are already merged into `main`:
 
-The intent of the questions below is to ensure we keep Sourcegraph high quality and [only create patch releases based on a strict criteria.](https://about.sourcegraph.com/handbook/engineering/releases#when-are-patch-releases-performed) If you can answer yes to many or most of these questions, we will be happy to create the patch release.
-
 - <!-- LINK TO EXACT MERGED COMMITS HERE -->
+
+---
+
+The intent of the questions below is to ensure we keep Sourcegraph high quality and [only create patch releases based on a strict criteria.](https://about.sourcegraph.com/handbook/engineering/releases#when-are-patch-releases-performed) If you can answer yes to many or most of these questions, we will be happy to create the patch release.
 
 I have read [when and why we perform patch releases](https://about.sourcegraph.com/handbook/engineering/releases#when-are-patch-releases-performed) and answer the questions as follows:
 
@@ -39,12 +41,13 @@ I have read [when and why we perform patch releases](https://about.sourcegraph.c
 
 ---
 
-**For the [release captain](https://about.sourcegraph.com/handbook/engineering/releases#release-captain)** - after reviewing and approving this request:
+**For the [release captain](https://about.sourcegraph.com/handbook/engineering/releases#release-captain)** - after reviewing this request:
 
-- If there is [already an upcoming patch release](https://github.com/sourcegraph/sourcegraph/issues?q=is%3Aissue+label%3Arelease-tracking+), add the listed commits alongside a link to this issue
-- If there is no upcoming patch release, create a new one:
-  - Update [`dev/release/release-config.jsonc`](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/dev/release/release-config.jsonc) with the patch release in `upcomingRelease` and `releaseDate` (and open a PR to `main` to update it)
-  - `yarn release tracking:issues`
-  - Add the listed commits alongside a link to this issue to the generated [release tracking issue](https://github.com/sourcegraph/sourcegraph/issues?q=is%3Aissue+label%3Arelease-tracking+)
-
-Comment and close this issue once the relevant commit(s) have been cherry-picked into the release branch.
+- [ ] **Comment on this issue** with a decision regarding the request.
+- [ ] If approved, **add it to a patch release**:
+  - If there is [already an upcoming patch release](https://github.com/sourcegraph/sourcegraph/issues?q=is%3Aissue+label%3Arelease-tracking+), add the listed commits alongside a link to this issue
+  - If there is no upcoming patch release, create a new one:
+    - Update [`dev/release/release-config.jsonc`](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/dev/release/release-config.jsonc) with the patch release in `upcomingRelease` and `releaseDate` (and open a PR to `main` to update it)
+    - `yarn release tracking:issues`
+    - Add the listed commits alongside a link to this issue to the generated [release tracking issue](https://github.com/sourcegraph/sourcegraph/issues?q=is%3Aissue+label%3Arelease-tracking+)
+- [ ] **Comment and close this issue once the relevant commit(s) have been cherry-picked into the release branch**.

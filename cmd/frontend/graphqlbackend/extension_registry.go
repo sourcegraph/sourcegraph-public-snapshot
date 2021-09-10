@@ -62,6 +62,7 @@ type RegistryExtensionConnectionArgs struct {
 	Publisher              *graphql.ID
 	Local                  bool
 	Remote                 bool
+	ExtensionIDs           *[]string
 	PrioritizeExtensionIDs *[]string
 }
 
@@ -127,6 +128,7 @@ type RegistryExtension interface {
 // ExtensionManifest is the interface for the GraphQL type ExtensionManifest.
 type ExtensionManifest interface {
 	Raw() string
+	JSONFields(*struct{ Fields []string }) JSONValue
 	Description() (*string, error)
 	BundleURL() (*string, error)
 }

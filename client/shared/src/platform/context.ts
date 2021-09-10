@@ -1,3 +1,4 @@
+import { ApolloClient, NormalizedCacheObject } from '@apollo/client'
 import { Endpoint } from 'comlink'
 import { isObject } from 'lodash'
 import { NextObserver, Observable, Subscribable, Subscription } from 'rxjs'
@@ -91,6 +92,11 @@ export interface PlatformContext {
      * update.
      */
     updateSettings: (subject: Scalars['ID'], edit: SettingsEdit | string) => Promise<void>
+
+    /**
+     * Returns promise that resolves into Apollo Client instance after cache restoration.
+     */
+    getGraphQLClient: () => Promise<ApolloClient<NormalizedCacheObject>>
 
     /**
      * Sends a request to the Sourcegraph GraphQL API and returns the response.

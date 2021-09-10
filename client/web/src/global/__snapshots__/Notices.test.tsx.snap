@@ -4,10 +4,10 @@ exports[`Notices no notices 1`] = `null`;
 
 exports[`Notices shows notices for location 1`] = `
 <div
-  className="notices "
+  className="notices"
 >
   <div
-    className="alert bg-transparent border "
+    className="alert bg-transparent border"
   >
     <div
       className="markdown"
@@ -21,7 +21,7 @@ exports[`Notices shows notices for location 1`] = `
     />
   </div>
   <div
-    className="alert container bg-transparent border "
+    className="alert container bg-transparent border"
   >
     <div
       className="content"

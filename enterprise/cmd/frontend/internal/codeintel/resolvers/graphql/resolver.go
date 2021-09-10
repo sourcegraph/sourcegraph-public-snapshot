@@ -50,7 +50,7 @@ func (r *Resolver) NodeResolvers() map[string]gql.NodeByIDFunc {
 			return r.LSIFIndexByID(ctx, id)
 		},
 		"CodeIntelligenceConfigurationPolicy": func(ctx context.Context, id graphql.ID) (gql.Node, error) {
-			return r.ConfigurationPolicyResolverByID(ctx, id)
+			return r.ConfigurationPolicyByID(ctx, id)
 		},
 	}
 }
@@ -260,11 +260,7 @@ func (r *Resolver) GitBlobLSIFData(ctx context.Context, args *gql.GitBlobLSIFDat
 	return NewQueryResolver(resolver, r.locationResolver), nil
 }
 
-func (r *Resolver) ConfigurationPolicyResolverByID(ctx context.Context, id graphql.ID) (gql.CodeIntelligenceConfigurationPolicyResolver, error) {
-	if !autoIndexingEnabled() {
-		return nil, errAutoIndexingNotEnabled
-	}
-
+func (r *Resolver) ConfigurationPolicyByID(ctx context.Context, id graphql.ID) (gql.CodeIntelligenceConfigurationPolicyResolver, error) {
 	// 🚨 SECURITY: Only site admins may configure code intelligence
 	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, dbconn.Global); err != nil {
 		return nil, err
@@ -336,13 +332,13 @@ func (r *Resolver) CreateCodeIntelligenceConfigurationPolicy(ctx context.Context
 	configurationPolicy, err := r.resolver.CreateConfigurationPolicy(ctx, store.ConfigurationPolicy{
 		RepositoryID:              repositoryID,
 		Name:                      args.Name,
-		Type:                      string(args.Type),
+		Type:                      store.GitObjectType(args.Type),
 		Pattern:                   args.Pattern,
 		RetentionEnabled:          args.RetentionEnabled,
-		RetentionDuration:         time.Duration(args.RetentionDurationHours) * time.Hour,
+		RetentionDuration:         toDuration(args.RetentionDurationHours),
 		RetainIntermediateCommits: args.RetainIntermediateCommits,
 		IndexingEnabled:           args.IndexingEnabled,
-		IndexCommitMaxAge:         time.Duration(args.IndexCommitMaxAgeHours) * time.Hour,
+		IndexCommitMaxAge:         toDuration(args.IndexCommitMaxAgeHours),
 		IndexIntermediateCommits:  args.IndexIntermediateCommits,
 	})
 	if err != nil {
@@ -350,6 +346,15 @@ func (r *Resolver) CreateCodeIntelligenceConfigurationPolicy(ctx context.Context
 	}
 
 	return NewConfigurationPolicyResolver(configurationPolicy), nil
+}
+
+func toDuration(hours *int32) *time.Duration {
+	if hours == nil {
+		return nil
+	}
+
+	v := time.Duration(*hours) * time.Hour
+	return &v
 }
 
 func (r *Resolver) UpdateCodeIntelligenceConfigurationPolicy(ctx context.Context, args *gql.UpdateCodeIntelligenceConfigurationPolicyArgs) (*gql.EmptyResponse, error) {
@@ -370,13 +375,13 @@ func (r *Resolver) UpdateCodeIntelligenceConfigurationPolicy(ctx context.Context
 	if err := r.resolver.UpdateConfigurationPolicy(ctx, store.ConfigurationPolicy{
 		ID:                        int(id),
 		Name:                      args.Name,
-		Type:                      string(args.Type),
+		Type:                      store.GitObjectType(args.Type),
 		Pattern:                   args.Pattern,
 		RetentionEnabled:          args.RetentionEnabled,
-		RetentionDuration:         time.Duration(args.RetentionDurationHours) * time.Hour,
+		RetentionDuration:         toDuration(args.RetentionDurationHours),
 		RetainIntermediateCommits: args.RetainIntermediateCommits,
 		IndexingEnabled:           args.IndexingEnabled,
-		IndexCommitMaxAge:         time.Duration(args.IndexCommitMaxAgeHours) * time.Hour,
+		IndexCommitMaxAge:         toDuration(args.IndexCommitMaxAgeHours),
 		IndexIntermediateCommits:  args.IndexIntermediateCommits,
 	}); err != nil {
 		return nil, err
@@ -481,6 +486,7 @@ func makeGetUploadsOptions(ctx context.Context, args *gql.LSIFRepositoryUploadsQ
 		DependentOf:  int(dependentOf),
 		Limit:        derefInt32(args.First, DefaultUploadPageSize),
 		Offset:       offset,
+		AllowExpired: true,
 	}, nil
 }
 

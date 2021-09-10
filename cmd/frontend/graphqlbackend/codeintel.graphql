@@ -13,10 +13,10 @@ extend type Mutation {
         type: GitObjectType!
         pattern: String!
         retentionEnabled: Boolean!
-        retentionDurationHours: Int!
+        retentionDurationHours: Int
         retainIntermediateCommits: Boolean!
         indexingEnabled: Boolean!
-        indexCommitMaxAgeHours: Int!
+        indexCommitMaxAgeHours: Int
         indexIntermediateCommits: Boolean!
     ): CodeIntelligenceConfigurationPolicy!
 
@@ -29,10 +29,10 @@ extend type Mutation {
         type: GitObjectType!
         pattern: String!
         retentionEnabled: Boolean!
-        retentionDurationHours: Int!
+        retentionDurationHours: Int
         retainIntermediateCommits: Boolean!
         indexingEnabled: Boolean!
-        indexCommitMaxAgeHours: Int!
+        indexCommitMaxAgeHours: Int
         indexIntermediateCommits: Boolean!
     ): EmptyResponse
 
@@ -191,7 +191,7 @@ type CodeIntelligenceConfigurationPolicy implements Node {
     """
     The max age of data retained by this configuration policy.
     """
-    retentionDurationHours: Int!
+    retentionDurationHours: Int
 
     """
     If the matching Git object is a branch, setting this value to true will also
@@ -208,7 +208,7 @@ type CodeIntelligenceConfigurationPolicy implements Node {
     """
     The max age of commits indexed by this configuration policy.
     """
-    indexCommitMaxAgeHours: Int!
+    indexCommitMaxAgeHours: Int
 
     """
     If the matching Git object is a branch, setting this value to true will also

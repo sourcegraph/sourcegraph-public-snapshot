@@ -13,6 +13,7 @@ import {
     Unsubscribable,
     concat,
     BehaviorSubject,
+    fromEvent,
 } from 'rxjs'
 import {
     catchError,
@@ -89,7 +90,7 @@ import { isExtension, isInPage } from '../../context'
 import { SourcegraphIntegrationURLs, BrowserPlatformContext } from '../../platform/context'
 import { resolveRevision, retryWhenCloneInProgressError } from '../../repo/backend'
 import { EventLogger, ConditionalTelemetryService } from '../../tracking/eventLogger'
-import { DEFAULT_SOURCEGRAPH_URL, observeSourcegraphURL } from '../../util/context'
+import { DEFAULT_SOURCEGRAPH_URL, getPlatformName, observeSourcegraphURL } from '../../util/context'
 import { MutationRecordLike, querySelectorOrSelf } from '../../util/dom'
 import { featureFlags } from '../../util/featureFlags'
 import { shouldOverrideSendTelemetry, observeOptionFlag } from '../../util/optionFlags'
@@ -101,6 +102,7 @@ import { phabricatorCodeHost } from '../phabricator/codeHost'
 
 import { CodeView, trackCodeViews, fetchFileContentForDiffOrFileInfo } from './codeViews'
 import { ContentView, handleContentViews } from './contentViews'
+import { RepoURLParseError } from './errors'
 import { applyDecorations, initializeExtensions, renderCommandPalette, renderGlobalDebug } from './extensions'
 import { createPrivateCodeHoverAlert, getActiveHoverAlerts, onHoverAlertDismissed } from './hoverAlerts'
 import {
@@ -111,7 +113,7 @@ import {
 } from './nativeTooltips'
 import { resolveRepoNamesForDiffOrFileInfo, defaultRevisionToCommitID } from './util/fileInfo'
 import { ViewOnSourcegraphButtonClassProps, ViewOnSourcegraphButton } from './ViewOnSourcegraphButton'
-import { delayUntilIntersecting, ViewResolver } from './views'
+import { delayUntilIntersecting, trackViews, ViewResolver } from './views'
 
 registerHighlightContributions()
 
@@ -197,6 +199,18 @@ export interface CodeHost extends ApplyLinkPreviewOptions {
      * Resolve {@link CodeView}s from the DOM.
      */
     codeViewResolvers: ViewResolver<CodeView>[]
+
+    /**
+     * Configuration for built-in search input enhancement
+     */
+    searchEnhancement?: {
+        /** Search input element resolver */
+        searchViewResolver: ViewResolver<{ element: HTMLElement }>
+        /** Search result element resolver */
+        resultViewResolver: ViewResolver<{ element: HTMLElement }>
+        /** Callback to trigger on input element change */
+        onChange: (args: { value: string; searchURL: string; resultElement: HTMLElement }) => void
+    }
 
     /**
      * Resolve {@link ContentView}s from the DOM.
@@ -603,7 +617,6 @@ export function observeHoverOverlayMountLocation(
 
 export interface HandleCodeHostOptions extends CodeIntelligenceProps {
     mutations: Observable<MutationRecordLike[]>
-    sourcegraphURL: string
     render: typeof reactDOMRender
     minimalUI: boolean
     hideActions?: boolean
@@ -616,7 +629,6 @@ export function handleCodeHost({
     extensionsController,
     platformContext,
     showGlobalDebug,
-    sourcegraphURL,
     telemetryService,
     render,
     minimalUI,
@@ -625,7 +637,7 @@ export function handleCodeHost({
 }: HandleCodeHostOptions): Subscription {
     const history = H.createBrowserHistory()
     const subscriptions = new Subscription()
-    const { requestGraphQL } = platformContext
+    const { requestGraphQL, sourcegraphURL } = platformContext
 
     const addedElements = mutations.pipe(
         concatAll(),
@@ -633,6 +645,13 @@ export function handleCodeHost({
         filter(isInstanceOf(HTMLElement))
     )
 
+    // Handle theming
+    subscriptions.add(
+        (codeHost.isLightTheme ?? of(true)).subscribe(isLightTheme => {
+            document.body.classList.toggle('theme-light', isLightTheme)
+            document.body.classList.toggle('theme-dark', !isLightTheme)
+        })
+    )
     const nativeTooltipsEnabled = codeHost.nativeTooltipResolvers
         ? nativeTooltipsEnabledFromSettings(platformContext.settings)
         : of(false)
@@ -747,14 +766,14 @@ export function handleCodeHost({
                 return resolveRevision({ repoName: rawRepoName, revision, requestGraphQL }).pipe(
                     retryWhenCloneInProgressError(),
                     mapTo(true),
-                    catchError(error => {
-                        if (isRepoNotFoundErrorLike(error)) {
-                            return [false]
-                        }
-                        return [asError(error)]
-                    }),
                     startWith(undefined)
                 )
+            }),
+            catchError(error => {
+                if (isRepoNotFoundErrorLike(error) || error instanceof RepoURLParseError) {
+                    return [false]
+                }
+                return [asError(error)]
             })
         )
         const onConfigureSourcegraphClick: React.MouseEventHandler<HTMLAnchorElement> = async event => {
@@ -804,6 +823,29 @@ export function handleCodeHost({
                 )
             })
         )
+    }
+
+    if (codeHost.searchEnhancement) {
+        const { searchViewResolver, resultViewResolver, onChange } = codeHost.searchEnhancement
+        const searchURL = new URL('/search', sourcegraphURL)
+        searchURL.searchParams.append('utm_source', getPlatformName())
+        searchURL.searchParams.append('utm_campaign', 'global-search')
+
+        const searchView = mutations.pipe(
+            trackViews([searchViewResolver]),
+            switchMap(({ element }) => fromEvent(element, 'input')),
+            map(event => ({
+                value: (event.target as HTMLInputElement).value,
+                searchURL: searchURL.href,
+            })),
+            observeOn(asyncScheduler)
+        )
+        const resultView = mutations.pipe(trackViews([resultViewResolver])).pipe(observeOn(asyncScheduler))
+
+        const searchEnhancementSubscription = combineLatest([searchView, resultView])
+            .pipe(map(([search, { element: resultElement }]) => ({ ...search, resultElement })))
+            .subscribe(onChange)
+        subscriptions.add(searchEnhancementSubscription)
     }
 
     /** A stream of added or removed code views with the resolved file info */
@@ -930,7 +972,6 @@ export function handleCodeHost({
     subscriptions.add(
         codeViews.subscribe(codeViewEvent => {
             console.log('Code view added')
-
             // This code view could have left the DOM between the time that
             // 1) it entered the DOM
             // 2) requests to Sourcegraph instance for repo name + file info fulfilled
@@ -1061,7 +1102,7 @@ export function handleCodeHost({
                 } else if (diffOrFileInfoWithEditor.head) {
                     scopeEditor = diffOrFileInfoWithEditor.head.editor
                 } else {
-                    scopeEditor = diffOrFileInfoWithEditor.base!.editor
+                    scopeEditor = diffOrFileInfoWithEditor.base.editor
                 }
 
                 if (wasRemoved) {
@@ -1230,7 +1271,34 @@ const CODE_HOSTS: CodeHost[] = [
     phabricatorCodeHost,
     gerritCodeHost,
 ]
-export const determineCodeHost = (): CodeHost | undefined => CODE_HOSTS.find(codeHost => codeHost.check())
+
+const CLOUD_CODE_HOST_HOSTS = ['github.com', 'gitlab.com']
+
+export const determineCodeHost = (sourcegraphURL?: string): CodeHost | undefined => {
+    const codeHost = CODE_HOSTS.find(codeHost => codeHost.check())
+
+    if (!codeHost) {
+        return undefined
+    }
+
+    // Prevent repo lookups for code hosts that we know cannot have repositories
+    // cloned on sourcegraph.com. Repo lookups trigger cloning, which will
+    // inevitably fail in this case.
+    if (sourcegraphURL === DEFAULT_SOURCEGRAPH_URL) {
+        const { hostname } = new URL(location.href)
+        const validCodeHost = CLOUD_CODE_HOST_HOSTS.some(cloudHost => cloudHost === hostname)
+        if (!validCodeHost) {
+            console.log(
+                `Sourcegraph code host integration: stopped initialization since ${hostname} is not a supported code host when Sourcegraph URL is ${DEFAULT_SOURCEGRAPH_URL}.\n List of supported code hosts on ${DEFAULT_SOURCEGRAPH_URL}: ${CLOUD_CODE_HOST_HOSTS.join(
+                    ', '
+                )}`
+            )
+            return undefined
+        }
+    }
+
+    return codeHost
+}
 
 export function injectCodeIntelligenceToCodeHost(
     mutations: Observable<MutationRecordLike[]>,
@@ -1292,7 +1360,6 @@ export function injectCodeIntelligenceToCodeHost(
                     extensionsController,
                     platformContext,
                     showGlobalDebug,
-                    sourcegraphURL,
                     telemetryService,
                     render: reactDOMRender,
                     minimalUI,

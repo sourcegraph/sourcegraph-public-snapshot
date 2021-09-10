@@ -130,8 +130,8 @@ func TestCreateBatchSpec(t *testing.T) {
 	changesetSpecs := make([]*btypes.ChangesetSpec, maxUnlicensedChangesets+1)
 	for i := range changesetSpecs {
 		changesetSpecs[i] = &btypes.ChangesetSpec{
-			Spec: &btypes.ChangesetSpecDescription{
-				BaseRepository: graphqlbackend.MarshalRepositoryID(repo.ID),
+			Spec: &batcheslib.ChangesetSpec{
+				BaseRepository: string(graphqlbackend.MarshalRepositoryID(repo.ID)),
 			},
 			RepoID: repo.ID,
 			UserID: userID,
@@ -412,8 +412,8 @@ func TestApplyBatchChange(t *testing.T) {
 
 	changesetSpec := &btypes.ChangesetSpec{
 		BatchSpecID: batchSpec.ID,
-		Spec: &btypes.ChangesetSpecDescription{
-			BaseRepository: repoAPIID,
+		Spec: &batcheslib.ChangesetSpec{
+			BaseRepository: string(repoAPIID),
 		},
 		RepoID: repo.ID,
 		UserID: userID,

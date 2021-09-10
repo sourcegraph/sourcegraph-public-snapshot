@@ -29,6 +29,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/usagestats"
+	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
 )
 
 // Resolver is the GraphQL resolver of all things related to batch changes.
@@ -493,7 +494,7 @@ func (r *Resolver) applyOrCreateBatchChange(ctx context.Context, args *graphqlba
 
 func (r *Resolver) CreateBatchSpec(ctx context.Context, args *graphqlbackend.CreateBatchSpecArgs) (graphqlbackend.BatchSpecResolver, error) {
 	var err error
-	tr, ctx := trace.New(ctx, "CreateBatchSpec", fmt.Sprintf("Resolver.CreateBatchspace %s, Spec %q", args.Namespace, args.BatchSpec))
+	tr, ctx := trace.New(ctx, "CreateBatchSpec", fmt.Sprintf("Resolver.CreateBatchSpec %s, Spec %q", args.Namespace, args.BatchSpec))
 	defer func() {
 		tr.SetError(err)
 		tr.Finish()
@@ -708,6 +709,37 @@ func (r *Resolver) BatchChanges(ctx context.Context, args *graphqlbackend.ListBa
 	}
 
 	return &batchChangesConnectionResolver{
+		store: r.store,
+		opts:  opts,
+	}, nil
+}
+
+func (r *Resolver) BatchSpecExecutions(ctx context.Context, args *graphqlbackend.ListBatchSpecExecutionsArgs) (graphqlbackend.BatchSpecExecutionConnectionResolver, error) {
+	if err := enterprise.BatchChangesEnabledForUser(ctx, r.store.DB()); err != nil {
+		return nil, err
+	}
+
+	// These endpoints currently only work for site admins
+	authErr := backend.CheckCurrentUserIsSiteAdmin(ctx, r.store.DB())
+	if authErr != nil {
+		return nil, authErr
+	}
+
+	opts := store.ListBatchSpecExecutionsOpts{}
+
+	if err := validateFirstParamDefaults(args.First); err != nil {
+		return nil, err
+	}
+	opts.Limit = int(args.First)
+	if args.After != nil {
+		cursor, err := strconv.ParseInt(*args.After, 10, 32)
+		if err != nil {
+			return nil, err
+		}
+		opts.Cursor = cursor
+	}
+
+	return &batchSpecExecutionConnectionResolver{
 		store: r.store,
 		opts:  opts,
 	}, nil
@@ -1498,6 +1530,51 @@ func (r *Resolver) CancelBatchSpecExecution(ctx context.Context, args *graphqlba
 	}
 
 	return r.batchSpecExecutionByID(ctx, marshalBatchSpecExecutionRandID(exec.RandID))
+}
+
+func (r *Resolver) ResolveWorkspacesForBatchSpec(ctx context.Context, args *graphqlbackend.ResolveWorkspacesForBatchSpecArgs) (_ graphqlbackend.BatchSpecWorkspacesResolver, err error) {
+	tr, ctx := trace.New(ctx, "Resolver.ResolveWorkspacesForBatchSpec", fmt.Sprintf("AllowIgnored: %t AllowUnsupported: %t", args.AllowIgnored, args.AllowUnsupported))
+	defer func() {
+		tr.SetError(err)
+		tr.Finish()
+	}()
+
+	if err := enterprise.BatchChangesEnabledForUser(ctx, r.store.DB()); err != nil {
+		return nil, err
+	}
+
+	// 🚨 SECURITY: Check that the requesting user is admin.
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.store.DB()); err != nil {
+		return nil, err
+	}
+
+	spec, err := batcheslib.ParseBatchSpec([]byte(args.BatchSpec), batcheslib.ParseBatchSpecOptions{
+		AllowArrayEnvironments: true,
+		AllowTransformChanges:  true,
+		AllowConditionalExec:   true,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	svc := service.New(r.store)
+	workspaces, unsupported, ignored, err := svc.ResolveWorkspacesForBatchSpec(ctx, spec, service.ResolveWorkspacesForBatchSpecOpts{
+		AllowIgnored:     args.AllowIgnored,
+		AllowUnsupported: args.AllowUnsupported,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return &batchSpecWorkspacesResolver{
+		store:            r.store,
+		rawSpec:          args.BatchSpec,
+		allowUnsupported: args.AllowUnsupported,
+		allowIgnored:     args.AllowIgnored,
+		workspaces:       workspaces,
+		unsupported:      unsupported,
+		ignored:          ignored,
+	}, nil
 }
 
 func parseBatchChangeState(s *string) (btypes.BatchChangeState, error) {

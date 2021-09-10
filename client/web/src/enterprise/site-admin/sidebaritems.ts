@@ -86,6 +86,10 @@ const codeIntelGroup: SiteAdminSideBarGroup = {
             label: 'Auto indexing',
             condition: () => Boolean(window.context?.codeIntelAutoIndexingEnabled),
         },
+        {
+            to: '/site-admin/code-intelligence/configuration',
+            label: 'Configuration',
+        },
     ],
 }
 

@@ -68,7 +68,7 @@ export const AddUserEmailForm: FunctionComponent<Props> = ({ user, className, on
     }
 
     return (
-        <div className={`add-user-email-form ${className || ''}`}>
+        <div className={classNames('add-user-email-form', className)}>
             <label
                 htmlFor="AddUserEmailForm-email"
                 className={classNames('align-self-start', {

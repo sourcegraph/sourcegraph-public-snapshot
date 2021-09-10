@@ -2171,11 +2171,15 @@ extend type Mutation {
 
 
     If namespace is not specified, the current user's personal namespace is used.
+
+    Experimental: This API is likely to change in the future.
     """
     createBatchSpecExecution(spec: String!, namespace: ID): BatchSpecExecution!
 
     """
     Attempts to cancel the given batch spec execution. It must not have completed yet.
+
+    Experimental: This API is likely to change in the future.
     """
     cancelBatchSpecExecution(batchSpecExecution: ID!): BatchSpecExecution!
 }
@@ -2229,6 +2233,130 @@ extend type Query {
         """
         after: String
     ): BatchChangesCodeHostConnection!
+
+    """
+    A list of batch spec executions.
+
+    Experimental: This API is likely to change in the future.
+    """
+    batchSpecExecutions(
+        """
+        Returns the first n batch spec executions from the list.
+        """
+        first: Int = 50
+        """
+        Opaque pagination cursor.
+        """
+        after: String
+    ): BatchSpecExecutionConnection!
+
+    """
+    Resolve workspaces matching the given batch spec input.
+
+    Experimental API. Will disappear soon.
+    """
+    resolveWorkspacesForBatchSpec(
+        """
+        The batch spec to evaluate.
+        """
+        batchSpec: String!
+        """
+        If true, repos with a .batchignore file will still be included.
+        """
+        allowIgnored: Boolean = false
+        """
+        If true, repos on unsupported codehosts will be included. These cannot
+        be published.
+        """
+        allowUnsupported: Boolean = false
+    ): BatchSpecWorkspaces!
+}
+
+"""
+A bag for all info around resolving workspaces.
+"""
+type BatchSpecWorkspaces {
+    """
+    The raw input given to produce this preview.
+    """
+    rawSpec: String!
+
+    """
+    If true, repos with a .batchignore file will still be included.
+    """
+    allowIgnored: Boolean!
+
+    """
+    If true, repos on unsupported codehosts will be included. These cannot
+    be published.
+    """
+    allowUnsupported: Boolean!
+
+    """
+    The actual list of determined workspaces.
+    """
+    workspaces: [BatchSpecWorkspace!]!
+
+    """
+    The list of repos that are unsupported.
+    """
+    unsupported: [Repository!]!
+
+    """
+    The list of repos that are ignored.
+    """
+    ignored: [Repository!]!
+}
+
+"""
+A workspace in Batch Changes to run in.
+"""
+type BatchSpecWorkspace {
+    """
+    The repository to run over.
+    """
+    repository: Repository!
+
+    """
+    The branch to run over.
+    """
+    branch: GitRef!
+
+    """
+    The path to run in.
+    """
+    path: String!
+
+    """
+    If true, only the files within the workspace will be fetched.
+    """
+    onlyFetchWorkspace: Boolean!
+
+    """
+    List of steps that will need to run over this workspace.
+    """
+    steps: [BatchSpecWorkspaceStep!]!
+
+    """
+    If this workspace was resolved based on a search, this is the list of paths
+    to files that have been included in the search results.
+    """
+    searchResultPaths: [String!]!
+}
+
+"""
+Description of one step in the execution of a workspace.
+"""
+type BatchSpecWorkspaceStep {
+    """
+    The command to run.
+    """
+    command: String!
+
+    """
+    The docker container image to use to run this command.
+    """
+    container: String!
 }
 
 """
@@ -2728,6 +2856,28 @@ type BatchChangeConnection {
     pageInfo: PageInfo!
 }
 
+"""
+A list of batch spec executions.
+
+Experimental: This API is likely to change in the future.
+"""
+type BatchSpecExecutionConnection {
+    """
+    A list of batch spec executions.
+    """
+    nodes: [BatchSpecExecution!]!
+
+    """
+    The total number of batch spec executions in the connection.
+    """
+    totalCount: Int!
+
+    """
+    Pagination information.
+    """
+    pageInfo: PageInfo!
+}
+
 extend type Org {
     """
     A list of batch changes initially applied in this organization.
@@ -2928,6 +3078,8 @@ type BatchChangeDescription {
 
 """
 The possible states of a batch spec execution.
+
+Experimental: This API is likely to change in the future.
 """
 enum BatchSpecExecutionState {
     """
@@ -2968,6 +3120,8 @@ enum BatchSpecExecutionState {
 
 """
 A batch spec execution describes one server-side run of a batch change yaml input.
+
+Experimental: This API is likely to change in the future.
 """
 type BatchSpecExecution implements Node {
     """
@@ -3044,6 +3198,8 @@ type BatchSpecExecution implements Node {
 
 """
 Configuration and execution summary of a batch spec execution.
+
+Experimental: This API is likely to change in the future.
 """
 type BatchSpecExecutionSteps {
     """

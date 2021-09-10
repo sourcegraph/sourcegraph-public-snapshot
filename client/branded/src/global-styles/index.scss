@@ -99,9 +99,6 @@ $table-border-color: var(--border-color);
 // Progress
 $progress-height: auto;
 
-// Collapsible
-$collapsible-expand-btn-width: 1.25rem;
-
 $hr-border-color: var(--border-color);
 $hr-margin-y: 0.25rem;
 
@@ -152,7 +149,7 @@ $badge-transition: none; // Avoids setting transitions on badges that aren't lin
 @import './highlight';
 @import './tabs';
 @import './tooltips';
-@import '~@sourcegraph/react-loading-spinner/lib/LoadingSpinner.css';
+@import '@sourcegraph/react-loading-spinner/lib/LoadingSpinner.css';
 
 * {
     box-sizing: border-box;

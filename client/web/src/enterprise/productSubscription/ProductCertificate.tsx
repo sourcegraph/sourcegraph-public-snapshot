@@ -1,4 +1,7 @@
-import * as React from 'react'
+import classNames from 'classnames'
+import React from 'react'
+
+import styles from './ProductCertificate.module.scss'
 
 interface Props {
     /** The title of the certificate. */
@@ -30,10 +33,10 @@ export const ProductCertificate: React.FunctionComponent<Props> = ({
     footer,
     className = '',
 }) => (
-    <div className={`product-certificate test-product-certificate card ${className || ''}`}>
+    <div className={classNames('card', className, 'test-product-certificate')}>
         <div className="card-body d-flex align-items-center">
             <img
-                className="product-certificate__logo mr-1 p-2"
+                className={classNames(styles.logo, 'mr-1', 'p-2')}
                 src="/.assets/img/sourcegraph-mark.svg?v2"
                 alt="Sourcegraph logo"
             />
@@ -43,7 +46,7 @@ export const ProductCertificate: React.FunctionComponent<Props> = ({
                 {detail && <p className="text-muted mb-0">{detail}</p>}
             </div>
         </div>
-        <div className="product-certificate__bg" />
-        {footer}
+        <div className={styles.bg} />
+        {footer && <div className={styles.footer}>{footer}</div>}
     </div>
 )

@@ -15,6 +15,9 @@ env:
   # Enable sharded indexed search mode:
   INDEXED_SEARCH_SERVERS: localhost:3070 localhost:3071
 
+  # The profiler is a GCP feature and so is not supported locally.
+  SRC_DISABLE_PROFILER: 'true'
+
   GO111MODULE: 'on'
 
   DEPLOY_TYPE: dev
@@ -269,11 +272,11 @@ commands:
       CADDY_VERSION: 2.3.0
 
   web:
-    cmd: ./node_modules/.bin/gulp --silent --color dev
+    cmd: ./node_modules/.bin/gulp --color dev
     install: yarn --no-progress
 
   enterprise-web:
-    cmd: ./node_modules/.bin/gulp --silent --color dev
+    cmd: ./node_modules/.bin/gulp --color dev
     install: yarn --no-progress
     env:
       ENTERPRISE: 1
@@ -706,6 +709,11 @@ commandsets:
 
   default: *enterprise_set
 
+  dotcom:
+    <<: *enterprise_set
+    env:
+      SOURCEGRAPHDOTCOM_MODE: true
+
   enterprise-codeintel:
     checks:
       - docker
@@ -733,13 +741,6 @@ commandsets:
       - codeintel-executor
 
   enterprise-codeinsights:
-    # Add the following overwrites to your sg.config.overwrite.yaml to get
-    # codeinsights working:
-    #
-    #   env:
-    #     DISABLE_CODE_INSIGHTS_HISTORICAL: false
-    #     DISABLE_CODE_INSIGHTS: false
-    #
     checks:
       - docker
       - redis
@@ -762,6 +763,9 @@ commandsets:
       - zoekt-webserver-0
       - zoekt-webserver-1
       - codeinsights-db
+    env:
+      DISABLE_CODE_INSIGHTS_HISTORICAL: false
+      DISABLE_CODE_INSIGHTS: false
 
   api-only:
     checks:

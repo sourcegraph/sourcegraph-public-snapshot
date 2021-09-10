@@ -11,6 +11,7 @@ type operations struct {
 	addUploadPart                          *observation.Operation
 	calculateVisibleUploads                *observation.Operation
 	commitGraphMetadata                    *observation.Operation
+	commitsVisibleToUpload                 *observation.Operation
 	createConfigurationPolicy              *observation.Operation
 	definitionDumps                        *observation.Operation
 	deleteConfigurationPolicyByID          *observation.Operation
@@ -43,8 +44,8 @@ type operations struct {
 	hasCommit                              *observation.Operation
 	hasRepository                          *observation.Operation
 	indexQueueSize                         *observation.Operation
-	insertDependencyIndexingJob            *observation.Operation
 	insertCloneableDependencyRepo          *observation.Operation
+	insertDependencyIndexingJob            *observation.Operation
 	insertIndex                            *observation.Operation
 	insertUpload                           *observation.Operation
 	isQueued                               *observation.Operation
@@ -60,20 +61,25 @@ type operations struct {
 	referencesForUpload                    *observation.Operation
 	refreshCommitResolvability             *observation.Operation
 	repoName                               *observation.Operation
+	repositoryIDsForRetentionScan          *observation.Operation
 	requeue                                *observation.Operation
 	requeueIndex                           *observation.Operation
+	softDeleteExpiredUploads               *observation.Operation
 	softDeleteOldUploads                   *observation.Operation
 	staleSourcedCommits                    *observation.Operation
 	updateCommitedAt                       *observation.Operation
 	updateConfigurationPolicy              *observation.Operation
+	updateDependencyNumReferences          *observation.Operation
 	updateIndexConfigurationByRepositoryID *observation.Operation
+	updateNumReferences                    *observation.Operation
 	updatePackageReferences                *observation.Operation
 	updatePackages                         *observation.Operation
+	updateUploadRetention                  *observation.Operation
 
-	writeVisibleUploads        *observation.Operation
 	persistNearestUploads      *observation.Operation
 	persistNearestUploadsLinks *observation.Operation
 	persistUploadsVisibleAtTip *observation.Operation
+	writeVisibleUploads        *observation.Operation
 }
 
 func newOperations(observationContext *observation.Context, metrics *metrics.OperationMetrics) *operations {
@@ -98,6 +104,7 @@ func newOperations(observationContext *observation.Context, metrics *metrics.Ope
 		addUploadPart:                          op("AddUploadPart"),
 		calculateVisibleUploads:                op("CalculateVisibleUploads"),
 		commitGraphMetadata:                    op("CommitGraphMetadata"),
+		commitsVisibleToUpload:                 op("CommitsVisibleToUpload"),
 		createConfigurationPolicy:              op("CreateConfigurationPolicy"),
 		definitionDumps:                        op("DefinitionDumps"),
 		deleteConfigurationPolicyByID:          op("DeleteConfigurationPolicyByID"),
@@ -113,7 +120,7 @@ func newOperations(observationContext *observation.Context, metrics *metrics.Ope
 		dirtyRepositories:                      op("DirtyRepositories"),
 		findClosestDumps:                       op("FindClosestDumps"),
 		findClosestDumpsFromGraphFragment:      op("FindClosestDumpsFromGraphFragment"),
-		getAutoindexDisabledRepositories:       op("getAutoindexDisabledRepositories"),
+		getAutoindexDisabledRepositories:       op("GetAutoindexDisabledRepositories"),
 		getConfigurationPolicies:               op("GetConfigurationPolicies"),
 		getConfigurationPolicyByID:             op("GetConfigurationPolicyByID"),
 		getDumpsByIDs:                          op("GetDumpsByIDs"),
@@ -130,8 +137,8 @@ func newOperations(observationContext *observation.Context, metrics *metrics.Ope
 		hasCommit:                              op("HasCommit"),
 		hasRepository:                          op("HasRepository"),
 		indexQueueSize:                         op("IndexQueueSize"),
-		insertDependencyIndexingJob:            op("InsertDependencyIndexingJob"),
 		insertCloneableDependencyRepo:          op("InsertCloneableDependencyRepo"),
+		insertDependencyIndexingJob:            op("InsertDependencyIndexingJob"),
 		insertIndex:                            op("InsertIndex"),
 		insertUpload:                           op("InsertUpload"),
 		isQueued:                               op("IsQueued"),
@@ -147,19 +154,24 @@ func newOperations(observationContext *observation.Context, metrics *metrics.Ope
 		referencesForUpload:                    op("ReferencesForUpload"),
 		refreshCommitResolvability:             op("RefreshCommitResolvability"),
 		repoName:                               op("RepoName"),
+		repositoryIDsForRetentionScan:          op("RepositoryIDsForRetentionScan"),
 		requeue:                                op("Requeue"),
 		requeueIndex:                           op("RequeueIndex"),
+		softDeleteExpiredUploads:               op("SoftDeleteExpiredUploads"),
 		softDeleteOldUploads:                   op("SoftDeleteOldUploads"),
 		staleSourcedCommits:                    op("StaleSourcedCommits"),
 		updateCommitedAt:                       op("UpdateCommitedAt"),
 		updateConfigurationPolicy:              op("UpdateConfigurationPolicy"),
+		updateDependencyNumReferences:          op("UpdateDependencyNumReferences"),
 		updateIndexConfigurationByRepositoryID: op("UpdateIndexConfigurationByRepositoryID"),
+		updateNumReferences:                    op("UpdateNumReferences"),
 		updatePackageReferences:                op("UpdatePackageReferences"),
 		updatePackages:                         op("UpdatePackages"),
+		updateUploadRetention:                  op("UpdateUploadRetention"),
 
-		writeVisibleUploads:        subOp("writeVisibleUploads"),
 		persistNearestUploads:      subOp("persistNearestUploads"),
 		persistNearestUploadsLinks: subOp("persistNearestUploadsLinks"),
 		persistUploadsVisibleAtTip: subOp("persistUploadsVisibleAtTip"),
+		writeVisibleUploads:        subOp("writeVisibleUploads"),
 	}
 }

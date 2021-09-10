@@ -24,7 +24,7 @@ exports[`SignUpPage renders sign up page (cloud) 1`] = `
       >
         <img
           alt="Sourcegraph logo"
-          className="brand-logo logo"
+          className="logo"
           src="/img/sourcegraph-logo-light.svg"
         />
       </div>
@@ -145,10 +145,10 @@ exports[`SignUpPage renders sign up page (server) 1`] = `
   className="signin-signup-page sign-up-page"
 >
   <div
-    className="hero-page hero-page__less-padding"
+    className="heroPage lessPadding"
   >
     <div
-      className="hero-page__icon bg-transparent"
+      className="icon bg-transparent"
     >
       <svg
         fill="none"
@@ -172,7 +172,7 @@ exports[`SignUpPage renders sign up page (server) 1`] = `
       </svg>
     </div>
     <div
-      className="hero-page__title"
+      className="title"
     >
       Sign up for Sourcegraph Server
     </div>

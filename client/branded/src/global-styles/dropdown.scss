@@ -1,7 +1,7 @@
 @import 'bootstrap/scss/dropdown';
 
 .theme-light {
-    --dropdown-bg: var(--input-bg);
+    --dropdown-bg: var(--color-bg-1);
     --dropdown-border-color: var(--input-border-color);
     --dropdown-link-hover-bg: var(--color-bg-2);
     --dropdown-header-color: var(--text-muted);
@@ -9,7 +9,7 @@
 }
 
 .theme-dark {
-    --dropdown-bg: var(--input-bg);
+    --dropdown-bg: var(--color-bg-1);
     --dropdown-border-color: var(--input-border-color);
     --dropdown-link-hover-bg: var(--color-bg-2);
     --dropdown-header-color: var(--text-muted);

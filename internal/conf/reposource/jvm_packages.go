@@ -24,8 +24,12 @@ func (m *MavenModule) MatchesDependencyString(dependency string) bool {
 	return strings.HasPrefix(dependency, fmt.Sprintf("%s:%s:", m.GroupID, m.ArtifactID))
 }
 
-func (m *MavenModule) SortText() string {
+func (m *MavenModule) CoursierSyntax() string {
 	return fmt.Sprintf("%s:%s", m.GroupID, m.ArtifactID)
+}
+
+func (m *MavenModule) SortText() string {
+	return m.CoursierSyntax()
 }
 
 func (m *MavenModule) LsifJavaKind() string {

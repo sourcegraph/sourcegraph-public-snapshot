@@ -4,6 +4,16 @@ This document provides a high level overview of Sourcegraph's architecture so yo
 
 The **"Dependencies"** sections give a short, high-level overview of dependencies on other architecture components and the most important aspects of _how_ they are used.
 
+## Diagram
+
+You can click on each component to jump to its respective code repository or subtree. <a href="./architecture.svg" target="_blank">Open in new tab</a>
+
+<object data="./architecture/architecture.svg" type="image/svg+xml" width="1023" height="1113" style="width:100%; height: auto">
+</object>
+
+Note that almost every service has a link back to the frontend, from which it gathers configuration updates.
+These edges are omitted for clarity.
+
 ## Repository syncing
 
 At its core, Sourcegraph maintains a persistent cache of all repositories that are connected to it. It is persistent, because this data is critical for Sourcegraph to function, but it is ultimately a cache because the code host is the source of truth and our cache is eventually consistent.
@@ -284,16 +294,6 @@ If you want to learn more about observability:
 - [Observability for site administrators](../../../admin/observability/index.md)
 - [Observability developer documentation](../observability/index.md)
 - [Observability at Sourcegraph](https://about.sourcegraph.com/handbook/engineering/observability)
-
-## Diagram
-
-You can click on each component to jump to its respective code repository or subtree.
-
-<object data="/dev/background-information/architecture/architecture.svg" type="image/svg+xml" style="width:100%; height: 100%">
-</object>
-
-Note that almost every service has a link back to the frontend, from which it gathers configuration updates.
-These edges are omitted for clarity.
 
 ## Other resources
 

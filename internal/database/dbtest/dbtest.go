@@ -63,7 +63,7 @@ func NewDB(t testing.TB, dsn string) *sql.DB {
 		dsn = os.Getenv("PGDATASOURCE")
 	}
 	if dsn == "" {
-		config, err = url.Parse("postgres://sourcegraph:sourcegraph@127.0.0.1:5432/sg?sslmode=disable&timezone=UTC")
+		config, err = url.Parse("postgres://sourcegraph:sourcegraph@127.0.0.1:5432/sourcegraph?sslmode=disable&timezone=UTC")
 		if err != nil {
 			t.Fatalf("failed to parse dsn %q: %s", dsn, err)
 		}
