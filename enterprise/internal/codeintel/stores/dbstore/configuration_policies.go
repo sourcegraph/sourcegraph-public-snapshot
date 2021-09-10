@@ -343,7 +343,6 @@ func (s *Store) DeleteConfigurationPolicyByID(ctx context.Context, id int) (err 
 	}})
 	defer endObservation(1, observation.Args{})
 
-	// TODO - add test for this
 	protected, ok, err := basestore.ScanFirstBool(s.Store.Query(ctx, sqlf.Sprintf(deleteConfigurationPolicyByIDQuery, id)))
 	if err != nil {
 		return err
