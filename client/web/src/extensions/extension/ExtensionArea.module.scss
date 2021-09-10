@@ -1,0 +1,11 @@
+.registry-extension-area {
+    width: 100%;
+
+    :global(.extensions-nav-link) {
+        /* stylelint-disable-next-line declaration-property-unit-whitelist */
+        margin-top: 1px;
+        &:hover {
+            text-decoration: none !important;
+        }
+    }
+}

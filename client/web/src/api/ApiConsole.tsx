@@ -12,6 +12,8 @@ import { ErrorAlert } from '../components/alerts'
 import { PageTitle } from '../components/PageTitle'
 import { eventLogger } from '../tracking/eventLogger'
 
+import styles from './ApiConsole.module.scss'
+
 const defaultQuery = `# Type queries here, with completion, validation, and hovers.
 #
 # Here's an example query to get you started:
@@ -125,10 +127,10 @@ export class ApiConsole extends React.PureComponent<Props, State> {
 
     public render(): JSX.Element | null {
         return (
-            <div className="api-console">
+            <div className={styles.apiConsole}>
                 <PageTitle title="API console" />
                 {this.state.graphiqlOrError === undefined ? (
-                    <span className="api-console__loader">
+                    <span className={styles.loader}>
                         <LoadingSpinner className="icon-inline" /> Loading…
                     </span>
                 ) : isErrorLike(this.state.graphiqlOrError) ? (

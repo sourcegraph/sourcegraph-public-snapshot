@@ -430,7 +430,7 @@ commands:
     cmd: |
       env TMPDIR="$HOME/.sourcegraph/batches-executor-temp" .bin/executor
     env:
-      EXECUTOR_QUEUE_NAME: batches
+      EXECUTOR_QUEUE_NAME: batch-spec-workspaces
       SRC_PROF_HTTP: ":6093"
 
   # If you want to use this, either start it with `sg run batches-executor-firecracker` or
@@ -443,7 +443,7 @@ commands:
           .bin/executor
     env:
       EXECUTOR_USE_FIRECRACKER: true
-      EXECUTOR_QUEUE_NAME: batches
+      EXECUTOR_QUEUE_NAME: batch-spec-workspaces
       SRC_PROF_HTTP: ":6093"
 
   minio:

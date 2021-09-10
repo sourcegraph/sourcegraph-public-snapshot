@@ -1,3 +1,4 @@
+import classNames from 'classnames'
 import { parseISO } from 'date-fns'
 import maxDate from 'date-fns/max'
 import { isObject } from 'lodash'
@@ -17,6 +18,7 @@ import { DefaultExtensionIcon, DefaultSourcegraphExtensionIcon, SourcegraphExten
 
 import { extensionsQuery, urlToExtensionsQuery, validCategories } from './extension'
 import { ExtensionAreaRouteContext } from './ExtensionArea'
+import styles from './RegistryExtensionOverviewPage.module.scss'
 import { ExtensionReadme } from './RegistryExtensionReadme'
 import { SourcegraphExtensionFeedback } from './SourcegraphExtensionFeedback'
 
@@ -51,13 +53,13 @@ const RegistryExtensionOverviewIcon: React.FunctionComponent<Pick<Props, 'extens
     }, [manifest?.icon, manifest?.iconDark, isLightTheme])
 
     if (iconURL) {
-        return <img className="registry-extension-overview-page__icon mb-3" src={iconURL.href} alt="" />
+        return <img className={classNames('mb-3', styles.icon)} src={iconURL.href} alt="" />
     }
 
     if (manifest?.publisher === 'sourcegraph') {
-        return <DefaultSourcegraphExtensionIcon className="registry-extension-overview-page__icon mb-3" />
+        return <DefaultSourcegraphExtensionIcon className={classNames('mb-3', styles.icon)} />
     }
-    return <DefaultExtensionIcon className="registry-extension-overview-page__icon mb-3" />
+    return <DefaultExtensionIcon className={classNames('mb-3', styles.icon)} />
 }
 
 /** A page that displays overview information about a registry extension. */
@@ -97,12 +99,12 @@ export const RegistryExtensionOverviewPage: React.FunctionComponent<Props> = ({
     const { publisher, isSourcegraphExtension } = splitExtensionID(extension.id)
 
     return (
-        <div className="registry-extension-overview-page d-flex flex-wrap">
+        <div className="d-flex flex-wrap">
             <PageTitle title={extension.id} />
-            <div className="registry-extension-overview-page__readme mr-3">
+            <div className={classNames('mr-3', styles.readme)}>
                 <ExtensionReadme extension={extension} />
             </div>
-            <aside className="registry-extension-overview-page__sidebar">
+            <aside className={styles.sidebar}>
                 <RegistryExtensionOverviewIcon extension={extension} isLightTheme={isLightTheme} />
                 {/* Publisher */}
                 {publisher && (
@@ -113,9 +115,7 @@ export const RegistryExtensionOverviewPage: React.FunctionComponent<Props> = ({
                         >
                             {publisher}
                         </small>
-                        {isSourcegraphExtension && (
-                            <SourcegraphExtensionIcon className="registry-extension-overview-page__sourcegraph-icon" />
-                        )}
+                        {isSourcegraphExtension && <SourcegraphExtensionIcon className={styles.sourcegraphIcon} />}
                     </div>
                 )}
                 {/* Installs/user count will go here */}
@@ -123,7 +123,7 @@ export const RegistryExtensionOverviewPage: React.FunctionComponent<Props> = ({
                 {/* Last updated */}
                 {extension.registryExtension &&
                     (extension.registryExtension.updatedAt || extension.registryExtension.publishedAt) && (
-                        <div className="registry-extension-overview-page__sidebar-section">
+                        <div className={styles.sidebarSection}>
                             <h3>Last updated</h3>
                             <small className="text-muted">
                                 <Timestamp
@@ -137,7 +137,7 @@ export const RegistryExtensionOverviewPage: React.FunctionComponent<Props> = ({
                         </div>
                     )}
                 {/* Resources */}
-                <div className="registry-extension-overview-page__sidebar-section">
+                <div className={styles.sidebarSection}>
                     <h3>Resources</h3>
                     <small>
                         {extension.registryExtension && (
@@ -171,13 +171,13 @@ export const RegistryExtensionOverviewPage: React.FunctionComponent<Props> = ({
                     </small>
                 </div>
                 {/* Full extension ID */}
-                <div className="registry-extension-overview-page__sidebar-section">
+                <div className={styles.sidebarSection}>
                     <h3>Extension ID</h3>
                     <small className="text-muted">{extension.id}</small>
                 </div>
                 {/* Categories */}
                 {categories && (
-                    <div className="registry-extension-overview-page__sidebar-section pb-0">
+                    <div className={classNames('pb-0', styles.sidebarSection)}>
                         <h3>Categories</h3>
                         <ul className="list-inline test-registry-extension-categories">
                             {categories.map(category => (
@@ -198,14 +198,14 @@ export const RegistryExtensionOverviewPage: React.FunctionComponent<Props> = ({
                     !isErrorLike(extension.manifest) &&
                     extension.manifest.tags &&
                     extension.manifest.tags.length > 0 && (
-                        <div className="registry-extension-overview-page__sidebar-section pb-0">
+                        <div className={classNames('pb-0', styles.sidebarSection)}>
                             <h3>Tags</h3>
                             <ul className="list-inline">
                                 {extension.manifest.tags.map(tag => (
                                     <li key={tag} className="list-inline-item mb-2">
                                         <Link
                                             to={urlToExtensionsQuery({ query: extensionsQuery({ tag }) })}
-                                            className="btn btn-outline-secondary btn-sm registry-extension-overview-page__tag"
+                                            className={classNames('btn btn-outline-secondary btn-sm', styles.tag)}
                                         >
                                             {tag}
                                         </Link>
@@ -217,7 +217,7 @@ export const RegistryExtensionOverviewPage: React.FunctionComponent<Props> = ({
                 {/* Rating widget will go here */}
                 {/* Message the author */}
                 {isSourcegraphExtension && (
-                    <div className="registry-extension-overview-page__sidebar-section">
+                    <div className={styles.sidebarSection}>
                         <SourcegraphExtensionFeedback extensionID={extension.id} />
                     </div>
                 )}
