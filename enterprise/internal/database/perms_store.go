@@ -4,6 +4,8 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
+	"fmt"
+	"strings"
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -923,12 +925,19 @@ func (s *PermsStore) GrantPendingPermissions(ctx context.Context, userID int32, 
 // upsertRepoPermissionsBatchQuery composes a SQL query that does both addition (for `addedRepoIDs`) and deletion (
 // for `removedRepoIDs`) of `userIDs` using upsert.
 func upsertRepoPermissionsBatchQuery(addedRepoIDs, removedRepoIDs, userIDs []uint32, perm authz.Perms, updatedAt time.Time) (*sqlf.Query, error) {
+	// TODO(@bobheadxi)
+	// https://klotzandrew.com/blog/postgres-passing-65535-parameter-limit
 	const format = `
 -- source: enterprise/internal/database/perms_store.go:upsertRepoPermissionsBatchQuery
 INSERT INTO repo_permissions
 	(repo_id, permission, user_ids_ints, updated_at)
-VALUES
-	%s
+	(
+		SELECT
+			repo_id, permission, string_to_array(user_ids_ints,',')::INT[], updated_at
+		FROM
+			unnest(%s::INT[], %s::TEXT[], %s::TEXT[], %s::TIMESTAMPTZ[])
+			as t(repo_id, permission, user_ids_ints, updated_at)
+	)
 ON CONFLICT ON CONSTRAINT
 	repo_permissions_perm_unique
 DO UPDATE SET
@@ -945,33 +954,39 @@ DO UPDATE SET
 		return nil, ErrPermsUpdatedAtNotSet
 	}
 
-	items := make([]*sqlf.Query, 0, len(addedRepoIDs)+len(removedRepoIDs))
-	for _, repoID := range addedRepoIDs {
-		items = append(items, sqlf.Sprintf("(%s, %s, %s, %s)",
-			repoID,
-			perm.String(),
-			pq.Array(userIDs),
-			updatedAt.UTC(),
-		))
+	userIDsStrs := make([]string, len(userIDs))
+	for i, id := range userIDs {
+		userIDsStrs[i] = fmt.Sprintf("%d", id)
 	}
-	for _, repoID := range removedRepoIDs {
-		items = append(items, sqlf.Sprintf("(%s, %s, %s, %s)",
-			repoID,
-			perm.String(),
+	userIDsStr := strings.Join(userIDsStrs, ",")
 
-			// NOTE: Rows from `removedRepoIDs` are expected to exist, but in case they do not,
-			// we need to set it with empty user IDs to be safe (it's a removal anyway).
-			pq.Array([]uint32{}),
-
-			updatedAt.UTC(),
-		))
+	itemsLength := len(addedRepoIDs) + len(removedRepoIDs)
+	repoIDs := append(addedRepoIDs, removedRepoIDs...)
+	permissions := make([]string, 0, itemsLength)
+	userIDsInts := make([]string, 0, itemsLength)
+	updatedAts := make([]time.Time, 0, itemsLength)
+	for range addedRepoIDs {
+		permissions = append(permissions, perm.String())
+		userIDsInts = append(userIDsInts, userIDsStr)
+		updatedAts = append(updatedAts, updatedAt.UTC())
+	}
+	for range removedRepoIDs {
+		permissions = append(permissions, perm.String())
+		// NOTE: Rows from `removedRepoIDs` are expected to exist, but in case they do not,
+		// we need to set it with empty user IDs to be safe (it's a removal anyway).
+		userIDsInts = append(userIDsInts, "")
+		updatedAts = append(updatedAts, updatedAt.UTC())
 	}
 
 	return sqlf.Sprintf(
 		format,
-		sqlf.Join(items, ","),
-		pq.Array(addedRepoIDs),
 
+		pq.Array(repoIDs),
+		pq.StringArray(permissions),
+		pq.StringArray(userIDsInts),
+		pq.Array(updatedAts),
+
+		pq.Array(addedRepoIDs),
 		// NOTE: Because we use empty user IDs for `removedRepoIDs`, we can't reuse "excluded.user_ids_ints"
 		// and have to explicitly set what user IDs to be removed.
 		pq.Array(userIDs),
