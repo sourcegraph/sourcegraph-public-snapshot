@@ -13,6 +13,8 @@ interface Props {
 
     /** class name to be applied to the alert */
     className: string
+
+    testId?: string
 }
 
 /**
@@ -20,7 +22,12 @@ interface Props {
  * alert will never be shown again after it is dismissed. Otherwise, it will be shown
  * whenever unmounted and remounted.
  */
-export const DismissibleAlert: React.FunctionComponent<Props> = ({ partialStorageKey, className, children }) => {
+export const DismissibleAlert: React.FunctionComponent<Props> = ({
+    partialStorageKey,
+    className,
+    testId,
+    children,
+}) => {
     const [dismissed, setDismissed] = React.useState<boolean>(
         partialStorageKey ? isAlertDismissed(partialStorageKey) : false
     )
@@ -35,8 +42,9 @@ export const DismissibleAlert: React.FunctionComponent<Props> = ({ partialStorag
     if (dismissed) {
         return null
     }
+
     return (
-        <div className={classNames('alert', styles.container, className)}>
+        <div data-testid={testId} className={classNames('alert', styles.container, className)}>
             <div className={styles.content}>{children}</div>
             <button type="button" className={classNames('btn btn-icon', styles.closeButton)} onClick={onDismiss}>
                 <CloseIcon className="icon-inline" />

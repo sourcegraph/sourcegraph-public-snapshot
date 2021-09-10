@@ -1,3 +1,4 @@
+import classNames from 'classnames'
 import * as H from 'history'
 import * as _monaco from 'monaco-editor' // type only
 import * as React from 'react'
@@ -9,6 +10,7 @@ import { ThemeProps } from '@sourcegraph/shared/src/theme'
 
 import { SaveToolbarProps, SaveToolbar, SaveToolbarPropsGenerator } from '../components/SaveToolbar'
 import { EditorAction } from '../site-admin/configHelpers'
+import adminConfigurationStyles from '../site-admin/SiteAdminConfigurationPage.module.scss'
 
 import * as _monacoSettingsEditorModule from './MonacoSettingsEditor' // type only
 
@@ -130,12 +132,12 @@ export class DynamicallyImportedMonacoSettingsEditor<T extends object = {}> exte
             <div className={this.props.className || ''}>
                 {this.props.canEdit && saveToolbar}
                 {this.props.actions && (
-                    <div className="site-admin-configuration-page__action-groups">
-                        <div className="site-admin-configuration-page__actions">
+                    <div className={adminConfigurationStyles.actionGroups}>
+                        <div className={adminConfigurationStyles.actions}>
                             {this.props.actions.map(({ id, label }) => (
                                 <button
                                     key={id}
-                                    className="btn btn-secondary btn-sm site-admin-configuration-page__action"
+                                    className={classNames('btn btn-secondary btn-sm', adminConfigurationStyles.action)}
                                     onClick={() => this.runAction(id, this.configEditor)}
                                     type="button"
                                 >

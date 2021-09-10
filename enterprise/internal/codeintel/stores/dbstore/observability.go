@@ -61,8 +61,10 @@ type operations struct {
 	referencesForUpload                    *observation.Operation
 	refreshCommitResolvability             *observation.Operation
 	repoName                               *observation.Operation
+	repositoryIDsForRetentionScan          *observation.Operation
 	requeue                                *observation.Operation
 	requeueIndex                           *observation.Operation
+	softDeleteExpiredUploads               *observation.Operation
 	softDeleteOldUploads                   *observation.Operation
 	staleSourcedCommits                    *observation.Operation
 	updateCommitedAt                       *observation.Operation
@@ -72,6 +74,7 @@ type operations struct {
 	updateNumReferences                    *observation.Operation
 	updatePackageReferences                *observation.Operation
 	updatePackages                         *observation.Operation
+	updateUploadRetention                  *observation.Operation
 
 	persistNearestUploads      *observation.Operation
 	persistNearestUploadsLinks *observation.Operation
@@ -117,7 +120,7 @@ func newOperations(observationContext *observation.Context, metrics *metrics.Ope
 		dirtyRepositories:                      op("DirtyRepositories"),
 		findClosestDumps:                       op("FindClosestDumps"),
 		findClosestDumpsFromGraphFragment:      op("FindClosestDumpsFromGraphFragment"),
-		getAutoindexDisabledRepositories:       op("getAutoindexDisabledRepositories"),
+		getAutoindexDisabledRepositories:       op("GetAutoindexDisabledRepositories"),
 		getConfigurationPolicies:               op("GetConfigurationPolicies"),
 		getConfigurationPolicyByID:             op("GetConfigurationPolicyByID"),
 		getDumpsByIDs:                          op("GetDumpsByIDs"),
@@ -151,8 +154,10 @@ func newOperations(observationContext *observation.Context, metrics *metrics.Ope
 		referencesForUpload:                    op("ReferencesForUpload"),
 		refreshCommitResolvability:             op("RefreshCommitResolvability"),
 		repoName:                               op("RepoName"),
+		repositoryIDsForRetentionScan:          op("RepositoryIDsForRetentionScan"),
 		requeue:                                op("Requeue"),
 		requeueIndex:                           op("RequeueIndex"),
+		softDeleteExpiredUploads:               op("SoftDeleteExpiredUploads"),
 		softDeleteOldUploads:                   op("SoftDeleteOldUploads"),
 		staleSourcedCommits:                    op("StaleSourcedCommits"),
 		updateCommitedAt:                       op("UpdateCommitedAt"),
@@ -162,6 +167,7 @@ func newOperations(observationContext *observation.Context, metrics *metrics.Ope
 		updateNumReferences:                    op("UpdateNumReferences"),
 		updatePackageReferences:                op("UpdatePackageReferences"),
 		updatePackages:                         op("UpdatePackages"),
+		updateUploadRetention:                  op("UpdateUploadRetention"),
 
 		persistNearestUploads:      subOp("persistNearestUploads"),
 		persistNearestUploadsLinks: subOp("persistNearestUploadsLinks"),

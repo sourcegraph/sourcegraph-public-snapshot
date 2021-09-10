@@ -3,7 +3,6 @@ package github
 import (
 	"context"
 	"fmt"
-	"log"
 	"net/url"
 	"strconv"
 	"strings"
@@ -380,7 +379,6 @@ func (p *Provider) FetchRepoPerms(ctx context.Context, repo *extsvc.Repository, 
 	// Perform a fresh sync with groups that need a sync.
 	repoID := extsvc.RepoID(repo.ID)
 	for _, group := range groups {
-		log.Printf("%+v\n", group)
 		// If this is a partial cache, add self to group
 		if len(group.Repositories) > 0 {
 			hasRepo := false
