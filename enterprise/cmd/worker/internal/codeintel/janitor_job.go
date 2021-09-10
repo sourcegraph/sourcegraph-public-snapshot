@@ -7,6 +7,7 @@ import (
 	"github.com/opentracing/opentracing-go"
 	"github.com/prometheus/client_golang/prometheus"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/worker/shared"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/codeintel/janitor"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
@@ -48,6 +49,11 @@ func (j *janitorJob) Routines(ctx context.Context) ([]goroutine.BackgroundRoutin
 		return nil, err
 	}
 
+	gitserverClient, err := InitGitserverClient()
+	if err != nil {
+		return nil, err
+	}
+
 	dbStoreShim := &janitor.DBStoreShim{Store: dbStore}
 	uploadWorkerStore := dbstore.WorkerutilUploadStore(dbStoreShim, observationContext)
 	indexWorkerStore := dbstore.WorkerutilIndexStore(dbStoreShim, observationContext)
@@ -57,11 +63,15 @@ func (j *janitorJob) Routines(ctx context.Context) ([]goroutine.BackgroundRoutin
 		janitor.NewAbandonedUploadJanitor(dbStoreShim, janitorConfigInst.UploadTimeout, janitorConfigInst.CleanupTaskInterval, metrics),
 		janitor.NewDeletedRepositoryJanitor(dbStoreShim, janitorConfigInst.CleanupTaskInterval, metrics),
 		janitor.NewHardDeleter(dbStoreShim, lsifStore, janitorConfigInst.CleanupTaskInterval, metrics),
-		janitor.NewRecordExpirer(dbStoreShim, janitorConfigInst.DataTTL, janitorConfigInst.CleanupTaskInterval, metrics),
 		janitor.NewUploadResetter(uploadWorkerStore, janitorConfigInst.CleanupTaskInterval, metrics, observationContext),
 		janitor.NewIndexResetter(indexWorkerStore, janitorConfigInst.CleanupTaskInterval, metrics, observationContext),
 		janitor.NewDependencyIndexResetter(dependencyIndexStore, janitorConfigInst.CleanupTaskInterval, metrics, observationContext),
 		janitor.NewUnknownCommitJanitor(dbStoreShim, janitorConfigInst.CommitResolverMinimumTimeSinceLastCheck, janitorConfigInst.CommitResolverBatchSize, janitorConfigInst.CommitResolverTaskInterval, metrics),
+		janitor.NewUploadExpirer(dbStoreShim, gitserverClient, janitorConfigInst.RepositoryProcessDelay, janitorConfigInst.RepositoryBatchSize, janitorConfigInst.UploadProcessDelay, janitorConfigInst.UploadBatchSize, janitorConfigInst.CleanupTaskInterval, metrics),
+	}
+
+	if !envvar.SourcegraphDotComMode() {
+		routines = append(routines, janitor.NewRecordExpirer(dbStoreShim, janitorConfigInst.DataTTL, janitorConfigInst.CleanupTaskInterval, metrics))
 	}
 
 	return routines, nil

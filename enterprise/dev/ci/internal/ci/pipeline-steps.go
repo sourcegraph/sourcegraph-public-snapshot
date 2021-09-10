@@ -95,19 +95,19 @@ func addBrowserExt(pipeline *bk.Pipeline) {
 // Adds the shared frontend tests (shared between the web app and browser extension).
 func addSharedTests(c Config) func(pipeline *bk.Pipeline) {
 	return func(pipeline *bk.Pipeline) {
-		// Client integration tests
-		pipeline.AddStep(":puppeteer::electric_plug: Puppeteer tests",
-			bk.Env("PUPPETEER_SKIP_CHROMIUM_DOWNLOAD", "true"), // Don't download browser, we use "download-puppeteer-browser" script instead
-			bk.Env("ENTERPRISE", "1"),
-			bk.Env("PERCY_ON", "true"),
-			bk.Cmd("COVERAGE_INSTRUMENT=true dev/ci/yarn-build.sh client/web"),
-			bk.Cmd("echo \"--- Install puppeteer\" && yarn --cwd client/shared run download-puppeteer-browser"),
-			bk.Cmd("echo \"--- Run integration test suite\" && yarn percy exec -- yarn run cover-integration"),
-			bk.Cmd("echo \"--- Process NYC report\" && yarn nyc report -r json"),
-			bk.Cmd("echo \"--- Upload coverage report\" && dev/ci/codecov.sh -c -F typescript -F integration"),
-			bk.ArtifactPaths("./puppeteer/*.png"))
+		if c.isMainDryRun || c.isClientAffected() {
+			// Client integration tests
+			pipeline.AddStep(":puppeteer::electric_plug: Puppeteer tests",
+				bk.Env("PUPPETEER_SKIP_CHROMIUM_DOWNLOAD", "true"), // Don't download browser, we use "download-puppeteer-browser" script instead
+				bk.Env("ENTERPRISE", "1"),
+				bk.Env("PERCY_ON", "true"),
+				bk.Cmd("COVERAGE_INSTRUMENT=true dev/ci/yarn-build.sh client/web"),
+				bk.Cmd("echo \"--- Install puppeteer\" && yarn --cwd client/shared run download-puppeteer-browser"),
+				bk.Cmd("echo \"--- Run integration test suite\" && yarn percy exec -- yarn run cover-integration"),
+				bk.Cmd("echo \"--- Process NYC report\" && yarn nyc report -r json"),
+				bk.Cmd("echo \"--- Upload coverage report\" && dev/ci/codecov.sh -c -F typescript -F integration"),
+				bk.ArtifactPaths("./puppeteer/*.png"))
 
-		if c.isMainDryRun || c.isStorybookAffected() {
 			// Upload storybook to Chromatic
 			chromaticCommand := "yarn chromatic --exit-zero-on-changes --exit-once-uploaded"
 			if c.isMainBranch() {
