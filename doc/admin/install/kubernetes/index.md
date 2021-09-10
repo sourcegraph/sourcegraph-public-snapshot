@@ -68,7 +68,9 @@ Once you are all set up, either [install Sourcegraph directly](#direct-installat
 > or other secure network that restricts unauthenticated access from the public Internet. You can later expose the
 > necessary ports via an
 > [Internet Gateway](http://docs.aws.amazon.com/AmazonVPC/latest/UserGuide/VPC_Internet_Gateway.html) or equivalent
-> mechanism. Take care to secure your cluster in a manner that meets your organization's security requirements.
+> mechanism. Note that SG must expose port 443 for outbound traffic to codehosts and to enable [telemetry](https://docs.sourcegraph.com/admin/pings) with 
+> Sourcegraph.com. Additionally port 22 may be opened to enable git SSH cloning by Sourcegraph. Take care to secure your cluster in a manner that meets your 
+> organization's security requirements.
 
 Follow the instructions linked in the table below to provision a Kubernetes cluster for the
 infrastructure provider of your choice, using the recommended node and list types in the
