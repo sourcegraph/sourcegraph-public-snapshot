@@ -1,48 +1,52 @@
 import classNames from 'classnames'
-import React, { useCallback, useEffect } from 'react'
-import { Link, useHistory, useLocation } from 'react-router-dom'
-import { Observable } from 'rxjs'
-import { map } from 'rxjs/operators'
+import React, { useEffect, useState } from 'react'
+import { Link } from 'react-router-dom'
 
 import { displayRepoName } from '@sourcegraph/shared/src/components/RepoFileLink'
 import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
 import { gql } from '@sourcegraph/shared/src/graphql/graphql'
-import * as GQL from '@sourcegraph/shared/src/graphql/schema'
 import { createAggregateError } from '@sourcegraph/shared/src/util/errors'
+import { useConnection } from '@sourcegraph/web/src/components/FilteredConnection/hooks/useConnection'
+import {
+    ConnectionContainer,
+    ConnectionError,
+    ConnectionForm,
+    ConnectionList,
+    ConnectionLoading,
+    ConnectionSummary,
+    ShowMoreButton,
+    SummaryContainer,
+} from '@sourcegraph/web/src/components/FilteredConnection/ui'
+import { useDebounce } from '@sourcegraph/wildcard'
 
-import { queryGraphQL } from '../backend/graphql'
-import { FilteredConnection, FilteredConnectionQueryArguments } from '../components/FilteredConnection'
+import {
+    RepositoriesForPopoverResult,
+    RepositoriesForPopoverVariables,
+    RepositoryPopoverFields,
+} from '../graphql-operations'
 import { eventLogger } from '../tracking/eventLogger'
 
-function fetchRepositories(args: { first?: number; query?: string }): Observable<GQL.IRepositoryConnection> {
-    return queryGraphQL(
-        gql`
-            query RepositoriesForPopover($first: Int, $query: String) {
-                repositories(first: $first, query: $query) {
-                    nodes {
-                        id
-                        name
-                    }
-                    totalCount
-                    pageInfo {
-                        hasNextPage
-                    }
-                }
+export const REPOSITORIES_FOR_POPOVER = gql`
+    query RepositoriesForPopover($first: Int, $query: String) {
+        repositories(first: $first, query: $query) {
+            nodes {
+                ...RepositoryPopoverFields
             }
-        `,
-        args
-    ).pipe(
-        map(({ data, errors }) => {
-            if (!data || !data.repositories) {
-                throw createAggregateError(errors)
+            totalCount
+            pageInfo {
+                hasNextPage
             }
-            return data.repositories
-        })
-    )
-}
+        }
+    }
+
+    fragment RepositoryPopoverFields on Repository {
+        id
+        name
+    }
+`
 
 interface RepositoryNodeProps {
-    node: GQL.IRepository
+    node: RepositoryPopoverFields
     currentRepo?: Scalars['ID']
 }
 
@@ -67,46 +71,73 @@ interface RepositoriesPopoverProps {
     currentRepo?: Scalars['ID']
 }
 
-class FilteredRepositoryConnection extends FilteredConnection<GQL.IRepository> {}
+const BATCH_COUNT = 10
 
 /**
  * A popover that displays a searchable list of repositories.
  */
 export const RepositoriesPopover: React.FunctionComponent<RepositoriesPopoverProps> = ({ currentRepo }) => {
-    const location = useLocation()
-    const history = useHistory()
+    const [searchValue, setSearchValue] = useState('')
+    const query = useDebounce(searchValue, 200)
 
     useEffect(() => {
         eventLogger.logViewEvent('RepositoriesPopover')
     }, [])
 
-    const queryRepositories = useCallback(
-        (args: FilteredConnectionQueryArguments): Observable<GQL.IRepositoryConnection> =>
-            fetchRepositories({ ...args }),
-        []
-    )
+    const { connection, loading, error, hasNextPage, fetchMore } = useConnection<
+        RepositoriesForPopoverResult,
+        RepositoriesForPopoverVariables,
+        RepositoryPopoverFields
+    >({
+        query: REPOSITORIES_FOR_POPOVER,
+        variables: { first: 10, query: '' },
+        getConnection: ({ data, errors }) => {
+            if (!data || !data.repositories) {
+                throw createAggregateError(errors)
+            }
+            return data.repositories
+        },
+    })
 
-    const nodeProps: Pick<RepositoryNodeProps, 'currentRepo'> = { currentRepo }
+    const summary = connection && (
+        <ConnectionSummary
+            connection={connection}
+            first={BATCH_COUNT}
+            noun="repository"
+            pluralNoun="repositories"
+            hasNextPage={hasNextPage}
+            connectionQuery={query}
+            noSummaryIfAllNodesVisible={true}
+        />
+    )
 
     return (
         <div className="repositories-popover connection-popover">
-            <FilteredRepositoryConnection
-                className="connection-popover__content"
-                inputClassName="connection-popover__input"
-                listClassName="connection-popover__nodes"
-                compact={true}
-                noun="repository"
-                pluralNoun="repositories"
-                queryConnection={queryRepositories}
-                nodeComponent={RepositoryNode}
-                nodeComponentProps={nodeProps}
-                defaultFirst={10}
-                autoFocus={true}
-                history={history}
-                location={location}
-                noSummaryIfAllNodesVisible={true}
-                useURLQuery={false}
-            />
+            <ConnectionContainer className="connection-popover__content" compact={true}>
+                <ConnectionForm
+                    inputValue={searchValue}
+                    onInputChange={event => setSearchValue(event.target.value)}
+                    inputPlaceholder="Search repositories..."
+                    inputClassName="connection-popover__input"
+                    autoFocus={true}
+                />
+                <SummaryContainer>{query && summary}</SummaryContainer>
+                {error && <ConnectionError errors={[error.message]} />}
+                {connection && (
+                    <ConnectionList className="connection-popover__nodes">
+                        {connection.nodes.map(node => (
+                            <RepositoryNode key={node.id} node={node} currentRepo={currentRepo} />
+                        ))}
+                    </ConnectionList>
+                )}
+                {loading && <ConnectionLoading />}
+                {!loading && connection && (
+                    <SummaryContainer>
+                        {!query && summary}
+                        {hasNextPage && <ShowMoreButton onClick={fetchMore} />}
+                    </SummaryContainer>
+                )}
+            </ConnectionContainer>
         </div>
     )
 }
