@@ -82,7 +82,7 @@ export const CodeIntelligencePolicyTable: FunctionComponent<CodeIntelligencePoli
                     )}
                 </span>
                 <span className={classNames(styles.button, 'd-none d-md-inline')}>
-                    {deletePolicy && (
+                    {deletePolicy && !policy.protected && (
                         <Button
                             onClick={() => deletePolicy(policy.id, policy.name)}
                             className="ml-2 p-0"

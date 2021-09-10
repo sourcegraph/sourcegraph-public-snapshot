@@ -47,6 +47,7 @@ const emptyPolicy: CodeIntelligenceConfigurationPolicyFields = {
     name: '',
     type: GitObjectType.GIT_COMMIT,
     pattern: '',
+    protected: false,
     retentionEnabled: false,
     retentionDurationHours: null,
     retainIntermediateCommits: false,
@@ -131,6 +132,13 @@ export const CodeIntelConfigurationPolicyPage: FunctionComponent<CodeIntelConfig
                 <LoadingSpinner className="icon-inline" />
             ) : (
                 <>
+                    {policy.protected && (
+                        <div className="alert alert-info">
+                            This configuration policy is protected. Protected configuration policies may not be deleted
+                            and only the retention duration and indexing options are editable.
+                        </div>
+                    )}
+
                     <Container className="container form">
                         {saveError && <ErrorAlert prefix="Error saving configuration policy" error={saveError} />}
                         <BranchTargetSettings
@@ -140,6 +148,7 @@ export const CodeIntelConfigurationPolicyPage: FunctionComponent<CodeIntelConfig
                             repoName={repoName}
                             searchGitBranches={searchGitBranches}
                             searchGitTags={searchGitTags}
+                            disabled={policy.protected}
                         />
                     </Container>
 
