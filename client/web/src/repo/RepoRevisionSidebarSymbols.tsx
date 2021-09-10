@@ -180,7 +180,7 @@ export const RepoRevisionSidebarSymbols: React.FunctionComponent<RepoRevisionSid
             <ConnectionForm
                 inputValue={searchValue}
                 onInputChange={event => setSearchValue(event.target.value)}
-                inputPlaceholder="Search..."
+                inputPlaceholder="Search symbols..."
             />
             <SummaryContainer>{query && summary}</SummaryContainer>
             {error && <ConnectionError errors={[error.message]} />}
