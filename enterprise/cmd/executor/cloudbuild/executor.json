@@ -1,6 +1,8 @@
 {
   "variables": {
     "version": "{{env `VERSION`}}",
+    "awsAccessKey": "{{env `AWS_EXECUTOR_AMI_ACCESS_KEY`}}",
+    "awsSecretKey": "{{env `AWS_EXECUTOR_AMI_SECRET_KEY`}}",
     "build_timestamp": "{{env `BUILD_TIMESTAMP`}}",
     "SRC_CLI_VERSION": "{{env `SRC_CLI_VERSION`}}"
   },
@@ -27,9 +29,11 @@
       "instance_type": "t3.micro",
       "source_ami": "ami-02868af3c3df4b3aa",
       "region": "us-west-2",
-      "vpc_id": "vpc-0cdd19a3c7d821029",
-      "subnet_id": "subnet-0d25cdd0f10558e3b",
-      "associate_public_ip_address": true
+      "vpc_id": "vpc-095ba109c7ca96d76",
+      "subnet_id": "subnet-03962956ca2682c50",
+      "associate_public_ip_address": true,
+      "access_key": "{{user `awsAccessKey`}}",
+      "secret_key": "{{user `awsSecretKey`}}"
     }
   ],
   "provisioners": [
