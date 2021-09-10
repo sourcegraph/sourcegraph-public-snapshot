@@ -12,7 +12,6 @@ import (
 
 type expiredUploadDeleter struct {
 	dbStore DBStore
-	ttl     time.Duration
 	metrics *metrics
 }
 
