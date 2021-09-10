@@ -48,7 +48,7 @@ export const enterpriseRoutes: readonly LayoutRouteProps<{}>[] = [
     {
         path: '/insights',
         render: lazyComponent(() => import('./insights/InsightsRouter'), 'InsightsRouter'),
-        condition: props => isCodeInsightsEnabled(props.settingsCascade, { insightsPage: true }),
+        condition: props => isCodeInsightsEnabled(props.settingsCascade),
     },
     ...routes,
 ]

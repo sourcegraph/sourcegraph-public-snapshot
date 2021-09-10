@@ -130,7 +130,7 @@ export const DiffHunk: React.FunctionComponent<DiffHunkProps> = ({
                             style={lineStyle}
                             data-diff-marker={diffHunkTypeIndicators[line.kind]}
                         >
-                            <div className="d-inline" dangerouslySetInnerHTML={{ __html: line.html }} />
+                            <div className="d-inline-block" dangerouslySetInnerHTML={{ __html: line.html }} />
                             {decorationsForLine.filter(property('after', isDefined)).map((decoration, index) => {
                                 const style = decorationAttachmentStyleForTheme(decoration.after, isLightTheme)
                                 return (

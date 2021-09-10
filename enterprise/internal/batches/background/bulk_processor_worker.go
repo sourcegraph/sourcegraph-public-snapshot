@@ -5,7 +5,6 @@ import (
 	"database/sql"
 	"time"
 
-	"github.com/hashicorp/go-multierror"
 	"github.com/keegancsmith/sqlf"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/processor"
@@ -103,15 +102,7 @@ func (b *bulkProcessorWorker) HandlerFunc() workerutil.HandlerFunc {
 		if err != nil {
 			return err
 		}
-		defer func() {
-			doneErr := tx.Done(nil)
-			if err != nil && doneErr != nil {
-				err = multierror.Append(err, doneErr)
-			}
-			if doneErr != nil {
-				err = doneErr
-			}
-		}()
+		defer func() { err = tx.Done(err) }()
 
 		p := processor.New(tx, b.sourcer)
 

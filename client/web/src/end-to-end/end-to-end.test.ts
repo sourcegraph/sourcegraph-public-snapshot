@@ -109,11 +109,11 @@ describe('e2e test suite', () => {
                 selectMethod: 'keyboard',
             })
             await driver.page.click('.test-settings-file .test-save-toolbar-save')
-            await driver.page.waitForSelector('.test-global-alert .notices .global-alerts__alert', { visible: true })
+            await driver.page.waitForSelector('.test-global-alert [data-testid="notice-alert"]', { visible: true })
             await driver.page.evaluate((message: string) => {
-                const element = document.querySelector<HTMLElement>('.test-global-alert .notices .global-alerts__alert')
+                const element = document.querySelector<HTMLElement>('.test-global-alert [data-testid="notice-alert"]')
                 if (!element) {
-                    throw new Error('No .test-global-alert .notices .global-alerts__alert element found')
+                    throw new Error('No .test-global-alert [data-testid="notice-alert"] element found')
                 }
                 if (!element.textContent?.includes(message)) {
                     throw new Error(`Expected "${message}" message, but didn't find it`)

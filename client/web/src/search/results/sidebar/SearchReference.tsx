@@ -580,7 +580,7 @@ const SearchReference = (props: SearchReferenceProps): ReactElement => {
                     </TabPanels>
                 </Tabs>
             )}
-            <p className={styles.footer}>
+            <p className={sidebarStyles.sidebarSectionFooter}>
                 <small>
                     <Link target="blank" to="https://docs.sourcegraph.com/code_search/reference/queries">
                         Search syntax <ExternalLinkIcon className="icon-inline" />
