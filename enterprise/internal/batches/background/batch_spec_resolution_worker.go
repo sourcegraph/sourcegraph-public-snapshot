@@ -16,7 +16,7 @@ import (
 )
 
 // batchSpecResolutionMaxNumRetries sets the number of retries for batch spec
-// resolutions to 0. Wedon't want to retry automatically and instead wait for
+// resolutions to 0. We don't want to retry automatically and instead wait for
 // user input
 const batchSpecResolutionMaxNumRetries = 0
 const batchSpecResolutionMaxNumResets = 60

@@ -3,7 +3,6 @@ package background
 import (
 	"context"
 
-	"github.com/hashicorp/go-multierror"
 	"github.com/inconshreveable/log15"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/service"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
@@ -26,15 +25,7 @@ func (e *batchSpecWorkspaceCreator) HandlerFunc() workerutil.HandlerFunc {
 		if err != nil {
 			return err
 		}
-		defer func() {
-			doneErr := tx.Done(nil)
-			if err != nil && doneErr != nil {
-				err = multierror.Append(err, doneErr)
-			}
-			if doneErr != nil {
-				err = doneErr
-			}
-		}()
+		defer func() { err = tx.Done(err) }()
 
 		return e.process(ctx, tx, record.(*btypes.BatchSpecResolutionJob))
 	}
