@@ -107,6 +107,71 @@ func testStoreBatchChanges(t *testing.T, ctx context.Context, s *Store, clock ct
 			}
 		})
 
+		t.Run("RepoID", func(t *testing.T) {
+			repoStore := database.ReposWith(s)
+			esStore := database.ExternalServicesWith(s)
+
+			repo1 := ct.TestRepo(t, esStore, extsvc.KindGitHub)
+			repo2 := ct.TestRepo(t, esStore, extsvc.KindGitHub)
+			repo3 := ct.TestRepo(t, esStore, extsvc.KindGitHub)
+			if err := repoStore.Create(ctx, repo1, repo2, repo3); err != nil {
+				t.Fatal(err)
+			}
+
+			// 1 batch change + changeset is associated with the first repo
+			ct.CreateChangeset(t, ctx, s, ct.TestChangesetOpts{
+				Repo:         repo1.ID,
+				BatchChanges: []btypes.BatchChangeAssoc{{BatchChangeID: cs[0].ID}},
+			})
+
+			// 2 batch changes, each with 1 changeset, are associated with the second repo
+			ct.CreateChangeset(t, ctx, s, ct.TestChangesetOpts{
+				Repo:         repo2.ID,
+				BatchChanges: []btypes.BatchChangeAssoc{{BatchChangeID: cs[0].ID}},
+			})
+			ct.CreateChangeset(t, ctx, s, ct.TestChangesetOpts{
+				Repo:         repo2.ID,
+				BatchChanges: []btypes.BatchChangeAssoc{{BatchChangeID: cs[1].ID}},
+			})
+
+			// no batch changes are associated with the third repo
+
+			{
+				tcs := []struct {
+					repoID api.RepoID
+					count  int
+				}{
+					{
+						repoID: repo1.ID,
+						count:  1,
+					},
+					{
+						repoID: repo2.ID,
+						count:  2,
+					},
+					{
+						repoID: repo3.ID,
+						count:  0,
+					},
+				}
+
+				for i, tc := range tcs {
+					t.Run(strconv.Itoa(i), func(t *testing.T) {
+						opts := CountBatchChangesOpts{RepoID: tc.repoID}
+
+						count, err := s.CountBatchChanges(ctx, opts)
+						if err != nil {
+							t.Fatal(err)
+						}
+
+						if count != tc.count {
+							t.Fatalf("listed the wrong number of batch changes: have %d, want %d", count, tc.count)
+						}
+					})
+				}
+			}
+		})
+
 		t.Run("OnlyForAuthor set", func(t *testing.T) {
 			for _, c := range cs {
 				count, err = s.CountBatchChanges(ctx, CountBatchChangesOpts{InitialApplierID: c.InitialApplierID})

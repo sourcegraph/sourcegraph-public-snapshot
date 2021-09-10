@@ -24,7 +24,7 @@ exports[`SignUpPage renders sign up page (cloud) 1`] = `
       >
         <img
           alt="Sourcegraph logo"
-          className="brand-logo logo"
+          className="logo"
           src="/img/sourcegraph-logo-light.svg"
         />
       </div>
@@ -142,13 +142,13 @@ exports[`SignUpPage renders sign up page (cloud) 1`] = `
 
 exports[`SignUpPage renders sign up page (server) 1`] = `
 <div
-  className="signin-signup-page sign-up-page"
+  className="signinSignupPage"
 >
   <div
-    className="hero-page hero-page__less-padding"
+    className="heroPage lessPadding"
   >
     <div
-      className="hero-page__icon bg-transparent"
+      className="icon bg-transparent"
     >
       <svg
         fill="none"
@@ -172,15 +172,15 @@ exports[`SignUpPage renders sign up page (server) 1`] = `
       </svg>
     </div>
     <div
-      className="hero-page__title"
+      className="title"
     >
       Sign up for Sourcegraph Server
     </div>
     <div
-      className="signup-page__container pb-5"
+      className="pb-5 signupPageContainer"
     >
       <form
-        className="signin-signup-form signup-form test-signup-form rounded p-4 text-left mt-4"
+        className="signinSignupForm test-signup-form rounded p-4 text-left mt-4"
         noValidate={true}
         onSubmit={[Function]}
       >
@@ -199,7 +199,7 @@ exports[`SignUpPage renders sign up page (server) 1`] = `
             <input
               autoComplete="email"
               autoFocus={true}
-              className="form-control signin-signup-form__input"
+              className="form-control"
               disabled={false}
               id="email"
               name="email"
@@ -227,7 +227,7 @@ exports[`SignUpPage renders sign up page (server) 1`] = `
             <input
               autoCapitalize="off"
               autoComplete="username"
-              className="form-control signin-signup-form__input"
+              className="form-control"
               disabled={false}
               id="username"
               maxLength={255}
@@ -256,7 +256,7 @@ exports[`SignUpPage renders sign up page (server) 1`] = `
           >
             <input
               autoComplete="new-password"
-              className="form-control signin-signup-form__input"
+              className="form-control"
               disabled={false}
               formNoValidate={true}
               id="password"

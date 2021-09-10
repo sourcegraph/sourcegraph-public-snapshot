@@ -1,3 +1,4 @@
+import classNames from 'classnames'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import React, { useLayoutEffect, useRef } from 'react'
 import { Route, RouteComponentProps, Switch, useLocation } from 'react-router'
@@ -18,6 +19,7 @@ import { HeroPage } from '../components/HeroPage'
 import { Page } from '../components/Page'
 import { RouteDescriptor } from '../util/contributions'
 
+import styles from './SiteAdminArea.module.scss'
 import { SiteAdminSidebar, SiteAdminSideBarGroups } from './SiteAdminSidebar'
 
 const NotFoundPage: React.ComponentType<{}> = () => (
@@ -96,9 +98,9 @@ const AuthenticatedSiteAdminArea: React.FunctionComponent<SiteAdminAreaProps> = 
     return (
         <Page>
             <PageHeader path={[{ text: 'Site Admin' }]} />
-            <div className="site-admin-area d-flex my-3" ref={reference}>
+            <div className={classNames('d-flex my-3', styles.siteAdminArea)} ref={reference}>
                 <SiteAdminSidebar
-                    className="sidebar flex-0 mr-3"
+                    className="flex-0 mr-3"
                     groups={props.sideBarGroups}
                     isSourcegraphDotCom={props.isSourcegraphDotCom}
                     batchChangesEnabled={props.batchChangesEnabled}

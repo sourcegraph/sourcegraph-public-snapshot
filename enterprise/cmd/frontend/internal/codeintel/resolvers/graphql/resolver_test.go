@@ -129,6 +129,7 @@ func TestMakeGetUploadsOptions(t *testing.T) {
 		VisibleAtTip: true,
 		Limit:        5,
 		Offset:       25,
+		AllowExpired: true,
 	}
 	if diff := cmp.Diff(expected, opts); diff != "" {
 		t.Errorf("unexpected opts (-want +got):\n%s", diff)
@@ -150,6 +151,7 @@ func TestMakeGetUploadsOptionsDefaults(t *testing.T) {
 		VisibleAtTip: false,
 		Limit:        DefaultUploadPageSize,
 		Offset:       0,
+		AllowExpired: true,
 	}
 	if diff := cmp.Diff(expected, opts); diff != "" {
 		t.Errorf("unexpected opts (-want +got):\n%s", diff)

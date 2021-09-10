@@ -2,17 +2,17 @@
 
 exports[`SiteInitPage normal 1`] = `
 <div
-  className="site-init-page"
+  className="siteInitPage"
 >
   <div
-    className="site-init-page__content card"
+    className="card content"
   >
     <div
       className="card-body p-4"
     >
       <img
         alt="Sourcegraph logo"
-        className="brand-logo w-100 mb-3"
+        className="w-100 mb-3"
         src="/img/sourcegraph-logo-light.svg"
       />
       <h2
@@ -24,7 +24,7 @@ exports[`SiteInitPage normal 1`] = `
         Create an admin account to start using Sourcegraph.
       </p>
       <form
-        className="signin-signup-form signup-form test-signup-form rounded p-4 text-left mt-4 w-100"
+        className="signinSignupForm test-signup-form rounded p-4 text-left mt-4 w-100"
         noValidate={true}
         onSubmit={[Function]}
       >
@@ -43,7 +43,7 @@ exports[`SiteInitPage normal 1`] = `
             <input
               autoComplete="email"
               autoFocus={true}
-              className="form-control signin-signup-form__input"
+              className="form-control"
               disabled={false}
               id="email"
               name="email"
@@ -71,7 +71,7 @@ exports[`SiteInitPage normal 1`] = `
             <input
               autoCapitalize="off"
               autoComplete="username"
-              className="form-control signin-signup-form__input"
+              className="form-control"
               disabled={false}
               id="username"
               maxLength={255}
@@ -100,7 +100,7 @@ exports[`SiteInitPage normal 1`] = `
           >
             <input
               autoComplete="new-password"
-              className="form-control signin-signup-form__input"
+              className="form-control"
               disabled={false}
               formNoValidate={true}
               id="password"
@@ -139,17 +139,17 @@ exports[`SiteInitPage normal 1`] = `
 
 exports[`SiteInitPage unexpected authed user 1`] = `
 <div
-  className="site-init-page"
+  className="siteInitPage"
 >
   <div
-    className="site-init-page__content card"
+    className="card content"
   >
     <div
       className="card-body p-4"
     >
       <img
         alt="Sourcegraph logo"
-        className="brand-logo w-100 mb-3"
+        className="w-100 mb-3"
         src="/img/sourcegraph-logo-light.svg"
       />
       <p>

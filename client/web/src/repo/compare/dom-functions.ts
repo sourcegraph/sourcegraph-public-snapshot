@@ -1,14 +1,16 @@
 import { DiffPart, DOMFunctions } from '@sourcegraph/codeintellify'
 
+import { DiffHunkLineType } from '../../graphql-operations'
+
 export const diffDomFunctions: DOMFunctions = {
     getCodeElementFromTarget: (target: HTMLElement): HTMLTableCellElement | null => {
         const row = target.closest('td')
         if (
             !row ||
-            row.classList.contains('diff-boundary__content') ||
-            row.classList.contains('diff-boundary__num') ||
-            row.classList.contains('diff-hunk__content--empty') ||
-            row.classList.contains('diff-hunk__num')
+            row.getAttribute('data-diff-boundary-content') ||
+            row.getAttribute('data-diff-boundary-num') ||
+            row.getAttribute('data-hunk-content-empty') ||
+            row.getAttribute('data-hunk-num')
         ) {
             return null
         }
@@ -30,13 +32,14 @@ export const diffDomFunctions: DOMFunctions = {
     getDiffCodePart: (codeElement: HTMLElement): DiffPart => {
         const tableCell = codeElement.closest('td') as HTMLTableCellElement
         const tableRow = codeElement.parentElement as HTMLTableRowElement
-        const isSplitMode = tableRow.classList.contains('file-diff-hunks__table--split-row')
+        const isSplitMode = tableRow.getAttribute('data-diff-mode') === 'split'
+        const lineKind = tableRow.getAttribute('data-hunk-line-kind')
 
-        if (tableRow.classList.contains('diff-hunk__line--addition')) {
+        if (lineKind === DiffHunkLineType.ADDED) {
             return 'head'
         }
 
-        if (tableRow.classList.contains('diff-hunk__line--deletion')) {
+        if (lineKind === DiffHunkLineType.DELETED) {
             return 'base'
         }
 

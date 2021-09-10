@@ -1,0 +1,18 @@
+.sidebar {
+    isolation: isolate;
+    width: 12rem;
+    display: flex;
+    flex-direction: column;
+}
+
+// TODO: remove global `.sidebar__link--inactive` usage and drop this selector.
+:global(.sidebar__link--inactive),
+.link--inactive {
+    &:hover {
+        background-color: var(--color-bg-2);
+    }
+}
+
+.chevron {
+    color: var(--icon-color);
+}

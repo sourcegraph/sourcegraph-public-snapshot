@@ -1,3 +1,4 @@
+import classNames from 'classnames'
 import React, { useCallback, useEffect } from 'react'
 import { Link, useHistory, useLocation } from 'react-router-dom'
 import { Observable } from 'rxjs'
@@ -49,9 +50,10 @@ const RepositoryNode: React.FunctionComponent<RepositoryNodeProps> = ({ node, cu
     <li key={node.id} className="connection-popover__node">
         <Link
             to={`/${node.name}`}
-            className={`connection-popover__node-link ${
-                node.id === currentRepo ? 'connection-popover__node-link--active' : ''
-            }`}
+            className={classNames(
+                'connection-popover__node-link',
+                node.id === currentRepo && 'connection-popover__node-link--active'
+            )}
         >
             {displayRepoName(node.name)}
         </Link>

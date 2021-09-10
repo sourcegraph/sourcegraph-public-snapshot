@@ -1,3 +1,4 @@
+import classNames from 'classnames'
 import * as React from 'react'
 import { CardElement, ReactStripeElements } from 'react-stripe-elements'
 
@@ -21,9 +22,10 @@ export const PaymentTokenFormControl: React.FunctionComponent<Props> = props => 
     return (
         <div className="payment-token-form-control">
             <PatchedCardElement
-                className={`form-control payment-token-form-control__card payment-token-form-control__card--${
-                    props.disabled ? 'disabled' : ''
-                }`}
+                className={classNames(
+                    'form-control payment-token-form-control__card',
+                    props.disabled && 'payment-token-form-control__card--disabled'
+                )}
                 disabled={props.disabled}
                 style={{
                     base: {

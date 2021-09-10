@@ -1,4 +1,4 @@
-import { ConfiguredRegistryExtension } from '@sourcegraph/shared/src/extensions/extension'
+import { ConfiguredExtension } from '@sourcegraph/shared/src/extensions/extension'
 import { isErrorLike } from '@sourcegraph/shared/src/util/errors'
 
 import settingsSchemaJSON from '../../../../schema/settings.schema.json'
@@ -9,7 +9,9 @@ import settingsSchemaJSON from '../../../../schema/settings.schema.json'
  * @param configuredExtensions
  * @returns A JSON Schema that describes an instance of settings for a particular subject.
  */
-export function mergeSettingsSchemas(configuredExtensions: Pick<ConfiguredRegistryExtension, 'manifest'>[]): any {
+export function mergeSettingsSchemas(
+    configuredExtensions: Pick<ConfiguredExtension<'contributes'>, 'manifest'>[]
+): { allOf: object } {
     return {
         allOf: [
             { $ref: settingsSchemaJSON.$id },

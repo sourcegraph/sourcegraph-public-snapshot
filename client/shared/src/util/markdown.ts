@@ -33,7 +33,7 @@ export const highlightCodeSafe = (code: string, language?: string): string => {
             return code
         }
         if (language) {
-            return highlight(language, code, true).value
+            return highlight(code, { language, ignoreIllegals: true }).value
         }
         return highlightAuto(code).value
     } catch (error) {

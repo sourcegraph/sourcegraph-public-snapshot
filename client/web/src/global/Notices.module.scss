@@ -1,0 +1,5 @@
+.notices {
+    p:last-child {
+        margin-bottom: 0; /* override Bootstrap to fix uneven spacing at end of alert */
+    }
+}

@@ -263,3 +263,8 @@ func NextRecording(current time.Time) time.Time {
 	year, month, _ := current.In(time.UTC).Date()
 	return time.Date(year, month+1, 1, 0, 0, 0, 0, time.UTC)
 }
+
+func NextSnapshot(current time.Time) time.Time {
+	year, month, day := current.In(time.UTC).Date()
+	return time.Date(year, month, day+1, 0, 0, 0, 0, time.UTC)
+}

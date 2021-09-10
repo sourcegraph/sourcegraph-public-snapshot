@@ -1,6 +1,9 @@
+import classNames from 'classnames'
 import copy from 'copy-to-clipboard'
 import ContentCopyIcon from 'mdi-react/ContentCopyIcon'
 import * as React from 'react'
+
+import styles from './CopyableText.module.scss'
 
 interface Props {
     /** The text to present and to copy. */
@@ -31,11 +34,11 @@ export class CopyableText extends React.PureComponent<Props, State> {
 
     public render(): JSX.Element | null {
         return (
-            <div className={`copyable-text form-inline ${this.props.className || ''}`}>
+            <div className={classNames('form-inline', this.props.className)}>
                 <div className="input-group">
                     <input
                         type={this.props.password ? 'password' : 'text'}
-                        className="copyable-text__input form-control"
+                        className={classNames('form-control', styles.input)}
                         value={this.props.text}
                         size={this.props.size}
                         readOnly={true}

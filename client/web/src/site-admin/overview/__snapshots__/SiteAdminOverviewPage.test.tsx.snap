@@ -112,7 +112,7 @@ exports[`SiteAdminOverviewPage >= 2 users 1`] = `
         </span>
         <button
           aria-label="Collapse section"
-          className="d-flex btn btn-icon collapsible__expand-btn stretched-link"
+          className="d-flex btn btn-icon expandBtn stretched-link"
           onClick={[Function]}
           type="button"
         >
@@ -130,9 +130,7 @@ exports[`SiteAdminOverviewPage >= 2 users 1`] = `
           </svg>
         </button>
       </div>
-      <div
-        className="site-admin-usage-statistics-page"
-      >
+      <div>
         <div
           className="site-admin-overview-page__detail-header"
         >
@@ -164,7 +162,7 @@ exports[`SiteAdminOverviewPage >= 2 users 1`] = `
           viewBox="0 0 500 200"
         />
         <small
-          className="site-admin-usage-statistics-page__tz-note"
+          className="tzNote"
         >
           <i>
             GMT/UTC time
@@ -209,7 +207,7 @@ exports[`SiteAdminOverviewPage activation in progress 1`] = `
         </div>
         <button
           aria-label="Collapse section"
-          className="d-flex btn btn-icon collapsible__expand-btn stretched-link"
+          className="d-flex btn btn-icon expandBtn stretched-link"
           onClick={[Function]}
           type="button"
         >
@@ -228,7 +226,7 @@ exports[`SiteAdminOverviewPage activation in progress 1`] = `
         </button>
       </div>
       <div
-        className="activation-checklist list-group list-group-flush "
+        className="activation-checklist list-group list-group-flush"
       >
         <div
           data-reach-accordion=""

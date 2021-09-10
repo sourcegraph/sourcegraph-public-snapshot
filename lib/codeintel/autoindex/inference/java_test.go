@@ -21,7 +21,11 @@ func TestCanIndexJavaRepo(t *testing.T) {
 		{paths: []string{"nested/build.gradle"}, expected: false},
 		{paths: []string{"settings.gradle"}, expected: false},
 		{paths: []string{"nested/settings.gradle"}, expected: false},
-		{paths: []string{"lsif-java.json"}, expected: true},
+		{paths: []string{"lsif-java.json"}, expected: false},
+		{paths: []string{"lsif-java.json", "A.kt"}, expected: false},
+		{paths: []string{"lsif-java.json", "A.java"}, expected: true},
+		{paths: []string{"lsif-java.json", "A.scala"}, expected: true},
+		{paths: []string{"lsif-java.json", "A.java", "A.scala"}, expected: true},
 		{paths: []string{"nested/lsif-java.json"}, expected: false},
 		{paths: []string{"build.sbt"}, expected: false},
 		{paths: []string{"package.json"}, expected: false},
@@ -44,13 +48,14 @@ func TestCanIndexJavaRepo(t *testing.T) {
 func TestInferJavaIndexJobs(t *testing.T) {
 	paths := []string{
 		"lsif-java.json",
+		"A.java",
 	}
 
 	expectedIndexJobs := []config.IndexJob{
 		{
 			Indexer: "sourcegraph/lsif-java",
 			IndexerArgs: []string{
-				"/coursier launch --contrib --ttl 0 lsif-java -- index",
+				"/coursier launch --contrib --ttl 0 lsif-java -- index --build-tool=lsif",
 			},
 			Outfile: "dump.lsif",
 			Root:    "",
@@ -65,6 +70,9 @@ func TestInferJavaIndexJobs(t *testing.T) {
 func TestJavaPatterns(t *testing.T) {
 	paths := []string{
 		"lsif-java.json",
+		"A.java",
+		"A.scala",
+		// "A.kt",
 		// "settings.gradle",
 		// "build.gradle",
 		// "pom.xml",

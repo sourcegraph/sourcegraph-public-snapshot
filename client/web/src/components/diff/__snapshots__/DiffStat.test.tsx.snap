@@ -2,7 +2,7 @@
 
 exports[`DiffStat expandedCounts 1`] = `
 <div
-  className="diff-stat"
+  className="diffStat"
   data-tooltip="1 addition, 2 changes, 3 deletions"
 >
   <strong
@@ -28,7 +28,7 @@ exports[`DiffStat expandedCounts 1`] = `
 
 exports[`DiffStat standard 1`] = `
 <div
-  className="diff-stat"
+  className="diffStat"
   data-tooltip="1 addition, 2 changes, 3 deletions"
 >
   <small>
@@ -39,22 +39,22 @@ exports[`DiffStat standard 1`] = `
 
 exports[`DiffStatSquares 1`] = `
 <div
-  className="diff-stat__squares"
+  className="squares"
 >
   <div
-    className="diff-stat__square bg-success"
+    className="square bg-success"
   />
   <div
-    className="diff-stat__square bg-warning"
+    className="square bg-warning"
   />
   <div
-    className="diff-stat__square bg-danger"
+    className="square bg-danger"
   />
   <div
-    className="diff-stat__square bg-danger"
+    className="square bg-danger"
   />
   <div
-    className="diff-stat__square bg-danger"
+    className="square bg-danger"
   />
 </div>
 `;
@@ -64,7 +64,7 @@ exports[`DiffStatStack 1`] = `
   className="d-flex flex-column align-items-center"
 >
   <div
-    className="diff-stat pb-1"
+    className="diffStat pb-1"
     data-tooltip="1 addition, 2 changes, 3 deletions"
   >
     <strong
@@ -87,22 +87,22 @@ exports[`DiffStatStack 1`] = `
     </strong>
   </div>
   <div
-    className="diff-stat__squares"
+    className="squares"
   >
     <div
-      className="diff-stat__square bg-success"
+      className="square bg-success"
     />
     <div
-      className="diff-stat__square bg-warning"
+      className="square bg-warning"
     />
     <div
-      className="diff-stat__square bg-danger"
+      className="square bg-danger"
     />
     <div
-      className="diff-stat__square bg-danger"
+      className="square bg-danger"
     />
     <div
-      className="diff-stat__square bg-danger"
+      className="square bg-danger"
     />
   </div>
 </div>
