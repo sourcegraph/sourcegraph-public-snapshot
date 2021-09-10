@@ -8,7 +8,7 @@ import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryServi
 import { renderMarkdown } from '@sourcegraph/shared/src/util/markdown'
 import { hasProperty } from '@sourcegraph/shared/src/util/types'
 
-import { CodeInsightsPings } from '../../telemetry-values'
+import { CodeInsightsPings } from '../../../../insights/telemetry-values'
 
 import { ChartViewContent } from './chart-view-content/ChartViewContent'
 

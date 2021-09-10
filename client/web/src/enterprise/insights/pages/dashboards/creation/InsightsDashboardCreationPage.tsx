@@ -13,13 +13,13 @@ import { AuthenticatedUser } from '../../../../../auth'
 import { LoaderButton } from '../../../../../components/LoaderButton'
 import { Page } from '../../../../../components/Page'
 import { PageTitle } from '../../../../../components/PageTitle'
+import { CodeInsightsPings } from '../../../../../insights/telemetry-values'
 import { Settings } from '../../../../../schema/settings.schema'
 import { CodeInsightsIcon } from '../../../components'
 import { FORM_ERROR, SubmissionErrors } from '../../../components/form/hooks/useForm'
 import { InsightsApiContext } from '../../../core/backend/api-provider'
 import { addDashboardToSettings } from '../../../core/settings-action/dashboards'
 import { useInsightSubjects } from '../../../hooks/use-insight-subjects/use-insight-subjects'
-import { CodeInsightsPings } from '../../../telemetry-values'
 
 import {
     DashboardCreationFields,

@@ -5,7 +5,7 @@ import { ChartContent } from 'sourcegraph'
 
 import { TelemetryService } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
-import { CodeInsightsPings } from '../../../telemetry-values'
+import { CodeInsightsPings } from '../../../../../insights/telemetry-values'
 
 import { BarChart } from './charts/bar/BarChart'
 import { LineChart } from './charts/line/LineChart'

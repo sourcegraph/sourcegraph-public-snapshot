@@ -5,7 +5,7 @@ import { Layout as ReactGridLayout, Layouts as ReactGridLayouts, Responsive, Wid
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { isFirefox } from '@sourcegraph/shared/src/util/browserDetection'
 
-import { CodeInsightsPings } from '../../../../telemetry-values'
+import { CodeInsightsPings } from '../../../insights/telemetry-values'
 
 import styles from './ViewGrid.module.scss'
 

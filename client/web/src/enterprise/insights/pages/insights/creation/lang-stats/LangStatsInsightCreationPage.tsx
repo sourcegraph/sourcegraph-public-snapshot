@@ -8,10 +8,10 @@ import { useLocalStorage } from '@sourcegraph/shared/src/util/useLocalStorage'
 
 import { Page } from '../../../../../../components/Page'
 import { PageTitle } from '../../../../../../components/PageTitle'
+import { CodeInsightsPings } from '../../../../../../insights/telemetry-values'
 import { FORM_ERROR, FormChangeEvent } from '../../../../components/form/hooks/useForm'
 import { LangStatsInsight } from '../../../../core/types'
 import { useInsightSubjects } from '../../../../hooks/use-insight-subjects/use-insight-subjects'
-import { CodeInsightsPings } from '../../../../telemetry-values'
 
 import {
     LangStatsInsightCreationContent,

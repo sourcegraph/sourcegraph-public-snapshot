@@ -8,6 +8,7 @@ import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryServi
 import { asError, isErrorLike } from '@sourcegraph/shared/src/util/errors'
 import { useDebounce } from '@sourcegraph/wildcard'
 
+import { CodeInsightsPings } from '../../../../../../insights/telemetry-values'
 import { Settings } from '../../../../../../schema/settings.schema'
 import {
     ViewCard,
@@ -24,7 +25,6 @@ import { useDeleteInsight } from '../../../../hooks/use-delete-insight/use-delet
 import { useDistinctValue } from '../../../../hooks/use-distinct-value'
 import { useParallelRequests } from '../../../../hooks/use-parallel-requests/use-parallel-request'
 import { DashboardInsightsContext } from '../../../../pages/dashboards/dashboard-page/components/dashboards-content/components/dashboard-inisghts/DashboardInsightsContext'
-import { CodeInsightsPings } from '../../../../telemetry-values'
 import { FORM_ERROR, SubmissionErrors } from '../../../form/hooks/useForm'
 import { InsightContextMenu } from '../insight-context-menu/InsightContextMenu'
 
