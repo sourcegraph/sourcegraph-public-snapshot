@@ -98,18 +98,14 @@ func testMigrations(t *testing.T, db *sql.DB, database *dbconn.Database) {
 		t.Errorf("error constructing migrations: %s", err)
 	}
 
-	for _, database := range []*dbconn.Database{
-		dbconn.Frontend,
-		dbconn.CodeIntel,
-	} {
-		if err := dbconn.MigrateDB(dbconn.Global, database); err != nil {
-			t.Errorf("unexpected error running initial migrations: %s", err)
-		}
+	if err := dbconn.DoMigrate(m); err != nil {
+		t.Errorf("unexpected error migration database: %s", err)
 	}
 
 	if err := m.Down(); err != nil && err != migrate.ErrNoChange {
 		t.Errorf("unexpected error running down migrations: %s", err)
 	}
+
 	if _, err := db.Exec("DROP SCHEMA public CASCADE; CREATE SCHEMA public;"); err != nil {
 		t.Fatalf("failed to recreate schema")
 	}
