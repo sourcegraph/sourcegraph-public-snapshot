@@ -7,6 +7,7 @@ There are multiple databases to rebuild indexes in. Repeat the below process for
 1. `pgsql`
 2. `codeintel-db`
 
+
 We need to ensure there's nothing writing or reading from/to the database before performing the next steps.
 
 In Kubernetes, you can accomplish this by deleting the database service to prevent new connections from being established, followed by a query to terminate existing connections.
@@ -20,6 +21,8 @@ psql -U sg -d sg -h localhost -p 3333
 
 In docker compose, you will need to scale down all the other services to prevent new connections from being established.
 You must run these commands from the machine where sourcegraph is running. 
+
+> Hint : To exec into the `pgsql` and `codeintel-db`containers for the above on docker, you run the following command `docker exec -it codeintel-db psql -U sg`. 
 
 ```shell
 export DB=pgsql # change for other databases
