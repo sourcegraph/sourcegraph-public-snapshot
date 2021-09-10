@@ -465,7 +465,7 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
                     : null,
                 didAddReposByURL: !!publicRepos.length,
             }
-            eventLogger.log('UserManageRepositoriesSave', loggerPayload, loggerPayload)
+            eventLogger.log('UserSettingsManageRepositoriesSaved', loggerPayload, loggerPayload)
 
             setFetchingRepos('loading')
             onSyncedPublicRepositoriesUpdate(publicRepos.length)
