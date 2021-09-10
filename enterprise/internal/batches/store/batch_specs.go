@@ -15,9 +15,9 @@ import (
 	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
 )
 
-// BatchSpecColumns are used by the batchSpec related Store methods to insert,
+// batchSpecColumns are used by the batchSpec related Store methods to insert,
 // update and query batch specs.
-var BatchSpecColumns = []*sqlf.Query{
+var batchSpecColumns = []*sqlf.Query{
 	sqlf.Sprintf("batch_specs.id"),
 	sqlf.Sprintf("batch_specs.rand_id"),
 	sqlf.Sprintf("batch_specs.raw_spec"),
@@ -93,7 +93,7 @@ func (s *Store) createBatchSpecQuery(c *btypes.BatchSpec) (*sqlf.Query, error) {
 		nullInt32Column(c.UserID),
 		c.CreatedAt,
 		c.UpdatedAt,
-		sqlf.Join(BatchSpecColumns, ", "),
+		sqlf.Join(batchSpecColumns, ", "),
 	), nil
 }
 
@@ -141,7 +141,7 @@ func (s *Store) updateBatchSpecQuery(c *btypes.BatchSpec) (*sqlf.Query, error) {
 		c.CreatedAt,
 		c.UpdatedAt,
 		c.ID,
-		sqlf.Join(BatchSpecColumns, ", "),
+		sqlf.Join(batchSpecColumns, ", "),
 	), nil
 }
 
@@ -228,7 +228,7 @@ func getBatchSpecQuery(opts *GetBatchSpecOpts) *sqlf.Query {
 
 	return sqlf.Sprintf(
 		getBatchSpecsQueryFmtstr,
-		sqlf.Join(BatchSpecColumns, ", "),
+		sqlf.Join(batchSpecColumns, ", "),
 		sqlf.Join(preds, "\n AND "),
 	)
 }
@@ -296,7 +296,7 @@ func getNewestBatchSpecQuery(opts *GetNewestBatchSpecOpts) *sqlf.Query {
 
 	return sqlf.Sprintf(
 		getNewestBatchSpecQueryFmtstr,
-		sqlf.Join(BatchSpecColumns, ", "),
+		sqlf.Join(batchSpecColumns, ", "),
 		sqlf.Join(preds, "\n AND "),
 	)
 }
@@ -347,7 +347,7 @@ func listBatchSpecsQuery(opts *ListBatchSpecsOpts) *sqlf.Query {
 
 	return sqlf.Sprintf(
 		listBatchSpecsQueryFmtstr+opts.LimitOpts.ToDB(),
-		sqlf.Join(BatchSpecColumns, ", "),
+		sqlf.Join(batchSpecColumns, ", "),
 		sqlf.Join(preds, "\n AND "),
 	)
 }
