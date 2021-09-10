@@ -2,7 +2,6 @@ package store
 
 import (
 	"context"
-	"database/sql"
 	"encoding/json"
 
 	"github.com/cockroachdb/errors"
@@ -407,29 +406,4 @@ func scanBatchSpec(c *btypes.BatchSpec, s scanner) error {
 	c.Spec = &batchSpec
 
 	return nil
-}
-
-func ScanFirstBatchSpec(rows *sql.Rows, err error) (*btypes.BatchSpec, bool, error) {
-	specs, err := scanBatchSpecs(rows, err)
-	if err != nil || len(specs) == 0 {
-		return &btypes.BatchSpec{}, false, err
-	}
-	return specs[0], true, nil
-}
-
-func scanBatchSpecs(rows *sql.Rows, queryErr error) ([]*btypes.BatchSpec, error) {
-	if queryErr != nil {
-		return nil, queryErr
-	}
-
-	var cs []*btypes.BatchSpec
-
-	return cs, scanAll(rows, func(sc scanner) (err error) {
-		var c btypes.BatchSpec
-		if err = scanBatchSpec(&c, sc); err != nil {
-			return err
-		}
-		cs = append(cs, &c)
-		return nil
-	})
 }
