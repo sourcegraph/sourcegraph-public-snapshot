@@ -22,7 +22,7 @@ psql -U sg -d sg -h localhost -p 3333
 In docker compose, you will need to scale down all the other services to prevent new connections from being established.
 You must run these commands from the machine where sourcegraph is running. 
 
-> Hint : To exec into the `pgsql` and `codeintel-db`containers for the above on docker, you run the following command `docker exec -it codeintel-db psql -U sg`. 
+> NOTE: You can refer to the following instructions for accessing databases on your deployment type: [Docker Compose](https://docs.sourcegraph.com/admin/install/docker-compose/operations#access-the-database), [Kubernetes](https://docs.sourcegraph.com/admin/install/kubernetes/operations#access-the-database).
 
 ```shell
 export DB=pgsql # change for other databases
