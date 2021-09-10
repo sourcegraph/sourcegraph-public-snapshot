@@ -19,7 +19,8 @@
       "image_licenses": ["projects/vm-options/global/licenses/enable-vmx"],
       "disk_type": "pd-ssd",
       "image_name": "executor-{{user `version`}}-{{user `build_timestamp`}}",
-      "tags": ["packer"]
+      "tags": ["packer"],
+      "account_file": "/workspace/builder-sa-key.json"
     },
     {
       "name": "aws",
@@ -37,6 +38,11 @@
     }
   ],
   "provisioners": [
+    {
+      "type": "file",
+      "sources": ["/workspace/builder-sa-key.json"],
+      "destination": "/tmp/"
+    },
     {
       "type": "file",
       "sources": ["executor"],
