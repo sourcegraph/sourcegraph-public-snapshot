@@ -9,8 +9,8 @@
         font-family: inherit;
     }
 
-    .axis path,
-    .axis .tick line {
+    :global(.axis) path,
+    :global(.axis) :global(.tick) line {
         stroke: var(--border-color);
     }
 }

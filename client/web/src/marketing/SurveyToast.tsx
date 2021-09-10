@@ -8,6 +8,7 @@ import { AuthenticatedUser } from '../auth'
 import { eventLogger } from '../tracking/eventLogger'
 
 import { Toast } from './Toast'
+import toastStyles from './Toast.module.scss'
 import { daysActiveCount } from './util'
 
 const HAS_DISMISSED_TOAST_KEY = 'has-dismissed-survey-toast'
@@ -51,7 +52,10 @@ export const SurveyCTA: React.FunctionComponent<SurveyCTAProps> = props => {
                 return (
                     <label
                         key={score}
-                        className={classNames('btn btn-primary toast__rating-btn', { active: pressed, focus: focused })}
+                        className={classNames('btn btn-primary', toastStyles.ratingBtn, {
+                            active: pressed,
+                            focus: focused,
+                        })}
                     >
                         <input
                             type="radio"
@@ -59,7 +63,7 @@ export const SurveyCTA: React.FunctionComponent<SurveyCTAProps> = props => {
                             value={score}
                             onChange={() => handleChange(score)}
                             onFocus={() => handleFocus(score)}
-                            className="toast__rating-radio"
+                            className={toastStyles.ratingRadio}
                         />
 
                         {score}
