@@ -549,13 +549,17 @@ func (s *SearchContextsStore) GetAllRevisionsForRepos(ctx context.Context, repoI
 		return nil, errors.New("GetAllRevisionsForRepos can only be accessed by an internal actor")
 	}
 
+	if len(repoIDs) == 0 {
+		return map[int32][]string{}, nil
+	}
+
 	ids := make([]*sqlf.Query, 0, len(repoIDs))
 	for _, repoID := range repoIDs {
 		ids = append(ids, sqlf.Sprintf("%s", repoID))
 	}
 	q := sqlf.Sprintf(
 		getAllRevisionsForReposFmtStr,
-		ids,
+		sqlf.Join(ids, ","),
 	)
 
 	rows, err := s.Query(ctx, q)
