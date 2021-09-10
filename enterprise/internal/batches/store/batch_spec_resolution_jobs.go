@@ -74,7 +74,7 @@ func (s *Store) CreateBatchSpecResolutionJob(ctx context.Context, ws ...*btypes.
 				wj.BatchSpecID,
 				wj.AllowUnsupported,
 				wj.AllowIgnored,
-				wj.State.ToDB(),
+				wj.State,
 				wj.CreatedAt,
 				wj.UpdatedAt,
 			); err != nil {

@@ -7,16 +7,16 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 )
 
-// BatchSpecResolutionJobState defines the possible states of a changeset job.
+// BatchSpecResolutionJobState defines the possible states of a batch spec resolution job.
 type BatchSpecResolutionJobState string
 
 // BatchSpecResolutionJobState constants.
 const (
-	BatchSpecResolutionJobStateQueued     BatchSpecResolutionJobState = "QUEUED"
-	BatchSpecResolutionJobStateProcessing BatchSpecResolutionJobState = "PROCESSING"
-	BatchSpecResolutionJobStateErrored    BatchSpecResolutionJobState = "ERRORED"
-	BatchSpecResolutionJobStateFailed     BatchSpecResolutionJobState = "FAILED"
-	BatchSpecResolutionJobStateCompleted  BatchSpecResolutionJobState = "COMPLETED"
+	BatchSpecResolutionJobStateQueued     BatchSpecResolutionJobState = "queued"
+	BatchSpecResolutionJobStateProcessing BatchSpecResolutionJobState = "processing"
+	BatchSpecResolutionJobStateErrored    BatchSpecResolutionJobState = "errored"
+	BatchSpecResolutionJobStateFailed     BatchSpecResolutionJobState = "failed"
+	BatchSpecResolutionJobStateCompleted  BatchSpecResolutionJobState = "completed"
 )
 
 // Valid returns true if the given BatchSpecResolutionJobState is valid.
@@ -33,10 +33,8 @@ func (s BatchSpecResolutionJobState) Valid() bool {
 	}
 }
 
-// ToDB returns the database representation of the worker state. That's
-// needed because we want to use UPPERCASE in the application and GraphQL layer,
-// but need to use lowercase in the database to make it work with workerutil.Worker.
-func (s BatchSpecResolutionJobState) ToDB() string { return strings.ToLower(string(s)) }
+// ToGraphQL returns the GraphQL representation of the worker state.
+func (s BatchSpecResolutionJobState) ToGraphQL() string { return strings.ToUpper(string(s)) }
 
 type BatchSpecResolutionJob struct {
 	ID int64
