@@ -247,8 +247,7 @@ func TestUpdateConfigurationPolicy(t *testing.T) {
 		RetainIntermediateCommits: false,
 		IndexingEnabled:           true,
 		IndexCommitMaxAge:         &d4,
-
-		IndexIntermediateCommits: false,
+		IndexIntermediateCommits:  false,
 	}
 
 	if err := store.UpdateConfigurationPolicy(context.Background(), newConfigurationPolicy); err != nil {

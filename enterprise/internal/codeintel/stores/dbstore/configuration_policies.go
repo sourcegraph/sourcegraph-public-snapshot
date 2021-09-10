@@ -186,10 +186,10 @@ func (s *Store) CreateConfigurationPolicy(ctx context.Context, configurationPoli
 		retentionDurationHours = &duration
 	}
 
-	var indexingCOmmitMaxAgeHours *int
+	var indexingCommitMaxAgeHours *int
 	if configurationPolicy.IndexCommitMaxAge != nil {
 		duration := int(*configurationPolicy.IndexCommitMaxAge / time.Hour)
-		indexingCOmmitMaxAgeHours = &duration
+		indexingCommitMaxAgeHours = &duration
 	}
 
 	hydratedConfigurationPolicy, _, err := scanFirstConfigurationPolicy(s.Query(ctx, sqlf.Sprintf(
@@ -202,7 +202,7 @@ func (s *Store) CreateConfigurationPolicy(ctx context.Context, configurationPoli
 		retentionDurationHours,
 		configurationPolicy.RetainIntermediateCommits,
 		configurationPolicy.IndexingEnabled,
-		indexingCOmmitMaxAgeHours,
+		indexingCommitMaxAgeHours,
 		configurationPolicy.IndexIntermediateCommits,
 	)))
 	if err != nil {
