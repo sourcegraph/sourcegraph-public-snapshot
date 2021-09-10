@@ -18,8 +18,8 @@ jobs:
     runs-on: ubuntu-latest
     container: sourcegraph/lsif-node:latest
     steps:
-      - uses: actions/checkout@v1
       - name: Install dependencies
+        uses: actions/checkout@v1
         run: npm install
       - name: Generate LSIF data
         run: lsif-tsc -p .
@@ -39,8 +39,8 @@ jobs:
     runs-on: ubuntu-latest
     container: my-awesome-container
     steps:
-      - uses: actions/checkout@v1
       - name: Install dependencies
+        uses: actions/checkout@v1
         run: <install dependencies>
       - name: Generate LSIF data
         uses: docker://sourcegraph/lsif-node:latest
