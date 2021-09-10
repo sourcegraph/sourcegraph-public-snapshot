@@ -1,13 +1,23 @@
 import 'focus-visible'
 
-import { ApolloProvider } from '@apollo/client'
+import { ApolloClient, ApolloProvider } from '@apollo/client'
 import { ShortcutProvider } from '@slimsag/react-shortcuts'
-import { createBrowserHistory } from 'history'
+import { History } from 'history'
 import ServerIcon from 'mdi-react/ServerIcon'
 import React, { useMemo, useEffect, useState, useCallback } from 'react'
 import { Route, Router } from 'react-router'
-import { combineLatest, from, fromEvent, of, Subject } from 'rxjs'
-import { bufferCount, catchError, distinctUntilChanged, map, startWith, switchMap, tap } from 'rxjs/operators'
+import { combineLatest, from, fromEvent, of, queueScheduler, Subject } from 'rxjs'
+import {
+    bufferCount,
+    catchError,
+    distinctUntilChanged,
+    filter,
+    map,
+    observeOn,
+    startWith,
+    switchMap,
+    tap,
+} from 'rxjs/operators'
 
 import { Tooltip } from '@sourcegraph/branded/src/components/tooltip/Tooltip'
 import { getEnabledExtensions } from '@sourcegraph/shared/src/api/client/enabledExtensions'
@@ -23,10 +33,10 @@ import { FilterType } from '@sourcegraph/shared/src/search/query/filters'
 import { filterExists } from '@sourcegraph/shared/src/search/query/validate'
 import { aggregateStreamingSearch } from '@sourcegraph/shared/src/search/stream'
 import { asError, isErrorLike } from '@sourcegraph/shared/src/util/errors'
+import { isDefined } from '@sourcegraph/shared/src/util/types'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
 
 import { authenticatedUser } from './auth'
-import { getWebGraphQLClient } from './backend/graphql'
 import { BatchChangesProps } from './batches'
 import { CodeIntelligenceProps } from './codeintel'
 import { ErrorBoundary } from './components/ErrorBoundary'
@@ -46,7 +56,7 @@ import { Layout } from './Layout'
 import { updateUserSessionStores } from './marketing/util'
 import { OrgAreaRoute } from './org/area/OrgArea'
 import { OrgAreaHeaderNavItem } from './org/area/OrgHeader'
-import { createPlatformContext } from './platform/context'
+import { createPlatformContext, useViewerSettingsQuery } from './platform/context'
 import { fetchHighlightedFileLineRanges } from './repo/backend'
 import { RepoContainerRoute } from './repo/RepoContainer'
 import { RepoHeaderActionButton } from './repo/RepoHeader'
@@ -97,7 +107,8 @@ import {
 } from './util/settings'
 
 export interface SourcegraphWebAppProps
-    extends CodeIntelligenceProps,
+    extends RootProps,
+        CodeIntelligenceProps,
         BatchChangesProps,
         CodeInsightsProps,
         KeyboardShortcutsProps {
@@ -122,6 +133,11 @@ export interface SourcegraphWebAppProps
     routes: readonly LayoutRouteProps<any>[]
 }
 
+export interface RootProps {
+    history: History
+    graphQLClient: ApolloClient<unknown>
+}
+
 const notificationClassNames = {
     [NotificationType.Log]: 'alert alert-secondary',
     [NotificationType.Success]: 'alert alert-success',
@@ -137,15 +153,15 @@ setLinkComponent(RouterLinkOrAnchor)
 
 const LayoutWithActivation = window.context.sourcegraphDotComMode ? Layout : withActivation(Layout)
 
-const history = createBrowserHistory()
-
 /**
  * The root component.
  */
-export const SourcegraphWebApp: React.FunctionComponent<SourcegraphWebAppProps> = ({ children, ...props }) => {
-    const location = history.location
-
-    const platformContext = useMemo(() => createPlatformContext(), [])
+export const SourcegraphWebApp: React.FunctionComponent<SourcegraphWebAppProps> = ({
+    children,
+    graphQLClient,
+    ...props
+}) => {
+    const platformContext = useMemo(() => createPlatformContext({ graphQLClient }), [graphQLClient])
     const extensionsController = useMemo(() => createExtensionsController(platformContext), [platformContext])
     useEffect(() => () => extensionsController.unsubscribe(), [extensionsController])
 
@@ -155,8 +171,8 @@ export const SourcegraphWebApp: React.FunctionComponent<SourcegraphWebAppProps> 
             () =>
                 combineLatest([
                     getEnabledExtensions(platformContext),
-                    observeLocation(history).pipe(
-                        startWith(location),
+                    observeLocation(props.history).pipe(
+                        startWith(props.history.location),
                         map(location => getModeFromPath(location.pathname)),
                         distinctUntilChanged()
                     ),
@@ -168,20 +184,7 @@ export const SourcegraphWebApp: React.FunctionComponent<SourcegraphWebAppProps> 
                         })
                     })
                 ),
-            [location, platformContext]
-        )
-    )
-
-    const graphqlClient = useObservable(
-        useMemo(
-            () =>
-                from(getWebGraphQLClient()).pipe(
-                    catchError(error => {
-                        console.error('Error initalizing GraphQL client', error)
-                        return of(undefined)
-                    })
-                ),
-            []
+            [props.history, platformContext]
         )
     )
 
@@ -189,17 +192,26 @@ export const SourcegraphWebApp: React.FunctionComponent<SourcegraphWebAppProps> 
         updateUserSessionStores()
     }, [])
 
-    const parsedSearchURL = useMemo(() => parseSearchURL(location.search), [location.search])
+    const parsedSearchURL = useMemo(() => parseSearchURL(props.history.location.search), [
+        props.history.location.search,
+    ])
     const [parsedSearchQuery, setParsedSearchQuery] = useState(parsedSearchURL.query || '')
     // The search patternType, and case in the URL query parameter. If none is provided, default to
     // literal, and these will be updated with the defaults in settings when the web app mounts.
     const [searchPatternType, setPatternType] = useState(parsedSearchURL.patternType || SearchPatternType.literal)
     const [searchCaseSensitivity, setCaseSensitivity] = useState(parsedSearchURL.caseSensitive)
 
+    const { data: viewerSettings } = useViewerSettingsQuery()
+
     const userAndSettingsProps = useObservable(
         useMemo(
             () =>
-                combineLatest([from(platformContext.settings), authenticatedUser.pipe(startWith(null))]).pipe(
+                combineLatest([
+                    /* from(platformContext.settings) */ of(viewerSettings?.viewerSettings as any).pipe(
+                        filter(isDefined)
+                    ),
+                    authenticatedUser.pipe(startWith(null)),
+                ]).pipe(
                     map(([settingsCascade, authenticatedUser]) => ({
                         settingsCascade,
                         authenticatedUser,
@@ -210,7 +222,7 @@ export const SourcegraphWebApp: React.FunctionComponent<SourcegraphWebAppProps> 
                         viewerSubject: viewerSubjectFromSettings(settingsCascade, authenticatedUser),
                     }))
                 ),
-            [platformContext.settings, searchCaseSensitivity, searchPatternType]
+            [searchCaseSensitivity, searchPatternType, viewerSettings?.viewerSettings]
         )
     )
 
@@ -408,7 +420,7 @@ export const SourcegraphWebApp: React.FunctionComponent<SourcegraphWebAppProps> 
     if (!userAndSettingsProps) {
         return null
     }
-    if (!graphqlClient) {
+    if (!userAndSettingsProps.authenticatedUser) {
         return null
     }
 
@@ -437,12 +449,12 @@ export const SourcegraphWebApp: React.FunctionComponent<SourcegraphWebAppProps> 
     }
 
     return (
-        <ApolloProvider client={graphqlClient}>
+        <div data-was-apollo-provider={true}>
             <ErrorBoundary location={null}>
                 <ShortcutProvider>
                     <TemporarySettingsProvider authenticatedUser={userAndSettingsProps.authenticatedUser}>
                         <SearchResultsCacheProvider>
-                            <Router history={history} key={0}>
+                            <div data-was-router={true}>
                                 <Route
                                     path="/"
                                     render={routeComponentProps => (
@@ -452,8 +464,7 @@ export const SourcegraphWebApp: React.FunctionComponent<SourcegraphWebAppProps> 
                                             <LayoutWithActivation
                                                 {...props}
                                                 {...routeComponentProps}
-                                                history={history}
-                                                location={location}
+                                                location={props.history.location}
                                                 platformContext={platformContext}
                                                 extensionsController={extensionsController}
                                                 {...userAndSettingsProps}
@@ -503,7 +514,7 @@ export const SourcegraphWebApp: React.FunctionComponent<SourcegraphWebAppProps> 
                                         </CodeHostScopeProvider>
                                     )}
                                 />
-                            </Router>
+                            </div>
                             <Tooltip key={1} />
                             <Notifications
                                 key={2}
@@ -514,6 +525,6 @@ export const SourcegraphWebApp: React.FunctionComponent<SourcegraphWebAppProps> 
                     </TemporarySettingsProvider>
                 </ShortcutProvider>
             </ErrorBoundary>
-        </ApolloProvider>
+        </div>
     )
 }

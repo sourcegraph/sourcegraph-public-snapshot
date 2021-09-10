@@ -1,0 +1,48 @@
+const x = require('/tmp/jscontext.json')
+
+export const JSCONTEXT = x || {
+    PRERENDER: true,
+    externalURL: 'https://sourcegraph.test:3443',
+    xhrHeaders: {
+        'X-Csrf-Token': 'aaaaaaa',
+        'X-Requested-With': 'Sourcegraph',
+        'x-sourcegraph-client': 'https://sourcegraph.test:3443',
+    },
+    csrfToken: 'aaaaaaa',
+    userAgentIsBot: false,
+    assetsRoot: '/.assets',
+    version: '0.0.0+dev',
+    isAuthenticatedUser: true,
+    sentryDSN: null,
+    siteID: '3d799d25-28e2-4c1e-8723-6421667250d3',
+    siteGQLID: 'U2l0ZToic2l0ZSI=',
+    debug: true,
+    needsSiteInit: false,
+    emailEnabled: true,
+    site: { 'update.channel': 'release' },
+    likelyDockerOnMac: false,
+    needServerRestart: false,
+    deployType: 'dev',
+    sourcegraphDotComMode: false,
+    billingPublishableKey: 'aaaaaaaaa',
+    accessTokensAllow: 'all-users-create',
+    allowSignup: true,
+    resetPasswordEnabled: true,
+    externalServicesUserMode: 'disabled',
+    authProviders: [
+        {
+            isBuiltin: true,
+            displayName: 'Builtin username-password authentication',
+            serviceType: 'builtin',
+            authenticationURL: '',
+        },
+    ],
+    branding: {
+        brandName: 'Sourcegraph',
+        favicon: 'https://drive.google.com/uc?id=174H2ygXNLdmhqhMECyzng1PVxCB9dqBj',
+    },
+    batchChangesEnabled: true,
+    codeIntelAutoIndexingEnabled: false,
+    productResearchPageEnabled: true,
+    experimentalFeatures: {},
+}

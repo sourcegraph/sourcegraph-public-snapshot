@@ -73,6 +73,17 @@ See https://about.sourcegraph.com/community/faq#is-all-of-sourcegraph-open-sourc
       },
     ],
     'react/jsx-no-target-blank': ['error', { allowReferrer: true }],
+
+        // TODO(sqs): for perf
+        'import/no-unused-modules': 'off',
+        'import/no-deprecated': 'off',
+        '@typescript-eslint/no-unsafe-assignment': 'off',
+        '@typescript-eslint/no-unsafe-return': 'off',
+        '@typescript-eslint/no-misused-promises': 'off',
+        'no-named-as-default': 'off',
+        '@typescript-eslint/no-unsafe-member-access': 'off',
+        '@typescript-eslint/no-unsafe-call': 'off',
+        'etc/no-deprecated': 'off',
   },
   overrides: [
     {

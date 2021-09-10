@@ -43,14 +43,12 @@ const readStoredThemePreference = (localStorage: Pick<Storage, 'getItem' | 'setI
  * A React hook for getting and setting the theme.
  *
  * @param window_ The global window object (or a mock in tests).
- * @param documentElement The root HTML document node (or a mock in tests).
  * @param localStorage The global localStorage object (or a mock in tests).
  */
 export const useTheme = (
     window_: Pick<Window, 'matchMedia'> = window,
-    documentElement: Pick<HTMLElement, 'classList'> = document.documentElement,
     localStorage: Pick<Storage, 'getItem' | 'setItem'> = window.localStorage
-): ThemeProps & ThemePreferenceProps => {
+): ThemeProps & ThemePreferenceProps & { themeClassName: string } => {
     // React to system-wide theme change.
     const { observable: systemIsLightThemeObservable, initialValue: systemIsLightThemeInitialValue } = useMemo(
         () => observeSystemIsLightTheme(window_),
@@ -68,14 +66,11 @@ export const useTheme = (
     )
 
     const isLightTheme = themePreference === 'system' ? systemIsLightTheme : themePreference === 'light'
-    useEffect(() => {
-        documentElement.classList.toggle('theme-light', isLightTheme)
-        documentElement.classList.toggle('theme-dark', !isLightTheme)
-    }, [documentElement.classList, isLightTheme])
 
     return {
         isLightTheme,
         themePreference,
         onThemePreferenceChange,
+        themeClassName: isLightTheme ? 'theme-light' : 'theme-dark',
     }
 }

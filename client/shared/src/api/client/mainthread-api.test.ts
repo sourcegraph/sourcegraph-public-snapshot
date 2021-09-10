@@ -29,7 +29,7 @@ describe('MainThreadAPI', () => {
                 | 'clientApplication'
             > = {
                 settings: EMPTY,
-                getGraphQLClient,
+                graphQLClient,
                 updateSettings: () => Promise.resolve(),
                 requestGraphQL,
                 getScriptURLForExtension: () => undefined,
@@ -70,7 +70,7 @@ describe('MainThreadAPI', () => {
                 | 'clientApplication'
             > = {
                 settings: EMPTY,
-                getGraphQLClient,
+                graphQLClient,
                 updateSettings: () => Promise.resolve(),
                 requestGraphQL,
                 getScriptURLForExtension: () => undefined,
@@ -120,7 +120,7 @@ describe('MainThreadAPI', () => {
                     final: { a: 'value' },
                 }),
                 updateSettings,
-                getGraphQLClient,
+                graphQLClient,
                 requestGraphQL: () => EMPTY,
                 getScriptURLForExtension: () => undefined,
                 sideloadedExtensionURL: new BehaviorSubject<string | null>(null),
@@ -161,7 +161,7 @@ describe('MainThreadAPI', () => {
                 | 'sideloadedExtensionURL'
                 | 'clientApplication'
             > = {
-                getGraphQLClient,
+                graphQLClient,
                 settings: of(...values),
                 updateSettings: () => Promise.resolve(),
                 requestGraphQL: () => EMPTY,
@@ -197,7 +197,7 @@ describe('MainThreadAPI', () => {
             > = {
                 settings: values.asObservable(),
                 updateSettings: () => Promise.resolve(),
-                getGraphQLClient,
+                graphQLClient,
                 requestGraphQL: () => EMPTY,
                 getScriptURLForExtension: () => undefined,
                 sideloadedExtensionURL: new BehaviorSubject<string | null>(null),

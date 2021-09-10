@@ -1,4 +1,4 @@
-export const IS_CHROME = !!window.chrome
+export const IS_CHROME = typeof window !== 'undefined' && !!window.chrome
 
 let lastDayActive = localStorage.getItem('last-day-active')
 export let daysActiveCount = parseInt(localStorage.getItem('days-active-count') || '', 10) || 0

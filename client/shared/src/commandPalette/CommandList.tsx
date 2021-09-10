@@ -2,7 +2,7 @@ import { Shortcut } from '@slimsag/react-shortcuts'
 import classNames from 'classnames'
 import { Remote } from 'comlink'
 import * as H from 'history'
-import { sortBy, uniq, uniqueId } from 'lodash'
+import { sortBy, uniq } from 'lodash'
 import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
 import ChevronUpIcon from 'mdi-react/ChevronUpIcon'
 import ConsoleIcon from 'mdi-react/ConsoleIcon'
@@ -383,7 +383,7 @@ export const CommandListPopoverButton: React.FunctionComponent<CommandListPopove
     const close = useCallback(() => setIsOpen(false), [])
     const toggleIsOpen = useCallback(() => setIsOpen(!isOpen), [isOpen])
 
-    const id = useMemo(() => uniqueId('command-list-popover-button-'), [])
+    const id = 'command-list-popover-button'
 
     const MenuDropdownIcon = (): JSX.Element =>
         isOpen ? <ChevronUpIcon className="icon-inline" /> : <ChevronDownIcon className="icon-inline" />

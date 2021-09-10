@@ -16,9 +16,18 @@ const typePolicies: TypedTypePolicies = {
     },
 }
 
-export const generateCache = (): InMemoryCache =>
-    new InMemoryCache({
+export const generateCache = (): InMemoryCache => {
+    const cache = new InMemoryCache({
         typePolicies,
     })
+
+    // Rehydrate from the data fetched during prerendering (if any).
+    const initialState = window.__APOLLO_STATE__
+    if (initialState) {
+        cache.restore(initialState)
+    }
+
+    return cache
+}
 
 export const cache = generateCache()

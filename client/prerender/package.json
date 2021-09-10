@@ -1,0 +1,14 @@
+{
+  "private": true,
+  "name": "@sourcegraph/prerender",
+  "version": "0.0.1",
+  "description": "Server-side prerenderer for the Sourcegraph web app",
+  "license": "Apache-2.0",
+  "scripts": {
+    "test": "jest",
+    "eslint": "eslint --cache '**/*.[tj]s?(x)'",
+    "build:bundle": "gulp buildBundle",
+    "serve": "NODE_TLS_REJECT_UNAUTHORIZED=0 FOO='TODO(sqs) the NODE_TLS_REJECT_UNAUTHORIZED is insecure!' node out/prerender.js"
+  }
+}
+

@@ -13,18 +13,19 @@ import {
     MutationHookOptions,
     MutationTuple,
     QueryTuple,
+    ApolloClientOptions,
+    HttpOptions,
+    DefaultOptions,
 } from '@apollo/client'
 import { GraphQLError } from 'graphql'
-import { once } from 'lodash'
 import { useMemo } from 'react'
 import { Observable } from 'rxjs'
 import { fromFetch } from 'rxjs/fetch'
+import { tap } from 'rxjs/operators'
 import { Omit } from 'utility-types'
 
 import { checkOk } from '../backend/fetch'
 import { createAggregateError } from '../util/errors'
-
-import { cache } from './cache'
 
 /**
  * Use this template string tag for all GraphQL queries.
@@ -67,7 +68,8 @@ export interface GraphQLRequestOptions extends Omit<RequestInit, 'method' | 'bod
     baseUrl?: string
 }
 
-const GRAPHQL_URI = '/.api/graphql'
+// TODO(sqs): need absolute url for SSR
+const GRAPHQL_URI = 'https://sourcegraph.test:3443/.api/graphql'
 
 /**
  * This function should not be called directly as it does not
@@ -91,50 +93,66 @@ export function requestGraphQLCommon<T, V = object>({
         body: JSON.stringify({ query: request, variables }),
         selector: response => checkOk(response).json(),
     })
+        .pipe
+        /* tap(
+            result => console.log('GQL:', nameMatch ? nameMatch[1] : 'unknown gql query', result),
+            error => console.log('GQL error:', nameMatch ? nameMatch[1] : 'unknown gql query', error)
+        ) */
+        ()
 }
 
-interface GetGraphqlClientOptions {
+export const WEB_GRAPHQL_CLIENT_OPTIONS: DefaultOptions = {
+    /**
+     * The default `fetchPolicy` is `cache-first`, which returns a cached response
+     * and doesn't trigger cache update. This is undesirable default behavior because
+     * we want to keep our cache updated to avoid confusing the user with stale data.
+     * `cache-and-network` allows us to return a cached result right away and then update
+     * all consumers with the fresh data from the network request.
+     */
+    watchQuery: {
+        fetchPolicy: 'cache-and-network',
+    },
+    /**
+     * `client.query()` returns promise, so it can only resolve one response.
+     * Meaning we cannot return the cached result first and then update it with
+     * the response from the network as it's done in `client.watchQuery()`.
+     * So we always need to make a network request to get data unless another
+     * `fetchPolicy` is specified in the `client.query()` call.
+     */
+    query: {
+        fetchPolicy: 'network-only',
+    },
+}
+
+interface GetGraphqlClientOptions
+    extends Pick<ApolloClientOptions<NormalizedCacheObject>, 'defaultOptions' | 'cache'>,
+        Pick<HttpOptions, 'fetch' | 'fetchOptions'> {
+    graphqlUri: string
     headers: RequestInit['headers']
 }
 
-export const getGraphQLClient = once(
-    async (options: GetGraphqlClientOptions): Promise<ApolloClient<NormalizedCacheObject>> => {
-        const { headers } = options
+export const getGraphQLClient = ({
+    graphqlUri,
+    defaultOptions,
+    headers,
+    cache,
+    fetch,
+    fetchOptions,
+}: GetGraphqlClientOptions): ApolloClient<NormalizedCacheObject> => {
+    const apolloClient = new ApolloClient({
+        uri: GRAPHQL_URI,
+        cache,
+        defaultOptions,
+        link: createHttpLink({
+            uri: ({ operationName }) => `${graphqlUri}?${operationName}`,
+            headers,
+            fetch,
+            fetchOptions,
+        }),
+    })
 
-        const apolloClient = new ApolloClient({
-            uri: GRAPHQL_URI,
-            cache,
-            defaultOptions: {
-                /**
-                 * The default `fetchPolicy` is `cache-first`, which returns a cached response
-                 * and doesn't trigger cache update. This is undesirable default behavior because
-                 * we want to keep our cache updated to avoid confusing the user with stale data.
-                 * `cache-and-network` allows us to return a cached result right away and then update
-                 * all consumers with the fresh data from the network request.
-                 */
-                watchQuery: {
-                    fetchPolicy: 'cache-and-network',
-                },
-                /**
-                 * `client.query()` returns promise, so it can only resolve one response.
-                 * Meaning we cannot return the cached result first and then update it with
-                 * the response from the network as it's done in `client.watchQuery()`.
-                 * So we always need to make a network request to get data unless another
-                 * `fetchPolicy` is specified in the `client.query()` call.
-                 */
-                query: {
-                    fetchPolicy: 'network-only',
-                },
-            },
-            link: createHttpLink({
-                uri: ({ operationName }) => `${GRAPHQL_URI}?${operationName}`,
-                headers,
-            }),
-        })
-
-        return Promise.resolve(apolloClient)
-    }
-)
+    return apolloClient
+}
 
 type RequestDocument = string | DocumentNode
 

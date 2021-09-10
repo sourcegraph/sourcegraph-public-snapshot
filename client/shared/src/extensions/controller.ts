@@ -54,6 +54,10 @@ export interface ExtensionsControllerProps<K extends keyof Controller = keyof Co
  * all of the client application state that the client needs to know.
  */
 export function createController(context: PlatformContext): Controller {
+    if (window.context.PRERENDER) {
+        return {} as any
+    }
+
     const subscriptions = new Subscription()
 
     const initData: Omit<InitData, 'initialSettings'> = {

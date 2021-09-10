@@ -1,5 +1,6 @@
 import { useEffect, useState, useMemo } from 'react'
-import { Observable, Observer, Subject } from 'rxjs'
+import { Observable, Observer, queueScheduler, Subject } from 'rxjs'
+import { subscribeOn } from 'rxjs/operators'
 
 /**
  * Returns a function that will trigger an error on the next render,
@@ -23,14 +24,36 @@ export function useError(): (error: any) => void {
  * @throws If the Observable pipeline errors.
  */
 export function useObservable<T>(observable: Observable<T>): T | undefined {
-    const [error, setError] = useState<any>()
-    const [currentValue, setCurrentValue] = useState<T>()
+    // Try to get current value synchronously.
+    const { currentValueInitialIsSet, currentValueInitial, errorInitial } = useMemo(() => {
+        let currentValueInitialIsSet = false
+        let currentValueInitial: T | undefined
+        let errorInitial: any
+        observable
+            .pipe(subscribeOn(queueScheduler))
+            .subscribe({
+                next: value => {
+                    currentValueInitial = value
+                    currentValueInitialIsSet = true
+                },
+                error: errorValue => {
+                    errorInitial = errorValue
+                },
+            })
+            .unsubscribe()
+        return { currentValueInitialIsSet, currentValueInitial, errorInitial }
+    }, [observable])
+
+    const [error, setError] = useState<any>(errorInitial)
+    const [currentValue, setCurrentValue] = useState<T | undefined>(currentValueInitial)
 
     useEffect(() => {
-        setCurrentValue(undefined)
+        if (!currentValueInitialIsSet) {
+            setCurrentValue(undefined)
+        }
         const subscription = observable.subscribe({ next: setCurrentValue, error: setError })
         return () => subscription.unsubscribe()
-    }, [observable])
+    }, [currentValueInitialIsSet, observable])
 
     if (error) {
         throw error

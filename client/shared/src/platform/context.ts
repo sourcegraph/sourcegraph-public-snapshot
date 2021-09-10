@@ -94,9 +94,9 @@ export interface PlatformContext {
     updateSettings: (subject: Scalars['ID'], edit: SettingsEdit | string) => Promise<void>
 
     /**
-     * Returns promise that resolves into Apollo Client instance after cache restoration.
+     * Apollo Client instance.
      */
-    getGraphQLClient: () => Promise<ApolloClient<NormalizedCacheObject>>
+    graphQLClient: ApolloClient<unknown>
 
     /**
      * Sends a request to the Sourcegraph GraphQL API and returns the response.

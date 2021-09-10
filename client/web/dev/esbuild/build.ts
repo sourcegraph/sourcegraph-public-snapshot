@@ -52,7 +52,11 @@ export const BUILD_OPTIONS: esbuild.BuildOptions = {
                 build.onStart(() => {
                     buildStarted = Date.now()
                 })
-                build.onEnd(() => console.log(`# esbuild: build took ${Date.now() - buildStarted}ms`))
+                build.onEnd(() => {
+                    if (buildStarted) {
+                        console.log(`# esbuild: build took ${Date.now() - buildStarted}ms`)
+                    }
+                })
             },
         },
         {

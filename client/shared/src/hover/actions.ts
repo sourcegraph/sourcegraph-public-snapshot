@@ -307,6 +307,11 @@ export function registerHoverContributions({
 
     const contributionsPromise = extensionsController.extHostAPI
         .then(extensionHostAPI => {
+            if (subscriptions.closed) {
+                // TODO(sqs): needed in React.StrictMode
+                return
+            }
+
             // Registers the "Go to definition" action shown in the hover tooltip. When clicked, the action finds the
             // definition of the token using the registered definition providers and navigates the user there.
             //

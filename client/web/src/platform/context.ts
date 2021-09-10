@@ -1,4 +1,5 @@
-import { concat, Observable, ReplaySubject } from 'rxjs'
+import { ApolloClient, gql as apolloGQL, QueryResult, useQuery } from '@apollo/client'
+import { concat, Observable, ReplaySubject, from } from 'rxjs'
 import { map, publishReplay, refCount } from 'rxjs/operators'
 
 import { Tooltip } from '@sourcegraph/branded/src/components/tooltip/Tooltip'
@@ -20,13 +21,14 @@ import {
     appendSubtreeQueryParameter,
 } from '@sourcegraph/shared/src/util/url'
 
-import { getWebGraphQLClient, queryGraphQL, requestGraphQL } from '../backend/graphql'
+import { queryGraphQL, requestGraphQL } from '../backend/graphql'
+import { ViewerSettingsResult } from '../graphql-operations'
 import { eventLogger } from '../tracking/eventLogger'
 
 /**
  * Creates the {@link PlatformContext} for the web app.
  */
-export function createPlatformContext(): PlatformContext {
+export function createPlatformContext({ graphQLClient }: { graphQLClient: ApolloClient<unknown> }): PlatformContext {
     const updatedSettings = new ReplaySubject<GQL.ISettingsCascade>(1)
     const context: PlatformContext = {
         settings: concat(fetchViewerSettings(), updatedSettings).pipe(map(gqlToCascade), publishReplay(1), refCount()),
@@ -61,7 +63,7 @@ export function createPlatformContext(): PlatformContext {
             }
             updatedSettings.next(await fetchViewerSettings().toPromise())
         },
-        getGraphQLClient: getWebGraphQLClient,
+        graphQLClient,
         requestGraphQL: ({ request, variables }) => requestGraphQL(request, variables),
         forceUpdateTooltip: () => Tooltip.forceUpdate(),
         createExtensionHost: () => Promise.resolve(createExtensionHost()),
@@ -114,6 +116,18 @@ const settingsCascadeFragment = gql`
         final
     }
 `
+
+export const useViewerSettingsQuery = (): QueryResult<ViewerSettingsResult> =>
+    useQuery<ViewerSettingsResult>(
+        apolloGQL`
+query ViewerSettings {
+    viewerSettings {
+        ...SettingsCascadeFields
+    }
+}
+${settingsCascadeFragment}`,
+        {}
+    )
 
 /**
  * Fetches the viewer's settings from the server. Callers should use settingsRefreshes#next instead of calling

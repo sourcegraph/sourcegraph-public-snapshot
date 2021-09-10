@@ -175,6 +175,8 @@ export const FeedbackPrompt: React.FunctionComponent<Props> = ({ open, routes })
     const forceClose = useCallback(() => setIsOpen(false), [])
     const match = useRoutesMatch(routes)
 
+    return null // TODO(sqs): bc it uses useLayoutEffect
+
     return (
         <ButtonDropdown a11y={false} isOpen={isOpen} toggle={handleToggle} className="feedback-prompt" group={false}>
             <DropdownToggle

@@ -1,3 +1,4 @@
+import classNames from 'classnames'
 import React, { Suspense, useCallback, useEffect, useMemo } from 'react'
 import { Redirect, Route, RouteComponentProps, Switch, matchPath } from 'react-router'
 import { Observable } from 'rxjs'
@@ -231,7 +232,7 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
 
     const authRequired = useObservable(authRequiredObservable)
 
-    const themeProps = useTheme()
+    const { themeClassName, ...themeProps } = useTheme()
 
     const breadcrumbProps = useBreadcrumbs()
 
@@ -257,7 +258,7 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
     }
 
     return (
-        <div className="layout">
+        <div className={classNames('layout', themeClassName)}>
             <KeyboardShortcutsHelp
                 keyboardShortcutForShow={KEYBOARD_SHORTCUT_SHOW_HELP}
                 keyboardShortcuts={props.keyboardShortcuts}

@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"crypto/md5"
 	_ "embed"
+	"encoding/json"
 	"fmt"
 	"html/template"
 	"io"
@@ -64,6 +65,10 @@ var funcMap = template.FuncMap{
 		versionCache[fp] = version
 		versionCacheMu.Unlock()
 		return version, nil
+	},
+	"json": func(value interface{}) (template.JS, error) {
+		data, err := json.Marshal(value)
+		return template.JS(data), err
 	},
 }
 

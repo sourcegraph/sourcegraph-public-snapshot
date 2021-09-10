@@ -54,7 +54,8 @@
 	<!-- End Google Tag Manager (noscript) -->
 	{{ end }}
 	{{.Injected.BodyTop}}
-	<div id="root"></div>
+	<div id="root">{{.PrerenderedHTML}}</div>
+    {{with .PrerenderedHTMLInitialState}}<script>window.__APOLLO_STATE__={{.|json}}</script>{{end}}
 	<noscript>
 		<p>Sourcegraph is a web-based code search and navigation tool for dev teams. Search, navigate, and review code. Find answers.</p>
 

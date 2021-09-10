@@ -1,8 +1,14 @@
 import { ApolloClient, NormalizedCacheObject } from '@apollo/client'
-import { memoize } from 'lodash'
+import fetch from 'cross-fetch'
 import { Observable } from 'rxjs'
 
-import { getGraphQLClient, GraphQLResult, requestGraphQLCommon } from '@sourcegraph/shared/src/graphql/graphql'
+import { cache } from '@sourcegraph/shared/src/graphql/cache'
+import {
+    getGraphQLClient,
+    GraphQLResult,
+    requestGraphQLCommon,
+    WEB_GRAPHQL_CLIENT_OPTIONS,
+} from '@sourcegraph/shared/src/graphql/graphql'
 import * as GQL from '@sourcegraph/shared/src/graphql/schema'
 
 const getHeaders = (): { [header: string]: string } => ({
@@ -67,13 +73,25 @@ export const mutateGraphQL = (request: string, variables?: {}): Observable<Graph
  * Memoized Apollo Client getter. It should be executed once to restore the cache from the local storage.
  * After that, the same instance should be used by all consumers.
  */
-export const getWebGraphQLClient = memoize(
-    (): Promise<ApolloClient<NormalizedCacheObject>> =>
-        getGraphQLClient({
-            headers: {
-                ...window?.context?.xhrHeaders,
-                'X-Sourcegraph-Should-Trace': new URLSearchParams(window.location.search).get('trace') || 'false',
-                // Note: Do not use getHeaders() here due to a bug that Apollo has duplicating headers with different letter casing. Issue to fix: https://github.com/apollographql/apollo-client/issues/8447
-            },
-        })
-)
+export const getWebGraphQLClient = (): ApolloClient<NormalizedCacheObject> =>
+    getGraphQLClient({
+        graphqlUri: '/.api/graphql',
+        defaultOptions: WEB_GRAPHQL_CLIENT_OPTIONS,
+        cache,
+        headers: {
+            ...window?.context?.xhrHeaders,
+            'X-Sourcegraph-Should-Trace': new URLSearchParams(window.location.search).get('trace') || 'false',
+            // Note: Do not use getHeaders() here due to a bug that Apollo has duplicating headers with different letter casing. Issue to fix: https://github.com/apollographql/apollo-client/issues/8447
+        },
+    })
+
+/**
+ * Apollo Client for server-side rendering.
+ */
+export const getSSRGraphQLClient = (): ApolloClient<NormalizedCacheObject> =>
+    getGraphQLClient({
+        graphqlUri: 'https://sourcegraph.test:3443/.api/graphql',
+        cache,
+        headers: { ...window?.context.xhrHeaders },
+        fetch,
+    })

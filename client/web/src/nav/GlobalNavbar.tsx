@@ -237,7 +237,7 @@ export const GlobalNavbar: React.FunctionComponent<Props> = ({
                     <NavItem icon={PuzzleOutlineIcon}>
                         <NavLink to="/extensions">Extensions</NavLink>
                     </NavItem>
-                    {props.activation && (
+                    {props.activation && false /* TODO(sqs): suppress hydration warning */ && (
                         <NavItem>
                             <ActivationDropdown activation={props.activation} history={history} />
                         </NavItem>
@@ -261,7 +261,7 @@ export const GlobalNavbar: React.FunctionComponent<Props> = ({
                             )}
                         </>
                     )}
-                    {props.authenticatedUser && (
+                    {props.authenticatedUser && false /* TODO(sqs): suppress hydration warning */ && (
                         <NavAction>
                             <FeedbackPrompt routes={props.routes} />
                         </NavAction>

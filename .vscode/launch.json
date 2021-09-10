@@ -59,6 +59,21 @@
       "internalConsoleOptions": "openOnSessionStart",
     },
     {
+      "type": "node",
+      "request": "launch",
+      "name": "Debug prerender",
+      "cwd": "${workspaceFolder}/client/prerender",
+      "program": "${workspaceFolder}/client/prerender/out/prerender.js",
+      "runtimeArgs": ["-r", "source-map-support"],
+      "internalConsoleOptions": "openOnSessionStart",
+      "skipFiles": ["<node_internals>/**"],
+      "outputCapture": "std", // https://github.com/facebook/react/issues/21783
+      "runtimeVersion": "16.7.0",
+      "env": {
+        "NODE_TLS_REJECT_UNAUTHORIZED": "0" // TODO(sqs): security
+      },
+    },
+    {
       "name": "Webapp Chrome",
       "type": "chrome",
       "request": "attach",

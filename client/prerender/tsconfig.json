@@ -1,0 +1,20 @@
+{
+  "extends": "../../tsconfig.json",
+  "compilerOptions": {
+    "target": "esnext",
+    "baseUrl": ".",
+    "jsx": "react",
+    "rootDir": ".",
+    "outDir": "out",
+  },
+  "references": [
+     { "path": "../web" },
+  ],
+
+  "ts-node": {
+    "transpileOnly": true,
+  },
+
+  "include": ["**/*", ".*"],
+  "exclude": ["../../node_modules", "./out"],
+}

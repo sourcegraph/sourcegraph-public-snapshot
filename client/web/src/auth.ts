@@ -13,6 +13,7 @@ import { CurrentAuthStateResult } from './graphql-operations'
  * in, sign out, and account changes all require a full-page reload in the browser to take effect.
  */
 export const authenticatedUser = new ReplaySubject<AuthenticatedUser | null>(1)
+export let authenticatedUserLET: AuthenticatedUser | null = null
 
 export type AuthenticatedUser = NonNullable<CurrentAuthStateResult['currentUser']>
 
@@ -52,8 +53,11 @@ export function refreshAuthenticatedUser(): Observable<never> {
         }
     `).pipe(
         map(dataOrThrowErrors),
-        tap(data => authenticatedUser.next(data.currentUser)),
-        catchError(() => {
+        tap(data => {
+            authenticatedUser.next(data.currentUser)
+            authenticatedUserLET = data.currentUser
+        }),
+        catchError(error => {
             authenticatedUser.next(null)
             return []
         }),
@@ -73,8 +77,8 @@ export function refreshAuthenticatedUser(): Observable<never> {
 export const authRequired = authenticatedUser.pipe(map(user => user === null && !window.context?.sourcegraphDotComMode))
 
 // Populate authenticatedUser.
-if (window.context?.isAuthenticatedUser) {
-    refreshAuthenticatedUser()
+if (typeof window !== 'undefined' && window.context?.isAuthenticatedUser) {
+    window.__waitForAuthUser = refreshAuthenticatedUser()
         .toPromise()
         .then(
             () => undefined,
