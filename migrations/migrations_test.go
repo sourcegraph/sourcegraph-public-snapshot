@@ -70,24 +70,24 @@ func TestIDConstraints(t *testing.T) {
 	}
 }
 
-func TestFrontendMigrations(t *testing.T) {
+func TestMigrations(t *testing.T) {
 	if os.Getenv("SKIP_MIGRATION_TEST") != "" {
 		t.Skip()
 	}
 
-	// Setup a global test database
 	db := dbtesting.GetDB(t)
-	testMigrations(t, db, dbconn.Frontend)
-}
 
-func TestCodeIntelMigrations(t *testing.T) {
-	if os.Getenv("SKIP_MIGRATION_TEST") != "" {
-		t.Skip()
+	for _, tt := range []struct {
+		name     string
+		database *dbconn.Database
+	}{
+		{"Frontend", dbconn.Frontend},
+		{"CodeIntel", dbconn.CodeIntel},
+	} {
+
+		t.Logf("Running migrations in %s", tt.name)
+		testMigrations(t, db, tt.database)
 	}
-
-	// Setup a global test database
-	db := dbtesting.GetDB(t)
-	testMigrations(t, db, dbconn.CodeIntel)
 }
 
 // testMigrations runs all migrations up, then the migrations for the given database
@@ -95,15 +95,15 @@ func TestCodeIntelMigrations(t *testing.T) {
 func testMigrations(t *testing.T, db *sql.DB, database *dbconn.Database) {
 	m, err := dbconn.NewMigrate(db, database)
 	if err != nil {
-		t.Errorf("error constructing migrations: %s", err)
+		t.Fatalf("error constructing migrations: %s", err)
 	}
 
 	if err := dbconn.DoMigrate(m); err != nil {
-		t.Errorf("unexpected error migration database: %s", err)
+		t.Fatalf("unexpected error migration database: %s", err)
 	}
 
 	if err := m.Down(); err != nil && err != migrate.ErrNoChange {
-		t.Errorf("unexpected error running down migrations: %s", err)
+		t.Fatalf("unexpected error running down migrations: %s", err)
 	}
 
 	if _, err := db.Exec("DROP SCHEMA public CASCADE; CREATE SCHEMA public;"); err != nil {
@@ -112,9 +112,9 @@ func testMigrations(t *testing.T, db *sql.DB, database *dbconn.Database) {
 
 	m, err = dbconn.NewMigrate(db, database)
 	if err != nil {
-		t.Errorf("unexpected error constructing migrations: %s", err)
+		t.Fatalf("unexpected error constructing migrations: %s", err)
 	}
 	if err := m.Up(); err != nil {
-		t.Errorf("unexpected error re-running up migrations: %s", err)
+		t.Fatalf("unexpected error re-running up migrations: %s", err)
 	}
 }
