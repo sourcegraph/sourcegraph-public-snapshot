@@ -43,8 +43,8 @@ At the moment, we have two different types of insights.
 1. **Built-in (former Extension based) insights.** <br/>
 These types of insights fetch data via frontend insight fetcher function. That means that we make a few network request to our search 
 API to collect and process insight data on the frontend [(source)](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/client/web/src/enterprise/insights/components/insights-view-grid/components/built-in-insight/BuiltInInsight.tsx).
-At some point we used Extension API to get information about these insights
-via Extension API. You still can find these extension by links below but they currently are not used for insight data fetching.
+At some point, we used Extension API to get information about these insights.
+You still can find these extensions by links below but they currently are not used for insight data fetching.
 <br /> &nbsp;
    - [Search-based insight (line chart)](https://github.com/sourcegraph/sourcegraph-search-insights)
    - [Code stats insight (pie chart)](https://github.com/sourcegraph/sourcegraph-code-stats-insights). <br />
