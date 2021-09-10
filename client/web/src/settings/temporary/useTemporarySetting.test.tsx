@@ -82,6 +82,7 @@ describe('useTemporarySetting', () => {
 
         const [, setValue] = result.current
         act(() => setValue({ filters: true, reference: false }))
+        act(() => setValue({ filters: true, reference: false }))
 
         const [value] = result.current
         expect(value).toEqual({ filters: true, reference: false })

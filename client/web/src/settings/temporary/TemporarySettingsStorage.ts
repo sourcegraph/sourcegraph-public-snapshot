@@ -1,6 +1,7 @@
 import { ApolloClient, gql } from '@apollo/client'
+import { isEqual } from 'lodash'
 import { Observable, of, Subscription, from, ReplaySubject } from 'rxjs'
-import { distinctUntilKeyChanged, map } from 'rxjs/operators'
+import { distinctUntilChanged, map } from 'rxjs/operators'
 
 import { GetTemporarySettingsResult } from '../../graphql-operations'
 
@@ -56,8 +57,8 @@ export class TemporarySettingsStorage {
         defaultValue?: TemporarySettings[K]
     ): Observable<TemporarySettings[K]> {
         return this.onChange.pipe(
-            distinctUntilKeyChanged(key),
-            map(settings => (key in settings ? settings[key] : defaultValue))
+            map(settings => (key in settings ? settings[key] : defaultValue)),
+            distinctUntilChanged((a, b) => isEqual(a, b))
         )
     }
 }
