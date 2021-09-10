@@ -1,6 +1,6 @@
 import { ApolloClient, gql } from '@apollo/client'
-import { Observable, Subject, of, Subscription, from } from 'rxjs'
-import { distinctUntilKeyChanged, map, startWith } from 'rxjs/operators'
+import { Observable, of, Subscription, from, ReplaySubject } from 'rxjs'
+import { distinctUntilKeyChanged, map } from 'rxjs/operators'
 
 import { GetTemporarySettingsResult } from '../../graphql-operations'
 
@@ -10,7 +10,7 @@ export class TemporarySettingsStorage {
     private settingsBackend: SettingsBackend = new LocalStorageSettingsBackend()
     private settings: TemporarySettings = {}
 
-    private onChange = new Subject<TemporarySettings>()
+    private onChange = new ReplaySubject<TemporarySettings>(1)
 
     private loadSubscription: Subscription | null = null
     private saveSubscription: Subscription | null = null
@@ -57,7 +57,6 @@ export class TemporarySettingsStorage {
     ): Observable<TemporarySettings[K]> {
         return this.onChange.pipe(
             distinctUntilKeyChanged(key),
-            startWith(this.settings),
             map(settings => (key in settings ? settings[key] : defaultValue))
         )
     }
