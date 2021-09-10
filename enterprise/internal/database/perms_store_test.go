@@ -297,6 +297,7 @@ func checkRegularPermsTable(s *PermsStore, sql string, expects map[int32][]uint3
 }
 
 func testPermsStore_SetUserPermissions(db *sql.DB) func(*testing.T) {
+	const countToExceedParameterLimit = 20000
 	tests := []struct {
 		name            string
 		updates         []*authz.UserPermissions
@@ -396,6 +397,34 @@ func testPermsStore_SetUserPermissions(db *sql.DB) func(*testing.T) {
 				2: {},
 				3: {},
 			},
+		},
+		{
+			name: "ensure we do not exceed postgres parameter limit",
+			updates: func() []*authz.UserPermissions {
+				user := &authz.UserPermissions{
+					UserID: 1,
+					Perm:   authz.Read,
+					IDs:    toBitmap(),
+				}
+				for i := 1; i <= countToExceedParameterLimit; i += 1 {
+					user.IDs.Add(uint32(i))
+				}
+				return []*authz.UserPermissions{user}
+			}(),
+			expectUserPerms: func() map[int32][]uint32 {
+				repos := make([]uint32, countToExceedParameterLimit)
+				for i := 1; i <= countToExceedParameterLimit; i += 1 {
+					repos[i-1] = uint32(i)
+				}
+				return map[int32][]uint32{1: repos}
+			}(),
+			expectRepoPerms: func() map[int32][]uint32 {
+				repos := make(map[int32][]uint32, countToExceedParameterLimit)
+				for i := 1; i <= countToExceedParameterLimit; i += 1 {
+					repos[int32(i)] = []uint32{1}
+				}
+				return repos
+			}(),
 		},
 	}
 
