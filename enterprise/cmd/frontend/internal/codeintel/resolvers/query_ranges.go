@@ -90,10 +90,16 @@ func (r *queryResolver) adjustCodeIntelligenceRange(ctx context.Context, upload 
 		return AdjustedCodeIntelligenceRange{}, false, err
 	}
 
+	adjustedImplementations, err := r.adjustLocations(ctx, uploadsByID, rn.Implementations)
+	if err != nil {
+		return AdjustedCodeIntelligenceRange{}, false, err
+	}
+
 	return AdjustedCodeIntelligenceRange{
 		Range:               adjustedRange,
 		Definitions:         adjustedDefinitions,
 		References:          adjustedReferences,
+		Implementations:     adjustedImplementations,
 		HoverText:           rn.HoverText,
 		DocumentationPathID: rn.DocumentationPathID,
 	}, true, nil

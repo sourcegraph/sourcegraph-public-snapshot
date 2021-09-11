@@ -44,7 +44,7 @@ func (r Range) SetImplementationResultID(id int) Range {
 		Range:                  r.Range,
 		DefinitionResultID:     r.DefinitionResultID,
 		ReferenceResultID:      r.ReferenceResultID,
-		ImplementationResultID: r.ImplementationResultID,
+		ImplementationResultID: id,
 		HoverResultID:          r.HoverResultID,
 		DocumentationResultID:  r.DocumentationResultID,
 	}

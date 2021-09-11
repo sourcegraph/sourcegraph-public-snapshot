@@ -2,6 +2,7 @@ package lsifstore
 
 import (
 	"context"
+	"fmt"
 	"sort"
 	"strings"
 
@@ -454,6 +455,7 @@ func extractResultIDs(ranges []precise.RangeData, fn func(r precise.RangeData) p
 	for _, r := range ranges {
 		resultID := fn(r)
 
+		fmt.Println("resultID", resultID)
 		if _, ok := resultIDMap[resultID]; !ok && resultID != "" {
 			resultIDs = append(resultIDs, resultID)
 			resultIDMap[resultID] = struct{}{}

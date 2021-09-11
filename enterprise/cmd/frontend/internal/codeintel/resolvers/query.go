@@ -33,6 +33,7 @@ type AdjustedCodeIntelligenceRange struct {
 	Range               lsifstore.Range
 	Definitions         []AdjustedLocation
 	References          []AdjustedLocation
+	Implementations     []AdjustedLocation
 	HoverText           string
 	DocumentationPathID string
 }

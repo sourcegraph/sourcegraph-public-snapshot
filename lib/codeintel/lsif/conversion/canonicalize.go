@@ -162,6 +162,9 @@ func mergeNextResultSetData(state *State, itemID int, item ResultSet, nextID int
 	if item.ReferenceResultID == 0 {
 		item = item.SetReferenceResultID(nextItem.ReferenceResultID)
 	}
+	if item.ImplementationResultID == 0 {
+		item = item.SetImplementationResultID(nextItem.ImplementationResultID)
+	}
 	if item.HoverResultID == 0 {
 		item = item.SetHoverResultID(nextItem.HoverResultID)
 	}

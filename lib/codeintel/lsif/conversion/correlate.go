@@ -432,17 +432,12 @@ func correlateItemEdge(state *wrappedState, id int, edge Edge) error {
 
 	if documentMap, ok := state.ImplementationData[edge.OutV]; ok {
 		for _, inV := range edge.InVs {
-			if _, ok := state.ImplementationData[inV]; ok {
-				// Link implementation data identifiers together
-				state.LinkedImplementationResults[edge.OutV] = append(state.LinkedImplementationResults[edge.OutV], inV)
-			} else {
-				if _, ok = state.RangeData[inV]; !ok {
-					return malformedDump(id, inV, "range")
-				}
-
-				// Link reference data to a reference range
-				documentMap.SetAdd(edge.Document, inV)
+			if _, ok := state.RangeData[inV]; !ok {
+				return malformedDump(id, inV, "range")
 			}
+
+			// Link definition data to defining range
+			documentMap.SetAdd(edge.Document, inV)
 		}
 
 		return nil

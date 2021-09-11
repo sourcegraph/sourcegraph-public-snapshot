@@ -15,7 +15,7 @@ import (
 // Ranges request.
 const MaximumRangesDefinitionLocations = 10000
 
-// Ranges returns definition, reference, hover, and documentation data for each range within the given span of lines.
+// Ranges returns definition, reference, implementation, hover, and documentation data for each range within the given span of lines.
 func (s *Store) Ranges(ctx context.Context, bundleID int, path string, startLine, endLine int) (_ []CodeIntelligenceRange, err error) {
 	ctx, traceLog, endObservation := s.operations.ranges.WithAndLogger(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("bundleID", bundleID),
@@ -58,6 +58,7 @@ func (s *Store) Ranges(ctx context.Context, bundleID int, path string, startLine
 			Range:               newRange(r.StartLine, r.StartCharacter, r.EndLine, r.EndCharacter),
 			Definitions:         definitionLocations[r.DefinitionResultID],
 			References:          referenceLocations[r.ReferenceResultID],
+			Implementations:     referenceLocations[r.ImplementationResultID],
 			HoverText:           documentData.Document.HoverResults[r.HoverResultID],
 			DocumentationPathID: documentationPathIDs[r.DocumentationResultID],
 		})
