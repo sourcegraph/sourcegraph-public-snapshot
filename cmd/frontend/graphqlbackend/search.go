@@ -234,6 +234,7 @@ const (
 
 var mockDecodedViewerFinalSettings *schema.Settings
 
+// decodedViewerFinalSettings returns the final (merged) settings for the viewer
 func decodedViewerFinalSettings(ctx context.Context, db dbutil.DB) (_ *schema.Settings, err error) {
 	tr, ctx := trace.New(ctx, "decodedViewerFinalSettings", "")
 	defer func() {
@@ -243,7 +244,13 @@ func decodedViewerFinalSettings(ctx context.Context, db dbutil.DB) (_ *schema.Se
 	if mockDecodedViewerFinalSettings != nil {
 		return mockDecodedViewerFinalSettings, nil
 	}
-	return viewerFinalSettings(ctx, db)
+
+	cascade, err := (&schemaResolver{db: db}).ViewerSettings(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	return cascade.finalTyped(ctx)
 }
 
 type resolveRepositoriesOpts struct {

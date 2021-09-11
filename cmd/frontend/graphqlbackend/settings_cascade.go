@@ -73,15 +73,6 @@ func (r *settingsCascade) Subjects(ctx context.Context) ([]*settingsSubject, err
 	return subjects, nil
 }
 
-// viewerFinalSettings returns the final (merged) settings for the viewer.
-func viewerFinalSettings(ctx context.Context, db dbutil.DB) (*schema.Settings, error) {
-	cascade, err := (&schemaResolver{db: db}).ViewerSettings(ctx)
-	if err != nil {
-		return nil, err
-	}
-	return cascade.finalTyped(ctx)
-}
-
 func (r *settingsCascade) Final(ctx context.Context) (string, error) {
 	settings, err := r.finalTyped(ctx)
 	if err != nil {
