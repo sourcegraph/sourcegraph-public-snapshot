@@ -18,6 +18,7 @@ import (
 	"github.com/cockroachdb/errors"
 	"github.com/inconshreveable/log15"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/query-runner/queryrunnerapi"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -340,16 +341,7 @@ func savedSearchListPageURL(utmSource string) string {
 func sourcegraphURL(path, query, utmSource string) string {
 	if externalURL == nil {
 		// Determine the external URL.
-		externalURLStr, err := api.InternalClient.ExternalURL(context.Background())
-		if err != nil {
-			log15.Error("failed to get ExternalURL", err)
-			return ""
-		}
-		externalURL, err = url.Parse(externalURLStr)
-		if err != nil {
-			log15.Error("failed to parse ExternalURL", err)
-			return ""
-		}
+		externalURL = globals.ExternalURL()
 	}
 
 	// Construct URL to the search query.

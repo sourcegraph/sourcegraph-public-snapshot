@@ -10,6 +10,7 @@ import (
 	"github.com/cockroachdb/errors"
 	"github.com/inconshreveable/log15"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/sources"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/state"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
@@ -496,10 +497,7 @@ func decorateChangesetBody(ctx context.Context, tx getBatchChanger, nsStore getN
 		return errors.Wrap(err, "retrieving namespace")
 	}
 
-	u, err := batchChangeURL(ctx, ns, batchChange)
-	if err != nil {
-		return errors.Wrap(err, "building URL")
-	}
+	u := batchChangeURL(ctx, ns, batchChange)
 
 	cs.Body = fmt.Sprintf(
 		"%s\n\n[_Created by Sourcegraph batch change `%s/%s`._](%s)",
@@ -509,22 +507,9 @@ func decorateChangesetBody(ctx context.Context, tx getBatchChanger, nsStore getN
 	return nil
 }
 
-// internalClient is here for mocking reasons.
-var internalClient interface {
-	ExternalURL(context.Context) (string, error)
-} = api.InternalClient
-
-func batchChangeURL(ctx context.Context, ns *database.Namespace, c *btypes.BatchChange) (string, error) {
+func batchChangeURL(ctx context.Context, ns *database.Namespace, c *btypes.BatchChange) string {
 	// To build the absolute URL, we need to know where Sourcegraph is!
-	extStr, err := internalClient.ExternalURL(ctx)
-	if err != nil {
-		return "", errors.Wrap(err, "getting external Sourcegraph URL")
-	}
-
-	extURL, err := url.Parse(extStr)
-	if err != nil {
-		return "", errors.Wrap(err, "parsing external Sourcegraph URL")
-	}
+	extURL := globals.ExternalURL()
 
 	// This needs to be kept consistent with resolvers.batchChangeURL().
 	// (Refactoring the resolver to use the same function is difficult due to
@@ -532,7 +517,7 @@ func batchChangeURL(ctx context.Context, ns *database.Namespace, c *btypes.Batch
 	// simply replicate the logic here.)
 	u := extURL.ResolveReference(&url.URL{Path: namespaceURL(ns) + "/batch-changes/" + c.Name})
 
-	return u.String(), nil
+	return u.String()
 }
 
 func namespaceURL(ns *database.Namespace) string {

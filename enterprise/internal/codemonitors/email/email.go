@@ -8,8 +8,10 @@ import (
 	"github.com/cockroachdb/errors"
 	"github.com/graph-gophers/graphql-go/relay"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codemonitors"
-	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/txemail"
 	"github.com/sourcegraph/sourcegraph/internal/txemail/txtypes"
 )
 
@@ -88,19 +90,19 @@ func NewTestTemplateDataForNewSearchResults(ctx context.Context, monitorDescript
 }
 
 func sendEmail(ctx context.Context, userID int32, template txtypes.Templates, data interface{}) error {
-	email, err := api.InternalClient.UserEmailsGetEmail(ctx, userID)
+	email, _, err := database.GlobalUserEmails.GetPrimaryEmail(ctx, userID)
 	if err != nil {
 		return errors.Errorf("InternalClient.UserEmailsGetEmail for userID=%d: %w", userID, err)
 	}
-	if email == nil {
+	if email == "" {
 		return errors.Errorf("unable to send email to user ID %d with unknown email address", userID)
 	}
-	if err := api.InternalClient.SendEmail(ctx, txtypes.Message{
-		To:       []string{*email},
+	if err := txemail.Send(ctx, txemail.Message{
+		To:       []string{email},
 		Template: template,
 		Data:     data,
 	}); err != nil {
-		return errors.Errorf("InternalClient.SendEmail to email=%q userID=%d: %w", *email, userID, err)
+		return errors.Wrap(err, fmt.Sprintf("SendEmail to email=%q userID=%d", email, userID))
 	}
 	return nil
 }
@@ -119,15 +121,7 @@ func sourcegraphURL(ctx context.Context, path, query, utmSource string) (string,
 	}
 	if externalURL == nil {
 		// Determine the external URL.
-		externalURLStr, err := api.InternalClient.ExternalURL(ctx)
-		if err != nil {
-			return "", errors.Errorf("failed to get ExternalURL: %w", err)
-		}
-		externalURL, err = url.Parse(externalURLStr)
-		if err != nil {
-
-			return "", errors.Errorf("failed to get ExternalURL: %w", err)
-		}
+		externalURL = globals.ExternalURL()
 	}
 
 	// Construct URL to the search query.

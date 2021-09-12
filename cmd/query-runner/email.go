@@ -9,16 +9,14 @@ import (
 	"github.com/inconshreveable/log15"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/txemail"
 	"github.com/sourcegraph/sourcegraph/internal/txemail/txtypes"
 )
 
 func canSendEmail(ctx context.Context) error {
-	canSendEmail, err := api.InternalClient.CanSendEmail(ctx)
-	if err != nil {
-		return errors.Wrap(err, "InternalClient.CanSendEmail")
-	}
-	if !canSendEmail {
+	if !conf.CanSendEmail() {
 		return errors.New("SMTP server not set in site configuration")
 	}
 	return nil
@@ -131,20 +129,20 @@ func emailNotifySubscribeUnsubscribe(ctx context.Context, recipient *recipient, 
 }
 
 func sendEmail(ctx context.Context, userID int32, eventType string, template txtypes.Templates, data interface{}) error {
-	email, err := api.InternalClient.UserEmailsGetEmail(ctx, userID)
+	email, _, err := database.GlobalUserEmails.GetPrimaryEmail(ctx, userID)
 	if err != nil {
 		return errors.Wrap(err, fmt.Sprintf("InternalClient.UserEmailsGetEmail for userID=%d", userID))
 	}
-	if email == nil {
+	if email == "" {
 		return errors.Errorf("unable to send email to user ID %d with unknown email address", userID)
 	}
 
-	if err := api.InternalClient.SendEmail(ctx, txtypes.Message{
-		To:       []string{*email},
+	if err := txemail.Send(ctx, txemail.Message{
+		To:       []string{email},
 		Template: template,
 		Data:     data,
 	}); err != nil {
-		return errors.Wrap(err, fmt.Sprintf("InternalClient.SendEmail to email=%q userID=%d", *email, userID))
+		return errors.Wrap(err, fmt.Sprintf("SendEmail to email=%q userID=%d", email, userID))
 	}
 	logEvent(userID, "SavedSearchEmailNotificationSent", eventType)
 	return nil

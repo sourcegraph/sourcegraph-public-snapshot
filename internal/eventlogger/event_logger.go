@@ -36,7 +36,7 @@ func LogEvent(userID int32, name string, argument json.RawMessage) {
 	}()
 }
 
-// logEvent sends a payload representing some user event to the InternalClient telemetry API
+// logEvent sends a payload representing some user event to the InternalClient telemetry API.
 func logEvent(userID int32, name string, argument json.RawMessage) error {
 	reqBody := &TelemetryRequest{
 		UserID:    userID,

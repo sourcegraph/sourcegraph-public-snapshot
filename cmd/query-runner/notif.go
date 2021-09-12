@@ -5,6 +5,8 @@ import (
 	"fmt"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
 )
 
 // recipientSpec identifies a recipient of a saved search notification. Exactly one of its fields is
@@ -49,13 +51,13 @@ func getNotificationRecipients(ctx context.Context, spec api.SavedQueryIDSpec, q
 	case spec.Subject.Org != nil:
 		if query.Notify {
 			// Email all org members.
-			orgMembers, err := api.InternalClient.OrgsListUsers(ctx, *spec.Subject.Org)
+			orgMembers, err := database.OrgMembers(dbconn.Global).GetByOrgID(ctx, *spec.Subject.Org)
 			if err != nil {
 				return nil, err
 			}
-			for _, userID := range orgMembers {
+			for _, member := range orgMembers {
 				recipients.add(recipient{
-					spec:  recipientSpec{userID: userID},
+					spec:  recipientSpec{userID: member.UserID},
 					email: true,
 				})
 			}

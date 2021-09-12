@@ -13,6 +13,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/usagestats"
 )
 
+// TODO: Remove and clean up.
 func telemetryHandler(db dbutil.DB) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		var tr eventlogger.TelemetryRequest

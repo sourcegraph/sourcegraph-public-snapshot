@@ -20,7 +20,6 @@ const (
 
 	RepoShield  = "repo.shield"
 	RepoRefresh = "repo.refresh"
-	Telemetry   = "telemetry"
 
 	GitHubWebhooks          = "github.webhooks"
 	GitLabWebhooks          = "gitlab.webhooks"
@@ -29,15 +28,6 @@ const (
 	SavedQueriesListAll    = "internal.saved-queries.list-all"
 	SavedQueriesGetInfo    = "internal.saved-queries.get-info"
 	SavedQueriesSetInfo    = "internal.saved-queries.set-info"
-	SavedQueriesDeleteInfo = "internal.saved-queries.delete-info"
-	SettingsGetForSubject  = "internal.settings.get-for-subject"
-	OrgsListUsers          = "internal.orgs.list-users"
-	OrgsGetByName          = "internal.orgs.get-by-name"
-	UsersGetByUsername     = "internal.users.get-by-username"
-	UserEmailsGetEmail     = "internal.user-emails.get-email"
-	ExternalURL            = "internal.app-url"
-	CanSendEmail           = "internal.can-send-email"
-	SendEmail              = "internal.send-email"
 	Extension              = "internal.extension"
 	GitExec                = "internal.git.exec"
 	GitInfoRefs            = "internal.git.info-refs"
@@ -45,7 +35,6 @@ const (
 	GitTar                 = "internal.git.tar"
 	GitUploadPack          = "internal.git.upload-pack"
 	PhabricatorRepoCreate  = "internal.phabricator.repo.create"
-	ReposGetByName         = "internal.repos.get-by-name"
 	ReposInventoryUncached = "internal.repos.inventory-uncached"
 	ReposInventory         = "internal.repos.inventory"
 	ReposList              = "internal.repos.list"
@@ -54,7 +43,6 @@ const (
 	Configuration          = "internal.configuration"
 	SearchConfiguration    = "internal.search-configuration"
 	ExternalServiceConfigs = "internal.external-services.configs"
-	ExternalServicesList   = "internal.external-services.list"
 	StreamingSearch        = "internal.stream-search"
 )
 
@@ -100,15 +88,6 @@ func NewInternal(base *mux.Router) *mux.Router {
 	base.Path("/saved-queries/list-all").Methods("POST").Name(SavedQueriesListAll)
 	base.Path("/saved-queries/get-info").Methods("POST").Name(SavedQueriesGetInfo)
 	base.Path("/saved-queries/set-info").Methods("POST").Name(SavedQueriesSetInfo)
-	base.Path("/saved-queries/delete-info").Methods("POST").Name(SavedQueriesDeleteInfo)
-	base.Path("/settings/get-for-subject").Methods("POST").Name(SettingsGetForSubject)
-	base.Path("/orgs/list-users").Methods("POST").Name(OrgsListUsers)
-	base.Path("/orgs/get-by-name").Methods("POST").Name(OrgsGetByName)
-	base.Path("/users/get-by-username").Methods("POST").Name(UsersGetByUsername)
-	base.Path("/user-emails/get-email").Methods("POST").Name(UserEmailsGetEmail)
-	base.Path("/app-url").Methods("POST").Name(ExternalURL)
-	base.Path("/can-send-email").Methods("POST").Name(CanSendEmail)
-	base.Path("/send-email").Methods("POST").Name(SendEmail)
 	base.Path("/extension").Methods("POST").Name(Extension)
 	base.Path("/git/{RepoID:[0-9]+}/exec").Methods("POST").Name(GitExec)
 	base.Path("/git/{RepoName:.*}/info/refs").Methods("GET").Name(GitInfoRefs)
@@ -117,16 +96,13 @@ func NewInternal(base *mux.Router) *mux.Router {
 	base.Path("/git/{RepoName:.*}/git-upload-pack").Methods("GET", "POST").Name(GitUploadPack)
 	base.Path("/phabricator/repo-create").Methods("POST").Name(PhabricatorRepoCreate)
 	base.Path("/external-services/configs").Methods("POST").Name(ExternalServiceConfigs)
-	base.Path("/external-services/list").Methods("POST").Name(ExternalServicesList)
 	base.Path("/repos/inventory-uncached").Methods("POST").Name(ReposInventoryUncached)
 	base.Path("/repos/inventory").Methods("POST").Name(ReposInventory)
 	base.Path("/repos/list").Methods("POST").Name(ReposList)
 	base.Path("/repos/index").Methods("POST").Name(ReposIndex)
 	base.Path("/repos/list-enabled").Methods("POST").Name(ReposListEnabled)
-	base.Path("/repos/{RepoName:.*}").Methods("POST").Name(ReposGetByName)
 	base.Path("/configuration").Methods("POST").Name(Configuration)
 	base.Path("/search/configuration").Methods("GET", "POST").Name(SearchConfiguration)
-	base.Path("/telemetry").Methods("POST").Name(Telemetry)
 	base.Path("/lsif/upload").Methods("POST").Name(LSIFUpload)
 	base.Path("/search/stream").Methods("GET").Name(StreamingSearch)
 	addRegistryRoute(base)

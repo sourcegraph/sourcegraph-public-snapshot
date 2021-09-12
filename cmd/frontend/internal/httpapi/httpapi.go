@@ -111,7 +111,6 @@ func NewInternalHandler(m *mux.Router, db dbutil.DB, schema *graphql.Schema, new
 	})
 
 	m.Get(apirouter.ExternalServiceConfigs).Handler(trace.Route(handler(serveExternalServiceConfigs(db))))
-	m.Get(apirouter.ExternalServicesList).Handler(trace.Route(handler(serveExternalServicesList(db))))
 	m.Get(apirouter.PhabricatorRepoCreate).Handler(trace.Route(handler(servePhabricatorRepoCreate(db))))
 	reposList := &reposListServer{
 		SourcegraphDotComMode: envvar.SourcegraphDotComMode(),
@@ -120,19 +119,9 @@ func NewInternalHandler(m *mux.Router, db dbutil.DB, schema *graphql.Schema, new
 	}
 	m.Get(apirouter.ReposIndex).Handler(trace.Route(handler(reposList.serveIndex)))
 	m.Get(apirouter.ReposListEnabled).Handler(trace.Route(handler(serveReposListEnabled)))
-	m.Get(apirouter.ReposGetByName).Handler(trace.Route(handler(serveReposGetByName)))
-	m.Get(apirouter.SettingsGetForSubject).Handler(trace.Route(handler(serveSettingsGetForSubject(db))))
 	m.Get(apirouter.SavedQueriesListAll).Handler(trace.Route(handler(serveSavedQueriesListAll(db))))
 	m.Get(apirouter.SavedQueriesGetInfo).Handler(trace.Route(handler(serveSavedQueriesGetInfo(db))))
 	m.Get(apirouter.SavedQueriesSetInfo).Handler(trace.Route(handler(serveSavedQueriesSetInfo(db))))
-	m.Get(apirouter.SavedQueriesDeleteInfo).Handler(trace.Route(handler(serveSavedQueriesDeleteInfo(db))))
-	m.Get(apirouter.OrgsListUsers).Handler(trace.Route(handler(serveOrgsListUsers(db))))
-	m.Get(apirouter.OrgsGetByName).Handler(trace.Route(handler(serveOrgsGetByName(db))))
-	m.Get(apirouter.UsersGetByUsername).Handler(trace.Route(handler(serveUsersGetByUsername)))
-	m.Get(apirouter.UserEmailsGetEmail).Handler(trace.Route(handler(serveUserEmailsGetEmail)))
-	m.Get(apirouter.ExternalURL).Handler(trace.Route(handler(serveExternalURL)))
-	m.Get(apirouter.CanSendEmail).Handler(trace.Route(handler(serveCanSendEmail)))
-	m.Get(apirouter.SendEmail).Handler(trace.Route(handler(serveSendEmail)))
 	m.Get(apirouter.GitExec).Handler(trace.Route(handler(serveGitExec)))
 	m.Get(apirouter.GitResolveRevision).Handler(trace.Route(handler(serveGitResolveRevision)))
 	m.Get(apirouter.GitTar).Handler(trace.Route(handler(serveGitTar)))
@@ -141,7 +130,6 @@ func NewInternalHandler(m *mux.Router, db dbutil.DB, schema *graphql.Schema, new
 	}
 	m.Get(apirouter.GitInfoRefs).Handler(trace.Route(http.HandlerFunc(gitService.serveInfoRefs)))
 	m.Get(apirouter.GitUploadPack).Handler(trace.Route(http.HandlerFunc(gitService.serveGitUploadPack)))
-	m.Get(apirouter.Telemetry).Handler(trace.Route(telemetryHandler(db)))
 	m.Get(apirouter.GraphQL).Handler(trace.Route(handler(serveGraphQL(schema, rateLimitWatcher, true))))
 	m.Get(apirouter.Configuration).Handler(trace.Route(handler(serveConfiguration)))
 	m.Get(apirouter.SearchConfiguration).Handler(trace.Route(handler(serveSearchConfiguration(db))))

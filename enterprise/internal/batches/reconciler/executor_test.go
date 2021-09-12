@@ -1092,12 +1092,3 @@ func TestNamespaceURL(t *testing.T) {
 		})
 	}
 }
-
-type mockInternalClient struct {
-	externalURL string
-	err         error
-}
-
-func (c *mockInternalClient) ExternalURL(ctx context.Context) (string, error) {
-	return c.externalURL, c.err
-}
