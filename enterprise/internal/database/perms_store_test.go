@@ -1360,7 +1360,7 @@ func testPermsStore_GrantPendingPermissions(db *sql.DB) func(*testing.T) {
 		AccountID:   "bob",
 	}
 
-	var countToExceedParameterLimit = 20000
+	const countToExceedParameterLimit = 20000
 
 	type pending struct {
 		accounts *extsvc.Accounts
