@@ -8,6 +8,7 @@ import (
 )
 
 var dsn = flag.String("dsn", "", "Database connection string to use in integration tests")
+var slowTests = flag.Bool("slow-tests", false, "Enable very slow tests")
 
 func TestIntegration_PermsStore(t *testing.T) {
 	if testing.Short() {
