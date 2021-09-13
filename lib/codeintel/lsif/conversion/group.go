@@ -2,6 +2,7 @@ package conversion
 
 import (
 	"context"
+	"fmt"
 	"math"
 	"sort"
 	"strings"
@@ -160,6 +161,10 @@ func serializeResultChunks(ctx context.Context, state *State, numResultChunks in
 		index := precise.HashKey(toID(id), numResultChunks)
 		chunkAssignments[index] = append(chunkAssignments[index], id)
 	}
+	for id := range state.ImplementationData {
+		index := precise.HashKey(toID(id), numResultChunks)
+		chunkAssignments[index] = append(chunkAssignments[index], id)
+	}
 
 	ch := make(chan precise.IndexedResultChunkData)
 
@@ -175,9 +180,16 @@ func serializeResultChunks(ctx context.Context, state *State, numResultChunks in
 			rangeIDsByResultID := make(map[precise.ID][]precise.DocumentIDRangeID, len(resultIDs))
 
 			for _, resultID := range resultIDs {
-				documentRanges, ok := state.DefinitionData[resultID]
-				if !ok {
-					documentRanges = state.ReferenceData[resultID]
+				var documentRanges *datastructures.DefaultIDSetMap
+
+				if ranges, ok := state.DefinitionData[resultID]; ok {
+					documentRanges = ranges
+				} else if ranges, ok := state.ReferenceData[resultID]; ok {
+					documentRanges = ranges
+				} else if ranges, ok := state.ImplementationData[resultID]; ok {
+					documentRanges = ranges
+				} else {
+					panic(fmt.Sprintf("in serializeResultChunks: resultID %d was not found in any known result set types [definition, reference, implementation]", resultID))
 				}
 
 				rangeIDMap := map[precise.ID]int{}

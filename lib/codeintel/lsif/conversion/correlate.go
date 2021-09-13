@@ -213,17 +213,17 @@ func correlateVertex(state *wrappedState, element Element) error {
 }
 
 var edgeHandlers = map[string]func(state *wrappedState, id int, edge Edge) error{
-	"contains":                     correlateContainsEdge,
-	"next":                         correlateNextEdge,
-	"item":                         correlateItemEdge,
-	"textDocument/definition":      correlateTextDocumentDefinitionEdge,
-	"textDocument/references":      correlateTextDocumentReferencesEdge,
-	"textDocument/implementations": correlateTextDocumentImplementationsEdge,
-	"textDocument/hover":           correlateTextDocumentHoverEdge,
-	"moniker":                      correlateMonikerEdge,
-	"nextMoniker":                  correlateNextMonikerEdge,
-	"packageInformation":           correlatePackageInformationEdge,
-	"textDocument/diagnostic":      correlateDiagnosticEdge,
+	"contains":                    correlateContainsEdge,
+	"next":                        correlateNextEdge,
+	"item":                        correlateItemEdge,
+	"textDocument/definition":     correlateTextDocumentDefinitionEdge,
+	"textDocument/references":     correlateTextDocumentReferencesEdge,
+	"textDocument/implementation": correlateTextDocumentImplementationEdge,
+	"textDocument/hover":          correlateTextDocumentHoverEdge,
+	"moniker":                     correlateMonikerEdge,
+	"nextMoniker":                 correlateNextMonikerEdge,
+	"packageInformation":          correlatePackageInformationEdge,
+	"textDocument/diagnostic":     correlateDiagnosticEdge,
 
 	// Sourcegraph extensions
 	string(protocol.EdgeSourcegraphDocumentationResult):   correlateDocumentationResultEdge,
@@ -481,7 +481,7 @@ func correlateTextDocumentReferencesEdge(state *wrappedState, id int, edge Edge)
 	return nil
 }
 
-func correlateTextDocumentImplementationsEdge(state *wrappedState, id int, edge Edge) error {
+func correlateTextDocumentImplementationEdge(state *wrappedState, id int, edge Edge) error {
 	if _, ok := state.ImplementationData[edge.InV]; !ok {
 		return malformedDump(id, edge.InV, "implementationResult")
 	}

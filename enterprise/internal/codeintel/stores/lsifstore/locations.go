@@ -2,7 +2,6 @@ package lsifstore
 
 import (
 	"context"
-	"fmt"
 	"sort"
 	"strings"
 
@@ -87,7 +86,7 @@ func (s *Store) locations(ctx context.Context, bundleID int, ids []precise.ID, l
 	}
 
 	// Get the list of indexes we need to read in order to find each result set identifier
-	indexes, err := s.translateIDsToResultChunkIndexes(ctx, bundleID, ids)
+	indexes, err := s.translateIDsToResultChunkIndexes(ctx, bundleID, ids) // might have fucked this up somehow
 	if err != nil {
 		return nil, 0, err
 	}
@@ -455,7 +454,6 @@ func extractResultIDs(ranges []precise.RangeData, fn func(r precise.RangeData) p
 	for _, r := range ranges {
 		resultID := fn(r)
 
-		fmt.Println("resultID", resultID)
 		if _, ok := resultIDMap[resultID]; !ok && resultID != "" {
 			resultIDs = append(resultIDs, resultID)
 			resultIDMap[resultID] = struct{}{}

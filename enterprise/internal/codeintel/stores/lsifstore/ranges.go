@@ -46,6 +46,12 @@ func (s *Store) Ranges(ctx context.Context, bundleID int, path string, startLine
 		return nil, err
 	}
 
+	implementationResultIDs := extractResultIDs(ranges, func(r precise.RangeData) precise.ID { return r.ImplementationResultID })
+	implementationLocations, err := s.locationsWithinFile(ctx, bundleID, implementationResultIDs, path, documentData.Document)
+	if err != nil {
+		return nil, err
+	}
+
 	documentationResultIDs := extractResultIDs(ranges, func(r precise.RangeData) precise.ID { return r.DocumentationResultID })
 	documentationPathIDs, err := s.documentationIDsToPathIDs(ctx, bundleID, documentationResultIDs)
 	if err != nil {
@@ -58,7 +64,7 @@ func (s *Store) Ranges(ctx context.Context, bundleID int, path string, startLine
 			Range:               newRange(r.StartLine, r.StartCharacter, r.EndLine, r.EndCharacter),
 			Definitions:         definitionLocations[r.DefinitionResultID],
 			References:          referenceLocations[r.ReferenceResultID],
-			Implementations:     referenceLocations[r.ImplementationResultID],
+			Implementations:     implementationLocations[r.ImplementationResultID],
 			HoverText:           documentData.Document.HoverResults[r.HoverResultID],
 			DocumentationPathID: documentationPathIDs[r.DocumentationResultID],
 		})

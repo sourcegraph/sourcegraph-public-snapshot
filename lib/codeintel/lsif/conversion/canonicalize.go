@@ -45,6 +45,7 @@ func canonicalizeDocuments(state *State) {
 
 			canonicalizeDocumentsInDefinitionReferences(state, state.DefinitionData, documentID, canonicalID)
 			canonicalizeDocumentsInDefinitionReferences(state, state.ReferenceData, documentID, canonicalID)
+			canonicalizeDocumentsInDefinitionReferences(state, state.ImplementationData, documentID, canonicalID)
 
 			// Remove non-canonical document
 			delete(state.DocumentData, documentID)
