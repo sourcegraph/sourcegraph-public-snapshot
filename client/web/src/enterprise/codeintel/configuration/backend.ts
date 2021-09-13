@@ -46,6 +46,7 @@ const codeIntelligenceConfigurationPolicyFieldsFragment = gql`
         name
         type
         pattern
+        protected
         retentionEnabled
         retentionDurationHours
         retainIntermediateCommits

@@ -915,6 +915,7 @@ Stores data points for a code insight that do not need to be queried directly, b
  indexing_enabled            | boolean |           | not null | 
  index_commit_max_age_hours  | integer |           |          | 
  index_intermediate_commits  | boolean |           | not null | 
+ protected                   | boolean |           | not null | false
 Indexes:
     "lsif_configuration_policies_pkey" PRIMARY KEY, btree (id)
     "lsif_configuration_policies_repository_id" btree (repository_id)
@@ -928,6 +929,8 @@ Indexes:
 **indexing_enabled**: Whether or not this configuration policy affects auto-indexing schedules.
 
 **pattern**: A pattern used to match` names of the associated Git object type.
+
+**protected**: Whether or not this configuration policy is protected from modification of its data retention behavior (except for duration).
 
 **repository_id**: The identifier of the repository to which this configuration policy applies. If absent, this policy is applied globally.
 
