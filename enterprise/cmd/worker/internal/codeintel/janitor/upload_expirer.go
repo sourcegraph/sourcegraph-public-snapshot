@@ -49,6 +49,8 @@ func NewUploadExpirer(
 		repositoryBatchSize:    repositoryBatchSize,
 		uploadProcessDelay:     uploadProcessDelay,
 		uploadBatchSize:        uploadBatchSize,
+		commitBatchSize:        commitBatchSize,
+		branchesCacheMaxKeys:   branchesCacheMaxKeys,
 	})
 }
 
