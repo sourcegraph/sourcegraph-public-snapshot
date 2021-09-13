@@ -590,7 +590,7 @@ func (s *Server) handleIsRepoCloneable(w http.ResponseWriter, r *http.Request) {
 
 	var syncer VCSSyncer
 	// We use an internal actor here as the repo may be private. It is safe since all
-	// we return is a bool indicating whether the repo us cloneable or not. Perhaps
+	// we return is a bool indicating whether the repo is cloneable or not. Perhaps
 	// the only things that could leak here is whether a private repo exists although
 	// the endpoint is only available internally so it's low risk.
 	remoteURL, err := s.getRemoteURL(actor.WithInternalActor(r.Context()), req.Repo)
