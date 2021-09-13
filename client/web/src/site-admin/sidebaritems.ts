@@ -96,8 +96,7 @@ export const maintenanceGroup: SiteAdminSideBarGroup = {
         },
         {
             label: 'Documentation',
-            to: 'https://docs.sourcegraph.com/',
-            source: 'server'
+            to: '/help'
         },
         {
             label: 'Pings',
