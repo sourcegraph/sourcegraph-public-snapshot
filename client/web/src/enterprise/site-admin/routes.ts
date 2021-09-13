@@ -1,4 +1,3 @@
-import { isBatchChangesExecutionEnabled } from '../../batches'
 import { siteAdminAreaRoutes } from '../../site-admin/routes'
 import { SiteAdminAreaRoute } from '../../site-admin/SiteAdminArea'
 import { lazyComponent } from '../../util/lazyComponent'
@@ -91,8 +90,8 @@ export const enterpriseSiteAdminAreaRoutes: readonly SiteAdminAreaRoute[] = [
         path: '/batch-changes/executions',
         exact: true,
         render: lazyComponent(() => import('../batches/settings/BatchSpecExecutionsPage'), 'BatchSpecExecutionsPage'),
-        condition: ({ batchChangesEnabled, settingsCascade }) =>
-            batchChangesEnabled && isBatchChangesExecutionEnabled(settingsCascade),
+        condition: ({ batchChangesEnabled, batchChangesExecutionEnabled }) =>
+            batchChangesEnabled && batchChangesExecutionEnabled,
     },
 
     // Code intelligence upload routes
