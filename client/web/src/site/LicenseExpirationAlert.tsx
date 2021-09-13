@@ -1,6 +1,6 @@
 import classNames from 'classnames'
 import formatDistanceStrict from 'date-fns/formatDistanceStrict'
-import * as React from 'react'
+import React from 'react'
 
 import { Link } from '@sourcegraph/shared/src/components/Link'
 
@@ -15,7 +15,7 @@ export const LicenseExpirationAlert: React.FunctionComponent<{
     expiresAt: Date
     daysLeft: number
     className?: string
-}> = ({ expiresAt, daysLeft, className = '' }) => (
+}> = ({ expiresAt, daysLeft, className }) => (
     <DismissibleAlert
         partialStorageKey={`licenseExpiring.${daysLeft}`}
         className={classNames('alert-warning align-items-center', className)}
