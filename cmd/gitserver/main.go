@@ -176,8 +176,9 @@ func main() {
 			}
 			return &server.GitRepoSyncer{}, nil
 		},
-		Hostname: hostname.Get(),
-		DB:       db,
+		Hostname:   hostname.Get(),
+		DB:         db,
+		CloneQueue: server.NewCloneQueue(),
 	}
 	gitserver.RegisterMetrics()
 
@@ -200,6 +201,11 @@ func main() {
 	go debugserver.NewServerRoutine(ready).Start()
 	go gitserver.Janitor(janitorInterval)
 	go gitserver.SyncRepoState(syncRepoStateInterval, syncRepoStateBatchSize, syncRepoStateUpsertPerSecond)
+
+	// TODO: DoBackgroundClones returns an error. We need to catch it once we have job management in
+	// gitserver. Ideally the same shared context should be passed to the other goroutines being
+	// spawned above as well. But for now, we pass it a new context.Background().
+	go gitserver.DoBackgroundClones(context.Background())
 
 	port := "3178"
 	host := ""

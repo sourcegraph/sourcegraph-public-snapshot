@@ -4,6 +4,7 @@ package server
 import (
 	"bufio"
 	"bytes"
+	"container/list"
 	"context"
 	"crypto/sha256"
 	"encoding/hex"
@@ -107,6 +108,56 @@ func runCommand(ctx context.Context, cmd *exec.Cmd) (exitCode int, err error) {
 	return exitStatus, err
 }
 
+// cloneJob abstracts away a repo and necessary metadata to clone it. In the future it may be
+// possible to simplify this, but to do that, doClone will need to do a lot less than it does at the
+// moment.
+type cloneJob struct {
+	repo   api.RepoName
+	dir    GitDir
+	syncer VCSSyncer
+
+	// TODO: cloneWorker should acquire a new lock. We are trying to keep the changes simple for the
+	// time being. When we start using the new approach of using long lived goroutines for cloning
+	// we will refactor doClone to acquire a new lock.
+	lock *RepositoryLock
+
+	remoteURL *vcs.URL
+	options   *cloneOptions
+}
+
+// cloneQueue is a threadsafe list.List of cloneJobs that functions as a queue in practice.
+type cloneQueue struct {
+	mu sync.RWMutex
+
+	jobs *list.List
+}
+
+// Push will queue the cloneJob to the end of the queue.
+func (c *cloneQueue) Push(cj *cloneJob) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	c.jobs.PushBack(cj)
+}
+
+// Next will return the next cloneJob. If there's no next job available, it returns nil.
+func (c *cloneQueue) Pop() *cloneJob {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	next := c.jobs.Front()
+	if next == nil {
+		return nil
+	}
+
+	return c.jobs.Remove(next).(*cloneJob)
+}
+
+// NewCloneList initializes a new cloneList.
+func NewCloneQueue() *cloneQueue {
+	return &cloneQueue{jobs: list.New()}
+}
+
 // Server is a gitserver server.
 type Server struct {
 	// ReposDir is the path to the base directory for gitserver storage.
@@ -140,6 +191,10 @@ type Server struct {
 
 	// shared db handle
 	DB dbutil.DB
+
+	// CloneQueue is a threadsafe queue used by DoBackgroundClones to process incoming clone
+	// requests asynchronously.
+	CloneQueue *cloneQueue
 
 	// skipCloneForTests is set by tests to avoid clones.
 	skipCloneForTests bool
@@ -236,17 +291,11 @@ func (s *Server) Handler() http.Handler {
 	// The new repo-updater scheduler enforces the rate limit across all gitserver,
 	// so ideally this logic could be removed here; however, ensureRevision can also
 	// cause an update to happen and it is called on every exec command.
-	maxConcurrentClones := conf.Get().GitMaxConcurrentClones
-	if maxConcurrentClones == 0 {
-		maxConcurrentClones = 5
-	}
+	maxConcurrentClones := getGitMaxConcurrentClones()
 	s.cloneLimiter = mutablelimiter.New(maxConcurrentClones)
 	s.cloneableLimiter = mutablelimiter.New(maxConcurrentClones)
 	conf.Watch(func() {
-		limit := conf.Get().GitMaxConcurrentClones
-		if limit == 0 {
-			limit = 5
-		}
+		limit := getGitMaxConcurrentClones()
 		s.cloneLimiter.SetLimit(limit)
 		s.cloneableLimiter.SetLimit(limit)
 	})
@@ -326,6 +375,65 @@ func (s *Server) SyncRepoState(interval time.Duration, batchSize, perSecond int)
 
 		time.Sleep(interval)
 	}
+}
+
+// DoBackgroundClones clones repos asynchronosuly. It creates a producer-consumer pipeline.
+func (s *Server) DoBackgroundClones(ctx context.Context) error {
+	maxCloneWorkers := getGitMaxConcurrentClones()
+
+	jobs := make(chan *cloneJob)
+
+	// Start "GitMaxConcurrentClones" number of worker goroutines.
+	for i := 0; i < maxCloneWorkers; i++ {
+		go s.cloneJobConsumer(ctx, jobs)
+	}
+
+	go s.cloneJobProducer(ctx, jobs)
+
+	<-ctx.Done()
+	return ctx.Err()
+}
+
+func (s *Server) cloneJobProducer(ctx context.Context, jobs chan<- *cloneJob) error {
+	defer close(jobs)
+
+	log15.Info("cloneJobProducer: ready")
+	for {
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		default:
+		}
+
+		job := s.CloneQueue.Pop()
+		if job != nil {
+			jobs <- job
+			continue
+		}
+
+		// CloneQueue is empty and we don't want to check immediately again. Sleep for 1 second to
+		// avoid hammering the CPU with rapidly acquiring and releasing the lock back to back.
+		time.Sleep(1 * time.Second)
+	}
+}
+
+func (s *Server) cloneJobConsumer(ctx context.Context, jobs <-chan *cloneJob) error {
+	for j := range jobs {
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		default:
+		}
+
+		err := s.doClone(ctx, j.repo, j.dir, j.syncer, j.lock, j.remoteURL, j.options)
+		if err != nil {
+			log15.Error("failed to clone repo", "repo", j.repo, "error", err)
+		}
+
+		s.setLastErrorNonFatal(ctx, j.repo, err)
+	}
+
+	return nil
 }
 
 // hostnameMatch checks whether the hostname matches the given address.
@@ -536,8 +644,8 @@ func (s *Server) getRemoteURL(ctx context.Context, name api.RepoName) (*vcs.URL,
 // acquireCloneLimiter() acquires a cancellable context associated with the
 // clone limiter.
 func (s *Server) acquireCloneLimiter(ctx context.Context) (context.Context, context.CancelFunc, error) {
-	cloneQueue.Inc()
-	defer cloneQueue.Dec()
+	cloneQueueGauge.Inc()
+	defer cloneQueueGauge.Dec()
 	return s.cloneLimiter.Acquire(ctx)
 }
 
@@ -1290,22 +1398,35 @@ func (s *Server) cloneRepo(ctx context.Context, repo api.RepoName, opts *cloneOp
 		return "", err
 	}
 
-	go func() {
-		// Create a new context because this is in a background goroutine.
-		ctx, cancel := s.serverContext()
-		defer cancel()
-		err := s.doClone(ctx, repo, dir, syncer, lock, remoteURL, opts)
-		if err != nil {
-			log15.Error("failed to clone repo", "repo", repo, "error", err)
-		}
-		s.setLastErrorNonFatal(ctx, repo, err)
-	}()
+	// TODO: Stop creating this goroutine here.
+	// TODO: Guard this behind a feature flag.
+	// go func() {
+	// 	// Create a new context because this is in a background goroutine.
+	// 	ctx, cancel := s.serverContext()
+	// 	defer cancel()
+	// 	err := s.doClone(ctx, repo, dir, syncer, lock, remoteURL, opts)
+	// 	if err != nil {
+	// 		log15.Error("failed to clone repo", "repo", repo, "error", err)
+	// 	}
+	//  s.setLastErrorNonFatal(ctx, repo, err)
+	// }()
+
+	s.CloneQueue.Push(&cloneJob{
+		repo:      repo,
+		dir:       dir,
+		syncer:    syncer,
+		lock:      lock,
+		remoteURL: remoteURL,
+		options:   opts,
+	})
 
 	return "", nil
 }
 
 func (s *Server) doClone(ctx context.Context, repo api.RepoName, dir GitDir, syncer VCSSyncer, lock *RepositoryLock, remoteURL *vcs.URL, opts *cloneOptions) error {
 	defer lock.Release()
+
+	log15.Info("clone options", "opts", opts)
 
 	ctx, cancel1, err := s.acquireCloneLimiter(ctx)
 	if err != nil {
@@ -1525,7 +1646,7 @@ var (
 		Help:    "gitserver.Command latencies in seconds.",
 		Buckets: trace.UserLatencyBuckets,
 	}, []string{"cmd", "repo", "status"})
-	cloneQueue = promauto.NewGauge(prometheus.GaugeOpts{
+	cloneQueueGauge = promauto.NewGauge(prometheus.GaugeOpts{
 		Name: "src_gitserver_clone_queue",
 		Help: "number of repos waiting to be cloned.",
 	})
@@ -2053,4 +2174,15 @@ func isAbsoluteRevision(s string) bool {
 		}
 	}
 	return true
+}
+
+// getGitMaxConcurrentClones ensures a default value of 5 is returned if GitMaxConcurrentClones is
+// not set. If set, it returns the specified value.
+func getGitMaxConcurrentClones() int {
+	n := conf.Get().GitMaxConcurrentClones
+	if n == 0 {
+		n = 5
+	}
+
+	return n
 }
