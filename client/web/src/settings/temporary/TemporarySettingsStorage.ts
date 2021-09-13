@@ -70,7 +70,7 @@ export interface SettingsBackend {
 
 /**
  * Settings backend for unauthenticated users.
- * Settings are stored in `localStorage and updated when
+ * Settings are stored in `localStorage` and updated when
  * the `storage` event is fired on the window.
  */
 class LocalStorageSettingsBackend implements SettingsBackend {
