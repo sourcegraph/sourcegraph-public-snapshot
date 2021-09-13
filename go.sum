@@ -1383,8 +1383,6 @@ github.com/sourcegraph/alertmanager v0.21.1-0.20210809100802-88b656a8713e h1:NuB
 github.com/sourcegraph/alertmanager v0.21.1-0.20210809100802-88b656a8713e/go.mod h1:rYinOWxFuCnNssc3iOjn2oMTlhLaPcUuqV5yk5JKUAE=
 github.com/sourcegraph/annotate v0.0.0-20160123013949-f4cad6c6324d h1:yKm7XZV6j9Ev6lojP2XaIshpT4ymkqhMeSghO5Ps00E=
 github.com/sourcegraph/annotate v0.0.0-20160123013949-f4cad6c6324d/go.mod h1:UdhH50NIW0fCiwBSr0co2m7BnFLdv4fQTgdqdJTHFeE=
-github.com/sourcegraph/batch-change-utils v0.0.0-20210708162152-c9f35b905d94 h1:Yzs0ABVo9TXlfhIJZlHbj+T5a/e2lGyxH0bTTF1OtSE=
-github.com/sourcegraph/batch-change-utils v0.0.0-20210708162152-c9f35b905d94/go.mod h1:kKNRPN6dxuXwC4UUhPVcAJsvz4EVEfI0jyN5HUJsazA=
 github.com/sourcegraph/ctxvfs v0.0.0-20180418081416-2b65f1b1ea81 h1:v4/JVxZSPWifxmICRqgXK7khThjw03RfdGhyeA2S4EQ=
 github.com/sourcegraph/ctxvfs v0.0.0-20180418081416-2b65f1b1ea81/go.mod h1:xIvvI5FiHLxhv8prbzVpaMHaaGPFPFQSuTcxC91ryOo=
 github.com/sourcegraph/go-ctags v0.0.0-20210805071240-8c61152fb089 h1:wQD0MqiqE45xk8IBAr/HlB+IUzp/IkhxTmzqtdXuH84=
