@@ -34,8 +34,8 @@ const getContributions = memoizeObservable(
 
 const RECENT_ACTIONS_STORAGE_KEY = 'commandList.recentActions'
 
-function readRecentActions() {
-    const value = localStorage.getItem(CommandList.RECENT_ACTIONS_STORAGE_KEY)
+function readRecentActions(): string[] | null {
+    const value = localStorage.getItem(RECENT_ACTIONS_STORAGE_KEY)
     if (value === null) {
         return null
     }
@@ -48,11 +48,22 @@ function readRecentActions() {
     } catch (error) {
         console.error('Error reading recent actions:', error)
     }
-    CommandList.writeRecentActions(null)
+    writeRecentActions(null)
     return null
 }
 
-function writeRecentActions() {}
+function writeRecentActions(recentActions: string[] | null): void {
+    try {
+        if (recentActions === null) {
+            localStorage.removeItem(RECENT_ACTIONS_STORAGE_KEY)
+        } else {
+            const value = JSON.stringify(recentActions)
+            localStorage.setItem(RECENT_ACTIONS_STORAGE_KEY, value)
+        }
+    } catch (error) {
+        console.error('Error writing recent actions:', error)
+    }
+}
 
 export interface CommandPaletteProps extends ExtensionsControllerProps<'extHostAPI'> {
     defaultIsOpen?: boolean
