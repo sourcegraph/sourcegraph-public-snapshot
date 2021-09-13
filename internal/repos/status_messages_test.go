@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"strings"
 	"testing"
 	"time"
 
@@ -72,8 +73,8 @@ func TestStatusMessages(t *testing.T) {
 	testCases := []struct {
 		name             string
 		stored           types.Repos
-		gitserverCloned  map[string]struct{}
-		gitserverFailure map[string]struct{}
+		gitserverCloned  []string
+		gitserverFailure map[string]bool
 		sourcerErr       error
 		res              []StatusMessage
 		user             *types.User
@@ -82,19 +83,17 @@ func TestStatusMessages(t *testing.T) {
 		err       string
 	}{
 		{
-			name:             "all cloned",
-			gitserverCloned:  map[string]struct{}{"foobar": {}},
-			gitserverFailure: map[string]struct{}{},
-			stored:           []*types.Repo{{Name: "foobar"}},
-			user:             admin,
-			res:              nil,
+			name:            "all cloned",
+			gitserverCloned: []string{"foobar"},
+			stored:          []*types.Repo{{Name: "foobar"}},
+			user:            admin,
+			res:             nil,
 		},
 		{
-			name:             "nothing cloned",
-			stored:           []*types.Repo{{Name: "foobar"}},
-			user:             admin,
-			gitserverCloned:  map[string]struct{}{},
-			gitserverFailure: map[string]struct{}{},
+			name:            "nothing cloned",
+			stored:          []*types.Repo{{Name: "foobar"}},
+			user:            admin,
+			gitserverCloned: []string{},
 			repoOwner: map[api.RepoName]*types.ExternalService{
 				"foobar": siteLevelService,
 			},
@@ -107,11 +106,10 @@ func TestStatusMessages(t *testing.T) {
 			},
 		},
 		{
-			name:             "subset cloned",
-			stored:           []*types.Repo{{Name: "foobar"}, {Name: "barfoo"}},
-			user:             admin,
-			gitserverCloned:  map[string]struct{}{"foobar": {}},
-			gitserverFailure: map[string]struct{}{},
+			name:            "subset cloned",
+			stored:          []*types.Repo{{Name: "foobar"}, {Name: "barfoo"}},
+			user:            admin,
+			gitserverCloned: []string{"foobar"},
 			repoOwner: map[api.RepoName]*types.ExternalService{
 				"foobar": siteLevelService,
 				"barfoo": siteLevelService,
@@ -130,8 +128,7 @@ func TestStatusMessages(t *testing.T) {
 			repoOwner: map[api.RepoName]*types.ExternalService{
 				"foobar": userService,
 			},
-			user:             nonAdmin,
-			gitserverFailure: map[string]struct{}{},
+			user: nonAdmin,
 			res: []StatusMessage{
 				{
 					Cloning: &CloningProgress{
@@ -141,26 +138,17 @@ func TestStatusMessages(t *testing.T) {
 			},
 		},
 		{
-			name:   "more cloned than stored",
-			stored: []*types.Repo{{Name: "foobar"}},
-			user:   admin,
-			gitserverCloned: map[string]struct{}{
-				"foobar": {},
-				"barfoo": {},
-			},
-			gitserverFailure: map[string]struct{}{},
-			res:              nil,
+			name:            "more cloned than stored",
+			stored:          []*types.Repo{{Name: "foobar"}},
+			user:            admin,
+			gitserverCloned: []string{"foobar", "barfoo"},
+			res:             nil,
 		},
 		{
-			name:   "cloned different than stored",
-			stored: []*types.Repo{{Name: "foobar"}, {Name: "barfoo"}},
-			user:   admin,
-			gitserverCloned: map[string]struct{}{
-				"one":   {},
-				"two":   {},
-				"three": {},
-			},
-			gitserverFailure: map[string]struct{}{},
+			name:            "cloned different than stored",
+			stored:          []*types.Repo{{Name: "foobar"}, {Name: "barfoo"}},
+			user:            admin,
+			gitserverCloned: []string{"one", "two", "three"},
 			repoOwner: map[api.RepoName]*types.ExternalService{
 				"foobar": siteLevelService,
 				"barfoo": siteLevelService,
@@ -174,16 +162,11 @@ func TestStatusMessages(t *testing.T) {
 			},
 		},
 		{
-			name:   "one repo failed to sync",
-			stored: []*types.Repo{{Name: "foobar"}, {Name: "barfoo"}},
-			user:   admin,
-			gitserverCloned: map[string]struct{}{
-				"foobar": {},
-				"barfoo": {},
-			},
-			gitserverFailure: map[string]struct{}{
-				"foobar": {},
-			},
+			name:             "one repo failed to sync",
+			stored:           []*types.Repo{{Name: "foobar"}, {Name: "barfoo"}},
+			user:             admin,
+			gitserverCloned:  []string{"foobar", "barfoo"},
+			gitserverFailure: map[string]bool{"foobar": true},
 			repoOwner: map[api.RepoName]*types.ExternalService{
 				"foobar": siteLevelService,
 				"barfoo": siteLevelService,
@@ -197,17 +180,11 @@ func TestStatusMessages(t *testing.T) {
 			},
 		},
 		{
-			name:   "two repos failed to sync",
-			stored: []*types.Repo{{Name: "foobar"}, {Name: "barfoo"}},
-			user:   admin,
-			gitserverCloned: map[string]struct{}{
-				"foobar": {},
-				"barfoo": {},
-			},
-			gitserverFailure: map[string]struct{}{
-				"foobar": {},
-				"barfoo": {},
-			},
+			name:             "two repos failed to sync",
+			stored:           []*types.Repo{{Name: "foobar"}, {Name: "barfoo"}},
+			user:             admin,
+			gitserverCloned:  []string{"foobar", "barfoo"},
+			gitserverFailure: map[string]bool{"foobar": true, "barfoo": true},
 			repoOwner: map[api.RepoName]*types.ExternalService{
 				"foobar": siteLevelService,
 				"barfoo": siteLevelService,
@@ -221,30 +198,23 @@ func TestStatusMessages(t *testing.T) {
 			},
 		},
 		{
-			name: "case insensitivity",
-			gitserverCloned: map[string]struct{}{
-				"foobar": {},
-			},
-			gitserverFailure: map[string]struct{}{},
-			stored:           []*types.Repo{{Name: "FOOBar"}},
-			user:             admin,
-			res:              nil,
+			name:            "case insensitivity",
+			gitserverCloned: []string{"foobar"},
+			stored:          []*types.Repo{{Name: "FOOBar"}},
+			user:            admin,
+			res:             nil,
 		},
 		{
-			name: "case insensitivity to gitserver names",
-			gitserverCloned: map[string]struct{}{
-				"FOOBar": {},
-			},
-			gitserverFailure: map[string]struct{}{},
-			stored:           []*types.Repo{{Name: "FOOBar"}},
-			user:             admin,
-			res:              nil,
+			name:            "case insensitivity to gitserver names",
+			gitserverCloned: []string{"FOOBar"},
+			stored:          []*types.Repo{{Name: "FOOBar"}},
+			user:            admin,
+			res:             nil,
 		},
 		{
-			name:             "one external service syncer err",
-			user:             admin,
-			gitserverFailure: map[string]struct{}{},
-			sourcerErr:       errors.New("github is down"),
+			name:       "one external service syncer err",
+			user:       admin,
+			sourcerErr: errors.New("github is down"),
 			res: []StatusMessage{
 				{
 					ExternalServiceSyncError: &ExternalServiceSyncError{
@@ -285,25 +255,29 @@ func TestStatusMessages(t *testing.T) {
 				}
 			})
 
-			// Add gitserver_repos rows
+			idMapping := make(map[api.RepoName]api.RepoID)
 			for _, r := range stored {
+				lower := strings.ToLower(string(r.Name))
+				idMapping[api.RepoName(lower)] = r.ID
+			}
+
+			// Add gitserver_repos rows
+			for _, toClone := range tc.gitserverCloned {
+				toClone = strings.ToLower(toClone)
+				id := idMapping[api.RepoName(toClone)]
+				if id == 0 {
+					continue
+				}
 				lastError := ""
-				if _, ok := tc.gitserverFailure[string(r.Name)]; ok {
+				if tc.gitserverFailure != nil && tc.gitserverFailure[toClone] {
 					lastError = "Oops"
 				}
-
-				cloneStatus := types.CloneStatusNotCloned
-				if _, ok := tc.gitserverCloned[string(r.Name)]; ok {
-					cloneStatus = types.CloneStatusCloned
-				}
-				if err := database.GitserverRepos(db).Upsert(ctx,
-					&types.GitserverRepo{
-						RepoID:      r.ID,
-						ShardID:     "test",
-						CloneStatus: cloneStatus,
-						LastError:   lastError,
-					},
-				); err != nil {
+				if err := database.GitserverRepos(db).Upsert(ctx, &types.GitserverRepo{
+					RepoID:      id,
+					ShardID:     "test",
+					CloneStatus: types.CloneStatusCloned,
+					LastError:   lastError,
+				}); err != nil {
 					t.Fatal(err)
 				}
 			}

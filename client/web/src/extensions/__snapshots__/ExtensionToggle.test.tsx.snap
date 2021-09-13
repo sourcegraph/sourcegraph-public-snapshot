@@ -13,10 +13,10 @@ exports[`ExtensionToggle extension disabled in settings 1`] = `
   value={0}
 >
   <span
-    className="toggle__bar"
+    className="bar"
   />
   <span
-    className="toggle__knob"
+    className="knob"
   />
 </button>
 `;
@@ -34,10 +34,10 @@ exports[`ExtensionToggle extension enabled in settings 1`] = `
   value={1}
 >
   <span
-    className="toggle__bar toggle__bar--on"
+    className="bar barOn"
   />
   <span
-    className="toggle__knob toggle__knob--on"
+    className="knob knobOn"
   />
 </button>
 `;
@@ -55,10 +55,10 @@ exports[`ExtensionToggle extension not present in settings 1`] = `
   value={0}
 >
   <span
-    className="toggle__bar"
+    className="bar"
   />
   <span
-    className="toggle__knob"
+    className="knob"
   />
 </button>
 `;

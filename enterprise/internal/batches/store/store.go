@@ -209,6 +209,18 @@ type operations struct {
 	getSiteCredential    *observation.Operation
 	listSiteCredentials  *observation.Operation
 	updateSiteCredential *observation.Operation
+
+	createBatchSpecWorkspace *observation.Operation
+	getBatchSpecWorkspace    *observation.Operation
+	listBatchSpecWorkspaces  *observation.Operation
+
+	createBatchSpecWorkspaceExecutionJob *observation.Operation
+	getBatchSpecWorkspaceExecutionJob    *observation.Operation
+	listBatchSpecWorkspaceExecutionJobs  *observation.Operation
+
+	createBatchSpecResolutionJob *observation.Operation
+	getBatchSpecResolutionJob    *observation.Operation
+	listBatchSpecResolutionJobs  *observation.Operation
 }
 
 var (
@@ -314,6 +326,18 @@ func newOperations(observationContext *observation.Context) *operations {
 			getSiteCredential:    op("GetSiteCredential"),
 			listSiteCredentials:  op("ListSiteCredentials"),
 			updateSiteCredential: op("UpdateSiteCredential"),
+
+			createBatchSpecWorkspace: op("CreateBatchSpecWorkspace"),
+			getBatchSpecWorkspace:    op("GetBatchSpecWorkspace"),
+			listBatchSpecWorkspaces:  op("ListBatchSpecWorkspaces"),
+
+			createBatchSpecWorkspaceExecutionJob: op("CreateBatchSpecWorkspaceExecutionJob"),
+			getBatchSpecWorkspaceExecutionJob:    op("GetBatchSpecWorkspaceExecutionJob"),
+			listBatchSpecWorkspaceExecutionJobs:  op("ListBatchSpecWorkspaceExecutionJobs"),
+
+			createBatchSpecResolutionJob: op("CreateBatchSpecResolutionJob"),
+			getBatchSpecResolutionJob:    op("GetBatchSpecResolutionJob"),
+			listBatchSpecResolutionJobs:  op("ListBatchSpecResolutionJobs"),
 		}
 	})
 

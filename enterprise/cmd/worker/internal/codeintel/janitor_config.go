@@ -19,6 +19,8 @@ type janitorConfig struct {
 	RepositoryBatchSize                     int
 	UploadProcessDelay                      time.Duration
 	UploadBatchSize                         int
+	CommitBatchSize                         int
+	BranchesCacheMaxKeys                    int
 }
 
 var janitorConfigInst = &janitorConfig{}
@@ -34,4 +36,6 @@ func (c *janitorConfig) Load() {
 	c.RepositoryBatchSize = c.GetInt("PRECISE_CODE_INTEL_RETENTION_REPOSITORY_BATCH_SIZE", "100", "The number of repositories to consider for expiration at a time.")
 	c.UploadProcessDelay = c.GetInterval("PRECISE_CODE_INTEL_RETENTION_UPLOAD_PROCESS_DELAY", "24h", "The minimum frequency that the same upload record can be considered for expiration.")
 	c.UploadBatchSize = c.GetInt("PRECISE_CODE_INTEL_RETENTION_UPLOAD_BATCH_SIZE", "100", "The number of uploads to consider for expiration at a time.")
+	c.CommitBatchSize = c.GetInt("PRECISE_CODE_INTEL_RETENTION_COMMIT_BATCH_SIZE", "100", "The number of commits to process per upload at a time.")
+	c.BranchesCacheMaxKeys = c.GetInt("PRECISE_CODE_INTEL_RETENTION_BRANCHES_CACHE_MAX_KEYS", "10000", "The number of maximum keys used to cache the set of branches visible from a commit.")
 }

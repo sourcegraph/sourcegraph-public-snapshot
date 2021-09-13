@@ -1288,8 +1288,7 @@ func TestCreateChangesetComments(t *testing.T) {
 	otherBatchSpec := ct.CreateBatchSpec(t, ctx, cstore, "test-comments-other", userID)
 	batchChange := ct.CreateBatchChange(t, ctx, cstore, "test-comments", userID, batchSpec.ID)
 	otherBatchChange := ct.CreateBatchChange(t, ctx, cstore, "test-comments-other", userID, otherBatchSpec.ID)
-	repos, _ := ct.CreateTestRepos(t, context.Background(), db, 1)
-	repo := repos[0]
+	repo, _ := ct.CreateTestRepo(t, ctx, db)
 	changeset := ct.CreateChangeset(t, ctx, cstore, ct.TestChangesetOpts{
 		Repo:             repo.ID,
 		BatchChange:      batchChange.ID,
@@ -1389,8 +1388,7 @@ func TestReenqueueChangesets(t *testing.T) {
 	otherBatchSpec := ct.CreateBatchSpec(t, ctx, cstore, "test-reenqueue-other", userID)
 	batchChange := ct.CreateBatchChange(t, ctx, cstore, "test-reenqueue", userID, batchSpec.ID)
 	otherBatchChange := ct.CreateBatchChange(t, ctx, cstore, "test-reenqueue-other", userID, otherBatchSpec.ID)
-	repos, _ := ct.CreateTestRepos(t, context.Background(), db, 1)
-	repo := repos[0]
+	repo, _ := ct.CreateTestRepo(t, ctx, db)
 	changeset := ct.CreateChangeset(t, ctx, cstore, ct.TestChangesetOpts{
 		Repo:             repo.ID,
 		BatchChange:      batchChange.ID,
@@ -1497,8 +1495,7 @@ func TestMergeChangesets(t *testing.T) {
 	otherBatchSpec := ct.CreateBatchSpec(t, ctx, cstore, "test-merge-other", userID)
 	batchChange := ct.CreateBatchChange(t, ctx, cstore, "test-merge", userID, batchSpec.ID)
 	otherBatchChange := ct.CreateBatchChange(t, ctx, cstore, "test-merge-other", userID, otherBatchSpec.ID)
-	repos, _ := ct.CreateTestRepos(t, context.Background(), db, 1)
-	repo := repos[0]
+	repo, _ := ct.CreateTestRepo(t, ctx, db)
 	changeset := ct.CreateChangeset(t, ctx, cstore, ct.TestChangesetOpts{
 		Repo:             repo.ID,
 		BatchChange:      batchChange.ID,
@@ -1682,8 +1679,7 @@ func TestCloseChangesets(t *testing.T) {
 	otherBatchSpec := ct.CreateBatchSpec(t, ctx, cstore, "test-close-other", userID)
 	batchChange := ct.CreateBatchChange(t, ctx, cstore, "test-close", userID, batchSpec.ID)
 	otherBatchChange := ct.CreateBatchChange(t, ctx, cstore, "test-close-other", userID, otherBatchSpec.ID)
-	repos, _ := ct.CreateTestRepos(t, context.Background(), db, 1)
-	repo := repos[0]
+	repo, _ := ct.CreateTestRepo(t, ctx, db)
 	changeset := ct.CreateChangeset(t, ctx, cstore, ct.TestChangesetOpts{
 		Repo:             repo.ID,
 		BatchChange:      batchChange.ID,
@@ -1793,8 +1789,7 @@ func TestPublishChangesets(t *testing.T) {
 	otherBatchSpec := ct.CreateBatchSpec(t, ctx, cstore, "test-close-other", userID)
 	batchChange := ct.CreateBatchChange(t, ctx, cstore, "test-close", userID, batchSpec.ID)
 	otherBatchChange := ct.CreateBatchChange(t, ctx, cstore, "test-close-other", userID, otherBatchSpec.ID)
-	repos, _ := ct.CreateTestRepos(t, context.Background(), db, 1)
-	repo := repos[0]
+	repo, _ := ct.CreateTestRepo(t, ctx, db)
 	publishableChangesetSpec := ct.CreateChangesetSpec(t, ctx, cstore, ct.TestSpecOpts{
 		User:      userID,
 		Repo:      repo.ID,

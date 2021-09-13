@@ -757,6 +757,7 @@ type ChangesetCountsResolver interface {
 type BatchSpecExecutionResolver interface {
 	ID() graphql.ID
 	InputSpec() string
+	Name(ctx context.Context) (*string, error)
 	State() string
 	CreatedAt() DateTime
 	StartedAt() *DateTime

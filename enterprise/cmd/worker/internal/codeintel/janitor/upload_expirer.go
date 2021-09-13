@@ -17,16 +17,18 @@ type uploadExpirer struct {
 	repositoryBatchSize    int
 	uploadProcessDelay     time.Duration
 	uploadBatchSize        int
+	commitBatchSize        int
+	branchesCacheMaxKeys   int
 }
 
 var _ goroutine.Handler = &uploadExpirer{}
 var _ goroutine.ErrorHandler = &uploadExpirer{}
 
-// NewUploadExpirer returns a background routine that periodically compares the age of upload records against
-// the age of uploads protected by global and repository specific data retention policies.
+// NewUploadExpirer returns a background routine that periodically compares the age of upload records
+// against the age of uploads protected by global and repository specific data retention policies.
 //
-// Uploads that are older than the protected retention age are marked as expired. Expired records with no
-// dependents will be removed by the expiredUploadDeleter.
+// Uploads that are older than the protected retention age are marked as expired. Expired records with
+// no dependents will be removed by the expiredUploadDeleter.
 func NewUploadExpirer(
 	dbStore DBStore,
 	gitserverClient GitserverClient,
@@ -34,6 +36,8 @@ func NewUploadExpirer(
 	repositoryBatchSize int,
 	uploadProcessDelay time.Duration,
 	uploadBatchSize int,
+	commitBatchSize int,
+	branchesCacheMaxKeys int,
 	interval time.Duration,
 	metrics *metrics,
 ) goroutine.BackgroundRoutine {
@@ -45,6 +49,8 @@ func NewUploadExpirer(
 		repositoryBatchSize:    repositoryBatchSize,
 		uploadProcessDelay:     uploadProcessDelay,
 		uploadBatchSize:        uploadBatchSize,
+		commitBatchSize:        commitBatchSize,
+		branchesCacheMaxKeys:   branchesCacheMaxKeys,
 	})
 }
 

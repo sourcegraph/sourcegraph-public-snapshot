@@ -64,6 +64,20 @@ describe('Search onboarding', () => {
                     final: JSON.stringify({}),
                 },
             }),
+            SearchSidebarGitRefs: () => ({
+                repository: {
+                    __typename: 'Repository',
+                    id: 'repo',
+                    gitRefs: {
+                        __typename: 'GitRefConnection',
+                        nodes: [],
+                        pageInfo: {
+                            hasNextPage: false,
+                        },
+                        totalCount: 0,
+                    },
+                },
+            }),
         })
         testContext.overrideSearchStreamEvents([{ type: 'done', data: {} }])
     })

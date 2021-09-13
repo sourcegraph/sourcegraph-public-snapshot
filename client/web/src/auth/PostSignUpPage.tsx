@@ -1,3 +1,4 @@
+import classNames from 'classnames'
 import React, { FunctionComponent, useState, useEffect, useCallback, useRef } from 'react'
 import { useLocation, useHistory } from 'react-router'
 
@@ -16,7 +17,9 @@ import { eventLogger } from '../tracking/eventLogger'
 import { SelectAffiliatedRepos } from '../user/settings/repositories/SelectAffiliatedRepos'
 import { UserExternalServicesOrRepositoriesUpdateProps } from '../util'
 
+import styles from './PostSignUpPage.module.scss'
 import { getReturnTo } from './SignInSignUpCommon'
+import signInSignUpCommonStyles from './SignInSignUpCommon.module.scss'
 import { Steps, Step, StepList, StepPanels, StepPanel, StepActions } from './Steps'
 import { useExternalServices } from './useExternalServices'
 import { CodeHostsConnection } from './welcome/CodeHostsConnection'
@@ -117,22 +120,22 @@ export const PostSignUpPage: FunctionComponent<PostSignUpPage> = ({
 
     return (
         <>
-            <LinkOrSpan to={getReturnTo(location)} className="post-signup-page__logo-link">
+            <LinkOrSpan to={getReturnTo(location)} className={styles.logoLink}>
                 <BrandLogo
-                    className="ml-3 mt-3 post-signup-page__logo"
+                    className={classNames('ml-3 mt-3', styles.logo)}
                     isLightTheme={true}
                     variant="symbol"
                     onClick={event => finishWelcomeFlow(event, { eventName: 'BrandLogo_Clicked' })}
                 />
             </LinkOrSpan>
 
-            <div className="signin-signup-page post-signup-page">
+            <div className={classNames(signInSignUpCommonStyles.signinSignupPage, styles.postSignupPage)}>
                 <PageTitle title="Welcome" />
                 <HeroPage
                     lessPadding={true}
                     className="text-left"
                     body={
-                        <div className="post-signup-page__container pb-1">
+                        <div className={classNames('pb-1', styles.container)}>
                             {hasErrors && (
                                 <div className="alert alert-danger mb-4" role="alert">
                                     Sorry, something went wrong. Try refreshing the page or{' '}
@@ -168,9 +171,17 @@ export const PostSignUpPage: FunctionComponent<PostSignUpPage> = ({
                                             <div className="mt-5">
                                                 <h3>Add repositories</h3>
                                                 <p className="text-muted mb-4">
-                                                    Choose repositories you own or collaborate on from your code hosts
-                                                    to search with Sourcegraph. We’ll sync and index these repositories
-                                                    so you can search your code all in one place.
+                                                    Choose repositories you own or collaborate on from your code hosts.
+                                                    We’ll sync and index these repositories so you can search your code
+                                                    all in one place.
+                                                    <Link
+                                                        to="https://docs.sourcegraph.com/code_search/how-to/adding_repositories_to_cloud"
+                                                        target="_blank"
+                                                        rel="noopener noreferrer"
+                                                    >
+                                                        {' '}
+                                                        Learn more
+                                                    </Link>
                                                 </p>
                                                 <SelectAffiliatedRepos
                                                     authenticatedUser={user}
