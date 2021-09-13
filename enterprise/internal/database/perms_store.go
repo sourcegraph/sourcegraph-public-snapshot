@@ -4,8 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
-	"fmt"
-	"strings"
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -202,10 +200,36 @@ func (s *PermsStore) SetUserPermissions(ctx context.Context, p *authz.UserPermis
 
 	updatedAt := txs.clock()
 	if !added.IsEmpty() || !removed.IsEmpty() {
-		if q, err := upsertRepoPermissionsBatchQuery(added.ToArray(), removed.ToArray(), []uint32{uint32(p.UserID)}, p.Perm, updatedAt); err != nil {
-			return err
-		} else if err = txs.execute(ctx, q); err != nil {
-			return errors.Wrap(err, "execute upsert repo permissions batch query")
+		var (
+			allAdded   = added.ToArray()
+			allRemoved = removed.ToArray()
+
+			pageSize    = 15000 // to stay within parameter limit
+			addQueue    = allAdded
+			removeQueue = allRemoved
+		)
+		for len(addQueue) > 0 || len(removeQueue) > 0 {
+			page := &upsertRepoPermissionsPage{}
+			if len(addQueue) < pageSize {
+				page.addedRepoIDs = addQueue
+				addQueue = nil
+			} else {
+				page.addedRepoIDs = addQueue[:pageSize]
+				addQueue = addQueue[pageSize:]
+			}
+			if len(removeQueue) < pageSize {
+				page.removedRepoIDs = removeQueue
+				removeQueue = nil
+			} else {
+				page.removedRepoIDs = removeQueue[:pageSize]
+				removeQueue = removeQueue[pageSize:]
+			}
+
+			if q, err := upsertRepoPermissionsBatchQuery(page, allAdded, allRemoved, []uint32{uint32(p.UserID)}, p.Perm, updatedAt); err != nil {
+				return err
+			} else if err = txs.execute(ctx, q); err != nil {
+				return errors.Wrap(err, "execute upsert repo permissions batch query")
+			}
 		}
 	}
 
@@ -900,7 +924,7 @@ func (s *PermsStore) GrantPendingPermissions(ctx context.Context, userID int32, 
 	}
 
 	updatedAt := txs.clock()
-	if q, err := upsertRepoPermissionsBatchQuery(repoIDs, nil, []uint32{uint32(userID)}, p.Perm, updatedAt); err != nil {
+	if q, err := upsertRepoPermissionsBatchQuery(&upsertRepoPermissionsPage{addedRepoIDs: repoIDs}, repoIDs, nil, []uint32{uint32(userID)}, p.Perm, updatedAt); err != nil {
 		return err
 	} else if err = txs.execute(ctx, q); err != nil {
 		return errors.Wrap(err, "execute upsert repo permissions batch query")
@@ -922,22 +946,20 @@ func (s *PermsStore) GrantPendingPermissions(ctx context.Context, userID int32, 
 	return nil
 }
 
+type upsertRepoPermissionsPage struct {
+	addedRepoIDs   []uint32
+	removedRepoIDs []uint32
+}
+
 // upsertRepoPermissionsBatchQuery composes a SQL query that does both addition (for `addedRepoIDs`) and deletion (
 // for `removedRepoIDs`) of `userIDs` using upsert.
-func upsertRepoPermissionsBatchQuery(addedRepoIDs, removedRepoIDs, userIDs []uint32, perm authz.Perms, updatedAt time.Time) (*sqlf.Query, error) {
-	// TODO(@bobheadxi)
-	// https://klotzandrew.com/blog/postgres-passing-65535-parameter-limit
+func upsertRepoPermissionsBatchQuery(page *upsertRepoPermissionsPage, addedRepoIDs, removedRepoIDs, userIDs []uint32, perm authz.Perms, updatedAt time.Time) (*sqlf.Query, error) {
 	const format = `
 -- source: enterprise/internal/database/perms_store.go:upsertRepoPermissionsBatchQuery
 INSERT INTO repo_permissions
 	(repo_id, permission, user_ids_ints, updated_at)
-	(
-		SELECT
-			repo_id, permission, string_to_array(user_ids_ints,',')::INT[], updated_at
-		FROM
-			unnest(%s::INT[], %s::TEXT[], %s::TEXT[], %s::TIMESTAMPTZ[])
-			as t(repo_id, permission, user_ids_ints, updated_at)
-	)
+VALUES
+	%s
 ON CONFLICT ON CONSTRAINT
 	repo_permissions_perm_unique
 DO UPDATE SET
@@ -954,39 +976,33 @@ DO UPDATE SET
 		return nil, ErrPermsUpdatedAtNotSet
 	}
 
-	userIDsStrs := make([]string, len(userIDs))
-	for i, id := range userIDs {
-		userIDsStrs[i] = fmt.Sprintf("%d", id)
+	items := make([]*sqlf.Query, 0, len(page.addedRepoIDs)+len(page.removedRepoIDs))
+	for _, repoID := range page.addedRepoIDs {
+		items = append(items, sqlf.Sprintf("(%s, %s, %s, %s)",
+			repoID,
+			perm.String(),
+			pq.Array(userIDs),
+			updatedAt.UTC(),
+		))
 	}
-	userIDsStr := strings.Join(userIDsStrs, ",")
+	for _, repoID := range page.removedRepoIDs {
+		items = append(items, sqlf.Sprintf("(%s, %s, %s, %s)",
+			repoID,
+			perm.String(),
 
-	itemsLength := len(addedRepoIDs) + len(removedRepoIDs)
-	repoIDs := append(addedRepoIDs, removedRepoIDs...)
-	permissions := make([]string, 0, itemsLength)
-	userIDsInts := make([]string, 0, itemsLength)
-	updatedAts := make([]time.Time, 0, itemsLength)
-	for range addedRepoIDs {
-		permissions = append(permissions, perm.String())
-		userIDsInts = append(userIDsInts, userIDsStr)
-		updatedAts = append(updatedAts, updatedAt.UTC())
-	}
-	for range removedRepoIDs {
-		permissions = append(permissions, perm.String())
-		// NOTE: Rows from `removedRepoIDs` are expected to exist, but in case they do not,
-		// we need to set it with empty user IDs to be safe (it's a removal anyway).
-		userIDsInts = append(userIDsInts, "")
-		updatedAts = append(updatedAts, updatedAt.UTC())
+			// NOTE: Rows from `removedRepoIDs` are expected to exist, but in case they do not,
+			// we need to set it with empty user IDs to be safe (it's a removal anyway).
+			pq.Array([]uint32{}),
+
+			updatedAt.UTC(),
+		))
 	}
 
 	return sqlf.Sprintf(
 		format,
-
-		pq.Array(repoIDs),
-		pq.StringArray(permissions),
-		pq.StringArray(userIDsInts),
-		pq.Array(updatedAts),
-
+		sqlf.Join(items, ","),
 		pq.Array(addedRepoIDs),
+
 		// NOTE: Because we use empty user IDs for `removedRepoIDs`, we can't reuse "excluded.user_ids_ints"
 		// and have to explicitly set what user IDs to be removed.
 		pq.Array(userIDs),
