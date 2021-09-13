@@ -204,7 +204,7 @@ The following command allows a user to shell into a Sourcegraph database contain
 
 ```bash
 docker exec -it pgsql psql -U sg #access pgsql container and run psql
-docker exec -it codeintel-db -U sg #access codeintel-db container and run psql
+docker exec -it codeintel-db psql -U sg #access codeintel-db container and run psql
 ```
 
 ## Backup and restore
