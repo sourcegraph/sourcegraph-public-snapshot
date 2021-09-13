@@ -123,14 +123,12 @@ func CreateDBWorkerStore(s *basestore.Store, observationContext *observation.Con
 		ColumnExpressions: jobsColumns,
 		Scan:              scanJobs,
 
-		// We will let a search query or webhook run for up to 60s. After that, it times out and
-		// retries in 10s. If 3 timeouts occur, it is not retried.
-		//
 		// If you change this, be sure to adjust the interval that work is enqueued in
 		// enterprise/internal/insights/background:newInsightEnqueuer.
 		StalledMaxAge:     60 * time.Second,
-		RetryAfter:        10 * time.Second,
-		MaxNumRetries:     3,
+		RetryAfter:        30 * time.Minute,
+		MaxNumRetries:     100,
+		MaxNumResets:      10,
 		OrderByExpression: sqlf.Sprintf("priority, id"),
 	}, observationContext)
 }
@@ -200,6 +198,7 @@ func EnqueueJob(ctx context.Context, workerBaseStore *basestore.Store, job *Job)
 			job.ProcessAfter,
 			job.Cost,
 			job.Priority,
+			job.PersistMode,
 		),
 	))
 	if err != nil {
@@ -221,8 +220,9 @@ INSERT INTO insights_query_runner_jobs (
 	state,
 	process_after,
 	cost,
-	priority
-) VALUES (%s, %s, %s, %s, %s, %s, %s)
+	priority,
+	persist_mode
+) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
 RETURNING id
 `
 
@@ -263,6 +263,7 @@ SELECT
 	record_time,
 	cost,
 	priority,
+	persist_mode,
 	id,
 	state,
 	failure_message,
@@ -324,6 +325,7 @@ type Job struct {
 	RecordTime  *time.Time // If non-nil, record results at this time instead of the time at which search results were found.
 	Cost        int
 	Priority    int
+	PersistMode string
 
 	DependentFrames []time.Time // This field isn't part of the job table, but maps to a table one-many on this job.
 
@@ -370,6 +372,7 @@ func doScanJobs(rows *sql.Rows, err error) ([]*Job, error) {
 			&j.RecordTime,
 			&j.Cost,
 			&j.Priority,
+			&j.PersistMode,
 
 			// Standard/required dbworker fields.
 			&j.ID,
@@ -402,6 +405,7 @@ var jobsColumns = []*sqlf.Query{
 	sqlf.Sprintf("insights_query_runner_jobs.record_time"),
 	sqlf.Sprintf("insights_query_runner_jobs.cost"),
 	sqlf.Sprintf("insights_query_runner_jobs.priority"),
+	sqlf.Sprintf("insights_query_runner_jobs.persist_mode"),
 	sqlf.Sprintf("id"),
 	sqlf.Sprintf("state"),
 	sqlf.Sprintf("failure_message"),

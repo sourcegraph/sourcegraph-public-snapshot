@@ -240,12 +240,12 @@ exports[`UserNavItem simple 1`] = `
                         Repositories 
                         <Badge
                           className="ml-1"
-                          status="new"
+                          status="beta"
                         >
                           <span
                             className="badge badgeCapitalized d-inline-flex align-items-center badge-info ml-1"
                           >
-                            new
+                            beta
                           </span>
                         </Badge>
                       </a>

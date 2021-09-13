@@ -1,7 +1,7 @@
 import * as H from 'history'
-import * as React from 'react'
-import { Link } from 'react-router-dom'
+import React from 'react'
 
+import { Link } from '@sourcegraph/shared/src/components/Link'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { ExtensionDevelopmentToolsPopover } from '@sourcegraph/shared/src/extensions/devtools'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'

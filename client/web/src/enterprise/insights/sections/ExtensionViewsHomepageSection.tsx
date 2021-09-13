@@ -45,6 +45,10 @@ export const ExtensionViewsHomepageSection: React.FunctionComponent<ExtensionVie
 
     const allViewIds = useMemo(() => [...extensionViews, ...insights].map(view => view.id), [extensionViews, insights])
 
+    if (!showCodeInsights) {
+        return null
+    }
+
     return (
         <ViewGrid viewIds={allViewIds} telemetryService={telemetryService} className={className}>
             {/* Render extension views for the search page */}

@@ -146,6 +146,6 @@ with a flag `--publish 9090:9090` in the `docker run` command.
 
 Prometheus will be available http://localhost:9090.
 
-## Using a cutom monitoring system
+## Using a custom monitoring system
 
 Please refer to our FAQ item, ["Can I consume Sourcegraph's metrics in my own monitoring system (Datadog, New Relic, etc.)"](../faq.md#can-i-consume-sourcegraph-s-metrics-in-my-own-monitoring-system-datadog-new-relic-etc).

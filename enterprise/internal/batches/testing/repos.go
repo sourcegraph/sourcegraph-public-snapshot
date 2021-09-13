@@ -66,6 +66,11 @@ func TestRepoWithService(t *testing.T, store *database.ExternalServiceStore, nam
 	}
 }
 
+func CreateTestRepo(t *testing.T, ctx context.Context, db dbutil.DB) (*types.Repo, *types.ExternalService) {
+	repos, extSvc := CreateTestRepos(t, ctx, db, 1)
+	return repos[0], extSvc
+}
+
 func CreateTestRepos(t *testing.T, ctx context.Context, db dbutil.DB, count int) ([]*types.Repo, *types.ExternalService) {
 	t.Helper()
 

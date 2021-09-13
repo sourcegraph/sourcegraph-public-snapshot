@@ -2019,7 +2019,7 @@ extend type Mutation {
 
         """
         The batch spec as YAML (or the equivalent JSON). See
-        https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/schema/campaign_spec.schema.json
+        https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/schema/batch_spec.schema.json
         for the JSON Schema that describes the structure of this input.
         """
         batchSpec: String!

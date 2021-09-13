@@ -12,11 +12,19 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
+type GitObjectType string
+
+const (
+	GitObjectTypeCommit GitObjectType = "GIT_COMMIT"
+	GitObjectTypeTag    GitObjectType = "GIT_TAG"
+	GitObjectTypeTree   GitObjectType = "GIT_TREE"
+)
+
 type ConfigurationPolicy struct {
 	ID                        int
 	RepositoryID              *int
 	Name                      string
-	Type                      string
+	Type                      GitObjectType
 	Pattern                   string
 	RetentionEnabled          bool
 	RetentionDuration         *time.Duration

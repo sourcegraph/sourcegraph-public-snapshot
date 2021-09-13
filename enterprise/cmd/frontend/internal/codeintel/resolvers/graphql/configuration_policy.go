@@ -30,11 +30,11 @@ func (r *configurationPolicyResolver) Name() string {
 
 func (r *configurationPolicyResolver) Type() (gql.GitObjectType, error) {
 	switch r.configurationPolicy.Type {
-	case "GIT_COMMIT":
+	case store.GitObjectTypeCommit:
 		return gql.GitObjectTypeCommit, nil
-	case "GIT_TAG":
+	case store.GitObjectTypeTag:
 		return gql.GitObjectTypeTag, nil
-	case "GIT_TREE":
+	case store.GitObjectTypeTree:
 		return gql.GitObjectTypeTree, nil
 	default:
 		return "", errors.Errorf("unknown git object type %s", r.configurationPolicy.Type)
