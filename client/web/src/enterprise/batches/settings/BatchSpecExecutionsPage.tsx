@@ -62,7 +62,7 @@ export const BatchSpecExecutionsPage: React.FunctionComponent<BatchSpecExecution
                     // TODO: This list is just for admins and is not public yet but we
                     // should think about what to show a new Sourcegraph admin when this
                     // list is empty.
-                    emptyElement={<>There's nothing here yet!</>}
+                    emptyElement={<>Nobody has executed a batch change yet!</>}
                 />
             </Container>
         </>
