@@ -1,3 +1,4 @@
+#!/usr/bin/env bash
 set -e
 
 # See https://stackoverflow.com/a/5148851
@@ -36,7 +37,7 @@ fi
 require_clean_work_tree "publish"
 
 while true; do
-  read -p "Did you already run ./build.sh? [y/n] " yn
+  read -r -p "Did you already run ./build.sh? [y/n] " yn
   case $yn in
     [Yy]*) break ;;
     [Nn]*) echo "Please run ./build.sh first." && exit ;;
@@ -49,10 +50,10 @@ VERSION=$(git rev-parse --short HEAD)
 echo docker push sourcegraph/syntect_server
 docker push sourcegraph/syntect_server
 
-docker tag sourcegraph/syntect_server sourcegraph/syntect_server:$VERSION
-echo docker push sourcegraph/syntect_server:$VERSION
-docker push sourcegraph/syntect_server:$VERSION
+docker tag sourcegraph/syntect_server sourcegraph/syntect_server:"$VERSION"
+echo docker push sourcegraph/syntect_server:"$VERSION"
+docker push sourcegraph/syntect_server:"$VERSION"
 
-docker tag sourcegraph/syntect_server us.gcr.io/sourcegraph-dev/syntect_server:$VERSION
-echo docker push us.gcr.io/sourcegraph-dev/syntect_server:$VERSION
-docker push us.gcr.io/sourcegraph-dev/syntect_server:$VERSION
+docker tag sourcegraph/syntect_server us.gcr.io/sourcegraph-dev/syntect_server:"$VERSION"
+echo docker push us.gcr.io/sourcegraph-dev/syntect_server:"$VERSION"
+docker push us.gcr.io/sourcegraph-dev/syntect_server:"$VERSION"
