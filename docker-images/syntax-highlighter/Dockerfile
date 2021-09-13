@@ -2,7 +2,7 @@
 # Build syntect_server statically #
 ###################################
 FROM rust:1.46.0-alpine3.12@sha256:c9890db1527309a88994b12dfe5e1ed695518037367ffb74df76a66bfc303ef5 as ss
-RUN apk add --no-cache musl-dev
+RUN apk add --no-cache musl-dev=1.1.24-r10
 COPY . /repo
 WORKDIR /repo
 RUN cargo rustc --release
