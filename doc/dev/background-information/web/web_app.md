@@ -10,12 +10,9 @@ Also, check out the web app [README](https://github.com/sourcegraph/sourcegraph/
 
 ### Prerequisites
 
-The `sg` CLI tool is required for key local development commands. Check out the `sg` [README](https://github.com/sourcegraph/sourcegraph/blob/main/dev/sg/README.md).
-To install it, use the following command.
+The `sg` CLI tool is required for key local development commands. Check out the `sg` [README](https://github.com/sourcegraph/sg).
 
-```sh
-./dev/sg/install.sh
-```
+To install it, see the [Quickstart](https://github.com/sourcegraph/sg#quickstart) section in the README.
 
 ### Commands
 

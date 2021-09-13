@@ -93,7 +93,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 			addFinalDockerImage(c, app, false),
 		}
 
-	case c.isPR() && c.isGoOnly() && !c.isSgOnly():
+	case c.isPR() && c.isGoOnly():
 		// If this is a go-only PR, run only the steps necessary to verify the go code.
 		pipelineOperations = []func(*bk.Pipeline){
 			addBackendIntegrationTests(c), // ~11m
@@ -101,13 +101,6 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 			addCheck,                      // ~1m
 			addGoBuild,                    // ~0.5m
 			addPostgresBackcompat,         // ~0.25m
-		}
-
-	case c.isPR() && c.isSgOnly():
-		// If the changes are only in ./dev/sg then we only need to run a subset of steps.
-		pipelineOperations = []func(*bk.Pipeline){
-			addGoTests,
-			addCheck,
 		}
 
 	case c.isBextReleaseBranch:
