@@ -741,7 +741,7 @@ func scanIntTimePairs(rows *sql.Rows, queryErr error) (_ map[int]*time.Time, err
 // identifiers with live code intelligence data. Repositories that were returned previously
 // from this call within the given process delay are not returned.
 func (s *Store) SelectRepositoriesForRetentionScan(ctx context.Context, processDelay time.Duration, limit int) (_ map[int]*time.Time, err error) {
-	return s.selectRepositoriesForRetentionScan(ctx, processDelay, limit, time.Now())
+	return s.selectRepositoriesForRetentionScan(ctx, processDelay, limit, timeutil.Now())
 }
 
 func (s *Store) selectRepositoriesForRetentionScan(ctx context.Context, processDelay time.Duration, limit int, now time.Time) (_ map[int]*time.Time, err error) {
