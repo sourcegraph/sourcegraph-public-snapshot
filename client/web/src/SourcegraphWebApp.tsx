@@ -31,7 +31,7 @@ import { asError, isErrorLike } from '@sourcegraph/shared/src/util/errors'
 
 import { authenticatedUser, AuthenticatedUser } from './auth'
 import { getWebGraphQLClient } from './backend/graphql'
-import { BatchChangesProps } from './batches'
+import { BatchChangesProps, isBatchChangesExecutionEnabled } from './batches'
 import { CodeIntelligenceProps } from './codeintel'
 import { ErrorBoundary } from './components/ErrorBoundary'
 import { queryExternalServices } from './components/externalServices/backend'
@@ -104,8 +104,8 @@ import {
 
 export interface SourcegraphWebAppProps
     extends CodeIntelligenceProps,
-        BatchChangesProps,
         CodeInsightsProps,
+        Pick<BatchChangesProps, 'batchChangesEnabled'>,
         KeyboardShortcutsProps {
     extensionAreaRoutes: readonly ExtensionAreaRoute[]
     extensionAreaHeaderNavItems: readonly ExtensionAreaHeaderNavItem[]
@@ -491,6 +491,9 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
                                                     viewerSubject={this.state.viewerSubject}
                                                     settingsCascade={this.state.settingsCascade}
                                                     batchChangesEnabled={this.props.batchChangesEnabled}
+                                                    batchChangesExecutionEnabled={isBatchChangesExecutionEnabled(
+                                                        this.state.settingsCascade
+                                                    )}
                                                     // Search query
                                                     navbarSearchQueryState={this.state.navbarSearchQueryState}
                                                     onNavbarQueryChange={this.onNavbarQueryChange}
