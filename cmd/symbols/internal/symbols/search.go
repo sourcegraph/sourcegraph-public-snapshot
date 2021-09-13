@@ -274,7 +274,7 @@ func symbolInDBToSymbol(symbolInDB symbolInDB) result.Symbol {
 
 // writeAllSymbolsToNewDB fetches the repo@commit from gitserver, parses all the
 // symbols, and writes them to the blank database file `dbFile`.
-func (s *Service) writeAllSymbolsToNewDB(ctx context.Context, dbFile string, repoName api.RepoName, commitID api.CommitID) error {
+func (s *Service) writeAllSymbolsToNewDB(ctx context.Context, dbFile string, repoName api.RepoName, commitID api.CommitID) (err error) {
 	db, err := sqlx.Open("sqlite3_with_pcre", dbFile)
 	if err != nil {
 		return err
@@ -286,6 +286,13 @@ func (s *Service) writeAllSymbolsToNewDB(ctx context.Context, dbFile string, rep
 	if err != nil {
 		return err
 	}
+	defer func() {
+		if err != nil {
+			_ = tx.Rollback()
+			return
+		}
+		err = tx.Commit()
+	}()
 
 	// The column names are the lowercase version of fields in `symbolInDB`
 	// because sqlx lowercases struct fields by default. See
@@ -339,19 +346,9 @@ func (s *Service) writeAllSymbolsToNewDB(ctx context.Context, dbFile string, rep
 		return err
 	}
 
-	err = s.parseUncached(ctx, repoName, commitID, func(symbol result.Symbol) error {
+	return s.parseUncached(ctx, repoName, commitID, func(symbol result.Symbol) error {
 		symbolInDBValue := symbolToSymbolInDB(symbol)
 		_, err := insertStatement.Exec(&symbolInDBValue)
 		return err
 	})
-	if err != nil {
-		return err
-	}
-
-	err = tx.Commit()
-	if err != nil {
-		return err
-	}
-
-	return nil
 }

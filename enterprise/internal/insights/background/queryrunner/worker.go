@@ -128,6 +128,7 @@ func CreateDBWorkerStore(s *basestore.Store, observationContext *observation.Con
 		StalledMaxAge:     60 * time.Second,
 		RetryAfter:        30 * time.Minute,
 		MaxNumRetries:     100,
+		MaxNumResets:      10,
 		OrderByExpression: sqlf.Sprintf("priority, id"),
 	}, observationContext)
 }

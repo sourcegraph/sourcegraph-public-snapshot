@@ -2,7 +2,6 @@
 set -ex -o nounset -o pipefail
 
 export IGNITE_VERSION=v0.10.0
-export CNI_VERSION=v0.9.1
 export KERNEL_IMAGE="weaveworks/ignite-kernel:5.10.51"
 export EXECUTOR_FIRECRACKER_IMAGE="sourcegraph/ignite-ubuntu:insiders"
 
@@ -71,14 +70,9 @@ function install_git() {
 ## Install Weaveworks Ignite
 ## Reference: https://ignite.readthedocs.io/en/stable/installation/
 function install_ignite() {
-  # Install ignite
   curl -sfLo ignite https://github.com/weaveworks/ignite/releases/download/${IGNITE_VERSION}/ignite-amd64
   chmod +x ignite
   mv ignite /usr/local/bin
-
-  # Install container network interface
-  mkdir -p /opt/cni/bin
-  curl -sSL https://github.com/containernetworking/plugins/releases/download/${CNI_VERSION}/cni-plugins-linux-amd64-${CNI_VERSION}.tgz | tar -xz -C /opt/cni/bin
 }
 
 ## Install and configure executor service

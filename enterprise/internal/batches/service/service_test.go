@@ -45,7 +45,7 @@ func TestServicePermissionLevels(t *testing.T) {
 	user := ct.CreateTestUser(t, db, false)
 	otherUser := ct.CreateTestUser(t, db, false)
 
-	rs, _ := ct.CreateTestRepos(t, ctx, db, 1)
+	repo, _ := ct.CreateTestRepo(t, ctx, db)
 
 	createTestData := func(t *testing.T, s *store.Store, svc *Service, author int32) (*btypes.BatchChange, *btypes.Changeset, *btypes.BatchSpec) {
 		spec := testBatchSpec(author)
@@ -58,7 +58,7 @@ func TestServicePermissionLevels(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		changeset := testChangeset(rs[0].ID, batchChange.ID, btypes.ChangesetExternalStateOpen)
+		changeset := testChangeset(repo.ID, batchChange.ID, btypes.ChangesetExternalStateOpen)
 		if err := s.CreateChangeset(ctx, changeset); err != nil {
 			t.Fatal(err)
 		}
