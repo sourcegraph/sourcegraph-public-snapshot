@@ -400,8 +400,10 @@ func testPermsStore_SetUserPermissions(db *sql.DB) func(*testing.T) {
 			},
 		},
 		{
-			name:     "ensure we do not exceed postgres parameter limit",
-			slowTest: true,
+			name: "ensure we do not exceed postgres parameter limit",
+			// This is kind of slow but not super slow (~30s), switch this to true if
+			// it is too slow
+			slowTest: false,
 			updates: func() []*authz.UserPermissions {
 				user := &authz.UserPermissions{
 					UserID: 1,
