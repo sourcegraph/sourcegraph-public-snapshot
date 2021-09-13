@@ -66,7 +66,7 @@ func setupFirecracker(ctx context.Context, runner commandRunner, logger *Logger,
 		Command: flatten(
 			"ignite", "run",
 			"--runtime", "docker",
-			"--network-plugin", "docker-bridge",
+			"--network-plugin", "cni",
 			firecrackerResourceFlags(options.ResourceOptions),
 			firecrackerCopyfileFlags(repoDir, options.FirecrackerOptions.VMStartupScriptPath),
 			"--ssh",
