@@ -55,7 +55,7 @@ export enum SectionID {
 
 export const SearchSidebar: React.FunctionComponent<SearchSidebarProps> = props => {
     const history = useHistory()
-    const [collapsedSections, setCollapsedSections] = useTemporarySetting('search.collapsedSidebarSections')
+    const [collapsedSections, setCollapsedSections] = useTemporarySetting('search.collapsedSidebarSections', {})
 
     const toggleFilter = useCallback(
         (value: string) => {
@@ -121,8 +121,13 @@ export const SearchSidebar: React.FunctionComponent<SearchSidebarProps> = props 
     ])
     const showReposSection = repoFilterLinks.length > 1
 
-    return (
-        <div className={classNames(styles.searchSidebar, props.className)}>
+    let body
+
+    // collapsedSections is undefined on first render. To prevent the sections
+    // being rendered open and immediately closing them, we render them only after
+    // we got the settings.
+    if (collapsedSections) {
+        body = (
             <StickyBox className={styles.searchSidebarStickyBox}>
                 <SearchSidebarSection
                     className={styles.searchSidebarItem}
@@ -184,8 +189,8 @@ export const SearchSidebar: React.FunctionComponent<SearchSidebarProps> = props 
                 <SearchSidebarSection
                     className={styles.searchSidebarItem}
                     header="Search snippets"
-                    startCollapsed={collapsedSections?.[SectionID.REPOSITORIES]}
-                    onToggle={open => persistToggleState(SectionID.REPOSITORIES, open)}
+                    startCollapsed={collapsedSections?.[SectionID.SEARCH_SNIPPETS]}
+                    onToggle={open => persistToggleState(SectionID.SEARCH_SNIPPETS, open)}
                 >
                     {getSearchSnippetLinks(props.settingsCascade, onSnippetClicked)}
                 </SearchSidebarSection>
@@ -198,6 +203,8 @@ export const SearchSidebar: React.FunctionComponent<SearchSidebarProps> = props 
                     {getQuickLinks(props.settingsCascade)}
                 </SearchSidebarSection>
             </StickyBox>
-        </div>
-    )
+        )
+    }
+
+    return <div className={classNames(styles.searchSidebar, props.className)}>{body}</div>
 }
