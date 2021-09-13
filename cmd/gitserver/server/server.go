@@ -1297,7 +1297,6 @@ func (s *Server) cloneRepo(ctx context.Context, repo api.RepoName, opts *cloneOp
 		s.setLastErrorNonFatal(ctx, repo, err)
 	}()
 
-
 	return "", nil
 }
 
