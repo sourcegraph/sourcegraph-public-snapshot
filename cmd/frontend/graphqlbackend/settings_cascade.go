@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"reflect"
 	"sort"
-	"sync"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
@@ -89,10 +88,7 @@ func (r *settingsCascade) finalTyped(ctx context.Context) (*schema.Settings, err
 		return nil, err
 	}
 
-	var (
-		mux         sync.Mutex
-		allSettings *schema.Settings
-	)
+	allSettings := make([]*schema.Settings, len(subjects))
 
 	// Each LatestSettings is a roundtrip to the database. So we do the requests concurrently.
 	bounded := goroutine.NewBounded(8)
@@ -108,20 +104,26 @@ func (r *settingsCascade) finalTyped(ctx context.Context) (*schema.Settings, err
 				return nil
 			}
 
-			var o schema.Settings
-			if err := jsonc.Unmarshal(settings.settings.Contents, &o); err != nil {
+			var unmarshalled schema.Settings
+			if err := jsonc.Unmarshal(settings.settings.Contents, &unmarshalled); err != nil {
 				return err
 			}
 
-			mux.Lock()
-			allSettings = mergeSettingsLeft(allSettings, &o)
-			mux.Unlock()
+			allSettings[i] = &unmarshalled
 
 			return nil
 		})
 	}
 
-	return allSettings, bounded.Wait()
+	if err := bounded.Wait(); err != nil {
+		return nil, err
+	}
+
+	var merged *schema.Settings
+	for _, subjectSettings := range allSettings {
+		merged = mergeSettingsLeft(merged, subjectSettings)
+	}
+	return merged, nil
 }
 
 // Deprecated: in the GraphQL API
