@@ -55,8 +55,6 @@ const defaultProps: StreamingSearchResultsProps = {
     } as AuthenticatedUser,
     isLightTheme: true,
 
-    navbarSearchQueryState: { query: '' },
-    onNavbarQueryChange: () => {},
     isSourcegraphDotCom: false,
 
     settingsCascade: {
