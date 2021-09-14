@@ -23,8 +23,8 @@ import {
     RepositoriesForPopoverResult,
     RepositoriesForPopoverVariables,
     RepositoryPopoverFields,
-} from '../graphql-operations'
-import { eventLogger } from '../tracking/eventLogger'
+} from '../../graphql-operations'
+import { eventLogger } from '../../tracking/eventLogger'
 
 export const REPOSITORIES_FOR_POPOVER = gql`
     query RepositoriesForPopover($first: Int, $query: String) {
@@ -40,6 +40,7 @@ export const REPOSITORIES_FOR_POPOVER = gql`
     }
 
     fragment RepositoryPopoverFields on Repository {
+        __typename
         id
         name
     }
@@ -64,7 +65,7 @@ const RepositoryNode: React.FunctionComponent<RepositoryNodeProps> = ({ node, cu
     </li>
 )
 
-interface RepositoriesPopoverProps {
+export interface RepositoriesPopoverProps {
     /**
      * The current repository (shown as selected in the list), if any.
      */
@@ -90,12 +91,15 @@ export const RepositoriesPopover: React.FunctionComponent<RepositoriesPopoverPro
         RepositoryPopoverFields
     >({
         query: REPOSITORIES_FOR_POPOVER,
-        variables: { first: 10, query: '' },
+        variables: { first: 10, query },
         getConnection: ({ data, errors }) => {
             if (!data || !data.repositories) {
                 throw createAggregateError(errors)
             }
             return data.repositories
+        },
+        options: {
+            fetchPolicy: 'cache-first',
         },
     })
 
