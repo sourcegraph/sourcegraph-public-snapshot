@@ -1,5 +1,5 @@
 import classNames from 'classnames'
-import * as React from 'react'
+import React from 'react'
 
 /**
  * A global alert that appears telling all users that they have exceeded the limit of free users allowed.
@@ -7,7 +7,7 @@ import * as React from 'react'
 export const FreeUsersExceededAlert: React.FunctionComponent<{
     noLicenseWarningUserCount: number | null
     className?: string
-}> = ({ noLicenseWarningUserCount, className = '' }) => (
+}> = ({ noLicenseWarningUserCount, className }) => (
     <div className={classNames('alert alert-danger', className)}>
         This Sourcegraph instance has reached{' '}
         {noLicenseWarningUserCount === null ? 'the limit for' : noLicenseWarningUserCount} free users, and an admin must{' '}

@@ -3141,6 +3141,11 @@ type BatchSpecExecution implements Node {
     inputSpec: String!
 
     """
+    The name parsed from the original input string yaml file.
+    """
+    name: String
+
+    """
     The state the execution is currently in.
     """
     state: BatchSpecExecutionState!

@@ -11,6 +11,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
+	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
 )
 
 const batchSpecExecutionIDKind = "BatchSpecExecution"
@@ -38,6 +39,31 @@ func (r *batchSpecExecutionResolver) ID() graphql.ID {
 
 func (r *batchSpecExecutionResolver) InputSpec() string {
 	return r.exec.BatchSpec
+}
+
+func (r *batchSpecExecutionResolver) Name(ctx context.Context) (*string, error) {
+	if r.exec.BatchSpecID == 0 {
+		spec, err := batcheslib.ParseBatchSpec([]byte(r.exec.BatchSpec), batcheslib.ParseBatchSpecOptions{
+			// Backend always supports all latest features.
+			AllowArrayEnvironments: true,
+			AllowTransformChanges:  true,
+			AllowConditionalExec:   true,
+		})
+
+		if err != nil {
+			return nil, err
+		}
+
+		return &spec.Name, nil
+	}
+
+	spec, err := r.store.GetBatchSpec(ctx, store.GetBatchSpecOpts{ID: r.exec.BatchSpecID})
+
+	if err != nil {
+		return nil, err
+	}
+
+	return &spec.Spec.Name, nil
 }
 
 func (r *batchSpecExecutionResolver) State() string {
