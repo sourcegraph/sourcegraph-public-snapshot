@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-echo "--- lint dependencies"
+echo "--- golangci-lint"
 
 trap "echo ^^^ +++" ERR
 
@@ -11,11 +11,19 @@ export GOBIN="$PWD/.bin"
 export PATH=$GOBIN:$PATH
 export GO111MODULE=on
 
-if [ $# -eq 0 ]; then
-  pkgs=('./...')
-else
-  pkgs=("$@")
-fi
+config_file="$(pwd)/.golangci.yml"
+lint_script="$(pwd)/dev/golangci-lint.sh"
 
-echo "--- lint"
-"./dev/golangci-lint.sh" --config .golangci.yml run "${pkgs[@]}"
+# If no args are given, traverse through each project with a `go.mod`
+if [ $# -eq 0 ]; then
+  find . -name go.mod -exec dirname '{}' \; | while read -r d; do
+    pushd "$d" >/dev/null
+
+    echo "--- golangci-lint $d"
+    "$lint_script" --config "$config_file" run ./...
+
+    popd >/dev/null
+  done
+else
+  "$lint_script" --config "$config_file" run "$@"
+fi
