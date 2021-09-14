@@ -1,0 +1,60 @@
+.overlay {
+    display: flex;
+    background-color: #343a4d4d; // --color-bg-3 with 30% opacity
+    position: fixed;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    overflow: auto;
+}
+
+.content {
+    max-width: 32rem;
+    width: 100%;
+    margin: auto;
+    background-color: var(--color-bg-1);
+    border-radius: var(--border-radius);
+    border: 1px solid var(--border-color);
+    padding: 1.5rem;
+}
+
+.title {
+    margin: 0;
+    font-size: 1rem;
+}
+
+.media-hero-content {
+    :global(.theme-light) & {
+        --marketing-gradient: linear-gradient(90.64deg, #e4d3fc 3.11%, #d7f0fd 83.64%);
+    }
+
+    :global(.theme-dark) & {
+        --marketing-gradient: linear-gradient(90.64deg, rgba(108, 8, 223, 0.5) 3.11%, rgba(0, 165, 213, 0.5) 83.64%);
+    }
+
+    display: flex;
+    // Stretch the charts container to the full width ignore parent paddings and border
+    margin: 1.5rem calc((-1px - 1.5rem));
+    padding: 1.5rem 1rem;
+    background: var(--marketing-gradient);
+    height: 11rem;
+    gap: 0.5rem;
+}
+
+.chart {
+    box-shadow: 0 4px 16px -6px rgba(36, 41, 54, 0.2);
+    border-radius: var(--border-radius);
+}
+
+.text-content {
+    margin-top: 1.5rem;
+    margin-bottom: 0;
+}
+
+.actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.5rem;
+    margin-top: 1.5rem;
+}
