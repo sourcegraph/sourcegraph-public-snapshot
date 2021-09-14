@@ -385,7 +385,8 @@ func (s *Server) DoBackgroundClones(ctx context.Context) error {
 
 	// Start "GitMaxConcurrentClones" number of worker goroutines.
 	for i := 0; i < maxCloneWorkers; i++ {
-		go s.cloneJobConsumer(ctx, jobs)
+		id := i
+		go s.cloneJobConsumer(ctx, id, jobs)
 	}
 
 	go s.cloneJobProducer(ctx, jobs)
@@ -417,20 +418,27 @@ func (s *Server) cloneJobProducer(ctx context.Context, jobs chan<- *cloneJob) er
 	}
 }
 
-func (s *Server) cloneJobConsumer(ctx context.Context, jobs <-chan *cloneJob) error {
-	for j := range jobs {
+var cloneJobProcessedCount = promauto.NewCounterVec(prometheus.CounterOpts{
+	Name: "src_gitserver_clone_job_processed_count",
+}, []string{"consumerID"})
+
+func (s *Server) cloneJobConsumer(ctx context.Context, id int, jobs <-chan *cloneJob) error {
+	for range jobs {
 		select {
 		case <-ctx.Done():
 			return ctx.Err()
 		default:
 		}
 
-		err := s.doClone(ctx, j.repo, j.dir, j.syncer, j.lock, j.remoteURL, j.options)
-		if err != nil {
-			log15.Error("failed to clone repo", "repo", j.repo, "error", err)
-		}
+		cloneJobProcessedCount.WithLabelValues(fmt.Sprintf("%d", id)).Inc()
 
-		s.setLastErrorNonFatal(ctx, j.repo, err)
+		// TODO: We will uncomment this once we know our changes work as expected.
+		// err := s.doClone(ctx, j.repo, j.dir, j.syncer, j.lock, j.remoteURL, j.options)
+		// if err != nil {
+		// 	log15.Error("failed to clone repo", "repo", j.repo, "error", err)
+		// }
+
+		// s.setLastErrorNonFatal(ctx, j.repo, err)
 	}
 
 	return nil
@@ -1325,6 +1333,22 @@ type cloneOptions struct {
 	Overwrite bool
 }
 
+// These counters are introduced to safely add the new pipeline to asynchronously clone repos via
+// long lived goroutines in the producer-consumer pipeline. If our changes are right, the value for
+// these counters should be the same. This is because, we continue to use our existing approach of
+// spawning new goroutine for each new non-blocking clone request, but also add a corresponding
+// cloneJob to Server.CloneQueue.
+var (
+	asyncDoCloneInvoked = promauto.NewCounter(prometheus.CounterOpts{
+		Name: "src_gitserver_async_doclone_invoked",
+		Help: "Number of times Server.doClone was invoked asynchronsously",
+	})
+	cloneQueueLength = promauto.NewCounter(prometheus.CounterOpts{
+		Name: "src_clone_queue_length",
+		Help: "Length of Server.CloneQueue",
+	})
+)
+
 // cloneRepo performs a clone operation for the given repository. It is
 // non-blocking by default.
 func (s *Server) cloneRepo(ctx context.Context, repo api.RepoName, opts *cloneOptions) (string, error) {
@@ -1398,18 +1422,18 @@ func (s *Server) cloneRepo(ctx context.Context, repo api.RepoName, opts *cloneOp
 		return "", err
 	}
 
-	// TODO: Stop creating this goroutine here.
-	// TODO: Guard this behind a feature flag.
-	// go func() {
-	// 	// Create a new context because this is in a background goroutine.
-	// 	ctx, cancel := s.serverContext()
-	// 	defer cancel()
-	// 	err := s.doClone(ctx, repo, dir, syncer, lock, remoteURL, opts)
-	// 	if err != nil {
-	// 		log15.Error("failed to clone repo", "repo", repo, "error", err)
-	// 	}
-	//  s.setLastErrorNonFatal(ctx, repo, err)
-	// }()
+	go func() {
+		// Create a new context because this is in a background goroutine.
+		ctx, cancel := s.serverContext()
+		defer cancel()
+		err := s.doClone(ctx, repo, dir, syncer, lock, remoteURL, opts)
+		if err != nil {
+			log15.Error("failed to clone repo", "repo", repo, "error", err)
+		}
+		s.setLastErrorNonFatal(ctx, repo, err)
+
+		asyncDoCloneInvoked.Inc()
+	}()
 
 	s.CloneQueue.Push(&cloneJob{
 		repo:      repo,
@@ -1419,6 +1443,8 @@ func (s *Server) cloneRepo(ctx context.Context, repo api.RepoName, opts *cloneOp
 		remoteURL: remoteURL,
 		options:   opts,
 	})
+
+	cloneQueueLength.Inc()
 
 	return "", nil
 }
