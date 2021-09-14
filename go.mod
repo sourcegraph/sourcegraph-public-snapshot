@@ -339,7 +339,7 @@ replace (
 replace (
 	// Pending: https://github.com/ghodss/yaml/pull/65
 	github.com/ghodss/yaml => github.com/sourcegraph/yaml v1.0.1-0.20200714132230-56936252f152
-	// graph-fieldconfig branch
+	// graph-fieldconfig branch - https://github.com/grafana-tools/sdk/pull/170
 	github.com/grafana-tools/sdk => github.com/sourcegraph/grafana-sdk v0.0.0-20210914025534-b4255965ba53
 	github.com/shurcooL/httpgzip => github.com/sourcegraph/httpgzip v0.0.0-20210213125624-48ebf036a6a1
 )
