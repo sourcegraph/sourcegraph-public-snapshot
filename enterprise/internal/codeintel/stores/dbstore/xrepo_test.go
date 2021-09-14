@@ -9,7 +9,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/commitgraph"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/lsifstore"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/shared"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 )
@@ -162,12 +162,12 @@ func TestReferenceIDsAndFilters(t *testing.T) {
 		},
 	})
 
-	insertPackageReferences(t, store, []lsifstore.PackageReference{
-		{Package: lsifstore.Package{DumpID: 1, Scheme: "gomod", Name: "leftpad", Version: "0.1.0"}, Filter: []byte("f1")},
-		{Package: lsifstore.Package{DumpID: 2, Scheme: "gomod", Name: "leftpad", Version: "0.1.0"}, Filter: []byte("f2")},
-		{Package: lsifstore.Package{DumpID: 3, Scheme: "gomod", Name: "leftpad", Version: "0.1.0"}, Filter: []byte("f3")},
-		{Package: lsifstore.Package{DumpID: 4, Scheme: "gomod", Name: "leftpad", Version: "0.1.0"}, Filter: []byte("f4")},
-		{Package: lsifstore.Package{DumpID: 5, Scheme: "gomod", Name: "leftpad", Version: "0.1.0"}, Filter: []byte("f5")},
+	insertPackageReferences(t, store, []shared.PackageReference{
+		{Package: shared.Package{DumpID: 1, Scheme: "gomod", Name: "leftpad", Version: "0.1.0"}, Filter: []byte("f1")},
+		{Package: shared.Package{DumpID: 2, Scheme: "gomod", Name: "leftpad", Version: "0.1.0"}, Filter: []byte("f2")},
+		{Package: shared.Package{DumpID: 3, Scheme: "gomod", Name: "leftpad", Version: "0.1.0"}, Filter: []byte("f3")},
+		{Package: shared.Package{DumpID: 4, Scheme: "gomod", Name: "leftpad", Version: "0.1.0"}, Filter: []byte("f4")},
+		{Package: shared.Package{DumpID: 5, Scheme: "gomod", Name: "leftpad", Version: "0.1.0"}, Filter: []byte("f5")},
 	})
 
 	moniker := precise.QualifiedMonikerData{
@@ -180,18 +180,18 @@ func TestReferenceIDsAndFilters(t *testing.T) {
 		},
 	}
 
-	refs := []lsifstore.PackageReference{
-		{Package: lsifstore.Package{DumpID: 1, Scheme: "gomod", Name: "leftpad", Version: "0.1.0"}, Filter: []byte("f1")},
-		{Package: lsifstore.Package{DumpID: 2, Scheme: "gomod", Name: "leftpad", Version: "0.1.0"}, Filter: []byte("f2")},
-		{Package: lsifstore.Package{DumpID: 3, Scheme: "gomod", Name: "leftpad", Version: "0.1.0"}, Filter: []byte("f3")},
-		{Package: lsifstore.Package{DumpID: 4, Scheme: "gomod", Name: "leftpad", Version: "0.1.0"}, Filter: []byte("f4")},
-		{Package: lsifstore.Package{DumpID: 5, Scheme: "gomod", Name: "leftpad", Version: "0.1.0"}, Filter: []byte("f5")},
+	refs := []shared.PackageReference{
+		{Package: shared.Package{DumpID: 1, Scheme: "gomod", Name: "leftpad", Version: "0.1.0"}, Filter: []byte("f1")},
+		{Package: shared.Package{DumpID: 2, Scheme: "gomod", Name: "leftpad", Version: "0.1.0"}, Filter: []byte("f2")},
+		{Package: shared.Package{DumpID: 3, Scheme: "gomod", Name: "leftpad", Version: "0.1.0"}, Filter: []byte("f3")},
+		{Package: shared.Package{DumpID: 4, Scheme: "gomod", Name: "leftpad", Version: "0.1.0"}, Filter: []byte("f4")},
+		{Package: shared.Package{DumpID: 5, Scheme: "gomod", Name: "leftpad", Version: "0.1.0"}, Filter: []byte("f5")},
 	}
 
 	testCases := []struct {
 		limit    int
 		offset   int
-		expected []lsifstore.PackageReference
+		expected []shared.PackageReference
 	}{
 		{5, 0, refs},
 		{5, 2, refs[2:]},
@@ -246,12 +246,12 @@ func TestReferenceIDsAndFiltersVisibility(t *testing.T) {
 		makeCommit(6): {{UploadID: 3, Distance: 3}, {UploadID: 4, Distance: 2}, {UploadID: 5, Distance: 1}},
 	})
 
-	insertPackageReferences(t, store, []lsifstore.PackageReference{
-		{Package: lsifstore.Package{DumpID: 1, Scheme: "gomod", Name: "leftpad", Version: "0.1.0"}, Filter: []byte("f1")},
-		{Package: lsifstore.Package{DumpID: 2, Scheme: "gomod", Name: "leftpad", Version: "0.1.0"}, Filter: []byte("f2")},
-		{Package: lsifstore.Package{DumpID: 3, Scheme: "gomod", Name: "leftpad", Version: "0.1.0"}, Filter: []byte("f3")},
-		{Package: lsifstore.Package{DumpID: 4, Scheme: "gomod", Name: "leftpad", Version: "0.1.0"}, Filter: []byte("f4")},
-		{Package: lsifstore.Package{DumpID: 5, Scheme: "gomod", Name: "leftpad", Version: "0.1.0"}, Filter: []byte("f5")},
+	insertPackageReferences(t, store, []shared.PackageReference{
+		{Package: shared.Package{DumpID: 1, Scheme: "gomod", Name: "leftpad", Version: "0.1.0"}, Filter: []byte("f1")},
+		{Package: shared.Package{DumpID: 2, Scheme: "gomod", Name: "leftpad", Version: "0.1.0"}, Filter: []byte("f2")},
+		{Package: shared.Package{DumpID: 3, Scheme: "gomod", Name: "leftpad", Version: "0.1.0"}, Filter: []byte("f3")},
+		{Package: shared.Package{DumpID: 4, Scheme: "gomod", Name: "leftpad", Version: "0.1.0"}, Filter: []byte("f4")},
+		{Package: shared.Package{DumpID: 5, Scheme: "gomod", Name: "leftpad", Version: "0.1.0"}, Filter: []byte("f5")},
 	})
 
 	moniker := precise.QualifiedMonikerData{
@@ -278,10 +278,10 @@ func TestReferenceIDsAndFiltersVisibility(t *testing.T) {
 		t.Fatalf("unexpected error from scanner: %s", err)
 	}
 
-	expected := []lsifstore.PackageReference{
-		{Package: lsifstore.Package{DumpID: 3, Scheme: "gomod", Name: "leftpad", Version: "0.1.0"}, Filter: []byte("f3")},
-		{Package: lsifstore.Package{DumpID: 4, Scheme: "gomod", Name: "leftpad", Version: "0.1.0"}, Filter: []byte("f4")},
-		{Package: lsifstore.Package{DumpID: 5, Scheme: "gomod", Name: "leftpad", Version: "0.1.0"}, Filter: []byte("f5")},
+	expected := []shared.PackageReference{
+		{Package: shared.Package{DumpID: 3, Scheme: "gomod", Name: "leftpad", Version: "0.1.0"}, Filter: []byte("f3")},
+		{Package: shared.Package{DumpID: 4, Scheme: "gomod", Name: "leftpad", Version: "0.1.0"}, Filter: []byte("f4")},
+		{Package: shared.Package{DumpID: 5, Scheme: "gomod", Name: "leftpad", Version: "0.1.0"}, Filter: []byte("f5")},
 	}
 	if diff := cmp.Diff(expected, filters); diff != "" {
 		t.Errorf("unexpected filters (-want +got):\n%s", diff)
@@ -313,15 +313,15 @@ func TestReferenceIDsAndFiltersRemoteVisibility(t *testing.T) {
 	insertVisibleAtTip(t, db, 56, 7)
 	insertVisibleAtTipNonDefaultBranch(t, db, 57, 8)
 
-	insertPackageReferences(t, store, []lsifstore.PackageReference{
-		{Package: lsifstore.Package{DumpID: 1, Scheme: "gomod", Name: "leftpad", Version: "0.1.0"}, Filter: []byte("f1")}, // same repo, not visible in git
-		{Package: lsifstore.Package{DumpID: 2, Scheme: "gomod", Name: "leftpad", Version: "0.1.0"}, Filter: []byte("f2")},
-		{Package: lsifstore.Package{DumpID: 3, Scheme: "gomod", Name: "leftpad", Version: "0.1.0"}, Filter: []byte("f3")},
-		{Package: lsifstore.Package{DumpID: 4, Scheme: "gomod", Name: "leftpad", Version: "0.1.0"}, Filter: []byte("f4")},
-		{Package: lsifstore.Package{DumpID: 5, Scheme: "gomod", Name: "leftpad", Version: "0.1.0"}, Filter: []byte("f5")},
-		{Package: lsifstore.Package{DumpID: 6, Scheme: "gomod", Name: "leftpad", Version: "0.1.0"}, Filter: []byte("f6")}, // remote repo not visible at tip
-		{Package: lsifstore.Package{DumpID: 7, Scheme: "gomod", Name: "leftpad", Version: "0.1.0"}, Filter: []byte("f7")},
-		{Package: lsifstore.Package{DumpID: 8, Scheme: "gomod", Name: "leftpad", Version: "0.1.0"}, Filter: []byte("f8")}, // visible on non-default branch
+	insertPackageReferences(t, store, []shared.PackageReference{
+		{Package: shared.Package{DumpID: 1, Scheme: "gomod", Name: "leftpad", Version: "0.1.0"}, Filter: []byte("f1")}, // same repo, not visible in git
+		{Package: shared.Package{DumpID: 2, Scheme: "gomod", Name: "leftpad", Version: "0.1.0"}, Filter: []byte("f2")},
+		{Package: shared.Package{DumpID: 3, Scheme: "gomod", Name: "leftpad", Version: "0.1.0"}, Filter: []byte("f3")},
+		{Package: shared.Package{DumpID: 4, Scheme: "gomod", Name: "leftpad", Version: "0.1.0"}, Filter: []byte("f4")},
+		{Package: shared.Package{DumpID: 5, Scheme: "gomod", Name: "leftpad", Version: "0.1.0"}, Filter: []byte("f5")},
+		{Package: shared.Package{DumpID: 6, Scheme: "gomod", Name: "leftpad", Version: "0.1.0"}, Filter: []byte("f6")}, // remote repo not visible at tip
+		{Package: shared.Package{DumpID: 7, Scheme: "gomod", Name: "leftpad", Version: "0.1.0"}, Filter: []byte("f7")},
+		{Package: shared.Package{DumpID: 8, Scheme: "gomod", Name: "leftpad", Version: "0.1.0"}, Filter: []byte("f8")}, // visible on non-default branch
 	})
 
 	moniker := precise.QualifiedMonikerData{
@@ -348,12 +348,12 @@ func TestReferenceIDsAndFiltersRemoteVisibility(t *testing.T) {
 		t.Fatalf("unexpected error from scanner: %s", err)
 	}
 
-	expected := []lsifstore.PackageReference{
-		{Package: lsifstore.Package{DumpID: 2, Scheme: "gomod", Name: "leftpad", Version: "0.1.0"}, Filter: []byte("f2")},
-		{Package: lsifstore.Package{DumpID: 3, Scheme: "gomod", Name: "leftpad", Version: "0.1.0"}, Filter: []byte("f3")},
-		{Package: lsifstore.Package{DumpID: 4, Scheme: "gomod", Name: "leftpad", Version: "0.1.0"}, Filter: []byte("f4")},
-		{Package: lsifstore.Package{DumpID: 5, Scheme: "gomod", Name: "leftpad", Version: "0.1.0"}, Filter: []byte("f5")},
-		{Package: lsifstore.Package{DumpID: 7, Scheme: "gomod", Name: "leftpad", Version: "0.1.0"}, Filter: []byte("f7")},
+	expected := []shared.PackageReference{
+		{Package: shared.Package{DumpID: 2, Scheme: "gomod", Name: "leftpad", Version: "0.1.0"}, Filter: []byte("f2")},
+		{Package: shared.Package{DumpID: 3, Scheme: "gomod", Name: "leftpad", Version: "0.1.0"}, Filter: []byte("f3")},
+		{Package: shared.Package{DumpID: 4, Scheme: "gomod", Name: "leftpad", Version: "0.1.0"}, Filter: []byte("f4")},
+		{Package: shared.Package{DumpID: 5, Scheme: "gomod", Name: "leftpad", Version: "0.1.0"}, Filter: []byte("f5")},
+		{Package: shared.Package{DumpID: 7, Scheme: "gomod", Name: "leftpad", Version: "0.1.0"}, Filter: []byte("f7")},
 	}
 	if diff := cmp.Diff(expected, filters); diff != "" {
 		t.Errorf("unexpected filters (-want +got):\n%s", diff)
@@ -375,12 +375,12 @@ func TestReferencesForUpload(t *testing.T) {
 		Upload{ID: 5, Commit: makeCommit(2), Root: "sub5/"},
 	)
 
-	insertPackageReferences(t, store, []lsifstore.PackageReference{
-		{Package: lsifstore.Package{DumpID: 1, Scheme: "gomod", Name: "leftpad", Version: "1.1.0"}, Filter: []byte("f1")},
-		{Package: lsifstore.Package{DumpID: 2, Scheme: "gomod", Name: "leftpad", Version: "2.1.0"}, Filter: []byte("f2")},
-		{Package: lsifstore.Package{DumpID: 2, Scheme: "gomod", Name: "leftpad", Version: "3.1.0"}, Filter: []byte("f3")},
-		{Package: lsifstore.Package{DumpID: 2, Scheme: "gomod", Name: "leftpad", Version: "4.1.0"}, Filter: []byte("f4")},
-		{Package: lsifstore.Package{DumpID: 3, Scheme: "gomod", Name: "leftpad", Version: "5.1.0"}, Filter: []byte("f5")},
+	insertPackageReferences(t, store, []shared.PackageReference{
+		{Package: shared.Package{DumpID: 1, Scheme: "gomod", Name: "leftpad", Version: "1.1.0"}, Filter: []byte("f1")},
+		{Package: shared.Package{DumpID: 2, Scheme: "gomod", Name: "leftpad", Version: "2.1.0"}, Filter: []byte("f2")},
+		{Package: shared.Package{DumpID: 2, Scheme: "gomod", Name: "leftpad", Version: "3.1.0"}, Filter: []byte("f3")},
+		{Package: shared.Package{DumpID: 2, Scheme: "gomod", Name: "leftpad", Version: "4.1.0"}, Filter: []byte("f4")},
+		{Package: shared.Package{DumpID: 3, Scheme: "gomod", Name: "leftpad", Version: "5.1.0"}, Filter: []byte("f5")},
 	})
 
 	scanner, err := store.ReferencesForUpload(context.Background(), 2)
@@ -393,10 +393,10 @@ func TestReferencesForUpload(t *testing.T) {
 		t.Fatalf("unexpected error from scanner: %s", err)
 	}
 
-	expected := []lsifstore.PackageReference{
-		{Package: lsifstore.Package{DumpID: 2, Scheme: "gomod", Name: "leftpad", Version: "2.1.0"}, Filter: nil},
-		{Package: lsifstore.Package{DumpID: 2, Scheme: "gomod", Name: "leftpad", Version: "3.1.0"}, Filter: nil},
-		{Package: lsifstore.Package{DumpID: 2, Scheme: "gomod", Name: "leftpad", Version: "4.1.0"}, Filter: nil},
+	expected := []shared.PackageReference{
+		{Package: shared.Package{DumpID: 2, Scheme: "gomod", Name: "leftpad", Version: "2.1.0"}, Filter: nil},
+		{Package: shared.Package{DumpID: 2, Scheme: "gomod", Name: "leftpad", Version: "3.1.0"}, Filter: nil},
+		{Package: shared.Package{DumpID: 2, Scheme: "gomod", Name: "leftpad", Version: "4.1.0"}, Filter: nil},
 	}
 	if diff := cmp.Diff(expected, filters); diff != "" {
 		t.Errorf("unexpected filters (-want +got):\n%s", diff)
@@ -404,7 +404,7 @@ func TestReferencesForUpload(t *testing.T) {
 }
 
 // consumeScanner reads all values from the scanner into memory.
-func consumeScanner(scanner PackageReferenceScanner) (references []lsifstore.PackageReference, _ error) {
+func consumeScanner(scanner PackageReferenceScanner) (references []shared.PackageReference, _ error) {
 	for {
 		reference, exists, err := scanner.Next()
 		if err != nil {
