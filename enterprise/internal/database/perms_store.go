@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
+	"fmt"
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -612,9 +613,24 @@ func (s *PermsStore) SetRepoPendingPermissions(ctx context.Context, accounts *ex
 				return err
 			}
 
+			rows, err := txs.Query(ctx, sqlf.Sprintf("EXPLAIN ANALYZE %s", q))
+			if err != nil {
+				return err
+			}
+			for rows.Next() {
+				var s string
+				if err := rows.Scan(&s); err != nil {
+					return err
+				}
+				fmt.Println(s)
+			}
+			if err := rows.Err(); err != nil {
+				return err
+			}
+
 			ids, err := txs.loadUserPendingPermissionsIDs(ctx, q)
 			if err != nil {
-				return errors.Wrap(err, "load user pending permissions IDs")
+				return errors.Wrap(err, "load user pending permissions IDs from upsert pending permissions")
 			}
 
 			// Make up p.UserIDs from the result set.
@@ -700,12 +716,19 @@ func upsertUserPendingPermissionsBatchQuery(
 	accounts *extsvc.Accounts,
 	p *authz.RepoPermissions,
 ) (*sqlf.Query, error) {
+	if p.UpdatedAt.IsZero() {
+		return nil, ErrPermsUpdatedAtNotSet
+	}
+
 	const format = `
 -- source: enterprise/internal/database/perms_store.go:upsertUserPendingPermissionsBatchQuery
 INSERT INTO user_pending_permissions
   (service_type, service_id, bind_id, permission, object_type, updated_at)
-VALUES
-  %s
+  (
+	-- Array parameters each count as 1 - we do this to ensure we stay below the parameter limit
+	SELECT *
+	FROM unnest(%s::text[], %s::text[], %s::text[], %s::text[], %s::text[], %s::timestamptz[])
+  )
 ON CONFLICT ON CONSTRAINT
   user_pending_permissions_service_perm_object_unique
 DO UPDATE SET
@@ -713,25 +736,30 @@ DO UPDATE SET
 RETURNING id
 `
 
-	if p.UpdatedAt.IsZero() {
-		return nil, ErrPermsUpdatedAtNotSet
-	}
-
-	items := make([]*sqlf.Query, len(accounts.AccountIDs))
+	serviceTypes := make([]string, len(accounts.AccountIDs))
+	serviceIDs := make([]string, len(accounts.AccountIDs))
+	accountIDs := make([]string, len(accounts.AccountIDs))
+	perms := make([]string, len(accounts.AccountIDs))
+	permRepos := make([]string, len(accounts.AccountIDs))
+	updatedAts := make([]time.Time, len(accounts.AccountIDs))
 	for i := range accounts.AccountIDs {
-		items[i] = sqlf.Sprintf("(%s, %s, %s, %s, %s, %s)",
-			accounts.ServiceType,
-			accounts.ServiceID,
-			accounts.AccountIDs[i],
-			p.Perm.String(),
-			authz.PermRepos,
-			p.UpdatedAt.UTC(),
-		)
+		serviceTypes[i] = accounts.ServiceType
+		serviceIDs[i] = accounts.ServiceID
+		accountIDs[i] = accounts.AccountIDs[i]
+		perms[i] = p.Perm.String()
+		permRepos[i] = string(authz.PermRepos)
+		updatedAts[i] = p.UpdatedAt.UTC()
 	}
 
 	return sqlf.Sprintf(
 		format,
-		sqlf.Join(items, ","),
+
+		pq.Array(serviceTypes),
+		pq.Array(serviceIDs),
+		pq.Array(accountIDs),
+		pq.Array(perms),
+		pq.Array(permRepos),
+		pq.Array(updatedAts),
 	), nil
 }
 
