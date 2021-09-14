@@ -2,7 +2,7 @@
 
 Site admins can associate Git repositories on [Phabricator](https://phabricator.org) with Sourcegraph so that users can jump to the Phabricator repository from Sourcegraph and use the [Phabricator extension](#native-extension) and [browser extension](../../integration/browser_extension.md) with Phabricator.
 
-> ⚠️ NOTE: Sourcegraphs support of Phabricator is limited ([learn more](../../integration/phabricator.md)), and not expected to evolve due to the [announced](https://admin.phacility.com/phame/post/view/11/phacility_is_winding_down_operations/) cease of support for Phabricator.
+> ⚠️ NOTE: Sourcegraph support of Phabricator is limited ([learn more](../../integration/phabricator.md)), and not expected to evolve due to the [announced](https://admin.phacility.com/phame/post/view/11/phacility_is_winding_down_operations/) cease of support for Phabricator.
 
 To connect Phabricator to Sourcegraph:
 
