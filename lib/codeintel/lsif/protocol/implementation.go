@@ -5,13 +5,14 @@ type ImplementationResult struct {
 }
 
 func NewImplementationResult(id uint64) ImplementationResult {
-	return ImplementationResult{Vertex{
-		Element: Element{
-			ID:   id,
-			Type: ElementVertex,
-		},
-		Label: VertexImplementationResult,
-	}}
+	return ImplementationResult{
+		Vertex{
+			Element: Element{
+				ID:   id,
+				Type: ElementVertex,
+			},
+			Label: VertexImplementationResult,
+		}}
 }
 
 type TextDocumentImplementation struct {
