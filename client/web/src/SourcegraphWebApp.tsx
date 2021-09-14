@@ -1,6 +1,6 @@
 import 'focus-visible'
 
-import { ApolloClient, ApolloProvider, NormalizedCacheObject } from '@apollo/client'
+import { ApolloProvider } from '@apollo/client'
 import { ShortcutProvider } from '@slimsag/react-shortcuts'
 import { createBrowserHistory } from 'history'
 import ServerIcon from 'mdi-react/ServerIcon'
@@ -20,6 +20,7 @@ import {
     createController as createExtensionsController,
 } from '@sourcegraph/shared/src/extensions/controller'
 import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
+import { GraphQLClient } from '@sourcegraph/shared/src/graphql/graphql'
 import { getModeFromPath } from '@sourcegraph/shared/src/languages'
 import { Notifications } from '@sourcegraph/shared/src/notifications/Notifications'
 import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
@@ -135,7 +136,7 @@ interface SourcegraphWebAppState extends SettingsCascadeProps {
     authenticatedUser?: AuthenticatedUser | null
 
     /** GraphQL client initialized asynchronously to restore persisted cache. */
-    graphqlClient?: ApolloClient<NormalizedCacheObject>
+    graphqlClient?: GraphQLClient
 
     viewerSubject: LayoutProps['viewerSubject']
 
