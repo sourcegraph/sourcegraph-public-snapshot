@@ -27,9 +27,6 @@ type Container struct {
 	// is responsible for, so that the impact of issues in it is clear.
 	Description string
 
-	// List of Annotations to apply to the dashboard.
-	Annotations []sdk.Annotation
-
 	// List of Template Variables to apply to the dashboard
 	Templates []sdk.TemplateVar
 
@@ -119,7 +116,6 @@ func (c *Container) renderDashboard() *sdk.Board {
 			Type:        "tags",
 		})
 	}
-	board.Annotations.List = append(board.Annotations.List, c.Annotations...)
 
 	description := sdk.NewText("")
 	description.Title = "" // Removes vertical space the title would otherwise take up
