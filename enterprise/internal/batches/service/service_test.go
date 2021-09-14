@@ -47,7 +47,7 @@ func TestServicePermissionLevels(t *testing.T) {
 
 	repo, _ := ct.CreateTestRepo(t, ctx, db)
 
-	createTestData := func(t *testing.T, s *store.Store, svc *Service, author int32) (*btypes.BatchChange, *btypes.Changeset, *btypes.BatchSpec) {
+	createTestData := func(t *testing.T, s *store.Store, svc Service, author int32) (*btypes.BatchChange, *btypes.Changeset, *btypes.BatchSpec) {
 		spec := testBatchSpec(author)
 		if err := s.CreateBatchSpec(ctx, spec); err != nil {
 			t.Fatal(err)

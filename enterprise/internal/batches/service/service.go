@@ -23,20 +23,38 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
+type Service interface {
+	WithStore(store *store.Store) Service
+	CreateBatchSpec(ctx context.Context, opts CreateBatchSpecOpts) (spec *btypes.BatchSpec, err error)
+	CreateChangesetSpec(ctx context.Context, rawSpec string, userID int32) (spec *btypes.ChangesetSpec, err error)
+	GetBatchChangeMatchingBatchSpec(ctx context.Context, spec *btypes.BatchSpec) (*btypes.BatchChange, error)
+	GetNewestBatchSpec(ctx context.Context, tx *store.Store, spec *btypes.BatchSpec, userID int32) (*btypes.BatchSpec, error)
+	MoveBatchChange(ctx context.Context, opts MoveBatchChangeOpts) (batchChange *btypes.BatchChange, err error)
+	CloseBatchChange(ctx context.Context, id int64, closeChangesets bool) (batchChange *btypes.BatchChange, err error)
+	DeleteBatchChange(ctx context.Context, id int64) (err error)
+	EnqueueChangesetSync(ctx context.Context, id int64) (err error)
+	ReenqueueChangeset(ctx context.Context, id int64) (changeset *btypes.Changeset, repo *types.Repo, err error)
+	CheckNamespaceAccess(ctx context.Context, namespaceUserID, namespaceOrgID int32) error
+	FetchUsernameForBitbucketServerToken(ctx context.Context, externalServiceID, externalServiceType, token string) (string, error)
+	ValidateAuthenticator(ctx context.Context, externalServiceID, externalServiceType string, a auth.Authenticator) error
+	CreateChangesetJobs(ctx context.Context, batchChangeID int64, ids []int64, jobType btypes.ChangesetJobType, payload interface{}, listOpts store.ListChangesetsOpts) (bulkGroupID string, err error)
+	ApplyBatchChange(ctx context.Context, opts ApplyBatchChangeOpts) (batchChange *btypes.BatchChange, err error)
+	ReconcileBatchChange(ctx context.Context, batchSpec *btypes.BatchSpec) (batchChange *btypes.BatchChange, previousSpecID int64, err error)
+}
+
 // New returns a Service.
-func New(store *store.Store) *Service {
+func New(store *store.Store) Service {
 	return NewWithClock(store, store.Clock())
 }
 
-// NewWithClock returns a Service the given clock used
-// to generate timestamps.
-func NewWithClock(store *store.Store, clock func() time.Time) *Service {
-	svc := &Service{store: store, sourcer: sources.NewSourcer(httpcli.ExternalClientFactory), clock: clock}
+// NewWithClock returns a Service the given clock used to generate timestamps.
+func NewWithClock(store *store.Store, clock func() time.Time) Service {
+	svc := &service{store: store, sourcer: sources.NewSourcer(httpcli.ExternalClientFactory), clock: clock}
 
 	return svc
 }
 
-type Service struct {
+type service struct {
 	store *store.Store
 
 	sourcer sources.Sourcer
@@ -46,8 +64,8 @@ type Service struct {
 
 // WithStore returns a copy of the Service with its store attribute set to the
 // given Store.
-func (s *Service) WithStore(store *store.Store) *Service {
-	return &Service{store: store, sourcer: s.sourcer, clock: s.clock}
+func (s *service) WithStore(store *store.Store) Service {
+	return &service{store: store, sourcer: s.sourcer, clock: s.clock}
 }
 
 type CreateBatchSpecOpts struct {
@@ -60,7 +78,7 @@ type CreateBatchSpecOpts struct {
 }
 
 // CreateBatchSpec creates the BatchSpec.
-func (s *Service) CreateBatchSpec(ctx context.Context, opts CreateBatchSpecOpts) (spec *btypes.BatchSpec, err error) {
+func (s *service) CreateBatchSpec(ctx context.Context, opts CreateBatchSpecOpts) (spec *btypes.BatchSpec, err error) {
 	actor := actor.FromContext(ctx)
 	tr, ctx := trace.New(ctx, "Service.CreateBatchSpec", fmt.Sprintf("Actor %d", actor.UID))
 	defer func() {
@@ -145,7 +163,7 @@ type EnqueueBatchSpecResolutionOpts struct {
 }
 
 // EnqueueBatchSpecResolution creates a pending BatchSpec that will be picked up by a worker in the background.
-func (s *Service) EnqueueBatchSpecResolution(ctx context.Context, opts EnqueueBatchSpecResolutionOpts) (err error) {
+func (s *service) EnqueueBatchSpecResolution(ctx context.Context, opts EnqueueBatchSpecResolutionOpts) (err error) {
 	actor := actor.FromContext(ctx)
 	tr, ctx := trace.New(ctx, "Service.EnqueueBatchSpecResolution", fmt.Sprintf("Actor %d", actor.UID))
 	defer func() {
@@ -161,7 +179,7 @@ func (s *Service) EnqueueBatchSpecResolution(ctx context.Context, opts EnqueueBa
 }
 
 // CreateChangesetSpec validates the given raw spec input and creates the ChangesetSpec.
-func (s *Service) CreateChangesetSpec(ctx context.Context, rawSpec string, userID int32) (spec *btypes.ChangesetSpec, err error) {
+func (s *service) CreateChangesetSpec(ctx context.Context, rawSpec string, userID int32) (spec *btypes.ChangesetSpec, err error) {
 	tr, ctx := trace.New(ctx, "Service.CreateChangesetSpec", fmt.Sprintf("User %d", userID))
 	defer func() {
 		tr.SetError(err)
@@ -207,7 +225,7 @@ func (e *changesetSpecNotFoundErr) NotFound() bool { return true }
 // applies to, if that BatchChange already exists.
 // If it doesn't exist yet, both return values are nil.
 // It accepts a *store.Store so that it can be used inside a transaction.
-func (s *Service) GetBatchChangeMatchingBatchSpec(ctx context.Context, spec *btypes.BatchSpec) (*btypes.BatchChange, error) {
+func (s *service) GetBatchChangeMatchingBatchSpec(ctx context.Context, spec *btypes.BatchSpec) (*btypes.BatchChange, error) {
 	opts := store.GetBatchChangeOpts{
 		Name:            spec.Spec.Name,
 		NamespaceUserID: spec.NamespaceUserID,
@@ -226,7 +244,7 @@ func (s *Service) GetBatchChangeMatchingBatchSpec(ctx context.Context, spec *bty
 
 // GetNewestBatchSpec returns the newest batch spec that matches the given
 // spec's namespace and name and is owned by the given user, or nil if none is found.
-func (s *Service) GetNewestBatchSpec(ctx context.Context, tx *store.Store, spec *btypes.BatchSpec, userID int32) (*btypes.BatchSpec, error) {
+func (s *service) GetNewestBatchSpec(ctx context.Context, tx *store.Store, spec *btypes.BatchSpec, userID int32) (*btypes.BatchSpec, error) {
 	opts := store.GetNewestBatchSpecOpts{
 		UserID:          userID,
 		NamespaceUserID: spec.NamespaceUserID,
@@ -266,7 +284,7 @@ func (o MoveBatchChangeOpts) String() string {
 
 // MoveBatchChange moves the batch change from one namespace to another and/or renames
 // the batch change.
-func (s *Service) MoveBatchChange(ctx context.Context, opts MoveBatchChangeOpts) (batchChange *btypes.BatchChange, err error) {
+func (s *service) MoveBatchChange(ctx context.Context, opts MoveBatchChangeOpts) (batchChange *btypes.BatchChange, err error) {
 	tr, ctx := trace.New(ctx, "Service.MoveBatchChange", opts.String())
 	defer func() {
 		tr.SetError(err)
@@ -312,7 +330,7 @@ func (s *Service) MoveBatchChange(ctx context.Context, opts MoveBatchChangeOpts)
 }
 
 // CloseBatchChange closes the BatchChange with the given ID if it has not been closed yet.
-func (s *Service) CloseBatchChange(ctx context.Context, id int64, closeChangesets bool) (batchChange *btypes.BatchChange, err error) {
+func (s *service) CloseBatchChange(ctx context.Context, id int64, closeChangesets bool) (batchChange *btypes.BatchChange, err error) {
 	traceTitle := fmt.Sprintf("batchChange: %d, closeChangesets: %t", id, closeChangesets)
 	tr, ctx := trace.New(ctx, "service.CloseBatchChange", traceTitle)
 	defer func() {
@@ -362,7 +380,7 @@ func (s *Service) CloseBatchChange(ctx context.Context, id int64, closeChangeset
 
 // DeleteBatchChange deletes the BatchChange with the given ID if it hasn't been
 // deleted yet.
-func (s *Service) DeleteBatchChange(ctx context.Context, id int64) (err error) {
+func (s *service) DeleteBatchChange(ctx context.Context, id int64) (err error) {
 	traceTitle := fmt.Sprintf("BatchChange: %d", id)
 	tr, ctx := trace.New(ctx, "service.BatchChange", traceTitle)
 	defer func() {
@@ -385,7 +403,7 @@ func (s *Service) DeleteBatchChange(ctx context.Context, id int64) (err error) {
 // EnqueueChangesetSync loads the given changeset from the database, checks
 // whether the actor in the context has permission to enqueue a sync and then
 // enqueues a sync by calling the repoupdater client.
-func (s *Service) EnqueueChangesetSync(ctx context.Context, id int64) (err error) {
+func (s *service) EnqueueChangesetSync(ctx context.Context, id int64) (err error) {
 	traceTitle := fmt.Sprintf("changeset: %d", id)
 	tr, ctx := trace.New(ctx, "service.EnqueueChangesetSync", traceTitle)
 	defer func() {
@@ -440,7 +458,7 @@ func (s *Service) EnqueueChangesetSync(ctx context.Context, id int64) (err error
 // ReenqueueChangeset loads the given changeset from the database, checks
 // whether the actor in the context has permission to enqueue a reconciler run and then
 // enqueues it by calling ResetReconcilerState.
-func (s *Service) ReenqueueChangeset(ctx context.Context, id int64) (changeset *btypes.Changeset, repo *types.Repo, err error) {
+func (s *service) ReenqueueChangeset(ctx context.Context, id int64) (changeset *btypes.Changeset, repo *types.Repo, err error) {
 	traceTitle := fmt.Sprintf("changeset: %d", id)
 	tr, ctx := trace.New(ctx, "service.RenqueueChangeset", traceTitle)
 	defer func() {
@@ -500,7 +518,7 @@ func (s *Service) ReenqueueChangeset(ctx context.Context, id int64) (changeset *
 // Otherwise it checks whether the current user _is_ the namespace user or has
 // access to the namespace org.
 // If both values are zero, an error is returned.
-func (s *Service) CheckNamespaceAccess(ctx context.Context, namespaceUserID, namespaceOrgID int32) error {
+func (s *service) CheckNamespaceAccess(ctx context.Context, namespaceUserID, namespaceOrgID int32) error {
 	if namespaceOrgID != 0 {
 		return backend.CheckOrgAccessOrSiteAdmin(ctx, s.store.DB(), namespaceOrgID)
 	} else if namespaceUserID != 0 {
@@ -525,7 +543,7 @@ var ErrNoNamespace = errors.New("no namespace given")
 //
 // Since Bitbucket sends the username as a header in REST responses, we can
 // take it from there and complete the UserCredential.
-func (s *Service) FetchUsernameForBitbucketServerToken(ctx context.Context, externalServiceID, externalServiceType, token string) (string, error) {
+func (s *service) FetchUsernameForBitbucketServerToken(ctx context.Context, externalServiceID, externalServiceType, token string) (string, error) {
 	css, err := s.sourcer.ForExternalService(ctx, s.store, store.GetExternalServiceIDsOpts{
 		ExternalServiceType: externalServiceType,
 		ExternalServiceID:   externalServiceID,
@@ -560,11 +578,7 @@ var _ usernameSource = &sources.BitbucketServerSource{}
 
 // ValidateAuthenticator creates a ChangesetSource, configures it with the given
 // authenticator and validates it can correctly access the remote server.
-func (s *Service) ValidateAuthenticator(ctx context.Context, externalServiceID, externalServiceType string, a auth.Authenticator) error {
-	if Mocks.ValidateAuthenticator != nil {
-		return Mocks.ValidateAuthenticator(ctx, externalServiceID, externalServiceType, a)
-	}
-
+func (s *service) ValidateAuthenticator(ctx context.Context, externalServiceID, externalServiceType string, a auth.Authenticator) error {
 	css, err := s.sourcer.ForExternalService(ctx, s.store, store.GetExternalServiceIDsOpts{
 		ExternalServiceType: externalServiceType,
 		ExternalServiceID:   externalServiceID,
@@ -583,7 +597,7 @@ func (s *Service) ValidateAuthenticator(ctx context.Context, externalServiceID, 
 	return nil
 }
 
-// ErrChangesetsForJobNotFound can be returned by (*Service).CreateChangesetJobs
+// ErrChangesetsForJobNotFound can be returned by (Service).CreateChangesetJobs
 // if the number of changesets returned from the database doesn't match the
 // number if IDs passed in. That can happen if some of the changesets are not
 // published.
@@ -592,7 +606,7 @@ var ErrChangesetsForJobNotFound = errors.New("some changesets could not be found
 // CreateChangesetJobs creates one changeset job for each given Changeset in the
 // given BatchChange, checking whether the actor in the context has permission to
 // trigger a job, and enqueues it.
-func (s *Service) CreateChangesetJobs(ctx context.Context, batchChangeID int64, ids []int64, jobType btypes.ChangesetJobType, payload interface{}, listOpts store.ListChangesetsOpts) (bulkGroupID string, err error) {
+func (s *service) CreateChangesetJobs(ctx context.Context, batchChangeID int64, ids []int64, jobType btypes.ChangesetJobType, payload interface{}, listOpts store.ListChangesetsOpts) (bulkGroupID string, err error) {
 	traceTitle := fmt.Sprintf("batchChangeID: %d, len(changesets): %d", batchChangeID, len(ids))
 	tr, ctx := trace.New(ctx, "service.CreateChangesetJobs", traceTitle)
 	defer func() {

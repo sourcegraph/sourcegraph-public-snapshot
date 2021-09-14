@@ -1069,7 +1069,7 @@ func TestCreateBatchChangesCredential(t *testing.T) {
 
 	cstore := store.New(db, &observation.TestContext, nil)
 
-	r := &Resolver{store: cstore}
+	r := New(cstore)
 	s, err := graphqlbackend.NewSchema(db, r, nil, nil, nil, nil, nil, nil)
 	if err != nil {
 		t.Fatal(err)

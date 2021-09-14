@@ -1136,7 +1136,7 @@ func TestServiceApplyBatchChange(t *testing.T) {
 	})
 }
 
-func applyAndListChangesets(ctx context.Context, t *testing.T, svc *Service, batchSpecRandID string, wantChangesets int) (*btypes.BatchChange, btypes.Changesets) {
+func applyAndListChangesets(ctx context.Context, t *testing.T, svc Service, batchSpecRandID string, wantChangesets int) (*btypes.BatchChange, btypes.Changesets) {
 	t.Helper()
 
 	batchChange, err := svc.ApplyBatchChange(ctx, ApplyBatchChangeOpts{

@@ -48,10 +48,7 @@ func (o ApplyBatchChangeOpts) String() string {
 }
 
 // ApplyBatchChange creates the BatchChange.
-func (s *Service) ApplyBatchChange(
-	ctx context.Context,
-	opts ApplyBatchChangeOpts,
-) (batchChange *btypes.BatchChange, err error) {
+func (s *service) ApplyBatchChange(ctx context.Context, opts ApplyBatchChangeOpts) (batchChange *btypes.BatchChange, err error) {
 	tr, ctx := trace.New(ctx, "Service.ApplyBatchChange", opts.String())
 	defer func() {
 		tr.SetError(err)
@@ -166,10 +163,7 @@ func (s *Service) ApplyBatchChange(
 	return batchChange, nil
 }
 
-func (s *Service) ReconcileBatchChange(
-	ctx context.Context,
-	batchSpec *btypes.BatchSpec,
-) (batchChange *btypes.BatchChange, previousSpecID int64, err error) {
+func (s *service) ReconcileBatchChange(ctx context.Context, batchSpec *btypes.BatchSpec) (batchChange *btypes.BatchChange, previousSpecID int64, err error) {
 	batchChange, err = s.GetBatchChangeMatchingBatchSpec(ctx, batchSpec)
 	if err != nil {
 		return nil, 0, err
