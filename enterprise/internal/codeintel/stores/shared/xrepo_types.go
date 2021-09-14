@@ -1,4 +1,4 @@
-package lsifstore
+package shared
 
 // Package pairs a package name and the dump that provides it.
 type Package struct {
