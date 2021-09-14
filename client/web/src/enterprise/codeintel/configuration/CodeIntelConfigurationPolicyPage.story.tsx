@@ -19,6 +19,7 @@ const policy: CodeIntelligenceConfigurationPolicyFields = {
     name: "Eric's feature branches",
     type: GitObjectType.GIT_TREE,
     pattern: 'ef/',
+    protected: false,
     retentionEnabled: true,
     retentionDurationHours: 168,
     retainIntermediateCommits: true,
@@ -76,6 +77,12 @@ const defaults: Partial<CodeIntelConfigurationPolicyPageProps> = {
 export const GlobalPage = Template.bind({})
 GlobalPage.args = {
     ...defaults,
+}
+
+export const GlobalProtectedPage = Template.bind({})
+GlobalProtectedPage.args = {
+    ...defaults,
+    getPolicyById: () => of({ ...policy, protected: true }),
 }
 
 export const RepositoryPage = Template.bind({})

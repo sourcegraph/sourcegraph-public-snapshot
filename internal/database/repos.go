@@ -890,7 +890,7 @@ func (s *RepoStore) listSQL(ctx context.Context, opt ReposListOptions) (*sqlf.Qu
 		where = append(where, sqlf.Sprintf("archived"))
 	}
 	if opt.NoCloned {
-		where = append(where, sqlf.Sprintf("gr.clone_status = 'not_cloned'"))
+		where = append(where, sqlf.Sprintf("(gr.clone_status = 'not_cloned' OR gr.clone_status IS NULL)"))
 	}
 	if opt.OnlyCloned {
 		where = append(where, sqlf.Sprintf("gr.clone_status = 'cloned'"))

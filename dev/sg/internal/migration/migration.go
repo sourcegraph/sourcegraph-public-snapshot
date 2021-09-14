@@ -261,8 +261,7 @@ func ParseMigrationName(name string) (string, bool) {
 	return migrationName, true
 }
 
-const migrationFileTemplate = `
-BEGIN;
+const migrationFileTemplate = `BEGIN;
 
 -- Insert migration here. See README.md. Highlights:
 --  * Always use IF EXISTS. eg: DROP TABLE IF EXISTS global_dep_private;

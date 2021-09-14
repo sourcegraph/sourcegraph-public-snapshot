@@ -1,6 +1,6 @@
 # Current limitations of Code Insights (Beta limitations)
 
-Because code insights is currently a private [beta feature](../../admin/beta_and_prototype_features.md#beta-features), there are some limitations that we have not finished building solutions for yet. 
+Because code insights is currently a private [beta feature](../../admin/beta_and_experimental_features.md#beta-features), there are some limitations that we have not finished building solutions for yet. 
 
 If you have strong feedback, please do [let us know](mailto:feedback@sourcegraph.com). 
 

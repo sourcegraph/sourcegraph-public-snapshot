@@ -1,9 +1,10 @@
-import { concat, Observable, ReplaySubject } from 'rxjs'
-import { map, publishReplay, refCount } from 'rxjs/operators'
+import { ApolloQueryResult, ObservableQuery } from '@apollo/client'
+import { map, publishReplay, refCount, shareReplay } from 'rxjs/operators'
 
 import { Tooltip } from '@sourcegraph/branded/src/components/tooltip/Tooltip'
 import { createExtensionHost } from '@sourcegraph/shared/src/api/extension/worker'
-import { gql } from '@sourcegraph/shared/src/graphql/graphql'
+import { fromObservableQueryPromise } from '@sourcegraph/shared/src/graphql/fromObservableQuery'
+import { getDocumentNode, gql } from '@sourcegraph/shared/src/graphql/graphql'
 import * as GQL from '@sourcegraph/shared/src/graphql/schema'
 import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
 import { mutateSettings, updateSettings } from '@sourcegraph/shared/src/settings/edit'
@@ -20,17 +21,27 @@ import {
     appendSubtreeQueryParameter,
 } from '@sourcegraph/shared/src/util/url'
 
-import { getWebGraphQLClient, queryGraphQL, requestGraphQL } from '../backend/graphql'
+import { getWebGraphQLClient, requestGraphQL } from '../backend/graphql'
+import { ViewerSettingsResult, ViewerSettingsVariables } from '../graphql-operations'
 import { eventLogger } from '../tracking/eventLogger'
 
 /**
  * Creates the {@link PlatformContext} for the web app.
  */
 export function createPlatformContext(): PlatformContext {
-    const updatedSettings = new ReplaySubject<GQL.ISettingsCascade>(1)
+    const settingsQueryWatcherPromise = watchViewerSettingsQuery()
+
     const context: PlatformContext = {
-        settings: concat(fetchViewerSettings(), updatedSettings).pipe(map(gqlToCascade), publishReplay(1), refCount()),
+        settings: fromObservableQueryPromise(settingsQueryWatcherPromise).pipe(
+            map(mapViewerSettingsResult),
+            shareReplay(1),
+            map(gqlToCascade),
+            publishReplay(1),
+            refCount()
+        ),
         updateSettings: async (subject, edit) => {
+            const settingsQueryWatcher = await settingsQueryWatcherPromise
+
             // Unauthenticated users can't update settings. (In the browser extension, they can update client
             // settings even when not authenticated. The difference in behavior in the web app vs. browser
             // extension is why this logic lives here and not in shared/.)
@@ -53,13 +64,15 @@ export function createPlatformContext(): PlatformContext {
                 if (asError(error).message.includes('version mismatch')) {
                     // The user probably edited the settings in another tab, so
                     // try once more.
-                    updatedSettings.next(await fetchViewerSettings().toPromise())
+                    await settingsQueryWatcher.refetch()
                     await updateSettings(context, subject, edit, mutateSettings)
                 } else {
                     throw error
                 }
             }
-            updatedSettings.next(await fetchViewerSettings().toPromise())
+
+            // The error will be emitted to consumers from the `context.settings` observable.
+            settingsQueryWatcher.refetch().catch(error => console.error(error))
         },
         getGraphQLClient: getWebGraphQLClient,
         requestGraphQL: ({ request, variables }) => requestGraphQL(request, variables),
@@ -72,6 +85,7 @@ export function createPlatformContext(): PlatformContext {
         sideloadedExtensionURL: new LocalStorageSubject<string | null>('sideloadedExtensionURL', null),
         telemetryService: eventLogger,
     }
+
     return context
 }
 
@@ -83,6 +97,14 @@ function toPrettyWebBlobURL(
         Partial<RenderModeSpec>
 ): string {
     return appendSubtreeQueryParameter(toPrettyBlobURL(context))
+}
+
+function mapViewerSettingsResult({ data, errors }: ApolloQueryResult<ViewerSettingsResult>): GQL.ISettingsCascade {
+    if (!data?.viewerSettings) {
+        throw createAggregateError(errors)
+    }
+
+    return data.viewerSettings as GQL.ISettingsCascade
 }
 
 const settingsCascadeFragment = gql`
@@ -116,26 +138,22 @@ const settingsCascadeFragment = gql`
 `
 
 /**
- * Fetches the viewer's settings from the server. Callers should use settingsRefreshes#next instead of calling
+ * Creates Apollo query watcher for the viewer's settings. Watcher is used instead of the one-time query because we
+ * want to use cached response if it's available. Callers should use settingsRefreshes#next instead of calling
  * this function, to ensure that the result is propagated consistently throughout the app instead of only being
  * returned to the caller.
- *
- * @returns Observable that emits the settings
  */
-function fetchViewerSettings(): Observable<GQL.ISettingsCascade> {
-    return queryGraphQL(gql`
-        query ViewerSettings {
-            viewerSettings {
-                ...SettingsCascadeFields
+async function watchViewerSettingsQuery(): Promise<ObservableQuery<ViewerSettingsResult, ViewerSettingsVariables>> {
+    const graphQLClient = await getWebGraphQLClient()
+
+    return graphQLClient.watchQuery<ViewerSettingsResult, ViewerSettingsVariables>({
+        query: getDocumentNode(gql`
+            query ViewerSettings {
+                viewerSettings {
+                    ...SettingsCascadeFields
+                }
             }
-        }
-        ${settingsCascadeFragment}
-    `).pipe(
-        map(({ data, errors }) => {
-            if (!data?.viewerSettings) {
-                throw createAggregateError(errors)
-            }
-            return data.viewerSettings
-        })
-    )
+            ${settingsCascadeFragment}
+        `),
+    })
 }

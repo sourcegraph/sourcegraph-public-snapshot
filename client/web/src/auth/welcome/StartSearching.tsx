@@ -120,6 +120,12 @@ export const StartSearching: React.FunctionComponent<StartSearching> = ({
                     })
                     .catch(onError)
             }
+
+            const loggerPayload = {
+                userReposSelection: repoSelectionMode ? (repoSelectionMode === 'selected' ? 'specific' : 'all') : null,
+            }
+
+            eventLogger.log(getPostSignUpEvent('Repos_Saved'), loggerPayload, loggerPayload)
         }
     }, [externalServices, saveSelectedRepos, repoSelectionMode, onError, setSelectedSearchContextSpec, user.username])
 

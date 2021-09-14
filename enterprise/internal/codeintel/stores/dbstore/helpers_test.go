@@ -15,7 +15,7 @@ import (
 	"github.com/lib/pq"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/commitgraph"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/lsifstore"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/shared"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
@@ -207,7 +207,7 @@ func deleteRepo(t testing.TB, db *sql.DB, id int, deleted_at time.Time) {
 }
 
 // insertPackages populates the lsif_packages table with the given packages.
-func insertPackages(t testing.TB, store *Store, packages []lsifstore.Package) {
+func insertPackages(t testing.TB, store *Store, packages []shared.Package) {
 	for _, pkg := range packages {
 		if err := store.UpdatePackages(context.Background(), pkg.DumpID, []precise.Package{
 			{
@@ -222,7 +222,7 @@ func insertPackages(t testing.TB, store *Store, packages []lsifstore.Package) {
 }
 
 // insertPackageReferences populates the lsif_references table with the given package references.
-func insertPackageReferences(t testing.TB, store *Store, packageReferences []lsifstore.PackageReference) {
+func insertPackageReferences(t testing.TB, store *Store, packageReferences []shared.PackageReference) {
 	for _, packageReference := range packageReferences {
 		if err := store.UpdatePackageReferences(context.Background(), packageReference.DumpID, []precise.PackageReference{
 			{

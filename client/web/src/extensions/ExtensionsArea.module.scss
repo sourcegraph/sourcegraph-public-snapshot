@@ -1,0 +1,25 @@
+.extensions-area {
+    width: 100%;
+
+    :global(.card) :global(.filtered-connection__summary) {
+        padding-left: 0.5rem;
+        padding-right: 0.5rem;
+        margin-top: 0.5rem;
+        margin-bottom: 0.5rem;
+        color: var(--text-muted);
+    }
+
+    :global(.navbar-expand) {
+        padding-bottom: 0;
+        padding-top: 0.5rem;
+    }
+}
+
+.content {
+    height: 100%;
+}
+
+.title {
+    text-decoration: none !important;
+    color: var(--body-color);
+}

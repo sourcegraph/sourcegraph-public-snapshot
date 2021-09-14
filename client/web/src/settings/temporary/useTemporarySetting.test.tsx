@@ -36,7 +36,7 @@ describe('useTemporarySetting', () => {
         const settingsBackend = new InMemoryMockSettingsBackend({
             'search.collapsedSidebarSections': { filters: true, reference: false },
         })
-        const settingsStorage = new TemporarySettingsStorage(mockClient, null)
+        const settingsStorage = new TemporarySettingsStorage(mockClient, false)
         settingsStorage.setSettingsBackend(settingsBackend)
 
         const { result } = renderHook(() => useTemporarySetting('search.collapsedSidebarSections'), {
@@ -46,14 +46,13 @@ describe('useTemporarySetting', () => {
                 </TemporarySettingsContext.Provider>
             ),
         })
-
         const [value] = result.current
         expect(value).toEqual({ filters: true, reference: false })
     })
 
     it('should get undefined if data does not exist in storage', () => {
         const settingsBackend = new InMemoryMockSettingsBackend({})
-        const settingsStorage = new TemporarySettingsStorage(mockClient, null)
+        const settingsStorage = new TemporarySettingsStorage(mockClient, false)
         settingsStorage.setSettingsBackend(settingsBackend)
 
         const { result } = renderHook(() => useTemporarySetting('search.collapsedSidebarSections'), {
@@ -70,7 +69,7 @@ describe('useTemporarySetting', () => {
 
     it('should save data and update value', () => {
         const settingsBackend = new InMemoryMockSettingsBackend({})
-        const settingsStorage = new TemporarySettingsStorage(mockClient, null)
+        const settingsStorage = new TemporarySettingsStorage(mockClient, false)
         settingsStorage.setSettingsBackend(settingsBackend)
 
         const { result } = renderHook(() => useTemporarySetting('search.collapsedSidebarSections'), {
@@ -83,6 +82,7 @@ describe('useTemporarySetting', () => {
 
         const [, setValue] = result.current
         act(() => setValue({ filters: true, reference: false }))
+        act(() => setValue({ filters: true, reference: false }))
 
         const [value] = result.current
         expect(value).toEqual({ filters: true, reference: false })
@@ -90,7 +90,7 @@ describe('useTemporarySetting', () => {
 
     it('should update other hook values if changed in another hook', () => {
         const settingsBackend = new InMemoryMockSettingsBackend({})
-        const settingsStorage = new TemporarySettingsStorage(mockClient, null)
+        const settingsStorage = new TemporarySettingsStorage(mockClient, false)
         settingsStorage.setSettingsBackend(settingsBackend)
 
         const { result: result1 } = renderHook(() => useTemporarySetting('search.collapsedSidebarSections'), {
@@ -120,7 +120,7 @@ describe('useTemporarySetting', () => {
         const settingsBackend1 = new InMemoryMockSettingsBackend({
             'search.collapsedSidebarSections': { filters: true, reference: false },
         })
-        const settingsStorage = new TemporarySettingsStorage(mockClient, null)
+        const settingsStorage = new TemporarySettingsStorage(mockClient, false)
         settingsStorage.setSettingsBackend(settingsBackend1)
 
         const { result } = renderHook(() => useTemporarySetting('search.collapsedSidebarSections'), {

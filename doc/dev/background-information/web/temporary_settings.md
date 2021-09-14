@@ -64,6 +64,14 @@ similar to other hooks like `useState`. The value will be updated automatically 
 the user's authentication state changes or the setting is modified elsewhere in the
 application.
 
+An optional second argument can be provided to specify a default value if the
+setting hasn't been set yet.
+
+NOTE: Settings might be loaded asynchronously, in which case the initial value
+of the setting will be `undefined`. You might have to account for this in your
+component to prevent a flash of content. The optional default value is only used
+if the setting hasn't been set yet; it is *not* used as an initial value.
+
 #### Example usage:
 
 ```typescript
