@@ -18,8 +18,10 @@ import (
 	store "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/uploadstore"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/honey"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
@@ -31,6 +33,7 @@ type handler struct {
 	dbStore         DBStore
 	workerStore     dbworkerstore.Store
 	lsifStore       LSIFStore
+	repoStore       *database.Repos
 	uploadStore     uploadstore.Store
 	gitserverClient GitserverClient
 	enableBudget    bool
@@ -87,7 +90,12 @@ func (h *handler) handle(ctx context.Context, upload store.Upload) (requeued boo
 		}
 	}()
 
-	if requeued, err := requeueIfCloning(ctx, h.workerStore, upload); err != nil || requeued {
+	repo, err := h.repoStore.Get(ctx, api.RepoID(upload.RepositoryID))
+	if err != nil {
+		return false, errors.Wrap(err, "Repos.Get")
+	}
+
+	if requeued, err := requeueIfCloning(ctx, h.workerStore, upload, repo); err != nil || requeued {
 		return requeued, err
 	}
 
@@ -200,12 +208,7 @@ const CloneInProgressDelay = time.Minute
 // if the repo has finished cloning and the revision does not exist, then the upload will fail to process.
 // If the repo is currently cloning, then we'll requeue the upload to be tried again later. This will not
 // increase the reset count of the record (so this doesn't count against the upload as a legitimate attempt).
-func requeueIfCloning(ctx context.Context, workerStore dbworkerstore.Store, upload store.Upload) (requeued bool, _ error) {
-	repo, err := backend.Repos.Get(ctx, api.RepoID(upload.RepositoryID))
-	if err != nil {
-		return false, errors.Wrap(err, "Repos.Get")
-	}
-
+func requeueIfCloning(ctx context.Context, workerStore dbworkerstore.Store, upload store.Upload, repo *types.Repo) (requeued bool, _ error) {
 	if _, err := backend.Repos.ResolveRev(ctx, repo, upload.Commit); err != nil {
 		if !vcs.IsCloneInProgress(err) {
 			return false, errors.Wrap(err, "Repos.ResolveRev")

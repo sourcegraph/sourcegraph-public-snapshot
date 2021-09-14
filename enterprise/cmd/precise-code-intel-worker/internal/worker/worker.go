@@ -6,6 +6,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/uploadstore"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker"
 	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
@@ -18,6 +19,7 @@ func NewWorker(
 	dbStore DBStore,
 	workerStore dbworkerstore.Store,
 	lsifStore LSIFStore,
+	repoStore *database.RepoStore,
 	uploadStore uploadstore.Store,
 	gitserverClient GitserverClient,
 	pollInterval time.Duration,
@@ -31,6 +33,7 @@ func NewWorker(
 		dbStore:         dbStore,
 		workerStore:     workerStore,
 		lsifStore:       lsifStore,
+		repoStore:       repoStore,
 		uploadStore:     uploadStore,
 		gitserverClient: gitserverClient,
 		enableBudget:    budgetMax > 0,

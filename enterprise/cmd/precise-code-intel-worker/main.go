@@ -101,6 +101,7 @@ func main() {
 		&worker.DBStoreShim{Store: dbStore},
 		workerStore,
 		&worker.LSIFStoreShim{Store: lsifStore},
+		database.Repos(db),
 		uploadStore,
 		gitserverClient,
 		config.WorkerPollInterval,
