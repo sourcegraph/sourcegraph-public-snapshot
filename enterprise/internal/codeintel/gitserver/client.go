@@ -97,13 +97,11 @@ func (c *Client) RepoInfo(ctx context.Context, repos ...api.RepoName) (_ map[api
 	defer endObservation(1, observation.Args{})
 
 	resp, err := gitserver.DefaultClient.RepoInfo(ctx, repos...)
-	if err != nil {
-		if resp == nil {
-			return nil, err
-		}
-		return resp.Results, err
+	if resp == nil {
+		return nil, err
 	}
-	return resp.Results, nil
+
+	return resp.Results, err
 }
 
 type CommitGraph struct {
