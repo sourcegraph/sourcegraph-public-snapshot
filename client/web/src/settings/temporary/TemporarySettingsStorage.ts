@@ -1,6 +1,6 @@
 import { ApolloClient, gql } from '@apollo/client'
 import { isEqual } from 'lodash'
-import { Observable, of, Subscription, from, ReplaySubject } from 'rxjs'
+import { Observable, of, Subscription, from, ReplaySubject, Subscriber } from 'rxjs'
 import { distinctUntilChanged, map } from 'rxjs/operators'
 
 import { fromObservableQuery } from '@sourcegraph/shared/src/graphql/fromObservableQuery'
@@ -70,21 +70,47 @@ export interface SettingsBackend {
     save: (settings: TemporarySettings) => Observable<void>
 }
 
+/**
+ * Settings backend for unauthenticated users.
+ * Settings are stored in `localStorage` and updated when
+ * the `storage` event is fired on the window.
+ */
 class LocalStorageSettingsBackend implements SettingsBackend {
     private readonly TemporarySettingsKey = 'temporarySettings'
 
     public load(): Observable<TemporarySettings> {
-        try {
-            const settings = localStorage.getItem(this.TemporarySettingsKey)
-            if (settings) {
-                const parsedSettings = JSON.parse(settings) as TemporarySettings
-                return of(parsedSettings)
-            }
-        } catch (error: unknown) {
-            console.error(error)
-        }
+        return new Observable<TemporarySettings>(observer => {
+            let settingsLoaded = false
 
-        return of({})
+            const loadObserver = (observer: Subscriber<TemporarySettings>): void => {
+                try {
+                    const settings = localStorage.getItem(this.TemporarySettingsKey)
+                    if (settings) {
+                        const parsedSettings = JSON.parse(settings) as TemporarySettings
+                        observer.next(parsedSettings)
+                        settingsLoaded = true
+                    }
+                } catch (error: unknown) {
+                    console.error(error)
+                }
+
+                if (!settingsLoaded) {
+                    observer.next({})
+                }
+            }
+
+            loadObserver(observer)
+
+            const loadCallback = (): void => {
+                loadObserver(observer)
+            }
+
+            window.addEventListener('storage', loadCallback)
+
+            return () => {
+                window.removeEventListener('storage', loadCallback)
+            }
+        })
     }
 
     public save(settings: TemporarySettings): Observable<void> {
@@ -99,7 +125,13 @@ class LocalStorageSettingsBackend implements SettingsBackend {
     }
 }
 
+/**
+ * Settings backend for authenticated users that saves settings to the server.
+ * Changes to settings are polled every 5 minutes.
+ */
 class ServersideSettingsBackend implements SettingsBackend {
+    private readonly PollInterval = 1000 * 60 * 5 // 5 minutes
+
     private readonly GetTemporarySettingsQuery = gql`
         query GetTemporarySettings {
             temporarySettings {
@@ -121,6 +153,7 @@ class ServersideSettingsBackend implements SettingsBackend {
     public load(): Observable<TemporarySettings> {
         const temporarySettingsQuery = this.apolloClient.watchQuery<GetTemporarySettingsResult>({
             query: this.GetTemporarySettingsQuery,
+            pollInterval: this.PollInterval,
         })
 
         return fromObservableQuery(temporarySettingsQuery).pipe(
