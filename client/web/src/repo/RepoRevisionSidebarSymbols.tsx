@@ -67,15 +67,7 @@ const SymbolNode: React.FunctionComponent<SymbolNodeProps> = ({ node, location }
     )
 }
 
-interface RepoRevisionSidebarSymbolsProps extends Partial<RevisionSpec> {
-    repoID: Scalars['ID']
-    history: H.History
-    location: H.Location
-    /** The path of the file or directory currently shown in the content area */
-    activePath: string
-}
-
-const SYMBOLS_QUERY = gql`
+export const SYMBOLS_QUERY = gql`
     query Symbols($repo: ID!, $revision: String!, $first: Int, $query: String, $includePatterns: [String!]) {
         node(id: $repo) {
             __typename
@@ -90,6 +82,7 @@ const SYMBOLS_QUERY = gql`
     }
 
     fragment SymbolConnectionFields on SymbolConnection {
+        __typename
         pageInfo {
             hasNextPage
         }
@@ -99,6 +92,7 @@ const SYMBOLS_QUERY = gql`
     }
 
     fragment SymbolNodeFields on Symbol {
+        __typename
         name
         containerName
         kind
@@ -123,6 +117,12 @@ const SYMBOLS_QUERY = gql`
 `
 
 const BATCH_COUNT = 100
+
+export interface RepoRevisionSidebarSymbolsProps extends Partial<RevisionSpec> {
+    repoID: Scalars['ID']
+    /** The path of the file or directory currently shown in the content area */
+    activePath: string
+}
 
 export const RepoRevisionSidebarSymbols: React.FunctionComponent<RepoRevisionSidebarSymbolsProps> = ({
     repoID,
