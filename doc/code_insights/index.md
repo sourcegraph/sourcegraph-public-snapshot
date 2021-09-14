@@ -1,6 +1,6 @@
-# Code Insights <a href="../admin/beta_and_prototype_features"><sup><span class="badge badge-beta">Beta</span></sup></a>
+# Code Insights <a href="../admin/beta_and_experimental_features"><sup><span class="badge badge-beta">Beta</span></sup></a>
 
-Code Insights are currently in Private [Beta](../admin/beta_and_prototype_features.md).
+Code Insights are currently in Private [Beta](../admin/beta_and_experimental_features.md).
 
 If you're a customer who wants early access or needs support, please [send us an email](mailto:feedback@sourcegraph.com).
 

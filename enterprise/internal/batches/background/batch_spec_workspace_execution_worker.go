@@ -14,6 +14,7 @@ import (
 	"github.com/keegancsmith/sqlf"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
+	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
@@ -55,6 +56,7 @@ var batchSpecWorkspaceExecutionWorkerStoreOptions = dbworkerstore.Options{
 
 type BatchSpecWorkspaceExecutionWorkerStore interface {
 	dbworkerstore.Store
+	FetchCanceled(ctx context.Context, executorName string) (canceledIDs []int, err error)
 }
 
 // NewBatchSpecWorkspaceExecutionWorkerStore creates a dbworker store that
@@ -151,6 +153,26 @@ func (s *batchSpecWorkspaceExecutionWorkerStore) MarkComplete(ctx context.Contex
 	// Mark batch_spec_workspace_execution_jobs as completed
 	_, ok, err := basestore.ScanFirstInt(tx.Query(ctx, sqlf.Sprintf(markBatchSpecWorkspaceExecutionJobCompleteQuery, id, options.WorkerHostname)))
 	return ok, err
+}
+
+func (s *batchSpecWorkspaceExecutionWorkerStore) FetchCanceled(ctx context.Context, executorName string) (canceledIDs []int, err error) {
+	batchesStore := store.New(s.Store.Handle().DB(), s.observationContext, nil)
+
+	t := true
+	cs, err := batchesStore.ListBatchSpecWorkspaceExecutionJobs(ctx, store.ListBatchSpecWorkspaceExecutionJobsOpts{
+		Cancel:         &t,
+		State:          btypes.BatchSpecWorkspaceExecutionJobStateProcessing,
+		WorkerHostname: executorName,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	ids := make([]int, 0, len(cs))
+	for _, c := range cs {
+		ids = append(ids, c.RecordID())
+	}
+	return ids, nil
 }
 
 func loadAndExtractChangesetSpecIDs(ctx context.Context, s *store.Store, id int64) ([]int64, error) {
