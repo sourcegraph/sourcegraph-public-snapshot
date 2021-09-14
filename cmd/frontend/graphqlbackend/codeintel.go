@@ -205,6 +205,7 @@ type CodeIntelligenceRangeResolver interface {
 	Range(ctx context.Context) (RangeResolver, error)
 	Definitions(ctx context.Context) (LocationConnectionResolver, error)
 	References(ctx context.Context) (LocationConnectionResolver, error)
+	Implementations(ctx context.Context) (LocationConnectionResolver, error)
 	Hover(ctx context.Context) (HoverResolver, error)
 	Documentation(ctx context.Context) (DocumentationResolver, error)
 }

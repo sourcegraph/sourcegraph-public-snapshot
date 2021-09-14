@@ -1518,6 +1518,22 @@ declare module 'sourcegraph' {
     }
 
     /**
+     * The implementation provider interface defines the contract between extensions and
+     * the [find implementation](https://code.visualstudio.com/docs/editor/editingevolved#_peek)-feature.
+     */
+    export interface ImplementationProvider {
+        /**
+         * Provides a set of workspace-wide implementations for the given position in a document.
+         *
+         * @param document The document in which the command was invoked.
+         * @param position The position at which the command was invoked.
+         * @param context Additional information and parameters for the request.
+         * @returns An array of reference locations.
+         */
+        provideImplementations(document: TextDocument, position: Position): ProviderResult<Badged<Location>[]>
+    }
+
+    /**
      * A location provider implements features such as "find implementations" and "find type definition". It is the
      * general form of {@link DefinitionProvider} and {@link ReferenceProvider}.
      */
@@ -1684,6 +1700,22 @@ declare module 'sourcegraph' {
         export function registerReferenceProvider(
             selector: DocumentSelector,
             provider: ReferenceProvider
+        ): Unsubscribable
+
+        /**
+         * Registers a implementation provider.
+         *
+         * Multiple providers can be registered for a language. In that case, providers are queried in parallel and
+         * the results are merged. A failing provider (rejected promise or exception) will not cause the whole
+         * operation to fail.
+         *
+         * @param selector A selector that defines the documents this provider is applicable to.
+         * @param provider A implementation provider.
+         * @returns An unsubscribable to unregister this provider.
+         */
+        export function registerImplementationProvider(
+            selector: DocumentSelector,
+            provider: ImplementationProvider
         ): Unsubscribable
 
         /**

@@ -185,11 +185,33 @@ export function createExtensionHostAPI(state: ExtensionHostState): FlatExtension
                 )
             )
         },
+        getImplementations: (textParameters: TextDocumentPositionParameters) => {
+            const document = getTextDocument(textParameters.textDocument.uri)
+            const position = toPosition(textParameters.position)
+
+            return proxySubscribable(
+                callProviders(
+                    state.implementationProviders,
+                    providers => providersForDocument(document, providers, ({ selector }) => selector),
+                    ({ provider }) => provider.provideImplementations(document, position),
+                    results => mergeProviderResults(results).map(fromLocation)
+                )
+            )
+        },
         hasReferenceProvidersForDocument: (textParameters: TextDocumentPositionParameters) => {
             const document = getTextDocument(textParameters.textDocument.uri)
 
             return proxySubscribable(
                 state.referenceProviders.pipe(
+                    map(providers => providersForDocument(document, providers, ({ selector }) => selector).length !== 0)
+                )
+            )
+        },
+        hasImplementationProvidersForDocument: (textParameters: TextDocumentPositionParameters) => {
+            const document = getTextDocument(textParameters.textDocument.uri)
+
+            return proxySubscribable(
+                state.implementationProviders.pipe(
                     map(providers => providersForDocument(document, providers, ({ selector }) => selector).length !== 0)
                 )
             )
