@@ -12,12 +12,13 @@ import { CodeIntelligenceConfigurationPolicyFields } from '../../../graphql-oper
 import styles from './CodeIntelligencePolicyTable.module.scss'
 import { IndexingPolicyDescription } from './IndexingPolicyDescription'
 import { RetentionPolicyDescription } from './RetentionPolicyDescription'
+import { DeletePolicyResult } from './usePoliciesConfigurations'
 
 export interface CodeIntelligencePolicyTableProps {
     indexingEnabled: boolean
     disabled: boolean
     policies: CodeIntelligenceConfigurationPolicyFields[]
-    deletePolicy?: (id: string, name: string) => Promise<void>
+    onDeletePolicy?: (id: string, name: string) => DeletePolicyResult
     history: H.History
 }
 
@@ -25,7 +26,7 @@ export const CodeIntelligencePolicyTable: FunctionComponent<CodeIntelligencePoli
     indexingEnabled,
     disabled,
     policies,
-    deletePolicy,
+    onDeletePolicy,
     history,
 }) => (
     <div className={classNames(styles.grid, 'mb-3')}>
@@ -71,7 +72,7 @@ export const CodeIntelligencePolicyTable: FunctionComponent<CodeIntelligencePoli
                 </div>
 
                 <span className={classNames(styles.button, 'd-none d-md-inline')}>
-                    {deletePolicy && (
+                    {onDeletePolicy && (
                         <Button
                             onClick={() => history.push(`./configuration/${policy.id}`)}
                             className="p-0"
@@ -82,9 +83,9 @@ export const CodeIntelligencePolicyTable: FunctionComponent<CodeIntelligencePoli
                     )}
                 </span>
                 <span className={classNames(styles.button, 'd-none d-md-inline')}>
-                    {deletePolicy && !policy.protected && (
+                    {onDeletePolicy && !policy.protected && (
                         <Button
-                            onClick={() => deletePolicy(policy.id, policy.name)}
+                            onClick={() => onDeletePolicy(policy.id, policy.name)}
                             className="ml-2 p-0"
                             disabled={disabled}
                         >
