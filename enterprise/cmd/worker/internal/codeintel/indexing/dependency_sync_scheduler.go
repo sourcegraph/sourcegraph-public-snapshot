@@ -72,8 +72,8 @@ func (h *dependencySyncSchedulerHandler) Handle(ctx context.Context, record work
 		kinds                      = map[string]struct{}{}
 		oldDependencyReposInserted int
 		newDependencyReposInserted int
+		errs                       []error
 	)
-	var errs []error
 
 	for {
 		packageReference, exists, err := scanner.Next()
