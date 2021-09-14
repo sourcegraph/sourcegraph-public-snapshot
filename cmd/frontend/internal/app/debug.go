@@ -158,7 +158,7 @@ func addJaeger(r *mux.Router, db dbutil.DB) {
 
 func addZoekt(r *mux.Router, db dbutil.DB) {
 	h, err := zoektweb.NewMux(&zoektweb.Server{
-		Searcher: search.Indexed().Client,
+		Searcher: search.Indexed(),
 		Top:      zoektweb.Top,
 		Print:    true,
 		HTML:     true,

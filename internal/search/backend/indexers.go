@@ -6,6 +6,8 @@ import (
 	"strings"
 
 	"github.com/cockroachdb/errors"
+	"github.com/google/zoekt"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 // EndpointMap is the subset of endpoint.Map (consistent hashmap) methods we
@@ -13,8 +15,8 @@ import (
 type EndpointMap interface {
 	// Endpoints returns a list of all addresses. Do not modify the returned value.
 	Endpoints() ([]string, error)
-	// GetMany returns the endpoint for each key. (consistent hashing).
-	GetMany(...string) ([]string, error)
+	// Get returns the endpoint for the key. (consistent hashing).
+	Get(string) (string, error)
 }
 
 // Indexers provides methods over the set of indexed-search servers in a
@@ -25,7 +27,7 @@ type Indexers struct {
 
 	// Indexed returns a set of repository names currently indexed on
 	// endpoint. If indexed fails, it is expected to return an empty set.
-	Indexed func(ctx context.Context, endpoint string) map[string]struct{}
+	Indexed func(ctx context.Context, endpoint string) map[uint32]*zoekt.MinimalRepoListEntry
 }
 
 // ReposSubset returns the subset of repoNames that hostname should index.
@@ -35,9 +37,9 @@ type Indexers struct {
 // indexed is the set of repositories currently indexed by hostname.
 //
 // An error is returned if hostname is not part of the Indexers endpoints.
-func (c *Indexers) ReposSubset(ctx context.Context, hostname string, indexed map[string]struct{}, repoNames []string) ([]string, error) {
+func (c *Indexers) ReposSubset(ctx context.Context, hostname string, indexed map[uint32]*zoekt.MinimalRepoListEntry, repos []types.RepoName) ([]types.RepoName, error) {
 	if !c.Enabled() {
-		return repoNames, nil
+		return repos, nil
 	}
 
 	eps, err := c.Map.Endpoints()
@@ -50,33 +52,33 @@ func (c *Indexers) ReposSubset(ctx context.Context, hostname string, indexed map
 		return nil, err
 	}
 
-	assigned, err := c.Map.GetMany(repoNames...)
-	if err != nil {
-		return nil, err
-	}
-
 	// Rebalancing: Other contains all repositories endpoint has indexed which
 	// it should drop. We will only drop them if the assigned endpoint has
 	// indexed it. This is to prevent dropping a computed index until
 	// rebalancing is finished.
-	other := map[string][]string{}
+	other := map[string][]types.RepoName{}
 
-	subset := repoNames[:0]
-	for i, name := range repoNames {
-		if assigned[i] == endpoint {
-			subset = append(subset, name)
-		} else if _, ok := indexed[name]; ok {
-			other[assigned[i]] = append(other[assigned[i]], name)
+	subset := repos[:0]
+	for _, r := range repos {
+		assigned, err := c.Map.Get(string(r.Name))
+		if err != nil {
+			return nil, err
+		}
+
+		if assigned == endpoint {
+			subset = append(subset, r)
+		} else if _, ok := indexed[uint32(r.ID)]; ok {
+			other[assigned] = append(other[assigned], r)
 		}
 	}
 
 	// Only include repos from other if the assigned endpoint has not yet
 	// indexed the repository.
-	for assignedEndpoint, repoNames := range other {
-		drop := c.Indexed(ctx, assignedEndpoint)
-		for _, name := range repoNames {
-			if _, ok := drop[name]; !ok {
-				subset = append(subset, name)
+	for assigned, otherRepos := range other {
+		drop := c.Indexed(ctx, assigned)
+		for _, r := range otherRepos {
+			if _, ok := drop[uint32(r.ID)]; !ok {
+				subset = append(subset, r)
 			}
 		}
 	}

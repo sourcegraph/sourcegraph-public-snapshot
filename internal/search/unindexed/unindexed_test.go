@@ -80,7 +80,7 @@ func TestSearchFilesInRepos(t *testing.T) {
 	}
 	defer func() { mockSearchFilesInRepo = nil }()
 
-	zoekt := &searchbackend.Zoekt{Client: &searchbackend.FakeSearcher{}}
+	zoekt := &searchbackend.FakeSearcher{}
 
 	q, err := query.ParseLiteral("foo")
 	if err != nil {
@@ -177,7 +177,7 @@ func TestSearchFilesInReposStream(t *testing.T) {
 	}
 	defer func() { mockSearchFilesInRepo = nil }()
 
-	zoekt := &searchbackend.Zoekt{Client: &searchbackend.FakeSearcher{}}
+	zoekt := &searchbackend.FakeSearcher{}
 
 	q, err := query.ParseLiteral("foo")
 	if err != nil {
@@ -246,7 +246,7 @@ func TestSearchFilesInRepos_multipleRevsPerRepo(t *testing.T) {
 	}})
 	defer conf.Mock(nil)
 
-	zoekt := &searchbackend.Zoekt{Client: &searchbackend.FakeSearcher{}}
+	zoekt := &searchbackend.FakeSearcher{}
 
 	q, err := query.ParseLiteral("foo")
 	if err != nil {

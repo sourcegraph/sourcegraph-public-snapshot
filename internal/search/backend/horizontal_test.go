@@ -461,6 +461,6 @@ func (m *atomicMap) Endpoints() ([]string, error) {
 	return m.Value.Load().(EndpointMap).Endpoints()
 }
 
-func (m *atomicMap) GetMany(keys ...string) ([]string, error) {
-	return m.Value.Load().(EndpointMap).GetMany(keys...)
+func (m *atomicMap) Get(key string) (string, error) {
+	return m.Value.Load().(EndpointMap).Get(key)
 }
