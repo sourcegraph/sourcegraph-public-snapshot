@@ -192,7 +192,7 @@ export function useBlobPanelViews({
                     provider: createLocationProvider('implementations', 'Implementations', 190, parameters =>
                         from(extensionsController.extHostAPI).pipe(
                             switchMap(extensionHostAPI =>
-                                wrapRemoteObservable(extensionHostAPI.getDefinition(parameters))
+                                wrapRemoteObservable(extensionHostAPI.getImplementations(parameters))
                             )
                         )
                     ),
