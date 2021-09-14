@@ -37,8 +37,8 @@ describe('Code monitoring', () => {
                 autoDefinedSearchContexts: [],
             }),
             ViewerSettings: () => ({
-                __typename: 'SettingsCascade',
                 viewerSettings: {
+                    __typename: 'SettingsCascade',
                     subjects: [
                         {
                             __typename: 'DefaultSettings',
