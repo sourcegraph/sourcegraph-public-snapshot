@@ -109,8 +109,6 @@ export const RepoRevisionSidebar: React.FunctionComponent<Props> = props => {
                                             repoID={props.repoID}
                                             revision={props.revision}
                                             activePath={props.filePath}
-                                            history={props.history}
-                                            location={props.location}
                                         />
                                     )}
                                 </TabPanel>

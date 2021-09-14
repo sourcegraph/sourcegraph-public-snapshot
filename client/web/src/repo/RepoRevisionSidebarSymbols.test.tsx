@@ -1,8 +1,7 @@
 import { MockedResponse } from '@apollo/client/testing'
-import { cleanup, render, RenderResult, fireEvent } from '@testing-library/react'
+import { cleanup, fireEvent } from '@testing-library/react'
 import { escapeRegExp } from 'lodash'
 import React from 'react'
-import { MemoryRouter } from 'react-router'
 
 import { SymbolKind } from '@sourcegraph/shared/src/graphql-operations'
 import { getDocumentNode } from '@sourcegraph/shared/src/graphql/graphql'
