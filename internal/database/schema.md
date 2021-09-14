@@ -158,6 +158,7 @@ Foreign-key constraints:
  last_heartbeat_at       | timestamp with time zone |           |          | 
  created_at              | timestamp with time zone |           | not null | now()
  updated_at              | timestamp with time zone |           | not null | now()
+ cancel                  | boolean                  |           | not null | false
 Indexes:
     "batch_spec_workspace_execution_jobs_pkey" PRIMARY KEY, btree (id)
 Foreign-key constraints:
