@@ -100,7 +100,7 @@ stdout: {"operation":"UPLOADING_CHANGESET_SPECS","timestamp":"2021-09-09T13:20:3
 			}
 		}
 
-		have, err := loadAndExtractChangesetSpecIDs(context.Background(), s, job.ID)
+		_, have, err := loadAndExtractChangesetSpecIDs(context.Background(), s, job.ID)
 		if err != nil {
 			t.Fatalf("unexpected error: %s", err)
 		}
@@ -119,7 +119,7 @@ stdout: {"operation":"UPLOADING_CHANGESET_SPECS","timestamp":"2021-09-09T13:20:3
 			t.Fatal(err)
 		}
 
-		_, err := loadAndExtractChangesetSpecIDs(context.Background(), s, job.ID)
+		_, _, err := loadAndExtractChangesetSpecIDs(context.Background(), s, job.ID)
 		if err == nil {
 			t.Fatalf("expected error but got none")
 		}
