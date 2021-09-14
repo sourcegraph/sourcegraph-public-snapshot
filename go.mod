@@ -19,10 +19,9 @@ require (
 	github.com/mitchellh/copystructure v1.2.0
 	github.com/neelance/parallel v0.0.0-20160708114440-4de9ce63d14c
 	github.com/pkg/browser v0.0.0-20180916011732-0a3d74bf9ce4
-	github.com/sourcegraph/batch-change-utils v0.0.0-20210708162152-c9f35b905d94
 	github.com/sourcegraph/go-diff v0.6.1
 	github.com/sourcegraph/jsonx v0.0.0-20200629203448-1a936bd500cf
-	github.com/sourcegraph/sourcegraph/lib v0.0.0-20210908093416-2bfda92388c7
+	github.com/sourcegraph/sourcegraph/lib v0.0.0-20210914094904-648e35b48ded
 	github.com/ssor/bom v0.0.0-20170718123548-6386211fdfcf // indirect
 	github.com/xeipuuv/gojsonpointer v0.0.0-20190905194746-02993c407bfb // indirect
 	golang.org/x/net v0.0.0-20210614182718-04defd469f4e

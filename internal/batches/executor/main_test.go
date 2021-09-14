@@ -1,8 +1,9 @@
 package executor
 
 import (
-	"github.com/sourcegraph/batch-change-utils/overridable"
 	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
+	"github.com/sourcegraph/sourcegraph/lib/batches/overridable"
+
 	"github.com/sourcegraph/src-cli/internal/batches/graphql"
 )
 
