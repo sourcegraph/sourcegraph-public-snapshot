@@ -161,6 +161,7 @@ Foreign-key constraints:
  cancel                  | boolean                  |           | not null | false
 Indexes:
     "batch_spec_workspace_execution_jobs_pkey" PRIMARY KEY, btree (id)
+    "batch_spec_workspace_execution_jobs_cancel" btree (cancel)
 Foreign-key constraints:
     "batch_spec_workspace_execution_job_batch_spec_workspace_id_fkey" FOREIGN KEY (batch_spec_workspace_id) REFERENCES batch_spec_workspaces(id) ON DELETE CASCADE DEFERRABLE
 
