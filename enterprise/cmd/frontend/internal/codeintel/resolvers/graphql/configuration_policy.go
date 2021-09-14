@@ -45,6 +45,10 @@ func (r *configurationPolicyResolver) Pattern() string {
 	return r.configurationPolicy.Pattern
 }
 
+func (r *configurationPolicyResolver) Protected() bool {
+	return r.configurationPolicy.Protected
+}
+
 func (r *configurationPolicyResolver) RetentionEnabled() bool {
 	return r.configurationPolicy.RetentionEnabled
 }

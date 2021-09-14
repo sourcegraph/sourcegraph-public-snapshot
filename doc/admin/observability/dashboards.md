@@ -6333,6 +6333,75 @@ Query: `sum(increase(src_codeintel_dependency_index_processor_errors_total{job=~
 
 ### Worker: [codeintel] Janitor stats
 
+#### worker: codeintel_background_repositories_scanned_total
+
+<p class="subtitle">Repository records scanned every 5m
+
+</p>
+
+Number of repositories considered for data retention scanning every 5m
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=100500` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Code-intel team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum(increase(src_codeintel_background_repositories_scanned_total{job=~"^worker.*"}[5m]))`
+
+</details>
+
+<br />
+
+#### worker: codeintel_background_upload_records_scanned_total
+
+<p class="subtitle">Lsif upload records scanned every 5m
+
+</p>
+
+Number of upload recrods considered for data retention scanning every 5m
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=100501` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Code-intel team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum(increase(src_codeintel_background_upload_records_scanned_total{job=~"^worker.*"}[5m]))`
+
+</details>
+
+<br />
+
+#### worker: codeintel_background_upload_records_expired_total
+
+<p class="subtitle">Lsif upload records expired every 5m
+
+</p>
+
+Number of upload records found to be expired every 5m
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=100502` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Code-intel team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum(increase(src_codeintel_background_upload_records_expired_total{job=~"^worker.*"}[5m]))`
+
+</details>
+
+<br />
+
 #### worker: codeintel_background_upload_records_removed_total
 
 <p class="subtitle">Lsif upload records deleted every 5m
@@ -6343,7 +6412,7 @@ Number of LSIF upload records deleted due to expiration or unreachability every 
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=100500` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=100510` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Code-intel team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
 
@@ -6366,7 +6435,7 @@ Number of LSIF index records deleted due to expiration or unreachability every 5
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=100501` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=100511` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Code-intel team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
 
@@ -6389,7 +6458,7 @@ Number of LSIF upload data bundles purged from the codeintel-db database every 5
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=100502` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=100512` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Code-intel team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
 
@@ -6412,7 +6481,7 @@ Number of code intelligence janitor errors every 5m
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=100503` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=100513` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Code-intel team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
 

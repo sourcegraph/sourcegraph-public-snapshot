@@ -89,6 +89,7 @@ const AuthenticatedSiteAdminArea: React.FunctionComponent<SiteAdminAreaProps> = 
         isLightTheme: props.isLightTheme,
         isSourcegraphDotCom: props.isSourcegraphDotCom,
         batchChangesEnabled: props.batchChangesEnabled,
+        batchChangesExecutionEnabled: props.batchChangesExecutionEnabled,
         activation: props.activation,
         site: { __typename: 'Site' as const, id: window.context.siteGQLID },
         overviewComponents: props.overviewComponents,
@@ -104,6 +105,7 @@ const AuthenticatedSiteAdminArea: React.FunctionComponent<SiteAdminAreaProps> = 
                     groups={props.sideBarGroups}
                     isSourcegraphDotCom={props.isSourcegraphDotCom}
                     batchChangesEnabled={props.batchChangesEnabled}
+                    batchChangesExecutionEnabled={props.batchChangesExecutionEnabled}
                 />
                 <div className="flex-bounded">
                     <ErrorBoundary location={props.location}>

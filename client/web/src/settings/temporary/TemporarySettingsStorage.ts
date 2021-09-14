@@ -3,6 +3,8 @@ import { isEqual } from 'lodash'
 import { Observable, of, Subscription, from, ReplaySubject, Subscriber } from 'rxjs'
 import { distinctUntilChanged, map } from 'rxjs/operators'
 
+import { fromObservableQuery } from '@sourcegraph/shared/src/graphql/fromObservableQuery'
+
 import { GetTemporarySettingsResult } from '../../graphql-operations'
 
 import { TemporarySettings } from './TemporarySettings'
@@ -149,35 +151,25 @@ class ServersideSettingsBackend implements SettingsBackend {
     constructor(private apolloClient: ApolloClient<object>) {}
 
     public load(): Observable<TemporarySettings> {
-        return new Observable<TemporarySettings>(observer => {
-            const subscription = this.apolloClient
-                .watchQuery<GetTemporarySettingsResult>({
-                    query: this.GetTemporarySettingsQuery,
-                    pollInterval: this.PollInterval,
-                })
-                .subscribe({
-                    next: result => {
-                        let parsedSettings: TemporarySettings = {}
-                        try {
-                            const settings = result.data.temporarySettings.contents
-                            parsedSettings = JSON.parse(settings) as TemporarySettings
-                        } catch (error: unknown) {
-                            console.error(error)
-                        }
-
-                        observer.next(parsedSettings || {})
-                    },
-                    error: error => {
-                        console.error(error)
-                        observer.error(error)
-                    },
-                    complete: () => {
-                        observer.complete()
-                    },
-                })
-
-            return () => subscription.unsubscribe()
+        const temporarySettingsQuery = this.apolloClient.watchQuery<GetTemporarySettingsResult>({
+            query: this.GetTemporarySettingsQuery,
+            pollInterval: this.PollInterval,
         })
+
+        return fromObservableQuery(temporarySettingsQuery).pipe(
+            map(({ data }) => {
+                let parsedSettings: TemporarySettings = {}
+
+                try {
+                    const settings = data.temporarySettings.contents
+                    parsedSettings = JSON.parse(settings) as TemporarySettings
+                } catch (error: unknown) {
+                    console.error(error)
+                }
+
+                return parsedSettings || {}
+            })
+        )
     }
 
     public save(settings: TemporarySettings): Observable<void> {

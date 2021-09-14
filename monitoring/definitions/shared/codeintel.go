@@ -661,6 +661,28 @@ func (codeIntelligence) NewJanitorGroup(containerName string) monitoring.Group {
 		Hidden: true,
 		Rows: []monitoring.Row{
 			{
+				Standard.Count("records scanned")(ObservableConstructorOptions{
+					MetricNameRoot:        "codeintel_background_repositories_scanned",
+					MetricDescriptionRoot: "repository",
+				})(containerName, monitoring.ObservableOwnerCodeIntel).WithNoAlerts(`
+					Number of repositories considered for data retention scanning every 5m
+				`).Observable(),
+
+				Standard.Count("records scanned")(ObservableConstructorOptions{
+					MetricNameRoot:        "codeintel_background_upload_records_scanned",
+					MetricDescriptionRoot: "lsif upload",
+				})(containerName, monitoring.ObservableOwnerCodeIntel).WithNoAlerts(`
+					Number of upload recrods considered for data retention scanning every 5m
+				`).Observable(),
+
+				Standard.Count("records expired")(ObservableConstructorOptions{
+					MetricNameRoot:        "codeintel_background_upload_records_expired",
+					MetricDescriptionRoot: "lsif upload",
+				})(containerName, monitoring.ObservableOwnerCodeIntel).WithNoAlerts(`
+					Number of upload records found to be expired every 5m
+				`).Observable(),
+			},
+			{
 				Standard.Count("records deleted")(ObservableConstructorOptions{
 					MetricNameRoot:        "codeintel_background_upload_records_removed",
 					MetricDescriptionRoot: "lsif upload",

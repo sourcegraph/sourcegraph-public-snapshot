@@ -100,7 +100,7 @@ func TestStatusMessages(t *testing.T) {
 			res: []StatusMessage{
 				{
 					Cloning: &CloningProgress{
-						Message: "1 repository cloning...",
+						Message: "Some repositories cloning...",
 					},
 				},
 			},
@@ -117,7 +117,7 @@ func TestStatusMessages(t *testing.T) {
 			res: []StatusMessage{
 				{
 					Cloning: &CloningProgress{
-						Message: "1 repository cloning...",
+						Message: "Some repositories cloning...",
 					},
 				},
 			},
@@ -132,7 +132,7 @@ func TestStatusMessages(t *testing.T) {
 			res: []StatusMessage{
 				{
 					Cloning: &CloningProgress{
-						Message: "1 repository cloning...",
+						Message: "Some repositories cloning...",
 					},
 				},
 			},
@@ -156,7 +156,7 @@ func TestStatusMessages(t *testing.T) {
 			res: []StatusMessage{
 				{
 					Cloning: &CloningProgress{
-						Message: "2 repositories cloning...",
+						Message: "Some repositories cloning...",
 					},
 				},
 			},
@@ -174,7 +174,7 @@ func TestStatusMessages(t *testing.T) {
 			res: []StatusMessage{
 				{
 					SyncError: &SyncError{
-						Message: "1 repository could not be synced",
+						Message: "Some repositories could not be synced",
 					},
 				},
 			},
@@ -192,7 +192,7 @@ func TestStatusMessages(t *testing.T) {
 			res: []StatusMessage{
 				{
 					SyncError: &SyncError{
-						Message: "2 repositories could not be synced",
+						Message: "Some repositories could not be synced",
 					},
 				},
 			},
