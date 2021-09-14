@@ -145,7 +145,10 @@ func testStoreBatchSpecWorkspaceExecutionJobs(t *testing.T, ctx context.Context,
 
 	t.Run("CancelBatchSpecWorkspaceExecutionJob", func(t *testing.T) {
 		t.Run("Queued", func(t *testing.T) {
-			record, err := s.CancelBatchSpecWorkspaceExecutionJob(ctx, jobs[1].ID)
+			if err := s.Exec(ctx, sqlf.Sprintf("UPDATE batch_spec_workspace_execution_jobs SET state = 'queued', started_at = NULL, finished_at = NULL WHERE id = %s", jobs[0].ID)); err != nil {
+				t.Fatal(err)
+			}
+			record, err := s.CancelBatchSpecWorkspaceExecutionJob(ctx, jobs[0].ID)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -166,6 +169,9 @@ func testStoreBatchSpecWorkspaceExecutionJobs(t *testing.T, ctx context.Context,
 		})
 
 		t.Run("Processing", func(t *testing.T) {
+			if err := s.Exec(ctx, sqlf.Sprintf("UPDATE batch_spec_workspace_execution_jobs SET state = 'processing', started_at = now(), finished_at = NULL WHERE id = %s", jobs[0].ID)); err != nil {
+				t.Fatal(err)
+			}
 			record, err := s.CancelBatchSpecWorkspaceExecutionJob(ctx, jobs[0].ID)
 			if err != nil {
 				t.Fatal(err)
