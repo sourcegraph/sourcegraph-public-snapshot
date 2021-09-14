@@ -1242,8 +1242,6 @@ func (s *Server) cloneRepo(ctx context.Context, repo api.RepoName, opts *cloneOp
 		return "", err
 	}
 
-	redactor := newURLRedactor(remoteURL)
-
 	// isCloneable causes a network request, so we limit the number that can
 	// run at one time. We use a separate semaphore to cloning since these
 	// checks being blocked by a few slow clones will lead to poor feedback to
@@ -1260,7 +1258,8 @@ func (s *Server) cloneRepo(ctx context.Context, repo api.RepoName, opts *cloneOp
 	}
 
 	if err := syncer.IsCloneable(ctx, remoteURL); err != nil {
-		return "", errors.Errorf("error cloning repo: repo %s not cloneable: %s", repo, redactor.redact(err.Error()))
+		redactedErr := newURLRedactor(remoteURL).redact(err.Error())
+		return "", errors.Errorf("error cloning repo: repo %s not cloneable: %s", repo, redactedErr)
 	}
 
 	// Mark this repo as currently being cloned. We have to check again if someone else isn't already
@@ -1281,127 +1280,10 @@ func (s *Server) cloneRepo(ctx context.Context, repo api.RepoName, opts *cloneOp
 	// We clone to a temporary location first to avoid having incomplete
 	// clones in the repo tree. This also avoids leaving behind corrupt clones
 	// if the clone is interrupted.
-	doClone := func(ctx context.Context) error {
-		defer lock.Release()
-
-		ctx, cancel1, err := s.acquireCloneLimiter(ctx)
-		if err != nil {
-			return err
-		}
-		defer cancel1()
-
-		if err = s.rpsLimiter.Wait(ctx); err != nil {
-			return err
-		}
-
-		ctx, cancel2 := context.WithTimeout(ctx, longGitCommandTimeout)
-		defer cancel2()
-
-		dstPath := string(dir)
-		overwrite := opts != nil && opts.Overwrite
-		if !overwrite {
-			// We clone to a temporary directory first, so avoid wasting resources
-			// if the directory already exists.
-			if _, err := os.Stat(dstPath); err == nil {
-				return &os.PathError{
-					Op:   "cloneRepo",
-					Path: dstPath,
-					Err:  os.ErrExist,
-				}
-			}
-		}
-
-		tmpPath, err := s.tempDir("clone-")
-		if err != nil {
-			return err
-		}
-		defer os.RemoveAll(tmpPath)
-		tmpPath = filepath.Join(tmpPath, ".git")
-		tmp := GitDir(tmpPath)
-
-		// It may already be cloned
-		if !repoCloned(dir) {
-			s.setCloneStatusNonFatal(ctx, repo, types.CloneStatusCloning)
-		}
-		defer func() {
-			// Use a background context to ensure we still update the DB even if we time out
-			s.setCloneStatusNonFatal(context.Background(), repo, cloneStatus(repoCloned(dir), false))
-		}()
-
-		cmd, err := syncer.CloneCommand(ctx, remoteURL, tmpPath)
-		if err != nil {
-			return errors.Wrap(err, "get clone command")
-		}
-		if cmd.Env == nil {
-			cmd.Env = os.Environ()
-		}
-
-		// see issue #7322: skip LFS content in repositories with Git LFS configured
-		cmd.Env = append(cmd.Env, "GIT_LFS_SKIP_SMUDGE=1")
-		log15.Info("cloning repo", "repo", repo, "tmp", tmpPath, "dst", dstPath)
-
-		pr, pw := io.Pipe()
-		defer pw.Close()
-		go readCloneProgress(redactor, lock, pr)
-
-		if output, err := runWithRemoteOpts(ctx, cmd, pw); err != nil {
-			return errors.Wrapf(err, "clone failed. Output: %s", string(output))
-		}
-
-		if testRepoCorrupter != nil {
-			testRepoCorrupter(ctx, tmp)
-		}
-
-		removeBadRefs(ctx, tmp)
-
-		if err := setHEAD(ctx, tmp, syncer, repo, remoteURL); err != nil {
-			log15.Error("Failed to ensure HEAD exists", "repo", repo, "error", err)
-			return errors.Wrap(err, "failed to ensure HEAD exists")
-		}
-
-		if err := setRepositoryType(tmp, syncer.Type()); err != nil {
-			return errors.Wrap(err, `git config set "sourcegraph.type"`)
-		}
-
-		// Update the last-changed stamp.
-		if err := setLastChanged(tmp); err != nil {
-			return errors.Wrapf(err, "failed to update last changed time")
-		}
-
-		// Update the DB with the last fetched time
-		if err := s.setLastFetched(ctx, repo, time.Now()); err != nil {
-			return errors.Wrap(err, "update last fetched time")
-		}
-
-		// Set gitattributes
-		if err := setGitAttributes(tmp); err != nil {
-			return err
-		}
-
-		if overwrite {
-			// remove the current repo by putting it into our temporary directory
-			err := renameAndSync(dstPath, filepath.Join(filepath.Dir(tmpPath), "old"))
-			if err != nil && !os.IsNotExist(err) {
-				return errors.Wrapf(err, "failed to remove old clone")
-			}
-		}
-
-		if err := os.MkdirAll(filepath.Dir(dstPath), os.ModePerm); err != nil {
-			return err
-		}
-		if err := renameAndSync(tmpPath, dstPath); err != nil {
-			return err
-		}
-
-		log15.Info("repo cloned", "repo", repo)
-		repoClonedCounter.Inc()
-
-		return nil
-	}
 
 	if opts != nil && opts.Block {
 		// We are blocking, so use the passed in context.
-		err := doClone(ctx)
+		err := s.doClone(ctx, repo, dir, syncer, lock, remoteURL, opts)
 		err = errors.Wrapf(err, "failed to clone %s", repo)
 		// Use a background context to ensure we still update the DB even if we time out
 		s.setLastErrorNonFatal(context.Background(), repo, err)
@@ -1412,7 +1294,7 @@ func (s *Server) cloneRepo(ctx context.Context, repo api.RepoName, opts *cloneOp
 		// Create a new context because this is in a background goroutine.
 		ctx, cancel := s.serverContext()
 		defer cancel()
-		err := doClone(ctx)
+		err := s.doClone(ctx, repo, dir, syncer, lock, remoteURL, opts)
 		if err != nil {
 			log15.Error("failed to clone repo", "repo", repo, "error", err)
 		}
@@ -1420,6 +1302,125 @@ func (s *Server) cloneRepo(ctx context.Context, repo api.RepoName, opts *cloneOp
 	}()
 
 	return "", nil
+}
+
+func (s *Server) doClone(ctx context.Context, repo api.RepoName, dir GitDir, syncer VCSSyncer, lock *RepositoryLock, remoteURL *vcs.URL, opts *cloneOptions) error {
+	defer lock.Release()
+
+	ctx, cancel1, err := s.acquireCloneLimiter(ctx)
+	if err != nil {
+		return err
+	}
+	defer cancel1()
+
+	if err = s.rpsLimiter.Wait(ctx); err != nil {
+		return err
+	}
+
+	ctx, cancel2 := context.WithTimeout(ctx, longGitCommandTimeout)
+	defer cancel2()
+
+	dstPath := string(dir)
+	overwrite := opts != nil && opts.Overwrite
+	if !overwrite {
+		// We clone to a temporary directory first, so avoid wasting resources
+		// if the directory already exists.
+		if _, err := os.Stat(dstPath); err == nil {
+			return &os.PathError{
+				Op:   "cloneRepo",
+				Path: dstPath,
+				Err:  os.ErrExist,
+			}
+		}
+	}
+
+	tmpPath, err := s.tempDir("clone-")
+	if err != nil {
+		return err
+	}
+	defer os.RemoveAll(tmpPath)
+	tmpPath = filepath.Join(tmpPath, ".git")
+	tmp := GitDir(tmpPath)
+
+	// It may already be cloned
+	if !repoCloned(dir) {
+		s.setCloneStatusNonFatal(ctx, repo, types.CloneStatusCloning)
+	}
+	defer func() {
+		// Use a background context to ensure we still update the DB even if we time out
+		s.setCloneStatusNonFatal(context.Background(), repo, cloneStatus(repoCloned(dir), false))
+	}()
+
+	cmd, err := syncer.CloneCommand(ctx, remoteURL, tmpPath)
+	if err != nil {
+		return errors.Wrap(err, "get clone command")
+	}
+	if cmd.Env == nil {
+		cmd.Env = os.Environ()
+	}
+
+	// see issue #7322: skip LFS content in repositories with Git LFS configured
+	cmd.Env = append(cmd.Env, "GIT_LFS_SKIP_SMUDGE=1")
+	log15.Info("cloning repo", "repo", repo, "tmp", tmpPath, "dst", dstPath)
+
+	pr, pw := io.Pipe()
+	defer pw.Close()
+
+	go readCloneProgress(newURLRedactor(remoteURL), lock, pr)
+
+	if output, err := runWithRemoteOpts(ctx, cmd, pw); err != nil {
+		return errors.Wrapf(err, "clone failed. Output: %s", string(output))
+	}
+
+	if testRepoCorrupter != nil {
+		testRepoCorrupter(ctx, tmp)
+	}
+
+	removeBadRefs(ctx, tmp)
+
+	if err := setHEAD(ctx, tmp, syncer, repo, remoteURL); err != nil {
+		log15.Error("Failed to ensure HEAD exists", "repo", repo, "error", err)
+		return errors.Wrap(err, "failed to ensure HEAD exists")
+	}
+
+	if err := setRepositoryType(tmp, syncer.Type()); err != nil {
+		return errors.Wrap(err, `git config set "sourcegraph.type"`)
+	}
+
+	// Update the last-changed stamp.
+	if err := setLastChanged(tmp); err != nil {
+		return errors.Wrapf(err, "failed to update last changed time")
+	}
+
+	// Update the DB with the last fetched time
+	if err := s.setLastFetched(ctx, repo, time.Now()); err != nil {
+		return errors.Wrap(err, "update last fetched time")
+	}
+
+	// Set gitattributes
+	if err := setGitAttributes(tmp); err != nil {
+		return err
+	}
+
+	if overwrite {
+		// remove the current repo by putting it into our temporary directory
+		err := renameAndSync(dstPath, filepath.Join(filepath.Dir(tmpPath), "old"))
+		if err != nil && !os.IsNotExist(err) {
+			return errors.Wrapf(err, "failed to remove old clone")
+		}
+	}
+
+	if err := os.MkdirAll(filepath.Dir(dstPath), os.ModePerm); err != nil {
+		return err
+	}
+	if err := renameAndSync(tmpPath, dstPath); err != nil {
+		return err
+	}
+
+	log15.Info("repo cloned", "repo", repo)
+	repoClonedCounter.Inc()
+
+	return nil
 }
 
 // readCloneProgress scans the reader and saves the most recent line of output
