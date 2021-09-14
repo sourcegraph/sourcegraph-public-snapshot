@@ -18,9 +18,9 @@ import {
 import { AuthenticatedUser } from '../../auth'
 import { VersionContext } from '../../schema/site.schema'
 import { submitSearch } from '../helpers'
+import { useNavbarQueryState } from '../navbarSearchQueryState'
 
 import { SearchBox } from './SearchBox'
-import { useNavbarQueryState } from '../navbarSearchQueryState'
 
 interface Props
     extends ActivationProps,

@@ -52,6 +52,7 @@ import {
     searchQueryForRepoRevision,
     SearchStreamingProps,
 } from '../search'
+import { useNavbarQueryState } from '../search/navbarSearchQueryState'
 import { StreamingSearchResultsListProps } from '../search/results/StreamingSearchResultsList'
 import { browserExtensionInstalled } from '../tracking/analyticsUtils'
 import { RouteDescriptor } from '../util/contributions'
@@ -69,7 +70,6 @@ import { RepoSettingsAreaRoute } from './settings/RepoSettingsArea'
 import { RepoSettingsSideBarGroup } from './settings/RepoSettingsSidebar'
 
 import { redirectToExternalHost } from '.'
-import { useNavbarQueryState } from '../search/navbarSearchQueryState'
 
 /**
  * Props passed to sub-routes of {@link RepoContainer}.

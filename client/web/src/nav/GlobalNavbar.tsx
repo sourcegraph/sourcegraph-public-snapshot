@@ -49,12 +49,12 @@ import {
     SearchContextInputProps,
 } from '../search'
 import { SearchNavbarItem } from '../search/input/SearchNavbarItem'
+import { useNavbarQueryState } from '../search/navbarSearchQueryState'
 import { ThemePreferenceProps } from '../theme'
 import { userExternalServicesEnabledFromTags } from '../user/settings/cloud-ga'
 import { showDotComMarketing } from '../util/features'
 
 import { ExtensionAlertAnimationProps, UserNavItem } from './UserNavItem'
-import { useNavbarQueryState } from '../search/navbarSearchQueryState'
 
 interface Props
     extends SettingsCascadeProps<Settings>,

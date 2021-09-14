@@ -1,4 +1,5 @@
 import create from 'zustand'
+
 import { QueryState } from './helpers'
 
 interface NavbarQueryState {

@@ -16,6 +16,7 @@ import { FeatureFlagProps } from '../../../featureFlags/featureFlags'
 import { TemporarySettings } from '../../../settings/temporary/TemporarySettings'
 import { useTemporarySetting } from '../../../settings/temporary/useTemporarySetting'
 import { submitSearch, toggleSearchFilter } from '../../helpers'
+import { useNavbarQueryState } from '../../navbarSearchQueryState'
 
 import { getDynamicFilterLinks, getRepoFilterLinks, getSearchSnippetLinks } from './FilterLink'
 import { getFiltersOfKind, useLastRepoName } from './helpers'
@@ -25,7 +26,6 @@ import { getSearchReferenceFactory } from './SearchReference'
 import styles from './SearchSidebar.module.scss'
 import { SearchSidebarSection } from './SearchSidebarSection'
 import { getSearchTypeLinks } from './SearchTypeLink'
-import { useNavbarQueryState } from '../../navbarSearchQueryState'
 
 export interface SearchSidebarProps
     extends Omit<PatternTypeProps, 'setPatternType'>,
