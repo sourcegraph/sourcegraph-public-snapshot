@@ -1,5 +1,5 @@
 import { MockedResponse } from '@apollo/client/testing'
-import { cleanup, fireEvent, render, RenderResult } from '@testing-library/react'
+import { cleanup, render, RenderResult, fireEvent } from '@testing-library/react'
 import { escapeRegExp } from 'lodash'
 import React from 'react'
 import { MemoryRouter } from 'react-router'
@@ -7,7 +7,7 @@ import { MemoryRouter } from 'react-router'
 import { SymbolKind } from '@sourcegraph/shared/src/graphql-operations'
 import { getDocumentNode } from '@sourcegraph/shared/src/graphql/graphql'
 import { MockedTestProvider, waitForNextApolloResponse } from '@sourcegraph/shared/src/testing/apollo'
-import { renderWithRouter } from '@sourcegraph/shared/src/testing/render-with-router'
+import { renderWithRouter, RenderWithRouterResult } from '@sourcegraph/shared/src/testing/render-with-router'
 
 import { SymbolsResult } from '../graphql-operations'
 
@@ -73,24 +73,36 @@ const symbolsMock: MockedResponse<SymbolsResult> = {
 }
 
 describe('RepoRevisionSidebarSymbols', () => {
-    let renderResult: RenderResult
+    let renderResult: RenderWithRouterResult
     afterEach(cleanup)
 
     beforeEach(async () => {
-        renderResult = render(
-            <MemoryRouter initialEntries={[route]}>
-                <MockedTestProvider mocks={[symbolsMock]} addTypename={true}>
-                    <RepoRevisionSidebarSymbols {...sidebarProps} />
-                </MockedTestProvider>
-            </MemoryRouter>
+        renderResult = renderWithRouter(
+            <MockedTestProvider mocks={[symbolsMock]} addTypename={true}>
+                <RepoRevisionSidebarSymbols {...sidebarProps} />
+            </MockedTestProvider>,
+            { route }
         )
         await waitForNextApolloResponse()
     })
 
-    it('renders all symbols correctly', () => {
-        renderResult.debug()
+    it('renders symbol correctly', () => {
         const symbol = renderResult.getByText('firstSymbol')
         expect(symbol).toBeVisible()
+        // Displays full symbol information
         expect(symbol.parentElement).toHaveTextContent('firstSymbolsrc/index.js')
+    })
+
+    it('renders summary correctly', () => {
+        expect(renderResult.getByText('1 symbol total')).toBeVisible()
+    })
+
+    it('clicking symbol updates route', () => {
+        expect(renderResult.history.location.search).toEqual('')
+
+        const symbol = renderResult.getByText('firstSymbol')
+        fireEvent.click(symbol)
+
+        expect(renderResult.history.location.search).toEqual('?L13:14')
     })
 })
