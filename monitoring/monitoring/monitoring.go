@@ -151,7 +151,7 @@ func (c *Container) renderDashboard() *sdk.Board {
 	alertsFiring.GraphPanel.Pointradius = 2
 	alertsFiring.GraphPanel.AliasColors = map[string]string{}
 	alertsFiring.GraphPanel.Xaxis = sdk.Axis{
-		Show: false,
+		Show: true,
 	}
 	alertsFiring.GraphPanel.Yaxes = []sdk.Axis{
 		{
@@ -160,7 +160,7 @@ func (c *Container) renderDashboard() *sdk.Board {
 			LogBase:  1,
 			Max:      sdk.NewFloatString(1),
 			Min:      sdk.NewFloatString(0),
-			Show:     true,
+			Show:     false,
 		},
 		{
 			Format:  "short",
@@ -175,7 +175,7 @@ func (c *Container) renderDashboard() *sdk.Board {
 	alertsFiring.GraphPanel.FieldConfig = &sdk.FieldConfig{}
 	alertsFiring.GraphPanel.FieldConfig.Defaults.Links = []sdk.Link{{
 		Title: "Graph panel",
-		URL:   StringPtr("/-/debug/grafana/d/${__fields.service_name}/${__fields.service_name}?viewPanel=${__fields.grafana_panel_id}"),
+		URL:   StringPtr("/-/debug/grafana/d/${__field.labels.service_name}/${__field.labels.service_name}?viewPanel=${__field.labels.grafana_panel_id}"),
 	}}
 	board.Panels = append(board.Panels, alertsFiring)
 
