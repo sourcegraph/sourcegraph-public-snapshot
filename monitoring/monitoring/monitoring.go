@@ -75,8 +75,7 @@ func (c *Container) renderDashboard() *sdk.Board {
 	board.SharedCrosshair = true
 	board.Editable = false
 	board.AddTags("builtin")
-	board.Templating.List = c.Templates
-	board.Templating.List = append(board.Templating.List, sdk.TemplateVar{
+	board.Templating.List = append([]sdk.TemplateVar{{
 		Label:      "Filter alert level",
 		Name:       "alert_level",
 		AllValue:   ".*",
@@ -89,10 +88,8 @@ func (c *Container) renderDashboard() *sdk.Board {
 		},
 		Query: "critical,warning",
 		Type:  "custom",
-	},
-	)
-	board.Annotations.List = c.Annotations
-	board.Annotations.List = append(board.Annotations.List, sdk.Annotation{
+	}}, c.Templates...)
+	board.Annotations.List = []sdk.Annotation{{
 		Name:       "Alert events",
 		Datasource: StringPtr("Prometheus"),
 		// Show alerts matching the selected alert_level (see template variable above)
@@ -103,8 +100,7 @@ func (c *Container) renderDashboard() *sdk.Board {
 		IconColor:   "rgba(255, 96, 96, 1)",
 		Enable:      false, // disable by default for now
 		Type:        "tags",
-	},
-	)
+	}}
 	// Annotation layers that require a service to export information required by the
 	// Sourcegraph debug server - see the `NoSourcegraphDebugServer` docstring.
 	if !c.NoSourcegraphDebugServer {
@@ -123,6 +119,7 @@ func (c *Container) renderDashboard() *sdk.Board {
 			Type:        "tags",
 		})
 	}
+	board.Annotations.List = append(board.Annotations.List, c.Annotations...)
 
 	description := sdk.NewText("")
 	description.Title = "" // Removes vertical space the title would otherwise take up
