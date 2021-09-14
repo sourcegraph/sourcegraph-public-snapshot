@@ -9,6 +9,7 @@ import {
     GraphQLClient,
     requestGraphQLCommon,
 } from '@sourcegraph/shared/src/graphql/graphql'
+import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
 
 import { background } from '../../browser-extension/web-extension-api/runtime'
 import { isBackground } from '../context'
@@ -24,7 +25,7 @@ interface RequestGraphQLOptions<V> {
 }
 
 interface GraphQLHelpers {
-    getBrowserGraphQLClient: () => Promise<GraphQLClient>
+    getBrowserGraphQLClient: PlatformContext['getGraphQLClient']
     requestGraphQL: <T, V = object>(options: RequestGraphQLOptions<V>) => Observable<GraphQLResult<T>>
 }
 
