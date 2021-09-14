@@ -29,5 +29,3 @@ type Override struct {
 	Matcher    OverrideMatcher    `json:"matcher"`
 	Properties []OverrideProperty `json:"properties"`
 }
-
-func stringPtr(s string) *string { return &s }

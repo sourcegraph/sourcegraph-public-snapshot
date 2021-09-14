@@ -158,7 +158,7 @@ func (c *Container) renderDashboard() *sdk.Board {
 	alertsFiring.GraphPanel.Pointradius = 2
 	alertsFiring.GraphPanel.AliasColors = map[string]string{}
 	alertsFiring.GraphPanel.Xaxis = sdk.Axis{
-		Show: true,
+		Show: false,
 	}
 	alertsFiring.GraphPanel.Yaxes = []sdk.Axis{
 		{
@@ -176,9 +176,14 @@ func (c *Container) renderDashboard() *sdk.Board {
 		},
 	}
 	alertsFiring.AddTarget(&sdk.Target{
-		Expr:         fmt.Sprintf(`sum by (service_name,level,name)(max by (level,service_name,name,description)(alert_count{service_name="%s",name!="",level=~"$alert_level"}) >= 1)`, c.Name),
+		Expr:         fmt.Sprintf(`sum by (service_name,level,name,grafana_panel_id)(max by (level,service_name,name,description,grafana_panel_id)(alert_count{service_name="%s",name!="",level=~"$alert_level"}) >= 1)`, c.Name),
 		LegendFormat: "{{level}}: {{name}}",
 	})
+	alertsFiring.GraphPanel.FieldConfig = &sdk.FieldConfig{}
+	alertsFiring.GraphPanel.FieldConfig.Defaults.Links = []sdk.Link{{
+		Title: "Graph panel",
+		URL:   StringPtr("/-/debug/grafana/d/${__fields.service_name}/${__fields.service_name}?viewPanel=${__fields.grafana_panel_id}"),
+	}}
 	board.Panels = append(board.Panels, alertsFiring)
 
 	baseY := 8

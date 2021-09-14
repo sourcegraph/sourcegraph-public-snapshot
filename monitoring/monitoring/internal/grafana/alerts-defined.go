@@ -5,6 +5,8 @@ import "github.com/grafana-tools/sdk"
 func NewContainerAlertsDefinedTable(target sdk.Target) *sdk.Panel {
 	alertsDefined := sdk.NewCustom("Alerts defined")
 	alertsDefined.Type = "table"
+
+	var panelTemplateLink = "/-/debug/grafana/d/${__data.fields.service_name}/${__data.fields.service_name}?viewPanel=${__data.fields.grafana_panel_id}"
 	alertsDefined.CustomPanel = &sdk.CustomPanel{
 		"fieldConfig": map[string]interface{}{
 			"overrides": []*Override{
@@ -20,7 +22,7 @@ func NewContainerAlertsDefinedTable(target sdk.Target) *sdk.Panel {
 						{ID: "custom.filterable", Value: true},
 						propertyLinks([]*sdk.Link{{
 							Title: "Graph panel",
-							URL:   stringPtr("/-/debug/grafana/d/${__data.fields.service_name}/${__data.fields.service_name}?viewPanel=${__data.fields.grafana_panel_id}"),
+							URL:   &panelTemplateLink,
 						}}),
 					},
 				},
