@@ -6,10 +6,10 @@ import (
 	"strings"
 	"time"
 
+	"github.com/google/zoekt"
 	zoektquery "github.com/google/zoekt/query"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/endpoint"
-	"github.com/sourcegraph/sourcegraph/internal/search/backend"
 	"github.com/sourcegraph/sourcegraph/internal/search/filter"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
@@ -143,7 +143,7 @@ type ZoektParameters struct {
 	FileMatchLimit int32
 	Select         filter.SelectPath
 
-	Zoekt *backend.Zoekt
+	Zoekt zoekt.Streamer
 }
 
 // SearcherParameters the inputs for a search fulfilled by the Searcher service
@@ -192,7 +192,7 @@ type TextParameters struct {
 	// to true if the user requests a specific timeout or maximum result size.
 	UseFullDeadline bool
 
-	Zoekt        *backend.Zoekt
+	Zoekt        zoekt.Streamer
 	SearcherURLs *endpoint.Map
 }
 

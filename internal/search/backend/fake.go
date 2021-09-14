@@ -30,7 +30,20 @@ func (ss *FakeSearcher) StreamSearch(ctx context.Context, q zoektquery.Q, opts *
 }
 
 func (ss *FakeSearcher) List(ctx context.Context, q zoektquery.Q, opt *zoekt.ListOptions) (*zoekt.RepoList, error) {
-	return &zoekt.RepoList{Repos: ss.Repos}, nil
+	list := &zoekt.RepoList{}
+	if opt != nil && opt.Minimal {
+		list.Minimal = make(map[uint32]*zoekt.MinimalRepoListEntry, len(ss.Repos))
+		for _, r := range ss.Repos {
+			list.Minimal[r.Repository.ID] = &zoekt.MinimalRepoListEntry{
+				HasSymbols: r.Repository.HasSymbols,
+				Branches:   r.Repository.Branches,
+			}
+		}
+	} else {
+		list.Repos = ss.Repos
+	}
+
+	return list, nil
 }
 
 func (ss *FakeSearcher) String() string {
