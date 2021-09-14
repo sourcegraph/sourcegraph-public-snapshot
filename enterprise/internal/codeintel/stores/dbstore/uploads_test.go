@@ -12,7 +12,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/gitserver"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/lsifstore"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/shared"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
@@ -326,13 +326,13 @@ func TestGetUploads(t *testing.T) {
 	insertVisibleAtTip(t, db, 50, 2, 5, 7, 8)
 
 	// upload 10 depends on uploads 7 and 8
-	insertPackages(t, store, []lsifstore.Package{
+	insertPackages(t, store, []shared.Package{
 		{DumpID: 7, Scheme: "npm", Name: "foo", Version: "0.1.0"},
 		{DumpID: 8, Scheme: "npm", Name: "bar", Version: "1.2.3"},
 	})
-	insertPackageReferences(t, store, []lsifstore.PackageReference{
-		{Package: lsifstore.Package{DumpID: 10, Scheme: "npm", Name: "foo", Version: "0.1.0"}},
-		{Package: lsifstore.Package{DumpID: 10, Scheme: "npm", Name: "bar", Version: "1.2.3"}},
+	insertPackageReferences(t, store, []shared.PackageReference{
+		{Package: shared.Package{DumpID: 10, Scheme: "npm", Name: "foo", Version: "0.1.0"}},
+		{Package: shared.Package{DumpID: 10, Scheme: "npm", Name: "bar", Version: "1.2.3"}},
 	})
 
 	testCases := []struct {
@@ -869,15 +869,15 @@ func TestHardDeleteUploadByID(t *testing.T) {
 		Upload{ID: 53, State: "completed"},
 		Upload{ID: 54, State: "completed"},
 	)
-	insertPackages(t, store, []lsifstore.Package{
+	insertPackages(t, store, []shared.Package{
 		{DumpID: 52, Scheme: "test", Name: "p1", Version: "1.2.3"},
 		{DumpID: 53, Scheme: "test", Name: "p2", Version: "1.2.3"},
 	})
-	insertPackageReferences(t, store, []lsifstore.PackageReference{
-		{Package: lsifstore.Package{DumpID: 51, Scheme: "test", Name: "p1", Version: "1.2.3"}},
-		{Package: lsifstore.Package{DumpID: 51, Scheme: "test", Name: "p2", Version: "1.2.3"}},
-		{Package: lsifstore.Package{DumpID: 54, Scheme: "test", Name: "p1", Version: "1.2.3"}},
-		{Package: lsifstore.Package{DumpID: 54, Scheme: "test", Name: "p2", Version: "1.2.3"}},
+	insertPackageReferences(t, store, []shared.PackageReference{
+		{Package: shared.Package{DumpID: 51, Scheme: "test", Name: "p1", Version: "1.2.3"}},
+		{Package: shared.Package{DumpID: 51, Scheme: "test", Name: "p2", Version: "1.2.3"}},
+		{Package: shared.Package{DumpID: 54, Scheme: "test", Name: "p1", Version: "1.2.3"}},
+		{Package: shared.Package{DumpID: 54, Scheme: "test", Name: "p2", Version: "1.2.3"}},
 	})
 
 	if err := store.UpdateNumReferences(context.Background(), []int{51, 52, 53, 54}); err != nil {
@@ -1029,23 +1029,23 @@ func TestUpdateNumReferences(t *testing.T) {
 		Upload{ID: 55, State: "completed"},
 		Upload{ID: 56, State: "completed"},
 	)
-	insertPackages(t, store, []lsifstore.Package{
+	insertPackages(t, store, []shared.Package{
 		{DumpID: 53, Scheme: "test", Name: "p1", Version: "1.2.3"},
 		{DumpID: 54, Scheme: "test", Name: "p2", Version: "1.2.3"},
 		{DumpID: 55, Scheme: "test", Name: "p3", Version: "1.2.3"},
 		{DumpID: 56, Scheme: "test", Name: "p4", Version: "1.2.3"},
 	})
-	insertPackageReferences(t, store, []lsifstore.PackageReference{
-		{Package: lsifstore.Package{DumpID: 51, Scheme: "test", Name: "p1", Version: "1.2.3"}},
-		{Package: lsifstore.Package{DumpID: 51, Scheme: "test", Name: "p2", Version: "1.2.3"}},
-		{Package: lsifstore.Package{DumpID: 51, Scheme: "test", Name: "p3", Version: "1.2.3"}},
-		{Package: lsifstore.Package{DumpID: 52, Scheme: "test", Name: "p1", Version: "1.2.3"}},
-		{Package: lsifstore.Package{DumpID: 52, Scheme: "test", Name: "p4", Version: "1.2.3"}},
+	insertPackageReferences(t, store, []shared.PackageReference{
+		{Package: shared.Package{DumpID: 51, Scheme: "test", Name: "p1", Version: "1.2.3"}},
+		{Package: shared.Package{DumpID: 51, Scheme: "test", Name: "p2", Version: "1.2.3"}},
+		{Package: shared.Package{DumpID: 51, Scheme: "test", Name: "p3", Version: "1.2.3"}},
+		{Package: shared.Package{DumpID: 52, Scheme: "test", Name: "p1", Version: "1.2.3"}},
+		{Package: shared.Package{DumpID: 52, Scheme: "test", Name: "p4", Version: "1.2.3"}},
 
-		{Package: lsifstore.Package{DumpID: 53, Scheme: "test", Name: "p4", Version: "1.2.3"}},
-		{Package: lsifstore.Package{DumpID: 54, Scheme: "test", Name: "p1", Version: "1.2.3"}},
-		{Package: lsifstore.Package{DumpID: 55, Scheme: "test", Name: "p1", Version: "1.2.3"}},
-		{Package: lsifstore.Package{DumpID: 56, Scheme: "test", Name: "p1", Version: "1.2.3"}},
+		{Package: shared.Package{DumpID: 53, Scheme: "test", Name: "p4", Version: "1.2.3"}},
+		{Package: shared.Package{DumpID: 54, Scheme: "test", Name: "p1", Version: "1.2.3"}},
+		{Package: shared.Package{DumpID: 55, Scheme: "test", Name: "p1", Version: "1.2.3"}},
+		{Package: shared.Package{DumpID: 56, Scheme: "test", Name: "p1", Version: "1.2.3"}},
 	})
 
 	if err := store.UpdateNumReferences(context.Background(), []int{50, 51, 52, 53, 54, 55, 56}); err != nil {
@@ -1087,25 +1087,25 @@ func TestUpdateDependencyNumReferences(t *testing.T) {
 		Upload{ID: 55, State: "completed"},
 		Upload{ID: 56, State: "completed"},
 	)
-	insertPackages(t, store, []lsifstore.Package{
+	insertPackages(t, store, []shared.Package{
 		{DumpID: 53, Scheme: "test", Name: "p1", Version: "1.2.3"},
 		{DumpID: 54, Scheme: "test", Name: "p2", Version: "1.2.3"},
 		{DumpID: 55, Scheme: "test", Name: "p3", Version: "1.2.3"},
 		{DumpID: 56, Scheme: "test", Name: "p4", Version: "1.2.3"},
 	})
-	insertPackageReferences(t, store, []lsifstore.PackageReference{
+	insertPackageReferences(t, store, []shared.PackageReference{
 		// References removed
-		{Package: lsifstore.Package{DumpID: 51, Scheme: "test", Name: "p1", Version: "1.2.3"}},
-		{Package: lsifstore.Package{DumpID: 51, Scheme: "test", Name: "p2", Version: "1.2.3"}},
-		{Package: lsifstore.Package{DumpID: 51, Scheme: "test", Name: "p3", Version: "1.2.3"}},
-		{Package: lsifstore.Package{DumpID: 52, Scheme: "test", Name: "p1", Version: "1.2.3"}},
-		{Package: lsifstore.Package{DumpID: 52, Scheme: "test", Name: "p4", Version: "1.2.3"}},
+		{Package: shared.Package{DumpID: 51, Scheme: "test", Name: "p1", Version: "1.2.3"}},
+		{Package: shared.Package{DumpID: 51, Scheme: "test", Name: "p2", Version: "1.2.3"}},
+		{Package: shared.Package{DumpID: 51, Scheme: "test", Name: "p3", Version: "1.2.3"}},
+		{Package: shared.Package{DumpID: 52, Scheme: "test", Name: "p1", Version: "1.2.3"}},
+		{Package: shared.Package{DumpID: 52, Scheme: "test", Name: "p4", Version: "1.2.3"}},
 
 		// Remaining references
-		{Package: lsifstore.Package{DumpID: 53, Scheme: "test", Name: "p4", Version: "1.2.3"}},
-		{Package: lsifstore.Package{DumpID: 54, Scheme: "test", Name: "p1", Version: "1.2.3"}},
-		{Package: lsifstore.Package{DumpID: 55, Scheme: "test", Name: "p1", Version: "1.2.3"}},
-		{Package: lsifstore.Package{DumpID: 56, Scheme: "test", Name: "p1", Version: "1.2.3"}},
+		{Package: shared.Package{DumpID: 53, Scheme: "test", Name: "p4", Version: "1.2.3"}},
+		{Package: shared.Package{DumpID: 54, Scheme: "test", Name: "p1", Version: "1.2.3"}},
+		{Package: shared.Package{DumpID: 55, Scheme: "test", Name: "p1", Version: "1.2.3"}},
+		{Package: shared.Package{DumpID: 56, Scheme: "test", Name: "p1", Version: "1.2.3"}},
 	})
 
 	// Set correct initial counts
@@ -1153,25 +1153,25 @@ func TestSoftDeleteExpiredUploads(t *testing.T) {
 		Upload{ID: 55, State: "completed"}, // referenced by 51
 		Upload{ID: 56, State: "completed"}, // referenced by 52, 53
 	)
-	insertPackages(t, store, []lsifstore.Package{
+	insertPackages(t, store, []shared.Package{
 		{DumpID: 53, Scheme: "test", Name: "p1", Version: "1.2.3"},
 		{DumpID: 54, Scheme: "test", Name: "p2", Version: "1.2.3"},
 		{DumpID: 55, Scheme: "test", Name: "p3", Version: "1.2.3"},
 		{DumpID: 56, Scheme: "test", Name: "p4", Version: "1.2.3"},
 	})
-	insertPackageReferences(t, store, []lsifstore.PackageReference{
+	insertPackageReferences(t, store, []shared.PackageReference{
 		// References removed
-		{Package: lsifstore.Package{DumpID: 51, Scheme: "test", Name: "p1", Version: "1.2.3"}},
-		{Package: lsifstore.Package{DumpID: 51, Scheme: "test", Name: "p2", Version: "1.2.3"}},
-		{Package: lsifstore.Package{DumpID: 51, Scheme: "test", Name: "p3", Version: "1.2.3"}},
-		{Package: lsifstore.Package{DumpID: 52, Scheme: "test", Name: "p1", Version: "1.2.3"}},
-		{Package: lsifstore.Package{DumpID: 52, Scheme: "test", Name: "p4", Version: "1.2.3"}},
+		{Package: shared.Package{DumpID: 51, Scheme: "test", Name: "p1", Version: "1.2.3"}},
+		{Package: shared.Package{DumpID: 51, Scheme: "test", Name: "p2", Version: "1.2.3"}},
+		{Package: shared.Package{DumpID: 51, Scheme: "test", Name: "p3", Version: "1.2.3"}},
+		{Package: shared.Package{DumpID: 52, Scheme: "test", Name: "p1", Version: "1.2.3"}},
+		{Package: shared.Package{DumpID: 52, Scheme: "test", Name: "p4", Version: "1.2.3"}},
 
 		// Remaining references
-		{Package: lsifstore.Package{DumpID: 53, Scheme: "test", Name: "p4", Version: "1.2.3"}},
-		{Package: lsifstore.Package{DumpID: 54, Scheme: "test", Name: "p1", Version: "1.2.3"}},
-		{Package: lsifstore.Package{DumpID: 55, Scheme: "test", Name: "p1", Version: "1.2.3"}},
-		{Package: lsifstore.Package{DumpID: 56, Scheme: "test", Name: "p1", Version: "1.2.3"}},
+		{Package: shared.Package{DumpID: 53, Scheme: "test", Name: "p4", Version: "1.2.3"}},
+		{Package: shared.Package{DumpID: 54, Scheme: "test", Name: "p1", Version: "1.2.3"}},
+		{Package: shared.Package{DumpID: 55, Scheme: "test", Name: "p1", Version: "1.2.3"}},
+		{Package: shared.Package{DumpID: 56, Scheme: "test", Name: "p1", Version: "1.2.3"}},
 	})
 
 	if err := store.UpdateUploadRetention(context.Background(), []int{}, []int{51, 52, 53, 54}); err != nil {
