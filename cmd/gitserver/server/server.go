@@ -1237,7 +1237,8 @@ func (s *Server) cloneRepo(ctx context.Context, repo api.RepoName, opts *cloneOp
 		return "", errors.Wrap(err, "get VCS syncer")
 	}
 
-	remoteURL, err := s.getRemoteURL(ctx, repo)
+	// We may be attempting to clone a private repo so we need an internal actor.
+	remoteURL, err := s.getRemoteURL(actor.WithInternalActor(ctx), repo)
 	if err != nil {
 		return "", err
 	}
