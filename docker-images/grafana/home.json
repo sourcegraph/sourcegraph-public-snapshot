@@ -318,24 +318,7 @@
             "displayMode": "auto",
             "filterable": false
           },
-          "mappings": [
-            {
-              "from": "",
-              "id": 1,
-              "text": "false",
-              "to": "",
-              "type": 1,
-              "value": "0"
-            },
-            {
-              "from": "1",
-              "id": 2,
-              "text": "true",
-              "to": "99",
-              "type": 1,
-              "value": "1"
-            }
-          ],
+          "mappings": [],
           "thresholds": {
             "mode": "absolute",
             "steps": [
@@ -345,11 +328,10 @@
               },
               {
                 "color": "red",
-                "value": 1
+                "value": 80
               }
             ]
-          },
-          "unit": "string"
+          }
         },
         "overrides": [
           {
@@ -476,10 +458,22 @@
                 "id": "links",
                 "value": [
                   {
-                    "title": "Service dashboards",
-                    "url": "/-/debug/grafana/d/${__data.fields.service_name}/${__data.fields.service_name}"
+                    "title": "Graph panel",
+                    "url": "/-/debug/grafana/d/${__data.fields.service_name}/${__data.fields.service_name}?viewPanel=${__data.fields.grafana_panel_id}"
                   }
                 ]
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "grafana_panel_id"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 0.1
               }
             ]
           }
@@ -506,7 +500,7 @@
       "targets": [
         {
           "exemplar": true,
-          "expr": "label_replace(sum by (level,service_name,description)(max by (level,service_name,name,description)(alert_count{name!=\"\"})), \"description\", \"$1\", \"description\", \".*: (.*)\")",
+          "expr": "label_replace(sum by (level,service_name,description,grafana_panel_id)(max by (level,service_name,name,description,grafana_panel_id)(alert_count{name!=\"\"})), \"description\", \"$1\", \"description\", \".*: (.*)\")",
           "format": "table",
           "instant": true,
           "interval": "",
@@ -534,10 +528,6 @@
               "description": 3,
               "level": 1,
               "service_name": 2
-            },
-            "renameByName": {
-              "Time": "",
-              "_01_level": ""
             }
           }
         }
