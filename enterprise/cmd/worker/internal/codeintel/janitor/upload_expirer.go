@@ -169,6 +169,7 @@ func (e *uploadExpirer) handleRepository(
 		uploads, _, err := e.dbStore.GetUploads(ctx, dbstore.GetUploadsOptions{
 			State:                   "completed",
 			RepositoryID:            repositoryID,
+			AllowExpired:            false,
 			OldestFirst:             true,
 			Limit:                   e.uploadBatchSize,
 			LastRetentionScanBefore: &lastRetentionScanBefore,
@@ -236,7 +237,7 @@ func (e *uploadExpirer) handleUploads(
 		}
 	}
 
-	e.metrics.numUploadsExpired.Add(float64(len(protectedUploadIDs)))
+	e.metrics.numUploadsExpired.Add(float64(len(expiredUploadIDs)))
 	return err
 }
 
