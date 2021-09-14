@@ -6,11 +6,11 @@ import (
 
 	"github.com/cockroachdb/errors"
 	"github.com/hashicorp/go-multierror"
-	"github.com/sourcegraph/batch-change-utils/env"
-	"github.com/sourcegraph/batch-change-utils/overridable"
-	"github.com/sourcegraph/batch-change-utils/yaml"
 
+	"github.com/sourcegraph/sourcegraph/lib/batches/env"
+	"github.com/sourcegraph/sourcegraph/lib/batches/overridable"
 	"github.com/sourcegraph/sourcegraph/lib/batches/schema"
+	"github.com/sourcegraph/sourcegraph/lib/batches/yaml"
 )
 
 // Some general notes about the struct definitions below.

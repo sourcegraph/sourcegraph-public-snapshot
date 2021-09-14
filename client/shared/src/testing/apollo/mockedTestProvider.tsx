@@ -1,14 +1,7 @@
 import { MockedProvider, MockedProviderProps } from '@apollo/client/testing'
-import { act } from '@testing-library/react'
 import React, { useMemo } from 'react'
 
-import { generateCache } from '../graphql/cache'
-
-/*
- * Wait one tick to load the next response from Apollo
- * https://www.apollographql.com/docs/react/development-testing/testing/#testing-the-success-state
- */
-export const waitForNextApolloResponse = (): Promise<void> => act(() => new Promise(resolve => setTimeout(resolve, 0)))
+import { generateCache } from '../../graphql/cache'
 
 export const MockedTestProvider: React.FunctionComponent<MockedProviderProps> = ({ children, ...props }) => {
     /**

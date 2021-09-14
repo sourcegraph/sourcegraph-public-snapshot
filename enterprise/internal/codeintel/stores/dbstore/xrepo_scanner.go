@@ -3,7 +3,7 @@ package dbstore
 import (
 	"database/sql"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/lsifstore"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/shared"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 )
 
@@ -15,7 +15,7 @@ import (
 // a single bloom filter in memory at any give time during reference requests.
 type PackageReferenceScanner interface {
 	// Next reads the next package reference value from the database cursor.
-	Next() (lsifstore.PackageReference, bool, error)
+	Next() (shared.PackageReference, bool, error)
 
 	// Close the underlying row object.
 	Close() error
@@ -33,9 +33,9 @@ func packageReferenceScannerFromRows(rows *sql.Rows) PackageReferenceScanner {
 }
 
 // Next reads the next package reference value from the database cursor.
-func (s *rowScanner) Next() (reference lsifstore.PackageReference, _ bool, _ error) {
+func (s *rowScanner) Next() (reference shared.PackageReference, _ bool, _ error) {
 	if !s.rows.Next() {
-		return lsifstore.PackageReference{}, false, nil
+		return shared.PackageReference{}, false, nil
 	}
 
 	if err := s.rows.Scan(
@@ -45,7 +45,7 @@ func (s *rowScanner) Next() (reference lsifstore.PackageReference, _ bool, _ err
 		&reference.Version,
 		&reference.Filter,
 	); err != nil {
-		return lsifstore.PackageReference{}, false, err
+		return shared.PackageReference{}, false, err
 	}
 
 	return reference, true, nil
@@ -57,19 +57,19 @@ func (s *rowScanner) Close() error {
 }
 
 type sliceScanner struct {
-	references []lsifstore.PackageReference
+	references []shared.PackageReference
 }
 
 // PackageReferenceScannerFromSlice creates a PackageReferenceScanner that feeds the given values.
-func PackageReferenceScannerFromSlice(references ...lsifstore.PackageReference) PackageReferenceScanner {
+func PackageReferenceScannerFromSlice(references ...shared.PackageReference) PackageReferenceScanner {
 	return &sliceScanner{
 		references: references,
 	}
 }
 
-func (s *sliceScanner) Next() (lsifstore.PackageReference, bool, error) {
+func (s *sliceScanner) Next() (shared.PackageReference, bool, error) {
 	if len(s.references) == 0 {
-		return lsifstore.PackageReference{}, false, nil
+		return shared.PackageReference{}, false, nil
 	}
 
 	next := s.references[0]

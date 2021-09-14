@@ -3,8 +3,7 @@ package batches
 import (
 	"github.com/cockroachdb/errors"
 
-	jsonutil "github.com/sourcegraph/batch-change-utils/json"
-
+	jsonutil "github.com/sourcegraph/sourcegraph/lib/batches/json"
 	"github.com/sourcegraph/sourcegraph/lib/batches/schema"
 )
 

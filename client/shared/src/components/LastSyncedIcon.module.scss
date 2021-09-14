@@ -3,6 +3,7 @@
     right: 0.5rem;
     top: 0.5rem;
     height: 1rem;
-    z-index: 1000;
+    isolation: isolate;
+    z-index: 1;
     background-color: inherit;
 }

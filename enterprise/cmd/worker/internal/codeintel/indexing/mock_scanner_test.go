@@ -6,7 +6,7 @@ import (
 	"sync"
 
 	dbstore "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
-	lsifstore "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/lsifstore"
+	shared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/shared"
 )
 
 // MockPackageReferenceScanner is a mock implementation of the
@@ -33,8 +33,8 @@ func NewMockPackageReferenceScanner() *MockPackageReferenceScanner {
 			},
 		},
 		NextFunc: &PackageReferenceScannerNextFunc{
-			defaultHook: func() (lsifstore.PackageReference, bool, error) {
-				return lsifstore.PackageReference{}, false, nil
+			defaultHook: func() (shared.PackageReference, bool, error) {
+				return shared.PackageReference{}, false, nil
 			},
 		},
 	}
@@ -157,15 +157,15 @@ func (c PackageReferenceScannerCloseFuncCall) Results() []interface{} {
 // PackageReferenceScannerNextFunc describes the behavior when the Next
 // method of the parent MockPackageReferenceScanner instance is invoked.
 type PackageReferenceScannerNextFunc struct {
-	defaultHook func() (lsifstore.PackageReference, bool, error)
-	hooks       []func() (lsifstore.PackageReference, bool, error)
+	defaultHook func() (shared.PackageReference, bool, error)
+	hooks       []func() (shared.PackageReference, bool, error)
 	history     []PackageReferenceScannerNextFuncCall
 	mutex       sync.Mutex
 }
 
 // Next delegates to the next hook function in the queue and stores the
 // parameter and result values of this invocation.
-func (m *MockPackageReferenceScanner) Next() (lsifstore.PackageReference, bool, error) {
+func (m *MockPackageReferenceScanner) Next() (shared.PackageReference, bool, error) {
 	r0, r1, r2 := m.NextFunc.nextHook()()
 	m.NextFunc.appendCall(PackageReferenceScannerNextFuncCall{r0, r1, r2})
 	return r0, r1, r2
@@ -174,7 +174,7 @@ func (m *MockPackageReferenceScanner) Next() (lsifstore.PackageReference, bool, 
 // SetDefaultHook sets function that is called when the Next method of the
 // parent MockPackageReferenceScanner instance is invoked and the hook queue
 // is empty.
-func (f *PackageReferenceScannerNextFunc) SetDefaultHook(hook func() (lsifstore.PackageReference, bool, error)) {
+func (f *PackageReferenceScannerNextFunc) SetDefaultHook(hook func() (shared.PackageReference, bool, error)) {
 	f.defaultHook = hook
 }
 
@@ -182,7 +182,7 @@ func (f *PackageReferenceScannerNextFunc) SetDefaultHook(hook func() (lsifstore.
 // Next method of the parent MockPackageReferenceScanner instance invokes
 // the hook at the front of the queue and discards it. After the queue is
 // empty, the default hook function is invoked for any future action.
-func (f *PackageReferenceScannerNextFunc) PushHook(hook func() (lsifstore.PackageReference, bool, error)) {
+func (f *PackageReferenceScannerNextFunc) PushHook(hook func() (shared.PackageReference, bool, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -190,21 +190,21 @@ func (f *PackageReferenceScannerNextFunc) PushHook(hook func() (lsifstore.Packag
 
 // SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
 // the given values.
-func (f *PackageReferenceScannerNextFunc) SetDefaultReturn(r0 lsifstore.PackageReference, r1 bool, r2 error) {
-	f.SetDefaultHook(func() (lsifstore.PackageReference, bool, error) {
+func (f *PackageReferenceScannerNextFunc) SetDefaultReturn(r0 shared.PackageReference, r1 bool, r2 error) {
+	f.SetDefaultHook(func() (shared.PackageReference, bool, error) {
 		return r0, r1, r2
 	})
 }
 
 // PushReturn calls PushDefaultHook with a function that returns the given
 // values.
-func (f *PackageReferenceScannerNextFunc) PushReturn(r0 lsifstore.PackageReference, r1 bool, r2 error) {
-	f.PushHook(func() (lsifstore.PackageReference, bool, error) {
+func (f *PackageReferenceScannerNextFunc) PushReturn(r0 shared.PackageReference, r1 bool, r2 error) {
+	f.PushHook(func() (shared.PackageReference, bool, error) {
 		return r0, r1, r2
 	})
 }
 
-func (f *PackageReferenceScannerNextFunc) nextHook() func() (lsifstore.PackageReference, bool, error) {
+func (f *PackageReferenceScannerNextFunc) nextHook() func() (shared.PackageReference, bool, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -239,7 +239,7 @@ func (f *PackageReferenceScannerNextFunc) History() []PackageReferenceScannerNex
 type PackageReferenceScannerNextFuncCall struct {
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
-	Result0 lsifstore.PackageReference
+	Result0 shared.PackageReference
 	// Result1 is the value of the 2nd result returned from this method
 	// invocation.
 	Result1 bool
