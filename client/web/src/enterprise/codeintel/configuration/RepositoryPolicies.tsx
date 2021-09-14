@@ -60,7 +60,7 @@ export const RepositoryPolicies: FunctionComponent<RepositoryPoliciesProps> = ({
             ) : (
                 <PoliciesList
                     policies={policies}
-                    onDeletePolicy={repo.id === null || isGlobal === false ? handleDelete : undefined}
+                    onDeletePolicy={repo.id === null || !isGlobal ? handleDelete : undefined}
                     disabled={loadingPolicies}
                     indexingEnabled={indexingEnabled}
                     buttonFragment={policyActions}
