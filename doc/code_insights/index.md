@@ -1,10 +1,10 @@
 # Code Insights <a href="../admin/beta_and_experimental_features"><sup><span class="badge badge-beta">Beta</span></sup></a>
 
-Code Insights are currently in Private [Beta](../admin/beta_and_experimental_features.md).
+> NOTE: While in Beta, Code Insights is free for enterprise customers. Once Code Insights is generally available and no sooner than January 1, 2022, it may cost an additional amount. 
 
-If you're a customer who wants early access or needs support, please [send us an email](mailto:feedback@sourcegraph.com).
+Code Insights are currently in Private [Beta](../admin/beta_and_experimental_features.md). If you're a customer who wants early access or needs support, please [send us an email](mailto:feedback@sourcegraph.com).
 
-> NOTE: Code insights docs are actively in progress.
+Code insights docs are actively in progress during the beta.
 
 Table of contents:
 
