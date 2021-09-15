@@ -159,6 +159,9 @@ export const RevisionsPopoverReferences: React.FunctionComponent<RevisionsPopove
             }
             return data.node.gitRefs
         },
+        options: {
+            fetchPolicy: 'cache-first',
+        },
     })
 
     const summary = response.connection && (
