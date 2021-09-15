@@ -11,6 +11,12 @@ interface CreateGraphQLClientGetterOptions {
     watchQueryMocks: object[]
 }
 
+/**
+ * Helper to mock Apollo-Client with subsequent `watchQuery` calls.
+ * It would be possible to use `import { createMockClient } from '@apollo/client/testing'`
+ * but it requires a lot of monkey patching because there's no straightforward way to mock
+ * `watchQuery` results for the returned client mock.
+ */
 export function createGraphQLClientGetter({
     watchQueryMocks,
 }: CreateGraphQLClientGetterOptions): PlatformContext['getGraphQLClient'] {
