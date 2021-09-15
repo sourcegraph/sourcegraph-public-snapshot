@@ -5,9 +5,10 @@ import (
 	"bytes"
 	"context"
 	"io"
-	"os"
 	"os/exec"
+	"strconv"
 	"strings"
+	"time"
 
 	"github.com/cockroachdb/errors"
 )
@@ -27,6 +28,7 @@ type RevisionSpecifier struct {
 	ExcludeRefGlob string
 }
 
+// Git formatting directives as described in man git-log / PRETTY FORMATS
 const (
 	hash           = "%H"
 	refNames       = "%D"
@@ -166,7 +168,10 @@ func (c *CommitScanner) Scan() bool {
 	return true
 }
 
-func (c *CommitScanner) CommitView() *CommitView {
+// CommitView returns a parsed view of the formatted commit as output by git.
+// The view is only valid until CommitScanner.Scan() is called next, and must
+// be copied if you want its lifetime to exceed that.
+func (c *CommitScanner) NextCommitView() *CommitView {
 	return &c.next
 }
 
@@ -174,14 +179,20 @@ func (c *CommitScanner) Err() error {
 	return c.err
 }
 
-func Search(dir string, revs []RevisionSpecifier, p CommitPredicate, onMatch func(*CommitView) bool) error {
+func Search(dir string, revs []RevisionSpecifier, p CommitPredicate, onMatch func(*LazyCommit, *HighlightedCommit) bool) error {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
+
+	diffFetcher, err := StartDiffFetcher(ctx, dir)
+	if err != nil {
+		return err
+	}
+
 	cmd := exec.CommandContext(ctx, "git", logArgsWithoutRefs...)
 	pr, pw := io.Pipe()
 	cmd.Stdout = pw
-	err := cmd.Start()
-	if err != nil {
+	cmd.Dir = dir
+	if err := cmd.Start(); err != nil {
 		return err
 	}
 
@@ -192,18 +203,96 @@ func Search(dir string, revs []RevisionSpecifier, p CommitPredicate, onMatch fun
 	}()
 
 	cs := NewCommitScanner(pr)
-	buf := bufio.NewWriterSize(os.Stdout, 1024*1024)
 	for cs.Scan() {
-		cv := cs.CommitView()
-		if idx := bytes.IndexByte(cv.Message, '\n'); idx < 0 {
-			buf.Write(cv.Message)
-		} else {
-			buf.Write(cv.Message[:idx+1])
+		cv := cs.NextCommitView()
+		lc := &LazyCommit{
+			CommitView:  cv,
+			diffFetcher: diffFetcher,
+		}
+		commitMatches, highlights, err := p.Match(lc)
+		if err != nil {
+			return err
+		}
+		if commitMatches {
+			if keepGoing := onMatch(lc, highlights); !keepGoing {
+				return nil
+			}
 		}
 	}
-	buf.Flush()
 	if cmdErr != nil {
 		return cmdErr
 	}
 	return cs.Err()
+}
+
+type DiffFetcher struct {
+	stdin   io.Writer
+	stderr  bytes.Buffer
+	scanner *bufio.Scanner
+}
+
+func StartDiffFetcher(ctx context.Context, dir string) (*DiffFetcher, error) {
+	cmd := exec.CommandContext(ctx, "git", "diff-tree", "--stdin", "-p", "--format=format:")
+	cmd.Dir = dir
+	stdoutReader, stdoutWriter := io.Pipe()
+	cmd.Stdout = stdoutWriter
+	stdinReader, stdinWriter := io.Pipe()
+	cmd.Stdin = stdinReader
+	var stderrBuf bytes.Buffer
+	cmd.Stderr = &stderrBuf
+	if err := cmd.Start(); err != nil {
+		return nil, err
+	}
+
+	scanner := bufio.NewScanner(stdoutReader)
+	scanner.Split(func(data []byte, atEOF bool) (advance int, token []byte, err error) {
+		if bytes.HasSuffix(data, []byte("\nENDOFPATCH\n")) {
+			return len(data), data[:len(data)-len("ENDOFPATCH\n")], nil
+		}
+
+		return 0, nil, nil
+	})
+
+	return &DiffFetcher{
+		stdin:   stdinWriter,
+		scanner: scanner,
+		stderr:  stderrBuf,
+	}, nil
+}
+
+func (d *DiffFetcher) FetchDiff(hash []byte) (string, error) {
+	d.stdin.Write(hash)
+	d.stdin.Write([]byte{'\n'})
+
+	// HACK: There is no way (as far as I can tell) to make `git diff-tree --stdin` to
+	// write a trailing null byte or tell us how much to read in advance, and since we're
+	// using a long-running process, the stream doesn't close at the end, and we can't use the
+	// start of a new patch to signify end of patch since we want to be able to do each round-trip
+	// serially. We resort to sending the subprocess a bogus commit hash named "EOF", which it
+	// will fail to read as a tree, and print back to stdout literally. We use this as a signal
+	// that the subprocess is done outputting for this commit.
+	d.stdin.Write([]byte("ENDOFPATCH\n"))
+
+	if d.scanner.Scan() {
+		return string(d.scanner.Bytes()), nil
+	} else if err := d.scanner.Err(); err != nil {
+		return "", err
+	} else if d.stderr.String() != "" {
+		return "", errors.Errorf("git subprocess stderr: %s", d.stderr.String())
+	}
+	return "", errors.New("expected scan to succeed")
+}
+
+type LazyCommit struct {
+	*CommitView
+	diffFetcher *DiffFetcher
+}
+
+func (l *LazyCommit) AuthorDate() (time.Time, error) {
+	unixSeconds, err := strconv.Atoi(string(l.CommitView.AuthorDate))
+	if err != nil {
+		return time.Time{}, err
+	}
+
+	return time.Unix(int64(unixSeconds), 0), nil
 }
