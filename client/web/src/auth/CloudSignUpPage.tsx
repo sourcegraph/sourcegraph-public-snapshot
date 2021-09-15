@@ -56,10 +56,11 @@ export const CloudSignUpPage: React.FunctionComponent<Props> = ({
     }
 
     const assetsRoot = window.context?.assetsRoot || ''
+    const isPostSignUpEnabled = window.context.experimentalFeatures.enablePostSignupFlow
 
-    // Since this page is only intented for use on Sourcegraph.com, it's OK to hardcode
+    // Since this page is only intended for use on Sourcegraph.com, it's OK to hardcode
     // GitHub and GitLab auth providers here as they are the only ones used on Sourcegraph.com.
-    // In the future if this page is intented for use in Sourcegraph Sever, this would need to be generisized
+    // In the future if this page is intended for use in Sourcegraph Sever, this would need to be generalized
     // for other auth providers such SAML, OpenID, Okta, Azure AD, etc.
     const githubProvider = context.authProviders.find(provider =>
         provider.authenticationURL?.startsWith('/.auth/github/login?pc=https%3A%2F%2Fgithub.com%2F')
@@ -124,7 +125,9 @@ export const CloudSignUpPage: React.FunctionComponent<Props> = ({
                         <>
                             {githubProvider && (
                                 <a
-                                    href={githubProvider.authenticationURL}
+                                    href={`${githubProvider.authenticationURL || ''}${
+                                        isPostSignUpEnabled ? '&redirect=/welcome' : ''
+                                    }`}
                                     className={classNames(styles.signUpButton, styles.githubButton)}
                                     onClick={logEvent}
                                 >
@@ -133,7 +136,9 @@ export const CloudSignUpPage: React.FunctionComponent<Props> = ({
                             )}
                             {gitlabProvider && (
                                 <a
-                                    href={gitlabProvider.authenticationURL}
+                                    href={`${gitlabProvider.authenticationURL || ''}${
+                                        isPostSignUpEnabled ? '&redirect=/welcome' : ''
+                                    }`}
                                     className={classNames(styles.signUpButton, styles.gitlabButton)}
                                     onClick={logEvent}
                                 >
