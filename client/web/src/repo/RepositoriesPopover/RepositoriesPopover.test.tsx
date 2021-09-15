@@ -4,7 +4,7 @@ import React from 'react'
 import { MockedTestProvider, waitForNextApolloResponse } from '@sourcegraph/shared/src/testing/apollo'
 import { renderWithRouter, RenderWithRouterResult } from '@sourcegraph/shared/src/testing/render-with-router'
 
-import { RepositoriesPopover } from './RepositoriesPopover'
+import { RepositoriesPopover, BATCH_COUNT } from './RepositoriesPopover'
 import { MOCK_REQUESTS } from './RepositoriesPopover.mocks'
 
 const repo = {
@@ -36,7 +36,7 @@ describe('RevisionsPopover', () => {
     afterEach(cleanup)
 
     it('renders correct number of results', () => {
-        expect(renderResult.getAllByRole('link')).toHaveLength(10)
+        expect(renderResult.getAllByRole('link')).toHaveLength(BATCH_COUNT)
         expect(renderResult.getByText('Show more')).toBeVisible()
     })
 
@@ -50,7 +50,7 @@ describe('RevisionsPopover', () => {
 
     it('fetches remaining results correctly', async () => {
         await fetchMoreNodes()
-        expect(renderResult.getAllByRole('link')).toHaveLength(20)
+        expect(renderResult.getAllByRole('link')).toHaveLength(BATCH_COUNT * 2)
         expect(renderResult.queryByText('Show more')).not.toBeInTheDocument()
     })
 
@@ -68,8 +68,7 @@ describe('RevisionsPopover', () => {
         const searchInput = renderResult.getByRole('searchbox')
         fireEvent.change(searchInput, { target: { value: 'some other query' } })
 
-        // Allow input to debounce
-        await act(() => new Promise(resolve => setTimeout(resolve, 200)))
+        await waitForInputDebounce()
         await waitForNextApolloResponse()
 
         expect(renderResult.queryByRole('link')).not.toBeInTheDocument()

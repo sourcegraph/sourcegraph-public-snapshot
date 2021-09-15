@@ -1,8 +1,5 @@
-import classNames from 'classnames'
 import React, { useEffect, useState } from 'react'
-import { Link } from 'react-router-dom'
 
-import { displayRepoName } from '@sourcegraph/shared/src/components/RepoFileLink'
 import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
 import { gql } from '@sourcegraph/shared/src/graphql/graphql'
 import { createAggregateError } from '@sourcegraph/shared/src/util/errors'
@@ -26,6 +23,8 @@ import {
 } from '../../graphql-operations'
 import { eventLogger } from '../../tracking/eventLogger'
 
+import { RepositoryNode } from './RepositoryNode'
+
 export const REPOSITORIES_FOR_POPOVER = gql`
     query RepositoriesForPopover($first: Int, $query: String) {
         repositories(first: $first, query: $query) {
@@ -46,25 +45,6 @@ export const REPOSITORIES_FOR_POPOVER = gql`
     }
 `
 
-interface RepositoryNodeProps {
-    node: RepositoryPopoverFields
-    currentRepo?: Scalars['ID']
-}
-
-const RepositoryNode: React.FunctionComponent<RepositoryNodeProps> = ({ node, currentRepo }) => (
-    <li key={node.id} className="connection-popover__node">
-        <Link
-            to={`/${node.name}`}
-            className={classNames(
-                'connection-popover__node-link',
-                node.id === currentRepo && 'connection-popover__node-link--active'
-            )}
-        >
-            {displayRepoName(node.name)}
-        </Link>
-    </li>
-)
-
 export interface RepositoriesPopoverProps {
     /**
      * The current repository (shown as selected in the list), if any.
@@ -72,7 +52,7 @@ export interface RepositoriesPopoverProps {
     currentRepo?: Scalars['ID']
 }
 
-const BATCH_COUNT = 10
+export const BATCH_COUNT = 10
 
 /**
  * A popover that displays a searchable list of repositories.
@@ -91,7 +71,7 @@ export const RepositoriesPopover: React.FunctionComponent<RepositoriesPopoverPro
         RepositoryPopoverFields
     >({
         query: REPOSITORIES_FOR_POPOVER,
-        variables: { first: 10, query },
+        variables: { first: BATCH_COUNT, query },
         getConnection: ({ data, errors }) => {
             if (!data || !data.repositories) {
                 throw createAggregateError(errors)
