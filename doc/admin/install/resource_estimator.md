@@ -39,6 +39,6 @@
 </style>
 
 <script src="https://storage.googleapis.com/sourcegraph-resource-estimator/go_1_14_wasm_exec.js"></script>
-<script src="https://storage.googleapis.com/sourcegraph-resource-estimator/launch_script.js?v2" version="94ad774"></script>
+<script src="https://storage.googleapis.com/sourcegraph-resource-estimator/launch_script.js?v2" version="f70debc"></script>
 
 <form id="root"></form>
