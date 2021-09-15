@@ -297,11 +297,16 @@ func checkRegularPermsTable(s *PermsStore, sql string, expects map[int32][]uint3
 }
 
 func testPermsStore_SetUserPermissions(db *sql.DB) func(*testing.T) {
+	const countToExceedParameterLimit = 17000 // ~ 65535 / 4 parameters per row
+
 	tests := []struct {
 		name            string
+		slowTest        bool
 		updates         []*authz.UserPermissions
 		expectUserPerms map[int32][]uint32 // user_id -> object_ids
 		expectRepoPerms map[int32][]uint32 // repo_id -> user_ids
+
+		upsertRepoPermissionsPageSize int
 	}{
 		{
 			name: "empty",
@@ -397,6 +402,54 @@ func testPermsStore_SetUserPermissions(db *sql.DB) func(*testing.T) {
 				3: {},
 			},
 		},
+		{
+			name:                          "add and page",
+			upsertRepoPermissionsPageSize: 2,
+			updates: []*authz.UserPermissions{
+				{
+					UserID: 1,
+					Perm:   authz.Read,
+					IDs:    toBitmap(1, 2, 3),
+				},
+			},
+			expectUserPerms: map[int32][]uint32{
+				1: {1, 2, 3},
+			},
+			expectRepoPerms: map[int32][]uint32{
+				1: {1},
+				2: {1},
+				3: {1},
+			},
+		},
+		{
+			name:     postgresParameterLimitTest,
+			slowTest: true,
+			updates: func() []*authz.UserPermissions {
+				user := &authz.UserPermissions{
+					UserID: 1,
+					Perm:   authz.Read,
+					IDs:    toBitmap(),
+				}
+				for i := 1; i <= countToExceedParameterLimit; i += 1 {
+					user.IDs.Add(uint32(i))
+				}
+				return []*authz.UserPermissions{user}
+			}(),
+			expectUserPerms: func() map[int32][]uint32 {
+				repos := make([]uint32, countToExceedParameterLimit)
+				for i := 1; i <= countToExceedParameterLimit; i += 1 {
+					repos[i-1] = uint32(i)
+				}
+				return map[int32][]uint32{1: repos}
+			}(),
+			expectRepoPerms: func() map[int32][]uint32 {
+				repos := make(map[int32][]uint32, countToExceedParameterLimit)
+				for i := 1; i <= countToExceedParameterLimit; i += 1 {
+					repos[int32(i)] = []uint32{1}
+				}
+				return repos
+			}(),
+		},
 	}
 
 	return func(t *testing.T) {
@@ -433,9 +486,20 @@ func testPermsStore_SetUserPermissions(db *sql.DB) func(*testing.T) {
 
 		for _, test := range tests {
 			t.Run(test.name, func(t *testing.T) {
+				if test.slowTest && !*slowTests {
+					t.Skip("slow-tests not enabled")
+				}
+
+				if test.upsertRepoPermissionsPageSize > 0 {
+					upsertRepoPermissionsPageSize = test.upsertRepoPermissionsPageSize
+				}
+
 				s := Perms(db, clock)
 				t.Cleanup(func() {
 					cleanupPermsTables(t, s)
+					if test.upsertRepoPermissionsPageSize > 0 {
+						upsertRepoPermissionsPageSize = defaultUpsertRepoPermissionsPageSize
+					}
 				})
 
 				for _, p := range test.updates {
@@ -1323,6 +1387,8 @@ func testPermsStore_GrantPendingPermissions(db *sql.DB) func(*testing.T) {
 		AccountID:   "bob",
 	}
 
+	const countToExceedParameterLimit = 17000 // ~ 65535 / 4 parameters per row
+
 	type pending struct {
 		accounts *extsvc.Accounts
 		perm     *authz.RepoPermissions
@@ -1337,12 +1403,15 @@ func testPermsStore_GrantPendingPermissions(db *sql.DB) func(*testing.T) {
 	}
 	tests := []struct {
 		name                   string
+		slowTest               bool
 		updates                []update
 		grants                 []grant
 		expectUserPerms        map[int32][]uint32              // user_id -> object_ids
 		expectRepoPerms        map[int32][]uint32              // repo_id -> user_ids
 		expectUserPendingPerms map[extsvc.AccountSpec][]uint32 // account -> object_ids
 		expectRepoPendingPerms map[int32][]extsvc.AccountSpec  // repo_id -> accounts
+
+		upsertRepoPermissionsPageSize int
 	}{
 		{
 			name: "empty",
@@ -1426,6 +1495,45 @@ func testPermsStore_GrantPendingPermissions(db *sql.DB) func(*testing.T) {
 			expectRepoPendingPerms: map[int32][]extsvc.AccountSpec{
 				1: {alice},
 				2: {bob},
+			},
+		},
+		{
+			name: "grant pending permission",
+			updates: []update{
+				{
+					regulars: []*authz.RepoPermissions{},
+					pendings: []pending{{
+						accounts: &extsvc.Accounts{
+							ServiceType: authz.SourcegraphServiceType,
+							ServiceID:   authz.SourcegraphServiceID,
+							AccountIDs:  []string{"alice"},
+						},
+						perm: &authz.RepoPermissions{
+							RepoID: 1,
+							Perm:   authz.Read,
+						},
+					}},
+				},
+			},
+			grants: []grant{{
+				userID: 1,
+				perm: &authz.UserPendingPermissions{
+					ServiceType: authz.SourcegraphServiceType,
+					ServiceID:   authz.SourcegraphServiceID,
+					BindID:      "alice",
+					Perm:        authz.Read,
+					Type:        authz.PermRepos,
+				},
+			}},
+			expectUserPerms: map[int32][]uint32{
+				1: {1},
+			},
+			expectRepoPerms: map[int32][]uint32{
+				1: {1},
+			},
+			expectUserPendingPerms: map[extsvc.AccountSpec][]uint32{},
+			expectRepoPendingPerms: map[int32][]extsvc.AccountSpec{
+				1: {},
 			},
 		},
 		{
@@ -1594,13 +1702,149 @@ func testPermsStore_GrantPendingPermissions(db *sql.DB) func(*testing.T) {
 				2: {},
 			},
 		},
+		{
+			name:                          "grant pending permission and page",
+			upsertRepoPermissionsPageSize: 2,
+			updates: []update{
+				{
+					regulars: []*authz.RepoPermissions{},
+					pendings: []pending{{
+						accounts: &extsvc.Accounts{
+							ServiceType: authz.SourcegraphServiceType,
+							ServiceID:   authz.SourcegraphServiceID,
+							AccountIDs:  []string{"alice"},
+						},
+						perm: &authz.RepoPermissions{
+							RepoID: 1,
+							Perm:   authz.Read,
+						},
+					}, {
+						accounts: &extsvc.Accounts{
+							ServiceType: authz.SourcegraphServiceType,
+							ServiceID:   authz.SourcegraphServiceID,
+							AccountIDs:  []string{"alice"},
+						},
+						perm: &authz.RepoPermissions{
+							RepoID: 2,
+							Perm:   authz.Read,
+						},
+					}, {
+						accounts: &extsvc.Accounts{
+							ServiceType: authz.SourcegraphServiceType,
+							ServiceID:   authz.SourcegraphServiceID,
+							AccountIDs:  []string{"alice"},
+						},
+						perm: &authz.RepoPermissions{
+							RepoID: 3,
+							Perm:   authz.Read,
+						},
+					}},
+				},
+			},
+			grants: []grant{{
+				userID: 1,
+				perm: &authz.UserPendingPermissions{
+					ServiceType: authz.SourcegraphServiceType,
+					ServiceID:   authz.SourcegraphServiceID,
+					BindID:      "alice",
+					Perm:        authz.Read,
+					Type:        authz.PermRepos,
+				},
+			}},
+			expectUserPerms: map[int32][]uint32{
+				1: {1, 2, 3},
+			},
+			expectRepoPerms: map[int32][]uint32{
+				1: {1},
+				2: {1},
+				3: {1},
+			},
+			expectUserPendingPerms: map[extsvc.AccountSpec][]uint32{},
+			expectRepoPendingPerms: map[int32][]extsvc.AccountSpec{
+				1: {},
+				2: {},
+				3: {},
+			},
+		},
+		{
+			name:     postgresParameterLimitTest,
+			slowTest: true,
+			updates: []update{
+				{
+					regulars: []*authz.RepoPermissions{},
+					pendings: func() []pending {
+						accounts := &extsvc.Accounts{
+							ServiceType: authz.SourcegraphServiceType,
+							ServiceID:   authz.SourcegraphServiceID,
+							AccountIDs:  []string{"alice"},
+						}
+						pendings := make([]pending, countToExceedParameterLimit)
+						for i := 1; i <= countToExceedParameterLimit; i += 1 {
+							pendings[i-1] = pending{
+								accounts: accounts,
+								perm: &authz.RepoPermissions{
+									RepoID: int32(i),
+									Perm:   authz.Read,
+								},
+							}
+						}
+						return pendings
+					}(),
+				},
+			},
+			grants: []grant{
+				{
+					userID: 1,
+					perm: &authz.UserPendingPermissions{
+						ServiceType: authz.SourcegraphServiceType,
+						ServiceID:   authz.SourcegraphServiceID,
+						BindID:      "alice",
+						Perm:        authz.Read,
+						Type:        authz.PermRepos,
+					},
+				},
+			},
+			expectUserPerms: func() map[int32][]uint32 {
+				repos := make([]uint32, countToExceedParameterLimit)
+				for i := 1; i <= countToExceedParameterLimit; i += 1 {
+					repos[i-1] = uint32(i)
+				}
+				return map[int32][]uint32{1: repos}
+			}(),
+			expectRepoPerms: func() map[int32][]uint32 {
+				repos := make(map[int32][]uint32, countToExceedParameterLimit)
+				for i := 1; i <= countToExceedParameterLimit; i += 1 {
+					repos[int32(i)] = []uint32{1}
+				}
+				return repos
+			}(),
+			expectUserPendingPerms: map[extsvc.AccountSpec][]uint32{},
+			expectRepoPendingPerms: func() map[int32][]extsvc.AccountSpec {
+				repos := make(map[int32][]extsvc.AccountSpec, countToExceedParameterLimit)
+				for i := 1; i <= countToExceedParameterLimit; i += 1 {
+					repos[int32(i)] = []extsvc.AccountSpec{}
+				}
+				return repos
+			}(),
+		},
 	}
 	return func(t *testing.T) {
 		for _, test := range tests {
 			t.Run(test.name, func(t *testing.T) {
+				if test.slowTest && !*slowTests {
+					t.Skip("slow-tests not enabled")
+				}
+
+				if test.upsertRepoPermissionsPageSize > 0 {
+					upsertRepoPermissionsPageSize = test.upsertRepoPermissionsPageSize
+				}
+
 				s := Perms(db, clock)
 				t.Cleanup(func() {
 					cleanupPermsTables(t, s)
+					if test.upsertRepoPermissionsPageSize > 0 {
+						upsertRepoPermissionsPageSize = defaultUpsertRepoPermissionsPageSize
+					}
 				})
 
 				ctx := context.Background()
