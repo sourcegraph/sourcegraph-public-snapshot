@@ -710,8 +710,7 @@ func upsertUserPendingPermissionsBatchQuery(
 INSERT INTO user_pending_permissions
   (service_type, service_id, bind_id, permission, object_type, updated_at)
   (
-	SELECT *
-	FROM UNNEST(%s::TEXT[], %s::TEXT[], %s::TEXT[], %s::TEXT[], %s::TEXT[], %s::TIMESTAMPTZ[])
+	SELECT %s::TEXT, %s::TEXT, UNNEST(%s::TEXT[]), %s::TEXT, %s::TEXT, UNNEST(%s::TIMESTAMPTZ[])
   )
 ON CONFLICT ON CONSTRAINT
   user_pending_permissions_service_perm_object_unique
@@ -723,28 +722,22 @@ RETURNING id
 		return nil, ErrPermsUpdatedAtNotSet
 	}
 
-	serviceTypes := make([]string, len(accounts.AccountIDs))
-	serviceIDs := make([]string, len(accounts.AccountIDs))
 	accountIDs := make([]string, len(accounts.AccountIDs))
-	perms := make([]string, len(accounts.AccountIDs))
-	permRepos := make([]string, len(accounts.AccountIDs))
 	updatedAts := make([]time.Time, len(accounts.AccountIDs))
 	for i := range accounts.AccountIDs {
-		serviceTypes[i] = accounts.ServiceType
-		serviceIDs[i] = accounts.ServiceID
 		accountIDs[i] = accounts.AccountIDs[i]
-		perms[i] = p.Perm.String()
-		permRepos[i] = string(authz.PermRepos)
 		updatedAts[i] = p.UpdatedAt.UTC()
 	}
 
 	return sqlf.Sprintf(
 		format,
-		pq.Array(serviceTypes),
-		pq.Array(serviceIDs),
+
+		accounts.ServiceType,
+		accounts.ServiceID,
 		pq.Array(accountIDs),
-		pq.Array(perms),
-		pq.Array(permRepos),
+
+		p.Perm.String(),
+		string(authz.PermRepos),
 		pq.Array(updatedAts),
 	), nil
 }
