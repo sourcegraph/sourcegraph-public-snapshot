@@ -227,7 +227,7 @@ func lastMigrationIndexAtCommit(database db.Database, commit string) (int, bool,
 		return 0, false, err
 	}
 
-	lastMigrationIndex, ok := migration.ParseLastMigrationIndex(strings.Split(string(output), "\n"))
+	lastMigrationIndex, ok := migration.ParseLastMigrationIndex(strings.Split(output, "\n"))
 	return lastMigrationIndex, ok, nil
 }
 
