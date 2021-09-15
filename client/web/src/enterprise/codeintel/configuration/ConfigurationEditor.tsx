@@ -3,7 +3,7 @@ import { editor } from 'monaco-editor'
 import React, { FunctionComponent, useCallback, useMemo, useState } from 'react'
 
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
-import { TelemetryProps, TelemetryService } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { ErrorAlert } from '@sourcegraph/web/src/components/alerts'
 
@@ -20,8 +20,6 @@ import {
 
 export interface ConfigurationEditorProps extends ThemeProps, TelemetryProps {
     repoId: string
-    isLightTheme: boolean
-    telemetryService: TelemetryService
     history: H.History
 }
 

@@ -1,7 +1,7 @@
 import * as H from 'history'
 import React, { FunctionComponent } from 'react'
 
-import { TelemetryProps, TelemetryService } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { Container, Tab, TabList, TabPanel, TabPanels, Tabs } from '@sourcegraph/wildcard'
 
@@ -12,8 +12,6 @@ export interface RepositoryConfigurationProps extends ThemeProps, TelemetryProps
     repo: { id: string }
     indexingEnabled: boolean
     history: H.History
-    isLightTheme: boolean
-    telemetryService: TelemetryService
 }
 
 export const RepositoryConfiguration: FunctionComponent<RepositoryConfigurationProps> = ({
