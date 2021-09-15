@@ -85,7 +85,8 @@ export function requestGraphQLCommon<T, V = object>({
 }): Observable<GraphQLResult<T>> {
     const nameMatch = request.match(/^\s*(?:query|mutation)\s+(\w+)/)
     const apiURL = `${GRAPHQL_URI}${nameMatch ? '?' + nameMatch[1] : ''}`
-    return fromFetch(baseUrl ? new URL(apiURL, baseUrl).href : apiURL, {
+
+    return fromFetch<GraphQLResult<T>>(baseUrl ? new URL(apiURL, baseUrl).href : apiURL, {
         ...options,
         method: 'POST',
         body: JSON.stringify({ query: request, variables }),
@@ -95,16 +96,18 @@ export function requestGraphQLCommon<T, V = object>({
 
 interface GetGraphqlClientOptions {
     headers: RequestInit['headers']
+    baseUrl?: string
 }
 
 export type GraphQLClient = ApolloClient<NormalizedCacheObject>
 
 export const getGraphQLClient = once(
     async (options: GetGraphqlClientOptions): Promise<GraphQLClient> => {
-        const { headers } = options
+        const { headers, baseUrl } = options
+        const uri = baseUrl ? new URL(GRAPHQL_URI, baseUrl).href : GRAPHQL_URI
 
         const apolloClient = new ApolloClient({
-            uri: GRAPHQL_URI,
+            uri,
             cache,
             defaultOptions: {
                 /**
@@ -129,7 +132,7 @@ export const getGraphQLClient = once(
                 },
             },
             link: createHttpLink({
-                uri: ({ operationName }) => `${GRAPHQL_URI}?${operationName}`,
+                uri: ({ operationName }) => `${uri}?${operationName}`,
                 headers,
             }),
         })

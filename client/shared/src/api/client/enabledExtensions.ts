@@ -22,12 +22,12 @@ import { asError, isErrorLike } from '../../util/errors'
  */
 function viewerConfiguredExtensions({
     settings,
-    requestGraphQL,
-}: Pick<PlatformContext, 'settings' | 'requestGraphQL'>): Observable<ConfiguredExtension[]> {
+    getGraphQLClient,
+}: Pick<PlatformContext, 'settings' | 'getGraphQLClient'>): Observable<ConfiguredExtension[]> {
     return from(settings).pipe(
         map(settings => extensionIDsFromSettings(settings)),
         distinctUntilChanged((a, b) => isEqual(a, b)),
-        switchMap(extensionIDs => queryConfiguredRegistryExtensions({ requestGraphQL }, extensionIDs)),
+        switchMap(extensionIDs => queryConfiguredRegistryExtensions({ getGraphQLClient }, extensionIDs)),
         catchError(error => throwError(asError(error))),
         // TODO: Restore reference counter after refactoring contributions service
         // to not unsubscribe from existing entries when new entries are registered,
@@ -71,7 +71,7 @@ export const getEnabledExtensions = once(
     (
         context: Pick<
             PlatformContext,
-            'settings' | 'requestGraphQL' | 'sideloadedExtensionURL' | 'getScriptURLForExtension'
+            'settings' | 'getGraphQLClient' | 'sideloadedExtensionURL' | 'getScriptURLForExtension'
         >
     ): Observable<ConfiguredExtension[]> => {
         const sideloadedExtension = from(context.sideloadedExtensionURL).pipe(

@@ -251,6 +251,7 @@
     "identity-obj-proxy": "^3.0.0",
     "jest": "^25.5.4",
     "jest-canvas-mock": "^2.3.0",
+    "jest-mock-extended": "^2.0.2-beta2",
     "jsdom": "^15.2.1",
     "json-schema-ref-parser": "^9.0.6",
     "json-schema-to-typescript": "^10.1.3",
