@@ -931,7 +931,7 @@ func (s *PermsStore) GrantPendingPermissions(ctx context.Context, userID int32, 
 	if q, err := upsertUserPermissionsBatchQuery(users, nil, repoIDs, p.Perm, authz.PermRepos, updatedAt); err != nil {
 		return err
 	} else if err = txs.execute(ctx, q); err != nil {
-		return errors.Wrap(err, "execute upsert repo permissions batch query")
+		return errors.Wrap(err, "execute upsert user permissions batch query")
 	}
 
 	// NOTE: Practically, we don't need to clean up "repo_pending_permissions" table because the value of "id" column
