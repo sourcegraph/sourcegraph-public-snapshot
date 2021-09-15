@@ -17,10 +17,9 @@ When the current repository has LSIF data and a dependent doesn't, the missing p
 
 ## Why are my results sometimes incorrect?
 
-If LSIF data is not found for a particular file in a repository, Sourcegraph will fall back to search-based code intelligence. You may occasionally see results from [search-based code intelligence](search_based_code_intelligence.md) even when you have uploaded LSIF data. Such results are indicated with a ![tooltip](../img/basic-code-intel-tooltip.svg) tooltip. This can happen in the following scenarios:
+If LSIF data is not found for a particular file in a repository, Sourcegraph will fall back to search-based code intelligence. You may occasionally see results from [search-based code intelligence](search_based_code_intelligence.md) even when you have uploaded LSIF data. This can happen in the following scenarios:
 
 - The symbol has LSIF data, but it is defined in a repository which does not have LSIF data.
-- The nearest commit that has LSIF data is too far away from your browsing commit. [The limit is 100 commits](https://github.com/sourcegraph/sourcegraph/blob/e7803474dbac8021e93ae2af930269045aece079/lsif/src/shared/constants.ts#L25) ahead/behind.
 - The line containing the symbol was created or edited between the nearest indexed commit and the commit being browsed.
 - The _Find references_ panel will always include search-based results, but only after all of the precise results have been displayed. This ensures every symbol has code intelligence.
 
