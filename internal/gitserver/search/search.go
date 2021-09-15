@@ -1,274 +1,16 @@
 package search
 
 import (
+	"bufio"
+	"bytes"
 	"context"
+	"io"
+	"os"
+	"os/exec"
 	"strings"
 
-	"github.com/hashicorp/go-multierror"
-	git "github.com/libgit2/git2go/v31"
-	"golang.org/x/sync/errgroup"
-
-	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/cockroachdb/errors"
 )
-
-// LazyCommit wraps a *git.Commit, lazily storing requested fields to avoid re-computing
-// expensive fields and dropping into cgo. Additionally, it holds a reference to the repo so the
-// commit can compute its own diff with its parent.
-type LazyCommit struct {
-	*git.Commit
-	repo *git.Repository
-
-	// These fields may not be initialized, so use their accessor methods instead
-	diff      FormattedDiff  // lazily populated by Diff()
-	author    *git.Signature // lazily populated by Author()
-	committer *git.Signature // lazily populated by Committer()
-	message   *string        // lazily populated by Message()
-}
-
-// Message returns the commit's message, trimmed of any leading or trailing whitespace,
-// using a cached value if it's already been calculated
-func (c *LazyCommit) Message() string {
-	if c.message != nil {
-		return *c.message
-	}
-	m := strings.TrimSpace(c.Commit.Message())
-	c.message = &m
-	return m
-}
-
-// Author returns the commit's author signature, using a cached value if it's already been called
-func (c *LazyCommit) Author() *git.Signature {
-	if c.author != nil {
-		return c.author
-	}
-	c.author = c.Commit.Author()
-	return c.author
-}
-
-// Committer returns the commit's committer signature, using a cached value if it's already been called
-func (c *LazyCommit) Committer() *git.Signature {
-	if c.committer != nil {
-		return c.committer
-	}
-	c.committer = c.Commit.Committer()
-	return c.committer
-}
-
-// Parents returns the IDs for this commits parents
-func (c *LazyCommit) Parents() []api.CommitID {
-	parentCount := c.ParentCount()
-	res := make([]api.CommitID, 0, parentCount)
-	for i := uint(0); i < parentCount; i++ {
-		res = append(res, api.CommitID(c.ParentId(i).String()))
-	}
-	return res
-}
-
-// Diff returns a formatted diff, or a cached value it's already been called
-func (c *LazyCommit) Diff() (FormattedDiff, error) {
-	// If the diff has already been computed, use that
-	if c.diff != "" {
-		return c.diff, nil
-	}
-
-	var (
-		// It's okay for the parentTree to be nil if there
-		// are no parent commits. This will happen with the
-		// first commit in the repository, and DiffTreeToTree
-		// treats that as diffing against an empty index.
-		parentTree *git.Tree
-		err        error
-	)
-	if c.ParentCount() > 0 {
-		parentTree, err = c.Parent(0).Tree()
-		if err != nil {
-			return "", err
-		}
-	}
-
-	tree, err := c.Tree()
-	if err != nil {
-		return "", err
-	}
-
-	diffOptions := git.DiffOptions{
-		ContextLines:   1,
-		InterhunkLines: 2,
-	}
-	diff, err := c.repo.DiffTreeToTree(parentTree, tree, &diffOptions)
-	if err != nil {
-		return "", err
-	}
-
-	return FormatDiff(diff)
-}
-
-type CommitMatch struct {
-	*LazyCommit
-	*HighlightedCommit
-}
-
-func IterCommitMatches(repoPath string, revs []RevisionSpecifier, pred CommitPredicate, fn func(*LazyCommit, *HighlightedCommit) bool) error {
-	ctx, cancel := context.WithCancel(context.Background())
-	g, ctx := errgroup.WithContext(ctx)
-
-	var (
-		batchSize   = 256
-		jobs        = make(chan searchJob, 256)
-		resultChans = make(chan chan CommitMatch, 256)
-	)
-
-	// Start job feeder. It will iterate over all commits that match the
-	// given revisions, batch them up, and send those batches of commits
-	// to the workers to be searched over.
-	g.Go(func() error {
-		defer close(jobs)
-		defer close(resultChans)
-
-		repo, err := git.OpenRepository(repoPath)
-		if err != nil {
-			return err
-		}
-
-		walker, err := repo.Walk()
-		if err != nil {
-			return err
-		}
-
-		// TODO(camdencheek): figure out a way to replicate git's --source
-		// so we can populate SourceRefs
-		for _, rev := range revs {
-			if rev.RevSpec != "" {
-				if err := walker.PushRange(rev.RevSpec); err != nil {
-					return err
-				}
-			} else if rev.RefGlob != "" {
-				if err := walker.PushGlob(rev.RevSpec); err != nil {
-					return err
-				}
-			} else if rev.ExcludeRefGlob != "" {
-				if err := walker.HideGlob(rev.RevSpec); err != nil {
-					return err
-				}
-			} else {
-				if err := walker.PushHead(); err != nil {
-					return err
-				}
-			}
-		}
-
-		walker.SimplifyFirstParent()
-
-		send := func(batch []git.Oid) {
-			resultChan := make(chan CommitMatch, 32)
-			j := searchJob{
-				CommitBatch: batch,
-				ResultChan:  resultChan,
-				Predicate:   pred,
-			}
-			jobs <- j
-			resultChans <- resultChan
-		}
-
-		batch := make([]git.Oid, batchSize)
-		for {
-			// Fill the batch, keeping track of how far we filled it
-			for i := 0; i < len(batch); i++ {
-				err := walker.Next(&batch[i])
-				if git.IsErrorCode(err, git.ErrorCodeIterOver) {
-					// We've hit the end of the commits, so send
-					// a partial batch and return
-					send(batch[:i])
-					return nil
-				}
-				if err != nil {
-					return err
-				}
-			}
-
-			// Send the batch and create a new one
-			send(batch)
-			batch = make([]git.Oid, batchSize)
-		}
-	})
-
-	// Start workers, which read off our jobs channel
-	numWorkers := 8
-	for i := 0; i < numWorkers; i++ {
-		g.Go(func() error {
-			repo, err := git.OpenRepository(repoPath)
-			if err != nil {
-				return err
-			}
-
-			errs := new(multierror.Error)
-			for job := range jobs {
-				// Every job that's created must be run in order to
-				// close channels correctly. The job will exit early
-				// if the context is cancelled, so only minimal extra
-				// work will happen after cancellation. This is also why
-				// we collect errors here rather than returning immediately
-				// on error.
-				if err := job.Run(ctx, repo); err != nil {
-					errs = multierror.Append(errs, err)
-				}
-			}
-			return errs.ErrorOrNil()
-		})
-	}
-
-	// Start consumer, which will read off our results channels (in order),
-	// calling the callback for each result it receives.
-	g.Go(func() error {
-		defer cancel()
-		for resultChan := range resultChans {
-			for result := range resultChan {
-				if !fn(result.LazyCommit, result.HighlightedCommit) {
-					return nil
-				}
-			}
-		}
-		return nil
-	})
-
-	return g.Wait()
-}
-
-type searchJob struct {
-	CommitBatch []git.Oid
-	ResultChan  chan CommitMatch
-	Predicate   CommitPredicate
-}
-
-func (j searchJob) Run(ctx context.Context, repo *git.Repository) error {
-	defer close(j.ResultChan)
-
-	for _, oid := range j.CommitBatch {
-		// Early return if context has already been canceled
-		if ctx.Err() != nil {
-			return nil
-		}
-
-		commit, err := repo.LookupCommit(&oid)
-		if err != nil {
-			return err
-		}
-
-		wrappedCommit := &LazyCommit{
-			Commit: commit,
-			repo:   repo,
-		}
-		matched, highlights := j.Predicate.Match(wrappedCommit)
-		if matched {
-			select {
-			case <-ctx.Done():
-				return nil
-			case j.ResultChan <- CommitMatch{wrappedCommit, highlights}:
-			}
-		}
-	}
-	return nil
-}
 
 // TODO(camdencheek): this is copied straight from internal/search to avoid import cycles
 type RevisionSpecifier struct {
@@ -283,4 +25,185 @@ type RevisionSpecifier struct {
 	// ExcludeRefGlob is a glob for references to exclude. See the
 	// documentation for "--exclude" in git-log.
 	ExcludeRefGlob string
+}
+
+const (
+	hash           = "%H"
+	refNames       = "%D"
+	authorName     = "%aN"
+	authorEmail    = "%aE"
+	authorDate     = "%at"
+	committerName  = "%cN"
+	committerEmail = "%cE"
+	committerDate  = "%ct"
+	rawBody        = "%B"
+	parentHashes   = "%P"
+)
+
+var (
+	partsPerCommit = len(formatWithRefs)
+
+	formatWithRefs = []string{
+		hash,
+		refNames,
+		authorName,
+		authorEmail,
+		authorDate,
+		committerName,
+		committerEmail,
+		committerDate,
+		rawBody,
+		parentHashes,
+	}
+
+	formatWithoutRefs = []string{
+		hash,
+		"",
+		authorName,
+		authorEmail,
+		authorDate,
+		committerName,
+		committerEmail,
+		committerDate,
+		rawBody,
+		parentHashes,
+	}
+
+	logArgsWithRefs = []string{
+		"log",
+		"--decorate=full",
+		"-z",
+		"--no-merges",
+		"--format=format:%s" + strings.Join(formatWithRefs, "%x00") + "%x00",
+	}
+
+	logArgsWithoutRefs = []string{
+		"log",
+		"--decorate=full",
+		"-z",
+		"--no-merges",
+		"--format=format:%s" + strings.Join(formatWithoutRefs, "%x00") + "%x00",
+	}
+
+	sep = []byte{0x0}
+)
+
+type CommitView struct {
+	Hash           []byte
+	RefNames       []byte
+	AuthorName     []byte
+	AuthorEmail    []byte
+	AuthorDate     []byte
+	CommitterName  []byte
+	CommitterEmail []byte
+	CommitterDate  []byte
+	Message        []byte
+	ParentHashes   []byte
+}
+
+func NewCommitScanner(r io.Reader) *CommitScanner {
+	scanner := bufio.NewScanner(r)
+
+	// Split by commit
+	scanner.Split(func(data []byte, atEOF bool) (advance int, token []byte, err error) {
+		if len(data) == 0 { // should only happen when atEOF
+			return 0, nil, nil
+		}
+
+		// See if we have enough null bytes to constitute a full commit
+		if bytes.Count(data, sep) < partsPerCommit+1 {
+			if atEOF {
+				return 0, nil, errors.Errorf("incomplete line")
+			}
+			return 0, nil, nil
+		}
+
+		// If we do, expand token to the end of that commit
+		for i := 0; i < partsPerCommit+1; i++ {
+			idx := bytes.IndexByte(data[len(token):], 0x0)
+			if idx == -1 {
+				panic("we already counted enough bytes in data")
+			}
+			token = data[:len(token)+idx+1]
+		}
+		return len(token), token, nil
+
+	})
+
+	return &CommitScanner{
+		scanner: scanner,
+	}
+}
+
+type CommitScanner struct {
+	scanner *bufio.Scanner
+	next    CommitView
+	err     error
+}
+
+func (c *CommitScanner) Scan() bool {
+	if !c.scanner.Scan() {
+		return false
+	}
+
+	parts := bytes.SplitN(c.scanner.Bytes(), sep, partsPerCommit+1)
+	if len(parts) < partsPerCommit+1 {
+		c.err = errors.Errorf("invalid commit log entry: %q", parts)
+		return false
+	}
+
+	c.next.Hash = parts[0]
+	c.next.RefNames = parts[1]
+	c.next.AuthorName = parts[2]
+	c.next.AuthorEmail = parts[3]
+	c.next.AuthorDate = parts[4]
+	c.next.CommitterName = parts[5]
+	c.next.CommitterEmail = parts[6]
+	c.next.CommitterDate = parts[7]
+	c.next.Message = parts[8]
+	c.next.ParentHashes = parts[9]
+
+	return true
+}
+
+func (c *CommitScanner) CommitView() *CommitView {
+	return &c.next
+}
+
+func (c *CommitScanner) Err() error {
+	return c.err
+}
+
+func Search(dir string, revs []RevisionSpecifier, p CommitPredicate, onMatch func(*CommitView) bool) error {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	cmd := exec.CommandContext(ctx, "git", logArgsWithoutRefs...)
+	pr, pw := io.Pipe()
+	cmd.Stdout = pw
+	err := cmd.Start()
+	if err != nil {
+		return err
+	}
+
+	var cmdErr error
+	go func() {
+		cmdErr = cmd.Wait()
+		pw.Close()
+	}()
+
+	cs := NewCommitScanner(pr)
+	buf := bufio.NewWriterSize(os.Stdout, 1024*1024)
+	for cs.Scan() {
+		cv := cs.CommitView()
+		if idx := bytes.IndexByte(cv.Message, '\n'); idx < 0 {
+			buf.Write(cv.Message)
+		} else {
+			buf.Write(cv.Message[:idx+1])
+		}
+	}
+	buf.Flush()
+	if cmdErr != nil {
+		return cmdErr
+	}
+	return cs.Err()
 }

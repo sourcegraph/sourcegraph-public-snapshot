@@ -993,18 +993,19 @@ func (s *Server) search(w http.ResponseWriter, r *http.Request, args *protocol.S
 	// Search all commits, sending matching commits down resultChan
 	resultChan := make(chan *protocol.CommitMatch, 128)
 	g.Go(func() error {
-		defer close(resultChan)
-		done := ctx.Done()
+		// defer close(resultChan)
+		// done := ctx.Done()
 
-		return search.IterCommitMatches(dir.Path(), args.Revisions, args.Predicate, func(match *search.LazyCommit, highlights *search.HighlightedCommit) bool {
-			res := createCommitMatch(match, highlights, args.IncludeDiff)
-			select {
-			case <-done:
-				return false
-			case resultChan <- res:
-				return true
-			}
-		})
+		// return search.IterCommitMatches(dir.Path(), args.Revisions, args.Predicate, func(match *search.LazyCommit, highlights *search.HighlightedCommit) bool {
+		// 	res := createCommitMatch(match, highlights, args.IncludeDiff)
+		// 	select {
+		// 	case <-done:
+		// 		return false
+		// 	case resultChan <- res:
+		// 		return true
+		// 	}
+		// })
+		return nil
 	})
 
 	// Write matching commits to the stream, flushing occasionally
@@ -1063,32 +1064,6 @@ func matchCount(cm *protocol.CommitMatch) int {
 		return len(cm.Message.Highlights)
 	}
 	return 1
-}
-
-func createCommitMatch(commit *search.LazyCommit, highlights *search.HighlightedCommit, includeDiff bool) *protocol.CommitMatch {
-	cm := &protocol.CommitMatch{
-		Oid: api.CommitID(commit.Id().String()),
-
-		Message: highlights.Message,
-
-		Author:    gitSignatureToProtocolSignature(commit.Author()),
-		Committer: gitSignatureToProtocolSignature(commit.Committer()),
-		Parents:   commit.Parents(),
-	}
-
-	// Populate these since they might not have been populated during the search
-	if cm.Message.Content == "" {
-		cm.Message.Content = commit.Message()
-	}
-
-	if includeDiff {
-		cm.Diff = highlights.Diff
-		if cm.Diff.Content == "" {
-			cm.Diff.Content = commit.Message()
-		}
-	}
-
-	return cm
 }
 
 func gitSignatureToProtocolSignature(in *git.Signature) protocol.Signature {
