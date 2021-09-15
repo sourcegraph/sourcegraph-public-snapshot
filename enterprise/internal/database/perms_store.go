@@ -722,17 +722,12 @@ RETURNING id
 		return nil, ErrPermsUpdatedAtNotSet
 	}
 
-	accountIDs := make([]string, len(accounts.AccountIDs))
-	for i := range accounts.AccountIDs {
-		accountIDs[i] = accounts.AccountIDs[i]
-	}
-
 	return sqlf.Sprintf(
 		format,
 
 		accounts.ServiceType,
 		accounts.ServiceID,
-		pq.Array(accountIDs),
+		pq.Array(accounts.AccountIDs),
 
 		p.Perm.String(),
 		string(authz.PermRepos),
