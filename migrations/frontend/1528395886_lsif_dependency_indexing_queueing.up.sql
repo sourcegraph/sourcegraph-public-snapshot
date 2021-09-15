@@ -1,7 +1,10 @@
 
 BEGIN;
 
-CREATE TABLE IF NOT EXISTS lsif_dependency_indexing_queueing_jobs (
+ALTER TABLE lsif_dependency_indexing_jobs
+RENAME TO lsif_dependency_syncing_jobs;
+
+CREATE TABLE IF NOT EXISTS lsif_dependency_indexing_jobs (
     id serial PRIMARY KEY,
     state text DEFAULT 'queued' NOT NULL,
     failure_message text,

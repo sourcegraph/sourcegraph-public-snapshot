@@ -43,7 +43,7 @@ func (j *janitorJob) Routines(ctx context.Context) ([]goroutine.BackgroundRoutin
 		return nil, err
 	}
 
-	dependencyIndexStore, err := InitDependencyIndexStore()
+	dependencyIndexStore, err := InitDependencySyncingStore()
 	if err != nil {
 		return nil, err
 	}

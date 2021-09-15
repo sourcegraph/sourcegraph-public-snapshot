@@ -54,7 +54,7 @@ func TestDependencyIndexingSchedulerHandler(t *testing.T) {
 		gitserver:     mockGitServer,
 	}
 
-	job := dbstore.DependencyIndexingQueueingJob{
+	job := dbstore.DependencyIndexingJob{
 		UploadID:            42,
 		ExternalServiceKind: "",
 		ExternalServiceSync: time.Time{},
@@ -140,7 +140,7 @@ func TestDependencyIndexingSchedulerHandlerRequeueNotCloned(t *testing.T) {
 		gitserver:     mockGitServer,
 	}
 
-	job := dbstore.DependencyIndexingQueueingJob{
+	job := dbstore.DependencyIndexingJob{
 		UploadID:            42,
 		ExternalServiceKind: "",
 		ExternalServiceSync: time.Time{},
@@ -197,7 +197,7 @@ func TestDependencyIndexingSchedulerHandlerSkipNonExistant(t *testing.T) {
 		gitserver:     mockGitServer,
 	}
 
-	job := dbstore.DependencyIndexingQueueingJob{
+	job := dbstore.DependencyIndexingJob{
 		UploadID:            42,
 		ExternalServiceKind: "",
 		ExternalServiceSync: time.Time{},
@@ -237,7 +237,7 @@ func TestDependencyIndexingSchedulerHandlerShouldSkipRepository(t *testing.T) {
 		gitserver:     mockGitServer,
 	}
 
-	job := dbstore.DependencyIndexingQueueingJob{
+	job := dbstore.DependencyIndexingJob{
 		ExternalServiceKind: "",
 		ExternalServiceSync: time.Time{},
 		UploadID:            42,

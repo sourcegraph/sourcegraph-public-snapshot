@@ -25,7 +25,7 @@ var schemeToExternalService = map[string]string{
 }
 
 // NewDependencySyncScheduler returns a new worker instance that processes
-// records from lsif_dependency_indexing_jobs.
+// records from lsif_dependency_syncing_jobs.
 func NewDependencySyncScheduler(
 	dbStore DBStore,
 	workerStore dbworkerstore.Store,
@@ -56,7 +56,7 @@ type dependencySyncSchedulerHandler struct {
 }
 
 func (h *dependencySyncSchedulerHandler) Handle(ctx context.Context, record workerutil.Record) error {
-	job := record.(dbstore.DependencyIndexingJob)
+	job := record.(dbstore.DependencySyncingJob)
 
 	scanner, err := h.dbStore.ReferencesForUpload(ctx, job.UploadID)
 	if err != nil {
@@ -139,11 +139,9 @@ func (h *dependencySyncSchedulerHandler) Handle(ctx context.Context, record work
 		log15.Info("no package schema kinds to sync external services for", "upload", job.UploadID, "job", job.ID)
 	}
 
-	// append empty kind as queueing jobs are partitioned on extsvc kind, and we want queueing jobs for
-	// uploads not associated with explicitly syncing an external service e.g. Go uploads
 	for kind := range kinds {
-		if _, err := h.dbStore.InsertDependencyIndexingQueueingJob(ctx, job.UploadID, kind, nextSync); err != nil {
-			errs = append(errs, errors.Wrap(err, "dbstore.InsertDependencyIndexingQueueingJob"))
+		if _, err := h.dbStore.InsertDependencyIndexingJob(ctx, job.UploadID, kind, nextSync); err != nil {
+			errs = append(errs, errors.Wrap(err, "dbstore.InsertDependencyIndexingJob"))
 		}
 	}
 

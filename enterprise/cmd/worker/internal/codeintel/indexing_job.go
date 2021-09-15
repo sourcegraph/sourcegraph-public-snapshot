@@ -51,12 +51,12 @@ func (j *indexingJob) Routines(ctx context.Context) ([]goroutine.BackgroundRouti
 		return nil, err
 	}
 
-	dependencyIndexStore, err := InitDependencyIndexStore()
+	dependencySyncStore, err := InitDependencySyncingStore()
 	if err != nil {
 		return nil, err
 	}
 
-	dependencyIndexQueueingStore, err := InitDependencyIndexQueueingStore()
+	dependencyIndexStore, err := InitDependencyIndexingStore()
 	if err != nil {
 		return nil, err
 	}
@@ -75,7 +75,7 @@ func (j *indexingJob) Routines(ctx context.Context) ([]goroutine.BackgroundRouti
 		Name: "src_codeintel_dependency_index_total",
 		Help: "Total number of jobs in the queued state.",
 	}, func() float64 {
-		count, err := dependencyIndexStore.QueuedCount(context.Background(), false, nil)
+		count, err := dependencySyncStore.QueuedCount(context.Background(), false, nil)
 		if err != nil {
 			log15.Error("Failed to get queued job count", "error", err)
 		}
@@ -85,8 +85,8 @@ func (j *indexingJob) Routines(ctx context.Context) ([]goroutine.BackgroundRouti
 
 	routines := []goroutine.BackgroundRoutine{
 		indexing.NewIndexScheduler(dbStoreShim, settingStore, repoStore, indexEnqueuer, indexingConfigInst.AutoIndexingTaskInterval, observationContext),
-		indexing.NewDependencySyncScheduler(dbStoreShim, dependencyIndexStore, extSvcStore, syncMetrics),
-		indexing.NewDependencyIndexingScheduler(dbStoreShim, dependencyIndexQueueingStore, extSvcStore, gitserverClient, indexEnqueuer, indexingConfigInst.DependencyIndexerSchedulerPollInterval, indexingConfigInst.DependencyIndexerSchedulerConcurrency, queueingMetrics),
+		indexing.NewDependencySyncScheduler(dbStoreShim, dependencySyncStore, extSvcStore, syncMetrics),
+		indexing.NewDependencyIndexingScheduler(dbStoreShim, dependencyIndexStore, extSvcStore, gitserverClient, indexEnqueuer, indexingConfigInst.DependencyIndexerSchedulerPollInterval, indexingConfigInst.DependencyIndexerSchedulerConcurrency, queueingMetrics),
 	}
 
 	return routines, nil

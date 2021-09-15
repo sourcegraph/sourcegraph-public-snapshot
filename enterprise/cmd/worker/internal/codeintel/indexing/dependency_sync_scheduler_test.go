@@ -29,18 +29,18 @@ func TestDependencySyncSchedulerJVM(t *testing.T) {
 		extsvcStore: mockExtsvcStore,
 	}
 
-	job := dbstore.DependencyIndexingJob{
+	job := dbstore.DependencySyncingJob{
 		UploadID: 42,
 	}
 	if err := handler.Handle(context.Background(), job); err != nil {
 		t.Fatalf("unexpected error performing update: %s", err)
 	}
 
-	if len(mockDBStore.InsertDependencyIndexingQueueingJobFunc.History()) != 1 {
-		t.Errorf("unexpected number of calls to InsertDependencyIndexingQueueingJob. want=%d have=%d", 1, len(mockDBStore.InsertDependencyIndexingQueueingJobFunc.History()))
+	if len(mockDBStore.InsertDependencyIndexingJobFunc.History()) != 1 {
+		t.Errorf("unexpected number of calls to InsertDependencyIndexingJob. want=%d have=%d", 1, len(mockDBStore.InsertDependencyIndexingJobFunc.History()))
 	} else {
 		var kinds []string
-		for _, call := range mockDBStore.InsertDependencyIndexingQueueingJobFunc.History() {
+		for _, call := range mockDBStore.InsertDependencyIndexingJobFunc.History() {
 			kinds = append(kinds, call.Arg2)
 		}
 
@@ -75,18 +75,18 @@ func TestDependencySyncSchedulerGomod(t *testing.T) {
 		extsvcStore: mockExtsvcStore,
 	}
 
-	job := dbstore.DependencyIndexingJob{
+	job := dbstore.DependencySyncingJob{
 		UploadID: 42,
 	}
 	if err := handler.Handle(context.Background(), job); err != nil {
 		t.Fatalf("unexpected error performing update: %s", err)
 	}
 
-	if len(mockDBStore.InsertDependencyIndexingQueueingJobFunc.History()) != 1 {
-		t.Errorf("unexpected number of calls to InsertDependencyIndexingQueueingJob. want=%d have=%d", 1, len(mockDBStore.InsertDependencyIndexingQueueingJobFunc.History()))
+	if len(mockDBStore.InsertDependencyIndexingJobFunc.History()) != 1 {
+		t.Errorf("unexpected number of calls to InsertDependencyIndexingJob. want=%d have=%d", 1, len(mockDBStore.InsertDependencyIndexingJobFunc.History()))
 	} else {
 		var kinds []string
-		for _, call := range mockDBStore.InsertDependencyIndexingQueueingJobFunc.History() {
+		for _, call := range mockDBStore.InsertDependencyIndexingJobFunc.History() {
 			kinds = append(kinds, call.Arg2)
 		}
 

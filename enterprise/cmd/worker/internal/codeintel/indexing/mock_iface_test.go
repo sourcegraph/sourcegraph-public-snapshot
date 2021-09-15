@@ -41,10 +41,10 @@ type MockDBStore struct {
 	// object controlling the behavior of the method
 	// InsertCloneableDependencyRepo.
 	InsertCloneableDependencyRepoFunc *DBStoreInsertCloneableDependencyRepoFunc
-	// InsertDependencyIndexingQueueingJobFunc is an instance of a mock
-	// function object controlling the behavior of the method
-	// InsertDependencyIndexingQueueingJob.
-	InsertDependencyIndexingQueueingJobFunc *DBStoreInsertDependencyIndexingQueueingJobFunc
+	// InsertDependencyIndexingJobFunc is an instance of a mock function
+	// object controlling the behavior of the method
+	// InsertDependencyIndexingJob.
+	InsertDependencyIndexingJobFunc *DBStoreInsertDependencyIndexingJobFunc
 	// ReferencesForUploadFunc is an instance of a mock function object
 	// controlling the behavior of the method ReferencesForUpload.
 	ReferencesForUploadFunc *DBStoreReferencesForUploadFunc
@@ -82,7 +82,7 @@ func NewMockDBStore() *MockDBStore {
 				return false, nil
 			},
 		},
-		InsertDependencyIndexingQueueingJobFunc: &DBStoreInsertDependencyIndexingQueueingJobFunc{
+		InsertDependencyIndexingJobFunc: &DBStoreInsertDependencyIndexingJobFunc{
 			defaultHook: func(context.Context, int, string, time.Time) (int, error) {
 				return 0, nil
 			},
@@ -119,8 +119,8 @@ func NewMockDBStoreFrom(i DBStore) *MockDBStore {
 		InsertCloneableDependencyRepoFunc: &DBStoreInsertCloneableDependencyRepoFunc{
 			defaultHook: i.InsertCloneableDependencyRepo,
 		},
-		InsertDependencyIndexingQueueingJobFunc: &DBStoreInsertDependencyIndexingQueueingJobFunc{
-			defaultHook: i.InsertDependencyIndexingQueueingJob,
+		InsertDependencyIndexingJobFunc: &DBStoreInsertDependencyIndexingJobFunc{
+			defaultHook: i.InsertDependencyIndexingJob,
 		},
 		ReferencesForUploadFunc: &DBStoreReferencesForUploadFunc{
 			defaultHook: i.ReferencesForUpload,
@@ -688,38 +688,37 @@ func (c DBStoreInsertCloneableDependencyRepoFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 
-// DBStoreInsertDependencyIndexingQueueingJobFunc describes the behavior
-// when the InsertDependencyIndexingQueueingJob method of the parent
-// MockDBStore instance is invoked.
-type DBStoreInsertDependencyIndexingQueueingJobFunc struct {
+// DBStoreInsertDependencyIndexingJobFunc describes the behavior when the
+// InsertDependencyIndexingJob method of the parent MockDBStore instance is
+// invoked.
+type DBStoreInsertDependencyIndexingJobFunc struct {
 	defaultHook func(context.Context, int, string, time.Time) (int, error)
 	hooks       []func(context.Context, int, string, time.Time) (int, error)
-	history     []DBStoreInsertDependencyIndexingQueueingJobFuncCall
+	history     []DBStoreInsertDependencyIndexingJobFuncCall
 	mutex       sync.Mutex
 }
 
-// InsertDependencyIndexingQueueingJob delegates to the next hook function
-// in the queue and stores the parameter and result values of this
-// invocation.
-func (m *MockDBStore) InsertDependencyIndexingQueueingJob(v0 context.Context, v1 int, v2 string, v3 time.Time) (int, error) {
-	r0, r1 := m.InsertDependencyIndexingQueueingJobFunc.nextHook()(v0, v1, v2, v3)
-	m.InsertDependencyIndexingQueueingJobFunc.appendCall(DBStoreInsertDependencyIndexingQueueingJobFuncCall{v0, v1, v2, v3, r0, r1})
+// InsertDependencyIndexingJob delegates to the next hook function in the
+// queue and stores the parameter and result values of this invocation.
+func (m *MockDBStore) InsertDependencyIndexingJob(v0 context.Context, v1 int, v2 string, v3 time.Time) (int, error) {
+	r0, r1 := m.InsertDependencyIndexingJobFunc.nextHook()(v0, v1, v2, v3)
+	m.InsertDependencyIndexingJobFunc.appendCall(DBStoreInsertDependencyIndexingJobFuncCall{v0, v1, v2, v3, r0, r1})
 	return r0, r1
 }
 
 // SetDefaultHook sets function that is called when the
-// InsertDependencyIndexingQueueingJob method of the parent MockDBStore
-// instance is invoked and the hook queue is empty.
-func (f *DBStoreInsertDependencyIndexingQueueingJobFunc) SetDefaultHook(hook func(context.Context, int, string, time.Time) (int, error)) {
+// InsertDependencyIndexingJob method of the parent MockDBStore instance is
+// invoked and the hook queue is empty.
+func (f *DBStoreInsertDependencyIndexingJobFunc) SetDefaultHook(hook func(context.Context, int, string, time.Time) (int, error)) {
 	f.defaultHook = hook
 }
 
 // PushHook adds a function to the end of hook queue. Each invocation of the
-// InsertDependencyIndexingQueueingJob method of the parent MockDBStore
-// instance invokes the hook at the front of the queue and discards it.
-// After the queue is empty, the default hook function is invoked for any
-// future action.
-func (f *DBStoreInsertDependencyIndexingQueueingJobFunc) PushHook(hook func(context.Context, int, string, time.Time) (int, error)) {
+// InsertDependencyIndexingJob method of the parent MockDBStore instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *DBStoreInsertDependencyIndexingJobFunc) PushHook(hook func(context.Context, int, string, time.Time) (int, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -727,7 +726,7 @@ func (f *DBStoreInsertDependencyIndexingQueueingJobFunc) PushHook(hook func(cont
 
 // SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
 // the given values.
-func (f *DBStoreInsertDependencyIndexingQueueingJobFunc) SetDefaultReturn(r0 int, r1 error) {
+func (f *DBStoreInsertDependencyIndexingJobFunc) SetDefaultReturn(r0 int, r1 error) {
 	f.SetDefaultHook(func(context.Context, int, string, time.Time) (int, error) {
 		return r0, r1
 	})
@@ -735,13 +734,13 @@ func (f *DBStoreInsertDependencyIndexingQueueingJobFunc) SetDefaultReturn(r0 int
 
 // PushReturn calls PushDefaultHook with a function that returns the given
 // values.
-func (f *DBStoreInsertDependencyIndexingQueueingJobFunc) PushReturn(r0 int, r1 error) {
+func (f *DBStoreInsertDependencyIndexingJobFunc) PushReturn(r0 int, r1 error) {
 	f.PushHook(func(context.Context, int, string, time.Time) (int, error) {
 		return r0, r1
 	})
 }
 
-func (f *DBStoreInsertDependencyIndexingQueueingJobFunc) nextHook() func(context.Context, int, string, time.Time) (int, error) {
+func (f *DBStoreInsertDependencyIndexingJobFunc) nextHook() func(context.Context, int, string, time.Time) (int, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -754,28 +753,27 @@ func (f *DBStoreInsertDependencyIndexingQueueingJobFunc) nextHook() func(context
 	return hook
 }
 
-func (f *DBStoreInsertDependencyIndexingQueueingJobFunc) appendCall(r0 DBStoreInsertDependencyIndexingQueueingJobFuncCall) {
+func (f *DBStoreInsertDependencyIndexingJobFunc) appendCall(r0 DBStoreInsertDependencyIndexingJobFuncCall) {
 	f.mutex.Lock()
 	f.history = append(f.history, r0)
 	f.mutex.Unlock()
 }
 
-// History returns a sequence of
-// DBStoreInsertDependencyIndexingQueueingJobFuncCall objects describing the
-// invocations of this function.
-func (f *DBStoreInsertDependencyIndexingQueueingJobFunc) History() []DBStoreInsertDependencyIndexingQueueingJobFuncCall {
+// History returns a sequence of DBStoreInsertDependencyIndexingJobFuncCall
+// objects describing the invocations of this function.
+func (f *DBStoreInsertDependencyIndexingJobFunc) History() []DBStoreInsertDependencyIndexingJobFuncCall {
 	f.mutex.Lock()
-	history := make([]DBStoreInsertDependencyIndexingQueueingJobFuncCall, len(f.history))
+	history := make([]DBStoreInsertDependencyIndexingJobFuncCall, len(f.history))
 	copy(history, f.history)
 	f.mutex.Unlock()
 
 	return history
 }
 
-// DBStoreInsertDependencyIndexingQueueingJobFuncCall is an object that
-// describes an invocation of method InsertDependencyIndexingQueueingJob on
-// an instance of MockDBStore.
-type DBStoreInsertDependencyIndexingQueueingJobFuncCall struct {
+// DBStoreInsertDependencyIndexingJobFuncCall is an object that describes an
+// invocation of method InsertDependencyIndexingJob on an instance of
+// MockDBStore.
+type DBStoreInsertDependencyIndexingJobFuncCall struct {
 	// Arg0 is the value of the 1st argument passed to this method
 	// invocation.
 	Arg0 context.Context
@@ -798,13 +796,13 @@ type DBStoreInsertDependencyIndexingQueueingJobFuncCall struct {
 
 // Args returns an interface slice containing the arguments of this
 // invocation.
-func (c DBStoreInsertDependencyIndexingQueueingJobFuncCall) Args() []interface{} {
+func (c DBStoreInsertDependencyIndexingJobFuncCall) Args() []interface{} {
 	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3}
 }
 
 // Results returns an interface slice containing the results of this
 // invocation.
-func (c DBStoreInsertDependencyIndexingQueueingJobFuncCall) Results() []interface{} {
+func (c DBStoreInsertDependencyIndexingJobFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 

@@ -18,8 +18,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 )
 
+const requeueBackoff = time.Second * 30
+
 // NewDependencyIndexingScheduler returns a new worker instance that processes
-// records from lsif_dependency_indexing_queueing_jobs.
+// records from lsif_dependency_indexing_jobs.
 func NewDependencyIndexingScheduler(
 	dbStore DBStore,
 	workerStore dbworkerstore.Store,
@@ -37,6 +39,7 @@ func NewDependencyIndexingScheduler(
 		extsvcStore:   externalServiceStore,
 		indexEnqueuer: enqueuer,
 		workerStore:   workerStore,
+		gitserver:     gitserver,
 	}
 
 	return dbworker.NewWorker(rootContext, workerStore, handler, workerutil.WorkerOptions{
@@ -67,7 +70,7 @@ func (h *dependencyIndexingSchedulerHandler) Handle(ctx context.Context, record 
 		return nil
 	}
 
-	job := record.(dbstore.DependencyIndexingQueueingJob)
+	job := record.(dbstore.DependencyIndexingJob)
 
 	shouldIndex, err := h.shouldIndexDependencies(ctx, h.dbStore, job.UploadID)
 	if err != nil {
@@ -87,7 +90,7 @@ func (h *dependencyIndexingSchedulerHandler) Handle(ctx context.Context, record 
 
 		for _, externalService := range externalServices {
 			if externalService.LastSyncAt.Before(job.ExternalServiceSync) {
-				return h.workerStore.Requeue(ctx, job.ID, time.Now().Add(time.Second*10))
+				return h.workerStore.Requeue(ctx, job.ID, time.Now().Add(requeueBackoff))
 			}
 		}
 	}
@@ -137,7 +140,7 @@ func (h *dependencyIndexingSchedulerHandler) Handle(ctx context.Context, record 
 		if !info.Cloned && !info.CloneInProgress { // if the repository doesnt exist
 			delete(repoToPackages, repo)
 		} else if info.CloneInProgress { // we can't enqueue if still cloning
-			return h.workerStore.Requeue(ctx, job.ID, time.Now().Add(time.Second*10))
+			return h.workerStore.Requeue(ctx, job.ID, time.Now().Add(requeueBackoff))
 		}
 	}
 

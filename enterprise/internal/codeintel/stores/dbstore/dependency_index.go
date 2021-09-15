@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/inconshreveable/log15"
 	"github.com/keegancsmith/sqlf"
 	"github.com/opentracing/opentracing-go/log"
 
@@ -15,9 +16,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 )
 
-// DependencyIndexingJob is a subset of the lsif_dependency_indexing_jobs table and acts as the
+// DependencySyncingJob is a subset of the lsif_dependency_syncing_jobs table and acts as the
 // queue and execution record for indexing the dependencies of a particular completed upload.
-type DependencyIndexingJob struct {
+type DependencySyncingJob struct {
 	ID             int        `json:"id"`
 	State          string     `json:"state"`
 	FailureMessage *string    `json:"failureMessage"`
@@ -29,21 +30,21 @@ type DependencyIndexingJob struct {
 	UploadID       int        `json:"uploadId"`
 }
 
-func (u DependencyIndexingJob) RecordID() int {
+func (u DependencySyncingJob) RecordID() int {
 	return u.ID
 }
 
-// scanDependencyIndexingJob scans a slice of dependency indexing jobs from the return value of
+// scanDependencySyncingJobs scans a slice of dependency syncing jobs from the return value of
 // `*Store.query`.
-func scanDependencyIndexingJobs(rows *sql.Rows, queryErr error) (_ []DependencyIndexingJob, err error) {
+func scanDependencySyncingJobs(rows *sql.Rows, queryErr error) (_ []DependencySyncingJob, err error) {
 	if queryErr != nil {
 		return nil, queryErr
 	}
 	defer func() { err = basestore.CloseRows(rows, err) }()
 
-	var jobs []DependencyIndexingJob
+	var jobs []DependencySyncingJob
 	for rows.Next() {
-		var job DependencyIndexingJob
+		var job DependencySyncingJob
 		if err := rows.Scan(
 			&job.ID,
 			&job.State,
@@ -64,7 +65,7 @@ func scanDependencyIndexingJobs(rows *sql.Rows, queryErr error) (_ []DependencyI
 	return jobs, nil
 }
 
-var dependencyIndexingJobColumns = []*sqlf.Query{
+var dependencySyncingJobColumns = []*sqlf.Query{
 	sqlf.Sprintf("j.id"),
 	sqlf.Sprintf("j.state"),
 	sqlf.Sprintf("j.failure_message"),
@@ -76,25 +77,25 @@ var dependencyIndexingJobColumns = []*sqlf.Query{
 	sqlf.Sprintf("j.upload_id"),
 }
 
-// scanFirstDependencyIndexingJob scans a slice of dependency indexing jobs from the return
+// scanFirstDependencySyncingingJob scans a slice of dependency indexing jobs from the return
 // value of `*Store.query` and returns the first.
-func scanFirstDependencyIndexingJob(rows *sql.Rows, err error) (DependencyIndexingJob, bool, error) {
-	jobs, err := scanDependencyIndexingJobs(rows, err)
+func scanFirstDependencySyncingingJob(rows *sql.Rows, err error) (DependencySyncingJob, bool, error) {
+	jobs, err := scanDependencySyncingJobs(rows, err)
 	if err != nil || len(jobs) == 0 {
-		return DependencyIndexingJob{}, false, err
+		return DependencySyncingJob{}, false, err
 	}
 	return jobs[0], true, nil
 }
 
-// scanFirstDependencyIndexingJobRecord scans a slice of dependency indexing jobs from the
+// scanFirstDependencySyncingJobRecord scans a slice of dependency indexing jobs from the
 // return value of `*Store.query` and returns the first.
-func scanFirstDependencyIndexingJobRecord(rows *sql.Rows, err error) (workerutil.Record, bool, error) {
-	return scanFirstDependencyIndexingJob(rows, err)
+func scanFirstDependencySyncingJobRecord(rows *sql.Rows, err error) (workerutil.Record, bool, error) {
+	return scanFirstDependencySyncingingJob(rows, err)
 }
 
-// DependencyIndexingQueueingJob is a subset of the lsif_dependency_indexing_jobs table and acts as the
+// DependencyIndexingJob is a subset of the lsif_dependency_indexing_jobs table and acts as the
 // queue and execution record for indexing the dependencies of a particular completed upload.
-type DependencyIndexingQueueingJob struct {
+type DependencyIndexingJob struct {
 	ID                  int        `json:"id"`
 	State               string     `json:"state"`
 	FailureMessage      *string    `json:"failureMessage"`
@@ -108,21 +109,21 @@ type DependencyIndexingQueueingJob struct {
 	ExternalServiceSync time.Time  `json:"externalServiceSync"`
 }
 
-func (u DependencyIndexingQueueingJob) RecordID() int {
+func (u DependencyIndexingJob) RecordID() int {
 	return u.ID
 }
 
-// scanDependencyIndexingQueueingJob scans a slice of dependency indexing jobs from the return value of
+// scanDependencyIndexingJobs scans a slice of dependency indexing jobs from the return value of
 // `*Store.query`.
-func scanDependencyIndexingQueueingJobs(rows *sql.Rows, queryErr error) (_ []DependencyIndexingQueueingJob, err error) {
+func scanDependencyIndexingJobs(rows *sql.Rows, queryErr error) (_ []DependencyIndexingJob, err error) {
 	if queryErr != nil {
 		return nil, queryErr
 	}
 	defer func() { err = basestore.CloseRows(rows, err) }()
 
-	var jobs []DependencyIndexingQueueingJob
+	var jobs []DependencyIndexingJob
 	for rows.Next() {
-		var job DependencyIndexingQueueingJob
+		var job DependencyIndexingJob
 		if err := rows.Scan(
 			&job.ID,
 			&job.State,
@@ -145,7 +146,7 @@ func scanDependencyIndexingQueueingJobs(rows *sql.Rows, queryErr error) (_ []Dep
 	return jobs, nil
 }
 
-var dependencyIndexingQueueingJobColumns = []*sqlf.Query{
+var dependencyIndexingJobColumns = []*sqlf.Query{
 	sqlf.Sprintf("j.id"),
 	sqlf.Sprintf("j.state"),
 	sqlf.Sprintf("j.failure_message"),
@@ -159,38 +160,38 @@ var dependencyIndexingQueueingJobColumns = []*sqlf.Query{
 	sqlf.Sprintf("j.external_service_sync"),
 }
 
-// scanFirstDependencyIndexingQueueingJob scans a slice of dependency indexing jobs from the return
+// scanFirstDependencyIndexingJob scans a slice of dependency indexing jobs from the return
 // value of `*Store.query` and returns the first.
-func scanFirstDependencyIndexingQueueingJob(rows *sql.Rows, err error) (DependencyIndexingQueueingJob, bool, error) {
-	jobs, err := scanDependencyIndexingQueueingJobs(rows, err)
+func scanFirstDependencyIndexingJob(rows *sql.Rows, err error) (DependencyIndexingJob, bool, error) {
+	jobs, err := scanDependencyIndexingJobs(rows, err)
 	if err != nil || len(jobs) == 0 {
-		return DependencyIndexingQueueingJob{}, false, err
+		return DependencyIndexingJob{}, false, err
 	}
 	return jobs[0], true, nil
 }
 
-// scanFirstDependencyIndexingQueueingJobRecord scans a slice of dependency indexing jobs from the
+// scanFirstDependencyIndexingJobRecord scans a slice of dependency indexing jobs from the
 // return value of `*Store.query` and returns the first.
-func scanFirstDependencyIndexingQueueingJobRecord(rows *sql.Rows, err error) (workerutil.Record, bool, error) {
-	return scanFirstDependencyIndexingQueueingJob(rows, err)
+func scanFirstDependencyIndexingJobRecord(rows *sql.Rows, err error) (workerutil.Record, bool, error) {
+	return scanFirstDependencyIndexingJob(rows, err)
 }
 
-// InsertDependencyIndexingJob inserts a new dependency indexing job and returns its identifier.
-func (s *Store) InsertDependencyIndexingJob(ctx context.Context, uploadID int) (id int, err error) {
-	ctx, endObservation := s.operations.insertDependencyIndexingJob.With(ctx, &err, observation.Args{})
+// InsertDependencySyncingJob inserts a new dependency syncing job and returns its identifier.
+func (s *Store) InsertDependencySyncingJob(ctx context.Context, uploadID int) (id int, err error) {
+	ctx, endObservation := s.operations.insertDependencySyncingJob.With(ctx, &err, observation.Args{})
 	defer func() {
 		endObservation(1, observation.Args{LogFields: []log.Field{
 			log.Int("id", id),
 		}})
 	}()
 
-	id, _, err = basestore.ScanFirstInt(s.Store.Query(ctx, sqlf.Sprintf(insertDependencyIndexingJobQuery, uploadID)))
+	id, _, err = basestore.ScanFirstInt(s.Store.Query(ctx, sqlf.Sprintf(insertDependencySyncingJobQuery, uploadID)))
 	return id, err
 }
 
-const insertDependencyIndexingJobQuery = `
--- source: enterprise/internal/codeintel/stores/dbstore/dependency_index.go:InsertDependencyIndexingJob
-INSERT INTO lsif_dependency_indexing_jobs (upload_id) VALUES (%s)
+const insertDependencySyncingJobQuery = `
+-- source: enterprise/internal/codeintel/stores/dbstore/dependency_index.go:InsertDependencySyncingJob
+INSERT INTO lsif_dependency_syncing_jobs (upload_id) VALUES (%s)
 RETURNING id
 `
 
@@ -204,6 +205,7 @@ func (s *Store) InsertCloneableDependencyRepo(ctx context.Context, dependency pr
 	}()
 
 	_, new, err = basestore.ScanFirstInt(s.Store.Query(ctx, sqlf.Sprintf(insertCloneableDependencyRepoQuery, dependency.Scheme, dependency.Name, dependency.Version)))
+	log15.Info("INSERTED CLONEABLE DEPENDENCIES", "new", new, "package", dependency)
 	return
 }
 
@@ -215,8 +217,8 @@ ON CONFLICT DO NOTHING
 RETURNING 1
 `
 
-func (s *Store) InsertDependencyIndexingQueueingJob(ctx context.Context, uploadID int, externalServiceKind string, syncTime time.Time) (id int, err error) {
-	ctx, endObservation := s.operations.insertDependencyIndexingQueueingJob.With(ctx, &err, observation.Args{LogFields: []log.Field{
+func (s *Store) InsertDependencyIndexingJob(ctx context.Context, uploadID int, externalServiceKind string, syncTime time.Time) (id int, err error) {
+	ctx, endObservation := s.operations.insertDependencyIndexingJob.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("uploadId", uploadID),
 		log.String("extSvcKind", externalServiceKind),
 	}})
@@ -226,13 +228,13 @@ func (s *Store) InsertDependencyIndexingQueueingJob(ctx context.Context, uploadI
 		}})
 	}()
 
-	id, _, err = basestore.ScanFirstInt(s.Store.Query(ctx, sqlf.Sprintf(insertDependencyIndexingQueueingJobQuery, uploadID, externalServiceKind, syncTime)))
+	id, _, err = basestore.ScanFirstInt(s.Store.Query(ctx, sqlf.Sprintf(insertDependencyIndexingJobQuery, uploadID, externalServiceKind, syncTime)))
 	return id, err
 }
 
-const insertDependencyIndexingQueueingJobQuery = `
--- source: enterprise/internal/codeintel/stores/dbstore/dependency_index.go:InsertDependencyIndexingSubJob
-INSERT INTO lsif_dependency_indexing_queueing_jobs (upload_id, external_service_kind, external_service_sync)
+const insertDependencyIndexingJobQuery = `
+-- source: enterprise/internal/codeintel/stores/dbstore/dependency_index.go:InsertDependencyIndexingJob
+INSERT INTO lsif_dependency_indexing_jobs (upload_id, external_service_kind, external_service_sync)
 VALUES (%s, %s, %s)
 RETURNING id
 `
