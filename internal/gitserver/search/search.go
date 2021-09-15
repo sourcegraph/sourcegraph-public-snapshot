@@ -234,12 +234,16 @@ type DiffFetcher struct {
 func StartDiffFetcher(ctx context.Context, dir string) (*DiffFetcher, error) {
 	cmd := exec.CommandContext(ctx, "git", "diff-tree", "--stdin", "-p", "--format=format:")
 	cmd.Dir = dir
+
 	stdoutReader, stdoutWriter := io.Pipe()
 	cmd.Stdout = stdoutWriter
+
 	stdinReader, stdinWriter := io.Pipe()
 	cmd.Stdin = stdinReader
+
 	var stderrBuf bytes.Buffer
 	cmd.Stderr = &stderrBuf
+
 	if err := cmd.Start(); err != nil {
 		return nil, err
 	}
@@ -260,10 +264,7 @@ func StartDiffFetcher(ctx context.Context, dir string) (*DiffFetcher, error) {
 	}, nil
 }
 
-func (d *DiffFetcher) FetchDiff(hash []byte) (string, error) {
-	d.stdin.Write(hash)
-	d.stdin.Write([]byte{'\n'})
-
+func (d *DiffFetcher) FetchDiff(hash []byte) ([]byte, error) {
 	// HACK: There is no way (as far as I can tell) to make `git diff-tree --stdin` to
 	// write a trailing null byte or tell us how much to read in advance, and since we're
 	// using a long-running process, the stream doesn't close at the end, and we can't use the
@@ -271,16 +272,16 @@ func (d *DiffFetcher) FetchDiff(hash []byte) (string, error) {
 	// serially. We resort to sending the subprocess a bogus commit hash named "EOF", which it
 	// will fail to read as a tree, and print back to stdout literally. We use this as a signal
 	// that the subprocess is done outputting for this commit.
-	d.stdin.Write([]byte("ENDOFPATCH\n"))
+	d.stdin.Write(append(hash, []byte("\nENDOFPATCH\n")...))
 
 	if d.scanner.Scan() {
-		return string(d.scanner.Bytes()), nil
+		return d.scanner.Bytes(), nil
 	} else if err := d.scanner.Err(); err != nil {
-		return "", err
+		return nil, err
 	} else if d.stderr.String() != "" {
-		return "", errors.Errorf("git subprocess stderr: %s", d.stderr.String())
+		return nil, errors.Errorf("git subprocess stderr: %s", d.stderr.String())
 	}
-	return "", errors.New("expected scan to succeed")
+	return nil, errors.New("expected scan to succeed")
 }
 
 type LazyCommit struct {
@@ -295,4 +296,13 @@ func (l *LazyCommit) AuthorDate() (time.Time, error) {
 	}
 
 	return time.Unix(int64(unixSeconds), 0), nil
+}
+
+func (l *LazyCommit) Diff() (FormattedDiff, error) {
+	gitDiff, err := l.diffFetcher.FetchDiff(l.Hash)
+	if err != nil {
+		return "", err
+	}
+
+	return FormatDiff(gitDiff), nil
 }

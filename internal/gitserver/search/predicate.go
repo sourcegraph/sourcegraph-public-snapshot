@@ -82,46 +82,45 @@ func (m *MessageMatches) Match(commit *LazyCommit) (bool, *HighlightedCommit, er
 	}, nil
 }
 
-// // DiffMatches is a a predicate that matches if any of the lines changed by
-// // the commit match the given regex pattern.
-// type DiffMatches struct {
-// 	Regexp
-// }
+// DiffMatches is a a predicate that matches if any of the lines changed by
+// the commit match the given regex pattern.
+type DiffMatches struct {
+	Regexp
+}
 
-// func (dm *DiffMatches) Match(commit *LazyCommit) (bool, *HighlightedCommit) {
-// 	diff, err := commit.Diff()
-// 	if err != nil {
-// 		// TODO(camdencheek) don't ignore error
-// 		return false, nil
-// 	}
+func (dm *DiffMatches) Match(commit *LazyCommit) (bool, *HighlightedCommit, error) {
+	diff, err := commit.Diff()
+	if err != nil {
+		return false, nil, err
+	}
 
-// 	foundMatch := false
-// 	var highlights Ranges
+	foundMatch := false
+	var highlights Ranges
 
-// 	diff.ForEachDelta(func(d Delta) bool {
-// 		d.ForEachHunk(func(h Hunk) bool {
-// 			h.ForEachLine(func(l Line) bool {
-// 				switch l.Origin() {
-// 				case '+', '-':
-// 				default:
-// 					return true
-// 				}
+	diff.ForEachDelta(func(d Delta) bool {
+		d.ForEachHunk(func(h Hunk) bool {
+			h.ForEachLine(func(l Line) bool {
+				switch l.Origin() {
+				case '+', '-':
+				default:
+					return true
+				}
 
-// 				content, loc := l.Content()
-// 				matches := dm.FindAllStringIndex(content, -1)
-// 				if matches != nil {
-// 					foundMatch = true
-// 					highlights = append(highlights, matchesToRanges(content, matches).Shift(loc)...)
-// 				}
-// 				return true
-// 			})
-// 			return true
-// 		})
-// 		return true
-// 	})
+				content, loc := l.Content()
+				matches := dm.FindAllStringIndex(content, -1)
+				if matches != nil {
+					foundMatch = true
+					highlights = append(highlights, matchesToRanges(content, matches).Shift(loc)...)
+				}
+				return true
+			})
+			return true
+		})
+		return true
+	})
 
-// 	return foundMatch, &HighlightedCommit{Diff: HighlightedString{Content: string(diff), Highlights: highlights}}
-// }
+	return foundMatch, &HighlightedCommit{Diff: HighlightedString{Content: string(diff), Highlights: highlights}}, nil
+}
 
 // // DiffModifiesFile is a predicate that matches if the commit modifies any files
 // // that match the given regex pattern.

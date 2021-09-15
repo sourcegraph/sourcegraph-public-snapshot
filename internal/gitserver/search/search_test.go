@@ -10,7 +10,9 @@ import (
 
 func BenchmarkGitSearch(b *testing.B) {
 	for i := 0; i < b.N; i++ {
-		predicate := &AuthorMatches{Regexp{regexp.MustCompile("camden")}}
+		predicate := &And{[]CommitPredicate{
+			&DiffMatches{Regexp{regexp.MustCompile("camden")}},
+		}}
 
 		buf := bufio.NewWriter(os.Stdout)
 		err := Search("/Users/ccheek/src/sourcegraph/sourcegraph", nil, predicate, func(lc *LazyCommit, hl *HighlightedCommit) bool {
