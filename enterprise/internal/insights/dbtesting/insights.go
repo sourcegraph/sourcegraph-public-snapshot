@@ -9,6 +9,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/inconshreveable/log15"
+
 	"github.com/jackc/pgx/v4"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
@@ -50,6 +52,7 @@ func TimescaleDB(t testing.TB) (db *sql.DB, cleanup func()) {
 
 	// Create database just for this test.
 	dbname := "insights_test_" + strings.ToLower(strings.ReplaceAll(t.Name(), "/", "_"))
+	log15.Info("dbname", "name", dbname)
 	_, err = initConn.Exec(ctx, "DROP DATABASE IF EXISTS "+dbname+";")
 	if err != nil {
 		t.Fatal("dropping test database", err)

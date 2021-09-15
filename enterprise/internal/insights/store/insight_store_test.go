@@ -23,7 +23,15 @@ func TestGet(t *testing.T) {
 
 	_, err := timescale.Exec(`INSERT INTO insight_view (title, description, unique_id)
 									VALUES ('test title', 'test description', 'unique-1'),
-									       ('test title 2', 'test description 2', 'unique-2');`)
+									       ('test title 2', 'test description 2', 'unique-2')`)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// assign some global grants just so the test can immediately fetch the created views
+	_, err = timescale.Exec(`INSERT INTO insight_view_grants (insight_view_id, global)
+									VALUES (1, true),
+									       (2, true)`)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -273,7 +281,7 @@ func TestCreateView(t *testing.T) {
 			UniqueID:    "1234567",
 		}
 
-		got, err := store.CreateView(ctx, view)
+		got, err := store.CreateView(ctx, view, []InsightViewGrant{GlobalGrant()})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -288,6 +296,91 @@ func TestCreateView(t *testing.T) {
 		if diff := cmp.Diff(want, got); diff != "" {
 			t.Errorf("unexpected result from create insight view (want/got): %s", diff)
 		}
+	})
+}
+
+func TestCreateGetView_WithGrants(t *testing.T) {
+	timescale, cleanup := insightsdbtesting.TimescaleDB(t)
+	defer cleanup()
+	now := time.Date(2020, 1, 1, 0, 0, 0, 0, time.UTC).Truncate(time.Microsecond).Round(0)
+	ctx := context.Background()
+
+	store := NewInsightStore(timescale)
+	store.Now = func() time.Time {
+		return now
+	}
+
+	uniqueID := "user1viewonly"
+	view, err := store.CreateView(ctx, types.InsightView{
+		Title:       "user 1 view only",
+		Description: "user 1 should see this only",
+		UniqueID:    uniqueID,
+	}, []InsightViewGrant{UserGrant(1), OrgGrant(5)})
+	if err != nil {
+		t.Fatal(err)
+	}
+	series, err := store.CreateSeries(ctx, types.InsightSeries{
+		SeriesID:              "series1",
+		Query:                 "query1",
+		CreatedAt:             now,
+		OldestHistoricalAt:    now,
+		LastRecordedAt:        now,
+		NextRecordingAfter:    now,
+		LastSnapshotAt:        now,
+		NextSnapshotAfter:     now,
+		BackfillQueuedAt:      now,
+		RecordingIntervalDays: 0,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = store.AttachSeriesToView(ctx, series, view, types.InsightViewSeriesMetadata{
+		Label:  "label1",
+		Stroke: "blue",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	t.Run("user 1 can see this view", func(t *testing.T) {
+		got, err := store.Get(ctx, InsightQueryArgs{UniqueID: uniqueID, UserID: []int{1}})
+		if err != nil {
+			t.Fatal(err)
+		}
+		if len(got) == 0 {
+			t.Errorf("unexpected count for user 1 insight views")
+		}
+		autogold.Equal(t, got, autogold.ExportedOnly())
+	})
+
+	t.Run("user 2 cannot see the view", func(t *testing.T) {
+		got, err := store.Get(ctx, InsightQueryArgs{UniqueID: uniqueID, UserID: []int{2}})
+		if err != nil {
+			t.Fatal(err)
+		}
+		if len(got) != 0 {
+			t.Errorf("unexpected count for user 2 insight views")
+		}
+	})
+
+	t.Run("org 1 cannot see the view", func(t *testing.T) {
+		got, err := store.Get(ctx, InsightQueryArgs{UniqueID: uniqueID, UserID: []int{3}, OrgID: []int{1}})
+		if err != nil {
+			t.Fatal(err)
+		}
+		if len(got) != 0 {
+			t.Errorf("unexpected count for org 1 insight views")
+		}
+	})
+	t.Run("org 5 can see the view", func(t *testing.T) {
+		got, err := store.Get(ctx, InsightQueryArgs{UniqueID: uniqueID, UserID: []int{3}, OrgID: []int{5}})
+		if err != nil {
+			t.Fatal(err)
+		}
+		if len(got) == 0 {
+			t.Errorf("unexpected count for org 5 insight views")
+		}
+		autogold.Equal(t, got, autogold.ExportedOnly())
 	})
 }
 
@@ -322,7 +415,7 @@ func TestAttachSeriesView(t *testing.T) {
 			Description: "my view description",
 			UniqueID:    "1234567",
 		}
-		view, err = store.CreateView(ctx, view)
+		view, err = store.CreateView(ctx, view, []InsightViewGrant{GlobalGrant()})
 		if err != nil {
 			t.Fatal(err)
 		}

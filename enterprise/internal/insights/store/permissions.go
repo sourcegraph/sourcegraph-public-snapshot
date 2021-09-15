@@ -61,3 +61,28 @@ func NewInsightPermissionStore(db dbutil.DB) *InsightPermStore {
 type InsightPermissionStore interface {
 	GetUnauthorizedRepoIDs(ctx context.Context) (results []api.RepoID, err error)
 }
+
+type InsightViewGrant struct {
+	UserID *int
+	OrgID  *int
+	Global *bool
+}
+
+func (i InsightViewGrant) toQuery(insightViewID int) *sqlf.Query {
+	// insight_view_id, org_id, user_id, global
+	valuesFmt := "(%s, %s, %s, %s)"
+	return sqlf.Sprintf(valuesFmt, insightViewID, i.OrgID, i.UserID, i.Global)
+}
+
+func UserGrant(userID int) InsightViewGrant {
+	return InsightViewGrant{UserID: &userID}
+}
+
+func OrgGrant(orgID int) InsightViewGrant {
+	return InsightViewGrant{OrgID: &orgID}
+}
+
+func GlobalGrant() InsightViewGrant {
+	b := true
+	return InsightViewGrant{Global: &b}
+}

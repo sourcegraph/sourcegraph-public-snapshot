@@ -235,7 +235,7 @@ func migrateSeries(ctx context.Context, insightStore *store.InsightStore, from i
 		UniqueID:    from.ID,
 	}
 
-	view, err = tx.CreateView(ctx, view)
+	view, err = tx.CreateView(ctx, view, nil)
 	if err != nil {
 		return errors.Wrapf(err, "unable to migrate insight unique_id: %s", from.ID)
 	}

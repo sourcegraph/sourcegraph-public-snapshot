@@ -158,6 +158,11 @@ func GetIntegratedInsights(ctx context.Context, db dbutil.DB) ([]SearchInsight, 
 
 	results := make([]SearchInsight, 0)
 	for _, setting := range settings {
+		perms := permissionAssociations{
+			userID: setting.Subject.User,
+			orgID:  setting.Subject.Org,
+		}
+
 		var raw map[string]json.RawMessage
 		raw, err = FilterSettingJson(setting.Contents, prefix)
 		if err != nil {
@@ -172,7 +177,7 @@ func GetIntegratedInsights(ctx context.Context, db dbutil.DB) ([]SearchInsight, 
 				// this isn't actually a total failure case, we could have partially parsed this dictionary.
 				multi = multierror.Append(multi, err)
 			}
-			results = append(results, temp.Insights()...)
+			results = append(results, temp.Insights(perms)...)
 		}
 	}
 
@@ -209,11 +214,23 @@ func unmarshalIntegrated(raw json.RawMessage) (IntegratedInsights, error) {
 	return result, multi
 }
 
+// permissionAssociations contains user / org information that is derived from a setting
+type permissionAssociations struct {
+	userID *int32
+	orgID  *int32
+}
+
 // Insights returns an array of contained insights.
-func (i IntegratedInsights) Insights() []SearchInsight {
+func (i IntegratedInsights) Insights(perms permissionAssociations) []SearchInsight {
 	results := make([]SearchInsight, 0)
 	for key, insight := range i {
 		insight.ID = key // the insight ID is the value of the dict key
+
+		// each setting is owned by either a user or an organization, which needs to be mapped when this insight is synced
+		// to preserve permissions semantics
+		insight.UserID = perms.userID
+		insight.OrgID = perms.orgID
+
 		results = append(results, insight)
 	}
 	return results
@@ -241,6 +258,8 @@ type SearchInsight struct {
 	Series       []TimeSeries
 	Step         Interval
 	Visibility   string
+	OrgID        *int32
+	UserID       *int32
 }
 
 type LangStatsInsight struct {
