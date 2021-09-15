@@ -3747,7 +3747,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Search team](https://about.sourcegraph.com/handbook/engineering/search).*</sub>
+<sub>*Managed by the [Sourcegraph Search-core team](https://about.sourcegraph.com/handbook/engineering/search/core).*</sub>
 
 <br />
 
@@ -3770,7 +3770,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Search team](https://about.sourcegraph.com/handbook/engineering/search).*</sub>
+<sub>*Managed by the [Sourcegraph Search-core team](https://about.sourcegraph.com/handbook/engineering/search/core).*</sub>
 
 <br />
 
@@ -3800,7 +3800,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Search team](https://about.sourcegraph.com/handbook/engineering/search).*</sub>
+<sub>*Managed by the [Sourcegraph Search-core team](https://about.sourcegraph.com/handbook/engineering/search/core).*</sub>
 
 <br />
 
@@ -3825,7 +3825,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Search team](https://about.sourcegraph.com/handbook/engineering/search).*</sub>
+<sub>*Managed by the [Sourcegraph Search-core team](https://about.sourcegraph.com/handbook/engineering/search/core).*</sub>
 
 <br />
 
@@ -3850,7 +3850,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Search team](https://about.sourcegraph.com/handbook/engineering/search).*</sub>
+<sub>*Managed by the [Sourcegraph Search-core team](https://about.sourcegraph.com/handbook/engineering/search/core).*</sub>
 
 <br />
 
@@ -3875,7 +3875,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Search team](https://about.sourcegraph.com/handbook/engineering/search).*</sub>
+<sub>*Managed by the [Sourcegraph Search-core team](https://about.sourcegraph.com/handbook/engineering/search/core).*</sub>
 
 <br />
 
@@ -3900,7 +3900,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Search team](https://about.sourcegraph.com/handbook/engineering/search).*</sub>
+<sub>*Managed by the [Sourcegraph Search-core team](https://about.sourcegraph.com/handbook/engineering/search/core).*</sub>
 
 <br />
 
@@ -3925,7 +3925,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Search team](https://about.sourcegraph.com/handbook/engineering/search).*</sub>
+<sub>*Managed by the [Sourcegraph Search-core team](https://about.sourcegraph.com/handbook/engineering/search/core).*</sub>
 
 <br />
 
@@ -3950,7 +3950,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Search team](https://about.sourcegraph.com/handbook/engineering/search).*</sub>
+<sub>*Managed by the [Sourcegraph Search-core team](https://about.sourcegraph.com/handbook/engineering/search/core).*</sub>
 
 <br />
 
@@ -3973,7 +3973,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Search team](https://about.sourcegraph.com/handbook/engineering/search).*</sub>
+<sub>*Managed by the [Sourcegraph Search-core team](https://about.sourcegraph.com/handbook/engineering/search/core).*</sub>
 
 <br />
 
@@ -3996,7 +3996,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Search team](https://about.sourcegraph.com/handbook/engineering/search).*</sub>
+<sub>*Managed by the [Sourcegraph Search-core team](https://about.sourcegraph.com/handbook/engineering/search/core).*</sub>
 
 <br />
 
@@ -4019,7 +4019,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Search team](https://about.sourcegraph.com/handbook/engineering/search).*</sub>
+<sub>*Managed by the [Sourcegraph Search-core team](https://about.sourcegraph.com/handbook/engineering/search/core).*</sub>
 
 <br />
 
@@ -4512,7 +4512,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Search team](https://about.sourcegraph.com/handbook/engineering/search).*</sub>
+<sub>*Managed by the [Sourcegraph Search-core team](https://about.sourcegraph.com/handbook/engineering/search/core).*</sub>
 
 <br />
 
@@ -4537,7 +4537,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Search team](https://about.sourcegraph.com/handbook/engineering/search).*</sub>
+<sub>*Managed by the [Sourcegraph Search-core team](https://about.sourcegraph.com/handbook/engineering/search/core).*</sub>
 
 <br />
 
@@ -4562,7 +4562,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Search team](https://about.sourcegraph.com/handbook/engineering/search).*</sub>
+<sub>*Managed by the [Sourcegraph Search-core team](https://about.sourcegraph.com/handbook/engineering/search/core).*</sub>
 
 <br />
 
@@ -4587,7 +4587,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Search team](https://about.sourcegraph.com/handbook/engineering/search).*</sub>
+<sub>*Managed by the [Sourcegraph Search-core team](https://about.sourcegraph.com/handbook/engineering/search/core).*</sub>
 
 <br />
 
@@ -4612,7 +4612,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Search team](https://about.sourcegraph.com/handbook/engineering/search).*</sub>
+<sub>*Managed by the [Sourcegraph Search-core team](https://about.sourcegraph.com/handbook/engineering/search/core).*</sub>
 
 <br />
 
@@ -4637,7 +4637,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Search team](https://about.sourcegraph.com/handbook/engineering/search).*</sub>
+<sub>*Managed by the [Sourcegraph Search-core team](https://about.sourcegraph.com/handbook/engineering/search/core).*</sub>
 
 <br />
 
@@ -4662,7 +4662,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Search team](https://about.sourcegraph.com/handbook/engineering/search).*</sub>
+<sub>*Managed by the [Sourcegraph Search-core team](https://about.sourcegraph.com/handbook/engineering/search/core).*</sub>
 
 <br />
 
@@ -4685,7 +4685,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Search team](https://about.sourcegraph.com/handbook/engineering/search).*</sub>
+<sub>*Managed by the [Sourcegraph Search-core team](https://about.sourcegraph.com/handbook/engineering/search/core).*</sub>
 
 <br />
 
@@ -4708,7 +4708,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Search team](https://about.sourcegraph.com/handbook/engineering/search).*</sub>
+<sub>*Managed by the [Sourcegraph Search-core team](https://about.sourcegraph.com/handbook/engineering/search/core).*</sub>
 
 <br />
 
@@ -4733,7 +4733,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Search team](https://about.sourcegraph.com/handbook/engineering/search).*</sub>
+<sub>*Managed by the [Sourcegraph Search-core team](https://about.sourcegraph.com/handbook/engineering/search/core).*</sub>
 
 <br />
 
@@ -4758,7 +4758,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Search team](https://about.sourcegraph.com/handbook/engineering/search).*</sub>
+<sub>*Managed by the [Sourcegraph Search-core team](https://about.sourcegraph.com/handbook/engineering/search/core).*</sub>
 
 <br />
 
@@ -4783,7 +4783,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Search team](https://about.sourcegraph.com/handbook/engineering/search).*</sub>
+<sub>*Managed by the [Sourcegraph Search-core team](https://about.sourcegraph.com/handbook/engineering/search/core).*</sub>
 
 <br />
 
@@ -4808,7 +4808,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Search team](https://about.sourcegraph.com/handbook/engineering/search).*</sub>
+<sub>*Managed by the [Sourcegraph Search-core team](https://about.sourcegraph.com/handbook/engineering/search/core).*</sub>
 
 <br />
 
@@ -4833,7 +4833,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Search team](https://about.sourcegraph.com/handbook/engineering/search).*</sub>
+<sub>*Managed by the [Sourcegraph Search-core team](https://about.sourcegraph.com/handbook/engineering/search/core).*</sub>
 
 <br />
 
@@ -4858,7 +4858,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Search team](https://about.sourcegraph.com/handbook/engineering/search).*</sub>
+<sub>*Managed by the [Sourcegraph Search-core team](https://about.sourcegraph.com/handbook/engineering/search/core).*</sub>
 
 <br />
 

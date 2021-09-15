@@ -10198,7 +10198,7 @@ Refer to the [alert solutions reference](./alert_solutions.md#searcher-unindexed
 
 To see this panel, visit `/-/debug/grafana/d/searcher/searcher?viewPanel=100000` on your Sourcegraph instance.
 
-<sub>*Managed by the [Sourcegraph Search team](https://about.sourcegraph.com/handbook/engineering/search).*</sub>
+<sub>*Managed by the [Sourcegraph Search-core team](https://about.sourcegraph.com/handbook/engineering/search/core).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -10219,7 +10219,7 @@ Refer to the [alert solutions reference](./alert_solutions.md#searcher-replica-t
 
 To see this panel, visit `/-/debug/grafana/d/searcher/searcher?viewPanel=100001` on your Sourcegraph instance.
 
-<sub>*Managed by the [Sourcegraph Search team](https://about.sourcegraph.com/handbook/engineering/search).*</sub>
+<sub>*Managed by the [Sourcegraph Search-core team](https://about.sourcegraph.com/handbook/engineering/search/core).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -10242,7 +10242,7 @@ Refer to the [alert solutions reference](./alert_solutions.md#searcher-frontend-
 
 To see this panel, visit `/-/debug/grafana/d/searcher/searcher?viewPanel=100100` on your Sourcegraph instance.
 
-<sub>*Managed by the [Sourcegraph Search team](https://about.sourcegraph.com/handbook/engineering/search).*</sub>
+<sub>*Managed by the [Sourcegraph Search-core team](https://about.sourcegraph.com/handbook/engineering/search/core).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -10275,7 +10275,7 @@ This panel has no related alerts.
 
 To see this panel, visit `/-/debug/grafana/d/searcher/searcher?viewPanel=100200` on your Sourcegraph instance.
 
-<sub>*Managed by the [Sourcegraph Search team](https://about.sourcegraph.com/handbook/engineering/search).*</sub>
+<sub>*Managed by the [Sourcegraph Search-core team](https://about.sourcegraph.com/handbook/engineering/search/core).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -10296,7 +10296,7 @@ Refer to the [alert solutions reference](./alert_solutions.md#searcher-container
 
 To see this panel, visit `/-/debug/grafana/d/searcher/searcher?viewPanel=100201` on your Sourcegraph instance.
 
-<sub>*Managed by the [Sourcegraph Search team](https://about.sourcegraph.com/handbook/engineering/search).*</sub>
+<sub>*Managed by the [Sourcegraph Search-core team](https://about.sourcegraph.com/handbook/engineering/search/core).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -10317,7 +10317,7 @@ Refer to the [alert solutions reference](./alert_solutions.md#searcher-container
 
 To see this panel, visit `/-/debug/grafana/d/searcher/searcher?viewPanel=100202` on your Sourcegraph instance.
 
-<sub>*Managed by the [Sourcegraph Search team](https://about.sourcegraph.com/handbook/engineering/search).*</sub>
+<sub>*Managed by the [Sourcegraph Search-core team](https://about.sourcegraph.com/handbook/engineering/search/core).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -10364,7 +10364,7 @@ Refer to the [alert solutions reference](./alert_solutions.md#searcher-provision
 
 To see this panel, visit `/-/debug/grafana/d/searcher/searcher?viewPanel=100300` on your Sourcegraph instance.
 
-<sub>*Managed by the [Sourcegraph Search team](https://about.sourcegraph.com/handbook/engineering/search).*</sub>
+<sub>*Managed by the [Sourcegraph Search-core team](https://about.sourcegraph.com/handbook/engineering/search/core).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -10385,7 +10385,7 @@ Refer to the [alert solutions reference](./alert_solutions.md#searcher-provision
 
 To see this panel, visit `/-/debug/grafana/d/searcher/searcher?viewPanel=100301` on your Sourcegraph instance.
 
-<sub>*Managed by the [Sourcegraph Search team](https://about.sourcegraph.com/handbook/engineering/search).*</sub>
+<sub>*Managed by the [Sourcegraph Search-core team](https://about.sourcegraph.com/handbook/engineering/search/core).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -10406,7 +10406,7 @@ Refer to the [alert solutions reference](./alert_solutions.md#searcher-provision
 
 To see this panel, visit `/-/debug/grafana/d/searcher/searcher?viewPanel=100310` on your Sourcegraph instance.
 
-<sub>*Managed by the [Sourcegraph Search team](https://about.sourcegraph.com/handbook/engineering/search).*</sub>
+<sub>*Managed by the [Sourcegraph Search-core team](https://about.sourcegraph.com/handbook/engineering/search/core).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -10427,7 +10427,7 @@ Refer to the [alert solutions reference](./alert_solutions.md#searcher-provision
 
 To see this panel, visit `/-/debug/grafana/d/searcher/searcher?viewPanel=100311` on your Sourcegraph instance.
 
-<sub>*Managed by the [Sourcegraph Search team](https://about.sourcegraph.com/handbook/engineering/search).*</sub>
+<sub>*Managed by the [Sourcegraph Search-core team](https://about.sourcegraph.com/handbook/engineering/search/core).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -10452,7 +10452,7 @@ Refer to the [alert solutions reference](./alert_solutions.md#searcher-go-gorout
 
 To see this panel, visit `/-/debug/grafana/d/searcher/searcher?viewPanel=100400` on your Sourcegraph instance.
 
-<sub>*Managed by the [Sourcegraph Search team](https://about.sourcegraph.com/handbook/engineering/search).*</sub>
+<sub>*Managed by the [Sourcegraph Search-core team](https://about.sourcegraph.com/handbook/engineering/search/core).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -10473,7 +10473,7 @@ Refer to the [alert solutions reference](./alert_solutions.md#searcher-go-gc-dur
 
 To see this panel, visit `/-/debug/grafana/d/searcher/searcher?viewPanel=100401` on your Sourcegraph instance.
 
-<sub>*Managed by the [Sourcegraph Search team](https://about.sourcegraph.com/handbook/engineering/search).*</sub>
+<sub>*Managed by the [Sourcegraph Search-core team](https://about.sourcegraph.com/handbook/engineering/search/core).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -10496,7 +10496,7 @@ Refer to the [alert solutions reference](./alert_solutions.md#searcher-pods-avai
 
 To see this panel, visit `/-/debug/grafana/d/searcher/searcher?viewPanel=100500` on your Sourcegraph instance.
 
-<sub>*Managed by the [Sourcegraph Search team](https://about.sourcegraph.com/handbook/engineering/search).*</sub>
+<sub>*Managed by the [Sourcegraph Search-core team](https://about.sourcegraph.com/handbook/engineering/search/core).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -11148,7 +11148,7 @@ This panel has no related alerts.
 
 To see this panel, visit `/-/debug/grafana/d/zoekt-indexserver/zoekt-indexserver?viewPanel=100000` on your Sourcegraph instance.
 
-<sub>*Managed by the [Sourcegraph Search team](https://about.sourcegraph.com/handbook/engineering/search).*</sub>
+<sub>*Managed by the [Sourcegraph Search-core team](https://about.sourcegraph.com/handbook/engineering/search/core).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -11171,7 +11171,7 @@ This panel has no related alerts.
 
 To see this panel, visit `/-/debug/grafana/d/zoekt-indexserver/zoekt-indexserver?viewPanel=100010` on your Sourcegraph instance.
 
-<sub>*Managed by the [Sourcegraph Search team](https://about.sourcegraph.com/handbook/engineering/search).*</sub>
+<sub>*Managed by the [Sourcegraph Search-core team](https://about.sourcegraph.com/handbook/engineering/search/core).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -11194,7 +11194,7 @@ This panel has no related alerts.
 
 To see this panel, visit `/-/debug/grafana/d/zoekt-indexserver/zoekt-indexserver?viewPanel=100011` on your Sourcegraph instance.
 
-<sub>*Managed by the [Sourcegraph Search team](https://about.sourcegraph.com/handbook/engineering/search).*</sub>
+<sub>*Managed by the [Sourcegraph Search-core team](https://about.sourcegraph.com/handbook/engineering/search/core).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -11217,7 +11217,7 @@ This panel has no related alerts.
 
 To see this panel, visit `/-/debug/grafana/d/zoekt-indexserver/zoekt-indexserver?viewPanel=100012` on your Sourcegraph instance.
 
-<sub>*Managed by the [Sourcegraph Search team](https://about.sourcegraph.com/handbook/engineering/search).*</sub>
+<sub>*Managed by the [Sourcegraph Search-core team](https://about.sourcegraph.com/handbook/engineering/search/core).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -11238,7 +11238,7 @@ Refer to the [alert solutions reference](./alert_solutions.md#zoekt-indexserver-
 
 To see this panel, visit `/-/debug/grafana/d/zoekt-indexserver/zoekt-indexserver?viewPanel=100020` on your Sourcegraph instance.
 
-<sub>*Managed by the [Sourcegraph Search team](https://about.sourcegraph.com/handbook/engineering/search).*</sub>
+<sub>*Managed by the [Sourcegraph Search-core team](https://about.sourcegraph.com/handbook/engineering/search/core).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -11271,7 +11271,7 @@ This panel has no related alerts.
 
 To see this panel, visit `/-/debug/grafana/d/zoekt-indexserver/zoekt-indexserver?viewPanel=100100` on your Sourcegraph instance.
 
-<sub>*Managed by the [Sourcegraph Search team](https://about.sourcegraph.com/handbook/engineering/search).*</sub>
+<sub>*Managed by the [Sourcegraph Search-core team](https://about.sourcegraph.com/handbook/engineering/search/core).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -11292,7 +11292,7 @@ Refer to the [alert solutions reference](./alert_solutions.md#zoekt-indexserver-
 
 To see this panel, visit `/-/debug/grafana/d/zoekt-indexserver/zoekt-indexserver?viewPanel=100101` on your Sourcegraph instance.
 
-<sub>*Managed by the [Sourcegraph Search team](https://about.sourcegraph.com/handbook/engineering/search).*</sub>
+<sub>*Managed by the [Sourcegraph Search-core team](https://about.sourcegraph.com/handbook/engineering/search/core).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -11313,7 +11313,7 @@ Refer to the [alert solutions reference](./alert_solutions.md#zoekt-indexserver-
 
 To see this panel, visit `/-/debug/grafana/d/zoekt-indexserver/zoekt-indexserver?viewPanel=100102` on your Sourcegraph instance.
 
-<sub>*Managed by the [Sourcegraph Search team](https://about.sourcegraph.com/handbook/engineering/search).*</sub>
+<sub>*Managed by the [Sourcegraph Search-core team](https://about.sourcegraph.com/handbook/engineering/search/core).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -11360,7 +11360,7 @@ Refer to the [alert solutions reference](./alert_solutions.md#zoekt-indexserver-
 
 To see this panel, visit `/-/debug/grafana/d/zoekt-indexserver/zoekt-indexserver?viewPanel=100200` on your Sourcegraph instance.
 
-<sub>*Managed by the [Sourcegraph Search team](https://about.sourcegraph.com/handbook/engineering/search).*</sub>
+<sub>*Managed by the [Sourcegraph Search-core team](https://about.sourcegraph.com/handbook/engineering/search/core).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -11381,7 +11381,7 @@ Refer to the [alert solutions reference](./alert_solutions.md#zoekt-indexserver-
 
 To see this panel, visit `/-/debug/grafana/d/zoekt-indexserver/zoekt-indexserver?viewPanel=100201` on your Sourcegraph instance.
 
-<sub>*Managed by the [Sourcegraph Search team](https://about.sourcegraph.com/handbook/engineering/search).*</sub>
+<sub>*Managed by the [Sourcegraph Search-core team](https://about.sourcegraph.com/handbook/engineering/search/core).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -11402,7 +11402,7 @@ Refer to the [alert solutions reference](./alert_solutions.md#zoekt-indexserver-
 
 To see this panel, visit `/-/debug/grafana/d/zoekt-indexserver/zoekt-indexserver?viewPanel=100210` on your Sourcegraph instance.
 
-<sub>*Managed by the [Sourcegraph Search team](https://about.sourcegraph.com/handbook/engineering/search).*</sub>
+<sub>*Managed by the [Sourcegraph Search-core team](https://about.sourcegraph.com/handbook/engineering/search/core).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -11423,7 +11423,7 @@ Refer to the [alert solutions reference](./alert_solutions.md#zoekt-indexserver-
 
 To see this panel, visit `/-/debug/grafana/d/zoekt-indexserver/zoekt-indexserver?viewPanel=100211` on your Sourcegraph instance.
 
-<sub>*Managed by the [Sourcegraph Search team](https://about.sourcegraph.com/handbook/engineering/search).*</sub>
+<sub>*Managed by the [Sourcegraph Search-core team](https://about.sourcegraph.com/handbook/engineering/search/core).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -11446,7 +11446,7 @@ Refer to the [alert solutions reference](./alert_solutions.md#zoekt-indexserver-
 
 To see this panel, visit `/-/debug/grafana/d/zoekt-indexserver/zoekt-indexserver?viewPanel=100300` on your Sourcegraph instance.
 
-<sub>*Managed by the [Sourcegraph Search team](https://about.sourcegraph.com/handbook/engineering/search).*</sub>
+<sub>*Managed by the [Sourcegraph Search-core team](https://about.sourcegraph.com/handbook/engineering/search/core).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -11473,7 +11473,7 @@ Refer to the [alert solutions reference](./alert_solutions.md#zoekt-webserver-in
 
 To see this panel, visit `/-/debug/grafana/d/zoekt-webserver/zoekt-webserver?viewPanel=100000` on your Sourcegraph instance.
 
-<sub>*Managed by the [Sourcegraph Search team](https://about.sourcegraph.com/handbook/engineering/search).*</sub>
+<sub>*Managed by the [Sourcegraph Search-core team](https://about.sourcegraph.com/handbook/engineering/search/core).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -11506,7 +11506,7 @@ This panel has no related alerts.
 
 To see this panel, visit `/-/debug/grafana/d/zoekt-webserver/zoekt-webserver?viewPanel=100100` on your Sourcegraph instance.
 
-<sub>*Managed by the [Sourcegraph Search team](https://about.sourcegraph.com/handbook/engineering/search).*</sub>
+<sub>*Managed by the [Sourcegraph Search-core team](https://about.sourcegraph.com/handbook/engineering/search/core).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -11527,7 +11527,7 @@ Refer to the [alert solutions reference](./alert_solutions.md#zoekt-webserver-co
 
 To see this panel, visit `/-/debug/grafana/d/zoekt-webserver/zoekt-webserver?viewPanel=100101` on your Sourcegraph instance.
 
-<sub>*Managed by the [Sourcegraph Search team](https://about.sourcegraph.com/handbook/engineering/search).*</sub>
+<sub>*Managed by the [Sourcegraph Search-core team](https://about.sourcegraph.com/handbook/engineering/search/core).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -11548,7 +11548,7 @@ Refer to the [alert solutions reference](./alert_solutions.md#zoekt-webserver-co
 
 To see this panel, visit `/-/debug/grafana/d/zoekt-webserver/zoekt-webserver?viewPanel=100102` on your Sourcegraph instance.
 
-<sub>*Managed by the [Sourcegraph Search team](https://about.sourcegraph.com/handbook/engineering/search).*</sub>
+<sub>*Managed by the [Sourcegraph Search-core team](https://about.sourcegraph.com/handbook/engineering/search/core).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -11595,7 +11595,7 @@ Refer to the [alert solutions reference](./alert_solutions.md#zoekt-webserver-pr
 
 To see this panel, visit `/-/debug/grafana/d/zoekt-webserver/zoekt-webserver?viewPanel=100200` on your Sourcegraph instance.
 
-<sub>*Managed by the [Sourcegraph Search team](https://about.sourcegraph.com/handbook/engineering/search).*</sub>
+<sub>*Managed by the [Sourcegraph Search-core team](https://about.sourcegraph.com/handbook/engineering/search/core).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -11616,7 +11616,7 @@ Refer to the [alert solutions reference](./alert_solutions.md#zoekt-webserver-pr
 
 To see this panel, visit `/-/debug/grafana/d/zoekt-webserver/zoekt-webserver?viewPanel=100201` on your Sourcegraph instance.
 
-<sub>*Managed by the [Sourcegraph Search team](https://about.sourcegraph.com/handbook/engineering/search).*</sub>
+<sub>*Managed by the [Sourcegraph Search-core team](https://about.sourcegraph.com/handbook/engineering/search/core).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -11637,7 +11637,7 @@ Refer to the [alert solutions reference](./alert_solutions.md#zoekt-webserver-pr
 
 To see this panel, visit `/-/debug/grafana/d/zoekt-webserver/zoekt-webserver?viewPanel=100210` on your Sourcegraph instance.
 
-<sub>*Managed by the [Sourcegraph Search team](https://about.sourcegraph.com/handbook/engineering/search).*</sub>
+<sub>*Managed by the [Sourcegraph Search-core team](https://about.sourcegraph.com/handbook/engineering/search/core).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -11658,7 +11658,7 @@ Refer to the [alert solutions reference](./alert_solutions.md#zoekt-webserver-pr
 
 To see this panel, visit `/-/debug/grafana/d/zoekt-webserver/zoekt-webserver?viewPanel=100211` on your Sourcegraph instance.
 
-<sub>*Managed by the [Sourcegraph Search team](https://about.sourcegraph.com/handbook/engineering/search).*</sub>
+<sub>*Managed by the [Sourcegraph Search-core team](https://about.sourcegraph.com/handbook/engineering/search/core).*</sub>
 
 <details>
 <summary>Technical details</summary>
