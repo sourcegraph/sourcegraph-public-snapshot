@@ -40,7 +40,7 @@ func ZoektIndexServer() *monitoring.Container {
 								}}
 								p.GraphPanel.Tooltip.Shared = true
 							}),
-							Owner:          monitoring.ObservableOwnerSearch,
+							Owner:          monitoring.ObservableOwnerSearchCore,
 							Interpretation: "Sudden changes should be caused by indexing configuration changes.",
 						},
 					},
@@ -50,7 +50,7 @@ func ZoektIndexServer() *monitoring.Container {
 							Description: "indexing results over 5m (noop=no changes, empty=no branches to index)",
 							Query:       `sum by (state) (increase(index_repo_seconds_count[5m]))`,
 							NoAlert:     true,
-							Owner:       monitoring.ObservableOwnerSearch,
+							Owner:       monitoring.ObservableOwnerSearchCore,
 							Panel: monitoring.Panel().LegendFormat("{{state}}").With(func(o monitoring.Observable, p *sdk.Panel) {
 								p.GraphPanel.Yaxes[0].LogBase = 2  // log to show the huge number of "noop" or "empty"
 								p.GraphPanel.Tooltip.Shared = true // show multiple lines simultaneously
@@ -65,7 +65,7 @@ func ZoektIndexServer() *monitoring.Container {
 							Panel: monitoring.PanelHeatmap().With(func(o monitoring.Observable, p *sdk.Panel) {
 								p.HeatmapPanel.YAxis.Format = string(monitoring.Seconds)
 							}),
-							Owner:          monitoring.ObservableOwnerSearch,
+							Owner:          monitoring.ObservableOwnerSearchCore,
 							Interpretation: "Latency increases can indicate bottlenecks in the indexserver.",
 						},
 						{
@@ -76,7 +76,7 @@ func ZoektIndexServer() *monitoring.Container {
 							Panel: monitoring.PanelHeatmap().With(func(o monitoring.Observable, p *sdk.Panel) {
 								p.HeatmapPanel.YAxis.Format = string(monitoring.Seconds)
 							}),
-							Owner:          monitoring.ObservableOwnerSearch,
+							Owner:          monitoring.ObservableOwnerSearchCore,
 							Interpretation: "Failures happening after a long time indicates timeouts.",
 						},
 					},
@@ -88,7 +88,7 @@ func ZoektIndexServer() *monitoring.Container {
 							Warning:           monitoring.Alert().GreaterOrEqual(15, nil),
 							Critical:          monitoring.Alert().GreaterOrEqual(30, nil),
 							Panel:             monitoring.Panel().LegendFormat("{{duration}}").Unit(monitoring.Seconds),
-							Owner:             monitoring.ObservableOwnerSearch,
+							Owner:             monitoring.ObservableOwnerSearchCore,
 							PossibleSolutions: "none",
 						},
 					},
@@ -99,9 +99,9 @@ func ZoektIndexServer() *monitoring.Container {
 			// zoekt_indexserver and zoekt_webserver are deployed together as part of the indexed-search service
 			// We show pod availability here for both the webserver and indexserver as they are bundled together.
 
-			shared.NewContainerMonitoringGroup(containerName, monitoring.ObservableOwnerSearch, nil),
-			shared.NewProvisioningIndicatorsGroup(containerName, monitoring.ObservableOwnerSearch, nil),
-			shared.NewKubernetesMonitoringGroup(bundledContainerName, monitoring.ObservableOwnerSearch, nil),
+			shared.NewContainerMonitoringGroup(containerName, monitoring.ObservableOwnerSearchCore, nil),
+			shared.NewProvisioningIndicatorsGroup(containerName, monitoring.ObservableOwnerSearchCore, nil),
+			shared.NewKubernetesMonitoringGroup(bundledContainerName, monitoring.ObservableOwnerSearchCore, nil),
 		},
 	}
 }
