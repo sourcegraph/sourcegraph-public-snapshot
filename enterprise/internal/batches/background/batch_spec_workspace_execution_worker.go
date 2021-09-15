@@ -80,24 +80,6 @@ type batchSpecWorkspaceExecutionWorkerStore struct {
 	observationContext *observation.Context
 }
 
-func (s *batchSpecWorkspaceExecutionWorkerStore) MarkComplete(ctx context.Context, id int, options dbworkerstore.MarkFinalOptions) (_ bool, err error) {
-	batchesStore := store.New(s.Store.Handle().DB(), s.observationContext, nil)
-
-	tx, err := batchesStore.Transact(ctx)
-	if err != nil {
-		return false, err
-	}
-	defer func() { err = tx.Done(err) }()
-
-	job, changesetSpecIDs, err := loadAndExtractChangesetSpecIDs(ctx, tx, int64(id))
-	if err != nil {
-		// If we couldn't extract the changeset IDs, we mark the job as failed
-		return s.Store.MarkFailed(ctx, id, fmt.Sprintf("failed to extract changeset IDs ID: %s", err), options)
-	}
-
-	return markBatchSpecWorkspaceExecutionJobComplete(ctx, tx, job, changesetSpecIDs, options.WorkerHostname)
-}
-
 func (s *batchSpecWorkspaceExecutionWorkerStore) FetchCanceled(ctx context.Context, executorName string) (canceledIDs []int, err error) {
 	batchesStore := store.New(s.Store.Handle().DB(), s.observationContext, nil)
 
@@ -116,6 +98,24 @@ func (s *batchSpecWorkspaceExecutionWorkerStore) FetchCanceled(ctx context.Conte
 		ids = append(ids, c.RecordID())
 	}
 	return ids, nil
+}
+
+func (s *batchSpecWorkspaceExecutionWorkerStore) MarkComplete(ctx context.Context, id int, options dbworkerstore.MarkFinalOptions) (_ bool, err error) {
+	batchesStore := store.New(s.Store.Handle().DB(), s.observationContext, nil)
+
+	tx, err := batchesStore.Transact(ctx)
+	if err != nil {
+		return false, err
+	}
+	defer func() { err = tx.Done(err) }()
+
+	job, changesetSpecIDs, err := loadAndExtractChangesetSpecIDs(ctx, tx, int64(id))
+	if err != nil {
+		// If we couldn't extract the changeset IDs, we mark the job as failed
+		return s.Store.MarkFailed(ctx, id, fmt.Sprintf("failed to extract changeset IDs ID: %s", err), options)
+	}
+
+	return markBatchSpecWorkspaceExecutionJobComplete(ctx, tx, job, changesetSpecIDs, options.WorkerHostname)
 }
 
 // markBatchSpecWorkspaceExecutionJobCompleteQuery is taken from internal/workerutil/dbworker/store/store.go
@@ -175,7 +175,7 @@ func loadAndExtractChangesetSpecIDs(ctx context.Context, s *store.Store, id int6
 	}
 
 	if len(job.ExecutionLogs) < 1 {
-		return job, []int64{}, errors.New("no execution logs")
+		return job, []int64{}, errors.Newf("job %d has no execution logs", job.ID)
 	}
 
 	randIDs, err := extractChangesetSpecRandIDs(job.ExecutionLogs)
