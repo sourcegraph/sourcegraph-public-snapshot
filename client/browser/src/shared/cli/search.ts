@@ -50,7 +50,10 @@ export class SearchCommand {
             })
         })
 
-    public action = async (query: string, disposition?: string): Promise<void> => {
+    public action = async (
+        query: string,
+        disposition?: 'newForegroundTab' | 'newBackgroundTab' | 'currentTab'
+    ): Promise<void> => {
         const sourcegraphURL = await observeSourcegraphURL(IS_EXTENSION).pipe(take(1)).toPromise()
 
         const [patternType, caseSensitive] = await this.getDefaultSearchSettings(sourcegraphURL)
@@ -65,18 +68,24 @@ export class SearchCommand {
                   )}&utm_source=omnibox`,
         }
 
-        switch (disposition) {
-            case 'newForegroundTab':
-                await browser.tabs.create(props)
-                break
-            case 'newBackgroundTab':
-                await browser.tabs.create({ ...props, active: false })
-                break
-            case 'currentTab':
-            default:
-                await browser.tabs.update(props)
-                break
+        if (disposition === 'newForegroundTab') {
+            await browser.tabs.create(props)
+            return
         }
+        if (disposition === 'newBackgroundTab') {
+            await browser.tabs.create({ ...props, active: false })
+            return
+        }
+
+        const [currentTab] = await browser.tabs.query({ active: true, currentWindow: true })
+        if (!currentTab.id) {
+            await browser.tabs.update(props)
+            return
+        }
+
+        // Note: this is done in order to blur browser omnibox and set focus on page
+        await browser.tabs.remove(currentTab.id)
+        await browser.tabs.create(props)
     }
 
     private lastSourcegraphUrl = ''
