@@ -1061,6 +1061,7 @@ func testPermsStore_SetRepoPendingPermissions(db *sql.DB) func(*testing.T) {
 		ServiceID:   "https://github.com/",
 		AccountID:   "cindy",
 	}
+	const countToExceedParameterLimit = 11000 // ~ 65535 / 6 parameters per row
 
 	type update struct {
 		accounts *extsvc.Accounts
@@ -1068,6 +1069,7 @@ func testPermsStore_SetRepoPendingPermissions(db *sql.DB) func(*testing.T) {
 	}
 	tests := []struct {
 		name                   string
+		slowTest               bool
 		updates                []update
 		expectUserPendingPerms map[extsvc.AccountSpec][]uint32 // account -> object_ids
 		expectRepoPendingPerms map[int32][]extsvc.AccountSpec  // repo_id -> accounts
@@ -1214,11 +1216,60 @@ func testPermsStore_SetRepoPendingPermissions(db *sql.DB) func(*testing.T) {
 				1: {},
 			},
 		},
+		{
+			name:     postgresParameterLimitTest,
+			slowTest: true,
+			updates: func() []update {
+				u := update{
+					accounts: &extsvc.Accounts{
+						ServiceType: authz.SourcegraphServiceType,
+						ServiceID:   authz.SourcegraphServiceID,
+						AccountIDs:  make([]string, countToExceedParameterLimit),
+					},
+					perm: &authz.RepoPermissions{
+						RepoID: 1,
+						Perm:   authz.Read,
+					},
+				}
+				for i := 1; i <= countToExceedParameterLimit; i++ {
+					u.accounts.AccountIDs[i-1] = fmt.Sprintf("%d", i)
+				}
+				return []update{u}
+			}(),
+			expectUserPendingPerms: func() map[extsvc.AccountSpec][]uint32 {
+				perms := make(map[extsvc.AccountSpec][]uint32, countToExceedParameterLimit)
+				for i := 1; i <= countToExceedParameterLimit; i++ {
+					perms[extsvc.AccountSpec{
+						ServiceType: authz.SourcegraphServiceType,
+						ServiceID:   authz.SourcegraphServiceID,
+						AccountID:   fmt.Sprintf("%d", i),
+					}] = []uint32{1}
+				}
+				return perms
+			}(),
+			expectRepoPendingPerms: map[int32][]extsvc.AccountSpec{
+				1: func() []extsvc.AccountSpec {
+					accounts := make([]extsvc.AccountSpec, countToExceedParameterLimit)
+					for i := 1; i <= countToExceedParameterLimit; i++ {
+						accounts[i-1] = extsvc.AccountSpec{
+							ServiceType: authz.SourcegraphServiceType,
+							ServiceID:   authz.SourcegraphServiceID,
+							AccountID:   fmt.Sprintf("%d", i),
+						}
+					}
+					return accounts
+				}(),
+			},
+		},
 	}
 
 	return func(t *testing.T) {
 		for _, test := range tests {
 			t.Run(test.name, func(t *testing.T) {
+				if test.slowTest && !*slowTests {
+					t.Skip("slow-tests not enabled")
+				}
+
 				s := Perms(db, clock)
 				t.Cleanup(func() {
 					cleanupPermsTables(t, s)

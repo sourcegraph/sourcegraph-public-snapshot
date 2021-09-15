@@ -654,7 +654,7 @@ func (s *PermsStore) SetRepoPendingPermissions(ctx context.Context, accounts *ex
 
 			ids, err := txs.loadUserPendingPermissionsIDs(ctx, q)
 			if err != nil {
-				return errors.Wrap(err, "load user pending permissions IDs")
+				return errors.Wrap(err, "load user pending permissions IDs from upsert pending permissions")
 			}
 
 			// Make up p.UserIDs from the result set.
@@ -736,42 +736,45 @@ func (s *PermsStore) loadExistingUserPendingPermissionsBatch(ctx context.Context
 	return bindIDsToIDs, nil
 }
 
+// upsertUserPendingPermissionsBatchQuery generates a query for upserting the provided
+// external service accounts into `user_pending_permissions`.
 func upsertUserPendingPermissionsBatchQuery(
 	accounts *extsvc.Accounts,
 	p *authz.RepoPermissions,
 ) (*sqlf.Query, error) {
+	// Above ~10,000 accounts (10,000 * 6 fields each = 60,000 parameters), we can run
+	// into the Postgres parameter limit inserting with VALUES. Instead, we pass in fields
+	// as arrays, where each array only counts for a single parameter.
+	//
+	// If changing the parameters used in this query, make sure to run relevant tests
+	// named `postgresParameterLimitTest` using "go test -slow-tests".
 	const format = `
 -- source: enterprise/internal/database/perms_store.go:upsertUserPendingPermissionsBatchQuery
 INSERT INTO user_pending_permissions
-  (service_type, service_id, bind_id, permission, object_type, updated_at)
-VALUES
-  %s
+	(service_type, service_id, bind_id, permission, object_type, updated_at)
+	(
+		SELECT %s::TEXT, %s::TEXT, UNNEST(%s::TEXT[]), %s::TEXT, %s::TEXT, %s::TIMESTAMPTZ
+	)
 ON CONFLICT ON CONSTRAINT
-  user_pending_permissions_service_perm_object_unique
+	user_pending_permissions_service_perm_object_unique
 DO UPDATE SET
-  updated_at = excluded.updated_at
+	updated_at = excluded.updated_at
 RETURNING id
 `
-
 	if p.UpdatedAt.IsZero() {
 		return nil, ErrPermsUpdatedAtNotSet
 	}
 
-	items := make([]*sqlf.Query, len(accounts.AccountIDs))
-	for i := range accounts.AccountIDs {
-		items[i] = sqlf.Sprintf("(%s, %s, %s, %s, %s, %s)",
-			accounts.ServiceType,
-			accounts.ServiceID,
-			accounts.AccountIDs[i],
-			p.Perm.String(),
-			authz.PermRepos,
-			p.UpdatedAt.UTC(),
-		)
-	}
-
 	return sqlf.Sprintf(
 		format,
-		sqlf.Join(items, ","),
+
+		accounts.ServiceType,
+		accounts.ServiceID,
+		pq.Array(accounts.AccountIDs),
+
+		p.Perm.String(),
+		string(authz.PermRepos),
+		p.UpdatedAt.UTC(),
 	), nil
 }
 
