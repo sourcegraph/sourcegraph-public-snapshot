@@ -174,7 +174,7 @@ func (m *settingMigrator) migrate(ctx context.Context) error {
 		if err != nil {
 			// we can't do anything about errors, so we will just skip it and log it
 			errorCount++
-			log15.Error("insights migraiton: error while migrating insight", "error", err)
+			log15.Error("insights migration: error while migrating insight", "error", err)
 		}
 		count++
 	}
