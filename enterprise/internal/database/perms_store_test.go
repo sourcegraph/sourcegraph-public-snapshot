@@ -997,7 +997,7 @@ func testPermsStore_SetRepoPendingPermissions(db *sql.DB) func(*testing.T) {
 		ServiceID:   "https://github.com/",
 		AccountID:   "cindy",
 	}
-	const manyUpdates = 100
+	const countToExceedParameterLimit = 15000
 
 	type update struct {
 		accounts *extsvc.Accounts
@@ -1152,27 +1152,27 @@ func testPermsStore_SetRepoPendingPermissions(db *sql.DB) func(*testing.T) {
 			},
 		},
 		{
-			name: "add many",
+			name: "ensure we do not exceed postgres parameter limit",
 			updates: func() []update {
 				u := update{
 					accounts: &extsvc.Accounts{
 						ServiceType: authz.SourcegraphServiceType,
 						ServiceID:   authz.SourcegraphServiceID,
-						AccountIDs:  make([]string, manyUpdates),
+						AccountIDs:  make([]string, countToExceedParameterLimit),
 					},
 					perm: &authz.RepoPermissions{
 						RepoID: 1,
 						Perm:   authz.Read,
 					},
 				}
-				for i := 1; i <= manyUpdates; i++ {
+				for i := 1; i <= countToExceedParameterLimit; i++ {
 					u.accounts.AccountIDs[i-1] = fmt.Sprintf("%d", i)
 				}
 				return []update{u}
 			}(),
 			expectUserPendingPerms: func() map[extsvc.AccountSpec][]uint32 {
-				perms := make(map[extsvc.AccountSpec][]uint32, manyUpdates)
-				for i := 1; i <= manyUpdates; i++ {
+				perms := make(map[extsvc.AccountSpec][]uint32, countToExceedParameterLimit)
+				for i := 1; i <= countToExceedParameterLimit; i++ {
 					perms[extsvc.AccountSpec{
 						ServiceType: authz.SourcegraphServiceType,
 						ServiceID:   authz.SourcegraphServiceID,
@@ -1183,8 +1183,8 @@ func testPermsStore_SetRepoPendingPermissions(db *sql.DB) func(*testing.T) {
 			}(),
 			expectRepoPendingPerms: map[int32][]extsvc.AccountSpec{
 				1: func() []extsvc.AccountSpec {
-					accounts := make([]extsvc.AccountSpec, manyUpdates)
-					for i := 1; i <= manyUpdates; i++ {
+					accounts := make([]extsvc.AccountSpec, countToExceedParameterLimit)
+					for i := 1; i <= countToExceedParameterLimit; i++ {
 						accounts[i-1] = extsvc.AccountSpec{
 							ServiceType: authz.SourcegraphServiceType,
 							ServiceID:   authz.SourcegraphServiceID,
