@@ -69,6 +69,9 @@ export const CloudSignUpPage: React.FunctionComponent<Props> = ({
         provider.authenticationURL?.startsWith('/.auth/gitlab/login?pc=https%3A%2F%2Fgitlab.com%2F')
     )
 
+    const maybeRedirectToWelcome = (url?: string): string =>
+        url ? `${url}${isPostSignUpEnabled ? '&redirect=/welcome' : ''}` : ''
+
     const sourceIsValid = source && Object.keys(SourceToTitleMap).includes(source)
     const title = sourceIsValid ? SourceToTitleMap[source as CloudSignUpSource] : SourceToTitleMap.Context // Use Context as default
 
@@ -125,9 +128,7 @@ export const CloudSignUpPage: React.FunctionComponent<Props> = ({
                         <>
                             {githubProvider && (
                                 <a
-                                    href={`${githubProvider.authenticationURL || ''}${
-                                        isPostSignUpEnabled ? '&redirect=/welcome' : ''
-                                    }`}
+                                    href={maybeRedirectToWelcome(githubProvider.authenticationURL)}
                                     className={classNames(styles.signUpButton, styles.githubButton)}
                                     onClick={logEvent}
                                 >
@@ -136,9 +137,7 @@ export const CloudSignUpPage: React.FunctionComponent<Props> = ({
                             )}
                             {gitlabProvider && (
                                 <a
-                                    href={`${gitlabProvider.authenticationURL || ''}${
-                                        isPostSignUpEnabled ? '&redirect=/welcome' : ''
-                                    }`}
+                                    href={maybeRedirectToWelcome(gitlabProvider.authenticationURL)}
                                     className={classNames(styles.signUpButton, styles.gitlabButton)}
                                     onClick={logEvent}
                                 >
