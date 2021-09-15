@@ -80,8 +80,6 @@ Now that you have successfully enabled code intelligence for your repository, yo
 
 Once LSIF data has uploaded, open the Sourcegraph UI or your code host (i.e. GitHub) and navigate to any code file that was part of the repository that was analyzed by the LSIF indexer. Hover over a symbol, variable or function name in the file, you should now see rich LSIF metadata as the source for hover-tooltips, definitions, and references.
 
-If precise code intelligence has been correctly enabled hover text should not be decorated with a ![tooltip](../img/basic-code-intel-tooltip.svg) icon. This icon indicates the results are from search-based [search-based code intelligence](../explanations/search_based_code_intelligence.md). This tooltip icon will be absent when results are precise!
-
 ### Error Logs
 
 To view LSIF indexer processing failures go to **Repository settings > Code intelligence > Activity for this repository** in your Sourcegraph instance. Failures can occur if the LSIF data is invalid (e.g., malformed indexer output), or problems were encountered during processing (e.g., system-level bug, flaky connections, etc). Try again or [file an issue](https://github.com/sourcegraph/sourcegraph/issues/new) if the problem persists.
