@@ -297,7 +297,8 @@ func checkRegularPermsTable(s *PermsStore, sql string, expects map[int32][]uint3
 }
 
 func testPermsStore_SetUserPermissions(db *sql.DB) func(*testing.T) {
-	const countToExceedParameterLimit = 20000
+	const countToExceedParameterLimit = 17000 // ~ 65535 / 4 parameters per row
+
 	tests := []struct {
 		name            string
 		slowTest        bool
@@ -1360,7 +1361,7 @@ func testPermsStore_GrantPendingPermissions(db *sql.DB) func(*testing.T) {
 		AccountID:   "bob",
 	}
 
-	const countToExceedParameterLimit = 20000
+	const countToExceedParameterLimit = 17000 // ~ 65535 / 4 parameters per row
 
 	type pending struct {
 		accounts *extsvc.Accounts
