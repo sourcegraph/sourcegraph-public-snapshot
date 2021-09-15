@@ -4,7 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
-	"fmt"
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -610,21 +609,6 @@ func (s *PermsStore) SetRepoPendingPermissions(ctx context.Context, accounts *ex
 			//  create overlapping stub rows.
 			q, err = upsertUserPendingPermissionsBatchQuery(missingAccounts, p)
 			if err != nil {
-				return err
-			}
-
-			rows, err := txs.Query(ctx, sqlf.Sprintf("EXPLAIN ANALYZE %s", q))
-			if err != nil {
-				return err
-			}
-			for rows.Next() {
-				var s string
-				if err := rows.Scan(&s); err != nil {
-					return err
-				}
-				fmt.Println(s)
-			}
-			if err := rows.Err(); err != nil {
 				return err
 			}
 
