@@ -35,7 +35,7 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Removed
 
--
+- The `PRECISE_CODE_INTEL_DATA_TTL` environment variable is no longer read by the worker service. Instead, global and repository-specific data retention policies configurable in the UI by site-admins will control the length of time LSIF uploads are considered _fresh_. [#24793](https://github.com/sourcegraph/sourcegraph/pull/24793)
 
 ## 3.31.2
 

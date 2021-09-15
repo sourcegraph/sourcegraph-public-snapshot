@@ -9,7 +9,6 @@ import (
 type janitorConfig struct {
 	env.BaseConfig
 
-	DataTTL                                 time.Duration
 	UploadTimeout                           time.Duration
 	CleanupTaskInterval                     time.Duration
 	CommitResolverTaskInterval              time.Duration
@@ -26,7 +25,6 @@ type janitorConfig struct {
 var janitorConfigInst = &janitorConfig{}
 
 func (c *janitorConfig) Load() {
-	c.DataTTL = c.GetInterval("PRECISE_CODE_INTEL_DATA_TTL", "720h", "The maximum time an non-critical index can live in the database.")
 	c.UploadTimeout = c.GetInterval("PRECISE_CODE_INTEL_UPLOAD_TIMEOUT", "24h", "The maximum time an upload can be in the 'uploading' state.")
 	c.CleanupTaskInterval = c.GetInterval("PRECISE_CODE_INTEL_CLEANUP_TASK_INTERVAL", "1m", "The frequency with which to run periodic codeintel cleanup tasks.")
 	c.CommitResolverTaskInterval = c.GetInterval("PRECISE_CODE_INTEL_COMMIT_RESOLVER_TASK_INTERVAL", "10s", "The frequency with which to run the periodic commit resolver task.")
