@@ -29,6 +29,7 @@ const repositoriesMock: MockedResponse<RepositoriesForPopoverResult> = {
         variables: {
             query: '',
             first: BATCH_COUNT,
+            after: null,
         },
     },
     result: {
@@ -72,6 +73,7 @@ const filteredRepositoriesMock: MockedResponse<RepositoriesForPopoverResult> = {
         variables: {
             query: 'some query',
             first: BATCH_COUNT,
+            after: null,
         },
     },
     result: {
@@ -93,6 +95,7 @@ const additionalFilteredRepositoriesMock: MockedResponse<RepositoriesForPopoverR
         variables: {
             query: 'some other query',
             first: BATCH_COUNT,
+            after: null,
         },
     },
     result: {
