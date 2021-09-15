@@ -80,8 +80,24 @@ func (r *schemaResolver) AddUserEmail(ctx context.Context, args *struct {
 	if err != nil {
 		return nil, err
 	}
+	
+	emails, err := database.GlobalUserEmails.ListByUser(ctx, database.UserEmailsListOptions{
+		UserID: userID,
+	})
+	
 	if err := backend.UserEmails.Add(ctx, r.db, userID, args.Email); err != nil {
 		return nil, err
+	}
+	
+	// If user has no existing email, the added email will be set as the primary email
+	if len(emails) == 0 {
+		// email needs to exist and be verified to be set as the primary email
+		if err := database.UserEmails(r.db).SetVerified(ctx, userID, args.Email, true); err != nil {
+			return nil, err
+		}
+		if err := database.UserEmails(r.db).SetPrimaryEmail(ctx, userID, args.Email); err != nil {
+			return nil, err
+		}
 	}
 
 	if conf.CanSendEmail() {
