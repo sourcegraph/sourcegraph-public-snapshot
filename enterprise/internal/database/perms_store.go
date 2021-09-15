@@ -905,30 +905,30 @@ func (s *PermsStore) GrantPendingPermissions(ctx context.Context, userID int32, 
 	p.IDs = vals.ids
 
 	// NOTE: We currently only have "repos" type, so avoid unnecessary type checking for now.
-	repoIDs := p.IDs.ToArray()
-	if len(repoIDs) == 0 {
+	allRepoIDs := p.IDs.ToArray()
+	if len(allRepoIDs) == 0 {
 		return nil
 	}
 
 	var (
-		updatedAt = txs.clock()
-		users     = []uint32{uint32(userID)}
+		updatedAt  = txs.clock()
+		allUserIDs = []uint32{uint32(userID)}
 
-		addQueue    = repoIDs
+		addQueue    = allRepoIDs
 		hasNextPage = true
 	)
 	for hasNextPage {
 		var page *upsertRepoPermissionsPage
 		page, addQueue, _, hasNextPage = newUpsertRepoPermissionsPage(addQueue, nil)
 
-		if q, err := upsertRepoPermissionsBatchQuery(page, repoIDs, nil, users, p.Perm, updatedAt); err != nil {
+		if q, err := upsertRepoPermissionsBatchQuery(page, allRepoIDs, nil, allUserIDs, p.Perm, updatedAt); err != nil {
 			return err
 		} else if err = txs.execute(ctx, q); err != nil {
 			return errors.Wrap(err, "execute upsert repo permissions batch query")
 		}
 	}
 
-	if q, err := upsertUserPermissionsBatchQuery(users, nil, repoIDs, p.Perm, authz.PermRepos, updatedAt); err != nil {
+	if q, err := upsertUserPermissionsBatchQuery(allUserIDs, nil, allRepoIDs, p.Perm, authz.PermRepos, updatedAt); err != nil {
 		return err
 	} else if err = txs.execute(ctx, q); err != nil {
 		return errors.Wrap(err, "execute upsert user permissions batch query")
@@ -999,9 +999,11 @@ func newUpsertRepoPermissionsPage(addQueue, removeQueue []uint32) (
 		len(addQueue) > 0 || len(removeQueue) > 0
 }
 
-// upsertRepoPermissionsBatchQuery composes a SQL query that does both addition (for `addedRepoIDs`) and deletion (
-// for `removedRepoIDs`) of `userIDs` using upsert.
-func upsertRepoPermissionsBatchQuery(page *upsertRepoPermissionsPage, addedRepoIDs, removedRepoIDs, userIDs []uint32, perm authz.Perms, updatedAt time.Time) (*sqlf.Query, error) {
+// upsertRepoPermissionsBatchQuery composes a SQL query that does both addition (for `addedRepoIDs`)
+// and deletion (for `removedRepoIDs`) of `userIDs` using upsert.
+//
+// Pages should be set up using the helper function `newUpsertRepoPermissionsPage`
+func upsertRepoPermissionsBatchQuery(page *upsertRepoPermissionsPage, allAddedRepoIDs, allRemovedRepoIDs, userIDs []uint32, perm authz.Perms, updatedAt time.Time) (*sqlf.Query, error) {
 	// If changing the parameters used in this query, make sure to enable relevant tests
 	// named `postgresParameterLimitTest`
 	const format = `
@@ -1051,7 +1053,7 @@ DO UPDATE SET
 	return sqlf.Sprintf(
 		format,
 		sqlf.Join(items, ","),
-		pq.Array(addedRepoIDs),
+		pq.Array(allAddedRepoIDs),
 
 		// NOTE: Because we use empty user IDs for `removedRepoIDs`, we can't reuse "excluded.user_ids_ints"
 		// and have to explicitly set what user IDs to be removed.
