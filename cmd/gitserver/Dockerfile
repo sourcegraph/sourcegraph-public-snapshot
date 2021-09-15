@@ -36,8 +36,7 @@ RUN apk add --no-cache \
     'git>=2.18' \
     openssh-client \
     git-p4 \
-    python2 \
-	libgit2
+    python2
 
 # This is installed separately due to the upstream edge repo requirement
 RUN apk update && apk add --no-cache \
