@@ -127,9 +127,11 @@ type cloneJob struct {
 
 // cloneQueue is a threadsafe list.List of cloneJobs that functions as a queue in practice.
 type cloneQueue struct {
-	mu sync.RWMutex
-
+	mu   sync.RWMutex
 	jobs *list.List
+
+	cmu  sync.Mutex
+	cond *sync.Cond
 }
 
 // Push will queue the cloneJob to the end of the queue.
@@ -138,6 +140,7 @@ func (c *cloneQueue) Push(cj *cloneJob) {
 	defer c.mu.Unlock()
 
 	c.jobs.PushBack(cj)
+	c.cond.Signal()
 }
 
 // Next will return the next cloneJob. If there's no next job available, it returns nil.
@@ -153,9 +156,19 @@ func (c *cloneQueue) Pop() *cloneJob {
 	return c.jobs.Remove(next).(*cloneJob)
 }
 
-// NewCloneList initializes a new cloneList.
+func (c *cloneQueue) depth() int {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	return c.jobs.Len()
+}
+
+// NewCloneQueue initializes a new cloneQueue.
 func NewCloneQueue() *cloneQueue {
-	return &cloneQueue{jobs: list.New()}
+	cq := cloneQueue{jobs: list.New()}
+	cq.cond = sync.NewCond(&cq.cmu)
+
+	return &cq
 }
 
 // Server is a gitserver server.
@@ -398,23 +411,31 @@ func (s *Server) DoBackgroundClones(ctx context.Context) error {
 func (s *Server) cloneJobProducer(ctx context.Context, jobs chan<- *cloneJob) error {
 	defer close(jobs)
 
-	log15.Info("cloneJobProducer: ready")
 	for {
-		select {
-		case <-ctx.Done():
-			return ctx.Err()
-		default:
+		// Acquire the cond mutex lock and wait for a signal if the queue is empty.
+		s.CloneQueue.cmu.Lock()
+		if s.CloneQueue.depth() == 0 {
+			s.CloneQueue.cond.Wait()
 		}
 
-		job := s.CloneQueue.Pop()
-		if job != nil {
-			jobs <- job
-			continue
-		}
+		// The queue is not empty and we have a job to process! But don't forget to unlock the cond
+		// mutex here as we don't need to hold the lock beyond this point for now.
+		s.CloneQueue.cmu.Unlock()
 
-		// CloneQueue is empty and we don't want to check immediately again. Sleep for 1 second to
-		// avoid hammering the CPU with rapidly acquiring and releasing the lock back to back.
-		time.Sleep(1 * time.Second)
+		// Keep popping from the queue until the queue is empty again, in which case we start all
+		// over again from the top.
+		for {
+			job := s.CloneQueue.Pop()
+			if job == nil {
+				break
+			}
+
+			select {
+			case jobs <- job:
+			case <-ctx.Done():
+				return ctx.Err()
+			}
+		}
 	}
 }
 
