@@ -68,9 +68,7 @@ func (c *cachedSearcher) List(ctx context.Context, q zoektquery.Q, opts *zoekt.L
 }
 
 func (c *cachedSearcher) update(ctx context.Context, k listCacheKey) *listCacheValue {
-	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	list, err := c.Streamer.List(ctx, k.q, k.opts)
-	cancel()
 
 	v := &listCacheValue{
 		list: list,
