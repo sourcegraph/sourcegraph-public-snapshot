@@ -85,7 +85,7 @@ func CorrelateLocalGit(ctx context.Context, dumpPath, projectRoot string) (*prec
 
 	relRoot, err := filepath.Rel(gitRoot, absoluteProjectRoot)
 	if err != nil {
-		return nil, errors.Wrapf(err, "Error getting relative path of %q and %q", gitRoot, absoluteProjectRoot)
+		return nil, errors.Wrapf(err, "failed to get relative path of %q and %q", gitRoot, absoluteProjectRoot)
 	}
 
 	// workaround: filepath.Rel returns a path starting with '../' if gitRoot and root are equal
