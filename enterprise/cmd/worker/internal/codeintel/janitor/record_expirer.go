@@ -58,7 +58,7 @@ func (e *recordExpirer) expireUploads(ctx context.Context) error {
 
 	count, err := tx.SoftDeleteOldUploads(ctx, e.ttl, time.Now())
 	if err != nil {
-		return errors.Wrap(err, "SoftDeleteOldUploads")
+		return errors.Wrap(err, "dbstore.SoftDeleteOldUploads")
 	}
 	if count > 0 {
 		log15.Debug("Deleted old upload records", "count", count)
@@ -77,7 +77,7 @@ func (e *recordExpirer) expireIndexes(ctx context.Context) error {
 
 	count, err := tx.DeleteOldIndexes(ctx, e.ttl, time.Now())
 	if err != nil {
-		return errors.Wrap(err, "DeleteOldIndexes")
+		return errors.Wrap(err, "dbstore.DeleteOldIndexes")
 	}
 	if count > 0 {
 		log15.Debug("Deleted old index records", "count", count)

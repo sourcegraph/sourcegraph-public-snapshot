@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/inconshreveable/log15"
+
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/service"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
@@ -27,11 +28,16 @@ func (e *batchSpecWorkspaceCreator) HandlerFunc() workerutil.HandlerFunc {
 		}
 		defer func() { err = tx.Done(err) }()
 
-		return e.process(ctx, tx, record.(*btypes.BatchSpecResolutionJob))
+		return e.process(ctx, tx, service.NewWorkspaceResolver, record.(*btypes.BatchSpecResolutionJob))
 	}
 }
 
-func (r *batchSpecWorkspaceCreator) process(ctx context.Context, tx *store.Store, job *btypes.BatchSpecResolutionJob) error {
+func (r *batchSpecWorkspaceCreator) process(
+	ctx context.Context,
+	tx *store.Store,
+	newResolver service.WorkspaceResolverBuilder,
+	job *btypes.BatchSpecResolutionJob,
+) error {
 	spec, err := tx.GetBatchSpec(ctx, store.GetBatchSpecOpts{ID: job.BatchSpecID})
 	if err != nil {
 		return err
@@ -46,7 +52,8 @@ func (r *batchSpecWorkspaceCreator) process(ctx context.Context, tx *store.Store
 		return err
 	}
 
-	workspaces, unsupported, ignored, err := service.New(tx).ResolveWorkspacesForBatchSpec(ctx, evaluatableSpec, service.ResolveWorkspacesForBatchSpecOpts{
+	resolver := newResolver(tx)
+	workspaces, unsupported, ignored, err := resolver.ResolveWorkspacesForBatchSpec(ctx, evaluatableSpec, service.ResolveWorkspacesForBatchSpecOpts{
 		AllowUnsupported: job.AllowUnsupported,
 		AllowIgnored:     job.AllowIgnored,
 	})

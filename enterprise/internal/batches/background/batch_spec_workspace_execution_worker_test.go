@@ -23,8 +23,7 @@ func TestLoadAndExtractChangesetSpecIDs(t *testing.T) {
 	db := dbtest.NewDB(t, "")
 	user := ct.CreateTestUser(t, db, true)
 
-	repos, _ := ct.CreateTestRepos(t, context.Background(), db, 1)
-	repo := repos[0]
+	repo, _ := ct.CreateTestRepo(t, context.Background(), db)
 
 	s := store.New(db, &observation.TestContext, nil)
 	workStore := dbworkerstore.NewWithMetrics(s.Handle(), batchSpecWorkspaceExecutionWorkerStoreOptions, &observation.TestContext)

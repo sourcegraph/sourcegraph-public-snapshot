@@ -176,7 +176,9 @@ func getBatchSpecWorkspaceQuery(opts *GetBatchSpecWorkspaceOpts) *sqlf.Query {
 
 // ListBatchSpecWorkspacesOpts captures the query options needed for
 // listing batch spec workspace jobs.
-type ListBatchSpecWorkspacesOpts struct{}
+type ListBatchSpecWorkspacesOpts struct {
+	BatchSpecID int64
+}
 
 // ListBatchSpecWorkspaces lists batch changes with the given filters.
 func (s *Store) ListBatchSpecWorkspaces(ctx context.Context, opts ListBatchSpecWorkspacesOpts) (cs []*btypes.BatchSpecWorkspace, err error) {
@@ -209,6 +211,10 @@ ORDER BY id ASC
 func listBatchSpecWorkspacesQuery(opts ListBatchSpecWorkspacesOpts) *sqlf.Query {
 	preds := []*sqlf.Query{
 		sqlf.Sprintf("repo.deleted_at IS NULL"),
+	}
+
+	if opts.BatchSpecID != 0 {
+		preds = append(preds, sqlf.Sprintf("batch_spec_workspaces.batch_spec_id = %d", opts.BatchSpecID))
 	}
 
 	return sqlf.Sprintf(

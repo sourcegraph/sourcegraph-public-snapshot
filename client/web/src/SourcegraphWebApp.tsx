@@ -1,6 +1,6 @@
 import 'focus-visible'
 
-import { ApolloClient, ApolloProvider, NormalizedCacheObject } from '@apollo/client'
+import { ApolloProvider } from '@apollo/client'
 import { ShortcutProvider } from '@slimsag/react-shortcuts'
 import { createBrowserHistory } from 'history'
 import ServerIcon from 'mdi-react/ServerIcon'
@@ -20,6 +20,7 @@ import {
     createController as createExtensionsController,
 } from '@sourcegraph/shared/src/extensions/controller'
 import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
+import { GraphQLClient } from '@sourcegraph/shared/src/graphql/graphql'
 import { getModeFromPath } from '@sourcegraph/shared/src/languages'
 import { Notifications } from '@sourcegraph/shared/src/notifications/Notifications'
 import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
@@ -31,7 +32,7 @@ import { asError, isErrorLike } from '@sourcegraph/shared/src/util/errors'
 
 import { authenticatedUser, AuthenticatedUser } from './auth'
 import { getWebGraphQLClient } from './backend/graphql'
-import { BatchChangesProps } from './batches'
+import { BatchChangesProps, isBatchChangesExecutionEnabled } from './batches'
 import { CodeIntelligenceProps } from './codeintel'
 import { ErrorBoundary } from './components/ErrorBoundary'
 import { queryExternalServices } from './components/externalServices/backend'
@@ -104,8 +105,8 @@ import {
 
 export interface SourcegraphWebAppProps
     extends CodeIntelligenceProps,
-        BatchChangesProps,
         CodeInsightsProps,
+        Pick<BatchChangesProps, 'batchChangesEnabled'>,
         KeyboardShortcutsProps {
     extensionAreaRoutes: readonly ExtensionAreaRoute[]
     extensionAreaHeaderNavItems: readonly ExtensionAreaHeaderNavItem[]
@@ -135,7 +136,7 @@ interface SourcegraphWebAppState extends SettingsCascadeProps {
     authenticatedUser?: AuthenticatedUser | null
 
     /** GraphQL client initialized asynchronously to restore persisted cache. */
-    graphqlClient?: ApolloClient<NormalizedCacheObject>
+    graphqlClient?: GraphQLClient
 
     viewerSubject: LayoutProps['viewerSubject']
 
@@ -477,7 +478,7 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
             <ApolloProvider client={graphqlClient}>
                 <ErrorBoundary location={null}>
                     <ShortcutProvider>
-                        <TemporarySettingsProvider authenticatedUser={authenticatedUser}>
+                        <TemporarySettingsProvider isAuthenticatedUser={window.context?.isAuthenticatedUser}>
                             <SearchResultsCacheProvider>
                                 <Router history={history} key={0}>
                                     <Route
@@ -491,6 +492,9 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
                                                     viewerSubject={this.state.viewerSubject}
                                                     settingsCascade={this.state.settingsCascade}
                                                     batchChangesEnabled={this.props.batchChangesEnabled}
+                                                    batchChangesExecutionEnabled={isBatchChangesExecutionEnabled(
+                                                        this.state.settingsCascade
+                                                    )}
                                                     // Search query
                                                     navbarSearchQueryState={this.state.navbarSearchQueryState}
                                                     onNavbarQueryChange={this.onNavbarQueryChange}

@@ -54,7 +54,7 @@ func (d *hardDeleter) Handle(ctx context.Context) error {
 		// previous "second" page is now the first page.
 		uploads, totalCount, err := d.dbStore.GetUploads(ctx, options)
 		if err != nil {
-			return errors.Wrap(err, "GetUploads")
+			return errors.Wrap(err, "dbstore.GetUploads")
 		}
 
 		if err := d.deleteBatch(ctx, uploadIDs(uploads)); err != nil {
@@ -86,11 +86,11 @@ func (d *hardDeleter) deleteBatch(ctx context.Context, ids []int) (err error) {
 	defer func() { err = tx.Done(err) }()
 
 	if err := d.lsifStore.Clear(ctx, ids...); err != nil {
-		return errors.Wrap(err, "Clear")
+		return errors.Wrap(err, "lsifstore.Clear")
 	}
 
 	if err := tx.HardDeleteUploadByID(ctx, ids...); err != nil {
-		return errors.Wrap(err, "HardDeleteUploadByID")
+		return errors.Wrap(err, "dbstore.HardDeleteUploadByID")
 	}
 
 	return nil

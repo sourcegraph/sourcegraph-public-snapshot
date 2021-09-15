@@ -27,6 +27,7 @@ export interface OrgAreaHeaderNavItem extends NavItemWithIconDescriptor<OrgAreaH
  */
 export const OrgHeader: React.FunctionComponent<Props> = ({
     batchChangesEnabled,
+    batchChangesExecutionEnabled,
     org,
     navItems,
     match,
@@ -60,7 +61,12 @@ export const OrgHeader: React.FunctionComponent<Props> = ({
                         <ul className="nav nav-tabs w-100">
                             {navItems.map(
                                 ({ to, label, exact, icon: Icon, condition = () => true }) =>
-                                    condition({ batchChangesEnabled, org, isSourcegraphDotCom }) && (
+                                    condition({
+                                        batchChangesEnabled,
+                                        batchChangesExecutionEnabled,
+                                        org,
+                                        isSourcegraphDotCom,
+                                    }) && (
                                         <li key={label} className="nav-item">
                                             <NavLink
                                                 to={match.url + to}

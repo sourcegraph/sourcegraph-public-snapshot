@@ -2,7 +2,6 @@
 set -ex -o nounset -o pipefail
 
 export IGNITE_VERSION=v0.10.0
-export CNI_VERSION=v0.9.1
 export KERNEL_IMAGE="weaveworks/ignite-kernel:5.10.51"
 export EXECUTOR_FIRECRACKER_IMAGE="sourcegraph/ignite-ubuntu:insiders"
 
@@ -11,6 +10,35 @@ export EXECUTOR_FIRECRACKER_IMAGE="sourcegraph/ignite-ubuntu:insiders"
 function install_ops_agent() {
   curl -sSO https://dl.google.com/cloudagents/add-google-cloud-ops-agent-repo.sh
   sudo bash add-google-cloud-ops-agent-repo.sh --also-install
+}
+
+## Install CloudWatch agent
+## Reference: https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/Install-CloudWatch-Agent.html
+function install_cloudwatch_agent() {
+  wget -q https://s3.us-west-2.amazonaws.com/amazoncloudwatch-agent-us-west-2/ubuntu/amd64/latest/amazon-cloudwatch-agent.deb
+  dpkg -i -E ./amazon-cloudwatch-agent.deb
+  rm ./amazon-cloudwatch-agent.deb
+
+  CLOUDWATCH_CONFIG_FILE_PATH=/opt/aws/amazon-cloudwatch-agent/etc/amazon-cloudwatch-agent.json
+  cat <<EOF >"${CLOUDWATCH_CONFIG_FILE_PATH}"
+{
+  "logs": {
+    "logs_collected": {
+      "files": {
+        "collect_list": [
+          {
+            "file_path": "/var/log/syslog",
+            "log_group_name": "executors",
+            "timezone": "UTC"
+          }
+        ]
+      }
+    },
+    "log_stream_name": "{instance_id}-syslog"
+  }
+}
+EOF
+  /opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-ctl -a fetch-config -m ec2 -s -c file:"${CLOUDWATCH_CONFIG_FILE_PATH}"
 }
 
 ## Install Docker
@@ -42,14 +70,9 @@ function install_git() {
 ## Install Weaveworks Ignite
 ## Reference: https://ignite.readthedocs.io/en/stable/installation/
 function install_ignite() {
-  # Install ignite
   curl -sfLo ignite https://github.com/weaveworks/ignite/releases/download/${IGNITE_VERSION}/ignite-amd64
   chmod +x ignite
   mv ignite /usr/local/bin
-
-  # Install container network interface
-  mkdir -p /opt/cni/bin
-  curl -sSL https://github.com/containernetworking/plugins/releases/download/${CNI_VERSION}/cni-plugins-linux-amd64-${CNI_VERSION}.tgz | tar -xz -C /opt/cni/bin
 }
 
 ## Install and configure executor service
@@ -126,7 +149,11 @@ function cleanup() {
 }
 
 # Prerequisites
-install_ops_agent
+if [ "${PLATFORM_TYPE}" == "gcp" ]; then
+  install_ops_agent
+else
+  install_cloudwatch_agent
+fi
 install_docker
 install_git
 install_ignite
