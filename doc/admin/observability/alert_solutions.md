@@ -4516,6 +4516,34 @@ with your code hosts connections or networking issues affecting communication wi
 
 <br />
 
+## zoekt-indexserver: get_index_options_error_increase
+
+<p class="subtitle">the number of repositories we failed to get indexing options over 5m</p>
+
+**Descriptions**
+
+- <span class="badge badge-warning">warning</span> zoekt-indexserver: 100+ the number of repositories we failed to get indexing options over 5m for 1m0s
+- <span class="badge badge-critical">critical</span> zoekt-indexserver: 100+ the number of repositories we failed to get indexing options over 5m for 10m0s
+
+**Possible solutions**
+
+- View error rates on gitserver and frontend to identify root cause.
+- Rollback frontend/gitserver deployment if due to a bad code change.
+- View error logs for `getIndexOptions` via net/trace debug interface. For example click on a `indexed-search-indexer-` on https://sourcegraph.com/-/debug/. Then click on Traces. Replace sourcegraph.com with your instance address.
+- More help interpreting this metric is available in the [dashboards reference](./dashboards.md#zoekt-indexserver-get-index-options-error-increase).
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_zoekt-indexserver_get_index_options_error_increase",
+  "critical_zoekt-indexserver_get_index_options_error_increase"
+]
+```
+
+<sub>*Managed by the [Sourcegraph Search-core team](https://about.sourcegraph.com/handbook/engineering/search/core).*</sub>
+
+<br />
+
 ## zoekt-indexserver: container_cpu_usage
 
 <p class="subtitle">container cpu usage total (1m average) across all cores by instance</p>

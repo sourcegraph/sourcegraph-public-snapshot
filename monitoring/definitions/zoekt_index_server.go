@@ -1,6 +1,8 @@
 package definitions
 
 import (
+	"time"
+
 	"github.com/grafana-tools/sdk"
 
 	"github.com/sourcegraph/sourcegraph/monitoring/definitions/shared"
@@ -90,6 +92,31 @@ func ZoektIndexServer() *monitoring.Container {
 							Panel:             monitoring.Panel().LegendFormat("{{duration}}").Unit(monitoring.Seconds),
 							Owner:             monitoring.ObservableOwnerSearchCore,
 							PossibleSolutions: "none",
+						},
+						{
+							Name:        "get_index_options_error_increase",
+							Description: "the number of repositories we failed to get indexing options over 5m",
+							Query:       `sum(increase(get_index_options_error_total[5m]))`,
+							// This value can spike, so only if we have a
+							// sustained error rate do we alert.
+							Warning:  monitoring.Alert().GreaterOrEqual(100, nil).For(time.Minute),
+							Critical: monitoring.Alert().GreaterOrEqual(100, nil).For(10 * time.Minute),
+							Panel:    monitoring.Panel().Min(0),
+							Owner:    monitoring.ObservableOwnerSearchCore,
+							PossibleSolutions: `
+								- View error rates on gitserver and frontend to identify root cause.
+								- Rollback frontend/gitserver deployment if due to a bad code change.
+								- View error logs for 'getIndexOptions' via net/trace debug interface. For example click on a 'indexed-search-indexer-' on https://sourcegraph.com/-/debug/. Then click on Traces. Replace sourcegraph.com with your instance address.
+							`,
+							Interpretation: `
+								When considering indexing a repository we ask for the index configuration
+								from frontend per repository. The most likely reason this would fail is
+								failing to resolve branch names to git SHAs.
+
+								This value can spike up during deployments/etc. Only if you encounter
+								sustained periods of errors is there an underlying issue. When sustained
+								this indicates repositories will not get updated indexes.
+							`,
 						},
 					},
 				},

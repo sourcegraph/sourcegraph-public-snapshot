@@ -11249,6 +11249,35 @@ Query: `sum(rate(resolve_revision_seconds_sum[5m])) / sum(rate(resolve_revision_
 
 <br />
 
+#### zoekt-indexserver: get_index_options_error_increase
+
+<p class="subtitle">The number of repositories we failed to get indexing options over 5m
+
+</p>
+
+When considering indexing a repository we ask for the index configuration
+from frontend per repository. The most likely reason this would fail is
+failing to resolve branch names to git SHAs.
+
+This value can spike up during deployments/etc. Only if you encounter
+sustained periods of errors is there an underlying issue. When sustained
+this indicates repositories will not get updated indexes.
+
+Refer to the [alert solutions reference](./alert_solutions.md#zoekt-indexserver-get-index-options-error-increase) for 2 alerts related to this panel.
+
+To see this panel, visit `/-/debug/grafana/d/zoekt-indexserver/zoekt-indexserver?viewPanel=100021` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Search-core team](https://about.sourcegraph.com/handbook/engineering/search/core).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum(increase(get_index_options_error_total[5m]))`
+
+</details>
+
+<br />
+
 ### Zoekt Index Server: Container monitoring (not available on server)
 
 #### zoekt-indexserver: container_missing
