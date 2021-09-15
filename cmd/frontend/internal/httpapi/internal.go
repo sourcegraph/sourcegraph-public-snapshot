@@ -315,6 +315,7 @@ func (h *reposListServer) serveIndex(w http.ResponseWriter, r *http.Request) err
 		err = h.StreamRepoNames(r.Context(), database.ReposListOptions{
 			IDs:   opt.IndexedIDs,
 			Names: opt.Indexed,
+			UseOr: true,
 		}, func(r *types.RepoName) { indexed[uint32(r.ID)] = nil })
 
 		if err != nil {

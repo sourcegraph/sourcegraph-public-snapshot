@@ -20,7 +20,7 @@ type cachedSearcher struct {
 }
 
 func NewCachedSearcher(z zoekt.Streamer) zoekt.Streamer {
-	return &cachedSearcher{Streamer: z}
+	return &cachedSearcher{Streamer: z, cache: map[string]*listCacheValue{}}
 }
 
 type listCacheKey struct {
@@ -55,7 +55,7 @@ func (c *cachedSearcher) List(ctx context.Context, q zoektquery.Q, opts *zoekt.L
 
 	switch {
 	case v == nil || v.err != nil:
-		c.update(ctx, k) // no cached value, block.
+		v = c.update(ctx, k) // no cached value, block.
 	case v.stale():
 		go func() {
 			ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
@@ -67,7 +67,7 @@ func (c *cachedSearcher) List(ctx context.Context, q zoektquery.Q, opts *zoekt.L
 	return v.list, v.err
 }
 
-func (c *cachedSearcher) update(ctx context.Context, k listCacheKey) {
+func (c *cachedSearcher) update(ctx context.Context, k listCacheKey) *listCacheValue {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	list, err := c.Streamer.List(ctx, k.q, k.opts)
 	cancel()
@@ -81,6 +81,8 @@ func (c *cachedSearcher) update(ctx context.Context, k listCacheKey) {
 	c.mu.Lock()
 	c.cache[k.String()] = v
 	c.mu.Unlock()
+
+	return v
 }
 
 // randInterval returns an expected d duration with a jitter in [-jitter /
