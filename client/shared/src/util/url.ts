@@ -102,7 +102,7 @@ export interface ModeSpec {
     mode: string
 }
 
-type BlobViewState = 'def' | 'references' | 'implementations'
+type BlobViewState = 'def' | 'references'
 
 export interface ViewStateSpec {
     /**

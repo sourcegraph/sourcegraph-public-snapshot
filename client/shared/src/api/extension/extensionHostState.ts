@@ -50,9 +50,6 @@ export function createExtensionHostState(
         >([]),
         definitionProviders: new BehaviorSubject<readonly RegisteredProvider<sourcegraph.DefinitionProvider>[]>([]),
         referenceProviders: new BehaviorSubject<readonly RegisteredProvider<sourcegraph.ReferenceProvider>[]>([]),
-        implementationProviders: new BehaviorSubject<readonly RegisteredProvider<sourcegraph.ImplementationProvider>[]>(
-            []
-        ),
         locationProviders: new BehaviorSubject<
             readonly RegisteredProvider<{ id: string; provider: sourcegraph.LocationProvider }>[]
         >([]),
@@ -123,7 +120,6 @@ export interface ExtensionHostState {
     documentHighlightProviders: BehaviorSubject<readonly RegisteredProvider<sourcegraph.DocumentHighlightProvider>[]>
     definitionProviders: BehaviorSubject<readonly RegisteredProvider<sourcegraph.DefinitionProvider>[]>
     referenceProviders: BehaviorSubject<readonly RegisteredProvider<sourcegraph.ReferenceProvider>[]>
-    implementationProviders: BehaviorSubject<readonly RegisteredProvider<sourcegraph.ImplementationProvider>[]>
     locationProviders: BehaviorSubject<
         readonly RegisteredProvider<{ id: string; provider: sourcegraph.LocationProvider }>[]
     >

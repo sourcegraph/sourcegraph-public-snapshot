@@ -63,12 +63,6 @@ export function getHoverActions(
                         wrapRemoteObservable(extensionHostAPI.hasReferenceProvidersForDocument(parameters))
                     )
                 ),
-            hasImplementationProvidersForDocument: parameters =>
-                from(extensionsController.extHostAPI).pipe(
-                    switchMap(extensionHostAPI =>
-                        wrapRemoteObservable(extensionHostAPI.hasImplementationProvidersForDocument(parameters))
-                    )
-                ),
             getWorkspaceRoots: () =>
                 from(extensionsController.extHostAPI).pipe(
                     switchMap(extensionHostAPI => wrapRemoteObservable(extensionHostAPI.getWorkspaceRoots()))
@@ -104,7 +98,6 @@ export interface HoverActionsContext extends Context<TextDocumentPositionParamet
     ['goToDefinition.notFound']: boolean
     ['goToDefinition.error']: boolean
     ['findReferences.url']: string | null
-    ['findImplementations.url']: string | null
     hoverPosition: TextDocumentPositionParameters & URLToFileContext
     hoveredOnDefinition: boolean
 }
@@ -118,13 +111,11 @@ export function getHoverActionsContext(
     {
         getDefinition,
         hasReferenceProvidersForDocument,
-        hasImplementationProvidersForDocument,
         getWorkspaceRoots,
         platformContext: { urlToFile, requestGraphQL },
     }: {
         getDefinition: (parameters: TextDocumentPositionParameters) => Observable<MaybeLoadingResult<Location[]>>
         hasReferenceProvidersForDocument: (parameters: TextDocumentPositionParameters) => Observable<boolean>
-        hasImplementationProvidersForDocument: (parameters: TextDocumentPositionParameters) => Observable<boolean>
         getWorkspaceRoots: () => Observable<WorkspaceRootWithMetadata[]>
         platformContext: Pick<PlatformContext, 'urlToFile' | 'requestGraphQL'>
     },
@@ -150,11 +141,6 @@ export function getHoverActionsContext(
         // not preloaded and here just involve statically constructing a URL, so no need to indicate loading.
         hasReferenceProvidersForDocument(parameters),
 
-        // hasImplementationsProvider:
-        // Only show "Find implementations" if an implementation provider is registered. Unlike definitions, implementations are
-        // not preloaded and here just involve statically constructing a URL, so no need to indicate loading.
-        hasImplementationProvidersForDocument(parameters),
-
         // showFindReferences:
         // If there is no definition, delay showing "Find references" because it is likely that the token is
         // punctuation or something else that has no meaningful references. This reduces UI jitter when it can be
@@ -171,30 +157,9 @@ export function getHoverActionsContext(
                 mapTo(true)
             )
         ),
-
-        // TODO(tj,chris): Only show find-implementations if an extension supports it on this token
-
-        // showFindImplementations: (similar to references)
-        merge(
-            [false],
-            of(true).pipe(
-                delay(LOADER_DELAY),
-                takeUntil(definitionURLOrError.pipe(filter(({ result }) => result !== null)))
-            ),
-            definitionURLOrError.pipe(
-                filter(({ result }) => result !== null),
-                mapTo(true)
-            )
-        ),
     ]).pipe(
         map(
-            ([
-                definitionURLOrError,
-                hasReferenceProvider,
-                hasImplementationProvider,
-                showFindReferences,
-                showFindImplementations,
-            ]): HoverActionsContext => {
+            ([definitionURLOrError, hasReferenceProvider, showFindReferences]): HoverActionsContext => {
                 const fileUrl =
                     definitionURLOrError !== LOADING && !isErrorLike(definitionURLOrError) && definitionURLOrError?.url
                         ? definitionURLOrError.url
@@ -222,14 +187,6 @@ export function getHoverActionsContext(
                         hasReferenceProvider && showFindReferences
                             ? urlToFile(
                                   { ...hoverContext, position: hoverContext, viewState: 'references' },
-                                  { part: hoverContext.part }
-                              )
-                            : null,
-
-                    'findImplementations.url':
-                        hasImplementationProvider && showFindImplementations
-                            ? urlToFile(
-                                  { ...hoverContext, position: hoverContext, viewState: 'implementations' },
                                   { part: hoverContext.part }
                               )
                             : null,
@@ -512,39 +469,7 @@ export function registerHoverContributions({
             })
             subscriptions.add(syncRemoteSubscription(referencesContributionPromise))
 
-            // Register the "Find implementations" action shown in the hover tooltip. This is similar to "Find references".
-            const implementationContributionPromise = extensionHostAPI.registerContributions({
-                actions: [
-                    {
-                        id: 'findImplementations',
-                        // title: parseTemplate('Find implementations'),
-                        title: 'Find implementations',
-                        command: 'open',
-                        // eslint-disable-next-line no-template-curly-in-string
-                        commandArguments: ['${findImplementations.url}'],
-                    },
-                ],
-                menus: {
-                    hover: [
-                        // To reduce UI jitter, even though "Find implementations" can be shown immediately (because
-                        // the URL can be statically constructed), don't show it until either (1) "Go to
-                        // definition" is showing or (2) the LOADER_DELAY has elapsed. The part (2) of this
-                        // logic is implemented in the observable pipe that sets findImplementations.url above.
-                        {
-                            action: 'findImplementations',
-                            when:
-                                'findImplementations.url && (goToDefinition.showLoading || goToDefinition.url || goToDefinition.error)',
-                        },
-                    ],
-                },
-            })
-            subscriptions.add(syncRemoteSubscription(referencesContributionPromise))
-
-            return Promise.all([
-                definitionContributionsPromise,
-                referencesContributionPromise,
-                implementationContributionPromise,
-            ])
+            return Promise.all([definitionContributionsPromise, referencesContributionPromise])
         })
         // Don't expose remote subscriptions, only sync subscriptions bag
         .then(() => undefined)

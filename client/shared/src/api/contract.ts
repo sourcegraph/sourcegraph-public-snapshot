@@ -61,17 +61,12 @@ export interface FlatExtensionHostAPI {
         parameters: TextDocumentPositionParameters,
         context: sourcegraph.ReferenceContext
     ) => ProxySubscribable<MaybeLoadingResult<clientType.Location[]>>
-    getImplementations: (
-        parameters: TextDocumentPositionParameters
-    ) => ProxySubscribable<MaybeLoadingResult<clientType.Location[]>>
     getLocations: (
         id: string,
         parameters: TextDocumentPositionParameters
     ) => ProxySubscribable<MaybeLoadingResult<clientType.Location[]>>
 
     hasReferenceProvidersForDocument: (parameters: TextDocumentPositionParameters) => ProxySubscribable<boolean>
-
-    hasImplementationProvidersForDocument: (parameters: TextDocumentPositionParameters) => ProxySubscribable<boolean>
 
     // Tree
     getFileDecorations: (parameters: sourcegraph.FileDecorationContext) => ProxySubscribable<FileDecorationsByPath>

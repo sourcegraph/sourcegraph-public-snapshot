@@ -28,6 +28,7 @@ export interface InitResult {
         // Backcompat definitions that were removed from sourcegraph.d.ts but are still defined (as
         // noops with a log message), to avoid completely breaking extensions that use them.
         registerTypeDefinitionProvider: any
+        registerImplementationProvider: any
     }
     graphQL: typeof sourcegraph['graphQL']
     content: typeof sourcegraph['content']
@@ -52,6 +53,7 @@ export function createExtensionAPIFactory(
     // noops with a log message), to avoid completely breaking extensions that use them.
     languages: {
         registerTypeDefinitionProvider: any
+        registerImplementationProvider: any
     }
 } {
     // Configuration
@@ -267,10 +269,6 @@ export function createExtensionAPIFactory(
             selector: sourcegraph.DocumentSelector,
             provider: sourcegraph.ReferenceProvider
         ): sourcegraph.Unsubscribable => addWithRollback(state.referenceProviders, { selector, provider }),
-        registerImplementationProvider: (
-            selector: sourcegraph.DocumentSelector,
-            provider: sourcegraph.ImplementationProvider
-        ): sourcegraph.Unsubscribable => addWithRollback(state.implementationProviders, { selector, provider }),
         registerLocationProvider: (
             id: string,
             selector: sourcegraph.DocumentSelector,
@@ -283,6 +281,12 @@ export function createExtensionAPIFactory(
         registerTypeDefinitionProvider: () => {
             console.warn(
                 'sourcegraph.languages.registerTypeDefinitionProvider was removed. Use sourcegraph.languages.registerLocationProvider instead.'
+            )
+            return { unsubscribe: () => undefined }
+        },
+        registerImplementationProvider: () => {
+            console.warn(
+                'sourcegraph.languages.registerImplementationProvider was removed. Use sourcegraph.languages.registerLocationProvider instead.'
             )
             return { unsubscribe: () => undefined }
         },

@@ -76,7 +76,7 @@ export function useBlobPanelViews({
         )
     )
 
-    // Creates source for definition, reference, and implementation panels
+    // Creates source for definition and reference panels
     const createLocationProvider = useCallback(
         <P extends TextDocumentPositionParameters>(
             id: string,
@@ -183,16 +183,6 @@ export function useBlobPanelViews({
                                 wrapRemoteObservable(
                                     extensionHostAPI.getReferences(parameters, { includeDeclaration: false })
                                 )
-                            )
-                        )
-                    ),
-                },
-                {
-                    id: 'implementations',
-                    provider: createLocationProvider('implementations', 'Implementations', 190, parameters =>
-                        from(extensionsController.extHostAPI).pipe(
-                            switchMap(extensionHostAPI =>
-                                wrapRemoteObservable(extensionHostAPI.getImplementations(parameters))
                             )
                         )
                     ),
