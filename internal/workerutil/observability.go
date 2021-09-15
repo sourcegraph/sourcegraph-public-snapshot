@@ -84,9 +84,9 @@ func newOperations(observationContext *observation.Context, prefix string, keys,
 
 // newLenientConcurrencyGauge creates a new gauge-like object that
 // emits the maximum value over the last five seconds into the given
-// gauge. Note that this gaugage should be used to track concurrency
+// gauge. Note that this gauge should be used to track concurrency
 // only, meaning that running the gauge into the negatives may produce
-// unwanted behaivor.
+// unwanted behavior.
 //
 // This method begins an immortal background routine.
 //
@@ -106,19 +106,30 @@ func newLenientConcurrencyGauge(gauge prometheus.Gauge, interval time.Duration) 
 }
 
 func runLenientConcurrencyGauge(gauge prometheus.Gauge, ch <-chan float64, interval time.Duration) {
-	max := float64(0)
-	value := float64(0)
-	ticker := time.NewTicker(interval)
+	value := float64(0)                // The current value
+	max := float64(0)                  // The max value in the current window
+	ticker := time.NewTicker(interval) // The window over which to track the max value
+	reset := true                      // Whether the next read of ch should reset the max
 
 	for {
 		select {
 		case <-ticker.C:
 			gauge.Set(max)
-			max = 0
+			reset = true
 
 		case update, ok := <-ch:
 			if !ok {
 				return
+			}
+
+			if reset {
+				// We've already emitted the max for the previous window, but we don't
+				// reset max to zero immediately after updating the gauge. That tends
+				// to emit zero values if our ticker frequency is less than our channel
+				// read frequency.
+
+				max = 0
+				reset = false
 			}
 
 			value += update

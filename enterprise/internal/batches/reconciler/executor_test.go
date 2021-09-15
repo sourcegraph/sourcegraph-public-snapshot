@@ -44,8 +44,7 @@ func TestExecutor_ExecutePlan(t *testing.T) {
 
 	admin := ct.CreateTestUser(t, db, true)
 
-	rs, extSvc := ct.CreateTestRepos(t, ctx, db, 1)
-	repo := rs[0]
+	repo, extSvc := ct.CreateTestRepo(t, ctx, db)
 	ct.CreateTestSiteCredential(t, cstore, repo)
 
 	state := ct.MockChangesetSyncState(&protocol.RepoInfo{
@@ -599,8 +598,7 @@ func TestExecutor_ExecutePlan_PublishedChangesetDuplicateBranch(t *testing.T) {
 
 	cstore := store.New(db, &observation.TestContext, et.TestKey{})
 
-	rs, _ := ct.CreateTestRepos(t, ctx, db, 1)
-	repo := rs[0]
+	repo, _ := ct.CreateTestRepo(t, ctx, db)
 
 	commonHeadRef := "refs/heads/collision"
 
@@ -645,8 +643,7 @@ func TestLoadChangesetSource(t *testing.T) {
 	admin := ct.CreateTestUser(t, db, true)
 	user := ct.CreateTestUser(t, db, false)
 
-	rs, _ := ct.CreateTestRepos(t, ctx, db, 1)
-	repo := rs[0]
+	repo, _ := ct.CreateTestRepo(t, ctx, db)
 
 	batchSpec := ct.CreateBatchSpec(t, ctx, cstore, "reconciler-test-batch-change", admin.ID)
 	adminBatchChange := ct.CreateBatchChange(t, ctx, cstore, "reconciler-test-batch-change", admin.ID, batchSpec.ID)
@@ -805,8 +802,7 @@ func TestExecutor_UserCredentialsForGitserver(t *testing.T) {
 	admin := ct.CreateTestUser(t, db, true)
 	user := ct.CreateTestUser(t, db, false)
 
-	rs, gitHubExtSvc := ct.CreateTestRepos(t, ctx, db, 1)
-	gitHubRepo := rs[0]
+	gitHubRepo, gitHubExtSvc := ct.CreateTestRepo(t, ctx, db)
 
 	gitLabRepos, gitLabExtSvc := ct.CreateGitlabTestRepos(t, ctx, db, 1)
 	gitLabRepo := gitLabRepos[0]

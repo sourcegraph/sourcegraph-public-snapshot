@@ -2,131 +2,179 @@ package graphqlbackend
 
 import (
 	"context"
-	"encoding/json"
-	"reflect"
 	"testing"
 
+	"github.com/stretchr/testify/require"
+
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 func TestMergeSettings(t *testing.T) {
-	orig := deeplyMergedSettingsFields
-	deeplyMergedSettingsFields = map[string]int{
-		"f1": 1,
-		"f2": 2,
+	boolPtr := func(b bool) *bool {
+		return &b
 	}
-	defer func() { deeplyMergedSettingsFields = orig }()
 
-	tests := map[string]struct {
-		configs []string
-		want    string
-		wantErr bool
-	}{
-		"empty": {
-			configs: []string{},
-			want:    `{}`,
+	cases := []struct {
+		name     string
+		left     *schema.Settings
+		right    *schema.Settings
+		expected *schema.Settings
+	}{{
+		name:     "nil left",
+		left:     nil,
+		right:    &schema.Settings{},
+		expected: &schema.Settings{},
+	}, {
+		name: "empty left",
+		left: &schema.Settings{},
+		right: &schema.Settings{
+			AlertsCodeHostIntegrationMessaging: "test",
 		},
-		"syntax error": {
-			configs: []string{`error!`, `{"a":1}`},
-			wantErr: true,
+		expected: &schema.Settings{
+			AlertsCodeHostIntegrationMessaging: "test",
 		},
-		"single": {
-			configs: []string{`{"a":1}`},
-			want:    `{"a":1}`,
+	}, {
+		name: "merge bool ptr",
+		left: &schema.Settings{
+			AlertsHideObservabilitySiteAlerts: boolPtr(true),
 		},
-		"single with comments": {
-			configs: []string{
-				`
-/* comment */
-{
-	// comment
-	"a": 1 // comment
-}`,
+		right: &schema.Settings{
+			AlertsCodeHostIntegrationMessaging: "test",
+		},
+		expected: &schema.Settings{
+			AlertsCodeHostIntegrationMessaging: "test",
+			AlertsHideObservabilitySiteAlerts:  boolPtr(true),
+		},
+	}, {
+		name: "merge bool",
+		left: &schema.Settings{
+			AlertsShowPatchUpdates:    false,
+			CodeHostUseNativeTooltips: true,
+		},
+		right: &schema.Settings{
+			AlertsShowPatchUpdates:    true,
+			CodeHostUseNativeTooltips: false, // This is the zero value, so will not override a previous non-zero value
+		},
+		expected: &schema.Settings{
+			AlertsShowPatchUpdates:    true,
+			CodeHostUseNativeTooltips: true,
+		},
+	}, {
+		name: "merge int",
+		left: &schema.Settings{
+			SearchContextLines:                        0,
+			CodeIntelligenceAutoIndexPopularRepoLimit: 1,
+		},
+		right: &schema.Settings{
+			SearchContextLines:                        1,
+			CodeIntelligenceAutoIndexPopularRepoLimit: 0, // This is the zero value, so will not override a previous non-zero value
+		},
+		expected: &schema.Settings{
+			SearchContextLines:                        1,
+			CodeIntelligenceAutoIndexPopularRepoLimit: 1, // This is the zero value, so will not override a previous non-zero value
+		},
+	}, {
+		name: "shallow override struct pointer",
+		left: &schema.Settings{
+			ExperimentalFeatures: &schema.SettingsExperimentalFeatures{
+				ShowSearchNotebook: boolPtr(true),
 			},
-			want: `{"a":1}`,
 		},
-		"multiple with no deeply merged fields": {
-			configs: []string{
-				`{"a":1}`,
-				`{"b":2}`,
+		right: &schema.Settings{
+			ExperimentalFeatures: &schema.SettingsExperimentalFeatures{
+				ShowSearchContextManagement: boolPtr(false),
 			},
-			want: `{"a":1,"b":2}`,
 		},
-		"arrays": {
-			configs: []string{
-				`{"f1":[0,1]}`,
-				`{"f1":[2,3]}`,
+		expected: &schema.Settings{
+			ExperimentalFeatures: &schema.SettingsExperimentalFeatures{
+				ShowSearchContextManagement: boolPtr(false),
 			},
-			want: `{"f1":[0,1,2,3]}`,
 		},
-		"objects": {
-			configs: []string{
-				`{"f1":{"a":1,"b":2}}`,
-				`{"f1":{"a":3,"c":4}}`,
+	}, {
+		name: "overwriting merge",
+		left: &schema.Settings{
+			AlertsHideObservabilitySiteAlerts: boolPtr(true),
+		},
+		right: &schema.Settings{
+			AlertsHideObservabilitySiteAlerts: boolPtr(false),
+		},
+		expected: &schema.Settings{
+			AlertsHideObservabilitySiteAlerts: boolPtr(false),
+		},
+	}, {
+		name: "deep merge slice",
+		left: &schema.Settings{
+			SearchScopes: []*schema.SearchScope{{Name: "test1"}},
+		},
+		right: &schema.Settings{
+			SearchScopes: []*schema.SearchScope{{Name: "test2"}},
+		},
+		expected: &schema.Settings{
+			SearchScopes: []*schema.SearchScope{{Name: "test1"}, {Name: "test2"}},
+		},
+	}, {
+		name: "no deep merge slice",
+		left: &schema.Settings{
+			Notices: []*schema.Notice{{Message: "test1"}},
+		},
+		right: &schema.Settings{
+			Notices: []*schema.Notice{{Message: "test2"}},
+		},
+		expected: &schema.Settings{
+			Notices: []*schema.Notice{{Message: "test2"}},
+		},
+	}, {
+		name: "deep merge map",
+		left: &schema.Settings{
+			SearchRepositoryGroups: map[string][]interface{}{
+				"test1": {"test", 1},
+				"test2": {"test", 2},
 			},
-			want: `{"f1":{"a":3,"b":2,"c":4}}`,
 		},
-		"nested objects with depth 1": {
-			configs: []string{
-				`{"f1":{"a":{"x":1,"y":2}}}`,
-				`{"f1":{"a":{"x":3,"z":4}}}`,
+		right: &schema.Settings{
+			SearchRepositoryGroups: map[string][]interface{}{
+				"test2": {"overridden", 3},
+				"test3": {"merged", 4},
 			},
-			// NOTE: It is expected that this does not include the "y":2 property because the
-			// merging only occurs 1 level deep for field f1.
-			want: `{"f1":{"a":{"x":3,"z":4}}}`,
 		},
-		"nested objects with depth 2": {
-			configs: []string{
-				`{"f2":{"a":{"x":1,"y":2}}}`,
-				`{"f2":{"a":{"x":3,"z":4}}}`,
+		expected: &schema.Settings{
+			SearchRepositoryGroups: map[string][]interface{}{
+				"test1": {"test", 1},
+				"test2": {"overridden", 3},
+				"test3": {"merged", 4},
 			},
-			want: `{"f2":{"a":{"x":3,"y":2,"z":4}}}`,
 		},
-		"arrays and null": {
-			configs: []string{
-				`{"f1":[0,1]}`,
-				`{"f1":null}`,
-				`{"f1":[2,3]}`,
+	}, {
+		name: "deep merge insightsDashboards",
+		left: &schema.Settings{
+			InsightsDashboards: map[string]schema.InsightDashboard{
+				"1": {Id: "1"},
+				"2": {Id: "2"},
+				"3": {Id: "3"},
 			},
-			want: `{"f1":[0,1,2,3]}`,
 		},
-		"unset 1nd": {
-			configs: []string{
-				`{}`,
-				`{"f1":[0,1]}`,
+		right: &schema.Settings{
+			InsightsDashboards: map[string]schema.InsightDashboard{
+				"2": {Id: "overridden", Title: "overridden"},
+				"3": {Title: "overridden"},
+				"4": {Id: "merged"},
 			},
-			want: `{"f1":[0,1]}`,
 		},
-		"unset 2nd": {
-			configs: []string{
-				`{"f1":[0,1]}`,
-				`{}`,
+		expected: &schema.Settings{
+			InsightsDashboards: map[string]schema.InsightDashboard{
+				"1": {Id: "1"},
+				"2": {Id: "overridden", Title: "overridden"},
+				"3": {Title: "overridden"},
+				"4": {Id: "merged"},
 			},
-			want: `{"f1":[0,1]}`,
 		},
-		"arrays of heterogenous objects": {
-			configs: []string{
-				`{"f1":[{"a":0},1]}`,
-				`{"f1":[2,{"b":3}]}`,
-			},
-			want: `{"f1":[{"a":0},1,2,{"b":3}]}`,
-		},
-	}
-	for label, test := range tests {
-		t.Run(label, func(t *testing.T) {
-			merged, err := mergeSettings(test.configs)
-			if err != nil {
-				if test.wantErr {
-					return
-				}
-				t.Fatal(err)
-			}
-			if test.wantErr {
-				t.Fatal("got no error, want error")
-			}
-			if !jsonDeepEqual(string(merged), test.want) {
-				t.Errorf("got %s, want %s", merged, test.want)
-			}
+	}}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			res := mergeSettingsLeft(tc.left, tc.right)
+			require.Equal(t, tc.expected, res)
 		})
 	}
 }
@@ -146,15 +194,4 @@ func TestSubjects(t *testing.T) {
 			t.Fatal("Expected the first subject to be default settings")
 		}
 	})
-}
-
-func jsonDeepEqual(a, b string) bool {
-	var va, vb interface{}
-	if err := json.Unmarshal([]byte(a), &va); err != nil {
-		panic(err)
-	}
-	if err := json.Unmarshal([]byte(b), &vb); err != nil {
-		panic(err)
-	}
-	return reflect.DeepEqual(va, vb)
 }

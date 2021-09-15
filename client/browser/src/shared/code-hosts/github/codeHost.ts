@@ -321,7 +321,7 @@ const notificationClassNames = {
 
 const searchEnhancement: CodeHost['searchEnhancement'] = {
     searchViewResolver: {
-        selector: '.js-site-search-form input[type="text"]',
+        selector: '.js-site-search-form input[type="text"][aria-controls="jump-to-results"]',
         resolveView: element => ({ element }),
     },
     resultViewResolver: {
@@ -351,7 +351,9 @@ const searchEnhancement: CodeHost['searchEnhancement'] = {
             badge.parentNode?.insertBefore(logo, badge)
 
             /** Add sourcegraph item after GH item */
-            return ghElement.parentNode?.insertBefore(sgElement, ghElement.nextElementSibling) as HTMLElement
+            ghElement.parentNode?.insertBefore(sgElement, ghElement.nextElementSibling)
+
+            return sgElement
         }
 
         /** Update link and display value */
@@ -415,7 +417,7 @@ export const githubCodeHost: CodeHost = {
     getCommandPaletteMount,
     notificationClassNames,
     commandPaletteClassProps: {
-        buttonClassName: 'Header-link',
+        buttonClassName: 'Header-link d-flex flex-items-baseline',
         popoverClassName: 'Box',
         formClassName: 'p-1',
         inputClassName: 'form-control input-sm header-search-input jump-to-field',

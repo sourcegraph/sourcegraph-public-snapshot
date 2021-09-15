@@ -65,6 +65,7 @@ const defaultProps = (
     onNavbarQueryChange: () => {},
     isExtensionAlertAnimating: false,
     batchChangesEnabled: true,
+    batchChangesExecutionEnabled: true,
     enableCodeMonitoring: true,
     activation: undefined,
     hideNavLinks: false,

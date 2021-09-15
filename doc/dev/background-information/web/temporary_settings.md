@@ -64,6 +64,14 @@ similar to other hooks like `useState`. The value will be updated automatically 
 the user's authentication state changes or the setting is modified elsewhere in the
 application.
 
+An optional second argument can be provided to specify a default value if the
+setting hasn't been set yet.
+
+NOTE: Settings might be loaded asynchronously, in which case the initial value
+of the setting will be `undefined`. You might have to account for this in your
+component to prevent a flash of content. The optional default value is only used
+if the setting hasn't been set yet; it is *not* used as an initial value.
+
 #### Example usage:
 
 ```typescript
@@ -80,7 +88,7 @@ return <>
 
 ### 🚨 Data sync warning
 
-Currently, settings are not kept up-to-date if modified in more than one tab/browser at once,
-which can cause settings to be out of sync and lost. **Do not use temporary settings for
-important data that may not be easily recoverable with a few clicks.**
-We will address this in the future.
+Temporary settings for authenticated users are only updated every 5 minutes.
+This can cause settings to become out-of-sync or lost if modified in more than
+one tab/browser at once. **Do not use temporary settings for data that may not
+be easily recoverable with a few clicks.**

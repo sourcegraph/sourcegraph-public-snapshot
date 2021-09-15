@@ -21,7 +21,8 @@ func detectCapabilities() (capabilities, error) {
 	w, h := 80, 25
 	var err error
 	if atty {
-		size, err := term.GetWinsize(os.Stdout.Fd())
+		var size *term.Winsize
+		size, err = term.GetWinsize(os.Stdout.Fd())
 		if err == nil {
 			if size != nil {
 				w, h = int(size.Width), int(size.Height)

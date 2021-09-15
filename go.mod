@@ -73,7 +73,7 @@ require (
 	github.com/gorilla/securecookie v1.1.1
 	github.com/gorilla/sessions v1.2.1
 	github.com/goware/urlx v0.3.1
-	github.com/grafana-tools/sdk v0.0.0-20210709154219-f35c5af8140d
+	github.com/grafana-tools/sdk v0.0.0-20210831082851-2de27e0f2577
 	github.com/graph-gophers/graphql-go v0.0.0-20201113091052-beb923fada29
 	github.com/graphql-go/graphql v0.7.9
 	github.com/gregjones/httpcache v0.0.0-20190611155906-901d90724c79
@@ -119,7 +119,6 @@ require (
 	github.com/shurcooL/github_flavored_markdown v0.0.0-20181002035957-2122de532470
 	github.com/shurcooL/httpgzip v0.0.0-20190720172056-320755c1c1b0
 	github.com/snabb/sitemap v1.0.0
-	github.com/sourcegraph/batch-change-utils v0.0.0-20210708162152-c9f35b905d94
 	github.com/sourcegraph/ctxvfs v0.0.0-20180418081416-2b65f1b1ea81
 	github.com/sourcegraph/go-ctags v0.0.0-20210805071240-8c61152fb089
 	github.com/sourcegraph/go-diff v0.6.1
@@ -320,7 +319,7 @@ require (
 // or intentional forks.
 replace (
 	// We maintain our own fork of Zoekt. Update with ./dev/zoekt/update
-	github.com/google/zoekt => github.com/sourcegraph/zoekt v0.0.0-20210908064810-6a4adda25a6c
+	github.com/google/zoekt => github.com/sourcegraph/zoekt v0.0.0-20210914071702-65ca553d3a98
 	// We use a fork of Alertmanager to allow prom-wrapper to better manipulate Alertmanager configuration.
 	// See https://docs.sourcegraph.com/dev/background-information/observability/prometheus
 	github.com/prometheus/alertmanager => github.com/sourcegraph/alertmanager v0.21.1-0.20210809100802-88b656a8713e
@@ -339,6 +338,8 @@ replace (
 replace (
 	// Pending: https://github.com/ghodss/yaml/pull/65
 	github.com/ghodss/yaml => github.com/sourcegraph/yaml v1.0.1-0.20200714132230-56936252f152
+	// graph-fieldconfig branch - https://github.com/grafana-tools/sdk/pull/170
+	github.com/grafana-tools/sdk => github.com/sourcegraph/grafana-sdk v0.0.0-20210914025534-b4255965ba53
 	github.com/shurcooL/httpgzip => github.com/sourcegraph/httpgzip v0.0.0-20210213125624-48ebf036a6a1
 )
 

@@ -15,6 +15,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 )
 
@@ -715,18 +716,40 @@ const hardDeleteUploadByIDQuery = `
 DELETE FROM lsif_uploads WHERE id IN (%s)
 `
 
-// RepositoryIDsForRetentionScan returns a set of identifiers of repositories that are
-// due to be scanned for removable code intelligence data. Repositories that were returned
-// previously from this call within the given process delay are not returned.
-func (s *Store) RepositoryIDsForRetentionScan(ctx context.Context, processDelay time.Duration, limit int) (_ []int, err error) {
-	return s.repositoryIDsForRetentionScan(ctx, processDelay, limit, time.Now())
+// scanIntTimePairs returns a map from ints to nullable times from the return value of `*Store.query`.
+func scanIntTimePairs(rows *sql.Rows, queryErr error) (_ map[int]*time.Time, err error) {
+	if queryErr != nil {
+		return nil, queryErr
+	}
+	defer func() { err = basestore.CloseRows(rows, err) }()
+
+	m := map[int]*time.Time{}
+	for rows.Next() {
+		var repositoryID int
+		var updatedAt *time.Time
+		if err := rows.Scan(&repositoryID, &updatedAt); err != nil {
+			return nil, err
+		}
+
+		m[repositoryID] = updatedAt
+	}
+
+	return m, nil
 }
 
-func (s *Store) repositoryIDsForRetentionScan(ctx context.Context, processDelay time.Duration, limit int, now time.Time) (_ []int, err error) {
-	ctx, endObservation := s.operations.repositoryIDsForRetentionScan.With(ctx, &err, observation.Args{})
+// SelectRepositoriesForRetentionScan returns a map from repository identifiers to the last
+// time the repository's commit graph was refreshed (or null). This method returns repository
+// identifiers with live code intelligence data. Repositories that were returned previously
+// from this call within the given process delay are not returned.
+func (s *Store) SelectRepositoriesForRetentionScan(ctx context.Context, processDelay time.Duration, limit int) (_ map[int]*time.Time, err error) {
+	return s.selectRepositoriesForRetentionScan(ctx, processDelay, limit, timeutil.Now())
+}
+
+func (s *Store) selectRepositoriesForRetentionScan(ctx context.Context, processDelay time.Duration, limit int, now time.Time) (_ map[int]*time.Time, err error) {
+	ctx, endObservation := s.operations.selectRepositoriesForRetentionScan.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
-	return basestore.ScanInts(s.Query(ctx, sqlf.Sprintf(
+	return scanIntTimePairs(s.Query(ctx, sqlf.Sprintf(
 		repositoryIDsForRetentionScanQuery,
 		now,
 		int(processDelay/time.Second),
@@ -744,9 +767,11 @@ WITH candidate_repositories AS (
 	WHERE u.state = 'completed'
 ),
 repositories AS (
-	SELECT cr.id FROM candidate_repositories cr
-	LEFT JOIN lsif_last_retention_scan lrs
-	ON lrs.repository_id = cr.id
+	SELECT cr.id, dr.updated_at
+	FROM candidate_repositories cr
+	LEFT JOIN lsif_last_retention_scan lrs ON lrs.repository_id = cr.id
+	LEFT JOIN lsif_dirty_repositories dr ON dr.repository_id = cr.id
+
 	-- Ignore records that have been checked recently. Note this condition is
 	-- true for a null last_retention_scan_at (which has never been checked).
 	WHERE (%s - lrs.last_retention_scan_at > (%s * '1 second'::interval)) IS DISTINCT FROM FALSE
@@ -754,12 +779,14 @@ repositories AS (
 		lrs.last_retention_scan_at NULLS FIRST,
 		cr.id -- tie breaker
 	LIMIT %s
+),
+inserted AS (
+	INSERT INTO lsif_last_retention_scan (repository_id, last_retention_scan_at)
+	SELECT r.id, %s::timestamp FROM repositories r
+	ON CONFLICT (repository_id) DO UPDATE
+	SET last_retention_scan_at = %s
 )
-INSERT INTO lsif_last_retention_scan (repository_id, last_retention_scan_at)
-SELECT id, %s::timestamp FROM repositories
-ON CONFLICT (repository_id) DO UPDATE
-SET last_retention_scan_at = %s
-RETURNING repository_id
+SELECT r.id, r.updated_at FROM repositories r
 `
 
 // UpdateUploadRetention updates the last data retention scan timestamp on the upload
@@ -898,45 +925,18 @@ func (s *Store) UpdateDependencyNumReferences(ctx context.Context, ids []int, de
 var updateDependencyNumReferencesQuery = `
 -- source: enterprise/internal/codeintel/stores/dbstore/uploads.go:UpdateDependencyNumReferences
 WITH
-source_references AS MATERIALIZED (
-	SELECT
-		r.scheme,
-		r.name,
-		r.version,
-		r.dump_id
-	FROM lsif_references r
-	WHERE r.dump_id IN (%s)
-),
--- Trick Postgres into using a better set of indexes here.
---
--- If we do a join between lsif_packages and lsif_references directly, which
--- is the more obvious way to write this query, then Postgres will tend to
--- choose to perform a parallel index-only scan over the package table's
--- (scheme, name, version, dump_id) index, then perform subsequent index only
--- scans over the reference table's (scheme, name, version, dump_id) index.
---
--- The first index operation touches the entire index. Despite being an index
--- _only_ scan, this also touches a large number of heap pages, where the tuple
--- visibility map is stored.
---
--- We materialize the query above to force it to use better indexes for the
--- distribution of data we expect (and analyze on the table did not help).
--- The query above will use the reference table's (dump_id) index, which is
--- a very specific target that will only read relevant areas of the index.
--- The query below can then efficiently use the package table's index on
--- (scheme, name, version, dump_id), which also only touches the relevant
--- fraction of the index.
 reference_counts AS (
 	SELECT
 		p.dump_id,
 		count(*) AS count
 	FROM lsif_packages p
-	JOIN source_references r
+	JOIN lsif_references r
 	ON
 		r.scheme = p.scheme AND
 		r.name = p.name AND
 		r.version = p.version AND
 		r.dump_id != p.dump_id
+	WHERE r.dump_id IN (%s)
 	GROUP BY p.dump_id
 ),
 locked_uploads AS (

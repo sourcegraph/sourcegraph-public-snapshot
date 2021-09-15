@@ -554,14 +554,13 @@ commands:
         -v "${GRAFANA_DISK}":/var/lib/grafana \
         -v "$(pwd)"/dev/grafana/all:/sg_config_grafana/provisioning/datasources \
         -v "$(pwd)"/docker-images/grafana/config/provisioning/dashboards:/sg_grafana_additional_dashboards \
-        -e DISABLE_SOURCEGRAPH_CONFIG \
-        ${IMAGE} >"${GRAFANA_LOG_FILE}" 2>&1
+        sourcegraph/grafana:dev >"${GRAFANA_LOG_FILE}" 2>&1
     install: |
       mkdir -p "${GRAFANA_DISK}"
       mkdir -p "$(dirname ${GRAFANA_LOG_FILE})"
 
       docker inspect $CONTAINER >/dev/null 2>&1 && docker rm -f $CONTAINER
-      CACHE=true ./docker-images/grafana/build.sh
+      ./docker-images/grafana/build.sh
     env:
       GRAFANA_DISK: $HOME/.sourcegraph-dev/data/grafana
       # Log file location: since we log outside of the Docker container, we should
@@ -572,13 +571,12 @@ commands:
       # We want to capture that output, but because it's fairly noisy, don't want to
       # display it in the normal case.
       GRAFANA_LOG_FILE: $HOME/.sourcegraph-dev/logs/grafana/grafana.log
-      IMAGE: sourcegraph/grafana:dev
       CONTAINER: grafana
       PORT: 3370
       # docker containers must access things via docker host on non-linux platforms
       DOCKER_USER: ""
       ADD_HOST_FLAG: ""
-      DISABLE_SOURCEGRAPH_CONFIG: false
+      CACHE: false
     watch:
       - monitoring
 

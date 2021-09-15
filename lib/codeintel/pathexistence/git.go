@@ -94,13 +94,11 @@ func parseDirectoryChildren(dirnames, paths []string) map[string][]string {
 					break
 				}
 			}
-		} else {
+		} else if len(dirnames) > 0 && dirnames[len(dirnames)-1] == "" {
 			// No need to loop here. If we have a root input directory it
 			// will necessarily be the last element due to the previous
 			// sorting step.
-			if len(dirnames) > 0 && dirnames[len(dirnames)-1] == "" {
-				childrenMap[""] = append(childrenMap[""], path)
-			}
+			childrenMap[""] = append(childrenMap[""], path)
 		}
 	}
 
