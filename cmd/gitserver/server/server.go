@@ -439,7 +439,7 @@ func (s *Server) cloneJobProducer(ctx context.Context, jobs chan<- *cloneJob) er
 	}
 }
 
-var cloneJobProcessedCount = promauto.NewCounterVec(prometheus.CounterOpts{
+var cloneJobProcessedCount = promauto.NewGaugeVec(prometheus.GaugeOpts{
 	Name: "src_gitserver_clone_job_processed_count",
 }, []string{"consumerID"})
 
@@ -460,6 +460,9 @@ func (s *Server) cloneJobConsumer(ctx context.Context, id int, jobs <-chan *clon
 		// }
 
 		// s.setLastErrorNonFatal(ctx, j.repo, err)
+
+		cloneQueueLength.Dec()
+		cloneJobProcessedCount.WithLabelValues(fmt.Sprintf("%d", id)).Inc()
 	}
 
 	return nil
@@ -673,8 +676,8 @@ func (s *Server) getRemoteURL(ctx context.Context, name api.RepoName) (*vcs.URL,
 // acquireCloneLimiter() acquires a cancellable context associated with the
 // clone limiter.
 func (s *Server) acquireCloneLimiter(ctx context.Context) (context.Context, context.CancelFunc, error) {
-	cloneQueueGauge.Inc()
-	defer cloneQueueGauge.Dec()
+	pendingClones.Inc()
+	defer pendingClones.Dec()
 	return s.cloneLimiter.Acquire(ctx)
 }
 
@@ -1360,12 +1363,12 @@ type cloneOptions struct {
 // spawning new goroutine for each new non-blocking clone request, but also add a corresponding
 // cloneJob to Server.CloneQueue.
 var (
-	asyncDoCloneInvoked = promauto.NewCounter(prometheus.CounterOpts{
+	asyncDoCloneInvoked = promauto.NewGauge(prometheus.GaugeOpts{
 		Name: "src_gitserver_async_doclone_invoked",
 		Help: "Number of times Server.doClone was invoked asynchronsously",
 	})
-	cloneQueueLength = promauto.NewCounter(prometheus.CounterOpts{
-		Name: "src_clone_queue_length",
+	cloneQueueLength = promauto.NewGauge(prometheus.GaugeOpts{
+		Name: "src_gitserver_clone_queue_length",
 		Help: "Length of Server.CloneQueue",
 	})
 )
@@ -1444,6 +1447,9 @@ func (s *Server) cloneRepo(ctx context.Context, repo api.RepoName, opts *cloneOp
 	}
 
 	go func() {
+		asyncDoCloneInvoked.Inc()
+		defer asyncDoCloneInvoked.Dec()
+
 		// Create a new context because this is in a background goroutine.
 		ctx, cancel := s.serverContext()
 		defer cancel()
@@ -1453,7 +1459,6 @@ func (s *Server) cloneRepo(ctx context.Context, repo api.RepoName, opts *cloneOp
 		}
 		s.setLastErrorNonFatal(ctx, repo, err)
 
-		asyncDoCloneInvoked.Inc()
 	}()
 
 	s.CloneQueue.Push(&cloneJob{
@@ -1693,7 +1698,7 @@ var (
 		Help:    "gitserver.Command latencies in seconds.",
 		Buckets: trace.UserLatencyBuckets,
 	}, []string{"cmd", "repo", "status"})
-	cloneQueueGauge = promauto.NewGauge(prometheus.GaugeOpts{
+	pendingClones = promauto.NewGauge(prometheus.GaugeOpts{
 		Name: "src_gitserver_clone_queue",
 		Help: "number of repos waiting to be cloned.",
 	})
