@@ -1,0 +1,14 @@
+{
+  "extends": "../../tsconfig.json",
+  "compilerOptions": {
+    "module": "esnext",
+    "sourceRoot": "src",
+    "rootDir": ".",
+    "outDir": "./out",
+    "baseUrl": "./src",
+    "jsx": "react",
+  },
+  "references": [{ "path": "../wildcard" }],
+  "include": ["**/*", ".*"],
+  "exclude": ["../../node_modules", "./node_modules", "./out"],
+}
