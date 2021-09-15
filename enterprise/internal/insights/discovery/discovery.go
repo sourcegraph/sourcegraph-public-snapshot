@@ -162,18 +162,6 @@ func (m *settingMigrator) migrate(ctx context.Context) error {
 			skipped++
 			continue
 		}
-		// results, err := insightStore.Get(ctx, store.InsightQueryArgs{
-		// 	UniqueID: d.ID,
-		// })
-		// if err != nil {
-		// 	return err
-		// }
-		// if len(results) != 0 {
-		// 	// this insight has already been ingested, so let's skip it. Technically this insight could have been edited
-		// 	// but for now we are going to ignore any edits to display settings.
-		// 	skipped++
-		// 	continue
-		// }
 		err := insightStore.DeleteViewByUniqueID(ctx, d.ID)
 		log15.Info("insights migration: deleting insight view", "unique_id", d.ID)
 		if err != nil {
