@@ -32,11 +32,7 @@ type Resources []Resource
 
 func (r Resources) Less(i, j int) bool { return r[i].Created.After(r[j].Created) }
 func (r Resources) Len() int           { return len(r) }
-func (r Resources) Swap(i, j int) {
-	tmp := r[i]
-	r[i] = r[j]
-	r[j] = tmp
-}
+func (r Resources) Swap(i, j int)      { r[i], r[j] = r[j], r[i] }
 
 // NonAllowed returns only resources that are not allowed
 func (r Resources) NonAllowed() (filtered Resources, allowed int) {

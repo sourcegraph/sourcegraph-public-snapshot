@@ -9,7 +9,7 @@ const version = "0.1.0"
 
 func main() {
 	if err := mainErr(); err != nil {
-		fmt.Fprint(os.Stderr, fmt.Sprintf("\nerror: %v\n", err))
+		fmt.Fprintf(os.Stderr, "\nerror: %v\n", err)
 		os.Exit(1)
 	}
 }

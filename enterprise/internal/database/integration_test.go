@@ -8,6 +8,15 @@ import (
 )
 
 var dsn = flag.String("dsn", "", "Database connection string to use in integration tests")
+var slowTests = flag.Bool("slow-tests", false, "Enable very slow tests")
+
+// postgresParameterLimitTest names tests that are focused on ensuring the default
+// behaviour of various queries do not run into the Postgres parameter limit at scale
+// (error `extended protocol limited to 65535 parameters`).
+//
+// They are typically flagged behind `-slow-tests` - when changing queries make sure to
+// enable these tests and add more where relevant.
+const postgresParameterLimitTest = "ensure we do not exceed postgres parameter limit"
 
 func TestIntegration_PermsStore(t *testing.T) {
 	if testing.Short() {

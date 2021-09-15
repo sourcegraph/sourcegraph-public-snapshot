@@ -77,8 +77,7 @@ describe('RevisionsPopover', () => {
             const searchInput = within(branchesTab).getByRole('searchbox')
             fireEvent.change(searchInput, { target: { value: 'some other query' } })
 
-            // Allow input to debounce
-            await act(() => new Promise(resolve => setTimeout(resolve, 200)))
+            await waitForInputDebounce()
             await waitForNextApolloResponse()
 
             expect(within(branchesTab).queryByRole('link')).not.toBeInTheDocument()

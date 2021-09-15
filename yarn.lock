@@ -14906,6 +14906,13 @@ jest-message-util@^26.5.2:
     slash "^3.0.0"
     stack-utils "^2.0.2"
 
+jest-mock-extended@^2.0.2-beta2:
+  version "2.0.2-beta2"
+  resolved "https://registry.npmjs.org/jest-mock-extended/-/jest-mock-extended-2.0.2-beta2.tgz#36a7e43c27df93aa30d1424f5360c4ae301d69b8"
+  integrity sha512-56zcpgRPs3YxQP0ejcaaNFxUinPyRxQCbuk7GGORZqEbAFuQVXWAAtru2tI1N4qcLBoDWEJ/hwUxwbEGY5hdyw==
+  dependencies:
+    ts-essentials "^7.0.3"
+
 jest-mock@^25.5.0:
   version "25.5.0"
   resolved "https://registry.npmjs.org/jest-mock/-/jest-mock-25.5.0.tgz#a91a54dabd14e37ecd61665d6b6e06360a55387a"
@@ -22550,6 +22557,11 @@ ts-essentials@^2.0.3:
   version "2.0.12"
   resolved "https://registry.npmjs.org/ts-essentials/-/ts-essentials-2.0.12.tgz#c9303f3d74f75fa7528c3d49b80e089ab09d8745"
   integrity sha512-3IVX4nI6B5cc31/GFFE+i8ey/N2eA0CZDbo6n0yrz0zDX8ZJ8djmU1p+XRz7G3is0F3bB3pu2pAroFdAWQKU3w==
+
+ts-essentials@^7.0.3:
+  version "7.0.3"
+  resolved "https://registry.npmjs.org/ts-essentials/-/ts-essentials-7.0.3.tgz#686fd155a02133eedcc5362dc8b5056cde3e5a38"
+  integrity sha512-8+gr5+lqO3G84KdiTSMRLtuyJ+nTBVRKuCrK4lidMPdVeEp0uqC875uE5NMcaA7YYMN7XsNiFQuMvasF8HT/xQ==
 
 ts-invariant@^0.7.0:
   version "0.7.5"

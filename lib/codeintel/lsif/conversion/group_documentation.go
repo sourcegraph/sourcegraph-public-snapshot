@@ -364,8 +364,8 @@ func (p *pageCollector) collect(ctx context.Context, ch chan<- *precise.Document
 //
 // It is not exhaustive, it only handles some common conflicts.
 func cleanPathIDElement(s string) string {
-	s = strings.Replace(s, "/", "-", -1)
-	s = strings.Replace(s, "#", "-", -1)
+	s = strings.ReplaceAll(s, "/", "-")
+	s = strings.ReplaceAll(s, "#", "-")
 	return s
 }
 
@@ -373,11 +373,7 @@ func cleanPathIDElement(s string) string {
 //
 // It is not exhaustive, it only handles some common conflicts.
 func cleanPathIDFragment(s string) string {
-	return strings.Replace(s, "#", "-", -1)
-}
-
-func joinPathIDs(a, b string) string {
-	return a + "/" + b
+	return strings.ReplaceAll(s, "#", "-")
 }
 
 func pathIDTrimHash(pathID string) string {

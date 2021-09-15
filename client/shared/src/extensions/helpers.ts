@@ -1,8 +1,14 @@
-import { from, Observable, of } from 'rxjs'
+import { Observable, of } from 'rxjs'
 import { map, switchMap } from 'rxjs/operators'
 
-import { gql } from '../graphql/graphql'
-import * as GQL from '../graphql/schema'
+import {
+    ExtensionsResult,
+    ExtensionsVariables,
+    ExtensionsWithPrioritizeExtensionIDsParamAndNoJSONFieldsResult,
+    ExtensionsWithPrioritizeExtensionIDsParamAndNoJSONFieldsVariables,
+} from '../graphql-operations'
+import { fromObservableQueryPromise } from '../graphql/fromObservableQuery'
+import { getDocumentNode, gql } from '../graphql/graphql'
 import { PlatformContext } from '../platform/context'
 import { createAggregateError } from '../util/errors'
 
@@ -13,6 +19,36 @@ import {
 } from './extension'
 import { parseExtensionManifestOrError, ExtensionManifest } from './extensionManifest'
 
+const ExtensionsQuery = gql`
+    query Extensions($first: Int!, $extensionIDs: [String!]!, $extensionManifestFields: [String!]!) {
+        extensionRegistry {
+            extensions(first: $first, extensionIDs: $extensionIDs) {
+                nodes {
+                    extensionID
+                    manifest {
+                        jsonFields(fields: $extensionManifestFields)
+                    }
+                }
+            }
+        }
+    }
+`
+
+const ExtensionsWithPrioritizeExtensionIDsParameterAndNoJSONFieldsQuery = gql`
+    query ExtensionsWithPrioritizeExtensionIDsParamAndNoJSONFields($first: Int!, $extensionIDs: [String!]!) {
+        extensionRegistry {
+            extensions(first: $first, prioritizeExtensionIDs: $extensionIDs) {
+                nodes {
+                    extensionID
+                    manifest {
+                        raw
+                    }
+                }
+            }
+        }
+    }
+`
+
 /**
  * Query the GraphQL API for registry metadata about the extensions given in {@link extensionIDs}.
  *
@@ -21,36 +57,31 @@ import { parseExtensionManifestOrError, ExtensionManifest } from './extensionMan
 export function queryConfiguredRegistryExtensions(
     // TODO(tj): can copy this over to extension host, just replace platformContext.requestGraphQL
     // with mainThreadAPI.requestGraphQL
-    { requestGraphQL }: Pick<PlatformContext, 'requestGraphQL'>,
+    { getGraphQLClient }: Pick<PlatformContext, 'getGraphQLClient'>,
     extensionIDs: string[]
 ): Observable<ConfiguredExtension[]> {
     if (extensionIDs.length === 0) {
         return of([])
     }
-    const variables: GQL.IExtensionsOnExtensionRegistryArguments = {
+
+    const variables: ExtensionsWithPrioritizeExtensionIDsParamAndNoJSONFieldsVariables = {
         first: extensionIDs.length,
         extensionIDs,
     }
-    return from(
-        requestGraphQL<GQL.IQuery>({
-            request: gql`
-                query Extensions($first: Int!, $extensionIDs: [String!]!, $extensionManifestFields: [String!]!) {
-                    extensionRegistry {
-                        extensions(first: $first, extensionIDs: $extensionIDs) {
-                            nodes {
-                                extensionID
-                                manifest {
-                                    jsonFields(fields: $extensionManifestFields)
-                                }
-                            }
-                        }
-                    }
-                }
-            `,
-            variables: { ...variables, extensionManifestFields: CONFIGURED_EXTENSION_DEFAULT_MANIFEST_FIELDS },
-            mightContainPrivateInfo: false,
+
+    const queryObservablePromise = getGraphQLClient().then(client =>
+        client.watchQuery<ExtensionsResult, ExtensionsVariables>({
+            query: getDocumentNode(ExtensionsQuery),
+            variables: {
+                ...variables,
+                // Spread operator is required to avoid Typescript type error
+                // because of `readonly` type of `CONFIGURED_EXTENSION_DEFAULT_MANIFEST_FIELDS`.
+                extensionManifestFields: [...CONFIGURED_EXTENSION_DEFAULT_MANIFEST_FIELDS],
+            },
         })
-    ).pipe(
+    )
+
+    return fromObservableQueryPromise(queryObservablePromise).pipe(
         switchMap(({ data, errors }) => {
             // BACKCOMPAT: The `extensionIDs` param to Query.extensionRegistry.extensions and the
             // ExtensionManifest#jsonFields field were added in 2021-09 and are not supported by
@@ -62,43 +93,50 @@ export function queryConfiguredRegistryExtensions(
                         'Unknown argument "extensionIDs" on field "extensions" of type "ExtensionRegistry".' ||
                     error.message === 'Cannot query field "jsonFields" on type "ExtensionManifest".'
             )
-            return hasUnknownArgumentExtensionIDsError
-                ? requestGraphQL<GQL.IQuery>({
-                      request: gql`
-                          query ExtensionsWithPrioritizeExtensionIDsParamAndNoJSONFields(
-                              $first: Int!
-                              $extensionIDs: [String!]!
-                          ) {
-                              extensionRegistry {
-                                  extensions(first: $first, prioritizeExtensionIDs: $extensionIDs) {
-                                      nodes {
-                                          extensionID
-                                          manifest {
-                                              raw
-                                          }
-                                      }
-                                  }
-                              }
-                          }
-                      `,
-                      variables,
-                      mightContainPrivateInfo: false,
-                  })
-                : of({ data, errors })
+
+            if (!hasUnknownArgumentExtensionIDsError) {
+                return of({ data, errors })
+            }
+
+            const queryObservablePromise = getGraphQLClient().then(client =>
+                client.watchQuery<
+                    ExtensionsWithPrioritizeExtensionIDsParamAndNoJSONFieldsResult,
+                    ExtensionsWithPrioritizeExtensionIDsParamAndNoJSONFieldsVariables
+                >({
+                    query: getDocumentNode(ExtensionsWithPrioritizeExtensionIDsParameterAndNoJSONFieldsQuery),
+                    variables,
+                })
+            )
+
+            return fromObservableQueryPromise(queryObservablePromise)
         }),
         map(({ data, errors }) => {
             if (!data?.extensionRegistry?.extensions?.nodes) {
                 throw createAggregateError(errors)
             }
-            return data.extensionRegistry.extensions.nodes
+
+            const { nodes } = data.extensionRegistry.extensions
+
+            return (nodes as typeof nodes[number][])
                 .filter(({ extensionID }) => extensionIDs.includes(extensionID))
-                .map(({ extensionID, manifest }) => ({
-                    id: extensionID,
-                    manifest: manifest
-                        ? (manifest.jsonFields as Pick<ExtensionManifest, ConfiguredExtensionManifestDefaultFields>) ||
-                          parseExtensionManifestOrError(manifest.raw)
-                        : null,
-                }))
+                .map(({ extensionID, manifest }) => {
+                    const getManifest = (value: typeof manifest): ConfiguredExtension['manifest'] => {
+                        if (!value) {
+                            return value
+                        }
+
+                        if ('jsonFields' in value) {
+                            return value.jsonFields as Pick<ExtensionManifest, ConfiguredExtensionManifestDefaultFields>
+                        }
+
+                        return parseExtensionManifestOrError(value.raw)
+                    }
+
+                    return {
+                        id: extensionID,
+                        manifest: getManifest(manifest),
+                    }
+                })
         })
     )
 }

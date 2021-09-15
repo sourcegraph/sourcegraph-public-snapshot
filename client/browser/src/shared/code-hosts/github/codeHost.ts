@@ -417,7 +417,7 @@ export const githubCodeHost: CodeHost = {
     getCommandPaletteMount,
     notificationClassNames,
     commandPaletteClassProps: {
-        buttonClassName: 'Header-link',
+        buttonClassName: 'Header-link d-flex flex-items-baseline',
         popoverClassName: 'Box',
         formClassName: 'p-1',
         inputClassName: 'form-control input-sm header-search-input jump-to-field',

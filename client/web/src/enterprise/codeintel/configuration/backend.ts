@@ -9,15 +9,11 @@ import {
 
 import { requestGraphQL } from '../../../backend/graphql'
 import {
-    CodeIntelligenceConfigurationPoliciesResult,
-    CodeIntelligenceConfigurationPoliciesVariables,
     CodeIntelligenceConfigurationPolicyFields,
     CodeIntelligenceConfigurationPolicyResult,
     CodeIntelligenceConfigurationPolicyVariables,
     CreateCodeIntelligenceConfigurationPolicyResult,
     CreateCodeIntelligenceConfigurationPolicyVariables,
-    DeleteCodeIntelligenceConfigurationPolicyResult,
-    DeleteCodeIntelligenceConfigurationPolicyVariables,
     IndexConfigurationResult,
     IndexConfigurationVariables,
     InferredIndexConfigurationResult,
@@ -39,7 +35,7 @@ import {
     UpdateRepositoryIndexConfigurationVariables,
 } from '../../../graphql-operations'
 
-const codeIntelligenceConfigurationPolicyFieldsFragment = gql`
+export const codeIntelligenceConfigurationPolicyFieldsFragment = gql`
     fragment CodeIntelligenceConfigurationPolicyFields on CodeIntelligenceConfigurationPolicy {
         __typename
         id
@@ -55,26 +51,6 @@ const codeIntelligenceConfigurationPolicyFieldsFragment = gql`
         indexIntermediateCommits
     }
 `
-
-export function getPolicies(repositoryId?: string): Observable<CodeIntelligenceConfigurationPolicyFields[]> {
-    const query = gql`
-        query CodeIntelligenceConfigurationPolicies($repositoryId: ID) {
-            codeIntelligenceConfigurationPolicies(repository: $repositoryId) {
-                ...CodeIntelligenceConfigurationPolicyFields
-            }
-        }
-
-        ${codeIntelligenceConfigurationPolicyFieldsFragment}
-    `
-
-    return requestGraphQL<CodeIntelligenceConfigurationPoliciesResult, CodeIntelligenceConfigurationPoliciesVariables>(
-        query,
-        { repositoryId: repositoryId ?? null }
-    ).pipe(
-        map(dataOrThrowErrors),
-        map(({ codeIntelligenceConfigurationPolicies }) => codeIntelligenceConfigurationPolicies)
-    )
-}
 
 export function getPolicyById(id: string): Observable<CodeIntelligenceConfigurationPolicyFields | undefined> {
     const query = gql`
@@ -181,26 +157,6 @@ export function updatePolicy(
         CreateCodeIntelligenceConfigurationPolicyResult,
         CreateCodeIntelligenceConfigurationPolicyVariables
     >(query, { ...policy, repositoryId: repositoryId ?? null }).pipe(
-        map(dataOrThrowErrors),
-        map(() => {
-            // no-op
-        })
-    )
-}
-
-export function deletePolicyById(id: string): Observable<void> {
-    const query = gql`
-        mutation DeleteCodeIntelligenceConfigurationPolicy($id: ID!) {
-            deleteCodeIntelligenceConfigurationPolicy(policy: $id) {
-                alwaysNil
-            }
-        }
-    `
-
-    return requestGraphQL<
-        DeleteCodeIntelligenceConfigurationPolicyResult,
-        DeleteCodeIntelligenceConfigurationPolicyVariables
-    >(query, { id }).pipe(
         map(dataOrThrowErrors),
         map(() => {
             // no-op
