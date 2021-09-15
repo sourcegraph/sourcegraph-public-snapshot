@@ -6,8 +6,8 @@ const isYAMLSequence = (node: YAMLNode): node is YAMLSequence => node.kind === Y
 const isYAMLScalar = (node: YAMLNode): node is YAMLScalar => node.kind === YAMLKind.SCALAR
 
 /**
- * A successful result from manipulating the batch spec YAML AST, even if the manipulation
- * was a no-op
+ * A successful result from manipulating the raw batch spec YAML from its AST, even if the
+ * manipulation was a no-op
  */
 interface YAMLManipulationSuccess {
     success: true
@@ -15,7 +15,7 @@ interface YAMLManipulationSuccess {
 }
 
 /**
- * An unsuccessful result from manipulating the batch spec YAML AST
+ * An unsuccessful result from manipulating the raw batch spec YAML from its AST
  */
 interface YAMLManipulationFailure {
     success: false
@@ -187,6 +187,16 @@ const trimLastSequenceItemDelimiter = (specSlice: string): string =>
     // and then zero or more spaces, e.g. "\n  - "
     specSlice.replace(/\n+\s*-\s*$/, '')
 
+/**
+ * Modifies the provided raw batch spec YAML string in order to exclude a repo resolved in
+ * the workspaces preview from the "repositoriesMatchingQuery" value and remove any single
+ * "repository" directive that matches the repo name (and branch name, if applicable).
+ *
+ * @param spec the raw batch spec YAML string
+ * @param repo the name of the repository to omit from the batch spec
+ * @param branch the name of the repository branch to match when omitting from the batch
+ * spec
+ */
 export const excludeRepo = (spec: string, repo: string, branch: string): YAMLManipulationResult => {
     let ast = load(spec)
 
@@ -197,6 +207,10 @@ export const excludeRepo = (spec: string, repo: string, branch: string): YAMLMan
     // First, try to update the "repositoriesMatchingQuery" string with "-repo:<repo>"
     const appendToQueryResult = appendExcludeRepoToQuery(spec, ast, repo)
 
+    if (!appendToQueryResult.success) {
+        return appendToQueryResult
+    }
+
     // Re-parse the AST from the updated result
     ast = load(appendToQueryResult.spec)
 
@@ -204,10 +218,9 @@ export const excludeRepo = (spec: string, repo: string, branch: string): YAMLMan
         return { spec, success: false, error: 'Could not parse spec after updating "repositoriesMatchingQuery"' }
     }
 
-    // Then, check if we need to remove any single repository directives that match the
-    // repo and branch names
+    // Then, also update in case we need to remove any single repository directives that
+    // match the repo and branch name
     const removeRepoResult = removeRepoDirective(appendToQueryResult.spec, ast, repo, branch)
 
-    // TODO: Surface errors better
     return removeRepoResult
 }
