@@ -404,9 +404,7 @@ DO UPDATE SET
 	), nil
 }
 
-// upsertRepoPermissionsQuery upserts single row of repository permissions,
-// it does the same thing as upsertRepoPermissionsBatchQuery but also updates
-// "synced_at" column to the value of p.SyncedAt field.
+// upsertRepoPermissionsQuery upserts single row of repository permissions.
 func upsertRepoPermissionsQuery(p *authz.RepoPermissions) (*sqlf.Query, error) {
 	const format = `
 -- source: enterprise/internal/database/perms_store.go:upsertRepoPermissionsQuery
@@ -436,6 +434,35 @@ DO UPDATE SET
 		pq.Array(p.UserIDs.ToArray()),
 		p.UpdatedAt.UTC(),
 		p.SyncedAt.UTC(),
+	), nil
+}
+
+// upsertRepoPendingPermissionsQuery
+func upsertRepoPendingPermissionsQuery(p *authz.RepoPermissions) (*sqlf.Query, error) {
+	const format = `
+-- source: enterprise/internal/database/perms_store.go:upsertRepoPendingPermissionsQuery
+INSERT INTO repo_pending_permissions
+  (repo_id, permission, user_ids_ints, updated_at)
+VALUES
+  (%s, %s, %s, %s)
+ON CONFLICT ON CONSTRAINT
+  repo_pending_permissions_perm_unique
+DO UPDATE SET
+  user_ids_ints = excluded.user_ids_ints,
+  updated_at = excluded.updated_at
+`
+
+	p.UserIDs.RunOptimize()
+	if p.UpdatedAt.IsZero() {
+		return nil, ErrPermsUpdatedAtNotSet
+	}
+
+	return sqlf.Sprintf(
+		format,
+		p.RepoID,
+		p.Perm.String(),
+		pq.Array(p.UserIDs.ToArray()),
+		p.UpdatedAt.UTC(),
 	), nil
 }
 
@@ -647,10 +674,10 @@ func (s *PermsStore) SetRepoPendingPermissions(ctx context.Context, accounts *ex
 		return errors.Wrap(err, "execute append user pending permissions batch query")
 	}
 
-	if q, err = upsertRepoPendingPermissionsBatchQuery(p); err != nil {
+	if q, err = upsertRepoPendingPermissionsQuery(p); err != nil {
 		return err
 	} else if err = txs.execute(ctx, q); err != nil {
-		return errors.Wrap(err, "execute upsert repo pending permissions batch query")
+		return errors.Wrap(err, "execute upsert repo pending permissions query")
 	}
 
 	return nil
@@ -810,41 +837,6 @@ AND object_type = %s
 		pq.Array(append(addedUserIDs, removedUserIDs...)),
 		perm.String(),
 		permType,
-	), nil
-}
-
-func upsertRepoPendingPermissionsBatchQuery(ps ...*authz.RepoPermissions) (*sqlf.Query, error) {
-	const format = `
--- source: enterprise/internal/database/perms_store.go:upsertRepoPendingPermissionsBatchQuery
-INSERT INTO repo_pending_permissions
-  (repo_id, permission, user_ids_ints, updated_at)
-VALUES
-  %s
-ON CONFLICT ON CONSTRAINT
-  repo_pending_permissions_perm_unique
-DO UPDATE SET
-  user_ids_ints = excluded.user_ids_ints,
-  updated_at = excluded.updated_at
-`
-
-	items := make([]*sqlf.Query, len(ps))
-	for i := range ps {
-		ps[i].UserIDs.RunOptimize()
-		if ps[i].UpdatedAt.IsZero() {
-			return nil, ErrPermsUpdatedAtNotSet
-		}
-
-		items[i] = sqlf.Sprintf("(%s, %s, %s, %s)",
-			ps[i].RepoID,
-			ps[i].Perm.String(),
-			pq.Array(ps[i].UserIDs.ToArray()),
-			ps[i].UpdatedAt.UTC(),
-		)
-	}
-
-	return sqlf.Sprintf(
-		format,
-		sqlf.Join(items, ","),
 	), nil
 }
 
