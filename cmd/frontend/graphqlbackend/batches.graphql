@@ -2065,6 +2065,12 @@ extend type Mutation {
         TODO: Not implemented yet.
         """
         execute: Boolean = false
+        """
+        Don't use cache entries.
+
+        TODO: Not implemented yet.
+        """
+        noCache: Boolean = false
     ): BatchSpec!
 
     """
@@ -2089,7 +2095,16 @@ extend type Mutation {
 
     TODO: This might be blocking with an error for now.
     """
-    executeBatchSpec(namespace: ID!, batchSpec: ID!): BatchSpec!
+    executeBatchSpec(
+        namespace: ID!
+        batchSpec: ID!
+        """
+        Don't use cache entries.
+
+        TODO: Not implemented yet.
+        """
+        noCache: Boolean = false
+    ): BatchSpec!
 
     """
     Create or update a batch change from a batch spec and locally computed changeset specs. If no
@@ -2239,11 +2254,18 @@ extend type Mutation {
     cancelBatchSpecWorkspaceExecution(batchSpecWorkspace: ID!): EmptyResponse!
 
     """
-    Requeue the workspace for execution. Previous results and logs will be deleted and
-    the execution is _replaced_. The workspace must be in a final state (COMPLETED, FAILED)
+    Requeue the workspaces for execution. Previous results and logs will be deleted and
+    the executions are _replaced_. The workspaces must be in a final state (COMPLETED, FAILED)
     to be retryable.
     """
-    retryBatchSpecWorkspaceExecution(batchSpecWorkspace: ID!): EmptyResponse!
+    retryBatchSpecWorkspaceExecution(batchSpecWorkspaces: [ID!]!): EmptyResponse!
+
+    """
+    Requeue all workspaces in the batch spec for execution. Previous results and
+    logs will be deleted and the executions are _replaced_. The workspaces must be in
+    a final state (COMPLETED, FAILED) to be retryable.
+    """
+    retryBatchSpecExecution(batchSpec: ID!): EmptyResponse!
 
     """
     Enqueue the workspace for execution. The workspace must not be running, and
@@ -2338,6 +2360,19 @@ enum BatchSpecWorkspaceResolutionState {
     COMPLETED
 }
 
+type BatchSpecWorkspaceResolutionStats {
+    errored: Int!
+    completed: Int!
+    processing: Int!
+    queued: Int!
+    ignored: Int!
+}
+
+enum WorkspacesSortOrder {
+    REPO_NAME_ASC
+    REPO_NAME_DESC
+}
+
 """
 A bag for all info around resolving workspaces.
 """
@@ -2376,7 +2411,12 @@ type BatchSpecWorkspaceResolution {
     """
     The actual list of determined workspaces.
     """
-    workspaces(first: Int = 50, after: String): BatchSpecWorkspaceConnection!
+    workspaces(
+        first: Int = 50
+        after: String
+        orderBy: WorkspacesSortOrder
+        search: String
+    ): BatchSpecWorkspaceConnection!
 
     """
     The list of repos that are unsupported.
@@ -2387,6 +2427,17 @@ type BatchSpecWorkspaceResolution {
     The list of repos that are ignored.
     """
     ignored: RepositoryConnection!
+
+    """
+    Returns the workspaces where most recently a step completed that yielded a diff.
+    """
+    recentlyCompleted(first: Int = 50, after: String): BatchSpecWorkspaceConnection!
+    """
+    Returns the most recently failed workspace executions.
+    """
+    recentlyErrored(first: Int = 50, after: String): BatchSpecWorkspaceConnection!
+
+    stats: BatchSpecWorkspaceResolutionStats!
 }
 
 type BatchSpecWorkspaceConnection {
