@@ -708,14 +708,14 @@ func upsertUserPendingPermissionsBatchQuery(
 	const format = `
 -- source: enterprise/internal/database/perms_store.go:upsertUserPendingPermissionsBatchQuery
 INSERT INTO user_pending_permissions
-  (service_type, service_id, bind_id, permission, object_type, updated_at)
-  (
-	SELECT %s::TEXT, %s::TEXT, UNNEST(%s::TEXT[]), %s::TEXT, %s::TEXT, UNNEST(%s::TIMESTAMPTZ[])
-  )
+	(service_type, service_id, bind_id, permission, object_type, updated_at)
+	(
+		SELECT %s::TEXT, %s::TEXT, UNNEST(%s::TEXT[]), %s::TEXT, %s::TEXT, UNNEST(%s::TIMESTAMPTZ[])
+	)
 ON CONFLICT ON CONSTRAINT
-  user_pending_permissions_service_perm_object_unique
+	user_pending_permissions_service_perm_object_unique
 DO UPDATE SET
-  updated_at = excluded.updated_at
+	updated_at = excluded.updated_at
 RETURNING id
 `
 	if p.UpdatedAt.IsZero() {
