@@ -15,12 +15,13 @@ import (
 type cachedSearcher struct {
 	zoekt.Streamer
 
+	ttl   time.Duration
 	mu    sync.RWMutex
 	cache map[string]*listCacheValue
 }
 
-func NewCachedSearcher(z zoekt.Streamer) zoekt.Streamer {
-	return &cachedSearcher{Streamer: z, cache: map[string]*listCacheValue{}}
+func NewCachedSearcher(ttl time.Duration, z zoekt.Streamer) zoekt.Streamer {
+	return &cachedSearcher{Streamer: z, ttl: ttl, cache: map[string]*listCacheValue{}}
 }
 
 type listCacheKey struct {
@@ -36,10 +37,11 @@ type listCacheValue struct {
 	list *zoekt.RepoList
 	err  error
 	ts   time.Time
+	ttl  time.Duration
 }
 
 func (v *listCacheValue) stale() bool {
-	return time.Since(v.ts) >= randInterval(5*time.Second, 2*time.Second)
+	return time.Since(v.ts) >= randInterval(v.ttl, 5*time.Second)
 }
 
 func (c *cachedSearcher) String() string {

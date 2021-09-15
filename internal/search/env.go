@@ -5,10 +5,12 @@ import (
 	"os"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/cockroachdb/errors"
 	"github.com/google/zoekt"
 	"github.com/google/zoekt/query"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 
 	"github.com/sourcegraph/sourcegraph/internal/endpoint"
 	"github.com/sourcegraph/sourcegraph/internal/env"
@@ -30,7 +32,21 @@ var (
 	indexersOnce sync.Once
 	indexers     *backend.Indexers
 
-	indexedDialer = backend.NewCachedZoektDialer(backend.ZoektDial)
+	indexedListTTL = func() time.Duration {
+		ttl, _ := time.ParseDuration(env.Get("SRC_INDEXED_SEARCH_LIST_CACHE_TTL", "", "Indexed search list cache TTL"))
+		if ttl == 0 {
+			if envvar.SourcegraphDotComMode() {
+				ttl = 30 * time.Second
+			} else {
+				ttl = 5 * time.Second
+			}
+		}
+		return ttl
+	}()
+
+	indexedDialer = backend.NewCachedZoektDialer(func(endpoint string) zoekt.Streamer {
+		return backend.NewCachedSearcher(indexedListTTL, backend.ZoektDial(endpoint))
+	})
 )
 
 func SearcherURLs() *endpoint.Map {
@@ -56,7 +72,7 @@ func IndexedEndpoints() *endpoint.Map {
 func Indexed() zoekt.Streamer {
 	indexedSearchOnce.Do(func() {
 		if eps := IndexedEndpoints(); eps != nil {
-			indexedSearch = backend.NewCachedSearcher(backend.NewMeteredSearcher(
+			indexedSearch = backend.NewCachedSearcher(indexedListTTL, backend.NewMeteredSearcher(
 				"", // no hostname means its the aggregator
 				&backend.HorizontalSearcher{
 					Map:  eps,

@@ -116,7 +116,7 @@ func ZoektDial(endpoint string) zoekt.Streamer {
 		Searcher: client,
 		Client:   zoektstream.NewClient("http://"+endpoint, zoektHTTPClient),
 	}
-	return NewCachedSearcher(NewMeteredSearcher(endpoint, streamClient))
+	return NewMeteredSearcher(endpoint, streamClient)
 }
 
 type zoektStream struct {
