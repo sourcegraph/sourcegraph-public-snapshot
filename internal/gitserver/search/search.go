@@ -76,7 +76,7 @@ var (
 		"--decorate=full",
 		"-z",
 		"--no-merges",
-		"--format=format:%s" + strings.Join(formatWithRefs, "%x00") + "%x00",
+		"--format=format:" + strings.Join(formatWithRefs, "%x00") + "%x00",
 	}
 
 	logArgsWithoutRefs = []string{
@@ -84,7 +84,7 @@ var (
 		"--decorate=full",
 		"-z",
 		"--no-merges",
-		"--format=format:%s" + strings.Join(formatWithoutRefs, "%x00") + "%x00",
+		"--format=format:" + strings.Join(formatWithoutRefs, "%x00") + "%x00",
 	}
 
 	sep = []byte{0x0}
@@ -105,6 +105,7 @@ type CommitView struct {
 
 func NewCommitScanner(r io.Reader) *CommitScanner {
 	scanner := bufio.NewScanner(r)
+	scanner.Buffer(make([]byte, 1024), 1<<22)
 
 	// Split by commit
 	scanner.Split(func(data []byte, atEOF bool) (advance int, token []byte, err error) {
@@ -249,6 +250,7 @@ func StartDiffFetcher(ctx context.Context, dir string) (*DiffFetcher, error) {
 	}
 
 	scanner := bufio.NewScanner(stdoutReader)
+	scanner.Buffer(make([]byte, 1024), 1<<30)
 	scanner.Split(func(data []byte, atEOF bool) (advance int, token []byte, err error) {
 		if bytes.HasSuffix(data, []byte("\nENDOFPATCH\n")) {
 			return len(data), data[:len(data)-len("ENDOFPATCH\n")], nil
@@ -303,6 +305,5 @@ func (l *LazyCommit) Diff() (FormattedDiff, error) {
 	if err != nil {
 		return "", err
 	}
-
 	return FormatDiff(gitDiff), nil
 }

@@ -25,7 +25,7 @@ func FormatDiff(gitDiff []byte) FormattedDiff {
 	var buf strings.Builder
 	buf.Grow(1024)
 
-	lines := bytes.Split(gitDiff, []byte{'\n'})
+	lines := bytes.SplitAfter(gitDiff, []byte{'\n'})
 	const (
 		STATE_DELTA = iota
 		STATE_HUNK
@@ -64,8 +64,10 @@ func FormatDiff(gitDiff []byte) FormattedDiff {
 				state = STATE_DELTA
 			} else if bytes.HasPrefix(line, []byte("@@")) {
 				state = STATE_HUNK
-			} else {
+			} else if bytes.Contains([]byte("-+ "), line[:1]) {
 				buf.Write(line)
+				i++
+			} else {
 				i++
 			}
 		}
