@@ -1,21 +1,36 @@
 package markdown
 
 import (
+	"bytes"
 	"regexp"
 	"sync"
 
 	"github.com/microcosm-cc/bluemonday"
-	gfm "github.com/shurcooL/github_flavored_markdown"
+	"github.com/yuin/goldmark"
+	"github.com/yuin/goldmark/extension"
+	"github.com/yuin/goldmark/parser"
+	"github.com/yuin/goldmark/renderer/html"
 )
 
 var (
 	once   sync.Once
+	md     goldmark.Markdown
 	policy *bluemonday.Policy
 )
 
 // Render renders Markdown content into sanitized HTML that is safe to render anywhere.
-func Render(content string) string {
+func Render(content string) (string, error) {
 	once.Do(func() {
+		md = goldmark.New(
+			goldmark.WithExtensions(extension.GFM),
+			goldmark.WithParserOptions(
+				parser.WithAutoHeadingID(),
+			),
+			goldmark.WithRendererOptions(
+				html.WithHardWraps(),
+				html.WithXHTML(),
+			),
+		)
 		policy = bluemonday.UGCPolicy()
 		policy.AllowAttrs("name").Matching(bluemonday.SpaceSeparatedTokens).OnElements("a")
 		policy.AllowAttrs("rel").Matching(regexp.MustCompile(`^nofollow$`)).OnElements("a")
@@ -26,6 +41,10 @@ func Render(content string) string {
 		policy.AllowAttrs("class").Matching(regexp.MustCompile("^language-[a-zA-Z0-9]+$")).OnElements("code")
 	})
 
-	unsafeHTML := gfm.Markdown([]byte(content))
-	return string(policy.SanitizeBytes(unsafeHTML))
+	var buf bytes.Buffer
+	err := md.Convert([]byte(content), &buf)
+	if err != nil {
+		return "", err
+	}
+	return string(policy.SanitizeBytes(buf.Bytes())), nil
 }

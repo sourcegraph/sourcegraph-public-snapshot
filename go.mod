@@ -116,7 +116,6 @@ require (
 	github.com/schollz/progressbar/v3 v3.5.0
 	github.com/segmentio/fasthash v1.0.3
 	github.com/sergi/go-diff v1.2.0
-	github.com/shurcooL/github_flavored_markdown v0.0.0-20181002035957-2122de532470
 	github.com/shurcooL/httpgzip v0.0.0-20190720172056-320755c1c1b0
 	github.com/snabb/sitemap v1.0.0
 	github.com/sourcegraph/ctxvfs v0.0.0-20180418081416-2b65f1b1ea81
@@ -143,6 +142,7 @@ require (
 	github.com/xeipuuv/gojsonschema v1.2.0
 	github.com/xeonx/timeago v1.0.0-rc4
 	github.com/xhit/go-str2duration/v2 v2.0.0
+	github.com/yuin/goldmark v1.4.1
 	go.etcd.io/bbolt v1.3.6
 	go.uber.org/atomic v1.9.0
 	go.uber.org/automaxprocs v1.4.0
@@ -272,15 +272,8 @@ require (
 	github.com/rivo/uniseg v0.1.0 // indirect
 	github.com/rogpeppe/go-internal v1.8.0 // indirect
 	github.com/rs/xid v1.3.0 // indirect
-	github.com/russross/blackfriday v1.5.2 // indirect
 	github.com/shurcooL/go-goon v0.0.0-20210110234559-7585751d9a17 // indirect
-	github.com/shurcooL/highlight_diff v0.0.0-20181222201841-111da2e7d480 // indirect
-	github.com/shurcooL/highlight_go v0.0.0-20191220051317-782971ddf21b // indirect
-	github.com/shurcooL/octicon v0.0.0-20191102190552-cbb32d6a785c // indirect
-	github.com/shurcooL/sanitized_anchor_name v1.0.0 // indirect
 	github.com/snabb/diagio v1.0.0 // indirect
-	github.com/sourcegraph/annotate v0.0.0-20160123013949-f4cad6c6324d // indirect
-	github.com/sourcegraph/syntaxhighlight v0.0.0-20170531221838-bd320f5d308e // indirect
 	github.com/spaolacci/murmur3 v1.1.0 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/src-d/gcfg v1.4.0 // indirect
