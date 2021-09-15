@@ -1,16 +1,15 @@
 import { RenderTooltipParams } from '@visx/xychart/lib/components/Tooltip'
 import classNames from 'classnames'
 import React, { ReactElement } from 'react'
-import { LineChartContent } from 'sourcegraph'
+
+import { isDefined } from '@sourcegraph/shared/src/util/types'
 
 import { DEFAULT_LINE_STROKE } from '../constants'
-import { Accessors } from '../types'
+import { LineChartSeriesWithData, Point } from '../types'
 
-export interface TooltipContentProps<Datum extends object> extends RenderTooltipParams<Datum> {
-    /** Accessors map to get information from nearest points. */
-    accessors: Accessors<Datum, keyof Datum>
+export interface TooltipContentProps<Datum extends object> extends RenderTooltipParams<Point> {
     /** Dataset of series (lines) on the chart. */
-    series: LineChartContent<Datum, keyof Datum>['series']
+    series: LineChartSeriesWithData<Datum>[]
     /** Possible className for root content element. */
     className?: string
 }
@@ -20,15 +19,25 @@ export interface TooltipContentProps<Datum extends object> extends RenderTooltip
  * It consists of title - datetime for current x point and list of all nearest y points.
  */
 export function TooltipContent<Datum extends object>(props: TooltipContentProps<Datum>): ReactElement | null {
-    const { className = '', tooltipData, accessors, series } = props
+    const { className = '', tooltipData, series } = props
     const datum = tooltipData?.nearestDatum?.datum
 
     if (!datum) {
         return null
     }
 
-    const dateString = new Date(accessors.x(datum)).toDateString()
-    const lineKeys = Object.keys(tooltipData?.datumByKey ?? {}).filter(lineKey => lineKey)
+    const dateString = new Date(datum.x).toDateString()
+    const lines = series
+        .map(line => {
+            const point = line.data.find(point => +point.x === +datum.x)
+
+            if (!point) {
+                return
+            }
+
+            return { ...line, point }
+        })
+        .filter(isDefined)
 
     return (
         <div className={classNames('line-chart__tooltip-content', className)}>
@@ -36,19 +45,18 @@ export function TooltipContent<Datum extends object>(props: TooltipContentProps<
 
             {/** values */}
             <ul className="line-chart__tooltip-list">
-                {lineKeys.map(lineKey => {
-                    const value = accessors.y[lineKey as keyof Datum](datum)
-                    const line = series.find(line => line.dataKey === lineKey)
+                {lines.map(line => {
+                    const value = line.point.y
                     const datumKey = tooltipData?.nearestDatum?.key
 
                     /* eslint-disable react/forbid-dom-props */
                     return (
-                        <li key={lineKey} className="line-chart__tooltip-item">
+                        <li key={line.dataKey as string} className="line-chart__tooltip-item">
                             <em
                                 className="line-chart__tooltip-item-name"
                                 style={{
                                     color: line?.stroke ?? DEFAULT_LINE_STROKE,
-                                    textDecoration: datumKey === lineKey ? 'underline' : undefined,
+                                    textDecoration: datumKey === line.dataKey ? 'underline' : undefined,
                                 }}
                             >
                                 {line?.name ?? 'unknown series'}

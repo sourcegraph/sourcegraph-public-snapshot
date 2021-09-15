@@ -34,6 +34,8 @@ add('Line chart with missing data', () => (
                 { x: 1588965700286 - 4 * 24 * 60 * 60 * 1000, a: null, b: null },
                 { x: 1588965700286 - 3 * 24 * 60 * 60 * 1000, a: null, b: null },
                 { x: 1588965700286 - 2 * 24 * 60 * 60 * 1000, a: 94, b: 200 },
+                { x: 1588965700286 - 1.5 * 24 * 60 * 60 * 1000, a: 134, b: null },
+                { x: 1588965700286 - 1.3 * 24 * 60 * 60 * 1000, a: null, b: 150 },
                 { x: 1588965700286 - 1 * 24 * 60 * 60 * 1000, a: 134, b: 190 },
                 { x: 1588965700286, a: 123, b: 170 },
             ],
@@ -41,7 +43,7 @@ add('Line chart with missing data', () => (
                 {
                     dataKey: 'a',
                     name: 'A metric',
-                    stroke: 'var(--warning)',
+                    stroke: 'var(--blue)',
                     linkURLs: [
                         '#A:1st_data_point',
                         '#A:2nd_data_point',
