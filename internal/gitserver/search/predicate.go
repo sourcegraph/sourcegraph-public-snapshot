@@ -122,42 +122,41 @@ func (dm *DiffMatches) Match(commit *LazyCommit) (bool, *HighlightedCommit, erro
 	return foundMatch, &HighlightedCommit{Diff: HighlightedString{Content: string(diff), Highlights: highlights}}, nil
 }
 
-// // DiffModifiesFile is a predicate that matches if the commit modifies any files
-// // that match the given regex pattern.
-// type DiffModifiesFile struct {
-// 	Regexp
-// }
+// DiffModifiesFile is a predicate that matches if the commit modifies any files
+// that match the given regex pattern.
+type DiffModifiesFile struct {
+	Regexp
+}
 
-// func (dmf *DiffModifiesFile) Match(commit *LazyCommit) (bool, *HighlightedCommit) {
-// 	diff, err := commit.Diff()
-// 	if err != nil {
-// 		// TODO is ignoring okay, or should the Match() signature return an error?
-// 		return false, nil
-// 	}
+func (dmf *DiffModifiesFile) Match(commit *LazyCommit) (bool, *HighlightedCommit, error) {
+	diff, err := commit.Diff()
+	if err != nil {
+		return false, nil, err
+	}
 
-// 	foundMatch := false
-// 	var highlights Ranges
+	foundMatch := false
+	var highlights Ranges
 
-// 	diff.ForEachDelta(func(d Delta) bool {
-// 		oldFile, oldLoc := d.OldFile()
-// 		oldFileMatches := dmf.FindAllStringIndex(oldFile, -1)
-// 		if oldFileMatches != nil {
-// 			foundMatch = true
-// 			highlights = append(highlights, matchesToRanges(oldFile, oldFileMatches).Shift(oldLoc)...)
-// 		}
+	diff.ForEachDelta(func(d Delta) bool {
+		oldFile, oldLoc := d.OldFile()
+		oldFileMatches := dmf.FindAllStringIndex(oldFile, -1)
+		if oldFileMatches != nil {
+			foundMatch = true
+			highlights = append(highlights, matchesToRanges(oldFile, oldFileMatches).Shift(oldLoc)...)
+		}
 
-// 		newFile, newLoc := d.NewFile()
-// 		newFileMatches := dmf.FindAllStringIndex(newFile, -1)
-// 		if newFileMatches != nil {
-// 			foundMatch = true
-// 			highlights = append(highlights, matchesToRanges(newFile, newFileMatches).Shift(newLoc)...)
-// 		}
+		newFile, newLoc := d.NewFile()
+		newFileMatches := dmf.FindAllStringIndex(newFile, -1)
+		if newFileMatches != nil {
+			foundMatch = true
+			highlights = append(highlights, matchesToRanges(newFile, newFileMatches).Shift(newLoc)...)
+		}
 
-// 		return true
-// 	})
+		return true
+	})
 
-// 	return foundMatch, &HighlightedCommit{Diff: HighlightedString{Content: string(diff), Highlights: highlights}}
-// }
+	return foundMatch, &HighlightedCommit{Diff: HighlightedString{Content: string(diff), Highlights: highlights}}, nil
+}
 
 // And is a predicate that matches if all of its children predicates match
 type And struct {
@@ -284,8 +283,8 @@ func RegisterGob() {
 		gob.Register(&CommitBefore{})
 		gob.Register(&CommitAfter{})
 		gob.Register(&MessageMatches{})
-		// gob.Register(&DiffMatches{})
-		// gob.Register(&DiffModifiesFile{})
+		gob.Register(&DiffMatches{})
+		gob.Register(&DiffModifiesFile{})
 		gob.Register(&And{})
 		gob.Register(&Or{})
 		gob.Register(&Not{})

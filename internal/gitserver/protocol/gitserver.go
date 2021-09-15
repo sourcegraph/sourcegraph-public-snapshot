@@ -11,10 +11,25 @@ import (
 
 type SearchRequest struct {
 	Repo        api.RepoName
-	Revisions   []search.RevisionSpecifier
+	Revisions   []RevisionSpecifier
 	Predicate   search.CommitPredicate
 	IncludeDiff bool
 	Limit       int
+}
+
+// TODO(camdencheek): this is copied straight from internal/search to avoid import cycles
+type RevisionSpecifier struct {
+	// RevSpec is a revision range specifier suitable for passing to git. See
+	// the manpage gitrevisions(7).
+	RevSpec string
+
+	// RefGlob is a reference glob to pass to git. See the documentation for
+	// "--glob" in git-log.
+	RefGlob string
+
+	// ExcludeRefGlob is a glob for references to exclude. See the
+	// documentation for "--exclude" in git-log.
+	ExcludeRefGlob string
 }
 
 type SearchEventMatches []CommitMatch
@@ -42,12 +57,12 @@ func NewSearchEventDone(limitHit bool, err error) SearchEventDone {
 }
 
 type CommitMatch struct {
-	Oid       api.CommitID
-	Author    Signature      `json:",omitempty"`
-	Committer Signature      `json:",omitempty"`
-	Parents   []api.CommitID `json:",omitempty"`
-	// TODO(camdencheek) Refs (this might be difficult)
-	// TODO(camdencheek) SourceRefs (this is difficult)
+	Oid        api.CommitID
+	Author     Signature      `json:",omitempty"`
+	Committer  Signature      `json:",omitempty"`
+	Parents    []api.CommitID `json:",omitempty"`
+	Refs       []string
+	SourceRefs []string
 
 	Message search.HighlightedString `json:",omitempty"`
 	Diff    search.HighlightedString `json:",omitempty"`

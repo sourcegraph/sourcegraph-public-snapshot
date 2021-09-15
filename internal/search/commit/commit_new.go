@@ -12,6 +12,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
+	gitprotocol "github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	gitsearch "github.com/sourcegraph/sourcegraph/internal/gitserver/search"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
@@ -66,10 +67,10 @@ func searchInReposNew(ctx context.Context, db dbutil.DB, textParams *search.Text
 	return g.Wait()
 }
 
-func searchRevsToGitserverRevs(in []search.RevisionSpecifier) []gitsearch.RevisionSpecifier {
-	out := make([]gitsearch.RevisionSpecifier, 0, len(in))
+func searchRevsToGitserverRevs(in []search.RevisionSpecifier) []gitprotocol.RevisionSpecifier {
+	out := make([]gitprotocol.RevisionSpecifier, 0, len(in))
 	for _, rev := range in {
-		out = append(out, gitsearch.RevisionSpecifier{
+		out = append(out, gitprotocol.RevisionSpecifier{
 			RevSpec:        rev.RevSpec,
 			RefGlob:        rev.RefGlob,
 			ExcludeRefGlob: rev.ExcludeRefGlob,

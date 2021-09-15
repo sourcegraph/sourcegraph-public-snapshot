@@ -11,27 +11,17 @@ import (
 	"time"
 
 	"github.com/cockroachdb/errors"
+	"github.com/hashicorp/go-multierror"
+	"golang.org/x/sync/errgroup"
+
+	"github.com/sourcegraph/sourcegraph/internal/api"
 )
-
-// TODO(camdencheek): this is copied straight from internal/search to avoid import cycles
-type RevisionSpecifier struct {
-	// RevSpec is a revision range specifier suitable for passing to git. See
-	// the manpage gitrevisions(7).
-	RevSpec string
-
-	// RefGlob is a reference glob to pass to git. See the documentation for
-	// "--glob" in git-log.
-	RefGlob string
-
-	// ExcludeRefGlob is a glob for references to exclude. See the
-	// documentation for "--exclude" in git-log.
-	ExcludeRefGlob string
-}
 
 // Git formatting directives as described in man git-log / PRETTY FORMATS
 const (
 	hash           = "%H"
 	refNames       = "%D"
+	sourceRefs     = "%S"
 	authorName     = "%aN"
 	authorEmail    = "%aE"
 	authorDate     = "%at"
@@ -48,6 +38,7 @@ var (
 	formatWithRefs = []string{
 		hash,
 		refNames,
+		sourceRefs,
 		authorName,
 		authorEmail,
 		authorDate,
@@ -61,6 +52,7 @@ var (
 	formatWithoutRefs = []string{
 		hash,
 		"",
+		sourceRefs,
 		authorName,
 		authorEmail,
 		authorDate,
@@ -90,9 +82,11 @@ var (
 	sep = []byte{0x0}
 )
 
-type CommitView struct {
+// RawCommit is a shallow parse of the output of git log
+type RawCommit struct {
 	Hash           []byte
 	RefNames       []byte
+	SourceRefs     []byte
 	AuthorName     []byte
 	AuthorEmail    []byte
 	AuthorDate     []byte
@@ -140,7 +134,7 @@ func NewCommitScanner(r io.Reader) *CommitScanner {
 
 type CommitScanner struct {
 	scanner *bufio.Scanner
-	next    CommitView
+	next    *RawCommit
 	err     error
 }
 
@@ -149,153 +143,196 @@ func (c *CommitScanner) Scan() bool {
 		return false
 	}
 
-	parts := bytes.SplitN(c.scanner.Bytes(), sep, partsPerCommit+1)
+	// Make a copy so the view can outlive the next scan
+	buf := make([]byte, len(c.scanner.Bytes()))
+	copy(buf, c.scanner.Bytes())
+
+	parts := bytes.SplitN(buf, sep, partsPerCommit+1)
 	if len(parts) < partsPerCommit+1 {
 		c.err = errors.Errorf("invalid commit log entry: %q", parts)
 		return false
 	}
 
-	c.next.Hash = parts[0]
-	c.next.RefNames = parts[1]
-	c.next.AuthorName = parts[2]
-	c.next.AuthorEmail = parts[3]
-	c.next.AuthorDate = parts[4]
-	c.next.CommitterName = parts[5]
-	c.next.CommitterEmail = parts[6]
-	c.next.CommitterDate = parts[7]
-	c.next.Message = parts[8]
-	c.next.ParentHashes = parts[9]
+	c.next = &RawCommit{
+		Hash:           parts[0],
+		RefNames:       parts[1],
+		SourceRefs:     parts[2],
+		AuthorName:     parts[3],
+		AuthorEmail:    parts[4],
+		AuthorDate:     parts[5],
+		CommitterName:  parts[6],
+		CommitterEmail: parts[7],
+		CommitterDate:  parts[8],
+		Message:        parts[9],
+		ParentHashes:   parts[10],
+	}
 
 	return true
 }
 
-// CommitView returns a parsed view of the formatted commit as output by git.
-// The view is only valid until CommitScanner.Scan() is called next, and must
-// be copied if you want its lifetime to exceed that.
-func (c *CommitScanner) NextCommitView() *CommitView {
-	return &c.next
+func (c *CommitScanner) NextCommitView() *RawCommit {
+	return c.next
 }
 
 func (c *CommitScanner) Err() error {
 	return c.err
 }
 
-func Search(dir string, revs []RevisionSpecifier, p CommitPredicate, onMatch func(*LazyCommit, *HighlightedCommit) bool) error {
+const (
+	batchSize  = 512
+	numWorkers = 4
+)
+
+func Search(dir string, revisionArgs []string, p CommitPredicate, onMatch func(*LazyCommit, *HighlightedCommit) bool) error {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
+	g, ctx := errgroup.WithContext(ctx)
 
-	diffFetcher, err := StartDiffFetcher(ctx, dir)
-	if err != nil {
-		return err
-	}
+	jobs := make(chan job, 128)
+	resultChans := make(chan chan searchResult, 128)
 
-	cmd := exec.CommandContext(ctx, "git", logArgsWithoutRefs...)
-	pr, pw := io.Pipe()
-	cmd.Stdout = pw
-	cmd.Dir = dir
-	if err := cmd.Start(); err != nil {
-		return err
-	}
+	// Start feeder
+	g.Go(func() error {
+		defer close(resultChans)
+		defer close(jobs)
 
-	var cmdErr error
-	go func() {
-		cmdErr = cmd.Wait()
-		pw.Close()
-	}()
-
-	cs := NewCommitScanner(pr)
-	for cs.Scan() {
-		cv := cs.NextCommitView()
-		lc := &LazyCommit{
-			CommitView:  cv,
-			diffFetcher: diffFetcher,
-		}
-		commitMatches, highlights, err := p.Match(lc)
-		if err != nil {
+		cmd := exec.CommandContext(ctx, "git", logArgsWithoutRefs...)
+		pr, pw := io.Pipe()
+		cmd.Stdout = pw
+		cmd.Dir = dir
+		if err := cmd.Start(); err != nil {
 			return err
 		}
-		if commitMatches {
-			if keepGoing := onMatch(lc, highlights); !keepGoing {
-				return nil
+
+		var cmdErr error
+		go func() {
+			cmdErr = cmd.Wait()
+			pw.Close()
+		}()
+
+		batch := make([]*RawCommit, 0, batchSize)
+		sendBatch := func() {
+			resultChan := make(chan searchResult, 128)
+			resultChans <- resultChan
+			jobs <- job{
+				batch:      batch,
+				resultChan: resultChan,
 			}
-		}
-	}
-	if cmdErr != nil {
-		return cmdErr
-	}
-	return cs.Err()
-}
-
-type DiffFetcher struct {
-	stdin   io.Writer
-	stderr  bytes.Buffer
-	scanner *bufio.Scanner
-}
-
-func StartDiffFetcher(ctx context.Context, dir string) (*DiffFetcher, error) {
-	cmd := exec.CommandContext(ctx, "git", "diff-tree", "--stdin", "-p", "--format=format:")
-	cmd.Dir = dir
-
-	stdoutReader, stdoutWriter := io.Pipe()
-	cmd.Stdout = stdoutWriter
-
-	stdinReader, stdinWriter := io.Pipe()
-	cmd.Stdin = stdinReader
-
-	var stderrBuf bytes.Buffer
-	cmd.Stderr = &stderrBuf
-
-	if err := cmd.Start(); err != nil {
-		return nil, err
-	}
-
-	scanner := bufio.NewScanner(stdoutReader)
-	scanner.Buffer(make([]byte, 1024), 1<<30)
-	scanner.Split(func(data []byte, atEOF bool) (advance int, token []byte, err error) {
-		if bytes.HasSuffix(data, []byte("ENDOFPATCH\n")) {
-			if bytes.Equal(data, []byte("ENDOFPATCH\n")) {
-				return len(data), data[:0], nil
-			}
-			return len(data), data[:len(data)-len("ENDOFPATCH\n")], nil
+			batch = make([]*RawCommit, 0, batchSize)
 		}
 
-		return 0, nil, nil
+		cs := NewCommitScanner(pr)
+		for cs.Scan() {
+			if ctx.Err() != nil {
+				return ctx.Err()
+			}
+			cv := cs.NextCommitView()
+			batch = append(batch, cv)
+			if len(batch) == batchSize {
+				sendBatch()
+			}
+		}
+
+		if len(batch) > 0 {
+			sendBatch()
+		}
+
+		if cmdErr != nil {
+			return cmdErr
+		}
+		return cs.Err()
 	})
 
-	return &DiffFetcher{
-		stdin:   stdinWriter,
-		scanner: scanner,
-		stderr:  stderrBuf,
-	}, nil
+	// Start workers
+	for i := 0; i < numWorkers; i++ {
+		g.Go(func() error {
+			// Create a new diff fetcher subprocess for each worker
+			diffFetcher, err := StartDiffFetcher(ctx, dir)
+			if err != nil {
+				return err
+			}
+
+			runJob := func(j job) error {
+				defer close(j.resultChan)
+
+				if ctx.Err() != nil {
+					// ignore context error, but don't spend time
+					// running this job
+					return nil
+				}
+
+				for _, cv := range j.batch {
+					lc := &LazyCommit{
+						RawCommit:   cv,
+						diffFetcher: diffFetcher,
+					}
+					commitMatches, highlights, err := p.Match(lc)
+					if err != nil {
+						return err
+					}
+					if commitMatches {
+						j.resultChan <- searchResult{
+							lazyCommit:        lc,
+							highlightedCommit: highlights,
+						}
+					}
+				}
+				return nil
+			}
+
+			var errors error
+			for j := range jobs {
+				if err := runJob(j); err != nil {
+					multierror.Append(errors, err)
+				}
+			}
+			return err
+		})
+	}
+
+	// Consumer goroutine that consumes results in the order jobs were
+	// submitted to the job queue
+	g.Go(func() error {
+	OUTER:
+		for resultChan := range resultChans {
+			for result := range resultChan {
+				keepGoing := onMatch(result.lazyCommit, result.highlightedCommit)
+				if !keepGoing {
+					cancel()
+					break OUTER
+				}
+			}
+		}
+
+		// Drain all the channels so writers never block
+		for resultChan := range resultChans {
+			for range resultChan {
+			}
+		}
+
+		return nil
+	})
+
+	return g.Wait()
 }
 
-func (d *DiffFetcher) FetchDiff(hash []byte) ([]byte, error) {
-	// HACK: There is no way (as far as I can tell) to make `git diff-tree --stdin` to
-	// write a trailing null byte or tell us how much to read in advance, and since we're
-	// using a long-running process, the stream doesn't close at the end, and we can't use the
-	// start of a new patch to signify end of patch since we want to be able to do each round-trip
-	// serially. We resort to sending the subprocess a bogus commit hash named "EOF", which it
-	// will fail to read as a tree, and print back to stdout literally. We use this as a signal
-	// that the subprocess is done outputting for this commit.
-	d.stdin.Write(append(hash, []byte("\nENDOFPATCH\n")...))
+type job struct {
+	batch      []*RawCommit
+	resultChan chan searchResult
+}
 
-	if d.scanner.Scan() {
-		return d.scanner.Bytes(), nil
-	} else if err := d.scanner.Err(); err != nil {
-		return nil, err
-	} else if d.stderr.String() != "" {
-		return nil, errors.Errorf("git subprocess stderr: %s", d.stderr.String())
-	}
-	return nil, errors.New("expected scan to succeed")
+type searchResult struct {
+	lazyCommit        *LazyCommit
+	highlightedCommit *HighlightedCommit
 }
 
 type LazyCommit struct {
-	*CommitView
+	*RawCommit
 	diffFetcher *DiffFetcher
 }
 
 func (l *LazyCommit) AuthorDate() (time.Time, error) {
-	unixSeconds, err := strconv.Atoi(string(l.CommitView.AuthorDate))
+	unixSeconds, err := strconv.Atoi(string(l.RawCommit.AuthorDate))
 	if err != nil {
 		return time.Time{}, err
 	}
@@ -303,10 +340,43 @@ func (l *LazyCommit) AuthorDate() (time.Time, error) {
 	return time.Unix(int64(unixSeconds), 0), nil
 }
 
+func (l *LazyCommit) CommitterDate() (time.Time, error) {
+	unixSeconds, err := strconv.Atoi(string(l.RawCommit.CommitterDate))
+	if err != nil {
+		return time.Time{}, err
+	}
+
+	return time.Unix(int64(unixSeconds), 0), nil
+}
+
+// RawDiff returns the diff exactly as returned by git diff-tree
+func (l *LazyCommit) RawDiff() ([]byte, error) {
+	return l.diffFetcher.FetchDiff(l.Hash)
+}
+
+// Diff fetches the diff, then formats it in the format used throughout our app
 func (l *LazyCommit) Diff() (FormattedDiff, error) {
-	gitDiff, err := l.diffFetcher.FetchDiff(l.Hash)
+	// TODO lazy fetch
+	rawDiff, err := l.RawDiff()
 	if err != nil {
 		return "", err
 	}
-	return FormatDiff(gitDiff), nil
+	return FormatDiff(rawDiff), nil
+}
+
+func (l *LazyCommit) ParentIDs() []api.CommitID {
+	strs := strings.Split(string(l.ParentHashes), " ")
+	commitIDs := make([]api.CommitID, 0, len(strs))
+	for _, str := range strs {
+		commitIDs = append(commitIDs, api.CommitID(str))
+	}
+	return commitIDs
+}
+
+func (l *LazyCommit) RefNames() []string {
+	return strings.Split(string(l.RawCommit.RefNames), ", ")
+}
+
+func (l *LazyCommit) SourceRefs() []string {
+	return strings.Split(string(l.RawCommit.SourceRefs), ", ")
 }

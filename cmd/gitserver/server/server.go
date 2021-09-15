@@ -27,7 +27,6 @@ import (
 
 	"github.com/cockroachdb/errors"
 	"github.com/inconshreveable/log15"
-	git "github.com/libgit2/git2go/v31"
 	"github.com/opentracing/opentracing-go/ext"
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/prometheus/client_golang/prometheus"
@@ -993,19 +992,37 @@ func (s *Server) search(w http.ResponseWriter, r *http.Request, args *protocol.S
 	// Search all commits, sending matching commits down resultChan
 	resultChan := make(chan *protocol.CommitMatch, 128)
 	g.Go(func() error {
-		// defer close(resultChan)
-		// done := ctx.Done()
+		defer close(resultChan)
+		done := ctx.Done()
 
-		// return search.IterCommitMatches(dir.Path(), args.Revisions, args.Predicate, func(match *search.LazyCommit, highlights *search.HighlightedCommit) bool {
-		// 	res := createCommitMatch(match, highlights, args.IncludeDiff)
-		// 	select {
-		// 	case <-done:
-		// 		return false
-		// 	case resultChan <- res:
-		// 		return true
-		// 	}
-		// })
-		return nil
+		revArgs := make([]string, 0, len(args.Revisions))
+		for _, rev := range args.Revisions {
+			if rev.RevSpec != "" {
+				revArgs = append(revArgs, rev.RevSpec)
+			} else if rev.RefGlob != "" {
+				revArgs = append(revArgs, "--glob="+rev.RefGlob)
+			} else if rev.ExcludeRefGlob != "" {
+				revArgs = append(revArgs, "--exclude="+rev.RefGlob)
+			} else {
+				revArgs = append(revArgs, "HEAD")
+			}
+		}
+
+		// TODO this should take a context so we can stop searching before we find a match
+		return search.Search(dir.Path(), revArgs, args.Predicate, func(match *search.LazyCommit, highlights *search.HighlightedCommit) bool {
+			res, err := createCommitMatch(match, highlights, args.IncludeDiff)
+			if err != nil {
+				// TODO(camdencheek)
+				panic(err)
+			}
+
+			select {
+			case <-done:
+				return false
+			case resultChan <- res:
+				return true
+			}
+		})
 	})
 
 	// Write matching commits to the stream, flushing occasionally
@@ -1052,6 +1069,55 @@ func (s *Server) search(w http.ResponseWriter, r *http.Request, args *protocol.S
 	}
 }
 
+func createCommitMatch(lc *search.LazyCommit, hc *search.HighlightedCommit, includeDiff bool) (*protocol.CommitMatch, error) {
+	authorDate, err := lc.AuthorDate()
+	if err != nil {
+		return nil, err
+	}
+
+	committerDate, err := lc.CommitterDate()
+	if err != nil {
+		return nil, err
+	}
+
+	message := hc.Message
+	if message.Content == "" {
+		message.Content = string(lc.Message)
+	}
+
+	diff := search.HighlightedString{}
+	if includeDiff {
+		diff = hc.Diff
+
+		if diff.Content == "" {
+			formattedDiff, err := lc.Diff()
+			if err != nil {
+				return nil, err
+			}
+			diff.Content = string(formattedDiff)
+		}
+	}
+
+	return &protocol.CommitMatch{
+		Oid: api.CommitID(string(lc.Hash)),
+		Author: protocol.Signature{
+			Name:  string(lc.AuthorName),
+			Email: string(lc.AuthorEmail),
+			Date:  authorDate,
+		},
+		Committer: protocol.Signature{
+			Name:  string(lc.CommitterName),
+			Email: string(lc.CommitterEmail),
+			Date:  committerDate,
+		},
+		Parents:    lc.ParentIDs(),
+		SourceRefs: lc.SourceRefs(),
+		Refs:       lc.RefNames(),
+		Message:    message,
+		Diff:       diff,
+	}, nil
+}
+
 // matchCount returns either:
 // 1) the number of diff matches if there are any
 // 2) the number of messsage matches if there are any
@@ -1064,14 +1130,6 @@ func matchCount(cm *protocol.CommitMatch) int {
 		return len(cm.Message.Highlights)
 	}
 	return 1
-}
-
-func gitSignatureToProtocolSignature(in *git.Signature) protocol.Signature {
-	return protocol.Signature{
-		Name:  in.Name,
-		Email: in.Email,
-		Date:  in.When,
-	}
 }
 
 func (s *Server) handleExec(w http.ResponseWriter, r *http.Request) {
