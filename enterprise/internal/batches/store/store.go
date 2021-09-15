@@ -335,7 +335,7 @@ func newOperations(observationContext *observation.Context) *operations {
 			createBatchSpecWorkspaceExecutionJob: op("CreateBatchSpecWorkspaceExecutionJob"),
 			getBatchSpecWorkspaceExecutionJob:    op("GetBatchSpecWorkspaceExecutionJob"),
 			listBatchSpecWorkspaceExecutionJobs:  op("ListBatchSpecWorkspaceExecutionJobs"),
-			cancelBatchSpecWorkspaceExecutionJob: op("GetBatchSpecWorkspaceExecutionJob"),
+			cancelBatchSpecWorkspaceExecutionJob: op("CancelBatchSpecWorkspaceExecutionJob"),
 
 			createBatchSpecResolutionJob: op("CreateBatchSpecResolutionJob"),
 			getBatchSpecResolutionJob:    op("GetBatchSpecResolutionJob"),

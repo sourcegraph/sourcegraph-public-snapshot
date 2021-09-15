@@ -1,14 +1,17 @@
+import { MockedResponse } from '@apollo/client/testing'
 import { boolean, withKnobs } from '@storybook/addon-knobs'
 import { Meta, Story } from '@storybook/react'
 import React from 'react'
 import { of } from 'rxjs'
 
 import { GitObjectType } from '@sourcegraph/shared/src/graphql-operations'
+import { getDocumentNode } from '@sourcegraph/shared/src/graphql/graphql'
 
-import { CodeIntelligenceConfigurationPolicyFields } from '../../../graphql-operations'
+import { CodeIntelligenceConfigurationPoliciesResult } from '../../../graphql-operations'
 import { EnterpriseWebStory } from '../../components/EnterpriseWebStory'
 
 import { CodeIntelConfigurationPage, CodeIntelConfigurationPageProps } from './CodeIntelConfigurationPage'
+import { POLICIES_CONFIGURATION } from './usePoliciesConfigurations'
 
 const trim = (value: string) => {
     const firstSignificantLine = value
@@ -27,67 +30,85 @@ const trim = (value: string) => {
         .trim()
 }
 
-const globalPolicies: CodeIntelligenceConfigurationPolicyFields[] = [
-    {
-        __typename: 'CodeIntelligenceConfigurationPolicy' as const,
-        id: 'g1',
-        name: 'Default major release retention',
-        type: GitObjectType.GIT_TAG,
-        pattern: '.0.0',
-        protected: true,
-        retentionEnabled: true,
-        retentionDurationHours: 168,
-        retainIntermediateCommits: false,
-        indexingEnabled: false,
-        indexCommitMaxAgeHours: 672,
-        indexIntermediateCommits: false,
+const localMockRequest: MockedResponse<CodeIntelligenceConfigurationPoliciesResult> = {
+    request: {
+        query: getDocumentNode(POLICIES_CONFIGURATION),
     },
-    {
-        __typename: 'CodeIntelligenceConfigurationPolicy' as const,
-        id: 'g2',
-        name: 'Default brach retention',
-        type: GitObjectType.GIT_TREE,
-        pattern: '',
-        protected: false,
-        retentionEnabled: true,
-        retentionDurationHours: 2016,
-        retainIntermediateCommits: false,
-        indexingEnabled: false,
-        indexCommitMaxAgeHours: 4032,
-        indexIntermediateCommits: false,
+    result: {
+        data: {
+            codeIntelligenceConfigurationPolicies: [
+                {
+                    __typename: 'CodeIntelligenceConfigurationPolicy' as const,
+                    id: 'id1',
+                    name: 'All branches created by Eric',
+                    type: GitObjectType.GIT_TREE,
+                    pattern: 'ef/',
+                    protected: false,
+                    retentionEnabled: true,
+                    retentionDurationHours: 8064,
+                    retainIntermediateCommits: true,
+                    indexingEnabled: true,
+                    indexCommitMaxAgeHours: 40320,
+                    indexIntermediateCommits: true,
+                },
+                {
+                    __typename: 'CodeIntelligenceConfigurationPolicy' as const,
+                    id: 'id2',
+                    name: 'All branches created by Erik',
+                    type: GitObjectType.GIT_TREE,
+                    pattern: 'es/',
+                    protected: false,
+                    retentionEnabled: true,
+                    retentionDurationHours: 8064,
+                    retainIntermediateCommits: true,
+                    indexingEnabled: true,
+                    indexCommitMaxAgeHours: 40320,
+                    indexIntermediateCommits: true,
+                },
+            ],
+        },
     },
-]
+}
 
-const policies: CodeIntelligenceConfigurationPolicyFields[] = [
-    {
-        __typename: 'CodeIntelligenceConfigurationPolicy' as const,
-        id: 'id1',
-        name: 'All branches created by Eric',
-        type: GitObjectType.GIT_TREE,
-        pattern: 'ef/',
-        protected: false,
-        retentionEnabled: true,
-        retentionDurationHours: 8064,
-        retainIntermediateCommits: true,
-        indexingEnabled: true,
-        indexCommitMaxAgeHours: 40320,
-        indexIntermediateCommits: true,
+const globalMockRequest: MockedResponse<CodeIntelligenceConfigurationPoliciesResult> = {
+    request: {
+        query: getDocumentNode(POLICIES_CONFIGURATION),
     },
-    {
-        __typename: 'CodeIntelligenceConfigurationPolicy' as const,
-        id: 'id2',
-        name: 'All branches created by Erik',
-        type: GitObjectType.GIT_TREE,
-        pattern: 'es/',
-        protected: false,
-        retentionEnabled: true,
-        retentionDurationHours: 8064,
-        retainIntermediateCommits: true,
-        indexingEnabled: true,
-        indexCommitMaxAgeHours: 40320,
-        indexIntermediateCommits: true,
+    result: {
+        data: {
+            codeIntelligenceConfigurationPolicies: [
+                {
+                    __typename: 'CodeIntelligenceConfigurationPolicy' as const,
+                    id: 'g1',
+                    name: 'Default major release retention',
+                    type: GitObjectType.GIT_TAG,
+                    pattern: '.0.0',
+                    protected: true,
+                    retentionEnabled: true,
+                    retentionDurationHours: 168,
+                    retainIntermediateCommits: false,
+                    indexingEnabled: false,
+                    indexCommitMaxAgeHours: 672,
+                    indexIntermediateCommits: false,
+                },
+                {
+                    __typename: 'CodeIntelligenceConfigurationPolicy' as const,
+                    id: 'g2',
+                    name: 'Default brach retention',
+                    type: GitObjectType.GIT_TREE,
+                    pattern: '',
+                    protected: false,
+                    retentionEnabled: true,
+                    retentionDurationHours: 2016,
+                    retainIntermediateCommits: false,
+                    indexingEnabled: false,
+                    indexCommitMaxAgeHours: 4032,
+                    indexIntermediateCommits: false,
+                },
+            ],
+        },
     },
-]
+}
 
 const repositoryConfiguration = {
     __typename: 'Repository' as const,
@@ -167,6 +188,7 @@ const inferredRepositoryConfiguration = {
 
 const story: Meta = {
     title: 'web/codeintel/configuration/CodeIntelConfigurationPage',
+    // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
     decorators: [story => <div className="p-3 container">{story()}</div>, withKnobs],
     parameters: {
         component: CodeIntelConfigurationPage,
@@ -178,7 +200,7 @@ const story: Meta = {
 export default story
 
 const Template: Story<CodeIntelConfigurationPageProps> = args => (
-    <EnterpriseWebStory>
+    <EnterpriseWebStory mocks={[localMockRequest, globalMockRequest]}>
         {props => (
             <CodeIntelConfigurationPage {...props} indexingEnabled={boolean('indexingEnabled', true)} {...args} />
         )}
@@ -186,11 +208,9 @@ const Template: Story<CodeIntelConfigurationPageProps> = args => (
 )
 
 const defaults: Partial<CodeIntelConfigurationPageProps> = {
-    getPolicies: () => of([]),
     getConfigurationForRepository: () => of(repositoryConfiguration),
     getInferredConfigurationForRepository: () => of(inferredRepositoryConfiguration),
     updateConfigurationForRepository: () => of(),
-    deletePolicyById: () => of(),
 }
 
 export const EmptyGlobalPage = Template.bind({})
@@ -201,7 +221,6 @@ EmptyGlobalPage.args = {
 export const GlobalPage = Template.bind({})
 GlobalPage.args = {
     ...defaults,
-    getPolicies: (repositoryId?: string) => of(repositoryId ? policies : globalPolicies),
 }
 
 export const EmptyRepositoryPage = Template.bind({})
@@ -214,5 +233,4 @@ export const RepositoryPage = Template.bind({})
 RepositoryPage.args = {
     ...defaults,
     repo: { id: 'sourcegraph' },
-    getPolicies: (repositoryId?: string) => of(repositoryId ? policies : globalPolicies),
 }

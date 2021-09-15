@@ -196,9 +196,9 @@ func runWatch(ctx context.Context, cmd Command, root string, globalEnv map[strin
 			cmdOut, err := BashInRoot(ctx, cmd.Install, makeEnv(globalEnv, cmd.Env))
 			if err != nil {
 				if !startedOnce {
-					return installErr{cmdName: cmd.Name, output: string(cmdOut)}
+					return installErr{cmdName: cmd.Name, output: cmdOut}
 				} else {
-					printCmdError(stdout.Out, cmd.Name, reinstallErr{cmdName: cmd.Name, output: string(cmdOut)})
+					printCmdError(stdout.Out, cmd.Name, reinstallErr{cmdName: cmd.Name, output: cmdOut})
 					// Now we wait for a reload signal before we start to build it again
 					<-reload
 					continue
@@ -216,7 +216,7 @@ func runWatch(ctx context.Context, cmd Command, root string, globalEnv map[strin
 			if cmd.CheckBinary != "" {
 				newHash, err := md5HashFile(filepath.Join(root, cmd.CheckBinary))
 				if err != nil {
-					return installErr{cmdName: cmd.Name, output: string(cmdOut)}
+					return installErr{cmdName: cmd.Name, output: cmdOut}
 				}
 
 				md5changed = md5hash != newHash

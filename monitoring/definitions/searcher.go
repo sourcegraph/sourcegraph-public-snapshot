@@ -25,7 +25,7 @@ func Searcher() *monitoring.Container {
 							Query:             `sum by (code)(increase(searcher_service_request_total{code!="200",code!="canceled"}[5m])) / ignoring(code) group_left sum(increase(searcher_service_request_total[5m])) * 100`,
 							Warning:           monitoring.Alert().GreaterOrEqual(5, nil).For(5 * time.Minute),
 							Panel:             monitoring.Panel().LegendFormat("{{code}}").Unit(monitoring.Percentage),
-							Owner:             monitoring.ObservableOwnerSearch,
+							Owner:             monitoring.ObservableOwnerSearchCore,
 							PossibleSolutions: "none",
 						},
 						{
@@ -34,18 +34,18 @@ func Searcher() *monitoring.Container {
 							Query:             "sum by(instance) (rate(searcher_service_request_total[10m]))",
 							Warning:           monitoring.Alert().GreaterOrEqual(5, nil),
 							Panel:             monitoring.Panel().LegendFormat("{{instance}}"),
-							Owner:             monitoring.ObservableOwnerSearch,
+							Owner:             monitoring.ObservableOwnerSearchCore,
 							PossibleSolutions: "none",
 						},
 					},
 				},
 			},
 
-			shared.NewFrontendInternalAPIErrorResponseMonitoringGroup(containerName, monitoring.ObservableOwnerSearch, nil),
-			shared.NewContainerMonitoringGroup(containerName, monitoring.ObservableOwnerSearch, nil),
-			shared.NewProvisioningIndicatorsGroup(containerName, monitoring.ObservableOwnerSearch, nil),
-			shared.NewGolangMonitoringGroup(containerName, monitoring.ObservableOwnerSearch, nil),
-			shared.NewKubernetesMonitoringGroup(containerName, monitoring.ObservableOwnerSearch, nil),
+			shared.NewFrontendInternalAPIErrorResponseMonitoringGroup(containerName, monitoring.ObservableOwnerSearchCore, nil),
+			shared.NewContainerMonitoringGroup(containerName, monitoring.ObservableOwnerSearchCore, nil),
+			shared.NewProvisioningIndicatorsGroup(containerName, monitoring.ObservableOwnerSearchCore, nil),
+			shared.NewGolangMonitoringGroup(containerName, monitoring.ObservableOwnerSearchCore, nil),
+			shared.NewKubernetesMonitoringGroup(containerName, monitoring.ObservableOwnerSearchCore, nil),
 		},
 	}
 }

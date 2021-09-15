@@ -925,45 +925,18 @@ func (s *Store) UpdateDependencyNumReferences(ctx context.Context, ids []int, de
 var updateDependencyNumReferencesQuery = `
 -- source: enterprise/internal/codeintel/stores/dbstore/uploads.go:UpdateDependencyNumReferences
 WITH
-source_references AS MATERIALIZED (
-	SELECT
-		r.scheme,
-		r.name,
-		r.version,
-		r.dump_id
-	FROM lsif_references r
-	WHERE r.dump_id IN (%s)
-),
--- Trick Postgres into using a better set of indexes here.
---
--- If we do a join between lsif_packages and lsif_references directly, which
--- is the more obvious way to write this query, then Postgres will tend to
--- choose to perform a parallel index-only scan over the package table's
--- (scheme, name, version, dump_id) index, then perform subsequent index only
--- scans over the reference table's (scheme, name, version, dump_id) index.
---
--- The first index operation touches the entire index. Despite being an index
--- _only_ scan, this also touches a large number of heap pages, where the tuple
--- visibility map is stored.
---
--- We materialize the query above to force it to use better indexes for the
--- distribution of data we expect (and analyze on the table did not help).
--- The query above will use the reference table's (dump_id) index, which is
--- a very specific target that will only read relevant areas of the index.
--- The query below can then efficiently use the package table's index on
--- (scheme, name, version, dump_id), which also only touches the relevant
--- fraction of the index.
 reference_counts AS (
 	SELECT
 		p.dump_id,
 		count(*) AS count
 	FROM lsif_packages p
-	JOIN source_references r
+	JOIN lsif_references r
 	ON
 		r.scheme = p.scheme AND
 		r.name = p.name AND
 		r.version = p.version AND
 		r.dump_id != p.dump_id
+	WHERE r.dump_id IN (%s)
 	GROUP BY p.dump_id
 ),
 locked_uploads AS (
