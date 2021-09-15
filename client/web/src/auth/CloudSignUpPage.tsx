@@ -56,7 +56,6 @@ export const CloudSignUpPage: React.FunctionComponent<Props> = ({
     }
 
     const assetsRoot = window.context?.assetsRoot || ''
-    const isPostSignUpEnabled = window.context.experimentalFeatures.enablePostSignupFlow
 
     // Since this page is only intended for use on Sourcegraph.com, it's OK to hardcode
     // GitHub and GitLab auth providers here as they are the only ones used on Sourcegraph.com.
@@ -70,7 +69,7 @@ export const CloudSignUpPage: React.FunctionComponent<Props> = ({
     )
 
     const maybeRedirectToWelcome = (url?: string): string =>
-        url ? `${url}${isPostSignUpEnabled ? '&redirect=/welcome' : ''}` : ''
+        url ? `${url}${window.context.experimentalFeatures.enablePostSignupFlow ? '&redirect=/welcome' : ''}` : ''
 
     const sourceIsValid = source && Object.keys(SourceToTitleMap).includes(source)
     const title = sourceIsValid ? SourceToTitleMap[source as CloudSignUpSource] : SourceToTitleMap.Context // Use Context as default
