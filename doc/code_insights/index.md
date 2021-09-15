@@ -1,5 +1,5 @@
 # Code Insights <a href="../admin/beta_and_experimental_features"><sup><span class="badge badge-beta">Beta</span></sup></a>
-Code Insights are the analytics tool that tells you things about your codebase at a high level based on how your code changes over time.
+Code Insights tells you things about your codebase at a high level, based on both how your code changes over time and its current state.
 
 Code Insights are based on our universal code search, making them incredibly accurate and extremely configurable. Track anything that can be expressed with Sourcegraph search query: migrations, package use, version adoption, code smells, codebase size and much more, across 1,000s of repositories.
 > NOTE: While in Beta, Code Insights is free for enterprise customers. Once Code Insights is generally available and no sooner than January 1, 2022, to continue using Code Insights may require a separate paid plan.
