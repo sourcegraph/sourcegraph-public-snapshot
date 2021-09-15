@@ -366,6 +366,8 @@ INSERT INTO insight_view_grants (insight_view_id, org_id, user_id, global)
 VALUES %s;
 `
 
+// DeleteViewByUniqueID deletes an insight view (cascading to dependent child tables) given a unique ID. This operation
+// is idempotent and can be executed many times with only one effect or error.
 func (s *InsightStore) DeleteViewByUniqueID(ctx context.Context, uniqueID string) error {
 	if len(uniqueID) == 0 {
 		return errors.New("unable to delete view invalid view ID")
