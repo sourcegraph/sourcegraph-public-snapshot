@@ -710,7 +710,7 @@ func upsertUserPendingPermissionsBatchQuery(
 INSERT INTO user_pending_permissions
 	(service_type, service_id, bind_id, permission, object_type, updated_at)
 	(
-		SELECT %s::TEXT, %s::TEXT, UNNEST(%s::TEXT[]), %s::TEXT, %s::TEXT, UNNEST(%s::TIMESTAMPTZ[])
+		SELECT %s::TEXT, %s::TEXT, UNNEST(%s::TEXT[]), %s::TEXT, %s::TEXT, %s::TIMESTAMPTZ
 	)
 ON CONFLICT ON CONSTRAINT
 	user_pending_permissions_service_perm_object_unique
@@ -723,10 +723,8 @@ RETURNING id
 	}
 
 	accountIDs := make([]string, len(accounts.AccountIDs))
-	updatedAts := make([]time.Time, len(accounts.AccountIDs))
 	for i := range accounts.AccountIDs {
 		accountIDs[i] = accounts.AccountIDs[i]
-		updatedAts[i] = p.UpdatedAt.UTC()
 	}
 
 	return sqlf.Sprintf(
@@ -738,7 +736,7 @@ RETURNING id
 
 		p.Perm.String(),
 		string(authz.PermRepos),
-		pq.Array(updatedAts),
+		p.UpdatedAt.UTC(),
 	), nil
 }
 
