@@ -4,30 +4,40 @@ import { getDocumentNode } from '@sourcegraph/shared/src/graphql/graphql'
 
 import { RepositoriesForPopoverResult, RepositoryPopoverFields } from '../../graphql-operations'
 
-import { REPOSITORIES_FOR_POPOVER } from './RepositoriesPopover'
+import { REPOSITORIES_FOR_POPOVER, BATCH_COUNT } from './RepositoriesPopover'
 
-const generateRepositoryNodes = (nodeCount: number): RepositoryPopoverFields[] =>
-    new Array(nodeCount).fill(null).map((_value, index) => ({
-        __typename: 'Repository',
-        id: `repository-${index}`,
-        name: `github.com/some-org/repository-name-${index}`,
-    }))
+interface GenerateRepositoryNodesParameters {
+    count: number
+    offset?: number
+}
+
+const generateRepositoryNodes = ({ count, offset = 0 }: GenerateRepositoryNodesParameters): RepositoryPopoverFields[] =>
+    new Array(count).fill(null).map((_value, index) => {
+        const increment = index + offset
+        return {
+            __typename: 'Repository',
+            id: `repository-${increment}`,
+            name: `github.com/some-org/repository-name-${increment}`,
+        }
+    })
+
+const MOCK_CURSOR = '12345'
 
 const repositoriesMock: MockedResponse<RepositoriesForPopoverResult> = {
     request: {
         query: getDocumentNode(REPOSITORIES_FOR_POPOVER),
         variables: {
             query: '',
-            first: 10,
+            first: BATCH_COUNT,
         },
     },
     result: {
         data: {
             repositories: {
-                nodes: generateRepositoryNodes(10),
-                totalCount: null,
+                nodes: generateRepositoryNodes({ count: 10 }),
                 pageInfo: {
                     hasNextPage: true,
+                    endCursor: MOCK_CURSOR,
                 },
             },
         },
@@ -39,16 +49,17 @@ const additionalRepositoriesMock: MockedResponse<RepositoriesForPopoverResult> =
         query: getDocumentNode(REPOSITORIES_FOR_POPOVER),
         variables: {
             query: '',
-            first: 20,
+            first: BATCH_COUNT,
+            after: MOCK_CURSOR,
         },
     },
     result: {
         data: {
             repositories: {
-                nodes: generateRepositoryNodes(20),
-                totalCount: null,
+                nodes: generateRepositoryNodes({ count: 10, offset: 10 }),
                 pageInfo: {
                     hasNextPage: false,
+                    endCursor: null,
                 },
             },
         },
@@ -60,16 +71,16 @@ const filteredRepositoriesMock: MockedResponse<RepositoriesForPopoverResult> = {
         query: getDocumentNode(REPOSITORIES_FOR_POPOVER),
         variables: {
             query: 'some query',
-            first: 10,
+            first: BATCH_COUNT,
         },
     },
     result: {
         data: {
             repositories: {
-                nodes: generateRepositoryNodes(2),
-                totalCount: null,
+                nodes: generateRepositoryNodes({ count: 2, offset: 10 }),
                 pageInfo: {
                     hasNextPage: false,
+                    endCursor: null,
                 },
             },
         },
@@ -81,16 +92,16 @@ const additionalFilteredRepositoriesMock: MockedResponse<RepositoriesForPopoverR
         query: getDocumentNode(REPOSITORIES_FOR_POPOVER),
         variables: {
             query: 'some other query',
-            first: 10,
+            first: BATCH_COUNT,
         },
     },
     result: {
         data: {
             repositories: {
                 nodes: [],
-                totalCount: null,
                 pageInfo: {
                     hasNextPage: false,
+                    endCursor: null,
                 },
             },
         },

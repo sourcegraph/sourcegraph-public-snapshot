@@ -26,14 +26,14 @@ import { eventLogger } from '../../tracking/eventLogger'
 import { RepositoryNode } from './RepositoryNode'
 
 export const REPOSITORIES_FOR_POPOVER = gql`
-    query RepositoriesForPopover($first: Int, $query: String) {
-        repositories(first: $first, query: $query) {
+    query RepositoriesForPopover($first: Int, $query: String, $after: String) {
+        repositories(first: $first, after: $after, query: $query) {
             nodes {
                 ...RepositoryPopoverFields
             }
-            totalCount
             pageInfo {
                 hasNextPage
+                endCursor
             }
         }
     }
@@ -71,7 +71,7 @@ export const RepositoriesPopover: React.FunctionComponent<RepositoriesPopoverPro
         RepositoryPopoverFields
     >({
         query: REPOSITORIES_FOR_POPOVER,
-        variables: { first: BATCH_COUNT, query },
+        variables: { first: BATCH_COUNT, after: null, query },
         getConnection: ({ data, errors }) => {
             if (!data || !data.repositories) {
                 throw createAggregateError(errors)
