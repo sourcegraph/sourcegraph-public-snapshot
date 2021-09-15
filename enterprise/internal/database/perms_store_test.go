@@ -305,6 +305,8 @@ func testPermsStore_SetUserPermissions(db *sql.DB) func(*testing.T) {
 		updates         []*authz.UserPermissions
 		expectUserPerms map[int32][]uint32 // user_id -> object_ids
 		expectRepoPerms map[int32][]uint32 // repo_id -> user_ids
+
+		upsertRepoPermissionsPageSize int
 	}{
 		{
 			name: "empty",
@@ -401,10 +403,27 @@ func testPermsStore_SetUserPermissions(db *sql.DB) func(*testing.T) {
 			},
 		},
 		{
-			name: "ensure we do not exceed postgres parameter limit",
-			// This is kind of slow but not super slow (~30s), switch this to true if
-			// it is too slow
-			slowTest: false,
+			name:                          "add and page",
+			upsertRepoPermissionsPageSize: 2,
+			updates: []*authz.UserPermissions{
+				{
+					UserID: 1,
+					Perm:   authz.Read,
+					IDs:    toBitmap(1, 2, 3),
+				},
+			},
+			expectUserPerms: map[int32][]uint32{
+				1: {1, 2, 3},
+			},
+			expectRepoPerms: map[int32][]uint32{
+				1: {1},
+				2: {1},
+				3: {1},
+			},
+		},
+		{
+			name:     postgresParameterLimitTest,
+			slowTest: true,
 			updates: func() []*authz.UserPermissions {
 				user := &authz.UserPermissions{
 					UserID: 1,
@@ -471,9 +490,16 @@ func testPermsStore_SetUserPermissions(db *sql.DB) func(*testing.T) {
 					t.Skip("slow-tests not enabled")
 				}
 
+				if test.upsertRepoPermissionsPageSize > 0 {
+					upsertRepoPermissionsPageSize = test.upsertRepoPermissionsPageSize
+				}
+
 				s := Perms(db, clock)
 				t.Cleanup(func() {
 					cleanupPermsTables(t, s)
+					if test.upsertRepoPermissionsPageSize > 0 {
+						upsertRepoPermissionsPageSize = defaultUpsertRepoPermissionsPageSize
+					}
 				})
 
 				for _, p := range test.updates {
@@ -1384,6 +1410,8 @@ func testPermsStore_GrantPendingPermissions(db *sql.DB) func(*testing.T) {
 		expectRepoPerms        map[int32][]uint32              // repo_id -> user_ids
 		expectUserPendingPerms map[extsvc.AccountSpec][]uint32 // account -> object_ids
 		expectRepoPendingPerms map[int32][]extsvc.AccountSpec  // repo_id -> accounts
+
+		upsertRepoPermissionsPageSize int
 	}{
 		{
 			name: "empty",
@@ -1675,7 +1703,71 @@ func testPermsStore_GrantPendingPermissions(db *sql.DB) func(*testing.T) {
 			},
 		},
 		{
-			name:     "ensure we do not exceed postgres parameter limit",
+			name:                          "grant pending permission and page",
+			upsertRepoPermissionsPageSize: 2,
+			updates: []update{
+				{
+					regulars: []*authz.RepoPermissions{},
+					pendings: []pending{{
+						accounts: &extsvc.Accounts{
+							ServiceType: authz.SourcegraphServiceType,
+							ServiceID:   authz.SourcegraphServiceID,
+							AccountIDs:  []string{"alice"},
+						},
+						perm: &authz.RepoPermissions{
+							RepoID: 1,
+							Perm:   authz.Read,
+						},
+					}, {
+						accounts: &extsvc.Accounts{
+							ServiceType: authz.SourcegraphServiceType,
+							ServiceID:   authz.SourcegraphServiceID,
+							AccountIDs:  []string{"alice"},
+						},
+						perm: &authz.RepoPermissions{
+							RepoID: 2,
+							Perm:   authz.Read,
+						},
+					}, {
+						accounts: &extsvc.Accounts{
+							ServiceType: authz.SourcegraphServiceType,
+							ServiceID:   authz.SourcegraphServiceID,
+							AccountIDs:  []string{"alice"},
+						},
+						perm: &authz.RepoPermissions{
+							RepoID: 3,
+							Perm:   authz.Read,
+						},
+					}},
+				},
+			},
+			grants: []grant{{
+				userID: 1,
+				perm: &authz.UserPendingPermissions{
+					ServiceType: authz.SourcegraphServiceType,
+					ServiceID:   authz.SourcegraphServiceID,
+					BindID:      "alice",
+					Perm:        authz.Read,
+					Type:        authz.PermRepos,
+				},
+			}},
+			expectUserPerms: map[int32][]uint32{
+				1: {1, 2, 3},
+			},
+			expectRepoPerms: map[int32][]uint32{
+				1: {1},
+				2: {1},
+				3: {1},
+			},
+			expectUserPendingPerms: map[extsvc.AccountSpec][]uint32{},
+			expectRepoPendingPerms: map[int32][]extsvc.AccountSpec{
+				1: {},
+				2: {},
+				3: {},
+			},
+		},
+		{
+			name:     postgresParameterLimitTest,
 			slowTest: true,
 			updates: []update{
 				{
@@ -1743,9 +1835,16 @@ func testPermsStore_GrantPendingPermissions(db *sql.DB) func(*testing.T) {
 					t.Skip("slow-tests not enabled")
 				}
 
+				if test.upsertRepoPermissionsPageSize > 0 {
+					upsertRepoPermissionsPageSize = test.upsertRepoPermissionsPageSize
+				}
+
 				s := Perms(db, clock)
 				t.Cleanup(func() {
 					cleanupPermsTables(t, s)
+					if test.upsertRepoPermissionsPageSize > 0 {
+						upsertRepoPermissionsPageSize = defaultUpsertRepoPermissionsPageSize
+					}
 				})
 
 				ctx := context.Background()

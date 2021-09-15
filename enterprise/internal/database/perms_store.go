@@ -950,6 +950,18 @@ type upsertRepoPermissionsPage struct {
 	removedRepoIDs []uint32
 }
 
+// upsertRepoPermissionsPageSize restricts page size for newUpsertRepoPermissionsPage to
+// stay within the Postgres parameter limit (see `defaultUpsertRepoPermissionsPageSize`).
+//
+// May be modified for testing.
+var upsertRepoPermissionsPageSize = defaultUpsertRepoPermissionsPageSize
+
+// defaultUpsertRepoPermissionsPageSize sets a default for upsertRepoPermissionsPageSize.
+//
+// Value set to avoid parameter limit of ~65k, because each page element counts for 4
+// parameters (65k / 4 ~= 16k rows at a time)
+const defaultUpsertRepoPermissionsPageSize = 15000
+
 // newUpsertRepoPermissionsPage instantiates a page from the given add/remove queues.
 // Callers should reassign their queues to the ones returned by this constructor.
 func newUpsertRepoPermissionsPage(addQueue, removeQueue []uint32) (
@@ -957,9 +969,7 @@ func newUpsertRepoPermissionsPage(addQueue, removeQueue []uint32) (
 	newAddQueue, newRemoveQueue []uint32,
 	hasNextPage bool,
 ) {
-	// Restrict page size to stay within parameter limit of ~65k, because each page
-	// element counts for 4 parameters.
-	quota := 15000
+	quota := upsertRepoPermissionsPageSize
 	page = &upsertRepoPermissionsPage{}
 
 	if len(addQueue) > 0 {
@@ -992,6 +1002,8 @@ func newUpsertRepoPermissionsPage(addQueue, removeQueue []uint32) (
 // upsertRepoPermissionsBatchQuery composes a SQL query that does both addition (for `addedRepoIDs`) and deletion (
 // for `removedRepoIDs`) of `userIDs` using upsert.
 func upsertRepoPermissionsBatchQuery(page *upsertRepoPermissionsPage, addedRepoIDs, removedRepoIDs, userIDs []uint32, perm authz.Perms, updatedAt time.Time) (*sqlf.Query, error) {
+	// If changing the parameters used in this query, make sure to enable relevant tests
+	// named `postgresParameterLimitTest`
 	const format = `
 -- source: enterprise/internal/database/perms_store.go:upsertRepoPermissionsBatchQuery
 INSERT INTO repo_permissions
