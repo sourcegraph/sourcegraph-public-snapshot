@@ -1196,7 +1196,8 @@ type ExternalChangeset implements Node & Changeset {
     syncerError: String
 
     """
-    The current changeset spec for this changeset.
+    The current changeset spec for this changeset. Use this to get access to the
+    workspace execution that generated this changeset.
 
     Null if the changeset was only imported.
     """
@@ -1544,6 +1545,11 @@ type VisibleChangesetSpec implements ChangesetSpec & Node {
     spec never expires (and this field is null) if its batch spec has been applied.
     """
     expiresAt: DateTime
+
+    """
+    The workspace this resulted from. Null, if not run server-side.
+    """
+    workspace: BatchSpecWorkspace
 }
 
 """
@@ -1986,6 +1992,7 @@ extend type Mutation {
     createBatchChange(
         """
         The batch spec that describes the desired state of the batch change.
+        It must be in COMPLETED state.
         """
         batchSpec: ID!
 
@@ -2031,6 +2038,60 @@ extend type Mutation {
     ): BatchSpec!
 
     """
+    Creates a batch spec and triggers a job to evaluate the workspaces. Consumers
+    need to poll the batch spec until the resolution is completed to get a full
+    list of all workspaces. This might become streaming so the results will come
+    in over time.
+    """
+    createBatchSpecFromRaw(
+        """
+        The raw batch spec as YAML (or the equivalent JSON). See
+        https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/schema/campaign_spec.schema.json
+        for the JSON Schema that describes the structure of this input.
+        """
+        batchSpec: String!
+        """
+        If true, repos with a .batchignore file will still be included.
+        """
+        allowIgnored: Boolean = false
+        """
+        If true, repos on unsupported codehosts will be included. Resulting changesets in these repos cannot
+        be published.
+        """
+        allowUnsupported: Boolean = false
+        """
+        Right away set the execute flag.
+
+        TODO: Not implemented yet.
+        """
+        execute: Boolean = false
+    ): BatchSpec!
+
+    """
+    Deletes the batch spec. All associated jobs will be canceled, if still running.
+    This is called by the client, whenever a new run is triggered, to support
+    faster cleanups. We will also purge these in the background, but this'll be
+    faster.
+    """
+    deleteBatchSpec(batchSpec: ID!): EmptyResponse!
+
+    """
+    Enqueue the workspaces that resulted from evaluation in `createBatchSpecFromRaw`to be executed. These will eventually be moved into running state.
+    resolution is done, to support fast edits.
+    Once the workspace resolution is done, workspace jobs are move to state QUEUED.
+    If resolving is already done by the time this mutation is called, they are
+    enqueued immediately.
+
+    Must be invoked by the _same_ user that called createBatchSpecFromRaw before.
+    Can only be invoked once.
+    If workspace resolution fails, the running flag should be reset to false. API
+    consumers can find this state by looking at BatchSpecWorkspaceResolution.failureMessage.
+
+    TODO: This might be blocking with an error for now.
+    """
+    executeBatchSpec(namespace: ID!, batchSpec: ID!): BatchSpec!
+
+    """
     Create or update a batch change from a batch spec and locally computed changeset specs. If no
     batch change exists in the namespace with the name given in the batch spec, a batch change will be
     created. Otherwise, the existing batch change will be updated. The batch change is returned.
@@ -2040,6 +2101,7 @@ extend type Mutation {
     applyBatchChange(
         """
         The batch spec that describes the new desired state of the batch change.
+        It must be in COMPLETED state.
         """
         batchSpec: ID!
 
@@ -2165,23 +2227,37 @@ extend type Mutation {
     publishChangesets(batchChange: ID!, changesets: [ID!]!, draft: Boolean = false): BulkOperation!
 
     """
-    Creates a new batch spec execution from a given batch spec yaml file input.
-    The execution will be queued for processing by an executor. If some are available
-    for work, they will pick this up eventually.
-
-
-    If namespace is not specified, the current user's personal namespace is used.
-
-    Experimental: This API is likely to change in the future.
+    Attempts to cancel the execution of the given batch spec. All workspace jobs
+    that are QUEUED or PROCESSING will be cancelled. The execution must not have completed yet.
     """
-    createBatchSpecExecution(spec: String!, namespace: ID): BatchSpecExecution!
+    cancelBatchSpecExecution(batchSpec: ID!): BatchSpec!
 
     """
-    Attempts to cancel the given batch spec execution. It must not have completed yet.
-
-    Experimental: This API is likely to change in the future.
+    Cancel a single workspace execution. Mostly useful in the "try out" UI, but
+    can also be used at later stages. Must be in PROCESSING or QUEUED state.
     """
-    cancelBatchSpecExecution(batchSpecExecution: ID!): BatchSpecExecution!
+    cancelBatchSpecWorkspaceExecution(batchSpecWorkspace: ID!): EmptyResponse!
+
+    """
+    Requeue the workspace for execution. Previous results and logs will be deleted and
+    the execution is _replaced_. The workspace must be in a final state (COMPLETED, FAILED)
+    to be retryable.
+    """
+    retryBatchSpecWorkspaceExecution(batchSpecWorkspace: ID!): EmptyResponse!
+
+    """
+    Enqueue the workspace for execution. The workspace must not be running, and
+    not be in a final state. This can be used for running single workspaces before
+    running the full set.
+    """
+    enqueueBatchSpecWorkspaceExecution(batchSpecWorkspace: ID!): EmptyResponse!
+
+    """
+    Sets the autoApplyEnabled on the given batch spec. Must be in PROCESSING state.
+
+    TODO: Not implemented yet.
+    """
+    toggleBatchSpecAutoApply(batchSpec: ID!, value: Boolean!): BatchSpec!
 }
 
 extend type Query {
@@ -2235,51 +2311,56 @@ extend type Query {
     ): BatchChangesCodeHostConnection!
 
     """
-    A list of batch spec executions.
+    A list of batch specs.
+
+
+    Site-admin only.
 
     Experimental: This API is likely to change in the future.
     """
-    batchSpecExecutions(
+    batchSpecs(
         """
-        Returns the first n batch spec executions from the list.
+        Returns the first n batch specs from the list.
         """
         first: Int = 50
         """
         Opaque pagination cursor.
         """
         after: String
-    ): BatchSpecExecutionConnection!
+    ): BatchSpecConnection!
+}
 
-    """
-    Resolve workspaces matching the given batch spec input.
-
-    Experimental API. Will disappear soon.
-    """
-    resolveWorkspacesForBatchSpec(
-        """
-        The batch spec to evaluate.
-        """
-        batchSpec: String!
-        """
-        If true, repos with a .batchignore file will still be included.
-        """
-        allowIgnored: Boolean = false
-        """
-        If true, repos on unsupported codehosts will be included. These cannot
-        be published.
-        """
-        allowUnsupported: Boolean = false
-    ): BatchSpecWorkspaces!
+enum BatchSpecWorkspaceResolutionState {
+    QUEUED
+    PROCESSING
+    ERRORED
+    FAILED
+    COMPLETED
 }
 
 """
 A bag for all info around resolving workspaces.
 """
-type BatchSpecWorkspaces {
+type BatchSpecWorkspaceResolution {
     """
-    The raw input given to produce this preview.
+    Error message, if the evaluation failed.
     """
-    rawSpec: String!
+    failureMessage: String
+
+    """
+    Set when evaluating workspaces begins.
+    """
+    startedAt: DateTime
+
+    """
+    Set when evaluating workspaces finished.
+    """
+    finishedAt: DateTime
+
+    """
+    State of evaluating the workspaces.
+    """
+    state: BatchSpecWorkspaceResolutionState!
 
     """
     If true, repos with a .batchignore file will still be included.
@@ -2295,27 +2376,61 @@ type BatchSpecWorkspaces {
     """
     The actual list of determined workspaces.
     """
-    workspaces: [BatchSpecWorkspace!]!
+    workspaces(first: Int = 50, after: String): BatchSpecWorkspaceConnection!
 
     """
     The list of repos that are unsupported.
     """
-    unsupported: [Repository!]!
+    unsupported: RepositoryConnection!
 
     """
     The list of repos that are ignored.
     """
-    ignored: [Repository!]!
+    ignored: RepositoryConnection!
+}
+
+type BatchSpecWorkspaceConnection {
+    totalCount: Int!
+    pageInfo: PageInfo!
+    nodes: [BatchSpecWorkspace!]!
+}
+
+"""
+Configuration and execution summary of a batch spec execution. This is mostly
+meant for internal consumption, for the timeline view.
+"""
+type BatchSpecWorkspaceStages {
+    """
+    Execution log entries related to setting up the workspace.
+    """
+    setup: [ExecutionLogEntry!]!
+
+    """
+    Execution log entry related to running src batch exec.
+    This field is null, if the step had not been executed.
+    """
+    srcExec: ExecutionLogEntry
+
+    """
+    Execution log entries related to tearing down the workspace.
+    """
+    teardown: [ExecutionLogEntry!]!
 }
 
 """
 A workspace in Batch Changes to run in.
 """
-type BatchSpecWorkspace {
+type BatchSpecWorkspace implements Node {
+    id: ID!
     """
     The repository to run over.
     """
     repository: Repository!
+
+    """
+    Used for reverse querying.
+    """
+    batchSpec: BatchSpec!
 
     """
     The branch to run over.
@@ -2333,6 +2448,18 @@ type BatchSpecWorkspace {
     onlyFetchWorkspace: Boolean!
 
     """
+    Whether we found a task cache result.
+
+    TODO: Not implemented yet.
+    """
+    cachedResultFound: Boolean!
+
+    """
+    Executor stages of running in this workspace.
+    """
+    stages: BatchSpecWorkspaceStages!
+
+    """
     List of steps that will need to run over this workspace.
     """
     steps: [BatchSpecWorkspaceStep!]!
@@ -2342,6 +2469,38 @@ type BatchSpecWorkspace {
     to files that have been included in the search results.
     """
     searchResultPaths: [String!]!
+
+    startedAt: DateTime
+    finishedAt: DateTime
+    failureMessage: String
+    state: BatchSpecWorkspaceState!
+
+    """
+    Populated, when the execution is finished. This is where you get the combined
+    diffs.
+    """
+    changesetSpecs: [ChangesetSpec!]
+
+    # TODO: Not possible to get this. ... Or do we want to show combined over all specs?
+    #diffStat: DiffStat
+
+    """
+    The rank of this execution in the queue. The value of this field is null if the
+    execution has started.
+
+    TODO: Not implemented yet.
+    """
+    placeInQueue: Int
+}
+
+enum BatchSpecWorkspaceState {
+    QUEUED
+    PROCESSING
+    ERRORED
+    FAILED
+    CANCELING
+    CANCELED
+    COMPLETED
 }
 
 """
@@ -2351,12 +2510,42 @@ type BatchSpecWorkspaceStep {
     """
     The command to run.
     """
-    command: String!
+    run: String!
 
     """
     The docker container image to use to run this command.
     """
     container: String!
+
+    cachedResultFound: Boolean!
+    """
+    True, when the `if` condition evaluated that this step doesn't need to run.
+    """
+    skipped: Boolean!
+
+    # TODO: Should these be separate? It's kinda hard to intertwine them then.
+    stdout: String
+    stderr: String
+
+    startedAt: DateTime
+    finishedAt: DateTime
+    exitCode: Int
+
+    envVars: [EnvVar!]!
+    outputVars: [OutputVar!]!
+
+    diffStat: DiffStat
+    diff: PreviewRepositoryComparison
+}
+
+type OutputVar {
+    name: String!
+    value: JSONValue!
+}
+
+type EnvVar {
+    name: String!
+    value: String!
 }
 
 """
@@ -2550,6 +2739,23 @@ type BatchChange implements Node {
         """
         createdAfter: DateTime
     ): BulkOperationConnection!
+
+    """
+    The batch specs that have been running on this batch change.
+
+    Site-admins can see all of them, non admins can only see batch specs that they
+    created.
+    """
+    batchSpecs(
+        """
+        Returns the first n entries from the list.
+        """
+        first: Int = 50
+        """
+        Opaque pagination cursor.
+        """
+        after: String
+    ): BulkSpecConnection!
 }
 
 """
@@ -2690,6 +2896,52 @@ type ChangesetJobError {
 }
 
 """
+The possible states of a batch spec.
+"""
+enum BatchSpecState {
+    """
+    This spec is being processed.
+    """
+    PROCESSING
+
+    """
+    This spec errored while processing.
+    """
+    ERRORED
+
+    """
+    This spec failed to be processed.
+    """
+    FAILED
+
+    """
+    This spec was processed successfully.
+    """
+    COMPLETED
+
+    """
+    This spec is queued to be processed.
+    """
+    QUEUED
+
+    """
+    The execution is being canceled.
+    """
+    CANCELING
+
+    """
+    The execution has been canceled.
+    """
+    CANCELED
+}
+
+type BatchSpecConnection {
+    totalCount: Int!
+    pageInfo: PageInfo!
+    nodes: [BatchSpec!]!
+}
+
+"""
 A batch spec is an immutable description of the desired state of a batch change. To create a
 batch spec, use the createBatchSpec mutation.
 """
@@ -2703,6 +2955,21 @@ type BatchSpec implements Node {
     between revealing the problem and merging the fixes is as short as possible.
     """
     id: ID!
+
+    """
+    Future: Flag that calls applyBatchChange automatically when this execution completes.
+    Useful for integrations with code monitoring etc.
+
+    TODO: Not implemented yet.
+    """
+    autoApplyEnabled: Boolean!
+
+    """
+    The current execution state of the batch spec. For manually created ones (src-cli workflow),
+    this will always be COMPLETED. This is an accumulated state over all the associated
+    workspaces for convenience.
+    """
+    state: BatchSpecState!
 
     """
     The original YAML or JSON input that was used to create this batch spec.
@@ -2769,14 +3036,29 @@ type BatchSpec implements Node {
     changesetSpecs(first: Int = 50, after: String): ChangesetSpecConnection!
 
     """
-    The user who created this batch spec (or null if the user no longer exists).
+    The user who created this batch spec. Their permissions will be honored when
+    executing the batch spec. Null, if the user has been deleted.
     """
     creator: User
 
     """
-    The date when this batch spec was created.
+    The time when the batch spec was created at. At this time, it is also added to
+    the queue for execution, if created from raw.
     """
     createdAt: DateTime!
+
+    """
+    The time when the execution started. Null, if the execution hasn't started
+    yet, or if the batch spec was created in COMPLETED state.
+    """
+    startedAt: DateTime
+
+    """
+    The time when the execution finished. Null, if the execution hasn't finished
+    yet, or if the batch spec was created in COMPLETED state.
+    This value is the time of when the batch spec has been sealed.
+    """
+    finishedAt: DateTime
 
     """
     The namespace (either a user or organization) of the batch spec.
@@ -2792,8 +3074,9 @@ type BatchSpec implements Node {
     """
     The URL of a web page that allows applying this batch spec and
     displays a preview of which changesets will be created by applying it.
+    Null, if the execution has not finished yet.
     """
-    applyURL: String!
+    applyURL: String
 
     """
     When true, the viewing user can apply this spec.
@@ -2801,9 +3084,10 @@ type BatchSpec implements Node {
     viewerCanAdminister: Boolean!
 
     """
-    The diff stat for all the changeset specs in the batch spec.
+    The diff stat for all the changeset specs in the batch spec. Null if state is
+    not COMPLETED.
     """
-    diffStat: DiffStat!
+    diffStat: DiffStat
 
     """
     The batch change this spec will update when applied. If it's null, the
@@ -2819,6 +3103,7 @@ type BatchSpec implements Node {
 
     """
     The code host connections required for applying this spec. Includes the credentials of the current user.
+    Only returns useful information if state is COMPLETED.
     """
     viewerBatchChangesCodeHosts(
         """
@@ -2834,6 +3119,22 @@ type BatchSpec implements Node {
         """
         onlyWithoutCredential: Boolean = false
     ): BatchChangesCodeHostConnection!
+
+    """
+    A wrapper for the workspace resolution on this batch spec. Contains access to
+    all workspaces that have been resolved, as well as insight into the state of
+    the resolution.
+    Null, if the batch spec was created in COMPLETED state.
+    """
+    workspaceResolution: BatchSpecWorkspaceResolution
+
+    """
+    Set when something about this batch spec is not right. For example, the input spec
+    is invalid, or if ValidateChangesetSpecs throws an error when the last job completes.
+
+    TODO: Not implemented yet.
+    """
+    failureMessage: String
 }
 
 """
@@ -2847,28 +3148,6 @@ type BatchChangeConnection {
 
     """
     The total number of batch changes in the connection.
-    """
-    totalCount: Int!
-
-    """
-    Pagination information.
-    """
-    pageInfo: PageInfo!
-}
-
-"""
-A list of batch spec executions.
-
-Experimental: This API is likely to change in the future.
-"""
-type BatchSpecExecutionConnection {
-    """
-    A list of batch spec executions.
-    """
-    nodes: [BatchSpecExecution!]!
-
-    """
-    The total number of batch spec executions in the connection.
     """
     totalCount: Int!
 
@@ -3074,154 +3353,6 @@ type BatchChangeDescription {
     The description as parsed from the input.
     """
     description: String!
-}
-
-"""
-The possible states of a batch spec execution.
-
-Experimental: This API is likely to change in the future.
-"""
-enum BatchSpecExecutionState {
-    """
-    This spec is being processed.
-    """
-    PROCESSING
-
-    """
-    This spec errored while processing.
-    """
-    ERRORED
-
-    """
-    This spec failed to be processed.
-    """
-    FAILED
-
-    """
-    This spec was processed successfully.
-    """
-    COMPLETED
-
-    """
-    This spec is queued to be processed.
-    """
-    QUEUED
-
-    """
-    The execution is being canceled.
-    """
-    CANCELING
-
-    """
-    The execution has been canceled.
-    """
-    CANCELED
-}
-
-"""
-A batch spec execution describes one server-side run of a batch change yaml input.
-
-Experimental: This API is likely to change in the future.
-"""
-type BatchSpecExecution implements Node {
-    """
-    The unique ID for a batch spec execution.
-
-    The ID is unguessable (i.e., long and randomly generated, not sequential).
-    Consider a batch change to fix a security vulnerability: the batch change
-    author may prefer to prepare the batch change in private so that the window
-    between revealing the problem and merging the fixes is as short as
-    possible.
-    """
-    id: ID!
-
-    """
-    The original input string provided as the batch change yaml file.
-    """
-    inputSpec: String!
-
-    """
-    The name parsed from the original input string yaml file.
-    """
-    name: String
-
-    """
-    The state the execution is currently in.
-    """
-    state: BatchSpecExecutionState!
-
-    """
-    The time when the execution was created at. At this time, it is also added to
-    the queue for execution.
-    """
-    createdAt: DateTime!
-
-    """
-    The time when the execution started. Null, if the execution hasn't started yet.
-    """
-    startedAt: DateTime
-
-    """
-    The time when the execution finished. Null, if the execution hasn't finished yet.
-    """
-    finishedAt: DateTime
-
-    """
-    Error message, if the execution failed.
-    """
-    failure: String
-
-    """
-    The configuration and execution summary (if completed or errored) of this execution.
-    """
-    steps: BatchSpecExecutionSteps!
-
-    """
-    The rank of this execution in the queue. The value of this field is null if the
-    execution has started.
-    """
-    placeInQueue: Int
-
-    """
-    The resulting batch spec from the execution. Null, if the execution hasn't
-    finished yet or if it failed.
-    """
-    batchSpec: BatchSpec
-
-    """
-    The user initiating this execution. Their permissions will be honored when
-    running the batch spec.
-    """
-    initiator: User!
-
-    """
-    The namespace this execution runs in. The resulting batch spec lives in this
-    namespace.
-    """
-    namespace: Namespace!
-}
-
-"""
-Configuration and execution summary of a batch spec execution.
-
-Experimental: This API is likely to change in the future.
-"""
-type BatchSpecExecutionSteps {
-    """
-    Execution log entries related to setting up the workspace.
-    """
-    setup: [ExecutionLogEntry!]!
-
-    """
-    Execution log entry related to running src batch preview.
-    This field is null, if the step had not been executed.
-    """
-    srcPreview: ExecutionLogEntry
-
-    """
-    Execution log entries related to tearing down the workspace.
-    """
-    teardown: [ExecutionLogEntry!]!
 }
 
 """
