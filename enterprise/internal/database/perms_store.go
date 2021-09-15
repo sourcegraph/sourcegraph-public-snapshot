@@ -697,25 +697,15 @@ func (s *PermsStore) loadExistingUserPendingPermissionsBatch(ctx context.Context
 }
 
 // upsertUserPendingPermissionsBatchQuery generates a query for upserting the provided
-// external service accounts into
-//
-// For very large inserts, a special query is generated - see inline docs for more details.
+// external service accounts into `user_pending_permissions`.
 func upsertUserPendingPermissionsBatchQuery(
 	accounts *extsvc.Accounts,
 	p *authz.RepoPermissions,
 ) (*sqlf.Query, error) {
-	if p.UpdatedAt.IsZero() {
-		return nil, ErrPermsUpdatedAtNotSet
-	}
-
 	// Above ~10,000 accounts (10,000 * 6 fields each = 60,000 parameters), we can run
-	// into the Postgres parameter limit. We use a special workaround by passing in fields
+	// into the Postgres parameter limit inserting with VALUES. Instead, we pass in fields
 	// as arrays, where each array only counts for a single parameter.
-	//
-	// This approach is also faster than the simpler insert at larger scales so we
-	// switch to this approach for any large insert.
-	if len(accounts.AccountIDs) > 2500 {
-		const unnestFormat = `
+	const format = `
 -- source: enterprise/internal/database/perms_store.go:upsertUserPendingPermissionsBatchQuery
 INSERT INTO user_pending_permissions
   (service_type, service_id, bind_id, permission, object_type, updated_at)
@@ -729,60 +719,33 @@ DO UPDATE SET
   updated_at = excluded.updated_at
 RETURNING id
 `
-		serviceTypes := make([]string, len(accounts.AccountIDs))
-		serviceIDs := make([]string, len(accounts.AccountIDs))
-		accountIDs := make([]string, len(accounts.AccountIDs))
-		perms := make([]string, len(accounts.AccountIDs))
-		permRepos := make([]string, len(accounts.AccountIDs))
-		updatedAts := make([]time.Time, len(accounts.AccountIDs))
-		for i := range accounts.AccountIDs {
-			serviceTypes[i] = accounts.ServiceType
-			serviceIDs[i] = accounts.ServiceID
-			accountIDs[i] = accounts.AccountIDs[i]
-			perms[i] = p.Perm.String()
-			permRepos[i] = string(authz.PermRepos)
-			updatedAts[i] = p.UpdatedAt.UTC()
-		}
-
-		return sqlf.Sprintf(
-			unnestFormat,
-			pq.Array(serviceTypes),
-			pq.Array(serviceIDs),
-			pq.Array(accountIDs),
-			pq.Array(perms),
-			pq.Array(permRepos),
-			pq.Array(updatedAts),
-		), nil
+	if p.UpdatedAt.IsZero() {
+		return nil, ErrPermsUpdatedAtNotSet
 	}
 
-	// Otherwise, we do a normal insert with VALUES
-	const simpleFormat = `
--- source: enterprise/internal/database/perms_store.go:upsertUserPendingPermissionsBatchQuery
-INSERT INTO user_pending_permissions
-	(service_type, service_id, bind_id, permission, object_type, updated_at)
-VALUES
-	%s
-ON CONFLICT ON CONSTRAINT
-	user_pending_permissions_service_perm_object_unique
-DO UPDATE SET
-	updated_at = excluded.updated_at
-RETURNING id
-`
-	items := make([]*sqlf.Query, len(accounts.AccountIDs))
+	serviceTypes := make([]string, len(accounts.AccountIDs))
+	serviceIDs := make([]string, len(accounts.AccountIDs))
+	accountIDs := make([]string, len(accounts.AccountIDs))
+	perms := make([]string, len(accounts.AccountIDs))
+	permRepos := make([]string, len(accounts.AccountIDs))
+	updatedAts := make([]time.Time, len(accounts.AccountIDs))
 	for i := range accounts.AccountIDs {
-		items[i] = sqlf.Sprintf("(%s, %s, %s, %s, %s, %s)",
-			accounts.ServiceType,
-			accounts.ServiceID,
-			accounts.AccountIDs[i],
-			p.Perm.String(),
-			authz.PermRepos,
-			p.UpdatedAt.UTC(),
-		)
+		serviceTypes[i] = accounts.ServiceType
+		serviceIDs[i] = accounts.ServiceID
+		accountIDs[i] = accounts.AccountIDs[i]
+		perms[i] = p.Perm.String()
+		permRepos[i] = string(authz.PermRepos)
+		updatedAts[i] = p.UpdatedAt.UTC()
 	}
 
 	return sqlf.Sprintf(
-		simpleFormat,
-		sqlf.Join(items, ","),
+		format,
+		pq.Array(serviceTypes),
+		pq.Array(serviceIDs),
+		pq.Array(accountIDs),
+		pq.Array(perms),
+		pq.Array(permRepos),
+		pq.Array(updatedAts),
 	), nil
 }
 
