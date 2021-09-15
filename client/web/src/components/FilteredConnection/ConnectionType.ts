@@ -3,7 +3,7 @@
  */
 export interface ConnectionQueryArguments {
     first?: number
-    after?: string
+    after?: string | null
     query?: string
 }
 

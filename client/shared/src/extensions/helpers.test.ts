@@ -1,9 +1,4 @@
-import { GraphQLError } from 'graphql'
-import { of } from 'rxjs'
-import { TestScheduler } from 'rxjs/testing'
-
-import { ErrorGraphQLResult, SuccessGraphQLResult } from '../graphql/graphql'
-import { PlatformContext } from '../platform/context'
+import { createGraphQLClientGetter } from '../testing/apollo/createGraphQLClientGetter'
 
 import { ConfiguredExtension, ConfiguredExtensionManifestDefaultFields } from './extension'
 import { ExtensionManifest } from './extensionManifest'
@@ -16,62 +11,53 @@ const TEST_MANIFEST: Pick<ExtensionManifest, ConfiguredExtensionManifestDefaultF
     activationEvents: [],
 }
 
-const scheduler = (): TestScheduler => new TestScheduler((actual, expected) => expect(actual).toStrictEqual(expected))
-
 describe('queryConfiguredRegistryExtensions', () => {
-    it('gets extensions from GraphQL servers supporting extensions(extensionIDs)', () => {
-        const requestGraphQL: PlatformContext['requestGraphQL'] = () =>
-            // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
-            of({
-                data: {
-                    extensionRegistry: {
-                        extensions: {
-                            nodes: [{ extensionID: 'a/b', manifest: { jsonFields: TEST_MANIFEST } }],
-                        },
+    it('gets extensions from GraphQL servers supporting extensions(extensionIDs)', done => {
+        const extensionsMock = {
+            data: {
+                extensionRegistry: {
+                    extensions: {
+                        nodes: [{ extensionID: 'a/b', manifest: { jsonFields: TEST_MANIFEST } }],
                     },
                 },
-            } as SuccessGraphQLResult<any>)
-        scheduler().run(({ expectObservable }) => {
-            expectObservable(queryConfiguredRegistryExtensions({ requestGraphQL }, ['a/b'])).toBe('(a|)', {
-                a: [{ id: 'a/b', manifest: TEST_MANIFEST }] as ConfiguredExtension[],
-            })
+            },
+        }
+
+        const getGraphQLClient = createGraphQLClientGetter({ watchQueryMocks: [extensionsMock] })
+
+        queryConfiguredRegistryExtensions({ getGraphQLClient }, ['a/b']).subscribe(data => {
+            expect(data).toEqual([{ id: 'a/b', manifest: TEST_MANIFEST }] as ConfiguredExtension[])
+            done()
         })
     })
 
-    it('gets extensions from GraphQL servers not supporting extensions(extensionIDs)/jsonFields and only supporting prioritizeExtensionIDs', () => {
-        let calledWithExtensionIDsParameter = false
-        const requestGraphQL: PlatformContext['requestGraphQL'] = ({ request }) => {
-            if (request.includes('prioritizeExtensionIDs: ') && !request.includes('jsonFields(')) {
-                // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
-                return of({
-                    data: {
-                        extensionRegistry: {
-                            extensions: {
-                                nodes: [{ extensionID: 'a/b', manifest: { raw: TEST_MANIFEST_RAW } }],
-                            },
-                        },
-                    },
-                } as SuccessGraphQLResult<any>)
-            }
-            calledWithExtensionIDsParameter = true
-            // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
-            return of({
-                data: undefined,
-                errors: [
-                    {
-                        message: 'Unknown argument "extensionIDs" on field "extensions" of type "ExtensionRegistry".',
-                    },
-                    {
-                        message: 'Cannot query field "jsonFields" on type "ExtensionManifest".',
-                    },
-                ] as GraphQLError[],
-            } as ErrorGraphQLResult)
+    it('gets extensions from GraphQL servers not supporting extensions(extensionIDs)/jsonFields and only supporting prioritizeExtensionIDs', done => {
+        const extensionsMock = {
+            data: undefined,
+            errors: [
+                {
+                    message: 'Unknown argument "extensionIDs" on field "extensions" of type "ExtensionRegistry".',
+                },
+                {
+                    message: 'Cannot query field "jsonFields" on type "ExtensionManifest".',
+                },
+            ],
         }
-        scheduler().run(({ expectObservable }) => {
-            expectObservable(queryConfiguredRegistryExtensions({ requestGraphQL }, ['a/b'])).toBe('(a|)', {
-                a: [{ id: 'a/b', manifest: TEST_MANIFEST }] as ConfiguredExtension[],
-            })
+        const extensionsCompatMock = {
+            data: {
+                extensionRegistry: {
+                    extensions: {
+                        nodes: [{ extensionID: 'a/b', manifest: { raw: TEST_MANIFEST_RAW } }],
+                    },
+                },
+            },
+        }
+
+        const getGraphQLClient = createGraphQLClientGetter({ watchQueryMocks: [extensionsMock, extensionsCompatMock] })
+
+        queryConfiguredRegistryExtensions({ getGraphQLClient }, ['a/b']).subscribe(data => {
+            expect(data).toEqual([{ id: 'a/b', manifest: TEST_MANIFEST }] as ConfiguredExtension[])
+            done()
         })
-        expect(calledWithExtensionIDsParameter).toBeTruthy()
     })
 })

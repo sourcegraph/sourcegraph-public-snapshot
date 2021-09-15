@@ -4,10 +4,7 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/db"
 )
-
-var defaultDB = db.DefaultDatabase
 
 func TestSameMigrations(t *testing.T) {
 	branch := map[int]migration{

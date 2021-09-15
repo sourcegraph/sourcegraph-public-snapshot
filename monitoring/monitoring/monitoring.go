@@ -9,6 +9,8 @@ import (
 
 	"github.com/cockroachdb/errors"
 	"github.com/grafana-tools/sdk"
+
+	"github.com/sourcegraph/sourcegraph/monitoring/monitoring/internal/grafana"
 )
 
 // Container describes a Docker container to be observed.
@@ -24,9 +26,6 @@ type Container struct {
 	// Description of the Docker container. It should describe what the container
 	// is responsible for, so that the impact of issues in it is clear.
 	Description string
-
-	// List of Annotations to apply to the dashboard.
-	Annotations []sdk.Annotation
 
 	// List of Template Variables to apply to the dashboard
 	Templates []sdk.TemplateVar
@@ -73,8 +72,7 @@ func (c *Container) renderDashboard() *sdk.Board {
 	board.SharedCrosshair = true
 	board.Editable = false
 	board.AddTags("builtin")
-	board.Templating.List = c.Templates
-	board.Templating.List = append(board.Templating.List, sdk.TemplateVar{
+	board.Templating.List = append([]sdk.TemplateVar{{
 		Label:      "Filter alert level",
 		Name:       "alert_level",
 		AllValue:   ".*",
@@ -87,10 +85,8 @@ func (c *Container) renderDashboard() *sdk.Board {
 		},
 		Query: "critical,warning",
 		Type:  "custom",
-	},
-	)
-	board.Annotations.List = c.Annotations
-	board.Annotations.List = append(board.Annotations.List, sdk.Annotation{
+	}}, c.Templates...)
+	board.Annotations.List = []sdk.Annotation{{
 		Name:       "Alert events",
 		Datasource: StringPtr("Prometheus"),
 		// Show alerts matching the selected alert_level (see template variable above)
@@ -101,8 +97,7 @@ func (c *Container) renderDashboard() *sdk.Board {
 		IconColor:   "rgba(255, 96, 96, 1)",
 		Enable:      false, // disable by default for now
 		Type:        "tags",
-	},
-	)
+	}}
 	// Annotation layers that require a service to export information required by the
 	// Sourcegraph debug server - see the `NoSourcegraphDebugServer` docstring.
 	if !c.NoSourcegraphDebugServer {
@@ -129,47 +124,21 @@ func (c *Container) renderDashboard() *sdk.Board {
 	description.TextPanel.Content = fmt.Sprintf(`
 	<div style="text-align: left;">
 	  <img src="https://sourcegraphstatic.com/sourcegraph-logo-light.png" style="height:30px; margin:0.5rem"></img>
-	  <div style="margin-left: 1rem; margin-top: 0.5rem; font-size: 20px;"><span style="color: #8e8e8e">%s:</span> %s <a style="font-size: 15px" target="_blank" href="https://docs.sourcegraph.com/dev/background-information/architecture">(⧉ architecture diagram)</a></span>
+	  <div style="margin-left: 1rem; margin-top: 0.5rem; font-size: 20px;"><b>%s:</b> %s <a style="font-size: 15px" target="_blank" href="https://docs.sourcegraph.com/dev/background-information/architecture">(⧉ architecture diagram)</a></span>
 	</div>
 	`, c.Name, c.Description)
 	board.Panels = append(board.Panels, description)
 
-	alertsDefined := sdk.NewTable("Alerts defined")
-	setPanelSize(alertsDefined, 9, 5)
-	setPanelPos(alertsDefined, 0, 3)
-	alertsDefined.TablePanel.Sort = &sdk.Sort{Desc: true, Col: 4}
-	alertsDefined.TablePanel.Styles = []sdk.ColumnStyle{
-		{
-			Pattern: "Time",
-			Type:    "hidden",
-		},
-		{
-			Pattern: "level",
-			Type:    "hidden",
-		},
-		{
-			Pattern: "_01_level",
-			Alias:   StringPtr("level"),
-		},
-		{
-			Pattern:     "Value",
-			Alias:       StringPtr("firing?"),
-			ColorMode:   StringPtr("row"),
-			Colors:      &[]string{"rgba(50, 172, 45, 0.97)", "rgba(237, 129, 40, 0.89)", "rgba(245, 54, 54, 0.9)"},
-			Thresholds:  &[]string{"0.99999", "1"},
-			Type:        "string",
-			MappingType: 1,
-			ValueMaps: []sdk.ValueMap{
-				{TextType: "false", Value: "0"},
-				{TextType: "true", Value: "1"},
-			},
-		},
-	}
-	alertsDefined.AddTarget(&sdk.Target{
-		Expr:    fmt.Sprintf(`label_replace(sum(max by (level,service_name,name,description)(alert_count{service_name="%s",name!="",level=~"$alert_level"})) by (level,description), "_01_level", "$1", "level", "(.*)")`, c.Name),
+	alertsDefined := grafana.NewContainerAlertsDefinedTable(sdk.Target{
+		Expr: fmt.Sprintf(`label_replace(
+			sum(max by (level,service_name,name,description,grafana_panel_id)(alert_count{service_name="%s",name!="",level=~"$alert_level"})) by (level,description,service_name,grafana_panel_id),
+			"description", "$1", "description", ".*: (.*)"
+		)`, c.Name),
 		Format:  "table",
 		Instant: true,
 	})
+	setPanelSize(alertsDefined, 9, 5)
+	setPanelPos(alertsDefined, 0, 3)
 	board.Panels = append(board.Panels, alertsDefined)
 
 	alertsFiring := sdk.NewGraph("Alerts firing")
@@ -191,7 +160,7 @@ func (c *Container) renderDashboard() *sdk.Board {
 			LogBase:  1,
 			Max:      sdk.NewFloatString(1),
 			Min:      sdk.NewFloatString(0),
-			Show:     true,
+			Show:     false,
 		},
 		{
 			Format:  "short",
@@ -200,9 +169,14 @@ func (c *Container) renderDashboard() *sdk.Board {
 		},
 	}
 	alertsFiring.AddTarget(&sdk.Target{
-		Expr:         fmt.Sprintf(`sum by (service_name,level,name)(max by (level,service_name,name,description)(alert_count{service_name="%s",name!="",level=~"$alert_level"}) >= 1)`, c.Name),
+		Expr:         fmt.Sprintf(`sum by (service_name,level,name,grafana_panel_id)(max by (level,service_name,name,description,grafana_panel_id)(alert_count{service_name="%s",name!="",level=~"$alert_level"}) >= 1)`, c.Name),
 		LegendFormat: "{{level}}: {{name}}",
 	})
+	alertsFiring.GraphPanel.FieldConfig = &sdk.FieldConfig{}
+	alertsFiring.GraphPanel.FieldConfig.Defaults.Links = []sdk.Link{{
+		Title: "Graph panel",
+		URL:   StringPtr("/-/debug/grafana/d/${__field.labels.service_name}/${__field.labels.service_name}?viewPanel=${__field.labels.grafana_panel_id}"),
+	}}
 	board.Panels = append(board.Panels, alertsFiring)
 
 	baseY := 8
