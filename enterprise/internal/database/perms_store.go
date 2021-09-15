@@ -711,7 +711,7 @@ INSERT INTO user_pending_permissions
   (service_type, service_id, bind_id, permission, object_type, updated_at)
   (
 	SELECT *
-	FROM unnest(%s::text[], %s::text[], %s::text[], %s::text[], %s::text[], %s::timestamptz[])
+	FROM UNNEST(%s::TEXT[], %s::TEXT[], %s::TEXT[], %s::TEXT[], %s::TEXT[], %s::TIMESTAMPTZ[])
   )
 ON CONFLICT ON CONSTRAINT
   user_pending_permissions_service_perm_object_unique
