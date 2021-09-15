@@ -6,15 +6,11 @@ import (
 	"context"
 	"io"
 	"os/exec"
-	"strconv"
 	"strings"
-	"time"
 
 	"github.com/cockroachdb/errors"
 	"github.com/hashicorp/go-multierror"
 	"golang.org/x/sync/errgroup"
-
-	"github.com/sourcegraph/sourcegraph/internal/api"
 )
 
 // Git formatting directives as described in man git-log / PRETTY FORMATS
@@ -82,100 +78,14 @@ var (
 	sep = []byte{0x0}
 )
 
-// RawCommit is a shallow parse of the output of git log
-type RawCommit struct {
-	Hash           []byte
-	RefNames       []byte
-	SourceRefs     []byte
-	AuthorName     []byte
-	AuthorEmail    []byte
-	AuthorDate     []byte
-	CommitterName  []byte
-	CommitterEmail []byte
-	CommitterDate  []byte
-	Message        []byte
-	ParentHashes   []byte
+type job struct {
+	batch      []*RawCommit
+	resultChan chan searchResult
 }
 
-func NewCommitScanner(r io.Reader) *CommitScanner {
-	scanner := bufio.NewScanner(r)
-	scanner.Buffer(make([]byte, 1024), 1<<22)
-
-	// Split by commit
-	scanner.Split(func(data []byte, atEOF bool) (advance int, token []byte, err error) {
-		if len(data) == 0 { // should only happen when atEOF
-			return 0, nil, nil
-		}
-
-		// See if we have enough null bytes to constitute a full commit
-		if bytes.Count(data, sep) < partsPerCommit+1 {
-			if atEOF {
-				return 0, nil, errors.Errorf("incomplete line")
-			}
-			return 0, nil, nil
-		}
-
-		// If we do, expand token to the end of that commit
-		for i := 0; i < partsPerCommit+1; i++ {
-			idx := bytes.IndexByte(data[len(token):], 0x0)
-			if idx == -1 {
-				panic("we already counted enough bytes in data")
-			}
-			token = data[:len(token)+idx+1]
-		}
-		return len(token), token, nil
-
-	})
-
-	return &CommitScanner{
-		scanner: scanner,
-	}
-}
-
-type CommitScanner struct {
-	scanner *bufio.Scanner
-	next    *RawCommit
-	err     error
-}
-
-func (c *CommitScanner) Scan() bool {
-	if !c.scanner.Scan() {
-		return false
-	}
-
-	// Make a copy so the view can outlive the next scan
-	buf := make([]byte, len(c.scanner.Bytes()))
-	copy(buf, c.scanner.Bytes())
-
-	parts := bytes.SplitN(buf, sep, partsPerCommit+1)
-	if len(parts) < partsPerCommit+1 {
-		c.err = errors.Errorf("invalid commit log entry: %q", parts)
-		return false
-	}
-
-	c.next = &RawCommit{
-		Hash:           parts[0],
-		RefNames:       parts[1],
-		SourceRefs:     parts[2],
-		AuthorName:     parts[3],
-		AuthorEmail:    parts[4],
-		AuthorDate:     parts[5],
-		CommitterName:  parts[6],
-		CommitterEmail: parts[7],
-		CommitterDate:  parts[8],
-		Message:        parts[9],
-		ParentHashes:   parts[10],
-	}
-
-	return true
-}
-
-func (c *CommitScanner) NextCommitView() *RawCommit {
-	return c.next
-}
-
-func (c *CommitScanner) Err() error {
-	return c.err
+type searchResult struct {
+	lazyCommit        *LazyCommit
+	highlightedCommit *HighlightedCommit
 }
 
 const (
@@ -183,6 +93,14 @@ const (
 	numWorkers = 4
 )
 
+// Search runs a search for commits matching the given predicate across the revisions passed in as revisionArgs.
+//
+// We have some slightly complex logic here in order to run searches in parallel (big benefit to diff searches),
+// but also return results in order. We first iterate over all the commits using the hard-coded git log arguments.
+// We batch the shallowly-parsed commits, then send them on the jobs channel along with a channel that results for
+// that job should be sent down. We then read from the result channels in the same order that the jobs were sent.
+// This allows our worker pool to run the jobs in parallel, but we still emit matches in the same order that
+// git log outputs them.
 func Search(dir string, revisionArgs []string, p CommitPredicate, onMatch func(*LazyCommit, *HighlightedCommit) bool) error {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -221,12 +139,12 @@ func Search(dir string, revisionArgs []string, p CommitPredicate, onMatch func(*
 			batch = make([]*RawCommit, 0, batchSize)
 		}
 
-		cs := NewCommitScanner(pr)
+		cs := NewGitLogScanner(pr)
 		for cs.Scan() {
 			if ctx.Err() != nil {
 				return ctx.Err()
 			}
-			cv := cs.NextCommitView()
+			cv := cs.NextRawCommit()
 			batch = append(batch, cv)
 			if len(batch) == batchSize {
 				sendBatch()
@@ -316,67 +234,136 @@ func Search(dir string, revisionArgs []string, p CommitPredicate, onMatch func(*
 	return g.Wait()
 }
 
-type job struct {
-	batch      []*RawCommit
-	resultChan chan searchResult
+// RawCommit is a shallow parse of the output of git log
+type RawCommit struct {
+	Hash           []byte
+	RefNames       []byte
+	SourceRefs     []byte
+	AuthorName     []byte
+	AuthorEmail    []byte
+	AuthorDate     []byte
+	CommitterName  []byte
+	CommitterEmail []byte
+	CommitterDate  []byte
+	Message        []byte
+	ParentHashes   []byte
 }
 
-type searchResult struct {
-	lazyCommit        *LazyCommit
-	highlightedCommit *HighlightedCommit
+func NewGitLogScanner(r io.Reader) *CommitScanner {
+	scanner := bufio.NewScanner(r)
+	scanner.Buffer(make([]byte, 1024), 1<<22)
+
+	// Split by commit
+	scanner.Split(func(data []byte, atEOF bool) (advance int, token []byte, err error) {
+		if len(data) == 0 { // should only happen when atEOF
+			return 0, nil, nil
+		}
+
+		// See if we have enough null bytes to constitute a full commit
+		if bytes.Count(data, sep) < partsPerCommit+1 {
+			if atEOF {
+				return 0, nil, errors.Errorf("incomplete line")
+			}
+			return 0, nil, nil
+		}
+
+		// If we do, expand token to the end of that commit
+		for i := 0; i < partsPerCommit+1; i++ {
+			idx := bytes.IndexByte(data[len(token):], 0x0)
+			if idx == -1 {
+				panic("we already counted enough bytes in data")
+			}
+			token = data[:len(token)+idx+1]
+		}
+		return len(token), token, nil
+
+	})
+
+	return &CommitScanner{
+		scanner: scanner,
+	}
 }
 
-type LazyCommit struct {
-	*RawCommit
-	diffFetcher *DiffFetcher
+type CommitScanner struct {
+	scanner *bufio.Scanner
+	next    *RawCommit
+	err     error
 }
 
-func (l *LazyCommit) AuthorDate() (time.Time, error) {
-	unixSeconds, err := strconv.Atoi(string(l.RawCommit.AuthorDate))
-	if err != nil {
-		return time.Time{}, err
+// NewCommitScanner creates a scanner that does a shallow parse of the stdout of git log.
+// Like the bufio.Scanner() API, call Scan() to ingest the next result, which will return
+// false if it hits an error or EOF, then call NextRawCommit() to get the scanned commit.
+func NewCommitScanner(r io.Reader) *CommitScanner {
+	scanner := bufio.NewScanner(r)
+	scanner.Buffer(make([]byte, 1024), 1<<22)
+
+	// Split by commit
+	scanner.Split(func(data []byte, atEOF bool) (advance int, token []byte, err error) {
+		if len(data) == 0 { // should only happen when atEOF
+			return 0, nil, nil
+		}
+
+		// See if we have enough null bytes to constitute a full commit
+		if bytes.Count(data, sep) < partsPerCommit+1 {
+			if atEOF {
+				return 0, nil, errors.Errorf("incomplete line")
+			}
+			return 0, nil, nil
+		}
+
+		// If we do, expand token to the end of that commit
+		for i := 0; i < partsPerCommit+1; i++ {
+			idx := bytes.IndexByte(data[len(token):], 0x0)
+			if idx == -1 {
+				panic("we already counted enough bytes in data")
+			}
+			token = data[:len(token)+idx+1]
+		}
+		return len(token), token, nil
+
+	})
+
+	return &CommitScanner{
+		scanner: scanner,
+	}
+}
+
+func (c *CommitScanner) Scan() bool {
+	if !c.scanner.Scan() {
+		return false
 	}
 
-	return time.Unix(int64(unixSeconds), 0), nil
-}
+	// Make a copy so the view can outlive the next scan
+	buf := make([]byte, len(c.scanner.Bytes()))
+	copy(buf, c.scanner.Bytes())
 
-func (l *LazyCommit) CommitterDate() (time.Time, error) {
-	unixSeconds, err := strconv.Atoi(string(l.RawCommit.CommitterDate))
-	if err != nil {
-		return time.Time{}, err
+	parts := bytes.SplitN(buf, sep, partsPerCommit+1)
+	if len(parts) < partsPerCommit+1 {
+		c.err = errors.Errorf("invalid commit log entry: %q", parts)
+		return false
 	}
 
-	return time.Unix(int64(unixSeconds), 0), nil
-}
-
-// RawDiff returns the diff exactly as returned by git diff-tree
-func (l *LazyCommit) RawDiff() ([]byte, error) {
-	return l.diffFetcher.FetchDiff(l.Hash)
-}
-
-// Diff fetches the diff, then formats it in the format used throughout our app
-func (l *LazyCommit) Diff() (FormattedDiff, error) {
-	// TODO lazy fetch
-	rawDiff, err := l.RawDiff()
-	if err != nil {
-		return "", err
+	c.next = &RawCommit{
+		Hash:           parts[0],
+		RefNames:       parts[1],
+		SourceRefs:     parts[2],
+		AuthorName:     parts[3],
+		AuthorEmail:    parts[4],
+		AuthorDate:     parts[5],
+		CommitterName:  parts[6],
+		CommitterEmail: parts[7],
+		CommitterDate:  parts[8],
+		Message:        parts[9],
+		ParentHashes:   parts[10],
 	}
-	return FormatDiff(rawDiff), nil
+
+	return true
 }
 
-func (l *LazyCommit) ParentIDs() []api.CommitID {
-	strs := strings.Split(string(l.ParentHashes), " ")
-	commitIDs := make([]api.CommitID, 0, len(strs))
-	for _, str := range strs {
-		commitIDs = append(commitIDs, api.CommitID(str))
-	}
-	return commitIDs
+func (c *CommitScanner) NextRawCommit() *RawCommit {
+	return c.next
 }
 
-func (l *LazyCommit) RefNames() []string {
-	return strings.Split(string(l.RawCommit.RefNames), ", ")
-}
-
-func (l *LazyCommit) SourceRefs() []string {
-	return strings.Split(string(l.RawCommit.SourceRefs), ", ")
+func (c *CommitScanner) Err() error {
+	return c.err
 }
