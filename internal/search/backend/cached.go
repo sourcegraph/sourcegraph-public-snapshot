@@ -75,7 +75,8 @@ func (c *cachedSearcher) update(ctx context.Context, k listCacheKey) *listCacheV
 	v := &listCacheValue{
 		list: list,
 		err:  err,
-		ts:   time.Now().UTC(),
+		ttl:  c.ttl,
+		ts:   time.Now(),
 	}
 
 	c.mu.Lock()
