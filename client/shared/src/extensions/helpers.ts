@@ -74,9 +74,9 @@ export function queryConfiguredRegistryExtensions(
             query: getDocumentNode(ExtensionsQuery),
             variables: {
                 ...variables,
-                // `.slice()` is required to avoid Typescript error
-                // because of `readonly` type of `CONFIGURED_EXTENSION_DEFAULT_MANIFEST_FIELDS`
-                extensionManifestFields: CONFIGURED_EXTENSION_DEFAULT_MANIFEST_FIELDS.slice(),
+                // Spread operator is required to avoid Typescript type error
+                // because of `readonly` type of `CONFIGURED_EXTENSION_DEFAULT_MANIFEST_FIELDS`.
+                extensionManifestFields: [...CONFIGURED_EXTENSION_DEFAULT_MANIFEST_FIELDS],
             },
         })
     )
