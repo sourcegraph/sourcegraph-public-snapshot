@@ -252,7 +252,10 @@ func StartDiffFetcher(ctx context.Context, dir string) (*DiffFetcher, error) {
 	scanner := bufio.NewScanner(stdoutReader)
 	scanner.Buffer(make([]byte, 1024), 1<<30)
 	scanner.Split(func(data []byte, atEOF bool) (advance int, token []byte, err error) {
-		if bytes.HasSuffix(data, []byte("\nENDOFPATCH\n")) {
+		if bytes.HasSuffix(data, []byte("ENDOFPATCH\n")) {
+			if bytes.Equal(data, []byte("ENDOFPATCH\n")) {
+				return len(data), data[:0], nil
+			}
 			return len(data), data[:len(data)-len("ENDOFPATCH\n")], nil
 		}
 
