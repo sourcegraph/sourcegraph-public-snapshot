@@ -1,4 +1,4 @@
-import { ApolloError, FetchResult, MutationFunctionOptions, ApolloCache } from '@apollo/client'
+import { ApolloError, FetchResult, MutationFunctionOptions, ApolloCache, OperationVariables } from '@apollo/client'
 
 import { gql, useQuery, useMutation } from '@sourcegraph/shared/src/graphql/graphql'
 
@@ -8,6 +8,9 @@ import {
     CodeIntelligenceConfigurationPoliciesResult,
     DeleteCodeIntelligenceConfigurationPolicyResult,
     DeleteCodeIntelligenceConfigurationPolicyVariables,
+    IndexConfigurationResult,
+    InferredIndexConfigurationResult,
+    UpdateRepositoryIndexConfigurationResult,
 } from '../../../graphql-operations'
 
 import { codeIntelligenceConfigurationPolicyFieldsFragment as defaultCodeIntelligenceConfigurationPolicyFieldsFragment } from './backend'
@@ -37,6 +40,76 @@ export const usePoliciesConfig = (repositoryId?: string | null): UsePoliciesConf
         policies: data?.codeIntelligenceConfigurationPolicies || [],
         loadingPolicies: loading,
         policiesError: error,
+    }
+}
+
+interface UseRepositoryConfigResult {
+    configuration: string
+    loadingRepository: boolean
+    repositoryError: ApolloError | undefined
+}
+
+export const REPOSITORY_CONFIGURATION = gql`
+    query IndexConfiguration($id: ID!) {
+        node(id: $id) {
+            ...RepositoryIndexConfigurationFields
+        }
+    }
+
+    fragment RepositoryIndexConfigurationFields on Repository {
+        __typename
+        indexConfiguration {
+            configuration
+        }
+    }
+`
+
+export const useRepositoryConfig = (id: string): UseRepositoryConfigResult => {
+    const { data, loading, error } = useQuery<IndexConfigurationResult>(REPOSITORY_CONFIGURATION, {
+        variables: { id },
+    })
+
+    const configuration = data?.node?.indexConfiguration?.configuration || ''
+
+    return {
+        configuration,
+        loadingRepository: loading,
+        repositoryError: error,
+    }
+}
+
+export const INFERRED_CONFIGURATION = gql`
+    query InferredIndexConfiguration($id: ID!) {
+        node(id: $id) {
+            ...RepositoryInferredIndexConfigurationFields
+        }
+    }
+
+    fragment RepositoryInferredIndexConfigurationFields on Repository {
+        __typename
+        indexConfiguration {
+            inferredConfiguration
+        }
+    }
+`
+
+interface UseInferredConfigResult {
+    inferredConfiguration: string
+    loadingInferred: boolean
+    inferredError: ApolloError | undefined
+}
+
+export const useInferredConfig = (id: string): UseInferredConfigResult => {
+    const { data, loading, error } = useQuery<InferredIndexConfigurationResult>(INFERRED_CONFIGURATION, {
+        variables: { id },
+    })
+
+    const inferredConfiguration = data?.node?.indexConfiguration?.inferredConfiguration || ''
+
+    return {
+        inferredConfiguration,
+        loadingInferred: loading,
+        inferredError: error,
     }
 }
 
@@ -98,4 +171,35 @@ export const updateDeletePolicyCache = (
             },
         },
     })
+}
+
+const UPDATE_CONFIGURATION_FOR_REPOSITORY = gql`
+    mutation UpdateRepositoryIndexConfiguration($id: ID!, $content: String!) {
+        updateRepositoryIndexConfiguration(repository: $id, configuration: $content) {
+            alwaysNil
+        }
+    }
+`
+
+type UpdateConfigurationResult = Promise<
+    FetchResult<UpdateRepositoryIndexConfigurationResult, Record<string, string>, Record<string, string>>
+>
+interface UpdateConfigurationForRepositoryResult {
+    updateConfigForRepository: (
+        options?: MutationFunctionOptions<UpdateRepositoryIndexConfigurationResult, OperationVariables> | undefined
+    ) => UpdateConfigurationResult
+    isUpdating: boolean
+    updatingError: ApolloError | undefined
+}
+
+export const useUpdateConfigurationForRepository = (): UpdateConfigurationForRepositoryResult => {
+    const [updateConfigForRepository, { loading, error }] = useMutation<UpdateRepositoryIndexConfigurationResult>(
+        UPDATE_CONFIGURATION_FOR_REPOSITORY
+    )
+
+    return {
+        updateConfigForRepository,
+        isUpdating: loading,
+        updatingError: error,
+    }
 }

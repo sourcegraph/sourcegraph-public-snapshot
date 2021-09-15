@@ -2,34 +2,25 @@ import * as H from 'history'
 import React, { FunctionComponent, useEffect } from 'react'
 import { RouteComponentProps } from 'react-router'
 
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { TelemetryProps, TelemetryService } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { PageTitle } from '@sourcegraph/web/src/components/PageTitle'
 import { PageHeader } from '@sourcegraph/wildcard'
 
-import {
-    getConfigurationForRepository as defaultGetConfigurationForRepository,
-    getInferredConfigurationForRepository as defaultGetInferredConfigurationForRepository,
-    updateConfigurationForRepository as defaultUpdateConfigurationForRepository,
-} from './backend'
 import { RepositoryConfiguration } from './RepositoryConfiguration'
 import { RepositoryPolicies } from './RepositoryPolicies'
 
 export interface CodeIntelConfigurationPageProps extends RouteComponentProps<{}>, ThemeProps, TelemetryProps {
     repo?: { id: string }
     indexingEnabled?: boolean
-    updateConfigurationForRepository?: typeof defaultUpdateConfigurationForRepository
-    getConfigurationForRepository?: typeof defaultGetConfigurationForRepository
-    getInferredConfigurationForRepository?: typeof defaultGetInferredConfigurationForRepository
+    isLightTheme: boolean
+    telemetryService: TelemetryService
     history: H.History
 }
 
 export const CodeIntelConfigurationPage: FunctionComponent<CodeIntelConfigurationPageProps> = ({
     repo,
     indexingEnabled = window.context?.codeIntelAutoIndexingEnabled,
-    updateConfigurationForRepository = defaultUpdateConfigurationForRepository,
-    getConfigurationForRepository = defaultGetConfigurationForRepository,
-    getInferredConfigurationForRepository = defaultGetInferredConfigurationForRepository,
     isLightTheme,
     telemetryService,
     history,
@@ -55,9 +46,6 @@ export const CodeIntelConfigurationPage: FunctionComponent<CodeIntelConfiguratio
             {repo ? (
                 <RepositoryConfiguration
                     repo={repo}
-                    updateConfigurationForRepository={updateConfigurationForRepository}
-                    getConfigurationForRepository={getConfigurationForRepository}
-                    getInferredConfigurationForRepository={getInferredConfigurationForRepository}
                     indexingEnabled={indexingEnabled}
                     isLightTheme={isLightTheme}
                     telemetryService={telemetryService}

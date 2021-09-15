@@ -1,25 +1,19 @@
 import * as H from 'history'
 import React, { FunctionComponent } from 'react'
 
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { TelemetryProps, TelemetryService } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { Container, Tab, TabList, TabPanel, TabPanels, Tabs } from '@sourcegraph/wildcard'
 
-import {
-    getConfigurationForRepository as defaultGetConfigurationForRepository,
-    getInferredConfigurationForRepository as defaultGetInferredConfigurationForRepository,
-    updateConfigurationForRepository as defaultUpdateConfigurationForRepository,
-} from './backend'
 import { ConfigurationEditor } from './ConfigurationEditor'
 import { RepositoryPolicies } from './RepositoryPolicies'
 
 export interface RepositoryConfigurationProps extends ThemeProps, TelemetryProps {
     repo: { id: string }
-    updateConfigurationForRepository: typeof defaultUpdateConfigurationForRepository
-    getConfigurationForRepository: typeof defaultGetConfigurationForRepository
-    getInferredConfigurationForRepository: typeof defaultGetInferredConfigurationForRepository
     indexingEnabled: boolean
     history: H.History
+    isLightTheme: boolean
+    telemetryService: TelemetryService
 }
 
 export const RepositoryConfiguration: FunctionComponent<RepositoryConfigurationProps> = ({
