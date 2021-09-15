@@ -944,7 +944,7 @@ func (s *PermsStore) GrantPendingPermissions(ctx context.Context, userID int32, 
 	return nil
 }
 
-// upsertRepoPermissionsPage tracks entries to upsert in a upsertRepoPermissionsBatchQuery
+// upsertRepoPermissionsPage tracks entries to upsert in a upsertRepoPermissionsBatchQuery.
 type upsertRepoPermissionsPage struct {
 	addedRepoIDs   []uint32
 	removedRepoIDs []uint32
@@ -1004,8 +1004,8 @@ func newUpsertRepoPermissionsPage(addQueue, removeQueue []uint32) (
 //
 // Pages should be set up using the helper function `newUpsertRepoPermissionsPage`
 func upsertRepoPermissionsBatchQuery(page *upsertRepoPermissionsPage, allAddedRepoIDs, allRemovedRepoIDs, userIDs []uint32, perm authz.Perms, updatedAt time.Time) (*sqlf.Query, error) {
-	// If changing the parameters used in this query, make sure to enable relevant tests
-	// named `postgresParameterLimitTest`
+	// If changing the parameters used in this query, make sure to run relevant tests
+	// named `postgresParameterLimitTest` using "go test -slow-tests".
 	const format = `
 -- source: enterprise/internal/database/perms_store.go:upsertRepoPermissionsBatchQuery
 INSERT INTO repo_permissions
