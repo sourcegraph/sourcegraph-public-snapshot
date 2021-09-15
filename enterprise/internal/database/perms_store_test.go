@@ -997,7 +997,7 @@ func testPermsStore_SetRepoPendingPermissions(db *sql.DB) func(*testing.T) {
 		ServiceID:   "https://github.com/",
 		AccountID:   "cindy",
 	}
-	const countToExceedParameterLimit = 15000
+	const countToExceedParameterLimit = 11000 // ~ 65535 / 6 parameters per row
 
 	type update struct {
 		accounts *extsvc.Accounts

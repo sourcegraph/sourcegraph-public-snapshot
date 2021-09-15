@@ -712,9 +712,9 @@ func upsertUserPendingPermissionsBatchQuery(
 	// into the Postgres parameter limit. We use a special workaround by passing in fields
 	// as arrays, where each array only counts for a single parameter.
 	//
-	// This approach is also faster than the simpler insert at around 5,000 rows so we
+	// This approach is also faster than the simpler insert at larger scales so we
 	// switch to this approach for any large insert.
-	if len(accounts.AccountIDs) > 5000 {
+	if len(accounts.AccountIDs) > 2500 {
 		const unnestFormat = `
 -- source: enterprise/internal/database/perms_store.go:upsertUserPendingPermissionsBatchQuery
 INSERT INTO user_pending_permissions
