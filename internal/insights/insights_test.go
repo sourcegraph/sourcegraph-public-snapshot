@@ -89,6 +89,7 @@ func TestGetIntegrationInsights(t *testing.T) {
 
 	weeks := 2
 
+	wantOrg := int32(1)
 	want := []SearchInsight{
 		{
 			ID:           "unique-id1",
@@ -102,6 +103,7 @@ func TestGetIntegrationInsights(t *testing.T) {
 			Step: Interval{
 				Weeks: &weeks,
 			},
+			OrgID: &wantOrg,
 		},
 		{
 			ID:           "unique-id2",
@@ -115,6 +117,7 @@ func TestGetIntegrationInsights(t *testing.T) {
 			Step: Interval{
 				Weeks: &weeks,
 			},
+			OrgID: &wantOrg,
 		},
 	}
 
