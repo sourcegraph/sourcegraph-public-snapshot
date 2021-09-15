@@ -12,6 +12,14 @@ type operations struct {
 	clear                         *observation.Operation
 	definitions                   *observation.Operation
 	diagnostics                   *observation.Operation
+	documentationAtPosition       *observation.Operation
+	documentationDefinitions      *observation.Operation
+	documentationIDsToPathIDs     *observation.Operation
+	documentationPage             *observation.Operation
+	documentationPathIDToFilePath *observation.Operation
+	documentationPathIDToID       *observation.Operation
+	documentationPathInfo         *observation.Operation
+	documentationReferences       *observation.Operation
 	exists                        *observation.Operation
 	hover                         *observation.Operation
 	monikerResults                *observation.Operation
@@ -19,21 +27,14 @@ type operations struct {
 	packageInformation            *observation.Operation
 	ranges                        *observation.Operation
 	references                    *observation.Operation
-	documentationPage             *observation.Operation
-	documentationPathInfo         *observation.Operation
-	documentationIDsToPathIDs     *observation.Operation
-	documentationPathIDToID       *observation.Operation
-	documentationPathIDToFilePath *observation.Operation
-	documentationDefinitions      *observation.Operation
-	documentationReferences       *observation.Operation
-	documentationAtPosition       *observation.Operation
+	stencil                       *observation.Operation
 	writeDefinitions              *observation.Operation
+	writeDocumentationPages       *observation.Operation
+	writeDocumentationPathInfo    *observation.Operation
 	writeDocuments                *observation.Operation
 	writeMeta                     *observation.Operation
 	writeReferences               *observation.Operation
 	writeResultChunks             *observation.Operation
-	writeDocumentationPages       *observation.Operation
-	writeDocumentationPathInfo    *observation.Operation
 	writeDocumentationMappings    *observation.Operation
 
 	locations           *observation.Operation
@@ -70,6 +71,14 @@ func newOperations(observationContext *observation.Context) *operations {
 		clear:                         op("Clear"),
 		definitions:                   op("Definitions"),
 		diagnostics:                   op("Diagnostics"),
+		documentationAtPosition:       op("DocumentationAtPosition"),
+		documentationDefinitions:      op("DocumentationDefinitions"),
+		documentationIDsToPathIDs:     op("DocumentationIDsToPathIDs"),
+		documentationPage:             op("DocumentationPage"),
+		documentationPathIDToFilePath: op("DocumentationPathIDToFilePath"),
+		documentationPathIDToID:       op("DocumentationPathIDToID"),
+		documentationPathInfo:         op("DocumentationPathInfo"),
+		documentationReferences:       op("DocumentationReferences"),
 		exists:                        op("Exists"),
 		hover:                         op("Hover"),
 		monikerResults:                op("MonikerResults"),
@@ -77,22 +86,15 @@ func newOperations(observationContext *observation.Context) *operations {
 		packageInformation:            op("PackageInformation"),
 		ranges:                        op("Ranges"),
 		references:                    op("References"),
-		documentationPage:             op("DocumentationPage"),
-		documentationPathInfo:         op("DocumentationPathInfo"),
-		documentationIDsToPathIDs:     op("DocumentationIDsToPathIDs"),
-		documentationPathIDToID:       op("DocumentationPathIDToID"),
-		documentationPathIDToFilePath: op("DocumentationPathIDToFilePath"),
-		documentationDefinitions:      op("DocumentationDefinitions"),
-		documentationReferences:       op("DocumentationReferences"),
-		documentationAtPosition:       op("DocumentationAtPosition"),
+		stencil:                       op("Stencil"),
 		writeDefinitions:              op("WriteDefinitions"),
+		writeDocumentationMappings:    op("WriteDocumentationMappings"),
+		writeDocumentationPages:       op("WriteDocumentationPages"),
+		writeDocumentationPathInfo:    op("WriteDocumentationPathInfo"),
 		writeDocuments:                op("WriteDocuments"),
 		writeMeta:                     op("WriteMeta"),
 		writeReferences:               op("WriteReferences"),
 		writeResultChunks:             op("WriteResultChunks"),
-		writeDocumentationPages:       op("WriteDocumentationPages"),
-		writeDocumentationPathInfo:    op("WriteDocumentationPathInfo"),
-		writeDocumentationMappings:    op("WriteDocumentationMappings"),
 
 		locations:           subOp("locations"),
 		locationsWithinFile: subOp("locationsWithinFile"),

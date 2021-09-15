@@ -49,6 +49,7 @@ func (a *AdjustedCodeIntelligenceRange) ToDocumentation() *Documentation {
 // specifics (auth, validation, marshaling, etc.). This resolver is wrapped by a symmetrics resolver
 // in this package's graphql subpackage, which is exposed directly by the API.
 type QueryResolver interface {
+	Stencil(ctx context.Context) ([]lsifstore.Range, error)
 	Ranges(ctx context.Context, startLine, endLine int) ([]AdjustedCodeIntelligenceRange, error)
 	Definitions(ctx context.Context, line, character int) ([]AdjustedLocation, error)
 	References(ctx context.Context, line, character, limit int, rawCursor string) ([]AdjustedLocation, string, error)

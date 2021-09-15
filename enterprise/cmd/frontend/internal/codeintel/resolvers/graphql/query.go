@@ -43,6 +43,20 @@ func NewQueryResolver(resolver resolvers.QueryResolver, locationResolver *Cached
 func (r *QueryResolver) ToGitTreeLSIFData() (gql.GitTreeLSIFDataResolver, bool) { return r, true }
 func (r *QueryResolver) ToGitBlobLSIFData() (gql.GitBlobLSIFDataResolver, bool) { return r, true }
 
+func (r *QueryResolver) Stencil(ctx context.Context) ([]gql.RangeResolver, error) {
+	ranges, err := r.resolver.Stencil(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	resolvers := make([]gql.RangeResolver, 0, len(ranges))
+	for _, r := range ranges {
+		resolvers = append(resolvers, gql.NewRangeResolver(convertRange(r)))
+	}
+
+	return resolvers, nil
+}
+
 func (r *QueryResolver) Ranges(ctx context.Context, args *gql.LSIFRangesArgs) (gql.CodeIntelligenceRangeConnectionResolver, error) {
 	if args.StartLine < 0 || args.EndLine < args.StartLine {
 		return nil, ErrIllegalBounds
