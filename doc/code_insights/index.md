@@ -7,7 +7,7 @@ Code Insights are based on our universal code search, making them incredibly acc
 Code Insights are currently in Private [Beta](../admin/beta_and_experimental_features.md). If you're a customer who wants early access or needs support, please [send us an email](mailto:feedback@sourcegraph.com).
 
 Code insights docs are actively in progress during the beta.
-It means that we're still polishing Insights and you might find bugs while we’re in beta. Please, do [share any bugs 🐛 or feedback](mailto:feedback@sourcegraph.com) to help us make Code Insights better.
+We're still polishing Code Insights and you might find bugs while we’re in beta. Please [share any bugs 🐛 or feedback](mailto:feedback@sourcegraph.com) you have to help us make Code Insights better.
 Table of contents:
 
 - [Quickstart](quickstart.md)
