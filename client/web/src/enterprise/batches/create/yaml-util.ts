@@ -106,7 +106,10 @@ const removeRepoDirective = (spec: string, ast: YAMLMap, repo: string, branch: s
             !!find(
                 item.mappings,
                 mapping =>
-                    mapping.key.value === 'repository' && isYAMLScalar(mapping.value) && mapping.value.value === repo
+                    mapping.key.value === 'repository' &&
+                    isYAMLScalar(mapping.value) &&
+                    // Compare the values case-insensitively
+                    mapping.value.value.toLowerCase() === repo.toLowerCase()
             )
     )
 
@@ -138,7 +141,10 @@ const removeRepoDirective = (spec: string, ast: YAMLMap, repo: string, branch: s
             !!find(
                 map.mappings,
                 mapping =>
-                    mapping.key.value === 'branch' && isYAMLScalar(mapping.value) && mapping.value.value === branch
+                    mapping.key.value === 'branch' &&
+                    isYAMLScalar(mapping.value) &&
+                    // Compare the values case-insensitively
+                    mapping.value.value.toLowerCase() === branch.toLowerCase()
             )
     )
 
