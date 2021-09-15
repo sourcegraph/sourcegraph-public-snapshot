@@ -1069,6 +1069,7 @@ func testPermsStore_SetRepoPendingPermissions(db *sql.DB) func(*testing.T) {
 	}
 	tests := []struct {
 		name                   string
+		slowTest               bool
 		updates                []update
 		expectUserPendingPerms map[extsvc.AccountSpec][]uint32 // account -> object_ids
 		expectRepoPendingPerms map[int32][]extsvc.AccountSpec  // repo_id -> accounts
@@ -1216,7 +1217,8 @@ func testPermsStore_SetRepoPendingPermissions(db *sql.DB) func(*testing.T) {
 			},
 		},
 		{
-			name: "ensure we do not exceed postgres parameter limit",
+			name:     postgresParameterLimitTest,
+			slowTest: true,
 			updates: func() []update {
 				u := update{
 					accounts: &extsvc.Accounts{
@@ -1264,6 +1266,10 @@ func testPermsStore_SetRepoPendingPermissions(db *sql.DB) func(*testing.T) {
 	return func(t *testing.T) {
 		for _, test := range tests {
 			t.Run(test.name, func(t *testing.T) {
+				if test.slowTest && !*slowTests {
+					t.Skip("slow-tests not enabled")
+				}
+
 				s := Perms(db, clock)
 				t.Cleanup(func() {
 					cleanupPermsTables(t, s)

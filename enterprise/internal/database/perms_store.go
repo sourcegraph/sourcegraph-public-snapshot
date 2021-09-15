@@ -745,6 +745,9 @@ func upsertUserPendingPermissionsBatchQuery(
 	// Above ~10,000 accounts (10,000 * 6 fields each = 60,000 parameters), we can run
 	// into the Postgres parameter limit inserting with VALUES. Instead, we pass in fields
 	// as arrays, where each array only counts for a single parameter.
+	//
+	// If changing the parameters used in this query, make sure to run relevant tests
+	// named `postgresParameterLimitTest` using "go test -slow-tests".
 	const format = `
 -- source: enterprise/internal/database/perms_store.go:upsertUserPendingPermissionsBatchQuery
 INSERT INTO user_pending_permissions
