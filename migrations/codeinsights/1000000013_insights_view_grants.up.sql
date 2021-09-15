@@ -8,7 +8,7 @@ CREATE TABLE IF NOT EXISTS insight_view_grants
     insight_view_id INTEGER NOT NULL
         CONSTRAINT insight_view_grants_insight_view_id_fk
             REFERENCES insight_view
-            ON DELETE CASCADE,
+            ON DELETE CASCADE, -- These grants only have meaning in the context of a parent view.
     user_id         INTEGER,
     org_id          INTEGER,
     global          BOOLEAN
@@ -30,5 +30,16 @@ CREATE INDEX IF NOT EXISTS insight_view_grants_org_id_idx
 
 CREATE INDEX IF NOT EXISTS insight_view_grants_global_idx
     ON insight_view_grants (global) WHERE global IS TRUE;
+
+
+-- This series join table is completely dependent on the existence of a parent view. So to simplify db operations
+-- and avoid dangling rows, adding cascade deletes to the insight view FK.
+ALTER TABLE insight_view_series
+    DROP CONSTRAINT IF EXISTS insight_view_series_insight_view_id_fkey;
+
+ALTER TABLE insight_view_series
+    ADD CONSTRAINT insight_view_series_insight_view_id_fkey
+        FOREIGN KEY (insight_view_id) REFERENCES insight_view
+            ON DELETE CASCADE;
 
 COMMIT;

@@ -5,8 +5,6 @@ import (
 	"database/sql"
 	"time"
 
-	"github.com/inconshreveable/log15"
-
 	"github.com/sourcegraph/sourcegraph/internal/insights"
 
 	"github.com/cockroachdb/errors"
@@ -74,8 +72,6 @@ func (s *InsightStore) Get(ctx context.Context, args InsightQueryArgs) ([]types.
 	}
 
 	q := sqlf.Sprintf(getInsightByViewSql, sqlf.Join(preds, "\n AND"))
-	log15.Info("testing query", "query", q.Query(sqlf.PostgresBindVar), "args", q.Args())
-
 	return scanInsightViewSeries(s.Query(ctx, q))
 }
 
@@ -357,7 +353,6 @@ func (s *InsightStore) AddViewGrants(ctx context.Context, view types.InsightView
 		values = append(values, grant.toQuery(view.ID))
 	}
 	q := sqlf.Sprintf(AddViewGrantsSql, sqlf.Join(values, ",\n"))
-	log15.Info("add_insight_view_grant_query", "query", q.Query(sqlf.PostgresBindVar), "args", q.Args())
 	err := s.Exec(ctx, q)
 	if err != nil {
 		return err
@@ -369,6 +364,24 @@ const AddViewGrantsSql = `
 -- source: enterprise/internal/insights/store/insight_store.go:AddViewGrants
 INSERT INTO insight_view_grants (insight_view_id, org_id, user_id, global)
 VALUES %s;
+`
+
+func (s *InsightStore) DeleteViewByUniqueID(ctx context.Context, uniqueID string) error {
+	if len(uniqueID) == 0 {
+		return errors.New("unable to delete view invalid view ID")
+	}
+	conds := sqlf.Sprintf("unique_id = %s", uniqueID)
+	q := sqlf.Sprintf(DeleteViewSql, conds)
+	err := s.Exec(ctx, q)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+const DeleteViewSql = `
+-- source: enterprise/internal/insights/store/insight_store.go:DeleteView
+delete from insight_view where %s;
 `
 
 // CreateSeries will create a new insight data series. This series must be uniquely identified by the series ID.

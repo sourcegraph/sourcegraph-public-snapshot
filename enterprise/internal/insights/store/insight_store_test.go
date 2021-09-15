@@ -384,6 +384,71 @@ func TestCreateGetView_WithGrants(t *testing.T) {
 	})
 }
 
+func TestDeleteView(t *testing.T) {
+	timescale, cleanup := insightsdbtesting.TimescaleDB(t)
+	defer cleanup()
+	now := time.Date(2020, 1, 1, 0, 0, 0, 0, time.UTC).Truncate(time.Microsecond).Round(0)
+	ctx := context.Background()
+
+	store := NewInsightStore(timescale)
+	store.Now = func() time.Time {
+		return now
+	}
+
+	uniqueID := "user1viewonly"
+	view, err := store.CreateView(ctx, types.InsightView{
+		Title:       "user 1 view only",
+		Description: "user 1 should see this only",
+		UniqueID:    uniqueID,
+	}, []InsightViewGrant{GlobalGrant()})
+	if err != nil {
+		t.Fatal(err)
+	}
+	series, err := store.CreateSeries(ctx, types.InsightSeries{
+		SeriesID:              "series1",
+		Query:                 "query1",
+		CreatedAt:             now,
+		OldestHistoricalAt:    now,
+		LastRecordedAt:        now,
+		NextRecordingAfter:    now,
+		LastSnapshotAt:        now,
+		NextSnapshotAfter:     now,
+		BackfillQueuedAt:      now,
+		RecordingIntervalDays: 0,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = store.AttachSeriesToView(ctx, series, view, types.InsightViewSeriesMetadata{
+		Label:  "label1",
+		Stroke: "blue",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	t.Run("delete view and check length", func(t *testing.T) {
+		got, err := store.Get(ctx, InsightQueryArgs{})
+		if err != nil {
+			t.Fatal(err)
+		}
+		if len(got) < 1 {
+			t.Errorf("expected results before deleting view")
+		}
+		err = store.DeleteViewByUniqueID(ctx, uniqueID)
+		if err != nil {
+			t.Fatal(err)
+		}
+		got, err = store.Get(ctx, InsightQueryArgs{})
+		if err != nil {
+			t.Fatal(err)
+		}
+		if len(got) != 0 {
+			t.Errorf("expected results after deleting view")
+		}
+	})
+}
+
 func TestAttachSeriesView(t *testing.T) {
 	timescale, cleanup := insightsdbtesting.TimescaleDB(t)
 	defer cleanup()
