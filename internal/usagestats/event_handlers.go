@@ -169,26 +169,23 @@ func publishAmplitudeEvent(args Event) error {
 		userID = fmt.Sprintf("%06d", args.UserID)
 	}
 
+	userProperties, err := getAmplitudeUserProperties(args)
+	if err != nil {
+		return err
+	}
+
 	amplitudeEvent, err := json.Marshal(amplitudeEventJson{
 		APIKey: amplitudeAPIToken,
 		Events: []amplitudeEvent{{
 			UserID: userID,
-			// TODO(FARHAN): Need to store this in context or cookie
+			// TODO(FARHAN): Need to store this in context or cookie and pull it each time. Perhaps send with event from
+			// the client side.
 			DeviceID:        fmt.Sprintf(`%s-%d`, string(args.UserID), time.Now().Unix()),
 			EventType:       args.EventName,
 			EventProperties: args.PublicArgument,
+			UserProperties:  userProperties,
 			Time:            time.Now().Unix(),
 		}},
-
-		// AnonymousUserID: args.UserCookieID,
-		// FirstSourceURL:  firstSourceURL,
-		// Referrer:        referrer,
-		// Source:          args.Source,
-		// Timestamp:       time.Now().UTC().Format(time.RFC3339),
-		// Version:         version.Version(),
-		// FeatureFlags:    string(featureFlagJSON),
-		// CohortID:        args.CohortID,
-		// PublicArgument:  string(args.PublicArgument),
 	})
 	if err != nil {
 		return err
@@ -198,9 +195,50 @@ func publishAmplitudeEvent(args Event) error {
 
 }
 
-func createAmplitudeEventProperties(publicArguments string) json.RawMessage {
-	// Existing Properties that could be in Event Props:
-	// * Version,
+// AnonymousUserID: args.UserCookieID,
+// FirstSourceURL:  firstSourceURL,
+// Referrer:        referrer,
+// Timestamp:       time.Now().UTC().Format(time.RFC3339),
+// FeatureFlags:    string(featureFlagJSON),
+// CohortID:        args.CohortID,
+// NumberOfReposAdded
+// HasAddedRepos
+// NumberPublicReposAdded
+// NumberPrivateReposAdded
+// ActiveCodeHost
+// CohortWeek
+// IsSourcegraphTeammate
+// Feature Flag - w0SignupOptimization, w1SignupOptimization, SearchNotebookOnboarding
+type AmplitudeUserProperties struct {
+	AnonymousUserID string              `json:"anonymous_user_id"`
+	FirstSourceURL  string              `json:"first_source_url"`
+	FeatureFlags    featureflag.FlagSet `json:"feature_flags"`
+	CohortID        *string             `json:"cohort_id,omitempty"`
+	Referrer        string              `json:"referrer,omitempty"`
+}
+
+func getAmplitudeUserProperties(args Event) (json.RawMessage, error) {
+	firstSourceURL := ""
+	if args.FirstSourceURL != nil {
+		firstSourceURL = *args.FirstSourceURL
+	}
+	referrer := ""
+	if args.Referrer != nil {
+		referrer = *args.Referrer
+	}
+
+	userProperties, err := json.Marshal(AmplitudeUserProperties{
+		AnonymousUserID: args.UserCookieID,
+		FirstSourceURL:  firstSourceURL,
+		Referrer:        referrer,
+		CohortID:        args.CohortID,
+		FeatureFlags:    args.FeatureFlags,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return userProperties, nil
 }
 
 // logLocalEvent logs users events.
