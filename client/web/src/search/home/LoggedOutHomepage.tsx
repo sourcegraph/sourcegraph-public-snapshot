@@ -72,7 +72,7 @@ const SearchExamples: React.FunctionComponent<SearchExamplesProps> = ({
 
 export const LoggedOutHomepage: React.FunctionComponent<LoggedOutHomepageProps> = props => {
     const onSignUpClick = useCallback(() => {
-        props.telemetryService.log('HomepageCTAClicked')
+        props.telemetryService.log('HomepageCTAClicked', { campaign: 'Sign up link' }, { campaign: 'Sign up link' })
     }, [props.telemetryService])
 
     return (

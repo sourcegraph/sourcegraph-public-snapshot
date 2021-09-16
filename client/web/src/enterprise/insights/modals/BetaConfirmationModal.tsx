@@ -1,8 +1,8 @@
 import { DialogContent, DialogOverlay } from '@reach/dialog'
-import React from 'react'
+import React, { useRef } from 'react'
 import { useHistory } from 'react-router'
 
-import { Button } from '@sourcegraph/wildcard'
+import { Button, useAutoFocus } from '@sourcegraph/wildcard'
 
 import { useTemporarySetting } from '../../../settings/temporary/useTemporarySetting'
 
@@ -46,9 +46,12 @@ interface BetaConfirmationModalContentProps {
  */
 export const BetaConfirmationModalContent: React.FunctionComponent<BetaConfirmationModalContentProps> = props => {
     const { onAccept, onDismiss } = props
+    const dismissButtonReference = useRef<HTMLButtonElement>(null)
+
+    useAutoFocus({ autoFocus: true, reference: dismissButtonReference })
 
     return (
-        <DialogContent className={styles.content}>
+        <DialogContent aria-label="Code Insights Beta information" className={styles.content}>
             <h1 className={styles.title}>Welcome to the Code Insights Beta!</h1>
 
             <div className={styles.mediaHeroContent}>
@@ -70,20 +73,24 @@ export const BetaConfirmationModalContent: React.FunctionComponent<BetaConfirmat
 
                 <p>
                     We're still polishing Code Insights and you might find bugs while we’re in beta. Please{' '}
-                    <a href="https://docs.sourcegraph.com/code_insights" target="_blank" rel="noopener">
+                    <a
+                        href="https://docs.sourcegraph.com/code_insights#code-insights-beta"
+                        target="_blank"
+                        rel="noopener"
+                    >
                         share any bugs 🐛 or feedback
                     </a>{' '}
                     to help us make Code Insights better.
                 </p>
 
                 <p>
-                    Code Insights is <b>free and in beta through 2021</b>. When Code Insights is officially released,
+                    Code Insights is <b>free while in beta through 2021</b>. When Code Insights is officially released,
                     continued use may require a separate paid plan (at which time we’d notify you again).
                 </p>
             </div>
 
             <footer className={styles.actions}>
-                <Button variant="secondary" outline={true} onClick={onDismiss}>
+                <Button ref={dismissButtonReference} variant="secondary" outline={true} onClick={onDismiss}>
                     Maybe later
                 </Button>
 
