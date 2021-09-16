@@ -31,6 +31,7 @@ import { CodeMonitoringProps } from '../code-monitoring'
 import { CodeMonitoringLogo } from '../code-monitoring/CodeMonitoringLogo'
 import { BrandLogo } from '../components/branding/BrandLogo'
 import { CodeInsightsProps } from '../insights/types'
+import { isCodeInsightsEnabled } from '../insights/utils/is-code-insights-enabled'
 import {
     KeyboardShortcutsProps,
     KEYBOARD_SHORTCUT_SHOW_COMMAND_PALETTE,
@@ -182,11 +183,9 @@ export const GlobalNavbar: React.FunctionComponent<Props> = ({
         props.showSearchContext,
     ])
 
-    const settings = !isErrorLike(props.settingsCascade.final) ? props.settingsCascade.final : null
-    const codeInsights =
-        codeInsightsEnabled &&
-        settings?.experimentalFeatures?.codeInsights &&
-        settings?.['insights.displayLocation.insightsPage'] !== false
+    // CodeInsightsEnabled props controls insights appearance over OSS and Enterprise version
+    // isCodeInsightsEnabled selector controls appearance based on user settings flags
+    const codeInsights = props.authenticatedUser && codeInsightsEnabled && isCodeInsightsEnabled(props.settingsCascade)
 
     const searchNavBar = (
         <SearchNavbarItem

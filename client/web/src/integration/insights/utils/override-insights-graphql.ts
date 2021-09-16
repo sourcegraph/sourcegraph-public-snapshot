@@ -48,6 +48,11 @@ export function overrideGraphQLExtensions(props: OverrideGraphQLExtensionsProps)
 
     testContext.overrideGraphQL({
         ...commonWebGraphQlResults,
+        // Mock temporary settings cause code insights beta modal UI relies on this handler to show/hide
+        // modal UI on all code insights related pages.
+        GetTemporarySettings: () => ({
+            temporarySettings: { contents: JSON.stringify({ 'insights.freeBetaAccepted': true }) },
+        }),
         Insights: () => ({ insights: { nodes: [] } }),
         CurrentAuthState: () => ({
             currentUser: {

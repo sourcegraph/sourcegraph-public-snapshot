@@ -2,25 +2,12 @@ import { gql } from '@apollo/client'
 import { createMockClient } from '@apollo/client/testing'
 import { renderHook, act } from '@testing-library/react-hooks'
 import React from 'react'
-import { Observable, of } from 'rxjs'
 
-import { TemporarySettings } from './TemporarySettings'
 import { TemporarySettingsContext } from './TemporarySettingsProvider'
-import { SettingsBackend, TemporarySettingsStorage } from './TemporarySettingsStorage'
+import { InMemoryMockSettingsBackend, TemporarySettingsStorage } from './TemporarySettingsStorage'
 import { useTemporarySetting } from './useTemporarySetting'
 
 describe('useTemporarySetting', () => {
-    class InMemoryMockSettingsBackend implements SettingsBackend {
-        constructor(private settings: TemporarySettings) {}
-        public load(): Observable<TemporarySettings> {
-            return of(this.settings)
-        }
-        public save(settings: TemporarySettings): Observable<void> {
-            this.settings = settings
-            return of()
-        }
-    }
-
     const mockClient = createMockClient(
         null,
         gql`

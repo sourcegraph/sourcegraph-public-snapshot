@@ -30,7 +30,7 @@ export function isCodeInsightsEnabled(
     const viewsKeys = Object.keys(views) as (keyof CodeInsightsDisplayLocation)[]
     const experimentalFeatures: SettingsExperimentalFeatures = final?.experimentalFeatures ?? {}
 
-    if (!experimentalFeatures.codeInsights) {
+    if (experimentalFeatures.codeInsights === false) {
         return false
     }
 
