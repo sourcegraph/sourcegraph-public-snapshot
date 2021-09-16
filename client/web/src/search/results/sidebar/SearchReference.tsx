@@ -18,7 +18,7 @@ import { useLocalStorage } from '@sourcegraph/shared/src/util/useLocalStorage'
 
 import { QueryChangeSource } from '../../helpers'
 import { createQueryExampleFromString, updateQueryWithFilterAndExample, QueryExample } from '../../helpers/queryExample'
-import { NavbarQueryState } from '../..//navbarSearchQueryState'
+import { NavbarQueryState } from '../../navbarSearchQueryState'
 
 import styles from './SearchReference.module.scss'
 import sidebarStyles from './SearchSidebarSection.module.scss'

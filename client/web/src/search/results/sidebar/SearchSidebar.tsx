@@ -42,7 +42,15 @@ export enum SectionID {
     REVISIONS = 'revisions',
 }
 
-const selectFromQueryState = ({ queryState: { query }, setQueryState, submitSearch }: NavbarQueryState) => ({
+const selectFromQueryState = ({
+    queryState: { query },
+    setQueryState,
+    submitSearch,
+}: NavbarQueryState): {
+    query: string
+    setQueryState: NavbarQueryState['setQueryState']
+    submitSearch: NavbarQueryState['submitSearch']
+} => ({
     query,
     setQueryState,
     submitSearch,
@@ -56,14 +64,14 @@ export const SearchSidebar: React.FunctionComponent<SearchSidebarProps> = props 
     const toggleFilter = useCallback(
         (value: string) =>
             submitSearch(query => toggleSearchFilter(query, value), { ...props, source: 'filter', history }),
-        [history, props]
+        [history, props, submitSearch]
     )
 
     // Unlike onFilterClicked, this function will always append or update a filter
     const updateOrAppendFilter = useCallback(
         (filter: string, value: string) =>
             submitSearch(query => updateFilter(query, filter, value), { ...props, source: 'filter', history }),
-        [history, props]
+        [history, props, submitSearch]
     )
 
     const onDynamicFilterClicked = useCallback(
@@ -136,7 +144,7 @@ export const SearchSidebar: React.FunctionComponent<SearchSidebarProps> = props 
                         caseSensitive: props.caseSensitive,
                         onNavbarQueryChange: setQueryState,
                         patternType: props.patternType,
-                        query: query,
+                        query,
                         versionContext: props.versionContext,
                         selectedSearchContextSpec: props.selectedSearchContextSpec,
                     })}
