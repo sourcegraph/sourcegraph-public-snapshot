@@ -1,8 +1,8 @@
 import { DialogContent, DialogOverlay } from '@reach/dialog'
-import React from 'react'
+import React, { useRef } from 'react'
 import { useHistory } from 'react-router'
 
-import { Button } from '@sourcegraph/wildcard'
+import { Button, useAutoFocus } from '@sourcegraph/wildcard'
 
 import { useTemporarySetting } from '../../../settings/temporary/useTemporarySetting'
 
@@ -46,9 +46,12 @@ interface BetaConfirmationModalContentProps {
  */
 export const BetaConfirmationModalContent: React.FunctionComponent<BetaConfirmationModalContentProps> = props => {
     const { onAccept, onDismiss } = props
+    const dismissButtonReference = useRef<HTMLButtonElement>(null)
+
+    useAutoFocus({ autoFocus: true, reference: dismissButtonReference })
 
     return (
-        <DialogContent className={styles.content}>
+        <DialogContent aria-label="Code Insights Beta information" className={styles.content}>
             <h1 className={styles.title}>Welcome to the Code Insights Beta!</h1>
 
             <div className={styles.mediaHeroContent}>
@@ -87,7 +90,7 @@ export const BetaConfirmationModalContent: React.FunctionComponent<BetaConfirmat
             </div>
 
             <footer className={styles.actions}>
-                <Button variant="secondary" outline={true} onClick={onDismiss}>
+                <Button ref={dismissButtonReference} variant="secondary" outline={true} onClick={onDismiss}>
                     Maybe later
                 </Button>
 
