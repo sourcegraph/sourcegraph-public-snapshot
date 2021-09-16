@@ -26,7 +26,7 @@ export const BetaConfirmationModal: React.FunctionComponent = () => {
     return (
         <DialogOverlay className={styles.overlay}>
             <DialogContent className={styles.content}>
-                <h1 className={styles.title}>Welcome to Code Insights Free Beta!</h1>
+                <h1 className={styles.title}>Welcome to the Code Insights Beta!</h1>
 
                 <div className={styles.mediaHeroContent}>
                     <ThreeLineChart className={styles.chart} />
@@ -36,27 +36,26 @@ export const BetaConfirmationModal: React.FunctionComponent = () => {
 
                 <div className={styles.textContent}>
                     <p>
-                        <b>🥁 We’re introducing Code Insights</b>, the first code analytics tool that can tell you
-                        things about your code base at a <b>high level</b>!
+                        <b>🥁 We’re introducing Code Insights</b>: a new analytics tool that lets you track and
+                        understand what’s in your code and how it changes <b>over time</b>!
                     </p>
 
                     <p>
-                        Code Insights are based on our universal code search, making them <b>incredibly accurate</b>.
-                        Track anything that can be expressed with Sourcegraph search query: migrations, usage of
-                        packages and much much more.
+                        Track anything that can be expressed with a Sourcegraph search query: migrations, package
+                        use, version adoption, code smells, codebase size, and more, across 1,000s of repositories.
                     </p>
 
                     <p>
-                        We're still polishing Insights and you may experience some issues while in beta.{' '}
+                        We're still polishing Code Insights and you might find bugs while we’re in beta. Please{' '}
                         <a href="https://docs.sourcegraph.com/code_insights" target="_blank" rel="noopener">
-                            Share any bugs 🐛 or feedback
+                            share any bugs 🐛 or feedback
                         </a>{' '}
                         to help us make Code Insights better.
                     </p>
 
                     <p>
-                        Code Insights are <b>free and in beta through 2021</b>. In 2022, Code Insights may be included
-                        in a separate paid plan.
+                        Code Insights is <b>free and in beta through 2021</b>. When Code Insights is officially released,
+                        continued use may require a separate paid plan (at which time we’d notify you again).
                     </p>
                 </div>
 
@@ -66,7 +65,7 @@ export const BetaConfirmationModal: React.FunctionComponent = () => {
                     </Button>
 
                     <Button variant="primary" onClick={handleAcceptClick}>
-                        Understood, let's try it!
+                        Understood, let’s go!
                     </Button>
                 </footer>
             </DialogContent>
