@@ -94,7 +94,7 @@ func viewPermissionsQuery(args InsightQueryArgs) *sqlf.Query {
 	}
 	permsPreds = append(permsPreds, sqlf.Sprintf("ivg.global is true"))
 
-	return sqlf.Sprintf("(%s)", sqlf.Join(permsPreds, " OR "))
+	return sqlf.Sprintf("(%s)", sqlf.Join(permsPreds, "OR"))
 }
 
 func (s *InsightStore) GetMapped(ctx context.Context, args InsightQueryArgs) ([]types.Insight, error) {
