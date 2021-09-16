@@ -84,8 +84,7 @@ export class SearchCommand {
         }
 
         // Note: this is done in order to blur browser omnibox and set focus on page
-        await browser.tabs.remove(currentTab.id)
-        await browser.tabs.create(props)
+        await Promise.all([browser.tabs.create(props), browser.tabs.remove(currentTab.id)])
     }
 
     private lastSourcegraphUrl = ''
