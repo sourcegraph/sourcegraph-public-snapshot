@@ -272,7 +272,14 @@ func open(cfg *pgx.ConnConfig) (*sql.DB, error) {
 	cfgKey := stdlib.RegisterConnConfig(cfg)
 
 	registerOnce.Do(func() {
-		sql.Register("postgres-proxy", sqlhooks.Wrap(stdlib.GetDefaultDriver(), &hook{}))
+		m := promauto.NewCounterVec(prometheus.CounterOpts{
+			Name: "src_pgsql_request_total",
+			Help: "Total number of SQL requests to the database.",
+		}, []string{"type"})
+		sql.Register("postgres-proxy", sqlhooks.Wrap(stdlib.GetDefaultDriver(), &hook{
+			metricSQLSuccessTotal: m.WithLabelValues("success"),
+			metricSQLErrorTotal:   m.WithLabelValues("error"),
+		}))
 	})
 	db, err := sql.Open("postgres-proxy", cfgKey)
 	if err != nil {
@@ -313,7 +320,10 @@ func WithBulkInsertion(ctx context.Context, bulkInsertion bool) context.Context 
 	return context.WithValue(ctx, bulkInsertionKey, bulkInsertion)
 }
 
-type hook struct{}
+type hook struct {
+	metricSQLSuccessTotal prometheus.Counter
+	metricSQLErrorTotal   prometheus.Counter
+}
 
 // postgresBulkInsertRowsPattern matches `($1, $2, $3), ($4, $5, $6), ...` which
 // we use to cut out the row payloads from bulk insertion tracing data. We don't
@@ -366,7 +376,7 @@ func (h *hook) After(ctx context.Context, query string, args ...interface{}) (co
 	if tr := trace.TraceFromContext(ctx); tr != nil {
 		tr.Finish()
 	}
-	metricSQLSuccessTotal.Inc()
+	h.metricSQLSuccessTotal.Inc()
 	return ctx, nil
 }
 
@@ -376,7 +386,7 @@ func (h *hook) OnError(ctx context.Context, err error, query string, args ...int
 		tr.SetError(err)
 		tr.Finish()
 	}
-	metricSQLErrorTotal.Inc()
+	h.metricSQLErrorTotal.Inc()
 	return err
 }
 
@@ -395,15 +405,4 @@ func configureConnectionPool(db *sql.DB) {
 	db.SetMaxOpenConns(maxOpen)
 	db.SetMaxIdleConns(maxOpen)
 	db.SetConnMaxIdleTime(time.Minute)
-}
-
-var metricSQLSuccessTotal, metricSQLErrorTotal prometheus.Counter
-
-func init() {
-	m := promauto.NewCounterVec(prometheus.CounterOpts{
-		Name: "src_pgsql_request_total",
-		Help: "Total number of SQL requests to the database.",
-	}, []string{"type"})
-	metricSQLSuccessTotal = m.WithLabelValues("success")
-	metricSQLErrorTotal = m.WithLabelValues("error")
 }
