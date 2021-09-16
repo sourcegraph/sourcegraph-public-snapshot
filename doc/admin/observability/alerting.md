@@ -41,6 +41,21 @@ Once configured, Sourcegraph alerts will automatically be routed to the appropri
 ]
 ```
 
+#### Mattermost 
+
+```json
+"observability.alerts": [
+  {
+    "level": "critical",
+    "notifier": {
+      "type": "mattermost",
+      // Mattermost incoming webhook URL - replace [SERVERNAME] below with name of your self-managed Mattermost server
+      "url": "https://[SERVERNAME]/services/xxxxxxxxx/xxxxxxxxxxx/xxxxxxxxxxxxxxxxxxxxxxxx",
+    }
+  }
+]
+```
+
 #### PagerDuty
 
 ```json
