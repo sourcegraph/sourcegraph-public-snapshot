@@ -364,7 +364,7 @@ type CampaignSpec implements Node {
     The URL of a web page that allows applying this campaign spec and
     displays a preview of which changesets will be created by applying it.
     """
-    applyURL: String!
+    applyURL: String
 
     """
     When true, the viewing user can apply this spec.
@@ -2257,7 +2257,7 @@ extend type Mutation {
     Cancel a single workspace execution. Mostly useful in the "try out" UI, but
     can also be used at later stages. Must be in PROCESSING or QUEUED state.
     """
-    cancelBatchSpecWorkspaceExecution(batchSpecWorkspace: ID!): EmptyResponse!
+    cancelBatchSpecWorkspaceExecution(batchSpecWorkspaces: [ID!]!): EmptyResponse!
 
     """
     Requeue the workspaces for execution. Previous results and logs will be deleted and
@@ -2278,7 +2278,7 @@ extend type Mutation {
     not be in a final state. This can be used for running single workspaces before
     running the full set.
     """
-    enqueueBatchSpecWorkspaceExecution(batchSpecWorkspace: ID!): EmptyResponse!
+    enqueueBatchSpecWorkspaceExecution(batchSpecWorkspaces: [ID!]!): EmptyResponse!
 
     """
     Sets the autoApplyEnabled on the given batch spec. Must be in PROCESSING state.
@@ -2593,7 +2593,7 @@ type BatchSpecWorkspaceStep {
     The output logs, prefixed with either "stdout " or "stderr ". Null, if the
     step has not run yet.
     """
-    outputLines(first: Int = 50000): [String!]
+    outputLines(first: Int = 50000, after: Int): [String!]
 
     startedAt: DateTime
     finishedAt: DateTime
