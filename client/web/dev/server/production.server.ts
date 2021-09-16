@@ -28,8 +28,8 @@ async function startProductionServer(): Promise<void> {
 
     const app = express()
 
-    // // Compress all HTTP responses
-    // app.use(compression())
+    // Compress all HTTP responses
+    app.use(compression())
     // Serve index.html in place of any 404 responses.
     app.use(historyApiFallback() as RequestHandler)
     // Attach `CSRF_COOKIE_NAME` cookie to every response to avoid "CSRF token is invalid" API error.

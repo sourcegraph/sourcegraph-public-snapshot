@@ -18,8 +18,6 @@ jobs:
       - name: Build
         env:
           NODE_ENV: production
-          WEBPACK_SERVE_INDEX: true
-          SOURCEGRAPH_API_URL: https://sourcegraph.com
         run: yarn workspace @sourcegraph/web run build
 
       - name: Run
