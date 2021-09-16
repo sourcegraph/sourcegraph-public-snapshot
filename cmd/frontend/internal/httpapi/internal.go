@@ -328,27 +328,27 @@ func (h *reposListServer) serveIndex(w http.ResponseWriter, r *http.Request) err
 		}
 	}
 
+	// TODO: Avoid batching up so much in memory by:
+	// 1. Changing the schema from object of arrays to array of objects.
+	// 2. Stream out each object marshalled rather than marshall the full list in memory.
+
+	names := make([]string, 0, len(indexable))
+	ids := make([]api.RepoID, 0, len(indexable))
+
+	for _, r := range indexable {
+		names = append(names, string(r.Name))
+		ids = append(ids, r.ID)
+	}
+
 	data := struct {
 		RepoNames []string
+		RepoIDs   []api.RepoID
 	}{
-		RepoNames: repoNames(indexable),
+		RepoNames: names,
+		RepoIDs:   ids,
 	}
 
-	w.WriteHeader(http.StatusOK)
 	return json.NewEncoder(w).Encode(&data)
-}
-
-func repoNames(rs []types.RepoName) []string {
-	if len(rs) == 0 {
-		return nil
-	}
-
-	names := make([]string, len(rs))
-	for i := range rs {
-		names[i] = string(rs[i].Name)
-	}
-
-	return names
 }
 
 func max(a, b int) int {
