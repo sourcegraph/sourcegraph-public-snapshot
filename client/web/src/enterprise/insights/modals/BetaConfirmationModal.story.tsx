@@ -1,6 +1,6 @@
 import { gql } from '@apollo/client'
 import { createMockClient } from '@apollo/client/testing'
-import { storiesOf } from '@storybook/react'
+import { Meta } from '@storybook/react'
 import { noop } from 'lodash'
 import React from 'react'
 
@@ -13,10 +13,6 @@ import { EnterpriseWebStory } from '../../components/EnterpriseWebStory'
 
 import { BetaConfirmationModal, BetaConfirmationModalContent } from './BetaConfirmationModal'
 
-const { add } = storiesOf('web/insights/BetaConfirmationModal', module).addDecorator(story => (
-    <div className="p-3 container web-content">{story()}</div>
-))
-
 const mockClient = createMockClient(
     { contents: JSON.stringify({}) },
     gql`
@@ -28,25 +24,32 @@ const mockClient = createMockClient(
     `
 )
 
-add('Code Insights Beta modal UI', () => {
+const Story: Meta = {
+    title: 'web/insights/BetaConfirmationModal',
+    decorators: [
+        story => (
+            <EnterpriseWebStory>{() => <div className="p-3 container web-content">{story()}</div>}</EnterpriseWebStory>
+        ),
+    ],
+}
+
+export default Story
+
+export const BetaModalUI: React.FunctionComponent = () => {
     const settingsStorage = new TemporarySettingsStorage(mockClient, true)
 
     settingsStorage.setSettingsBackend(new InMemoryMockSettingsBackend({}))
 
     return (
-        <EnterpriseWebStory>
-            {() => (
-                <TemporarySettingsContext.Provider value={settingsStorage}>
-                    <div>
-                        <h2>Some content</h2>
-                        <BetaConfirmationModal />
-                    </div>
-                </TemporarySettingsContext.Provider>
-            )}
-        </EnterpriseWebStory>
+        <TemporarySettingsContext.Provider value={settingsStorage}>
+            <div>
+                <h2>Some content</h2>
+                <BetaConfirmationModal />
+            </div>
+        </TemporarySettingsContext.Provider>
     )
-})
+}
 
-add('Code Insights modal content', () => (
-    <EnterpriseWebStory>{() => <BetaConfirmationModalContent onAccept={noop} onDismiss={noop} />}</EnterpriseWebStory>
-))
+export const BetaModalContent: React.FunctionComponent = () => (
+    <BetaConfirmationModalContent onAccept={noop} onDismiss={noop} />
+)
