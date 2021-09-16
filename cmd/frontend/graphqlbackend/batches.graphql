@@ -2104,6 +2104,12 @@ extend type Mutation {
         TODO: Not implemented yet.
         """
         noCache: Boolean = false
+        """
+        Right away set the autoApplyEnabled flag on the batch spec.
+
+        TODO: Not implemented yet.
+        """
+        autoApply: Boolean = false
     ): BatchSpec!
 
     """
@@ -2399,12 +2405,17 @@ type BatchSpecWorkspaceResolution {
 
     """
     If true, repos with a .batchignore file will still be included.
+
+    TODO: Determine if this is required, or if we want to switch this over to
+    the spec file instead.
     """
     allowIgnored: Boolean!
 
     """
     If true, repos on unsupported codehosts will be included. These cannot
     be published.
+
+    TODO: Determine if this is required.
     """
     allowUnsupported: Boolean!
 
@@ -2424,14 +2435,10 @@ type BatchSpecWorkspaceResolution {
     unsupported: RepositoryConnection!
 
     """
-    The list of repos that are ignored.
-    """
-    ignored: RepositoryConnection!
-
-    """
     Returns the workspaces where most recently a step completed that yielded a diff.
     """
     recentlyCompleted(first: Int = 50, after: String): BatchSpecWorkspaceConnection!
+
     """
     Returns the most recently failed workspace executions.
     """
@@ -2497,6 +2504,14 @@ type BatchSpecWorkspace implements Node {
     If true, only the files within the workspace will be fetched.
     """
     onlyFetchWorkspace: Boolean!
+
+    """
+    If true, this workspace has been skipped, because some rule forced this.
+    For now, the only one is a .batchignore file existing in the repository.
+
+    TODO: Not yet implemented.
+    """
+    ignored: Boolean!
 
     """
     Whether we found a task cache result.
@@ -2574,9 +2589,11 @@ type BatchSpecWorkspaceStep {
     """
     skipped: Boolean!
 
-    # TODO: Should these be separate? It's kinda hard to intertwine them then.
-    stdout: String
-    stderr: String
+    """
+    The output logs, prefixed with either "stdout " or "stderr ". Null, if the
+    step has not run yet.
+    """
+    outputLines(first: Int = 50000): [String!]
 
     startedAt: DateTime
     finishedAt: DateTime
@@ -3178,6 +3195,15 @@ type BatchSpec implements Node {
     Null, if the batch spec was created in COMPLETED state.
     """
     workspaceResolution: BatchSpecWorkspaceResolution
+
+    """
+    The set of changeset specs for importing changesets, as determined from the
+    raw spec.
+    Null, if not created through createBatchSpecFromRaw.
+
+    TODO: Not yet implemented.
+    """
+    importingChangesets(first: Int = 50, after: String, search: String): ChangesetSpecConnection
 
     """
     Set when something about this batch spec is not right. For example, the input spec
