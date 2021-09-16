@@ -1,4 +1,4 @@
-import { persistenceMapper, QUERIES_TO_PERSIST, ROOT_QUERY_KEY, CacheObject } from './persistenceMapper'
+import { persistenceMapper, ROOT_QUERY_KEY, CacheObject } from './persistenceMapper'
 
 describe('persistenceMapper', () => {
     const userKey = 'User:01'
@@ -30,7 +30,7 @@ describe('persistenceMapper', () => {
             })
         )
 
-        expect(Object.keys(parseCacheString(persistedString).ROOT_QUERY)).toEqual(['__typename', ...QUERIES_TO_PERSIST])
+        expect(Object.keys(parseCacheString(persistedString).ROOT_QUERY)).not.toContain('shouldNotBePersisted')
     })
 
     it('persists cache references', async () => {
