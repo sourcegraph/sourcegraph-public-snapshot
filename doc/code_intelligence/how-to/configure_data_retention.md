@@ -10,6 +10,8 @@ Each policy has a number of configurable options, including:
 
 Note that we also track cross-repository dependencies and will not delete any data that is referenced by another precise code intelligence index. This ensures that we don't delete code intelligence for dependencies pinned to older versions (or dependencies that have reached a steady state and no longer receives frequent updates).
 
+All upload records will be periodically compared against global and their target repository's data retention policies with the exception of uploads that provide code intelligence for the tip of the default branch. These uploads will never expire due to age.
+
 <style>
 img.screenshot {
   display: block;
