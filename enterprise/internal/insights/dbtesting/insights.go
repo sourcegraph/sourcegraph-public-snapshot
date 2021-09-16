@@ -9,8 +9,6 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/inconshreveable/log15"
-
 	"github.com/jackc/pgx/v4"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"

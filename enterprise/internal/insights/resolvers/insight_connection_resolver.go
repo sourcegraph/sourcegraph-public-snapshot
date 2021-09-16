@@ -76,7 +76,8 @@ func (r *insightConnectionResolver) compute(ctx context.Context) ([]types.Insigh
 		uid := actor.FromContext(ctx).UID
 		if uid != 0 {
 			// 🚨 SECURITY
-			// only filter user if the actor is not anonymous so that internal users of the API have super-admin like behavior
+			// only add users / orgs if the user is non-anonymous. This will restrict anonymous users to only see
+			// insights with a global grant.
 			args.UserID = []int{int(uid)}
 			orgs, err := r.orgStore.GetByUserID(ctx, uid)
 			if err != nil {

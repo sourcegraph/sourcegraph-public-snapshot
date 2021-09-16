@@ -382,6 +382,48 @@ func TestCreateGetView_WithGrants(t *testing.T) {
 		}
 		autogold.Equal(t, got, autogold.ExportedOnly())
 	})
+	t.Run("no users or orgs provided should only return global", func(t *testing.T) {
+		uniqueID := "globalonly"
+		view, err := store.CreateView(ctx, types.InsightView{
+			Title:       "global only",
+			Description: "global only",
+			UniqueID:    uniqueID,
+		}, []InsightViewGrant{GlobalGrant()})
+		if err != nil {
+			t.Fatal(err)
+		}
+		series, err := store.CreateSeries(ctx, types.InsightSeries{
+			SeriesID:              "globalseries",
+			Query:                 "global",
+			CreatedAt:             now,
+			OldestHistoricalAt:    now,
+			LastRecordedAt:        now,
+			NextRecordingAfter:    now,
+			LastSnapshotAt:        now,
+			NextSnapshotAfter:     now,
+			BackfillQueuedAt:      now,
+			RecordingIntervalDays: 0,
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+		err = store.AttachSeriesToView(ctx, series, view, types.InsightViewSeriesMetadata{
+			Label:  "label2",
+			Stroke: "red",
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		got, err := store.Get(ctx, InsightQueryArgs{})
+		if err != nil {
+			t.Fatal(err)
+		}
+		if len(got) != 1 {
+			t.Errorf("unexpected count for global only insights")
+		}
+		autogold.Equal(t, got, autogold.ExportedOnly())
+	})
 }
 
 func TestDeleteView(t *testing.T) {
