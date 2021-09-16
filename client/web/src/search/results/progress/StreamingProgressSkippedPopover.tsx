@@ -49,7 +49,7 @@ const SkippedMessage: React.FunctionComponent<{ skipped: Skipped; startOpen: boo
 
     return (
         <div
-            className={classNames('streaming-skipped-item pt-2 px-2 w-100', {
+            className={classNames('streaming-skipped-item pt-2 w-100', {
                 'streaming-skipped-item--warn': skipped.severity !== 'info',
             })}
         >
@@ -62,9 +62,9 @@ const SkippedMessage: React.FunctionComponent<{ skipped: Skipped; startOpen: boo
             >
                 <h4 className="d-flex align-items-center mb-0 w-100">
                     {skipped.severity === 'info' ? (
-                        <InformationOutlineIcon className="icon-inline mr-2 streaming-skipped-item__icon flex-shrink-0" />
+                        <InformationOutlineIcon className="icon-inline streaming-skipped-item__icon flex-shrink-0" />
                     ) : (
-                        <AlertCircleIcon className="icon-inline mr-2 streaming-skipped-item__icon flex-shrink-0" />
+                        <AlertCircleIcon className="icon-inline streaming-skipped-item__icon flex-shrink-0" />
                     )}
                     <span className="flex-grow-1 text-left">{skipped.title}</span>
 
