@@ -155,6 +155,7 @@ export const MULTIPLE_SEARCH_RESULT: AggregateStreamingSearchResults = {
                 },
             ],
             repoStars: 42,
+            repoLastFetched: '2017-01-01T00:00:00Z',
         },
     ],
 }
