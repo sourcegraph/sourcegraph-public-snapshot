@@ -70,14 +70,18 @@ export const BetaConfirmationModalContent: React.FunctionComponent<BetaConfirmat
 
                 <p>
                     We're still polishing Code Insights and you might find bugs while we’re in beta. Please{' '}
-                    <a href="https://docs.sourcegraph.com/code_insights" target="_blank" rel="noopener">
+                    <a
+                        href="https://docs.sourcegraph.com/code_insights#code-insights-beta"
+                        target="_blank"
+                        rel="noopener"
+                    >
                         share any bugs 🐛 or feedback
                     </a>{' '}
                     to help us make Code Insights better.
                 </p>
 
                 <p>
-                    Code Insights is <b>free and in beta through 2021</b>. When Code Insights is officially released,
+                    Code Insights is <b>free while in beta through 2021</b>. When Code Insights is officially released,
                     continued use may require a separate paid plan (at which time we’d notify you again).
                 </p>
             </div>
