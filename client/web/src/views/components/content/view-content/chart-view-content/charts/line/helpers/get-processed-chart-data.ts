@@ -70,6 +70,7 @@ export function getProcessedChartData<Datum extends object>(
  * Filters series data list, preserves null value at the beginning of the series data list
  * and removes null value between the points.
  *
+ * ```
  * Null value ▽   Real point ■                  Null value ▽   Real point ■
  * ┌────────────────────────────────────┐       ┌────────────────────────────────────┐
  * │░░░░░░░░░░░░░░░                     │       │░░░░░░░░░░░░░░░                     │
@@ -82,6 +83,7 @@ export function getProcessedChartData<Datum extends object>(
  * │░░░▽░░░░░░░░░░░                     │       │░░░▽░░░░░░░░░░░                     │
  * │░░░░░░░░░░░░░░░             ▽       │       │░░░░░░░░░░░░░░░                     │
  * └────────────────────────────────────┘       └────────────────────────────────────┘
+ *```
  *
  * @param data - Series data list
  */
