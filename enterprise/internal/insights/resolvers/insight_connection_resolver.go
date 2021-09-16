@@ -7,6 +7,10 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/sourcegraph/sourcegraph/internal/database"
+
+	"github.com/sourcegraph/sourcegraph/internal/actor"
+
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
@@ -20,6 +24,7 @@ var _ graphqlbackend.InsightConnectionResolver = &insightConnectionResolver{}
 type insightConnectionResolver struct {
 	insightsStore        store.Interface
 	workerBaseStore      *basestore.Store
+	orgStore             *database.OrgStore
 	insightMetadataStore store.InsightMetadataStore
 
 	// arguments from query
@@ -67,7 +72,26 @@ func (r *insightConnectionResolver) PageInfo(ctx context.Context) (*graphqlutil.
 
 func (r *insightConnectionResolver) compute(ctx context.Context) ([]types.Insight, int64, error) {
 	r.once.Do(func() {
-		mapped, err := r.insightMetadataStore.GetMapped(ctx, store.InsightQueryArgs{UniqueIDs: r.ids})
+		args := store.InsightQueryArgs{UniqueIDs: r.ids}
+		uid := actor.FromContext(ctx).UID
+		if uid != 0 {
+			// 🚨 SECURITY
+			// only add users / orgs if the user is non-anonymous. This will restrict anonymous users to only see
+			// insights with a global grant.
+			args.UserID = []int{int(uid)}
+			orgs, err := r.orgStore.GetByUserID(ctx, uid)
+			if err != nil {
+				r.err = err
+				return
+			}
+			orgIDs := make([]int, 0, len(orgs))
+			for _, org := range orgs {
+				orgIDs = append(orgIDs, int(org.ID))
+			}
+			args.OrgID = orgIDs
+		}
+
+		mapped, err := r.insightMetadataStore.GetMapped(ctx, args)
 		if err != nil {
 			r.err = err
 			return
