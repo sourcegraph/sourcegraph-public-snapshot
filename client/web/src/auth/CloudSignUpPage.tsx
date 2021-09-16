@@ -18,7 +18,7 @@ interface Props extends ThemeProps, TelemetryProps {
     showEmailForm: boolean
     /** Called to perform the signup on the server. */
     onSignUp: (args: SignUpArguments) => Promise<void>
-    context: Pick<SourcegraphContext, 'authProviders'>
+    context: Pick<SourcegraphContext, 'authProviders' | 'experimentalFeatures'>
 }
 
 const SourceToTitleMap = {
@@ -69,7 +69,7 @@ export const CloudSignUpPage: React.FunctionComponent<Props> = ({
     )
 
     const maybeRedirectToWelcome = (url?: string): string =>
-        url ? `${url}${window.context.experimentalFeatures.enablePostSignupFlow ? '&redirect=/welcome' : ''}` : ''
+        url ? `${url}${context.experimentalFeatures.enablePostSignupFlow ? '&redirect=/welcome' : ''}` : ''
 
     const sourceIsValid = source && Object.keys(SourceToTitleMap).includes(source)
     const title = sourceIsValid ? SourceToTitleMap[source as CloudSignUpSource] : SourceToTitleMap.Context // Use Context as default
