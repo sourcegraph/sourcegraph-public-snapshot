@@ -184,3 +184,21 @@ Take a look at the following links to see some examples of batch changes and the
 - [sourcegraph/batch-change-examples](https://github.com/sourcegraph/batch-change-examples)
 - [k8s.sgdev.org/batch-changes](https://k8s.sgdev.org/batch-changes)
 - [Batch Changes tutorials](https://docs.sourcegraph.com/batch_changes/tutorials)
+
+## Server-side batch changes
+
+### Database tables
+
+There are currently (Sept '21) four tables at the heart of the server-side execution of batch specs:
+
+**`batch_specs`**. These are the `batch_specs` we already have, but in server-side mode they are created through a special mutation that also creates a `batch_spec_resolution_job`, see below.
+
+**`batch_spec_resolution_jobs`**. These are [worker jobs](../workers.md) that are created through the GraphQL when a user wants to kick of a server-side execution. Once a `batch_spec_resolution_job` is created a worker will pick them up, load the corresponding `batch_spec` and resolve its `on` part into `RepoWorkspaces`: a combination of repository, commit, path, steps, branch, etc. For each `RepoWorkspace` they create a `batch_spec_workspace` in the database.
+
+**`batch_spec_workspace`**. Each `batch_spec_workspace` represents a unit of work for a [`src batch exec`](https://github.com/sourcegraph/src-cli/pull/608) invocation inside the executor. Once `src batch exec` has successfully executed, these `batch_spec_workspaces` will contain references to `changeset_specs` and those in turn will be updated to point to the `batch_spec` that kicked all of this off.
+
+**`batch_spec_workspace_execution_jobs`**. These are the worker jobs that get picked up the executor and lead to `src batch exec` being called. Each `batch_spec_workspace_execution_job` points to one `batch_spec_workspace`. This extra table lets us separate the workspace _data_ from the _execution_ of `src batch exec`. Separation of these two tables is the result of us running into tricky concurrency problems where workers were modifying table rows that the GraphQL layer was reading (or even modifying).
+
+Here's a diagram of their relationship:
+
+<img src="https://storage.googleapis.com/sourcegraph-assets/docs/images/dev/diagram.png">
