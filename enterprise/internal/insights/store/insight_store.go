@@ -352,7 +352,7 @@ func (s *InsightStore) AddViewGrants(ctx context.Context, view types.InsightView
 	for _, grant := range grants {
 		values = append(values, grant.toQuery(view.ID))
 	}
-	q := sqlf.Sprintf(AddViewGrantsSql, sqlf.Join(values, ",\n"))
+	q := sqlf.Sprintf(addViewGrantsSql, sqlf.Join(values, ",\n"))
 	err := s.Exec(ctx, q)
 	if err != nil {
 		return err
@@ -360,7 +360,7 @@ func (s *InsightStore) AddViewGrants(ctx context.Context, view types.InsightView
 	return nil
 }
 
-const AddViewGrantsSql = `
+const addViewGrantsSql = `
 -- source: enterprise/internal/insights/store/insight_store.go:AddViewGrants
 INSERT INTO insight_view_grants (insight_view_id, org_id, user_id, global)
 VALUES %s;
@@ -373,7 +373,7 @@ func (s *InsightStore) DeleteViewByUniqueID(ctx context.Context, uniqueID string
 		return errors.New("unable to delete view invalid view ID")
 	}
 	conds := sqlf.Sprintf("unique_id = %s", uniqueID)
-	q := sqlf.Sprintf(DeleteViewSql, conds)
+	q := sqlf.Sprintf(deleteViewSql, conds)
 	err := s.Exec(ctx, q)
 	if err != nil {
 		return err
@@ -381,7 +381,7 @@ func (s *InsightStore) DeleteViewByUniqueID(ctx context.Context, uniqueID string
 	return nil
 }
 
-const DeleteViewSql = `
+const deleteViewSql = `
 -- source: enterprise/internal/insights/store/insight_store.go:DeleteView
 delete from insight_view where %s;
 `
