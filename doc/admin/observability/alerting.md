@@ -48,9 +48,9 @@ Once configured, Sourcegraph alerts will automatically be routed to the appropri
   {
     "level": "critical",
     "notifier": {
-      "type": "mattermost",
+      "type": "slack",
       // Mattermost incoming webhook URL - replace [SERVERNAME] below with name of your self-managed Mattermost server
-      "url": "https://[SERVERNAME]/services/xxxxxxxxx/xxxxxxxxxxx/xxxxxxxxxxxxxxxxxxxxxxxx",
+      "url": "https://[SERVERNAME]/hooks/xxxxxxxxxxxxxxxxxxxxxxxxxx",
     }
   }
 ]
