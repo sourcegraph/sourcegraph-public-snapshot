@@ -35,7 +35,6 @@ func serveVerifyEmail(db dbutil.DB) func(w http.ResponseWriter, r *http.Request)
 			httpLogAndError(w, "Could not get current user", http.StatusUnauthorized)
 			return
 		}
-
 		email, alreadyVerified, err := database.UserEmails(db).Get(ctx, usr.ID, email)
 		if err != nil {
 			http.Error(w, fmt.Sprintf("No email %q found for user %d", email, usr.ID), http.StatusBadRequest)
@@ -46,6 +45,15 @@ func serveVerifyEmail(db dbutil.DB) func(w http.ResponseWriter, r *http.Request)
 			return
 		}
 		verified, err := database.UserEmails(db).Verify(ctx, usr.ID, email, verifyCode)
+		// Set the verified email as primary if user has no existing email
+		emails, err := database.GlobalUserEmails.ListByUser(ctx, database.UserEmailsListOptions{
+			UserID: usr.ID,
+		})
+		if verified && len(emails) == 1 {
+			if err := database.UserEmails(db).SetPrimaryEmail(ctx, usr.ID, email); err != nil {
+				return
+			}
+		}
 		if err != nil {
 			httpLogAndError(w, "Could not verify user email", http.StatusInternalServerError, "userID", usr.ID, "email", email, "error", err)
 			return
