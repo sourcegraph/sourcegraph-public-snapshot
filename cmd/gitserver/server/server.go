@@ -1454,16 +1454,19 @@ func (s *Server) cloneRepo(ctx context.Context, repo api.RepoName, opts *cloneOp
 		asyncDoCloneInvoked.Inc()
 		defer asyncDoCloneInvoked.Dec()
 
-		_, cancel, err := s.acquireCloneLimiter(ctx)
+		// Create a new context because this is in a background goroutine. The outer context's
+		// cancel will be invoked when cloneRepo returns, but we dont' want this goroutine to get
+		// cancelled. Thus a new context is required here.
+		ctx, cancel1 := s.serverContext()
+		defer cancel1()
+
+		ctx, cancel2, err := s.acquireCloneLimiter(ctx)
 		if err != nil {
 			log15.Error("failed to clone repo", "repo", repo, "error", err)
 			return
 		}
-		defer cancel()
+		defer cancel2()
 
-		// Create a new context because this is in a background goroutine.
-		ctx, cancel1 := s.serverContext()
-		defer cancel1()
 		err = s.doClone(ctx, repo, dir, syncer, lock, remoteURL, opts)
 		if err != nil {
 			log15.Error("failed to clone repo", "repo", repo, "error", err)
