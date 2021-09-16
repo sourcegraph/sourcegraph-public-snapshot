@@ -159,38 +159,40 @@ export interface RevisionsProps {
     _initialTab?: TabIndex
 }
 
-export const Revisions: React.FunctionComponent<RevisionsProps> = ({ repoName, onFilterClick, query, _initialTab }) => {
-    const [selectedTab, setSelectedTab] = useTemporarySetting('search.sidebar.revisions.tab')
-    const onRevisionFilterClick = (value: string): void => onFilterClick('rev', value)
-    return (
-        <Tabs index={_initialTab ?? selectedTab ?? 0} onChange={setSelectedTab}>
-            <TabList className={styles.sidebarSectionTabsHeader}>
-                <Tab index={TabIndex.BRANCHES}>Branches</Tab>
-                <Tab index={TabIndex.TAGS}>Tags</Tab>
-            </TabList>
-            <TabPanels>
-                <TabPanel>
-                    <RevisionList
-                        pluralNoun="branches"
-                        repoName={repoName}
-                        type={GitRefType.GIT_BRANCH}
-                        onFilterClick={onRevisionFilterClick}
-                        query={query}
-                    />
-                </TabPanel>
-                <TabPanel>
-                    <RevisionList
-                        pluralNoun="tags"
-                        repoName={repoName}
-                        type={GitRefType.GIT_TAG}
-                        onFilterClick={onRevisionFilterClick}
-                        query={query}
-                    />
-                </TabPanel>
-            </TabPanels>
-        </Tabs>
-    )
-}
+export const Revisions: React.FunctionComponent<RevisionsProps> = React.memo(
+    ({ repoName, onFilterClick, query, _initialTab }) => {
+        const [selectedTab, setSelectedTab] = useTemporarySetting('search.sidebar.revisions.tab')
+        const onRevisionFilterClick = (value: string): void => onFilterClick('rev', value)
+        return (
+            <Tabs index={_initialTab ?? selectedTab ?? 0} onChange={setSelectedTab}>
+                <TabList className={styles.sidebarSectionTabsHeader}>
+                    <Tab index={TabIndex.BRANCHES}>Branches</Tab>
+                    <Tab index={TabIndex.TAGS}>Tags</Tab>
+                </TabList>
+                <TabPanels>
+                    <TabPanel>
+                        <RevisionList
+                            pluralNoun="branches"
+                            repoName={repoName}
+                            type={GitRefType.GIT_BRANCH}
+                            onFilterClick={onRevisionFilterClick}
+                            query={query}
+                        />
+                    </TabPanel>
+                    <TabPanel>
+                        <RevisionList
+                            pluralNoun="tags"
+                            repoName={repoName}
+                            type={GitRefType.GIT_TAG}
+                            onFilterClick={onRevisionFilterClick}
+                            query={query}
+                        />
+                    </TabPanel>
+                </TabPanels>
+            </Tabs>
+        )
+    }
+)
 
 export const getRevisions = (props: Omit<RevisionsProps, 'query'>) => (query: string) => (
     <Revisions {...props} query={query} />
