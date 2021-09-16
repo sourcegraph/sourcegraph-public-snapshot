@@ -49,7 +49,7 @@
 
         // Border should appear directly under the width of the icon
         // Halfway past the icon, minus half the border size
-        margin-left: calc(#{$icon-inline-size} / 2 - #{$border-size} / 2 + 0.75rem);
+        margin-left: calc(#{$icon-inline-size} / 2 - #{$border-size} / 2 + 0.5rem);
         // Halfway past the icon, minus half the border size, plus the icon's right margin
         padding-left: calc(#{$icon-inline-size} / 2 - #{$border-size} / 2 + 0.5rem);
 
@@ -70,8 +70,8 @@
 
     &__bottom-border-spacer {
         border-bottom: 1px solid var(--border-color-2);
-        margin-left: 0.75rem;
-        margin-right: 0.75rem;
+        margin-left: 0.5rem;
+        margin-right: 0.5rem;
     }
 
     &__chevron {

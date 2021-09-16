@@ -49,12 +49,12 @@ const SkippedMessage: React.FunctionComponent<{ skipped: Skipped; startOpen: boo
 
     return (
         <div
-            className={classNames('streaming-skipped-item pt-2 w-100', {
+            className={classNames('streaming-skipped-item pt-2 px-2 w-100', {
                 'streaming-skipped-item--warn': skipped.severity !== 'info',
             })}
         >
             <Button
-                className="streaming-skipped-item__button py-2 w-100 bg-transparent border-0"
+                className="streaming-skipped-item__button p-2 w-100 bg-transparent border-0"
                 onClick={toggleIsOpen}
                 onKeyDown={onKeyDown}
                 disabled={!skipped.message}
