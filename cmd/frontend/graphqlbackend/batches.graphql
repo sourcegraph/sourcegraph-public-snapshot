@@ -2823,7 +2823,7 @@ type BatchChange implements Node {
         Opaque pagination cursor.
         """
         after: String
-    ): BulkSpecConnection!
+    ): BatchSpecConnection!
 }
 
 """
