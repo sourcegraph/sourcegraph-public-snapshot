@@ -80,7 +80,6 @@ import {
     getUserSearchContextNamespaces,
     fetchSearchContextBySpec,
 } from './search/backend'
-import { QueryState } from './search/helpers'
 import { SearchResultsCacheProvider } from './search/results/SearchResultsCacheProvider'
 import { TemporarySettingsProvider } from './settings/temporary/TemporarySettingsProvider'
 import { listUserRepositories } from './site-admin/backend'
@@ -139,11 +138,6 @@ interface SourcegraphWebAppState extends SettingsCascadeProps {
     graphqlClient?: GraphQLClient
 
     viewerSubject: LayoutProps['viewerSubject']
-
-    /**
-     * The current search query in the navbar.
-     */
-    navbarSearchQueryState: QueryState
 
     /**
      * The current parsed search query, with all UI-configurable parameters
@@ -287,7 +281,6 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
             : undefined
 
         this.state = {
-            navbarSearchQueryState: { query: '' },
             settingsCascade: EMPTY_SETTINGS_CASCADE,
             viewerSubject: SITE_SUBJECT_NO_ADMIN,
             parsedSearchQuery: parsedSearchURL.query || '',
@@ -496,8 +489,6 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
                                                         this.state.settingsCascade
                                                     )}
                                                     // Search query
-                                                    navbarSearchQueryState={this.state.navbarSearchQueryState}
-                                                    onNavbarQueryChange={this.onNavbarQueryChange}
                                                     fetchHighlightedFileLineRanges={fetchHighlightedFileLineRanges}
                                                     parsedSearchQuery={this.state.parsedSearchQuery}
                                                     setParsedSearchQuery={this.setParsedSearchQuery}
@@ -571,10 +562,6 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
                 </ErrorBoundary>
             </ApolloProvider>
         )
-    }
-
-    private onNavbarQueryChange = (navbarSearchQueryState: QueryState): void => {
-        this.setState({ navbarSearchQueryState })
     }
 
     private setParsedSearchQuery = (query: string): void => {

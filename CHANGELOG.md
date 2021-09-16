@@ -32,6 +32,7 @@ All notable changes to Sourcegraph are documented in this file.
 ### Fixed
 
 - Fixed a number of issues where repository permissions sync may fail for instances with very large numbers of repositories. [#24852](https://github.com/sourcegraph/sourcegraph/pull/24852), [#24972](https://github.com/sourcegraph/sourcegraph/pull/24972)
+- Fixed excessive re-rendering of the whole web application on every keypress in the search query input. [#24844](https://github.com/sourcegraph/sourcegraph/pull/24844)
 
 ### Removed
 

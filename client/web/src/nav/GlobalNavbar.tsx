@@ -48,8 +48,8 @@ import {
     getGlobalSearchContextFilter,
     SearchContextInputProps,
 } from '../search'
-import { QueryState } from '../search/helpers'
 import { SearchNavbarItem } from '../search/input/SearchNavbarItem'
+import { useNavbarQueryState } from '../search/navbarSearchQueryState'
 import { ThemePreferenceProps } from '../theme'
 import { userExternalServicesEnabledFromTags } from '../user/settings/cloud-ga'
 import { showDotComMarketing } from '../util/features'
@@ -79,8 +79,6 @@ interface Props
     location: H.Location<{ query: string }>
     authenticatedUser: AuthenticatedUser | null
     authRequired: boolean
-    navbarSearchQueryState: QueryState
-    onNavbarQueryChange: (queryState: QueryState) => void
     isSourcegraphDotCom: boolean
     showSearchBox: boolean
     routes: readonly LayoutRouteProps<{}>[]
@@ -112,10 +110,8 @@ interface Props
 export const GlobalNavbar: React.FunctionComponent<Props> = ({
     authRequired,
     showSearchBox,
-    navbarSearchQueryState,
     caseSensitive,
     patternType,
-    onNavbarQueryChange,
     hideNavLinks,
     variant,
     isLightTheme,
@@ -153,6 +149,8 @@ export const GlobalNavbar: React.FunctionComponent<Props> = ({
             [globalSearchContextSpec]
         )
     )
+
+    const onNavbarQueryChange = useNavbarQueryState(state => state.setQueryState)
 
     useEffect(() => {
         // On a non-search related page or non-repo page, we clear the query in
@@ -193,8 +191,6 @@ export const GlobalNavbar: React.FunctionComponent<Props> = ({
     const searchNavBar = (
         <SearchNavbarItem
             {...props}
-            navbarSearchState={navbarSearchQueryState}
-            onChange={onNavbarQueryChange}
             location={location}
             history={history}
             isLightTheme={isLightTheme}

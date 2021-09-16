@@ -24406,6 +24406,11 @@ zip-stream@^1.2.0:
     lodash "^4.8.0"
     readable-stream "^2.0.0"
 
+zustand@^3.5.10:
+  version "3.5.10"
+  resolved "https://registry.npmjs.org/zustand/-/zustand-3.5.10.tgz#d2622efd64530ffda285ee5b13ff645b68ab0faf"
+  integrity sha512-upluvSRWrlCiExu2UbkuMIPJ9AigyjRFoO7O9eUossIj7rPPq7pcJ0NKk6t2P7KF80tg/UdPX6/pNKOSbs9DEg==
+
 zwitch@^1.0.0:
   version "1.0.5"
   resolved "https://registry.npmjs.org/zwitch/-/zwitch-1.0.5.tgz#d11d7381ffed16b742f6af7b3f223d5cd9fe9920"

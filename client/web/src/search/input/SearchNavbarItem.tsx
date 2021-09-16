@@ -17,7 +17,8 @@ import {
 } from '..'
 import { AuthenticatedUser } from '../../auth'
 import { VersionContext } from '../../schema/site.schema'
-import { submitSearch, QueryState } from '../helpers'
+import { submitSearch } from '../helpers'
+import { useNavbarQueryState } from '../navbarSearchQueryState'
 
 import { SearchBox } from './SearchBox'
 
@@ -34,9 +35,7 @@ interface Props
     authenticatedUser: AuthenticatedUser | null
     location: H.Location
     history: H.History
-    navbarSearchState: QueryState
     isSourcegraphDotCom: boolean
-    onChange: (newValue: QueryState) => void
     globbing: boolean
     isSearchAutoFocusRequired?: boolean
     setVersionContext: (versionContext: string | undefined) => Promise<void>
@@ -52,12 +51,14 @@ export const SearchNavbarItem: React.FunctionComponent<Props> = (props: Props) =
     // or remove the search help button
     const isSearchPage = props.location.pathname === '/search' && Boolean(parseSearchURLQuery(props.location.search))
 
+    const { queryState, setQueryState } = useNavbarQueryState()
+
     const onSubmit = useCallback(
         (event?: React.FormEvent): void => {
             event?.preventDefault()
-            submitSearch({ ...props, query: props.navbarSearchState.query, source: 'nav' })
+            submitSearch({ ...props, query: queryState.query, source: 'nav' })
         },
-        [props]
+        [props, queryState]
     )
 
     return (
@@ -68,7 +69,8 @@ export const SearchNavbarItem: React.FunctionComponent<Props> = (props: Props) =
             <SearchBox
                 {...props}
                 hasGlobalQueryBehavior={true}
-                queryState={props.navbarSearchState}
+                queryState={queryState}
+                onChange={setQueryState}
                 onSubmit={onSubmit}
                 autoFocus={autoFocus}
                 showSearchContextFeatureTour={true}
