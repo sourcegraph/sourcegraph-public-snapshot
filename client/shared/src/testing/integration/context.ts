@@ -266,6 +266,11 @@ export const createSharedIntegrationTestContext = async <
                 DISPOSE_ACTION_TIMEOUT,
                 new Error('Recording coverage timed out')
             )
+            await pTimeout(
+                driver.page.evaluate(() => localStorage.clear()),
+                DISPOSE_ACTION_TIMEOUT,
+                new Error('Clearing localStorage timed out')
+            )
             await pTimeout(driver.page.close(), DISPOSE_ACTION_TIMEOUT, new Error('Closing Puppeteer page timed out'))
             await pTimeout(polly.stop(), DISPOSE_ACTION_TIMEOUT, new Error('Stopping Polly timed out'))
         },

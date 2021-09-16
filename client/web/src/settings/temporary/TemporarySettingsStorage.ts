@@ -3,7 +3,7 @@ import { isEqual } from 'lodash'
 import { Observable, of, Subscription, from, ReplaySubject, Subscriber } from 'rxjs'
 import { distinctUntilChanged, map } from 'rxjs/operators'
 
-import { fromObservableQuery } from '@sourcegraph/shared/src/graphql/fromObservableQuery'
+import { fromObservableQuery } from '@sourcegraph/shared/src/graphql/graphql'
 
 import { GetTemporarySettingsResult } from '../../graphql-operations'
 
