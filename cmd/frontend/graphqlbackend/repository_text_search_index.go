@@ -7,16 +7,16 @@ import (
 	"github.com/cockroachdb/errors"
 	"github.com/google/zoekt"
 	zoektquery "github.com/google/zoekt/query"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
 
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
 
 func (r *RepositoryResolver) TextSearchIndex() *repositoryTextSearchIndexResolver {
-	if !conf.SearchIndexEnabled() {
+	if search.Indexed() == nil {
 		return nil
 	}
+
 	return &repositoryTextSearchIndexResolver{
 		repo:   r,
 		client: search.Indexed(),

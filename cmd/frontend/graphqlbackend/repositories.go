@@ -7,7 +7,6 @@ import (
 
 	"github.com/google/zoekt"
 	zoektquery "github.com/google/zoekt/query"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
@@ -119,7 +118,7 @@ func (r *repositoryConnectionResolver) compute(ctx context.Context) ([]*types.Re
 		}
 
 		var indexed *zoekt.RepoList
-		searchIndexEnabled := conf.SearchIndexEnabled()
+		searchIndexEnabled := search.Indexed() != nil
 		isIndexed := func(id api.RepoID) bool {
 			if !searchIndexEnabled {
 				return true // do not need index

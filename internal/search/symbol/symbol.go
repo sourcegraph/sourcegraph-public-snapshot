@@ -188,11 +188,10 @@ func searchInRepo(ctx context.Context, repoRevs *search.RepositoryRevisions, pat
 // repository at a specific commit. If it has it returns the branch name (for
 // use when querying zoekt). Otherwise an empty string is returned.
 func indexedSymbolsBranch(ctx context.Context, repo *types.RepoName, commit string) string {
-	if !conf.SearchIndexEnabled() {
+	z := search.Indexed()
+	if z == nil {
 		return ""
 	}
-
-	z := search.Indexed()
 
 	ctx, cancel := context.WithTimeout(ctx, time.Second)
 	defer cancel()

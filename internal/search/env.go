@@ -11,6 +11,7 @@ import (
 	"github.com/google/zoekt"
 	"github.com/google/zoekt/query"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 
 	"github.com/sourcegraph/sourcegraph/internal/endpoint"
 	"github.com/sourcegraph/sourcegraph/internal/env"
@@ -70,6 +71,10 @@ func IndexedEndpoints() *endpoint.Map {
 }
 
 func Indexed() zoekt.Streamer {
+	if !conf.SearchIndexEnabled() {
+		return nil
+	}
+
 	indexedSearchOnce.Do(func() {
 		if eps := IndexedEndpoints(); eps != nil {
 			indexedSearch = backend.NewCachedSearcher(indexedListTTL, backend.NewMeteredSearcher(
@@ -80,6 +85,7 @@ func Indexed() zoekt.Streamer {
 				}))
 		}
 	})
+
 	return indexedSearch
 }
 

@@ -11,7 +11,6 @@ import (
 	zoektquery "github.com/google/zoekt/query"
 	"github.com/inconshreveable/log15"
 	"github.com/opentracing/opentracing-go/log"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"go.uber.org/atomic"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
@@ -302,7 +301,7 @@ func NewIndexedSubsetSearchRequest(ctx context.Context, args *search.TextParamet
 	}()
 
 	// If Zoekt is disabled just fallback to Unindexed.
-	if !conf.SearchIndexEnabled() {
+	if args.Zoekt == nil {
 		if args.PatternInfo.Index == query.Only {
 			return nil, errors.Errorf("invalid index:%q (indexed search is not enabled)", args.PatternInfo.Index)
 		}
