@@ -80,9 +80,18 @@ func (c *cachedSearcher) List(ctx context.Context, q zoektquery.Q, opts *zoekt.L
 }
 
 func (c *cachedSearcher) update(ctx context.Context, q zoektquery.Q, k listCacheKey) *listCacheValue {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	v := c.cache[k]
+	if v != nil && v.err == nil && !v.stale() {
+		// someone beat us to the update
+		return v
+	}
+
 	list, err := c.Streamer.List(ctx, q, &k.opts)
 
-	v := &listCacheValue{
+	v = &listCacheValue{
 		list: list,
 		err:  err,
 		ttl:  c.ttl,
@@ -90,9 +99,7 @@ func (c *cachedSearcher) update(ctx context.Context, q zoektquery.Q, k listCache
 		ts:   c.now(),
 	}
 
-	c.mu.Lock()
 	c.cache[k] = v
-	c.mu.Unlock()
 
 	return v
 }
