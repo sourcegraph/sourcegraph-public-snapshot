@@ -1,7 +1,6 @@
 package httpapi
 
 import (
-	"context"
 	"log"
 	"net/http"
 	"reflect"
@@ -13,8 +12,6 @@ import (
 	"github.com/gorilla/schema"
 	"github.com/graph-gophers/graphql-go"
 	"github.com/inconshreveable/log15"
-	"github.com/sourcegraph/sourcegraph/internal/types"
-
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/enterprise"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
@@ -118,13 +115,7 @@ func NewInternalHandler(m *mux.Router, db dbutil.DB, schema *graphql.Schema, new
 
 	reposStore := database.Repos(db)
 	reposList := &reposListServer{
-		ListIndexable: func(ctx context.Context) ([]types.RepoName, error) {
-			if envvar.SourcegraphDotComMode() {
-				return backend.Repos.ListIndexable(ctx)
-			}
-			trueP := true
-			return reposStore.ListRepoNames(ctx, database.ReposListOptions{Index: &trueP})
-		},
+		ListIndexable:   backend.Repos.ListIndexable,
 		StreamRepoNames: reposStore.StreamRepoNames,
 		Indexers:        search.Indexers(),
 	}
