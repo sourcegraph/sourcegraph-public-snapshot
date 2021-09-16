@@ -1441,6 +1441,7 @@ Referenced by:
  introduced_version_minor | integer                  |           | not null | 
  deprecated_version_major | integer                  |           |          | 
  deprecated_version_minor | integer                  |           |          | 
+ metadata                 | jsonb                    |           | not null | '{}'::jsonb
 Indexes:
     "out_of_band_migrations_pkey" PRIMARY KEY, btree (id)
 Check constraints:
