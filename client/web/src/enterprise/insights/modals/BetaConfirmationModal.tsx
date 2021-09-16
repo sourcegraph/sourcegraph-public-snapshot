@@ -7,7 +7,7 @@ import { Button } from '@sourcegraph/wildcard'
 import { useTemporarySetting } from '../../../settings/temporary/useTemporarySetting'
 
 import styles from './BetaConfirmationModal.module.scss'
-import { FourLineChart, ThreeLineChart, TwoLineChart } from './components/MediaCharts'
+import { FourLineChart, PieChart, ThreeLineChart } from './components/MediaCharts'
 
 export const BetaConfirmationModal: React.FunctionComponent = () => {
     const history = useHistory()
@@ -31,7 +31,7 @@ export const BetaConfirmationModal: React.FunctionComponent = () => {
                 <div className={styles.mediaHeroContent}>
                     <ThreeLineChart className={styles.chart} />
                     <FourLineChart className={styles.chart} />
-                    <TwoLineChart className={styles.chart} />
+                    <PieChart className={styles.chart} />
                 </div>
 
                 <div className={styles.textContent}>
@@ -41,8 +41,8 @@ export const BetaConfirmationModal: React.FunctionComponent = () => {
                     </p>
 
                     <p>
-                        Track anything that can be expressed with a Sourcegraph search query: migrations, package
-                        use, version adoption, code smells, codebase size, and more, across 1,000s of repositories.
+                        Track anything that can be expressed with a Sourcegraph search query: migrations, package use,
+                        version adoption, code smells, codebase size, and more, across 1,000s of repositories.
                     </p>
 
                     <p>
@@ -54,8 +54,8 @@ export const BetaConfirmationModal: React.FunctionComponent = () => {
                     </p>
 
                     <p>
-                        Code Insights is <b>free and in beta through 2021</b>. When Code Insights is officially released,
-                        continued use may require a separate paid plan (at which time we’d notify you again).
+                        Code Insights is <b>free and in beta through 2021</b>. When Code Insights is officially
+                        released, continued use may require a separate paid plan (at which time we’d notify you again).
                     </p>
                 </div>
 
