@@ -25,6 +25,18 @@ interface ProcessedChartData<Datum extends object> {
 /**
  * Processes data list (sort it) and extracts data from the datum object and merge it with
  * series (line) data.
+ *
+ * Example:
+ * ```
+ * data: [
+ *   { a: 2, b: 3, x: 2},
+ *   { a: 4, b: 5, x: 3},
+ *   { a: null, b: 6, x: 4}
+ * ] → series: [
+ *     { name: a, data: [{ y: 2, x: 2 }, { y: 4, x: 3 }],
+ *     { name: b, data: [{ y: 3, x: 2 }, { y: 5, x: 3 }, { y: 6, x: 4 }]
+ *   ]
+ * ```
  */
 export function getProcessedChartData<Datum extends object>(
     props: GetProcessedChartDataProps<Datum>
@@ -57,6 +69,19 @@ export function getProcessedChartData<Datum extends object>(
 /**
  * Filters series data list, preserves null value at the beginning of the series data list
  * and removes null value between the points.
+ *
+ * Null value ▽   Real point ■                  Null value ▽   Real point ■
+ * ┌────────────────────────────────────┐       ┌────────────────────────────────────┐
+ * │░░░░░░░░░░░░░░░                     │       │░░░░░░░░░░░░░░░                     │
+ * │░░░░░░░░░░░░░░░                     │       │░░░░░░░░░░░░░░░                     │
+ * │░░░░░░░░░░░░░░░                ■    │       │░░░░░░░░░░░░░░░                ■    │
+ * │░░░░░░░░░░░░▽░░    ■                │       │░░░░░░░░░░░░▽░░    ■                │
+ * │░░░░░░░░░░░░░░░          ▽          │──────▶│░░░░░░░░░░░░░░░                     │
+ * │░░░░░░▽░░░░░░░░ ■                   │       │░░░░░░▽░░░░░░░░ ■                   │
+ * │░░░░░░░░░░░░░░░       ■             │       │░░░░░░░░░░░░░░░       ■             │
+ * │░░░▽░░░░░░░░░░░                     │       │░░░▽░░░░░░░░░░░                     │
+ * │░░░░░░░░░░░░░░░             ▽       │       │░░░░░░░░░░░░░░░                     │
+ * └────────────────────────────────────┘       └────────────────────────────────────┘
  *
  * @param data - Series data list
  */
