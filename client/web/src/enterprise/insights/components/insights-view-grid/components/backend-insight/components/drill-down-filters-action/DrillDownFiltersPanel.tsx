@@ -9,13 +9,13 @@ import { Settings } from '@sourcegraph/shared/src/settings/settings'
 import { SearchBasedBackendFilters } from '../../../../../../core/types/insight/search-insight'
 import { flipRightPosition } from '../../../../../context-menu/utils'
 import { SubmissionResult } from '../../../../../form/hooks/useForm'
+import { useKeyboard } from '../../../../../popover/hooks/use-keyboard'
+import { useOnClickOutside } from '../../../../../popover/hooks/use-outside-click'
 import { hasActiveFilters } from '../drill-down-filters-panel/components/drill-down-filters-form/DrillDownFiltersForm'
 import { DrillDownInsightCreationFormValues } from '../drill-down-filters-panel/components/drill-down-insight-creation-form/DrillDownInsightCreationForm'
 import { DrillDownFiltersPanel } from '../drill-down-filters-panel/DrillDownFiltersPanel'
 
 import styles from './DrillDownFiltersPanel.module.scss'
-import { useKeyboard } from './hooks/use-keyboard'
-import { useOnClickOutside } from './hooks/use-outside-click'
 
 interface DrillDownFiltersProps {
     isOpen: boolean
