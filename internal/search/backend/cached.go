@@ -16,52 +16,62 @@ type cachedSearcher struct {
 	zoekt.Streamer
 
 	ttl   time.Duration
+	now   func() time.Time
 	mu    sync.RWMutex
-	cache map[string]*listCacheValue
+	cache map[listCacheKey]*listCacheValue
 }
 
-func NewCachedSearcher(ttl time.Duration, z zoekt.Streamer) zoekt.Streamer {
-	return &cachedSearcher{Streamer: z, ttl: ttl, cache: map[string]*listCacheValue{}}
+func NewCachedSearcher(ttl time.Duration, z zoekt.Streamer) *cachedSearcher {
+	return &cachedSearcher{
+		Streamer: z,
+		ttl:      ttl,
+		now:      time.Now,
+		cache:    map[listCacheKey]*listCacheValue{},
+	}
 }
 
 type listCacheKey struct {
-	q    zoektquery.Q
-	opts *zoekt.ListOptions
-}
-
-func (l listCacheKey) String() string {
-	return l.q.String() + " " + l.opts.String()
+	opts zoekt.ListOptions
 }
 
 type listCacheValue struct {
 	list *zoekt.RepoList
 	err  error
 	ts   time.Time
+	now  func() time.Time
 	ttl  time.Duration
 }
 
 func (v *listCacheValue) stale() bool {
-	return time.Since(v.ts) >= randInterval(v.ttl, 5*time.Second)
+	return v.now().Sub(v.ts) >= randInterval(v.ttl, 5*time.Second)
 }
 
 func (c *cachedSearcher) String() string {
-	return fmt.Sprintf("cachedSearcher(%v)", c.Streamer)
+	return fmt.Sprintf("cachedSearcher(%s, %v)", c.ttl, c.Streamer)
 }
 
 func (c *cachedSearcher) List(ctx context.Context, q zoektquery.Q, opts *zoekt.ListOptions) (*zoekt.RepoList, error) {
-	k := listCacheKey{q: q, opts: opts}
+	if v, ok := q.(*zoektquery.Const); !ok || !v.Value {
+		// cache pass-through for anything that isn't "ListAll", either minimal or not
+		return c.Streamer.List(ctx, q, opts)
+	}
+
+	k := listCacheKey{}
+	if opts != nil {
+		k.opts = *opts
+	}
 
 	c.mu.RLock()
-	v := c.cache[k.String()]
+	v := c.cache[k]
 	c.mu.RUnlock()
 
 	switch {
 	case v == nil || v.err != nil:
-		v = c.update(ctx, k) // no cached value, block.
+		v = c.update(ctx, q, k) // no cached value, block.
 	case v.stale():
 		go func() {
 			ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-			c.update(ctx, k) // start async update, return stale version
+			c.update(ctx, q, k) // start async update, return stale version
 			cancel()
 		}()
 	}
@@ -69,18 +79,19 @@ func (c *cachedSearcher) List(ctx context.Context, q zoektquery.Q, opts *zoekt.L
 	return v.list, v.err
 }
 
-func (c *cachedSearcher) update(ctx context.Context, k listCacheKey) *listCacheValue {
-	list, err := c.Streamer.List(ctx, k.q, k.opts)
+func (c *cachedSearcher) update(ctx context.Context, q zoektquery.Q, k listCacheKey) *listCacheValue {
+	list, err := c.Streamer.List(ctx, q, &k.opts)
 
 	v := &listCacheValue{
 		list: list,
 		err:  err,
 		ttl:  c.ttl,
-		ts:   time.Now(),
+		now:  c.now,
+		ts:   c.now(),
 	}
 
 	c.mu.Lock()
-	c.cache[k.String()] = v
+	c.cache[k] = v
 	c.mu.Unlock()
 
 	return v
