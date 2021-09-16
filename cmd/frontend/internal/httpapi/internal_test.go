@@ -110,6 +110,7 @@ func TestReposIndex(t *testing.T) {
 			StreamRepoNames: fakeStreamRepoNames(allRepos),
 			Indexers:        suffixIndexers(true),
 		},
+		want: []string{},
 		body: `{"Hostname": "baz"}`,
 	}}
 
