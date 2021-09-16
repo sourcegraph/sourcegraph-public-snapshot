@@ -127,7 +127,7 @@ type cloneJob struct {
 
 // cloneQueue is a threadsafe list.List of cloneJobs that functions as a queue in practice.
 type cloneQueue struct {
-	mu   sync.RWMutex
+	mu   sync.Mutex
 	jobs *list.List
 
 	cmu  sync.Mutex
@@ -390,25 +390,15 @@ func (s *Server) SyncRepoState(interval time.Duration, batchSize, perSecond int)
 	}
 }
 
-// DoBackgroundClones clones repos asynchronosuly. It creates a producer-consumer pipeline.
-func (s *Server) DoBackgroundClones(ctx context.Context) error {
-	maxCloneWorkers := getGitMaxConcurrentClones()
-
+// StartClonePipeline clones repos asynchronosuly. It creates a producer-consumer pipeline.
+func (s *Server) StartClonePipeline(ctx context.Context) {
 	jobs := make(chan *cloneJob)
 
-	// Start "GitMaxConcurrentClones" number of worker goroutines.
-	for i := 0; i < maxCloneWorkers; i++ {
-		id := i
-		go s.cloneJobConsumer(ctx, id, jobs)
-	}
-
+	go s.cloneJobConsumer(ctx, jobs)
 	go s.cloneJobProducer(ctx, jobs)
-
-	<-ctx.Done()
-	return ctx.Err()
 }
 
-func (s *Server) cloneJobProducer(ctx context.Context, jobs chan<- *cloneJob) error {
+func (s *Server) cloneJobProducer(ctx context.Context, jobs chan<- *cloneJob) {
 	defer close(jobs)
 
 	for {
@@ -433,39 +423,45 @@ func (s *Server) cloneJobProducer(ctx context.Context, jobs chan<- *cloneJob) er
 			select {
 			case jobs <- job:
 			case <-ctx.Done():
-				return ctx.Err()
+				log15.Error("cloneProdConsumer: ", "error", ctx.Err())
+				return
 			}
 		}
 	}
 }
 
-var cloneJobProcessedCount = promauto.NewGaugeVec(prometheus.GaugeOpts{
-	Name: "src_gitserver_clone_job_processed_count",
-}, []string{"consumerID"})
-
-func (s *Server) cloneJobConsumer(ctx context.Context, id int, jobs <-chan *cloneJob) error {
+func (s *Server) cloneJobConsumer(ctx context.Context, jobs <-chan *cloneJob) {
+	// TODO: What we want eventually.
+	// for j := range jobs {
 	for range jobs {
 		select {
 		case <-ctx.Done():
-			return ctx.Err()
+			log15.Error("cloneJobConsumer: ", "error", ctx.Err())
+			return
 		default:
 		}
 
-		cloneJobProcessedCount.WithLabelValues(fmt.Sprintf("%d", id)).Inc()
-
 		// TODO: We will uncomment this once we know our changes work as expected.
-		// err := s.doClone(ctx, j.repo, j.dir, j.syncer, j.lock, j.remoteURL, j.options)
+		//
+		// ctx, cancel, err := s.acquireCloneLimiter(ctx)
 		// if err != nil {
-		// 	log15.Error("failed to clone repo", "repo", j.repo, "error", err)
+		// 	log15.Error("cloneJobConsumer: ", "error", err)
+		// 	continue
 		// }
 
-		// s.setLastErrorNonFatal(ctx, j.repo, err)
+		// go func() {
+		// 	defer cancel()
+
+		// 	err := s.doClone(ctx, j.repo, j.dir, j.syncer, j.lock, j.remoteURL, j.options)
+		// 	if err != nil {
+		// 		log15.Error("failed to clone repo", "repo", j.repo, "error", err)
+		// 	}
+
+		// 	s.setLastErrorNonFatal(ctx, j.repo, err)
+		// }()
 
 		cloneQueueLength.Dec()
-		cloneJobProcessedCount.WithLabelValues(fmt.Sprintf("%d", id)).Inc()
 	}
-
-	return nil
 }
 
 // hostnameMatch checks whether the hostname matches the given address.
@@ -1438,27 +1434,41 @@ func (s *Server) cloneRepo(ctx context.Context, repo api.RepoName, opts *cloneOp
 	// if the clone is interrupted.
 
 	if opts != nil && opts.Block {
+		ctx, cancel, err := s.acquireCloneLimiter(ctx)
+		if err != nil {
+			return "", err
+		}
+		defer cancel()
+
 		// We are blocking, so use the passed in context.
-		err := s.doClone(ctx, repo, dir, syncer, lock, remoteURL, opts)
+		err = s.doClone(ctx, repo, dir, syncer, lock, remoteURL, opts)
 		err = errors.Wrapf(err, "failed to clone %s", repo)
 		// Use a background context to ensure we still update the DB even if we time out
 		s.setLastErrorNonFatal(context.Background(), repo, err)
 		return "", err
 	}
 
+	// TODO: Remove this goroutine when we are confident that the producer-consumer pipeline works.
+	// And enable the commented out code in cloneJobConsumer.
 	go func() {
 		asyncDoCloneInvoked.Inc()
 		defer asyncDoCloneInvoked.Dec()
 
-		// Create a new context because this is in a background goroutine.
-		ctx, cancel := s.serverContext()
+		_, cancel, err := s.acquireCloneLimiter(ctx)
+		if err != nil {
+			log15.Error("failed to clone repo", "repo", repo, "error", err)
+			return
+		}
 		defer cancel()
-		err := s.doClone(ctx, repo, dir, syncer, lock, remoteURL, opts)
+
+		// Create a new context because this is in a background goroutine.
+		ctx, cancel1 := s.serverContext()
+		defer cancel1()
+		err = s.doClone(ctx, repo, dir, syncer, lock, remoteURL, opts)
 		if err != nil {
 			log15.Error("failed to clone repo", "repo", repo, "error", err)
 		}
 		s.setLastErrorNonFatal(ctx, repo, err)
-
 	}()
 
 	s.CloneQueue.Push(&cloneJob{
@@ -1480,13 +1490,7 @@ func (s *Server) doClone(ctx context.Context, repo api.RepoName, dir GitDir, syn
 
 	log15.Info("clone options", "opts", opts)
 
-	ctx, cancel1, err := s.acquireCloneLimiter(ctx)
-	if err != nil {
-		return err
-	}
-	defer cancel1()
-
-	if err = s.rpsLimiter.Wait(ctx); err != nil {
+	if err := s.rpsLimiter.Wait(ctx); err != nil {
 		return err
 	}
 

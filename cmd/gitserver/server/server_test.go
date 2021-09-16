@@ -481,7 +481,7 @@ func makeTestServer(ctx context.Context, repoDir, remote string, db dbutil.DB) *
 		rpsLimiter:       rate.NewLimiter(rate.Inf, 10),
 	}
 
-	go s.DoBackgroundClones(ctx)
+	s.StartClonePipeline(ctx)
 	return s
 }
 

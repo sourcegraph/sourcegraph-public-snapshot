@@ -205,7 +205,7 @@ func main() {
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-	go gitserver.DoBackgroundClones(ctx)
+	gitserver.StartClonePipeline(ctx)
 
 	port := "3178"
 	host := ""
