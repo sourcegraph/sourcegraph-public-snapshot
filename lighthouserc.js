@@ -1,11 +1,7 @@
 module.exports = {
   ci: {
     collect: {
-      url: [
-        'http://localhost:3443/search',
-        'http://localhost:3443/search?q=repo:sourcegraph/sourcegraph&patternType=literal',
-        'http://localhost:3443/github.com/sourcegraph/sourcegraph',
-      ],
+      url: ['http://localhost:3443/search'],
       startServerCommand: 'yarn workspace @sourcegraph/web serve:prod',
       settings: {
         preset: 'desktop',
