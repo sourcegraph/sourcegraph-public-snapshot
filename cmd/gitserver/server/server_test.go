@@ -2,6 +2,7 @@ package server
 
 import (
 	"bytes"
+	"container/list"
 	"context"
 	"encoding/json"
 	"flag"
@@ -472,7 +473,7 @@ func makeTestServer(ctx context.Context, repoDir, remote string, db dbutil.DB) *
 			return &GitRepoSyncer{}, nil
 		},
 		DB:               db,
-		CloneQueue:       NewCloneQueue(),
+		CloneQueue:       NewCloneQueue(list.New()),
 		ctx:              ctx,
 		locker:           &RepositoryLocker{},
 		cloneLimiter:     mutablelimiter.New(1),

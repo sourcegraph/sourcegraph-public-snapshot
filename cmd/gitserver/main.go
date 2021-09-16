@@ -2,6 +2,7 @@
 package main // import "github.com/sourcegraph/sourcegraph/cmd/gitserver"
 
 import (
+	"container/list"
 	"context"
 	"log"
 	"net"
@@ -178,7 +179,7 @@ func main() {
 		},
 		Hostname:   hostname.Get(),
 		DB:         db,
-		CloneQueue: server.NewCloneQueue(),
+		CloneQueue: server.NewCloneQueue(list.New()),
 	}
 	gitserver.RegisterMetrics()
 

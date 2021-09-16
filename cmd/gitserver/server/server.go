@@ -164,8 +164,8 @@ func (c *cloneQueue) depth() int {
 }
 
 // NewCloneQueue initializes a new cloneQueue.
-func NewCloneQueue() *cloneQueue {
-	cq := cloneQueue{jobs: list.New()}
+func NewCloneQueue(jobs *list.List) *cloneQueue {
+	cq := cloneQueue{jobs: jobs}
 	cq.cond = sync.NewCond(&cq.cmu)
 
 	return &cq
