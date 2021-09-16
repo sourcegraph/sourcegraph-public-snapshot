@@ -8,7 +8,6 @@ import { catchError, debounceTime, startWith, switchMap } from 'rxjs/operators'
 import { isErrorLike } from '@sourcegraph/codeintellify/lib/errors'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { asError } from '@sourcegraph/shared/src/util/errors'
-import { pluralize } from '@sourcegraph/shared/src/util/strings'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
 import { Container, LoadingSpinner } from '@sourcegraph/wildcard'
 
@@ -20,7 +19,7 @@ import { MonacoSettingsEditor } from '../../../../settings/MonacoSettingsEditor'
 import { BatchSpecDownloadLink, getFileName } from '../../BatchSpec'
 import { excludeRepo } from '../yaml-util'
 
-import { resolveWorkspacesForBatchSpec } from './backend'
+import { createBatchSpecFromRaw } from './backend'
 import combySample from './comby.batch.yaml'
 import helloWorldSample from './empty.batch.yaml'
 import styles from './ExampleTabs.module.scss'
@@ -145,7 +144,7 @@ const ExampleTabPanel: React.FunctionComponent<ExampleTabPanelProps> = ({
                 codeUpdates.pipe(
                     startWith(code),
                     debounceTime(5000),
-                    switchMap(code => resolveWorkspacesForBatchSpec(code)),
+                    switchMap(code => createBatchSpecFromRaw(code)),
                     catchError(error => [asError(error)])
                 ),
             // Don't want to trigger on changes to code, it's just the initial value.
@@ -203,14 +202,14 @@ const PreviewWorkspaces: React.FunctionComponent<PreviewWorkspacesProps> = ({ ex
     }
     return (
         <>
-            <h3>Preview workspaces ({preview.workspaces.length})</h3>
+            <h3>Preview workspaces ({preview.workspaceResolution?.workspaces.nodes.length})</h3>
             <p className="text-monospace">
-                allowUnsupported: {JSON.stringify(preview.allowUnsupported)}
+                allowUnsupported: {JSON.stringify(preview.workspaceResolution?.allowUnsupported)}
                 <br />
-                allowIgnored: {JSON.stringify(preview.allowIgnored)}
+                allowIgnored: {JSON.stringify(preview.workspaceResolution?.allowIgnored)}
             </p>
-            <ul className="list-group mb-0">
-                {preview.workspaces.map(item => (
+            <ul className="list-group p-1 mb-0">
+                {preview.workspaceResolution?.workspaces.nodes.map(item => (
                     <li
                         className="d-flex border-bottom mb-3"
                         key={`${item.repository.id}_${item.branch.target.oid}_${item.path || '/'}`}
@@ -234,7 +233,7 @@ const PreviewWorkspaces: React.FunctionComponent<PreviewWorkspacesProps> = ({ ex
                                 {item.steps.map((step, index) => (
                                     // eslint-disable-next-line react/no-array-index-key
                                     <li key={index}>
-                                        <span className="text-monospace">{step.command}</span>
+                                        <span className="text-monospace">{step.run}</span>
                                         <br />
                                         <span className="text-muted">{step.container}</span>
                                     </li>
@@ -244,8 +243,10 @@ const PreviewWorkspaces: React.FunctionComponent<PreviewWorkspacesProps> = ({ ex
                     </li>
                 ))}
             </ul>
-            {preview.workspaces.length === 0 && <span className="text-muted">No workspaces found</span>}
-            <hr />
+            {preview.workspaceResolution?.workspaces.nodes.length === 0 && (
+                <span className="text-muted">No workspaces found</span>
+            )}
+            {/* <hr />
             {preview.ignored.length > 0 && (
                 <>
                     <p>
@@ -264,8 +265,8 @@ const PreviewWorkspaces: React.FunctionComponent<PreviewWorkspacesProps> = ({ ex
                         ))}
                     </ul>
                 </>
-            )}
-            {preview.unsupported.length > 0 && (
+            )} */}
+            {/* {preview.unsupported.length > 0 && (
                 <>
                     <p>
                         {preview.unsupported.length} {pluralize('repo is', preview.unsupported.length, 'repos are')}{' '}
@@ -284,7 +285,7 @@ const PreviewWorkspaces: React.FunctionComponent<PreviewWorkspacesProps> = ({ ex
                         ))}
                     </ul>
                 </>
-            )}
+            )} */}
         </>
     )
 }

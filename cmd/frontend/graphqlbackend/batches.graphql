@@ -2050,21 +2050,70 @@ extend type Mutation {
         for the JSON Schema that describes the structure of this input.
         """
         batchSpec: String!
+
         """
         If true, repos with a .batchignore file will still be included.
         """
         allowIgnored: Boolean = false
+
         """
         If true, repos on unsupported codehosts will be included. Resulting changesets in these repos cannot
         be published.
         """
         allowUnsupported: Boolean = false
+
         """
         Right away set the execute flag.
 
         TODO: Not implemented yet.
         """
         execute: Boolean = false
+
+        """
+        Don't use cache entries.
+
+        TODO: Not implemented yet.
+        """
+        noCache: Boolean = false
+    ): BatchSpec!
+
+    """
+    Replaces the original input of the batch spec. All existing resolution jobs
+    and workspaces are deleted and recreated in the background as the `on` section
+    is evaluated. This mutation is used for overwriting existing resolutions, so
+    after typing in the editor, we don't create 10s of batch specs.
+    """
+    replaceBatchSpecInput(
+        """
+        The ID of the batch spec resource to update.
+        """
+        previousSpec: ID!
+
+        """
+        The raw batch spec as YAML (or the equivalent JSON). See
+        https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/schema/campaign_spec.schema.json
+        for the JSON Schema that describes the structure of this input.
+        """
+        batchSpec: String!
+
+        """
+        If true, repos with a .batchignore file will still be included.
+        """
+        allowIgnored: Boolean = false
+
+        """
+        If true, repos on unsupported codehosts will be included. Resulting changesets in these repos cannot
+        be published.
+        """
+        allowUnsupported: Boolean = false
+
+        """
+        Right away set the execute flag.
+
+        TODO: Not implemented yet.
+        """
+        execute: Boolean = false
+
         """
         Don't use cache entries.
 
