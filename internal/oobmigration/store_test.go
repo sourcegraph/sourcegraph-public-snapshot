@@ -2,6 +2,7 @@ package oobmigration
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"sort"
 	"testing"
@@ -124,6 +125,56 @@ func TestUpdateProgress(t *testing.T) {
 	}
 }
 
+func TestUpdateMetadata(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+	now := testTime.Add(time.Hour * 7)
+	db := dbtesting.GetDB(t)
+	store := testStore(t, db)
+
+	type sampleMeta = struct {
+		Message string
+	}
+	exampleMeta := sampleMeta{Message: "Hello"}
+	marshalled, err := json.Marshal(exampleMeta)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if err := store.updateMetadata(context.Background(), 3, marshalled, now); err != nil {
+		t.Fatalf("unexpected error updating migration: %s", err)
+	}
+
+	migration, exists, err := store.GetByID(context.Background(), 3)
+	if err != nil {
+		t.Fatalf("unexpected error getting migrations: %s", err)
+	}
+	if !exists {
+		t.Fatalf("expected record to exist")
+	}
+
+	expectedMigration := testMigrations[2] // ID = 3
+	// Formatting can change so we just use the value returned and confirm
+	// unmarshalled value is the same lower down
+	expectedMigration.Metadata = migration.Metadata
+	expectedMigration.LastUpdated = timePtr(now)
+
+	if diff := cmp.Diff(expectedMigration, migration); diff != "" {
+		t.Errorf("unexpected migration (-want +got):\n%s", diff)
+	}
+
+	var metaFromDB sampleMeta
+	err = json.Unmarshal(migration.Metadata, &metaFromDB)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if diff := cmp.Diff(exampleMeta, metaFromDB); diff != "" {
+		t.Errorf("unexpected metadata (-want +got):\n%s", diff)
+	}
+}
+
 func TestAddError(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
@@ -221,6 +272,7 @@ var testMigrations = []Migration{
 		LastUpdated:    nil,
 		NonDestructive: false,
 		ApplyReverse:   false,
+		Metadata:       json.RawMessage(`{}`),
 		Errors:         []MigrationError{},
 	},
 	{
@@ -235,6 +287,7 @@ var testMigrations = []Migration{
 		LastUpdated:    timePtr(testTime.Add(time.Hour * 2)),
 		NonDestructive: true,
 		ApplyReverse:   false,
+		Metadata:       json.RawMessage(`{}`),
 		Errors: []MigrationError{
 			{Message: "uh-oh 1", Created: testTime.Add(time.Hour*5 + time.Second*2)},
 			{Message: "uh-oh 2", Created: testTime.Add(time.Hour*5 + time.Second*1)},
@@ -252,6 +305,7 @@ var testMigrations = []Migration{
 		LastUpdated:    timePtr(testTime.Add(time.Hour * 4)),
 		NonDestructive: false,
 		ApplyReverse:   true,
+		Metadata:       json.RawMessage(`{}`),
 		Errors: []MigrationError{
 			{Message: "uh-oh 3", Created: testTime.Add(time.Hour*5 + time.Second*4)},
 			{Message: "uh-oh 4", Created: testTime.Add(time.Hour*5 + time.Second*3)},
@@ -272,6 +326,7 @@ var testEnterpriseMigrations = []Migration{
 		LastUpdated:    nil,
 		NonDestructive: false,
 		ApplyReverse:   false,
+		Metadata:       json.RawMessage(`{}`),
 		Errors:         []MigrationError{},
 	},
 	{
@@ -286,6 +341,7 @@ var testEnterpriseMigrations = []Migration{
 		LastUpdated:    timePtr(testTime.Add(time.Hour * 2)),
 		NonDestructive: true,
 		ApplyReverse:   false,
+		Metadata:       json.RawMessage(`{}`),
 		Errors:         []MigrationError{},
 	},
 }
