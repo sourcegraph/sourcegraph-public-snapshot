@@ -134,8 +134,8 @@ type cloneQueue struct {
 	cond *sync.Cond
 }
 
-// Push will queue the cloneJob to the end of the queue.
-func (c *cloneQueue) Push(cj *cloneJob) {
+// push will queue the cloneJob to the end of the queue.
+func (c *cloneQueue) push(cj *cloneJob) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
@@ -143,8 +143,8 @@ func (c *cloneQueue) Push(cj *cloneJob) {
 	c.cond.Signal()
 }
 
-// Next will return the next cloneJob. If there's no next job available, it returns nil.
-func (c *cloneQueue) Pop() *cloneJob {
+// pop will return the next cloneJob. If there's no next job available, it returns nil.
+func (c *cloneQueue) pop() *cloneJob {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
@@ -415,7 +415,7 @@ func (s *Server) cloneJobProducer(ctx context.Context, jobs chan<- *cloneJob) {
 		// Keep popping from the queue until the queue is empty again, in which case we start all
 		// over again from the top.
 		for {
-			job := s.CloneQueue.Pop()
+			job := s.CloneQueue.pop()
 			if job == nil {
 				break
 			}
@@ -1471,7 +1471,7 @@ func (s *Server) cloneRepo(ctx context.Context, repo api.RepoName, opts *cloneOp
 		s.setLastErrorNonFatal(ctx, repo, err)
 	}()
 
-	s.CloneQueue.Push(&cloneJob{
+	s.CloneQueue.push(&cloneJob{
 		repo:      repo,
 		dir:       dir,
 		syncer:    syncer,
