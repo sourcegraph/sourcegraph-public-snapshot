@@ -21,6 +21,7 @@ import (
 	"github.com/jackc/pgx/v4/stdlib"
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/qustavo/sqlhooks/v2"
 
 	"github.com/sourcegraph/sourcegraph/internal/env"
@@ -365,6 +366,7 @@ func (h *hook) After(ctx context.Context, query string, args ...interface{}) (co
 	if tr := trace.TraceFromContext(ctx); tr != nil {
 		tr.Finish()
 	}
+	metricSQLSuccessTotal.Inc()
 	return ctx, nil
 }
 
@@ -374,6 +376,7 @@ func (h *hook) OnError(ctx context.Context, err error, query string, args ...int
 		tr.SetError(err)
 		tr.Finish()
 	}
+	metricSQLErrorTotal.Inc()
 	return err
 }
 
@@ -392,4 +395,15 @@ func configureConnectionPool(db *sql.DB) {
 	db.SetMaxOpenConns(maxOpen)
 	db.SetMaxIdleConns(maxOpen)
 	db.SetConnMaxIdleTime(time.Minute)
+}
+
+var metricSQLSuccessTotal, metricSQLErrorTotal prometheus.Counter
+
+func init() {
+	m := promauto.NewCounterVec(prometheus.CounterOpts{
+		Name: "src_pgsql_request_total",
+		Help: "Total number of SQL requests to the database.",
+	}, []string{"type"})
+	metricSQLSuccessTotal = m.WithLabelValues("success")
+	metricSQLErrorTotal = m.WithLabelValues("error")
 }
