@@ -13,6 +13,7 @@ import (
 	database "github.com/sourcegraph/sourcegraph/internal/database"
 	basestore "github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	protocol "github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
+	protocol1 "github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 	types "github.com/sourcegraph/sourcegraph/internal/types"
 	precise "github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 	schema "github.com/sourcegraph/sourcegraph/schema"
@@ -2743,5 +2744,149 @@ func (c IndexingSettingStoreGetLastestSchemaSettingsFuncCall) Args() []interface
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c IndexingSettingStoreGetLastestSchemaSettingsFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// MockRepoUpdaterClient is a mock implementation of the RepoUpdaterClient
+// interface (from the package
+// github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/codeintel/indexing)
+// used for unit testing.
+type MockRepoUpdaterClient struct {
+	// RepoLookupFunc is an instance of a mock function object controlling
+	// the behavior of the method RepoLookup.
+	RepoLookupFunc *RepoUpdaterClientRepoLookupFunc
+}
+
+// NewMockRepoUpdaterClient creates a new mock of the RepoUpdaterClient
+// interface. All methods return zero values for all results, unless
+// overwritten.
+func NewMockRepoUpdaterClient() *MockRepoUpdaterClient {
+	return &MockRepoUpdaterClient{
+		RepoLookupFunc: &RepoUpdaterClientRepoLookupFunc{
+			defaultHook: func(context.Context, protocol1.RepoLookupArgs) (*protocol1.RepoLookupResult, error) {
+				return nil, nil
+			},
+		},
+	}
+}
+
+// NewMockRepoUpdaterClientFrom creates a new mock of the
+// MockRepoUpdaterClient interface. All methods delegate to the given
+// implementation, unless overwritten.
+func NewMockRepoUpdaterClientFrom(i RepoUpdaterClient) *MockRepoUpdaterClient {
+	return &MockRepoUpdaterClient{
+		RepoLookupFunc: &RepoUpdaterClientRepoLookupFunc{
+			defaultHook: i.RepoLookup,
+		},
+	}
+}
+
+// RepoUpdaterClientRepoLookupFunc describes the behavior when the
+// RepoLookup method of the parent MockRepoUpdaterClient instance is
+// invoked.
+type RepoUpdaterClientRepoLookupFunc struct {
+	defaultHook func(context.Context, protocol1.RepoLookupArgs) (*protocol1.RepoLookupResult, error)
+	hooks       []func(context.Context, protocol1.RepoLookupArgs) (*protocol1.RepoLookupResult, error)
+	history     []RepoUpdaterClientRepoLookupFuncCall
+	mutex       sync.Mutex
+}
+
+// RepoLookup delegates to the next hook function in the queue and stores
+// the parameter and result values of this invocation.
+func (m *MockRepoUpdaterClient) RepoLookup(v0 context.Context, v1 protocol1.RepoLookupArgs) (*protocol1.RepoLookupResult, error) {
+	r0, r1 := m.RepoLookupFunc.nextHook()(v0, v1)
+	m.RepoLookupFunc.appendCall(RepoUpdaterClientRepoLookupFuncCall{v0, v1, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the RepoLookup method of
+// the parent MockRepoUpdaterClient instance is invoked and the hook queue
+// is empty.
+func (f *RepoUpdaterClientRepoLookupFunc) SetDefaultHook(hook func(context.Context, protocol1.RepoLookupArgs) (*protocol1.RepoLookupResult, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// RepoLookup method of the parent MockRepoUpdaterClient instance invokes
+// the hook at the front of the queue and discards it. After the queue is
+// empty, the default hook function is invoked for any future action.
+func (f *RepoUpdaterClientRepoLookupFunc) PushHook(hook func(context.Context, protocol1.RepoLookupArgs) (*protocol1.RepoLookupResult, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
+// the given values.
+func (f *RepoUpdaterClientRepoLookupFunc) SetDefaultReturn(r0 *protocol1.RepoLookupResult, r1 error) {
+	f.SetDefaultHook(func(context.Context, protocol1.RepoLookupArgs) (*protocol1.RepoLookupResult, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushDefaultHook with a function that returns the given
+// values.
+func (f *RepoUpdaterClientRepoLookupFunc) PushReturn(r0 *protocol1.RepoLookupResult, r1 error) {
+	f.PushHook(func(context.Context, protocol1.RepoLookupArgs) (*protocol1.RepoLookupResult, error) {
+		return r0, r1
+	})
+}
+
+func (f *RepoUpdaterClientRepoLookupFunc) nextHook() func(context.Context, protocol1.RepoLookupArgs) (*protocol1.RepoLookupResult, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *RepoUpdaterClientRepoLookupFunc) appendCall(r0 RepoUpdaterClientRepoLookupFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of RepoUpdaterClientRepoLookupFuncCall objects
+// describing the invocations of this function.
+func (f *RepoUpdaterClientRepoLookupFunc) History() []RepoUpdaterClientRepoLookupFuncCall {
+	f.mutex.Lock()
+	history := make([]RepoUpdaterClientRepoLookupFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// RepoUpdaterClientRepoLookupFuncCall is an object that describes an
+// invocation of method RepoLookup on an instance of MockRepoUpdaterClient.
+type RepoUpdaterClientRepoLookupFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 protocol1.RepoLookupArgs
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 *protocol1.RepoLookupResult
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c RepoUpdaterClientRepoLookupFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c RepoUpdaterClientRepoLookupFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }

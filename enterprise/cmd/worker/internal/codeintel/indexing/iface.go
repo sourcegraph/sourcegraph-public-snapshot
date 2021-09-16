@@ -9,7 +9,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
+	gprotocol "github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
+	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -43,6 +44,10 @@ func (s *DBStoreShim) With(other basestore.ShareableStore) DBStore {
 	return &DBStoreShim{s.Store.With(s)}
 }
 
+type RepoUpdaterClient interface {
+	RepoLookup(ctx context.Context, args protocol.RepoLookupArgs) (result *protocol.RepoLookupResult, err error)
+}
+
 type ExternalServiceStore interface {
 	List(ctx context.Context, opt database.ExternalServicesListOptions) ([]*types.ExternalService, error)
 	Upsert(ctx context.Context, svcs ...*types.ExternalService) (err error)
@@ -54,7 +59,7 @@ type GitserverClient interface {
 	FileExists(ctx context.Context, repositoryID int, commit, file string) (bool, error)
 	RawContents(ctx context.Context, repositoryID int, commit, file string) ([]byte, error)
 	ResolveRevision(ctx context.Context, repositoryID int, versionString string) (api.CommitID, error)
-	RepoInfo(ctx context.Context, repos ...api.RepoName) (map[api.RepoName]*protocol.RepoInfo, error)
+	RepoInfo(ctx context.Context, repos ...api.RepoName) (map[api.RepoName]*gprotocol.RepoInfo, error)
 }
 
 type IndexEnqueuer interface {

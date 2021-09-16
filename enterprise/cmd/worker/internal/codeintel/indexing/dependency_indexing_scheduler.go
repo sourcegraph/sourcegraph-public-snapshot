@@ -12,6 +12,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/errcode"
+	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker"
 	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
@@ -26,7 +28,8 @@ func NewDependencyIndexingScheduler(
 	dbStore DBStore,
 	workerStore dbworkerstore.Store,
 	externalServiceStore ExternalServiceStore,
-	gitserver GitserverClient,
+	repoUpdaterClient RepoUpdaterClient,
+	gitserverClient GitserverClient,
 	enqueuer IndexEnqueuer,
 	pollInterval time.Duration,
 	numProcessorRoutines int,
@@ -39,7 +42,8 @@ func NewDependencyIndexingScheduler(
 		extsvcStore:   externalServiceStore,
 		indexEnqueuer: enqueuer,
 		workerStore:   workerStore,
-		gitserver:     gitserver,
+		repoUpdater:   repoUpdaterClient,
+		gitserver:     gitserverClient,
 	}
 
 	return dbworker.NewWorker(rootContext, workerStore, handler, workerutil.WorkerOptions{
@@ -56,6 +60,7 @@ type dependencyIndexingSchedulerHandler struct {
 	indexEnqueuer IndexEnqueuer
 	extsvcStore   ExternalServiceStore
 	workerStore   dbworkerstore.Store
+	repoUpdater   RepoUpdaterClient
 	gitserver     GitserverClient
 }
 
@@ -131,9 +136,21 @@ func (h *dependencyIndexingSchedulerHandler) Handle(ctx context.Context, record 
 		repoNames = append(repoNames, api.RepoName(name))
 	}
 
+	// if this job is not associated with an external service kind that was just synced, then we need to guarantee
+	// that the repos are visible to the Sourcegraph instance, else skip them
+	if job.ExternalServiceKind == "" {
+		for _, repo := range repoNames {
+			if _, err := h.repoUpdater.RepoLookup(ctx, protocol.RepoLookupArgs{Repo: repo}); errcode.IsNotFound(err) {
+				delete(repoToPackages, repo)
+			} else if err != nil {
+				return errors.Wrapf(err, "repoUpdater.RepoLookup", "repo", repo)
+			}
+		}
+	}
+
 	results, err := h.gitserver.RepoInfo(ctx, repoNames...)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "gitserver.RepoInfo")
 	}
 
 	for repo, info := range results {

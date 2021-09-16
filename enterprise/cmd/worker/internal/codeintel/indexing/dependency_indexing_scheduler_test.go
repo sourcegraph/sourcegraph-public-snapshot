@@ -19,6 +19,7 @@ func TestDependencyIndexingSchedulerHandler(t *testing.T) {
 	mockDBStore := NewMockDBStore()
 	mockExtSvcStore := NewMockExternalServiceStore()
 	mockGitServer := NewMockGitserverClient()
+	mockRepoUpdater := NewMockRepoUpdaterClient()
 	mockScanner := NewMockPackageReferenceScanner()
 	mockWorkerStore := NewMockWorkerStore()
 	mockDBStore.WithFunc.SetDefaultReturn(mockDBStore)
@@ -52,6 +53,7 @@ func TestDependencyIndexingSchedulerHandler(t *testing.T) {
 		extsvcStore:   mockExtSvcStore,
 		workerStore:   mockWorkerStore,
 		gitserver:     mockGitServer,
+		repoUpdater:   mockRepoUpdater,
 	}
 
 	job := dbstore.DependencyIndexingJob{
@@ -109,14 +111,15 @@ func TestDependencyIndexingSchedulerHandlerRequeueNotCloned(t *testing.T) {
 	mockDBStore := NewMockDBStore()
 	mockExtSvcStore := NewMockExternalServiceStore()
 	mockGitServer := NewMockGitserverClient()
+	mockRepoUpdater := NewMockRepoUpdaterClient()
 	mockScanner := NewMockPackageReferenceScanner()
 	mockWorkerStore := NewMockWorkerStore()
 	mockDBStore.WithFunc.SetDefaultReturn(mockDBStore)
 	mockDBStore.GetUploadByIDFunc.SetDefaultReturn(dbstore.Upload{ID: 42, RepositoryID: 50, Indexer: "lsif-go"}, true, nil)
 	mockDBStore.ReferencesForUploadFunc.SetDefaultReturn(mockScanner, nil)
 
-	mockScanner.NextFunc.PushReturn(shared.PackageReference{Package: shared.Package{DumpID: 42, Scheme: "gomod", Name: "github.com/sample/text", Version: "v3.2.0"}}, true, nil)
-	mockScanner.NextFunc.PushReturn(shared.PackageReference{Package: shared.Package{DumpID: 42, Scheme: "gomod", Name: "github.com/cheese/burger", Version: "v4.2.3"}}, true, nil)
+	mockScanner.NextFunc.PushReturn(shared.PackageReference{Package: shared.Package{DumpID: 42, Scheme: "gomod", Name: "https://github.com/sample/text", Version: "v3.2.0"}}, true, nil)
+	mockScanner.NextFunc.PushReturn(shared.PackageReference{Package: shared.Package{DumpID: 42, Scheme: "gomod", Name: "https://github.com/cheese/burger", Version: "v4.2.3"}}, true, nil)
 	mockScanner.NextFunc.SetDefaultReturn(shared.PackageReference{}, false, nil)
 
 	mockGitServer.RepoInfoFunc.PushReturn(map[api.RepoName]*protocol.RepoInfo{
@@ -138,6 +141,7 @@ func TestDependencyIndexingSchedulerHandlerRequeueNotCloned(t *testing.T) {
 		extsvcStore:   mockExtSvcStore,
 		workerStore:   mockWorkerStore,
 		gitserver:     mockGitServer,
+		repoUpdater:   mockRepoUpdater,
 	}
 
 	job := dbstore.DependencyIndexingJob{
@@ -165,6 +169,7 @@ func TestDependencyIndexingSchedulerHandlerRequeueNotCloned(t *testing.T) {
 func TestDependencyIndexingSchedulerHandlerSkipNonExistant(t *testing.T) {
 	mockDBStore := NewMockDBStore()
 	mockExtSvcStore := NewMockExternalServiceStore()
+	mockRepoUpdater := NewMockRepoUpdaterClient()
 	mockGitServer := NewMockGitserverClient()
 	mockScanner := NewMockPackageReferenceScanner()
 	mockWorkerStore := NewMockWorkerStore()
@@ -195,6 +200,7 @@ func TestDependencyIndexingSchedulerHandlerSkipNonExistant(t *testing.T) {
 		extsvcStore:   mockExtSvcStore,
 		workerStore:   mockWorkerStore,
 		gitserver:     mockGitServer,
+		repoUpdater:   mockRepoUpdater,
 	}
 
 	job := dbstore.DependencyIndexingJob{
