@@ -2,12 +2,15 @@
 Code Insights tells you things about your codebase at a high level, based on both how your code changes over time and its current state.
 
 Code Insights is based on our universal code search, making it incredibly precise and extremely configurable. Track anything that can be expressed with Sourcegraph search query: migrations, package use, version adoption, code smells, codebase size and much more, across 1,000s of repositories.
+
 > NOTE: While in Beta, Code Insights is free for enterprise customers. Once Code Insights is generally available and no sooner than January 1, 2022, to continue using Code Insights may require a separate paid plan.
 
 Code Insights are currently in Private [Beta](../admin/beta_and_experimental_features.md). If you're a customer who wants early access or needs support, please [send us an email](mailto:feedback@sourcegraph.com).
 
-Code insights docs are actively in progress during the beta.
 We're still polishing Code Insights and you might find bugs while we’re in beta. Please [share any bugs 🐛 or feedback](mailto:feedback@sourcegraph.com) you have to help us make Code Insights better.
+
+Code insights docs are actively in progress during the beta.
+
 Table of contents:
 
 - [Quickstart](quickstart.md)
