@@ -34,7 +34,11 @@ export const ConfigurationEditor: FunctionComponent<ConfigurationEditorProps> = 
     const { updateConfigForRepository, isUpdating, updatingError } = useUpdateConfigurationForRepository()
 
     const save = useCallback(
-        async (content: string) => updateConfigForRepository({ variables: { id: repoId, content } }),
+        async (content: string) =>
+            updateConfigForRepository({
+                variables: { id: repoId, content },
+                update: cache => cache.modify({ fields: { node: () => {} } }),
+            }).then(() => setDirty(false)),
         [updateConfigForRepository, repoId]
     )
 
