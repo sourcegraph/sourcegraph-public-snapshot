@@ -27,6 +27,14 @@ func isUploadCommitProtectedByPolicy(
 			return true, nil
 		}
 
+		// Never expire tip of the default branch
+		for _, refDescription := range refDescriptions[commit] {
+			if refDescription.IsDefaultBranch {
+				repositoryState.MarkProtected(commit)
+				return true, nil
+			}
+		}
+
 		// See if this commit was shown to be unprotected through this upload's timeframe. We may have
 		// previously been able to tell that a commit cannot be protected by any upload after a certain
 		// date, which can potentially short-circuit a large number of both policy comparisons and calls
