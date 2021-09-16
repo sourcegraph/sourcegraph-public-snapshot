@@ -36,6 +36,8 @@ steps:
       - 'VERSION=$(git log -n1 --pretty=format:%h)'
       - 'BUILD_TIMESTAMP=$BUILD_TIMESTAMP'
       - 'SRC_CLI_VERSION=$SRC_CLI_VERSION'
+      - 'AWS_EXECUTOR_AMI_ACCESS_KEY=$AWS_EXECUTOR_AMI_ACCESS_KEY'
+      - 'AWS_EXECUTOR_AMI_SECRET_KEY=$AWS_EXECUTOR_AMI_SECRET_KEY'
     args: ['build', 'executor.json']
 EOF
 
@@ -43,4 +45,4 @@ EOF
 cp -R ./cloudbuild/* "$OUTPUT"
 
 # Run gcloud image build.
-gcloud builds submit --config="$OUTPUT/cloudbuild.yaml" "$OUTPUT" --project="sourcegraph-ci"
+gcloud builds submit --config="$OUTPUT/cloudbuild.yaml" "$OUTPUT" --project="sourcegraph-ci" --timeout=20m

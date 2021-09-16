@@ -49,31 +49,34 @@ func TestGetConfigurationPolicies(t *testing.T) {
 			t.Fatalf("unexpected error fetching configuration policies: %s", err)
 		}
 
+		d1 := time.Hour * 5
+		d2 := time.Hour * 6
+
 		expected := []ConfigurationPolicy{
 			{
 				ID:                        4,
 				RepositoryID:              nil,
 				Name:                      "policy 4",
-				Type:                      "GIT_COMMIT",
+				Type:                      GitObjectTypeCommit,
 				Pattern:                   "deadbeef",
 				RetentionEnabled:          false,
-				RetentionDuration:         time.Hour * 5,
+				RetentionDuration:         &d1,
 				RetainIntermediateCommits: true,
 				IndexingEnabled:           false,
-				IndexCommitMaxAge:         time.Hour * 6,
+				IndexCommitMaxAge:         &d2,
 				IndexIntermediateCommits:  true,
 			},
 			{
 				ID:                        5,
 				RepositoryID:              nil,
 				Name:                      "policy 5",
-				Type:                      "GIT_TAG",
+				Type:                      GitObjectTypeTag,
 				Pattern:                   "3.0",
 				RetentionEnabled:          false,
-				RetentionDuration:         time.Hour * 6,
+				RetentionDuration:         &d2,
 				RetainIntermediateCommits: false,
 				IndexingEnabled:           true,
-				IndexCommitMaxAge:         time.Hour * 6,
+				IndexCommitMaxAge:         &d2,
 				IndexIntermediateCommits:  false,
 			},
 		}
@@ -92,31 +95,36 @@ func TestGetConfigurationPolicies(t *testing.T) {
 			t.Fatalf("unexpected error fetching configuration policies: %s", err)
 		}
 
+		d1 := time.Hour * 2
+		d2 := time.Hour * 3
+		d3 := time.Hour * 3
+		d4 := time.Hour * 4
+
 		expected := []ConfigurationPolicy{
 			{
 				ID:                        1,
 				RepositoryID:              &repositoryID,
 				Name:                      "policy 1",
-				Type:                      "GIT_TREE",
+				Type:                      GitObjectTypeTree,
 				Pattern:                   "ab/",
 				RetentionEnabled:          true,
-				RetentionDuration:         time.Hour * 2,
+				RetentionDuration:         &d1,
 				RetainIntermediateCommits: false,
 				IndexingEnabled:           false,
-				IndexCommitMaxAge:         time.Hour * 3,
+				IndexCommitMaxAge:         &d2,
 				IndexIntermediateCommits:  true,
 			},
 			{
 				ID:                        2,
 				RepositoryID:              &repositoryID,
 				Name:                      "policy 2",
-				Type:                      "GIT_TREE",
+				Type:                      GitObjectTypeTree,
 				Pattern:                   "nm/",
 				RetentionEnabled:          false,
-				RetentionDuration:         time.Hour * 3,
+				RetentionDuration:         &d3,
 				RetainIntermediateCommits: true,
 				IndexingEnabled:           false,
-				IndexCommitMaxAge:         time.Hour * 4,
+				IndexCommitMaxAge:         &d4,
 				IndexIntermediateCommits:  false,
 			},
 		}
@@ -150,16 +158,19 @@ func TestCreateConfigurationPolicy(t *testing.T) {
 	store := testStore(db)
 
 	repositoryID := 42
+	d1 := time.Hour * 5
+	d2 := time.Hour * 6
+
 	configurationPolicy := ConfigurationPolicy{
 		RepositoryID:              &repositoryID,
 		Name:                      "name",
-		Type:                      "GIT_COMMIT",
+		Type:                      GitObjectTypeCommit,
 		Pattern:                   "deadbeef",
 		RetentionEnabled:          false,
-		RetentionDuration:         time.Hour * 5,
+		RetentionDuration:         &d1,
 		RetainIntermediateCommits: true,
 		IndexingEnabled:           false,
-		IndexCommitMaxAge:         time.Hour * 6,
+		IndexCommitMaxAge:         &d2,
 		IndexIntermediateCommits:  true,
 	}
 
@@ -196,16 +207,19 @@ func TestUpdateConfigurationPolicy(t *testing.T) {
 	store := testStore(db)
 
 	repositoryID := 42
+	d1 := time.Hour * 5
+	d2 := time.Hour * 6
+
 	configurationPolicy := ConfigurationPolicy{
 		RepositoryID:              &repositoryID,
 		Name:                      "name",
-		Type:                      "GIT_COMMIT",
+		Type:                      GitObjectTypeCommit,
 		Pattern:                   "deadbeef",
 		RetentionEnabled:          false,
-		RetentionDuration:         time.Hour * 5,
+		RetentionDuration:         &d1,
 		RetainIntermediateCommits: true,
 		IndexingEnabled:           false,
-		IndexCommitMaxAge:         time.Hour * 6,
+		IndexCommitMaxAge:         &d2,
 		IndexIntermediateCommits:  true,
 	}
 
@@ -219,17 +233,20 @@ func TestUpdateConfigurationPolicy(t *testing.T) {
 		t.Fatalf("hydrated policy does not have an identifier")
 	}
 
+	d3 := time.Hour * 10
+	d4 := time.Hour * 15
+
 	newConfigurationPolicy := ConfigurationPolicy{
 		ID:                        hydratedConfigurationPolicy.ID,
 		RepositoryID:              &repositoryID,
 		Name:                      "new name",
-		Type:                      "GIT_TREE",
+		Type:                      GitObjectTypeTree,
 		Pattern:                   "az/",
 		RetentionEnabled:          true,
-		RetentionDuration:         time.Hour * 10,
+		RetentionDuration:         &d3,
 		RetainIntermediateCommits: false,
 		IndexingEnabled:           true,
-		IndexCommitMaxAge:         time.Hour * 15,
+		IndexCommitMaxAge:         &d4,
 		IndexIntermediateCommits:  false,
 	}
 
@@ -247,6 +264,110 @@ func TestUpdateConfigurationPolicy(t *testing.T) {
 	}
 }
 
+func TestUpdateProtectedConfigurationPolicy(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+	db := dbtesting.GetDB(t)
+	store := testStore(db)
+
+	repositoryID := 42
+	d1 := time.Hour * 5
+	d2 := time.Hour * 6
+
+	configurationPolicy := ConfigurationPolicy{
+		RepositoryID:              &repositoryID,
+		Name:                      "default branch policy",
+		Type:                      GitObjectTypeTree,
+		Pattern:                   "*",
+		RetentionEnabled:          true,
+		RetentionDuration:         &d1,
+		RetainIntermediateCommits: false,
+		IndexingEnabled:           false,
+		IndexCommitMaxAge:         &d2,
+		IndexIntermediateCommits:  true,
+	}
+
+	hydratedConfigurationPolicy, err := store.CreateConfigurationPolicy(context.Background(), configurationPolicy)
+	if err != nil {
+		t.Fatalf("unexpected error creating configuration policy: %s", err)
+	}
+
+	// Inherit auto-generated identifier
+	if hydratedConfigurationPolicy.ID == 0 {
+		t.Fatalf("hydrated policy does not have an identifier")
+	}
+
+	// Mark configuration policy as protected (no other way to do so outside of migrations)
+	if _, err := db.Exec("UPDATE lsif_configuration_policies SET protected = true"); err != nil {
+		t.Fatalf("unexpected error marking configuration policy as protected: %s", err)
+	}
+
+	t.Run("illegal update", func(t *testing.T) {
+		t.Run("Name", func(t *testing.T) {
+			newConfigurationPolicy := hydratedConfigurationPolicy
+			newConfigurationPolicy.Name = "some clever name"
+
+			if err := store.UpdateConfigurationPolicy(context.Background(), newConfigurationPolicy); err == nil {
+				t.Fatalf("expected error updating protected configuration policy")
+			}
+		})
+
+		t.Run("Type", func(t *testing.T) {
+			newConfigurationPolicy := hydratedConfigurationPolicy
+			newConfigurationPolicy.Type = GitObjectTypeTag
+
+			if err := store.UpdateConfigurationPolicy(context.Background(), newConfigurationPolicy); err == nil {
+				t.Fatalf("expected error updating protected configuration policy")
+			}
+		})
+
+		t.Run("Pattern", func(t *testing.T) {
+			newConfigurationPolicy := hydratedConfigurationPolicy
+			newConfigurationPolicy.Pattern = "ef/"
+
+			if err := store.UpdateConfigurationPolicy(context.Background(), newConfigurationPolicy); err == nil {
+				t.Fatalf("expected error updating protected configuration policy")
+			}
+		})
+
+		t.Run("RetentionEnabled", func(t *testing.T) {
+			newConfigurationPolicy := hydratedConfigurationPolicy
+			newConfigurationPolicy.RetentionEnabled = false
+
+			if err := store.UpdateConfigurationPolicy(context.Background(), newConfigurationPolicy); err == nil {
+				t.Fatalf("expected error updating protected configuration policy")
+			}
+		})
+	})
+
+	t.Run("success", func(t *testing.T) {
+		d3 := time.Hour * 10
+		d4 := time.Hour * 15
+
+		newConfigurationPolicy := hydratedConfigurationPolicy
+		newConfigurationPolicy.Protected = true
+		newConfigurationPolicy.RetentionDuration = &d3
+		newConfigurationPolicy.RetainIntermediateCommits = true
+		newConfigurationPolicy.IndexingEnabled = true
+		newConfigurationPolicy.IndexCommitMaxAge = &d4
+		newConfigurationPolicy.IndexIntermediateCommits = false
+
+		if err := store.UpdateConfigurationPolicy(context.Background(), newConfigurationPolicy); err != nil {
+			t.Fatalf("unexpected error updating configuration policy: %s", err)
+		}
+
+		roundTrippedConfigurationPolicy, _, err := store.GetConfigurationPolicyByID(context.Background(), newConfigurationPolicy.ID)
+		if err != nil {
+			t.Fatalf("unexpected error fetching configuration policy: %s", err)
+		}
+
+		if diff := cmp.Diff(roundTrippedConfigurationPolicy, newConfigurationPolicy); diff != "" {
+			t.Errorf("unexpected configuration policy (-want +got):\n%s", diff)
+		}
+	})
+}
+
 func TestDeleteConfigurationPolicyByID(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
@@ -255,16 +376,19 @@ func TestDeleteConfigurationPolicyByID(t *testing.T) {
 	store := testStore(db)
 
 	repositoryID := 42
+	d1 := time.Hour * 5
+	d2 := time.Hour * 6
+
 	configurationPolicy := ConfigurationPolicy{
 		RepositoryID:              &repositoryID,
 		Name:                      "name",
-		Type:                      "GIT_COMMIT",
+		Type:                      GitObjectTypeCommit,
 		Pattern:                   "deadbeef",
 		RetentionEnabled:          false,
-		RetentionDuration:         time.Hour * 5,
+		RetentionDuration:         &d1,
 		RetainIntermediateCommits: true,
 		IndexingEnabled:           false,
-		IndexCommitMaxAge:         time.Hour * 6,
+		IndexCommitMaxAge:         &d2,
 		IndexIntermediateCommits:  true,
 	}
 
@@ -287,5 +411,56 @@ func TestDeleteConfigurationPolicyByID(t *testing.T) {
 	}
 	if ok {
 		t.Fatalf("unexpected record")
+	}
+}
+
+func TestDeleteConfigurationProtectedPolicy(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+	db := dbtesting.GetDB(t)
+	store := testStore(db)
+
+	repositoryID := 42
+	d1 := time.Hour * 5
+	d2 := time.Hour * 6
+
+	configurationPolicy := ConfigurationPolicy{
+		RepositoryID:              &repositoryID,
+		Name:                      "name",
+		Type:                      GitObjectTypeCommit,
+		Pattern:                   "deadbeef",
+		RetentionEnabled:          false,
+		RetentionDuration:         &d1,
+		RetainIntermediateCommits: true,
+		IndexingEnabled:           false,
+		IndexCommitMaxAge:         &d2,
+		IndexIntermediateCommits:  true,
+	}
+
+	hydratedConfigurationPolicy, err := store.CreateConfigurationPolicy(context.Background(), configurationPolicy)
+	if err != nil {
+		t.Fatalf("unexpected error creating configuration policy: %s", err)
+	}
+
+	if hydratedConfigurationPolicy.ID == 0 {
+		t.Fatalf("hydrated policy does not have an identifier")
+	}
+
+	// Mark configuration policy as protected (no other way to do so outside of migrations)
+	if _, err := db.Exec("UPDATE lsif_configuration_policies SET protected = true"); err != nil {
+		t.Fatalf("unexpected error marking configuration policy as protected: %s", err)
+	}
+
+	if err := store.DeleteConfigurationPolicyByID(context.Background(), hydratedConfigurationPolicy.ID); err == nil {
+		t.Fatalf("expected error deleting configuration policy: %s", err)
+	}
+
+	_, ok, err := store.GetConfigurationPolicyByID(context.Background(), hydratedConfigurationPolicy.ID)
+	if err != nil {
+		t.Fatalf("unexpected error fetching configuration policy: %s", err)
+	}
+	if !ok {
+		t.Fatalf("expected record")
 	}
 }

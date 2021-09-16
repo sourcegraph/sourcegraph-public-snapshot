@@ -110,7 +110,7 @@ func (a *affiliatedRepositoriesConnection) Nodes(ctx context.Context) ([]*codeHo
 			case result := <-results:
 				if result.err != nil {
 					// An error from one code is not fatal
-					log15.Error("getting affiliated repos", "externalServiceId", result.svcID, "err", err)
+					log15.Error("getting affiliated repos", "externalServiceId", result.svcID, "err", result.err)
 					fetchErrors = append(fetchErrors, result.err)
 					continue
 				}

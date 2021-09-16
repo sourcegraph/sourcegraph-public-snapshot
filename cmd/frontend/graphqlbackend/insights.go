@@ -31,6 +31,7 @@ type InsightStatusResolver interface {
 	PendingJobs() int32
 	CompletedJobs() int32
 	FailedJobs() int32
+	BackfillQueuedAt() *DateTime
 }
 
 type InsightsPointsArgs struct {

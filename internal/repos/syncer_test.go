@@ -141,10 +141,39 @@ func testSyncerSync(s *repos.Store) func(*testing.T) {
 			UpdatedAt:   clock.Now(),
 		}
 
+		err := s.Exec(context.Background(), sqlf.Sprintf(`INSERT INTO users (id, username) VALUES (1, 'u')`))
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		userAddedGithubSvc := githubService.With(func(service *types.ExternalService) {
+			service.ID = 0
+			service.NamespaceUserID = 1
+		})
+
+		userAddedGitlabSvc := gitlabService.With(func(service *types.ExternalService) {
+			service.ID = 0
+			service.NamespaceUserID = 1
+		})
+
 		// create a few external services
-		if err := s.ExternalServiceStore.Upsert(context.Background(), &svcdup); err != nil {
+		if err := s.ExternalServiceStore.Upsert(context.Background(), &svcdup, userAddedGithubSvc, userAddedGitlabSvc); err != nil {
 			t.Fatalf("failed to insert external services: %v", err)
 		}
+
+		userAddedGithubRepo := githubRepo.With(func(r *types.Repo) {
+			r.Name += "-2"
+			r.ExternalRepo.ID += "-2"
+		},
+			types.Opt.RepoSources(userAddedGithubSvc.URN()),
+		)
+
+		userAddedGitlabRepo := gitlabRepo.With(func(r *types.Repo) {
+			r.Name += "-2"
+			r.ExternalRepo.ID += "-2"
+		},
+			types.Opt.RepoSources(userAddedGitlabSvc.URN()),
+		)
 
 		type testCase struct {
 			name    string
@@ -165,6 +194,8 @@ func testSyncerSync(s *repos.Store) func(*testing.T) {
 		}{
 			{repo: githubRepo, svc: githubService},
 			{repo: gitlabRepo, svc: gitlabService},
+			{repo: userAddedGithubRepo, svc: userAddedGithubSvc},
+			{repo: userAddedGitlabRepo, svc: userAddedGitlabSvc},
 			{repo: bitbucketServerRepo, svc: bitbucketServerService},
 			{repo: awsCodeCommitRepo, svc: awsCodeCommitService},
 			{repo: otherRepo, svc: otherService},
@@ -187,9 +218,25 @@ func testSyncerSync(s *repos.Store) func(*testing.T) {
 					svcs: []*types.ExternalService{tc.svc},
 					err:  "<nil>",
 				},
+			)
+
+			var diff repos.Diff
+			if tc.svc.NamespaceUserID > 0 {
+				diff.Deleted = append(diff.Deleted, tc.repo.With(
+					types.Opt.RepoSources(tc.svc.URN()),
+				))
+			} else {
+				diff.Unmodified = append(diff.Unmodified, tc.repo.With(
+					types.Opt.RepoSources(tc.svc.URN()),
+				))
+			}
+
+			testCases = append(testCases,
 				testCase{
 					// If the source is unauthorized we should treat this as if zero repos were
 					// returned as it indicates that the source no longer has access to its repos
+					// This only applies to user added external services, since site level ones will
+					// usually regenerate a token.
 					name: string(tc.repo.Name) + "/unauthorized",
 					sourcer: repos.NewFakeSourcer(nil,
 						repos.NewFakeSource(tc.svc.Clone(), &repos.ErrUnauthorized{}),
@@ -198,16 +245,16 @@ func testSyncerSync(s *repos.Store) func(*testing.T) {
 					stored: types.Repos{tc.repo.With(
 						types.Opt.RepoSources(tc.svc.URN()),
 					)},
-					now: clock.Now,
-					diff: repos.Diff{Deleted: types.Repos{tc.repo.With(
-						types.Opt.RepoSources(tc.svc.URN(), svcdup.URN()),
-					)}},
+					now:  clock.Now,
+					diff: diff,
 					svcs: []*types.ExternalService{tc.svc},
 					err:  "bad credentials",
 				},
 				testCase{
 					// If the source is forbidden we should treat this as if zero repos were returned
 					// as it indicates that the source no longer has access to its repos
+					// This only applies to user added external services, since site level ones will
+					// usually regenerate a token.
 					name: string(tc.repo.Name) + "/forbidden",
 					sourcer: repos.NewFakeSourcer(nil,
 						repos.NewFakeSource(tc.svc.Clone(), &repos.ErrForbidden{}),
@@ -216,16 +263,16 @@ func testSyncerSync(s *repos.Store) func(*testing.T) {
 					stored: types.Repos{tc.repo.With(
 						types.Opt.RepoSources(tc.svc.URN()),
 					)},
-					now: clock.Now,
-					diff: repos.Diff{Deleted: types.Repos{tc.repo.With(
-						types.Opt.RepoSources(tc.svc.URN(), svcdup.URN()),
-					)}},
+					now:  clock.Now,
+					diff: diff,
 					svcs: []*types.ExternalService{tc.svc},
 					err:  "forbidden",
 				},
 				testCase{
 					// If the source account has been suspended we should treat this as if zero repos were returned as it indicates
 					// that the source no longer has access to its repos
+					// This only applies to user added external services, since site level ones will
+					// usually regenerate a token.
 					name: string(tc.repo.Name) + "/accountsuspended",
 					sourcer: repos.NewFakeSourcer(nil,
 						repos.NewFakeSource(tc.svc.Clone(), &repos.ErrAccountSuspended{}),
@@ -234,10 +281,8 @@ func testSyncerSync(s *repos.Store) func(*testing.T) {
 					stored: types.Repos{tc.repo.With(
 						types.Opt.RepoSources(tc.svc.URN()),
 					)},
-					now: clock.Now,
-					diff: repos.Diff{Deleted: types.Repos{tc.repo.With(
-						types.Opt.RepoSources(tc.svc.URN(), svcdup.URN()),
-					)}},
+					now:  clock.Now,
+					diff: diff,
 					svcs: []*types.ExternalService{tc.svc},
 					err:  "account suspended",
 				},

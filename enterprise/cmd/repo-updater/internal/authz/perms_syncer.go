@@ -68,7 +68,7 @@ func NewPermsSyncer(
 // By design, all schedules triggered by user actions are in high priority.
 //
 // This method implements the repoupdater.Server.PermsSyncer in the OSS namespace.
-func (s *PermsSyncer) ScheduleUsers(ctx context.Context, userIDs ...int32) {
+func (s *PermsSyncer) ScheduleUsers(ctx context.Context, opts authz.FetchPermsOptions, userIDs ...int32) {
 	if len(userIDs) == 0 {
 		return
 	} else if s.isDisabled() {
@@ -81,6 +81,7 @@ func (s *PermsSyncer) ScheduleUsers(ctx context.Context, userIDs ...int32) {
 		users[i] = scheduledUser{
 			priority: priorityHigh,
 			userID:   userIDs[i],
+			options:  opts,
 			// NOTE: Have nextSyncAt with zero value (i.e. not set) gives it higher priority,
 			// as the request is most likely triggered by a user action from OSS namespace.
 		}
@@ -102,6 +103,7 @@ func (s *PermsSyncer) scheduleUsers(ctx context.Context, users ...scheduledUser)
 			Priority:   u.priority,
 			Type:       requestTypeUser,
 			ID:         u.userID,
+			Options:    u.options,
 			NextSyncAt: u.nextSyncAt,
 			NoPerms:    u.noPerms,
 		})
@@ -215,7 +217,7 @@ func (s *PermsSyncer) listPrivateRepoNamesByExact(ctx context.Context, repoSpecs
 
 // syncUserPerms processes permissions syncing request in user-centric way. When `noPerms` is true,
 // the method will use partial results to update permissions tables even when error occurs.
-func (s *PermsSyncer) syncUserPerms(ctx context.Context, userID int32, noPerms bool) (err error) {
+func (s *PermsSyncer) syncUserPerms(ctx context.Context, userID int32, noPerms bool, fetchOpts authz.FetchPermsOptions) (err error) {
 	ctx, save := s.observe(ctx, "PermsSyncer.syncUserPerms", "")
 	defer save(requestTypeUser, userID, &err)
 
@@ -307,7 +309,7 @@ func (s *PermsSyncer) syncUserPerms(ctx context.Context, userID int32, noPerms b
 			return errors.Wrap(err, "wait for rate limiter")
 		}
 
-		extIDs, err := provider.FetchUserPerms(ctx, acct)
+		extIDs, err := provider.FetchUserPerms(ctx, acct, fetchOpts)
 		if err != nil {
 			// The "401 Unauthorized" is returned by code hosts when the token is no longer valid
 			unauthorized := errcode.IsUnauthorized(err)
@@ -426,14 +428,17 @@ func (s *PermsSyncer) syncUserPerms(ctx context.Context, userID int32, noPerms b
 		return errors.Wrap(err, "set user permissions")
 	}
 
-	log15.Debug("PermsSyncer.syncUserPerms.synced", "userID", user.ID)
+	log15.Debug("PermsSyncer.syncUserPerms.synced",
+		"userID", user.ID,
+		"count", p.IDs.GetCardinality(),
+		"fetchOpts.invalidateCaches", fetchOpts.InvalidateCaches)
 	return nil
 }
 
 // syncRepoPerms processes permissions syncing request in repository-centric way.
 // When `noPerms` is true, the method will use partial results to update permissions
 // tables even when error occurs.
-func (s *PermsSyncer) syncRepoPerms(ctx context.Context, repoID api.RepoID, noPerms bool) (err error) {
+func (s *PermsSyncer) syncRepoPerms(ctx context.Context, repoID api.RepoID, noPerms bool, fetchOpts authz.FetchPermsOptions) (err error) {
 	ctx, save := s.observe(ctx, "PermsSyncer.syncRepoPerms", "")
 	defer save(requestTypeRepo, int32(repoID), &err)
 
@@ -496,7 +501,7 @@ func (s *PermsSyncer) syncRepoPerms(ctx context.Context, repoID api.RepoID, noPe
 		extAccountIDs, err := provider.FetchRepoPerms(ctx, &extsvc.Repository{
 			URI:              repo.URI,
 			ExternalRepoSpec: repo.ExternalRepo,
-		})
+		}, fetchOpts)
 
 		// Detect 404 error (i.e. not authorized to call given APIs) that often happens with GitHub.com
 		// when the owner of the token only has READ access. However, we don't want to fail
@@ -589,6 +594,7 @@ func (s *PermsSyncer) syncRepoPerms(ctx context.Context, repoID api.RepoID, noPe
 		"repoID", repo.ID,
 		"name", repo.Name,
 		"count", p.UserIDs.GetCardinality(),
+		"fetchOpts.invalidateCaches", fetchOpts.InvalidateCaches,
 	)
 	return nil
 }
@@ -617,9 +623,9 @@ func (s *PermsSyncer) syncPerms(ctx context.Context, request *syncRequest) error
 	var err error
 	switch request.Type {
 	case requestTypeUser:
-		err = s.syncUserPerms(ctx, request.ID, request.NoPerms)
+		err = s.syncUserPerms(ctx, request.ID, request.NoPerms, request.Options)
 	case requestTypeRepo:
-		err = s.syncRepoPerms(ctx, api.RepoID(request.ID), request.NoPerms)
+		err = s.syncRepoPerms(ctx, api.RepoID(request.ID), request.NoPerms, request.Options)
 	default:
 		err = errors.Errorf("unexpected request type: %v", request.Type)
 	}
@@ -758,6 +764,7 @@ type schedule struct {
 type scheduledUser struct {
 	priority   priority
 	userID     int32
+	options    authz.FetchPermsOptions
 	nextSyncAt time.Time
 
 	// Whether the user has no permissions when scheduled. Currently used to
@@ -905,6 +912,7 @@ func (s *PermsSyncer) DebugDump() interface{} {
 				Priority:   request.Priority,
 				Type:       request.Type,
 				ID:         request.ID,
+				Options:    request.Options,
 				NextSyncAt: request.NextSyncAt,
 			},
 			Acquired: request.acquired,

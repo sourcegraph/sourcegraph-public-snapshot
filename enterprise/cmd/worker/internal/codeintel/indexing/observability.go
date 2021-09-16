@@ -8,37 +8,52 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
-type operations struct {
+type schedulerOperations struct {
 	HandleIndexScheduler *observation.Operation
 	QueueRepository      *observation.Operation
 }
 
+type dependencyReposOperations struct {
+	InsertCloneableDependencyRepo *observation.Operation
+}
+
 var (
-	singletonOperations *operations
-	once                sync.Once
+	schedulerOps       *schedulerOperations
+	dependencyReposOps *dependencyReposOperations
+	once               sync.Once
 )
 
-func newOperations(observationContext *observation.Context) *operations {
+func newOperations(observationContext *observation.Context) *schedulerOperations {
 	once.Do(func() {
-		metrics := metrics.NewOperationMetrics(
+		m := metrics.NewOperationMetrics(
 			observationContext.Registerer,
 			"codeintel_index_scheduler",
 			metrics.WithLabels("op"),
 			metrics.WithCountHelp("Total number of method invocations."),
 		)
 
-		op := func(name string) *observation.Operation {
+		op := func(prefix, name string) *observation.Operation {
 			return observationContext.Operation(observation.Op{
-				Name:         fmt.Sprintf("codeintel.indexing.%s", name),
-				MetricLabels: []string{name},
-				Metrics:      metrics,
+				Name:              fmt.Sprintf("codeintel.%s.%s", prefix, name),
+				MetricLabelValues: []string{name},
+				Metrics:           m,
 			})
 		}
 
-		singletonOperations = &operations{
-			HandleIndexScheduler: op("HandleIndexSchedule"),
-			QueueRepository:      op("QueueRepository"),
+		schedulerOps = &schedulerOperations{
+			HandleIndexScheduler: op("indexing", "HandleIndexSchedule"),
+			QueueRepository:      op("indexing", "QueueRepository"),
+		}
+
+		m = metrics.NewOperationMetrics(
+			observationContext.Registerer,
+			"codeintel_dependency_repos",
+			metrics.WithLabels("op", "scheme", "new"),
+		)
+
+		dependencyReposOps = &dependencyReposOperations{
+			InsertCloneableDependencyRepo: op("dependencyrepos", "InsertCloneableDependencyRepo"),
 		}
 	})
-	return singletonOperations
+	return schedulerOps
 }

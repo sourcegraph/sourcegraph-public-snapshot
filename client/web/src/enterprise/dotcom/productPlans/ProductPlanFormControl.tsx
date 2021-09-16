@@ -1,3 +1,4 @@
+import classNames from 'classnames'
 import React, { useCallback, useMemo } from 'react'
 import { Observable } from 'rxjs'
 import { catchError, map, startWith, tap } from 'rxjs/operators'
@@ -72,7 +73,7 @@ export const ProductPlanFormControl: React.FunctionComponent<Props> = ({
     const disableInputs = disabled || plans === LOADING || isErrorLike(plans)
 
     return (
-        <div className={`product-plan-form-control ${className}`}>
+        <div className={classNames('product-plan-form-control', className)}>
             {plans === LOADING ? (
                 <LoadingSpinner className="icon-inline" />
             ) : isErrorLike(plans) ? (

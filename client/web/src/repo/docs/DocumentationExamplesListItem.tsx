@@ -43,14 +43,13 @@ export const DocumentationExamplesListItem: React.FunctionComponent<Props> = ({
     ...props
 }) => {
     const fetchHighlightedFileRangeLines = React.useCallback(
-        (isFirst, startLine, endLine, isLightTheme) =>
+        (isFirst, startLine, endLine) =>
             fetchHighlightedFileLineRanges(
                 {
                     repoName: item.resource.repository.name,
                     commitID: item.resource.commit.oid,
                     filePath: item.resource.path,
                     disableTimeout: false,
-                    isLightTheme,
                     ranges: [
                         {
                             startLine: (item.range?.start.line || 0) - contextLines,

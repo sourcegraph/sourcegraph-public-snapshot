@@ -88,7 +88,7 @@ func (c *Config) WorkerOptions() workerutil.WorkerOptions {
 		Name:              fmt.Sprintf("executor_%s_worker", c.QueueName),
 		NumHandlers:       c.MaximumNumJobs,
 		Interval:          c.QueuePollInterval,
-		HeartbeatInterval: 1 * time.Second,
+		HeartbeatInterval: 5 * time.Second,
 		Metrics:           makeWorkerMetrics(c.QueueName),
 		NumTotalJobs:      c.NumTotalJobs,
 		MaxActiveTime:     c.MaxActiveTime,

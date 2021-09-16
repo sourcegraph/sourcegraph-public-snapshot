@@ -63,3 +63,31 @@ If you are seeing the database instance restarting due to a backend OOM conditio
 2021-04-26 10:11:12.123 UTC [33330] ERROR:  could not read block 1234 in file "base/123456789/123456789": Cannot allocate memory
 2021-04-26 10:11:12.123 UTC [33330] ERROR:  could not read block 1234 in file "base/123456789/123456789": read only 1234 of 1234 bytes
 ```
+
+## Increasing shared memory in container environments
+
+Postgres uses [shared memory](https://www.postgresql.org/docs/12/kernel-resources.html#SYSVIPC) for some operations.
+By default, this value is set to 64M in most container environments. This value may be too small for larger systems.
+
+If the error similar to:
+ `ERROR: could not resize shared memory segment "/PostgreSQL.491173048" to 4194304 bytes: No space left on device` is observed, then shared memory should be increased.
+
+This can be done by mounting a memory backed `EmptyDir`.
+
+```
+            - mountPath: /dev/shm
+              name: dshm
+        - name: pgsql-exporter
+          env:
+            - name: DATA_SOURCE_NAME
+@@ -94,3 +96,7 @@ spec:
+          configMap:
+            defaultMode: 0777
+            name: pgsql-conf
+        - name: dshm
+            emptyDir:
+              medium: Memory
+              sizeLimit: 8GB # this value depends on your postgres config
+```
+
+See this [stackexchange](https://dba.stackexchange.com/questions/275378/dev-shm-size-recommendation-for-postgres-database-in-docker) post for tips on tuning this value

@@ -496,11 +496,11 @@ func TestEventLogs_CodeIntelligenceSettingsPageViewCounts(t *testing.T) {
 
 	names := []string{
 		"ViewBatchesConfiguration",
-		"ViewCodeIntelUploadsPage",            // contributes 75 events
-		"ViewCodeIntelUploadPage",             // contributes 75 events
-		"ViewCodeIntelIndexesPage",            // contributes 75 events
-		"ViewCodeIntelIndexPage",              // contributes 75 events
-		"ViewCodeIntelIndexConfigurationPage", // contributes 75 events
+		"ViewCodeIntelUploadsPage",       // contributes 75 events
+		"ViewCodeIntelUploadPage",        // contributes 75 events
+		"ViewCodeIntelIndexesPage",       // contributes 75 events
+		"ViewCodeIntelIndexPage",         // contributes 75 events
+		"ViewCodeIntelConfigurationPage", // contributes 75 events
 	}
 
 	// This unix timestamp is equivalent to `Friday, May 15, 2020 10:30:00 PM GMT` and is set to

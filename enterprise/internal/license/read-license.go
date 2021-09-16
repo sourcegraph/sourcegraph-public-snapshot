@@ -1,3 +1,4 @@
+//go:build ignore
 // +build ignore
 
 // Command read-license describes a signed Sourcegraph license key. It does not verify the

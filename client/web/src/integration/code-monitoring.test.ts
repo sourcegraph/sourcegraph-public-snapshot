@@ -38,6 +38,7 @@ describe('Code monitoring', () => {
             }),
             ViewerSettings: () => ({
                 viewerSettings: {
+                    __typename: 'SettingsCascade',
                     subjects: [
                         {
                             __typename: 'DefaultSettings',

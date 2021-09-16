@@ -24,7 +24,6 @@ import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryServi
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 
 import { SearchResult } from '../../components/SearchResult'
-import { eventLogger } from '../../tracking/eventLogger'
 
 import { StreamingSearchResultFooter } from './StreamingSearchResultsFooter'
 
@@ -44,7 +43,6 @@ export interface StreamingSearchResultsListProps extends ThemeProps, SettingsCas
 export const StreamingSearchResultsList: React.FunctionComponent<StreamingSearchResultsListProps> = ({
     results,
     location,
-    isLightTheme,
     allExpanded,
     fetchHighlightedFileLineRanges,
     settingsCascade,
@@ -79,13 +77,12 @@ export const StreamingSearchResultsList: React.FunctionComponent<StreamingSearch
                     return (
                         <FileMatch
                             location={location}
-                            eventLogger={eventLogger}
+                            telemetryService={telemetryService}
                             icon={getFileMatchIcon(result)}
                             result={result}
                             onSelect={logSearchResultClicked}
                             expanded={false}
                             showAllMatches={false}
-                            isLightTheme={isLightTheme}
                             allExpanded={allExpanded}
                             fetchHighlightedFileLineRanges={fetchHighlightedFileLineRanges}
                             repoDisplayName={displayRepoName(result.repository)}
@@ -93,26 +90,19 @@ export const StreamingSearchResultsList: React.FunctionComponent<StreamingSearch
                         />
                     )
                 case 'commit':
-                    return (
-                        <SearchResult
-                            icon={SourceCommitIcon}
-                            result={result}
-                            repoName={result.repository}
-                            isLightTheme={isLightTheme}
-                        />
-                    )
+                    return <SearchResult icon={SourceCommitIcon} result={result} repoName={result.repository} />
                 case 'repo':
-                    return (
-                        <SearchResult
-                            icon={SourceRepositoryIcon}
-                            result={result}
-                            repoName={result.repository}
-                            isLightTheme={isLightTheme}
-                        />
-                    )
+                    return <SearchResult icon={SourceRepositoryIcon} result={result} repoName={result.repository} />
             }
         },
-        [isLightTheme, location, logSearchResultClicked, allExpanded, fetchHighlightedFileLineRanges, settingsCascade]
+        [
+            location,
+            telemetryService,
+            logSearchResultClicked,
+            allExpanded,
+            fetchHighlightedFileLineRanges,
+            settingsCascade,
+        ]
     )
 
     return (

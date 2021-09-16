@@ -207,6 +207,16 @@ func (r *schemaResolver) AutoDefinedSearchContexts(ctx context.Context) ([]*sear
 	return searchContextsToResolvers(searchContexts, r.db), nil
 }
 
+func (r *schemaResolver) SearchContextBySpec(ctx context.Context, args *struct {
+	Spec string
+}) (*searchContextResolver, error) {
+	searchContext, err := searchcontexts.ResolveSearchContextSpec(ctx, r.db, args.Spec)
+	if err != nil {
+		return nil, err
+	}
+	return &searchContextResolver{searchContext, r.db}, nil
+}
+
 func (r *schemaResolver) CreateSearchContext(ctx context.Context, args createSearchContextArgs) (*searchContextResolver, error) {
 	var namespaceUserID, namespaceOrgID int32
 	if args.SearchContext.Namespace != nil {

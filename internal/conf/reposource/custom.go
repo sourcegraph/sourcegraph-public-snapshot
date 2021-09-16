@@ -55,7 +55,7 @@ func CustomCloneURLToRepoName(cloneURL string) (repoName api.RepoName) {
 			return api.RepoName(name)
 		}
 	}
-	return api.RepoName("")
+	return ""
 }
 
 func mapString(r *regexp.Regexp, in string, outTmpl string) string {

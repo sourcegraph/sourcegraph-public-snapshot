@@ -200,10 +200,23 @@ func (s *PermsStore) SetUserPermissions(ctx context.Context, p *authz.UserPermis
 
 	updatedAt := txs.clock()
 	if !added.IsEmpty() || !removed.IsEmpty() {
-		if q, err := upsertRepoPermissionsBatchQuery(added.ToArray(), removed.ToArray(), []uint32{uint32(p.UserID)}, p.Perm, updatedAt); err != nil {
-			return err
-		} else if err = txs.execute(ctx, q); err != nil {
-			return errors.Wrap(err, "execute upsert repo permissions batch query")
+		var (
+			allAdded   = added.ToArray()
+			allRemoved = removed.ToArray()
+
+			addQueue    = allAdded
+			removeQueue = allRemoved
+			hasNextPage = true
+		)
+		for hasNextPage {
+			var page *upsertRepoPermissionsPage
+			page, addQueue, removeQueue, hasNextPage = newUpsertRepoPermissionsPage(addQueue, removeQueue)
+
+			if q, err := upsertRepoPermissionsBatchQuery(page, allAdded, allRemoved, []uint32{uint32(p.UserID)}, p.Perm, updatedAt); err != nil {
+				return err
+			} else if err = txs.execute(ctx, q); err != nil {
+				return errors.Wrap(err, "execute upsert repo permissions batch query")
+			}
 		}
 	}
 
@@ -404,9 +417,7 @@ DO UPDATE SET
 	), nil
 }
 
-// upsertRepoPermissionsQuery upserts single row of repository permissions,
-// it does the same thing as upsertRepoPermissionsBatchQuery but also updates
-// "synced_at" column to the value of p.SyncedAt field.
+// upsertRepoPermissionsQuery upserts single row of repository permissions.
 func upsertRepoPermissionsQuery(p *authz.RepoPermissions) (*sqlf.Query, error) {
 	const format = `
 -- source: enterprise/internal/database/perms_store.go:upsertRepoPermissionsQuery
@@ -436,6 +447,35 @@ DO UPDATE SET
 		pq.Array(p.UserIDs.ToArray()),
 		p.UpdatedAt.UTC(),
 		p.SyncedAt.UTC(),
+	), nil
+}
+
+// upsertRepoPendingPermissionsQuery
+func upsertRepoPendingPermissionsQuery(p *authz.RepoPermissions) (*sqlf.Query, error) {
+	const format = `
+-- source: enterprise/internal/database/perms_store.go:upsertRepoPendingPermissionsQuery
+INSERT INTO repo_pending_permissions
+  (repo_id, permission, user_ids_ints, updated_at)
+VALUES
+  (%s, %s, %s, %s)
+ON CONFLICT ON CONSTRAINT
+  repo_pending_permissions_perm_unique
+DO UPDATE SET
+  user_ids_ints = excluded.user_ids_ints,
+  updated_at = excluded.updated_at
+`
+
+	p.UserIDs.RunOptimize()
+	if p.UpdatedAt.IsZero() {
+		return nil, ErrPermsUpdatedAtNotSet
+	}
+
+	return sqlf.Sprintf(
+		format,
+		p.RepoID,
+		p.Perm.String(),
+		pq.Array(p.UserIDs.ToArray()),
+		p.UpdatedAt.UTC(),
 	), nil
 }
 
@@ -565,25 +605,61 @@ func (s *PermsStore) SetRepoPendingPermissions(ctx context.Context, accounts *ex
 
 	p.UserIDs = roaring.NewBitmap()
 
-	// Insert rows for AccountIDs without one in the "user_pending_permissions" table.
-	// The insert does not store any permissions data but uses auto-increment key to generate unique ID.
-	// This help guarantees rows of all AccountIDs exist when getting user IDs in next load query.
+	// Insert rows for AccountIDs without one in the "user_pending_permissions"
+	// table. The insert does not store any permission data but uses auto-increment
+	// key to generate unique ID. This guarantees that rows of all AccountIDs exist
+	// when getting user IDs in the next load query.
 	updatedAt := txs.clock()
 	p.UpdatedAt = updatedAt
 	if len(accounts.AccountIDs) > 0 {
-		// NOTE: Row-level locking is not needed here because we're creating stub rows and not modifying permissions.
-		q, err = insertUserPendingPermissionsBatchQuery(accounts, p)
+		// NOTE: The primary key of "user_pending_permissions" table is
+		//  auto-incremented, and it is monotonically growing even with upsert in
+		//  Postgres (i.e. the primary key is increased internally by one even if the row
+		//  exists). This means with large number of AccountIDs, the primary key will
+		//  grow very quickly every time we do an upsert, and soon reaching the largest
+		//  number an int4 (32-bit integer) can hold (2,147,483,647). Therefore, load
+		//  existing rows would help us only upsert rows that are newly discovered. See
+		//  NOTE in below for why we do upsert not insert.
+		q = loadExistingUserPendingPermissionsBatchQuery(accounts, p)
+		bindIDsToIDs, err := txs.loadExistingUserPendingPermissionsBatch(ctx, q)
 		if err != nil {
-			return err
+			return errors.Wrap(err, "loading existing user pending permissions")
 		}
 
-		ids, err := txs.loadUserPendingPermissionsIDs(ctx, q)
-		if err != nil {
-			return errors.Wrap(err, "load user pending permissions IDs")
+		missingAccounts := &extsvc.Accounts{
+			ServiceType: accounts.ServiceType,
+			ServiceID:   accounts.ServiceID,
+			AccountIDs:  make([]string, 0, len(accounts.AccountIDs)-len(bindIDsToIDs)),
 		}
 
-		// Make up p.UserIDs from the result set.
-		p.UserIDs.AddMany(ids)
+		for _, bindID := range accounts.AccountIDs {
+			id, ok := bindIDsToIDs[bindID]
+			if ok {
+				p.UserIDs.Add(id)
+			} else {
+				missingAccounts.AccountIDs = append(missingAccounts.AccountIDs, bindID)
+			}
+		}
+
+		// Only do upsert when there are missing accounts
+		if len(missingAccounts.AccountIDs) > 0 {
+			// NOTE: Row-level locking is not needed here because we're creating stub rows
+			//  and not modifying permissions, which is also why it is best to use upsert not
+			//  insert to avoid unique violation in case other transactions are trying to
+			//  create overlapping stub rows.
+			q, err = upsertUserPendingPermissionsBatchQuery(missingAccounts, p)
+			if err != nil {
+				return err
+			}
+
+			ids, err := txs.loadUserPendingPermissionsIDs(ctx, q)
+			if err != nil {
+				return errors.Wrap(err, "load user pending permissions IDs from upsert pending permissions")
+			}
+
+			// Make up p.UserIDs from the result set.
+			p.UserIDs.AddMany(ids)
+		}
 	}
 
 	// Retrieve currently stored user IDs of this repository.
@@ -611,10 +687,10 @@ func (s *PermsStore) SetRepoPendingPermissions(ctx context.Context, accounts *ex
 		return errors.Wrap(err, "execute append user pending permissions batch query")
 	}
 
-	if q, err = upsertRepoPendingPermissionsBatchQuery(p); err != nil {
+	if q, err = upsertRepoPendingPermissionsQuery(p); err != nil {
 		return err
 	} else if err = txs.execute(ctx, q); err != nil {
-		return errors.Wrap(err, "execute upsert repo pending permissions batch query")
+		return errors.Wrap(err, "execute upsert repo pending permissions query")
 	}
 
 	return nil
@@ -630,63 +706,103 @@ func (s *PermsStore) loadUserPendingPermissionsIDs(ctx context.Context, q *sqlf.
 	}()
 
 	rows, err := s.Query(ctx, q)
+	return basestore.ScanUint32s(rows, err)
+}
+
+func (s *PermsStore) loadExistingUserPendingPermissionsBatch(ctx context.Context, q *sqlf.Query) (bindIDsToIDs map[string]uint32, err error) {
+	ctx, save := s.observe(ctx, "loadExistingUserPendingPermissionsBatch", "")
+	defer func() {
+		save(&err,
+			otlog.String("Query.Query", q.Query(sqlf.PostgresBindVar)),
+			otlog.Object("Query.Args", q.Args()),
+		)
+	}()
+
+	rows, err := s.Query(ctx, q)
 	if err != nil {
 		return nil, err
 	}
-	defer func() { _ = rows.Close() }()
+	defer func() { err = basestore.CloseRows(rows, err) }()
 
+	bindIDsToIDs = make(map[string]uint32)
 	for rows.Next() {
+		var bindID string
 		var id uint32
-		if err = rows.Scan(&id); err != nil {
+		if err = rows.Scan(&bindID, &id); err != nil {
 			return nil, err
 		}
-
-		ids = append(ids, id)
+		bindIDsToIDs[bindID] = id
 	}
-	if err = rows.Err(); err != nil {
-		return nil, err
-	}
-
-	return ids, nil
+	return bindIDsToIDs, nil
 }
 
-func insertUserPendingPermissionsBatchQuery(
+// upsertUserPendingPermissionsBatchQuery generates a query for upserting the provided
+// external service accounts into `user_pending_permissions`.
+func upsertUserPendingPermissionsBatchQuery(
 	accounts *extsvc.Accounts,
 	p *authz.RepoPermissions,
 ) (*sqlf.Query, error) {
+	// Above ~10,000 accounts (10,000 * 6 fields each = 60,000 parameters), we can run
+	// into the Postgres parameter limit inserting with VALUES. Instead, we pass in fields
+	// as arrays, where each array only counts for a single parameter.
+	//
+	// If changing the parameters used in this query, make sure to run relevant tests
+	// named `postgresParameterLimitTest` using "go test -slow-tests".
 	const format = `
--- source: enterprise/internal/database/perms_store.go:insertUserPendingPermissionsBatchQuery
+-- source: enterprise/internal/database/perms_store.go:upsertUserPendingPermissionsBatchQuery
 INSERT INTO user_pending_permissions
-  (service_type, service_id, bind_id, permission, object_type, updated_at)
-VALUES
-  %s
+	(service_type, service_id, bind_id, permission, object_type, updated_at)
+	(
+		SELECT %s::TEXT, %s::TEXT, UNNEST(%s::TEXT[]), %s::TEXT, %s::TEXT, %s::TIMESTAMPTZ
+	)
 ON CONFLICT ON CONSTRAINT
-  user_pending_permissions_service_perm_object_unique
+	user_pending_permissions_service_perm_object_unique
 DO UPDATE SET
-  updated_at = excluded.updated_at
+	updated_at = excluded.updated_at
 RETURNING id
 `
-
 	if p.UpdatedAt.IsZero() {
 		return nil, ErrPermsUpdatedAtNotSet
 	}
 
-	items := make([]*sqlf.Query, len(accounts.AccountIDs))
+	return sqlf.Sprintf(
+		format,
+
+		accounts.ServiceType,
+		accounts.ServiceID,
+		pq.Array(accounts.AccountIDs),
+
+		p.Perm.String(),
+		string(authz.PermRepos),
+		p.UpdatedAt.UTC(),
+	), nil
+}
+
+func loadExistingUserPendingPermissionsBatchQuery(accounts *extsvc.Accounts, p *authz.RepoPermissions) *sqlf.Query {
+	const format = `
+-- source: enterprise/internal/database/perms_store.go:loadExistingUserPendingPermissionsBatchQuery
+SELECT bind_id, id FROM user_pending_permissions
+WHERE
+	service_type = %s
+AND service_id = %s
+AND permission = %s
+AND object_type = %s
+AND bind_id IN (%s)
+`
+
+	bindIDs := make([]*sqlf.Query, len(accounts.AccountIDs))
 	for i := range accounts.AccountIDs {
-		items[i] = sqlf.Sprintf("(%s, %s, %s, %s, %s, %s)",
-			accounts.ServiceType,
-			accounts.ServiceID,
-			accounts.AccountIDs[i],
-			p.Perm.String(),
-			authz.PermRepos,
-			p.UpdatedAt.UTC(),
-		)
+		bindIDs[i] = sqlf.Sprintf("%s", accounts.AccountIDs[i])
 	}
 
 	return sqlf.Sprintf(
 		format,
-		sqlf.Join(items, ","),
-	), nil
+		accounts.ServiceType,
+		accounts.ServiceID,
+		p.Perm.String(),
+		authz.PermRepos,
+		sqlf.Join(bindIDs, ","),
+	)
 }
 
 func loadRepoPendingPermissionsQuery(p *authz.RepoPermissions, lock string) *sqlf.Query {
@@ -740,41 +856,6 @@ AND object_type = %s
 	), nil
 }
 
-func upsertRepoPendingPermissionsBatchQuery(ps ...*authz.RepoPermissions) (*sqlf.Query, error) {
-	const format = `
--- source: enterprise/internal/database/perms_store.go:upsertRepoPendingPermissionsBatchQuery
-INSERT INTO repo_pending_permissions
-  (repo_id, permission, user_ids_ints, updated_at)
-VALUES
-  %s
-ON CONFLICT ON CONSTRAINT
-  repo_pending_permissions_perm_unique
-DO UPDATE SET
-  user_ids_ints = excluded.user_ids_ints,
-  updated_at = excluded.updated_at
-`
-
-	items := make([]*sqlf.Query, len(ps))
-	for i := range ps {
-		ps[i].UserIDs.RunOptimize()
-		if ps[i].UpdatedAt.IsZero() {
-			return nil, ErrPermsUpdatedAtNotSet
-		}
-
-		items[i] = sqlf.Sprintf("(%s, %s, %s, %s)",
-			ps[i].RepoID,
-			ps[i].Perm.String(),
-			pq.Array(ps[i].UserIDs.ToArray()),
-			ps[i].UpdatedAt.UTC(),
-		)
-	}
-
-	return sqlf.Sprintf(
-		format,
-		sqlf.Join(items, ","),
-	), nil
-}
-
 // GrantPendingPermissions is used to grant pending permissions when the associated "ServiceType",
 // "ServiceID" and "BindID" found in p becomes effective for a given user, e.g. username as bind ID when
 // a user is created, email as bind ID when the email address is verified.
@@ -819,19 +900,30 @@ func (s *PermsStore) GrantPendingPermissions(ctx context.Context, userID int32, 
 	p.IDs = vals.ids
 
 	// NOTE: We currently only have "repos" type, so avoid unnecessary type checking for now.
-	repoIDs := p.IDs.ToArray()
-	if len(repoIDs) == 0 {
+	allRepoIDs := p.IDs.ToArray()
+	if len(allRepoIDs) == 0 {
 		return nil
 	}
 
-	updatedAt := txs.clock()
-	if q, err := upsertRepoPermissionsBatchQuery(repoIDs, nil, []uint32{uint32(userID)}, p.Perm, updatedAt); err != nil {
-		return err
-	} else if err = txs.execute(ctx, q); err != nil {
-		return errors.Wrap(err, "execute upsert repo permissions batch query")
+	var (
+		updatedAt  = txs.clock()
+		allUserIDs = []uint32{uint32(userID)}
+
+		addQueue    = allRepoIDs
+		hasNextPage = true
+	)
+	for hasNextPage {
+		var page *upsertRepoPermissionsPage
+		page, addQueue, _, hasNextPage = newUpsertRepoPermissionsPage(addQueue, nil)
+
+		if q, err := upsertRepoPermissionsBatchQuery(page, allRepoIDs, nil, allUserIDs, p.Perm, updatedAt); err != nil {
+			return err
+		} else if err = txs.execute(ctx, q); err != nil {
+			return errors.Wrap(err, "execute upsert repo permissions batch query")
+		}
 	}
 
-	if q, err := upsertUserPermissionsBatchQuery([]uint32{uint32(userID)}, nil, repoIDs, p.Perm, authz.PermRepos, updatedAt); err != nil {
+	if q, err := upsertUserPermissionsBatchQuery(allUserIDs, nil, allRepoIDs, p.Perm, authz.PermRepos, updatedAt); err != nil {
 		return err
 	} else if err = txs.execute(ctx, q); err != nil {
 		return errors.Wrap(err, "execute upsert user permissions batch query")
@@ -847,9 +939,68 @@ func (s *PermsStore) GrantPendingPermissions(ctx context.Context, userID int32, 
 	return nil
 }
 
-// upsertRepoPermissionsBatchQuery composes a SQL query that does both addition (for `addedRepoIDs`) and deletion (
-// for `removedRepoIDs`) of `userIDs` using upsert.
-func upsertRepoPermissionsBatchQuery(addedRepoIDs, removedRepoIDs, userIDs []uint32, perm authz.Perms, updatedAt time.Time) (*sqlf.Query, error) {
+// upsertRepoPermissionsPage tracks entries to upsert in a upsertRepoPermissionsBatchQuery.
+type upsertRepoPermissionsPage struct {
+	addedRepoIDs   []uint32
+	removedRepoIDs []uint32
+}
+
+// upsertRepoPermissionsPageSize restricts page size for newUpsertRepoPermissionsPage to
+// stay within the Postgres parameter limit (see `defaultUpsertRepoPermissionsPageSize`).
+//
+// May be modified for testing.
+var upsertRepoPermissionsPageSize = defaultUpsertRepoPermissionsPageSize
+
+// defaultUpsertRepoPermissionsPageSize sets a default for upsertRepoPermissionsPageSize.
+//
+// Value set to avoid parameter limit of ~65k, because each page element counts for 4
+// parameters (65k / 4 ~= 16k rows at a time)
+const defaultUpsertRepoPermissionsPageSize = 15000
+
+// newUpsertRepoPermissionsPage instantiates a page from the given add/remove queues.
+// Callers should reassign their queues to the ones returned by this constructor.
+func newUpsertRepoPermissionsPage(addQueue, removeQueue []uint32) (
+	page *upsertRepoPermissionsPage,
+	newAddQueue, newRemoveQueue []uint32,
+	hasNextPage bool,
+) {
+	quota := upsertRepoPermissionsPageSize
+	page = &upsertRepoPermissionsPage{}
+
+	if len(addQueue) > 0 {
+		if len(addQueue) < quota {
+			page.addedRepoIDs = addQueue
+			addQueue = nil
+		} else {
+			page.addedRepoIDs = addQueue[:quota]
+			addQueue = addQueue[quota:]
+		}
+		quota -= len(page.addedRepoIDs)
+	}
+
+	if len(removeQueue) > 0 {
+		if len(removeQueue) < quota {
+			page.removedRepoIDs = removeQueue
+			removeQueue = nil
+		} else {
+			page.removedRepoIDs = removeQueue[:quota]
+			removeQueue = removeQueue[quota:]
+		}
+	}
+
+	return page,
+		addQueue,
+		removeQueue,
+		len(addQueue) > 0 || len(removeQueue) > 0
+}
+
+// upsertRepoPermissionsBatchQuery composes a SQL query that does both addition (for `addedRepoIDs`)
+// and deletion (for `removedRepoIDs`) of `userIDs` using upsert.
+//
+// Pages should be set up using the helper function `newUpsertRepoPermissionsPage`
+func upsertRepoPermissionsBatchQuery(page *upsertRepoPermissionsPage, allAddedRepoIDs, allRemovedRepoIDs, userIDs []uint32, perm authz.Perms, updatedAt time.Time) (*sqlf.Query, error) {
+	// If changing the parameters used in this query, make sure to run relevant tests
+	// named `postgresParameterLimitTest` using "go test -slow-tests".
 	const format = `
 -- source: enterprise/internal/database/perms_store.go:upsertRepoPermissionsBatchQuery
 INSERT INTO repo_permissions
@@ -872,8 +1023,8 @@ DO UPDATE SET
 		return nil, ErrPermsUpdatedAtNotSet
 	}
 
-	items := make([]*sqlf.Query, 0, len(addedRepoIDs)+len(removedRepoIDs))
-	for _, repoID := range addedRepoIDs {
+	items := make([]*sqlf.Query, 0, len(page.addedRepoIDs)+len(page.removedRepoIDs))
+	for _, repoID := range page.addedRepoIDs {
 		items = append(items, sqlf.Sprintf("(%s, %s, %s, %s)",
 			repoID,
 			perm.String(),
@@ -881,7 +1032,7 @@ DO UPDATE SET
 			updatedAt.UTC(),
 		))
 	}
-	for _, repoID := range removedRepoIDs {
+	for _, repoID := range page.removedRepoIDs {
 		items = append(items, sqlf.Sprintf("(%s, %s, %s, %s)",
 			repoID,
 			perm.String(),
@@ -897,7 +1048,7 @@ DO UPDATE SET
 	return sqlf.Sprintf(
 		format,
 		sqlf.Join(items, ","),
-		pq.Array(addedRepoIDs),
+		pq.Array(allAddedRepoIDs),
 
 		// NOTE: Because we use empty user IDs for `removedRepoIDs`, we can't reuse "excluded.user_ids_ints"
 		// and have to explicitly set what user IDs to be removed.

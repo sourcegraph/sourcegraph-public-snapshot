@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"context"
 	"io"
 	"log"
 	"net"
@@ -10,6 +11,7 @@ import (
 	"os"
 	"os/signal"
 	"strconv"
+	"strings"
 	"sync"
 	"syscall"
 	"time"
@@ -19,6 +21,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
+
 	"github.com/sourcegraph/sourcegraph/internal/debugserver"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/logging"
@@ -30,10 +33,15 @@ import (
 
 var logRequests, _ = strconv.ParseBool(env.Get("LOG_REQUESTS", "", "log HTTP requests"))
 
-const port = "3180"
+var gracefulShutdownTimeout = func() time.Duration {
+	d, _ := time.ParseDuration(env.Get("SRC_GRACEFUL_SHUTDOWN_TIMEOUT", "10s", "Graceful shutdown timeout"))
+	if d == 0 {
+		d = 10 * time.Second
+	}
+	return d
+}()
 
-// requestMu ensures we only do one request at a time to prevent tripping abuse detection.
-var requestMu sync.Mutex
+const port = "3180"
 
 var metricWaitingRequestsGauge = promauto.NewGauge(prometheus.GaugeOpts{
 	Name: "github_proxy_waiting_requests",
@@ -61,71 +69,22 @@ func main() {
 	sentry.Init()
 	trace.Init()
 
-	go func() {
-		c := make(chan os.Signal, 1)
-		signal.Notify(c, syscall.SIGINT, syscall.SIGHUP)
-		<-c
-		os.Exit(0)
-	}()
-
 	// Ready immediately
 	ready := make(chan struct{})
 	close(ready)
 	go debugserver.NewServerRoutine(ready).Start()
 
-	// Use a custom client/transport because GitHub closes keep-alive
-	// connections after 60s. In order to avoid running into EOF errors, we use
-	// a IdleConnTimeout of 30s, so connections are only kept around for <30s
-	client := &http.Client{Transport: &http.Transport{
-		Proxy:           http.ProxyFromEnvironment,
-		IdleConnTimeout: 30 * time.Second,
-	}}
+	p := &githubProxy{
+		// Use a custom client/transport because GitHub closes keep-alive
+		// connections after 60s. In order to avoid running into EOF errors, we use
+		// a IdleConnTimeout of 30s, so connections are only kept around for <30s
+		client: &http.Client{Transport: &http.Transport{
+			Proxy:           http.ProxyFromEnvironment,
+			IdleConnTimeout: 30 * time.Second,
+		}},
+	}
 
-	var h http.Handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		q2 := r.URL.Query()
-		h2 := make(http.Header)
-		for k, v := range r.Header {
-			if _, found := hopHeaders[k]; !found {
-				h2[k] = v
-			}
-		}
-
-		req2 := &http.Request{
-			Method: r.Method,
-			Body:   r.Body,
-			URL: &url.URL{
-				Scheme:   "https",
-				Host:     "api.github.com",
-				Path:     r.URL.Path,
-				RawQuery: q2.Encode(),
-			},
-			Header: h2,
-		}
-
-		metricWaitingRequestsGauge.Inc()
-		requestMu.Lock()
-		metricWaitingRequestsGauge.Dec()
-		resp, err := client.Do(req2)
-		requestMu.Unlock()
-		if err != nil {
-			log15.Warn("proxy error", "err", err)
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-		defer resp.Body.Close()
-
-		for k, v := range resp.Header {
-			w.Header()[k] = v
-		}
-		w.WriteHeader(resp.StatusCode)
-		if resp.StatusCode < 400 || !logRequests {
-			_, _ = io.Copy(w, resp.Body)
-			return
-		}
-		b, err := io.ReadAll(resp.Body)
-		log15.Warn("proxy error", "status", resp.StatusCode, "body", string(b), "bodyErr", err)
-		_, _ = io.Copy(w, bytes.NewReader(b))
-	})
+	h := http.Handler(p)
 	if logRequests {
 		h = handlers.LoggingHandler(os.Stdout, h)
 	}
@@ -146,6 +105,21 @@ func main() {
 		Addr:         addr,
 		Handler:      http.DefaultServeMux,
 	}
+
+	go func() {
+		c := make(chan os.Signal, 1)
+		signal.Notify(c, syscall.SIGINT, syscall.SIGHUP)
+		<-c
+
+		ctx, cancel := context.WithTimeout(context.Background(), gracefulShutdownTimeout)
+		if err := s.Shutdown(ctx); err != nil {
+			log15.Error("graceful termination timeout", "error", err)
+		}
+		cancel()
+
+		os.Exit(0)
+	}()
+
 	log.Fatal(s.ListenAndServe())
 }
 
@@ -189,4 +163,96 @@ func instrumentHandler(r prometheus.Registerer, h http.Handler) http.Handler {
 			),
 		),
 	)
+}
+
+type githubProxy struct {
+	tokenLocks lockMap
+	client     interface {
+		Do(*http.Request) (*http.Response, error)
+	}
+}
+
+func (p *githubProxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	var token string
+	q2 := r.URL.Query()
+	h2 := make(http.Header)
+	for k, v := range r.Header {
+		if _, found := hopHeaders[k]; !found {
+			h2[k] = v
+		}
+
+		if k == "Authorization" && len(v) > 0 {
+			fields := strings.Fields(v[0])
+			token = fields[len(fields)-1]
+		}
+	}
+
+	req2 := &http.Request{
+		Method: r.Method,
+		Body:   r.Body,
+		URL: &url.URL{
+			Scheme:   "https",
+			Host:     "api.github.com",
+			Path:     r.URL.Path,
+			RawQuery: q2.Encode(),
+		},
+		Header: h2,
+	}
+
+	lock := p.tokenLocks.get(token)
+	metricWaitingRequestsGauge.Inc()
+	lock.Lock()
+	metricWaitingRequestsGauge.Dec()
+	resp, err := p.client.Do(req2)
+	lock.Unlock()
+
+	if err != nil {
+		log15.Warn("proxy error", "err", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	defer func() { _ = resp.Body.Close() }()
+
+	for k, v := range resp.Header {
+		w.Header()[k] = v
+	}
+	w.WriteHeader(resp.StatusCode)
+	if resp.StatusCode < 400 || !logRequests {
+		_, _ = io.Copy(w, resp.Body)
+		return
+	}
+	b, err := io.ReadAll(resp.Body)
+	log15.Warn("proxy error", "status", resp.StatusCode, "body", string(b), "bodyErr", err)
+	_, _ = io.Copy(w, bytes.NewReader(b))
+}
+
+// lockMap is a map of strings to mutexes. It's used to serialize github.com API
+// requests of each access token in order to prevent abuse rate limiting due
+// to concurrency.
+type lockMap struct {
+	init  sync.Once
+	mu    sync.RWMutex
+	locks map[string]*sync.Mutex
+}
+
+func (m *lockMap) get(k string) *sync.Mutex {
+	m.init.Do(func() { m.locks = make(map[string]*sync.Mutex) })
+
+	m.mu.RLock()
+	lock, ok := m.locks[k]
+	m.mu.RUnlock()
+
+	if ok {
+		return lock
+	}
+
+	m.mu.Lock()
+	lock, ok = m.locks[k]
+	if !ok {
+		lock = &sync.Mutex{}
+		m.locks[k] = lock
+	}
+	m.mu.Unlock()
+
+	return lock
 }

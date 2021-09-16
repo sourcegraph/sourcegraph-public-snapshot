@@ -157,6 +157,11 @@ func (r *Resolver) UpdateCodeMonitor(ctx context.Context, args *graphqlbackend.U
 		return nil, errors.Errorf("UpdateCodeMonitor: %w", err)
 	}
 
+	err = r.isAllowedToCreate(ctx, args.Monitor.Update.Namespace)
+	if err != nil {
+		return nil, errors.Errorf("update namespace: %w", err)
+	}
+
 	var monitorID int64
 	err = relay.UnmarshalSpec(args.Monitor.Id, &monitorID)
 	if err != nil {

@@ -15,6 +15,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/debugserver"
+	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/httpserver"
@@ -52,6 +53,9 @@ func Start(additionalJobs map[string]Job) {
 	tracer.Init()
 	sentry.Init()
 	trace.Init()
+	if err := keyring.Init(context.Background()); err != nil {
+		log.Fatalf("Failed to intialise keyring: %v", err)
+	}
 
 	// Start debug server
 	ready := make(chan struct{})

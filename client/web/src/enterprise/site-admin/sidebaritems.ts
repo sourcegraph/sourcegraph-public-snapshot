@@ -45,8 +45,13 @@ export const batchChangesGroup: SiteAdminSideBarGroup = {
     },
     items: [
         {
-            label: 'Batch Changes',
+            label: 'Settings',
             to: '/site-admin/batch-changes',
+        },
+        {
+            label: 'Batch spec executions',
+            to: '/site-admin/batch-changes/executions',
+            condition: props => props.batchChangesExecutionEnabled,
         },
     ],
     condition: ({ batchChangesEnabled }) => batchChangesEnabled,
@@ -85,6 +90,10 @@ const codeIntelGroup: SiteAdminSideBarGroup = {
             to: '/site-admin/code-intelligence/indexes',
             label: 'Auto indexing',
             condition: () => Boolean(window.context?.codeIntelAutoIndexingEnabled),
+        },
+        {
+            to: '/site-admin/code-intelligence/configuration',
+            label: 'Configuration',
         },
     ],
 }

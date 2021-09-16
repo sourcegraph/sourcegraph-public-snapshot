@@ -119,6 +119,21 @@ func TestHandle(t *testing.T) {
 		t.Errorf("unexpected UpdatePackageReferencesFunc args (-want +got):\n%s", diff)
 	}
 
+	expectedIDsForRefcountUpdate := []int{42}
+	if len(mockDBStore.UpdateNumReferencesFunc.History()) != 1 {
+		t.Errorf("unexpected number of UpdateNumReferences calls. want=%d have=%d", 1, len(mockDBStore.UpdateNumReferencesFunc.History()))
+	} else if diff := cmp.Diff(expectedIDsForRefcountUpdate, mockDBStore.UpdateNumReferencesFunc.History()[0].Arg1); diff != "" {
+		t.Errorf("unexpected UpdateNumReferences args (-want +got):\n%s", diff)
+	}
+
+	if len(mockDBStore.UpdateDependencyNumReferencesFunc.History()) != 1 {
+		t.Errorf("unexpected number of UpdateDependencyNumReferences calls. want=%d have=%d", 1, len(mockDBStore.UpdateDependencyNumReferencesFunc.History()))
+	} else if diff := cmp.Diff(expectedIDsForRefcountUpdate, mockDBStore.UpdateDependencyNumReferencesFunc.History()[0].Arg1); diff != "" {
+		t.Errorf("unexpected UpdateDependencyNumReferences args (-want +got):\n%s", diff)
+	} else if diff := cmp.Diff(false, mockDBStore.UpdateDependencyNumReferencesFunc.History()[0].Arg2); diff != "" {
+		t.Errorf("unexpected UpdateDependencyNumReferences args (-want +got):\n%s", diff)
+	}
+
 	if len(mockDBStore.InsertDependencyIndexingJobFunc.History()) != 1 {
 		t.Errorf("unexpected number of InsertDependencyIndexingJob calls. want=%d have=%d", 1, len(mockDBStore.InsertDependencyIndexingJobFunc.History()))
 	} else if mockDBStore.InsertDependencyIndexingJobFunc.History()[0].Arg1 != 42 {

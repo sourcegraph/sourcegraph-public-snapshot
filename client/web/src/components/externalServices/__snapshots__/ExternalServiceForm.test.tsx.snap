@@ -2,7 +2,7 @@
 
 exports[`ExternalServiceForm create GitHub 1`] = `
 <form
-  className="external-service-form "
+  className="external-service-form"
   onInvalid={[Function]}
   onSubmit={[Function]}
 >
@@ -53,7 +53,7 @@ exports[`ExternalServiceForm create GitHub 1`] = `
 
 exports[`ExternalServiceForm edit GitHub 1`] = `
 <form
-  className="external-service-form "
+  className="external-service-form"
   onInvalid={[Function]}
   onSubmit={[Function]}
 >
@@ -104,7 +104,7 @@ exports[`ExternalServiceForm edit GitHub 1`] = `
 
 exports[`ExternalServiceForm edit GitHub, loading 1`] = `
 <form
-  className="external-service-form "
+  className="external-service-form"
   onInvalid={[Function]}
   onSubmit={[Function]}
 >

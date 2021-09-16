@@ -5,15 +5,6 @@ import { catchError, filter, map, mapTo, publishReplay, refCount, take } from 'r
 import { IS_CHROME } from '../marketing/util'
 import { observeQuerySelector } from '../util/dom'
 
-import { eventLogger } from './eventLogger'
-import { stripURLParameters } from './util'
-
-interface EventQueryParameters {
-    utm_campaign?: string
-    utm_source?: string
-    utm_medium?: string
-}
-
 const extensionMarker = document.querySelector<HTMLDivElement>('#sourcegraph-app-background')
 
 /**
@@ -70,40 +61,3 @@ export const browserExtensionInstalled: Observable<boolean> = concat(
     publishReplay(1),
     refCount()
 )
-
-/**
- * Get pageview-specific event properties from URL query string parameters
- */
-export function pageViewQueryParameters(url: string): EventQueryParameters {
-    const parsedUrl = new URL(url)
-
-    const utmSource = parsedUrl.searchParams.get('utm_source')
-    if (utmSource === 'saved-search-email') {
-        eventLogger.log('SavedSearchEmailClicked')
-    } else if (utmSource === 'saved-search-slack') {
-        eventLogger.log('SavedSearchSlackClicked')
-    } else if (utmSource === 'code-monitoring-email') {
-        eventLogger.log('CodeMonitorEmailLinkClicked')
-    }
-
-    return {
-        utm_campaign: parsedUrl.searchParams.get('utm_campaign') || undefined,
-        utm_source: parsedUrl.searchParams.get('utm_source') || undefined,
-        utm_medium: parsedUrl.searchParams.get('utm_medium') || undefined,
-    }
-}
-
-/**
- * Log events associated with URL query string parameters, and remove those parameters as necessary
- * Note that this is a destructive operation (it changes the page URL and replaces browser state) by
- * calling stripURLParameters
- */
-export function handleQueryEvents(url: string): void {
-    const parsedUrl = new URL(url)
-    const isBadgeRedirect = !!parsedUrl.searchParams.get('badge')
-    if (isBadgeRedirect) {
-        eventLogger.log('RepoBadgeRedirected')
-    }
-
-    stripURLParameters(url, ['utm_campaign', 'utm_source', 'utm_medium', 'badge'])
-}

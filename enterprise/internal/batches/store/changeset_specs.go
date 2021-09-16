@@ -14,6 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
 )
 
 // changesetSpecInsertColumns is the list of changeset_specs columns that are
@@ -461,7 +462,7 @@ func scanChangesetSpec(c *btypes.ChangesetSpec, s scanner) error {
 		return errors.Wrap(err, "scanning changeset spec")
 	}
 
-	c.Spec = new(btypes.ChangesetSpecDescription)
+	c.Spec = new(batcheslib.ChangesetSpec)
 	if err = json.Unmarshal(spec, c.Spec); err != nil {
 		return errors.Wrap(err, "scanChangesetSpec: failed to unmarshal spec")
 	}

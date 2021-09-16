@@ -17,6 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
 )
 
 // Comparing the IDs is good enough, no need to bloat the tests here.
@@ -47,7 +48,7 @@ func testStoreChangesetSpecs(t *testing.T, ctx context.Context, s *Store, clock 
 	for i := 0; i < cap(changesetSpecs); i++ {
 		c := &btypes.ChangesetSpec{
 			RawSpec: `{"externalID":"12345"}`,
-			Spec: &btypes.ChangesetSpecDescription{
+			Spec: &batcheslib.ChangesetSpec{
 				ExternalID: "123456",
 			},
 			UserID:      int32(i + 1234),
@@ -70,7 +71,7 @@ func testStoreChangesetSpecs(t *testing.T, ctx context.Context, s *Store, clock 
 	// ChangesetSpecs whose repository has been (soft-)deleted.
 	changesetSpecDeletedRepo := &btypes.ChangesetSpec{
 		UserID:      int32(424242),
-		Spec:        &btypes.ChangesetSpecDescription{},
+		Spec:        &batcheslib.ChangesetSpec{},
 		BatchSpecID: int64(424242),
 		RawSpec:     `{}`,
 		RepoID:      deletedRepo.ID,

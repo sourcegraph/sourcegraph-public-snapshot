@@ -51,6 +51,7 @@ export const UserSettingsSidebar: React.FunctionComponent<UserSettingsSidebarPro
     const siteAdminViewingOtherUser = props.user.id !== props.authenticatedUser.id
     const context: UserSettingsSidebarItemConditionContext = {
         batchChangesEnabled: props.batchChangesEnabled,
+        batchChangesExecutionEnabled: props.batchChangesExecutionEnabled,
         user: props.user,
         authenticatedUser: props.authenticatedUser,
         isSourcegraphDotCom: props.isSourcegraphDotCom,
@@ -107,7 +108,7 @@ export const UserSettingsSidebar: React.FunctionComponent<UserSettingsSidebarPro
                 {props.showOnboardingTour && (
                     <button
                         type="button"
-                        className="btn text-left sidebar__link--inactive d-flex sidebar-nav-link w-100"
+                        className="btn text-left sidebar__link--inactive d-flex w-100"
                         onClick={reEnableSearchTour}
                     >
                         Show search tour

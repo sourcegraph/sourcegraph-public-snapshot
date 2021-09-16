@@ -1,3 +1,4 @@
+import classNames from 'classnames'
 import * as H from 'history'
 import { upperFirst } from 'lodash'
 import BookOpenVariantIcon from 'mdi-react/BookOpenVariantIcon'
@@ -10,6 +11,7 @@ import { catchError, startWith } from 'rxjs/operators'
 import { isErrorLike } from '@sourcegraph/codeintellify/lib/errors'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { FetchFileParameters } from '@sourcegraph/shared/src/components/CodeExcerpt'
+import { displayRepoName } from '@sourcegraph/shared/src/components/RepoFileLink'
 import { VersionContextProps } from '@sourcegraph/shared/src/search/util'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { asError, ErrorLike } from '@sourcegraph/shared/src/util/errors'
@@ -180,7 +182,18 @@ export const RepositoryDocumentationPage: React.FunctionComponent<Props> = React
 
     return (
         <div className="repository-docs-page">
-            <PageTitle title="API docs" />
+            {page !== LOADING && !isErrorLike(page) ? (
+                <PageTitle
+                    title={
+                        onlyPathID
+                            ? `${
+                                  findDocumentationNode(page.tree, onlyPathID)?.documentation.searchKey ||
+                                  page.tree.documentation.searchKey
+                              } - ${displayRepoName(props.repo.name)} API docs`
+                            : `${page.tree.documentation.searchKey} - ${displayRepoName(props.repo.name)} API docs`
+                    }
+                />
+            ) : null}
             {loading ? <LoadingSpinner className="icon-inline m-1" /> : null}
             {error && error.message === 'page not found' ? <PageNotFound /> : null}
             {error && (error.message === 'no LSIF data' || error.message === 'no LSIF documentation') ? (
@@ -250,9 +263,10 @@ export const RepositoryDocumentationPage: React.FunctionComponent<Props> = React
                     />
                     <div className="repository-docs-page__container" ref={containerReference}>
                         <div
-                            className={`repository-docs-page__container-content${
-                                sidebarVisible ? ' repository-docs-page__container-content--sidebar-visible' : ''
-                            }`}
+                            className={classNames(
+                                'repository-docs-page__container-content',
+                                sidebarVisible && 'repository-docs-page__container-content--sidebar-visible'
+                            )}
                         >
                             {/*
                                 TODO(apidocs): Eventually this welcome alert should go away entirely, but for now
@@ -284,6 +298,22 @@ export const RepositoryDocumentationPage: React.FunctionComponent<Props> = React
         </div>
     )
 })
+
+/** Finds a descendant child node of the input with the given path ID. */
+function findDocumentationNode(node: GQLDocumentationNode, pathID: string): GQLDocumentationNode | undefined {
+    if (node.pathID === pathID) {
+        return node
+    }
+    for (const child of node.children) {
+        if (child.node) {
+            const found = findDocumentationNode(child.node, pathID)
+            if (found) {
+                return found
+            }
+        }
+    }
+    return undefined
+}
 
 /** Checks if an element is in view of the scrolling container. */
 function isElementInView(element: HTMLElement, container: HTMLElement, partial: boolean): boolean {

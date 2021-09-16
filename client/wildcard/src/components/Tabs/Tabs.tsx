@@ -10,6 +10,7 @@ import {
     Tabs as ReachTabs,
     TabsProps as ReachTabsProps,
 } from '@reach/tabs'
+import classNames from 'classnames'
 import React from 'react'
 
 import { TabsContext, useTabsContext } from './context'
@@ -18,7 +19,9 @@ import { useTabPanelBehavior } from './useTabPanelBehavior'
 import { useTabPanelsState } from './useTabPanelsState'
 import { TabsState, useTabs } from './useTabs'
 
-interface TabsProps extends ReachTabsProps, TabsState {}
+interface TabsProps extends ReachTabsProps, TabsState {
+    className?: string
+}
 
 interface TabListProps extends ReachTabListProps {
     /*
@@ -43,12 +46,12 @@ export type { TabsProps, TabPanelsProps, TabPanelProps }
  *
  */
 export const Tabs: React.FunctionComponent<TabsProps> = props => {
-    const { lazy, size, behavior, ...reachProps } = props
+    const { lazy, size, behavior, className, ...reachProps } = props
     const { contextValue } = useTabs({ lazy, size, behavior })
 
     return (
         <TabsContext.Provider value={contextValue}>
-            <div className={styles.wildcardTabs} data-testid="wildcard-tabs">
+            <div className={classNames(styles.wildcardTabs, className)} data-testid="wildcard-tabs">
                 <ReachTabs {...reachProps} />
             </div>
         </TabsContext.Provider>

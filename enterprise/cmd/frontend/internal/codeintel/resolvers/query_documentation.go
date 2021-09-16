@@ -37,7 +37,10 @@ func (r *queryResolver) DocumentationPage(ctx context.Context, pathID string) (_
 		// matching bundle.
 		var page *precise.DocumentationPageData
 		page, err = r.lsifStore.DocumentationPage(ctx, r.uploads[i].ID, pathID)
-		if err == nil {
+		if err != nil {
+			return nil, err
+		}
+		if page != nil {
 			return page, nil
 		}
 	}
@@ -69,7 +72,10 @@ func (r *queryResolver) DocumentationPathInfo(ctx context.Context, pathID string
 		// matching bundle.
 		var pathInfo *precise.DocumentationPathInfoData
 		pathInfo, err = r.lsifStore.DocumentationPathInfo(ctx, r.uploads[i].ID, pathID)
-		if err == nil {
+		if err != nil {
+			return nil, err
+		}
+		if pathInfo != nil {
 			return pathInfo, nil
 		}
 	}

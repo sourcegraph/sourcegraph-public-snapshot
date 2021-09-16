@@ -1,3 +1,4 @@
+import classNames from 'classnames'
 import React from 'react'
 
 /**
@@ -11,7 +12,7 @@ import React from 'react'
  */
 export const LicenseGenerationKeyWarning: React.FunctionComponent<{ className?: string }> = ({ className = '' }) =>
     window.context?.debug ? (
-        <div className={`alert alert-warning ${className}`}>
+        <div className={classNames('alert alert-warning', className)}>
             License keys generated in dev mode are <strong>NOT VALID</strong>.{' '}
             <a href="https://sourcegraph.com/site-admin/dotcom/product/subscriptions">
                 Use Sourcegraph.com to generate valid license keys.

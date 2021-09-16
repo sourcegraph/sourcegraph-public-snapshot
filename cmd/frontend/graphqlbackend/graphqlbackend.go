@@ -21,6 +21,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/cloneurls"
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -46,7 +47,6 @@ var (
 )
 
 type prometheusTracer struct {
-	db dbutil.DB
 	trace.OpenTracingTracer
 }
 
@@ -63,10 +63,10 @@ func (t *prometheusTracer) TraceQuery(ctx context.Context, queryString string, o
 
 	// Note: We don't care about the error here, we just extract the username if
 	// we get a non-nil user object.
-	currentUser, _ := CurrentUser(ctx, t.db)
-	var currentUserName string
-	if currentUser != nil {
-		currentUserName = currentUser.Username()
+	var currentUserID int32
+	a := actor.FromContext(ctx)
+	if a.IsAuthenticated() {
+		currentUserID = a.UID
 	}
 
 	// Requests made by our JS frontend and other internal things will have a concrete name attached to the
@@ -82,9 +82,9 @@ func (t *prometheusTracer) TraceQuery(ctx context.Context, queryString string, o
 	requestSource := sgtrace.RequestSource(ctx)
 
 	if !disableLog {
-		lvl("serving GraphQL request", "name", requestName, "user", currentUserName, "source", requestSource)
+		lvl("serving GraphQL request", "name", requestName, "userID", currentUserID, "source", requestSource)
 		if requestName == "unknown" {
-			log.Printf(`logging complete query for unnamed GraphQL request above name=%s user=%s source=%s:
+			log.Printf(`logging complete query for unnamed GraphQL request above name=%s userID=%d source=%s:
 QUERY
 -----
 %s
@@ -93,7 +93,7 @@ VARIABLES
 ---------
 %v
 
-`, requestName, currentUserName, requestSource, queryString, variables)
+`, requestName, currentUserID, requestSource, queryString, variables)
 		}
 	}
 
@@ -104,9 +104,9 @@ VARIABLES
 		d := time.Since(start)
 		if v := conf.Get().ObservabilityLogSlowGraphQLRequests; v != 0 && d.Milliseconds() > int64(v) {
 			encodedVariables, _ := json.Marshal(variables)
-			log15.Warn("slow GraphQL request", "time", d, "name", requestName, "user", currentUserName, "source", requestSource, "error", err, "variables", string(encodedVariables))
+			log15.Warn("slow GraphQL request", "time", d, "name", requestName, "userID", currentUserID, "source", requestSource, "error", err, "variables", string(encodedVariables))
 			if requestName == "unknown" {
-				log.Printf(`logging complete query for slow GraphQL request above time=%v name=%s user=%s source=%s error=%v:
+				log.Printf(`logging complete query for slow GraphQL request above time=%v name=%s userID=%d source=%s error=%v:
 QUERY
 -----
 %s
@@ -115,7 +115,7 @@ VARIABLES
 ---------
 %s
 
-`, d, requestName, currentUserName, requestSource, err, queryString, encodedVariables)
+`, d, requestName, currentUserID, requestSource, err, queryString, encodedVariables)
 			}
 		}
 	}
@@ -398,7 +398,7 @@ func NewSchema(db dbutil.DB, batchChanges BatchChangesResolver, codeIntel CodeIn
 	return graphql.ParseSchema(
 		strings.Join(schemas, "\n"),
 		resolver,
-		graphql.Tracer(&prometheusTracer{db: db}),
+		graphql.Tracer(&prometheusTracer{}),
 		graphql.UseStringDescriptions(),
 	)
 }

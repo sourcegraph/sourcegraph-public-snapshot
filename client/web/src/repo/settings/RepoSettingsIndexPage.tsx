@@ -1,3 +1,4 @@
+import classNames from 'classnames'
 import CheckCircleIcon from 'mdi-react/CheckCircleIcon'
 import prettyBytes from 'pretty-bytes'
 import * as React from 'react'
@@ -76,20 +77,18 @@ const TextSearchIndexedReference: React.FunctionComponent<{
     repo: SettingsAreaRepositoryFields
     indexedRef: GQL.IRepositoryTextSearchIndexedRef
 }> = ({ repo, indexedRef }) => {
-    let Icon: React.ComponentType<{ className?: string }>
-    let iconClassName: string
-    if (indexedRef.indexed && indexedRef.current) {
-        Icon = CheckCircleIcon
-        iconClassName = 'current'
-    } else {
-        Icon = LoadingSpinner
-        iconClassName = 'stale'
-    }
+    const isCurrent = indexedRef.indexed && indexedRef.current
+    const Icon = isCurrent ? CheckCircleIcon : LoadingSpinner
 
     return (
         <li className="repo-settings-index-page__ref">
             <Icon
-                className={`icon-inline repo-settings-index-page__ref-icon repo-settings-index-page__ref-icon--${iconClassName}`}
+                className={classNames(
+                    'icon-inline repo-settings-index-page__ref-icon',
+                    isCurrent
+                        ? 'repo-settings-index-page__ref-icon--current'
+                        : 'repo-settings-index-page__ref-icon--stale'
+                )}
             />
             <LinkOrSpan to={indexedRef.ref.url}>
                 <strong>

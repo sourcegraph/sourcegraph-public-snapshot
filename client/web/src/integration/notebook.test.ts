@@ -15,6 +15,7 @@ import { highlightFileResult, mixedSearchStreamEvents } from './streaming-search
 const viewerSettings: Partial<WebGraphQlOperations> = {
     ViewerSettings: () => ({
         viewerSettings: {
+            __typename: 'SettingsCascade',
             subjects: [
                 {
                     __typename: 'DefaultSettings',

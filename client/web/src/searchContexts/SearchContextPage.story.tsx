@@ -68,7 +68,9 @@ const fetchAutoDefinedContext = (): Observable<ISearchContext> =>
 add(
     'public context',
     () => (
-        <WebStory>{webProps => <SearchContextPage {...webProps} fetchSearchContext={fetchPublicContext} />}</WebStory>
+        <WebStory>
+            {webProps => <SearchContextPage {...webProps} fetchSearchContextBySpec={fetchPublicContext} />}
+        </WebStory>
     ),
     {}
 )
@@ -77,7 +79,7 @@ add(
     'autodefined context',
     () => (
         <WebStory>
-            {webProps => <SearchContextPage {...webProps} fetchSearchContext={fetchAutoDefinedContext} />}
+            {webProps => <SearchContextPage {...webProps} fetchSearchContextBySpec={fetchAutoDefinedContext} />}
         </WebStory>
     ),
     {}
@@ -86,14 +88,16 @@ add(
 add(
     'private context',
     () => (
-        <WebStory>{webProps => <SearchContextPage {...webProps} fetchSearchContext={fetchPrivateContext} />}</WebStory>
+        <WebStory>
+            {webProps => <SearchContextPage {...webProps} fetchSearchContextBySpec={fetchPrivateContext} />}
+        </WebStory>
     ),
     {}
 )
 
 add(
     'loading',
-    () => <WebStory>{webProps => <SearchContextPage {...webProps} fetchSearchContext={() => NEVER} />}</WebStory>,
+    () => <WebStory>{webProps => <SearchContextPage {...webProps} fetchSearchContextBySpec={() => NEVER} />}</WebStory>,
     {}
 )
 
@@ -104,7 +108,7 @@ add(
             {webProps => (
                 <SearchContextPage
                     {...webProps}
-                    fetchSearchContext={() => throwError(new Error('Failed to fetch search context'))}
+                    fetchSearchContextBySpec={() => throwError(new Error('Failed to fetch search context'))}
                 />
             )}
         </WebStory>

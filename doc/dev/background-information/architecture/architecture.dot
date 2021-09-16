@@ -7,10 +7,10 @@ digraph architecture {
     compound=true
     splines=ortho
     concentrate=true
-    stylesheet="/assets/architecture.css"
+    stylesheet="./architecture.css"
 
     graph [
-        fontname="Iosevka"
+        fontname="Source Code Pro, monospace"
         fontsize=12
         pad=0.2
     ]
@@ -20,7 +20,7 @@ digraph architecture {
         style="filled"
         fillcolor="white"
         shape="rectangle"
-        fontname="Iosevka"
+        fontname="Source Code Pro, monospace"
         fontsize=10
         margin=0.15
         target="_blank"

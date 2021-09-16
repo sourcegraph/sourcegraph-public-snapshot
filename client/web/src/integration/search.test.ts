@@ -33,9 +33,17 @@ const mockDefaultStreamEvents: SearchEvent[] = [
         data: [
             { label: 'archived:yes', value: 'archived:yes', count: 5, kind: 'generic', limitHit: true },
             { label: 'fork:yes', value: 'fork:yes', count: 46, kind: 'generic', limitHit: true },
+            // Two repo filters to trigger the repository sidebar section
             {
                 label: 'github.com/Algorilla/manta-ray',
                 value: 'repo:^github\\.com/Algorilla/manta-ray$',
+                count: 1,
+                kind: 'repo',
+                limitHit: true,
+            },
+            {
+                label: 'github.com/Algorilla/manta-ray2',
+                value: 'repo:^github\\.com/Algorilla/manta-ray2$',
                 count: 1,
                 kind: 'repo',
                 limitHit: true,
@@ -223,7 +231,11 @@ describe('Search', () => {
             testContext.overrideGraphQL({
                 ...commonSearchGraphQLResults,
                 RegistryExtensions: () => ({
-                    extensionRegistry: { extensions: { error: null, nodes: [] }, featuredExtensions: null },
+                    extensionRegistry: {
+                        __typename: 'ExtensionRegistry',
+                        extensions: { error: null, nodes: [] },
+                        featuredExtensions: null,
+                    },
                 }),
             })
             testContext.overrideSearchStreamEvents(mockDefaultStreamEvents)
@@ -342,20 +354,20 @@ describe('Search', () => {
                         {
                             type: 'content',
                             lineMatches: [],
-                            name: 'stream.ts',
+                            path: 'stream.ts',
                             repository: 'github.com/sourcegraph/sourcegraph',
                         },
                         {
                             type: 'content',
                             lineMatches: [],
-                            name: 'stream.ts',
+                            path: 'stream.ts',
                             repository: 'github.com/sourcegraph/sourcegraph',
-                            version: 'abcd',
+                            commit: 'abcd',
                         },
                         {
                             type: 'content',
                             lineMatches: [],
-                            name: 'stream.ts',
+                            path: 'stream.ts',
                             repository: 'github.com/sourcegraph/sourcegraph',
                             branches: ['test/branch'],
                         },
@@ -423,7 +435,7 @@ describe('Search', () => {
                 waitUntil: 'networkidle0',
             })
             await hideCreateCodeMonitorFeatureTour()
-            await driver.page.waitForSelector('.search-result-match__code-excerpt .selection-highlight', {
+            await driver.page.waitForSelector('[data-testid="search-result-match-code-excerpt"] .selection-highlight', {
                 visible: true,
             })
             await driver.page.waitForSelector('#monaco-query-input', { visible: true })
@@ -444,7 +456,7 @@ describe('Search', () => {
                 waitUntil: 'networkidle0',
             })
             await hideCreateCodeMonitorFeatureTour()
-            await driver.page.waitForSelector('.search-result-match__code-excerpt .selection-highlight', {
+            await driver.page.waitForSelector('[data-testid="search-result-match-code-excerpt"] .selection-highlight', {
                 visible: true,
             })
             await driver.page.waitForSelector('#monaco-query-input', { visible: true })
@@ -512,6 +524,12 @@ describe('Search', () => {
                         'div[data-shepherd-step-id="create-code-monitor-feature-tour"]'
                     ) !== null
             )
+
+        beforeEach(() => {
+            testContext.overrideGraphQL({
+                ...commonSearchGraphQLResults,
+            })
+        })
 
         test('Do not show create code monitor button feature tour with missing search type', async () => {
             testContext.overrideSearchStreamEvents(mockDefaultStreamEvents)

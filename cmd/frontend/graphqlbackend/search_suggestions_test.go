@@ -74,6 +74,18 @@ func TestSearchSuggestions(t *testing.T) {
 		}
 	})
 
+	t.Run("no suggestions for predicate syntax", func(t *testing.T) {
+		for _, v := range searchVersions {
+			testSuggestions(t, "repo:contains(file:foo)", v, []string{})
+		}
+	})
+
+	t.Run("no suggestions for search expressions", func(t *testing.T) {
+		for _, v := range searchVersions {
+			testSuggestions(t, "file:foo or file:bar", v, []string{})
+		}
+	})
+
 	t.Run("single term", func(t *testing.T) {
 		mockDecodedViewerFinalSettings = &schema.Settings{}
 		defer func() { mockDecodedViewerFinalSettings = nil }()

@@ -37,11 +37,14 @@ For enterprise version:
 sg run enterprise-web-standalone-prod
 ```
 
-Web app should be available at `http://${SOURCEGRAPH_HTTPS_DOMAIN}:${SOURCEGRAPH_HTTPS_PORT}`.
-Build artifacts will be served from `<rootRepoPath>/ui/assets`.
+Web app should be available at `http://${SOURCEGRAPH_HTTPS_DOMAIN}:${SOURCEGRAPH_HTTPS_PORT}` (note the `http` not `https`). Build artifacts will be served from `<rootRepoPath>/ui/assets`.
 
 ### API proxy
 
 In both environments, server proxies API requests to `SOURCEGRAPH_API_URL` provided as the `.env` variable.
 To avoid the `CSRF token is invalid` error CSRF token is retrieved from the `SOURCEGRAPH_API_URL` before the server starts.
 Then this value is used for every subsequent request to the API.
+
+### esbuild (experimental)
+
+See https://docs.sourcegraph.com/dev/background-information/web/build#esbuild.

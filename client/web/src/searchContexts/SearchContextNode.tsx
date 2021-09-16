@@ -18,7 +18,7 @@ export const SearchContextNode: React.FunctionComponent<SearchContextNodeProps> 
     <div className="search-context-node py-3 d-flex align-items-center">
         <div className="search-context-node__left flex-grow-1">
             <div>
-                <Link to={`/contexts/${node.id}`}>
+                <Link to={`/contexts/${node.spec}`}>
                     <strong>{node.spec}</strong>
                 </Link>
                 {!node.public && <div className="badge badge-pill badge-secondary ml-1">Private</div>}

@@ -2296,6 +2296,43 @@ func TestRepos_RepoExternalServices(t *testing.T) {
 	assertServices(repo2.ID, []*types.ExternalService{service2})
 }
 
+func TestGetFirstRepoNamesByCloneURL(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
+	db := dbtest.NewDB(t, "")
+	ctx := actor.WithInternalActor(context.Background())
+
+	confGet := func() *conf.Unified {
+		return &conf.Unified{}
+	}
+
+	services := types.MakeExternalServices()
+	service1 := services[0]
+	if err := ExternalServices(db).Create(ctx, confGet, service1); err != nil {
+		t.Fatal(err)
+	}
+
+	repo1 := types.MakeGithubRepo(service1)
+	if err := Repos(db).Create(ctx, repo1); err != nil {
+		t.Fatal(err)
+	}
+
+	_, err := db.ExecContext(ctx, "UPDATE external_service_repos SET clone_url = 'https://github.com/foo/bar' WHERE repo_id = $1", repo1.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	name, err := Repos(db).GetFirstRepoNamesByCloneURL(ctx, "https://github.com/foo/bar")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if name != "github.com/foo/bar" {
+		t.Fatalf("Want %q, got %q", "github.com/foo/bar", name)
+	}
+}
+
 func initUserAndRepo(t *testing.T, ctx context.Context, db dbutil.DB) (*types.User, *types.Repo) {
 	id := rand.String(3)
 	user, err := Users(db).Create(ctx, NewUser{

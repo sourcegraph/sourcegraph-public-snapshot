@@ -21,23 +21,47 @@ export type SearchMatch = ContentMatch | RepositoryMatch | CommitMatch | SymbolM
 
 export interface PathMatch {
     type: 'path'
-    name: string
+    path: string
     repository: string
     repoStars?: number
     repoLastFetched?: string
     branches?: string[]
-    version?: string
+    commit?: string
 }
 
 export interface ContentMatch {
     type: 'content'
-    name: string
+    path: string
     repository: string
     repoStars?: number
     repoLastFetched?: string
     branches?: string[]
-    version?: string
+    commit?: string
     lineMatches: LineMatch[]
+    hunks?: DecoratedHunk[]
+}
+
+export interface DecoratedHunk {
+    content: DecoratedContent
+    lineStart: number
+    lineCount: number
+    matches: Range[]
+}
+
+export interface DecoratedContent {
+    plaintext?: string
+    html?: string
+}
+
+export interface Range {
+    start: Location
+    end: Location
+}
+
+export interface Location {
+    offset: number
+    line: number
+    column: number
 }
 
 interface LineMatch {
@@ -49,12 +73,12 @@ interface LineMatch {
 
 export interface SymbolMatch {
     type: 'symbol'
-    name: string
+    path: string
     repository: string
     repoStars?: number
     repoLastFetched?: string
     branches?: string[]
-    version?: string
+    commit?: string
     symbols: MatchedSymbol[]
 }
 
@@ -375,6 +399,8 @@ export interface StreamSearchOptions {
     caseSensitive: boolean
     versionContext: string | undefined
     trace: string | undefined
+    decorationKinds?: string[]
+    decorationContextLines?: number
 }
 
 /**
@@ -390,12 +416,17 @@ function search({
     caseSensitive,
     versionContext,
     trace,
+    decorationKinds,
+    decorationContextLines,
 }: StreamSearchOptions): Observable<SearchEvent> {
     return new Observable<SearchEvent>(observer => {
         const parameters = [
             ['q', `${query} ${caseSensitive ? 'case:yes' : ''}`],
             ['v', version],
             ['t', patternType as string],
+            ['dl', '0'],
+            ['dk', (decorationKinds || ['html']).join('|')],
+            ['dc', (decorationContextLines || '1').toString()],
             ['display', '1500'],
         ]
         if (versionContext) {
@@ -447,8 +478,8 @@ export function getRevision(branches?: string[], version?: string): string {
 }
 
 export function getFileMatchUrl(fileMatch: ContentMatch | SymbolMatch | PathMatch): string {
-    const revision = getRevision(fileMatch.branches, fileMatch.version)
-    return `/${fileMatch.repository}${revision ? '@' + revision : ''}/-/blob/${fileMatch.name}`
+    const revision = getRevision(fileMatch.branches, fileMatch.commit)
+    return `/${fileMatch.repository}${revision ? '@' + revision : ''}/-/blob/${fileMatch.path}`
 }
 
 export function getRepoMatchLabel(repoMatch: RepositoryMatch): string {

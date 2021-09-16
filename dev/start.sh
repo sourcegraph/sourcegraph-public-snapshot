@@ -1,5 +1,44 @@
 #!/usr/bin/env bash
 
+# DEPRECATION NOTICE: We're switching to `sg` as the default way to run the
+# Sourcegraph dev environment.
+echo "[38;5;57m          _____                    _____  "
+echo "         /\    \                  /\    \  "
+echo "        /[38;5;202m::[38;5;57m\    \                /[38;5;202m::[38;5;57m\    \  "
+echo "       /[38;5;202m::::[38;5;57m\    \              /[38;5;202m::::[38;5;57m\    \  "
+echo "      /[38;5;202m::::::[38;5;57m\    \            /[38;5;202m::::::[38;5;57m\    \  "
+echo "     /[38;5;202m:::[38;5;57m/\[38;5;202m:::[38;5;57m\    \          /[38;5;202m:::[38;5;57m/\[38;5;202m:::[38;5;57m\    \  "
+echo "    /[38;5;202m:::[38;5;57m/__\[38;5;202m:::[38;5;57m\    \        /[38;5;202m:::[38;5;57m/  \[38;5;202m:::[38;5;57m\    \  "
+echo "    \[38;5;202m:::[38;5;57m\   \[38;5;202m:::[38;5;57m\    \      /[38;5;202m:::[38;5;57m/    \[38;5;202m:::[38;5;57m\    \  "
+echo "  ___\[38;5;202m:::[38;5;57m\   \[38;5;202m:::[38;5;57m\    \    /[38;5;202m:::[38;5;57m/    / \[38;5;202m:::[38;5;57m\    \  "
+echo " /\   \[38;5;202m:::[38;5;57m\   \[38;5;202m:::[38;5;57m\    \  /[38;5;202m:::[38;5;57m/    /   \[38;5;202m:::[38;5;57m\ ___\  "
+echo "/[38;5;202m::[38;5;57m\   \[38;5;202m:::[38;5;57m\   \[38;5;202m:::[38;5;57m\____\/[38;5;202m:::[38;5;57m/____/  ___\[38;5;202m:::[38;5;57m|    |  "
+echo "\[38;5;202m:::[38;5;57m\   \[38;5;202m:::[38;5;57m\   \[38;5;202m::[38;5;57m/    /\[38;5;202m:::[38;5;57m\    \ /\  /[38;5;202m:::[38;5;57m|____|  "
+echo " \[38;5;202m:::[38;5;57m\   \[38;5;202m:::[38;5;57m\   \/____/  \[38;5;202m:::[38;5;57m\    /[38;5;202m::[38;5;57m\ \[38;5;202m::[38;5;57m/    /  "
+echo "  \[38;5;202m:::[38;5;57m\   \[38;5;202m:::[38;5;57m\    \       \[38;5;202m:::[38;5;57m\   \[38;5;202m:::[38;5;57m\ \/____/  "
+echo "   \[38;5;202m:::[38;5;57m\   \[38;5;202m:::[38;5;57m\____\       \[38;5;202m:::[38;5;57m\   \[38;5;202m:::[38;5;57m\____\  "
+echo "    \[38;5;202m:::[38;5;57m\  /[38;5;202m:::[38;5;57m/    /        \[38;5;202m:::[38;5;57m\  /[38;5;202m:::[38;5;57m/    /  "
+echo "     \[38;5;202m:::[38;5;57m\/[38;5;202m:::[38;5;57m/    /          \[38;5;202m:::[38;5;57m\/[38;5;202m:::[38;5;57m/    /  "
+echo "      \[38;5;202m::::::[38;5;57m/    /            \[38;5;202m::::::[38;5;57m/    /  "
+echo "       \[38;5;202m::::[38;5;57m/    /              \[38;5;202m::::[38;5;57m/    /  "
+echo "        \[38;5;202m::[38;5;57m/    /                \[38;5;202m::[38;5;57m/____/  "
+echo "         \/____/  "
+echo "[0m  "
+echo ""
+echo "  [48;5;11m[38;5;0mDEPRECATION AHEAD! STEER CLEAR! SWITCH TO SG![0m"
+echo ""
+echo "  We're switching to sg, the Sourcegraph developer tool, as the default way to run Sourcegraph locally."
+echo ""
+echo "  On 2021-09-29 UTC we'll remove the dev/start.sh and dev/enterprise/start.sh scripts."
+echo ""
+echo "  Take a look at the README to see how to get started with sg: https://github.com/sourcegraph/sourcegraph/blob/main/dev/sg/README.md"
+echo ""
+echo "  Questions? Problems? Concerns? Opinions? Ask in the #dev-experience Slack channel"
+echo ""
+echo "  [1mSG QUICKSTART:[0m ./dev/sg/install.sh && sg start"
+echo ""
+sleep 6
+
 set -euf -o pipefail
 
 bash_error="Please upgrade bash to version 4. Currently on ${BASH_VERSION}."
@@ -126,6 +165,7 @@ export DISABLE_CODE_INSIGHTS_HISTORICAL="${DISABLE_CODE_INSIGHTS_HISTORICAL:-"tr
 # having port 3080.
 export SRC_HTTP_ADDR=":3082"
 export WEBPACK_DEV_SERVER=1
+export DEV_WEB_BUILDER=${DEV_WEB_BUILDER:-webpack}
 
 if [ -z "${DEV_NO_CONFIG-}" ]; then
   export SITE_CONFIG_FILE=${SITE_CONFIG_FILE:-./dev/site-config.json}

@@ -9,6 +9,8 @@ type WebpackManifest struct {
 	// JS runtime bundle which is served only in development environment
 	// to kick off the main application code.
 	AppJSRuntimeBundlePath *string `json:"runtime.js"`
+	// IsModule is whether the JavaScript files are modules (<script type="module">).
+	IsModule bool `json:"isModule"`
 	// Main CSS bundle, only present in production.
 	AppCSSBundlePath *string `json:"app.css"`
 }

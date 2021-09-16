@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/cockroachdb/errors"
+	"github.com/graph-gophers/graphql-go"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
@@ -61,7 +62,7 @@ type CreateBatchSpecOpts struct {
 // CreateBatchSpec creates the BatchSpec.
 func (s *Service) CreateBatchSpec(ctx context.Context, opts CreateBatchSpecOpts) (spec *btypes.BatchSpec, err error) {
 	actor := actor.FromContext(ctx)
-	tr, ctx := trace.New(ctx, "Service.CreateBatchSpec", fmt.Sprintf("Actor %s", actor))
+	tr, ctx := trace.New(ctx, "Service.CreateBatchSpec", fmt.Sprintf("Actor %d", actor.UID))
 	defer func() {
 		tr.SetError(err)
 		tr.Finish()
@@ -136,6 +137,29 @@ func (s *Service) CreateBatchSpec(ctx context.Context, opts CreateBatchSpecOpts)
 	return spec, nil
 }
 
+type EnqueueBatchSpecResolutionOpts struct {
+	BatchSpecID int64
+
+	AllowIgnored     bool
+	AllowUnsupported bool
+}
+
+// EnqueueBatchSpecResolution creates a pending BatchSpec that will be picked up by a worker in the background.
+func (s *Service) EnqueueBatchSpecResolution(ctx context.Context, opts EnqueueBatchSpecResolutionOpts) (err error) {
+	actor := actor.FromContext(ctx)
+	tr, ctx := trace.New(ctx, "Service.EnqueueBatchSpecResolution", fmt.Sprintf("Actor %d", actor.UID))
+	defer func() {
+		tr.SetError(err)
+		tr.Finish()
+	}()
+
+	return s.store.CreateBatchSpecResolutionJob(ctx, &btypes.BatchSpecResolutionJob{
+		BatchSpecID:      opts.BatchSpecID,
+		AllowIgnored:     opts.AllowIgnored,
+		AllowUnsupported: opts.AllowUnsupported,
+	})
+}
+
 // CreateChangesetSpec validates the given raw spec input and creates the ChangesetSpec.
 func (s *Service) CreateChangesetSpec(ctx context.Context, rawSpec string, userID int32) (spec *btypes.ChangesetSpec, err error) {
 	tr, ctx := trace.New(ctx, "Service.CreateChangesetSpec", fmt.Sprintf("User %d", userID))
@@ -149,7 +173,7 @@ func (s *Service) CreateChangesetSpec(ctx context.Context, rawSpec string, userI
 		return nil, err
 	}
 	spec.UserID = userID
-	spec.RepoID, err = graphqlbackend.UnmarshalRepositoryID(spec.Spec.BaseRepository)
+	spec.RepoID, err = graphqlbackend.UnmarshalRepositoryID(graphql.ID(spec.Spec.BaseRepository))
 	if err != nil {
 		return nil, err
 	}

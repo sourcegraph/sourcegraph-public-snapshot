@@ -24,9 +24,9 @@ const RedactedSecret = "REDACTED"
 
 // RedactConfigSecrets replaces any secret fields in the Config field with RedactedSecret, be sure to call
 // UnRedactExternalServiceConfig before writing back to the database, otherwise validation will throw errors.
-func (e *ExternalService) RedactConfigSecrets() error {
+func (e *ExternalService) RedactConfigSecrets() (string, error) {
 	if e.Config == "" {
-		return nil
+		return "", nil
 	}
 	var (
 		newCfg string
@@ -34,7 +34,7 @@ func (e *ExternalService) RedactConfigSecrets() error {
 	)
 	cfg, err := e.Configuration()
 	if err != nil {
-		return err
+		return "", err
 	}
 	switch cfg := cfg.(type) {
 	case *schema.GitHubConnection:
@@ -71,10 +71,9 @@ func (e *ExternalService) RedactConfigSecrets() error {
 		err = errors.Errorf("RedactExternalServiceConfig: kind %q not implemented", e.Kind)
 	}
 	if err != nil {
-		return err
+		return "", err
 	}
-	e.Config = newCfg
-	return nil
+	return newCfg, nil
 }
 
 // redactField will unmarshal the passed JSON string into the passed value, and then replace the pointer fields you pass

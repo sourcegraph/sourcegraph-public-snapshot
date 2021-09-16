@@ -22,6 +22,8 @@ type DBStore interface {
 
 	UpdatePackages(ctx context.Context, dumpID int, packages []precise.Package) error
 	UpdatePackageReferences(ctx context.Context, dumpID int, packageReferences []precise.PackageReference) error
+	UpdateNumReferences(ctx context.Context, ids []int) error
+	UpdateDependencyNumReferences(ctx context.Context, ids []int, decrement bool) error
 	MarkRepositoryAsDirty(ctx context.Context, repositoryID int) error
 	DeleteOverlappingDumps(ctx context.Context, repositoryID int, commit, root, indexer string) error
 	InsertDependencyIndexingJob(ctx context.Context, uploadID int) (int, error)

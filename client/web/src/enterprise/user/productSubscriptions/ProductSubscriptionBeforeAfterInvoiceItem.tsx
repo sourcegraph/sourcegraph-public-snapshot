@@ -1,3 +1,4 @@
+import classNames from 'classnames'
 import { parseISO } from 'date-fns'
 import React from 'react'
 
@@ -18,9 +19,9 @@ export const ProductSubscriptionBeforeAfterInvoiceItem: React.FunctionComponent<
     const planChanged = beforeInvoiceItem.plan.billingPlanID !== afterInvoiceItem.plan.billingPlanID
     const userCountChanged = beforeInvoiceItem.userCount !== afterInvoiceItem.userCount
     return !planChanged && !userCountChanged ? (
-        <div className={`text-muted ${className}`}>No changes to subscription.</div>
+        <div className={classNames('text-muted', className)}>No changes to subscription.</div>
     ) : (
-        <ul className={`pl-3 ${className}`}>
+        <ul className={classNames('pl-3', className)}>
             {planChanged && (
                 <li>
                     {afterInvoiceItem.plan.pricePerUserPerYear > beforeInvoiceItem.plan.pricePerUserPerYear

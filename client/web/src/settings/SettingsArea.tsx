@@ -1,3 +1,4 @@
+import classNames from 'classnames'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import * as React from 'react'
@@ -5,7 +6,7 @@ import { Route, RouteComponentProps, Switch } from 'react-router'
 import { combineLatest, from, Observable, of, Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, map, startWith, switchMap } from 'rxjs/operators'
 
-import { getConfiguredSideloadedExtension } from '@sourcegraph/shared/src/api/client/mainthread-api'
+import { getConfiguredSideloadedExtension } from '@sourcegraph/shared/src/api/client/enabledExtensions'
 import { extensionIDsFromSettings } from '@sourcegraph/shared/src/extensions/extension'
 import { queryConfiguredRegistryExtensions } from '@sourcegraph/shared/src/extensions/helpers'
 import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
@@ -165,7 +166,7 @@ export class SettingsArea extends React.Component<Props, State> {
         }
 
         return (
-            <div className={`h-100 d-flex flex-column ${this.props.className || ''}`}>
+            <div className={classNames('h-100 d-flex flex-column', this.props.className)}>
                 <PageHeader headingElement="h2" path={[{ text: `${term} settings` }]} className="mb-3" />
                 {this.props.extraHeader}
                 <Switch>

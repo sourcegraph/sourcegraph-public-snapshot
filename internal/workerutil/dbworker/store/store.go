@@ -6,11 +6,13 @@ import (
 	"database/sql/driver"
 	"encoding/json"
 	"fmt"
+	"regexp"
 	"strings"
 	"time"
 
 	"github.com/cockroachdb/errors"
 	"github.com/derision-test/glock"
+	"github.com/inconshreveable/log15"
 	"github.com/keegancsmith/sqlf"
 	"github.com/opentracing/opentracing-go/log"
 
@@ -146,9 +148,10 @@ func ExecutionLogEntries(raw []workerutil.ExecutionLogEntry) (entries []Executio
 
 type store struct {
 	*basestore.Store
-	options        Options
-	columnReplacer *strings.Replacer
-	operations     *operations
+	options                         Options
+	columnReplacer                  *strings.Replacer
+	modifiedColumnExpressionMatches [][]MatchingColumnExpressions
+	operations                      *operations
 }
 
 var _ Store = &store{}
@@ -286,11 +289,32 @@ func newStore(handle *basestore.TransactableHandle, options Options, observation
 		replacements = append(replacements, fmt.Sprintf("{%s}", k), v)
 	}
 
+	modifiedColumnExpressionMatches := matchModifiedColumnExpressions(options.ViewName, options.ColumnExpressions)
+
+	for i, expression := range options.ColumnExpressions {
+		for _, match := range modifiedColumnExpressionMatches[i] {
+			if match.exact {
+				continue
+			}
+
+			log15.Error(``+
+				`dbworker store: column expression refers to a column modified by dequeue in a complex expression. `+
+				`The given expression will currently evaluate to the OLD value of the row, and the associated handler `+
+				`will not have a completely up-to-date record. Please refer to this column without a transform.`,
+				"index", i,
+				"expression", expression.Query(sqlf.PostgresBindVar),
+				"columnName", match.columnName,
+				"storeName", options.Name,
+			)
+		}
+	}
+
 	return &store{
-		Store:          basestore.NewWithHandle(handle),
-		options:        options,
-		columnReplacer: strings.NewReplacer(replacements...),
-		operations:     newOperations(options.Name, observationContext),
+		Store:                           basestore.NewWithHandle(handle),
+		options:                         options,
+		columnReplacer:                  strings.NewReplacer(replacements...),
+		modifiedColumnExpressionMatches: modifiedColumnExpressionMatches,
+		operations:                      newOperations(options.Name, observationContext),
 	}
 }
 
@@ -354,6 +378,17 @@ SELECT COUNT(*) FROM %s WHERE (
 ) %s
 `
 
+// columnsUpdatedByDequeue are the unmapped column names modified by the dequeue method.
+var columnsUpdatedByDequeue = []string{
+	"state",
+	"started_at",
+	"last_heartbeat_at",
+	"finished_at",
+	"failure_message",
+	"execution_logs",
+	"worker_hostname",
+}
+
 // Dequeue selects the first queued record matching the given conditions and updates the state to processing. If there
 // is such a record, it is returned. If there is no such unclaimed record, a nil record and and a nil cancel function
 // will be returned along with a false-valued flag. This method must not be called from within a transaction.
@@ -372,37 +407,41 @@ func (s *store) Dequeue(ctx context.Context, workerHostname string, conditions [
 	}
 
 	now := s.now()
+	retryAfter := int(s.options.RetryAfter / time.Second)
 
-	// Select and "lock" candidate record
-	id, exists, err := basestore.ScanFirstInt(s.Query(ctx, s.formatQuery(
-		selectCandidateQuery,
+	var (
+		processingExpr     = sqlf.Sprintf("%s", "processing")
+		nowTimestampExpr   = sqlf.Sprintf("%s::timestamp", now)
+		nullExpr           = sqlf.Sprintf("NULL")
+		workerHostnameExpr = sqlf.Sprintf("%s", workerHostname)
+	)
+
+	// NOTE: Changes to this mapping should be reflected in the package variable
+	// columnsUpdatedByDequeue, also defined in this file.
+	updatedColumns := map[string]*sqlf.Query{
+		s.columnReplacer.Replace("{state}"):             processingExpr,
+		s.columnReplacer.Replace("{started_at}"):        nowTimestampExpr,
+		s.columnReplacer.Replace("{last_heartbeat_at}"): nowTimestampExpr,
+		s.columnReplacer.Replace("{finished_at}"):       nullExpr,
+		s.columnReplacer.Replace("{failure_message}"):   nullExpr,
+		s.columnReplacer.Replace("{execution_logs}"):    nullExpr,
+		s.columnReplacer.Replace("{worker_hostname}"):   workerHostnameExpr,
+	}
+
+	record, exists, err := s.options.Scan(s.Query(ctx, s.formatQuery(
+		dequeueQuery,
 		quote(s.options.ViewName),
 		now,
-		int(s.options.RetryAfter/time.Second),
+		retryAfter,
 		now,
-		int(s.options.RetryAfter/time.Second),
+		retryAfter,
 		s.options.MaxNumRetries,
 		makeConditionSuffix(conditions),
 		s.options.OrderByExpression,
 		quote(s.options.TableName),
-		now,
-		now,
-		workerHostname,
-	)))
-	if err != nil {
-		return nil, false, err
-	}
-	if !exists {
-		return nil, false, nil
-	}
-	traceLog(log.Int("id", id))
-
-	// Scan the actual record after updating its state
-	record, exists, err := s.options.Scan(s.Query(ctx, s.formatQuery(
-		selectRecordQuery,
-		sqlf.Join(s.options.ColumnExpressions, ", "),
+		sqlf.Join(s.makeDequeueUpdateStatements(updatedColumns), ", "),
+		sqlf.Join(s.makeDequeueSelectExpressions(updatedColumns), ", "),
 		quote(s.options.ViewName),
-		id,
 	)))
 	if err != nil {
 		return nil, false, err
@@ -410,11 +449,12 @@ func (s *store) Dequeue(ctx context.Context, workerHostname string, conditions [
 	if !exists {
 		return nil, false, nil
 	}
+	traceLog(log.Int("recordID", record.RecordID()))
 
 	return record, true, nil
 }
 
-const selectCandidateQuery = `
+const dequeueQuery = `
 -- source: internal/workerutil/store.go:Dequeue
 WITH candidate AS (
 	SELECT {id} FROM %s
@@ -434,24 +474,57 @@ WITH candidate AS (
 	ORDER BY %s
 	FOR UPDATE SKIP LOCKED
 	LIMIT 1
+),
+updated_record AS (
+	UPDATE
+		%s
+	SET
+		%s
+	WHERE
+		{id} IN (SELECT {id} FROM candidate)
 )
-UPDATE %s
-SET
-	{state} = 'processing',
-	{started_at} = %s,
-	{last_heartbeat_at} = %s,
-	{finished_at} = NULL,
-	{failure_message} = NULL,
-	{execution_logs} = NULL,
-	{worker_hostname} = %s
-WHERE {id} IN (SELECT {id} FROM candidate)
-RETURNING {id}
+SELECT
+	%s
+FROM
+	%s
+WHERE
+	{id} IN (SELECT {id} FROM candidate)
 `
 
-const selectRecordQuery = `
--- source: internal/workerutil/store.go:Dequeue
-SELECT %s FROM %s WHERE {id} = %s
-`
+// makeDequeueSelectExpressions constructs the ordered set of SQL expressions that are returned
+// from the dequeue query. This method returns a copy of the configured column expressions slice
+// where expressions referencing one of the column updated by dequeue are replaced by the updated
+// value.
+//
+// Note that this method only considers select expressions like `alias.ColumnName` and not something
+// more complex like `SomeFunction(alias.ColumnName) + 1`. We issue a warning on construction of a
+// new store configured in this way to indicate this (probably) unwanted behavior.
+func (s *store) makeDequeueSelectExpressions(updatedColumns map[string]*sqlf.Query) []*sqlf.Query {
+	selectExpressions := make([]*sqlf.Query, len(s.options.ColumnExpressions))
+	copy(selectExpressions, s.options.ColumnExpressions)
+
+	for i := range selectExpressions {
+		for _, match := range s.modifiedColumnExpressionMatches[i] {
+			if match.exact {
+				selectExpressions[i] = updatedColumns[match.columnName]
+				break
+			}
+		}
+	}
+
+	return selectExpressions
+}
+
+// makeDequeueUpdateStatements constructs the set of SQL statements that update values of the target table
+// in the dequeue query.
+func (s *store) makeDequeueUpdateStatements(updatedColumns map[string]*sqlf.Query) []*sqlf.Query {
+	updateStatements := make([]*sqlf.Query, 0, len(updatedColumns))
+	for columnName, updateValue := range updatedColumns {
+		updateStatements = append(updateStatements, sqlf.Sprintf(columnName+"=%s", updateValue))
+	}
+
+	return updateStatements
+}
 
 func (s *store) Heartbeat(ctx context.Context, ids []int, options HeartbeatOptions) (knownIDs []int, err error) {
 	ctx, endObservation := s.operations.heartbeat.With(ctx, &err, observation.Args{})
@@ -823,4 +896,72 @@ func makeConditionSuffix(conditions []*sqlf.Query) *sqlf.Query {
 	}
 
 	return sqlf.Sprintf("AND %s", sqlf.Join(quotedConditions, " AND "))
+}
+
+type MatchingColumnExpressions struct {
+	columnName string
+	exact      bool
+}
+
+// matchModifiedColumnExpressions returns a slice of columns to which each of the
+// given column expressions refers. Column references that do not refere to a member
+// of the columnsUpdatedByDequeue slice are ignored. Each match indicates the column
+// name and whether or not the expression is an exact reference or a reference within
+// a more complex expression (arithmetic, function call argument, etc).
+//
+// The output slice has the same number of elements as the input column expressions
+// and the results are ordered in parallel with the given column expressions.
+func matchModifiedColumnExpressions(viewName string, columnExpressions []*sqlf.Query) [][]MatchingColumnExpressions {
+	matches := make([][]MatchingColumnExpressions, len(columnExpressions))
+	columnPrefixes := makeColumnPrefixes(viewName)
+
+	for i, columnExpression := range columnExpressions {
+		columnExpressionText := columnExpression.Query(sqlf.PostgresBindVar)
+
+		for _, columnName := range columnsUpdatedByDequeue {
+			match := false
+			exact := false
+
+			for _, columnPrefix := range columnPrefixes {
+				if regexp.MustCompile(fmt.Sprintf(`^%s%s$`, columnPrefix, columnName)).MatchString(columnExpressionText) {
+					match = true
+					exact = true
+					break
+				}
+
+				if !match && regexp.MustCompile(fmt.Sprintf(`\b%s%s\b`, columnPrefix, columnName)).MatchString(columnExpressionText) {
+					match = true
+				}
+			}
+
+			if match {
+				matches[i] = append(matches[i], MatchingColumnExpressions{columnName: columnName, exact: exact})
+				break
+			}
+		}
+	}
+
+	return matches
+}
+
+// makeColumnPrefixes returns the set of prefixes of a column to indicate that the column belongs to a
+// particular table or aliased table. The given name should be the table name  or the aliased table
+// reference: `TableName` or `TableName alias`. The return slice always  includes an empty string for a
+// bare column reference.
+func makeColumnPrefixes(name string) []string {
+	parts := strings.Split(name, " ")
+
+	switch len(parts) {
+	case 1:
+		// name = TableName
+		// prefixes = <empty> and `TableName.`
+		return []string{"", parts[0] + "."}
+	case 2:
+		// name = TableName alias
+		// prefixes = <empty>, `TableName.`, and `alias.`
+		return []string{"", parts[0] + ".", parts[1] + "."}
+
+	default:
+		return []string{""}
+	}
 }

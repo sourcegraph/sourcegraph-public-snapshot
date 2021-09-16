@@ -60,7 +60,7 @@ func newRange(startLine, endLine, startColumn, endColumn int) Range {
 	}
 }
 
-func ofRegexpMatches(matches [][]int, namedGroups []string, lineValue string, lineNumber int) Match {
+func fromRegexpMatches(matches [][]int, namedGroups []string, lineValue string, lineNumber int) Match {
 	env := make(Environment)
 	var firstValue string
 	var firstRange Range
@@ -98,7 +98,7 @@ func FromFileMatch(fm *result.FileMatch, r *regexp.Regexp) *MatchContext {
 	for _, l := range fm.LineMatches {
 		regexpMatches := r.FindAllStringSubmatchIndex(l.Preview, -1)
 		if len(regexpMatches) > 0 {
-			matches = append(matches, ofRegexpMatches(regexpMatches, r.SubexpNames(), l.Preview, int(l.LineNumber)))
+			matches = append(matches, fromRegexpMatches(regexpMatches, r.SubexpNames(), l.Preview, int(l.LineNumber)))
 		}
 	}
 	return &MatchContext{Matches: matches, Path: fm.Path}

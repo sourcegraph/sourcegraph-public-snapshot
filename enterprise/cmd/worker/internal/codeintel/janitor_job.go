@@ -48,20 +48,31 @@ func (j *janitorJob) Routines(ctx context.Context) ([]goroutine.BackgroundRoutin
 		return nil, err
 	}
 
+	gitserverClient, err := InitGitserverClient()
+	if err != nil {
+		return nil, err
+	}
+
 	dbStoreShim := &janitor.DBStoreShim{Store: dbStore}
 	uploadWorkerStore := dbstore.WorkerutilUploadStore(dbStoreShim, observationContext)
 	indexWorkerStore := dbstore.WorkerutilIndexStore(dbStoreShim, observationContext)
 	metrics := janitor.NewMetrics(observationContext)
 
 	routines := []goroutine.BackgroundRoutine{
-		janitor.NewAbandonedUploadJanitor(dbStoreShim, janitorConfigInst.UploadTimeout, janitorConfigInst.CleanupTaskInterval, metrics),
+		// Reconciliation
 		janitor.NewDeletedRepositoryJanitor(dbStoreShim, janitorConfigInst.CleanupTaskInterval, metrics),
+		janitor.NewUnknownCommitJanitor(dbStoreShim, janitorConfigInst.CommitResolverMinimumTimeSinceLastCheck, janitorConfigInst.CommitResolverBatchSize, janitorConfigInst.CommitResolverTaskInterval, metrics),
+
+		// Expiration
+		janitor.NewAbandonedUploadJanitor(dbStoreShim, janitorConfigInst.UploadTimeout, janitorConfigInst.CleanupTaskInterval, metrics),
+		janitor.NewUploadExpirer(dbStoreShim, gitserverClient, janitorConfigInst.RepositoryProcessDelay, janitorConfigInst.RepositoryBatchSize, janitorConfigInst.UploadProcessDelay, janitorConfigInst.UploadBatchSize, janitorConfigInst.CommitBatchSize, janitorConfigInst.BranchesCacheMaxKeys, janitorConfigInst.CleanupTaskInterval, metrics),
+		janitor.NewExpiredUploadDeleter(dbStoreShim, janitorConfigInst.CleanupTaskInterval, metrics),
 		janitor.NewHardDeleter(dbStoreShim, lsifStore, janitorConfigInst.CleanupTaskInterval, metrics),
-		janitor.NewRecordExpirer(dbStoreShim, janitorConfigInst.DataTTL, janitorConfigInst.CleanupTaskInterval, metrics),
+
+		// Resetters
 		janitor.NewUploadResetter(uploadWorkerStore, janitorConfigInst.CleanupTaskInterval, metrics, observationContext),
 		janitor.NewIndexResetter(indexWorkerStore, janitorConfigInst.CleanupTaskInterval, metrics, observationContext),
 		janitor.NewDependencyIndexResetter(dependencyIndexStore, janitorConfigInst.CleanupTaskInterval, metrics, observationContext),
-		janitor.NewUnknownCommitJanitor(dbStoreShim, janitorConfigInst.CommitResolverMinimumTimeSinceLastCheck, janitorConfigInst.CommitResolverBatchSize, janitorConfigInst.CommitResolverTaskInterval, metrics),
 	}
 
 	return routines, nil

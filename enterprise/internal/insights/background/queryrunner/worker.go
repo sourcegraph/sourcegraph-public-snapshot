@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/sourcegraph/sourcegraph/internal/observation"
+
 	"github.com/prometheus/client_golang/prometheus"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
@@ -37,9 +39,7 @@ import (
 
 // NewWorker returns a worker that will execute search queries and insert information about the
 // results into the code insights database.
-func NewWorker(ctx context.Context, workerBaseStore *basestore.Store, insightsStore *store.Store, metrics workerutil.WorkerMetrics) *workerutil.Worker {
-	workerStore := createDBWorkerStore(workerBaseStore)
-
+func NewWorker(ctx context.Context, workerStore dbworkerstore.Store, insightsStore *store.Store, metrics workerutil.WorkerMetrics) *workerutil.Worker {
 	numHandlers := conf.Get().InsightsQueryWorkerConcurrency
 	if numHandlers <= 0 {
 		numHandlers = 1
@@ -79,7 +79,7 @@ func NewWorker(ctx context.Context, workerBaseStore *basestore.Store, insightsSt
 	}))
 
 	return dbworker.NewWorker(ctx, workerStore, &workHandler{
-		workerBaseStore: workerBaseStore,
+		baseWorkerStore: basestore.NewWithDB(workerStore.Handle().DB(), sql.TxOptions{}),
 		insightsStore:   insightsStore,
 		limiter:         limiter,
 		metadadataStore: store.NewInsightStore(insightsStore.Handle().DB()),
@@ -104,8 +104,7 @@ func getRateLimit(defaultValue rate.Limit) func() rate.Limit {
 
 // NewResetter returns a resetter that will reset pending query runner jobs if they take too long
 // to complete.
-func NewResetter(ctx context.Context, workerBaseStore *basestore.Store, metrics dbworker.ResetterMetrics) *dbworker.Resetter {
-	workerStore := createDBWorkerStore(workerBaseStore)
+func NewResetter(ctx context.Context, workerStore dbworkerstore.Store, metrics dbworker.ResetterMetrics) *dbworker.Resetter {
 	options := dbworker.ResetterOptions{
 		Name:     "insights_query_runner_worker_resetter",
 		Interval: 1 * time.Minute,
@@ -114,26 +113,24 @@ func NewResetter(ctx context.Context, workerBaseStore *basestore.Store, metrics 
 	return dbworker.NewResetter(workerStore, options)
 }
 
-// createDBWorkerStore creates the dbworker store for the query runner worker.
+// CreateDBWorkerStore creates the dbworker store for the query runner worker.
 //
 // See internal/workerutil/dbworker for more information about dbworkers.
-func createDBWorkerStore(s *basestore.Store) dbworkerstore.Store {
-	return dbworkerstore.New(s.Handle(), dbworkerstore.Options{
+func CreateDBWorkerStore(s *basestore.Store, observationContext *observation.Context) dbworkerstore.Store {
+	return dbworkerstore.NewWithMetrics(s.Handle(), dbworkerstore.Options{
 		Name:              "insights_query_runner_jobs_store",
 		TableName:         "insights_query_runner_jobs",
 		ColumnExpressions: jobsColumns,
 		Scan:              scanJobs,
 
-		// We will let a search query or webhook run for up to 60s. After that, it times out and
-		// retries in 10s. If 3 timeouts occur, it is not retried.
-		//
 		// If you change this, be sure to adjust the interval that work is enqueued in
 		// enterprise/internal/insights/background:newInsightEnqueuer.
 		StalledMaxAge:     60 * time.Second,
-		RetryAfter:        10 * time.Second,
-		MaxNumRetries:     3,
+		RetryAfter:        30 * time.Minute,
+		MaxNumRetries:     100,
+		MaxNumResets:      10,
 		OrderByExpression: sqlf.Sprintf("priority, id"),
-	})
+	}, observationContext)
 }
 
 func getDependencies(ctx context.Context, workerBaseStore *basestore.Store, jobID int) (_ []time.Time, err error) {
@@ -201,6 +198,7 @@ func EnqueueJob(ctx context.Context, workerBaseStore *basestore.Store, job *Job)
 			job.ProcessAfter,
 			job.Cost,
 			job.Priority,
+			job.PersistMode,
 		),
 	))
 	if err != nil {
@@ -222,8 +220,9 @@ INSERT INTO insights_query_runner_jobs (
 	state,
 	process_after,
 	cost,
-	priority
-) VALUES (%s, %s, %s, %s, %s, %s, %s)
+	priority,
+	persist_mode
+) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
 RETURNING id
 `
 
@@ -264,6 +263,7 @@ SELECT
 	record_time,
 	cost,
 	priority,
+	persist_mode,
 	id,
 	state,
 	failure_message,
@@ -325,6 +325,7 @@ type Job struct {
 	RecordTime  *time.Time // If non-nil, record results at this time instead of the time at which search results were found.
 	Cost        int
 	Priority    int
+	PersistMode string
 
 	DependentFrames []time.Time // This field isn't part of the job table, but maps to a table one-many on this job.
 
@@ -350,7 +351,7 @@ func (j *Job) RecordID() int {
 
 func scanJobs(rows *sql.Rows, err error) (workerutil.Record, bool, error) {
 	records, err := doScanJobs(rows, err)
-	if err != nil {
+	if err != nil || len(records) == 0 {
 		return &Job{}, false, err
 	}
 	return records[0], true, nil
@@ -371,6 +372,7 @@ func doScanJobs(rows *sql.Rows, err error) ([]*Job, error) {
 			&j.RecordTime,
 			&j.Cost,
 			&j.Priority,
+			&j.PersistMode,
 
 			// Standard/required dbworker fields.
 			&j.ID,
@@ -403,6 +405,7 @@ var jobsColumns = []*sqlf.Query{
 	sqlf.Sprintf("insights_query_runner_jobs.record_time"),
 	sqlf.Sprintf("insights_query_runner_jobs.cost"),
 	sqlf.Sprintf("insights_query_runner_jobs.priority"),
+	sqlf.Sprintf("insights_query_runner_jobs.persist_mode"),
 	sqlf.Sprintf("id"),
 	sqlf.Sprintf("state"),
 	sqlf.Sprintf("failure_message"),

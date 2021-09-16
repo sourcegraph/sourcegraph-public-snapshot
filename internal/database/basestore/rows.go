@@ -129,6 +129,26 @@ func ScanInt32s(rows *sql.Rows, queryErr error) (_ []int32, err error) {
 	return values, nil
 }
 
+// ScanUint32s reads unsigned integer values from the given row object.
+func ScanUint32s(rows *sql.Rows, queryErr error) (_ []uint32, err error) {
+	if queryErr != nil {
+		return nil, queryErr
+	}
+	defer func() { err = CloseRows(rows, err) }()
+
+	var values []uint32
+	for rows.Next() {
+		var value uint32
+		if err := rows.Scan(&value); err != nil {
+			return nil, err
+		}
+
+		values = append(values, value)
+	}
+
+	return values, nil
+}
+
 // ScanFirstInt reads integer values from the given row object and returns the first one.
 // If no rows match the query, a false-valued flag is returned.
 func ScanFirstInt(rows *sql.Rows, queryErr error) (_ int, _ bool, err error) {

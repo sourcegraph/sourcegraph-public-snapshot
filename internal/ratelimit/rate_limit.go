@@ -37,7 +37,8 @@ func (r *Registry) Get(baseURL string) *rate.Limiter {
 func (r *Registry) GetOrSet(baseURL string, fallback *rate.Limiter) *rate.Limiter {
 	baseURL = normaliseURL(baseURL)
 	if fallback == nil {
-		fallback = rate.NewLimiter(rate.Inf, 100)
+		// Burst is ignored when rate.Inf is used
+		fallback = rate.NewLimiter(rate.Inf, 1)
 	}
 	r.mu.Lock()
 	defer r.mu.Unlock()

@@ -191,17 +191,11 @@ func TestGetExtensionByExtensionID(t *testing.T) {
 
 func TestIsWorkInProgressExtension(t *testing.T) {
 	tests := map[*string]bool{
-		nil:                                        true,
-		strptr(`{`):                                false,
-		strptr(`{}`):                               false,
-		strptr(`{"title":null}`):                   false,
-		strptr(`{"title":""}`):                     false,
-		strptr(`{"title":"a b"}`):                  false,
-		strptr(`{"title":"WIP: a"}`):               true,
-		strptr(`{"title":"[WIP] a"}`):              true,
-		strptr(`{"wip": true, "title":"a"}`):       true,
-		strptr(`{"wip": false, "title":"a"}`):      false,
-		strptr(`{"wip": false, "title":"WIP: a"}`): true,
+		nil:                      true,
+		strptr(`{`):              false,
+		strptr(`{}`):             false,
+		strptr(`{"wip": true}`):  true,
+		strptr(`{"wip": false}`): false,
 	}
 	for manifest, want := range tests {
 		got := IsWorkInProgressExtension(manifest)

@@ -60,9 +60,6 @@ type Params struct {
 	// default, as some files can take a very long time to highlight).
 	DisableTimeout bool
 
-	// Whether or not the light theme should be used to highlight the code.
-	IsLightTheme bool
-
 	// HighlightLongLines, if true, highlighting lines which are greater than
 	// 2000 bytes is enabled. This may produce a significant amount of HTML
 	// which some browsers (such as Chrome, but not Firefox) may have trouble
@@ -290,14 +287,14 @@ func CodeAsLines(ctx context.Context, p Params) ([]template.HTML, bool, error) {
 	if err != nil {
 		return nil, aborted, err
 	}
-	lines, err := splitHighlightedLines(html, false)
+	lines, err := SplitHighlightedLines(html, false)
 	return lines, aborted, err
 }
 
-// splitHighlightedLines takes the highlighted HTML table and returns a slice
+// SplitHighlightedLines takes the highlighted HTML table and returns a slice
 // of highlighted strings, where each string corresponds a single line in the
 // original, highlighted file.
-func splitHighlightedLines(input template.HTML, wholeRow bool) ([]template.HTML, error) {
+func SplitHighlightedLines(input template.HTML, wholeRow bool) ([]template.HTML, error) {
 	doc, err := html.Parse(strings.NewReader(string(input)))
 	if err != nil {
 		return nil, err
@@ -368,7 +365,7 @@ type LineRange struct {
 //
 // Input line ranges will automatically be clamped within the bounds of the file.
 func SplitLineRanges(html template.HTML, ranges []LineRange) ([][]string, error) {
-	lines, err := splitHighlightedLines(html, true)
+	lines, err := SplitHighlightedLines(html, true)
 	if err != nil {
 		return nil, err
 	}

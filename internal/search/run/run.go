@@ -1,8 +1,11 @@
 package run
 
 import (
+	"context"
+
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
+	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -17,6 +20,15 @@ type SearchInputs struct {
 
 	// DefaultLimit is the default limit to use if not specified in query.
 	DefaultLimit int
+}
+
+// Job is an interface shared by all search backends. Calling Run on a job
+// object runs a search. The relation with SearchInputs and Jobs is that
+// SearchInputs are static values, parsed and validated, to produce Jobs. Jobs
+// express semantic behavior at runtime across different backends and system
+// architecture.
+type Job interface {
+	Run(context.Context, streaming.Sender) error
 }
 
 // MaxResults computes the limit for the query.

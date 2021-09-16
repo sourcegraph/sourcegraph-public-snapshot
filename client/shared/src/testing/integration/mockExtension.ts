@@ -35,6 +35,12 @@ interface ExtensionMockingUtils {
     extensionSettings: Settings['extensions']
 }
 
+interface ExtensionsResultMock {
+    extensionRegistry: ExtensionsResult['extensionRegistry'] & {
+        __typename: 'ExtensionRegistry'
+    }
+}
+
 /**
  * Set up Sourcegraph extension mocking for an integration test.
  */
@@ -45,8 +51,9 @@ export function setupExtensionMocking({
     let internalID = 0
 
     const extensionSettings: Settings['extensions'] = {}
-    const extensionsResult: ExtensionsResult = {
+    const extensionsResult: ExtensionsResultMock = {
         extensionRegistry: {
+            __typename: 'ExtensionRegistry',
             extensions: {
                 nodes: [],
             },
@@ -71,13 +78,10 @@ export function setupExtensionMocking({
             // Mutate mock data objects
             extensionSettings[id] = true
             extensionsResult.extensionRegistry.extensions.nodes.push({
-                id: `TestExtensionID${internalID}`,
                 extensionID: id,
                 manifest: {
-                    raw: JSON.stringify(extensionManifest),
+                    jsonFields: extensionManifest,
                 },
-                url: `/extensions/${id}`,
-                viewerCanAdminister: false,
             })
 
             pollyServer.get(bundleURL).intercept((request, response) => {

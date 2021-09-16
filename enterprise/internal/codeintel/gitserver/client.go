@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"regexp"
+	"sort"
 	"strings"
 	"time"
 
@@ -32,7 +33,7 @@ func New(dbStore DBStore, observationContext *observation.Context) *Client {
 	}
 }
 
-// Head determines the tip commit of the default branch for the given repository.
+// CommitExists determines if the given commit exists in the given repository.
 func (c *Client) CommitExists(ctx context.Context, repositoryID int, commit string) (_ bool, err error) {
 	ctx, endObservation := c.operations.commitExists.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("repositoryID", repositoryID),
@@ -208,7 +209,7 @@ var refPrefixes = map[string]RefType{
 
 // RefDescriptions returns a map from commits to descriptions of the tip of each
 // branch and tag of the given repository.
-func (c *Client) RefDescriptions(ctx context.Context, repositoryID int) (_ map[string]RefDescription, err error) {
+func (c *Client) RefDescriptions(ctx context.Context, repositoryID int) (_ map[string][]RefDescription, err error) {
 	ctx, endObservation := c.operations.refDescriptions.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("repositoryID", repositoryID),
 	}})
@@ -235,8 +236,8 @@ func (c *Client) RefDescriptions(ctx context.Context, repositoryID int) (_ map[s
 // - %(refname) is the name of the tag or branch (prefixed with refs/heads/ or ref/tags/)
 // - %(HEAD) is `*` if the branch is the default branch (and whitesace otherwise)
 // - %(creatordate) is the ISO-formatted date the object was created
-func parseRefDescriptions(lines []string) (map[string]RefDescription, error) {
-	refDescriptions := make(map[string]RefDescription, len(lines))
+func parseRefDescriptions(lines []string) (map[string][]RefDescription, error) {
+	refDescriptions := make(map[string][]RefDescription, len(lines))
 	for _, line := range lines {
 		line = strings.TrimSpace(line)
 		if line == "" {
@@ -269,15 +270,50 @@ func parseRefDescriptions(lines []string) (map[string]RefDescription, error) {
 			return nil, errors.Errorf(`unexpected output from git for-each-ref (bad date format) "%s"`, line)
 		}
 
-		refDescriptions[commit] = RefDescription{
+		refDescriptions[commit] = append(refDescriptions[commit], RefDescription{
 			Name:            name,
 			Type:            refType,
 			IsDefaultBranch: isDefaultBranch,
 			CreatedDate:     createdDate,
-		}
+		})
 	}
 
 	return refDescriptions, nil
+}
+
+// BranchesContaining returns a map from branch names to branch tip hashes for each brach
+// containing the given commit.
+func (c *Client) BranchesContaining(ctx context.Context, repositoryID int, commit string) ([]string, error) {
+	out, err := c.execGitCommand(ctx, repositoryID, "branch", "--contains", commit, "--format", "%(refname)")
+	if err != nil {
+		return nil, err
+	}
+
+	return parseBranchesContaining(strings.Split(out, "\n")), nil
+}
+
+func parseBranchesContaining(lines []string) []string {
+	names := make([]string, 0, len(lines))
+	for _, line := range lines {
+		line = strings.TrimSpace(line)
+		if line == "" {
+			continue
+		}
+
+		refname := line
+
+		// Remove refs/heads/ or ref/tags/ prefix
+		for prefix := range refPrefixes {
+			if strings.HasPrefix(line, prefix) {
+				refname = line[len(prefix):]
+			}
+		}
+
+		names = append(names, refname)
+	}
+	sort.Strings(names)
+
+	return names
 }
 
 // RawContents returns the contents of a file in a particular commit of a repository.

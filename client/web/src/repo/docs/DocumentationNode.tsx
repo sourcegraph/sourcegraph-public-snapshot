@@ -1,3 +1,4 @@
+import classNames from 'classnames'
 import * as H from 'history'
 import BookOpenVariantIcon from 'mdi-react/BookOpenVariantIcon'
 import HelpCircleOutlineIcon from 'mdi-react/HelpCircleOutlineIcon'
@@ -121,21 +122,21 @@ export const DocumentationNode: React.FunctionComponent<Props> = React.memo(
         const headingLevel = depth + 1 < 4 ? depth + 1 : 4
         const topMargin =
             depth === 0
-                ? ' mt-3' // Level 0 header ("Package foo")
+                ? 'mt-3' // Level 0 header ("Package foo")
                 : onlyPathID
-                ? ' mt-3' // Single-node display margin
+                ? 'mt-3' // Single-node display margin
                 : depth === 1
-                ? ' mt-5' // Level 1 headers ("Constants", "Variables", etc.)
+                ? 'mt-5' // Level 1 headers ("Constants", "Variables", etc.)
                 : isFirstChild
-                ? ' mt-4'
-                : ' mt-5' // Lowest level headers
+                ? 'mt-4'
+                : 'mt-5' // Lowest level headers
 
         if (onlyPathID && node.pathID !== onlyPathID && !hasDescendent(node, onlyPathID)) {
             return null
         }
         const renderContent = !onlyPathID || node.pathID === onlyPathID || depth === 0
         return (
-            <div className={`documentation-node mb-5${topMargin}`}>
+            <div className={classNames('documentation-node mb-5', topMargin)}>
                 {renderContent && (
                     <div ref={reference}>
                         <Heading level={headingLevel} className="d-flex align-items-center documentation-node__heading">

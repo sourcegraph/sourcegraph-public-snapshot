@@ -1009,6 +1009,12 @@ type ListIndexableReposOptions struct {
 	*LimitOffset
 }
 
+var listIndexableReposMinStars, _ = strconv.Atoi(env.Get(
+	"SRC_INDEXABLE_REPOS_MIN_STARS",
+	"8",
+	"Minimum stars needed for a public repo to be indexed on sourcegraph.com",
+))
+
 // ListIndexableRepos returns a list of repos to be indexed for search on sourcegraph.com.
 // This includes all repos with >= 20 stars as well as user added repos.
 func (s *RepoStore) ListIndexableRepos(ctx context.Context, opts ListIndexableReposOptions) (results []types.RepoName, err error) {
@@ -1039,8 +1045,14 @@ func (s *RepoStore) ListIndexableRepos(ctx context.Context, opts ListIndexableRe
 		where = append(where, sqlf.Sprintf("TRUE"))
 	}
 
+	minStars := listIndexableReposMinStars
+	if minStars == 0 {
+		minStars = 8
+	}
+
 	q := sqlf.Sprintf(
 		listIndexableReposQuery,
+		minStars,
 		sqlf.Join(joins, "\n"),
 		sqlf.Join(where, "\nAND "),
 		opts.LimitOffset.SQL(),
@@ -1070,7 +1082,7 @@ const listIndexableReposQuery = `
 WITH s AS (
 	SELECT id as repo_id
 	FROM repo
-	WHERE stars >= 13
+	WHERE stars >= %s
 
 	UNION ALL
 
@@ -1461,6 +1473,31 @@ func (s *RepoStore) ExternalServices(ctx context.Context, repoID api.RepoID) ([]
 	}
 
 	return ExternalServicesWith(s).List(ctx, opts)
+}
+
+// GetFirstRepoNamesByCloneURL returns the first repo name in our database that
+// match the given clone url. If not repo is found, an empty string and nil error
+// are returned.
+func (s *RepoStore) GetFirstRepoNamesByCloneURL(ctx context.Context, cloneURL string) (api.RepoName, error) {
+	if Mocks.Repos.GetFirstRepoNamesByCloneURL != nil {
+		return Mocks.Repos.GetFirstRepoNamesByCloneURL(ctx, cloneURL)
+	}
+
+	s.ensureStore()
+
+	name, _, err := basestore.ScanFirstString(
+		s.Query(ctx, sqlf.Sprintf(`
+SELECT name
+FROM repo r
+JOIN external_service_repos esr ON r.id = esr.repo_id
+WHERE clone_url = %s
+ORDER BY r.updated_at desc
+LIMIT 1
+`, cloneURL)))
+	if err != nil {
+		return "", err
+	}
+	return api.RepoName(name), nil
 }
 
 func parsePattern(p string) ([]*sqlf.Query, error) {

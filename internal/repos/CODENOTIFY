@@ -1,2 +1,5 @@
-store* @asdine
+# See https://github.com/sourcegraph/codenotify for documentation.
+
+store* @asdine @unknwon
 * @tsenart
+* @indradhanush

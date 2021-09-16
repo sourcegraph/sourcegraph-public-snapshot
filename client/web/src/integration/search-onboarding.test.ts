@@ -37,6 +37,7 @@ describe('Search onboarding', () => {
             }),
             ViewerSettings: () => ({
                 viewerSettings: {
+                    __typename: 'SettingsCascade',
                     subjects: [
                         {
                             __typename: 'DefaultSettings',
@@ -61,6 +62,20 @@ describe('Search onboarding', () => {
                         },
                     ],
                     final: JSON.stringify({}),
+                },
+            }),
+            SearchSidebarGitRefs: () => ({
+                repository: {
+                    __typename: 'Repository',
+                    id: 'repo',
+                    gitRefs: {
+                        __typename: 'GitRefConnection',
+                        nodes: [],
+                        pageInfo: {
+                            hasNextPage: false,
+                        },
+                        totalCount: 0,
+                    },
                 },
             }),
         })

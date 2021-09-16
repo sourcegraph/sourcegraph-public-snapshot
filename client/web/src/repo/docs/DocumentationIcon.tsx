@@ -1,3 +1,4 @@
+import classNames from 'classnames'
 import { MdiReactIconComponentType } from 'mdi-react'
 import AccountMultipleIcon from 'mdi-react/AccountMultipleIcon'
 import ClockFastIcon from 'mdi-react/ClockFastIcon'
@@ -122,5 +123,10 @@ interface Props {
  */
 export const DocumentationIcon: React.FunctionComponent<Props> = ({ tag, className = '' }) => {
     const Icon = getDocumentationIconComponent(tag)
-    return <Icon className={`documentation-icon documentation-icon--tag-${tag} ${className}`} data-tooltip={tag} />
+    return (
+        <Icon
+            className={classNames('documentation-icon', `documentation-icon--tag-${tag}`, className)}
+            data-tooltip={tag}
+        />
+    )
 }

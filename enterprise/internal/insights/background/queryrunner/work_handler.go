@@ -6,6 +6,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
+
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -20,7 +22,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
-	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 )
 
@@ -29,7 +30,7 @@ var _ workerutil.Handler = &workHandler{}
 // workHandler implements the dbworker.Handler interface by executing search queries and
 // inserting insights about them to the insights Timescale database.
 type workHandler struct {
-	workerBaseStore *basestore.Store
+	baseWorkerStore *basestore.Store
 	insightsStore   *store.Store
 	metadadataStore *store.InsightStore
 	limiter         *rate.Limiter
@@ -75,16 +76,16 @@ func (r *workHandler) Handle(ctx context.Context, record workerutil.Record) (err
 		}
 	}()
 
-	// Dequeue the job to get information about it, like what search query to perform.
-	job, err := dequeueJob(ctx, r.workerBaseStore, record.RecordID())
-	if err != nil {
-		return err
-	}
-
 	err = r.limiter.Wait(ctx)
 	if err != nil {
 		return err
 	}
+	job, err := dequeueJob(ctx, r.baseWorkerStore, record.RecordID())
+	if err != nil {
+		return err
+	}
+
+	log15.Info("dequeue_job", "job", *job)
 
 	series, err := r.getSeries(ctx, job.SeriesID)
 	if err != nil {
@@ -170,6 +171,20 @@ func (r *workHandler) Handle(ctx context.Context, record workerutil.Record) (err
 		matchesPerRepo[decoded.repoID()] = matchesPerRepo[decoded.repoID()] + decoded.matchCount()
 	}
 
+	tx, err := r.insightsStore.Transact(ctx)
+	if err != nil {
+		return err
+	}
+	defer func() { err = tx.Done(err) }()
+
+	if job.PersistMode == string(store.SnapshotMode) {
+		// The purpose of the snapshot is for low fidelity but recently updated data points.
+		// To avoid unbounded growth of the snapshots table we will prune it at the same time as adding new values.
+		if err := tx.DeleteSnapshots(ctx, series); err != nil {
+			return err
+		}
+	}
+
 	// Record the number of results we got, one data point per-repository.
 	for graphQLRepoID, matchCount := range matchesPerRepo {
 		dbRepoID, idErr := graphqlbackend.UnmarshalRepositoryID(graphql.ID(graphQLRepoID))
@@ -183,8 +198,9 @@ func (r *workHandler) Handle(ctx context.Context, record workerutil.Record) (err
 			err = multierror.Append(err, errors.Newf("MissingRepositoryName for repo_id: %v", string(dbRepoID)))
 			continue
 		}
+
 		args := ToRecording(job, float64(matchCount), recordTime, repoName, dbRepoID)
-		if recordErr := r.insightsStore.RecordSeriesPoints(ctx, args); recordErr != nil {
+		if recordErr := tx.RecordSeriesPoints(ctx, args); recordErr != nil {
 			err = multierror.Append(err, errors.Wrap(recordErr, "RecordSeriesPoints"))
 		}
 	}
@@ -200,8 +216,9 @@ func ToRecording(record *Job, value float64, recordTime time.Time, repoName stri
 			Time:     recordTime,
 			Value:    value,
 		},
-		RepoName: &repoName,
-		RepoID:   &repoID,
+		RepoName:    &repoName,
+		RepoID:      &repoID,
+		PersistMode: store.PersistMode(record.PersistMode),
 	}
 	args = append(args, base)
 	for _, dependent := range record.DependentFrames {

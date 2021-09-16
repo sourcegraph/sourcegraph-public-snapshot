@@ -173,4 +173,10 @@ type InsightSeriesStatus {
     Why its useful: signals if there are problems, and how severe they are.
     """
     failedJobs: Int!
+
+    """
+    The time that the insight series completed a full iteration and queued up records for processing. This can
+    effectively be used as a status that the insight is still processing if returned null.
+    """
+    backfillQueuedAt: DateTime
 }

@@ -97,7 +97,7 @@ export const AddExternalServicePage: React.FunctionComponent<Props> = ({
     }, [afterCreateRoute, createdExternalService, history])
 
     return (
-        <div className="add-external-service-page mt-3">
+        <div className="mt-3">
             <PageTitle title="Add repositories" />
             <h2>Add repositories</h2>
             {createdExternalService?.warning ? (

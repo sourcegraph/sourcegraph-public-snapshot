@@ -145,7 +145,7 @@ export const FuzzyModal: React.FunctionComponent<FuzzyModalProps> = props => {
                         Find file
                     </h3>
                     <button type="button" className="btn btn-icon" onClick={() => props.onClose()} aria-label="Close">
-                        <CloseIcon className={`icon-inline ${styles.closeIcon}`} />
+                        <CloseIcon className={classNames('icon-inline', styles.closeIcon)} />
                     </button>
                 </div>
                 <input

@@ -11,6 +11,7 @@ import (
 	gh "github.com/google/go-github/v28/github"
 	"github.com/inconshreveable/log15"
 
+	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
@@ -21,7 +22,7 @@ import (
 
 // handleGitHubUserAuthzEvent handles a github webhook for the events described in webhookhandlers/handlers.go
 // extracting a user from the github event and scheduling it for a perms update in repo-updater
-func handleGitHubUserAuthzEvent(db dbutil.DB) func(ctx context.Context, extSvc *types.ExternalService, payload interface{}) error {
+func handleGitHubUserAuthzEvent(db dbutil.DB, opts authz.FetchPermsOptions) func(ctx context.Context, extSvc *types.ExternalService, payload interface{}) error {
 	return func(ctx context.Context, extSvc *types.ExternalService, payload interface{}) error {
 		if !conf.ExperimentalFeatures().EnablePermissionsWebhooks {
 			return nil
@@ -46,7 +47,7 @@ func handleGitHubUserAuthzEvent(db dbutil.DB) func(ctx context.Context, extSvc *
 			return errors.Errorf("could not extract GitHub user from %T GitHub event", payload)
 		}
 
-		return scheduleUserUpdate(ctx, db, extSvc, user)
+		return scheduleUserUpdate(ctx, db, extSvc, user, opts)
 	}
 }
 
@@ -58,7 +59,7 @@ type membershipGetter interface {
 	GetMembership() *gh.Membership
 }
 
-func scheduleUserUpdate(ctx context.Context, db dbutil.DB, extSvc *types.ExternalService, githubUser *gh.User) error {
+func scheduleUserUpdate(ctx context.Context, db dbutil.DB, extSvc *types.ExternalService, githubUser *gh.User, opts authz.FetchPermsOptions) error {
 	if githubUser == nil {
 		return nil
 	}
@@ -85,5 +86,6 @@ func scheduleUserUpdate(ctx context.Context, db dbutil.DB, extSvc *types.Externa
 	c := repoupdater.DefaultClient
 	return c.SchedulePermsSync(ctx, protocol.PermsSyncRequest{
 		UserIDs: ids,
+		Options: opts,
 	})
 }

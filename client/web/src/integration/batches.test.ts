@@ -372,25 +372,28 @@ describe('Batches', () => {
             batchChanges: true,
         }),
     }
+    const batchChangesListResults = {
+        BatchChanges: () => ({
+            batchChanges: {
+                nodes: [batchChangeListNode],
+                pageInfo: {
+                    endCursor: null,
+                    hasNextPage: false,
+                },
+                totalCount: 1,
+            },
+            allBatchChanges: {
+                totalCount: 1,
+            },
+        }),
+    }
 
     describe('Batch changes list', () => {
         it('lists global batch changes', async () => {
             testContext.overrideGraphQL({
                 ...commonWebGraphQlResults,
                 ...batchChangeLicenseGraphQlResults,
-                BatchChanges: () => ({
-                    batchChanges: {
-                        nodes: [batchChangeListNode],
-                        pageInfo: {
-                            endCursor: null,
-                            hasNextPage: false,
-                        },
-                        totalCount: 1,
-                    },
-                    allBatchChanges: {
-                        totalCount: 1,
-                    },
-                }),
+                ...batchChangesListResults,
             })
             await driver.page.goto(driver.sourcegraphBaseUrl + '/batch-changes')
             await driver.page.waitForSelector('.test-batches-list-page')
@@ -414,6 +417,7 @@ describe('Batches', () => {
             testContext.overrideGraphQL({
                 ...commonWebGraphQlResults,
                 ...batchChangeLicenseGraphQlResults,
+                ...batchChangesListResults,
                 ...mockCommonGraphQLResponses('user'),
             })
             await driver.page.goto(driver.sourcegraphBaseUrl + '/users/alice/batch-changes')
@@ -431,6 +435,7 @@ describe('Batches', () => {
             testContext.overrideGraphQL({
                 ...commonWebGraphQlResults,
                 ...batchChangeLicenseGraphQlResults,
+                ...batchChangesListResults,
                 ...mockCommonGraphQLResponses('org'),
             })
             await driver.page.goto(driver.sourcegraphBaseUrl + '/batch-changes')
@@ -452,6 +457,7 @@ describe('Batches', () => {
                 testContext.overrideGraphQL({
                     ...commonWebGraphQlResults,
                     ...batchChangeLicenseGraphQlResults,
+                    ...batchChangesListResults,
                     ...mockCommonGraphQLResponses(entityType),
                     BatchChangeChangesets,
                     ChangesetCountsOverTime,

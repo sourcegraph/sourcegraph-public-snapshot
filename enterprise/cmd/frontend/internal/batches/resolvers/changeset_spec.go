@@ -12,7 +12,7 @@ import (
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
-	"github.com/sourcegraph/sourcegraph/lib/batches"
+	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
 )
 
 const changesetSpecIDKind = "ChangesetSpec"
@@ -122,7 +122,7 @@ var _ graphqlbackend.ChangesetDescription = &changesetDescriptionResolver{}
 type changesetDescriptionResolver struct {
 	store        *store.Store
 	repoResolver *graphqlbackend.RepositoryResolver
-	desc         *btypes.ChangesetSpecDescription
+	desc         *batcheslib.ChangesetSpec
 	diffStat     diff.Stat
 }
 
@@ -151,7 +151,7 @@ func (r *changesetDescriptionResolver) HeadRepository() *graphqlbackend.Reposito
 func (r *changesetDescriptionResolver) HeadRef() string { return git.AbbreviateRef(r.desc.HeadRef) }
 func (r *changesetDescriptionResolver) Title() string   { return r.desc.Title }
 func (r *changesetDescriptionResolver) Body() string    { return r.desc.Body }
-func (r *changesetDescriptionResolver) Published() *batches.PublishedValue {
+func (r *changesetDescriptionResolver) Published() *batcheslib.PublishedValue {
 	if published := r.desc.Published; !published.Nil() {
 		return &published
 	}

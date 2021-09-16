@@ -25,17 +25,17 @@ import { SearchContextProps } from '../search'
 import { SearchContextForm } from './SearchContextForm'
 
 export interface EditSearchContextPageProps
-    extends RouteComponentProps<{ id: Scalars['ID'] }>,
+    extends RouteComponentProps<{ spec: Scalars['ID'] }>,
         ThemeProps,
         TelemetryProps,
-        Pick<SearchContextProps, 'updateSearchContext' | 'fetchSearchContext' | 'deleteSearchContext'> {
+        Pick<SearchContextProps, 'updateSearchContext' | 'fetchSearchContextBySpec' | 'deleteSearchContext'> {
     authenticatedUser: AuthenticatedUser
 }
 
 export const AuthenticatedEditSearchContextPage: React.FunctionComponent<EditSearchContextPageProps> = props => {
     const LOADING = 'loading' as const
 
-    const { match, updateSearchContext, fetchSearchContext } = props
+    const { match, updateSearchContext, fetchSearchContextBySpec } = props
     const onSubmit = useCallback(
         (
             id: Scalars['ID'] | undefined,
@@ -53,7 +53,7 @@ export const AuthenticatedEditSearchContextPage: React.FunctionComponent<EditSea
     const searchContextOrError = useObservable(
         useMemo(
             () =>
-                fetchSearchContext(match.params.id).pipe(
+                fetchSearchContextBySpec(match.params.spec).pipe(
                     switchMap(searchContext => {
                         if (!searchContext.viewerCanManage) {
                             return throwError(new Error('You do not have sufficient permissions to edit this context.'))
@@ -63,7 +63,7 @@ export const AuthenticatedEditSearchContextPage: React.FunctionComponent<EditSea
                     startWith(LOADING),
                     catchError(error => [asError(error)])
                 ),
-            [match.params.id, fetchSearchContext]
+            [match.params.spec, fetchSearchContextBySpec]
         )
     )
 

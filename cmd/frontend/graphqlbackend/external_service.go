@@ -74,11 +74,11 @@ func (r *externalServiceResolver) DisplayName() string {
 }
 
 func (r *externalServiceResolver) Config() (JSONCString, error) {
-	err := r.externalService.RedactConfigSecrets()
+	redacted, err := r.externalService.RedactConfigSecrets()
 	if err != nil {
 		return "", err
 	}
-	return JSONCString(r.externalService.Config), nil
+	return JSONCString(redacted), nil
 }
 
 func (r *externalServiceResolver) CreatedAt() DateTime {

@@ -183,7 +183,7 @@ func (r *Resolver) ScheduleRepositoryPermissionsSync(ctx context.Context, args *
 	return &graphqlbackend.EmptyResponse{}, nil
 }
 
-func (r *Resolver) ScheduleUserPermissionsSync(ctx context.Context, args *graphqlbackend.UserIDArgs) (*graphqlbackend.EmptyResponse, error) {
+func (r *Resolver) ScheduleUserPermissionsSync(ctx context.Context, args *graphqlbackend.UserPermissionsSyncArgs) (*graphqlbackend.EmptyResponse, error) {
 	if err := r.checkLicense(); err != nil {
 		return nil, err
 	}
@@ -198,10 +198,14 @@ func (r *Resolver) ScheduleUserPermissionsSync(ctx context.Context, args *graphq
 		return nil, err
 	}
 
-	err = r.repoupdaterClient.SchedulePermsSync(ctx, protocol.PermsSyncRequest{
+	req := protocol.PermsSyncRequest{
 		UserIDs: []int32{userID},
-	})
-	if err != nil {
+	}
+	if args.Options != nil && args.Options.InvalidateCaches != nil && *args.Options.InvalidateCaches {
+		req.Options.InvalidateCaches = true
+	}
+
+	if err := r.repoupdaterClient.SchedulePermsSync(ctx, req); err != nil {
 		return nil, err
 	}
 	return &graphqlbackend.EmptyResponse{}, nil

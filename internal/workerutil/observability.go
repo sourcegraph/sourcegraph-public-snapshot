@@ -2,6 +2,7 @@ package workerutil
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
 
@@ -11,7 +12,12 @@ import (
 
 type WorkerMetrics struct {
 	operations *operations
-	numJobs    prometheus.Gauge
+	numJobs    Gauge
+}
+
+type Gauge interface {
+	Inc()
+	Dec()
 }
 
 type operations struct {
@@ -51,7 +57,7 @@ func NewMetrics(observationContext *observation.Context, prefix string, labels m
 
 	return WorkerMetrics{
 		operations: newOperations(observationContext, prefix, keys, values),
-		numJobs:    numJobs,
+		numJobs:    newLenientConcurrencyGauge(numJobs, time.Second*5),
 	}
 }
 
@@ -65,9 +71,9 @@ func newOperations(observationContext *observation.Context, prefix string, keys,
 
 	op := func(name string) *observation.Operation {
 		return observationContext.Operation(observation.Op{
-			Name:         fmt.Sprintf("worker.%s", name),
-			MetricLabels: append(append([]string{}, values...), name),
-			Metrics:      metrics,
+			Name:              fmt.Sprintf("worker.%s", name),
+			MetricLabelValues: append(append([]string{}, values...), name),
+			Metrics:           metrics,
 		})
 	}
 
@@ -75,3 +81,68 @@ func newOperations(observationContext *observation.Context, prefix string, keys,
 		handle: op("Handle"),
 	}
 }
+
+// newLenientConcurrencyGauge creates a new gauge-like object that
+// emits the maximum value over the last five seconds into the given
+// gauge. Note that this gauge should be used to track concurrency
+// only, meaning that running the gauge into the negatives may produce
+// unwanted behavior.
+//
+// This method begins an immortal background routine.
+//
+// This gauge should be used to smooth-over the randomness sampled by
+// Prometheus by emitting the aggregate we'll likely be using with this
+// type of data directly.
+//
+// Without wrapping concurrency gauges in this object, we tend to sample
+// zero values consistently when the underlying resource is only occupied
+// for a small amount of time (e.g., less than 500ms). We attribute this
+// to random Prometheus samplying alignments.
+func newLenientConcurrencyGauge(gauge prometheus.Gauge, interval time.Duration) Gauge {
+	ch := make(chan float64)
+	go runLenientConcurrencyGauge(gauge, ch, interval)
+
+	return &channelGauge{ch: ch}
+}
+
+func runLenientConcurrencyGauge(gauge prometheus.Gauge, ch <-chan float64, interval time.Duration) {
+	value := float64(0)                // The current value
+	max := float64(0)                  // The max value in the current window
+	ticker := time.NewTicker(interval) // The window over which to track the max value
+	reset := true                      // Whether the next read of ch should reset the max
+
+	for {
+		select {
+		case <-ticker.C:
+			gauge.Set(max)
+			reset = true
+
+		case update, ok := <-ch:
+			if !ok {
+				return
+			}
+
+			if reset {
+				// We've already emitted the max for the previous window, but we don't
+				// reset max to zero immediately after updating the gauge. That tends
+				// to emit zero values if our ticker frequency is less than our channel
+				// read frequency.
+
+				max = 0
+				reset = false
+			}
+
+			value += update
+			if value > max {
+				max = value
+			}
+		}
+	}
+}
+
+type channelGauge struct {
+	ch chan<- float64
+}
+
+func (g *channelGauge) Inc() { g.ch <- +1 }
+func (g *channelGauge) Dec() { g.ch <- -1 }

@@ -1,3 +1,4 @@
+import classNames from 'classnames'
 import * as React from 'react'
 
 import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
@@ -23,7 +24,7 @@ export const RegistryPublisherFormGroup: React.FunctionComponent<{
     disabled?: boolean
     onChange?: React.FormEventHandler<HTMLSelectElement>
 }> = ({ className = '', value, publishersOrError, disabled, onChange }) => (
-    <div className={`form-group ${className}`}>
+    <div className={classNames('form-group', className)}>
         <label htmlFor="extension-registry-create-extension-page__publisher">Publisher</label>
         {isErrorLike(publishersOrError) ? (
             <ErrorAlert error={publishersOrError} />
@@ -59,7 +60,7 @@ export const RegistryExtensionNameFormGroup: React.FunctionComponent<{
     disabled?: boolean
     onChange: React.FormEventHandler<HTMLInputElement>
 }> = ({ className = '', value, disabled, onChange }) => (
-    <div className={`form-group ${className}`}>
+    <div className={classNames('form-group', className)}>
         <label htmlFor="extension-registry-form__name">Name</label>
         <input
             type="text"

@@ -1,3 +1,4 @@
+import classNames from 'classnames'
 import * as H from 'history'
 import React, { useCallback } from 'react'
 
@@ -113,9 +114,10 @@ export const ExternalServiceForm: React.FunctionComponent<Props> = ({
             </div>
             <button
                 type="submit"
-                className={`btn btn-primary mb-3 ${
+                className={classNames(
+                    'btn btn-primary mb-3',
                     mode === 'create' ? 'test-add-external-service-button' : 'test-update-external-service-button'
-                }`}
+                )}
                 disabled={loading}
             >
                 {loading && <LoadingSpinner className="icon-inline" />}

@@ -96,9 +96,16 @@ func (c *Client) addrForKey(key string) string {
 	return addrForKey(key, addrs)
 }
 
+var addForRepoInvoked = promauto.NewCounter(prometheus.CounterOpts{
+	Name: "src_gitserver_addr_for_repo_invoked",
+	Help: "Number of times gitserver.AddrForRepo was invoked",
+})
+
 // AddrForRepo returns the gitserver address to use for the given repo name.
 // It should never be called with an empty slice.
 func AddrForRepo(repo api.RepoName, addrs []string) string {
+	addForRepoInvoked.Inc()
+
 	repo = protocol.NormalizeRepo(repo) // in case the caller didn't already normalize it
 	return addrForKey(string(repo), addrs)
 }

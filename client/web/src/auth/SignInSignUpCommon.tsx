@@ -1,3 +1,4 @@
+import classNames from 'classnames'
 import * as H from 'history'
 import * as React from 'react'
 
@@ -14,7 +15,7 @@ export const PasswordInput: React.FunctionComponent<InputProps> = props => {
             name="password"
             id="password"
             {...other}
-            className={`form-control ${props.className || ''}`}
+            className={classNames('form-control', props.className)}
             placeholder={props.placeholder || 'Password'}
             type="password"
             required={true}
@@ -30,7 +31,7 @@ export const EmailInput: React.FunctionComponent<InputProps> = props => {
             name="email"
             id="email"
             {...other}
-            className={`form-control ${props.className || ''}`}
+            className={classNames('form-control', props.className)}
             type="email"
             placeholder={props.placeholder || 'Email'}
             spellCheck={false}
@@ -47,7 +48,7 @@ export const UsernameInput: React.FunctionComponent<InputProps> = props => {
             name="username"
             id="username"
             {...other}
-            className={`form-control ${props.className || ''}`}
+            className={classNames('form-control', props.className)}
             type="text"
             placeholder={props.placeholder || 'Username'}
             spellCheck={false}

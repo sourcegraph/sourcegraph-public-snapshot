@@ -1,30 +1,12 @@
 package run
 
 import (
-	"bytes"
+	"context"
 	"hash/fnv"
-	"time"
 
 	"github.com/sourcegraph/sourcegraph/lib/output"
+	"github.com/sourcegraph/sourcegraph/lib/process"
 )
-
-// tickDuration is the time to wait before writing the buffer contents
-// without having received a newline.
-var tickDuration = 2 * time.Millisecond
-
-// cmdLogger is a simplified version of goreman's logger:
-// https://github.com/mattn/goreman/blob/master/log.go
-type cmdLogger struct {
-	out   *output.Output
-	name  string
-	color output.Style
-
-	// buf is used to keep partial lines buffered before flushing them (either
-	// on the next newline or after tickDuration)
-	buf    *bytes.Buffer
-	writes chan []byte
-	done   chan struct{}
-}
 
 func nameToColor(s string, v ...interface{}) output.Style {
 	h := fnv.New32()
@@ -33,90 +15,18 @@ func nameToColor(s string, v ...interface{}) output.Style {
 	return output.Fg256Color((int(h.Sum32()) % 220))
 }
 
-// newCmdLogger returns a new cmdLogger instance and spawns a goroutine in the
-// background that regularily flushed the logged output to the given output..
-func newCmdLogger(name string, out *output.Output) *cmdLogger {
-	l := &cmdLogger{
-		name:   name,
-		out:    out,
-		color:  nameToColor(name),
-		writes: make(chan []byte),
-		done:   make(chan struct{}),
-		buf:    &bytes.Buffer{},
+// newCmdLogger returns a new process.Logger with a unique color based on the name of the cmd.
+func newCmdLogger(ctx context.Context, name string, out *output.Output) *process.Logger {
+	color := nameToColor(name)
+
+	sink := func(data string) {
+		// TODO: This always adds a newline, which is not always what we want. When
+		// we flush partial lines, we don't want to add a newline character. What
+		// we need to do: extend the `*output.Output` type to have a
+		// `WritefNoNewline` (yes, bad name) method.
+		//
+		out.Writef("%s%s[%s]%s %s", output.StyleBold, color, name, output.StyleReset, data)
 	}
 
-	go l.writeLines()
-
-	return l
-}
-
-func (l *cmdLogger) bufLine(line []byte) error {
-	_, err := l.buf.Write(line)
-	return err
-}
-
-func (l *cmdLogger) flush() {
-	if l.buf.Len() == 0 {
-		return
-	}
-	// TODO: This always adds a newline, which is not always what we want. When
-	// we flush partial lines, we don't want to add a newline character. What
-	// we need to do: extend the `*output.Output` type to have a
-	// `WritefNoNewline` (yes, bad name) method.
-	l.out.Writef("%s%s[%s]%s %s", output.StyleBold, l.color, l.name, output.StyleReset, l.buf.String())
-	l.buf.Reset()
-}
-
-// Write handler of logger.
-func (l *cmdLogger) Write(p []byte) (int, error) {
-	l.writes <- p
-	<-l.done
-	return len(p), nil
-}
-
-func (l *cmdLogger) writeLines() {
-	tick := time.NewTicker(tickDuration)
-	for {
-		select {
-		case w, ok := <-l.writes:
-			if !ok {
-				l.flush()
-				return
-			}
-
-			buf := bytes.NewBuffer(w)
-			for {
-				line, err := buf.ReadBytes('\n')
-				if len(line) > 0 {
-					if line[len(line)-1] == '\n' {
-						// TODO: We currently add a newline in flush(), see comment there
-						line = line[0 : len(line)-1]
-
-						// But since there *was* a newline, we need to flush,
-						// but only if there is more than a newline or there
-						// was already content.
-						if len(line) != 1 || l.buf.Len() > 0 {
-							if err := l.bufLine(line); err != nil {
-								break
-							}
-							l.flush()
-						}
-						tick.Stop()
-					} else {
-						if err := l.bufLine(line); err != nil {
-							break
-						}
-						tick.Reset(tickDuration)
-					}
-				}
-				if err != nil {
-					break
-				}
-			}
-			l.done <- struct{}{}
-		case <-tick.C:
-			l.flush()
-			tick.Stop()
-		}
-	}
+	return process.NewLogger(ctx, sink)
 }

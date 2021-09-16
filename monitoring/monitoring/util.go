@@ -20,6 +20,13 @@ func withPeriod(s string) string {
 	return s
 }
 
+func pluralize(noun string, count int) string {
+	if count != 1 {
+		noun += "s"
+	}
+	return fmt.Sprintf("%d %s", count, noun)
+}
+
 // StringPtr converts a string value to a pointer, useful for setting fields in some APIs.
 func StringPtr(s string) *string { return &s }
 

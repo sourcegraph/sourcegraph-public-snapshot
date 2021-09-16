@@ -34,6 +34,7 @@ func NewHandler(db dbutil.DB) http.Handler {
 	m.Handle("/", r)
 
 	r.Get(router.RobotsTxt).Handler(trace.Route(http.HandlerFunc(robotsTxt)))
+	r.Get(router.SitemapXmlGz).Handler(trace.Route(http.HandlerFunc(sitemapXmlGz)))
 	r.Get(router.Favicon).Handler(trace.Route(http.HandlerFunc(favicon)))
 	r.Get(router.OpenSearch).Handler(trace.Route(http.HandlerFunc(openSearch)))
 

@@ -110,10 +110,16 @@ func (f *RepoContainsPredicate) parseNode(n Node) error {
 			if f.File != "" {
 				return errors.New("cannot specify file multiple times")
 			}
+			if _, err := regexp.Compile(v.Value); err != nil {
+				return errors.Errorf("`contains` predicate has invalid `file` argument: %w", err)
+			}
 			f.File = v.Value
 		case "content":
 			if f.Content != "" {
 				return errors.New("cannot specify content multiple times")
+			}
+			if _, err := regexp.Compile(v.Value); err != nil {
+				return errors.Errorf("`contains` predicate has invalid `content` argument: %w", err)
 			}
 			f.Content = v.Value
 		default:

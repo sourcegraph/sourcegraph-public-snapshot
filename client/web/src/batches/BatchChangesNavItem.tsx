@@ -1,6 +1,6 @@
 import React from 'react'
 
-import { NavItem, NavLink } from '@sourcegraph/wildcard/src/components/NavBar'
+import { NavItem, NavLink } from '@sourcegraph/wildcard'
 
 import { BatchChangesIconNav } from './icons'
 

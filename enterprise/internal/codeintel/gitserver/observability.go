@@ -33,9 +33,9 @@ func newOperations(observationContext *observation.Context) *operations {
 
 	op := func(name string) *observation.Operation {
 		return observationContext.Operation(observation.Op{
-			Name:         fmt.Sprintf("codeintel.gitserver.%s", name),
-			MetricLabels: []string{name},
-			Metrics:      metrics,
+			Name:              fmt.Sprintf("codeintel.gitserver.%s", name),
+			MetricLabelValues: []string{name},
+			Metrics:           metrics,
 			ErrorFilter: func(err error) observation.ErrorFilterBehaviour {
 				if errors.HasType(err, &gitserver.RevisionNotFoundError{}) {
 					return observation.EmitForNone

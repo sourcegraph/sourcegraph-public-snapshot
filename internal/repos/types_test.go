@@ -251,7 +251,7 @@ func TestGrantedScopes(t *testing.T) {
 	ctx := context.Background()
 
 	want := []string{"repo"}
-	github.MockGetAuthenticatedUserOAuthScopes = func(ctx context.Context) ([]string, error) {
+	github.MockGetAuthenticatedOAuthScopes = func(ctx context.Context) ([]string, error) {
 		return want, nil
 	}
 

@@ -80,8 +80,9 @@ func (r *insightSeriesResolver) Status(ctx context.Context) (graphqlbackend.Insi
 		// Include errored because they'll be retried before becoming failures
 		pendingJobs: int32(status.Queued + status.Processing + status.Errored),
 
-		completedJobs: int32(status.Completed),
-		failedJobs:    int32(status.Failed),
+		completedJobs:    int32(status.Completed),
+		failedJobs:       int32(status.Failed),
+		backfillQueuedAt: r.series.BackfillQueuedAt,
 	}, nil
 }
 
@@ -109,9 +110,13 @@ func (i insightsDataPointResolver) Value() float64 { return i.p.Value }
 
 type insightStatusResolver struct {
 	totalPoints, pendingJobs, completedJobs, failedJobs int32
+	backfillQueuedAt                                    *time.Time
 }
 
 func (i insightStatusResolver) TotalPoints() int32   { return i.totalPoints }
 func (i insightStatusResolver) PendingJobs() int32   { return i.pendingJobs }
 func (i insightStatusResolver) CompletedJobs() int32 { return i.completedJobs }
 func (i insightStatusResolver) FailedJobs() int32    { return i.failedJobs }
+func (i insightStatusResolver) BackfillQueuedAt() *graphqlbackend.DateTime {
+	return graphqlbackend.DateTimeOrNil(i.backfillQueuedAt)
+}

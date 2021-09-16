@@ -1,3 +1,4 @@
+import classNames from 'classnames'
 import { isEqual, range } from 'lodash'
 import React from 'react'
 import { Link } from 'react-router-dom'
@@ -7,14 +8,17 @@ import { catchError, distinctUntilChanged, filter, switchMap } from 'rxjs/operat
 import sanitizeHtml from 'sanitize-html'
 
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
+import { LastSyncedIcon } from '@sourcegraph/shared/src/components/LastSyncedIcon'
 import { Markdown } from '@sourcegraph/shared/src/components/Markdown'
 import { CommitMatch } from '@sourcegraph/shared/src/search/stream'
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { highlightNode } from '@sourcegraph/shared/src/util/dom'
 
 import { highlightCode } from '../search/backend'
 
-interface CommitSearchResultMatchProps extends ThemeProps {
+import styles from './CommitSearchResultMatch.module.scss'
+import searchResultStyles from './SearchResult.module.scss'
+
+interface CommitSearchResultMatchProps {
     item: CommitMatch
 }
 
@@ -63,7 +67,6 @@ export class CommitSearchResultMatch extends React.Component<
                                 code: codeContent,
                                 fuzzyLanguage: lang,
                                 disableTimeout: false,
-                                isLightTheme: props.isLightTheme,
                             }).pipe(
                                 // Return the rendered markdown if highlighting fails.
                                 catchError(error => {
@@ -150,26 +153,37 @@ export class CommitSearchResultMatch extends React.Component<
                 partialVisibility={true}
                 offset={this.visibilitySensorOffset}
             >
-                <>
+                <div className={styles.commitSearchResultMatch}>
+                    {this.props.item.repoLastFetched && (
+                        <LastSyncedIcon
+                            className={styles.lastSyncedIcon}
+                            lastSyncedTime={this.props.item.repoLastFetched}
+                        />
+                    )}
                     {this.state.HTML !== undefined ? (
-                        <Link key={this.props.item.url} to={this.props.item.url} className="search-result-match">
+                        <Link
+                            key={this.props.item.url}
+                            to={this.props.item.url}
+                            className={searchResultStyles.searchResultMatch}
+                        >
                             <code>
                                 <Markdown
                                     refFn={this.setTableContainerElement}
-                                    className="search-result-match__markdown search-result-match__code-excerpt"
+                                    testId="search-result-match-code-excerpt"
+                                    className={classNames(styles.markdown, styles.codeExcerpt)}
                                     dangerousInnerHTML={this.state.HTML}
                                 />
                             </code>
                         </Link>
                     ) : (
                         <>
-                            <LoadingSpinner className="icon-inline search-result-match__loader" />
+                            <LoadingSpinner className={classNames('icon-inline', styles.loader)} />
                             <table>
                                 <tbody>
                                     {range(firstLine, lastLine).map(index => (
                                         <tr key={`${this.props.item.url}#${index}`}>
                                             {/* create empty space to fill viewport (as if the blob content were already fetched, otherwise we'll overfetch) */}
-                                            <td className="line search-result-match__line--hidden">
+                                            <td className={styles.lineHidden}>
                                                 <code>{index}</code>
                                             </td>
                                             <td className="code"> </td>
@@ -179,7 +193,7 @@ export class CommitSearchResultMatch extends React.Component<
                             </table>
                         </>
                     )}
-                </>
+                </div>
             </VisibilitySensor>
         )
     }

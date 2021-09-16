@@ -5,9 +5,9 @@ import { map } from 'rxjs/operators'
 
 import { IHighlightLineRange } from '../graphql/schema'
 import { ContentMatch, SymbolMatch, PathMatch, getFileMatchUrl } from '../search/stream'
-import { isSettingsValid, SettingsCascadeProps } from '../settings/settings'
+import { SettingsCascadeProps } from '../settings/settings'
 import { SymbolIcon } from '../symbols/SymbolIcon'
-import { ThemeProps } from '../theme'
+import { TelemetryProps } from '../telemetry/telemetryService'
 import { isErrorLike } from '../util/errors'
 import {
     appendLineRangeQueryParameter,
@@ -16,30 +16,16 @@ import {
 } from '../util/url'
 
 import { CodeExcerpt, FetchFileParameters } from './CodeExcerpt'
-import { CodeExcerptUnhighlighted } from './CodeExcerptUnhighlighted'
-import { MatchItem } from './FileMatch'
-import { MatchGroup, calculateMatchGroups } from './FileMatchContext'
+import { MatchGroup } from './FileMatchContext'
+import { LastSyncedIcon } from './LastSyncedIcon'
 import { Link } from './Link'
 
-export interface EventLogger {
-    log: (eventLabel: string, eventProperties?: any, publicEventProperties?: any) => void
-}
-
-interface FileMatchProps extends SettingsCascadeProps, ThemeProps {
+interface FileMatchProps extends SettingsCascadeProps, TelemetryProps {
     location: H.Location
-    eventLogger?: EventLogger
-    items: MatchItem[]
     result: ContentMatch | SymbolMatch | PathMatch
+    grouped: MatchGroup[]
     /* Called when the first result has fully loaded. */
     onFirstResultLoad?: () => void
-    /**
-     * Whether or not to show all matches for this file, or only a subset.
-     */
-    allMatches: boolean
-    /**
-     * The number of matches to show when the results are collapsed (allMatches===false, user has not clicked "Show N more matches")
-     */
-    subsetMatches: number
     fetchHighlightedFileLineRanges: (parameters: FetchFileParameters, force?: boolean) => Observable<string[][]>
     /**
      * Called when the file's search result is selected.
@@ -47,32 +33,7 @@ interface FileMatchProps extends SettingsCascadeProps, ThemeProps {
     onSelect: () => void
 }
 
-// Dev flag for disabling syntax highlighting on search results pages.
-const NO_SEARCH_HIGHLIGHTING = localStorage.getItem('noSearchHighlighting') !== null
-
 export const FileMatchChildren: React.FunctionComponent<FileMatchProps> = props => {
-    // The number of lines of context to show before and after each match.
-    let context = 1
-
-    if (props.location.pathname === '/search') {
-        // Check if search.contextLines is configured in settings.
-        const contextLinesSetting =
-            isSettingsValid(props.settingsCascade) &&
-            props.settingsCascade.final &&
-            props.settingsCascade.final['search.contextLines']
-
-        if (typeof contextLinesSetting === 'number' && contextLinesSetting >= 0) {
-            context = contextLinesSetting
-        }
-    }
-
-    const maxMatches = props.allMatches ? 0 : props.subsetMatches
-    const [matches, grouped] = React.useMemo(() => calculateMatchGroups(props.items, maxMatches, context), [
-        props.items,
-        maxMatches,
-        context,
-    ])
-
     // If optimizeHighlighting is enabled, compile a list of the highlighted file ranges we want to
     // fetch (instead of the entire file.)
     const optimizeHighlighting =
@@ -81,17 +42,16 @@ export const FileMatchChildren: React.FunctionComponent<FileMatchProps> = props 
         props.settingsCascade.final.experimentalFeatures &&
         props.settingsCascade.final.experimentalFeatures.enableFastResultLoading
 
-    const { result, isLightTheme, fetchHighlightedFileLineRanges, eventLogger, onFirstResultLoad } = props
+    const { result, grouped, fetchHighlightedFileLineRanges, telemetryService, onFirstResultLoad } = props
     const fetchHighlightedFileRangeLines = React.useCallback(
-        (isFirst, startLine, endLine, isLightTheme) => {
+        (isFirst, startLine, endLine) => {
             const startTime = Date.now()
             return fetchHighlightedFileLineRanges(
                 {
                     repoName: result.repository,
-                    commitID: result.version || '',
-                    filePath: result.name,
+                    commitID: result.commit || '',
+                    filePath: result.path,
                     disableTimeout: false,
-                    isLightTheme,
                     ranges: optimizeHighlighting
                         ? grouped.map(
                               (group): IHighlightLineRange => ({
@@ -107,20 +67,18 @@ export const FileMatchChildren: React.FunctionComponent<FileMatchProps> = props 
                     if (isFirst && onFirstResultLoad) {
                         onFirstResultLoad()
                     }
-                    if (eventLogger) {
-                        eventLogger.log(
-                            'search.latencies.frontend.code-load',
-                            { durationMs: Date.now() - startTime },
-                            { durationMs: Date.now() - startTime }
-                        )
-                    }
+                    telemetryService.log(
+                        'search.latencies.frontend.code-load',
+                        { durationMs: Date.now() - startTime },
+                        { durationMs: Date.now() - startTime }
+                    )
                     return optimizeHighlighting
                         ? lines[grouped.findIndex(group => group.startLine === startLine && group.endLine === endLine)]
                         : lines[0].slice(startLine, endLine)
                 })
             )
         },
-        [result, fetchHighlightedFileLineRanges, grouped, optimizeHighlighting, eventLogger, onFirstResultLoad]
+        [result, fetchHighlightedFileLineRanges, grouped, optimizeHighlighting, telemetryService, onFirstResultLoad]
     )
 
     const createCodeExcerptLink = (group: MatchGroup): string => {
@@ -131,18 +89,9 @@ export const FileMatchChildren: React.FunctionComponent<FileMatchProps> = props 
         )
     }
 
-    if (NO_SEARCH_HIGHLIGHTING) {
-        return (
-            <CodeExcerptUnhighlighted
-                urlWithoutPosition={getFileMatchUrl(result)}
-                items={matches}
-                onSelect={props.onSelect}
-            />
-        )
-    }
-
     return (
         <div className="file-match-children">
+            {result.repoLastFetched && <LastSyncedIcon lastSyncedTime={result.repoLastFetched} />}
             {/* Path */}
             {result.type === 'path' && (
                 <div className="file-match-children__item">
@@ -166,31 +115,37 @@ export const FileMatchChildren: React.FunctionComponent<FileMatchProps> = props 
             ))}
 
             {/* Line matches */}
-            {grouped.map((group, index) => (
-                <div
-                    key={`linematch:${getFileMatchUrl(result)}${group.position.line}:${group.position.character}`}
-                    className="file-match-children__item-code-wrapper test-file-match-children-item-wrapper"
-                >
-                    <Link
-                        to={createCodeExcerptLink(group)}
-                        className="file-match-children__item file-match-children__item-clickable test-file-match-children-item"
-                        onClick={props.onSelect}
-                    >
-                        <CodeExcerpt
-                            repoName={result.repository}
-                            commitID={result.version || ''}
-                            filePath={result.name}
-                            startLine={group.startLine}
-                            endLine={group.endLine}
-                            highlightRanges={group.matches}
-                            className="file-match-children__item-code-excerpt"
-                            isLightTheme={isLightTheme}
-                            fetchHighlightedFileRangeLines={fetchHighlightedFileRangeLines}
-                            isFirst={index === 0}
-                        />
-                    </Link>
+            {grouped && (
+                <div>
+                    {grouped.map((group, index) => (
+                        <div
+                            key={`linematch:${getFileMatchUrl(result)}${group.position.line}:${
+                                group.position.character
+                            }`}
+                            className="file-match-children__item-code-wrapper test-file-match-children-item-wrapper"
+                        >
+                            <Link
+                                to={createCodeExcerptLink(group)}
+                                className="file-match-children__item file-match-children__item-clickable test-file-match-children-item"
+                                onClick={props.onSelect}
+                            >
+                                <CodeExcerpt
+                                    repoName={result.repository}
+                                    commitID={result.commit || ''}
+                                    filePath={result.path}
+                                    startLine={group.startLine}
+                                    endLine={group.endLine}
+                                    highlightRanges={group.matches}
+                                    className="file-match-children__item-code-excerpt"
+                                    fetchHighlightedFileRangeLines={fetchHighlightedFileRangeLines}
+                                    isFirst={index === 0}
+                                    blobLines={group.blobLines}
+                                />
+                            </Link>
+                        </div>
+                    ))}
                 </div>
-            ))}
+            )}
         </div>
     )
 }

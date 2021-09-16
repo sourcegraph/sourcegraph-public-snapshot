@@ -15,6 +15,9 @@ env:
   # Enable sharded indexed search mode:
   INDEXED_SEARCH_SERVERS: localhost:3070 localhost:3071
 
+  # The profiler is a GCP feature and so is not supported locally.
+  SRC_DISABLE_PROFILER: 'true'
+
   GO111MODULE: 'on'
 
   DEPLOY_TYPE: dev
@@ -269,11 +272,11 @@ commands:
       CADDY_VERSION: 2.3.0
 
   web:
-    cmd: ./node_modules/.bin/gulp --silent --color dev
+    cmd: ./node_modules/.bin/gulp --color dev
     install: yarn --no-progress
 
   enterprise-web:
-    cmd: ./node_modules/.bin/gulp --silent --color dev
+    cmd: ./node_modules/.bin/gulp --color dev
     install: yarn --no-progress
     env:
       ENTERPRISE: 1
@@ -427,7 +430,7 @@ commands:
     cmd: |
       env TMPDIR="$HOME/.sourcegraph/batches-executor-temp" .bin/executor
     env:
-      EXECUTOR_QUEUE_NAME: batches
+      EXECUTOR_QUEUE_NAME: batch-spec-workspaces
       SRC_PROF_HTTP: ":6093"
 
   # If you want to use this, either start it with `sg run batches-executor-firecracker` or
@@ -440,7 +443,7 @@ commands:
           .bin/executor
     env:
       EXECUTOR_USE_FIRECRACKER: true
-      EXECUTOR_QUEUE_NAME: batches
+      EXECUTOR_QUEUE_NAME: batch-spec-workspaces
       SRC_PROF_HTTP: ":6093"
 
   minio:
@@ -551,14 +554,13 @@ commands:
         -v "${GRAFANA_DISK}":/var/lib/grafana \
         -v "$(pwd)"/dev/grafana/all:/sg_config_grafana/provisioning/datasources \
         -v "$(pwd)"/docker-images/grafana/config/provisioning/dashboards:/sg_grafana_additional_dashboards \
-        -e DISABLE_SOURCEGRAPH_CONFIG \
-        ${IMAGE} >"${GRAFANA_LOG_FILE}" 2>&1
+        sourcegraph/grafana:dev >"${GRAFANA_LOG_FILE}" 2>&1
     install: |
       mkdir -p "${GRAFANA_DISK}"
       mkdir -p "$(dirname ${GRAFANA_LOG_FILE})"
 
       docker inspect $CONTAINER >/dev/null 2>&1 && docker rm -f $CONTAINER
-      CACHE=true ./docker-images/grafana/build.sh
+      ./docker-images/grafana/build.sh
     env:
       GRAFANA_DISK: $HOME/.sourcegraph-dev/data/grafana
       # Log file location: since we log outside of the Docker container, we should
@@ -569,13 +571,14 @@ commands:
       # We want to capture that output, but because it's fairly noisy, don't want to
       # display it in the normal case.
       GRAFANA_LOG_FILE: $HOME/.sourcegraph-dev/logs/grafana/grafana.log
-      IMAGE: sourcegraph/grafana:dev
       CONTAINER: grafana
       PORT: 3370
       # docker containers must access things via docker host on non-linux platforms
       DOCKER_USER: ""
       ADD_HOST_FLAG: ""
-      DISABLE_SOURCEGRAPH_CONFIG: false
+      CACHE: false
+    watch:
+      - monitoring
 
   prometheus:
     cmd: |
@@ -704,6 +707,11 @@ commandsets:
 
   default: *enterprise_set
 
+  dotcom:
+    <<: *enterprise_set
+    env:
+      SOURCEGRAPHDOTCOM_MODE: true
+
   enterprise-codeintel:
     checks:
       - docker
@@ -731,13 +739,6 @@ commandsets:
       - codeintel-executor
 
   enterprise-codeinsights:
-    # Add the following overwrites to your sg.config.overwrite.yaml to get
-    # codeinsights working:
-    #
-    #   env:
-    #     DISABLE_CODE_INSIGHTS_HISTORICAL: false
-    #     DISABLE_CODE_INSIGHTS: false
-    #
     checks:
       - docker
       - redis
@@ -760,6 +761,9 @@ commandsets:
       - zoekt-webserver-0
       - zoekt-webserver-1
       - codeinsights-db
+    env:
+      DISABLE_CODE_INSIGHTS_HISTORICAL: false
+      DISABLE_CODE_INSIGHTS: false
 
   api-only:
     checks:

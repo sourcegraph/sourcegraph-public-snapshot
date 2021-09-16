@@ -173,7 +173,7 @@ func (s *Store) runActionJobQuery(ctx context.Context, q *sqlf.Query) (ajs *Acti
 
 func ScanActionJobs(rows *sql.Rows, err error) (workerutil.Record, bool, error) {
 	records, err := scanActionJobs(rows, err)
-	if err != nil {
+	if err != nil || len(records) == 0 {
 		return &TriggerJobs{}, false, err
 	}
 	return records[0], true, nil

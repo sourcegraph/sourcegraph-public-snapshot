@@ -16,7 +16,7 @@ func GitServer() *monitoring.Container {
 		return observable.WithNoAlerts(`Git Server is expected to use up all the memory it is provided.`)
 	}
 
-	var provisioningIndicatorsOptions = &shared.ContainerProvisioningIndicatorsGroupOptions{
+	provisioningIndicatorsOptions := &shared.ContainerProvisioningIndicatorsGroupOptions{
 		LongTermMemoryUsage:  gitserverHighMemoryNoAlertTransformer,
 		ShortTermMemoryUsage: gitserverHighMemoryNoAlertTransformer,
 	}
@@ -310,6 +310,8 @@ func GitServer() *monitoring.Container {
 					},
 				},
 			},
+
+			shared.CodeIntelligence.NewCoursierGroup(containerName),
 
 			shared.NewDatabaseConnectionsMonitoringGroup(containerName),
 			shared.NewContainerMonitoringGroup(containerName, monitoring.ObservableOwnerCoreApplication, nil),

@@ -7,8 +7,12 @@ import (
 	"net/http"
 	"strconv"
 
+	"github.com/gorilla/mux"
+
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/assetsutil"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 )
 
@@ -25,11 +29,23 @@ func robotsTxtHelper(w io.Writer, allowRobots bool) {
 	fmt.Fprintln(&buf, "User-agent: *")
 	if allowRobots {
 		fmt.Fprintln(&buf, "Allow: /")
+		if envvar.SourcegraphDotComMode() {
+			fmt.Fprintln(&buf, "Sitemap: https://sourcegraph.com/sitemap.xml.gz")
+		}
 	} else {
 		fmt.Fprintln(&buf, "Disallow: /")
 	}
 	fmt.Fprintln(&buf)
 	_, _ = buf.WriteTo(w)
+}
+
+func sitemapXmlGz(w http.ResponseWriter, r *http.Request) {
+	if envvar.SourcegraphDotComMode() || conf.DeployType() == conf.DeployDev {
+		number := mux.Vars(r)["number"]
+		http.Redirect(w, r, fmt.Sprintf("https://storage.googleapis.com/sitemap-sourcegraph-com/sitemap%s.xml.gz", number), http.StatusFound)
+		return
+	}
+	w.WriteHeader(http.StatusNotFound)
 }
 
 func favicon(w http.ResponseWriter, r *http.Request) {

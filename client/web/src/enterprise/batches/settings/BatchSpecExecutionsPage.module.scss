@@ -1,0 +1,7 @@
+.executions {
+    &__grid {
+        display: grid;
+        grid-template-columns: [caret] min-content [state] min-content [info] minmax(min-content, 1fr) [timestamp] min-content;
+        align-items: center;
+    }
+}

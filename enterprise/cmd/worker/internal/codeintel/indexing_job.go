@@ -56,6 +56,7 @@ func (j *indexingJob) Routines(ctx context.Context) ([]goroutine.BackgroundRouti
 		return nil, err
 	}
 
+	extSvcStore := database.ExternalServices(db)
 	dbStoreShim := &indexing.DBStoreShim{Store: dbStore}
 	enqueuerDBStoreShim := &enqueuer.DBStoreShim{Store: dbStore}
 	indexEnqueuer := enqueuer.NewIndexEnqueuer(enqueuerDBStoreShim, gitserverClient, repoupdater.DefaultClient, indexingConfigInst.AutoIndexEnqueuerConfig, observationContext)
@@ -78,7 +79,7 @@ func (j *indexingJob) Routines(ctx context.Context) ([]goroutine.BackgroundRouti
 
 	routines := []goroutine.BackgroundRoutine{
 		indexing.NewIndexScheduler(dbStoreShim, settingStore, repoStore, indexEnqueuer, indexingConfigInst.AutoIndexingTaskInterval, observationContext),
-		indexing.NewDependencyIndexingScheduler(dbStoreShim, dependencyIndexStore, indexEnqueuer, indexingConfigInst.DependencyIndexerSchedulerPollInterval, indexingConfigInst.DependencyIndexerSchedulerConcurrency, metrics),
+		indexing.NewDependencyIndexingScheduler(dbStoreShim, dependencyIndexStore, extSvcStore, indexEnqueuer, indexingConfigInst.DependencyIndexerSchedulerPollInterval, indexingConfigInst.DependencyIndexerSchedulerConcurrency, metrics),
 	}
 
 	return routines, nil

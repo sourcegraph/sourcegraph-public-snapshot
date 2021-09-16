@@ -157,17 +157,11 @@ func scanSingleJob(rows *sql.Rows, err error) (workerutil.Record, bool, error) {
 	}
 
 	jobs, err := scanJobs(rows)
-	if err != nil {
+	if err != nil || len(jobs) == 0 {
 		return nil, false, err
 	}
 
-	var job SyncJob
-
-	if len(jobs) > 0 {
-		job = jobs[0]
-	}
-
-	return &job, true, nil
+	return &jobs[0], true, nil
 }
 
 // SyncJob represents an external service that needs to be synced

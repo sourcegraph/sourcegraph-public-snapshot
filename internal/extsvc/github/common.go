@@ -47,8 +47,12 @@ type Actor struct {
 
 // A Team represents a team on Github.
 type Team struct {
-	Name string
-	URL  string
+	Name string `json:",omitempty"`
+	Slug string `json:",omitempty"`
+	URL  string `json:",omitempty"`
+
+	ReposCount   int  `json:",omitempty"`
+	Organization *Org `json:",omitempty"`
 }
 
 // A GitActor represents an actor in a Git commit (ie. an author or committer).
@@ -1542,10 +1546,16 @@ type RepoNotFoundError struct{}
 func (e RepoNotFoundError) Error() string  { return "GitHub repository not found" }
 func (e RepoNotFoundError) NotFound() bool { return true }
 
+// RepoNotFoundError is when the requested GitHub organization is not found.
+type OrgNotFoundError struct{}
+
+func (e OrgNotFoundError) Error() string  { return "GitHub organization not found" }
+func (e OrgNotFoundError) NotFound() bool { return true }
+
 // IsNotFound reports whether err is a GitHub API error of type NOT_FOUND, the equivalent cached
 // response error, or HTTP 404.
 func IsNotFound(err error) bool {
-	if errors.HasType(err, &RepoNotFoundError{}) || errors.HasType(err, ErrPullRequestNotFound(0)) ||
+	if errors.HasType(err, &RepoNotFoundError{}) || errors.HasType(err, &OrgNotFoundError{}) || errors.HasType(err, ErrPullRequestNotFound(0)) ||
 		HTTPErrorCode(err) == http.StatusNotFound {
 		return true
 	}
@@ -1788,6 +1798,22 @@ const (
 	VisibilityPrivate Visibility = "private"
 )
 
+// RepositoryAffiliation is the affiliation filter for listing repositories.
+type RepositoryAffiliation string
+
+const (
+	AffiliationOwner        RepositoryAffiliation = "owner"
+	AffiliationCollaborator RepositoryAffiliation = "collaborator"
+	AffiliationOrgMember    RepositoryAffiliation = "organization_member"
+)
+
+type CollaboratorAffiliation string
+
+const (
+	AffiliationOutside CollaboratorAffiliation = "outside"
+	AffiliationDirect  CollaboratorAffiliation = "direct"
+)
+
 type restSearchResponse struct {
 	TotalCount        int              `json:"total_count"`
 	IncompleteResults bool             `json:"incomplete_results"`
@@ -1846,6 +1872,23 @@ type UserEmail struct {
 
 type Org struct {
 	Login string `json:"login,omitempty"`
+}
+
+// OrgDetails describes the more detailed Org data you can only get from the
+// get-an-organization API (https://docs.github.com/en/rest/reference/orgs#get-an-organization)
+//
+// It is a superset of the organization field that is embedded in other API responses.
+type OrgDetails struct {
+	Org
+
+	DefaultRepositoryPermission string `json:"default_repository_permission,omitempty"`
+}
+
+// OrgMembership describes organization membership information for a user.
+// See https://docs.github.com/en/rest/reference/orgs#get-an-organization-membership-for-the-authenticated-user
+type OrgMembership struct {
+	State string `json:"state"`
+	Role  string `json:"role"`
 }
 
 // Collaborator is a collaborator of a repository.

@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/awscodecommit"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
@@ -235,10 +236,12 @@ type ChangesetSyncResponse struct {
 	Error string
 }
 
-// PermsSyncRequest is a request to sync permissions.
+// PermsSyncRequest is a request to sync permissions. The provided options are used to
+// sync all provided users and repos - to use different options, make a separate request.
 type PermsSyncRequest struct {
-	UserIDs []int32      `json:"user_ids"`
-	RepoIDs []api.RepoID `json:"repo_ids"`
+	UserIDs []int32                 `json:"user_ids"`
+	RepoIDs []api.RepoID            `json:"repo_ids"`
+	Options authz.FetchPermsOptions `json:"options"`
 }
 
 // PermsSyncResponse is a response to sync permissions.

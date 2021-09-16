@@ -163,7 +163,7 @@ export const SearchContextsListTab: React.FunctionComponent<SearchContextsListTa
                     {autoDefinedSearchContexts?.map(context => (
                         <div key={context.spec} className="card p-3">
                             <div>
-                                <Link to={`/contexts/${context.id}`}>
+                                <Link to={`/contexts/${context.spec}`}>
                                     <strong>{context.spec}</strong>
                                 </Link>
                                 <span

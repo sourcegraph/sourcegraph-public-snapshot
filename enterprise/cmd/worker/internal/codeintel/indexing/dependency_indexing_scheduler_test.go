@@ -8,30 +8,32 @@ import (
 	"github.com/google/go-cmp/cmp"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
-	lsifstore "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/lsifstore"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/shared"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 )
 
 func TestDependencyIndexingSchedulerHandler(t *testing.T) {
 	mockDBStore := NewMockDBStore()
+	mockExtSvcStore := NewMockExternalServiceStore()
 	mockScanner := NewMockPackageReferenceScanner()
 	mockDBStore.WithFunc.SetDefaultReturn(mockDBStore)
 	mockDBStore.GetUploadByIDFunc.SetDefaultReturn(dbstore.Upload{ID: 42, RepositoryID: 50, Indexer: "lsif-go"}, true, nil)
 	mockDBStore.ReferencesForUploadFunc.SetDefaultReturn(mockScanner, nil)
 
-	mockScanner.NextFunc.PushReturn(lsifstore.PackageReference{Package: lsifstore.Package{DumpID: 42, Scheme: "test", Name: "name1", Version: "v2.2.0"}}, true, nil)
-	mockScanner.NextFunc.PushReturn(lsifstore.PackageReference{Package: lsifstore.Package{DumpID: 42, Scheme: "test", Name: "name1", Version: "v3.2.0"}}, true, nil)
-	mockScanner.NextFunc.PushReturn(lsifstore.PackageReference{Package: lsifstore.Package{DumpID: 42, Scheme: "test", Name: "name2", Version: "v3.2.2"}}, true, nil)
-	mockScanner.NextFunc.PushReturn(lsifstore.PackageReference{Package: lsifstore.Package{DumpID: 42, Scheme: "test", Name: "name2", Version: "v2.2.1"}}, true, nil)
-	mockScanner.NextFunc.PushReturn(lsifstore.PackageReference{Package: lsifstore.Package{DumpID: 42, Scheme: "test", Name: "name2", Version: "v4.2.3"}}, true, nil)
-	mockScanner.NextFunc.PushReturn(lsifstore.PackageReference{Package: lsifstore.Package{DumpID: 42, Scheme: "test", Name: "name1", Version: "v1.2.0"}}, true, nil)
-	mockScanner.NextFunc.SetDefaultReturn(lsifstore.PackageReference{}, false, nil)
+	mockScanner.NextFunc.PushReturn(shared.PackageReference{Package: shared.Package{DumpID: 42, Scheme: "test", Name: "name1", Version: "v2.2.0"}}, true, nil)
+	mockScanner.NextFunc.PushReturn(shared.PackageReference{Package: shared.Package{DumpID: 42, Scheme: "test", Name: "name1", Version: "v3.2.0"}}, true, nil)
+	mockScanner.NextFunc.PushReturn(shared.PackageReference{Package: shared.Package{DumpID: 42, Scheme: "test", Name: "name2", Version: "v3.2.2"}}, true, nil)
+	mockScanner.NextFunc.PushReturn(shared.PackageReference{Package: shared.Package{DumpID: 42, Scheme: "test", Name: "name2", Version: "v2.2.1"}}, true, nil)
+	mockScanner.NextFunc.PushReturn(shared.PackageReference{Package: shared.Package{DumpID: 42, Scheme: "test", Name: "name2", Version: "v4.2.3"}}, true, nil)
+	mockScanner.NextFunc.PushReturn(shared.PackageReference{Package: shared.Package{DumpID: 42, Scheme: "test", Name: "name1", Version: "v1.2.0"}}, true, nil)
+	mockScanner.NextFunc.SetDefaultReturn(shared.PackageReference{}, false, nil)
 
 	indexEnqueuer := NewMockIndexEnqueuer()
 
 	handler := &dependencyIndexingSchedulerHandler{
 		dbStore:       mockDBStore,
 		indexEnqueuer: indexEnqueuer,
+		extsvcStore:   mockExtSvcStore,
 	}
 
 	job := dbstore.DependencyIndexingJob{
@@ -81,6 +83,7 @@ func TestDependencyIndexingSchedulerHandler(t *testing.T) {
 
 func TestDependencyIndexingSchedulerHandlerShouldSkipRepository(t *testing.T) {
 	mockDBStore := NewMockDBStore()
+	mockExtSvcStore := NewMockExternalServiceStore()
 	mockScanner := NewMockPackageReferenceScanner()
 	mockDBStore.WithFunc.SetDefaultReturn(mockDBStore)
 	mockDBStore.GetUploadByIDFunc.SetDefaultReturn(dbstore.Upload{ID: 42, RepositoryID: 51, Indexer: "lsif-tsc"}, true, nil)
@@ -91,6 +94,7 @@ func TestDependencyIndexingSchedulerHandlerShouldSkipRepository(t *testing.T) {
 	handler := &dependencyIndexingSchedulerHandler{
 		dbStore:       mockDBStore,
 		indexEnqueuer: indexEnqueuer,
+		extsvcStore:   mockExtSvcStore,
 	}
 
 	job := dbstore.DependencyIndexingJob{

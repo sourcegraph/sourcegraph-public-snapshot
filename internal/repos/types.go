@@ -48,6 +48,7 @@ func (r *RateLimitSyncer) SyncRateLimiters(ctx context.Context) error {
 
 	for {
 		services, err := r.serviceLister.List(ctx, database.ExternalServicesListOptions{
+			NoNamespace: true,
 			LimitOffset: &cursor,
 		})
 		if err != nil {
@@ -133,7 +134,7 @@ func GrantedScopes(ctx context.Context, cache ScopeCache, svc *types.ExternalSer
 		if err != nil {
 			return nil, errors.Wrap(err, "creating source")
 		}
-		scopes, err := src.v3Client.GetAuthenticatedUserOAuthScopes(ctx)
+		scopes, err := src.v3Client.GetAuthenticatedOAuthScopes(ctx)
 		if err != nil {
 			return nil, errors.Wrap(err, "getting scopes")
 		}

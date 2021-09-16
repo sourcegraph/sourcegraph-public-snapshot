@@ -1,14 +1,2 @@
 @import './graphiql-theme.scss';
 @import './cm-sourcegraph-theme.scss';
-
-.api-console {
-    display: flex;
-    flex-direction: column;
-    flex: 1 1 auto;
-
-    &__loader {
-        align-self: center;
-        margin-top: auto;
-        margin-bottom: auto;
-    }
-}

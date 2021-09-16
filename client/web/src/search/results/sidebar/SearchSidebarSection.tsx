@@ -9,7 +9,7 @@ import styles from './SearchSidebarSection.module.scss'
 
 export const SearchSidebarSection: React.FunctionComponent<{
     header: string
-    children?: React.ReactElement[] | ((filter: string) => React.ReactElement)
+    children?: React.ReactElement | React.ReactElement[] | ((filter: string) => React.ReactElement)
     className?: string
     showSearch?: boolean // Search only works if children are FilterLink
     onToggle?: (open: boolean) => void
@@ -18,6 +18,13 @@ export const SearchSidebarSection: React.FunctionComponent<{
      * Shown when the built-in search doesn't find any results.
      */
     noResultText?: React.ReactElement | string
+    /**
+     * Clear the search input whenever this value changes. This is supposed to
+     * be used together with function children, which use the search input but
+     * handle search on their own.
+     * Defaults to the component's children.
+     */
+    clearSearchOnChange?: {}
 }> = ({
     header,
     children = [],
@@ -26,19 +33,22 @@ export const SearchSidebarSection: React.FunctionComponent<{
     onToggle,
     startCollapsed,
     noResultText = 'No results',
+    clearSearchOnChange = children,
 }) => {
     const [filter, setFilter] = useState('')
 
-    // Clear filter when children change
-    useEffect(() => setFilter(''), [children])
+    // Clears the filter whenever clearSearchOnChange changes (defaults to the
+    // component's children)
+    useEffect(() => setFilter(''), [clearSearchOnChange])
 
     let body
     let searchVisible = showSearch
-    let visible = typeof children === 'function'
+    let visible = false
 
     if (typeof children === 'function') {
+        visible = true
         body = children(filter)
-    } else {
+    } else if (Array.isArray(children)) {
         visible = children.length > 0
         searchVisible = searchVisible && children.length > 1
         const childrenList = children as React.ReactElement[]
@@ -68,6 +78,9 @@ export const SearchSidebarSection: React.FunctionComponent<{
                 </ul>
             </>
         )
+    } else {
+        visible = true
+        body = children
     }
 
     const [collapsed, setCollapsed] = useState(startCollapsed)

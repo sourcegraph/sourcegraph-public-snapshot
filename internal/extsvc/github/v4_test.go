@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/url"
-	"os"
 	"reflect"
 	"strconv"
 	"strings"
@@ -658,9 +657,5 @@ func newV4Client(t testing.TB, name string) (*V4Client, func()) {
 		t.Fatal(err)
 	}
 
-	cli := NewV4Client(uri, &auth.OAuthBearerToken{
-		Token: os.Getenv("GITHUB_TOKEN"),
-	}, doer)
-
-	return cli, save
+	return NewV4Client(uri, vcrToken, doer), save
 }

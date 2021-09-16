@@ -11,6 +11,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/external/session"
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
@@ -31,11 +32,9 @@ func (r *schemaResolver) DeleteUser(ctx context.Context, args *struct {
 		return nil, err
 	}
 
-	currentUser, err := CurrentUser(ctx, r.db)
-	if err != nil {
-		return nil, err
-	}
-	if currentUser.ID() == args.User {
+	// a must be authenticated at this point, CheckCurrentUserIsSiteAdmin enforces it.
+	a := actor.FromContext(ctx)
+	if a.UID == userID {
 		return nil, errors.New("unable to delete current user")
 	}
 

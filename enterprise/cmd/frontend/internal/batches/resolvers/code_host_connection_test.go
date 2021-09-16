@@ -36,8 +36,7 @@ func TestCodeHostConnectionResolver(t *testing.T) {
 
 	cstore := store.New(db, &observation.TestContext, nil)
 
-	ghRepos, _ := ct.CreateTestRepos(t, ctx, db, 1)
-	ghRepo := ghRepos[0]
+	ghRepo, _ := ct.CreateTestRepo(t, ctx, db)
 	glRepos, _ := ct.CreateGitlabTestRepos(t, ctx, db, 1)
 	glRepo := glRepos[0]
 	bbsRepos, _ := ct.CreateBbsTestRepos(t, ctx, db, 1)

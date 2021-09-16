@@ -46,12 +46,9 @@ const defaultProps: SearchSidebarProps = {
     patternType: SearchPatternType.literal,
     versionContext: undefined,
     selectedSearchContextSpec: 'global',
-    query: '',
     settingsCascade: EMPTY_SETTINGS_CASCADE,
     telemetryService: NOOP_TELEMETRY_SERVICE,
     featureFlags: EMPTY_FEATURE_FLAGS,
-    navbarSearchQueryState: { query: '' },
-    onNavbarQueryChange: () => {},
     isSourcegraphDotCom: false,
 }
 

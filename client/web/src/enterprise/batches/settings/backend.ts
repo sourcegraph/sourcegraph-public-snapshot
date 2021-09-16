@@ -7,6 +7,8 @@ import { requestGraphQL } from '../../../backend/graphql'
 import {
     BatchChangesCodeHostsFields,
     BatchChangesCredentialFields,
+    BatchSpecExecutionsResult,
+    BatchSpecExecutionsVariables,
     CreateBatchChangesCredentialResult,
     CreateBatchChangesCredentialVariables,
     DeleteBatchChangesCredentialResult,
@@ -156,4 +158,50 @@ export const queryGlobalBatchChangesCodeHosts = ({
     ).pipe(
         map(dataOrThrowErrors),
         map(data => data.batchChangesCodeHosts)
+    )
+
+export const queryBatchSpecExecutions = ({
+    first,
+    after,
+}: BatchSpecExecutionsVariables): Observable<BatchSpecExecutionsResult['batchSpecExecutions']> =>
+    requestGraphQL<BatchSpecExecutionsResult, BatchSpecExecutionsVariables>(
+        gql`
+            query BatchSpecExecutions($first: Int, $after: String) {
+                batchSpecExecutions(first: $first, after: $after) {
+                    __typename
+                    totalCount
+                    pageInfo {
+                        endCursor
+                        hasNextPage
+                    }
+                    nodes {
+                        ...BatchSpecExecutionsFields
+                    }
+                }
+            }
+
+            fragment BatchSpecExecutionsFields on BatchSpecExecution {
+                __typename
+                id
+                state
+                finishedAt
+                createdAt
+                name
+                namespace {
+                    namespaceName
+                    url
+                }
+                initiator {
+                    username
+                }
+                inputSpec
+            }
+        `,
+        {
+            first,
+            after,
+        }
+    ).pipe(
+        map(dataOrThrowErrors),
+        map(data => data.batchSpecExecutions)
     )

@@ -19,7 +19,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
@@ -192,50 +191,80 @@ func repoRankFromConfig(siteConfig schema.SiteConfiguration, repoName string) fl
 // This endpoint also supports batch requests to avoid managing concurrency in
 // zoekt. On vertically scaled instances we have observed zoekt requesting
 // this endpoint concurrently leading to socket starvation.
-func serveSearchConfiguration(w http.ResponseWriter, r *http.Request) error {
-	ctx := r.Context()
-	siteConfig := conf.Get().SiteConfiguration
-	getRepoIndexOptions := func(repoName string) (*searchbackend.RepoIndexOptions, error) {
-		repo, err := database.GlobalRepos.GetByName(ctx, api.RepoName(repoName))
-		if err != nil {
-			return nil, err
+func serveSearchConfiguration(db dbutil.DB) func(http.ResponseWriter, *http.Request) error {
+	return func(w http.ResponseWriter, r *http.Request) error {
+		ctx := r.Context()
+		siteConfig := conf.Get().SiteConfiguration
+
+		if err := r.ParseForm(); err != nil {
+			return err
+		}
+		repoNames := r.Form["repo"]
+
+		// Preload repos.
+		// TODO: Support more than 32k repos at a time.
+		repos, loadReposErr := database.Repos(db).List(ctx, database.ReposListOptions{Names: repoNames})
+		// Support fast lookups by repo name.
+		reposMap := make(map[api.RepoName]*types.Repo, len(repos))
+		for _, repo := range repos {
+			reposMap[repo.Name] = repo
 		}
 
-		getVersion := func(branch string) (string, error) {
-			// Do not to trigger a repo-updater lookup since this is a batch job.
-			commitID, err := git.ResolveRevision(ctx, repo.Name, branch, git.ResolveRevisionOptions{})
-			if err != nil && errcode.HTTP(err) == http.StatusNotFound {
-				// GetIndexOptions wants an empty rev for a missing rev or empty
-				// repo.
-				return "", nil
+		getRepoIndexOptions := func(repoName string) (*searchbackend.RepoIndexOptions, error) {
+			if loadReposErr != nil {
+				return nil, loadReposErr
 			}
-			return string(commitID), err
+			// Replicate what database.Repos.GetByName would do here:
+			repo, ok := reposMap[api.RepoName(repoName)]
+			if !ok {
+				return nil, &database.RepoNotFoundErr{Name: api.RepoName(repoName)}
+			}
+			if err := repo.IsBlocked(); err != nil {
+				return nil, err
+			}
+
+			getVersion := func(branch string) (string, error) {
+				// Do not to trigger a repo-updater lookup since this is a batch job.
+				commitID, err := git.ResolveRevision(ctx, repo.Name, branch, git.ResolveRevisionOptions{})
+				if err != nil && errcode.HTTP(err) == http.StatusNotFound {
+					// GetIndexOptions wants an empty rev for a missing rev or empty
+					// repo.
+					return "", nil
+				}
+				return string(commitID), err
+			}
+
+			priority := float64(repo.Stars) + repoRankFromConfig(siteConfig, repoName)
+
+			return &searchbackend.RepoIndexOptions{
+				RepoID:     int32(repo.ID),
+				Public:     !repo.Private,
+				Priority:   priority,
+				Fork:       repo.Fork,
+				Archived:   repo.Archived,
+				GetVersion: getVersion,
+			}, nil
 		}
 
-		priority := float64(repo.Stars) + repoRankFromConfig(siteConfig, repoName)
+		// Build list of repo IDs to fetch revisions for.
+		repoIDs := make([]int32, 0, len(repos))
+		for _, repo := range repos {
+			repoIDs = append(repoIDs, int32(repo.ID))
+		}
 
-		return &searchbackend.RepoIndexOptions{
-			RepoID:     int32(repo.ID),
-			Public:     !repo.Private,
-			Priority:   priority,
-			Fork:       repo.Fork,
-			Archived:   repo.Archived,
-			GetVersion: getVersion,
-		}, nil
+		// TODO: Support more than 32k repos at a time.
+		revisionsForRepo, revisionsForRepoErr := database.SearchContexts(db).GetAllRevisionsForRepos(ctx, repoIDs)
+		getSearchContextRevisions := func(repoID int32) ([]string, error) {
+			if revisionsForRepoErr != nil {
+				return nil, revisionsForRepoErr
+			}
+			return revisionsForRepo[repoID], nil
+		}
+
+		b := searchbackend.GetIndexOptions(&siteConfig, getRepoIndexOptions, getSearchContextRevisions, repoNames...)
+		_, _ = w.Write(b)
+		return nil
 	}
-
-	sc := database.SearchContexts(dbconn.Global)
-	getSearchContextRevisions := func(repoID int32) ([]string, error) {
-		return sc.GetAllRevisionsForRepo(ctx, repoID)
-	}
-
-	if err := r.ParseForm(); err != nil {
-		return err
-	}
-
-	b := searchbackend.GetIndexOptions(&siteConfig, getRepoIndexOptions, getSearchContextRevisions, r.Form["repo"]...)
-	_, _ = w.Write(b)
-	return nil
 }
 
 type reposListServer struct {

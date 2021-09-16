@@ -4,6 +4,7 @@ import React from 'react'
 import { of } from 'rxjs'
 
 import { Location } from '@sourcegraph/extension-api-types'
+import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { extensionsController } from '@sourcegraph/shared/src/util/searchTestHelpers'
 import webStyles from '@sourcegraph/web/src/SourcegraphWebApp.scss'
 
@@ -92,6 +93,7 @@ const PROPS: HierarchicalLocationsViewProps = {
     isLightTheme: true,
     fetchHighlightedFileLineRanges: () => of([['line1\n', 'line2\n', 'line3\n', 'line4']]),
     versionContext: undefined,
+    telemetryService: NOOP_TELEMETRY_SERVICE,
 }
 
 add('Single repo', () => (

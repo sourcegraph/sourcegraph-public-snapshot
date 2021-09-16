@@ -86,6 +86,13 @@ export const enterpriseSiteAdminAreaRoutes: readonly SiteAdminAreaRoute[] = [
         ),
         condition: ({ batchChangesEnabled }) => batchChangesEnabled,
     },
+    {
+        path: '/batch-changes/executions',
+        exact: true,
+        render: lazyComponent(() => import('../batches/settings/BatchSpecExecutionsPage'), 'BatchSpecExecutionsPage'),
+        condition: ({ batchChangesEnabled, batchChangesExecutionEnabled }) =>
+            batchChangesEnabled && batchChangesExecutionEnabled,
+    },
 
     // Code intelligence upload routes
     {
@@ -111,6 +118,24 @@ export const enterpriseSiteAdminAreaRoutes: readonly SiteAdminAreaRoute[] = [
         render: lazyComponent(() => import('../codeintel/detail/CodeIntelIndexPage'), 'CodeIntelIndexPage'),
         exact: true,
         condition: () => Boolean(window.context?.codeIntelAutoIndexingEnabled),
+    },
+
+    // Code intelligence configuration
+    {
+        path: '/code-intelligence/configuration',
+        render: lazyComponent(
+            () => import('../codeintel/configuration/CodeIntelConfigurationPage'),
+            'CodeIntelConfigurationPage'
+        ),
+        exact: true,
+    },
+    {
+        path: '/code-intelligence/configuration/:id',
+        render: lazyComponent(
+            () => import('../codeintel/configuration/CodeIntelConfigurationPolicyPage'),
+            'CodeIntelConfigurationPolicyPage'
+        ),
+        exact: true,
     },
 
     // Legacy routes

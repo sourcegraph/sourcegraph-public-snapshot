@@ -28,6 +28,7 @@ import { HeroPage } from '../../components/HeroPage'
 import { RouteDescriptor } from '../../util/contributions'
 import { ExtensionsAreaRouteContext } from '../ExtensionsArea'
 
+import styles from './ExtensionArea.module.scss'
 import { ExtensionAreaHeader, ExtensionAreaHeaderNavItem } from './ExtensionAreaHeader'
 
 export const registryExtensionFragment = gql`
@@ -215,7 +216,7 @@ export class ExtensionArea extends React.Component<ExtensionAreaProps> {
         }
 
         return (
-            <div className="registry-extension-area">
+            <div className={styles.registryExtensionArea}>
                 <ExtensionAreaHeader {...this.props} {...context} navItems={this.props.extensionAreaHeaderNavItems} />
                 <div className="container pt-3">
                     <ErrorBoundary location={this.props.location}>

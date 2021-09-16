@@ -25,6 +25,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
 )
 
 func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, clock ct.Clock) {
@@ -1705,7 +1706,7 @@ func testStoreListChangesetsTextSearch(t *testing.T, ctx context.Context, s *Sto
 	// Let's define some helpers.
 	createChangesetSpec := func(title string) *btypes.ChangesetSpec {
 		spec := &btypes.ChangesetSpec{
-			Spec: &btypes.ChangesetSpecDescription{
+			Spec: &batcheslib.ChangesetSpec{
 				Title: title,
 			},
 		}
@@ -2015,7 +2016,7 @@ func testStoreChangesetScheduling(t *testing.T, ctx context.Context, s *Store, c
 	createChangeset := func(title string, lastUpdated time.Time, state btypes.ReconcilerState) *btypes.Changeset {
 		// First, we need to create a changeset spec.
 		spec := &btypes.ChangesetSpec{
-			Spec: &btypes.ChangesetSpecDescription{
+			Spec: &batcheslib.ChangesetSpec{
 				Title: "fake spec",
 			},
 		}
@@ -2144,8 +2145,7 @@ func TestCancelQueuedBatchChangeChangesets(t *testing.T) {
 	user := ct.CreateTestUser(t, db, true)
 	spec := ct.CreateBatchSpec(t, ctx, s, "test-batch-change", user.ID)
 	batchChange := ct.CreateBatchChange(t, ctx, s, "test-batch-change", user.ID, spec.ID)
-	repos, _ := ct.CreateTestRepos(t, ctx, s.DB(), 1)
-	repo := repos[0]
+	repo, _ := ct.CreateTestRepo(t, ctx, db)
 
 	c1 := ct.CreateChangeset(t, ctx, s, ct.TestChangesetOpts{
 		Repo:               repo.ID,
@@ -2279,8 +2279,7 @@ func TestEnqueueChangesetsToClose(t *testing.T) {
 	user := ct.CreateTestUser(t, db, true)
 	spec := ct.CreateBatchSpec(t, ctx, s, "test-batch-change", user.ID)
 	batchChange := ct.CreateBatchChange(t, ctx, s, "test-batch-change", user.ID, spec.ID)
-	repos, _ := ct.CreateTestRepos(t, ctx, s.DB(), 1)
-	repo := repos[0]
+	repo, _ := ct.CreateTestRepo(t, ctx, db)
 
 	wantEnqueued := ct.ChangesetAssertions{
 		Repo:               repo.ID,

@@ -3,6 +3,7 @@
     border: 1px solid var(--border-color);
     border-radius: var(--border-radius);
     padding: 0.25rem 0;
+    position: relative;
 
     &__item {
         text-decoration: none; // don't use cascading link style

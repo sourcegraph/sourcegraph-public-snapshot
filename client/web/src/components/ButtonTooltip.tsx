@@ -15,7 +15,7 @@ export const ButtonTooltip: React.FunctionComponent<
     ButtonProps & { tooltip?: string } & Required<Pick<ButtonProps, 'type'>>
 > = ({ disabled, tooltip, type, ...props }) => (
     <div className={styles.container}>
-        {disabled && tooltip ? <div className={styles.containerTooltip} data-tooltip={tooltip} /> : null}
+        {disabled && tooltip ? <div className={styles.tooltip} data-tooltip={tooltip} /> : null}
         {/* This ESLint rule requires specifying the type with a static string or a trivial ternary expression only.
             The intent is to avoid undesirable page reloading behavior because the default value of `type` for HTML
             `button`s is "submit". However, because we're using TS and require `type` on this component's props,

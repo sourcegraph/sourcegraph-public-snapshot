@@ -210,7 +210,7 @@ export class ActionItem extends React.PureComponent<ActionItemProps, State> {
                 <span
                     data-tooltip={tooltip}
                     data-content={this.props.dataContent}
-                    className={`action-item ${this.props.className || ''} ${variantClassName}`}
+                    className={classNames('action-item', this.props.className, variantClassName)}
                     tabIndex={this.props.tabIndex}
                 >
                     {content}

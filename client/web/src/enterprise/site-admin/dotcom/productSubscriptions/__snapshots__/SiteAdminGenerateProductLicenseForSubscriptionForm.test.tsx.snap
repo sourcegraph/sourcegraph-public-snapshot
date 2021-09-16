@@ -5,7 +5,7 @@ exports[`SiteAdminGenerateProductLicenseForSubscriptionForm renders 1`] = `
   className="site-admin-generate-product-license-for-subscription-form"
 >
   <form
-    className=" "
+    className=""
     onInvalid={[Function]}
     onSubmit={[Function]}
   >

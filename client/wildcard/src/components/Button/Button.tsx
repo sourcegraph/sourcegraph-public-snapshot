@@ -5,7 +5,7 @@ import { BUTTON_VARIANTS, BUTTON_SIZES } from './constants'
 import { getButtonSize, getButtonStyle } from './utils'
 
 export interface ButtonProps
-    extends React.ButtonHTMLAttributes<'HTMLButtonElement'>,
+    extends React.ButtonHTMLAttributes<HTMLButtonElement>,
         React.RefAttributes<HTMLButtonElement> {
     /**
      * The variant style of the button. Defaults to `primary`

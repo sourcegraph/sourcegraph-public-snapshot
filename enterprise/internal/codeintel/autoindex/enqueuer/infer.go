@@ -10,6 +10,7 @@ import (
 func InferRepositoryAndRevision(pkg precise.Package) (repoName, gitTagOrCommit string, ok bool) {
 	for _, fn := range []func(pkg precise.Package) (string, string, bool){
 		inferGoRepositoryAndRevision,
+		inferJVMRepositoryAndRevision,
 	} {
 		if repoName, gitTagOrCommit, ok := fn(pkg); ok {
 			return repoName, gitTagOrCommit, true
@@ -39,4 +40,11 @@ func inferGoRepositoryAndRevision(pkg precise.Package) (string, string, bool) {
 	}
 
 	return strings.Join(repoParts, "/"), version, true
+}
+
+func inferJVMRepositoryAndRevision(pkg precise.Package) (string, string, bool) {
+	if pkg.Scheme != "semanticdb" {
+		return "", "", false
+	}
+	return pkg.Name, "v" + pkg.Version, true
 }

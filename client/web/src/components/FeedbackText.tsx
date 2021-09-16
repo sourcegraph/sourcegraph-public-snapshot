@@ -1,3 +1,4 @@
+import classNames from 'classnames'
 import * as React from 'react'
 
 interface Props {
@@ -7,7 +8,7 @@ interface Props {
 }
 
 export const FeedbackText: React.FunctionComponent<Props> = (props: Props) => (
-    <p className={`feedback-text ${props.className || ''}`}>
+    <p className={classNames('feedback-text', props.className)}>
         {props.headerText || 'Questions/feedback?'} Contact us at{' '}
         <a href="https://twitter.com/sourcegraph" target="_blank" rel="noopener noreferrer">
             @sourcegraph

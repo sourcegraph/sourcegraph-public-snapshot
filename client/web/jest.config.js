@@ -3,7 +3,7 @@ const path = require('path')
 
 const config = require('../../jest.config.base')
 
-/** @type {jest.InitialOptions} */
+/** @type {import('@jest/types').Config.InitialOptions} */
 const exportedConfig = {
   ...config,
   displayName: 'web',

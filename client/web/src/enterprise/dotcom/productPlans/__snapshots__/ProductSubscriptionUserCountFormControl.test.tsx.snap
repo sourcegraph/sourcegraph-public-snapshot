@@ -2,7 +2,7 @@
 
 exports[`ProductSubscriptionUserCountFormControl renders 1`] = `
 <div
-  className="product-subscription-user-count-control form-group align-items-center "
+  className="product-subscription-user-count-control form-group align-items-center"
 >
   <label
     className="mb-0 mr-2 font-weight-bold"

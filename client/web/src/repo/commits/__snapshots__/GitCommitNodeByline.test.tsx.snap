@@ -17,7 +17,7 @@ exports[`GitCommitNodeByline author (compact) 1`] = `
   <div>
     committed by 
     <span
-      className="font-weight-bold "
+      className="font-weight-bold"
       data-tooltip="alice@example.com"
     >
       Alice Zhao
@@ -50,7 +50,7 @@ exports[`GitCommitNodeByline author 1`] = `
   <div>
     committed by 
     <span
-      className="font-weight-bold "
+      className="font-weight-bold"
       data-tooltip="alice@example.com"
     >
       Alice Zhao
@@ -90,7 +90,7 @@ exports[`GitCommitNodeByline different author and committer (compact) 1`] = `
   </div>
   <div>
     <span
-      className="font-weight-bold "
+      className="font-weight-bold"
       data-tooltip="alice@example.com"
     >
       Alice Zhao
@@ -98,7 +98,7 @@ exports[`GitCommitNodeByline different author and committer (compact) 1`] = `
      authored and
      
     <a
-      className="font-weight-bold "
+      className="font-weight-bold"
       data-tooltip="Bob Yang <bob@example.com>"
       href="https://example.com/bobyang"
     >
@@ -140,7 +140,7 @@ exports[`GitCommitNodeByline different author and committer 1`] = `
   </div>
   <div>
     <span
-      className="font-weight-bold "
+      className="font-weight-bold"
       data-tooltip="alice@example.com"
     >
       Alice Zhao
@@ -148,7 +148,7 @@ exports[`GitCommitNodeByline different author and committer 1`] = `
      authored and
      
     <a
-      className="font-weight-bold "
+      className="font-weight-bold"
       data-tooltip="Bob Yang <bob@example.com>"
       href="https://example.com/bobyang"
     >
@@ -183,7 +183,7 @@ exports[`GitCommitNodeByline omit GitHub committer 1`] = `
   <div>
     committed by 
     <span
-      className="font-weight-bold "
+      className="font-weight-bold"
       data-tooltip="alice@example.com"
     >
       Alice Zhao
@@ -216,7 +216,7 @@ exports[`GitCommitNodeByline same author and committer 1`] = `
   <div>
     committed by 
     <span
-      className="font-weight-bold "
+      className="font-weight-bold"
       data-tooltip="alice@example.com"
     >
       Alice Zhao

@@ -13,7 +13,7 @@ interactions:
     url: https://api.github.com/user
     method: GET
   response:
-    body: '{"login":"sourcegraph-vcr","id":63290851,"node_id":"MDQ6VXNlcjYzMjkwODUx","avatar_url":"https://avatars.githubusercontent.com/u/63290851?v=4","gravatar_id":"","url":"https://api.github.com/users/sourcegraph-vcr","html_url":"https://github.com/sourcegraph-vcr","followers_url":"https://api.github.com/users/sourcegraph-vcr/followers","following_url":"https://api.github.com/users/sourcegraph-vcr/following{/other_user}","gists_url":"https://api.github.com/users/sourcegraph-vcr/gists{/gist_id}","starred_url":"https://api.github.com/users/sourcegraph-vcr/starred{/owner}{/repo}","subscriptions_url":"https://api.github.com/users/sourcegraph-vcr/subscriptions","organizations_url":"https://api.github.com/users/sourcegraph-vcr/orgs","repos_url":"https://api.github.com/users/sourcegraph-vcr/repos","events_url":"https://api.github.com/users/sourcegraph-vcr/events{/privacy}","received_events_url":"https://api.github.com/users/sourcegraph-vcr/received_events","type":"User","site_admin":false,"name":null,"company":null,"blog":"","location":null,"email":null,"hireable":null,"bio":null,"twitter_username":null,"public_repos":1,"public_gists":0,"followers":0,"following":0,"created_at":"2020-04-07T10:10:56Z","updated_at":"2020-10-26T05:37:00Z","private_gists":0,"total_private_repos":1,"owned_private_repos":1,"disk_usage":19,"collaborators":0,"two_factor_authentication":true,"plan":{"name":"free","space":976562499,"collaborators":0,"private_repos":10000}}'
+    body: '{"login":"sourcegraph-vcr","id":63290851,"node_id":"MDQ6VXNlcjYzMjkwODUx","avatar_url":"https://avatars.githubusercontent.com/u/63290851?v=4","gravatar_id":"","url":"https://api.github.com/users/sourcegraph-vcr","html_url":"https://github.com/sourcegraph-vcr","followers_url":"https://api.github.com/users/sourcegraph-vcr/followers","following_url":"https://api.github.com/users/sourcegraph-vcr/following{/other_user}","gists_url":"https://api.github.com/users/sourcegraph-vcr/gists{/gist_id}","starred_url":"https://api.github.com/users/sourcegraph-vcr/starred{/owner}{/repo}","subscriptions_url":"https://api.github.com/users/sourcegraph-vcr/subscriptions","organizations_url":"https://api.github.com/users/sourcegraph-vcr/orgs","repos_url":"https://api.github.com/users/sourcegraph-vcr/repos","events_url":"https://api.github.com/users/sourcegraph-vcr/events{/privacy}","received_events_url":"https://api.github.com/users/sourcegraph-vcr/received_events","type":"User","site_admin":false,"name":null,"company":null,"blog":"","location":null,"email":null,"hireable":null,"bio":null,"twitter_username":null,"public_repos":1,"public_gists":0,"followers":0,"following":0,"created_at":"2020-04-07T10:10:56Z","updated_at":"2021-08-25T03:17:55Z","private_gists":0,"total_private_repos":1,"owned_private_repos":1,"disk_usage":19,"collaborators":0,"two_factor_authentication":true,"plan":{"name":"free","space":976562499,"collaborators":0,"private_repos":10000}}'
     headers:
       Access-Control-Allow-Origin:
       - '*'
@@ -29,11 +29,11 @@ interactions:
       Content-Type:
       - application/json; charset=utf-8
       Date:
-      - Fri, 21 May 2021 12:26:33 GMT
+      - Wed, 25 Aug 2021 14:52:59 GMT
       Etag:
-      - W/"940ae4443ae0afa215189ac02ab3cb2dbec2bd91666dec09809ca3a04e0a73ee"
+      - W/"d7c2253c1882d3c79702271ecfc85bb8dcf9ebe0921a3ad5596200da552c4ab8"
       Last-Modified:
-      - Mon, 26 Oct 2020 05:37:00 GMT
+      - Wed, 25 Aug 2021 03:17:55 GMT
       Referrer-Policy:
       - origin-when-cross-origin, strict-origin-when-cross-origin
       Server:
@@ -53,7 +53,7 @@ interactions:
       - github.v3; param=jean-grey-preview; format=json, github.mercy-preview; param=machine-man-preview;
         format=json
       X-Github-Request-Id:
-      - C048:6D7A:171697:17901C:60A7A6F9
+      - F098:0D7B:E8780:1F6C72:6126594B
       X-Oauth-Scopes:
       - admin:enterprise, admin:gpg_key, admin:org, admin:org_hook, admin:public_key,
         admin:repo_hook, delete:packages, delete_repo, gist, notifications, repo,
@@ -61,13 +61,13 @@ interactions:
       X-Ratelimit-Limit:
       - "5000"
       X-Ratelimit-Remaining:
-      - "4989"
+      - "4980"
       X-Ratelimit-Reset:
-      - "1621601332"
+      - "1629906603"
       X-Ratelimit-Resource:
       - core
       X-Ratelimit-Used:
-      - "11"
+      - "20"
       X-Xss-Protection:
       - "0"
     status: 200 OK

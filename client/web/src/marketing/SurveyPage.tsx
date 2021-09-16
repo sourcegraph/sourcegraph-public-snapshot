@@ -16,6 +16,7 @@ import { PageTitle } from '../components/PageTitle'
 import { eventLogger } from '../tracking/eventLogger'
 
 import { submitSurvey } from './backend'
+import styles from './SurveyPage.module.scss'
 import { SurveyCTA } from './SurveyToast'
 
 interface SurveyFormProps {
@@ -57,23 +58,23 @@ class SurveyForm extends React.Component<SurveyFormProps, SurveyFormState> {
 
     public render(): JSX.Element | null {
         return (
-            <Form className="survey-form" onSubmit={this.handleSubmit}>
-                {this.state.error && <p className="survey-form__error">{this.state.error.message}</p>}
+            <Form className={styles.surveyForm} onSubmit={this.handleSubmit}>
+                {this.state.error && <p className={styles.error}>{this.state.error.message}</p>}
                 {/* Label is associated with control through aria-labelledby */}
                 {/* eslint-disable-next-line jsx-a11y/label-has-associated-control */}
-                <label id="survey-form-scores" className="survey-form__label">
+                <label id="survey-form-scores" className={styles.label}>
                     How likely is it that you would recommend Sourcegraph to a friend?
                 </label>
                 <SurveyCTA
                     ariaLabelledby="survey-form-scores"
-                    className="survey-form__scores"
+                    className={styles.scores}
                     onChange={this.onScoreChange}
                     score={this.props.score}
                 />
                 {!this.props.authenticatedUser && (
                     <div className="form-group">
                         <input
-                            className="form-control survey-form__input"
+                            className="form-control"
                             type="text"
                             placeholder="Email"
                             onChange={this.onEmailFieldChange}
@@ -83,12 +84,12 @@ class SurveyForm extends React.Component<SurveyFormProps, SurveyFormState> {
                     </div>
                 )}
                 <div className="form-group">
-                    <label className="survey-form__label" htmlFor="survey-form-score-reason">
+                    <label className={styles.label} htmlFor="survey-form-score-reason">
                         What is the most important reason for the score you gave Sourcegraph?
                     </label>
                     <textarea
                         id="survey-form-score-reason"
-                        className="form-control survey-form__input"
+                        className="form-control"
                         onChange={this.onReasonFieldChange}
                         value={this.state.reason}
                         disabled={this.state.loading}
@@ -96,12 +97,12 @@ class SurveyForm extends React.Component<SurveyFormProps, SurveyFormState> {
                     />
                 </div>
                 <div className="form-group">
-                    <label className="survey-form__label" htmlFor="survey-form-better-product">
+                    <label className={styles.label} htmlFor="survey-form-better-product">
                         What could Sourcegraph do to provide a better product?
                     </label>
                     <textarea
                         id="survey-form-better-product"
-                        className="form-control survey-form__input"
+                        className="form-control"
                         onChange={this.onBetterProductFieldChange}
                         value={this.state.betterProduct}
                         disabled={this.state.loading}
@@ -113,7 +114,7 @@ class SurveyForm extends React.Component<SurveyFormProps, SurveyFormState> {
                     </button>
                 </div>
                 {this.state.loading && (
-                    <div className="survey-form__loader">
+                    <div className={styles.loader}>
                         <LoadingSpinner className="icon-inline" />
                     </div>
                 )}
@@ -231,7 +232,7 @@ export class SurveyPage extends React.Component<SurveyPageProps> {
     public render(): JSX.Element | null {
         if (this.props.match.params.score === 'thanks') {
             return (
-                <div className="survey-page">
+                <div className={styles.surveyPage}>
                     <PageTitle title="Thanks" />
                     <HeroPage
                         title="Thanks for the feedback!"
@@ -247,7 +248,7 @@ export class SurveyPage extends React.Component<SurveyPageProps> {
             )
         }
         return (
-            <div className="survey-page">
+            <div className={styles.surveyPage}>
                 <PageTitle title="Almost there..." />
                 <HeroPage
                     title="Almost there..."
