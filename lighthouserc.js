@@ -3,7 +3,9 @@
 const config = {
   ci: {
     collect: {
-      url: ['http://localhost:3443/search'],
+      url: [
+        'http://localhost:3443/search', // Homepage
+      ],
       startServerCommand: 'yarn workspace @sourcegraph/web serve:prod',
       settings: {
         preset: 'desktop',
