@@ -116,9 +116,9 @@ type cloneJob struct {
 	dir    GitDir
 	syncer VCSSyncer
 
-	// TODO: cloneWorker should acquire a new lock. We are trying to keep the changes simple for the
-	// time being. When we start using the new approach of using long lived goroutines for cloning
-	// we will refactor doClone to acquire a new lock.
+	// TODO: cloneJobConsumer should acquire a new lock. We are trying to keep the changes simple
+	// for the time being. When we start using the new approach of using long lived goroutines for
+	// cloning we will refactor doClone to acquire a new lock.
 	lock *RepositoryLock
 
 	remoteURL *vcs.URL
@@ -1455,7 +1455,7 @@ func (s *Server) cloneRepo(ctx context.Context, repo api.RepoName, opts *cloneOp
 		defer asyncDoCloneInvoked.Dec()
 
 		// Create a new context because this is in a background goroutine. The outer context's
-		// cancel will be invoked when cloneRepo returns, but we dont' want this goroutine to get
+		// cancel will be invoked when cloneRepo returns, but we don't want this goroutine to get
 		// cancelled. Thus a new context is required here.
 		ctx, cancel1 := s.serverContext()
 		defer cancel1()
@@ -1490,8 +1490,6 @@ func (s *Server) cloneRepo(ctx context.Context, repo api.RepoName, opts *cloneOp
 
 func (s *Server) doClone(ctx context.Context, repo api.RepoName, dir GitDir, syncer VCSSyncer, lock *RepositoryLock, remoteURL *vcs.URL, opts *cloneOptions) error {
 	defer lock.Release()
-
-	log15.Info("clone options", "opts", opts)
 
 	if err := s.rpsLimiter.Wait(ctx); err != nil {
 		return err
