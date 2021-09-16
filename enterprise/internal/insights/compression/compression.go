@@ -182,6 +182,7 @@ func (q *QueryExecution) ToQueueJob(seriesID string, query string, cost priority
 		Priority:        int(jobPriority),
 		DependentFrames: q.SharedRecordings,
 		State:           "queued",
+		PersistMode:     string(store.RecordMode),
 	}
 }
 
