@@ -3,7 +3,7 @@ on:
   issues:
     types: [labeled]
 jobs:
-  Move_Labeled_Issue_On_Project_Board:
+  move-labeled-or-milestoned-issue:
     runs-on: ubuntu-latest
     steps:
     - uses: konradpabjan/move-labeled-or-milestoned-issue@v2.0
@@ -32,7 +32,7 @@ jobs:
   distribution-board:
     runs-on: ubuntu-latest
     env:
-      PROJECT: MDExOlByb2plY3ROZXh0MzIxNw== # https://github.com/orgs/sourcegraph/projects/197
+      PROJECT_ID: MDExOlByb2plY3ROZXh0MzIxNw== # https://github.com/orgs/sourcegraph/projects/197
       GITHUB_TOKEN: ${{ secrets.GH_PROJECTS_ACTION_TOKEN }}
     steps:
     - name: Get issue if relevant
