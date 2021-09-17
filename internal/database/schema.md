@@ -1644,7 +1644,6 @@ Referenced by:
  deleted_at            | timestamp with time zone |           |          | 
  metadata              | jsonb                    |           | not null | '{}'::jsonb
  private               | boolean                  |           | not null | false
- cloned                | boolean                  |           | not null | false
  stars                 | integer                  |           |          | 
  blocked               | jsonb                    |           |          | 
 Indexes:
@@ -1653,7 +1652,6 @@ Indexes:
     "repo_name_unique" UNIQUE CONSTRAINT, btree (name) DEFERRABLE
     "repo_archived" btree (archived)
     "repo_blocked_idx" btree ((blocked IS NOT NULL))
-    "repo_cloned" btree (cloned)
     "repo_created_at" btree (created_at)
     "repo_fork" btree (fork)
     "repo_is_not_blocked_idx" btree ((blocked IS NULL))
