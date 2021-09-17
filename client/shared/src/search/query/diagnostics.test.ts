@@ -149,6 +149,35 @@ describe('getDiagnostics()', () => {
                   }
                 ]
             `)
+            expect(parseAndDiagnose('until:yesterday since:"last week" m:test', SearchPatternType.literal))
+                .toMatchInlineSnapshot(`
+                [
+                  {
+                    "severity": 8,
+                    "message": "Error: this filter requires 'type:commit' or 'type:diff' in the query",
+                    "startLineNumber": 1,
+                    "endLineNumber": 1,
+                    "startColumn": 1,
+                    "endColumn": 6
+                  },
+                  {
+                    "severity": 8,
+                    "message": "Error: this filter requires 'type:commit' or 'type:diff' in the query",
+                    "startLineNumber": 1,
+                    "endLineNumber": 1,
+                    "startColumn": 17,
+                    "endColumn": 22
+                  },
+                  {
+                    "severity": 8,
+                    "message": "Error: this filter requires 'type:commit' or 'type:diff' in the query",
+                    "startLineNumber": 1,
+                    "endLineNumber": 1,
+                    "startColumn": 35,
+                    "endColumn": 36
+                  }
+                ]
+            `)
         })
 
         test('accepts author/before/after/message filters if type:diff is present', () => {
@@ -157,7 +186,7 @@ describe('getDiagnostics()', () => {
                     'author:me before:yesterday after:"last week" message:test type:diff',
                     SearchPatternType.literal
                 )
-            ).toMatchInlineSnapshot(`[]`)
+            ).toMatchInlineSnapshot('[]')
         })
 
         test('accepts author/before/after/message filters if type:commit is present', () => {
@@ -166,7 +195,165 @@ describe('getDiagnostics()', () => {
                     'author:me before:yesterday after:"last week" message:test type:diff',
                     SearchPatternType.literal
                 )
-            ).toMatchInlineSnapshot(`[]`)
+            ).toMatchInlineSnapshot('[]')
+        })
+    })
+
+    describe('repo and rev filters', () => {
+        test('detects rev without repo filter', () => {
+            expect(parseAndDiagnose('rev:main test', SearchPatternType.literal)).toMatchInlineSnapshot(`
+                [
+                  {
+                    "severity": 8,
+                    "message": "Error: query contains 'rev:' without 'repo:'. Add a 'repo:' filter.",
+                    "startLineNumber": 1,
+                    "endLineNumber": 1,
+                    "startColumn": 1,
+                    "endColumn": 4
+                  }
+                ]
+            `)
+            expect(parseAndDiagnose('revision:main test', SearchPatternType.literal)).toMatchInlineSnapshot(`
+                [
+                  {
+                    "severity": 8,
+                    "message": "Error: query contains 'rev:' without 'repo:'. Add a 'repo:' filter.",
+                    "startLineNumber": 1,
+                    "endLineNumber": 1,
+                    "startColumn": 1,
+                    "endColumn": 9
+                  }
+                ]
+            `)
+        })
+
+        test('detects rev with repo+rev tag filter', () => {
+            expect(parseAndDiagnose('rev:main repo:test@dev test', SearchPatternType.literal)).toMatchInlineSnapshot(`
+                [
+                  {
+                    "severity": 8,
+                    "message": "Error: You have specified both '@' and 'rev:' for a repo filter and I don't know how to interpret this. Remove either '@' or 'rev:'",
+                    "startLineNumber": 1,
+                    "endLineNumber": 1,
+                    "startColumn": 10,
+                    "endColumn": 14
+                  },
+                  {
+                    "severity": 8,
+                    "message": "Error: You have specified both '@' and 'rev:' for a repo filter and I don't know how to interpret this. Remove either '@' or 'rev:'",
+                    "startLineNumber": 1,
+                    "endLineNumber": 1,
+                    "startColumn": 1,
+                    "endColumn": 4
+                  }
+                ]
+            `)
+            expect(parseAndDiagnose('rev:main r:test@dev test', SearchPatternType.literal)).toMatchInlineSnapshot(`
+                [
+                  {
+                    "severity": 8,
+                    "message": "Error: You have specified both '@' and 'rev:' for a repo filter and I don't know how to interpret this. Remove either '@' or 'rev:'",
+                    "startLineNumber": 1,
+                    "endLineNumber": 1,
+                    "startColumn": 10,
+                    "endColumn": 11
+                  },
+                  {
+                    "severity": 8,
+                    "message": "Error: You have specified both '@' and 'rev:' for a repo filter and I don't know how to interpret this. Remove either '@' or 'rev:'",
+                    "startLineNumber": 1,
+                    "endLineNumber": 1,
+                    "startColumn": 1,
+                    "endColumn": 4
+                  }
+                ]
+            `)
+        })
+
+        test('detects rev with empty repo filter', () => {
+            expect(parseAndDiagnose('rev:main repo: test', SearchPatternType.literal)).toMatchInlineSnapshot(`
+                [
+                  {
+                    "severity": 4,
+                    "message": "Warning: This filter is empty. Remove the space between the filter and value or quote the value to include the space. E.g., repo:\\" a term\\".",
+                    "startLineNumber": 1,
+                    "endLineNumber": 1,
+                    "startColumn": 10,
+                    "endColumn": 14
+                  },
+                  {
+                    "severity": 8,
+                    "message": "Error: query contains 'rev:' with an empty 'repo:' filter. Add a non-empty 'repo:' filter.",
+                    "startLineNumber": 1,
+                    "endLineNumber": 1,
+                    "startColumn": 10,
+                    "endColumn": 14
+                  },
+                  {
+                    "severity": 8,
+                    "message": "Error: query contains 'rev:' with an empty 'repo:' filter. Add a non-empty 'repo:' filter.",
+                    "startLineNumber": 1,
+                    "endLineNumber": 1,
+                    "startColumn": 1,
+                    "endColumn": 4
+                  }
+                ]
+            `)
+        })
+
+        test('accepts rev filter if valid repo filter is present', () => {
+            expect(parseAndDiagnose('repo:test rev:main repo: -repo:main@dev test', SearchPatternType.literal))
+                .toMatchInlineSnapshot(`
+                [
+                  {
+                    "severity": 4,
+                    "message": "Warning: This filter is empty. Remove the space between the filter and value or quote the value to include the space. E.g., repo:\\" a term\\".",
+                    "startLineNumber": 1,
+                    "endLineNumber": 1,
+                    "startColumn": 20,
+                    "endColumn": 24
+                  }
+                ]
+            `)
+        })
+    })
+
+    describe('structural search and type: filter', () => {
+        test('detects type: filter in structural search', () => {
+            expect(parseAndDiagnose('type:symbol test', SearchPatternType.structural)).toMatchInlineSnapshot(`
+                [
+                  {
+                    "severity": 8,
+                    "message": "Error: Structural search syntax only applies to searching file contents and is not compatible with 'type:'. Remove this filter or switch to a different search type.",
+                    "startLineNumber": 1,
+                    "endLineNumber": 1,
+                    "startColumn": 1,
+                    "endColumn": 5
+                  }
+                ]
+            `)
+            expect(parseAndDiagnose('type:symbol test patterntype:structural', SearchPatternType.literal))
+                .toMatchInlineSnapshot(`
+                [
+                  {
+                    "severity": 8,
+                    "message": "Error: Structural search syntax only applies to searching file contents and is not compatible with 'type:'. Remove this filter or switch to a different search type.",
+                    "startLineNumber": 1,
+                    "endLineNumber": 1,
+                    "startColumn": 1,
+                    "endColumn": 5
+                  }
+                ]
+            `)
+        })
+
+        test('accepts type: filter in non-structure search', () => {
+            expect(parseAndDiagnose('type:symbol test', SearchPatternType.regexp)).toMatchInlineSnapshot('[]')
+            expect(parseAndDiagnose('type:symbol test', SearchPatternType.literal)).toMatchInlineSnapshot('[]')
+            // patterntype: takes presedence
+            expect(
+                parseAndDiagnose('type:symbol test patterntype:literal', SearchPatternType.structural)
+            ).toMatchInlineSnapshot('[]')
         })
     })
 })
