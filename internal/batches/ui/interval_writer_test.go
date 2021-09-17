@@ -18,9 +18,12 @@ func TestIntervalWriter(t *testing.T) {
 	}
 
 	ticker := glock.NewMockTicker(1 * time.Second)
-	writer := newIntervalWriter(ctx, ticker, sink)
+	writer := newIntervalProcessWriter(ctx, ticker, sink)
 
-	writer.Write([]byte("1"))
+	stdoutWriter := writer.StdoutWriter()
+	stderrWriter := writer.StderrWriter()
+	stdoutWriter.Write([]byte("1"))
+	stderrWriter.Write([]byte("1"))
 	select {
 	case <-ch:
 		t.Fatalf("ch has data")
@@ -31,17 +34,22 @@ func TestIntervalWriter(t *testing.T) {
 
 	select {
 	case d := <-ch:
-		if d != "1" {
-			t.Fatalf("wrong data in sink")
+		want := "stdout: 1\nstderr: 1\n"
+		if d != want {
+			t.Fatalf("wrong data in sink. want=%q, have=%q", want, d)
 		}
 	case <-time.After(1 * time.Second):
 		t.Fatalf("ch has NO data")
 	}
 
-	writer.Write([]byte("2"))
-	writer.Write([]byte("3"))
-	writer.Write([]byte("4"))
-	writer.Write([]byte("5"))
+	stdoutWriter.Write([]byte("2"))
+	stderrWriter.Write([]byte("2"))
+	stdoutWriter.Write([]byte("3"))
+	stderrWriter.Write([]byte("3"))
+	stdoutWriter.Write([]byte("4"))
+	stderrWriter.Write([]byte("4"))
+	stdoutWriter.Write([]byte("5"))
+	stderrWriter.Write([]byte("5"))
 
 	select {
 	case <-ch:
@@ -54,8 +62,13 @@ func TestIntervalWriter(t *testing.T) {
 
 	select {
 	case d := <-ch:
-		if d != "2345" {
-			t.Fatalf("wrong data in sink")
+		want := "stdout: 2\nstderr: 2\n" +
+			"stdout: 3\nstderr: 3\n" +
+			"stdout: 4\nstderr: 4\n" +
+			"stdout: 5\nstderr: 5\n"
+
+		if d != want {
+			t.Fatalf("wrong data in sink. want")
 		}
 	case <-time.After(1 * time.Second):
 		t.Fatalf("ch has NO data")

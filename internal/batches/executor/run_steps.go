@@ -315,16 +315,14 @@ func executeSingleStep(
 
 	writerCtx, writerCancel := context.WithCancel(ctx)
 	defer writerCancel()
-	uiStdoutWriter := opts.ui.StepStdoutWriter(writerCtx, opts.task, i)
-	uiStderrWriter := opts.ui.StepStderrWriter(writerCtx, opts.task, i)
+	outputWriter := opts.ui.StepOutputWriter(writerCtx, opts.task, i)
 	defer func() {
-		uiStdoutWriter.Close()
-		uiStderrWriter.Close()
+		outputWriter.Close()
 	}()
 
 	var stdoutBuffer, stderrBuffer bytes.Buffer
-	stdout := io.MultiWriter(&stdoutBuffer, uiStdoutWriter, opts.logger.PrefixWriter("stdout"))
-	stderr := io.MultiWriter(&stderrBuffer, uiStderrWriter, opts.logger.PrefixWriter("stderr"))
+	stdout := io.MultiWriter(&stdoutBuffer, outputWriter.StdoutWriter(), opts.logger.PrefixWriter("stdout"))
+	stderr := io.MultiWriter(&stderrBuffer, outputWriter.StderrWriter(), opts.logger.PrefixWriter("stderr"))
 
 	// Setup readers that pipe the output into the given buffers
 	wg, err := process.PipeOutput(ctx, cmd, stdout, stderr)

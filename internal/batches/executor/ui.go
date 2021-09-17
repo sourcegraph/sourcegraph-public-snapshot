@@ -20,6 +20,12 @@ type TaskExecutionUI interface {
 	StepsExecutionUI(*Task) StepsExecutionUI
 }
 
+type StepOutputWriter interface {
+	StdoutWriter() io.Writer
+	StderrWriter() io.Writer
+	Close() error
+}
+
 type StepsExecutionUI interface {
 	ArchiveDownloadStarted()
 	ArchiveDownloadFinished()
@@ -34,8 +40,7 @@ type StepsExecutionUI interface {
 	StepPreparing(int)
 	StepStarted(int, string)
 
-	StepStdoutWriter(context.Context, *Task, int) io.WriteCloser
-	StepStderrWriter(context.Context, *Task, int) io.WriteCloser
+	StepOutputWriter(context.Context, *Task, int) StepOutputWriter
 
 	CalculatingDiffStarted()
 	CalculatingDiffFinished()
@@ -54,19 +59,16 @@ func (noop NoopStepsExecUI) SkippingStepsUpto(startStep int)        {}
 func (noop NoopStepsExecUI) StepSkipped(step int)                   {}
 func (noop NoopStepsExecUI) StepPreparing(step int)                 {}
 func (noop NoopStepsExecUI) StepStarted(step int, runScript string) {}
-func (noop NoopStepsExecUI) StepStdoutWriter(ctx context.Context, task *Task, step int) io.WriteCloser {
-	return discardCloser{io.Discard}
-}
-func (noop NoopStepsExecUI) StepStderrWriter(ctx context.Context, task *Task, step int) io.WriteCloser {
-	return discardCloser{io.Discard}
+func (noop NoopStepsExecUI) StepOutputWriter(ctx context.Context, task *Task, step int) StepOutputWriter {
+	return NoopStepOutputWriter{}
 }
 func (noop NoopStepsExecUI) CalculatingDiffStarted()  {}
 func (noop NoopStepsExecUI) CalculatingDiffFinished() {}
 func (noop NoopStepsExecUI) StepFinished(idx int, diff []byte, changes *git.Changes, outputs map[string]interface{}) {
 }
 
-type discardCloser struct {
-	io.Writer
-}
+type NoopStepOutputWriter struct{}
 
-func (discardCloser) Close() error { return nil }
+func (noop NoopStepOutputWriter) StdoutWriter() io.Writer { return io.Discard }
+func (noop NoopStepOutputWriter) StderrWriter() io.Writer { return io.Discard }
+func (noop NoopStepOutputWriter) Close() error            { return nil }

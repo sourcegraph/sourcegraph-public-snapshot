@@ -3,7 +3,6 @@ package ui
 import (
 	"context"
 	"fmt"
-	"io"
 	"sort"
 	"strings"
 	"sync"
@@ -458,12 +457,10 @@ func (ui stepsExecTUI) StepStarted(step int, runScript string) {
 	ui.updateStatusBar(runScript)
 }
 
-func (ui stepsExecTUI) StepStdoutWriter(ctx context.Context, task *executor.Task, step int) io.WriteCloser {
-	return discardCloser{io.Discard}
+func (ui stepsExecTUI) StepOutputWriter(ctx context.Context, task *executor.Task, step int) executor.StepOutputWriter {
+	return executor.NoopStepOutputWriter{}
 }
-func (ui stepsExecTUI) StepStderrWriter(ctx context.Context, task *executor.Task, step int) io.WriteCloser {
-	return discardCloser{io.Discard}
-}
+
 func (ui stepsExecTUI) CalculatingDiffStarted() {
 	ui.updateStatusBar("Calculating diff")
 }
@@ -473,7 +470,3 @@ func (ui stepsExecTUI) CalculatingDiffFinished() {
 func (ui stepsExecTUI) StepFinished(idx int, diff []byte, changes *git.Changes, outputs map[string]interface{}) {
 	// noop right now
 }
-
-type discardCloser struct{ io.Writer }
-
-func (discardCloser) Close() error { return nil }

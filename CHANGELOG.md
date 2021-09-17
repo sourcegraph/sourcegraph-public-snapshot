@@ -17,6 +17,8 @@ All notable changes to `src-cli` are documented in this file.
 
 ### Changed
 
+- For internal use only: when `src batch [preview|apply|exec]` are executed in `-text-only` mode, command output on stdout/stderr will be logged in the same message, with each line prefixed accordingly. [#619](https://github.com/sourcegraph/src-cli/pull/619)
+
 ### Fixed
 
 ### Removed

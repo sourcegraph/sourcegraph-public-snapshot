@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io"
 	"math/rand"
 	"os"
 	"strconv"
@@ -325,35 +324,18 @@ func (ui *stepsExecutionJSONLines) StepStarted(step int, runScript string) {
 	logOperationStart(batcheslib.LogEventOperationTaskStep, map[string]interface{}{"taskID": ui.linesTask.ID, "step": step, "runScript": runScript})
 }
 
-func (ui *stepsExecutionJSONLines) StepStdoutWriter(ctx context.Context, task *executor.Task, step int) io.WriteCloser {
+func (ui *stepsExecutionJSONLines) StepOutputWriter(ctx context.Context, task *executor.Task, step int) executor.StepOutputWriter {
 	sink := func(data string) {
 		logOperationProgress(
 			batcheslib.LogEventOperationTaskStep,
 			map[string]interface{}{
-				"taskID":      ui.linesTask.ID,
-				"step":        step,
-				"out":         data,
-				"output_type": "stdout",
+				"taskID": ui.linesTask.ID,
+				"step":   step,
+				"out":    data,
 			},
 		)
 	}
-	return NewIntervalWriter(ctx, stepFlushDuration, sink)
-}
-
-func (ui *stepsExecutionJSONLines) StepStderrWriter(ctx context.Context, task *executor.Task, step int) io.WriteCloser {
-	sink := func(data string) {
-		logOperationProgress(
-			batcheslib.LogEventOperationTaskStep,
-			map[string]interface{}{
-				"taskID":      ui.linesTask.ID,
-				"step":        step,
-				"out":         data,
-				"output_type": "stderr",
-			},
-		)
-	}
-
-	return NewIntervalWriter(ctx, stepFlushDuration, sink)
+	return NewIntervalProcessWriter(ctx, stepFlushDuration, sink)
 }
 
 func (ui *stepsExecutionJSONLines) StepFinished(step int, diff []byte, changes *git.Changes, outputs map[string]interface{}) {

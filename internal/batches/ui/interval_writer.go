@@ -3,14 +3,15 @@ package ui
 import (
 	"bytes"
 	"context"
+	"io"
 	"time"
 
 	"github.com/derision-test/glock"
 )
 
-// IntervalWriter is a io.Writer that flushes to the given sink on the given
-// interval.
-type IntervalWriter struct {
+// IntervalProcessWriter accepts stdout/stderr writes from processes, prefixed
+// them accordingly, and flushes to the given sink on the given interval.
+type IntervalProcessWriter struct {
 	sink func(string)
 
 	ticker glock.Ticker
@@ -25,8 +26,8 @@ type IntervalWriter struct {
 	done   chan struct{}
 }
 
-func newIntervalWriter(ctx context.Context, ticker glock.Ticker, sink func(string)) *IntervalWriter {
-	l := &IntervalWriter{
+func newIntervalProcessWriter(ctx context.Context, ticker glock.Ticker, sink func(string)) *IntervalProcessWriter {
+	l := &IntervalProcessWriter{
 		sink:   sink,
 		ticker: ticker,
 
@@ -44,15 +45,34 @@ func newIntervalWriter(ctx context.Context, ticker glock.Ticker, sink func(strin
 	return l
 }
 
-// NewLogger returns a new Logger instance and spawns a goroutine in the
-// background that regularily flushed the logged output to the given sink.
+// NewIntervalProcessWriter returns a new IntervalProcessWriter instance and
+// spawns a goroutine in the background that regularily flushed the logged
+// output to the given sink.
 //
 // If the passed in ctx is canceled the goroutine will exit.
-func NewIntervalWriter(ctx context.Context, interval time.Duration, sink func(string)) *IntervalWriter {
-	return newIntervalWriter(ctx, glock.NewRealTicker(interval), sink)
+func NewIntervalProcessWriter(ctx context.Context, interval time.Duration, sink func(string)) *IntervalProcessWriter {
+	return newIntervalProcessWriter(ctx, glock.NewRealTicker(interval), sink)
 }
 
-func (l *IntervalWriter) flush() {
+// StdoutWriter returns an io.Writer that prefixes every line with "stdout: "
+func (l *IntervalProcessWriter) StdoutWriter() io.Writer {
+	return &prefixedWriter{writes: l.writes, writesDone: l.writesDone, prefix: "stdout: "}
+}
+
+// SterrWriter returns an io.Writer that prefixes every line with "stderr: "
+func (l *IntervalProcessWriter) StderrWriter() io.Writer {
+	return &prefixedWriter{writes: l.writes, writesDone: l.writesDone, prefix: "stderr: "}
+}
+
+// Close blocks until all pending writes have been flushed to the buffer. It
+// then causes the underlying goroutine to exit.
+func (l *IntervalProcessWriter) Close() error {
+	l.closed <- struct{}{}
+	<-l.done
+	return nil
+}
+
+func (l *IntervalProcessWriter) flush() {
 	if l.buf.Len() == 0 {
 		return
 	}
@@ -60,21 +80,7 @@ func (l *IntervalWriter) flush() {
 	l.buf.Reset()
 }
 
-// Close flushes the
-func (l *IntervalWriter) Close() error {
-	l.closed <- struct{}{}
-	<-l.done
-	return nil
-}
-
-// Write handler of IntervalWriter.
-func (l *IntervalWriter) Write(p []byte) (int, error) {
-	l.writes <- p
-	<-l.writesDone
-	return len(p), nil
-}
-
-func (l *IntervalWriter) writeLines(ctx context.Context) {
+func (l *IntervalProcessWriter) writeLines(ctx context.Context) {
 	defer func() {
 		l.flush()
 		l.ticker.Stop()
@@ -102,4 +108,23 @@ func (l *IntervalWriter) writeLines(ctx context.Context) {
 			l.flush()
 		}
 	}
+}
+
+type prefixedWriter struct {
+	writes     chan []byte
+	writesDone chan struct{}
+	prefix     string
+}
+
+func (w *prefixedWriter) Write(p []byte) (int, error) {
+	var prefixedLines []byte
+	for _, line := range bytes.Split(p, []byte("\n")) {
+		prefixedLine := append([]byte(w.prefix), line...)
+		prefixedLine = append(prefixedLine, []byte("\n")...)
+
+		prefixedLines = append(prefixedLines, prefixedLine...)
+	}
+	w.writes <- prefixedLines
+	<-w.writesDone
+	return len(p), nil
 }
