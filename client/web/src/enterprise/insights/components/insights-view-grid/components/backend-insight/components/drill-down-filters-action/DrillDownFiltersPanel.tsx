@@ -61,7 +61,8 @@ export const DrillDownFiltersAction: React.FunctionComponent<DrillDownFiltersPro
 
             <Popover
                 isOpen={isOpen}
-                target={popoverTargetRef}
+                target={targetButtonReference}
+                positionTarget={popoverTargetRef}
                 position={flipRightPosition}
                 aria-label="Drill-down filters panel"
                 onVisibilityChange={onVisibilityChange}

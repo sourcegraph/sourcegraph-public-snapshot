@@ -8,6 +8,7 @@ import { useOnClickOutside } from './hooks/use-outside-click'
 
 interface PopoverProps extends React.HTMLAttributes<HTMLDivElement> {
     target: React.RefObject<HTMLElement>
+    positionTarget?: React.RefObject<HTMLElement>
     position?: Position
     isOpen?: boolean
     onVisibilityChange?: (open: boolean) => void
@@ -15,7 +16,16 @@ interface PopoverProps extends React.HTMLAttributes<HTMLDivElement> {
 }
 
 export const Popover: React.FunctionComponent<PopoverProps> = props => {
-    const { isOpen, target, position = positionDefault, children, className, onVisibilityChange, ...otherProps } = props
+    const {
+        isOpen,
+        target,
+        positionTarget = target,
+        position = positionDefault,
+        children,
+        className,
+        onVisibilityChange,
+        ...otherProps
+    } = props
 
     const isControlledReference = useRef(isOpen !== undefined)
     const popoverReference = useRef<HTMLDivElement>(null)
@@ -84,7 +94,7 @@ export const Popover: React.FunctionComponent<PopoverProps> = props => {
     return (
         <ReachPopover
             ref={popoverReference}
-            targetRef={target}
+            targetRef={positionTarget}
             // hidden={true}
             position={position}
             className={classnames('d-block dropdown-menu', className)}
