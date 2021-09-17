@@ -160,11 +160,7 @@ func (c *cloneQueue) empty() bool {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
-	if c.jobs.Len() == 0 {
-		return true
-	}
-
-	return false
+	return c.jobs.Len() == 0
 }
 
 // NewCloneQueue initializes a new cloneQueue.
