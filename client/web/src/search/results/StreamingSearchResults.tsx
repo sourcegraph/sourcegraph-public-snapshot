@@ -32,7 +32,7 @@ import { CodeInsightsProps } from '../../insights/types'
 import { isCodeInsightsEnabled } from '../../insights/utils/is-code-insights-enabled'
 import { SavedSearchModal } from '../../savedSearches/SavedSearchModal'
 import { SearchBetaIcon } from '../CtaIcons'
-import { getSubmittedSearchesCount, QueryState, submitSearch } from '../helpers'
+import { getSubmittedSearchesCount, submitSearch } from '../helpers'
 
 import { StreamingProgress } from './progress/StreamingProgress'
 import { SearchAlert } from './SearchAlert'
@@ -60,8 +60,6 @@ export interface StreamingSearchResultsProps
     authenticatedUser: AuthenticatedUser | null
     location: H.Location
     history: H.History
-    navbarSearchQueryState: QueryState
-    onNavbarQueryChange: (queryState: QueryState) => void
     isSourcegraphDotCom: boolean
 
     fetchHighlightedFileLineRanges: (parameters: FetchFileParameters, force?: boolean) => Observable<string[][]>
@@ -244,7 +242,6 @@ export const StreamingSearchResults: React.FunctionComponent<StreamingSearchResu
                     styles.streamingSearchResultsSidebar,
                     showSidebar && styles.streamingSearchResultsSidebarShow
                 )}
-                query={props.navbarSearchQueryState.query}
                 filters={results?.filters}
             />
 

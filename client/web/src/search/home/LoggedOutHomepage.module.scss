@@ -14,12 +14,10 @@
 
     :global(.theme-light) & {
         --homepage-card-color: var(--color-bg-1);
-        --marketing-gradient: linear-gradient(90.64deg, #e4d3fc 3.11%, #d7f0fd 83.64%);
     }
 
     :global(.theme-dark) & {
         --homepage-card-color: var(--color-bg-2);
-        --marketing-gradient: linear-gradient(90.64deg, rgba(108, 8, 223, 0.5) 3.11%, rgba(0, 165, 213, 0.5) 83.64%);
     }
 
     --home-marketing-drop: 0 4px 16px -6px rgba(46, 34, 119, 0.1);

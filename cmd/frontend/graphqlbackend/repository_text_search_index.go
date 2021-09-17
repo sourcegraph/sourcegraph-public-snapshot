@@ -13,12 +13,13 @@ import (
 )
 
 func (r *RepositoryResolver) TextSearchIndex() *repositoryTextSearchIndexResolver {
-	if !search.Indexed().Enabled() {
+	if search.Indexed() == nil {
 		return nil
 	}
+
 	return &repositoryTextSearchIndexResolver{
 		repo:   r,
-		client: search.Indexed().Client,
+		client: search.Indexed(),
 	}
 }
 

@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"log"
 	"os"
 	"os/exec"
@@ -64,7 +64,7 @@ func main() {
 	}
 	log.Printf("Generating from manifest %v...", jsonFile.Name())
 
-	bytes, err := ioutil.ReadAll(jsonFile)
+	bytes, err := io.ReadAll(jsonFile)
 	if err != nil {
 		log.Fatal(errors.Wrap(err, "unable to read manifest file"))
 	}
@@ -195,11 +195,9 @@ func run(args ...string) error {
 func runWithEnv(vars ...string) func(args ...string) error {
 	return func(args ...string) error {
 		cmd := exec.Command(args[0], args[1:]...)
-		cmd.Env = os.Environ()
 
-		for _, s := range vars {
-			cmd.Env = append(cmd.Env, s)
-		}
+		cmd.Env = os.Environ()
+		cmd.Env = append(cmd.Env, vars...)
 
 		out, err := cmd.CombinedOutput()
 		if err != nil {
@@ -216,9 +214,8 @@ func inDir(d string, f func() error) (err error) {
 		return errors.Wrapf(err, "getting working dir: %s", d0)
 	}
 	defer func() {
-		if err := os.Chdir(d0); err != nil {
-			err = errors.Wrapf(err, "changing dir to %s", d0)
-			return
+		if chdirErr := os.Chdir(d0); chdirErr != nil {
+			err = errors.Wrapf(chdirErr, "changing dir to %s", d0)
 		}
 	}()
 	if err := os.Chdir(d); err != nil {

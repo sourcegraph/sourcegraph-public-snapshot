@@ -21,7 +21,6 @@ export interface SearchTypeLinksProps
         VersionContextProps,
         Pick<SearchContextProps, 'selectedSearchContextSpec'> {
     query: string
-    navbarSearchQueryState: QueryState
     onNavbarQueryChange: (queryState: QueryState) => void
 }
 
@@ -86,10 +85,7 @@ const SearchTypeButton: React.FunctionComponent<SearchTypeButtonProps> = ({ chil
  */
 const SearchSymbol: React.FunctionComponent<Omit<SearchTypeLinkProps, 'type'>> = props => {
     const type = 'symbol'
-    const {
-        navbarSearchQueryState: { query },
-        onNavbarQueryChange,
-    } = props
+    const { query, onNavbarQueryChange } = props
 
     const setSymbolSearch = useCallback(() => {
         onNavbarQueryChange({
@@ -97,7 +93,7 @@ const SearchSymbol: React.FunctionComponent<Omit<SearchTypeLinkProps, 'type'>> =
         })
     }, [query, onNavbarQueryChange])
 
-    if (containsLiteralOrPattern(props.navbarSearchQueryState.query)) {
+    if (containsLiteralOrPattern(query)) {
         return (
             <SearchTypeLink {...props} type={type}>
                 {props.children}
@@ -111,16 +107,11 @@ const repoExample = createQueryExampleFromString('{regexp-pattern}')
 
 export const getSearchTypeLinks = (props: SearchTypeLinksProps): ReactElement[] => {
     function updateQueryWithRepoExample(): void {
-        const updatedQuery = updateQueryWithFilterAndExample(
-            props.navbarSearchQueryState.query,
-            FilterType.repo,
-            repoExample,
-            {
-                singular: false,
-                negate: false,
-                emptyValue: true,
-            }
-        )
+        const updatedQuery = updateQueryWithFilterAndExample(props.query, FilterType.repo, repoExample, {
+            singular: false,
+            negate: false,
+            emptyValue: true,
+        })
         props.onNavbarQueryChange({
             changeSource: QueryChangeSource.searchTypes,
             query: updatedQuery.query,

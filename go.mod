@@ -73,7 +73,7 @@ require (
 	github.com/gorilla/securecookie v1.1.1
 	github.com/gorilla/sessions v1.2.1
 	github.com/goware/urlx v0.3.1
-	github.com/grafana-tools/sdk v0.0.0-20210709154219-f35c5af8140d
+	github.com/grafana-tools/sdk v0.0.0-20210831082851-2de27e0f2577
 	github.com/graph-gophers/graphql-go v0.0.0-20201113091052-beb923fada29
 	github.com/graphql-go/graphql v0.7.9
 	github.com/gregjones/httpcache v0.0.0-20190611155906-901d90724c79
@@ -338,6 +338,8 @@ replace (
 replace (
 	// Pending: https://github.com/ghodss/yaml/pull/65
 	github.com/ghodss/yaml => github.com/sourcegraph/yaml v1.0.1-0.20200714132230-56936252f152
+	// graph-fieldconfig branch - https://github.com/grafana-tools/sdk/pull/170
+	github.com/grafana-tools/sdk => github.com/sourcegraph/grafana-sdk v0.0.0-20210914025534-b4255965ba53
 	github.com/shurcooL/httpgzip => github.com/sourcegraph/httpgzip v0.0.0-20210213125624-48ebf036a6a1
 )
 

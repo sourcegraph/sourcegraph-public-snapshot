@@ -47,7 +47,7 @@ var headBranch = []string{"HEAD"}
 // add will add reporev and repo to the list of repository and branches to
 // search if reporev's refs are a subset of repo's branches. It will return
 // the revision specifiers it can't add.
-func (rb *IndexedRepoRevs) add(reporev *search.RepositoryRevisions, repo *zoekt.Repository) []search.RevisionSpecifier {
+func (rb *IndexedRepoRevs) add(reporev *search.RepositoryRevisions, repo *zoekt.MinimalRepoListEntry) []search.RevisionSpecifier {
 	// A repo should only appear once in revs. However, in case this
 	// invariant is broken we will treat later revs as if it isn't
 	// indexed.
@@ -170,7 +170,7 @@ func (s *IndexedUniverseSearchRequest) Search(ctx context.Context, c streaming.S
 	}
 
 	q := zoektGlobalQuery(s.Args.Query, s.RepoOptions, s.UserPrivateRepos)
-	return doZoektSearchGlobal(ctx, q, s.Args.Typ, s.Args.Zoekt.Client, s.Args.FileMatchLimit, s.Args.Select, c)
+	return doZoektSearchGlobal(ctx, q, s.Args.Typ, s.Args.Zoekt, s.Args.FileMatchLimit, s.Args.Select, c)
 }
 
 // IndexedRepos for a request over the indexed universe cannot answer which
@@ -271,7 +271,7 @@ func (s *IndexedSubsetSearchRequest) Search(ctx context.Context, c streaming.Sen
 		since = s.since
 	}
 
-	return zoektSearch(ctx, s.RepoRevs, s.Args.Query, s.Args.Typ, s.Args.Zoekt.Client, s.Args.FileMatchLimit, s.Args.Select, since, c)
+	return zoektSearch(ctx, s.RepoRevs, s.Args.Query, s.Args.Typ, s.Args.Zoekt, s.Args.FileMatchLimit, s.Args.Select, since, c)
 }
 
 const maxUnindexedRepoRevSearchesPerQuery = 200
@@ -301,7 +301,7 @@ func NewIndexedSubsetSearchRequest(ctx context.Context, args *search.TextParamet
 	}()
 
 	// If Zoekt is disabled just fallback to Unindexed.
-	if !args.Zoekt.Enabled() {
+	if args.Zoekt == nil {
 		if args.PatternInfo.Index == query.Only {
 			return nil, errors.Errorf("invalid index:%q (indexed search is not enabled)", args.PatternInfo.Index)
 		}
@@ -330,17 +330,17 @@ func NewIndexedSubsetSearchRequest(ctx context.Context, args *search.TextParamet
 	}
 
 	// Only include indexes with symbol information if a symbol request.
-	var filter func(repo *zoekt.Repository) bool
+	var filter func(repo *zoekt.MinimalRepoListEntry) bool
 	if typ == search.SymbolRequest {
-		filter = func(repo *zoekt.Repository) bool {
+		filter = func(repo *zoekt.MinimalRepoListEntry) bool {
 			return repo.HasSymbols
 		}
 	}
 
 	// Consult Zoekt to find out which repository revisions can be searched.
-	ctx, cancel := context.WithTimeout(ctx, time.Second)
+	ctx, cancel := context.WithTimeout(ctx, time.Minute)
 	defer cancel()
-	indexedSet, err := args.Zoekt.ListAll(ctx)
+	list, err := args.Zoekt.List(ctx, &zoektquery.Const{Value: true}, &zoekt.ListOptions{Minimal: true})
 	if err != nil {
 		if ctx.Err() == nil {
 			// Only hard fail if the user specified index:only
@@ -357,10 +357,10 @@ func NewIndexedSubsetSearchRequest(ctx context.Context, args *search.TextParamet
 		}, ctx.Err()
 	}
 
-	tr.LogFields(log.Int("all_indexed_set.size", len(indexedSet)))
+	tr.LogFields(log.Int("all_indexed_set.size", len(list.Minimal)))
 
 	// Split based on indexed vs unindexed
-	indexed, searcherRepos := zoektIndexedRepos(indexedSet, args.Repos, filter)
+	indexed, searcherRepos := zoektIndexedRepos(list.Minimal, args.Repos, filter)
 
 	tr.LogFields(
 		log.Int("indexed.size", len(indexed.repoRevs)),
@@ -733,7 +733,7 @@ func contextWithoutDeadline(cOld context.Context) (context.Context, context.Canc
 // zoektIndexedRepos splits the revs into two parts: (1) the repository
 // revisions in indexedSet (indexed) and (2) the repositories that are
 // unindexed.
-func zoektIndexedRepos(indexedSet map[string]*zoekt.Repository, revs []*search.RepositoryRevisions, filter func(*zoekt.Repository) bool) (indexed *IndexedRepoRevs, unindexed []*search.RepositoryRevisions) {
+func zoektIndexedRepos(indexedSet map[uint32]*zoekt.MinimalRepoListEntry, revs []*search.RepositoryRevisions, filter func(repo *zoekt.MinimalRepoListEntry) bool) (indexed *IndexedRepoRevs, unindexed []*search.RepositoryRevisions) {
 	// PERF: If len(revs) is large, we expect to be doing an indexed
 	// search. So set indexed to the max size it can be to avoid growing.
 	indexed = &IndexedRepoRevs{
@@ -743,7 +743,7 @@ func zoektIndexedRepos(indexedSet map[string]*zoekt.Repository, revs []*search.R
 	unindexed = make([]*search.RepositoryRevisions, 0)
 
 	for _, reporev := range revs {
-		repo, ok := indexedSet[string(reporev.Repo.Name)]
+		repo, ok := indexedSet[uint32(reporev.Repo.ID)]
 		if !ok || (filter != nil && !filter(repo)) {
 			unindexed = append(unindexed, reporev)
 			continue

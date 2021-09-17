@@ -15,7 +15,8 @@ import { AuthenticatedUser } from '../../../auth'
 import { FeatureFlagProps } from '../../../featureFlags/featureFlags'
 import { TemporarySettings } from '../../../settings/temporary/TemporarySettings'
 import { useTemporarySetting } from '../../../settings/temporary/useTemporarySetting'
-import { QueryState, submitSearch, toggleSearchFilter } from '../../helpers'
+import { submitSearch, toggleSearchFilter } from '../../helpers'
+import { useNavbarQueryState } from '../../navbarSearchQueryState'
 
 import { getDynamicFilterLinks, getRepoFilterLinks, getSearchSnippetLinks } from './FilterLink'
 import { getFiltersOfKind, useLastRepoName } from './helpers'
@@ -35,11 +36,8 @@ export interface SearchSidebarProps
         TelemetryProps,
         FeatureFlagProps {
     authenticatedUser: AuthenticatedUser | null
-    query: string
     filters?: Filter[]
     className?: string
-    navbarSearchQueryState: QueryState
-    onNavbarQueryChange: (queryState: QueryState) => void
     isSourcegraphDotCom: boolean
 }
 
@@ -56,22 +54,24 @@ export enum SectionID {
 export const SearchSidebar: React.FunctionComponent<SearchSidebarProps> = props => {
     const history = useHistory()
     const [collapsedSections, setCollapsedSections] = useTemporarySetting('search.collapsedSidebarSections', {})
+    const query = useNavbarQueryState(state => state.queryState.query)
+    const setQueryState = useNavbarQueryState(state => state.setQueryState)
 
     const toggleFilter = useCallback(
         (value: string) => {
-            const newQuery = toggleSearchFilter(props.query, value)
+            const newQuery = toggleSearchFilter(query, value)
             submitSearch({ ...props, query: newQuery, source: 'filter', history })
         },
-        [history, props]
+        [history, props, query]
     )
 
     // Unlike onFilterClicked, this function will always append or update a filter
     const updateOrAppendFilter = useCallback(
         (filter: string, value: string) => {
-            const newQuery = updateFilter(props.query, filter, value)
+            const newQuery = updateFilter(query, filter, value)
             submitSearch({ ...props, query: newQuery, source: 'filter', history })
         },
-        [history, props]
+        [history, props, query]
     )
 
     const onDynamicFilterClicked = useCallback(
@@ -114,12 +114,17 @@ export const SearchSidebar: React.FunctionComponent<SearchSidebarProps> = props 
     )
 
     const repoFilters = useMemo(() => getFiltersOfKind(props.filters, FilterType.repo), [props.filters])
-    const repoName = useLastRepoName(props.query, repoFilters)
+    const repoName = useLastRepoName(query, repoFilters)
     const repoFilterLinks = useMemo(() => getRepoFilterLinks(repoFilters, onDynamicFilterClicked), [
         repoFilters,
         onDynamicFilterClicked,
     ])
     const showReposSection = repoFilterLinks.length > 1
+    const sectionProps = useMemo(() => ({ ...props, query, onNavbarQueryChange: setQueryState }), [
+        props,
+        query,
+        setQueryState,
+    ])
 
     let body
 
@@ -135,7 +140,7 @@ export const SearchSidebar: React.FunctionComponent<SearchSidebarProps> = props 
                     startCollapsed={collapsedSections?.[SectionID.SEARCH_TYPES]}
                     onToggle={open => persistToggleState(SectionID.SEARCH_TYPES, open)}
                 >
-                    {getSearchTypeLinks(props)}
+                    {getSearchTypeLinks(sectionProps)}
                 </SearchSidebarSection>
                 <SearchSidebarSection
                     className={styles.searchSidebarItem}
@@ -184,7 +189,7 @@ export const SearchSidebar: React.FunctionComponent<SearchSidebarProps> = props 
                     // (false is just an arbitrary but static value)
                     clearSearchOnChange={false}
                 >
-                    {getSearchReferenceFactory(props)}
+                    {getSearchReferenceFactory(sectionProps)}
                 </SearchSidebarSection>
                 <SearchSidebarSection
                     className={styles.searchSidebarItem}
