@@ -4,6 +4,7 @@ import React from 'react'
 import { of } from 'rxjs'
 
 import { GitObjectType } from '@sourcegraph/shared/src/graphql-operations'
+import { getDocumentNode } from '@sourcegraph/shared/src/graphql/graphql'
 
 import { CodeIntelligenceConfigurationPolicyFields } from '../../../graphql-operations'
 import { EnterpriseWebStory } from '../../components/EnterpriseWebStory'
@@ -12,6 +13,7 @@ import {
     CodeIntelConfigurationPolicyPage,
     CodeIntelConfigurationPolicyPageProps,
 } from './CodeIntelConfigurationPolicyPage'
+import { POLICY_CONFIGURATION_BY_ID } from './usePoliciesConfigurations'
 
 const policy: CodeIntelligenceConfigurationPolicyFields = {
     __typename: 'CodeIntelligenceConfigurationPolicy' as const,
@@ -46,6 +48,19 @@ const tagsResult = {
     tags: { totalCount: 2, nodes: [{ displayName: 'v3.0-ref' }, { displayName: 'v3-ref.1' }] },
 }
 
+const configurationPolicyRequest = {
+    request: {
+        query: getDocumentNode(POLICY_CONFIGURATION_BY_ID),
+    },
+    result: {
+        data: {
+            node: {
+                ...policy,
+            },
+        },
+    },
+}
+
 const story: Meta = {
     title: 'web/codeintel/configuration/CodeIntelConfigurationPolicyPage',
     decorators: [story => <div className="p-3 container">{story()}</div>, withKnobs],
@@ -59,7 +74,7 @@ const story: Meta = {
 export default story
 
 const Template: Story<CodeIntelConfigurationPolicyPageProps> = args => (
-    <EnterpriseWebStory>
+    <EnterpriseWebStory mocks={[configurationPolicyRequest]}>
         {props => (
             <CodeIntelConfigurationPolicyPage {...props} indexingEnabled={boolean('indexingEnabled', true)} {...args} />
         )}
@@ -67,8 +82,6 @@ const Template: Story<CodeIntelConfigurationPolicyPageProps> = args => (
 )
 
 const defaults: Partial<CodeIntelConfigurationPolicyPageProps> = {
-    getPolicyById: () => of(policy),
-    updatePolicy: () => of(),
     searchGitBranches: () => of(branchesResult),
     searchGitTags: () => of(tagsResult),
     repoName: () => of(repoResult),
@@ -77,12 +90,6 @@ const defaults: Partial<CodeIntelConfigurationPolicyPageProps> = {
 export const GlobalPage = Template.bind({})
 GlobalPage.args = {
     ...defaults,
-}
-
-export const GlobalProtectedPage = Template.bind({})
-GlobalProtectedPage.args = {
-    ...defaults,
-    getPolicyById: () => of({ ...policy, protected: true }),
 }
 
 export const RepositoryPage = Template.bind({})
