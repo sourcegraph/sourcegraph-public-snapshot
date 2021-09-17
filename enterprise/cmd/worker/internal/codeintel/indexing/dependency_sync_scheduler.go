@@ -56,6 +56,10 @@ type dependencySyncSchedulerHandler struct {
 }
 
 func (h *dependencySyncSchedulerHandler) Handle(ctx context.Context, record workerutil.Record) error {
+	if !indexSchedulerEnabled() {
+		return nil
+	}
+
 	job := record.(dbstore.DependencySyncingJob)
 
 	scanner, err := h.dbStore.ReferencesForUpload(ctx, job.UploadID)
@@ -91,7 +95,7 @@ func (h *dependencySyncSchedulerHandler) Handle(ctx context.Context, record work
 		}
 
 		extsvcKind, ok := schemeToExternalService[packageReference.Scheme]
-		// add entry for empty string here so dependencies such as lsif-go ones still get
+		// add entry for empty string/kind here so dependencies such as lsif-go ones still get
 		// an associated dependency indexing job
 		kinds[extsvcKind] = struct{}{}
 		if !ok {
@@ -134,14 +138,21 @@ func (h *dependencySyncSchedulerHandler) Handle(ctx context.Context, record work
 				errs = append(errs, errors.Wrapf(err, "extsvcStore.Upsert: error setting next_sync_at for external service %d - %s", externalService.ID, externalService.DisplayName))
 			}
 		}
-
 	} else {
 		log15.Info("no package schema kinds to sync external services for", "upload", job.UploadID, "job", job.ID)
 	}
 
-	for kind := range kinds {
-		if _, err := h.dbStore.InsertDependencyIndexingJob(ctx, job.UploadID, kind, nextSync); err != nil {
-			errs = append(errs, errors.Wrap(err, "dbstore.InsertDependencyIndexingJob"))
+	shouldIndex, err := h.shouldIndexDependencies(ctx, h.dbStore, job.UploadID)
+	if err != nil {
+		return err
+	}
+
+	if shouldIndex {
+		// see note on L94 on how this is populated
+		for kind := range kinds {
+			if _, err := h.dbStore.InsertDependencyIndexingJob(ctx, job.UploadID, kind, nextSync); err != nil {
+				errs = append(errs, errors.Wrap(err, "dbstore.InsertDependencyIndexingJob"))
+			}
 		}
 	}
 
@@ -169,6 +180,18 @@ func (h *dependencySyncSchedulerHandler) insertDependencyRepo(ctx context.Contex
 		return new, errors.Wrap(err, "dbstore.InsertCloneableDependencyRepos")
 	}
 	return new, nil
+}
+
+// shouldIndexDependencies returns true if the given upload should undergo dependency
+// indexing. Currently, we're only enabling dependency indexing for a repositories that
+// were indexed via lsif-go and lsif-java.
+func (h *dependencySyncSchedulerHandler) shouldIndexDependencies(ctx context.Context, store DBStore, uploadID int) (bool, error) {
+	upload, _, err := store.GetUploadByID(ctx, uploadID)
+	if err != nil {
+		return false, errors.Wrap(err, "dbstore.GetUploadByID")
+	}
+
+	return upload.Indexer == "lsif-go" || upload.Indexer == "lsif-java", nil
 }
 
 func kindsToArray(k map[string]struct{}) (s []string) {

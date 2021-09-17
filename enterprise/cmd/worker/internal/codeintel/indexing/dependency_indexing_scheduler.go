@@ -77,20 +77,12 @@ func (h *dependencyIndexingSchedulerHandler) Handle(ctx context.Context, record 
 
 	job := record.(dbstore.DependencyIndexingJob)
 
-	shouldIndex, err := h.shouldIndexDependencies(ctx, h.dbStore, job.UploadID)
-	if err != nil {
-		return errors.Wrap(err, "indexing.shouldIndexDependencies")
-	}
-	if !shouldIndex {
-		return nil
-	}
-
 	if job.ExternalServiceKind != "" {
 		externalServices, err := h.extsvcStore.List(ctx, database.ExternalServicesListOptions{
 			Kinds: []string{job.ExternalServiceKind},
 		})
 		if err != nil {
-			return errors.Wrap(err, "dbstore.List")
+			return errors.Wrap(err, "extsvcStore.List")
 		}
 
 		for _, externalService := range externalServices {
@@ -178,16 +170,4 @@ func (h *dependencyIndexingSchedulerHandler) Handle(ctx context.Context, record 
 	}
 
 	return multierror.Append(nil, errs...)
-}
-
-// shouldIndexDependencies returns true if the given upload should undergo dependency
-// indexing. Currently, we're only enabling dependency indexing for a repositories that
-// were indexed via lsif-go and lsif-java.
-func (h *dependencyIndexingSchedulerHandler) shouldIndexDependencies(ctx context.Context, store DBStore, uploadID int) (bool, error) {
-	upload, _, err := store.GetUploadByID(ctx, uploadID)
-	if err != nil {
-		return false, errors.Wrap(err, "dbstore.GetUploadByID")
-	}
-
-	return upload.Indexer == "lsif-go" || upload.Indexer == "lsif-java", nil
 }

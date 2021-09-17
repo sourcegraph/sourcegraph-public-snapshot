@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/inconshreveable/log15"
 	"github.com/keegancsmith/sqlf"
 	"github.com/opentracing/opentracing-go/log"
 
@@ -205,7 +204,6 @@ func (s *Store) InsertCloneableDependencyRepo(ctx context.Context, dependency pr
 	}()
 
 	_, new, err = basestore.ScanFirstInt(s.Store.Query(ctx, sqlf.Sprintf(insertCloneableDependencyRepoQuery, dependency.Scheme, dependency.Name, dependency.Version)))
-	log15.Info("INSERTED CLONEABLE DEPENDENCIES", "new", new, "package", dependency)
 	return
 }
 
