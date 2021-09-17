@@ -2,6 +2,8 @@ package indexing
 
 import (
 	"context"
+	"os"
+	"strconv"
 	"time"
 
 	"github.com/cockroachdb/errors"
@@ -21,6 +23,9 @@ import (
 )
 
 const requeueBackoff = time.Second * 30
+
+// default is false aka index scheduler is enabled
+var disableIndexScheduler, _ = strconv.ParseBool(os.Getenv("CODEINTEL_DEPENDENCY_INDEX_SCHEDULER_DISABLED"))
 
 // NewDependencyIndexingScheduler returns a new worker instance that processes
 // records from lsif_dependency_indexing_jobs.
@@ -71,7 +76,7 @@ var _ workerutil.Handler = &dependencyIndexingSchedulerHandler{}
 // scheme to determine the dependent repository and commit. A set of indexing
 // jobs are enqueued for each repository and commit pair.
 func (h *dependencyIndexingSchedulerHandler) Handle(ctx context.Context, record workerutil.Record) error {
-	if !indexSchedulerEnabled() {
+	if !autoIndexingEnabled() || disableIndexScheduler {
 		return nil
 	}
 

@@ -56,7 +56,7 @@ type dependencySyncSchedulerHandler struct {
 }
 
 func (h *dependencySyncSchedulerHandler) Handle(ctx context.Context, record workerutil.Record) error {
-	if !indexSchedulerEnabled() {
+	if !autoIndexingEnabled() {
 		return nil
 	}
 

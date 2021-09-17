@@ -961,15 +961,18 @@ Indexes:
  last_heartbeat_at     | timestamp with time zone |           |          | 
  worker_hostname       | text                     |           | not null | ''::text
  upload_id             | integer                  |           |          | 
- external_service_kind | text                     |           |          | 
+ external_service_kind | text                     |           | not null | ''::text
  external_service_sync | timestamp with time zone |           |          | 
 Indexes:
     "lsif_dependency_indexing_jobs_pkey1" PRIMARY KEY, btree (id)
-    "lsif_dependency_indexing_jobs_upload_id" btree (upload_id)
 Foreign-key constraints:
     "lsif_dependency_indexing_jobs_upload_id_fkey1" FOREIGN KEY (upload_id) REFERENCES lsif_uploads(id) ON DELETE CASCADE
 
 ```
+
+**external_service_kind**: Filter the external services for this kind to wait to have synced. If empty, external_service_sync is ignored and no external services are polled for their last sync time.
+
+**external_service_sync**: The sync time after which external services of the given kind will have synced/created any repositories referenced by the LSIF upload that are resolvable.
 
 # Table "public.lsif_dependency_repos"
 ```
@@ -1004,6 +1007,7 @@ Indexes:
  last_heartbeat_at | timestamp with time zone |           |          | 
 Indexes:
     "lsif_dependency_indexing_jobs_pkey" PRIMARY KEY, btree (id)
+    "lsif_dependency_indexing_jobs_upload_id" btree (upload_id)
 Foreign-key constraints:
     "lsif_dependency_indexing_jobs_upload_id_fkey" FOREIGN KEY (upload_id) REFERENCES lsif_uploads(id) ON DELETE CASCADE
 
