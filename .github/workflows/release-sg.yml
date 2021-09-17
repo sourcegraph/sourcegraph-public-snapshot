@@ -11,8 +11,22 @@ env:
   # GO_EXTLINK_ENABLED: '0'
 
 jobs:
+  create-release:
+    name: Create Release
+    runs-on: ubuntu-latest
+    steps:
+      - name: Create Release
+        run: |
+          gh release delete -R="${repo}" ${tag_name} || true
+          gh release create -R="${repo}" ${tag_name}
+        env:
+          repo: sourcegraph/sg
+          tag_name: build-${{ github.sha }}
+          GITHUB_TOKEN: ${{ secrets.SG_RELEASE_TOKEN }}
+
   build:
     name: Build
+    needs: create-release
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -77,11 +91,10 @@ jobs:
 
       - name: Upload release asset
         run: |
-          gh release delete -R="${repo}" ${tag_name} || true
-          gh release create -R="${repo}" ${tag_name}
           gh release upload -R="${repo}" ${tag_name} "${filename}"
         env:
           repo: sourcegraph/sg
           tag_name: build-${{ github.sha }}
           filename: ${{ steps.asset.outputs.filename }}
           GITHUB_TOKEN: ${{ secrets.SG_RELEASE_TOKEN }}
+
