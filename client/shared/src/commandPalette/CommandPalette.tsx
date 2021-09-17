@@ -145,6 +145,8 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
     const filteredActionItems = actionItems && filterAndRankItems(actionItems, value, null)
 
     return (
+        // TODO: render shortcuts here. isOpen state is global, can be changed by e.g. button, keybinding.
+        // this is a singleton component that is always rendered.
         <Dialog className="modal-body p-4 rounded border" {...{ isOpen, onDismiss }}>
             <div>
                 <h1>cmdpal</h1>
