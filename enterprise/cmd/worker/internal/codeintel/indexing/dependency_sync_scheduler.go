@@ -148,7 +148,7 @@ func (h *dependencySyncSchedulerHandler) Handle(ctx context.Context, record work
 	}
 
 	if shouldIndex {
-		// see note on L94 on how this is populated
+		// If we saw a kind that's not in schemeToExternalService, then kinds contains an empty string key
 		for kind := range kinds {
 			if _, err := h.dbStore.InsertDependencyIndexingJob(ctx, job.UploadID, kind, nextSync); err != nil {
 				errs = append(errs, errors.Wrap(err, "dbstore.InsertDependencyIndexingJob"))
