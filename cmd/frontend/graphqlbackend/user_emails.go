@@ -90,21 +90,20 @@ func (r *schemaResolver) AddUserEmail(ctx context.Context, args *struct {
 	}
 
 	if conf.CanSendEmail() {
-		if len(emails) != 0 {
-			if err := backend.UserEmails.SendUserEmailOnFieldUpdate(ctx, userID, "added an email"); err != nil {
-				log15.Warn("Failed to send email to inform user of email addition", "error", err)
-			}
+		if err := backend.UserEmails.SendUserEmailOnFieldUpdate(ctx, userID, "added an email"); err != nil {
+			log15.Warn("Failed to send email to inform user of email addition", "error", err)
 		}
-	} else {
-		// If user has no existing email, the added email will be set as the primary email
-		if len(emails) == 0 {
-			if err := database.UserEmails(r.db).SetVerified(ctx, userID, args.Email, true); err != nil {
-				return nil, err
-			}
-			if err := database.UserEmails(r.db).SetPrimaryEmail(ctx, userID, args.Email); err != nil {
-				return nil, err
-			}
+		return &EmptyResponse{}, nil
+	}
+	// If user has no existing email, the added email will be set as the primary email
+	if len(emails) == 0 {
+		if err := database.UserEmails(r.db).SetVerified(ctx, userID, args.Email, true); err != nil {
+			return nil, err
 		}
+		if err := database.UserEmails(r.db).SetPrimaryEmail(ctx, userID, args.Email); err != nil {
+			return nil, err
+		}
+	}
 	}
 
 	return &EmptyResponse{}, nil
