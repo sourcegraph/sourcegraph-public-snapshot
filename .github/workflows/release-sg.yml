@@ -7,7 +7,7 @@ on:
 
 env:
   GOFLAGS: -trimpath
-  CGO_ENABLED: '1'
+  CGO_ENABLED: '0'
   # GO_EXTLINK_ENABLED: '0'
 
 jobs:
