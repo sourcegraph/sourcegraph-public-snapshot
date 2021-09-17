@@ -423,7 +423,7 @@ func (s *Server) cloneJobProducer(ctx context.Context, jobs chan<- *cloneJob) {
 			select {
 			case jobs <- job:
 			case <-ctx.Done():
-				log15.Error("cloneProdConsumer: ", "error", ctx.Err())
+				log15.Error("cloneJobProducer: ", "error", ctx.Err())
 				return
 			}
 		}
