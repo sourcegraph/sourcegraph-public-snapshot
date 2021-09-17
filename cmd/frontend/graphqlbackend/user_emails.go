@@ -77,13 +77,12 @@ func (r *schemaResolver) AddUserEmail(ctx context.Context, args *struct {
 	Email string
 }) (*EmptyResponse, error) {
 	userID, err := UnmarshalUserID(args.User)
-	if err != nil {
-		return nil, err
-	}
-
 	emails, err := database.GlobalUserEmails.ListByUser(ctx, database.UserEmailsListOptions{
 		UserID: userID,
 	})
+	if err != nil {
+		return nil, err
+	}
 
 	if err := backend.UserEmails.Add(ctx, r.db, userID, args.Email); err != nil {
 		return nil, err
