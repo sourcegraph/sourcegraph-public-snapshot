@@ -40,24 +40,26 @@ jobs:
         with:
           go-version: 1.17
 
-      - name: Get Go environment
-        id: go-env
-        run: |
-          echo "::set-output name=path::$(go env GOPATH)"
-          echo "::set-output name=exe::$(go env GOEXE)"
-          echo "::set-output name=hostos::$(go env GOHOSTOS)"
-          echo "::set-output name=hostarch::$(go env GOHOSTARCH)"
-          echo "::set-output name=cache::$(go env GOCACHE)"
-          echo "::set-output name=modcache::$(go env GOMODCACHE)"
+      # - name: Get Go environment
+      #   id: go-env
+      #   run: |
+      #     echo "::set-output name=path::$(go env GOPATH)"
+      #     echo "::set-output name=exe::$(go env GOEXE)"
+      #     echo "::set-output name=hostos::$(go env GOHOSTOS)"
+      #     echo "::set-output name=hostarch::$(go env GOHOSTARCH)"
+      #     echo "::set-output name=cache::$(go env GOCACHE)"
+      #     echo "::set-output name=modcache::$(go env GOMODCACHE)"
 
-      - name: Get asset name
-        id: asset
-        run: echo "::set-output name=filename::sg_${GOOS}_${GOARCH}${GOEXE}"
-        env:
-          GOEXE: ${{ steps.go-env.outputs.exe }}
+      # - name: Get asset name
+      #   id: asset
+      #   run: echo "::set-output name=filename::sg_${GOOS}_${GOARCH}${GOEXE}"
+      #   env:
+      #     GOEXE: ${{ steps.go-env.outputs.exe }}
 
       - name: Build release asset
-        run: go install -ldflags "-X main.BuildCommit=$(git rev-list -1 HEAD .)" .
+        run: |
+          go help
+          go install -ldflags "-X main.BuildCommit=$(git rev-list -1 HEAD .)" .
 
       - name: Move asset to GOPATH/bin
         if: ${{ steps.go-env.outputs.hostos != matrix.os || steps.go-env.outputs.hostarch != matrix.arch }}
