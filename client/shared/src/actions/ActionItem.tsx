@@ -32,6 +32,11 @@ export interface ActionItemAction {
 
     /** Whether the action item is active in the given context */
     active: boolean
+
+    /**
+     * TODO: check if rather need to Keybinding interface
+     */
+    keybinding?: string
 }
 
 export interface ActionItemComponentProps
