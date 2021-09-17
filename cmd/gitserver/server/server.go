@@ -156,11 +156,15 @@ func (c *cloneQueue) pop() *cloneJob {
 	return c.jobs.Remove(next).(*cloneJob)
 }
 
-func (c *cloneQueue) depth() int {
+func (c *cloneQueue) empty() bool {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
-	return c.jobs.Len()
+	if c.jobs.Len() == 0 {
+		return true
+	}
+
+	return false
 }
 
 // NewCloneQueue initializes a new cloneQueue.
@@ -404,7 +408,7 @@ func (s *Server) cloneJobProducer(ctx context.Context, jobs chan<- *cloneJob) {
 	for {
 		// Acquire the cond mutex lock and wait for a signal if the queue is empty.
 		s.CloneQueue.cmu.Lock()
-		if s.CloneQueue.depth() == 0 {
+		if s.CloneQueue.empty() {
 			s.CloneQueue.cond.Wait()
 		}
 
