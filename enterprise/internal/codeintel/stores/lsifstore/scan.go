@@ -169,7 +169,7 @@ func (s *Store) scanQualifiedMonikerLocations(rows *sql.Rows, queryErr error) (_
 func (s *Store) scanSingleQualifiedMonikerLocationsObject(rows *sql.Rows) (QualifiedMonikerLocations, error) {
 	var rawData []byte
 	var record QualifiedMonikerLocations
-	if err := rows.Scan(&record.DumpID, &record.Scheme, &record.Identifier, &rawData); err != nil {
+	if err := rows.Scan(&record.DumpID, &record.Kind, &record.Scheme, &record.Identifier, &rawData); err != nil {
 		return QualifiedMonikerLocations{}, err
 	}
 

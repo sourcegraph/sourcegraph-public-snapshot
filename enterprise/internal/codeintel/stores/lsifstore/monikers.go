@@ -96,7 +96,7 @@ func (s *Store) BulkMonikerResults(ctx context.Context, tableName string, upload
 
 	monikerQueries := make([]*sqlf.Query, 0, len(monikers))
 	for _, arg := range monikers {
-		monikerQueries = append(monikerQueries, sqlf.Sprintf("(%s, %s)", arg.Scheme, arg.Identifier))
+		monikerQueries = append(monikerQueries, sqlf.Sprintf("(%s, %s, %s)", arg.Kind, arg.Scheme, arg.Identifier))
 	}
 
 	locationData, err := s.scanQualifiedMonikerLocations(s.Store.Query(ctx, sqlf.Sprintf(
@@ -150,13 +150,13 @@ outer:
 
 const bulkMonikerResultsQuery = `
 -- source: enterprise/internal/codeintel/stores/lsifstore/monikers.go:BulkMonikerResults
-SELECT dump_id, scheme, identifier, data FROM %s WHERE dump_id IN (%s) AND (scheme, identifier) IN (%s) ORDER BY (dump_id, scheme, identifier)
+SELECT dump_id, kind, scheme, identifier, data FROM %s WHERE dump_id IN (%s) AND (kind, scheme, identifier) IN (%s) ORDER BY (dump_id, kind, scheme, identifier)
 `
 
 func monikersToString(vs []precise.MonikerData) string {
 	strs := make([]string, 0, len(vs))
 	for _, v := range vs {
-		strs = append(strs, fmt.Sprintf("%s:%s", v.Scheme, v.Identifier))
+		strs = append(strs, fmt.Sprintf("%s:%s:%s", v.Kind, v.Scheme, v.Identifier))
 	}
 
 	return strings.Join(strs, ", ")

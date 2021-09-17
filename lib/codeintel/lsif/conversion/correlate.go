@@ -556,6 +556,9 @@ func correlatePackageInformationEdge(state *wrappedState, id int, edge Edge) err
 	case "export":
 		// keep list of exported monikers
 		state.ExportedMonikers.Add(edge.OutV)
+	case "implementation":
+		// keep list of implemented monikers
+		state.ImplementedMonikers.Add(edge.OutV)
 	}
 
 	return nil

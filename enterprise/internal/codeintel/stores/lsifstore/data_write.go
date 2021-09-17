@@ -232,7 +232,7 @@ func (s *Store) writeDefinitionReferences(ctx context.Context, bundleID int, tab
 				return err
 			}
 
-			if err := inserter.Insert(ctx, v.Scheme, v.Identifier, data, len(v.Locations)); err != nil {
+			if err := inserter.Insert(ctx, v.Kind, v.Scheme, v.Identifier, data, len(v.Locations)); err != nil {
 				return err
 			}
 
@@ -247,7 +247,7 @@ func (s *Store) writeDefinitionReferences(ctx context.Context, bundleID int, tab
 		ctx,
 		tx.Handle().DB(),
 		"t_"+tableName,
-		[]string{"scheme", "identifier", "data", "num_locations"},
+		[]string{"kind", "scheme", "identifier", "data", "num_locations"},
 		inserter,
 	); err != nil {
 		return err
@@ -269,6 +269,7 @@ func (s *Store) writeDefinitionReferences(ctx context.Context, bundleID int, tab
 const writeDefinitionsReferencesTemporaryTableQuery = `
 -- source: enterprise/internal/codeintel/stores/lsifstore/data_write.go:writeDefinitionReferences
 CREATE TEMPORARY TABLE t_%s (
+	kind text NOT NULL,
 	scheme text NOT NULL,
 	identifier text NOT NULL,
 	data bytea NOT NULL,
@@ -278,8 +279,8 @@ CREATE TEMPORARY TABLE t_%s (
 
 const writeDefinitionReferencesInsertQuery = `
 -- source: enterprise/internal/codeintel/stores/lsifstore/data_write.go:writeDefinitionReferences
-INSERT INTO %s (dump_id, schema_version, scheme, identifier, data, num_locations)
-SELECT %s, %s, source.scheme, source.identifier, source.data, source.num_locations
+INSERT INTO %s (dump_id, schema_version, kind, scheme, identifier, data, num_locations)
+SELECT %s, %s, source.kind, source.scheme, source.identifier, source.data, source.num_locations
 FROM t_%s source
 `
 

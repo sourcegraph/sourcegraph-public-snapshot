@@ -118,6 +118,7 @@ type LocationData struct {
 // MonikerLocations pairs a moniker scheme and identifier with the set of locations
 // with that within a particular bundle.
 type MonikerLocations struct {
+	Kind       string
 	Scheme     string
 	Identifier string
 	Locations  []LocationData
@@ -238,8 +239,8 @@ type GroupedBundleDataMaps struct {
 	Meta              MetaData
 	Documents         map[string]DocumentData
 	ResultChunks      map[int]ResultChunkData
-	Definitions       map[string]map[string][]LocationData
-	References        map[string]map[string][]LocationData
+	Definitions       map[string]map[string]map[string][]LocationData
+	References        map[string]map[string]map[string][]LocationData
 	Packages          []Package
 	PackageReferences []PackageReference
 }

@@ -277,7 +277,7 @@ func gatherMonikersLocations(ctx context.Context, state *State, data map[int]*da
 		}
 	}
 
-	idsBySchemeByIdentifier := map[string]map[string][]int{}
+	idsByKindBySchemeByIdentifier := map[string]map[string]map[string][]int{}
 	for id := range data {
 		monikerIDs := monikers.Get(id)
 		if monikerIDs == nil {
@@ -286,6 +286,11 @@ func gatherMonikersLocations(ctx context.Context, state *State, data map[int]*da
 
 		monikerIDs.Each(func(monikerID int) {
 			moniker := state.MonikerData[monikerID]
+			idsBySchemeByIdentifier, ok := idsByKindBySchemeByIdentifier[moniker.Kind]
+			if !ok {
+				idsBySchemeByIdentifier = map[string]map[string][]int{}
+				idsByKindBySchemeByIdentifier[moniker.Kind] = idsBySchemeByIdentifier
+			}
 			idsByIdentifier, ok := idsBySchemeByIdentifier[moniker.Scheme]
 			if !ok {
 				idsByIdentifier = map[string][]int{}
@@ -300,50 +305,53 @@ func gatherMonikersLocations(ctx context.Context, state *State, data map[int]*da
 	go func() {
 		defer close(ch)
 
-		for scheme, idsByIdentifier := range idsBySchemeByIdentifier {
-			for identifier, ids := range idsByIdentifier {
-				var locations []precise.LocationData
-				for _, id := range ids {
-					data[id].Each(func(documentID int, rangeIDs *datastructures.IDSet) {
-						uri := state.DocumentData[documentID]
-						if strings.HasPrefix(uri, "..") {
-							return
-						}
+		for kind, idsBySchemeByIdentifier := range idsByKindBySchemeByIdentifier {
+			for scheme, idsByIdentifier := range idsBySchemeByIdentifier {
+				for identifier, ids := range idsByIdentifier {
+					var locations []precise.LocationData
+					for _, id := range ids {
+						data[id].Each(func(documentID int, rangeIDs *datastructures.IDSet) {
+							uri := state.DocumentData[documentID]
+							if strings.HasPrefix(uri, "..") {
+								return
+							}
 
-						rangeIDs.Each(func(id int) {
-							r := state.RangeData[id]
+							rangeIDs.Each(func(id int) {
+								r := state.RangeData[id]
 
-							locations = append(locations, precise.LocationData{
-								URI:            uri,
-								StartLine:      r.Start.Line,
-								StartCharacter: r.Start.Character,
-								EndLine:        r.End.Line,
-								EndCharacter:   r.End.Character,
+								locations = append(locations, precise.LocationData{
+									URI:            uri,
+									StartLine:      r.Start.Line,
+									StartCharacter: r.Start.Character,
+									EndLine:        r.End.Line,
+									EndCharacter:   r.End.Character,
+								})
 							})
 						})
-					})
-				}
+					}
 
-				if len(locations) == 0 {
-					continue
-				}
+					if len(locations) == 0 {
+						continue
+					}
 
-				// Sort locations by containing document path then by offset within the text
-				// document (in reading order). This provides us with an obvious and deterministic
-				// ordering of a result set over multiple API requests.
+					// Sort locations by containing document path then by offset within the text
+					// document (in reading order). This provides us with an obvious and deterministic
+					// ordering of a result set over multiple API requests.
 
-				sort.Sort(sortableLocations(locations))
+					sort.Sort(sortableLocations(locations))
 
-				data := precise.MonikerLocations{
-					Scheme:     scheme,
-					Identifier: identifier,
-					Locations:  locations,
-				}
+					data := precise.MonikerLocations{
+						Kind:       kind,
+						Scheme:     scheme,
+						Identifier: identifier,
+						Locations:  locations,
+					}
 
-				select {
-				case ch <- data:
-				case <-ctx.Done():
-					return
+					select {
+					case ch <- data:
+					case <-ctx.Done():
+						return
+					}
 				}
 			}
 		}

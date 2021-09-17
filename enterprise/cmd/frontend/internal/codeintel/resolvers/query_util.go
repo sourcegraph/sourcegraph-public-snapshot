@@ -242,7 +242,7 @@ func uploadIDsToString(vs []dbstore.Dump) string {
 func monikersToString(vs []precise.QualifiedMonikerData) string {
 	strs := make([]string, 0, len(vs))
 	for _, v := range vs {
-		strs = append(strs, fmt.Sprintf("%s:%s:%s", v.Scheme, v.Identifier, v.Version))
+		strs = append(strs, fmt.Sprintf("%s:%s:%s:%s", v.Kind, v.Scheme, v.Identifier, v.Version))
 	}
 
 	return strings.Join(strs, ", ")

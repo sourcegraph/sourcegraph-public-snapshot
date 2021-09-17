@@ -287,6 +287,7 @@ func writeData(ctx context.Context, lsifStore LSIFStore, upload dbstore.Upload, 
 	if err := tx.WriteResultChunks(ctx, upload.ID, groupedBundleData.ResultChunks); err != nil {
 		return errors.Wrap(err, "store.WriteResultChunks")
 	}
+	// TODO figure out how to prevent implementation monikers from being stored in lsif_data_definitions
 	if err := tx.WriteDefinitions(ctx, upload.ID, groupedBundleData.Definitions); err != nil {
 		return errors.Wrap(err, "store.WriteDefinitions")
 	}
