@@ -5,15 +5,14 @@ import StickyBox from 'react-sticky-box'
 import shallow from 'zustand/shallow'
 
 import { FilterType } from '@sourcegraph/shared/src/search/query/filters'
-import { updateFilter } from '@sourcegraph/shared/src/search/query/transformer'
 import { Filter } from '@sourcegraph/shared/src/search/stream'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
 import { TemporarySettings } from '../../../settings/temporary/TemporarySettings'
 import { useTemporarySetting } from '../../../settings/temporary/useTemporarySetting'
-import { SubmitSearchParameters, toggleSearchFilter } from '../../helpers'
-import { NavbarQueryState, useNavbarQueryState } from '../../navbarSearchQueryState'
+import { SubmitSearchParameters } from '../../helpers'
+import { NavbarQueryState, QueryUpdate, useNavbarQueryState } from '../../navbarSearchQueryState'
 
 import { getDynamicFilterLinks, getRepoFilterLinks, getSearchSnippetLinks } from './FilterLink'
 import { getFiltersOfKind, useLastRepoName } from './helpers'
@@ -61,16 +60,9 @@ export const SearchSidebar: React.FunctionComponent<SearchSidebarProps> = props 
     const [collapsedSections, setCollapsedSections] = useTemporarySetting('search.collapsedSidebarSections', {})
     const { query, setQueryState, submitSearch } = useNavbarQueryState(selectFromQueryState, shallow)
 
-    const toggleFilter = useCallback(
-        (value: string) =>
-            submitSearch(query => toggleSearchFilter(query, value), { ...props, source: 'filter', history }),
-        [history, props, submitSearch]
-    )
-
     // Unlike onFilterClicked, this function will always append or update a filter
-    const updateOrAppendFilter = useCallback(
-        (filter: string, value: string) =>
-            submitSearch(query => updateFilter(query, filter, value), { ...props, source: 'filter', history }),
+    const submitQueryWithProps = useCallback(
+        (updates: QueryUpdate[]) => submitSearch(updates, { ...props, source: 'filter', history }),
         [history, props, submitSearch]
     )
 
@@ -80,17 +72,17 @@ export const SearchSidebar: React.FunctionComponent<SearchSidebarProps> = props 
                 search_filter: { value },
             })
 
-            toggleFilter(value)
+            submitQueryWithProps([{ type: 'toggleSubstring', value }])
         },
-        [toggleFilter, props.telemetryService]
+        [submitQueryWithProps, props.telemetryService]
     )
 
     const onSnippetClicked = useCallback(
         (value: string) => {
             props.telemetryService.log('SearchSnippetClicked')
-            toggleFilter(value)
+            submitQueryWithProps([{ type: 'toggleSubstring', value }])
         },
-        [toggleFilter, props.telemetryService]
+        [submitQueryWithProps, props.telemetryService]
     )
 
     const persistToggleState = useCallback(
@@ -186,7 +178,7 @@ export const SearchSidebar: React.FunctionComponent<SearchSidebarProps> = props 
                         showSearch={true}
                         clearSearchOnChange={repoName}
                     >
-                        {getRevisions({ repoName, onFilterClick: updateOrAppendFilter })}
+                        {getRevisions({ repoName, onFilterClick: submitQueryWithProps })}
                     </SearchSidebarSection>
                 ) : null}
                 <SearchSidebarSection
