@@ -6,17 +6,9 @@ on:
       - dev/sg
 
 env:
-  # # Ensure that we still have a chance to remove tags even after release.
-  # # See also release.yaml.
-  # GOPRIVATE: github.com/genjidb/genji
-  # Enable reproducible builds.
   GOFLAGS: -trimpath
   CGO_ENABLED: '1'
   # GO_EXTLINK_ENABLED: '0'
-
-# defaults:
-#   run:
-#     working-directory: dev/sg
 
 jobs:
   build:
@@ -27,10 +19,10 @@ jobs:
       matrix:
         os:
           - linux
-          # - darwin
+          - darwin
         arch:
           - amd64
-          # - arm64
+          - arm64
     env:
       GOOS: ${{ matrix.os }}
       GOARCH: ${{ matrix.arch }}
