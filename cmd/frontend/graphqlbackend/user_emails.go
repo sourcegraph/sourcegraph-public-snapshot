@@ -104,7 +104,6 @@ func (r *schemaResolver) AddUserEmail(ctx context.Context, args *struct {
 			return nil, err
 		}
 	}
-	}
 
 	return &EmptyResponse{}, nil
 }
