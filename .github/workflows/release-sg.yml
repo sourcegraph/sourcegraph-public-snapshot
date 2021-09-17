@@ -78,13 +78,16 @@ jobs:
           workspace: ${{ github.workspace }}
           filename: ${{ steps.asset.outputs.filename }}
 
-      - uses: actions-ecosystem/action-push-tag@v1
-        with:
-          tag: build-${{ github.sha }}
-          message: 'snapshot sg release ${{ github.sha }}'
+      # - uses: actions-ecosystem/action-push-tag@v1
+      #   with:
+      #     tag: build-${{ github.sha }}
+      #     message: 'snapshot sg release ${{ github.sha }}'
 
       - name: Upload release asset
-        run: gh release upload -R="${repo}" "${tag_name}" "${filename}"
+        run: |
+          gh release delete -R="${repo}" ${tag_name} || true
+          gh release create -R="${repo}" ${tag_name}
+          gh release upload -R="${repo}" ${tag_name} "${filename}"
         env:
           repo: sourcegraph/sg
           tag_name: build-${{ github.sha }}
