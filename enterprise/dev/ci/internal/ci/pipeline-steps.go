@@ -108,6 +108,15 @@ func addSharedTests(c Config) func(pipeline *bk.Pipeline) {
 				bk.Cmd("echo \"--- Upload coverage report\" && dev/ci/codecov.sh -c -F typescript -F integration"),
 				bk.ArtifactPaths("./puppeteer/*.png"))
 
+			// Lighthouse CI tests
+			pipeline.AddStep(":lighthouse: Lighthouse",
+				bk.Env("NODE_ENV", "production"),
+				bk.Env("WEBPACK_SERVE_INDEX", "true"), // Required for local production server
+				bk.Env("SOURCEGRAPH_API_URL", "https://sourcegraph.com"),
+				bk.Cmd("dev/ci/yarn-build.sh client/web"),
+				bk.Cmd("echo \"--- Install puppeteer\" && yarn --cwd client/shared run download-puppeteer-browser"),
+				bk.Cmd("echo \"--- Run Lighthouse CI\" && yarn test-lighthouse"))
+
 			// Upload storybook to Chromatic
 			chromaticCommand := "yarn chromatic --exit-zero-on-changes --exit-once-uploaded"
 			if c.isMainBranch() {
