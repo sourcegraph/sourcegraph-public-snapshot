@@ -111,7 +111,6 @@ func DoMigrate(m *migrate.Migrate) (err error) {
 		if dirty { // this shouldn't happen, but checking anyways
 			return err
 		}
-
 		log15.Warn("WARNING: Detected an old version of Sourcegraph. The database has migrated to a newer version. If you have applied a rollback, this is expected and you can ignore this warning. If not, please contact support@sourcegraph.com for further assistance.", "db_version", version)
 		return nil
 	}
