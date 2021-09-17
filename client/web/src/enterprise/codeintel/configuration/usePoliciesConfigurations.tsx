@@ -11,6 +11,9 @@ import {
     IndexConfigurationResult,
     InferredIndexConfigurationResult,
     UpdateRepositoryIndexConfigurationResult,
+    CodeIntelligenceConfigurationPolicyResult,
+    GitObjectType,
+    UpdateCodeIntelligenceConfigurationPolicyResult,
 } from '../../../graphql-operations'
 
 import { codeIntelligenceConfigurationPolicyFieldsFragment as defaultCodeIntelligenceConfigurationPolicyFieldsFragment } from './backend'
@@ -113,6 +116,56 @@ export const useInferredConfig = (id: string): UseInferredConfigResult => {
     }
 }
 
+export const POLICY_CONFIGURATION_BY_ID = gql`
+    query CodeIntelligenceConfigurationPolicy($id: ID!) {
+        node(id: $id) {
+            ...CodeIntelligenceConfigurationPolicyFields
+        }
+    }
+
+    ${defaultCodeIntelligenceConfigurationPolicyFieldsFragment}
+`
+
+interface UsePolicyConfigResult {
+    policyConfig: CodeIntelligenceConfigurationPolicyFields | undefined
+    loadingPolicyConfig: boolean
+    policyConfigError: ApolloError | undefined
+}
+
+const emptyPolicy: CodeIntelligenceConfigurationPolicyFields = {
+    __typename: 'CodeIntelligenceConfigurationPolicy',
+    id: '',
+    name: '',
+    type: GitObjectType.GIT_COMMIT,
+    pattern: '',
+    protected: false,
+    retentionEnabled: false,
+    retentionDurationHours: null,
+    retainIntermediateCommits: false,
+    indexingEnabled: false,
+    indexCommitMaxAgeHours: null,
+    indexIntermediateCommits: false,
+}
+
+export const usePolicyConfigurationByID = (id: string): UsePolicyConfigResult => {
+    const { data, loading, error } = useQuery<CodeIntelligenceConfigurationPolicyResult>(POLICY_CONFIGURATION_BY_ID, {
+        variables: { id },
+        skip: id === 'new',
+    })
+
+    const response = data?.node || undefined
+    const isNew = id === 'new'
+
+    return {
+        policyConfig: isNew ? emptyPolicy : response,
+        loadingPolicyConfig: loading,
+        policyConfigError:
+            !response && !isNew
+                ? new ApolloError({ errorMessage: 'No such CodeIntelligenceConfigurationPolicy' })
+                : error,
+    }
+}
+
 // Mutations
 export type DeletePolicyResult = Promise<
     | FetchResult<DeleteCodeIntelligenceConfigurationPolicyResult, Record<string, string>, Record<string, string>>
@@ -201,5 +254,91 @@ export const useUpdateConfigurationForRepository = (): UpdateConfigurationForRep
         updateConfigForRepository,
         isUpdating: loading,
         updatingError: error,
+    }
+}
+
+const CREATE_POLICY_CONFIGURATION = gql`
+    mutation CreateCodeIntelligenceConfigurationPolicy(
+        $repositoryId: ID
+        $name: String!
+        $type: GitObjectType!
+        $pattern: String!
+        $retentionEnabled: Boolean!
+        $retentionDurationHours: Int
+        $retainIntermediateCommits: Boolean!
+        $indexingEnabled: Boolean!
+        $indexCommitMaxAgeHours: Int
+        $indexIntermediateCommits: Boolean!
+    ) {
+        createCodeIntelligenceConfigurationPolicy(
+            repository: $repositoryId
+            name: $name
+            type: $type
+            pattern: $pattern
+            retentionEnabled: $retentionEnabled
+            retentionDurationHours: $retentionDurationHours
+            retainIntermediateCommits: $retainIntermediateCommits
+            indexingEnabled: $indexingEnabled
+            indexCommitMaxAgeHours: $indexCommitMaxAgeHours
+            indexIntermediateCommits: $indexIntermediateCommits
+        ) {
+            id
+        }
+    }
+`
+
+const UPDATE_POLICY_CONFIGURATION = gql`
+    mutation UpdateCodeIntelligenceConfigurationPolicy(
+        $id: ID!
+        $name: String!
+        $type: GitObjectType!
+        $pattern: String!
+        $retentionEnabled: Boolean!
+        $retentionDurationHours: Int
+        $retainIntermediateCommits: Boolean!
+        $indexingEnabled: Boolean!
+        $indexCommitMaxAgeHours: Int
+        $indexIntermediateCommits: Boolean!
+    ) {
+        updateCodeIntelligenceConfigurationPolicy(
+            id: $id
+            name: $name
+            type: $type
+            pattern: $pattern
+            retentionEnabled: $retentionEnabled
+            retentionDurationHours: $retentionDurationHours
+            retainIntermediateCommits: $retainIntermediateCommits
+            indexingEnabled: $indexingEnabled
+            indexCommitMaxAgeHours: $indexCommitMaxAgeHours
+            indexIntermediateCommits: $indexIntermediateCommits
+        ) {
+            alwaysNil
+        }
+    }
+`
+
+type SavePolicyConfigResult = Promise<
+    FetchResult<UpdateCodeIntelligenceConfigurationPolicyResult, Record<string, string>, Record<string, string>>
+>
+interface SavePolicyConfigurationResult {
+    savePolicyConfiguration: (
+        options?:
+            | MutationFunctionOptions<UpdateCodeIntelligenceConfigurationPolicyResult, OperationVariables>
+            | undefined
+    ) => SavePolicyConfigResult
+    isSaving: boolean
+    savingError: ApolloError | undefined
+}
+
+export const useSavePolicyConfiguration = (isNew: boolean): SavePolicyConfigurationResult => {
+    const mutation = isNew ? CREATE_POLICY_CONFIGURATION : UPDATE_POLICY_CONFIGURATION
+    const [savePolicyConfiguration, { loading, error }] = useMutation<UpdateCodeIntelligenceConfigurationPolicyResult>(
+        mutation
+    )
+
+    return {
+        savePolicyConfiguration,
+        isSaving: loading,
+        savingError: error,
     }
 }
