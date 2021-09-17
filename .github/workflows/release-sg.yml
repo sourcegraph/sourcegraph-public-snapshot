@@ -36,7 +36,7 @@ jobs:
       GOARCH: ${{ matrix.arch }}
     steps:
       - name: Install Go
-        uses: actions/setup-go@v2.1.3
+        uses: actions/setup-go@v2
         with:
           go-version: 1.17
 
