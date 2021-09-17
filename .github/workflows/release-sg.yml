@@ -92,4 +92,4 @@ jobs:
           repo: sourcegraph/sg
           tag_name: build-${{ github.sha }}
           filename: ${{ steps.asset.outputs.filename }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.SG_RELEASE_TOKEN }}
