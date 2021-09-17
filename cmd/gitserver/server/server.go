@@ -236,17 +236,11 @@ func (s *Server) Handler() http.Handler {
 	// The new repo-updater scheduler enforces the rate limit across all gitserver,
 	// so ideally this logic could be removed here; however, ensureRevision can also
 	// cause an update to happen and it is called on every exec command.
-	maxConcurrentClones := conf.Get().GitMaxConcurrentClones
-	if maxConcurrentClones == 0 {
-		maxConcurrentClones = 5
-	}
+	maxConcurrentClones := conf.GitMaxConcurrentClones()
 	s.cloneLimiter = mutablelimiter.New(maxConcurrentClones)
 	s.cloneableLimiter = mutablelimiter.New(maxConcurrentClones)
 	conf.Watch(func() {
-		limit := conf.Get().GitMaxConcurrentClones
-		if limit == 0 {
-			limit = 5
-		}
+		limit := conf.GitMaxConcurrentClones()
 		s.cloneLimiter.SetLimit(limit)
 		s.cloneableLimiter.SetLimit(limit)
 	})
