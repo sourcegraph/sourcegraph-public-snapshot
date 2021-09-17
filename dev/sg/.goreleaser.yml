@@ -1,4 +1,10 @@
 dist: release
+
+release:
+  github:
+    owner: sourcegraph
+    name: sg
+
 env:
   - GO111MODULE=on
 
