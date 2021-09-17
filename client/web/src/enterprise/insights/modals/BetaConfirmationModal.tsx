@@ -63,7 +63,7 @@ export const BetaConfirmationModalContent: React.FunctionComponent<BetaConfirmat
             <div className={styles.textContent}>
                 <p>
                     <b>🥁 We’re introducing Code Insights</b>: a new analytics tool that lets you track and understand
-                    what’s in your code and how it changes <b>over time</b>!
+                    what’s in your code and how it changes <b>over time</b>.
                 </p>
 
                 <p>
@@ -85,7 +85,7 @@ export const BetaConfirmationModalContent: React.FunctionComponent<BetaConfirmat
 
                 <p>
                     Code Insights is <b>free while in beta through 2021</b>. When Code Insights is officially released,
-                    continued use may require a separate paid plan (at which time we’d notify you again).
+                    we may disable your use of the product or charge for continued use.
                 </p>
             </div>
 
