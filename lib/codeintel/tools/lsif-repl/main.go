@@ -22,13 +22,6 @@ query <dump id> <path> <line> <column>                query dumps
 index <path to repo root with dump.lsif>              index new dump
 `
 
-const helpMsgTODO string = `
-patch <path to repo root with dump.lsif> <base ID>    patch dump
-docRefs <dump id> <paths file>                        replace list of paths in paths file with list of docs referencing in dump
-eq <dump id> <dump id>                                test two dumps for equality
-cd <path>                                             change directory
-`
-
 func main() {
 	var bundles []*precise.GroupedBundleDataMaps
 
@@ -43,7 +36,6 @@ func main() {
 		switch fields[0] {
 		case "count":
 			fmt.Println(len(bundles))
-			break
 		case "query":
 			if len(fields) != 5 {
 				fmt.Println("wrong number of args to q")
@@ -71,7 +63,6 @@ func main() {
 				fmt.Println(helpMsg)
 				break
 			}
-			break
 
 		case "paths":
 			if len(fields) != 2 {
@@ -106,10 +97,11 @@ func main() {
 
 			bundle, err := conversion.CorrelateLocalGit(context.Background(), dumpPath, projectRoot)
 			if err != nil {
+				fmt.Printf("CorrelateLocalGit failed: %s", err)
+				break
 			}
 			bundles = append(bundles, precise.GroupedBundleDataChansToMaps(bundle))
 			fmt.Printf("finished indexing dump %v\n", len(bundles)-1)
-			break
 
 		case "diff":
 			if len(fields) != 3 {
@@ -128,7 +120,6 @@ func main() {
 			}
 
 			fmt.Println(diff.Diff(bundles[gotID], bundles[wantID]))
-			break
 
 		case "patch":
 			// TODO
@@ -193,38 +184,4 @@ func queryBundle(bundle *precise.GroupedBundleDataMaps, path string, line, chara
 
 	}
 	return nil
-}
-
-// finds all documents which have definition edges pointing into the argument list
-func documentsReferencing(bundle *precise.GroupedBundleDataMaps, paths []string) (_ []string, err error) {
-	pathMap := map[string]struct{}{}
-	for _, path := range paths {
-		pathMap[path] = struct{}{}
-	}
-
-	resultIDs := map[precise.ID]struct{}{}
-	for _, resultChunk := range bundle.ResultChunks {
-		for resultID, documentIDRangeIDs := range resultChunk.DocumentIDRangeIDs {
-			for _, documentIDRangeID := range documentIDRangeIDs {
-				// Skip results that do not point into one of the given documents
-				if _, ok := pathMap[resultChunk.DocumentPaths[documentIDRangeID.DocumentID]]; !ok {
-					continue
-				}
-
-				resultIDs[resultID] = struct{}{}
-			}
-		}
-	}
-
-	var pathsReferencing []string
-	for path, document := range bundle.Documents {
-		for _, r := range document.Ranges {
-			if _, ok := resultIDs[r.DefinitionResultID]; ok {
-				pathsReferencing = append(pathsReferencing, path)
-				break
-			}
-		}
-	}
-
-	return pathsReferencing, nil
 }

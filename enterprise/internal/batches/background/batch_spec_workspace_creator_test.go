@@ -6,6 +6,7 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
+
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/service"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
@@ -71,7 +72,7 @@ func TestBatchSpecWorkspaceCreatorProcess(t *testing.T) {
 	}
 
 	creator := &batchSpecWorkspaceCreator{store: s}
-	if err := creator.process(context.Background(), s, resolver, job); err != nil {
+	if err := creator.process(context.Background(), s, resolver.DummyBuilder, job); err != nil {
 		t.Fatalf("proces failed: %s", err)
 	}
 
@@ -129,6 +130,11 @@ type dummyWorkspaceResolver struct {
 	unsupported map[*types.Repo]struct{}
 	ignored     map[*types.Repo]struct{}
 	err         error
+}
+
+// DummyBuilder is a simple implementation of the service.WorkspaceResolverBuilder
+func (d *dummyWorkspaceResolver) DummyBuilder(s *store.Store) service.WorkspaceResolver {
+	return d
 }
 
 func (d *dummyWorkspaceResolver) ResolveWorkspacesForBatchSpec(context.Context, *batcheslib.BatchSpec, service.ResolveWorkspacesForBatchSpecOpts) ([]*service.RepoWorkspace, map[*types.Repo]struct{}, map[*types.Repo]struct{}, error) {

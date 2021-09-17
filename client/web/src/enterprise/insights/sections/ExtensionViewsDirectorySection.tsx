@@ -84,7 +84,7 @@ export const ExtensionViewsDirectorySection: React.FunctionComponent<ExtensionVi
 
     const allViewIds = useMemo(() => [...extensionViews, ...insights].map(view => view.id), [extensionViews, insights])
 
-    if (!showCodeInsights) {
+    if (!showCodeInsights || !directoryPageContext) {
         return null
     }
 
@@ -96,19 +96,17 @@ export const ExtensionViewsDirectorySection: React.FunctionComponent<ExtensionVi
             ))}
 
             {/* Render all code insights with proper directory page context */}
-            {directoryPageContext
-                ? insights.map(insight => (
-                      <SmartInsight
-                          key={insight.id}
-                          insight={insight}
-                          telemetryService={props.telemetryService}
-                          platformContext={props.platformContext}
-                          settingsCascade={settingsCascade}
-                          where="directory"
-                          context={directoryPageContext}
-                      />
-                  ))
-                : []}
+            {insights.map(insight => (
+                <SmartInsight
+                    key={insight.id}
+                    insight={insight}
+                    telemetryService={props.telemetryService}
+                    platformContext={props.platformContext}
+                    settingsCascade={settingsCascade}
+                    where="directory"
+                    context={directoryPageContext}
+                />
+            ))}
         </ViewGrid>
     )
 }

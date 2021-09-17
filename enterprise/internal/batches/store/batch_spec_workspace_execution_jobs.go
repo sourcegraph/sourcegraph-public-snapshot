@@ -36,6 +36,7 @@ var BatchSpecWorkspaceExecutionJobColums = SQLColumns{
 	"batch_spec_workspace_execution_jobs.num_failures",
 	"batch_spec_workspace_execution_jobs.execution_logs",
 	"batch_spec_workspace_execution_jobs.worker_hostname",
+	"batch_spec_workspace_execution_jobs.cancel",
 
 	"batch_spec_workspace_execution_jobs.created_at",
 	"batch_spec_workspace_execution_jobs.updated_at",
@@ -143,6 +144,7 @@ func getBatchSpecWorkspaceExecutionJobQuery(opts *GetBatchSpecWorkspaceExecution
 // ListBatchSpecWorkspaceExecutionJobsOpts captures the query options needed for
 // listing batch spec workspace execution jobs.
 type ListBatchSpecWorkspaceExecutionJobsOpts struct {
+	Cancel         *bool
 	State          btypes.BatchSpecWorkspaceExecutionJobState
 	WorkerHostname string
 }
@@ -185,6 +187,10 @@ func listBatchSpecWorkspaceExecutionJobsQuery(opts ListBatchSpecWorkspaceExecuti
 		preds = append(preds, sqlf.Sprintf("batch_spec_workspace_execution_jobs.worker_hostname = %s", opts.WorkerHostname))
 	}
 
+	if opts.Cancel != nil {
+		preds = append(preds, sqlf.Sprintf("batch_spec_workspace_execution_jobs.cancel = %s", *opts.Cancel))
+	}
+
 	if len(preds) == 0 {
 		preds = append(preds, sqlf.Sprintf("TRUE"))
 	}
@@ -193,6 +199,72 @@ func listBatchSpecWorkspaceExecutionJobsQuery(opts ListBatchSpecWorkspaceExecuti
 		listBatchSpecWorkspaceExecutionJobsQueryFmtstr,
 		sqlf.Join(BatchSpecWorkspaceExecutionJobColums.ToSqlf(), ", "),
 		sqlf.Join(preds, "\n AND "),
+	)
+}
+
+// CancelBatchSpecWorkspaceExecutionJob lists batch changes with the given filters.
+func (s *Store) CancelBatchSpecWorkspaceExecutionJob(ctx context.Context, id int64) (job *btypes.BatchSpecWorkspaceExecutionJob, err error) {
+	ctx, endObservation := s.operations.cancelBatchSpecWorkspaceExecutionJob.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.Int("ID", int(id)),
+	}})
+	defer endObservation(1, observation.Args{})
+
+	q := s.cancelBatchSpecWorkspaceExecutionJobQuery(id)
+	var c btypes.BatchSpecWorkspaceExecutionJob
+	err = s.query(ctx, q, func(sc scanner) (err error) {
+		return scanBatchSpecWorkspaceExecutionJob(&c, sc)
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	if c.ID == 0 {
+		return nil, ErrNoResults
+	}
+
+	return &c, nil
+}
+
+var cancelBatchSpecWorkspaceExecutionJobQueryFmtstr = `
+-- source: enterprise/internal/batches/store/batch_spec_workspace_execution_jobs.go:CancelBatchSpecWorkspaceExecutionJob
+WITH candidate AS (
+	SELECT
+		id
+	FROM
+		batch_spec_workspace_execution_jobs
+	WHERE
+		id = %s
+		AND
+		-- It must be queued or processing, we cannot cancel jobs that have already completed.
+		state IN (%s, %s)
+	FOR UPDATE
+)
+UPDATE
+	batch_spec_workspace_execution_jobs
+SET
+	cancel = TRUE,
+	-- If the execution is still queued, we directly abort, otherwise we keep the
+	-- state, so the worker can to teardown and, at some point, mark it failed itself.
+	state = CASE WHEN batch_spec_workspace_execution_jobs.state = %s THEN batch_spec_workspace_execution_jobs.state ELSE %s END,
+	finished_at = CASE WHEN batch_spec_workspace_execution_jobs.state = %s THEN batch_spec_workspace_execution_jobs.finished_at ELSE %s END,
+	updated_at = %s
+WHERE
+	id IN (SELECT id FROM candidate)
+RETURNING %s
+`
+
+func (s *Store) cancelBatchSpecWorkspaceExecutionJobQuery(id int64) *sqlf.Query {
+	return sqlf.Sprintf(
+		cancelBatchSpecWorkspaceExecutionJobQueryFmtstr,
+		id,
+		btypes.BatchSpecWorkspaceExecutionJobStateQueued,
+		btypes.BatchSpecWorkspaceExecutionJobStateProcessing,
+		btypes.BatchSpecWorkspaceExecutionJobStateProcessing,
+		btypes.BatchSpecWorkspaceExecutionJobStateFailed,
+		btypes.BatchSpecWorkspaceExecutionJobStateProcessing,
+		s.now(),
+		s.now(),
+		sqlf.Join(BatchSpecWorkspaceExecutionJobColums.ToSqlf(), ", "),
 	)
 }
 
@@ -212,6 +284,7 @@ func scanBatchSpecWorkspaceExecutionJob(wj *btypes.BatchSpecWorkspaceExecutionJo
 		&wj.NumFailures,
 		pq.Array(&executionLogs),
 		&wj.WorkerHostname,
+		&wj.Cancel,
 		&wj.CreatedAt,
 		&wj.UpdatedAt,
 	); err != nil {

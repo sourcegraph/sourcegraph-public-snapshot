@@ -17,7 +17,6 @@ type operations struct {
 	deleteConfigurationPolicyByID          *observation.Operation
 	deleteIndexByID                        *observation.Operation
 	deleteIndexesWithoutRepository         *observation.Operation
-	deleteOldIndexes                       *observation.Operation
 	deleteOverlappingDumps                 *observation.Operation
 	deleteUploadByID                       *observation.Operation
 	deleteUploadsStuckUploading            *observation.Operation
@@ -45,6 +44,7 @@ type operations struct {
 	hasRepository                          *observation.Operation
 	indexQueueSize                         *observation.Operation
 	insertCloneableDependencyRepo          *observation.Operation
+	insertDependencySyncingJob             *observation.Operation
 	insertDependencyIndexingJob            *observation.Operation
 	insertIndex                            *observation.Operation
 	insertUpload                           *observation.Operation
@@ -61,11 +61,10 @@ type operations struct {
 	referencesForUpload                    *observation.Operation
 	refreshCommitResolvability             *observation.Operation
 	repoName                               *observation.Operation
-	repositoryIDsForRetentionScan          *observation.Operation
 	requeue                                *observation.Operation
 	requeueIndex                           *observation.Operation
+	selectRepositoriesForRetentionScan     *observation.Operation
 	softDeleteExpiredUploads               *observation.Operation
-	softDeleteOldUploads                   *observation.Operation
 	staleSourcedCommits                    *observation.Operation
 	updateCommitedAt                       *observation.Operation
 	updateConfigurationPolicy              *observation.Operation
@@ -110,7 +109,6 @@ func newOperations(observationContext *observation.Context, metrics *metrics.Ope
 		deleteConfigurationPolicyByID:          op("DeleteConfigurationPolicyByID"),
 		deleteIndexByID:                        op("DeleteIndexByID"),
 		deleteIndexesWithoutRepository:         op("DeleteIndexesWithoutRepository"),
-		deleteOldIndexes:                       op("DeleteOldIndexes"),
 		deleteOverlappingDumps:                 op("DeleteOverlappingDumps"),
 		deleteUploadByID:                       op("DeleteUploadByID"),
 		deleteUploadsStuckUploading:            op("DeleteUploadsStuckUploading"),
@@ -138,6 +136,7 @@ func newOperations(observationContext *observation.Context, metrics *metrics.Ope
 		hasRepository:                          op("HasRepository"),
 		indexQueueSize:                         op("IndexQueueSize"),
 		insertCloneableDependencyRepo:          op("InsertCloneableDependencyRepo"),
+		insertDependencySyncingJob:             op("InsertDependencySyncingJob"),
 		insertDependencyIndexingJob:            op("InsertDependencyIndexingJob"),
 		insertIndex:                            op("InsertIndex"),
 		insertUpload:                           op("InsertUpload"),
@@ -154,11 +153,10 @@ func newOperations(observationContext *observation.Context, metrics *metrics.Ope
 		referencesForUpload:                    op("ReferencesForUpload"),
 		refreshCommitResolvability:             op("RefreshCommitResolvability"),
 		repoName:                               op("RepoName"),
-		repositoryIDsForRetentionScan:          op("RepositoryIDsForRetentionScan"),
 		requeue:                                op("Requeue"),
 		requeueIndex:                           op("RequeueIndex"),
+		selectRepositoriesForRetentionScan:     op("SelectRepositoriesForRetentionScan"),
 		softDeleteExpiredUploads:               op("SoftDeleteExpiredUploads"),
-		softDeleteOldUploads:                   op("SoftDeleteOldUploads"),
 		staleSourcedCommits:                    op("StaleSourcedCommits"),
 		updateCommitedAt:                       op("UpdateCommitedAt"),
 		updateConfigurationPolicy:              op("UpdateConfigurationPolicy"),

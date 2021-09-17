@@ -36,7 +36,8 @@ func WorkspaceExecutionQueueOptions(db dbutil.DB, config *Config, observationCon
 
 	store := background.NewBatchSpecWorkspaceExecutionWorkerStore(basestore.NewHandleWithDB(db, sql.TxOptions{}), observationContext)
 	return handler.QueueOptions{
-		Store:             store,
-		RecordTransformer: recordTransformer,
+		Store:                  store,
+		RecordTransformer:      recordTransformer,
+		CanceledRecordsFetcher: store.FetchCanceled,
 	}
 }

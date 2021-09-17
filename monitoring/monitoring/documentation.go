@@ -166,7 +166,7 @@ func (d *documentation) renderAlertSolutionEntry(c *Container, o Observable) err
 
 func (d *documentation) renderDashboardPanelEntry(c *Container, g Group, o Observable, panelID uint) error {
 	fprintObservableHeader(&d.dashboards, c, &o, 4)
-	fprintSubtitle(&d.dashboards, fmt.Sprintf("%s\n\n", upperFirst(o.Description)))
+	fprintSubtitle(&d.dashboards, upperFirst(o.Description))
 
 	// render interpretation reference if available
 	if o.Interpretation != "" && o.Interpretation != "none" {

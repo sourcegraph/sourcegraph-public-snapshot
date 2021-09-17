@@ -51,6 +51,7 @@ type BatchSpecWorkspaceExecutionJob struct {
 	LastHeartbeatAt time.Time
 	ExecutionLogs   []workerutil.ExecutionLogEntry
 	WorkerHostname  string
+	Cancel          bool
 
 	CreatedAt time.Time
 	UpdatedAt time.Time

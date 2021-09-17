@@ -3,7 +3,8 @@
 	RecordTime: &time.Time{
 		ext: 63713433600,
 	},
-	Cost:     500,
-	Priority: 1000,
-	State:    "queued",
+	Cost:        500,
+	Priority:    1000,
+	PersistMode: "record",
+	State:       "queued",
 }

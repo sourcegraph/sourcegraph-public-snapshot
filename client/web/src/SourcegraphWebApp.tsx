@@ -1,6 +1,6 @@
 import 'focus-visible'
 
-import { ApolloClient, ApolloProvider, NormalizedCacheObject } from '@apollo/client'
+import { ApolloProvider } from '@apollo/client'
 import { ShortcutProvider } from '@slimsag/react-shortcuts'
 import { createBrowserHistory } from 'history'
 import ServerIcon from 'mdi-react/ServerIcon'
@@ -20,6 +20,7 @@ import {
     createController as createExtensionsController,
 } from '@sourcegraph/shared/src/extensions/controller'
 import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
+import { GraphQLClient } from '@sourcegraph/shared/src/graphql/graphql'
 import { getModeFromPath } from '@sourcegraph/shared/src/languages'
 import { Notifications } from '@sourcegraph/shared/src/notifications/Notifications'
 import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
@@ -79,7 +80,6 @@ import {
     getUserSearchContextNamespaces,
     fetchSearchContextBySpec,
 } from './search/backend'
-import { QueryState } from './search/helpers'
 import { SearchResultsCacheProvider } from './search/results/SearchResultsCacheProvider'
 import { TemporarySettingsProvider } from './settings/temporary/TemporarySettingsProvider'
 import { listUserRepositories } from './site-admin/backend'
@@ -135,14 +135,9 @@ interface SourcegraphWebAppState extends SettingsCascadeProps {
     authenticatedUser?: AuthenticatedUser | null
 
     /** GraphQL client initialized asynchronously to restore persisted cache. */
-    graphqlClient?: ApolloClient<NormalizedCacheObject>
+    graphqlClient?: GraphQLClient
 
     viewerSubject: LayoutProps['viewerSubject']
-
-    /**
-     * The current search query in the navbar.
-     */
-    navbarSearchQueryState: QueryState
 
     /**
      * The current parsed search query, with all UI-configurable parameters
@@ -286,7 +281,6 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
             : undefined
 
         this.state = {
-            navbarSearchQueryState: { query: '' },
             settingsCascade: EMPTY_SETTINGS_CASCADE,
             viewerSubject: SITE_SUBJECT_NO_ADMIN,
             parsedSearchQuery: parsedSearchURL.query || '',
@@ -495,8 +489,6 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
                                                         this.state.settingsCascade
                                                     )}
                                                     // Search query
-                                                    navbarSearchQueryState={this.state.navbarSearchQueryState}
-                                                    onNavbarQueryChange={this.onNavbarQueryChange}
                                                     fetchHighlightedFileLineRanges={fetchHighlightedFileLineRanges}
                                                     parsedSearchQuery={this.state.parsedSearchQuery}
                                                     setParsedSearchQuery={this.setParsedSearchQuery}
@@ -570,10 +562,6 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
                 </ErrorBoundary>
             </ApolloProvider>
         )
-    }
-
-    private onNavbarQueryChange = (navbarSearchQueryState: QueryState): void => {
-        this.setState({ navbarSearchQueryState })
     }
 
     private setParsedSearchQuery = (query: string): void => {

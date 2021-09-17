@@ -61,8 +61,6 @@ const defaultProps = (
     defaultSearchContextSpec: '',
     showOnboardingTour: false,
     isLightTheme: props.isLightTheme,
-    navbarSearchQueryState: { query: '' },
-    onNavbarQueryChange: () => {},
     isExtensionAlertAnimating: false,
     batchChangesEnabled: true,
     batchChangesExecutionEnabled: true,

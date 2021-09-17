@@ -398,6 +398,14 @@ func GitMaxCodehostRequestsPerSecond() int {
 	return *val
 }
 
+func GitMaxConcurrentClones() int {
+	v := Get().GitMaxConcurrentClones
+	if v <= 0 {
+		return 5
+	}
+	return v
+}
+
 func UserReposMaxPerUser() int {
 	v := Get().UserReposMaxPerUser
 	if v == 0 {

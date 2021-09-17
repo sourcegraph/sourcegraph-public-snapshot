@@ -1,6 +1,6 @@
 import CloseIcon from 'mdi-react/CloseIcon'
 import TickIcon from 'mdi-react/TickIcon'
-import React, { useCallback, useEffect, useState } from 'react'
+import React, { useCallback, useEffect, useRef, useState } from 'react'
 import TextAreaAutosize from 'react-textarea-autosize'
 import { ButtonDropdown, DropdownMenu, DropdownToggle } from 'reactstrap'
 
@@ -8,7 +8,7 @@ import { Form } from '@sourcegraph/branded/src/components/Form'
 import { Link } from '@sourcegraph/shared/src/components/Link'
 import { gql, useMutation } from '@sourcegraph/shared/src/graphql/graphql'
 import { useLocalStorage } from '@sourcegraph/shared/src/util/useLocalStorage'
-import { Button, LoadingSpinner } from '@sourcegraph/wildcard'
+import { Button, LoadingSpinner, useAutoFocus } from '@sourcegraph/wildcard'
 
 import { ErrorAlert } from '../../components/alerts'
 import { SubmitHappinessFeedbackResult, SubmitHappinessFeedbackVariables } from '../../graphql-operations'
@@ -66,6 +66,7 @@ export const FeedbackPromptContent: React.FunctionComponent<ContentProps> = ({
 }) => {
     const [rating, setRating] = useLocalStorage<number | undefined>(LOCAL_STORAGE_KEY_RATING, undefined)
     const [text, setText] = useLocalStorage<string>(LOCAL_STORAGE_KEY_TEXT, '')
+    const textAreaReference = useRef<HTMLTextAreaElement>(null)
     const handleRateChange = useCallback((value: number) => setRating(value), [setRating])
     const handleTextChange = useCallback(
         (event: React.ChangeEvent<HTMLTextAreaElement>) => setText(event.target.value),
@@ -102,6 +103,8 @@ export const FeedbackPromptContent: React.FunctionComponent<ContentProps> = ({
         }
     }, [data?.submitHappinessFeedback])
 
+    useAutoFocus({ autoFocus: true, reference: textAreaReference })
+
     return (
         <>
             <Button className="feedback-prompt__close" onClick={closePrompt}>
@@ -137,6 +140,7 @@ export const FeedbackPromptContent: React.FunctionComponent<ContentProps> = ({
                         placeholder="What’s going well? What could be better?"
                         className="form-control feedback-prompt__textarea"
                         autoFocus={true}
+                        ref={textAreaReference}
                     />
 
                     <IconRadioButtons

@@ -1557,8 +1557,8 @@ func (r *Resolver) ResolveWorkspacesForBatchSpec(ctx context.Context, args *grap
 		return nil, err
 	}
 
-	svc := service.New(r.store)
-	workspaces, unsupported, ignored, err := svc.ResolveWorkspacesForBatchSpec(ctx, spec, service.ResolveWorkspacesForBatchSpecOpts{
+	workspaceResolver := service.NewWorkspaceResolver(r.store)
+	workspaces, unsupported, ignored, err := workspaceResolver.ResolveWorkspacesForBatchSpec(ctx, spec, service.ResolveWorkspacesForBatchSpecOpts{
 		AllowIgnored:     args.AllowIgnored,
 		AllowUnsupported: args.AllowUnsupported,
 	})
