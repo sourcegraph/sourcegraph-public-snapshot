@@ -99,7 +99,6 @@ func NewMigrate(db *sql.DB, database *Database) (*migrate.Migrate, error) {
 func DoMigrate(m *migrate.Migrate) (err error) {
 	err = m.Up()
 	if err == nil || err == migrate.ErrNoChange {
-		fmt.Printf("A\n")
 		return nil
 	}
 
