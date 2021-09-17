@@ -221,7 +221,7 @@ func shortGitCommandSlow(args []string) time.Duration {
 // This is a timeout for long git commands like clone or remote update.
 // that may take a while for large repos. These types of commands should
 // be run in the background.
-var longGitCommandTimeout = time.Hour
+var longGitCommandTimeout = conf.GitLongCommandTimeout()
 
 // Handler returns the http.Handler that should be used to serve requests.
 func (s *Server) Handler() http.Handler {
@@ -265,6 +265,9 @@ func (s *Server) Handler() http.Handler {
 	}
 	conf.Watch(func() {
 		setRPSLimiter()
+	})
+	conf.Watch(func() {
+		longGitCommandTimeout = conf.GitLongCommandTimeout()
 	})
 
 	mux := http.NewServeMux()

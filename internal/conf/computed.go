@@ -6,6 +6,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf/confdefaults"
@@ -385,6 +386,19 @@ func ExternalServiceUserMode() ExternalServiceMode {
 	default:
 		return ExternalServiceModeDisabled
 	}
+}
+
+const defaultGitLongCommandTimeout = time.Hour
+
+// GitLongCommandTimeout returns the maximum amount of time in seconds that a
+// long Git command (e.g. clone or remote update) is allowed to execute. If not
+// set, it returns the default value.
+func GitLongCommandTimeout() time.Duration {
+	val := Get().GitLongCommandTimeout
+	if val < 1 {
+		return defaultGitLongCommandTimeout
+	}
+	return time.Duration(val) * time.Second
 }
 
 // GitMaxCodehostRequestsPerSecond returns maximum number of remote code host
