@@ -95,7 +95,9 @@ const PageAnnotation: React.FunctionComponent = () => {
 
     return (
         <div className="d-flex align-items-center">
-            <Badge status="beta" className="text-uppercase" />
+            <a href="https://docs.sourcegraph.com/code_insights#code-insights-beta" target="_blank" rel="noopener">
+                <Badge status="beta" className="text-uppercase" />
+            </a>
 
             <Button ref={buttonReference} variant="link" size="sm">
                 Share feedback
