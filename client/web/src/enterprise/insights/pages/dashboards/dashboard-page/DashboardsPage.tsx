@@ -102,9 +102,9 @@ const PageAnnotation: React.FunctionComponent = () => {
             </Button>
 
             <Popover
+                isOpen={isVisible}
                 target={buttonReference}
                 position={flipRightPosition}
-                open={isVisible}
                 onVisibilityChange={setVisibility}
                 className={styles.feedbackPrompt}
             >

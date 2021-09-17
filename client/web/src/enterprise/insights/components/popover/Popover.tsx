@@ -6,32 +6,32 @@ import FocusLock from 'react-focus-lock'
 import { useKeyboard } from './hooks/use-keyboard'
 import { useOnClickOutside } from './hooks/use-outside-click'
 
-interface PopoverProps {
+interface PopoverProps extends React.HTMLAttributes<HTMLDivElement> {
     target: React.RefObject<HTMLElement>
     position?: Position
-    open?: boolean
+    isOpen?: boolean
     onVisibilityChange?: (open: boolean) => void
     className?: string
 }
 
 export const Popover: React.FunctionComponent<PopoverProps> = props => {
-    const { target, position = positionDefault, children, open, onVisibilityChange, className } = props
+    const { isOpen, target, position = positionDefault, children, className, onVisibilityChange, ...otherProps } = props
 
-    const isControlled = useRef(open !== undefined)
+    const isControlledReference = useRef(isOpen !== undefined)
     const popoverReference = useRef<HTMLDivElement>(null)
 
     // Local popover visibility state is used if popover component is used
     // in stateful controlled mode.
-    const [isOpen, setOpenState] = useState(false)
-    const isPopoverVisible = isControlled.current ? open : isOpen
+    const [isOpenInternal, setOpenInternalState] = useState(false)
+    const isPopoverVisible = isControlledReference.current ? isOpen : isOpenInternal
 
     const setPopoverVisibility = useCallback(
         (state: boolean): void => {
-            if (isControlled.current) {
+            if (isControlledReference.current) {
                 return onVisibilityChange?.(state)
             }
 
-            setOpenState(state)
+            setOpenInternalState(state)
         },
         [onVisibilityChange]
     )
@@ -85,10 +85,11 @@ export const Popover: React.FunctionComponent<PopoverProps> = props => {
         <ReachPopover
             ref={popoverReference}
             targetRef={target}
-            hidden={true}
+            // hidden={true}
             position={position}
             className={classnames('d-block dropdown-menu', className)}
             role="dialog"
+            {...otherProps}
         >
             <FocusLock returnFocus={true}>{children}</FocusLock>
         </ReachPopover>
