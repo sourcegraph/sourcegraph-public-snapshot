@@ -27,4 +27,6 @@ CREATE TRIGGER trig_soft_delete_orphan_repo_by_external_service_repo
     AFTER DELETE ON external_service_repos
     FOR EACH STATEMENT EXECUTE PROCEDURE soft_delete_orphan_repo_by_external_service_repos();
 
+-- Clear the dirty flag in case the operator timed out and isn't around to clear it.
+UPDATE schema_migrations SET dirty = 'f'
 COMMIT;

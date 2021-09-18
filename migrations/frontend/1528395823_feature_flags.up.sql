@@ -61,4 +61,6 @@ CREATE INDEX feature_flag_overrides_user_id
 	ON feature_flag_overrides (namespace_user_id)
 	WHERE namespace_user_id IS NOT NULL;
 
+-- Clear the dirty flag in case the operator timed out and isn't around to clear it.
+UPDATE schema_migrations SET dirty = 'f'
 COMMIT;

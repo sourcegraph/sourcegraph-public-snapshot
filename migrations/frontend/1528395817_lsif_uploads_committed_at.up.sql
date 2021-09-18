@@ -7,4 +7,6 @@ INSERT INTO out_of_band_migrations (id, team, component, description, introduced
 VALUES (8, 'code-intelligence', 'frontend-db.lsif_uploads', 'Backfill committed_at', '3.28.0', true)
 ON CONFLICT DO NOTHING;
 
+-- Clear the dirty flag in case the operator timed out and isn't around to clear it.
+UPDATE schema_migrations SET dirty = 'f'
 COMMIT;

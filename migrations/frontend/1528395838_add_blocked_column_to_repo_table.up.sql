@@ -13,4 +13,6 @@ $$ LANGUAGE SQL STRICT IMMUTABLE;
 CREATE INDEX repo_blocked_idx ON repo USING BTREE ((blocked IS NOT NULL));
 CREATE INDEX repo_is_not_blocked_idx ON repo USING BTREE ((blocked IS NULL));
 
+-- Clear the dirty flag in case the operator timed out and isn't around to clear it.
+UPDATE schema_migrations SET dirty = 'f'
 COMMIT;

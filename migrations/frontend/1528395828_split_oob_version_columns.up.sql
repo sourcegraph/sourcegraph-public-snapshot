@@ -34,4 +34,6 @@ COMMENT ON COLUMN out_of_band_migrations.introduced_version_minor IS 'The Source
 COMMENT ON COLUMN out_of_band_migrations.deprecated_version_major IS 'The lowest Sourcegraph version (major component) that assumes the migration has completed.';
 COMMENT ON COLUMN out_of_band_migrations.deprecated_version_minor IS 'The lowest Sourcegraph version (minor component) that assumes the migration has completed.';
 
+-- Clear the dirty flag in case the operator timed out and isn't around to clear it.
+UPDATE schema_migrations SET dirty = 'f'
 COMMIT;

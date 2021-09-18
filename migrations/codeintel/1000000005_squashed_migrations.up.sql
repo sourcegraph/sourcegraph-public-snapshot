@@ -98,4 +98,6 @@ ALTER TABLE ONLY lsif_data_references
 ALTER TABLE ONLY lsif_data_result_chunks
     ADD CONSTRAINT lsif_data_result_chunks_pkey PRIMARY KEY (dump_id, idx);
 
+-- Clear the dirty flag in case the operator timed out and isn't around to clear it.
+UPDATE codeintel_schema_migrations SET dirty = 'f'
 COMMIT;

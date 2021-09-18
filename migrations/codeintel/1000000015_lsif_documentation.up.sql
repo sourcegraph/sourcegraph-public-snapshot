@@ -13,4 +13,6 @@ COMMENT ON COLUMN lsif_data_documentation_pages.dump_id IS 'The identifier of th
 COMMENT ON COLUMN lsif_data_documentation_pages.path_id IS 'The documentation page path ID, see see GraphQL codeintel.schema:documentationPage for what this is.';
 COMMENT ON COLUMN lsif_data_documentation_pages.data IS 'A gob-encoded payload conforming to a `type DocumentationPageData struct` pointer (lib/codeintel/semantic/types.go)';
 
+-- Clear the dirty flag in case the operator timed out and isn't around to clear it.
+UPDATE codeintel_schema_migrations SET dirty = 'f'
 COMMIT;

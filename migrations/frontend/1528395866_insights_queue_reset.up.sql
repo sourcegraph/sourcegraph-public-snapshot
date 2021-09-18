@@ -16,4 +16,6 @@ BEGIN;
 -- Note: This data is by design ephemeral, so there is no risk of permanent data loss here.
 
 TRUNCATE insights_query_runner_jobs CASCADE;
+-- Clear the dirty flag in case the operator timed out and isn't around to clear it.
+UPDATE schema_migrations SET dirty = 'f'
 COMMIT;

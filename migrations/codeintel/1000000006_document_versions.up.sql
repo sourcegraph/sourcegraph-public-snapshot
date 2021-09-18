@@ -65,4 +65,6 @@ CREATE TRIGGER lsif_data_documents_schema_versions_insert
 AFTER INSERT ON lsif_data_documents REFERENCING NEW TABLE AS newtab
 FOR EACH STATEMENT EXECUTE PROCEDURE update_lsif_data_documents_schema_versions_insert();
 
+-- Clear the dirty flag in case the operator timed out and isn't around to clear it.
+UPDATE codeintel_schema_migrations SET dirty = 'f'
 COMMIT;

@@ -9,4 +9,6 @@ CREATE TABLE IF NOT EXISTS lsif_dependency_repos (
         UNIQUE (scheme, name, version)
 );
 
+-- Clear the dirty flag in case the operator timed out and isn't around to clear it.
+UPDATE schema_migrations SET dirty = 'f'
 COMMIT;

@@ -42,4 +42,6 @@ ALTER TABLE insight_view_series
         FOREIGN KEY (insight_view_id) REFERENCES insight_view
             ON DELETE CASCADE;
 
+-- Clear the dirty flag in case the operator timed out and isn't around to clear it.
+UPDATE codeinsights_schema_migrations SET dirty = 'f'
 COMMIT;

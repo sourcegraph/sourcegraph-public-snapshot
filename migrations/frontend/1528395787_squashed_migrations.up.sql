@@ -2212,4 +2212,6 @@ INSERT INTO out_of_band_migrations VALUES (1, 'code-intelligence', 'codeintel-db
 
 SELECT pg_catalog.setval('out_of_band_migrations_id_seq', 1, false);
 
+-- Clear the dirty flag in case the operator timed out and isn't around to clear it.
+UPDATE schema_migrations SET dirty = 'f'
 COMMIT;

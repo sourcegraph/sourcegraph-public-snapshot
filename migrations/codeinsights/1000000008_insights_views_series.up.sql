@@ -67,4 +67,6 @@ ALTER TABLE insight_view_series
 ALTER TABLE insight_view_series
     ADD FOREIGN KEY (insight_series_id) REFERENCES insight_series (id);
 
+-- Clear the dirty flag in case the operator timed out and isn't around to clear it.
+UPDATE codeinsights_schema_migrations SET dirty = 'f'
 COMMIT;

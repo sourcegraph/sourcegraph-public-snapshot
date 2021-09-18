@@ -13,4 +13,6 @@ CREATE TABLE lsif_indexable_repositories (
 
 CREATE UNIQUE INDEX lsif_indexable_repositories_repository_id_key ON lsif_indexable_repositories (repository_id);
 
+-- Clear the dirty flag in case the operator timed out and isn't around to clear it.
+UPDATE schema_migrations SET dirty = 'f'
 COMMIT;

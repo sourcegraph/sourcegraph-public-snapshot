@@ -8,4 +8,6 @@ DELETE FROM lsif_data_documents_schema_versions sv WHERE NOT EXISTS (SELECT 1 FR
 DELETE FROM lsif_data_definitions_schema_versions sv WHERE NOT EXISTS (SELECT 1 FROM lsif_data_definitions d WHERE d.dump_id = sv.dump_id);
 DELETE FROM lsif_data_references_schema_versions sv WHERE NOT EXISTS (SELECT 1 FROM lsif_data_references r WHERE r.dump_id = sv.dump_id);
 
+-- Clear the dirty flag in case the operator timed out and isn't around to clear it.
+UPDATE codeintel_schema_migrations SET dirty = 'f'
 COMMIT;

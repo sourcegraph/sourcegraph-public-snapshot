@@ -187,7 +187,7 @@ func RunAdd(database db.Database, migrationName string) (up, down string, _ erro
 		return "", "", err
 	}
 
-	if err := writeMigrationFiles(upPath, downPath); err != nil {
+	if err := writeMigrationFiles(database.MigrationsTable, upPath, downPath); err != nil {
 		return "", "", err
 	}
 
@@ -270,11 +270,13 @@ const migrationFileTemplate = `BEGIN;
 --  * Historically we advised against transactions since we thought the
 --    migrate library handled it. However, it does not! /facepalm
 
+-- Clear the dirty flag in case the operator timed out and isn't around to clear it.
+UPDATE $MIGRATIONS_TABLE SET dirty = 'f';
 COMMIT;
 `
 
 // writeMigrationFiles writes the contents of migrationFileTemplate to the given filepaths.
-func writeMigrationFiles(paths ...string) (err error) {
+func writeMigrationFiles(migrationsTable string, paths ...string) (err error) {
 	defer func() {
 		if err != nil {
 			for _, path := range paths {
@@ -285,7 +287,8 @@ func writeMigrationFiles(paths ...string) (err error) {
 	}()
 
 	for _, path := range paths {
-		if err := os.WriteFile(path, []byte(migrationFileTemplate), os.FileMode(0644)); err != nil {
+		contents := strings.Replace(migrationFileTemplate, "$MIGRATIONS_TABLE", migrationsTable, 1)
+		if err := os.WriteFile(path, []byte(contents), os.FileMode(0644)); err != nil {
 			return err
 		}
 	}

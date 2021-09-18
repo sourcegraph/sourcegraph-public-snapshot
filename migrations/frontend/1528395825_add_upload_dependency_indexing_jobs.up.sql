@@ -17,4 +17,6 @@ CREATE TABLE lsif_dependency_indexing_jobs (
 COMMENT ON TABLE lsif_dependency_indexing_jobs IS 'Tracks jobs that scan imports of indexes to schedule auto-index jobs.';
 COMMENT ON COLUMN lsif_dependency_indexing_jobs.upload_id IS 'The identifier of the triggering upload record.';
 
+-- Clear the dirty flag in case the operator timed out and isn't around to clear it.
+UPDATE schema_migrations SET dirty = 'f'
 COMMIT;

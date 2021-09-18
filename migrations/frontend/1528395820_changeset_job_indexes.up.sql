@@ -6,4 +6,6 @@ CREATE INDEX IF NOT EXISTS changeset_jobs_state_idx ON changeset_jobs USING BTRE
 -- primary key, because the bulk_group entity doesn't really exist.
 CREATE INDEX IF NOT EXISTS changeset_jobs_bulk_group_idx ON changeset_jobs USING BTREE(bulk_group);
 
+-- Clear the dirty flag in case the operator timed out and isn't around to clear it.
+UPDATE schema_migrations SET dirty = 'f'
 COMMIT;

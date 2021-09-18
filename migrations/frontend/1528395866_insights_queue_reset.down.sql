@@ -8,4 +8,6 @@ BEGIN;
 --  * Historically we advised against transactions since we thought the
 --    migrate library handled it. However, it does not! /facepalm
 
+-- Clear the dirty flag in case the operator timed out and isn't around to clear it.
+UPDATE schema_migrations SET dirty = 'f'
 COMMIT;

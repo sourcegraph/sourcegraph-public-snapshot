@@ -12,4 +12,6 @@ BEGIN;
 -- needed in general when making this change, but is useful in this specific situation.
 DELETE FROM series_points;
 
+-- Clear the dirty flag in case the operator timed out and isn't around to clear it.
+UPDATE codeinsights_schema_migrations SET dirty = 'f'
 COMMIT;

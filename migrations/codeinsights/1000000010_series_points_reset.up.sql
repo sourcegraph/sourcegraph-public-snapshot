@@ -28,4 +28,6 @@ TRUNCATE commit_index_metadata;
 
 -- Update all of the underlying insights that may have been synced to reset metadata and rebuild their data.
 update insight_series set created_at = current_timestamp, backfill_queued_at = null, next_recording_after = date_trunc('month', current_date) + interval '1 month';
+-- Clear the dirty flag in case the operator timed out and isn't around to clear it.
+UPDATE codeinsights_schema_migrations SET dirty = 'f'
 COMMIT;

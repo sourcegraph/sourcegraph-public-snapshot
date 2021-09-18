@@ -12,4 +12,6 @@ ALTER TABLE insight_series ADD COLUMN backfill_queued_at TIMESTAMP;
 COMMENT ON COLUMN insight_series.series_id IS
     'Timestamp that this series completed a full repository iteration for backfill. This flag has limited semantic value, and only means it tried to queue up queries for each repository. It does not guarantee success on those queries.';
 
+-- Clear the dirty flag in case the operator timed out and isn't around to clear it.
+UPDATE codeinsights_schema_migrations SET dirty = 'f'
 COMMIT;

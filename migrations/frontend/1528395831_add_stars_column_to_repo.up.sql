@@ -9,4 +9,6 @@ AND metadata ? 'StargazerCount';
 
 CREATE INDEX IF NOT EXISTS repo_stars_idx ON repo USING BTREE (stars DESC NULLS LAST);
 
+-- Clear the dirty flag in case the operator timed out and isn't around to clear it.
+UPDATE schema_migrations SET dirty = 'f'
 COMMIT;

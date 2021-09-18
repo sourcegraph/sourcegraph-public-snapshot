@@ -79,4 +79,6 @@ CREATE VIEW lsif_dumps_with_repository_name AS
     JOIN repo r ON r.id = u.repository_id
     WHERE r.deleted_at IS NULL;
 
+-- Clear the dirty flag in case the operator timed out and isn't around to clear it.
+UPDATE schema_migrations SET dirty = 'f'
 COMMIT;

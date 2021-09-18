@@ -15,4 +15,6 @@ UPDATE lsif_uploads_visible_at_tip SET is_default_branch = true;
 -- boots up.
 UPDATE lsif_dirty_repositories SET dirty_token = dirty_token + 1;
 
+-- Clear the dirty flag in case the operator timed out and isn't around to clear it.
+UPDATE schema_migrations SET dirty = 'f'
 COMMIT;

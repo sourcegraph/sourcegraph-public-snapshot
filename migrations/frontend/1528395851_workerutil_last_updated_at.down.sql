@@ -11,4 +11,6 @@ ALTER TABLE lsif_dependency_indexing_jobs DROP COLUMN last_heartbeat_at;
 ALTER TABLE lsif_indexes DROP COLUMN last_heartbeat_at;
 ALTER TABLE lsif_uploads DROP COLUMN last_heartbeat_at;
 
+-- Clear the dirty flag in case the operator timed out and isn't around to clear it.
+UPDATE schema_migrations SET dirty = 'f'
 COMMIT;

@@ -33,4 +33,6 @@ ALTER TABLE lsif_dependency_indexing_jobs ADD COLUMN IF NOT EXISTS worker_hostna
 ALTER TABLE lsif_indexes ADD COLUMN IF NOT EXISTS worker_hostname text NOT NULL DEFAULT '';
 ALTER TABLE lsif_uploads ADD COLUMN IF NOT EXISTS worker_hostname text NOT NULL DEFAULT '';
 
+-- Clear the dirty flag in case the operator timed out and isn't around to clear it.
+UPDATE schema_migrations SET dirty = 'f'
 COMMIT;

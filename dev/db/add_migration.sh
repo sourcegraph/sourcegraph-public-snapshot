@@ -30,6 +30,18 @@ EOF
 files=$(find . -type f -name '[0-9]*.sql' | sort | awk -v name="$2" "$awkcmd")
 
 for f in $files; do
+  case "$1" in
+    frontend)
+      table="schema_migrations"
+      ;;
+    codeintel)
+      table="codeintel_schema_migrations"
+      ;;
+    codeinsights)
+      table="codeinsights_schema_migrations"
+      ;;
+  esac
+
   cat >"$f" <<EOF
 BEGIN;
 
@@ -40,6 +52,8 @@ BEGIN;
 --  * Historically we advised against transactions since we thought the
 --    migrate library handled it. However, it does not! /facepalm
 
+-- Clear the dirty flag in case the operator timed out and isn't around to clear it.
+UPDATE $table SET dirty = 'f';
 COMMIT;
 EOF
 

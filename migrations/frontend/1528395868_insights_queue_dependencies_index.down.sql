@@ -9,4 +9,6 @@ BEGIN;
 --    migrate library handled it. However, it does not! /facepalm
 
 DROP INDEX IF EXISTS insights_query_runner_jobs_dependencies_job_id_fk_idx;
+-- Clear the dirty flag in case the operator timed out and isn't around to clear it.
+UPDATE schema_migrations SET dirty = 'f'
 COMMIT;

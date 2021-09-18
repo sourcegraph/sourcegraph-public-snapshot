@@ -11,4 +11,6 @@ ALTER TABLE lsif_dependency_indexing_jobs ADD COLUMN last_heartbeat_at timestamp
 ALTER TABLE lsif_indexes ADD COLUMN last_heartbeat_at timestamp with time zone;
 ALTER TABLE lsif_uploads ADD COLUMN last_heartbeat_at timestamp with time zone;
 
+-- Clear the dirty flag in case the operator timed out and isn't around to clear it.
+UPDATE schema_migrations SET dirty = 'f'
 COMMIT;

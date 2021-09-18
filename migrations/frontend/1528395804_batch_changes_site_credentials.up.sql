@@ -11,4 +11,6 @@ CREATE TABLE IF NOT EXISTS batch_changes_site_credentials (
 
 CREATE UNIQUE INDEX batch_changes_site_credentials_unique ON batch_changes_site_credentials(external_service_type, external_service_id);
 
+-- Clear the dirty flag in case the operator timed out and isn't around to clear it.
+UPDATE schema_migrations SET dirty = 'f'
 COMMIT;

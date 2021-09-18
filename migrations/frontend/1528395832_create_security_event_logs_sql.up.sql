@@ -33,4 +33,6 @@ COMMENT ON COLUMN security_event_logs.source            IS 'The site section (WE
 COMMENT ON COLUMN security_event_logs.argument          IS 'An arbitrary JSON blob containing event data.';
 COMMENT ON COLUMN security_event_logs.version           IS 'The version of Sourcegraph which generated the event.';
 
+-- Clear the dirty flag in case the operator timed out and isn't around to clear it.
+UPDATE schema_migrations SET dirty = 'f'
 COMMIT;

@@ -15,4 +15,6 @@ COMMENT ON COLUMN lsif_data_documentation_mappings.dump_id IS 'The identifier of
 COMMENT ON COLUMN lsif_data_documentation_mappings.path_id IS 'The documentation page path ID, see see GraphQL codeintel.schema:documentationPage for what this is.';
 COMMENT ON COLUMN lsif_data_documentation_mappings.result_id IS 'The documentationResult vertex ID.';
 
+-- Clear the dirty flag in case the operator timed out and isn't around to clear it.
+UPDATE codeintel_schema_migrations SET dirty = 'f'
 COMMIT;

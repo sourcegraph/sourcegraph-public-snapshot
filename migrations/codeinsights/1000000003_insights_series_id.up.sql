@@ -7,4 +7,6 @@ ALTER TABLE series_points ALTER COLUMN series_id SET NOT NULL;
 -- Give series_id a btree index since we'll be filtering on it very frequently.
 CREATE INDEX series_points_series_id_btree ON series_points USING btree (series_id);
 
+-- Clear the dirty flag in case the operator timed out and isn't around to clear it.
+UPDATE codeinsights_schema_migrations SET dirty = 'f'
 COMMIT;

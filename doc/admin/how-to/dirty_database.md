@@ -29,8 +29,8 @@ ERROR: Failed to migrate the DB. Please contact support@sourcegraph.com for furt
   * The `dirty` column indicates whether a migration is in-process, and
   * The `version` column indicates the version of the migration the database is on or converting to.
   * On startup, frontend will abort if the `dirty` column is set to true. (The table has only one row.)
-* If frontend fails at startup with a complaint about a dirty migration, a migration was started but not recorded as completing.
-  * It’s possible that one or more commands from the migration ran successfully.
+* If frontend fails at startup with a complaint about a dirty migration, a migration failed to complete.
+  * Each migration is wrapped in a transaction, so either all the changes that a migration makes are committed or none are.
 * Do not mark the migration table as clean if you have not verified that the migration was successfully completed.
 * To check the state of the migration table:
   * `SELECT * FROM schema_migrations;`

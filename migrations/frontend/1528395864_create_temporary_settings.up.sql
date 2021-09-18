@@ -14,4 +14,6 @@ COMMENT ON TABLE temporary_settings IS 'Stores per-user temporary settings used 
 COMMENT ON COLUMN temporary_settings.user_id IS 'The ID of the user the settings will be saved for.';
 COMMENT ON COLUMN temporary_settings.contents IS 'JSON-encoded temporary settings.';
 
+-- Clear the dirty flag in case the operator timed out and isn't around to clear it.
+UPDATE schema_migrations SET dirty = 'f'
 COMMIT;

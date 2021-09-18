@@ -127,4 +127,6 @@ ALTER TABLE changeset_specs RENAME CONSTRAINT "changeset_specs_campaign_spec_id_
 ALTER TABLE changesets RENAME CONSTRAINT "changesets_owned_by_campaign_id_fkey" TO "changesets_owned_by_batch_spec_id_fkey";
 ALTER TABLE changesets RENAME CONSTRAINT "changesets_campaign_ids_check" TO "changesets_batch_change_ids_check";
 
+-- Clear the dirty flag in case the operator timed out and isn't around to clear it.
+UPDATE schema_migrations SET dirty = 'f'
 COMMIT;

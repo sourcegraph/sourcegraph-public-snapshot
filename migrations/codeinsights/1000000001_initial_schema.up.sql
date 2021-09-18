@@ -106,4 +106,6 @@ CREATE INDEX series_points_repo_id_btree ON series_points USING btree (repo_id);
 CREATE INDEX series_points_repo_name_id_btree ON series_points USING btree (repo_name_id);
 CREATE INDEX series_points_original_repo_name_id_btree ON series_points USING btree (original_repo_name_id);
 
+-- Clear the dirty flag in case the operator timed out and isn't around to clear it.
+UPDATE codeinsights_schema_migrations SET dirty = 'f'
 COMMIT;
