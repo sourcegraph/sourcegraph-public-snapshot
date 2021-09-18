@@ -219,11 +219,7 @@ const PreviewWorkspaces: React.FunctionComponent<PreviewWorkspacesProps> = ({ ex
                             className="btn align-self-start p-0 m-0 mr-3"
                             data-tooltip="Omit this repository from batch spec file"
                             type="button"
-                            // TODO: Is displayName the one that would match whatever
-                            // branch is specified in the batch spec file?
-                            // TODO: Are there weird exceptions that we can't reliably
-                            // figure out how to exclude and should just disable this
-                            // button for in the short term?
+                            // TODO: Alert that for monorepos, we will exclude all paths
                             onClick={() => excludeRepo(item.repository.name, item.branch.displayName)}
                         >
                             <CloseIcon className="icon-inline" />

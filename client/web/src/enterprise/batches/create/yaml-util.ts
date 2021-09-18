@@ -1,4 +1,4 @@
-import { find, filter } from 'lodash'
+import { escapeRegExp, find, filter } from 'lodash'
 import { load, Kind as YAMLKind, YamlMap as YAMLMap, YAMLNode, YAMLSequence, YAMLScalar } from 'yaml-ast-parser'
 
 const isYAMLMap = (node: YAMLNode): node is YAMLMap => node.kind === YAMLKind.MAP
@@ -69,10 +69,12 @@ const appendExcludeRepoToQuery = (spec: string, ast: YAMLMap, repo: string): YAM
     }
 
     // Insert "-repo:" qualifier at the end of the query string
-    // TODO: Does this always work if it's at the end of the search query string?
+    // TODO: In the future this can be integrated into the batch spec under its own
+    // "excludes" keyword instead
     return {
         success: true,
-        spec: spec.slice(0, queryValue.endPosition) + ` -repo:${repo}` + spec.slice(queryValue.endPosition),
+        spec:
+            spec.slice(0, queryValue.endPosition) + ` -repo:${escapeRegExp(repo)}` + spec.slice(queryValue.endPosition),
     }
 }
 
