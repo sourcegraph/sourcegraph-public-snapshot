@@ -5,11 +5,6 @@ import { dataOrThrowErrors, gql } from '@sourcegraph/shared/src/graphql/graphql'
 
 import { requestGraphQL } from '../../../backend/graphql'
 import {
-    CodeIntelligenceConfigurationPolicyFields,
-    CodeIntelligenceConfigurationPolicyResult,
-    CodeIntelligenceConfigurationPolicyVariables,
-    CreateCodeIntelligenceConfigurationPolicyResult,
-    CreateCodeIntelligenceConfigurationPolicyVariables,
     RepositoryBranchesFields,
     RepositoryNameFields,
     RepositoryNameResult,
@@ -19,8 +14,6 @@ import {
     SearchGitBranchesVariables,
     SearchGitTagsResult,
     SearchGitTagsVariables,
-    UpdateCodeIntelligenceConfigurationPolicyResult,
-    UpdateCodeIntelligenceConfigurationPolicyVariables,
 } from '../../../graphql-operations'
 
 export const codeIntelligenceConfigurationPolicyFieldsFragment = gql`
@@ -39,118 +32,6 @@ export const codeIntelligenceConfigurationPolicyFieldsFragment = gql`
         indexIntermediateCommits
     }
 `
-
-export function getPolicyById(id: string): Observable<CodeIntelligenceConfigurationPolicyFields | undefined> {
-    const query = gql`
-        query CodeIntelligenceConfigurationPolicy($id: ID!) {
-            node(id: $id) {
-                ...CodeIntelligenceConfigurationPolicyFields
-            }
-        }
-
-        ${codeIntelligenceConfigurationPolicyFieldsFragment}
-    `
-
-    return requestGraphQL<CodeIntelligenceConfigurationPolicyResult, CodeIntelligenceConfigurationPolicyVariables>(
-        query,
-        { id }
-    ).pipe(
-        map(dataOrThrowErrors),
-        map(({ node }) => {
-            if (!node) {
-                throw new Error('No such CodeIntelligenceConfigurationPolicy')
-            }
-            return node
-        })
-    )
-}
-
-export function updatePolicy(
-    policy: CodeIntelligenceConfigurationPolicyFields,
-    repositoryId?: string
-): Observable<void> {
-    if (policy.id) {
-        const query = gql`
-            mutation UpdateCodeIntelligenceConfigurationPolicy(
-                $id: ID!
-                $name: String!
-                $type: GitObjectType!
-                $pattern: String!
-                $retentionEnabled: Boolean!
-                $retentionDurationHours: Int
-                $retainIntermediateCommits: Boolean!
-                $indexingEnabled: Boolean!
-                $indexCommitMaxAgeHours: Int
-                $indexIntermediateCommits: Boolean!
-            ) {
-                updateCodeIntelligenceConfigurationPolicy(
-                    id: $id
-                    name: $name
-                    type: $type
-                    pattern: $pattern
-                    retentionEnabled: $retentionEnabled
-                    retentionDurationHours: $retentionDurationHours
-                    retainIntermediateCommits: $retainIntermediateCommits
-                    indexingEnabled: $indexingEnabled
-                    indexCommitMaxAgeHours: $indexCommitMaxAgeHours
-                    indexIntermediateCommits: $indexIntermediateCommits
-                ) {
-                    alwaysNil
-                }
-            }
-        `
-
-        return requestGraphQL<
-            UpdateCodeIntelligenceConfigurationPolicyResult,
-            UpdateCodeIntelligenceConfigurationPolicyVariables
-        >(query, { ...policy }).pipe(
-            map(dataOrThrowErrors),
-            map(() => {
-                // no-op
-            })
-        )
-    }
-
-    const query = gql`
-        mutation CreateCodeIntelligenceConfigurationPolicy(
-            $repositoryId: ID
-            $name: String!
-            $type: GitObjectType!
-            $pattern: String!
-            $retentionEnabled: Boolean!
-            $retentionDurationHours: Int
-            $retainIntermediateCommits: Boolean!
-            $indexingEnabled: Boolean!
-            $indexCommitMaxAgeHours: Int
-            $indexIntermediateCommits: Boolean!
-        ) {
-            createCodeIntelligenceConfigurationPolicy(
-                repository: $repositoryId
-                name: $name
-                type: $type
-                pattern: $pattern
-                retentionEnabled: $retentionEnabled
-                retentionDurationHours: $retentionDurationHours
-                retainIntermediateCommits: $retainIntermediateCommits
-                indexingEnabled: $indexingEnabled
-                indexCommitMaxAgeHours: $indexCommitMaxAgeHours
-                indexIntermediateCommits: $indexIntermediateCommits
-            ) {
-                id
-            }
-        }
-    `
-
-    return requestGraphQL<
-        CreateCodeIntelligenceConfigurationPolicyResult,
-        CreateCodeIntelligenceConfigurationPolicyVariables
-    >(query, { ...policy, repositoryId: repositoryId ?? null }).pipe(
-        map(dataOrThrowErrors),
-        map(() => {
-            // no-op
-        })
-    )
-}
 
 export function searchGitTags(id: string, term: string): Observable<RepositoryTagsFields | null> {
     const query = gql`

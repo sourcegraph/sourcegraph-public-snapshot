@@ -13,7 +13,7 @@ import (
 )
 
 func init() {
-	indexSchedulerEnabled = func() bool { return true }
+	autoIndexingEnabled = func() bool { return true }
 }
 
 func TestIndexSchedulerUpdate(t *testing.T) {

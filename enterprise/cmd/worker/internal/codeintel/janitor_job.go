@@ -43,7 +43,7 @@ func (j *janitorJob) Routines(ctx context.Context) ([]goroutine.BackgroundRoutin
 		return nil, err
 	}
 
-	dependencyIndexStore, err := InitDependencyIndexStore()
+	dependencyIndexingStore, err := InitDependencySyncingStore()
 	if err != nil {
 		return nil, err
 	}
@@ -72,7 +72,7 @@ func (j *janitorJob) Routines(ctx context.Context) ([]goroutine.BackgroundRoutin
 		// Resetters
 		janitor.NewUploadResetter(uploadWorkerStore, janitorConfigInst.CleanupTaskInterval, metrics, observationContext),
 		janitor.NewIndexResetter(indexWorkerStore, janitorConfigInst.CleanupTaskInterval, metrics, observationContext),
-		janitor.NewDependencyIndexResetter(dependencyIndexStore, janitorConfigInst.CleanupTaskInterval, metrics, observationContext),
+		janitor.NewDependencyIndexResetter(dependencyIndexingStore, janitorConfigInst.CleanupTaskInterval, metrics, observationContext),
 	}
 
 	return routines, nil
