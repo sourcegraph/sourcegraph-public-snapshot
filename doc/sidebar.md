@@ -39,6 +39,7 @@ Keep it as a single list with at most 2 levels. (Anything else may not render co
   - [Explanations](cli/explanations/index.md)
   - [How-to guides](cli/how-tos/index.md)
   - [References](cli/references/index.md)
+- [Cloud](cloud/index.md)
 - [Adopting](adopt/index.md)
 - [Administration](admin/index.md)
   - [Install](admin/install/index.md)
