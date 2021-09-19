@@ -64,13 +64,16 @@ func addWebApp(pipeline *bk.Pipeline) {
 		bk.Cmd("dev/ci/codecov.sh -c -F typescript -F unit"))
 }
 
+// Don't download browser, we use "download-puppeteer-browser" script instead
+var percyBrowserExecutableEnv = bk.Env("PERCY_BROWSER_EXECUTABLE", "node_modules/puppeteer/.local-chromium/linux-885174/chrome-linux/chrome")
+
 // Builds and tests the browser extension.
 func addBrowserExt(pipeline *bk.Pipeline) {
 	// Browser extension integration tests
 	for _, browser := range []string{"chrome"} {
 		pipeline.AddStep(
 			fmt.Sprintf(":%s: Puppeteer tests for %s extension", browser, browser),
-			bk.Env("PUPPETEER_SKIP_CHROMIUM_DOWNLOAD", "true"), // Don't download browser, we use "download-puppeteer-browser" script instead
+			percyBrowserExecutableEnv,
 			bk.Env("EXTENSION_PERMISSIONS_ALL_URLS", "true"),
 			bk.Env("BROWSER", browser),
 			bk.Env("LOG_BROWSER_CONSOLE", "true"),
@@ -92,33 +95,72 @@ func addBrowserExt(pipeline *bk.Pipeline) {
 		bk.Cmd("dev/ci/codecov.sh -c -F typescript -F unit"))
 }
 
+func addClientIntegrationTests(pipeline *bk.Pipeline) {
+	CHUNK_SIZE := 3
+	PREP_STEP_KEY := "puppeteer:prep"
+	SKIP_GIT_CLONE_STEP := bk.Plugin("uber-workflow/run-without-clone", "")
+
+	// Build web application used for integration tests to share it between multiple parallel steps.
+	pipeline.AddStep(":puppeteer::electric_plug: Puppeteer tests prep",
+		bk.Key(PREP_STEP_KEY),
+		bk.Env("ENTERPRISE", "1"),
+		bk.Cmd("COVERAGE_INSTRUMENT=true dev/ci/yarn-build.sh client/web"),
+		bk.Cmd("dev/ci/create-client-artifact.sh"))
+
+	// Chunk web integration tests to save time via parallel execution.
+	chunkedTestFiles := getChunkedWebIntegrationFileNames(CHUNK_SIZE)
+	// Percy finalize step should be executed after all integration tests.
+	puppeteerFinalizeDependencies := make([]bk.StepOpt, len(chunkedTestFiles))
+
+	// Add pipeline step for each chunk of web integrations files.
+	for i, chunkTestFiles := range chunkedTestFiles {
+		stepLabel := fmt.Sprintf(":puppeteer::electric_plug: Puppeteer tests chunk #%s", fmt.Sprint(i+1))
+
+		stepKey := fmt.Sprintf("puppeteer:chunk:%s", fmt.Sprint(i+1))
+		puppeteerFinalizeDependencies[i] = bk.DependsOn(stepKey)
+
+		pipeline.AddStep(stepLabel,
+			SKIP_GIT_CLONE_STEP,
+			bk.Key(stepKey),
+			bk.DependsOn(PREP_STEP_KEY),
+			percyBrowserExecutableEnv,
+			bk.Env("PERCY_ON", "true"),
+			bk.Cmd(fmt.Sprintf(`dev/ci/yarn-web-integration.sh "%s"`, chunkTestFiles)),
+			bk.ArtifactPaths("./puppeteer/*.png"))
+	}
+
+	finalizeSteps := []bk.StepOpt{
+		SKIP_GIT_CLONE_STEP,
+		bk.Cmd("npx @percy/cli build:finalize"),
+	}
+
+	pipeline.AddStep(":puppeteer::electric_plug: Puppeteer tests finalize",
+		append(finalizeSteps, puppeteerFinalizeDependencies...)...)
+}
+
+func addChromaticTests(c Config, pipeline *bk.Pipeline) {
+	// Upload storybook to Chromatic
+	chromaticCommand := "yarn chromatic --exit-zero-on-changes --exit-once-uploaded"
+
+	if c.isMainBranch() {
+		chromaticCommand += " --auto-accept-changes"
+	}
+
+	pipeline.AddStep(":chromatic: Upload Storybook to Chromatic",
+		bk.AutomaticRetry(5),
+		bk.Cmd("yarn --mutex network --frozen-lockfile --network-timeout 60000"),
+		bk.Cmd("yarn gulp generate"),
+		bk.Env("MINIFY", "1"),
+		bk.Cmd(chromaticCommand))
+
+}
+
 // Adds the shared frontend tests (shared between the web app and browser extension).
 func addSharedTests(c Config) func(pipeline *bk.Pipeline) {
 	return func(pipeline *bk.Pipeline) {
 		if c.isMainDryRun || c.isClientAffected() {
-			// Client integration tests
-			pipeline.AddStep(":puppeteer::electric_plug: Puppeteer tests",
-				bk.Env("PUPPETEER_SKIP_CHROMIUM_DOWNLOAD", "true"), // Don't download browser, we use "download-puppeteer-browser" script instead
-				bk.Env("ENTERPRISE", "1"),
-				bk.Env("PERCY_ON", "true"),
-				bk.Cmd("COVERAGE_INSTRUMENT=true dev/ci/yarn-build.sh client/web"),
-				bk.Cmd("echo \"--- Install puppeteer\" && yarn --cwd client/shared run download-puppeteer-browser"),
-				bk.Cmd("echo \"--- Run integration test suite\" && yarn percy exec -- yarn run cover-integration"),
-				bk.Cmd("echo \"--- Process NYC report\" && yarn nyc report -r json"),
-				bk.Cmd("echo \"--- Upload coverage report\" && dev/ci/codecov.sh -c -F typescript -F integration"),
-				bk.ArtifactPaths("./puppeteer/*.png"))
-
-			// Upload storybook to Chromatic
-			chromaticCommand := "yarn chromatic --exit-zero-on-changes --exit-once-uploaded"
-			if c.isMainBranch() {
-				chromaticCommand += " --auto-accept-changes"
-			}
-			pipeline.AddStep(":chromatic: Upload storybook to Chromatic",
-				bk.AutomaticRetry(5),
-				bk.Cmd("yarn --mutex network --frozen-lockfile --network-timeout 60000"),
-				bk.Cmd("yarn gulp generate"),
-				bk.Env("MINIFY", "1"),
-				bk.Cmd(chromaticCommand))
+			addClientIntegrationTests(pipeline)
+			addChromaticTests(c, pipeline)
 		}
 
 		// Shared tests
@@ -186,7 +228,7 @@ func addBrowserExtensionE2ESteps(pipeline *bk.Pipeline) {
 	for _, browser := range []string{"chrome"} {
 		// Run e2e tests
 		pipeline.AddStep(fmt.Sprintf(":%s: E2E for %s extension", browser, browser),
-			bk.Env("PUPPETEER_SKIP_CHROMIUM_DOWNLOAD", "true"), // Don't download browser, we use "download-puppeteer-browser" script instead
+			percyBrowserExecutableEnv,
 			bk.Env("EXTENSION_PERMISSIONS_ALL_URLS", "true"),
 			bk.Env("BROWSER", browser),
 			bk.Env("LOG_BROWSER_CONSOLE", "true"),
