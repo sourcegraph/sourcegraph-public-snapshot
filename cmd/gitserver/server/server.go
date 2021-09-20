@@ -1096,6 +1096,10 @@ func createCommitMatch(lc *search.LazyCommit, hc *protocol.HighlightedCommit, in
 			}
 			diff.Content = string(formattedDiff)
 		}
+
+		content, highlights := search.FormattedDiff(diff.Content).Collapsed(diff.Highlights)
+		diff.Content = string(content)
+		diff.Highlights = highlights
 	}
 
 	return &protocol.CommitMatch{

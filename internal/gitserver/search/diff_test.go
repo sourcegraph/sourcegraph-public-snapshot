@@ -37,6 +37,8 @@ p q
 `
 
 	var results []deltaResult
+	type Range = protocol.Range
+	type Location = protocol.Location
 
 	FormattedDiff([]byte(diff)).ForEachDelta(func(d Delta) bool {
 		dr := deltaResult{Delta: d}
@@ -57,52 +59,52 @@ p q
 
 	expected := []deltaResult{{
 		Delta: Delta{
-			location: protocol.Location{},
-			oldFile:  "a",
-			newFile:  "b",
-			hunks:    "@@ c\n d\n-ef\n+gh\n ij\n@@ k\n-lm\n+no\n",
+			Range:   Range{Location{}, Location{Line: 9, Offset: 37}},
+			oldFile: "a",
+			newFile: "b",
+			hunks:   "@@ c\n d\n-ef\n+gh\n ij\n@@ k\n-lm\n+no\n",
 		},
 		Hunks: []hunkResult{{
 			Hunk: Hunk{
-				location: protocol.Location{Line: 1, Offset: 4},
-				header:   "@@ c",
-				lines:    " d\n-ef\n+gh\n ij\n",
+				Range:  Range{Location{Line: 1, Offset: 4}, Location{Line: 6, Offset: 24}},
+				header: "@@ c",
+				lines:  " d\n-ef\n+gh\n ij\n",
 			},
 			Lines: []Line{
-				{fullLine: " d\n", location: protocol.Location{Line: 2, Offset: 9}},
-				{fullLine: "-ef\n", location: protocol.Location{Line: 3, Offset: 12}},
-				{fullLine: "+gh\n", location: protocol.Location{Line: 4, Offset: 16}},
-				{fullLine: " ij\n", location: protocol.Location{Line: 5, Offset: 20}},
+				{fullLine: " d\n", Range: Range{Location{Line: 2, Offset: 9}, Location{Line: 3, Offset: 12}}},
+				{fullLine: "-ef\n", Range: Range{Location{Line: 3, Offset: 12}, Location{Line: 4, Offset: 16}}},
+				{fullLine: "+gh\n", Range: Range{Location{Line: 4, Offset: 16}, Location{Line: 5, Offset: 20}}},
+				{fullLine: " ij\n", Range: Range{Location{Line: 5, Offset: 20}, Location{Line: 6, Offset: 24}}},
 			},
 		}, {
 			Hunk: Hunk{
-				location: protocol.Location{Line: 6, Offset: 24},
-				header:   "@@ k",
-				lines:    "-lm\n+no\n",
+				Range:  Range{Location{Line: 6, Offset: 24}, Location{Line: 9, Offset: 37}},
+				header: "@@ k",
+				lines:  "-lm\n+no\n",
 			},
 			Lines: []Line{
-				{fullLine: "-lm\n", location: protocol.Location{Line: 7, Offset: 29}},
-				{fullLine: "+no\n", location: protocol.Location{Line: 8, Offset: 33}},
+				{fullLine: "-lm\n", Range: Range{Location{Line: 7, Offset: 29}, Location{Line: 8, Offset: 33}}},
+				{fullLine: "+no\n", Range: Range{Location{Line: 8, Offset: 33}, Location{Line: 9, Offset: 37}}},
 			},
 		}},
 	}, {
 		Delta: Delta{
-			location: protocol.Location{Line: 9, Offset: 37},
-			oldFile:  "p",
-			newFile:  "q",
-			hunks:    "@@ rs\n t\n-u\n+v\n+w\n",
+			Range:   Range{Location{Line: 9, Offset: 37}, Location{Line: 15, Offset: 59}},
+			oldFile: "p",
+			newFile: "q",
+			hunks:   "@@ rs\n t\n-u\n+v\n+w\n",
 		},
 		Hunks: []hunkResult{{
 			Hunk: Hunk{
-				location: protocol.Location{Line: 10, Offset: 41},
-				header:   "@@ rs",
-				lines:    " t\n-u\n+v\n+w\n",
+				Range:  Range{Location{Line: 10, Offset: 41}, Location{Line: 15, Offset: 59}},
+				header: "@@ rs",
+				lines:  " t\n-u\n+v\n+w\n",
 			},
 			Lines: []Line{
-				{fullLine: " t\n", location: protocol.Location{Line: 11, Offset: 47}},
-				{fullLine: "-u\n", location: protocol.Location{Line: 12, Offset: 50}},
-				{fullLine: "+v\n", location: protocol.Location{Line: 13, Offset: 53}},
-				{fullLine: "+w\n", location: protocol.Location{Line: 14, Offset: 56}},
+				{fullLine: " t\n", Range: Range{Location{Line: 11, Offset: 47}, Location{Line: 12, Offset: 50}}},
+				{fullLine: "-u\n", Range: Range{Location{Line: 12, Offset: 50}, Location{Line: 13, Offset: 53}}},
+				{fullLine: "+v\n", Range: Range{Location{Line: 13, Offset: 53}, Location{Line: 14, Offset: 56}}},
+				{fullLine: "+w\n", Range: Range{Location{Line: 14, Offset: 56}, Location{Line: 15, Offset: 59}}},
 			},
 		}},
 	}}

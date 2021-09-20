@@ -87,23 +87,84 @@ func FormatDiff(rawDiff []byte) FormattedDiff {
 // Collapsed takes a set of highlighted ranges, and collapses the diff to only
 // highlighted lines, respecting diff syntax
 func (d FormattedDiff) Collapsed(ranges protocol.Ranges) (FormattedDiff, protocol.Ranges) {
-	// var buf strings.Builder
+	var buf strings.Builder
 	sort.Sort(ranges)
 
-	// newRanges := make(protocol.Ranges, 0, len(ranges))
-	// d.ForEachDelta(func(delta Delta) bool {
-	// 	if !delta.Contains(ranges[0]) {
-	// 		ranges = ranges.Shift(delta.End.Sub(delta.Start))
-	// 		return true
-	// 	}
-	// 	delta.ForEachHunk(func(hunk Hunk) bool {
-	// 		if !hunk.Contains(ranges[0]) {
+	newRanges := make(protocol.Ranges, 0, len(ranges))
+	d.ForEachDelta(func(delta Delta) bool {
+		if !delta.Contains(ranges[0]) {
+			// Skip the delta and adjust the remaining ranges
+			ranges = ranges.Sub(delta.End.Sub(delta.Start))
+			return true
+		}
 
-	// 		}
-	// 	})
-	// })
+		// TODO file line method?
+		buf.WriteString(delta.oldFile)
+		buf.WriteString(fileSeparator)
+		buf.WriteString(delta.newFile)
+		buf.WriteByte('\n')
 
-	return "", nil
+		for len(ranges) > 0 {
+			if ranges[0].Start.Line != delta.Start.Line {
+				break
+			}
+			newRanges = append(newRanges, ranges[0])
+			ranges = ranges[1:]
+		}
+
+		delta.ForEachHunk(func(hunk Hunk) bool {
+			if !hunk.Contains(ranges[0]) {
+				// Skip the hunk and adjust the remaining ranges
+				ranges = ranges.Sub(hunk.End.Sub(hunk.Start))
+				return true
+			}
+
+			buf.WriteString(hunk.header)
+			buf.WriteByte('\n')
+
+			for len(ranges) > 0 {
+				if ranges[0].Start.Line != hunk.Start.Line {
+					break
+				}
+				newRanges = append(newRanges, ranges[0])
+				ranges = ranges[1:]
+			}
+
+			includeLines := make(map[int]struct{})
+			for _, r := range ranges {
+				if !hunk.Contains(r) {
+					break
+				}
+				includeLines[r.Start.Line-1] = struct{}{}
+				includeLines[r.Start.Line] = struct{}{}
+				includeLines[r.Start.Line+1] = struct{}{}
+			}
+
+			hunk.ForEachLine(func(line Line) bool {
+				if _, ok := includeLines[line.Start.Line]; ok {
+					buf.WriteString(line.fullLine)
+				} else {
+					ranges = ranges.Sub(line.End.Sub(line.Start))
+				}
+
+				for len(ranges) > 0 {
+					if ranges[0].Start.Line != line.Start.Line {
+						break
+					}
+					newRanges = append(newRanges, ranges[0])
+					ranges = ranges[1:]
+				}
+
+				return len(ranges) > 0
+			})
+
+			return len(ranges) > 0
+		})
+
+		return len(ranges) > 0
+	})
+
+	return FormattedDiff(buf.String()), newRanges
 }
 
 // ForEachDelta iterates over the file deltas in a diff in a zero-copy manner
