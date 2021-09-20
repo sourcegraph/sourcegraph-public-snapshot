@@ -176,7 +176,7 @@ The following projects have example Travis CI configurations to generate and upl
    lsif-tsc **/*.js --allowJs --checkJs
    ```
 
-> **_NOTE:_**  This is also applicable if you are using a mono-repo that contains different projects. For example, project A has `<repo root>/proja/tsconfig.json`  and project B has  `<repo root>/projb/package.json` you run the above commands from the root of the project.
+> **_NOTE:_**  This is also applicable if you are using a mono-repo that contains different projects. For example, project A has `<repo root>/proja/`  and project B has  `<repo root>/projb/` You just need to run the right `lsif-tsc` command and `src lsif upload` in both `./proja` and `./projb` directories depending on the project type.
 
    Check out the tool's documentation if you're having trouble getting `lsif-tsc` to work. It accepts any options `tsc` does, so it shouldn't be too hard to get it running on your project.
 
