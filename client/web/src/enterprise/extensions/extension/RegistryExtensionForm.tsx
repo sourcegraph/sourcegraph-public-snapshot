@@ -5,12 +5,8 @@ import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
 import { ErrorLike, isErrorLike } from '@sourcegraph/shared/src/util/errors'
 
 import { ErrorAlert } from '../../../components/alerts'
-import {
-    EXTENSION_NAME_MAX_LENGTH,
-    EXTENSION_NAME_VALID_PATTERN,
-    publisherName,
-    RegistryPublisher,
-} from '../../../extensions/extension/extension'
+
+import { EXTENSION_NAME_MAX_LENGTH, EXTENSION_NAME_VALID_PATTERN, publisherName, RegistryPublisher } from './extension'
 
 export const RegistryPublisherFormGroup: React.FunctionComponent<{
     className?: string

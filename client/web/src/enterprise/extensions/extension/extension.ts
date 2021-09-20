@@ -9,8 +9,8 @@ import {
 import { Settings } from '@sourcegraph/shared/src/settings/settings'
 import { ErrorLike, isErrorLike } from '@sourcegraph/shared/src/util/errors'
 
-import { quoteIfNeeded } from '../../search'
-import { ExtensionCategoryOrAll } from '../ExtensionRegistry'
+import { quoteIfNeeded } from '../../../search'
+import { ExtensionCategoryOrAll } from '../registry/ExtensionRegistry'
 
 /** Pattern for valid extension names. */
 export const EXTENSION_NAME_VALID_PATTERN = '^[a-zA-Z0-9](?:[a-zA-Z0-9]|[_.-](?=[a-zA-Z0-9]))*$'

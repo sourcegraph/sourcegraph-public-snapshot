@@ -9,9 +9,9 @@ import { createRecord } from '@sourcegraph/shared/src/util/createRecord'
 import { ErrorLike, isErrorLike } from '@sourcegraph/shared/src/util/errors'
 import { isDefined } from '@sourcegraph/shared/src/util/types'
 
-import { RegistryExtensionFieldsForList } from '../graphql-operations'
+import { RegistryExtensionFieldsForList } from '../../../graphql-operations'
+import { validCategories } from '../extension/extension'
 
-import { validCategories } from './extension/extension'
 import { ConfiguredExtensionCache, ExtensionsEnablement } from './ExtensionRegistry'
 
 export type MinimalConfiguredRegistryExtension = Pick<

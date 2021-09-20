@@ -1,9 +1,25 @@
 import { ExtensionAreaRoute } from '../../../extensions/extension/ExtensionArea'
-import { extensionAreaRoutes } from '../../../extensions/extension/routes'
 import { lazyComponent } from '../../../util/lazyComponent'
 
 export const enterpriseExtensionAreaRoutes: readonly ExtensionAreaRoute[] = [
-    ...extensionAreaRoutes,
+    {
+        path: '',
+        exact: true,
+        render: lazyComponent(() => import('./RegistryExtensionOverviewPage'), 'RegistryExtensionOverviewPage'),
+    },
+    {
+        path: '/-/manifest',
+        exact: true,
+        render: lazyComponent(() => import('./RegistryExtensionManifestPage'), 'RegistryExtensionManifestPage'),
+    },
+    {
+        path: '/-/contributions',
+        exact: true,
+        render: lazyComponent(
+            () => import('./RegistryExtensionContributionsPage'),
+            'RegistryExtensionContributionsPage'
+        ),
+    },
     {
         path: '/-/manage',
         exact: true,

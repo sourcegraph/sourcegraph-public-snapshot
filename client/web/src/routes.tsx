@@ -19,7 +19,7 @@ const StreamingSearchResults = lazyComponent(
     'StreamingSearchResults'
 )
 const SiteAdminArea = lazyComponent(() => import('./site-admin/SiteAdminArea'), 'SiteAdminArea')
-const ExtensionsArea = lazyComponent(() => import('./extensions/ExtensionsArea'), 'ExtensionsArea')
+const ExtensionsArea = lazyComponent(() => import('./extensions/registry/ExtensionsArea'), 'ExtensionsArea')
 const SearchConsolePage = lazyComponent(() => import('./search/SearchConsolePage'), 'SearchConsolePage')
 const SearchNotebookPage = lazyComponent(() => import('./search/notebook/SearchNotebookPage'), 'SearchNotebookPage')
 const SignInPage = lazyComponent(() => import('./auth/SignInPage'), 'SignInPage')

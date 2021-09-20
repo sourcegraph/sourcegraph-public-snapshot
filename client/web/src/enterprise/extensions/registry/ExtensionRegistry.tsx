@@ -15,13 +15,14 @@ import { createAggregateError, ErrorLike, isErrorLike } from '@sourcegraph/share
 import { useLocalStorage } from '@sourcegraph/shared/src/util/useLocalStorage'
 import { useEventObservable } from '@sourcegraph/shared/src/util/useObservable'
 
-import { PageTitle } from '../components/PageTitle'
+import { PageTitle } from '../../../components/PageTitle'
+import { ExtensionsAreaRouteContext } from '../../../extensions/registry/ExtensionsArea'
 import {
     RegistryExtensionsResult,
     RegistryExtensionFieldsForList,
     RegistryExtensionsVariables,
-} from '../graphql-operations'
-import { eventLogger } from '../tracking/eventLogger'
+} from '../../../graphql-operations'
+import { eventLogger } from '../../../tracking/eventLogger'
 
 import { ExtensionBanner } from './ExtensionBanner'
 import { ExtensionRegistrySidenav } from './ExtensionRegistrySidenav'
@@ -31,7 +32,6 @@ import {
     MinimalConfiguredRegistryExtension,
     configureFeaturedExtensions,
 } from './extensions'
-import { ExtensionsAreaRouteContext } from './ExtensionsArea'
 import { ExtensionsList } from './ExtensionsList'
 
 interface Props

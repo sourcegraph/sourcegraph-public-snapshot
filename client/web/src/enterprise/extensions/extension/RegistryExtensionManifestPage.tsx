@@ -9,11 +9,11 @@ import { ConfiguredRegistryExtension } from '@sourcegraph/shared/src/extensions/
 import extensionSchemaJSON from '@sourcegraph/shared/src/schema/extension.schema.json'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 
-import { PageTitle } from '../../components/PageTitle'
-import { DynamicallyImportedMonacoSettingsEditor } from '../../settings/DynamicallyImportedMonacoSettingsEditor'
-import { eventLogger } from '../../tracking/eventLogger'
+import { PageTitle } from '../../../components/PageTitle'
+import { ExtensionAreaRouteContext } from '../../../extensions/extension/ExtensionArea'
+import { DynamicallyImportedMonacoSettingsEditor } from '../../../settings/DynamicallyImportedMonacoSettingsEditor'
+import { eventLogger } from '../../../tracking/eventLogger'
 
-import { ExtensionAreaRouteContext } from './ExtensionArea'
 import styles from './RegistryExtensionManifestPage.module.scss'
 
 export const ExtensionNoManifestAlert: React.FunctionComponent<{

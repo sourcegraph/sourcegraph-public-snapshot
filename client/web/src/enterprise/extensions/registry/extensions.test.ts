@@ -2,7 +2,7 @@ import { ConfiguredRegistryExtension } from '@sourcegraph/shared/src/extensions/
 import { ExtensionManifest } from '@sourcegraph/shared/src/extensions/extensionManifest'
 import { Settings } from '@sourcegraph/shared/src/settings/settings'
 
-import { RegistryExtensionFieldsForList } from '../graphql-operations'
+import { RegistryExtensionFieldsForList } from '../../../graphql-operations'
 
 import { ConfiguredExtensionCache } from './ExtensionRegistry'
 import {

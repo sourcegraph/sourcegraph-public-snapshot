@@ -1,7 +1,7 @@
 import classNames from 'classnames'
 import React from 'react'
 
-import { CtaBanner } from '../components/CtaBanner'
+import { CtaBanner } from '@sourcegraph/web/src/components/CtaBanner'
 
 import styles from './ExtensionBanner.module.scss'
 import { extensionBannerIconURL } from './icons'

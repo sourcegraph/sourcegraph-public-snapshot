@@ -13,23 +13,21 @@ import {
 } from '@sourcegraph/shared/src/extensions/extension'
 import { gql } from '@sourcegraph/shared/src/graphql/graphql'
 import * as GQL from '@sourcegraph/shared/src/graphql/schema'
-import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
-import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { createAggregateError, ErrorLike, isErrorLike, asError } from '@sourcegraph/shared/src/util/errors'
 
-import { AuthenticatedUser } from '../../auth'
-import { queryGraphQL } from '../../backend/graphql'
-import { ErrorMessage } from '../../components/alerts'
-import { BreadcrumbSetters } from '../../components/Breadcrumbs'
-import { ErrorBoundary } from '../../components/ErrorBoundary'
-import { HeroPage } from '../../components/HeroPage'
-import { RouteDescriptor } from '../../util/contributions'
-import { ExtensionsAreaRouteContext } from '../ExtensionsArea'
+import { queryGraphQL } from '../../../backend/graphql'
+import { ErrorMessage } from '../../../components/alerts'
+import { BreadcrumbSetters } from '../../../components/Breadcrumbs'
+import { ErrorBoundary } from '../../../components/ErrorBoundary'
+import { HeroPage } from '../../../components/HeroPage'
+import { ExtensionAreaRoute, ExtensionAreaRouteContext } from '../../../extensions/extension/ExtensionArea'
+import { ExtensionAreaHeaderNavItem } from '../../../extensions/extension/ExtensionAreaHeader'
+import { ExtensionsAreaRouteContext } from '../../../extensions/registry/ExtensionsArea'
 
 import styles from './ExtensionArea.module.scss'
-import { ExtensionAreaHeader, ExtensionAreaHeaderNavItem } from './ExtensionAreaHeader'
+import { ExtensionAreaHeader } from './ExtensionAreaHeader'
 
 export const registryExtensionFragment = gql`
     fragment RegistryExtensionFields on RegistryExtension {
@@ -70,8 +68,6 @@ export const registryExtensionFragment = gql`
 
 const NotFoundPage: React.FunctionComponent = () => <HeroPage icon={MapSearchIcon} title="404: Not Found" />
 
-export interface ExtensionAreaRoute extends RouteDescriptor<ExtensionAreaRouteContext> {}
-
 export interface ExtensionAreaProps
     extends ExtensionsAreaRouteContext,
         RouteComponentProps<{ extensionID: string }>,
@@ -85,26 +81,6 @@ export interface ExtensionAreaProps
 interface ExtensionAreaState {
     /** The registry extension, undefined while loading, or an error.  */
     extensionOrError?: ConfiguredRegistryExtension<GQL.IRegistryExtension> | ErrorLike
-}
-
-/**
- * Properties passed to all page components in the registry extension area.
- */
-export interface ExtensionAreaRouteContext
-    extends SettingsCascadeProps,
-        PlatformContextProps,
-        ThemeProps,
-        TelemetryProps {
-    /** The extension registry area main URL. */
-    url: string
-
-    /** The extension that is the subject of the page. */
-    extension: ConfiguredRegistryExtension<GQL.IRegistryExtension>
-
-    onDidUpdateExtension: () => void
-
-    /** The currently authenticated user. */
-    authenticatedUser: AuthenticatedUser | null
 }
 
 /**

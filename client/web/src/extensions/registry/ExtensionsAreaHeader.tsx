@@ -1,10 +1,11 @@
 import PuzzleOutlineIcon from 'mdi-react/PuzzleOutlineIcon'
-import * as React from 'react'
-import { Link, RouteComponentProps } from 'react-router-dom'
+import React from 'react'
+import { RouteComponentProps } from 'react-router-dom'
 
+import { Link } from '@sourcegraph/shared/src/components/Link'
 import { PageHeader } from '@sourcegraph/wildcard'
 
-import { ActionButtonDescriptor } from '../util/contributions'
+import { ActionButtonDescriptor } from '../../util/contributions'
 
 import { ExtensionsAreaRouteContext } from './ExtensionsArea'
 
@@ -18,6 +19,8 @@ export interface ExtensionAreaHeaderContext {
 }
 
 export interface ExtensionsAreaHeaderActionButton extends ActionButtonDescriptor<ExtensionAreaHeaderContext> {}
+
+export const extensionsAreaHeaderActionButtons: ExtensionsAreaHeaderActionButton[] = []
 
 /**
  * Header for the extensions area.

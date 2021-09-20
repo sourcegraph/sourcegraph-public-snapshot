@@ -1,10 +1,18 @@
 import LockIcon from 'mdi-react/LockIcon'
 
 import { ExtensionAreaHeaderNavItem } from '../../../extensions/extension/ExtensionAreaHeader'
-import { extensionAreaHeaderNavItems } from '../../../extensions/extension/extensionAreaHeaderNavItems'
 
 export const enterpriseExtensionAreaHeaderNavItems: readonly ExtensionAreaHeaderNavItem[] = [
-    ...extensionAreaHeaderNavItems,
+    {
+        to: '',
+        exact: true,
+        label: 'Extension',
+    },
+    {
+        to: '/-/contributions',
+        exact: true,
+        label: 'Contributions',
+    },
     {
         condition: context =>
             !!context.extension.registryExtension && context.extension.registryExtension.viewerCanAdminister,

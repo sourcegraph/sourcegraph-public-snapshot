@@ -11,12 +11,12 @@ import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { createRecord } from '@sourcegraph/shared/src/util/createRecord'
 import { isErrorLike } from '@sourcegraph/shared/src/util/errors'
 
-import { ErrorAlert } from '../components/alerts'
+import { ErrorAlert } from '../../../components/alerts'
+import { ExtensionsAreaRouteContext } from '../../../extensions/registry/ExtensionsArea'
 
 import { ExtensionCard } from './ExtensionCard'
 import { ExtensionCategoryOrAll, ExtensionListData, ExtensionsEnablement } from './ExtensionRegistry'
 import { applyEnablementFilter, applyWIPFilter } from './extensions'
-import { ExtensionsAreaRouteContext } from './ExtensionsArea'
 import styles from './ExtensionsList.module.scss'
 
 interface Props

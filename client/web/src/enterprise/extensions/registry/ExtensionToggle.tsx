@@ -8,9 +8,9 @@ import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { SettingsCascadeProps, SettingsSubject } from '@sourcegraph/shared/src/settings/settings'
 import { useEventObservable } from '@sourcegraph/shared/src/util/useObservable'
 
-import { eventLogger } from '../tracking/eventLogger'
+import { eventLogger } from '../../../tracking/eventLogger'
+import { isExtensionAdded } from '../extension/extension'
 
-import { isExtensionAdded } from './extension/extension'
 import { ExtensionPermissionModal } from './ExtensionPermissionModal'
 
 interface Props extends SettingsCascadeProps, PlatformContextProps<'updateSettings'> {

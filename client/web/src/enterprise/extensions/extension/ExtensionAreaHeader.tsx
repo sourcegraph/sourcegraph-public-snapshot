@@ -1,7 +1,7 @@
 import classNames from 'classnames'
 import PuzzleOutlineIcon from 'mdi-react/PuzzleOutlineIcon'
 import React, { useState, useCallback, useMemo } from 'react'
-import { Link, NavLink, RouteComponentProps } from 'react-router-dom'
+import { Link, NavLink } from 'react-router-dom'
 
 import { isExtensionEnabled, splitExtensionID } from '@sourcegraph/shared/src/extensions/extension'
 import { ExtensionManifest } from '@sourcegraph/shared/src/schema/extensionSchema'
@@ -9,21 +9,11 @@ import { isErrorLike } from '@sourcegraph/shared/src/util/errors'
 import { useTimeoutManager } from '@sourcegraph/shared/src/util/useTimeoutManager'
 import { PageHeader } from '@sourcegraph/wildcard'
 
-import { NavItemWithIconDescriptor } from '../../util/contributions'
-import { ExtensionToggle } from '../ExtensionToggle'
+import { ExtensionAreaHeaderProps } from '../../../extensions/extension/ExtensionAreaHeader'
+import { ExtensionToggle } from '../registry/ExtensionToggle'
 
-import { ExtensionAreaRouteContext } from './ExtensionArea'
 import styles from './ExtensionAreaHeader.module.scss'
 import { ExtensionStatusBadge } from './ExtensionStatusBadge'
-
-interface ExtensionAreaHeaderProps extends ExtensionAreaRouteContext, RouteComponentProps<{}> {
-    navItems: readonly ExtensionAreaHeaderNavItem[]
-    className?: string
-}
-
-export type ExtensionAreaHeaderContext = Pick<ExtensionAreaHeaderProps, 'extension'>
-
-export interface ExtensionAreaHeaderNavItem extends NavItemWithIconDescriptor<ExtensionAreaHeaderContext> {}
 
 /** ms after which to remove visual feedback */
 const FEEDBACK_DELAY = 5000

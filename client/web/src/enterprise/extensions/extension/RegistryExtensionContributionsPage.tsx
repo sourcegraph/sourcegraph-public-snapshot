@@ -8,11 +8,11 @@ import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { asError, ErrorLike, isErrorLike } from '@sourcegraph/shared/src/util/errors'
 import { hasProperty } from '@sourcegraph/shared/src/util/types'
 
-import { ErrorAlert } from '../../components/alerts'
-import { PageTitle } from '../../components/PageTitle'
-import { eventLogger } from '../../tracking/eventLogger'
+import { ErrorAlert } from '../../../components/alerts'
+import { PageTitle } from '../../../components/PageTitle'
+import { ExtensionAreaRouteContext } from '../../../extensions/extension/ExtensionArea'
+import { eventLogger } from '../../../tracking/eventLogger'
 
-import { ExtensionAreaRouteContext } from './ExtensionArea'
 import { ExtensionNoManifestAlert } from './RegistryExtensionManifestPage'
 
 interface Props extends ExtensionAreaRouteContext, RouteComponentProps<{}>, ThemeProps {

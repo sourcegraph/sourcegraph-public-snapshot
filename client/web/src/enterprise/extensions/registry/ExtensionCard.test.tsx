@@ -4,7 +4,7 @@ import renderer from 'react-test-renderer'
 
 import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
 
-import { AuthenticatedUser } from '../auth'
+import { AuthenticatedUser } from '../../../auth'
 
 import { ExtensionCard } from './ExtensionCard'
 

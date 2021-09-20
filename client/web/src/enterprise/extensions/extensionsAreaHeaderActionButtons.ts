@@ -1,7 +1,9 @@
 import AddIcon from 'mdi-react/AddIcon'
 
-import { ExtensionsAreaHeaderActionButton } from '../../extensions/ExtensionsAreaHeader'
-import { extensionsAreaHeaderActionButtons } from '../../extensions/extensionsAreaHeaderActionButtons'
+import {
+    ExtensionsAreaHeaderActionButton,
+    extensionsAreaHeaderActionButtons,
+} from '../../extensions/registry/ExtensionsAreaHeader'
 
 export const enterpriseExtensionsAreaHeaderActionButtons: readonly ExtensionsAreaHeaderActionButton[] = [
     ...extensionsAreaHeaderActionButtons,

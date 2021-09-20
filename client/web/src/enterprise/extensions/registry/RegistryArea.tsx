@@ -7,7 +7,7 @@ import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { AuthenticatedUser } from '../../../auth'
 import { BreadcrumbSetters } from '../../../components/Breadcrumbs'
 import { HeroPage } from '../../../components/HeroPage'
-import { ExtensionsAreaRouteContext } from '../../../extensions/ExtensionsArea'
+import { ExtensionsAreaRouteContext } from '../../../extensions/registry/ExtensionsArea'
 
 import { RegistryNewExtensionPage } from './RegistryNewExtensionPage'
 

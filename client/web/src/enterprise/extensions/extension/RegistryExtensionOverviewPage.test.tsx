@@ -5,7 +5,7 @@ import renderer from 'react-test-renderer'
 
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
-import { PageTitle } from '../../components/PageTitle'
+import { PageTitle } from '../../../components/PageTitle'
 
 import { RegistryExtensionOverviewPage } from './RegistryExtensionOverviewPage'
 

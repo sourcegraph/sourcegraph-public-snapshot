@@ -1,8 +1,8 @@
 import React from 'react'
 
-import { extensionAreaHeaderNavItems } from './extensions/extension/extensionAreaHeaderNavItems'
+import { extensionAreaHeaderNavItems } from './extensions/extension/ExtensionAreaHeader'
 import { extensionAreaRoutes } from './extensions/extension/routes'
-import { extensionsAreaHeaderActionButtons } from './extensions/extensionsAreaHeaderActionButtons'
+import { extensionsAreaHeaderActionButtons } from './extensions/registry/ExtensionsAreaHeader'
 import { extensionsAreaRoutes } from './extensions/routes'
 import './SourcegraphWebApp.scss'
 import { ExtensionViewsSection } from './insights/sections/ExtenstionViewsSection'

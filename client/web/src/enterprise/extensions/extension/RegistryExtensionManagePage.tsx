@@ -18,10 +18,10 @@ import { mutateGraphQL } from '../../../backend/graphql'
 import { ErrorAlert } from '../../../components/alerts'
 import { HeroPage } from '../../../components/HeroPage'
 import { PageTitle } from '../../../components/PageTitle'
-import { toExtensionID } from '../../../extensions/extension/extension'
 import { ExtensionAreaRouteContext } from '../../../extensions/extension/ExtensionArea'
 import { eventLogger } from '../../../tracking/eventLogger'
 
+import { toExtensionID } from './extension'
 import { RegistryExtensionDeleteButton } from './RegistryExtensionDeleteButton'
 import { RegistryExtensionNameFormGroup, RegistryPublisherFormGroup } from './RegistryExtensionForm'
 

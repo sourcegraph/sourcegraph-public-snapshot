@@ -4,7 +4,7 @@ import { ButtonDropdown, DropdownItem, DropdownMenu, DropdownToggle } from 'reac
 
 import { EXTENSION_CATEGORIES } from '@sourcegraph/shared/src/schema/extensionSchema'
 
-import { SidebarGroup, SidebarGroupHeader } from '../components/Sidebar'
+import { SidebarGroup, SidebarGroupHeader } from '../../../components/Sidebar'
 
 import { ExtensionCategoryOrAll, ExtensionsEnablement } from './ExtensionRegistry'
 import styles from './ExtensionRegistrySidenav.module.scss'
