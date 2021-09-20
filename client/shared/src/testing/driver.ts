@@ -223,7 +223,7 @@ export class Driver {
             // background gql client request fetching ViewerSettings. this race condition results in the gql request
             // "winning" sometimes without proper credentials which confuses the login state machine and it navigates
             // you back to the login page
-            await delay(1000)
+            await delay(3000)
             await this.page.click('button[type=submit]')
             await this.page.waitForNavigation({ timeout: 3 * 10000 })
         } else if (url.pathname === '/sign-in') {
@@ -231,7 +231,7 @@ export class Driver {
             await this.page.type('input', username)
             await this.page.type('input[name=password]', password)
             // TODO(uwedeportivo): see comment above, same reason
-            await delay(1000)
+            await delay(3000)
             await this.page.click('button[type=submit]')
             await this.page.waitForNavigation({ timeout: 3 * 10000 })
         }
