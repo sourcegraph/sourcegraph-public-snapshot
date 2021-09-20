@@ -54,7 +54,7 @@ func FormatDiff(rawDiff []byte) FormattedDiff {
 				i++
 			} else if bytes.HasPrefix(line, []byte("@@")) {
 				buf.Write(oldFile)
-				buf.WriteString("  ")
+				buf.WriteString(fileSeparator)
 				buf.Write(newFile)
 				buf.WriteByte('\n')
 				state = STATE_HUNK
