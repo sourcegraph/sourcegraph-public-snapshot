@@ -12,11 +12,20 @@ import (
 	bk "github.com/sourcegraph/sourcegraph/enterprise/dev/ci/internal/buildkite"
 )
 
+// Operation defines a function that adds something to a pipeline.
+//
+// Functions that return an Operation should never accept Config as an argument - they
+// should only accept `changedFiles` or evaluated arguments.
+//
+// Operations should never conditionally add Steps and Operations - they should only use
+// arguments to create variations of specific Operations (e.g. with different arguments).
+type Operation func(*bk.Pipeline)
+
 // CoreTestOperations is a core set of tests that should be run in most CI cases. These
 // steps should generally be quite fast.
-func CoreTestOperations(changedFiles ChangedFiles, buildOptions bk.BuildOptions) []func(*bk.Pipeline) {
+func CoreTestOperations(changedFiles ChangedFiles, buildOptions bk.BuildOptions) []Operation {
 	// Default set
-	operations := []func(*bk.Pipeline){
+	operations := []Operation{
 		triggerAsync(buildOptions), // triggers a slow pipeline, so do it first.
 		addLint,                    // ~4.5m
 		frontendTests,              // ~4.5m
@@ -38,13 +47,13 @@ func CoreTestOperations(changedFiles ChangedFiles, buildOptions bk.BuildOptions)
 	switch {
 	case changedFiles.onlyDocs():
 		// If this is a docs-only PR, run only the steps necessary to verify the docs.
-		operations = []func(*bk.Pipeline){
+		operations = []Operation{
 			addDocs,
 		}
 
 	case changedFiles.onlyGo() && !changedFiles.onlySg():
 		// If this is a go-only PR, run only the steps necessary to verify the go code.
-		operations = []func(*bk.Pipeline){
+		operations = []Operation{
 			addGoTests, // ~1.5m
 			addCheck,   // ~1m
 			addGoBuild, // ~0.5m
@@ -52,7 +61,7 @@ func CoreTestOperations(changedFiles ChangedFiles, buildOptions bk.BuildOptions)
 
 	case changedFiles.onlySg():
 		// If the changes are only in ./dev/sg then we only need to run a subset of steps.
-		operations = []func(*bk.Pipeline){
+		operations = []Operation{
 			addGoTests,
 			addCheck,
 		}
@@ -147,7 +156,7 @@ func addBrowserExt(pipeline *bk.Pipeline) {
 		bk.Cmd("dev/ci/codecov.sh -c -F typescript -F unit"))
 }
 
-func frontendPuppeteerAndStorybook(autoAcceptChanges bool) func(pipeline *bk.Pipeline) {
+func frontendPuppeteerAndStorybook(autoAcceptChanges bool) Operation {
 	return func(pipeline *bk.Pipeline) {
 		// Client integration tests
 		pipeline.AddStep(":puppeteer::electric_plug: Puppeteer tests",
@@ -283,7 +292,7 @@ func wait(pipeline *bk.Pipeline) {
 }
 
 // Trigger the async pipeline to run.
-func triggerAsync(buildOptions bk.BuildOptions) func(*bk.Pipeline) {
+func triggerAsync(buildOptions bk.BuildOptions) Operation {
 	return func(pipeline *bk.Pipeline) {
 		pipeline.AddTrigger(":snail: Trigger async",
 			bk.Trigger("sourcegraph-async"),
@@ -330,7 +339,7 @@ func (opts *e2eAndQAOptions) copyEnv(keys ...string) map[string]string {
 	return m
 }
 
-func triggerE2EandQA(opts e2eAndQAOptions) func(*bk.Pipeline) {
+func triggerE2EandQA(opts e2eAndQAOptions) Operation {
 	customOptions := bk.BuildOptions{
 		Message: opts.buildOptions.Message,
 		Branch:  opts.buildOptions.Branch,
@@ -378,7 +387,7 @@ func triggerE2EandQA(opts e2eAndQAOptions) func(*bk.Pipeline) {
 
 // Build a candidate docker image that will re-tagged with the final
 // tags once the e2e tests pass.
-func buildCandidateDockerImage(app, version, tag string) func(*bk.Pipeline) {
+func buildCandidateDockerImage(app, version, tag string) Operation {
 	return func(pipeline *bk.Pipeline) {
 		image := strings.ReplaceAll(app, "/", "-")
 		localImage := "sourcegraph/" + image + ":" + version
@@ -424,7 +433,9 @@ func buildCandidateDockerImage(app, version, tag string) func(*bk.Pipeline) {
 
 // Tag and push final Docker image for the service defined by `app`
 // after the e2e tests pass.
-func publishFinalDockerImage(c Config, app string, insiders bool) func(*bk.Pipeline) {
+//
+// It requires Config as an argument because published images require a lot of metadata.
+func publishFinalDockerImage(c Config, app string, insiders bool) Operation {
 	return func(pipeline *bk.Pipeline) {
 		image := strings.ReplaceAll(app, "/", "-")
 		devImage := fmt.Sprintf("%s/%s", images.SourcegraphDockerDevRegistry, image)
@@ -467,7 +478,7 @@ func publishFinalDockerImage(c Config, app string, insiders bool) func(*bk.Pipel
 	}
 }
 
-func buildExecutor(timestamp time.Time, version string) func(*bk.Pipeline) {
+func buildExecutor(timestamp time.Time, version string) Operation {
 	return func(pipeline *bk.Pipeline) {
 		cmds := []bk.StepOpt{
 			bk.Cmd(`echo "Building executor cloud image..."`),
@@ -480,7 +491,7 @@ func buildExecutor(timestamp time.Time, version string) func(*bk.Pipeline) {
 	}
 }
 
-func publishExecutor(timestamp time.Time, version string) func(*bk.Pipeline) {
+func publishExecutor(timestamp time.Time, version string) Operation {
 	return func(pipeline *bk.Pipeline) {
 		cmds := []bk.StepOpt{
 			bk.Cmd(`echo "Releasing executor cloud image..."`),

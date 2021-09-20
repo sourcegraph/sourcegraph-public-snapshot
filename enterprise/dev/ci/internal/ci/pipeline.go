@@ -87,12 +87,15 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 	// Generate pipeline steps. This statement outlines the pipeline steps for each CI case.
 	//
 	// PERF: Try to order steps such that slower steps are first.
-	var operations []func(*bk.Pipeline)
+	var operations []Operation
 	switch c.RunType {
+	case PullRequest:
+		operations = CoreTestOperations(c.ChangedFiles, buildOptions)
+
 	case BextReleaseBranch:
 		// If this is a browser extension release branch, run the browser-extension tests and
 		// builds.
-		operations = []func(*bk.Pipeline){
+		operations = []Operation{
 			addLint,
 			addBrowserExt,
 			frontendTests,
@@ -103,7 +106,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 	case BextNightly:
 		// If this is a browser extension nightly build, run the browser-extension tests and
 		// e2e tests.
-		operations = []func(*bk.Pipeline){
+		operations = []Operation{
 			addLint,
 			addBrowserExt,
 			frontendTests,
@@ -118,7 +121,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		if !contains(images.SourcegraphDockerImages, patchImage) {
 			panic(fmt.Sprintf("no image %q found", patchImage))
 		}
-		operations = append([]func(*bk.Pipeline){
+		operations = append([]Operation{
 			buildCandidateDockerImage(patchImage, c.Version, c.candidateImageTag())},
 			CoreTestOperations(nil, buildOptions)...)
 		operations = append(operations,
@@ -127,21 +130,18 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 	case ImagePatchNoTest:
 		// If this is a no-test branch, then run only the Docker build. No tests are run.
 		app := c.Branch[27:]
-		operations = []func(*bk.Pipeline){
+		operations = []Operation{
 			buildCandidateDockerImage(app, c.Version, c.candidateImageTag()),
 			wait,
 			publishFinalDockerImage(c, app, false),
 		}
 
 	case CandidatesNoTest:
-		operations = []func(*bk.Pipeline){}
+		operations = []Operation{}
 		for _, dockerImage := range images.SourcegraphDockerImages {
 			operations = append(operations,
 				buildCandidateDockerImage(dockerImage, c.Version, c.candidateImageTag()))
 		}
-
-	case PullRequest:
-		operations = CoreTestOperations(c.ChangedFiles, buildOptions)
 
 	default:
 		// Slow image builds
