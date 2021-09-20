@@ -4,6 +4,8 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
+
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 )
 
 type deltaResult struct {
@@ -17,7 +19,7 @@ type hunkResult struct {
 }
 
 func TestDiffIter(t *testing.T) {
-	diff := `a  b
+	diff := `a b
 @@ c
  d
 -ef
@@ -26,7 +28,7 @@ func TestDiffIter(t *testing.T) {
 @@ k
 -lm
 +no
-p  q
+p q
 @@ rs
  t
 -u
@@ -55,52 +57,52 @@ p  q
 
 	expected := []deltaResult{{
 		Delta: Delta{
-			location: Location{},
+			location: protocol.Location{},
 			oldFile:  "a",
 			newFile:  "b",
 			hunks:    "@@ c\n d\n-ef\n+gh\n ij\n@@ k\n-lm\n+no\n",
 		},
 		Hunks: []hunkResult{{
 			Hunk: Hunk{
-				location: Location{Line: 1, Offset: 5},
+				location: protocol.Location{Line: 1, Offset: 4},
 				header:   "@@ c",
 				lines:    " d\n-ef\n+gh\n ij\n",
 			},
 			Lines: []Line{
-				{fullLine: " d\n", location: Location{Line: 2, Offset: 10}},
-				{fullLine: "-ef\n", location: Location{Line: 3, Offset: 13}},
-				{fullLine: "+gh\n", location: Location{Line: 4, Offset: 17}},
-				{fullLine: " ij\n", location: Location{Line: 5, Offset: 21}},
+				{fullLine: " d\n", location: protocol.Location{Line: 2, Offset: 9}},
+				{fullLine: "-ef\n", location: protocol.Location{Line: 3, Offset: 12}},
+				{fullLine: "+gh\n", location: protocol.Location{Line: 4, Offset: 16}},
+				{fullLine: " ij\n", location: protocol.Location{Line: 5, Offset: 20}},
 			},
 		}, {
 			Hunk: Hunk{
-				location: Location{Line: 6, Offset: 25},
+				location: protocol.Location{Line: 6, Offset: 24},
 				header:   "@@ k",
 				lines:    "-lm\n+no\n",
 			},
 			Lines: []Line{
-				{fullLine: "-lm\n", location: Location{Line: 7, Offset: 30}},
-				{fullLine: "+no\n", location: Location{Line: 8, Offset: 34}},
+				{fullLine: "-lm\n", location: protocol.Location{Line: 7, Offset: 29}},
+				{fullLine: "+no\n", location: protocol.Location{Line: 8, Offset: 33}},
 			},
 		}},
 	}, {
 		Delta: Delta{
-			location: Location{Line: 9, Offset: 38},
+			location: protocol.Location{Line: 9, Offset: 37},
 			oldFile:  "p",
 			newFile:  "q",
 			hunks:    "@@ rs\n t\n-u\n+v\n+w\n",
 		},
 		Hunks: []hunkResult{{
 			Hunk: Hunk{
-				location: Location{Line: 10, Offset: 43},
+				location: protocol.Location{Line: 10, Offset: 41},
 				header:   "@@ rs",
 				lines:    " t\n-u\n+v\n+w\n",
 			},
 			Lines: []Line{
-				{fullLine: " t\n", location: Location{Line: 11, Offset: 49}},
-				{fullLine: "-u\n", location: Location{Line: 12, Offset: 52}},
-				{fullLine: "+v\n", location: Location{Line: 13, Offset: 55}},
-				{fullLine: "+w\n", location: Location{Line: 14, Offset: 58}},
+				{fullLine: " t\n", location: protocol.Location{Line: 11, Offset: 47}},
+				{fullLine: "-u\n", location: protocol.Location{Line: 12, Offset: 50}},
+				{fullLine: "+v\n", location: protocol.Location{Line: 13, Offset: 53}},
+				{fullLine: "+w\n", location: protocol.Location{Line: 14, Offset: 56}},
 			},
 		}},
 	}}
