@@ -24,7 +24,6 @@ func coreTestOperations(c Config, buildOptions bk.BuildOptions) []func(*bk.Pipel
 		addGoTests,                 // ~1.5m
 		addCheck,                   // ~1m
 		addGoBuild,                 // ~0.5m
-		addPostgresBackcompat,      // ~0.25m
 		addDockerfileLint,          // ~0.2m
 		wait,                       // wait for all steps to pass
 	}
@@ -162,11 +161,6 @@ func addBrandedTests(pipeline *bk.Pipeline) {
 	pipeline.AddStep(":jest: Test branded client code",
 		bk.Cmd("dev/ci/yarn-test.sh client/branded"),
 		bk.Cmd("dev/ci/codecov.sh -c -F typescript -F unit"))
-}
-
-// Adds PostgreSQL backcompat tests.
-func addPostgresBackcompat(pipeline *bk.Pipeline) {
-	// TODO: We do not test Postgres DB backcompat anymore.
 }
 
 // Adds the Go test step.

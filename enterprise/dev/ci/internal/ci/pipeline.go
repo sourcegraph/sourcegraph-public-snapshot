@@ -152,10 +152,9 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		case c.changedFiles.isGoOnly() && !c.changedFiles.isSgOnly():
 			// If this is a go-only PR, run only the steps necessary to verify the go code.
 			operations = []func(*bk.Pipeline){
-				addGoTests,            // ~1.5m
-				addCheck,              // ~1m
-				addGoBuild,            // ~0.5m
-				addPostgresBackcompat, // ~0.25m
+				addGoTests, // ~1.5m
+				addCheck,   // ~1m
+				addGoBuild, // ~0.5m
 			}
 
 		case c.changedFiles.isSgOnly():
