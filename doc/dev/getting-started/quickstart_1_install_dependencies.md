@@ -33,7 +33,7 @@ The following are two recommendations for installing these dependencies:
 1.  Install [Homebrew](https://brew.sh).
 2.  Install [Docker for Mac](https://docs.docker.com/docker-for-mac/).
 
-    optionally via `brew`
+    Alternatively, you can install it via `brew`
 
     ```
     brew install --cask docker
@@ -45,7 +45,9 @@ The following are two recommendations for installing these dependencies:
     brew install go yarn git gnu-sed golang-migrate comby sqlite pcre FiloSottile/musl-cross/musl-cross jq watchman
     ```
 
-4. (without docker) Install PostgreSQL and Redis
+4. Choose to run Postgres and Redis manually (Option a.) or via Docker (Option b.)
+    
+    a. (without docker) Install PostgreSQL and Redis
 
     If you want to run Redis and/or PostgreSQL directly on your system install them with the follwing command:
 
@@ -54,7 +56,7 @@ The following are two recommendations for installing these dependencies:
     brew install redis
     ```
 
-5. (with docker) Install Docker Compose
+    b. (with docker) Install Docker Compose
 
     We provide a docker compose file at `dev/redis-postgres.yml` to make it easy to run Redis and PostgreSQL as docker containers. Fortunately `docker-compose` comes with Docker for Mac so no additional step is required.
 
@@ -109,7 +111,7 @@ The following are two recommendations for installing these dependencies:
     instead, to ensure you get a Node version compatible with the current state
     of the sourcegraph repository.
 
-8.  (optional) Configure PostgreSQL and Redis to start automatically
+8.  (optional) Configure PostgreSQL and Redis to start automatically if you chose to install it manually via 4a above.
 
     If you have installed PostgreSQL and Redis directly on your system, start them with the following commands:
 
