@@ -511,7 +511,7 @@ func (s *Store) UpdateExternalServiceRepo(ctx context.Context, svc *types.Extern
 	if !s.InTransaction() {
 		s, err = s.Transact(ctx)
 		if err != nil {
-			return errors.Wrap(err, "UpdateExternalServiceRep")
+			return errors.Wrap(err, "UpdateExternalServiceRepo")
 		}
 		defer func() { s.Done(err) }()
 	}
