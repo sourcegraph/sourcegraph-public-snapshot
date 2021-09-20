@@ -18,6 +18,19 @@ let
     exec ${pkgs.universal-ctags}/bin/ctags "$@"
   '';
 
+  # go1.17 is not yet available in nixpkgs and is held up due to go requiring
+  # macOS 10.13 or later. So we use official go releases.
+  go_1_17 =
+    pkgs.callPackage "${<nixpkgs>}/pkgs/development/compilers/go/binary.nix" {
+      version = "1.17";
+      hashes = {
+        linux-amd64 =
+          "6bf89fc4f5ad763871cf7eac80a2d594492de7a818303283f1366a7f6a30372d";
+        darwin-amd64 =
+          "355bd544ce08d7d484d9d7de05a71b5c6f5bc10aa4b316688c2192aeb3dacfd1";
+      };
+    };
+
   # need unstable to get the latest version of node. We pin a very specific
   # commit to make this reproducable.
   unstable = import (pkgs.fetchFromGitHub {
@@ -43,7 +56,7 @@ in pkgs.mkShell {
     universal-ctags
 
     # Build our backend.
-    pkgs.go
+    go_1_17
 
     # Lots of our tooling and go tests rely on git.
     pkgs.git
@@ -75,4 +88,10 @@ in pkgs.mkShell {
   # By explicitly setting this environment variable we avoid starting up
   # universal-ctags via docker.
   CTAGS_COMMAND = "${universal-ctags}/bin/universal-ctags";
+
+  # Official go release expects GOROOT to be /usr/local/go. While we are using
+  # the official release we need to point it to the correct place and disable
+  # CGO.
+  GOROOT = "${go_1_17}/share/go";
+  CGO_ENABLED = "0";
 }

@@ -690,16 +690,13 @@ func (s *RepoStore) List(ctx context.Context, opt ReposListOptions) (results []*
 	return s.listRepos(ctx, tr, opt)
 }
 
-// ListRepoNames returns a list of repositories names and ids.
-func (s *RepoStore) ListRepoNames(ctx context.Context, opt ReposListOptions) (results []types.RepoName, err error) {
-	tr, ctx := trace.New(ctx, "repos.ListRepoNames", "")
+// StreamRepoNames calls the given callback for each of the repositories names and ids that match the given options.
+func (s *RepoStore) StreamRepoNames(ctx context.Context, opt ReposListOptions, cb func(*types.RepoName)) (err error) {
+	tr, ctx := trace.New(ctx, "repos.StreamRepoNames", "")
 	defer func() {
 		tr.SetError(err)
 		tr.Finish()
 	}()
-	if Mocks.Repos.ListRepoNames != nil {
-		return Mocks.Repos.ListRepoNames(ctx, opt)
-	}
 	s.ensureStore()
 
 	opt.Select = minimalColumns(repoColumns)
@@ -707,7 +704,6 @@ func (s *RepoStore) ListRepoNames(ctx context.Context, opt ReposListOptions) (re
 		opt.OrderBy = append(opt.OrderBy, RepoListSort{Field: RepoListID})
 	}
 
-	var repos []types.RepoName
 	var privateIDs []api.RepoID
 
 	err = s.list(ctx, tr, opt, func(rows *sql.Rows) error {
@@ -718,7 +714,7 @@ func (s *RepoStore) ListRepoNames(ctx context.Context, opt ReposListOptions) (re
 			return err
 		}
 
-		repos = append(repos, r)
+		cb(&r)
 
 		if private {
 			privateIDs = append(privateIDs, r.ID)
@@ -727,7 +723,7 @@ func (s *RepoStore) ListRepoNames(ctx context.Context, opt ReposListOptions) (re
 		return nil
 	})
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	if len(privateIDs) > 0 {
@@ -735,7 +731,18 @@ func (s *RepoStore) ListRepoNames(ctx context.Context, opt ReposListOptions) (re
 		logPrivateRepoAccessGranted(ctx, s.Handle().DB(), privateIDs)
 	}
 
-	return repos, nil
+	return nil
+}
+
+// ListRepoNames returns a list of repositories names and ids.
+func (s *RepoStore) ListRepoNames(ctx context.Context, opt ReposListOptions) (results []types.RepoName, err error) {
+	if Mocks.Repos.ListRepoNames != nil {
+		return Mocks.Repos.ListRepoNames(ctx, opt)
+	}
+
+	return results, s.StreamRepoNames(ctx, opt, func(r *types.RepoName) {
+		results = append(results, *r)
+	})
 }
 
 func (s *RepoStore) listRepos(ctx context.Context, tr *trace.Trace, opt ReposListOptions) (rs []*types.Repo, err error) {
@@ -1473,6 +1480,31 @@ func (s *RepoStore) ExternalServices(ctx context.Context, repoID api.RepoID) ([]
 	}
 
 	return ExternalServicesWith(s).List(ctx, opts)
+}
+
+// GetFirstRepoNamesByCloneURL returns the first repo name in our database that
+// match the given clone url. If not repo is found, an empty string and nil error
+// are returned.
+func (s *RepoStore) GetFirstRepoNamesByCloneURL(ctx context.Context, cloneURL string) (api.RepoName, error) {
+	if Mocks.Repos.GetFirstRepoNamesByCloneURL != nil {
+		return Mocks.Repos.GetFirstRepoNamesByCloneURL(ctx, cloneURL)
+	}
+
+	s.ensureStore()
+
+	name, _, err := basestore.ScanFirstString(
+		s.Query(ctx, sqlf.Sprintf(`
+SELECT name
+FROM repo r
+JOIN external_service_repos esr ON r.id = esr.repo_id
+WHERE clone_url = %s
+ORDER BY r.updated_at desc
+LIMIT 1
+`, cloneURL)))
+	if err != nil {
+		return "", err
+	}
+	return api.RepoName(name), nil
 }
 
 func parsePattern(p string) ([]*sqlf.Query, error) {

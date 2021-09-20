@@ -70,7 +70,7 @@ export const BlobPage: React.FunctionComponent<Props> = props => {
     // Log view event whenever a new Blob, or a Blob with a different render mode, is visited.
     useEffect(() => {
         props.telemetryService.logViewEvent('Blob', { repoName, filePath })
-    }, [repoName, commitID, filePath, isLightTheme, renderMode, props.telemetryService])
+    }, [repoName, commitID, filePath, renderMode, props.telemetryService])
 
     useBreadcrumb(
         useMemo(() => {
@@ -113,7 +113,6 @@ export const BlobPage: React.FunctionComponent<Props> = props => {
                             repoName,
                             commitID,
                             filePath,
-                            isLightTheme,
                             disableTimeout,
                         })
                     ),
@@ -129,7 +128,6 @@ export const BlobPage: React.FunctionComponent<Props> = props => {
                             commitID,
                             filePath,
                             mode,
-                            isLightTheme,
                             // Properties used in `BlobPage` but not `Blob`
                             richHTML: blob.richHTML,
                             aborted: blob.highlight.aborted,
@@ -141,7 +139,7 @@ export const BlobPage: React.FunctionComponent<Props> = props => {
                         return [asError(error)]
                     })
                 ),
-            [repoName, revision, commitID, filePath, isLightTheme, mode]
+            [repoName, revision, commitID, filePath, mode]
         )
     )
 

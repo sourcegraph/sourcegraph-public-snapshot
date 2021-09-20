@@ -471,6 +471,9 @@ func logDiffCommonArgs(opt RawLogDiffSearchOptions) []string {
 	if opt.Query.Pattern != "" && opt.Diff {
 		var queryArg string
 		if opt.MatchChangedOccurrenceCount {
+			if opt.Query.IsRegExp {
+				args = append(args, "--pickaxe-regex")
+			}
 			queryArg = "-S"
 		} else {
 			queryArg = "-G"
@@ -478,9 +481,6 @@ func logDiffCommonArgs(opt RawLogDiffSearchOptions) []string {
 		args = append(args, queryArg+opt.Query.Pattern)
 		if !opt.Query.IsCaseSensitive {
 			args = append(args, "--regexp-ignore-case")
-		}
-		if opt.Query.IsRegExp {
-			args = append(args, "--pickaxe-regex")
 		}
 	}
 	if opt.Paths.IsRegExp {

@@ -105,7 +105,7 @@ func TestSearch(t *testing.T) {
 			db := new(dbtesting.MockDB)
 			database.Mocks.Repos.List = tc.reposListMock
 			sr := &schemaResolver{db: db}
-			schema, err := graphql.ParseSchema(mainSchema, sr, graphql.Tracer(&prometheusTracer{db: db}))
+			schema, err := graphql.ParseSchema(mainSchema, sr, graphql.Tracer(&prometheusTracer{}))
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -543,12 +543,9 @@ func BenchmarkSearchResults(b *testing.B) {
 	minimalRepos, _, zoektRepos := generateRepos(5000)
 	zoektFileMatches := generateZoektMatches(50)
 
-	z := &searchbackend.Zoekt{
-		Client: &searchbackend.FakeSearcher{
-			Repos:  zoektRepos,
-			Result: &zoekt.SearchResult{Files: zoektFileMatches},
-		},
-		DisableCache: true,
+	z := &searchbackend.FakeSearcher{
+		Repos:  zoektRepos,
+		Result: &zoekt.SearchResult{Files: zoektFileMatches},
 	}
 
 	ctx := context.Background()
@@ -602,10 +599,7 @@ func BenchmarkIntegrationSearchResults(b *testing.B) {
 		Result: &zoekt.SearchResult{Files: zoektFileMatches},
 	})
 	defer cleanup()
-	z := &searchbackend.Zoekt{
-		Client:       &searchbackend.StreamSearchAdapter{zoektClient},
-		DisableCache: true,
-	}
+	z := &searchbackend.StreamSearchAdapter{zoektClient}
 
 	rows := make([]*sqlf.Query, 0, len(repos))
 	for _, r := range repos {

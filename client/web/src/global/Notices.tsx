@@ -8,18 +8,28 @@ import { renderMarkdown } from '@sourcegraph/shared/src/util/markdown'
 import { DismissibleAlert } from '../components/DismissibleAlert'
 import { Notice, Settings } from '../schema/settings.schema'
 
-const NoticeAlert: React.FunctionComponent<{ notice: Notice; className?: string }> = ({ notice, className = '' }) => {
+import styles from './Notices.module.scss'
+
+const NoticeAlert: React.FunctionComponent<{ notice: Notice; className?: string; testId?: string }> = ({
+    notice,
+    className = '',
+    testId,
+}) => {
     const content = <Markdown dangerousInnerHTML={renderMarkdown(notice.message)} />
     const baseClassName = notice.location === 'top' ? 'alert-info' : 'bg-transparent border'
+
     return notice.dismissible ? (
         <DismissibleAlert
+            data-testid={testId}
             className={classNames(baseClassName, className)}
             partialStorageKey={`notice.${notice.message}`}
         >
             {content}
         </DismissibleAlert>
     ) : (
-        <div className={classNames('alert', baseClassName, className)}>{content}</div>
+        <div data-testid={testId} className={classNames('alert', baseClassName, className)}>
+            {content}
+        </div>
     )
 }
 
@@ -49,14 +59,16 @@ export const Notices: React.FunctionComponent<Props> = ({
     ) {
         return null
     }
+
     const notices = settingsCascade.final.notices.filter(notice => notice.location === location)
     if (notices.length === 0) {
         return null
     }
+
     return (
-        <div className={classNames('notices', className)}>
+        <div className={classNames(styles.notices, className)}>
             {notices.map((notice, index) => (
-                <NoticeAlert key={index} className={alertClassName} notice={notice} />
+                <NoticeAlert key={index} testId="notice-alert" className={alertClassName} notice={notice} />
             ))}
         </div>
     )

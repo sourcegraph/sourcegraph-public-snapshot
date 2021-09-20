@@ -6,4 +6,5 @@
 !img/**
 *.DS_Store
 *.ttf
+*.woff2
 *.png

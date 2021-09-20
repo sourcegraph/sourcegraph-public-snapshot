@@ -2,20 +2,20 @@
 
 exports[`ErrorBoundary passes through if non-error 1`] = `
 <div
-  className="hero-page hero-page__default-padding"
+  className="heroPage defaultPadding"
 >
   <div
-    className="hero-page__icon"
+    className="icon"
   >
     <ErrorIcon />
   </div>
   <div
-    className="hero-page__title"
+    className="title"
   >
     Error
   </div>
   <div
-    className="hero-page__subtitle"
+    className="subtitle"
   >
     <div
       className="container"
@@ -43,20 +43,20 @@ exports[`ErrorBoundary renders error page if error 1`] = `
 
 exports[`ErrorBoundary renders reload page if chunk error 1`] = `
 <div
-  className="hero-page hero-page__default-padding"
+  className="heroPage defaultPadding"
 >
   <div
-    className="hero-page__icon"
+    className="icon"
   >
     <ErrorIcon />
   </div>
   <div
-    className="hero-page__title"
+    className="title"
   >
     Error
   </div>
   <div
-    className="hero-page__subtitle"
+    className="subtitle"
   >
     <div
       className="container"

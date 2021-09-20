@@ -3,6 +3,8 @@ import * as React from 'react'
 
 import { numberWithCommas, pluralize } from '@sourcegraph/shared/src/util/strings'
 
+import styles from './DiffStat.module.scss'
+
 const NUM_SQUARES = 5
 
 interface DiffProps {
@@ -44,7 +46,7 @@ export const DiffStat: React.FunctionComponent<DiffStatProps> = React.memo(funct
         labels.push(`${numberWithCommas(deleted)} ${pluralize('deletion', deleted)}`)
     }
     return (
-        <div className={classNames('diff-stat', className)} data-tooltip={labels.join(', ')}>
+        <div className={classNames(styles.diffStat, className)} data-tooltip={labels.join(', ')}>
             {expandedCounts ? (
                 <>
                     <strong className="text-success mr-1">+{numberWithCommas(added)}</strong>
@@ -91,19 +93,19 @@ export const DiffStatSquares: React.FunctionComponent<DiffProps> = React.memo(fu
         }
     }
 
-    const squares = new Array<'bg-success' | 'bg-warning' | 'bg-danger' | 'diff-stat__empty'>(addedSquares)
+    const squares = new Array<'bg-success' | 'bg-warning' | 'bg-danger'>(addedSquares)
         .fill('bg-success')
         .concat(
             new Array<'bg-warning'>(changedSquares).fill('bg-warning'),
             new Array<'bg-danger'>(deletedSquares).fill('bg-danger'),
-            new Array<'diff-stat__empty'>(NUM_SQUARES - numberOfSquares).fill('diff-stat__empty')
+            new Array(NUM_SQUARES - numberOfSquares).fill(styles.empty)
         )
 
     return (
-        <div className="diff-stat__squares">
+        <div className={styles.squares}>
             {squares.map((className, index) => (
                 // eslint-disable-next-line react/no-array-index-key
-                <div key={index} className={classNames('diff-stat__square', className)} />
+                <div key={index} className={classNames(styles.square, className)} />
             ))}
         </div>
     )

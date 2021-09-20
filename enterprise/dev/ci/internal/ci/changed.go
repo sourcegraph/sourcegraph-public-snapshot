@@ -37,10 +37,10 @@ func (c ChangedFiles) isGoOnly() bool {
 	return true
 }
 
-// Run Storybook workflow only if related files were changed.
-func (c ChangedFiles) isStorybookAffected() bool {
+// Check if files that affect client code were changed. Used to detect if we need to run Puppeteer or Chromatic tests.
+func (c ChangedFiles) isClientAffected() bool {
 	for _, p := range c {
-		if !strings.HasSuffix(p, ".md") && (strings.HasPrefix(p, "client/") || isStorybookAllowedRootFile(p)) {
+		if !strings.HasSuffix(p, ".md") && (strings.HasPrefix(p, "client/") || isAllowedRootFile(p)) {
 			return true
 		}
 	}
@@ -48,7 +48,7 @@ func (c ChangedFiles) isStorybookAffected() bool {
 }
 
 // Changes in the files below will be ignored by the Storybook workflow.
-var storybookIgnoredRootFiles = []string{
+var ignoredRootFiles = []string{
 	"jest.config.base.js",
 	"graphql-schema-linter.config.js",
 	"libsqlite3-pcre.dylib",
@@ -90,6 +90,6 @@ func contains(s []string, str string) bool {
 	return false
 }
 
-func isStorybookAllowedRootFile(p string) bool {
-	return filepath.Dir(p) == "." && !contains(storybookIgnoredRootFiles, p)
+func isAllowedRootFile(p string) bool {
+	return filepath.Dir(p) == "." && !contains(ignoredRootFiles, p)
 }

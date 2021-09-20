@@ -184,6 +184,11 @@ type CodeIntelligenceConfigurationPolicy implements Node {
     pattern: String!
 
     """
+    Protected policies may not be deleted (or created directly by users).
+    """
+    protected: Boolean!
+
+    """
     Whether or not this configuration policy affects data retention rules.
     """
     retentionEnabled: Boolean!

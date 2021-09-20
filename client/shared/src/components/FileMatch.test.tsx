@@ -44,7 +44,7 @@ describe('FileMatch', () => {
     it('correctly shows number of context lines when search.contextLines setting is set', () => {
         const result: ContentMatch = {
             type: 'content',
-            name: '.travis.yml',
+            path: '.travis.yml',
             repository: 'github.com/golang/oauth2',
             lineMatches: [
                 {

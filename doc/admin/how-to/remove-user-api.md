@@ -15,7 +15,7 @@ This document walk you through the steps of removing users with the GraphQL API.
 
 **Option B) Nuking a user:** the user and *all* associated data is deleted forever. *Note: You cannot undo this and this is considered the less safe option.*
 
-First, query the user's ID from their email address or user name
+First, query the user's ID by using their email address or user name
 
 Example:
 
@@ -23,6 +23,14 @@ Example:
 {
   user(email: "someone@gmail.com") {
     id
+  }
+}
+```
+
+```json
+{
+  user(username: "username") {    
+  id
   }
 }
 ```

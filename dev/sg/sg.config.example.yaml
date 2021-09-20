@@ -120,6 +120,8 @@ commandsets:
       - repo-updater
       - gitserver
       - web
+    env:
+      SOURCEGRAPHDOTCOM_MODE: true
 
 tests:
   # These can be run with `sg test [name]`

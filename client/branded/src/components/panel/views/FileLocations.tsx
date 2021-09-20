@@ -195,8 +195,8 @@ function referencesToContentMatch(uri: string, references: Badged<Location>[]): 
     const parsedUri = parseRepoURI(uri)
     return {
         type: 'content',
-        name: parsedUri.filePath || '',
-        version: (parsedUri.commitID || parsedUri.revision)!,
+        path: parsedUri.filePath || '',
+        commit: (parsedUri.commitID || parsedUri.revision)!,
         repository: parsedUri.repoName,
         lineMatches: references.filter(property('range', isDefined)).map(reference => ({
             line: '',

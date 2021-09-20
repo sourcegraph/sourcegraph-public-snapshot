@@ -752,13 +752,10 @@ describe('Repository', () => {
                         extensions: {
                             nodes: [
                                 {
-                                    id: 'TestExtensionID',
                                     extensionID: 'test/test',
                                     manifest: {
-                                        raw: JSON.stringify(extensionManifest),
+                                        jsonFields: extensionManifest,
                                     },
-                                    url: '/extensions/test/test',
-                                    viewerCanAdminister: false,
                                 },
                             ],
                         },

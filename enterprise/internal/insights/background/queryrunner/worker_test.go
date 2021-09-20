@@ -7,6 +7,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
+
 	"github.com/hexops/autogold"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
@@ -41,6 +43,7 @@ func TestJobQueue(t *testing.T) {
 	firstJobID, err := EnqueueJob(ctx, workerBaseStore, &Job{
 		SeriesID:    "job 1",
 		SearchQuery: "our search 1",
+		PersistMode: string(store.RecordMode),
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -48,6 +51,7 @@ func TestJobQueue(t *testing.T) {
 	secondJobID, err := EnqueueJob(ctx, workerBaseStore, &Job{
 		SeriesID:    "job 2",
 		SearchQuery: "our search 2",
+		PersistMode: string(store.RecordMode),
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -57,6 +61,7 @@ func TestJobQueue(t *testing.T) {
 	firstJob, err := dequeueJob(ctx, workerBaseStore, firstJobID)
 	autogold.Want("2", &Job{
 		SeriesID: "job 1", SearchQuery: "our search 1",
+		PersistMode:     "record",
 		DependentFrames: []time.Time{},
 		ID:              1,
 	}).Equal(t, firstJob)
@@ -66,6 +71,7 @@ func TestJobQueue(t *testing.T) {
 		SeriesID: "job 2", SearchQuery: "our search 2",
 		DependentFrames: []time.Time{},
 		ID:              2,
+		PersistMode:     "record",
 	}).Equal(t, secondJob)
 	autogold.Want("5", "<nil>").Equal(t, fmt.Sprint(err))
 }
@@ -83,6 +89,7 @@ func TestJobQueueDependencies(t *testing.T) {
 		id, err := EnqueueJob(ctx, workerBaseStore, &Job{
 			SeriesID:    "job 1",
 			SearchQuery: "our search 1",
+			PersistMode: string(store.RecordMode),
 		})
 		if err != nil {
 			t.Fatal(err)
@@ -94,6 +101,7 @@ func TestJobQueueDependencies(t *testing.T) {
 		}
 		autogold.Want("1", &Job{
 			SeriesID: "job 1", SearchQuery: "our search 1",
+			PersistMode:     "record",
 			DependentFrames: []time.Time{},
 			ID:              1,
 		}).Equal(t, got)
@@ -104,6 +112,7 @@ func TestJobQueueDependencies(t *testing.T) {
 			SeriesID:        "job 2",
 			SearchQuery:     "our search 2",
 			DependentFrames: []time.Time{now, now},
+			PersistMode:     string(store.RecordMode),
 		})
 		if err != nil {
 			t.Fatal(err)

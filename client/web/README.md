@@ -37,8 +37,7 @@ For enterprise version:
 sg run enterprise-web-standalone-prod
 ```
 
-Web app should be available at `http://${SOURCEGRAPH_HTTPS_DOMAIN}:${SOURCEGRAPH_HTTPS_PORT}`.
-Build artifacts will be served from `<rootRepoPath>/ui/assets`.
+Web app should be available at `http://${SOURCEGRAPH_HTTPS_DOMAIN}:${SOURCEGRAPH_HTTPS_PORT}` (note the `http` not `https`). Build artifacts will be served from `<rootRepoPath>/ui/assets`.
 
 ### API proxy
 

@@ -1,6 +1,8 @@
 import classNames from 'classnames'
 import React from 'react'
 
+import styles from './RadioButtons.module.scss'
+
 /**
  * Descriptor of a radio button element.
  */
@@ -52,19 +54,12 @@ interface Props {
  * A row of radio buttons.
  */
 export const RadioButtons: React.FunctionComponent<Props> = ({ nodes, onChange, selected, className }) => (
-    <div className="radio-buttons">
+    <div className={classNames(styles.radioButtons, className)}>
         {nodes.map(node => (
-            <label key={node.key ? node.key : node.id.toString()} className="radio-buttons__item" title={node.tooltip}>
-                <input
-                    className={classNames('radio-buttons__input', className)}
-                    name="filter"
-                    type="radio"
-                    onChange={onChange}
-                    value={node.id}
-                    checked={node.id === selected}
-                />{' '}
+            <label key={node.key ? node.key : node.id.toString()} className={styles.item} title={node.tooltip}>
+                <input name="filter" type="radio" onChange={onChange} value={node.id} checked={node.id === selected} />{' '}
                 <small>
-                    <div className="radio-buttons__label">{node.label}</div>
+                    <div className={styles.label}>{node.label}</div>
                 </small>
             </label>
         ))}

@@ -2,11 +2,11 @@ package graphqlbackend
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"sync"
 
 	"github.com/cockroachdb/errors"
+	"github.com/google/zoekt"
 	otlog "github.com/opentracing/opentracing-go/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
@@ -14,7 +14,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/endpoint"
 	"github.com/sourcegraph/sourcegraph/internal/search"
-	searchbackend "github.com/sourcegraph/sourcegraph/internal/search/backend"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	searchrepos "github.com/sourcegraph/sourcegraph/internal/search/repos"
 	"github.com/sourcegraph/sourcegraph/internal/search/run"
@@ -206,7 +205,7 @@ type searchResolver struct {
 	resolved *searchrepos.Resolved
 	repoErr  error
 
-	zoekt        *searchbackend.Zoekt
+	zoekt        zoekt.Streamer
 	searcherURLs *endpoint.Map
 }
 
@@ -235,6 +234,7 @@ const (
 
 var mockDecodedViewerFinalSettings *schema.Settings
 
+// decodedViewerFinalSettings returns the final (merged) settings for the viewer
 func decodedViewerFinalSettings(ctx context.Context, db dbutil.DB) (_ *schema.Settings, err error) {
 	tr, ctx := trace.New(ctx, "decodedViewerFinalSettings", "")
 	defer func() {
@@ -244,15 +244,13 @@ func decodedViewerFinalSettings(ctx context.Context, db dbutil.DB) (_ *schema.Se
 	if mockDecodedViewerFinalSettings != nil {
 		return mockDecodedViewerFinalSettings, nil
 	}
-	merged, err := viewerFinalSettings(ctx, db)
+
+	cascade, err := (&schemaResolver{db: db}).ViewerSettings(ctx)
 	if err != nil {
 		return nil, err
 	}
-	var settings schema.Settings
-	if err := json.Unmarshal([]byte(merged.Contents()), &settings); err != nil {
-		return nil, err
-	}
-	return &settings, nil
+
+	return cascade.finalTyped(ctx)
 }
 
 type resolveRepositoriesOpts struct {

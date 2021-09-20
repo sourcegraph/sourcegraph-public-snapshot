@@ -5,6 +5,7 @@ import { extensionAreaRoutes } from './extensions/extension/routes'
 import { extensionsAreaHeaderActionButtons } from './extensions/extensionsAreaHeaderActionButtons'
 import { extensionsAreaRoutes } from './extensions/routes'
 import './SourcegraphWebApp.scss'
+import { ExtensionViewsSection } from './insights/sections/ExtenstionViewsSection'
 import { KEYBOARD_SHORTCUTS } from './keyboardShortcuts/keyboardShortcuts'
 import { orgAreaHeaderNavItems } from './org/area/navitems'
 import { orgAreaRoutes } from './org/area/routes'
@@ -46,6 +47,7 @@ export const OpenSourceWebApp: React.FunctionComponent = () => (
         repoSettingsSidebarGroups={repoSettingsSideBarGroups}
         routes={routes}
         keyboardShortcuts={KEYBOARD_SHORTCUTS}
+        extensionViews={ExtensionViewsSection}
         codeIntelligenceEnabled={false}
         batchChangesEnabled={false}
     />

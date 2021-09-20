@@ -61,10 +61,9 @@ const defaultProps = (
     defaultSearchContextSpec: '',
     showOnboardingTour: false,
     isLightTheme: props.isLightTheme,
-    navbarSearchQueryState: { query: '' },
-    onNavbarQueryChange: () => {},
     isExtensionAlertAnimating: false,
     batchChangesEnabled: true,
+    batchChangesExecutionEnabled: true,
     enableCodeMonitoring: true,
     activation: undefined,
     hideNavLinks: false,
@@ -74,6 +73,7 @@ const defaultProps = (
     hasUserAddedRepositories: false,
     hasUserAddedExternalServices: false,
     getUserSearchContextNamespaces: mockGetUserSearchContextNamespaces,
+    extensionViews: () => null,
 })
 
 const { add } = storiesOf('web/nav/GlobalNav', module)

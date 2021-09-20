@@ -1,6 +1,8 @@
 import classNames from 'classnames'
 import * as React from 'react'
 
+import styles from './CtaBanner.module.scss'
+
 interface Props {
     className?: string
     bodyTextClassName?: string
@@ -26,7 +28,7 @@ export const CtaBanner: React.FunctionComponent<Props> = ({
     googleAnalytics,
     onClick,
 }) => (
-    <div className={classNames('cta-banner shadow d-flex flex-row card py-4 pr-4 pl-3', className)}>
+    <div className={classNames('shadow d-flex flex-row card py-4 pr-4 pl-3', styles.ctaBanner, className)}>
         <div className="mr-4 d-flex flex-column align-items-center">{icon}</div>
         <div>
             <HeadingX>{title}</HeadingX>

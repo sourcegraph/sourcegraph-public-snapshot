@@ -83,7 +83,7 @@ const ExampleTab: React.FunctionComponent<{ index: number }> = ({ children, inde
             <button
                 type="button"
                 className={classNames(
-                    'btn text-left sidebar__link--inactive d-flex sidebar-nav-link w-100',
+                    'btn text-left sidebar__link--inactive d-flex w-100',
                     index === selectedIndex && 'btn-primary'
                 )}
             >

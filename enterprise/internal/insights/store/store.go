@@ -8,6 +8,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
+
 	"github.com/cockroachdb/errors"
 	"github.com/keegancsmith/sqlf"
 
@@ -162,7 +164,11 @@ const fullVectorSeriesAggregation = `
 -- source: enterprise/internal/insights/store/store.go:SeriesPoints
 SELECT sub.series_id, sub.interval_time, SUM(sub.value) as value, sub.metadata FROM (
 	SELECT sp.repo_name_id, sp.series_id, sp.time AS interval_time, MAX(value) as value, null as metadata
-	FROM series_points sp JOIN repo_names rn ON sp.repo_name_id = rn.id
+	FROM (  select * from series_points
+			union
+			select * from series_points_snapshots
+	) AS sp
+	JOIN repo_names rn ON sp.repo_name_id = rn.id
 	WHERE %s
 	GROUP BY sp.series_id, interval_time, sp.repo_name_id
 	ORDER BY sp.series_id, interval_time, sp.repo_name_id DESC
@@ -293,6 +299,28 @@ func countDataQuery(opts CountDataOpts) *sqlf.Query {
 	)
 }
 
+func (s *Store) DeleteSnapshots(ctx context.Context, series *types.InsightSeries) error {
+	err := s.Exec(ctx, sqlf.Sprintf(deleteSnapshotsSql, sqlf.Sprintf(snapshotsTable), series.SeriesID))
+	if err != nil {
+		return errors.Wrapf(err, "failed to delete insights snapshots for series_id: %s", series.SeriesID)
+	}
+	return nil
+}
+
+const deleteSnapshotsSql = `
+-- source: enterprise/internal/insights/store/store.go:DeleteSnapshots
+delete from %s where series_id = %s;
+`
+
+type PersistMode string
+
+const (
+	RecordMode     PersistMode = "record"
+	SnapshotMode   PersistMode = "snapshot"
+	recordingTable string      = "series_points"
+	snapshotsTable string      = "series_points_snapshots"
+)
+
 // RecordSeriesPointArgs describes arguments for the RecordSeriesPoint method.
 type RecordSeriesPointArgs struct {
 	// SeriesID is the unique series ID to query. It should describe the series of data uniquely,
@@ -313,6 +341,8 @@ type RecordSeriesPointArgs struct {
 	// See the DB schema comments for intended use cases. This should generally be small,
 	// low-cardinality data to avoid inflating the table.
 	Metadata interface{}
+
+	PersistMode PersistMode
 }
 
 // RecordSeriesPoint records a data point for the specfied series ID (which is a unique ID for the
@@ -362,9 +392,19 @@ func (s *Store) RecordSeriesPoint(ctx context.Context, v RecordSeriesPointArgs) 
 		metadataID = &metadataIDValue
 	}
 
-	// Insert the actual data point.
-	return txStore.Exec(ctx, sqlf.Sprintf(
+	var tableName string
+	switch v.PersistMode {
+	case RecordMode:
+		tableName = recordingTable
+	case SnapshotMode:
+		tableName = snapshotsTable
+	default:
+		return errors.Newf("unsupported insights series point persist mode: %v", v.PersistMode)
+	}
+
+	q := sqlf.Sprintf(
 		recordSeriesPointFmtstr,
+		sqlf.Sprintf(tableName),
 		v.SeriesID,         // series_id
 		v.Point.Time.UTC(), // time
 		v.Point.Value,      // value
@@ -372,7 +412,9 @@ func (s *Store) RecordSeriesPoint(ctx context.Context, v RecordSeriesPointArgs) 
 		v.RepoID,           // repo_id
 		repoNameID,         // repo_name_id
 		repoNameID,         // original_repo_name_id
-	))
+	)
+	// Insert the actual data point.
+	return txStore.Exec(ctx, q)
 }
 
 // RecordSeriesPoints stores multiple data points atomically.
@@ -420,7 +462,7 @@ UNION
 
 const recordSeriesPointFmtstr = `
 -- source: enterprise/internal/insights/store/store.go:RecordSeriesPoint
-INSERT INTO series_points(
+INSERT INTO %s (
 	series_id,
 	time,
 	value,

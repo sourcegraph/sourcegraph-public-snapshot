@@ -17,6 +17,7 @@ import (
 	"github.com/lib/pq"
 	"github.com/tidwall/gjson"
 	"github.com/xeipuuv/gojsonschema"
+	"golang.org/x/sync/errgroup"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -1195,6 +1196,8 @@ func (e *ExternalServiceStore) list(ctx context.Context, opt ExternalServicesLis
 	}
 	defer rows.Close()
 
+	keyIDs := make(map[int64]string)
+
 	var results []*types.ExternalService
 	for rows.Next() {
 		var (
@@ -1222,13 +1225,32 @@ func (e *ExternalServiceStore) list(ctx context.Context, opt ExternalServicesLis
 			h.NamespaceUserID = namespaceUserID.Int32
 		}
 
-		h.Config, err = e.maybeDecryptConfig(ctx, h.Config, keyID)
-		if err != nil {
-			return nil, err
-		}
+		keyIDs[h.ID] = keyID
+
 		results = append(results, &h)
 	}
 	if err = rows.Err(); err != nil {
+		return nil, err
+	}
+
+	// Now we may need to decrypt config. Since each decrypt operation could make an
+	// API call we should run them in parallel
+	group, ctx := errgroup.WithContext(ctx)
+	for i := range results {
+		s := results[i]
+		var groupErr error
+		group.Go(func() error {
+			keyID := keyIDs[s.ID]
+			s.Config, groupErr = e.maybeDecryptConfig(ctx, s.Config, keyID)
+			if groupErr != nil {
+				return groupErr
+			}
+			return nil
+		})
+	}
+
+	err = group.Wait()
+	if err != nil {
 		return nil, err
 	}
 

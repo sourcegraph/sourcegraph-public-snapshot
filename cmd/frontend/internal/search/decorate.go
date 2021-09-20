@@ -7,6 +7,7 @@ import (
 
 	"html/template"
 
+	"github.com/inconshreveable/log15"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/highlight"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
@@ -121,17 +122,15 @@ func DecorateFileHTML(ctx context.Context, repo api.RepoName, commit api.CommitI
 }
 
 // DecorateFileHunksHTML returns decorated file hunks given a file match.
-func DecorateFileHunksHTML(ctx context.Context, fm result.FileMatch) []stream.DecoratedHunk {
+func DecorateFileHunksHTML(ctx context.Context, fm *result.FileMatch) []stream.DecoratedHunk {
 	html, err := DecorateFileHTML(ctx, fm.Repo.Name, fm.CommitID, fm.Path)
 	if err != nil {
-		// TODO(rvantonder): log error and swallow if we can't highlight
-		// the entire file.
+		log15.Warn("stream result decoration could not highlight file", "error", err)
 		return nil
 	}
 	lines, err := highlight.SplitHighlightedLines(html, true)
 	if err != nil {
-		// TODO(rvantonder): log error and swallow if we can't split the
-		// highlighted file (parse error, malformed HTML).
+		log15.Warn("stream result decoration could not split highlighted file", "error", err)
 		return nil
 	}
 

@@ -6,7 +6,7 @@ const CSRF_CONTEXT_VALUE_REGEXP = new RegExp(`${CSRF_CONTEXT_KEY}":"(.*?)"`)
 export const CSRF_COOKIE_NAME = 'sg_csrf_token'
 const CSRF_COOKIE_VALUE_REGEXP = new RegExp(`${CSRF_COOKIE_NAME}=(.*?);`)
 
-interface CSFRTokenAndCookie {
+interface CSRFTokenAndCookie {
     csrfContextValue: string
     csrfCookieValue: string
 }
@@ -19,7 +19,7 @@ interface CSFRTokenAndCookie {
  * 2. value from JS context under `CSRF_CONTEXT_KEY` key.
  *
  */
-export async function getCSRFTokenAndCookie(proxyUrl: string): Promise<CSFRTokenAndCookie> {
+export async function getCSRFTokenAndCookie(proxyUrl: string): Promise<CSRFTokenAndCookie> {
     const response = await fetch(`${proxyUrl}/sign-in`)
 
     const html = await response.text()

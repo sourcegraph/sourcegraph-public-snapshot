@@ -17,6 +17,7 @@ export interface BranchTargetSettingsProps {
     repoName: typeof defaultRepoName
     searchGitBranches: typeof defaultSearchGitBranches
     searchGitTags: typeof defaultSearchGitTags
+    disabled: boolean
 }
 
 const GIT_OBJECT_PREVIEW_DEBOUNCE_TIMEOUT = 300
@@ -28,6 +29,7 @@ export const BranchTargetSettings: FunctionComponent<BranchTargetSettingsProps> 
     repoName,
     searchGitBranches,
     searchGitTags,
+    disabled = false,
 }) => {
     const [debouncedPattern, setDebouncedPattern] = useState(policy.pattern)
     const setPattern = debounce(value => setDebouncedPattern(value), GIT_OBJECT_PREVIEW_DEBOUNCE_TIMEOUT)
@@ -42,6 +44,7 @@ export const BranchTargetSettings: FunctionComponent<BranchTargetSettingsProps> 
                     className="form-control"
                     value={policy.name}
                     onChange={event => setPolicy({ ...policy, name: event.target.value })}
+                    disabled={disabled}
                 />
             </div>
 
@@ -63,6 +66,7 @@ export const BranchTargetSettings: FunctionComponent<BranchTargetSettingsProps> 
                                 : {}),
                         })
                     }
+                    disabled={disabled}
                 >
                     <option value="">Select Git object type</option>
                     {repoId && <option value={GitObjectType.GIT_COMMIT}>Commit</option>}
@@ -81,6 +85,7 @@ export const BranchTargetSettings: FunctionComponent<BranchTargetSettingsProps> 
                         setPolicy({ ...policy, pattern: event.target.value })
                         setPattern(event.target.value)
                     }}
+                    disabled={disabled}
                 />
             </div>
 

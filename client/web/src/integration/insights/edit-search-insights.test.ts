@@ -7,13 +7,8 @@ import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing
 import { createWebIntegrationTestContext, WebIntegrationTestContext } from '../context'
 import { percySnapshotWithVariants } from '../utils'
 
-import {
-    INSIGHT_TYPES_MIGRATION_BULK_SEARCH,
-    INSIGHT_TYPES_MIGRATION_COMMITS,
-    INSIGHT_VIEW_TEAM_SIZE,
-    INSIGHT_VIEW_TYPES_MIGRATION,
-} from './utils/insight-mock-data'
-import { overrideGraphQLExtensions } from './utils/override-graphql-with-extensions'
+import { INSIGHT_TYPES_MIGRATION_BULK_SEARCH, INSIGHT_TYPES_MIGRATION_COMMITS } from './utils/insight-mock-data'
+import { overrideGraphQLExtensions } from './utils/override-insights-graphql'
 
 interface InsightValues {
     series: {
@@ -114,21 +109,11 @@ describe('Code insight edit insight page', () => {
 
         overrideGraphQLExtensions({
             testContext,
-            /**
-             * Since search insight and code stats insight are working via user/org
-             * settings. We have to mock them by mocking user settings and provide
-             * mock data - mocking extension work.
-             * */
+
+            // Since search insight and code stats insights work via user/org
+            // settings. We have to mock them by mocking user settings and provide
+            // settings cascade mock data
             userSettings,
-            insightExtensionsMocks: {
-                'searchInsights.insight.graphQLTypesMigration': INSIGHT_VIEW_TYPES_MIGRATION,
-                'searchInsights.insight.TestInsightTitle': {
-                    ...INSIGHT_VIEW_TYPES_MIGRATION,
-                    title: 'Test insight',
-                },
-                'searchInsights.insight.teamSize': INSIGHT_VIEW_TEAM_SIZE,
-                'searchInsights.insight.orgTeamSize': INSIGHT_VIEW_TEAM_SIZE,
-            },
             overrides: {
                 OverwriteSettings: () => ({
                     settingsMutation: {
@@ -171,21 +156,17 @@ describe('Code insight edit insight page', () => {
                     }
                 },
 
-                /**
-                 * Mock for async repositories field validation.
-                 * */
+                // Mock for async repositories field validation.
                 BulkRepositoriesSearch: () => ({
                     repoSearch0: { name: 'github.com/sourcegraph/sourcegraph' },
                     repoSearch1: { name: 'github.com/sourcegraph/about' },
                 }),
 
-                /**
-                 * Mocks of commits searching and data search itself for live preview chart
-                 * */
+                // Mocks of commits searching and data search itself for live preview chart
                 BulkSearchCommits: () => INSIGHT_TYPES_MIGRATION_COMMITS,
                 BulkSearch: () => INSIGHT_TYPES_MIGRATION_BULK_SEARCH,
 
-                /** Mock for repository suggest component. */
+                // Mock for repository suggest component
                 RepositorySearchSuggestions: () => ({
                     repositories: { nodes: [] },
                 }),
@@ -321,31 +302,21 @@ describe('Code insight edit insight page', () => {
         overrideGraphQLExtensions({
             testContext,
 
-            /**
-             * Since search insight and code stats insight are working via user/org
-             * settings. We have to mock them by mocking user settings and provide
-             * mock data - mocking extension work.
-             * */
+            // Since search insight and code stats insights work via user/org
+            // settings. We have to mock them by mocking user settings and provide
+            // mock setting cascade data
             userSettings: settings,
-            insightExtensionsMocks: {
-                'searchInsights.insight.graphQLTypesMigration': INSIGHT_VIEW_TYPES_MIGRATION,
-                'searchInsights.insight.teamSize': INSIGHT_VIEW_TEAM_SIZE,
-            },
             overrides: {
-                /**
-                 * Mock for async repositories field validation.
-                 * */
+                // Mock for async repositories field validation.
                 BulkRepositoriesSearch: () => ({
                     repoSearch0: { name: 'github.com/sourcegraph/sourcegraph' },
                 }),
 
-                /**
-                 * Mocks of commits searching and data search itself for live preview chart
-                 * */
+                // Mocks of commits searching and data search itself for live preview chart
                 BulkSearchCommits: () => INSIGHT_TYPES_MIGRATION_COMMITS,
                 BulkSearch: () => INSIGHT_TYPES_MIGRATION_BULK_SEARCH,
 
-                /** Mock for repository suggest component. */
+                // Mock for repository suggest component
                 RepositorySearchSuggestions: () => ({
                     repositories: { nodes: [] },
                 }),

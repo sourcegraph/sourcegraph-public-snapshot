@@ -1,3 +1,4 @@
+import classNames from 'classnames'
 import React, { useEffect } from 'react'
 import { Link, Redirect, useLocation } from 'react-router-dom'
 
@@ -14,6 +15,7 @@ import { eventLogger } from '../tracking/eventLogger'
 import { CloudSignUpPage, ShowEmailFormQueryParameter } from './CloudSignUpPage'
 import { SourcegraphIcon } from './icons'
 import { getReturnTo } from './SignInSignUpCommon'
+import signInSignUpCommonStyles from './SignInSignUpCommon.module.scss'
 import { SignUpArguments, SignUpForm } from './SignUpForm'
 
 interface SignUpPageProps extends ThemeProps, TelemetryProps, FeatureFlagProps {
@@ -86,7 +88,7 @@ export const SignUpPage: React.FunctionComponent<SignUpPageProps> = ({
     }
 
     return (
-        <div className="signin-signup-page sign-up-page">
+        <div className={signInSignUpCommonStyles.signinSignupPage}>
             <PageTitle title="Sign up" />
             <HeroPage
                 icon={SourcegraphIcon}
@@ -97,7 +99,7 @@ export const SignUpPage: React.FunctionComponent<SignUpPageProps> = ({
                 }
                 lessPadding={true}
                 body={
-                    <div className="signup-page__container pb-5">
+                    <div className={classNames('pb-5', signInSignUpCommonStyles.signupPageContainer)}>
                         {context.sourcegraphDotComMode && <p className="pt-1 pb-2">Start searching public code now</p>}
                         <SignUpForm context={context} onSignUp={handleSignUp} />
                         <p className="mt-3">

@@ -57,7 +57,7 @@ export const ExtensionRegistrySidenav: React.FunctionComponent<
                     <button
                         type="button"
                         className={classnames(
-                            'btn text-left sidebar__link--inactive d-flex sidebar-nav-link w-100',
+                            'btn text-left sidebar__link--inactive d-flex w-100',
                             selectedCategory === category && 'btn-primary'
                         )}
                         data-test-extension-category={category}

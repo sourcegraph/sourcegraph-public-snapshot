@@ -14,6 +14,7 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
+	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/jvmpackages/coursier"
 	"github.com/sourcegraph/sourcegraph/internal/vcs"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -115,6 +116,51 @@ func (s JVMPackagesSyncer) runCloneCommand(t *testing.T, bareGitDirectory string
 	cmd, err := s.CloneCommand(context.Background(), &url, bareGitDirectory)
 	assert.Nil(t, err)
 	assert.Nil(t, cmd.Run())
+}
+
+func TestNoMaliciousFiles(t *testing.T) {
+	dir, err := os.MkdirTemp("", "")
+	assert.Nil(t, err)
+	defer os.RemoveAll(dir)
+
+	jarPath := path.Join(dir, "sampletext.zip")
+	extractPath := path.Join(dir, "extracted")
+	assert.Nil(t, os.Mkdir(extractPath, os.ModePerm))
+
+	createMaliciousJar(t, jarPath)
+
+	s := JVMPackagesSyncer{
+		Config:  &schema.JVMPackagesConnection{Maven: &schema.Maven{Dependencies: []string{}}},
+		DBStore: &simpleJVMPackageDBStoreMock{},
+	}
+
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel() // cancel now  to prevent any network IO
+	err = s.commitJar(ctx, reposource.MavenDependency{}, extractPath, jarPath, &schema.JVMPackagesConnection{Maven: &schema.Maven{}})
+	assert.NotNil(t, err)
+
+	files, err := os.ReadDir(extractPath)
+	assert.Nil(t, err)
+	assert.Equal(t, 2, len(files))
+}
+
+func createMaliciousJar(t *testing.T, name string) {
+	f, err := os.Create(name)
+	assert.Nil(t, err)
+	defer f.Close()
+	writer := zip.NewWriter(f)
+	defer writer.Close()
+
+	_, err = writer.Create("/")
+	assert.Nil(t, err)
+	_, err = writer.Create("/hello/burger")
+	assert.Nil(t, err)
+	_, err = writer.Create("/hello/../../burger")
+	assert.Nil(t, err)
+	_, err = writer.Create("sample/burger")
+	assert.Nil(t, err)
+	_, err = writer.Create(".git/test")
+	assert.Nil(t, err)
 }
 
 func TestJVMCloneCommand(t *testing.T) {

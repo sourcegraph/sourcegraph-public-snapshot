@@ -43,6 +43,7 @@ func (r *batchChangesConnectionResolver) TotalCount(ctx context.Context) (int32,
 		InitialApplierID: r.opts.InitialApplierID,
 		NamespaceUserID:  r.opts.NamespaceUserID,
 		NamespaceOrgID:   r.opts.NamespaceOrgID,
+		RepoID:           r.opts.RepoID,
 	}
 	count, err := r.store.CountBatchChanges(ctx, opts)
 	return int32(count), err

@@ -55,10 +55,7 @@ Run `yarn upgrade -L PACKAGE`.
 
 [esbuild](https://esbuild.github.io/) is an alternative to Webpack for building `client/web` (the web app). Its usage on our codebase is **EXPERIMENTAL** and optional.
 
-To use esbuild instead of Webpack, set the env var `DEV_WEB_BUILDER=esbuild`:
-
-- For the `start.sh` script: `DEV_WEB_BUILDER=esbuild enterprise/dev/start.sh`
-- For `sg`: add `DEV_WEB_BUILDER: esbuild` to the `env` section of the `web` or `enterprise-web` commands (the `web-standalone` and `enterprise-web-standalone` commands aren't yet supported for esbuild)
+To use esbuild instead of Webpack, set the env var `DEV_WEB_BUILDER=esbuild` (when using either `sg` or the `start.sh` script).
 
 Comparison vs. Webpack:
 

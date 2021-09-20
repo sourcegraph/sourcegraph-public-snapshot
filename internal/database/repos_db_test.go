@@ -106,7 +106,6 @@ type InsertRepoOp struct {
 	Description  string
 	Fork         bool
 	Archived     bool
-	Cloned       bool
 	Private      bool
 	ExternalRepo api.ExternalRepoSpec
 }
@@ -122,8 +121,7 @@ WITH upsert AS (
     external_service_type = NULLIF(BTRIM($5), ''),
     external_service_id   = NULLIF(BTRIM($6), ''),
     archived              = $7,
-    cloned                = $8,
-    private               = $9
+    private               = $8
   WHERE name = $1 OR (
     external_id IS NOT NULL
     AND external_service_type IS NOT NULL
@@ -146,7 +144,6 @@ INSERT INTO repo (
   external_service_type,
   external_service_id,
   archived,
-  cloned,
   private
 ) (
   SELECT
@@ -157,8 +154,7 @@ INSERT INTO repo (
     NULLIF(BTRIM($5), '') AS external_service_type,
     NULLIF(BTRIM($6), '') AS external_service_id,
     $7 AS archived,
-    $8 AS cloned,
-    $9 AS private
+    $8 AS private
   WHERE NOT EXISTS (SELECT 1 FROM upsert)
 )`
 
@@ -201,7 +197,6 @@ func (s *RepoStore) Upsert(ctx context.Context, op InsertRepoOp) error {
 		op.ExternalRepo.ServiceType,
 		op.ExternalRepo.ServiceID,
 		op.Archived,
-		op.Cloned,
 		op.Private,
 	)
 
@@ -2294,6 +2289,43 @@ func TestRepos_RepoExternalServices(t *testing.T) {
 
 	assertServices(repo1.ID, []*types.ExternalService{service1})
 	assertServices(repo2.ID, []*types.ExternalService{service2})
+}
+
+func TestGetFirstRepoNamesByCloneURL(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
+	db := dbtest.NewDB(t, "")
+	ctx := actor.WithInternalActor(context.Background())
+
+	confGet := func() *conf.Unified {
+		return &conf.Unified{}
+	}
+
+	services := types.MakeExternalServices()
+	service1 := services[0]
+	if err := ExternalServices(db).Create(ctx, confGet, service1); err != nil {
+		t.Fatal(err)
+	}
+
+	repo1 := types.MakeGithubRepo(service1)
+	if err := Repos(db).Create(ctx, repo1); err != nil {
+		t.Fatal(err)
+	}
+
+	_, err := db.ExecContext(ctx, "UPDATE external_service_repos SET clone_url = 'https://github.com/foo/bar' WHERE repo_id = $1", repo1.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	name, err := Repos(db).GetFirstRepoNamesByCloneURL(ctx, "https://github.com/foo/bar")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if name != "github.com/foo/bar" {
+		t.Fatalf("Want %q, got %q", "github.com/foo/bar", name)
+	}
 }
 
 func initUserAndRepo(t *testing.T, ctx context.Context, db dbutil.DB) (*types.User, *types.Repo) {

@@ -1,6 +1,7 @@
 import { RawRepoSpec } from '@sourcegraph/shared/src/util/url'
 
 import { DiffResolvedRevisionSpec } from '../../repo'
+import { RepoURLParseError } from '../shared/errors'
 
 /**
  * Returns the elements on the page which should be marked
@@ -248,7 +249,7 @@ export function parseURL(location: Pick<Location, 'host' | 'pathname' | 'href'> 
     const { host, pathname } = location
     const [user, ghRepoName, pageType, ...rest] = pathname.slice(1).split('/')
     if (!user || !ghRepoName) {
-        throw new Error(`Could not parse repoName from GitHub url: ${location.href}`)
+        throw new RepoURLParseError(`Could not parse repoName from GitHub url: ${location.href}`)
     }
     const rawRepoName = `${host}/${user}/${ghRepoName}`
     switch (pageType) {

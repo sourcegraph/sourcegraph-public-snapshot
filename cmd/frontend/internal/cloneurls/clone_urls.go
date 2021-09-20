@@ -7,6 +7,7 @@ import (
 
 	"github.com/cockroachdb/errors"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -31,6 +32,15 @@ func ReposourceCloneURLToRepoName(ctx context.Context, db dbutil.DB, cloneURL st
 		return repoName, nil
 	}
 
+	// Fast path for repos we already have in our database
+	name, err := database.Repos(db).GetFirstRepoNamesByCloneURL(ctx, cloneURL)
+	if err != nil {
+		return "", err
+	}
+	if name != "" {
+		return name, nil
+	}
+
 	opt := database.ExternalServicesListOptions{
 		Kinds: []string{
 			extsvc.KindGitHub,
@@ -42,9 +52,17 @@ func ReposourceCloneURLToRepoName(ctx context.Context, db dbutil.DB, cloneURL st
 			extsvc.KindOther,
 		},
 		LimitOffset: &database.LimitOffset{
-			Limit: 500, // The number is randomly chosen
+			Limit: 50, // The number is randomly chosen
 		},
 	}
+
+	if envvar.SourcegraphDotComMode() {
+		// We want to check these first as they'll be able to decode the majority of
+		// repos. If our cloud_default services are unable to decode the clone url then
+		// we fall back to going through all services until we find a match.
+		opt.OnlyCloudDefault = true
+	}
+
 	for {
 		svcs, err := database.ExternalServices(db).List(ctx, opt)
 		if err != nil {
@@ -63,6 +81,12 @@ func ReposourceCloneURLToRepoName(ctx context.Context, db dbutil.DB, cloneURL st
 			if repoName != "" {
 				return repoName, nil
 			}
+		}
+
+		if opt.OnlyCloudDefault {
+			// Try again without narrowing down to cloud_default external services
+			opt.OnlyCloudDefault = false
+			continue
 		}
 
 		if len(svcs) < opt.Limit {

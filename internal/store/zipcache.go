@@ -2,7 +2,6 @@ package store
 
 import (
 	"archive/zip"
-	"bytes"
 	"fmt"
 	"hash/fnv"
 	"io"
@@ -172,24 +171,6 @@ func (f *ZipFile) PopulateFiles(r *zip.Reader) error {
 // Close has been called.
 func (f *ZipFile) Close() {
 	f.wg.Done()
-}
-
-func MockZipFile(data []byte) (*ZipFile, error) {
-	r, err := zip.NewReader(bytes.NewReader(data), int64(len(data)))
-	if err != nil {
-		return nil, err
-	}
-	zf := new(ZipFile)
-	if err := zf.PopulateFiles(r); err != nil {
-		return nil, err
-	}
-	// Make a copy of data to avoid accidental alias/re-use bugs.
-	// This method is only for testing, so don't sweat the performance.
-	zf.Data = make([]byte, len(data))
-	copy(zf.Data, data)
-	// zf.f is intentionally left nil;
-	// this is an indicator that this is a mock ZipFile.
-	return zf, nil
 }
 
 // A SrcFile is a single file inside a ZipFile.

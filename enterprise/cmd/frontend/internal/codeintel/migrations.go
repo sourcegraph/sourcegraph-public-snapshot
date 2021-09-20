@@ -52,5 +52,13 @@ func registerMigrations(ctx context.Context, db dbutil.DB, outOfBandMigrationRun
 		return err
 	}
 
+	if err := outOfBandMigrationRunner.Register(
+		dbmigrations.ReferenceCountMigrationID, // 11
+		dbmigrations.NewReferenceCountMigrator(services.dbStore, config.ReferenceCountMigrationBatchSize),
+		oobmigration.MigratorOptions{Interval: config.ReferenceCountMigrationBatchInterval},
+	); err != nil {
+		return err
+	}
+
 	return nil
 }

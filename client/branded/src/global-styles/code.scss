@@ -1,10 +1,15 @@
-$code-font-family: sfmono-regular, consolas, menlo, dejavu sans mono, monospace;
-$code-font-size: (12/14) + em;
+:root {
+    --code-font-family: sfmono-regular, consolas, menlo, dejavu sans mono, monospace;
+    --code-font-size: #{(12/14)}em;
+}
+
+$code-font-family: var(--code-font-family);
+$code-font-size: var(--code-font-size);
 
 code,
 .text-code {
-    font-family: $code-font-family;
-    font-size: $code-font-size;
+    font-family: var(--code-font-family);
+    font-size: var(--code-font-size);
     line-height: 1rem;
     white-space: pre;
 }
@@ -14,11 +19,11 @@ code,
 }
 
 kbd {
-    font-family: SFMono-Regular, Consolas, Menlo, DejaVu Sans Mono, monospace;
+    font-family: var(--code-font-family);
+    font-size: var(--code-font-size);
     display: inline-block;
     line-height: (16/12);
     height: 1.125rem;
-    font-size: $code-font-size;
     padding: 0 0.25rem;
     margin: 0 0.125rem;
     vertical-align: middle;

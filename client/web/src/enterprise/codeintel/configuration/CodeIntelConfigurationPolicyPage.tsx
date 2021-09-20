@@ -1,7 +1,6 @@
 import * as H from 'history'
-import React, { FunctionComponent, useEffect, useState } from 'react'
+import React, { FunctionComponent, useCallback, useEffect, useState } from 'react'
 import { RouteComponentProps } from 'react-router'
-import { of } from 'rxjs'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
@@ -9,18 +8,17 @@ import { ErrorAlert } from '@sourcegraph/web/src/components/alerts'
 import { PageTitle } from '@sourcegraph/web/src/components/PageTitle'
 import { Button, Container, LoadingSpinner, PageHeader } from '@sourcegraph/wildcard'
 
-import { CodeIntelligenceConfigurationPolicyFields, GitObjectType } from '../../../graphql-operations'
+import { CodeIntelligenceConfigurationPolicyFields } from '../../../graphql-operations'
 
 import {
-    getPolicyById as defaultGetPolicyById,
     repoName as defaultRepoName,
     searchGitBranches as defaultSearchGitBranches,
     searchGitTags as defaultSearchGitTags,
-    updatePolicy as defaultUpdatePolicy,
 } from './backend'
 import { BranchTargetSettings } from './BranchTargetSettings'
 import { IndexingSettings } from './IndexSettings'
 import { RetentionSettings } from './RetentionSettings'
+import { usePolicyConfigurationByID, useSavePolicyConfiguration } from './usePoliciesConfigurations'
 
 export interface CodeIntelConfigurationPolicyPageProps
     extends RouteComponentProps<{ id: string }>,
@@ -28,31 +26,10 @@ export interface CodeIntelConfigurationPolicyPageProps
         TelemetryProps {
     repo?: { id: string }
     indexingEnabled?: boolean
-    getPolicyById?: typeof defaultGetPolicyById
     repoName?: typeof defaultRepoName
     searchGitBranches?: typeof defaultSearchGitBranches
     searchGitTags?: typeof defaultSearchGitTags
-    updatePolicy?: typeof defaultUpdatePolicy
     history: H.History
-}
-
-enum State {
-    Idle,
-    Saving,
-}
-
-const emptyPolicy: CodeIntelligenceConfigurationPolicyFields = {
-    __typename: 'CodeIntelligenceConfigurationPolicy',
-    id: '',
-    name: '',
-    type: GitObjectType.GIT_COMMIT,
-    pattern: '',
-    retentionEnabled: false,
-    retentionDurationHours: null,
-    retainIntermediateCommits: false,
-    indexingEnabled: false,
-    indexCommitMaxAgeHours: null,
-    indexIntermediateCommits: false,
 }
 
 export const CodeIntelConfigurationPolicyPage: FunctionComponent<CodeIntelConfigurationPolicyPageProps> = ({
@@ -61,57 +38,39 @@ export const CodeIntelConfigurationPolicyPage: FunctionComponent<CodeIntelConfig
     },
     repo,
     indexingEnabled = window.context?.codeIntelAutoIndexingEnabled,
-    getPolicyById = defaultGetPolicyById,
     repoName = defaultRepoName,
     searchGitBranches = defaultSearchGitBranches,
     searchGitTags = defaultSearchGitTags,
-    updatePolicy = defaultUpdatePolicy,
     history,
     telemetryService,
 }) => {
     useEffect(() => telemetryService.logViewEvent('CodeIntelConfigurationPolicyPageProps'), [telemetryService])
 
+    const { policyConfig, loadingPolicyConfig, policyConfigError } = usePolicyConfigurationByID(id)
     const [saved, setSaved] = useState<CodeIntelligenceConfigurationPolicyFields>()
-    const [policy, setPolicy] = useState<CodeIntelligenceConfigurationPolicyFields>()
-    const [fetchError, setFetchError] = useState<Error>()
+    const [policy, setPolicy] = useState<CodeIntelligenceConfigurationPolicyFields | undefined>()
+
+    const { savePolicyConfiguration, isSaving, savingError } = useSavePolicyConfiguration(policy?.id === '')
 
     useEffect(() => {
-        const subscription = (id === 'new' ? of(emptyPolicy) : getPolicyById(id)).subscribe(policy => {
-            setSaved(policy)
-            setPolicy(policy)
-        }, setFetchError)
+        setPolicy(policyConfig)
+        setSaved(policyConfig)
+    }, [policyConfig])
 
-        return () => subscription.unsubscribe()
-    }, [id, getPolicyById])
-
-    const [saveError, setSaveError] = useState<Error>()
-    const [state, setState] = useState(() => State.Idle)
-
-    const save = async (): Promise<void> => {
+    const savePolicyConfig = useCallback(async () => {
         if (!policy) {
             return
         }
 
-        let navigatingAway = false
-        setState(State.Saving)
-        setSaveError(undefined)
+        const variables = repo?.id ? { ...policy, repositoryId: repo.id ?? null } : { ...policy }
+        return savePolicyConfiguration({ variables }).then(() => history.push('./'))
+    }, [policy, repo, savePolicyConfiguration, history])
 
-        try {
-            await updatePolicy(policy, repo?.id).toPromise()
-            history.push('./')
-            navigatingAway = true
-        } catch (error) {
-            setSaveError(error)
-        } finally {
-            if (!navigatingAway) {
-                setState(State.Idle)
-            }
-        }
+    if (policyConfigError || policy === undefined) {
+        return <ErrorAlert prefix="Error fetching configuration policy" error={policyConfigError} />
     }
 
-    return fetchError ? (
-        <ErrorAlert prefix="Error fetching configuration policy" error={fetchError} />
-    ) : (
+    return (
         <>
             <PageTitle title="Precise code intelligence configuration policy" />
             <PageHeader
@@ -126,13 +85,19 @@ export const CodeIntelConfigurationPolicyPage: FunctionComponent<CodeIntelConfig
                 }.`}
                 className="mb-3"
             />
-
-            {policy === undefined ? (
+            {loadingPolicyConfig ? (
                 <LoadingSpinner className="icon-inline" />
             ) : (
                 <>
+                    {policy.protected && (
+                        <div className="alert alert-info">
+                            This configuration policy is protected. Protected configuration policies may not be deleted
+                            and only the retention duration and indexing options are editable.
+                        </div>
+                    )}
+
                     <Container className="container form">
-                        {saveError && <ErrorAlert prefix="Error saving configuration policy" error={saveError} />}
+                        {savingError && <ErrorAlert prefix="Error saving configuration policy" error={savingError} />}
                         <BranchTargetSettings
                             repoId={repo?.id}
                             policy={policy}
@@ -140,6 +105,7 @@ export const CodeIntelConfigurationPolicyPage: FunctionComponent<CodeIntelConfig
                             repoName={repoName}
                             searchGitBranches={searchGitBranches}
                             searchGitTags={searchGitTags}
+                            disabled={policy.protected}
                         />
                     </Container>
 
@@ -150,8 +116,8 @@ export const CodeIntelConfigurationPolicyPage: FunctionComponent<CodeIntelConfig
                         <Button
                             type="submit"
                             variant="primary"
-                            onClick={save}
-                            disabled={state !== State.Idle || comparePolicies(policy, saved)}
+                            onClick={savePolicyConfig}
+                            disabled={isSaving || comparePolicies(policy, saved)}
                         >
                             {policy.id === '' ? 'Create' : 'Update'} policy
                         </Button>
@@ -161,12 +127,12 @@ export const CodeIntelConfigurationPolicyPage: FunctionComponent<CodeIntelConfig
                             className="ml-3"
                             variant="secondary"
                             onClick={() => history.push('./')}
-                            disabled={state !== State.Idle}
+                            disabled={isSaving}
                         >
                             Cancel
                         </Button>
 
-                        {state === State.Saving && (
+                        {isSaving && (
                             <span className="ml-2">
                                 <LoadingSpinner className="icon-inline" /> Saving...
                             </span>

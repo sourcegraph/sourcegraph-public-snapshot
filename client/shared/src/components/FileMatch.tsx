@@ -74,14 +74,14 @@ const sumHighlightRanges = (count: number, item: MatchItem): number => count + i
 export const FileMatch: React.FunctionComponent<Props> = props => {
     const result = props.result
     const repoAtRevisionURL = getRepositoryUrl(result.repository, result.branches)
-    const revisionDisplayName = getRevision(result.branches, result.version)
+    const revisionDisplayName = getRevision(result.branches, result.commit)
     const renderTitle = (): JSX.Element => (
         <>
             <RepoIcon repoName={result.repository} className="icon-inline text-muted" />
             <RepoFileLink
                 repoName={result.repository}
                 repoURL={repoAtRevisionURL}
-                filePath={result.name}
+                filePath={result.path}
                 fileURL={getFileMatchUrl(result)}
                 repoDisplayName={
                     props.repoDisplayName

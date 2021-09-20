@@ -187,25 +187,25 @@ func searchInRepo(ctx context.Context, repoRevs *search.RepositoryRevisions, pat
 // indexedSymbols checks to see if Zoekt has indexed symbols information for a
 // repository at a specific commit. If it has it returns the branch name (for
 // use when querying zoekt). Otherwise an empty string is returned.
-func indexedSymbolsBranch(ctx context.Context, repository, commit string) string {
+func indexedSymbolsBranch(ctx context.Context, repo *types.RepoName, commit string) string {
 	z := search.Indexed()
-	if !z.Enabled() {
+	if z == nil {
 		return ""
 	}
 
 	ctx, cancel := context.WithTimeout(ctx, time.Second)
 	defer cancel()
-	set, err := z.ListAll(ctx)
+	list, err := z.List(ctx, &zoektquery.Const{Value: true}, &zoekt.ListOptions{Minimal: true})
 	if err != nil {
 		return ""
 	}
 
-	repo, ok := set[repository]
-	if !ok || !repo.HasSymbols {
+	r, ok := list.Minimal[uint32(repo.ID)]
+	if !ok || !r.HasSymbols {
 		return ""
 	}
 
-	for _, branch := range repo.Branches {
+	for _, branch := range r.Branches {
 		if branch.Version == commit {
 			return branch.Name
 		}
@@ -256,7 +256,7 @@ func searchZoekt(ctx context.Context, repoName types.RepoName, commitID api.Comm
 
 	final := zoektquery.Simplify(zoektquery.NewAnd(ands...))
 	match := limitOrDefault(first) + 1
-	resp, err := search.Indexed().Client.Search(ctx, final, &zoekt.SearchOptions{
+	resp, err := search.Indexed().Search(ctx, final, &zoekt.SearchOptions{
 		Trace:                  ot.ShouldTrace(ctx),
 		MaxWallTime:            3 * time.Second,
 		ShardMaxMatchCount:     match * 25,
@@ -307,7 +307,7 @@ func searchZoekt(ctx context.Context, repoName types.RepoName, commitID api.Comm
 func Compute(ctx context.Context, repoName types.RepoName, commitID api.CommitID, inputRev *string, query *string, first *int32, includePatterns *[]string) (res []*result.SymbolMatch, err error) {
 	// TODO(keegancsmith) we should be able to use indexedSearchRequest here
 	// and remove indexedSymbolsBranch.
-	if branch := indexedSymbolsBranch(ctx, string(repoName.Name), string(commitID)); branch != "" {
+	if branch := indexedSymbolsBranch(ctx, &repoName, string(commitID)); branch != "" {
 		return searchZoekt(ctx, repoName, commitID, inputRev, branch, query, first, includePatterns)
 	}
 

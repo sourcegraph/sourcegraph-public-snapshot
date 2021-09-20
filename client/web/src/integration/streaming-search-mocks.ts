@@ -80,17 +80,17 @@ export const mixedSearchStreamEvents: SearchEvent[] = [
             { type: 'repo', repository: 'gitlab.sgdev.org/lg-test-private/lg-test' },
             {
                 type: 'path',
-                name: 'overridable/bool_or_string_test.go',
+                path: 'overridable/bool_or_string_test.go',
                 repository: 'gitlab.sgdev.org/aharvey/batch-change-utils',
                 branches: [''],
-                version: '206c057cc03eea48300a4bd33f4dc4222d242114',
+                commit: '206c057cc03eea48300a4bd33f4dc4222d242114',
             },
             {
                 type: 'content',
-                name: 'src/main.test.ts',
+                path: 'src/main.test.ts',
                 repository: 'gitlab.sgdev.org/sourcegraph/lsif-cpp',
                 branches: [''],
-                version: '2e3569cf60646c9ce4e37a43e5cf698a00cbd41a',
+                commit: '2e3569cf60646c9ce4e37a43e5cf698a00cbd41a',
                 lineMatches: [
                     {
                         line: "test('does not emit items with duplicate IDs', async () => {",
@@ -321,10 +321,10 @@ export const symbolSearchStreamEvents: SearchEvent[] = [
         data: [
             {
                 type: 'symbol',
-                name: 'website/src/components/TestimonialCarousel.tsx',
+                path: 'website/src/components/TestimonialCarousel.tsx',
                 repository: 'gitlab.sgdev.org/sourcegraph/about',
                 branches: [''],
-                version: 'b1812108c8c8f0d24c03d69a883060159ebe1ae3',
+                commit: 'b1812108c8c8f0d24c03d69a883060159ebe1ae3',
                 symbols: [
                     {
                         url:
@@ -344,10 +344,10 @@ export const symbolSearchStreamEvents: SearchEvent[] = [
             },
             {
                 type: 'symbol',
-                name: 'src/characters.test.ts',
+                path: 'src/characters.test.ts',
                 repository: 'gitlab.sgdev.org/sourcegraph/event-positions',
                 branches: [''],
-                version: '03f7c3714a1eefe96fdaca48dd234ea3a19224ff',
+                commit: '03f7c3714a1eefe96fdaca48dd234ea3a19224ff',
                 symbols: [
                     {
                         url: '/gitlab.sgdev.org/sourcegraph/event-positions/-/blob/src/characters.test.ts#L43:9-43:18',
@@ -366,10 +366,10 @@ export const symbolSearchStreamEvents: SearchEvent[] = [
             },
             {
                 type: 'symbol',
-                name: 'src/positions_events.test.ts',
+                path: 'src/positions_events.test.ts',
                 repository: 'gitlab.sgdev.org/sourcegraph/event-positions',
                 branches: [''],
-                version: '03f7c3714a1eefe96fdaca48dd234ea3a19224ff',
+                commit: '03f7c3714a1eefe96fdaca48dd234ea3a19224ff',
                 symbols: [
                     {
                         url:
@@ -382,10 +382,10 @@ export const symbolSearchStreamEvents: SearchEvent[] = [
             },
             {
                 type: 'symbol',
-                name: 'src/typings/SourcegraphGQL.d.ts',
+                path: 'src/typings/SourcegraphGQL.d.ts',
                 repository: 'gitlab.sgdev.org/sourcegraph/sourcegraph-code-discussions',
                 branches: [''],
-                version: 'f8c71486372087822b7995f0d572c6422b7ae0e5',
+                commit: 'f8c71486372087822b7995f0d572c6422b7ae0e5',
                 symbols: [
                     {
                         url:

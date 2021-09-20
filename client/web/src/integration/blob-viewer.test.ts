@@ -223,13 +223,10 @@ describe('Blob viewer', () => {
                         extensions: {
                             nodes: [
                                 {
-                                    id: 'TestExtensionID',
                                     extensionID: 'test/test',
                                     manifest: {
-                                        raw: JSON.stringify(extensionManifest),
+                                        jsonFields: extensionManifest,
                                     },
-                                    url: '/extensions/test/test',
-                                    viewerCanAdminister: false,
                                 },
                             ],
                         },
@@ -295,12 +292,8 @@ describe('Blob viewer', () => {
         })
 
         interface MockExtension {
-            id: string
             extensionID: string
             extensionManifest: ExtensionManifest
-            /** The URL of the JavaScript bundle */
-            url: string
-            viewerCanAdminister: boolean
             /**
              * A function whose body is a Sourcegraph extension.
              *
@@ -315,7 +308,6 @@ describe('Blob viewer', () => {
         it('adds and clears line decoration attachments properly', async () => {
             const mockExtensions: MockExtension[] = [
                 {
-                    id: 'TestFixedLineID',
                     extensionID: 'test/fixed-line',
                     extensionManifest: {
                         url: new URL(
@@ -324,8 +316,6 @@ describe('Blob viewer', () => {
                         ).href,
                         activationEvents: ['*'],
                     },
-                    url: '/extensions/test/fixed-line',
-                    viewerCanAdminister: false,
                     bundle: function extensionBundle(): void {
                         // eslint-disable-next-line @typescript-eslint/no-require-imports, @typescript-eslint/no-var-requires
                         const sourcegraph = require('sourcegraph') as typeof import('sourcegraph')
@@ -379,7 +369,6 @@ describe('Blob viewer', () => {
                     },
                 },
                 {
-                    id: 'TestSelectedLineID',
                     extensionID: 'test/selected-line',
                     extensionManifest: {
                         url: new URL(
@@ -388,8 +377,6 @@ describe('Blob viewer', () => {
                         ).href,
                         activationEvents: ['*'],
                     },
-                    url: '/extensions/test/selected-line',
-                    viewerCanAdminister: false,
                     bundle: function extensionBundle(): void {
                         // eslint-disable-next-line @typescript-eslint/no-require-imports, @typescript-eslint/no-var-requires
                         const sourcegraph = require('sourcegraph') as typeof import('sourcegraph')
@@ -513,7 +500,7 @@ describe('Blob viewer', () => {
                         extensions: {
                             nodes: mockExtensions.map(mockExtension => ({
                                 ...mockExtension,
-                                manifest: { raw: JSON.stringify(mockExtension.extensionManifest) },
+                                manifest: { jsonFields: mockExtension.extensionManifest },
                             })),
                         },
                     },
@@ -629,7 +616,6 @@ describe('Blob viewer', () => {
              */
 
             const wordFinder: MockExtension = {
-                id: 'TestWordFinderID',
                 extensionID: 'test/word-finder',
                 extensionManifest: {
                     url: new URL(
@@ -638,8 +624,6 @@ describe('Blob viewer', () => {
                     ).href,
                     activationEvents: ['*'],
                 },
-                url: '/extensions/test/word-finder',
-                viewerCanAdminister: false,
                 bundle: function extensionBundle(): void {
                     // eslint-disable-next-line @typescript-eslint/no-require-imports, @typescript-eslint/no-var-requires
                     const sourcegraph = require('sourcegraph') as typeof import('sourcegraph')
@@ -782,7 +766,7 @@ describe('Blob viewer', () => {
                                 {
                                     ...wordFinder,
                                     manifest: {
-                                        raw: JSON.stringify(wordFinder.extensionManifest),
+                                        jsonFields: wordFinder.extensionManifest,
                                     },
                                 },
                             ],
@@ -920,13 +904,10 @@ describe('Blob viewer', () => {
                         extensions: {
                             nodes: [
                                 {
-                                    id: 'TestExtensionID',
                                     extensionID: 'test/references',
                                     manifest: {
-                                        raw: JSON.stringify(extensionManifest),
+                                        jsonFields: extensionManifest,
                                     },
-                                    url: '/extensions/test/references',
-                                    viewerCanAdminister: false,
                                 },
                             ],
                         },

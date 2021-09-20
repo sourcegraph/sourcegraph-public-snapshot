@@ -9,7 +9,7 @@ import { AggregateStreamingSearchResults, ContentMatch, RepositoryMatch } from '
 
 export const RESULT: ContentMatch = {
     type: 'content',
-    name: '.travis.yml',
+    path: '.travis.yml',
     repository: 'github.com/golang/oauth2',
     lineMatches: [
         {
@@ -25,9 +25,33 @@ export const REPO_MATCH_RESULT: RepositoryMatch = {
     repository: 'github.com/golang/oauth2',
 }
 
+export const REPO_MATCH_RESULTS_WITH_METADATA: RepositoryMatch[] = [
+    {
+        type: 'repo',
+        repository: 'github.com/golang/oauth2',
+        description: 'The Go package for OAuth2.',
+    },
+    {
+        type: 'repo',
+        repository: 'github.com/sourcegraph/sourcegraph',
+        description: 'Universtal code search',
+        repoStars: 123,
+        repoLastFetched: '2017-01-01T00:00:00Z',
+        private: true,
+    },
+    {
+        type: 'repo',
+        repository: 'github.com/sourcegraph/go-langserver',
+        description: 'Go language server',
+        repoStars: 9000,
+        fork: true,
+        archived: true,
+    },
+]
+
 export const MULTIPLE_MATCH_RESULT: ContentMatch = {
     type: 'content',
-    name: 'clientcredentials/clientcredentials_test.go',
+    path: 'clientcredentials/clientcredentials_test.go',
     repository: 'github.com/golang/oauth2',
     lineMatches: [
         {
@@ -120,8 +144,8 @@ export const MULTIPLE_SEARCH_RESULT: AggregateStreamingSearchResults = {
         MULTIPLE_MATCH_RESULT,
         {
             type: 'content',
-            name: 'example_test.go',
-            version: 'some-branch',
+            path: 'example_test.go',
+            commit: 'abcd1234',
             repository: 'github.com/golang/oauth2',
             lineMatches: [
                 {
@@ -130,6 +154,8 @@ export const MULTIPLE_SEARCH_RESULT: AggregateStreamingSearchResults = {
                     offsetAndLengths: [[15, 4]],
                 },
             ],
+            repoStars: 42,
+            repoLastFetched: '2017-01-01T00:00:00Z',
         },
     ],
 }

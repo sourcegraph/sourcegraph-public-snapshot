@@ -8,10 +8,11 @@ import sinon from 'sinon'
 
 import { FileMatch } from '@sourcegraph/shared/src/components/FileMatch'
 import { VirtualList } from '@sourcegraph/shared/src/components/VirtualList'
-import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
+import { GitRefType, SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
 import * as GQL from '@sourcegraph/shared/src/graphql/schema'
 import { AggregateStreamingSearchResults } from '@sourcegraph/shared/src/search/stream'
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 import {
     extensionsController,
     HIGHLIGHTED_FILE_LINES_REQUEST,
@@ -27,6 +28,7 @@ import * as helpers from '../helpers'
 
 import { StreamingProgress } from './progress/StreamingProgress'
 import { SearchResultsInfoBar } from './SearchResultsInfoBar'
+import { generateMockedResponses } from './sidebar/Revisions.mocks'
 import { StreamingSearchResults, StreamingSearchResultsProps } from './StreamingSearchResults'
 import { VersionContextWarning } from './VersionContextWarning'
 
@@ -50,8 +52,6 @@ describe('StreamingSearchResults', () => {
         location: history.location,
         authenticatedUser: null,
 
-        navbarSearchQueryState: { query: '' },
-        onNavbarQueryChange: () => {},
         isSourcegraphDotCom: false,
 
         settingsCascade: {
@@ -66,23 +66,32 @@ describe('StreamingSearchResults', () => {
         isLightTheme: true,
         enableCodeMonitoring: false,
         featureFlags: EMPTY_FEATURE_FLAGS,
+        extensionViews: () => null,
+    }
+
+    const revisionsMockResponses = generateMockedResponses(GitRefType.GIT_BRANCH, 5, 'github.com/golang/oauth2')
+
+    function render(component: React.ReactElement<StreamingSearchResultsProps>) {
+        return mount(
+            <BrowserRouter>
+                <MockedTestProvider mocks={revisionsMockResponses}>{component}</MockedTestProvider>
+            </BrowserRouter>
+        )
     }
 
     it('should call streaming search API with the right parameters from URL', () => {
         const searchSpy = sinon.spy(defaultProps.streamSearch)
 
-        const element = mount(
-            <BrowserRouter>
-                <StreamingSearchResults
-                    {...defaultProps}
-                    parsedSearchQuery="r:golang/oauth2 test f:travis"
-                    patternType={SearchPatternType.regexp}
-                    caseSensitive={true}
-                    versionContext="test"
-                    streamSearch={searchSpy}
-                    availableVersionContexts={[{ name: 'test', revisions: [] }]}
-                />
-            </BrowserRouter>
+        const element = render(
+            <StreamingSearchResults
+                {...defaultProps}
+                parsedSearchQuery="r:golang/oauth2 test f:travis"
+                patternType={SearchPatternType.regexp}
+                caseSensitive={true}
+                versionContext="test"
+                streamSearch={searchSpy}
+                availableVersionContexts={[{ name: 'test', revisions: [] }]}
+            />
         )
 
         sinon.assert.calledOnce(searchSpy)
@@ -104,18 +113,16 @@ describe('StreamingSearchResults', () => {
 
         const searchSpy = sinon.spy(defaultProps.streamSearch)
 
-        const element = mount(
-            <BrowserRouter>
-                <StreamingSearchResults
-                    {...defaultProps}
-                    parsedSearchQuery="r:golang/oauth2 test f:travis"
-                    patternType={SearchPatternType.regexp}
-                    caseSensitive={false}
-                    versionContext="test"
-                    streamSearch={searchSpy}
-                    availableVersionContexts={[{ name: 'something', revisions: [] }]}
-                />
-            </BrowserRouter>
+        const element = render(
+            <StreamingSearchResults
+                {...defaultProps}
+                parsedSearchQuery="r:golang/oauth2 test f:travis"
+                patternType={SearchPatternType.regexp}
+                caseSensitive={false}
+                versionContext="test"
+                streamSearch={searchSpy}
+                availableVersionContexts={[{ name: 'something', revisions: [] }]}
+            />
         )
 
         sinon.assert.calledOnce(searchSpy)
@@ -132,11 +139,7 @@ describe('StreamingSearchResults', () => {
     })
 
     it('should render progress with data from API', () => {
-        const element = mount(
-            <BrowserRouter>
-                <StreamingSearchResults {...defaultProps} />
-            </BrowserRouter>
-        )
+        const element = render(<StreamingSearchResults {...defaultProps} />)
 
         const progress = element.find(StreamingProgress)
         expect(progress.prop('progress')).toEqual(streamingSearchResult.progress)
@@ -145,11 +148,7 @@ describe('StreamingSearchResults', () => {
     })
 
     it('should expand and collapse results when event from infobar is triggered', () => {
-        const element = mount(
-            <BrowserRouter>
-                <StreamingSearchResults {...defaultProps} />
-            </BrowserRouter>
-        )
+        const element = render(<StreamingSearchResults {...defaultProps} />)
 
         let infobar = element.find(SearchResultsInfoBar)
         expect(infobar.prop('allExpanded')).toBe(false)
@@ -179,19 +178,17 @@ describe('StreamingSearchResults', () => {
         const history = createBrowserHistory()
         history.replace({ search: 'q=r:golang/oauth2+test+f:travis&c=test' })
 
-        const element = mount(
-            <BrowserRouter>
-                <StreamingSearchResults
-                    {...defaultProps}
-                    history={history}
-                    location={history.location}
-                    previousVersionContext={null}
-                    availableVersionContexts={[
-                        { name: 'test', revisions: [] },
-                        { name: 'other', revisions: [] },
-                    ]}
-                />
-            </BrowserRouter>
+        const element = render(
+            <StreamingSearchResults
+                {...defaultProps}
+                history={history}
+                location={history.location}
+                previousVersionContext={null}
+                availableVersionContexts={[
+                    { name: 'test', revisions: [] },
+                    { name: 'other', revisions: [] },
+                ]}
+            />
         )
 
         const warning = element.find(VersionContextWarning)
@@ -204,19 +201,17 @@ describe('StreamingSearchResults', () => {
         const history = createBrowserHistory()
         history.replace({ search: 'q=r:golang/oauth2+test+f:travis&c=test&from-context-toggle=true' })
 
-        const element = mount(
-            <BrowserRouter>
-                <StreamingSearchResults
-                    {...defaultProps}
-                    history={history}
-                    location={history.location}
-                    previousVersionContext={null}
-                    availableVersionContexts={[
-                        { name: 'test', revisions: [] },
-                        { name: 'other', revisions: [] },
-                    ]}
-                />
-            </BrowserRouter>
+        const element = render(
+            <StreamingSearchResults
+                {...defaultProps}
+                history={history}
+                location={history.location}
+                previousVersionContext={null}
+                availableVersionContexts={[
+                    { name: 'test', revisions: [] },
+                    { name: 'other', revisions: [] },
+                ]}
+            />
         )
 
         const warning = element.find(VersionContextWarning)
@@ -230,11 +225,7 @@ describe('StreamingSearchResults', () => {
             ...streamingSearchResult,
             results: [RESULT, REPO_MATCH_RESULT],
         }
-        const element = mount(
-            <BrowserRouter>
-                <StreamingSearchResults {...defaultProps} streamSearch={() => of(results)} />
-            </BrowserRouter>
-        )
+        const element = render(<StreamingSearchResults {...defaultProps} streamSearch={() => of(results)} />)
 
         const listComponent = element.find<VirtualList<GQL.SearchResult>>(VirtualList)
         const renderedResultsList = listComponent.prop('items')
@@ -254,11 +245,7 @@ describe('StreamingSearchResults', () => {
             logViewEvent: logViewEventSpy,
         }
 
-        const element = mount(
-            <BrowserRouter>
-                <StreamingSearchResults {...defaultProps} telemetryService={telemetryService} />
-            </BrowserRouter>
-        )
+        const element = render(<StreamingSearchResults {...defaultProps} telemetryService={telemetryService} />)
 
         sinon.assert.calledOnceWithExactly(logViewEventSpy, 'SearchResults')
         sinon.assert.calledWith(logSpy, 'SearchResultsQueried')
@@ -274,11 +261,7 @@ describe('StreamingSearchResults', () => {
             log: logSpy,
         }
 
-        const element = mount(
-            <BrowserRouter>
-                <StreamingSearchResults {...defaultProps} telemetryService={telemetryService} />
-            </BrowserRouter>
-        )
+        const element = render(<StreamingSearchResults {...defaultProps} telemetryService={telemetryService} />)
 
         const item = element.find(FileMatch).first()
         act(() => item.prop('onSelect')())
@@ -289,22 +272,14 @@ describe('StreamingSearchResults', () => {
     })
 
     it('should not show saved search modal on first load', () => {
-        const element = mount(
-            <BrowserRouter>
-                <StreamingSearchResults {...defaultProps} />
-            </BrowserRouter>
-        )
+        const element = render(<StreamingSearchResults {...defaultProps} />)
 
         const modal = element.find(SavedSearchModal)
         expect(modal.length).toBe(0)
     })
 
     it('should open saved search modal when triggering event from infobar', () => {
-        const element = mount(
-            <BrowserRouter>
-                <StreamingSearchResults {...defaultProps} />
-            </BrowserRouter>
-        )
+        const element = render(<StreamingSearchResults {...defaultProps} />)
 
         const infobar = element.find(SearchResultsInfoBar)
         act(() => infobar.prop('onSaveQueryClick')())
@@ -315,11 +290,7 @@ describe('StreamingSearchResults', () => {
     })
 
     it('should close saved search modal if close event triggers', () => {
-        const element = mount(
-            <BrowserRouter>
-                <StreamingSearchResults {...defaultProps} />
-            </BrowserRouter>
-        )
+        const element = render(<StreamingSearchResults {...defaultProps} />)
 
         const infobar = element.find(SearchResultsInfoBar)
         act(() => infobar.prop('onSaveQueryClick')())
@@ -353,10 +324,8 @@ describe('StreamingSearchResults', () => {
             },
         ]
         for (const [index, test] of tests.entries()) {
-            const element = mount(
-                <BrowserRouter>
-                    <StreamingSearchResults {...defaultProps} parsedSearchQuery={test.parsedSearchQuery} />
-                </BrowserRouter>
+            const element = render(
+                <StreamingSearchResults {...defaultProps} parsedSearchQuery={test.parsedSearchQuery} />
             )
 
             const progress = element.find(StreamingProgress)

@@ -143,6 +143,17 @@ func (h *handler) handle(ctx context.Context, upload store.Upload) (requeued boo
 				return errors.Wrap(err, "store.UpdatePackageReferences")
 			}
 
+			// When inserting a new completed upload record, update the reference counts both to it from
+			// existing uploads, as well as the reference counts to all of this new upload's dependencies.
+			// We decrement reference counts of dependencies on upload deletion, so this count should
+			// always be up to date as records are created and removed.
+			if err := tx.UpdateNumReferences(ctx, []int{upload.ID}); err != nil {
+				return errors.Wrap(err, "store.UpdateNumReferences")
+			}
+			if err := tx.UpdateDependencyNumReferences(ctx, []int{upload.ID}, false); err != nil {
+				return errors.Wrap(err, "store.UpdateDependencyNumReferences")
+			}
+
 			// Before we mark the upload as complete, we need to delete any existing completed uploads
 			// that have the same repository_id, commit, root, and indexer values. Otherwise the transaction
 			// will fail as these values form a unique constraint.
@@ -150,10 +161,10 @@ func (h *handler) handle(ctx context.Context, upload store.Upload) (requeued boo
 				return errors.Wrap(err, "store.DeleteOverlappingDumps")
 			}
 
-			// Insert a companion record to this upload that will asynchronously trigger another worker to
-			// queue auto-index records for the monikers written into the lsif_references table attached by
-			// this index processing job.
-			if _, err := tx.InsertDependencyIndexingJob(ctx, upload.ID); err != nil {
+			// Insert a companion record to this upload that will asynchronously trigger other workers to
+			// sync/create referenced dependency repositories and queue auto-index records for the monikers
+			// written into the lsif_references table attached by this index processing job.
+			if _, err := tx.InsertDependencySyncingJob(ctx, upload.ID); err != nil {
 				return errors.Wrap(err, "store.InsertDependencyIndexingJob")
 			}
 
@@ -164,7 +175,7 @@ func (h *handler) handle(ctx context.Context, upload store.Upload) (requeued boo
 			// repository rather than having a set of uploads for the same repo re-calculate nearly identical
 			// data multiple times.
 			if err := tx.MarkRepositoryAsDirty(ctx, upload.RepositoryID); err != nil {
-				return errors.Wrap(err, "store.MarkRepositoryDirty")
+				return errors.Wrap(err, "store.MarkRepositoryAsDirty")
 			}
 
 			return nil

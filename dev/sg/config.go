@@ -5,8 +5,9 @@ import (
 	"os"
 
 	"github.com/cockroachdb/errors"
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/run"
 	"gopkg.in/yaml.v2"
+
+	"github.com/sourcegraph/sourcegraph/dev/sg/internal/run"
 )
 
 func ParseConfigFile(name string) (*Config, error) {
@@ -54,9 +55,10 @@ func ParseConfig(data []byte) (*Config, error) {
 }
 
 type Commandset struct {
-	Name     string   `yaml:"-"`
-	Commands []string `yaml:"commands"`
-	Checks   []string `yaml:"checks"`
+	Name     string            `yaml:"-"`
+	Commands []string          `yaml:"commands"`
+	Checks   []string          `yaml:"checks"`
+	Env      map[string]string `yaml:"env"`
 }
 
 // UnmarshalYAML implements the Unmarshaler interface.

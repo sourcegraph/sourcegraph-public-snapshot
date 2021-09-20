@@ -9,6 +9,7 @@ import { Scalars } from '../../graphql-operations'
 import { PageTitle } from '../PageTitle'
 
 import { AddExternalServicePage } from './AddExternalServicePage'
+import styles from './AddExternalServicesPage.module.scss'
 import { ExternalServiceCard } from './ExternalServiceCard'
 import { allExternalServices, AddExternalServiceOptions } from './externalServices'
 
@@ -128,7 +129,7 @@ export const AddExternalServicesPage: React.FunctionComponent<AddExternalService
                 </div>
             )}
             {Object.entries(codeHostExternalServices).map(([id, externalService]) => (
-                <div className="add-external-services-page__card" key={id}>
+                <div className={styles.addExternalServicesPageCard} key={id}>
                     <ExternalServiceCard to={getAddURL(id)} {...externalService} />
                 </div>
             ))}
@@ -138,7 +139,7 @@ export const AddExternalServicesPage: React.FunctionComponent<AddExternalService
                     <h2>Other connections</h2>
                     <p className="mt-2">Add connections to non-code-host services.</p>
                     {Object.entries(nonCodeHostExternalServices).map(([id, externalService]) => (
-                        <div className="add-external-services-page__card" key={id}>
+                        <div className={styles.addExternalServicesPageCard} key={id}>
                             <ExternalServiceCard to={getAddURL(id)} {...externalService} />
                         </div>
                     ))}

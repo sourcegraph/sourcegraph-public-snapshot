@@ -724,10 +724,10 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                                               value={1}
                                             >
                                               <span
-                                                className="toggle__bar toggle__bar--on"
+                                                className="bar barOn"
                                               />
                                               <span
-                                                className="toggle__knob toggle__knob--on"
+                                                className="knob knobOn"
                                               />
                                             </button>
                                           </Toggle>
@@ -833,10 +833,10 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                                               value={1}
                                             >
                                               <span
-                                                className="toggle__bar toggle__bar--on"
+                                                className="bar barOn"
                                               />
                                               <span
-                                                className="toggle__knob toggle__knob--on"
+                                                className="knob knobOn"
                                               />
                                             </button>
                                           </Toggle>
@@ -942,10 +942,10 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                                               value={1}
                                             >
                                               <span
-                                                className="toggle__bar toggle__bar--on"
+                                                className="bar barOn"
                                               />
                                               <span
-                                                className="toggle__knob toggle__knob--on"
+                                                className="knob knobOn"
                                               />
                                             </button>
                                           </Toggle>
@@ -1051,10 +1051,10 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                                               value={1}
                                             >
                                               <span
-                                                className="toggle__bar toggle__bar--on"
+                                                className="bar barOn"
                                               />
                                               <span
-                                                className="toggle__knob toggle__knob--on"
+                                                className="knob knobOn"
                                               />
                                             </button>
                                           </Toggle>
@@ -1160,10 +1160,10 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                                               value={1}
                                             >
                                               <span
-                                                className="toggle__bar toggle__bar--on"
+                                                className="bar barOn"
                                               />
                                               <span
-                                                className="toggle__knob toggle__knob--on"
+                                                className="knob knobOn"
                                               />
                                             </button>
                                           </Toggle>
@@ -1269,10 +1269,10 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                                               value={1}
                                             >
                                               <span
-                                                className="toggle__bar toggle__bar--on"
+                                                className="bar barOn"
                                               />
                                               <span
-                                                className="toggle__knob toggle__knob--on"
+                                                className="knob knobOn"
                                               />
                                             </button>
                                           </Toggle>
@@ -1378,10 +1378,10 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                                               value={1}
                                             >
                                               <span
-                                                className="toggle__bar toggle__bar--on"
+                                                className="bar barOn"
                                               />
                                               <span
-                                                className="toggle__knob toggle__knob--on"
+                                                className="knob knobOn"
                                               />
                                             </button>
                                           </Toggle>
@@ -1487,10 +1487,10 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                                               value={1}
                                             >
                                               <span
-                                                className="toggle__bar toggle__bar--on"
+                                                className="bar barOn"
                                               />
                                               <span
-                                                className="toggle__knob toggle__knob--on"
+                                                className="knob knobOn"
                                               />
                                             </button>
                                           </Toggle>
@@ -1596,10 +1596,10 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                                               value={1}
                                             >
                                               <span
-                                                className="toggle__bar toggle__bar--on"
+                                                className="bar barOn"
                                               />
                                               <span
-                                                className="toggle__knob toggle__knob--on"
+                                                className="knob knobOn"
                                               />
                                             </button>
                                           </Toggle>
@@ -1705,10 +1705,10 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                                               value={1}
                                             >
                                               <span
-                                                className="toggle__bar toggle__bar--on"
+                                                className="bar barOn"
                                               />
                                               <span
-                                                className="toggle__knob toggle__knob--on"
+                                                className="knob knobOn"
                                               />
                                             </button>
                                           </Toggle>
@@ -2594,10 +2594,10 @@ exports[`CodeMonitoringListPage Code monitoring page with less than 10 results 1
                                               value={1}
                                             >
                                               <span
-                                                className="toggle__bar toggle__bar--on"
+                                                className="bar barOn"
                                               />
                                               <span
-                                                className="toggle__knob toggle__knob--on"
+                                                className="knob knobOn"
                                               />
                                             </button>
                                           </Toggle>
@@ -2703,10 +2703,10 @@ exports[`CodeMonitoringListPage Code monitoring page with less than 10 results 1
                                               value={1}
                                             >
                                               <span
-                                                className="toggle__bar toggle__bar--on"
+                                                className="bar barOn"
                                               />
                                               <span
-                                                className="toggle__knob toggle__knob--on"
+                                                className="knob knobOn"
                                               />
                                             </button>
                                           </Toggle>
@@ -2812,10 +2812,10 @@ exports[`CodeMonitoringListPage Code monitoring page with less than 10 results 1
                                               value={1}
                                             >
                                               <span
-                                                className="toggle__bar toggle__bar--on"
+                                                className="bar barOn"
                                               />
                                               <span
-                                                className="toggle__knob toggle__knob--on"
+                                                className="knob knobOn"
                                               />
                                             </button>
                                           </Toggle>
@@ -3753,10 +3753,10 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                                               value={1}
                                             >
                                               <span
-                                                className="toggle__bar toggle__bar--on"
+                                                className="bar barOn"
                                               />
                                               <span
-                                                className="toggle__knob toggle__knob--on"
+                                                className="knob knobOn"
                                               />
                                             </button>
                                           </Toggle>
@@ -3862,10 +3862,10 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                                               value={1}
                                             >
                                               <span
-                                                className="toggle__bar toggle__bar--on"
+                                                className="bar barOn"
                                               />
                                               <span
-                                                className="toggle__knob toggle__knob--on"
+                                                className="knob knobOn"
                                               />
                                             </button>
                                           </Toggle>
@@ -3971,10 +3971,10 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                                               value={1}
                                             >
                                               <span
-                                                className="toggle__bar toggle__bar--on"
+                                                className="bar barOn"
                                               />
                                               <span
-                                                className="toggle__knob toggle__knob--on"
+                                                className="knob knobOn"
                                               />
                                             </button>
                                           </Toggle>
@@ -4080,10 +4080,10 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                                               value={1}
                                             >
                                               <span
-                                                className="toggle__bar toggle__bar--on"
+                                                className="bar barOn"
                                               />
                                               <span
-                                                className="toggle__knob toggle__knob--on"
+                                                className="knob knobOn"
                                               />
                                             </button>
                                           </Toggle>
@@ -4189,10 +4189,10 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                                               value={1}
                                             >
                                               <span
-                                                className="toggle__bar toggle__bar--on"
+                                                className="bar barOn"
                                               />
                                               <span
-                                                className="toggle__knob toggle__knob--on"
+                                                className="knob knobOn"
                                               />
                                             </button>
                                           </Toggle>
@@ -4298,10 +4298,10 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                                               value={1}
                                             >
                                               <span
-                                                className="toggle__bar toggle__bar--on"
+                                                className="bar barOn"
                                               />
                                               <span
-                                                className="toggle__knob toggle__knob--on"
+                                                className="knob knobOn"
                                               />
                                             </button>
                                           </Toggle>
@@ -4407,10 +4407,10 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                                               value={1}
                                             >
                                               <span
-                                                className="toggle__bar toggle__bar--on"
+                                                className="bar barOn"
                                               />
                                               <span
-                                                className="toggle__knob toggle__knob--on"
+                                                className="knob knobOn"
                                               />
                                             </button>
                                           </Toggle>
@@ -4516,10 +4516,10 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                                               value={1}
                                             >
                                               <span
-                                                className="toggle__bar toggle__bar--on"
+                                                className="bar barOn"
                                               />
                                               <span
-                                                className="toggle__knob toggle__knob--on"
+                                                className="knob knobOn"
                                               />
                                             </button>
                                           </Toggle>
@@ -4625,10 +4625,10 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                                               value={1}
                                             >
                                               <span
-                                                className="toggle__bar toggle__bar--on"
+                                                className="bar barOn"
                                               />
                                               <span
-                                                className="toggle__knob toggle__knob--on"
+                                                className="knob knobOn"
                                               />
                                             </button>
                                           </Toggle>
@@ -4734,10 +4734,10 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                                               value={1}
                                             >
                                               <span
-                                                className="toggle__bar toggle__bar--on"
+                                                className="bar barOn"
                                               />
                                               <span
-                                                className="toggle__knob toggle__knob--on"
+                                                className="knob knobOn"
                                               />
                                             </button>
                                           </Toggle>
@@ -4843,10 +4843,10 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                                               value={1}
                                             >
                                               <span
-                                                className="toggle__bar toggle__bar--on"
+                                                className="bar barOn"
                                               />
                                               <span
-                                                className="toggle__knob toggle__knob--on"
+                                                className="knob knobOn"
                                               />
                                             </button>
                                           </Toggle>
@@ -4952,10 +4952,10 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                                               value={1}
                                             >
                                               <span
-                                                className="toggle__bar toggle__bar--on"
+                                                className="bar barOn"
                                               />
                                               <span
-                                                className="toggle__knob toggle__knob--on"
+                                                className="knob knobOn"
                                               />
                                             </button>
                                           </Toggle>

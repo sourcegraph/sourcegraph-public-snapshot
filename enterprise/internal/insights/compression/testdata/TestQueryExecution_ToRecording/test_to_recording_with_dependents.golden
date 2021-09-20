@@ -7,8 +7,9 @@
 			},
 			Value: 5,
 		},
-		RepoName: valast.Addr("repoName1").(*string),
-		RepoID:   valast.Addr(api.RepoID(1)).(*api.RepoID),
+		RepoName:    valast.Addr("repoName1").(*string),
+		RepoID:      valast.Addr(api.RepoID(1)).(*api.RepoID),
+		PersistMode: store.PersistMode("record"),
 	},
 	store.RecordSeriesPointArgs{
 		SeriesID: "series1",
@@ -16,7 +17,8 @@
 			Time:  time.Time{ext: 63713520000},
 			Value: 5,
 		},
-		RepoName: valast.Addr("repoName1").(*string),
-		RepoID:   valast.Addr(api.RepoID(1)).(*api.RepoID),
+		RepoName:    valast.Addr("repoName1").(*string),
+		RepoID:      valast.Addr(api.RepoID(1)).(*api.RepoID),
+		PersistMode: store.PersistMode("record"),
 	},
 }

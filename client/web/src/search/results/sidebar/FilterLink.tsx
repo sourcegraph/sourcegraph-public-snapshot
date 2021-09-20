@@ -3,6 +3,7 @@ import React from 'react'
 
 import { displayRepoName } from '@sourcegraph/shared/src/components/RepoFileLink'
 import { RepoIcon } from '@sourcegraph/shared/src/components/RepoIcon'
+import { FilterType } from '@sourcegraph/shared/src/search/query/filters'
 import { Filter } from '@sourcegraph/shared/src/search/stream'
 import { isSettingsValid, SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { pluralize } from '@sourcegraph/shared/src/util/strings'
@@ -10,6 +11,7 @@ import { pluralize } from '@sourcegraph/shared/src/util/strings'
 import { SyntaxHighlightedSearchQuery } from '../../../components/SyntaxHighlightedSearchQuery'
 import { Settings } from '../../../schema/settings.schema'
 
+import { getFiltersOfKind } from './helpers'
 import styles from './SearchSidebarSection.module.scss'
 
 export interface FilterLinkProps {
@@ -74,16 +76,14 @@ export const getRepoFilterLinks = (
         )
     }
 
-    return (filters || [])
-        .filter(filter => filter.kind === 'repo' && filter.value !== '')
-        .map(filter => (
-            <FilterLink
-                {...filter}
-                key={`${filter.label}-${filter.value}`}
-                labelConverter={repoLabelConverter}
-                onFilterChosen={onFilterChosen}
-            />
-        ))
+    return getFiltersOfKind(filters, FilterType.repo).map(filter => (
+        <FilterLink
+            {...filter}
+            key={`${filter.label}-${filter.value}`}
+            labelConverter={repoLabelConverter}
+            onFilterChosen={onFilterChosen}
+        />
+    ))
 }
 
 export const getDynamicFilterLinks = (

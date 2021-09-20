@@ -1,6 +1,8 @@
 import classnames from 'classnames'
 import React from 'react'
 
+import styles from './Badge.module.scss'
+
 export type BadgeStatus = 'beta' | 'prototype' | 'experimental' | 'wip' | 'new'
 
 const statusStyleMapping: Record<BadgeStatus, string> = {
@@ -25,7 +27,7 @@ export const Badge: React.FunctionComponent<BadgeProps> = props => {
             data-tooltip={tooltip}
             className={classnames(
                 'badge',
-                'badge--capitalized',
+                styles.badgeCapitalized,
                 'd-inline-flex',
                 'align-items-center',
                 statusStyleMapping[status],

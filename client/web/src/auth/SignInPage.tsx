@@ -15,6 +15,7 @@ import { eventLogger } from '../tracking/eventLogger'
 import { SourcegraphIcon } from './icons'
 import { OrDivider } from './OrDivider'
 import { getReturnTo } from './SignInSignUpCommon'
+import signInSignUpCommonStyles from './SignInSignUpCommon.module.scss'
 import { UsernamePasswordSignInForm } from './UsernamePasswordSignInForm'
 
 interface SignInPageProps {
@@ -48,11 +49,12 @@ export const SignInPage: React.FunctionComponent<SignInPageProps> = props => {
                 No authentication providers are available. Contact a site administrator for help.
             </div>
         ) : (
-            <div className="mb-4 signin-page__container pb-5">
+            <div className={classNames('mb-4 pb-5', signInSignUpCommonStyles.signinPageContainer)}>
                 {error && <ErrorAlert className="mt-4 mb-0 text-left" error={error} icon={false} />}
                 <div
                     className={classNames(
-                        'signin-signup-form signin-form test-signin-form rounded p-4 my-3',
+                        'test-signin-form rounded p-4 my-3',
+                        signInSignUpCommonStyles.signinSignupForm,
                         error ? 'mt-3' : 'mt-4'
                     )}
                 >
@@ -96,7 +98,7 @@ export const SignInPage: React.FunctionComponent<SignInPageProps> = props => {
         )
 
     return (
-        <div className="signin-signup-page sign-in-page">
+        <div className={signInSignUpCommonStyles.signinSignupPage}>
             <PageTitle title="Sign in" />
             <HeroPage
                 icon={SourcegraphIcon}

@@ -31,6 +31,7 @@ const KubernetesRepogroupPage = lazyComponent(() => import('./repogroups/Kuberne
 const StackstormRepogroupPage = lazyComponent(() => import('./repogroups/StackStorm'), 'StackStormRepogroupPage')
 const TemporalRepogroupPage = lazyComponent(() => import('./repogroups/Temporal'), 'TemporalRepogroupPage')
 const O3deRepogroupPage = lazyComponent(() => import('./repogroups/o3de'), 'O3deRepogroupPage')
+const ChakraUIRepogroupPage = lazyComponent(() => import('./repogroups/chakraui'), 'ChakraUIRepogroupPage')
 const StanfordRepogroupPage = lazyComponent(() => import('./repogroups/Stanford'), 'StanfordRepogroupPage')
 const CncfRepogroupPage = lazyComponent(() => import('./repogroups/cncf'), 'CncfRepogroupPage')
 
@@ -205,14 +206,6 @@ export const routes: readonly LayoutRouteProps<any>[] = [
         render: passThroughToServer,
     },
     {
-        path: '/insights',
-        render: lazyComponent(() => import('./insights/InsightsRouter'), 'InsightsRouter'),
-        condition: props =>
-            !isErrorLike(props.settingsCascade.final) &&
-            !!props.settingsCascade.final?.experimentalFeatures?.codeInsights &&
-            props.settingsCascade.final['insights.displayLocation.insightsPage'] !== false,
-    },
-    {
         path: '/contexts',
         render: lazyComponent(() => import('./searchContexts/SearchContextsListPage'), 'SearchContextsListPage'),
         exact: true,
@@ -277,6 +270,11 @@ export const routes: readonly LayoutRouteProps<any>[] = [
     {
         path: '/o3de',
         render: props => <O3deRepogroupPage {...props} />,
+        condition: ({ isSourcegraphDotCom }) => isSourcegraphDotCom,
+    },
+    {
+        path: '/chakraui',
+        render: props => <ChakraUIRepogroupPage {...props} />,
         condition: ({ isSourcegraphDotCom }) => isSourcegraphDotCom,
     },
     {

@@ -1,6 +1,8 @@
 import classNames from 'classnames'
 import React from 'react'
 
+import styles from './ModalPage.module.scss'
+
 interface Props {
     icon?: React.ReactNode
 
@@ -12,10 +14,10 @@ interface Props {
  * A page that displays a modal prompt in the middle of the screen.
  */
 export const ModalPage: React.FunctionComponent<Props> = ({ icon, className = '', children }) => (
-    <div className={classNames('modal-page', className)}>
+    <div className={classNames(styles.modalPage, className)}>
         <div className="card">
-            <div className="modal-page__card-body card-body">
-                {icon && <div className="modal-page__icon">{icon}</div>}
+            <div className={classNames('card-body', styles.cardBody)}>
+                {icon && <div className={styles.icon}>{icon}</div>}
                 {children}
             </div>
         </div>
