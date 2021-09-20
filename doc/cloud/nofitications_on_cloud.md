@@ -5,7 +5,7 @@ There are various kinds of notifications to indicate status of your repositories
 1. **No repositories:** You have not added any repository, try [Adding repositories to Sourcegraph cloud](../code_search/how-to/adding_repositories_to_cloud.md).
 1. **Repositories cloning:** Some or all of your repositories are currently being cloned into Sourcegraph cloud. At this stage, search results are computed on-the-fly over your repositories which could be slow, and you may not get search results from all of your repositories.
 1. **Repositories indexing:** Some or all of your repositories are currently being indexed. At this stage, search results are coming back much faster for your repositories.
-1. **Everthing goes well:** All of your repositories are successfully cloned and indexed, search results are complete and coming back very fast.
+1. **Everything goes well:** All of your repositories are successfully cloned and indexed, search results are complete and coming back very fast.
 1. **Something went wrong:** Something unexpected happened during repositories cloning stage, please refer to the [Troubleshooting](#Troubleshooting) section for possible solutions.
 
 ### Troubleshooting
