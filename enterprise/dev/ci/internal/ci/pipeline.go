@@ -64,7 +64,6 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		// everything.
 		if len(s.Command) > 0 {
 			if s.TimeoutInMinutes == "" {
-
 				// Set the default value iff someone else hasn't set a custom one.
 				s.TimeoutInMinutes = "60"
 			}
@@ -84,10 +83,14 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		})
 	}
 
+	var operations []Operation
+	appendOps := func(ops ...Operation) {
+		operations = append(operations, ops...)
+	}
+
 	// Generate pipeline steps. This statement outlines the pipeline steps for each CI case.
 	//
 	// PERF: Try to order steps such that slower steps are first.
-	var operations []Operation
 	switch c.RunType {
 	case PullRequest:
 		operations = CoreTestOperations(c.ChangedFiles, buildOptions)
@@ -121,11 +124,13 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		if !contains(images.SourcegraphDockerImages, patchImage) {
 			panic(fmt.Sprintf("no image %q found", patchImage))
 		}
-		operations = append([]Operation{
-			buildCandidateDockerImage(patchImage, c.Version, c.candidateImageTag())},
-			CoreTestOperations(nil, buildOptions)...)
-		operations = append(operations,
-			publishFinalDockerImage(c, patchImage, false))
+		operations = []Operation{
+			buildCandidateDockerImage(patchImage, c.Version, c.candidateImageTag()),
+		}
+		// Test images
+		appendOps(CoreTestOperations(nil, buildOptions)...)
+		// Publish images
+		appendOps(publishFinalDockerImage(c, patchImage, false))
 
 	case ImagePatchNoTest:
 		// If this is a no-test branch, then run only the Docker build. No tests are run.
@@ -139,15 +144,14 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 	case CandidatesNoTest:
 		operations = []Operation{}
 		for _, dockerImage := range images.SourcegraphDockerImages {
-			operations = append(operations,
+			appendOps(
 				buildCandidateDockerImage(dockerImage, c.Version, c.candidateImageTag()))
 		}
 
 	default:
 		// Slow image builds
 		for _, dockerImage := range images.SourcegraphDockerImages {
-			operations = append(operations,
-				buildCandidateDockerImage(dockerImage, c.Version, c.candidateImageTag()))
+			appendOps(buildCandidateDockerImage(dockerImage, c.Version, c.candidateImageTag()))
 		}
 		if c.RunType.Is(MainDryRun, MainBranch) {
 			buildExecutor(c.Time, c.Version)
@@ -156,13 +160,13 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		// Slow tests
 		if c.RunType.Is(BackendDryRun, MainDryRun, MainBranch) {
 			// Add backend integration tests first because it is slow
-			operations = append(operations,
+			appendOps(
 				addBackendIntegrationTests,
 				frontendPuppeteerAndStorybook(c.RunType.Is(MainBranch)))
 		}
 
 		// Core tests
-		operations = append(operations, CoreTestOperations(nil, buildOptions)...)
+		appendOps(CoreTestOperations(nil, buildOptions)...)
 
 		// Trigger e2e late so that it can leverage candidate images
 		var async bool
@@ -171,7 +175,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		} else {
 			async = false
 		}
-		operations = append(operations, triggerE2EandQA(e2eAndQAOptions{
+		appendOps(triggerE2EandQA(e2eAndQAOptions{
 			candidateImage: c.candidateImageTag(),
 			buildOptions:   buildOptions,
 			async:          async,
@@ -180,18 +184,17 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		// Add final artifacts
 		for _, dockerImage := range images.SourcegraphDockerImages {
 			insiders := c.RunType.Is(MainBranch)
-			operations = append(operations,
-				publishFinalDockerImage(c, dockerImage, insiders))
+			appendOps(publishFinalDockerImage(c, dockerImage, insiders))
 		}
 		if c.RunType.Is(MainBranch) {
-			operations = append(operations,
+			appendOps(
 				publishExecutor(c.Time, c.Version), // ~6m (building executor base VM)
 			)
 		}
 
 		// Propogate changes elsewhere
 		if !c.RunType.Is(MainDryRun) {
-			operations = append(operations,
+			appendOps(
 				// wait for all steps to pass
 				wait,
 				triggerUpdaterPipeline)
