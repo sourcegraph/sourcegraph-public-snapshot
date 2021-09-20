@@ -9,6 +9,7 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/graph-gophers/graphql-go/relay"
+	"github.com/keegancsmith/sqlf"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
@@ -19,29 +20,39 @@ import (
 	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
 )
 
-func TestLoadAndExtractChangesetSpecIDs(t *testing.T) {
+func TestBatchSpecWorkspaceExecutionWorkerStore_MarkComplete(t *testing.T) {
+	ctx := context.Background()
 	db := dbtest.NewDB(t, "")
 	user := ct.CreateTestUser(t, db, true)
 
-	repo, _ := ct.CreateTestRepo(t, context.Background(), db)
+	repo, _ := ct.CreateTestRepo(t, ctx, db)
 
 	s := store.New(db, &observation.TestContext, nil)
 	workStore := dbworkerstore.NewWithMetrics(s.Handle(), batchSpecWorkspaceExecutionWorkerStoreOptions, &observation.TestContext)
 
+	// Setup all the associations
 	batchSpec := &btypes.BatchSpec{UserID: user.ID, NamespaceUserID: user.ID, RawSpec: "horse"}
-	if err := s.CreateBatchSpec(context.Background(), batchSpec); err != nil {
+	if err := s.CreateBatchSpec(ctx, batchSpec); err != nil {
 		t.Fatal(err)
 	}
 
-	workspace := &btypes.BatchSpecWorkspace{
-		BatchSpecID: batchSpec.ID,
-		RepoID:      repo.ID,
-		Steps:       []batcheslib.Step{},
-	}
-	if err := s.CreateBatchSpecWorkspace(context.Background(), workspace); err != nil {
+	workspace := &btypes.BatchSpecWorkspace{BatchSpecID: batchSpec.ID, RepoID: repo.ID, Steps: []batcheslib.Step{}}
+	if err := s.CreateBatchSpecWorkspace(ctx, workspace); err != nil {
 		t.Fatal(err)
 	}
 
+	job := &btypes.BatchSpecWorkspaceExecutionJob{BatchSpecWorkspaceID: workspace.ID}
+	if err := s.CreateBatchSpecWorkspaceExecutionJob(ctx, job); err != nil {
+		t.Fatal(err)
+	}
+
+	job.State = btypes.BatchSpecWorkspaceExecutionJobStateProcessing
+	job.WorkerHostname = "worker-1"
+	if err := s.Exec(ctx, sqlf.Sprintf("UPDATE batch_spec_workspace_execution_jobs SET worker_hostname = %s, state = %s WHERE id = %s", job.WorkerHostname, job.State, job.ID)); err != nil {
+		t.Fatal(err)
+	}
+
+	// Create changeset_specs to simulate the job resulting in changeset_specs being created
 	var (
 		changesetSpecIDs        []int64
 		changesetSpecGraphQLIDs []string
@@ -49,85 +60,62 @@ func TestLoadAndExtractChangesetSpecIDs(t *testing.T) {
 
 	for i := 0; i < 3; i++ {
 		spec := &btypes.ChangesetSpec{RepoID: repo.ID, UserID: user.ID}
-		if err := s.CreateChangesetSpec(context.Background(), spec); err != nil {
+		if err := s.CreateChangesetSpec(ctx, spec); err != nil {
 			t.Fatal(err)
 		}
 		changesetSpecIDs = append(changesetSpecIDs, spec.ID)
 		changesetSpecGraphQLIDs = append(changesetSpecGraphQLIDs, fmt.Sprintf("%q", relay.MarshalID("doesnotmatter", spec.RandID)))
 	}
 
+	// Add a log entry that contains the changeset spec IDs
 	jsonArray := `[` + strings.Join(changesetSpecGraphQLIDs, ",") + `]`
+	entry := workerutil.ExecutionLogEntry{
+		Key:        "step.src.0",
+		Command:    []string{"src", "batch", "preview", "-f", "spec.yml", "-text-only"},
+		StartTime:  time.Now().Add(-5 * time.Second),
+		Out:        `stdout: {"operation":"UPLOADING_CHANGESET_SPECS","timestamp":"2021-09-09T13:20:32.95Z","status":"SUCCESS","metadata":{"ids":` + jsonArray + `}} `,
+		DurationMs: intptr(200),
+	}
 
-	t.Run("success", func(t *testing.T) {
-		job := &btypes.BatchSpecWorkspaceExecutionJob{
-			State:                btypes.BatchSpecWorkspaceExecutionJobStateProcessing,
-			BatchSpecWorkspaceID: workspace.ID,
-		}
+	_, err := workStore.AddExecutionLogEntry(ctx, int(job.ID), entry, dbworkerstore.ExecutionLogEntryOptions{})
+	if err != nil {
+		t.Fatal(err)
+	}
 
-		if err := s.CreateBatchSpecWorkspaceExecutionJob(context.Background(), job); err != nil {
-			t.Fatal(err)
-		}
+	executionStore := &batchSpecWorkspaceExecutionWorkerStore{Store: workStore, observationContext: &observation.TestContext}
+	opts := dbworkerstore.MarkFinalOptions{WorkerHostname: job.WorkerHostname}
+	ok, err := executionStore.MarkComplete(context.Background(), int(job.ID), opts)
+	if !ok || err != nil {
+		t.Fatalf("MarkComplete failed. ok=%t, err=%s", ok, err)
+	}
 
-		entries := []workerutil.ExecutionLogEntry{
-			{
-				Key:        "setup.firecracker.start",
-				Command:    []string{"ignite", "run"},
-				StartTime:  time.Now().Add(-5 * time.Second),
-				Out:        `stdout: cool`,
-				DurationMs: intptr(200),
-			},
-			{
-				Key:       "step.src.0",
-				Command:   []string{"src", "batch", "preview", "-f", "spec.yml", "-text-only"},
-				StartTime: time.Now().Add(-5 * time.Second),
-				Out: `stdout: {"operation":"PARSING_BATCH_SPEC","timestamp":"2021-07-06T09:38:51.481Z","status":"STARTED"}
-stdout: {"operation":"PARSING_BATCH_SPEC","timestamp":"2021-07-06T09:38:51.481Z","status":"SUCCESS"}
-stdout: {"operation":"UPLOADING_CHANGESET_SPECS","timestamp":"2021-09-09T13:20:32.942Z","status":"STARTED","metadata":{"total":1}}
-stdout: {"operation":"UPLOADING_CHANGESET_SPECS","timestamp":"2021-09-09T13:20:32.95Z","status":"PROGRESS","metadata":{"done":1,"total":1}}
-stdout: {"operation":"UPLOADING_CHANGESET_SPECS","timestamp":"2021-09-09T13:20:32.95Z","status":"SUCCESS","metadata":{"ids":` + jsonArray + `}}
-`,
-				DurationMs: intptr(200),
-			},
-		}
+	// Now reload the involved entities and make sure they've been updated correctly
+	reloadedJob, err := s.GetBatchSpecWorkspaceExecutionJob(ctx, store.GetBatchSpecWorkspaceExecutionJobOpts{ID: job.ID})
+	if err != nil {
+		t.Fatalf("failed to reload job: %s", err)
+	}
 
-		for i, e := range entries {
-			entryID, err := workStore.AddExecutionLogEntry(context.Background(), int(job.ID), e, dbworkerstore.ExecutionLogEntryOptions{})
-			if err != nil {
-				t.Fatal(err)
-			}
-			if entryID != i+1 {
-				t.Fatalf("AddExecutionLogEntry returned wrong entryID. want=%d, have=%d", i+1, entryID)
-			}
-		}
+	if reloadedJob.State != btypes.BatchSpecWorkspaceExecutionJobStateCompleted {
+		t.Fatalf("wrong state: %s", reloadedJob.State)
+	}
 
-		have, err := loadAndExtractChangesetSpecIDs(context.Background(), s, job.ID)
-		if err != nil {
-			t.Fatalf("unexpected error: %s", err)
-		}
-		if diff := cmp.Diff(changesetSpecIDs, have); diff != "" {
-			t.Fatalf("wrong diff: %s", diff)
-		}
-	})
+	reloadedWorkspace, err := s.GetBatchSpecWorkspace(ctx, store.GetBatchSpecWorkspaceOpts{ID: workspace.ID})
+	if err != nil {
+		t.Fatalf("failed to reload workspace: %s", err)
+	}
+	if diff := cmp.Diff(changesetSpecIDs, reloadedWorkspace.ChangesetSpecIDs); diff != "" {
+		t.Fatalf("reloaded workspace has wrong changeset spec IDs: %s", diff)
+	}
 
-	t.Run("without log entry", func(t *testing.T) {
-		job := &btypes.BatchSpecWorkspaceExecutionJob{
-			State:                btypes.BatchSpecWorkspaceExecutionJobStateProcessing,
-			BatchSpecWorkspaceID: workspace.ID,
+	reloadedSpecs, _, err := s.ListChangesetSpecs(ctx, store.ListChangesetSpecsOpts{LimitOpts: store.LimitOpts{Limit: 0}, IDs: changesetSpecIDs})
+	if err != nil {
+		t.Fatalf("failed to reload changeset specs: %s", err)
+	}
+	for _, reloadedSpec := range reloadedSpecs {
+		if reloadedSpec.BatchSpecID != batchSpec.ID {
+			t.Fatalf("reloaded changeset spec does not have correct batch spec id: %d", reloadedSpec.BatchSpecID)
 		}
-
-		if err := s.CreateBatchSpecWorkspaceExecutionJob(context.Background(), job); err != nil {
-			t.Fatal(err)
-		}
-
-		_, err := loadAndExtractChangesetSpecIDs(context.Background(), s, job.ID)
-		if err == nil {
-			t.Fatalf("expected error but got none")
-		}
-
-		if err.Error() != "no execution logs" {
-			t.Fatalf("wrong error: %q", err.Error())
-		}
-	})
+	}
 }
 
 func TestExtractChangesetSpecIDs(t *testing.T) {

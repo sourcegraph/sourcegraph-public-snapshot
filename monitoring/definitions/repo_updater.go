@@ -110,15 +110,6 @@ func RepoUpdater() *monitoring.Container {
 					},
 					{
 						{
-							Name:              "syncer_synced_repos",
-							Description:       "repositories synced",
-							Query:             `max by (state) (rate(src_repoupdater_syncer_synced_repos_total[1m]))`,
-							Warning:           monitoring.Alert().LessOrEqual(0, monitoring.StringPtr("max")).For(syncDurationThreshold),
-							Panel:             monitoring.Panel().LegendFormat("{{state}}").Unit(monitoring.Number),
-							Owner:             monitoring.ObservableOwnerCoreApplication,
-							PossibleSolutions: "Check network connectivity to code hosts",
-						},
-						{
 							Name:              "sourced_repos",
 							Description:       "repositories sourced",
 							Query:             `max(rate(src_repoupdater_source_repos_total[1m]))`,

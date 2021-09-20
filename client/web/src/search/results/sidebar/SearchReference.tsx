@@ -483,7 +483,6 @@ export interface SearchReferenceProps
         Pick<SearchContextProps, 'selectedSearchContextSpec'> {
     query: string
     filter: string
-    navbarSearchQueryState: QueryState
     onNavbarQueryChange: (queryState: QueryState) => void
     isSourcegraphDotCom: boolean
 }
@@ -491,7 +490,7 @@ export interface SearchReferenceProps
 const SearchReference = (props: SearchReferenceProps): ReactElement => {
     const [selectedTab, setSelectedTab] = useLocalStorage(SEARCH_REFERENCE_TAB_KEY, 0)
 
-    const { onNavbarQueryChange, navbarSearchQueryState, telemetryService } = props
+    const { onNavbarQueryChange, query, telemetryService } = props
     const filter = props.filter.trim()
     const hasFilter = filter.length > 0
 
@@ -505,16 +504,11 @@ const SearchReference = (props: SearchReferenceProps): ReactElement => {
 
     const updateQuery = useCallback(
         (searchReference: FilterInfo, negate: boolean) => {
-            const updatedQuery = updateQueryWithFilterAndExample(
-                navbarSearchQueryState.query,
-                searchReference.field,
-                searchReference,
-                {
-                    singular: Boolean(FILTERS[searchReference.field].singular),
-                    negate: negate && isNegatableFilter(searchReference.field),
-                    emptyValue: shouldShowSuggestions(searchReference),
-                }
-            )
+            const updatedQuery = updateQueryWithFilterAndExample(query, searchReference.field, searchReference, {
+                singular: Boolean(FILTERS[searchReference.field].singular),
+                negate: negate && isNegatableFilter(searchReference.field),
+                emptyValue: shouldShowSuggestions(searchReference),
+            })
             onNavbarQueryChange({
                 changeSource: QueryChangeSource.searchReference,
                 query: updatedQuery.query,
@@ -523,22 +517,22 @@ const SearchReference = (props: SearchReferenceProps): ReactElement => {
                 showSuggestions: shouldShowSuggestions(searchReference),
             })
         },
-        [onNavbarQueryChange, navbarSearchQueryState]
+        [onNavbarQueryChange, query]
     )
     const updateQueryWithOperator = useCallback(
         (info: OperatorInfo) => {
             onNavbarQueryChange({
-                query: navbarSearchQueryState.query + ` ${info.operator} `,
+                query: query + ` ${info.operator} `,
             })
         },
-        [onNavbarQueryChange, navbarSearchQueryState]
+        [onNavbarQueryChange, query]
     )
     const updateQueryWithExample = useCallback(
         (example: string) => {
             telemetryService.log(hasFilter ? 'SearchReferenceSearchedAndClicked' : 'SearchReferenceFilterClicked')
-            onNavbarQueryChange({ query: navbarSearchQueryState.query.trimEnd() + ' ' + example })
+            onNavbarQueryChange({ query: query.trimEnd() + ' ' + example })
         },
-        [onNavbarQueryChange, navbarSearchQueryState, hasFilter, telemetryService]
+        [onNavbarQueryChange, query, hasFilter, telemetryService]
     )
 
     const filterList = (

@@ -59,7 +59,6 @@ import {
     SearchContextProps,
     getGlobalSearchContextFilter,
 } from './search'
-import { QueryState } from './search/helpers'
 import { SiteAdminAreaRoute } from './site-admin/SiteAdminArea'
 import { SiteAdminSideBarGroups } from './site-admin/SiteAdminSidebar'
 import { useTheme } from './theme'
@@ -123,8 +122,6 @@ export interface LayoutProps
     viewerSubject: Pick<GQL.ISettingsSubject, 'id' | 'viewerCanAdminister'>
 
     // Search
-    navbarSearchQueryState: QueryState
-    onNavbarQueryChange: (queryState: QueryState) => void
     fetchHighlightedFileLineRanges: (parameters: FetchFileParameters, force?: boolean) => Observable<string[][]>
 
     globbing: boolean

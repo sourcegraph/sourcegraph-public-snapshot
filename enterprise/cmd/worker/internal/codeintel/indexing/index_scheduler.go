@@ -57,10 +57,10 @@ func NewIndexScheduler(
 }
 
 // For mocking in tests
-var indexSchedulerEnabled = conf.CodeIntelAutoIndexingEnabled
+var autoIndexingEnabled = conf.CodeIntelAutoIndexingEnabled
 
 func (s *IndexScheduler) Handle(ctx context.Context) error {
-	if !indexSchedulerEnabled() {
+	if !autoIndexingEnabled() {
 		return nil
 	}
 

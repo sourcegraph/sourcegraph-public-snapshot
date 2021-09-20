@@ -11,6 +11,7 @@ import (
 	"github.com/cockroachdb/errors"
 	"github.com/inconshreveable/log15"
 
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 )
@@ -21,10 +22,13 @@ func (s *Server) repoInfo(ctx context.Context, repo api.RepoName) (*protocol.Rep
 		Cloned: repoCloned(dir),
 	}
 	if resp.Cloned {
-		// TODO(keegancsmith,tsenart) the only user of this information is the
-		// site admin settings page for a repo. That page should just ask the
-		// DB for the remote URL.
-		remoteURL, err := s.getRemoteURL(ctx, repo)
+		// TODO(keegancsmith,tsenart) the only user of this information is the site admin
+		// settings page for a repo. That page should just ask the DB for the remote URL.
+		//
+		// We need an internal actor here since we query the repo table. We are trusting
+		// the auth checks we already have in place that do not allow a site admin to
+		// view private repos they don't own.
+		remoteURL, err := s.getRemoteURL(actor.WithInternalActor(ctx), repo)
 		if err != nil {
 			return nil, err
 		}

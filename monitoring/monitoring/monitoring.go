@@ -380,11 +380,12 @@ func (r Row) validate() error {
 }
 
 // ObservableOwner denotes a team that owns an Observable. The current teams are described in
-// the handbook: https://about.sourcegraph.com/company/team/org_chart#engineering
+// the handbook: https://about.sourcegraph.com/handbook/engineering/eng_org#current-organization
 type ObservableOwner string
 
 const (
 	ObservableOwnerSearch          ObservableOwner = "search"
+	ObservableOwnerSearchCore      ObservableOwner = "search-core"
 	ObservableOwnerBatches         ObservableOwner = "batches"
 	ObservableOwnerCodeIntel       ObservableOwner = "code-intel"
 	ObservableOwnerDistribution    ObservableOwner = "distribution"
@@ -399,12 +400,14 @@ func (o ObservableOwner) toMarkdown() string {
 	var slug string
 	// special cases for differences in how a team is named in ObservableOwner and how
 	// they are named in the handbook.
-	// see https://about.sourcegraph.com/company/team/org_chart#engineering
+	// see https://about.sourcegraph.com/handbook/engineering/eng_org#current-organization
 	switch o {
 	case ObservableOwnerCodeIntel:
 		slug = "code-intelligence"
 	case ObservableOwnerCodeInsights:
 		slug = "developer-insights/code-insights"
+	case ObservableOwnerSearchCore:
+		slug = "search/core"
 	default:
 		slug = strings.ReplaceAll(string(o), " ", "-")
 	}
