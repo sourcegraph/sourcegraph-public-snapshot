@@ -241,7 +241,7 @@ func (s *Store) DeleteExternalServiceRepo(ctx context.Context, svc *types.Extern
 	if !s.InTransaction() {
 		s, err = s.Transact(ctx)
 		if err != nil {
-			return err
+			return errors.Wrap(err, "DeleteExternalServiceRepo")
 		}
 		defer func() { s.Done(err) }()
 	}
@@ -402,7 +402,7 @@ func (s *Store) CreateExternalServiceRepo(ctx context.Context, svc *types.Extern
 	if !s.InTransaction() {
 		s, err = s.Transact(ctx)
 		if err != nil {
-			return err
+			return errors.Wrap(err, "CreateExternalServiceRepo")
 		}
 		defer func() { s.Done(err) }()
 	}
@@ -511,7 +511,7 @@ func (s *Store) UpdateExternalServiceRepo(ctx context.Context, svc *types.Extern
 	if !s.InTransaction() {
 		s, err = s.Transact(ctx)
 		if err != nil {
-			return err
+			return errors.Wrap(err, "UpdateExternalServiceRepo")
 		}
 		defer func() { s.Done(err) }()
 	}
