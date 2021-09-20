@@ -738,7 +738,7 @@ func (u *UserStore) GetByCurrentAuthUser(ctx context.Context) (*types.User, erro
 		return nil, ErrNoCurrentUser
 	}
 
-	return u.getOneBySQL(ctx, sqlf.Sprintf("WHERE id=%s AND deleted_at IS NULL LIMIT 1", a.UID))
+	return a.User(ctx, u)
 }
 
 func (u *UserStore) InvalidateSessionsByID(ctx context.Context, id int32) (err error) {

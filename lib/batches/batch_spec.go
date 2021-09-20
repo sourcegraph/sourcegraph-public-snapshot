@@ -129,7 +129,8 @@ func ParseBatchSpec(data []byte, opts ParseBatchSpecOptions) (*BatchSpec, error)
 func parseBatchSpec(schema string, data []byte, opts ParseBatchSpecOptions) (*BatchSpec, error) {
 	var spec BatchSpec
 	if err := yaml.UnmarshalValidate(schema, data, &spec); err != nil {
-		if multiErr, ok := err.(*multierror.Error); ok {
+		var multiErr *multierror.Error
+		if errors.As(err, &multiErr) {
 			var newMultiError *multierror.Error
 
 			for _, e := range multiErr.Errors {
