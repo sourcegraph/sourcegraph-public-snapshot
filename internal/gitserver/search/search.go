@@ -63,6 +63,7 @@ var (
 
 	logArgsWithRefs = []string{
 		"log",
+		"--no-prefix",
 		"--decorate=full",
 		"-z",
 		"--no-merges",
@@ -71,6 +72,7 @@ var (
 
 	logArgsWithoutRefs = []string{
 		"log",
+		"--no-prefix",
 		"--decorate=full",
 		"-z",
 		"--no-merges",
