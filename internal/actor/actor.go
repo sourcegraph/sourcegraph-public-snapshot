@@ -63,6 +63,9 @@ func (a *Actor) User(ctx context.Context, fetcher userFetcher) (*types.User, err
 	a.userOnce.Do(func() {
 		a.user, a.userErr = fetcher.GetByID(ctx, a.UID)
 	})
+	if a.user.ID != a.UID {
+		panic(fmt.Sprintf("actor UID (%d) and the ID of the cached User (%d) do not match", a.UID, a.user.ID))
+	}
 	return a.user, a.userErr
 }
 
