@@ -31,12 +31,12 @@ jobs:
           gh release create -R="${repo}" ${release_name} --notes "sg release ${release_name}"
         env:
           repo: sourcegraph/sg
-          release_name: ${{ steps.set-release-name.outputs.release-name }}
+          release_name: ${{ needs.set-release-name.outputs.release-name }}
           GITHUB_TOKEN: ${{ secrets.SG_RELEASE_TOKEN }}
 
   build:
     name: Build
-    needs: create-release
+    needs: [set-release-name, create-release]
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -99,6 +99,6 @@ jobs:
           gh release upload -R="${repo}" ${release_name} "${filename}"
         env:
           repo: sourcegraph/sg
-          release_name: ${{ steps.set-release-name.outputs.release-name }}
+          release_name: ${{ needs.set-release-name.outputs.release-name }}
           filename: ${{ steps.asset.outputs.filename }}
           GITHUB_TOKEN: ${{ secrets.SG_RELEASE_TOKEN }}
