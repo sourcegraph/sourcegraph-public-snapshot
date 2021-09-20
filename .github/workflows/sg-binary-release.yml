@@ -13,6 +13,8 @@ jobs:
   set-release-name:
     name: set-release-name
     runs-on: ubuntu-latest
+    outputs:
+      release-name: ${{ steps.compute-release-name.outputs.release-name }}
     steps:
       - name: compute-release-name
         run: |
