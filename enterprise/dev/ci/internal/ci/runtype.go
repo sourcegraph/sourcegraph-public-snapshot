@@ -7,30 +7,31 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 )
 
-// RunType indicates the type of this run.
+// RunType indicates the type of this run. Each CI pipeline can only be a single run type.
 type RunType int
 
 const (
-	// If no specific run type is matched, assumed to be a PR
-	PullRequest RunType = iota
-
-	// Main branch build
-	MainBranch
+	PullRequest RunType = iota // pull request build
+	MainBranch                 // main branch build
 
 	// Releases
+
 	TaggedRelease // semver-tagged release
 	ReleaseBranch // release branch build
 
 	// Browser extensions
-	BextReleaseBranch // release build
-	BextNightly       // nightly build
+
+	BextReleaseBranch // browser extension release build
+	BextNightly       // browser extension nightly build
 
 	// Patches (NOT patch releases)
+
 	ImagePatch       // build a patched image
 	ImagePatchNoTest // build a patched image without testing
 	CandidatesNoTest // build all candidates without testing
 
 	// Special run cases
+
 	MainDryRun    // run everything main does, except for deploy-related steps
 	BackendDryRun // ???
 )
@@ -61,7 +62,9 @@ func computeRunType(tag, branch string) RunType {
 
 	case branch == "main":
 		return MainBranch
+
 	default:
+		// If no specific run type is matched, assumed to be a PR
 		return PullRequest
 	}
 }

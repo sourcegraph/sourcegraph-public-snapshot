@@ -12,12 +12,13 @@ import (
 	bk "github.com/sourcegraph/sourcegraph/enterprise/dev/ci/internal/buildkite"
 )
 
-// coreTestOperations is a core set of tests that should be run in most CI cases.
-func coreTestOperations(c Config, buildOptions bk.BuildOptions) []func(*bk.Pipeline) {
+// coreTestOperations is a core set of tests that should be run in most CI cases. These
+// steps should generally be quite fast.
+func coreTestOperations(buildOptions bk.BuildOptions) []func(*bk.Pipeline) {
 	operations := []func(*bk.Pipeline){
 		triggerAsync(buildOptions), // triggers a slow pipeline, so do it first.
 		addLint,                    // ~4.5m
-		addSharedFrontendTests(c),  // ~4.5m
+		frontendTests,              // ~4.5m
 		addWebApp,                  // ~3m
 		addBrowserExt,              // ~2m
 		addBrandedTests,            // ~1.5m
@@ -26,12 +27,6 @@ func coreTestOperations(c Config, buildOptions bk.BuildOptions) []func(*bk.Pipel
 		addGoBuild,                 // ~0.5m
 		addDockerfileLint,          // ~0.2m
 		wait,                       // wait for all steps to pass
-	}
-	if !c.runType.is(BackendDryRun, MainDryRun, MainBranch) {
-		// Add backend integration tests first because it is slow
-		operations = append([]func(*bk.Pipeline){
-			addBackendIntegrationTests, // ~11m
-		}, operations...)
 	}
 	return operations
 }
@@ -116,45 +111,45 @@ func addBrowserExt(pipeline *bk.Pipeline) {
 		bk.Cmd("dev/ci/codecov.sh -c -F typescript -F unit"))
 }
 
-// Adds the shared frontend tests (shared between the web app and browser extension).
-func addSharedFrontendTests(c Config) func(pipeline *bk.Pipeline) {
+func frontendPuppeteerAndStorybook(autoAcceptChanges bool) func(pipeline *bk.Pipeline) {
 	return func(pipeline *bk.Pipeline) {
-		if c.runType.is(MainDryRun) || c.changedFiles.isClientAffected() {
-			// Client integration tests
-			pipeline.AddStep(":puppeteer::electric_plug: Puppeteer tests",
-				bk.Env("PUPPETEER_SKIP_CHROMIUM_DOWNLOAD", "true"), // Don't download browser, we use "download-puppeteer-browser" script instead
-				bk.Env("ENTERPRISE", "1"),
-				bk.Env("PERCY_ON", "true"),
-				bk.Cmd("COVERAGE_INSTRUMENT=true dev/ci/yarn-build.sh client/web"),
-				bk.Cmd("echo \"--- Install puppeteer\" && yarn --cwd client/shared run download-puppeteer-browser"),
-				bk.Cmd("echo \"--- Run integration test suite\" && yarn percy exec -- yarn run cover-integration"),
-				bk.Cmd("echo \"--- Process NYC report\" && yarn nyc report -r json"),
-				bk.Cmd("echo \"--- Upload coverage report\" && dev/ci/codecov.sh -c -F typescript -F integration"),
-				bk.ArtifactPaths("./puppeteer/*.png"))
+		// Client integration tests
+		pipeline.AddStep(":puppeteer::electric_plug: Puppeteer tests",
+			bk.Env("PUPPETEER_SKIP_CHROMIUM_DOWNLOAD", "true"), // Don't download browser, we use "download-puppeteer-browser" script instead
+			bk.Env("ENTERPRISE", "1"),
+			bk.Env("PERCY_ON", "true"),
+			bk.Cmd("COVERAGE_INSTRUMENT=true dev/ci/yarn-build.sh client/web"),
+			bk.Cmd("echo \"--- Install puppeteer\" && yarn --cwd client/shared run download-puppeteer-browser"),
+			bk.Cmd("echo \"--- Run integration test suite\" && yarn percy exec -- yarn run cover-integration"),
+			bk.Cmd("echo \"--- Process NYC report\" && yarn nyc report -r json"),
+			bk.Cmd("echo \"--- Upload coverage report\" && dev/ci/codecov.sh -c -F typescript -F integration"),
+			bk.ArtifactPaths("./puppeteer/*.png"))
 
-			// Upload storybook to Chromatic
-			chromaticCommand := "yarn chromatic --exit-zero-on-changes --exit-once-uploaded"
-			if c.runType.is(MainBranch) {
-				chromaticCommand += " --auto-accept-changes"
-			}
-			pipeline.AddStep(":chromatic: Upload storybook to Chromatic",
-				bk.AutomaticRetry(5),
-				bk.Cmd("yarn --mutex network --frozen-lockfile --network-timeout 60000"),
-				bk.Cmd("yarn gulp generate"),
-				bk.Env("MINIFY", "1"),
-				bk.Cmd(chromaticCommand))
+		// Upload storybook to Chromatic
+		chromaticCommand := "yarn chromatic --exit-zero-on-changes --exit-once-uploaded"
+		if autoAcceptChanges {
+			chromaticCommand += " --auto-accept-changes"
 		}
-
-		// Shared tests
-		pipeline.AddStep(":jest: Test shared client code",
-			bk.Cmd("dev/ci/yarn-test.sh client/shared"),
-			bk.Cmd("dev/ci/codecov.sh -c -F typescript -F unit"))
-
-		// Wildcard tests
-		pipeline.AddStep(":jest: Test wildcard client code",
-			bk.Cmd("dev/ci/yarn-test.sh client/wildcard"),
-			bk.Cmd("dev/ci/codecov.sh -c -F typescript -F unit"))
+		pipeline.AddStep(":chromatic: Upload storybook to Chromatic",
+			bk.AutomaticRetry(5),
+			bk.Cmd("yarn --mutex network --frozen-lockfile --network-timeout 60000"),
+			bk.Cmd("yarn gulp generate"),
+			bk.Env("MINIFY", "1"),
+			bk.Cmd(chromaticCommand))
 	}
+}
+
+// Adds the shared frontend tests (shared between the web app and browser extension).
+func frontendTests(pipeline *bk.Pipeline) {
+	// Shared tests
+	pipeline.AddStep(":jest: Test shared client code",
+		bk.Cmd("dev/ci/yarn-test.sh client/shared"),
+		bk.Cmd("dev/ci/codecov.sh -c -F typescript -F unit"))
+
+	// Wildcard tests
+	pipeline.AddStep(":jest: Test wildcard client code",
+		bk.Cmd("dev/ci/yarn-test.sh client/wildcard"),
+		bk.Cmd("dev/ci/codecov.sh -c -F typescript -F unit"))
 }
 
 func addBrandedTests(pipeline *bk.Pipeline) {
@@ -184,6 +179,8 @@ func addDockerfileLint(pipeline *bk.Pipeline) {
 }
 
 // Adds backend integration tests step.
+//
+// Runtime: ~11m
 func addBackendIntegrationTests(pipeline *bk.Pipeline) {
 	pipeline.AddStep(":chains: Backend integration tests",
 		bk.Cmd("pushd enterprise"),

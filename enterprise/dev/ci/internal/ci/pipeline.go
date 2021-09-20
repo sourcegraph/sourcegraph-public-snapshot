@@ -95,7 +95,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		operations = []func(*bk.Pipeline){
 			addLint,
 			addBrowserExt,
-			addSharedFrontendTests(c),
+			frontendTests,
 			wait,
 			addBrowserExtensionReleaseSteps,
 		}
@@ -106,7 +106,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		operations = []func(*bk.Pipeline){
 			addLint,
 			addBrowserExt,
-			addSharedFrontendTests(c),
+			frontendTests,
 			wait,
 			addBrowserExtensionE2ESteps,
 		}
@@ -120,7 +120,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		}
 		operations = append([]func(*bk.Pipeline){
 			buildCandidateDockerImage(patchImage, c.version, c.candidateImageTag())},
-			coreTestOperations(c, buildOptions)...)
+			coreTestOperations(buildOptions)...)
 		operations = append(operations,
 			publishFinalDockerImage(c, patchImage, false))
 
@@ -165,7 +165,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 			}
 
 		default:
-			operations = coreTestOperations(c, buildOptions)
+			operations = coreTestOperations(buildOptions)
 		}
 
 	default:
@@ -178,8 +178,16 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 			buildExecutor(c.now, c.version)
 		}
 
+		// Slow tests
+		if c.runType.is(BackendDryRun, MainDryRun, MainBranch) {
+			// Add backend integration tests first because it is slow
+			operations = append(operations,
+				addBackendIntegrationTests,
+				frontendPuppeteerAndStorybook(c.runType.is(MainBranch)))
+		}
+
 		// Core tests
-		operations = append(operations, coreTestOperations(c, buildOptions)...)
+		operations = append(operations, coreTestOperations(buildOptions)...)
 
 		// Trigger e2e late so that it can leverage candidate images
 		var async bool
