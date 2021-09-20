@@ -6,8 +6,10 @@ import (
 	"context"
 	"fmt"
 	"strconv"
+	"sync"
 
 	"github.com/sourcegraph/sourcegraph/internal/trace"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 // Actor represents an agent that accesses resources. It can represent an anonymous user, an
@@ -24,6 +26,11 @@ type Actor struct {
 	// to selectively display a logout link. (If the actor wasn't authenticated with a session
 	// cookie, logout would be ineffective.)
 	FromSessionCookie bool `json:"-"`
+
+	// user is populated lazily by (*Actor).User()
+	user     *types.User
+	userErr  error
+	userOnce sync.Once
 }
 
 // FromUser returns an actor corresponding to a user
@@ -44,6 +51,22 @@ func (a *Actor) IsAuthenticated() bool {
 // IsInternal returns true if the Actor is an internal actor.
 func (a *Actor) IsInternal() bool {
 	return a != nil && a.Internal
+}
+
+type userFetcher interface {
+	GetByID(context.Context, int32) (*types.User, error)
+}
+
+// User returns the expanded types.User for the actor's ID. The ID is expanded to a full
+// types.User using the fetcher, which is likely a *database.UserStore.
+func (a *Actor) User(ctx context.Context, fetcher userFetcher) (*types.User, error) {
+	a.userOnce.Do(func() {
+		a.user, a.userErr = fetcher.GetByID(ctx, a.UID)
+	})
+	if a.user.ID != a.UID {
+		panic(fmt.Sprintf("actor UID (%d) and the ID of the cached User (%d) do not match", a.UID, a.user.ID))
+	}
+	return a.user, a.userErr
 }
 
 type key int

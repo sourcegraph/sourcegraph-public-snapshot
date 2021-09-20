@@ -2,6 +2,7 @@
 package main // import "github.com/sourcegraph/sourcegraph/cmd/gitserver"
 
 import (
+	"container/list"
 	"context"
 	"log"
 	"net"
@@ -176,8 +177,9 @@ func main() {
 			}
 			return &server.GitRepoSyncer{}, nil
 		},
-		Hostname: hostname.Get(),
-		DB:       db,
+		Hostname:   hostname.Get(),
+		DB:         db,
+		CloneQueue: server.NewCloneQueue(list.New()),
 	}
 	gitserver.RegisterMetrics()
 
@@ -200,6 +202,10 @@ func main() {
 	go debugserver.NewServerRoutine(ready).Start()
 	go gitserver.Janitor(janitorInterval)
 	go gitserver.SyncRepoState(syncRepoStateInterval, syncRepoStateBatchSize, syncRepoStateUpsertPerSecond)
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	gitserver.StartClonePipeline(ctx)
 
 	port := "3178"
 	host := ""
