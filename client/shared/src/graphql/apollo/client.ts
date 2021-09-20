@@ -30,7 +30,9 @@ export const getGraphQLClient = once(
         const persistor = new CachePersistor({
             cache,
             persistenceMapper,
-            maxSize: false,
+            // Use max 4 MB for persistent cache. Leave 1 MB for other means out of 5 MB available.
+            // If exceeded, persistence will pause and app will start up cold on next launch.
+            maxSize: 1024 * 1024 * 4,
             key: getApolloPersistCacheKey(isAuthenticated),
             storage: new LocalStorageWrapper(window.localStorage),
         })
