@@ -10,35 +10,27 @@ env:
   CGO_ENABLED: '0'
 
 jobs:
-  set-release-name:
-    name: set-release-name
-    runs-on: ubuntu-latest
-    outputs:
-      release-name: ${{ steps.compute-release-name.outputs.release-name }}
-    steps:
-      - name: compute-release-name
-        run: |
-          today=$(date +'%Y-%m-%d')
-          short_sha=$(echo ${{ github.sha }} | cut -c1-8)
-          echo "::set-output name=release-name::${today}-${short_sha}"
-
   create-release:
     name: create-release
-    needs: set-release-name
     runs-on: ubuntu-latest
     steps:
       - name: Create Release
+        # note that the release_name thing here is a duplicate from above,
+        # because I can't get outputs to work.
         run: |
+          today=$(date +'%Y-%m-%d')
+          short_sha=$(echo ${{ github.sha }} | cut -c1-8)
+          release_name="${today}-${short_sha}""
+
           gh release delete -R="${repo}" ${release_name} || true
           gh release create -R="${repo}" ${release_name} --notes "sg release ${release_name}"
         env:
           repo: sourcegraph/sg
-          release_name: ${{ needs.set-release-name.outputs.release-name }}
           GITHUB_TOKEN: ${{ secrets.SG_RELEASE_TOKEN }}
 
   build:
     name: Build
-    needs: [set-release-name, create-release]
+    needs: [create-release]
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -97,10 +89,15 @@ jobs:
           filename: ${{ steps.asset.outputs.filename }}
 
       - name: Upload release asset
+        # note that the release_name thing here is a duplicate from above,
+        # because I can't get outputs to work.
         run: |
+          today=$(date +'%Y-%m-%d')
+          short_sha=$(echo ${{ github.sha }} | cut -c1-8)
+          release_name="${today}-${short_sha}""
+
           gh release upload -R="${repo}" ${release_name} "${filename}"
         env:
           repo: sourcegraph/sg
-          release_name: ${{ needs.set-release-name.outputs.release-name }}
           filename: ${{ steps.asset.outputs.filename }}
           GITHUB_TOKEN: ${{ secrets.SG_RELEASE_TOKEN }}
