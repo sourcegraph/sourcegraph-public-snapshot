@@ -12,6 +12,7 @@ env:
 jobs:
   set-release-name:
     name: set-release-name
+    runs-on: ubuntu-latest
     steps:
       - name: compute-release-name
         run: |
