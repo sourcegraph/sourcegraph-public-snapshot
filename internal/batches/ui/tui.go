@@ -43,13 +43,16 @@ func (ui *TUI) ParsingBatchSpecSuccess() {
 }
 
 func (ui *TUI) ParsingBatchSpecFailure(err error) {
-	if merr, ok := err.(*multierror.Error); ok {
-		block := ui.Out.Block(output.Line("\u274c", output.StyleWarning, "Batch spec failed validation."))
-		defer block.Close()
+	block := ui.Out.Block(output.Line("\u274c", output.StyleWarning, "Batch spec failed validation."))
+	defer block.Close()
 
-		for i, err := range merr.Errors {
+	var multiErr *multierror.Error
+	if errors.As(err, &multiErr) {
+		for i, err := range multiErr.Errors {
 			block.Writef("%d. %s", i+1, err)
 		}
+	} else {
+		block.Writef("1. %s", err)
 	}
 }
 

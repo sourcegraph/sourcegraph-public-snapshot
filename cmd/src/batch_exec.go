@@ -112,8 +112,9 @@ func executeBatchSpecInWorkspaces(ctx context.Context, opts executeBatchSpecOpts
 	opts.ui.ParsingBatchSpec()
 	batchSpec, err := svc.ParseBatchSpec([]byte(input.RawSpec))
 	if err != nil {
-		if merr, ok := err.(*multierror.Error); ok {
-			opts.ui.ParsingBatchSpecFailure(merr)
+		var multiErr *multierror.Error
+		if errors.As(err, &multiErr) {
+			opts.ui.ParsingBatchSpecFailure(multiErr)
 			return cmderrors.ExitCode(2, nil)
 		} else {
 			// This shouldn't happen; let's just punt and let the normal

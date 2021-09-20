@@ -41,17 +41,19 @@ Examples:
 			return cmderrors.Usage("additional arguments not allowed")
 		}
 
+		out := output.NewOutput(flagSet.Output(), output.OutputOpts{Verbose: *verbose})
+		ui := &ui.TUI{Out: out}
 		svc := service.New(&service.Opts{
 			Client: cfg.apiClient(apiFlags, flagSet.Output()),
 		})
 
 		if err := svc.DetermineFeatureFlags(ctx); err != nil {
+			ui.ExecutionError(err)
 			return err
 		}
 
-		out := output.NewOutput(flagSet.Output(), output.OutputOpts{Verbose: *verbose})
 		if _, _, err := parseBatchSpec(fileFlag, svc); err != nil {
-			(&ui.TUI{Out: out}).ParsingBatchSpecFailure(err)
+			ui.ParsingBatchSpecFailure(err)
 			return err
 		}
 
