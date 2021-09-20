@@ -145,7 +145,7 @@ func (dm *DiffMatches) Match(commit *LazyCommit) (bool, *protocol.HighlightedCom
 				matches := dm.FindAllStringIndex(content, -1)
 				if matches != nil {
 					foundMatch = true
-					highlights = append(highlights, matchesToRanges(content, matches).Shift(loc)...)
+					highlights = append(highlights, matchesToRanges(content, matches).Add(loc)...)
 				}
 				return true
 			})
@@ -182,14 +182,14 @@ func (dmf *DiffModifiesFile) Match(commit *LazyCommit) (bool, *protocol.Highligh
 		oldFileMatches := dmf.FindAllStringIndex(oldFile, -1)
 		if oldFileMatches != nil {
 			foundMatch = true
-			highlights = append(highlights, matchesToRanges(oldFile, oldFileMatches).Shift(oldLoc)...)
+			highlights = append(highlights, matchesToRanges(oldFile, oldFileMatches).Add(oldLoc)...)
 		}
 
 		newFile, newLoc := d.NewFile()
 		newFileMatches := dmf.FindAllStringIndex(newFile, -1)
 		if newFileMatches != nil {
 			foundMatch = true
-			highlights = append(highlights, matchesToRanges(newFile, newFileMatches).Shift(newLoc)...)
+			highlights = append(highlights, matchesToRanges(newFile, newFileMatches).Add(newLoc)...)
 		}
 
 		return true

@@ -48,11 +48,19 @@ type Location struct {
 	Column int
 }
 
-func (l Location) Shift(o Location) Location {
+func (l Location) Add(o Location) Location {
 	return Location{
 		Offset: l.Offset + o.Offset,
 		Line:   l.Line + o.Line,
 		Column: l.Column + o.Column,
+	}
+}
+
+func (l Location) Sub(o Location) Location {
+	return Location{
+		Offset: l.Offset - o.Offset,
+		Line:   l.Line - o.Line,
+		Column: l.Column - o.Column,
 	}
 }
 
@@ -78,6 +86,28 @@ type Range struct {
 	End   Location `json:"end"`
 }
 
+func (r Range) Includes(loc Location) bool {
+	return r.Start.Offset <= loc.Offset && r.End.Offset > loc.Offset
+}
+
+func (r Range) Contains(r2 Range) bool {
+	return r.Includes(r2.Start) && r.Includes(r2.End)
+}
+
+func (r Range) Add(amount Location) Range {
+	return Range{
+		Start: r.Start.Add(amount),
+		End:   r.End.Add(amount),
+	}
+}
+
+func (r Range) Sub(amount Location) Range {
+	return Range{
+		Start: r.Start.Sub(amount),
+		End:   r.End.Sub(amount),
+	}
+}
+
 type Ranges []Range
 
 func (r Ranges) Len() int           { return len(r) }
@@ -92,17 +122,18 @@ func (r Ranges) Merge(other Ranges) Ranges {
 	return r
 }
 
-// Shift takes a set of ranges and creates a new set of ranges whose
-// start and end locations are offset by the given amount. Note, we could
-// mutate the ranges in place to avoid an allocation, but it's a relatively
-// small cost for immutability.
-func (r Ranges) Shift(amount Location) Ranges {
+func (r Ranges) Add(amount Location) Ranges {
 	res := make(Ranges, 0, len(r))
 	for _, oldRange := range r {
-		res = append(res, Range{
-			Start: oldRange.Start.Shift(amount),
-			End:   oldRange.End.Shift(amount),
-		})
+		res = append(res, oldRange.Add(amount))
+	}
+	return res
+}
+
+func (r Ranges) Sub(amount Location) Ranges {
+	res := make(Ranges, 0, len(r))
+	for _, oldRange := range r {
+		res = append(res, oldRange.Sub(amount))
 	}
 	return res
 }

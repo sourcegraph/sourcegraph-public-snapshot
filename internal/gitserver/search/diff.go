@@ -6,6 +6,7 @@ import (
 	"context"
 	"io"
 	"os/exec"
+	"sort"
 	"strings"
 
 	"github.com/cockroachdb/errors"
@@ -83,10 +84,32 @@ func FormatDiff(rawDiff []byte) FormattedDiff {
 	return FormattedDiff(buf.String())
 }
 
+// Collapsed takes a set of highlighted ranges, and collapses the diff to only
+// highlighted lines, respecting diff syntax
+func (d FormattedDiff) Collapsed(ranges protocol.Ranges) (FormattedDiff, protocol.Ranges) {
+	// var buf strings.Builder
+	sort.Sort(ranges)
+
+	// newRanges := make(protocol.Ranges, 0, len(ranges))
+	// d.ForEachDelta(func(delta Delta) bool {
+	// 	if !delta.Contains(ranges[0]) {
+	// 		ranges = ranges.Shift(delta.End.Sub(delta.Start))
+	// 		return true
+	// 	}
+	// 	delta.ForEachHunk(func(hunk Hunk) bool {
+	// 		if !hunk.Contains(ranges[0]) {
+
+	// 		}
+	// 	})
+	// })
+
+	return "", nil
+}
+
 // ForEachDelta iterates over the file deltas in a diff in a zero-copy manner
 func (d FormattedDiff) ForEachDelta(f func(Delta) bool) {
 	remaining := d
-	var loc protocol.Location
+	var start protocol.Location
 	for len(remaining) > 0 {
 		delta := scanDelta(string(remaining))
 		remaining = remaining[len(delta):]
@@ -96,19 +119,20 @@ func (d FormattedDiff) ForEachDelta(f func(Delta) bool) {
 		hunks := delta[newlineIdx+1:]
 		oldFile, newFile := splitFileNames(fileNameLine)
 
+		end := start.Add(protocol.Location{
+			Offset: len(delta),
+			Line:   strings.Count(delta, "\n"),
+		})
 		if cont := f(Delta{
-			location: loc,
-			oldFile:  oldFile,
-			newFile:  newFile,
-			hunks:    hunks,
+			Range:   protocol.Range{Start: start, End: end},
+			oldFile: oldFile,
+			newFile: newFile,
+			hunks:   hunks,
 		}); !cont {
 			return
 		}
 
-		loc = loc.Shift(protocol.Location{
-			Offset: len(delta),
-			Line:   strings.Count(delta, "\n"),
-		})
+		start = end
 	}
 }
 
@@ -153,18 +177,18 @@ func scanDelta(s string) string {
 }
 
 type Delta struct {
-	location protocol.Location
-	oldFile  string
-	newFile  string
-	hunks    string
+	protocol.Range
+	oldFile string
+	newFile string
+	hunks   string
 }
 
 func (d Delta) OldFile() (string, protocol.Location) {
-	return d.oldFile, d.location
+	return d.oldFile, d.Start
 }
 
 func (d Delta) NewFile() (string, protocol.Location) {
-	return d.newFile, d.location.Shift(protocol.Location{
+	return d.newFile, d.Start.Add(protocol.Location{
 		Offset: len(d.newFile) + len(fileSeparator),
 		Column: len(d.newFile) + len(fileSeparator),
 	})
@@ -173,7 +197,10 @@ func (d Delta) NewFile() (string, protocol.Location) {
 // ForEachHunk iterates over each hunk in a delta in a zero-copy manner
 func (d Delta) ForEachHunk(f func(Hunk) bool) {
 	remaining := d.hunks
-	loc := d.location.Shift(protocol.Location{Line: 1, Offset: len(d.oldFile) + len(d.newFile) + len(fileSeparator) + len("\n")})
+	start := d.Start.Add(protocol.Location{
+		Line:   1,
+		Offset: len(d.oldFile) + len(d.newFile) + len(fileSeparator) + len("\n"),
+	})
 	for len(remaining) > 0 {
 		hunk := scanHunk(remaining)
 		remaining = remaining[len(hunk):]
@@ -182,18 +209,19 @@ func (d Delta) ForEachHunk(f func(Hunk) bool) {
 		header := hunk[:newlineIdx]
 		lines := hunk[newlineIdx+1:]
 
+		end := start.Add(protocol.Location{
+			Offset: len(hunk),
+			Line:   strings.Count(hunk, "\n"),
+		})
 		if cont := f(Hunk{
-			location: loc,
-			header:   header,
-			lines:    lines,
+			Range:  protocol.Range{Start: start, End: end},
+			header: header,
+			lines:  lines,
 		}); !cont {
 			return
 		}
 
-		loc = loc.Shift(protocol.Location{
-			Offset: len(hunk),
-			Line:   strings.Count(hunk, "\n"),
-		})
+		start = end
 	}
 }
 
@@ -218,35 +246,39 @@ func scanHunk(s string) string {
 }
 
 type Hunk struct {
-	location protocol.Location
-	header   string
-	lines    string
+	protocol.Range
+	header string
+	lines  string
 }
 
 // Header returns the @@-prefixed header for the hunk
 func (h Hunk) Header() (string, protocol.Location) {
-	return h.header, h.location
+	return h.header, h.Start
 }
 
 // ForEachLine iterates over each line in a hunk in a zero-copy manner
 func (h Hunk) ForEachLine(f func(Line) bool) {
 	remaining := h.lines
-	loc := h.location.Shift(protocol.Location{Line: 1, Offset: len(h.header) + len("\n")})
+	start := h.Start.Add(protocol.Location{
+		Line:   1,
+		Offset: len(h.header) + len("\n"),
+	})
 	for len(remaining) > 0 {
 		line := scanLine(remaining)
 		remaining = remaining[len(line):]
 
+		end := start.Add(protocol.Location{
+			Offset: len(line),
+			Line:   1,
+		})
 		if cont := f(Line{
-			location: loc,
+			Range:    protocol.Range{Start: start, End: end},
 			fullLine: line,
 		}); !cont {
 			return
 		}
 
-		loc = loc.Shift(protocol.Location{
-			Offset: len(line),
-			Line:   1,
-		})
+		start = end
 	}
 }
 
@@ -258,7 +290,7 @@ func scanLine(s string) string {
 }
 
 type Line struct {
-	location protocol.Location
+	protocol.Range
 	fullLine string
 }
 
@@ -269,7 +301,7 @@ func (l Line) Origin() byte {
 
 // Content returns the full content of the line, including the trailing newline
 func (l Line) Content() (string, protocol.Location) {
-	return l.fullLine[1:], l.location.Shift(protocol.Location{Column: 1, Offset: 1})
+	return l.fullLine[1:], l.Start.Add(protocol.Location{Column: 1, Offset: 1})
 }
 
 // DiffFetcher is a handle to the stdin and stdout of a git diff-tree subprocess
