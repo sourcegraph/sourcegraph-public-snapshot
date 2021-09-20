@@ -3,7 +3,6 @@
 package main
 
 import (
-	"fmt"
 	"os"
 	"time"
 
@@ -18,7 +17,6 @@ func main() {
 	)
 
 	config := ci.NewConfig(time.Now(), commit, branch, tag)
-	fmt.Printf("%+v\n", config)
 
 	pipeline, err := ci.GeneratePipeline(config)
 	if err != nil {
