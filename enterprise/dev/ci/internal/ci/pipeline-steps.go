@@ -101,6 +101,7 @@ func addSharedTests(c Config) func(pipeline *bk.Pipeline) {
 				bk.Env("PUPPETEER_SKIP_CHROMIUM_DOWNLOAD", "true"), // Don't download browser, we use "download-puppeteer-browser" script instead
 				bk.Env("ENTERPRISE", "1"),
 				bk.Env("PERCY_ON", "true"),
+				bk.Env("CI_INTEGRATION_MOCHA_JOBS", "6"),
 				bk.Cmd("COVERAGE_INSTRUMENT=true dev/ci/yarn-build.sh client/web"),
 				bk.Cmd("echo \"--- Install puppeteer\" && yarn --cwd client/shared run download-puppeteer-browser"),
 				bk.Cmd("echo \"--- Run integration test suite\" && yarn percy exec -- yarn run cover-integration"),
