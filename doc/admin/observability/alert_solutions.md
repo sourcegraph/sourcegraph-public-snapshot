@@ -2872,8 +2872,6 @@ with your code hosts connections or networking issues affecting communication wi
 
 <br />
 
-
-
 ## repo-updater: sourced_repos
 
 <p class="subtitle">repositories sourced</p>
