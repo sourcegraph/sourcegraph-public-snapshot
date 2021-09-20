@@ -1,4 +1,4 @@
-name: sg-release
+name: sg-binary-release
 
 on:
   push:
@@ -8,20 +8,29 @@ on:
 env:
   GOFLAGS: -trimpath
   CGO_ENABLED: '0'
-  # GO_EXTLINK_ENABLED: '0'
 
 jobs:
+  set-release-name:
+    name: set-release-name
+    steps:
+      - name: compute-release-name
+        run: |
+          today=$(date +'%Y-%m-%d')
+          short_sha=$(echo ${{ github.sha }} | cut -c1-8)
+          echo "::set-output name=release-name::${today}-${short_sha}"
+
   create-release:
-    name: Create Release
+    name: create-release
+    needs: set-release-name
     runs-on: ubuntu-latest
     steps:
       - name: Create Release
         run: |
-          gh release delete -R="${repo}" ${tag_name} || true
-          gh release create -R="${repo}" ${tag_name}
+          gh release delete -R="${repo}" ${release_name} || true
+          gh release create -R="${repo}" ${release_name} --notes "sg release ${release_name}"
         env:
           repo: sourcegraph/sg
-          tag_name: build-${{ github.sha }}
+          release_name: ${{ steps.set-release-name.outputs.release-name }}
           GITHUB_TOKEN: ${{ secrets.SG_RELEASE_TOKEN }}
 
   build:
@@ -84,17 +93,11 @@ jobs:
           workspace: ${{ github.workspace }}
           filename: ${{ steps.asset.outputs.filename }}
 
-      # - uses: actions-ecosystem/action-push-tag@v1
-      #   with:
-      #     tag: build-${{ github.sha }}
-      #     message: 'snapshot sg release ${{ github.sha }}'
-
       - name: Upload release asset
         run: |
-          gh release upload -R="${repo}" ${tag_name} "${filename}"
+          gh release upload -R="${repo}" ${release_name} "${filename}"
         env:
           repo: sourcegraph/sg
-          tag_name: build-${{ github.sha }}
+          release_name: ${{ steps.set-release-name.outputs.release-name }}
           filename: ${{ steps.asset.outputs.filename }}
           GITHUB_TOKEN: ${{ secrets.SG_RELEASE_TOKEN }}
-
