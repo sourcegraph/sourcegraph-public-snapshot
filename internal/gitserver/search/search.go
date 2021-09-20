@@ -11,6 +11,8 @@ import (
 	"github.com/cockroachdb/errors"
 	"github.com/hashicorp/go-multierror"
 	"golang.org/x/sync/errgroup"
+
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 )
 
 // Git formatting directives as described in man git-log / PRETTY FORMATS
@@ -85,7 +87,7 @@ type job struct {
 
 type searchResult struct {
 	lazyCommit        *LazyCommit
-	highlightedCommit *HighlightedCommit
+	highlightedCommit *protocol.HighlightedCommit
 }
 
 const (
@@ -101,7 +103,7 @@ const (
 // that job should be sent down. We then read from the result channels in the same order that the jobs were sent.
 // This allows our worker pool to run the jobs in parallel, but we still emit matches in the same order that
 // git log outputs them.
-func Search(dir string, revisionArgs []string, p CommitPredicate, onMatch func(*LazyCommit, *HighlightedCommit) bool) error {
+func Search(dir string, revisionArgs []string, p MatchTree, onMatch func(*LazyCommit, *protocol.HighlightedCommit) bool) error {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	g, ctx := errgroup.WithContext(ctx)

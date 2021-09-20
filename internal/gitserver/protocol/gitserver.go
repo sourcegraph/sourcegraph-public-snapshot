@@ -1,18 +1,16 @@
 package protocol
 
 import (
+	"github.com/cockroachdb/errors"
 	"time"
 
-	"github.com/cockroachdb/errors"
-
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver/search"
 )
 
 type SearchRequest struct {
 	Repo        api.RepoName
 	Revisions   []RevisionSpecifier
-	Predicate   search.CommitPredicate
+	Query       SearchQuery
 	IncludeDiff bool
 	Limit       int
 }
@@ -64,8 +62,8 @@ type CommitMatch struct {
 	Refs       []string
 	SourceRefs []string
 
-	Message search.HighlightedString `json:",omitempty"`
-	Diff    search.HighlightedString `json:",omitempty"`
+	Message HighlightedString `json:",omitempty"`
+	Diff    HighlightedString `json:",omitempty"`
 }
 
 type Signature struct {

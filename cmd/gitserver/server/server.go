@@ -914,7 +914,7 @@ func (s *Server) handleArchive(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) handleSearch(w http.ResponseWriter, r *http.Request) {
-	search.RegisterGob()
+	protocol.RegisterGob()
 	var req protocol.SearchRequest
 	if err := gob.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
@@ -1009,7 +1009,7 @@ func (s *Server) search(w http.ResponseWriter, r *http.Request, args *protocol.S
 		}
 
 		// TODO this should take a context so we can stop searching before we find a match
-		return search.Search(dir.Path(), revArgs, args.Predicate, func(match *search.LazyCommit, highlights *search.HighlightedCommit) bool {
+		return search.Search(dir.Path(), revArgs, search.ToMatchTree(args.Query), func(match *search.LazyCommit, highlights *protocol.HighlightedCommit) bool {
 			res, err := createCommitMatch(match, highlights, args.IncludeDiff)
 			if err != nil {
 				// TODO(camdencheek)
@@ -1069,7 +1069,7 @@ func (s *Server) search(w http.ResponseWriter, r *http.Request, args *protocol.S
 	}
 }
 
-func createCommitMatch(lc *search.LazyCommit, hc *search.HighlightedCommit, includeDiff bool) (*protocol.CommitMatch, error) {
+func createCommitMatch(lc *search.LazyCommit, hc *protocol.HighlightedCommit, includeDiff bool) (*protocol.CommitMatch, error) {
 	authorDate, err := lc.AuthorDate()
 	if err != nil {
 		return nil, err
@@ -1085,7 +1085,7 @@ func createCommitMatch(lc *search.LazyCommit, hc *search.HighlightedCommit, incl
 		message.Content = string(lc.Message)
 	}
 
-	diff := search.HighlightedString{}
+	diff := protocol.HighlightedString{}
 	if includeDiff {
 		diff = hc.Diff
 

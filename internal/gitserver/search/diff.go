@@ -9,6 +9,8 @@ import (
 	"strings"
 
 	"github.com/cockroachdb/errors"
+
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 )
 
 // The token to separate oldFile and newFile. We use two spaces because with one space,
@@ -86,7 +88,7 @@ func FormatDiff(rawDiff []byte) FormattedDiff {
 // ForEachDelta iterates over the file deltas in a diff in a zero-copy manner
 func (d FormattedDiff) ForEachDelta(f func(Delta) bool) {
 	remaining := d
-	var loc Location
+	var loc protocol.Location
 	for len(remaining) > 0 {
 		delta := scanDelta(string(remaining))
 		remaining = remaining[len(delta):]
@@ -106,7 +108,7 @@ func (d FormattedDiff) ForEachDelta(f func(Delta) bool) {
 			return
 		}
 
-		loc = loc.Shift(Location{
+		loc = loc.Shift(protocol.Location{
 			Offset: len(delta),
 			Line:   strings.Count(delta, "\n"),
 		})
@@ -134,18 +136,18 @@ func scanDelta(s string) string {
 }
 
 type Delta struct {
-	location Location
+	location protocol.Location
 	oldFile  string
 	newFile  string
 	hunks    string
 }
 
-func (d Delta) OldFile() (string, Location) {
+func (d Delta) OldFile() (string, protocol.Location) {
 	return d.oldFile, d.location
 }
 
-func (d Delta) NewFile() (string, Location) {
-	return d.newFile, d.location.Shift(Location{
+func (d Delta) NewFile() (string, protocol.Location) {
+	return d.newFile, d.location.Shift(protocol.Location{
 		Offset: len(d.newFile) + len(fileSeparator),
 		Column: len(d.newFile) + len(fileSeparator),
 	})
@@ -154,7 +156,7 @@ func (d Delta) NewFile() (string, Location) {
 // ForEachHunk iterates over each hunk in a delta in a zero-copy manner
 func (d Delta) ForEachHunk(f func(Hunk) bool) {
 	remaining := d.hunks
-	loc := d.location.Shift(Location{Line: 1, Offset: len(d.oldFile) + len(d.newFile) + len(fileSeparator) + len("\n")})
+	loc := d.location.Shift(protocol.Location{Line: 1, Offset: len(d.oldFile) + len(d.newFile) + len(fileSeparator) + len("\n")})
 	for len(remaining) > 0 {
 		hunk := scanHunk(remaining)
 		remaining = remaining[len(hunk):]
@@ -171,7 +173,7 @@ func (d Delta) ForEachHunk(f func(Hunk) bool) {
 			return
 		}
 
-		loc = loc.Shift(Location{
+		loc = loc.Shift(protocol.Location{
 			Offset: len(hunk),
 			Line:   strings.Count(hunk, "\n"),
 		})
@@ -199,20 +201,20 @@ func scanHunk(s string) string {
 }
 
 type Hunk struct {
-	location Location
+	location protocol.Location
 	header   string
 	lines    string
 }
 
 // Header returns the @@-prefixed header for the hunk
-func (h Hunk) Header() (string, Location) {
+func (h Hunk) Header() (string, protocol.Location) {
 	return h.header, h.location
 }
 
 // ForEachLine iterates over each line in a hunk in a zero-copy manner
 func (h Hunk) ForEachLine(f func(Line) bool) {
 	remaining := h.lines
-	loc := h.location.Shift(Location{Line: 1, Offset: len(h.header) + len("\n")})
+	loc := h.location.Shift(protocol.Location{Line: 1, Offset: len(h.header) + len("\n")})
 	for len(remaining) > 0 {
 		line := scanLine(remaining)
 		remaining = remaining[len(line):]
@@ -224,7 +226,7 @@ func (h Hunk) ForEachLine(f func(Line) bool) {
 			return
 		}
 
-		loc = loc.Shift(Location{
+		loc = loc.Shift(protocol.Location{
 			Offset: len(line),
 			Line:   1,
 		})
@@ -239,7 +241,7 @@ func scanLine(s string) string {
 }
 
 type Line struct {
-	location Location
+	location protocol.Location
 	fullLine string
 }
 
@@ -249,8 +251,8 @@ func (l Line) Origin() byte {
 }
 
 // Content returns the full content of the line, including the trailing newline
-func (l Line) Content() (string, Location) {
-	return l.fullLine[1:], l.location.Shift(Location{Column: 1, Offset: 1})
+func (l Line) Content() (string, protocol.Location) {
+	return l.fullLine[1:], l.location.Shift(protocol.Location{Column: 1, Offset: 1})
 }
 
 // DiffFetcher is a handle to the stdin and stdout of a git diff-tree subprocess

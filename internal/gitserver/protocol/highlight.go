@@ -1,4 +1,4 @@
-package search
+package protocol
 
 import (
 	"encoding/json"

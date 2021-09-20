@@ -10,7 +10,7 @@ import (
 
 func BenchmarkGitSearch(b *testing.B) {
 	for i := 0; i < b.N; i++ {
-		predicate := &And{[]CommitPredicate{
+		predicate := &And{[]MatchTree{
 			&AuthorMatches{Regexp{regexp.MustCompile("camden")}},
 			&DiffMatches{Regexp{regexp.MustCompile("camden")}},
 		}}
