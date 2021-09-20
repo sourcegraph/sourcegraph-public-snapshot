@@ -51,6 +51,7 @@ export const UserSettingsSidebar: React.FunctionComponent<UserSettingsSidebarPro
     const siteAdminViewingOtherUser = props.user.id !== props.authenticatedUser.id
     const context: UserSettingsSidebarItemConditionContext = {
         batchChangesEnabled: props.batchChangesEnabled,
+        batchChangesExecutionEnabled: props.batchChangesExecutionEnabled,
         user: props.user,
         authenticatedUser: props.authenticatedUser,
         isSourcegraphDotCom: props.isSourcegraphDotCom,

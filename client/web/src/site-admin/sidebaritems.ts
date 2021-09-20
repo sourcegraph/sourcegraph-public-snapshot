@@ -95,6 +95,10 @@ export const maintenanceGroup: SiteAdminSideBarGroup = {
             to: '/site-admin/updates',
         },
         {
+            label: 'Documentation',
+            to: '/help',
+        },
+        {
             label: 'Pings',
             to: '/site-admin/pings',
         },

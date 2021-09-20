@@ -27,7 +27,7 @@ export function queryRepositoryComparisonFileDiffs(args: {
     base: string | null
     head: string | null
     first?: number
-    after?: string
+    after?: string | null
 }): Observable<GQL.IFileDiffConnection> {
     return queryGraphQL(
         gql`

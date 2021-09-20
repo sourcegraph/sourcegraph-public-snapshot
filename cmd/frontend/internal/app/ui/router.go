@@ -170,7 +170,7 @@ func newRouter() *mux.Router {
 
 	// Repogroup pages. Must mirror web/src/Layout.tsx
 	if envvar.SourcegraphDotComMode() {
-		repogroups := []string{"kubernetes", "stanford", "stackstorm", "temporal", "o3de"}
+		repogroups := []string{"kubernetes", "stanford", "stackstorm", "temporal", "o3de", "chakraui"}
 		r.Path("/{Path:(?:" + strings.Join(repogroups, "|") + ")}").Methods("GET").Name(routeRepoGroups)
 		r.Path("/cncf").Methods("GET").Name(routeCncf)
 	}

@@ -7,8 +7,8 @@ $card-cap-bg: var(--color-bg-2);
 .card {
     --card-bg: var(--color-bg-1);
     --card-border-color: var(--border-color);
-    --card-spacer-y: $card-spacer-y;
-    --card-spacer-x: $card-spacer-x;
+    --card-spacer-y: #{$card-spacer-y};
+    --card-spacer-x: #{$card-spacer-x};
 }
 
 @import 'bootstrap/scss/card';

@@ -125,6 +125,11 @@ type ListBatchChangesArgs struct {
 	Repo      *graphql.ID
 }
 
+type ListBatchSpecExecutionsArgs struct {
+	First int32
+	After *string
+}
+
 type CloseBatchChangeArgs struct {
 	BatchChange     graphql.ID
 	CloseChangesets bool
@@ -310,6 +315,7 @@ type BatchChangesResolver interface {
 	BatchChangesCodeHosts(ctx context.Context, args *ListBatchChangesCodeHostsArgs) (BatchChangesCodeHostConnectionResolver, error)
 	RepoChangesetsStats(ctx context.Context, repo *graphql.ID) (RepoChangesetsStatsResolver, error)
 	RepoDiffStat(ctx context.Context, repo *graphql.ID) (*DiffStat, error)
+	BatchSpecExecutions(ctx context.Context, args *ListBatchSpecExecutionsArgs) (BatchSpecExecutionConnectionResolver, error)
 
 	NodeResolvers() map[string]NodeByIDFunc
 }
@@ -620,6 +626,12 @@ type BatchChangesConnectionResolver interface {
 	PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error)
 }
 
+type BatchSpecExecutionConnectionResolver interface {
+	Nodes(ctx context.Context) ([]BatchSpecExecutionResolver, error)
+	TotalCount(ctx context.Context) (int32, error)
+	PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error)
+}
+
 type CommonChangesetsStatsResolver interface {
 	Unpublished() int32
 	Draft() int32
@@ -745,6 +757,7 @@ type ChangesetCountsResolver interface {
 type BatchSpecExecutionResolver interface {
 	ID() graphql.ID
 	InputSpec() string
+	Name(ctx context.Context) (*string, error)
 	State() string
 	CreatedAt() DateTime
 	StartedAt() *DateTime

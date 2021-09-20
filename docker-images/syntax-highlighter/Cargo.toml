@@ -1,0 +1,16 @@
+[package]
+name = "syntect_server"
+version = "1.0.0"
+authors = ["Stephen Gutekanst <stephen.gutekanst@gmail.com>"]
+edition = "2018"
+license = "MIT"
+
+[dependencies]
+syntect = { git = "https://github.com/slimsag/syntect" }
+rocket = { git = "https://github.com/SergioBenitez/Rocket" } # Rocket 0.5 is not released yet: https://github.com/SergioBenitez/Rocket/issues/19#issuecomment-684122645
+rocket_contrib = { git = "https://github.com/SergioBenitez/Rocket" } # Rocket 0.5 is not released yet: https://github.com/SergioBenitez/Rocket/issues/19#issuecomment-684122645
+serde = "1.0"
+serde_json = "1.0"
+serde_derive = "1.0"
+rayon = "1.0"
+lazy_static = "1.0"

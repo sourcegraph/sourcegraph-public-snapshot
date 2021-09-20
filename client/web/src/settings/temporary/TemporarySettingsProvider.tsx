@@ -1,12 +1,10 @@
 import { useApolloClient } from '@apollo/client'
 import React, { createContext, useEffect, useState } from 'react'
 
-import { AuthenticatedUser } from '../../auth'
-
 import { TemporarySettingsStorage } from './TemporarySettingsStorage'
 
 export const TemporarySettingsContext = createContext<TemporarySettingsStorage>(
-    new TemporarySettingsStorage(null, null)
+    new TemporarySettingsStorage(null, false)
 )
 TemporarySettingsContext.displayName = 'TemporarySettingsContext'
 
@@ -15,19 +13,15 @@ TemporarySettingsContext.displayName = 'TemporarySettingsContext'
  * The web app needs to be wrapped around this.
  */
 export const TemporarySettingsProvider: React.FunctionComponent<{
-    authenticatedUser: AuthenticatedUser | null
-}> = ({ children, authenticatedUser }) => {
+    isAuthenticatedUser: boolean
+}> = ({ children, isAuthenticatedUser }) => {
     const apolloClient = useApolloClient()
 
     const [temporarySettingsStorage] = useState<TemporarySettingsStorage>(
-        () => new TemporarySettingsStorage(apolloClient, authenticatedUser)
+        () => new TemporarySettingsStorage(apolloClient, isAuthenticatedUser)
     )
 
     useEffect(() => () => temporarySettingsStorage.dispose(), [temporarySettingsStorage])
-
-    useEffect(() => {
-        temporarySettingsStorage?.setAuthenticatedUser(authenticatedUser)
-    }, [temporarySettingsStorage, authenticatedUser])
 
     return (
         <TemporarySettingsContext.Provider value={temporarySettingsStorage}>

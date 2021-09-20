@@ -228,19 +228,21 @@ func getBatchSpecExecutionQuery(opts *GetBatchSpecExecutionOpts) (*sqlf.Query, e
 // ListBatchSpecExecutionsOpts captures the query options needed for
 // listing batch spec executions.
 type ListBatchSpecExecutionsOpts struct {
+	LimitOpts
+	Cursor         int64
 	Cancel         *bool
 	State          btypes.BatchSpecExecutionState
 	WorkerHostname string
 }
 
 // ListBatchSpecExecutions lists batch changes with the given filters.
-func (s *Store) ListBatchSpecExecutions(ctx context.Context, opts ListBatchSpecExecutionsOpts) (cs []*btypes.BatchSpecExecution, err error) {
+func (s *Store) ListBatchSpecExecutions(ctx context.Context, opts ListBatchSpecExecutionsOpts) (cs []*btypes.BatchSpecExecution, next int64, err error) {
 	ctx, endObservation := s.operations.listBatchSpecExecutions.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
 	q := listBatchSpecExecutionsQuery(opts)
 
-	cs = make([]*btypes.BatchSpecExecution, 0)
+	cs = make([]*btypes.BatchSpecExecution, 0, opts.DBLimit())
 	err = s.query(ctx, q, func(sc scanner) error {
 		var c btypes.BatchSpecExecution
 		if err := scanBatchSpecExecution(&c, sc); err != nil {
@@ -250,18 +252,27 @@ func (s *Store) ListBatchSpecExecutions(ctx context.Context, opts ListBatchSpecE
 		return nil
 	})
 
-	return cs, err
+	if opts.Limit != 0 && len(cs) == opts.DBLimit() {
+		next = cs[len(cs)-1].ID
+		cs = cs[:len(cs)-1]
+	}
+
+	return cs, next, err
 }
 
 var listBatchSpecExecutionsQueryFmtstr = `
 -- source: enterprise/internal/batches/store/batch_spec_execution.go:ListBatchSpecExecutions
 SELECT %s FROM batch_spec_executions
 WHERE %s
-ORDER BY id ASC
+ORDER BY id DESC
 `
 
 func listBatchSpecExecutionsQuery(opts ListBatchSpecExecutionsOpts) *sqlf.Query {
 	preds := []*sqlf.Query{}
+
+	if opts.Cursor != 0 {
+		preds = append(preds, sqlf.Sprintf("batch_spec_executions.id <= %s", opts.Cursor))
+	}
 
 	if opts.Cancel != nil {
 		preds = append(preds, sqlf.Sprintf("batch_spec_executions.cancel = %s", *opts.Cancel))
@@ -280,7 +291,7 @@ func listBatchSpecExecutionsQuery(opts ListBatchSpecExecutionsOpts) *sqlf.Query 
 	}
 
 	return sqlf.Sprintf(
-		listBatchSpecExecutionsQueryFmtstr,
+		listBatchSpecExecutionsQueryFmtstr+opts.LimitOpts.ToDB(),
 		sqlf.Join(BatchSpecExecutionColumns, ", "),
 		sqlf.Join(preds, "\n AND "),
 	)
@@ -348,4 +359,27 @@ func ScanFirstBatchSpecExecution(rows *sql.Rows, err error) (*btypes.BatchSpecEx
 		return &btypes.BatchSpecExecution{}, false, err
 	}
 	return execs[0], true, nil
+}
+
+// CountBatchSpecExecutionsOpts captures the query options needed for
+// counting batch spec executions.
+type CountBatchSpecExecutionsOpts struct {
+	// Nothing yet.
+}
+
+// CountBatchSpecExecutions returns the number of batch spec executions in the database.
+func (s *Store) CountBatchSpecExecutions(ctx context.Context, opts CountBatchSpecExecutionsOpts) (count int, err error) {
+	return s.queryCount(ctx, countBatchSpecExecutionsQuery(&opts))
+}
+
+var countBatchSpecExecutionsQueryFmtstr = `
+-- source: enterprise/internal/batches/store/batch_spec_execution.go:CountBatchSpecExecutions
+SELECT COUNT(batch_spec_executions.id)
+FROM batch_spec_executions
+WHERE %s
+`
+
+func countBatchSpecExecutionsQuery(opts *CountBatchSpecExecutionsOpts) *sqlf.Query {
+	// Nothing yet.
+	return sqlf.Sprintf(countBatchSpecExecutionsQueryFmtstr, "TRUE")
 }

@@ -13,10 +13,11 @@ import { LineChartContent as LineChartContentType } from 'sourcegraph'
 
 import { DEFAULT_LINE_STROKE } from '../constants'
 import { generateAccessors } from '../helpers/generate-accessors'
+import { getProcessedChartData } from '../helpers/get-processed-chart-data'
 import { getYAxisWidth } from '../helpers/get-y-axis-width'
 import { usePointerEventEmitters } from '../helpers/use-event-emitters'
 import { useScalesConfiguration, useXScale, useYScale } from '../helpers/use-scales'
-import { onDatumZoneClick } from '../types'
+import { onDatumZoneClick, Point } from '../types'
 
 import { ActiveDatum, GlyphContent } from './GlyphContent'
 import { NonActiveBackground } from './NonActiveBackground'
@@ -97,15 +98,11 @@ export function LineChartContent<Datum extends object>(props: LineChartContentPr
 
     const dynamicMargin = { ...MARGIN, left: MARGIN.left + yAxisWidth }
 
-    // In case if we've got unsorted by x (time) axis dataset we have to sort that by ourselves
-    // otherwise we will get an error in calculation of position for the tooltip
-    // Details: bisector from d3-array package expects sorted data otherwise he can't calculate
-    // right index for nearest point on the XYChart.
-    // See https://github.com/airbnb/visx/blob/master/packages/visx-xychart/src/utils/findNearestDatumSingleDimension.ts#L30
-    const sortedData = useMemo(
-        () => data.sort((firstDatum, secondDatum) => +firstDatum[xAxis.dataKey] - +secondDatum[xAxis.dataKey]),
-        [data, xAxis]
-    )
+    const { sortedData, seriesWithData } = useMemo(() => getProcessedChartData({ accessors, data, series }), [
+        data,
+        accessors,
+        series,
+    ])
 
     // state
     const [hoveredDatum, setHoveredDatum] = useState<ActiveDatum<Datum> | null>(null)
@@ -113,19 +110,14 @@ export function LineChartContent<Datum extends object>(props: LineChartContentPr
 
     // callbacks
     const renderTooltip = useCallback(
-        (renderProps: RenderTooltipParams<Datum>) => (
-            <TooltipContent
-                {...renderProps}
-                accessors={accessors}
-                series={series}
-                className="line-chart__tooltip-content"
-            />
+        (renderProps: RenderTooltipParams<Point>) => (
+            <TooltipContent {...renderProps} series={seriesWithData} className="line-chart__tooltip-content" />
         ),
-        [accessors, series]
+        [seriesWithData]
     )
 
     const handlePointerMove = useCallback(
-        (event: EventHandlerParams<Datum>) => {
+        (event: EventHandlerParams<Point>) => {
             // If active point hasn't been change we shouldn't call setActiveDatum again
             if (hoveredDatum?.index === event.index && hoveredDatum?.key === event.key) {
                 return
@@ -147,7 +139,7 @@ export function LineChartContent<Datum extends object>(props: LineChartContentPr
     )
 
     const handlePointerUp = useCallback(
-        (info: EventHandlerParams<Datum>) => {
+        (info: EventHandlerParams<Point>) => {
             info.event?.persist()
 
             // According to types from visx/xychart index can be undefined
@@ -223,7 +215,7 @@ export function LineChartContent<Datum extends object>(props: LineChartContentPr
     const rootClasses = classnames('line-chart__content', { 'line-chart__content--with-cursor': !!hoveredDatumLink })
 
     return (
-        <div className={rootClasses} data-testid="line-chart__content">
+        <div className={classnames(rootClasses, 'percy-inactive-element')} data-testid="line-chart__content">
             {/*
                 Because XYChart wraps itself with context providers in case if consumer didn't add them
                 But this recursive wrapping leads to problem with event emitter context - double subscription all event
@@ -309,7 +301,7 @@ export function LineChartContent<Datum extends object>(props: LineChartContentPr
                                 fill="transparent"
                             />
 
-                            {series.map((line, index) => (
+                            {seriesWithData.map((line, index) => (
                                 <Group
                                     key={line.dataKey as string}
                                     // eslint-disable-next-line jsx-a11y/aria-role
@@ -320,12 +312,12 @@ export function LineChartContent<Datum extends object>(props: LineChartContentPr
                                 >
                                     <LineSeries
                                         dataKey={line.dataKey as string}
-                                        data={sortedData}
+                                        data={line.data}
                                         strokeWidth={2}
                                         /* eslint-disable-next-line jsx-a11y/aria-role */
                                         role="graphics-dataline"
-                                        xAccessor={accessors.x}
-                                        yAccessor={accessors.y[line.dataKey]}
+                                        xAccessor={point => point?.x}
+                                        yAccessor={point => point?.y}
                                         stroke={getLineStroke(line)}
                                         curve={curveLinear}
                                         aria-hidden={true}
@@ -333,10 +325,10 @@ export function LineChartContent<Datum extends object>(props: LineChartContentPr
 
                                     <GlyphSeries
                                         dataKey={line.dataKey as string}
-                                        data={sortedData}
+                                        data={line.data}
                                         enableEvents={false}
-                                        xAccessor={accessors.x}
-                                        yAccessor={accessors.y[line.dataKey]}
+                                        xAccessor={point => point?.x}
+                                        yAccessor={point => point?.y}
                                         // Don't have info about line in props. @visx/xychart doesn't expose this information
                                         // Move this arrow function in separate component when API of GlyphSeries will be fixed.
                                         renderGlyph={glyphProps => (
@@ -345,7 +337,6 @@ export function LineChartContent<Datum extends object>(props: LineChartContentPr
                                                 index={glyphProps.key}
                                                 hoveredDatum={hoveredDatum}
                                                 focusedDatum={focusedDatum}
-                                                accessors={accessors}
                                                 line={line}
                                                 lineIndex={index}
                                                 totalNumberOfLines={series.length}

@@ -1,6 +1,7 @@
 import classNames from 'classnames'
-import * as React from 'react'
-import { Link } from 'react-router-dom'
+import React from 'react'
+
+import { Link } from '@sourcegraph/shared/src/components/Link'
 
 import { DismissibleAlert } from '../components/DismissibleAlert'
 
@@ -8,7 +9,7 @@ import { DismissibleAlert } from '../components/DismissibleAlert'
  * A global alert telling all users that due to Docker for Mac, site performance
  * will be degraded.
  */
-export const DockerForMacAlert: React.FunctionComponent<{ className?: string }> = ({ className = '' }) => (
+export const DockerForMacAlert: React.FunctionComponent<{ className?: string }> = ({ className }) => (
     <DismissibleAlert
         partialStorageKey="DockerForMac"
         className={classNames('alert-warning docker-for-mac-alert d-flex align-items-center', className)}

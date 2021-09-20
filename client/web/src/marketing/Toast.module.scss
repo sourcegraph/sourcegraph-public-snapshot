@@ -1,0 +1,63 @@
+.toast {
+    position: fixed;
+    right: 2rem;
+    bottom: 2rem;
+    z-index: 100; /* Overlay repository/blob contents and search results */
+    display: flex;
+    align-items: flex-start;
+    border-radius: 0.25rem;
+    border: 1px solid var(--border-color);
+}
+
+.logo {
+    flex: 0 0 auto;
+    width: 2rem;
+    height: 2rem;
+
+    :global(.icon),
+    :global(.logo-icon) {
+        width: 2rem;
+        height: 2rem;
+    }
+
+    :global(.icon) {
+        fill: currentColor;
+    }
+}
+
+.contents {
+    flex: 1 1 auto;
+    margin: 0 0.5rem;
+    display: flex;
+    flex-direction: column;
+    max-width: 400px;
+}
+
+.contents-cta {
+    margin-top: 1rem;
+}
+
+.rating-btn {
+    width: 2rem;
+    padding: 0.5rem 0;
+}
+
+.rating-radio {
+    position: absolute;
+    clip: rect(0, 0, 0, 0);
+    pointer-events: none;
+}
+
+.rating-btn:not(:first-of-type) {
+    border-top-left-radius: 0;
+    border-bottom-left-radius: 0;
+}
+
+.rating-btn:not(:last-of-type) {
+    border-top-right-radius: 0;
+    border-bottom-right-radius: 0;
+}
+
+.close-button {
+    flex: 0 0 auto;
+}

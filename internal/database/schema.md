@@ -113,6 +113,88 @@ Foreign-key constraints:
 
 ```
 
+# Table "public.batch_spec_resolution_jobs"
+```
+      Column       |           Type           | Collation | Nullable |                        Default                         
+-------------------+--------------------------+-----------+----------+--------------------------------------------------------
+ id                | bigint                   |           | not null | nextval('batch_spec_resolution_jobs_id_seq'::regclass)
+ batch_spec_id     | integer                  |           |          | 
+ allow_unsupported | boolean                  |           | not null | false
+ allow_ignored     | boolean                  |           | not null | false
+ state             | text                     |           |          | 'queued'::text
+ failure_message   | text                     |           |          | 
+ started_at        | timestamp with time zone |           |          | 
+ finished_at       | timestamp with time zone |           |          | 
+ process_after     | timestamp with time zone |           |          | 
+ num_resets        | integer                  |           | not null | 0
+ num_failures      | integer                  |           | not null | 0
+ execution_logs    | json[]                   |           |          | 
+ worker_hostname   | text                     |           | not null | ''::text
+ last_heartbeat_at | timestamp with time zone |           |          | 
+ created_at        | timestamp with time zone |           | not null | now()
+ updated_at        | timestamp with time zone |           | not null | now()
+Indexes:
+    "batch_spec_resolution_jobs_pkey" PRIMARY KEY, btree (id)
+Foreign-key constraints:
+    "batch_spec_resolution_jobs_batch_spec_id_fkey" FOREIGN KEY (batch_spec_id) REFERENCES batch_specs(id) ON DELETE CASCADE DEFERRABLE
+
+```
+
+# Table "public.batch_spec_workspace_execution_jobs"
+```
+         Column          |           Type           | Collation | Nullable |                             Default                             
+-------------------------+--------------------------+-----------+----------+-----------------------------------------------------------------
+ id                      | bigint                   |           | not null | nextval('batch_spec_workspace_execution_jobs_id_seq'::regclass)
+ batch_spec_workspace_id | integer                  |           |          | 
+ state                   | text                     |           |          | 'queued'::text
+ failure_message         | text                     |           |          | 
+ started_at              | timestamp with time zone |           |          | 
+ finished_at             | timestamp with time zone |           |          | 
+ process_after           | timestamp with time zone |           |          | 
+ num_resets              | integer                  |           | not null | 0
+ num_failures            | integer                  |           | not null | 0
+ execution_logs          | json[]                   |           |          | 
+ worker_hostname         | text                     |           | not null | ''::text
+ last_heartbeat_at       | timestamp with time zone |           |          | 
+ created_at              | timestamp with time zone |           | not null | now()
+ updated_at              | timestamp with time zone |           | not null | now()
+ cancel                  | boolean                  |           | not null | false
+Indexes:
+    "batch_spec_workspace_execution_jobs_pkey" PRIMARY KEY, btree (id)
+    "batch_spec_workspace_execution_jobs_cancel" btree (cancel)
+Foreign-key constraints:
+    "batch_spec_workspace_execution_job_batch_spec_workspace_id_fkey" FOREIGN KEY (batch_spec_workspace_id) REFERENCES batch_spec_workspaces(id) ON DELETE CASCADE DEFERRABLE
+
+```
+
+# Table "public.batch_spec_workspaces"
+```
+        Column        |           Type           | Collation | Nullable |                      Default                      
+----------------------+--------------------------+-----------+----------+---------------------------------------------------
+ id                   | bigint                   |           | not null | nextval('batch_spec_workspaces_id_seq'::regclass)
+ batch_spec_id        | integer                  |           |          | 
+ changeset_spec_ids   | jsonb                    |           |          | '{}'::jsonb
+ repo_id              | integer                  |           |          | 
+ branch               | text                     |           | not null | 
+ commit               | text                     |           | not null | 
+ path                 | text                     |           | not null | 
+ file_matches         | text[]                   |           | not null | 
+ only_fetch_workspace | boolean                  |           | not null | false
+ steps                | jsonb                    |           |          | '[]'::jsonb
+ created_at           | timestamp with time zone |           | not null | now()
+ updated_at           | timestamp with time zone |           | not null | now()
+Indexes:
+    "batch_spec_workspaces_pkey" PRIMARY KEY, btree (id)
+Check constraints:
+    "batch_spec_workspaces_steps_check" CHECK (jsonb_typeof(steps) = 'array'::text)
+Foreign-key constraints:
+    "batch_spec_workspaces_batch_spec_id_fkey" FOREIGN KEY (batch_spec_id) REFERENCES batch_specs(id) ON DELETE CASCADE DEFERRABLE
+    "batch_spec_workspaces_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) DEFERRABLE
+Referenced by:
+    TABLE "batch_spec_workspace_execution_jobs" CONSTRAINT "batch_spec_workspace_execution_job_batch_spec_workspace_id_fkey" FOREIGN KEY (batch_spec_workspace_id) REFERENCES batch_spec_workspaces(id) ON DELETE CASCADE DEFERRABLE
+
+```
+
 # Table "public.batch_specs"
 ```
       Column       |           Type           | Collation | Nullable |                 Default                 
@@ -136,6 +218,8 @@ Foreign-key constraints:
 Referenced by:
     TABLE "batch_changes" CONSTRAINT "batch_changes_batch_spec_id_fkey" FOREIGN KEY (batch_spec_id) REFERENCES batch_specs(id) DEFERRABLE
     TABLE "batch_spec_executions" CONSTRAINT "batch_spec_executions_batch_spec_id_fkey" FOREIGN KEY (batch_spec_id) REFERENCES batch_specs(id) DEFERRABLE
+    TABLE "batch_spec_resolution_jobs" CONSTRAINT "batch_spec_resolution_jobs_batch_spec_id_fkey" FOREIGN KEY (batch_spec_id) REFERENCES batch_specs(id) ON DELETE CASCADE DEFERRABLE
+    TABLE "batch_spec_workspaces" CONSTRAINT "batch_spec_workspaces_batch_spec_id_fkey" FOREIGN KEY (batch_spec_id) REFERENCES batch_specs(id) ON DELETE CASCADE DEFERRABLE
     TABLE "changeset_specs" CONSTRAINT "changeset_specs_batch_spec_id_fkey" FOREIGN KEY (batch_spec_id) REFERENCES batch_specs(id) DEFERRABLE
 
 ```
@@ -777,6 +861,7 @@ Indexes:
  last_heartbeat_at | timestamp with time zone |           |          | 
  priority          | integer                  |           | not null | 1
  cost              | integer                  |           | not null | 500
+ persist_mode      | persistmode              |           | not null | 'record'::persistmode
 Indexes:
     "insights_query_runner_jobs_pkey" PRIMARY KEY, btree (id)
     "insights_query_runner_jobs_cost_idx" btree (cost)
@@ -791,6 +876,8 @@ Referenced by:
 See [enterprise/internal/insights/background/queryrunner/worker.go:Job](https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+file:enterprise/internal/insights/background/queryrunner/worker.go+type+Job&patternType=literal)
 
 **cost**: Integer representing a cost approximation of executing this search query.
+
+**persist_mode**: The persistence level for this query. This value will determine the lifecycle of the resulting value.
 
 **priority**: Integer representing a category of priority for this query. Priority in this context is ambiguously defined for consumers to decide an interpretation.
 
@@ -830,6 +917,7 @@ Stores data points for a code insight that do not need to be queried directly, b
  indexing_enabled            | boolean |           | not null | 
  index_commit_max_age_hours  | integer |           |          | 
  index_intermediate_commits  | boolean |           | not null | 
+ protected                   | boolean |           | not null | false
 Indexes:
     "lsif_configuration_policies_pkey" PRIMARY KEY, btree (id)
     "lsif_configuration_policies_repository_id" btree (repository_id)
@@ -844,6 +932,8 @@ Indexes:
 
 **pattern**: A pattern used to match` names of the associated Git object type.
 
+**protected**: Whether or not this configuration policy is protected from modification of its data retention behavior (except for duration).
+
 **repository_id**: The identifier of the repository to which this configuration policy applies. If absent, this policy is applied globally.
 
 **retain_intermediate_commits**: If the matching Git object is a branch, setting this value to true will also retain all data used to resolve queries for any commit on the matching branches. Setting this value to false will only consider the tip of the branch.
@@ -855,6 +945,50 @@ Indexes:
 **type**: The type of Git object (e.g., COMMIT, BRANCH, TAG).
 
 # Table "public.lsif_dependency_indexing_jobs"
+```
+        Column         |           Type           | Collation | Nullable |                          Default                           
+-----------------------+--------------------------+-----------+----------+------------------------------------------------------------
+ id                    | integer                  |           | not null | nextval('lsif_dependency_indexing_jobs_id_seq1'::regclass)
+ state                 | text                     |           | not null | 'queued'::text
+ failure_message       | text                     |           |          | 
+ queued_at             | timestamp with time zone |           | not null | now()
+ started_at            | timestamp with time zone |           |          | 
+ finished_at           | timestamp with time zone |           |          | 
+ process_after         | timestamp with time zone |           |          | 
+ num_resets            | integer                  |           | not null | 0
+ num_failures          | integer                  |           | not null | 0
+ execution_logs        | json[]                   |           |          | 
+ last_heartbeat_at     | timestamp with time zone |           |          | 
+ worker_hostname       | text                     |           | not null | ''::text
+ upload_id             | integer                  |           |          | 
+ external_service_kind | text                     |           | not null | ''::text
+ external_service_sync | timestamp with time zone |           |          | 
+Indexes:
+    "lsif_dependency_indexing_jobs_pkey1" PRIMARY KEY, btree (id)
+Foreign-key constraints:
+    "lsif_dependency_indexing_jobs_upload_id_fkey1" FOREIGN KEY (upload_id) REFERENCES lsif_uploads(id) ON DELETE CASCADE
+
+```
+
+**external_service_kind**: Filter the external services for this kind to wait to have synced. If empty, external_service_sync is ignored and no external services are polled for their last sync time.
+
+**external_service_sync**: The sync time after which external services of the given kind will have synced/created any repositories referenced by the LSIF upload that are resolvable.
+
+# Table "public.lsif_dependency_repos"
+```
+ Column  |  Type  | Collation | Nullable |                      Default                      
+---------+--------+-----------+----------+---------------------------------------------------
+ id      | bigint |           | not null | nextval('lsif_dependency_repos_id_seq'::regclass)
+ name    | text   |           | not null | 
+ version | text   |           | not null | 
+ scheme  | text   |           | not null | 
+Indexes:
+    "lsif_dependency_repos_pkey" PRIMARY KEY, btree (id)
+    "lsif_dependency_repos_unique_triplet" UNIQUE CONSTRAINT, btree (scheme, name, version)
+
+```
+
+# Table "public.lsif_dependency_syncing_jobs"
 ```
       Column       |           Type           | Collation | Nullable |                          Default                          
 -------------------+--------------------------+-----------+----------+-----------------------------------------------------------
@@ -873,6 +1007,7 @@ Indexes:
  last_heartbeat_at | timestamp with time zone |           |          | 
 Indexes:
     "lsif_dependency_indexing_jobs_pkey" PRIMARY KEY, btree (id)
+    "lsif_dependency_indexing_jobs_upload_id" btree (upload_id)
 Foreign-key constraints:
     "lsif_dependency_indexing_jobs_upload_id_fkey" FOREIGN KEY (upload_id) REFERENCES lsif_uploads(id) ON DELETE CASCADE
 
@@ -881,20 +1016,6 @@ Foreign-key constraints:
 Tracks jobs that scan imports of indexes to schedule auto-index jobs.
 
 **upload_id**: The identifier of the triggering upload record.
-
-# Table "public.lsif_dependency_repos"
-```
- Column  |  Type  | Collation | Nullable |                      Default                      
----------+--------+-----------+----------+---------------------------------------------------
- id      | bigint |           | not null | nextval('lsif_dependency_repos_id_seq'::regclass)
- name    | text   |           | not null | 
- version | text   |           | not null | 
- scheme  | text   |           | not null | 
-Indexes:
-    "lsif_dependency_repos_pkey" PRIMARY KEY, btree (id)
-    "lsif_dependency_repos_unique_triplet" UNIQUE CONSTRAINT, btree (scheme, name, version)
-
-```
 
 # Table "public.lsif_dirty_repositories"
 ```
@@ -968,6 +1089,7 @@ Stores the configuration used for code intel index jobs for a repository.
 Indexes:
     "lsif_indexes_pkey" PRIMARY KEY, btree (id)
     "lsif_indexes_commit_last_checked_at" btree (commit_last_checked_at) WHERE state <> 'deleted'::text
+    "lsif_indexes_repository_id_commit" btree (repository_id, commit)
 Check constraints:
     "lsif_uploads_commit_valid_chars" CHECK (commit ~ '^[a-z0-9]{40}$'::text)
 
@@ -992,6 +1114,21 @@ Stores metadata about a code intel index job.
 **outfile**: The path to the index file produced by the index command relative to the working directory.
 
 **root**: The working directory of the indexer image relative to the repository root.
+
+# Table "public.lsif_last_retention_scan"
+```
+         Column         |           Type           | Collation | Nullable | Default 
+------------------------+--------------------------+-----------+----------+---------
+ repository_id          | integer                  |           | not null | 
+ last_retention_scan_at | timestamp with time zone |           | not null | 
+Indexes:
+    "lsif_last_retention_scan_pkey" PRIMARY KEY, btree (repository_id)
+
+```
+
+Tracks the last time uploads a repository were checked against data retention policies.
+
+**last_retention_scan_at**: The last time uploads of this repository were checked against data retention policies.
 
 # Table "public.lsif_nearest_uploads"
 ```
@@ -1045,6 +1182,7 @@ Associates commits with the closest ancestor commit with usable upload data. Tog
  dump_id | integer |           | not null | 
 Indexes:
     "lsif_packages_pkey" PRIMARY KEY, btree (id)
+    "lsif_packages_dump_id" btree (dump_id)
     "lsif_packages_scheme_name_version_dump_id" btree (scheme, name, version, dump_id)
 Foreign-key constraints:
     "lsif_packages_dump_id_fkey" FOREIGN KEY (dump_id) REFERENCES lsif_uploads(id) ON DELETE CASCADE
@@ -1073,6 +1211,7 @@ Associates an upload with the set of packages they provide within a given packag
  dump_id | integer |           | not null | 
 Indexes:
     "lsif_references_pkey" PRIMARY KEY, btree (id)
+    "lsif_references_dump_id" btree (dump_id)
     "lsif_references_scheme_name_version_dump_id" btree (scheme, name, version, dump_id)
 Foreign-key constraints:
     "lsif_references_dump_id_fkey" FOREIGN KEY (dump_id) REFERENCES lsif_uploads(id) ON DELETE CASCADE
@@ -1140,18 +1279,22 @@ Stores the retention policy of code intellience data for a repository.
  last_heartbeat_at      | timestamp with time zone |           |          | 
  execution_logs         | json[]                   |           |          | 
  num_references         | integer                  |           |          | 
+ expired                | boolean                  |           | not null | false
+ last_retention_scan_at | timestamp with time zone |           |          | 
 Indexes:
     "lsif_uploads_pkey" PRIMARY KEY, btree (id)
     "lsif_uploads_repository_id_commit_root_indexer" UNIQUE, btree (repository_id, commit, root, indexer) WHERE state = 'completed'::text
     "lsif_uploads_associated_index_id" btree (associated_index_id)
     "lsif_uploads_commit_last_checked_at" btree (commit_last_checked_at) WHERE state <> 'deleted'::text
     "lsif_uploads_committed_at" btree (committed_at) WHERE state = 'completed'::text
+    "lsif_uploads_repository_id" btree (repository_id)
     "lsif_uploads_state" btree (state)
     "lsif_uploads_uploaded_at" btree (uploaded_at)
 Check constraints:
     "lsif_uploads_commit_valid_chars" CHECK (commit ~ '^[a-z0-9]{40}$'::text)
 Referenced by:
-    TABLE "lsif_dependency_indexing_jobs" CONSTRAINT "lsif_dependency_indexing_jobs_upload_id_fkey" FOREIGN KEY (upload_id) REFERENCES lsif_uploads(id) ON DELETE CASCADE
+    TABLE "lsif_dependency_syncing_jobs" CONSTRAINT "lsif_dependency_indexing_jobs_upload_id_fkey" FOREIGN KEY (upload_id) REFERENCES lsif_uploads(id) ON DELETE CASCADE
+    TABLE "lsif_dependency_indexing_jobs" CONSTRAINT "lsif_dependency_indexing_jobs_upload_id_fkey1" FOREIGN KEY (upload_id) REFERENCES lsif_uploads(id) ON DELETE CASCADE
     TABLE "lsif_packages" CONSTRAINT "lsif_packages_dump_id_fkey" FOREIGN KEY (dump_id) REFERENCES lsif_uploads(id) ON DELETE CASCADE
     TABLE "lsif_references" CONSTRAINT "lsif_references_dump_id_fkey" FOREIGN KEY (dump_id) REFERENCES lsif_uploads(id) ON DELETE CASCADE
 
@@ -1161,9 +1304,13 @@ Stores metadata about an LSIF index uploaded by a user.
 
 **commit**: A 40-char revhash. Note that this commit may not be resolvable in the future.
 
+**expired**: Whether or not this upload data is no longer protected by any data retention policy.
+
 **id**: Used as a logical foreign key with the (disjoint) codeintel database.
 
 **indexer**: The name of the indexer that produced the index file. If not supplied by the user it will be pulled from the index metadata.
+
+**last_retention_scan_at**: The last time this upload was checked against data retention policies.
 
 **num_parts**: The number of parts src-cli split the upload file into.
 
@@ -1325,6 +1472,7 @@ Referenced by:
  introduced_version_minor | integer                  |           | not null | 
  deprecated_version_major | integer                  |           |          | 
  deprecated_version_minor | integer                  |           |          | 
+ metadata                 | jsonb                    |           | not null | '{}'::jsonb
 Indexes:
     "out_of_band_migrations_pkey" PRIMARY KEY, btree (id)
 Check constraints:
@@ -1527,7 +1675,6 @@ Referenced by:
  deleted_at            | timestamp with time zone |           |          | 
  metadata              | jsonb                    |           | not null | '{}'::jsonb
  private               | boolean                  |           | not null | false
- cloned                | boolean                  |           | not null | false
  stars                 | integer                  |           |          | 
  blocked               | jsonb                    |           |          | 
 Indexes:
@@ -1536,7 +1683,6 @@ Indexes:
     "repo_name_unique" UNIQUE CONSTRAINT, btree (name) DEFERRABLE
     "repo_archived" btree (archived)
     "repo_blocked_idx" btree ((blocked IS NOT NULL))
-    "repo_cloned" btree (cloned)
     "repo_created_at" btree (created_at)
     "repo_fork" btree (fork)
     "repo_is_not_blocked_idx" btree ((blocked IS NULL))
@@ -1550,6 +1696,7 @@ Check constraints:
     "check_name_nonempty" CHECK (name <> ''::citext)
     "repo_metadata_check" CHECK (jsonb_typeof(metadata) = 'object'::text)
 Referenced by:
+    TABLE "batch_spec_workspaces" CONSTRAINT "batch_spec_workspaces_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) DEFERRABLE
     TABLE "changeset_specs" CONSTRAINT "changeset_specs_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) DEFERRABLE
     TABLE "changesets" CONSTRAINT "changesets_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE DEFERRABLE
     TABLE "discussion_threads_target_repo" CONSTRAINT "discussion_threads_target_repo_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE
@@ -2080,26 +2227,28 @@ Triggers:
 
 # View "public.lsif_dumps"
 ```
-       Column        |           Type           | Collation | Nullable | Default 
----------------------+--------------------------+-----------+----------+---------
- id                  | integer                  |           |          | 
- commit              | text                     |           |          | 
- root                | text                     |           |          | 
- uploaded_at         | timestamp with time zone |           |          | 
- state               | text                     |           |          | 
- failure_message     | text                     |           |          | 
- started_at          | timestamp with time zone |           |          | 
- finished_at         | timestamp with time zone |           |          | 
- repository_id       | integer                  |           |          | 
- indexer             | text                     |           |          | 
- num_parts           | integer                  |           |          | 
- uploaded_parts      | integer[]                |           |          | 
- process_after       | timestamp with time zone |           |          | 
- num_resets          | integer                  |           |          | 
- upload_size         | bigint                   |           |          | 
- num_failures        | integer                  |           |          | 
- associated_index_id | bigint                   |           |          | 
- processed_at        | timestamp with time zone |           |          | 
+         Column         |           Type           | Collation | Nullable | Default 
+------------------------+--------------------------+-----------+----------+---------
+ id                     | integer                  |           |          | 
+ commit                 | text                     |           |          | 
+ root                   | text                     |           |          | 
+ uploaded_at            | timestamp with time zone |           |          | 
+ state                  | text                     |           |          | 
+ failure_message        | text                     |           |          | 
+ started_at             | timestamp with time zone |           |          | 
+ finished_at            | timestamp with time zone |           |          | 
+ repository_id          | integer                  |           |          | 
+ indexer                | text                     |           |          | 
+ num_parts              | integer                  |           |          | 
+ uploaded_parts         | integer[]                |           |          | 
+ process_after          | timestamp with time zone |           |          | 
+ num_resets             | integer                  |           |          | 
+ upload_size            | bigint                   |           |          | 
+ num_failures           | integer                  |           |          | 
+ associated_index_id    | bigint                   |           |          | 
+ expired                | boolean                  |           |          | 
+ last_retention_scan_at | timestamp with time zone |           |          | 
+ processed_at           | timestamp with time zone |           |          | 
 
 ```
 
@@ -2123,6 +2272,8 @@ Triggers:
     u.upload_size,
     u.num_failures,
     u.associated_index_id,
+    u.expired,
+    u.last_retention_scan_at,
     u.finished_at AS processed_at
    FROM lsif_uploads u
   WHERE ((u.state = 'completed'::text) OR (u.state = 'deleting'::text));
@@ -2130,27 +2281,29 @@ Triggers:
 
 # View "public.lsif_dumps_with_repository_name"
 ```
-       Column        |           Type           | Collation | Nullable | Default 
----------------------+--------------------------+-----------+----------+---------
- id                  | integer                  |           |          | 
- commit              | text                     |           |          | 
- root                | text                     |           |          | 
- uploaded_at         | timestamp with time zone |           |          | 
- state               | text                     |           |          | 
- failure_message     | text                     |           |          | 
- started_at          | timestamp with time zone |           |          | 
- finished_at         | timestamp with time zone |           |          | 
- repository_id       | integer                  |           |          | 
- indexer             | text                     |           |          | 
- num_parts           | integer                  |           |          | 
- uploaded_parts      | integer[]                |           |          | 
- process_after       | timestamp with time zone |           |          | 
- num_resets          | integer                  |           |          | 
- upload_size         | bigint                   |           |          | 
- num_failures        | integer                  |           |          | 
- associated_index_id | bigint                   |           |          | 
- processed_at        | timestamp with time zone |           |          | 
- repository_name     | citext                   |           |          | 
+         Column         |           Type           | Collation | Nullable | Default 
+------------------------+--------------------------+-----------+----------+---------
+ id                     | integer                  |           |          | 
+ commit                 | text                     |           |          | 
+ root                   | text                     |           |          | 
+ uploaded_at            | timestamp with time zone |           |          | 
+ state                  | text                     |           |          | 
+ failure_message        | text                     |           |          | 
+ started_at             | timestamp with time zone |           |          | 
+ finished_at            | timestamp with time zone |           |          | 
+ repository_id          | integer                  |           |          | 
+ indexer                | text                     |           |          | 
+ num_parts              | integer                  |           |          | 
+ uploaded_parts         | integer[]                |           |          | 
+ process_after          | timestamp with time zone |           |          | 
+ num_resets             | integer                  |           |          | 
+ upload_size            | bigint                   |           |          | 
+ num_failures           | integer                  |           |          | 
+ associated_index_id    | bigint                   |           |          | 
+ expired                | boolean                  |           |          | 
+ last_retention_scan_at | timestamp with time zone |           |          | 
+ processed_at           | timestamp with time zone |           |          | 
+ repository_name        | citext                   |           |          | 
 
 ```
 
@@ -2174,6 +2327,8 @@ Triggers:
     u.upload_size,
     u.num_failures,
     u.associated_index_id,
+    u.expired,
+    u.last_retention_scan_at,
     u.processed_at,
     r.name AS repository_name
    FROM (lsif_dumps u
@@ -2238,26 +2393,28 @@ Triggers:
 
 # View "public.lsif_uploads_with_repository_name"
 ```
-       Column        |           Type           | Collation | Nullable | Default 
----------------------+--------------------------+-----------+----------+---------
- id                  | integer                  |           |          | 
- commit              | text                     |           |          | 
- root                | text                     |           |          | 
- uploaded_at         | timestamp with time zone |           |          | 
- state               | text                     |           |          | 
- failure_message     | text                     |           |          | 
- started_at          | timestamp with time zone |           |          | 
- finished_at         | timestamp with time zone |           |          | 
- repository_id       | integer                  |           |          | 
- indexer             | text                     |           |          | 
- num_parts           | integer                  |           |          | 
- uploaded_parts      | integer[]                |           |          | 
- process_after       | timestamp with time zone |           |          | 
- num_resets          | integer                  |           |          | 
- upload_size         | bigint                   |           |          | 
- num_failures        | integer                  |           |          | 
- associated_index_id | bigint                   |           |          | 
- repository_name     | citext                   |           |          | 
+         Column         |           Type           | Collation | Nullable | Default 
+------------------------+--------------------------+-----------+----------+---------
+ id                     | integer                  |           |          | 
+ commit                 | text                     |           |          | 
+ root                   | text                     |           |          | 
+ uploaded_at            | timestamp with time zone |           |          | 
+ state                  | text                     |           |          | 
+ failure_message        | text                     |           |          | 
+ started_at             | timestamp with time zone |           |          | 
+ finished_at            | timestamp with time zone |           |          | 
+ repository_id          | integer                  |           |          | 
+ indexer                | text                     |           |          | 
+ num_parts              | integer                  |           |          | 
+ uploaded_parts         | integer[]                |           |          | 
+ process_after          | timestamp with time zone |           |          | 
+ num_resets             | integer                  |           |          | 
+ upload_size            | bigint                   |           |          | 
+ num_failures           | integer                  |           |          | 
+ associated_index_id    | bigint                   |           |          | 
+ expired                | boolean                  |           |          | 
+ last_retention_scan_at | timestamp with time zone |           |          | 
+ repository_name        | citext                   |           |          | 
 
 ```
 
@@ -2281,6 +2438,8 @@ Triggers:
     u.upload_size,
     u.num_failures,
     u.associated_index_id,
+    u.expired,
+    u.last_retention_scan_at,
     r.name AS repository_name
    FROM (lsif_uploads u
      JOIN repo r ON ((r.id = u.repository_id)))
@@ -2467,4 +2626,9 @@ Triggers:
 - errored
 - deleted
 - failed
+
+# Type persistmode
+
+- record
+- snapshot
 

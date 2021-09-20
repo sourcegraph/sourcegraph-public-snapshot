@@ -11,6 +11,7 @@ import (
 	"strconv"
 
 	"github.com/cockroachdb/errors"
+	"github.com/google/zoekt"
 	"github.com/gorilla/mux"
 	"github.com/inconshreveable/log15"
 
@@ -19,7 +20,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
@@ -192,64 +192,87 @@ func repoRankFromConfig(siteConfig schema.SiteConfiguration, repoName string) fl
 // This endpoint also supports batch requests to avoid managing concurrency in
 // zoekt. On vertically scaled instances we have observed zoekt requesting
 // this endpoint concurrently leading to socket starvation.
-func serveSearchConfiguration(w http.ResponseWriter, r *http.Request) error {
-	ctx := r.Context()
-	siteConfig := conf.Get().SiteConfiguration
-	getRepoIndexOptions := func(repoName string) (*searchbackend.RepoIndexOptions, error) {
-		repo, err := database.GlobalRepos.GetByName(ctx, api.RepoName(repoName))
-		if err != nil {
-			return nil, err
+func serveSearchConfiguration(db dbutil.DB) func(http.ResponseWriter, *http.Request) error {
+	return func(w http.ResponseWriter, r *http.Request) error {
+		ctx := r.Context()
+		siteConfig := conf.Get().SiteConfiguration
+
+		if err := r.ParseForm(); err != nil {
+			return err
+		}
+		repoNames := r.Form["repo"]
+
+		// Preload repos.
+		// TODO: Support more than 32k repos at a time.
+		repos, loadReposErr := database.Repos(db).List(ctx, database.ReposListOptions{Names: repoNames})
+		// Support fast lookups by repo name.
+		reposMap := make(map[api.RepoName]*types.Repo, len(repos))
+		for _, repo := range repos {
+			reposMap[repo.Name] = repo
 		}
 
-		getVersion := func(branch string) (string, error) {
-			// Do not to trigger a repo-updater lookup since this is a batch job.
-			commitID, err := git.ResolveRevision(ctx, repo.Name, branch, git.ResolveRevisionOptions{})
-			if err != nil && errcode.HTTP(err) == http.StatusNotFound {
-				// GetIndexOptions wants an empty rev for a missing rev or empty
-				// repo.
-				return "", nil
+		getRepoIndexOptions := func(repoName string) (*searchbackend.RepoIndexOptions, error) {
+			if loadReposErr != nil {
+				return nil, loadReposErr
 			}
-			return string(commitID), err
+			// Replicate what database.Repos.GetByName would do here:
+			repo, ok := reposMap[api.RepoName(repoName)]
+			if !ok {
+				return nil, &database.RepoNotFoundErr{Name: api.RepoName(repoName)}
+			}
+			if err := repo.IsBlocked(); err != nil {
+				return nil, err
+			}
+
+			getVersion := func(branch string) (string, error) {
+				// Do not to trigger a repo-updater lookup since this is a batch job.
+				commitID, err := git.ResolveRevision(ctx, repo.Name, branch, git.ResolveRevisionOptions{})
+				if err != nil && errcode.HTTP(err) == http.StatusNotFound {
+					// GetIndexOptions wants an empty rev for a missing rev or empty
+					// repo.
+					return "", nil
+				}
+				return string(commitID), err
+			}
+
+			priority := float64(repo.Stars) + repoRankFromConfig(siteConfig, repoName)
+
+			return &searchbackend.RepoIndexOptions{
+				RepoID:     int32(repo.ID),
+				Public:     !repo.Private,
+				Priority:   priority,
+				Fork:       repo.Fork,
+				Archived:   repo.Archived,
+				GetVersion: getVersion,
+			}, nil
 		}
 
-		priority := float64(repo.Stars) + repoRankFromConfig(siteConfig, repoName)
+		// Build list of repo IDs to fetch revisions for.
+		repoIDs := make([]int32, 0, len(repos))
+		for _, repo := range repos {
+			repoIDs = append(repoIDs, int32(repo.ID))
+		}
 
-		return &searchbackend.RepoIndexOptions{
-			RepoID:     int32(repo.ID),
-			Public:     !repo.Private,
-			Priority:   priority,
-			Fork:       repo.Fork,
-			Archived:   repo.Archived,
-			GetVersion: getVersion,
-		}, nil
+		// TODO: Support more than 32k repos at a time.
+		revisionsForRepo, revisionsForRepoErr := database.SearchContexts(db).GetAllRevisionsForRepos(ctx, repoIDs)
+		getSearchContextRevisions := func(repoID int32) ([]string, error) {
+			if revisionsForRepoErr != nil {
+				return nil, revisionsForRepoErr
+			}
+			return revisionsForRepo[repoID], nil
+		}
+
+		b := searchbackend.GetIndexOptions(&siteConfig, getRepoIndexOptions, getSearchContextRevisions, repoNames...)
+		_, _ = w.Write(b)
+		return nil
 	}
-
-	sc := database.SearchContexts(dbconn.Global)
-	getSearchContextRevisions := func(repoID int32) ([]string, error) {
-		return sc.GetAllRevisionsForRepo(ctx, repoID)
-	}
-
-	if err := r.ParseForm(); err != nil {
-		return err
-	}
-
-	b := searchbackend.GetIndexOptions(&siteConfig, getRepoIndexOptions, getSearchContextRevisions, r.Form["repo"]...)
-	_, _ = w.Write(b)
-	return nil
 }
 
 type reposListServer struct {
-	// SourcegraphDotComMode is true if this instance of Sourcegraph is http://sourcegraph.com
-	SourcegraphDotComMode bool
+	// ListIndexable returns the repositories to index.
+	ListIndexable func(context.Context) ([]types.RepoName, error)
 
-	// Repos is the subset of backend.Repos methods we use. Declared as an
-	// interface for testing.
-	Repos interface {
-		// ListIndexable returns the repositories to index on Sourcegraph.com
-		ListIndexable(context.Context) ([]types.RepoName, error)
-		// List returns a list of repositories
-		List(context.Context, database.ReposListOptions) ([]*types.Repo, error)
-	}
+	StreamRepoNames func(context.Context, database.ReposListOptions, func(*types.RepoName)) error
 
 	// Indexers is the subset of searchbackend.Indexers methods we
 	// use. reposListServer is used by indexed-search to get the list of
@@ -259,7 +282,7 @@ type reposListServer struct {
 	Indexers interface {
 		// ReposSubset returns the subset of repoNames that hostname should
 		// index.
-		ReposSubset(ctx context.Context, hostname string, indexed map[string]struct{}, repoNames []string) ([]string, error)
+		ReposSubset(ctx context.Context, hostname string, indexed map[uint32]*zoekt.MinimalRepoListEntry, indexable []types.RepoName) ([]types.RepoName, error)
 		// Enabled is true if horizontal indexed search is enabled.
 		Enabled() bool
 	}
@@ -271,56 +294,68 @@ func (h *reposListServer) serveIndex(w http.ResponseWriter, r *http.Request) err
 	var opt struct {
 		// Hostname is used to determine the subset of repos to return
 		Hostname string
-		// Indexed is the repository names of indexed repos by Hostname.
+		// DEPRECATED: Indexed is the repository names of indexed repos by Hostname.
 		Indexed []string
+		// IndexedIDs are the repository IDs of indexed repos by Hostname.
+		IndexedIDs []api.RepoID
 	}
-	if err := json.NewDecoder(r.Body).Decode(&opt); err != nil {
+
+	err := json.NewDecoder(r.Body).Decode(&opt)
+	if err != nil {
 		return err
 	}
 
-	var names []string
-	if h.SourcegraphDotComMode {
-		res, err := h.Repos.ListIndexable(r.Context())
-		if err != nil {
-			return errors.Wrap(err, "listing repos")
-		}
-		names = make([]string, len(res))
-		for i, r := range res {
-			names[i] = string(r.Name)
-		}
-	} else {
-		trueP := true
-		res, err := h.Repos.List(r.Context(), database.ReposListOptions{Index: &trueP})
-		if err != nil {
-			return errors.Wrap(err, "listing repos")
-		}
-		names = make([]string, len(res))
-		for i, r := range res {
-			names[i] = string(r.Name)
-		}
+	indexable, err := h.ListIndexable(r.Context())
+	if err != nil {
+		return err
 	}
 
 	if h.Indexers.Enabled() {
-		indexed := make(map[string]struct{}, len(opt.Indexed))
-		for _, name := range opt.Indexed {
-			indexed[name] = struct{}{}
+		indexed := make(map[uint32]*zoekt.MinimalRepoListEntry, max(len(opt.Indexed), len(opt.IndexedIDs)))
+		err = h.StreamRepoNames(r.Context(), database.ReposListOptions{
+			IDs:   opt.IndexedIDs,
+			Names: opt.Indexed,
+			UseOr: true,
+		}, func(r *types.RepoName) { indexed[uint32(r.ID)] = nil })
+
+		if err != nil {
+			return err
 		}
 
-		var err error
-		names, err = h.Indexers.ReposSubset(r.Context(), opt.Hostname, indexed, names)
+		indexable, err = h.Indexers.ReposSubset(r.Context(), opt.Hostname, indexed, indexable)
 		if err != nil {
 			return err
 		}
 	}
 
-	data := struct {
-		RepoNames []string
-	}{
-		RepoNames: names,
+	// TODO: Avoid batching up so much in memory by:
+	// 1. Changing the schema from object of arrays to array of objects.
+	// 2. Stream out each object marshalled rather than marshall the full list in memory.
+
+	names := make([]string, 0, len(indexable))
+	ids := make([]api.RepoID, 0, len(indexable))
+
+	for _, r := range indexable {
+		names = append(names, string(r.Name))
+		ids = append(ids, r.ID)
 	}
 
-	w.WriteHeader(http.StatusOK)
+	data := struct {
+		RepoNames []string
+		RepoIDs   []api.RepoID
+	}{
+		RepoNames: names,
+		RepoIDs:   ids,
+	}
+
 	return json.NewEncoder(w).Encode(&data)
+}
+
+func max(a, b int) int {
+	if a > b {
+		return a
+	}
+	return b
 }
 
 func serveReposListEnabled(w http.ResponseWriter, r *http.Request) error {

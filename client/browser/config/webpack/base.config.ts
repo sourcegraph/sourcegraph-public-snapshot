@@ -139,6 +139,10 @@ export const config = subtypeOf<webpack.Configuration>()({
                 }),
             },
             {
+                test: /\.svg$/i,
+                type: 'asset/inline',
+            },
+            {
                 test: extensionHostWorker,
                 use: [
                     {

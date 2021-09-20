@@ -20,6 +20,14 @@
     {
       "packageNames": ["react-grid-layout"],
       "reviewers": ["team:code-insights-frontend"]
+    },
+    {
+      "groupName": "Upstream Alpine 3.12 Docker image",
+      "matchDatasources": ["docker"],
+      "packagePatterns": ["^alpine:3.12"],
+      "fileMatch": ["^Dockerfile$"],
+      "paths": ["docker-images/**"],
+      "labels": ["automerge"]
     }
   ]
 }

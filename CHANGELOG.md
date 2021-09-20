@@ -15,20 +15,37 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Added
 
+- The search sidebar shows a revisions section if all search results are from a single repository. This makes it easier to search in and switch between different revisions. [#23835](https://github.com/sourcegraph/sourcegraph/pull/23835)
+- The various alerts overview panels in Grafana can now be clicked to go directly to the relevant panels and dashboards. [#24920](https://github.com/sourcegraph/sourcegraph/pull/24920)
+- Added a `Documentation` tab to the Site Admin Maintenance panel that links to the official Sourcegraph documentation. [#24917](https://github.com/sourcegraph/sourcegraph/pull/24917)
+- Code Insights that run over all repositories now generate a moving daily snapshot between time points. [#24804](https://github.com/sourcegraph/sourcegraph/pull/24804)
+- The Code Insights GraphQL API now restricts the results to user, org, and globally scoped insights. Insights will be synced to the database with access associated to the user or org setting containing the insight definition. [#25017](https://github.com/sourcegraph/sourcegraph/pull/25017)
+
 ### Changed
 
 - `allowGroupsPermissionsSync` in the GitHub authorization provider is now required to enable the experimental GitHub teams and organization permissions caching. [#24561](https://github.com/sourcegraph/sourcegraph/pull/24561)
 - GitHub external code hosts now validate if a corresponding authorization provider is set, and emits a warning if not. [#24526](https://github.com/sourcegraph/sourcegraph/pull/24526)
 - Sourcegraph is now built with Go 1.17. [#24566](https://github.com/sourcegraph/sourcegraph/pull/24566)
+- Code Insights is now available only in the Sourcegraph enterprise. [#24741](https://github.com/sourcegraph/sourcegraph/pull/24741)
+- Prometheus in Sourcegraph with Docker Compose now scrapes Postgres and Redis instances for metrics. [deploy-sourcegraph-docker#580](https://github.com/sourcegraph/deploy-sourcegraph-docker/pull/580)
+- Symbol suggestions now leverage optimizations for global searches. [#24943](https://github.com/sourcegraph/sourcegraph/pull/24943)
 
 ### Fixed
 
-- Code Insights the dashboard page no longer triggers insights re-fetching when insight adding/removing actions happen. [#24375](https://github.com/sourcegraph/sourcegraph/pull/24375)
-- Fixed an issue where particular values for subfields in search query predicates triggers a nil dereference. [#24472](https://github.com/sourcegraph/sourcegraph/pull/24472)
+- Fixed a number of issues where repository permissions sync may fail for instances with very large numbers of repositories. [#24852](https://github.com/sourcegraph/sourcegraph/pull/24852), [#24972](https://github.com/sourcegraph/sourcegraph/pull/24972)
+- Fixed excessive re-rendering of the whole web application on every keypress in the search query input. [#24844](https://github.com/sourcegraph/sourcegraph/pull/24844)
+- Code Insights line chart now supports different timelines for each data series (lines). [#25005](https://github.com/sourcegraph/sourcegraph/pull/25005)
 
 ### Removed
 
-- The "no results found in timeout" search alert is not shown if we indicate timeouts in the progress notifications. This alert caused confusion since it was large, would show even if results where returned and duplicated information from the "some results excluded" drop down. [#24376](https://github.com/sourcegraph/sourcegraph/issues/24376)
+- The `PRECISE_CODE_INTEL_DATA_TTL` environment variable is no longer read by the worker service. Instead, global and repository-specific data retention policies configurable in the UI by site-admins will control the length of time LSIF uploads are considered _fresh_. [#24793](https://github.com/sourcegraph/sourcegraph/pull/24793)
+- The `repo.cloned` column was removed as it was deprecated in 3.26. [#25066](https://github.com/sourcegraph/sourcegraph/pull/25066)
+
+## 3.31.2
+
+### Fixed
+
+- Fixed multiple CVEs for [libssl](https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2021-3711) and [Python3](https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2021-29921). [#24700](https://github.com/sourcegraph/sourcegraph/pull/24700) [#24620](https://github.com/sourcegraph/sourcegraph/pull/24620) [#24695](https://github.com/sourcegraph/sourcegraph/pull/24695)
 
 ## 3.31.1
 
@@ -40,10 +57,6 @@ All notable changes to Sourcegraph are documented in this file.
 
 - Caching behaviour for GitHub repository permissions enabled via the `authorization.groupsCacheTTL` field in the code host config can now leverage additional caching of team and organization permissions for repository permissions syncing (on top of the caching for user permissions syncing introduced in 3.31). [#24328](https://github.com/sourcegraph/sourcegraph/pull/24328)
 
-### Fixed
-
-- Fixed a panic in the worker service preventing code insights from populating with data. [#24475](https://github.com/sourcegraph/sourcegraph/pull/24475)
-
 ## 3.31.0
 
 ### Added
@@ -51,6 +64,7 @@ All notable changes to Sourcegraph are documented in this file.
 - Backend Code Insights GraphQL queries now support arguments `includeRepoRegex` and `excludeRepoRegex` to filter on repository names. [#23256](https://github.com/sourcegraph/sourcegraph/pull/23256)
 - Code Insights background queries now process in a priority order backwards through time. This will allow insights to populate concurrently. [#23101](https://github.com/sourcegraph/sourcegraph/pull/23101)
 - Operator documentation has been added to the Search Reference sidebar section. [#23116](https://github.com/sourcegraph/sourcegraph/pull/23116)
+- Syntax highlighting support for the [Cue](https://cuelang.org) language.
 - Reintroduced a revised version of the Search Types sidebar section. [#23170](https://github.com/sourcegraph/sourcegraph/pull/23170)
 - Improved usability where filters followed by a space in the search query will warn users that the filter value is empty. [#23646](https://github.com/sourcegraph/sourcegraph/pull/23646)
 - Perforce: [`git p4`'s `--use-client-spec` option](https://git-scm.com/docs/git-p4#Documentation/git-p4.txt---use-client-spec) can now be enabled by configuring the `p4.client` field. [#23833](https://github.com/sourcegraph/sourcegraph/pull/23833), [#23845](https://github.com/sourcegraph/sourcegraph/pull/23845)

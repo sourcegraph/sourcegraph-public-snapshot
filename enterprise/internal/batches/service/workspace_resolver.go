@@ -29,6 +29,50 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/batches/template"
 )
 
+// RepoRevision describes a repository on a branch at a fixed revision.
+type RepoRevision struct {
+	Repo        *types.Repo
+	Branch      string
+	Commit      api.CommitID
+	FileMatches []string
+}
+
+func (r *RepoRevision) HasBranch() bool {
+	return r.Branch != ""
+}
+
+type RepoWorkspace struct {
+	*RepoRevision
+	Path  string
+	Steps []batcheslib.Step
+
+	OnlyFetchWorkspace bool
+}
+
+type ResolveWorkspacesForBatchSpecOpts struct {
+	AllowIgnored     bool
+	AllowUnsupported bool
+}
+
+type WorkspaceResolver interface {
+	ResolveWorkspacesForBatchSpec(
+		ctx context.Context,
+		batchSpec *batcheslib.BatchSpec,
+		opts ResolveWorkspacesForBatchSpecOpts,
+	) (
+		workspaces []*RepoWorkspace,
+		unsupported map[*types.Repo]struct{},
+		ignored map[*types.Repo]struct{},
+		err error,
+	)
+}
+
+type WorkspaceResolverBuilder func(tx *store.Store) WorkspaceResolver
+
+func NewWorkspaceResolver(s *store.Store) WorkspaceResolver {
+	return &workspaceResolver{store: s, frontendInternalURL: api.InternalClient.URL + "/.internal"}
+}
+
 type workspaceResolver struct {
 	store               *store.Store
 	frontendInternalURL string
@@ -44,6 +88,12 @@ func (wr *workspaceResolver) ResolveWorkspacesForBatchSpec(
 	ignored map[*types.Repo]struct{},
 	err error,
 ) {
+	tr, ctx := trace.New(ctx, "workspaceResolver.ResolveWorkspacesForBatchSpec", "")
+	defer func() {
+		tr.SetError(err)
+		tr.Finish()
+	}()
+
 	// First, find all repositories that match the batch spec on definitions.
 	// This list is filtered by permissions using database.Repos.List.
 	// This also returns the list of repos that aren't supported.

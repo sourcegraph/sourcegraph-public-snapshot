@@ -30,6 +30,8 @@ import { BatchChangesNavItem } from '../batches/BatchChangesNavItem'
 import { CodeMonitoringProps } from '../code-monitoring'
 import { CodeMonitoringLogo } from '../code-monitoring/CodeMonitoringLogo'
 import { BrandLogo } from '../components/branding/BrandLogo'
+import { CodeInsightsProps } from '../insights/types'
+import { isCodeInsightsEnabled } from '../insights/utils/is-code-insights-enabled'
 import {
     KeyboardShortcutsProps,
     KEYBOARD_SHORTCUT_SHOW_COMMAND_PALETTE,
@@ -47,8 +49,8 @@ import {
     getGlobalSearchContextFilter,
     SearchContextInputProps,
 } from '../search'
-import { QueryState } from '../search/helpers'
 import { SearchNavbarItem } from '../search/input/SearchNavbarItem'
+import { useNavbarQueryState } from '../search/navbarSearchQueryState'
 import { ThemePreferenceProps } from '../theme'
 import { userExternalServicesEnabledFromTags } from '../user/settings/cloud-ga'
 import { showDotComMarketing } from '../util/features'
@@ -71,14 +73,13 @@ interface Props
         VersionContextProps,
         SearchContextInputProps,
         CodeMonitoringProps,
+        CodeInsightsProps,
         OnboardingTourProps,
         BatchChangesProps {
     history: H.History
     location: H.Location<{ query: string }>
     authenticatedUser: AuthenticatedUser | null
     authRequired: boolean
-    navbarSearchQueryState: QueryState
-    onNavbarQueryChange: (queryState: QueryState) => void
     isSourcegraphDotCom: boolean
     showSearchBox: boolean
     routes: readonly LayoutRouteProps<{}>[]
@@ -110,10 +111,8 @@ interface Props
 export const GlobalNavbar: React.FunctionComponent<Props> = ({
     authRequired,
     showSearchBox,
-    navbarSearchQueryState,
     caseSensitive,
     patternType,
-    onNavbarQueryChange,
     hideNavLinks,
     variant,
     isLightTheme,
@@ -122,6 +121,7 @@ export const GlobalNavbar: React.FunctionComponent<Props> = ({
     history,
     minimalNavLinks,
     isSourcegraphDotCom,
+    codeInsightsEnabled,
     ...props
 }) => {
     // Workaround: can't put this in optional parameter value because of https://github.com/babel/babel/issues/11166
@@ -150,6 +150,8 @@ export const GlobalNavbar: React.FunctionComponent<Props> = ({
             [globalSearchContextSpec]
         )
     )
+
+    const onNavbarQueryChange = useNavbarQueryState(state => state.setQueryState)
 
     useEffect(() => {
         // On a non-search related page or non-repo page, we clear the query in
@@ -181,15 +183,13 @@ export const GlobalNavbar: React.FunctionComponent<Props> = ({
         props.showSearchContext,
     ])
 
-    const settings = !isErrorLike(props.settingsCascade.final) ? props.settingsCascade.final : null
-    const codeInsights =
-        settings?.experimentalFeatures?.codeInsights && settings?.['insights.displayLocation.insightsPage'] !== false
+    // CodeInsightsEnabled props controls insights appearance over OSS and Enterprise version
+    // isCodeInsightsEnabled selector controls appearance based on user settings flags
+    const codeInsights = props.authenticatedUser && codeInsightsEnabled && isCodeInsightsEnabled(props.settingsCascade)
 
     const searchNavBar = (
         <SearchNavbarItem
             {...props}
-            navbarSearchState={navbarSearchQueryState}
-            onChange={onNavbarQueryChange}
             location={location}
             history={history}
             isLightTheme={isLightTheme}

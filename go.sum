@@ -797,8 +797,6 @@ github.com/gostaticanalysis/analysisutil v0.0.0-20190318220348-4088753ea4d3/go.m
 github.com/gostaticanalysis/analysisutil v0.0.3/go.mod h1:eEOZF4jCKGi+aprrirO9e7WKB3beBRtWgqGunKl6pKE=
 github.com/goware/urlx v0.3.1 h1:BbvKl8oiXtJAzOzMqAQ0GfIhf96fKeNEZfm9ocNSUBI=
 github.com/goware/urlx v0.3.1/go.mod h1:h8uwbJy68o+tQXCGZNa9D73WN8n0r9OBae5bUnLcgjw=
-github.com/grafana-tools/sdk v0.0.0-20210709154219-f35c5af8140d h1:B9Kh4bpYLYe/Fr1UyOWH6QbzpzAB3VMx/UND9TsYHdU=
-github.com/grafana-tools/sdk v0.0.0-20210709154219-f35c5af8140d/go.mod h1:MiNTogM+MYQQWjzO7Gg9R6iILfcJ0mJhpaBTwoi8BNI=
 github.com/graph-gophers/graphql-go v0.0.0-20201113091052-beb923fada29 h1:sezaKhEfPFg8W0Enm61B9Gs911H8iesGY5R8NDPtd1M=
 github.com/graph-gophers/graphql-go v0.0.0-20201113091052-beb923fada29/go.mod h1:9CQHMSxwO4MprSdzoIEobiHpoLtHm77vfxsvsIN5Vuc=
 github.com/graphql-go/graphql v0.7.9 h1:5Va/Rt4l5g3YjwDnid3vFfn43faaQBq7rMcIZ0VnV34=
@@ -1383,8 +1381,6 @@ github.com/sourcegraph/alertmanager v0.21.1-0.20210809100802-88b656a8713e h1:NuB
 github.com/sourcegraph/alertmanager v0.21.1-0.20210809100802-88b656a8713e/go.mod h1:rYinOWxFuCnNssc3iOjn2oMTlhLaPcUuqV5yk5JKUAE=
 github.com/sourcegraph/annotate v0.0.0-20160123013949-f4cad6c6324d h1:yKm7XZV6j9Ev6lojP2XaIshpT4ymkqhMeSghO5Ps00E=
 github.com/sourcegraph/annotate v0.0.0-20160123013949-f4cad6c6324d/go.mod h1:UdhH50NIW0fCiwBSr0co2m7BnFLdv4fQTgdqdJTHFeE=
-github.com/sourcegraph/batch-change-utils v0.0.0-20210708162152-c9f35b905d94 h1:Yzs0ABVo9TXlfhIJZlHbj+T5a/e2lGyxH0bTTF1OtSE=
-github.com/sourcegraph/batch-change-utils v0.0.0-20210708162152-c9f35b905d94/go.mod h1:kKNRPN6dxuXwC4UUhPVcAJsvz4EVEfI0jyN5HUJsazA=
 github.com/sourcegraph/ctxvfs v0.0.0-20180418081416-2b65f1b1ea81 h1:v4/JVxZSPWifxmICRqgXK7khThjw03RfdGhyeA2S4EQ=
 github.com/sourcegraph/ctxvfs v0.0.0-20180418081416-2b65f1b1ea81/go.mod h1:xIvvI5FiHLxhv8prbzVpaMHaaGPFPFQSuTcxC91ryOo=
 github.com/sourcegraph/go-ctags v0.0.0-20210805071240-8c61152fb089 h1:wQD0MqiqE45xk8IBAr/HlB+IUzp/IkhxTmzqtdXuH84=
@@ -1406,6 +1402,8 @@ github.com/sourcegraph/gosaml2 v0.6.1-0.20210128133756-84151d087b10 h1:lLSG41QZ5
 github.com/sourcegraph/gosaml2 v0.6.1-0.20210128133756-84151d087b10/go.mod h1:CAOGXqoL6YYtu7kCSx69SZlbNZWbwUchYzOacZatJ3s=
 github.com/sourcegraph/gosyntect v0.0.0-20210422223331-645353f16ddc h1:iaDqNUpXf8FKUzw1pZrA6NrpILji4OigouwD9OSyamo=
 github.com/sourcegraph/gosyntect v0.0.0-20210422223331-645353f16ddc/go.mod h1:WiNJKgKTnR3psOIGzVZQjLqZjJZuoL3F8tCh25Uk8dU=
+github.com/sourcegraph/grafana-sdk v0.0.0-20210914025534-b4255965ba53 h1:QI7iReP0qGHpZ/rQPhpqsPvTkjQsfO9NPgBK/eBjbsM=
+github.com/sourcegraph/grafana-sdk v0.0.0-20210914025534-b4255965ba53/go.mod h1:AHHlOEv1+GGQ3ktHMlhuTUwo3zljV3QJbC0+8o2kn+4=
 github.com/sourcegraph/httpgzip v0.0.0-20210213125624-48ebf036a6a1 h1:o9U79WCNQjxxK2RYhIvflq7PK6JBbG70O2qG2haR26M=
 github.com/sourcegraph/httpgzip v0.0.0-20210213125624-48ebf036a6a1/go.mod h1:RqWagzxNGCvucQQC9vX6aps474LCCOgshDpUTTyb+O8=
 github.com/sourcegraph/jsonx v0.0.0-20200629203448-1a936bd500cf h1:oAdWFqhStsWiiMP/vkkHiMXqFXzl1XfUNOdxKJbd6bI=
@@ -1416,8 +1414,8 @@ github.com/sourcegraph/syntaxhighlight v0.0.0-20170531221838-bd320f5d308e h1:qpG
 github.com/sourcegraph/syntaxhighlight v0.0.0-20170531221838-bd320f5d308e/go.mod h1:HuIsMU8RRBOtsCgI77wP899iHVBQpCmg4ErYMZB+2IA=
 github.com/sourcegraph/yaml v1.0.1-0.20200714132230-56936252f152 h1:z/MpntplPaW6QW95pzcAR/72Z5TWDyDnSo0EOcyij9o=
 github.com/sourcegraph/yaml v1.0.1-0.20200714132230-56936252f152/go.mod h1:GIjDIg/heH5DOkXY3YJ/wNhfHsQHoXGjl8G8amsYQ1I=
-github.com/sourcegraph/zoekt v0.0.0-20210908064810-6a4adda25a6c h1:umB1hI5ORIwdFBtcsOsZOP6EWC9SXG7o534YeGbG29E=
-github.com/sourcegraph/zoekt v0.0.0-20210908064810-6a4adda25a6c/go.mod h1:lFzo+otquSTC1CI6SZ4+wOKjmL3qrsqfeA/vFUGExTg=
+github.com/sourcegraph/zoekt v0.0.0-20210914071702-65ca553d3a98 h1:1HvfcMM9ULp9K7KJ6DwStJAHe22rQ5HjkH3sTqQiA7g=
+github.com/sourcegraph/zoekt v0.0.0-20210914071702-65ca553d3a98/go.mod h1:lFzo+otquSTC1CI6SZ4+wOKjmL3qrsqfeA/vFUGExTg=
 github.com/spaolacci/murmur3 v0.0.0-20180118202830-f09979ecbc72/go.mod h1:JwIasOWyU6f++ZhiEuf87xNszmSA2myDM2Kzu9HwQUA=
 github.com/spaolacci/murmur3 v1.1.0 h1:7c1g84S4BPRrfL5Xrdp6fOJ206sU9y293DDHaoy0bLI=
 github.com/spaolacci/murmur3 v1.1.0/go.mod h1:JwIasOWyU6f++ZhiEuf87xNszmSA2myDM2Kzu9HwQUA=
