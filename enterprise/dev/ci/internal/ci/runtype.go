@@ -69,8 +69,8 @@ func computeRunType(tag, branch string) RunType {
 	}
 }
 
-// is returns true if this run type is one of the given RunTypes
-func (t RunType) is(oneOfTypes ...RunType) bool {
+// Is returns true if this run type Is one of the given RunTypes
+func (t RunType) Is(oneOfTypes ...RunType) bool {
 	for _, rt := range oneOfTypes {
 		if t == rt {
 			return true

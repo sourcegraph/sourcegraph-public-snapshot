@@ -432,12 +432,12 @@ func publishFinalDockerImage(c Config, app string, insiders bool) func(*bk.Pipel
 
 		var images []string
 		for _, image := range []string{publishImage, devImage} {
-			if app != "server" || c.runType.is(TaggedRelease, ImagePatch, ImagePatchNoTest) {
-				images = append(images, fmt.Sprintf("%s:%s", image, c.version))
+			if app != "server" || c.RunType.Is(TaggedRelease, ImagePatch, ImagePatchNoTest) {
+				images = append(images, fmt.Sprintf("%s:%s", image, c.Version))
 			}
 
-			if app == "server" && c.runType.is(ReleaseBranch) {
-				images = append(images, fmt.Sprintf("%s:%s-insiders", image, c.branch))
+			if app == "server" && c.RunType.Is(ReleaseBranch) {
+				images = append(images, fmt.Sprintf("%s:%s-insiders", image, c.Branch))
 			}
 
 			if insiders {
@@ -448,13 +448,13 @@ func publishFinalDockerImage(c Config, app string, insiders bool) func(*bk.Pipel
 		// these tags are pushed to our dev registry, and are only
 		// used internally
 		for _, tag := range []string{
-			c.version,
-			c.commit,
+			c.Version,
+			c.Commit,
 			c.shortCommit(),
-			fmt.Sprintf("%s_%s_%d", c.shortCommit(), c.now.Format("2006-01-02"), c.buildNumber),
-			fmt.Sprintf("%s_%d", c.shortCommit(), c.buildNumber),
-			fmt.Sprintf("%s_%d", c.commit, c.buildNumber),
-			strconv.Itoa(c.buildNumber),
+			fmt.Sprintf("%s_%s_%d", c.shortCommit(), c.Time.Format("2006-01-02"), c.BuildNumber),
+			fmt.Sprintf("%s_%d", c.shortCommit(), c.BuildNumber),
+			fmt.Sprintf("%s_%d", c.Commit, c.BuildNumber),
+			strconv.Itoa(c.BuildNumber),
 		} {
 			internalImage := fmt.Sprintf("%s:%s", devImage, tag)
 			images = append(images, internalImage)
