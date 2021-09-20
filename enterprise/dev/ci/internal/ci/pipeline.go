@@ -40,17 +40,17 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		"NODE_OPTIONS": "--max_old_space_size=4096",
 	}
 
+	// On release branches Percy must compare to the previous commit of the release branch, not main.
+	if c.runType.is(ReleaseBranch) {
+		env["PERCY_TARGET_BRANCH"] = c.branch
+	}
+
 	// Build options for pipeline operations that spawn more build steps
 	buildOptions := bk.BuildOptions{
 		Message: os.Getenv("BUILDKITE_MESSAGE"),
 		Commit:  c.commit,
 		Branch:  c.branch,
 		Env:     env,
-	}
-
-	// On release branches Percy must compare to the previous commit of the release branch, not main.
-	if c.runType.is(ReleaseBranch) {
-		env["PERCY_TARGET_BRANCH"] = c.branch
 	}
 
 	// Make all command steps timeout after 60 minutes in case a buildkite agent
@@ -120,7 +120,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		}
 		operations = append([]func(*bk.Pipeline){
 			buildCandidateDockerImage(patchImage, c.version, c.candidateImageTag())},
-			coreTestOperations(buildOptions)...)
+			CoreTestOperations(nil, buildOptions)...)
 		operations = append(operations,
 			publishFinalDockerImage(c, patchImage, false))
 
@@ -141,32 +141,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		}
 
 	case PullRequest:
-		// Run checks for pull requests
-		switch {
-		case c.changedFiles.isDocsOnly():
-			// If this is a docs-only PR, run only the steps necessary to verify the docs.
-			operations = []func(*bk.Pipeline){
-				addDocs,
-			}
-
-		case c.changedFiles.isGoOnly() && !c.changedFiles.isSgOnly():
-			// If this is a go-only PR, run only the steps necessary to verify the go code.
-			operations = []func(*bk.Pipeline){
-				addGoTests, // ~1.5m
-				addCheck,   // ~1m
-				addGoBuild, // ~0.5m
-			}
-
-		case c.changedFiles.isSgOnly():
-			// If the changes are only in ./dev/sg then we only need to run a subset of steps.
-			operations = []func(*bk.Pipeline){
-				addGoTests,
-				addCheck,
-			}
-
-		default:
-			operations = coreTestOperations(buildOptions)
-		}
+		operations = CoreTestOperations(c.changedFiles, buildOptions)
 
 	default:
 		// Slow image builds
@@ -187,7 +162,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		}
 
 		// Core tests
-		operations = append(operations, coreTestOperations(buildOptions)...)
+		operations = append(operations, CoreTestOperations(nil, buildOptions)...)
 
 		// Trigger e2e late so that it can leverage candidate images
 		var async bool

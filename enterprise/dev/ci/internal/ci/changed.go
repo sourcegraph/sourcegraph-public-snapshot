@@ -7,8 +7,8 @@ import (
 
 type ChangedFiles []string
 
-// isDocsOnly returns whether the ChangedFiles are only documentation.
-func (c ChangedFiles) isDocsOnly() bool {
+// onlyDocs returns whether the ChangedFiles are only documentation.
+func (c ChangedFiles) onlyDocs() bool {
 	for _, p := range c {
 		if !strings.HasPrefix(p, "doc/") && p != "CHANGELOG.md" {
 			return false
@@ -17,8 +17,8 @@ func (c ChangedFiles) isDocsOnly() bool {
 	return true
 }
 
-// isSgOnly returns whether the ChangedFiles are only in the ./dev/sg folder.
-func (c ChangedFiles) isSgOnly() bool {
+// onlySg returns whether the ChangedFiles are only in the ./dev/sg folder.
+func (c ChangedFiles) onlySg() bool {
 	for _, p := range c {
 		if !strings.HasPrefix(p, "dev/sg/") {
 			return false
@@ -27,8 +27,8 @@ func (c ChangedFiles) isSgOnly() bool {
 	return true
 }
 
-// isGoOnly returns whether the ChangedFiles are only go files.
-func (c ChangedFiles) isGoOnly() bool {
+// onlyGo returns whether the ChangedFiles are only go files.
+func (c ChangedFiles) onlyGo() bool {
 	for _, p := range c {
 		if !strings.HasSuffix(p, ".go") && p != "go.sum" && p != "go.mod" {
 			return false
@@ -38,7 +38,7 @@ func (c ChangedFiles) isGoOnly() bool {
 }
 
 // Check if files that affect client code were changed. Used to detect if we need to run Puppeteer or Chromatic tests.
-func (c ChangedFiles) isClientAffected() bool {
+func (c ChangedFiles) affectsClient() bool {
 	for _, p := range c {
 		if !strings.HasSuffix(p, ".md") && (strings.HasPrefix(p, "client/") || isAllowedRootFile(p)) {
 			return true

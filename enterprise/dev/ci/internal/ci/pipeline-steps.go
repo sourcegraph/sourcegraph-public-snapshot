@@ -12,9 +12,10 @@ import (
 	bk "github.com/sourcegraph/sourcegraph/enterprise/dev/ci/internal/buildkite"
 )
 
-// coreTestOperations is a core set of tests that should be run in most CI cases. These
+// CoreTestOperations is a core set of tests that should be run in most CI cases. These
 // steps should generally be quite fast.
-func coreTestOperations(buildOptions bk.BuildOptions) []func(*bk.Pipeline) {
+func CoreTestOperations(changedFiles ChangedFiles, buildOptions bk.BuildOptions) []func(*bk.Pipeline) {
+	// Default set
 	operations := []func(*bk.Pipeline){
 		triggerAsync(buildOptions), // triggers a slow pipeline, so do it first.
 		addLint,                    // ~4.5m
@@ -26,9 +27,44 @@ func coreTestOperations(buildOptions bk.BuildOptions) []func(*bk.Pipeline) {
 		addCheck,                   // ~1m
 		addGoBuild,                 // ~0.5m
 		addDockerfileLint,          // ~0.2m
-		wait,                       // wait for all steps to pass
 	}
-	return operations
+
+	// Special-case branches provide a nil changedFiles to only run default changes.
+	if len(changedFiles) == 0 {
+		return append(operations, wait)
+	}
+
+	// Build special pipelines for changes that only touch a subset of code.
+	switch {
+	case changedFiles.onlyDocs():
+		// If this is a docs-only PR, run only the steps necessary to verify the docs.
+		operations = []func(*bk.Pipeline){
+			addDocs,
+		}
+
+	case changedFiles.onlyGo() && !changedFiles.onlySg():
+		// If this is a go-only PR, run only the steps necessary to verify the go code.
+		operations = []func(*bk.Pipeline){
+			addGoTests, // ~1.5m
+			addCheck,   // ~1m
+			addGoBuild, // ~0.5m
+		}
+
+	case changedFiles.onlySg():
+		// If the changes are only in ./dev/sg then we only need to run a subset of steps.
+		operations = []func(*bk.Pipeline){
+			addGoTests,
+			addCheck,
+		}
+	}
+
+	// Add additional steps
+	if changedFiles.affectsClient() {
+		operations = append(operations, frontendPuppeteerAndStorybook(false))
+	}
+
+	// wait for all steps to pass
+	return append(operations, wait)
 }
 
 // Verifies the docs formatting and builds the `docsite` command.
@@ -283,12 +319,23 @@ type e2eAndQAOptions struct {
 	async          bool
 }
 
+// copyEnv copies a subset of env variables from the given BuildOptions
+func (opts *e2eAndQAOptions) copyEnv(keys ...string) map[string]string {
+	m := map[string]string{}
+	for _, k := range keys {
+		if v, ok := opts.buildOptions.Env[k]; ok {
+			m[k] = v
+		}
+	}
+	return m
+}
+
 func triggerE2EandQA(opts e2eAndQAOptions) func(*bk.Pipeline) {
 	customOptions := bk.BuildOptions{
 		Message: opts.buildOptions.Message,
 		Branch:  opts.buildOptions.Branch,
 		Commit:  opts.buildOptions.Commit,
-		Env: copyEnv(opts.buildOptions.Env,
+		Env: opts.copyEnv(
 			"BUILDKITE_PULL_REQUEST",
 			"BUILDKITE_PULL_REQUEST_BASE_BRANCH",
 			"BUILDKITE_PULL_REQUEST_REPO",
@@ -327,16 +374,6 @@ func triggerE2EandQA(opts e2eAndQAOptions) func(*bk.Pipeline) {
 			bk.Build(customOptions),
 		)
 	}
-}
-
-func copyEnv(source map[string]string, keys ...string) map[string]string {
-	m := map[string]string{}
-	for _, k := range keys {
-		if v, ok := os.LookupEnv(k); ok {
-			m[k] = v
-		}
-	}
-	return m
 }
 
 // Build a candidate docker image that will re-tagged with the final
