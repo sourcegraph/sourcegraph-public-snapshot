@@ -21,18 +21,20 @@ type SearchEventArgs struct {
 
 // SearchEvent returns a honey event for the dataset "search".
 func SearchEvent(ctx context.Context, args SearchEventArgs) *libhoney.Event {
+	act := &actor.Actor{}
+	if a := actor.FromContext(ctx); a != nil {
+		act = a
+	}
 	ev := Event("search")
 	ev.AddField("query", args.OriginalQuery)
+	ev.AddField("actor_uid", act.UID)
+	ev.AddField("actor_internal", act.Internal)
 	ev.AddField("type", args.Typ)
 	ev.AddField("source", args.Source)
 	ev.AddField("status", args.Status)
 	ev.AddField("alert_type", args.AlertType)
 	ev.AddField("duration_ms", args.DurationMs)
 	ev.AddField("result_size", args.ResultSize)
-	if a := actor.FromContext(ctx); a != nil {
-		ev.AddField("actor_uid", a.UID)
-		ev.AddField("actor_internal", a.Internal)
-	}
 	if args.Error != nil {
 		ev.AddField("error", args.Error.Error())
 	}
