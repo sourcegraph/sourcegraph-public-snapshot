@@ -151,6 +151,47 @@ func TestGitMaxCodehostRequestsPerSecond(t *testing.T) {
 	}
 }
 
+func TestGitMaxConcurrentClones(t *testing.T) {
+	tests := []struct {
+		name string
+		sc   *Unified
+		want int
+	}{
+		{
+			name: "not set should return default",
+			sc:   &Unified{SiteConfiguration: schema.SiteConfiguration{}},
+			want: 5,
+		},
+		{
+			name: "bad value should return default",
+			sc: &Unified{
+				SiteConfiguration: schema.SiteConfiguration{
+					GitMaxConcurrentClones: -100,
+				},
+			},
+			want: 5,
+		},
+		{
+			name: "set non-zero should return non-zero",
+			sc: &Unified{
+				SiteConfiguration: schema.SiteConfiguration{
+					GitMaxConcurrentClones: 100,
+				},
+			},
+			want: 100,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			Mock(test.sc)
+			if got, want := GitMaxConcurrentClones(), test.want; got != want {
+				t.Fatalf("GitMaxConcurrentClones() = %v, want %v", got, want)
+			}
+		})
+	}
+}
+
 func setenv(t *testing.T, keyval string) func() {
 	t.Helper()
 

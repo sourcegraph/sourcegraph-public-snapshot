@@ -151,11 +151,11 @@ func TestResolver_InsightsRepoPermissions(t *testing.T) {
 	// 2 & 3) public repos
 	_, err = postgres.Exec(`
 		INSERT INTO repo (id, name, description, fork, created_at, updated_at, external_id, external_service_type,
-					  external_service_id, archived, uri, deleted_at, metadata, private, cloned, stars)
+					  external_service_id, archived, uri, deleted_at, metadata, private, stars)
 		VALUES
-			(1, 'test-repo1', 'description', false, current_timestamp, current_timestamp, 1, 'github', 1, false, 'github.com/test-repo/test-repo1', null, '{}', true, true, 1),
-			(2, 'test-repo2', 'description', false, current_timestamp, current_timestamp, 2, 'github', 1, false, 'github.com/test-repo/test-repo2', null, '{}', false, true, 1),
-			(3, 'test-repo3', 'description', false, current_timestamp, current_timestamp, 3, 'github', 1, false, 'github.com/test-repo/test-repo3', null, '{}', false, true, 1);
+			(1, 'test-repo1', 'description', false, current_timestamp, current_timestamp, 1, 'github', 1, false, 'github.com/test-repo/test-repo1', null, '{}', true, 1),
+			(2, 'test-repo2', 'description', false, current_timestamp, current_timestamp, 2, 'github', 1, false, 'github.com/test-repo/test-repo2', null, '{}', false, 1),
+			(3, 'test-repo3', 'description', false, current_timestamp, current_timestamp, 3, 'github', 1, false, 'github.com/test-repo/test-repo3', null, '{}', false, 1);
 
 		INSERT INTO user_permissions (user_id, permission, object_type, object_ids, updated_at, synced_at, object_ids_ints)
 		VALUES

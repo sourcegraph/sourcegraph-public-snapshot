@@ -210,6 +210,66 @@ func TestUploadExpirer(t *testing.T) {
 	)
 }
 
+func TestUploadExpirerDefaultBranch(t *testing.T) {
+	now := timeutil.Now()
+	t1 := now.Add(-time.Hour * 24 * 365 * 15) // 15 years ago
+
+	uploads := []dbstore.Upload{
+		{ID: 1, RepositoryID: 50, Commit: "deadbeef01", State: "completed", FinishedAt: &t1},
+		{ID: 2, RepositoryID: 50, Commit: "deadbeef02", State: "completed", FinishedAt: &t1},
+		{ID: 3, RepositoryID: 50, Commit: "deadbeef03", State: "completed", FinishedAt: &t1},
+		{ID: 4, RepositoryID: 50, Commit: "deadbeef04", State: "completed", FinishedAt: &t1},
+		{ID: 5, RepositoryID: 50, Commit: "deadbeef05", State: "completed", FinishedAt: &t1},
+	}
+
+	branchMap := map[string]map[string]string{
+		"deadbeef01": {"main": "deadbeef01"},
+		"deadbeef02": {"main": "deadbeef01"},
+		"deadbeef03": {"main": "deadbeef01"},
+		"deadbeef04": {"main": "deadbeef01"},
+		"deadbeef05": {"main": "deadbeef01"},
+	}
+
+	tagMap := map[string][]string{
+		"deadbeef01": nil,
+		"deadbeef02": nil,
+		"deadbeef03": nil,
+		"deadbeef04": nil,
+		"deadbeef05": nil,
+	}
+
+	globalPolicies := []dbstore.ConfigurationPolicy{}
+	repositoryPolicies := map[int][]dbstore.ConfigurationPolicy{
+		50: {},
+	}
+
+	dbStore := testUploadExpirerMockDBStore(globalPolicies, repositoryPolicies, uploads)
+	gitserverClient := testUploadExpirerMockGitserverClient(branchMap, tagMap)
+
+	uploadExpirer := &uploadExpirer{
+		dbStore:                dbStore,
+		gitserverClient:        gitserverClient,
+		metrics:                newMetrics(&observation.TestContext),
+		repositoryProcessDelay: 24 * time.Hour,
+		repositoryBatchSize:    100,
+		uploadProcessDelay:     24 * time.Hour,
+		uploadBatchSize:        100,
+		commitBatchSize:        100,
+		branchesCacheMaxKeys:   10000,
+	}
+
+	if err := uploadExpirer.Handle(context.Background()); err != nil {
+		t.Fatalf("unexpected error from handle: %s", err)
+	}
+
+	assertProtectedAndExpiredIDs(
+		t,
+		dbStore,
+		[]int{1},
+		[]int{2, 3, 4, 5},
+	)
+}
+
 func TestUploadExpirerCachingStrategy(t *testing.T) {
 	now := timeutil.Now()
 

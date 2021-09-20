@@ -172,7 +172,13 @@ func (s *repos) ListIndexable(ctx context.Context) (repos []types.RepoName, err 
 		}
 		done()
 	}()
-	return s.cache.List(ctx)
+
+	if envvar.SourcegraphDotComMode() {
+		return s.cache.List(ctx)
+	}
+
+	trueP := true
+	return s.store.ListRepoNames(ctx, database.ReposListOptions{Index: &trueP})
 }
 
 // ListSearchable calls database.IndexableRepos.ListPublic, with tracing.
