@@ -96,9 +96,9 @@ func addBrowserExt(pipeline *bk.Pipeline) {
 }
 
 func addClientIntegrationTests(pipeline *bk.Pipeline) {
-	CHUNK_SIZE := 3
-	PREP_STEP_KEY := "puppeteer:prep"
-	SKIP_GIT_CLONE_STEP := bk.Plugin("uber-workflow/run-without-clone", "")
+	chunkSize := 3
+	prepStepKey := "puppeteer:prep"
+	skipGitCloneStep := bk.Plugin("uber-workflow/run-without-clone", "")
 
 	// Build web application used for integration tests to share it between multiple parallel steps.
 	pipeline.AddStep(":puppeteer::electric_plug: Puppeteer tests prep",
