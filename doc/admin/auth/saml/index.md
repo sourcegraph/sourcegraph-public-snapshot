@@ -84,7 +84,10 @@ When debugging a problem with SAML its often helpful to use your browsers develo
 3. Clear the collection of network logs in the your devTool network tab and attempt a saml login
 4. Look for a network request in the network tab that indicates a SAML request response communication. (This might be labeled ACS, or Authn), select the network request and observe its headers. You should see something like the image below from a Sourcegraph Okta login (don't worry this example has no sensative info)
 
-<TODO insert picture>
+![Screen Shot 2021-09-15 at 1 13 17 PM](https://user-images.githubusercontent.com/13024338/134255811-88250622-7f0e-42f8-91b0-a3f7bf5274fc.png)
+
+
+
 
 In a real network response you will often find that the XML has been compressed, and/or encrypted, there are a variety of ways to decompress and decrypt XML. For an easy tool we recommend the tools at [samltool.com](https://www.samltool.com/), which provide a user friendly UI to accomplish these tasks.
 
