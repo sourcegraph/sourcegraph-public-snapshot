@@ -19,7 +19,7 @@ func (c *CommitHighlights) Merge(other *CommitHighlights) *CommitHighlights {
 		return c
 	}
 
-	c.Message.Merge(other.Message)
+	c.Message = c.Message.Merge(other.Message)
 
 	if c.Diff == nil {
 		c.Diff = other.Diff

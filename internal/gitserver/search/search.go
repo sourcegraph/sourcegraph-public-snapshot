@@ -355,7 +355,7 @@ func (c *CommitScanner) Scan() bool {
 		CommitterName:  parts[6],
 		CommitterEmail: parts[7],
 		CommitterDate:  parts[8],
-		Message:        parts[9],
+		Message:        bytes.TrimSpace(parts[9]),
 		ParentHashes:   parts[10],
 	}
 

@@ -103,7 +103,7 @@ type MessageMatches struct {
 }
 
 func (m *MessageMatches) Match(commit *LazyCommit) (bool, *protocol.CommitHighlights, error) {
-	results := m.FindAllIndex(commit.Message, -1) // TODO limit?
+	results := m.FindAllIndex(commit.Message, -1)
 	if results == nil {
 		return false, nil, nil
 	}
