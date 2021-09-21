@@ -84,6 +84,7 @@ Set the env var `INSECURE_SAML_LOG_TRACES=1` to log all SAML requests and respon
 
 ### Debugging with your browser
 When debugging a problem with SAML its often helpful to use your browsers developer tools to directly observer the XML assertions and their contents. Below are some general pointers on how to collect SAML communications:
+
 1. Naviagate in your browser to Sourcegraph, prepare to attempt a login via SAML in Sourcegraph
 2. Open your developer tools and navigate to the Network tab. Check to see if theres an option to preserve logs, if so enable it.
 3. Clear the collection of network logs in the your devTool network tab and attempt a saml login
