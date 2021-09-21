@@ -2,6 +2,7 @@ name: sg-binary-release
 
 on:
   push:
+    branch: main
     path:
       - dev/sg
 
