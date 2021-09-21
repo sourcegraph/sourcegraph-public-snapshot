@@ -2,7 +2,7 @@
 
 Here are some common use cases for Code Insights and example data series queries you could use. 
 
-For all use cases, you can also explore your insight by [filtering repositories in real time](../how-tos/filtering_an_insight.md) or add any [Sourcegraph search filter](../../../code_search/reference/language.md#search-pattern) to the data series query to filter by language, directory, or content. 
+For all use cases, you can also explore your insight by [filtering repositories in real time](../how-tos/filtering_an_insight.md) or add any [Sourcegraph search filter](../../../code_search/reference/language.md#search-pattern) to the data series query to filter by language, directory, or content. Currently, the sample queries using commit and diff searches are only supported for insights running over explicit lists of specific repositories. 
 
 *The sample queries below make the assumption you [do not want to search fork or archived](../references/common_reasons_code_insights_may_not_match_search_results.md#not-including-fork-no-and-archived-no-in-your-insight-query) repositories. You can exclude those flags if you do.*
 
@@ -70,7 +70,7 @@ theme-redesign archived:no fork:no
 ```sgquery
 slowEventLib.log archived:no fork:no
 ```
-Or, if you have <10,000 repositories, you can count how many removals (below) rather than how many remain (above): 
+Or you can count how many removals (below) rather than how many remain (above): 
 ```sgquery
 slowEventLib.log type:diff select:commit.diff.removed archived:no fork:no
 ```
