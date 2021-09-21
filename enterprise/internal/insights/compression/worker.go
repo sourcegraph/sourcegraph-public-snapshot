@@ -145,7 +145,7 @@ func (i *CommitIndexer) index(name string) (err error) {
 	searchTime := max(i.maxHistoricalTime, metadata.LastIndexedAt)
 
 	logger.Debug("fetching commits", "repo_id", repoId, "after", searchTime)
-	commits, err := getCommits(ctx, repoName, searchTime, i.operations.getCommits)
+	commits, err := i.getCommits(ctx, repoName, searchTime, i.operations.getCommits)
 	if err != nil {
 		return errors.Wrapf(err, "error fetching commits from gitserver repo_id: %v", repoId)
 	}
@@ -176,6 +176,7 @@ func (i *CommitIndexer) index(name string) (err error) {
 func getCommits(ctx context.Context, name api.RepoName, after time.Time, operation *observation.Operation) (_ []*git.Commit, err error) {
 	ctx, endObservation := operation.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
+
 	return git.Commits(ctx, name, git.CommitsOptions{N: 0, DateOrder: true, NoEnsureRevision: true, After: after.Format(time.RFC3339)})
 }
 

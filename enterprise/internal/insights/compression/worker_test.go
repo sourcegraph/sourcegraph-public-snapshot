@@ -27,6 +27,7 @@ func TestCommitIndexer_indexAll(t *testing.T) {
 		commitStore:       commitStore,
 		maxHistoricalTime: maxHistorical,
 		background:        context.Background(),
+		operations:		   newOperations(&observation.TestContext),
 	}
 
 	// Testing a scenario with 3 repos
