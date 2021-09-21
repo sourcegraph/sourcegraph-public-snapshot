@@ -78,8 +78,15 @@ The most likely error message indicating a problem is `Error prefetching SAML se
 ### Debugging with your browser
 Security Assertion Markup Language (SAML) is a common web protocol used pass authorized credentials between two web applications, a service provider (SP, Sourcegraph in this instance), and an Identity Provider (IdP, see our [list](#IdentityProviders) of IdP's above). This communication is conducted via XML assertions.
 
-When debugging a problem with SAML its often helpful to use your browsers developer tools to directly observer the XML assertions and their contents.
+When debugging a problem with SAML its often helpful to use your browsers developer tools to directly observer the XML assertions and their contents. Below are some general pointers on how to collect SAML communications:
+1. Naviagate in your browser to Sourcegraph, prepare to attempt a login via SAML in Sourcegraph
+2. Open your developer tools and navigate to the Network tab. Check to see if theres an option to preserve logs, if so enable it.
+3. Clear the collection of network logs in the your devTool network tab and attempt a saml login
+4. Look for a network request in the network tab that indicates a SAML request response communication. (This might be labeled ACS, or Authn), select the network request and observe its headers. You should see something like the image below from a Sourcegraph Okta login (don't worry this example has no sensative info)
 
+<TODO insert picture>
+
+In a real network response you will often find that the XML has been compressed, and/or encrypted, there are a variety of ways to decompress and decrypt XML. For an easy tool we recommend the tools at [samltool.com](https://www.samltool.com/), which provide a user friendly UI to accomplish these tasks.
 
 
 
