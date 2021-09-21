@@ -101,9 +101,10 @@ func addSharedTests(c Config) func(pipeline *bk.Pipeline) {
 				bk.Env("PUPPETEER_SKIP_CHROMIUM_DOWNLOAD", "true"), // Don't download browser, we use "download-puppeteer-browser" script instead
 				bk.Env("ENTERPRISE", "1"),
 				bk.Env("PERCY_ON", "true"),
-				bk.Env("CI_INTEGRATION_MOCHA_JOBS", "6"),
+				bk.Env("CI_INTEGRATION_MOCHA_JOBS", "14"),
 				bk.Cmd("COVERAGE_INSTRUMENT=true dev/ci/yarn-build.sh client/web"),
 				bk.Cmd("echo \"--- Install puppeteer\" && yarn --cwd client/shared run download-puppeteer-browser"),
+				echoPSA("jhchabran", "If the step below fails with TODO worker stuff, please see https://gist.github.com/jhchabran/0a6e3dd73299400fdec983e07fbbac20"),
 				bk.Cmd("echo \"--- Run integration test suite\" && yarn percy exec -- yarn run cover-integration"),
 				bk.Cmd("echo \"--- Process NYC report\" && yarn nyc report -r json"),
 				bk.Cmd("echo \"--- Upload coverage report\" && dev/ci/codecov.sh -c -F typescript -F integration"),
@@ -522,4 +523,8 @@ func addFinalDockerImage(c Config, app string, insiders bool) func(*bk.Pipeline)
 
 		pipeline.AddStep(fmt.Sprintf(":docker: :white_check_mark: %s", app), bk.Cmd(cmd))
 	}
+}
+
+func echoPSA(owner string, message string) bk.StepOpt {
+	return bk.Cmd(fmt.Sprintf("echo \"\033[33mPSA\033[0m\nfrom: %s\n%s\"", owner, message))
 }
