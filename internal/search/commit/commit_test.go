@@ -17,7 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
-	gitsearch "github.com/sourcegraph/sourcegraph/internal/gitserver/search"
+	gitprotocol "github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
@@ -368,16 +368,16 @@ func TestOrderedFuzzyRegexp(t *testing.T) {
 func Test_searchRangeToHighlights(t *testing.T) {
 	type testCase struct {
 		input      string
-		inputRange gitsearch.Range
+		inputRange gitprotocol.Range
 		output     []result.HighlightedRange
 	}
 
 	cases := []testCase{
 		{
 			input: "abc",
-			inputRange: gitsearch.Range{
-				Start: gitsearch.Location{Offset: 1, Line: 0, Column: 1},
-				End:   gitsearch.Location{Offset: 2, Line: 0, Column: 2},
+			inputRange: gitprotocol.Range{
+				Start: gitprotocol.Location{Offset: 1, Line: 0, Column: 1},
+				End:   gitprotocol.Location{Offset: 2, Line: 0, Column: 2},
 			},
 			output: []result.HighlightedRange{{
 				Line:      0,
@@ -387,9 +387,9 @@ func Test_searchRangeToHighlights(t *testing.T) {
 		},
 		{
 			input: "abc\ndef\n",
-			inputRange: gitsearch.Range{
-				Start: gitsearch.Location{Offset: 2, Line: 0, Column: 2},
-				End:   gitsearch.Location{Offset: 5, Line: 1, Column: 1},
+			inputRange: gitprotocol.Range{
+				Start: gitprotocol.Location{Offset: 2, Line: 0, Column: 2},
+				End:   gitprotocol.Location{Offset: 5, Line: 1, Column: 1},
 			},
 			output: []result.HighlightedRange{{
 				Line:      0,
@@ -403,9 +403,9 @@ func Test_searchRangeToHighlights(t *testing.T) {
 		},
 		{
 			input: "abc\ndef\nghi\n",
-			inputRange: gitsearch.Range{
-				Start: gitsearch.Location{Offset: 0, Line: 0, Column: 0},
-				End:   gitsearch.Location{Offset: 11, Line: 2, Column: 3},
+			inputRange: gitprotocol.Range{
+				Start: gitprotocol.Location{Offset: 0, Line: 0, Column: 0},
+				End:   gitprotocol.Location{Offset: 11, Line: 2, Column: 3},
 			},
 			output: []result.HighlightedRange{{
 				Line:      0,
