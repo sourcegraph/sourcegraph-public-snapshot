@@ -11,10 +11,10 @@ env:
 
 jobs:
   create-release:
-    name: create-release
+    name: create-github-release
     runs-on: ubuntu-latest
     steps:
-      - name: Create Release
+      - name: create-github-release
         # note that the release_name thing here is a duplicate from below,
         # because I can't get outputs to work.
         run: |
@@ -23,13 +23,13 @@ jobs:
           release_name="${today}-${short_sha}"
 
           gh release delete -R="${repo}" ${release_name} || true
-          gh release create -R="${repo}" ${release_name} --notes "sg release ${release_name}"
+          gh release create -R="${repo}" ${release_name} --notes "### sg snapshot release\n\n: Commit: [${short_sha}](https://github.com/sourcegraph/sourcegraph/commit/${{github.sha}}]"
         env:
           repo: sourcegraph/sg
           GITHUB_TOKEN: ${{ secrets.SG_RELEASE_TOKEN }}
 
   build:
-    name: Build
+    name: build
     needs: [create-release]
     runs-on: ubuntu-latest
     strategy:
