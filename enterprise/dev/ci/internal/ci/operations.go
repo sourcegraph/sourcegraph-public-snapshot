@@ -478,6 +478,7 @@ func publishFinalDockerImage(c Config, app string, insiders bool) Operation {
 	}
 }
 
+// ~6m (building executor base VM)
 func buildExecutor(timestamp time.Time, version string) Operation {
 	return func(pipeline *bk.Pipeline) {
 		cmds := []bk.StepOpt{

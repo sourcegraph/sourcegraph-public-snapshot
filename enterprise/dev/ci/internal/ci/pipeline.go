@@ -70,25 +70,26 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		}
 	})
 
+	// Toggle profiling of each step
 	if c.ProfilingEnabled {
 		bk.AfterEveryStepOpts = append(bk.AfterEveryStepOpts, func(s *bk.Step) {
 			// wrap "time -v" around each command for CPU/RAM utilization information
-
 			var prefixed []string
 			for _, cmd := range s.Command {
 				prefixed = append(prefixed, fmt.Sprintf("env time -v %s", cmd))
 			}
-
 			s.Command = prefixed
 		})
 	}
 
+	// Set up operations that add steps to a pipeline.
 	var operations []Operation
+	// appendOps is a utility for adding an operation to the set of pipeline operations.
 	appendOps := func(ops ...Operation) {
 		operations = append(operations, ops...)
 	}
 
-	// Generate pipeline steps. This statement outlines the pipeline steps for each CI case.
+	// This statement outlines the pipeline steps for each CI case.
 	//
 	// PERF: Try to order steps such that slower steps are first.
 	switch c.RunType {
@@ -154,42 +155,33 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 			appendOps(buildCandidateDockerImage(dockerImage, c.Version, c.candidateImageTag()))
 		}
 		if c.RunType.Is(MainDryRun, MainBranch) {
-			buildExecutor(c.Time, c.Version)
+			appendOps(buildExecutor(c.Time, c.Version))
 		}
 
 		// Slow tests
 		if c.RunType.Is(BackendDryRun, MainDryRun, MainBranch) {
-			// Add backend integration tests first because it is slow
-			appendOps(
-				addBackendIntegrationTests,
-				frontendPuppeteerAndStorybook(c.RunType.Is(MainBranch)))
+			appendOps(addBackendIntegrationTests)
+		}
+		if c.RunType.Is(MainDryRun, MainBranch) {
+			appendOps(frontendPuppeteerAndStorybook(c.RunType.Is(MainBranch)))
 		}
 
 		// Core tests
 		appendOps(CoreTestOperations(nil, buildOptions)...)
 
 		// Trigger e2e late so that it can leverage candidate images
-		var async bool
-		if c.RunType.Is(MainBranch) {
-			async = true
-		} else {
-			async = false
-		}
 		appendOps(triggerE2EandQA(e2eAndQAOptions{
 			candidateImage: c.candidateImageTag(),
 			buildOptions:   buildOptions,
-			async:          async,
+			async:          c.RunType.Is(MainBranch),
 		}))
 
 		// Add final artifacts
 		for _, dockerImage := range images.SourcegraphDockerImages {
-			insiders := c.RunType.Is(MainBranch)
-			appendOps(publishFinalDockerImage(c, dockerImage, insiders))
+			appendOps(publishFinalDockerImage(c, dockerImage, c.RunType.Is(MainBranch)))
 		}
 		if c.RunType.Is(MainBranch) {
-			appendOps(
-				publishExecutor(c.Time, c.Version), // ~6m (building executor base VM)
-			)
+			appendOps(publishExecutor(c.Time, c.Version))
 		}
 
 		// Propogate changes elsewhere
