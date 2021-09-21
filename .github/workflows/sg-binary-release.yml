@@ -15,12 +15,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Create Release
-        # note that the release_name thing here is a duplicate from above,
+        # note that the release_name thing here is a duplicate from below,
         # because I can't get outputs to work.
         run: |
           today=$(date +'%Y-%m-%d')
           short_sha=$(echo ${{ github.sha }} | cut -c1-8)
-          release_name="${today}-${short_sha}""
+          release_name="${today}-${short_sha}"
 
           gh release delete -R="${repo}" ${release_name} || true
           gh release create -R="${repo}" ${release_name} --notes "sg release ${release_name}"
@@ -94,7 +94,7 @@ jobs:
         run: |
           today=$(date +'%Y-%m-%d')
           short_sha=$(echo ${{ github.sha }} | cut -c1-8)
-          release_name="${today}-${short_sha}""
+          release_name="${today}-${short_sha}"
 
           gh release upload -R="${repo}" ${release_name} "${filename}"
         env:
