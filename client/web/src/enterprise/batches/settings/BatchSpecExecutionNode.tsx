@@ -10,15 +10,15 @@ import React, { useCallback, useMemo, useState } from 'react'
 
 import { CodeSnippet } from '@sourcegraph/branded/src/components/CodeSnippet'
 import { Link } from '@sourcegraph/shared/src/components/Link'
+import { BatchSpecState } from '@sourcegraph/shared/src/graphql-operations'
 import { Timestamp } from '@sourcegraph/web/src/components/time/Timestamp'
 
-import { BatchSpecExecutionsFields, BatchSpecExecutionState } from '../../../graphql-operations'
+import { BatchSpecListFields } from '../../../graphql-operations'
 
-import { queryBatchSpecExecutions as _queryBatchSpecExecutions } from './backend'
 import styles from './BatchSpecExecutionNode.module.scss'
 
 export interface BatchSpecExecutionNodeProps {
-    node: BatchSpecExecutionsFields
+    node: BatchSpecListFields
     /** Used for testing purposes. Sets the current date */
     now?: () => Date
 }
@@ -66,38 +66,40 @@ export const BatchSpecExecutionNode: React.FunctionComponent<BatchSpecExecutionN
                         {node.namespace.namespaceName}
                     </Link>
                     <span className="text-muted d-inline-block mx-1">/</span>
-                    <Link to={`${node.namespace.url}/batch-changes/executions/${node.id}`}>{node.name || '-'}</Link>
+                    <Link to={`${node.namespace.url}/batch-changes/executions/${node.id}`}>
+                        {node.description.name || '-'}
+                    </Link>
                 </h3>
                 <small className="text-muted d-block">
-                    Executed by <strong>{node.initiator.username}</strong> <Timestamp date={node.createdAt} now={now} />
+                    Executed by <strong>{node.creator?.username}</strong> <Timestamp date={node.createdAt} now={now} />
                 </small>
             </div>
             <div className="text-center pb-1">{(executionDuration / 1000).toFixed(0)}s</div>
             {isExpanded && (
                 <div className={styles.nodeExpandedSection}>
                     <h4>Input spec</h4>
-                    <CodeSnippet code={node.inputSpec} language="yaml" className="mb-0" />
+                    <CodeSnippet code={node.originalInput} language="yaml" className="mb-0" />
                 </div>
             )}
         </>
     )
 }
 
-const ExecutionStateIcon: React.FunctionComponent<{ state: BatchSpecExecutionState }> = ({ state }) => {
+const ExecutionStateIcon: React.FunctionComponent<{ state: BatchSpecState }> = ({ state }) => {
     switch (state) {
-        case BatchSpecExecutionState.COMPLETED:
+        case BatchSpecState.COMPLETED:
             return <CheckCircleIcon className={classNames(styles.nodeStateIcon, 'icon-inline text-success mb-1')} />
 
-        case BatchSpecExecutionState.PROCESSING:
-        case BatchSpecExecutionState.QUEUED:
+        case BatchSpecState.PROCESSING:
+        case BatchSpecState.QUEUED:
             return <TimerSandIcon className={classNames(styles.nodeStateIcon, 'icon-inline text-muted mb-1')} />
 
-        case BatchSpecExecutionState.CANCELED:
-        case BatchSpecExecutionState.CANCELING:
+        case BatchSpecState.CANCELED:
+        case BatchSpecState.CANCELING:
             return <CancelIcon className={classNames(styles.nodeStateIcon, 'icon-inline text-muted mb-1')} />
 
-        case BatchSpecExecutionState.ERRORED:
-        case BatchSpecExecutionState.FAILED:
+        case BatchSpecState.ERRORED:
+        case BatchSpecState.FAILED:
         default:
             return <ErrorIcon className={classNames(styles.nodeStateIcon, 'icon-inline text-danger mb-1')} />
     }

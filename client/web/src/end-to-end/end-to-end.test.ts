@@ -904,10 +904,14 @@ describe('e2e test suite', () => {
         describe('revision resolution', () => {
             test('shows clone in progress interstitial page', async () => {
                 await driver.page.goto(sourcegraphBaseUrl + '/github.com/sourcegraphtest/AlwaysCloningTest')
-                await driver.page.waitForSelector('.hero-page__subtitle', { visible: true })
+                await driver.page.waitForSelector('[data-testid="hero-page-subtitle"]', {
+                    visible: true,
+                })
                 await retry(async () =>
                     expect(
-                        await driver.page.evaluate(() => document.querySelector('.hero-page__subtitle')?.textContent)
+                        await driver.page.evaluate(
+                            () => document.querySelector('[data-testid="hero-page-subtitle"]')?.textContent
+                        )
                     ).toEqual('Cloning in progress')
                 )
             })

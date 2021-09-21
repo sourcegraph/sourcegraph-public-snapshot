@@ -27,7 +27,7 @@ Running Postgres via Docker vs Manually
 
 - No matter which option you choose, docker is required because the development server starts additional docker containers.
 
-The following are two recommendations for installing these dependencies (See below for asdf for an alternate way of managing dependencies):
+The following are two recommendations for installing these dependencies (See below for [asdf](#optional-asdf) for an alternate way of managing dependencies):
 
 ## macOS
 
@@ -98,7 +98,7 @@ The following are two recommendations for installing these dependencies (See bel
         ```
 
 7.  Install the current recommended version of Node JS by running the following
-    from the working directory of a sourcegraph repository clone (See [Cloning our repository](quickstart_4_clone_repository.md) for cloning the repository):
+    from the working directory of a sourcegraph repository clone (See [Cloning our repository](quickstart_2_clone_repository.md) for cloning the repository):
 
     ```
     nvm install
@@ -266,4 +266,4 @@ asdf plugin add yarn
 
 You can install the all the versions specified in [.tool-versions](https://github.com/sourcegraph/sourcegraph/blob/main/.tool-versions) by running `asdf install`.
 
-[< Previous](index.md) | [Next >](quickstart_2_start_docker.md)
+[< Previous](index.md) | [Next >](quickstart_2_clone_repository.md)
