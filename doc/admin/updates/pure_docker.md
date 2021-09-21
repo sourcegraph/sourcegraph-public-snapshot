@@ -8,6 +8,12 @@ Each section comprehensively describes the changes needed in Docker images, envi
 
 <!-- GENERATE UPGRADE GUIDE ON RELEASE (release tooling uses this to add entries) -->
 
+## 3.31 -> 3.32
+
+TODO
+
+*How smooth was this upgrade process for you? You can give us your feedback on this upgrade by filling out [this feedback form](https://share.hsforms.com/1aGeG7ALQQEGO6zyfauIiCA1n7ku?update_version=3.31).*
+
 
 
 ## 3.31 -> 3.32.0
