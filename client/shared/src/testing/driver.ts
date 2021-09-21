@@ -210,7 +210,17 @@ export class Driver {
             localStorage.setItem('has-dismissed-integrations-toast', 'true')
             localStorage.setItem('has-dismissed-survey-toast', 'true')
         })
+
+        /**
+         * Wait for redirects to complete to avoid using an outdated page URL.
+         *
+         * In case a user is not authenticated, and site-init is required, two redirects happen:
+         * 1. Redirect to /sign-in?returnTo=%2F
+         * 2. Redirect to /site-admin/init
+         */
+        await delay(1000)
         const url = new URL(this.page.url())
+
         if (url.pathname === '/site-admin/init') {
             await this.page.waitForSelector('.test-signup-form')
             if (email) {
