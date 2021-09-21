@@ -1,6 +1,10 @@
 package shared
 
-import "github.com/sourcegraph/sourcegraph/monitoring/monitoring"
+import (
+	"time"
+
+	"github.com/sourcegraph/sourcegraph/monitoring/monitoring"
+)
 
 var CodeInsights codeInsights
 
@@ -8,6 +12,26 @@ var namespace string = "codeinsights"
 
 // codeInsights provides `CodeInsights` implementations.
 type codeInsights struct{}
+
+func (codeInsights) NewInsightsQueueUtilizationGroup() monitoring.Group {
+	return monitoring.Group{
+		Title:  "Code Insights Queue Utilization",
+		Hidden: false,
+		Rows: []monitoring.Row{{monitoring.Observable{
+			Name:              "insights_queue_unutilized_size",
+			Description:       "queue size that is not utilized (not processing)",
+			Owner:             monitoring.ObservableOwnerCodeInsights,
+			Query:             "max(src_insights_search_queue_total{job=~\"^worker.*\"}) > 0 and on(job) sum by (op)(increase(src_workerutil_dbworker_store_insights_query_runner_jobs_store_total{job=~\"^worker.*\",op=\"Dequeue\"}[5m])) < 1",
+			DataMustExist:     false,
+			Warning:           monitoring.Alert().Greater(0.0, nil).For(time.Minute * 30),
+			Critical:          nil,
+			NoAlert:           false,
+			PossibleSolutions: "Verify code insights worker job has successfully started. Restart worker service and monitoring startup logs, looking for worker panics.",
+			Interpretation:    "",
+			Panel:             monitoring.Panel().LegendFormat("count"),
+		}}},
+	}
+}
 
 // src_insights_search_queue_total
 // src_insights_search_queue_processor_total

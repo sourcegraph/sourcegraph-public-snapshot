@@ -164,6 +164,7 @@ func Worker() *monitoring.Container {
 			shared.CodeInsights.NewInsightsQueryRunnerWorkerGroup(containerName),
 			shared.CodeInsights.NewInsightsQueryRunnerResetterGroup(containerName),
 			shared.CodeInsights.NewInsightsQueryRunnerStoreGroup(containerName),
+			shared.CodeInsights.NewInsightsQueueUtilizationGroup(),
 
 			// Resource monitoring
 			shared.NewFrontendInternalAPIErrorResponseMonitoringGroup(containerName, monitoring.ObservableOwnerCodeIntel, nil),
