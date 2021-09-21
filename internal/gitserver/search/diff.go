@@ -18,6 +18,8 @@ import (
 const (
 	matchContextLines = 1
 	maxLinesPerHunk   = 5
+	maxHunksPerFile   = 3
+	maxFiles          = 5
 )
 
 func FormatDiff(rawDiff []*diff.FileDiff, highlights map[int]protocol.FileDiffHighlight) (string, protocol.Ranges) {
@@ -25,11 +27,16 @@ func FormatDiff(rawDiff []*diff.FileDiff, highlights map[int]protocol.FileDiffHi
 	var loc protocol.Location
 	var ranges protocol.Ranges
 
+	fileCount := 0
 	for fileIdx, fileDiff := range rawDiff {
 		fdh, ok := highlights[fileIdx]
-		if !ok {
+		if !ok && len(highlights) > 0 {
 			continue
 		}
+		if fileCount >= maxFiles {
+			break
+		}
+		fileCount++
 
 		ranges = append(ranges, fdh.OldFile.Add(loc)...)
 		buf.WriteString(fileDiff.OrigName)
@@ -49,11 +56,16 @@ func FormatDiff(rawDiff []*diff.FileDiff, highlights map[int]protocol.FileDiffHi
 
 		filteredHunks, filteredHighlights := splitHunkMatches(fileDiff.Hunks, fdh.HunkHighlights, matchContextLines, maxLinesPerHunk)
 
+		hunkCount := 0
 		for hunkIdx, hunk := range filteredHunks {
 			hmh, ok := filteredHighlights[hunkIdx]
-			if !ok {
+			if !ok && len(filteredHighlights) > 0 {
 				continue
 			}
+			if hunkCount >= maxHunksPerFile {
+				break
+			}
+			hunkCount++
 
 			n, _ := fmt.Fprintf(&buf,
 				"@@ -%d,%d +%d,%d @@ %s\n",
@@ -203,7 +215,7 @@ func computeDiffHunkInfo(lines [][]byte, lineHighlights map[int]protocol.Ranges,
 		lineInfo[i].added, lineInfo[i].removed = diffHunkLineStatus(line)
 		if lineInfo[i].changed() {
 			_, ok := lineHighlights[i]
-			lineInfo[i].matching = ok
+			lineInfo[i].matching = ok || len(lineHighlights) == 0
 			if lineInfo[i].matching {
 				// Mark context lines before/after matching lines.
 				start, end := contextLines(i)
