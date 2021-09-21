@@ -31,7 +31,7 @@ import (
 
 // SearchCommitDiffsInRepos searches a set of repos for matching commit diffs.
 func SearchCommitDiffsInRepos(ctx context.Context, db dbutil.DB, args *search.TextParametersForCommitParameters, resultChannel streaming.Sender) error {
-	if featureflag.FromContext(ctx).GetBoolOr("cc_libgit2", false) {
+	if featureflag.FromContext(ctx).GetBoolOr("cc_commit_search", false) {
 		return searchInReposNew(ctx, db, args, searchCommitsInReposParameters{
 			TraceName:     "SearchCommitDiffsInRepos",
 			ResultChannel: resultChannel,
@@ -61,7 +61,7 @@ func SearchCommitLogInRepos(ctx context.Context, db dbutil.DB, args *search.Text
 		terms = append(terms, args.PatternInfo.Pattern)
 	}
 
-	if featureflag.FromContext(ctx).GetBoolOr("cc_libgit2", false) {
+	if featureflag.FromContext(ctx).GetBoolOr("cc_commit_search", false) {
 		return searchInReposNew(ctx, db, args, searchCommitsInReposParameters{
 			TraceName:     "searchCommitLogsInRepos",
 			ResultChannel: resultChannel,
