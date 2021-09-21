@@ -11,6 +11,7 @@ import (
 	"strconv"
 
 	"github.com/cockroachdb/errors"
+	"github.com/google/zoekt"
 	"github.com/gorilla/mux"
 	"github.com/inconshreveable/log15"
 
@@ -268,17 +269,10 @@ func serveSearchConfiguration(db dbutil.DB) func(http.ResponseWriter, *http.Requ
 }
 
 type reposListServer struct {
-	// SourcegraphDotComMode is true if this instance of Sourcegraph is http://sourcegraph.com
-	SourcegraphDotComMode bool
+	// ListIndexable returns the repositories to index.
+	ListIndexable func(context.Context) ([]types.RepoName, error)
 
-	// Repos is the subset of backend.Repos methods we use. Declared as an
-	// interface for testing.
-	Repos interface {
-		// ListIndexable returns the repositories to index on Sourcegraph.com
-		ListIndexable(context.Context) ([]types.RepoName, error)
-		// List returns a list of repositories
-		List(context.Context, database.ReposListOptions) ([]*types.Repo, error)
-	}
+	StreamRepoNames func(context.Context, database.ReposListOptions, func(*types.RepoName)) error
 
 	// Indexers is the subset of searchbackend.Indexers methods we
 	// use. reposListServer is used by indexed-search to get the list of
@@ -288,7 +282,7 @@ type reposListServer struct {
 	Indexers interface {
 		// ReposSubset returns the subset of repoNames that hostname should
 		// index.
-		ReposSubset(ctx context.Context, hostname string, indexed map[string]struct{}, repoNames []string) ([]string, error)
+		ReposSubset(ctx context.Context, hostname string, indexed map[uint32]*zoekt.MinimalRepoListEntry, indexable []types.RepoName) ([]types.RepoName, error)
 		// Enabled is true if horizontal indexed search is enabled.
 		Enabled() bool
 	}
@@ -300,56 +294,68 @@ func (h *reposListServer) serveIndex(w http.ResponseWriter, r *http.Request) err
 	var opt struct {
 		// Hostname is used to determine the subset of repos to return
 		Hostname string
-		// Indexed is the repository names of indexed repos by Hostname.
+		// DEPRECATED: Indexed is the repository names of indexed repos by Hostname.
 		Indexed []string
+		// IndexedIDs are the repository IDs of indexed repos by Hostname.
+		IndexedIDs []api.RepoID
 	}
-	if err := json.NewDecoder(r.Body).Decode(&opt); err != nil {
+
+	err := json.NewDecoder(r.Body).Decode(&opt)
+	if err != nil {
 		return err
 	}
 
-	var names []string
-	if h.SourcegraphDotComMode {
-		res, err := h.Repos.ListIndexable(r.Context())
-		if err != nil {
-			return errors.Wrap(err, "listing repos")
-		}
-		names = make([]string, len(res))
-		for i, r := range res {
-			names[i] = string(r.Name)
-		}
-	} else {
-		trueP := true
-		res, err := h.Repos.List(r.Context(), database.ReposListOptions{Index: &trueP})
-		if err != nil {
-			return errors.Wrap(err, "listing repos")
-		}
-		names = make([]string, len(res))
-		for i, r := range res {
-			names[i] = string(r.Name)
-		}
+	indexable, err := h.ListIndexable(r.Context())
+	if err != nil {
+		return err
 	}
 
 	if h.Indexers.Enabled() {
-		indexed := make(map[string]struct{}, len(opt.Indexed))
-		for _, name := range opt.Indexed {
-			indexed[name] = struct{}{}
+		indexed := make(map[uint32]*zoekt.MinimalRepoListEntry, max(len(opt.Indexed), len(opt.IndexedIDs)))
+		err = h.StreamRepoNames(r.Context(), database.ReposListOptions{
+			IDs:   opt.IndexedIDs,
+			Names: opt.Indexed,
+			UseOr: true,
+		}, func(r *types.RepoName) { indexed[uint32(r.ID)] = nil })
+
+		if err != nil {
+			return err
 		}
 
-		var err error
-		names, err = h.Indexers.ReposSubset(r.Context(), opt.Hostname, indexed, names)
+		indexable, err = h.Indexers.ReposSubset(r.Context(), opt.Hostname, indexed, indexable)
 		if err != nil {
 			return err
 		}
 	}
 
-	data := struct {
-		RepoNames []string
-	}{
-		RepoNames: names,
+	// TODO: Avoid batching up so much in memory by:
+	// 1. Changing the schema from object of arrays to array of objects.
+	// 2. Stream out each object marshalled rather than marshall the full list in memory.
+
+	names := make([]string, 0, len(indexable))
+	ids := make([]api.RepoID, 0, len(indexable))
+
+	for _, r := range indexable {
+		names = append(names, string(r.Name))
+		ids = append(ids, r.ID)
 	}
 
-	w.WriteHeader(http.StatusOK)
+	data := struct {
+		RepoNames []string
+		RepoIDs   []api.RepoID
+	}{
+		RepoNames: names,
+		RepoIDs:   ids,
+	}
+
 	return json.NewEncoder(w).Encode(&data)
+}
+
+func max(a, b int) int {
+	if a > b {
+		return a
+	}
+	return b
 }
 
 func serveReposListEnabled(w http.ResponseWriter, r *http.Request) error {

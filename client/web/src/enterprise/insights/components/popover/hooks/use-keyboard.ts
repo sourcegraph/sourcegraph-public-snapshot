@@ -1,6 +1,6 @@
 import { useEffect } from 'react'
 
-import { useDistinctValue } from '../../../../../../../hooks/use-distinct-value'
+import { useDistinctValue } from '../../../hooks/use-distinct-value'
 
 interface UseKeyboardProps {
     detectKeys: (string | number)[]

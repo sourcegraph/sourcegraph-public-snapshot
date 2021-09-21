@@ -5,19 +5,11 @@ import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryServi
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { Container, Tab, TabList, TabPanel, TabPanels, Tabs } from '@sourcegraph/wildcard'
 
-import {
-    getConfigurationForRepository as defaultGetConfigurationForRepository,
-    getInferredConfigurationForRepository as defaultGetInferredConfigurationForRepository,
-    updateConfigurationForRepository as defaultUpdateConfigurationForRepository,
-} from './backend'
 import { ConfigurationEditor } from './ConfigurationEditor'
 import { RepositoryPolicies } from './RepositoryPolicies'
 
 export interface RepositoryConfigurationProps extends ThemeProps, TelemetryProps {
     repo: { id: string }
-    updateConfigurationForRepository: typeof defaultUpdateConfigurationForRepository
-    getConfigurationForRepository: typeof defaultGetConfigurationForRepository
-    getInferredConfigurationForRepository: typeof defaultGetInferredConfigurationForRepository
     indexingEnabled: boolean
     history: H.History
 }

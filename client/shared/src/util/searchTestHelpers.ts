@@ -25,6 +25,30 @@ export const REPO_MATCH_RESULT: RepositoryMatch = {
     repository: 'github.com/golang/oauth2',
 }
 
+export const REPO_MATCH_RESULTS_WITH_METADATA: RepositoryMatch[] = [
+    {
+        type: 'repo',
+        repository: 'github.com/golang/oauth2',
+        description: 'The Go package for OAuth2.',
+    },
+    {
+        type: 'repo',
+        repository: 'github.com/sourcegraph/sourcegraph',
+        description: 'Universtal code search',
+        repoStars: 123,
+        repoLastFetched: '2017-01-01T00:00:00Z',
+        private: true,
+    },
+    {
+        type: 'repo',
+        repository: 'github.com/sourcegraph/go-langserver',
+        description: 'Go language server',
+        repoStars: 9000,
+        fork: true,
+        archived: true,
+    },
+]
+
 export const MULTIPLE_MATCH_RESULT: ContentMatch = {
     type: 'content',
     path: 'clientcredentials/clientcredentials_test.go',
@@ -130,6 +154,8 @@ export const MULTIPLE_SEARCH_RESULT: AggregateStreamingSearchResults = {
                     offsetAndLengths: [[15, 4]],
                 },
             ],
+            repoStars: 42,
+            repoLastFetched: '2017-01-01T00:00:00Z',
         },
     ],
 }

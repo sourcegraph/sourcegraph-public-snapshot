@@ -249,11 +249,7 @@ var requestRepoUpdate = func(ctx context.Context, repo configuredRepo, since tim
 var configuredLimiter = func() *mutablelimiter.Limiter {
 	limiter := mutablelimiter.New(1)
 	conf.Watch(func() {
-		limit := conf.Get().GitMaxConcurrentClones
-		if limit == 0 {
-			limit = 5
-		}
-		limiter.SetLimit(limit)
+		limiter.SetLimit(conf.GitMaxConcurrentClones())
 	})
 	return limiter
 }
