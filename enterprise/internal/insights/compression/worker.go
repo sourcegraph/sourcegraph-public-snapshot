@@ -64,18 +64,6 @@ func NewCommitIndexer(background context.Context, base dbutil.DB, insights dbuti
 
 	operations := newOperations(observationContext)
 
-	// prometheus.DefaultRegisterer.MustRegister(prometheus.NewGaugeFunc(prometheus.GaugeOpts{
-	// 	Name: "src_insights_search_queue_total",
-	// 	Help: "Total number of jobs in the queued state.",
-	// }, func() float64 {
-	// 	count, err := commitStore.InsertCommits(background, false, nil)
-	// 	if err != nil {
-	// 		log15.Error("Failed to get queued job count", "error", err)
-	// 	}
-
-	// 	return float64(count)
-	// }))
-
 	indexer := CommitIndexer{
 		limiter:           limiter,
 		allReposIterator:  iterator.ForEach,
@@ -156,14 +144,12 @@ func (i *CommitIndexer) index(name string) (err error) {
 
 	searchTime := max(i.maxHistoricalTime, metadata.LastIndexedAt)
 
-	logger.Info("fetching commits", "repo_id", repoId, "after", searchTime)
+	logger.Debug("fetching commits", "repo_id", repoId, "after", searchTime)
 
 	commits, err := getCommits(ctx, repoName, searchTime, i.operations.getCommits)
 	if err != nil {
 		return errors.Wrapf(err, "error fetching commits from gitserver repo_id: %v", repoId)
 	}
-
-	logger.Info("found commits", "count", len(commits))
 
 	i.operations.countCommits.WithLabelValues(string(repoName)).Add(float64(len(commits)))
 
@@ -178,7 +164,7 @@ func (i *CommitIndexer) index(name string) (err error) {
 		return nil
 	}
 
-	log15.Warn("indexing commits", "repo_id", repoId, "count", len(commits))
+	log15.Debug("indexing commits", "repo_id", repoId, "count", len(commits))
 
 	err = i.commitStore.InsertCommits(ctx, repoId, commits)
 	if err != nil {

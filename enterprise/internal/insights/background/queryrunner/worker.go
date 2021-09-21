@@ -397,8 +397,6 @@ func doScanJobs(rows *sql.Rows, err error) ([]*Job, error) {
 		return nil, err
 	}
 
-	// TODO: Revert this. I just needed this job to stop running because it was hitting a
-	// "limit hit" error and killing my local environment
 	return jobs, nil
 }
 
