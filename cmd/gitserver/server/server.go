@@ -995,11 +995,9 @@ func (s *Server) search(w http.ResponseWriter, r *http.Request, args *protocol.S
 		defer close(resultChan)
 		done := ctx.Done()
 
-		// TODO this should take a context so we can stop searching before we find a match
-
 		var conversionErr error
 		err := search.Search(ctx, dir.Path(), args.Revisions, search.ToMatchTree(args.Query), func(match *search.LazyCommit, highlights *protocol.CommitHighlights) bool {
-			res, err := createCommitMatch(match, highlights, args.IncludeDiff)
+			res, err := search.CreateCommitMatch(match, highlights, args.IncludeDiff)
 			if err != nil {
 				conversionErr = err
 				return false
@@ -1060,49 +1058,6 @@ func (s *Server) search(w http.ResponseWriter, r *http.Request, args *protocol.S
 	if err := eventWriter.Event("done", doneEvent); err != nil {
 		log15.Warn("failed to send done event", "error", err)
 	}
-}
-
-func createCommitMatch(lc *search.LazyCommit, hc *protocol.CommitHighlights, includeDiff bool) (*protocol.CommitMatch, error) {
-	authorDate, err := lc.AuthorDate()
-	if err != nil {
-		return nil, err
-	}
-
-	committerDate, err := lc.CommitterDate()
-	if err != nil {
-		return nil, err
-	}
-
-	diff := protocol.HighlightedString{}
-	if includeDiff {
-		rawDiff, err := lc.Diff()
-		if err != nil {
-			return nil, err
-		}
-		diff.Content, diff.Highlights = search.FormatDiff(rawDiff, hc.Diff)
-	}
-
-	return &protocol.CommitMatch{
-		Oid: api.CommitID(string(lc.Hash)),
-		Author: protocol.Signature{
-			Name:  string(lc.AuthorName),
-			Email: string(lc.AuthorEmail),
-			Date:  authorDate,
-		},
-		Committer: protocol.Signature{
-			Name:  string(lc.CommitterName),
-			Email: string(lc.CommitterEmail),
-			Date:  committerDate,
-		},
-		Parents:    lc.ParentIDs(),
-		SourceRefs: lc.SourceRefs(),
-		Refs:       lc.RefNames(),
-		Message: protocol.HighlightedString{
-			Content:    string(lc.Message),
-			Highlights: hc.Message,
-		},
-		Diff: diff,
-	}, nil
 }
 
 // matchCount returns either:

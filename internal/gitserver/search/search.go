@@ -12,6 +12,7 @@ import (
 	"github.com/hashicorp/go-multierror"
 	"golang.org/x/sync/errgroup"
 
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 )
 
@@ -384,4 +385,47 @@ func (c *CommitScanner) NextRawCommit() *RawCommit {
 
 func (c *CommitScanner) Err() error {
 	return c.err
+}
+
+func CreateCommitMatch(lc *LazyCommit, hc *protocol.CommitHighlights, includeDiff bool) (*protocol.CommitMatch, error) {
+	authorDate, err := lc.AuthorDate()
+	if err != nil {
+		return nil, err
+	}
+
+	committerDate, err := lc.CommitterDate()
+	if err != nil {
+		return nil, err
+	}
+
+	diff := protocol.HighlightedString{}
+	if includeDiff {
+		rawDiff, err := lc.Diff()
+		if err != nil {
+			return nil, err
+		}
+		diff.Content, diff.Highlights = FormatDiff(rawDiff, hc.Diff)
+	}
+
+	return &protocol.CommitMatch{
+		Oid: api.CommitID(string(lc.Hash)),
+		Author: protocol.Signature{
+			Name:  string(lc.AuthorName),
+			Email: string(lc.AuthorEmail),
+			Date:  authorDate,
+		},
+		Committer: protocol.Signature{
+			Name:  string(lc.CommitterName),
+			Email: string(lc.CommitterEmail),
+			Date:  committerDate,
+		},
+		Parents:    lc.ParentIDs(),
+		SourceRefs: lc.SourceRefs(),
+		Refs:       lc.RefNames(),
+		Message: protocol.HighlightedString{
+			Content:    string(lc.Message),
+			Highlights: hc.Message,
+		},
+		Diff: diff,
+	}, nil
 }

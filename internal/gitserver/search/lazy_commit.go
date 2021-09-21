@@ -42,7 +42,7 @@ func (l *LazyCommit) RawDiff() ([]byte, error) {
 	return l.diffFetcher.FetchDiff(l.Hash)
 }
 
-// Diff fetches the diff, then formats it in the format used throughout our app
+// Diff fetches the diff, then parses it with go-diff, caching the result
 func (l *LazyCommit) Diff() ([]*diff.FileDiff, error) {
 	if l.diff != nil {
 		return l.diff, nil
