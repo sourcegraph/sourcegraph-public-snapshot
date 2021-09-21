@@ -35,8 +35,8 @@ body.theme-dark .markdown-body ul li:before {
 
 <p class="subtitle">Anything you can search, you can track and analyze</p>
 
-<!-- TODO there's a light version too @ https://sourcegraphstatic.com/docs/images/code_insights/insights_index_light.png -->
-<img src="https://sourcegraphstatic.com/docs/images/code_insights/insights_index_dark.png" class="screenshot" /> 
+<img src="https://sourcegraphstatic.com/docs/images/code_insights/insights_index_light.png" class="screenshot theme-light-only" />
+<img src="https://sourcegraphstatic.com/docs/images/code_insights/insights_index_dark.png" class="screenshot theme-dark-only" />
 
 <p class="lead">Code Insights reveals high-level information about your codebase, based on both how your code changes over time and its current state.</p>
 
@@ -44,7 +44,7 @@ Code Insights is based on our universal code search, making it precise and confi
 
 ### Code Insights is in Beta
 
-Code Insights are currently in [Beta](../admin/beta_and_experimental_features.md). If you want early access or support, please [send us an email](mailto:feedback@sourcegraph.com). 
+Code Insights are currently in [Beta](../admin/beta_and_experimental_features.md). If you want early access or support, please [send us an email](mailto:feedback@sourcegraph.com).
 
 > NOTE: While in Beta, Code Insights is free for enterprise customers. Once Code Insights is generally available and no sooner than January 1, 2022, to continue using Code Insights may require a separate paid plan.
 
