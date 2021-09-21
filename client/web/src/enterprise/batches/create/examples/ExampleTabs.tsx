@@ -1,5 +1,6 @@
 import { Tab, TabList, TabPanel, TabPanels, Tabs, useTabsContext } from '@reach/tabs'
 import classNames from 'classnames'
+import CloseIcon from 'mdi-react/CloseIcon'
 import React, { useState, useCallback, useEffect, useMemo } from 'react'
 import { Subject } from 'rxjs'
 import { catchError, debounceTime, startWith, switchMap } from 'rxjs/operators'
@@ -17,6 +18,7 @@ import { SidebarGroup, SidebarGroupHeader } from '../../../../components/Sidebar
 import { BatchSpecWorkspacesFields } from '../../../../graphql-operations'
 import { MonacoSettingsEditor } from '../../../../settings/MonacoSettingsEditor'
 import { BatchSpecDownloadLink, getFileName } from '../../BatchSpec'
+import { excludeRepo } from '../yaml-util'
 
 import { resolveWorkspacesForBatchSpec } from './backend'
 import combySample from './comby.batch.yaml'
@@ -106,7 +108,30 @@ const ExampleTabPanel: React.FunctionComponent<ExampleTabPanelProps> = ({
     updateSpec,
     ...props
 }) => {
+    const { selectedIndex } = useTabsContext()
+    const isSelected = useMemo(() => selectedIndex === index, [selectedIndex, index])
+
     const [code, setCode] = useState<string>(example.code)
+    const [codeUpdateError, setCodeUpdateError] = useState<string>()
+
+    // Updates the batch spec code when the user wants to exclude a repo resolved in the
+    // workspaces preview.
+    const excludeRepoFromSpec = useCallback(
+        (repo: string, branch: string) => {
+            setCodeUpdateError(undefined)
+
+            const result = excludeRepo(code, repo, branch)
+
+            if (result.success) {
+                setCode(result.spec)
+            } else {
+                setCodeUpdateError(
+                    'Unable to update batch spec. Double-check to make sure there are no syntax errors, then try again.'
+                )
+            }
+        },
+        [code]
+    )
 
     const codeUpdates = useMemo(() => new Subject<string>(), [])
 
@@ -129,14 +154,12 @@ const ExampleTabPanel: React.FunctionComponent<ExampleTabPanelProps> = ({
         )
     )
 
-    const { selectedIndex } = useTabsContext()
-
     // Update the spec in parent state whenever the code changes
     useEffect(() => {
-        if (selectedIndex === index) {
+        if (isSelected) {
             updateSpec({ code, fileName: getFileName(example.name) })
         }
-    }, [code, example.name, updateSpec, selectedIndex, index])
+    }, [code, example.name, isSelected, updateSpec])
 
     const reset = useCallback(() => setCode(example.code), [example.code])
 
@@ -159,16 +182,19 @@ const ExampleTabPanel: React.FunctionComponent<ExampleTabPanelProps> = ({
                 />
             </Container>
             <Container>
-                <h3>Preview workspaces</h3>
-                <PreviewWorkspaces preview={preview} />
+                {codeUpdateError && <ErrorAlert error={codeUpdateError} />}
+                <PreviewWorkspaces excludeRepo={excludeRepoFromSpec} preview={preview} />
             </Container>
         </TabPanel>
     )
 }
 
-const PreviewWorkspaces: React.FunctionComponent<{ preview: BatchSpecWorkspacesFields | Error | undefined }> = ({
-    preview,
-}) => {
+interface PreviewWorkspacesProps {
+    excludeRepo: (repo: string, branch: string) => void
+    preview: BatchSpecWorkspacesFields | Error | undefined
+}
+
+const PreviewWorkspaces: React.FunctionComponent<PreviewWorkspacesProps> = ({ excludeRepo, preview }) => {
     if (isErrorLike(preview)) {
         return <ErrorAlert error={preview} />
     }
@@ -177,31 +203,44 @@ const PreviewWorkspaces: React.FunctionComponent<{ preview: BatchSpecWorkspacesF
     }
     return (
         <>
+            <h3>Preview workspaces ({preview.workspaces.length})</h3>
             <p className="text-monospace">
                 allowUnsupported: {JSON.stringify(preview.allowUnsupported)}
                 <br />
                 allowIgnored: {JSON.stringify(preview.allowIgnored)}
             </p>
-            <ul className="list-group p-1 mb-0">
+            <ul className="list-group mb-0">
                 {preview.workspaces.map(item => (
                     <li
-                        className="list-group-item"
+                        className="d-flex border-bottom mb-3"
                         key={`${item.repository.id}_${item.branch.target.oid}_${item.path || '/'}`}
                     >
-                        <p>
-                            {item.repository.name}:{item.branch.abbrevName}@{item.branch.target.oid} Path:{' '}
-                            {item.path || '/'}
-                        </p>
-                        <p>{item.searchResultPaths.join(', ')}</p>
-                        <ul>
-                            {item.steps.map((step, index) => (
-                                <li key={index}>
-                                    <span className="text-monospace">{step.command}</span>
-                                    <br />
-                                    <span className="text-muted">{step.container}</span>
-                                </li>
-                            ))}
-                        </ul>
+                        <button
+                            className="btn align-self-start p-0 m-0 mr-3"
+                            data-tooltip="Omit this repository from batch spec file"
+                            type="button"
+                            // TODO: Alert that for monorepos, we will exclude all paths
+                            onClick={() => excludeRepo(item.repository.name, item.branch.displayName)}
+                        >
+                            <CloseIcon className="icon-inline" />
+                        </button>
+                        <div className="mb-2 flex-1">
+                            <p>
+                                {item.repository.name}:{item.branch.abbrevName}@{item.branch.target.oid} Path:{' '}
+                                {item.path || '/'}
+                            </p>
+                            <p>{item.searchResultPaths.join(', ')}</p>
+                            <ul>
+                                {item.steps.map((step, index) => (
+                                    // eslint-disable-next-line react/no-array-index-key
+                                    <li key={index}>
+                                        <span className="text-monospace">{step.command}</span>
+                                        <br />
+                                        <span className="text-muted">{step.container}</span>
+                                    </li>
+                                ))}
+                            </ul>
+                        </div>
                     </li>
                 ))}
             </ul>
