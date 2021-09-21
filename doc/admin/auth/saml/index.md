@@ -1,5 +1,7 @@
 # SAML
 
+## Identity Providers
+
 Select your SAML identity provider for setup instructions:
 
 - [Okta](okta.md)
@@ -73,6 +75,15 @@ The most likely error message indicating a problem is `Error prefetching SAML se
 
 ## Troubleshooting
 
+### Debugging with your browser
+Security Assertion Markup Language (SAML) is a common web protocol used pass authorized credentials between two web applications, a service provider (SP, Sourcegraph in this instance), and an Identity Provider (IdP, see our [list](#IdentityProviders) of IdP's above). This communication is conducted via XML assertions.
+
+When debugging a problem with SAML its often helpful to use your browsers developer tools to directly observer the XML assertions and their contents.
+
+
+
+
+### Enable logging in Sourcegraph containers
 Set the env var `INSECURE_SAML_LOG_TRACES=1` to log all SAML requests and responses on:
 
 - [Docker Compose](../../install/docker-compose/index.md) and [Kubernetes](../../install/kubernetes/index.md): the `sourcegraph-frontend` deployment
