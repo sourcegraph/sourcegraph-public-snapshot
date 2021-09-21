@@ -204,13 +204,6 @@ export class Driver {
         password: string
         email?: string
     }): Promise<void> {
-        await this.page.goto(this.sourcegraphBaseUrl)
-        await this.page.evaluate(() => {
-            localStorage.setItem('has-dismissed-browser-ext-toast', 'true')
-            localStorage.setItem('has-dismissed-integrations-toast', 'true')
-            localStorage.setItem('has-dismissed-survey-toast', 'true')
-        })
-
         /**
          * Wait for redirects to complete to avoid using an outdated page URL.
          *
@@ -218,7 +211,13 @@ export class Driver {
          * 1. Redirect to /sign-in?returnTo=%2F
          * 2. Redirect to /site-admin/init
          */
-        await delay(1000)
+        await this.page.goto(this.sourcegraphBaseUrl, { waitUntil: 'networkidle0' })
+        await this.page.evaluate(() => {
+            localStorage.setItem('has-dismissed-browser-ext-toast', 'true')
+            localStorage.setItem('has-dismissed-integrations-toast', 'true')
+            localStorage.setItem('has-dismissed-survey-toast', 'true')
+        })
+
         const url = new URL(this.page.url())
 
         if (url.pathname === '/site-admin/init') {
