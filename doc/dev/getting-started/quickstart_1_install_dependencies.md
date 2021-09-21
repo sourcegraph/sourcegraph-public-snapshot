@@ -27,7 +27,7 @@ Running Postgres via Docker vs Manually
 
 - No matter which option you choose, docker is required because the development server starts additional docker containers.
 
-The following are two recommendations for installing these dependencies (See below for asdf for an alternate way of managing dependencies):
+The following are two recommendations for installing these dependencies (See below for [asdf](#optional-asdf) for an alternate way of managing dependencies):
 
 ## macOS
 
