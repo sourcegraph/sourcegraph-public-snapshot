@@ -22,8 +22,12 @@ jobs:
           short_sha=$(echo ${{ github.sha }} | cut -c1-8)
           release_name="${today}-${short_sha}"
 
+          echo "### sg snapshot release" >> /tmp/release-notes.md
+          echo "" >> /tmp/release-notes.md
+          echo "Commit: [${short_sha}](https://github.com/sourcegraph/sourcegraph/commit/${{github.sha}}]" >> /tmp/release-notes.md
+
           gh release delete -R="${repo}" ${release_name} || true
-          gh release create -R="${repo}" ${release_name} --notes "### sg snapshot release\n\n: Commit: [${short_sha}](https://github.com/sourcegraph/sourcegraph/commit/${{github.sha}}]"
+          gh release create -R="${repo}" ${release_name} --notes-file /tmp/release-notes.md
         env:
           repo: sourcegraph/sg
           GITHUB_TOKEN: ${{ secrets.SG_RELEASE_TOKEN }}
