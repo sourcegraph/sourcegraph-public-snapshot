@@ -15,8 +15,10 @@ import (
 // diffs or parsing times when they're not unneeded.
 type LazyCommit struct {
 	*RawCommit
-	diffFetcher *DiffFetcher
+
+	// diff is the parsed output from the diff fetcher, cached here for performance
 	diff        []*diff.FileDiff
+	diffFetcher *DiffFetcher
 }
 
 func (l *LazyCommit) AuthorDate() (time.Time, error) {
@@ -39,7 +41,7 @@ func (l *LazyCommit) CommitterDate() (time.Time, error) {
 
 // RawDiff returns the diff exactly as returned by git diff-tree
 func (l *LazyCommit) RawDiff() ([]byte, error) {
-	return l.diffFetcher.FetchDiff(l.Hash)
+	return l.diffFetcher.Fetch(l.Hash)
 }
 
 // Diff fetches the diff, then parses it with go-diff, caching the result

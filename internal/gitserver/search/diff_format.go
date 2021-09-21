@@ -88,7 +88,7 @@ func FormatDiff(rawDiff []*diff.FileDiff, highlights map[int]protocol.FileDiffHi
 
 				buf.Write(line)
 				buf.WriteByte('\n')
-				loc = loc.Add(protocol.Location{Line: 1, Offset: len(line)})
+				loc = loc.Add(protocol.Location{Line: 1, Offset: len(line) + len("\n")})
 				loc.Column = 0
 			}
 		}

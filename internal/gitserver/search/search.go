@@ -62,23 +62,16 @@ var (
 		parentHashes,
 	}
 
-	logArgsWithRefs = []string{
+	baseLogArgs = []string{
 		"log",
 		"--decorate=full",
 		"-z",
 		"--no-merges",
-		"--format=format:" + strings.Join(formatWithRefs, "%x00") + "%x00",
 	}
 
-	logArgsWithoutRefs = []string{
-		"log",
-		"--decorate=full",
-		"-z",
-		"--no-merges",
-		"--format=format:" + strings.Join(formatWithoutRefs, "%x00") + "%x00",
-	}
-
-	sep = []byte{0x0}
+	logArgsWithRefs    = append(baseLogArgs, "--format=format:"+strings.Join(formatWithRefs, "%x00")+"%x00")
+	logArgsWithoutRefs = append(baseLogArgs, "--format=format:"+strings.Join(formatWithoutRefs, "%x00")+"%x00")
+	sep                = []byte{0x0}
 )
 
 type job struct {
@@ -92,6 +85,7 @@ type searchResult struct {
 }
 
 const (
+	// The size of a batch of commits sent in each worker job
 	batchSize  = 512
 	numWorkers = 4
 )
@@ -207,27 +201,25 @@ func Search(ctx context.Context, dir string, revs []protocol.RevisionSpecifier, 
 			for j := range jobs {
 				multierror.Append(errors, runJob(j))
 			}
-			return err
+			return errors
 		})
 	}
 
 	// Consumer goroutine that consumes results in the order jobs were
 	// submitted to the job queue
 	g.Go(func() error {
-	OUTER:
+		skip := false
 		for resultChan := range resultChans {
 			for result := range resultChan {
+				if skip {
+					// Drain all the channels to keep from blocking writers
+					continue
+				}
 				keepGoing := onMatch(result.lazyCommit, result.highlightedCommit)
 				if !keepGoing {
+					skip = true
 					cancel()
-					break OUTER
 				}
-			}
-		}
-
-		// Drain all the channels so writers never block
-		for resultChan := range resultChans {
-			for range resultChan {
 			}
 		}
 

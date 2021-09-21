@@ -76,7 +76,7 @@ func Test_matchesToRanges(t *testing.T) {
 
 	for i, tc := range cases {
 		t.Run(strconv.Itoa(i), func(t *testing.T) {
-			ranges := matchesToRanges(tc.input, tc.matches)
+			ranges := matchesToRanges([]byte(tc.input), tc.matches)
 			require.Equal(t, tc.expectedRanges, ranges)
 		})
 	}

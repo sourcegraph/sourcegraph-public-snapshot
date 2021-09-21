@@ -22,6 +22,7 @@ type DiffFetcher struct {
 // StartDiffFetcher starts a git diff-tree subprocess that waits, listening on stdin
 // for comimt hashes to generate patches for.
 func StartDiffFetcher(dir string) (*DiffFetcher, error) {
+	println("started")
 	ctx, cancel := context.WithCancel(context.Background())
 	cmd := exec.CommandContext(ctx, "git", "diff-tree", "--stdin", "--no-prefix", "-p", "--format=format:")
 	cmd.Dir = dir
@@ -65,15 +66,12 @@ func StartDiffFetcher(dir string) (*DiffFetcher, error) {
 }
 
 func (d *DiffFetcher) Stop() {
-	d.stdin.Close()
-	for d.scanner.Scan() {
-	}
 	d.cancel()
 }
 
-// FetchDiff fetches a diff from the git diff-tree subprocess, writing to its stdin
+// Fetch fetches a diff from the git diff-tree subprocess, writing to its stdin
 // and waiting for its response on stdout. Note that this is not safe to call concurrently.
-func (d *DiffFetcher) FetchDiff(hash []byte) ([]byte, error) {
+func (d *DiffFetcher) Fetch(hash []byte) ([]byte, error) {
 	// HACK: There is no way (as far as I can tell) to make `git diff-tree --stdin` to
 	// write a trailing null byte or tell us how much to read in advance, and since we're
 	// using a long-running process, the stream doesn't close at the end, and we can't use the
