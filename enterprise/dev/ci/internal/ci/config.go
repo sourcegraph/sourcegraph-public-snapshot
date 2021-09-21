@@ -47,15 +47,15 @@ func NewConfig(now time.Time, commit, branch, tag string) Config {
 
 	// detect changed files
 	var changedFiles []string
-	diffComamnd := []string{"diff", "--name-only"}
+	diffCommand := []string{"diff", "--name-only"}
 	if commit != "" {
-		diffComamnd = append(diffComamnd, "origin/main..."+commit)
+		diffCommand = append(diffCommand, "origin/main..."+commit)
 	} else {
-		diffComamnd = append(diffComamnd, "origin/main...")
+		diffCommand = append(diffCommand, "origin/main...")
 		// for testing
 		commit = "1234567890123456789012345678901234567890"
 	}
-	if output, err := exec.Command("git", diffComamnd...).Output(); err != nil {
+	if output, err := exec.Command("git", diffCommand...).Output(); err != nil {
 		panic(err)
 	} else {
 		changedFiles = strings.Split(strings.TrimSpace(string(output)), "\n")
