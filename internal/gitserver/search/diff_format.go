@@ -155,13 +155,17 @@ func splitHunkMatches(hunks []*diff.Hunk, hunkHighlights map[int]protocol.HunkHi
 				if !lineInfo.removed {
 					cur.NewLines++
 				}
-				curHighlights[len(curLines)] = origHighlights[i]
+				if len(origHighlights[i]) > 0 {
+					curHighlights[len(curLines)] = origHighlights[i]
+				}
 				curLines = append(curLines, line)
 			} else if cur != nil {
 				addExtraHunkMatchesSection(cur, extraHunkMatches)
 				cur.Body = bytes.Join(curLines, nil)
-				newHighlights[len(results)] = protocol.HunkHighlight{LineHighlights: curHighlights}
-				curHighlights = make(map[int]protocol.Ranges)
+				if len(curHighlights) > 0 {
+					newHighlights[len(results)] = protocol.HunkHighlight{LineHighlights: curHighlights}
+					curHighlights = make(map[int]protocol.Ranges)
+				}
 				results = append(results, cur)
 				cur = nil
 				curLines = nil
