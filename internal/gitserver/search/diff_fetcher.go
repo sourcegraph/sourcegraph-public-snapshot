@@ -13,7 +13,7 @@ import (
 // DiffFetcher is a handle to the stdin and stdout of a git diff-tree subprocess
 // started with StartDiffFetcher
 type DiffFetcher struct {
-	stdin   io.Writer
+	stdin   io.WriteCloser
 	stderr  bytes.Buffer
 	scanner *bufio.Scanner
 	cancel  context.CancelFunc
@@ -65,6 +65,9 @@ func StartDiffFetcher(dir string) (*DiffFetcher, error) {
 }
 
 func (d *DiffFetcher) Stop() {
+	d.stdin.Close()
+	for d.scanner.Scan() {
+	}
 	d.cancel()
 }
 
