@@ -396,7 +396,6 @@ func doScanJobs(rows *sql.Rows, err error) ([]*Job, error) {
 	if err := rows.Err(); err != nil {
 		return nil, err
 	}
-
 	return jobs, nil
 }
 

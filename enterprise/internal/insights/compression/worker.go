@@ -145,7 +145,6 @@ func (i *CommitIndexer) index(name string) (err error) {
 	searchTime := max(i.maxHistoricalTime, metadata.LastIndexedAt)
 
 	logger.Debug("fetching commits", "repo_id", repoId, "after", searchTime)
-
 	commits, err := getCommits(ctx, repoName, searchTime, i.operations.getCommits)
 	if err != nil {
 		return errors.Wrapf(err, "error fetching commits from gitserver repo_id: %v", repoId)
@@ -165,7 +164,6 @@ func (i *CommitIndexer) index(name string) (err error) {
 	}
 
 	log15.Debug("indexing commits", "repo_id", repoId, "count", len(commits))
-
 	err = i.commitStore.InsertCommits(ctx, repoId, commits)
 	if err != nil {
 		return errors.Wrapf(err, "unable to update commit index repo_id: %v", repoId)
