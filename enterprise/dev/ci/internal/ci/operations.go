@@ -361,7 +361,7 @@ func triggerE2EandQA(opts e2eAndQAOptions) Operation {
 	customOptions.Env["VAGRANT_SERVICE_ACCOUNT"] = "buildkite@sourcegraph-ci.iam.gserviceaccount.com"
 
 	// Test upgrades from mininum upgradeable Sourcegraph version - updated by release tool
-	customOptions.Env["MINIMUM_UPGRADEABLE_VERSION"] = "3.31.2"
+	customOptions.Env["MINIMUM_UPGRADEABLE_VERSION"] = "3.32.0"
 
 	// Docker images used in cluster tests
 	customOptions.Env["DOCKER_CLUSTER_IMAGES_TXT"] = clusterDockerImages(images.SourcegraphDockerImages)
