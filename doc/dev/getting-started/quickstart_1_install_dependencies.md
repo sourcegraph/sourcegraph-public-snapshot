@@ -18,15 +18,16 @@ Sourcegraph has the following dependencies:
 - [Comby](https://github.com/comby-tools/comby/) (v0.11.3 or higher)
 - [Watchman](https://facebook.github.io/watchman/)
 
-You can choose to install Redis and/or PostgreSQL directly on your system, or you can run them as docker containers with [docker compose](https://docs.docker.com/compose/). The following instructions will describe both options.
+Running Postgres via Docker vs Manually
+- You can choose to install Redis and/or PostgreSQL directly on your system, or you can run them as docker containers with [docker compose](https://docs.docker.com/compose/). The following instructions will describe both options.
 
-Running within a container provides some advantages such as storing the data separately from the container, you do not need to run it as a system service and its easy to use different database versions or multiple databases.
+- Running within a container provides some advantages such as storing the data separately from the container, you do not need to run it as a system service and its easy to use different database versions or multiple databases.
 
-Running as system services might yield better performance, especially on macOS.
+- Running as system services might yield better performance, especially on macOS.
 
-No matter which option you choose, docker is required because the development server starts additional docker containers.
+- No matter which option you choose, docker is required because the development server starts additional docker containers.
 
-The following are two recommendations for installing these dependencies:
+The following are two recommendations for installing these dependencies (See below for asdf for an alternate way of managing dependencies):
 
 ## macOS
 
@@ -97,7 +98,7 @@ The following are two recommendations for installing these dependencies:
         ```
 
 7.  Install the current recommended version of Node JS by running the following
-    from the working directory of a sourcegraph repository clone:
+    from the working directory of a sourcegraph repository clone (See [Cloning our repository](quickstart_4_clone_repository.md) for cloning the repository):
 
     ```
     nvm install
