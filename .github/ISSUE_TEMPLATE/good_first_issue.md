@@ -27,8 +27,7 @@ assignees: ''
 
 #### Estimated amount of work
 
-<!-- Include implementation and code review effort. Use t-shirt sizes:
-- XS - half a day
-- S - up to one day
-- M - up to three days
-- L - up to a five days -->
+<!-- Include implementation and code review effort.
+Use t-shirt sizes as an abstract effort measurement because time estimates vary depending on the experience: XS, S, M, L. -->
+
+<!-- Note: generally, tickets should be achievable in 5 days or less. -->
