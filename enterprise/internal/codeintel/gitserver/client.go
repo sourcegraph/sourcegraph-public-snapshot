@@ -331,6 +331,39 @@ func parseBranchesContaining(lines []string) []string {
 	return names
 }
 
+// DefaultBranchContains tells if the default branch contains the given commit ID.
+//
+// TODO(apidocs): future: This could be implemented more optimally, but since it is called
+// infrequently it is fine for now.
+func (c *Client) DefaultBranchContains(ctx context.Context, repositoryID int, commit string) (bool, error) {
+	// Determine default branch name.
+	descriptions, err := c.RefDescriptions(ctx, repositoryID)
+	if err != nil {
+		return false, errors.Wrap(err, "RefDescriptions")
+	}
+	var defaultBranchName string
+	for name, descriptions := range descriptions {
+		for _, ref := range descriptions {
+			if ref.IsDefaultBranch {
+				defaultBranchName = name
+				break
+			}
+		}
+	}
+
+	// Determine if branch contains commit.
+	branches, err := c.BranchesContaining(ctx, repositoryID, commit)
+	if err != nil {
+		return false, errors.Wrap(err, "BranchesContaining")
+	}
+	for _, branch := range branches {
+		if branch == defaultBranchName {
+			return true, nil
+		}
+	}
+	return false, nil
+}
+
 // RawContents returns the contents of a file in a particular commit of a repository.
 func (c *Client) RawContents(ctx context.Context, repositoryID int, commit, file string) (_ []byte, err error) {
 	ctx, endObservation := c.operations.rawContents.With(ctx, &err, observation.Args{LogFields: []log.Field{
