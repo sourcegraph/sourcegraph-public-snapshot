@@ -4,8 +4,7 @@ import React from 'react'
 import { NEVER, Observable, of, throwError } from 'rxjs'
 
 import { IRepository, ISearchContext, ISearchContextRepositoryRevisions } from '@sourcegraph/shared/src/graphql/schema'
-
-import { WebStory } from '../components/WebStory'
+import { WebStory } from '@sourcegraph/web/src/components/WebStory'
 
 import { SearchContextPage } from './SearchContextPage'
 

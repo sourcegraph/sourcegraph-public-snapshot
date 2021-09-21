@@ -5,9 +5,9 @@ import { NEVER, Observable, of } from 'rxjs'
 import sinon from 'sinon'
 
 import { IOrg, IRepository, ISearchContext } from '@sourcegraph/shared/src/graphql/schema'
+import { WebStory } from '@sourcegraph/web/src/components/WebStory'
 
-import { AuthenticatedUser } from '../auth'
-import { WebStory } from '../components/WebStory'
+import { AuthenticatedUser } from '../../auth'
 
 import { SearchContextForm } from './SearchContextForm'
 

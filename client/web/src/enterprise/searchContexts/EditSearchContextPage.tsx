@@ -15,12 +15,12 @@ import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryServi
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { asError } from '@sourcegraph/shared/src/util/errors'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
+import { Page } from '@sourcegraph/web/src/components/Page'
+import { PageTitle } from '@sourcegraph/web/src/components/PageTitle'
 
-import { AuthenticatedUser } from '../auth'
-import { withAuthenticatedUser } from '../auth/withAuthenticatedUser'
-import { Page } from '../components/Page'
-import { PageTitle } from '../components/PageTitle'
-import { SearchContextProps } from '../search'
+import { AuthenticatedUser } from '../../auth'
+import { withAuthenticatedUser } from '../../auth/withAuthenticatedUser'
+import { SearchContextProps } from '../../search'
 
 import { SearchContextForm } from './SearchContextForm'
 

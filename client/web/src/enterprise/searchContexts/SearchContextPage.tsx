@@ -11,12 +11,12 @@ import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
 import { asError, isErrorLike } from '@sourcegraph/shared/src/util/errors'
 import { renderMarkdown } from '@sourcegraph/shared/src/util/markdown'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
+import { Page } from '@sourcegraph/web/src/components/Page'
+import { PageTitle } from '@sourcegraph/web/src/components/PageTitle'
+import { Timestamp } from '@sourcegraph/web/src/components/time/Timestamp'
 import { PageHeader } from '@sourcegraph/wildcard'
 
-import { Page } from '../components/Page'
-import { PageTitle } from '../components/PageTitle'
-import { Timestamp } from '../components/time/Timestamp'
-import { SearchContextProps } from '../search'
+import { SearchContextProps } from '../../search'
 
 import styles from './SearchContextPage.module.scss'
 

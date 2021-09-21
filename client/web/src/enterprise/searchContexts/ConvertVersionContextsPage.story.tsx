@@ -2,7 +2,7 @@ import { storiesOf } from '@storybook/react'
 import React from 'react'
 import { of } from 'rxjs'
 
-import { WebStory } from '../components/WebStory'
+import { WebStory } from '@sourcegraph/web/src/components/WebStory'
 
 import { ConvertVersionContextsPageProps, ConvertVersionContextsPage } from './ConvertVersionContextsPage'
 

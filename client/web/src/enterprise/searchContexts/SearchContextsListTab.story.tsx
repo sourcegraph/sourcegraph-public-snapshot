@@ -3,15 +3,16 @@ import { subDays } from 'date-fns'
 import React from 'react'
 import { Observable, of } from 'rxjs'
 
-import { WebStory } from '../components/WebStory'
-import { ListSearchContextsResult } from '../graphql-operations'
-
-import { SearchContextsListTab, SearchContextsListTabProps } from './SearchContextsListTab'
 import {
     mockFetchAutoDefinedSearchContexts,
     mockFetchSearchContexts,
     mockGetUserSearchContextNamespaces,
-} from './testHelpers'
+} from '@sourcegraph/shared/src/testing/searchContexts/testHelpers'
+import { WebStory } from '@sourcegraph/web/src/components/WebStory'
+
+import { ListSearchContextsResult } from '../../graphql-operations'
+
+import { SearchContextsListTab, SearchContextsListTabProps } from './SearchContextsListTab'
 
 const { add } = storiesOf('web/searchContexts/SearchContextsListTab', module)
     .addParameters({

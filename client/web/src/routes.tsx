@@ -2,7 +2,6 @@ import * as React from 'react'
 import { Redirect, RouteComponentProps } from 'react-router'
 
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { isErrorLike } from '@sourcegraph/shared/src/util/errors'
 
 import { BatchChangesProps } from './batches'
 import { CodeIntelligenceProps } from './codeintel'
@@ -204,53 +203,6 @@ export const routes: readonly LayoutRouteProps<any>[] = [
     {
         path: '/-/debug/*',
         render: passThroughToServer,
-    },
-    {
-        path: '/contexts',
-        render: lazyComponent(() => import('./searchContexts/SearchContextsListPage'), 'SearchContextsListPage'),
-        exact: true,
-        condition: props =>
-            !isErrorLike(props.settingsCascade.final) &&
-            !!props.settingsCascade.final?.experimentalFeatures?.showSearchContext &&
-            !!props.settingsCascade.final?.experimentalFeatures?.showSearchContextManagement,
-    },
-    {
-        path: '/contexts/convert-version-contexts',
-        render: lazyComponent(
-            () => import('./searchContexts/ConvertVersionContextsPage'),
-            'ConvertVersionContextsPage'
-        ),
-        exact: true,
-        condition: props =>
-            !isErrorLike(props.settingsCascade.final) &&
-            !!props.settingsCascade.final?.experimentalFeatures?.showSearchContext &&
-            !!props.settingsCascade.final?.experimentalFeatures?.showSearchContextManagement &&
-            !!props.authenticatedUser?.siteAdmin,
-    },
-    {
-        path: '/contexts/new',
-        render: lazyComponent(() => import('./searchContexts/CreateSearchContextPage'), 'CreateSearchContextPage'),
-        exact: true,
-        condition: props =>
-            !isErrorLike(props.settingsCascade.final) &&
-            !!props.settingsCascade.final?.experimentalFeatures?.showSearchContext &&
-            !!props.settingsCascade.final?.experimentalFeatures?.showSearchContextManagement,
-    },
-    {
-        path: '/contexts/:spec+/edit',
-        render: lazyComponent(() => import('./searchContexts/EditSearchContextPage'), 'EditSearchContextPage'),
-        condition: props =>
-            !isErrorLike(props.settingsCascade.final) &&
-            !!props.settingsCascade.final?.experimentalFeatures?.showSearchContext &&
-            !!props.settingsCascade.final?.experimentalFeatures?.showSearchContextManagement,
-    },
-    {
-        path: '/contexts/:spec+',
-        render: lazyComponent(() => import('./searchContexts/SearchContextPage'), 'SearchContextPage'),
-        condition: props =>
-            !isErrorLike(props.settingsCascade.final) &&
-            !!props.settingsCascade.final?.experimentalFeatures?.showSearchContext &&
-            !!props.settingsCascade.final?.experimentalFeatures?.showSearchContextManagement,
     },
     {
         path: '/kubernetes',

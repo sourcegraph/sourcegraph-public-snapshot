@@ -4,12 +4,12 @@ import PlusIcon from 'mdi-react/PlusIcon'
 import React, { useCallback, useState } from 'react'
 
 import { Link } from '@sourcegraph/shared/src/components/Link'
+import { Page } from '@sourcegraph/web/src/components/Page'
 import { PageHeader } from '@sourcegraph/wildcard'
 
-import { AuthenticatedUser } from '../auth'
-import { Page } from '../components/Page'
-import { VersionContext } from '../schema/site.schema'
-import { SearchContextProps } from '../search'
+import { AuthenticatedUser } from '../../auth'
+import { VersionContext } from '../../schema/site.schema'
+import { SearchContextProps } from '../../search'
 
 import { SearchContextsListTab } from './SearchContextsListTab'
 

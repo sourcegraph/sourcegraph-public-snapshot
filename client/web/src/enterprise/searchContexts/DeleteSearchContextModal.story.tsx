@@ -4,8 +4,7 @@ import { NEVER } from 'rxjs'
 import sinon from 'sinon'
 
 import { ISearchContext } from '@sourcegraph/shared/src/graphql/schema'
-
-import { WebStory } from '../components/WebStory'
+import { WebStory } from '@sourcegraph/web/src/components/WebStory'
 
 import { DeleteSearchContextModal } from './DeleteSearchContextModal'
 

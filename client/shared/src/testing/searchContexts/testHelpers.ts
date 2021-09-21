@@ -4,7 +4,34 @@ import { Observable, of } from 'rxjs'
 
 import { ISearchContext } from '@sourcegraph/shared/src/graphql/schema'
 
-import { ListSearchContextsResult, Maybe, Scalars } from '../graphql-operations'
+import { Maybe, Scalars } from '../../graphql-operations'
+
+interface SearchContextFields {
+    __typename: 'SearchContext'
+    id: string
+    name: string
+    spec: string
+    description: string
+    public: boolean
+    autoDefined: boolean
+    updatedAt: string
+    viewerCanManage: boolean
+    namespace: Maybe<
+        | { __typename: 'User'; id: string; namespaceName: string }
+        | { __typename: 'Org'; id: string; namespaceName: string }
+    >
+    repositories: {
+        __typename: 'SearchContextRepositoryRevisions'
+        revisions: string[]
+        repository: { name: string }
+    }[]
+}
+
+interface ListSearchContexts {
+    totalCount: number
+    nodes: SearchContextFields[]
+    pageInfo: { hasNextPage: boolean; endCursor: Maybe<string> }
+}
 
 export function mockFetchAutoDefinedSearchContexts(numberContexts = 0): Observable<ISearchContext[]> {
     return of(
@@ -32,8 +59,8 @@ export function mockFetchSearchContexts({
     first: number
     query?: string
     after?: string
-}): Observable<ListSearchContextsResult['searchContexts']> {
-    const result: ListSearchContextsResult['searchContexts'] = {
+}): Observable<ListSearchContexts> {
+    const result: ListSearchContexts = {
         nodes: [],
         pageInfo: {
             endCursor: null,
