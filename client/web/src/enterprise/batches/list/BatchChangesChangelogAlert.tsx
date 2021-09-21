@@ -12,7 +12,7 @@ export const BatchChangesChangelogAlert: React.FunctionComponent = () => (
     >
         <div className={classNames(styles.batchChangesListIntroCard, 'card h-100 p-2')}>
             <div className="card-body">
-                <h4>Foobar New Batch Changes features in version 3.32</h4>
+                <h4>Foobaxz New Batch Changes features in version 3.32</h4>
                 <ul className="mb-0 pl-3">
                     <li>No changes.</li>
                 </ul>
