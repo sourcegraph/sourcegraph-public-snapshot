@@ -1,51 +1,26 @@
 # Quickstart step 6: Start the server
 
+## Install `sg`, the Sourcegraph developer tool
+
+At Sourcegraph we use [`sg`](https://github.com/sourcegraph/sourcegraph/tree/main/dev/sg) to manage our local developer environment.
+
+To install `sg`, do the following:
+
 1. Navigate to the sourcegraph source code folder
 
     ```
     cd sourcegraph
     ```
 
-2. (with docker) Start the Redis and PostgreSQL containers in the background with:
+2. Install `sg` and follow printed instructions
 
     ```
-    docker-compose -f dev/redis-postgres.yml up -d
+    ./dev/sg/install.sh
     ```
 
-    You can also start either Redis or PostgreSQL, if you are running the other one directly on your system:
+## For Sourcegraph employees: clone shared configuration
 
-    ```
-    docker-compose -f dev/redis-postgres.yml up -d redis
-    # or
-    docker-compose -f dev/redis-postgres.yml up -d postgresql
-    ```
-
-    When you want to stop the containers, run:
-
-    ```
-    docker-compose -f dev/redis-postgres.yml down
-    ```
-
-3. Start the server with
-
-    ```
-    ./dev/start.sh
-    ```
-
-This will continuously compile your code and live reload your locally running instance of Sourcegraph.
-
-Navigate your browser to https://sourcegraph.test:3443 to see if everything worked.
-
-If the script exits with errors or outputs errors, have a look at [Troubleshooting](../how-to/troubleshooting_local_development.md).
-
-## Environment
-
-Sourcegraph server is a collection of smaller binaries. The development server, [dev/start.sh](https://github.com/sourcegraph/sourcegraph/blob/main/dev/start.sh), initializes the environment and starts a process manager that runs all of the binaries. See the [Architecture doc](../background-information/architecture/index.md) for a full description of what each of these services does. The sections below describe the dependencies you need to run `dev/start.sh`.
-
-<!-- omit in toc -->
-## For Sourcegraph employees
-
-You'll need to clone [`sourcegraph/dev-private`](https://github.com/sourcegraph/dev-private) (which has convenient preconfigured settings and external services on an enterprise account) alongside the `sourcegraph/sourcegraph` repository, for example:
+Before you can start the local environment, you'll need to clone [`sourcegraph/dev-private`](https://github.com/sourcegraph/dev-private) (which has convenient preconfigured settings and external services on an enterprise account) alongside the `sourcegraph/sourcegraph` repository, for example:
 
 ```
 /dir
@@ -53,16 +28,48 @@ You'll need to clone [`sourcegraph/dev-private`](https://github.com/sourcegraph/
  +-- sourcegraph
 ```
 
-Note: Ensure that you have the latest changes from [`sourcegraph/dev-private`](https://github.com/sourcegraph/dev-private) as the secrets are updated from time to time. For example the following error is an indicator that there are new updated secrets in the repo that you might not have available locally:
+Note: Ensure that you have the latest changes from [`sourcegraph/dev-private`](https://github.com/sourcegraph/dev-private) as the secrets are updated from time to time.
 
 ```
-14:43:03              repo-updater | ERROR source.list-repos, error: 1 error occurred:
-14:43:03              repo-updater | 	* UnrecognizedClientException: The security token included in the request is invalid.
-14:43:03              repo-updater | 	status code: 400, request id: 1aa331d7-42ff-4d21-9465-2483409f86b7
+[repo-updater] ERROR source.list-repos, error: 1 error occurred:
+[repo-updater] 	* UnrecognizedClientException: The security token included in the request is invalid.
+[repo-updater] 	status code: 400, request id: 1aa331d7-42ff-4d21-9465-2483409f86b7
 ```
 
-After the initial setup you can `cd` into `sourcegraph` and run `enterprise/dev/start.sh` instead of `dev/start.sh`.
+## Start databases
 
-The environment variables `SITE_CONFIG_FILE`, `EXTSVC_CONFIG_FILE` and `GLOBAL_SETTINGS_FILE` are paths that are read at startup. The content of the files will overwrite the respective setting. `start.sh` will set these files to point into `dev-private`. To avoid overwriting configuration changes done in Sourcegraph, you can set the environment variable `DEV_NO_CONFIG=1`.
+If you do **not** use Docker, PostgreSQL and Redis should already be running. You can jump the next section.
 
+If you **do use Docker for Redis & PostgreSQL** to then we need to configure `sg` so it can connect to them.
+
+1. In the `sourcegraph` folder, create a `sg.config.overwrite.yaml` file with the following contents (don't worry, `sg.config.overwrite.yaml` files are ignored by `git` and serve as a place for your local configuration):
+
+    ```
+    env:
+        POSTGRES_HOST: localhost
+        PGPASSWORD: sourcegraph
+        PGUSER: sourcegraph
+    ```
+
+2. Start the databases:
+
+    ```
+    sg start redis-postgres
+    ```
+
+## Start the server 
+
+Start the local development server with the following command:
+
+```
+sg start
+```
+
+This will continuously compile your code and live reload your locally running instance of Sourcegraph.
+
+Navigate your browser to https://sourcegraph.test:3443 to see if everything worked.
+
+If `sg` exits with errors or outputs errors, have a look at [Troubleshooting](../how-to/troubleshooting_local_development.md) or ask in the `#dev-experience` Slack channel.
+
+<!-- omit in toc -->
 [< Previous](quickstart_5_configure_https_reverse_proxy.md) | [Next >](quickstart_7_additional_resources.md)
