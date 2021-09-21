@@ -25,4 +25,3 @@ Table of contents:
     - [Filtering an insight](how-tos/filtering_an_insight.md)
 - [References](references/index.md)
     - [Common reasons code insights may not match search results](references/common_reasons_code_insights_may_not_match_search_results.md)
-    - [Common use cases and recipes](references/common_use_cases.md)
