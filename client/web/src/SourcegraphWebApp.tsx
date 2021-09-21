@@ -4,6 +4,7 @@ import { ApolloClient, ApolloProvider, NormalizedCacheObject } from '@apollo/cli
 import { ShortcutProvider } from '@slimsag/react-shortcuts'
 import { createBrowserHistory } from 'history'
 import ServerIcon from 'mdi-react/ServerIcon'
+import { bool } from 'prop-types'
 import * as React from 'react'
 import { Route, Router } from 'react-router'
 import { combineLatest, from, Subscription, fromEvent, of, Subject } from 'rxjs'
@@ -43,6 +44,7 @@ import { ExtensionAreaHeaderNavItem } from './extensions/extension/ExtensionArea
 import { ExtensionsAreaRoute } from './extensions/ExtensionsArea'
 import { ExtensionsAreaHeaderActionButton } from './extensions/ExtensionsAreaHeader'
 import { FeatureFlagName, fetchFeatureFlags, FlagSet } from './featureFlags/featureFlags'
+import { ExternalServicesResult, UserRepositoriesResult } from './graphql-operations'
 import { logInsightMetrics } from './insights/analytics'
 import { CodeInsightsProps } from './insights/types'
 import { KeyboardShortcutsProps } from './keyboardShortcuts/keyboardShortcuts'
@@ -375,6 +377,10 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
                 .subscribe(result => {
                     if (!isErrorLike(result) && result !== null) {
                         const [userRepositoriesResult, externalServicesResult] = result
+                        this.setUserProperties(userRepositoriesResult, externalServicesResult)
+                        // TODO farhan: store in local storage / cookie for has_added_repositories user properties
+                        // TODO farhan: also can use the result of listUserRepositories for number of public/private repos added
+                        // TODO farhan: can also get number_of_repos_added
                         this.setState({
                             hasUserAddedRepositories: userRepositoriesResult.nodes.length > 0,
                             hasUserAddedExternalServices: externalServicesResult.nodes.length > 0,
@@ -644,8 +650,30 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
         )
     }
 
+    private setUserProperties = (
+        reposResult: NonNullable<UserRepositoriesResult['node']>['repositories'],
+        extensionSvcResult: ExternalServicesResult['externalServices']
+    ): void => {
+        const userProps: userProperties = {
+            hasAddedRepositories: reposResult.totalCount ? reposResult.totalCount > 0 : false,
+            numberOfRepositoriesAdded: reposResult.totalCount ? reposResult.totalCount : 0,
+            numberOfPublicRepos: reposResult.nodes ? reposResult.nodes.filter(repo => !repo.isPrivate).length : 0,
+            numberOfPrivateRepos: reposResult.nodes ? reposResult.nodes.filter(repo => repo.isPrivate).length : 0,
+            hasActiveCodeHost: extensionSvcResult.totalCount > 0,
+        }
+        localStorage.setItem('SOURCEGRAPH_USER_PROPERTIES', JSON.stringify(userProps))
+    }
+
     private async setWorkspaceSearchContext(spec: string | undefined): Promise<void> {
         const extensionHostAPI = await this.extensionsController.extHostAPI
         await extensionHostAPI.setSearchContext(spec)
     }
+}
+
+interface userProperties {
+    hasAddedRepositories: boolean
+    numberOfRepositoriesAdded: number
+    numberOfPublicRepos: number
+    numberOfPrivateRepos: number
+    hasActiveCodeHost: boolean
 }

@@ -38,6 +38,7 @@ type Event struct {
 	Referrer       *string
 	Argument       json.RawMessage
 	PublicArgument json.RawMessage
+	UserProperties json.RawMessage
 }
 
 // LogBackendEvent is a convenience function for logging backend events.
@@ -195,13 +196,10 @@ func publishAmplitudeEvent(args Event) error {
 
 }
 
-// AnonymousUserID: args.UserCookieID,
-// FirstSourceURL:  firstSourceURL,
-// Referrer:        referrer,
-// Timestamp:       time.Now().UTC().Format(time.RFC3339),
-// FeatureFlags:    string(featureFlagJSON),
-// CohortID:        args.CohortID,
+// Has Cloud Account
+// -- proxy for User ID vs Anonymous User ID. check if user ID is non-zero
 // NumberOfReposAdded
+// -- we cannot get this via Amplitude Events because people will batch add repositories.
 // HasAddedRepos
 // NumberPublicReposAdded
 // NumberPrivateReposAdded
@@ -210,11 +208,25 @@ func publishAmplitudeEvent(args Event) error {
 // IsSourcegraphTeammate
 // Feature Flag - w0SignupOptimization, w1SignupOptimization, SearchNotebookOnboarding
 type AmplitudeUserProperties struct {
-	AnonymousUserID string              `json:"anonymous_user_id"`
-	FirstSourceURL  string              `json:"first_source_url"`
-	FeatureFlags    featureflag.FlagSet `json:"feature_flags"`
-	CohortID        *string             `json:"cohort_id,omitempty"`
-	Referrer        string              `json:"referrer,omitempty"`
+	AnonymousUserID         string              `json:"anonymous_user_id"`
+	FirstSourceURL          string              `json:"first_source_url"`
+	FeatureFlags            featureflag.FlagSet `json:"feature_flags"`
+	CohortID                *string             `json:"cohort_id,omitempty"`
+	Referrer                string              `json:"referrer,omitempty"`
+	HasCloudAccount         bool                `json:"has_cloud_account"`
+	NumberOfReposAdded      int                 `json:"number_repos_added"`
+	HasAddedRepos           bool                `json:"has_added_repos"`
+	NumberPublicReposAdded  int                 `json:"number_public_repos_added"`
+	NumberPrivateReposAdded int                 `json:"number_private_repos_added"`
+	HasActiveCodeHost       int                 `json:"has_active_code_host"`
+}
+
+type FrontendAmplitudeUserProperties struct {
+	NumberOfReposAdded      int  `json:"number_repos_added"`
+	HasAddedRepos           bool `json:"has_added_repos"`
+	NumberPublicReposAdded  int  `json:"number_public_repos_added"`
+	NumberPrivateReposAdded int  `json:"number_private_repos_added"`
+	HasActiveCodeHost       int  `json:"has_active_code_host"`
 }
 
 func getAmplitudeUserProperties(args Event) (json.RawMessage, error) {
@@ -226,13 +238,24 @@ func getAmplitudeUserProperties(args Event) (json.RawMessage, error) {
 	if args.Referrer != nil {
 		referrer = *args.Referrer
 	}
-
+	var userPropertiesFromFrontend FrontendAmplitudeUserProperties
+	err := json.Unmarshal(args.UserProperties, &userPropertiesFromFrontend)
+	if err != nil {
+		return nil, err
+	}
 	userProperties, err := json.Marshal(AmplitudeUserProperties{
-		AnonymousUserID: args.UserCookieID,
-		FirstSourceURL:  firstSourceURL,
-		Referrer:        referrer,
-		CohortID:        args.CohortID,
-		FeatureFlags:    args.FeatureFlags,
+		AnonymousUserID:         args.UserCookieID,
+		FirstSourceURL:          firstSourceURL,
+		Referrer:                referrer,
+		CohortID:                args.CohortID,
+		FeatureFlags:            args.FeatureFlags,
+		HasCloudAccount:         args.UserID != 0,
+		NumberOfReposAdded:      userPropertiesFromFrontend.NumberOfReposAdded,
+		HasAddedRepos:           userPropertiesFromFrontend.HasAddedRepos,
+		NumberPublicReposAdded:  userPropertiesFromFrontend.NumberPublicReposAdded,
+		NumberPrivateReposAdded: userPropertiesFromFrontend.NumberPrivateReposAdded,
+		HasActiveCodeHost:       userPropertiesFromFrontend.HasActiveCodeHost,
+		// NumberOfReposAdded: args.UserID != 0,
 	})
 	if err != nil {
 		return nil, err

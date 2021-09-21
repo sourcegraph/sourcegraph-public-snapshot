@@ -437,6 +437,12 @@ type Mutation {
         such as search queries or repository names.
         """
         publicArgument: String
+        """
+        User properties for analytics. DO NOT include any PII. Rather, these are characteristics
+        of the user based on actions they've taken. For example, whether they've added repositories, whether they have
+        an active code host, etc.
+        """
+        userProperties: String
     ): EmptyResponse
     """
     Sends a test notification for the saved search. Be careful: this will send a notifcation (email and other

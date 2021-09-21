@@ -92,6 +92,8 @@ type JSContext struct {
 	ProductResearchPageEnabled bool `json:"productResearchPageEnabled"`
 
 	ExperimentalFeatures schema.ExperimentalFeatures `json:"experimentalFeatures"`
+
+	Test string `json:"test"`
 }
 
 // NewJSContextFromRequest populates a JSContext struct from the HTTP
@@ -138,6 +140,9 @@ func NewJSContextFromRequest(req *http.Request) JSContext {
 	if siteConfig.Log != nil && siteConfig.Log.Sentry != nil && siteConfig.Log.Sentry.Dsn != "" {
 		sentryDSN = &siteConfig.Log.Sentry.Dsn
 	}
+
+	// List user Repositories, code host query
+	// Get User Repos status
 
 	// 🚨 SECURITY: This struct is sent to all users regardless of whether or
 	// not they are logged in, for example on an auth.public=false private
@@ -190,6 +195,17 @@ func NewJSContextFromRequest(req *http.Request) JSContext {
 		ProductResearchPageEnabled: conf.ProductResearchPageEnabled(),
 
 		ExperimentalFeatures: conf.ExperimentalFeatures(),
+
+		Test: "Testing",
+
+		// UserProperties: {
+		// 	NumberOfReposAdded: conf.ExperimentalFeatures()
+		// 	NumberOfPublicReposAdded
+		// 	NumberOfPrivateReposAdded
+		// 	ActiveCodeHost
+		// 	CohortWeek
+		// },
+		// NumberOfReposAdded: conf.ExperimentalFeatures(),
 	}
 }
 

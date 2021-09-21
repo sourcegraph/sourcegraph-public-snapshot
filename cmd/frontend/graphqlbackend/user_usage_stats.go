@@ -87,6 +87,7 @@ func (r *schemaResolver) LogEvent(ctx context.Context, args *struct {
 	CohortID       *string
 	Referrer       *string
 	PublicArgument *string
+	UserProperties *string
 }) (*EmptyResponse, error) {
 	if !conf.EventLoggingEnabled() {
 		return nil, nil
@@ -113,6 +114,13 @@ func (r *schemaResolver) LogEvent(ctx context.Context, args *struct {
 		}
 	}
 
+	var userPropertiesPayload json.RawMessage
+	if args.UserProperties != nil {
+		if err := json.Unmarshal([]byte(*args.UserProperties), &userPropertiesPayload); err != nil {
+			return nil, err
+		}
+	}
+
 	actor := actor.FromContext(ctx)
 	ffs := featureflag.FromContext(ctx)
 	return nil, usagestats.LogEvent(ctx, r.db, usagestats.Event{
@@ -127,6 +135,7 @@ func (r *schemaResolver) LogEvent(ctx context.Context, args *struct {
 		CohortID:       args.CohortID,
 		Referrer:       args.Referrer,
 		PublicArgument: publicArgumentPayload,
+		UserProperties: userPropertiesPayload,
 	})
 }
 

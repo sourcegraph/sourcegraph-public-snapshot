@@ -140,6 +140,7 @@ export function logEvent(event: string, eventProperties?: unknown, publicArgumen
                 $source: EventSource!
                 $argument: String
                 $publicArgument: String
+                $userProperties: String
             ) {
                 logEvent(
                     event: $event
@@ -151,6 +152,7 @@ export function logEvent(event: string, eventProperties?: unknown, publicArgumen
                     source: $source
                     argument: $argument
                     publicArgument: $publicArgument
+                    userProperties: $userProperties
                 ) {
                     alwaysNil
                 }
@@ -166,6 +168,7 @@ export function logEvent(event: string, eventProperties?: unknown, publicArgumen
             source: EventSource.WEB,
             argument: eventProperties ? JSON.stringify(eventProperties) : null,
             publicArgument: publicArgument ? JSON.stringify(publicArgument) : null,
+            userProperties: eventLogger.getUserProperties(),
         }
     )
         .pipe(map(dataOrThrowErrors))
