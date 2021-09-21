@@ -245,11 +245,13 @@ type DiffFetcher struct {
 	stdin   io.Writer
 	stderr  bytes.Buffer
 	scanner *bufio.Scanner
+	cancel  context.CancelFunc
 }
 
 // StartDiffFetcher starts a git diff-tree subprocess that waits, listening on stdin
 // for comimt hashes to generate patches for.
-func StartDiffFetcher(ctx context.Context, dir string) (*DiffFetcher, error) {
+func StartDiffFetcher(dir string) (*DiffFetcher, error) {
+	ctx, cancel := context.WithCancel(context.Background())
 	cmd := exec.CommandContext(ctx, "git", "diff-tree", "--stdin", "--no-prefix", "-p", "--format=format:")
 	cmd.Dir = dir
 
@@ -263,6 +265,7 @@ func StartDiffFetcher(ctx context.Context, dir string) (*DiffFetcher, error) {
 	cmd.Stderr = &stderrBuf
 
 	if err := cmd.Start(); err != nil {
+		cancel()
 		return nil, err
 	}
 
@@ -286,7 +289,12 @@ func StartDiffFetcher(ctx context.Context, dir string) (*DiffFetcher, error) {
 		stdin:   stdinWriter,
 		scanner: scanner,
 		stderr:  stderrBuf,
+		cancel:  cancel,
 	}, nil
+}
+
+func (d *DiffFetcher) Stop() {
+	d.cancel()
 }
 
 // FetchDiff fetches a diff from the git diff-tree subprocess, writing to its stdin

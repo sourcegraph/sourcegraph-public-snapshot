@@ -106,6 +106,7 @@ const (
 func Search(ctx context.Context, dir string, revs []protocol.RevisionSpecifier, p MatchTree, onMatch func(*LazyCommit, *protocol.CommitHighlights) bool) error {
 	g, ctx := errgroup.WithContext(ctx)
 	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
 
 	revArgs := revsToGitArgs(revs)
 
@@ -169,17 +170,16 @@ func Search(ctx context.Context, dir string, revs []protocol.RevisionSpecifier, 
 	for i := 0; i < numWorkers; i++ {
 		g.Go(func() error {
 			// Create a new diff fetcher subprocess for each worker
-			diffFetcher, err := StartDiffFetcher(ctx, dir)
+			diffFetcher, err := StartDiffFetcher(dir)
 			if err != nil {
 				return err
 			}
+			defer diffFetcher.Stop()
 
 			runJob := func(j job) error {
 				defer close(j.resultChan)
-
 				if ctx.Err() != nil {
-					// ignore context error, but don't spend time
-					// running this job
+					// ignore context error, and don't spend time running the job
 					return nil
 				}
 
@@ -204,9 +204,7 @@ func Search(ctx context.Context, dir string, revs []protocol.RevisionSpecifier, 
 
 			var errors error
 			for j := range jobs {
-				if err := runJob(j); err != nil {
-					multierror.Append(errors, err)
-				}
+				multierror.Append(errors, runJob(j))
 			}
 			return err
 		})
