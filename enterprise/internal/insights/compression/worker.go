@@ -9,6 +9,7 @@ import (
 
 	"github.com/cockroachdb/errors"
 
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 
 	"github.com/inconshreveable/log15"
@@ -36,9 +37,10 @@ type CommitIndexer struct {
 	commitStore       CommitStore
 	maxHistoricalTime time.Time
 	background        context.Context
+	operations        *operations
 }
 
-func NewCommitIndexer(background context.Context, base dbutil.DB, insights dbutil.DB) *CommitIndexer {
+func NewCommitIndexer(background context.Context, base dbutil.DB, insights dbutil.DB, observationContext *observation.Context) *CommitIndexer {
 	//TODO(insights): add a setting for historical index length
 	startTime := time.Now().AddDate(-1, 0, 0)
 
@@ -60,6 +62,20 @@ func NewCommitIndexer(background context.Context, base dbutil.DB, insights dbuti
 
 	limiter := rate.NewLimiter(10, 1)
 
+	operations := newOperations(observationContext)
+
+	// prometheus.DefaultRegisterer.MustRegister(prometheus.NewGaugeFunc(prometheus.GaugeOpts{
+	// 	Name: "src_insights_search_queue_total",
+	// 	Help: "Total number of jobs in the queued state.",
+	// }, func() float64 {
+	// 	count, err := commitStore.InsertCommits(background, false, nil)
+	// 	if err != nil {
+	// 		log15.Error("Failed to get queued job count", "error", err)
+	// 	}
+
+	// 	return float64(count)
+	// }))
+
 	indexer := CommitIndexer{
 		limiter:           limiter,
 		allReposIterator:  iterator.ForEach,
@@ -68,25 +84,25 @@ func NewCommitIndexer(background context.Context, base dbutil.DB, insights dbuti
 		maxHistoricalTime: startTime,
 		background:        background,
 		getCommits:        getCommits,
+		operations:        operations,
 	}
 	return &indexer
 }
 
-func NewCommitIndexerWorker(ctx context.Context, base dbutil.DB, insights dbutil.DB) goroutine.BackgroundRoutine {
-	indexer := NewCommitIndexer(ctx, base, insights)
+func NewCommitIndexerWorker(ctx context.Context, base dbutil.DB, insights dbutil.DB, observationContext *observation.Context) goroutine.BackgroundRoutine {
+	indexer := NewCommitIndexer(ctx, base, insights, observationContext)
 
-	return indexer.Handler(ctx)
+	return indexer.Handler(ctx, observationContext)
 }
 
-func (i *CommitIndexer) Handler(ctx context.Context) goroutine.BackgroundRoutine {
+func (i *CommitIndexer) Handler(ctx context.Context, observationContext *observation.Context) goroutine.BackgroundRoutine {
 	//TODO(insights) consider adding setting for index interval
 	interval := time.Hour * 1
 
-	//TODO(insights) convert this to a metrics generating goroutine
-	return goroutine.NewPeriodicGoroutine(ctx, interval,
+	return goroutine.NewPeriodicGoroutineWithMetrics(ctx, interval,
 		goroutine.NewHandlerWithErrorMessage("commit_indexer_handler", func(ctx context.Context) error {
 			return i.indexAll(ctx)
-		}))
+		}), operations.Worker)
 }
 
 func (i *CommitIndexer) indexAll(ctx context.Context) error {
@@ -146,6 +162,15 @@ func (i *CommitIndexer) index(name string) error {
 		return errors.Wrapf(err, "error fetching commits from gitserver repo_id: %v", repoId)
 	}
 
+	// TODO it's not liking this because of duplicate registrations
+	//
+	// prometheus.DefaultRegisterer.MustRegister(prometheus.NewCounterFunc(prometheus.CounterOpts{
+	// 	Name: "commit_indexer_commits_added",
+	// 	Help: "Total number of commits added to the commit index for this repo.",
+	// }, func() float64 {
+	// 	return float64(len(commits))
+	// }))
+
 	if len(commits) == 0 {
 		logger.Debug("commit index up to date", "repo_id", repoId)
 
@@ -157,7 +182,7 @@ func (i *CommitIndexer) index(name string) error {
 		return nil
 	}
 
-	log15.Debug("indexing commits", "repo_id", repoId, "count", len(commits))
+	log15.Warn("indexing commits", "repo_id", repoId, "count", len(commits))
 	err = i.commitStore.InsertCommits(ctx, repoId, commits)
 	if err != nil {
 		return errors.Wrapf(err, "unable to update commit index repo_id: %v", repoId)
@@ -168,6 +193,7 @@ func (i *CommitIndexer) index(name string) error {
 
 //getCommits fetches the commits from the remote gitserver for a repository after a certain time.
 func getCommits(ctx context.Context, name api.RepoName, after time.Time) ([]*git.Commit, error) {
+
 	return git.Commits(ctx, name, git.CommitsOptions{N: 0, DateOrder: true, NoEnsureRevision: true, After: after.Format(time.RFC3339)})
 }
 
