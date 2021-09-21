@@ -526,5 +526,5 @@ func addFinalDockerImage(c Config, app string, insiders bool) func(*bk.Pipeline)
 }
 
 func echoPSA(owner string, message string) bk.StepOpt {
-	return bk.Cmd(fmt.Sprintf("echo \"\033[33mPSA\033[0m\nfrom: %s\n%s\"", owner, message))
+	return bk.Cmd(fmt.Sprintf("echo \"\033[33mPSA\033[0m\\nfrom: %s\\n%s\"", owner, message))
 }
