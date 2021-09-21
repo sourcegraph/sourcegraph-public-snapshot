@@ -102,13 +102,13 @@ func addClientIntegrationTests(pipeline *bk.Pipeline) {
 
 	// Build web application used for integration tests to share it between multiple parallel steps.
 	pipeline.AddStep(":puppeteer::electric_plug: Puppeteer tests prep",
-		bk.Key(PREP_STEP_KEY),
+		bk.Key(prepStepKey),
 		bk.Env("ENTERPRISE", "1"),
 		bk.Cmd("COVERAGE_INSTRUMENT=true dev/ci/yarn-build.sh client/web"),
 		bk.Cmd("dev/ci/create-client-artifact.sh"))
 
 	// Chunk web integration tests to save time via parallel execution.
-	chunkedTestFiles := getChunkedWebIntegrationFileNames(CHUNK_SIZE)
+	chunkedTestFiles := getChunkedWebIntegrationFileNames(chunkSize)
 	// Percy finalize step should be executed after all integration tests.
 	puppeteerFinalizeDependencies := make([]bk.StepOpt, len(chunkedTestFiles))
 
@@ -120,9 +120,9 @@ func addClientIntegrationTests(pipeline *bk.Pipeline) {
 		puppeteerFinalizeDependencies[i] = bk.DependsOn(stepKey)
 
 		pipeline.AddStep(stepLabel,
-			SKIP_GIT_CLONE_STEP,
+			skipGitCloneStep,
 			bk.Key(stepKey),
-			bk.DependsOn(PREP_STEP_KEY),
+			bk.DependsOn(prepStepKey),
 			percyBrowserExecutableEnv,
 			bk.Env("PERCY_ON", "true"),
 			bk.Cmd(fmt.Sprintf(`dev/ci/yarn-web-integration.sh "%s"`, chunkTestFiles)),
@@ -130,7 +130,7 @@ func addClientIntegrationTests(pipeline *bk.Pipeline) {
 	}
 
 	finalizeSteps := []bk.StepOpt{
-		SKIP_GIT_CLONE_STEP,
+		skipGitCloneStep,
 		bk.Cmd("npx @percy/cli build:finalize"),
 	}
 
