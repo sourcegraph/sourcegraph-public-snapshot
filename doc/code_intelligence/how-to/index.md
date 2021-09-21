@@ -2,6 +2,7 @@
 
 ## General
 
+- [Configure data retention policies](configure_data_retention.md)
 - [Add a GitHub repository to your Sourcegraph instance](add_a_repository.md)
 
 ## Language-specific guides

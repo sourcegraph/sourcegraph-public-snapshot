@@ -19,9 +19,9 @@ For more information about Code Insights see the [Code Insights](index.md) docum
 
 ## Enable Code Insights
 
-### 1. Enable the experimental feature flag
+### 1. [If need be] Enable the experimental feature flag
 
-Add the following to either your Sourcegraph user settings `sourcegraph.example.com/users/[username]/settings` or organization settings `sourcegraph.example.com/organizations/[your_org]/settings`:
+**If you're on Sourcegraph version 3.31 or earlier** and you don't already see the "Insights" item in your main nav bar, you'll need to add the following to either your Sourcegraph user settings `sourcegraph.example.com/users/[username]/settings` or organization settings `sourcegraph.example.com/organizations/[your_org]/settings`:
 
 ```javascript
 "experimentalFeatures": { "codeInsights": true },
