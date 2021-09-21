@@ -22,7 +22,6 @@ type DiffFetcher struct {
 // StartDiffFetcher starts a git diff-tree subprocess that waits, listening on stdin
 // for comimt hashes to generate patches for.
 func StartDiffFetcher(dir string) (*DiffFetcher, error) {
-	println("started")
 	ctx, cancel := context.WithCancel(context.Background())
 	cmd := exec.CommandContext(ctx, "git", "diff-tree", "--stdin", "--no-prefix", "-p", "--format=format:")
 	cmd.Dir = dir

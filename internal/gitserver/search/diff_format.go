@@ -22,10 +22,12 @@ func FormatDiff(rawDiff []*diff.FileDiff, highlights map[int]protocol.FileDiffHi
 	var loc protocol.Location
 	var ranges protocol.Ranges
 
+	formatAll := len(highlights) == 0
+
 	fileCount := 0
 	for fileIdx, fileDiff := range rawDiff {
 		fdh, ok := highlights[fileIdx]
-		if !ok && len(highlights) > 0 {
+		if !ok && !formatAll {
 			continue
 		}
 		if fileCount >= maxFiles {
@@ -43,10 +45,8 @@ func FormatDiff(rawDiff []*diff.FileDiff, highlights map[int]protocol.FileDiffHi
 		ranges = append(ranges, fdh.NewFile.Add(loc)...)
 		buf.WriteString(fileDiff.NewName)
 		buf.WriteByte('\n')
-		loc = loc.Add(protocol.Location{
-			Line:   1,
-			Offset: len(fileDiff.NewName) + len("\n"),
-		})
+		loc.Offset = buf.Len()
+		loc.Line++
 		loc.Column = 0
 
 		filteredHunks, filteredHighlights := splitHunkMatches(fileDiff.Hunks, fdh.HunkHighlights, matchContextLines, maxLinesPerHunk)
@@ -54,7 +54,7 @@ func FormatDiff(rawDiff []*diff.FileDiff, highlights map[int]protocol.FileDiffHi
 		hunkCount := 0
 		for hunkIdx, hunk := range filteredHunks {
 			hmh, ok := filteredHighlights[hunkIdx]
-			if !ok && len(filteredHighlights) > 0 {
+			if !ok && !formatAll {
 				continue
 			}
 			if hunkCount >= maxHunksPerFile {
@@ -62,7 +62,7 @@ func FormatDiff(rawDiff []*diff.FileDiff, highlights map[int]protocol.FileDiffHi
 			}
 			hunkCount++
 
-			n, _ := fmt.Fprintf(&buf,
+			fmt.Fprintf(&buf,
 				"@@ -%d,%d +%d,%d @@ %s\n",
 				hunk.OrigStartLine,
 				hunk.OrigLines,
@@ -70,10 +70,8 @@ func FormatDiff(rawDiff []*diff.FileDiff, highlights map[int]protocol.FileDiffHi
 				hunk.NewLines,
 				hunk.Section,
 			)
-			loc = loc.Add(protocol.Location{
-				Offset: n,
-				Line:   1,
-			})
+			loc.Offset = buf.Len()
+			loc.Line++
 			loc.Column = 0
 
 			lines := bytes.Split(hunk.Body, []byte("\n"))
@@ -81,14 +79,20 @@ func FormatDiff(rawDiff []*diff.FileDiff, highlights map[int]protocol.FileDiffHi
 				if len(line) == 0 {
 					continue
 				}
-				loc = loc.Add(protocol.Location{Offset: 1, Column: 1})
+
+				prefix, lineWithoutPrefix := line[0], line[1:]
+				buf.WriteByte(prefix)
+				loc.Offset = buf.Len()
+				loc.Column = 1
+
 				if lineHighlights, ok := hmh.LineHighlights[lineIdx]; ok {
 					ranges = append(ranges, lineHighlights.Add(loc)...)
 				}
 
-				buf.Write(line)
+				buf.Write(lineWithoutPrefix)
 				buf.WriteByte('\n')
-				loc = loc.Add(protocol.Location{Line: 1, Offset: len(line) + len("\n")})
+				loc.Offset = buf.Len()
+				loc.Line++
 				loc.Column = 0
 			}
 		}

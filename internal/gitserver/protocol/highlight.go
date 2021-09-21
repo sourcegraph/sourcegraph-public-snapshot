@@ -90,9 +90,6 @@ type Location struct {
 }
 
 func (l Location) Add(o Location) Location {
-	if o.Line > 0 {
-		l.Column = 0
-	}
 	return Location{
 		Offset: l.Offset + o.Offset,
 		Line:   l.Line + o.Line,
