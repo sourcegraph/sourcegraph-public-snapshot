@@ -67,6 +67,9 @@ func FormatDiff(rawDiff []*diff.FileDiff, highlights map[int]protocol.FileDiffHi
 
 			lines := bytes.Split(hunk.Body, []byte("\n"))
 			for lineIdx, line := range lines {
+				if len(line) == 0 {
+					continue
+				}
 				loc = loc.Add(protocol.Location{Offset: 1, Column: 1})
 				if lineHighlights, ok := hmh.LineHighlights[lineIdx]; ok {
 					ranges = append(ranges, lineHighlights.Add(loc)...)
