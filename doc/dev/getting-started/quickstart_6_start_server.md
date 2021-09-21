@@ -71,5 +71,25 @@ Navigate your browser to https://sourcegraph.test:3443 to see if everything work
 
 If `sg` exits with errors or outputs errors, have a look at [Troubleshooting](../how-to/troubleshooting_local_development.md) or ask in the `#dev-experience` Slack channel.
 
+If you want to run the server in different configurations (with the monitoring stack, with code insights enabled, Sourcegraph OSS, ...), run the following:
+
+```
+sg start -help
+```
+
+That prints a list of possible configurations which you can start with `sg start`.
+
+For example, you can start Sourcegraph in the mode it uses on Sourcegraph.com by running the following in one terminal window
+
+```
+sg start dotcom
+```
+
+and then, in another terminal window, start the monitoring stack:
+
+```
+sg start monitoring
+```
+
 <!-- omit in toc -->
 [< Previous](quickstart_5_configure_https_reverse_proxy.md) | [Next >](quickstart_7_additional_resources.md)
