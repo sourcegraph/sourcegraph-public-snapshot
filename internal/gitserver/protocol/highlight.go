@@ -80,7 +80,6 @@ func (h *HighlightedString) Merge(other HighlightedString) {
 		h.Content = other.Content
 	}
 	h.Highlights = append(h.Highlights, other.Highlights...)
-	// TODO(camdencheek): Do we need to guarantee that these are non-overlapping like Zoekt does?
 	sort.Sort(h.Highlights)
 }
 
@@ -91,6 +90,9 @@ type Location struct {
 }
 
 func (l Location) Add(o Location) Location {
+	if o.Line > 0 {
+		l.Column = 0
+	}
 	return Location{
 		Offset: l.Offset + o.Offset,
 		Line:   l.Line + o.Line,
@@ -126,14 +128,6 @@ func (l *Location) UnmarshalJSON(data []byte) error {
 type Range struct {
 	Start Location `json:"start"`
 	End   Location `json:"end"`
-}
-
-func (r Range) Includes(loc Location) bool {
-	return r.Start.Offset <= loc.Offset && r.End.Offset > loc.Offset
-}
-
-func (r Range) Contains(r2 Range) bool {
-	return r.Includes(r2.Start) && r.Includes(r2.End)
 }
 
 func (r Range) Add(amount Location) Range {

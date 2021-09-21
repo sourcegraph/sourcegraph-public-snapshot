@@ -15,7 +15,6 @@ type SearchRequest struct {
 	Limit       int
 }
 
-// TODO(camdencheek): this is copied straight from internal/search to avoid import cycles
 type RevisionSpecifier struct {
 	// RevSpec is a revision range specifier suitable for passing to git. See
 	// the manpage gitrevisions(7).
@@ -59,8 +58,8 @@ type CommitMatch struct {
 	Author     Signature      `json:",omitempty"`
 	Committer  Signature      `json:",omitempty"`
 	Parents    []api.CommitID `json:",omitempty"`
-	Refs       []string
-	SourceRefs []string
+	Refs       []string       `json:",omitempty"`
+	SourceRefs []string       `json:",omitempty"`
 
 	Message HighlightedString `json:",omitempty"`
 	Diff    HighlightedString `json:",omitempty"`
