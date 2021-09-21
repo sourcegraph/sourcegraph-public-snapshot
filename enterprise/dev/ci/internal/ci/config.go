@@ -41,7 +41,7 @@ type Config struct {
 	MustIncludeCommit []string
 }
 
-func NewConfig(now time.Time, commit, branch, tag string) Config {
+func NewConfig(now time.Time, commit, branch, tag string, mustIncludeCommits []string) Config {
 	// defaults to 0
 	buildNumber, _ := strconv.Atoi(os.Getenv("BUILDKITE_BUILD_NUMBER"))
 
@@ -75,14 +75,6 @@ func NewConfig(now time.Time, commit, branch, tag string) Config {
 	if runType.Is(ImagePatch, ImagePatchNoTest) {
 		// Add additional patch suffix
 		tag = tag + "_patch"
-	}
-
-	var mustIncludeCommits []string
-	if rawMustIncludeCommit := os.Getenv("MUST_INCLUDE_COMMIT"); rawMustIncludeCommit != "" {
-		mustIncludeCommits = strings.Split(rawMustIncludeCommit, ",")
-		for i := range mustIncludeCommits {
-			mustIncludeCommits[i] = strings.TrimSpace(mustIncludeCommits[i])
-		}
 	}
 
 	return Config{

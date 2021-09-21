@@ -4,6 +4,7 @@ package main
 
 import (
 	"os"
+	"strings"
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/dev/ci/internal/ci"
@@ -11,12 +12,20 @@ import (
 
 func main() {
 	var (
-		commit = os.Getenv("BUILDKITE_COMMIT")
-		branch = os.Getenv("BUILDKITE_BRANCH")
-		tag    = os.Getenv("BUILDKITE_TAG")
+		commit             = os.Getenv("BUILDKITE_COMMIT")
+		branch             = os.Getenv("BUILDKITE_BRANCH")
+		tag                = os.Getenv("BUILDKITE_TAG")
+		mustIncludeCommits []string
 	)
 
-	config := ci.NewConfig(time.Now(), commit, branch, tag)
+	if rawMustIncludeCommit := os.Getenv("MUST_INCLUDE_COMMIT"); rawMustIncludeCommit != "" {
+		mustIncludeCommits = strings.Split(rawMustIncludeCommit, ",")
+		for i := range mustIncludeCommits {
+			mustIncludeCommits[i] = strings.TrimSpace(mustIncludeCommits[i])
+		}
+	}
+
+	config := ci.NewConfig(time.Now(), commit, branch, tag, mustIncludeCommits)
 
 	pipeline, err := ci.GeneratePipeline(config)
 	if err != nil {
