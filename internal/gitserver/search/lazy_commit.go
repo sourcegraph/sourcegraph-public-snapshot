@@ -1,10 +1,12 @@
 package search
 
 import (
+	"bytes"
 	"strconv"
 	"strings"
 	"time"
 
+	"github.com/sourcegraph/go-diff/diff"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 )
 
@@ -14,7 +16,7 @@ import (
 type LazyCommit struct {
 	*RawCommit
 	diffFetcher *DiffFetcher
-	diff        FormattedDiff
+	diff        []*diff.FileDiff
 }
 
 func (l *LazyCommit) AuthorDate() (time.Time, error) {
@@ -41,19 +43,23 @@ func (l *LazyCommit) RawDiff() ([]byte, error) {
 }
 
 // Diff fetches the diff, then formats it in the format used throughout our app
-func (l *LazyCommit) Diff() (FormattedDiff, error) {
-	if l.diff != "" {
+func (l *LazyCommit) Diff() ([]*diff.FileDiff, error) {
+	if l.diff != nil {
 		return l.diff, nil
 	}
 
 	rawDiff, err := l.RawDiff()
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
-	formattedDiff := FormatDiff(rawDiff)
-	l.diff = formattedDiff
-	return formattedDiff, nil
+	r := diff.NewMultiFileDiffReader(bytes.NewReader(rawDiff))
+	diff, err := r.ReadAllFiles()
+	if err != nil {
+		return nil, err
+	}
+	l.diff = diff
+	return diff, nil
 }
 
 func (l *LazyCommit) ParentIDs() []api.CommitID {

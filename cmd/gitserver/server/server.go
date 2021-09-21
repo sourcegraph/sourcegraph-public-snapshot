@@ -1009,7 +1009,7 @@ func (s *Server) search(w http.ResponseWriter, r *http.Request, args *protocol.S
 		}
 
 		// TODO this should take a context so we can stop searching before we find a match
-		return search.Search(dir.Path(), revArgs, search.ToMatchTree(args.Query), func(match *search.LazyCommit, highlights *protocol.HighlightedCommit) bool {
+		return search.Search(dir.Path(), revArgs, search.ToMatchTree(args.Query), func(match *search.LazyCommit, highlights *protocol.CommitHighlights) bool {
 			res, err := createCommitMatch(match, highlights, args.IncludeDiff)
 			if err != nil {
 				// TODO(camdencheek)
@@ -1069,7 +1069,7 @@ func (s *Server) search(w http.ResponseWriter, r *http.Request, args *protocol.S
 	}
 }
 
-func createCommitMatch(lc *search.LazyCommit, hc *protocol.HighlightedCommit, includeDiff bool) (*protocol.CommitMatch, error) {
+func createCommitMatch(lc *search.LazyCommit, hc *protocol.CommitHighlights, includeDiff bool) (*protocol.CommitMatch, error) {
 	authorDate, err := lc.AuthorDate()
 	if err != nil {
 		return nil, err
@@ -1080,26 +1080,13 @@ func createCommitMatch(lc *search.LazyCommit, hc *protocol.HighlightedCommit, in
 		return nil, err
 	}
 
-	message := hc.Message
-	if message.Content == "" {
-		message.Content = string(lc.Message)
-	}
-
 	diff := protocol.HighlightedString{}
 	if includeDiff {
-		diff = hc.Diff
-
-		if diff.Content == "" {
-			formattedDiff, err := lc.Diff()
-			if err != nil {
-				return nil, err
-			}
-			diff.Content = string(formattedDiff)
+		rawDiff, err := lc.Diff()
+		if err != nil {
+			return nil, err
 		}
-
-		content, highlights := search.FormattedDiff(diff.Content).Collapsed(diff.Highlights)
-		diff.Content = string(content)
-		diff.Highlights = highlights
+		diff.Content, diff.Highlights = search.FormatDiff(rawDiff, hc.Diff)
 	}
 
 	return &protocol.CommitMatch{
@@ -1117,8 +1104,11 @@ func createCommitMatch(lc *search.LazyCommit, hc *protocol.HighlightedCommit, in
 		Parents:    lc.ParentIDs(),
 		SourceRefs: lc.SourceRefs(),
 		Refs:       lc.RefNames(),
-		Message:    message,
-		Diff:       diff,
+		Message: protocol.HighlightedString{
+			Content:    string(lc.Message),
+			Highlights: hc.Message,
+		},
+		Diff: diff,
 	}, nil
 }
 

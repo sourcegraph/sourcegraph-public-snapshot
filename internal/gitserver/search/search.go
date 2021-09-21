@@ -63,7 +63,6 @@ var (
 
 	logArgsWithRefs = []string{
 		"log",
-		"--no-prefix",
 		"--decorate=full",
 		"-z",
 		"--no-merges",
@@ -72,7 +71,6 @@ var (
 
 	logArgsWithoutRefs = []string{
 		"log",
-		"--no-prefix",
 		"--decorate=full",
 		"-z",
 		"--no-merges",
@@ -89,7 +87,7 @@ type job struct {
 
 type searchResult struct {
 	lazyCommit        *LazyCommit
-	highlightedCommit *protocol.HighlightedCommit
+	highlightedCommit *protocol.CommitHighlights
 }
 
 const (
@@ -105,7 +103,7 @@ const (
 // that job should be sent down. We then read from the result channels in the same order that the jobs were sent.
 // This allows our worker pool to run the jobs in parallel, but we still emit matches in the same order that
 // git log outputs them.
-func Search(dir string, revisionArgs []string, p MatchTree, onMatch func(*LazyCommit, *protocol.HighlightedCommit) bool) error {
+func Search(dir string, revisionArgs []string, p MatchTree, onMatch func(*LazyCommit, *protocol.CommitHighlights) bool) error {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	g, ctx := errgroup.WithContext(ctx)

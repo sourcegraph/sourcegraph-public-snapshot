@@ -5,16 +5,12 @@ import (
 	"sort"
 )
 
-type HighlightedCommit struct {
-	Diff    HighlightedString
-	Message HighlightedString
-
-	// TODO we could potentially return highlights for author and committer as well
-	// Author    Ranges
-	// Committer Ranges
+type CommitHighlights struct {
+	Message Ranges
+	Diff    map[int]FileDiffHighlight
 }
 
-func (c *HighlightedCommit) Merge(other *HighlightedCommit) *HighlightedCommit {
+func (c *CommitHighlights) Merge(other *CommitHighlights) *CommitHighlights {
 	if c == nil {
 		return other
 	}
@@ -23,9 +19,55 @@ func (c *HighlightedCommit) Merge(other *HighlightedCommit) *HighlightedCommit {
 		return c
 	}
 
-	c.Diff.Merge(other.Diff)
 	c.Message.Merge(other.Message)
+
+	if c.Diff == nil {
+		c.Diff = other.Diff
+	} else {
+		for i, fdh := range other.Diff {
+			c.Diff[i] = c.Diff[i].Merge(fdh)
+		}
+	}
+
 	return c
+}
+
+type FileDiffHighlight struct {
+	OldFile        Ranges
+	NewFile        Ranges
+	HunkHighlights map[int]HunkHighlight
+}
+
+func (f FileDiffHighlight) Merge(other FileDiffHighlight) FileDiffHighlight {
+	f.OldFile = append(f.OldFile, other.OldFile...)
+	sort.Sort(f.OldFile)
+
+	f.NewFile = append(f.NewFile, other.NewFile...)
+	sort.Sort(f.NewFile)
+
+	if f.HunkHighlights == nil {
+		f.HunkHighlights = other.HunkHighlights
+	} else {
+		for i, hh := range other.HunkHighlights {
+			f.HunkHighlights[i] = f.HunkHighlights[i].Merge(hh)
+		}
+	}
+	return f
+}
+
+type HunkHighlight struct {
+	LineHighlights map[int]Ranges
+}
+
+func (h HunkHighlight) Merge(other HunkHighlight) HunkHighlight {
+	if h.LineHighlights == nil {
+		h.LineHighlights = other.LineHighlights
+	} else {
+		for i, lh := range other.LineHighlights {
+			h.LineHighlights[i] = h.LineHighlights[i].Merge(lh)
+		}
+	}
+	return h
 }
 
 type HighlightedString struct {

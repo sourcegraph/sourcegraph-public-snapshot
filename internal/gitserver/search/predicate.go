@@ -1,9 +1,9 @@
 package search
 
 import (
+	"bytes"
 	"fmt"
 	"regexp"
-	"strings"
 
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 )
@@ -47,7 +47,7 @@ func ToMatchTree(q protocol.SearchQuery) MatchTree {
 type MatchTree interface {
 	// Match returns whether the given predicate matches a commit and, if it does,
 	// the portions of the commit that match in the form of *CommitHighlights
-	Match(*LazyCommit) (matched bool, highlights *protocol.HighlightedCommit, err error)
+	Match(*LazyCommit) (matched bool, highlights *protocol.CommitHighlights, err error)
 }
 
 // AuthorMatches is a predicate that matches if the author's name or email address
@@ -56,7 +56,7 @@ type AuthorMatches struct {
 	protocol.AuthorMatches
 }
 
-func (a *AuthorMatches) Match(cv *LazyCommit) (bool, *protocol.HighlightedCommit, error) {
+func (a *AuthorMatches) Match(cv *LazyCommit) (bool, *protocol.CommitHighlights, error) {
 	return a.Regexp.Match(cv.AuthorName) || a.Regexp.Match(cv.AuthorEmail), nil, nil
 }
 
@@ -66,7 +66,7 @@ type CommitterMatches struct {
 	protocol.CommitterMatches
 }
 
-func (c *CommitterMatches) Match(cv *LazyCommit) (bool, *protocol.HighlightedCommit, error) {
+func (c *CommitterMatches) Match(cv *LazyCommit) (bool, *protocol.CommitHighlights, error) {
 	return c.Regexp.Match(cv.CommitterName) || c.Regexp.Match(cv.CommitterEmail), nil, nil
 }
 
@@ -75,7 +75,7 @@ type CommitBefore struct {
 	protocol.CommitBefore
 }
 
-func (c *CommitBefore) Match(lc *LazyCommit) (bool, *protocol.HighlightedCommit, error) {
+func (c *CommitBefore) Match(lc *LazyCommit) (bool, *protocol.CommitHighlights, error) {
 	authorDate, err := lc.AuthorDate()
 	if err != nil {
 		return false, nil, err
@@ -88,7 +88,7 @@ type CommitAfter struct {
 	protocol.CommitAfter
 }
 
-func (c *CommitAfter) Match(lc *LazyCommit) (bool, *protocol.HighlightedCommit, error) {
+func (c *CommitAfter) Match(lc *LazyCommit) (bool, *protocol.CommitHighlights, error) {
 	authorDate, err := lc.AuthorDate()
 	if err != nil {
 		return false, nil, err
@@ -102,18 +102,14 @@ type MessageMatches struct {
 	protocol.MessageMatches
 }
 
-func (m *MessageMatches) Match(commit *LazyCommit) (bool, *protocol.HighlightedCommit, error) {
+func (m *MessageMatches) Match(commit *LazyCommit) (bool, *protocol.CommitHighlights, error) {
 	results := m.FindAllIndex(commit.Message, -1) // TODO limit?
 	if results == nil {
 		return false, nil, nil
 	}
 
-	messageString := string(commit.Message)
-	return true, &protocol.HighlightedCommit{
-		Message: protocol.HighlightedString{
-			Content:    messageString,
-			Highlights: matchesToRanges(messageString, results),
-		},
+	return true, &protocol.CommitHighlights{
+		Message: matchesToRanges(commit.Message, results),
 	}, nil
 }
 
@@ -123,42 +119,58 @@ type DiffMatches struct {
 	protocol.DiffMatches
 }
 
-func (dm *DiffMatches) Match(commit *LazyCommit) (bool, *protocol.HighlightedCommit, error) {
+func (dm *DiffMatches) Match(commit *LazyCommit) (bool, *protocol.CommitHighlights, error) {
 	diff, err := commit.Diff()
 	if err != nil {
 		return false, nil, err
 	}
 
 	foundMatch := false
-	var highlights protocol.Ranges
 
-	diff.ForEachDelta(func(d Delta) bool {
-		d.ForEachHunk(func(h Hunk) bool {
-			h.ForEachLine(func(l Line) bool {
-				switch l.Origin() {
+	var fileDiffHighlights map[int]protocol.FileDiffHighlight
+	for fileIdx, fileDiff := range diff {
+		var hunkHighlights map[int]protocol.HunkHighlight
+		for hunkIdx, hunk := range fileDiff.Hunks {
+			var lineHighlights map[int]protocol.Ranges
+			for lineIdx, line := range bytes.Split(hunk.Body, []byte("\n")) {
+				if len(line) == 0 {
+					continue
+				}
+
+				origin, lineWithoutPrefix := line[0], line[1:]
+				switch origin {
 				case '+', '-':
 				default:
-					return true
+					continue
 				}
 
-				content, loc := l.Content()
-				matches := dm.FindAllStringIndex(content, -1)
+				matches := dm.FindAllIndex(lineWithoutPrefix, -1)
 				if matches != nil {
 					foundMatch = true
-					highlights = append(highlights, matchesToRanges(content, matches).Add(loc)...)
+					if lineHighlights == nil {
+						lineHighlights = make(map[int]protocol.Ranges, 1)
+					}
+					lineHighlights[lineIdx] = matchesToRanges(lineWithoutPrefix, matches)
 				}
-				return true
-			})
-			return true
-		})
-		return true
-	})
+			}
 
-	return foundMatch, &protocol.HighlightedCommit{
-		Diff: protocol.HighlightedString{
-			Content:    string(diff),
-			Highlights: highlights,
-		},
+			if len(lineHighlights) > 0 {
+				if hunkHighlights == nil {
+					hunkHighlights = make(map[int]protocol.HunkHighlight, 1)
+				}
+				hunkHighlights[hunkIdx] = protocol.HunkHighlight{lineHighlights}
+			}
+		}
+		if len(hunkHighlights) > 0 {
+			if fileDiffHighlights == nil {
+				fileDiffHighlights = make(map[int]protocol.FileDiffHighlight)
+			}
+			fileDiffHighlights[fileIdx] = protocol.FileDiffHighlight{HunkHighlights: hunkHighlights}
+		}
+	}
+
+	return foundMatch, &protocol.CommitHighlights{
+		Diff: fileDiffHighlights,
 	}, nil
 }
 
@@ -168,34 +180,32 @@ type DiffModifiesFile struct {
 	protocol.DiffModifiesFile
 }
 
-func (dmf *DiffModifiesFile) Match(commit *LazyCommit) (bool, *protocol.HighlightedCommit, error) {
+func (dmf *DiffModifiesFile) Match(commit *LazyCommit) (bool, *protocol.CommitHighlights, error) {
 	diff, err := commit.Diff()
 	if err != nil {
 		return false, nil, err
 	}
 
 	foundMatch := false
-	var highlights protocol.Ranges
-
-	diff.ForEachDelta(func(d Delta) bool {
-		oldFile, oldLoc := d.OldFile()
-		oldFileMatches := dmf.FindAllStringIndex(oldFile, -1)
-		if oldFileMatches != nil {
+	var fileDiffHighlights map[int]protocol.FileDiffHighlight
+	for fileIdx, fileDiff := range diff {
+		oldFileMatches := dmf.FindAllStringIndex(fileDiff.OrigName, -1)
+		newFileMatches := dmf.FindAllStringIndex(fileDiff.NewName, -1)
+		if oldFileMatches != nil || newFileMatches != nil {
+			if fileDiffHighlights == nil {
+				fileDiffHighlights = make(map[int]protocol.FileDiffHighlight)
+			}
 			foundMatch = true
-			highlights = append(highlights, matchesToRanges(oldFile, oldFileMatches).Add(oldLoc)...)
+			fileDiffHighlights[fileIdx] = protocol.FileDiffHighlight{
+				OldFile: matchesToRanges([]byte(fileDiff.OrigName), oldFileMatches),
+				NewFile: matchesToRanges([]byte(fileDiff.NewName), newFileMatches),
+			}
 		}
+	}
 
-		newFile, newLoc := d.NewFile()
-		newFileMatches := dmf.FindAllStringIndex(newFile, -1)
-		if newFileMatches != nil {
-			foundMatch = true
-			highlights = append(highlights, matchesToRanges(newFile, newFileMatches).Add(newLoc)...)
-		}
-
-		return true
-	})
-
-	return foundMatch, &protocol.HighlightedCommit{Diff: protocol.HighlightedString{Content: string(diff), Highlights: highlights}}, nil
+	return foundMatch, &protocol.CommitHighlights{
+		Diff: fileDiffHighlights,
+	}, nil
 }
 
 // And is a predicate that matches if all of its children predicates match
@@ -203,8 +213,8 @@ type And struct {
 	Children []MatchTree
 }
 
-func (a *And) Match(commit *LazyCommit) (bool, *protocol.HighlightedCommit, error) {
-	highlights := &protocol.HighlightedCommit{}
+func (a *And) Match(commit *LazyCommit) (bool, *protocol.CommitHighlights, error) {
+	highlights := &protocol.CommitHighlights{}
 	for _, child := range a.Children {
 		childMatched, childHighlights, err := child.Match(commit)
 		if err != nil {
@@ -225,9 +235,9 @@ type Or struct {
 	Children []MatchTree
 }
 
-func (o *Or) Match(commit *LazyCommit) (bool, *protocol.HighlightedCommit, error) {
+func (o *Or) Match(commit *LazyCommit) (bool, *protocol.CommitHighlights, error) {
 	hasMatch := false
-	mergedHighlights := &protocol.HighlightedCommit{}
+	mergedHighlights := &protocol.CommitHighlights{}
 	for _, child := range o.Children {
 		matched, highlights, err := child.Match(commit)
 		if err != nil {
@@ -247,7 +257,7 @@ type Not struct {
 	Child MatchTree
 }
 
-func (n *Not) Match(commit *LazyCommit) (bool, *protocol.HighlightedCommit, error) {
+func (n *Not) Match(commit *LazyCommit) (bool, *protocol.CommitHighlights, error) {
 	// Even if the child highlights, since we're negating, the match shouldn't be highlighted
 	foundMatch, _, err := n.Child.Match(commit)
 	return !foundMatch, nil, err
@@ -271,7 +281,7 @@ func (r *Regexp) GobDecode(data []byte) (err error) {
 // and converts it to Ranges.
 // INVARIANT: matches must be ordered and non-overlapping,
 // which is guaranteed by regexp.FindAllStringIndex()
-func matchesToRanges(s string, matches [][]int) protocol.Ranges {
+func matchesToRanges(content []byte, matches [][]int) protocol.Ranges {
 	// Incrementally search newlines to avoid counting newlines over the
 	// entire string for every match.
 	var (
@@ -280,7 +290,7 @@ func matchesToRanges(s string, matches [][]int) protocol.Ranges {
 		searchEnd         int
 	)
 	lineAndColumn := func(offset int) (line, column int) {
-		newlines, index := newlineCountAndLastIndex(s[searchEnd:offset])
+		newlines, index := newlineCountAndLastIndex(content[searchEnd:offset])
 		newlineCount += newlines
 		if index >= 0 {
 			lastNewlineOffset = searchEnd + index
@@ -305,11 +315,11 @@ func matchesToRanges(s string, matches [][]int) protocol.Ranges {
 	return res
 }
 
-func newlineCountAndLastIndex(s string) (count int, lastIndex int) {
-	lastIndex = strings.LastIndexByte(s, '\n')
+func newlineCountAndLastIndex(content []byte) (count int, lastIndex int) {
+	lastIndex = bytes.LastIndexByte(content, '\n')
 	if lastIndex == -1 {
 		return 0, -1
 	}
 
-	return strings.Count(s[:lastIndex], "\n") + 1, lastIndex
+	return bytes.Count(content[:lastIndex], []byte("\n")) + 1, lastIndex
 }
