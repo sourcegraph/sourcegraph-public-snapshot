@@ -41,6 +41,8 @@ type Config struct {
 	MustIncludeCommit []string
 }
 
+// NewConfig computes configuration for the pipeline generator based on Buildkite environment
+// variables.
 func NewConfig(now time.Time) Config {
 	var (
 		commit = os.Getenv("BUILDKITE_COMMIT")
