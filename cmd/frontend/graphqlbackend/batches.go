@@ -854,7 +854,7 @@ type BatchSpecWorkspaceResolutionResolver interface {
 	AllowIgnored() bool
 	AllowUnsupported() bool
 
-	Workspaces(ctx context.Context, args *ListWorkspacesArgs) BatchSpecWorkspaceConnectionResolver
+	Workspaces(ctx context.Context, args *ListWorkspacesArgs) (BatchSpecWorkspaceConnectionResolver, error)
 	Unsupported(ctx context.Context) RepositoryConnectionResolver
 
 	RecentlyCompleted(ctx context.Context, args *ListRecentlyCompletedWorkspacesArgs) BatchSpecWorkspaceConnectionResolver
@@ -885,20 +885,20 @@ type BatchSpecWorkspaceResolver interface {
 	FailureMessage() *string
 
 	CachedResultFound() bool
-	Stages() (BatchSpecWorkspaceStagesResolver, error)
+	Stages() BatchSpecWorkspaceStagesResolver
 
 	Repository(ctx context.Context) (*RepositoryResolver, error)
 	BatchSpec(ctx context.Context) (BatchSpecResolver, error)
 
 	Branch(ctx context.Context) (*GitRefResolver, error)
 	Path() string
-	Steps() []BatchSpecWorkspaceStepResolver
+	Steps(ctx context.Context) ([]BatchSpecWorkspaceStepResolver, error)
 	SearchResultPaths() []string
 	OnlyFetchWorkspace() bool
 
 	Ignored() bool
 
-	ChangesetSpecs() *[]ChangesetSpecResolver
+	ChangesetSpecs(ctx context.Context) (*[]ChangesetSpecResolver, error)
 	PlaceInQueue() *int32
 }
 
@@ -919,10 +919,10 @@ type BatchSpecWorkspaceStepResolver interface {
 	FinishedAt() *DateTime
 
 	ExitCode() *int32
-	Environment() []BatchSpecWorkspaceEnvironmentVariableResolver
+	Environment() ([]BatchSpecWorkspaceEnvironmentVariableResolver, error)
 	OutputVariables() *[]BatchSpecWorkspaceOutputVariableResolver
 
-	DiffStat() *DiffStat
+	DiffStat(ctx context.Context) (*DiffStat, error)
 	Diff(ctx context.Context) (PreviewRepositoryComparisonResolver, error)
 }
 

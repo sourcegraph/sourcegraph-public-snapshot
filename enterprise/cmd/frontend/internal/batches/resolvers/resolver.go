@@ -132,6 +132,9 @@ func (r *Resolver) NodeResolvers() map[string]graphqlbackend.NodeByIDFunc {
 		bulkOperationIDKind: func(ctx context.Context, id graphql.ID) (graphqlbackend.Node, error) {
 			return r.bulkOperationByID(ctx, id)
 		},
+		batchSpecWorkspaceIDKind: func(ctx context.Context, id graphql.ID) (graphqlbackend.Node, error) {
+			return r.batchSpecWorkspaceByID(ctx, id)
+		},
 	}
 }
 
@@ -347,6 +350,36 @@ func (r *Resolver) bulkOperationByIDString(ctx context.Context, id string) (grap
 		return nil, err
 	}
 	return &bulkOperationResolver{store: r.store, bulkOperation: bulkOperation}, nil
+}
+
+func (r *Resolver) batchSpecWorkspaceByID(ctx context.Context, gqlID graphql.ID) (graphqlbackend.BatchSpecWorkspaceResolver, error) {
+	// TODO(ssbc): currently admin only.
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.store.DB()); err != nil {
+		return nil, err
+	}
+
+	id, err := unmarshalBatchSpecWorkspaceID(gqlID)
+	if err != nil {
+		return nil, err
+	}
+
+	if id == 0 {
+		return nil, ErrIDIsZero{}
+	}
+
+	w, err := r.store.GetBatchSpecWorkspace(ctx, store.GetBatchSpecWorkspaceOpts{ID: id})
+	if err != nil {
+		if err == store.ErrNoResults {
+			return nil, nil
+		}
+		return nil, err
+	}
+	ex, err := r.store.GetBatchSpecWorkspaceExecutionJob(ctx, store.GetBatchSpecWorkspaceExecutionJobOpts{BatchSpecWorkspaceID: w.ID})
+	if err != nil && err != store.ErrNoResults {
+		return nil, err
+	}
+
+	return &batchSpecWorkspaceResolver{store: r.store, workspace: w, execution: ex}, nil
 }
 
 func (r *Resolver) CreateBatchChange(ctx context.Context, args *graphqlbackend.CreateBatchChangeArgs) (graphqlbackend.BatchChangeResolver, error) {
@@ -1401,8 +1434,27 @@ func (r *Resolver) BatchSpecs(ctx context.Context, args *graphqlbackend.ListBatc
 }
 
 func (r *Resolver) CreateBatchSpecFromRaw(ctx context.Context, args *graphqlbackend.CreateBatchSpecFromRawArgs) (graphqlbackend.BatchSpecResolver, error) {
-	// TODO(ssbc): not implemented
-	return nil, errors.New("not implemented yet")
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.store.DB()); err != nil {
+		return nil, err
+	}
+
+	svc := service.New(r.store)
+	batchSpec, err := svc.CreateBatchSpec(ctx, service.CreateBatchSpecOpts{
+		NamespaceUserID: actor.FromContext(ctx).UID,
+		RawSpec:         args.BatchSpec,
+	})
+	if err != nil {
+		return nil, err
+	}
+	err = svc.EnqueueBatchSpecResolution(ctx, service.EnqueueBatchSpecResolutionOpts{
+		BatchSpecID:      batchSpec.ID,
+		AllowIgnored:     args.AllowIgnored,
+		AllowUnsupported: args.AllowUnsupported,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return r.batchSpecByID(ctx, marshalBatchSpecRandID(batchSpec.RandID))
 }
 
 func (r *Resolver) DeleteBatchSpec(ctx context.Context, args *graphqlbackend.DeleteBatchSpecArgs) (*graphqlbackend.EmptyResponse, error) {

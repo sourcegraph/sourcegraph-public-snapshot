@@ -438,6 +438,7 @@ commands:
       env TMPDIR="$HOME/.sourcegraph/batches-executor-temp" .bin/executor
     env:
       EXECUTOR_QUEUE_NAME: batches
+      EXECUTOR_MAXIMUM_NUM_JOBS: 8
       SRC_PROF_HTTP: ":6093"
 
   # If you want to use this, either start it with `sg run batches-executor-firecracker` or

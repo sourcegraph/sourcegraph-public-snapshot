@@ -18,6 +18,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
+	"github.com/sourcegraph/sourcegraph/lib/batches"
 )
 
 const batchSpecIDKind = "BatchSpec"
@@ -67,7 +68,9 @@ func (r *batchSpecResolver) ParsedInput() (graphqlbackend.JSONValue, error) {
 }
 
 func (r *batchSpecResolver) ChangesetSpecs(ctx context.Context, args *graphqlbackend.ChangesetSpecsConnectionArgs) (graphqlbackend.ChangesetSpecConnectionResolver, error) {
-	opts := store.ListChangesetSpecsOpts{}
+	opts := store.ListChangesetSpecsOpts{
+		BatchSpecID: r.batchSpec.ID,
+	}
 	if err := validateFirstParamDefaults(args.First); err != nil {
 		return nil, err
 	}
@@ -81,9 +84,8 @@ func (r *batchSpecResolver) ChangesetSpecs(ctx context.Context, args *graphqlbac
 	}
 
 	return &changesetSpecConnectionResolver{
-		store:       r.store,
-		opts:        opts,
-		batchSpecID: r.batchSpec.ID,
+		store: r.store,
+		opts:  opts,
 	}, nil
 }
 
@@ -220,8 +222,8 @@ func (r *batchChangeDescriptionResolver) Description() string {
 
 func (r *batchSpecResolver) DiffStat(ctx context.Context) (*graphqlbackend.DiffStat, error) {
 	specsConnection := &changesetSpecConnectionResolver{
-		store:       r.store,
-		batchSpecID: r.batchSpec.ID,
+		store: r.store,
+		opts:  store.ListChangesetSpecsOpts{BatchSpecID: r.batchSpec.ID},
 	}
 
 	specs, err := specsConnection.Nodes(ctx)
@@ -349,7 +351,7 @@ func (r *batchSpecResolver) AutoApplyEnabled() bool {
 
 func (r *batchSpecResolver) State() string {
 	// TODO(ssbc): not implemented
-	return "not implemented"
+	return "PROCESSING"
 }
 
 func (r *batchSpecResolver) StartedAt() *graphqlbackend.DateTime {
@@ -368,11 +370,52 @@ func (r *batchSpecResolver) FailureMessage() *string {
 }
 
 func (r *batchSpecResolver) ImportingChangesets(ctx context.Context, args *graphqlbackend.ListImportingChangesetsArgs) (graphqlbackend.ChangesetSpecConnectionResolver, error) {
-	// TODO(ssbc): not implemented
-	return nil, errors.New("not implemented")
+	workspaces, _, err := r.store.ListBatchSpecWorkspaces(ctx, store.ListBatchSpecWorkspacesOpts{BatchSpecID: r.batchSpec.ID})
+	if err != nil {
+		return nil, err
+	}
+
+	uniqueCSIDs := make(map[int64]struct{})
+	for _, w := range workspaces {
+		for _, id := range w.ChangesetSpecIDs {
+			if _, ok := uniqueCSIDs[id]; !ok {
+				uniqueCSIDs[id] = struct{}{}
+			}
+		}
+	}
+	specIDs := make([]int64, 0, len(uniqueCSIDs))
+	for id := range uniqueCSIDs {
+		specIDs = append(specIDs, id)
+	}
+
+	opts := store.ListChangesetSpecsOpts{
+		IDs:         specIDs,
+		BatchSpecID: r.batchSpec.ID,
+		Type:        batches.ChangesetSpecDescriptionTypeExisting,
+	}
+	if err := validateFirstParamDefaults(args.First); err != nil {
+		return nil, err
+	}
+	opts.Limit = int(args.First)
+	if args.After != nil {
+		id, err := strconv.Atoi(*args.After)
+		if err != nil {
+			return nil, err
+		}
+		opts.Cursor = int64(id)
+	}
+
+	return &changesetSpecConnectionResolver{store: r.store, opts: opts}, nil
 }
 
 func (r *batchSpecResolver) WorkspaceResolution(ctx context.Context) (graphqlbackend.BatchSpecWorkspaceResolutionResolver, error) {
-	// TODO(ssbc): not implemented
-	return nil, errors.New("not implemented")
+	resolution, err := r.store.GetBatchSpecResolutionJob(ctx, store.GetBatchSpecResolutionJobOpts{BatchSpecID: r.batchSpec.ID})
+	if err != nil {
+		// TODO: switch to full error, once we can distinguish server side batch specs.
+		if err == store.ErrNoResults {
+			return nil, nil
+		}
+		return nil, err
+	}
+	return &batchSpecWorkspaceResolutionResolver{store: r.store, resolution: resolution}, nil
 }

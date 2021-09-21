@@ -154,6 +154,7 @@ func (s *Service) EnqueueBatchSpecResolution(ctx context.Context, opts EnqueueBa
 	}()
 
 	return s.store.CreateBatchSpecResolutionJob(ctx, &btypes.BatchSpecResolutionJob{
+		State:            btypes.BatchSpecResolutionJobStateQueued,
 		BatchSpecID:      opts.BatchSpecID,
 		AllowIgnored:     opts.AllowIgnored,
 		AllowUnsupported: opts.AllowUnsupported,

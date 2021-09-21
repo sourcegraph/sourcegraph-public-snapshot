@@ -177,11 +177,13 @@ func getBatchSpecWorkspaceQuery(opts *GetBatchSpecWorkspaceOpts) *sqlf.Query {
 // ListBatchSpecWorkspacesOpts captures the query options needed for
 // listing batch spec workspace jobs.
 type ListBatchSpecWorkspacesOpts struct {
+	LimitOpts
+	Cursor      int64
 	BatchSpecID int64
 }
 
 // ListBatchSpecWorkspaces lists batch changes with the given filters.
-func (s *Store) ListBatchSpecWorkspaces(ctx context.Context, opts ListBatchSpecWorkspacesOpts) (cs []*btypes.BatchSpecWorkspace, err error) {
+func (s *Store) ListBatchSpecWorkspaces(ctx context.Context, opts ListBatchSpecWorkspacesOpts) (cs []*btypes.BatchSpecWorkspace, next int64, err error) {
 	ctx, endObservation := s.operations.listBatchSpecWorkspaces.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
@@ -197,7 +199,12 @@ func (s *Store) ListBatchSpecWorkspaces(ctx context.Context, opts ListBatchSpecW
 		return nil
 	})
 
-	return cs, err
+	if opts.Limit != 0 && len(cs) == opts.DBLimit() {
+		next = cs[len(cs)-1].ID
+		cs = cs[:len(cs)-1]
+	}
+
+	return cs, next, err
 }
 
 var listBatchSpecWorkspacesQueryFmtstr = `
@@ -217,8 +224,12 @@ func listBatchSpecWorkspacesQuery(opts ListBatchSpecWorkspacesOpts) *sqlf.Query 
 		preds = append(preds, sqlf.Sprintf("batch_spec_workspaces.batch_spec_id = %d", opts.BatchSpecID))
 	}
 
+	if opts.Cursor > 0 {
+		preds = append(preds, sqlf.Sprintf("batch_spec_workspaces.id >= %s", opts.Cursor))
+	}
+
 	return sqlf.Sprintf(
-		listBatchSpecWorkspacesQueryFmtstr,
+		listBatchSpecWorkspacesQueryFmtstr+opts.LimitOpts.ToDB(),
 		sqlf.Join(BatchSpecWorkspaceColums.ToSqlf(), ", "),
 		sqlf.Join(preds, "\n AND "),
 	)

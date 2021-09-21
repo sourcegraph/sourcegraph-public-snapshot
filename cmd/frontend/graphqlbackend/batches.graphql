@@ -2670,9 +2670,10 @@ type BatchSpecWorkspace implements Node {
     cachedResultFound: Boolean!
 
     """
-    Executor stages of running in this workspace.
+    Executor stages of running in this workspace. Null, if the execution hasn't
+    started yet.
     """
-    stages: BatchSpecWorkspaceStages!
+    stages: BatchSpecWorkspaceStages
 
     """
     List of steps that will need to run over this workspace.

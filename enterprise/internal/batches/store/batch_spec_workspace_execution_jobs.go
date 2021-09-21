@@ -7,6 +7,7 @@ import (
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
 	"github.com/opentracing/opentracing-go/log"
+
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/database/batch"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
@@ -144,9 +145,10 @@ func getBatchSpecWorkspaceExecutionJobQuery(opts *GetBatchSpecWorkspaceExecution
 // ListBatchSpecWorkspaceExecutionJobsOpts captures the query options needed for
 // listing batch spec workspace execution jobs.
 type ListBatchSpecWorkspaceExecutionJobsOpts struct {
-	Cancel         *bool
-	State          btypes.BatchSpecWorkspaceExecutionJobState
-	WorkerHostname string
+	Cancel                *bool
+	State                 btypes.BatchSpecWorkspaceExecutionJobState
+	WorkerHostname        string
+	BatchSpecWorkspaceIDs []int64
 }
 
 // ListBatchSpecWorkspaceExecutionJobs lists batch changes with the given filters.
@@ -189,6 +191,14 @@ func listBatchSpecWorkspaceExecutionJobsQuery(opts ListBatchSpecWorkspaceExecuti
 
 	if opts.Cancel != nil {
 		preds = append(preds, sqlf.Sprintf("batch_spec_workspace_execution_jobs.cancel = %s", *opts.Cancel))
+	}
+
+	if len(opts.BatchSpecWorkspaceIDs) != 0 {
+		ids := make([]*sqlf.Query, 0, len(opts.BatchSpecWorkspaceIDs))
+		for _, id := range opts.BatchSpecWorkspaceIDs {
+			ids = append(ids, sqlf.Sprintf("%s", id))
+		}
+		preds = append(preds, sqlf.Sprintf("batch_spec_workspace_execution_jobs.batch_spec_workspace_id IN (%s)", sqlf.Join(ids, ",")))
 	}
 
 	if len(preds) == 0 {

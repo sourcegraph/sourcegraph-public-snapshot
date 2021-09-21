@@ -3,7 +3,7 @@ import classNames from 'classnames'
 import CloseIcon from 'mdi-react/CloseIcon'
 import React, { useState, useCallback, useEffect, useMemo } from 'react'
 import { Subject } from 'rxjs'
-import { catchError, debounceTime, startWith, switchMap } from 'rxjs/operators'
+import { catchError, debounceTime, delay, repeatWhen, startWith, switchMap } from 'rxjs/operators'
 
 import { isErrorLike } from '@sourcegraph/codeintellify/lib/errors'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
@@ -19,7 +19,7 @@ import { MonacoSettingsEditor } from '../../../../settings/MonacoSettingsEditor'
 import { BatchSpecDownloadLink, getFileName } from '../../BatchSpec'
 import { excludeRepo } from '../yaml-util'
 
-import { createBatchSpecFromRaw } from './backend'
+import { createBatchSpecFromRaw, fetchBatchSpec } from './backend'
 import combySample from './comby.batch.yaml'
 import helloWorldSample from './empty.batch.yaml'
 import styles from './ExampleTabs.module.scss'
@@ -145,6 +145,9 @@ const ExampleTabPanel: React.FunctionComponent<ExampleTabPanelProps> = ({
                     startWith(code),
                     debounceTime(5000),
                     switchMap(code => createBatchSpecFromRaw(code)),
+                    switchMap(spec =>
+                        fetchBatchSpec(spec.id).pipe(repeatWhen(completed => completed.pipe(delay(5000))))
+                    ),
                     catchError(error => [asError(error)])
                 ),
             // Don't want to trigger on changes to code, it's just the initial value.
