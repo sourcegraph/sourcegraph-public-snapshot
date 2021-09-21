@@ -315,6 +315,7 @@ func NewCommitScanner(r io.Reader) *CommitScanner {
 		}
 
 		// See if we have enough null bytes to constitute a full commit
+		// Look for one more than the number of parts because the each message ends with a null byte too
 		if bytes.Count(data, sep) < partsPerCommit+1 {
 			if atEOF {
 				return 0, nil, errors.Errorf("incomplete line")
