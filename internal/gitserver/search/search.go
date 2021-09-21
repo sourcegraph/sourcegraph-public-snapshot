@@ -103,10 +103,11 @@ const (
 // that job should be sent down. We then read from the result channels in the same order that the jobs were sent.
 // This allows our worker pool to run the jobs in parallel, but we still emit matches in the same order that
 // git log outputs them.
-func Search(dir string, revisionArgs []string, p MatchTree, onMatch func(*LazyCommit, *protocol.CommitHighlights) bool) error {
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
+func Search(ctx context.Context, dir string, revs []protocol.RevisionSpecifier, p MatchTree, onMatch func(*LazyCommit, *protocol.CommitHighlights) bool) error {
 	g, ctx := errgroup.WithContext(ctx)
+	ctx, cancel := context.WithCancel(ctx)
+
+	revArgs := revsToGitArgs(revs)
 
 	jobs := make(chan job, 128)
 	resultChans := make(chan chan searchResult, 128)
@@ -116,7 +117,7 @@ func Search(dir string, revisionArgs []string, p MatchTree, onMatch func(*LazyCo
 		defer close(resultChans)
 		defer close(jobs)
 
-		cmd := exec.CommandContext(ctx, "git", logArgsWithoutRefs...)
+		cmd := exec.CommandContext(ctx, "git", append(logArgsWithoutRefs, revArgs...)...)
 		pr, pw := io.Pipe()
 		cmd.Stdout = pw
 		cmd.Dir = dir
@@ -124,10 +125,11 @@ func Search(dir string, revisionArgs []string, p MatchTree, onMatch func(*LazyCo
 			return err
 		}
 
+		// Wait for the git subprocess to finish, closing the pipe when it does
 		var cmdErr error
 		go func() {
+			defer pw.Close()
 			cmdErr = cmd.Wait()
-			pw.Close()
 		}()
 
 		batch := make([]*RawCommit, 0, batchSize)
@@ -234,6 +236,22 @@ func Search(dir string, revisionArgs []string, p MatchTree, onMatch func(*LazyCo
 	})
 
 	return g.Wait()
+}
+
+func revsToGitArgs(revs []protocol.RevisionSpecifier) []string {
+	revArgs := make([]string, 0, len(revs))
+	for _, rev := range revs {
+		if rev.RevSpec != "" {
+			revArgs = append(revArgs, rev.RevSpec)
+		} else if rev.RefGlob != "" {
+			revArgs = append(revArgs, "--glob="+rev.RefGlob)
+		} else if rev.ExcludeRefGlob != "" {
+			revArgs = append(revArgs, "--exclude="+rev.RefGlob)
+		} else {
+			revArgs = append(revArgs, "HEAD")
+		}
+	}
+	return revArgs
 }
 
 // RawCommit is a shallow parse of the output of git log

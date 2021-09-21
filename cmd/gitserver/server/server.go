@@ -995,25 +995,14 @@ func (s *Server) search(w http.ResponseWriter, r *http.Request, args *protocol.S
 		defer close(resultChan)
 		done := ctx.Done()
 
-		revArgs := make([]string, 0, len(args.Revisions))
-		for _, rev := range args.Revisions {
-			if rev.RevSpec != "" {
-				revArgs = append(revArgs, rev.RevSpec)
-			} else if rev.RefGlob != "" {
-				revArgs = append(revArgs, "--glob="+rev.RefGlob)
-			} else if rev.ExcludeRefGlob != "" {
-				revArgs = append(revArgs, "--exclude="+rev.RefGlob)
-			} else {
-				revArgs = append(revArgs, "HEAD")
-			}
-		}
-
 		// TODO this should take a context so we can stop searching before we find a match
-		return search.Search(dir.Path(), revArgs, search.ToMatchTree(args.Query), func(match *search.LazyCommit, highlights *protocol.CommitHighlights) bool {
+
+		var conversionErr error
+		err := search.Search(ctx, dir.Path(), args.Revisions, search.ToMatchTree(args.Query), func(match *search.LazyCommit, highlights *protocol.CommitHighlights) bool {
 			res, err := createCommitMatch(match, highlights, args.IncludeDiff)
 			if err != nil {
-				// TODO(camdencheek)
-				panic(err)
+				conversionErr = err
+				return false
 			}
 
 			select {
@@ -1023,6 +1012,10 @@ func (s *Server) search(w http.ResponseWriter, r *http.Request, args *protocol.S
 				return true
 			}
 		})
+		if err != nil {
+			return err
+		}
+		return conversionErr
 	})
 
 	// Write matching commits to the stream, flushing occasionally

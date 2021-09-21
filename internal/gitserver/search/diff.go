@@ -15,6 +15,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 )
 
+const (
+	matchContextLines = 1
+	maxLinesPerHunk   = 5
+)
+
 func FormatDiff(rawDiff []*diff.FileDiff, highlights map[int]protocol.FileDiffHighlight) (string, protocol.Ranges) {
 	var buf strings.Builder
 	var loc protocol.Location
@@ -42,8 +47,7 @@ func FormatDiff(rawDiff []*diff.FileDiff, highlights map[int]protocol.FileDiffHi
 		})
 		loc.Column = 0
 
-		// TODO extract consts
-		filteredHunks, filteredHighlights := splitHunkMatches(fileDiff.Hunks, fdh.HunkHighlights, 1, 5)
+		filteredHunks, filteredHighlights := splitHunkMatches(fileDiff.Hunks, fdh.HunkHighlights, matchContextLines, maxLinesPerHunk)
 
 		for hunkIdx, hunk := range filteredHunks {
 			hmh, ok := filteredHighlights[hunkIdx]
@@ -87,9 +91,9 @@ func FormatDiff(rawDiff []*diff.FileDiff, highlights map[int]protocol.FileDiffHi
 }
 
 // splitHunkMatches returns a list of hunks that are a subset of the input hunks,
-// filtered down to only hunks that match the query. Non-matching context lines
+// filtered down to only hunks that matched, determined by whether the hunk has highlights.
 // and non-matching changed lines are eliminated, and the hunk header (start/end
-// lines) are adjusted accordingly.
+// lines) are adjusted accordingly. The provided highlights are adjusted accordingly.
 func splitHunkMatches(hunks []*diff.Hunk, hunkHighlights map[int]protocol.HunkHighlight, matchContextLines, maxLinesPerHunk int) (results []*diff.Hunk, newHighlights map[int]protocol.HunkHighlight) {
 	addExtraHunkMatchesSection := func(hunk *diff.Hunk, extraHunkMatches int) {
 		if extraHunkMatches > 0 {

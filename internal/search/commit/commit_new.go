@@ -151,8 +151,7 @@ func queryParameterToPredicate(parameter query.Parameter, caseSensitive, diff bo
 	case query.FieldFile:
 		newPred = &gitprotocol.DiffModifiesFile{gitprotocol.Regexp{regexp.MustCompile(wrapCaseSensitive(parameter.Value, caseSensitive))}}
 	case query.FieldLang:
-		// TODO(camdencheek)
-		return nil
+		newPred = &gitprotocol.DiffModifiesFile{gitprotocol.Regexp{regexp.MustCompile(search.LangToFileRegexp(parameter.Value))}}
 	}
 
 	if parameter.Negated {
