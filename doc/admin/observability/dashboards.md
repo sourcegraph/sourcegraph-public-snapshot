@@ -7443,11 +7443,13 @@ Query: `sum by (op)(increase(src_workerutil_dbworker_store_insights_query_runner
 
 <br />
 
-### Worker: Code Insights Queue Utilization
+### Worker: Code Insights queue utilization
 
 #### worker: insights_queue_unutilized_size
 
-<p class="subtitle">Queue size that is not utilized (not processing)</p>
+<p class="subtitle">Insights queue size that is not utilized (not processing)</p>
+
+Any value on this panel indicates code insights is not processing queries from its queue. This observable and alert only fire if there are records in the queue and there have been no dequeue attempts for 30 minutes.
 
 Refer to the [alert solutions reference](./alert_solutions.md#worker-insights-queue-unutilized-size) for 1 alert related to this panel.
 
