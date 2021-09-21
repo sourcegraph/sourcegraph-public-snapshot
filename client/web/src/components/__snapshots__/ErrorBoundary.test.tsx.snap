@@ -16,6 +16,7 @@ exports[`ErrorBoundary passes through if non-error 1`] = `
   </div>
   <div
     className="subtitle"
+    data-testid="hero-page-subtitle"
   >
     <div
       className="container"
@@ -57,6 +58,7 @@ exports[`ErrorBoundary renders reload page if chunk error 1`] = `
   </div>
   <div
     className="subtitle"
+    data-testid="hero-page-subtitle"
   >
     <div
       className="container"
