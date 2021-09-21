@@ -39,6 +39,9 @@ type Event struct {
 	Argument       json.RawMessage
 	PublicArgument json.RawMessage
 	UserProperties json.RawMessage
+	DeviceID       string
+	InsertID       *string
+	EventID        *int
 }
 
 // LogBackendEvent is a convenience function for logging backend events.
@@ -95,6 +98,8 @@ type amplitudeEventJson struct {
 type amplitudeEvent struct {
 	UserID          string          `json:"user_id"`
 	DeviceID        string          `json:"device_id"`
+	EventID         *int            `json:"event_id"`
+	InsertID        *string         `json:"insert_id"`
 	EventType       string          `json:"event_type"`
 	EventProperties json.RawMessage `json:"event_properties,omitempty"`
 	UserProperties  json.RawMessage `json:"user_properties,omitempty"`
@@ -178,10 +183,13 @@ func publishAmplitudeEvent(args Event) error {
 	amplitudeEvent, err := json.Marshal(amplitudeEventJson{
 		APIKey: amplitudeAPIToken,
 		Events: []amplitudeEvent{{
-			UserID: userID,
+			UserID:   userID,
+			DeviceID: args.DeviceID,
+			InsertID: args.InsertID,
+			EventID:  args.EventID,
 			// TODO(FARHAN): Need to store this in context or cookie and pull it each time. Perhaps send with event from
 			// the client side.
-			DeviceID:        fmt.Sprintf(`%s-%d`, string(args.UserID), time.Now().Unix()),
+			// DeviceID:        fmt.Sprintf(`%s-%d`, string(args.UserID), time.Now().Unix()),
 			EventType:       args.EventName,
 			EventProperties: args.PublicArgument,
 			UserProperties:  userProperties,

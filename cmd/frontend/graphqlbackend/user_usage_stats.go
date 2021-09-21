@@ -88,6 +88,9 @@ func (r *schemaResolver) LogEvent(ctx context.Context, args *struct {
 	Referrer       *string
 	PublicArgument *string
 	UserProperties *string
+	DeviceID       string
+	InsertID       *string
+	EventID        *int
 }) (*EmptyResponse, error) {
 	if !conf.EventLoggingEnabled() {
 		return nil, nil
@@ -136,6 +139,9 @@ func (r *schemaResolver) LogEvent(ctx context.Context, args *struct {
 		Referrer:       args.Referrer,
 		PublicArgument: publicArgumentPayload,
 		UserProperties: userPropertiesPayload,
+		DeviceID:       args.DeviceID,
+		EventID:        args.EventID,
+		InsertID:       args.InsertID,
 	})
 }
 

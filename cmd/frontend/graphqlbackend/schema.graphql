@@ -443,6 +443,12 @@ type Mutation {
         an active code host, etc.
         """
         userProperties: String
+
+        deviceID: String!
+
+        eventID: String
+
+        insertID: String
     ): EmptyResponse
     """
     Sends a test notification for the saved search. Be careful: this will send a notifcation (email and other
