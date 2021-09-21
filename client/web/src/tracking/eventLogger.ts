@@ -129,7 +129,7 @@ export class EventLogger implements TelemetryService {
         }
     }
 
-    private getUserProperties(): string {
+    public getUserProperties(): string {
         const userProps = localStorage.getItem('SOURCEGRAPH_USER_PROPERTIES')
         if (userProps) {
             return userProps

@@ -195,17 +195,6 @@ func NewJSContextFromRequest(req *http.Request) JSContext {
 		ProductResearchPageEnabled: conf.ProductResearchPageEnabled(),
 
 		ExperimentalFeatures: conf.ExperimentalFeatures(),
-
-		Test: "Testing",
-
-		// UserProperties: {
-		// 	NumberOfReposAdded: conf.ExperimentalFeatures()
-		// 	NumberOfPublicReposAdded
-		// 	NumberOfPrivateReposAdded
-		// 	ActiveCodeHost
-		// 	CohortWeek
-		// },
-		// NumberOfReposAdded: conf.ExperimentalFeatures(),
 	}
 }
 
