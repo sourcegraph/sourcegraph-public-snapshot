@@ -47,6 +47,14 @@ export function useQuery<TData = any, TVariables = OperationVariables>(
     return useApolloQuery(documentNode, options)
 }
 
+/**
+ * Unlike with `useQuery`, when you call `useLazyQuery`, it does not immediately execute its associated query.
+ * Wrapper around Apollo `useLazyQuery` that supports `DocumentNode` and `string` types.
+ *
+ * @param query GraphQL operation payload.
+ * @param options Operation variables and request configuration.
+ * @returns returns a query function in its result tuple that you call whenever you're ready to execute the query.
+ */
 export function useLazyQuery<TData = any, TVariables = OperationVariables>(
     query: RequestDocument,
     options: QueryHookOptions<TData, TVariables>
