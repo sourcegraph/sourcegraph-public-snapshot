@@ -74,10 +74,15 @@ Then, confirm there are no error messages in:
 The most likely error message indicating a problem is `Error prefetching SAML service provider metadata`. See [SAML troubleshooting](#troubleshooting) for more tips.
 
 ## Troubleshooting
-
-### Debugging with your browser
 Security Assertion Markup Language (SAML) is a common web protocol used pass authorized credentials between two web applications, a service provider (SP, Sourcegraph in this instance), and an Identity Provider (IdP, see our [list](#IdentityProviders) of IdP's above). This communication is conducted via XML assertions.
 
+### Enable logging in Sourcegraph containers
+Set the env var `INSECURE_SAML_LOG_TRACES=1` to log all SAML requests and responses on:
+
+- [Docker Compose](../../install/docker-compose/index.md) and [Kubernetes](../../install/kubernetes/index.md): the `sourcegraph-frontend` deployment
+- [Single-container](../../install/docker/index.md): the `sourcegraph/server` container
+
+### Debugging with your browser
 When debugging a problem with SAML its often helpful to use your browsers developer tools to directly observer the XML assertions and their contents. Below are some general pointers on how to collect SAML communications:
 1. Naviagate in your browser to Sourcegraph, prepare to attempt a login via SAML in Sourcegraph
 2. Open your developer tools and navigate to the Network tab. Check to see if theres an option to preserve logs, if so enable it.
@@ -91,10 +96,7 @@ When debugging a problem with SAML its often helpful to use your browsers develo
 
 In a real network response you will often find that the header info in the network tab has a `SAMLResponse` field containing XML that has been encoded, and/or encrypted, there are a variety of ways to decompress and decrypt XML. For an easy to use tools we recommend [samltool.com](https://www.samltool.com/), which provides a user friendly UI to accomplish these tasks.
 
+If you're not sure why your SAML isn't working and you've collected the network request and response from your login attempts please feel free to reach out to our support team at [support@sourcegraph.com](support@sourcegraph.com), **please redacted any secret keys that may be contained in your site configuration or SAML assertions before sharing with us at Sourcegraph.** 
 
 
-### Enable logging in Sourcegraph containers
-Set the env var `INSECURE_SAML_LOG_TRACES=1` to log all SAML requests and responses on:
 
-- [Docker Compose](../../install/docker-compose/index.md) and [Kubernetes](../../install/kubernetes/index.md): the `sourcegraph-frontend` deployment
-- [Single-container](../../install/docker/index.md): the `sourcegraph/server` container
