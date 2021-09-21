@@ -8,6 +8,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 )
 
+// ToMatchTree converts a protocol.SearchQuery into its equivalent MatchTree.
+// We don't send a match tree directly over the wire so using the protocol
+// package doesn't pull in all the dependencies that the match tree needs.
 func ToMatchTree(q protocol.SearchQuery) MatchTree {
 	switch v := q.(type) {
 	case *protocol.AuthorMatches:
@@ -280,7 +283,7 @@ func (r *Regexp) GobDecode(data []byte) (err error) {
 // matchesToRanges is a helper that takes the return value of regexp.FindAllStringIndex()
 // and converts it to Ranges.
 // INVARIANT: matches must be ordered and non-overlapping,
-// which is guaranteed by regexp.FindAllStringIndex()
+// which is guaranteed by regexp.FindAllIndex()
 func matchesToRanges(content []byte, matches [][]int) protocol.Ranges {
 	// Incrementally search newlines to avoid counting newlines over the
 	// entire string for every match.
@@ -315,6 +318,8 @@ func matchesToRanges(content []byte, matches [][]int) protocol.Ranges {
 	return res
 }
 
+// newlineCountAndLastIndex returns the number of newlines in the byte slice,
+// as well as the index of the last newline in the byte slice.
 func newlineCountAndLastIndex(content []byte) (count int, lastIndex int) {
 	lastIndex = bytes.LastIndexByte(content, '\n')
 	if lastIndex == -1 {
