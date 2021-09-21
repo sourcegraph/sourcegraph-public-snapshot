@@ -141,6 +141,9 @@ export function logEvent(event: string, eventProperties?: unknown, publicArgumen
                 $argument: String
                 $publicArgument: String
                 $userProperties: String
+                $deviceID: String!
+                $eventID: String
+                $insertID: String
             ) {
                 logEvent(
                     event: $event
@@ -153,6 +156,9 @@ export function logEvent(event: string, eventProperties?: unknown, publicArgumen
                     argument: $argument
                     publicArgument: $publicArgument
                     userProperties: $userProperties
+                    deviceID: $deviceID
+                    eventID: $eventID
+                    insertID: $insertID
                 ) {
                     alwaysNil
                 }
@@ -169,6 +175,9 @@ export function logEvent(event: string, eventProperties?: unknown, publicArgumen
             argument: eventProperties ? JSON.stringify(eventProperties) : null,
             publicArgument: publicArgument ? JSON.stringify(publicArgument) : null,
             userProperties: eventLogger.getUserProperties(),
+            deviceID: eventLogger.getDeviceID(),
+            eventID: eventLogger.getEventID(),
+            insertID: eventLogger.getInsertID(),
         }
     )
         .pipe(map(dataOrThrowErrors))

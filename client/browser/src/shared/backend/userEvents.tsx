@@ -61,8 +61,16 @@ export const logEvent = (
                 $url: String!
                 $source: EventSource!
                 $argument: String
+                $deviceID: String!
             ) {
-                logEvent(event: $name, userCookieID: $userCookieID, url: $url, source: $source, argument: $argument) {
+                logEvent(
+                    event: $name
+                    userCookieID: $userCookieID
+                    url: $url
+                    source: $source
+                    argument: $argument
+                    deviceID: $deviceID
+                ) {
                     alwaysNil
                 }
             }
@@ -71,6 +79,7 @@ export const logEvent = (
             ...event,
             source: EventSource.CODEHOSTINTEGRATION,
             argument: event.argument && JSON.stringify(event.argument),
+            deviceID: 'browser-ext',
         },
         mightContainPrivateInfo: false,
         // eslint-disable-next-line rxjs/no-ignored-subscription

@@ -10,6 +10,7 @@ import { getPreviousMonday, redactSensitiveInfoFromAppURL, stripURLParameters } 
 export const ANONYMOUS_USER_ID_KEY = 'sourcegraphAnonymousUid'
 export const COHORT_ID_KEY = 'sourcegraphCohortId'
 export const FIRST_SOURCE_URL_KEY = 'sourcegraphSourceUrl'
+export const DEVICE_ID_KEY = 'sourcegraphDeviceId'
 
 export class EventLogger implements TelemetryService {
     private hasStrippedQueryParameters = false
@@ -17,6 +18,8 @@ export class EventLogger implements TelemetryService {
     private anonymousUserID = ''
     private cohortID?: string
     private firstSourceURL?: string
+    private deviceID?: string
+    private eventID = 0
 
     private readonly cookieSettings: CookieAttributes = {
         // 365 days expiry, but renewed on activity.
@@ -75,6 +78,7 @@ export class EventLogger implements TelemetryService {
         }
         serverAdmin.trackAction(eventLabel, eventProperties, publicArgument)
         this.logToConsole(eventLabel, eventProperties)
+        this.eventID++
     }
 
     private logToConsole(eventLabel: string, object?: any): void {
@@ -111,6 +115,24 @@ export class EventLogger implements TelemetryService {
 
         this.firstSourceURL = firstSourceURL
         return firstSourceURL
+    }
+
+    public getDeviceID(): string {
+        const deviceID = this.deviceID || cookies.get(DEVICE_ID_KEY) || uuid.v4()
+
+        cookies.set(DEVICE_ID_KEY, deviceID, this.cookieSettings)
+
+        this.deviceID = deviceID
+        return deviceID
+    }
+
+    public getInsertID(): string {
+        const insertID = this.getDeviceID() + Date.now().toString()
+        return insertID
+    }
+
+    public getEventID(): number {
+        return this.eventID
     }
 
     public getReferrer(): string {
@@ -150,7 +172,6 @@ export class EventLogger implements TelemetryService {
     private initializeLogParameters(): void {
         let anonymousUserID = cookies.get(ANONYMOUS_USER_ID_KEY) || localStorage.getItem(ANONYMOUS_USER_ID_KEY)
         let cohortID = cookies.get(COHORT_ID_KEY)
-
         if (!anonymousUserID) {
             anonymousUserID = uuid.v4()
             cohortID = getPreviousMonday(new Date())
@@ -164,8 +185,15 @@ export class EventLogger implements TelemetryService {
             cookies.set(COHORT_ID_KEY, cohortID, this.cookieSettings)
         }
 
+        let deviceID = cookies.get(DEVICE_ID_KEY)
+        if (!deviceID) {
+            deviceID = uuid.v4()
+            cookies.set(DEVICE_ID_KEY, deviceID)
+        }
+
         this.anonymousUserID = anonymousUserID
         this.cohortID = cohortID
+        this.deviceID = deviceID
     }
 }
 

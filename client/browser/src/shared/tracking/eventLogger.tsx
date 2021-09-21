@@ -13,6 +13,7 @@ import { isInPage } from '../context'
 import { observeSourcegraphURL, getPlatformName } from '../util/context'
 
 const uidKey = 'sourcegraphAnonymousUid'
+const deviceIDKey = 'sourcegraphDeviceId'
 
 /**
  * Telemetry Service which only logs when the enable flag is set. Accepts an
@@ -61,6 +62,7 @@ export class ConditionalTelemetryService implements TelemetryService {
 
 export class EventLogger implements TelemetryService {
     private uid: string | null = null
+    // private deviceID: string | null = null
 
     private platform = getPlatformName()
 
@@ -83,6 +85,7 @@ export class EventLogger implements TelemetryService {
      * Generate a new anonymous user ID if one has not yet been set and stored.
      */
     private generateAnonUserID = (): string => uuid.v4()
+    private generateDeviceID = (): string => uuid.v4()
 
     /**
      * Get the anonymous identifier for this user (allows site admins on a private Sourcegraph
@@ -113,6 +116,30 @@ export class EventLogger implements TelemetryService {
         this.uid = sourcegraphAnonymousUid
         return sourcegraphAnonymousUid
     }
+
+    // private async getDeviceID(): Promise<string> {
+    //     if (this.deviceID) {
+    //         return this.deviceID
+    //     }
+
+    //     if (isInPage) {
+    //         let id = localStorage.getItem(deviceIDKey)
+    //         if (id === null) {
+    //             id = this.generateDeviceID()
+    //             localStorage.setItem(deviceIDKey, id)
+    //         }
+    //         this.deviceID = id
+    //         return this.deviceID
+    //     }
+
+    // let { deviceID } = await storage.sync.get()
+    // if (!deviceID) {
+    //     deviceID = this.generateDeviceID()
+    //     await storage.sync.set({ deviceID })
+    // }
+    //     this.deviceID = deviceID
+    //     return deviceID
+    // }
 
     /**
      * Log a user action on the associated self-hosted Sourcegraph instance (allows site admins on a private
