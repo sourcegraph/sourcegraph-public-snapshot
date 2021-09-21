@@ -98,7 +98,7 @@ The following are two recommendations for installing these dependencies (See bel
         ```
 
 7.  Install the current recommended version of Node JS by running the following
-    from the working directory of a sourcegraph repository clone (See [Cloning our repository](quickstart_4_clone_repository.md) for cloning the repository):
+    from the working directory of a sourcegraph repository clone (See [Cloning our repository](quickstart_2_clone_repository.md) for cloning the repository):
 
     ```
     nvm install
