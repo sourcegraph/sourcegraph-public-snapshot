@@ -71,4 +71,5 @@ Code insights docs are actively in progress during the beta.
 
 ## [References](references/index.md)
 
+- [Common use cases and recipes](references/common_use_cases.md)
 - [Common reasons code insights may not match search results](references/common_reasons_code_insights_may_not_match_search_results.md)
