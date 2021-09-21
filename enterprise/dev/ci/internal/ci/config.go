@@ -41,9 +41,22 @@ type Config struct {
 	MustIncludeCommit []string
 }
 
-func NewConfig(now time.Time, commit, branch, tag string, mustIncludeCommits []string) Config {
-	// defaults to 0
-	buildNumber, _ := strconv.Atoi(os.Getenv("BUILDKITE_BUILD_NUMBER"))
+func NewConfig(now time.Time) Config {
+	var (
+		commit = os.Getenv("BUILDKITE_COMMIT")
+		branch = os.Getenv("BUILDKITE_BRANCH")
+		tag    = os.Getenv("BUILDKITE_TAG")
+		// defaults to 0
+		buildNumber, _ = strconv.Atoi(os.Getenv("BUILDKITE_BUILD_NUMBER"))
+	)
+
+	var mustIncludeCommits []string
+	if rawMustIncludeCommit := os.Getenv("MUST_INCLUDE_COMMIT"); rawMustIncludeCommit != "" {
+		mustIncludeCommits = strings.Split(rawMustIncludeCommit, ",")
+		for i := range mustIncludeCommits {
+			mustIncludeCommits[i] = strings.TrimSpace(mustIncludeCommits[i])
+		}
+	}
 
 	// detect changed files
 	var changedFiles []string
