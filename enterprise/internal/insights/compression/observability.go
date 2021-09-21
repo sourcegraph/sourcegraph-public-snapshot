@@ -1,13 +1,17 @@
 package compression
 
 import (
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
+
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
 type operations struct {
-	Worker     *observation.Operation
-	GetCommits *observation.Operation
+	worker       *observation.Operation
+	getCommits   *observation.Operation
+	countCommits *prometheus.CounterVec
 }
 
 func newOperations(observationContext *observation.Context) *operations {
@@ -15,7 +19,7 @@ func newOperations(observationContext *observation.Context) *operations {
 		Name: "CommitIndexer.GetCommits",
 		Metrics: metrics.NewOperationMetrics(
 			observationContext.Registerer,
-			"src_insights_commit_indexer_fetch_duration",
+			"insights_commit_indexer_fetch",
 			metrics.WithCountHelp("Time for the commit indexer to fetch commits from gitserver."),
 		),
 	})
@@ -24,13 +28,19 @@ func newOperations(observationContext *observation.Context) *operations {
 		Name: "CommitIndexer.Run",
 		Metrics: metrics.NewOperationMetrics(
 			observationContext.Registerer,
-			"commit_indexer",
+			"insights_commit_indexer",
 			metrics.WithCountHelp("Total number of commit indexer executions"),
 		),
 	})
 
+	countCommits := promauto.NewCounterVec(prometheus.CounterOpts{
+		Name: "insights_commit_indexer_commits_added",
+		Help: "Total number of commits added to the commit index for this repo",
+	}, []string{"repoName"})
+
 	return &operations{
-		Worker:     worker,
-		GetCommits: getCommits,
+		worker:       worker,
+		getCommits:   getCommits,
+		countCommits: countCommits,
 	}
 }
