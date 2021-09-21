@@ -167,6 +167,15 @@ type CreateBatchSpecFromRawArgs struct {
 	NoCache          bool
 }
 
+type ReplaceBatchSpecInputArgs struct {
+	PreviousSpec     graphql.ID
+	BatchSpec        string
+	AllowIgnored     bool
+	AllowUnsupported bool
+	Execute          bool
+	NoCache          bool
+}
+
 type DeleteBatchSpecArgs struct {
 	BatchSpec graphql.ID
 }
@@ -319,6 +328,7 @@ type BatchChangesResolver interface {
 	CreateBatchChange(ctx context.Context, args *CreateBatchChangeArgs) (BatchChangeResolver, error)
 	CreateBatchSpec(ctx context.Context, args *CreateBatchSpecArgs) (BatchSpecResolver, error)
 	CreateBatchSpecFromRaw(ctx context.Context, args *CreateBatchSpecFromRawArgs) (BatchSpecResolver, error)
+	ReplaceBatchSpecInput(ctx context.Context, args *ReplaceBatchSpecInputArgs) (BatchSpecResolver, error)
 	DeleteBatchSpec(ctx context.Context, args *DeleteBatchSpecArgs) (*EmptyResponse, error)
 	ExecuteBatchSpec(ctx context.Context, args *ExecuteBatchSpecArgs) (BatchSpecResolver, error)
 	CancelBatchSpecExecution(ctx context.Context, args *CancelBatchSpecExecutionArgs) (BatchSpecResolver, error)
@@ -849,22 +859,21 @@ type BatchSpecWorkspaceResolutionResolver interface {
 
 	RecentlyCompleted(ctx context.Context, args *ListRecentlyCompletedWorkspacesArgs) BatchSpecWorkspaceConnectionResolver
 	RecentlyErrored(ctx context.Context, args *ListRecentlyErroredWorkspacesArgs) BatchSpecWorkspaceConnectionResolver
-
-	Stats(ctx context.Context) BatchSpecWorkspaceResolutionStatsResolver
-}
-
-type BatchSpecWorkspaceResolutionStatsResolver interface {
-	Errored() int32
-	Completed() int32
-	Processing() int32
-	Queued() int32
-	Ignored() int32
 }
 
 type BatchSpecWorkspaceConnectionResolver interface {
 	Nodes(ctx context.Context) ([]BatchSpecWorkspaceResolver, error)
 	TotalCount(ctx context.Context) (int32, error)
 	PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error)
+	Stats(ctx context.Context) BatchSpecWorkspacesStatsResolver
+}
+
+type BatchSpecWorkspacesStatsResolver interface {
+	Errored() int32
+	Completed() int32
+	Processing() int32
+	Queued() int32
+	Ignored() int32
 }
 
 type BatchSpecWorkspaceResolver interface {
@@ -910,19 +919,19 @@ type BatchSpecWorkspaceStepResolver interface {
 	FinishedAt() *DateTime
 
 	ExitCode() *int32
-	EnvVars() []BatchSpecWorkspaceStepEnvVarResolver
-	OutputVars() []BatchSpecWorkspaceStepOutputVarResolver
+	Environment() []BatchSpecWorkspaceEnvironmentVariableResolver
+	OutputVariables() *[]BatchSpecWorkspaceOutputVariableResolver
 
 	DiffStat() *DiffStat
 	Diff(ctx context.Context) (PreviewRepositoryComparisonResolver, error)
 }
 
-type BatchSpecWorkspaceStepEnvVarResolver interface {
+type BatchSpecWorkspaceEnvironmentVariableResolver interface {
 	Name() string
 	Value() string
 }
 
-type BatchSpecWorkspaceStepOutputVarResolver interface {
+type BatchSpecWorkspaceOutputVariableResolver interface {
 	Name() string
 	Value() JSONValue
 }

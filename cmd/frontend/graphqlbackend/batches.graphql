@@ -2407,24 +2407,43 @@ extend type Query {
     ): BatchSpecConnection!
 }
 
+"""
+State of the workspace resolution.
+"""
 enum BatchSpecWorkspaceResolutionState {
+    """
+    Not yet started resolving. Will be picked up by a worker eventually.
+    """
     QUEUED
+    """
+    Currently resolving workspaces.
+    """
     PROCESSING
+    """
+    An error occured while resolving workspaces. Will be retried eventually.
+    """
     ERRORED
+    """
+    A fatal error occured while resolving workspaces. No retries will be made.
+    """
     FAILED
+    """
+    Resolving workspaces finished successfully.
+    """
     COMPLETED
 }
 
-type BatchSpecWorkspaceResolutionStats {
-    errored: Int!
-    completed: Int!
-    processing: Int!
-    queued: Int!
-    ignored: Int!
-}
-
+"""
+Possible sort orderings for a workspace connection.
+"""
 enum WorkspacesSortOrder {
+    """
+    Sort by repository name in ascending order.
+    """
     REPO_NAME_ASC
+    """
+    Sort by repository name in descending order.
+    """
     REPO_NAME_DESC
 }
 
@@ -2492,14 +2511,54 @@ type BatchSpecWorkspaceResolution {
     Returns the most recently failed workspace executions.
     """
     recentlyErrored(first: Int = 50, after: String): BatchSpecWorkspaceConnection!
-
-    stats: BatchSpecWorkspaceResolutionStats!
 }
 
+"""
+Statistics on all workspaces in a connection.
+"""
+type BatchSpecWorkspacesStats {
+    """
+    Number of errored workspaces.
+    """
+    errored: Int!
+    """
+    Number of completed workspaces.
+    """
+    completed: Int!
+    """
+    Number of processing workspaces.
+    """
+    processing: Int!
+    """
+    Number of queued workspaces.
+    """
+    queued: Int!
+    """
+    Number of ignored workspaces.
+    """
+    ignored: Int!
+}
+
+"""
+A list of workspaces.
+"""
 type BatchSpecWorkspaceConnection {
+    """
+    The total number of workspaces in the connection.
+    """
     totalCount: Int!
+    """
+    Pagination information.
+    """
     pageInfo: PageInfo!
+    """
+    A list of workspaces.
+    """
     nodes: [BatchSpecWorkspace!]!
+    """
+    Statistics on the workspaces in this connection.
+    """
+    stats: BatchSpecWorkspacesStats!
 }
 
 """
@@ -2525,9 +2584,50 @@ type BatchSpecWorkspaceStages {
 }
 
 """
+The states a workspace can be in.
+"""
+enum BatchSpecWorkspaceState {
+    """
+    The workspace is not yet enqueued for execution.
+    """
+    PENDING
+    """
+    Not yet started executing. Will be picked up by a worker eventually.
+    """
+    QUEUED
+    """
+    Currently executing on the workspace.
+    """
+    PROCESSING
+    """
+    An error occured while executing. Will be retried eventually.
+    """
+    ERRORED
+    """
+    A fatal error occured while executing. No retries will be made.
+    """
+    FAILED
+    """
+    Execution finished successfully.
+    """
+    COMPLETED
+    """
+    Execution is being canceled. This is an async process.
+    """
+    CANCELING
+    """
+    Execution has been canceled.
+    """
+    CANCELED
+}
+
+"""
 A workspace in Batch Changes to run in.
 """
 type BatchSpecWorkspace implements Node {
+    """
+    The unique ID for the workspace.
+    """
     id: ID!
     """
     The repository to run over.
@@ -2585,9 +2685,24 @@ type BatchSpecWorkspace implements Node {
     """
     searchResultPaths: [String!]!
 
+    """
+    The time when the workspace started processing. Null, if not yet started.
+    """
     startedAt: DateTime
+
+    """
+    The time when the workspace finished processing. Null, if not yet finished.
+    """
     finishedAt: DateTime
+
+    """
+    Optional failure message, set when the execution failed.
+    """
     failureMessage: String
+
+    """
+    The current state the workspace is in.
+    """
     state: BatchSpecWorkspaceState!
 
     """
@@ -2596,9 +2711,6 @@ type BatchSpecWorkspace implements Node {
     """
     changesetSpecs: [ChangesetSpec!]
 
-    # TODO: Not possible to get this. ... Or do we want to show combined over all specs?
-    #diffStat: DiffStat
-
     """
     The rank of this execution in the queue. The value of this field is null if the
     execution has started.
@@ -2606,16 +2718,6 @@ type BatchSpecWorkspace implements Node {
     TODO: Not implemented yet.
     """
     placeInQueue: Int
-}
-
-enum BatchSpecWorkspaceState {
-    QUEUED
-    PROCESSING
-    ERRORED
-    FAILED
-    CANCELING
-    CANCELED
-    COMPLETED
 }
 
 """
@@ -2632,7 +2734,13 @@ type BatchSpecWorkspaceStep {
     """
     container: String!
 
+    """
+    True, if a cached result has been found.
+
+    TODO: Not yet implemented.
+    """
     cachedResultFound: Boolean!
+
     """
     True, when the `if` condition evaluated that this step doesn't need to run.
     """
@@ -2642,26 +2750,78 @@ type BatchSpecWorkspaceStep {
     The output logs, prefixed with either "stdout " or "stderr ". Null, if the
     step has not run yet.
     """
-    outputLines(first: Int = 50000, after: Int): [String!]
+    outputLines(
+        """
+        Return the first N lines of logs.
+        """
+        first: Int = 500
+        """
+        Return the log lines after N lines.
+        """
+        after: Int
+    ): [String!]
 
+    """
+    The time when the step started processing. Null, if not yet started.
+    """
     startedAt: DateTime
+
+    """
+    The time when the step finished processing. Null, if not yet finished.
+    """
     finishedAt: DateTime
+
+    """
+    The exit code of the command. Null, if not yet finished.
+    """
     exitCode: Int
 
-    envVars: [EnvVar!]!
-    outputVars: [OutputVar!]!
+    """
+    The environment variables passed to this step.
+    """
+    environment: [BatchSpecWorkspaceEnvironmentVariable!]!
 
+    """
+    The output variables the step produced. Null, if not yet finished.
+    """
+    outputVariables: [BatchSpecWorkspaceOutputVariable!]
+
+    """
+    The diff stat of the step result. Null, if not yet finished.
+    """
     diffStat: DiffStat
+
+    """
+    The generated diff from this step. Null, if not yet finished.
+    """
     diff: PreviewRepositoryComparison
 }
 
-type OutputVar {
+"""
+An output variable in a step.
+"""
+type BatchSpecWorkspaceOutputVariable {
+    """
+    The variable name.
+    """
     name: String!
+    """
+    The variable value.
+    """
     value: JSONValue!
 }
 
-type EnvVar {
+"""
+An enviroment variable passed to a command in a step.
+"""
+type BatchSpecWorkspaceEnvironmentVariable {
+    """
+    The variable name.
+    """
     name: String!
+    """
+    The variable value.
+    """
     value: String!
 }
 
@@ -3052,9 +3212,23 @@ enum BatchSpecState {
     CANCELED
 }
 
+"""
+A list of batch specs.
+"""
 type BatchSpecConnection {
+    """
+    The total number of batch specs in the connection.
+    """
     totalCount: Int!
+
+    """
+    Pagination information.
+    """
     pageInfo: PageInfo!
+
+    """
+    A list of batch specs.
+    """
     nodes: [BatchSpec!]!
 }
 

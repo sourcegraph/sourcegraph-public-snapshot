@@ -1445,6 +1445,11 @@ func (r *Resolver) ToggleBatchSpecAutoApply(ctx context.Context, args *graphqlba
 	return nil, errors.New("not implemented yet")
 }
 
+func (r *Resolver) ReplaceBatchSpecInput(ctx context.Context, args *graphqlbackend.ReplaceBatchSpecInputArgs) (graphqlbackend.BatchSpecResolver, error) {
+	// TODO(ssbc): not implemented
+	return nil, errors.New("not implemented yet")
+}
+
 func parseBatchChangeState(s *string) (btypes.BatchChangeState, error) {
 	if s == nil {
 		return btypes.BatchChangeStateAny, nil

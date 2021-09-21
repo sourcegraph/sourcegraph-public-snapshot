@@ -5,6 +5,7 @@ import (
 
 	"github.com/cockroachdb/errors"
 	"github.com/graph-gophers/graphql-go"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/service"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
@@ -146,12 +147,12 @@ func (r *batchSpecWorkspaceStepResolver) ExitCode() *int32 {
 	return nil
 }
 
-func (r *batchSpecWorkspaceStepResolver) EnvVars() []graphqlbackend.BatchSpecWorkspaceStepEnvVarResolver {
+func (r *batchSpecWorkspaceStepResolver) Environment() []graphqlbackend.BatchSpecWorkspaceEnvironmentVariableResolver {
 	// TODO(ssbc): not implemented
 	return nil
 }
 
-func (r *batchSpecWorkspaceStepResolver) OutputVars() []graphqlbackend.BatchSpecWorkspaceStepOutputVarResolver {
+func (r *batchSpecWorkspaceStepResolver) OutputVariables() *[]graphqlbackend.BatchSpecWorkspaceOutputVariableResolver {
 	// TODO(ssbc): not implemented
 	return nil
 }
