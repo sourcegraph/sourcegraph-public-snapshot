@@ -1372,7 +1372,7 @@ var (
 // cloneRepo performs a clone operation for the given repository. It is
 // non-blocking by default.
 func (s *Server) cloneRepo(ctx context.Context, repo api.RepoName, opts *cloneOptions) (string, error) {
-	if strings.ToLower(string(repo)) == string(alwaysCloningTestRepoName) {
+	if isAlwaysCloningTest(repo) {
 		return "This will never finish cloning", nil
 	}
 
