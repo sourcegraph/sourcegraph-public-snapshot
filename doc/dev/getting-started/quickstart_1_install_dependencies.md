@@ -266,4 +266,4 @@ asdf plugin add yarn
 
 You can install the all the versions specified in [.tool-versions](https://github.com/sourcegraph/sourcegraph/blob/main/.tool-versions) by running `asdf install`.
 
-[< Previous](index.md) | [Next >](quickstart_2_start_docker.md)
+[< Previous](index.md) | [Next >](quickstart_2_clone_repository.md)
