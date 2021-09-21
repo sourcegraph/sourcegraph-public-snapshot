@@ -48,18 +48,18 @@ index 2f71392b2f..d874527291 100644
 
 	expectedHighlights := &protocol.CommitHighlights{
 		Diff: map[int]protocol.FileDiffHighlight{
-			1: protocol.FileDiffHighlight{
+			1: {
 				HunkHighlights: map[int]protocol.HunkHighlight{
-					0: protocol.HunkHighlight{
+					0: {
 						LineHighlights: map[int]protocol.Ranges{
-							3: protocol.Ranges{{
+							3: {{
 								Start: protocol.Location{Offset: 9, Column: 9},
 								End:   protocol.Location{Offset: 14, Column: 14},
 							}, {
 								Start: protocol.Location{Offset: 24, Column: 24},
 								End:   protocol.Location{Offset: 29, Column: 29},
 							}},
-							4: protocol.Ranges{{
+							4: {{
 								Start: protocol.Location{Offset: 9, Column: 9},
 								End:   protocol.Location{Offset: 14, Column: 14},
 							}, {
