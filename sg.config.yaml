@@ -401,7 +401,7 @@ commands:
       - enterprise/internal
       - lib/codeintel
 
-  executor-template: &executor_template 
+  executor-template: &executor_template
     # TMPDIR is set here so it's not set in the `install` process, which would trip up `go build`.
     cmd: |
       env TMPDIR="$HOME/.sourcegraph/executor-temp" .bin/executor
@@ -761,7 +761,6 @@ commandsets:
       - zoekt-webserver-0
       - zoekt-webserver-1
       - codeinsights-db
-
     env:
       DISABLE_CODE_INSIGHTS_HISTORICAL: false
       DISABLE_CODE_INSIGHTS: false
