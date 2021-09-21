@@ -75,10 +75,8 @@ func cloneStatus(cloned, cloning bool) types.CloneStatus {
 	return types.CloneStatusNotCloned
 }
 
-const alwaysCloningTestRepoName api.RepoName = "github.com/sourcegraphtest/alwayscloningtest"
-
 func isAlwaysCloningTest(name api.RepoName) bool {
-	return protocol.NormalizeRepo(name).Equal(alwaysCloningTestRepoName)
+	return protocol.NormalizeRepo(name).Equal(api.RepoName("github.com/sourcegraphtest/alwayscloningtest"))
 }
 
 // checkSpecArgSafety returns a non-nil err if spec begins with a "-", which could
