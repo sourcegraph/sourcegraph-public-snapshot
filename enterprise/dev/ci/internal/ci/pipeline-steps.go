@@ -64,7 +64,7 @@ func addWebApp(pipeline *bk.Pipeline) {
 		bk.Cmd("dev/ci/codecov.sh -c -F typescript -F unit"))
 }
 
-// Don't download browser, we use "download-puppeteer-browser" script instead
+// We provide our own Chromium instance that is installed through the `download-puppeteer-browser` script
 var percyBrowserExecutableEnv = bk.Env("PERCY_BROWSER_EXECUTABLE", "node_modules/puppeteer/.local-chromium/linux-885174/chrome-linux/chrome")
 
 // Builds and tests the browser extension.
