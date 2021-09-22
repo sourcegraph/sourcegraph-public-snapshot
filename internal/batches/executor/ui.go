@@ -38,7 +38,7 @@ type StepsExecutionUI interface {
 	StepSkipped(int)
 
 	StepPreparing(int)
-	StepStarted(int, string)
+	StepStarted(stepIdx int, runScript string, env map[string]string)
 
 	StepOutputWriter(context.Context, *Task, int) StepOutputWriter
 
@@ -51,14 +51,14 @@ type StepsExecutionUI interface {
 // NoopStepsExecUI is an implementation of StepsExecutionUI that does nothing.
 type NoopStepsExecUI struct{}
 
-func (noop NoopStepsExecUI) ArchiveDownloadStarted()                {}
-func (noop NoopStepsExecUI) ArchiveDownloadFinished()               {}
-func (noop NoopStepsExecUI) WorkspaceInitializationStarted()        {}
-func (noop NoopStepsExecUI) WorkspaceInitializationFinished()       {}
-func (noop NoopStepsExecUI) SkippingStepsUpto(startStep int)        {}
-func (noop NoopStepsExecUI) StepSkipped(step int)                   {}
-func (noop NoopStepsExecUI) StepPreparing(step int)                 {}
-func (noop NoopStepsExecUI) StepStarted(step int, runScript string) {}
+func (noop NoopStepsExecUI) ArchiveDownloadStarted()                                       {}
+func (noop NoopStepsExecUI) ArchiveDownloadFinished()                                      {}
+func (noop NoopStepsExecUI) WorkspaceInitializationStarted()                               {}
+func (noop NoopStepsExecUI) WorkspaceInitializationFinished()                              {}
+func (noop NoopStepsExecUI) SkippingStepsUpto(startStep int)                               {}
+func (noop NoopStepsExecUI) StepSkipped(step int)                                          {}
+func (noop NoopStepsExecUI) StepPreparing(step int)                                        {}
+func (noop NoopStepsExecUI) StepStarted(step int, runScript string, env map[string]string) {}
 func (noop NoopStepsExecUI) StepOutputWriter(ctx context.Context, task *Task, step int) StepOutputWriter {
 	return NoopStepOutputWriter{}
 }

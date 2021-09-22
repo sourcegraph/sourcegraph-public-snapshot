@@ -265,7 +265,6 @@ func executeSingleStep(
 	if err != nil {
 		return bytes.Buffer{}, bytes.Buffer{}, errors.Wrap(err, "resolving step environment")
 	}
-
 	// Render the step.Env variables as templates.
 	env, err := template.RenderStepMap(stepEnv, stepContext)
 	if err != nil {
@@ -275,7 +274,7 @@ func executeSingleStep(
 	// ----------
 	// EXECUTION
 	// ----------
-	opts.ui.StepStarted(i+1, runScript)
+	opts.ui.StepStarted(i+1, runScript, env)
 
 	workspaceOpts, err := workspace.DockerRunOpts(ctx, workDir)
 	if err != nil {

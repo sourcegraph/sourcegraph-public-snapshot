@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/sourcegraph/go-diff/diff"
+
 	"github.com/sourcegraph/src-cli/internal/batches/executor"
 
 	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
@@ -453,7 +454,7 @@ func (ui stepsExecTUI) StepSkipped(step int) {
 func (ui stepsExecTUI) StepPreparing(step int) {
 	ui.updateStatusBar(fmt.Sprintf("Preparing %d", step))
 }
-func (ui stepsExecTUI) StepStarted(step int, runScript string) {
+func (ui stepsExecTUI) StepStarted(step int, runScript string, _ map[string]string) {
 	ui.updateStatusBar(runScript)
 }
 

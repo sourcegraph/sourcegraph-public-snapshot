@@ -320,8 +320,8 @@ func (ui *stepsExecutionJSONLines) StepPreparing(step int) {
 	logOperationProgress(batcheslib.LogEventOperationTaskPreparingStep, map[string]interface{}{"taskID": ui.linesTask.ID, "step": step})
 }
 
-func (ui *stepsExecutionJSONLines) StepStarted(step int, runScript string) {
-	logOperationStart(batcheslib.LogEventOperationTaskStep, map[string]interface{}{"taskID": ui.linesTask.ID, "step": step, "runScript": runScript})
+func (ui *stepsExecutionJSONLines) StepStarted(step int, runScript string, env map[string]string) {
+	logOperationStart(batcheslib.LogEventOperationTaskStep, map[string]interface{}{"taskID": ui.linesTask.ID, "step": step, "runScript": runScript, "env": env})
 }
 
 func (ui *stepsExecutionJSONLines) StepOutputWriter(ctx context.Context, task *executor.Task, step int) executor.StepOutputWriter {
