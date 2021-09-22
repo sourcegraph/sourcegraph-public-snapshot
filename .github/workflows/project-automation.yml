@@ -1,4 +1,4 @@
-name: Update issue status in Code Insights GitHub Beta project
+name: Code Insights GitHub project automation
 
 on:
   issues:
@@ -17,6 +17,8 @@ jobs:
         with:
           script: |
             Install-Module PSGitHub -Force -ErrorAction Stop
+
+            $VerbosePreference = 'Continue'
 
             if (!$env:GITHUB_TOKEN) {
               throw "No GITHUB_TOKEN env var provided"
