@@ -4,7 +4,7 @@
 Single-container Sourcegraph with Docker is a way to very quickly get an instance of Sourcegraph set up locally to experiment with its features.
 </p>
 
-> WARNING: **We do not recommend using this method for a production instance.** If deploying a production instance, see [our recommendations](../index.md) for how to chose a deployment type that suits your needs. We recommend [Docker Compose](../docker-compose/index.md) for most initial production deployments.
+> WARNING: **We do not recommend using this method for a production instance.** If deploying a production instance, see [our recommendations](../index.md) for how to choose a deployment type that suits your needs. We recommend [Docker Compose](../docker-compose/index.md) for most initial production deployments.
 
 <div class="cta-group">
 <a class="btn btn-primary" href="#installation">★ Installation</a>
@@ -28,7 +28,7 @@ Once the server is ready (logo is displayed in the terminal), navigate to the ho
 
 For next steps and further configuration options, visit the [site administration documentation](../../index.md).
 
-> WARNING: **We do not recommend using this method for a production instance.** If deploying a production instance, see [our recommendations](../index.md) for how to chose a deployment type that suits your needs. We recommend [Docker Compose](../docker-compose/index.md) for most initial production deployments.
+> WARNING: **We do not recommend using this method for a production instance.** If deploying a production instance, see [our recommendations](../index.md) for how to choose a deployment type that suits your needs. We recommend [Docker Compose](../docker-compose/index.md) for most initial production deployments.
 
 <span class="virtual-br"></span>
 
