@@ -1,0 +1,33 @@
+fragment SettingsCascadeFields on SettingsCascade {
+    subjects {
+        __typename
+        ... on Org {
+            id
+            name
+            displayName
+        }
+        ... on User {
+            id
+            username
+            displayName
+        }
+        ... on Site {
+            id
+            siteID
+            allowSiteSettingsEdits
+        }
+        latestSettings {
+            id
+            contents
+        }
+        settingsURL
+        viewerCanAdminister
+    }
+    final
+}
+
+query ViewerSettings {
+    viewerSettings {
+        ...SettingsCascadeFields
+    }
+}
