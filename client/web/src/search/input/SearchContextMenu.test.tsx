@@ -102,7 +102,7 @@ describe('SearchContextMenu', () => {
         defaultSearchContextSpec: 'global',
         selectedSearchContextSpec: 'global',
         selectSearchContextSpec: () => {},
-        fetchAutoDefinedSearchContexts: mockFetchAutoDefinedSearchContexts(),
+        fetchAutoDefinedSearchContexts: mockFetchAutoDefinedSearchContexts,
         fetchSearchContexts: mockFetchSearchContexts,
         closeMenu: () => {},
         getUserSearchContextNamespaces: mockGetUserSearchContextNamespaces,
@@ -280,7 +280,7 @@ describe('SearchContextMenu', () => {
                 <DropdownMenu>
                     <SearchContextMenu
                         {...defaultProps}
-                        fetchAutoDefinedSearchContexts={errorFetchAutoDefinedSearchContexts()}
+                        fetchAutoDefinedSearchContexts={errorFetchAutoDefinedSearchContexts}
                     />
                 </DropdownMenu>
             </UncontrolledDropdown>

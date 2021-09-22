@@ -20,6 +20,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/search/searchcontexts"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 const maxSearchSuggestions = 100
@@ -481,7 +482,19 @@ func (r *searchResolver) showSearchContextSuggestions(ctx context.Context) ([]Se
 	}
 	searchContextSpec, _ := r.Query.StringValue(query.FieldContext)
 	parsedSearchContextSpec := searchcontexts.ParseSearchContextSpec(searchContextSpec)
-	searchContexts, err := database.SearchContexts(r.db).ListSearchContexts(
+	searchContexts := []*types.SearchContext{}
+
+	autoDefinedSearchContexts, err := searchcontexts.GetAutoDefinedSearchContexts(ctx, r.db)
+	if err != nil {
+		return nil, err
+	}
+	for _, searchContext := range autoDefinedSearchContexts {
+		if strings.Contains(searchContext.Name, parsedSearchContextSpec.SearchContextName) {
+			searchContexts = append(searchContexts, searchContext)
+		}
+	}
+
+	userDefinedSearchContexts, err := database.SearchContexts(r.db).ListSearchContexts(
 		ctx,
 		database.ListSearchContextsPageOptions{First: maxSearchSuggestions},
 		database.ListSearchContextsOptions{
@@ -494,6 +507,8 @@ func (r *searchResolver) showSearchContextSuggestions(ctx context.Context) ([]Se
 	if err != nil {
 		return nil, err
 	}
+	searchContexts = append(searchContexts, userDefinedSearchContexts...)
+
 	suggestions := make([]SearchSuggestionResolver, 0, len(searchContexts))
 	for i, searchContext := range searchContexts {
 		suggestions = append(suggestions, &searchContextSuggestionResolver{
