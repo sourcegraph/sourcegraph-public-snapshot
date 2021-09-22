@@ -16,9 +16,9 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GH_PROJECTS_ACTION_TOKEN }}
         with:
           script: |
-            Install-Module PSGitHub -Force -ErrorAction Stop
+            $global:InformationPreference = 'Continue'
 
-            $VerbosePreference = 'Continue'
+            Install-Module PSGitHub -Force -ErrorAction Stop
 
             if (!$env:GITHUB_TOKEN) {
               throw "No GITHUB_TOKEN env var provided"
