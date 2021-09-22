@@ -208,7 +208,7 @@ func addGoTests(pipeline *bk.Pipeline) {
 	pipeline.AddStep(":go: Test",
 		bk.Cmd("./dev/ci/go-test.sh"),
 		bk.Cmd("dev/ci/codecov.sh -c -F go"),
-		bk.ArtifactPaths("~/.sourcegraph-dev/logs/**/*"))
+		bk.ArtifactPaths("$HOME/.sourcegraph-dev/logs/**/*"))
 }
 
 // Builds the OSS and Enterprise Go commands.
@@ -235,7 +235,7 @@ func addBackendIntegrationTests(pipeline *bk.Pipeline) {
 		bk.Cmd("popd"),
 		bk.Cmd("./dev/ci/backend-integration.sh"),
 		bk.Cmd(`docker image rm -f "$IMAGE"`),
-		bk.ArtifactPaths("~/.sourcegraph-dev/logs/**/*"))
+		bk.ArtifactPaths("$HOME/.sourcegraph-dev/logs/**/*"))
 }
 
 func addBrowserExtensionE2ESteps(pipeline *bk.Pipeline) {
