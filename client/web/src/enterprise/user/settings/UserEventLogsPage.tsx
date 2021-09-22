@@ -5,7 +5,7 @@ import { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
 
 import { Link } from '@sourcegraph/shared/src/components/Link'
-import { dataOrThrowErrors, gql } from '@sourcegraph/shared/src/graphql/graphql'
+import { dataOrThrowErrors } from '@sourcegraph/shared/src/graphql/graphql'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Container, PageHeader } from '@sourcegraph/wildcard'
 
@@ -13,12 +13,7 @@ import { requestGraphQL } from '../../../backend/graphql'
 import { FilteredConnection } from '../../../components/FilteredConnection'
 import { PageTitle } from '../../../components/PageTitle'
 import { Timestamp } from '../../../components/time/Timestamp'
-import {
-    UserEventLogFields,
-    UserEventLogsConnectionFields,
-    UserEventLogsResult,
-    UserEventLogsVariables,
-} from '../../../graphql-operations'
+import { UserEventLogFields, UserEventLogsConnectionFields, UserEventLogsDocument } from '../../../graphql-operations'
 import { UserSettingsAreaRouteContext } from '../../../user/settings/UserSettingsArea'
 
 import styles from './UserEventLogsPage.module.scss'
@@ -71,38 +66,10 @@ export const UserEventLogsPage: React.FunctionComponent<UserEventLogsPageProps> 
 
     const queryUserEventLogs = useCallback(
         (args: { first?: number }): Observable<UserEventLogsConnectionFields> =>
-            requestGraphQL<UserEventLogsResult, UserEventLogsVariables>(
-                gql`
-                    query UserEventLogs($user: ID!, $first: Int) {
-                        node(id: $user) {
-                            __typename
-                            ... on User {
-                                eventLogs(first: $first) {
-                                    ...UserEventLogsConnectionFields
-                                }
-                            }
-                        }
-                    }
-
-                    fragment UserEventLogsConnectionFields on EventLogsConnection {
-                        nodes {
-                            ...UserEventLogFields
-                        }
-                        totalCount
-                        pageInfo {
-                            hasNextPage
-                        }
-                    }
-
-                    fragment UserEventLogFields on EventLog {
-                        name
-                        source
-                        url
-                        timestamp
-                    }
-                `,
-                { first: args.first ?? null, user: user.id }
-            ).pipe(
+            requestGraphQL(UserEventLogsDocument, {
+                first: args.first ?? null,
+                user: user.id,
+            }).pipe(
                 map(dataOrThrowErrors),
                 map(data => {
                     if (!data.node) {

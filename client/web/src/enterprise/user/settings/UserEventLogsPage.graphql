@@ -1,0 +1,27 @@
+query UserEventLogs($user: ID!, $first: Int) {
+    node(id: $user) {
+        __typename
+        ... on User {
+            eventLogs(first: $first) {
+                ...UserEventLogsConnectionFields
+            }
+        }
+    }
+}
+
+fragment UserEventLogsConnectionFields on EventLogsConnection {
+    nodes {
+        ...UserEventLogFields
+    }
+    totalCount
+    pageInfo {
+        hasNextPage
+    }
+}
+
+fragment UserEventLogFields on EventLog {
+    name
+    source
+    url
+    timestamp
+}
