@@ -2,20 +2,30 @@ package lsifstore
 
 import (
 	"context"
+	"fmt"
+	"strings"
+	"sync"
 	"sync/atomic"
+	"time"
 
+	"github.com/cockroachdb/errors"
+	"github.com/inconshreveable/log15"
 	"github.com/keegancsmith/sqlf"
 	"github.com/opentracing/opentracing-go/log"
 
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/batch"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 )
 
 // WriteDocumentationPages is called (transactionally) from the precise-code-intel-worker.
-func (s *Store) WriteDocumentationPages(ctx context.Context, bundleID int, documentationPages chan *precise.DocumentationPageData) (err error) {
+func (s *Store) WriteDocumentationPages(ctx context.Context, upload dbstore.Upload, repo *types.Repo, isDefaultBranch bool, documentationPages chan *precise.DocumentationPageData) (err error) {
 	ctx, traceLog, endObservation := s.operations.writeDocumentationPages.WithAndLogger(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.Int("bundleID", bundleID),
+		log.Int("bundleID", upload.ID),
 	}})
 	defer endObservation(1, observation.Args{})
 
@@ -31,14 +41,16 @@ func (s *Store) WriteDocumentationPages(ctx context.Context, bundleID int, docum
 	}
 
 	var count uint32
+	var pages []*precise.DocumentationPageData
 	inserter := func(inserter *batch.Inserter) error {
-		for v := range documentationPages {
-			data, err := s.serializer.MarshalDocumentationPageData(v)
+		for page := range documentationPages {
+			pages = append(pages, page)
+			data, err := s.serializer.MarshalDocumentationPageData(page)
 			if err != nil {
 				return err
 			}
 
-			if err := inserter.Insert(ctx, v.Tree.PathID, data); err != nil {
+			if err := inserter.Insert(ctx, page.Tree.PathID, data); err != nil {
 				return err
 			}
 
@@ -59,9 +71,18 @@ func (s *Store) WriteDocumentationPages(ctx context.Context, bundleID int, docum
 	}
 	traceLog(log.Int("numResultChunkRecords", int(count)))
 
+	// Note: If someone disables API docs search indexing, uploads during that time will not be
+	// indexed even if it is turned back on. Only future uploads would be.
+	if conf.APIDocsSearchIndexingEnabled() {
+		// Perform search indexing for API docs pages.
+		if err := tx.WriteDocumentationSearch(ctx, NewDocumentationSearchInfo(upload), repo, isDefaultBranch, pages); err != nil {
+			return errors.Wrap(err, "WriteDocumentationSearch")
+		}
+	}
+
 	// Insert the values from the temporary table into the target table. We select a
 	// parameterized dump id here since it is the same for all rows in this operation.
-	return tx.Exec(ctx, sqlf.Sprintf(writeDocumentationPagesInsertQuery, bundleID))
+	return tx.Exec(ctx, sqlf.Sprintf(writeDocumentationPagesInsertQuery, upload.ID))
 }
 
 const writeDocumentationPagesTemporaryTableQuery = `
@@ -74,8 +95,8 @@ CREATE TEMPORARY TABLE t_lsif_data_documentation_pages (
 
 const writeDocumentationPagesInsertQuery = `
 -- source: enterprise/internal/codeintel/stores/lsifstore/data_write_documentation.go:WriteDocumentationPages
-INSERT INTO lsif_data_documentation_pages (dump_id, path_id, data)
-SELECT %s, source.path_id, source.data
+INSERT INTO lsif_data_documentation_pages (dump_id, path_id, data, search_indexed)
+SELECT %s, source.path_id, source.data, 'true'
 FROM t_lsif_data_documentation_pages source
 `
 
@@ -207,3 +228,238 @@ INSERT INTO lsif_data_documentation_mappings (dump_id, path_id, result_id, file_
 SELECT %s, source.path_id, source.result_id, source.file_path
 FROM t_lsif_data_documentation_mappings source
 `
+
+type DocumentationSearchInfo struct {
+	ID             int
+	RepositoryName string
+	RepositoryID   int
+	Commit         string
+	Indexer        string
+	Root           string
+}
+
+func NewDocumentationSearchInfo(dumpOrUpload interface{}) DocumentationSearchInfo {
+	switch v := dumpOrUpload.(type) {
+	case dbstore.Dump:
+		return DocumentationSearchInfo{
+			ID:             v.ID,
+			RepositoryName: v.RepositoryName,
+			RepositoryID:   v.RepositoryID,
+			Commit:         v.Commit,
+			Indexer:        v.Indexer,
+			Root:           v.Root,
+		}
+	case dbstore.Upload:
+		return DocumentationSearchInfo{
+			ID:             v.ID,
+			RepositoryName: v.RepositoryName,
+			RepositoryID:   v.RepositoryID,
+			Commit:         v.Commit,
+			Indexer:        v.Indexer,
+			Root:           v.Root,
+		}
+	default:
+		panic(fmt.Sprintf("invariant: T != %T", v))
+	}
+}
+
+// WriteDocumentationSearch is called (within a transaction) to write the search index for a given documentation page.
+func (s *Store) WriteDocumentationSearch(ctx context.Context, meta DocumentationSearchInfo, repo *types.Repo, isDefaultBranch bool, pages []*precise.DocumentationPageData) (err error) {
+	if !isDefaultBranch {
+		// We do not index non-default branches for API docs search.
+		return nil
+	}
+
+	ctx, traceLog, endObservation := s.operations.writeDocumentationSearch.WithAndLogger(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.String("repo", meta.RepositoryName),
+		log.Int("bundleID", meta.ID),
+		log.Int("pages", len(pages)),
+	}})
+	defer endObservation(1, observation.Args{})
+
+	// This will not always produce a proper language name, e.g. if an indexer is not named after
+	// the language or is not in "lsif-$LANGUAGE" format. That's OK: in that case, the "language"
+	// is the indexer name which is likely good enough since we use fuzzy search / partial text matching
+	// over it.
+	languageOrIndexerName := strings.ToLower(strings.TrimPrefix(meta.Indexer, "lsif-"))
+
+	const (
+		tableNamePublic  = "lsif_data_documentation_search_public"
+		tableNamePrivate = "lsif_data_documentation_search_private"
+	)
+	tableName := tableNamePublic
+	if repo.Private {
+		tableName = tableNamePrivate
+	}
+
+	// This upload is for a commit on the default branch of the repository, so it is eligible for API
+	// docs search indexing. It will replace any existing data that we have or this unique (repo_id, lang, root)
+	// tuple in either table so we go ahead and purge the old data now.
+	for _, tableName := range []string{tableNamePublic, tableNamePrivate} {
+		if err := s.Exec(ctx, sqlf.Sprintf(
+			strings.Replace(purgeDocumentationSearchOldData, "$TABLE_NAME", tableName, -1),
+			meta.RepositoryID,
+			languageOrIndexerName,
+			meta.RepositoryID,
+			meta.Root,
+		)); err != nil {
+			return errors.Wrap(err, "purging old data")
+		}
+	}
+
+	var index func(node *precise.DocumentationNode) error
+	index = func(node *precise.DocumentationNode) error {
+		if node.Documentation.SearchKey != "" {
+			tags := []string{}
+			for _, tag := range node.Documentation.Tags {
+				tags = append(tags, string(tag))
+			}
+			err := s.Exec(ctx, sqlf.Sprintf(
+				strings.Replace(writeDocumentationSearchInsertQuery, "$TABLE_NAME", tableName, -1),
+				meta.ID,
+				node.PathID,
+				languageOrIndexerName,
+				meta.RepositoryName,
+				node.Documentation.SearchKey,
+				truncate(node.Label.String(), 256),     // 256 bytes, enough for ~100 characters in all languages
+				truncate(node.Detail.String(), 5*1024), // 5 KiB - just for sanity
+				strings.Join(tags, " "),
+				meta.RepositoryID,
+			))
+			if err != nil {
+				return err
+			}
+		}
+
+		// Index descendants.
+		for _, child := range node.Children {
+			if child.Node != nil {
+				if err := index(child.Node); err != nil {
+					return err
+				}
+			}
+		}
+		return nil
+	}
+
+	// Index each page.
+	for _, page := range pages {
+		traceLog(log.String("page", page.Tree.PathID))
+		if err := index(page.Tree); err != nil {
+			return err
+		}
+	}
+
+	// Truncate the search index size if it exceeds our configured limit now.
+	for _, tableName := range []string{tableNamePublic, tableNamePrivate} {
+		if err := s.truncateDocumentationSearchIndexSize(ctx, tableName); err != nil {
+			return errors.Wrap(err, "truncating documentation search index size")
+		}
+	}
+	return nil
+}
+
+const purgeDocumentationSearchOldData = `
+-- source: enterprise/internal/codeintel/stores/lsifstore/data_write_documentation.go:WriteDocumentationSearch
+DELETE FROM $TABLE_NAME
+WHERE repo_id=%s
+AND lang=%s
+AND dump_id IN (
+	SELECT dump_id FROM lsif_dumps
+	WHERE repository_id=%s
+	AND root=%s
+)
+`
+
+const writeDocumentationSearchInsertQuery = `
+-- source: enterprise/internal/codeintel/stores/lsifstore/data_write_documentation.go:WriteDocumentationSearch
+INSERT INTO $TABLE_NAME (dump_id, path_id, lang, repo_name, search_key, label, detail, tags, repo_id)
+VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+`
+
+var (
+	lastTruncationWarningMu   sync.Mutex
+	lastTruncationWarningTime time.Time
+)
+
+// truncateDocumentationSearchIndexSize is called (within a transaction) to truncate the
+// documentation search index size according to the site config apidocs.search-index-limit-factor.
+func (s *Store) truncateDocumentationSearchIndexSize(ctx context.Context, tableName string) error {
+	estimatedTotalRows, exists, err := basestore.ScanFirstInt64(s.Query(ctx, sqlf.Sprintf(
+		strings.Replace(estimateDocumentationSearchRowsQuery, "$TABLE_NAME", tableName, -1),
+	)))
+	if !exists {
+		return fmt.Errorf("failed to estimate table size")
+	}
+	if err != nil {
+		return errors.Wrap(err, "estimating table size")
+	}
+
+	searchIndexLimitFactor := conf.Get().ApidocsSearchIndexSizeLimitFactor
+	if searchIndexLimitFactor <= 0 {
+		searchIndexLimitFactor = 1.0
+	}
+	searchIndexRowsLimit := int64(searchIndexLimitFactor * 250_000_000)
+	rowsToDelete := int64(estimatedTotalRows) - searchIndexRowsLimit
+	if rowsToDelete <= 0 {
+		return nil
+	}
+
+	lastTruncationWarningMu.Lock()
+	if lastTruncationWarningTime.IsZero() || time.Since(lastTruncationWarningTime) > 5*time.Minute {
+		lastTruncationWarningTime = time.Now()
+		log15.Warn(
+			"API docs search index size exceeded configured limit, truncating index",
+			"apidocs.search-index-limit-factor", searchIndexLimitFactor,
+			"rows_limit", searchIndexRowsLimit,
+			"estimated_total_rows", estimatedTotalRows,
+			"deleting", rowsToDelete,
+		)
+	}
+	lastTruncationWarningMu.Unlock()
+
+	// Delete the first (oldest) N rows
+	if err := s.Exec(ctx, sqlf.Sprintf(
+		strings.Replace(truncateDocumentationSearchRowsQuery, "$TABLE_NAME", tableName, -1),
+		rowsToDelete,
+	)); err != nil {
+		return errors.Wrap(err, "truncating search index rows")
+	}
+	return nil
+}
+
+const estimateDocumentationSearchRowsQuery = `
+-- source: enterprise/internal/codeintel/stores/lsifstore/data_write_documentation.go:truncateDocumentationSearchIndexSize
+--
+-- Note: This estimate value is updated by autovacuum and autoanalyze, so it will always be within
+-- a 10% margin of error when compared to the real value which would require a full table scan and
+-- be much more expensive.
+SELECT reltuples::bigint AS estimate
+FROM   pg_catalog.pg_class
+WHERE relname='$TABLE_NAME'
+`
+
+const truncateDocumentationSearchRowsQuery = `
+-- source: enterprise/internal/codeintel/stores/lsifstore/data_write_documentation.go:truncateDocumentationSearchIndexSize
+DELETE FROM $TABLE_NAME
+WHERE ctid IN (
+    SELECT ctid
+    FROM $TABLE_NAME
+    ORDER BY dump_id
+    LIMIT %s
+)
+`
+
+// truncate truncates a string to limitBytes, taking into account multi-byte runes. If the string
+// is truncated, an ellipsis "…" is added to the end.
+func truncate(s string, limitBytes int) string {
+	runes := []rune(s)
+	bytes := 0
+	for i, r := range runes {
+		if bytes+len(string(r)) >= limitBytes {
+			return string(runes[:i-1]) + "…"
+		}
+		bytes += len(string(r))
+	}
+	return s
+}
