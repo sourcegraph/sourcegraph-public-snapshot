@@ -1,0 +1,33 @@
+# GraphQL fragment for the User fields needed by UserArea.
+fragment UserAreaUserFields on User {
+    __typename
+    id
+    username
+    displayName
+    url
+    settingsURL
+    avatarURL
+    viewerCanAdminister
+    siteAdmin @include(if: $siteAdmin)
+    builtinAuth
+    createdAt
+    emails @include(if: $siteAdmin) {
+        email
+        verified
+    }
+    organizations {
+        nodes {
+            id
+            displayName
+            name
+        }
+    }
+    tags @include(if: $siteAdmin)
+    ...EditUserProfilePage
+}
+
+query UserAreaUserProfile($username: String!, $siteAdmin: Boolean!) {
+    user(username: $username) {
+        ...UserAreaUserFields
+    }
+}
