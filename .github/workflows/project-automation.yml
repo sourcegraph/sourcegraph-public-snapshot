@@ -17,6 +17,7 @@ jobs:
         with:
           script: |
             $global:InformationPreference = 'Continue'
+            $global:ProgressPreference = 'SilentlyContinue'
 
             Install-Module PSGitHub -Force -ErrorAction Stop
 
@@ -72,7 +73,7 @@ jobs:
                   Where-Object { $_.labels | Where-Object { $_.name -eq 'team/code-insights' } }
 
                 if (!$fixedIssues) {
-                  Write-Information "No fixed issues with team/code-insights label referenced from PR description"
+                  Write-Information "No fixed issues with team/code-insights label referenced from PR description, exiting."
                   return
                 }
 
