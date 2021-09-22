@@ -22,7 +22,7 @@ describe('SearchSidebarSection', () => {
 
     it('should render all items initially', () => {
         const element = mount(
-            <SearchSidebarSection header="Dynamic filters" showSearch={true}>
+            <SearchSidebarSection sectionId="id" header="Dynamic filters" showSearch={true}>
                 {getDynamicFilterLinks(filters, onFilterChosen)}
             </SearchSidebarSection>
         )
@@ -36,7 +36,7 @@ describe('SearchSidebarSection', () => {
 
     it('should filter items based on search', () => {
         const element = mount(
-            <SearchSidebarSection header="Dynamic filters" showSearch={true}>
+            <SearchSidebarSection sectionId="id" header="Dynamic filters" showSearch={true}>
                 {getDynamicFilterLinks(filters, onFilterChosen)}
             </SearchSidebarSection>
         )
@@ -51,7 +51,7 @@ describe('SearchSidebarSection', () => {
 
     it('should clear search when items change', () => {
         const element = mount(
-            <SearchSidebarSection header="Dynamic filters" showSearch={true}>
+            <SearchSidebarSection sectionId="id" header="Dynamic filters" showSearch={true}>
                 {getDynamicFilterLinks(filters, onFilterChosen)}
             </SearchSidebarSection>
         )
@@ -73,7 +73,7 @@ describe('SearchSidebarSection', () => {
 
     it('should not show search if only one item in list', () => {
         const element = mount(
-            <SearchSidebarSection header="Dynamic filters" showSearch={true}>
+            <SearchSidebarSection sectionId="id" header="Dynamic filters" showSearch={true}>
                 {getDynamicFilterLinks([filters[2]], onFilterChosen)}
             </SearchSidebarSection>
         )
@@ -87,7 +87,7 @@ describe('SearchSidebarSection', () => {
 
     it('should not show search if showSearch is false', () => {
         const element = mount(
-            <SearchSidebarSection header="Dynamic filters">
+            <SearchSidebarSection sectionId="id" header="Dynamic filters">
                 {getDynamicFilterLinks(filters, onFilterChosen)}
             </SearchSidebarSection>
         )

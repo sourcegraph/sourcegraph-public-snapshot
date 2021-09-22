@@ -4,6 +4,18 @@ Operations guides specific to managing [single-container Soucegraph with Docker]
 
 Trying to deploy single-container Soucegraph with Docker? Refer to our [installation guide](./index.md#installation).
 
+## Upgrade
+
+Before upgrading, refer to the [update notes for single-container Soucegraph with Docker](../../updates/pure_docker.md).
+
+To update, just use the newer `sourcegraph/server:N.N.N` Docker image (where `N.N.N` is the version number) in place of the older one, using the same Docker volumes. Your server's data will be migrated automatically if needed.
+
+You can always find the version number of the latest release at [docs.sourcegraph.com](https://docs.sourcegraph.com) in the `docker run` command's image tag.
+
+- As a precaution, before updating, we recommend backing up the contents of the Docker volumes used by Sourcegraph.
+- If you need a HA deployment, use the [Kubernetes cluster deployment option](https://github.com/sourcegraph/deploy-sourcegraph).
+- There is currently no automated way to downgrade to an older version after you have updated. [Contact support](https://about.sourcegraph.com/contact) for help.
+
 ## Configure exposed Sourcegraph port
 
 Change the `docker` `--publish` argument to make it listen on the specific interface and port on your host machine. For example, `docker run ... --publish 0.0.0.0:80:7080 ...` would make it accessible on port 80 of your machine. For more information, see "[Publish or expose port](https://docs.docker.com/engine/reference/commandline/run/#publish-or-expose-port--p---expose)" in the Docker documentation.
