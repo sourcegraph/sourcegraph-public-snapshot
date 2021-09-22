@@ -142,7 +142,7 @@ export function logEvent(event: string, eventProperties?: unknown, publicArgumen
                 $publicArgument: String
                 $userProperties: String
                 $deviceID: String!
-                $eventID: String
+                $eventID: Int
                 $insertID: String
             ) {
                 logEvent(

@@ -45,7 +45,7 @@ export const logUserEvent = (
  * Sourcegraph instance to see a count of unique users on a daily, weekly, and monthly basis).
  */
 export const logEvent = (
-    event: { name: string; userCookieID: string; url: string; argument?: string | {} },
+    event: { name: string; userCookieID: string; url: string; deviceID: string; argument?: string | {} },
     requestGraphQL: PlatformContext['requestGraphQL']
 ): void => {
     // Only send the request if this is a private, self-hosted Sourcegraph instance.
@@ -79,7 +79,7 @@ export const logEvent = (
             ...event,
             source: EventSource.CODEHOSTINTEGRATION,
             argument: event.argument && JSON.stringify(event.argument),
-            deviceID: 'browser-ext',
+            deviceID: event.deviceID,
         },
         mightContainPrivateInfo: false,
         // eslint-disable-next-line rxjs/no-ignored-subscription

@@ -446,7 +446,7 @@ type Mutation {
 
         deviceID: String!
 
-        eventID: String
+        eventID: Int
 
         insertID: String
     ): EmptyResponse

@@ -41,7 +41,7 @@ type Event struct {
 	UserProperties json.RawMessage
 	DeviceID       string
 	InsertID       *string
-	EventID        *int
+	EventID        *int32
 }
 
 // LogBackendEvent is a convenience function for logging backend events.
@@ -98,7 +98,7 @@ type amplitudeEventJson struct {
 type amplitudeEvent struct {
 	UserID          string          `json:"user_id"`
 	DeviceID        string          `json:"device_id"`
-	EventID         *int            `json:"event_id"`
+	EventID         *int32          `json:"event_id"`
 	InsertID        *string         `json:"insert_id"`
 	EventType       string          `json:"event_type"`
 	EventProperties json.RawMessage `json:"event_properties,omitempty"`

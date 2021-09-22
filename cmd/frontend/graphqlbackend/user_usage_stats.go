@@ -90,7 +90,7 @@ func (r *schemaResolver) LogEvent(ctx context.Context, args *struct {
 	UserProperties *string
 	DeviceID       string
 	InsertID       *string
-	EventID        *int
+	EventID        *int32
 }) (*EmptyResponse, error) {
 	if !conf.EventLoggingEnabled() {
 		return nil, nil
