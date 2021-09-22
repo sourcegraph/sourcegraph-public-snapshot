@@ -5,9 +5,7 @@ import { Filter } from '@sourcegraph/shared/src/search/stream'
 import { EMPTY_SETTINGS_CASCADE } from '@sourcegraph/shared/src/settings/settings'
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
-import { AuthenticatedUser } from '../../../auth'
 import { WebStory } from '../../../components/WebStory'
-import { EMPTY_FEATURE_FLAGS } from '../../../featureFlags/featureFlags'
 import { SearchPatternType } from '../../../graphql-operations'
 import { QuickLink, SearchScope } from '../../../schema/settings.schema'
 
@@ -21,35 +19,13 @@ const { add } = storiesOf('web/search/results/sidebar/SearchSidebar', module).ad
     chromatic: { viewports: [544, 577, 993] },
 })
 
-const authenticatedUser: AuthenticatedUser = {
-    __typename: 'User',
-    id: '0',
-    email: 'alice@sourcegraph.com',
-    username: 'alice',
-    avatarURL: null,
-    session: { canSignOut: true },
-    displayName: null,
-    url: '',
-    settingsURL: '#',
-    siteAdmin: true,
-    organizations: {
-        nodes: [],
-    },
-    tags: [],
-    viewerCanAdminister: true,
-    databaseID: 0,
-}
-
 const defaultProps: SearchSidebarProps = {
-    authenticatedUser,
     caseSensitive: false,
     patternType: SearchPatternType.literal,
     versionContext: undefined,
     selectedSearchContextSpec: 'global',
     settingsCascade: EMPTY_SETTINGS_CASCADE,
     telemetryService: NOOP_TELEMETRY_SERVICE,
-    featureFlags: EMPTY_FEATURE_FLAGS,
-    isSourcegraphDotCom: false,
 }
 
 const quicklinks: QuickLink[] = [
