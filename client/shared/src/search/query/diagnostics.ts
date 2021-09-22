@@ -61,9 +61,7 @@ export function checkFilter(filter: Filter): Monaco.editor.IMarkerData[] {
     return checks.map(check => check(filter)).find(value => value.length !== 0) || []
 }
 
-// There should be a better way to pass additional data to patterns, or for
-// patterns to keep internal state than piggybacking on `data`
-// (tracked in https://github.com/sourcegraph/sourcegraph/issues/25070)
+// TODO(fkling): Improve how we pass additional data to patterns #25070
 interface PatternData {
     // Used to make the search pattern type available to patterns
     searchPatternType: SearchPatternType
