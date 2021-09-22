@@ -31,18 +31,16 @@ export const BasicHeader = () => (
     />
 )
 
-BasicHeader.story = {
-    name: 'Basic header',
+BasicHeader.storyName = 'Basic header';
 
-    parameters: {
-        design: {
-            type: 'figma',
-            name: 'Figma',
-            url:
-                'https://www.figma.com/file/NIsN34NH7lPu04olBzddTw/Design-Refresh-Systemization-source-of-truth?node-id=1485%3A0',
-        },
+BasicHeader.parameters = {
+    design: {
+        type: 'figma',
+        name: 'Figma',
+        url:
+            'https://www.figma.com/file/NIsN34NH7lPu04olBzddTw/Design-Refresh-Systemization-source-of-truth?node-id=1485%3A0',
     },
-}
+};
 
 export const ComplexHeader = () => (
     <PageHeader
@@ -67,15 +65,13 @@ export const ComplexHeader = () => (
     />
 )
 
-ComplexHeader.story = {
-    name: 'Complex header',
+ComplexHeader.storyName = 'Complex header';
 
-    parameters: {
-        design: {
-            type: 'figma',
-            name: 'Figma',
-            url:
-                'https://www.figma.com/file/NIsN34NH7lPu04olBzddTw/Design-Refresh-Systemization-source-of-truth?node-id=1485%3A0',
-        },
+ComplexHeader.parameters = {
+    design: {
+        type: 'figma',
+        name: 'Figma',
+        url:
+            'https://www.figma.com/file/NIsN34NH7lPu04olBzddTw/Design-Refresh-Systemization-source-of-truth?node-id=1485%3A0',
     },
-}
+};

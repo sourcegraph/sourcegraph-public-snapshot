@@ -35,24 +35,18 @@ export const LongOnMobile = () => {
     )
 }
 
-LongOnMobile.story = {
-    name: 'Long on mobile',
-}
+LongOnMobile.storyName = 'Long on mobile';
 
 export const LongActive = () => {
     const [page, setPage] = useState(5)
     return <PageSelector currentPage={page} onPageChange={setPage} totalPages={number('maxPages', 10)} />
 }
 
-LongActive.story = {
-    name: 'Long active',
-}
+LongActive.storyName = 'Long active';
 
 export const LongComplete = () => {
     const [page, setPage] = useState(10)
     return <PageSelector currentPage={page} onPageChange={setPage} totalPages={number('maxPages', 10)} />
 }
 
-LongComplete.story = {
-    name: 'Long complete',
-}
+LongComplete.storyName = 'Long complete';

@@ -85,12 +85,10 @@ export const Overview = () => (
     </>
 )
 
-Overview.story = {
-    parameters: {
-        design: {
-            type: 'figma',
-            name: 'Figma',
-            url: 'https://www.figma.com/file/NIsN34NH7lPu04olBzddTw/?node-id=1478%3A3044',
-        },
+Overview.parameters = {
+    design: {
+        type: 'figma',
+        name: 'Figma',
+        url: 'https://www.figma.com/file/NIsN34NH7lPu04olBzddTw/?node-id=1478%3A3044',
     },
-}
+};
