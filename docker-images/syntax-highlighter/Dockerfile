@@ -1,7 +1,7 @@
 ###################################
 # Build syntect_server statically #
 ###################################
-FROM rust:1.46.0-alpine3.12@sha256:c9890db1527309a88994b12dfe5e1ed695518037367ffb74df76a66bfc303ef5 as ss
+FROM rust:1.53.0-alpine3.12@sha256:115f359134b85ce7731218cee9e308dbf228eb1e03e9ddc9b92ab7ad0157a50f as ss
 RUN apk add --no-cache musl-dev=1.1.24-r10
 COPY . /repo
 WORKDIR /repo
