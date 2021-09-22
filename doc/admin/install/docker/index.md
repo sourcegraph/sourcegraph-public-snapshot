@@ -84,16 +84,16 @@ Sourcegraph can be **tested** on Windows 10 using roughly the same steps provide
 
 ### Low resource environments
 
-To test sourcegraph in a low resource environment you may want to disable some of the observability tools (Prometheus, Grafana and Jaeger).
+To test Sourcegraph in a low resource environment you may want to disable some of the observability tools (Prometheus, Grafana and Jaeger).
 
-Add `-e DISABLE_OBSERVABILITY=true` to your docker run command
+Add `-e DISABLE_OBSERVABILITY=true` to your docker run command.
 
 ### Starting in Postgres restore mode
 
 In order to restore a Postgres backup, you need to start on an empty database and prevent all other Sourcegraph services from starting.
-You can do this by adding `-e PGRESTORE=true` to your `docker run` command. This will start only the Postgres system and allow you to perform a restore, once it is done, simply remove that parameter from your docker command.
+You can do this by adding `-e PGRESTORE=true` to your `docker run` command. This will start only the Postgres system and allow you to perform a restore. Once it is done, remove that parameter from your docker command.
 
-The database is only accessible from within the container, to perform a restore you will need to copy the required files to the container and then execute the restore commands from within the container using `docker exec`.
+The database is only accessible from within the container. To perform a restore you will need to copy the required files to the container and then execute the restore commands from within the container using `docker exec`.
 
 You can find examples of this procedure for `docker-compose` in our [docker-compose migration docs](../docker-compose/migrate.md).
 
