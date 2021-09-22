@@ -22,12 +22,10 @@ func FormatDiff(rawDiff []*diff.FileDiff, highlights map[int]FileDiffHighlight) 
 	var loc protocol.Location
 	var ranges protocol.Ranges
 
-	formatAll := len(highlights) == 0
-
 	fileCount := 0
 	for fileIdx, fileDiff := range rawDiff {
 		fdh, ok := highlights[fileIdx]
-		if !ok && !formatAll {
+		if !ok && len(highlights) > 0 {
 			continue
 		}
 		if fileCount >= maxFiles {
@@ -54,7 +52,7 @@ func FormatDiff(rawDiff []*diff.FileDiff, highlights map[int]FileDiffHighlight) 
 		hunkCount := 0
 		for hunkIdx, hunk := range filteredHunks {
 			hmh, ok := filteredHighlights[hunkIdx]
-			if !ok && !formatAll {
+			if !ok && len(filteredHighlights) > 0 {
 				continue
 			}
 			if hunkCount >= maxHunksPerFile {
