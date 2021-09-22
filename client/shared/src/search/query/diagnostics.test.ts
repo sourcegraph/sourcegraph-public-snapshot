@@ -91,7 +91,7 @@ describe('getDiagnostics()', () => {
                 [
                   {
                     "severity": 8,
-                    "message": "Error: this filter requires \\"type:commit\\" or \\"type:diff\\" in the query",
+                    "message": "Error: this filter requires \`type:commit\` or \`type:diff\` in the query",
                     "startLineNumber": 1,
                     "endLineNumber": 1,
                     "startColumn": 1,
@@ -103,7 +103,7 @@ describe('getDiagnostics()', () => {
                 [
                   {
                     "severity": 8,
-                    "message": "Error: this filter requires \\"type:commit\\" or \\"type:diff\\" in the query",
+                    "message": "Error: this filter requires \`type:commit\` or \`type:diff\` in the query",
                     "startLineNumber": 1,
                     "endLineNumber": 1,
                     "startColumn": 1,
@@ -117,7 +117,7 @@ describe('getDiagnostics()', () => {
                 [
                   {
                     "severity": 8,
-                    "message": "Error: this filter requires \\"type:commit\\" or \\"type:diff\\" in the query",
+                    "message": "Error: this filter requires \`type:commit\` or \`type:diff\` in the query",
                     "startLineNumber": 1,
                     "endLineNumber": 1,
                     "startColumn": 1,
@@ -125,7 +125,7 @@ describe('getDiagnostics()', () => {
                   },
                   {
                     "severity": 8,
-                    "message": "Error: this filter requires \\"type:commit\\" or \\"type:diff\\" in the query",
+                    "message": "Error: this filter requires \`type:commit\` or \`type:diff\` in the query",
                     "startLineNumber": 1,
                     "endLineNumber": 1,
                     "startColumn": 11,
@@ -133,7 +133,7 @@ describe('getDiagnostics()', () => {
                   },
                   {
                     "severity": 8,
-                    "message": "Error: this filter requires \\"type:commit\\" or \\"type:diff\\" in the query",
+                    "message": "Error: this filter requires \`type:commit\` or \`type:diff\` in the query",
                     "startLineNumber": 1,
                     "endLineNumber": 1,
                     "startColumn": 28,
@@ -141,7 +141,7 @@ describe('getDiagnostics()', () => {
                   },
                   {
                     "severity": 8,
-                    "message": "Error: this filter requires \\"type:commit\\" or \\"type:diff\\" in the query",
+                    "message": "Error: this filter requires \`type:commit\` or \`type:diff\` in the query",
                     "startLineNumber": 1,
                     "endLineNumber": 1,
                     "startColumn": 46,
@@ -154,7 +154,7 @@ describe('getDiagnostics()', () => {
                 [
                   {
                     "severity": 8,
-                    "message": "Error: this filter requires \\"type:commit\\" or \\"type:diff\\" in the query",
+                    "message": "Error: this filter requires \`type:commit\` or \`type:diff\` in the query",
                     "startLineNumber": 1,
                     "endLineNumber": 1,
                     "startColumn": 1,
@@ -162,7 +162,7 @@ describe('getDiagnostics()', () => {
                   },
                   {
                     "severity": 8,
-                    "message": "Error: this filter requires \\"type:commit\\" or \\"type:diff\\" in the query",
+                    "message": "Error: this filter requires \`type:commit\` or \`type:diff\` in the query",
                     "startLineNumber": 1,
                     "endLineNumber": 1,
                     "startColumn": 17,
@@ -170,7 +170,7 @@ describe('getDiagnostics()', () => {
                   },
                   {
                     "severity": 8,
-                    "message": "Error: this filter requires \\"type:commit\\" or \\"type:diff\\" in the query",
+                    "message": "Error: this filter requires \`type:commit\` or \`type:diff\` in the query",
                     "startLineNumber": 1,
                     "endLineNumber": 1,
                     "startColumn": 35,
@@ -205,7 +205,7 @@ describe('getDiagnostics()', () => {
                 [
                   {
                     "severity": 8,
-                    "message": "Error: query contains \\"rev:\\" without \\"repo:\\". Add a \\"repo:\\" filter.",
+                    "message": "Error: query contains \`rev:\` without \`repo:\`. Add a \`repo:\` filter.",
                     "startLineNumber": 1,
                     "endLineNumber": 1,
                     "startColumn": 1,
@@ -217,7 +217,7 @@ describe('getDiagnostics()', () => {
                 [
                   {
                     "severity": 8,
-                    "message": "Error: query contains \\"rev:\\" without \\"repo:\\". Add a \\"repo:\\" filter.",
+                    "message": "Error: query contains \`rev:\` without \`repo:\`. Add a \`repo:\` filter.",
                     "startLineNumber": 1,
                     "endLineNumber": 1,
                     "startColumn": 1,
@@ -232,7 +232,7 @@ describe('getDiagnostics()', () => {
                 [
                   {
                     "severity": 8,
-                    "message": "Error: You have specified both \\"@\\" and \\"rev:\\" for a repo filter and I don\\"t know how to interpret this. Remove either \\"@\\" or \\"rev:\\"",
+                    "message": "Error: You have specified both \`@\` and \`rev:\` for a repo filter and I don\`t know how to interpret this. Remove either \`@\` or \`rev:\`",
                     "startLineNumber": 1,
                     "endLineNumber": 1,
                     "startColumn": 10,
@@ -240,7 +240,7 @@ describe('getDiagnostics()', () => {
                   },
                   {
                     "severity": 8,
-                    "message": "Error: You have specified both \\"@\\" and \\"rev:\\" for a repo filter and I don\\"t know how to interpret this. Remove either \\"@\\" or \\"rev:\\"",
+                    "message": "Error: You have specified both \`@\` and \`rev:\` for a repo filter and I don\`t know how to interpret this. Remove either \`@\` or \`rev:\`",
                     "startLineNumber": 1,
                     "endLineNumber": 1,
                     "startColumn": 1,
@@ -252,7 +252,7 @@ describe('getDiagnostics()', () => {
                 [
                   {
                     "severity": 8,
-                    "message": "Error: You have specified both \\"@\\" and \\"rev:\\" for a repo filter and I don\\"t know how to interpret this. Remove either \\"@\\" or \\"rev:\\"",
+                    "message": "Error: You have specified both \`@\` and \`rev:\` for a repo filter and I don\`t know how to interpret this. Remove either \`@\` or \`rev:\`",
                     "startLineNumber": 1,
                     "endLineNumber": 1,
                     "startColumn": 10,
@@ -260,7 +260,7 @@ describe('getDiagnostics()', () => {
                   },
                   {
                     "severity": 8,
-                    "message": "Error: You have specified both \\"@\\" and \\"rev:\\" for a repo filter and I don\\"t know how to interpret this. Remove either \\"@\\" or \\"rev:\\"",
+                    "message": "Error: You have specified both \`@\` and \`rev:\` for a repo filter and I don\`t know how to interpret this. Remove either \`@\` or \`rev:\`",
                     "startLineNumber": 1,
                     "endLineNumber": 1,
                     "startColumn": 1,
@@ -283,7 +283,7 @@ describe('getDiagnostics()', () => {
                   },
                   {
                     "severity": 8,
-                    "message": "Error: query contains \\"rev:\\" with an empty \\"repo:\\" filter. Add a non-empty \\"repo:\\" filter.",
+                    "message": "Error: query contains \`rev:\` with an empty \`repo:\` filter. Add a non-empty \`repo:\` filter.",
                     "startLineNumber": 1,
                     "endLineNumber": 1,
                     "startColumn": 10,
@@ -291,7 +291,7 @@ describe('getDiagnostics()', () => {
                   },
                   {
                     "severity": 8,
-                    "message": "Error: query contains \\"rev:\\" with an empty \\"repo:\\" filter. Add a non-empty \\"repo:\\" filter.",
+                    "message": "Error: query contains \`rev:\` with an empty \`repo:\` filter. Add a non-empty \`repo:\` filter.",
                     "startLineNumber": 1,
                     "endLineNumber": 1,
                     "startColumn": 1,
@@ -324,7 +324,7 @@ describe('getDiagnostics()', () => {
                 [
                   {
                     "severity": 8,
-                    "message": "Error: Structural search syntax only applies to searching file contents and is not compatible with \\"type:\\". Remove this filter or switch to a different search type.",
+                    "message": "Error: Structural search syntax only applies to searching file contents and is not compatible with \`type:\`. Remove this filter or switch to a different search type.",
                     "startLineNumber": 1,
                     "endLineNumber": 1,
                     "startColumn": 1,
@@ -337,7 +337,7 @@ describe('getDiagnostics()', () => {
                 [
                   {
                     "severity": 8,
-                    "message": "Error: Structural search syntax only applies to searching file contents and is not compatible with \\"type:\\". Remove this filter or switch to a different search type.",
+                    "message": "Error: Structural search syntax only applies to searching file contents and is not compatible with \`type:\`. Remove this filter or switch to a different search type.",
                     "startLineNumber": 1,
                     "endLineNumber": 1,
                     "startColumn": 1,

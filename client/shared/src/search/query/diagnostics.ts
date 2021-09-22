@@ -96,7 +96,7 @@ const rules: PatternOf<Token[], PatternData>[] = [
         not(some({ field: { value: 'type' }, value: { value: oneOf('diff', 'commit') } })),
         each({
             field: { value: oneOf('author', 'before', 'until', 'after', 'since', 'message', 'msg', 'm') },
-            $data: addFilterDiagnostic('Error: this filter requires "type:commit" or "type:diff" in the query'),
+            $data: addFilterDiagnostic('Error: this filter requires `type:commit` or `type:diff` in the query'),
         })
     ),
 
@@ -114,7 +114,7 @@ const rules: PatternOf<Token[], PatternData>[] = [
                 $data: (_tokens, context) => {
                     context.data.marker.push(
                         createMarker(
-                            'Error: query contains "rev:" without "repo:". Add a "repo:" filter.',
+                            'Error: query contains `rev:` without `repo:`. Add a `repo:` filter.',
                             context.data.revFilter!
                         )
                     )
@@ -128,7 +128,7 @@ const rules: PatternOf<Token[], PatternData>[] = [
                     value: { value: '' },
                     $data: (token: Token, context: MatchContext<PatternData>) => {
                         const errorMessage =
-                            'Error: query contains "rev:" with an empty "repo:" filter. Add a non-empty "repo:" filter.'
+                            'Error: query contains `rev:` with an empty `repo:` filter. Add a non-empty `repo:` filter.'
                         context.data.marker.push(
                             createMarker(errorMessage, token as Filter),
                             createMarker(errorMessage, context.data.revFilter!)
@@ -142,7 +142,7 @@ const rules: PatternOf<Token[], PatternData>[] = [
                 value: { value: value => value.includes('@') },
                 $data: (token: Token, context: MatchContext<PatternData>) => {
                     const errorMessage =
-                        'Error: You have specified both "@" and "rev:" for a repo filter and I don"t know how to interpret this. Remove either "@" or "rev:"'
+                        'Error: You have specified both `@` and `rev:` for a repo filter and I don`t know how to interpret this. Remove either `@` or `rev:`'
                     context.data.marker.push(
                         createMarker(errorMessage, token as Filter),
                         createMarker(errorMessage, context.data.revFilter!)
@@ -164,7 +164,7 @@ const rules: PatternOf<Token[], PatternData>[] = [
         some({
             field: { value: 'type' },
             $data: addFilterDiagnostic(
-                'Error: Structural search syntax only applies to searching file contents and is not compatible with "type:". Remove this filter or switch to a different search type.'
+                'Error: Structural search syntax only applies to searching file contents and is not compatible with `type:`. Remove this filter or switch to a different search type.'
             ),
         })
     ),
