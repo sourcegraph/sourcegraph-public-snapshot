@@ -7998,13 +7998,32 @@ Query: `histogram_quantile(0.95, max by (le) (rate(src_repoupdater_source_durati
 
 <br />
 
+#### repo-updater: syncer_synced_repos
+
+<p class="subtitle">Repositories synced</p>
+
+Refer to the [alert solutions reference](./alert_solutions.md#repo-updater-syncer-synced-repos) for 1 alert related to this panel.
+
+To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel=100020` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `max by (state) (rate(src_repoupdater_syncer_synced_repos_total[1m]))`
+
+</details>
+
+<br />
+
 #### repo-updater: sourced_repos
 
 <p class="subtitle">Repositories sourced</p>
 
 Refer to the [alert solutions reference](./alert_solutions.md#repo-updater-sourced-repos) for 1 alert related to this panel.
 
-To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel=100020` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel=100021` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
 
@@ -8023,7 +8042,7 @@ Query: `max(rate(src_repoupdater_source_repos_total[1m]))`
 
 Refer to the [alert solutions reference](./alert_solutions.md#repo-updater-user-added-repos) for 1 alert related to this panel.
 
-To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel=100021` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel=100022` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
 

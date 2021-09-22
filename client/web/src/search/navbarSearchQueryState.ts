@@ -5,13 +5,32 @@
 // (see https://github.com/sourcegraph/sourcegraph/issues/21200).
 import create from 'zustand'
 
-import { QueryState } from './helpers'
+import { QueryState, SubmitSearchParameters, submitSearch } from './helpers'
 
-interface NavbarQueryState {
+type QueryStateUpdate = QueryState | ((queryState: QueryState) => QueryState)
+
+export interface NavbarQueryState {
     queryState: QueryState
-    setQueryState: (queryState: QueryState) => void
+    setQueryState: (queryState: QueryStateUpdate) => void
+    /**
+     * submitSearch makes it possible to submit a new search query by updating
+     * the current query via the callback.
+     */
+    submitSearch: (
+        updateQuery: (currentQuery: string) => string,
+        parameters: Omit<SubmitSearchParameters, 'query'>
+    ) => void
 }
-export const useNavbarQueryState = create<NavbarQueryState>(set => ({
+export const useNavbarQueryState = create<NavbarQueryState>((set, get) => ({
     queryState: { query: '' },
-    setQueryState: queryState => set({ queryState }),
+    setQueryState: queryStateUpdate => {
+        if (typeof queryStateUpdate === 'function') {
+            set({ queryState: queryStateUpdate(get().queryState) })
+        } else {
+            set({ queryState: queryStateUpdate })
+        }
+    },
+    submitSearch: (updateQuery, parameters) => {
+        submitSearch({ ...parameters, query: updateQuery(get().queryState.query) })
+    },
 }))
