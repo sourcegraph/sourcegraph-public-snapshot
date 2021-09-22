@@ -178,7 +178,11 @@ type ExecuteBatchSpecOpts struct {
 	BatchSpecRandID string
 }
 
-// ExecuteBatchSpec creates a pending BatchSpec that will be picked up by a worker in the background.
+// ExecuteBatchSpec creates BatchSpecWorkspaceExecutionJobs for every created
+// BatchSpecWorkspace.
+//
+// It returns an error if the batchSpecWorkspaceResolutionJob didn't finish
+// successfully.
 func (s *Service) ExecuteBatchSpec(ctx context.Context, opts ExecuteBatchSpecOpts) (batchSpec *btypes.BatchSpec, err error) {
 	actor := actor.FromContext(ctx)
 	tr, ctx := trace.New(ctx, "Service.ExecuteBatchSpec", fmt.Sprintf("Actor %d", actor.UID))
