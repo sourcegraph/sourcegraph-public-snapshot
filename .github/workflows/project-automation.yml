@@ -49,6 +49,11 @@ jobs:
                 $pr = $github.event.pull_request
                 $repo = $github.repository
 
+                # Ignore merged and closed PRs
+                if ($pr.state -ne 'open') {
+                  return
+                }
+
                 $status = if ($pr.draft) { 'In Progress' } else { 'In Review' }
 
                 # Get fixed issues from the PR description
