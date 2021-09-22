@@ -12,7 +12,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/graph-gophers/graphql-go"
 
-	"github.com/sourcegraph/batch-change-utils/overridable"
+	"github.com/sourcegraph/sourcegraph/lib/batches/overridable"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/batches/resolvers/apitest"
@@ -91,7 +91,6 @@ func TestNullIDResilience(t *testing.T) {
 		fmt.Sprintf(`mutation { closeChangesets(batchChange: %q, changesets: [%q]) { id } }`, marshalBatchChangeID(1), marshalChangesetID(0)),
 		fmt.Sprintf(`mutation { publishChangesets(batchChange: %q, changesets: []) { id } }`, marshalBatchChangeID(0)),
 		fmt.Sprintf(`mutation { publishChangesets(batchChange: %q, changesets: [%q]) { id } }`, marshalBatchChangeID(1), marshalChangesetID(0)),
-		fmt.Sprintf(`mutation { cancelBatchSpecExecution(batchSpecExecution: %q) { id } }`, marshalBatchSpecExecutionRandID("")),
 	}
 
 	for _, m := range mutations {
@@ -232,13 +231,14 @@ func TestCreateBatchSpec(t *testing.T) {
 					}
 				}
 
+				applyUrl := fmt.Sprintf("/users/%s/batch-changes/apply/%s", user.Username, have.ID)
 				want := apitest.BatchSpec{
 					ID:            have.ID,
 					CreatedAt:     have.CreatedAt,
 					ExpiresAt:     have.ExpiresAt,
 					OriginalInput: rawSpec,
 					ParsedInput:   graphqlbackend.JSONValue{Value: unmarshaled},
-					ApplyURL:      fmt.Sprintf("/users/%s/batch-changes/apply/%s", user.Username, have.ID),
+					ApplyURL:      &applyUrl,
 					Namespace:     apitest.UserOrg{ID: userAPIID, DatabaseID: userID, SiteAdmin: true},
 					Creator:       &apitest.User{ID: userAPIID, DatabaseID: userID, SiteAdmin: true},
 					ChangesetSpecs: apitest.ChangesetSpecConnection{
@@ -1288,8 +1288,7 @@ func TestCreateChangesetComments(t *testing.T) {
 	otherBatchSpec := ct.CreateBatchSpec(t, ctx, cstore, "test-comments-other", userID)
 	batchChange := ct.CreateBatchChange(t, ctx, cstore, "test-comments", userID, batchSpec.ID)
 	otherBatchChange := ct.CreateBatchChange(t, ctx, cstore, "test-comments-other", userID, otherBatchSpec.ID)
-	repos, _ := ct.CreateTestRepos(t, context.Background(), db, 1)
-	repo := repos[0]
+	repo, _ := ct.CreateTestRepo(t, ctx, db)
 	changeset := ct.CreateChangeset(t, ctx, cstore, ct.TestChangesetOpts{
 		Repo:             repo.ID,
 		BatchChange:      batchChange.ID,
@@ -1389,8 +1388,7 @@ func TestReenqueueChangesets(t *testing.T) {
 	otherBatchSpec := ct.CreateBatchSpec(t, ctx, cstore, "test-reenqueue-other", userID)
 	batchChange := ct.CreateBatchChange(t, ctx, cstore, "test-reenqueue", userID, batchSpec.ID)
 	otherBatchChange := ct.CreateBatchChange(t, ctx, cstore, "test-reenqueue-other", userID, otherBatchSpec.ID)
-	repos, _ := ct.CreateTestRepos(t, context.Background(), db, 1)
-	repo := repos[0]
+	repo, _ := ct.CreateTestRepo(t, ctx, db)
 	changeset := ct.CreateChangeset(t, ctx, cstore, ct.TestChangesetOpts{
 		Repo:             repo.ID,
 		BatchChange:      batchChange.ID,
@@ -1497,8 +1495,7 @@ func TestMergeChangesets(t *testing.T) {
 	otherBatchSpec := ct.CreateBatchSpec(t, ctx, cstore, "test-merge-other", userID)
 	batchChange := ct.CreateBatchChange(t, ctx, cstore, "test-merge", userID, batchSpec.ID)
 	otherBatchChange := ct.CreateBatchChange(t, ctx, cstore, "test-merge-other", userID, otherBatchSpec.ID)
-	repos, _ := ct.CreateTestRepos(t, context.Background(), db, 1)
-	repo := repos[0]
+	repo, _ := ct.CreateTestRepo(t, ctx, db)
 	changeset := ct.CreateChangeset(t, ctx, cstore, ct.TestChangesetOpts{
 		Repo:             repo.ID,
 		BatchChange:      batchChange.ID,
@@ -1594,80 +1591,6 @@ mutation($batchChange: ID!, $changesets: [ID!]!, $squash: Boolean = false) {
 }
 `
 
-func TestResolver_CreateBatchSpecExecution(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-
-	ctx := context.Background()
-	db := dbtest.NewDB(t, "")
-	now := time.Now().UTC().Truncate(time.Millisecond)
-	cstore := store.NewWithClock(db, &observation.TestContext, nil, func() time.Time { return now })
-
-	userID := ct.CreateTestUser(t, db, true).ID
-	orgID := ct.InsertTestOrg(t, db, "test-org")
-	userCtx := actor.WithActor(ctx, actor.FromUser(userID))
-
-	r := &Resolver{store: cstore}
-	s, err := graphqlbackend.NewSchema(db, r, nil, nil, nil, nil, nil, nil)
-	if err != nil {
-		t.Fatal(err)
-	}
-	testSpec := `testSpec: yeah`
-	mutateAndAssert := func(namespaceID, expectNamespaceID string) {
-		input := map[string]interface{}{
-			"spec": testSpec,
-		}
-		if namespaceID != "" {
-			input["namespace"] = namespaceID
-		}
-		var response struct {
-			CreateBatchSpecExecution apitest.BatchSpecExecution
-		}
-		apitest.MustExec(userCtx, t, s, input, &response, mutationCreateBatchSpecExecution)
-
-		if response.CreateBatchSpecExecution.ID == "" {
-			t.Fatalf("expected execution to be created, but was not")
-		}
-		want := apitest.BatchSpecExecution{
-			ID:        response.CreateBatchSpecExecution.ID,
-			InputSpec: testSpec,
-			State:     "QUEUED",
-			Initiator: apitest.User{
-				ID: string(graphqlbackend.MarshalUserID(userID)),
-			},
-			Namespace: apitest.UserOrg{
-				ID: expectNamespaceID,
-			},
-			CreatedAt: graphqlbackend.DateTime{Time: now.Truncate(time.Second)},
-		}
-		if diff := cmp.Diff(want, response.CreateBatchSpecExecution); diff != "" {
-			t.Fatalf("invalid execution returned, diff=%s", diff)
-		}
-	}
-	mutateAndAssert("", string(graphqlbackend.MarshalUserID(userID)))
-	mutateAndAssert(string(graphqlbackend.MarshalUserID(userID)), string(graphqlbackend.MarshalUserID(userID)))
-	mutateAndAssert(string(graphqlbackend.MarshalOrgID(orgID)), string(graphqlbackend.MarshalOrgID(orgID)))
-}
-
-const mutationCreateBatchSpecExecution = `
-mutation($spec: String!, $namespace: ID) {
-    createBatchSpecExecution(spec: $spec, namespace: $namespace) {
-		id
-		inputSpec
-		state
-		createdAt
-		startedAt
-		finishedAt
-		failure
-		placeInQueue
-		batchSpec { id }
-		initiator { id }
-		namespace { id }
-	}
-}
-`
-
 func TestCloseChangesets(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
@@ -1682,8 +1605,7 @@ func TestCloseChangesets(t *testing.T) {
 	otherBatchSpec := ct.CreateBatchSpec(t, ctx, cstore, "test-close-other", userID)
 	batchChange := ct.CreateBatchChange(t, ctx, cstore, "test-close", userID, batchSpec.ID)
 	otherBatchChange := ct.CreateBatchChange(t, ctx, cstore, "test-close-other", userID, otherBatchSpec.ID)
-	repos, _ := ct.CreateTestRepos(t, context.Background(), db, 1)
-	repo := repos[0]
+	repo, _ := ct.CreateTestRepo(t, ctx, db)
 	changeset := ct.CreateChangeset(t, ctx, cstore, ct.TestChangesetOpts{
 		Repo:             repo.ID,
 		BatchChange:      batchChange.ID,
@@ -1793,8 +1715,7 @@ func TestPublishChangesets(t *testing.T) {
 	otherBatchSpec := ct.CreateBatchSpec(t, ctx, cstore, "test-close-other", userID)
 	batchChange := ct.CreateBatchChange(t, ctx, cstore, "test-close", userID, batchSpec.ID)
 	otherBatchChange := ct.CreateBatchChange(t, ctx, cstore, "test-close-other", userID, otherBatchSpec.ID)
-	repos, _ := ct.CreateTestRepos(t, context.Background(), db, 1)
-	repo := repos[0]
+	repo, _ := ct.CreateTestRepo(t, ctx, db)
 	publishableChangesetSpec := ct.CreateChangesetSpec(t, ctx, cstore, ct.TestSpecOpts{
 		User:      userID,
 		Repo:      repo.ID,

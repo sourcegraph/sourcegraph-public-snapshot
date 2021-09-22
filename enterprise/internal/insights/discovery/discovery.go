@@ -155,22 +155,17 @@ func (m *settingMigrator) migrate(ctx context.Context) error {
 		return err
 	}
 
-	var count, skipped, errors int
+	var count, skipped, errorCount int
 	for _, d := range discovered {
 		if d.ID == "" {
 			// we need a unique ID, and if for some reason this insight doesn't have one, it can't be migrated.
 			skipped++
 			continue
 		}
-		results, err := insightStore.Get(ctx, store.InsightQueryArgs{
-			UniqueID: d.ID,
-		})
+		err := insightStore.DeleteViewByUniqueID(ctx, d.ID)
+		log15.Info("insights migration: deleting insight view", "unique_id", d.ID)
 		if err != nil {
-			return err
-		}
-		if len(results) != 0 {
-			// this insight has already been ingested, so let's skip it. Technically this insight could have been edited
-			// but for now we are going to ignore any edits to display settings.
+			// if we fail here there isn't much we can do in this migration, so continue
 			skipped++
 			continue
 		}
@@ -178,12 +173,12 @@ func (m *settingMigrator) migrate(ctx context.Context) error {
 		err = migrateSeries(ctx, insightStore, d)
 		if err != nil {
 			// we can't do anything about errors, so we will just skip it and log it
-			errors++
-			log15.Error("error while migrating insight", "error", err)
+			errorCount++
+			log15.Error("insights migration: error while migrating insight", "error", err)
 		}
 		count++
 	}
-	log15.Info("insights settings migration complete", "count", count, "skipped", skipped, "errors", errors)
+	log15.Info("insights settings migration complete", "count", count, "skipped", skipped, "errors", errorCount)
 	return nil
 }
 
@@ -195,7 +190,7 @@ func migrateSeries(ctx context.Context, insightStore *store.InsightStore, from i
 	}
 	defer func() { err = tx.Store.Done(err) }()
 
-	log15.Info("attempting to migrate insight", "unique_id", from.ID)
+	log15.Info("insights migration: attempting to migrate insight", "unique_id", from.ID)
 	dataSeries := make([]types.InsightSeries, len(from.Series))
 	metadata := make([]types.InsightViewSeriesMetadata, len(from.Series))
 
@@ -214,7 +209,7 @@ func migrateSeries(ctx context.Context, insightStore *store.InsightStore, from i
 			return errors.Wrapf(err, "unable to migrate insight unique_id: %s series_id: %s", from.ID, temp.SeriesID)
 		} else if len(existing) > 0 {
 			series = existing[0]
-			log15.Info("existing data series identified, attempting to construct and attach new view", "series_id", series.SeriesID, "unique_id", from.ID)
+			log15.Info("insights migration: existing data series identified, attempting to construct and attach new view", "series_id", series.SeriesID, "unique_id", from.ID)
 		} else {
 			series, err = tx.CreateSeries(ctx, temp)
 			if err != nil {
@@ -235,7 +230,16 @@ func migrateSeries(ctx context.Context, insightStore *store.InsightStore, from i
 		UniqueID:    from.ID,
 	}
 
-	view, err = tx.CreateView(ctx, view)
+	var grants []store.InsightViewGrant
+	if from.UserID != nil {
+		grants = []store.InsightViewGrant{store.UserGrant(int(*from.UserID))}
+	} else if from.OrgID != nil {
+		grants = []store.InsightViewGrant{store.OrgGrant(int(*from.OrgID))}
+	} else {
+		grants = []store.InsightViewGrant{store.GlobalGrant()}
+	}
+
+	view, err = tx.CreateView(ctx, view, grants)
 	if err != nil {
 		return errors.Wrapf(err, "unable to migrate insight unique_id: %s", from.ID)
 	}

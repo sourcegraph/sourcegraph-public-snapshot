@@ -1,4 +1,3 @@
-import { ApolloClient, NormalizedCacheObject } from '@apollo/client'
 import { memoize } from 'lodash'
 import { Observable } from 'rxjs'
 
@@ -67,13 +66,12 @@ export const mutateGraphQL = (request: string, variables?: {}): Observable<Graph
  * Memoized Apollo Client getter. It should be executed once to restore the cache from the local storage.
  * After that, the same instance should be used by all consumers.
  */
-export const getWebGraphQLClient = memoize(
-    (): Promise<ApolloClient<NormalizedCacheObject>> =>
-        getGraphQLClient({
-            headers: {
-                ...window?.context?.xhrHeaders,
-                'X-Sourcegraph-Should-Trace': new URLSearchParams(window.location.search).get('trace') || 'false',
-                // Note: Do not use getHeaders() here due to a bug that Apollo has duplicating headers with different letter casing. Issue to fix: https://github.com/apollographql/apollo-client/issues/8447
-            },
-        })
+export const getWebGraphQLClient = memoize(() =>
+    getGraphQLClient({
+        headers: {
+            ...window?.context?.xhrHeaders,
+            'X-Sourcegraph-Should-Trace': new URLSearchParams(window.location.search).get('trace') || 'false',
+            // Note: Do not use getHeaders() here due to a bug that Apollo has duplicating headers with different letter casing. Issue to fix: https://github.com/apollographql/apollo-client/issues/8447
+        },
+    })
 )

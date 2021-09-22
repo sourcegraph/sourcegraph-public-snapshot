@@ -244,7 +244,7 @@ func TestRecordSeriesPoints(t *testing.T) {
 	optionalString := func(v string) *string { return &v }
 	optionalRepoID := func(v api.RepoID) *api.RepoID { return &v }
 
-	current := time.Now().Truncate(24 * time.Hour)
+	current := time.Date(2021, time.September, 10, 10, 0, 0, 0, time.UTC)
 
 	// Metadata is currently not queried and will not resolve to reduce cardinality.
 	for _, record := range []RecordSeriesPointArgs{
@@ -348,7 +348,7 @@ func TestRecordSeriesPointsSnapshotOnly(t *testing.T) {
 	optionalString := func(v string) *string { return &v }
 	optionalRepoID := func(v api.RepoID) *api.RepoID { return &v }
 
-	current := time.Now().Truncate(24 * time.Hour)
+	current := time.Date(2021, time.September, 10, 10, 0, 0, 0, time.UTC)
 
 	// Metadata is currently not queried and will not resolve to reduce cardinality.
 	for _, record := range []RecordSeriesPointArgs{
@@ -414,7 +414,7 @@ func TestRecordSeriesPointsRecordingOnly(t *testing.T) {
 	optionalString := func(v string) *string { return &v }
 	optionalRepoID := func(v api.RepoID) *api.RepoID { return &v }
 
-	current := time.Now().Truncate(24 * time.Hour)
+	current := time.Date(2021, time.September, 10, 10, 0, 0, 0, time.UTC)
 
 	// Metadata is currently not queried and will not resolve to reduce cardinality.
 	for _, record := range []RecordSeriesPointArgs{
@@ -480,7 +480,7 @@ func TestDeleteSnapshots(t *testing.T) {
 	optionalString := func(v string) *string { return &v }
 	optionalRepoID := func(v api.RepoID) *api.RepoID { return &v }
 
-	current := time.Now().Truncate(24 * time.Hour)
+	current := time.Date(2021, time.September, 10, 10, 0, 0, 0, time.UTC)
 
 	seriesID := "one"
 	// Metadata is currently not queried and will not resolve to reduce cardinality.

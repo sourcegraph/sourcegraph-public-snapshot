@@ -16,6 +16,7 @@ import (
 	// used in schema pkg
 	_ "github.com/sourcegraph/go-jsonschema/cmd/go-jsonschema-compiler"
 
+	_ "golang.org/x/tools/cmd/goimports"
 	// used in many places
 	_ "golang.org/x/tools/cmd/stringer"
 )

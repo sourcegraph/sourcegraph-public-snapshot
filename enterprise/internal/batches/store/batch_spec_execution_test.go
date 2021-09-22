@@ -12,7 +12,7 @@ import (
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 )
 
-func testStoreChangesetSpecExecutions(t *testing.T, ctx context.Context, s *Store, clock ct.Clock) {
+func testStoreBatchSpecExecutions(t *testing.T, ctx context.Context, s *Store, clock ct.Clock) {
 	testBatchSpec := `theSpec: yeah`
 
 	execs := make([]*btypes.BatchSpecExecution, 0, 2)

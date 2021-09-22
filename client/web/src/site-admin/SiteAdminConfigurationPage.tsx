@@ -1,5 +1,6 @@
 import * as jsonc from '@sqs/jsonc-parser'
 import { setProperty } from '@sqs/jsonc-parser/lib/edit'
+import classNames from 'classnames'
 import * as H from 'history'
 import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
@@ -21,6 +22,7 @@ import { refreshSiteFlags } from '../site/backend'
 import { eventLogger } from '../tracking/eventLogger'
 
 import { fetchSite, reloadSite, updateSiteConfiguration } from './backend'
+import styles from './SiteAdminConfigurationPage.module.scss'
 
 const defaultFormattingOptions: jsonc.FormattingOptions = {
     eol: '\n',
@@ -336,13 +338,11 @@ export class SiteAdminConfigurationPage extends React.Component<Props, State> {
     public render(): JSX.Element | null {
         const alerts: JSX.Element[] = []
         if (this.state.error) {
-            alerts.push(
-                <ErrorAlert key="error" className="site-admin-configuration-page__alert" error={this.state.error} />
-            )
+            alerts.push(<ErrorAlert key="error" className={styles.alert} error={this.state.error} />)
         }
         if (this.state.reloadStartedAt) {
             alerts.push(
-                <div key="error" className="alert alert-primary site-admin-configuration-page__alert">
+                <div key="error" className={classNames('alert alert-primary', styles.alert)}>
                     <p>
                         <LoadingSpinner className="icon-inline" /> Waiting for site to reload...
                     </p>
@@ -356,10 +356,7 @@ export class SiteAdminConfigurationPage extends React.Component<Props, State> {
         }
         if (this.state.restartToApply) {
             alerts.push(
-                <div
-                    key="remote-dirty"
-                    className="alert alert-warning site-admin-configuration-page__alert site-admin-configuration-page__alert-flex"
-                >
+                <div key="remote-dirty" className={classNames('alert alert-warning', styles.alert, styles.alertFlex)}>
                     Server restart is required for the configuration to take effect.
                     {(this.state.site === undefined || this.state.site?.canReloadSite) && (
                         <button type="button" className="btn btn-primary btn-sm" onClick={this.reloadSite}>
@@ -374,11 +371,11 @@ export class SiteAdminConfigurationPage extends React.Component<Props, State> {
             this.state.site.configuration.validationMessages.length > 0
         ) {
             alerts.push(
-                <div key="validation-messages" className="alert alert-danger site-admin-configuration-page__alert">
+                <div key="validation-messages" className={classNames('alert alert-danger', styles.alert)}>
                     <p>The server reported issues in the last-saved config:</p>
                     <ul>
                         {this.state.site.configuration.validationMessages.map((message, index) => (
-                            <li key={index} className="site-admin-configuration-page__alert-item">
+                            <li key={index} className={styles.alertItem}>
                                 {message}
                             </li>
                         ))}
@@ -419,10 +416,7 @@ export class SiteAdminConfigurationPage extends React.Component<Props, State> {
         ].filter(property => contents?.includes(`"${property}"`))
         if (legacyKubernetesConfigProps.length > 0) {
             alerts.push(
-                <div
-                    key="legacy-cluster-props-present"
-                    className="alert alert-info site-admin-configuration-page__alert"
-                >
+                <div key="legacy-cluster-props-present" className={classNames('alert alert-info', styles.alert)}>
                     The configuration contains properties that are valid only in the
                     <code>values.yaml</code> config file used for Kubernetes cluster deployments of Sourcegraph:{' '}
                     <code>{legacyKubernetesConfigProps.join(' ')}</code>. You can disregard the validation warnings for
@@ -434,14 +428,14 @@ export class SiteAdminConfigurationPage extends React.Component<Props, State> {
         const isReloading = typeof this.state.reloadStartedAt === 'number'
 
         return (
-            <div className="site-admin-configuration-page">
+            <div>
                 <PageTitle title="Configuration - Admin" />
                 <h2>Site configuration</h2>
                 <p>
                     View and edit the Sourcegraph site configuration. See{' '}
                     <Link to="/help/admin/config/site_config">documentation</Link> for more information.
                 </p>
-                <div className="site-admin-configuration-page__alerts">{alerts}</div>
+                <div>{alerts}</div>
                 {this.state.loading && <LoadingSpinner className="icon-inline" />}
                 {this.state.site?.configuration && (
                     <div>

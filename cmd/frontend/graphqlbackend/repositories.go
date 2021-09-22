@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/google/zoekt"
+	zoektquery "github.com/google/zoekt/query"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
@@ -116,27 +117,27 @@ func (r *repositoryConnectionResolver) compute(ctx context.Context) ([]*types.Re
 			}
 		}
 
-		var indexed map[string]*zoekt.Repository
-		searchIndexEnabled := search.Indexed().Enabled()
-		isIndexed := func(repo api.RepoName) bool {
+		var indexed *zoekt.RepoList
+		searchIndexEnabled := search.Indexed() != nil
+		isIndexed := func(id api.RepoID) bool {
 			if !searchIndexEnabled {
 				return true // do not need index
 			}
-			_, ok := indexed[string(repo)]
+			_, ok := indexed.Minimal[uint32(id)]
 			return ok
 		}
 		if searchIndexEnabled && (!r.indexed || !r.notIndexed) {
-			listCtx, cancel := context.WithTimeout(ctx, 2*time.Second)
+			listCtx, cancel := context.WithTimeout(ctx, time.Minute)
 			defer cancel()
 			var err error
-			indexed, err = search.Indexed().ListAll(listCtx)
+			indexed, err = search.Indexed().List(listCtx, &zoektquery.Const{Value: true}, &zoekt.ListOptions{Minimal: true})
 			if err != nil {
 				r.err = err
 				return
 			}
 			// ensure we fetch at least as many repos as we have indexed
-			if opt2.LimitOffset != nil && opt2.LimitOffset.Limit < len(indexed) {
-				opt2.LimitOffset.Limit = len(indexed) * 2
+			if opt2.LimitOffset != nil && opt2.LimitOffset.Limit < len(indexed.Minimal) {
+				opt2.LimitOffset.Limit = len(indexed.Minimal) * 2
 			}
 		}
 
@@ -171,7 +172,7 @@ func (r *repositoryConnectionResolver) compute(ctx context.Context) ([]*types.Re
 			if !r.indexed || !r.notIndexed {
 				keepRepos := repos[:0]
 				for _, repo := range repos {
-					indexed := isIndexed(repo.Name)
+					indexed := isIndexed(repo.ID)
 					if (r.indexed && indexed) || (r.notIndexed && !indexed) {
 						keepRepos = append(keepRepos, repo)
 					}

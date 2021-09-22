@@ -286,3 +286,11 @@ func (r *batchChangeResolver) BulkOperations(
 		opts:          opts,
 	}, nil
 }
+
+func (r *batchChangeResolver) BatchSpecs(
+	ctx context.Context,
+	args *graphqlbackend.ListBatchSpecArgs,
+) (graphqlbackend.BatchSpecConnectionResolver, error) {
+	// TODO(ssbc): not implemented
+	return nil, errors.New("not implemented yet")
+}

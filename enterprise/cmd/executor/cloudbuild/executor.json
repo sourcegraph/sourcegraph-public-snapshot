@@ -1,11 +1,14 @@
 {
   "variables": {
     "version": "{{env `VERSION`}}",
+    "awsAccessKey": "{{env `AWS_EXECUTOR_AMI_ACCESS_KEY`}}",
+    "awsSecretKey": "{{env `AWS_EXECUTOR_AMI_SECRET_KEY`}}",
     "build_timestamp": "{{env `BUILD_TIMESTAMP`}}",
     "SRC_CLI_VERSION": "{{env `SRC_CLI_VERSION`}}"
   },
   "builders": [
     {
+      "name": "gcp",
       "type": "googlecompute",
       "project_id": "sourcegraph-ci",
       "source_image_project_id": "ubuntu-os-cloud",
@@ -18,6 +21,20 @@
       "image_name": "executor-{{user `version`}}-{{user `build_timestamp`}}",
       "tags": ["packer"],
       "account_file": "/workspace/builder-sa-key.json"
+    },
+    {
+      "name": "aws",
+      "type": "amazon-ebs",
+      "ami_name": "executor-{{user `version`}}-{{user `build_timestamp`}}",
+      "ssh_username": "ubuntu",
+      "instance_type": "t3.micro",
+      "source_ami": "ami-02868af3c3df4b3aa",
+      "region": "us-west-2",
+      "vpc_id": "vpc-095ba109c7ca96d76",
+      "subnet_id": "subnet-03962956ca2682c50",
+      "associate_public_ip_address": true,
+      "access_key": "{{user `awsAccessKey`}}",
+      "secret_key": "{{user `awsSecretKey`}}"
     }
   ],
   "provisioners": [
@@ -40,7 +57,14 @@
       "type": "shell",
       "execute_command": "chmod +x {{ .Path }}; {{ .Vars }} sudo -E bash {{ .Path }}",
       "script": "build.sh",
-      "environment_vars": ["SRC_CLI_VERSION={{user `SRC_CLI_VERSION`}}"]
+      "override": {
+        "gcp": {
+          "environment_vars": ["SRC_CLI_VERSION={{user `SRC_CLI_VERSION`}}", "PLATFORM_TYPE=gcp"]
+        },
+        "aws": {
+          "environment_vars": ["SRC_CLI_VERSION={{user `SRC_CLI_VERSION`}}", "PLATFORM_TYPE=aws"]
+        }
+      }
     }
   ]
 }

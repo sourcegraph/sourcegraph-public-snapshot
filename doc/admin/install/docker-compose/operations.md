@@ -58,7 +58,7 @@ We **strongly** recommend that you create and run Sourcegraph from your own fork
 
   ```bash
   # Specify the version you want to install
-  export SOURCEGRAPH_VERSION="v3.31.2"
+  export SOURCEGRAPH_VERSION="v3.32.0"
   # Check out the selected version for use, in a new branch called "release"
   git checkout $SOURCEGRAPH_VERSION -b release
   ```
@@ -204,7 +204,7 @@ The following command allows a user to shell into a Sourcegraph database contain
 
 ```bash
 docker exec -it pgsql psql -U sg #access pgsql container and run psql
-docker exec -it codeintel-db -U sg #access codeintel-db container and run psql
+docker exec -it codeintel-db psql -U sg #access codeintel-db container and run psql
 ```
 
 ## Backup and restore

@@ -1,0 +1,19 @@
+.node {
+    &__expanded-section {
+        background-color: var(--body-bg);
+        grid-column: 1 / -1;
+        border-top: 1px solid var(--border-color-2);
+        padding: 1.5rem;
+    }
+
+    &__separator {
+        // Make it full width in the current row.
+        grid-column: 1 / -1;
+        border-top: 1px solid var(--border-color-2);
+        padding-bottom: 0.5rem;
+    }
+
+    &__state-icon {
+        font-size: 1.5rem;
+    }
+}

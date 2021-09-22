@@ -86,6 +86,13 @@ export const enterpriseSiteAdminAreaRoutes: readonly SiteAdminAreaRoute[] = [
         ),
         condition: ({ batchChangesEnabled }) => batchChangesEnabled,
     },
+    {
+        path: '/batch-changes/executions',
+        exact: true,
+        render: lazyComponent(() => import('../batches/settings/BatchSpecExecutionsPage'), 'BatchSpecExecutionsPage'),
+        condition: ({ batchChangesEnabled, batchChangesExecutionEnabled }) =>
+            batchChangesEnabled && batchChangesExecutionEnabled,
+    },
 
     // Code intelligence upload routes
     {

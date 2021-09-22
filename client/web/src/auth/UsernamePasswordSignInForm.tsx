@@ -98,7 +98,7 @@ export const UsernamePasswordSignInForm: React.FunctionComponent<Props> = ({
                     </label>
                     <input
                         id="username-or-email"
-                        className="form-control signin-signup-form__input"
+                        className="form-control"
                         type="text"
                         onChange={onUsernameOrEmailFieldChange}
                         required={true}
@@ -122,7 +122,6 @@ export const UsernamePasswordSignInForm: React.FunctionComponent<Props> = ({
                         )}
                     </div>
                     <PasswordInput
-                        className="signin-signup-form__input"
                         onChange={onPasswordFieldChange}
                         value={password}
                         required={true}

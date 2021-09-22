@@ -277,6 +277,7 @@ type CodeIntelligenceConfigurationPolicyResolver interface {
 	Name() string
 	Type() (GitObjectType, error)
 	Pattern() string
+	Protected() bool
 	RetentionEnabled() bool
 	RetentionDurationHours() *int32
 	RetainIntermediateCommits() bool

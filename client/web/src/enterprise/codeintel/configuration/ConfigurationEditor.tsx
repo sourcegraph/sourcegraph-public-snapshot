@@ -1,6 +1,6 @@
 import * as H from 'history'
 import { editor } from 'monaco-editor'
-import React, { FunctionComponent, useCallback, useEffect, useMemo, useState } from 'react'
+import React, { FunctionComponent, useCallback, useMemo, useState } from 'react'
 
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
@@ -10,25 +10,17 @@ import { ErrorAlert } from '@sourcegraph/web/src/components/alerts'
 import { SaveToolbarProps, SaveToolbarPropsGenerator } from '../../../components/SaveToolbar'
 import { DynamicallyImportedMonacoSettingsEditor } from '../../../settings/DynamicallyImportedMonacoSettingsEditor'
 
-import {
-    getConfigurationForRepository as defaultGetConfigurationForRepository,
-    getInferredConfigurationForRepository as defaultGetInferredConfigurationForRepository,
-    updateConfigurationForRepository as defaultUpdateConfigurationForRepository,
-} from './backend'
 import { IndexConfigurationSaveToolbar, IndexConfigurationSaveToolbarProps } from './IndexConfigurationSaveToolbar'
 import allConfigSchema from './schema.json'
+import {
+    useInferredConfig,
+    useRepositoryConfig,
+    useUpdateConfigurationForRepository,
+} from './usePoliciesConfigurations'
 
 export interface ConfigurationEditorProps extends ThemeProps, TelemetryProps {
     repoId: string
     history: H.History
-    getConfigurationForRepository: typeof defaultGetConfigurationForRepository
-    getInferredConfigurationForRepository: typeof defaultGetInferredConfigurationForRepository
-    updateConfigurationForRepository: typeof defaultUpdateConfigurationForRepository
-}
-
-enum EditorState {
-    Idle,
-    Saving,
 }
 
 export const ConfigurationEditor: FunctionComponent<ConfigurationEditorProps> = ({
@@ -36,57 +28,26 @@ export const ConfigurationEditor: FunctionComponent<ConfigurationEditorProps> = 
     isLightTheme,
     telemetryService,
     history,
-    getConfigurationForRepository,
-    getInferredConfigurationForRepository,
-    updateConfigurationForRepository,
 }) => {
-    const [configuration, setConfiguration] = useState<string>()
-    const [inferredConfiguration, setInferredConfiguration] = useState<string>()
-    const [fetchError, setFetchError] = useState<Error>()
-
-    useEffect(() => {
-        const subscription = getConfigurationForRepository(repoId).subscribe(config => {
-            setConfiguration(config?.indexConfiguration?.configuration || '')
-        }, setFetchError)
-
-        return () => subscription.unsubscribe()
-    }, [repoId, getConfigurationForRepository])
-
-    useEffect(() => {
-        const subscription = getInferredConfigurationForRepository(repoId).subscribe(config => {
-            setInferredConfiguration(config?.indexConfiguration?.inferredConfiguration || '')
-        }, setFetchError)
-
-        return () => subscription.unsubscribe()
-    }, [repoId, getInferredConfigurationForRepository])
-
-    const [saveError, setSaveError] = useState<Error>()
-    const [state, setState] = useState(() => EditorState.Idle)
+    const { inferredConfiguration, loadingInferred, inferredError } = useInferredConfig(repoId)
+    const { configuration, loadingRepository, repositoryError } = useRepositoryConfig(repoId)
+    const { updateConfigForRepository, isUpdating, updatingError } = useUpdateConfigurationForRepository()
 
     const save = useCallback(
-        async (content: string) => {
-            setState(EditorState.Saving)
-            setSaveError(undefined)
-
-            try {
-                await updateConfigurationForRepository(repoId, content).toPromise()
-                setDirty(false)
-                setConfiguration(content)
-            } catch (error) {
-                setSaveError(error)
-            } finally {
-                setState(EditorState.Idle)
-            }
-        },
-        [repoId, updateConfigurationForRepository]
+        async (content: string) =>
+            updateConfigForRepository({
+                variables: { id: repoId, content },
+                update: cache => cache.modify({ fields: { node: () => {} } }),
+            }).then(() => setDirty(false)),
+        [updateConfigForRepository, repoId]
     )
 
     const [dirty, setDirty] = useState<boolean>()
     const [editor, setEditor] = useState<editor.ICodeEditor>()
-    const infer = useCallback(() => editor?.setValue(inferredConfiguration || ''), [editor, inferredConfiguration])
+    const infer = useCallback(() => editor?.setValue(inferredConfiguration), [editor, inferredConfiguration])
 
     const customToolbar = useMemo<{
-        saveToolbar: React.FunctionComponent<SaveToolbarProps & IndexConfigurationSaveToolbarProps>
+        saveToolbar: FunctionComponent<SaveToolbarProps & IndexConfigurationSaveToolbarProps>
         propsGenerator: SaveToolbarPropsGenerator<IndexConfigurationSaveToolbarProps>
     }>(
         () => ({
@@ -107,13 +68,15 @@ export const ConfigurationEditor: FunctionComponent<ConfigurationEditorProps> = 
         [dirty, configuration, inferredConfiguration, infer]
     )
 
-    return fetchError ? (
-        <ErrorAlert prefix="Error fetching index configuration" error={fetchError} />
-    ) : (
-        <>
-            {saveError && <ErrorAlert prefix="Error saving index configuration" error={saveError} />}
+    if (inferredError || repositoryError) {
+        return <ErrorAlert prefix="Error fetching index configuration" error={inferredError || repositoryError} />
+    }
 
-            {configuration === undefined ? (
+    return (
+        <>
+            {updatingError && <ErrorAlert prefix="Error saving index configuration" error={updatingError} />}
+
+            {loadingInferred || loadingRepository ? (
                 <LoadingSpinner className="icon-inline" />
             ) : (
                 <DynamicallyImportedMonacoSettingsEditor
@@ -121,7 +84,7 @@ export const ConfigurationEditor: FunctionComponent<ConfigurationEditorProps> = 
                     jsonSchema={allConfigSchema}
                     canEdit={true}
                     onSave={save}
-                    saving={state === EditorState.Saving}
+                    saving={isUpdating}
                     height={600}
                     isLightTheme={isLightTheme}
                     history={history}

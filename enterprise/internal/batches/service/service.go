@@ -15,14 +15,12 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
-	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
 )
 
 // New returns a Service.
@@ -64,7 +62,7 @@ type CreateBatchSpecOpts struct {
 // CreateBatchSpec creates the BatchSpec.
 func (s *Service) CreateBatchSpec(ctx context.Context, opts CreateBatchSpecOpts) (spec *btypes.BatchSpec, err error) {
 	actor := actor.FromContext(ctx)
-	tr, ctx := trace.New(ctx, "Service.CreateBatchSpec", fmt.Sprintf("Actor %s", actor))
+	tr, ctx := trace.New(ctx, "Service.CreateBatchSpec", fmt.Sprintf("Actor %d", actor.UID))
 	defer func() {
 		tr.SetError(err)
 		tr.Finish()
@@ -137,6 +135,29 @@ func (s *Service) CreateBatchSpec(ctx context.Context, opts CreateBatchSpecOpts)
 	}
 
 	return spec, nil
+}
+
+type EnqueueBatchSpecResolutionOpts struct {
+	BatchSpecID int64
+
+	AllowIgnored     bool
+	AllowUnsupported bool
+}
+
+// EnqueueBatchSpecResolution creates a pending BatchSpec that will be picked up by a worker in the background.
+func (s *Service) EnqueueBatchSpecResolution(ctx context.Context, opts EnqueueBatchSpecResolutionOpts) (err error) {
+	actor := actor.FromContext(ctx)
+	tr, ctx := trace.New(ctx, "Service.EnqueueBatchSpecResolution", fmt.Sprintf("Actor %d", actor.UID))
+	defer func() {
+		tr.SetError(err)
+		tr.Finish()
+	}()
+
+	return s.store.CreateBatchSpecResolutionJob(ctx, &btypes.BatchSpecResolutionJob{
+		BatchSpecID:      opts.BatchSpecID,
+		AllowIgnored:     opts.AllowIgnored,
+		AllowUnsupported: opts.AllowUnsupported,
+	})
 }
 
 // CreateChangesetSpec validates the given raw spec input and creates the ChangesetSpec.
@@ -636,52 +657,4 @@ func (s *Service) CreateChangesetJobs(ctx context.Context, batchChangeID int64, 
 	}
 
 	return bulkGroupID, nil
-}
-
-// RepoRevision describes a repository on a branch at a fixed revision.
-type RepoRevision struct {
-	Repo        *types.Repo
-	Branch      string
-	Commit      api.CommitID
-	FileMatches []string
-}
-
-func (r *RepoRevision) HasBranch() bool {
-	return r.Branch != ""
-}
-
-type RepoWorkspace struct {
-	*RepoRevision
-	Path  string
-	Steps []batcheslib.Step
-
-	OnlyFetchWorkspace bool
-}
-
-type ResolveWorkspacesForBatchSpecOpts struct {
-	AllowIgnored     bool
-	AllowUnsupported bool
-}
-
-// ResolveWorkspacesForBatchSpec takes the given batchSpec, and calculates the
-// RepoWorkspaces matching the `on` part of the spec. For more details on this
-// process, see workspaceResolver.ResolveWorkspacesForBatchSpec.
-func (s *Service) ResolveWorkspacesForBatchSpec(
-	ctx context.Context,
-	batchSpec *batcheslib.BatchSpec,
-	opts ResolveWorkspacesForBatchSpecOpts,
-) (
-	workspaces []*RepoWorkspace,
-	unsupported map[*types.Repo]struct{},
-	ignored map[*types.Repo]struct{},
-	err error,
-) {
-	tr, ctx := trace.New(ctx, "service.ResolveWorkspacesForBatchSpec", "")
-	defer func() {
-		tr.SetError(err)
-		tr.Finish()
-	}()
-
-	wr := &workspaceResolver{store: s.store, frontendInternalURL: api.InternalClient.URL + "/.internal"}
-	return wr.ResolveWorkspacesForBatchSpec(ctx, batchSpec, opts)
 }

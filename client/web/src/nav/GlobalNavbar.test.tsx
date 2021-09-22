@@ -27,8 +27,6 @@ const PROPS: React.ComponentProps<typeof GlobalNavbar> = {
     history: createMemoryHistory(),
     keyboardShortcuts: [],
     isSourcegraphDotCom: false,
-    navbarSearchQueryState: { query: 'q' },
-    onNavbarQueryChange: () => undefined,
     onThemePreferenceChange: () => undefined,
     isLightTheme: true,
     themePreference: ThemePreference.Light,
@@ -40,6 +38,7 @@ const PROPS: React.ComponentProps<typeof GlobalNavbar> = {
     platformContext: {} as any,
     settingsCascade: NOOP_SETTINGS_CASCADE,
     batchChangesEnabled: false,
+    batchChangesExecutionEnabled: false,
     enableCodeMonitoring: false,
     telemetryService: {} as any,
     hideNavLinks: true, // used because reactstrap Popover is incompatible with react-test-renderer

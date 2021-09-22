@@ -833,14 +833,19 @@ export function handleCodeHost({
 
         const searchView = mutations.pipe(
             trackViews([searchViewResolver]),
-            switchMap(({ element }) => fromEvent(element, 'input')),
-            map(event => ({
-                value: (event.target as HTMLInputElement).value,
+            switchMap(({ element }) =>
+                fromEvent(element, 'input').pipe(
+                    map(event => (event.target as HTMLInputElement).value),
+                    startWith((element as HTMLInputElement).value)
+                )
+            ),
+            map(value => ({
+                value,
                 searchURL: searchURL.href,
             })),
             observeOn(asyncScheduler)
         )
-        const resultView = mutations.pipe(trackViews([resultViewResolver])).pipe(observeOn(asyncScheduler))
+        const resultView = mutations.pipe(trackViews([resultViewResolver]), observeOn(asyncScheduler))
 
         const searchEnhancementSubscription = combineLatest([searchView, resultView])
             .pipe(map(([search, { element: resultElement }]) => ({ ...search, resultElement })))

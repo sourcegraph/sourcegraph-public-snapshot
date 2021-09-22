@@ -80,13 +80,9 @@ body,
 // Pages
 @import './Layout';
 @import './api/ApiConsole';
-@import './extensions/ExtensionsArea';
-@import './extensions/extension/ExtensionArea';
 @import './extensions/components/StatusBar';
 @import './extensions/components/ActionItemsBar';
-@import './global/GlobalAlerts';
 @import './global/GlobalDebug';
-@import './global/Notices';
 @import './savedSearches/index';
 @import './search/home/SearchPage';
 @import './search/SearchConsolePage';
@@ -98,18 +94,12 @@ body,
 @import './search/results/progress/StreamingProgress.scss';
 @import './settings/MonacoSettingsEditor';
 @import './settings/SettingsFile';
-@import './site-admin/init/SiteInitPage';
-@import './site-admin/SiteAdmin';
 @import './tree/Tree';
 @import './views/view-global-styles';
 @import './nav/GlobalNavbar';
 @import './nav/Feedback/FeedbackPrompt.scss';
 @import './nav/UserNavItem.scss';
 @import './nav/StatusMessagesNavItem.scss';
-@import './auth/ResetPasswordPage';
-@import './auth/SignInPage';
-@import './auth/SignUpPage';
-@import './auth/OrDivider';
 @import './repo/RepoContainer';
 @import './repo/FilePathBreadcrumbs.scss';
 @import './repo/settings/RepoSettingsArea';
@@ -118,12 +108,10 @@ body,
 @import './components/FilteredConnection';
 @import './components/Dialog';
 @import './user/settings/UserSettingsArea';
-@import './site-admin/SiteAdminAlert';
 @import './site/DockerForMacAlert';
 @import './user/UserAvatar';
 @import './user/area/UserArea';
 @import './org/OrgsArea';
-@import './marketing/SurveyPage';
 @import '../../branded/src/components/panel/views/FileLocations';
 @import '../../branded/src/components/LoaderInput';
 

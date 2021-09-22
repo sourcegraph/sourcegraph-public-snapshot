@@ -1,4 +1,4 @@
-import { ApolloError, QueryResult } from '@apollo/client'
+import { ApolloError, QueryResult, WatchQueryFetchPolicy } from '@apollo/client'
 import { useMemo, useRef } from 'react'
 
 import { GraphQLResult, useQuery } from '@sourcegraph/shared/src/graphql/graphql'
@@ -17,13 +17,18 @@ export interface UseConnectionResult<TData> {
     hasNextPage: boolean
 }
 
+interface UseConnectionConfig {
+    /** Set if query variables should be updated in and derived from the URL */
+    useURL?: boolean
+    /** Allows modifying how the query interacts with the Apollo cache */
+    fetchPolicy?: WatchQueryFetchPolicy
+}
+
 interface UseConnectionParameters<TResult, TVariables, TData> {
     query: string
     variables: TVariables & ConnectionQueryArguments
     getConnection: (result: GraphQLResult<TResult>) => Connection<TData>
-    options?: {
-        useURL?: boolean
-    }
+    options?: UseConnectionConfig
 }
 
 const DEFAULT_AFTER: ConnectionQueryArguments['after'] = undefined
@@ -93,6 +98,7 @@ export const useConnection = <TResult, TVariables, TData>({
             ...initialControls,
         },
         notifyOnNetworkStatusChange: true, // Ensures loading state is updated on `fetchMore`
+        fetchPolicy: options?.fetchPolicy,
     })
 
     /**

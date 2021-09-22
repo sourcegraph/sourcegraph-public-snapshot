@@ -15,20 +15,50 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Added
 
+-
+
+### Changed
+
+-
+
+### Fixed
+
+- StatefulSet service discovery in Kubernetes correctly constructs pod hostnames in the case where the ServiceName is different from the StatefulSet name. [#25146](https://github.com/sourcegraph/sourcegraph/pull/25146)
+
+### Removed
+
+-
+
+## 3.32.0
+
+### Added
+
+- The search sidebar shows a revisions section if all search results are from a single repository. This makes it easier to search in and switch between different revisions. [#23835](https://github.com/sourcegraph/sourcegraph/pull/23835)
+- The various alerts overview panels in Grafana can now be clicked to go directly to the relevant panels and dashboards. [#24920](https://github.com/sourcegraph/sourcegraph/pull/24920)
+- Added a `Documentation` tab to the Site Admin Maintenance panel that links to the official Sourcegraph documentation. [#24917](https://github.com/sourcegraph/sourcegraph/pull/24917)
+- Code Insights that run over all repositories now generate a moving daily snapshot between time points. [#24804](https://github.com/sourcegraph/sourcegraph/pull/24804)
+- The Code Insights GraphQL API now restricts the results to user, org, and globally scoped insights. Insights will be synced to the database with access associated to the user or org setting containing the insight definition. [#25017](https://github.com/sourcegraph/sourcegraph/pull/25017)
+
 ### Changed
 
 - `allowGroupsPermissionsSync` in the GitHub authorization provider is now required to enable the experimental GitHub teams and organization permissions caching. [#24561](https://github.com/sourcegraph/sourcegraph/pull/24561)
 - GitHub external code hosts now validate if a corresponding authorization provider is set, and emits a warning if not. [#24526](https://github.com/sourcegraph/sourcegraph/pull/24526)
 - Sourcegraph is now built with Go 1.17. [#24566](https://github.com/sourcegraph/sourcegraph/pull/24566)
 - Code Insights is now available only in the Sourcegraph enterprise. [#24741](https://github.com/sourcegraph/sourcegraph/pull/24741)
+- Prometheus in Sourcegraph with Docker Compose now scrapes Postgres and Redis instances for metrics. [deploy-sourcegraph-docker#580](https://github.com/sourcegraph/deploy-sourcegraph-docker/pull/580)
+- Symbol suggestions now leverage optimizations for global searches. [#24943](https://github.com/sourcegraph/sourcegraph/pull/24943)
 
 ### Fixed
 
--
+- Fixed a number of issues where repository permissions sync may fail for instances with very large numbers of repositories. [#24852](https://github.com/sourcegraph/sourcegraph/pull/24852), [#24972](https://github.com/sourcegraph/sourcegraph/pull/24972)
+- Fixed excessive re-rendering of the whole web application on every keypress in the search query input. [#24844](https://github.com/sourcegraph/sourcegraph/pull/24844)
+- Code Insights line chart now supports different timelines for each data series (lines). [#25005](https://github.com/sourcegraph/sourcegraph/pull/25005)
+- Postgres exporter now exposes pg_stat_activity account to show the number of active DB connections. [#25086](https://github.com/sourcegraph/sourcegraph/pull/25086)
 
 ### Removed
 
--
+- The `PRECISE_CODE_INTEL_DATA_TTL` environment variable is no longer read by the worker service. Instead, global and repository-specific data retention policies configurable in the UI by site-admins will control the length of time LSIF uploads are considered _fresh_. [#24793](https://github.com/sourcegraph/sourcegraph/pull/24793)
+- The `repo.cloned` column was removed as it was deprecated in 3.26. [#25066](https://github.com/sourcegraph/sourcegraph/pull/25066)
 
 ## 3.31.2
 

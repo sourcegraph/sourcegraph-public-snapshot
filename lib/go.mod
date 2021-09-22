@@ -9,6 +9,7 @@ require (
 	github.com/derision-test/go-mockgen v1.1.2
 	github.com/efritz/pentimento v0.0.0-20190429011147-ade47d831101
 	github.com/fatih/color v1.11.0
+	github.com/ghodss/yaml v1.0.0
 	github.com/go-stack/stack v1.8.0 // indirect
 	github.com/gobwas/glob v0.2.3
 	github.com/google/go-cmp v0.5.5
@@ -25,9 +26,9 @@ require (
 	github.com/mattn/go-runewidth v0.0.12
 	github.com/moby/term v0.0.0-20210619224110-3f7ff695adc6
 	github.com/rogpeppe/go-internal v1.8.0 // indirect
-	github.com/sourcegraph/batch-change-utils v0.0.0-20210708162152-c9f35b905d94
 	github.com/sourcegraph/go-diff v0.6.1
 	github.com/sourcegraph/jsonx v0.0.0-20200629203448-1a936bd500cf
+	github.com/xeipuuv/gojsonschema v1.2.0
 	golang.org/x/sys v0.0.0-20210616094352-59db8d763f22
 	gopkg.in/yaml.v2 v2.4.0
 	gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b

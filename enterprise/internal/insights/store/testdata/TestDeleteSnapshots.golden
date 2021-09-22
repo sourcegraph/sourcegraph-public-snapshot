@@ -1,7 +1,7 @@
 []store.SeriesPoint{store.SeriesPoint{
 	SeriesID: "one",
 	Time: time.Time{
-		ext: 63766746000,
+		ext: 63766868400,
 		loc: &time.Location{
 			name: "UTC",
 		},
