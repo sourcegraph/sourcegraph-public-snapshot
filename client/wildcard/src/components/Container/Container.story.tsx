@@ -1,3 +1,4 @@
+import { DecoratorFn, Meta, Story } from '@storybook/react'
 import React from 'react'
 
 import { BrandedStory } from '@sourcegraph/branded/src/components/BrandedStory'
@@ -5,17 +6,18 @@ import webStyles from '@sourcegraph/web/src/SourcegraphWebApp.scss'
 
 import { Container } from './Container'
 
-export default {
-    title: 'wildcard/Container',
+const decorator: DecoratorFn = story => (
+    <BrandedStory styles={webStyles}>{() => <div className="container mt-3">{story()}</div>}</BrandedStory>
+)
 
-    decorators: [
-        story => (
-            <BrandedStory styles={webStyles}>{() => <div className="container mt-3">{story()}</div>}</BrandedStory>
-        ),
-    ],
+const config: Meta = {
+    title: 'wildcard/Container',
+    decorators: [decorator],
 }
 
-export const Overview = () => (
+export default config
+
+export const Overview: Story = () => (
     <>
         <div className="alert alert-info">
             <p>
@@ -91,4 +93,4 @@ Overview.parameters = {
         name: 'Figma',
         url: 'https://www.figma.com/file/NIsN34NH7lPu04olBzddTw/?node-id=1478%3A3044',
     },
-};
+}

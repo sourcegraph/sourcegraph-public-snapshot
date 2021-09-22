@@ -1,3 +1,4 @@
+import { DecoratorFn, Meta, Story } from '@storybook/react'
 import PlusIcon from 'mdi-react/PlusIcon'
 import PuzzleOutlineIcon from 'mdi-react/PuzzleOutlineIcon'
 import SearchIcon from 'mdi-react/SearchIcon'
@@ -10,17 +11,18 @@ import webStyles from '@sourcegraph/web/src/SourcegraphWebApp.scss'
 
 import { PageHeader } from './PageHeader'
 
-export default {
-    title: 'wildcard/PageHeader',
+const decorator: DecoratorFn = story => (
+    <BrandedStory styles={webStyles}>{() => <div className="container mt-3">{story()}</div>}</BrandedStory>
+)
 
-    decorators: [
-        story => (
-            <BrandedStory styles={webStyles}>{() => <div className="container mt-3">{story()}</div>}</BrandedStory>
-        ),
-    ],
+const config: Meta = {
+    title: 'wildcard/PageHeader',
+    decorators: [decorator],
 }
 
-export const BasicHeader = () => (
+export default config
+
+export const BasicHeader: Story = () => (
     <PageHeader
         path={[{ icon: PuzzleOutlineIcon, text: 'Header' }]}
         actions={
@@ -31,7 +33,7 @@ export const BasicHeader = () => (
     />
 )
 
-BasicHeader.storyName = 'Basic header';
+BasicHeader.storyName = 'Basic header'
 
 BasicHeader.parameters = {
     design: {
@@ -40,9 +42,9 @@ BasicHeader.parameters = {
         url:
             'https://www.figma.com/file/NIsN34NH7lPu04olBzddTw/Design-Refresh-Systemization-source-of-truth?node-id=1485%3A0',
     },
-};
+}
 
-export const ComplexHeader = () => (
+export const ComplexHeader: Story = () => (
     <PageHeader
         annotation={<FeedbackBadge status="prototype" feedback={{ mailto: 'support@sourcegraph.com' }} />}
         path={[{ to: '/level-0', icon: PuzzleOutlineIcon }, { to: '/level-1', text: 'Level 1' }, { text: 'Level 2' }]}
@@ -65,7 +67,7 @@ export const ComplexHeader = () => (
     />
 )
 
-ComplexHeader.storyName = 'Complex header';
+ComplexHeader.storyName = 'Complex header'
 
 ComplexHeader.parameters = {
     design: {
@@ -74,4 +76,4 @@ ComplexHeader.parameters = {
         url:
             'https://www.figma.com/file/NIsN34NH7lPu04olBzddTw/Design-Refresh-Systemization-source-of-truth?node-id=1485%3A0',
     },
-};
+}
