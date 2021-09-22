@@ -1,0 +1,69 @@
+name: Update issue status in Code Insights GitHub Beta project
+
+on:
+  issues:
+    types: [closed, reopened]
+  pull_request:
+    types: [opened, edited, synchronize, ready_for_review]
+
+jobs:
+  update-status:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Update status
+        uses: Amadevus/pwsh-script@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GH_PROJECTS_ACTION_TOKEN }}
+        with:
+          script: |
+            Install-Module PSGitHub -Force -ErrorAction Stop
+
+            if (!$env:GITHUB_TOKEN) {
+              throw "No GITHUB_TOKEN env var provided"
+            }
+
+            $PSDefaultParameterValues['*GitHub*:Token'] = ConvertTo-SecureString -String $env:GITHUB_TOKEN -AsPlainText -Force
+            $PSDefaultParameterValues['*GitHubBetaProject*:ProjectNodeId'] = 'MDExOlByb2plY3ROZXh0MzI3Ng==' # https://github.com/orgs/sourcegraph/projects/200
+
+            $fixIssuePattern = "(?:close|fixe?|resolve)(?:[sd])? (?:#|(?<repo>[^/]+/[^/]+)|https://github\.com/(?<repo>[^/]+/[^/]+)/issues/)(?<number>\d+)"
+
+            switch ($github.event_name) {
+
+              'issues' {
+                # Find project item for the issue
+                # THIS DOES NOT SCALE AS THE PROJECT GETS LARGE, but it's the only way possible afaict.
+                # One way this is mitigated is that this request is streamed/paginated in order of most-recent-first,
+                # which means we can hope the issue is usually found in the first page(s).
+
+                $status = if ($github.event.action -eq 'closed') { 'Done' } else { 'In Progress' }
+
+                Get-GitHubBetaProjectItem |
+                  Where-Object { $_.content.number -eq $github.event.issue.number } |
+                  Select-Object -First 1 |
+                  Set-GitHubBetaProjectItemField -FieldName 'Status' -Value $status
+              }
+
+              'pull_request' {
+                $pr = $github.event.pull_request
+                $repo = $github.repository
+
+                $status = if ($pr.draft) { 'In Progress' } else { 'In Review' }
+
+                # Get fixed issues from the PR description
+                $fixedIssues = [regex]::Matches($pr.body, $fixIssuePattern, [Text.RegularExpressions.RegexOptions]::IgnoreCase) | ForEach-Object { $_.Groups['number'].Value }
+
+                # Find project items for the issues the PR references
+                Get-GitHubBetaProjectItem |
+                  Where-Object {
+                    $item = $_
+                    $fixedIssues | Where-Object {
+                      # Check issue number is the same
+                      $_.Groups['number'].Value -eq $item.content.number -and
+                      # Check repo is same
+                      ($_.Groups['repo'].Value -eq $item.content.repository.nameWithOwner -or (!$_.Groups['repo'].Success -and $repo -eq $item.content.repository.nameWithOwner))
+                    }
+                  } |
+                  Select-Object -First $fixedIssues.Count |
+                  Set-GitHubBetaProjectItemField -FieldName 'Status' -Value $status
+              }
+            }
