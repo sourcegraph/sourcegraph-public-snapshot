@@ -24,7 +24,10 @@ type Operation func(*bk.Pipeline)
 // CoreTestOperations is a core set of tests that should be run in most CI cases. These
 // steps should generally be quite fast.
 func CoreTestOperations(changedFiles ChangedFiles, buildOptions bk.BuildOptions) []Operation {
-	// Default set
+	// Special-case branches provide a nil changedFiles to only run all checks.
+	runAll := len(changedFiles) == 0
+
+	// Base set - TODO reduce to bare minimum
 	operations := []Operation{
 		triggerAsync(buildOptions), // triggers a slow pipeline, so do it first.
 		addLint,                    // ~4.5m
@@ -32,44 +35,35 @@ func CoreTestOperations(changedFiles ChangedFiles, buildOptions bk.BuildOptions)
 		addWebApp,                  // ~3m
 		addBrowserExt,              // ~2m
 		addBrandedTests,            // ~1.5m
-		addGoTests,                 // ~1.5m
-		addCheck,                   // ~1m
-		addGoBuild,                 // ~0.5m
-		addDockerfileLint,          // ~0.2m
 	}
 
-	// Special-case branches provide a nil changedFiles to only run default changes.
-	if len(changedFiles) == 0 {
-		return append(operations, wait)
-	}
-
-	// Build special pipelines for changes that only touch a subset of code.
-	switch {
-	case changedFiles.onlyDocs():
-		// If this is a docs-only PR, run only the steps necessary to verify the docs.
-		operations = []Operation{
-			addDocs,
-		}
-
-	case changedFiles.onlyGo() && !changedFiles.onlySg():
-		// If this is a go-only PR, run only the steps necessary to verify the go code.
-		operations = []Operation{
-			addGoTests, // ~1.5m
-			addCheck,   // ~1m
-			addGoBuild, // ~0.5m
-		}
-
-	case changedFiles.onlySg():
-		// If the changes are only in ./dev/sg then we only need to run a subset of steps.
-		operations = []Operation{
-			addGoTests,
-			addCheck,
+	if runAll || changedFiles.affectsGo() {
+		if changedFiles.affectsSg() {
+			// If the changes are only in ./dev/sg then we only need to run a subset of steps.
+			operations = append(operations,
+				addGoTests,
+				addCheck,
+			)
+		} else {
+			// Run all Go checks
+			operations = append(operations,
+				addGoTests, // ~1.5m
+				addCheck,   // ~1m
+				addGoBuild, // ~0.5m
+			)
 		}
 	}
 
-	// Add additional steps
-	if changedFiles.affectsClient() {
+	if runAll || changedFiles.affectsClient() {
 		operations = append(operations, frontendPuppeteerAndStorybook(false))
+	}
+
+	if runAll || changedFiles.affectsDockerfiles() {
+		operations = append(operations, addDockerfileLint)
+	}
+
+	if runAll || changedFiles.affectsDocs() {
+		operations = append(operations, addDocs)
 	}
 
 	// wait for all steps to pass

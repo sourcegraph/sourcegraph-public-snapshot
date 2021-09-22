@@ -7,34 +7,44 @@ import (
 
 type ChangedFiles []string
 
-// onlyDocs returns whether the ChangedFiles are only documentation.
-func (c ChangedFiles) onlyDocs() bool {
+// affectsDocs returns whether the ChangedFiles affects documentation.
+func (c ChangedFiles) affectsDocs() bool {
 	for _, p := range c {
-		if !strings.HasPrefix(p, "doc/") && p != "CHANGELOG.md" {
-			return false
+		if strings.HasPrefix(p, "doc/") && p != "CHANGELOG.md" {
+			return true
 		}
 	}
-	return true
+	return false
 }
 
-// onlySg returns whether the ChangedFiles are only in the ./dev/sg folder.
-func (c ChangedFiles) onlySg() bool {
+// affectsSg returns whether the ChangedFiles affects the ./dev/sg folder.
+func (c ChangedFiles) affectsSg() bool {
 	for _, p := range c {
-		if !strings.HasPrefix(p, "dev/sg/") {
-			return false
+		if strings.HasPrefix(p, "dev/sg/") {
+			return true
 		}
 	}
-	return true
+	return false
 }
 
-// onlyGo returns whether the ChangedFiles are only go files.
-func (c ChangedFiles) onlyGo() bool {
+// affectsGo returns whether the ChangedFiles affects go files.
+func (c ChangedFiles) affectsGo() bool {
 	for _, p := range c {
-		if !strings.HasSuffix(p, ".go") && p != "go.sum" && p != "go.mod" {
-			return false
+		if strings.HasSuffix(p, ".go") || p == "go.sum" || p == "go.mod" {
+			return true
 		}
 	}
-	return true
+	return false
+}
+
+// affectsDockerfiles whether the ChangedFiles affects Dockerfiles.
+func (c ChangedFiles) affectsDockerfiles() bool {
+	for _, p := range c {
+		if strings.HasPrefix(p, "Dockerfile") || strings.HasSuffix(p, "Dockerfile") {
+			return true
+		}
+	}
+	return false
 }
 
 // Check if files that affect client code were changed. Used to detect if we need to run Puppeteer or Chromatic tests.
