@@ -39,6 +39,7 @@ func resolveStepsEnvironment(steps []batcheslib.Step) ([]map[string]string, erro
 	global := os.Environ()
 	envs := make([]map[string]string, len(steps))
 	for i, step := range steps {
+		// TODO: This should also render templates inside env vars.
 		env, err := step.Env.Resolve(global)
 		if err != nil {
 			return nil, errors.Wrapf(err, "resolving environment for step %d", i)
