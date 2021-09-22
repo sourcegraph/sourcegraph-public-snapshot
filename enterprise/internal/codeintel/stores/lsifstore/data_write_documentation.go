@@ -263,7 +263,7 @@ func (s *Store) WriteDocumentationSearch(ctx context.Context, upload dbstore.Upl
 	// tuple in either table so we go ahead and purge the old data now.
 	for _, tableName := range []string{tableNamePublic, tableNamePrivate} {
 		if err := s.Exec(ctx, sqlf.Sprintf(
-			strings.Replace(purgeDocumentationSearchOldData, "$TABLE_NAME", tableName, -1),
+			strings.ReplaceAll(purgeDocumentationSearchOldData, "$TABLE_NAME", tableName),
 			upload.RepositoryID,
 			upload.Root,
 			languageOrIndexerName,
@@ -280,7 +280,7 @@ func (s *Store) WriteDocumentationSearch(ctx context.Context, upload dbstore.Upl
 				tags = append(tags, string(tag))
 			}
 			err := s.Exec(ctx, sqlf.Sprintf(
-				strings.Replace(writeDocumentationSearchInsertQuery, "$TABLE_NAME", tableName, -1),
+				strings.ReplaceAll(writeDocumentationSearchInsertQuery, "$TABLE_NAME", tableName),
 				upload.ID,
 				node.PathID,
 				languageOrIndexerName,
@@ -355,14 +355,14 @@ var (
 // truncateDocumentationSearchIndexSize is called (within a transaction) to truncate the
 // documentation search index size according to the site config apidocs.search-index-limit-factor.
 func (s *Store) truncateDocumentationSearchIndexSize(ctx context.Context, tableName string) error {
-	estimatedTotalRows, exists, err := basestore.ScanFirstInt64(s.Query(ctx, sqlf.Sprintf(
-		strings.Replace(countDocumentationSearchRowsQuery, "$TABLE_NAME", tableName, -1),
+	totalRows, exists, err := basestore.ScanFirstInt64(s.Query(ctx, sqlf.Sprintf(
+		strings.ReplaceAll(countDocumentationSearchRowsQuery, "$TABLE_NAME", tableName),
 	)))
 	if !exists {
-		return fmt.Errorf("failed to estimate table size")
+		return fmt.Errorf("failed to count table size")
 	}
 	if err != nil {
-		return errors.Wrap(err, "estimating table size")
+		return errors.Wrap(err, "counting table size")
 	}
 
 	searchIndexLimitFactor := conf.Get().ApidocsSearchIndexSizeLimitFactor
@@ -370,7 +370,7 @@ func (s *Store) truncateDocumentationSearchIndexSize(ctx context.Context, tableN
 		searchIndexLimitFactor = 1.0
 	}
 	searchIndexRowsLimit := int64(searchIndexLimitFactor * 250_000_000)
-	rowsToDelete := int64(estimatedTotalRows) - searchIndexRowsLimit
+	rowsToDelete := totalRows - searchIndexRowsLimit
 	if rowsToDelete <= 0 {
 		return nil
 	}
@@ -382,7 +382,7 @@ func (s *Store) truncateDocumentationSearchIndexSize(ctx context.Context, tableN
 			"API docs search index size exceeded configured limit, truncating index",
 			"apidocs.search-index-limit-factor", searchIndexLimitFactor,
 			"rows_limit", searchIndexRowsLimit,
-			"estimated_total_rows", estimatedTotalRows,
+			"total_rows", totalRows,
 			"deleting", rowsToDelete,
 		)
 	}
@@ -390,7 +390,7 @@ func (s *Store) truncateDocumentationSearchIndexSize(ctx context.Context, tableN
 
 	// Delete the first (oldest) N rows
 	if err := s.Exec(ctx, sqlf.Sprintf(
-		strings.Replace(truncateDocumentationSearchRowsQuery, "$TABLE_NAME", tableName, -1),
+		strings.ReplaceAll(truncateDocumentationSearchRowsQuery, "$TABLE_NAME", tableName),
 		rowsToDelete,
 	)); err != nil {
 		return errors.Wrap(err, "truncating search index rows")
