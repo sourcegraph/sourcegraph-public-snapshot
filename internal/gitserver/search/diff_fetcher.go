@@ -15,7 +15,7 @@ import (
 // started with StartDiffFetcher
 type DiffFetcher struct {
 	stdin   io.WriteCloser
-	stderr  safeBuffer
+	stderr  *safeBuffer
 	scanner *bufio.Scanner
 	cancel  context.CancelFunc
 }
@@ -67,7 +67,7 @@ func StartDiffFetcher(dir string) (*DiffFetcher, error) {
 	return &DiffFetcher{
 		stdin:   stdinWriter,
 		scanner: scanner,
-		stderr:  stderrBuf,
+		stderr:  &stderrBuf,
 		cancel:  cancel,
 	}, nil
 }
