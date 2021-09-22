@@ -26,24 +26,25 @@ func Publish(amplitudeAPIToken string, jsonReq []byte) error {
 		resp, err := client.Do(req)
 		if err != nil {
 			if resp.StatusCode == http.StatusBadRequest {
-				log15.Warn("Could not log Amplitude event: JSON formatting incorrect.")
+				log15.Warn("Could not log Amplitude event: JSON formatting incorrect.", "err", err)
 			}
 			if resp.StatusCode == http.StatusRequestEntityTooLarge {
 				// We should never hit this, because we send a single event at a time.
 				// Notify the user, but a TODO is to properly handle retries for this case.
-				log15.Warn("Could not log Amplitude event: Payload too large. Max size is 1MB. Split up into smaller requests.")
+				log15.Warn("Could not log Amplitude event: Payload too large.", "err", err)
 			}
 			if resp.StatusCode == http.StatusTooManyRequests {
 				// Amplitude may throttle us if we exceed 1000 events/sec. Give a 30 second break before retrying.
-				log15.Warn("Could not log Amplitude event: Too many requests. Maximum 10 events/second/user. Retrying in 30s.")
+				log15.Warn("Could not log Amplitude event: Too many requests. Maximum 10 events/second/user. Retrying in 30s.", "err", err)
 				time.Sleep(30 * time.Second)
 			}
 			if resp.StatusCode == http.StatusInternalServerError {
-				log15.Warn("Could not log Amplitude event: Internal server error.")
+				log15.Warn("Could not log Amplitude event: Internal server error.", "err", err)
+				time.Sleep(5 * time.Second)
 			}
 			if attempts > 5 {
-				log15.Warn("Could not log Amplitude event. Not retrying")
-				return errors.Errorf("Could not log Amplitude event. Not retrying. Code: %v", resp.StatusCode)
+				log15.Warn("Could not log Amplitude event. Not retrying", "err", err)
+				return errors.Errorf("Could not log Amplitude event. Not retrying. Code: %v, Message: %v", resp.StatusCode, err.Error())
 			}
 			attempts++
 		}
