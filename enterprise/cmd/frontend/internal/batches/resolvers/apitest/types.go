@@ -193,7 +193,7 @@ type BatchSpec struct {
 	OriginalInput string
 	ParsedInput   graphqlbackend.JSONValue
 
-	ApplyURL string
+	ApplyURL *string
 
 	Namespace UserOrg
 	Creator   *User

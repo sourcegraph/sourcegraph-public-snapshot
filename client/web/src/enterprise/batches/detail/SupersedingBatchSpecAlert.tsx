@@ -17,6 +17,11 @@ export const SupersedingBatchSpecAlert: React.FunctionComponent<SupersedingBatch
     }
 
     const { applyURL, createdAt } = spec
+
+    if (applyURL === null) {
+        return null
+    }
+
     return (
         <DismissibleAlert
             className="alert-info"

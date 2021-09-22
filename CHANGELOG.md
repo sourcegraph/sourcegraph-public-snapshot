@@ -15,6 +15,24 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Added
 
+-
+
+### Changed
+
+-
+
+### Fixed
+
+- StatefulSet service discovery in Kubernetes correctly constructs pod hostnames in the case where the ServiceName is different from the StatefulSet name. [#25146](https://github.com/sourcegraph/sourcegraph/pull/25146)
+
+### Removed
+
+-
+
+## 3.32.0
+
+### Added
+
 - The search sidebar shows a revisions section if all search results are from a single repository. This makes it easier to search in and switch between different revisions. [#23835](https://github.com/sourcegraph/sourcegraph/pull/23835)
 - The various alerts overview panels in Grafana can now be clicked to go directly to the relevant panels and dashboards. [#24920](https://github.com/sourcegraph/sourcegraph/pull/24920)
 - Added a `Documentation` tab to the Site Admin Maintenance panel that links to the official Sourcegraph documentation. [#24917](https://github.com/sourcegraph/sourcegraph/pull/24917)
@@ -36,6 +54,7 @@ All notable changes to Sourcegraph are documented in this file.
 - Fixed a number of issues where repository permissions sync may fail for instances with very large numbers of repositories. [#24852](https://github.com/sourcegraph/sourcegraph/pull/24852), [#24972](https://github.com/sourcegraph/sourcegraph/pull/24972)
 - Fixed excessive re-rendering of the whole web application on every keypress in the search query input. [#24844](https://github.com/sourcegraph/sourcegraph/pull/24844)
 - Code Insights line chart now supports different timelines for each data series (lines). [#25005](https://github.com/sourcegraph/sourcegraph/pull/25005)
+- Postgres exporter now exposes pg_stat_activity account to show the number of active DB connections. [#25086](https://github.com/sourcegraph/sourcegraph/pull/25086)
 
 ### Removed
 

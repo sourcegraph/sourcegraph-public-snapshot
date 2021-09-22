@@ -35,11 +35,20 @@
 }
 
 .streaming-skipped-item {
+    $button-margin: 0.5rem;
+
+    padding-left: #{$button-margin};
+    padding-right: #{$button-margin};
+
     &__button {
         &:disabled {
             opacity: 1;
             color: var(--body-color);
         }
+    }
+
+    &__icon {
+        margin-right: #{$button-margin} !important;
     }
 
     &__message {
@@ -49,11 +58,11 @@
 
         // Border should appear directly under the width of the icon
         // Halfway past the icon, minus half the border size
-        margin-left: calc(#{$icon-inline-size} / 2 - #{$border-size} / 2 + 0.75rem);
+        margin-left: calc(#{$icon-inline-size} / 2 - #{$border-size} / 2 + #{$button-margin});
         // Halfway past the icon, minus half the border size, plus the icon's right margin
-        padding-left: calc(#{$icon-inline-size} / 2 - #{$border-size} / 2 + 0.5rem);
+        padding-left: calc(#{$icon-inline-size} / 2 - #{$border-size} / 2 + #{$button-margin});
 
-        margin-right: 0.75rem;
+        margin-right: #{$button-margin};
 
         &.markdown {
             code {
@@ -70,8 +79,8 @@
 
     &__bottom-border-spacer {
         border-bottom: 1px solid var(--border-color-2);
-        margin-left: 0.75rem;
-        margin-right: 0.75rem;
+        margin-left: #{$button-margin};
+        margin-right: #{$button-margin};
     }
 
     &__chevron {

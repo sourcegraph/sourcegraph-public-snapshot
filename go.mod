@@ -73,7 +73,7 @@ require (
 	github.com/gorilla/securecookie v1.1.1
 	github.com/gorilla/sessions v1.2.1
 	github.com/goware/urlx v0.3.1
-	github.com/grafana-tools/sdk v0.0.0-20210831082851-2de27e0f2577
+	github.com/grafana-tools/sdk v0.0.0-20210921191058-888ef9d18611
 	github.com/graph-gophers/graphql-go v0.0.0-20201113091052-beb923fada29
 	github.com/graphql-go/graphql v0.7.9
 	github.com/gregjones/httpcache v0.0.0-20190611155906-901d90724c79
@@ -111,6 +111,7 @@ require (
 	github.com/prometheus/common v0.30.0
 	github.com/qustavo/sqlhooks/v2 v2.1.0
 	github.com/rainycape/unidecode v0.0.0-20150907023854-cb7f23ec59be
+	github.com/rs/xid v1.3.0
 	github.com/russellhaering/gosaml2 v0.6.0
 	github.com/russellhaering/goxmldsig v1.1.1-0.20201210191726-3541f5e554ee
 	github.com/schollz/progressbar/v3 v3.5.0
@@ -271,7 +272,6 @@ require (
 	github.com/prometheus/procfs v0.6.0 // indirect
 	github.com/rivo/uniseg v0.1.0 // indirect
 	github.com/rogpeppe/go-internal v1.8.0 // indirect
-	github.com/rs/xid v1.3.0 // indirect
 	github.com/russross/blackfriday v1.5.2 // indirect
 	github.com/shurcooL/go-goon v0.0.0-20210110234559-7585751d9a17 // indirect
 	github.com/shurcooL/highlight_diff v0.0.0-20181222201841-111da2e7d480 // indirect
@@ -338,8 +338,7 @@ replace (
 replace (
 	// Pending: https://github.com/ghodss/yaml/pull/65
 	github.com/ghodss/yaml => github.com/sourcegraph/yaml v1.0.1-0.20200714132230-56936252f152
-	// graph-fieldconfig branch - https://github.com/grafana-tools/sdk/pull/170
-	github.com/grafana-tools/sdk => github.com/sourcegraph/grafana-sdk v0.0.0-20210914025534-b4255965ba53
+	// Pending: https://github.com/shurcooL/httpgzip/pull/9
 	github.com/shurcooL/httpgzip => github.com/sourcegraph/httpgzip v0.0.0-20210213125624-48ebf036a6a1
 )
 

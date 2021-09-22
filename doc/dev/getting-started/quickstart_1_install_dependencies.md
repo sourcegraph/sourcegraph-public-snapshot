@@ -18,22 +18,23 @@ Sourcegraph has the following dependencies:
 - [Comby](https://github.com/comby-tools/comby/) (v0.11.3 or higher)
 - [Watchman](https://facebook.github.io/watchman/)
 
-You can choose to install Redis and/or PostgreSQL directly on your system, or you can run them as docker containers with [docker compose](https://docs.docker.com/compose/). The following instructions will describe both options.
+Running Postgres via Docker vs Manually
+- You can choose to install Redis and/or PostgreSQL directly on your system, or you can run them as docker containers with [docker compose](https://docs.docker.com/compose/). The following instructions will describe both options.
 
-Running within a container provides some advantages such as storing the data separately from the container, you do not need to run it as a system service and its easy to use different database versions or multiple databases.
+- Running within a container provides some advantages such as storing the data separately from the container, you do not need to run it as a system service and its easy to use different database versions or multiple databases.
 
-Running as system services might yield better performance, especially on macOS.
+- Running as system services might yield better performance, especially on macOS.
 
-No matter which option you choose, docker is required because the development server starts additional docker containers.
+- No matter which option you choose, docker is required because the development server starts additional docker containers.
 
-The following are two recommendations for installing these dependencies:
+The following are two recommendations for installing these dependencies (See below for [asdf](#optional-asdf) for an alternate way of managing dependencies):
 
 ## macOS
 
 1.  Install [Homebrew](https://brew.sh).
 2.  Install [Docker for Mac](https://docs.docker.com/docker-for-mac/).
 
-    optionally via `brew`
+    Alternatively, you can install it via `brew`
 
     ```
     brew install --cask docker
@@ -45,7 +46,9 @@ The following are two recommendations for installing these dependencies:
     brew install go yarn git gnu-sed golang-migrate comby sqlite pcre FiloSottile/musl-cross/musl-cross jq watchman
     ```
 
-4. (without docker) Install PostgreSQL and Redis
+4. Choose to run Postgres and Redis manually (Option a.) or via Docker (Option b.)
+    
+    a. (without docker) Install PostgreSQL and Redis
 
     If you want to run Redis and/or PostgreSQL directly on your system install them with the follwing command:
 
@@ -54,7 +57,7 @@ The following are two recommendations for installing these dependencies:
     brew install redis
     ```
 
-5. (with docker) Install Docker Compose
+    b. (with docker) Install Docker Compose
 
     We provide a docker compose file at `dev/redis-postgres.yml` to make it easy to run Redis and PostgreSQL as docker containers. Fortunately `docker-compose` comes with Docker for Mac so no additional step is required.
 
@@ -95,7 +98,7 @@ The following are two recommendations for installing these dependencies:
         ```
 
 7.  Install the current recommended version of Node JS by running the following
-    from the working directory of a sourcegraph repository clone:
+    from the working directory of a sourcegraph repository clone (See [Cloning our repository](quickstart_2_clone_repository.md) for cloning the repository):
 
     ```
     nvm install
@@ -109,7 +112,7 @@ The following are two recommendations for installing these dependencies:
     instead, to ensure you get a Node version compatible with the current state
     of the sourcegraph repository.
 
-8.  (optional) Configure PostgreSQL and Redis to start automatically
+8.  (optional) Configure PostgreSQL and Redis to start automatically if you chose to install it manually via 4a above.
 
     If you have installed PostgreSQL and Redis directly on your system, start them with the following commands:
 
@@ -263,4 +266,4 @@ asdf plugin add yarn
 
 You can install the all the versions specified in [.tool-versions](https://github.com/sourcegraph/sourcegraph/blob/main/.tool-versions) by running `asdf install`.
 
-[< Previous](index.md) | [Next >](quickstart_2_start_docker.md)
+[< Previous](index.md) | [Next >](quickstart_2_clone_repository.md)
