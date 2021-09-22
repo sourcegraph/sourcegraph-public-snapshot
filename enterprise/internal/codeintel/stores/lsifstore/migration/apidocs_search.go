@@ -97,7 +97,7 @@ func (m *apiDocsSearchMigrator) Up(ctx context.Context) error {
 	for _, dumpID := range dumpIDs {
 		dumpID := dumpID
 		go func() {
-			err := m.processDump(ctx, dumpID)
+			err := m.processUpload(ctx, dumpID)
 			done <- err
 		}()
 	}
@@ -118,47 +118,34 @@ WHERE search_indexed='false'
 LIMIT %s
 `
 
-// processDump indexes all of the API documentation for the given dump ID by decoding the information
+// processUpload indexes all of the API documentation for the given dump ID by decoding the information
 // in lsif_data_documentation_pages and inserting into the new lsif_data_documentation_search_* tables.
-func (m *apiDocsSearchMigrator) processDump(ctx context.Context, dumpID int) error {
-	var dumpOrUpload interface{}
-	dumps, err := m.dbStore.GetDumpsByIDs(ctx, []int{dumpID})
+func (m *apiDocsSearchMigrator) processUpload(ctx context.Context, uploadID int) error {
+	upload, exists, err := m.dbStore.GetUploadByID(ctx, uploadID)
 	if err != nil {
-		return errors.Wrap(err, "getDumpsByIDs")
+		return errors.Wrap(err, "GetUploadByID")
 	}
-	if len(dumps) == 0 {
-		// We couldn't find a dump with this ID, but we'd also be 100% OK with the upload so
-		// fallback to that if the dump doesn't exist for any reason.
-		upload, exists, err := m.dbStore.GetUploadByID(ctx, dumpID)
-		if err != nil {
-			return errors.Wrap(err, "GetUploadByID")
+	if !exists {
+		// The upload doesn't exist anymore, don't error out - just skip migrating this one.
+		log15.Error("API docs: migration: could not find LSIF upload, skipping", "id", uploadID)
+		if err := m.store.Exec(ctx, sqlf.Sprintf(apiDocsSearchMigratorProcessedDumpQuery, uploadID)); err != nil {
+			return errors.Wrap(err, "marking upload as migrated")
 		}
-		if !exists {
-			// The dump/upload doesn't exist anymore, don't error out - just skip migrating this one.
-			log15.Error("API docs: migration: could not find LSIF dump/upload, skipping", "id", dumpID)
-			if err := m.store.Exec(ctx, sqlf.Sprintf(apiDocsSearchMigratorProcessedDumpQuery, dumpID)); err != nil {
-				return errors.Wrap(err, "marking dump is migrated")
-			}
-			return nil
-		}
-		dumpOrUpload = upload
-	} else {
-		dumpOrUpload = dumps[0]
+		return nil
 	}
-	meta := lsifstore.NewDocumentationSearchInfo(dumpOrUpload)
 
 	// Find the associated repository.
-	repos, err := m.repoStore.GetByIDs(ctx, api.RepoID(meta.RepositoryID))
+	repos, err := m.repoStore.GetByIDs(ctx, api.RepoID(upload.RepositoryID))
 	if err != nil {
 		return errors.Wrap(err, "RepoStore.GetByIDs")
 	}
 	if len(repos) == 0 {
-		return fmt.Errorf("could not get repo id=%v name=%q", meta.RepositoryID, meta.RepositoryName) // Repository no longer exists? nothing we can do
+		return fmt.Errorf("could not get repo id=%v name=%q", upload.RepositoryID, upload.RepositoryName) // Repository no longer exists? nothing we can do
 	}
 	repo := repos[0]
 
 	// Determine if this bundle was for the default branch or not.
-	isDefaultBranch, err := m.gitserverClient.DefaultBranchContains(ctx, meta.RepositoryID, meta.Commit)
+	isDefaultBranch, err := m.gitserverClient.DefaultBranchContains(ctx, upload.RepositoryID, upload.Commit)
 	if err != nil {
 		return errors.Wrap(err, "gitserver.DefaultBranchContains")
 	}
@@ -169,7 +156,7 @@ func (m *apiDocsSearchMigrator) processDump(ctx context.Context, dumpID int) err
 	}
 	defer func() { err = tx.Done(err) }()
 
-	rows, err := m.store.Query(ctx, sqlf.Sprintf(apiDocsSearchMigratorPagesQuery, dumpID))
+	rows, err := m.store.Query(ctx, sqlf.Sprintf(apiDocsSearchMigratorPagesQuery, uploadID))
 	if err != nil {
 		return errors.Wrap(err, "Query")
 	}
@@ -191,13 +178,13 @@ func (m *apiDocsSearchMigrator) processDump(ctx context.Context, dumpID int) err
 		}
 		pages = append(pages, page)
 	}
-	if err := tx.WriteDocumentationSearch(ctx, meta, repo, isDefaultBranch, pages); err != nil {
+	if err := tx.WriteDocumentationSearch(ctx, upload, repo, isDefaultBranch, pages); err != nil {
 		return errors.Wrap(err, "WriteDocumentationSearch")
 	}
-	if err := m.store.Exec(ctx, sqlf.Sprintf(apiDocsSearchMigratorProcessedDumpQuery, dumpID)); err != nil {
-		return errors.Wrap(err, "marking dump is migrated")
+	if err := m.store.Exec(ctx, sqlf.Sprintf(apiDocsSearchMigratorProcessedDumpQuery, uploadID)); err != nil {
+		return errors.Wrap(err, "marking upload as migrated")
 	}
-	log15.Info("Indexed API docs pages for search", "pages_indexed", indexed, "repo", meta.RepositoryName, "dump_id", dumpID)
+	log15.Info("Indexed API docs pages for search", "pages_indexed", indexed, "repo", upload.RepositoryName, "upload_id", uploadID)
 	return nil
 }
 
