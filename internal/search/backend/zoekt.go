@@ -1,11 +1,9 @@
 package backend
 
 import (
-	"context"
 	"sync"
 
 	"github.com/google/zoekt"
-	"github.com/google/zoekt/query"
 	"github.com/google/zoekt/rpc"
 	zoektstream "github.com/google/zoekt/stream"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
@@ -29,30 +27,6 @@ type StreamSearchEvent struct {
 	// SearchResult is non-nil if this event is a search result. These should be
 	// combined with previous and later SearchResults.
 	SearchResult *zoekt.SearchResult
-}
-
-// StreamSearchAdapter adapts a zoekt.Searcher to conform to the StreamSearch
-// interface by calling zoekt.Searcher.Search.
-type StreamSearchAdapter struct {
-	zoekt.Searcher
-}
-
-func (s *StreamSearchAdapter) StreamSearch(
-	ctx context.Context,
-	q query.Q,
-	opts *zoekt.SearchOptions,
-	c zoekt.Sender,
-) error {
-	sr, err := s.Search(ctx, q, opts)
-	if err != nil {
-		return err
-	}
-	c.Send(sr)
-	return nil
-}
-
-func (s *StreamSearchAdapter) String() string {
-	return "streamSearchAdapter{" + s.Searcher.String() + "}"
 }
 
 // ZoektDialer is a function that returns a zoekt.Streamer for the given endpoint.
