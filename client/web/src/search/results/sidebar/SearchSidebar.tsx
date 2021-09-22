@@ -134,7 +134,7 @@ export const SearchSidebar: React.FunctionComponent<SearchSidebarProps> = props 
         body = (
             <StickyBox className={styles.searchSidebarStickyBox}>
                 <SearchSidebarSection
-                    id={SectionID.SEARCH_TYPES}
+                    sectionId={SectionID.SEARCH_TYPES}
                     className={styles.searchSidebarItem}
                     header="Search Types"
                     startCollapsed={collapsedSections?.[SectionID.SEARCH_TYPES]}
@@ -150,7 +150,7 @@ export const SearchSidebar: React.FunctionComponent<SearchSidebarProps> = props 
                     })}
                 </SearchSidebarSection>
                 <SearchSidebarSection
-                    id={SectionID.DYNAMIC_FILTERS}
+                    sectionId={SectionID.DYNAMIC_FILTERS}
                     className={styles.searchSidebarItem}
                     header="Dynamic filters"
                     startCollapsed={collapsedSections?.[SectionID.DYNAMIC_FILTERS]}
@@ -160,7 +160,7 @@ export const SearchSidebar: React.FunctionComponent<SearchSidebarProps> = props 
                 </SearchSidebarSection>
                 {showReposSection ? (
                     <SearchSidebarSection
-                        id={SectionID.REPOSITORIES}
+                        sectionId={SectionID.REPOSITORIES}
                         className={styles.searchSidebarItem}
                         header="Repositories"
                         startCollapsed={collapsedSections?.[SectionID.REPOSITORIES]}
@@ -178,7 +178,7 @@ export const SearchSidebar: React.FunctionComponent<SearchSidebarProps> = props 
                 ) : null}
                 {repoName ? (
                     <SearchSidebarSection
-                        id={SectionID.REVISIONS}
+                        sectionId={SectionID.REVISIONS}
                         className={styles.searchSidebarItem}
                         header="Revisions"
                         startCollapsed={collapsedSections?.[SectionID.REVISIONS]}
@@ -190,7 +190,7 @@ export const SearchSidebar: React.FunctionComponent<SearchSidebarProps> = props 
                     </SearchSidebarSection>
                 ) : null}
                 <SearchSidebarSection
-                    id={SectionID.SEARCH_REFERENCE}
+                    sectionId={SectionID.SEARCH_REFERENCE}
                     className={styles.searchSidebarItem}
                     header="Search reference"
                     showSearch={true}
@@ -206,7 +206,7 @@ export const SearchSidebar: React.FunctionComponent<SearchSidebarProps> = props 
                     })}
                 </SearchSidebarSection>
                 <SearchSidebarSection
-                    id={SectionID.SEARCH_SNIPPETS}
+                    sectionId={SectionID.SEARCH_SNIPPETS}
                     className={styles.searchSidebarItem}
                     header="Search snippets"
                     startCollapsed={collapsedSections?.[SectionID.SEARCH_SNIPPETS]}
@@ -215,7 +215,7 @@ export const SearchSidebar: React.FunctionComponent<SearchSidebarProps> = props 
                     {getSearchSnippetLinks(props.settingsCascade, onSnippetClicked)}
                 </SearchSidebarSection>
                 <SearchSidebarSection
-                    id={SectionID.QUICK_LINKS}
+                    sectionId={SectionID.QUICK_LINKS}
                     className={styles.searchSidebarItem}
                     header="Quicklinks"
                     startCollapsed={collapsedSections?.[SectionID.QUICK_LINKS]}

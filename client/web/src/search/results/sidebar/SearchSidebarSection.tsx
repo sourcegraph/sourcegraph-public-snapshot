@@ -8,7 +8,7 @@ import { FilterLink, FilterLinkProps } from './FilterLink'
 import styles from './SearchSidebarSection.module.scss'
 
 export const SearchSidebarSection: React.FunctionComponent<{
-    id: string
+    sectionId: string
     header: string
     children?: React.ReactElement | React.ReactElement[] | ((filter: string) => React.ReactElement)
     className?: string
@@ -28,7 +28,7 @@ export const SearchSidebarSection: React.FunctionComponent<{
     clearSearchOnChange?: {}
 }> = React.memo(
     ({
-        id,
+        sectionId,
         header,
         children = [],
         className,
@@ -97,7 +97,7 @@ export const SearchSidebarSection: React.FunctionComponent<{
                     onClick={() =>
                         setCollapsed(collapsed => {
                             if (onToggle) {
-                                onToggle(id, !collapsed)
+                                onToggle(sectionId, !collapsed)
                             }
                             return !collapsed
                         })
