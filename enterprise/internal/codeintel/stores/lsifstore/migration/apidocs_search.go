@@ -173,7 +173,7 @@ func (m *apiDocsSearchMigrator) processDump(ctx context.Context, dumpID int) err
 	if err != nil {
 		return errors.Wrap(err, "Query")
 	}
-	defer rows.Close()
+	defer func() { err = basestore.CloseRows(rows, err) }()
 	var (
 		indexed = 0
 		pages   []*precise.DocumentationPageData
