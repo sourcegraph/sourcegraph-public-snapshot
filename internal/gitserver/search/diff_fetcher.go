@@ -6,6 +6,7 @@ import (
 	"context"
 	"io"
 	"os/exec"
+	"sync"
 
 	"github.com/cockroachdb/errors"
 )
@@ -14,7 +15,7 @@ import (
 // started with StartDiffFetcher
 type DiffFetcher struct {
 	stdin   io.WriteCloser
-	stderr  bytes.Buffer
+	stderr  safeBuffer
 	scanner *bufio.Scanner
 	cancel  context.CancelFunc
 }
@@ -39,7 +40,7 @@ func StartDiffFetcher(dir string) (*DiffFetcher, error) {
 	stdinReader, stdinWriter := io.Pipe()
 	cmd.Stdin = stdinReader
 
-	var stderrBuf bytes.Buffer
+	var stderrBuf safeBuffer
 	cmd.Stderr = &stderrBuf
 
 	if err := cmd.Start(); err != nil {
@@ -95,4 +96,21 @@ func (d *DiffFetcher) Fetch(hash []byte) ([]byte, error) {
 		return nil, errors.Errorf("git subprocess stderr: %s", d.stderr.String())
 	}
 	return nil, errors.New("expected scan to succeed")
+}
+
+type safeBuffer struct {
+	buf bytes.Buffer
+	sync.Mutex
+}
+
+func (s *safeBuffer) Write(p []byte) (n int, err error) {
+	s.Lock()
+	defer s.Unlock()
+	return s.buf.Write(p)
+}
+
+func (s *safeBuffer) String() string {
+	s.Lock()
+	defer s.Unlock()
+	return s.buf.String()
 }
