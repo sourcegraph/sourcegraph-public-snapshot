@@ -212,6 +212,30 @@ func listBatchSpecResolutionJobsQuery(opts ListBatchSpecResolutionJobsOpts) *sql
 	)
 }
 
+
+// DeleteBatchSpecResolutionJobAndWorkspacesOpts captures the query options needed for getting a BatchSpecResolutionJob
+type DeleteBatchSpecResolutionJobAndWorkspacesOpts struct {
+	BatchSpecID int64
+}
+
+// DeleteBatchSpecResolutionJobAndWorkspaces gets a BatchSpecResolutionJob matching the given options.
+func (s *Store) DeleteBatchSpecResolutionJobAndWorkspaces(ctx context.Context, opts DeleteBatchSpecResolutionJobAndWorkspacesOpts) (err error) {
+	ctx, endObservation := s.operations.deleteBatchSpecResolutionJobAndWorkspaces.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.Int("BatchSpecID", int(opts.BatchSpecID)),
+	}})
+	defer endObservation(1, observation.Args{})
+
+	q := sqlf.Sprintf(deleteBatchSpecResolutionJobAndWorkspacessQueryFmtstr, opts.BatchSpecID)
+	return s.Exec(ctx, q)
+}
+
+var deleteBatchSpecResolutionJobAndWorkspacessQueryFmtstr = `
+-- source: enterprise/internal/batches/store/batch_spec_resolution_job.go:DeleteBatchSpecResolutionJobAndWorkspaces
+SELECT %s FROM batch_spec_resolution_jobs
+WHERE %s
+LIMIT 1
+`
+
 func scanBatchSpecResolutionJob(rj *btypes.BatchSpecResolutionJob, s scanner) error {
 	var executionLogs []dbworkerstore.ExecutionLogEntry
 	var failureMessage string

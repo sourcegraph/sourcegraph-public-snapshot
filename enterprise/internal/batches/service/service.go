@@ -230,6 +230,90 @@ func (s *Service) ExecuteBatchSpec(ctx context.Context, opts ExecuteBatchSpecOpt
 	}
 }
 
+type ReplaceBatchSpecInputOpts struct {
+	BatchSpecRandID  string
+	RawSpec          string
+	AllowIgnored     bool
+	AllowUnsupported bool
+}
+
+// ReplaceBatchSpecInput creates BatchSpecWorkspaceExecutionJobs for every created
+// BatchSpecWorkspace.
+//
+// It returns an error if the batchSpecWorkspaceResolutionJob didn't finish
+// successfully.
+func (s *Service) ReplaceBatchSpecInput(ctx context.Context, opts ReplaceBatchSpecInputOpts) (batchSpec *btypes.BatchSpec, err error) {
+	actor := actor.FromContext(ctx)
+	tr, ctx := trace.New(ctx, "Service.ReplaceBatchSpecInput", fmt.Sprintf("Actor %d", actor.UID))
+	defer func() {
+		tr.SetError(err)
+		tr.Finish()
+	}()
+
+	// Before we hit the database, validate the new spec
+	newSpec, err := btypes.NewBatchSpecFromRaw(opts.RawSpec)
+	if err != nil {
+		return nil, err
+	}
+
+	// Make sure the user has access
+	batchSpec, err = s.store.GetBatchSpec(ctx, store.GetBatchSpecOpts{RandID: opts.BatchSpecRandID})
+	if err != nil {
+		return nil, err
+	}
+
+	// Check whether the current user has access to either one of the namespaces.
+	err = s.CheckNamespaceAccess(ctx, batchSpec.NamespaceUserID, batchSpec.NamespaceOrgID)
+	if err != nil {
+		return nil, err
+	}
+
+	// Start transaction
+	tx, err := s.store.Transact(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	// Delete the previous batch spec, which should delete
+	// - batch_spec_resolution_jobs
+	// - batch_spec_workspaces
+	// associated with it
+	if err := tx.DeleteBatchSpec(ctx, batchSpec.ID); err != nil {
+		return nil, err
+	}
+
+	// We keep the RandID so the user-visible GraphQL ID is stable
+	newSpec.RandID = batchSpec.RandID
+
+	newSpec.NamespaceOrgID = batchSpec.NamespaceOrgID
+	newSpec.NamespaceUserID = batchSpec.NamespaceUserID
+	newSpec.UserID = batchSpec.UserID
+
+	if err := tx.CreateBatchSpec(ctx, newSpec); err != nil {
+		return nil, err
+	}
+
+	// Create a new resolution job now in the transaction so that we switch the
+	// resolution jobs essentially.
+	err = tx.CreateBatchSpecResolutionJob(ctx, &btypes.BatchSpecResolutionJob{
+		State:            btypes.BatchSpecResolutionJobStateQueued,
+		BatchSpecID:      newSpec.ID,
+		AllowIgnored:     opts.AllowIgnored,
+		AllowUnsupported: opts.AllowUnsupported,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	// Commit transaction
+	err = tx.Done(err)
+	if err != nil {
+		return nil, err
+	}
+
+	return newSpec, nil
+}
+
 // CreateChangesetSpec validates the given raw spec input and creates the ChangesetSpec.
 func (s *Service) CreateChangesetSpec(ctx context.Context, rawSpec string, userID int32) (spec *btypes.ChangesetSpec, err error) {
 	tr, ctx := trace.New(ctx, "Service.CreateChangesetSpec", fmt.Sprintf("User %d", userID))

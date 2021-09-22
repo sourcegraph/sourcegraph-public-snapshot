@@ -78,7 +78,7 @@ func testStoreBatchSpecs(t *testing.T, ctx context.Context, s *Store, clock ct.C
 	}
 
 	t.Run("Count", func(t *testing.T) {
-		count, err := s.CountBatchSpecs(ctx)
+		count, err := s.CountBatchSpecs(ctx, CountBatchSpecsOpts{})
 		if err != nil {
 			t.Fatal(err)
 		}

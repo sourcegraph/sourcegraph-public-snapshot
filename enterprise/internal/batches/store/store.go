@@ -220,9 +220,10 @@ type operations struct {
 	listBatchSpecWorkspaceExecutionJobs   *observation.Operation
 	cancelBatchSpecWorkspaceExecutionJob  *observation.Operation
 
-	createBatchSpecResolutionJob *observation.Operation
-	getBatchSpecResolutionJob    *observation.Operation
-	listBatchSpecResolutionJobs  *observation.Operation
+	createBatchSpecResolutionJob              *observation.Operation
+	getBatchSpecResolutionJob                 *observation.Operation
+	listBatchSpecResolutionJobs               *observation.Operation
+	deleteBatchSpecResolutionJobAndWorkspaces *observation.Operation
 }
 
 var (
@@ -339,9 +340,10 @@ func newOperations(observationContext *observation.Context) *operations {
 			listBatchSpecWorkspaceExecutionJobs:   op("ListBatchSpecWorkspaceExecutionJobs"),
 			cancelBatchSpecWorkspaceExecutionJob:  op("CancelBatchSpecWorkspaceExecutionJob"),
 
-			createBatchSpecResolutionJob: op("CreateBatchSpecResolutionJob"),
-			getBatchSpecResolutionJob:    op("GetBatchSpecResolutionJob"),
-			listBatchSpecResolutionJobs:  op("ListBatchSpecResolutionJobs"),
+			createBatchSpecResolutionJob:              op("CreateBatchSpecResolutionJob"),
+			getBatchSpecResolutionJob:                 op("GetBatchSpecResolutionJob"),
+			listBatchSpecResolutionJobs:               op("ListBatchSpecResolutionJobs"),
+			deleteBatchSpecResolutionJobAndWorkspaces: op("DeleteBatchSpecResolutionJobAndWorkspaces"),
 		}
 	})
 

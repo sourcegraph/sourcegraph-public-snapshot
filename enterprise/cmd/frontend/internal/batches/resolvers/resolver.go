@@ -1571,8 +1571,27 @@ func (r *Resolver) ReplaceBatchSpecInput(ctx context.Context, args *graphqlbacke
 	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.store.DB()); err != nil {
 		return nil, err
 	}
-	// TODO(ssbc): not implemented
-	return nil, errors.New("not implemented yet")
+
+	batchSpecRandID, err := unmarshalBatchSpecID(args.PreviousSpec)
+	if err != nil {
+		return nil, err
+	}
+
+	if batchSpecRandID == "" {
+		return nil, ErrIDIsZero{}
+	}
+
+	batchSpec, err := service.New(r.store).ReplaceBatchSpecInput(ctx, service.ReplaceBatchSpecInputOpts{
+		BatchSpecRandID:  batchSpecRandID,
+		RawSpec:          args.BatchSpec,
+		AllowIgnored:     args.AllowIgnored,
+		AllowUnsupported: args.AllowUnsupported,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return &batchSpecResolver{store: r.store, batchSpec: batchSpec}, nil
 }
 
 func parseBatchChangeState(s *string) (btypes.BatchChangeState, error) {
