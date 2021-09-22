@@ -106,6 +106,38 @@ func TestSearch(t *testing.T) {
 		require.Len(t, highlights, 1)
 		require.Equal(t, commits[0].AuthorName, []byte("camden1"))
 	})
+
+	t.Run("author matches", func(t *testing.T) {
+		query := &protocol.AuthorMatches{protocol.Regexp{regexp.MustCompile("2")}}
+		tree := ToMatchTree(query)
+		var commits []*LazyCommit
+		var highlights []*CommitHighlights
+		err := Search(context.Background(), dir, nil, tree, func(lc *LazyCommit, hl *CommitHighlights) bool {
+			commits = append(commits, lc)
+			highlights = append(highlights, hl)
+			return true
+		})
+		require.NoError(t, err)
+		require.Len(t, commits, 1)
+		require.Len(t, highlights, 1)
+		require.Equal(t, commits[0].AuthorName, []byte("camden2"))
+	})
+
+	t.Run("file matches", func(t *testing.T) {
+		query := &protocol.DiffModifiesFile{protocol.Regexp{regexp.MustCompile("file1")}}
+		tree := ToMatchTree(query)
+		var commits []*LazyCommit
+		var highlights []*CommitHighlights
+		err := Search(context.Background(), dir, nil, tree, func(lc *LazyCommit, hl *CommitHighlights) bool {
+			commits = append(commits, lc)
+			highlights = append(highlights, hl)
+			return true
+		})
+		require.NoError(t, err)
+		require.Len(t, commits, 1)
+		require.Len(t, highlights, 1)
+		require.Equal(t, commits[0].AuthorName, []byte("camden1"))
+	})
 }
 
 func TestCommitScanner(t *testing.T) {
