@@ -89,20 +89,20 @@ export function LineChartContent<Datum extends object>(props: LineChartContentPr
     const innerWidth = width - MARGIN.left - MARGIN.right - yAxisWidth
     const numberOfTicksX = Math.max(1, Math.floor(innerWidth / WIDTH_PER_TICK))
 
-    const xScale = useXScale({
-        config: scalesConfiguration.x,
-        width: innerWidth,
-        accessors,
-        data,
-    })
-
-    const dynamicMargin = { ...MARGIN, left: MARGIN.left + yAxisWidth }
-
     const { sortedData, seriesWithData } = useMemo(() => getProcessedChartData({ accessors, data, series }), [
         data,
         accessors,
         series,
     ])
+
+    const xScale = useXScale({
+        config: scalesConfiguration.x,
+        width: innerWidth,
+        data: sortedData,
+        accessors,
+    })
+
+    const dynamicMargin = { ...MARGIN, left: MARGIN.left + yAxisWidth }
 
     // state
     const [hoveredDatum, setHoveredDatum] = useState<ActiveDatum<Datum> | null>(null)

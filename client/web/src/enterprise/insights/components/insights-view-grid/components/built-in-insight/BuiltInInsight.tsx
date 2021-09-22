@@ -63,10 +63,10 @@ export function BuiltInInsight<D extends keyof ViewContexts>(props: BuiltInInsig
             {...otherProps}
             insight={{ id: insight.id, view: data?.view }}
             className={classnames('extension-insight-card', otherProps.className)}
-            contextMenu={
+            actions={
                 <InsightContextMenu
                     insightID={insight.id}
-                    menuButtonClassName="ml-1 mr-n2 d-inline-flex"
+                    menuButtonClassName="ml-1 mr-n2"
                     zeroYAxisMin={zeroYAxisMin}
                     onToggleZeroYAxisMin={() => setZeroYAxisMin(!zeroYAxisMin)}
                     onDelete={() => handleDelete(insight)}

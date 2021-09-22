@@ -1,7 +1,7 @@
 .view-card {
     display: flex;
     flex-direction: column;
-    padding: 0.5rem 1rem;
+    padding: 0.75rem 0.75rem 0.75rem 1rem;
     cursor: default;
     outline: none;
 
@@ -12,30 +12,43 @@
 
     &__header {
         display: flex;
-        align-items: center;
-        margin: -0.5rem -1rem 0.5rem -1rem;
-        padding: 0.5rem 1rem;
+        align-items: flex-start;
+
+        margin-bottom: 0.325rem;
     }
 
     &__header-content {
         flex-grow: 1;
+        // Two lines height in order to avoid layout jumps if we switch from
+        // initial state to fetch recent data state and vice versa.
+        height: 2.25rem;
+        overflow: hidden;
     }
 
     &__title {
+        display: -webkit-box;
+        // Force that title can be only two lines
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+        text-overflow: ellipsis;
         margin-bottom: 0.25rem;
+
+        // Force only 1 line for title block in compact mode
+        &--compact {
+            -webkit-line-clamp: 1;
+        }
     }
 
-    &__subtitle {
-        margin-bottom: 1rem;
-    }
+    .re-loading-status {
+        display: flex;
+        align-items: center;
 
-    // Handle views with only a title
-    &__title,
-    &__subtitle {
-        flex-grow: 0;
-
-        &:last-child {
-            margin-bottom: 0;
+        &-spinner {
+            width: 0.75rem;
+            height: 0.75rem;
+            margin-right: 0.25rem;
+            border-width: 1px;
         }
     }
 }

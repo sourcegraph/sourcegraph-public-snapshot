@@ -2,6 +2,7 @@ import classnames from 'classnames'
 import React, { PropsWithChildren, ReactNode } from 'react'
 import { useLocation } from 'react-router-dom'
 
+import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { ViewProviderResult } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
 import { isErrorLike } from '@sourcegraph/shared/src/util/errors'
 
@@ -28,10 +29,7 @@ export interface ViewCardProps extends ViewCardElementProps {
      */
     innerRef?: React.RefObject<HTMLElement>
 
-    /**
-     * Custom c
-     */
-    contextMenu?: ReactNode
+    reFetchingStatus?: boolean
 }
 
 /**
@@ -40,8 +38,8 @@ export interface ViewCardProps extends ViewCardElementProps {
 export const ViewCard: React.FunctionComponent<PropsWithChildren<ViewCardProps>> = props => {
     const {
         insight: { id, view },
+        reFetchingStatus,
         actions,
-        contextMenu,
         children,
         innerRef,
         ...otherProps
@@ -49,11 +47,10 @@ export const ViewCard: React.FunctionComponent<PropsWithChildren<ViewCardProps>>
 
     const location = useLocation()
     const title = !isErrorLike(view) ? view?.title : null
-    const subtitle = !isErrorLike(view) ? view?.subtitle : null
 
     // In case if we don't have a content for the header component
     // we should render nothing
-    const hasHeader = title || subtitle || contextMenu || actions
+    const hasHeader = title || actions
 
     return (
         <section
@@ -67,24 +64,28 @@ export const ViewCard: React.FunctionComponent<PropsWithChildren<ViewCardProps>>
             <ErrorBoundary
                 className="pt-0"
                 location={location}
-                extraContext={
-                    <>
-                        <p>ID: {id}</p>
-                        <pre>View: {JSON.stringify(view, null, 2)}</pre>
-                    </>
-                }
+                extraContext={<ExtraErrorContext id={id} view={view} />}
             >
                 {hasHeader && (
                     <header className={styles.viewCardHeader}>
                         <div className={styles.viewCardHeaderContent}>
-                            <h4 className={styles.viewCardTitle}>{title}</h4>
-                            {subtitle && <div className={styles.viewCardSubtitle}>{subtitle}</div>}
+                            <h4
+                                className={classnames(styles.viewCardTitle, {
+                                    [styles.viewCardTitleCompact]: reFetchingStatus,
+                                })}
+                            >
+                                {title}
+                            </h4>
+
+                            {reFetchingStatus && (
+                                <small className="text-muted d-flex align-items-center">
+                                    <LoadingSpinner className={styles.reLoadingStatusSpinner} />
+                                    Fetching recent data...
+                                </small>
+                            )}
                         </div>
 
-                        <div className="align-self-start d-flex align-items-center">
-                            {actions}
-                            {contextMenu}
-                        </div>
+                        {actions}
                     </header>
                 )}
 
@@ -93,3 +94,15 @@ export const ViewCard: React.FunctionComponent<PropsWithChildren<ViewCardProps>>
         </section>
     )
 }
+
+interface ExtraErrorContextProps {
+    id: string
+    view: ViewProviderResult['view']
+}
+
+const ExtraErrorContext: React.FunctionComponent<ExtraErrorContextProps> = props => (
+    <>
+        <p>ID: {props.id}</p>
+        <pre>View: {JSON.stringify(props.view, null, 2)}</pre>
+    </>
+)

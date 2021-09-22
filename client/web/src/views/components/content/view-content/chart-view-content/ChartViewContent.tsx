@@ -1,5 +1,4 @@
 import { ParentSize } from '@visx/responsive'
-import classNames from 'classnames'
 import React, { FunctionComponent, useCallback } from 'react'
 import { ChartContent } from 'sourcegraph'
 
@@ -24,7 +23,7 @@ export interface ChartViewContentProps {
  * Display chart content with different type of charts (line, bar, pie)
  */
 export const ChartViewContent: FunctionComponent<ChartViewContentProps> = props => {
-    const { content, className = '', viewID, telemetryService } = props
+    const { content, viewID, telemetryService } = props
 
     const handleDatumLinkClick = useCallback((): void => {
         telemetryService.log(
@@ -55,47 +54,35 @@ export const ChartViewContent: FunctionComponent<ChartViewContentProps> = props 
     )
 
     return (
-        <div className={classNames('chart-view-content', className)}>
-            <ParentSize className="chart-view-content__chart">
-                {({ width, height }) => {
-                    if (content.chart === 'line') {
-                        return (
-                            <LineChart
-                                {...content}
-                                onDatumZoneClick={linkHandler}
-                                onDatumLinkClick={handleDatumLinkClick}
-                                width={width}
-                                height={height}
-                            />
-                        )
-                    }
+        <ParentSize className="chart-view-content__chart">
+            {({ width, height }) => {
+                if (content.chart === 'line') {
+                    return (
+                        <LineChart
+                            {...content}
+                            onDatumZoneClick={linkHandler}
+                            onDatumLinkClick={handleDatumLinkClick}
+                            width={width}
+                            height={height}
+                        />
+                    )
+                }
 
-                    if (content.chart === 'bar') {
-                        return (
-                            <BarChart
-                                {...content}
-                                width={width}
-                                height={height}
-                                onDatumLinkClick={handleDatumLinkClick}
-                            />
-                        )
-                    }
+                if (content.chart === 'bar') {
+                    return (
+                        <BarChart {...content} width={width} height={height} onDatumLinkClick={handleDatumLinkClick} />
+                    )
+                }
 
-                    if (content.chart === 'pie') {
-                        return (
-                            <PieChart
-                                {...content}
-                                width={width}
-                                height={height}
-                                onDatumLinkClick={handleDatumLinkClick}
-                            />
-                        )
-                    }
+                if (content.chart === 'pie') {
+                    return (
+                        <PieChart {...content} width={width} height={height} onDatumLinkClick={handleDatumLinkClick} />
+                    )
+                }
 
-                    // TODO Add UI for incorrect type of chart
-                    return null
-                }}
-            </ParentSize>
-        </div>
+                // TODO Add UI for incorrect type of chart
+                return null
+            }}
+        </ParentSize>
     )
 }

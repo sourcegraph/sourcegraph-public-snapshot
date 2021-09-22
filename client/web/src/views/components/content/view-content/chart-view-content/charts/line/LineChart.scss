@@ -93,20 +93,22 @@
     &__legend {
         display: flex;
         flex-wrap: wrap;
-        padding: 0.5rem;
+        padding: 0;
+        margin: 0.75rem 0 -0.25rem 0;
         list-style: none;
-        margin: 0;
     }
 
     &__legend-item {
         display: flex;
-        margin-right: 0.5rem;
+        margin-right: 1rem;
         align-items: center;
+        font-size: 0.75rem;
+        padding-bottom: 0.25rem;
     }
 
     &__legend-mark {
-        width: 0.75rem;
-        height: 0.75rem;
+        width: 0.5rem;
+        height: 0.5rem;
         flex-shrink: 0;
         margin-right: 0.25rem;
         border-radius: 50%;
