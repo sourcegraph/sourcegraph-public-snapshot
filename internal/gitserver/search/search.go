@@ -139,7 +139,7 @@ func Search(ctx context.Context, dir string, revs []protocol.RevisionSpecifier, 
 			batch = make([]*RawCommit, 0, batchSize)
 		}
 
-		cs := NewGitLogScanner(pr)
+		cs := NewCommitScanner(pr)
 		for cs.Scan() {
 			if ctx.Err() != nil {
 				return ctx.Err()
@@ -260,41 +260,6 @@ type RawCommit struct {
 	ParentHashes   []byte
 }
 
-func NewGitLogScanner(r io.Reader) *CommitScanner {
-	scanner := bufio.NewScanner(r)
-	scanner.Buffer(make([]byte, 1024), 1<<22)
-
-	// Split by commit
-	scanner.Split(func(data []byte, atEOF bool) (advance int, token []byte, err error) {
-		if len(data) == 0 { // should only happen when atEOF
-			return 0, nil, nil
-		}
-
-		// See if we have enough null bytes to constitute a full commit
-		if bytes.Count(data, sep) < partsPerCommit+1 {
-			if atEOF {
-				return 0, nil, errors.Errorf("incomplete line")
-			}
-			return 0, nil, nil
-		}
-
-		// If we do, expand token to the end of that commit
-		for i := 0; i < partsPerCommit+1; i++ {
-			idx := bytes.IndexByte(data[len(token):], 0x0)
-			if idx == -1 {
-				panic("we already counted enough bytes in data")
-			}
-			token = data[:len(token)+idx+1]
-		}
-		return len(token), token, nil
-
-	})
-
-	return &CommitScanner{
-		scanner: scanner,
-	}
-}
-
 type CommitScanner struct {
 	scanner *bufio.Scanner
 	next    *RawCommit
@@ -316,23 +281,26 @@ func NewCommitScanner(r io.Reader) *CommitScanner {
 
 		// See if we have enough null bytes to constitute a full commit
 		// Look for one more than the number of parts because the each message ends with a null byte too
-		if bytes.Count(data, sep) < partsPerCommit+1 {
+		sepCount := bytes.Count(data, sep)
+		if sepCount < partsPerCommit+1 {
 			if atEOF {
+				if sepCount == partsPerCommit {
+					return len(data), data, nil
+				}
 				return 0, nil, errors.Errorf("incomplete line")
 			}
 			return 0, nil, nil
 		}
 
 		// If we do, expand token to the end of that commit
-		for i := 0; i < partsPerCommit+1; i++ {
+		for i := 0; i < partsPerCommit; i++ {
 			idx := bytes.IndexByte(data[len(token):], 0x0)
 			if idx == -1 {
 				panic("we already counted enough bytes in data")
 			}
 			token = data[:len(token)+idx+1]
 		}
-		return len(token), token, nil
-
+		return len(token) + 1, token, nil
 	})
 
 	return &CommitScanner{
