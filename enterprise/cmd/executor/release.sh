@@ -5,12 +5,6 @@
 cd "$(dirname "${BASH_SOURCE[0]}")"
 set -eu
 
-OUTPUT=$(mktemp -d -t sgdockerbuild_XXXXXXX)
-cleanup() {
-  rm -rf "$OUTPUT"
-}
-trap cleanup EXIT
-
 export AWS_ACCESS_KEY_ID="${AWS_EXECUTOR_AMI_ACCESS_KEY}"
 export AWS_SECRET_ACCESS_KEY="${AWS_EXECUTOR_AMI_SECRET_KEY}"
 
