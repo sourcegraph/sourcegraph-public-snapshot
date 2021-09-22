@@ -15,7 +15,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 )
 
-func WorkspaceExecutionQueueOptions(db dbutil.DB, config *Config, observationContext *observation.Context) handler.QueueOptions {
+func QueueOptions(db dbutil.DB, config *Config, observationContext *observation.Context) handler.QueueOptions {
 	recordTransformer := func(ctx context.Context, record workerutil.Record) (apiclient.Job, error) {
 		batchesStore := store.New(db, observationContext, nil)
 		return transformBatchSpecWorkspaceExecutionJobRecord(ctx, batchesStore, record.(*btypes.BatchSpecWorkspaceExecutionJob), config)
