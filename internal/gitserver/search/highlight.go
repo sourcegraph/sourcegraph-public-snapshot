@@ -6,11 +6,17 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 )
 
+// CommitHighlights are the portions of a commit that match a query
 type CommitHighlights struct {
+	// Message is the set of ranges of the commit message that were matched
 	Message protocol.Ranges
-	Diff    map[int]FileDiffHighlight
+
+	// Diff is the set of files deltas that have matches in the parsed diff.
+	// The key of the map is the index of the delta in the diff.
+	Diff map[int]FileDiffHighlight
 }
 
+// Merge merges another CommitHighlights into this one, returning the result.
 func (c *CommitHighlights) Merge(other *CommitHighlights) *CommitHighlights {
 	if c == nil {
 		return other
