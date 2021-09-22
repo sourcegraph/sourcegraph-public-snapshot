@@ -299,9 +299,8 @@ func (s *Store) WriteDocumentationSearch(ctx context.Context, meta Documentation
 		if err := s.Exec(ctx, sqlf.Sprintf(
 			strings.Replace(purgeDocumentationSearchOldData, "$TABLE_NAME", tableName, -1),
 			meta.RepositoryID,
-			languageOrIndexerName,
-			meta.RepositoryID,
 			meta.Root,
+			languageOrIndexerName,
 		)); err != nil {
 			return errors.Wrap(err, "purging old data")
 		}
@@ -361,14 +360,19 @@ func (s *Store) WriteDocumentationSearch(ctx context.Context, meta Documentation
 
 const purgeDocumentationSearchOldData = `
 -- source: enterprise/internal/codeintel/stores/lsifstore/data_write_documentation.go:WriteDocumentationSearch
-DELETE FROM $TABLE_NAME
-WHERE repo_id=%s
-AND lang=%s
-AND dump_id IN (
-	SELECT dump_id FROM lsif_dumps
+WITH candidates AS (
+	SELECT id FROM lsif_dumps
 	WHERE repository_id=%s
 	AND root=%s
+
+	-- Lock these rows in a deterministic order so that we don't deadlock with other processes
+	-- updating the lsif_data_documentation_search_* tables.
+	ORDER BY id FOR UPDATE
 )
+DELETE FROM $TABLE_NAME
+WHERE dump_id IN (SELECT dump_id FROM candidates)
+AND lang=%s
+RETURNING dump_id
 `
 
 const writeDocumentationSearchInsertQuery = `
@@ -441,13 +445,17 @@ WHERE relname='$TABLE_NAME'
 
 const truncateDocumentationSearchRowsQuery = `
 -- source: enterprise/internal/codeintel/stores/lsifstore/data_write_documentation.go:truncateDocumentationSearchIndexSize
-DELETE FROM $TABLE_NAME
-WHERE ctid IN (
-    SELECT ctid
-    FROM $TABLE_NAME
-    ORDER BY dump_id
-    LIMIT %s
+WITH candidates AS (
+	SELECT ctid FROM $TABLE_NAME
+
+	-- Lock these rows in a deterministic order so that we don't deadlock with other processes
+	-- updating the lsif_data_documentation_search_* tables.
+	ORDER BY dump_id FOR UPDATE
+	LIMIT %s
 )
+DELETE FROM $TABLE_NAME
+WHERE ctid IN (SELECT ctid FROM candidates)
+RETURNING ctid
 `
 
 // truncate truncates a string to limitBytes, taking into account multi-byte runes. If the string
