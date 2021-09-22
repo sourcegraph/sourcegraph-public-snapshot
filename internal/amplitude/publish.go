@@ -5,8 +5,8 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/cockroachdb/errors"
 	"github.com/inconshreveable/log15"
-	"github.com/pkg/errors"
 )
 
 var AMPLITUDE_API_URL = "https://api2.amplitude.com/2/httpapi"
