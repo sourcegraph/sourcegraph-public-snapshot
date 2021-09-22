@@ -390,7 +390,7 @@ var (
 // documentation search index size according to the site config apidocs.search-index-limit-factor.
 func (s *Store) truncateDocumentationSearchIndexSize(ctx context.Context, tableName string) error {
 	estimatedTotalRows, exists, err := basestore.ScanFirstInt64(s.Query(ctx, sqlf.Sprintf(
-		strings.Replace(estimateDocumentationSearchRowsQuery, "$TABLE_NAME", tableName, -1),
+		strings.Replace(countDocumentationSearchRowsQuery, "$TABLE_NAME", tableName, -1),
 	)))
 	if !exists {
 		return fmt.Errorf("failed to estimate table size")
@@ -432,15 +432,11 @@ func (s *Store) truncateDocumentationSearchIndexSize(ctx context.Context, tableN
 	return nil
 }
 
-const estimateDocumentationSearchRowsQuery = `
+// TODO(apidocs): future: introduce materialized count for this table and for other interesting API
+// docs data points in general. https://github.com/sourcegraph/sourcegraph/pull/25206#discussion_r714270738
+const countDocumentationSearchRowsQuery = `
 -- source: enterprise/internal/codeintel/stores/lsifstore/data_write_documentation.go:truncateDocumentationSearchIndexSize
---
--- Note: This estimate value is updated by autovacuum and autoanalyze, so it will always be within
--- a 10% margin of error when compared to the real value which would require a full table scan and
--- be much more expensive.
-SELECT reltuples::bigint AS estimate
-FROM   pg_catalog.pg_class
-WHERE relname='$TABLE_NAME'
+SELECT count(*)::bigint FROM $TABLE_NAME
 `
 
 const truncateDocumentationSearchRowsQuery = `
