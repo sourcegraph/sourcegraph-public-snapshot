@@ -23,7 +23,14 @@ type DiffFetcher struct {
 // for comimt hashes to generate patches for.
 func StartDiffFetcher(dir string) (*DiffFetcher, error) {
 	ctx, cancel := context.WithCancel(context.Background())
-	cmd := exec.CommandContext(ctx, "git", "diff-tree", "--stdin", "--no-prefix", "-p", "--format=format:")
+	cmd := exec.CommandContext(ctx, "git",
+		"diff-tree",
+		"--stdin",          // Read commit hashes from stdin
+		"--no-prefix",      // Do not prefix file names with a/ and b/
+		"-p",               // Output in patch format
+		"--format=format:", // Output only the patch, not any other commit metadata
+		"--root",           // Treat the root commit as a big creation event (otherwise the diff would be empty)
+	)
 	cmd.Dir = dir
 
 	stdoutReader, stdoutWriter := io.Pipe()

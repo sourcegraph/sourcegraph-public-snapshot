@@ -74,7 +74,7 @@ func TestSearch(t *testing.T) {
 		require.Len(t, highlights, 1)
 	})
 
-	t.Run("match both", func(t *testing.T) {
+	t.Run("match both, in order", func(t *testing.T) {
 		query := &protocol.MessageMatches{protocol.Regexp{regexp.MustCompile("c")}}
 		tree := ToMatchTree(query)
 		var commits []*LazyCommit
@@ -87,6 +87,24 @@ func TestSearch(t *testing.T) {
 		require.NoError(t, err)
 		require.Len(t, commits, 2)
 		require.Len(t, highlights, 2)
+		require.Equal(t, commits[0].AuthorName, []byte("camden2"))
+		require.Equal(t, commits[1].AuthorName, []byte("camden1"))
+	})
+
+	t.Run("match diff content", func(t *testing.T) {
+		query := &protocol.DiffMatches{protocol.Regexp{regexp.MustCompile("ipsum")}}
+		tree := ToMatchTree(query)
+		var commits []*LazyCommit
+		var highlights []*CommitHighlights
+		err := Search(context.Background(), dir, nil, tree, func(lc *LazyCommit, hl *CommitHighlights) bool {
+			commits = append(commits, lc)
+			highlights = append(highlights, hl)
+			return true
+		})
+		require.NoError(t, err)
+		require.Len(t, commits, 1)
+		require.Len(t, highlights, 1)
+		require.Equal(t, commits[0].AuthorName, []byte("camden1"))
 	})
 }
 
