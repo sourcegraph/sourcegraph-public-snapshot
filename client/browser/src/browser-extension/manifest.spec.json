@@ -29,7 +29,12 @@
   },
   "optional_permissions": ["tabs", "http://*/*", "https://*/*"],
   "content_security_policy": "script-src 'self' blob:; object-src 'self'",
-  "web_accessible_resources": ["img/*", "css/style.bundle.css", "css/branded-style.bundle.css"],
+  "web_accessible_resources": [
+    "img/*",
+    "css/style.bundle.css",
+    "css/branded-style.bundle.css",
+    "css/options.bundle.scss"
+  ],
   "omnibox": {
     "keyword": "src"
   },
