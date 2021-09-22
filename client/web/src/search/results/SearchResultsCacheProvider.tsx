@@ -1,9 +1,11 @@
 import { isEqual } from 'lodash'
 import React, { createContext, Dispatch, SetStateAction, useContext, useEffect, useMemo, useState } from 'react'
+import { useHistory } from 'react-router'
 import { of } from 'rxjs'
 import { throttleTime } from 'rxjs/operators'
 
 import { AggregateStreamingSearchResults, StreamSearchOptions } from '@sourcegraph/shared/src/search/stream'
+import { TelemetryService } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
 
 import { SearchStreamingProps } from '..'
@@ -28,9 +30,12 @@ const SearchResultsCacheContext = createContext<[CachedResults | null, Dispatch<
  */
 export function useCachedSearchResults(
     streamSearch: SearchStreamingProps['streamSearch'],
-    options: StreamSearchOptions
+    options: StreamSearchOptions,
+    telemetryService: TelemetryService
 ): AggregateStreamingSearchResults | undefined {
     const [cachedResults, setCachedResults] = useContext(SearchResultsCacheContext)
+
+    const history = useHistory()
 
     const results = useObservable(
         useMemo(() => {
@@ -50,6 +55,17 @@ export function useCachedSearchResults(
         // Only update cached results if the results change
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [results])
+
+    useEffect(() => {
+        // In case of back/forward navigation, log if the cache is being used.
+        const cacheExists = isEqual(options, cachedResults?.options)
+
+        if (history.action === 'POP') {
+            telemetryService.log('SearchResultsCacheRetrieved', { cacheHit: cacheExists }, { cacheHit: cacheExists })
+        }
+        // Only log when options have changed
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [options])
 
     return results
 }
