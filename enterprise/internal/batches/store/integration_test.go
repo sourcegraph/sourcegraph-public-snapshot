@@ -34,7 +34,6 @@ func TestIntegration(t *testing.T) {
 		t.Run("UserDeleteCascades", storeTest(db, nil, testUserDeleteCascades))
 		t.Run("ChangesetJobs", storeTest(db, nil, testStoreChangesetJobs))
 		t.Run("BulkOperations", storeTest(db, nil, testStoreBulkOperations))
-		t.Run("BatchSpecExecutions", storeTest(db, nil, testStoreBatchSpecExecutions))
 		t.Run("BatchSpecWorkspaces", storeTest(db, nil, testStoreBatchSpecWorkspaces))
 		t.Run("BatchSpecWorkspaceExecutionJobs", storeTest(db, nil, testStoreBatchSpecWorkspaceExecutionJobs))
 		t.Run("BatchSpecResolutionJobs", storeTest(db, nil, testStoreBatchSpecResolutionJobs))

@@ -76,43 +76,6 @@ Indexes:
 
 ```
 
-# Table "public.batch_spec_executions"
-```
-      Column       |           Type           | Collation | Nullable |                      Default                      
--------------------+--------------------------+-----------+----------+---------------------------------------------------
- id                | bigint                   |           | not null | nextval('batch_spec_executions_id_seq'::regclass)
- state             | text                     |           |          | 'queued'::text
- failure_message   | text                     |           |          | 
- started_at        | timestamp with time zone |           |          | 
- finished_at       | timestamp with time zone |           |          | 
- process_after     | timestamp with time zone |           |          | 
- num_resets        | integer                  |           | not null | 0
- num_failures      | integer                  |           | not null | 0
- execution_logs    | json[]                   |           |          | 
- worker_hostname   | text                     |           | not null | ''::text
- created_at        | timestamp with time zone |           | not null | now()
- updated_at        | timestamp with time zone |           | not null | now()
- batch_spec        | text                     |           | not null | 
- batch_spec_id     | integer                  |           |          | 
- user_id           | integer                  |           |          | 
- namespace_user_id | integer                  |           |          | 
- namespace_org_id  | integer                  |           |          | 
- rand_id           | text                     |           | not null | 
- last_heartbeat_at | timestamp with time zone |           |          | 
- cancel            | boolean                  |           |          | false
-Indexes:
-    "batch_spec_executions_pkey" PRIMARY KEY, btree (id)
-    "batch_spec_executions_rand_id" btree (rand_id)
-Check constraints:
-    "batch_spec_executions_has_1_namespace" CHECK ((namespace_user_id IS NULL) <> (namespace_org_id IS NULL))
-Foreign-key constraints:
-    "batch_spec_executions_batch_spec_id_fkey" FOREIGN KEY (batch_spec_id) REFERENCES batch_specs(id) DEFERRABLE
-    "batch_spec_executions_namespace_org_id_fkey" FOREIGN KEY (namespace_org_id) REFERENCES orgs(id) DEFERRABLE
-    "batch_spec_executions_namespace_user_id_fkey" FOREIGN KEY (namespace_user_id) REFERENCES users(id) DEFERRABLE
-    "batch_spec_executions_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) DEFERRABLE
-
-```
-
 # Table "public.batch_spec_resolution_jobs"
 ```
       Column       |           Type           | Collation | Nullable |                        Default                         
@@ -217,7 +180,6 @@ Foreign-key constraints:
     "batch_specs_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL DEFERRABLE
 Referenced by:
     TABLE "batch_changes" CONSTRAINT "batch_changes_batch_spec_id_fkey" FOREIGN KEY (batch_spec_id) REFERENCES batch_specs(id) DEFERRABLE
-    TABLE "batch_spec_executions" CONSTRAINT "batch_spec_executions_batch_spec_id_fkey" FOREIGN KEY (batch_spec_id) REFERENCES batch_specs(id) DEFERRABLE
     TABLE "batch_spec_resolution_jobs" CONSTRAINT "batch_spec_resolution_jobs_batch_spec_id_fkey" FOREIGN KEY (batch_spec_id) REFERENCES batch_specs(id) ON DELETE CASCADE DEFERRABLE
     TABLE "batch_spec_workspaces" CONSTRAINT "batch_spec_workspaces_batch_spec_id_fkey" FOREIGN KEY (batch_spec_id) REFERENCES batch_specs(id) ON DELETE CASCADE DEFERRABLE
     TABLE "changeset_specs" CONSTRAINT "changeset_specs_batch_spec_id_fkey" FOREIGN KEY (batch_spec_id) REFERENCES batch_specs(id) DEFERRABLE
@@ -1440,7 +1402,6 @@ Check constraints:
     "orgs_name_valid_chars" CHECK (name ~ '^[a-zA-Z0-9](?:[a-zA-Z0-9]|[-.](?=[a-zA-Z0-9]))*-?$'::citext)
 Referenced by:
     TABLE "batch_changes" CONSTRAINT "batch_changes_namespace_org_id_fkey" FOREIGN KEY (namespace_org_id) REFERENCES orgs(id) ON DELETE CASCADE DEFERRABLE
-    TABLE "batch_spec_executions" CONSTRAINT "batch_spec_executions_namespace_org_id_fkey" FOREIGN KEY (namespace_org_id) REFERENCES orgs(id) DEFERRABLE
     TABLE "cm_monitors" CONSTRAINT "cm_monitors_org_id_fk" FOREIGN KEY (namespace_org_id) REFERENCES orgs(id) ON DELETE CASCADE
     TABLE "cm_recipients" CONSTRAINT "cm_recipients_org_id_fk" FOREIGN KEY (namespace_org_id) REFERENCES orgs(id) ON DELETE CASCADE
     TABLE "feature_flag_overrides" CONSTRAINT "feature_flag_overrides_namespace_org_id_fkey" FOREIGN KEY (namespace_org_id) REFERENCES orgs(id) ON DELETE CASCADE
@@ -2094,8 +2055,6 @@ Referenced by:
     TABLE "batch_changes" CONSTRAINT "batch_changes_initial_applier_id_fkey" FOREIGN KEY (initial_applier_id) REFERENCES users(id) ON DELETE SET NULL DEFERRABLE
     TABLE "batch_changes" CONSTRAINT "batch_changes_last_applier_id_fkey" FOREIGN KEY (last_applier_id) REFERENCES users(id) ON DELETE SET NULL DEFERRABLE
     TABLE "batch_changes" CONSTRAINT "batch_changes_namespace_user_id_fkey" FOREIGN KEY (namespace_user_id) REFERENCES users(id) ON DELETE CASCADE DEFERRABLE
-    TABLE "batch_spec_executions" CONSTRAINT "batch_spec_executions_namespace_user_id_fkey" FOREIGN KEY (namespace_user_id) REFERENCES users(id) DEFERRABLE
-    TABLE "batch_spec_executions" CONSTRAINT "batch_spec_executions_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) DEFERRABLE
     TABLE "batch_specs" CONSTRAINT "batch_specs_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL DEFERRABLE
     TABLE "changeset_jobs" CONSTRAINT "changeset_jobs_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE DEFERRABLE
     TABLE "changeset_specs" CONSTRAINT "changeset_specs_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL DEFERRABLE
