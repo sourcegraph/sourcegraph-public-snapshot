@@ -36,12 +36,12 @@ export const queryRepositoryComparisonFileDiffs = memoizeObservable(
 
                 fragment FileDiffConnectionFields on FileDiffConnection {
                     nodes {
-                        ...FileDiffFields
+                        ...RepositoryFileDiffFields
                     }
                     totalCount
                 }
 
-                fragment FileDiffFields on FileDiff {
+                fragment RepositoryFileDiffFields on FileDiff {
                     oldPath
                     newPath
                     internalID

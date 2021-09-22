@@ -1,0 +1,8 @@
+fragment EditUserProfilePage on User {
+    id
+    username
+    displayName
+    avatarURL
+    viewerCanChangeUsername
+    createdAt
+}

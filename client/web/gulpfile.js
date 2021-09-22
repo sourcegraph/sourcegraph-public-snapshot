@@ -25,6 +25,7 @@ const {
   watchSchema,
   cssModulesTypings,
   watchCSSModulesTypings,
+  watchGraphQlDocuments,
 } = require('../shared/gulpfile')
 
 const { build: buildEsbuild } = require('./dev/esbuild/build')
@@ -156,7 +157,13 @@ const developmentServer = DEV_WEB_BUILDER === 'webpack' ? webpackDevelopmentServ
 const generate = gulp.parallel(schema, graphQlSchema, graphQlOperations, cssModulesTypings)
 
 // Watches code generation only, rebuilds on file changes
-const watchGenerators = gulp.parallel(watchSchema, watchGraphQlSchema, watchGraphQlOperations, watchCSSModulesTypings)
+const watchGenerators = gulp.parallel(
+  watchSchema,
+  watchGraphQlSchema,
+  watchGraphQlOperations,
+  watchGraphQlDocuments,
+  watchCSSModulesTypings
+)
 
 /**
  * Builds everything.

@@ -13,10 +13,10 @@ import { requestGraphQL } from '../../../backend/graphql'
 import { FilteredConnection } from '../../../components/FilteredConnection'
 import { PageTitle } from '../../../components/PageTitle'
 import { Timestamp } from '../../../components/time/Timestamp'
-import { UserEventLogFields, UserEventLogsConnectionFields, UserEventLogsDocument } from '../../../graphql-operations'
 import { UserSettingsAreaRouteContext } from '../../../user/settings/UserSettingsArea'
 
 import styles from './UserEventLogsPage.module.scss'
+import { UserEventLogFields, UserEventLogsConnectionFields, UserEventLogsDocument } from './UserEventLogsPage.queries'
 
 interface UserEventNodeProps {
     /**

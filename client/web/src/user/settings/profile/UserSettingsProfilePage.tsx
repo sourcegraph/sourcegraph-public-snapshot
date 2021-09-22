@@ -2,27 +2,15 @@ import React, { useEffect } from 'react'
 
 import { percentageDone } from '@sourcegraph/shared/src/components/activation/Activation'
 import { ActivationChecklist } from '@sourcegraph/shared/src/components/activation/ActivationChecklist'
-import { gql } from '@sourcegraph/shared/src/graphql/graphql'
 import { Container, PageHeader } from '@sourcegraph/wildcard'
 
 import { PageTitle } from '../../../components/PageTitle'
 import { Timestamp } from '../../../components/time/Timestamp'
-import { EditUserProfilePage as EditUserProfilePageFragment } from '../../../graphql-operations'
 import { eventLogger } from '../../../tracking/eventLogger'
 import { UserSettingsAreaRouteContext } from '../UserSettingsArea'
 
 import { EditUserProfileForm } from './EditUserProfileForm'
-
-export const EditUserProfilePageGQLFragment = gql`
-    fragment EditUserProfilePage on User {
-        id
-        username
-        displayName
-        avatarURL
-        viewerCanChangeUsername
-        createdAt
-    }
-`
+import { EditUserProfilePage as EditUserProfilePageFragment } from './UserSettingsProfilePage.queries'
 
 interface Props extends Pick<UserSettingsAreaRouteContext, 'activation'> {
     user: EditUserProfilePageFragment
