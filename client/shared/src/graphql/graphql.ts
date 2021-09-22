@@ -13,6 +13,7 @@ import {
     MutationHookOptions,
     MutationTuple,
     QueryTuple,
+    TypedDocumentNode,
 } from '@apollo/client'
 import { GraphQLError } from 'graphql'
 import { once } from 'lodash'
@@ -42,6 +43,8 @@ export interface ErrorGraphQLResult {
 }
 
 export type GraphQLResult<T> = SuccessGraphQLResult<T> | ErrorGraphQLResult
+
+export type GraphQLRequest<T, V> = string | TypedDocumentNode<T, V>
 
 /**
  * Guarantees that the GraphQL query resulted in an error.
@@ -80,10 +83,18 @@ export function requestGraphQLCommon<T, V = object>({
     variables,
     ...options
 }: GraphQLRequestOptions & {
-    request: string
+    request: GraphQLRequest<T, V>
     variables?: V
 }): Observable<GraphQLResult<T>> {
-    const nameMatch = request.match(/^\s*(?:query|mutation)\s+(\w+)/)
+    let nameMatch: string | null
+
+    if (typeof request === 'string') {
+        nameMatch = request.match(/^\s*(?:query|mutation)\s+(\w+)/)?.[1] ?? null
+    } else {
+        console.log('Getting name match', request)
+        nameMatch = null
+    }
+
     const apiURL = `${GRAPHQL_URI}${nameMatch ? '?' + nameMatch[1] : ''}`
 
     return fromFetch<GraphQLResult<T>>(baseUrl ? new URL(apiURL, baseUrl).href : apiURL, {
@@ -141,22 +152,20 @@ export const getGraphQLClient = once(
     }
 )
 
-type RequestDocument = string | DocumentNode
-
 /**
  * Returns a `DocumentNode` value to support integrations with GraphQL clients that require this.
  *
  * @param document The GraphQL operation payload
  * @returns The created `DocumentNode`
  */
-export const getDocumentNode = (document: RequestDocument): DocumentNode => {
+export const getDocumentNode = (document: GraphQLRequest<unknown, unknown>): DocumentNode => {
     if (typeof document === 'string') {
         return apolloGql(document)
     }
     return document
 }
 
-const useDocumentNode = (document: RequestDocument): DocumentNode =>
+const useDocumentNode = (document: GraphQLRequest<unknown, unknown>): DocumentNode =>
     useMemo(() => getDocumentNode(document), [document])
 
 /**
@@ -168,7 +177,7 @@ const useDocumentNode = (document: RequestDocument): DocumentNode =>
  * @returns GraphQL response
  */
 export function useQuery<TData = any, TVariables = OperationVariables>(
-    query: RequestDocument,
+    query: GraphQLRequest<TData, TVariables>,
     options: QueryHookOptions<TData, TVariables>
 ): QueryResult<TData, TVariables> {
     const documentNode = useDocumentNode(query)
@@ -176,7 +185,7 @@ export function useQuery<TData = any, TVariables = OperationVariables>(
 }
 
 export function useLazyQuery<TData = any, TVariables = OperationVariables>(
-    query: RequestDocument,
+    query: GraphQLRequest<TData, TVariables>,
     options: QueryHookOptions<TData, TVariables>
 ): QueryTuple<TData, TVariables> {
     const documentNode = useDocumentNode(query)
@@ -192,7 +201,7 @@ export function useLazyQuery<TData = any, TVariables = OperationVariables>(
  * @returns GraphQL response
  */
 export function useMutation<TData = any, TVariables = OperationVariables>(
-    mutation: RequestDocument,
+    mutation: GraphQLRequest<TData, TVariables>,
     options?: MutationHookOptions<TData, TVariables>
 ): MutationTuple<TData, TVariables> {
     const documentNode = useDocumentNode(mutation)

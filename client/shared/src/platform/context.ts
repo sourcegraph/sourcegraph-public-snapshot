@@ -1,3 +1,4 @@
+import { TypedDocumentNode } from '@apollo/client'
 import { Endpoint } from 'comlink'
 import { isObject } from 'lodash'
 import { NextObserver, Observable, Subscribable, Subscription } from 'rxjs'
@@ -8,7 +9,7 @@ import { DiffPart } from '@sourcegraph/codeintellify'
 import { SettingsEdit } from '../api/client/services/settings'
 import { ExecutableExtension } from '../api/extension/activation'
 import { Scalars } from '../graphql-operations'
-import { GraphQLClient, GraphQLResult } from '../graphql/graphql'
+import { GraphQLResult } from '../graphql/graphql'
 import { Settings, SettingsCascadeOrError } from '../settings/settings'
 import { TelemetryService } from '../telemetry/telemetryService'
 import { ErrorLike } from '../util/errors'
@@ -109,7 +110,7 @@ export interface PlatformContext {
         /**
          * The GraphQL request (query or mutation)
          */
-        request: string
+        request: string | TypedDocumentNode<R, V>
         /**
          * An object whose properties are GraphQL query name-value variable pairs
          */

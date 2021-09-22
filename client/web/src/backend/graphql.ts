@@ -1,7 +1,12 @@
 import { memoize } from 'lodash'
 import { Observable } from 'rxjs'
 
-import { getGraphQLClient, GraphQLResult, requestGraphQLCommon } from '@sourcegraph/shared/src/graphql/graphql'
+import {
+    getGraphQLClient,
+    GraphQLResult,
+    GraphQLRequest,
+    requestGraphQLCommon,
+} from '@sourcegraph/shared/src/graphql/graphql'
 import * as GQL from '@sourcegraph/shared/src/graphql/schema'
 
 const getHeaders = (): { [header: string]: string } => ({
@@ -21,7 +26,7 @@ const getHeaders = (): { [header: string]: string } => ({
  * @template TVariables The type of the query input variables (import from our auto-generated types).
  */
 export const requestGraphQL = <TResult, TVariables = object>(
-    request: string,
+    request: GraphQLRequest<TResult, TVariables>,
     variables?: TVariables
 ): Observable<GraphQLResult<TResult>> =>
     requestGraphQLCommon({
