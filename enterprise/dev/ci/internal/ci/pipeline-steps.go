@@ -147,10 +147,16 @@ func addClientIntegrationTests(pipeline *bk.Pipeline) {
 // yarn lighthouse collect --additive --url="$BASE_URL$TEST_PATH"
 
 func addClientLighthouseTests(pipeline *bk.Pipeline) {
-	SKIP_GIT_CLONE_STEP := bk.Plugin("uber-workflow/run-without-clone", "")
 	PREP_STEP_KEY := "lighthouse:prep"
-	// We only need the lhci command
-	installLhci := bk.Cmd("yarn add --global @lhci/cli@$(cat ./package.json | jq -r '.devDependencies[\"package-name\"]')")
+
+	// Build web application used for integration tests to share it between multiple parallel steps.
+	pipeline.AddStep(":lighthouse: Lighthouse production build",
+		bk.Key(PREP_STEP_KEY),
+		bk.Env("NODE_ENV", "production"),
+		bk.Env("WEBPACK_SERVE_INDEX", "true"), // Required for local production server
+		bk.Env("SOURCEGRAPH_API_URL", "https://sourcegraph.com"),
+		bk.Cmd("dev/ci/yarn-build.sh client/web"),
+		bk.Cmd("dev/ci/create-client-artifact.sh"))
 
 	testPaths := map[string]string{
 		"lighthouse:homepage":       "/",
@@ -161,25 +167,13 @@ func addClientLighthouseTests(pipeline *bk.Pipeline) {
 	for key, path := range testPaths {
 		stepLabel := fmt.Sprintf(":lighthouse: %s", key)
 		pipeline.AddStep(stepLabel,
-			SKIP_GIT_CLONE_STEP,
-			bk.DependsOn(PREP_STEP_KEY),
 			bk.Key(key),
 			bk.Env("NODE_ENV", "production"),
 			bk.Env("WEBPACK_SERVE_INDEX", "true"), // Required for local production server
 			bk.Env("SOURCEGRAPH_API_URL", "https://sourcegraph.com"),
-			percyBrowserExecutableEnv,
-			installLhci,
-			bk.Cmd("yarn add --global @lhci/cli@$(cat ./package.json | jq -r '.devDependencies[\"package-name\"]')"),
-			bk.Cmd(fmt.Sprintf(`lhci collect "%s"`, path)))
+			bk.Cmd(fmt.Sprintf(`dev/ci/yarn-lighthouse.sh "%s"`, path)),
+			bk.DependsOn(PREP_STEP_KEY))
 	}
-
-	pipeline.AddStep(":lighthouse: Lighthouse upload results",
-		SKIP_GIT_CLONE_STEP,
-		bk.DependsOn("lighthouse:homepage"),
-		bk.DependsOn("lighthouse:search"),
-		bk.DependsOn("lighthouse:file_blob"),
-		installLhci,
-		bk.Cmd("lhci upload --target=temporary-public-storage"))
 }
 
 func addChromaticTests(c Config, pipeline *bk.Pipeline) {
