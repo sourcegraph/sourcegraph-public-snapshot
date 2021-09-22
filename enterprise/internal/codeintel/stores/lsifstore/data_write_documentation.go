@@ -75,7 +75,7 @@ func (s *Store) WriteDocumentationPages(ctx context.Context, upload dbstore.Uplo
 	// indexed even if it is turned back on. Only future uploads would be.
 	if conf.APIDocsSearchIndexingEnabled() {
 		// Perform search indexing for API docs pages.
-		if err := tx.WriteDocumentationSearch(ctx, NewDocumentationSearchInfo(upload), repo, isDefaultBranch, pages); err != nil {
+		if err := tx.WriteDocumentationSearch(ctx, upload, repo, isDefaultBranch, pages); err != nil {
 			return errors.Wrap(err, "WriteDocumentationSearch")
 		}
 	}
@@ -229,50 +229,16 @@ SELECT %s, source.path_id, source.result_id, source.file_path
 FROM t_lsif_data_documentation_mappings source
 `
 
-type DocumentationSearchInfo struct {
-	ID             int
-	RepositoryName string
-	RepositoryID   int
-	Commit         string
-	Indexer        string
-	Root           string
-}
-
-func NewDocumentationSearchInfo(dumpOrUpload interface{}) DocumentationSearchInfo {
-	switch v := dumpOrUpload.(type) {
-	case dbstore.Dump:
-		return DocumentationSearchInfo{
-			ID:             v.ID,
-			RepositoryName: v.RepositoryName,
-			RepositoryID:   v.RepositoryID,
-			Commit:         v.Commit,
-			Indexer:        v.Indexer,
-			Root:           v.Root,
-		}
-	case dbstore.Upload:
-		return DocumentationSearchInfo{
-			ID:             v.ID,
-			RepositoryName: v.RepositoryName,
-			RepositoryID:   v.RepositoryID,
-			Commit:         v.Commit,
-			Indexer:        v.Indexer,
-			Root:           v.Root,
-		}
-	default:
-		panic(fmt.Sprintf("invariant: T != %T", v))
-	}
-}
-
 // WriteDocumentationSearch is called (within a transaction) to write the search index for a given documentation page.
-func (s *Store) WriteDocumentationSearch(ctx context.Context, meta DocumentationSearchInfo, repo *types.Repo, isDefaultBranch bool, pages []*precise.DocumentationPageData) (err error) {
+func (s *Store) WriteDocumentationSearch(ctx context.Context, upload dbstore.Upload, repo *types.Repo, isDefaultBranch bool, pages []*precise.DocumentationPageData) (err error) {
 	if !isDefaultBranch {
 		// We do not index non-default branches for API docs search.
 		return nil
 	}
 
 	ctx, traceLog, endObservation := s.operations.writeDocumentationSearch.WithAndLogger(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.String("repo", meta.RepositoryName),
-		log.Int("bundleID", meta.ID),
+		log.String("repo", upload.RepositoryName),
+		log.Int("bundleID", upload.ID),
 		log.Int("pages", len(pages)),
 	}})
 	defer endObservation(1, observation.Args{})
@@ -281,7 +247,7 @@ func (s *Store) WriteDocumentationSearch(ctx context.Context, meta Documentation
 	// the language or is not in "lsif-$LANGUAGE" format. That's OK: in that case, the "language"
 	// is the indexer name which is likely good enough since we use fuzzy search / partial text matching
 	// over it.
-	languageOrIndexerName := strings.ToLower(strings.TrimPrefix(meta.Indexer, "lsif-"))
+	languageOrIndexerName := strings.ToLower(strings.TrimPrefix(upload.Indexer, "lsif-"))
 
 	const (
 		tableNamePublic  = "lsif_data_documentation_search_public"
@@ -298,8 +264,8 @@ func (s *Store) WriteDocumentationSearch(ctx context.Context, meta Documentation
 	for _, tableName := range []string{tableNamePublic, tableNamePrivate} {
 		if err := s.Exec(ctx, sqlf.Sprintf(
 			strings.Replace(purgeDocumentationSearchOldData, "$TABLE_NAME", tableName, -1),
-			meta.RepositoryID,
-			meta.Root,
+			upload.RepositoryID,
+			upload.Root,
 			languageOrIndexerName,
 		)); err != nil {
 			return errors.Wrap(err, "purging old data")
@@ -315,15 +281,15 @@ func (s *Store) WriteDocumentationSearch(ctx context.Context, meta Documentation
 			}
 			err := s.Exec(ctx, sqlf.Sprintf(
 				strings.Replace(writeDocumentationSearchInsertQuery, "$TABLE_NAME", tableName, -1),
-				meta.ID,
+				upload.ID,
 				node.PathID,
 				languageOrIndexerName,
-				meta.RepositoryName,
+				upload.RepositoryName,
 				node.Documentation.SearchKey,
 				truncate(node.Label.String(), 256),     // 256 bytes, enough for ~100 characters in all languages
 				truncate(node.Detail.String(), 5*1024), // 5 KiB - just for sanity
 				strings.Join(tags, " "),
-				meta.RepositoryID,
+				upload.RepositoryID,
 			))
 			if err != nil {
 				return err
