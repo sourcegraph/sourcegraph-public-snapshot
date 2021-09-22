@@ -92,3 +92,52 @@ Temporary settings for authenticated users are only updated every 5 minutes.
 This can cause settings to become out-of-sync or lost if modified in more than
 one tab/browser at once. **Do not use temporary settings for data that may not
 be easily recoverable with a few clicks.**
+
+
+## Viewing and modifying raw temporary settings
+
+For debugging and testing purposes, it can be useful to view and modify the raw
+temporary settings data. In particular, clearing temporary settings can help
+emulate the flow of what a new user would see.
+
+### Unauthenticated users
+
+You can view and modify temporary settings using the `localStorage` in the browser
+developer tools' Storage (Firefox & Safari) or Application (Chromium) tab, or by
+calling `localStorage` directly from the console. Temporary settings are stored in
+`localStorage` with the `temporarySettings` key. Deleting the item with this key will
+clear all temporary settings.
+
+Useful console commands:
+
+```js
+localStorage['temporarySettings'] // Get settings
+
+localStorage.removeItem('temporarySettings') // Clear settings
+```
+
+### Authenticated users
+
+You can view and modify temporary settings via the GraphQL API using the
+[GraphQL console](https://sourcegraph.com/api/console).
+
+You can view your temporary settings with the `temporarySettings` GraphQL query:
+
+```graphql
+query {
+  temporarySettings {
+    contents
+  }
+}
+```
+
+You can modify your temporary settings with the `overwriteTemporarySettings` GraphQL mutation.
+For example, the following mutation will clear your temporary settings:
+
+```graphql
+mutation {
+  overwriteTemporarySettings(contents: "{}") {
+    alwaysNil
+  }
+}
+```

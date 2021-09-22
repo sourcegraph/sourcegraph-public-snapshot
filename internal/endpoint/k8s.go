@@ -61,44 +61,7 @@ func k8sDiscovery(urlspec, ns string, clientFactory func() (*kubernetes.Clientse
 		}
 
 		handle := func(obj interface{}) {
-			var eps []string
-
-			switch o := (obj).(type) {
-			case *corev1.Endpoints:
-				for _, s := range o.Subsets {
-					for _, a := range s.Addresses {
-						var ep string
-						if a.Hostname != "" {
-							ep = u.endpointURL(a.Hostname + "." + u.Service)
-						} else if a.IP != "" {
-							ep = u.endpointURL(a.IP)
-						}
-						eps = append(eps, ep)
-					}
-				}
-			case *appsv1.StatefulSet:
-				replicas := int32(1)
-				if o.Spec.Replicas != nil {
-					replicas = *o.Spec.Replicas
-				}
-				for i := int32(0); i < replicas; i++ {
-					// Quoting k8s Reference: https://v1-21.docs.kubernetes.io/docs/concepts/workloads/controllers/statefulset/#stable-network-id
-					//
-					// Each Pod in a StatefulSet derives its hostname from the
-					// name of the StatefulSet and the ordinal of the Pod. The
-					// pattern for the constructed hostname is $(statefulset
-					// name)-$(ordinal). ... A StatefulSet can use a Headless
-					// Service to control the domain of its Pods. ... As each
-					// Pod is created, it gets a matching DNS subdomain,
-					// taking the form: $(podname).$(governing service
-					// domain), where the governing service is defined by the
-					// serviceName field on the StatefulSet.
-					//
-					// We set serviceName in our resources and ensure it is a
-					// headless service.
-					eps = append(eps, u.endpointURL(fmt.Sprintf("%s-%d.%s", o.Name, i, o.Spec.ServiceName)))
-				}
-			}
+			eps := k8sEndpoints(u, obj)
 
 			log15.Info(
 				"endpoints k8s discovered",
@@ -121,6 +84,51 @@ func k8sDiscovery(urlspec, ns string, clientFactory func() (*kubernetes.Clientse
 
 		informer.Run(stop)
 	}
+}
+
+// k8sEndpoints constructs a list of endpoint addresses for u based on the
+// kubernetes resource object obj.
+func k8sEndpoints(u *k8sURL, obj interface{}) []string {
+	var eps []string
+
+	switch o := (obj).(type) {
+	case *corev1.Endpoints:
+		for _, s := range o.Subsets {
+			for _, a := range s.Addresses {
+				var ep string
+				if a.Hostname != "" {
+					ep = u.endpointURL(a.Hostname + "." + u.Service)
+				} else if a.IP != "" {
+					ep = u.endpointURL(a.IP)
+				}
+				eps = append(eps, ep)
+			}
+		}
+	case *appsv1.StatefulSet:
+		replicas := int32(1)
+		if o.Spec.Replicas != nil {
+			replicas = *o.Spec.Replicas
+		}
+		for i := int32(0); i < replicas; i++ {
+			// Quoting k8s Reference: https://v1-21.docs.kubernetes.io/docs/concepts/workloads/controllers/statefulset/#stable-network-id
+			//
+			// Each Pod in a StatefulSet derives its hostname from the
+			// name of the StatefulSet and the ordinal of the Pod. The
+			// pattern for the constructed hostname is $(statefulset
+			// name)-$(ordinal). ... A StatefulSet can use a Headless
+			// Service to control the domain of its Pods. ... As each
+			// Pod is created, it gets a matching DNS subdomain,
+			// taking the form: $(podname).$(governing service
+			// domain), where the governing service is defined by the
+			// serviceName field on the StatefulSet.
+			//
+			// We set serviceName in our resources and ensure it is a
+			// headless service.
+			eps = append(eps, u.endpointURL(fmt.Sprintf("%s-%d.%s", o.Name, i, o.Spec.ServiceName)))
+		}
+	}
+
+	return eps
 }
 
 type k8sURL struct {

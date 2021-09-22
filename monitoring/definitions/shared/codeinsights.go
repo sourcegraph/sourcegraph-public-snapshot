@@ -1,6 +1,8 @@
 package shared
 
-import "github.com/sourcegraph/sourcegraph/monitoring/monitoring"
+import (
+	"github.com/sourcegraph/sourcegraph/monitoring/monitoring"
+)
 
 var CodeInsights codeInsights
 

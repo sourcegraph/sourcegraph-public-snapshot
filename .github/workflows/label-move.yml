@@ -29,6 +29,16 @@ jobs:
         columns-to-ignore: "*"
 
   # Uses issues beta API - see https://docs.github.com/en/issues/trying-out-the-new-projects-experience/automating-projects#example-workflow
+  # To get your PROJECT_ID, use:
+  #
+  #   gh api graphql --header 'GraphQL-Features: projects_next_graphql' -f query='
+  # query($project: Int!) {
+  #   organization(login: "sourcegraph") {
+  #     projectNext(number: $project) {
+  #       id
+  #     }
+  #   }
+  #   }' -F project=212
   distribution-board:
     runs-on: ubuntu-latest
     env:
@@ -100,6 +110,33 @@ jobs:
         NODE_ID: ${{ github.event.pull_request.node_id }}
       run: echo 'NODE_ID='$NODE_ID >> $GITHUB_ENV
     - name: Add to board
+      if: ${{ env.NODE_ID != '' }}
+      run: |
+        gh api graphql --header 'GraphQL-Features: projects_next_graphql' -f query='
+          mutation($project:ID!, $node_id:ID!) {
+            addProjectNextItem(input: {projectId: $project, contentId: $node_id}) {
+              projectNextItem {
+                id
+              }
+            }
+          }' -f project=$PROJECT_ID -f node_id=$NODE_ID
+  dev-experience-board:
+    runs-on: ubuntu-latest
+    env:
+      PROJECT_ID: MDExOlByb2plY3ROZXh0NDI1Nw== # https://github.com/orgs/sourcegraph/projects/212
+      GITHUB_TOKEN: ${{ secrets.GH_PROJECTS_ACTION_TOKEN }}
+    steps:
+    - name: Get issue if relevant
+      if: ${{ contains(github.event.issue.labels.*.name, 'dx') || contains(github.event.issue.labels.*.name, 'team/dev-experience') }}
+      env:
+        NODE_ID: ${{ github.event.issue.node_id }}
+      run: echo 'NODE_ID='$NODE_ID >> $GITHUB_ENV
+    - name: Get pull request if relevant
+      if: ${{ contains(github.event.pull_request.labels.*.name, 'dx') || contains(github.event.pull_request.labels.*.name, 'team/dev-experience') }}
+      env:
+        NODE_ID: ${{ github.event.pull_request.node_id }}
+      run: echo 'NODE_ID='$NODE_ID >> $GITHUB_ENV
+    - name: Add to Distribution board
       if: ${{ env.NODE_ID != '' }}
       run: |
         gh api graphql --header 'GraphQL-Features: projects_next_graphql' -f query='
