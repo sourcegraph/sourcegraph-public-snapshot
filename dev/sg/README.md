@@ -93,17 +93,17 @@ Make sure that `~/my/path` is in your `$PATH` then.
 
 ## Usage
 
-### `sg [start,run,run-set]` - Start dev environment
+### `sg [start,run]` - Start dev environment
 
 ```bash
 # Run default environment (this starts the 'default' command set defined in `sg.config.yaml`):
 sg start
 
 # Run the enterprise environment:
-sg run-set enterprise
+sg start enterprise
 
 # Override the logger levels for specific services
-sg run-set --debug=gitserver --error=enterprise-worker,enterprise-frontend enterprise
+sg start --debug=gitserver --error=enterprise-worker,enterprise-frontend enterprise
 
 # Run specific commands:
 sg run gitserver
@@ -116,7 +116,7 @@ sg run gitserver frontend repo-updater
 sg run -help
 
 # List available command sets:
-sg run-set -help
+sg start -help
 ```
 
 ### `sg test` - Running test suites
@@ -191,6 +191,14 @@ sg rfc search "search terms"
 
 # Open a specific RFC
 sg rfc open 420
+```
+
+## Useful commands by feature
+### Code Insights
+```bash
+sg start --info=enterprise-worker enterprise-codeinsights # start the local environment with Code Insights running at a useful log level
+sg start monitoring # start the monitoring stack if needed
+sg run enterprise-web-standalone # connect to k8s-dogfood with just the web client 
 ```
 
 ## Configuration
