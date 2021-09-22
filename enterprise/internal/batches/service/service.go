@@ -161,6 +161,71 @@ func (s *Service) EnqueueBatchSpecResolution(ctx context.Context, opts EnqueueBa
 	})
 }
 
+type ErrBatchSpecResolutionErrored struct {
+	failureMessage *string
+}
+
+func (e ErrBatchSpecResolutionErrored) Error() string {
+	if e.failureMessage != nil && *e.failureMessage != "" {
+		return fmt.Sprintf("cannot execute batch spec, workspace resolution failed: %s", *e.failureMessage)
+	}
+	return "cannot execute batch spec, workspace resolution failed"
+}
+
+var ErrBatchSpecResolutionIncomplete = errors.New("cannot execute batch spec, workspaces still being resolved")
+
+type ExecuteBatchSpecOpts struct {
+	BatchSpecRandID string
+}
+
+// ExecuteBatchSpec creates a pending BatchSpec that will be picked up by a worker in the background.
+func (s *Service) ExecuteBatchSpec(ctx context.Context, opts ExecuteBatchSpecOpts) (batchSpec *btypes.BatchSpec, err error) {
+	actor := actor.FromContext(ctx)
+	tr, ctx := trace.New(ctx, "Service.ExecuteBatchSpec", fmt.Sprintf("Actor %d", actor.UID))
+	defer func() {
+		tr.SetError(err)
+		tr.Finish()
+	}()
+
+	batchSpec, err = s.store.GetBatchSpec(ctx, store.GetBatchSpecOpts{RandID: opts.BatchSpecRandID})
+	if err != nil {
+		return nil, err
+	}
+
+	// Check whether the current user has access to either one of the namespaces.
+	err = s.CheckNamespaceAccess(ctx, batchSpec.NamespaceUserID, batchSpec.NamespaceOrgID)
+	if err != nil {
+		return nil, err
+	}
+
+	// TODO: In the future we want to block here until the resolution is done
+	// and only then check whether it failed or not.
+	//
+	// TODO: We also want to check that whether there was already an
+	// execution.
+	tx, err := s.store.Transact(ctx)
+	if err != nil {
+		return nil, err
+	}
+	defer func() { err = tx.Done(err) }()
+
+	resolutionJob, err := tx.GetBatchSpecResolutionJob(ctx, store.GetBatchSpecResolutionJobOpts{BatchSpecID: batchSpec.ID})
+	if err != nil {
+		return nil, err
+	}
+
+	switch resolutionJob.State {
+	case btypes.BatchSpecResolutionJobStateErrored, btypes.BatchSpecResolutionJobStateFailed:
+		return nil, ErrBatchSpecResolutionErrored{resolutionJob.FailureMessage}
+
+	case btypes.BatchSpecResolutionJobStateCompleted:
+		return batchSpec, tx.CreateBatchSpecWorkspaceExecutionJobs(ctx, batchSpec.ID)
+
+	default:
+		return nil, ErrBatchSpecResolutionIncomplete
+	}
+}
+
 // CreateChangesetSpec validates the given raw spec input and creates the ChangesetSpec.
 func (s *Service) CreateChangesetSpec(ctx context.Context, rawSpec string, userID int32) (spec *btypes.ChangesetSpec, err error) {
 	tr, ctx := trace.New(ctx, "Service.CreateChangesetSpec", fmt.Sprintf("User %d", userID))

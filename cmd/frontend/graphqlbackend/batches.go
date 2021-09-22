@@ -165,6 +165,7 @@ type CreateBatchSpecFromRawArgs struct {
 	AllowUnsupported bool
 	Execute          bool
 	NoCache          bool
+	Namespace        *graphql.ID
 }
 
 type ReplaceBatchSpecInputArgs struct {
@@ -181,7 +182,6 @@ type DeleteBatchSpecArgs struct {
 }
 
 type ExecuteBatchSpecArgs struct {
-	Namespace graphql.ID
 	BatchSpec graphql.ID
 	NoCache   bool
 	AutoApply bool

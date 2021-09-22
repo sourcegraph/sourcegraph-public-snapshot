@@ -12,7 +12,7 @@ export async function createBatchSpec(spec: Scalars['ID']): Promise<BatchSpecCre
     const result = await requestGraphQL<CreateBatchSpecResult, CreateBatchSpecVariables>(
         gql`
             mutation CreateBatchSpec($id: ID!) {
-                executeBatchSpec(batchSpec: $id, namespace: "123") {
+                executeBatchSpec(batchSpec: $id) {
                     ...BatchSpecCreateFields
                 }
             }

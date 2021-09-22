@@ -14,6 +14,7 @@ import (
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/database/batch"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
 )
 
 // batchSpecWorkspaceInsertColumns is the list of batch_spec_workspaces columns
@@ -83,6 +84,10 @@ func (s *Store) CreateBatchSpecWorkspace(ctx context.Context, ws ...*btypes.Batc
 
 			if wj.FileMatches == nil {
 				wj.FileMatches = []string{}
+			}
+
+			if wj.Steps == nil {
+				wj.Steps = []batcheslib.Step{}
 			}
 
 			marshaledSteps, err := json.Marshal(wj.Steps)

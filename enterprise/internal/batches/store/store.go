@@ -214,10 +214,11 @@ type operations struct {
 	getBatchSpecWorkspace    *observation.Operation
 	listBatchSpecWorkspaces  *observation.Operation
 
-	createBatchSpecWorkspaceExecutionJob *observation.Operation
-	getBatchSpecWorkspaceExecutionJob    *observation.Operation
-	listBatchSpecWorkspaceExecutionJobs  *observation.Operation
-	cancelBatchSpecWorkspaceExecutionJob *observation.Operation
+	createBatchSpecWorkspaceExecutionJob  *observation.Operation
+	createBatchSpecWorkspaceExecutionJobs *observation.Operation
+	getBatchSpecWorkspaceExecutionJob     *observation.Operation
+	listBatchSpecWorkspaceExecutionJobs   *observation.Operation
+	cancelBatchSpecWorkspaceExecutionJob  *observation.Operation
 
 	createBatchSpecResolutionJob *observation.Operation
 	getBatchSpecResolutionJob    *observation.Operation
@@ -332,10 +333,11 @@ func newOperations(observationContext *observation.Context) *operations {
 			getBatchSpecWorkspace:    op("GetBatchSpecWorkspace"),
 			listBatchSpecWorkspaces:  op("ListBatchSpecWorkspaces"),
 
-			createBatchSpecWorkspaceExecutionJob: op("CreateBatchSpecWorkspaceExecutionJob"),
-			getBatchSpecWorkspaceExecutionJob:    op("GetBatchSpecWorkspaceExecutionJob"),
-			listBatchSpecWorkspaceExecutionJobs:  op("ListBatchSpecWorkspaceExecutionJobs"),
-			cancelBatchSpecWorkspaceExecutionJob: op("CancelBatchSpecWorkspaceExecutionJob"),
+			createBatchSpecWorkspaceExecutionJob:  op("CreateBatchSpecWorkspaceExecutionJob"),
+			createBatchSpecWorkspaceExecutionJobs: op("CreateBatchSpecWorkspaceExecutionJobs"),
+			getBatchSpecWorkspaceExecutionJob:     op("GetBatchSpecWorkspaceExecutionJob"),
+			listBatchSpecWorkspaceExecutionJobs:   op("ListBatchSpecWorkspaceExecutionJobs"),
+			cancelBatchSpecWorkspaceExecutionJob:  op("CancelBatchSpecWorkspaceExecutionJob"),
 
 			createBatchSpecResolutionJob: op("CreateBatchSpecResolutionJob"),
 			getBatchSpecResolutionJob:    op("GetBatchSpecResolutionJob"),

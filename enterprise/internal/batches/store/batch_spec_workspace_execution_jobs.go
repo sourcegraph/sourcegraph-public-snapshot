@@ -43,6 +43,29 @@ var BatchSpecWorkspaceExecutionJobColums = SQLColumns{
 	"batch_spec_workspace_execution_jobs.updated_at",
 }
 
+const createBatchSpecWorkspaceExecutionJobsQueryFmtstr = `
+-- source: enterprise/internal/batches/store/batch_spec_workspace_execution_jobs.go:CreateBatchSpecWorkspaceExecutionJobs
+INSERT INTO
+	batch_spec_workspace_execution_jobs (batch_spec_workspace_id)
+SELECT
+	id
+FROM
+	batch_spec_workspaces
+WHERE
+	batch_spec_id = %s
+;`
+
+// CreateBatchSpecWorkspaceExecutionJob creates the given batch spec workspace jobs.
+func (s *Store) CreateBatchSpecWorkspaceExecutionJobs(ctx context.Context, batchSpecID int64) (err error) {
+	ctx, endObservation := s.operations.createBatchSpecWorkspaceExecutionJob.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.Int("batchSpecID", int(batchSpecID)),
+	}})
+	defer endObservation(1, observation.Args{})
+
+	q := sqlf.Sprintf(createBatchSpecWorkspaceExecutionJobsQueryFmtstr, batchSpecID)
+	return s.Exec(ctx, q)
+}
+
 // CreateBatchSpecWorkspaceExecutionJob creates the given batch spec workspace jobs.
 func (s *Store) CreateBatchSpecWorkspaceExecutionJob(ctx context.Context, jobs ...*btypes.BatchSpecWorkspaceExecutionJob) (err error) {
 	ctx, endObservation := s.operations.createBatchSpecWorkspaceExecutionJob.With(ctx, &err, observation.Args{LogFields: []log.Field{

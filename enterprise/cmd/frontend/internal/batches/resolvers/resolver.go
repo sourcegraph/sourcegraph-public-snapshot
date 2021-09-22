@@ -1488,12 +1488,28 @@ func (r *Resolver) DeleteBatchSpec(ctx context.Context, args *graphqlbackend.Del
 }
 
 func (r *Resolver) ExecuteBatchSpec(ctx context.Context, args *graphqlbackend.ExecuteBatchSpecArgs) (graphqlbackend.BatchSpecResolver, error) {
-	// TODO(ssbc): currently admin only.
 	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.store.DB()); err != nil {
 		return nil, err
 	}
-	// TODO(ssbc): not implemented
-	return nil, errors.New("not implemented yet")
+
+	batchSpecRandID, err := unmarshalBatchSpecID(args.BatchSpec)
+	if err != nil {
+		return nil, err
+	}
+
+	if batchSpecRandID == "" {
+		return nil, ErrIDIsZero{}
+	}
+
+	batchSpec, err := service.New(r.store).ExecuteBatchSpec(ctx, service.ExecuteBatchSpecOpts{
+		BatchSpecRandID: batchSpecRandID,
+		// TODO: args not yet implemented: NoCache, AutoApply
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return &batchSpecResolver{store: r.store, batchSpec: batchSpec}, nil
 }
 
 func (r *Resolver) CancelBatchSpecExecution(ctx context.Context, args *graphqlbackend.CancelBatchSpecExecutionArgs) (graphqlbackend.BatchSpecResolver, error) {

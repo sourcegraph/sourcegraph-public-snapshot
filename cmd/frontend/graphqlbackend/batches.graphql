@@ -2075,6 +2075,14 @@ extend type Mutation {
         TODO: Not implemented yet.
         """
         noCache: Boolean = false
+
+        """
+        The namespace (either a user or organization). A batch spec can only be applied to (or
+        used to create) batch changes in this namespace.
+
+        Defaults to the user who created the batch spec.
+        """
+        namespace: ID
     ): BatchSpec!
 
     """
@@ -2131,8 +2139,9 @@ extend type Mutation {
     deleteBatchSpec(batchSpec: ID!): EmptyResponse!
 
     """
-    Enqueue the workspaces that resulted from evaluation in `createBatchSpecFromRaw`to be executed. These will eventually be moved into running state.
-    resolution is done, to support fast edits.
+    Enqueue the workspaces that resulted from evaluation in
+    `createBatchSpecFromRaw`to be executed. These will eventually be moved into
+    running state. resolution is done, to support fast edits.
     Once the workspace resolution is done, workspace jobs are move to state QUEUED.
     If resolving is already done by the time this mutation is called, they are
     enqueued immediately.
@@ -2145,7 +2154,9 @@ extend type Mutation {
     TODO: This might be blocking with an error for now.
     """
     executeBatchSpec(
-        namespace: ID!
+        """
+        The ID of the batch spec.
+        """
         batchSpec: ID!
         """
         Don't use cache entries.

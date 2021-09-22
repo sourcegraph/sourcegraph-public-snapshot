@@ -69,12 +69,14 @@ func (s *Store) CreateBatchSpecResolutionJob(ctx context.Context, ws ...*btypes.
 				wj.UpdatedAt = wj.CreatedAt
 			}
 
+			state := string(wj.State)
+
 			if err := inserter.Insert(
 				ctx,
 				wj.BatchSpecID,
 				wj.AllowUnsupported,
 				wj.AllowIgnored,
-				wj.State,
+				&dbutil.NullString{S: &state},
 				wj.CreatedAt,
 				wj.UpdatedAt,
 			); err != nil {
