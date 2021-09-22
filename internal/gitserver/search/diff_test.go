@@ -46,10 +46,10 @@ index 2f71392b2f..d874527291 100644
 	require.NoError(t, err)
 	require.True(t, matched)
 
-	expectedHighlights := &protocol.CommitHighlights{
-		Diff: map[int]protocol.FileDiffHighlight{
+	expectedHighlights := &CommitHighlights{
+		Diff: map[int]FileDiffHighlight{
 			1: {
-				HunkHighlights: map[int]protocol.HunkHighlight{
+				HunkHighlights: map[int]HunkHighlight{
 					0: {
 						LineHighlights: map[int]protocol.Ranges{
 							3: {{

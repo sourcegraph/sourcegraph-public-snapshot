@@ -63,8 +63,8 @@ func TestSearch(t *testing.T) {
 		query := &protocol.MessageMatches{protocol.Regexp{regexp.MustCompile("commit2")}}
 		tree := ToMatchTree(query)
 		var commits []*LazyCommit
-		var highlights []*protocol.CommitHighlights
-		err := Search(context.Background(), dir, nil, tree, func(lc *LazyCommit, hl *protocol.CommitHighlights) bool {
+		var highlights []*CommitHighlights
+		err := Search(context.Background(), dir, nil, tree, func(lc *LazyCommit, hl *CommitHighlights) bool {
 			commits = append(commits, lc)
 			highlights = append(highlights, hl)
 			return true
@@ -78,8 +78,8 @@ func TestSearch(t *testing.T) {
 		query := &protocol.MessageMatches{protocol.Regexp{regexp.MustCompile("c")}}
 		tree := ToMatchTree(query)
 		var commits []*LazyCommit
-		var highlights []*protocol.CommitHighlights
-		err := Search(context.Background(), dir, nil, tree, func(lc *LazyCommit, hl *protocol.CommitHighlights) bool {
+		var highlights []*CommitHighlights
+		err := Search(context.Background(), dir, nil, tree, func(lc *LazyCommit, hl *CommitHighlights) bool {
 			commits = append(commits, lc)
 			highlights = append(highlights, hl)
 			return true

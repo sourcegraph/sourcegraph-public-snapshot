@@ -17,7 +17,7 @@ const (
 	maxFiles          = 5
 )
 
-func FormatDiff(rawDiff []*diff.FileDiff, highlights map[int]protocol.FileDiffHighlight) (string, protocol.Ranges) {
+func FormatDiff(rawDiff []*diff.FileDiff, highlights map[int]FileDiffHighlight) (string, protocol.Ranges) {
 	var buf strings.Builder
 	var loc protocol.Location
 	var ranges protocol.Ranges
@@ -105,7 +105,7 @@ func FormatDiff(rawDiff []*diff.FileDiff, highlights map[int]protocol.FileDiffHi
 // filtered down to only hunks that matched, determined by whether the hunk has highlights.
 // and non-matching changed lines are eliminated, and the hunk header (start/end
 // lines) are adjusted accordingly. The provided highlights are adjusted accordingly.
-func splitHunkMatches(hunks []*diff.Hunk, hunkHighlights map[int]protocol.HunkHighlight, matchContextLines, maxLinesPerHunk int) (results []*diff.Hunk, newHighlights map[int]protocol.HunkHighlight) {
+func splitHunkMatches(hunks []*diff.Hunk, hunkHighlights map[int]HunkHighlight, matchContextLines, maxLinesPerHunk int) (results []*diff.Hunk, newHighlights map[int]HunkHighlight) {
 	addExtraHunkMatchesSection := func(hunk *diff.Hunk, extraHunkMatches int) {
 		if extraHunkMatches > 0 {
 			if hunk.Section != "" {
@@ -115,7 +115,7 @@ func splitHunkMatches(hunks []*diff.Hunk, hunkHighlights map[int]protocol.HunkHi
 		}
 	}
 
-	newHighlights = make(map[int]protocol.HunkHighlight, len(hunkHighlights))
+	newHighlights = make(map[int]HunkHighlight, len(hunkHighlights))
 
 	for i, hunk := range hunks {
 		var cur *diff.Hunk
@@ -163,7 +163,7 @@ func splitHunkMatches(hunks []*diff.Hunk, hunkHighlights map[int]protocol.HunkHi
 				addExtraHunkMatchesSection(cur, extraHunkMatches)
 				cur.Body = bytes.Join(curLines, nil)
 				if len(curHighlights) > 0 {
-					newHighlights[len(results)] = protocol.HunkHighlight{LineHighlights: curHighlights}
+					newHighlights[len(results)] = HunkHighlight{LineHighlights: curHighlights}
 					curHighlights = make(map[int]protocol.Ranges)
 				}
 				results = append(results, cur)

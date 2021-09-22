@@ -996,7 +996,7 @@ func (s *Server) search(w http.ResponseWriter, r *http.Request, args *protocol.S
 		done := ctx.Done()
 
 		var conversionErr error
-		err := search.Search(ctx, dir.Path(), args.Revisions, search.ToMatchTree(args.Query), func(match *search.LazyCommit, highlights *protocol.CommitHighlights) bool {
+		err := search.Search(ctx, dir.Path(), args.Revisions, search.ToMatchTree(args.Query), func(match *search.LazyCommit, highlights *search.CommitHighlights) bool {
 			res, err := search.CreateCommitMatch(match, highlights, args.IncludeDiff)
 			if err != nil {
 				conversionErr = err

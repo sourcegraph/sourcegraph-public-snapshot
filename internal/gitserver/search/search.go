@@ -16,7 +16,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 )
 
-// Git formatting directives as described in man git-log / PRETTY FORMATS
+// Git formatting directives as described in man git-log (see PRETTY FORMATS)
 const (
 	hash           = "%H"
 	refNames       = "%D"
@@ -81,7 +81,7 @@ type job struct {
 
 type searchResult struct {
 	lazyCommit        *LazyCommit
-	highlightedCommit *protocol.CommitHighlights
+	highlightedCommit *CommitHighlights
 }
 
 const (
@@ -98,7 +98,7 @@ const (
 // that job should be sent down. We then read from the result channels in the same order that the jobs were sent.
 // This allows our worker pool to run the jobs in parallel, but we still emit matches in the same order that
 // git log outputs them.
-func Search(ctx context.Context, dir string, revs []protocol.RevisionSpecifier, p MatchTree, onMatch func(*LazyCommit, *protocol.CommitHighlights) bool) error {
+func Search(ctx context.Context, dir string, revs []protocol.RevisionSpecifier, p MatchTree, onMatch func(*LazyCommit, *CommitHighlights) bool) error {
 	g, ctx := errgroup.WithContext(ctx)
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
@@ -348,7 +348,7 @@ func (c *CommitScanner) Err() error {
 	return c.err
 }
 
-func CreateCommitMatch(lc *LazyCommit, hc *protocol.CommitHighlights, includeDiff bool) (*protocol.CommitMatch, error) {
+func CreateCommitMatch(lc *LazyCommit, hc *CommitHighlights, includeDiff bool) (*protocol.CommitMatch, error) {
 	authorDate, err := lc.AuthorDate()
 	if err != nil {
 		return nil, err
