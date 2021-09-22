@@ -120,7 +120,6 @@ func addClientIntegrationTests(pipeline *bk.Pipeline) {
 		puppeteerFinalizeDependencies[i] = bk.DependsOn(stepKey)
 
 		pipeline.AddStep(stepLabel,
-			skipGitCloneStep,
 			bk.Key(stepKey),
 			bk.DependsOn(prepStepKey),
 			percyBrowserExecutableEnv,
