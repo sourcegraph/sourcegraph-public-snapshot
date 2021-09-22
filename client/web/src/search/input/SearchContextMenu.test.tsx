@@ -106,6 +106,7 @@ describe('SearchContextMenu', () => {
         fetchSearchContexts: mockFetchSearchContexts,
         closeMenu: () => {},
         getUserSearchContextNamespaces: mockGetUserSearchContextNamespaces,
+        searchContextsEnabled: true,
     }
 
     const RealIntersectionObserver = window.IntersectionObserver

@@ -95,6 +95,7 @@ const commonProps = () =>
             return Promise.resolve()
         },
         availableVersionContexts: [],
+        searchContextsEnabled: true,
         showSearchContext: false,
         showSearchContextManagement: false,
         selectedSearchContextSpec: '',

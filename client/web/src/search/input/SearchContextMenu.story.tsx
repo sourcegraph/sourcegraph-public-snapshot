@@ -71,6 +71,7 @@ const defaultProps: SearchContextMenuProps = {
     selectSearchContextSpec: () => {},
     closeMenu: () => {},
     getUserSearchContextNamespaces: mockGetUserSearchContextNamespaces,
+    searchContextsEnabled: true,
 }
 
 const emptySearchContexts = {

@@ -65,6 +65,7 @@ import {
     parseSearchURL,
     getAvailableSearchContextSpecOrDefault,
     isSearchContextSpecAvailable,
+    SearchContextProps,
 } from './search'
 import {
     fetchSavedSearches,
@@ -106,6 +107,7 @@ export interface SourcegraphWebAppProps
     extends CodeIntelligenceProps,
         CodeInsightsProps,
         Pick<BatchChangesProps, 'batchChangesEnabled'>,
+        Pick<SearchContextProps, 'searchContextsEnabled'>,
         KeyboardShortcutsProps {
     extensionAreaRoutes: readonly ExtensionAreaRoute[]
     extensionAreaHeaderNavItems: readonly ExtensionAreaHeaderNavItem[]
@@ -507,6 +509,7 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
                                                     isSourcegraphDotCom={window.context.sourcegraphDotComMode}
                                                     showRepogroupHomepage={this.state.showRepogroupHomepage}
                                                     showOnboardingTour={this.state.showOnboardingTour}
+                                                    searchContextsEnabled={this.props.searchContextsEnabled}
                                                     showSearchContext={this.state.showSearchContext}
                                                     hasUserAddedRepositories={this.hasUserAddedRepositories()}
                                                     hasUserAddedExternalServices={

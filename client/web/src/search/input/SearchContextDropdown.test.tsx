@@ -38,6 +38,7 @@ describe('SearchContextDropdown', () => {
         hasUserAddedExternalServices: false,
         isSourcegraphDotCom: false,
         authenticatedUser: null,
+        searchContextsEnabled: true,
     }
     const RealIntersectionObserver = window.IntersectionObserver
     let clock: sinon.SinonFakeTimers

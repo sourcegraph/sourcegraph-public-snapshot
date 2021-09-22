@@ -62,6 +62,7 @@ const defaultProps = (
     showOnboardingTour: false,
     isLightTheme: props.isLightTheme,
     isExtensionAlertAnimating: false,
+    searchContextsEnabled: true,
     batchChangesEnabled: true,
     batchChangesExecutionEnabled: true,
     enableCodeMonitoring: true,

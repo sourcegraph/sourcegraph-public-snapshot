@@ -38,6 +38,7 @@ const defaultProps: SearchBoxProps = {
     versionContext: undefined,
     availableVersionContexts: [],
     setVersionContext: () => Promise.resolve(undefined),
+    searchContextsEnabled: true,
     showSearchContext: false,
     showSearchContextManagement: false,
     selectedSearchContextSpec: 'global',

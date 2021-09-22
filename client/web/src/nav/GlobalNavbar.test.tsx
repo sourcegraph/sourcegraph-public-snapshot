@@ -57,6 +57,7 @@ const PROPS: React.ComponentProps<typeof GlobalNavbar> = {
     showOnboardingTour: false,
     branding: undefined,
     routes: [],
+    searchContextsEnabled: true,
     fetchAutoDefinedSearchContexts: mockFetchAutoDefinedSearchContexts(),
     fetchSearchContexts: mockFetchSearchContexts,
     hasUserAddedRepositories: false,
