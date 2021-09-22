@@ -118,11 +118,34 @@ func (r *batchSpecWorkspaceStepResolver) ExitCode() *int32 {
 }
 
 func (r *batchSpecWorkspaceStepResolver) Environment() ([]graphqlbackend.BatchSpecWorkspaceEnvironmentVariableResolver, error) {
-	// TODO: This should be precedented by env as printed by src-cli. It will do the evaluation of output vars etc.
-	env, err := r.step.Env.Resolve([]string{})
-	if err != nil {
-		return nil, err
+	// The environment is dependent on environment of the executor and template variables, that aren't
+	// known at the time when we resolve the workspace. If the step already started, src cli has logged
+	// the final env. Otherwise, we fall back to the preliminary set of env vars as determined by the
+	// resolve workspaces step.
+	found := false
+	var env map[string]string
+	for _, l := range r.logLines {
+		if l.Operation == batcheslib.LogEventOperationTaskStep && l.Status == batcheslib.LogEventStatusStarted {
+			if v, ok := l.Metadata["step"]; ok {
+				if int(v.(float64)-1) == r.index {
+					e, ok := l.Metadata["env"]
+					if ok {
+						found = true
+						env = e.(map[string]string)
+					}
+				}
+			}
+		}
 	}
+
+	if !found {
+		var err error
+		env, err = r.step.Env.Resolve([]string{})
+		if err != nil {
+			return nil, err
+		}
+	}
+
 	resolvers := make([]graphqlbackend.BatchSpecWorkspaceEnvironmentVariableResolver, 0, len(env))
 	for k, v := range env {
 		resolvers = append(resolvers, &batchSpecWorkspaceEnvironmentVariableResolver{key: k, value: v})
