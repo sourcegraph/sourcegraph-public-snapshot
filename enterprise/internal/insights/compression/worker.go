@@ -150,7 +150,7 @@ func (i *CommitIndexer) index(name string) (err error) {
 		return errors.Wrapf(err, "error fetching commits from gitserver repo_id: %v", repoId)
 	}
 
-	i.operations.countCommits.WithLabelValues(string(repoName)).Add(float64(len(commits)))
+	i.operations.countCommits.WithLabelValues().Add(float64(len(commits)))
 
 	if len(commits) == 0 {
 		logger.Debug("commit index up to date", "repo_id", repoId)

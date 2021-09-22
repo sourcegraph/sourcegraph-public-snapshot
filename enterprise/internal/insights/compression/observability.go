@@ -36,7 +36,7 @@ func newOperations(observationContext *observation.Context) *operations {
 	countCommits := promauto.NewCounterVec(prometheus.CounterOpts{
 		Name: "insights_commit_indexer_commits_added",
 		Help: "Total number of commits added to the commit index for this repo",
-	}, []string{"repoName"})
+	}, []string{})
 
 	return &operations{
 		worker:       worker,
