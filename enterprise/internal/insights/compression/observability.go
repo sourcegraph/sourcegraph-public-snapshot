@@ -15,21 +15,21 @@ type operations struct {
 }
 
 func newOperations(observationContext *observation.Context) *operations {
-	getCommits := observationContext.Operation(observation.Op{
-		Name: "CommitIndexer.GetCommits",
-		Metrics: metrics.NewOperationMetrics(
-			observationContext.Registerer,
-			"insights_commit_indexer_fetch",
-			metrics.WithCountHelp("Time for the commit indexer to fetch commits from gitserver."),
-		),
-	})
-
 	worker := observationContext.Operation(observation.Op{
 		Name: "CommitIndexer.Run",
 		Metrics: metrics.NewOperationMetrics(
 			observationContext.Registerer,
 			"insights_commit_indexer",
 			metrics.WithCountHelp("Total number of commit indexer executions"),
+		),
+	})
+
+	getCommits := observationContext.Operation(observation.Op{
+		Name: "CommitIndexer.GetCommits",
+		Metrics: metrics.NewOperationMetrics(
+			observationContext.Registerer,
+			"insights_commit_indexer_fetch",
+			metrics.WithCountHelp("Time for the commit indexer to fetch commits from gitserver."),
 		),
 	})
 
