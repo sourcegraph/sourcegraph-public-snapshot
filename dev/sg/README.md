@@ -196,9 +196,14 @@ sg rfc open 420
 ## Useful commands by feature
 ### Code Insights
 ```bash
-sg start --info=enterprise-worker enterprise-codeinsights # start the local environment with Code Insights running at a useful log level
-sg start monitoring # start the monitoring stack if needed
-sg run enterprise-web-standalone # connect to k8s-dogfood with just the web client 
+# start the local environment with Code Insights running at a useful log level
+sg start --info=enterprise-worker enterprise-codeinsights
+
+# start the monitoring stack if needed
+sg start monitoring 
+
+# connect to k8s-dogfood with just the web client 
+sg run enterprise-web-standalone 
 ```
 
 ## Configuration
