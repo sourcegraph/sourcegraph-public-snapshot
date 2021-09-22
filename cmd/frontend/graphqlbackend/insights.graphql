@@ -10,6 +10,103 @@ extend type Query {
     ): InsightConnection
 }
 
+extend type Mutation {
+    """
+    Create a new dashboard. Permissions will automatically be granted to the user creating the dashboard.
+    """
+    createDashboard(input: DashboardInput!): Dashboard!
+
+    """
+    Edit an existing dashboard.
+    """
+    editDashboard(id: ID!, input: DashboardInput!): Dashboard!
+
+    """
+    Delete a dashboard. Any views that would become dangling will be deleted.
+    """
+    deleteDashboard(input: ID!): EmptyResponse!
+
+    """
+    Associate an existing insight view with this dashboard.
+    """
+    attachView(id: ID!, viewID: ID!): Dashboard!
+
+    """
+    Remove an insight view from this dashboard. If the view would become dangling it will be deleted.
+    """
+    removeView(id: ID!, viewID: ID!): Dashboard!
+}
+
+extend type Query {
+    """
+    Return dashboards granted to the authenticated user.
+    """
+    dashboards: DashboardConnection!
+}
+
+type DashboardConnection {
+
+    """
+    A list of dashboards.
+    """
+    nodes: [Dashboard!]!
+    """
+    Total number of dashboards.
+    """
+    totalCount: Int!
+
+    """
+    Pagination information.
+    """
+    pageInfo: PageInfo!
+}
+
+input DashboardInput {
+    title: String!
+    grants: PermissionGrants
+}
+
+input PermissionGrants {
+    users: [ID!]
+    orgs: [ID!]
+    global: Boolean
+}
+
+type Dashboard {
+    id: ID!
+    metadata: DashboardMetadata!
+    views: InsightConnection
+}
+
+type DashboardMetadata {
+    title: String!
+}
+
+type InsightViewConnection {
+    """
+    A list of insights.
+    """
+    nodes: [InsightView!]!
+
+    """
+    The total number of insights in the connection.
+    """
+    totalCount: Int!
+
+    """
+    Pagination information.
+    """
+    pageInfo: PageInfo!
+}
+
+
+"""
+Stub for insight view
+"""
+type InsightView {
+    id: ID!
+}
+
 """
 A list of insights.
 """
