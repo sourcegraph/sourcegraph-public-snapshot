@@ -27,7 +27,7 @@ jobs:
             $PSDefaultParameterValues['*GitHub*:Token'] = ConvertTo-SecureString -String $env:GITHUB_TOKEN -AsPlainText -Force
             $PSDefaultParameterValues['*GitHubBetaProject*:ProjectNodeId'] = 'MDExOlByb2plY3ROZXh0MzI3Ng==' # https://github.com/orgs/sourcegraph/projects/200
 
-            $fixIssuePattern = "(?:close|fixe?|resolve)(?:[sd])? (?:#|(?<repo>[^/]+/[^/]+)|https://github\.com/(?<repo>[^/]+/[^/]+)/issues/)(?<number>\d+)"
+            $fixIssuePattern = "(?:close|fixe?|resolve)(?:[sd])? (?:#|(?<owner>[^/]+)/(?<repo>[^/]+)|https://github\.com/(?<owner>[^/]+)/(?<repo>[^/]+)/issues/)(?<number>\d+)"
 
             switch ($github.event_name) {
 
@@ -36,6 +36,10 @@ jobs:
                 # THIS DOES NOT SCALE AS THE PROJECT GETS LARGE, but it's the only way possible afaict.
                 # One way this is mitigated is that this request is streamed/paginated in order of most-recent-first,
                 # which means we can hope the issue is usually found in the first page(s).
+
+                if (-not ($github.event.issue.labels | Where-Object { $_.name -eq 'team/code-insights' })) {
+                  return
+                }
 
                 $status = if ($github.event.action -eq 'closed') { 'Done' } else { 'In Progress' }
 
@@ -56,18 +60,31 @@ jobs:
 
                 $status = if ($pr.draft) { 'In Progress' } else { 'In Review' }
 
-                # Get fixed issues from the PR description
-                $fixedIssues = [regex]::Matches($pr.body, $fixIssuePattern, [Text.RegularExpressions.RegexOptions]::IgnoreCase) | ForEach-Object { $_.Groups['number'].Value }
+                # Get fixed team/code-insights issues from the PR description
+                $fixedIssues = [regex]::Matches($pr.body, $fixIssuePattern, [Text.RegularExpressions.RegexOptions]::IgnoreCase) |
+                  ForEach-Object {
+                    $owner = if ($_.Groups.owner.Success) { $_.Groups.owner.Value } else { $pr.repository.owner.login }
+                    $repo = if ($_.Groups.repo.Success) { $_.Groups.repo.Value } else { $pr.repository.name }
+                    $number = $_.Groups.number.Value
+                    Get-GitHubIssue -Owner $owner -Repository $repo -Number $number
+                  } |
+                  Where-Object { $_.labels | Where-Object { $_.name -eq 'team/code-insights' } }
+
+                if (!$fixedIssues) {
+                  return
+                }
+
+                Write-Information "Fixed issues:"
+                $fixedIssues | ForEach-Object HtmlUrl | Write-Information
 
                 # Find project items for the issues the PR references
                 Get-GitHubBetaProjectItem |
                   Where-Object {
                     $item = $_
                     $fixedIssues | Where-Object {
-                      # Check issue number is the same
-                      $_.Groups['number'].Value -eq $item.content.number -and
-                      # Check repo is same
-                      ($_.Groups['repo'].Value -eq $item.content.repository.nameWithOwner -or (!$_.Groups['repo'].Success -and $repo -eq $item.content.repository.nameWithOwner))
+                      $_.Number -eq $item.content.number -and
+                      $_.Owner -eq $item.content.repository.owner.login -and
+                      $_.RepositoryName -eq $item.content.repository.name
                     }
                   } |
                   Select-Object -First $fixedIssues.Count |
