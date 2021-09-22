@@ -45,6 +45,10 @@ func CoreTestOperations(changedFiles ChangedFiles, buildOptions bk.BuildOptions)
 
 	// Build special pipelines for changes that only touch a subset of code.
 	switch {
+	case changedFiles.onlyConfig():
+		// If this PR only affects e.g. .github config files, no steps are necessary to run.
+		operations = []Operation{}
+
 	case changedFiles.onlyDocs():
 		// If this is a docs-only PR, run only the steps necessary to verify the docs.
 		operations = []Operation{
