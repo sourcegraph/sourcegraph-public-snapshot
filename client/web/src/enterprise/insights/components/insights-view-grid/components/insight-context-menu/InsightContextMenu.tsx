@@ -40,6 +40,7 @@ export const InsightContextMenu: React.FunctionComponent<InsightCardMenuProps> =
                     <MenuButton
                         data-testid="InsightContextMenuButton"
                         className={classnames(menuButtonClassName, 'btn btn-outline p-1', styles.button)}
+                        aria-label="Insight context menu"
                     >
                         <DotsVerticalIcon
                             className={classnames(styles.buttonIcon, { [styles.buttonIconActive]: isOpen })}
@@ -68,6 +69,7 @@ export const InsightContextMenu: React.FunctionComponent<InsightCardMenuProps> =
                                 >
                                     <CheckIcon size={16} className={classnames('mr-2', { 'd-none': !zeroYAxisMin })} />{' '}
                                     Start Y Axis at 0
+                                    <span className="sr-only">{zeroYAxisMin ? 'enabled' : 'disabled'}</span>
                                 </MenuLink>
                             )}
 
