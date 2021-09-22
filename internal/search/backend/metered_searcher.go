@@ -72,7 +72,7 @@ func (m *meteredSearcher) StreamSearch(ctx context.Context, q query.Q, opts *zoe
 		evBefore.AddField(key, value)
 		evAfter.AddField(key, value)
 	}
-	if searchCoreOOMDebug {
+	if searchCoreOOMDebug && cat == "SearchAll" {
 		evBefore = honey.Event("search-core-oom-debug")
 		evAfter = honey.Event("search-core-oom-debug")
 		debugAdd("category", cat)
@@ -253,7 +253,7 @@ func (m *meteredSearcher) List(ctx context.Context, q query.Q, opts *zoekt.ListO
 		evBefore.AddField(key, value)
 		evAfter.AddField(key, value)
 	}
-	if searchCoreOOMDebug {
+	if searchCoreOOMDebug && cat == "ListAll" {
 		evBefore = honey.Event("search-core-oom-debug")
 		evAfter = honey.Event("search-core-oom-debug")
 		debugAdd("category", cat)
