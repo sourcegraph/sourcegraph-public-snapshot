@@ -437,9 +437,9 @@ type BatchSpecResolver interface {
 
 	AutoApplyEnabled() bool
 	State() string
-	StartedAt() *DateTime
-	FinishedAt() *DateTime
-	FailureMessage() *string
+	StartedAt(ctx context.Context) (*DateTime, error)
+	FinishedAt(ctx context.Context) (*DateTime, error)
+	FailureMessage(ctx context.Context) (*string, error)
 	WorkspaceResolution(ctx context.Context) (BatchSpecWorkspaceResolutionResolver, error)
 	ImportingChangesets(ctx context.Context, args *ListImportingChangesetsArgs) (ChangesetSpecConnectionResolver, error)
 }

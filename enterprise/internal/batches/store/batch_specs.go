@@ -159,19 +159,52 @@ var deleteBatchSpecQueryFmtstr = `
 DELETE FROM batch_specs WHERE id = %s
 `
 
+// CountBatchSpecsOpts captures the query options needed for
+// counting batch specs.
+type CountBatchSpecsOpts struct {
+	BatchChangeID int64
+}
+
 // CountBatchSpecs returns the number of code mods in the database.
-func (s *Store) CountBatchSpecs(ctx context.Context) (count int, err error) {
+func (s *Store) CountBatchSpecs(ctx context.Context, opts CountBatchSpecsOpts) (count int, err error) {
 	ctx, endObservation := s.operations.countBatchSpecs.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
-	return s.queryCount(ctx, sqlf.Sprintf(countBatchSpecsQueryFmtstr))
+	q := countBatchSpecsQuery(opts)
+
+	return s.queryCount(ctx, q)
 }
 
 var countBatchSpecsQueryFmtstr = `
 -- source: enterprise/internal/batches/store/batch_specs.go:CountBatchSpecs
 SELECT COUNT(id)
 FROM batch_specs
+-- Joins go here:
+%s
+WHERE %s
 `
+
+func countBatchSpecsQuery(opts CountBatchSpecsOpts) *sqlf.Query {
+	preds := []*sqlf.Query{}
+	joins := []*sqlf.Query{}
+
+	if opts.BatchChangeID != 0 {
+		joins = append(joins, sqlf.Sprintf(`INNER JOIN batch_changes
+ON
+	batch_changes.name = batch_specs.spec->>'name'
+	AND
+	batch_changes.namespace_user_id IS NOT DISTINCT FROM batch_specs.namespace_user_id
+	AND
+	batch_changes.namespace_org_id IS NOT DISTINCT FROM batch_specs.namespace_org_id`))
+		preds = append(preds, sqlf.Sprintf("batch_changes.id = %s", opts.BatchChangeID))
+	}
+
+	return sqlf.Sprintf(
+		countBatchSpecsQueryFmtstr,
+		sqlf.Join(joins, "\n"),
+		sqlf.Join(preds, "\n AND "),
+	)
+}
 
 // GetBatchSpecOpts captures the query options needed for getting a BatchSpec
 type GetBatchSpecOpts struct {
@@ -304,7 +337,8 @@ func getNewestBatchSpecQuery(opts *GetNewestBatchSpecOpts) *sqlf.Query {
 // listing batch specs.
 type ListBatchSpecsOpts struct {
 	LimitOpts
-	Cursor int64
+	Cursor        int64
+	BatchChangeID int64
 }
 
 // ListBatchSpecs lists BatchSpecs with the given filters.
@@ -335,18 +369,33 @@ func (s *Store) ListBatchSpecs(ctx context.Context, opts ListBatchSpecsOpts) (cs
 var listBatchSpecsQueryFmtstr = `
 -- source: enterprise/internal/batches/store/batch_specs.go:ListBatchSpecs
 SELECT %s FROM batch_specs
+-- Joins go here:
+%s
 WHERE %s
 ORDER BY id ASC
 `
 
 func listBatchSpecsQuery(opts *ListBatchSpecsOpts) *sqlf.Query {
 	preds := []*sqlf.Query{
-		sqlf.Sprintf("id >= %s", opts.Cursor),
+		sqlf.Sprintf("batch_specs.id >= %s", opts.Cursor),
+	}
+	joins := []*sqlf.Query{}
+
+	if opts.BatchChangeID != 0 {
+		joins = append(joins, sqlf.Sprintf(`INNER JOIN batch_changes
+ON
+	batch_changes.name = batch_specs.spec->>'name'
+	AND
+	batch_changes.namespace_user_id IS NOT DISTINCT FROM batch_specs.namespace_user_id
+	AND
+	batch_changes.namespace_org_id IS NOT DISTINCT FROM batch_specs.namespace_org_id`))
+		preds = append(preds, sqlf.Sprintf("batch_changes.id = %s", opts.BatchChangeID))
 	}
 
 	return sqlf.Sprintf(
 		listBatchSpecsQueryFmtstr+opts.LimitOpts.ToDB(),
 		sqlf.Join(batchSpecColumns, ", "),
+		sqlf.Join(joins, "\n"),
 		sqlf.Join(preds, "\n AND "),
 	)
 }

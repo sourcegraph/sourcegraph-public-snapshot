@@ -291,6 +291,22 @@ func (r *batchChangeResolver) BatchSpecs(
 	ctx context.Context,
 	args *graphqlbackend.ListBatchSpecArgs,
 ) (graphqlbackend.BatchSpecConnectionResolver, error) {
-	// TODO(ssbc): not implemented
-	return nil, errors.New("not implemented yet")
+	if err := validateFirstParamDefaults(args.First); err != nil {
+		return nil, err
+	}
+	opts := store.ListBatchSpecsOpts{
+		BatchChangeID: r.batchChange.ID,
+		LimitOpts: store.LimitOpts{
+			Limit: int(args.First),
+		},
+	}
+	if args.After != nil {
+		id, err := strconv.Atoi(*args.After)
+		if err != nil {
+			return nil, err
+		}
+		opts.Cursor = int64(id)
+	}
+
+	return &batchSpecConnectionResolver{store: r.store, opts: opts}, nil
 }
