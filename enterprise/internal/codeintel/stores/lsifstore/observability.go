@@ -94,7 +94,7 @@ func newOperations(observationContext *observation.Context) *operations {
 		writeDocumentationPages:       op("WriteDocumentationPages"),
 		writeDocumentationPathInfo:    op("WriteDocumentationPathInfo"),
 		writeDocumentationMappings:    op("WriteDocumentationMappings"),
-		writeDocumentationSearch:      op("WritedocumentationSearch"),
+		writeDocumentationSearch:      op("WriteDocumentationSearch"),
 
 		locations:           subOp("locations"),
 		locationsWithinFile: subOp("locationsWithinFile"),
