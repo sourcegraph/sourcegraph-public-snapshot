@@ -1,5 +1,6 @@
 import { Menu, MenuButton, MenuItem, MenuItems, MenuLink, MenuPopover } from '@reach/menu-button'
 import classnames from 'classnames'
+import { noop } from 'lodash'
 import CheckIcon from 'mdi-react/CheckIcon'
 import DotsVerticalIcon from 'mdi-react/DotsVerticalIcon'
 import React, { useContext } from 'react'
@@ -40,7 +41,7 @@ export const InsightContextMenu: React.FunctionComponent<InsightCardMenuProps> =
                     <MenuButton
                         data-testid="InsightContextMenuButton"
                         className={classnames(menuButtonClassName, 'btn btn-outline p-1', styles.button)}
-                        aria-label="Insight context menu"
+                        aria-label="Insight options"
                     >
                         <DotsVerticalIcon
                             className={classnames(styles.buttonIcon, { [styles.buttonIconActive]: isOpen })}
@@ -62,15 +63,26 @@ export const InsightContextMenu: React.FunctionComponent<InsightCardMenuProps> =
                             </MenuLink>
 
                             {showYAxisToggleMenu && (
-                                <MenuLink
+                                <MenuItem
+                                    role="menuitemcheckbox"
                                     data-testid="InsightContextMenuEditLink"
-                                    className={classnames('btn btn-outline border-bottom', styles.item)}
-                                    onClick={onToggleZeroYAxisMin}
+                                    className={classnames(
+                                        'd-flex align-items-center justify-content-between',
+                                        styles.item
+                                    )}
+                                    onSelect={onToggleZeroYAxisMin}
+                                    aria-checked={zeroYAxisMin}
                                 >
-                                    <CheckIcon size={16} className={classnames('mr-2', { 'd-none': !zeroYAxisMin })} />{' '}
-                                    Start Y Axis at 0
-                                    <span className="sr-only">{zeroYAxisMin ? 'enabled' : 'disabled'}</span>
-                                </MenuLink>
+                                    <input
+                                        type="checkbox"
+                                        className="sr-only"
+                                        aria-hidden="true"
+                                        checked={zeroYAxisMin}
+                                        onChange={noop}
+                                    />
+                                    <CheckIcon size={16} className={classnames('mr-2', { invisible: !zeroYAxisMin })} />{' '}
+                                    <span>Start Y Axis at 0</span>
+                                </MenuItem>
                             )}
 
                             <MenuItem
