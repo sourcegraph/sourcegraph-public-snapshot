@@ -979,8 +979,13 @@ func (s *Server) search(w http.ResponseWriter, r *http.Request, args *protocol.S
 		defer close(resultChan)
 		done := ctx.Done()
 
+		mt, err := search.ToMatchTree(args.Query)
+		if err != nil {
+			return err
+		}
+
 		var conversionErr error
-		err := search.Search(ctx, dir.Path(), args.Revisions, search.ToMatchTree(args.Query), func(match *search.LazyCommit, highlights *search.CommitHighlights) bool {
+		err = search.Search(ctx, dir.Path(), args.Revisions, mt, func(match *search.LazyCommit, highlights *search.CommitHighlights) bool {
 			res, err := search.CreateCommitMatch(match, highlights, args.IncludeDiff)
 			if err != nil {
 				conversionErr = err

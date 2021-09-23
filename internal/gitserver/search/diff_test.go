@@ -1,7 +1,6 @@
 package search
 
 import (
-	"regexp"
 	"strings"
 	"testing"
 
@@ -39,8 +38,9 @@ index 2f71392b2f..d874527291 100644
 	fileDiffs, err := r.ReadAllFiles()
 	require.NoError(t, err)
 
-	query := &protocol.DiffMatches{protocol.Regexp{regexp.MustCompile("(?i)polly")}}
-	matchTree := ToMatchTree(query)
+	query := &protocol.DiffMatches{Expr: "(?i)polly"}
+	matchTree, err := ToMatchTree(query)
+	require.NoError(t, err)
 
 	matched, highlights, err := matchTree.Match(&LazyCommit{diff: fileDiffs})
 	require.NoError(t, err)
