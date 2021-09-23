@@ -75,7 +75,7 @@ input PermissionGrants {
 type Dashboard {
     id: ID!
     metadata: DashboardMetadata!
-    views: InsightConnection
+    views: InsightViewConnection
 }
 
 type DashboardMetadata {
