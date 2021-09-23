@@ -24,7 +24,6 @@ import (
 	"time"
 
 	"github.com/cockroachdb/errors"
-	"github.com/gorilla/mux"
 	"github.com/inconshreveable/log15"
 	"github.com/opentracing/opentracing-go/ext"
 	otlog "github.com/opentracing/opentracing-go/log"
@@ -336,28 +335,28 @@ func (s *Server) Handler() http.Handler {
 		setRPSLimiter()
 	})
 
-	router := mux.NewRouter()
-	router.Handle("/archive", trace.Route(http.HandlerFunc(s.handleArchive))).Name("archive")
-	router.Handle("/exec", trace.Route(http.HandlerFunc(s.handleExec))).Name("exec")
-	router.Handle("/p4-exec", trace.Route(http.HandlerFunc(s.handleP4Exec))).Name("p4-exec")
-	router.Handle("/list", trace.Route(http.HandlerFunc(s.handleList))).Name("list")
-	router.Handle("/list-gitolite", trace.Route(http.HandlerFunc(s.handleListGitolite))).Name("list-gitolite")
-	router.Handle("/is-repo-cloneable", trace.Route(http.HandlerFunc(s.handleIsRepoCloneable))).Name("is-repo-cloneable")
-	router.Handle("/is-repo-cloned", trace.Route(http.HandlerFunc(s.handleIsRepoCloned))).Name("is-repo-cloned")
-	router.Handle("/repos", trace.Route(http.HandlerFunc(s.handleRepoInfo))).Name("repos")
-	router.Handle("/repos-stats", trace.Route(http.HandlerFunc(s.handleReposStats))).Name("repos-stats")
-	router.Handle("/repo-clone-progress", trace.Route(http.HandlerFunc(s.handleRepoCloneProgress))).Name("repo-clone-progress")
-	router.Handle("/delete", trace.Route(http.HandlerFunc(s.handleRepoDelete))).Name("delete")
-	router.Handle("/repo-update", trace.Route(http.HandlerFunc(s.handleRepoUpdate))).Name("repo-update")
-	router.Handle("/getGitolitePhabricatorMetadata", trace.Route(http.HandlerFunc(s.handleGetGitolitePhabricatorMetadata))).Name("getGitolitePhabricatorMetadata")
-	router.Handle("/create-commit-from-patch", trace.Route(http.HandlerFunc(s.handleCreateCommitFromPatch))).Name("create-commit-from-patch")
-	router.Handle("/ping", trace.Route(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+	mux := http.NewServeMux()
+	mux.HandleFunc("/archive", s.handleArchive)
+	mux.HandleFunc("/exec", s.handleExec)
+	mux.HandleFunc("/p4-exec", s.handleP4Exec)
+	mux.HandleFunc("/list", s.handleList)
+	mux.HandleFunc("/list-gitolite", s.handleListGitolite)
+	mux.HandleFunc("/is-repo-cloneable", s.handleIsRepoCloneable)
+	mux.HandleFunc("/is-repo-cloned", s.handleIsRepoCloned)
+	mux.HandleFunc("/repos", s.handleRepoInfo)
+	mux.HandleFunc("/repos-stats", s.handleReposStats)
+	mux.HandleFunc("/repo-clone-progress", s.handleRepoCloneProgress)
+	mux.HandleFunc("/delete", s.handleRepoDelete)
+	mux.HandleFunc("/repo-update", s.handleRepoUpdate)
+	mux.HandleFunc("/getGitolitePhabricatorMetadata", s.handleGetGitolitePhabricatorMetadata)
+	mux.HandleFunc("/create-commit-from-patch", s.handleCreateCommitFromPatch)
+	mux.HandleFunc("/ping", func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusOK)
-	}))).Name("ping")
+	})
 
-	router.Handle("/git/", http.StripPrefix("/git", trace.Route(s.gitServiceHandler()))).Name("git-service")
+	mux.Handle("/git/", http.StripPrefix("/git", s.gitServiceHandler()))
 
-	return router
+	return mux
 }
 
 // Janitor does clean up tasks over s.ReposDir and is expected to run in a
