@@ -228,7 +228,7 @@ export function diffCodeInsightsSettings(oldSettings: Settings, newSettings: Set
         const insightMetadata = parseInsightSettingsKey(key)
         const configuration = newSettings[BACKEND_INSIGHTS_SETTINGS_KEY]?.[key]
         if (insightMetadata && configuration) {
-            oldInsights.set(insightMetadata.name, { ...insightMetadata, configuration })
+            newInsights.set(insightMetadata.name, { ...insightMetadata, configuration })
         }
     }
 
