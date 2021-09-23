@@ -1,6 +1,6 @@
 #include "textflag.h"
 
-TEXT ·bytesToLowerASCII(SB),NOSPLIT,$0
+TEXT ·BytesToLowerASCII(SB),NOSPLIT,$0
 	// use the smaller of the two lengths to avoid out-of-bounds writes
 	MOVQ	dst_len+8(FP), BX
 	MOVQ	src_len+32(FP), DX
