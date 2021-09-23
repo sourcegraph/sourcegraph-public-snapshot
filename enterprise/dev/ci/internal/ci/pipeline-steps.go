@@ -159,9 +159,10 @@ func addClientLighthouseTests(pipeline *bk.Pipeline) {
 		bk.Cmd("dev/ci/create-client-artifact.sh"))
 
 	testPaths := map[string]string{
-		"lighthouse:homepage":       "/",
-		"lighthouse:search_results": "/search?q=repo:sourcegraph/sourcegraph+file:package.json",
-		"lighthouse:file_blob":      "/github.com/sourcegraph/sourcegraph/-/blob/package.json",
+		"lighthouse:homepage":        "/",
+		"lighthouse:search_results":  "/search?q=repo:sourcegraph/sourcegraph+file:package.json",
+		"lighthouse:repository_page": "/github.com/sourcegraph/sourcegraph",
+		"lighthouse:file_blob":       "/github.com/sourcegraph/sourcegraph/-/blob/package.json",
 	}
 
 	for key, path := range testPaths {
