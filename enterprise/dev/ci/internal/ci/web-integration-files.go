@@ -43,7 +43,7 @@ func chunkItems(items []string, size int) [][]string {
 }
 
 func min(x int, y int) int {
-	if x > y {
+	if x < y {
 		return x
 	}
 
