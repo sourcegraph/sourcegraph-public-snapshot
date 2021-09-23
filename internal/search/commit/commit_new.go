@@ -160,13 +160,6 @@ func queryParameterToPredicate(parameter query.Parameter, caseSensitive, diff bo
 	return newPred
 }
 
-func wrapCaseSensitive(pattern string, caseSensitive bool) string {
-	if caseSensitive {
-		return pattern
-	}
-	return "(?i:" + pattern + ")"
-}
-
 func protocolMatchToCommitMatch(repo types.RepoName, diff bool, in protocol.CommitMatch) *result.CommitMatch {
 	var (
 		matchBody       string
