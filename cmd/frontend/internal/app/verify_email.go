@@ -50,7 +50,7 @@ func serveVerifyEmail(db dbutil.DB) func(w http.ResponseWriter, r *http.Request)
 			return
 		}
 		// Set the verified email as primary if user has no existing email
-		emails, err := database.GlobalUserEmails.ListByUser(ctx, database.UserEmailsListOptions{
+		emails, err := database.UserEmails(db).ListByUser(ctx, database.UserEmailsListOptions{
 			UserID: usr.ID,
 		})
 		if verified && len(emails) == 1 {
