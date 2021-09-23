@@ -8,6 +8,8 @@ import (
 	"github.com/opentracing/opentracing-go"
 	"github.com/prometheus/client_golang/prometheus"
 
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/enterprise"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/executorqueue/config"
@@ -15,7 +17,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/executorqueue/metrics"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/executorqueue/queues/batches"
 	codeintelqueue "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/executorqueue/queues/codeintel"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
@@ -63,9 +64,8 @@ func Init(ctx context.Context, db dbutil.DB, outOfBandMigrationRunner *oobmigrat
 	// Register queues. If this set changes, be sure to also update the list of valid
 	// queue names in ./metrics/queue_allocation.go.
 	queueOptions := map[string]handler.QueueOptions{
-		"codeintel":             codeintelqueue.QueueOptions(db, codeintelConfig, observationContext),
-		"batches":               batches.QueueOptions(db, batchesConfig, observationContext),
-		"batch-spec-workspaces": batches.WorkspaceExecutionQueueOptions(db, batchesConfig, observationContext),
+		"codeintel": codeintelqueue.QueueOptions(db, codeintelConfig, observationContext),
+		"batches":   batches.QueueOptions(db, batchesConfig, observationContext),
 	}
 
 	handler, err := codeintel.NewCodeIntelUploadHandler(ctx, db, true)

@@ -7,8 +7,8 @@ import { requestGraphQL } from '../../../backend/graphql'
 import {
     BatchChangesCodeHostsFields,
     BatchChangesCredentialFields,
-    BatchSpecExecutionsResult,
-    BatchSpecExecutionsVariables,
+    BatchSpecsResult,
+    BatchSpecsVariables,
     CreateBatchChangesCredentialResult,
     CreateBatchChangesCredentialVariables,
     DeleteBatchChangesCredentialResult,
@@ -160,14 +160,11 @@ export const queryGlobalBatchChangesCodeHosts = ({
         map(data => data.batchChangesCodeHosts)
     )
 
-export const queryBatchSpecExecutions = ({
-    first,
-    after,
-}: BatchSpecExecutionsVariables): Observable<BatchSpecExecutionsResult['batchSpecExecutions']> =>
-    requestGraphQL<BatchSpecExecutionsResult, BatchSpecExecutionsVariables>(
+export const queryBatchSpecs = ({ first, after }: BatchSpecsVariables): Observable<BatchSpecsResult['batchSpecs']> =>
+    requestGraphQL<BatchSpecsResult, BatchSpecsVariables>(
         gql`
-            query BatchSpecExecutions($first: Int, $after: String) {
-                batchSpecExecutions(first: $first, after: $after) {
+            query BatchSpecs($first: Int, $after: String) {
+                batchSpecs(first: $first, after: $after) {
                     __typename
                     totalCount
                     pageInfo {
@@ -175,26 +172,28 @@ export const queryBatchSpecExecutions = ({
                         hasNextPage
                     }
                     nodes {
-                        ...BatchSpecExecutionsFields
+                        ...BatchSpecListFields
                     }
                 }
             }
 
-            fragment BatchSpecExecutionsFields on BatchSpecExecution {
+            fragment BatchSpecListFields on BatchSpec {
                 __typename
                 id
                 state
                 finishedAt
                 createdAt
-                name
+                description {
+                    name
+                }
                 namespace {
                     namespaceName
                     url
                 }
-                initiator {
+                creator {
                     username
                 }
-                inputSpec
+                originalInput
             }
         `,
         {
@@ -203,5 +202,5 @@ export const queryBatchSpecExecutions = ({
         }
     ).pipe(
         map(dataOrThrowErrors),
-        map(data => data.batchSpecExecutions)
+        map(data => data.batchSpecs)
     )

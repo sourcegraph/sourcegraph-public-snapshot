@@ -4,6 +4,18 @@ Operations guides specific to managing [single-container Soucegraph with Docker]
 
 Trying to deploy single-container Soucegraph with Docker? Refer to our [installation guide](./index.md#installation).
 
+## Upgrade
+
+Before upgrading, refer to the [update notes for single-container Soucegraph with Docker](../../updates/pure_docker.md).
+
+To update, just use the newer `sourcegraph/server:N.N.N` Docker image (where `N.N.N` is the version number) in place of the older one, using the same Docker volumes. Your server's data will be migrated automatically if needed.
+
+You can always find the version number of the latest release at [docs.sourcegraph.com](https://docs.sourcegraph.com) in the `docker run` command's image tag.
+
+- As a precaution, before updating, we recommend backing up the contents of the Docker volumes used by Sourcegraph.
+- If you need a HA deployment, use the [Kubernetes cluster deployment option](https://github.com/sourcegraph/deploy-sourcegraph).
+- There is currently no automated way to downgrade to an older version after you have updated. [Contact support](https://about.sourcegraph.com/contact) for help.
+
 ## Configure exposed Sourcegraph port
 
 Change the `docker` `--publish` argument to make it listen on the specific interface and port on your host machine. For example, `docker run ... --publish 0.0.0.0:80:7080 ...` would make it accessible on port 80 of your machine. For more information, see "[Publish or expose port](https://docs.docker.com/engine/reference/commandline/run/#publish-or-expose-port--p---expose)" in the Docker documentation.
@@ -50,7 +62,7 @@ For example, to mount a `.gitconfig`, create a file `/mnt/sourcegraph/config/git
 Alternatively you can create a new Docker image which inherits from Sourcegraph and then mutates the environment:
 
 ```dockerfile
-FROM sourcegraph/server:3.31.2
+FROM sourcegraph/server:3.32.0
 
 COPY gitconfig /etc/gitconfig
 COPY ssh /root/.ssh
@@ -91,7 +103,7 @@ This is required to [collect debug data](../../pprof.md).
 The docker run command for single-container Sourcegraph needs an additional publish flag to expose the debug port:
 
 ```bash script
-docker run --publish 7080:7080 --publish 127.0.0.1:3370:3370 --publish 127.0.0.1:6060:6060 --rm --volume ~/.sourcegraph/config:/etc/sourcegraph --volume ~/.sourcegraph/data:/var/opt/sourcegraph sourcegraph/server:3.31.2
+docker run --publish 7080:7080 --publish 127.0.0.1:3370:3370 --publish 127.0.0.1:6060:6060 --rm --volume ~/.sourcegraph/config:/etc/sourcegraph --volume ~/.sourcegraph/data:/var/opt/sourcegraph sourcegraph/server:3.32.0
 ```
 
 If Sourcegraph is deployed to a remote server, then access via an SSH tunnel using a tool
@@ -109,5 +121,5 @@ Add the following to your docker run command:
 ```
 docker run [...]
 -e (YOUR CODE)
-sourcegraph/server:3.31.2
+sourcegraph/server:3.32.0
 ```

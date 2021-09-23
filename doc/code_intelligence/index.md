@@ -37,6 +37,8 @@ Code intelligence provides advanced code navigation features that let developers
 
 ## [How-tos](how-to/index.md)
 
+
+- [Configure data retention policies](how-to/configure_data_retention.md)
 - [Add a GitHub repository to your Sourcegraph instance](how-to/add_a_repository.md)
 - [Index a Go repository](how-to/index_a_go_repository.md)
 - [Index a TypeScript or JavaScript repository](how-to/index_a_typescript_and_javascript_repository.md)

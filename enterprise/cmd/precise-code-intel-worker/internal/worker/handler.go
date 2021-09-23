@@ -15,11 +15,13 @@ import (
 	"github.com/keegancsmith/sqlf"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	store "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/uploadstore"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/honey"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
@@ -87,8 +89,19 @@ func (h *handler) handle(ctx context.Context, upload store.Upload) (requeued boo
 		}
 	}()
 
-	if requeued, err := requeueIfCloning(ctx, h.workerStore, upload); err != nil || requeued {
+	repo, err := backend.Repos.Get(ctx, api.RepoID(upload.RepositoryID))
+	if err != nil {
+		return false, errors.Wrap(err, "Repos.Get")
+	}
+
+	if requeued, err := requeueIfCloning(ctx, h.workerStore, upload, repo); err != nil || requeued {
 		return requeued, err
+	}
+
+	// Determine if the upload is for the default Git branch.
+	isDefaultBranch, err := h.gitserverClient.DefaultBranchContains(ctx, upload.RepositoryID, upload.Commit)
+	if err != nil {
+		return false, errors.Wrap(err, "gitserver.DefaultBranchContains")
 	}
 
 	getChildren := func(ctx context.Context, dirnames []string) (map[string][]string, error) {
@@ -107,7 +120,7 @@ func (h *handler) handle(ctx context.Context, upload store.Upload) (requeued boo
 
 		// Note: this is writing to a different database than the block below, so we need to use a
 		// different transaction context (managed by the writeData function).
-		if err := writeData(ctx, h.lsifStore, upload.ID, groupedBundleData); err != nil {
+		if err := writeData(ctx, h.lsifStore, upload, repo, isDefaultBranch, groupedBundleData); err != nil {
 			if isUniqueConstraintViolation(err) {
 				// If this is a unique constraint violation, then we've previously processed this same
 				// upload record up to this point, but failed to perform the transaction below. We can
@@ -200,12 +213,7 @@ const CloneInProgressDelay = time.Minute
 // if the repo has finished cloning and the revision does not exist, then the upload will fail to process.
 // If the repo is currently cloning, then we'll requeue the upload to be tried again later. This will not
 // increase the reset count of the record (so this doesn't count against the upload as a legitimate attempt).
-func requeueIfCloning(ctx context.Context, workerStore dbworkerstore.Store, upload store.Upload) (requeued bool, _ error) {
-	repo, err := backend.Repos.Get(ctx, api.RepoID(upload.RepositoryID))
-	if err != nil {
-		return false, errors.Wrap(err, "Repos.Get")
-	}
-
+func requeueIfCloning(ctx context.Context, workerStore dbworkerstore.Store, upload store.Upload, repo *types.Repo) (requeued bool, _ error) {
 	if _, err := backend.Repos.ResolveRev(ctx, repo, upload.Commit); err != nil {
 		if !vcs.IsCloneInProgress(err) {
 			return false, errors.Wrap(err, "Repos.ResolveRev")
@@ -252,35 +260,35 @@ func withUploadData(ctx context.Context, uploadStore uploadstore.Store, id int, 
 }
 
 // writeData transactionally writes the given grouped bundle data into the given LSIF store.
-func writeData(ctx context.Context, lsifStore LSIFStore, id int, groupedBundleData *precise.GroupedBundleDataChans) (err error) {
+func writeData(ctx context.Context, lsifStore LSIFStore, upload dbstore.Upload, repo *types.Repo, isDefaultBranch bool, groupedBundleData *precise.GroupedBundleDataChans) (err error) {
 	tx, err := lsifStore.Transact(ctx)
 	if err != nil {
 		return err
 	}
 	defer func() { err = tx.Done(err) }()
 
-	if err := tx.WriteMeta(ctx, id, groupedBundleData.Meta); err != nil {
+	if err := tx.WriteMeta(ctx, upload.ID, groupedBundleData.Meta); err != nil {
 		return errors.Wrap(err, "store.WriteMeta")
 	}
-	if err := tx.WriteDocuments(ctx, id, groupedBundleData.Documents); err != nil {
+	if err := tx.WriteDocuments(ctx, upload.ID, groupedBundleData.Documents); err != nil {
 		return errors.Wrap(err, "store.WriteDocuments")
 	}
-	if err := tx.WriteResultChunks(ctx, id, groupedBundleData.ResultChunks); err != nil {
+	if err := tx.WriteResultChunks(ctx, upload.ID, groupedBundleData.ResultChunks); err != nil {
 		return errors.Wrap(err, "store.WriteResultChunks")
 	}
-	if err := tx.WriteDefinitions(ctx, id, groupedBundleData.Definitions); err != nil {
+	if err := tx.WriteDefinitions(ctx, upload.ID, groupedBundleData.Definitions); err != nil {
 		return errors.Wrap(err, "store.WriteDefinitions")
 	}
-	if err := tx.WriteReferences(ctx, id, groupedBundleData.References); err != nil {
+	if err := tx.WriteReferences(ctx, upload.ID, groupedBundleData.References); err != nil {
 		return errors.Wrap(err, "store.WriteReferences")
 	}
-	if err := tx.WriteDocumentationPages(ctx, id, groupedBundleData.DocumentationPages); err != nil {
+	if err := tx.WriteDocumentationPages(ctx, upload, repo, isDefaultBranch, groupedBundleData.DocumentationPages); err != nil {
 		return errors.Wrap(err, "store.WriteDocumentationPages")
 	}
-	if err := tx.WriteDocumentationPathInfo(ctx, id, groupedBundleData.DocumentationPathInfo); err != nil {
+	if err := tx.WriteDocumentationPathInfo(ctx, upload.ID, groupedBundleData.DocumentationPathInfo); err != nil {
 		return errors.Wrap(err, "store.WriteDocumentationPathInfo")
 	}
-	if err := tx.WriteDocumentationMappings(ctx, id, groupedBundleData.DocumentationMappings); err != nil {
+	if err := tx.WriteDocumentationMappings(ctx, upload.ID, groupedBundleData.DocumentationMappings); err != nil {
 		return errors.Wrap(err, "store.WriteDocumentationMappings")
 	}
 
