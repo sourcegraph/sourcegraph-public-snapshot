@@ -6,7 +6,6 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
-	"time"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/dev/ci/images"
 	bk "github.com/sourcegraph/sourcegraph/enterprise/dev/ci/internal/buildkite"
@@ -483,28 +482,28 @@ func publishFinalDockerImage(c Config, app string, insiders bool) Operation {
 }
 
 // ~6m (building executor base VM)
-func buildExecutor(timestamp time.Time, version string) Operation {
-	return func(pipeline *bk.Pipeline) {
-		cmds := []bk.StepOpt{
-			bk.Cmd(`echo "Building executor cloud image..."`),
-			bk.Env("VERSION", version),
-			bk.Env("BUILD_TIMESTAMP", strconv.Itoa(int(timestamp.UTC().Unix()))),
-			bk.Cmd("./enterprise/cmd/executor/build.sh"),
-		}
+// func buildExecutor(timestamp time.Time, version string) Operation {
+// 	return func(pipeline *bk.Pipeline) {
+// 		cmds := []bk.StepOpt{
+// 			bk.Cmd(`echo "Building executor cloud image..."`),
+// 			bk.Env("VERSION", version),
+// 			bk.Env("BUILD_TIMESTAMP", strconv.Itoa(int(timestamp.UTC().Unix()))),
+// 			bk.Cmd("./enterprise/cmd/executor/build.sh"),
+// 		}
 
-		pipeline.AddStep(":packer: :construction: executor image", cmds...)
-	}
-}
+// 		pipeline.AddStep(":packer: :construction: executor image", cmds...)
+// 	}
+// }
 
-func publishExecutor(timestamp time.Time, version string) Operation {
-	return func(pipeline *bk.Pipeline) {
-		cmds := []bk.StepOpt{
-			bk.Cmd(`echo "Releasing executor cloud image..."`),
-			bk.Env("VERSION", version),
-			bk.Env("BUILD_TIMESTAMP", strconv.Itoa(int(timestamp.UTC().Unix()))),
-			bk.Cmd("./enterprise/cmd/executor/release.sh"),
-		}
+// func publishExecutor(timestamp time.Time, version string) Operation {
+// 	return func(pipeline *bk.Pipeline) {
+// 		cmds := []bk.StepOpt{
+// 			bk.Cmd(`echo "Releasing executor cloud image..."`),
+// 			bk.Env("VERSION", version),
+// 			bk.Env("BUILD_TIMESTAMP", strconv.Itoa(int(timestamp.UTC().Unix()))),
+// 			bk.Cmd("./enterprise/cmd/executor/release.sh"),
+// 		}
 
-		pipeline.AddStep(":packer: :white_check_mark: executor image", cmds...)
-	}
-}
+// 		pipeline.AddStep(":packer: :white_check_mark: executor image", cmds...)
+// 	}
+// }
