@@ -154,7 +154,6 @@ class ServersideSettingsBackend implements SettingsBackend {
         const temporarySettingsQuery = this.apolloClient.watchQuery<GetTemporarySettingsResult>({
             query: this.GetTemporarySettingsQuery,
             pollInterval: this.PollInterval,
-            fetchPolicy: 'network-only',
         })
 
         return fromObservableQuery(temporarySettingsQuery).pipe(
