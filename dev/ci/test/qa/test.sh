@@ -57,6 +57,7 @@ echo "TEST: Running tests"
 # Run all tests, and error if one fails
 test_status=0
 pushd client/web
+yarn --cwd client/shared run download-puppeteer-browser
 yarn run test:regression || test_status=1
 popd
 exit $test_status
