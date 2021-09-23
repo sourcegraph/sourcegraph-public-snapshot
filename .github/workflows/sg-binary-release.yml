@@ -2,9 +2,11 @@ name: sg-binary-release
 
 on:
   push:
-    branches: [main]
-    paths:
-      - dev/sg
+    branches:
+      - main
+      - sg/hacking-hour-sep-17-create-release
+    # paths:
+    #   - dev/sg
 
 env:
   GOFLAGS: -trimpath
