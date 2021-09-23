@@ -6,7 +6,7 @@ RUN apk add --no-cache musl-dev=1.1.24-r10
 WORKDIR /repo
 
 # Cache deps by building a dummy project first
-COPY Cargo.toml Cargo.lock /repo
+COPY Cargo.toml Cargo.lock /repo/
 RUN mkdir src && echo "fn main() {}" > src/main.rs && \
   cargo rustc --release && \
   rm -rf src
