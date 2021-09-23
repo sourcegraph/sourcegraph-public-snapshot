@@ -82,7 +82,7 @@ func NewCommitIndexerWorker(ctx context.Context, base dbutil.DB, insights dbutil
 func (i *CommitIndexer) Handler(ctx context.Context) goroutine.BackgroundRoutine {
 	intervalMinutes := conf.Get().InsightsCommitIndexerInterval
 	if intervalMinutes <= 0 {
-		intervalMinutes = 1
+		intervalMinutes = 60
 	}
 	interval := time.Minute * time.Duration(intervalMinutes)
 
