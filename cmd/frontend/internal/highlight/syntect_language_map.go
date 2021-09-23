@@ -4,6 +4,7 @@ package highlight
 // to valid syntect file extensions.
 var SyntectLanguageMap = map[string]string{
 	"txt":                  "txt",
+	"apex":                 "apex",
 	"asa":                  "asa",
 	"asp":                  "asp",
 	"actionscript":         "as",
