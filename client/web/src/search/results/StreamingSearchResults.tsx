@@ -134,7 +134,7 @@ export const StreamingSearchResults: React.FunctionComponent<StreamingSearchResu
         [availableVersionContexts, caseSensitive, patternType, query, trace, versionContext]
     )
 
-    const results = useCachedSearchResults(streamSearch, options)
+    const results = useCachedSearchResults(streamSearch, options, telemetryService)
 
     // Log events when search completes or fails
     useEffect(() => {
