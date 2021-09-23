@@ -160,7 +160,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 			appendOps(addBackendIntegrationTests)
 		}
 		if c.RunType.Is(MainDryRun, MainBranch) {
-			appendOps(frontendPuppeteerAndStorybook(c.RunType.Is(MainBranch)))
+			appendOps(clientIntegrationTests, clientChromaticTests(c.RunType.Is(MainBranch)))
 		}
 
 		// Core tests
