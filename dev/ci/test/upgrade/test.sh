@@ -65,9 +65,11 @@ fi
 # Upgrade to current candidate image. Capture logs for the attempted upgrade.
 CONTAINER=sourcegraph-new
 docker_logs() {
+  pushd "$root_dir"
   LOGFILE=$(docker inspect ${CONTAINER} --format '{{.LogPath}}')
   cp "$LOGFILE" $CONTAINER.log
   chmod 744 $CONTAINER.log
+  popd
 }
 IMAGE=us.gcr.io/sourcegraph-dev/server:$CANDIDATE_VERSION CLEAN="false" ./dev/run-server-image.sh -d --name $CONTAINER
 trap docker_logs exit
