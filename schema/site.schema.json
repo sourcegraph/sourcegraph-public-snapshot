@@ -44,6 +44,12 @@
       "group": "Debug",
       "examples": [["20"]]
     },
+    "apidocs.search.index-size-limit-factor": {
+      "description": "Limit factor for API docs search index size. A multiple of 250 million symbols. 1.0 indicates 250 million symbols (approx 12.5k repos) can be indexed. 2.0 indicates double that, and so on. See https://docs.sourcegraph.com/code_intelligence/apidocs",
+      "type": "number",
+      "default": 1.0,
+      "additionalProperties": false
+    },
     "experimentalFeatures": {
       "description": "Experimental features to enable or disable. Features that are now enabled by default are marked as deprecated.",
       "type": "object",
@@ -71,6 +77,12 @@
               "default": false
             }
           }
+        },
+        "apidocs.search.indexing": {
+          "description": "Index API docs for search, see https://docs.sourcegraph.com/code_intelligence/apidocs",
+          "type": "string",
+          "enum": ["enabled", "disabled"],
+          "default": "enabled"
         },
         "structuralSearch": {
           "description": "Enables structural search.",

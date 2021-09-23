@@ -12,14 +12,13 @@ import { Markdown } from '@sourcegraph/shared/src/components/Markdown'
 import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
 import { FILTERS, FilterType, isNegatableFilter } from '@sourcegraph/shared/src/search/query/filters'
 import { scanSearchQuery } from '@sourcegraph/shared/src/search/query/scanner'
-import { VersionContextProps } from '@sourcegraph/shared/src/search/util'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { renderMarkdown } from '@sourcegraph/shared/src/util/markdown'
 import { useLocalStorage } from '@sourcegraph/shared/src/util/useLocalStorage'
 
-import { CaseSensitivityProps, PatternTypeProps, SearchContextProps } from '../..'
-import { QueryChangeSource, QueryState } from '../../helpers'
+import { QueryChangeSource } from '../../helpers'
 import { createQueryExampleFromString, updateQueryWithFilterAndExample, QueryExample } from '../../helpers/queryExample'
+import { NavbarQueryState } from '../../navbarSearchQueryState'
 
 import styles from './SearchReference.module.scss'
 import sidebarStyles from './SearchSidebarSection.module.scss'
@@ -475,115 +474,114 @@ const FilterInfoList = ({ filters, onClick, onExampleClick }: FilterInfoListProp
     </ul>
 )
 
-export interface SearchReferenceProps
-    extends Omit<PatternTypeProps, 'setPatternType'>,
-        Omit<CaseSensitivityProps, 'setCaseSensitivity'>,
-        VersionContextProps,
-        TelemetryProps,
-        Pick<SearchContextProps, 'selectedSearchContextSpec'> {
-    query: string
+export interface SearchReferenceProps extends TelemetryProps, Pick<NavbarQueryState, 'setQueryState'> {
     filter: string
-    onNavbarQueryChange: (queryState: QueryState) => void
-    isSourcegraphDotCom: boolean
 }
 
-const SearchReference = (props: SearchReferenceProps): ReactElement => {
-    const [selectedTab, setSelectedTab] = useLocalStorage(SEARCH_REFERENCE_TAB_KEY, 0)
+const SearchReference = React.memo(
+    (props: SearchReferenceProps): ReactElement => {
+        const [selectedTab, setSelectedTab] = useLocalStorage(SEARCH_REFERENCE_TAB_KEY, 0)
 
-    const { onNavbarQueryChange, query, telemetryService } = props
-    const filter = props.filter.trim()
-    const hasFilter = filter.length > 0
+        const { setQueryState, telemetryService } = props
+        const filter = props.filter.trim()
+        const hasFilter = filter.length > 0
 
-    const selectedFilters = useMemo(() => {
-        if (!hasFilter) {
-            return filterInfos
-        }
-        const searchTerms = parseSearchInput(filter)
-        return filterInfos.filter(info => matches(searchTerms, info))
-    }, [filter, hasFilter])
+        const selectedFilters = useMemo(() => {
+            if (!hasFilter) {
+                return filterInfos
+            }
+            const searchTerms = parseSearchInput(filter)
+            return filterInfos.filter(info => matches(searchTerms, info))
+        }, [filter, hasFilter])
 
-    const updateQuery = useCallback(
-        (searchReference: FilterInfo, negate: boolean) => {
-            const updatedQuery = updateQueryWithFilterAndExample(query, searchReference.field, searchReference, {
-                singular: Boolean(FILTERS[searchReference.field].singular),
-                negate: negate && isNegatableFilter(searchReference.field),
-                emptyValue: shouldShowSuggestions(searchReference),
-            })
-            onNavbarQueryChange({
-                changeSource: QueryChangeSource.searchReference,
-                query: updatedQuery.query,
-                selectionRange: updatedQuery.placeholderRange,
-                revealRange: updatedQuery.filterRange,
-                showSuggestions: shouldShowSuggestions(searchReference),
-            })
-        },
-        [onNavbarQueryChange, query]
-    )
-    const updateQueryWithOperator = useCallback(
-        (info: OperatorInfo) => {
-            onNavbarQueryChange({
-                query: query + ` ${info.operator} `,
-            })
-        },
-        [onNavbarQueryChange, query]
-    )
-    const updateQueryWithExample = useCallback(
-        (example: string) => {
-            telemetryService.log(hasFilter ? 'SearchReferenceSearchedAndClicked' : 'SearchReferenceFilterClicked')
-            onNavbarQueryChange({ query: query.trimEnd() + ' ' + example })
-        },
-        [onNavbarQueryChange, query, hasFilter, telemetryService]
-    )
+        const updateQuery = useCallback(
+            (searchReference: FilterInfo, negate: boolean) => {
+                setQueryState(({ query }) => {
+                    const updatedQuery = updateQueryWithFilterAndExample(
+                        query,
+                        searchReference.field,
+                        searchReference,
+                        {
+                            singular: Boolean(FILTERS[searchReference.field].singular),
+                            negate: negate && isNegatableFilter(searchReference.field),
+                            emptyValue: shouldShowSuggestions(searchReference),
+                        }
+                    )
+                    return {
+                        changeSource: QueryChangeSource.searchReference,
+                        query: updatedQuery.query,
+                        selectionRange: updatedQuery.placeholderRange,
+                        revealRange: updatedQuery.filterRange,
+                        showSuggestions: shouldShowSuggestions(searchReference),
+                    }
+                })
+            },
+            [setQueryState]
+        )
+        const updateQueryWithOperator = useCallback(
+            (info: OperatorInfo) => {
+                setQueryState(({ query }) => ({ query: query + ` ${info.operator} ` }))
+            },
+            [setQueryState]
+        )
+        const updateQueryWithExample = useCallback(
+            (example: string) => {
+                telemetryService.log(hasFilter ? 'SearchReferenceSearchedAndClicked' : 'SearchReferenceFilterClicked')
+                setQueryState(({ query }) => ({ query: query.trimEnd() + ' ' + example }))
+            },
+            [setQueryState, hasFilter, telemetryService]
+        )
 
-    const filterList = (
-        <FilterInfoList filters={selectedFilters} onClick={updateQuery} onExampleClick={updateQueryWithExample} />
-    )
+        const filterList = (
+            <FilterInfoList filters={selectedFilters} onClick={updateQuery} onExampleClick={updateQueryWithExample} />
+        )
 
-    return (
-        <div>
-            {hasFilter ? (
-                filterList
-            ) : (
-                <Tabs index={selectedTab} onChange={setSelectedTab}>
-                    <TabList className={styles.tablist}>
-                        <Tab>Common</Tab>
-                        <Tab>All filters</Tab>
-                        <Tab>Operators</Tab>
-                    </TabList>
-                    <TabPanels>
-                        <TabPanel>
-                            <FilterInfoList
-                                filters={commonFilters}
-                                onClick={updateQuery}
-                                onExampleClick={updateQueryWithExample}
-                            />
-                        </TabPanel>
-                        <TabPanel>{filterList}</TabPanel>
-                        <TabPanel>
-                            <ul className={styles.list}>
-                                {operatorInfo.map(operatorInfo => (
-                                    <SearchReferenceEntry
-                                        searchReference={operatorInfo}
-                                        key={operatorInfo.operator + operatorInfo.value}
-                                        onClick={updateQueryWithOperator}
-                                        onExampleClick={updateQueryWithExample}
-                                    />
-                                ))}
-                            </ul>
-                        </TabPanel>
-                    </TabPanels>
-                </Tabs>
-            )}
-            <p className={sidebarStyles.sidebarSectionFooter}>
-                <small>
-                    <Link target="blank" to="https://docs.sourcegraph.com/code_search/reference/queries">
-                        Search syntax <ExternalLinkIcon className="icon-inline" />
-                    </Link>
-                </small>
-            </p>
-        </div>
-    )
-}
+        return (
+            <div>
+                {hasFilter ? (
+                    filterList
+                ) : (
+                    <Tabs index={selectedTab} onChange={setSelectedTab}>
+                        <TabList className={styles.tablist}>
+                            <Tab>Common</Tab>
+                            <Tab>All filters</Tab>
+                            <Tab>Operators</Tab>
+                        </TabList>
+                        <TabPanels>
+                            <TabPanel>
+                                <FilterInfoList
+                                    filters={commonFilters}
+                                    onClick={updateQuery}
+                                    onExampleClick={updateQueryWithExample}
+                                />
+                            </TabPanel>
+                            <TabPanel>{filterList}</TabPanel>
+                            <TabPanel>
+                                <ul className={styles.list}>
+                                    {operatorInfo.map(operatorInfo => (
+                                        <SearchReferenceEntry
+                                            searchReference={operatorInfo}
+                                            key={operatorInfo.operator + operatorInfo.value}
+                                            onClick={updateQueryWithOperator}
+                                            onExampleClick={updateQueryWithExample}
+                                        />
+                                    ))}
+                                </ul>
+                            </TabPanel>
+                        </TabPanels>
+                    </Tabs>
+                )}
+                <p className={sidebarStyles.sidebarSectionFooter}>
+                    <small>
+                        <Link target="blank" to="https://docs.sourcegraph.com/code_search/reference/queries">
+                            Search syntax <ExternalLinkIcon className="icon-inline" />
+                        </Link>
+                    </small>
+                </p>
+            </div>
+        )
+    }
+)
 
 export function getSearchReferenceFactory(
     props: Omit<SearchReferenceProps, 'filter'>

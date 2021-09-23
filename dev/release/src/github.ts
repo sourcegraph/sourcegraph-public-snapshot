@@ -227,6 +227,11 @@ export async function ensureTrackingIssues({
         // close previous iterations of this issue
         const previous = await queryIssues(octokit, template.titleSuffix, template.labels)
         for (const previousIssue of previous) {
+            if (previousIssue.number === issue.number) {
+                // don't close self
+                continue
+            }
+
             if (dryRun) {
                 console.log(`dryRun enabled, skipping closure of #${previousIssue.number} '${previousIssue.title}'`)
                 continue

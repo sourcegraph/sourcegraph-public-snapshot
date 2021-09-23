@@ -10,11 +10,6 @@ import { Button, Container, LoadingSpinner, PageHeader } from '@sourcegraph/wild
 
 import { CodeIntelligenceConfigurationPolicyFields } from '../../../graphql-operations'
 
-import {
-    repoName as defaultRepoName,
-    searchGitBranches as defaultSearchGitBranches,
-    searchGitTags as defaultSearchGitTags,
-} from './backend'
 import { BranchTargetSettings } from './BranchTargetSettings'
 import { IndexingSettings } from './IndexSettings'
 import { RetentionSettings } from './RetentionSettings'
@@ -26,9 +21,6 @@ export interface CodeIntelConfigurationPolicyPageProps
         TelemetryProps {
     repo?: { id: string }
     indexingEnabled?: boolean
-    repoName?: typeof defaultRepoName
-    searchGitBranches?: typeof defaultSearchGitBranches
-    searchGitTags?: typeof defaultSearchGitTags
     history: H.History
 }
 
@@ -38,9 +30,6 @@ export const CodeIntelConfigurationPolicyPage: FunctionComponent<CodeIntelConfig
     },
     repo,
     indexingEnabled = window.context?.codeIntelAutoIndexingEnabled,
-    repoName = defaultRepoName,
-    searchGitBranches = defaultSearchGitBranches,
-    searchGitTags = defaultSearchGitTags,
     history,
     telemetryService,
 }) => {
@@ -102,9 +91,6 @@ export const CodeIntelConfigurationPolicyPage: FunctionComponent<CodeIntelConfig
                             repoId={repo?.id}
                             policy={policy}
                             setPolicy={setPolicy}
-                            repoName={repoName}
-                            searchGitBranches={searchGitBranches}
-                            searchGitTags={searchGitTags}
                             disabled={policy.protected}
                         />
                     </Container>

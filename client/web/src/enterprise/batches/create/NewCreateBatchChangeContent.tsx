@@ -15,7 +15,7 @@ import { isErrorLike } from '@sourcegraph/shared/src/util/errors'
 import { ErrorAlert } from '../../../components/alerts'
 import { Settings } from '../../../schema/settings.schema'
 
-import { createBatchSpecExecution } from './backend'
+import { createBatchSpec } from './backend'
 import { ExampleTabs } from './examples/ExampleTabs'
 import styles from './NewCreateBatchChangeContent.module.scss'
 
@@ -34,12 +34,12 @@ export const NewCreateBatchChangeContent: React.FunctionComponent<CreateBatchCha
     const submitBatchSpec = useCallback<React.MouseEventHandler>(async () => {
         setIsLoading(true)
         try {
-            const execution = await createBatchSpecExecution(spec.code, selectedNamespace)
+            const execution = await createBatchSpec(spec.code)
             history.push(`${execution.namespace.url}/batch-changes/executions/${execution.id}`)
         } catch (error) {
             setIsLoading(error)
         }
-    }, [spec.code, selectedNamespace, history])
+    }, [spec.code, history])
 
     return (
         <>

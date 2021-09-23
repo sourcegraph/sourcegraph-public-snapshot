@@ -16,9 +16,24 @@ import {
     UpdateCodeIntelligenceConfigurationPolicyResult,
 } from '../../../graphql-operations'
 
-import { codeIntelligenceConfigurationPolicyFieldsFragment as defaultCodeIntelligenceConfigurationPolicyFieldsFragment } from './backend'
-
 // Query
+const defaultCodeIntelligenceConfigurationPolicyFieldsFragment = gql`
+    fragment CodeIntelligenceConfigurationPolicyFields on CodeIntelligenceConfigurationPolicy {
+        __typename
+        id
+        name
+        type
+        pattern
+        protected
+        retentionEnabled
+        retentionDurationHours
+        retainIntermediateCommits
+        indexingEnabled
+        indexCommitMaxAgeHours
+        indexIntermediateCommits
+    }
+`
+
 interface UsePoliciesConfigResult {
     policies: CodeIntelligenceConfigurationPolicyFields[]
     loadingPolicies: boolean
