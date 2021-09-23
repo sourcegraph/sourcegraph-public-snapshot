@@ -72,6 +72,14 @@ func Test_matchesToRanges(t *testing.T) {
 				End:   protocol.Location{Offset: 7, Line: 1, Column: 3},
 			}},
 		},
+		5: {
+			input:   "›a", // three-byte unicode character
+			matches: [][]int{{3, 4}},
+			expectedRanges: protocol.Ranges{{
+				Start: protocol.Location{Offset: 1, Line: 0, Column: 1},
+				End:   protocol.Location{Offset: 2, Line: 0, Column: 2},
+			}},
+		},
 	}
 
 	for i, tc := range cases {

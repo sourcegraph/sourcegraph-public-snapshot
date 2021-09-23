@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"regexp"
+	"unicode/utf8"
 
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 )
@@ -285,46 +286,34 @@ func (r *Regexp) GobDecode(data []byte) (err error) {
 // INVARIANT: matches must be ordered and non-overlapping,
 // which is guaranteed by regexp.FindAllIndex()
 func matchesToRanges(content []byte, matches [][]int) protocol.Ranges {
-	// Incrementally search newlines to avoid counting newlines over the
-	// entire string for every match.
 	var (
-		lastNewlineOffset int
-		newlineCount      int
-		searchEnd         int
+		unscannedOffset          = 0
+		scannedNewlines          = 0
+		scannedRunes             = 0
+		lastScannedNewlineOffset = -1
 	)
-	lineAndColumn := func(offset int) (line, column int) {
-		newlines, index := newlineCountAndLastIndex(content[searchEnd:offset])
-		newlineCount += newlines
-		if index >= 0 {
-			lastNewlineOffset = searchEnd + index
-		}
-		searchEnd = offset
 
-		if newlineCount > 0 {
-			return newlineCount, offset - (lastNewlineOffset + 1)
+	lineColumnOffset := func(byteOffset int) (line, column, offset int) {
+		unscanned := content[unscannedOffset:byteOffset]
+		scannedRunes += utf8.RuneCount(unscanned)
+		lastUnscannedNewlineOffset := bytes.LastIndexByte(unscanned, '\n')
+		if lastUnscannedNewlineOffset != -1 {
+			lastScannedNewlineOffset = unscannedOffset + lastUnscannedNewlineOffset
+			scannedNewlines += bytes.Count(unscanned, []byte("\n"))
 		}
-		return 0, offset
+		column = utf8.RuneCount(content[lastScannedNewlineOffset+1 : byteOffset])
+		unscannedOffset = byteOffset
+		return scannedNewlines, column, scannedRunes
 	}
 
 	res := make(protocol.Ranges, 0, len(matches))
 	for _, match := range matches {
-		startLine, startColumn := lineAndColumn(match[0])
-		endLine, endColumn := lineAndColumn(match[1])
+		startLine, startColumn, startOffset := lineColumnOffset(match[0])
+		endLine, endColumn, endOffset := lineColumnOffset(match[1])
 		res = append(res, protocol.Range{
-			Start: protocol.Location{Offset: match[0], Line: startLine, Column: startColumn},
-			End:   protocol.Location{Offset: match[1], Line: endLine, Column: endColumn},
+			Start: protocol.Location{Line: startLine, Column: startColumn, Offset: startOffset},
+			End:   protocol.Location{Line: endLine, Column: endColumn, Offset: endOffset},
 		})
 	}
 	return res
-}
-
-// newlineCountAndLastIndex returns the number of newlines in the byte slice,
-// as well as the index of the last newline in the byte slice.
-func newlineCountAndLastIndex(content []byte) (count int, lastIndex int) {
-	lastIndex = bytes.LastIndexByte(content, '\n')
-	if lastIndex == -1 {
-		return 0, -1
-	}
-
-	return bytes.Count(content[:lastIndex], []byte("\n")) + 1, lastIndex
 }
