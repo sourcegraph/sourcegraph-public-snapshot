@@ -151,20 +151,18 @@ func addClientLighthouseTests(pipeline *bk.Pipeline) {
 		bk.Cmd("dev/ci/create-client-artifact.sh"))
 
 	testPaths := map[string]string{
-		"lighthouse:homepage":        "/",
-		"lighthouse:search_results":  "/search?q=repo:sourcegraph/sourcegraph+file:package.json",
-		"lighthouse:repository_page": "/github.com/sourcegraph/sourcegraph",
-		"lighthouse:file_blob":       "/github.com/sourcegraph/sourcegraph/-/blob/package.json",
+		"homepage":        "/",
+		"search_results":  "/search?q=repo:sourcegraph/sourcegraph+file:package.json",
+		"repository_page": "/github.com/sourcegraph/sourcegraph",
+		"file_blob":       "/github.com/sourcegraph/sourcegraph/-/blob/package.json",
 	}
 
 	for key, path := range testPaths {
-		stepLabel := fmt.Sprintf(":lighthouse: %s", key)
+		stepLabel := fmt.Sprintf(":lighthouse: lighthouse:%s", key)
 		pipeline.AddStep(stepLabel,
 			bk.Key(key),
-			bk.Env("NODE_ENV", "production"),
-			bk.Env("WEBPACK_SERVE_INDEX", "true"), // Required for local production server
 			bk.Env("SOURCEGRAPH_API_URL", "https://sourcegraph.com"),
-			bk.Cmd(fmt.Sprintf(`dev/ci/yarn-lighthouse.sh "%s"`, path)),
+			bk.Cmd(fmt.Sprintf(`dev/ci/yarn-lighthouse.sh %s %s`, key, path)),
 			bk.DependsOn(PREP_STEP_KEY))
 	}
 }

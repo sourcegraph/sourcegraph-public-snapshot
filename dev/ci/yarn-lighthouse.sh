@@ -3,7 +3,8 @@
 set -e
 
 BASE_URL=http://localhost:3443
-TEST_PATH=$1
+TEST_LABEL=$1
+TEST_PATH=$2
 
 echo "--- Download pre-built client artifact"
 buildkite-agent artifact download 'client.tar.gz' . --step 'lighthouse:prep'
@@ -17,4 +18,4 @@ echo "--- Collecting Lighthouse results"
 yarn lighthouse collect --url="$BASE_URL$TEST_PATH"
 
 echo "--- Uploading Lighthouse results"
-yarn lighthouse upload --target=temporary-public-storage
+yarn lighthouse upload --target=temporary-public-storage --githubStatusContextSuffix="/$TEST_LABEL"
