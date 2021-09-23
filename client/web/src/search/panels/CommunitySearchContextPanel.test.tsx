@@ -3,7 +3,7 @@ import React from 'react'
 
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
-import { RepogroupPanel } from './RepogroupPanel'
+import { CommunitySearchContextsPanel } from './CommunitySearchContextPanel'
 
 describe('RepogroupPanel', () => {
     test('renders correctly', () => {
@@ -12,6 +12,6 @@ describe('RepogroupPanel', () => {
             telemetryService: NOOP_TELEMETRY_SERVICE,
         }
 
-        expect(mount(<RepogroupPanel {...props} />)).toMatchSnapshot()
+        expect(mount(<CommunitySearchContextsPanel {...props} />)).toMatchSnapshot()
     })
 })

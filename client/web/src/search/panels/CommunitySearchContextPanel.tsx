@@ -14,10 +14,11 @@ interface Props extends TelemetryProps {
     authenticatedUser: AuthenticatedUser | null
 }
 
-export const RepogroupPanel: React.FunctionComponent<Props> = ({ className, telemetryService }) => {
-    const logRepogroupClicked = useCallback(() => telemetryService.log('RepogroupPanelRepogroupClicked'), [
-        telemetryService,
-    ])
+export const CommunitySearchContextsPanel: React.FunctionComponent<Props> = ({ className, telemetryService }) => {
+    const logContextClicked = useCallback(
+        () => telemetryService.log('CommunitySearchContextsPanelCommunitySearchContextClicked'),
+        [telemetryService]
+    )
 
     const populatedContent = (
         <div className="mt-2 row">
@@ -27,12 +28,12 @@ export const RepogroupPanel: React.FunctionComponent<Props> = ({ className, tele
                     key={communitySearchContext.spec}
                 >
                     <img
-                        className="repogroup-panel__repogroup-icon mr-4"
+                        className="community-search-context-panel__icon mr-4"
                         src={communitySearchContext.homepageIcon}
                         alt=""
                     />
                     <div className="d-flex flex-column">
-                        <Link to={communitySearchContext.url} onClick={logRepogroupClicked} className="mb-1">
+                        <Link to={communitySearchContext.url} onClick={logContextClicked} className="mb-1">
                             {communitySearchContext.title}
                         </Link>
                     </div>
@@ -43,7 +44,7 @@ export const RepogroupPanel: React.FunctionComponent<Props> = ({ className, tele
 
     return (
         <PanelContainer
-            className={classNames(className, 'repogroup-panel')}
+            className={classNames(className, 'community-search-context-panel')}
             title="Community search contexts"
             state="populated"
             populatedContent={populatedContent}

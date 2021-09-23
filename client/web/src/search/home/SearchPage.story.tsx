@@ -49,7 +49,6 @@ const defaultProps = (props: ThemeProps): SearchPageProps => ({
     selectedSearchContextSpec: '',
     setSelectedSearchContextSpec: () => {},
     defaultSearchContextSpec: '',
-    showRepogroupHomepage: false,
     showEnterpriseHomePanels: false,
     showOnboardingTour: false,
     showQueryBuilder: false,
@@ -88,9 +87,7 @@ add('Cloud without repogroups or panels', () => (
 ))
 
 add('Cloud with repogroups', () => (
-    <WebStory>
-        {webProps => <SearchPage {...defaultProps(webProps)} isSourcegraphDotCom={true} showRepogroupHomepage={true} />}
-    </WebStory>
+    <WebStory>{webProps => <SearchPage {...defaultProps(webProps)} isSourcegraphDotCom={true} />}</WebStory>
 ))
 
 add('Cloud with notebook onboarding', () => (
@@ -99,7 +96,6 @@ add('Cloud with notebook onboarding', () => (
             <SearchPage
                 {...defaultProps(webProps)}
                 isSourcegraphDotCom={true}
-                showRepogroupHomepage={true}
                 featureFlags={new Map([['search-notebook-onboarding', true]])}
             />
         )}

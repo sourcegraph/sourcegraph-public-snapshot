@@ -170,9 +170,6 @@ interface SourcegraphWebAppState extends SettingsCascadeProps {
      */
     previousVersionContext: string | null
 
-    // TODO: Remove this prop
-    showRepogroupHomepage: boolean
-
     showOnboardingTour: boolean
 
     showEnterpriseHomePanels: boolean
@@ -290,7 +287,6 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
             versionContext: resolvedVersionContext,
             availableVersionContexts,
             previousVersionContext,
-            showRepogroupHomepage: false,
             showOnboardingTour: false,
             showSearchContext: false,
             showSearchContextManagement: false,
@@ -506,7 +502,6 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
                                                     extensionsController={this.extensionsController}
                                                     telemetryService={eventLogger}
                                                     isSourcegraphDotCom={window.context.sourcegraphDotComMode}
-                                                    showRepogroupHomepage={this.state.showRepogroupHomepage}
                                                     showOnboardingTour={this.state.showOnboardingTour}
                                                     showSearchContext={this.state.showSearchContext}
                                                     hasUserAddedRepositories={this.hasUserAddedRepositories()}

@@ -181,10 +181,6 @@ export interface MutableVersionContextProps extends VersionContextProps {
     previousVersionContext: string | null
 }
 
-export interface RepogroupHomepageProps {
-    showRepogroupHomepage: boolean
-}
-
 export interface OnboardingTourProps {
     showOnboardingTour: boolean
 }
