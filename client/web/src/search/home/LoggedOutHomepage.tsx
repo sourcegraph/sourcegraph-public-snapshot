@@ -6,9 +6,9 @@ import { Link } from '@sourcegraph/shared/src/components/Link'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 
+import { communitySearchContextsList } from '../../communitySearchContexts/HomepageConfig'
 import { SyntaxHighlightedSearchQuery } from '../../components/SyntaxHighlightedSearchQuery'
 import { FeatureFlagProps } from '../../featureFlags/featureFlags'
-import { repogroupList } from '../../repogroups/HomepageConfig'
 
 import { CustomersSection } from './CustomersSection'
 import { DynamicWebFonts } from './DynamicWebFonts'
@@ -137,24 +137,24 @@ export const LoggedOutHomepage: React.FunctionComponent<LoggedOutHomepageProps> 
                         </div>
                     </div>
                     <div className={styles.loggedOutHomepageRepogroupListCards}>
-                        {repogroupList.map(repogroup => (
+                        {communitySearchContextsList.map(communitySearchContext => (
                             <div
                                 className={classNames(
                                     styles.loggedOutHomepageRepogroupListCard,
                                     'd-flex align-items-center'
                                 )}
-                                key={repogroup.name}
+                                key={communitySearchContext.spec}
                             >
                                 <img
                                     className={classNames(styles.loggedOutHomepageRepogroupListIcon, 'mr-2')}
-                                    src={repogroup.homepageIcon}
-                                    alt={`${repogroup.name} icon`}
+                                    src={communitySearchContext.homepageIcon}
+                                    alt={`${communitySearchContext.spec} icon`}
                                 />
                                 <Link
-                                    to={repogroup.url}
+                                    to={communitySearchContext.url}
                                     className={classNames(styles.loggedOutHomepageRepogroupListingTitle)}
                                 >
-                                    {repogroup.title}
+                                    {communitySearchContext.title}
                                 </Link>
                             </div>
                         ))}

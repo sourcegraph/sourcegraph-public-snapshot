@@ -2,12 +2,12 @@ import React from 'react'
 
 import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
 
-import { RepogroupPage, RepogroupPageProps } from './RepogroupPage'
-import { RepogroupMetadata } from './types'
+import { CommunitySearchContextPage, CommunitySearchContextPageProps } from './CommunitySearchContextPage'
+import { CommunitySearchContextMetadata } from './types'
 
-export const temporal: RepogroupMetadata = {
+export const temporal: CommunitySearchContextMetadata = {
     title: 'Temporal',
-    name: 'temporalio',
+    spec: 'temporalio',
     url: '/temporal',
     description: '',
     examples: [
@@ -26,6 +26,6 @@ export const temporal: RepogroupMetadata = {
     homepageIcon: 'https://avatars.githubusercontent.com/u/56493103?s=200&v=4',
 }
 
-export const TemporalRepogroupPage: React.FunctionComponent<Omit<RepogroupPageProps, 'repogroupMetadata'>> = props => (
-    <RepogroupPage {...props} repogroupMetadata={temporal} />
-)
+export const TemporalCommunitySearchContextPage: React.FunctionComponent<
+    Omit<CommunitySearchContextPageProps, 'communitySearchContextMetadata'>
+> = props => <CommunitySearchContextPage {...props} communitySearchContextMetadata={temporal} />

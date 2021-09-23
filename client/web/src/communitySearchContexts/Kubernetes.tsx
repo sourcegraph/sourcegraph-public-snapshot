@@ -2,12 +2,12 @@ import React from 'react'
 
 import { SearchPatternType } from '../graphql-operations'
 
-import { RepogroupPage, RepogroupPageProps } from './RepogroupPage'
-import { RepogroupMetadata } from './types'
+import { CommunitySearchContextPage, CommunitySearchContextPageProps } from './CommunitySearchContextPage'
+import { CommunitySearchContextMetadata } from './types'
 
-export const kubernetes: RepogroupMetadata = {
+export const kubernetes: CommunitySearchContextMetadata = {
     title: 'Kubernetes',
-    name: 'kubernetes',
+    spec: 'kubernetes',
     url: '/kubernetes',
     description: 'Explore Kubernetes repositories on GitHub. Search with examples below.',
     examples: [
@@ -44,6 +44,6 @@ export const kubernetes: RepogroupMetadata = {
     homepageIcon: 'https://code.benco.io/icon-collection/logos/kubernetes.svg',
 }
 
-export const KubernetesRepogroupPage: React.FunctionComponent<
-    Omit<RepogroupPageProps, 'repogroupMetadata'>
-> = props => <RepogroupPage {...props} repogroupMetadata={kubernetes} />
+export const KubernetesCommunitySearchContextPage: React.FunctionComponent<
+    Omit<CommunitySearchContextPageProps, 'communitySearchContextMetadata'>
+> = props => <CommunitySearchContextPage {...props} communitySearchContextMetadata={kubernetes} />

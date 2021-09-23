@@ -170,6 +170,7 @@ interface SourcegraphWebAppState extends SettingsCascadeProps {
      */
     previousVersionContext: string | null
 
+    // TODO: Remove this prop
     showRepogroupHomepage: boolean
 
     showOnboardingTour: boolean

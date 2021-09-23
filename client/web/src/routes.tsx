@@ -6,6 +6,7 @@ import { isErrorLike } from '@sourcegraph/shared/src/util/errors'
 
 import { BatchChangesProps } from './batches'
 import { CodeIntelligenceProps } from './codeintel'
+import { communitySearchContextsRoutes } from './communitySearchContexts/routes'
 import { BreadcrumbsProps, BreadcrumbSetters } from './components/Breadcrumbs'
 import type { LayoutProps } from './Layout'
 import type { ExtensionAlertProps } from './repo/RepoContainer'
@@ -26,14 +27,6 @@ const SignInPage = lazyComponent(() => import('./auth/SignInPage'), 'SignInPage'
 const SignUpPage = lazyComponent(() => import('./auth/SignUpPage'), 'SignUpPage')
 const PostSignUpPage = lazyComponent(() => import('./auth/PostSignUpPage'), 'PostSignUpPage')
 const SiteInitPage = lazyComponent(() => import('./site-admin/init/SiteInitPage'), 'SiteInitPage')
-
-const KubernetesRepogroupPage = lazyComponent(() => import('./repogroups/Kubernetes'), 'KubernetesRepogroupPage')
-const StackstormRepogroupPage = lazyComponent(() => import('./repogroups/StackStorm'), 'StackStormRepogroupPage')
-const TemporalRepogroupPage = lazyComponent(() => import('./repogroups/Temporal'), 'TemporalRepogroupPage')
-const O3deRepogroupPage = lazyComponent(() => import('./repogroups/o3de'), 'O3deRepogroupPage')
-const ChakraUIRepogroupPage = lazyComponent(() => import('./repogroups/chakraui'), 'ChakraUIRepogroupPage')
-const StanfordRepogroupPage = lazyComponent(() => import('./repogroups/Stanford'), 'StanfordRepogroupPage')
-const CncfRepogroupPage = lazyComponent(() => import('./repogroups/cncf'), 'CncfRepogroupPage')
 
 export interface LayoutRouteComponentProps<RouteParameters extends { [K in keyof RouteParameters]?: string }>
     extends RouteComponentProps<RouteParameters>,
@@ -252,41 +245,7 @@ export const routes: readonly LayoutRouteProps<any>[] = [
             !!props.settingsCascade.final?.experimentalFeatures?.showSearchContext &&
             !!props.settingsCascade.final?.experimentalFeatures?.showSearchContextManagement,
     },
-    {
-        path: '/kubernetes',
-        render: props => <KubernetesRepogroupPage {...props} />,
-        condition: ({ isSourcegraphDotCom }) => isSourcegraphDotCom,
-    },
-    {
-        path: '/stackstorm',
-        render: props => <StackstormRepogroupPage {...props} />,
-        condition: ({ isSourcegraphDotCom }) => isSourcegraphDotCom,
-    },
-    {
-        path: '/temporal',
-        render: props => <TemporalRepogroupPage {...props} />,
-        condition: ({ isSourcegraphDotCom }) => isSourcegraphDotCom,
-    },
-    {
-        path: '/o3de',
-        render: props => <O3deRepogroupPage {...props} />,
-        condition: ({ isSourcegraphDotCom }) => isSourcegraphDotCom,
-    },
-    {
-        path: '/chakraui',
-        render: props => <ChakraUIRepogroupPage {...props} />,
-        condition: ({ isSourcegraphDotCom }) => isSourcegraphDotCom,
-    },
-    {
-        path: '/stanford',
-        render: props => <StanfordRepogroupPage {...props} />,
-        condition: ({ isSourcegraphDotCom }) => isSourcegraphDotCom,
-    },
-    {
-        path: '/cncf',
-        render: props => <CncfRepogroupPage {...props} />,
-        condition: ({ isSourcegraphDotCom }) => isSourcegraphDotCom,
-    },
+    ...communitySearchContextsRoutes,
     {
         path: '/:repoRevAndRest+',
         render: lazyComponent(() => import('./repo/RepoContainer'), 'RepoContainer'),
