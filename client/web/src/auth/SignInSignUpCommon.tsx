@@ -76,3 +76,15 @@ export function getReturnTo(location: H.Location): string {
     newURL.searchParams.append('toast', 'integrations')
     return newURL.pathname + newURL.search + newURL.hash
 }
+
+export function maybeAddPostSignUpRedirect(url?: string): string {
+    const { enablePostSignupFlow } = window.context.experimentalFeatures
+    const { sourcegraphDotComMode } = window.context
+    const shouldAddRedirect = sourcegraphDotComMode && enablePostSignupFlow
+
+    if (url) {
+        return shouldAddRedirect ? `${url}&redirect=/welcome` : url
+    }
+
+    return shouldAddRedirect ? '/welcome' : ''
+}
