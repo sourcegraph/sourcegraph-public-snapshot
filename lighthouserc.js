@@ -7,7 +7,7 @@ const config = {
       settings: {
         preset: 'desktop',
         // These audits are not currently supported by the local production server.
-        // TODO: Check why errors in console is here
+        // TODO: Check why errors in console is here!
         skipAudits: ['meta-description', 'is-on-https', 'uses-http2', 'errors-in-console'],
         chromeFlags: '--no-sandbox',
       },
