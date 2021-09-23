@@ -7,8 +7,7 @@ import {
     ExtensionsWithPrioritizeExtensionIDsParamAndNoJSONFieldsResult,
     ExtensionsWithPrioritizeExtensionIDsParamAndNoJSONFieldsVariables,
 } from '../graphql-operations'
-import { fromObservableQueryPromise } from '../graphql/fromObservableQuery'
-import { getDocumentNode, gql } from '../graphql/graphql'
+import { fromObservableQueryPromise, getDocumentNode, gql } from '../graphql/graphql'
 import { PlatformContext } from '../platform/context'
 import { createAggregateError } from '../util/errors'
 
@@ -24,6 +23,7 @@ const ExtensionsQuery = gql`
         extensionRegistry {
             extensions(first: $first, extensionIDs: $extensionIDs) {
                 nodes {
+                    id
                     extensionID
                     manifest {
                         jsonFields(fields: $extensionManifestFields)
@@ -39,6 +39,7 @@ const ExtensionsWithPrioritizeExtensionIDsParameterAndNoJSONFieldsQuery = gql`
         extensionRegistry {
             extensions(first: $first, prioritizeExtensionIDs: $extensionIDs) {
                 nodes {
+                    id
                     extensionID
                     manifest {
                         raw
