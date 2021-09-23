@@ -5,7 +5,7 @@ import { first } from 'rxjs/operators'
 import { Omit } from 'utility-types'
 
 import { SymbolKind } from '../../graphql-operations'
-import { IRepository, IFile, ISymbol, ILanguage, IRepoGroup, ISearchContext } from '../../graphql/schema'
+import { IRepository, IFile, ISymbol, ILanguage, IRepoGroup, ISearchContext, IAPIDocsSearchSuggestion } from '../../graphql/schema'
 import { isDefined } from '../../util/types'
 import { SearchSuggestion } from '../suggestions'
 
@@ -15,6 +15,7 @@ import { Filter, Token } from './token'
 
 export const repositoryCompletionItemKind = Monaco.languages.CompletionItemKind.Color
 const filterCompletionItemKind = Monaco.languages.CompletionItemKind.Issue
+const apiDocumentationCompletionItemKind = Monaco.languages.CompletionItemKind.Color
 
 type PartialCompletionItem = Omit<Monaco.languages.CompletionItem, 'range'>
 
@@ -148,6 +149,14 @@ const languageToCompletion = ({ name }: ILanguage): PartialCompletionItem | unde
           }
         : undefined
 
+const apiDocumentationSearchSuggestionToCompletion = ({searchKey, nodeLabel}: IAPIDocsSearchSuggestion): PartialCompletionItem => ({
+    label: searchKey,
+    kind: apiDocumentationCompletionItemKind,
+    insertText: searchKey + ' ',
+    filterText: searchKey,
+    detail: nodeLabel,
+})
+
 const repoGroupToCompletion = ({ name }: IRepoGroup): PartialCompletionItem => ({
     label: name,
     kind: repositoryCompletionItemKind,
@@ -180,6 +189,8 @@ const suggestionToCompletionItem = (
             return repoGroupToCompletion(suggestion)
         case 'SearchContext':
             return searchContextToCompletion(suggestion)
+        case 'APIDocsSearchSuggestion':
+            return apiDocumentationSearchSuggestionToCompletion(suggestion)
     }
 }
 

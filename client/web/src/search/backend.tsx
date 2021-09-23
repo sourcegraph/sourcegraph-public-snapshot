@@ -333,6 +333,16 @@ export function fetchSuggestions(query: string): Observable<SearchSuggestion[]> 
                                 spec
                                 description
                             }
+                            ... on APIDocsSearchSuggestion {
+                                __typename
+                                lang
+                                repoName
+                                searchKey
+                                pathID
+                                nodeLabel
+                                nodeDetail
+                                tags
+                            }
                         }
                     }
                 }

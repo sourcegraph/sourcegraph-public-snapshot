@@ -2,6 +2,7 @@ package graphqlbackend
 
 import (
 	"context"
+	"fmt"
 	"math"
 	"regexp"
 	"sort"
@@ -45,6 +46,7 @@ type SearchSuggestionResolver interface {
 	ToSymbol() (*symbolResolver, bool)
 	ToLanguage() (*languageResolver, bool)
 	ToSearchContext() (*searchContextResolver, bool)
+	ToAPIDocsSearchSuggestion() (*apiDocsSearchSuggestionResolver, bool)
 }
 
 // baseSuggestionResolver implements all the To* methods, returning false for all of them.
@@ -59,6 +61,9 @@ func (baseSuggestionResolver) ToGitTree() (*GitTreeEntryResolver, bool)        {
 func (baseSuggestionResolver) ToSymbol() (*symbolResolver, bool)               { return &symbolResolver{}, false }
 func (baseSuggestionResolver) ToLanguage() (*languageResolver, bool)           { return nil, false }
 func (baseSuggestionResolver) ToSearchContext() (*searchContextResolver, bool) { return nil, false }
+func (baseSuggestionResolver) ToAPIDocsSearchSuggestion() (*apiDocsSearchSuggestionResolver, bool) {
+	return nil, false
+}
 
 // repositorySuggestionResolver implements searchSuggestionResolver for RepositoryResolver
 type repositorySuggestionResolver struct {
@@ -185,6 +190,7 @@ type suggestionKey struct {
 	lang              string
 	url               string
 	searchContextSpec string
+	apiDocsPathID     string
 }
 
 type searchSuggestionsArgs struct {
@@ -524,30 +530,6 @@ func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestion
 		return nil, nil
 	}
 
-	// Only suggest for type:file.
-	typeValues, _ := r.Query.StringValues(query.FieldType)
-	for _, resultType := range typeValues {
-		if resultType != "file" {
-			return nil, nil
-		}
-	}
-
-	if query.ContainsPredicate(r.Query) {
-		// Query contains a predicate that that may first need to be
-		// evaluated to provide suggestions (e.g., for repos), or we
-		// can't guarantee it will behave well. Evaluating predicates can
-		// be expensive, so punt suggestions for queries with them.
-		return nil, nil
-	}
-
-	if b, err := query.ToBasicQuery(r.Query); err != nil || !query.IsPatternAtom(b) {
-		// Query is a search expression that contains 'or' operators,
-		// either on filters or patterns. Since it is not a basic query
-		// with an atomic pattern, we can't guarantee suggestions behave
-		// well--do not return suggestions.
-		return nil, nil
-	}
-
 	suggesters := []suggester{
 		r.showRepoSuggestions,
 		r.showFileSuggestions,
@@ -556,6 +538,34 @@ func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestion
 		r.showFilesWithTextMatches(*args.First),
 		r.showSearchContextSuggestions,
 	}
+
+	// Only suggest for type:file.
+	typeValues, _ := r.Query.StringValues(query.FieldType)
+	for _, resultType := range typeValues {
+		if resultType != "file" {
+			suggesters = nil
+		}
+	}
+
+	if query.ContainsPredicate(r.Query) {
+		// Query contains a predicate that that may first need to be
+		// evaluated to provide suggestions (e.g., for repos), or we
+		// can't guarantee it will behave well. Evaluating predicates can
+		// be expensive, so punt suggestions for queries with them.
+		// (excluding API docs suggestions, which can handle them due to fuzzy matching.)
+		suggesters = nil
+	}
+
+	if b, err := query.ToBasicQuery(r.Query); err != nil || !query.IsPatternAtom(b) {
+		// Query is a search expression that contains 'or' operators,
+		// either on filters or patterns. Since it is not a basic query
+		// with an atomic pattern, we can't guarantee suggestions behave
+		// well--do not return suggestions.
+		// (excluding API docs suggestions, which can handle them due to fuzzy matching.)
+		suggesters = nil
+	}
+
+	suggesters = append(suggesters, r.showAPIDocsSuggestions)
 
 	// Run suggesters.
 	var (
@@ -600,6 +610,7 @@ func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestion
 	seen := make(map[suggestionKey]struct{}, len(allSuggestions))
 	uniqueSuggestions := allSuggestions[:0]
 	for _, s := range allSuggestions {
+		fmt.Println(s, s.Key())
 		k := s.Key()
 		if _, dup := seen[k]; !dup {
 			uniqueSuggestions = append(uniqueSuggestions, s)
