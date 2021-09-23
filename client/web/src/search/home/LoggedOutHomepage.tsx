@@ -129,30 +129,33 @@ export const LoggedOutHomepage: React.FunctionComponent<LoggedOutHomepageProps> 
                     <HeroSection {...props} />
                 </div>
 
-                <div className={styles.repogroupSection}>
+                <div className={styles.communitySearchContextsSection}>
                     <div className="d-block d-md-flex align-items-baseline mb-3">
                         <div className={classNames(styles.title, 'mr-2')}>Search open source communities</div>
                         <div className="font-weight-normal text-muted">
                             Customized search portals for our open source partners
                         </div>
                     </div>
-                    <div className={styles.loggedOutHomepageRepogroupListCards}>
+                    <div className={styles.loggedOutHomepageCommunitySearchContextListCards}>
                         {communitySearchContextsList.map(communitySearchContext => (
                             <div
                                 className={classNames(
-                                    styles.loggedOutHomepageRepogroupListCard,
+                                    styles.loggedOutHomepageCommunitySearchContextListCard,
                                     'd-flex align-items-center'
                                 )}
                                 key={communitySearchContext.spec}
                             >
                                 <img
-                                    className={classNames(styles.loggedOutHomepageRepogroupListIcon, 'mr-2')}
+                                    className={classNames(
+                                        styles.loggedOutHomepageCommunitySearchContextListIcon,
+                                        'mr-2'
+                                    )}
                                     src={communitySearchContext.homepageIcon}
                                     alt={`${communitySearchContext.spec} icon`}
                                 />
                                 <Link
                                     to={communitySearchContext.url}
-                                    className={classNames(styles.loggedOutHomepageRepogroupListingTitle)}
+                                    className={classNames(styles.loggedOutHomepageCommunitySearchContextsListingTitle)}
                                 >
                                     {communitySearchContext.title}
                                 </Link>

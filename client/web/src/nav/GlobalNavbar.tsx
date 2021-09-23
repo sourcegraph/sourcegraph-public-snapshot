@@ -93,7 +93,7 @@ interface Props
      * 'low-profile' renders the the navbar with no border or background. Used on the search
      * homepage.
      *
-     * 'low-profile-with-logo' renders the low-profile navbar but with the homepage logo. Used on repogroup pages.
+     * 'low-profile-with-logo' renders the low-profile navbar but with the homepage logo. Used on community search context pages.
      */
     variant: 'default' | 'low-profile' | 'low-profile-with-logo'
 

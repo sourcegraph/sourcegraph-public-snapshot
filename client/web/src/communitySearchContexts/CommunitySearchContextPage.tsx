@@ -100,20 +100,20 @@ export const CommunitySearchContextPage: React.FunctionComponent<CommunitySearch
     const onSubmitExample = (query: string, patternType: SearchPatternType) => (
         event?: React.MouseEvent<HTMLButtonElement>
     ): void => {
-        eventLogger.log('RepositoryGroupSuggestionClicked')
+        eventLogger.log('CommunitySearchContextSuggestionClicked')
         event?.preventDefault()
         submitSearch({ ...props, query, patternType, source: 'communitySearchContextPage' })
     }
 
     return (
-        <div className="repogroup-page">
+        <div className="community-search-contexts-page">
             <PageTitle title={props.communitySearchContextMetadata.title} />
             <CommunitySearchContextPageLogo
-                className="repogroup-page__logo"
+                className="community-search-contexts-page__logo"
                 icon={props.communitySearchContextMetadata.homepageIcon}
                 text={props.communitySearchContextMetadata.title}
             />
-            <div className="repogroup-page__subheading">
+            <div className="community-search-contexts-page__subheading">
                 {props.communitySearchContextMetadata.lowProfile ? (
                     <>{props.communitySearchContextMetadata.description}</>
                 ) : (
@@ -123,7 +123,7 @@ export const CommunitySearchContextPage: React.FunctionComponent<CommunitySearch
                     </span>
                 )}
             </div>
-            <div className="repogroup-page__container">
+            <div className="community-search-contexts-page__container">
                 {props.communitySearchContextMetadata.lowProfile ? (
                     <SearchPageInput
                         {...props}
@@ -142,8 +142,8 @@ export const CommunitySearchContextPage: React.FunctionComponent<CommunitySearch
             </div>
             {!props.communitySearchContextMetadata.lowProfile && (
                 <div className="row">
-                    <div className="repogroup-page__column col-xs-12 col-lg-7">
-                        <p className="repogroup-page__content-description h5 font-weight-normal mb-4">
+                    <div className="community-search-contexts-page__column col-xs-12 col-lg-7">
+                        <p className="community-search-contexts-page__content-description h5 font-weight-normal mb-4">
                             {props.communitySearchContextMetadata.description}
                         </p>
 
@@ -153,12 +153,12 @@ export const CommunitySearchContextPage: React.FunctionComponent<CommunitySearch
                                 <h3 className="mb-3">{example.title}</h3>
                                 <p>{example.description}</p>
                                 <div className="d-flex mb-4">
-                                    <small className="repogroup-page__example-bar form-control text-monospace ">
+                                    <small className="community-search-contexts-page__example-bar form-control text-monospace ">
                                         <SyntaxHighlightedSearchQuery query={`${contextQuery} ${example.query}`} />
                                     </small>
                                     <div className="d-flex">
                                         <button
-                                            className="btn btn-secondary btn-sm repogroup-page__search-button"
+                                            className="btn btn-secondary btn-sm community-search-contexts-page__search-button"
                                             type="button"
                                             aria-label="Search"
                                             onClick={onSubmitExample(
@@ -173,9 +173,9 @@ export const CommunitySearchContextPage: React.FunctionComponent<CommunitySearch
                             </div>
                         ))}
                     </div>
-                    <div className="repogroup-page__column col-xs-12 col-lg-5">
+                    <div className="community-search-contexts-page__column col-xs-12 col-lg-5">
                         <div className="order-2-lg order-1-xs">
-                            <div className="repogroup-page__repo-card card">
+                            <div className="community-search-contexts-page__repo-card card">
                                 <h2>
                                     <SourceRepositoryMultipleIcon className="icon-inline mr-2" />
                                     Repositories
@@ -191,7 +191,7 @@ export const CommunitySearchContextPage: React.FunctionComponent<CommunitySearch
                                 {searchContextOrError &&
                                     !isErrorLike(searchContextOrError) &&
                                     searchContextOrError !== LOADING && (
-                                        <div className="repogroup-page__repo-list row">
+                                        <div className="community-search-contexts-page__repo-list row">
                                             <div className="col-lg-6">
                                                 {searchContextOrError.repositories
                                                     .slice(0, Math.ceil(searchContextOrError.repositories.length / 2))
@@ -227,11 +227,11 @@ const RepoLinkClicked = (repoName: string) => (): void =>
     eventLogger.log('CommunitySearchContextPageRepoLinkClicked', { repo_name: repoName }, { repo_name: repoName })
 
 const RepoLink: React.FunctionComponent<{ repo: string }> = ({ repo }) => (
-    <li className="repogroup-page__repo-item list-unstyled mb-3" key={repo}>
+    <li className="community-search-contexts-page__repo-item list-unstyled mb-3" key={repo}>
         {repo.startsWith('github.com') && (
             <>
                 <a href={`https://${repo}`} target="_blank" rel="noopener noreferrer" onClick={RepoLinkClicked(repo)}>
-                    <GithubIcon className="icon-inline repogroup-page__repo-list-icon" />
+                    <GithubIcon className="icon-inline community-search-contexts-page__repo-list-icon" />
                 </a>
                 <Link to={`/${repo}`} className="text-monospace search-filter-keyword">
                     {displayRepoName(repo)}
@@ -241,7 +241,7 @@ const RepoLink: React.FunctionComponent<{ repo: string }> = ({ repo }) => (
         {repo.startsWith('gitlab.com') && (
             <>
                 <a href={`https://${repo}`} target="_blank" rel="noopener noreferrer" onClick={RepoLinkClicked(repo)}>
-                    <GitlabIcon className="icon-inline repogroup-page__repo-list-icon" />
+                    <GitlabIcon className="icon-inline community-search-contexts-page__repo-list-icon" />
                 </a>
                 <Link to={`/${repo}`} className="text-monospace search-filter-keyword">
                     {displayRepoName(repo)}
@@ -251,7 +251,7 @@ const RepoLink: React.FunctionComponent<{ repo: string }> = ({ repo }) => (
         {repo.startsWith('bitbucket.com') && (
             <>
                 <a href={`https://${repo}`} target="_blank" rel="noopener noreferrer" onClick={RepoLinkClicked(repo)}>
-                    <BitbucketIcon className="icon-inline repogroup-page__repo-list-icon" />
+                    <BitbucketIcon className="icon-inline community-search-contexts-page__repo-list-icon" />
                 </a>
                 <Link to={`/${repo}`} className="text-monospace search-filter-keyword">
                     {displayRepoName(repo)}
@@ -270,7 +270,7 @@ interface CommunitySearchContextPageLogoProps extends Exclude<React.ImgHTMLAttri
  * The community search context logo image.
  */
 const CommunitySearchContextPageLogo: React.FunctionComponent<CommunitySearchContextPageLogoProps> = props => (
-    <div className="repogroup-page__logo-container d-flex align-items-center">
+    <div className="community-search-contexts-page__logo-container d-flex align-items-center">
         <img {...props} src={props.icon} alt="" />
         <span className="h3 font-weight-normal mb-0 ml-1">{props.text}</span>
     </div>

@@ -82,11 +82,7 @@ add('Cloud with panels', () => (
     </WebStory>
 ))
 
-add('Cloud without repogroups or panels', () => (
-    <WebStory>{webProps => <SearchPage {...defaultProps(webProps)} isSourcegraphDotCom={true} />}</WebStory>
-))
-
-add('Cloud with repogroups', () => (
+add('Cloud with community search contexts', () => (
     <WebStory>{webProps => <SearchPage {...defaultProps(webProps)} isSourcegraphDotCom={true} />}</WebStory>
 ))
 
