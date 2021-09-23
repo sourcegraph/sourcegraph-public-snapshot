@@ -89,6 +89,7 @@ export const SiteInitPage: React.FunctionComponent<Props> = ({
                                 className="w-100"
                                 buttonLabel="Create admin account & continue"
                                 onSignUp={initSite}
+                                signupTermsCheckbox={true}
                                 context={context}
                             />
                         </>

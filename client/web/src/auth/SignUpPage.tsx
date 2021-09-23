@@ -101,7 +101,7 @@ export const SignUpPage: React.FunctionComponent<SignUpPageProps> = ({
                 body={
                     <div className={classNames('pb-5', signInSignUpCommonStyles.signupPageContainer)}>
                         {context.sourcegraphDotComMode && <p className="pt-1 pb-2">Start searching public code now</p>}
-                        <SignUpForm context={context} onSignUp={handleSignUp} />
+                        <SignUpForm context={context} onSignUp={handleSignUp} signupTermsCheckbox={true} />
                         <p className="mt-3">
                             Already have an account? <Link to={`/sign-in${location.search}`}>Sign in</Link>
                         </p>

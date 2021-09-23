@@ -25,6 +25,7 @@ import { enterpriseTrial, signupTerms } from '../util/features'
 import { OrDivider } from './OrDivider'
 import { EmailInput, PasswordInput, UsernameInput } from './SignInSignUpCommon'
 import signInSignUpCommonStyles from './SignInSignUpCommon.module.scss'
+import { Checkbox } from '@sourcegraph/wildcard'
 
 export interface SignUpArguments {
     email: string
@@ -46,6 +47,9 @@ interface SignUpFormProps {
 
     // For use in ExperimentalSignUpPage. Modifies styling and removes terms of service and trial section.
     experimental?: boolean
+
+    // Determines if we show a checkbox requiring acceptance of Terms of Service and Privacy Policy
+    signupTermsCheckbox?: boolean
 }
 
 const preventDefault = (event: React.FormEvent): void => event.preventDefault()
@@ -59,9 +63,11 @@ export const SignUpForm: React.FunctionComponent<SignUpFormProps> = ({
     className,
     context,
     experimental = false,
+    signupTermsCheckbox = false,
 }) => {
     const [loading, setLoading] = useState(false)
     const [requestedTrial, setRequestedTrial] = useState(false)
+    const [termsAccepted, setTermsAccepted] = useState(!signupTermsCheckbox)
     const [error, setError] = useState<Error | null>(null)
 
     const signUpFieldValidators: Record<'email' | 'username' | 'password', ValidationOptions> = useMemo(
@@ -91,7 +97,11 @@ export const SignUpForm: React.FunctionComponent<SignUpFormProps> = ({
         signUpFieldValidators.password
     )
 
-    const canRegister = emailState.kind === 'VALID' && usernameState.kind === 'VALID' && passwordState.kind === 'VALID'
+    const canRegister =
+        emailState.kind === 'VALID' &&
+        usernameState.kind === 'VALID' &&
+        passwordState.kind === 'VALID' &&
+        termsAccepted === true
 
     const disabled = loading || !canRegister
 
@@ -242,20 +252,42 @@ export const SignUpForm: React.FunctionComponent<SignUpFormProps> = ({
                 </div>
                 {!experimental && enterpriseTrial && (
                     <div className="form-group">
-                        <div className="form-check">
-                            <label className="form-check-label">
-                                <input
-                                    className="form-check-input"
-                                    type="checkbox"
-                                    onChange={onRequestTrialFieldChange}
-                                />
-                                Try Sourcegraph Enterprise free for 30 days{' '}
-                                {/* eslint-disable-next-line react/jsx-no-target-blank */}
-                                <a target="_blank" rel="noopener" href="https://about.sourcegraph.com/pricing">
-                                    <HelpCircleOutlineIcon className="icon-inline" />
-                                </a>
-                            </label>
-                        </div>
+                        <Checkbox
+                            id="trial-checkbox"
+                            label={
+                                <>
+                                    Try Sourcegraph Enterprise free for 30 days{' '}
+                                    {/* eslint-disable-next-line react/jsx-no-target-blank */}
+                                    <a target="_blank" rel="noopener" href="https://about.sourcegraph.com/pricing">
+                                        <HelpCircleOutlineIcon className="icon-inline" />
+                                    </a>
+                                </>
+                            }
+                            onChange={onRequestTrialFieldChange}
+                        />
+                    </div>
+                )}
+                {signupTermsCheckbox && (
+                    <div className="form-group">
+                        <Checkbox
+                            id="terms-checkbox"
+                            label={
+                                <>
+                                    I agree to Sourcegraph{' '}
+                                    <a href="https://about.sourcegraph.com/terms" target="_blank" rel="noopener">
+                                        Terms of Service
+                                    </a>{' '}
+                                    and{' '}
+                                    <a href="https://about.sourcegraph.com/privacy" target="_blank" rel="noopener">
+                                        Privacy Policy
+                                    </a>
+                                </>
+                            }
+                            checked={termsAccepted}
+                            onChange={() => {
+                                setTermsAccepted(!termsAccepted)
+                            }}
+                        />
                     </div>
                 )}
                 <div className="form-group mb-0">
@@ -291,7 +323,7 @@ export const SignUpForm: React.FunctionComponent<SignUpFormProps> = ({
                     </>
                 )}
 
-                {!experimental && signupTerms && (
+                {!experimental && signupTerms && !signupTermsCheckbox && (
                     <p className="mt-3 mb-0">
                         <small className="form-text text-muted">
                             By signing up, you agree to our {/* eslint-disable-next-line react/jsx-no-target-blank */}
