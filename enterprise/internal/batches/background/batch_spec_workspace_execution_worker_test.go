@@ -249,3 +249,5 @@ stdout: {"operation":"UPLOADING_CHANGESET_SPECS","timestamp":"2021-09-09T13:20:3
 		})
 	}
 }
+
+func intptr(i int) *int { return &i }

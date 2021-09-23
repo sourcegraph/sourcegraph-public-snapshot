@@ -4,16 +4,19 @@ package main
 
 import (
 	"os"
+	"time"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/dev/ci/internal/ci"
 )
 
 func main() {
-	config := ci.ComputeConfig()
+	config := ci.NewConfig(time.Now())
+
 	pipeline, err := ci.GeneratePipeline(config)
 	if err != nil {
 		panic(err)
 	}
+
 	_, err = pipeline.WriteTo(os.Stdout)
 	if err != nil {
 		panic(err)
