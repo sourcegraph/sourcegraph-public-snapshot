@@ -9,6 +9,7 @@ import (
 
 	"github.com/cockroachdb/errors"
 
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 
 	"github.com/inconshreveable/log15"
@@ -79,8 +80,11 @@ func NewCommitIndexerWorker(ctx context.Context, base dbutil.DB, insights dbutil
 }
 
 func (i *CommitIndexer) Handler(ctx context.Context) goroutine.BackgroundRoutine {
-	//TODO(insights) consider adding setting for index interval
-	interval := time.Hour * 1
+	intervalMinutes := conf.Get().InsightsCommitIndexerInterval
+	if intervalMinutes <= 0 {
+		intervalMinutes = 1
+	}
+	interval := time.Minute * time.Duration(intervalMinutes)
 
 	//TODO(insights) convert this to a metrics generating goroutine
 	return goroutine.NewPeriodicGoroutine(ctx, interval,
