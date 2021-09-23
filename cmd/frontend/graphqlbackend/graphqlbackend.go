@@ -396,8 +396,7 @@ func NewSchema(db dbutil.DB, batchChanges BatchChangesResolver, codeIntel CodeIn
 	if searchContexts != nil {
 		EnterpriseResolvers.searchContextsResolver = searchContexts
 		resolver.SearchContextsResolver = searchContexts
-		// TODO: Move schema
-		// schemas = append(schemas, codeMonitorsSchema)
+		schemas = append(schemas, searchContextsSchema)
 		// Register NodeByID handlers.
 		for kind, res := range searchContexts.NodeResolvers() {
 			resolver.nodeByIDFns[kind] = res
