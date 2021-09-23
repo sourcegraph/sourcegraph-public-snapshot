@@ -921,7 +921,7 @@
       "!go": { "pointer": true }
     },
     "insights.commit.indexer.interval": {
-      "description": "The interval (in minutes) at which the commit indexer will check for new commits.",
+      "description": "The interval (in minutes) at which the insights commit indexer will check for new commits.",
       "type": "integer",
       "group": "CodeInsights",
       "default": 60,
