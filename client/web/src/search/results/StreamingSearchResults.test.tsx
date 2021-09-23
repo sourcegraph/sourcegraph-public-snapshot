@@ -52,8 +52,6 @@ describe('StreamingSearchResults', () => {
         location: history.location,
         authenticatedUser: null,
 
-        isSourcegraphDotCom: false,
-
         settingsCascade: {
             subjects: null,
             final: null,

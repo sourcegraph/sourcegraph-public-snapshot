@@ -405,6 +405,7 @@
     "webext-domain-permission-toggle": "^1.0.1",
     "webext-patterns": "^0.9.0",
     "webextension-polyfill": "^0.6.0",
+    "yaml-ast-parser": "^0.0.43",
     "zustand": "^3.5.10"
   },
   "resolutions": {

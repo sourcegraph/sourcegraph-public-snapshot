@@ -254,7 +254,7 @@ func (r *NodeResolver) ToBulkOperation() (BulkOperationResolver, bool) {
 	return n, ok
 }
 
-func (r *NodeResolver) ToBatchSpecExecution() (BatchSpecExecutionResolver, bool) {
-	n, ok := r.Node.(BatchSpecExecutionResolver)
+func (r *NodeResolver) ToBatchSpecWorkspace() (BatchSpecWorkspaceResolver, bool) {
+	n, ok := r.Node.(BatchSpecWorkspaceResolver)
 	return n, ok
 }
