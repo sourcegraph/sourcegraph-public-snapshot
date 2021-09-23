@@ -4,9 +4,9 @@ on:
   push:
     branches:
       - main
-      - sg/hacking-hour-sep-17-create-release
-    # paths:
-    #   - dev/sg
+    paths:
+      - dev/sg
+      - .github/workflows/sg-binary-release.yml
 
 env:
   GOFLAGS: -trimpath
