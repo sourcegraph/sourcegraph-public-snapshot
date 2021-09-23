@@ -49,11 +49,12 @@ func serveVerifyEmail(db dbutil.DB) func(w http.ResponseWriter, r *http.Request)
 			http.Error(w, fmt.Sprintf("User %d email %q cannot be verified", usr.ID, email), http.StatusBadRequest)
 			return
 		}
-		// Set the verified email as primary if user has no existing email
-		emails, err := database.UserEmails(db).ListByUser(ctx, database.UserEmailsListOptions{
-			UserID: usr.ID,
-		})
-		if verified && len(emails) == 1 {
+		// Set the verified email as primary if user has no primary email
+		primary, _, err := database.UserEmails(db).GetPrimaryEmail(ctx, usr.ID)
+		if err != nil {
+			log15.Warn("Failed to get user email", "error", err)
+		}
+		if verified && len(primary) == 0 {
 			if err := database.UserEmails(db).SetPrimaryEmail(ctx, usr.ID, email); err != nil {
 				return
 			}
