@@ -46,6 +46,7 @@ func TimescaleDB(t testing.TB) (db *sql.DB, cleanup func()) {
 		} else {
 			t.Fail()
 		}
+		return
 	}
 
 	// Create database just for this test.
