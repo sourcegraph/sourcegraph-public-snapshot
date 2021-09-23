@@ -67,7 +67,7 @@ title: "That current page title"
 description: "A brief description of what that page is about"
 category: "Which category of the content does this belong"
 type: "article (will default to website otherwise)"
-imagePath: "/assets/logo-theme-light.svg"
+imageURL: "https://sourcegraph.com/.assets/img/sourcegraph-logo-dark.svg"
 tags: 
   - A list of tags such as
   - Code Search

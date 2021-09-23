@@ -26,10 +26,10 @@
   <meta content="{{ $tag }}" property="article:tag">
   {{ end }}
   {{ end }}
-  {{ with .Content.Doc.Meta.ImagePath }}
-  <meta itemprop="image" content="{{ . | absURL }}" />
-  <meta property="og:image" content="{{ . | absURL }}" />
-  <meta name="twitter:image" content="{{ . | absURL }}" />
+  {{ with .Content.Doc.Meta.ImageURL }}
+  <meta itemprop="image" content="{{ . }}" />
+  <meta property="og:image" content="{{ . }}" />
+  <meta name="twitter:image" content="{{ . }}" />
 {{ end }}
 {{end}}
 {{define "title"}}
