@@ -180,6 +180,9 @@ func splitHunkMatches(hunks []*diff.Hunk, hunkHighlights map[int]HunkHighlight, 
 		if cur != nil {
 			addExtraHunkMatchesSection(cur, extraHunkMatches)
 			cur.Body = bytes.Join(curLines, nil)
+			if len(curHighlights) > 0 {
+				newHighlights[len(results)] = HunkHighlight{LineHighlights: curHighlights}
+			}
 			results = append(results, cur)
 		}
 	}
