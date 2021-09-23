@@ -1,0 +1,96 @@
+name: Code Insights GitHub project automation
+
+on:
+  issues:
+    types: [closed, reopened]
+  pull_request:
+    types: [opened, edited, synchronize, ready_for_review]
+
+jobs:
+  update-status:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Update status
+        uses: Amadevus/pwsh-script@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GH_PROJECTS_ACTION_TOKEN }}
+        with:
+          script: |
+            $global:InformationPreference = 'Continue'
+            $global:ProgressPreference = 'SilentlyContinue'
+
+            Install-Module PSGitHub -Force -ErrorAction Stop
+
+            if (!$env:GITHUB_TOKEN) {
+              throw "No GITHUB_TOKEN env var provided"
+            }
+
+            $PSDefaultParameterValues['*GitHub*:Token'] = ConvertTo-SecureString -String $env:GITHUB_TOKEN -AsPlainText -Force
+            $PSDefaultParameterValues['*GitHubBetaProject*:ProjectNodeId'] = 'MDExOlByb2plY3ROZXh0MzI3Ng==' # https://github.com/orgs/sourcegraph/projects/200
+
+            $fixIssuePattern = "(?:close|fixe?|resolve)(?:[sd])? (?:#|(?<owner>[^/]+)/(?<repo>[^/]+)|https://github\.com/(?<owner>[^/]+)/(?<repo>[^/]+)/issues/)(?<number>\d+)"
+
+            switch ($github.event_name) {
+
+              'issues' {
+                # Find project item for the issue
+                # THIS DOES NOT SCALE AS THE PROJECT GETS LARGE, but it's the only way possible afaict.
+                # One way this is mitigated is that this request is streamed/paginated in order of most-recent-first,
+                # which means we can hope the issue is usually found in the first page(s).
+
+                if (-not ($github.event.issue.labels | Where-Object { $_.name -eq 'team/code-insights' })) {
+                  Write-Information "Issue does not have team/code-insights label, exiting."
+                  return
+                }
+
+                $status = if ($github.event.action -eq 'closed') { 'Done' } else { 'In Progress' }
+
+                Get-GitHubBetaProjectItem |
+                  Where-Object { $_.content.number -eq $github.event.issue.number } |
+                  Select-Object -First 1 |
+                  Set-GitHubBetaProjectItemField -FieldName 'Status' -Value $status
+              }
+
+              'pull_request' {
+                $pr = $github.event.pull_request
+                $repo = $github.repository
+
+                # Ignore merged and closed PRs
+                if ($pr.state -ne 'open') {
+                  return
+                }
+
+                $status = if ($pr.draft) { 'In Progress' } else { 'In Review' }
+
+                # Get fixed team/code-insights issues from the PR description
+                $fixedIssues = [regex]::Matches($pr.body, $fixIssuePattern, [Text.RegularExpressions.RegexOptions]::IgnoreCase) |
+                  ForEach-Object {
+                    $owner = if ($_.Groups.owner.Success) { $_.Groups.owner.Value } else { $pr.repository.owner.login }
+                    $repo = if ($_.Groups.repo.Success) { $_.Groups.repo.Value } else { $pr.repository.name }
+                    $number = $_.Groups.number.Value
+                    Get-GitHubIssue -Owner $owner -Repository $repo -Number $number
+                  } |
+                  Where-Object { $_.labels | Where-Object { $_.name -eq 'team/code-insights' } }
+
+                if (!$fixedIssues) {
+                  Write-Information "No fixed issues with team/code-insights label referenced from PR description, exiting."
+                  return
+                }
+
+                Write-Information "Fixed issues:"
+                $fixedIssues | ForEach-Object HtmlUrl | Write-Information
+
+                # Find project items for the issues the PR references
+                Get-GitHubBetaProjectItem |
+                  Where-Object {
+                    $item = $_
+                    $fixedIssues | Where-Object {
+                      $_.Number -eq $item.content.number -and
+                      $_.Owner -eq $item.content.repository.owner.login -and
+                      $_.RepositoryName -eq $item.content.repository.name
+                    }
+                  } |
+                  Select-Object -First $fixedIssues.Count |
+                  Set-GitHubBetaProjectItemField -FieldName 'Status' -Value $status
+              }
+            }
