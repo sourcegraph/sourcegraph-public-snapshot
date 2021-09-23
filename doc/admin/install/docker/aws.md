@@ -2,7 +2,7 @@
 
 This tutorial shows you how to deploy [single-container Sourcegraph with Docker](./index.md) to a single EC2 instance on AWS.
 
-> NOTE: We *do not* recommend using this method for a production instance. If deploying a production instance, see [our recommendations](../index.md) for how to chose a deployment type that suits your needs. We recommend [Docker Compose](../docker-compose/aws.md) for most initial production deployments.
+> NOTE: We *do not* recommend using this method for a production instance. If deploying a production instance, see [our recommendations](../index.md) for how to choose a deployment type that suits your needs. We recommend [Docker Compose](../docker-compose/aws.md) for most initial production deployments.
 
 ---
 
