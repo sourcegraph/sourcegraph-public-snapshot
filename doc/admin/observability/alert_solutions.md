@@ -2462,6 +2462,30 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 
 <br />
 
+## worker: insights_queue_unutilized_size
+
+<p class="subtitle">insights queue size that is not utilized (not processing)</p>
+
+**Descriptions**
+
+- <span class="badge badge-warning">warning</span> worker: 0+ insights queue size that is not utilized (not processing) for 30m0s
+
+**Possible solutions**
+
+- Verify code insights worker job has successfully started. Restart worker service and monitoring startup logs, looking for worker panics.
+- More help interpreting this metric is available in the [dashboards reference](./dashboards.md#worker-insights-queue-unutilized-size).
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_worker_insights_queue_unutilized_size"
+]
+```
+
+<sub>*Managed by the [Sourcegraph Code-insights team](https://about.sourcegraph.com/handbook/engineering/developer-insights/code-insights).*</sub>
+
+<br />
+
 ## worker: frontend_internal_api_error_responses
 
 <p class="subtitle">frontend-internal API error responses every 5m by route</p>

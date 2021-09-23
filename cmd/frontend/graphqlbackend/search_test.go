@@ -23,6 +23,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/search/backend"
 	searchbackend "github.com/sourcegraph/sourcegraph/internal/search/backend"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	searchrepos "github.com/sourcegraph/sourcegraph/internal/search/repos"
@@ -594,12 +595,11 @@ func BenchmarkIntegrationSearchResults(b *testing.B) {
 	_, repos, zoektRepos := generateRepos(5000)
 	zoektFileMatches := generateZoektMatches(50)
 
-	zoektClient, cleanup := zoektRPC(&searchbackend.FakeSearcher{
+	z, cleanup := zoektRPC(&searchbackend.FakeSearcher{
 		Repos:  zoektRepos,
 		Result: &zoekt.SearchResult{Files: zoektFileMatches},
 	})
 	defer cleanup()
-	z := &searchbackend.StreamSearchAdapter{zoektClient}
 
 	rows := make([]*sqlf.Query, 0, len(repos))
 	for _, r := range repos {
@@ -726,11 +726,11 @@ func generateZoektMatches(count int) []zoekt.FileMatch {
 // zoektRPC starts zoekts rpc interface and returns a client to
 // searcher. Useful for capturing CPU/memory usage when benchmarking the zoekt
 // client.
-func zoektRPC(s zoekt.Searcher) (zoekt.Searcher, func()) {
+func zoektRPC(s zoekt.Streamer) (zoekt.Streamer, func()) {
 	mux := http.NewServeMux()
 	mux.Handle(zoektrpc.DefaultRPCPath, zoektrpc.Server(s))
 	ts := httptest.NewServer(mux)
-	cl := zoektrpc.Client(strings.TrimPrefix(ts.URL, "http://"))
+	cl := backend.ZoektDial(strings.TrimPrefix(ts.URL, "http://"))
 	return cl, func() {
 		cl.Close()
 		ts.Close()

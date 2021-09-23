@@ -1,182 +1,129 @@
-import React, { FunctionComponent, useEffect, useState } from 'react'
+import { ApolloError } from '@apollo/client'
+import React, { FunctionComponent } from 'react'
 
 import { ErrorAlert } from '@sourcegraph/web/src/components/alerts'
 import { LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { GitObjectType } from '../../../graphql-operations'
 
-import {
-    repoName as defaultRepoName,
-    searchGitBranches as defaultSearchGitBranches,
-    searchGitTags as defaultSearchGitTags,
-} from './backend'
+import { useSearchGitBranches, useSearchGitTags, useSearchRepoName, GitObjectPreviewResult } from './useSearchGit'
 
-export interface GitObjectPreviewProps {
+export interface GitObjectPreviewWrapperProps {
     repoId: string
     type: GitObjectType
     pattern: string
-    repoName: typeof defaultRepoName
-    searchGitTags: typeof defaultSearchGitTags
-    searchGitBranches: typeof defaultSearchGitBranches
 }
 
-enum PreviewState {
-    Idle,
-    LoadingTags,
+const GitObjectHeader = <h3>Preview of Git object filter</h3>
+
+export const GitObjectPreview: FunctionComponent<GitObjectPreviewWrapperProps> = ({ repoId, type, pattern }) => {
+    if (!type || type === GitObjectType.GIT_BLOB || type === GitObjectType.GIT_UNKNOWN) {
+        return (
+            <>
+                {GitObjectHeader}
+                <small>Select a Git object type to preview matching commits.</small>
+            </>
+        )
+    }
+
+    return {
+        [GitObjectType.GIT_COMMIT]: <GitCommitPreview repoId={repoId} pattern={pattern} typeText=" commit." />,
+        [GitObjectType.GIT_TAG]: <GitTagPreview repoId={repoId} pattern={pattern} typeText=" tags." />,
+        [GitObjectType.GIT_TREE]: <GitBranchesPreview repoId={repoId} pattern={pattern} typeText=" branches." />,
+    }[type]
 }
 
-export const GitObjectPreview: FunctionComponent<GitObjectPreviewProps> = ({
-    repoId,
-    type,
-    pattern,
-    repoName,
-    searchGitTags,
-    searchGitBranches,
-}) => {
-    const [state, setState] = useState(() => PreviewState.Idle)
-    const [commitPreview, setCommitPreview] = useState<GitObjectPreviewResult>()
-    const [commitPreviewFetchError, setCommitPreviewFetchError] = useState<Error>()
+export interface GitPreviewProps {
+    repoId: string
+    pattern: string
+    typeText: string
+}
 
-    useEffect(() => {
-        async function updateCommitPreview(): Promise<void> {
-            setState(PreviewState.LoadingTags)
-            setCommitPreviewFetchError(undefined)
-
-            const resultFactories = [
-                { type: GitObjectType.GIT_COMMIT, factory: () => resultFromCommit(repoId, pattern, repoName) },
-                { type: GitObjectType.GIT_TAG, factory: () => resultFromTag(repoId, pattern, searchGitTags) },
-                { type: GitObjectType.GIT_TREE, factory: () => resultFromBranch(repoId, pattern, searchGitBranches) },
-            ]
-
-            try {
-                const match = resultFactories.find(({ type: match }) => match === type)
-
-                if (match) {
-                    setCommitPreview(await match.factory())
-                }
-            } catch (error) {
-                setCommitPreviewFetchError(error)
-            } finally {
-                setState(PreviewState.Idle)
-            }
-        }
-
-        updateCommitPreview().catch(console.error)
-    }, [repoId, type, pattern, repoName, searchGitTags, searchGitBranches])
+const GitTagPreview: FunctionComponent<GitPreviewProps> = ({ repoId, pattern, typeText }) => {
+    const { previewResult, isLoadingPreview, previewError } = useSearchGitTags(repoId, pattern)
 
     return (
-        <>
-            <h3>Preview of Git object filter</h3>
-
-            {type ? (
-                <>
-                    <small>
-                        {commitPreview?.preview.length === 0 ? (
-                            <>Configuration policy does not match any known commits.</>
-                        ) : (
-                            <>
-                                Configuration policy will be applied to the following
-                                {type === GitObjectType.GIT_COMMIT
-                                    ? ' commit'
-                                    : type === GitObjectType.GIT_TAG
-                                    ? ' tags'
-                                    : type === GitObjectType.GIT_TREE
-                                    ? ' branches'
-                                    : ''}
-                                .
-                            </>
-                        )}
-                    </small>
-
-                    {commitPreviewFetchError ? (
-                        <ErrorAlert
-                            prefix="Error fetching matching repository objects"
-                            error={commitPreviewFetchError}
-                        />
-                    ) : (
-                        <>
-                            {commitPreview !== undefined && commitPreview.preview.length !== 0 && (
-                                <div className="mt-2 p-2">
-                                    <div className="bg-dark text-light p-2">
-                                        {commitPreview.preview.map(tag => (
-                                            <p key={tag.revlike} className="text-monospace p-0 m-0">
-                                                <span className="search-filter-keyword">repo:</span>
-                                                <span>{tag.name}</span>
-                                                <span className="search-filter-keyword">@</span>
-                                                <span>{tag.revlike}</span>
-                                            </p>
-                                        ))}
-                                    </div>
-
-                                    {commitPreview.preview.length < commitPreview.totalCount && (
-                                        <p className="pt-2">
-                                            ...and {commitPreview.totalCount - commitPreview.preview.length} other
-                                            matches
-                                        </p>
-                                    )}
-                                </div>
-                            )}
-                            {state === PreviewState.LoadingTags && <LoadingSpinner />}
-                        </>
-                    )}
-                </>
-            ) : (
-                <small>Select a Git object type to preview matching commits.</small>
-            )}
-        </>
+        <GitPreview
+            typeText={typeText}
+            preview={previewResult}
+            previewLoading={isLoadingPreview}
+            previewError={previewError}
+        />
     )
 }
 
-interface GitObjectPreviewResult {
-    preview: { name: string; revlike: string }[]
-    totalCount: number
+const GitBranchesPreview: FunctionComponent<GitPreviewProps> = ({ repoId, pattern, typeText }) => {
+    const { previewResult, isLoadingPreview, previewError } = useSearchGitBranches(repoId, pattern)
+
+    return (
+        <GitPreview
+            typeText={typeText}
+            preview={previewResult}
+            previewLoading={isLoadingPreview}
+            previewError={previewError}
+        />
+    )
 }
 
-const resultFromCommit = async (
-    repoId: string,
-    pattern: string,
-    repoName: typeof defaultRepoName
-): Promise<GitObjectPreviewResult> => {
-    const result = await repoName(repoId).toPromise()
-    if (!result) {
-        return { preview: [], totalCount: 0 }
-    }
+const GitCommitPreview: FunctionComponent<GitPreviewProps> = ({ repoId, pattern, typeText }) => {
+    const { previewResult, isLoadingPreview, previewError } = useSearchRepoName(repoId, pattern)
 
-    return { preview: [{ name: result.name, revlike: pattern }], totalCount: 1 }
+    return (
+        <GitPreview
+            typeText={typeText}
+            preview={previewResult}
+            previewLoading={isLoadingPreview}
+            previewError={previewError}
+        />
+    )
 }
 
-const resultFromTag = async (
-    repoId: string,
-    pattern: string,
-    searchGitTags: typeof defaultSearchGitTags
-): Promise<GitObjectPreviewResult> => {
-    const result = await searchGitTags(repoId, pattern).toPromise()
-    if (!result) {
-        return { preview: [], totalCount: 0 }
-    }
-
-    const { nodes, totalCount } = result.tags
-
-    return {
-        preview: nodes.map(node => ({ name: result.name, revlike: node.displayName })),
-        totalCount,
-    }
+interface GitObjectPreviewProps {
+    typeText: string
+    preview: GitObjectPreviewResult
+    previewError: ApolloError | undefined
+    previewLoading: boolean
 }
 
-const resultFromBranch = async (
-    repoId: string,
-    pattern: string,
-    searchGitBranches: typeof defaultSearchGitBranches
-): Promise<GitObjectPreviewResult> => {
-    const result = await searchGitBranches(repoId, pattern).toPromise()
-    if (!result) {
-        return { preview: [], totalCount: 0 }
-    }
+const GitPreview: FunctionComponent<GitObjectPreviewProps> = ({ typeText, preview, previewError, previewLoading }) => (
+    <>
+        {GitObjectHeader}
+        <small>
+            {preview.preview.length === 0 ? (
+                <>Configuration policy does not match any known commits.</>
+            ) : (
+                <>
+                    Configuration policy will be applied to the following
+                    {typeText}
+                </>
+            )}
+        </small>
 
-    const { nodes, totalCount } = result.branches
+        {previewError && <ErrorAlert prefix="Error fetching matching repository objects" error={previewError} />}
 
-    return {
-        preview: nodes.map(node => ({ name: result.name, revlike: node.displayName })),
-        totalCount,
-    }
-}
+        {previewLoading ? (
+            <LoadingSpinner />
+        ) : (
+            <>
+                {preview.preview.length !== 0 && (
+                    <div className="mt-2 p-2">
+                        <div className="bg-dark text-light p-2">
+                            {preview.preview.map(tag => (
+                                <p key={tag.revlike} className="text-monospace p-0 m-0">
+                                    <span className="search-filter-keyword">repo:</span>
+                                    <span>{tag.name}</span>
+                                    <span className="search-filter-keyword">@</span>
+                                    <span>{tag.revlike}</span>
+                                </p>
+                            ))}
+                        </div>
+
+                        {preview.preview.length < preview.totalCount && (
+                            <p className="pt-2">...and {preview.totalCount - preview.preview.length} other matches</p>
+                        )}
+                    </div>
+                )}
+            </>
+        )}
+    </>
+)

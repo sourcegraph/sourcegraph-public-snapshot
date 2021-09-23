@@ -102,7 +102,7 @@ func DoMigrate(m *migrate.Migrate) (err error) {
 		return nil
 	}
 
-	if os.IsNotExist(err) {
+	if errors.Is(err, os.ErrNotExist) {
 		// This should only happen if the DB is ahead of the migrations available
 		version, dirty, verr := m.Version()
 		if verr != nil {

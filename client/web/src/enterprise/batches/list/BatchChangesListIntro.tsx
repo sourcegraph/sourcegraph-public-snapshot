@@ -3,7 +3,6 @@ import React from 'react'
 
 import { SourcegraphIcon } from '../../../auth/icons'
 
-import { BatchChangesChangelogAlert } from './BatchChangesChangelogAlert'
 import styles from './BatchChangesListIntro.module.scss'
 
 export interface BatchChangesListIntroProps {
@@ -14,22 +13,14 @@ export const BatchChangesListIntro: React.FunctionComponent<BatchChangesListIntr
     if (licensed === undefined) {
         return null
     }
+    if (licensed === true) {
+        return null
+    }
     return (
         <div className="row">
-            {licensed === true ? (
-                <div className="col-12">
-                    <BatchChangesChangelogAlert />
-                </div>
-            ) : (
-                <>
-                    <div className="col-12 col-md-6 mb-3">
-                        <BatchChangesUnlicensedAlert />
-                    </div>
-                    <div className="col-12 col-md-6 mb-3">
-                        <BatchChangesChangelogAlert />
-                    </div>
-                </>
-            )}
+            <div className="col-12 mb-3">
+                <BatchChangesUnlicensedAlert />
+            </div>
         </div>
     )
 }

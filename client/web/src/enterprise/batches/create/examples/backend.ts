@@ -6,35 +6,36 @@ import { dataOrThrowErrors, gql } from '@sourcegraph/shared/src/graphql/graphql'
 import { requestGraphQL } from '../../../../backend/graphql'
 import {
     BatchSpecWorkspacesFields,
-    ResolveWorkspacesForBatchSpecResult,
-    ResolveWorkspacesForBatchSpecVariables,
+    CreateBatchSpecFromRawResult,
+    CreateBatchSpecFromRawVariables,
 } from '../../../../graphql-operations'
 
-export function resolveWorkspacesForBatchSpec(spec: string): Observable<BatchSpecWorkspacesFields> {
-    return requestGraphQL<ResolveWorkspacesForBatchSpecResult, ResolveWorkspacesForBatchSpecVariables>(
+export function createBatchSpecFromRaw(spec: string): Observable<BatchSpecWorkspacesFields> {
+    return requestGraphQL<CreateBatchSpecFromRawResult, CreateBatchSpecFromRawVariables>(
         gql`
-            query ResolveWorkspacesForBatchSpec($spec: String!) {
-                resolveWorkspacesForBatchSpec(batchSpec: $spec) {
+            mutation CreateBatchSpecFromRaw($spec: String!) {
+                createBatchSpecFromRaw(batchSpec: $spec) {
                     ...BatchSpecWorkspacesFields
                 }
             }
 
-            fragment BatchSpecWorkspacesFields on BatchSpecWorkspaces {
-                rawSpec
-                workspaces {
-                    ...BatchSpecWorkspaceFields
-                }
-                allowIgnored
-                allowUnsupported
-                unsupported {
-                    id
-                    url
-                    name
-                }
-                ignored {
-                    id
-                    url
-                    name
+            fragment BatchSpecWorkspacesFields on BatchSpec {
+                originalInput
+                workspaceResolution {
+                    workspaces {
+                        nodes {
+                            ...BatchSpecWorkspaceFields
+                        }
+                    }
+                    allowIgnored
+                    allowUnsupported
+                    unsupported {
+                        nodes {
+                            id
+                            url
+                            name
+                        }
+                    }
                 }
             }
 
@@ -44,6 +45,7 @@ export function resolveWorkspacesForBatchSpec(spec: string): Observable<BatchSpe
                     name
                     url
                 }
+                ignored
                 branch {
                     id
                     abbrevName
@@ -55,7 +57,7 @@ export function resolveWorkspacesForBatchSpec(spec: string): Observable<BatchSpe
                 path
                 onlyFetchWorkspace
                 steps {
-                    command
+                    run
                     container
                 }
                 searchResultPaths
@@ -64,6 +66,6 @@ export function resolveWorkspacesForBatchSpec(spec: string): Observable<BatchSpe
         { spec }
     ).pipe(
         map(dataOrThrowErrors),
-        map(result => result.resolveWorkspacesForBatchSpec)
+        map(result => result.createBatchSpecFromRaw)
     )
 }

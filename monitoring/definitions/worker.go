@@ -164,6 +164,21 @@ func Worker() *monitoring.Container {
 			shared.CodeInsights.NewInsightsQueryRunnerWorkerGroup(containerName),
 			shared.CodeInsights.NewInsightsQueryRunnerResetterGroup(containerName),
 			shared.CodeInsights.NewInsightsQueryRunnerStoreGroup(containerName),
+			{
+				Title:  "Code Insights queue utilization",
+				Hidden: true,
+				Rows: []monitoring.Row{{monitoring.Observable{
+					Name:              "insights_queue_unutilized_size",
+					Description:       "insights queue size that is not utilized (not processing)",
+					Owner:             monitoring.ObservableOwnerCodeInsights,
+					Query:             "max(src_insights_search_queue_total{job=~\"^worker.*\"}) > 0 and on(job) sum by (op)(increase(src_workerutil_dbworker_store_insights_query_runner_jobs_store_total{job=~\"^worker.*\",op=\"Dequeue\"}[5m])) < 1",
+					DataMustExist:     false,
+					Warning:           monitoring.Alert().Greater(0.0, nil).For(time.Minute * 30),
+					PossibleSolutions: "Verify code insights worker job has successfully started. Restart worker service and monitoring startup logs, looking for worker panics.",
+					Interpretation:    "Any value on this panel indicates code insights is not processing queries from its queue. This observable and alert only fire if there are records in the queue and there have been no dequeue attempts for 30 minutes.",
+					Panel:             monitoring.Panel().LegendFormat("count"),
+				}}},
+			},
 
 			// Resource monitoring
 			shared.NewFrontendInternalAPIErrorResponseMonitoringGroup(containerName, monitoring.ObservableOwnerCodeIntel, nil),

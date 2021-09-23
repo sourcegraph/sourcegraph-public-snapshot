@@ -103,10 +103,6 @@
     --hl-gray-4: #586e75;
     --hl-gray-5: #2b3750;
 
-    // bg colors
-    --hl-bg-red: #f5dbdd;
-    --hl-bg-green: #deeade;
-
     .hl-source,
     .hl-text {
         color: var(--hl-gray-3);
@@ -444,11 +440,11 @@
         }
         .hl-markup.hl-deleted {
             color: var(--hl-gray-5);
-            background: var(--hl-bg-red);
+            background: var(--diff-remove-bg);
         }
         .hl-markup.hl-inserted {
             color: var(--hl-gray-5);
-            background: var(--hl-bg-green);
+            background: var(--diff-add-bg);
         }
     }
 

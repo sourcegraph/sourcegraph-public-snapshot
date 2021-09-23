@@ -93,7 +93,7 @@ export const BatchChangePreviewPage: React.FunctionComponent<BatchChangePreviewP
                     <SupersedingBatchSpecAlert spec={spec.supersedingBatchSpec} />
                     <BatchChangePreviewStatsBar
                         batchSpec={spec.id}
-                        diffStat={spec.diffStat}
+                        diffStat={spec.diffStat!}
                         queryApplyPreviewStats={queryApplyPreviewStats}
                     />
                     <CreateUpdateBatchChangeAlert

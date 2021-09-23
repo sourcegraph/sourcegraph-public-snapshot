@@ -19,7 +19,7 @@ func TestCachedSearcher(t *testing.T) {
 		}},
 	}
 
-	ttl := time.Second
+	ttl := 30 * time.Second
 	s := NewCachedSearcher(ttl, ms)
 
 	now := time.Now()
