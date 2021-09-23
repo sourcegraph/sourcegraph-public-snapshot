@@ -433,7 +433,7 @@ func (s *Server) cloneJobProducer(ctx context.Context, jobs chan<- *cloneJob) {
 // This counter is introduced along with the asyncDoCloneInvoked and the cloneQueueLength
 // counters. We want to verify if the value of all these counters are same in a given time
 // period. This would help us verify our producer-consumer pipeline for asynchronouse repo
-// cloning. More more, see associated commeents attached with the declaration of the mentioned
+// cloning. For more, see associated commeents attached with the declaration of the mentioned
 // counters in this file.
 var cloneJobProcessed = promauto.NewCounter(prometheus.CounterOpts{
 	Name: "src_gitserver_clone_job_processed",
