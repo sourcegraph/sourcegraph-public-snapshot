@@ -837,7 +837,7 @@ export async function createDriverForTest(options?: Partial<DriverOptions>): Pro
  * Get the RevisionInfo (which contains the executable path) for the given
  * browser and revision string.
  */
-function getPuppeteerBrowser(browserName: string, revision: string): RevisionInfo {
+export function getPuppeteerBrowser(browserName: string, revision: string): RevisionInfo {
     const browserFetcher = puppeteer.createBrowserFetcher({ product: browserName })
     const revisionInfo = browserFetcher.revisionInfo(revision)
     if (!revisionInfo.local) {
