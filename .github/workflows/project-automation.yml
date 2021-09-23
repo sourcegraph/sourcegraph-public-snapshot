@@ -49,7 +49,8 @@ jobs:
                 Get-GitHubBetaProjectItem |
                   Where-Object { $_.content.number -eq $github.event.issue.number } |
                   Select-Object -First 1 |
-                  Set-GitHubBetaProjectItemField -FieldName 'Status' -Value $status
+                  Set-GitHubBetaProjectItemField -FieldName 'Status' -Value $status |
+                  ForEach-Object { Write-Information "Updated `"Status`" field of project item for $($_.content.url) to `"$status`"" }
               }
 
               'pull_request' {
@@ -92,6 +93,7 @@ jobs:
                     }
                   } |
                   Select-Object -First $fixedIssues.Count |
-                  Set-GitHubBetaProjectItemField -FieldName 'Status' -Value $status
+                  Set-GitHubBetaProjectItemField -FieldName 'Status' -Value $status |
+                  ForEach-Object { Write-Information "Updated `"Status`" field of project item for $($_.content.url) to `"$status`"" }
               }
             }
