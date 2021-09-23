@@ -71,7 +71,7 @@ const repositories: ISearchContextRepositoryRevisions[] = [
             __typename: 'Repository',
             name: 'github.com/example/example2',
         } as IRepository,
-        revisions: ['REVISION1', 'REVISION2'],
+        revisions: ['main'],
     },
     {
         __typename: 'SearchContextRepositoryRevisions',
@@ -79,7 +79,7 @@ const repositories: ISearchContextRepositoryRevisions[] = [
             __typename: 'Repository',
             name: 'github.com/example/example1',
         } as IRepository,
-        revisions: ['REVISION3', 'LONG-LONG-LONG-LONG-LONG-LONG-LONG-LONG-REVISION'],
+        revisions: ['main'],
     },
 ]
 
