@@ -14,9 +14,11 @@ dev/ci/test/setup-deps.sh
 CONTAINER=sourcegraph-server
 
 docker_logs() {
+  pushd "$root_dir"
   LOGFILE=$(docker inspect ${CONTAINER} --format '{{.LogPath}}')
   cp "$LOGFILE" $CONTAINER.log
   chmod 744 $CONTAINER.log
+  popd
 }
 
 if [[ $VAGRANT_RUN_ENV = "CI" ]]; then
