@@ -2,8 +2,8 @@ name: sg-binary-release
 
 on:
   push:
-    branch: main
-    path:
+    branches: [main]
+    paths:
       - dev/sg
 
 env:
@@ -11,11 +11,14 @@ env:
   CGO_ENABLED: '0'
 
 jobs:
-  create-release:
+  create_release:
     name: create-github-release
     runs-on: ubuntu-latest
+    outputs:
+      release_name: ${{ steps.release.outputs.release_name }}
     steps:
       - name: create-github-release
+        id: release
         run: |
           today=$(date +'%Y-%m-%d-%H-%M')
           short_sha=$(echo ${{ github.sha }} | cut -c1-8)
@@ -31,13 +34,15 @@ jobs:
 
           gh release delete -R="${repo}" ${release_name} || true
           gh release create -R="${repo}" ${release_name} --notes-file /tmp/release-notes.md
+
+          echo "::set-output name=release_name::${release_name}"
         env:
           repo: sourcegraph/sg
           GITHUB_TOKEN: ${{ secrets.SG_RELEASE_TOKEN }}
 
   build:
     name: build
-    needs: [create-release]
+    needs: [create_release]
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -96,16 +101,8 @@ jobs:
           filename: ${{ steps.asset.outputs.filename }}
 
       - name: Upload release asset
-        # note that the release_name thing here is a duplicate from above,
-        # because I can't get outputs to work.
         run: |
-          today=$(date +'%Y-%m-%d-%H-%M')
-          short_sha=$(echo ${{ github.sha }} | cut -c1-8)
-
-          # ATTENTION: release_name is a duplicate from the last step in this
-          # file, because I can't get workflow outputs to work. If you change
-          # one, make sure you change the other.
-          release_name="${today}-${short_sha}"
+          release_name="${{ needs.create_release.outputs.release_name }}"
 
           gh release upload -R="${repo}" ${release_name} "${filename}"
         env:
