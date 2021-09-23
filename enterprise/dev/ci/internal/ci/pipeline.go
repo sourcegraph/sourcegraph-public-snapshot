@@ -155,7 +155,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 			appendOps(buildCandidateDockerImage(dockerImage, c.Version, c.candidateImageTag()))
 		}
 		if c.RunType.Is(MainDryRun, MainBranch) {
-			appendOps(buildExecutor(c.Time, c.Version))
+			// appendOps(buildExecutor(c.Time, c.Version))
 		}
 
 		// Slow tests
@@ -181,7 +181,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 			appendOps(publishFinalDockerImage(c, dockerImage, c.RunType.Is(MainBranch)))
 		}
 		if c.RunType.Is(MainBranch) {
-			appendOps(publishExecutor(c.Time, c.Version))
+			// appendOps(publishExecutor(c.Time, c.Version))
 		}
 
 		// Propogate changes elsewhere
