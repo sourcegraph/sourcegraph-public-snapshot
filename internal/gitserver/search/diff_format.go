@@ -36,9 +36,8 @@ func FormatDiff(rawDiff []*diff.FileDiff, highlights map[int]FileDiffHighlight) 
 		ranges = append(ranges, fdh.OldFile.Add(loc)...)
 		buf.WriteString(fileDiff.OrigName)
 		buf.WriteByte(' ')
-		loc = loc.Add(protocol.Location{
-			Offset: len(fileDiff.OrigName) + len(" "),
-		})
+		loc.Offset = buf.Len()
+		loc.Column = len(fileDiff.OrigName) + len(" ")
 
 		ranges = append(ranges, fdh.NewFile.Add(loc)...)
 		buf.WriteString(fileDiff.NewName)
