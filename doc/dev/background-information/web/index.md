@@ -10,4 +10,5 @@ See also our [TypeScript guide](https://about.sourcegraph.com/handbook/engineeri
 - [Styling UI](styling.md)
 - [Accessibility](accessibility.md)
 - [Temporary settings](temporary_settings.md)
+- [Shared state management](shared_state.md) (experimental)
 - [Build process](build.md)
