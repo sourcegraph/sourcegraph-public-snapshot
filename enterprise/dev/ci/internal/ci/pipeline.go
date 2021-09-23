@@ -180,7 +180,8 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		for _, dockerImage := range images.SourcegraphDockerImages {
 			appendOps(publishFinalDockerImage(c, dockerImage, c.RunType.Is(MainBranch)))
 		}
-		if c.RunType.Is(MainBranch) {
+		// TODO: temporary to test on branch
+		if c.RunType.Is(MainBranch) || c.RunType.Is(MainDryRun) {
 			appendOps(publishExecutor(c.Time, c.Version))
 		}
 
