@@ -138,14 +138,6 @@ func addClientIntegrationTests(pipeline *bk.Pipeline) {
 		append(finalizeSteps, puppeteerFinalizeDependencies...)...)
 }
 
-// set -e
-
-// BASE_URL=http://localhost:3443
-// TEST_PATH=$1
-
-// echo "--- Running lighthouse collect"
-// yarn lighthouse collect --additive --url="$BASE_URL$TEST_PATH"
-
 func addClientLighthouseTests(pipeline *bk.Pipeline) {
 	PREP_STEP_KEY := "lighthouse:prep"
 
@@ -198,7 +190,7 @@ func addChromaticTests(c Config, pipeline *bk.Pipeline) {
 func addSharedTests(c Config) func(pipeline *bk.Pipeline) {
 	return func(pipeline *bk.Pipeline) {
 		if c.isMainDryRun || c.isClientAffected() {
-			// addClientIntegrationTests(pipeline)
+			addClientIntegrationTests(pipeline)
 			addClientLighthouseTests(pipeline)
 			addChromaticTests(c, pipeline)
 		}
