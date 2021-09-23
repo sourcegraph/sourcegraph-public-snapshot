@@ -18,6 +18,7 @@ jobs:
           script: |
             $global:InformationPreference = 'Continue'
             $global:ProgressPreference = 'SilentlyContinue'
+            Set-StrictMode -Version 3.0
 
             Install-Module PSGitHub -Force -ErrorAction Stop
 
@@ -53,7 +54,6 @@ jobs:
 
               'pull_request' {
                 $pr = $github.event.pull_request
-                $repo = $github.repository
 
                 # Ignore merged and closed PRs
                 if ($pr.state -ne 'open') {
@@ -65,9 +65,9 @@ jobs:
                 # Get fixed team/code-insights issues from the PR description
                 $fixedIssues = [regex]::Matches($pr.body, $fixIssuePattern, [Text.RegularExpressions.RegexOptions]::IgnoreCase) |
                   ForEach-Object {
-                    $owner = if ($_.Groups.owner.Success) { $_.Groups.owner.Value } else { $pr.repository.owner.login }
-                    $repo = if ($_.Groups.repo.Success) { $_.Groups.repo.Value } else { $pr.repository.name }
-                    $number = $_.Groups.number.Value
+                    $owner = if ($_.Groups['owner'].Success) { $_.Groups['owner'].Value } else { $github.event.repository.owner.login }
+                    $repo = if ($_.Groups['repo'].Success) { $_.Groups['repo'].Value } else { $github.event.repository.name }
+                    $number = $_.Groups['number'].Value
                     Get-GitHubIssue -Owner $owner -Repository $repo -Number $number
                   } |
                   Where-Object { $_.labels | Where-Object { $_.name -eq 'team/code-insights' } }
