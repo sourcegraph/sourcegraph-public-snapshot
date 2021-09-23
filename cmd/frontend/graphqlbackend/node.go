@@ -219,8 +219,8 @@ func (r *NodeResolver) ToSavedSearch() (*savedSearchResolver, bool) {
 	return n, ok
 }
 
-func (r *NodeResolver) ToSearchContext() (*searchContextResolver, bool) {
-	n, ok := r.Node.(*searchContextResolver)
+func (r *NodeResolver) ToSearchContext() (SearchContextResolver, bool) {
+	n, ok := r.Node.(SearchContextResolver)
 	return n, ok
 }
 
