@@ -6,6 +6,7 @@ DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)""
 # cd to repo root
 root_dir="$(dirname "${BASH_SOURCE[0]}")/../../../.."
 cd "$root_dir"
+root_dir=$(pwd)
 
 export NAMESPACE="cluster-ci-$BUILDKITE_BUILD_NUMBER"
 

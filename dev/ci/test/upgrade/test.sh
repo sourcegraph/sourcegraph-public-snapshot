@@ -4,6 +4,7 @@
 source /root/.profile
 root_dir="$(dirname "${BASH_SOURCE[0]}")/../../../.."
 cd "$root_dir"
+root_dir=$(pwd)
 
 set -ex
 
