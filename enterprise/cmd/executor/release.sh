@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+set -Eeuo pipefail
 
 # Point to GCP boot disk image built by build.sh
 IMAGE_NAME="executor-$(git log -n1 --pretty=format:%h)-${BUILD_TIMESTAMP}"
