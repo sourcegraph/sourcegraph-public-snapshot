@@ -106,14 +106,50 @@ fn highlight(q: Query) -> JsonValue {
             // name. This is done due to some syntaxes matching an "extension"
             // that is actually a whole file name (e.g. "Dockerfile" or "CMakeLists.txt")
             // see https://github.com/trishume/syntect/pull/170
-            syntax_set
-                .find_syntax_by_extension(file_name)
-                .or_else(|| syntax_set.find_syntax_by_extension(extension))
-                .or_else(|| syntax_set.find_syntax_by_first_line(&q.code))
-                .unwrap_or_else(|| {
-                    is_plaintext = true;
-                    syntax_set.find_syntax_plain_text()
-                })
+
+            // Override syntect's language detection for conflicting file extensions because
+            // it's impossible to express this logic in a syntax definition.
+            struct Override {
+                extension: &'static str,
+                prefix_langs: Vec<(&'static str, &'static str)>,
+                default: &'static str,
+            }
+            let overrides = vec![Override {
+                extension: "cls",
+                prefix_langs: vec![("%", "TeX"), ("\\", "TeX")],
+                default: "Apex",
+            }];
+
+            if let Some(Override {
+                prefix_langs,
+                default,
+                ..
+            }) = overrides.iter().find(|o| o.extension == extension)
+            {
+                if let Some((_, lang)) = prefix_langs
+                    .iter()
+                    .find(|(prefix, _)| q.code.starts_with(prefix))
+                {
+                    syntax_set.find_syntax_by_name(lang).unwrap_or_else(|| {
+                        is_plaintext = true;
+                        syntax_set.find_syntax_plain_text()
+                    })
+                } else {
+                    syntax_set.find_syntax_by_name(default).unwrap_or_else(|| {
+                        is_plaintext = true;
+                        syntax_set.find_syntax_plain_text()
+                    })
+                }
+            } else {
+                syntax_set
+                    .find_syntax_by_extension(file_name)
+                    .or_else(|| syntax_set.find_syntax_by_extension(extension))
+                    .or_else(|| syntax_set.find_syntax_by_first_line(&q.code))
+                    .unwrap_or_else(|| {
+                        is_plaintext = true;
+                        syntax_set.find_syntax_plain_text()
+                    })
+            }
         };
 
         if q.css {
