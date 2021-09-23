@@ -5,6 +5,7 @@ import PuzzleOutlineIcon from 'mdi-react/PuzzleOutlineIcon'
 import React, { useEffect, useMemo } from 'react'
 import { of } from 'rxjs'
 import { startWith } from 'rxjs/operators'
+import { useContextSelector } from 'use-context-selector';
 
 import { isErrorLike } from '@sourcegraph/codeintellify/lib/errors'
 import { ContributableMenu } from '@sourcegraph/shared/src/api/protocol'
@@ -30,6 +31,7 @@ import { BatchChangesNavItem } from '../batches/BatchChangesNavItem'
 import { CodeMonitoringProps } from '../code-monitoring'
 import { CodeMonitoringLogo } from '../code-monitoring/CodeMonitoringLogo'
 import { BrandLogo } from '../components/branding/BrandLogo'
+import { globalStateContext } from '../GlobalStateProvider';
 import { CodeInsightsProps } from '../insights/types'
 import { isCodeInsightsEnabled } from '../insights/utils/is-code-insights-enabled'
 import {
@@ -50,7 +52,6 @@ import {
     SearchContextInputProps,
 } from '../search'
 import { SearchNavbarItem } from '../search/input/SearchNavbarItem'
-import { useNavbarQueryState } from '../search/navbarSearchQueryState'
 import { ThemePreferenceProps } from '../theme'
 import { userExternalServicesEnabledFromTags } from '../user/settings/cloud-ga'
 import { showDotComMarketing } from '../util/features'
@@ -151,14 +152,15 @@ export const GlobalNavbar: React.FunctionComponent<Props> = ({
         )
     )
 
-    const onNavbarQueryChange = useNavbarQueryState(state => state.setQueryState)
+    const setQueryState = useContextSelector(globalStateContext, state => state.setQueryState)
+    // const onNavbarQueryChange = useNavbarQueryState(state => state.setQueryState)
 
     useEffect(() => {
         // On a non-search related page or non-repo page, we clear the query in
         // the main query input to avoid misleading users
         // that the query is relevant in any way on those pages.
         if (!showSearchBox) {
-            onNavbarQueryChange({ query: '' })
+            setQueryState({ query: '' })
             return
         }
         // Do nothing if there is no query in the URL
@@ -173,10 +175,10 @@ export const GlobalNavbar: React.FunctionComponent<Props> = ({
                 ? omitFilter(query, globalSearchContextSpec.filter)
                 : query
 
-        onNavbarQueryChange({ query: finalQuery })
+        setQueryState({ query: finalQuery })
     }, [
         showSearchBox,
-        onNavbarQueryChange,
+        setQueryState,
         query,
         globalSearchContextSpec,
         isSearchContextAvailable,

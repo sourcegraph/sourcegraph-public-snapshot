@@ -2,7 +2,7 @@ import classNames from 'classnames'
 import React, { useCallback, useMemo } from 'react'
 import { useHistory } from 'react-router'
 import StickyBox from 'react-sticky-box'
-import shallow from 'zustand/shallow'
+import { useContextSelector } from 'use-context-selector';
 
 import { FilterType } from '@sourcegraph/shared/src/search/query/filters'
 import { updateFilter } from '@sourcegraph/shared/src/search/query/transformer'
@@ -10,10 +10,10 @@ import { Filter } from '@sourcegraph/shared/src/search/stream'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
+import { globalStateContext } from '../../../GlobalStateProvider';
 import { TemporarySettings } from '../../../settings/temporary/TemporarySettings'
 import { useTemporarySetting } from '../../../settings/temporary/useTemporarySetting'
 import { SubmitSearchParameters, toggleSearchFilter } from '../../helpers'
-import { NavbarQueryState, useNavbarQueryState } from '../../navbarSearchQueryState'
 
 import { getDynamicFilterLinks, getRepoFilterLinks, getSearchSnippetLinks } from './FilterLink'
 import { getFiltersOfKind, useLastRepoName } from './helpers'
@@ -42,24 +42,13 @@ export enum SectionID {
     REVISIONS = 'revisions',
 }
 
-const selectFromQueryState = ({
-    queryState: { query },
-    setQueryState,
-    submitSearch,
-}: NavbarQueryState): {
-    query: string
-    setQueryState: NavbarQueryState['setQueryState']
-    submitSearch: NavbarQueryState['submitSearch']
-} => ({
-    query,
-    setQueryState,
-    submitSearch,
-})
-
 export const SearchSidebar: React.FunctionComponent<SearchSidebarProps> = props => {
     const history = useHistory()
     const [collapsedSections, setCollapsedSections] = useTemporarySetting('search.collapsedSidebarSections', {})
-    const { query, setQueryState, submitSearch } = useNavbarQueryState(selectFromQueryState, shallow)
+
+    const query = useContextSelector(globalStateContext, state => state.queryState.query)
+    const setQueryState = useContextSelector(globalStateContext, state => state.setQueryState)
+    const submitSearch = useContextSelector(globalStateContext, state => state.submitSearch)
 
     const toggleFilter = useCallback(
         (value: string) =>

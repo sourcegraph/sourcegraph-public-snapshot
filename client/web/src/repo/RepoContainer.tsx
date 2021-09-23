@@ -9,6 +9,7 @@ import { Route, RouteComponentProps, Switch } from 'react-router'
 import { UncontrolledPopover } from 'reactstrap'
 import { NEVER, ObservableInput, of } from 'rxjs'
 import { catchError, switchMap } from 'rxjs/operators'
+import { useContextSelector } from 'use-context-selector';
 
 import {
     isCloneInProgressErrorLike,
@@ -41,6 +42,7 @@ import { ErrorBoundary } from '../components/ErrorBoundary'
 import { FuzzyFinder } from '../components/fuzzyFinder/FuzzyFinder'
 import { HeroPage } from '../components/HeroPage'
 import { ActionItemsBarProps, useWebActionItems } from '../extensions/components/ActionItemsBar'
+import { globalStateContext } from '../GlobalStateProvider';
 import { ExternalLinkFields, RepositoryFields } from '../graphql-operations'
 import { CodeInsightsProps } from '../insights/types'
 import { IS_CHROME } from '../marketing/util'
@@ -52,7 +54,6 @@ import {
     searchQueryForRepoRevision,
     SearchStreamingProps,
 } from '../search'
-import { useNavbarQueryState } from '../search/navbarSearchQueryState'
 import { StreamingSearchResultsListProps } from '../search/results/StreamingSearchResultsList'
 import { browserExtensionInstalled } from '../tracking/analyticsUtils'
 import { RouteDescriptor } from '../util/contributions'
@@ -314,16 +315,18 @@ export const RepoContainer: React.FunctionComponent<RepoContainerProps> = props 
 
     // Update the navbar query to reflect the current repo / revision
     const { globbing } = props
-    const onNavbarQueryChange = useNavbarQueryState(state => state.setQueryState)
+
+    const setQueryState = useContextSelector(globalStateContext, state => state.setQueryState)
+
     useEffect(() => {
         let query = searchQueryForRepoRevision(repoName, globbing, revision)
         if (filePath) {
             query = `${query.trimEnd()} file:${escapeSpaces(globbing ? filePath : '^' + escapeRegExp(filePath))}`
         }
-        onNavbarQueryChange({
+        setQueryState({
             query,
         })
-    }, [revision, filePath, repoName, onNavbarQueryChange, globbing])
+    }, [revision, filePath, repoName, setQueryState, globbing])
 
     const { useActionItemsBar, useActionItemsToggle } = useWebActionItems()
 

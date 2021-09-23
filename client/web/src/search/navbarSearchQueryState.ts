@@ -21,6 +21,7 @@ export interface NavbarQueryState {
         parameters: Omit<SubmitSearchParameters, 'query'>
     ) => void
 }
+
 export const useNavbarQueryState = create<NavbarQueryState>((set, get) => ({
     queryState: { query: '' },
     setQueryState: queryStateUpdate => {

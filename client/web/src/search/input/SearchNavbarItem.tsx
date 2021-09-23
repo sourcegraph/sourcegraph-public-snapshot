@@ -1,5 +1,6 @@
 import * as H from 'history'
 import React, { useCallback } from 'react'
+import { useContextSelector } from 'use-context-selector';
 
 import { Form } from '@sourcegraph/branded/src/components/Form'
 import { ActivationProps } from '@sourcegraph/shared/src/components/activation/Activation'
@@ -16,9 +17,9 @@ import {
     parseSearchURLQuery,
 } from '..'
 import { AuthenticatedUser } from '../../auth'
+import { globalStateContext } from '../../GlobalStateProvider';
 import { VersionContext } from '../../schema/site.schema'
 import { submitSearch } from '../helpers'
-import { useNavbarQueryState } from '../navbarSearchQueryState'
 
 import { SearchBox } from './SearchBox'
 
@@ -51,7 +52,11 @@ export const SearchNavbarItem: React.FunctionComponent<Props> = (props: Props) =
     // or remove the search help button
     const isSearchPage = props.location.pathname === '/search' && Boolean(parseSearchURLQuery(props.location.search))
 
-    const { queryState, setQueryState } = useNavbarQueryState()
+    const queryState = useContextSelector(globalStateContext, state => {
+        console.log('hello context state', state)
+        return state.queryState
+    })
+    const setQueryState = useContextSelector(globalStateContext, state => state.setQueryState)
 
     const onSubmit = useCallback(
         (event?: React.FormEvent): void => {
