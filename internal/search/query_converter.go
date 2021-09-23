@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/go-enry/go-enry/v2"
+	"github.com/go-enry/go-enry/v2/data"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/search/filter"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
@@ -34,6 +35,20 @@ func unionRegexp(values []string) string {
 	return "(" + strings.Join(values, ")|(") + ")"
 }
 
+// filenamesFromLanguage is a map of language name to full filenames
+// that are associated with it. This is different from extensions, because
+// some languages (like Dockerfile) do not conventionally have an associated
+// extension.
+var filenamesFromLanguage = func() map[string][]string {
+	res := make(map[string][]string, len(data.LanguagesByFilename))
+	for filename, languages := range data.LanguagesByFilename {
+		for _, language := range languages {
+			res[language] = append(res[language], filename)
+		}
+	}
+	return res
+}()
+
 // langToFileRegexp converts a lang: parameter to its corresponding file
 // patterns for file filters. The lang value must be valid, cf. validate.go
 func langToFileRegexp(lang string) string {
@@ -43,6 +58,9 @@ func langToFileRegexp(lang string) string {
 	for i, e := range extensions {
 		// Add `\.ext$` pattern to match files with the given extension.
 		patterns[i] = regexp.QuoteMeta(e) + "$"
+	}
+	for _, filename := range filenamesFromLanguage[lang] {
+		patterns = append(patterns, "^"+regexp.QuoteMeta(filename)+"$")
 	}
 	return unionRegexp(patterns)
 }
