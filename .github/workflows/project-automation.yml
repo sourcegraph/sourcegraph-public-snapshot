@@ -85,6 +85,7 @@ jobs:
                   Where-Object {
                     $item = $_
                     $fixedIssues | Where-Object {
+                      $item.content -and
                       $_.Number -eq $item.content.number -and
                       $_.Owner -eq $item.content.repository.owner.login -and
                       $_.RepositoryName -eq $item.content.repository.name
