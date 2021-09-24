@@ -26,7 +26,7 @@
 
 ## Run Sourcegraph Enterprise for Free (up to 10 users)
 
-The fastest way to run Sourcegraph is to run a pre-built Docker images. See the [quickstart installation guide](https://docs.sourcegraph.com/#getting-started). Sourcegraph also offers several ways to run a [production instance](https://docs.sourcegraph.com/admin/install)
+The fastest way to run Sourcegraph is to run a pre-built Docker images. See the [quickstart installation guide](https://docs.sourcegraph.com/#getting-started). Sourcegraph also offers several ways of running a [production instance](https://docs.sourcegraph.com/admin/install).
 
 ## Sourcegraph OSS
 
