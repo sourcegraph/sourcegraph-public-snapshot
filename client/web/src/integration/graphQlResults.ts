@@ -223,8 +223,8 @@ export const commonWebGraphQlResults: Partial<WebGraphQlOperations & SharedGraph
             contents: '{}',
         },
     }),
-    SaveTemporarySettings: () => ({
-        overwriteTemporarySettings: {
+    EditTemporarySettings: () => ({
+        editTemporarySettings: {
             alwaysNil: null,
         },
     }),
