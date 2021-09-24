@@ -275,7 +275,9 @@ func (s *Syncer) SyncRepo(ctx context.Context, name api.RepoName) (repo *types.R
 		go func() {
 			ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 			defer cancel()
-			s.syncRepo(ctx, codehost, name, repo)
+			if _, err := s.syncRepo(ctx, codehost, name, repo); err != nil {
+				log15.Error("Background SyncRepo failed", "error", err)
+			}
 		}()
 	}
 
