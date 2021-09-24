@@ -913,35 +913,11 @@ func (s *RepoStore) listSQL(ctx context.Context, opt ReposListOptions) (*sqlf.Qu
 	}
 
 	if len(opt.Names) > 0 {
-		// = ANY seems to be slow on the repo name column, as postgres doesn't opt
-		// for using the unique index on it. On dotcom, we see a difference in performance
-		// of 1ms compared to 1300ms for Repos.GetByName calls.
-		if len(opt.Names) < 30000 {
-			names := make([]*sqlf.Query, len(opt.Names))
-			for i, name := range opt.Names {
-				names[i] = sqlf.Sprintf("%s", name)
-			}
-			where = append(where, sqlf.Sprintf("name IN (%s)", sqlf.Join(names, ",")))
-		} else {
-			log15.Info("Large set of names passed to Repos.List", "len", len(opt.Names))
-			where = append(where, sqlf.Sprintf("name = ANY (%s)", pq.Array(opt.Names)))
-		}
+		where = append(where, sqlf.Sprintf("name = ANY (%s)", pq.Array(opt.Names)))
 	}
 
 	if len(opt.URIs) > 0 {
-		// = ANY seems to be slow on the repo name column, as postgres doesn't opt
-		// for using the unique index on it. On dotcom, we see a difference in performance
-		// of 1ms compared to 1300ms for Repos.GetByName calls.
-		if len(opt.URIs) < 30000 {
-			uris := make([]*sqlf.Query, len(opt.URIs))
-			for i, name := range opt.URIs {
-				uris[i] = sqlf.Sprintf("%s", name)
-			}
-			where = append(where, sqlf.Sprintf("uri IN (%s)", sqlf.Join(uris, ",")))
-		} else {
-			log15.Info("Large set of URIs passed to Repos.List", "len", len(opt.URIs))
-			where = append(where, sqlf.Sprintf("uri = ANY (%s)", pq.Array(opt.URIs)))
-		}
+		where = append(where, sqlf.Sprintf("uri = ANY (%s)", pq.Array(opt.URIs)))
 	}
 
 	if opt.Index != nil {
