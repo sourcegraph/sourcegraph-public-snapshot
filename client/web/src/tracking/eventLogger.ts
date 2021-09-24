@@ -18,7 +18,7 @@ export class EventLogger implements TelemetryService {
     private anonymousUserID = ''
     private cohortID?: string
     private firstSourceURL?: string
-    private deviceID?: string
+    private deviceID = ''
     private eventID = 0
 
     private readonly cookieSettings: CookieAttributes = {
@@ -117,20 +117,22 @@ export class EventLogger implements TelemetryService {
         return firstSourceURL
     }
 
+    // Device ID is a require field for Amplitude events.
+    // https://developers.amplitude.com/docs/http-api-v2
     public getDeviceID(): string {
-        const deviceID = this.deviceID || cookies.get(DEVICE_ID_KEY) || uuid.v4()
-
-        cookies.set(DEVICE_ID_KEY, deviceID, this.cookieSettings)
-
-        this.deviceID = deviceID
-        return deviceID
+        return this.deviceID
     }
 
+    // Insert ID is used to deduplicate events in Amplitude.
+    // https://developers.amplitude.com/docs/http-api-v2#optional-keys
     public getInsertID(): string {
         const insertID = this.getDeviceID() + Date.now().toString()
         return insertID
     }
 
+    // Event ID is used to deduplicate events in Amplitude.
+    // This is used in the case that multiple events with the same userID and timestamp
+    // are sent. https://developers.amplitude.com/docs/http-api-v2#optional-keys
     public getEventID(): number {
         return this.eventID
     }
