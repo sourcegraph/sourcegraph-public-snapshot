@@ -19,10 +19,10 @@ func TestSearchIndexEnabled(t *testing.T) {
 		env  []string
 		want interface{}
 	}{{
-		name: "SearchIndex defaults to false in docker",
+		name: "SearchIndex defaults to true in docker",
 		sc:   &Unified{},
 		env:  []string{"DEPLOY_TYPE=docker-container"},
-		want: false,
+		want: true,
 	}, {
 		name: "SearchIndex defaults to true in k8s",
 		sc:   &Unified{},
