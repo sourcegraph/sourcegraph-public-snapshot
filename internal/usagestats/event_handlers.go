@@ -91,33 +91,6 @@ type bigQueryEvent struct {
 	PublicArgument  string  `json:"public_argument"`
 }
 
-type amplitudeEventJson struct {
-	APIKey string           `json:"api_key"`
-	Events []amplitudeEvent `json:"events"`
-}
-type amplitudeEvent struct {
-	UserID          string          `json:"user_id"`
-	DeviceID        string          `json:"device_id"`
-	EventID         *int32          `json:"event_id"`
-	InsertID        *string         `json:"insert_id"`
-	EventType       string          `json:"event_type"`
-	EventProperties json.RawMessage `json:"event_properties,omitempty"`
-	UserProperties  json.RawMessage `json:"user_properties,omitempty"`
-	Time            int64           `json:"time,omitempty"`
-	// // Event Property
-	// Version string `json:"version"`
-	// // User Property
-	// FeatureFlags string `json:"feature_flags"`
-	// // User Property
-	// CohortID *string `json:"cohort_id,omitempty"`
-	// // User Property
-	// Referrer string `json:"referrer,omitempty"`
-	// // User Property
-	// AnonymousUserID string `json:"anonymous_user_id"`
-	// // User Property
-	// FirstSourceURL string `json:"first_source_url"`
-}
-
 // publishSourcegraphDotComEvent publishes Sourcegraph.com events to BigQuery.
 func publishSourcegraphDotComEvent(args Event) error {
 	if !envvar.SourcegraphDotComMode() {
@@ -166,6 +139,13 @@ func publishAmplitudeEvent(args Event) error {
 	if amplitudeAPIToken == "" {
 		return nil
 	}
+
+	for _, eventName := range amplitude.DenyList {
+		if eventName == args.EventName {
+			return nil
+		}
+	}
+
 	// For anonymous users, do not assign a user ID.
 	// Amplitude does not want User IDs for anonymous users
 	// so it can perform merging for users who sign up based on device ID.
@@ -180,16 +160,13 @@ func publishAmplitudeEvent(args Event) error {
 		return err
 	}
 
-	amplitudeEvent, err := json.Marshal(amplitudeEventJson{
+	amplitudeEvent, err := json.Marshal(amplitude.AmplitudeEventPayload{
 		APIKey: amplitudeAPIToken,
-		Events: []amplitudeEvent{{
-			UserID:   userID,
-			DeviceID: args.DeviceID,
-			InsertID: args.InsertID,
-			EventID:  args.EventID,
-			// TODO(FARHAN): Need to store this in context or cookie and pull it each time. Perhaps send with event from
-			// the client side.
-			// DeviceID:        fmt.Sprintf(`%s-%d`, string(args.UserID), time.Now().Unix()),
+		Events: []amplitude.AmplitudeEvent{{
+			UserID:          userID,
+			DeviceID:        args.DeviceID,
+			InsertID:        args.InsertID,
+			EventID:         args.EventID,
 			EventType:       args.EventName,
 			EventProperties: args.PublicArgument,
 			UserProperties:  userProperties,
@@ -204,41 +181,6 @@ func publishAmplitudeEvent(args Event) error {
 
 }
 
-// Has Cloud Account
-// -- proxy for User ID vs Anonymous User ID. check if user ID is non-zero
-// NumberOfReposAdded
-// -- we cannot get this via Amplitude Events because people will batch add repositories.
-// HasAddedRepos
-// NumberPublicReposAdded
-// NumberPrivateReposAdded
-// ActiveCodeHost
-// CohortWeek
-// IsSourcegraphTeammate
-// Feature Flag - w0SignupOptimization, w1SignupOptimization, SearchNotebookOnboarding
-type AmplitudeUserProperties struct {
-	AnonymousUserID         string              `json:"anonymous_user_id"`
-	FirstSourceURL          string              `json:"first_source_url"`
-	FeatureFlags            featureflag.FlagSet `json:"feature_flags"`
-	CohortID                *string             `json:"cohort_id,omitempty"`
-	Referrer                string              `json:"referrer,omitempty"`
-	HasCloudAccount         bool                `json:"has_cloud_account"`
-	NumberOfReposAdded      int                 `json:"number_repos_added"`
-	HasAddedRepos           bool                `json:"has_added_repos"`
-	NumberPublicReposAdded  int                 `json:"number_public_repos_added"`
-	NumberPrivateReposAdded int                 `json:"number_private_repos_added"`
-	HasActiveCodeHost       int                 `json:"has_active_code_host"`
-	IsSourcegraphTeammate   int                 `json:"is_sourcegraph_teammate"`
-}
-
-type FrontendAmplitudeUserProperties struct {
-	NumberOfReposAdded      int  `json:"number_repos_added"`
-	HasAddedRepos           bool `json:"has_added_repos"`
-	NumberPublicReposAdded  int  `json:"number_public_repos_added"`
-	NumberPrivateReposAdded int  `json:"number_private_repos_added"`
-	HasActiveCodeHost       int  `json:"has_active_code_host"`
-	IsSourcegraphTeammate   int  `json:"is_sourcegraph_teammate"`
-}
-
 func getAmplitudeUserProperties(args Event) (json.RawMessage, error) {
 	firstSourceURL := ""
 	if args.FirstSourceURL != nil {
@@ -248,12 +190,12 @@ func getAmplitudeUserProperties(args Event) (json.RawMessage, error) {
 	if args.Referrer != nil {
 		referrer = *args.Referrer
 	}
-	var userPropertiesFromFrontend FrontendAmplitudeUserProperties
+	var userPropertiesFromFrontend amplitude.FrontendUserProperties
 	err := json.Unmarshal(args.UserProperties, &userPropertiesFromFrontend)
 	if err != nil {
 		return nil, err
 	}
-	userProperties, err := json.Marshal(AmplitudeUserProperties{
+	userProperties, err := json.Marshal(amplitude.UserProperties{
 		AnonymousUserID:         args.UserCookieID,
 		FirstSourceURL:          firstSourceURL,
 		Referrer:                referrer,

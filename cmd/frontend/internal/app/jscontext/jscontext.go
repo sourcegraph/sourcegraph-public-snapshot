@@ -6,11 +6,9 @@ import (
 	"bytes"
 	"net/http"
 	"os"
-	"strconv"
 	"strings"
 
 	"github.com/gorilla/csrf"
-	"k8s.io/apimachinery/pkg/util/rand"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth/providers"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/enterprise"
@@ -143,9 +141,6 @@ func NewJSContextFromRequest(req *http.Request) JSContext {
 		sentryDSN = &siteConfig.Log.Sentry.Dsn
 	}
 
-	// List user Repositories, code host query
-	// Get User Repos status
-
 	// 🚨 SECURITY: This struct is sent to all users regardless of whether or
 	// not they are logged in, for example on an auth.public=false private
 	// server. Including secret fields here is OK if it is based on the user's
@@ -197,10 +192,7 @@ func NewJSContextFromRequest(req *http.Request) JSContext {
 		ProductResearchPageEnabled: conf.ProductResearchPageEnabled(),
 
 		ExperimentalFeatures: conf.ExperimentalFeatures(),
-
-		Test: strconv.Itoa(rand.Intn(100)),
 	}
-
 }
 
 // publicSiteConfiguration is the subset of the site.schema.json site
