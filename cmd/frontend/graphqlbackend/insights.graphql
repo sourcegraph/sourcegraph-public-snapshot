@@ -86,6 +86,13 @@ extend type Query {
         If omitted, all available insights will return.
         """
         search: String
+
+        """
+        An (optional) owner id that will filter the rusult and return all reachable insights
+        for the owner with ownerId. (Example: OwnerId: Org filter returns all your personal and
+        org level insights)
+        """
+        ownerId: ID
     ): InsightConnection
 }
 
