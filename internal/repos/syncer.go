@@ -5,17 +5,18 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/cockroachdb/errors"
 	"github.com/hashicorp/go-multierror"
 	"github.com/inconshreveable/log15"
 	"github.com/prometheus/client_golang/prometheus"
+	"golang.org/x/sync/semaphore"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/locker"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
@@ -49,6 +50,11 @@ type Syncer struct {
 	// UserReposMaxPerSite can be used to override the value read from config.
 	// If zero, we'll read from config instead.
 	UserReposMaxPerSite int
+
+	// SyncSemaphoreMu protects   SyncSemaphore
+	SyncSemaphoreMu sync.Mutex
+	// SyncSemaphore allows us to limit the number of concurrent syncs per repo to 1
+	SyncSemaphore map[api.RepoName]*semaphore.Weighted
 }
 
 // RunOptions contains options customizing Run behaviour.
@@ -292,19 +298,29 @@ func (s *Syncer) syncRepo(
 	ctx, save := s.observeSync(ctx, "Syncer.syncRepo", string(name))
 	defer func() { save(svc, err) }()
 
-	lk := locker.NewWithDB(nil, "repos.sync-repo").With(s.Store)
+	s.SyncSemaphoreMu.Lock()
+	sem := s.SyncSemaphore[name]
+	if sem == nil {
+		sem = semaphore.NewWeighted(1)
+		s.SyncSemaphore[name] = sem
+	}
+	s.SyncSemaphoreMu.Unlock()
 
 	blocking := stored == nil
-	locked, unlock, err := lk.Lock(ctx, locker.StringKey(string(name)), blocking)
-	if err != nil {
-		return nil, errors.Wrapf(err, "failed to acquire sync lock for %q", name)
+	var locked bool
+	if blocking {
+		if err := sem.Acquire(ctx, 1); err != nil {
+			return nil, errors.Wrapf(err, "failed to acquire sync lock for %q", name)
+		}
+		locked = true
+	} else {
+		locked = sem.TryAcquire(1)
 	}
 
 	if !locked {
 		return stored, nil
 	}
-
-	defer func() { err = unlock(err) }()
+	defer func() { sem.Release(1) }()
 
 	// We may have blocked waiting for another process to sync the repo, so let's fetch it from the database if
 	// it exists and return it.
