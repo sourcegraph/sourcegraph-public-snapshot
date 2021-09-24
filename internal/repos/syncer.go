@@ -51,7 +51,7 @@ type Syncer struct {
 	// If zero, we'll read from config instead.
 	UserReposMaxPerSite int
 
-	// SyncSemaphoreMu protects   SyncSemaphore
+	// SyncSemaphoreMu protects SyncSemaphore
 	SyncSemaphoreMu sync.Mutex
 	// SyncSemaphore allows us to limit the number of concurrent syncs per repo to 1
 	SyncSemaphore map[api.RepoName]*semaphore.Weighted
