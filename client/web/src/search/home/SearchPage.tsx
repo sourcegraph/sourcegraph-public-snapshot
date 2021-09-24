@@ -96,9 +96,7 @@ export const SearchPage: React.FunctionComponent<SearchPageProps> = props => {
                 />
             </div>
             <div className="flex-grow-1">
-                {props.isSourcegraphDotCom && (!props.authenticatedUser || !props.showEnterpriseHomePanels) && (
-                    <LoggedOutHomepage {...props} />
-                )}
+                {props.isSourcegraphDotCom && !props.authenticatedUser && <LoggedOutHomepage {...props} />}
 
                 {props.showEnterpriseHomePanels && props.authenticatedUser && <HomePanels {...props} />}
             </div>
