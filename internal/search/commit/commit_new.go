@@ -132,12 +132,12 @@ func queryParameterToPredicate(parameter query.Parameter, caseSensitive, diff bo
 	var newPred gitprotocol.SearchQuery
 	switch parameter.Field {
 	case query.FieldAuthor:
-		// TODO look up emails
+		// TODO(@camdencheek) look up emails (issue #25180)
 		newPred = &gitprotocol.AuthorMatches{gitprotocol.Regexp{regexp.MustCompile(wrapCaseSensitive(parameter.Value, caseSensitive))}}
 	case query.FieldCommitter:
 		newPred = &gitprotocol.CommitterMatches{gitprotocol.Regexp{regexp.MustCompile(wrapCaseSensitive(parameter.Value, caseSensitive))}}
 	case query.FieldBefore:
-		newPred = &gitprotocol.CommitBefore{time.Now()} // TODO parse the time in with go-naturaldate
+		newPred = &gitprotocol.CommitBefore{time.Now()} // TODO(@camdencheek) parse the time in with go-naturaldate (issue #25357)
 	case query.FieldAfter:
 		newPred = &gitprotocol.CommitAfter{time.Now()}
 	case query.FieldMessage:

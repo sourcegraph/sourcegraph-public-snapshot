@@ -69,7 +69,7 @@ var (
 		"--no-merges",
 	}
 
-	// TODO support adding refs
+	// TODO(@camdencheek) support adding refs (issue #25356)
 	// logArgsWithRefs    = append(baseLogArgs, "--format=format:"+strings.Join(formatWithRefs, "%x00")+"%x00")
 	logArgsWithoutRefs = append(baseLogArgs, "--format=format:"+strings.Join(formatWithoutRefs, "%x00")+"%x00")
 	sep                = []byte{0x0}
