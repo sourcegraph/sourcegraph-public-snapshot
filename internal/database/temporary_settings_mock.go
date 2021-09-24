@@ -7,6 +7,7 @@ import (
 )
 
 type MockTemporarySettings struct {
-	GetTemporarySettings    func(ctx context.Context, userID int32) (*ts.TemporarySettings, error)
-	UpsertTemporarySettings func(ctx context.Context, userID int32, contents string) error
+	GetTemporarySettings       func(ctx context.Context, userID int32) (*ts.TemporarySettings, error)
+	OverwriteTemporarySettings func(ctx context.Context, userID int32, contents string) error
+	EditTemporarySettings      func(ctx context.Context, userID int32, settingsToEdit string) error
 }
