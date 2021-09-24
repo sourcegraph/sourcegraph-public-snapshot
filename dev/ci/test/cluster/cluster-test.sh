@@ -11,7 +11,10 @@ export NAMESPACE="cluster-ci-$BUILDKITE_BUILD_NUMBER"
 
 # Capture information about the state of the test cluster
 function cluster_capture_state() {
-  # Get status of all pods
+  # Get specifics pods
+  kubectl describe pods
+
+  # Get overview of all pods for readability
   kubectl get pods
 
   # Get logs for some deployments
