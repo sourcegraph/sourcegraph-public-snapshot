@@ -202,10 +202,18 @@ func serveSearchConfiguration(db dbutil.DB) func(http.ResponseWriter, *http.Requ
 		}
 		repoNames := r.Form["repo"]
 
-		// Preload repos.
-		// TODO: Support more than 32k repos at a time.
-		repos, loadReposErr := database.Repos(db).List(ctx, database.ReposListOptions{Names: repoNames})
-		// Support fast lookups by repo name.
+		// Preload repos to support fast lookups by repo name.
+		// This does NOT support fetching by URI (unlike Repos.GetByName). Zoekt
+		// will always ask us actual repo names and not URIs, though. This way,
+		// we can also save the additional round trip to the database when the
+		// repo is not found.
+		repos, loadReposErr := database.Repos(db).List(ctx, database.ReposListOptions{
+			Names: repoNames,
+			// This mimics the behavior of Repos.GetByName, which has been used
+			// here before. Once we are sure this has no negative impact, we
+			// can remove this option and the IsBlocked check below.
+			IncludeBlocked: true,
+		})
 		reposMap := make(map[api.RepoName]*types.Repo, len(repos))
 		for _, repo := range repos {
 			reposMap[repo.Name] = repo
@@ -248,12 +256,10 @@ func serveSearchConfiguration(db dbutil.DB) func(http.ResponseWriter, *http.Requ
 		}
 
 		// Build list of repo IDs to fetch revisions for.
-		repoIDs := make([]int32, 0, len(repos))
-		for _, repo := range repos {
-			repoIDs = append(repoIDs, int32(repo.ID))
+		repoIDs := make([]int32, len(repos))
+		for i, repo := range repos {
+			repoIDs[i] = int32(repo.ID)
 		}
-
-		// TODO: Support more than 32k repos at a time.
 		revisionsForRepo, revisionsForRepoErr := database.SearchContexts(db).GetAllRevisionsForRepos(ctx, repoIDs)
 		getSearchContextRevisions := func(repoID int32) ([]string, error) {
 			if revisionsForRepoErr != nil {
