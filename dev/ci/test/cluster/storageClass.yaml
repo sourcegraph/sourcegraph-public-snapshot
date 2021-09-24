@@ -9,5 +9,5 @@ provisioner: kubernetes.io/gce-pd
 parameters:
     type: pd-ssd # This configures SSDs (recommended).
     fsType: ext4
-volumeBindingMode: Immediate
+volumeBindingMode: WaitForFirstConsumer
 reclaimPolicy: Delete

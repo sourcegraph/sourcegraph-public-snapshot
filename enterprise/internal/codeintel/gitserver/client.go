@@ -342,10 +342,10 @@ func (c *Client) DefaultBranchContains(ctx context.Context, repositoryID int, co
 		return false, errors.Wrap(err, "RefDescriptions")
 	}
 	var defaultBranchName string
-	for _, descriptions := range descriptions {
+	for name, descriptions := range descriptions {
 		for _, ref := range descriptions {
 			if ref.IsDefaultBranch {
-				defaultBranchName = ref.Name
+				defaultBranchName = name
 				break
 			}
 		}

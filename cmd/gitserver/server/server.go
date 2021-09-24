@@ -430,6 +430,16 @@ func (s *Server) cloneJobProducer(ctx context.Context, jobs chan<- *cloneJob) {
 	}
 }
 
+// This counter is introduced along with the asyncDoCloneInvoked and the cloneQueueLength
+// counters. We want to verify if the value of all these counters are same in a given time
+// period. This would help us verify our producer-consumer pipeline for asynchronouse repo
+// cloning. For more, see associated commeents attached with the declaration of the mentioned
+// counters in this file.
+var cloneJobProcessed = promauto.NewCounter(prometheus.CounterOpts{
+	Name: "src_gitserver_clone_job_processed",
+	Help: "Number of cloneJobs processed",
+})
+
 func (s *Server) cloneJobConsumer(ctx context.Context, jobs <-chan *cloneJob) {
 	// TODO: What we want eventually.
 	// for j := range jobs {
@@ -460,7 +470,7 @@ func (s *Server) cloneJobConsumer(ctx context.Context, jobs <-chan *cloneJob) {
 		// 	s.setLastErrorNonFatal(ctx, j.repo, err)
 		// }()
 
-		cloneQueueLength.Dec()
+		cloneJobProcessed.Inc()
 	}
 }
 
@@ -1359,12 +1369,12 @@ type cloneOptions struct {
 // spawning new goroutine for each new non-blocking clone request, but also add a corresponding
 // cloneJob to Server.CloneQueue.
 var (
-	asyncDoCloneInvoked = promauto.NewGauge(prometheus.GaugeOpts{
-		Name: "src_gitserver_async_doclone_invoked",
+	asyncDoCloneInvoked = promauto.NewCounter(prometheus.CounterOpts{
+		Name: "src_gitserver_async_doclone_invoked_counter",
 		Help: "Number of times Server.doClone was invoked asynchronsously",
 	})
-	cloneQueueLength = promauto.NewGauge(prometheus.GaugeOpts{
-		Name: "src_gitserver_clone_queue_length",
+	cloneQueueLength = promauto.NewCounter(prometheus.CounterOpts{
+		Name: "src_gitserver_clone_queue_length_counter",
 		Help: "Length of Server.CloneQueue",
 	})
 )
@@ -1453,7 +1463,6 @@ func (s *Server) cloneRepo(ctx context.Context, repo api.RepoName, opts *cloneOp
 	// And enable the commented out code in cloneJobConsumer.
 	go func() {
 		asyncDoCloneInvoked.Inc()
-		defer asyncDoCloneInvoked.Dec()
 
 		// Create a new context because this is in a background goroutine. The outer context's
 		// cancel will be invoked when cloneRepo returns, but we don't want this goroutine to get
