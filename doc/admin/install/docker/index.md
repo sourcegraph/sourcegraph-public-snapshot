@@ -4,7 +4,7 @@
 Single-container Sourcegraph with Docker is a way to very quickly get an instance of Sourcegraph set up locally to experiment with its features.
 </p>
 
-> WARNING: **We do not recommend using this method for a production instance.** If deploying a production instance, see [our recommendations](../index.md) for how to chose a deployment type that suits your needs. We recommend [Docker Compose](../docker-compose/index.md) for most initial production deployments.
+> WARNING: **We do not recommend using this method for a production instance.** If deploying a production instance, see [our recommendations](../index.md) for how to choose a deployment type that suits your needs. We recommend [Docker Compose](../docker-compose/index.md) for most initial production deployments.
 
 <div class="cta-group">
 <a class="btn btn-primary" href="#installation">★ Installation</a>
@@ -28,7 +28,7 @@ Once the server is ready (logo is displayed in the terminal), navigate to the ho
 
 For next steps and further configuration options, visit the [site administration documentation](../../index.md).
 
-> WARNING: **We do not recommend using this method for a production instance.** If deploying a production instance, see [our recommendations](../index.md) for how to chose a deployment type that suits your needs. We recommend [Docker Compose](../docker-compose/index.md) for most initial production deployments.
+> WARNING: **We do not recommend using this method for a production instance.** If deploying a production instance, see [our recommendations](../index.md) for how to choose a deployment type that suits your needs. We recommend [Docker Compose](../docker-compose/index.md) for most initial production deployments.
 
 <span class="virtual-br"></span>
 
@@ -84,16 +84,16 @@ Sourcegraph can be **tested** on Windows 10 using roughly the same steps provide
 
 ### Low resource environments
 
-To test sourcegraph in a low resource environment you may want to disable some of the observability tools (Prometheus, Grafana and Jaeger).
+To test Sourcegraph in a low resource environment you may want to disable some of the observability tools (Prometheus, Grafana and Jaeger).
 
-Add `-e DISABLE_OBSERVABILITY=true` to your docker run command
+Add `-e DISABLE_OBSERVABILITY=true` to your docker run command.
 
 ### Starting in Postgres restore mode
 
 In order to restore a Postgres backup, you need to start on an empty database and prevent all other Sourcegraph services from starting.
-You can do this by adding `-e PGRESTORE=true` to your `docker run` command. This will start only the Postgres system and allow you to perform a restore, once it is done, simply remove that parameter from your docker command.
+You can do this by adding `-e PGRESTORE=true` to your `docker run` command. This will start only the Postgres system and allow you to perform a restore. Once it is done, remove that parameter from your docker command.
 
-The database is only accessible from within the container, to perform a restore you will need to copy the required files to the container and then execute the restore commands from within the container using `docker exec`.
+The database is only accessible from within the container. To perform a restore you will need to copy the required files to the container and then execute the restore commands from within the container using `docker exec`.
 
 You can find examples of this procedure for `docker-compose` in our [docker-compose migration docs](../docker-compose/migrate.md).
 

@@ -4,7 +4,7 @@ on:
   issues:
     types: [closed, reopened]
   pull_request:
-    types: [opened, edited, synchronize, ready_for_review]
+    types: [opened, edited, synchronize, ready_for_review, converted_to_draft]
 
 jobs:
   update-status:
