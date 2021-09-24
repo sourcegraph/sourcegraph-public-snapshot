@@ -19,7 +19,7 @@ import {
 import { GraphQLClient } from './util/GraphQlClient'
 import { ensureLoggedInOrCreateTestUser } from './util/helpers'
 import { getTestTools } from './util/init'
-import { ScreenshotVerifier } from './util/ScreenshotVerifier'
+// import { ScreenshotVerifier } from './util/ScreenshotVerifier'
 import { TestResourceManager } from './util/TestResourceManager'
 
 // const activationNavBarSelector = '.test-activation-nav-item-toggle'
@@ -78,11 +78,11 @@ describe('Onboarding', () => {
     let driver: Driver
     let gqlClient: GraphQLClient
     let resourceManager: TestResourceManager
-    let screenshots: ScreenshotVerifier
+    // let screenshots: ScreenshotVerifier
     before(async function () {
         this.timeout(20 * 1000)
         ;({ driver, gqlClient, resourceManager } = await getTestTools(config))
-        screenshots = new ScreenshotVerifier(driver)
+        // screenshots = new ScreenshotVerifier(driver)
 
         resourceManager.add(
             'User',
