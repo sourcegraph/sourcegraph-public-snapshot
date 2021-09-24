@@ -11,11 +11,11 @@ import { from } from 'rxjs'
 import { filter, switchMap } from 'rxjs/operators'
 import stringScore from 'string-score'
 
-import { ActionItem, ActionItemAction } from '../actions/ActionItem'
+import { ActionItem, ActionItemAction, urlForClientCommandOpen } from '../actions/ActionItem'
 import { wrapRemoteObservable } from '../api/client/api/common'
 import { FlatExtensionHostAPI } from '../api/contract'
 import { haveInitialExtensionsLoaded } from '../api/features'
-import { ContributableMenu } from '../api/protocol'
+import { ActionContribution, ContributableMenu, Evaluated } from '../api/protocol'
 import { HighlightedMatches } from '../components/HighlightedMatches'
 import { getContributedActionItems } from '../contributions/contributions'
 import { ExtensionsControllerProps } from '../extensions/controller'
@@ -124,14 +124,31 @@ const ShortcutController: React.FC<{
     </ShortcutProvider>
 ))
 
-const ActionItemRender: React.FC<{
+interface CommandPaletteActionItemProps extends TelemetryProps {
     actionItem: ActionItemAction
     onClick: (action: ActionItemAction) => void
-}> = ({ action, onClick }) => {
-    console.log({ action })
 
-    const runAction = (runAction = (event: React.MouseEvent<HTMLElement> | React.KeyboardEvent<HTMLElement>): void => {
-        const action = (isAltEvent(event) && this.props.altAction) || this.props.action
+    // TODO
+    runAction: () => void
+
+    /** Called after executing the action (for both success and failure). */
+    onDidExecute?: (actionID: string) => void
+
+    location: H.Location
+}
+
+const ActionItemRender: React.FC<CommandPaletteActionItemProps> = ({
+    actionItem,
+    onClick,
+    telemetryService,
+    onDidExecute,
+    location,
+}) => {
+    const { action, altAction, keybinding } = actionItem
+
+    // TODO: lift this up to the command palette component
+    const runAction = (event: React.MouseEvent<HTMLElement> | React.KeyboardEvent<HTMLElement>): void => {
+        const action = (isAltEvent(event) && actionItem.altAction) || actionItem.action
 
         if (!action.command) {
             // Unexpectedly arrived here; noop actions should not have event handlers that trigger
@@ -140,19 +157,18 @@ const ActionItemRender: React.FC<{
         }
 
         // Record action ID (but not args, which might leak sensitive data).
-        this.props.telemetryService.log(action.id)
+        telemetryService.log(action.id)
 
-        if (urlForClientCommandOpen(action, this.props.location)) {
+        if (urlForClientCommandOpen(action, location)) {
             if (event.currentTarget.tagName === 'A' && event.currentTarget.hasAttribute('href')) {
                 // Do not execute the command. The <LinkOrButton>'s default event handler will do what we want (which
                 // is to open a URL). The only case where this breaks is if both the action and alt action are "open"
                 // commands; in that case, this only ever opens the (non-alt) action.
-                if (this.props.onDidExecute) {
+                if (onDidExecute) {
                     // Defer calling onRun until after the URL has been opened. If we call it immediately, then in
                     // CommandList it immediately updates the (most-recent-first) ordering of the ActionItems, and
                     // the URL actually changes underneath us before the URL is opened. There is no harm to
                     // deferring this call; onRun's documentation allows this.
-                    const onDidExecute = this.props.onDidExecute
                     setTimeout(() => onDidExecute(action.id))
                 }
                 return
@@ -163,13 +179,27 @@ const ActionItemRender: React.FC<{
         // ensure the default event handler for the <LinkOrButton> doesn't run (which might open the URL).
         event.preventDefault()
 
-        this.commandExecutions.next({
+        // TODO: command executions hook? The command should be handled by the command palette, which is always rendered even
+        // when not open
+        commandExecutions.next({
             command: action.command,
             args: action.commandArguments,
         })
-    })
+    }
 
-    return <button onClick={() => onClick(action)}>{action.actionItem?.label}</button>
+    return (
+        <button onClick={(): void => onClick(action)}>
+            {actionItem?.label}
+
+            {keybindings && (
+                <>
+                    {[...keybindings.held, ...keybinding.order].map(key => (
+                        <kbd>{key}</kbd>
+                    ))}
+                </>
+            )}
+        </button>
+    )
 }
 
 /**
@@ -337,4 +367,8 @@ export function filterAndRankItems(
             }
         })
     return sortBy(scoredItems, 'recentIndex', 'score', ({ item }) => item.action.id).map(({ item }) => item)
+}
+
+function isAltEvent(event: React.KeyboardEvent | React.MouseEvent): boolean {
+    return event.altKey || event.metaKey || event.ctrlKey || ('button' in event && event.button === 1)
 }
