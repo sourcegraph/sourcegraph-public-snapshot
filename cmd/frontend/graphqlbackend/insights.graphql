@@ -213,6 +213,7 @@ type CreateInsightResult {
 
 input CreateInsightInput {
     lineChart: LineChartInsightViewInput
+    grants: PermissionGrants!
 }
 
 input LineChartInsightViewInput {
