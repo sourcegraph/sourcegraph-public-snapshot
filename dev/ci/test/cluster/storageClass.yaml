@@ -5,10 +5,9 @@ metadata:
     name: sourcegraph
     labels:
         deploy: sourcegraph
-provisioner: pd.csi.storage.gke.io
+provisioner: kubernetes.io/gce-pd
 parameters:
-    type: pd-balanced
+    type: pd-ssd # This configures SSDs (recommended).
     fsType: ext4
 volumeBindingMode: WaitForFirstConsumer
 reclaimPolicy: Delete
-allowVolumeExpansion: true
