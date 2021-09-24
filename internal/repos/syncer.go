@@ -51,10 +51,10 @@ type Syncer struct {
 	// If zero, we'll read from config instead.
 	UserReposMaxPerSite int
 
-	// SyncSemaphoreMu protects SyncSemaphore
+	// SyncSemaphoreMu protects SyncSemaphores
 	SyncSemaphoreMu sync.Mutex
-	// SyncSemaphore allows us to limit the number of concurrent syncs per repo to 1
-	SyncSemaphore map[api.RepoName]*semaphore.Weighted
+	// SyncSemaphores allows us to limit the number of concurrent syncs per repo to 1
+	SyncSemaphores map[api.RepoName]*semaphore.Weighted
 }
 
 // RunOptions contains options customizing Run behaviour.
@@ -299,13 +299,13 @@ func (s *Syncer) syncRepo(
 	defer func() { save(svc, err) }()
 
 	s.SyncSemaphoreMu.Lock()
-	if s.SyncSemaphore == nil {
-		s.SyncSemaphore = make(map[api.RepoName]*semaphore.Weighted)
+	if s.SyncSemaphores == nil {
+		s.SyncSemaphores = make(map[api.RepoName]*semaphore.Weighted)
 	}
-	sem := s.SyncSemaphore[name]
+	sem := s.SyncSemaphores[name]
 	if sem == nil {
 		sem = semaphore.NewWeighted(1)
-		s.SyncSemaphore[name] = sem
+		s.SyncSemaphores[name] = sem
 	}
 	s.SyncSemaphoreMu.Unlock()
 
