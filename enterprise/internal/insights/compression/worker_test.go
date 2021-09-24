@@ -11,6 +11,7 @@ import (
 	"golang.org/x/time/rate"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
@@ -26,6 +27,7 @@ func TestCommitIndexer_indexAll(t *testing.T) {
 		commitStore:       commitStore,
 		maxHistoricalTime: maxHistorical,
 		background:        context.Background(),
+		operations:        newOperations(&observation.TestContext),
 	}
 
 	// Testing a scenario with 3 repos
@@ -194,8 +196,8 @@ func commit(ref string, commitTime string) *git.Commit {
 	}
 }
 
-func mockCommits(commits map[string][]*git.Commit) func(ctx context.Context, name api.RepoName, after time.Time) ([]*git.Commit, error) {
-	return func(ctx context.Context, name api.RepoName, after time.Time) ([]*git.Commit, error) {
+func mockCommits(commits map[string][]*git.Commit) func(ctx context.Context, name api.RepoName, after time.Time, operation *observation.Operation) ([]*git.Commit, error) {
+	return func(ctx context.Context, name api.RepoName, after time.Time, operation *observation.Operation) ([]*git.Commit, error) {
 		return commits[(string(name))], nil
 	}
 }
