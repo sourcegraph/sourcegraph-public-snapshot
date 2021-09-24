@@ -1,7 +1,6 @@
 import { Menu, MenuButton, MenuItem, MenuItems, MenuLink, MenuPopover } from '@reach/menu-button'
 import classnames from 'classnames'
 import { noop } from 'lodash'
-import CheckIcon from 'mdi-react/CheckIcon'
 import DotsVerticalIcon from 'mdi-react/DotsVerticalIcon'
 import React, { useContext } from 'react'
 import { Link } from 'react-router-dom'
@@ -73,14 +72,7 @@ export const InsightContextMenu: React.FunctionComponent<InsightCardMenuProps> =
                                     onSelect={onToggleZeroYAxisMin}
                                     aria-checked={zeroYAxisMin}
                                 >
-                                    <input
-                                        type="checkbox"
-                                        className="sr-only"
-                                        aria-hidden="true"
-                                        checked={zeroYAxisMin}
-                                        onChange={noop}
-                                    />
-                                    <CheckIcon size={16} className={classnames('mr-2', { invisible: !zeroYAxisMin })} />{' '}
+                                    <input type="checkbox" aria-hidden="true" checked={zeroYAxisMin} onChange={noop} />
                                     <span>Start Y Axis at 0</span>
                                 </MenuItem>
                             )}
