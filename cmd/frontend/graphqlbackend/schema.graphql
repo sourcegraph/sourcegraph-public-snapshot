@@ -740,6 +740,19 @@ type Mutation {
         """
         contents: String!
     ): EmptyResponse!
+
+    """
+    Merges the given settings edit with the current temporary settings for the current user.
+    Keys in the given edit take priority over key in the temporary settings. The merge is
+    not recursive.
+    If temporary settings for the user do not exist, they are created.
+    """
+    editTemporarySettings(
+        """
+        The settings to merge with the current temporary settings for the current user, as a JSON string.
+        """
+        settingsToEdit: String!
+    ): EmptyResponse!
 }
 
 """
