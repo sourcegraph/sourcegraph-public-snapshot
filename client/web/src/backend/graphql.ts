@@ -68,6 +68,7 @@ export const mutateGraphQL = (request: string, variables?: {}): Observable<Graph
  */
 export const getWebGraphQLClient = memoize(() =>
     getGraphQLClient({
+        isAuthenticated: window.context.isAuthenticatedUser,
         headers: {
             ...window?.context?.xhrHeaders,
             'X-Sourcegraph-Should-Trace': new URLSearchParams(window.location.search).get('trace') || 'false',
