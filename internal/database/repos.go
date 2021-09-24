@@ -913,7 +913,24 @@ func (s *RepoStore) listSQL(ctx context.Context, opt ReposListOptions) (*sqlf.Qu
 	}
 
 	if len(opt.Names) > 0 {
-		where = append(where, sqlf.Sprintf("name = ANY (%s)", pq.Array(opt.Names)))
+		lowerNames := make([]string, len(opt.Names))
+		for i, name := range opt.Names {
+			lowerNames[i] = strings.ToLower(name)
+		}
+
+		// Performance improvement
+		//
+		// Comparing JUST the name field will use the repo_name_unique index, which is
+		// a unique btree index over the citext name field. This tends to be a VERY SLOW
+		// comparison over a large table. We were seeing query plans growing linearly with
+		// the size of the result set such that each unique index scan would take ~0.1ms.
+		// This adds up as we regularly query 10k-40k repositories at a time.
+		//
+		// This condition instead forces the use of a btree index repo_name_idx defined over
+		// (lower(name::text) COLLATE "C"). This is a MUCH faster comparison as it does not
+		// need to fold the casing of either the input value nor the value in the index.
+
+		where = append(where, sqlf.Sprintf(`lower(name::text) COLLATE "C" = ANY (%s::text[])`, pq.Array(lowerNames)))
 	}
 
 	if len(opt.URIs) > 0 {
