@@ -72,6 +72,15 @@ export class ActivationDropdown extends React.PureComponent<ActivationDropdownPr
             this.state.displayEvenIfFullyCompleted ||
             this.state.animate ||
             (this.props.activation.completed !== undefined && percentageDone(this.props.activation.completed) < 100)
+
+        console.log({
+            activation: this.props.activation,
+            string: JSON.stringify(this.props.activation),
+            props: this.props,
+            state: this.state,
+            show,
+        })
+
         if (!show) {
             return <div className="test-activation-hidden d-none" />
         }
