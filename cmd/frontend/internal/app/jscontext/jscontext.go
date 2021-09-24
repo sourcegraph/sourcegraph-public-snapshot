@@ -6,9 +6,11 @@ import (
 	"bytes"
 	"net/http"
 	"os"
+	"strconv"
 	"strings"
 
 	"github.com/gorilla/csrf"
+	"k8s.io/apimachinery/pkg/util/rand"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth/providers"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/enterprise"
@@ -195,7 +197,10 @@ func NewJSContextFromRequest(req *http.Request) JSContext {
 		ProductResearchPageEnabled: conf.ProductResearchPageEnabled(),
 
 		ExperimentalFeatures: conf.ExperimentalFeatures(),
+
+		Test: strconv.Itoa(rand.Intn(100)),
 	}
+
 }
 
 // publicSiteConfiguration is the subset of the site.schema.json site

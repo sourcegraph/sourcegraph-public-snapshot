@@ -1,5 +1,7 @@
 import 'focus-visible'
 
+import { isError } from 'util'
+
 import { ApolloProvider } from '@apollo/client'
 import { ShortcutProvider } from '@slimsag/react-shortcuts'
 import { createBrowserHistory } from 'history'
@@ -7,7 +9,7 @@ import ServerIcon from 'mdi-react/ServerIcon'
 import * as React from 'react'
 import { Route, Router } from 'react-router'
 import { combineLatest, from, Subscription, fromEvent, of, Subject } from 'rxjs'
-import { bufferCount, catchError, distinctUntilChanged, map, startWith, switchMap } from 'rxjs/operators'
+import { bufferCount, catchError, distinctUntilChanged, map, startWith, switchMap, tap } from 'rxjs/operators'
 
 import { Tooltip } from '@sourcegraph/branded/src/components/tooltip/Tooltip'
 import { getEnabledExtensions } from '@sourcegraph/shared/src/api/client/enabledExtensions'
@@ -360,20 +362,28 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
                     switchMap(([, authenticatedUser]) =>
                         authenticatedUser
                             ? combineLatest([
-                                  listUserRepositories({ id: authenticatedUser.id, first: 1 }),
+                                  listUserRepositories({
+                                      id: authenticatedUser.id,
+                                      first: window.context.sourcegraphDotComMode ? undefined : 1,
+                                  }),
                                   queryExternalServices({ namespace: authenticatedUser.id, first: 1, after: null }),
+                                  [authenticatedUser],
                               ])
                             : of(null)
                     ),
+                    tap(result => {
+                        if (!isErrorLike(result) && result !== null && window.context.sourcegraphDotComMode) {
+                            // Set user properties for Cloud analytics.
+                            const [userRepositoriesResult, externalServicesResult, authenticatedUser] = result
+                            this.setUserProperties(userRepositoriesResult, externalServicesResult, authenticatedUser)
+                        }
+                    }),
                     catchError(error => [asError(error)])
                 )
                 .subscribe(result => {
                     if (!isErrorLike(result) && result !== null) {
                         const [userRepositoriesResult, externalServicesResult] = result
-                        this.setUserProperties(userRepositoriesResult, externalServicesResult)
-                        // TODO farhan: store in local storage / cookie for has_added_repositories user properties
-                        // TODO farhan: also can use the result of listUserRepositories for number of public/private repos added
-                        // TODO farhan: can also get number_of_repos_added
+
                         this.setState({
                             hasUserAddedRepositories: userRepositoriesResult.nodes.length > 0,
                             hasUserAddedExternalServices: externalServicesResult.nodes.length > 0,
@@ -642,7 +652,8 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
 
     private setUserProperties = (
         reposResult: NonNullable<UserRepositoriesResult['node']>['repositories'],
-        extensionSvcResult: ExternalServicesResult['externalServices']
+        extensionSvcResult: ExternalServicesResult['externalServices'],
+        authenticatedUser: AuthenticatedUser | null
     ): void => {
         const userProps: userProperties = {
             hasAddedRepositories: reposResult.totalCount ? reposResult.totalCount > 0 : false,
@@ -650,6 +661,7 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
             numberOfPublicRepos: reposResult.nodes ? reposResult.nodes.filter(repo => !repo.isPrivate).length : 0,
             numberOfPrivateRepos: reposResult.nodes ? reposResult.nodes.filter(repo => repo.isPrivate).length : 0,
             hasActiveCodeHost: extensionSvcResult.totalCount > 0,
+            isSourcegraphTeammate: authenticatedUser?.email.endsWith('@sourcegraph.com') || false,
         }
         localStorage.setItem('SOURCEGRAPH_USER_PROPERTIES', JSON.stringify(userProps))
     }
@@ -666,4 +678,5 @@ interface userProperties {
     numberOfPublicRepos: number
     numberOfPrivateRepos: number
     hasActiveCodeHost: boolean
+    isSourcegraphTeammate: boolean
 }

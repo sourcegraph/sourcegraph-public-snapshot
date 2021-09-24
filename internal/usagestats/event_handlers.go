@@ -227,6 +227,7 @@ type AmplitudeUserProperties struct {
 	NumberPublicReposAdded  int                 `json:"number_public_repos_added"`
 	NumberPrivateReposAdded int                 `json:"number_private_repos_added"`
 	HasActiveCodeHost       int                 `json:"has_active_code_host"`
+	IsSourcegraphTeammate   int                 `json:"is_sourcegraph_teammate"`
 }
 
 type FrontendAmplitudeUserProperties struct {
@@ -235,6 +236,7 @@ type FrontendAmplitudeUserProperties struct {
 	NumberPublicReposAdded  int  `json:"number_public_repos_added"`
 	NumberPrivateReposAdded int  `json:"number_private_repos_added"`
 	HasActiveCodeHost       int  `json:"has_active_code_host"`
+	IsSourcegraphTeammate   int  `json:"is_sourcegraph_teammate"`
 }
 
 func getAmplitudeUserProperties(args Event) (json.RawMessage, error) {
@@ -263,7 +265,7 @@ func getAmplitudeUserProperties(args Event) (json.RawMessage, error) {
 		NumberPublicReposAdded:  userPropertiesFromFrontend.NumberPublicReposAdded,
 		NumberPrivateReposAdded: userPropertiesFromFrontend.NumberPrivateReposAdded,
 		HasActiveCodeHost:       userPropertiesFromFrontend.HasActiveCodeHost,
-		// NumberOfReposAdded: args.UserID != 0,
+		IsSourcegraphTeammate:   userPropertiesFromFrontend.IsSourcegraphTeammate,
 	})
 	if err != nil {
 		return nil, err
