@@ -1,6 +1,5 @@
 import delay from 'delay'
 import { describe, before, after, test } from 'mocha'
-import { Key } from 'ts-key-enum'
 
 import * as GQL from '@sourcegraph/shared/src/graphql/schema'
 import { getConfig } from '@sourcegraph/shared/src/testing/config'
@@ -9,8 +8,6 @@ import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing
 import { retry } from '@sourcegraph/shared/src/testing/utils'
 
 import {
-    ensureTestExternalService,
-    waitForRepos,
     setUserSiteAdmin,
     getUser,
     ensureNoTestExternalServices,
@@ -154,3 +151,4 @@ describe('Onboarding', () => {
             config: JSON.stringify(testExternalServiceConfig.config),
         })
     })
+})
