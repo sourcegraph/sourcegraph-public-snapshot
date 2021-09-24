@@ -1,6 +1,5 @@
 import delay from 'delay'
 import { describe, before, after, test } from 'mocha'
-import { Key } from 'ts-key-enum'
 
 import * as GQL from '@sourcegraph/shared/src/graphql/schema'
 import { getConfig } from '@sourcegraph/shared/src/testing/config'
@@ -8,14 +7,7 @@ import { Driver } from '@sourcegraph/shared/src/testing/driver'
 import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'
 import { retry } from '@sourcegraph/shared/src/testing/utils'
 
-import {
-    ensureTestExternalService,
-    waitForRepos,
-    setUserSiteAdmin,
-    getUser,
-    ensureNoTestExternalServices,
-    getExternalServices,
-} from './util/api'
+import { setUserSiteAdmin, getUser, ensureNoTestExternalServices, getExternalServices } from './util/api'
 import { GraphQLClient } from './util/GraphQlClient'
 import { ensureLoggedInOrCreateTestUser } from './util/helpers'
 import { getTestTools } from './util/init'
@@ -153,46 +145,5 @@ describe('Onboarding', () => {
             displayName: testExternalServiceConfig.uniqueDisplayName,
             config: JSON.stringify(testExternalServiceConfig.config),
         })
-    })
-
-    test('Non-admin user onboarding', async function () {
-        this.timeout(30 * 1000)
-        await ensureTestExternalService(gqlClient, testExternalServiceConfig, config)
-        const repoSlugs = testExternalServiceConfig.config.repos
-        await waitForRepos(gqlClient, ['github.com/' + repoSlugs[repoSlugs.length - 1]], config)
-
-        const testUser = await getUser(gqlClient, testUsername)
-        if (!testUser) {
-            throw new Error(`Could not obtain userID of user ${testUsername}`)
-        }
-        await setUserSiteAdmin(gqlClient, testUser.id, false)
-
-        // Initial status indicator
-        await driver.page.goto(config.sourcegraphBaseUrl + '/search')
-
-        // Do a search
-        await driver.page.waitForSelector('#monaco-query-input')
-        await driver.page.type('#monaco-query-input', 'asdf')
-        await driver.page.keyboard.press(Key.Enter)
-
-        // Do a find references
-        await driver.page.goto(
-            config.sourcegraphBaseUrl + '/github.com/auth0/go-jwt-middleware/-/blob/jwtmiddleware.go'
-        )
-        await driver.findElementWithText('TokenExtractor', {
-            selector: '.blob-page__blob span',
-            fuzziness: 'prefix',
-            wait: { timeout: 5000 },
-            action: 'click',
-        })
-        const findReferencesSelector = '.test-tooltip-find-references'
-        await driver.page.waitForSelector(findReferencesSelector)
-        await driver.page.click(findReferencesSelector)
-        await driver.page.waitForSelector('.test-search-result')
-
-        await driver.page.reload()
-
-        // Activation dropdown should be hidden
-        await driver.page.waitForSelector('.test-activation-hidden')
     })
 })
