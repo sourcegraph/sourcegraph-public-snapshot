@@ -154,16 +154,13 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		for _, dockerImage := range images.SourcegraphDockerImages {
 			appendOps(buildCandidateDockerImage(dockerImage, c.Version, c.candidateImageTag()))
 		}
-		if c.RunType.Is(MainDryRun, MainBranch) {
-			appendOps(buildExecutor(c.Time, c.Version))
-		}
 
 		// Slow tests
 		if c.RunType.Is(BackendDryRun, MainDryRun, MainBranch) {
 			appendOps(addBackendIntegrationTests)
 		}
 		if c.RunType.Is(MainDryRun, MainBranch) {
-			appendOps(frontendPuppeteerAndStorybook(c.RunType.Is(MainBranch)))
+			appendOps(clientIntegrationTests, clientChromaticTests(c.RunType.Is(MainBranch)))
 		}
 
 		// Core tests
@@ -179,9 +176,6 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		// Add final artifacts
 		for _, dockerImage := range images.SourcegraphDockerImages {
 			appendOps(publishFinalDockerImage(c, dockerImage, c.RunType.Is(MainBranch)))
-		}
-		if c.RunType.Is(MainBranch) {
-			appendOps(publishExecutor(c.Time, c.Version))
 		}
 
 		// Propogate changes elsewhere

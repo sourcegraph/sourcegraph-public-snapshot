@@ -4,6 +4,7 @@
 source /root/.profile
 root_dir="$(dirname "${BASH_SOURCE[0]}")/../../../.."
 cd "$root_dir"
+root_dir=$(pwd)
 
 set -ex
 
@@ -21,9 +22,11 @@ trap cleanup EXIT
 CONTAINER=sourcegraph-server
 
 docker_logs() {
+  pushd "$root_dir"
   LOGFILE=$(docker inspect ${CONTAINER} --format '{{.LogPath}}')
   cp "$LOGFILE" $CONTAINER.log
   chmod 744 $CONTAINER.log
+  popd
 }
 
 if [[ $VAGRANT_RUN_ENV = "CI" ]]; then
