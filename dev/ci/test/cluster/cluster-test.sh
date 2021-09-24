@@ -98,6 +98,8 @@ function test_setup() {
 function e2e() {
   echo "TEST: Running tests"
   pushd client/web
+  echo "TEST: Downloading Puppeteer"
+  yarn --cwd client/shared run download-puppeteer-browser
   echo "$SOURCEGRAPH_BASE_URL"
   yarn run test:regression:core
   yarn run test:regression:config-settings
