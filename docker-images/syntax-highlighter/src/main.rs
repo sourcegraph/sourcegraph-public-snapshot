@@ -16,6 +16,7 @@ use rocket_contrib::json::{Json, JsonValue};
 use std::env;
 use std::panic;
 use std::path::Path;
+use syntect::parsing::SyntaxReference;
 use syntect::{
     highlighting::ThemeSet,
     html::{highlighted_html_for_string, ClassStyle},
@@ -74,46 +75,9 @@ fn index(q: Json<Query>) -> JsonValue {
 fn highlight(q: Query) -> JsonValue {
     SYNTAX_SET.with(|syntax_set| {
         // Determine syntax definition by extension.
-        let mut is_plaintext = false;
-        let syntax_def = if q.filepath == "" {
-            // Legacy codepath, kept for backwards-compatability with old clients.
-            match syntax_set.find_syntax_by_extension(&q.extension) {
-                Some(v) => v,
-                None =>
-                // Fall back: Determine syntax definition by first line.
-                {
-                    match syntax_set.find_syntax_by_first_line(&q.code) {
-                        Some(v) => v,
-                        None => return json!({"error": "invalid extension"}),
-                    }
-                }
-            }
-        } else {
-            // Split the input path ("foo/myfile.go") into file name
-            // ("myfile.go") and extension ("go").
-            let path = Path::new(&q.filepath);
-            let file_name = path.file_name().and_then(|n| n.to_str()).unwrap_or("");
-            let extension = path.extension().and_then(|x| x.to_str()).unwrap_or("");
-
-            // To determine the syntax definition, we must first check using the
-            // filename as some syntaxes match an "extension" that is actually a
-            // whole file name (e.g. "Dockerfile" or "CMakeLists.txt"); see e.g. https://github.com/trishume/syntect/pull/170
-            //
-            // After that, if we do not find any syntax, we can actually check by
-            // extension and lastly via the first line of the code.
-
-            // First try to find a syntax whose "extension" matches our file
-            // name. This is done due to some syntaxes matching an "extension"
-            // that is actually a whole file name (e.g. "Dockerfile" or "CMakeLists.txt")
-            // see https://github.com/trishume/syntect/pull/170
-            syntax_set
-                .find_syntax_by_extension(file_name)
-                .or_else(|| syntax_set.find_syntax_by_extension(extension))
-                .or_else(|| syntax_set.find_syntax_by_first_line(&q.code))
-                .unwrap_or_else(|| {
-                    is_plaintext = true;
-                    syntax_set.find_syntax_plain_text()
-                })
+        let syntax_def = match determine_language(&q, syntax_set) {
+            Ok(v) => v,
+            Err(e) => return e,
         };
 
         if q.css {
@@ -128,7 +92,7 @@ fn highlight(q: Query) -> JsonValue {
 
             json!({
                 "data": output,
-                "plaintext": is_plaintext,
+                "plaintext": syntax_def.name == "Plain Text",
             })
         } else {
             // TODO(slimsag): return the theme's background color (and other info??) to caller?
@@ -145,10 +109,111 @@ fn highlight(q: Query) -> JsonValue {
 
             json!({
                 "data": highlighted_html_for_string(&q.code, &syntax_set, &syntax_def, theme),
-                "plaintext": is_plaintext,
+                "plaintext": syntax_def.name == "Plain Text",
             })
         }
     })
+}
+
+fn determine_language<'a>(
+    q: &Query,
+    syntax_set: &'a SyntaxSet,
+) -> Result<&'a SyntaxReference, JsonValue> {
+    if q.filepath == "" {
+        // Legacy codepath, kept for backwards-compatability with old clients.
+        return match syntax_set.find_syntax_by_extension(&q.extension) {
+            Some(v) => Ok(v),
+            // Fall back: Determine syntax definition by first line.
+            None => match syntax_set.find_syntax_by_first_line(&q.code) {
+                Some(v) => Ok(v),
+                None => Err(json!({"error": "invalid extension"})),
+            },
+        };
+    }
+
+    // Split the input path ("foo/myfile.go") into file name
+    // ("myfile.go") and extension ("go").
+    let path = Path::new(&q.filepath);
+    let file_name = path.file_name().and_then(|n| n.to_str()).unwrap_or("");
+    let extension = path.extension().and_then(|x| x.to_str()).unwrap_or("");
+
+    // Override syntect's language detection for conflicting file extensions because
+    // it's impossible to express this logic in a syntax definition.
+    struct Override {
+        extension: &'static str,
+        prefix_langs: Vec<(&'static str, &'static str)>,
+        default: &'static str,
+    }
+    let overrides = vec![Override {
+        extension: "cls",
+        prefix_langs: vec![("%", "TeX"), ("\\", "TeX")],
+        default: "Apex",
+    }];
+
+    if let Some(Override {
+        prefix_langs,
+        default,
+        ..
+    }) = overrides.iter().find(|o| o.extension == extension)
+    {
+        let name = match prefix_langs
+            .iter()
+            .find(|(prefix, _)| q.code.starts_with(prefix))
+        {
+            Some((_, lang)) => lang,
+            None => default,
+        };
+        return Ok(syntax_set
+            .find_syntax_by_name(name)
+            .unwrap_or_else(|| syntax_set.find_syntax_plain_text()));
+    }
+
+    Ok(syntax_set
+        // First try to find a syntax whose "extension" matches our file
+        // name. This is done due to some syntaxes matching an "extension"
+        // that is actually a whole file name (e.g. "Dockerfile" or "CMakeLists.txt")
+        // see https://github.com/trishume/syntect/pull/170
+        .find_syntax_by_extension(file_name)
+        .or_else(|| syntax_set.find_syntax_by_extension(extension))
+        .or_else(|| syntax_set.find_syntax_by_first_line(&q.code))
+        .unwrap_or_else(|| syntax_set.find_syntax_plain_text()))
+}
+
+#[cfg(test)]
+mod tests {
+    use syntect::parsing::SyntaxSet;
+
+    use crate::{Query, determine_language};
+
+    #[test]
+    fn cls_tex() {
+        let syntax_set = SyntaxSet::load_defaults_newlines();
+        let query = Query {
+            filepath: "foo.cls".to_string(),
+            code: "%".to_string(),
+            css: false,
+            line_length_limit: None,
+            extension: String::new(),
+            theme: String::new(),
+        };
+        let result = determine_language(&query, &syntax_set);
+        assert_eq!(result.unwrap().name, "TeX");
+    }
+
+    #[test]
+    fn cls_apex() {
+        let syntax_set = SyntaxSet::load_defaults_newlines();
+        let query = Query {
+            filepath: "foo.cls".to_string(),
+            code: "/**".to_string(),
+            css: false,
+            line_length_limit: None,
+            extension: String::new(),
+            theme: String::new(),
+        };
+        let result = determine_language(&query, &syntax_set);
+        assert_eq!(result.unwrap().name, "Apex");
+    }
 }
 
 #[get("/health")]
