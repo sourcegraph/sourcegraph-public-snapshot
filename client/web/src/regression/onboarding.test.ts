@@ -7,12 +7,7 @@ import { Driver } from '@sourcegraph/shared/src/testing/driver'
 import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'
 import { retry } from '@sourcegraph/shared/src/testing/utils'
 
-import {
-    setUserSiteAdmin,
-    getUser,
-    ensureNoTestExternalServices,
-    getExternalServices,
-} from './util/api'
+import { setUserSiteAdmin, getUser, ensureNoTestExternalServices, getExternalServices } from './util/api'
 import { GraphQLClient } from './util/GraphQlClient'
 import { ensureLoggedInOrCreateTestUser } from './util/helpers'
 import { getTestTools } from './util/init'
