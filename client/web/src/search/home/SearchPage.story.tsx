@@ -83,7 +83,9 @@ add('Cloud with panels', () => (
 ))
 
 add('Cloud with community search contexts', () => (
-    <WebStory>{webProps => <SearchPage {...defaultProps(webProps)} isSourcegraphDotCom={true} />}</WebStory>
+    <WebStory>
+        {webProps => <SearchPage {...defaultProps(webProps)} isSourcegraphDotCom={true} authenticatedUser={null} />}
+    </WebStory>
 ))
 
 add('Cloud with notebook onboarding', () => (
@@ -92,6 +94,7 @@ add('Cloud with notebook onboarding', () => (
             <SearchPage
                 {...defaultProps(webProps)}
                 isSourcegraphDotCom={true}
+                authenticatedUser={null}
                 featureFlags={new Map([['search-notebook-onboarding', true]])}
             />
         )}
