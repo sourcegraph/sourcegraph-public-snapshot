@@ -1,4 +1,4 @@
-import cookies, { CookieAttributes } from 'js-cookie'
+import cookies from 'js-cookie'
 import { noop } from 'lodash'
 import { Observable, ReplaySubject, Subscription } from 'rxjs'
 import { take } from 'rxjs/operators'
