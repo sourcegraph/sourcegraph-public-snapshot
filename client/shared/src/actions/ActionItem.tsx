@@ -12,6 +12,7 @@ import { ActionContribution, Evaluated } from '../api/protocol'
 import { urlForOpenPanel } from '../commands/commands'
 import { ButtonLink } from '../components/LinkOrButton'
 import { ExtensionsControllerProps } from '../extensions/controller'
+import { Keybinding } from '../keyboardShortcuts'
 import { PlatformContextProps } from '../platform/context'
 import { TelemetryProps } from '../telemetry/telemetryService'
 import { asError, ErrorLike, isErrorLike } from '../util/errors'
@@ -36,7 +37,7 @@ export interface ActionItemAction {
     /**
      * TODO: check if rather need to Keybinding interface
      */
-    keybinding?: string
+    keybinding?: Keybinding
 }
 
 export interface ActionItemComponentProps

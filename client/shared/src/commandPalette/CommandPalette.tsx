@@ -1,9 +1,11 @@
 import Dialog from '@reach/dialog'
+import { Key, ModifierKey, Shortcut, ShortcutProvider } from '@slimsag/react-shortcuts'
+import { action } from '@storybook/addon-actions'
 import { Remote } from 'comlink'
 import * as H from 'history'
 import { sortBy } from 'lodash'
 import { extension } from 'mime-types'
-import React, { useState, useMemo } from 'react'
+import React, { useState, useMemo, useCallback } from 'react'
 import { useToggle } from 'react-use'
 import { from } from 'rxjs'
 import { filter, switchMap } from 'rxjs/operators'
@@ -17,6 +19,7 @@ import { ContributableMenu } from '../api/protocol'
 import { HighlightedMatches } from '../components/HighlightedMatches'
 import { getContributedActionItems } from '../contributions/contributions'
 import { ExtensionsControllerProps } from '../extensions/controller'
+import { Keybinding } from '../keyboardShortcuts'
 import { PlatformContextProps } from '../platform/context'
 import { TelemetryProps } from '../telemetry/telemetryService'
 import { memoizeObservable } from '../util/memoizeObservable'
@@ -43,6 +46,7 @@ const getContributions = memoizeObservable(
 )
 
 const RECENT_ACTIONS_STORAGE_KEY = 'commandList.recentActions'
+const KEEP_RECENT_ACTIONS = 10
 
 function readRecentActions(): string[] | null {
     const value = localStorage.getItem(RECENT_ACTIONS_STORAGE_KEY)
@@ -95,10 +99,78 @@ const builtInActions: Pick<ActionItemAction, 'action' | 'active' | 'keybinding'>
             command: 'open',
             commandArguments: ['https://google.com'],
         },
-        keybinding: 'ctrl + t',
+        keybinding: {
+            ordered: ['T'],
+            // held: ["Control"],
+        },
         active: true,
     },
 ]
+
+const ShortcutController: React.FC<{
+    actions: ActionItemAction[]
+    onMatch: (action: ActionItemAction) => void
+}> = React.memo(({ actions, onMatch }) => (
+    <ShortcutProvider>
+        {actions.map((actionItem, index) => (
+            <Shortcut
+                key={index}
+                {...actionItem.keybinding!}
+                onMatch={() => {
+                    onMatch(actionItem)
+                }}
+            />
+        ))}
+    </ShortcutProvider>
+))
+
+const ActionItemRender: React.FC<{
+    actionItem: ActionItemAction
+    onClick: (action: ActionItemAction) => void
+}> = ({ action, onClick }) => {
+    console.log({ action })
+
+    const runAction = (runAction = (event: React.MouseEvent<HTMLElement> | React.KeyboardEvent<HTMLElement>): void => {
+        const action = (isAltEvent(event) && this.props.altAction) || this.props.action
+
+        if (!action.command) {
+            // Unexpectedly arrived here; noop actions should not have event handlers that trigger
+            // this.
+            return
+        }
+
+        // Record action ID (but not args, which might leak sensitive data).
+        this.props.telemetryService.log(action.id)
+
+        if (urlForClientCommandOpen(action, this.props.location)) {
+            if (event.currentTarget.tagName === 'A' && event.currentTarget.hasAttribute('href')) {
+                // Do not execute the command. The <LinkOrButton>'s default event handler will do what we want (which
+                // is to open a URL). The only case where this breaks is if both the action and alt action are "open"
+                // commands; in that case, this only ever opens the (non-alt) action.
+                if (this.props.onDidExecute) {
+                    // Defer calling onRun until after the URL has been opened. If we call it immediately, then in
+                    // CommandList it immediately updates the (most-recent-first) ordering of the ActionItems, and
+                    // the URL actually changes underneath us before the URL is opened. There is no harm to
+                    // deferring this call; onRun's documentation allows this.
+                    const onDidExecute = this.props.onDidExecute
+                    setTimeout(() => onDidExecute(action.id))
+                }
+                return
+            }
+        }
+
+        // If the action we're running is *not* opening a URL by using the event target's default handler, then
+        // ensure the default event handler for the <LinkOrButton> doesn't run (which might open the URL).
+        event.preventDefault()
+
+        this.commandExecutions.next({
+            command: action.command,
+            args: action.commandArguments,
+        })
+    })
+
+    return <button onClick={() => onClick(action)}>{action.actionItem?.label}</button>
+}
 
 /**
  * EXPERIMENTAL: New command palette (RFC 467)
@@ -114,6 +186,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
     const [value, setValue] = useState('')
 
     const mode = getMode(value)
+    // TODO: builtin shortcuts that will open the cmdpalette with a default prefix (to set mode)
 
     const extensionContributions = useObservable(
         useMemo(
@@ -140,56 +213,78 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
         [extensionContributions]
     )
 
-    // TODO: recent actions, pass to filterAndRankItems
+    const [recentActions, setRecentActions] = useState(readRecentActions)
+    console.log({ recentActions })
+    // Update recent actions when an action is executed.
+    const onActionDidExecute = useCallback((actionID: string): void => {
+        setRecentActions(recentActions => {
+            const newRecentActions = [actionID, ...(recentActions ?? [])].slice(0, KEEP_RECENT_ACTIONS)
+            writeRecentActions(newRecentActions)
+            return newRecentActions
+        })
+    }, [])
 
-    const filteredActionItems = actionItems && filterAndRankItems(actionItems, value, null)
+    const filteredActionItems = actionItems && filterAndRankItems(actionItems, value, recentActions)
+
+    const actionsWithShortcut = useMemo(
+        (): ActionItemAction[] => actionItems.filter(({ keybinding }) => !!keybinding),
+        [actionItems]
+    )
+
+    const handleActionItem = (...args: any): void => console.log(...args)
 
     return (
         // TODO: render shortcuts here. isOpen state is global, can be changed by e.g. button, keybinding.
         // this is a singleton component that is always rendered.
-        <Dialog className="modal-body p-4 rounded border" {...{ isOpen, onDismiss }}>
-            <div>
-                <h1>cmdpal</h1>
-                <input
-                    autoComplete="off"
-                    spellCheck="false"
-                    aria-autocomplete="list"
-                    className="form-control py-1"
-                    placeholder="Search files by name (append : to jump to a line or @ to go to a symbol or > to search for a command)"
-                    value={value}
-                    onChange={event => {
-                        setValue(event.target.value)
-                    }}
-                    type="text"
-                />
-            </div>
-            {filteredActionItems?.map(item => (
-                <li key={item.action.id}>
-                    <ActionItem
-                        {...item}
-                        title={
-                            <>
-                                <HighlightedMatches
-                                    text={[
-                                        item.action.category,
-                                        item.action.actionItem?.label || item.action.title || item.action.command,
-                                    ]
-                                        .filter(Boolean)
-                                        .join(': ')}
-                                    pattern={value}
-                                />
-                                {item.keybinding && <kbd>{item.keybinding}</kbd>}
-                            </>
-                        }
-                        // onDidExecute={() => {}}
-                        extensionsController={extensionsController}
-                        platformContext={platformContext}
-                        telemetryService={telemetryService}
-                        location={location}
+        <>
+            <ShortcutController actions={actionsWithShortcut} onMatch={handleActionItem} />
+            <Dialog className="modal-body p-4 rounded border" {...{ isOpen, onDismiss }}>
+                <div>
+                    <h1>cmdpal</h1>
+                    <input
+                        autoComplete="off"
+                        spellCheck="false"
+                        aria-autocomplete="list"
+                        className="form-control py-1"
+                        placeholder="Search files by name (append : to jump to a line or @ to go to a symbol or > to search for a command)"
+                        value={value}
+                        onChange={event => {
+                            setValue(event.target.value)
+                        }}
+                        type="text"
                     />
-                </li>
-            ))}
-        </Dialog>
+                </div>
+                {filteredActionItems?.map(item => (
+                    <li key={item.action.id}>
+                        <ActionItem
+                            {...item}
+                            title={
+                                <>
+                                    <HighlightedMatches
+                                        text={[
+                                            item.action.category,
+                                            item.action.actionItem?.label || item.action.title || item.action.command,
+                                        ]
+                                            .filter(Boolean)
+                                            .join(': ')}
+                                        pattern={value}
+                                    />
+
+                                    {item.keybinding && item.keybinding.ordered.map(key => <kbd>{key}</kbd>)}
+                                    {item.keybinding && item.keybinding.held?.map(key => <kbd>{key}</kbd>)}
+                                </>
+                            }
+                            onClick={handleActionItem}
+                            onDidExecute={onActionDidExecute}
+                            extensionsController={extensionsController}
+                            platformContext={platformContext}
+                            telemetryService={telemetryService}
+                            location={location}
+                        />
+                    </li>
+                ))}
+            </Dialog>
+        </>
     )
 }
 
@@ -235,7 +330,11 @@ export function filterAndRankItems(
         })
         .map((item, index) => {
             const recentIndex = recentActions?.indexOf(item.action.id)
-            return { item, score: scores[index], recentIndex: recentIndex === -1 ? null : recentIndex }
+            return {
+                item,
+                score: scores[index],
+                recentIndex: recentIndex === -1 ? null : recentIndex,
+            }
         })
     return sortBy(scoredItems, 'recentIndex', 'score', ({ item }) => item.action.id).map(({ item }) => item)
 }

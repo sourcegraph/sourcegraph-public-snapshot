@@ -70,16 +70,25 @@ export const Default: Story<CommandPaletteProps> = () => {
                                 haveInitialExtensionsLoaded: () => pretendProxySubscribable(of(true)),
                                 getContributions: () =>
                                     pretendProxySubscribable(
-                                        of({ actions: commandPaletteActions, menus: commandPaletteMenus })
+                                        of({
+                                            actions: commandPaletteActions,
+                                            menus: commandPaletteMenus,
+                                        })
                                     ),
                             })
                         ),
                         executeCommand: (commandID, commandArguments) => {
-                            console.log({ commandID, commandArgs: commandArguments })
+                            console.log({
+                                commandID,
+                                commandArgs: commandArguments,
+                            })
                             return Promise.resolve()
                         },
                     }}
-                    platformContext={{ forceUpdateTooltip: noop, settings: of(NOOP_SETTINGS_CASCADE) }}
+                    platformContext={{
+                        forceUpdateTooltip: noop,
+                        settings: of(NOOP_SETTINGS_CASCADE),
+                    }}
                     telemetryService={NOOP_TELEMETRY_SERVICE}
                     location={history.location}
                 />
