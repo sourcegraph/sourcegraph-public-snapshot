@@ -29,11 +29,6 @@ steps:
     label: ':lighthouse: lighthouse:search_results'
     env:
       SOURCEGRAPH_API_URL: https://sourcegraph.com
-  - command: dev/ci/yarn-lighthouse.sh repository_page /github.com/sourcegraph/sourcegraph
-    depends_on: lighthouse:prep
-    label: ':lighthouse: lighthouse:repository_page'
-    env:
-      SOURCEGRAPH_API_URL: https://sourcegraph.com
   - command: dev/ci/yarn-lighthouse.sh file_blob /github.com/sourcegraph/sourcegraph/-/blob/package.json
     depends_on: lighthouse:prep
     label: ':lighthouse: lighthouse:file_blob'
