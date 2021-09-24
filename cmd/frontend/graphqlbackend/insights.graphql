@@ -1,40 +1,29 @@
-extend type Query {
-    """
-    [Experimental] Query for all insights and return their aggregations.
-    """
-    insights(
-        """
-        An (optional) array of insight unique ids that will filter the results by the provided values. If omitted, all available insights will return.
-        """
-        ids: [ID!]
-    ): InsightConnection
-}
 
 extend type Mutation {
     """
     Create a new dashboard. Permissions will automatically be granted to the user creating the dashboard.
     """
-    createDashboard(input: DashboardInput!): Dashboard!
+    createInsightsDashboard(input: DashboardInput!): Dashboard!
 
     """
     Edit an existing dashboard.
     """
-    editDashboard(id: ID!, input: DashboardInput!): Dashboard!
+    updateInsightsDashboard(id: ID!, input: DashboardInput!): Dashboard!
 
     """
     Delete a dashboard. Any views that would become dangling will be deleted.
     """
-    deleteDashboard(input: ID!): EmptyResponse!
+    deleteInsightsDashboard(input: ID!): EmptyResponse!
 
     """
     Associate an existing insight view with this dashboard.
     """
-    attachView(id: ID!, viewID: ID!): Dashboard!
+    attachInsightViewToDashboard(id: ID!, viewID: ID!): Dashboard!
 
     """
     Remove an insight view from this dashboard. If the view would become dangling it will be deleted.
     """
-    removeView(id: ID!, viewID: ID!): Dashboard!
+    detachInsightViewFromDashboard(id: ID!, viewID: ID!): Dashboard!
 }
 
 extend type Query {
@@ -75,36 +64,29 @@ input PermissionGrants {
 type Dashboard {
     id: ID!
     metadata: DashboardMetadata!
-    views: InsightViewConnection
+    views: InsightConnection
 }
 
 type DashboardMetadata {
     title: String!
 }
 
-type InsightViewConnection {
+extend type Query {
     """
-    A list of insights.
+    [Experimental] Query for all insights and return their aggregations.
     """
-    nodes: [InsightView!]!
+    insights(
+        """
+        An (optional) array of insight unique ids that will filter the results by the provided values. If omitted, all available insights will return.
+        """
+        ids: [ID!]
 
-    """
-    The total number of insights in the connection.
-    """
-    totalCount: Int!
-
-    """
-    Pagination information.
-    """
-    pageInfo: PageInfo!
-}
-
-
-"""
-Stub for insight view
-"""
-type InsightView {
-    id: ID!
+        """
+        An (optional) string of insight title that will filter the results by the provided values title field.
+        If omitted, all available insights will return.
+        """
+        search: String
+    ): InsightConnection
 }
 
 """
@@ -130,36 +112,176 @@ type InsightConnection {
 """
 An insight about code.
 """
-type Insight {
+union Insight = BackendInsight | FrontendInsight
+
+"""
+An insight that runs over all repositories.
+"""
+type BackendInsight {
+    """
+    Unique identifier for this insight.
+    """
+    id: String!
+
     """
     The short title of the insight.
     """
     title: String!
 
     """
-    The description of the insight.
-    """
-    description: String!
-
-    """
     Data points over a time range (inclusive)
     """
-    series: [InsightsSeries!]!
+    series: [BackendInsightsSeries!]!
+}
 
+"""
+An insight that runs over limited list of repositories.
+"""
+type FrontendInsight {
     """
     Unique identifier for this insight.
     """
     id: String!
+
+    """
+    The short title of the insight.
+    """
+    title: String!
+
+    """
+    The list of repositories to run your search over.
+    """
+    repositories: [String!]!
+
+    """
+    Granularity: distance between data points
+    """
+    timeStep: InsightTimeStep
+
+    """
+    Data points over a time range (inclusive)
+    """
+    series: [FrontendInsightSeries!]!
+}
+
+
+extend type Mutation {
+
+    """
+    Create a new insight.
+    """
+    createInsight(input: InsightInput): Insight
+
+    """
+    Edit an existing insight.
+    """
+    updateInsight(input: InsightInput): Insight
+}
+
+input InsightInput {
+    """
+    The short title of the insight.
+    """
+    title: String!
+
+    """
+    The list of repositories to run your search over.
+    """
+    repositories: [String!]!
+
+    """
+    Data points over a time range (inclusive)
+    """
+    series: [InsightsSeriesInput!]!
+
+    """
+    Granularity: distance between data points
+    """
+    timeStep: InsightTimeStepInput
+
+    """
+    Create an insight with global/all search across all indexed repos or
+    an insight with search across repositories specified with repositories array
+    field.
+    """
+    runOverAllRepositories: Boolean
+
+    """
+    The insight owner (former visibility setting)
+    """
+    owner: ID!
+}
+
+input InsightsSeriesInput {
+    """
+    The short title of the series.
+    """
+    title: String!
+
+    """
+    The series query that is used for gathering data.
+    """
+    query: String!
+
+    """
+    The rgba/hex/css variable color value of the series.
+    """
+    color: String!
+}
+
+enum InsightTimeStep {
+    HOUR
+    DAY
+    WEEK
+    MONTH
+    YEAR
+}
+
+input InsightTimeStepInput {
+    unit: InsightTimeStep!,
+    value: Int!
+}
+
+type InsightTimeStep {
+    unit: InsightTimeStep!,
+    value: Int!
+}
+
+type FrontendInsightSeries {
+    """
+    The label used to describe this series of data points.
+    """
+    label: String!
+
+    """
+    The series query that is used for gathering data.
+    """
+    query: String!
+
+    """
+    The rgba/hex/css variable color value of the series.
+    """
+    color: String!
 }
 
 """
 A series of data about a code insight.
 """
-type InsightsSeries {
+type BackendInsightsSeries {
     """
     The label used to describe this series of data points.
     """
     label: String!
+
+    """
+    The series query that is used for gathering data.
+    """
+    query: String!
+
+    """
+    The rgba/hex/css variable color value of the series.
+    """
+    color: String!
 
     """
     Data points over a time range (inclusive)
