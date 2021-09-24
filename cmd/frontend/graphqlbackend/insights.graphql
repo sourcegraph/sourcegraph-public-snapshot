@@ -135,6 +135,11 @@ An insight series as defined in the insight view. This series definition will on
 type InsightDataSeries {
     options: InsightDataSeriesOptions!
     definition: InsightDataSeriesDefinition!
+
+    """
+    To avoid groups of huge cardinality breaking our response, we would probably have to limit this to some max size and provide an alternate way to query with
+    paging / some other sorting filtering capability. Or otherwise somehow page this in place, but this gets really weird when you consider this is an expansion of a previously defined series, and paging through all of the series would involve paging across multiple groups.comment
+    """
     matchedSeries: [InsightMatchedDataSeries!]!
 }
 
