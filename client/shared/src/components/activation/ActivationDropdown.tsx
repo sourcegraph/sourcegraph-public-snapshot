@@ -1,6 +1,9 @@
 import { Menu, MenuButton, MenuPopover, MenuPopoverProps } from '@reach/menu-button'
 import classNames from 'classnames'
 import * as H from 'history'
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-ignore
+import stringify from 'json-stringify-safe'
 import React from 'react'
 import { CircularProgressbar } from 'react-circular-progressbar'
 import Confetti from 'react-dom-confetti'
@@ -75,7 +78,7 @@ export class ActivationDropdown extends React.PureComponent<ActivationDropdownPr
 
         console.log({
             activation: this.props.activation,
-            string: JSON.stringify(this.props.activation),
+            string: stringify(this.props.activation),
             props: this.props,
             state: this.state,
             show,
