@@ -299,6 +299,9 @@ func (s *Syncer) syncRepo(
 	defer func() { save(svc, err) }()
 
 	s.SyncSemaphoreMu.Lock()
+	if s.SyncSemaphore == nil {
+		s.SyncSemaphore = make(map[api.RepoName]*semaphore.Weighted)
+	}
 	sem := s.SyncSemaphore[name]
 	if sem == nil {
 		sem = semaphore.NewWeighted(1)
