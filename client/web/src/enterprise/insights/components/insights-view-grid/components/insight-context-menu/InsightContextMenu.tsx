@@ -72,7 +72,7 @@ export const InsightContextMenu: React.FunctionComponent<InsightCardMenuProps> =
                                     onSelect={onToggleZeroYAxisMin}
                                     aria-checked={zeroYAxisMin}
                                 >
-                                    <input type="checkbox" aria-hidden="true" checked={zeroYAxisMin} onChange={noop} />
+                                    <input type="checkbox" aria-hidden="true" checked={zeroYAxisMin} onChange={noop} tabIndex={-1} />
                                     <span>Start Y Axis at 0</span>
                                 </MenuItem>
                             )}
