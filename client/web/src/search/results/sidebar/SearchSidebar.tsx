@@ -2,18 +2,21 @@ import classNames from 'classnames'
 import React, { useCallback, useMemo } from 'react'
 import { useHistory } from 'react-router'
 import StickyBox from 'react-sticky-box'
-import shallow from 'zustand/shallow'
 
 import { FilterType } from '@sourcegraph/shared/src/search/query/filters'
 import { updateFilter } from '@sourcegraph/shared/src/search/query/transformer'
 import { Filter } from '@sourcegraph/shared/src/search/stream'
+import { VersionContextProps } from '@sourcegraph/shared/src/search/util'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
+import { CaseSensitivityProps, PatternTypeProps, SearchContextProps } from '../..'
+import { AuthenticatedUser } from '../../../auth'
+import { FeatureFlagProps } from '../../../featureFlags/featureFlags'
 import { TemporarySettings } from '../../../settings/temporary/TemporarySettings'
 import { useTemporarySetting } from '../../../settings/temporary/useTemporarySetting'
-import { SubmitSearchParameters, toggleSearchFilter } from '../../helpers'
-import { NavbarQueryState, useNavbarQueryState } from '../../navbarSearchQueryState'
+import { submitSearch, toggleSearchFilter } from '../../helpers'
+import { useNavbarQueryState } from '../../navbarSearchQueryState'
 
 import { getDynamicFilterLinks, getRepoFilterLinks, getSearchSnippetLinks } from './FilterLink'
 import { getFiltersOfKind, useLastRepoName } from './helpers'
@@ -25,11 +28,17 @@ import { SearchSidebarSection } from './SearchSidebarSection'
 import { getSearchTypeLinks } from './SearchTypeLink'
 
 export interface SearchSidebarProps
-    extends Omit<SubmitSearchParameters, 'history' | 'query' | 'source' | 'searchParameters'>,
+    extends Omit<PatternTypeProps, 'setPatternType'>,
+        Omit<CaseSensitivityProps, 'setCaseSensitivity'>,
+        VersionContextProps,
+        Pick<SearchContextProps, 'selectedSearchContextSpec'>,
         SettingsCascadeProps,
-        TelemetryProps {
+        TelemetryProps,
+        FeatureFlagProps {
+    authenticatedUser: AuthenticatedUser | null
     filters?: Filter[]
     className?: string
+    isSourcegraphDotCom: boolean
 }
 
 export enum SectionID {
@@ -42,36 +51,27 @@ export enum SectionID {
     REVISIONS = 'revisions',
 }
 
-const selectFromQueryState = ({
-    queryState: { query },
-    setQueryState,
-    submitSearch,
-}: NavbarQueryState): {
-    query: string
-    setQueryState: NavbarQueryState['setQueryState']
-    submitSearch: NavbarQueryState['submitSearch']
-} => ({
-    query,
-    setQueryState,
-    submitSearch,
-})
-
 export const SearchSidebar: React.FunctionComponent<SearchSidebarProps> = props => {
     const history = useHistory()
     const [collapsedSections, setCollapsedSections] = useTemporarySetting('search.collapsedSidebarSections', {})
-    const { query, setQueryState, submitSearch } = useNavbarQueryState(selectFromQueryState, shallow)
+    const query = useNavbarQueryState(state => state.queryState.query)
+    const setQueryState = useNavbarQueryState(state => state.setQueryState)
 
     const toggleFilter = useCallback(
-        (value: string) =>
-            submitSearch(query => toggleSearchFilter(query, value), { ...props, source: 'filter', history }),
-        [history, props, submitSearch]
+        (value: string) => {
+            const newQuery = toggleSearchFilter(query, value)
+            submitSearch({ ...props, query: newQuery, source: 'filter', history })
+        },
+        [history, props, query]
     )
 
     // Unlike onFilterClicked, this function will always append or update a filter
     const updateOrAppendFilter = useCallback(
-        (filter: string, value: string) =>
-            submitSearch(query => updateFilter(query, filter, value), { ...props, source: 'filter', history }),
-        [history, props, submitSearch]
+        (filter: string, value: string) => {
+            const newQuery = updateFilter(query, filter, value)
+            submitSearch({ ...props, query: newQuery, source: 'filter', history })
+        },
+        [history, props, query]
     )
 
     const onDynamicFilterClicked = useCallback(
@@ -94,7 +94,7 @@ export const SearchSidebar: React.FunctionComponent<SearchSidebarProps> = props 
     )
 
     const persistToggleState = useCallback(
-        (id: string, open: boolean) => {
+        (id: SectionID, open: boolean) => {
             setCollapsedSections(openSections => {
                 const newSettings: TemporarySettings['search.collapsedSidebarSections'] = {
                     ...openSections,
@@ -106,7 +106,7 @@ export const SearchSidebar: React.FunctionComponent<SearchSidebarProps> = props 
         [setCollapsedSections]
     )
     const onSearchReferenceToggle = useCallback(
-        (_id: string, open: boolean) => {
+        open => {
             persistToggleState(SectionID.SEARCH_REFERENCE, open)
             props.telemetryService.log(open ? 'SearchReferenceOpened' : 'SearchReferenceClosed')
         },
@@ -119,11 +119,12 @@ export const SearchSidebar: React.FunctionComponent<SearchSidebarProps> = props 
         repoFilters,
         onDynamicFilterClicked,
     ])
-    const dynamicFilterLinks = useMemo(() => getDynamicFilterLinks(props.filters, onDynamicFilterClicked), [
-        props.filters,
-        onDynamicFilterClicked,
-    ])
     const showReposSection = repoFilterLinks.length > 1
+    const sectionProps = useMemo(() => ({ ...props, query, onNavbarQueryChange: setQueryState }), [
+        props,
+        query,
+        setQueryState,
+    ])
 
     let body
 
@@ -134,37 +135,27 @@ export const SearchSidebar: React.FunctionComponent<SearchSidebarProps> = props 
         body = (
             <StickyBox className={styles.searchSidebarStickyBox}>
                 <SearchSidebarSection
-                    sectionId={SectionID.SEARCH_TYPES}
                     className={styles.searchSidebarItem}
                     header="Search Types"
                     startCollapsed={collapsedSections?.[SectionID.SEARCH_TYPES]}
-                    onToggle={persistToggleState}
+                    onToggle={open => persistToggleState(SectionID.SEARCH_TYPES, open)}
                 >
-                    {getSearchTypeLinks({
-                        caseSensitive: props.caseSensitive,
-                        onNavbarQueryChange: setQueryState,
-                        patternType: props.patternType,
-                        query,
-                        versionContext: props.versionContext,
-                        selectedSearchContextSpec: props.selectedSearchContextSpec,
-                    })}
+                    {getSearchTypeLinks(sectionProps)}
                 </SearchSidebarSection>
                 <SearchSidebarSection
-                    sectionId={SectionID.DYNAMIC_FILTERS}
                     className={styles.searchSidebarItem}
                     header="Dynamic filters"
                     startCollapsed={collapsedSections?.[SectionID.DYNAMIC_FILTERS]}
-                    onToggle={persistToggleState}
+                    onToggle={open => persistToggleState(SectionID.DYNAMIC_FILTERS, open)}
                 >
-                    {dynamicFilterLinks}
+                    {getDynamicFilterLinks(props.filters, onDynamicFilterClicked)}
                 </SearchSidebarSection>
                 {showReposSection ? (
                     <SearchSidebarSection
-                        sectionId={SectionID.REPOSITORIES}
                         className={styles.searchSidebarItem}
                         header="Repositories"
                         startCollapsed={collapsedSections?.[SectionID.REPOSITORIES]}
-                        onToggle={persistToggleState}
+                        onToggle={open => persistToggleState(SectionID.REPOSITORIES, open)}
                         showSearch={true}
                         noResultText={
                             <span>
@@ -178,11 +169,10 @@ export const SearchSidebar: React.FunctionComponent<SearchSidebarProps> = props 
                 ) : null}
                 {repoName ? (
                     <SearchSidebarSection
-                        sectionId={SectionID.REVISIONS}
                         className={styles.searchSidebarItem}
                         header="Revisions"
                         startCollapsed={collapsedSections?.[SectionID.REVISIONS]}
-                        onToggle={persistToggleState}
+                        onToggle={open => persistToggleState(SectionID.REVISIONS, open)}
                         showSearch={true}
                         clearSearchOnChange={repoName}
                     >
@@ -190,7 +180,6 @@ export const SearchSidebar: React.FunctionComponent<SearchSidebarProps> = props 
                     </SearchSidebarSection>
                 ) : null}
                 <SearchSidebarSection
-                    sectionId={SectionID.SEARCH_REFERENCE}
                     className={styles.searchSidebarItem}
                     header="Search reference"
                     showSearch={true}
@@ -200,26 +189,21 @@ export const SearchSidebar: React.FunctionComponent<SearchSidebarProps> = props 
                     // (false is just an arbitrary but static value)
                     clearSearchOnChange={false}
                 >
-                    {getSearchReferenceFactory({
-                        telemetryService: props.telemetryService,
-                        setQueryState,
-                    })}
+                    {getSearchReferenceFactory(sectionProps)}
                 </SearchSidebarSection>
                 <SearchSidebarSection
-                    sectionId={SectionID.SEARCH_SNIPPETS}
                     className={styles.searchSidebarItem}
                     header="Search snippets"
                     startCollapsed={collapsedSections?.[SectionID.SEARCH_SNIPPETS]}
-                    onToggle={persistToggleState}
+                    onToggle={open => persistToggleState(SectionID.SEARCH_SNIPPETS, open)}
                 >
                     {getSearchSnippetLinks(props.settingsCascade, onSnippetClicked)}
                 </SearchSidebarSection>
                 <SearchSidebarSection
-                    sectionId={SectionID.QUICK_LINKS}
                     className={styles.searchSidebarItem}
                     header="Quicklinks"
                     startCollapsed={collapsedSections?.[SectionID.QUICK_LINKS]}
-                    onToggle={persistToggleState}
+                    onToggle={open => persistToggleState(SectionID.QUICK_LINKS, open)}
                 >
                     {getQuickLinks(props.settingsCascade)}
                 </SearchSidebarSection>

@@ -55,6 +55,8 @@ const defaultProps: StreamingSearchResultsProps = {
     } as AuthenticatedUser,
     isLightTheme: true,
 
+    isSourcegraphDotCom: false,
+
     settingsCascade: {
         subjects: null,
         final: null,
