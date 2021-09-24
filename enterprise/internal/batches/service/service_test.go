@@ -175,6 +175,14 @@ func TestServicePermissionLevels(t *testing.T) {
 				})
 				tc.assertFunc(t, err)
 			})
+
+			t.Run("ReplaceBatchSpecInput", func(t *testing.T) {
+				_, err := svc.ReplaceBatchSpecInput(currentUserCtx, ReplaceBatchSpecInputOpts{
+					BatchSpecRandID: batchSpec.RandID,
+					RawSpec:         ct.TestRawBatchSpecYAML,
+				})
+				tc.assertFunc(t, err)
+			})
 		})
 	}
 }
@@ -1194,6 +1202,59 @@ func TestService(t *testing.T) {
 			_, err := svc.ExecuteBatchSpec(ctx, ExecuteBatchSpecOpts{BatchSpecRandID: spec.RandID})
 			if !errors.HasType(err, ErrBatchSpecResolutionErrored{}) {
 				t.Fatalf("error has wrong type: %T", err)
+			}
+		})
+	})
+
+	t.Run("ReplaceBatchSpecInput", func(t *testing.T) {
+		t.Run("success", func(t *testing.T) {
+			spec := testBatchSpec(admin.ID)
+			if err := s.CreateBatchSpec(ctx, spec); err != nil {
+				t.Fatal(err)
+			}
+
+			job := &btypes.BatchSpecResolutionJob{
+				State:       btypes.BatchSpecResolutionJobStateCompleted,
+				BatchSpecID: spec.ID,
+			}
+
+			if err := s.CreateBatchSpecResolutionJob(ctx, job); err != nil {
+				t.Fatal(err)
+			}
+
+			var workspaceIDs []int64
+			for _, repo := range rs {
+				ws := &btypes.BatchSpecWorkspace{BatchSpecID: spec.ID, RepoID: repo.ID}
+				if err := s.CreateBatchSpecWorkspace(ctx, ws); err != nil {
+					t.Fatal(err)
+				}
+				workspaceIDs = append(workspaceIDs, ws.ID)
+			}
+
+			newSpec, err := svc.ReplaceBatchSpecInput(ctx, ReplaceBatchSpecInputOpts{
+				BatchSpecRandID: spec.RandID,
+				RawSpec:         ct.TestRawBatchSpecYAML,
+			})
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if newSpec.ID == spec.ID {
+				t.Fatalf("new batch spec has same ID as old one: %d", newSpec.ID)
+			}
+
+			if newSpec.RandID != spec.RandID {
+				t.Fatalf("new batch spec has different RandID. new=%s, old=%s", newSpec.RandID, spec.RandID)
+			}
+
+			resolutionJob, err := s.GetBatchSpecResolutionJob(ctx, store.GetBatchSpecResolutionJobOpts{
+				BatchSpecID: newSpec.ID,
+			})
+			if err != nil {
+				t.Fatal(err)
+			}
+			if want, have := btypes.BatchSpecResolutionJobStateQueued, resolutionJob.State; have != want {
+				t.Fatalf("resolution job has wrong state. want=%s, have=%s", want, have)
 			}
 		})
 	})

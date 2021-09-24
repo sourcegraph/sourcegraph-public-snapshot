@@ -296,7 +296,6 @@ func (s *Service) ReplaceBatchSpecInput(ctx context.Context, opts ReplaceBatchSp
 	// Create a new resolution job now in the transaction so that we switch the
 	// resolution jobs essentially.
 	err = tx.CreateBatchSpecResolutionJob(ctx, &btypes.BatchSpecResolutionJob{
-		State:            btypes.BatchSpecResolutionJobStateQueued,
 		BatchSpecID:      newSpec.ID,
 		AllowIgnored:     opts.AllowIgnored,
 		AllowUnsupported: opts.AllowUnsupported,

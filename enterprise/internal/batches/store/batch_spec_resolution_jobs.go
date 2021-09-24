@@ -70,6 +70,9 @@ func (s *Store) CreateBatchSpecResolutionJob(ctx context.Context, ws ...*btypes.
 			}
 
 			state := string(wj.State)
+			if state == "" {
+				state = string(btypes.BatchSpecResolutionJobStateQueued)
+			}
 
 			if err := inserter.Insert(
 				ctx,
@@ -211,7 +214,6 @@ func listBatchSpecResolutionJobsQuery(opts ListBatchSpecResolutionJobsOpts) *sql
 		sqlf.Join(preds, "\n AND "),
 	)
 }
-
 
 // DeleteBatchSpecResolutionJobAndWorkspacesOpts captures the query options needed for getting a BatchSpecResolutionJob
 type DeleteBatchSpecResolutionJobAndWorkspacesOpts struct {
