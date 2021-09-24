@@ -12,11 +12,15 @@ export NAMESPACE="cluster-ci-$BUILDKITE_BUILD_NUMBER"
 
 # Capture information about the state of the test cluster
 function cluster_capture_state() {
-  # Get status of all pods
+  # Get overview of all pods
   kubectl get pods
 
-  # Get logs for some deployments
   pushd "$root_dir"
+  # Get specifics of pods
+  kubectl describe pods >'describe_pods.log'
+  chmod 744 'describe_pods.log'
+
+  # Get logs for some deployments
   FRONTEND_LOGS="frontend_logs.log"
   kubectl logs deployment/sourcegraph-frontend --all-containers >$FRONTEND_LOGS
   chmod 744 $FRONTEND_LOGS
