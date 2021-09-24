@@ -1,7 +1,5 @@
 import 'focus-visible'
 
-import { isError } from 'util'
-
 import { ApolloProvider } from '@apollo/client'
 import { ShortcutProvider } from '@slimsag/react-shortcuts'
 import { createBrowserHistory } from 'history'
