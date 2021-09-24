@@ -92,8 +92,6 @@ type JSContext struct {
 	ProductResearchPageEnabled bool `json:"productResearchPageEnabled"`
 
 	ExperimentalFeatures schema.ExperimentalFeatures `json:"experimentalFeatures"`
-
-	Test string `json:"test"`
 }
 
 // NewJSContextFromRequest populates a JSContext struct from the HTTP

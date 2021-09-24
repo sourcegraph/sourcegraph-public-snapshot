@@ -438,16 +438,23 @@ type Mutation {
         """
         publicArgument: String
         """
-        User properties for analytics. DO NOT include any PII. Rather, these are characteristics
-        of the user based on actions they've taken. For example, whether they've added repositories, whether they have
-        an active code host, etc.
+        User properties for Amplitude analytics. Used on Sourcegraph Cloud only. Avoid including any PII.
         """
         userProperties: String
-
+        """
+        Device ID used for Amplitude analytics. Used on Sourcegraph Cloud only.
+        """
         deviceID: String!
-
+        """
+        Event ID used to deduplicate events that occur simultaneously in Amplitude analytics.
+        See https://developers.amplitude.com/docs/http-api-v2#optional-keys. Used on Sourcegraph Cloud only.
+        """
         eventID: Int
-
+        """
+        Insert ID used to deduplicate events that re-occur in the event of retries or
+        backfills in Amplitude analytics. See https://developers.amplitude.com/docs/http-api-v2#optional-keys.
+        Used on Sourcegraph Cloud only.
+        """
         insertID: String
     ): EmptyResponse
     """
