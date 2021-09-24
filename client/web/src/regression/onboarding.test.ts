@@ -156,43 +156,62 @@ describe('Onboarding', () => {
     // })
 
     test('Non-admin user onboarding', async function () {
+        console.log('Non-admin user onboarding 1')
         this.timeout(30 * 1000)
+        console.log('Non-admin user onboarding 2')
         await ensureTestExternalService(gqlClient, testExternalServiceConfig, config)
+        console.log('Non-admin user onboarding 3')
         const repoSlugs = testExternalServiceConfig.config.repos
+        console.log('Non-admin user onboarding 4', { repoSlugs })
         await waitForRepos(gqlClient, ['github.com/' + repoSlugs[repoSlugs.length - 1]], config)
+        console.log('Non-admin user onboarding 5', { config, testUsername })
 
         const testUser = await getUser(gqlClient, testUsername)
+        console.log('Non-admin user onboarding 6', { testUser })
         if (!testUser) {
             throw new Error(`Could not obtain userID of user ${testUsername}`)
         }
         await setUserSiteAdmin(gqlClient, testUser.id, false)
+        console.log('Non-admin user onboarding 7')
 
         // Initial status indicator
         await driver.page.goto(config.sourcegraphBaseUrl + '/search')
+        console.log('Non-admin user onboarding 8')
 
         // Do a search
         await driver.page.waitForSelector('#monaco-query-input')
+        console.log('Non-admin user onboarding 9')
         await driver.page.type('#monaco-query-input', 'asdf')
+        console.log('Non-admin user onboarding 10')
         await driver.page.keyboard.press(Key.Enter)
+        console.log('Non-admin user onboarding 11')
 
         // Do a find references
         await driver.page.goto(
             config.sourcegraphBaseUrl + '/github.com/auth0/go-jwt-middleware/-/blob/jwtmiddleware.go'
         )
+        console.log('Non-admin user onboarding 12')
         await driver.findElementWithText('TokenExtractor', {
             selector: '.blob-page__blob span',
             fuzziness: 'prefix',
             wait: { timeout: 5000 },
             action: 'click',
         })
+        console.log('Non-admin user onboarding 13')
         const findReferencesSelector = '.test-tooltip-find-references'
+        console.log('Non-admin user onboarding 14')
         await driver.page.waitForSelector(findReferencesSelector)
+        console.log('Non-admin user onboarding 15')
         await driver.page.click(findReferencesSelector)
+        console.log('Non-admin user onboarding 16')
         await driver.page.waitForSelector('.test-search-result')
+        console.log('Non-admin user onboarding 17')
 
         await driver.page.reload()
+        console.log('Non-admin user onboarding 18')
 
         // Activation dropdown should be hidden
         await driver.page.waitForSelector('.test-activation-hidden')
+        console.log('Non-admin user onboarding 19')
     })
 })
