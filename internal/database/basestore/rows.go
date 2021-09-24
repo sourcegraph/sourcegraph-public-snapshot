@@ -169,6 +169,26 @@ func ScanFirstInt(rows *sql.Rows, queryErr error) (_ int, _ bool, err error) {
 	return 0, false, nil
 }
 
+// ScanFirstInt64 reads int64 values from the given row object and returns the first one.
+// If no rows match the query, a false-valued flag is returned.
+func ScanFirstInt64(rows *sql.Rows, queryErr error) (_ int64, _ bool, err error) {
+	if queryErr != nil {
+		return 0, false, queryErr
+	}
+	defer func() { err = CloseRows(rows, err) }()
+
+	if rows.Next() {
+		var value int64
+		if err := rows.Scan(&value); err != nil {
+			return 0, false, err
+		}
+
+		return value, true, nil
+	}
+
+	return 0, false, nil
+}
+
 // ScanFloats reads float values from the given row object.
 func ScanFloats(rows *sql.Rows, queryErr error) (_ []float64, err error) {
 	if queryErr != nil {

@@ -85,12 +85,9 @@ $theme-colors: (
     --brand-secondary-2: var(--pink);
     --brand-secondary-3: #8900bf;
     --success: var(--green);
-    --success-2: #afe0b8;
     --info: var(--cyan);
     --warning: var(--yellow);
-    --warning-2: #fbd999;
     --danger: var(--red);
-    --danger-2: #e9aaaa;
     --merged: #7048e8;
     --merged-2: #c6b6f6;
     --merged-3: #6b47d6;
@@ -99,6 +96,7 @@ $theme-colors: (
     --line-number-color: var(--gray-06);
     --header-icon-color: var(--gray-05);
     --tooltip-bg: var(--gray-08);
+    --text-disabled: var(--gray-06);
 }
 
 .theme-light {
@@ -111,13 +109,16 @@ $theme-colors: (
     --secondary-2: #eef1f7;
     --secondary-3: #c6cfe1;
     --secondary-4: #f1f4f9;
+    --success-2: #afe0b8;
     --success-3: #319e44;
     --success-4: #ebfaee;
     --info-2: #a8dbe2;
     --info-3: #0bb3ca;
     --info-4: #eafafc;
+    --warning-2: #fbd999;
     --warning-3: #e09200;
     --warning-4: #fff7e1;
+    --danger-2: #e9aaaa;
     --danger-3: #b52626;
     --danger-4: #fbeaea;
     --body-color: var(--gray-08);
@@ -128,7 +129,6 @@ $theme-colors: (
     --mark-bg: #f8e688;
     --merged-4: #eee9fd;
     --text-muted: var(--gray-07);
-    --text-disabled: var(--gray-05);
     --link-color: var(--primary);
     --link-color-2: #0766cc;
     --link-active-color: #0c7bf0;
@@ -164,13 +164,16 @@ $theme-colors: (
     --secondary-2: #242936;
     --secondary-3: #1f232e;
     --secondary-4: #545967;
+    --success-2: #156724;
     --success-3: #237332;
     --success-4: #054410;
-    --info-2: #b8e3e8;
+    --info-2: #05454e;
     --info-3: #005766;
     --info-4: #025762;
+    --warning-2: #815504;
     --warning-3: #9c6500;
     --warning-4: #3d2904;
+    --danger-2: #6b1515;
     --danger-3: #801b1b;
     --danger-4: #3d0a0a;
     --body-color: var(--gray-04);
@@ -180,8 +183,7 @@ $theme-colors: (
     --color-bg-3: var(--gray-08);
     --mark-bg: #7a341e;
     --merged-4: #1f0a5c;
-    --text-muted: var(--gray-05);
-    --text-disabled: var(--gray-07);
+    --text-muted: var(--gray-06);
     --link-color: #4393e7;
     --link-color-2: #70b0f3;
     --link-active-color: #489ffa;

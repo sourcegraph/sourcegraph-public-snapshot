@@ -15,7 +15,7 @@
 | `-force-override-ignore` | Do not ignore repositories that have a .batchignore file. | `false` |
 | `-get-curl` | Print the curl command for executing this query and exit (WARNING: includes printing your access token!) | `false` |
 | `-insecure-skip-verify` | Skip validation of TLS certificates against trusted chains | `false` |
-| `-j` | The maximum number of parallel jobs. Default is GOMAXPROCS. | `16` |
+| `-j` | The maximum number of parallel jobs. Default is GOMAXPROCS. | `8` |
 | `-keep-logs` | Retain logs after executing steps. | `false` |
 | `-n` | Alias for -namespace. |  |
 | `-namespace` | The user or organization namespace to place the batch change within. Default is the currently authenticated user. |  |
@@ -53,7 +53,7 @@ Usage of 'src batch preview':
   -insecure-skip-verify
     	Skip validation of TLS certificates against trusted chains
   -j int
-    	The maximum number of parallel jobs. Default is GOMAXPROCS. (default 16)
+    	The maximum number of parallel jobs. Default is GOMAXPROCS. (default 8)
   -keep-logs
     	Retain logs after executing steps.
   -n string

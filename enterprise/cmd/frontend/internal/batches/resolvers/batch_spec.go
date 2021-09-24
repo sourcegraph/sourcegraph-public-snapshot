@@ -183,12 +183,15 @@ func (r *batchSpecResolver) computeNamespace(ctx context.Context) (*graphqlbacke
 	return r.namespace, r.namespaceErr
 }
 
-func (r *batchSpecResolver) ApplyURL(ctx context.Context) (string, error) {
+func (r *batchSpecResolver) ApplyURL(ctx context.Context) (*string, error) {
+	// TODO(ssbc): not implemented
+
 	n, err := r.computeNamespace(ctx)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
-	return batchChangesApplyURL(n, r), nil
+	url := batchChangesApplyURL(n, r)
+	return &url, nil
 }
 
 func (r *batchSpecResolver) CreatedAt() graphqlbackend.DateTime {
@@ -337,4 +340,39 @@ func (r *batchSpecResolver) ViewerBatchChangesCodeHosts(ctx context.Context, arg
 			Offset: offset,
 		},
 	}, nil
+}
+
+func (r *batchSpecResolver) AutoApplyEnabled() bool {
+	// TODO(ssbc): not implemented
+	return false
+}
+
+func (r *batchSpecResolver) State() string {
+	// TODO(ssbc): not implemented
+	return "not implemented"
+}
+
+func (r *batchSpecResolver) StartedAt() *graphqlbackend.DateTime {
+	// TODO(ssbc): not implemented
+	return nil
+}
+
+func (r *batchSpecResolver) FinishedAt() *graphqlbackend.DateTime {
+	// TODO(ssbc): not implemented
+	return nil
+}
+
+func (r *batchSpecResolver) FailureMessage() *string {
+	// TODO(ssbc): not implemented
+	return nil
+}
+
+func (r *batchSpecResolver) ImportingChangesets(ctx context.Context, args *graphqlbackend.ListImportingChangesetsArgs) (graphqlbackend.ChangesetSpecConnectionResolver, error) {
+	// TODO(ssbc): not implemented
+	return nil, errors.New("not implemented")
+}
+
+func (r *batchSpecResolver) WorkspaceResolution(ctx context.Context) (graphqlbackend.BatchSpecWorkspaceResolutionResolver, error) {
+	// TODO(ssbc): not implemented
+	return nil, errors.New("not implemented")
 }

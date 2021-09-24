@@ -1,7 +1,6 @@
 package ci
 
 import (
-	"math"
 	"os"
 	"path/filepath"
 	"strings"
@@ -34,7 +33,7 @@ func chunkItems(items []string, size int) [][]string {
 	lenChunks := lenItems/size + 1
 	chunks := make([][]string, lenChunks)
 
-	for i := range chunks {
+	for i := 0; i < lenChunks; i++ {
 		start := i * size
 		end := min(start+size, lenItems)
 		chunks[i] = items[start:end]
@@ -44,9 +43,14 @@ func chunkItems(items []string, size int) [][]string {
 }
 
 func min(x int, y int) int {
-	return int(math.Min(float64(x), float64(y)))
+	if x < y {
+		return x
+	}
+
+	return y
 }
 
+// getChunkedWebIntegrationFileNames gets web integration test filenames and splits them in chunks for parallelizing client integration tests.
 func getChunkedWebIntegrationFileNames(chunkSize int) []string {
 	testFiles := getWebIntegrationFileNames()
 	chunkedTestFiles := chunkItems(testFiles, chunkSize)

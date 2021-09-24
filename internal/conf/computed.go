@@ -4,7 +4,6 @@ import (
 	"context"
 	"log"
 	"os"
-	"strconv"
 	"strings"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -204,19 +203,12 @@ func UpdateChannel() string {
 }
 
 // SearchIndexEnabled returns true if sourcegraph should index all
-// repositories for text search. If the configuration is unset, it returns
-// false for the docker server image (due to resource usage) but true
-// elsewhere. Additionally it also checks for the outdated environment
-// variable INDEXED_SEARCH.
+// repositories for text search.
 func SearchIndexEnabled() bool {
 	if v := Get().SearchIndexEnabled; v != nil {
 		return *v
 	}
-	if v := os.Getenv("INDEXED_SEARCH"); v != "" {
-		enabled, _ := strconv.ParseBool(v)
-		return enabled
-	}
-	return DeployType() != DeploySingleDocker
+	return true // always on by default in all deployment types, see confdefaults.go
 }
 
 func BatchChangesEnabled() bool {
