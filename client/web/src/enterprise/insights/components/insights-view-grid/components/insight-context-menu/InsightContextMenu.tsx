@@ -55,7 +55,7 @@ export const InsightContextMenu: React.FunctionComponent<InsightCardMenuProps> =
                             <MenuLink
                                 as={Link}
                                 data-testid="InsightContextMenuEditLink"
-                                className={classnames('btn btn-outline', styles.item)}
+                                className={styles.item}
                                 to={editUrl}
                             >
                                 Edit
@@ -72,7 +72,13 @@ export const InsightContextMenu: React.FunctionComponent<InsightCardMenuProps> =
                                     onSelect={onToggleZeroYAxisMin}
                                     aria-checked={zeroYAxisMin}
                                 >
-                                    <input type="checkbox" aria-hidden="true" checked={zeroYAxisMin} onChange={noop} tabIndex={-1} />
+                                    <input
+                                        type="checkbox"
+                                        aria-hidden="true"
+                                        checked={zeroYAxisMin}
+                                        onChange={noop}
+                                        tabIndex={-1}
+                                    />
                                     <span>Start Y Axis at 0</span>
                                 </MenuItem>
                             )}
@@ -80,7 +86,7 @@ export const InsightContextMenu: React.FunctionComponent<InsightCardMenuProps> =
                             <MenuItem
                                 data-testid="insight-context-menu-delete-button"
                                 onSelect={() => onDelete(insightID)}
-                                className={classnames('btn btn-outline-', styles.item)}
+                                className={styles.item}
                             >
                                 Delete
                             </MenuItem>
