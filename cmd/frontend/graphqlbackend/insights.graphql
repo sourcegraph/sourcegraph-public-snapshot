@@ -27,7 +27,7 @@ extend type Mutation {
     deleteDashboard(input: ID!): EmptyResponse!
 
     """
-    Associate an existing insight view with this dashboard.
+    Associate an existing insight view with this dashboard. This will create a duplicate view such that changes
     """
     attachView(id: ID!, viewID: ID!): Dashboard!
 
@@ -99,13 +99,191 @@ type InsightViewConnection {
     pageInfo: PageInfo!
 }
 
+extend type Mutation {
+
+    createInsight(input: CreateInsightInput!): CreateInsightResult!
+
+    deleteInsightView(id: ID!): EmptyResponse
+
+    getView(input: GetInsightViewInput) : InsightViewResult!
+
+}
 
 """
-Stub for insight view
+Input to resolve an insight view given a set of filters. In the future this will support a set of fields to aggregate.
 """
-type InsightView {
+input GetInsightViewInput {
     id: ID!
+    filters: InsightViewFiltersInput!
 }
+
+type InsightViewResult {
+    view: InsightView!
+}
+
+"""
+A sigle point in a time series.
+"""
+type TimeSeriesPoint {
+    time: DateTime!
+    value: Float!
+}
+
+"""
+An insight series as defined in the insight view. This series definition will only correspond 1-1 with matched series if there is no aggregation being applied.
+"""
+type InsightDataSeries {
+    options: InsightDataSeriesOptions!
+    definition: InsightDataSeriesDefinition!
+    matchedSeries: [InsightMatchedDataSeries!]!
+}
+
+"""
+A single matched data series with information about the grouping the series is associated to.
+"""
+type InsightMatchedDataSeries {
+    aggregateTags: [InsightAggregationTag!]!
+    timeSeries: [TimeSeriesPoint!]!
+}
+
+"""
+Key-value pair of a group (aggregate) and its match for an insight view.
+"""
+type InsightAggregationTag {
+    name: String!
+    value: String!
+}
+
+"""
+Options that correspond to a defined data series.
+"""
+union InsightDataSeriesOptions = LineChartDataSeriesOptions
+
+"""
+Definition for the mechanism for how the series is generated.
+"""
+union InsightDataSeriesDefinition = InsightSearchQueryDataSeriesDefinition
+
+"""
+Options that correspond with an entire view.
+"""
+union InsightViewOptions = LineChartOptions
+
+"""
+Options for an entire line chart
+"""
+type LineChartOptions {
+    title: String
+}
+
+"""
+Options for a single line chart data series
+"""
+type LineChartDataSeriesOptions {
+    color: String
+    label: String
+}
+
+"""
+Definition for how an insight series is generated using a Sourcegraph search query.
+"""
+type InsightSearchQueryDataSeriesDefinition {
+    query: String!
+}
+
+"""
+An insight view is like a 'lens' into an underlying timeseries. It wraps visualization options, filter options, aggregation options, permissions, and other
+high level concerns around access to a data series.
+"""
+type InsightView implements Node {
+    id: ID!
+    filters: InsightViewFilters!
+    options: InsightViewOptions!
+    dataSeries: [InsightDataSeries!]!
+}
+
+type InsightViewFilters {
+    includeRepoRegex: String
+    excludeRepoRegex: String
+}
+
+type CreateInsightResult {
+    view: InsightView!
+}
+
+input CreateInsightInput {
+    lineChart: LineChartInsightViewInput
+}
+
+input LineChartInsightViewInput {
+    series: [LineChartDataSeriesInput]!
+    filters: InsightViewFiltersInput!
+}
+
+"""
+Default filters for this insight view.
+"""
+input InsightViewFiltersInput {
+    includeRepoRegex: String
+    excludeRepoRegex: String
+}
+
+"""
+An insight data series for a line chart.
+"""
+input LineChartDataSeriesInput {
+    searchSeries: SearchDataSeriesInput
+    options: LineChartDataSeriesOptionsInput
+}
+
+"""
+Options for a line chart data series
+"""
+input LineChartDataSeriesOptionsInput {
+    label: String
+    lineColor: String
+}
+
+"""
+Construct an insight data series using a Sourcegraph search query.
+"""
+input SearchDataSeriesInput {
+    query: String!
+    repositoryScope: RepositoryScopeInput!
+    timeScope: DataSeriesTimeScopeInput!
+}
+
+"""
+A custom repository scope for an insight data series.
+"""
+input RepositoryScopeInput {
+    global: Boolean
+    repositories: [String!]
+}
+
+"""
+A custom time scope for an insight data series.
+"""
+input DataSeriesTimeScopeInput {
+    stepInterval: TimeIntervalStepInput
+}
+
+"""
+A time scope defined using a time interval (ex. 5 days)
+"""
+input TimeIntervalStepInput {
+    unit: TimeIntervalStepUnit!,
+    value: Int!
+}
+
+enum TimeIntervalStepUnit {
+    HOUR
+    DAY
+    WEEK
+    MONTH
+    YEAR
+}
+
 
 """
 A list of insights.
