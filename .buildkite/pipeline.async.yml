@@ -14,11 +14,11 @@ steps:
   - command:
       - dev/ci/yarn-build.sh client/web
       - dev/ci/create-client-artifact.sh
+    key: lighthouse:prep
+    label: ':lighthouse: Lighthouse production build'
     env:
       NODE_ENV: production
       WEBPACK_SERVE_INDEX: 'true'
-    key: lighthouse:prep
-    label: ':lighthouse: Lighthouse production build'
   - command: dev/ci/yarn-lighthouse.sh homepage /
     depends_on: lighthouse:prep
     label: ':lighthouse: lighthouse:homepage'
