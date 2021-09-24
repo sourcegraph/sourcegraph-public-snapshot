@@ -13,6 +13,13 @@ This document assumes that you are a [site administrator](https://docs.sourcegra
 1. [Set up alerting](../observability/alerting.md#setting-up-alerting) and [learn about how to respond to alerts](../observability/alerting.md#understanding-alerts).
    1. Also see our [full alert solutions reference](../observability/alert_solutions.md).
 
+## Set up monitoring for Executors
+
+- [Configure Prometheus for GCP deployed Executors](../../executors/monitoring.md#google-cloud-deployment).
+- [Configure Prometheus for AWS deployed Executors](../../executors/monitoring.md#aws-deployment).
+- [Executor monitoring architecture overview](../../executors/monitoring_architecture.md).
+
+
 ## FAQs
 
 See the [monitoring section of our FAQ](./../faq.md#monitoring).

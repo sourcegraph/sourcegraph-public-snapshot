@@ -41,6 +41,7 @@ Keep it as a single list with at most 2 levels. (Anything else may not render co
   - [References](cli/references/index.md)
 - [Cloud](cloud/index.md)
 - [Adopting](adopt/index.md)
+- [Executors](executors/index.md)
 - [Administration](admin/index.md)
   - [Install](admin/install/index.md)
   - [Upgrade](admin/updates/index.md)
