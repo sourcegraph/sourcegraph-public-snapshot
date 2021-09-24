@@ -8,7 +8,6 @@ metadata:
 provisioner: pd.csi.storage.gke.io
 parameters:
     type: pd-balanced
-    fsType: ext4
 volumeBindingMode: WaitForFirstConsumer
 reclaimPolicy: Delete
 allowVolumeExpansion: true
