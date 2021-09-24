@@ -15,7 +15,7 @@ echo "--- Yarn install in root"
 NODE_ENV='' yarn --mutex network --frozen-lockfile --network-timeout 60000
 
 echo "--- Collecting Lighthouse results"
-yarn lighthouse collect --url="$BASE_URL$TEST_PATH"
+yarn lhci collect --url="$BASE_URL$TEST_PATH"
 
 echo "--- Uploading Lighthouse results"
-yarn lighthouse upload --target=temporary-public-storage --githubStatusContextSuffix="/$TEST_LABEL"
+yarn lhci upload --githubStatusContextSuffix="/$TEST_LABEL"
