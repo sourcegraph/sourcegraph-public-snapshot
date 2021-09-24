@@ -25,7 +25,9 @@ const SelectedReposInitialValue: SelectedRepos = undefined
 export const selectedReposVar = makeVar<SelectedRepos>(SelectedReposInitialValue)
 
 interface UseSelectedReposResult {
-    selectedRepos: NonNullable<UserRepositoriesResult['node']>['repositories']['nodes'] | undefined
+    selectedRepos:
+        | (NonNullable<UserRepositoriesResult['node']> & { __typename: 'User' })['repositories']['nodes']
+        | undefined
     loadingSelectedRepos: boolean
     errorSelectedRepos: ApolloError | undefined
     refetchSelectedRepos:
@@ -140,7 +142,7 @@ export const useSelectedRepos = (userId: string, first?: number): UseSelectedRep
     )
 
     return {
-        selectedRepos: data?.node?.repositories.nodes,
+        selectedRepos: (data?.node?.__typename === 'User' && data.node.repositories.nodes) || undefined,
         loadingSelectedRepos: loading,
         errorSelectedRepos: error,
         refetchSelectedRepos: refetch,

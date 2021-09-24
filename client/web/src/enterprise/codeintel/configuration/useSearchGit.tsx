@@ -47,7 +47,14 @@ export const useSearchGitTags = (id: string, pattern: string): SearchGitObjectRe
         variables: { id, query: pattern },
     })
 
-    const { tags: { nodes = [], totalCount = 0 } = {}, name = '' } = data?.node || {}
+    const node =
+        data?.node && data.node.__typename === 'Repository'
+            ? data.node
+            : { tags: { nodes: [], totalCount: 0 }, name: '' }
+    const {
+        tags: { nodes, totalCount },
+        name,
+    } = node
     const previewResult = { preview: nodes.map(({ displayName: revlike }) => ({ name, revlike })), totalCount }
 
     return {
@@ -83,7 +90,14 @@ export const useSearchGitBranches = (id: string, pattern: string): SearchGitObje
         SEARCH_GIT_BRANCHES,
         { variables: { id, query: pattern } }
     )
-    const { branches: { nodes = [], totalCount = 0 } = {}, name = '' } = data?.node || {}
+    const node =
+        data?.node && data.node.__typename === 'Repository'
+            ? data.node
+            : { branches: { nodes: [], totalCount: 0 }, name: '' }
+    const {
+        branches: { nodes, totalCount },
+        name,
+    } = node
     const previewResult = { preview: nodes.map(({ displayName: revlike }) => ({ name, revlike })), totalCount }
 
     return {
@@ -112,9 +126,10 @@ export const useSearchRepoName = (id: string, pattern: string): SearchGitObjectR
         variables: { id },
     })
 
-    const previewResult = data?.node
-        ? { preview: [{ name: data?.node.name, revlike: pattern }], totalCount: 1 }
-        : { preview: [], totalCount: 0 }
+    const previewResult =
+        data?.node && data?.node.__typename === 'Repository'
+            ? { preview: [{ name: data?.node.name, revlike: pattern }], totalCount: 1 }
+            : { preview: [], totalCount: 0 }
 
     return {
         previewResult,

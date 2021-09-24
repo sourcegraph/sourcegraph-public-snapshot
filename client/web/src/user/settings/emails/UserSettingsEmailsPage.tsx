@@ -21,7 +21,7 @@ interface Props {
     user: UserAreaUserFields
 }
 
-type UserEmail = NonNullable<UserEmailsResult['node']>['emails'][number]
+type UserEmail = (NonNullable<UserEmailsResult['node']> & { __typename: 'User' })['emails'][number]
 type Status = undefined | 'loading' | 'loaded' | ErrorLike
 type EmailActionError = undefined | ErrorLike
 
@@ -47,7 +47,7 @@ export const UserSettingsEmailsPage: FunctionComponent<Props> = ({ user }) => {
         // always cleanup email action errors when re-fetching emails
         setEmailActionError(undefined)
 
-        if (fetchedEmails?.node?.emails) {
+        if (fetchedEmails?.node?.__typename === 'User' && fetchedEmails.node.emails) {
             setEmails(fetchedEmails.node.emails)
             setStatusOrError('loaded')
         } else {

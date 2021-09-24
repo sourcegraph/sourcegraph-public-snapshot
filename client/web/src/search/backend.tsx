@@ -608,7 +608,7 @@ function fetchEvents(userId: Scalars['ID'], first: number, eventName: string): O
         map(dataOrThrowErrors),
         map(
             (data: EventLogsDataResult): EventLogResult => {
-                if (!data.node) {
+                if (!data.node || data.node.__typename !== 'User') {
                     throw new Error('User not found')
                 }
                 return data.node.eventLogs

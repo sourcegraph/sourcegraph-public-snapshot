@@ -91,7 +91,7 @@ export class UserSettingsExternalAccountsPage extends React.Component<Props> {
                     throw createAggregateError(errors)
                 }
                 const user = data.node
-                if (!user.externalAccounts) {
+                if (user.__typename !== 'User' || !user.externalAccounts) {
                     throw createAggregateError(errors)
                 }
                 return user.externalAccounts

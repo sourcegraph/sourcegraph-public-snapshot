@@ -1,5 +1,6 @@
 export const mockCodeMonitor = {
     node: {
+        __typename: 'Monitor',
         id: 'foo0',
         description: 'Test code monitor',
         enabled: true,

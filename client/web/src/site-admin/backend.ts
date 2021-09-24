@@ -54,6 +54,8 @@ import {
     OutOfBandMigrationsVariables,
 } from '../graphql-operations'
 
+type UserRepositories = (NonNullable<UserRepositoriesResult['node']> & { __typename: 'User' })['repositories']
+
 /**
  * Fetches all users.
  */
@@ -161,9 +163,7 @@ const siteAdminRepositoryFieldsFragment = gql`
     }
 `
 
-export function listUserRepositories(
-    args: Partial<UserRepositoriesVariables>
-): Observable<NonNullable<UserRepositoriesResult['node']>['repositories']> {
+export function listUserRepositories(args: Partial<UserRepositoriesVariables>): Observable<UserRepositories> {
     return requestGraphQL<UserRepositoriesResult, UserRepositoriesVariables>(
         gql`
             query UserRepositories(
@@ -214,7 +214,7 @@ export function listUserRepositories(
     ).pipe(
         map(dataOrThrowErrors),
         map(data => {
-            if (data.node === null) {
+            if (data.node === null || data.node.__typename !== 'User') {
                 throw new Error('user not found')
             }
             return data.node.repositories
@@ -224,7 +224,7 @@ export function listUserRepositories(
 
 export function listUserRepositoriesAndPollIfEmptyOrAnyCloning(
     args: Partial<UserRepositoriesVariables>
-): Observable<NonNullable<UserRepositoriesResult['node']>['repositories']> {
+): Observable<UserRepositories> {
     return listUserRepositories(args).pipe(
         // Poll every 5000ms if repositories are being cloned or the list is empty.
         repeatUntil(
@@ -810,7 +810,7 @@ export function queryUserPublicRepositories(
     ).pipe(
         map(dataOrThrowErrors),
         map(data => {
-            if (data?.node) {
+            if (data?.node?.__typename === 'User') {
                 return data.node.publicRepositories
             }
             return []

@@ -3,6 +3,7 @@ import React from 'react'
 import { NEVER } from 'rxjs'
 import sinon from 'sinon'
 
+import { CodeMonitorFields } from '../../../graphql-operations'
 import { EnterpriseWebStory } from '../../components/EnterpriseWebStory'
 import { mockCodeMonitor } from '../testing/util'
 
@@ -18,7 +19,7 @@ add(
                 <DeleteMonitorModal
                     {...props}
                     isOpen={true}
-                    codeMonitor={mockCodeMonitor.node}
+                    codeMonitor={mockCodeMonitor.node as CodeMonitorFields}
                     toggleDeleteModal={sinon.fake()}
                     deleteCodeMonitor={sinon.fake(() => NEVER)}
                 />

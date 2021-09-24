@@ -13,17 +13,31 @@ import {
 } from '@sourcegraph/shared/src/graphql-operations'
 
 import { AuthenticatedUser } from '../../auth'
+import { CodeMonitorFields, FetchCodeMonitorResult } from '../../graphql-operations'
 
 import { ManageCodeMonitorPage } from './ManageCodeMonitorPage'
 import { mockCodeMonitor } from './testing/util'
 
 describe('ManageCodeMonitorPage', () => {
-    const mockUser = {
+    const mockUser: AuthenticatedUser = {
+        __typename: 'User',
         id: 'userID',
         username: 'username',
         email: 'user@me.com',
         siteAdmin: true,
-    } as AuthenticatedUser
+        databaseID: 0,
+        tags: [],
+        url: '',
+        avatarURL: '',
+        displayName: 'display name',
+        settingsURL: '',
+        viewerCanAdminister: true,
+        organizations: {
+            __typename: 'OrgConnection',
+            nodes: [],
+        },
+        session: { __typename: 'Session', canSignOut: true },
+    }
 
     const history = H.createMemoryHistory()
     history.location.pathname = '/code-monitoring/test-monitor-id'
@@ -40,9 +54,9 @@ describe('ManageCodeMonitorPage', () => {
                 monitorEditInput: MonitorEditInput,
                 triggerEditInput: MonitorEditTriggerInput,
                 actionEditInput: MonitorEditActionInput[]
-            ) => of(mockCodeMonitor.node)
+            ) => of(mockCodeMonitor.node as CodeMonitorFields)
         ),
-        fetchCodeMonitor: sinon.spy((id: string) => of(mockCodeMonitor)),
+        fetchCodeMonitor: sinon.spy((id: string) => of(mockCodeMonitor as FetchCodeMonitorResult)),
         match: {
             params: { id: 'test-id' },
             isExact: true,
