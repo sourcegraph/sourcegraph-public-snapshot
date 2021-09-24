@@ -22,7 +22,7 @@ import { getTestTools } from './util/init'
 import { ScreenshotVerifier } from './util/ScreenshotVerifier'
 import { TestResourceManager } from './util/TestResourceManager'
 
-const activationNavBarSelector = '.test-activation-nav-item-toggle'
+// const activationNavBarSelector = '.test-activation-nav-item-toggle'
 
 /**
  * Gets the activation status for the current user from the GUI. There's no easy way to fetch this
