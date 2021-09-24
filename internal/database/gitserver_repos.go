@@ -83,14 +83,14 @@ func (s *GitserverRepoStore) IterateRepoGitserverStatus(ctx context.Context, opt
 		return errors.New("nil repoFn")
 	}
 
-	var q *sqlf.Query
+	var q string
 	if options.OnlyWithoutShard {
-		q = sqlf.Sprintf(iterateRepoGitserverStatusWithoutShardQuery)
+		q = iterateRepoGitserverStatusWithoutShardQuery
 	} else {
-		q = sqlf.Sprintf(iterateRepoGitserverQuery)
+		q = iterateRepoGitserverQuery
 	}
 
-	rows, err := s.Query(ctx, q)
+	rows, err := s.Query(ctx, sqlf.Sprintf(q))
 	if err != nil {
 		return errors.Wrap(err, "fetching gitserver status")
 	}
