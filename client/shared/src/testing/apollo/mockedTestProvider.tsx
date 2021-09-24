@@ -1,7 +1,7 @@
 import { MockedProvider, MockedProviderProps } from '@apollo/client/testing'
 import React, { useMemo } from 'react'
 
-import { generateCache } from '../../graphql/cache'
+import { generateCache } from '../../graphql/apollo/cache'
 
 export const MockedTestProvider: React.FunctionComponent<MockedProviderProps> = ({ children, ...props }) => {
     /**

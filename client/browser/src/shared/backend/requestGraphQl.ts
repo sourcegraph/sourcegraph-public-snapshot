@@ -107,7 +107,9 @@ export function createGraphQLHelpers(sourcegraphURL: string, isExtension: boolea
      * Memoized Apollo Client getter. It should be executed once to restore the cache from the local storage.
      * After that, the same instance should be used by all consumers.
      */
-    const getBrowserGraphQLClient = once(() => getGraphQLClient({ headers: getHeaders(), baseUrl: sourcegraphURL }))
+    const getBrowserGraphQLClient = once(() =>
+        getGraphQLClient({ headers: getHeaders(), baseUrl: sourcegraphURL, isAuthenticated: false })
+    )
 
     return { getBrowserGraphQLClient, requestGraphQL }
 }

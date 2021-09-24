@@ -17,6 +17,16 @@ func (c ChangedFiles) onlyDocs() bool {
 	return true
 }
 
+// onlyConfig returns whether the ChangedFiles are only config file changes that don't need to run CI.
+func (c ChangedFiles) onlyConfig() bool {
+	for _, p := range c {
+		if !strings.HasPrefix(p, ".github/") {
+			return false
+		}
+	}
+	return true
+}
+
 // onlySg returns whether the ChangedFiles are only in the ./dev/sg folder.
 func (c ChangedFiles) onlySg() bool {
 	for _, p := range c {
