@@ -913,11 +913,35 @@ func (s *RepoStore) listSQL(ctx context.Context, opt ReposListOptions) (*sqlf.Qu
 	}
 
 	if len(opt.Names) > 0 {
-		where = append(where, sqlf.Sprintf("name = ANY (%s)", pq.Array(opt.Names)))
+		// = ANY seems to be slow on the repo name column, as postgres doesn't opt
+		// for using the unique index on it. On dotcom, we see a difference in performance
+		// of 1ms compared to 1300ms for Repos.GetByName calls.
+		if len(opt.Names) < 30000 {
+			names := make([]*sqlf.Query, len(opt.Names))
+			for i, name := range opt.Names {
+				names[i] = sqlf.Sprintf("%s", name)
+			}
+			where = append(where, sqlf.Sprintf("name IN (%s)", sqlf.Join(names, ",")))
+		} else {
+			log15.Info("Large set of names passed to Repos.List", "len", len(opt.Names))
+			where = append(where, sqlf.Sprintf("name = ANY (%s)", pq.Array(opt.Names)))
+		}
 	}
 
 	if len(opt.URIs) > 0 {
-		where = append(where, sqlf.Sprintf("uri = ANY (%s)", pq.Array(opt.URIs)))
+		// = ANY seems to be slow on the repo name column, as postgres doesn't opt
+		// for using the unique index on it. On dotcom, we see a difference in performance
+		// of 1ms compared to 1300ms for Repos.GetByName calls.
+		if len(opt.URIs) < 30000 {
+			uris := make([]*sqlf.Query, len(opt.URIs))
+			for i, name := range opt.URIs {
+				uris[i] = sqlf.Sprintf("%s", name)
+			}
+			where = append(where, sqlf.Sprintf("uri IN (%s)", sqlf.Join(uris, ",")))
+		} else {
+			log15.Info("Large set of URIs passed to Repos.List", "len", len(opt.URIs))
+			where = append(where, sqlf.Sprintf("uri = ANY (%s)", pq.Array(opt.URIs)))
+		}
 	}
 
 	if opt.Index != nil {
@@ -1023,7 +1047,7 @@ var listIndexableReposMinStars, _ = strconv.Atoi(env.Get(
 ))
 
 // ListIndexableRepos returns a list of repos to be indexed for search on sourcegraph.com.
-// This includes all repos with >= 20 stars as well as user added repos.
+// This includes all repos with >= SRC_INDEXABLE_REPOS_MIN_STARS stars as well as user added repos.
 func (s *RepoStore) ListIndexableRepos(ctx context.Context, opts ListIndexableReposOptions) (results []types.RepoName, err error) {
 	tr, ctx := trace.New(ctx, "repos.ListIndexable", "")
 	defer func() {
@@ -1039,13 +1063,13 @@ func (s *RepoStore) ListIndexableRepos(ctx context.Context, opts ListIndexableRe
 			"LEFT JOIN gitserver_repos gr ON gr.repo_id = repo.id",
 		))
 		where = append(where, sqlf.Sprintf(
-			"(clone_status IS NULL OR clone_status = %s)",
+			"(gr.clone_status IS NULL OR gr.clone_status = %s)",
 			types.CloneStatusNotCloned,
 		))
 	}
 
 	if !opts.IncludePrivate {
-		where = append(where, sqlf.Sprintf("NOT private"))
+		where = append(where, sqlf.Sprintf("NOT repo.private"))
 	}
 
 	if len(where) == 0 {
@@ -1059,9 +1083,9 @@ func (s *RepoStore) ListIndexableRepos(ctx context.Context, opts ListIndexableRe
 
 	q := sqlf.Sprintf(
 		listIndexableReposQuery,
-		minStars,
 		sqlf.Join(joins, "\n"),
-		sqlf.Join(where, "\nAND "),
+		minStars,
+		sqlf.Join(where, "\nAND"),
 		opts.LimitOffset.SQL(),
 	)
 
@@ -1086,30 +1110,37 @@ func (s *RepoStore) ListIndexableRepos(ctx context.Context, opts ListIndexableRe
 }
 
 const listIndexableReposQuery = `
-WITH s AS (
-	SELECT id as repo_id
-	FROM repo
-	WHERE stars >= %s
-
-	UNION ALL
-
-	SELECT repo_id
-	FROM external_service_repos
-	WHERE user_id IS NOT NULL
-
-	UNION ALL
-
-	SELECT repo_id
-	FROM user_public_repos
-)
-
-SELECT DISTINCT ON (stars, id) id, name
+-- source: internal/database/repos.go:ListIndexableRepos
+SELECT
+	repo.id, repo.name
 FROM repo
-JOIN s ON s.repo_id = repo.id
 %s
-WHERE deleted_at IS NULL
-AND blocked IS NULL
-AND %s
+WHERE
+	(
+		repo.stars >= %s
+		OR
+		repo.id IN (
+			SELECT
+				repo_id
+			FROM
+				external_service_repos
+			WHERE
+				external_service_repos.user_id IS NOT NULL
+
+			UNION ALL
+
+			SELECT
+				repo_id
+			FROM
+				user_public_repos
+		)
+	)
+	AND
+	deleted_at IS NULL
+	AND
+	blocked IS NULL
+	AND
+	%s
 ORDER BY stars DESC NULLS LAST
 %s
 `
