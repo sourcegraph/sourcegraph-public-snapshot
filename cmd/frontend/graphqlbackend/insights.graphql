@@ -112,12 +112,12 @@ type InsightConnection {
 """
 An insight about code.
 """
-union Insight = BackendInsight | FrontendInsight
+union Insight = BackendSearchInsight | FrontendSearchInsight | FrontendCodeStatsInsight
 
 """
 An insight that runs over all repositories.
 """
-type BackendInsight {
+type BackendSearchInsight {
     """
     Unique identifier for this insight.
     """
@@ -137,7 +137,7 @@ type BackendInsight {
 """
 An insight that runs over limited list of repositories.
 """
-type FrontendInsight {
+type FrontendSearchInsight {
     """
     Unique identifier for this insight.
     """
@@ -162,6 +162,25 @@ type FrontendInsight {
     Data points over a time range (inclusive)
     """
     series: [FrontendInsightSeries!]!
+}
+
+type FrontendCodeStatsInsight {
+    """
+    Unique identifier for this insight.
+    """
+    id: String!
+
+    """
+    The short title of the insight.
+    """
+    title: String!
+
+    """
+    A repository to run code stats insight search over.
+    """
+    repository: String!
+
+    otherThreshold: Int!
 }
 
 
