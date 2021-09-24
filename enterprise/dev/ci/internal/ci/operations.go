@@ -6,7 +6,6 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
-	"time"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/dev/ci/images"
 	bk "github.com/sourcegraph/sourcegraph/enterprise/dev/ci/internal/buildkite"
@@ -45,6 +44,10 @@ func CoreTestOperations(changedFiles ChangedFiles, buildOptions bk.BuildOptions)
 
 	// Build special pipelines for changes that only touch a subset of code.
 	switch {
+	case changedFiles.onlyConfig():
+		// If this PR only affects e.g. .github config files, no steps are necessary to run.
+		operations = []Operation{}
+
 	case changedFiles.onlyDocs():
 		// If this is a docs-only PR, run only the steps necessary to verify the docs.
 		operations = []Operation{
@@ -69,7 +72,7 @@ func CoreTestOperations(changedFiles ChangedFiles, buildOptions bk.BuildOptions)
 
 	// Add additional steps
 	if changedFiles.affectsClient() {
-		operations = append(operations, frontendPuppeteerAndStorybook(false))
+		operations = append(operations, clientIntegrationTests, clientChromaticTests(false))
 	}
 
 	// wait for all steps to pass
@@ -128,13 +131,16 @@ func addWebApp(pipeline *bk.Pipeline) {
 		bk.Cmd("dev/ci/codecov.sh -c -F typescript -F unit"))
 }
 
+// We provide our own Chromium instance that is installed through the `download-puppeteer-browser` script
+var percyBrowserExecutableEnv = bk.Env("PERCY_BROWSER_EXECUTABLE", "node_modules/puppeteer/.local-chromium/linux-901812/chrome-linux/chrome")
+
 // Builds and tests the browser extension.
 func addBrowserExt(pipeline *bk.Pipeline) {
 	// Browser extension integration tests
 	for _, browser := range []string{"chrome"} {
 		pipeline.AddStep(
 			fmt.Sprintf(":%s: Puppeteer tests for %s extension", browser, browser),
-			bk.Env("PUPPETEER_SKIP_CHROMIUM_DOWNLOAD", "true"), // Don't download browser, we use "download-puppeteer-browser" script instead
+			percyBrowserExecutableEnv,
 			bk.Env("EXTENSION_PERMISSIONS_ALL_URLS", "true"),
 			bk.Env("BROWSER", browser),
 			bk.Env("LOG_BROWSER_CONSOLE", "true"),
@@ -156,26 +162,58 @@ func addBrowserExt(pipeline *bk.Pipeline) {
 		bk.Cmd("dev/ci/codecov.sh -c -F typescript -F unit"))
 }
 
-func frontendPuppeteerAndStorybook(autoAcceptChanges bool) Operation {
-	return func(pipeline *bk.Pipeline) {
-		// Client integration tests
-		pipeline.AddStep(":puppeteer::electric_plug: Puppeteer tests",
-			bk.Env("PUPPETEER_SKIP_CHROMIUM_DOWNLOAD", "true"), // Don't download browser, we use "download-puppeteer-browser" script instead
-			bk.Env("ENTERPRISE", "1"),
-			bk.Env("PERCY_ON", "true"),
-			bk.Cmd("COVERAGE_INSTRUMENT=true dev/ci/yarn-build.sh client/web"),
-			bk.Cmd("echo \"--- Install puppeteer\" && yarn --cwd client/shared run download-puppeteer-browser"),
-			bk.Cmd("echo \"--- Run integration test suite\" && yarn percy exec -- yarn run cover-integration"),
-			bk.Cmd("echo \"--- Process NYC report\" && yarn nyc report -r json"),
-			bk.Cmd("echo \"--- Upload coverage report\" && dev/ci/codecov.sh -c -F typescript -F integration"),
-			bk.ArtifactPaths("./puppeteer/*.png"))
+func clientIntegrationTests(pipeline *bk.Pipeline) {
+	chunkSize := 3
+	prepStepKey := "puppeteer:prep"
+	skipGitCloneStep := bk.Plugin("uber-workflow/run-without-clone", "")
 
+	// Build web application used for integration tests to share it between multiple parallel steps.
+	pipeline.AddStep(":puppeteer::electric_plug: Puppeteer tests prep",
+		bk.Key(prepStepKey),
+		bk.Env("ENTERPRISE", "1"),
+		bk.Cmd("COVERAGE_INSTRUMENT=true dev/ci/yarn-build.sh client/web"),
+		bk.Cmd("dev/ci/create-client-artifact.sh"))
+
+	// Chunk web integration tests to save time via parallel execution.
+	chunkedTestFiles := getChunkedWebIntegrationFileNames(chunkSize)
+	// Percy finalize step should be executed after all integration tests.
+	puppeteerFinalizeDependencies := make([]bk.StepOpt, len(chunkedTestFiles))
+
+	// Add pipeline step for each chunk of web integrations files.
+	for i, chunkTestFiles := range chunkedTestFiles {
+		stepLabel := fmt.Sprintf(":puppeteer::electric_plug: Puppeteer tests chunk #%s", fmt.Sprint(i+1))
+
+		stepKey := fmt.Sprintf("puppeteer:chunk:%s", fmt.Sprint(i+1))
+		puppeteerFinalizeDependencies[i] = bk.DependsOn(stepKey)
+
+		pipeline.AddStep(stepLabel,
+			bk.Key(stepKey),
+			bk.DependsOn(prepStepKey),
+			percyBrowserExecutableEnv,
+			bk.Env("PERCY_ON", "true"),
+			bk.Cmd(fmt.Sprintf(`dev/ci/yarn-web-integration.sh "%s"`, chunkTestFiles)),
+			bk.ArtifactPaths("./puppeteer/*.png"))
+	}
+
+	finalizeSteps := []bk.StepOpt{
+		skipGitCloneStep,
+		bk.Cmd("npx @percy/cli build:finalize"),
+	}
+
+	pipeline.AddStep(":puppeteer::electric_plug: Puppeteer tests finalize",
+		append(finalizeSteps, puppeteerFinalizeDependencies...)...)
+}
+
+func clientChromaticTests(autoAcceptChanges bool) Operation {
+	return func(pipeline *bk.Pipeline) {
 		// Upload storybook to Chromatic
 		chromaticCommand := "yarn chromatic --exit-zero-on-changes --exit-once-uploaded"
+
 		if autoAcceptChanges {
 			chromaticCommand += " --auto-accept-changes"
 		}
-		pipeline.AddStep(":chromatic: Upload storybook to Chromatic",
+
+		pipeline.AddStep(":chromatic: Upload Storybook to Chromatic",
 			bk.AutomaticRetry(5),
 			bk.Cmd("yarn --mutex network --frozen-lockfile --network-timeout 60000"),
 			bk.Cmd("yarn gulp generate"),
@@ -207,7 +245,8 @@ func addBrandedTests(pipeline *bk.Pipeline) {
 func addGoTests(pipeline *bk.Pipeline) {
 	pipeline.AddStep(":go: Test",
 		bk.Cmd("./dev/ci/go-test.sh"),
-		bk.Cmd("dev/ci/codecov.sh -c -F go"))
+		bk.Cmd("dev/ci/codecov.sh -c -F go"),
+		bk.ArtifactPaths("$HOME/.sourcegraph-dev/logs/**/*"))
 }
 
 // Builds the OSS and Enterprise Go commands.
@@ -234,14 +273,14 @@ func addBackendIntegrationTests(pipeline *bk.Pipeline) {
 		bk.Cmd("popd"),
 		bk.Cmd("./dev/ci/backend-integration.sh"),
 		bk.Cmd(`docker image rm -f "$IMAGE"`),
-	)
+		bk.ArtifactPaths("$HOME/.sourcegraph-dev/logs/**/*"))
 }
 
 func addBrowserExtensionE2ESteps(pipeline *bk.Pipeline) {
 	for _, browser := range []string{"chrome"} {
 		// Run e2e tests
 		pipeline.AddStep(fmt.Sprintf(":%s: E2E for %s extension", browser, browser),
-			bk.Env("PUPPETEER_SKIP_CHROMIUM_DOWNLOAD", "true"), // Don't download browser, we use "download-puppeteer-browser" script instead
+			percyBrowserExecutableEnv,
 			bk.Env("EXTENSION_PERMISSIONS_ALL_URLS", "true"),
 			bk.Env("BROWSER", browser),
 			bk.Env("LOG_BROWSER_CONSOLE", "true"),
@@ -479,28 +518,28 @@ func publishFinalDockerImage(c Config, app string, insiders bool) Operation {
 }
 
 // ~6m (building executor base VM)
-func buildExecutor(timestamp time.Time, version string) Operation {
-	return func(pipeline *bk.Pipeline) {
-		cmds := []bk.StepOpt{
-			bk.Cmd(`echo "Building executor cloud image..."`),
-			bk.Env("VERSION", version),
-			bk.Env("BUILD_TIMESTAMP", strconv.Itoa(int(timestamp.UTC().Unix()))),
-			bk.Cmd("./enterprise/cmd/executor/build.sh"),
-		}
+// func buildExecutor(timestamp time.Time, version string) Operation {
+// 	return func(pipeline *bk.Pipeline) {
+// 		cmds := []bk.StepOpt{
+// 			bk.Cmd(`echo "Building executor cloud image..."`),
+// 			bk.Env("VERSION", version),
+// 			bk.Env("BUILD_TIMESTAMP", strconv.Itoa(int(timestamp.UTC().Unix()))),
+// 			bk.Cmd("./enterprise/cmd/executor/build.sh"),
+// 		}
 
-		pipeline.AddStep(":packer: :construction: executor image", cmds...)
-	}
-}
+// 		pipeline.AddStep(":packer: :construction: executor image", cmds...)
+// 	}
+// }
 
-func publishExecutor(timestamp time.Time, version string) Operation {
-	return func(pipeline *bk.Pipeline) {
-		cmds := []bk.StepOpt{
-			bk.Cmd(`echo "Releasing executor cloud image..."`),
-			bk.Env("VERSION", version),
-			bk.Env("BUILD_TIMESTAMP", strconv.Itoa(int(timestamp.UTC().Unix()))),
-			bk.Cmd("./enterprise/cmd/executor/release.sh"),
-		}
+// func publishExecutor(timestamp time.Time, version string) Operation {
+// 	return func(pipeline *bk.Pipeline) {
+// 		cmds := []bk.StepOpt{
+// 			bk.Cmd(`echo "Releasing executor cloud image..."`),
+// 			bk.Env("VERSION", version),
+// 			bk.Env("BUILD_TIMESTAMP", strconv.Itoa(int(timestamp.UTC().Unix()))),
+// 			bk.Cmd("./enterprise/cmd/executor/release.sh"),
+// 		}
 
-		pipeline.AddStep(":packer: :white_check_mark: executor image", cmds...)
-	}
-}
+// 		pipeline.AddStep(":packer: :white_check_mark: executor image", cmds...)
+// 	}
+// }

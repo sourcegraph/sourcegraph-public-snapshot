@@ -24,7 +24,6 @@ import (
 	"time"
 
 	"github.com/cockroachdb/errors"
-	"github.com/gorilla/mux"
 	"github.com/inconshreveable/log15"
 	"github.com/opentracing/opentracing-go/ext"
 	otlog "github.com/opentracing/opentracing-go/log"
@@ -336,28 +335,28 @@ func (s *Server) Handler() http.Handler {
 		setRPSLimiter()
 	})
 
-	router := mux.NewRouter()
-	router.Handle("/archive", trace.Route(http.HandlerFunc(s.handleArchive))).Name("archive")
-	router.Handle("/exec", trace.Route(http.HandlerFunc(s.handleExec))).Name("exec")
-	router.Handle("/p4-exec", trace.Route(http.HandlerFunc(s.handleP4Exec))).Name("p4-exec")
-	router.Handle("/list", trace.Route(http.HandlerFunc(s.handleList))).Name("list")
-	router.Handle("/list-gitolite", trace.Route(http.HandlerFunc(s.handleListGitolite))).Name("list-gitolite")
-	router.Handle("/is-repo-cloneable", trace.Route(http.HandlerFunc(s.handleIsRepoCloneable))).Name("is-repo-cloneable")
-	router.Handle("/is-repo-cloned", trace.Route(http.HandlerFunc(s.handleIsRepoCloned))).Name("is-repo-cloned")
-	router.Handle("/repos", trace.Route(http.HandlerFunc(s.handleRepoInfo))).Name("repos")
-	router.Handle("/repos-stats", trace.Route(http.HandlerFunc(s.handleReposStats))).Name("repos-stats")
-	router.Handle("/repo-clone-progress", trace.Route(http.HandlerFunc(s.handleRepoCloneProgress))).Name("repo-clone-progress")
-	router.Handle("/delete", trace.Route(http.HandlerFunc(s.handleRepoDelete))).Name("delete")
-	router.Handle("/repo-update", trace.Route(http.HandlerFunc(s.handleRepoUpdate))).Name("repo-update")
-	router.Handle("/getGitolitePhabricatorMetadata", trace.Route(http.HandlerFunc(s.handleGetGitolitePhabricatorMetadata))).Name("getGitolitePhabricatorMetadata")
-	router.Handle("/create-commit-from-patch", trace.Route(http.HandlerFunc(s.handleCreateCommitFromPatch))).Name("create-commit-from-patch")
-	router.Handle("/ping", trace.Route(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+	mux := http.NewServeMux()
+	mux.HandleFunc("/archive", s.handleArchive)
+	mux.HandleFunc("/exec", s.handleExec)
+	mux.HandleFunc("/p4-exec", s.handleP4Exec)
+	mux.HandleFunc("/list", s.handleList)
+	mux.HandleFunc("/list-gitolite", s.handleListGitolite)
+	mux.HandleFunc("/is-repo-cloneable", s.handleIsRepoCloneable)
+	mux.HandleFunc("/is-repo-cloned", s.handleIsRepoCloned)
+	mux.HandleFunc("/repos", s.handleRepoInfo)
+	mux.HandleFunc("/repos-stats", s.handleReposStats)
+	mux.HandleFunc("/repo-clone-progress", s.handleRepoCloneProgress)
+	mux.HandleFunc("/delete", s.handleRepoDelete)
+	mux.HandleFunc("/repo-update", s.handleRepoUpdate)
+	mux.HandleFunc("/getGitolitePhabricatorMetadata", s.handleGetGitolitePhabricatorMetadata)
+	mux.HandleFunc("/create-commit-from-patch", s.handleCreateCommitFromPatch)
+	mux.HandleFunc("/ping", func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusOK)
-	}))).Name("ping")
+	})
 
-	router.Handle("/git/", http.StripPrefix("/git", trace.Route(s.gitServiceHandler()))).Name("git-service")
+	mux.Handle("/git/", http.StripPrefix("/git", s.gitServiceHandler()))
 
-	return router
+	return mux
 }
 
 // Janitor does clean up tasks over s.ReposDir and is expected to run in a
@@ -431,6 +430,16 @@ func (s *Server) cloneJobProducer(ctx context.Context, jobs chan<- *cloneJob) {
 	}
 }
 
+// This counter is introduced along with the asyncDoCloneInvoked and the cloneQueueLength
+// counters. We want to verify if the value of all these counters are same in a given time
+// period. This would help us verify our producer-consumer pipeline for asynchronouse repo
+// cloning. For more, see associated commeents attached with the declaration of the mentioned
+// counters in this file.
+var cloneJobProcessed = promauto.NewCounter(prometheus.CounterOpts{
+	Name: "src_gitserver_clone_job_processed",
+	Help: "Number of cloneJobs processed",
+})
+
 func (s *Server) cloneJobConsumer(ctx context.Context, jobs <-chan *cloneJob) {
 	// TODO: What we want eventually.
 	// for j := range jobs {
@@ -461,7 +470,7 @@ func (s *Server) cloneJobConsumer(ctx context.Context, jobs <-chan *cloneJob) {
 		// 	s.setLastErrorNonFatal(ctx, j.repo, err)
 		// }()
 
-		cloneQueueLength.Dec()
+		cloneJobProcessed.Inc()
 	}
 }
 
@@ -1360,12 +1369,12 @@ type cloneOptions struct {
 // spawning new goroutine for each new non-blocking clone request, but also add a corresponding
 // cloneJob to Server.CloneQueue.
 var (
-	asyncDoCloneInvoked = promauto.NewGauge(prometheus.GaugeOpts{
-		Name: "src_gitserver_async_doclone_invoked",
+	asyncDoCloneInvoked = promauto.NewCounter(prometheus.CounterOpts{
+		Name: "src_gitserver_async_doclone_invoked_counter",
 		Help: "Number of times Server.doClone was invoked asynchronsously",
 	})
-	cloneQueueLength = promauto.NewGauge(prometheus.GaugeOpts{
-		Name: "src_gitserver_clone_queue_length",
+	cloneQueueLength = promauto.NewCounter(prometheus.CounterOpts{
+		Name: "src_gitserver_clone_queue_length_counter",
 		Help: "Length of Server.CloneQueue",
 	})
 )
@@ -1454,7 +1463,6 @@ func (s *Server) cloneRepo(ctx context.Context, repo api.RepoName, opts *cloneOp
 	// And enable the commented out code in cloneJobConsumer.
 	go func() {
 		asyncDoCloneInvoked.Inc()
-		defer asyncDoCloneInvoked.Dec()
 
 		// Create a new context because this is in a background goroutine. The outer context's
 		// cancel will be invoked when cloneRepo returns, but we don't want this goroutine to get
