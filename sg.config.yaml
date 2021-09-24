@@ -221,14 +221,13 @@ commands:
       - cmd/query-runner
 
   symbols:
-    cmd: .bin/symbols
+    cmd: env LIBSQLITE3_PCRE=$(./dev/libsqlite3-pcre/build.sh libpath) .bin/symbols
     install: |
       ./dev/libsqlite3-pcre/build.sh &&
       ./cmd/symbols/build-ctags.sh &&
       go build -o .bin/symbols github.com/sourcegraph/sourcegraph/cmd/symbols
     checkBinary: .bin/symbols
     env:
-      LIBSQLITE3_PCRE: ./dev/libsqlite3-pcre/build.sh libpath
       CTAGS_COMMAND: cmd/symbols/universal-ctags-dev
       CTAGS_PROCESSES: 2
     watch:
