@@ -72,7 +72,7 @@ func CoreTestOperations(changedFiles ChangedFiles, buildOptions bk.BuildOptions)
 
 	// Add additional steps
 	if changedFiles.affectsClient() {
-		operations = append(operations, clientIntegrationTests, clientLighthouseTests, clientChromaticTests(false))
+		operations = append(operations, clientIntegrationTests, clientChromaticTests(false))
 	}
 
 	// wait for all steps to pass
@@ -202,35 +202,6 @@ func clientIntegrationTests(pipeline *bk.Pipeline) {
 
 	pipeline.AddStep(":puppeteer::electric_plug: Puppeteer tests finalize",
 		append(finalizeSteps, puppeteerFinalizeDependencies...)...)
-}
-
-func clientLighthouseTests(pipeline *bk.Pipeline) {
-	PREP_STEP_KEY := "lighthouse:prep"
-
-	// Build web application used for integration tests to share it between multiple parallel steps.
-	pipeline.AddStep(":lighthouse: Lighthouse production build",
-		bk.Key(PREP_STEP_KEY),
-		bk.Env("NODE_ENV", "production"),
-		bk.Env("WEBPACK_SERVE_INDEX", "true"), // Required for local production server
-		bk.Env("SOURCEGRAPH_API_URL", "https://sourcegraph.com"),
-		bk.Cmd("dev/ci/yarn-build.sh client/web"),
-		bk.Cmd("dev/ci/create-client-artifact.sh"))
-
-	testPaths := map[string]string{
-		"homepage":        "/",
-		"search_results":  "/search?q=repo:sourcegraph/sourcegraph+file:package.json",
-		"repository_page": "/github.com/sourcegraph/sourcegraph",
-		"file_blob":       "/github.com/sourcegraph/sourcegraph/-/blob/package.json",
-	}
-
-	for key, path := range testPaths {
-		stepLabel := fmt.Sprintf(":lighthouse: lighthouse:%s", key)
-		pipeline.AddStep(stepLabel,
-			bk.Key(key),
-			bk.Env("SOURCEGRAPH_API_URL", "https://sourcegraph.com"),
-			bk.Cmd(fmt.Sprintf(`dev/ci/yarn-lighthouse.sh %s %s`, key, path)),
-			bk.DependsOn(PREP_STEP_KEY))
-	}
 }
 
 func clientChromaticTests(autoAcceptChanges bool) Operation {
