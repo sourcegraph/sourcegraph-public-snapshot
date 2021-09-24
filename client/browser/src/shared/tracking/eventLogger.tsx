@@ -1,3 +1,4 @@
+import cookies, { CookieAttributes } from 'js-cookie'
 import { noop } from 'lodash'
 import { Observable, ReplaySubject, Subscription } from 'rxjs'
 import { take } from 'rxjs/operators'
@@ -62,7 +63,7 @@ export class ConditionalTelemetryService implements TelemetryService {
 
 export class EventLogger implements TelemetryService {
     private uid: string | null = null
-    private deviceID: string | null = null
+    private deviceID?: string = undefined
 
     private platform = getPlatformName()
 
@@ -123,8 +124,8 @@ export class EventLogger implements TelemetryService {
         }
 
         if (isInPage) {
-            let id = localStorage.getItem(deviceIDKey)
-            if (id === null) {
+            let id = cookies.get(deviceIDKey)
+            if (!id) {
                 id = this.generateDeviceID()
                 localStorage.setItem(deviceIDKey, id)
             }
