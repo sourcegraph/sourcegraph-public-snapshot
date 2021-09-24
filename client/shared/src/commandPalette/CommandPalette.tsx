@@ -124,77 +124,26 @@ const ShortcutController: React.FC<{
     </ShortcutProvider>
 ))
 
-interface CommandPaletteActionItemProps extends TelemetryProps {
+interface CommandPaletteActionItemProps {
     actionItem: ActionItemAction
-    onClick: (action: ActionItemAction) => void
-
-    // TODO
-    runAction: () => void
-
-    /** Called after executing the action (for both success and failure). */
-    onDidExecute?: (actionID: string) => void
-
-    location: H.Location
+    onRunAction: (action: ActionItemAction) => void
 }
 
-const ActionItemRender: React.FC<CommandPaletteActionItemProps> = ({
-    actionItem,
-    onClick,
-    telemetryService,
-    onDidExecute,
-    location,
-}) => {
-    const { action, altAction, keybinding } = actionItem
+const CommandPaletteActionItem: React.FC<CommandPaletteActionItemProps> = ({ actionItem, onRunAction }) => {
+    const { action, keybinding } = actionItem
 
-    // TODO: lift this up to the command palette component
-    const runAction = (event: React.MouseEvent<HTMLElement> | React.KeyboardEvent<HTMLElement>): void => {
-        const action = (isAltEvent(event) && actionItem.altAction) || actionItem.action
-
-        if (!action.command) {
-            // Unexpectedly arrived here; noop actions should not have event handlers that trigger
-            // this.
-            return
-        }
-
-        // Record action ID (but not args, which might leak sensitive data).
-        telemetryService.log(action.id)
-
-        if (urlForClientCommandOpen(action, location)) {
-            if (event.currentTarget.tagName === 'A' && event.currentTarget.hasAttribute('href')) {
-                // Do not execute the command. The <LinkOrButton>'s default event handler will do what we want (which
-                // is to open a URL). The only case where this breaks is if both the action and alt action are "open"
-                // commands; in that case, this only ever opens the (non-alt) action.
-                if (onDidExecute) {
-                    // Defer calling onRun until after the URL has been opened. If we call it immediately, then in
-                    // CommandList it immediately updates the (most-recent-first) ordering of the ActionItems, and
-                    // the URL actually changes underneath us before the URL is opened. There is no harm to
-                    // deferring this call; onRun's documentation allows this.
-                    setTimeout(() => onDidExecute(action.id))
-                }
-                return
-            }
-        }
-
-        // If the action we're running is *not* opening a URL by using the event target's default handler, then
-        // ensure the default event handler for the <LinkOrButton> doesn't run (which might open the URL).
-        event.preventDefault()
-
-        // TODO: command executions hook? The command should be handled by the command palette, which is always rendered even
-        // when not open
-        commandExecutions.next({
-            command: action.command,
-            args: action.commandArguments,
-        })
-    }
+    const label = [action.category, action.actionItem?.label || action.title || action.command]
+        .filter(Boolean)
+        .join(': ')
 
     return (
-        <button onClick={(): void => onClick(action)}>
-            {actionItem?.label}
+        <button type="button" onClick={(): void => onRunAction(actionItem)}>
+            {label}
 
-            {keybindings && (
+            {keybinding && (
                 <>
-                    {[...keybindings.held, ...keybinding.order].map(key => (
-                        <kbd>{key}</kbd>
+                    {[...keybinding.ordered, ...(keybinding.held || [])].map(key => (
+                        <kbd key={key}>{key}</kbd>
                     ))}
                 </>
             )}
@@ -263,6 +212,12 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
 
     const handleActionItem = (...args: any): void => console.log(...args)
 
+    const onRunAction = useCallback((action: ActionItemAction) => {
+        console.log('running action', action)
+
+        // TODO set recent actions (async?)
+    }, [])
+
     return (
         // TODO: render shortcuts here. isOpen state is global, can be changed by e.g. button, keybinding.
         // this is a singleton component that is always rendered.
@@ -284,7 +239,11 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
                         type="text"
                     />
                 </div>
-                {filteredActionItems?.map(item => (
+                {mode === 'command' &&
+                    filteredActionItems?.map(item => (
+                        <CommandPaletteActionItem key={item.action.id} actionItem={item} onRunAction={onRunAction} />
+                    ))}
+                {/* {filteredActionItems?.map(item => (
                     <li key={item.action.id}>
                         <ActionItem
                             {...item}
@@ -312,7 +271,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
                             location={location}
                         />
                     </li>
-                ))}
+                ))} */}
             </Dialog>
         </>
     )
