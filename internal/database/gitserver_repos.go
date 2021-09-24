@@ -83,14 +83,14 @@ func (s *GitserverRepoStore) IterateRepoGitserverStatus(ctx context.Context, opt
 		return errors.New("nil repoFn")
 	}
 
-	var cond *sqlf.Query
+	var q *sqlf.Query
 	if options.OnlyWithoutShard {
-		cond = sqlf.Sprintf("AND gr.shard_id = ''")
+		q = sqlf.Sprintf(iterateRepoGitserverStatusWithoutShardQuery)
 	} else {
-		cond = sqlf.Sprintf("")
+		q = sqlf.Sprintf(iterateRepoGitserverQuery)
 	}
 
-	rows, err := s.Query(ctx, sqlf.Sprintf(iterateRepoGitserverStatusQuery, cond))
+	rows, err := s.Query(ctx, q)
 	if err != nil {
 		return errors.Wrap(err, "fetching gitserver status")
 	}
@@ -136,7 +136,23 @@ func (s *GitserverRepoStore) IterateRepoGitserverStatus(ctx context.Context, opt
 	return nil
 }
 
-const iterateRepoGitserverStatusQuery = `
+const iterateRepoGitserverQuery = `
+-- source: internal/database/gitserver_repos.go:GitserverRepoStore.IterateRepoGitserverStatus
+SELECT
+	repo.id,
+	repo.name,
+	gr.clone_status,
+	gr.shard_id,
+	gr.last_external_service,
+	gr.last_error,
+	gr.last_fetched,
+	gr.updated_at
+FROM repo
+LEFT JOIN gitserver_repos gr ON gr.repo_id = repo.id
+WHERE repo.deleted_at IS NULL
+`
+
+const iterateRepoGitserverStatusWithoutShardQuery = `
 -- source: internal/database/gitserver_repos.go:GitserverRepoStore.IterateRepoGitserverStatus
 (
 	SELECT
@@ -150,7 +166,7 @@ const iterateRepoGitserverStatusQuery = `
 		NULL AS updated_at
 	FROM repo
 	WHERE repo.deleted_at IS NULL AND NOT EXISTS (SELECT 1 FROM gitserver_repos gr WHERE gr.repo_id = repo.id)
-) UNION (
+) UNION ALL (
 	SELECT
 		repo.id,
 		repo.name,
@@ -162,7 +178,7 @@ const iterateRepoGitserverStatusQuery = `
 		gr.updated_at
 	FROM repo
 	JOIN gitserver_repos gr ON gr.repo_id = repo.id
-	WHERE repo.deleted_at IS NULL %s
+	WHERE repo.deleted_at IS NULL AND gr.shard_id = ''
 )
 `
 
