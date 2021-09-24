@@ -1,22 +1,4 @@
-import {
-    gql as apolloGql,
-    useQuery as useApolloQuery,
-    useMutation as useApolloMutation,
-    useLazyQuery as useApolloLazyQuery,
-    DocumentNode,
-    ApolloClient,
-    createHttpLink,
-    NormalizedCacheObject,
-    OperationVariables,
-    QueryHookOptions,
-    QueryResult,
-    MutationHookOptions,
-    MutationTuple,
-    QueryTuple,
-} from '@apollo/client'
 import { GraphQLError } from 'graphql'
-import { once } from 'lodash'
-import { useMemo } from 'react'
 import { Observable } from 'rxjs'
 import { fromFetch } from 'rxjs/fetch'
 import { Omit } from 'utility-types'
@@ -24,7 +6,7 @@ import { Omit } from 'utility-types'
 import { checkOk } from '../backend/fetch'
 import { createAggregateError } from '../util/errors'
 
-import { cache } from './cache'
+import { GRAPHQL_URI } from './constants'
 
 /**
  * Use this template string tag for all GraphQL queries.
@@ -67,8 +49,6 @@ export interface GraphQLRequestOptions extends Omit<RequestInit, 'method' | 'bod
     baseUrl?: string
 }
 
-const GRAPHQL_URI = '/.api/graphql'
-
 /**
  * This function should not be called directly as it does not
  * add the necessary headers to authorize the GraphQL API call.
@@ -94,107 +74,4 @@ export function requestGraphQLCommon<T, V = object>({
     })
 }
 
-interface GetGraphqlClientOptions {
-    headers: RequestInit['headers']
-    baseUrl?: string
-}
-
-export type GraphQLClient = ApolloClient<NormalizedCacheObject>
-
-export const getGraphQLClient = once(
-    async (options: GetGraphqlClientOptions): Promise<GraphQLClient> => {
-        const { headers, baseUrl } = options
-        const uri = baseUrl ? new URL(GRAPHQL_URI, baseUrl).href : GRAPHQL_URI
-
-        const apolloClient = new ApolloClient({
-            uri,
-            cache,
-            defaultOptions: {
-                /**
-                 * The default `fetchPolicy` is `cache-first`, which returns a cached response
-                 * and doesn't trigger cache update. This is undesirable default behavior because
-                 * we want to keep our cache updated to avoid confusing the user with stale data.
-                 * `cache-and-network` allows us to return a cached result right away and then update
-                 * all consumers with the fresh data from the network request.
-                 */
-                watchQuery: {
-                    fetchPolicy: 'cache-and-network',
-                },
-                /**
-                 * `client.query()` returns promise, so it can only resolve one response.
-                 * Meaning we cannot return the cached result first and then update it with
-                 * the response from the network as it's done in `client.watchQuery()`.
-                 * So we always need to make a network request to get data unless another
-                 * `fetchPolicy` is specified in the `client.query()` call.
-                 */
-                query: {
-                    fetchPolicy: 'network-only',
-                },
-            },
-            link: createHttpLink({
-                uri: ({ operationName }) => `${uri}?${operationName}`,
-                headers,
-            }),
-        })
-
-        return Promise.resolve(apolloClient)
-    }
-)
-
-type RequestDocument = string | DocumentNode
-
-/**
- * Returns a `DocumentNode` value to support integrations with GraphQL clients that require this.
- *
- * @param document The GraphQL operation payload
- * @returns The created `DocumentNode`
- */
-export const getDocumentNode = (document: RequestDocument): DocumentNode => {
-    if (typeof document === 'string') {
-        return apolloGql(document)
-    }
-    return document
-}
-
-const useDocumentNode = (document: RequestDocument): DocumentNode =>
-    useMemo(() => getDocumentNode(document), [document])
-
-/**
- * Send a query to GraphQL and respond to updates.
- * Wrapper around Apollo `useQuery` that supports `DocumentNode` and `string` types.
- *
- * @param query GraphQL operation payload.
- * @param options Operation variables and request configuration
- * @returns GraphQL response
- */
-export function useQuery<TData = any, TVariables = OperationVariables>(
-    query: RequestDocument,
-    options: QueryHookOptions<TData, TVariables>
-): QueryResult<TData, TVariables> {
-    const documentNode = useDocumentNode(query)
-    return useApolloQuery(documentNode, options)
-}
-
-export function useLazyQuery<TData = any, TVariables = OperationVariables>(
-    query: RequestDocument,
-    options: QueryHookOptions<TData, TVariables>
-): QueryTuple<TData, TVariables> {
-    const documentNode = useDocumentNode(query)
-    return useApolloLazyQuery(documentNode, options)
-}
-
-/**
- * Send a mutation to GraphQL and respond to updates.
- * Wrapper around Apollo `useMutation` that supports `DocumentNode` and `string` types.
- *
- * @param mutation GraphQL operation payload.
- * @param options Operation variables and request configuration
- * @returns GraphQL response
- */
-export function useMutation<TData = any, TVariables = OperationVariables>(
-    mutation: RequestDocument,
-    options?: MutationHookOptions<TData, TVariables>
-): MutationTuple<TData, TVariables> {
-    const documentNode = useDocumentNode(mutation)
-    return useApolloMutation(documentNode, options)
-}
+export * from './apollo'

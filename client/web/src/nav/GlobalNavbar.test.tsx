@@ -27,8 +27,6 @@ const PROPS: React.ComponentProps<typeof GlobalNavbar> = {
     history: createMemoryHistory(),
     keyboardShortcuts: [],
     isSourcegraphDotCom: false,
-    navbarSearchQueryState: { query: 'q' },
-    onNavbarQueryChange: () => undefined,
     onThemePreferenceChange: () => undefined,
     isLightTheme: true,
     themePreference: ThemePreference.Light,

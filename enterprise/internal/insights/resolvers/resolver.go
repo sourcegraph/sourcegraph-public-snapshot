@@ -5,6 +5,8 @@ import (
 	"database/sql"
 	"time"
 
+	"github.com/sourcegraph/sourcegraph/internal/database"
+
 	"github.com/cockroachdb/errors"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
@@ -51,6 +53,7 @@ func (r *Resolver) Insights(ctx context.Context, args *graphqlbackend.InsightsAr
 		workerBaseStore:      r.workerBaseStore,
 		insightMetadataStore: r.insightMetadataStore,
 		ids:                  idList,
+		orgStore:             database.Orgs(r.workerBaseStore.Handle().DB()),
 	}, nil
 }
 

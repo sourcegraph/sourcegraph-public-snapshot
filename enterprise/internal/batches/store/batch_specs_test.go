@@ -290,11 +290,10 @@ func testStoreBatchSpecs(t *testing.T, ctx context.Context, s *Store, clock ct.C
 		overTTL := clock.Now().Add(-btypes.BatchSpecTTL - 1*time.Minute)
 
 		tests := []struct {
-			createdAt             time.Time
-			hasBatchChange        bool
-			hasChangesetSpecs     bool
-			hasBatchSpecExecution bool
-			wantDeleted           bool
+			createdAt         time.Time
+			hasBatchChange    bool
+			hasChangesetSpecs bool
+			wantDeleted       bool
 		}{
 			{createdAt: underTTL, wantDeleted: false},
 			{createdAt: overTTL, wantDeleted: true},
@@ -305,11 +304,8 @@ func testStoreBatchSpecs(t *testing.T, ctx context.Context, s *Store, clock ct.C
 			{hasBatchChange: true, hasChangesetSpecs: true, createdAt: underTTL, wantDeleted: false},
 			{hasBatchChange: true, hasChangesetSpecs: true, createdAt: overTTL, wantDeleted: false},
 
-			{hasBatchSpecExecution: true, createdAt: underTTL, wantDeleted: false},
-			{hasBatchSpecExecution: true, createdAt: overTTL, wantDeleted: false},
-
-			{hasBatchChange: true, hasBatchSpecExecution: true, hasChangesetSpecs: true, createdAt: underTTL, wantDeleted: false},
-			{hasBatchChange: true, hasBatchSpecExecution: true, hasChangesetSpecs: true, createdAt: overTTL, wantDeleted: false},
+			{hasBatchChange: true, hasChangesetSpecs: true, createdAt: underTTL, wantDeleted: false},
+			{hasBatchChange: true, hasChangesetSpecs: true, createdAt: overTTL, wantDeleted: false},
 		}
 
 		for _, tc := range tests {
@@ -343,16 +339,6 @@ func testStoreBatchSpecs(t *testing.T, ctx context.Context, s *Store, clock ct.C
 					BatchSpecID: batchSpec.ID,
 				}
 				if err := s.CreateChangesetSpec(ctx, changesetSpec); err != nil {
-					t.Fatal(err)
-				}
-			}
-
-			if tc.hasBatchSpecExecution {
-				batchSpecExecution := &btypes.BatchSpecExecution{
-					NamespaceUserID: 1,
-					BatchSpecID:     batchSpec.ID,
-				}
-				if err := s.CreateBatchSpecExecution(ctx, batchSpecExecution); err != nil {
 					t.Fatal(err)
 				}
 			}

@@ -6,7 +6,7 @@ import React from 'react'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 
 import { Settings } from '../../../../../../../schema/settings.schema'
-import { positionRight } from '../../../../../components/context-menu/utils'
+import { positionBottomRight } from '../../../../../components/context-menu/utils'
 import { InsightDashboard } from '../../../../../core/types'
 import { getTooltipMessage, useDashboardPermissions } from '../../hooks/use-dashboard-permissions'
 
@@ -43,7 +43,7 @@ export const DashboardMenu: React.FunctionComponent<DashboardMenuProps> = props 
                 <DotsVerticalIcon size={16} />
             </MenuButton>
 
-            <MenuPopover portal={true} position={positionRight}>
+            <MenuPopover portal={true} position={positionBottomRight}>
                 <MenuItems className={classnames(styles.menuList, 'dropdown-menu')}>
                     <MenuItem
                         as="button"

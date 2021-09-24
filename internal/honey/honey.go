@@ -11,18 +11,22 @@ import (
 	"github.com/honeycombio/libhoney-go"
 )
 
-var apiKey = env.Get("HONEYCOMB_TEAM", "", "The key used for Honeycomb event tracking.")
+var (
+	apiKey  = env.Get("HONEYCOMB_TEAM", "", "The key used for Honeycomb event tracking.")
+	suffix  = env.Get("HONEYCOMB_SUFFIX", "", "Suffix to append to honeycomb datasets. Used to differentiate between prod/dogfood/dev/etc.")
+	disable = env.Get("HONEYCOMB_DISABLE", "", "Ignore that HONEYCOMB_TEAM is set and return false for Enabled. Used by specific instrumentation which ignores what Enabled returns and will log based on other criteria.")
+)
 
 // Enabled returns true if honeycomb has been configured to run.
 func Enabled() bool {
-	return apiKey != ""
+	return apiKey != "" && disable == ""
 }
 
 // Event creates an event for logging to dataset. Event.Send will only work if
 // Enabled() returns true.
 func Event(dataset string) *libhoney.Event {
 	ev := libhoney.NewEvent()
-	ev.Dataset = dataset
+	ev.Dataset = dataset + suffix
 	return ev
 }
 
@@ -35,13 +39,6 @@ func EventWithFields(dataset string, fields map[string]interface{}) *libhoney.Ev
 	}
 
 	return ev
-}
-
-// Builder creates a builder for logging to a dataset.
-func Builder(dataset string) *libhoney.Builder {
-	b := libhoney.NewBuilder()
-	b.Dataset = dataset
-	return b
 }
 
 func init() {

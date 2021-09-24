@@ -3,6 +3,7 @@ import * as H from 'history'
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { Observable } from 'rxjs'
 
+import { ActivationProps } from '@sourcegraph/shared/src/components/activation/Activation'
 import { FetchFileParameters } from '@sourcegraph/shared/src/components/CodeExcerpt'
 import { Link } from '@sourcegraph/shared/src/components/Link'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
@@ -23,6 +24,7 @@ import {
     resolveVersionContext,
     ParsedSearchQueryProps,
     MutableVersionContextProps,
+    SearchContextProps,
 } from '..'
 import { AuthenticatedUser } from '../../auth'
 import { CodeMonitoringProps } from '../../code-monitoring'
@@ -32,7 +34,7 @@ import { CodeInsightsProps } from '../../insights/types'
 import { isCodeInsightsEnabled } from '../../insights/utils/is-code-insights-enabled'
 import { SavedSearchModal } from '../../savedSearches/SavedSearchModal'
 import { SearchBetaIcon } from '../CtaIcons'
-import { getSubmittedSearchesCount, QueryState, submitSearch } from '../helpers'
+import { getSubmittedSearchesCount, submitSearch } from '../helpers'
 
 import { StreamingProgress } from './progress/StreamingProgress'
 import { SearchAlert } from './SearchAlert'
@@ -45,10 +47,12 @@ import { VersionContextWarning } from './VersionContextWarning'
 
 export interface StreamingSearchResultsProps
     extends SearchStreamingProps,
+        Pick<ActivationProps, 'activation'>,
         Pick<ParsedSearchQueryProps, 'parsedSearchQuery'>,
         Pick<PatternTypeProps, 'patternType'>,
         Pick<MutableVersionContextProps, 'versionContext' | 'availableVersionContexts' | 'previousVersionContext'>,
         Pick<CaseSensitivityProps, 'caseSensitive'>,
+        Pick<SearchContextProps, 'selectedSearchContextSpec'>,
         SettingsCascadeProps,
         ExtensionsControllerProps<'executeCommand' | 'extHostAPI'>,
         PlatformContextProps<'forceUpdateTooltip' | 'settings'>,
@@ -60,9 +64,6 @@ export interface StreamingSearchResultsProps
     authenticatedUser: AuthenticatedUser | null
     location: H.Location
     history: H.History
-    navbarSearchQueryState: QueryState
-    onNavbarQueryChange: (queryState: QueryState) => void
-    isSourcegraphDotCom: boolean
 
     fetchHighlightedFileLineRanges: (parameters: FetchFileParameters, force?: boolean) => Observable<string[][]>
 }
@@ -133,7 +134,7 @@ export const StreamingSearchResults: React.FunctionComponent<StreamingSearchResu
         [availableVersionContexts, caseSensitive, patternType, query, trace, versionContext]
     )
 
-    const results = useCachedSearchResults(streamSearch, options)
+    const results = useCachedSearchResults(streamSearch, options, telemetryService)
 
     // Log events when search completes or fails
     useEffect(() => {
@@ -239,12 +240,17 @@ export const StreamingSearchResults: React.FunctionComponent<StreamingSearchResu
             <PageTitle key="page-title" title={query} />
 
             <SearchSidebar
-                {...props}
+                activation={props.activation}
+                caseSensitive={props.caseSensitive}
+                patternType={props.patternType}
+                settingsCascade={props.settingsCascade}
+                telemetryService={props.telemetryService}
+                versionContext={props.versionContext}
+                selectedSearchContextSpec={props.selectedSearchContextSpec}
                 className={classNames(
                     styles.streamingSearchResultsSidebar,
                     showSidebar && styles.streamingSearchResultsSidebarShow
                 )}
-                query={props.navbarSearchQueryState.query}
                 filters={results?.filters}
             />
 

@@ -76,43 +76,6 @@ Indexes:
 
 ```
 
-# Table "public.batch_spec_executions"
-```
-      Column       |           Type           | Collation | Nullable |                      Default                      
--------------------+--------------------------+-----------+----------+---------------------------------------------------
- id                | bigint                   |           | not null | nextval('batch_spec_executions_id_seq'::regclass)
- state             | text                     |           |          | 'queued'::text
- failure_message   | text                     |           |          | 
- started_at        | timestamp with time zone |           |          | 
- finished_at       | timestamp with time zone |           |          | 
- process_after     | timestamp with time zone |           |          | 
- num_resets        | integer                  |           | not null | 0
- num_failures      | integer                  |           | not null | 0
- execution_logs    | json[]                   |           |          | 
- worker_hostname   | text                     |           | not null | ''::text
- created_at        | timestamp with time zone |           | not null | now()
- updated_at        | timestamp with time zone |           | not null | now()
- batch_spec        | text                     |           | not null | 
- batch_spec_id     | integer                  |           |          | 
- user_id           | integer                  |           |          | 
- namespace_user_id | integer                  |           |          | 
- namespace_org_id  | integer                  |           |          | 
- rand_id           | text                     |           | not null | 
- last_heartbeat_at | timestamp with time zone |           |          | 
- cancel            | boolean                  |           |          | false
-Indexes:
-    "batch_spec_executions_pkey" PRIMARY KEY, btree (id)
-    "batch_spec_executions_rand_id" btree (rand_id)
-Check constraints:
-    "batch_spec_executions_has_1_namespace" CHECK ((namespace_user_id IS NULL) <> (namespace_org_id IS NULL))
-Foreign-key constraints:
-    "batch_spec_executions_batch_spec_id_fkey" FOREIGN KEY (batch_spec_id) REFERENCES batch_specs(id) DEFERRABLE
-    "batch_spec_executions_namespace_org_id_fkey" FOREIGN KEY (namespace_org_id) REFERENCES orgs(id) DEFERRABLE
-    "batch_spec_executions_namespace_user_id_fkey" FOREIGN KEY (namespace_user_id) REFERENCES users(id) DEFERRABLE
-    "batch_spec_executions_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) DEFERRABLE
-
-```
-
 # Table "public.batch_spec_resolution_jobs"
 ```
       Column       |           Type           | Collation | Nullable |                        Default                         
@@ -217,7 +180,6 @@ Foreign-key constraints:
     "batch_specs_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL DEFERRABLE
 Referenced by:
     TABLE "batch_changes" CONSTRAINT "batch_changes_batch_spec_id_fkey" FOREIGN KEY (batch_spec_id) REFERENCES batch_specs(id) DEFERRABLE
-    TABLE "batch_spec_executions" CONSTRAINT "batch_spec_executions_batch_spec_id_fkey" FOREIGN KEY (batch_spec_id) REFERENCES batch_specs(id) DEFERRABLE
     TABLE "batch_spec_resolution_jobs" CONSTRAINT "batch_spec_resolution_jobs_batch_spec_id_fkey" FOREIGN KEY (batch_spec_id) REFERENCES batch_specs(id) ON DELETE CASCADE DEFERRABLE
     TABLE "batch_spec_workspaces" CONSTRAINT "batch_spec_workspaces_batch_spec_id_fkey" FOREIGN KEY (batch_spec_id) REFERENCES batch_specs(id) ON DELETE CASCADE DEFERRABLE
     TABLE "changeset_specs" CONSTRAINT "changeset_specs_batch_spec_id_fkey" FOREIGN KEY (batch_spec_id) REFERENCES batch_specs(id) DEFERRABLE
@@ -946,6 +908,50 @@ Indexes:
 
 # Table "public.lsif_dependency_indexing_jobs"
 ```
+        Column         |           Type           | Collation | Nullable |                          Default                           
+-----------------------+--------------------------+-----------+----------+------------------------------------------------------------
+ id                    | integer                  |           | not null | nextval('lsif_dependency_indexing_jobs_id_seq1'::regclass)
+ state                 | text                     |           | not null | 'queued'::text
+ failure_message       | text                     |           |          | 
+ queued_at             | timestamp with time zone |           | not null | now()
+ started_at            | timestamp with time zone |           |          | 
+ finished_at           | timestamp with time zone |           |          | 
+ process_after         | timestamp with time zone |           |          | 
+ num_resets            | integer                  |           | not null | 0
+ num_failures          | integer                  |           | not null | 0
+ execution_logs        | json[]                   |           |          | 
+ last_heartbeat_at     | timestamp with time zone |           |          | 
+ worker_hostname       | text                     |           | not null | ''::text
+ upload_id             | integer                  |           |          | 
+ external_service_kind | text                     |           | not null | ''::text
+ external_service_sync | timestamp with time zone |           |          | 
+Indexes:
+    "lsif_dependency_indexing_jobs_pkey1" PRIMARY KEY, btree (id)
+Foreign-key constraints:
+    "lsif_dependency_indexing_jobs_upload_id_fkey1" FOREIGN KEY (upload_id) REFERENCES lsif_uploads(id) ON DELETE CASCADE
+
+```
+
+**external_service_kind**: Filter the external services for this kind to wait to have synced. If empty, external_service_sync is ignored and no external services are polled for their last sync time.
+
+**external_service_sync**: The sync time after which external services of the given kind will have synced/created any repositories referenced by the LSIF upload that are resolvable.
+
+# Table "public.lsif_dependency_repos"
+```
+ Column  |  Type  | Collation | Nullable |                      Default                      
+---------+--------+-----------+----------+---------------------------------------------------
+ id      | bigint |           | not null | nextval('lsif_dependency_repos_id_seq'::regclass)
+ name    | text   |           | not null | 
+ version | text   |           | not null | 
+ scheme  | text   |           | not null | 
+Indexes:
+    "lsif_dependency_repos_pkey" PRIMARY KEY, btree (id)
+    "lsif_dependency_repos_unique_triplet" UNIQUE CONSTRAINT, btree (scheme, name, version)
+
+```
+
+# Table "public.lsif_dependency_syncing_jobs"
+```
       Column       |           Type           | Collation | Nullable |                          Default                          
 -------------------+--------------------------+-----------+----------+-----------------------------------------------------------
  id                | integer                  |           | not null | nextval('lsif_dependency_indexing_jobs_id_seq'::regclass)
@@ -972,20 +978,6 @@ Foreign-key constraints:
 Tracks jobs that scan imports of indexes to schedule auto-index jobs.
 
 **upload_id**: The identifier of the triggering upload record.
-
-# Table "public.lsif_dependency_repos"
-```
- Column  |  Type  | Collation | Nullable |                      Default                      
----------+--------+-----------+----------+---------------------------------------------------
- id      | bigint |           | not null | nextval('lsif_dependency_repos_id_seq'::regclass)
- name    | text   |           | not null | 
- version | text   |           | not null | 
- scheme  | text   |           | not null | 
-Indexes:
-    "lsif_dependency_repos_pkey" PRIMARY KEY, btree (id)
-    "lsif_dependency_repos_unique_triplet" UNIQUE CONSTRAINT, btree (scheme, name, version)
-
-```
 
 # Table "public.lsif_dirty_repositories"
 ```
@@ -1263,7 +1255,8 @@ Indexes:
 Check constraints:
     "lsif_uploads_commit_valid_chars" CHECK (commit ~ '^[a-z0-9]{40}$'::text)
 Referenced by:
-    TABLE "lsif_dependency_indexing_jobs" CONSTRAINT "lsif_dependency_indexing_jobs_upload_id_fkey" FOREIGN KEY (upload_id) REFERENCES lsif_uploads(id) ON DELETE CASCADE
+    TABLE "lsif_dependency_syncing_jobs" CONSTRAINT "lsif_dependency_indexing_jobs_upload_id_fkey" FOREIGN KEY (upload_id) REFERENCES lsif_uploads(id) ON DELETE CASCADE
+    TABLE "lsif_dependency_indexing_jobs" CONSTRAINT "lsif_dependency_indexing_jobs_upload_id_fkey1" FOREIGN KEY (upload_id) REFERENCES lsif_uploads(id) ON DELETE CASCADE
     TABLE "lsif_packages" CONSTRAINT "lsif_packages_dump_id_fkey" FOREIGN KEY (dump_id) REFERENCES lsif_uploads(id) ON DELETE CASCADE
     TABLE "lsif_references" CONSTRAINT "lsif_references_dump_id_fkey" FOREIGN KEY (dump_id) REFERENCES lsif_uploads(id) ON DELETE CASCADE
 
@@ -1409,7 +1402,6 @@ Check constraints:
     "orgs_name_valid_chars" CHECK (name ~ '^[a-zA-Z0-9](?:[a-zA-Z0-9]|[-.](?=[a-zA-Z0-9]))*-?$'::citext)
 Referenced by:
     TABLE "batch_changes" CONSTRAINT "batch_changes_namespace_org_id_fkey" FOREIGN KEY (namespace_org_id) REFERENCES orgs(id) ON DELETE CASCADE DEFERRABLE
-    TABLE "batch_spec_executions" CONSTRAINT "batch_spec_executions_namespace_org_id_fkey" FOREIGN KEY (namespace_org_id) REFERENCES orgs(id) DEFERRABLE
     TABLE "cm_monitors" CONSTRAINT "cm_monitors_org_id_fk" FOREIGN KEY (namespace_org_id) REFERENCES orgs(id) ON DELETE CASCADE
     TABLE "cm_recipients" CONSTRAINT "cm_recipients_org_id_fk" FOREIGN KEY (namespace_org_id) REFERENCES orgs(id) ON DELETE CASCADE
     TABLE "feature_flag_overrides" CONSTRAINT "feature_flag_overrides_namespace_org_id_fkey" FOREIGN KEY (namespace_org_id) REFERENCES orgs(id) ON DELETE CASCADE
@@ -1441,6 +1433,7 @@ Referenced by:
  introduced_version_minor | integer                  |           | not null | 
  deprecated_version_major | integer                  |           |          | 
  deprecated_version_minor | integer                  |           |          | 
+ metadata                 | jsonb                    |           | not null | '{}'::jsonb
 Indexes:
     "out_of_band_migrations_pkey" PRIMARY KEY, btree (id)
 Check constraints:
@@ -1643,7 +1636,6 @@ Referenced by:
  deleted_at            | timestamp with time zone |           |          | 
  metadata              | jsonb                    |           | not null | '{}'::jsonb
  private               | boolean                  |           | not null | false
- cloned                | boolean                  |           | not null | false
  stars                 | integer                  |           |          | 
  blocked               | jsonb                    |           |          | 
 Indexes:
@@ -1652,7 +1644,6 @@ Indexes:
     "repo_name_unique" UNIQUE CONSTRAINT, btree (name) DEFERRABLE
     "repo_archived" btree (archived)
     "repo_blocked_idx" btree ((blocked IS NOT NULL))
-    "repo_cloned" btree (cloned)
     "repo_created_at" btree (created_at)
     "repo_fork" btree (fork)
     "repo_is_not_blocked_idx" btree ((blocked IS NULL))
@@ -2064,8 +2055,6 @@ Referenced by:
     TABLE "batch_changes" CONSTRAINT "batch_changes_initial_applier_id_fkey" FOREIGN KEY (initial_applier_id) REFERENCES users(id) ON DELETE SET NULL DEFERRABLE
     TABLE "batch_changes" CONSTRAINT "batch_changes_last_applier_id_fkey" FOREIGN KEY (last_applier_id) REFERENCES users(id) ON DELETE SET NULL DEFERRABLE
     TABLE "batch_changes" CONSTRAINT "batch_changes_namespace_user_id_fkey" FOREIGN KEY (namespace_user_id) REFERENCES users(id) ON DELETE CASCADE DEFERRABLE
-    TABLE "batch_spec_executions" CONSTRAINT "batch_spec_executions_namespace_user_id_fkey" FOREIGN KEY (namespace_user_id) REFERENCES users(id) DEFERRABLE
-    TABLE "batch_spec_executions" CONSTRAINT "batch_spec_executions_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) DEFERRABLE
     TABLE "batch_specs" CONSTRAINT "batch_specs_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL DEFERRABLE
     TABLE "changeset_jobs" CONSTRAINT "changeset_jobs_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE DEFERRABLE
     TABLE "changeset_specs" CONSTRAINT "changeset_specs_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL DEFERRABLE

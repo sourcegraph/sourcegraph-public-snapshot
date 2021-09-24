@@ -52,10 +52,6 @@ describe('StreamingSearchResults', () => {
         location: history.location,
         authenticatedUser: null,
 
-        navbarSearchQueryState: { query: '' },
-        onNavbarQueryChange: () => {},
-        isSourcegraphDotCom: false,
-
         settingsCascade: {
             subjects: null,
             final: null,

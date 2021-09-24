@@ -27,7 +27,9 @@ type BuildOptions struct {
 
 type Step struct {
 	Label            string                 `json:"label"`
+	Key              string                 `json:"key,omitempty"`
 	Command          []string               `json:"command,omitempty"`
+	DependsOn        []string               `json:"depends_on,omitempty"`
 	TimeoutInMinutes string                 `json:"timeout_in_minutes,omitempty"`
 	Trigger          string                 `json:"trigger,omitempty"`
 	Async            bool                   `json:"async,omitempty"`
@@ -50,8 +52,6 @@ type AutomaticRetryOptions struct {
 	Limit int `json:"limit,omitempty"`
 }
 
-var Plugins = make(map[string]interface{})
-
 // BeforeEveryStepOpts are e.g. commands that are run before every AddStep, similar to
 // Plugins.
 var BeforeEveryStepOpts []StepOpt
@@ -65,7 +65,7 @@ func (p *Pipeline) AddStep(label string, opts ...StepOpt) {
 		Label:   label,
 		Env:     make(map[string]string),
 		Agents:  make(map[string]string),
-		Plugins: Plugins,
+		Plugins: make(map[string]interface{}),
 	}
 	for _, opt := range BeforeEveryStepOpts {
 		opt(step)
@@ -173,4 +173,22 @@ func Agent(key, value string) StepOpt {
 
 func (p *Pipeline) AddWait() {
 	p.Steps = append(p.Steps, "wait")
+}
+
+func Key(key string) StepOpt {
+	return func(step *Step) {
+		step.Key = key
+	}
+}
+
+func Plugin(name string, plugin interface{}) StepOpt {
+	return func(step *Step) {
+		step.Plugins[name] = plugin
+	}
+}
+
+func DependsOn(dependency string) StepOpt {
+	return func(step *Step) {
+		step.DependsOn = append(step.DependsOn, dependency)
+	}
 }

@@ -11,7 +11,7 @@ import { CloudSignUpPage } from './CloudSignUpPage'
 
 const { add } = storiesOf('web/auth/CloudSignUpPage', module)
 
-const context: Pick<SourcegraphContext, 'authProviders'> = {
+const context: Pick<SourcegraphContext, 'authProviders' | 'experimentalFeatures'> = {
     authProviders: [
         {
             serviceType: 'github',
@@ -26,6 +26,7 @@ const context: Pick<SourcegraphContext, 'authProviders'> = {
             authenticationURL: '/.auth/gitlab/login?pc=https%3A%2F%2Fgitlab.com%2F',
         },
     ],
+    experimentalFeatures: {},
 }
 
 add('default', () => (

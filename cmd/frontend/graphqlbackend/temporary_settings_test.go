@@ -94,9 +94,9 @@ func TestTemporarySettings(t *testing.T) {
 func TestOverwriteTemporarySettingsNotSignedIn(t *testing.T) {
 	resetMocks()
 
-	calledUpsertTemporarySettings := false
-	database.Mocks.TemporarySettings.UpsertTemporarySettings = func(ctx context.Context, userID int32, contents string) error {
-		calledUpsertTemporarySettings = true
+	calledOverwriteTemporarySettings := false
+	database.Mocks.TemporarySettings.OverwriteTemporarySettings = func(ctx context.Context, userID int32, contents string) error {
+		calledOverwriteTemporarySettings = true
 		return nil
 	}
 
@@ -127,19 +127,19 @@ func TestOverwriteTemporarySettingsNotSignedIn(t *testing.T) {
 		},
 	})
 
-	if calledUpsertTemporarySettings {
-		t.Fatal("should not call UpsertTemporarySettings")
+	if calledOverwriteTemporarySettings {
+		t.Fatal("should not call OverwriteTemporarySettings")
 	}
 }
 
 func TestOverwriteTemporarySettings(t *testing.T) {
 	resetMocks()
 
-	calledUpsertTemporarySettings := false
-	var calledUpsertTemporarySettingsUserID int32
-	database.Mocks.TemporarySettings.UpsertTemporarySettings = func(ctx context.Context, userID int32, contents string) error {
-		calledUpsertTemporarySettingsUserID = userID
-		calledUpsertTemporarySettings = true
+	calledOverwriteTemporarySettings := false
+	var calledOverwriteTemporarySettingsUserID int32
+	database.Mocks.TemporarySettings.OverwriteTemporarySettings = func(ctx context.Context, userID int32, contents string) error {
+		calledOverwriteTemporarySettingsUserID = userID
+		calledOverwriteTemporarySettings = true
 		return nil
 	}
 
@@ -148,7 +148,7 @@ func TestOverwriteTemporarySettings(t *testing.T) {
 			Context: actor.WithActor(context.Background(), actor.FromUser(1)),
 			Schema:  mustParseGraphQLSchema(t),
 			Query: `
-				mutation ModifyTemporarySettings {
+				mutation OverwriteTemporarySettings {
 					overwriteTemporarySettings(
 						contents: "{\"search.collapsedSidebarSections\": []}"
 					) {
@@ -160,10 +160,46 @@ func TestOverwriteTemporarySettings(t *testing.T) {
 		},
 	})
 
-	if !calledUpsertTemporarySettings {
-		t.Fatal("should call UpsertTemporarySettings")
+	if !calledOverwriteTemporarySettings {
+		t.Fatal("should call OverwriteTemporarySettings")
 	}
-	if calledUpsertTemporarySettingsUserID != 1 {
-		t.Fatalf("should call UpsertTemporarySettings with userID=1, got=%d", calledUpsertTemporarySettingsUserID)
+	if calledOverwriteTemporarySettingsUserID != 1 {
+		t.Fatalf("should call OverwriteTemporarySettings with userID=1, got=%d", calledOverwriteTemporarySettingsUserID)
+	}
+}
+
+func TestEditTemporarySettings(t *testing.T) {
+	resetMocks()
+
+	calledEditTemporarySettings := false
+	var calledEditTemporarySettingsUserID int32
+	database.Mocks.TemporarySettings.EditTemporarySettings = func(ctx context.Context, userID int32, settingsToEdit string) error {
+		calledEditTemporarySettingsUserID = userID
+		calledEditTemporarySettings = true
+		return nil
+	}
+
+	RunTests(t, []*Test{
+		{
+			Context: actor.WithActor(context.Background(), actor.FromUser(1)),
+			Schema:  mustParseGraphQLSchema(t),
+			Query: `
+				mutation EditTemporarySettings {
+					editTemporarySettings(
+						settingsToEdit: "{\"search.collapsedSidebarSections\": []}"
+					) {
+						alwaysNil
+					}
+				}
+			`,
+			ExpectedResult: "{\"editTemporarySettings\":{\"alwaysNil\":null}}",
+		},
+	})
+
+	if !calledEditTemporarySettings {
+		t.Fatal("should call EditTemporarySettings")
+	}
+	if calledEditTemporarySettingsUserID != 1 {
+		t.Fatalf("should call EditTemporarySettings with userID=1, got=%d", calledEditTemporarySettingsUserID)
 	}
 }

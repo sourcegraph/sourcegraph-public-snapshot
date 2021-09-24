@@ -19,7 +19,7 @@ can make global configuration changes, such as changing the timezone. If you
 need to use other settings for other databases, use a separate PostgreSQL
 instance.
 
-See the [setting up PostgreSQL guide](../getting-started/configure_postgresql.md) or [quickstart step 2: initialize the database](../getting-started/quickstart_3_initialize_database.md)
+See the [setting up PostgreSQL guide](../getting-started/configure_postgresql.md) or [quickstart step 4: initialize the database](../getting-started/quickstart_4_initialize_database.md)
 
 ## Migrations
 

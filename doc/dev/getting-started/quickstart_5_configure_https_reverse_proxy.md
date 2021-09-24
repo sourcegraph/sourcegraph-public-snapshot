@@ -46,4 +46,4 @@ Enter your Firefox master password here and proceed. See [this issue on GitHub](
 
 You might need to restart your web browsers in order for them to recognize the certificates.
 
-[< Previous](quickstart_4_clone_repository.md) | [Next >](quickstart_6_start_server.md)
+[< Previous](quickstart_4_initialize_database.md) | [Next >](quickstart_6_start_server.md)

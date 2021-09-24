@@ -3,6 +3,7 @@ package resolvers
 import (
 	"context"
 
+	"github.com/cockroachdb/errors"
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/sourcegraph/go-diff/diff"
@@ -96,6 +97,11 @@ func (r *changesetSpecResolver) ExpiresAt() *graphqlbackend.DateTime {
 func (r *changesetSpecResolver) repoAccessible() bool {
 	// If the repository is not nil, it's accessible
 	return r.repo != nil
+}
+
+func (r *changesetSpecResolver) Workspace(ctx context.Context) (graphqlbackend.BatchSpecWorkspaceResolver, error) {
+	// TODO(ssbc): not implemented
+	return nil, errors.New("not implemented")
 }
 
 func (r *changesetSpecResolver) ToHiddenChangesetSpec() (graphqlbackend.HiddenChangesetSpecResolver, bool) {
