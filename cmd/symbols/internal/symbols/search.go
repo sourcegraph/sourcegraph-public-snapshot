@@ -33,10 +33,7 @@ func init() {
 	sql.Register("sqlite3_with_regexp",
 		&sqlite3.SQLiteDriver{
 			ConnectHook: func(conn *sqlite3.SQLiteConn) error {
-				return conn.RegisterFunc("REGEXP",
-					func(pattern, subject string) (bool, error) {
-						return regexp.MatchString(pattern, subject)
-					}, true)
+				return conn.RegisterFunc("REGEXP", regexp.MatchString, true)
 			},
 		})
 }
