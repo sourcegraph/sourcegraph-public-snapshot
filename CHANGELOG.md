@@ -23,6 +23,8 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Fixed
 
+- A search regression in 3.32.0 which caused instances with search indexing _disabled_ (very rare) via `"search.index.enabled": false,` in their site config to crash with a panic. [#25321](https://github.com/sourcegraph/sourcegraph/pull/25321)
+- An issue where the default `search.index.enabled` value on single-container Docker instances would incorrectly be computed as `false` in some situations. [#25321](https://github.com/sourcegraph/sourcegraph/pull/25321)
 - StatefulSet service discovery in Kubernetes correctly constructs pod hostnames in the case where the ServiceName is different from the StatefulSet name. [#25146](https://github.com/sourcegraph/sourcegraph/pull/25146)
 
 ### Removed

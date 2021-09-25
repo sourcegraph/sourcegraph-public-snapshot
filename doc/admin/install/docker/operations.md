@@ -1,12 +1,12 @@
-# Single-container Soucegraph with Docker operations guides
+# Single-container Sourcegraph with Docker operations guides
 
-Operations guides specific to managing [single-container Soucegraph with Docker](./index.md) installations.
+Operations guides specific to managing [single-container Sourcegraph with Docker](./index.md) installations.
 
-Trying to deploy single-container Soucegraph with Docker? Refer to our [installation guide](./index.md#installation).
+Trying to deploy single-container Sourcegraph with Docker? Refer to our [installation guide](./index.md#installation).
 
 ## Upgrade
 
-Before upgrading, refer to the [update notes for single-container Soucegraph with Docker](../../updates/pure_docker.md).
+Before upgrading, refer to the [update notes for single-container Sourcegraph with Docker](../../updates/pure_docker.md).
 
 To update, just use the newer `sourcegraph/server:N.N.N` Docker image (where `N.N.N` is the version number) in place of the older one, using the same Docker volumes. Your server's data will be migrated automatically if needed.
 

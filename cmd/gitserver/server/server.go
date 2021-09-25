@@ -7,10 +7,12 @@ import (
 	"container/list"
 	"context"
 	"crypto/sha256"
+	"encoding/gob"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"io"
+	"math"
 	"net/http"
 	"os"
 	"os/exec"
@@ -24,12 +26,12 @@ import (
 	"time"
 
 	"github.com/cockroachdb/errors"
-	"github.com/gorilla/mux"
 	"github.com/inconshreveable/log15"
 	"github.com/opentracing/opentracing-go/ext"
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
+	"golang.org/x/sync/errgroup"
 	"golang.org/x/time/rate"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
@@ -40,10 +42,12 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/search"
 	"github.com/sourcegraph/sourcegraph/internal/honey"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/internal/mutablelimiter"
 	"github.com/sourcegraph/sourcegraph/internal/repotrackutil"
+	streamhttp "github.com/sourcegraph/sourcegraph/internal/search/streaming/http"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -338,28 +342,29 @@ func (s *Server) Handler() http.Handler {
 		setRPSLimiter()
 	})
 
-	router := mux.NewRouter()
-	router.Handle("/archive", trace.Route(http.HandlerFunc(s.handleArchive))).Name("archive")
-	router.Handle("/exec", trace.Route(http.HandlerFunc(s.handleExec))).Name("exec")
-	router.Handle("/p4-exec", trace.Route(http.HandlerFunc(s.handleP4Exec))).Name("p4-exec")
-	router.Handle("/list", trace.Route(http.HandlerFunc(s.handleList))).Name("list")
-	router.Handle("/list-gitolite", trace.Route(http.HandlerFunc(s.handleListGitolite))).Name("list-gitolite")
-	router.Handle("/is-repo-cloneable", trace.Route(http.HandlerFunc(s.handleIsRepoCloneable))).Name("is-repo-cloneable")
-	router.Handle("/is-repo-cloned", trace.Route(http.HandlerFunc(s.handleIsRepoCloned))).Name("is-repo-cloned")
-	router.Handle("/repos", trace.Route(http.HandlerFunc(s.handleRepoInfo))).Name("repos")
-	router.Handle("/repos-stats", trace.Route(http.HandlerFunc(s.handleReposStats))).Name("repos-stats")
-	router.Handle("/repo-clone-progress", trace.Route(http.HandlerFunc(s.handleRepoCloneProgress))).Name("repo-clone-progress")
-	router.Handle("/delete", trace.Route(http.HandlerFunc(s.handleRepoDelete))).Name("delete")
-	router.Handle("/repo-update", trace.Route(http.HandlerFunc(s.handleRepoUpdate))).Name("repo-update")
-	router.Handle("/getGitolitePhabricatorMetadata", trace.Route(http.HandlerFunc(s.handleGetGitolitePhabricatorMetadata))).Name("getGitolitePhabricatorMetadata")
-	router.Handle("/create-commit-from-patch", trace.Route(http.HandlerFunc(s.handleCreateCommitFromPatch))).Name("create-commit-from-patch")
-	router.Handle("/ping", trace.Route(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+	mux := http.NewServeMux()
+	mux.HandleFunc("/archive", s.handleArchive)
+	mux.HandleFunc("/exec", s.handleExec)
+	mux.HandleFunc("/search", s.handleSearch)
+	mux.HandleFunc("/p4-exec", s.handleP4Exec)
+	mux.HandleFunc("/list", s.handleList)
+	mux.HandleFunc("/list-gitolite", s.handleListGitolite)
+	mux.HandleFunc("/is-repo-cloneable", s.handleIsRepoCloneable)
+	mux.HandleFunc("/is-repo-cloned", s.handleIsRepoCloned)
+	mux.HandleFunc("/repos", s.handleRepoInfo)
+	mux.HandleFunc("/repos-stats", s.handleReposStats)
+	mux.HandleFunc("/repo-clone-progress", s.handleRepoCloneProgress)
+	mux.HandleFunc("/delete", s.handleRepoDelete)
+	mux.HandleFunc("/repo-update", s.handleRepoUpdate)
+	mux.HandleFunc("/getGitolitePhabricatorMetadata", s.handleGetGitolitePhabricatorMetadata)
+	mux.HandleFunc("/create-commit-from-patch", s.handleCreateCommitFromPatch)
+	mux.HandleFunc("/ping", func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusOK)
-	}))).Name("ping")
+	})
 
-	router.Handle("/git/", http.StripPrefix("/git", trace.Route(s.gitServiceHandler()))).Name("git-service")
+	mux.Handle("/git/", http.StripPrefix("/git", s.gitServiceHandler()))
 
-	return router
+	return mux
 }
 
 // Janitor does clean up tasks over s.ReposDir and is expected to run in a
@@ -433,6 +438,16 @@ func (s *Server) cloneJobProducer(ctx context.Context, jobs chan<- *cloneJob) {
 	}
 }
 
+// This counter is introduced along with the asyncDoCloneInvoked and the cloneQueueLength
+// counters. We want to verify if the value of all these counters are same in a given time
+// period. This would help us verify our producer-consumer pipeline for asynchronouse repo
+// cloning. For more, see associated commeents attached with the declaration of the mentioned
+// counters in this file.
+var cloneJobProcessed = promauto.NewCounter(prometheus.CounterOpts{
+	Name: "src_gitserver_clone_job_processed",
+	Help: "Number of cloneJobs processed",
+})
+
 func (s *Server) cloneJobConsumer(ctx context.Context, jobs <-chan *cloneJob) {
 	// TODO: What we want eventually.
 	// for j := range jobs {
@@ -463,7 +478,7 @@ func (s *Server) cloneJobConsumer(ctx context.Context, jobs <-chan *cloneJob) {
 		// 	s.setLastErrorNonFatal(ctx, j.repo, err)
 		// }()
 
-		cloneQueueLength.Dec()
+		cloneJobProcessed.Inc()
 	}
 }
 
@@ -898,6 +913,167 @@ func (s *Server) handleArchive(w http.ResponseWriter, r *http.Request) {
 	req.Args = append(req.Args, paths...)
 
 	s.exec(w, r, req)
+}
+
+func (s *Server) handleSearch(w http.ResponseWriter, r *http.Request) {
+	protocol.RegisterGob()
+	var req protocol.SearchRequest
+	if err := gob.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	s.search(w, r, &req)
+}
+
+func (s *Server) search(w http.ResponseWriter, r *http.Request, args *protocol.SearchRequest) {
+	ctx := r.Context()
+	args.Repo = protocol.NormalizeRepo(args.Repo)
+	if args.Limit == 0 {
+		args.Limit = math.MaxInt32
+	}
+
+	dir := s.dir(args.Repo)
+	if !repoCloned(dir) {
+		if conf.Get().DisableAutoGitUpdates {
+			log15.Debug("not cloning on demand as DisableAutoGitUpdates is set")
+			w.WriteHeader(http.StatusNotFound)
+			_ = json.NewEncoder(w).Encode(&protocol.NotFoundPayload{})
+			return
+		}
+
+		cloneProgress, cloneInProgress := s.locker.Status(dir)
+		if cloneInProgress {
+			w.WriteHeader(http.StatusNotFound)
+			_ = json.NewEncoder(w).Encode(&protocol.NotFoundPayload{
+				CloneInProgress: true,
+				CloneProgress:   cloneProgress,
+			})
+			return
+		}
+
+		cloneProgress, err := s.cloneRepo(ctx, args.Repo, nil)
+		if err != nil {
+			log15.Debug("error starting repo clone", "repo", args.Repo, "err", err)
+			w.WriteHeader(http.StatusNotFound)
+			_ = json.NewEncoder(w).Encode(&protocol.NotFoundPayload{CloneInProgress: false})
+			return
+		}
+		w.WriteHeader(http.StatusNotFound)
+		_ = json.NewEncoder(w).Encode(&protocol.NotFoundPayload{
+			CloneInProgress: true,
+			CloneProgress:   cloneProgress,
+		})
+		return
+	}
+
+	if !conf.Get().DisableAutoGitUpdates {
+		for _, rev := range args.Revisions {
+			// TODO add result to trace
+			if rev.RevSpec != "" {
+				_ = s.ensureRevision(ctx, args.Repo, rev.RevSpec, dir)
+			} else if rev.RefGlob != "" {
+				_ = s.ensureRevision(ctx, args.Repo, rev.RefGlob, dir)
+			}
+		}
+	}
+
+	eventWriter, err := streamhttp.NewWriter(w)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	matchesBuf := streamhttp.NewJSONArrayBuf(8*1024, func(data []byte) error {
+		return eventWriter.EventBytes("matches", data)
+	})
+
+	g, ctx := errgroup.WithContext(ctx)
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
+
+	// Search all commits, sending matching commits down resultChan
+	resultChan := make(chan *protocol.CommitMatch, 128)
+	g.Go(func() error {
+		defer close(resultChan)
+		done := ctx.Done()
+
+		var conversionErr error
+		err := search.Search(ctx, dir.Path(), args.Revisions, search.ToMatchTree(args.Query), func(match *search.LazyCommit, highlights *search.CommitHighlights) bool {
+			res, err := search.CreateCommitMatch(match, highlights, args.IncludeDiff)
+			if err != nil {
+				conversionErr = err
+				return false
+			}
+
+			select {
+			case <-done:
+				return false
+			case resultChan <- res:
+				return true
+			}
+		})
+		if err != nil {
+			return err
+		}
+		return conversionErr
+	})
+
+	// Write matching commits to the stream, flushing occasionally
+	limitHit := false
+	g.Go(func() error {
+		defer cancel()
+		defer matchesBuf.Flush()
+
+		flushTicker := time.NewTicker(50 * time.Millisecond)
+		defer flushTicker.Stop()
+
+		sentCount := 0
+		firstMatch := true
+		for {
+			select {
+			case result, ok := <-resultChan:
+				if !ok {
+					return nil
+				}
+
+				if sentCount >= args.Limit {
+					limitHit = true
+					return nil
+				}
+				sentCount += matchCount(result)
+
+				_ = matchesBuf.Append(result) // EOF only
+
+				// Send immediately if this if the first result we've seen
+				if firstMatch {
+					_ = matchesBuf.Flush() // EOF only
+					firstMatch = false
+				}
+			case <-flushTicker.C:
+				_ = matchesBuf.Flush() // EOF only
+			}
+		}
+	})
+
+	err = g.Wait()
+	doneEvent := protocol.NewSearchEventDone(limitHit, err)
+	if err := eventWriter.Event("done", doneEvent); err != nil {
+		log15.Warn("failed to send done event", "error", err)
+	}
+}
+
+// matchCount returns either:
+// 1) the number of diff matches if there are any
+// 2) the number of messsage matches if there are any
+// 3) one, to represent matching the commit, but nothing inside it
+func matchCount(cm *protocol.CommitMatch) int {
+	if len(cm.Diff.Highlights) > 0 {
+		return len(cm.Diff.Highlights)
+	}
+	if len(cm.Message.Highlights) > 0 {
+		return len(cm.Message.Highlights)
+	}
+	return 1
 }
 
 func (s *Server) handleExec(w http.ResponseWriter, r *http.Request) {
@@ -1362,12 +1538,12 @@ type cloneOptions struct {
 // spawning new goroutine for each new non-blocking clone request, but also add a corresponding
 // cloneJob to Server.CloneQueue.
 var (
-	asyncDoCloneInvoked = promauto.NewGauge(prometheus.GaugeOpts{
-		Name: "src_gitserver_async_doclone_invoked",
+	asyncDoCloneInvoked = promauto.NewCounter(prometheus.CounterOpts{
+		Name: "src_gitserver_async_doclone_invoked_counter",
 		Help: "Number of times Server.doClone was invoked asynchronsously",
 	})
-	cloneQueueLength = promauto.NewGauge(prometheus.GaugeOpts{
-		Name: "src_gitserver_clone_queue_length",
+	cloneQueueLength = promauto.NewCounter(prometheus.CounterOpts{
+		Name: "src_gitserver_clone_queue_length_counter",
 		Help: "Length of Server.CloneQueue",
 	})
 )
@@ -1456,7 +1632,6 @@ func (s *Server) cloneRepo(ctx context.Context, repo api.RepoName, opts *cloneOp
 	// And enable the commented out code in cloneJobConsumer.
 	go func() {
 		asyncDoCloneInvoked.Inc()
-		defer asyncDoCloneInvoked.Dec()
 
 		// Create a new context because this is in a background goroutine. The outer context's
 		// cancel will be invoked when cloneRepo returns, but we don't want this goroutine to get

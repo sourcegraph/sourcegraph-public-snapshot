@@ -12,7 +12,7 @@ import { SettingsEdit } from './services/settings'
 
 describe('MainThreadAPI', () => {
     // TODO(tj): commands, notifications
-    const getGraphQLClient = () => getGraphQLClientBase({ headers: {} })
+    const getGraphQLClient = () => getGraphQLClientBase({ headers: {}, isAuthenticated: false })
 
     describe('graphQL', () => {
         test('PlatformContext#requestGraphQL is called with the correct arguments', async () => {
