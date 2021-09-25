@@ -29,7 +29,6 @@ import (
 )
 
 func init() {
-	fmt.Println("REGISTER")
 	sql.Register("sqlite3_with_regexp",
 		&sqlite3.SQLiteDriver{
 			ConnectHook: func(conn *sqlite3.SQLiteConn) error {
