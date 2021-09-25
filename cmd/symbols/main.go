@@ -4,19 +4,21 @@ package main
 
 import (
 	"context"
+	"database/sql"
 	"io"
 	"log"
 	"net"
 	"net/http"
 	"os"
 	"os/signal"
+	"regexp"
 	"runtime"
 	"strconv"
 	"time"
 
 	"github.com/inconshreveable/log15"
+	"github.com/mattn/go-sqlite3"
 
-	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/sqliteutil"
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/symbols"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -47,8 +49,6 @@ func main() {
 	tracer.Init()
 	sentry.Init()
 	trace.Init()
-
-	sqliteutil.MustRegisterSqlite3WithPcre()
 
 	// Ready immediately
 	ready := make(chan struct{})
