@@ -323,7 +323,10 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
             })
 
         this.subscriptions.add(
-            combineLatest([from(this.platformContext.settings), authenticatedUser.pipe(startWith(null))]).subscribe(
+            combineLatest([
+                from(this.platformContext.settings),
+                authenticatedUser.pipe(startWith(undefined)),
+            ]).subscribe(
                 ([settingsCascade, authenticatedUser]) => {
                     this.setState(state => ({
                         settingsCascade,
