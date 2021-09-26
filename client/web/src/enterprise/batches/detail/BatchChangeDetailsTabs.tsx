@@ -184,7 +184,7 @@ export const BatchChangeDetailsTabs: React.FunctionComponent<BatchChangeDetailsT
                 />
             </BatchChangeTabPanel>
             <BatchChangeTabPanel index={4}>
-                <BulkOperationsTab batchChangeID={batchChange.id} refetchBatchChange={refetchBatchChange} />
+                <BulkOperationsTab batchChangeID={batchChange.id} />
             </BatchChangeTabPanel>
         </BatchChangeTabPanels>
     </BatchChangeTabs>

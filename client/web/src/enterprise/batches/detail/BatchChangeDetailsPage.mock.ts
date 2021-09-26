@@ -3,7 +3,6 @@ import { subDays } from 'date-fns'
 import {
     BatchChangeFields,
     BulkOperationState,
-    BulkOperationConnectionFields,
     BulkOperationType,
     BatchChangeBulkOperationsResult,
 } from '../../../graphql-operations'
