@@ -152,9 +152,6 @@ export const BatchChangeDetailsPage: React.FunctionComponent<BatchChangeDetailsP
                 className="mb-3"
             />
             <Description description={batchChange.description} />
-            <button className="btn btn-outline-secondary btn-sm" onClick={() => refetch()} type="button">
-                Refetch
-            </button>
             <BatchChangeDetailsTabs batchChange={batchChange} refetchBatchChange={refetch} {...props} />
         </>
     )
