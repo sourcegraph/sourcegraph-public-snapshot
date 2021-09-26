@@ -11,7 +11,6 @@ import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 
 import {
     BatchChangeByNamespaceResult,
-    BatchChangeByNamespaceVariables,
     BatchChangeFields,
     BulkOperationState,
     BulkOperationType,
@@ -23,7 +22,6 @@ import {
 import { EnterpriseWebStory } from '../../components/EnterpriseWebStory'
 
 import {
-    fetchBatchChangeByNamespace,
     queryChangesets as _queryChangesets,
     queryExternalChangesetWithFileDiffs,
     queryChangesetCountsOverTime as _queryChangesetCountsOverTime,
@@ -343,8 +341,6 @@ const stories: Record<string, { url: string; supersededBatchSpec?: boolean }> = 
     'Superseded batch-spec': { url: '/users/alice/batch-changes/awesome-batch-change', supersededBatchSpec: true },
 }
 
-const CREATED_AFTER = subDays(new Date(), 3).toISOString()
-
 for (const [name, { url, supersededBatchSpec }] of Object.entries(stories)) {
     add(name, () => {
         const supersedingBatchSpec = boolean('supersedingBatchSpec', !!supersededBatchSpec)
@@ -389,7 +385,6 @@ for (const [name, { url, supersededBatchSpec }] of Object.entries(stories)) {
                             {...props}
                             namespaceID="namespace123"
                             batchChangeName="awesome-batch-change"
-                            createdAfter={CREATED_AFTER}
                             queryChangesets={queryChangesets}
                             queryChangesetCountsOverTime={queryChangesetCountsOverTime}
                             queryExternalChangesetWithFileDiffs={queryEmptyExternalChangesetWithFileDiffs}

@@ -369,7 +369,7 @@ describe('Repository', () => {
                                 ],
                                 totalCount: 1,
                                 pageInfo: { endCursor: null, hasNextPage: false },
-                                diffStat: { added: 1, changed: 3, deleted: 4 },
+                                diffStat: { added: 1, changed: 3, deleted: 4, __typename: 'DiffStat' },
                             },
                         },
                     },

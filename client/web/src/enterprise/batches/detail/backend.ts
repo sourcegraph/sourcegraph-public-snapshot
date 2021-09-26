@@ -51,6 +51,7 @@ import {
 
 const changesetsStatsFragment = gql`
     fragment ChangesetsStatsFields on ChangesetsStats {
+        __typename
         total
         closed
         deleted
@@ -148,6 +149,7 @@ const batchChangeFragment = gql`
     }
 
     fragment ActiveBulkOperationsConnectionFields on BulkOperationConnection {
+        __typename
         totalCount
         nodes {
             ...ActiveBulkOperationFields
