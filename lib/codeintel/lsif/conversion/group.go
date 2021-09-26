@@ -33,6 +33,7 @@ func groupBundleData(ctx context.Context, state *State) (*precise.GroupedBundleD
 	resultChunks := serializeResultChunks(ctx, state, numResultChunks)
 	definitionRows := gatherMonikersLocations(ctx, state, state.DefinitionData, func(r Range) int { return r.DefinitionResultID })
 	referenceRows := gatherMonikersLocations(ctx, state, state.ReferenceData, func(r Range) int { return r.ReferenceResultID })
+	implementationRows := gatherMonikersLocations(ctx, state, state.ImplementationData, func(r Range) int { return r.ImplementationResultID })
 	documentation := collectDocumentation(ctx, state)
 	packages := gatherPackages(state)
 	packageReferences, err := gatherPackageReferences(state, packages)
@@ -46,6 +47,7 @@ func groupBundleData(ctx context.Context, state *State) (*precise.GroupedBundleD
 		ResultChunks:          resultChunks,
 		Definitions:           definitionRows,
 		References:            referenceRows,
+		Implementations:       implementationRows,
 		DocumentationPages:    documentation.pages,
 		DocumentationPathInfo: documentation.pathInfo,
 		DocumentationMappings: documentation.mappings,

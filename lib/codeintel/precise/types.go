@@ -228,6 +228,7 @@ type GroupedBundleDataChans struct {
 	ResultChunks          chan IndexedResultChunkData
 	Definitions           chan MonikerLocations
 	References            chan MonikerLocations
+	Implementations       chan MonikerLocations
 	Packages              []Package
 	PackageReferences     []PackageReference
 	DocumentationPages    chan *DocumentationPageData

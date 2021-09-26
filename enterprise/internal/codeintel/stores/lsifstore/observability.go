@@ -39,6 +39,7 @@ type operations struct {
 	writeDocumentationSearch        *observation.Operation
 	writeDocumentationSearchPrework *observation.Operation
 	writeDocuments                  *observation.Operation
+	writeImplementations            *observation.Operation
 	writeMeta                       *observation.Operation
 	writeReferences                 *observation.Operation
 	writeResultChunks               *observation.Operation
@@ -104,6 +105,7 @@ func newOperations(observationContext *observation.Context) *operations {
 		writeDocumentationSearch:        op("WriteDocumentationSearch"),
 		writeDocumentationSearchPrework: op("WriteDocumentationSearchPrework"),
 		writeDocuments:                  op("WriteDocuments"),
+		writeImplementations:            op("WriteImplementations"),
 		writeMeta:                       op("WriteMeta"),
 		writeReferences:                 op("WriteReferences"),
 		writeResultChunks:               op("WriteResultChunks"),
