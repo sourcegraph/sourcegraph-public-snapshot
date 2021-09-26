@@ -71,6 +71,7 @@ const batchChangeDefaults: BatchChangeFields = {
         supersedingBatchSpec: null,
     },
     bulkOperations: {
+        __typename: 'BulkOperationConnection',
         totalCount: 0,
     },
     activeBulkOperations: {

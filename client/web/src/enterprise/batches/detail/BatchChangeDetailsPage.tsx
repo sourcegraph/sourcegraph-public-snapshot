@@ -18,7 +18,6 @@ import {
 import { Description } from '../Description'
 
 import {
-    fetchBatchChangeByNamespace as _fetchBatchChangeByNamespace,
     queryChangesets as _queryChangesets,
     queryExternalChangesetWithFileDiffs as _queryExternalChangesetWithFileDiffs,
     queryChangesetCountsOverTime as _queryChangesetCountsOverTime,

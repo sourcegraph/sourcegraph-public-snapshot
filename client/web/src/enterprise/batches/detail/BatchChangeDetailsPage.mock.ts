@@ -43,6 +43,7 @@ export const MOCK_BATCH_CHANGE: BatchChangeFields = {
         supersedingBatchSpec: null,
     },
     bulkOperations: {
+        __typename: 'BulkOperationConnection',
         totalCount: 3,
     },
     activeBulkOperations: {
@@ -50,6 +51,7 @@ export const MOCK_BATCH_CHANGE: BatchChangeFields = {
         totalCount: 1,
         nodes: [
             {
+                __typename: 'BulkOperation',
                 id: 'testid-123',
                 state: BulkOperationState.PROCESSING,
             },

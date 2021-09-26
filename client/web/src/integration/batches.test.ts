@@ -300,7 +300,7 @@ function mockCommonGraphQLResponses(
                     originalInput: 'name: awesome-batch-change\ndescription: somesttring',
                     supersedingBatchSpec: null,
                 },
-                bulkOperations: { totalCount: 0 },
+                bulkOperations: { __typename: 'BulkOperationConnection', totalCount: 0 },
                 activeBulkOperations: { __typename: 'BulkOperationConnection', totalCount: 0, nodes: [] },
                 ...batchesOverrides,
             },

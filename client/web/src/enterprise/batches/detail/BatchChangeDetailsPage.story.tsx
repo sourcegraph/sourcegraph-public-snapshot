@@ -193,6 +193,7 @@ const queryBulkOperations: typeof _queryBulkOperations = () =>
         },
         nodes: [
             {
+                __typename: 'BulkOperation',
                 id: 'id1',
                 type: BulkOperationType.COMMENT,
                 state: BulkOperationState.PROCESSING,
@@ -207,6 +208,7 @@ const queryBulkOperations: typeof _queryBulkOperations = () =>
                 },
             },
             {
+                __typename: 'BulkOperation',
                 id: 'id2',
                 type: BulkOperationType.COMMENT,
                 state: BulkOperationState.COMPLETED,
@@ -221,6 +223,7 @@ const queryBulkOperations: typeof _queryBulkOperations = () =>
                 },
             },
             {
+                __typename: 'BulkOperation',
                 id: 'id3',
                 type: BulkOperationType.DETACH,
                 state: BulkOperationState.COMPLETED,
@@ -235,6 +238,7 @@ const queryBulkOperations: typeof _queryBulkOperations = () =>
                 },
             },
             {
+                __typename: 'BulkOperation',
                 id: 'id4',
                 type: BulkOperationType.COMMENT,
                 state: BulkOperationState.FAILED,

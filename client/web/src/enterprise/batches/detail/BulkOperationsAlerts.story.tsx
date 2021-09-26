@@ -17,7 +17,7 @@ add('Processing', () => {
         () => ({
             __typename: 'BulkOperationConnection' as const,
             totalCount: 1,
-            nodes: [{ id: '132', state: BulkOperationState.PROCESSING }],
+            nodes: [{ id: '132', state: BulkOperationState.PROCESSING, __typename: 'BulkOperation' as const }],
         }),
         []
     )
@@ -32,7 +32,7 @@ add('Failed', () => {
         () => ({
             __typename: 'BulkOperationConnection' as const,
             totalCount: 1,
-            nodes: [{ id: '132', state: BulkOperationState.FAILED }],
+            nodes: [{ id: '132', state: BulkOperationState.FAILED, __typename: 'BulkOperation' as const }],
         }),
         []
     )
@@ -47,7 +47,7 @@ add('Completed', () => {
         () => ({
             __typename: 'BulkOperationConnection' as const,
             totalCount: 1,
-            nodes: [{ id: '132', state: BulkOperationState.COMPLETED }],
+            nodes: [{ id: '132', state: BulkOperationState.COMPLETED, __typename: 'BulkOperation' as const }],
         }),
         []
     )

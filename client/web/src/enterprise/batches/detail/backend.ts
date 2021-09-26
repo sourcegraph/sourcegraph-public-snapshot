@@ -65,6 +65,7 @@ const changesetsStatsFragment = gql`
 
 const bulkOperationFragment = gql`
     fragment BulkOperationFields on BulkOperation {
+        __typename
         id
         type
         state
@@ -132,6 +133,7 @@ const batchChangeFragment = gql`
         }
 
         bulkOperations(first: 0) {
+            __typename
             totalCount
         }
 
@@ -161,6 +163,7 @@ const batchChangeFragment = gql`
     ${diffStatFields}
 
     fragment ActiveBulkOperationFields on BulkOperation {
+        __typename
         id
         state
     }
