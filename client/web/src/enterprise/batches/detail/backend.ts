@@ -197,6 +197,15 @@ export const fetchBatchChangeByNamespace = (
         })
     )
 
+export const BATCH_CHANGE_BY_NAMESPACE = gql`
+    query BatchChangeByNamespace($namespaceID: ID!, $batchChange: String!, $createdAfter: DateTime!) {
+        batchChange(namespace: $namespaceID, name: $batchChange) {
+            ...BatchChangeFields
+        }
+    }
+    ${batchChangeFragment}
+`
+
 export const hiddenExternalChangesetFieldsFragment = gql`
     fragment HiddenExternalChangesetFields on HiddenExternalChangeset {
         __typename
