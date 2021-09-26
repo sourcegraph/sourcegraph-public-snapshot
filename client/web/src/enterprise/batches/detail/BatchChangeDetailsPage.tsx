@@ -1,18 +1,20 @@
-import { subDays } from 'date-fns'
-import { isEqual } from 'lodash'
+import { subDays, startOfDay } from 'date-fns'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import React, { useEffect, useMemo } from 'react'
-import { delay, distinctUntilChanged, repeatWhen } from 'rxjs/operators'
 
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
-import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
+import { useQuery } from '@sourcegraph/shared/src/graphql/apollo'
 import { PageHeader } from '@sourcegraph/wildcard'
 
 import { BatchChangesIcon } from '../../../batches/icons'
 import { HeroPage } from '../../../components/HeroPage'
 import { PageTitle } from '../../../components/PageTitle'
-import { BatchChangeFields } from '../../../graphql-operations'
+import {
+    BatchChangeByNamespaceResult,
+    BatchChangeByNamespaceVariables,
+    BatchChangeFields,
+} from '../../../graphql-operations'
 import { Description } from '../Description'
 
 import {
@@ -23,6 +25,7 @@ import {
     deleteBatchChange as _deleteBatchChange,
     queryBulkOperations as _queryBulkOperations,
     queryAllChangesetIDs as _queryAllChangesetIDs,
+    BATCH_CHANGE_BY_NAMESPACE,
 } from './backend'
 import { BatchChangeDetailsActionSection } from './BatchChangeDetailsActionSection'
 import { BatchChangeDetailsProps, BatchChangeDetailsTabs } from './BatchChangeDetailsTabs'
@@ -40,55 +43,44 @@ export interface BatchChangeDetailsPageProps extends BatchChangeDetailsProps {
     /** The batch change name. */
     batchChangeName: BatchChangeFields['name']
     /** For testing only. */
-    fetchBatchChangeByNamespace?: typeof _fetchBatchChangeByNamespace
-    /** For testing only. */
     deleteBatchChange?: typeof _deleteBatchChange
-    /** For testing only. */
-    queryAllChangesetIDs?: typeof _queryAllChangesetIDs
 }
 
 /**
  * The area for a single batch change.
  */
 export const BatchChangeDetailsPage: React.FunctionComponent<BatchChangeDetailsPageProps> = props => {
-    const {
-        namespaceID,
-        batchChangeName,
-        history,
-        location,
-        telemetryService,
-        fetchBatchChangeByNamespace: fetchBatchChangeByNamespace = _fetchBatchChangeByNamespace,
-        deleteBatchChange,
-    } = props
+    const { namespaceID, batchChangeName, history, location, telemetryService, deleteBatchChange } = props
 
     useEffect(() => {
         telemetryService.logViewEvent('BatchChangeDetailsPage')
     }, [telemetryService])
 
-    const createdAfter = useMemo(() => subDays(new Date(), 3).toISOString(), [])
-    const batchChange: BatchChangeFields | null | undefined = useObservable(
-        useMemo(
-            () =>
-                fetchBatchChangeByNamespace(namespaceID, batchChangeName, createdAfter).pipe(
-                    repeatWhen(notifier => notifier.pipe(delay(5000))),
-                    distinctUntilChanged((a, b) => isEqual(a, b))
-                ),
-            [fetchBatchChangeByNamespace, namespaceID, batchChangeName, createdAfter]
-        )
+    // Query bulk operations created after this time.
+    const createdAfter = useMemo(() => subDays(startOfDay(new Date()), 3).toISOString(), [])
+
+    const { data, error, loading } = useQuery<BatchChangeByNamespaceResult, BatchChangeByNamespaceVariables>(
+        BATCH_CHANGE_BY_NAMESPACE,
+        {
+            variables: { namespaceID, batchChange: batchChangeName, createdAfter },
+            fetchPolicy: 'cache-and-network',
+            // TODO: Why do we need to poll this every 5 seconds??
+            // pollInterval: 5000,
+        }
     )
 
-    // Is loading.
-    if (batchChange === undefined) {
+    if (loading && !data) {
         return (
             <div className="text-center">
                 <LoadingSpinner className="icon-inline mx-auto my-4" />
             </div>
         )
     }
-    // Batch change was not found.
-    if (batchChange === null) {
+    if (error || !data || !data.batchChange) {
         return <HeroPage icon={AlertCircleIcon} title="Batch change not found" />
     }
+
+    const { batchChange } = data
 
     return (
         <>
