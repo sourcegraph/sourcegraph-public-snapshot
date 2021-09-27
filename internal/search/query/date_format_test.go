@@ -26,7 +26,6 @@ func TestParseGitDate(t *testing.T) {
 		{"2005-04-07T22:13:13+07:00", time.Date(2005, 4, 7, 15, 13, 13, 0, time.UTC)},
 		{"2005-04-07 22:13:13", time.Date(2005, 4, 7, 22, 13, 13, 0, time.UTC)},
 		{"2005-04-07 22:13:13+07:00", time.Date(2005, 4, 7, 15, 13, 13, 0, time.UTC)},
-		{"2005-04-07 22:13:13+07:00", time.Date(2005, 4, 7, 15, 13, 13, 0, time.UTC)},
 		{"yesterday", time.Date(1996, 6, 27, 0, 0, 0, 0, time.UTC)},
 		{"5 days ago", time.Date(1996, 6, 23, 0, 0, 0, 0, time.UTC)},
 		{"20 minutes ago", time.Date(1996, 6, 27, 23, 40, 0, 0, time.UTC)},
