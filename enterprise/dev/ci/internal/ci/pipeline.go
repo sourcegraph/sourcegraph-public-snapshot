@@ -94,7 +94,13 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 	// PERF: Try to order steps such that slower steps are first.
 	switch c.RunType {
 	case PullRequest:
-		operations = CoreTestOperations(c.ChangedFiles, buildOptions)
+		operations = CoreTestOperations(c.ChangedFiles, false)
+
+		if c.ChangedFiles.affectsClient() {
+			appendOps(
+				// triggers a slow pipeline, currently only affects web.
+				triggerAsync(buildOptions))
+		}
 
 	case BextReleaseBranch:
 		// If this is a browser extension release branch, run the browser-extension tests and
@@ -129,7 +135,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 			buildCandidateDockerImage(patchImage, c.Version, c.candidateImageTag()),
 		}
 		// Test images
-		appendOps(CoreTestOperations(nil, buildOptions)...)
+		appendOps(CoreTestOperations(nil, false)...)
 		// Publish images
 		appendOps(publishFinalDockerImage(c, patchImage, false))
 
@@ -150,6 +156,9 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		}
 
 	default:
+		// Slow async pipeline
+		appendOps(triggerAsync(buildOptions))
+
 		// Slow image builds
 		for _, dockerImage := range images.SourcegraphDockerImages {
 			appendOps(buildCandidateDockerImage(dockerImage, c.Version, c.candidateImageTag()))
@@ -162,12 +171,9 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		if c.RunType.Is(BackendDryRun, MainDryRun, MainBranch) {
 			appendOps(addBackendIntegrationTests)
 		}
-		if c.RunType.Is(MainDryRun, MainBranch) {
-			appendOps(clientIntegrationTests, clientChromaticTests(c.RunType.Is(MainBranch)))
-		}
 
 		// Core tests
-		appendOps(CoreTestOperations(nil, buildOptions)...)
+		appendOps(CoreTestOperations(nil, c.RunType.Is(MainBranch))...)
 
 		// Trigger e2e late so that it can leverage candidate images
 		appendOps(triggerE2EandQA(e2eAndQAOptions{

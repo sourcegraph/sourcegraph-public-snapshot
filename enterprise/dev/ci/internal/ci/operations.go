@@ -21,9 +21,14 @@ import (
 // arguments to create variations of specific Operations (e.g. with different arguments).
 type Operation func(*bk.Pipeline)
 
-// CoreTestOperations is a core set of tests that should be run in most CI cases. These
-// steps should generally be quite fast.
-func CoreTestOperations(changedFiles ChangedFiles, buildOptions bk.BuildOptions) []Operation {
+// CoreTestOperations is a core set of tests that should be run in most CI cases.
+//
+// Operations should ONLY be ADDITIVE based on changedFiles. Please do not remove steps
+// after they are added. changedFiles can be nil to run all tests.
+//
+// isMain should be used ONLY to adjust the behaviour of added steps, e.g. by adding flags,
+// and not as a condition for adding steps or commands.
+func CoreTestOperations(changedFiles ChangedFiles, isMain bool) []Operation {
 	// Special-case branches provide a nil changedFiles to only run all checks.
 	runAll := len(changedFiles) == 0
 
@@ -35,11 +40,13 @@ func CoreTestOperations(changedFiles ChangedFiles, buildOptions bk.BuildOptions)
 		addCheck,
 	}
 
-	if runAll || changedFiles.affectsClient() {
-		operations = append(operations,
-			// triggers a slow pipeline, currently only affects web.
-			triggerAsync(buildOptions),
+	// appendOps is a utility for adding an operation to the set of pipeline operations.
+	appendOps := func(ops ...Operation) {
+		operations = append(operations, ops...)
+	}
 
+	if runAll || changedFiles.affectsClient() {
+		appendOps(
 			clientIntegrationTests,
 			clientChromaticTests(false),
 			frontendTests,   // ~4.5m
@@ -53,13 +60,13 @@ func CoreTestOperations(changedFiles ChangedFiles, buildOptions bk.BuildOptions)
 	if runAll || changedFiles.affectsGo() {
 		if changedFiles.affectsSg() {
 			// If the changes are only in ./dev/sg then we only need to run a subset of steps.
-			operations = append(operations,
+			appendOps(
 				addGoTests,
 				addCheck,
 			)
 		} else {
 			// Run all Go checks
-			operations = append(operations,
+			appendOps(
 				addGoTests, // ~1.5m
 				addCheck,   // ~1m
 				addGoBuild, // ~0.5m
@@ -68,15 +75,15 @@ func CoreTestOperations(changedFiles ChangedFiles, buildOptions bk.BuildOptions)
 	}
 
 	if runAll || changedFiles.affectsGraphQL() {
-		operations = append(operations, addGraphQLLint)
+		appendOps(addGraphQLLint)
 	}
 
 	if runAll || changedFiles.affectsDockerfiles() {
-		operations = append(operations, addDockerfileLint)
+		appendOps(addDockerfileLint)
 	}
 
 	if runAll || changedFiles.affectsDocs() {
-		operations = append(operations, addDocs)
+		appendOps(addDocs)
 	}
 
 	// wait for all steps to pass
