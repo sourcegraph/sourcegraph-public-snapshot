@@ -4,6 +4,13 @@ import { o3de } from './o3de'
 import { stackStorm } from './StackStorm'
 import { stanford } from './Stanford'
 import { temporal } from './Temporal'
-import { RepogroupMetadata } from './types'
+import { CommunitySearchContextMetadata } from './types'
 
-export const repogroupList: RepogroupMetadata[] = [cncf, temporal, o3de, stackStorm, kubernetes, stanford]
+export const communitySearchContextsList: CommunitySearchContextMetadata[] = [
+    cncf,
+    temporal,
+    o3de,
+    stackStorm,
+    kubernetes,
+    stanford,
+]

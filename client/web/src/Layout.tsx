@@ -18,6 +18,7 @@ import { AuthenticatedUser, authRequired as authRequiredObservable } from './aut
 import { BatchChangesProps } from './batches'
 import { CodeMonitoringProps } from './code-monitoring'
 import { CodeIntelligenceProps } from './codeintel'
+import { communitySearchContextsRoutes } from './communitySearchContexts/routes'
 import { useBreadcrumbs } from './components/Breadcrumbs'
 import { ErrorBoundary } from './components/ErrorBoundary'
 import { useScrollToLocationHash } from './components/useScrollToLocationHash'
@@ -49,7 +50,6 @@ import {
     parseSearchURLQuery,
     PatternTypeProps,
     CaseSensitivityProps,
-    RepogroupHomepageProps,
     OnboardingTourProps,
     HomePanelsProps,
     SearchStreamingProps,
@@ -81,7 +81,6 @@ export interface LayoutProps
         PatternTypeProps,
         CaseSensitivityProps,
         MutableVersionContextProps,
-        RepogroupHomepageProps,
         OnboardingTourProps,
         SearchContextProps,
         HomePanelsProps,
@@ -207,9 +206,8 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
         searchContextSpec,
     ])
 
-    // Hack! Hardcode these routes into cmd/frontend/internal/app/ui/router.go
-    const repogroupPages = ['/kubernetes', '/stanford', '/stackstorm', '/temporal', '/o3de', '/chakraui', '/cncf']
-    const isRepogroupPage = repogroupPages.includes(props.location.pathname)
+    const communitySearchContextPaths = communitySearchContextsRoutes.map(route => route.path)
+    const isCommunitySearchContextPage = communitySearchContextPaths.includes(props.location.pathname)
 
     // TODO add a component layer as the parent of the Layout component rendering "top-level" routes that do not render the navbar,
     // so that Layout can always render the navbar.
@@ -269,11 +267,17 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
                     showSearchBox={
                         isSearchRelatedPage &&
                         !isSearchHomepage &&
-                        !isRepogroupPage &&
+                        !isCommunitySearchContextPage &&
                         !isSearchConsolePage &&
                         !isSearchNotebookPage
                     }
-                    variant={isSearchHomepage ? 'low-profile' : isRepogroupPage ? 'low-profile-with-logo' : 'default'}
+                    variant={
+                        isSearchHomepage
+                            ? 'low-profile'
+                            : isCommunitySearchContextPage
+                            ? 'low-profile-with-logo'
+                            : 'default'
+                    }
                     hideNavLinks={false}
                     minimalNavLinks={minimalNavLinks}
                     isSearchAutoFocusRequired={!isSearchAutoFocusRequired}

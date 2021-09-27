@@ -2,12 +2,12 @@ import React from 'react'
 
 import { SearchPatternType } from '../graphql-operations'
 
-import { RepogroupPage, RepogroupPageProps } from './RepogroupPage'
-import { RepogroupMetadata } from './types'
+import { CommunitySearchContextPage, CommunitySearchContextPageProps } from './CommunitySearchContextPage'
+import { CommunitySearchContextMetadata } from './types'
 
-export const stanford: RepogroupMetadata = {
+export const stanford: CommunitySearchContextMetadata = {
     title: 'Stanford University',
-    name: 'stanford',
+    spec: 'stanford',
     url: '/stanford',
     description: 'Explore open-source code from Stanford students, faculty, research groups, and clubs.',
     examples: [
@@ -49,6 +49,6 @@ export const stanford: RepogroupMetadata = {
         'https://upload.wikimedia.org/wikipedia/commons/thumb/a/aa/Icons8_flat_graduation_cap.svg/120px-Icons8_flat_graduation_cap.svg.png',
 }
 
-export const StanfordRepogroupPage: React.FunctionComponent<Omit<RepogroupPageProps, 'repogroupMetadata'>> = props => (
-    <RepogroupPage {...props} repogroupMetadata={stanford} />
-)
+export const StanfordCommunitySearchContextPage: React.FunctionComponent<
+    Omit<CommunitySearchContextPageProps, 'communitySearchContextMetadata'>
+> = props => <CommunitySearchContextPage {...props} communitySearchContextMetadata={stanford} />

@@ -1,10 +1,12 @@
 import { action } from '@storybook/addon-actions'
 import { storiesOf } from '@storybook/react'
+import { subDays } from 'date-fns'
 import React from 'react'
-import { NEVER } from 'rxjs'
+import { NEVER, Observable, of } from 'rxjs'
 
 import { ActionItemComponentProps } from '@sourcegraph/shared/src/actions/ActionItem'
 import * as GQL from '@sourcegraph/shared/src/graphql/schema'
+import { IRepository, ISearchContext, ISearchContextRepositoryRevisions } from '@sourcegraph/shared/src/graphql/schema'
 import {
     mockFetchAutoDefinedSearchContexts,
     mockFetchSearchContexts,
@@ -12,17 +14,17 @@ import {
 } from '@sourcegraph/shared/src/testing/searchContexts/testHelpers'
 import { NOOP_SETTINGS_CASCADE } from '@sourcegraph/shared/src/util/searchTestHelpers'
 import { subtypeOf } from '@sourcegraph/shared/src/util/types'
+import { WebStory } from '@sourcegraph/web/src/components/WebStory'
 
 import { AuthenticatedUser } from '../auth'
-import { WebStory } from '../components/WebStory'
 import { SearchPatternType } from '../graphql-operations'
 import { ThemePreference } from '../theme'
 
 import { cncf } from './cncf'
-import { RepogroupPage, RepogroupPageProps } from './RepogroupPage'
+import { CommunitySearchContextPage, CommunitySearchContextPageProps } from './CommunitySearchContextPage'
 import { temporal } from './Temporal'
 
-const { add } = storiesOf('web/RepogroupPage', module).addParameters({
+const { add } = storiesOf('web/CommunitySearchContextPage', module).addParameters({
     design: {
         type: 'figma',
         url: 'https://www.figma.com/file/Xc4M24VTQq8itU0Lgb1Wwm/RFC-159-Visual-Design?node-id=66%3A611',
@@ -34,7 +36,7 @@ const EXTENSIONS_CONTROLLER: ActionItemComponentProps['extensionsController'] = 
     executeCommand: () => new Promise(resolve => setTimeout(resolve, 750)),
 }
 
-const PLATFORM_CONTEXT: RepogroupPageProps['platformContext'] = {
+const PLATFORM_CONTEXT: CommunitySearchContextPageProps['platformContext'] = {
     forceUpdateTooltip: () => undefined,
     settings: NEVER,
     sourcegraphURL: '',
@@ -62,22 +64,43 @@ const authUser: AuthenticatedUser = {
     databaseID: 0,
 }
 
+const repositories: ISearchContextRepositoryRevisions[] = [
+    {
+        __typename: 'SearchContextRepositoryRevisions',
+        repository: {
+            __typename: 'Repository',
+            name: 'github.com/example/example2',
+        } as IRepository,
+        revisions: ['main'],
+    },
+    {
+        __typename: 'SearchContextRepositoryRevisions',
+        repository: {
+            __typename: 'Repository',
+            name: 'github.com/example/example1',
+        } as IRepository,
+        revisions: ['main'],
+    },
+]
+
+const fetchCommunitySearchContext = (): Observable<ISearchContext> =>
+    of({
+        __typename: 'SearchContext',
+        id: '1',
+        spec: 'public-ctx',
+        name: 'public-ctx',
+        namespace: null,
+        public: true,
+        autoDefined: false,
+        description: 'Repositories on Sourcegraph',
+        repositories,
+        updatedAt: subDays(new Date(), 1).toISOString(),
+        viewerCanManage: true,
+    })
+
 const commonProps = () =>
-    subtypeOf<Partial<RepogroupPageProps>>()({
-        settingsCascade: {
-            ...NOOP_SETTINGS_CASCADE,
-            subjects: [],
-            final: {
-                'search.repositoryGroups': {
-                    python: [
-                        'github.com/python/test',
-                        'github.com/python/test2',
-                        'github.com/python/test3',
-                        'github.com/python/test4',
-                    ],
-                },
-            },
-        },
+    subtypeOf<Partial<CommunitySearchContextPageProps>>()({
+        settingsCascade: NOOP_SETTINGS_CASCADE,
         onThemePreferenceChange: action('onThemePreferenceChange'),
         parsedSearchQuery: 'r:golang/oauth2 test f:travis',
         patternType: SearchPatternType.literal,
@@ -95,8 +118,8 @@ const commonProps = () =>
             return Promise.resolve()
         },
         availableVersionContexts: [],
+        showSearchContext: true,
         searchContextsEnabled: true,
-        showSearchContext: false,
         showSearchContextManagement: false,
         selectedSearchContextSpec: '',
         setSelectedSearchContextSpec: () => {},
@@ -104,7 +127,7 @@ const commonProps = () =>
         authRequired: false,
         batchChangesEnabled: false,
         authenticatedUser: authUser,
-        repogroupMetadata: temporal,
+        communitySearchContextMetadata: temporal,
         globbing: false,
         showOnboardingTour: false,
         showQueryBuilder: false,
@@ -113,12 +136,14 @@ const commonProps = () =>
         hasUserAddedRepositories: false,
         hasUserAddedExternalServices: false,
         getUserSearchContextNamespaces: mockGetUserSearchContextNamespaces,
+        fetchSearchContextBySpec: fetchCommunitySearchContext,
+        showSearchContextFeatureTour: false,
     })
 
 add('Temporal', () => (
     <WebStory>
         {webProps => (
-            <RepogroupPage
+            <CommunitySearchContextPage
                 {...webProps}
                 {...commonProps()}
                 themePreference={webProps.isLightTheme ? ThemePreference.Light : ThemePreference.Dark}
@@ -130,10 +155,10 @@ add('Temporal', () => (
 add('CNCF', () => (
     <WebStory>
         {webProps => (
-            <RepogroupPage
+            <CommunitySearchContextPage
                 {...webProps}
                 {...commonProps()}
-                repogroupMetadata={cncf}
+                communitySearchContextMetadata={cncf}
                 themePreference={webProps.isLightTheme ? ThemePreference.Light : ThemePreference.Dark}
             />
         )}

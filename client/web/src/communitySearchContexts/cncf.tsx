@@ -1,11 +1,11 @@
 import React from 'react'
 
-import { RepogroupPage, RepogroupPageProps } from './RepogroupPage'
-import { RepogroupMetadata } from './types'
+import { CommunitySearchContextPage, CommunitySearchContextPageProps } from './CommunitySearchContextPage'
+import { CommunitySearchContextMetadata } from './types'
 
-export const cncf: RepogroupMetadata = {
+export const cncf: CommunitySearchContextMetadata = {
     title: 'Cloud Native Computing Foundation (CNCF)',
-    name: 'cncf',
+    spec: 'cncf',
     url: '/cncf',
     description: (
         <>
@@ -21,6 +21,6 @@ export const cncf: RepogroupMetadata = {
     lowProfile: true,
 }
 
-export const CncfRepogroupPage: React.FunctionComponent<Omit<RepogroupPageProps, 'repogroupMetadata'>> = props => (
-    <RepogroupPage {...props} repogroupMetadata={cncf} />
-)
+export const CncfCommunitySearchContextPage: React.FunctionComponent<
+    Omit<CommunitySearchContextPageProps, 'communitySearchContextMetadata'>
+> = props => <CommunitySearchContextPage {...props} communitySearchContextMetadata={cncf} />

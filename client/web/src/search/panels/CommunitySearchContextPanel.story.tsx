@@ -2,10 +2,9 @@ import { storiesOf } from '@storybook/react'
 import React from 'react'
 
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { WebStory } from '@sourcegraph/web/src/components/WebStory'
 
-import { WebStory } from '../../components/WebStory'
-
-import { RepogroupPanel } from './RepogroupPanel'
+import { CommunitySearchContextsPanel } from './CommunitySearchContextPanel'
 import { _fetchRecentSearches } from './utils'
 
 const { add } = storiesOf('web/search/panels/RepogroupPanel', module)
@@ -24,4 +23,4 @@ const props = {
     telemetryService: NOOP_TELEMETRY_SERVICE,
 }
 
-add('Populated', () => <WebStory>{() => <RepogroupPanel {...props} />}</WebStory>)
+add('Populated', () => <WebStory>{() => <CommunitySearchContextsPanel {...props} />}</WebStory>)

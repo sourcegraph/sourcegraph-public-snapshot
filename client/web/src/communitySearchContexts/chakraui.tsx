@@ -2,12 +2,12 @@ import React from 'react'
 
 import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
 
-import { RepogroupPage, RepogroupPageProps } from './RepogroupPage'
-import { RepogroupMetadata } from './types'
+import { CommunitySearchContextPage, CommunitySearchContextPageProps } from './CommunitySearchContextPage'
+import { CommunitySearchContextMetadata } from './types'
 
-export const chakraui: RepogroupMetadata = {
+export const chakraui: CommunitySearchContextMetadata = {
     title: 'CHAKRA UI',
-    name: 'chakraui',
+    spec: 'chakraui',
     url: '/chakraui',
     description: '',
     examples: [
@@ -26,6 +26,6 @@ export const chakraui: RepogroupMetadata = {
     homepageIcon: 'https://raw.githubusercontent.com/chakra-ui/chakra-ui/main/logo/logomark-colored.svg',
 }
 
-export const ChakraUIRepogroupPage: React.FunctionComponent<Omit<RepogroupPageProps, 'repogroupMetadata'>> = props => (
-    <RepogroupPage {...props} repogroupMetadata={chakraui} />
-)
+export const ChakraUICommunitySearchContextPage: React.FunctionComponent<
+    Omit<CommunitySearchContextPageProps, 'communitySearchContextMetadata'>
+> = props => <CommunitySearchContextPage {...props} communitySearchContextMetadata={chakraui} />

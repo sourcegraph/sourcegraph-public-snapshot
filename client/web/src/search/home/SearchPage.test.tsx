@@ -24,7 +24,11 @@ jest.mock('./SearchPageInput', () => ({
 
 // Uses import.meta.url, which is a SyntaxError when used outside of ES Modules (Jest runs tests as
 // CommonJS).
-jest.mock('./LoggedOutHomepage.constants', () => ({}))
+jest.mock('./LoggedOutHomepage.constants', () => ({
+    fonts: [],
+    exampleQueries: [],
+    exampleNotebooks: [],
+}))
 
 describe('SearchPage', () => {
     afterAll(cleanup)
@@ -62,7 +66,6 @@ describe('SearchPage', () => {
         selectedSearchContextSpec: '',
         setSelectedSearchContextSpec: () => {},
         defaultSearchContextSpec: '',
-        showRepogroupHomepage: false,
         showEnterpriseHomePanels: false,
         showOnboardingTour: false,
         showQueryBuilder: false,
