@@ -2,6 +2,10 @@
 
 set -e
 
+# For symbol tests
+echo "--- build libsqlite"
+./dev/libsqlite3-pcre/build.sh
+
 # For searcher
 echo "--- comby install"
 ./dev/comby-install-or-upgrade.sh
