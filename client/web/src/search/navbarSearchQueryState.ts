@@ -37,22 +37,20 @@ export type QueryUpdate =
       }
 
 function updateQuery(query: string, updates: QueryUpdate[]): string {
-    for (const update of updates) {
+    return updates.reduce((query, update) => {
         switch (update.type) {
             case 'appendFilter':
                 if (!update.unique || !filterExists(query, update.field)) {
-                    query = appendFilter(query, update.field, update.value)
+                    return appendFilter(query, update.field, update.value)
                 }
                 break
             case 'updateOrAppendFilter':
-                query = updateFilter(query, update.field, update.value)
-                break
+                return updateFilter(query, update.field, update.value)
             case 'toggleSubquery':
-                query = toggleSubquery(query, update.value)
-                break
+                return toggleSubquery(query, update.value)
         }
-    }
-    return query
+        return query
+    }, query)
 }
 
 export interface NavbarQueryState {
