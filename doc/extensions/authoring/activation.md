@@ -11,7 +11,7 @@ For simplicity, the extension creator sets `activationEvents` to `["*"]`. Adjust
 
 ## Determining the correct language value
 
-Search this [list of languages](https://github.com/github/linguist/blob/master/lib/linguist/languages.yml) to find the value assigned to the `codemirror_mode` key for that language. For example, Typescript
+Search this [list of languages](https://github.com/github/linguist/blob/master/lib/linguist/languages.yml) to find the value assigned to the `codemirror_mode` key for that language.
 
 ## Deactivation
 
