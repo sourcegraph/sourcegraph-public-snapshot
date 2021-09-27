@@ -12,6 +12,7 @@ OUTPUT="${1:?no output path provided}"
 export GO111MODULE=on
 export GOARCH=amd64
 export GOOS=linux
+export CGO_ENABLED=0
 
 echo "--- go build"
 pkg="github.com/sourcegraph/sourcegraph/cmd/symbols"
