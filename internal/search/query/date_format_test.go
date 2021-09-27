@@ -31,6 +31,8 @@ func TestParseGitDate(t *testing.T) {
 		{"5 days ago", time.Date(1996, 6, 23, 0, 0, 0, 0, time.UTC)},
 		{"20 minutes ago", time.Date(1996, 6, 27, 23, 40, 0, 0, time.UTC)},
 		{"2 weeks ago", time.Date(1996, 6, 14, 0, 0, 0, 0, time.UTC)},
+		{"3:00", time.Date(1996, 6, 28, 3, 0, 0, 0, time.UTC)},
+		{"3pm", time.Date(1996, 6, 28, 15, 0, 0, 0, time.UTC)},
 	}
 
 	for _, tc := range cases {
@@ -42,4 +44,16 @@ func TestParseGitDate(t *testing.T) {
 			require.Equal(t, tc.output, output)
 		})
 	}
+
+	t.Run("errors", func(t *testing.T) {
+		cases := []string{
+			"not a date",
+			"",
+		}
+
+		for _, tc := range cases {
+			_, err := ParseGitDate(tc, now)
+			require.Error(t, err, "expected error for value %q", tc)
+		}
+	})
 }

@@ -63,7 +63,10 @@ func ParseGitDate(s string, now func() time.Time) (time.Time, error) {
 	}
 
 	// Human date
-	if t, err := naturaldate.Parse(s, now()); err == nil {
+	n := now()
+	if t, err := naturaldate.Parse(s, n); err == nil && t != n {
+		// We test that t != n because naturaldate won't necessarily error
+		// if it doesn't find any time values in the string
 		return t, nil
 	}
 
