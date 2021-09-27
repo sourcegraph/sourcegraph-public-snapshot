@@ -1246,6 +1246,15 @@ func TestService(t *testing.T) {
 			if newSpec.RandID != spec.RandID {
 				t.Fatalf("new batch spec has different RandID. new=%s, old=%s", newSpec.RandID, spec.RandID)
 			}
+			if newSpec.UserID != spec.UserID {
+				t.Fatalf("new batch spec has different UserID. new=%d, old=%d", newSpec.UserID, spec.UserID)
+			}
+			if newSpec.NamespaceUserID != spec.NamespaceUserID {
+				t.Fatalf("new batch spec has different NamespaceUserID. new=%d, old=%d", newSpec.NamespaceUserID, spec.NamespaceUserID)
+			}
+			if newSpec.NamespaceOrgID != spec.NamespaceOrgID {
+				t.Fatalf("new batch spec has different NamespaceOrgID. new=%d, old=%d", newSpec.NamespaceOrgID, spec.NamespaceOrgID)
+			}
 
 			resolutionJob, err := s.GetBatchSpecResolutionJob(ctx, store.GetBatchSpecResolutionJobOpts{
 				BatchSpecID: newSpec.ID,
@@ -1255,6 +1264,12 @@ func TestService(t *testing.T) {
 			}
 			if want, have := btypes.BatchSpecResolutionJobStateQueued, resolutionJob.State; have != want {
 				t.Fatalf("resolution job has wrong state. want=%s, have=%s", want, have)
+			}
+
+			// Assert that old batch spec is deleted
+			_, err = s.GetBatchSpec(ctx, store.GetBatchSpecOpts{ID: spec.ID})
+			if err != store.ErrNoResults {
+				t.Fatalf("unexpected error: %s", err)
 			}
 		})
 	})

@@ -273,6 +273,7 @@ func (s *Service) ReplaceBatchSpecInput(ctx context.Context, opts ReplaceBatchSp
 	if err != nil {
 		return nil, err
 	}
+	defer func() { err = tx.Done(err) }()
 
 	// Delete the previous batch spec, which should delete
 	// - batch_spec_resolution_jobs
@@ -300,12 +301,6 @@ func (s *Service) ReplaceBatchSpecInput(ctx context.Context, opts ReplaceBatchSp
 		AllowIgnored:     opts.AllowIgnored,
 		AllowUnsupported: opts.AllowUnsupported,
 	})
-	if err != nil {
-		return nil, err
-	}
-
-	// Commit transaction
-	err = tx.Done(err)
 	if err != nil {
 		return nil, err
 	}
