@@ -7,11 +7,11 @@ import { Link } from '@sourcegraph/shared/src/components/Link'
 import { VirtualList } from '@sourcegraph/shared/src/components/VirtualList'
 import { asError, isErrorLike } from '@sourcegraph/shared/src/util/errors'
 import { useEventObservable, useObservable } from '@sourcegraph/shared/src/util/useObservable'
+import { Page } from '@sourcegraph/web/src/components/Page'
+import { PageTitle } from '@sourcegraph/web/src/components/PageTitle'
 
-import { Page } from '../components/Page'
-import { PageTitle } from '../components/PageTitle'
-import { VersionContext } from '../schema/site.schema'
-import { SearchContextProps } from '../search'
+import { VersionContext } from '../../schema/site.schema'
+import { SearchContextProps } from '../../search'
 
 import { ConvertVersionContextNode } from './ConvertVersionContextNode'
 

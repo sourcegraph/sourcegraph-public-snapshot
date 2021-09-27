@@ -19,7 +19,8 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Changed
 
--
+- Search context management pages are now only available in the Sourcegraph enterprise version. Search context dropdown is disabled in the OSS version. [#25147](https://github.com/sourcegraph/sourcegraph/pull/25147)
+- Search contexts GQL API is now only available in the Sourcegraph enterprise version. [#25281](https://github.com/sourcegraph/sourcegraph/pull/25281)
 
 ### Fixed
 

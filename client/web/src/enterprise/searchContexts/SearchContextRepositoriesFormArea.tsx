@@ -11,7 +11,7 @@ import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryServi
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { useEventObservable } from '@sourcegraph/shared/src/util/useObservable'
 
-import { DynamicallyImportedMonacoSettingsEditor } from '../settings/DynamicallyImportedMonacoSettingsEditor'
+import { DynamicallyImportedMonacoSettingsEditor } from '../../settings/DynamicallyImportedMonacoSettingsEditor'
 
 import { MAX_REVISION_LENGTH, REPOSITORY_KEY, REVISIONS_KEY } from './repositoryRevisionsConfigParser'
 

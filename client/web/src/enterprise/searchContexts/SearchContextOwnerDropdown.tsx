@@ -4,7 +4,7 @@ import { Dropdown, DropdownItem, DropdownMenu, DropdownToggle } from 'reactstrap
 
 import { Namespace } from '@sourcegraph/shared/src/graphql/schema'
 
-import { AuthenticatedUser } from '../auth'
+import { AuthenticatedUser } from '../../auth'
 
 import styles from './SearchContextOwnerDropdown.module.scss'
 

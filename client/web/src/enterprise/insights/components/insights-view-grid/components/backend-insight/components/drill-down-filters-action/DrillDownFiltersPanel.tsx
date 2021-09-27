@@ -51,7 +51,7 @@ export const DrillDownFiltersAction: React.FunctionComponent<DrillDownFiltersPro
                     [styles.filterButtonWithOpenPanel]: isOpen,
                     [styles.filterButtonActive]: isFiltered,
                 })}
-                aria-label={isFiltered ? 'Active filters button' : 'Filters button'}
+                aria-label={isFiltered ? 'Active filters' : 'Filters'}
                 // To prevent grid layout position change animation. Attempts to drag
                 // the filter panel should not trigger react-grid-layout events.
                 onMouseDown={event => event.stopPropagation()}

@@ -50,5 +50,6 @@ export const OpenSourceWebApp: React.FunctionComponent = () => (
         extensionViews={ExtensionViewsSection}
         codeIntelligenceEnabled={false}
         batchChangesEnabled={false}
+        searchContextsEnabled={false}
     />
 )

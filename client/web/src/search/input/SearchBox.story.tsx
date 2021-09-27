@@ -3,14 +3,14 @@ import { createMemoryHistory } from 'history'
 import React from 'react'
 
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
-
-import { WebStory } from '../../components/WebStory'
-import { SearchPatternType } from '../../graphql-operations'
 import {
     mockFetchAutoDefinedSearchContexts,
     mockFetchSearchContexts,
     mockGetUserSearchContextNamespaces,
-} from '../../searchContexts/testHelpers'
+} from '@sourcegraph/shared/src/testing/searchContexts/testHelpers'
+
+import { WebStory } from '../../components/WebStory'
+import { SearchPatternType } from '../../graphql-operations'
 
 import { SearchBox, SearchBoxProps } from './SearchBox'
 
@@ -38,6 +38,7 @@ const defaultProps: SearchBoxProps = {
     versionContext: undefined,
     availableVersionContexts: [],
     setVersionContext: () => Promise.resolve(undefined),
+    searchContextsEnabled: true,
     showSearchContext: false,
     showSearchContextManagement: false,
     selectedSearchContextSpec: 'global',

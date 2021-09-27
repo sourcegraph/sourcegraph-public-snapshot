@@ -7,17 +7,17 @@ import { NEVER, Observable, of } from 'rxjs'
 import { ActionItemComponentProps } from '@sourcegraph/shared/src/actions/ActionItem'
 import * as GQL from '@sourcegraph/shared/src/graphql/schema'
 import { IRepository, ISearchContext, ISearchContextRepositoryRevisions } from '@sourcegraph/shared/src/graphql/schema'
+import {
+    mockFetchAutoDefinedSearchContexts,
+    mockFetchSearchContexts,
+    mockGetUserSearchContextNamespaces,
+} from '@sourcegraph/shared/src/testing/searchContexts/testHelpers'
 import { NOOP_SETTINGS_CASCADE } from '@sourcegraph/shared/src/util/searchTestHelpers'
 import { subtypeOf } from '@sourcegraph/shared/src/util/types'
 import { WebStory } from '@sourcegraph/web/src/components/WebStory'
 
 import { AuthenticatedUser } from '../auth'
 import { SearchPatternType } from '../graphql-operations'
-import {
-    mockFetchAutoDefinedSearchContexts,
-    mockFetchSearchContexts,
-    mockGetUserSearchContextNamespaces,
-} from '../searchContexts/testHelpers'
 import { ThemePreference } from '../theme'
 
 import { cncf } from './cncf'
@@ -119,6 +119,7 @@ const commonProps = () =>
         },
         availableVersionContexts: [],
         showSearchContext: true,
+        searchContextsEnabled: true,
         showSearchContextManagement: false,
         selectedSearchContextSpec: '',
         setSelectedSearchContextSpec: () => {},
