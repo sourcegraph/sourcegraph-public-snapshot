@@ -83,5 +83,5 @@ Since Sourcegraph 3.31, it is possible to publish many types of changeset when p
 
 The changeset may also be in a state that we cannot currently publish from: for example, because a previous push to the code host failed (in which case you should re-apply the batch change), or if you are actively detaching the changeset from your batch change.
 
-### Changesets are taking a lot of time to sync
+### Why do my changesets take a long time to sync?
 Have you [set up webhooks](../requirements.md#batch-changes-effect-on-code-host-rate-limits)?
