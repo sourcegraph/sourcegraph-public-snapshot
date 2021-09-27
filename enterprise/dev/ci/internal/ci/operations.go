@@ -70,17 +70,14 @@ func CoreTestOperations(changedFiles ChangedFiles, opts CoreTestOperationsOption
 	}
 
 	if runAll || changedFiles.affectsGo() {
-		if changedFiles.affectsSg() {
-			// If the changes are only in ./dev/sg then we only need to run a subset of steps.
+		appendOps(
+			addGoTests,
+			addCheck,
+		)
+
+		// If the changes are only in ./dev/sg then we only need to run a subset of steps.
+		if !changedFiles.affectsSg() {
 			appendOps(
-				addGoTests,
-				addCheck,
-			)
-		} else {
-			// Run all Go checks
-			appendOps(
-				addGoTests, // ~1.5m
-				addCheck,   // ~1m
 				addGoBuild, // ~0.5m
 			)
 		}
