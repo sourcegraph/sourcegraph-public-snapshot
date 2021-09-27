@@ -436,20 +436,8 @@ func (s *Server) cloneJobProducer(ctx context.Context, jobs chan<- *cloneJob) {
 	}
 }
 
-// This counter is introduced along with the asyncDoCloneInvoked and the cloneQueueLength
-// counters. We want to verify if the value of all these counters are same in a given time
-// period. This would help us verify our producer-consumer pipeline for asynchronouse repo
-// cloning. For more, see associated commeents attached with the declaration of the mentioned
-// counters in this file.
-var cloneJobProcessed = promauto.NewCounter(prometheus.CounterOpts{
-	Name: "src_gitserver_clone_job_processed",
-	Help: "Number of cloneJobs processed",
-})
-
 func (s *Server) cloneJobConsumer(ctx context.Context, jobs <-chan *cloneJob) {
-	// TODO: What we want eventually.
-	// for j := range jobs {
-	for range jobs {
+	for j := range jobs {
 		select {
 		case <-ctx.Done():
 			log15.Error("cloneJobConsumer: ", "error", ctx.Err())
@@ -457,26 +445,22 @@ func (s *Server) cloneJobConsumer(ctx context.Context, jobs <-chan *cloneJob) {
 		default:
 		}
 
-		// TODO: We will uncomment this once we know our changes work as expected.
-		//
-		// ctx, cancel, err := s.acquireCloneLimiter(ctx)
-		// if err != nil {
-		// 	log15.Error("cloneJobConsumer: ", "error", err)
-		// 	continue
-		// }
+		ctx, cancel, err := s.acquireCloneLimiter(ctx)
+		if err != nil {
+			log15.Error("cloneJobConsumer: ", "error", err)
+			continue
+		}
 
-		// go func() {
-		// 	defer cancel()
+		go func(job *cloneJob) {
+			defer cancel()
 
-		// 	err := s.doClone(ctx, j.repo, j.dir, j.syncer, j.lock, j.remoteURL, j.options)
-		// 	if err != nil {
-		// 		log15.Error("failed to clone repo", "repo", j.repo, "error", err)
-		// 	}
+			err := s.doClone(ctx, job.repo, job.dir, job.syncer, job.lock, job.remoteURL, job.options)
+			if err != nil {
+				log15.Error("failed to clone repo", "repo", job.repo, "error", err)
+			}
 
-		// 	s.setLastErrorNonFatal(ctx, j.repo, err)
-		// }()
-
-		cloneJobProcessed.Inc()
+			s.setLastErrorNonFatal(ctx, job.repo, err)
+		}(j)
 	}
 }
 
@@ -1530,22 +1514,6 @@ type cloneOptions struct {
 	Overwrite bool
 }
 
-// These counters are introduced to safely add the new pipeline to asynchronously clone repos via
-// long lived goroutines in the producer-consumer pipeline. If our changes are right, the value for
-// these counters should be the same. This is because, we continue to use our existing approach of
-// spawning new goroutine for each new non-blocking clone request, but also add a corresponding
-// cloneJob to Server.CloneQueue.
-var (
-	asyncDoCloneInvoked = promauto.NewCounter(prometheus.CounterOpts{
-		Name: "src_gitserver_async_doclone_invoked_counter",
-		Help: "Number of times Server.doClone was invoked asynchronsously",
-	})
-	cloneQueueLength = promauto.NewCounter(prometheus.CounterOpts{
-		Name: "src_gitserver_clone_queue_length_counter",
-		Help: "Length of Server.CloneQueue",
-	})
-)
-
 // cloneRepo performs a clone operation for the given repository. It is
 // non-blocking by default.
 func (s *Server) cloneRepo(ctx context.Context, repo api.RepoName, opts *cloneOptions) (string, error) {
@@ -1610,7 +1578,6 @@ func (s *Server) cloneRepo(ctx context.Context, repo api.RepoName, opts *cloneOp
 	// We clone to a temporary location first to avoid having incomplete
 	// clones in the repo tree. This also avoids leaving behind corrupt clones
 	// if the clone is interrupted.
-
 	if opts != nil && opts.Block {
 		ctx, cancel, err := s.acquireCloneLimiter(ctx)
 		if err != nil {
@@ -1626,31 +1593,9 @@ func (s *Server) cloneRepo(ctx context.Context, repo api.RepoName, opts *cloneOp
 		return "", err
 	}
 
-	// TODO: Remove this goroutine when we are confident that the producer-consumer pipeline works.
-	// And enable the commented out code in cloneJobConsumer.
-	go func() {
-		asyncDoCloneInvoked.Inc()
-
-		// Create a new context because this is in a background goroutine. The outer context's
-		// cancel will be invoked when cloneRepo returns, but we don't want this goroutine to get
-		// cancelled. Thus a new context is required here.
-		ctx, cancel1 := s.serverContext()
-		defer cancel1()
-
-		ctx, cancel2, err := s.acquireCloneLimiter(ctx)
-		if err != nil {
-			log15.Error("failed to clone repo", "repo", repo, "error", err)
-			return
-		}
-		defer cancel2()
-
-		err = s.doClone(ctx, repo, dir, syncer, lock, remoteURL, opts)
-		if err != nil {
-			log15.Error("failed to clone repo", "repo", repo, "error", err)
-		}
-		s.setLastErrorNonFatal(ctx, repo, err)
-	}()
-
+	// We push the cloneJob to a queue and let the producer-consumer pipeline take over from this
+	// point. See definitions of cloneJobProducer and cloneJobConsumer to understand how these jobs
+	// are processed.
 	s.CloneQueue.push(&cloneJob{
 		repo:      repo,
 		dir:       dir,
@@ -1659,8 +1604,6 @@ func (s *Server) cloneRepo(ctx context.Context, repo api.RepoName, opts *cloneOp
 		remoteURL: remoteURL,
 		options:   opts,
 	})
-
-	cloneQueueLength.Inc()
 
 	return "", nil
 }
