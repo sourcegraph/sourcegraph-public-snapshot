@@ -2,7 +2,7 @@ import { DialogContent, DialogOverlay } from '@reach/dialog'
 import { Remote } from 'comlink'
 import * as H from 'history'
 import React, { useState, useMemo, useCallback, useEffect } from 'react'
-import { from } from 'rxjs'
+import { from, Observable } from 'rxjs'
 import { filter, map, switchMap } from 'rxjs/operators'
 
 import { ActionItemAction } from '../../actions/ActionItem'
@@ -129,10 +129,12 @@ function useCommandList(value: string, extensionsController: CommandPaletteProps
 
 export interface CommandPaletteProps
     extends ExtensionsControllerProps<'extHostAPI' | 'executeCommand'>,
-        PlatformContextProps<'forceUpdateTooltip' | 'settings'>,
+        PlatformContextProps<'forceUpdateTooltip' | 'settings' | 'requestGraphQL'>,
         TelemetryProps {
     initialIsOpen?: boolean
     location: H.Location
+    // TODO: different for web and bext. change name
+    getAuthenticatedUserID: Observable<string | null>
 }
 
 /**
@@ -145,6 +147,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
     platformContext,
     telemetryService,
     location,
+    getAuthenticatedUserID,
 }) => {
     const [text, setText] = useState('')
     const { actions, actionsWithShortcut, onRunAction } = useCommandList(text, extensionsController)
@@ -227,7 +230,12 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
                             />
                         )}
                         {mode === CommandPaletteMode.RecentSearches && (
-                            <RecentSearchesResult value={value} onClick={onClose} />
+                            <RecentSearchesResult
+                                value={value}
+                                onClick={onClose}
+                                getAuthenticatedUserID={getAuthenticatedUserID}
+                                platformContext={platformContext}
+                            />
                         )}
                         {/* TODO: Only when repo open */}
                         {mode === CommandPaletteMode.Fuzzy && (
