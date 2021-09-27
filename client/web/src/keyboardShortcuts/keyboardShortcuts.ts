@@ -27,12 +27,6 @@ export const KEYBOARD_SHORTCUT_FOCUS_SEARCHBAR: KeyboardShortcut = {
     keybindings: [{ ordered: ['/'] }],
 }
 
-export const KEYBOARD_SHORTCUT_FUZZY_FINDER: KeyboardShortcut = {
-    id: 'fuzzyFinder',
-    title: 'Fuzzy search files',
-    keybindings: [{ ordered: ['t'] }],
-}
-
 export const KEYBOARD_SHORTCUT_CLOSE_FUZZY_FINDER: KeyboardShortcut = {
     id: 'closeFuzzyFiles',
     title: 'Close fuzzy search files',
@@ -54,7 +48,6 @@ export const KEYBOARD_SHORTCUTS: KeyboardShortcut[] = [
     KEYBOARD_SHORTCUT_SWITCH_THEME,
     KEYBOARD_SHORTCUT_SHOW_HELP,
     KEYBOARD_SHORTCUT_FOCUS_SEARCHBAR,
-    KEYBOARD_SHORTCUT_FUZZY_FINDER,
     KEYBOARD_SHORTCUT_CLOSE_FUZZY_FINDER,
     KEYBOARD_SHORTCUT_COPY_FULL_QUERY,
 ]

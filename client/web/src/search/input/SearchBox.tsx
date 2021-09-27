@@ -1,10 +1,11 @@
 import classNames from 'classnames'
-import React from 'react'
+import React, { useState } from 'react'
 
 import { KeyboardShortcut } from '@sourcegraph/shared/src/keyboardShortcuts'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
+import { FuzzyFinder } from '@sourcegraph/web/src/components/fuzzyFinder/FuzzyFinder'
 
 import { SearchContextInputProps } from '..'
 import { AuthenticatedUser } from '../../auth'
@@ -54,6 +55,7 @@ export interface SearchBoxProps
 }
 
 export const SearchBox: React.FunctionComponent<SearchBoxProps> = props => {
+    const [isFuzzyFinderVisible, setIsFuzzyFinderVisible] = useState(false)
     const { queryState } = props
 
     return (
@@ -84,11 +86,23 @@ export const SearchBox: React.FunctionComponent<SearchBoxProps> = props => {
                     </>
                 )}
                 <div className={classNames(styles.searchBoxFocusContainer, 'flex-shrink-past-contents')}>
-                    <LazyMonacoQueryInput {...props} className={styles.searchBoxInput} />
+                    <LazyMonacoQueryInput
+                        {...props}
+                        setIsFuzzyFinderVisible={setIsFuzzyFinderVisible}
+                        className={styles.searchBoxInput}
+                    />
                     <Toggles {...props} navbarSearchQuery={queryState.query} className={styles.searchBoxToggles} />
                 </div>
             </div>
             <SearchButton hideHelpButton={props.hideHelpButton} className={styles.searchBoxButton} />
+            {isFuzzyFinderVisible && props.settingsCascade.final?.experimentalFeatures?.fuzzyFinder && (
+                <FuzzyFinder
+                    caseInsensitiveFileCountThreshold={
+                        props.settingsCascade.final?.experimentalFeatures?.fuzzyFinderCaseInsensitiveFileCountThreshold
+                    }
+                    setIsVisible={bool => setIsFuzzyFinderVisible(bool)}
+                />
+            )}
         </div>
     )
 }
