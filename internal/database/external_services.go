@@ -1117,6 +1117,7 @@ ORDER BY es.id, essj.finished_at DESC
 	if err != nil {
 		return nil, err
 	}
+	defer func() { err = basestore.CloseRows(rows, err) }()
 
 	messages := make(map[int64]string)
 
@@ -1127,9 +1128,6 @@ ORDER BY es.id, essj.finished_at DESC
 			return nil, err
 		}
 		messages[svcID] = message.String
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
 	}
 
 	return messages, nil
