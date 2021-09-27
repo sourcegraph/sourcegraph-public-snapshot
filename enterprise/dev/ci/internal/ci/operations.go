@@ -345,7 +345,7 @@ func wait(pipeline *bk.Pipeline) {
 	pipeline.AddWait()
 }
 
-// Trigger the async pipeline to run.
+// Trigger the async pipeline to run. See pipeline.async.yaml.
 func triggerAsync(buildOptions bk.BuildOptions) Operation {
 	return func(pipeline *bk.Pipeline) {
 		pipeline.AddTrigger(":snail: Trigger async",
