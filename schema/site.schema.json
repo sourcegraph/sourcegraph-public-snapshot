@@ -908,6 +908,13 @@
       "examples": [50.0, 0.5],
       "!go": { "pointer": true }
     },
+    "insights.commit.indexer.interval": {
+      "description": "The interval (in minutes) at which the insights commit indexer will check for new commits.",
+      "type": "integer",
+      "group": "CodeInsights",
+      "default": 60,
+      "examples": [120]
+    },
     "htmlHeadTop": {
       "description": "HTML to inject at the top of the `<head>` element on each page, for analytics scripts",
       "type": "string",

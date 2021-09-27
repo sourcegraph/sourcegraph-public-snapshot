@@ -787,6 +787,7 @@ Indexes:
     "gitserver_repos_cloning_status_idx" btree (repo_id) WHERE clone_status = 'cloning'::text
     "gitserver_repos_last_error_idx" btree (last_error) WHERE last_error IS NOT NULL
     "gitserver_repos_not_cloned_status_idx" btree (repo_id) WHERE clone_status = 'not_cloned'::text
+    "gitserver_repos_shard_id" btree (shard_id, repo_id)
 Foreign-key constraints:
     "gitserver_repos_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE
 
@@ -1650,6 +1651,7 @@ Indexes:
     "repo_metadata_gin_idx" gin (metadata)
     "repo_name_idx" btree (lower(name::text) COLLATE "C")
     "repo_name_trgm" gin (lower(name::text) gin_trgm_ops)
+    "repo_non_deleted_id_name_idx" btree (id, name) WHERE deleted_at IS NULL
     "repo_private" btree (private)
     "repo_stars_idx" btree (stars DESC NULLS LAST)
     "repo_uri_idx" btree (uri)

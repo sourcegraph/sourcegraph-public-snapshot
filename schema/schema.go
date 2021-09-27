@@ -1536,6 +1536,8 @@ type SiteConfiguration struct {
 	HtmlHeadBottom string `json:"htmlHeadBottom,omitempty"`
 	// HtmlHeadTop description: HTML to inject at the top of the `<head>` element on each page, for analytics scripts
 	HtmlHeadTop string `json:"htmlHeadTop,omitempty"`
+	// InsightsCommitIndexerInterval description: The interval (in minutes) at which the insights commit indexer will check for new commits.
+	InsightsCommitIndexerInterval int `json:"insights.commit.indexer.interval,omitempty"`
 	// InsightsHistoricalFrameLength description: (debug) duration of historical insights timeframes, one point per repository will be recorded in each timeframe.
 	InsightsHistoricalFrameLength string `json:"insights.historical.frameLength,omitempty"`
 	// InsightsHistoricalFrames description: (debug) number of historical insights timeframes to populate

@@ -3,8 +3,74 @@ package protocol
 import (
 	"time"
 
+	"github.com/cockroachdb/errors"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
 )
+
+type SearchRequest struct {
+	Repo        api.RepoName
+	Revisions   []RevisionSpecifier
+	Query       SearchQuery
+	IncludeDiff bool
+	Limit       int
+}
+
+type RevisionSpecifier struct {
+	// RevSpec is a revision range specifier suitable for passing to git. See
+	// the manpage gitrevisions(7).
+	RevSpec string
+
+	// RefGlob is a reference glob to pass to git. See the documentation for
+	// "--glob" in git-log.
+	RefGlob string
+
+	// ExcludeRefGlob is a glob for references to exclude. See the
+	// documentation for "--exclude" in git-log.
+	ExcludeRefGlob string
+}
+
+type SearchEventMatches []CommitMatch
+
+type SearchEventDone struct {
+	LimitHit bool
+	Error    string
+}
+
+func (s SearchEventDone) Err() error {
+	if s.Error != "" {
+		return errors.New(s.Error)
+	}
+	return nil
+}
+
+func NewSearchEventDone(limitHit bool, err error) SearchEventDone {
+	e := SearchEventDone{
+		LimitHit: limitHit,
+	}
+	if err != nil {
+		e.Error = err.Error()
+	}
+	return e
+}
+
+type CommitMatch struct {
+	Oid        api.CommitID
+	Author     Signature      `json:",omitempty"`
+	Committer  Signature      `json:",omitempty"`
+	Parents    []api.CommitID `json:",omitempty"`
+	Refs       []string       `json:",omitempty"`
+	SourceRefs []string       `json:",omitempty"`
+
+	Message HighlightedString `json:",omitempty"`
+	Diff    HighlightedString `json:",omitempty"`
+}
+
+type Signature struct {
+	Name  string `json:",omitempty"`
+	Email string `json:",omitempty"`
+	Date  time.Time
+}
 
 // ExecRequest is a request to execute a command inside a git repository.
 //

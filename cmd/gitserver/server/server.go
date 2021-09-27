@@ -7,10 +7,12 @@ import (
 	"container/list"
 	"context"
 	"crypto/sha256"
+	"encoding/gob"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"io"
+	"math"
 	"net/http"
 	"os"
 	"os/exec"
@@ -29,6 +31,7 @@ import (
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
+	"golang.org/x/sync/errgroup"
 	"golang.org/x/time/rate"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
@@ -39,10 +42,12 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/search"
 	"github.com/sourcegraph/sourcegraph/internal/honey"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/internal/mutablelimiter"
 	"github.com/sourcegraph/sourcegraph/internal/repotrackutil"
+	streamhttp "github.com/sourcegraph/sourcegraph/internal/search/streaming/http"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -338,6 +343,7 @@ func (s *Server) Handler() http.Handler {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/archive", s.handleArchive)
 	mux.HandleFunc("/exec", s.handleExec)
+	mux.HandleFunc("/search", s.handleSearch)
 	mux.HandleFunc("/p4-exec", s.handleP4Exec)
 	mux.HandleFunc("/list", s.handleList)
 	mux.HandleFunc("/list-gitolite", s.handleListGitolite)
@@ -905,6 +911,167 @@ func (s *Server) handleArchive(w http.ResponseWriter, r *http.Request) {
 	req.Args = append(req.Args, paths...)
 
 	s.exec(w, r, req)
+}
+
+func (s *Server) handleSearch(w http.ResponseWriter, r *http.Request) {
+	protocol.RegisterGob()
+	var req protocol.SearchRequest
+	if err := gob.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	s.search(w, r, &req)
+}
+
+func (s *Server) search(w http.ResponseWriter, r *http.Request, args *protocol.SearchRequest) {
+	ctx := r.Context()
+	args.Repo = protocol.NormalizeRepo(args.Repo)
+	if args.Limit == 0 {
+		args.Limit = math.MaxInt32
+	}
+
+	dir := s.dir(args.Repo)
+	if !repoCloned(dir) {
+		if conf.Get().DisableAutoGitUpdates {
+			log15.Debug("not cloning on demand as DisableAutoGitUpdates is set")
+			w.WriteHeader(http.StatusNotFound)
+			_ = json.NewEncoder(w).Encode(&protocol.NotFoundPayload{})
+			return
+		}
+
+		cloneProgress, cloneInProgress := s.locker.Status(dir)
+		if cloneInProgress {
+			w.WriteHeader(http.StatusNotFound)
+			_ = json.NewEncoder(w).Encode(&protocol.NotFoundPayload{
+				CloneInProgress: true,
+				CloneProgress:   cloneProgress,
+			})
+			return
+		}
+
+		cloneProgress, err := s.cloneRepo(ctx, args.Repo, nil)
+		if err != nil {
+			log15.Debug("error starting repo clone", "repo", args.Repo, "err", err)
+			w.WriteHeader(http.StatusNotFound)
+			_ = json.NewEncoder(w).Encode(&protocol.NotFoundPayload{CloneInProgress: false})
+			return
+		}
+		w.WriteHeader(http.StatusNotFound)
+		_ = json.NewEncoder(w).Encode(&protocol.NotFoundPayload{
+			CloneInProgress: true,
+			CloneProgress:   cloneProgress,
+		})
+		return
+	}
+
+	if !conf.Get().DisableAutoGitUpdates {
+		for _, rev := range args.Revisions {
+			// TODO add result to trace
+			if rev.RevSpec != "" {
+				_ = s.ensureRevision(ctx, args.Repo, rev.RevSpec, dir)
+			} else if rev.RefGlob != "" {
+				_ = s.ensureRevision(ctx, args.Repo, rev.RefGlob, dir)
+			}
+		}
+	}
+
+	eventWriter, err := streamhttp.NewWriter(w)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	matchesBuf := streamhttp.NewJSONArrayBuf(8*1024, func(data []byte) error {
+		return eventWriter.EventBytes("matches", data)
+	})
+
+	g, ctx := errgroup.WithContext(ctx)
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
+
+	// Search all commits, sending matching commits down resultChan
+	resultChan := make(chan *protocol.CommitMatch, 128)
+	g.Go(func() error {
+		defer close(resultChan)
+		done := ctx.Done()
+
+		var conversionErr error
+		err := search.Search(ctx, dir.Path(), args.Revisions, search.ToMatchTree(args.Query), func(match *search.LazyCommit, highlights *search.CommitHighlights) bool {
+			res, err := search.CreateCommitMatch(match, highlights, args.IncludeDiff)
+			if err != nil {
+				conversionErr = err
+				return false
+			}
+
+			select {
+			case <-done:
+				return false
+			case resultChan <- res:
+				return true
+			}
+		})
+		if err != nil {
+			return err
+		}
+		return conversionErr
+	})
+
+	// Write matching commits to the stream, flushing occasionally
+	limitHit := false
+	g.Go(func() error {
+		defer cancel()
+		defer matchesBuf.Flush()
+
+		flushTicker := time.NewTicker(50 * time.Millisecond)
+		defer flushTicker.Stop()
+
+		sentCount := 0
+		firstMatch := true
+		for {
+			select {
+			case result, ok := <-resultChan:
+				if !ok {
+					return nil
+				}
+
+				if sentCount >= args.Limit {
+					limitHit = true
+					return nil
+				}
+				sentCount += matchCount(result)
+
+				_ = matchesBuf.Append(result) // EOF only
+
+				// Send immediately if this if the first result we've seen
+				if firstMatch {
+					_ = matchesBuf.Flush() // EOF only
+					firstMatch = false
+				}
+			case <-flushTicker.C:
+				_ = matchesBuf.Flush() // EOF only
+			}
+		}
+	})
+
+	err = g.Wait()
+	doneEvent := protocol.NewSearchEventDone(limitHit, err)
+	if err := eventWriter.Event("done", doneEvent); err != nil {
+		log15.Warn("failed to send done event", "error", err)
+	}
+}
+
+// matchCount returns either:
+// 1) the number of diff matches if there are any
+// 2) the number of messsage matches if there are any
+// 3) one, to represent matching the commit, but nothing inside it
+func matchCount(cm *protocol.CommitMatch) int {
+	if len(cm.Diff.Highlights) > 0 {
+		return len(cm.Diff.Highlights)
+	}
+	if len(cm.Message.Highlights) > 0 {
+		return len(cm.Message.Highlights)
+	}
+	return 1
 }
 
 func (s *Server) handleExec(w http.ResponseWriter, r *http.Request) {

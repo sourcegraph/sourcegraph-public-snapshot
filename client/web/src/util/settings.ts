@@ -16,7 +16,7 @@ export const SITE_SUBJECT_NO_ADMIN: Pick<GQL.ISettingsSubject, 'id' | 'viewerCan
 
 export function viewerSubjectFromSettings(
     cascade: SettingsCascadeOrError,
-    authenticatedUser: AuthenticatedUser | null
+    authenticatedUser?: AuthenticatedUser | null
 ): LayoutProps['viewerSubject'] {
     if (authenticatedUser) {
         return authenticatedUser

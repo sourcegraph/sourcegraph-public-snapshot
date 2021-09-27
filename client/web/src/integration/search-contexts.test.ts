@@ -281,10 +281,17 @@ describe('Search contexts', () => {
     })
 
     test('Feature tour on search homepage', async () => {
+        testContext.overrideGraphQL({
+            GetTemporarySettings: () => ({
+                temporarySettings: {
+                    contents: '{"search.onboarding.tourCancelled": true}',
+                },
+            }),
+        })
+
         await driver.page.goto(driver.sourcegraphBaseUrl + '/search', {
             waitUntil: 'networkidle0',
         })
-        await driver.page.evaluate(() => localStorage.setItem('has-cancelled-onboarding-tour', 'true'))
         await driver.page.goto(driver.sourcegraphBaseUrl + '/search')
         await driver.page.waitForSelector('.test-selected-search-context-spec', { visible: true })
         expect(await isSearchContextFeatureTourStepVisible()).toBeTruthy()
@@ -292,11 +299,18 @@ describe('Search contexts', () => {
     })
 
     test('Do not show feature tour on search homepage if already seen', async () => {
+        testContext.overrideGraphQL({
+            GetTemporarySettings: () => ({
+                temporarySettings: {
+                    contents: '{"search.onboarding.tourCancelled": true}',
+                },
+            }),
+        })
+
         await driver.page.goto(driver.sourcegraphBaseUrl + '/search', {
             waitUntil: 'networkidle0',
         })
         await driver.page.evaluate(() => {
-            localStorage.setItem('has-cancelled-onboarding-tour', 'true')
             localStorage.setItem('has-seen-search-contexts-dropdown-highlight-tour-step', 'true')
         })
         await driver.page.goto(driver.sourcegraphBaseUrl + '/search')
