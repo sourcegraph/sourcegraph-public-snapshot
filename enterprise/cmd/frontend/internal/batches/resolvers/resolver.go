@@ -1501,7 +1501,8 @@ func (r *Resolver) ExecuteBatchSpec(ctx context.Context, args *graphqlbackend.Ex
 		return nil, ErrIDIsZero{}
 	}
 
-	batchSpec, err := service.New(r.store).ExecuteBatchSpec(ctx, service.ExecuteBatchSpecOpts{
+	svc := service.New(r.store)
+	batchSpec, err := svc.ExecuteBatchSpec(ctx, service.ExecuteBatchSpecOpts{
 		BatchSpecRandID: batchSpecRandID,
 		// TODO: args not yet implemented: NoCache, AutoApply
 	})
@@ -1581,7 +1582,8 @@ func (r *Resolver) ReplaceBatchSpecInput(ctx context.Context, args *graphqlbacke
 		return nil, ErrIDIsZero{}
 	}
 
-	batchSpec, err := service.New(r.store).ReplaceBatchSpecInput(ctx, service.ReplaceBatchSpecInputOpts{
+	svc := service.New(r.store)
+	batchSpec, err := svc.ReplaceBatchSpecInput(ctx, service.ReplaceBatchSpecInputOpts{
 		BatchSpecRandID:  batchSpecRandID,
 		RawSpec:          args.BatchSpec,
 		AllowIgnored:     args.AllowIgnored,

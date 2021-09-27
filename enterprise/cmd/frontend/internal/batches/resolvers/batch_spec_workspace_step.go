@@ -9,6 +9,7 @@ import (
 )
 
 type batchSpecWorkspaceStepResolver struct {
+	si       stepInfo
 	store    *store.Store
 	repo     *graphqlbackend.RepositoryResolver
 	baseRev  string
@@ -101,7 +102,7 @@ func (r *batchSpecWorkspaceStepResolver) StartedAt() *graphqlbackend.DateTime {
 
 func (r *batchSpecWorkspaceStepResolver) FinishedAt() *graphqlbackend.DateTime {
 	for _, l := range r.logLines {
-		if l.Operation == batcheslib.LogEventOperationTaskStep && l.Status == batcheslib.LogEventStatusSuccess {
+		if l.Operation == batcheslib.LogEventOperationTaskStep && (l.Status == batcheslib.LogEventStatusSuccess || l.Status == batcheslib.LogEventStatusFailure) {
 			if v, ok := l.Metadata["step"]; ok {
 				if int(v.(float64)-1) == r.index {
 					return &graphqlbackend.DateTime{Time: l.Timestamp}
@@ -113,7 +114,26 @@ func (r *batchSpecWorkspaceStepResolver) FinishedAt() *graphqlbackend.DateTime {
 }
 
 func (r *batchSpecWorkspaceStepResolver) ExitCode() *int32 {
-	// TODO(ssbc): not implemented
+	for _, l := range r.logLines {
+		if l.Operation == batcheslib.LogEventOperationTaskStep && l.Status == batcheslib.LogEventStatusSuccess {
+			if v, ok := l.Metadata["step"]; ok {
+				if int(v.(float64)-1) == r.index {
+					var zero int32 = 0
+					return &zero
+				}
+			}
+		}
+		if l.Operation == batcheslib.LogEventOperationTaskStep && l.Status == batcheslib.LogEventStatusFailure {
+			if v, ok := l.Metadata["step"]; ok {
+				if int(v.(float64)-1) == r.index {
+					if e, ok := l.Metadata["exitCode"]; ok {
+						code := int32(e.(float64))
+						return &code
+					}
+				}
+			}
+		}
+	}
 	return nil
 }
 

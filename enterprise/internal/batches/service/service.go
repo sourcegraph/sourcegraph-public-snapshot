@@ -250,13 +250,13 @@ func (s *Service) ReplaceBatchSpecInput(ctx context.Context, opts ReplaceBatchSp
 		tr.Finish()
 	}()
 
-	// Before we hit the database, validate the new spec
+	// Before we hit the database, validate the new spec.
 	newSpec, err := btypes.NewBatchSpecFromRaw(opts.RawSpec)
 	if err != nil {
 		return nil, err
 	}
 
-	// Make sure the user has access
+	// Make sure the user has access.
 	batchSpec, err = s.store.GetBatchSpec(ctx, store.GetBatchSpecOpts{RandID: opts.BatchSpecRandID})
 	if err != nil {
 		return nil, err
@@ -268,7 +268,7 @@ func (s *Service) ReplaceBatchSpecInput(ctx context.Context, opts ReplaceBatchSp
 		return nil, err
 	}
 
-	// Start transaction
+	// Start transaction.
 	tx, err := s.store.Transact(ctx)
 	if err != nil {
 		return nil, err
