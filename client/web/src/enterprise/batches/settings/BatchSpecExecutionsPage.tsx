@@ -55,7 +55,7 @@ export const BatchSpecExecutionsPage: React.FunctionComponent<BatchSpecExecution
                     pluralNoun="executions"
                     listClassName={styles.executionsGrid}
                     listComponent="div"
-                    className="filtered-connection__centered-summary"
+                    withCenteredSummary={true}
                     headComponent={ExecutionsHeader}
                     cursorPaging={true}
                     noSummaryIfAllNodesVisible={true}

@@ -286,7 +286,6 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                     className="container"
                   >
                     <FilteredConnection
-                      className="filtered-connection__centered-summary"
                       cursorPaging={true}
                       defaultFirst={10}
                       emptyElement={
@@ -317,12 +316,12 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                       pluralNoun="code monitors"
                       queryConnection={[Function]}
                       useURLQuery={true}
+                      withCenteredSummary={true}
                     >
-                      <ConnectionContainer
-                        className="filtered-connection__centered-summary"
-                      >
+                      <ConnectionContainer>
                         <div
-                          className="filtered-connection test-filtered-connection filtered-connection--noncompact filtered-connection__centered-summary"
+                          className="normal noncompact"
+                          data-testid="filtered-connection"
                         >
                           <ConnectionNodes
                             connection={
@@ -625,18 +624,21 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                             onShowMore={[Function]}
                             pluralNoun="code monitors"
                             query=""
+                            withCenteredSummary={true}
                           >
-                            <SummaryContainer>
+                            <SummaryContainer
+                              centered={true}
+                            >
                               <div
-                                className="filtered-connection__summary-container"
+                                className="normal centered"
                               />
                             </SummaryContainer>
                             <ConnectionList
                               as="ul"
                             >
                               <ul
-                                className="filtered-connection__nodes"
-                                data-testid="nodes"
+                                className="normal"
+                                data-testid="filtered-connection-nodes"
                               >
                                 <CodeMonitorNode
                                   isSiteAdminUser={false}
@@ -1730,11 +1732,14 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                                 </CodeMonitorNode>
                               </ul>
                             </ConnectionList>
-                            <SummaryContainer>
+                            <SummaryContainer
+                              centered={true}
+                            >
                               <div
-                                className="filtered-connection__summary-container"
+                                className="normal centered"
                               >
                                 <ConnectionSummary
+                                  centered={true}
                                   connection={
                                     Object {
                                       "nodes": Array [
@@ -2338,7 +2343,6 @@ exports[`CodeMonitoringListPage Code monitoring page with less than 10 results 1
                     className="container"
                   >
                     <FilteredConnection
-                      className="filtered-connection__centered-summary"
                       cursorPaging={true}
                       defaultFirst={10}
                       emptyElement={
@@ -2369,12 +2373,12 @@ exports[`CodeMonitoringListPage Code monitoring page with less than 10 results 1
                       pluralNoun="code monitors"
                       queryConnection={[Function]}
                       useURLQuery={true}
+                      withCenteredSummary={true}
                     >
-                      <ConnectionContainer
-                        className="filtered-connection__centered-summary"
-                      >
+                      <ConnectionContainer>
                         <div
-                          className="filtered-connection test-filtered-connection filtered-connection--noncompact filtered-connection__centered-summary"
+                          className="normal noncompact"
+                          data-testid="filtered-connection"
                         >
                           <ConnectionNodes
                             connection={
@@ -2495,18 +2499,21 @@ exports[`CodeMonitoringListPage Code monitoring page with less than 10 results 1
                             onShowMore={[Function]}
                             pluralNoun="code monitors"
                             query=""
+                            withCenteredSummary={true}
                           >
-                            <SummaryContainer>
+                            <SummaryContainer
+                              centered={true}
+                            >
                               <div
-                                className="filtered-connection__summary-container"
+                                className="normal centered"
                               />
                             </SummaryContainer>
                             <ConnectionList
                               as="ul"
                             >
                               <ul
-                                className="filtered-connection__nodes"
-                                data-testid="nodes"
+                                className="normal"
+                                data-testid="filtered-connection-nodes"
                               >
                                 <CodeMonitorNode
                                   isSiteAdminUser={false}
@@ -2837,11 +2844,14 @@ exports[`CodeMonitoringListPage Code monitoring page with less than 10 results 1
                                 </CodeMonitorNode>
                               </ul>
                             </ConnectionList>
-                            <SummaryContainer>
+                            <SummaryContainer
+                              centered={true}
+                            >
                               <div
-                                className="filtered-connection__summary-container"
+                                className="normal centered"
                               >
                                 <ConnectionSummary
+                                  centered={true}
                                   connection={
                                     Object {
                                       "nodes": Array [
@@ -3263,7 +3273,6 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                     className="container"
                   >
                     <FilteredConnection
-                      className="filtered-connection__centered-summary"
                       cursorPaging={true}
                       defaultFirst={10}
                       emptyElement={
@@ -3294,12 +3303,12 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                       pluralNoun="code monitors"
                       queryConnection={[Function]}
                       useURLQuery={true}
+                      withCenteredSummary={true}
                     >
-                      <ConnectionContainer
-                        className="filtered-connection__centered-summary"
-                      >
+                      <ConnectionContainer>
                         <div
-                          className="filtered-connection test-filtered-connection filtered-connection--noncompact filtered-connection__centered-summary"
+                          className="normal noncompact"
+                          data-testid="filtered-connection"
                         >
                           <ConnectionNodes
                             connection={
@@ -3654,18 +3663,21 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                             onShowMore={[Function]}
                             pluralNoun="code monitors"
                             query=""
+                            withCenteredSummary={true}
                           >
-                            <SummaryContainer>
+                            <SummaryContainer
+                              centered={true}
+                            >
                               <div
-                                className="filtered-connection__summary-container"
+                                className="normal centered"
                               />
                             </SummaryContainer>
                             <ConnectionList
                               as="ul"
                             >
                               <ul
-                                className="filtered-connection__nodes"
-                                data-testid="nodes"
+                                className="normal"
+                                data-testid="filtered-connection-nodes"
                               >
                                 <CodeMonitorNode
                                   isSiteAdminUser={false}
@@ -4977,11 +4989,14 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                                 </CodeMonitorNode>
                               </ul>
                             </ConnectionList>
-                            <SummaryContainer>
+                            <SummaryContainer
+                              centered={true}
+                            >
                               <div
-                                className="filtered-connection__summary-container"
+                                className="normal centered"
                               >
                                 <ConnectionSummary
+                                  centered={true}
                                   connection={
                                     Object {
                                       "nodes": Array [
@@ -5324,7 +5339,7 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                                   pluralNoun="code monitors"
                                 >
                                   <p
-                                    className="filtered-connection__summary"
+                                    className="centered normal"
                                     data-testid="summary"
                                   >
                                     <small>
@@ -5340,10 +5355,11 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                                   </p>
                                 </ConnectionSummary>
                                 <ShowMoreButton
+                                  centered={true}
                                   onClick={[Function]}
                                 >
                                   <button
-                                    className="btn btn-sm filtered-connection__show-more btn-link"
+                                    className="btn btn-sm normal noncompact centered btn-link"
                                     onClick={[Function]}
                                     type="button"
                                   >

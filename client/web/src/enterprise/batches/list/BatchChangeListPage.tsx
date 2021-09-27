@@ -148,7 +148,7 @@ export const BatchChangeListPage: React.FunctionComponent<BatchChangeListPagePro
                         pluralNoun="batch changes"
                         listComponent="div"
                         listClassName={styles.batchChangeListPageGrid}
-                        className="filtered-connection__centered-summary"
+                        withCenteredSummary={true}
                         cursorPaging={true}
                         noSummaryIfAllNodesVisible={true}
                         emptyElement={<BatchChangeListEmptyElement location={location} />}
