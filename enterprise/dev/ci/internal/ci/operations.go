@@ -21,13 +21,18 @@ import (
 // arguments to create variations of specific Operations (e.g. with different arguments).
 type Operation func(*bk.Pipeline)
 
-// CoreTestOperations is a core set of tests that should be run in most CI cases.
+// CoreTestOperations is a core set of tests that should be run in most CI cases. More
+// notably, this is what is used to define operations that run on PRs. Please read the
+// following notes:
 //
 // Operations should ONLY be ADDITIVE based on changedFiles. Please do not remove steps
 // after they are added. changedFiles can be nil to run all tests.
 //
 // isMain should be used ONLY to adjust the behaviour of added steps, e.g. by adding flags,
 // and not as a condition for adding steps or commands.
+//
+// If the conditions for the addition of an operation cannot be expressed using the above
+// arguments, please add it from the switch case within `GeneratePipeline` instead.
 func CoreTestOperations(changedFiles ChangedFiles, isMain bool) []Operation {
 	// Special-case branches provide a nil changedFiles to only run all checks.
 	runAll := len(changedFiles) == 0
