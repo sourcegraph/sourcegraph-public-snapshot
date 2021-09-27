@@ -45,6 +45,12 @@ function getModeFromExtension(extension: string): string | undefined {
         case 'ads':
             return 'ada'
 
+        // Apex
+        case 'cls':
+        case 'apex':
+        case 'trigger':
+            return 'apex'
+
         // Actionscript
         case 'as':
             return 'actionscript'
