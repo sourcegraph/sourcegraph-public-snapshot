@@ -46,6 +46,7 @@ export const useVisitorCounter = create<VisitorStore>((set, get) => ({
 
 `create` passes functions to the callback for writing to and reading from the
 store:
+
   - `set` accepts a partial state object (or a function returning a partial
       state object) and will merge that value into the current state. 
   - `get` returns the current state object. This is useful for actions that
