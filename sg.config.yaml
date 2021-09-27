@@ -328,14 +328,17 @@ commands:
     env:
       DOCSITE_VERSION: v1.7.0 # make sure to update all DOCSITE_VERSION
 
-  syntect_server:
+  syntax-highlighter:
     ignoreStdout: true
     ignoreStderr: true
     cmd: |
-      docker run --name=syntect_server --rm -p9238:9238 \
+      docker run --name=syntax-highlighter --rm -p9238:9238 \
       -e WORKERS=1 -e ROCKET_ADDRESS=0.0.0.0 \
       sourcegraph/syntax-highlighter@sha256:92a5c181dbf2d8aead5171c985139bf38c496bef2ac98afbd64c3612967fe5cc
-    install: docker inspect syntect_server >/dev/null 2>&1 && docker rm -f syntect_server || true
+    install: |
+      # Remove containers by the old name, too.
+      docker inspect syntect_server >/dev/null 2>&1 && docker rm -f syntect_server || true
+      docker inspect syntax-highlighter >/dev/null 2>&1 && docker rm -f syntax-highlighter || true
     env:
       # This is not needed actually
       INSECURE_DEV: 1
@@ -679,7 +682,7 @@ commandsets:
       - web
       - caddy
       - docsite
-      - syntect_server
+      - syntax-highlighter
       - github-proxy
       - zoekt-indexserver-0
       - zoekt-indexserver-1
@@ -702,7 +705,7 @@ commandsets:
       - query-runner
       - caddy
       - docsite
-      - syntect_server
+      - syntax-highlighter
       - github-proxy
       - zoekt-indexserver-0
       - zoekt-indexserver-1
@@ -732,7 +735,7 @@ commandsets:
       - query-runner
       - caddy
       - docsite
-      - syntect_server
+      - syntax-highlighter
       - github-proxy
       - zoekt-indexserver-0
       - zoekt-indexserver-1
@@ -758,7 +761,7 @@ commandsets:
       - query-runner
       - caddy
       - docsite
-      - syntect_server
+      - syntax-highlighter
       - github-proxy
       - zoekt-indexserver-0
       - zoekt-indexserver-1
@@ -803,7 +806,7 @@ commandsets:
       - query-runner
       - caddy
       - docsite
-      - syntect_server
+      - syntax-highlighter
       - github-proxy
       - zoekt-indexserver-0
       - zoekt-indexserver-1

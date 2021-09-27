@@ -242,7 +242,7 @@ commandsets:
     - watch
     - caddy
     - web
-    - syntect_server
+    - syntax-highlighter
     - zoekt-indexserver-0
     - zoekt-indexserver-1
     - zoekt-webserver-0
@@ -265,7 +265,7 @@ commandsets:
     - watch
     - caddy
     - web
-    - syntect_server
+    - syntax-highlighter
     - zoekt-indexserver-0
     - zoekt-indexserver-1
     - zoekt-webserver-0
