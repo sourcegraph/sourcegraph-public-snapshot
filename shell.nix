@@ -62,7 +62,6 @@ in pkgs.mkShell {
     pkgs.git
 
     # cgo dependency for symbols. TODO build with nix?
-    pkgs.pcre
     pkgs.sqlite
     pkgs.pkg-config
 

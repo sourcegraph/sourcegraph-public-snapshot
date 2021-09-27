@@ -22,7 +22,7 @@ Below are instructions to install these dependencies:
 
 > NOTE: You can choose to install and run Redis and/or PostgreSQL **with or without Docker**. The following instructions will describe both options.
 > What's the better option?
-> 
+>
 > - Running within a container provides some advantages such as storing the data separately from the container, you do not need to run it as a system service and its easy to use different database versions or multiple databases.
 > - Running as system services might yield better performance, especially on macOS.
 > - No matter which option you choose, docker is required because the development server starts additional docker containers.
@@ -41,10 +41,12 @@ Below are instructions to install these dependencies:
 3.  Install Go, Yarn, Git, Comby, SQLite tools, and jq with the following command:
 
     ```
-    brew install go yarn git gnu-sed comby sqlite pcre FiloSottile/musl-cross/musl-cross jq
+    brew install go yarn git gnu-sed comby pcre sqlite jq
     ```
 
 4. Choose to run Postgres and Redis manually (Option a.) or via Docker (Option b.)
+
+    a. (without docker) Install PostgreSQL and Redis
 
     a. **Without Docker**
 
@@ -159,7 +161,7 @@ Below are instructions to install these dependencies:
 3. Install dependencies:
 
     ```
-    sudo apt install -y make git-all libpcre3-dev libsqlite3-dev pkg-config golang-go musl-tools docker-ce docker-ce-cli containerd.io yarn jq libnss3-tools
+    sudo apt install -y make git-all libpcre3-dev libsqlite3-dev pkg-config golang-go docker-ce docker-ce-cli containerd.io yarn jq libnss3-tools
 
     # Install comby
     curl -L https://github.com/comby-tools/comby/releases/download/0.11.3/comby-0.11.3-x86_64-linux.tar.gz | tar xvz
