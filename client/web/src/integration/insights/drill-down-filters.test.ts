@@ -67,7 +67,7 @@ describe('Backend insight drill down filters', () => {
         await driver.page.goto(driver.sourcegraphBaseUrl + '/insights/dashboards/all')
         await driver.page.waitForSelector('[data-testid="line-chart__content"] svg circle')
 
-        await driver.page.click('button[aria-label="Filters button"]')
+        await driver.page.click('button[aria-label="Filters"]')
         await driver.page.waitForSelector('[role="dialog"][aria-label="Drill-down filters panel"]')
         await driver.page.type('[name="excludeRepoRegexp"]', 'github.com/sourcegraph/sourcegraph')
 
@@ -78,7 +78,7 @@ describe('Backend insight drill down filters', () => {
         })
 
         // In this time we should see active button state (filter dot should appear if we've got some filters)
-        await driver.page.click('button[aria-label="Active filters button"]')
+        await driver.page.click('button[aria-label="Active filters"]')
 
         const variables = await testContext.waitForGraphQLRequest(async () => {
             await driver.page.click('[role="dialog"][aria-label="Drill-down filters panel"] button[type="submit"]')
@@ -140,7 +140,7 @@ describe('Backend insight drill down filters', () => {
         await driver.page.goto(driver.sourcegraphBaseUrl + '/insights/dashboards/all')
         await driver.page.waitForSelector('[data-testid="line-chart__content"] svg circle')
 
-        await driver.page.click('button[aria-label="Active filters button"]')
+        await driver.page.click('button[aria-label="Active filters"]')
         await driver.page.waitForSelector('[role="dialog"][aria-label="Drill-down filters panel"]')
 
         await driver.page.click(
