@@ -416,11 +416,12 @@ func triggerE2EandQA(opts e2eAndQAOptions) Operation {
 			bk.Async(opts.async),
 			bk.Build(customOptions),
 		)
-		pipeline.AddTrigger(":chromium: Trigger Code Intel QA",
-			bk.Trigger("code-intel-qa"),
-			bk.Async(opts.async),
-			bk.Build(customOptions),
-		)
+		// code-intel-qa is disabled, see https://github.com/sourcegraph/sourcegraph/issues/25387
+		// pipeline.AddTrigger(":chromium: Trigger Code Intel QA",
+		// 	bk.Trigger("code-intel-qa"),
+		// 	bk.Async(opts.async),
+		// 	bk.Build(customOptions),
+		// )
 	}
 }
 
