@@ -12,12 +12,17 @@ import (
 
 	"github.com/sourcegraph/go-ctags"
 
+	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/sqliteutil"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	symbolsclient "github.com/sourcegraph/sourcegraph/internal/symbols"
 )
+
+func init() {
+	sqliteutil.SetLocalLibpath()
+}
 
 func TestIsLiteralEquality(t *testing.T) {
 	type TestCase struct {
@@ -57,6 +62,8 @@ func TestIsLiteralEquality(t *testing.T) {
 }
 
 func TestService(t *testing.T) {
+	sqliteutil.MustRegisterSqlite3WithPcre()
+
 	tmpDir, err := os.MkdirTemp("", "")
 	if err != nil {
 		t.Fatal(err)

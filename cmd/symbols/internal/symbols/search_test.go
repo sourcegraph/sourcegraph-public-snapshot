@@ -10,10 +10,13 @@ import (
 	"github.com/inconshreveable/log15"
 
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/protocol"
+	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/sqliteutil"
 	"github.com/sourcegraph/sourcegraph/internal/testutil"
 )
 
 func BenchmarkSearch(b *testing.B) {
+	sqliteutil.MustRegisterSqlite3WithPcre()
+
 	log15.Root().SetHandler(log15.LvlFilterHandler(log15.LvlError, log15.Root().GetHandler()))
 
 	service := Service{
