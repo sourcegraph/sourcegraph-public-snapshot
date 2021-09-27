@@ -2,6 +2,7 @@ import * as H from 'history'
 import React, { useCallback } from 'react'
 
 import { Form } from '@sourcegraph/branded/src/components/Form'
+import { useCommandPaletteStore } from '@sourcegraph/shared/src/commandPalette/v2/CommandPalette'
 import { ActivationProps } from '@sourcegraph/shared/src/components/activation/Activation'
 import { VersionContextProps } from '@sourcegraph/shared/src/search/util'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
@@ -61,6 +62,8 @@ export const SearchNavbarItem: React.FunctionComponent<Props> = (props: Props) =
         [props, queryState]
     )
 
+    const toggleCommandPaletteIsOpen = useCommandPaletteStore(state => state.toggleIsOpen)
+
     return (
         <Form
             className="search--navbar-item d-flex align-items-flex-start flex-grow-1 flex-shrink-past-contents"
@@ -77,6 +80,7 @@ export const SearchNavbarItem: React.FunctionComponent<Props> = (props: Props) =
                 isSearchOnboardingTourVisible={false}
                 hideHelpButton={isSearchPage}
             />
+            <button type="button" onClick={toggleCommandPaletteIsOpen}>CMDPAL</button>
         </Form>
     )
 }
