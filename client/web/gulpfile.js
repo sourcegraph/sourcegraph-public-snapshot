@@ -106,6 +106,7 @@ async function webpackDevelopmentServer() {
     hot: !process.env.NO_HOT,
     host: DEV_SERVER_LISTEN_ADDR.host,
     port: DEV_SERVER_LISTEN_ADDR.port,
+    compress: false,
     client: {
       overlay: false,
       webSocketTransport: 'ws',
