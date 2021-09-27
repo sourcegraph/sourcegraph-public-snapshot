@@ -310,6 +310,22 @@ export function createExtensionHostAPI(state: ExtensionHostState): FlatExtension
             }
         },
 
+        getActiveTextDocument: () =>
+            proxySubscribable(
+                state.activeViewComponentChanges.pipe(
+                    map(activeViewComponent => {
+                        if (activeViewComponent?.type === 'CodeEditor') {
+                            const {
+                                resource: uri,
+                                document: { text, languageId },
+                            } = activeViewComponent
+                            return { uri, text, languageId }
+                        }
+                        return null
+                    })
+                )
+            ),
+
         // For panel view location provider arguments
         getActiveCodeEditorPosition: () =>
             proxySubscribable(

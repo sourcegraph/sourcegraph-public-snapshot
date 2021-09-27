@@ -105,6 +105,7 @@ export interface FlatExtensionHostAPI {
 
     // TEXT DOCUMENTS
     addTextDocumentIfNotExists: (textDocumentData: TextDocumentData) => void
+    getActiveTextDocument: () => ProxySubscribable<TextDocumentData | null>
 
     // VIEWERS
     getActiveCodeEditorPosition: () => ProxySubscribable<TextDocumentPositionParameters | null>

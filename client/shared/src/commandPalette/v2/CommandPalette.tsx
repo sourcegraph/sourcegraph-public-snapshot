@@ -1,9 +1,9 @@
-import Dialog from '@reach/dialog'
+import { DialogContent, DialogOverlay } from '@reach/dialog'
 import { Remote } from 'comlink'
 import * as H from 'history'
 import React, { useState, useMemo, useCallback, useEffect } from 'react'
 import { from } from 'rxjs'
-import { filter, switchMap } from 'rxjs/operators'
+import { filter, map, switchMap } from 'rxjs/operators'
 
 import { ActionItemAction } from '../../actions/ActionItem'
 import { wrapRemoteObservable } from '../../api/client/api/common'
@@ -17,6 +17,7 @@ import { TelemetryProps } from '../../telemetry/telemetryService'
 import { memoizeObservable } from '../../util/memoizeObservable'
 import { useObservable } from '../../util/useObservable'
 
+import styles from './CommandPalette.module.scss'
 import { CommandListResult } from './components/CommandListResult'
 import { CommandsModesList } from './components/CommandsModesList'
 import { FuzzyFinderResult } from './components/FuzzyFinderResult'
@@ -131,7 +132,6 @@ export interface CommandPaletteProps
         PlatformContextProps<'forceUpdateTooltip' | 'settings'>,
         TelemetryProps {
     initialIsOpen?: boolean
-    onDismiss?: () => void
     location: H.Location
 }
 
@@ -141,7 +141,6 @@ export interface CommandPaletteProps
 export const CommandPalette: React.FC<CommandPaletteProps> = ({
     initialIsOpen = false,
     // TODO: add ability to set default/initial mode
-    onDismiss,
     extensionsController,
     platformContext,
     telemetryService,
@@ -166,6 +165,29 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [])
 
+    const activeTextDocument = useObservable(
+        useMemo(
+            () =>
+                from(extensionsController.extHostAPI).pipe(
+                    switchMap(extensionHostAPI => wrapRemoteObservable(extensionHostAPI.getActiveTextDocument()))
+                ),
+            [extensionsController]
+        )
+    )
+
+    const workspaceRoot = useObservable(
+        useMemo(
+            () =>
+                from(extensionsController.extHostAPI).pipe(
+                    switchMap(extensionHostAPI => wrapRemoteObservable(extensionHostAPI.getWorkspaceRoots())),
+                    map(workspaceRoots => workspaceRoots[0])
+                ),
+            [extensionsController]
+        )
+    )
+
+    console.log({ activeTextDocument, workspaceRoot })
+
     const value = mode ? text.slice(1) : text
 
     return (
@@ -173,40 +195,53 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
         <>
             <ShortcutController actions={actionsWithShortcut} onMatch={onRunAction} />
             {state.isOpen && (
-                <Dialog className="modal-body p-4 rounded border" isOpen={state.isOpen} onDismiss={onDismiss}>
-                    <div>
-                        <h1>cmdpal</h1>
-                        <input
-                            autoComplete="off"
-                            spellCheck="false"
-                            aria-autocomplete="list"
-                            className="form-control py-1"
-                            placeholder="Search files by name (append : to jump to a line or @ to go to a symbol or > to search for a command)"
-                            value={text}
-                            onChange={event => setText(event.target.value)}
-                            type="text"
-                        />
-                    </div>
-                    {!mode && <CommandsModesList />}
-                    {mode === CommandPaletteMode.Command && (
-                        <CommandListResult
-                            actions={actions}
-                            value={value}
-                            onRunAction={action => {
-                                onRunAction(action)
-                                onClose()
-                            }}
-                        />
-                    )}
-                    {mode === CommandPaletteMode.RecentSearches && (
-                        <RecentSearchesResult value={value} onClick={onClose} />
-                    )}
-                    {/* TODO: Only when repo open */}
-                    {mode === CommandPaletteMode.Fuzzy && <FuzzyFinderResult value={value} onClick={onClose} />}
-                    {/* TODO: Only when code editor open (possibly only when single open TODO) */}
-                    {mode === CommandPaletteMode.JumpToLine && <JumpToLineResult value={value} onClick={onClose} />}
-                    {mode === CommandPaletteMode.JumpToSymbol && <JumpToSymbolResult value={value} onClick={onClose} />}
-                </Dialog>
+                <DialogOverlay isOpen={state.isOpen} onDismiss={onClose} className={styles.dialogOverlay}>
+                    <DialogContent className="modal-body p-4 rounded border shadow-lg">
+                        <div>
+                            <h1>cmdpal</h1>
+                            <input
+                                autoComplete="off"
+                                spellCheck="false"
+                                aria-autocomplete="list"
+                                className="form-control py-1"
+                                placeholder="Search files by name (append : to jump to a line or @ to go to a symbol or > to search for a command)"
+                                value={text}
+                                onChange={event => setText(event.target.value)}
+                                type="text"
+                            />
+                        </div>
+                        {!mode && (
+                            <CommandsModesList
+                                hasActiveTextDocument={!!activeTextDocument}
+                                hasWorkspaceRoot={!!workspaceRoot}
+                            />
+                        )}
+                        {mode === CommandPaletteMode.Command && (
+                            <CommandListResult
+                                actions={actions}
+                                value={value}
+                                onRunAction={action => {
+                                    onRunAction(action)
+                                    onClose()
+                                }}
+                            />
+                        )}
+                        {mode === CommandPaletteMode.RecentSearches && (
+                            <RecentSearchesResult value={value} onClick={onClose} />
+                        )}
+                        {/* TODO: Only when repo open */}
+                        {mode === CommandPaletteMode.Fuzzy && (
+                            <FuzzyFinderResult value={value} onClick={onClose} workspaceRoot={workspaceRoot} />
+                        )}
+                        {/* TODO: Only when code editor open (possibly only when single open TODO) */}
+                        {mode === CommandPaletteMode.JumpToLine && (
+                            <JumpToLineResult value={value} onClick={onClose} textDocumentData={activeTextDocument} />
+                        )}
+                        {mode === CommandPaletteMode.JumpToSymbol && (
+                            <JumpToSymbolResult value={value} onClick={onClose} textDocumentData={activeTextDocument} />
+                        )}
+                    </DialogContent>
+                </DialogOverlay>
             )}
         </>
     )

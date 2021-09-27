@@ -4,6 +4,7 @@ import { Observable } from 'rxjs'
 
 import { ResizablePanel } from '@sourcegraph/branded/src/components/panel/Panel'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
+import { CommandPalette } from '@sourcegraph/shared/src/commandPalette/v2/CommandPalette'
 import { ActivationProps } from '@sourcegraph/shared/src/components/activation/Activation'
 import { FetchFileParameters } from '@sourcegraph/shared/src/components/CodeExcerpt'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
@@ -258,6 +259,12 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
             <KeyboardShortcutsHelp
                 keyboardShortcutForShow={KEYBOARD_SHORTCUT_SHOW_HELP}
                 keyboardShortcuts={props.keyboardShortcuts}
+            />
+            <CommandPalette
+                location={props.location}
+                extensionsController={props.extensionsController}
+                platformContext={props.platformContext}
+                telemetryService={props.telemetryService}
             />
             <GlobalAlerts authenticatedUser={props.authenticatedUser} settingsCascade={props.settingsCascade} />
             {!isSiteInit && <SurveyToast authenticatedUser={props.authenticatedUser} />}

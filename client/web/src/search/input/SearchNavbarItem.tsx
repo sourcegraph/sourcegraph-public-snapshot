@@ -2,7 +2,7 @@ import * as H from 'history'
 import React, { useCallback } from 'react'
 
 import { Form } from '@sourcegraph/branded/src/components/Form'
-import { useCommandPaletteStore } from '@sourcegraph/shared/src/commandPalette/v2/CommandPalette'
+import { useCommandPaletteStore } from '@sourcegraph/shared/src/commandPalette/v2/store'
 import { ActivationProps } from '@sourcegraph/shared/src/components/activation/Activation'
 import { VersionContextProps } from '@sourcegraph/shared/src/search/util'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
@@ -62,6 +62,7 @@ export const SearchNavbarItem: React.FunctionComponent<Props> = (props: Props) =
         [props, queryState]
     )
 
+    // TODO(tj) TODO(erzhan) command palette button style
     const toggleCommandPaletteIsOpen = useCommandPaletteStore(state => state.toggleIsOpen)
 
     return (
@@ -80,7 +81,9 @@ export const SearchNavbarItem: React.FunctionComponent<Props> = (props: Props) =
                 isSearchOnboardingTourVisible={false}
                 hideHelpButton={isSearchPage}
             />
-            <button type="button" onClick={toggleCommandPaletteIsOpen}>CMDPAL</button>
+            <button type="button" onClick={toggleCommandPaletteIsOpen}>
+                CMDPAL
+            </button>
         </Form>
     )
 }
