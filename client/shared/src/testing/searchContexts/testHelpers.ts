@@ -33,22 +33,23 @@ interface ListSearchContexts {
     pageInfo: { hasNextPage: boolean; endCursor: Maybe<string> }
 }
 
-export function mockFetchAutoDefinedSearchContexts(numberContexts = 0): Observable<ISearchContext[]> {
-    return of(
-        range(0, numberContexts).map(index => ({
-            __typename: 'SearchContext',
-            id: index.toString(),
-            spec: `auto-defined-${index}`,
-            name: `auto-defined-${index}`,
-            namespace: null,
-            public: true,
-            autoDefined: true,
-            viewerCanManage: false,
-            description: 'Repositories on Sourcegraph',
-            repositories: [],
-            updatedAt: subDays(new Date(), 1).toISOString(),
-        })) as ISearchContext[]
-    )
+export function mockFetchAutoDefinedSearchContexts(numberContexts = 0): () => Observable<ISearchContext[]> {
+    return () =>
+        of(
+            range(0, numberContexts).map(index => ({
+                __typename: 'SearchContext',
+                id: index.toString(),
+                spec: `auto-defined-${index}`,
+                name: `auto-defined-${index}`,
+                namespace: null,
+                public: true,
+                autoDefined: true,
+                viewerCanManage: false,
+                description: 'Repositories on Sourcegraph',
+                repositories: [],
+                updatedAt: subDays(new Date(), 1).toISOString(),
+            })) as ISearchContext[]
+        )
 }
 
 export function mockFetchSearchContexts({

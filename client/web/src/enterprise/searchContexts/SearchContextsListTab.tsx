@@ -1,5 +1,5 @@
 import classNames from 'classnames'
-import React, { useCallback } from 'react'
+import React, { useCallback, useMemo } from 'react'
 import { useHistory, useLocation } from 'react-router'
 import { catchError } from 'rxjs/operators'
 
@@ -61,7 +61,9 @@ export const SearchContextsListTab: React.FunctionComponent<SearchContextsListTa
         [authenticatedUser, fetchSearchContexts, getUserSearchContextNamespaces]
     )
 
-    const autoDefinedSearchContexts = useObservable(fetchAutoDefinedSearchContexts.pipe(catchError(() => [])))
+    const autoDefinedSearchContexts = useObservable(
+        useMemo(() => fetchAutoDefinedSearchContexts().pipe(catchError(() => [])), [fetchAutoDefinedSearchContexts])
+    )
 
     const ownerNamespaceFilterValues: FilteredConnectionFilterValue[] = authenticatedUser
         ? [

@@ -107,21 +107,21 @@ export function convertVersionContextToSearchContext(
     )
 }
 
-export const fetchAutoDefinedSearchContexts = defer(() =>
-    requestGraphQL<AutoDefinedSearchContextsResult, AutoDefinedSearchContextsVariables>(gql`
+export function fetchAutoDefinedSearchContexts(): Observable<
+    AutoDefinedSearchContextsResult['autoDefinedSearchContexts']
+> {
+    return requestGraphQL<AutoDefinedSearchContextsResult, AutoDefinedSearchContextsVariables>(gql`
         query AutoDefinedSearchContexts {
             autoDefinedSearchContexts {
                 ...SearchContextFields
             }
         }
         ${searchContextFragment}
-    `)
-).pipe(
-    map(dataOrThrowErrors),
-    map(({ autoDefinedSearchContexts }) => autoDefinedSearchContexts as GQL.ISearchContext[]),
-    publishReplay(1),
-    refCount()
-)
+    `).pipe(
+        map(dataOrThrowErrors),
+        map(({ autoDefinedSearchContexts }) => autoDefinedSearchContexts as GQL.ISearchContext[])
+    )
+}
 
 export function getUserSearchContextNamespaces(authenticatedUser: AuthenticatedUser | null): Maybe<Scalars['ID']>[] {
     return authenticatedUser

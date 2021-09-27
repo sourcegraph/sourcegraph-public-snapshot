@@ -20,6 +20,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/search/searchcontexts"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 const maxSearchSuggestions = 100
@@ -485,7 +486,22 @@ func (r *searchResolver) showSearchContextSuggestions(ctx context.Context) ([]Se
 	}
 	searchContextSpec, _ := r.Query.StringValue(query.FieldContext)
 	parsedSearchContextSpec := searchcontexts.ParseSearchContextSpec(searchContextSpec)
-	searchContexts, err := database.SearchContexts(r.db).ListSearchContexts(
+	searchContexts := []*types.SearchContext{}
+
+	autoDefinedSearchContexts, err := searchcontexts.GetAutoDefinedSearchContexts(ctx, r.db)
+	if err != nil {
+		return nil, err
+	}
+	for _, searchContext := range autoDefinedSearchContexts {
+		matchesName := parsedSearchContextSpec.SearchContextName != "" && strings.Contains(searchContext.Name, parsedSearchContextSpec.SearchContextName)
+		matchesNamespace := parsedSearchContextSpec.NamespaceName != "" && (strings.Contains(searchContext.NamespaceUserName, parsedSearchContextSpec.NamespaceName) ||
+			strings.Contains(searchContext.NamespaceOrgName, parsedSearchContextSpec.NamespaceName))
+		if matchesName || matchesNamespace {
+			searchContexts = append(searchContexts, searchContext)
+		}
+	}
+
+	userDefinedSearchContexts, err := database.SearchContexts(r.db).ListSearchContexts(
 		ctx,
 		database.ListSearchContextsPageOptions{First: maxSearchSuggestions},
 		database.ListSearchContextsOptions{
@@ -499,6 +515,7 @@ func (r *searchResolver) showSearchContextSuggestions(ctx context.Context) ([]Se
 		return nil, err
 	}
 
+	searchContexts = append(searchContexts, userDefinedSearchContexts...)
 	searchContextsResolvers := EnterpriseResolvers.searchContextsResolver.SearchContextsToResolvers(searchContexts)
 	suggestions := make([]SearchSuggestionResolver, 0, len(searchContextsResolvers))
 	for i, searchContextResolver := range searchContextsResolvers {
