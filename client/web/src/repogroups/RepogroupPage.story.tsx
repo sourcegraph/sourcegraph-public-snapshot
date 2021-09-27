@@ -5,17 +5,17 @@ import { NEVER } from 'rxjs'
 
 import { ActionItemComponentProps } from '@sourcegraph/shared/src/actions/ActionItem'
 import * as GQL from '@sourcegraph/shared/src/graphql/schema'
+import {
+    mockFetchAutoDefinedSearchContexts,
+    mockFetchSearchContexts,
+    mockGetUserSearchContextNamespaces,
+} from '@sourcegraph/shared/src/testing/searchContexts/testHelpers'
 import { NOOP_SETTINGS_CASCADE } from '@sourcegraph/shared/src/util/searchTestHelpers'
 import { subtypeOf } from '@sourcegraph/shared/src/util/types'
 
 import { AuthenticatedUser } from '../auth'
 import { WebStory } from '../components/WebStory'
 import { SearchPatternType } from '../graphql-operations'
-import {
-    mockFetchAutoDefinedSearchContexts,
-    mockFetchSearchContexts,
-    mockGetUserSearchContextNamespaces,
-} from '../searchContexts/testHelpers'
 import { ThemePreference } from '../theme'
 
 import { cncf } from './cncf'
@@ -95,6 +95,7 @@ const commonProps = () =>
             return Promise.resolve()
         },
         availableVersionContexts: [],
+        searchContextsEnabled: true,
         showSearchContext: false,
         showSearchContextManagement: false,
         selectedSearchContextSpec: '',

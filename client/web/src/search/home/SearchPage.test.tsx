@@ -4,14 +4,14 @@ import React from 'react'
 import { of } from 'rxjs'
 
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { extensionsController } from '@sourcegraph/shared/src/util/searchTestHelpers'
-
-import { SearchPatternType } from '../../graphql-operations'
 import {
     mockFetchAutoDefinedSearchContexts,
     mockFetchSearchContexts,
     mockGetUserSearchContextNamespaces,
-} from '../../searchContexts/testHelpers'
+} from '@sourcegraph/shared/src/testing/searchContexts/testHelpers'
+import { extensionsController } from '@sourcegraph/shared/src/util/searchTestHelpers'
+
+import { SearchPatternType } from '../../graphql-operations'
 import { ThemePreference } from '../../theme'
 import { authUser } from '../panels/utils'
 
@@ -56,6 +56,7 @@ describe('SearchPage', () => {
         platformContext: {} as any,
         keyboardShortcuts: [],
         versionContext: undefined,
+        searchContextsEnabled: true,
         showSearchContext: false,
         showSearchContextManagement: false,
         selectedSearchContextSpec: '',

@@ -10,13 +10,13 @@ import {
 import { ISearchContext } from '@sourcegraph/shared/src/graphql/schema'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
+import { Page } from '@sourcegraph/web/src/components/Page'
+import { PageTitle } from '@sourcegraph/web/src/components/PageTitle'
 import { PageHeader } from '@sourcegraph/wildcard'
 
-import { AuthenticatedUser } from '../auth'
-import { withAuthenticatedUser } from '../auth/withAuthenticatedUser'
-import { Page } from '../components/Page'
-import { PageTitle } from '../components/PageTitle'
-import { SearchContextProps } from '../search'
+import { AuthenticatedUser } from '../../auth'
+import { withAuthenticatedUser } from '../../auth/withAuthenticatedUser'
+import { SearchContextProps } from '../../search'
 
 import { SearchContextForm } from './SearchContextForm'
 
