@@ -178,6 +178,11 @@ fi
 export NODE_ENV=development
 export NODE_OPTIONS="--max_old_space_size=4096"
 
+# Ensure SQLite for symbols is built
+./dev/libsqlite3-pcre/build.sh
+LIBSQLITE3_PCRE="$(./dev/libsqlite3-pcre/build.sh libpath)"
+export LIBSQLITE3_PCRE
+
 # Increase ulimit (not needed on Windows/WSL)
 # shellcheck disable=SC2015
 type ulimit >/dev/null && ulimit -n 10000 || true

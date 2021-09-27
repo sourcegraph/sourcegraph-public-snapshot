@@ -113,6 +113,10 @@ dll-bundle
 # Extensions
 /client/extension-api/dist
 
+# Symbols service: PCRE extension to sqlite3
+libsqlite3-pcre.dylib
+libsqlite3-pcre.so
+
 # Direnv
 .envrc
 .direnv

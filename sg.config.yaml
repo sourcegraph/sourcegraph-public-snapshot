@@ -222,13 +222,9 @@ commands:
       - cmd/query-runner
 
   symbols:
-    cmd: .bin/symbols
+    cmd: env LIBSQLITE3_PCRE=$(./dev/libsqlite3-pcre/build.sh libpath) .bin/symbols
     install: |
-      # Remove old pcre libs that might still be lying around.
-      # TODO delete these two lines after 2021-10-24 (1 month after removal of pcre).
-      rm -f libsqlite3-pcre.dylib || true
-      rm -f libsqlite3-pcre.so || true
-
+      ./dev/libsqlite3-pcre/build.sh &&
       ./cmd/symbols/build-ctags.sh &&
       go build -o .bin/symbols github.com/sourcegraph/sourcegraph/cmd/symbols
     checkBinary: .bin/symbols
