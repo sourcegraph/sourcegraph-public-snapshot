@@ -3,6 +3,7 @@ import React, { useState, useCallback } from 'react'
 import stringScore from 'string-score'
 
 import { ActionItemAction } from '../../../actions/ActionItem'
+import { HighlightedMatches } from '../../../components/HighlightedMatches'
 
 const KEEP_RECENT_ACTIONS = 10
 const RECENT_ACTIONS_STORAGE_KEY = 'commandList.recentActions'
@@ -93,7 +94,6 @@ interface CommandListResultProps {
     value: string
     onRunAction: (action: ActionItemAction) => void
     actions: ActionItemAction[]
-    children: (label: string, keybindings: string[]) => JSX.Element
 }
 
 export const CommandListResult: React.FC<CommandListResultProps> = ({ actions, value, onRunAction }) => {
@@ -117,11 +117,27 @@ export const CommandListResult: React.FC<CommandListResultProps> = ({ actions, v
     return (
         <>
             {filteredActions?.map(item => {
-                label = [action.category, action.actionItem?.label || action.title || action.command]
+                // TODO: share label between filteritems
+                const label = [
+                    item.action.category,
+                    item.action.actionItem?.label || item.action.title || item.action.command,
+                ]
                     .filter(Boolean)
                     .join(': ')
 
-                return children()
+                return (
+                    <button type="button" key={item.action.id} onClick={(): void => handleRunAction(item)}>
+                        <HighlightedMatches text={label} pattern={value} />
+
+                        {item.keybinding && (
+                            <>
+                                {[...item.keybinding.ordered, ...(item.keybinding.held || [])].map(key => (
+                                    <kbd key={key}>{key}</kbd>
+                                ))}
+                            </>
+                        )}
+                    </button>
+                )
             })}
         </>
     )
