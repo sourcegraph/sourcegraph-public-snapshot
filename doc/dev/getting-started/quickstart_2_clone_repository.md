@@ -10,7 +10,7 @@ git clone https://github.com/sourcegraph/sourcegraph.git
 
 In order to run the local development environment as a Sourcegraph employee, you'll need to clone another repository: [`sourcegraph/dev-private`](https://github.com/sourcegraph/dev-private). It contains convenient preconfigured settings and code host connections.
 
-It needs to be cloned into the same folder as `sourcegraph/sourcegraph`, so they asit alongside each other. To illustrate:
+It needs to be cloned into the same folder as `sourcegraph/sourcegraph`, so they sit alongside each other. To illustrate:
 
 ```
 /dir
