@@ -2,6 +2,7 @@ package search
 
 import (
 	"bytes"
+	"unicode/utf8"
 
 	"github.com/cockroachdb/errors"
 
