@@ -10,7 +10,7 @@
   * [GitHub](../../admin/external_service/github.md#webhooks)
   * [Bitbucket Server](../../admin/external_service/bitbucket_server.md#webhooks)
   * [GitLab](../../admin/external_service/gitlab.md#webhooks)
-1. (Optional) [Control the rate at which Batch Changes will publish changesets on code hosts](../../../admin/config/batch_changes.md#rollout-windows).
+5. (Optional) [Control the rate at which Batch Changes will publish changesets on code hosts](../../../admin/config/batch_changes.md#rollout-windows).
 
 #### Disable Batch Changes
 - [Disable Batch Changes](../explanations/permissions_in_batch_changes.md#disabling-batch-changes).
