@@ -124,27 +124,27 @@ type ResolvingNamespaceMetadata struct {
 }
 
 type PreparingDockerImagesMetadata struct {
-	Done  int
-	Total int
+	Done  int `json:"done,omitempty"`
+	Total int `json:"total,omitempty"`
 }
 
 type DeterminingWorkspaceTypeMetadata struct {
-	Type string
+	Type string `json:"type,omitempty"`
 }
 
 type ResolvingRepositoriesMetadata struct {
-	Unsupported int
-	Ignored     int
-	Count       int
+	Unsupported int `json:"unsupported,omitempty"`
+	Ignored     int `json:"ignored,omitempty"`
+	Count       int `json:"count,omitempty"`
 }
 
 type DeterminingWorkspacesMetadata struct {
-	Count int
+	Count int `json:"count,omitempty"`
 }
 
 type CheckingCacheMetadata struct {
-	CachedSpecsFound int
-	TasksToExecute   int
+	CachedSpecsFound int `json:"cachedSpecsFound,omitempty"`
+	TasksToExecute   int `json:"tasksToExecute,omitempty"`
 }
 
 type JSONLinesTask struct {
@@ -157,83 +157,84 @@ type JSONLinesTask struct {
 }
 
 type ExecutingTasksMetadata struct {
-	Tasks   []JSONLinesTask
-	Skipped bool
-	Error   string
+	Tasks   []JSONLinesTask `json:"tasks,omitempty"`
+	Skipped bool            `json:"skipped,omitempty"`
+	Error   string          `json:"error,omitempty"`
 }
 
 type LogFileKeptMetadata struct {
-	Path string
+	Path string `json:"path,omitempty"`
 }
 
 type UploadingChangesetSpecsMetadata struct {
-	Done  int
-	Total int
+	Done  int `json:"done,omitempty"`
+	Total int `json:"total,omitempty"`
 	// IDs is the slice of GraphQL IDs of the created changeset specs.
-	IDs []string
+	IDs []string `json:"ids,omitempty"`
 }
 
 type CreatingBatchSpecMetadata struct {
-	PreviewURL string
+	PreviewURL string `json:"previewURL,omitempty"`
 }
 
 type ApplyingBatchSpecMetadata struct {
-	BatchChangeURL string
+	BatchChangeURL string `json:"batchChangeURL,omitempty"`
 }
 
 type BatchSpecExecutionMetadata struct {
-	Error string
+	Error string `json:"error,omitempty"`
 }
 
 type ExecutingTaskMetadata struct {
-	TaskID string
-	Error  string
+	TaskID string `json:"taskID,omitempty"`
+	Error  string `json:"error,omitempty"`
 }
 
 type TaskBuildChangesetSpecsMetadata struct {
-	TaskID string
+	TaskID string `json:"taskID,omitempty"`
 }
 
 type TaskDownloadingArchiveMetadata struct {
-	TaskID string
+	TaskID string `json:"taskID,omitempty"`
+	Error  string `json:"error,omitempty"`
 }
 
 type TaskInitializingWorkspaceMetadata struct {
-	TaskID string
+	TaskID string `json:"taskID,omitempty"`
 }
 
 type TaskSkippingStepsMetadata struct {
-	TaskID    string
-	StartStep int
+	TaskID    string `json:"taskID,omitempty"`
+	StartStep int    `json:"startStep,omitempty"`
 }
 
 type TaskStepSkippedMetadata struct {
-	TaskID string
-	Step   int
+	TaskID string `json:"taskID,omitempty"`
+	Step   int    `json:"step,omitempty"`
 }
 
 type TaskPreparingStepMetadata struct {
-	TaskID string
-	Step   int
-	Error  string
+	TaskID string `json:"taskID,omitempty"`
+	Step   int    `json:"step,omitempty"`
+	Error  string `json:"error,omitempty"`
 }
 
 type TaskStepMetadata struct {
-	TaskID string
-	Step   int
+	TaskID string `json:"taskID,omitempty"`
+	Step   int    `json:"step,omitempty"`
 
-	RunScript string
-	Env       map[string]string
+	RunScript string            `json:"runScript,omitempty"`
+	Env       map[string]string `json:"env,omitempty"`
 
-	Out string
+	Out string `json:"out,omitempty"`
 
-	Diff    string
-	Outputs map[string]interface{}
+	Diff    string                 `json:"diff,omitempty"`
+	Outputs map[string]interface{} `json:"outputs,omitempty"`
 
-	ExitCode int
-	Error    string
+	ExitCode int    `json:"exitCode,omitempty"`
+	Error    string `json:"error,omitempty"`
 }
 
 type TaskCalculatingDiffMetadata struct {
-	TaskID string
+	TaskID string `json:"taskID,omitempty"`
 }
