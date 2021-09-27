@@ -451,16 +451,16 @@ func (s *Server) cloneJobConsumer(ctx context.Context, jobs <-chan *cloneJob) {
 			continue
 		}
 
-		go func() {
+		go func(job *cloneJob) {
 			defer cancel()
 
-			err := s.doClone(ctx, j.repo, j.dir, j.syncer, j.lock, j.remoteURL, j.options)
+			err := s.doClone(ctx, job.repo, job.dir, job.syncer, job.lock, job.remoteURL, job.options)
 			if err != nil {
-				log15.Error("failed to clone repo", "repo", j.repo, "error", err)
+				log15.Error("failed to clone repo", "repo", job.repo, "error", err)
 			}
 
-			s.setLastErrorNonFatal(ctx, j.repo, err)
-		}()
+			s.setLastErrorNonFatal(ctx, job.repo, err)
+		}(j)
 	}
 }
 
