@@ -46,6 +46,7 @@ func CoreTestOperations(changedFiles ChangedFiles, buildOptions bk.BuildOptions)
 			addWebApp,       // ~3m
 			addBrowserExt,   // ~2m
 			addBrandedTests, // ~1.5m
+			addTsLint,
 		)
 	}
 
@@ -94,30 +95,24 @@ func addCheck(pipeline *bk.Pipeline) {
 		bk.Cmd("./dev/check/all.sh"))
 }
 
+// yarn ~41s + ~30s
 func addPrettier(pipeline *bk.Pipeline) {
 	pipeline.AddStep(":lipstick: Prettier",
 		bk.Cmd("dev/ci/yarn-run.sh prettier-check"))
 }
 
+// yarn ~41s + ~1s
 func addGraphQLLint(pipeline *bk.Pipeline) {
 	pipeline.AddStep(":lipstick: :graphql:",
-		bk.Cmd("dev/ci/yarn-run.sh all:stylelint graphql-lint"))
+		bk.Cmd("dev/ci/yarn-run.sh graphql-lint"))
 }
 
-// Adds the lint test step.
+// Adds Typescript linting. (2x ~41s) + ~60s + ~137s + 7s
 func addTsLint(pipeline *bk.Pipeline) {
-	// If we run all lints together it is our slow step (5m). So we split it
-	// into two and try balance the runtime. yarn is a fixed cost so we always
-	// pay it on a step. Aim for around 3m.
-	//
-	// Random sample of timings:
-	//
-	// - yarn 41s
-	// - eslint 137s
+	// - yarn 41s (required on all steps)
 	// - build-ts 60s
-	// - prettier 29s
+	// - eslint 137s
 	// - stylelint 7s
-	// - graphql-lint 1s
 	pipeline.AddStep(":eslint: Typescript eslint",
 		bk.Cmd("dev/ci/yarn-run.sh build-ts all:eslint")) // eslint depends on build-ts
 	pipeline.AddStep(":stylelint: Stylelint",
