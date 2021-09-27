@@ -2,12 +2,16 @@ package symbols
 
 import (
 	"context"
+	"database/sql"
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"regexp"
 	"regexp/syntax"
 	"strings"
 	"time"
+
+	"github.com/mattn/go-sqlite3"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 
@@ -23,6 +27,15 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 )
+
+func init() {
+	sql.Register("sqlite3_with_regexp",
+		&sqlite3.SQLiteDriver{
+			ConnectHook: func(conn *sqlite3.SQLiteConn) error {
+				return conn.RegisterFunc("REGEXP", regexp.MatchString, true)
+			},
+		})
+}
 
 // maxFileSize is the limit on file size in bytes. Only files smaller than this are processed.
 const maxFileSize = 1 << 19 // 512KB
@@ -82,7 +95,7 @@ func (s *Service) search(ctx context.Context, args protocol.SearchArgs) (*result
 	if err != nil {
 		return nil, err
 	}
-	db, err := sqlx.Open("sqlite3_with_pcre", dbFile)
+	db, err := sqlx.Open("sqlite3_with_regexp", dbFile)
 	if err != nil {
 		return nil, err
 	}
@@ -275,7 +288,7 @@ func symbolInDBToSymbol(symbolInDB symbolInDB) result.Symbol {
 // writeAllSymbolsToNewDB fetches the repo@commit from gitserver, parses all the
 // symbols, and writes them to the blank database file `dbFile`.
 func (s *Service) writeAllSymbolsToNewDB(ctx context.Context, dbFile string, repoName api.RepoName, commitID api.CommitID) (err error) {
-	db, err := sqlx.Open("sqlite3_with_pcre", dbFile)
+	db, err := sqlx.Open("sqlite3_with_regexp", dbFile)
 	if err != nil {
 		return err
 	}
