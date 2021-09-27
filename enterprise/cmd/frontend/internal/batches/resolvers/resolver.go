@@ -1460,22 +1460,17 @@ func (r *Resolver) CreateBatchSpecFromRaw(ctx context.Context, args *graphqlback
 	}
 
 	svc := service.New(r.store)
-	batchSpec, err := svc.CreateBatchSpec(ctx, service.CreateBatchSpecOpts{
-		NamespaceUserID: actor.FromContext(ctx).UID,
-		RawSpec:         args.BatchSpec,
-	})
-	if err != nil {
-		return nil, err
-	}
-	err = svc.EnqueueBatchSpecResolution(ctx, service.EnqueueBatchSpecResolutionOpts{
-		BatchSpecID:      batchSpec.ID,
+	batchSpec, err := svc.CreateBatchSpecFromRaw(ctx, service.CreateBatchSpecFromRawOpts{
+		NamespaceUserID:  actor.FromContext(ctx).UID,
+		RawSpec:          args.BatchSpec,
 		AllowIgnored:     args.AllowIgnored,
 		AllowUnsupported: args.AllowUnsupported,
 	})
 	if err != nil {
 		return nil, err
 	}
-	return r.batchSpecByID(ctx, marshalBatchSpecRandID(batchSpec.RandID))
+
+	return &batchSpecResolver{store: r.store, batchSpec: batchSpec}, nil
 }
 
 func (r *Resolver) DeleteBatchSpec(ctx context.Context, args *graphqlbackend.DeleteBatchSpecArgs) (*graphqlbackend.EmptyResponse, error) {
