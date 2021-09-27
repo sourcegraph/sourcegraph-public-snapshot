@@ -1,6 +1,7 @@
 import React, { Suspense, useCallback, useEffect, useMemo } from 'react'
 import { Redirect, Route, RouteComponentProps, Switch, matchPath } from 'react-router'
 import { Observable } from 'rxjs'
+import { map } from 'rxjs/operators'
 
 import { ResizablePanel } from '@sourcegraph/branded/src/components/panel/Panel'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
@@ -15,7 +16,7 @@ import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryServi
 import { parseQueryAndHash } from '@sourcegraph/shared/src/util/url'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
 
-import { AuthenticatedUser, authRequired as authRequiredObservable } from './auth'
+import { authenticatedUser, AuthenticatedUser, authRequired as authRequiredObservable } from './auth'
 import { BatchChangesProps } from './batches'
 import { CodeMonitoringProps } from './code-monitoring'
 import { CodeIntelligenceProps } from './codeintel'
@@ -240,6 +241,11 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
         startExtensionAlertAnimation()
     }, [startExtensionAlertAnimation])
 
+    const getAuthenticatedUserID = useMemo(
+        () => authenticatedUser.pipe(map(authenticatedUser => (authenticatedUser ? authenticatedUser.id : null))),
+        []
+    )
+
     useScrollToLocationHash(props.location)
     // Remove trailing slash (which is never valid in any of our URLs).
     if (props.location.pathname !== '/' && props.location.pathname.endsWith('/')) {
@@ -265,6 +271,7 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
                 extensionsController={props.extensionsController}
                 platformContext={props.platformContext}
                 telemetryService={props.telemetryService}
+                getAuthenticatedUserID={getAuthenticatedUserID}
             />
             <GlobalAlerts authenticatedUser={props.authenticatedUser} settingsCascade={props.settingsCascade} />
             {!isSiteInit && <SurveyToast authenticatedUser={props.authenticatedUser} />}
