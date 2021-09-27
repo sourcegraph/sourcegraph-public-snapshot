@@ -8,6 +8,7 @@ import (
 
 	"github.com/cockroachdb/errors"
 	"github.com/keegancsmith/sqlf"
+	"github.com/lib/pq"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -537,7 +538,7 @@ INNER JOIN (
 ON
 	sc.id = scr.search_context_id
 WHERE
-	scr.repo_id IN (%s)
+	scr.repo_id = ANY (%s)
 ORDER BY
 	scr.revision
 `
@@ -553,13 +554,9 @@ func (s *SearchContextsStore) GetAllRevisionsForRepos(ctx context.Context, repoI
 		return map[int32][]string{}, nil
 	}
 
-	ids := make([]*sqlf.Query, 0, len(repoIDs))
-	for _, repoID := range repoIDs {
-		ids = append(ids, sqlf.Sprintf("%s", repoID))
-	}
 	q := sqlf.Sprintf(
 		getAllRevisionsForReposFmtStr,
-		sqlf.Join(ids, ","),
+		pq.Array(repoIDs),
 	)
 
 	rows, err := s.Query(ctx, q)
