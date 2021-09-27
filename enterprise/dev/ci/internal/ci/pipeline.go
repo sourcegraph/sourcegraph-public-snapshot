@@ -94,12 +94,12 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 	// PERF: Try to order steps such that slower steps are first.
 	switch c.RunType {
 	case PullRequest:
-		operations = CoreTestOperations(c.ChangedFiles, false)
+		operations = CoreTestOperations(c.ChangedFiles, CoreTestOperationsOptions{})
 
 		if c.ChangedFiles.affectsClient() {
-			appendOps(
-				// triggers a slow pipeline, currently only affects web.
-				triggerAsync(buildOptions))
+			// triggers a slow pipeline, currently only affects web. It's optional so we
+			// set it up separately from CoreTestOperations
+			appendOps(triggerAsync(buildOptions))
 		}
 
 	case BextReleaseBranch:
@@ -135,7 +135,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 			buildCandidateDockerImage(patchImage, c.Version, c.candidateImageTag()),
 		}
 		// Test images
-		appendOps(CoreTestOperations(nil, false)...)
+		appendOps(CoreTestOperations(nil, CoreTestOperationsOptions{})...)
 		// Publish images
 		appendOps(publishFinalDockerImage(c, patchImage, false))
 
@@ -173,7 +173,9 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		}
 
 		// Core tests
-		appendOps(CoreTestOperations(nil, c.RunType.Is(MainBranch))...)
+		appendOps(CoreTestOperations(nil, CoreTestOperationsOptions{
+			ChromaticShouldAutoAccept: c.RunType.Is(MainBranch),
+		})...)
 
 		// Trigger e2e late so that it can leverage candidate images
 		appendOps(triggerE2EandQA(e2eAndQAOptions{
