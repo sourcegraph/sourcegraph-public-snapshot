@@ -172,6 +172,8 @@ func Search(ctx context.Context, dir string, revs []protocol.RevisionSpecifier, 
 			}
 			defer diffFetcher.Stop()
 
+			startBuf := make([]byte, 1024)
+
 			runJob := func(j job) error {
 				defer close(j.resultChan)
 				if ctx.Err() != nil {
@@ -183,6 +185,7 @@ func Search(ctx context.Context, dir string, revs []protocol.RevisionSpecifier, 
 					lc := &LazyCommit{
 						RawCommit:   cv,
 						diffFetcher: diffFetcher,
+						LowerBuf:    startBuf,
 					}
 					commitMatches, highlights, err := p.Match(lc)
 					if err != nil {

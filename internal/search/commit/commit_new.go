@@ -37,7 +37,7 @@ func searchInReposNew(ctx context.Context, db dbutil.DB, textParams *search.Text
 		args := &protocol.SearchRequest{
 			Repo:        rr.Repo.Name,
 			Revisions:   searchRevsToGitserverRevs(rr.Revs),
-			Query:       &gitprotocol.And{queryNodesToPredicates(query, query.IsCaseSensitive(), diff)},
+			Query:       &gitprotocol.And{Children: queryNodesToPredicates(query, query.IsCaseSensitive(), diff)},
 			IncludeDiff: diff,
 			Limit:       limit,
 		}
@@ -100,9 +100,9 @@ func queryNodesToPredicates(nodes []query.Node, caseSensitive, diff bool) []gitp
 func queryOperatorToPredicate(op query.Operator, caseSensitive, diff bool) gitprotocol.SearchQuery {
 	switch op.Kind {
 	case query.And:
-		return &gitprotocol.And{queryNodesToPredicates(op.Operands, caseSensitive, diff)}
+		return &gitprotocol.And{Children: queryNodesToPredicates(op.Operands, caseSensitive, diff)}
 	case query.Or:
-		return &gitprotocol.Or{queryNodesToPredicates(op.Operands, caseSensitive, diff)}
+		return &gitprotocol.Or{Children: queryNodesToPredicates(op.Operands, caseSensitive, diff)}
 	default:
 		// I don't think we should have concats at this point, but ignore it if we do
 		return nil
@@ -117,13 +117,13 @@ func queryPatternToPredicate(pattern query.Pattern, caseSensitive, diff bool) gi
 
 	var newPred gitprotocol.SearchQuery
 	if diff {
-		newPred = &gitprotocol.DiffMatches{gitprotocol.Regexp{regexp.MustCompile(wrapCaseSensitive(patString, caseSensitive))}}
+		newPred = &gitprotocol.DiffMatches{Expr: patString, IgnoreCase: !caseSensitive}
 	} else {
-		newPred = &gitprotocol.MessageMatches{gitprotocol.Regexp{regexp.MustCompile(wrapCaseSensitive(patString, caseSensitive))}}
+		newPred = &gitprotocol.MessageMatches{Expr: patString, IgnoreCase: !caseSensitive}
 	}
 
 	if pattern.Negated {
-		return &gitprotocol.Not{newPred}
+		return &gitprotocol.Not{Child: newPred}
 	}
 	return newPred
 }
@@ -133,38 +133,31 @@ func queryParameterToPredicate(parameter query.Parameter, caseSensitive, diff bo
 	switch parameter.Field {
 	case query.FieldAuthor:
 		// TODO(@camdencheek) look up emails (issue #25180)
-		newPred = &gitprotocol.AuthorMatches{gitprotocol.Regexp{regexp.MustCompile(wrapCaseSensitive(parameter.Value, caseSensitive))}}
+		newPred = &gitprotocol.AuthorMatches{Expr: parameter.Value, IgnoreCase: !caseSensitive}
 	case query.FieldCommitter:
-		newPred = &gitprotocol.CommitterMatches{gitprotocol.Regexp{regexp.MustCompile(wrapCaseSensitive(parameter.Value, caseSensitive))}}
+		newPred = &gitprotocol.CommitterMatches{Expr: parameter.Value, IgnoreCase: !caseSensitive}
 	case query.FieldBefore:
-		newPred = &gitprotocol.CommitBefore{time.Now()} // TODO(@camdencheek) parse the time in with go-naturaldate (issue #25357)
+		newPred = &gitprotocol.CommitBefore{Time: time.Now()} // TODO(@camdencheek) parse the time in with go-naturaldate (issue #25357)
 	case query.FieldAfter:
-		newPred = &gitprotocol.CommitAfter{time.Now()}
+		newPred = &gitprotocol.CommitAfter{Time: time.Now()}
 	case query.FieldMessage:
-		newPred = &gitprotocol.MessageMatches{gitprotocol.Regexp{regexp.MustCompile(wrapCaseSensitive(parameter.Value, caseSensitive))}}
+		newPred = &gitprotocol.MessageMatches{Expr: parameter.Value, IgnoreCase: !caseSensitive}
 	case query.FieldContent:
 		if diff {
-			newPred = &gitprotocol.DiffMatches{gitprotocol.Regexp{regexp.MustCompile(wrapCaseSensitive(parameter.Value, caseSensitive))}}
+			newPred = &gitprotocol.DiffMatches{Expr: parameter.Value, IgnoreCase: !caseSensitive}
 		} else {
-			newPred = &gitprotocol.MessageMatches{gitprotocol.Regexp{regexp.MustCompile(wrapCaseSensitive(parameter.Value, caseSensitive))}}
+			newPred = &gitprotocol.MessageMatches{Expr: parameter.Value, IgnoreCase: !caseSensitive}
 		}
 	case query.FieldFile:
-		newPred = &gitprotocol.DiffModifiesFile{gitprotocol.Regexp{regexp.MustCompile(wrapCaseSensitive(parameter.Value, caseSensitive))}}
+		newPred = &gitprotocol.DiffModifiesFile{Expr: parameter.Value, IgnoreCase: !caseSensitive}
 	case query.FieldLang:
-		newPred = &gitprotocol.DiffModifiesFile{gitprotocol.Regexp{regexp.MustCompile(search.LangToFileRegexp(parameter.Value))}}
+		newPred = &gitprotocol.DiffModifiesFile{Expr: search.LangToFileRegexp(parameter.Value), IgnoreCase: true}
 	}
 
 	if parameter.Negated {
-		return &gitprotocol.Not{newPred}
+		return &gitprotocol.Not{Child: newPred}
 	}
 	return newPred
-}
-
-func wrapCaseSensitive(pattern string, caseSensitive bool) string {
-	if caseSensitive {
-		return pattern
-	}
-	return "(?i:" + pattern + ")"
 }
 
 func protocolMatchToCommitMatch(repo types.RepoName, diff bool, in protocol.CommitMatch) *result.CommitMatch {
