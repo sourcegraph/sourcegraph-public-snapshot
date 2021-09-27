@@ -9,7 +9,7 @@ import { FilterType } from '@sourcegraph/shared/src/search/query/filters'
 import { appendFilter, updateFilter } from '@sourcegraph/shared/src/search/query/transformer'
 import { filterExists } from '@sourcegraph/shared/src/search/query/validate'
 
-import { QueryState, SubmitSearchParameters, submitSearch, toggleSearchFilter } from './helpers'
+import { QueryState, SubmitSearchParameters, submitSearch, toggleSubquery } from './helpers'
 
 type QueryStateUpdate = QueryState | ((queryState: QueryState) => QueryState)
 
@@ -32,7 +32,7 @@ export type QueryUpdate =
     // Only exists for the filters from the serach sidebar since they come in
     // filter:value form. Should not be used elsewhere.
     | {
-          type: 'toggleSubstring'
+          type: 'toggleSubquery'
           value: string
       }
 
@@ -47,8 +47,8 @@ function updateQuery(query: string, updates: QueryUpdate[]): string {
             case 'updateOrAppendFilter':
                 query = updateFilter(query, update.field, update.value)
                 break
-            case 'toggleSubstring':
-                query = toggleSearchFilter(query, update.value)
+            case 'toggleSubquery':
+                query = toggleSubquery(query, update.value)
                 break
         }
     }

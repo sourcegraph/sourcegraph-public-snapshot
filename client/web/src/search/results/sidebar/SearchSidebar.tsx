@@ -72,7 +72,7 @@ export const SearchSidebar: React.FunctionComponent<SearchSidebarProps> = props 
                 search_filter: { value },
             })
 
-            submitQueryWithProps([{ type: 'toggleSubstring', value }])
+            submitQueryWithProps([{ type: 'toggleSubquery', value }])
         },
         [submitQueryWithProps, props.telemetryService]
     )
@@ -80,7 +80,7 @@ export const SearchSidebar: React.FunctionComponent<SearchSidebarProps> = props 
     const onSnippetClicked = useCallback(
         (value: string) => {
             props.telemetryService.log('SearchSnippetClicked')
-            submitQueryWithProps([{ type: 'toggleSubstring', value }])
+            submitQueryWithProps([{ type: 'toggleSubquery', value }])
         },
         [submitQueryWithProps, props.telemetryService]
     )
