@@ -9,7 +9,6 @@ import (
 )
 
 type batchSpecWorkspaceStepResolver struct {
-	si       stepInfo
 	store    *store.Store
 	repo     *graphqlbackend.RepositoryResolver
 	baseRev  string
@@ -33,17 +32,14 @@ func (r *batchSpecWorkspaceStepResolver) CachedResultFound() bool {
 
 func (r *batchSpecWorkspaceStepResolver) Skipped() bool {
 	for _, l := range r.logLines {
-		if l.Operation == batcheslib.LogEventOperationTaskSkippingSteps {
-			if v, ok := l.Metadata["startStep"]; ok {
-				if int(v.(float64)-1) > r.index {
-					return true
-				}
+		if m, ok := l.Metadata.(*batcheslib.TaskSkippingStepsMetadata); ok {
+			if m.StartStep-1 > r.index {
+				return true
 			}
-		} else if l.Operation == batcheslib.LogEventOperationTaskStepSkipped {
-			if v, ok := l.Metadata["step"]; ok {
-				if int(v.(float64)-1) == r.index {
-					return true
-				}
+		}
+		if m, ok := l.Metadata.(*batcheslib.TaskStepSkippedMetadata); ok {
+			if m.Step-1 == r.index {
+				return true
 			}
 		}
 	}
@@ -54,27 +50,17 @@ func (r *batchSpecWorkspaceStepResolver) Skipped() bool {
 func (r *batchSpecWorkspaceStepResolver) OutputLines(ctx context.Context, args *graphqlbackend.BatchSpecWorkspaceStepOutputLinesArgs) (*[]string, error) {
 	lines := []string{}
 	for _, l := range r.logLines {
-		if l.Operation == batcheslib.LogEventOperationTaskSkippingSteps && l.Status == batcheslib.LogEventStatusProgress {
-			if v, ok := l.Metadata["step"]; !ok {
+		if l.Status != batcheslib.LogEventStatusProgress {
+			continue
+		}
+		if m, ok := l.Metadata.(*batcheslib.TaskStepMetadata); ok {
+			if m.Step-1 != r.index {
 				continue
-			} else {
-				if v.(int)-1 != r.index {
-					continue
-				}
-				out, ok := l.Metadata["out"]
-				if !ok {
-					continue
-				}
-				outputType, ok := l.Metadata["output_type"]
-				if !ok {
-					continue
-				}
-				if outputType == "stdout" {
-					lines = append(lines, "stdout: "+out.(string))
-				} else {
-					lines = append(lines, "stderr: "+out.(string))
-				}
 			}
+			if m.Out == "" {
+				continue
+			}
+			lines = append(lines, m.Out)
 		}
 	}
 	if args.After != nil {
@@ -89,11 +75,12 @@ func (r *batchSpecWorkspaceStepResolver) OutputLines(ctx context.Context, args *
 
 func (r *batchSpecWorkspaceStepResolver) StartedAt() *graphqlbackend.DateTime {
 	for _, l := range r.logLines {
-		if l.Operation == batcheslib.LogEventOperationTaskPreparingStep {
-			if v, ok := l.Metadata["step"]; ok {
-				if int(v.(float64)-1) == r.index {
-					return &graphqlbackend.DateTime{Time: l.Timestamp}
-				}
+		if l.Status != batcheslib.LogEventStatusStarted {
+			continue
+		}
+		if m, ok := l.Metadata.(*batcheslib.TaskPreparingStepMetadata); ok {
+			if m.Step-1 == r.index {
+				return &graphqlbackend.DateTime{Time: l.Timestamp}
 			}
 		}
 	}
@@ -102,11 +89,12 @@ func (r *batchSpecWorkspaceStepResolver) StartedAt() *graphqlbackend.DateTime {
 
 func (r *batchSpecWorkspaceStepResolver) FinishedAt() *graphqlbackend.DateTime {
 	for _, l := range r.logLines {
-		if l.Operation == batcheslib.LogEventOperationTaskStep && (l.Status == batcheslib.LogEventStatusSuccess || l.Status == batcheslib.LogEventStatusFailure) {
-			if v, ok := l.Metadata["step"]; ok {
-				if int(v.(float64)-1) == r.index {
-					return &graphqlbackend.DateTime{Time: l.Timestamp}
-				}
+		if l.Status != batcheslib.LogEventStatusSuccess && l.Status != batcheslib.LogEventStatusFailure {
+			continue
+		}
+		if m, ok := l.Metadata.(*batcheslib.TaskStepMetadata); ok {
+			if m.Step-1 == r.index {
+				return &graphqlbackend.DateTime{Time: l.Timestamp}
 			}
 		}
 	}
@@ -115,22 +103,13 @@ func (r *batchSpecWorkspaceStepResolver) FinishedAt() *graphqlbackend.DateTime {
 
 func (r *batchSpecWorkspaceStepResolver) ExitCode() *int32 {
 	for _, l := range r.logLines {
-		if l.Operation == batcheslib.LogEventOperationTaskStep && l.Status == batcheslib.LogEventStatusSuccess {
-			if v, ok := l.Metadata["step"]; ok {
-				if int(v.(float64)-1) == r.index {
-					var zero int32 = 0
-					return &zero
-				}
-			}
+		if l.Status != batcheslib.LogEventStatusSuccess && l.Status != batcheslib.LogEventStatusFailure {
+			continue
 		}
-		if l.Operation == batcheslib.LogEventOperationTaskStep && l.Status == batcheslib.LogEventStatusFailure {
-			if v, ok := l.Metadata["step"]; ok {
-				if int(v.(float64)-1) == r.index {
-					if e, ok := l.Metadata["exitCode"]; ok {
-						code := int32(e.(float64))
-						return &code
-					}
-				}
+		if m, ok := l.Metadata.(*batcheslib.TaskStepMetadata); ok {
+			if m.Step-1 == r.index {
+				code := int32(m.ExitCode)
+				return &code
 			}
 		}
 	}
@@ -145,14 +124,14 @@ func (r *batchSpecWorkspaceStepResolver) Environment() ([]graphqlbackend.BatchSp
 	found := false
 	var env map[string]string
 	for _, l := range r.logLines {
-		if l.Operation == batcheslib.LogEventOperationTaskStep && l.Status == batcheslib.LogEventStatusStarted {
-			if v, ok := l.Metadata["step"]; ok {
-				if int(v.(float64)-1) == r.index {
-					e, ok := l.Metadata["env"]
-					if ok {
-						found = true
-						env = e.(map[string]string)
-					}
+		if l.Status != batcheslib.LogEventStatusStarted {
+			continue
+		}
+		if m, ok := l.Metadata.(*batcheslib.TaskStepMetadata); ok {
+			if m.Step-1 == r.index {
+				if m.Env != nil {
+					found = true
+					env = m.Env
 				}
 			}
 		}
@@ -175,18 +154,16 @@ func (r *batchSpecWorkspaceStepResolver) Environment() ([]graphqlbackend.BatchSp
 
 func (r *batchSpecWorkspaceStepResolver) OutputVariables() *[]graphqlbackend.BatchSpecWorkspaceOutputVariableResolver {
 	for _, l := range r.logLines {
-		if l.Operation == batcheslib.LogEventOperationTaskStep && l.Status == batcheslib.LogEventStatusSuccess {
-			if v, ok := l.Metadata["step"]; ok {
-				if int(v.(float64)-1) == r.index {
-					if o, ok := l.Metadata["outputs"]; ok {
-						om := o.(map[string]interface{})
-						resolvers := make([]graphqlbackend.BatchSpecWorkspaceOutputVariableResolver, 0, len(om))
-						for k, v := range om {
-							resolvers = append(resolvers, &batchSpecWorkspaceOutputVariableResolver{key: k, value: v})
-						}
-						return &resolvers
-					}
+		if l.Status != batcheslib.LogEventStatusSuccess {
+			continue
+		}
+		if m, ok := l.Metadata.(*batcheslib.TaskStepMetadata); ok {
+			if m.Step-1 == r.index {
+				resolvers := make([]graphqlbackend.BatchSpecWorkspaceOutputVariableResolver, 0, len(m.Outputs))
+				for k, v := range m.Outputs {
+					resolvers = append(resolvers, &batchSpecWorkspaceOutputVariableResolver{key: k, value: v})
 				}
+				return &resolvers
 			}
 		}
 	}
@@ -210,14 +187,12 @@ func (r *batchSpecWorkspaceStepResolver) DiffStat(ctx context.Context) (*graphql
 
 func (r *batchSpecWorkspaceStepResolver) Diff(ctx context.Context) (graphqlbackend.PreviewRepositoryComparisonResolver, error) {
 	for _, l := range r.logLines {
-		if l.Operation == batcheslib.LogEventOperationTaskStep && l.Status == batcheslib.LogEventStatusSuccess {
-			if v, ok := l.Metadata["step"]; ok {
-				if int(v.(float64)-1) == r.index {
-					if v, ok := l.Metadata["diff"]; ok {
-						diff := v.(string)
-						return graphqlbackend.NewPreviewRepositoryComparisonResolver(ctx, r.store.DB(), r.repo, r.baseRev, diff)
-					}
-				}
+		if l.Status != batcheslib.LogEventStatusSuccess {
+			continue
+		}
+		if m, ok := l.Metadata.(*batcheslib.TaskStepMetadata); ok {
+			if m.Step-1 == r.index {
+				return graphqlbackend.NewPreviewRepositoryComparisonResolver(ctx, r.store.DB(), r.repo, r.baseRev, m.Diff)
 			}
 		}
 	}
