@@ -489,7 +489,10 @@ func (r *searchResolver) showSearchContextSuggestions(ctx context.Context) ([]Se
 		return nil, err
 	}
 	for _, searchContext := range autoDefinedSearchContexts {
-		if strings.Contains(searchContext.Name, parsedSearchContextSpec.SearchContextName) {
+		matchesName := parsedSearchContextSpec.SearchContextName != "" && strings.Contains(searchContext.Name, parsedSearchContextSpec.SearchContextName)
+		matchesNamespace := parsedSearchContextSpec.NamespaceName != "" && (strings.Contains(searchContext.NamespaceUserName, parsedSearchContextSpec.NamespaceName) ||
+			strings.Contains(searchContext.NamespaceOrgName, parsedSearchContextSpec.NamespaceName))
+		if matchesName || matchesNamespace {
 			searchContexts = append(searchContexts, searchContext)
 		}
 	}
