@@ -7,10 +7,10 @@ import { of } from 'rxjs'
 import { BrandedStory } from '@sourcegraph/branded/src/components/BrandedStory'
 import webStyles from '@sourcegraph/web/src/SourcegraphWebApp.scss'
 
-import { FlatExtensionHostAPI } from '../api/contract'
-import { pretendProxySubscribable, pretendRemote } from '../api/util'
-import { NOOP_TELEMETRY_SERVICE } from '../telemetry/telemetryService'
-import { NOOP_SETTINGS_CASCADE } from '../util/searchTestHelpers'
+import { FlatExtensionHostAPI } from '../../api/contract'
+import { pretendProxySubscribable, pretendRemote } from '../../api/util'
+import { NOOP_TELEMETRY_SERVICE } from '../../telemetry/telemetryService'
+import { NOOP_SETTINGS_CASCADE } from '../../util/searchTestHelpers'
 
 import { CommandPalette, CommandPaletteProps } from './CommandPalette'
 
@@ -63,7 +63,7 @@ export const Default: Story<CommandPaletteProps> = () => {
         <BrandedStory styles={webStyles}>
             {() => (
                 <CommandPalette
-                    isOpen={true}
+                    initialIsOpen={true}
                     extensionsController={{
                         extHostAPI: Promise.resolve(
                             pretendRemote<FlatExtensionHostAPI>({
