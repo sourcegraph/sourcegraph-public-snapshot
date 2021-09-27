@@ -62,7 +62,7 @@ func TestServeStream_empty(t *testing.T) {
 func TestDefaultNewSearchResolver(t *testing.T) {
 	db := new(dbtesting.MockDB)
 
-	_, err := defaultNewSearchResolver(context.Background(), db, &graphqlbackend.SearchArgs{
+	_, err := defaultNewSearchResolver(context.Background(), db, nil, &graphqlbackend.SearchArgs{
 		Version:  "V2",
 		Settings: &schema.Settings{},
 	})

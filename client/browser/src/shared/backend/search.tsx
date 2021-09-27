@@ -108,7 +108,7 @@ export const createSuggestionFetcher = (): ((input: SuggestionInput) => void) =>
     fetcher
         .pipe(
             distinctUntilChanged(),
-            debounceTime(200),
+            debounceTime(10),
             switchMap(({ sourcegraphURL, queries, handler }) =>
                 forkJoin(queries.map(query => fetchStreamSuggestions(query, sourcegraphURL))).pipe(
                     map(suggestions => ({

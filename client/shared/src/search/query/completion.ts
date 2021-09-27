@@ -18,6 +18,17 @@ const filterCompletionItemKind = Monaco.languages.CompletionItemKind.Issue
 type PartialCompletionItem = Omit<Monaco.languages.CompletionItem, 'range'>
 
 /**
+ * Returns the friendly display form of the repository name (e.g., removing "github.com/").
+ */
+ function displayRepoName(repoName: string): string {
+    let parts = repoName.split('/')
+    if (parts.length >= 3 && parts[0].includes('.')) {
+        parts = parts.slice(1) // remove hostname from repo name (reduce visual noise)
+    }
+    return parts.join('/')
+}
+
+/**
  * COMPLETION_ITEM_SELECTED is a custom Monaco command that we fire after the user selects an autocomplete suggestion.
  * This allows us to be notified and run custom code when a user selects a suggestion.
  */
@@ -141,6 +152,15 @@ const symbolToCompletion = (
     detail: `${startCase(kind.toLowerCase())} - ${path} - ${repository}`,
 })
 
+const apiDocumentationSearchSuggestionToCompletion = ({ searchKey, nodeDescription, repoName }: IAPIDocsSearchSuggestion): PartialCompletionItem => ({
+    label: searchKey as string,
+    kind: 5,
+    insertText: searchKey as string + ' ',
+    filterText: searchKey as string,
+    detail: displayRepoName(repoName),
+    documentation: nodeDescription as Monaco.IMarkdownString,
+})
+
 const suggestionToCompletionItems = (
     suggestion: SearchMatch,
     options: { isFilterValue: boolean; globbing: boolean }
@@ -152,6 +172,8 @@ const suggestionToCompletionItems = (
             return [repositoryToCompletion(suggestion, options)]
         case 'symbol':
             return suggestion.symbols.map(symbol => symbolToCompletion(symbol, suggestion.path, suggestion.repository))
+        case 'APIDocsSearchSuggestion':
+            return apiDocumentationSearchSuggestionToCompletion(suggestion)
     }
     return []
 }
@@ -219,6 +241,7 @@ async function completeDefault(
                     // Set a sortText so that dynamic suggestions
                     // are shown after filter type suggestions.
                     sortText: '1',
+                    filterText: token.value as string,
                     command: COMPLETION_ITEM_SELECTED,
                 })),
         ],

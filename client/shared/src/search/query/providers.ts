@@ -134,7 +134,7 @@ export function getProviders(
                         // We use a delay here to implement a custom debounce. In the next step we check if the current
                         // completion request was cancelled in the meantime (`token.isCancellationRequested`).
                         // This prevents us from needlessly running multiple suggestion queries.
-                        delay(200),
+                        delay(50),
                         switchMap(query =>
                             cancellationToken.isCancellationRequested
                                 ? Promise.resolve(null)

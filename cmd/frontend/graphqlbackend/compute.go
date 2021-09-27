@@ -209,13 +209,13 @@ func toResultResolverList(pattern *regexp.Regexp, matches []result.Match, db dbu
 
 // NewComputeImplementer is a function that abstracts away the need to have a
 // handle on (*schemaResolver) Compute.
-func NewComputeImplementer(ctx context.Context, db dbutil.DB, args *ComputeArgs) ([]*computeResultResolver, error) {
+func NewComputeImplementer(ctx context.Context, db dbutil.DB, codeIntelResolver CodeIntelResolver, args *ComputeArgs) ([]*computeResultResolver, error) {
 	pattern, err := regexpFromQuery(args.Query)
 	if err != nil {
 		return nil, err
 	}
 	patternType := "regexp"
-	job, err := NewSearchImplementer(ctx, db, &SearchArgs{Query: args.Query, PatternType: &patternType})
+	job, err := NewSearchImplementer(ctx, db, codeIntelResolver, &SearchArgs{Query: args.Query, PatternType: &patternType})
 	if err != nil {
 		return nil, err
 	}
@@ -228,5 +228,5 @@ func NewComputeImplementer(ctx context.Context, db dbutil.DB, args *ComputeArgs)
 }
 
 func (r *schemaResolver) Compute(ctx context.Context, args *ComputeArgs) ([]*computeResultResolver, error) {
-	return NewComputeImplementer(ctx, r.db, args)
+	return NewComputeImplementer(ctx, r.db, r.CodeIntelResolver, args)
 }

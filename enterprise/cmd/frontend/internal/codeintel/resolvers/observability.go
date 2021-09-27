@@ -22,6 +22,7 @@ type operations struct {
 	documentationPage         *observation.Operation
 	documentationPathInfo     *observation.Operation
 	documentationReferences   *observation.Operation
+	documentationSearch       *observation.Operation
 	hover                     *observation.Operation
 	queryResolver             *observation.Operation
 	ranges                    *observation.Operation
@@ -64,6 +65,7 @@ func newOperations(observationContext *observation.Context) *operations {
 		documentationPage:         op("DocumentationPage"),
 		documentationPathInfo:     op("DocumentationPathInfo"),
 		documentationReferences:   op("DocumentationReferences"),
+		documentationSearch:       op("DocumentationSearch"),
 		hover:                     op("Hover"),
 		queryResolver:             op("QueryResolver"),
 		ranges:                    op("Ranges"),

@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"fmt"
 	"strconv"
+	"strings"
 
 	"github.com/cockroachdb/errors"
 	"github.com/keegancsmith/sqlf"
@@ -354,4 +355,170 @@ func (s *Store) documentationDefinitions(
 	}
 
 	return locations, totalCount, nil
+}
+
+// DocumentationSearch searches API documentation in either the "public" or "private" table.
+func (s *Store) DocumentationSearch(ctx context.Context, table, query string, repos []string) (_ []precise.DocumentationSearchResult, err error) {
+	ctx, _, endObservation := s.operations.documentationSearch.WithAndLogger(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.String("query", query),
+		log.String("repos", fmt.Sprint(repos)),
+	}})
+	defer endObservation(1, observation.Args{})
+
+	metaQuery := query
+	mainQuery := query
+	if i := strings.Index(query, ":"); i != -1 {
+		metaQuery = strings.TrimSpace(query[:i])
+		mainQuery = strings.TrimSpace(query[i+len(":"):])
+	}
+	fmt.Printf("QUERY META %q MAIN %q\n", metaQuery, mainQuery)
+	return s.scanDocumentationSearchResults(s.Store.Query(ctx, sqlf.Sprintf(
+		strings.ReplaceAll(documentationSearchQuery, "$TABLE_NAME", "lsif_data_documentation_search_"+table),
+		metaQuery,
+		metaQuery,
+		metaQuery,
+		metaQuery,
+		metaQuery,
+		metaQuery,
+		mainQuery,
+		mainQuery,
+		mainQuery,
+		mainQuery,
+	)))
+}
+
+const documentationSearchQuery = `
+-- source: enterprise/internal/codeintel/stores/lsifstore/documentation.go:DocumentationSearch
+WITH
+    matching_langs AS (
+        SELECT DISTINCT
+            lang,
+            lang <<<-> %s AS lang_dist
+        FROM $TABLE_NAME
+		WHERE lang <<%% %s
+        ORDER BY lang_dist
+        LIMIT 1
+    ),
+    matching_repos AS (
+        SELECT DISTINCT
+            repo_name,
+            repo_name <<-> %s as repo_name_dist
+        FROM $TABLE_NAME
+        WHERE repo_name <<%% %s
+        ORDER BY repo_name_dist
+        LIMIT 100
+    ),
+    matching_tags AS (
+        SELECT DISTINCT
+            tags,
+            tags <<-> %s as tags_dist
+        FROM $TABLE_NAME
+        WHERE tags <<%% %s
+        ORDER BY tags_dist
+        LIMIT 100
+    )
+SELECT
+	lang,
+    repo_name,
+    search_key,
+    search_key_dist,
+	label,
+	label_dist,
+	detail,
+    tags,
+	path_id
+FROM (
+    SELECT
+        lang,
+        repo_name,
+        search_key,
+        search_key <<<-> %s as search_key_dist,
+        label,
+        label <<<-> %s as label_dist,
+		detail,
+        tags,
+		path_id
+    FROM $TABLE_NAME
+    WHERE
+        search_key <<%% %s
+        OR
+        label <<%% %s
+) sub
+WHERE
+    CASE
+        -- filter by (tags, langs, repos)
+        WHEN
+            (SELECT COUNT(*) FROM matching_tags) > 0
+            AND (SELECT COUNT(*) FROM matching_langs) > 0
+            AND (SELECT COUNT(*) FROM matching_repos) > 0
+        THEN
+            tags IN (select tags from matching_tags)
+            AND lang IN (SELECT lang FROM matching_langs)
+            AND repo_name IN (SELECT repo_name FROM matching_repos)
+
+        -- filter by (tags, langs)
+        WHEN
+            (SELECT COUNT(*) FROM matching_tags) > 0
+            AND (SELECT COUNT(*) FROM matching_langs) > 0
+        THEN
+            tags IN (select tags from matching_tags)
+            AND lang IN (SELECT lang FROM matching_langs)
+
+		-- filter by (langs, repos)
+        WHEN
+            (SELECT COUNT(*) FROM matching_langs) > 0
+            AND (SELECT COUNT(*) FROM matching_repos) > 0
+        THEN
+            lang IN (SELECT lang FROM matching_langs)
+            AND repo_name IN (SELECT repo_name FROM matching_repos)
+
+		-- filter by (tags)
+        WHEN (SELECT COUNT(*) FROM matching_tags) > 0
+        THEN tags IN (SELECT tags FROM matching_tags)
+
+		-- filter by (langs)
+        WHEN (SELECT COUNT(*) FROM matching_langs) > 0
+        THEN lang IN (SELECT lang FROM matching_langs)
+
+		-- filter by (repos)
+        WHEN (SELECT COUNT(*) FROM matching_repos) > 0
+        THEN repo_name IN (SELECT repo_name FROM matching_repos)
+
+		-- Need a truthy where condition in default case.
+		ELSE search_key IS NOT NULL
+    END
+ORDER BY LEAST(search_key_dist, label_dist), repo_name, tags, lang;
+`
+
+// scanDocumentationSearchResults reads the documentation search results rows. If no rows matched, (nil, nil) is returned.
+func (s *Store) scanDocumentationSearchResults(rows *sql.Rows, queryErr error) (_ []precise.DocumentationSearchResult, err error) {
+	if queryErr != nil {
+		return nil, queryErr
+	}
+	defer func() { err = basestore.CloseRows(rows, err) }()
+
+	var results []precise.DocumentationSearchResult
+	for rows.Next() {
+		var (
+			result                      precise.DocumentationSearchResult
+			tags                        string
+			searchKeyDist, labelDist float32
+		)
+		if err := rows.Scan(
+			&result.Lang,
+			&result.RepoName,
+			&result.SearchKey,
+			&searchKeyDist,
+			&result.Label,
+			&labelDist,
+			&result.Detail,
+			&tags,
+			&result.PathID,
+		); err != nil {
+			return nil, err
+		}
+		result.Tags = strings.Fields(tags)
+		results = append(results, result)
+	}
+	return results, nil
 }

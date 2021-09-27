@@ -186,6 +186,18 @@ type DocumentationMapping struct {
 	FilePath *string `json:"filePath"`
 }
 
+// DocumentationSearchResult describes a single documentation search result, from one of the
+// lsif_data_documentation_search_* tables.
+type DocumentationSearchResult struct {
+	Lang      string
+	RepoName  string
+	SearchKey string
+	PathID    string
+	Label     string
+	Detail    string
+	Tags      []string
+}
+
 // Package pairs a package name and the dump that provides it.
 type Package struct {
 	Scheme  string

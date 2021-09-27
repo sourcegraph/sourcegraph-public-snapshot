@@ -59,7 +59,7 @@ type SearchImplementer interface {
 }
 
 // NewSearchImplementer returns a SearchImplementer that provides search results and suggestions.
-func NewSearchImplementer(ctx context.Context, db dbutil.DB, args *SearchArgs) (_ SearchImplementer, err error) {
+func NewSearchImplementer(ctx context.Context, db dbutil.DB, codeIntelResolver CodeIntelResolver, args *SearchArgs) (_ SearchImplementer, err error) {
 	tr, ctx := trace.New(ctx, "NewSearchImplementer", args.Query)
 	defer func() {
 		tr.SetError(err)
@@ -107,7 +107,8 @@ func NewSearchImplementer(ctx context.Context, db dbutil.DB, args *SearchArgs) (
 	}
 
 	return &searchResolver{
-		db: db,
+		db:                db,
+		codeIntelResolver: codeIntelResolver,
 		SearchInputs: &run.SearchInputs{
 			Plan:           plan,
 			Query:          plan.ToParseTree(),
@@ -128,7 +129,7 @@ func NewSearchImplementer(ctx context.Context, db dbutil.DB, args *SearchArgs) (
 }
 
 func (r *schemaResolver) Search(ctx context.Context, args *SearchArgs) (SearchImplementer, error) {
-	return NewSearchImplementer(ctx, r.db, args)
+	return NewSearchImplementer(ctx, r.db, r.CodeIntelResolver, args)
 }
 
 // detectSearchType returns the search type to perfrom ("regexp", or
@@ -194,6 +195,7 @@ func getBoolPtr(b *bool, def bool) bool {
 type searchResolver struct {
 	*run.SearchInputs
 	db                  dbutil.DB
+	codeIntelResolver   CodeIntelResolver
 	invalidateRepoCache bool // if true, invalidates the repo cache when evaluating search subexpressions.
 
 	// stream if non-nil will send all search events we receive down it.

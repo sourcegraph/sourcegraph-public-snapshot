@@ -46,6 +46,7 @@ type SearchSuggestionResolver interface {
 	ToSymbol() (*symbolResolver, bool)
 	ToLanguage() (*languageResolver, bool)
 	ToSearchContext() (SearchContextResolver, bool)
+	ToAPIDocsSearchSuggestion() (*apiDocsSearchSuggestionResolver, bool)
 }
 
 // baseSuggestionResolver implements all the To* methods, returning false for all of them.
@@ -60,6 +61,9 @@ func (baseSuggestionResolver) ToGitTree() (*GitTreeEntryResolver, bool)       { 
 func (baseSuggestionResolver) ToSymbol() (*symbolResolver, bool)              { return &symbolResolver{}, false }
 func (baseSuggestionResolver) ToLanguage() (*languageResolver, bool)          { return nil, false }
 func (baseSuggestionResolver) ToSearchContext() (SearchContextResolver, bool) { return nil, false }
+func (baseSuggestionResolver) ToAPIDocsSearchSuggestion() (*apiDocsSearchSuggestionResolver, bool) {
+	return nil, false
+}
 
 // repositorySuggestionResolver implements searchSuggestionResolver for RepositoryResolver
 type repositorySuggestionResolver struct {
@@ -186,6 +190,7 @@ type suggestionKey struct {
 	lang              string
 	url               string
 	searchContextSpec string
+	apiDocsPathID     string
 }
 
 type searchSuggestionsArgs struct {
@@ -547,11 +552,20 @@ func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestion
 		return nil, nil
 	}
 
+	suggesters := []suggester{
+		r.showRepoSuggestions,
+		r.showFileSuggestions,
+		r.showLangSuggestions,
+		r.showSymbolMatches,
+		r.showFilesWithTextMatches(*args.First),
+		r.showSearchContextSuggestions,
+	}
+
 	// Only suggest for type:file.
 	typeValues, _ := r.Query.StringValues(query.FieldType)
 	for _, resultType := range typeValues {
 		if resultType != "file" {
-			return nil, nil
+			suggesters = nil
 		}
 	}
 
@@ -560,7 +574,7 @@ func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestion
 		// evaluated to provide suggestions (e.g., for repos), or we
 		// can't guarantee it will behave well. Evaluating predicates can
 		// be expensive, so punt suggestions for queries with them.
-		return nil, nil
+		suggesters = nil
 	}
 
 	if b, err := query.ToBasicQuery(r.Query); err != nil || !query.IsPatternAtom(b) {
@@ -568,16 +582,14 @@ func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestion
 		// either on filters or patterns. Since it is not a basic query
 		// with an atomic pattern, we can't guarantee suggestions behave
 		// well--do not return suggestions.
-		return nil, nil
+		suggesters = nil
 	}
 
-	suggesters := []suggester{
-		r.showRepoSuggestions,
-		r.showFileSuggestions,
-		r.showLangSuggestions,
-		r.showSymbolMatches,
-		r.showFilesWithTextMatches(*args.First),
-		r.showSearchContextSuggestions,
+	if r.codeIntelResolver != nil {
+		suggesters = []suggester{r.showAPIDocsSuggestions}
+	}
+	if len(suggesters) == 0 {
+		return nil, nil
 	}
 
 	// Run suggesters.
