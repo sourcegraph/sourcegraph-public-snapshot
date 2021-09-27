@@ -1,5 +1,5 @@
 # SAML
-Security Assertion Markup Language (SAML) is a common web protocol used pass authorized credentials between two web applications, a service provider (SP, Sourcegraph in this instance), and an Identity Provider (IdP). This communication is conducted via XML assertions.
+Security Assertion Markup Language (SAML) is a common web protocol used to pass authorized credentials between two web applications, a service provider (SP, Sourcegraph in this instance), and an Identity Provider (IdP). This communication is conducted via XML assertions.
 
 ## Identity Providers
 
