@@ -1,7 +1,5 @@
 # Quickstart step 1: Install dependencies
 
-> NOTE: Please see install instructions for [macOS](#macos) and [Ubuntu](#ubuntu) in succeeding sections.
-
 Sourcegraph has the following dependencies:
 
 - [Git](https://git-scm.com/book/en/v2/Getting-Started-Installing-Git) (v2.18 or higher)
@@ -14,20 +12,20 @@ Sourcegraph has the following dependencies:
 - [Redis](http://redis.io/) (v5.0.7 or higher)
 - [Yarn](https://yarnpkg.com) (v1.10.1 or higher)
 - [SQLite](https://www.sqlite.org/index.html) tools
-- [Golang Migrate](https://github.com/golang-migrate/migrate/) (v4.7.0 or higher)
 - [Comby](https://github.com/comby-tools/comby/) (v0.11.3 or higher)
-- [Watchman](https://facebook.github.io/watchman/)
 
-Running Postgres via Docker vs Manually
-- You can choose to install Redis and/or PostgreSQL directly on your system, or you can run them as docker containers with [docker compose](https://docs.docker.com/compose/). The following instructions will describe both options.
+Below are instructions to install these dependencies:
 
-- Running within a container provides some advantages such as storing the data separately from the container, you do not need to run it as a system service and its easy to use different database versions or multiple databases.
+- [macOS](#macos)
+- [Ubuntu](#ubuntu)
+- Optional: [asdf](#optional-asdf) for an alternate way of managing dependencies, especially different versions of programming languages.
 
-- Running as system services might yield better performance, especially on macOS.
-
-- No matter which option you choose, docker is required because the development server starts additional docker containers.
-
-The following are two recommendations for installing these dependencies (See below for [asdf](#optional-asdf) for an alternate way of managing dependencies):
+> NOTE: You can choose to install and run Redis and/or PostgreSQL **with or without Docker**. The following instructions will describe both options.
+> What's the better option?
+> 
+> - Running within a container provides some advantages such as storing the data separately from the container, you do not need to run it as a system service and its easy to use different database versions or multiple databases.
+> - Running as system services might yield better performance, especially on macOS.
+> - No matter which option you choose, docker is required because the development server starts additional docker containers.
 
 ## macOS
 
@@ -40,28 +38,51 @@ The following are two recommendations for installing these dependencies (See bel
     brew install --cask docker
     ```
 
-3.  Install Go, Yarn, Git, golang-migrate, Comby, SQLite tools, and jq with the following command:
+3.  Install Go, Yarn, Git, Comby, SQLite tools, and jq with the following command:
 
     ```
-    brew install go yarn git gnu-sed golang-migrate comby sqlite pcre FiloSottile/musl-cross/musl-cross jq watchman
+    brew install go yarn git gnu-sed comby sqlite pcre FiloSottile/musl-cross/musl-cross jq
     ```
 
 4. Choose to run Postgres and Redis manually (Option a.) or via Docker (Option b.)
-    
-    a. (without docker) Install PostgreSQL and Redis
 
-    If you want to run Redis and/or PostgreSQL directly on your system install them with the follwing command:
+    a. **Without Docker**
 
-    ```
-    brew install postgresql
-    brew install redis
-    ```
+      1. Install PostgreSQL and Redis with the following commands:
 
-    b. (with docker) Install Docker Compose
+          ```
+          brew install postgresql
+          brew install redis
+          ```
 
-    We provide a docker compose file at `dev/redis-postgres.yml` to make it easy to run Redis and PostgreSQL as docker containers. Fortunately `docker-compose` comes with Docker for Mac so no additional step is required.
+      2. (optional) Start the services (and configure them to start automatically):
 
-    See the official [docker compose documentation](https://docs.docker.com/compose/install/).
+          ```
+          brew services start postgresql
+          brew services start redis
+          ```
+
+          (You can stop them later by calling `stop` instead of `start` above.
+
+      3. Ensure `psql`, the PostgreSQL command line client, is on your `$PATH`.
+
+          Homebrew does not put it there by default. Homebrew gives you the command to run to insert `psql` in your path in the "Caveats" section of `brew info postgresql`.
+          Alternatively, you can use the command below. It might need to be adjusted depending on your Homebrew prefix (`/usr/local` below) and shell (bash below).
+
+          ```
+          hash psql || { echo 'export PATH="/usr/local/opt/postgresql/bin:$PATH"' >> ~/.bash_profile }
+          source ~/.bash_profile
+          ```
+
+      4. Open a new Terminal window to ensure `psql` is now on your `$PATH`.
+
+
+    b. **With Docker**
+
+    Nothing to do here, since you already installed Docker for Mac.
+
+    We provide a docker compose file at `dev/redis-postgres.yml` to make it easy to run Redis and PostgreSQL as Docker containers, with [docker compose](https://docs.docker.com/compose/install/).
+
 
 6.  Install the Node Version Manager (`nvm`) using:
 
@@ -97,8 +118,7 @@ The following are two recommendations for installing these dependencies (See bel
         set -x NVM_DIR ~/.nvm
         ```
 
-7.  Install the current recommended version of Node JS by running the following
-    from the working directory of a sourcegraph repository clone (See [Cloning our repository](quickstart_2_clone_repository.md) for cloning the repository):
+7.  Install the current recommended version of Node JS by running the following in the `sourcegraph/sourcegraph` repository clone (See [Cloning our repository](quickstart_2_clone_repository.md) for cloning the repository):
 
     ```
     nvm install
@@ -111,27 +131,6 @@ The following are two recommendations for installing these dependencies (See bel
     > NOTE: Although there is a Homebrew package for Node, we advise using `nvm`
     instead, to ensure you get a Node version compatible with the current state
     of the sourcegraph repository.
-
-8.  (optional) Configure PostgreSQL and Redis to start automatically if you chose to install it manually via 4a above.
-
-    If you have installed PostgreSQL and Redis directly on your system, start them with the following commands:
-
-    ```
-    brew services start postgresql
-    brew services start redis
-    ```
-
-    You can stop them later by calling `stop` instead of `start` above.
-
-9.  Ensure `psql`, the PostgreSQL command line client, is on your `$PATH`.
-    Homebrew does not put it there by default. Homebrew gives you the command to run to insert `psql` in your path in the "Caveats" section of `brew info postgresql`. Alternatively, you can use the command below. It might need to be adjusted depending on your Homebrew prefix (`/usr/local` below) and shell (bash below).
-
-    ```
-    hash psql || { echo 'export PATH="/usr/local/opt/postgresql/bin:$PATH"' >> ~/.bash_profile }
-    source ~/.bash_profile
-    ```
-
-10.  Open a new Terminal window to ensure `psql` is now on your `$PATH`.
 
 ## Ubuntu
 
@@ -162,18 +161,6 @@ The following are two recommendations for installing these dependencies (See bel
     ```
     sudo apt install -y make git-all libpcre3-dev libsqlite3-dev pkg-config golang-go musl-tools docker-ce docker-ce-cli containerd.io yarn jq libnss3-tools
 
-    # (without docker) Install PostgreSQL and/or Redis if you don't want to run them as docker containers
-    sudo apt install -y redis-server
-    sudo apt install -y postgresql postgresql-contrib
-
-    # Install golang-migrate
-    curl -L https://github.com/golang-migrate/migrate/releases/download/v4.7.0/migrate.linux-amd64.tar.gz | tar xvz
-
-    # The extracted binary must be in your $PATH available as `golang-migrate`.
-    # Here's how you'd move it to `/usr/local/bin` (which is most likely in your `$PATH`):
-    chmod +x migrate.linux-amd64
-    mv migrate.linux-amd64 /usr/local/bin/golang-migrate
-
     # Install comby
     curl -L https://github.com/comby-tools/comby/releases/download/0.11.3/comby-0.11.3-x86_64-linux.tar.gz | tar xvz
 
@@ -181,17 +168,6 @@ The following are two recommendations for installing these dependencies (See bel
     # Here's how you'd move it to `/usr/local/bin` (which is most likely in your `$PATH`):
     chmod +x comby-*-linux
     mv comby-*-linux /usr/local/bin/comby
-
-    # Install watchman (you must put the binary and shared libraries on your $PATH and $LD_LIBRARY_PATH)
-    curl -LO https://github.com/facebook/watchman/releases/download/v2020.07.13.00/watchman-v2020.07.13.00-linux.zip
-    unzip watchman-*-linux.zip
-    sudo mkdir -p /usr/local/var/run/watchman
-    sudo cp watchman-*-linux/bin/* /usr/local/bin
-    sudo cp watchman-*-linux/lib/* /usr/local/lib
-    sudo chmod 755 /usr/local/bin/watchman
-    sudo chmod 2777 /usr/local/var/run/watchman
-    # On Linux, you may need to run the following in addition:
-    watchman watch <path to sourcegraph repository>
 
     # Install nvm (to manage Node.js)
     NVM_VERSION="$(curl https://api.github.com/repos/nvm-sh/nvm/releases/latest | jq -r .name)"
@@ -202,7 +178,25 @@ The following are two recommendations for installing these dependencies (See bel
     nvm install
     ```
 
-3. (with docker) Install Docker Compose
+4. Choose to run Postgres and Redis manually (Option a.) or via Docker (Option b.)
+
+    a. **Without Docker**
+
+      1. Install PostgreSQL and Redis with the following commands:
+
+          ```
+          sudo apt install -y redis-server
+          sudo apt install -y postgresql postgresql-contrib
+          ```
+
+      2. (optional) Start the services (and configure them to start automatically):
+
+          ```
+          sudo systemctl enable --now postgresql
+          sudo systemctl enable --now redis-server.service
+          ```
+
+    b. **With Docker**
 
     We provide a docker compose file at `dev/redis-postgres.yml` to make it easy to run Redis and PostgreSQL as docker containers.
 
@@ -210,14 +204,6 @@ The following are two recommendations for installing these dependencies (See bel
 
     See the official [docker compose documentation](https://docs.docker.com/compose/install/) for more details on different installation options.
 
-4. (without docker) Configure startup services
-
-    If you have installed PostgreSQL and Redis directly on your system, start them with the following commands:
-
-    ```
-    sudo systemctl enable --now postgresql
-    sudo systemctl enable --now redis-server.service
-    ```
 
 ## (optional) asdf
 
