@@ -1517,7 +1517,7 @@ type cloneOptions struct {
 // cloneRepo performs a clone operation for the given repository. It is
 // non-blocking by default.
 func (s *Server) cloneRepo(ctx context.Context, repo api.RepoName, opts *cloneOptions) (string, error) {
-	if strings.ToLower(string(repo)) == "github.com/sourcegraphtest/alwayscloningtest" {
+	if isAlwaysCloningTest(repo) {
 		return "This will never finish cloning", nil
 	}
 
