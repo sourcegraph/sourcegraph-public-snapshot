@@ -266,7 +266,7 @@ func (s *Syncer) SyncRepo(ctx context.Context, name api.RepoName) (repo *types.R
 
 	if repo == nil {
 		// We don't have this repo yet so we need to try and sync it now and we will block
-		// until syncing is complete
+		// until syncing is complete.
 		repo, err, _ := s.syncGroup.Do(string(name), func() (interface{}, error) {
 			return s.syncRepo(ctx, codehost, name, nil)
 		})
