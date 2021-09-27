@@ -31,9 +31,9 @@ func groupBundleData(ctx context.Context, state *State) (*precise.GroupedBundleD
 	meta := precise.MetaData{NumResultChunks: numResultChunks}
 	documents := serializeBundleDocuments(ctx, state)
 	resultChunks := serializeResultChunks(ctx, state, numResultChunks)
-	definitionRows := gatherMonikersLocations(ctx, state, state.DefinitionData, func(r Range) int { return r.DefinitionResultID })
-	referenceRows := gatherMonikersLocations(ctx, state, state.ReferenceData, func(r Range) int { return r.ReferenceResultID })
-	implementationRows := gatherMonikersLocations(ctx, state, state.ImplementationData, func(r Range) int { return r.ImplementationResultID })
+	definitionRows := gatherMonikersLocations(ctx, state, state.DefinitionData, "export", func(r Range) int { return r.DefinitionResultID })
+	referenceRows := gatherMonikersLocations(ctx, state, state.ReferenceData, "import", func(r Range) int { return r.ReferenceResultID })
+	implementationRows := gatherMonikersLocations(ctx, state, state.ImplementationData, "implementation", func(r Range) int { return r.ImplementationResultID })
 	documentation := collectDocumentation(ctx, state)
 	packages := gatherPackages(state)
 	packageReferences, err := gatherPackageReferences(state, packages)
@@ -271,7 +271,7 @@ func (s sortableDocumentIDRangeIDs) Less(i, j int) bool {
 	return iRange.Start.Character-jRange.Start.Character < 0
 }
 
-func gatherMonikersLocations(ctx context.Context, state *State, data map[int]*datastructures.DefaultIDSetMap, getResultID func(r Range) int) chan precise.MonikerLocations {
+func gatherMonikersLocations(ctx context.Context, state *State, data map[int]*datastructures.DefaultIDSetMap, kind string, getResultID func(r Range) int) chan precise.MonikerLocations {
 	monikers := datastructures.NewDefaultIDSetMap()
 	for rangeID, r := range state.RangeData {
 		if resultID := getResultID(r); resultID != 0 {
@@ -288,6 +288,9 @@ func gatherMonikersLocations(ctx context.Context, state *State, data map[int]*da
 
 		monikerIDs.Each(func(monikerID int) {
 			moniker := state.MonikerData[monikerID]
+			if moniker.Kind != kind {
+				return
+			}
 			idsBySchemeByIdentifier, ok := idsByKindBySchemeByIdentifier[moniker.Kind]
 			if !ok {
 				idsBySchemeByIdentifier = map[string]map[string][]int{}

@@ -199,7 +199,7 @@ func (s *Store) WriteDefinitions(ctx context.Context, bundleID int, monikerLocat
 	}})
 	defer endObservation(1, observation.Args{})
 
-	return s.writeDefinitionReferences(ctx, bundleID, "lsif_data_definitions", "export", CurrentDefinitionsSchemaVersion, monikerLocations, traceLog)
+	return s.writeDefinitionReferences(ctx, bundleID, "lsif_data_definitions", CurrentDefinitionsSchemaVersion, monikerLocations, traceLog)
 }
 
 // WriteReferences is called (transactionally) from the precise-code-intel-worker.
@@ -209,7 +209,7 @@ func (s *Store) WriteReferences(ctx context.Context, bundleID int, monikerLocati
 	}})
 	defer endObservation(1, observation.Args{})
 
-	return s.writeDefinitionReferences(ctx, bundleID, "lsif_data_references", "import", CurrentReferencesSchemaVersion, monikerLocations, traceLog)
+	return s.writeDefinitionReferences(ctx, bundleID, "lsif_data_references", CurrentReferencesSchemaVersion, monikerLocations, traceLog)
 }
 
 // WriteImplementations is called (transactionally) from the precise-code-intel-worker.
@@ -219,10 +219,10 @@ func (s *Store) WriteImplementations(ctx context.Context, bundleID int, monikerL
 	}})
 	defer endObservation(1, observation.Args{})
 
-	return s.writeDefinitionReferences(ctx, bundleID, "lsif_data_references", "implementation", CurrentReferencesSchemaVersion, monikerLocations, traceLog)
+	return s.writeDefinitionReferences(ctx, bundleID, "lsif_data_references", CurrentReferencesSchemaVersion, monikerLocations, traceLog)
 }
 
-func (s *Store) writeDefinitionReferences(ctx context.Context, bundleID int, tableName string, kind string, version int, monikerLocations chan precise.MonikerLocations, traceLog observation.TraceLogger) (err error) {
+func (s *Store) writeDefinitionReferences(ctx context.Context, bundleID int, tableName string, version int, monikerLocations chan precise.MonikerLocations, traceLog observation.TraceLogger) (err error) {
 	tx, err := s.Transact(ctx)
 	if err != nil {
 		return err
@@ -240,13 +240,6 @@ func (s *Store) writeDefinitionReferences(ctx context.Context, bundleID int, tab
 			data, err := s.serializer.MarshalLocations(v.Locations)
 			if err != nil {
 				return err
-			}
-
-			if v.Kind != kind {
-				// TODO figure out why some implementation monikers wind up lsif_data_definitions
-				// TODO figure out why some export monikers wind up lsif_data_references
-				// TODO figure out why some implementation monikers wind up lsif_data_references
-				continue
 			}
 
 			if err := inserter.Insert(ctx, v.Kind, v.Scheme, v.Identifier, data, len(v.Locations)); err != nil {
