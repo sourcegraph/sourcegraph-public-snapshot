@@ -15,12 +15,12 @@ import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryServi
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { asError, createAggregateError, isErrorLike } from '@sourcegraph/shared/src/util/errors'
 import { useEventObservable } from '@sourcegraph/shared/src/util/useObservable'
+import { ALLOW_NAVIGATION, AwayPrompt } from '@sourcegraph/web/src/components/AwayPrompt'
 import { Container } from '@sourcegraph/wildcard'
 
-import { AuthenticatedUser } from '../auth'
-import { ALLOW_NAVIGATION, AwayPrompt } from '../components/AwayPrompt'
-import { fetchRepository } from '../repo/backend'
-import { SearchContextProps } from '../search'
+import { AuthenticatedUser } from '../../auth'
+import { fetchRepository } from '../../repo/backend'
+import { SearchContextProps } from '../../search'
 
 import { DeleteSearchContextModal } from './DeleteSearchContextModal'
 import { parseConfig } from './repositoryRevisionsConfigParser'

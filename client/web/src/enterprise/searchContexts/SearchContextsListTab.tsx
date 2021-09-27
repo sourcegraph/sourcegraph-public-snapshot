@@ -5,20 +5,20 @@ import { catchError } from 'rxjs/operators'
 
 import { Link } from '@sourcegraph/shared/src/components/Link'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
-
-import { AuthenticatedUser } from '../auth'
 import {
     FilteredConnection,
     FilteredConnectionFilter,
     FilteredConnectionFilterValue,
-} from '../components/FilteredConnection'
+} from '@sourcegraph/web/src/components/FilteredConnection'
+
+import { AuthenticatedUser } from '../../auth'
 import {
     ListSearchContextsResult,
     ListSearchContextsVariables,
     SearchContextFields,
     SearchContextsOrderBy,
-} from '../graphql-operations'
-import { SearchContextProps } from '../search'
+} from '../../graphql-operations'
+import { SearchContextProps } from '../../search'
 
 import { SearchContextNode, SearchContextNodeProps } from './SearchContextNode'
 

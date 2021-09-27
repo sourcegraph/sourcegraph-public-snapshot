@@ -6,14 +6,14 @@ import { Dropdown, DropdownItem, DropdownToggle } from 'reactstrap'
 import sinon from 'sinon'
 
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { MockIntersectionObserver } from '@sourcegraph/shared/src/util/MockIntersectionObserver'
-
-import { SearchPatternType } from '../../graphql-operations'
 import {
     mockFetchAutoDefinedSearchContexts,
     mockFetchSearchContexts,
     mockGetUserSearchContextNamespaces,
-} from '../../searchContexts/testHelpers'
+} from '@sourcegraph/shared/src/testing/searchContexts/testHelpers'
+import { MockIntersectionObserver } from '@sourcegraph/shared/src/util/MockIntersectionObserver'
+
+import { SearchPatternType } from '../../graphql-operations'
 
 import { SearchContextDropdown, SearchContextDropdownProps } from './SearchContextDropdown'
 
@@ -38,6 +38,7 @@ describe('SearchContextDropdown', () => {
         hasUserAddedExternalServices: false,
         isSourcegraphDotCom: false,
         authenticatedUser: null,
+        searchContextsEnabled: true,
     }
     const RealIntersectionObserver = window.IntersectionObserver
     let clock: sinon.SinonFakeTimers

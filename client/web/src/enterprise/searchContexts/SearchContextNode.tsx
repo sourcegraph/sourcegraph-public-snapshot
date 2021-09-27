@@ -2,9 +2,9 @@ import * as H from 'history'
 import React from 'react'
 
 import { Link } from '@sourcegraph/shared/src/components/Link'
+import { Timestamp } from '@sourcegraph/web/src/components/time/Timestamp'
 
-import { Timestamp } from '../components/time/Timestamp'
-import { SearchContextFields } from '../graphql-operations'
+import { SearchContextFields } from '../../graphql-operations'
 
 export interface SearchContextNodeProps {
     node: SearchContextFields

@@ -5,7 +5,7 @@ import { NEVER, Observable, of, throwError } from 'rxjs'
 
 import { IRepository, ISearchContext, ISearchContextRepositoryRevisions } from '@sourcegraph/shared/src/graphql/schema'
 
-import { WebStory } from '../components/WebStory'
+import { EnterpriseWebStory } from '../components/EnterpriseWebStory'
 
 import { SearchContextPage } from './SearchContextPage'
 
@@ -68,9 +68,9 @@ const fetchAutoDefinedContext = (): Observable<ISearchContext> =>
 add(
     'public context',
     () => (
-        <WebStory>
+        <EnterpriseWebStory>
             {webProps => <SearchContextPage {...webProps} fetchSearchContextBySpec={fetchPublicContext} />}
-        </WebStory>
+        </EnterpriseWebStory>
     ),
     {}
 )
@@ -78,9 +78,9 @@ add(
 add(
     'autodefined context',
     () => (
-        <WebStory>
+        <EnterpriseWebStory>
             {webProps => <SearchContextPage {...webProps} fetchSearchContextBySpec={fetchAutoDefinedContext} />}
-        </WebStory>
+        </EnterpriseWebStory>
     ),
     {}
 )
@@ -88,30 +88,34 @@ add(
 add(
     'private context',
     () => (
-        <WebStory>
+        <EnterpriseWebStory>
             {webProps => <SearchContextPage {...webProps} fetchSearchContextBySpec={fetchPrivateContext} />}
-        </WebStory>
+        </EnterpriseWebStory>
     ),
     {}
 )
 
 add(
     'loading',
-    () => <WebStory>{webProps => <SearchContextPage {...webProps} fetchSearchContextBySpec={() => NEVER} />}</WebStory>,
+    () => (
+        <EnterpriseWebStory>
+            {webProps => <SearchContextPage {...webProps} fetchSearchContextBySpec={() => NEVER} />}
+        </EnterpriseWebStory>
+    ),
     {}
 )
 
 add(
     'error',
     () => (
-        <WebStory>
+        <EnterpriseWebStory>
             {webProps => (
                 <SearchContextPage
                     {...webProps}
                     fetchSearchContextBySpec={() => throwError(new Error('Failed to fetch search context'))}
                 />
             )}
-        </WebStory>
+        </EnterpriseWebStory>
     ),
     {}
 )

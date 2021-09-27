@@ -296,7 +296,6 @@ export function isSearchContextAvailable(
 export function fetchSuggestions(query: string): Observable<SearchSuggestion[]> {
     return combineLatest([
         repogroupSuggestions,
-        fetchAutoDefinedSearchContexts,
         queryGraphQL(
             gql`
                 query SearchSuggestions($query: String!) {
@@ -346,13 +345,7 @@ export function fetchSuggestions(query: string): Observable<SearchSuggestion[]> 
                 return data.search.suggestions
             })
         ),
-    ]).pipe(
-        map(([repogroups, autoDefinedSearchContexts, dynamicSuggestions]) => [
-            ...repogroups,
-            ...autoDefinedSearchContexts,
-            ...dynamicSuggestions,
-        ])
-    )
+    ]).pipe(map(([repogroups, dynamicSuggestions]) => [...repogroups, ...dynamicSuggestions]))
 }
 
 export function fetchReposByQuery(query: string): Observable<{ name: string; url: string }[]> {
