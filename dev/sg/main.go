@@ -260,9 +260,15 @@ func checkSgVersion() {
 		return
 	}
 
-	out, err := run.GitCmd("rev-list", fmt.Sprintf("%s..HEAD", BuildCommit), "./dev/sg")
+	rev := BuildCommit
+	if strings.HasPrefix(BuildCommit, "dev-") {
+		rev = BuildCommit[len("dev-"):]
+	}
+
+	out, err := run.GitCmd("rev-list", fmt.Sprintf("%s..HEAD", rev), "./dev/sg")
 	if err != nil {
-		fmt.Printf("error getting new commits in ./dev/sg: %s\n", err)
+		fmt.Printf("error getting new commits since %s in ./dev/sg: %s\n", rev, err)
+		fmt.Println("try reinstalling sg with `./dev/sg/install.sh`.")
 		os.Exit(1)
 	}
 
