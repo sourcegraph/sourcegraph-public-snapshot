@@ -37,10 +37,20 @@ func (c ChangedFiles) affectsGo() bool {
 	return false
 }
 
-// affectsDockerfiles whether the ChangedFiles affects Dockerfiles.
+// affectsDockerfiles returns whether the ChangedFiles affects Dockerfiles.
 func (c ChangedFiles) affectsDockerfiles() bool {
 	for _, p := range c {
 		if strings.HasPrefix(p, "Dockerfile") || strings.HasSuffix(p, "Dockerfile") {
+			return true
+		}
+	}
+	return false
+}
+
+// affectsGraphQL returns whether the ChangedFiles affects GraphQL files
+func (c ChangedFiles) affectsGraphQL() bool {
+	for _, p := range c {
+		if strings.HasSuffix(p, ".graphql") {
 			return true
 		}
 	}

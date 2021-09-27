@@ -13,7 +13,6 @@ import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import {
     PatternTypeProps,
     CaseSensitivityProps,
-    RepogroupHomepageProps,
     OnboardingTourProps,
     HomePanelsProps,
     ShowQueryBuilderProps,
@@ -48,7 +47,6 @@ export interface SearchPageProps
         PlatformContextProps<'forceUpdateTooltip' | 'settings' | 'sourcegraphURL' | 'updateSettings'>,
         VersionContextProps,
         SearchContextInputProps,
-        RepogroupHomepageProps,
         OnboardingTourProps,
         HomePanelsProps,
         ShowQueryBuilderProps,
@@ -98,9 +96,7 @@ export const SearchPage: React.FunctionComponent<SearchPageProps> = props => {
                 />
             </div>
             <div className="flex-grow-1">
-                {props.isSourcegraphDotCom &&
-                    props.showRepogroupHomepage &&
-                    (!props.authenticatedUser || !props.showEnterpriseHomePanels) && <LoggedOutHomepage {...props} />}
+                {props.isSourcegraphDotCom && !props.authenticatedUser && <LoggedOutHomepage {...props} />}
 
                 {props.showEnterpriseHomePanels && props.authenticatedUser && <HomePanels {...props} />}
             </div>

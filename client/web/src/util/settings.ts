@@ -16,7 +16,7 @@ export const SITE_SUBJECT_NO_ADMIN: Pick<GQL.ISettingsSubject, 'id' | 'viewerCan
 
 export function viewerSubjectFromSettings(
     cascade: SettingsCascadeOrError,
-    authenticatedUser: AuthenticatedUser | null
+    authenticatedUser?: AuthenticatedUser | null
 ): LayoutProps['viewerSubject'] {
     if (authenticatedUser) {
         return authenticatedUser
@@ -60,7 +60,6 @@ export function defaultCaseSensitiveFromSettings(settingsCascade: SettingsCascad
 export function experimentalFeaturesFromSettings(
     settingsCascade: SettingsCascadeOrError
 ): {
-    showRepogroupHomepage: boolean
     showOnboardingTour: boolean
     showEnterpriseHomePanels: boolean
     showMultilineSearchConsole: boolean
@@ -76,7 +75,6 @@ export function experimentalFeaturesFromSettings(
         {}
 
     const {
-        showRepogroupHomepage = false,
         showOnboardingTour = true, // Default to true if not set
         showEnterpriseHomePanels = true, // Default to true if not set
         showSearchContext = false,
@@ -90,7 +88,6 @@ export function experimentalFeaturesFromSettings(
     } = experimentalFeatures
 
     return {
-        showRepogroupHomepage,
         showOnboardingTour,
         showSearchContext,
         showSearchContextManagement,

@@ -226,7 +226,9 @@ export const SearchContextMenu: React.FunctionComponent<SearchContextMenuProps> 
     ])
 
     const autoDefinedSearchContexts = useObservable(
-        fetchAutoDefinedSearchContexts.pipe(catchError(error => [asError(error)]))
+        useMemo(() => fetchAutoDefinedSearchContexts().pipe(catchError(error => [asError(error)])), [
+            fetchAutoDefinedSearchContexts,
+        ])
     )
     const filteredAutoDefinedSearchContexts = useMemo(
         () =>

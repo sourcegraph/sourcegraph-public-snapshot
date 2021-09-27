@@ -22,7 +22,16 @@ export interface SubmitSearchParameters
         Pick<SearchContextProps, 'selectedSearchContextSpec'> {
     history: H.History
     query: string
-    source: 'home' | 'nav' | 'repo' | 'tree' | 'filter' | 'type' | 'scopePage' | 'repogroupPage' | 'excludedResults'
+    source:
+        | 'home'
+        | 'nav'
+        | 'repo'
+        | 'tree'
+        | 'filter'
+        | 'type'
+        | 'scopePage'
+        | 'communitySearchContextPage'
+        | 'excludedResults'
     searchParameters?: { key: string; value: string }[]
 }
 
@@ -119,7 +128,7 @@ export function queryIndexOfScope(query: string, scope: string): number {
  * @param searchFilter The search scope (sub query) or dynamic filter to toggle (add/remove) from the current user query.
  * @returns The new query.
  */
-export function toggleSearchFilter(query: string, searchFilter: string): string {
+export function toggleSubquery(query: string, searchFilter: string): string {
     const index = queryIndexOfScope(query, searchFilter)
     if (index === -1) {
         // Scope doesn't exist in search query, so add it now.

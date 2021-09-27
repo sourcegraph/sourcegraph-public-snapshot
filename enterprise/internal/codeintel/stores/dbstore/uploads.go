@@ -760,7 +760,7 @@ func (s *Store) selectRepositoriesForRetentionScan(ctx context.Context, processD
 }
 
 const repositoryIDsForRetentionScanQuery = `
--- source: enterprise/internal/codeintel/stores/dbstore/uploads.go:repositoryIDsForRetentionScan
+-- source: enterprise/internal/codeintel/stores/dbstore/uploads.go:selectRepositoriesForRetentionScan
 WITH candidate_repositories AS (
 	SELECT DISTINCT u.repository_id AS id
 	FROM lsif_uploads u

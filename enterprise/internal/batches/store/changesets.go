@@ -12,6 +12,7 @@ import (
 
 	"github.com/cockroachdb/errors"
 	"github.com/keegancsmith/sqlf"
+	"github.com/lib/pq"
 	"github.com/opentracing/opentracing-go/log"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/search"
@@ -297,11 +298,7 @@ func countChangesetsQuery(opts *CountChangesetsOpts, authzConds *sqlf.Query) *sq
 		preds = append(preds, sqlf.Sprintf("changesets.publication_state = %s", *opts.PublicationState))
 	}
 	if len(opts.ExternalStates) > 0 {
-		states := make([]*sqlf.Query, len(opts.ExternalStates))
-		for i, externalState := range opts.ExternalStates {
-			states[i] = sqlf.Sprintf("%s", externalState)
-		}
-		preds = append(preds, sqlf.Sprintf("changesets.external_state IN (%s)", sqlf.Join(states, ",")))
+		preds = append(preds, sqlf.Sprintf("changesets.external_state = ANY (%s)", pq.Array(opts.ExternalStates)))
 	}
 	if opts.ExternalReviewState != nil {
 		preds = append(preds, sqlf.Sprintf("changesets.external_review_state = %s", *opts.ExternalReviewState))
@@ -310,6 +307,7 @@ func countChangesetsQuery(opts *CountChangesetsOpts, authzConds *sqlf.Query) *sq
 		preds = append(preds, sqlf.Sprintf("changesets.external_check_state = %s", *opts.ExternalCheckState))
 	}
 	if len(opts.ReconcilerStates) != 0 {
+		// TODO: Would be nice if we could use this with pq.Array.
 		states := make([]*sqlf.Query, len(opts.ReconcilerStates))
 		for i, reconcilerState := range opts.ReconcilerStates {
 			states[i] = sqlf.Sprintf("%s", reconcilerState.ToDB())
@@ -491,13 +489,7 @@ func listChangesetSyncDataQuery(opts ListChangesetSyncDataOpts) *sqlf.Query {
 		sqlf.Sprintf("changesets.reconciler_state = %s", btypes.ReconcilerStateCompleted.ToDB()),
 	}
 	if len(opts.ChangesetIDs) > 0 {
-		ids := make([]*sqlf.Query, 0, len(opts.ChangesetIDs))
-		for _, id := range opts.ChangesetIDs {
-			if id != 0 {
-				ids = append(ids, sqlf.Sprintf("%d", id))
-			}
-		}
-		preds = append(preds, sqlf.Sprintf("changesets.id IN (%s)", sqlf.Join(ids, ",")))
+		preds = append(preds, sqlf.Sprintf("changesets.id = ANY (%s)", pq.Array(opts.ChangesetIDs)))
 	}
 
 	if opts.ExternalServiceID != "" {
@@ -585,13 +577,7 @@ func listChangesetsQuery(opts *ListChangesetsOpts, authzConds *sqlf.Query) *sqlf
 	}
 
 	if len(opts.IDs) > 0 {
-		ids := make([]*sqlf.Query, 0, len(opts.IDs))
-		for _, id := range opts.IDs {
-			if id != 0 {
-				ids = append(ids, sqlf.Sprintf("%d", id))
-			}
-		}
-		preds = append(preds, sqlf.Sprintf("changesets.id IN (%s)", sqlf.Join(ids, ",")))
+		preds = append(preds, sqlf.Sprintf("changesets.id = ANY (%s)", pq.Array(opts.IDs)))
 	}
 
 	if opts.PublicationState != nil {
@@ -605,11 +591,7 @@ func listChangesetsQuery(opts *ListChangesetsOpts, authzConds *sqlf.Query) *sqlf
 		preds = append(preds, sqlf.Sprintf("changesets.reconciler_state IN (%s)", sqlf.Join(states, ",")))
 	}
 	if len(opts.ExternalStates) > 0 {
-		states := make([]*sqlf.Query, len(opts.ExternalStates))
-		for i, externalState := range opts.ExternalStates {
-			states[i] = sqlf.Sprintf("%s", externalState)
-		}
-		preds = append(preds, sqlf.Sprintf("changesets.external_state IN (%s)", sqlf.Join(states, ",")))
+		preds = append(preds, sqlf.Sprintf("changesets.external_state = ANY (%s)", pq.Array(opts.ExternalStates)))
 	}
 	if opts.ExternalReviewState != nil {
 		preds = append(preds, sqlf.Sprintf("changesets.external_review_state = %s", *opts.ExternalReviewState))

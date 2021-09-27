@@ -100,7 +100,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		// If this is a browser extension release branch, run the browser-extension tests and
 		// builds.
 		operations = []Operation{
-			addLint,
+			addTsLint,
 			addBrowserExt,
 			frontendTests,
 			wait,
@@ -111,7 +111,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		// If this is a browser extension nightly build, run the browser-extension tests and
 		// e2e tests.
 		operations = []Operation{
-			addLint,
+			addTsLint,
 			addBrowserExt,
 			frontendTests,
 			wait,
@@ -163,7 +163,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 			appendOps(addBackendIntegrationTests)
 		}
 		if c.RunType.Is(MainDryRun, MainBranch) {
-			appendOps(frontendPuppeteerAndStorybook(c.RunType.Is(MainBranch)))
+			appendOps(clientIntegrationTests, clientChromaticTests(c.RunType.Is(MainBranch)))
 		}
 
 		// Core tests

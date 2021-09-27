@@ -58,8 +58,9 @@ in pkgs.mkShell {
     # Build our backend.
     go_1_17
 
-    # Lots of our tooling and go tests rely on git.
+    # Lots of our tooling and go tests rely on git et al.
     pkgs.git
+    pkgs.parallel
 
     # cgo dependency for symbols. TODO build with nix?
     pkgs.pcre

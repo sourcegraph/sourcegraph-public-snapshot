@@ -39,3 +39,7 @@ var authzSchema string
 // computeSchema is an experimental graphql endpoint for computing values from search results.
 //go:embed compute.graphql
 var computeSchema string
+
+// searchContextsSchema is the Search Contexts raw graqhql schema.
+//go:embed search_contexts.graphql
+var searchContextsSchema string

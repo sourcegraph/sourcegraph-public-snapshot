@@ -23,7 +23,7 @@
     --home-marketing-drop: 0 4px 16px -6px rgba(46, 34, 119, 0.1);
     --search-input-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
 
-    &__repogroup-list {
+    &__community-search-context-list {
         &-cards {
             display: flex;
             flex-direction: row;
@@ -63,7 +63,7 @@
         background-color: var(--color-bg-1);
     }
 
-    &__repogroup-listing-title {
+    &__community-search-contexts-listing-title {
         margin-bottom: 0.25rem;
     }
 }
@@ -176,7 +176,7 @@
 }
 
 .hero-section,
-.repogroup-section,
+.community-search-contexts-section,
 .self-host-section,
 .customer-section {
     margin-top: 4rem;

@@ -12,6 +12,7 @@ import (
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/keegancsmith/sqlf"
+	"github.com/lib/pq"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
@@ -145,23 +146,20 @@ UPDATE batch_spec_workspaces SET changeset_spec_ids = %s WHERE id = %s
 const setBatchSpecIDOnChangesetSpecs = `
 UPDATE changeset_specs
 SET batch_spec_id = (SELECT batch_spec_id FROM batch_spec_workspaces WHERE id = %s LIMIT 1)
-WHERE id IN (%s)
+WHERE id = ANY (%s)
 `
 
 func markBatchSpecWorkspaceExecutionJobComplete(ctx context.Context, tx *store.Store, job *btypes.BatchSpecWorkspaceExecutionJob, changesetSpecIDs []int64, workerHostname string) (bool, error) {
-	ids := []*sqlf.Query{}
-	m := make(map[int64]struct{}, len(changesetSpecIDs))
-	for _, id := range changesetSpecIDs {
-		ids = append(ids, sqlf.Sprintf("%s", id))
-		m[id] = struct{}{}
-	}
-
 	// Set the batch_spec_id on the changeset_specs that were created
-	err := tx.Exec(ctx, sqlf.Sprintf(setBatchSpecIDOnChangesetSpecs, job.BatchSpecWorkspaceID, sqlf.Join(ids, ",")))
+	err := tx.Exec(ctx, sqlf.Sprintf(setBatchSpecIDOnChangesetSpecs, job.BatchSpecWorkspaceID, pq.Array(changesetSpecIDs)))
 	if err != nil {
 		return false, err
 	}
 
+	m := make(map[int64]struct{}, len(changesetSpecIDs))
+	for _, id := range changesetSpecIDs {
+		m[id] = struct{}{}
+	}
 	marshaledIDs, err := json.Marshal(m)
 	if err != nil {
 		return false, err

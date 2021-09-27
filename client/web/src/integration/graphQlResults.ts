@@ -223,4 +223,9 @@ export const commonWebGraphQlResults: Partial<WebGraphQlOperations & SharedGraph
             contents: '{}',
         },
     }),
+    EditTemporarySettings: () => ({
+        editTemporarySettings: {
+            alwaysNil: null,
+        },
+    }),
 }

@@ -10,7 +10,7 @@ import { SidebarGroup, SidebarGroupHeader, SidebarNavItem } from '../../componen
 import { UserAreaUserFields } from '../../graphql-operations'
 import { OrgAvatar } from '../../org/OrgAvatar'
 import { OnboardingTourProps } from '../../search'
-import { HAS_CANCELLED_TOUR_KEY, HAS_COMPLETED_TOUR_KEY } from '../../search/input/SearchOnboardingTour'
+import { useTemporarySetting } from '../../settings/temporary/useTemporarySetting'
 import { NavItemDescriptor } from '../../util/contributions'
 import { UserAreaRouteContext } from '../area/UserArea'
 
@@ -36,13 +36,10 @@ export interface UserSettingsSidebarProps
     className?: string
 }
 
-function reEnableSearchTour(): void {
-    localStorage.setItem(HAS_CANCELLED_TOUR_KEY, 'false')
-    localStorage.setItem(HAS_COMPLETED_TOUR_KEY, 'false')
-}
-
 /** Sidebar for user account pages. */
 export const UserSettingsSidebar: React.FunctionComponent<UserSettingsSidebarProps> = props => {
+    const [, setHasCancelledTour] = useTemporarySetting('search.onboarding.tourCancelled')
+
     if (!props.authenticatedUser) {
         return null
     }
@@ -55,6 +52,10 @@ export const UserSettingsSidebar: React.FunctionComponent<UserSettingsSidebarPro
         user: props.user,
         authenticatedUser: props.authenticatedUser,
         isSourcegraphDotCom: props.isSourcegraphDotCom,
+    }
+
+    function reEnableSearchTour(): void {
+        setHasCancelledTour(false)
     }
 
     return (

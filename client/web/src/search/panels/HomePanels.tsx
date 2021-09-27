@@ -5,9 +5,9 @@ import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryServi
 import { HomePanelsProps, PatternTypeProps } from '..'
 import { AuthenticatedUser } from '../../auth'
 
+import { CommunitySearchContextsPanel } from './CommunitySearchContextPanel'
 import { RecentFilesPanel } from './RecentFilesPanel'
 import { RecentSearchesPanel } from './RecentSearchesPanel'
-import { RepogroupPanel } from './RepogroupPanel'
 import { RepositoriesPanel } from './RepositoriesPanel'
 import { SavedSearchesPanel } from './SavedSearchesPanel'
 
@@ -26,7 +26,7 @@ export const HomePanels: React.FunctionComponent<Props> = (props: Props) => (
             <RecentFilesPanel {...props} className="home-panels__panel col-lg-7" />
 
             {props.isSourcegraphDotCom ? (
-                <RepogroupPanel {...props} className="home-panels__panel col-lg-5" />
+                <CommunitySearchContextsPanel {...props} className="home-panels__panel col-lg-5" />
             ) : (
                 <SavedSearchesPanel {...props} className="home-panels__panel col-lg-5" />
             )}

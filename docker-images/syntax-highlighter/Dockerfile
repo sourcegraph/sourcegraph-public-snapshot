@@ -1,10 +1,11 @@
 ###################################
 # Build syntect_server statically #
 ###################################
-FROM rust:1.46.0-alpine3.12@sha256:c9890db1527309a88994b12dfe5e1ed695518037367ffb74df76a66bfc303ef5 as ss
+FROM rust:1.53.0-alpine3.12@sha256:115f359134b85ce7731218cee9e308dbf228eb1e03e9ddc9b92ab7ad0157a50f as ss
 RUN apk add --no-cache musl-dev=1.1.24-r10
 COPY . /repo
 WORKDIR /repo
+RUN cargo test --release
 RUN cargo rustc --release
 RUN ls ./target
 RUN cp ./target/release/syntect_server /syntect_server
@@ -12,7 +13,7 @@ RUN cp ./target/release/syntect_server /syntect_server
 ################################
 # Build http-server-stabilizer #
 ################################
-FROM golang:1.15.2-alpine@sha256:4d8abd16b03209b30b48f69a2e10347aacf7ce65d8f9f685e8c3e20a512234d9 as hss
+FROM golang:1.15.2-alpine@sha256:fc801399d044a8e01f125eeb5aa3f160a0d12d6e03ba17a1d0b22ce50dfede81 as hss
 
 RUN apk add --no-cache git=2.26.3-r0
 RUN git clone https://github.com/slimsag/http-server-stabilizer /repo

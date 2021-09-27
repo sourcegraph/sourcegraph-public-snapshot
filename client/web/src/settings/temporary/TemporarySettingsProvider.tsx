@@ -1,6 +1,7 @@
 import { useApolloClient } from '@apollo/client'
 import React, { createContext, useEffect, useState } from 'react'
 
+import { migrateLocalStorageToTemporarySettings } from './migrateLocalStorageToTemporarySettings'
 import { TemporarySettingsStorage } from './TemporarySettingsStorage'
 
 export const TemporarySettingsContext = createContext<TemporarySettingsStorage>(
@@ -21,6 +22,16 @@ export const TemporarySettingsProvider: React.FunctionComponent<{
         () => new TemporarySettingsStorage(apolloClient, isAuthenticatedUser)
     )
 
+    // On first run, migrate the settings from the local storage to the temporary storage.
+    useEffect(() => {
+        const migrate = async (): Promise<void> => {
+            await migrateLocalStorageToTemporarySettings(temporarySettingsStorage)
+        }
+
+        migrate().catch(console.error)
+    }, [temporarySettingsStorage])
+
+    // Dispose temporary settings storage on unmount.
     useEffect(() => () => temporarySettingsStorage.dispose(), [temporarySettingsStorage])
 
     return (

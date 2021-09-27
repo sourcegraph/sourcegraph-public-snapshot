@@ -16,8 +16,9 @@ A hands-on introduction for setting up your local development environment.
 - [Step 3: Start Docker](getting-started/quickstart_3_start_docker.md)
 - [Step 4: Initialize your database](getting-started/quickstart_4_initialize_database.md)
 - [Step 5: Configure HTTPS reverse proxy](getting-started/quickstart_5_configure_https_reverse_proxy.md)
-- [Step 6: Start the server](getting-started/quickstart_6_start_server.md)
-- [Step 7: Additional resources](getting-started/quickstart_7_additional_resources.md)
+- [Step 6: Install `sg`](getting-started/quickstart_6_install_sg.md)
+- [Step 7: Start the server](getting-started/quickstart_7_start_server.md)
+- [Step 8: Additional resources](getting-started/quickstart_8_additional_resources.md)
 
 ## [How-to guides](how-to/index.md)
 
@@ -103,6 +104,8 @@ Clarification and discussion about key concepts, architecture, and development s
 - [Developing a worker](background-information/workers.md)
 - [Developing an out-of-band migration](background-information/oobmigrations.md)
 - [Developing a background routine](background-information/backgroundroutine.md)
+- [High-performance SQL](background-information/sql.md)
+- [Code host connections on local dev environment](background-information/code-host.md)
 
 ### [Languages](background-information/languages/index.md)
 

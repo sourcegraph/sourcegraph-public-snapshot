@@ -65,6 +65,7 @@ import {
     parseSearchURL,
     getAvailableSearchContextSpecOrDefault,
     isSearchContextSpecAvailable,
+    SearchContextProps,
 } from './search'
 import {
     fetchSavedSearches,
@@ -106,6 +107,7 @@ export interface SourcegraphWebAppProps
     extends CodeIntelligenceProps,
         CodeInsightsProps,
         Pick<BatchChangesProps, 'batchChangesEnabled'>,
+        Pick<SearchContextProps, 'searchContextsEnabled'>,
         KeyboardShortcutsProps {
     extensionAreaRoutes: readonly ExtensionAreaRoute[]
     extensionAreaHeaderNavItems: readonly ExtensionAreaHeaderNavItem[]
@@ -131,7 +133,12 @@ export interface SourcegraphWebAppProps
 interface SourcegraphWebAppState extends SettingsCascadeProps {
     error?: Error
 
-    /** The currently authenticated user (or null if the viewer is anonymous). */
+    /**
+     * The currently authenticated user:
+     * - `undefined` until `CurrentAuthState` query completion.
+     * - `AuthenticatedUser` if the viewer is authenticated.
+     * - `null` if the viewer is anonymous.
+     */
     authenticatedUser?: AuthenticatedUser | null
 
     /** GraphQL client initialized asynchronously to restore persisted cache. */
@@ -169,8 +176,6 @@ interface SourcegraphWebAppState extends SettingsCascadeProps {
      * The previously used version context, as specified in localStorage.
      */
     previousVersionContext: string | null
-
-    showRepogroupHomepage: boolean
 
     showOnboardingTour: boolean
 
@@ -289,7 +294,6 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
             versionContext: resolvedVersionContext,
             availableVersionContexts,
             previousVersionContext,
-            showRepogroupHomepage: false,
             showOnboardingTour: false,
             showSearchContext: false,
             showSearchContextManagement: false,
@@ -323,7 +327,11 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
             })
 
         this.subscriptions.add(
-            combineLatest([from(this.platformContext.settings), authenticatedUser.pipe(startWith(null))]).subscribe(
+            combineLatest([
+                from(this.platformContext.settings),
+                // Start with `undefined` while we don't know if the viewer is authenticated or not.
+                authenticatedUser.pipe(startWith(undefined)),
+            ]).subscribe(
                 ([settingsCascade, authenticatedUser]) => {
                     this.setState(state => ({
                         settingsCascade,
@@ -505,8 +513,8 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
                                                     extensionsController={this.extensionsController}
                                                     telemetryService={eventLogger}
                                                     isSourcegraphDotCom={window.context.sourcegraphDotComMode}
-                                                    showRepogroupHomepage={this.state.showRepogroupHomepage}
                                                     showOnboardingTour={this.state.showOnboardingTour}
+                                                    searchContextsEnabled={this.props.searchContextsEnabled}
                                                     showSearchContext={this.state.showSearchContext}
                                                     hasUserAddedRepositories={this.hasUserAddedRepositories()}
                                                     hasUserAddedExternalServices={
@@ -620,6 +628,10 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
         this.state.showSearchContext ? this.state.selectedSearchContextSpec : undefined
 
     private setSelectedSearchContextSpec = (spec: string): void => {
+        if (!this.props.searchContextsEnabled) {
+            return
+        }
+
         const { defaultSearchContextSpec } = this.state
         this.subscriptions.add(
             getAvailableSearchContextSpecOrDefault({ spec, defaultSpec: defaultSearchContextSpec }).subscribe(

@@ -27,14 +27,26 @@ func CoreTestOperations(changedFiles ChangedFiles, buildOptions bk.BuildOptions)
 	// Special-case branches provide a nil changedFiles to only run all checks.
 	runAll := len(changedFiles) == 0
 
-	// Base set - TODO reduce to bare minimum
+	// Base set
 	operations := []Operation{
-		triggerAsync(buildOptions), // triggers a slow pipeline, so do it first.
-		addLint,                    // ~4.5m
-		frontendTests,              // ~4.5m
-		addWebApp,                  // ~3m
-		addBrowserExt,              // ~2m
-		addBrandedTests,            // ~1.5m
+		// lightweight check that works over a lot of stuff - we are okay with running
+		// these on all PRs
+		addPrettier,
+		addCheck,
+	}
+
+	if runAll || changedFiles.affectsClient() {
+		operations = append(operations,
+			// triggers a slow pipeline, currently only affects web.
+			triggerAsync(buildOptions),
+
+			clientIntegrationTests,
+			clientChromaticTests(false),
+			frontendTests,   // ~4.5m
+			addWebApp,       // ~3m
+			addBrowserExt,   // ~2m
+			addBrandedTests, // ~1.5m
+		)
 	}
 
 	if runAll || changedFiles.affectsGo() {
@@ -54,8 +66,8 @@ func CoreTestOperations(changedFiles ChangedFiles, buildOptions bk.BuildOptions)
 		}
 	}
 
-	if runAll || changedFiles.affectsClient() {
-		operations = append(operations, frontendPuppeteerAndStorybook(false))
+	if runAll || changedFiles.affectsGraphQL() {
+		operations = append(operations, addGraphQLLint)
 	}
 
 	if runAll || changedFiles.affectsDockerfiles() {
@@ -73,17 +85,27 @@ func CoreTestOperations(changedFiles ChangedFiles, buildOptions bk.BuildOptions)
 // Verifies the docs formatting and builds the `docsite` command.
 func addDocs(pipeline *bk.Pipeline) {
 	pipeline.AddStep(":memo: Check and build docsite",
-		bk.Cmd("./dev/ci/yarn-run.sh prettier-check"),
 		bk.Cmd("./dev/check/docsite.sh"))
 }
 
 // Adds the static check test step.
 func addCheck(pipeline *bk.Pipeline) {
-	pipeline.AddStep(":white_check_mark: Misc Linters", bk.Cmd("./dev/check/all.sh"))
+	pipeline.AddStep(":white_check_mark: Misc Linters",
+		bk.Cmd("./dev/check/all.sh"))
+}
+
+func addPrettier(pipeline *bk.Pipeline) {
+	pipeline.AddStep(":lipstick: Prettier",
+		bk.Cmd("dev/ci/yarn-run.sh prettier-check"))
+}
+
+func addGraphQLLint(pipeline *bk.Pipeline) {
+	pipeline.AddStep(":lipstick: :graphql:",
+		bk.Cmd("dev/ci/yarn-run.sh all:stylelint graphql-lint"))
 }
 
 // Adds the lint test step.
-func addLint(pipeline *bk.Pipeline) {
+func addTsLint(pipeline *bk.Pipeline) {
 	// If we run all lints together it is our slow step (5m). So we split it
 	// into two and try balance the runtime. yarn is a fixed cost so we always
 	// pay it on a step. Aim for around 3m.
@@ -96,10 +118,10 @@ func addLint(pipeline *bk.Pipeline) {
 	// - prettier 29s
 	// - stylelint 7s
 	// - graphql-lint 1s
-	pipeline.AddStep(":eslint: Lint all Typescript",
+	pipeline.AddStep(":eslint: Typescript eslint",
 		bk.Cmd("dev/ci/yarn-run.sh build-ts all:eslint")) // eslint depends on build-ts
-	pipeline.AddStep(":lipstick: :lint-roller: :stylelint: :graphql:", // TODO: Add header - Similar to the previous step
-		bk.Cmd("dev/ci/yarn-run.sh prettier-check all:stylelint graphql-lint"))
+	pipeline.AddStep(":stylelint: Stylelint",
+		bk.Cmd("dev/ci/yarn-run.sh all:stylelint"))
 }
 
 // Adds steps for the OSS and Enterprise web app builds. Runs the web app tests.
@@ -122,13 +144,16 @@ func addWebApp(pipeline *bk.Pipeline) {
 		bk.Cmd("dev/ci/codecov.sh -c -F typescript -F unit"))
 }
 
+// We provide our own Chromium instance that is installed through the `download-puppeteer-browser` script
+var percyBrowserExecutableEnv = bk.Env("PERCY_BROWSER_EXECUTABLE", "node_modules/puppeteer/.local-chromium/linux-901812/chrome-linux/chrome")
+
 // Builds and tests the browser extension.
 func addBrowserExt(pipeline *bk.Pipeline) {
 	// Browser extension integration tests
 	for _, browser := range []string{"chrome"} {
 		pipeline.AddStep(
 			fmt.Sprintf(":%s: Puppeteer tests for %s extension", browser, browser),
-			bk.Env("PUPPETEER_SKIP_CHROMIUM_DOWNLOAD", "true"), // Don't download browser, we use "download-puppeteer-browser" script instead
+			percyBrowserExecutableEnv,
 			bk.Env("EXTENSION_PERMISSIONS_ALL_URLS", "true"),
 			bk.Env("BROWSER", browser),
 			bk.Env("LOG_BROWSER_CONSOLE", "true"),
@@ -150,26 +175,58 @@ func addBrowserExt(pipeline *bk.Pipeline) {
 		bk.Cmd("dev/ci/codecov.sh -c -F typescript -F unit"))
 }
 
-func frontendPuppeteerAndStorybook(autoAcceptChanges bool) Operation {
-	return func(pipeline *bk.Pipeline) {
-		// Client integration tests
-		pipeline.AddStep(":puppeteer::electric_plug: Puppeteer tests",
-			bk.Env("PUPPETEER_SKIP_CHROMIUM_DOWNLOAD", "true"), // Don't download browser, we use "download-puppeteer-browser" script instead
-			bk.Env("ENTERPRISE", "1"),
-			bk.Env("PERCY_ON", "true"),
-			bk.Cmd("COVERAGE_INSTRUMENT=true dev/ci/yarn-build.sh client/web"),
-			bk.Cmd("echo \"--- Install puppeteer\" && yarn --cwd client/shared run download-puppeteer-browser"),
-			bk.Cmd("echo \"--- Run integration test suite\" && yarn percy exec -- yarn run cover-integration"),
-			bk.Cmd("echo \"--- Process NYC report\" && yarn nyc report -r json"),
-			bk.Cmd("echo \"--- Upload coverage report\" && dev/ci/codecov.sh -c -F typescript -F integration"),
-			bk.ArtifactPaths("./puppeteer/*.png"))
+func clientIntegrationTests(pipeline *bk.Pipeline) {
+	chunkSize := 3
+	prepStepKey := "puppeteer:prep"
+	skipGitCloneStep := bk.Plugin("uber-workflow/run-without-clone", "")
 
+	// Build web application used for integration tests to share it between multiple parallel steps.
+	pipeline.AddStep(":puppeteer::electric_plug: Puppeteer tests prep",
+		bk.Key(prepStepKey),
+		bk.Env("ENTERPRISE", "1"),
+		bk.Cmd("COVERAGE_INSTRUMENT=true dev/ci/yarn-build.sh client/web"),
+		bk.Cmd("dev/ci/create-client-artifact.sh"))
+
+	// Chunk web integration tests to save time via parallel execution.
+	chunkedTestFiles := getChunkedWebIntegrationFileNames(chunkSize)
+	// Percy finalize step should be executed after all integration tests.
+	puppeteerFinalizeDependencies := make([]bk.StepOpt, len(chunkedTestFiles))
+
+	// Add pipeline step for each chunk of web integrations files.
+	for i, chunkTestFiles := range chunkedTestFiles {
+		stepLabel := fmt.Sprintf(":puppeteer::electric_plug: Puppeteer tests chunk #%s", fmt.Sprint(i+1))
+
+		stepKey := fmt.Sprintf("puppeteer:chunk:%s", fmt.Sprint(i+1))
+		puppeteerFinalizeDependencies[i] = bk.DependsOn(stepKey)
+
+		pipeline.AddStep(stepLabel,
+			bk.Key(stepKey),
+			bk.DependsOn(prepStepKey),
+			percyBrowserExecutableEnv,
+			bk.Env("PERCY_ON", "true"),
+			bk.Cmd(fmt.Sprintf(`dev/ci/yarn-web-integration.sh "%s"`, chunkTestFiles)),
+			bk.ArtifactPaths("./puppeteer/*.png"))
+	}
+
+	finalizeSteps := []bk.StepOpt{
+		skipGitCloneStep,
+		bk.Cmd("npx @percy/cli build:finalize"),
+	}
+
+	pipeline.AddStep(":puppeteer::electric_plug: Puppeteer tests finalize",
+		append(finalizeSteps, puppeteerFinalizeDependencies...)...)
+}
+
+func clientChromaticTests(autoAcceptChanges bool) Operation {
+	return func(pipeline *bk.Pipeline) {
 		// Upload storybook to Chromatic
 		chromaticCommand := "yarn chromatic --exit-zero-on-changes --exit-once-uploaded"
+
 		if autoAcceptChanges {
 			chromaticCommand += " --auto-accept-changes"
 		}
-		pipeline.AddStep(":chromatic: Upload storybook to Chromatic",
+
+		pipeline.AddStep(":chromatic: Upload Storybook to Chromatic",
 			bk.AutomaticRetry(5),
 			bk.Cmd("yarn --mutex network --frozen-lockfile --network-timeout 60000"),
 			bk.Cmd("yarn gulp generate"),
@@ -201,7 +258,8 @@ func addBrandedTests(pipeline *bk.Pipeline) {
 func addGoTests(pipeline *bk.Pipeline) {
 	pipeline.AddStep(":go: Test",
 		bk.Cmd("./dev/ci/go-test.sh"),
-		bk.Cmd("dev/ci/codecov.sh -c -F go"))
+		bk.Cmd("dev/ci/codecov.sh -c -F go"),
+		bk.ArtifactPaths("$HOME/.sourcegraph-dev/logs/**/*"))
 }
 
 // Builds the OSS and Enterprise Go commands.
@@ -228,14 +286,14 @@ func addBackendIntegrationTests(pipeline *bk.Pipeline) {
 		bk.Cmd("popd"),
 		bk.Cmd("./dev/ci/backend-integration.sh"),
 		bk.Cmd(`docker image rm -f "$IMAGE"`),
-	)
+		bk.ArtifactPaths("$HOME/.sourcegraph-dev/logs/**/*"))
 }
 
 func addBrowserExtensionE2ESteps(pipeline *bk.Pipeline) {
 	for _, browser := range []string{"chrome"} {
 		// Run e2e tests
 		pipeline.AddStep(fmt.Sprintf(":%s: E2E for %s extension", browser, browser),
-			bk.Env("PUPPETEER_SKIP_CHROMIUM_DOWNLOAD", "true"), // Don't download browser, we use "download-puppeteer-browser" script instead
+			percyBrowserExecutableEnv,
 			bk.Env("EXTENSION_PERMISSIONS_ALL_URLS", "true"),
 			bk.Env("BROWSER", browser),
 			bk.Env("LOG_BROWSER_CONSOLE", "true"),
@@ -371,11 +429,12 @@ func triggerE2EandQA(opts e2eAndQAOptions) Operation {
 			bk.Async(opts.async),
 			bk.Build(customOptions),
 		)
-		pipeline.AddTrigger(":chromium: Trigger Code Intel QA",
-			bk.Trigger("code-intel-qa"),
-			bk.Async(opts.async),
-			bk.Build(customOptions),
-		)
+		// code-intel-qa is disabled, see https://github.com/sourcegraph/sourcegraph/issues/25387
+		// pipeline.AddTrigger(":chromium: Trigger Code Intel QA",
+		// 	bk.Trigger("code-intel-qa"),
+		// 	bk.Async(opts.async),
+		// 	bk.Build(customOptions),
+		// )
 	}
 }
 
