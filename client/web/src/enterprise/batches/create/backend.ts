@@ -24,7 +24,7 @@ export async function createBatchSpec(spec: Scalars['ID']): Promise<BatchSpecCre
                 }
             }
         `,
-        { spec }
+        { id: spec }
     ).toPromise()
     return dataOrThrowErrors(result).executeBatchSpec
 }
