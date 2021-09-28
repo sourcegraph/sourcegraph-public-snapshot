@@ -137,9 +137,11 @@ func queryParameterToPredicate(parameter query.Parameter, caseSensitive, diff bo
 	case query.FieldCommitter:
 		newPred = &gitprotocol.CommitterMatches{Expr: parameter.Value, IgnoreCase: !caseSensitive}
 	case query.FieldBefore:
-		newPred = &gitprotocol.CommitBefore{Time: time.Now()} // TODO(@camdencheek) parse the time in with go-naturaldate (issue #25357)
+		t, _ := query.ParseGitDate(parameter.Value, time.Now) // field already validated
+		newPred = &gitprotocol.CommitBefore{Time: t}
 	case query.FieldAfter:
-		newPred = &gitprotocol.CommitAfter{Time: time.Now()}
+		t, _ := query.ParseGitDate(parameter.Value, time.Now) // field already validated
+		newPred = &gitprotocol.CommitAfter{Time: t}
 	case query.FieldMessage:
 		newPred = &gitprotocol.MessageMatches{Expr: parameter.Value, IgnoreCase: !caseSensitive}
 	case query.FieldContent:
