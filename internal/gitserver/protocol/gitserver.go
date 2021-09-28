@@ -62,8 +62,8 @@ type CommitMatch struct {
 	Refs       []string       `json:",omitempty"`
 	SourceRefs []string       `json:",omitempty"`
 
-	Message HighlightedString `json:",omitempty"`
-	Diff    HighlightedString `json:",omitempty"`
+	Message MatchedString `json:",omitempty"`
+	Diff    MatchedString `json:",omitempty"`
 }
 
 type Signature struct {

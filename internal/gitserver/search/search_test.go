@@ -65,8 +65,8 @@ func TestSearch(t *testing.T) {
 		tree, err := ToMatchTree(query)
 		require.NoError(t, err)
 		var commits []*LazyCommit
-		var highlights []*CommitHighlights
-		err = Search(context.Background(), dir, nil, tree, func(lc *LazyCommit, hl *CommitHighlights) bool {
+		var highlights []*MatchedCommit
+		err = Search(context.Background(), dir, nil, tree, func(lc *LazyCommit, hl *MatchedCommit) bool {
 			commits = append(commits, lc)
 			highlights = append(highlights, hl)
 			return true
@@ -81,8 +81,8 @@ func TestSearch(t *testing.T) {
 		tree, err := ToMatchTree(query)
 		require.NoError(t, err)
 		var commits []*LazyCommit
-		var highlights []*CommitHighlights
-		err = Search(context.Background(), dir, nil, tree, func(lc *LazyCommit, hl *CommitHighlights) bool {
+		var highlights []*MatchedCommit
+		err = Search(context.Background(), dir, nil, tree, func(lc *LazyCommit, hl *MatchedCommit) bool {
 			commits = append(commits, lc)
 			highlights = append(highlights, hl)
 			return true
@@ -99,8 +99,8 @@ func TestSearch(t *testing.T) {
 		tree, err := ToMatchTree(query)
 		require.NoError(t, err)
 		var commits []*LazyCommit
-		var highlights []*CommitHighlights
-		err = Search(context.Background(), dir, nil, tree, func(lc *LazyCommit, hl *CommitHighlights) bool {
+		var highlights []*MatchedCommit
+		err = Search(context.Background(), dir, nil, tree, func(lc *LazyCommit, hl *MatchedCommit) bool {
 			commits = append(commits, lc)
 			highlights = append(highlights, hl)
 			return true
@@ -116,8 +116,8 @@ func TestSearch(t *testing.T) {
 		tree, err := ToMatchTree(query)
 		require.NoError(t, err)
 		var commits []*LazyCommit
-		var highlights []*CommitHighlights
-		err = Search(context.Background(), dir, nil, tree, func(lc *LazyCommit, hl *CommitHighlights) bool {
+		var highlights []*MatchedCommit
+		err = Search(context.Background(), dir, nil, tree, func(lc *LazyCommit, hl *MatchedCommit) bool {
 			commits = append(commits, lc)
 			highlights = append(highlights, hl)
 			return true
@@ -133,8 +133,8 @@ func TestSearch(t *testing.T) {
 		tree, err := ToMatchTree(query)
 		require.NoError(t, err)
 		var commits []*LazyCommit
-		var highlights []*CommitHighlights
-		err = Search(context.Background(), dir, nil, tree, func(lc *LazyCommit, hl *CommitHighlights) bool {
+		var highlights []*MatchedCommit
+		err = Search(context.Background(), dir, nil, tree, func(lc *LazyCommit, hl *MatchedCommit) bool {
 			commits = append(commits, lc)
 			highlights = append(highlights, hl)
 			return true
@@ -156,8 +156,8 @@ func TestSearch(t *testing.T) {
 		tree, err := ToMatchTree(query)
 		require.NoError(t, err)
 		var commits []*LazyCommit
-		var highlights []*CommitHighlights
-		err = Search(context.Background(), dir, nil, tree, func(lc *LazyCommit, hl *CommitHighlights) bool {
+		var highlights []*MatchedCommit
+		err = Search(context.Background(), dir, nil, tree, func(lc *LazyCommit, hl *MatchedCommit) bool {
 			commits = append(commits, lc)
 			highlights = append(highlights, hl)
 			return true
@@ -166,12 +166,12 @@ func TestSearch(t *testing.T) {
 		require.Len(t, commits, 1)
 		require.Len(t, highlights, 1)
 		require.Equal(t, commits[0].AuthorName, []byte("camden1"))
-		expectedHighlights := &CommitHighlights{
-			Diff: map[int]FileDiffHighlight{
+		expectedHighlights := &MatchedCommit{
+			Diff: map[int]MatchedFileDiff{
 				0: {
-					HunkHighlights: map[int]HunkHighlight{
+					MatchedHunks: map[int]MatchedHunk{
 						0: {
-							LineHighlights: map[int]protocol.Ranges{
+							MatchedLines: map[int]protocol.Ranges{
 								0: {{
 									Start: protocol.Location{},
 									End:   protocol.Location{Offset: 5, Column: 5},

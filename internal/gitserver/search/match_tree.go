@@ -53,7 +53,7 @@ func ToMatchTree(q protocol.Node) (MatchTree, error) {
 type MatchTree interface {
 	// Match returns whether the given predicate matches a commit and, if it does,
 	// the portions of the commit that match in the form of *CommitHighlights
-	Match(*LazyCommit) (matched bool, highlights *CommitHighlights, err error)
+	Match(*LazyCommit) (matched bool, highlights *MatchedCommit, err error)
 }
 
 // AuthorMatches is a predicate that matches if the author's name or email address
@@ -62,7 +62,7 @@ type AuthorMatches struct {
 	*casetransform.Regexp
 }
 
-func (a *AuthorMatches) Match(lc *LazyCommit) (bool, *CommitHighlights, error) {
+func (a *AuthorMatches) Match(lc *LazyCommit) (bool, *MatchedCommit, error) {
 	return a.Regexp.Match(lc.AuthorName, &lc.LowerBuf) || a.Regexp.Match(lc.AuthorEmail, &lc.LowerBuf), nil, nil
 }
 
@@ -72,7 +72,7 @@ type CommitterMatches struct {
 	*casetransform.Regexp
 }
 
-func (c *CommitterMatches) Match(lc *LazyCommit) (bool, *CommitHighlights, error) {
+func (c *CommitterMatches) Match(lc *LazyCommit) (bool, *MatchedCommit, error) {
 	return c.Regexp.Match(lc.CommitterName, &lc.LowerBuf) || c.Regexp.Match(lc.CommitterEmail, &lc.LowerBuf), nil, nil
 }
 
@@ -81,7 +81,7 @@ type CommitBefore struct {
 	protocol.CommitBefore
 }
 
-func (c *CommitBefore) Match(lc *LazyCommit) (bool, *CommitHighlights, error) {
+func (c *CommitBefore) Match(lc *LazyCommit) (bool, *MatchedCommit, error) {
 	authorDate, err := lc.AuthorDate()
 	if err != nil {
 		return false, nil, err
@@ -94,7 +94,7 @@ type CommitAfter struct {
 	protocol.CommitAfter
 }
 
-func (c *CommitAfter) Match(lc *LazyCommit) (bool, *CommitHighlights, error) {
+func (c *CommitAfter) Match(lc *LazyCommit) (bool, *MatchedCommit, error) {
 	authorDate, err := lc.AuthorDate()
 	if err != nil {
 		return false, nil, err
@@ -108,13 +108,13 @@ type MessageMatches struct {
 	*casetransform.Regexp
 }
 
-func (m *MessageMatches) Match(lc *LazyCommit) (bool, *CommitHighlights, error) {
+func (m *MessageMatches) Match(lc *LazyCommit) (bool, *MatchedCommit, error) {
 	results := m.FindAllIndex(lc.Message, -1, &lc.LowerBuf)
 	if results == nil {
 		return false, nil, nil
 	}
 
-	return true, &CommitHighlights{
+	return true, &MatchedCommit{
 		Message: matchesToRanges(lc.Message, results),
 	}, nil
 }
@@ -125,7 +125,7 @@ type DiffMatches struct {
 	*casetransform.Regexp
 }
 
-func (dm *DiffMatches) Match(lc *LazyCommit) (bool, *CommitHighlights, error) {
+func (dm *DiffMatches) Match(lc *LazyCommit) (bool, *MatchedCommit, error) {
 	diff, err := lc.Diff()
 	if err != nil {
 		return false, nil, err
@@ -133,9 +133,9 @@ func (dm *DiffMatches) Match(lc *LazyCommit) (bool, *CommitHighlights, error) {
 
 	foundMatch := false
 
-	var fileDiffHighlights map[int]FileDiffHighlight
+	var fileDiffHighlights map[int]MatchedFileDiff
 	for fileIdx, fileDiff := range diff {
-		var hunkHighlights map[int]HunkHighlight
+		var hunkHighlights map[int]MatchedHunk
 		for hunkIdx, hunk := range fileDiff.Hunks {
 			var lineHighlights map[int]protocol.Ranges
 			for lineIdx, line := range bytes.Split(hunk.Body, []byte("\n")) {
@@ -162,20 +162,20 @@ func (dm *DiffMatches) Match(lc *LazyCommit) (bool, *CommitHighlights, error) {
 
 			if len(lineHighlights) > 0 {
 				if hunkHighlights == nil {
-					hunkHighlights = make(map[int]HunkHighlight, 1)
+					hunkHighlights = make(map[int]MatchedHunk, 1)
 				}
-				hunkHighlights[hunkIdx] = HunkHighlight{lineHighlights}
+				hunkHighlights[hunkIdx] = MatchedHunk{lineHighlights}
 			}
 		}
 		if len(hunkHighlights) > 0 {
 			if fileDiffHighlights == nil {
-				fileDiffHighlights = make(map[int]FileDiffHighlight)
+				fileDiffHighlights = make(map[int]MatchedFileDiff)
 			}
-			fileDiffHighlights[fileIdx] = FileDiffHighlight{HunkHighlights: hunkHighlights}
+			fileDiffHighlights[fileIdx] = MatchedFileDiff{MatchedHunks: hunkHighlights}
 		}
 	}
 
-	return foundMatch, &CommitHighlights{
+	return foundMatch, &MatchedCommit{
 		Diff: fileDiffHighlights,
 	}, nil
 }
@@ -186,30 +186,30 @@ type DiffModifiesFile struct {
 	*casetransform.Regexp
 }
 
-func (dmf *DiffModifiesFile) Match(lc *LazyCommit) (bool, *CommitHighlights, error) {
+func (dmf *DiffModifiesFile) Match(lc *LazyCommit) (bool, *MatchedCommit, error) {
 	diff, err := lc.Diff()
 	if err != nil {
 		return false, nil, err
 	}
 
 	foundMatch := false
-	var fileDiffHighlights map[int]FileDiffHighlight
+	var fileDiffHighlights map[int]MatchedFileDiff
 	for fileIdx, fileDiff := range diff {
 		oldFileMatches := dmf.FindAllIndex([]byte(fileDiff.OrigName), -1, &lc.LowerBuf)
 		newFileMatches := dmf.FindAllIndex([]byte(fileDiff.NewName), -1, &lc.LowerBuf)
 		if oldFileMatches != nil || newFileMatches != nil {
 			if fileDiffHighlights == nil {
-				fileDiffHighlights = make(map[int]FileDiffHighlight)
+				fileDiffHighlights = make(map[int]MatchedFileDiff)
 			}
 			foundMatch = true
-			fileDiffHighlights[fileIdx] = FileDiffHighlight{
+			fileDiffHighlights[fileIdx] = MatchedFileDiff{
 				OldFile: matchesToRanges([]byte(fileDiff.OrigName), oldFileMatches),
 				NewFile: matchesToRanges([]byte(fileDiff.NewName), newFileMatches),
 			}
 		}
 	}
 
-	return foundMatch, &CommitHighlights{
+	return foundMatch, &MatchedCommit{
 		Diff: fileDiffHighlights,
 	}, nil
 }
@@ -219,8 +219,8 @@ type Operator struct {
 	Operands []MatchTree
 }
 
-func (o *Operator) Match(commit *LazyCommit) (bool, *CommitHighlights, error) {
-	var resultMatches *CommitHighlights
+func (o *Operator) Match(commit *LazyCommit) (bool, *MatchedCommit, error) {
+	var resultMatches *MatchedCommit
 	hasMatch := false
 	for _, operand := range o.Operands {
 		matched, matches, err := operand.Match(commit)

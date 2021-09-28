@@ -980,7 +980,7 @@ func (s *Server) search(w http.ResponseWriter, r *http.Request, args *protocol.S
 		}
 
 		var conversionErr error
-		err = search.Search(ctx, dir.Path(), args.Revisions, mt, func(match *search.LazyCommit, highlights *search.CommitHighlights) bool {
+		err = search.Search(ctx, dir.Path(), args.Revisions, mt, func(match *search.LazyCommit, highlights *search.MatchedCommit) bool {
 			res, err := search.CreateCommitMatch(match, highlights, args.IncludeDiff)
 			if err != nil {
 				conversionErr = err
@@ -1049,11 +1049,11 @@ func (s *Server) search(w http.ResponseWriter, r *http.Request, args *protocol.S
 // 2) the number of messsage matches if there are any
 // 3) one, to represent matching the commit, but nothing inside it
 func matchCount(cm *protocol.CommitMatch) int {
-	if len(cm.Diff.Highlights) > 0 {
-		return len(cm.Diff.Highlights)
+	if len(cm.Diff.MatchedRanges) > 0 {
+		return len(cm.Diff.MatchedRanges)
 	}
-	if len(cm.Message.Highlights) > 0 {
-		return len(cm.Message.Highlights)
+	if len(cm.Message.MatchedRanges) > 0 {
+		return len(cm.Message.MatchedRanges)
 	}
 	return 1
 }
