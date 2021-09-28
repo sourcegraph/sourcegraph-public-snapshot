@@ -32,12 +32,14 @@ steps:
     entrypoint: bash
     args: ['-c', 'gcloud secrets versions access latest --secret=e2e-builder-sa-key --quiet --project=sourcegraph-ci > /workspace/builder-sa-key.json']
   - name: index.docker.io/hashicorp/packer:1.6.6
+    timeout: 1800s
     env:
       - 'NAME=executor-$(git log -n1 --pretty=format:%h)-${BUILDKITE_BUILD_NUMBER}'
       - 'SRC_CLI_VERSION=${SRC_CLI_VERSION}'
       - 'AWS_EXECUTOR_AMI_ACCESS_KEY=${AWS_EXECUTOR_AMI_ACCESS_KEY}'
       - 'AWS_EXECUTOR_AMI_SECRET_KEY=${AWS_EXECUTOR_AMI_SECRET_KEY}'
     args: ['build', 'executor.json']
+timeout: 1800s
 EOF
 
 # Copy cloudbuild files into workspace.
