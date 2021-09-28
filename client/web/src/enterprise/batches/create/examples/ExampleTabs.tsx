@@ -14,7 +14,7 @@ import { Container, LoadingSpinner } from '@sourcegraph/wildcard'
 import batchSpecSchemaJSON from '../../../../../../../schema/batch_spec.schema.json'
 import { ErrorAlert } from '../../../../components/alerts'
 import { SidebarGroup, SidebarGroupHeader } from '../../../../components/Sidebar'
-import { BatchSpecWorkspacesFields } from '../../../../graphql-operations'
+import { BatchSpecWorkspacesFields, Scalars } from '../../../../graphql-operations'
 import { MonacoSettingsEditor } from '../../../../settings/MonacoSettingsEditor'
 import { BatchSpecDownloadLink, getFileName } from '../../BatchSpec'
 import { excludeRepo } from '../yaml-util'
@@ -45,9 +45,10 @@ const EXAMPLES: [Example, Example, Example, Example] = [
 
 interface ExampleTabsProps extends ThemeProps {
     updateSpec: (spec: Spec) => void
+    setPreviewID: (id: Scalars['ID']) => void
 }
 
-export const ExampleTabs: React.FunctionComponent<ExampleTabsProps> = ({ isLightTheme, updateSpec }) => (
+export const ExampleTabs: React.FunctionComponent<ExampleTabsProps> = ({ isLightTheme, updateSpec, setPreviewID }) => (
     <Tabs className={styles.exampleTabs}>
         <TabList className="d-flex flex-column flex-shrink-0">
             <SidebarGroup>
@@ -69,6 +70,7 @@ export const ExampleTabs: React.FunctionComponent<ExampleTabsProps> = ({ isLight
                         isLightTheme={isLightTheme}
                         index={index}
                         updateSpec={updateSpec}
+                        setPreviewID={setPreviewID}
                     />
                 ))}
             </TabPanels>
@@ -97,6 +99,7 @@ const ExampleTab: React.FunctionComponent<{ index: number }> = ({ children, inde
 interface ExampleTabPanelProps extends ThemeProps {
     example: Example
     updateSpec: (spec: Spec) => void
+    setPreviewID: (id: Scalars['ID']) => void
     index: number
 }
 
@@ -105,6 +108,7 @@ const ExampleTabPanel: React.FunctionComponent<ExampleTabPanelProps> = ({
     isLightTheme,
     index,
     updateSpec,
+    setPreviewID,
     ...props
 }) => {
     const { selectedIndex } = useTabsContext()
@@ -155,6 +159,12 @@ const ExampleTabPanel: React.FunctionComponent<ExampleTabPanelProps> = ({
             [codeUpdates]
         )
     )
+
+    useEffect(() => {
+        if (preview && !isErrorLike(preview)) {
+            setPreviewID(preview.id)
+        }
+    }, [preview, setPreviewID])
 
     // Update the spec in parent state whenever the code changes
     useEffect(() => {

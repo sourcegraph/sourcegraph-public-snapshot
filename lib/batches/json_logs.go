@@ -16,10 +16,20 @@ type LogEvent struct {
 	Metadata interface{}    `json:"metadata,omitempty"`
 }
 
-func (l LogEvent) UnmarshalJSON(data []byte) error {
-	if err := json.Unmarshal(data, &l); err != nil {
+type logEventJSON struct {
+	Operation LogEventOperation `json:"operation"`
+	Timestamp time.Time         `json:"timestamp"`
+	Status    LogEventStatus    `json:"status"`
+}
+
+func (l *LogEvent) UnmarshalJSON(data []byte) error {
+	var j *logEventJSON
+	if err := json.Unmarshal(data, &j); err != nil {
 		return err
 	}
+	l.Operation = j.Operation
+	l.Timestamp = j.Timestamp
+	l.Status = j.Status
 
 	switch l.Operation {
 	case LogEventOperationParsingBatchSpec:

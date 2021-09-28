@@ -53,7 +53,7 @@ FROM
 	batch_spec_workspaces
 WHERE
 	batch_spec_id = %s
-;`
+`
 
 // CreateBatchSpecWorkspaceExecutionJob creates the given batch spec workspace jobs.
 func (s *Store) CreateBatchSpecWorkspaceExecutionJobs(ctx context.Context, batchSpecID int64) (err error) {
