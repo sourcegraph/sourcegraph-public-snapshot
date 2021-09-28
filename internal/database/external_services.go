@@ -716,6 +716,7 @@ func (e *ExternalServiceStore) Upsert(ctx context.Context, svcs ...*types.Extern
 			&svcs[i].Unrestricted,
 			&svcs[i].CloudDefault,
 			&keyID,
+			&dbutil.NullInt32{N: &svcs[i].NamespaceOrgID},
 		)
 		if err != nil {
 			return err
