@@ -5,6 +5,8 @@ set -e
 BASE_URL=http://localhost:3443
 TEST_LABEL=$1
 TEST_PATH=$2
+
+# Store results on `main` so future branches can be compared against a baseline
 [[ "$BUILDKITE_BRANCH" == "main" ]] && SHOULD_STORE_RESULTS='true' || SHOULD_STORE_RESULTS='false'
 
 echo "--- Download pre-built client artifact"
