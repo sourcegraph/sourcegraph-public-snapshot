@@ -39,7 +39,7 @@ type Event struct {
 	Argument       json.RawMessage
 	PublicArgument json.RawMessage
 	UserProperties json.RawMessage
-	DeviceID       string
+	DeviceID       *string
 	InsertID       *string
 	EventID        *int32
 }
@@ -164,7 +164,7 @@ func publishAmplitudeEvent(args Event) error {
 		APIKey: amplitudeAPIToken,
 		Events: []amplitude.AmplitudeEvent{{
 			UserID:          userID,
-			DeviceID:        args.DeviceID,
+			DeviceID:        *args.DeviceID,
 			InsertID:        args.InsertID,
 			EventID:         args.EventID,
 			EventType:       args.EventName,

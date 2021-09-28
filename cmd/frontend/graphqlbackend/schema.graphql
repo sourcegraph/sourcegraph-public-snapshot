@@ -444,7 +444,7 @@ type Mutation {
         """
         Device ID used for Amplitude analytics. Used on Sourcegraph Cloud only.
         """
-        deviceID: String!
+        deviceID: String
         """
         Event ID used to deduplicate events that occur simultaneously in Amplitude analytics.
         See https://developers.amplitude.com/docs/http-api-v2#optional-keys. Used on Sourcegraph Cloud only.

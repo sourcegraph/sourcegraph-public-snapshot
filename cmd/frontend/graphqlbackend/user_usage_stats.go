@@ -88,7 +88,7 @@ func (r *schemaResolver) LogEvent(ctx context.Context, args *struct {
 	Referrer       *string
 	PublicArgument *string
 	UserProperties *string
-	DeviceID       string
+	DeviceID       *string
 	InsertID       *string
 	EventID        *int32
 }) (*EmptyResponse, error) {
