@@ -43,7 +43,7 @@ steps:
       # https://austincloud.guru/2020/05/14/long-running-packer-builds-failing/
       - 'AWS_MAX_ATTEMPTS=240'
       - 'AWS_POLL_DELAY_SECONDS=5'
-    args: ['build', 'executor.json']
+    args: ['build', '-force', 'executor.json']
 EOF
 
 # Copy cloudbuild files into workspace.
