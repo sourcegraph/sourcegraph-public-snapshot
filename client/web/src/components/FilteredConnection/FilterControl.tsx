@@ -60,7 +60,7 @@ export const FilterControl: React.FunctionComponent<FilterControlProps> = ({
     )
 
     return (
-        <div className="filtered-connection-filter-control">
+        <div className={styles.filterControl}>
             {filters.map(filter => {
                 if (filter.type === 'radio') {
                     return (

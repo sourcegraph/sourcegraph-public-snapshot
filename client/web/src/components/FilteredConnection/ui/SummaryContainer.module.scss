@@ -1,0 +1,23 @@
+.normal {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+
+    &:empty {
+        // Hide if no children
+        display: none;
+    }
+}
+
+.compact {
+    padding: var(--compact-summary-padding);
+    border-top: var(--compact-summary-divider);
+    min-height: var(--compact-summary-min-height);
+}
+
+.centered {
+    flex-direction: column;
+    justify-content: center;
+    margin-top: 1rem;
+}

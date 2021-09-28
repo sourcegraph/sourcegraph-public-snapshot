@@ -10,106 +10,116 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/enterprise/dev/ci/images"
 	bk "github.com/sourcegraph/sourcegraph/enterprise/dev/ci/internal/buildkite"
+	"github.com/sourcegraph/sourcegraph/enterprise/dev/ci/internal/ci/changed"
+	"github.com/sourcegraph/sourcegraph/enterprise/dev/ci/internal/ci/operations"
 )
 
-// Operation defines a function that adds something to a pipeline.
-//
-// Functions that return an Operation should never accept Config as an argument - they
-// should only accept `changedFiles` or evaluated arguments.
-//
-// Operations should never conditionally add Steps and Operations - they should only use
-// arguments to create variations of specific Operations (e.g. with different arguments).
-type Operation func(*bk.Pipeline)
+// CoreTestOperationsOptions should be used ONLY to adjust the behaviour of specific steps,
+// e.g. by adding flags, and not as a condition for adding steps or commands.
+type CoreTestOperationsOptions struct {
+	// for clientChromaticTests
+	ChromaticShouldAutoAccept bool
+}
 
-// CoreTestOperations is a core set of tests that should be run in most CI cases. These
-// steps should generally be quite fast.
-func CoreTestOperations(changedFiles ChangedFiles, buildOptions bk.BuildOptions) []Operation {
-	// Default set
-	operations := []Operation{
-		triggerAsync(buildOptions), // triggers a slow pipeline, so do it first.
-		addLint,                    // ~4.5m
-		frontendTests,              // ~4.5m
-		addWebApp,                  // ~3m
-		addBrowserExt,              // ~2m
-		addBrandedTests,            // ~1.5m
-		addGoTests,                 // ~1.5m
-		addCheck,                   // ~1m
-		addGoBuild,                 // ~0.5m
-		addDockerfileLint,          // ~0.2m
+// CoreTestOperations is a core set of tests that should be run in most CI cases. More
+// notably, this is what is used to define operations that run on PRs. Please read the
+// following notes:
+//
+// - changedFiles can be nil to run all tests.
+// - opts should be used ONLY to adjust the behaviour of specific steps, e.g. by adding flags,
+// and not as a condition for adding steps or commands.
+// - be careful not to add duplicate steps.
+//
+// If the conditions for the addition of an operation cannot be expressed using the above
+// arguments, please add it to the switch case within `GeneratePipeline` instead.
+func CoreTestOperations(changedFiles changed.Files, opts CoreTestOperationsOptions) *operations.Set {
+	// Various RunTypes can provide a nil changedFiles to run all checks.
+	runAll := len(changedFiles) == 0
+
+	// Base set
+	ops := operations.NewSet([]operations.Operation{
+		// lightweight check that works over a lot of stuff - we are okay with running
+		// these on all PRs
+		addPrettier,
+		addCheck,
+	})
+
+	if runAll || changedFiles.AffectsClient() {
+		ops.Append(
+			clientIntegrationTests,
+			clientChromaticTests(opts.ChromaticShouldAutoAccept),
+			frontendTests,   // ~4.5m
+			addWebApp,       // ~3m
+			addBrowserExt,   // ~2m
+			addBrandedTests, // ~1.5m
+			addTsLint,
+		)
 	}
 
-	// Special-case branches provide a nil changedFiles to only run default changes.
-	if len(changedFiles) == 0 {
-		return append(operations, wait)
-	}
-
-	// Build special pipelines for changes that only touch a subset of code.
-	switch {
-	case changedFiles.onlyConfig():
-		// If this PR only affects e.g. .github config files, no steps are necessary to run.
-		operations = []Operation{}
-
-	case changedFiles.onlyDocs():
-		// If this is a docs-only PR, run only the steps necessary to verify the docs.
-		operations = []Operation{
-			addDocs,
-		}
-
-	case changedFiles.onlyGo() && !changedFiles.onlySg():
-		// If this is a go-only PR, run only the steps necessary to verify the go code.
-		operations = []Operation{
-			addGoTests, // ~1.5m
-			addCheck,   // ~1m
-			addGoBuild, // ~0.5m
-		}
-
-	case changedFiles.onlySg():
-		// If the changes are only in ./dev/sg then we only need to run a subset of steps.
-		operations = []Operation{
+	if runAll || changedFiles.AffectsGo() {
+		ops.Append(
 			addGoTests,
-			addCheck,
+		)
+
+		// If the changes are only in ./dev/sg then we skip the build
+		if runAll || !changedFiles.AffectsSg() {
+			ops.Append(
+				addGoBuild, // ~0.5m
+			)
 		}
 	}
 
-	// Add additional steps
-	if changedFiles.affectsClient() {
-		operations = append(operations, clientIntegrationTests, clientChromaticTests(false))
+	if runAll || changedFiles.AffectsGraphQL() {
+		ops.Append(addGraphQLLint)
+	}
+
+	if runAll || changedFiles.AffectsDockerfiles() {
+		ops.Append(addDockerfileLint)
+	}
+
+	if runAll || changedFiles.AffectsDocs() {
+		ops.Append(addDocs)
 	}
 
 	// wait for all steps to pass
-	return append(operations, wait)
+	ops.Append(wait)
+	return &ops
 }
 
 // Verifies the docs formatting and builds the `docsite` command.
 func addDocs(pipeline *bk.Pipeline) {
 	pipeline.AddStep(":memo: Check and build docsite",
-		bk.Cmd("./dev/ci/yarn-run.sh prettier-check"),
 		bk.Cmd("./dev/check/docsite.sh"))
 }
 
 // Adds the static check test step.
 func addCheck(pipeline *bk.Pipeline) {
-	pipeline.AddStep(":white_check_mark: Misc Linters", bk.Cmd("./dev/check/all.sh"))
+	pipeline.AddStep(":white_check_mark: Misc Linters",
+		bk.Cmd("./dev/check/all.sh"))
 }
 
-// Adds the lint test step.
-func addLint(pipeline *bk.Pipeline) {
-	// If we run all lints together it is our slow step (5m). So we split it
-	// into two and try balance the runtime. yarn is a fixed cost so we always
-	// pay it on a step. Aim for around 3m.
-	//
-	// Random sample of timings:
-	//
-	// - yarn 41s
-	// - eslint 137s
+// yarn ~41s + ~30s
+func addPrettier(pipeline *bk.Pipeline) {
+	pipeline.AddStep(":lipstick: Prettier",
+		bk.Cmd("dev/ci/yarn-run.sh prettier-check"))
+}
+
+// yarn ~41s + ~1s
+func addGraphQLLint(pipeline *bk.Pipeline) {
+	pipeline.AddStep(":lipstick: :graphql:",
+		bk.Cmd("dev/ci/yarn-run.sh graphql-lint"))
+}
+
+// Adds Typescript linting. (2x ~41s) + ~60s + ~137s + 7s
+func addTsLint(pipeline *bk.Pipeline) {
+	// - yarn 41s (required on all steps)
 	// - build-ts 60s
-	// - prettier 29s
+	// - eslint 137s
 	// - stylelint 7s
-	// - graphql-lint 1s
-	pipeline.AddStep(":eslint: Lint all Typescript",
+	pipeline.AddStep(":eslint: Typescript eslint",
 		bk.Cmd("dev/ci/yarn-run.sh build-ts all:eslint")) // eslint depends on build-ts
-	pipeline.AddStep(":lipstick: :lint-roller: :stylelint: :graphql:", // TODO: Add header - Similar to the previous step
-		bk.Cmd("dev/ci/yarn-run.sh prettier-check all:stylelint graphql-lint"))
+	pipeline.AddStep(":stylelint: Stylelint",
+		bk.Cmd("dev/ci/yarn-run.sh all:stylelint"))
 }
 
 // Adds steps for the OSS and Enterprise web app builds. Runs the web app tests.
@@ -205,7 +215,7 @@ func clientIntegrationTests(pipeline *bk.Pipeline) {
 		append(finalizeSteps, puppeteerFinalizeDependencies...)...)
 }
 
-func clientChromaticTests(autoAcceptChanges bool) Operation {
+func clientChromaticTests(autoAcceptChanges bool) operations.Operation {
 	return func(pipeline *bk.Pipeline) {
 		// Upload storybook to Chromatic
 		chromaticCommand := "yarn chromatic --exit-zero-on-changes --exit-once-uploaded"
@@ -266,15 +276,16 @@ func addDockerfileLint(pipeline *bk.Pipeline) {
 // Adds backend integration tests step.
 //
 // Runtime: ~11m
-func addBackendIntegrationTests(pipeline *bk.Pipeline) {
-	pipeline.AddStep(":chains: Backend integration tests",
-		bk.Cmd("pushd enterprise"),
-		bk.Cmd("./cmd/server/pre-build.sh"),
-		bk.Cmd("./cmd/server/build.sh"),
-		bk.Cmd("popd"),
-		bk.Cmd("./dev/ci/backend-integration.sh"),
-		bk.Cmd(`docker image rm -f "$IMAGE"`),
-		bk.ArtifactPaths("$HOME/.sourcegraph-dev/logs/**/*"))
+func addBackendIntegrationTests(candidateImageTag string) operations.Operation {
+	return func(pipeline *bk.Pipeline) {
+		pipeline.AddStep(":chains: Backend integration tests",
+			// Run tests against the candidate server image
+			bk.DependsOn(candidateImageStepKey("server")),
+			bk.Env("IMAGE",
+				images.DevRegistryImage("server", candidateImageTag)),
+			bk.Cmd("./dev/ci/backend-integration.sh"),
+			bk.ArtifactPaths("$HOME/.sourcegraph-dev/logs/**/*"))
+	}
 }
 
 func addBrowserExtensionE2ESteps(pipeline *bk.Pipeline) {
@@ -331,8 +342,8 @@ func wait(pipeline *bk.Pipeline) {
 	pipeline.AddWait()
 }
 
-// Trigger the async pipeline to run.
-func triggerAsync(buildOptions bk.BuildOptions) Operation {
+// Trigger the async pipeline to run. See pipeline.async.yaml.
+func triggerAsync(buildOptions bk.BuildOptions) operations.Operation {
 	return func(pipeline *bk.Pipeline) {
 		pipeline.AddTrigger(":snail: Trigger async",
 			bk.Trigger("sourcegraph-async"),
@@ -379,7 +390,7 @@ func (opts *e2eAndQAOptions) copyEnv(keys ...string) map[string]string {
 	return m
 }
 
-func triggerE2EandQA(opts e2eAndQAOptions) Operation {
+func triggerE2EandQA(opts e2eAndQAOptions) operations.Operation {
 	customOptions := bk.BuildOptions{
 		Message: opts.buildOptions.Message,
 		Branch:  opts.buildOptions.Branch,
@@ -426,14 +437,21 @@ func triggerE2EandQA(opts e2eAndQAOptions) Operation {
 	}
 }
 
+// candidateImageStepKey is the key for the given app (see the `images` package). Useful for
+// adding dependencies on a step.
+func candidateImageStepKey(app string) string {
+	return strings.ReplaceAll(app, ".", "-") + ":candidate"
+}
+
 // Build a candidate docker image that will re-tagged with the final
 // tags once the e2e tests pass.
-func buildCandidateDockerImage(app, version, tag string) Operation {
+func buildCandidateDockerImage(app, version, tag string) operations.Operation {
 	return func(pipeline *bk.Pipeline) {
 		image := strings.ReplaceAll(app, "/", "-")
 		localImage := "sourcegraph/" + image + ":" + version
 
 		cmds := []bk.StepOpt{
+			bk.Key(candidateImageStepKey(app)),
 			bk.Cmd(fmt.Sprintf(`echo "Building candidate %s image..."`, app)),
 			bk.Env("DOCKER_BUILDKIT", "1"),
 			bk.Env("IMAGE", localImage),
@@ -460,12 +478,12 @@ func buildCandidateDockerImage(app, version, tag string) Operation {
 			cmds = append(cmds, bk.Cmd(cmdDir+"/build.sh"))
 		}
 
-		devImage := fmt.Sprintf("%s/%s", images.SourcegraphDockerDevRegistry, image)
+		devImage := images.DevRegistryImage(app, tag)
 		cmds = append(cmds,
 			// Retag the local image for dev registry
-			bk.Cmd(fmt.Sprintf("docker tag %s %s:%s", localImage, devImage, tag)),
+			bk.Cmd(fmt.Sprintf("docker tag %s %s", localImage, devImage)),
 			// Publish tagged image
-			bk.Cmd(fmt.Sprintf("docker push %s:%s", devImage, tag)),
+			bk.Cmd(fmt.Sprintf("docker push %s", devImage)),
 		)
 
 		pipeline.AddStep(fmt.Sprintf(":docker: :construction: %s", app), cmds...)
@@ -476,11 +494,10 @@ func buildCandidateDockerImage(app, version, tag string) Operation {
 // after the e2e tests pass.
 //
 // It requires Config as an argument because published images require a lot of metadata.
-func publishFinalDockerImage(c Config, app string, insiders bool) Operation {
+func publishFinalDockerImage(c Config, app string, insiders bool) operations.Operation {
 	return func(pipeline *bk.Pipeline) {
-		image := strings.ReplaceAll(app, "/", "-")
-		devImage := fmt.Sprintf("%s/%s", images.SourcegraphDockerDevRegistry, image)
-		publishImage := fmt.Sprintf("%s/%s", images.SourcegraphDockerPublishRegistry, image)
+		devImage := images.DevRegistryImage(app, "")
+		publishImage := images.PublishedRegistryImage(app, "")
 
 		var images []string
 		for _, image := range []string{publishImage, devImage} {
@@ -520,7 +537,7 @@ func publishFinalDockerImage(c Config, app string, insiders bool) Operation {
 }
 
 // ~6m (building executor base VM)
-func buildExecutor(timestamp time.Time, version string) Operation {
+func buildExecutor(timestamp time.Time, version string) operations.Operation {
 	return func(pipeline *bk.Pipeline) {
 		cmds := []bk.StepOpt{
 			bk.Cmd(`echo "Building executor cloud image..."`),
@@ -533,7 +550,7 @@ func buildExecutor(timestamp time.Time, version string) Operation {
 	}
 }
 
-func publishExecutor(timestamp time.Time, version string) Operation {
+func publishExecutor(timestamp time.Time, version string) operations.Operation {
 	return func(pipeline *bk.Pipeline) {
 		cmds := []bk.StepOpt{
 			bk.Cmd(`echo "Releasing executor cloud image..."`),

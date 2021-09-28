@@ -1,4 +1,4 @@
-package search
+package casetransform
 
 // python to generate ', '.join(hex(ord(chr(i).lower())) for i in range(256))
 var lowerTable = [256]uint8{

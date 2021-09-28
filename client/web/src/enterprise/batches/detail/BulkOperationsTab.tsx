@@ -59,7 +59,7 @@ export const BulkOperationsTab: React.FunctionComponent<BulkOperationsTabProps> 
                 listComponent="div"
                 emptyElement={<EmptyBulkOperationsListElement />}
                 noSummaryIfAllNodesVisible={true}
-                className="filtered-connection__centered-summary"
+                withCenteredSummary={true}
             />
         </Container>
     )

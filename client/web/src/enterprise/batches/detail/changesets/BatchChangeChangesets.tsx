@@ -248,7 +248,7 @@ const BatchChangeChangesetsImpl: React.FunctionComponent<Props> = ({
                     useURLQuery={true}
                     listComponent="div"
                     listClassName={styles.batchChangeChangesetsGrid}
-                    className="filtered-connection__centered-summary"
+                    withCenteredSummary={true}
                     headComponent={BatchChangeChangesetsHeader}
                     headComponentProps={{
                         allSelected: showSelectRow && areAllVisibleSelected(),

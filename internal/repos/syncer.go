@@ -11,11 +11,11 @@ import (
 	"github.com/hashicorp/go-multierror"
 	"github.com/inconshreveable/log15"
 	"github.com/prometheus/client_golang/prometheus"
+	"golang.org/x/sync/singleflight"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/locker"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
@@ -49,6 +49,9 @@ type Syncer struct {
 	// UserReposMaxPerSite can be used to override the value read from config.
 	// If zero, we'll read from config instead.
 	UserReposMaxPerSite int
+
+	// Ensure that we only run one sync per repo at a time
+	syncGroup singleflight.Group
 }
 
 // RunOptions contains options customizing Run behaviour.
@@ -262,20 +265,37 @@ func (s *Syncer) SyncRepo(ctx context.Context, name api.RepoName) (repo *types.R
 	}
 
 	if repo == nil {
-		// We don't have this repo yet, so block before returning.
-		return s.syncRepo(ctx, codehost, name, nil)
+		// We don't have this repo yet so we need to try and sync it now and we will block
+		// until syncing is complete.
+		repo, err, _ := s.syncGroup.Do(string(name), func() (interface{}, error) {
+			return s.syncRepo(ctx, codehost, name, nil)
+		})
+		if err != nil {
+			return nil, err
+		}
+		return repo.(*types.Repo), nil
 	}
 
 	// Only public repos can be individually synced on sourcegraph.com
 	if repo.Private {
 		return nil, &database.RepoNotFoundErr{Name: name}
 	}
+
 	// Sync the repo in the background if it wasn't updated in 1 minute.
 	if s.Now().Sub(repo.UpdatedAt) >= time.Minute {
 		go func() {
 			ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 			defer cancel()
-			s.syncRepo(ctx, codehost, name, repo)
+
+			// We don't care about the return value here, but we still want to ensure that
+			// only one is in flight at a time.
+			_, _, _ = s.syncGroup.Do(string(name), func() (interface{}, error) {
+				repo, err := s.syncRepo(ctx, codehost, name, repo)
+				if err != nil {
+					log15.Error("Error syncing repo in the background", "name", name, "error", err)
+				}
+				return repo, err
+			})
 		}()
 	}
 
@@ -291,29 +311,6 @@ func (s *Syncer) syncRepo(
 	var svc *types.ExternalService
 	ctx, save := s.observeSync(ctx, "Syncer.syncRepo", string(name))
 	defer func() { save(svc, err) }()
-
-	lk := locker.NewWithDB(nil, "repos.sync-repo").With(s.Store)
-
-	blocking := stored == nil
-	locked, unlock, err := lk.Lock(ctx, locker.StringKey(string(name)), blocking)
-	if err != nil {
-		return nil, errors.Wrapf(err, "failed to acquire sync lock for %q", name)
-	}
-
-	if !locked {
-		return stored, nil
-	}
-
-	defer func() { err = unlock(err) }()
-
-	// We may have blocked waiting for another process to sync the repo, so let's fetch it from the database if
-	// it exists and return it.
-	if blocking {
-		repo, err = s.Store.RepoStore.GetByName(ctx, name)
-		if err == nil {
-			return repo, nil
-		}
-	}
 
 	svcs, err := s.Store.ExternalServiceStore.List(ctx, database.ExternalServicesListOptions{
 		Kinds:            []string{extsvc.TypeToKind(codehost.ServiceType)},

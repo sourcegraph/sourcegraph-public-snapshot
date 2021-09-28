@@ -5,6 +5,7 @@ import (
 	"os"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf/confdefaults"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
@@ -99,6 +100,35 @@ func TestAuthPasswordResetLinkDuration(t *testing.T) {
 			Mock(test.sc)
 			if got, want := AuthPasswordResetLinkExpiry(), test.want; got != want {
 				t.Fatalf("AuthPasswordResetLinkExpiry() = %v, want %v", got, want)
+			}
+		})
+	}
+}
+
+func TestGitLongCommandTimeout(t *testing.T) {
+	tests := []struct {
+		name string
+		sc   *Unified
+		want time.Duration
+	}{{
+		name: "Git long command timeout has a default value if null",
+		sc:   &Unified{},
+		want: defaultGitLongCommandTimeout,
+	}, {
+		name: "Git long command timeout has a default value if blank",
+		sc:   &Unified{SiteConfiguration: schema.SiteConfiguration{GitLongCommandTimeout: 0}},
+		want: defaultGitLongCommandTimeout,
+	}, {
+		name: "Git long command timeout can be customized",
+		sc:   &Unified{SiteConfiguration: schema.SiteConfiguration{GitLongCommandTimeout: 60}},
+		want: time.Duration(60) * time.Second,
+	}}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			Mock(test.sc)
+			if got, want := GitLongCommandTimeout(), test.want; got != want {
+				t.Fatalf("GitLongCommandTimeout() = %v, want %v", got, want)
 			}
 		})
 	}
