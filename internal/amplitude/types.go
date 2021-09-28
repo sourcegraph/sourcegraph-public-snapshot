@@ -6,10 +6,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 )
 
-// AmplitudeEventPayload represents the structure of the payloads we send to Amplitude
+// EventPayload represents the structure of the payloads we send to Amplitude
 // when we log an event. We can send more than one event in Events, but we currently
 // send events in individual payloads.
-type AmplitudeEventPayload struct {
+type EventPayload struct {
 	APIKey string           `json:"api_key"`
 	Events []AmplitudeEvent `json:"events"`
 }

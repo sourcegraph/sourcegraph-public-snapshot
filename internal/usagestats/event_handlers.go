@@ -158,7 +158,7 @@ func publishAmplitudeEvent(args Event) error {
 		return err
 	}
 
-	amplitudeEvent, err := json.Marshal(amplitude.AmplitudeEventPayload{
+	amplitudeEvent, err := json.Marshal(amplitude.EventPayload{
 		APIKey: amplitudeAPIToken,
 		Events: []amplitude.AmplitudeEvent{{
 			UserID:          userID,
