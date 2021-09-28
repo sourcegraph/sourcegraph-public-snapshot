@@ -66,7 +66,7 @@ func (r *queryResolver) References(ctx context.Context, line, character, limit i
 	// may already be stashed in the cursor decoded above, in which case we don't need to hit
 	// the database.
 
-	orderedMonikers, err := r.orderedMonikersFromCursor(ctx, adjustedUploads, &cursor)
+	orderedMonikers, err := r.orderedMonikersFromCursor(ctx, adjustedUploads, &cursor, "import")
 	if err != nil {
 		return nil, "", err
 	}
@@ -79,6 +79,7 @@ func (r *queryResolver) References(ctx context.Context, line, character, limit i
 	// one of the adjusted indexes. This data may already be stashed in the cursor decoded above,
 	// in which case we don't need to hit the database.
 
+	// Set of dumps that cover the monikers' packages
 	definitionUploadIDs, definitionUploads, err := r.definitionUploadIDsFromCursor(ctx, adjustedUploads, orderedMonikers, &cursor)
 	if err != nil {
 		return nil, "", err
@@ -98,6 +99,8 @@ func (r *queryResolver) References(ctx context.Context, line, character, limit i
 	// Query a single page of location results
 	locations, hasMore, err := r.pageReferences(
 		ctx,
+		"references",
+		"references",
 		adjustedUploads,
 		orderedMonikers,
 		definitionUploadIDs,
@@ -183,13 +186,13 @@ func (r *queryResolver) adjustedUploadsFromCursor(ctx context.Context, line, cha
 // orderedMonikersFromCursor returns the set of monikers attached to the ranges specified by the given
 // upload list. The returned slice will be cached on the given cursor. If this data is already stashed
 // in the given cursor, we don't need to hit the database.
-func (r *queryResolver) orderedMonikersFromCursor(ctx context.Context, adjustedUploads []adjustedUpload, cursor *referencesCursor) ([]precise.QualifiedMonikerData, error) {
+func (r *queryResolver) orderedMonikersFromCursor(ctx context.Context, adjustedUploads []adjustedUpload, cursor *referencesCursor, kind string) ([]precise.QualifiedMonikerData, error) {
 	if cursor.OrderedMonikers != nil {
 		return cursor.OrderedMonikers, nil
 	}
 
 	// Gather all monikers attached to the ranges enclosing the requested position
-	orderedMonikers, err := r.orderedMonikers(ctx, adjustedUploads, "")
+	orderedMonikers, err := r.orderedMonikers(ctx, adjustedUploads, kind)
 	if err != nil {
 		return nil, err
 	}
@@ -248,6 +251,8 @@ func (r *queryResolver) definitionUploadIDsFromCursor(ctx context.Context, adjus
 // left in the result set, a false-valued flag is returned.
 func (r *queryResolver) pageReferences(
 	ctx context.Context,
+	ty string,
+	lsifDataTable string,
 	adjustedUploads []adjustedUpload,
 	orderedMonikers []precise.QualifiedMonikerData,
 	definitionUploadIDs []int,
@@ -266,6 +271,7 @@ func (r *queryResolver) pageReferences(
 		for len(locations) < limit {
 			localLocations, hasMore, err := r.pageLocalReferences(
 				ctx,
+				ty,
 				adjustedUploads,
 				cursor,
 				limit-len(locations),
@@ -293,6 +299,7 @@ func (r *queryResolver) pageReferences(
 		for len(locations) < limit {
 			remoteLocations, hasMore, err := r.pageRemoteReferences(
 				ctx,
+				lsifDataTable,
 				adjustedUploads,
 				orderedMonikers,
 				definitionUploadIDs,
@@ -322,6 +329,7 @@ func (r *queryResolver) pageReferences(
 // returned.
 func (r *queryResolver) pageLocalReferences(
 	ctx context.Context,
+	ty string,
 	adjustedUploads []adjustedUpload,
 	cursor *referencesCursor,
 	limit int,
@@ -338,7 +346,11 @@ func (r *queryResolver) pageLocalReferences(
 			continue
 		}
 
-		locations, totalCount, err := r.lsifStore.References(
+		fn := r.lsifStore.References
+		if ty == "implementations" {
+			fn = r.lsifStore.Implementations
+		}
+		locations, totalCount, err := fn(
 			ctx,
 			adjustedUploads[i].Upload.ID,
 			adjustedUploads[i].AdjustedPathInBundle,
@@ -377,6 +389,7 @@ const maximumIndexesPerMonikerSearch = 50
 // a false-valued flag is returned.
 func (r *queryResolver) pageRemoteReferences(
 	ctx context.Context,
+	lsifDataTable string,
 	adjustedUploads []adjustedUpload,
 	orderedMonikers []precise.QualifiedMonikerData,
 	definitionUploadIDs []int,
@@ -423,7 +436,7 @@ func (r *queryResolver) pageRemoteReferences(
 	}
 
 	// Perform the moniker search
-	locations, totalCount, err := r.monikerLocations(ctx, monikerSearchUploads, orderedMonikers, "references", limit, cursor.RemoteOffset)
+	locations, totalCount, err := r.monikerLocations(ctx, monikerSearchUploads, orderedMonikers, lsifDataTable, limit, cursor.RemoteOffset)
 	if err != nil {
 		return nil, false, err
 	}

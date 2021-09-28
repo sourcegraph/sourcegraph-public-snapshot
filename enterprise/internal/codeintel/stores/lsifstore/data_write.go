@@ -306,6 +306,7 @@ const writeDefinitionReferencesInsertQuery = `
 INSERT INTO %s (dump_id, schema_version, kind, scheme, identifier, data, num_locations)
 SELECT %s, %s, source.kind, source.scheme, source.identifier, source.data, source.num_locations
 FROM t_%s source
+ON CONFLICT DO NOTHING
 `
 
 const dropDefinitionReferencesTemporaryTableQuery = `

@@ -22,7 +22,7 @@ type State struct {
 	NextData               map[int]int                     // maps range/result sets related via next edges
 	ImportedMonikers       *datastructures.IDSet           // moniker ids that have kind "import"
 	ExportedMonikers       *datastructures.IDSet           // moniker ids that have kind "export"
-	ImplementedMonikers    *datastructures.IDSet           // moniker ids that have kind "import"
+	ImplementedMonikers    *datastructures.IDSet           // moniker ids that have kind "implementation"
 	LinkedMonikers         *datastructures.DisjointIDSet   // tracks which moniker ids are related via next edges
 	LinkedReferenceResults map[int][]int                   // tracks which reference result ids are related via item edges
 	Monikers               *datastructures.DefaultIDSetMap // maps items to their monikers

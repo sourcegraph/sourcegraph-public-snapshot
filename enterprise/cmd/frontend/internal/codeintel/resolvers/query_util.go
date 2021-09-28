@@ -202,7 +202,7 @@ func (r *queryResolver) adjustRange(ctx context.Context, repositoryID int, commi
 }
 
 // filterUploadsWithCommits removes the uploads for commits which are unknown to gitserver from the given
-// lice. The slice is filtered in-place and returned (to update the slice length).
+// slice. The slice is filtered in-place and returned (to update the slice length).
 func filterUploadsWithCommits(ctx context.Context, cachedCommitChecker *cachedCommitChecker, uploads []dbstore.Dump) ([]dbstore.Dump, error) {
 	filtered := uploads[:0]
 
