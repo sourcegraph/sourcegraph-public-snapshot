@@ -96,9 +96,9 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 	case PullRequest:
 		// triggers a slow pipeline, currently only affects web. It's optional so we
 		// set it up separately from CoreTestOperations
-		appendOps(triggerAsync(buildOptions))
 
 		operations = CoreTestOperations(c.ChangedFiles, CoreTestOperationsOptions{})
+		appendOps(triggerAsync(buildOptions))
 
 	case BextReleaseBranch:
 		// If this is a browser extension release branch, run the browser-extension tests and
