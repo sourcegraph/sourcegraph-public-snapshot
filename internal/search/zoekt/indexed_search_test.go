@@ -267,7 +267,15 @@ func TestIndexedSearch(t *testing.T) {
 				},
 			}
 
-			indexed, err := newIndexedSubsetSearchRequest(context.Background(), args, search.TextRequest, MissingRepoRevStatus(streaming.StreamFunc(func(streaming.SearchEvent) {})))
+			zoektArgs := &search.ZoektParameters{
+				Query:          q,
+				Typ:            search.TextRequest,
+				FileMatchLimit: tt.args.patternInfo.FileMatchLimit,
+				Select:         tt.args.patternInfo.Select,
+				Zoekt:          args.Zoekt,
+			}
+
+			indexed, err := newIndexedSubsetSearchRequest(context.Background(), args, zoektArgs, MissingRepoRevStatus(streaming.StreamFunc(func(streaming.SearchEvent) {})))
 			if err != nil {
 				t.Fatal(err)
 			}
