@@ -1,4 +1,4 @@
-import { DialogContent, DialogOverlay } from '@reach/dialog'
+// import Dialog, { DialogContent, DialogOverlay } from '@reach/dialog'
 import { Remote } from 'comlink'
 import * as H from 'history'
 import React, { useMemo, useCallback, useEffect } from 'react'
@@ -18,14 +18,20 @@ import { memoizeObservable } from '../../util/memoizeObservable'
 import { useObservable } from '../../util/useObservable'
 
 import styles from './CommandPalette.module.scss'
-import { CommandListResult } from './components/CommandListResult'
+import { CommandResult } from './components/CommandResult'
 import { CommandsModesList } from './components/CommandsModesList'
 import { FuzzyFinderResult } from './components/FuzzyFinderResult'
 import { JumpToLineResult } from './components/JumpToLineResult'
 import { JumpToSymbolResult } from './components/JumpToSymbolResult'
+import { Modal } from './components/Modal'
 import { RecentSearchesResult } from './components/RecentSearchesResult'
 import { ShortcutController } from './components/ShortcutController'
-import { COMMAND_PALETTE_SHORTCUTS, CommandPaletteMode, BUILT_IN_ACTIONS } from './constants'
+import {
+    COMMAND_PALETTE_SHORTCUTS,
+    CommandPaletteMode,
+    BUILT_IN_ACTIONS,
+    KeyboardShortcutWithCallback,
+} from './constants'
 import { useCommandPaletteStore } from './store'
 
 const getMode = (text: string): CommandPaletteMode | undefined =>
@@ -37,11 +43,6 @@ const getContributions = memoizeObservable(
         from(extensionHostAPI).pipe(switchMap(extensionHost => wrapRemoteObservable(extensionHost.getContributions()))),
     () => 'getContributions' // only one instance
 )
-
-interface CommandPaletteActionItemProps {
-    actionItem: ActionItemAction
-    onRunAction: (action: ActionItemAction) => void
-}
 
 function useCommandList(value: string, extensionsController: CommandPaletteProps['extensionsController']) {
     const extensionContributions = useObservable(
@@ -73,11 +74,20 @@ function useCommandList(value: string, extensionsController: CommandPaletteProps
         console.log('running action', action)
     }, [])
 
-    const actionsWithShortcut = useMemo((): ActionItemAction[] => actions.filter(({ keybinding }) => !!keybinding), [
-        actions,
-    ])
+    const shortcuts = useMemo((): KeyboardShortcutWithCallback[] => {
+        const actionsWithShortcuts: KeyboardShortcutWithCallback[] = actions
+            .filter(({ keybinding }) => !!keybinding)
+            .map(action => ({
+                keybindings: action.keybinding ? [action.keybinding] : [],
+                onMatch: () => onRunAction(action),
+                id: action.action.id,
+                title: action.action.title ?? action.action.actionItem?.label ?? '',
+            }))
 
-    return { actions, actionsWithShortcut, onRunAction }
+        return [...COMMAND_PALETTE_SHORTCUTS, ...actionsWithShortcuts]
+    }, [actions, onRunAction])
+
+    return { actions, shortcuts, onRunAction }
 }
 
 export interface CommandPaletteProps
@@ -92,6 +102,8 @@ export interface CommandPaletteProps
 
 /**
  * EXPERIMENTAL: New command palette (RFC 467)
+ *
+ * @description this is a singleton component that is always rendered.
  */
 export const CommandPalette: React.FC<CommandPaletteProps> = ({
     initialIsOpen = false,
@@ -103,7 +115,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
     getAuthenticatedUserID,
 }) => {
     const { isOpen, toggleIsOpen, value, setValue } = useCommandPaletteStore()
-    const { actions, actionsWithShortcut, onRunAction } = useCommandList(value, extensionsController)
+    const { actions, shortcuts, onRunAction } = useCommandList(value, extensionsController)
 
     const mode = getMode(value)
 
@@ -113,9 +125,16 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
         }
     }, [toggleIsOpen, initialIsOpen])
 
-    const onClose = useCallback(() => {
+    const handleClose = useCallback(() => {
         toggleIsOpen()
     }, [toggleIsOpen])
+
+    const handleChange = useCallback(
+        (event: React.ChangeEvent<HTMLInputElement>) => {
+            setValue(event.target.value)
+        },
+        [setValue]
+    )
 
     const activeTextDocument = useObservable(
         useMemo(
@@ -140,70 +159,68 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
 
     const searchText = mode ? value.slice(1) : value
 
-    // TODO: merge other builtin shortcuts, extension-contributed  shortcuts
-    const shortcuts = useMemo(() => [...COMMAND_PALETTE_SHORTCUTS], [])
-
     return (
-        // this is a singleton component that is always rendered.
         <>
             <ShortcutController shortcuts={shortcuts} />
-            {isOpen && (
-                <DialogOverlay isOpen={isOpen} onDismiss={onClose} className={styles.dialogOverlay}>
-                    <DialogContent className="modal-body p-4 rounded border shadow-lg">
-                        <div>
-                            <h1>cmdpal</h1>
-                            <input
-                                autoComplete="off"
-                                spellCheck="false"
-                                aria-autocomplete="list"
-                                className="form-control py-1"
-                                placeholder="Search files by name (append : to jump to a line or @ to go to a symbol or > to search for a command)"
-                                value={value}
-                                onChange={event => setValue(event.target.value)}
-                                type="text"
-                            />
-                        </div>
-                        {!mode && <CommandsModesList />}
-                        {mode === CommandPaletteMode.Command && (
-                            <CommandListResult
-                                actions={actions}
-                                value={searchText}
-                                onRunAction={action => {
-                                    onRunAction(action)
-                                    onClose()
-                                }}
-                            />
-                        )}
-                        {mode === CommandPaletteMode.RecentSearches && (
-                            <RecentSearchesResult
-                                value={searchText}
-                                onClick={onClose}
-                                getAuthenticatedUserID={getAuthenticatedUserID}
-                                platformContext={platformContext}
-                            />
-                        )}
-                        {/* TODO: Only when repo open */}
-                        {mode === CommandPaletteMode.Fuzzy && (
-                            <FuzzyFinderResult value={searchText} onClick={onClose} workspaceRoot={workspaceRoot} />
-                        )}
-                        {/* TODO: Only when code editor open (possibly only when single open TODO) */}
-                        {mode === CommandPaletteMode.JumpToLine && (
-                            <JumpToLineResult
-                                value={searchText}
-                                onClick={onClose}
-                                textDocumentData={activeTextDocument}
-                            />
-                        )}
-                        {mode === CommandPaletteMode.JumpToSymbol && (
-                            <JumpToSymbolResult
-                                value={searchText}
-                                onClick={onClose}
-                                textDocumentData={activeTextDocument}
-                            />
-                        )}
-                    </DialogContent>
-                </DialogOverlay>
-            )}
+            {/* Can be rendered at the main app shell level */}
+            <Modal.Host />
+            {/* USE STYLES */}
+            <Modal isOpen={isOpen} onDismiss={toggleIsOpen}>
+                <Modal.Content>
+                    <div>
+                        <h1>cmdpal</h1>
+                        <input
+                            autoComplete="off"
+                            spellCheck="false"
+                            aria-autocomplete="list"
+                            className="form-control py-1"
+                            placeholder="Search files by name (append : to jump to a line or @ to go to a symbol or > to search for a command)"
+                            value={value}
+                            onChange={handleChange}
+                            type="text"
+                        />
+                    </div>
+                    {!mode && <CommandsModesList />}
+                    {mode === CommandPaletteMode.Command && (
+                        <CommandResult
+                            actions={actions}
+                            value={searchText}
+                            onRunAction={action => {
+                                onRunAction(action)
+                                handleClose()
+                            }}
+                        />
+                    )}
+                    {mode === CommandPaletteMode.RecentSearches && (
+                        <RecentSearchesResult
+                            value={searchText}
+                            onClick={handleClose}
+                            getAuthenticatedUserID={getAuthenticatedUserID}
+                            platformContext={platformContext}
+                        />
+                    )}
+                    {/* TODO: Only when repo open */}
+                    {mode === CommandPaletteMode.Fuzzy && (
+                        <FuzzyFinderResult value={searchText} onClick={handleClose} workspaceRoot={workspaceRoot} />
+                    )}
+                    {/* TODO: Only when code editor open (possibly only when single open TODO) */}
+                    {mode === CommandPaletteMode.JumpToLine && (
+                        <JumpToLineResult
+                            value={searchText}
+                            onClick={handleClose}
+                            textDocumentData={activeTextDocument}
+                        />
+                    )}
+                    {mode === CommandPaletteMode.JumpToSymbol && (
+                        <JumpToSymbolResult
+                            value={searchText}
+                            onClick={handleClose}
+                            textDocumentData={activeTextDocument}
+                            platformContext={platformContext}
+                        />
+                    )}
+                </Modal.Content>
+            </Modal>
         </>
     )
 }

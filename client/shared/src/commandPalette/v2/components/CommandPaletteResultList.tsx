@@ -16,6 +16,7 @@ const CommandPaletteResultListItem: React.FC<CommandPaletteResultItemProps> = ({
     label,
 }) => {
     const Tag = href ? 'a' : 'button'
+
     return (
         <li>
             <Tag type="button" onClick={onClick} href={href}>

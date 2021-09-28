@@ -116,7 +116,7 @@ export const SYMBOLS_QUERY = gql`
     }
 `
 
-const BATCH_COUNT = 100
+const BATCH_COUNT = 500
 
 export interface RepoRevisionSidebarSymbolsProps extends Partial<RevisionSpec> {
     repoID: Scalars['ID']

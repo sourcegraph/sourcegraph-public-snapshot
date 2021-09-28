@@ -59,7 +59,7 @@ export const COMMAND_PALETTE_SHORTCUTS: KeyboardShortcutWithCallback[] = [
         title: 'Command palette -> jump to symbol mode',
         keybindings: [{ held: ['Control'], ordered: ['@'] }],
         onMatch: () => {
-            useCommandPaletteStore.getState().toggleIsOpen({ open: true, mode: CommandPaletteMode.Fuzzy })
+            useCommandPaletteStore.getState().toggleIsOpen({ open: true, mode: CommandPaletteMode.JumpToSymbol })
         },
     },
 ]
