@@ -172,65 +172,77 @@ func (s *Service) CreateBatchSpecFromRaw(ctx context.Context, opts CreateBatchSp
 	spec.NamespaceUserID = opts.NamespaceUserID
 	spec.UserID = actor.UID
 
-	// Use an anonymous function here to wrap everything in a transaction
-	err = func() (err error) {
-		tx, err := s.store.Transact(ctx)
-		if err != nil {
-			return err
+	tx, err := s.store.Transact(ctx)
+	if err != nil {
+		return nil, err
+	}
+	defer func() { err = tx.Done(err) }()
+
+	reposStore := tx.Repos()
+
+	if err := tx.CreateBatchSpec(ctx, spec); err != nil {
+		return nil, err
+	}
+
+	if len(spec.Spec.ImportChangesets) != 0 {
+		var repoNames []string
+		for _, ic := range spec.Spec.ImportChangesets {
+			repoNames = append(repoNames, ic.Repository)
 		}
-		defer func() { err = tx.Done(err) }()
 
-		reposStore := tx.Repos()
+		// 🚨 SECURITY: We use database.Repos.List to get the ID and also to check
+		// whether the user has access to the repository or not.
+		//
+		// Further down, when iterating over
+		repos, err := reposStore.List(ctx, database.ReposListOptions{Names: repoNames})
+		if err != nil {
+			return nil, err
+		}
 
-		if err := tx.CreateBatchSpec(ctx, spec); err != nil {
-			return err
+		repoNameIDs := make(map[api.RepoName]api.RepoID, len(repos))
+		for _, r := range repos {
+			repoNameIDs[r.Name] = r.ID
 		}
 
 		// If there are "importChangesets" statements in the spec we evaluate
 		// them now and create ChangesetSpecs for them.
 		for _, ic := range spec.Spec.ImportChangesets {
-			// 🚨 SECURITY: We use database.Repos.GetByName to check whether the user has access to
-			// the repository or not.
-			repo, err := reposStore.GetByName(ctx, api.RepoName(ic.Repository))
-			if err != nil {
-				return err
-			}
-
 			for _, id := range ic.ExternalIDs {
+				repoID, ok := repoNameIDs[api.RepoName(ic.Repository)]
+				if !ok {
+					return nil, errors.Newf("repository %s not found", ic.Repository)
+				}
+
 				extID, err := batcheslib.ParseChangesetSpecExternalID(id)
 				if err != nil {
-					return err
+					return nil, err
 				}
 
 				changesetSpec := &btypes.ChangesetSpec{
 					UserID: actor.UID,
-					RepoID: repo.ID,
+					RepoID: repoID,
 					Spec: &batcheslib.ChangesetSpec{
-						BaseRepository: string(graphqlbackend.MarshalRepositoryID(repo.ID)),
+						BaseRepository: string(graphqlbackend.MarshalRepositoryID(repoID)),
 						ExternalID:     extID,
 					},
 					BatchSpecID: spec.ID,
 				}
 
 				if err = tx.CreateChangesetSpec(ctx, changesetSpec); err != nil {
-					return err
+					return nil, err
 				}
 			}
 		}
-
-		return nil
-	}()
-
-	if err != nil {
-		return nil, err
 	}
 
 	// Return spec and enqueue resolution
-	return spec, s.EnqueueBatchSpecResolution(ctx, EnqueueBatchSpecResolutionOpts{
+	return spec, tx.CreateBatchSpecResolutionJob(ctx, &btypes.BatchSpecResolutionJob{
+		State:            btypes.BatchSpecResolutionJobStateQueued,
 		BatchSpecID:      spec.ID,
 		AllowIgnored:     opts.AllowIgnored,
 		AllowUnsupported: opts.AllowUnsupported,
 	})
+
 }
 
 type EnqueueBatchSpecResolutionOpts struct {
