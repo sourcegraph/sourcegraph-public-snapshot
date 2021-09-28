@@ -183,18 +183,14 @@ func NewIndexedSearchRequest(ctx context.Context, args *search.TextParameters, t
 
 // IndexedUniverseSearchRequest represents a request to run a search over the universe of indexed repositories.
 type IndexedUniverseSearchRequest struct {
-	RepoOptions      search.RepoOptions
-	UserPrivateRepos []types.RepoName
-	Args             *search.ZoektParameters
+	Args *search.ZoektParameters
 }
 
 func (s *IndexedUniverseSearchRequest) Search(ctx context.Context, c streaming.Sender) error {
 	if s.Args == nil {
 		return nil
 	}
-
-	q := zoektGlobalQuery(s.Args.Query, s.RepoOptions, s.UserPrivateRepos)
-	return doZoektSearchGlobal(ctx, q, s.Args.Typ, s.Args.Zoekt, s.Args.FileMatchLimit, s.Args.Select, c)
+	return doZoektSearchGlobal(ctx, s.Args.Query, s.Args.Typ, s.Args.Zoekt, s.Args.FileMatchLimit, s.Args.Select, c)
 }
 
 // IndexedRepos for a request over the indexed universe cannot answer which
@@ -219,11 +215,8 @@ func newIndexedUniverseSearchRequest(ctx context.Context, zoektArgs *search.Zoek
 		tr.Finish()
 	}()
 
-	return &IndexedUniverseSearchRequest{
-		RepoOptions:      repoOptions,
-		UserPrivateRepos: userPrivateRepos,
-		Args:             zoektArgs,
-	}, nil
+	zoektArgs.Query = zoektGlobalQuery(zoektArgs.Query, repoOptions, userPrivateRepos)
+	return &IndexedUniverseSearchRequest{Args: zoektArgs}, nil
 }
 
 // IndexedSubsetSearchRequest is responsible for:
