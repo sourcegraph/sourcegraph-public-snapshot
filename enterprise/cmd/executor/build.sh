@@ -39,7 +39,7 @@ steps:
       - 'SRC_CLI_VERSION=${SRC_CLI_VERSION}'
       - 'AWS_EXECUTOR_AMI_ACCESS_KEY=${AWS_EXECUTOR_AMI_ACCESS_KEY}'
       - 'AWS_EXECUTOR_AMI_SECRET_KEY=${AWS_EXECUTOR_AMI_SECRET_KEY}'
-    args: ['build', 'executor.json', '-force']
+    args: ['build', '-force', 'executor.json']
 EOF
 
 # Copy cloudbuild files into workspace.
