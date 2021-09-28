@@ -11,6 +11,15 @@ import (
 	"github.com/sourcegraph/sourcegraph/dev/codeintel-qa/internal"
 )
 
+// monitor periodically polls Sourcegraph via the GraphQL API for the status of each
+// given repo, as well as the status of each given upload. When there is a change of
+// state for a repository, it is printed. The state changes that can occur are:
+//
+// - An upload fails to process (returns an error)
+// - An upload completes processing
+// - The last upload for a repository completes processing, but the
+//   containing repo has a stale commit graph
+// - A repository with no pending uploads has a fresh commit graph
 func monitor(ctx context.Context, repoNames []string, uploads []uploadMeta, start time.Time) error {
 	var oldState map[string]repoState
 	waitMessageDisplayed := make(map[string]struct{}, len(repoNames))
@@ -87,6 +96,10 @@ type uploadState struct {
 	failure string
 }
 
+// queryRepoState makes a GraphQL request for the given repositories and uploads and
+// returns a map from repository names to the state of that repository. Each repository
+// state has a flag indicating whether or not its commit graph is stale, and an entry
+// for each upload belonging to that repository including that upload's state.
 func queryRepoState(ctx context.Context, repoNames []string, uploads []uploadMeta) (map[string]repoState, error) {
 	uploadIDs := make([]string, 0, len(uploads))
 	for _, upload := range uploads {
@@ -131,6 +144,7 @@ func queryRepoState(ctx context.Context, repoNames []string, uploads []uploadMet
 	return state, nil
 }
 
+// makeRepoStateQuery constructs a GraphQL query for use by queryRepoState.
 func makeRepoStateQuery(repoNames, uploadIDs []string) string {
 	fragments := make([]string, 0, len(repoNames)+len(uploadIDs))
 	for i, repoName := range repoNames {

@@ -9,9 +9,6 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/google/go-cmp/cmp"
-	"github.com/pkg/errors"
-
 	"github.com/sourcegraph/sourcegraph/dev/codeintel-qa/internal"
 )
 
@@ -76,59 +73,4 @@ func mainErr(ctx context.Context, start time.Time) error {
 
 	fmt.Printf("[%5s] All %d queries completed\n", internal.TimeSince(start), numRequestsFinished)
 	return nil
-}
-
-func buildQueries() <-chan queryFunc {
-	fns := make(chan queryFunc)
-
-	go func() {
-		defer close(fns)
-
-		for _, testCase := range testCases {
-			// Definition returns defintion
-			fns <- makeFunction(queryDefinitions, testCase.Definition, []Location{testCase.Definition})
-
-			// References return definition
-			for _, reference := range testCase.References {
-				fns <- makeFunction(queryDefinitions, reference, []Location{testCase.Definition})
-			}
-
-			// Definition returns references
-			fns <- makeFunction(queryReferences, testCase.Definition, testCase.References)
-
-			// References return references
-			if queryReferencesOfReferences {
-				for _, reference := range testCase.References {
-					fns <- makeFunction(queryReferences, reference, testCase.References)
-				}
-			}
-		}
-	}()
-
-	return fns
-}
-
-// TODO - rename
-func makeFunction(
-	// TODO
-	f func(ctx context.Context, location Location) ([]Location, error),
-	source Location,
-	expectedLocations []Location,
-) func(ctx context.Context) error {
-	return func(ctx context.Context) error {
-		locations, err := f(ctx, source)
-		if err != nil {
-			return err
-		}
-
-		if checkQueryResult {
-			sortLocations(locations)
-
-			if diff := cmp.Diff(expectedLocations, locations); diff != "" {
-				return errors.Errorf("unexpected locations (-want +got):\n%s", diff)
-			}
-		}
-
-		return nil
-	}
 }

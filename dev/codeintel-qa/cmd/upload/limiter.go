@@ -17,8 +17,8 @@ func newLimiter(concurrency int) *limiter {
 	return &limiter{ch: ch}
 }
 
-// Acquire blocks until it can acquire a value from the inner channel.
-func (l *limiter) Acquire(ctx context.Context) error {
+// acquire blocks until it can acquire a value from the inner channel.
+func (l *limiter) acquire(ctx context.Context) error {
 	select {
 	case <-l.ch:
 		return nil
@@ -28,12 +28,12 @@ func (l *limiter) Acquire(ctx context.Context) error {
 	}
 }
 
-// Release adds a value back to the limiter, unblocking one waiter.
-func (l *limiter) Release() {
+// release adds a value back to the limiter, unblocking one waiter.
+func (l *limiter) release() {
 	l.ch <- struct{}{}
 }
 
-// Close closes the underlying channel.
-func (l *limiter) Close() {
+// close closes the underlying channel.
+func (l *limiter) close() {
 	close(l.ch)
 }

@@ -27,7 +27,7 @@ func main() {
 	}
 
 	limiter := newLimiter(numConcurrentUploads)
-	defer limiter.Close()
+	defer limiter.close()
 
 	if err := mainErr(context.Background(), limiter, time.Now()); err != nil {
 		fmt.Printf("error: %s\n", err.Error())

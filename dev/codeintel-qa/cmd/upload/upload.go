@@ -20,6 +20,10 @@ type uploadMeta struct {
 	commit   string
 }
 
+// uploadAll uploads the dumps for the commits present in the given commitsByRepo map.
+// Uploads are performed concurrently given the limiter instance as well as the set of
+// flags supplied by the user. This function returns a slice of uploadMeta containing
+// the graphql identifier of the uploaded resources.
 func uploadAll(ctx context.Context, commitsByRepo map[string][]string, limiter *limiter, start time.Time) ([]uploadMeta, error) {
 	n := 0
 	for _, commits := range commitsByRepo {
@@ -37,11 +41,11 @@ func uploadAll(ctx context.Context, commitsByRepo map[string][]string, limiter *
 			go func(repoName, commit, file string) {
 				defer wg.Done()
 
-				if err := limiter.Acquire(ctx); err != nil {
+				if err := limiter.acquire(ctx); err != nil {
 					errCh <- err
 					return
 				}
-				defer limiter.Release()
+				defer limiter.release()
 
 				fmt.Printf("[%5s] Uploading index for %s@%s\n", internal.TimeSince(start), repoName, commit[:7])
 
@@ -80,6 +84,8 @@ func uploadAll(ctx context.Context, commitsByRepo map[string][]string, limiter *
 	return uploads, nil
 }
 
+// upload invokes `src lsif upload` on the host and returns the graphql identifier of
+// the uploaded resource.
 func upload(ctx context.Context, repoName, commit, file string) (string, error) {
 	argMap := map[string]string{
 		"root":   "/",

@@ -7,6 +7,10 @@ import (
 
 var indexFilenamePattern = regexp.MustCompile(`^(.+)\.\d+\.([0-9A-Fa-f]{40})\.dump$`)
 
+// commitsByRepo returns a map from repository name to a slice of commits for that repository.
+// The repositories and commits are read from the filesystem state of the index directory
+// supplied by the user. This method assumes that index files have been downloaded or generated
+// locally.
 func commitsByRepo() (map[string][]string, error) {
 	infos, err := os.ReadDir(indexDir)
 	if err != nil {
