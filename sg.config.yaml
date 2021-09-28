@@ -515,6 +515,7 @@ commands:
       # Set the following to a path on disk to persist data (or unset to not persist data)
       PGDATA_DIR: $HOME/.sourcegraph-dev/data/postgresql
       REDIS_DATA_DIR: ""
+
   jaeger:
     cmd: |
       .bin/jaeger-all-in-one-${JAEGER_VERSION}-$(go env GOOS)-$(go env GOARCH) --log-level ${JAEGER_LOG_LEVEL} >> "${JAEGER_LOGS}"/jaeger.log 2>&1
