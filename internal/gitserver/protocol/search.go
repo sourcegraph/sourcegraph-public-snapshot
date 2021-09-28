@@ -3,7 +3,6 @@ package protocol
 import (
 	"encoding/gob"
 	"fmt"
-	"regexp"
 	"strings"
 	"sync"
 	"time"
@@ -116,20 +115,6 @@ func (o Operator) String() string {
 		cs = append(cs, operand.String())
 	}
 	return "(" + prefix + strings.Join(cs, sep) + ")"
-}
-
-// Regexp is a thin wrapper around the stdlib Regexp type that enables gob encoding
-type Regexp struct {
-	*regexp.Regexp
-}
-
-func (r Regexp) GobEncode() ([]byte, error) {
-	return []byte(r.String()), nil
-}
-
-func (r *Regexp) GobDecode(data []byte) (err error) {
-	r.Regexp, err = regexp.Compile(string(data))
-	return err
 }
 
 var registerOnce sync.Once
