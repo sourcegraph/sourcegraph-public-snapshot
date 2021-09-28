@@ -16,21 +16,23 @@ type SearchQuery interface {
 // AuthorMatches is a predicate that matches if the author's name or email address
 // matches the regex pattern.
 type AuthorMatches struct {
-	Regexp
+	Expr       string
+	IgnoreCase bool
 }
 
 func (a AuthorMatches) String() string {
-	return fmt.Sprintf("%T(%s)", a, a.Regexp.String())
+	return fmt.Sprintf("%T(%s)", a, a.Expr)
 }
 
 // CommitterMatches is a predicate that matches if the author's name or email address
 // matches the regex pattern.
 type CommitterMatches struct {
-	Regexp
+	Expr       string
+	IgnoreCase bool
 }
 
 func (c CommitterMatches) String() string {
-	return fmt.Sprintf("%T(%s)", c, c.Regexp.String())
+	return fmt.Sprintf("%T(%s)", c, c.Expr)
 }
 
 // CommitBefore is a predicate that matches if the commit is before the given date
@@ -54,31 +56,34 @@ func (c CommitAfter) String() string {
 // MessageMatches is a predicate that matches if the commit message matches
 // the provided regex pattern.
 type MessageMatches struct {
-	Regexp
+	Expr       string
+	IgnoreCase bool
 }
 
 func (m MessageMatches) String() string {
-	return fmt.Sprintf("%T(%s)", m, m.Regexp.String())
+	return fmt.Sprintf("%T(%s)", m, m.Expr)
 }
 
 // DiffMatches is a a predicate that matches if any of the lines changed by
 // the commit match the given regex pattern.
 type DiffMatches struct {
-	Regexp
+	Expr       string
+	IgnoreCase bool
 }
 
 func (d DiffMatches) String() string {
-	return fmt.Sprintf("%T(%s)", d, d.Regexp.String())
+	return fmt.Sprintf("%T(%s)", d, d.Expr)
 }
 
 // DiffModifiesFile is a predicate that matches if the commit modifies any files
 // that match the given regex pattern.
 type DiffModifiesFile struct {
-	Regexp
+	Expr       string
+	IgnoreCase bool
 }
 
 func (d DiffModifiesFile) String() string {
-	return fmt.Sprintf("%T(%s)", d, d.Regexp.String())
+	return fmt.Sprintf("%T(%s)", d, d.Expr)
 }
 
 // And is a predicate that matches if all of its children predicates match

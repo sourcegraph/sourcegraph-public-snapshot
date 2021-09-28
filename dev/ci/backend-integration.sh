@@ -49,14 +49,14 @@ socat tcp-listen:7080,reuseaddr,fork system:"docker exec -i $CONTAINER socat std
 
 echo "--- Waiting for $URL to be up"
 set +e
-timeout 60s bash -c "until curl --output /dev/null --silent --head --fail $URL; do
+timeout 120s bash -c "until curl --output /dev/null --silent --head --fail $URL; do
     echo Waiting 5s for $URL...
     sleep 5
 done"
 # shellcheck disable=SC2181
 if [ $? -ne 0 ]; then
   echo "^^^ +++"
-  echo "$URL was not accessible within 60s. Here's the output of docker inspect and docker logs:"
+  echo "$URL was not accessible within 120s. Here's the output of docker inspect and docker logs:"
   docker inspect "$CONTAINER"
   exit 1
 fi

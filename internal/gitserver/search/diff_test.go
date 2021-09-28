@@ -1,7 +1,7 @@
 package search
 
 import (
-	"regexp"
+	_ "embed"
 	"strings"
 	"testing"
 
@@ -11,36 +11,22 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 )
 
+var (
+	//go:embed testdata/small_diff.txt
+	smallDiff string
+
+	//go:embed testdata/large_diff.txt
+	largeDiff string
+)
+
 func TestDiffSearch(t *testing.T) {
-	rawDiff := `diff --git a/web/src/integration/gqlresponses/user_settings_bla_response_1.ts b/web/src/integration/gqlresponses/user_settings_bla_response_1.ts
-new file mode 100644
-index 0000000000..4f6e758628
---- /dev/null
-+++ web/src/integration/gqlresponses/user_settings_bla_response_1.ts
-@@ -0,0 +1,4 @@
-+export const overrideSettingsResponse: OverrideSettingsResponseShape = {
-+    foo: 1,
-+    bar: {},
-+}
-diff --git a/web/src/integration/helpers.ts b/web/src/integration/helpers.ts
-index 2f71392b2f..d874527291 100644
---- web/src/integration/helpers.ts
-+++ web/src/integration/helpers.ts
-@@ -5,7 +5,7 @@ import { createDriverForTest, Driver } from '../../../shared/src/testing/driver'
- import * as path from 'path'
- import mkdirp from 'mkdirp-promise'
- import express from 'express'
--import { Polly } from '@pollyjs/core'
-+import { Polly, Request, Response } from '@pollyjs/core'
- import { PuppeteerAdapter } from './polly/PuppeteerAdapter'
- import FSPersister from '@pollyjs/persister-fs'
-`
-	r := diff.NewMultiFileDiffReader(strings.NewReader(rawDiff))
+	r := diff.NewMultiFileDiffReader(strings.NewReader(smallDiff))
 	fileDiffs, err := r.ReadAllFiles()
 	require.NoError(t, err)
 
-	query := &protocol.DiffMatches{protocol.Regexp{regexp.MustCompile("(?i)polly")}}
-	matchTree := ToMatchTree(query)
+	query := &protocol.DiffMatches{Expr: "(?i)polly"}
+	matchTree, err := ToMatchTree(query)
+	require.NoError(t, err)
 
 	matched, highlights, err := matchTree.Match(&LazyCommit{diff: fileDiffs})
 	require.NoError(t, err)
@@ -100,4 +86,88 @@ index 2f71392b2f..d874527291 100644
 	require.Equal(t, expectedFormatted, formatted)
 	require.Equal(t, expectedRanges, ranges)
 
+}
+
+func BenchmarkDiffSearchCaseInsensitiveOptimization(b *testing.B) {
+	b.Run("small diff", func(b *testing.B) {
+		r := diff.NewMultiFileDiffReader(strings.NewReader(smallDiff))
+		fileDiffs, err := r.ReadAllFiles()
+		require.NoError(b, err)
+
+		b.Run("with optimization", func(b *testing.B) {
+			query := &protocol.DiffMatches{Expr: "polly", IgnoreCase: true}
+			matchTree, err := ToMatchTree(query)
+			require.NoError(b, err)
+
+			for i := 0; i < b.N; i++ {
+				matched, _, _ := matchTree.Match(&LazyCommit{diff: fileDiffs})
+				require.True(b, matched)
+			}
+		})
+
+		b.Run("without optimization", func(b *testing.B) {
+			query := &protocol.DiffMatches{Expr: "(?i)polly", IgnoreCase: false}
+			matchTree, err := ToMatchTree(query)
+			require.NoError(b, err)
+
+			for i := 0; i < b.N; i++ {
+				matched, _, _ := matchTree.Match(&LazyCommit{diff: fileDiffs})
+				require.True(b, matched)
+			}
+		})
+	})
+
+	b.Run("large diff", func(b *testing.B) {
+		r := diff.NewMultiFileDiffReader(strings.NewReader(largeDiff))
+		fileDiffs, err := r.ReadAllFiles()
+		require.NoError(b, err)
+
+		b.Run("many matches", func(b *testing.B) {
+			b.Run("with optimization", func(b *testing.B) {
+				query := &protocol.DiffMatches{Expr: "suggestion", IgnoreCase: true}
+				matchTree, err := ToMatchTree(query)
+				require.NoError(b, err)
+
+				for i := 0; i < b.N; i++ {
+					matched, _, _ := matchTree.Match(&LazyCommit{diff: fileDiffs})
+					require.True(b, matched)
+				}
+			})
+
+			b.Run("without optimization", func(b *testing.B) {
+				query := &protocol.DiffMatches{Expr: "(?i)suggestion", IgnoreCase: false}
+				matchTree, err := ToMatchTree(query)
+				require.NoError(b, err)
+
+				for i := 0; i < b.N; i++ {
+					matched, _, _ := matchTree.Match(&LazyCommit{diff: fileDiffs})
+					require.True(b, matched)
+				}
+			})
+		})
+
+		b.Run("few matches", func(b *testing.B) {
+			b.Run("with optimization", func(b *testing.B) {
+				query := &protocol.DiffMatches{Expr: "limitoffset", IgnoreCase: true}
+				matchTree, err := ToMatchTree(query)
+				require.NoError(b, err)
+
+				for i := 0; i < b.N; i++ {
+					matched, _, _ := matchTree.Match(&LazyCommit{diff: fileDiffs})
+					require.True(b, matched)
+				}
+			})
+
+			b.Run("without optimization", func(b *testing.B) {
+				query := &protocol.DiffMatches{Expr: "(?i)limitoffset", IgnoreCase: false}
+				matchTree, err := ToMatchTree(query)
+				require.NoError(b, err)
+
+				for i := 0; i < b.N; i++ {
+					matched, _, _ := matchTree.Match(&LazyCommit{diff: fileDiffs})
+					require.True(b, matched)
+				}
+			})
+		})
+	})
 }
