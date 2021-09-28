@@ -31,3 +31,12 @@ env CC=musl-gcc go build \
   -tags dist \
   -o "$OUTPUT/$(basename $pkg)" \
   "$pkg"
+
+# Make sure go-sqlite3 was compiled with cgo.
+echo "--- sanity check"
+docker run \
+  --rm \
+  -v "$OUTPUT":/host \
+  -e "SANITY_CHECK=true" \
+  sourcegraph/alpine@sha256:ce099fbcd3cf70b338fc4cb2a4e1fa9ae847de21afdb0a849a393b87d94fb174 \
+  /host/symbols
