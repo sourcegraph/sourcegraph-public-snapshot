@@ -44,16 +44,17 @@
 1. Install the [Sourcegraph development dependencies](https://docs.sourcegraph.com/dev/getting-started/quickstart_1_install_dependencies).
 2. In your clone of [`sourcegraph/sourcegraph`](https://github.com/sourcegraph/sourcegraph), run:
 
-    ```
-    ./dev/sg/install.sh
-    ```
+   ```
+   ./dev/sg/install.sh
+   ```
+
 3. Start the default Sourcegraph environment:
 
-    ```
-    sg start
-    ```
+   ```
+   sg start
+   ```
 
-    Once the `web` process has finished compilation, open [`https://sourcegraph.test:3443`](https://sourcegraph.test:3443/) in your browser.
+   Once the `web` process has finished compilation, open [`https://sourcegraph.test:3443`](https://sourcegraph.test:3443/) in your browser.
 
 ## Installation
 
@@ -222,6 +223,7 @@ If an `sg.config.overwrite.yaml` file exists, its contents will be merged with t
 specific to your work.
 
 ### Examples
+
 #### Changing database configuration
 
 In order to change the default database configuration, the username and the database, for example, create an `sg.config.overwrite.yaml` file that looks like this:
