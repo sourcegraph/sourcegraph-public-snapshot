@@ -1,3 +1,4 @@
+import classNames from 'classnames'
 import * as H from 'history'
 import BitbucketIcon from 'mdi-react/BitbucketIcon'
 import GithubIcon from 'mdi-react/GithubIcon'
@@ -39,6 +40,7 @@ import { SearchPageInput } from '../search/home/SearchPageInput'
 import { ThemePreferenceProps } from '../theme'
 import { eventLogger } from '../tracking/eventLogger'
 
+import styles from './CommunitySearchContextPage.module.scss'
 import { CommunitySearchContextMetadata } from './types'
 
 export interface CommunitySearchContextPageProps
@@ -106,14 +108,14 @@ export const CommunitySearchContextPage: React.FunctionComponent<CommunitySearch
     }
 
     return (
-        <div className="community-search-contexts-page">
+        <div className={styles.communitySearchContextsPage}>
             <PageTitle title={props.communitySearchContextMetadata.title} />
             <CommunitySearchContextPageLogo
-                className="community-search-contexts-page__logo"
+                className={styles.logo}
                 icon={props.communitySearchContextMetadata.homepageIcon}
                 text={props.communitySearchContextMetadata.title}
             />
-            <div className="community-search-contexts-page__subheading">
+            <div className={styles.subheading}>
                 {props.communitySearchContextMetadata.lowProfile ? (
                     <>{props.communitySearchContextMetadata.description}</>
                 ) : (
@@ -123,7 +125,7 @@ export const CommunitySearchContextPage: React.FunctionComponent<CommunitySearch
                     </span>
                 )}
             </div>
-            <div className="community-search-contexts-page__container">
+            <div className={styles.container}>
                 {props.communitySearchContextMetadata.lowProfile ? (
                     <SearchPageInput
                         {...props}
@@ -142,8 +144,8 @@ export const CommunitySearchContextPage: React.FunctionComponent<CommunitySearch
             </div>
             {!props.communitySearchContextMetadata.lowProfile && (
                 <div className="row">
-                    <div className="community-search-contexts-page__column col-xs-12 col-lg-7">
-                        <p className="community-search-contexts-page__content-description h5 font-weight-normal mb-4">
+                    <div className={classNames('col-xs-12 col-lg-7', styles.column)}>
+                        <p className={classNames('h5 font-weight-normal mb-4', styles.contentDescription)}>
                             {props.communitySearchContextMetadata.description}
                         </p>
 
@@ -153,12 +155,12 @@ export const CommunitySearchContextPage: React.FunctionComponent<CommunitySearch
                                 <h3 className="mb-3">{example.title}</h3>
                                 <p>{example.description}</p>
                                 <div className="d-flex mb-4">
-                                    <small className="community-search-contexts-page__example-bar form-control text-monospace ">
+                                    <small className={classNames('form-control text-monospace ', styles.exampleBar)}>
                                         <SyntaxHighlightedSearchQuery query={`${contextQuery} ${example.query}`} />
                                     </small>
                                     <div className="d-flex">
                                         <button
-                                            className="btn btn-secondary btn-sm community-search-contexts-page__search-button"
+                                            className={classNames('btn btn-secondary btn-sm', styles.searchButton)}
                                             type="button"
                                             aria-label="Search"
                                             onClick={onSubmitExample(
@@ -173,9 +175,9 @@ export const CommunitySearchContextPage: React.FunctionComponent<CommunitySearch
                             </div>
                         ))}
                     </div>
-                    <div className="community-search-contexts-page__column col-xs-12 col-lg-5">
+                    <div className={classNames('col-xs-12 col-lg-5', styles.column)}>
                         <div className="order-2-lg order-1-xs">
-                            <div className="community-search-contexts-page__repo-card card">
+                            <div className={classNames('card', styles.repoCard)}>
                                 <h2>
                                     <SourceRepositoryMultipleIcon className="icon-inline mr-2" />
                                     Repositories
@@ -227,11 +229,11 @@ const RepoLinkClicked = (repoName: string) => (): void =>
     eventLogger.log('CommunitySearchContextPageRepoLinkClicked', { repo_name: repoName }, { repo_name: repoName })
 
 const RepoLink: React.FunctionComponent<{ repo: string }> = ({ repo }) => (
-    <li className="community-search-contexts-page__repo-item list-unstyled mb-3" key={repo}>
+    <li className={classNames('list-unstyled mb-3', styles.repoItem)} key={repo}>
         {repo.startsWith('github.com') && (
             <>
                 <a href={`https://${repo}`} target="_blank" rel="noopener noreferrer" onClick={RepoLinkClicked(repo)}>
-                    <GithubIcon className="icon-inline community-search-contexts-page__repo-list-icon" />
+                    <GithubIcon className={classNames('icon-inline', styles.repoListIcon)} />
                 </a>
                 <Link to={`/${repo}`} className="text-monospace search-filter-keyword">
                     {displayRepoName(repo)}
@@ -241,7 +243,7 @@ const RepoLink: React.FunctionComponent<{ repo: string }> = ({ repo }) => (
         {repo.startsWith('gitlab.com') && (
             <>
                 <a href={`https://${repo}`} target="_blank" rel="noopener noreferrer" onClick={RepoLinkClicked(repo)}>
-                    <GitlabIcon className="icon-inline community-search-contexts-page__repo-list-icon" />
+                    <GitlabIcon className={classNames('icon-inline', styles.repoListIcon)} />
                 </a>
                 <Link to={`/${repo}`} className="text-monospace search-filter-keyword">
                     {displayRepoName(repo)}
@@ -251,7 +253,7 @@ const RepoLink: React.FunctionComponent<{ repo: string }> = ({ repo }) => (
         {repo.startsWith('bitbucket.com') && (
             <>
                 <a href={`https://${repo}`} target="_blank" rel="noopener noreferrer" onClick={RepoLinkClicked(repo)}>
-                    <BitbucketIcon className="icon-inline community-search-contexts-page__repo-list-icon" />
+                    <BitbucketIcon className={classNames('icon-inline', styles.repoListIcon)} />
                 </a>
                 <Link to={`/${repo}`} className="text-monospace search-filter-keyword">
                     {displayRepoName(repo)}
@@ -270,7 +272,7 @@ interface CommunitySearchContextPageLogoProps extends Exclude<React.ImgHTMLAttri
  * The community search context logo image.
  */
 const CommunitySearchContextPageLogo: React.FunctionComponent<CommunitySearchContextPageLogoProps> = props => (
-    <div className="community-search-contexts-page__logo-container d-flex align-items-center">
+    <div className={classNames('d-flex align-items-center', styles.logoContainer)}>
         <img {...props} src={props.icon} alt="" />
         <span className="h3 font-weight-normal mb-0 ml-1">{props.text}</span>
     </div>
