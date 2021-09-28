@@ -12,8 +12,22 @@ OUTPUT="${1:?no output path provided}"
 export GO111MODULE=on
 export GOARCH=amd64
 export GOOS=linux
-export CGO_ENABLED=0
+
+# go-sqlite3 depends on cgo. Without cgo, it will build but it'll throw an error at query time.
+export CGO_ENABLED=1
+
+# Ensure musl-gcc is available since we're building to run on Alpine, which uses musl.
+if ! command -v musl-gcc >/dev/null; then
+  echo "musl-gcc not found, which is needed for cgo for go-sqlite3. Run 'apt-get install -y musl-tools'."
+  exit 1
+fi
 
 echo "--- go build"
 pkg="github.com/sourcegraph/sourcegraph/cmd/symbols"
-go build -trimpath -ldflags "-X github.com/sourcegraph/sourcegraph/internal/version.version=$VERSION  -X github.com/sourcegraph/sourcegraph/internal/version.timestamp=$(date +%s)" -buildmode exe -tags dist -o "$OUTPUT/$(basename $pkg)" "$pkg"
+env CC=musl-gcc go build \
+  -trimpath \
+  -ldflags "-X github.com/sourcegraph/sourcegraph/internal/version.version=$VERSION  -X github.com/sourcegraph/sourcegraph/internal/version.timestamp=$(date +%s)" \
+  -buildmode exe \
+  -tags dist \
+  -o "$OUTPUT/$(basename $pkg)" \
+  "$pkg"
