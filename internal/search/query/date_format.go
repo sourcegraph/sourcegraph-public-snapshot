@@ -73,7 +73,9 @@ func ParseGitDate(s string, now func() time.Time) (time.Time, error) {
 	return time.Time{}, errInvalidDate
 }
 
-var gitInternalTimestampRegexp = lazyregexp.New(`^(?P<epoch_seconds>\d+) (?P<zone_offset>(?P<pm>\+|\-)(?P<hours>\d{2})(?P<minutes>\d{2}))$`)
+// Seconds since unix epoch plus an optional time zone offset
+// As documented here: https://github.com/git/git/blob/master/Documentation/date-formats.txt
+var gitInternalTimestampRegexp = lazyregexp.New(`^(?P<epoch_seconds>\d{5,})( (?P<zone_offset>(?P<pm>\+|\-)(?P<hours>\d{2})(?P<minutes>\d{2})))?$`)
 
 var errInvalidDate = errors.New("invalid date format")
 
@@ -84,26 +86,30 @@ func parseGitInternalFormat(s string) (time.Time, error) {
 		return time.Time{}, errInvalidDate
 	}
 
+	locationName := match[re.SubexpIndex("zone_offset")]
+
 	epochSeconds, err := strconv.Atoi(match[re.SubexpIndex("epoch_seconds")])
 	if err != nil {
 		return time.Time{}, errInvalidDate
 	}
 
-	hours, err := strconv.Atoi(match[re.SubexpIndex("hours")])
-	if err != nil {
-		return time.Time{}, errInvalidDate
-	}
+	// If a time zone offset is set, respect it
+	offsetSeconds := 0
+	if locationName != "" {
+		hours, err := strconv.Atoi(match[re.SubexpIndex("hours")])
+		if err != nil {
+			return time.Time{}, errInvalidDate
+		}
 
-	minutes, err := strconv.Atoi(match[re.SubexpIndex("minutes")])
-	if err != nil {
-		return time.Time{}, errInvalidDate
-	}
+		minutes, err := strconv.Atoi(match[re.SubexpIndex("minutes")])
+		if err != nil {
+			return time.Time{}, errInvalidDate
+		}
 
-	locationName := match[re.SubexpIndex("zone_offset")]
-
-	offsetSeconds := hours*60*60 + minutes*60
-	if match[re.SubexpIndex("pm")] == "-" {
-		offsetSeconds *= -1
+		offsetSeconds := hours*60*60 + minutes*60
+		if match[re.SubexpIndex("pm")] == "-" {
+			offsetSeconds *= -1
+		}
 	}
 
 	return time.Unix(int64(epochSeconds), 0).In(time.FixedZone(locationName, offsetSeconds)), nil

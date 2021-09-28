@@ -32,6 +32,8 @@ func TestParseGitDate(t *testing.T) {
 		{"2 weeks ago", time.Date(1996, 6, 14, 0, 0, 0, 0, time.UTC)},
 		{"3:00", time.Date(1996, 6, 28, 3, 0, 0, 0, time.UTC)},
 		{"3pm", time.Date(1996, 6, 28, 15, 0, 0, 0, time.UTC)},
+		{"1632782809 -0600", time.Date(2021, 9, 27, 22, 46, 49, 0, time.UTC)},
+		{"1632782809", time.Date(2021, 9, 27, 22, 46, 49, 0, time.UTC)},
 	}
 
 	for _, tc := range cases {
