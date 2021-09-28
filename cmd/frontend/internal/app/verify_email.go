@@ -46,7 +46,11 @@ func serveVerifyEmail(db dbutil.DB) func(w http.ResponseWriter, r *http.Request)
 		}
 		verified, err := database.UserEmails(db).Verify(ctx, usr.ID, email, verifyCode)
 		if err != nil {
-			http.Error(w, fmt.Sprintf("User %d email %q cannot be verified", usr.ID, email), http.StatusBadRequest)
+			httpLogAndError(w, "Could not verify user email", http.StatusInternalServerError, "userID", usr.ID, "email", email, "error", err)
+			return
+		}
+		if !verified {
+			http.Error(w, "Could not verify user email. Email verification code did not match.", http.StatusUnauthorized)
 			return
 		}
 		// Set the verified email as primary if user has no primary email
@@ -54,17 +58,13 @@ func serveVerifyEmail(db dbutil.DB) func(w http.ResponseWriter, r *http.Request)
 		if err != nil {
 			log15.Warn("Failed to get user email", "error", err)
 		}
-		if verified && len(primary) == 0 {
+		if len(primary) == 0 {
 			if err := database.UserEmails(db).SetPrimaryEmail(ctx, usr.ID, email); err != nil {
 				return
 			}
 		}
 		if err != nil {
-			httpLogAndError(w, "Could not verify user email", http.StatusInternalServerError, "userID", usr.ID, "email", email, "error", err)
-			return
-		}
-		if !verified {
-			http.Error(w, "Could not verify user email. Email verification code did not match.", http.StatusUnauthorized)
+			httpLogAndError(w, "Could not set primary email.", http.StatusInternalServerError, "userID", usr.ID, "email", email, "error", err)
 			return
 		}
 
