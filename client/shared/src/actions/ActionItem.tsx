@@ -107,7 +107,7 @@ const LOADING = 'loading' as const
 
 interface State {
     /** The executed action: undefined while loading, null when done or not started, or an error. */
-    actionOrError: typeof LOADING | null | ErrorLikez
+    actionOrError: typeof LOADING | null | ErrorLike
 }
 
 export class ActionItem extends React.PureComponent<ActionItemProps, State> {

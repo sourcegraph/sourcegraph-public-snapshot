@@ -1,7 +1,7 @@
 import { DialogContent, DialogOverlay } from '@reach/dialog'
 import { Remote } from 'comlink'
 import * as H from 'history'
-import React, { useState, useMemo, useCallback, useEffect } from 'react'
+import React, { useMemo, useCallback, useEffect } from 'react'
 import { from, Observable } from 'rxjs'
 import { filter, map, switchMap } from 'rxjs/operators'
 
@@ -25,15 +25,8 @@ import { JumpToLineResult } from './components/JumpToLineResult'
 import { JumpToSymbolResult } from './components/JumpToSymbolResult'
 import { RecentSearchesResult } from './components/RecentSearchesResult'
 import { ShortcutController } from './components/ShortcutController'
+import { COMMAND_PALETTE_SHORTCUTS, CommandPaletteMode, BUILT_IN_ACTIONS } from './constants'
 import { useCommandPaletteStore } from './store'
-
-export enum CommandPaletteMode {
-    Fuzzy = '$',
-    Command = '>',
-    JumpToLine = ':',
-    JumpToSymbol = '@',
-    RecentSearches = '#',
-}
 
 const getMode = (text: string): CommandPaletteMode | undefined =>
     Object.values(CommandPaletteMode).find(value => text.startsWith(value))
@@ -45,49 +38,9 @@ const getContributions = memoizeObservable(
     () => 'getContributions' // only one instance
 )
 
-const BUILT_IN_ACTIONS: Pick<ActionItemAction, 'action' | 'active' | 'keybinding'>[] = [
-    {
-        action: {
-            id: 'SOURCEGRAPH.switchColorTheme',
-            actionItem: {
-                label: 'Switch color theme',
-            },
-            command: 'open',
-            commandArguments: ['https://google.com'],
-        },
-        keybinding: {
-            ordered: ['T'],
-            // held: ["Control"],
-        },
-        active: true,
-    },
-]
-
 interface CommandPaletteActionItemProps {
     actionItem: ActionItemAction
     onRunAction: (action: ActionItemAction) => void
-}
-
-const CommandPaletteActionItem: React.FC<CommandPaletteActionItemProps> = ({ actionItem, onRunAction }) => {
-    const { action, keybinding } = actionItem
-
-    const label = [action.category, action.actionItem?.label || action.title || action.command]
-        .filter(Boolean)
-        .join(': ')
-
-    return (
-        <button type="button" onClick={(): void => onRunAction(actionItem)}>
-            {label}
-
-            {keybinding && (
-                <>
-                    {[...keybinding.ordered, ...(keybinding.held || [])].map(key => (
-                        <kbd key={key}>{key}</kbd>
-                    ))}
-                </>
-            )}
-        </button>
-    )
 }
 
 function useCommandList(value: string, extensionsController: CommandPaletteProps['extensionsController']) {
@@ -149,24 +102,20 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
     location,
     getAuthenticatedUserID,
 }) => {
-    const [text, setText] = useState('')
-    const { actions, actionsWithShortcut, onRunAction } = useCommandList(text, extensionsController)
+    const { isOpen, toggleIsOpen, value, setValue } = useCommandPaletteStore()
+    const { actions, actionsWithShortcut, onRunAction } = useCommandList(value, extensionsController)
 
-    const state = useCommandPaletteStore()
-    const mode = getMode(text)
+    const mode = getMode(value)
 
     useEffect(() => {
         if (initialIsOpen) {
-            state.toggleIsOpen()
+            toggleIsOpen()
         }
-        // Initial state for storybook
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [])
+    }, [toggleIsOpen, initialIsOpen])
 
     const onClose = useCallback(() => {
-        state.toggleIsOpen()
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [])
+        toggleIsOpen()
+    }, [toggleIsOpen])
 
     const activeTextDocument = useObservable(
         useMemo(
@@ -189,16 +138,17 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
         )
     )
 
-    console.log({ activeTextDocument, workspaceRoot })
+    const searchText = mode ? value.slice(1) : value
 
-    const value = mode ? text.slice(1) : text
+    // TODO: merge other builtin shortcuts, extension-contributed  shortcuts
+    const shortcuts = useMemo(() => [...COMMAND_PALETTE_SHORTCUTS], [])
 
     return (
         // this is a singleton component that is always rendered.
         <>
-            <ShortcutController actions={actionsWithShortcut} onMatch={onRunAction} />
-            {state.isOpen && (
-                <DialogOverlay isOpen={state.isOpen} onDismiss={onClose} className={styles.dialogOverlay}>
+            <ShortcutController shortcuts={shortcuts} />
+            {isOpen && (
+                <DialogOverlay isOpen={isOpen} onDismiss={onClose} className={styles.dialogOverlay}>
                     <DialogContent className="modal-body p-4 rounded border shadow-lg">
                         <div>
                             <h1>cmdpal</h1>
@@ -208,21 +158,16 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
                                 aria-autocomplete="list"
                                 className="form-control py-1"
                                 placeholder="Search files by name (append : to jump to a line or @ to go to a symbol or > to search for a command)"
-                                value={text}
-                                onChange={event => setText(event.target.value)}
+                                value={value}
+                                onChange={event => setValue(event.target.value)}
                                 type="text"
                             />
                         </div>
-                        {!mode && (
-                            <CommandsModesList
-                                hasActiveTextDocument={!!activeTextDocument}
-                                hasWorkspaceRoot={!!workspaceRoot}
-                            />
-                        )}
+                        {!mode && <CommandsModesList />}
                         {mode === CommandPaletteMode.Command && (
                             <CommandListResult
                                 actions={actions}
-                                value={value}
+                                value={searchText}
                                 onRunAction={action => {
                                     onRunAction(action)
                                     onClose()
@@ -231,7 +176,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
                         )}
                         {mode === CommandPaletteMode.RecentSearches && (
                             <RecentSearchesResult
-                                value={value}
+                                value={searchText}
                                 onClick={onClose}
                                 getAuthenticatedUserID={getAuthenticatedUserID}
                                 platformContext={platformContext}
@@ -239,14 +184,22 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
                         )}
                         {/* TODO: Only when repo open */}
                         {mode === CommandPaletteMode.Fuzzy && (
-                            <FuzzyFinderResult value={value} onClick={onClose} workspaceRoot={workspaceRoot} />
+                            <FuzzyFinderResult value={searchText} onClick={onClose} workspaceRoot={workspaceRoot} />
                         )}
                         {/* TODO: Only when code editor open (possibly only when single open TODO) */}
                         {mode === CommandPaletteMode.JumpToLine && (
-                            <JumpToLineResult value={value} onClick={onClose} textDocumentData={activeTextDocument} />
+                            <JumpToLineResult
+                                value={searchText}
+                                onClick={onClose}
+                                textDocumentData={activeTextDocument}
+                            />
                         )}
                         {mode === CommandPaletteMode.JumpToSymbol && (
-                            <JumpToSymbolResult value={value} onClick={onClose} textDocumentData={activeTextDocument} />
+                            <JumpToSymbolResult
+                                value={searchText}
+                                onClick={onClose}
+                                textDocumentData={activeTextDocument}
+                            />
                         )}
                     </DialogContent>
                 </DialogOverlay>

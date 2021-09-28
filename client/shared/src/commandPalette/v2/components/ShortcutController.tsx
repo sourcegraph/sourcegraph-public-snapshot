@@ -1,15 +1,16 @@
 import { Shortcut, ShortcutProvider } from '@slimsag/react-shortcuts'
 import React from 'react'
 
-import { ActionItemAction } from '../../../actions/ActionItem'
+import { KeyboardShortcutWithCallback } from '../constants'
 
 export const ShortcutController: React.FC<{
-    actions: ActionItemAction[]
-    onMatch: (action: ActionItemAction) => void
-}> = React.memo(({ actions, onMatch }) => (
+    shortcuts: KeyboardShortcutWithCallback[]
+}> = React.memo(({ shortcuts }) => (
     <ShortcutProvider>
-        {actions.map((actionItem, index) => (
-            <Shortcut key={index} {...actionItem.keybinding!} onMatch={() => onMatch(actionItem)} />
-        ))}
+        {shortcuts.map(({ keybindings, onMatch, id }) =>
+            keybindings.map((keybinding, index) => (
+                <Shortcut key={`${id}-${index}`} {...keybinding} onMatch={onMatch} />
+            ))
+        )}
     </ShortcutProvider>
 ))
