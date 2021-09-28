@@ -262,7 +262,7 @@ func shortGitCommandTimeout(args []string) time.Duration {
 		// example a search over all repos in an organization may have several
 		// large repos. All of those repos will be competing for IO => we need
 		// a larger timeout.
-		return longGitCommandTimeout
+		return conf.GitLongCommandTimeout()
 
 	case "ls-remote":
 		return 30 * time.Second
@@ -290,11 +290,6 @@ func shortGitCommandSlow(args []string) time.Duration {
 		return 2500 * time.Millisecond
 	}
 }
-
-// This is a timeout for long git commands like clone or remote update.
-// that may take a while for large repos. These types of commands should
-// be run in the background.
-var longGitCommandTimeout = time.Hour
 
 // Handler returns the http.Handler that should be used to serve requests.
 func (s *Server) Handler() http.Handler {
@@ -793,7 +788,7 @@ func (s *Server) handleRepoUpdate(w http.ResponseWriter, r *http.Request) {
 	// cancel the git commands partway through if the request terminates.
 	ctx, cancel1 := s.serverContext()
 	defer cancel1()
-	ctx, cancel2 := context.WithTimeout(ctx, longGitCommandTimeout)
+	ctx, cancel2 := context.WithTimeout(ctx, conf.GitLongCommandTimeout())
 	defer cancel2()
 	resp.QueueCap, resp.QueueLen = s.queryCloneLimiter()
 	if !repoCloned(dir) && !s.skipCloneForTests {
@@ -1620,7 +1615,7 @@ func (s *Server) doClone(ctx context.Context, repo api.RepoName, dir GitDir, syn
 		return err
 	}
 
-	ctx, cancel2 := context.WithTimeout(ctx, longGitCommandTimeout)
+	ctx, cancel2 := context.WithTimeout(ctx, conf.GitLongCommandTimeout())
 	defer cancel2()
 
 	dstPath := string(dir)

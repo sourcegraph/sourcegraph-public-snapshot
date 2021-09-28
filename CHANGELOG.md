@@ -42,6 +42,7 @@ All notable changes to Sourcegraph are documented in this file.
 - Added a `Documentation` tab to the Site Admin Maintenance panel that links to the official Sourcegraph documentation. [#24917](https://github.com/sourcegraph/sourcegraph/pull/24917)
 - Code Insights that run over all repositories now generate a moving daily snapshot between time points. [#24804](https://github.com/sourcegraph/sourcegraph/pull/24804)
 - The Code Insights GraphQL API now restricts the results to user, org, and globally scoped insights. Insights will be synced to the database with access associated to the user or org setting containing the insight definition. [#25017](https://github.com/sourcegraph/sourcegraph/pull/25017)
+- The timeout for long-running Git commands can be customized via `gitLongCommandTimeout` in the site config. [#25080](https://github.com/sourcegraph/sourcegraph/pull/25080)
 
 ### Changed
 
