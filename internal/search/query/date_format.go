@@ -22,6 +22,11 @@ func ParseGitDate(s string, now func() time.Time) (time.Time, error) {
 
 	// RFC 3339
 	{
+		// Only date
+		if t, err := time.Parse("2006-01-02", s); err == nil {
+			return t, nil
+		}
+
 		// With timezone
 		if t, err := time.Parse(time.RFC3339, s); err == nil {
 			return t, nil
