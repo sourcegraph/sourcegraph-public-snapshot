@@ -126,6 +126,7 @@ export const ChangesetFileDiff: React.FunctionComponent<ChangesetFileDiffProps> 
             location={location}
             useURLQuery={false}
             cursorPaging={true}
+            withCenteredSummary={true}
         />
     )
 }

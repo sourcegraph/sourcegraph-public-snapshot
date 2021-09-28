@@ -177,7 +177,7 @@ export const BatchChangeCloseChangesetsList: React.FunctionComponent<Props> = ({
                     noSummaryIfAllNodesVisible={true}
                     onUpdate={onUpdate}
                     emptyElement={<CloseChangesetsListEmptyElement />}
-                    className="filtered-connection__centered-summary"
+                    withCenteredSummary={true}
                 />
                 {hoverState?.hoverOverlayProps && (
                     <WebHoverOverlay

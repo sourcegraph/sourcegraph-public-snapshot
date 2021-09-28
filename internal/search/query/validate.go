@@ -275,6 +275,11 @@ func validateField(field, value string, negated bool, seen map[string]struct{}) 
 		return err
 	}
 
+	isValidGitDate := func() error {
+		_, err := ParseGitDate(value, time.Now)
+		return err
+	}
+
 	satisfies := func(fns ...func() error) error {
 		for _, fn := range fns {
 			if err := fn(); err != nil {
@@ -321,7 +326,7 @@ func validateField(field, value string, negated bool, seen map[string]struct{}) 
 	case
 		FieldBefore,
 		FieldAfter:
-		return satisfies(isNotNegated)
+		return satisfies(isNotNegated, isValidGitDate)
 	case
 		FieldAuthor,
 		FieldCommitter,
