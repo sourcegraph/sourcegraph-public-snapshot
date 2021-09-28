@@ -319,7 +319,7 @@ require (
 // or intentional forks.
 replace (
 	// We maintain our own fork of Zoekt. Update with ./dev/zoekt/update
-	github.com/google/zoekt => github.com/sourcegraph/zoekt v0.0.0-20210923202240-05c4b0636968
+	github.com/google/zoekt => github.com/sourcegraph/zoekt v0.0.0-20210928065217-b86ecca1cab6
 	// We use a fork of Alertmanager to allow prom-wrapper to better manipulate Alertmanager configuration.
 	// See https://docs.sourcegraph.com/dev/background-information/observability/prometheus
 	github.com/prometheus/alertmanager => github.com/sourcegraph/alertmanager v0.21.1-0.20210809100802-88b656a8713e
