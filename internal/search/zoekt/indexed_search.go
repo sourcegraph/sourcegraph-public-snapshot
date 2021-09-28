@@ -152,9 +152,9 @@ func NewIndexedSearchRequest(ctx context.Context, args *search.TextParameters, t
 	if args.Zoekt != nil && args.Mode == search.ZoektGlobalSearch {
 		// performance: optimize global searches where Zoekt searches
 		// all shards anyway.
-		return NewIndexedUniverseSearchRequest(ctx, args, typ, args.RepoOptions, args.UserPrivateRepos)
+		return newIndexedUniverseSearchRequest(ctx, args, typ, args.RepoOptions, args.UserPrivateRepos)
 	}
-	return NewIndexedSubsetSearchRequest(ctx, args, typ, onMissing)
+	return newIndexedSubsetSearchRequest(ctx, args, typ, onMissing)
 }
 
 // IndexedUniverseSearchRequest represents a request to run a search over the universe of indexed repositories.
@@ -184,8 +184,12 @@ func (s *IndexedUniverseSearchRequest) UnindexedRepos() []*search.RepositoryRevi
 	return nil
 }
 
-func NewIndexedUniverseSearchRequest(ctx context.Context, args *search.TextParameters, typ search.IndexedRequestType, repoOptions search.RepoOptions, userPrivateRepos []types.RepoName) (_ *IndexedUniverseSearchRequest, err error) {
-	tr, _ := trace.New(ctx, "NewIndexedUniverseSearchRequest", "text")
+// newIndexedUniverseSearchRequest creates a search request for indexed search
+// on all indexed repositories. Strongly avoid calling this constructor
+// directly, and use NewIndexedSearchRequest instead, which will validate your
+// inputs and figure out the kind of indexed search to run.
+func newIndexedUniverseSearchRequest(ctx context.Context, args *search.TextParameters, typ search.IndexedRequestType, repoOptions search.RepoOptions, userPrivateRepos []types.RepoName) (_ *IndexedUniverseSearchRequest, err error) {
+	tr, _ := trace.New(ctx, "newIndexedUniverseSearchRequest", "text")
 	defer func() {
 		tr.SetError(err)
 		tr.Finish()
@@ -292,8 +296,12 @@ func MissingRepoRevStatus(stream streaming.Sender) OnMissingRepoRevs {
 	}
 }
 
-func NewIndexedSubsetSearchRequest(ctx context.Context, args *search.TextParameters, typ search.IndexedRequestType, onMissing OnMissingRepoRevs) (_ *IndexedSubsetSearchRequest, err error) {
-	tr, ctx := trace.New(ctx, "NewIndexedSubsetSearchRequest", string(typ))
+// newIndexedSubsetSearchRequest creates a search request for indexed search on
+// a subset of repos. Strongly avoid calling this constructor directly, and use
+// NewIndexedSearchRequest instead, which will validate your inputs and figure
+// out the kind of indexed search to run.
+func newIndexedSubsetSearchRequest(ctx context.Context, args *search.TextParameters, typ search.IndexedRequestType, onMissing OnMissingRepoRevs) (_ *IndexedSubsetSearchRequest, err error) {
+	tr, ctx := trace.New(ctx, "newIndexedSubsetSearchRequest", string(typ))
 	tr.LogFields(trace.Stringer("global_search_mode", args.Mode))
 	defer func() {
 		tr.SetError(err)
