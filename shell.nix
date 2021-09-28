@@ -62,11 +62,6 @@ in pkgs.mkShell {
     pkgs.git
     pkgs.parallel
 
-    # cgo dependency for symbols. TODO build with nix?
-    pkgs.pcre
-    pkgs.sqlite
-    pkgs.pkg-config
-
     # monitors src files to restart dev services
     pkgs.watchman
 

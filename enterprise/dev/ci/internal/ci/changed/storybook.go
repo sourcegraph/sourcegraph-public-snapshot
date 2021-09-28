@@ -6,7 +6,6 @@ import "path/filepath"
 var ignoredRootFiles = []string{
 	"jest.config.base.js",
 	"graphql-schema-linter.config.js",
-	"libsqlite3-pcre.dylib",
 	".mocharc.js",
 	"go.mod",
 	"LICENSE",
