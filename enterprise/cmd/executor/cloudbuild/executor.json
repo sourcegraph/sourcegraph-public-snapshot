@@ -1,9 +1,11 @@
 {
   "variables": {
     "name": "{{env `NAME`}}",
+    "srcCliVersion": "{{env `SRC_CLI_VERSION`}}",
     "awsAccessKey": "{{env `AWS_EXECUTOR_AMI_ACCESS_KEY`}}",
     "awsSecretKey": "{{env `AWS_EXECUTOR_AMI_SECRET_KEY`}}",
-    "src_cli_version": "{{env `SRC_CLI_VERSION`}}"
+    "awsMaxAttempts": "{{env `AWS_MAX_ATTEMPTS`}}",
+    "awsPollDelaySeconds": "{{env `AWS_POLL_DELAY_SECONDS`}}"
   },
   "builders": [
     {
@@ -33,7 +35,11 @@
       "subnet_id": "subnet-03962956ca2682c50",
       "associate_public_ip_address": true,
       "access_key": "{{user `awsAccessKey`}}",
-      "secret_key": "{{user `awsSecretKey`}}"
+      "secret_key": "{{user `awsSecretKey`}}",
+      "aws_polling": {
+        "delay_seconds": "{{user `awsMaxAttempts`}}",
+        "max_attempts": "{{user `awsPollDelaySeconds`}}"
+      }
     }
   ],
   "provisioners": [
@@ -58,10 +64,10 @@
       "script": "build.sh",
       "override": {
         "gcp": {
-          "environment_vars": ["SRC_CLI_VERSION={{user `src_cli_version`}}", "PLATFORM_TYPE=gcp"]
+          "environment_vars": ["SRC_CLI_VERSION={{user `srcCliVersion`}}", "PLATFORM_TYPE=gcp"]
         },
         "aws": {
-          "environment_vars": ["SRC_CLI_VERSION={{user `src_cli_version`}}", "PLATFORM_TYPE=aws"]
+          "environment_vars": ["SRC_CLI_VERSION={{user `srcCliVersion`}}", "PLATFORM_TYPE=aws"]
         }
       }
     }

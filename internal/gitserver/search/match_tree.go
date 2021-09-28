@@ -34,32 +34,16 @@ func ToMatchTree(q protocol.SearchQuery) (MatchTree, error) {
 	case *protocol.DiffModifiesFile:
 		re, err := casetransform.CompileRegexp(v.Expr, v.IgnoreCase)
 		return &DiffModifiesFile{re}, err
-	case *protocol.And:
-		children := make([]MatchTree, 0, len(v.Children))
-		for _, child := range v.Children {
-			sub, err := ToMatchTree(child)
+	case *protocol.Operator:
+		operands := make([]MatchTree, 0, len(v.Operands))
+		for _, operand := range v.Operands {
+			sub, err := ToMatchTree(operand)
 			if err != nil {
 				return nil, err
 			}
-			children = append(children, sub)
+			operands = append(operands, sub)
 		}
-		return &And{Children: children}, nil
-	case *protocol.Or:
-		children := make([]MatchTree, 0, len(v.Children))
-		for _, child := range v.Children {
-			sub, err := ToMatchTree(child)
-			if err != nil {
-				return nil, err
-			}
-			children = append(children, sub)
-		}
-		return &Or{Children: children}, nil
-	case *protocol.Not:
-		sub, err := ToMatchTree(v.Child)
-		if err != nil {
-			return nil, err
-		}
-		return &Not{Child: sub}, nil
+		return &Operator{Kind: v.Kind, Operands: operands}, nil
 	default:
 		return nil, errors.Errorf("unknown protocol query type %T", q)
 	}
@@ -230,59 +214,43 @@ func (dmf *DiffModifiesFile) Match(lc *LazyCommit) (bool, *CommitHighlights, err
 	}, nil
 }
 
-// And is a predicate that matches if all of its children predicates match
-type And struct {
-	Children []MatchTree
+type Operator struct {
+	Kind     protocol.OperatorKind
+	Operands []MatchTree
 }
 
-func (a *And) Match(commit *LazyCommit) (bool, *CommitHighlights, error) {
-	highlights := &CommitHighlights{}
-	for _, child := range a.Children {
-		childMatched, childHighlights, err := child.Match(commit)
-		if err != nil {
-			return false, nil, err
-		}
-
-		if !childMatched {
-			// Since we don't care about the highlights if we don't match all children, we can short-circuit
-			return false, nil, nil
-		}
-		highlights.Merge(childHighlights)
-	}
-	return true, highlights, nil
-}
-
-// Or is a predicate that matches if any of its children predicates match
-type Or struct {
-	Children []MatchTree
-}
-
-func (o *Or) Match(commit *LazyCommit) (bool, *CommitHighlights, error) {
+func (o *Operator) Match(commit *LazyCommit) (bool, *CommitHighlights, error) {
+	var resultMatches *CommitHighlights
 	hasMatch := false
-	mergedHighlights := &CommitHighlights{}
-	for _, child := range o.Children {
-		matched, highlights, err := child.Match(commit)
+	for _, operand := range o.Operands {
+		matched, matches, err := operand.Match(commit)
 		if err != nil {
 			return false, nil, err
 		}
-		if matched {
-			// Because we want to highlight every match, we can't short circuit
+
+		switch o.Kind {
+		case protocol.Not:
+			if matched {
+				return false, nil, nil
+			}
+			return true, nil, nil
+		case protocol.And:
+			if !matched {
+				return false, nil, nil
+			}
 			hasMatch = true
-			mergedHighlights.Merge(highlights)
+			resultMatches = resultMatches.Merge(matches)
+		case protocol.Or:
+			if matched {
+				hasMatch = true
+				resultMatches = resultMatches.Merge(matches)
+			}
+		default:
+			panic("unreachable")
 		}
 	}
-	return hasMatch, mergedHighlights, nil
-}
 
-// Not is a predicate that matches if its child predicate does not match
-type Not struct {
-	Child MatchTree
-}
-
-func (n *Not) Match(commit *LazyCommit) (bool, *CommitHighlights, error) {
-	// Even if the child highlights, since we're negating, the match shouldn't be highlighted
-	foundMatch, _, err := n.Child.Match(commit)
-	return !foundMatch, nil, err
+	return hasMatch, resultMatches, nil
 }
 
 // matchesToRanges is a helper that takes the return value of regexp.FindAllStringIndex()

@@ -37,7 +37,7 @@ func searchInReposNew(ctx context.Context, db dbutil.DB, textParams *search.Text
 		args := &protocol.SearchRequest{
 			Repo:        rr.Repo.Name,
 			Revisions:   searchRevsToGitserverRevs(rr.Revs),
-			Query:       &gitprotocol.And{Children: queryNodesToPredicates(query, query.IsCaseSensitive(), diff)},
+			Query:       &gitprotocol.Operator{Kind: protocol.And, Operands: queryNodesToPredicates(query, query.IsCaseSensitive(), diff)},
 			IncludeDiff: diff,
 			Limit:       limit,
 		}
@@ -100,9 +100,9 @@ func queryNodesToPredicates(nodes []query.Node, caseSensitive, diff bool) []gitp
 func queryOperatorToPredicate(op query.Operator, caseSensitive, diff bool) gitprotocol.SearchQuery {
 	switch op.Kind {
 	case query.And:
-		return &gitprotocol.And{Children: queryNodesToPredicates(op.Operands, caseSensitive, diff)}
+		return &gitprotocol.Operator{Kind: protocol.And, Operands: queryNodesToPredicates(op.Operands, caseSensitive, diff)}
 	case query.Or:
-		return &gitprotocol.Or{Children: queryNodesToPredicates(op.Operands, caseSensitive, diff)}
+		return &gitprotocol.Operator{Kind: protocol.And, Operands: queryNodesToPredicates(op.Operands, caseSensitive, diff)}
 	default:
 		// I don't think we should have concats at this point, but ignore it if we do
 		return nil
@@ -123,7 +123,7 @@ func queryPatternToPredicate(pattern query.Pattern, caseSensitive, diff bool) gi
 	}
 
 	if pattern.Negated {
-		return &gitprotocol.Not{Child: newPred}
+		return &gitprotocol.Operator{Kind: protocol.Not, Operands: []gitprotocol.SearchQuery{newPred}}
 	}
 	return newPred
 }
@@ -157,7 +157,7 @@ func queryParameterToPredicate(parameter query.Parameter, caseSensitive, diff bo
 	}
 
 	if parameter.Negated {
-		return &gitprotocol.Not{Child: newPred}
+		return &gitprotocol.Operator{Kind: protocol.Not, Operands: []gitprotocol.SearchQuery{newPred}}
 	}
 	return newPred
 }

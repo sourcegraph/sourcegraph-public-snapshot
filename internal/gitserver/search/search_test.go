@@ -146,10 +146,13 @@ func TestSearch(t *testing.T) {
 	})
 
 	t.Run("and match", func(t *testing.T) {
-		query := &protocol.And{[]protocol.SearchQuery{
-			&protocol.DiffMatches{Expr: "lorem"},
-			&protocol.DiffMatches{Expr: "ipsum"},
-		}}
+		query := &protocol.Operator{
+			Kind: protocol.And,
+			Operands: []protocol.SearchQuery{
+				&protocol.DiffMatches{Expr: "lorem"},
+				&protocol.DiffMatches{Expr: "ipsum"},
+			},
+		}
 		tree, err := ToMatchTree(query)
 		require.NoError(t, err)
 		var commits []*LazyCommit
@@ -295,14 +298,20 @@ index 0000000000..7e54670557
 		diff: parsedDiff,
 	}
 
-	mt, err := ToMatchTree(&protocol.And{[]protocol.SearchQuery{
-		&protocol.AuthorMatches{Expr: "Camden"},
-		&protocol.DiffModifiesFile{Expr: "test"},
-		&protocol.And{[]protocol.SearchQuery{
-			&protocol.DiffMatches{Expr: "result"},
-			&protocol.DiffMatches{Expr: "test"},
-		}},
-	}})
+	mt, err := ToMatchTree(&protocol.Operator{
+		Kind: protocol.And,
+		Operands: []protocol.SearchQuery{
+			&protocol.AuthorMatches{Expr: "Camden"},
+			&protocol.DiffModifiesFile{Expr: "test"},
+			&protocol.Operator{
+				Kind: protocol.And,
+				Operands: []protocol.SearchQuery{
+					&protocol.DiffMatches{Expr: "result"},
+					&protocol.DiffMatches{Expr: "test"},
+				},
+			},
+		},
+	})
 	require.NoError(t, err)
 
 	matches, highlights, err := mt.Match(lc)
