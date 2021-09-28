@@ -27,13 +27,13 @@ go build -trimpath -ldflags "-X github.com/sourcegraph/sourcegraph/internal/vers
 echo "--- packer build"
 
 cat <<EOF >"$OUTPUT/cloudbuild.yaml"
-timeout: 1800s
+timeout: 1200s
 steps:
   - name: gcr.io/cloud-builders/gcloud
     entrypoint: bash
     args: ['-c', 'gcloud secrets versions access latest --secret=e2e-builder-sa-key --quiet --project=sourcegraph-ci > /workspace/builder-sa-key.json']
   - name: index.docker.io/hashicorp/packer:1.6.6
-    timeout: 1800s
+    timeout: 1200s
     env:
       - 'NAME=executor-$(git log -n1 --pretty=format:%h)-${BUILDKITE_BUILD_NUMBER}'
       - 'SRC_CLI_VERSION=${SRC_CLI_VERSION}'
