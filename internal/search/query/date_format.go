@@ -2,6 +2,7 @@ package query
 
 import (
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/cockroachdb/errors"
@@ -62,6 +63,11 @@ func ParseGitDate(s string, now func() time.Time) (time.Time, error) {
 		return t, nil
 	}
 
+	// 1 november 2020 or november 1 2020
+	if t, err := parseSimpleDate(s); err == nil {
+		return t, nil
+	}
+
 	// Human date
 	n := now()
 	if t, err := naturaldate.Parse(s, n); err == nil && t != n {
@@ -113,4 +119,65 @@ func parseGitInternalFormat(s string) (time.Time, error) {
 	}
 
 	return time.Unix(int64(epochSeconds), 0).In(time.FixedZone(locationName, offsetSeconds)), nil
+}
+
+var (
+	simpleDateRe1 = lazyregexp.New(`(?P<month>[A-Za-z]{3,9})\s+(?P<day>\d{1,2}),?\s+(?P<year>\d{4})`)
+	simpleDateRe2 = lazyregexp.New(`(?P<day>\d{1,2})\s+(?P<month>[A-Za-z]{3,9}),?\s+(?P<year>\d{4})`)
+	monthNums     = map[string]time.Month{
+		"january":   time.January,
+		"jan":       time.January,
+		"february":  time.February,
+		"feb":       time.February,
+		"march":     time.March,
+		"mar":       time.March,
+		"april":     time.April,
+		"apr":       time.April,
+		"may":       time.May,
+		"june":      time.June,
+		"jun":       time.June,
+		"july":      time.July,
+		"jul":       time.July,
+		"august":    time.August,
+		"aug":       time.August,
+		"september": time.September,
+		"sep":       time.September,
+		"october":   time.October,
+		"oct":       time.October,
+		"november":  time.November,
+		"nov":       time.November,
+		"december":  time.December,
+		"dec":       time.December,
+	}
+)
+
+// parseSimpleDate parses dates of the form "1 january 1996" or "january 1 1996"
+func parseSimpleDate(s string) (time.Time, error) {
+	re := simpleDateRe1
+	match := re.FindStringSubmatch(s)
+	if match == nil {
+		re = simpleDateRe2
+		match = re.FindStringSubmatch(s)
+		if match == nil {
+			return time.Time{}, errInvalidDate
+		}
+	}
+
+	month := strings.ToLower(match[re.SubexpIndex("month")])
+	monthNum, ok := monthNums[month]
+	if !ok {
+		return time.Time{}, errInvalidDate
+	}
+
+	day, err := strconv.Atoi(match[re.SubexpIndex("day")])
+	if err != nil {
+		return time.Time{}, errInvalidDate
+	}
+
+	year, err := strconv.Atoi(match[re.SubexpIndex("year")])
+	if err != nil {
+		return time.Time{}, errInvalidDate
+	}
+
+	return time.Date(year, monthNum, day, 0, 0, 0, 0, time.UTC), nil
 }
