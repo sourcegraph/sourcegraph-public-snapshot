@@ -20,6 +20,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/search/searchcontexts"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 const maxSearchSuggestions = 100
@@ -44,7 +45,7 @@ type SearchSuggestionResolver interface {
 	ToGitTree() (*GitTreeEntryResolver, bool)
 	ToSymbol() (*symbolResolver, bool)
 	ToLanguage() (*languageResolver, bool)
-	ToSearchContext() (*searchContextResolver, bool)
+	ToSearchContext() (SearchContextResolver, bool)
 }
 
 // baseSuggestionResolver implements all the To* methods, returning false for all of them.
@@ -52,13 +53,13 @@ type SearchSuggestionResolver interface {
 // searchSuggestionResolver.
 type baseSuggestionResolver struct{}
 
-func (baseSuggestionResolver) ToRepository() (*RepositoryResolver, bool)       { return nil, false }
-func (baseSuggestionResolver) ToFile() (*GitTreeEntryResolver, bool)           { return nil, false }
-func (baseSuggestionResolver) ToGitBlob() (*GitTreeEntryResolver, bool)        { return nil, false }
-func (baseSuggestionResolver) ToGitTree() (*GitTreeEntryResolver, bool)        { return nil, false }
-func (baseSuggestionResolver) ToSymbol() (*symbolResolver, bool)               { return &symbolResolver{}, false }
-func (baseSuggestionResolver) ToLanguage() (*languageResolver, bool)           { return nil, false }
-func (baseSuggestionResolver) ToSearchContext() (*searchContextResolver, bool) { return nil, false }
+func (baseSuggestionResolver) ToRepository() (*RepositoryResolver, bool)      { return nil, false }
+func (baseSuggestionResolver) ToFile() (*GitTreeEntryResolver, bool)          { return nil, false }
+func (baseSuggestionResolver) ToGitBlob() (*GitTreeEntryResolver, bool)       { return nil, false }
+func (baseSuggestionResolver) ToGitTree() (*GitTreeEntryResolver, bool)       { return nil, false }
+func (baseSuggestionResolver) ToSymbol() (*symbolResolver, bool)              { return &symbolResolver{}, false }
+func (baseSuggestionResolver) ToLanguage() (*languageResolver, bool)          { return nil, false }
+func (baseSuggestionResolver) ToSearchContext() (SearchContextResolver, bool) { return nil, false }
 
 // repositorySuggestionResolver implements searchSuggestionResolver for RepositoryResolver
 type repositorySuggestionResolver struct {
@@ -161,14 +162,14 @@ func sortSearchSuggestions(s []SearchSuggestionResolver) {
 
 type searchContextSuggestionResolver struct {
 	baseSuggestionResolver
-	searchContext *searchContextResolver
+	searchContext SearchContextResolver
 	score         int
 }
 
 func (s searchContextSuggestionResolver) Score() int    { return s.score }
 func (s searchContextSuggestionResolver) Length() int   { return len(s.searchContext.Spec()) }
 func (s searchContextSuggestionResolver) Label() string { return s.searchContext.Spec() }
-func (s searchContextSuggestionResolver) ToSearchContext() (*searchContextResolver, bool) {
+func (s searchContextSuggestionResolver) ToSearchContext() (SearchContextResolver, bool) {
 	return s.searchContext, true
 }
 func (s searchContextSuggestionResolver) Key() suggestionKey {
@@ -475,13 +476,32 @@ func (r *searchResolver) showFilesWithTextMatches(first int32) suggester {
 }
 
 func (r *searchResolver) showSearchContextSuggestions(ctx context.Context) ([]SearchSuggestionResolver, error) {
+	if EnterpriseResolvers.searchContextsResolver == nil {
+		return []SearchSuggestionResolver{}, nil
+	}
+
 	hasSingleContextField := len(r.Query.Values(query.FieldContext)) == 1
 	if !hasSingleContextField {
 		return nil, nil
 	}
 	searchContextSpec, _ := r.Query.StringValue(query.FieldContext)
 	parsedSearchContextSpec := searchcontexts.ParseSearchContextSpec(searchContextSpec)
-	searchContexts, err := database.SearchContexts(r.db).ListSearchContexts(
+	searchContexts := []*types.SearchContext{}
+
+	autoDefinedSearchContexts, err := searchcontexts.GetAutoDefinedSearchContexts(ctx, r.db)
+	if err != nil {
+		return nil, err
+	}
+	for _, searchContext := range autoDefinedSearchContexts {
+		matchesName := parsedSearchContextSpec.SearchContextName != "" && strings.Contains(searchContext.Name, parsedSearchContextSpec.SearchContextName)
+		matchesNamespace := parsedSearchContextSpec.NamespaceName != "" && (strings.Contains(searchContext.NamespaceUserName, parsedSearchContextSpec.NamespaceName) ||
+			strings.Contains(searchContext.NamespaceOrgName, parsedSearchContextSpec.NamespaceName))
+		if matchesName || matchesNamespace {
+			searchContexts = append(searchContexts, searchContext)
+		}
+	}
+
+	userDefinedSearchContexts, err := database.SearchContexts(r.db).ListSearchContexts(
 		ctx,
 		database.ListSearchContextsPageOptions{First: maxSearchSuggestions},
 		database.ListSearchContextsOptions{
@@ -494,11 +514,14 @@ func (r *searchResolver) showSearchContextSuggestions(ctx context.Context) ([]Se
 	if err != nil {
 		return nil, err
 	}
-	suggestions := make([]SearchSuggestionResolver, 0, len(searchContexts))
-	for i, searchContext := range searchContexts {
+
+	searchContexts = append(searchContexts, userDefinedSearchContexts...)
+	searchContextsResolvers := EnterpriseResolvers.searchContextsResolver.SearchContextsToResolvers(searchContexts)
+	suggestions := make([]SearchSuggestionResolver, 0, len(searchContextsResolvers))
+	for i, searchContextResolver := range searchContextsResolvers {
 		suggestions = append(suggestions, &searchContextSuggestionResolver{
-			searchContext: &searchContextResolver{searchContext, r.db},
-			score:         len(searchContexts) - i,
+			searchContext: searchContextResolver,
+			score:         len(searchContextsResolvers) - i,
 		})
 	}
 	return suggestions, nil

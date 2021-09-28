@@ -175,6 +175,7 @@ export const RepoRevisionSidebarSymbols: React.FunctionComponent<RepoRevisionSid
             pluralNoun="symbols"
             hasNextPage={hasNextPage}
             connectionQuery={query}
+            compact={true}
         />
     )
 
@@ -184,21 +185,25 @@ export const RepoRevisionSidebarSymbols: React.FunctionComponent<RepoRevisionSid
                 inputValue={searchValue}
                 onInputChange={event => setSearchValue(event.target.value)}
                 inputPlaceholder="Search symbols..."
+                compact={true}
+                formClassName="repo-revision-sidebar-symbols__form"
             />
-            <SummaryContainer>{query && summary}</SummaryContainer>
-            {error && <ConnectionError errors={[error.message]} />}
+            <SummaryContainer compact={true} className="repo-revision-sidebar-symbols__summary-container">
+                {query && summary}
+            </SummaryContainer>
+            {error && <ConnectionError errors={[error.message]} compact={true} />}
             {connection && (
-                <ConnectionList>
+                <ConnectionList compact={true}>
                     {connection.nodes.map((node, index) => (
                         <SymbolNode key={index} node={node} location={location} />
                     ))}
                 </ConnectionList>
             )}
-            {loading && <ConnectionLoading />}
+            {loading && <ConnectionLoading compact={true} />}
             {!loading && connection && (
-                <SummaryContainer>
+                <SummaryContainer compact={true} className="repo-revision-sidebar-symbols__summary-container">
                     {!query && summary}
-                    {hasNextPage && <ShowMoreButton onClick={fetchMore} />}
+                    {hasNextPage && <ShowMoreButton compact={true} onClick={fetchMore} />}
                 </SummaryContainer>
             )}
         </ConnectionContainer>

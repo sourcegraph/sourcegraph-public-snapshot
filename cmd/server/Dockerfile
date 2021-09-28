@@ -1,8 +1,3 @@
-FROM sourcegraph/alpine-3.12:107969_2021-09-10_80f5edc@sha256:ce1ba2f16ec56e5e8007da53e0e6449bc0fa1fe1f972bffbc33dea1ae410b86d as libsqlite3-pcre
-
-COPY libsqlite3-pcre-install-alpine.sh /libsqlite3-pcre-install-alpine.sh
-RUN /libsqlite3-pcre-install-alpine.sh
-
 # Install p4 CLI (keep this up to date with cmd/gitserver/Dockerfile)
 FROM sourcegraph/alpine-3.12:107969_2021-09-10_80f5edc@sha256:ce1ba2f16ec56e5e8007da53e0e6449bc0fa1fe1f972bffbc33dea1ae410b86d AS p4cli
 
@@ -97,9 +92,6 @@ RUN set -ex && \
 # hadolint ignore=DL3022
 COPY --from=sourcegraph/grafana:server /usr/share/grafana /usr/share/grafana
 
-# hadolint ignore=DL3022
-COPY --from=libsqlite3-pcre /sqlite3-pcre/pcre.so /libsqlite3-pcre.so
-ENV LIBSQLITE3_PCRE /libsqlite3-pcre.so
 COPY . /
 
 # hadolint ignore=DL3022

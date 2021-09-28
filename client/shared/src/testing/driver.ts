@@ -363,8 +363,8 @@ export class Driver {
         // Delete existing external services if there are any.
         if (externalServices.totalCount !== 0) {
             await this.page.goto(this.sourcegraphBaseUrl + '/site-admin/external-services')
-            await this.page.waitFor('.test-filtered-connection')
-            await this.page.waitForSelector('.test-filtered-connection__loader', { hidden: true })
+            await this.page.waitForSelector('[data-testid="filtered-connection"]')
+            await this.page.waitForSelector('[data-testid="filtered-connection-loader"]', { hidden: true })
 
             // Matches buttons for deleting external services named ${displayName}.
             const deleteButtonSelector = `[data-test-external-service-name="${displayName}"] .test-delete-external-service-button`

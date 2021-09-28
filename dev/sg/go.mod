@@ -12,11 +12,11 @@ require (
 	github.com/hashicorp/go-multierror v1.1.1
 	github.com/jackc/pgx/v4 v4.11.0
 	github.com/peterbourgon/ff/v3 v3.0.0
-	github.com/rjeczalik/notify v0.9.2
+	github.com/rjeczalik/notify v0.9.3-0.20210809113154-3472d85e95cd
 	github.com/sourcegraph/sourcegraph/lib v0.0.0-20210906140940-dd601b549e29
 	golang.org/x/mod v0.4.2
 	golang.org/x/oauth2 v0.0.0-20210628180205-a41e5a781914
-	golang.org/x/sys v0.0.0-20210630005230-0f9fa26af87c // indirect
+	golang.org/x/sys v0.0.0-20210915083310-ed5796bab164 // indirect
 	google.golang.org/api v0.50.0
 	google.golang.org/genproto v0.0.0-20210708141623-e76da96a951f // indirect
 	gopkg.in/yaml.v2 v2.4.0

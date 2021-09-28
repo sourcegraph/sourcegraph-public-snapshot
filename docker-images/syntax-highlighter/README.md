@@ -57,7 +57,7 @@ Invoke `cargo build --release` and an optimized binary will be built (e.g. to `.
 
 ## Publishing docker image
 
-Run `./publish.sh` after merging your changes.
+This will happen automatically via CI. You don't need to do anything after merging to main.
 
 ## Updating Sourcegraph
 
@@ -96,11 +96,11 @@ We use a temporary fork of `syntect` as a hack to get our `Packages` registry in
 
 #### 3) Update syntect_server to use the new version of `syntect`
 
-Send a PR to this repository [with the result of running `cargo update -p syntect`](https://github.com/sourcegraph/syntect_server/commit/1c72addeac3cb54f2c1a7735e8c4ca75eb16d0b3).
+Run the following in this directory.
 
-#### 4) Publish a new image, use it in Sourcegraph
-
-Run `./publish.sh` to build and release a new image of `syntect_server`, and then send a PR to the main Sourcegraph repository like [this](https://github.com/sourcegraph/sourcegraph/pull/15634/commits/2b8c2a09ab52dbf840495fe0200abd21619b2856). Once merged, it will automatically rollout to Sourcegraph.com and go in the next Sourcegraph release.
+```
+$ cargo update -p syntect
+```
 
 ## Embedded themes:
 

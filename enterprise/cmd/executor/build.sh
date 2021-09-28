@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-# This script builds the executor google cloud image.
+# This script builds the executor image as a GCP boot disk image and as an AWS AMI.
 
 cd "$(dirname "${BASH_SOURCE[0]}")"
 set -eu
@@ -33,11 +33,10 @@ steps:
     args: ['-c', 'gcloud secrets versions access latest --secret=e2e-builder-sa-key --quiet --project=sourcegraph-ci > /workspace/builder-sa-key.json']
   - name: index.docker.io/hashicorp/packer:1.6.6
     env:
-      - 'VERSION=$(git log -n1 --pretty=format:%h)'
-      - 'BUILD_TIMESTAMP=$BUILD_TIMESTAMP'
-      - 'SRC_CLI_VERSION=$SRC_CLI_VERSION'
-      - 'AWS_EXECUTOR_AMI_ACCESS_KEY=$AWS_EXECUTOR_AMI_ACCESS_KEY'
-      - 'AWS_EXECUTOR_AMI_SECRET_KEY=$AWS_EXECUTOR_AMI_SECRET_KEY'
+      - 'NAME=executor-$(git log -n1 --pretty=format:%h)-${BUILDKITE_BUILD_NUMBER}'
+      - 'SRC_CLI_VERSION=${SRC_CLI_VERSION}'
+      - 'AWS_EXECUTOR_AMI_ACCESS_KEY=${AWS_EXECUTOR_AMI_ACCESS_KEY}'
+      - 'AWS_EXECUTOR_AMI_SECRET_KEY=${AWS_EXECUTOR_AMI_SECRET_KEY}'
     args: ['build', 'executor.json']
 EOF
 

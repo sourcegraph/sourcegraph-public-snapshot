@@ -23,6 +23,8 @@ export interface Settings {
         enableFastResultLoading?: boolean
         acceptSearchSuggestionOnEnter?: boolean
         batchChangesExecution?: boolean
+        showSearchContext?: boolean
+        showSearchContextManagement?: boolean
     }
     [key: string]: any
 

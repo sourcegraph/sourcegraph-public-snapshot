@@ -1,5 +1,5 @@
 .modal {
-    background-color: rgba(0, 0, 0, 0.1);
+    background-color: transparent;
     position: absolute;
     left: 0;
     top: 0;
@@ -9,13 +9,13 @@
 }
 
 .modal-content {
-    background-color: #cdcdcd;
-    border-radius: 4px;
-    margin: 4px;
-    padding: 32px;
-    box-shadow: -2px 2px 8px gray;
+    background-color: var(--body-bg);
+    border-radius: 0.12rem;
+    margin: 1rem;
+    padding: 2rem;
+    box-shadow: 0.1rem 0.1rem 0.5rem var(--body-color);
     position: absolute;
     left: 50%;
-    top: 50%;
-    transform: translate(-50%, -50%);
+    top: 5%;
+    transform: translate(-50%, -5%);
 }

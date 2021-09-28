@@ -15,17 +15,19 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Added
 
--
+- More rules have been added to the search query validation so that user get faster feedback on issues with their query. [#24747](https://github.com/sourcegraph/sourcegraph/pull/24747)
 
 ### Changed
 
--
+- Search context management pages are now only available in the Sourcegraph enterprise version. Search context dropdown is disabled in the OSS version. [#25147](https://github.com/sourcegraph/sourcegraph/pull/25147)
+- Search contexts GQL API is now only available in the Sourcegraph enterprise version. [#25281](https://github.com/sourcegraph/sourcegraph/pull/25281)
 
 ### Fixed
 
 - A search regression in 3.32.0 which caused instances with search indexing _disabled_ (very rare) via `"search.index.enabled": false,` in their site config to crash with a panic. [#25321](https://github.com/sourcegraph/sourcegraph/pull/25321)
 - An issue where the default `search.index.enabled` value on single-container Docker instances would incorrectly be computed as `false` in some situations. [#25321](https://github.com/sourcegraph/sourcegraph/pull/25321)
 - StatefulSet service discovery in Kubernetes correctly constructs pod hostnames in the case where the ServiceName is different from the StatefulSet name. [#25146](https://github.com/sourcegraph/sourcegraph/pull/25146)
+- An issue where clicking on a link in the 'Revisions' search sidebar section would result in an invalid query if the query didn't already contain a 'repo:' filter. [#25076](https://github.com/sourcegraph/sourcegraph/pull/25076)
 
 ### Removed
 
@@ -40,6 +42,7 @@ All notable changes to Sourcegraph are documented in this file.
 - Added a `Documentation` tab to the Site Admin Maintenance panel that links to the official Sourcegraph documentation. [#24917](https://github.com/sourcegraph/sourcegraph/pull/24917)
 - Code Insights that run over all repositories now generate a moving daily snapshot between time points. [#24804](https://github.com/sourcegraph/sourcegraph/pull/24804)
 - The Code Insights GraphQL API now restricts the results to user, org, and globally scoped insights. Insights will be synced to the database with access associated to the user or org setting containing the insight definition. [#25017](https://github.com/sourcegraph/sourcegraph/pull/25017)
+- The timeout for long-running Git commands can be customized via `gitLongCommandTimeout` in the site config. [#25080](https://github.com/sourcegraph/sourcegraph/pull/25080)
 
 ### Changed
 

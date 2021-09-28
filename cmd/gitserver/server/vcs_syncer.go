@@ -13,7 +13,6 @@ import (
 	"github.com/cockroachdb/errors"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 )
 
 // VCSSyncer describes whether and how to sync content from a VCS remote to
@@ -41,7 +40,7 @@ func (s *GitRepoSyncer) Type() string {
 
 // IsCloneable checks to see if the Git remote URL is cloneable.
 func (s *GitRepoSyncer) IsCloneable(ctx context.Context, remoteURL *vcs.URL) error {
-	if strings.ToLower(string(protocol.NormalizeRepo(api.RepoName(remoteURL.String())))) == "github.com/sourcegraphtest/alwayscloningtest" {
+	if isAlwaysCloningTest(api.RepoName(remoteURL.String())) {
 		return nil
 	}
 	if testGitRepoExists != nil {
