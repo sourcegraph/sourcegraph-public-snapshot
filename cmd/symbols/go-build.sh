@@ -40,6 +40,7 @@ env CC=musl-gcc go build \
 #
 #     'cat FILE | docker run ... -i ... sh -c "cat > FILE && ..."'
 echo "--- sanity check"
+# shellcheck disable=SC2002
 cat "$OUTPUT/$(basename $pkg)" | docker run \
   --rm \
   -i \
