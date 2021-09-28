@@ -217,11 +217,7 @@ func listBatchSpecWorkspaceExecutionJobsQuery(opts ListBatchSpecWorkspaceExecuti
 	}
 
 	if len(opts.BatchSpecWorkspaceIDs) != 0 {
-		ids := make([]*sqlf.Query, 0, len(opts.BatchSpecWorkspaceIDs))
-		for _, id := range opts.BatchSpecWorkspaceIDs {
-			ids = append(ids, sqlf.Sprintf("%s", id))
-		}
-		preds = append(preds, sqlf.Sprintf("batch_spec_workspace_execution_jobs.batch_spec_workspace_id IN (%s)", sqlf.Join(ids, ",")))
+		preds = append(preds, sqlf.Sprintf("batch_spec_workspace_execution_jobs.batch_spec_workspace_id = ANY (%s)", pq.Array(opts.BatchSpecWorkspaceIDs)))
 	}
 
 	if len(preds) == 0 {
