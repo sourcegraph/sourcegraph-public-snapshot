@@ -177,6 +177,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
                             placeholder="Search files by name (append : to jump to a line or @ to go to a symbol or > to search for a command)"
                             value={value}
                             onChange={handleChange}
+                            autoFocus={true}
                             type="text"
                         />
                     </div>

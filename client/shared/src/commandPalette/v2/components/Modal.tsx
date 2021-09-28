@@ -25,7 +25,6 @@ function useOutsideClick(
 ): void {
     const handleMouseDown = useCallback(
         (event: MouseEvent) => {
-            event.preventDefault()
             if (event?.target && reference?.current?.contains?.(event.target as Node)) {
                 return
             }
