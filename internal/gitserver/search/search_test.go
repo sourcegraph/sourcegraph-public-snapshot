@@ -148,7 +148,7 @@ func TestSearch(t *testing.T) {
 	t.Run("and match", func(t *testing.T) {
 		query := &protocol.Operator{
 			Kind: protocol.And,
-			Operands: []protocol.SearchQuery{
+			Operands: []protocol.Node{
 				&protocol.DiffMatches{Expr: "lorem"},
 				&protocol.DiffMatches{Expr: "ipsum"},
 			},
@@ -300,12 +300,12 @@ index 0000000000..7e54670557
 
 	mt, err := ToMatchTree(&protocol.Operator{
 		Kind: protocol.And,
-		Operands: []protocol.SearchQuery{
+		Operands: []protocol.Node{
 			&protocol.AuthorMatches{Expr: "Camden"},
 			&protocol.DiffModifiesFile{Expr: "test"},
 			&protocol.Operator{
 				Kind: protocol.And,
-				Operands: []protocol.SearchQuery{
+				Operands: []protocol.Node{
 					&protocol.DiffMatches{Expr: "result"},
 					&protocol.DiffMatches{Expr: "test"},
 				},

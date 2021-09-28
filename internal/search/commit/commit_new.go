@@ -78,10 +78,10 @@ func searchRevsToGitserverRevs(in []search.RevisionSpecifier) []gitprotocol.Revi
 	return out
 }
 
-func queryNodesToPredicates(nodes []query.Node, caseSensitive, diff bool) []gitprotocol.SearchQuery {
-	res := make([]gitprotocol.SearchQuery, 0, len(nodes))
+func queryNodesToPredicates(nodes []query.Node, caseSensitive, diff bool) []gitprotocol.Node {
+	res := make([]gitprotocol.Node, 0, len(nodes))
 	for _, node := range nodes {
-		var newPred gitprotocol.SearchQuery
+		var newPred gitprotocol.Node
 		switch v := node.(type) {
 		case query.Operator:
 			newPred = queryOperatorToPredicate(v, caseSensitive, diff)
@@ -97,7 +97,7 @@ func queryNodesToPredicates(nodes []query.Node, caseSensitive, diff bool) []gitp
 	return res
 }
 
-func queryOperatorToPredicate(op query.Operator, caseSensitive, diff bool) gitprotocol.SearchQuery {
+func queryOperatorToPredicate(op query.Operator, caseSensitive, diff bool) gitprotocol.Node {
 	switch op.Kind {
 	case query.And:
 		return &gitprotocol.Operator{Kind: protocol.And, Operands: queryNodesToPredicates(op.Operands, caseSensitive, diff)}
@@ -109,13 +109,13 @@ func queryOperatorToPredicate(op query.Operator, caseSensitive, diff bool) gitpr
 	}
 }
 
-func queryPatternToPredicate(pattern query.Pattern, caseSensitive, diff bool) gitprotocol.SearchQuery {
+func queryPatternToPredicate(pattern query.Pattern, caseSensitive, diff bool) gitprotocol.Node {
 	patString := pattern.Value
 	if pattern.Annotation.Labels.IsSet(query.Literal) {
 		patString = regexp.QuoteMeta(pattern.Value)
 	}
 
-	var newPred gitprotocol.SearchQuery
+	var newPred gitprotocol.Node
 	if diff {
 		newPred = &gitprotocol.DiffMatches{Expr: patString, IgnoreCase: !caseSensitive}
 	} else {
@@ -123,13 +123,13 @@ func queryPatternToPredicate(pattern query.Pattern, caseSensitive, diff bool) gi
 	}
 
 	if pattern.Negated {
-		return &gitprotocol.Operator{Kind: protocol.Not, Operands: []gitprotocol.SearchQuery{newPred}}
+		return &gitprotocol.Operator{Kind: protocol.Not, Operands: []gitprotocol.Node{newPred}}
 	}
 	return newPred
 }
 
-func queryParameterToPredicate(parameter query.Parameter, caseSensitive, diff bool) gitprotocol.SearchQuery {
-	var newPred gitprotocol.SearchQuery
+func queryParameterToPredicate(parameter query.Parameter, caseSensitive, diff bool) gitprotocol.Node {
+	var newPred gitprotocol.Node
 	switch parameter.Field {
 	case query.FieldAuthor:
 		// TODO(@camdencheek) look up emails (issue #25180)
@@ -157,7 +157,7 @@ func queryParameterToPredicate(parameter query.Parameter, caseSensitive, diff bo
 	}
 
 	if parameter.Negated {
-		return &gitprotocol.Operator{Kind: protocol.Not, Operands: []gitprotocol.SearchQuery{newPred}}
+		return &gitprotocol.Operator{Kind: protocol.Not, Operands: []gitprotocol.Node{newPred}}
 	}
 	return newPred
 }
