@@ -82,7 +82,7 @@ type job struct {
 
 type searchResult struct {
 	lazyCommit        *LazyCommit
-	highlightedCommit *CommitHighlights
+	highlightedCommit *MatchedCommit
 }
 
 const (
@@ -99,7 +99,7 @@ const (
 // that job should be sent down. We then read from the result channels in the same order that the jobs were sent.
 // This allows our worker pool to run the jobs in parallel, but we still emit matches in the same order that
 // git log outputs them.
-func Search(ctx context.Context, dir string, revs []protocol.RevisionSpecifier, p MatchTree, onMatch func(*LazyCommit, *CommitHighlights) bool) error {
+func Search(ctx context.Context, dir string, revs []protocol.RevisionSpecifier, p MatchTree, onMatch func(*LazyCommit, *MatchedCommit) bool) error {
 	g, ctx := errgroup.WithContext(ctx)
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
@@ -352,7 +352,7 @@ func (c *CommitScanner) Err() error {
 	return c.err
 }
 
-func CreateCommitMatch(lc *LazyCommit, hc *CommitHighlights, includeDiff bool) (*protocol.CommitMatch, error) {
+func CreateCommitMatch(lc *LazyCommit, hc *MatchedCommit, includeDiff bool) (*protocol.CommitMatch, error) {
 	authorDate, err := lc.AuthorDate()
 	if err != nil {
 		return nil, err
@@ -363,13 +363,13 @@ func CreateCommitMatch(lc *LazyCommit, hc *CommitHighlights, includeDiff bool) (
 		return nil, err
 	}
 
-	diff := protocol.HighlightedString{}
+	diff := protocol.MatchedString{}
 	if includeDiff {
 		rawDiff, err := lc.Diff()
 		if err != nil {
 			return nil, err
 		}
-		diff.Content, diff.Highlights = FormatDiff(rawDiff, hc.Diff)
+		diff.Content, diff.MatchedRanges = FormatDiff(rawDiff, hc.Diff)
 	}
 
 	return &protocol.CommitMatch{
@@ -387,9 +387,9 @@ func CreateCommitMatch(lc *LazyCommit, hc *CommitHighlights, includeDiff bool) (
 		Parents:    lc.ParentIDs(),
 		SourceRefs: lc.SourceRefs(),
 		Refs:       lc.RefNames(),
-		Message: protocol.HighlightedString{
-			Content:    string(lc.Message),
-			Highlights: hc.Message,
+		Message: protocol.MatchedString{
+			Content:       string(lc.Message),
+			MatchedRanges: hc.Message,
 		},
 		Diff: diff,
 	}, nil

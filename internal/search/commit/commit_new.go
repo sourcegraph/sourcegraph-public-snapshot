@@ -171,14 +171,14 @@ func protocolMatchToCommitMatch(repo types.RepoName, diff bool, in protocol.Comm
 
 	if diff {
 		matchBody = "```diff\n" + in.Diff.Content + "\n```"
-		matchHighlights = searchRangesToHighlights(matchBody, in.Diff.Highlights.Add(gitprotocol.Location{Line: 1, Offset: len("```diff\n")}))
+		matchHighlights = searchRangesToHighlights(matchBody, in.Diff.MatchedRanges.Add(gitprotocol.Location{Line: 1, Offset: len("```diff\n")}))
 		diffPreview = &result.HighlightedString{
 			Value:      in.Diff.Content,
-			Highlights: searchRangesToHighlights(in.Diff.Content, in.Diff.Highlights),
+			Highlights: searchRangesToHighlights(in.Diff.Content, in.Diff.MatchedRanges),
 		}
 	} else {
 		matchBody = "```COMMIT_EDITMSG\n" + in.Message.Content + "\n```"
-		matchHighlights = searchRangesToHighlights(matchBody, in.Message.Highlights.Add(gitprotocol.Location{Line: 1, Offset: len("```COMMIT_EDITMSG\n")}))
+		matchHighlights = searchRangesToHighlights(matchBody, in.Message.MatchedRanges.Add(gitprotocol.Location{Line: 1, Offset: len("```COMMIT_EDITMSG\n")}))
 	}
 
 	return &result.CommitMatch{
@@ -200,7 +200,7 @@ func protocolMatchToCommitMatch(repo types.RepoName, diff bool, in protocol.Comm
 		Repo: repo,
 		MessagePreview: &result.HighlightedString{
 			Value:      in.Message.Content,
-			Highlights: searchRangesToHighlights(in.Message.Content, in.Message.Highlights),
+			Highlights: searchRangesToHighlights(in.Message.Content, in.Message.MatchedRanges),
 		},
 		DiffPreview: diffPreview,
 		Body: result.HighlightedString{
