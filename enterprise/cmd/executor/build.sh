@@ -27,6 +27,7 @@ go build -trimpath -ldflags "-X github.com/sourcegraph/sourcegraph/internal/vers
 echo "--- packer build"
 
 cat <<EOF >"$OUTPUT/cloudbuild.yaml"
+timeout: 1800s
 steps:
   - name: gcr.io/cloud-builders/gcloud
     entrypoint: bash
@@ -39,7 +40,6 @@ steps:
       - 'AWS_EXECUTOR_AMI_ACCESS_KEY=${AWS_EXECUTOR_AMI_ACCESS_KEY}'
       - 'AWS_EXECUTOR_AMI_SECRET_KEY=${AWS_EXECUTOR_AMI_SECRET_KEY}'
     args: ['build', 'executor.json']
-timeout: 1800s
 EOF
 
 # Copy cloudbuild files into workspace.
