@@ -10,16 +10,9 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/enterprise/dev/ci/images"
 	bk "github.com/sourcegraph/sourcegraph/enterprise/dev/ci/internal/buildkite"
+	"github.com/sourcegraph/sourcegraph/enterprise/dev/ci/internal/ci/changed"
+	"github.com/sourcegraph/sourcegraph/enterprise/dev/ci/internal/ci/operations"
 )
-
-// Operation defines a function that adds something to a pipeline.
-//
-// Functions that return an Operation should never accept Config as an argument - they
-// should only accept `changedFiles` or evaluated arguments.
-//
-// Operations should never conditionally add Steps and Operations - they should only use
-// arguments to create variations of specific Operations (e.g. with different arguments).
-type Operation func(*bk.Pipeline)
 
 // CoreTestOperationsOptions should be used ONLY to adjust the behaviour of specific steps,
 // e.g. by adding flags, and not as a condition for adding steps or commands.
@@ -32,33 +25,26 @@ type CoreTestOperationsOptions struct {
 // notably, this is what is used to define operations that run on PRs. Please read the
 // following notes:
 //
-// Operations should ONLY be ADDITIVE based on changedFiles. Please do not remove steps
-// after they are added. changedFiles can be nil to run all tests.
-//
+// changedFiles can be nil to run all tests.
 // opts should be used ONLY to adjust the behaviour of specific steps, e.g. by adding flags,
 // and not as a condition for adding steps or commands.
 //
 // If the conditions for the addition of an operation cannot be expressed using the above
 // arguments, please add it to the switch case within `GeneratePipeline` instead.
-func CoreTestOperations(changedFiles ChangedFiles, opts CoreTestOperationsOptions) []Operation {
+func CoreTestOperations(changedFiles changed.ChangedFiles, opts CoreTestOperationsOptions) *operations.Operations {
 	// Various RunTypes can provide a nil changedFiles to run all checks.
 	runAll := len(changedFiles) == 0
 
 	// Base set
-	operations := []Operation{
+	ops := operations.NewOperations([]operations.Operation{
 		// lightweight check that works over a lot of stuff - we are okay with running
 		// these on all PRs
 		addPrettier,
 		addCheck,
-	}
+	})
 
-	// appendOps is a utility for adding an operation to the set of pipeline operations.
-	appendOps := func(ops ...Operation) {
-		operations = append(operations, ops...)
-	}
-
-	if runAll || changedFiles.affectsClient() {
-		appendOps(
+	if runAll || changedFiles.AffectsClient() {
+		ops.Append(
 			clientIntegrationTests,
 			clientChromaticTests(opts.ChromaticShouldAutoAccept),
 			frontendTests,   // ~4.5m
@@ -69,34 +55,35 @@ func CoreTestOperations(changedFiles ChangedFiles, opts CoreTestOperationsOption
 		)
 	}
 
-	if runAll || changedFiles.affectsGo() {
-		appendOps(
+	if runAll || changedFiles.AffectsGo() {
+		ops.Append(
 			addGoTests,
 			addCheck,
 		)
 
 		// If the changes are only in ./dev/sg then we only need to run a subset of steps.
-		if !changedFiles.affectsSg() {
-			appendOps(
+		if !changedFiles.AffectsSg() {
+			ops.Append(
 				addGoBuild, // ~0.5m
 			)
 		}
 	}
 
-	if runAll || changedFiles.affectsGraphQL() {
-		appendOps(addGraphQLLint)
+	if runAll || changedFiles.AffectsGraphQL() {
+		ops.Append(addGraphQLLint)
 	}
 
-	if runAll || changedFiles.affectsDockerfiles() {
-		appendOps(addDockerfileLint)
+	if runAll || changedFiles.AffectsDockerfiles() {
+		ops.Append(addDockerfileLint)
 	}
 
-	if runAll || changedFiles.affectsDocs() {
-		appendOps(addDocs)
+	if runAll || changedFiles.AffectsDocs() {
+		ops.Append(addDocs)
 	}
 
 	// wait for all steps to pass
-	return append(operations, wait)
+	ops.Append(wait)
+	return &ops
 }
 
 // Verifies the docs formatting and builds the `docsite` command.
@@ -228,7 +215,7 @@ func clientIntegrationTests(pipeline *bk.Pipeline) {
 		append(finalizeSteps, puppeteerFinalizeDependencies...)...)
 }
 
-func clientChromaticTests(autoAcceptChanges bool) Operation {
+func clientChromaticTests(autoAcceptChanges bool) operations.Operation {
 	return func(pipeline *bk.Pipeline) {
 		// Upload storybook to Chromatic
 		chromaticCommand := "yarn chromatic --exit-zero-on-changes --exit-once-uploaded"
@@ -355,7 +342,7 @@ func wait(pipeline *bk.Pipeline) {
 }
 
 // Trigger the async pipeline to run. See pipeline.async.yaml.
-func triggerAsync(buildOptions bk.BuildOptions) Operation {
+func triggerAsync(buildOptions bk.BuildOptions) operations.Operation {
 	return func(pipeline *bk.Pipeline) {
 		pipeline.AddTrigger(":snail: Trigger async",
 			bk.Trigger("sourcegraph-async"),
@@ -402,7 +389,7 @@ func (opts *e2eAndQAOptions) copyEnv(keys ...string) map[string]string {
 	return m
 }
 
-func triggerE2EandQA(opts e2eAndQAOptions) Operation {
+func triggerE2EandQA(opts e2eAndQAOptions) operations.Operation {
 	customOptions := bk.BuildOptions{
 		Message: opts.buildOptions.Message,
 		Branch:  opts.buildOptions.Branch,
@@ -451,7 +438,7 @@ func triggerE2EandQA(opts e2eAndQAOptions) Operation {
 
 // Build a candidate docker image that will re-tagged with the final
 // tags once the e2e tests pass.
-func buildCandidateDockerImage(app, version, tag string) Operation {
+func buildCandidateDockerImage(app, version, tag string) operations.Operation {
 	return func(pipeline *bk.Pipeline) {
 		image := strings.ReplaceAll(app, "/", "-")
 		localImage := "sourcegraph/" + image + ":" + version
@@ -499,7 +486,7 @@ func buildCandidateDockerImage(app, version, tag string) Operation {
 // after the e2e tests pass.
 //
 // It requires Config as an argument because published images require a lot of metadata.
-func publishFinalDockerImage(c Config, app string, insiders bool) Operation {
+func publishFinalDockerImage(c Config, app string, insiders bool) operations.Operation {
 	return func(pipeline *bk.Pipeline) {
 		image := strings.ReplaceAll(app, "/", "-")
 		devImage := fmt.Sprintf("%s/%s", images.SourcegraphDockerDevRegistry, image)
@@ -543,7 +530,7 @@ func publishFinalDockerImage(c Config, app string, insiders bool) Operation {
 }
 
 // ~6m (building executor base VM)
-func buildExecutor(timestamp time.Time, version string) Operation {
+func buildExecutor(timestamp time.Time, version string) operations.Operation {
 	return func(pipeline *bk.Pipeline) {
 		cmds := []bk.StepOpt{
 			bk.Cmd(`echo "Building executor cloud image..."`),
@@ -556,7 +543,7 @@ func buildExecutor(timestamp time.Time, version string) Operation {
 	}
 }
 
-func publishExecutor(timestamp time.Time, version string) Operation {
+func publishExecutor(timestamp time.Time, version string) operations.Operation {
 	return func(pipeline *bk.Pipeline) {
 		cmds := []bk.StepOpt{
 			bk.Cmd(`echo "Releasing executor cloud image..."`),
