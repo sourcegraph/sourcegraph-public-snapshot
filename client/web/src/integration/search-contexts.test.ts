@@ -106,6 +106,7 @@ describe('Search contexts', () => {
         ...viewerSettingsWithSearchContexts,
         UserRepositories: () => ({
             node: {
+                __typename: 'User',
                 repositories: {
                     totalCount: 1,
                     nodes: [

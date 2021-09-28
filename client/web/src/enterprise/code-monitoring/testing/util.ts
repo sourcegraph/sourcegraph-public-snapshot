@@ -1,5 +1,40 @@
+import { AuthenticatedUser } from '../../../auth'
+import { CodeMonitorFields } from '../../../graphql-operations'
+
+export const mockUser: AuthenticatedUser = {
+    __typename: 'User',
+    id: 'userID',
+    username: 'username',
+    email: 'user@me.com',
+    siteAdmin: true,
+    databaseID: 0,
+    tags: [],
+    url: '',
+    avatarURL: '',
+    displayName: 'display name',
+    settingsURL: '',
+    viewerCanAdminister: true,
+    organizations: {
+        __typename: 'OrgConnection',
+        nodes: [],
+    },
+    session: { __typename: 'Session', canSignOut: true },
+}
+
+export const mockCodeMonitorFields: CodeMonitorFields = {
+    __typename: 'Monitor',
+    id: 'foo0',
+    description: 'Test code monitor',
+    enabled: true,
+    trigger: { id: 'test-0', query: 'test' },
+    actions: {
+        nodes: [{ id: 'test-action-0', enabled: true, recipients: { nodes: [{ id: 'baz-0' }] } }],
+    },
+}
+
 export const mockCodeMonitor = {
     node: {
+        __typename: 'Monitor',
         id: 'foo0',
         description: 'Test code monitor',
         enabled: true,
