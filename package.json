@@ -11,7 +11,7 @@
     "yarn": "^1.22.4"
   },
   "scripts": {
-    "prettier": "prettier '**/{*.{js?(on),ts?(x),graphql,md,scss},.*.js?(on)}' --write --list-different --config prettier.config.js",
+    "prettier": "prettier '**/{*.{js?(on),ts?(x),graphql,scss},.*.js?(on)}' --write --list-different --config prettier.config.js",
     "prettier-check": "yarn -s run prettier --write=false",
     "all:eslint": "DOCSITE_LIST=\"$(./dev/docsite.sh -config doc/docsite.json ls)\" dev/foreach-ts-project.sh yarn -s run eslint --quiet",
     "all:stylelint": "yarn --cwd client/web run stylelint && yarn --cwd client/shared run stylelint && yarn --cwd client/branded run stylelint && yarn --cwd client/browser run stylelint && yarn --cwd client/wildcard run stylelint",
