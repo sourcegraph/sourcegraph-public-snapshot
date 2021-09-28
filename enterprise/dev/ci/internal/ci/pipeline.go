@@ -94,11 +94,9 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 	// PERF: Try to order steps such that slower steps are first.
 	switch c.RunType {
 	case PullRequest:
-		if c.ChangedFiles.affectsClient() {
-			// triggers a slow pipeline, currently only affects web. It's optional so we
-			// set it up separately from CoreTestOperations
-			appendOps(triggerAsync(buildOptions))
-		}
+		// triggers a slow pipeline, currently only affects web. It's optional so we
+		// set it up separately from CoreTestOperations
+		appendOps(triggerAsync(buildOptions))
 
 		operations = CoreTestOperations(c.ChangedFiles, CoreTestOperationsOptions{})
 
