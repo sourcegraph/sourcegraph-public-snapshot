@@ -418,22 +418,11 @@ func triggerE2EandQA(opts e2eAndQAOptions) operations.Operation {
 	customOptions.Env["DOCKER_CLUSTER_IMAGES_TXT"] = clusterDockerImages(images.SourcegraphDockerImages)
 
 	return func(pipeline *bk.Pipeline) {
-		pipeline.AddTrigger(":chromium: Trigger E2E",
-			bk.Trigger("sourcegraph-e2e"),
-			bk.Async(opts.async),
-			bk.Build(customOptions),
-		)
-		pipeline.AddTrigger(":chromium: Trigger QA",
+		pipeline.AddTrigger(":chromium: Trigger QA pipeline",
 			bk.Trigger("qa"),
 			bk.Async(opts.async),
 			bk.Build(customOptions),
 		)
-		// code-intel-qa is disabled, see https://github.com/sourcegraph/sourcegraph/issues/25387
-		// pipeline.AddTrigger(":chromium: Trigger Code Intel QA",
-		// 	bk.Trigger("code-intel-qa"),
-		// 	bk.Async(opts.async),
-		// 	bk.Build(customOptions),
-		// )
 	}
 }
 
