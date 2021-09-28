@@ -39,6 +39,10 @@ steps:
       - 'SRC_CLI_VERSION=${SRC_CLI_VERSION}'
       - 'AWS_EXECUTOR_AMI_ACCESS_KEY=${AWS_EXECUTOR_AMI_ACCESS_KEY}'
       - 'AWS_EXECUTOR_AMI_SECRET_KEY=${AWS_EXECUTOR_AMI_SECRET_KEY}'
+      # This should prevent some occurrences of Failed waiting for AMI failures:
+      # https://austincloud.guru/2020/05/14/long-running-packer-builds-failing/
+      - 'AWS_MAX_ATTEMPTS=240'
+      - 'AWS_POLL_DELAY_SECONDS=5'
     args: ['build', 'executor.json']
 EOF
 
