@@ -199,6 +199,10 @@ ON
 		preds = append(preds, sqlf.Sprintf("batch_changes.id = %s", opts.BatchChangeID))
 	}
 
+	if len(preds) == 0 {
+		preds = append(preds, sqlf.Sprintf("TRUE"))
+	}
+
 	return sqlf.Sprintf(
 		countBatchSpecsQueryFmtstr,
 		sqlf.Join(joins, "\n"),
