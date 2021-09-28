@@ -177,6 +177,7 @@ export const RevisionsPopoverCommits: React.FunctionComponent<RevisionsPopoverCo
             pluralNoun={pluralNoun}
             hasNextPage={response.hasNextPage}
             connectionQuery={query}
+            compact={true}
         />
     )
 

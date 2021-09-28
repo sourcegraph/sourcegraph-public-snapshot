@@ -45,6 +45,9 @@ interface FilteredConnectionDisplayProps extends ConnectionNodesDisplayProps, Co
     /** Whether to display it more compactly. */
     compact?: boolean
 
+    /** Whether to display centered summary. */
+    withCenteredSummary?: boolean
+
     /**
      * An observable that upon emission causes the connection to refresh the data (by calling queryConnection).
      *
@@ -483,10 +486,12 @@ export class FilteredConnection<
                             filters={this.props.filters}
                             onValueSelect={this.onDidSelectValue}
                             values={this.state.activeValues}
+                            compact={this.props.compact}
+                            formClassName={this.props.formClassName}
                         />
                     )
                 }
-                {errors.length > 0 && <ConnectionError errors={errors} />}
+                {errors.length > 0 && <ConnectionError errors={errors} compact={this.props.compact} />}
                 {this.state.connectionOrError && !isErrorLike(this.state.connectionOrError) && (
                     <ConnectionNodes
                         connection={this.state.connectionOrError}
@@ -511,9 +516,12 @@ export class FilteredConnection<
                         location={this.props.location}
                         emptyElement={this.props.emptyElement}
                         totalCountSummaryComponent={this.props.totalCountSummaryComponent}
+                        withCenteredSummary={this.props.withCenteredSummary}
                     />
                 )}
-                {this.state.loading && <ConnectionLoading className={this.props.loaderClassName} />}
+                {this.state.loading && (
+                    <ConnectionLoading compact={this.props.compact} className={this.props.loaderClassName} />
+                )}
             </ConnectionContainer>
         )
     }
