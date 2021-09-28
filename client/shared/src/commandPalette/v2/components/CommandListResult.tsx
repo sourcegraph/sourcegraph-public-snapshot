@@ -3,7 +3,8 @@ import React, { useState, useCallback } from 'react'
 import stringScore from 'string-score'
 
 import { ActionItemAction } from '../../../actions/ActionItem'
-import { HighlightedMatches } from '../../../components/HighlightedMatches'
+
+import { CommandPaletteResultList } from './CommandPaletteResultList'
 
 const KEEP_RECENT_ACTIONS = 10
 const RECENT_ACTIONS_STORAGE_KEY = 'commandList.recentActions'
@@ -115,30 +116,23 @@ export const CommandListResult: React.FC<CommandListResultProps> = ({ actions, v
     )
 
     return (
-        <>
+        <CommandPaletteResultList>
             {filteredActions?.map(item => {
+                const { action, keybinding } = item
                 // TODO: share label between filteritems
-                const label = [
-                    item.action.category,
-                    item.action.actionItem?.label || item.action.title || item.action.command,
-                ]
+                const label = [action.category, action.actionItem?.label || action.title || action.command]
                     .filter(Boolean)
                     .join(': ')
 
                 return (
-                    <button type="button" key={item.action.id} onClick={(): void => handleRunAction(item)}>
-                        <HighlightedMatches text={label} pattern={value} />
-
-                        {item.keybinding && (
-                            <>
-                                {[...item.keybinding.ordered, ...(item.keybinding.held || [])].map(key => (
-                                    <kbd key={key}>{key}</kbd>
-                                ))}
-                            </>
-                        )}
-                    </button>
+                    <CommandPaletteResultList.Item
+                        key={action.id}
+                        label={label}
+                        keybindings={keybinding ? [keybinding] : []}
+                        onClick={() => handleRunAction(item)}
+                    />
                 )
             })}
-        </>
+        </CommandPaletteResultList>
     )
 }

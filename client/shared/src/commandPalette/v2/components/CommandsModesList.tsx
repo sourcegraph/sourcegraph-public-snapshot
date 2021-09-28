@@ -1,28 +1,13 @@
-import classNames from 'classnames'
 import React from 'react'
 
-interface CommandModesListProps {
-    hasActiveTextDocument: boolean
+import { COMMAND_PALETTE_SHORTCUTS } from '../constants'
 
-    hasWorkspaceRoot: boolean
-}
+import { CommandPaletteResultList } from './CommandPaletteResultList'
 
-export const CommandsModesList: React.FC<CommandModesListProps> = ({ hasActiveTextDocument, hasWorkspaceRoot }) => (
-    <ul>
-        <li>
-            Command <kbd>{'>'}</kbd>
-        </li>
-        <li className={classNames(!hasActiveTextDocument && 'text-muted')}>
-            Fuzzy <kbd>$</kbd>
-        </li>
-        <li className={classNames(!hasActiveTextDocument && 'text-muted')}>
-            Jump to line <kbd>:</kbd>
-        </li>
-        <li className={classNames(!hasActiveTextDocument && 'text-muted')}>
-            Jump to symbol <kbd>@</kbd>
-        </li>
-        <li>
-            Recent searches <kbd>#</kbd>
-        </li>
-    </ul>
+export const CommandsModesList: React.FC = () => (
+    <CommandPaletteResultList>
+        {COMMAND_PALETTE_SHORTCUTS.map(({ id, title, keybindings, onMatch }) => (
+            <CommandPaletteResultList.Item key={id} label={title} onClick={onMatch} keybindings={keybindings} />
+        ))}
+    </CommandPaletteResultList>
 )
