@@ -159,9 +159,12 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		for _, dockerImage := range images.SourcegraphDockerImages {
 			ops.Append(buildCandidateDockerImage(dockerImage, c.Version, c.candidateImageTag()))
 		}
-		if c.RunType.Is(MainDryRun, MainBranch) {
-			ops.Append(buildExecutor(c.Time, c.Version))
-		}
+		// TODO: Disabled because it tends to time out when multiple main builds
+		// are running at the same time. See https://github.com/sourcegraph/sourcegraph/issues/25487
+		// for details.
+		// if c.RunType.Is(MainDryRun, MainBranch) {
+		// 	ops.Append(buildExecutor(c.Time, c.Version))
+		// }
 
 		// Slow tests
 		if c.RunType.Is(BackendDryRun, MainDryRun, MainBranch) {
@@ -184,9 +187,12 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		for _, dockerImage := range images.SourcegraphDockerImages {
 			ops.Append(publishFinalDockerImage(c, dockerImage, c.RunType.Is(MainBranch)))
 		}
-		if c.RunType.Is(MainBranch) {
-			ops.Append(publishExecutor(c.Time, c.Version))
-		}
+		// TODO: Disabled because it tends to time out when multiple main builds
+		// are running at the same time. See https://github.com/sourcegraph/sourcegraph/issues/25487
+		// for details.
+		// if c.RunType.Is(MainBranch) {
+		// 	ops.Append(publishExecutor(c.Time, c.Version))
+		// }
 
 		// Propogate changes elsewhere
 		if c.RunType.Is(MainBranch) {
