@@ -24,9 +24,9 @@ index dbace57d5f..53357b4971 100644
 		parsedDiff, err := diff.NewMultiFileDiffReader(strings.NewReader(rawDiff)).ReadAllFiles()
 		require.NoError(t, err)
 
-		highlights := map[int]FileDiffHighlight{
-			0: {HunkHighlights: map[int]HunkHighlight{
-				0: {LineHighlights: map[int]protocol.Ranges{
+		highlights := map[int]MatchedFileDiff{
+			0: {MatchedHunks: map[int]MatchedHunk{
+				0: {MatchedLines: map[int]protocol.Ranges{
 					2: {{
 						Start: protocol.Location{Offset: 0, Line: 0, Column: 0},
 						End:   protocol.Location{Offset: 6, Line: 0, Column: 6},

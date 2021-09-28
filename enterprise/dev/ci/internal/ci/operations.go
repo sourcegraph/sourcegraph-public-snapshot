@@ -6,7 +6,6 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
-	"time"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/dev/ci/images"
 	bk "github.com/sourcegraph/sourcegraph/enterprise/dev/ci/internal/buildkite"
@@ -276,15 +275,16 @@ func addDockerfileLint(pipeline *bk.Pipeline) {
 // Adds backend integration tests step.
 //
 // Runtime: ~11m
-func addBackendIntegrationTests(pipeline *bk.Pipeline) {
-	pipeline.AddStep(":chains: Backend integration tests",
-		bk.Cmd("pushd enterprise"),
-		bk.Cmd("./cmd/server/pre-build.sh"),
-		bk.Cmd("./cmd/server/build.sh"),
-		bk.Cmd("popd"),
-		bk.Cmd("./dev/ci/backend-integration.sh"),
-		bk.Cmd(`docker image rm -f "$IMAGE"`),
-		bk.ArtifactPaths("$HOME/.sourcegraph-dev/logs/**/*"))
+func addBackendIntegrationTests(candidateImageTag string) operations.Operation {
+	return func(pipeline *bk.Pipeline) {
+		pipeline.AddStep(":chains: Backend integration tests",
+			// Run tests against the candidate server image
+			bk.DependsOn(candidateImageStepKey("server")),
+			bk.Env("IMAGE",
+				images.DevRegistryImage("server", candidateImageTag)),
+			bk.Cmd("./dev/ci/backend-integration.sh"),
+			bk.ArtifactPaths("$HOME/.sourcegraph-dev/logs/**/*"))
+	}
 }
 
 func addBrowserExtensionE2ESteps(pipeline *bk.Pipeline) {
@@ -417,23 +417,23 @@ func triggerE2EandQA(opts e2eAndQAOptions) operations.Operation {
 	customOptions.Env["DOCKER_CLUSTER_IMAGES_TXT"] = clusterDockerImages(images.SourcegraphDockerImages)
 
 	return func(pipeline *bk.Pipeline) {
-		pipeline.AddTrigger(":chromium: Trigger E2E",
-			bk.Trigger("sourcegraph-e2e"),
-			bk.Async(opts.async),
-			bk.Build(customOptions),
-		)
-		pipeline.AddTrigger(":chromium: Trigger QA",
+		pipeline.AddTrigger(":chromium: Trigger QA pipeline",
 			bk.Trigger("qa"),
 			bk.Async(opts.async),
 			bk.Build(customOptions),
 		)
-		// code-intel-qa is disabled, see https://github.com/sourcegraph/sourcegraph/issues/25387
-		pipeline.AddTrigger(":chromium: Trigger Code Intel QA",
+		pipeline.AddTrigger(":brain: Trigger Code Intel QA",
 			bk.Trigger("code-intel-qa"),
 			bk.Async(opts.async),
 			bk.Build(customOptions),
 		)
 	}
+}
+
+// candidateImageStepKey is the key for the given app (see the `images` package). Useful for
+// adding dependencies on a step.
+func candidateImageStepKey(app string) string {
+	return strings.ReplaceAll(app, ".", "-") + ":candidate"
 }
 
 // Build a candidate docker image that will re-tagged with the final
@@ -444,6 +444,7 @@ func buildCandidateDockerImage(app, version, tag string) operations.Operation {
 		localImage := "sourcegraph/" + image + ":" + version
 
 		cmds := []bk.StepOpt{
+			bk.Key(candidateImageStepKey(app)),
 			bk.Cmd(fmt.Sprintf(`echo "Building candidate %s image..."`, app)),
 			bk.Env("DOCKER_BUILDKIT", "1"),
 			bk.Env("IMAGE", localImage),
@@ -470,12 +471,12 @@ func buildCandidateDockerImage(app, version, tag string) operations.Operation {
 			cmds = append(cmds, bk.Cmd(cmdDir+"/build.sh"))
 		}
 
-		devImage := fmt.Sprintf("%s/%s", images.SourcegraphDockerDevRegistry, image)
+		devImage := images.DevRegistryImage(app, tag)
 		cmds = append(cmds,
 			// Retag the local image for dev registry
-			bk.Cmd(fmt.Sprintf("docker tag %s %s:%s", localImage, devImage, tag)),
+			bk.Cmd(fmt.Sprintf("docker tag %s %s", localImage, devImage)),
 			// Publish tagged image
-			bk.Cmd(fmt.Sprintf("docker push %s:%s", devImage, tag)),
+			bk.Cmd(fmt.Sprintf("docker push %s", devImage)),
 		)
 
 		pipeline.AddStep(fmt.Sprintf(":docker: :construction: %s", app), cmds...)
@@ -488,9 +489,8 @@ func buildCandidateDockerImage(app, version, tag string) operations.Operation {
 // It requires Config as an argument because published images require a lot of metadata.
 func publishFinalDockerImage(c Config, app string, insiders bool) operations.Operation {
 	return func(pipeline *bk.Pipeline) {
-		image := strings.ReplaceAll(app, "/", "-")
-		devImage := fmt.Sprintf("%s/%s", images.SourcegraphDockerDevRegistry, image)
-		publishImage := fmt.Sprintf("%s/%s", images.SourcegraphDockerPublishRegistry, image)
+		devImage := images.DevRegistryImage(app, "")
+		publishImage := images.PublishedRegistryImage(app, "")
 
 		var images []string
 		for _, image := range []string{publishImage, devImage} {
@@ -530,28 +530,28 @@ func publishFinalDockerImage(c Config, app string, insiders bool) operations.Ope
 }
 
 // ~6m (building executor base VM)
-func buildExecutor(timestamp time.Time, version string) operations.Operation {
-	return func(pipeline *bk.Pipeline) {
-		cmds := []bk.StepOpt{
-			bk.Cmd(`echo "Building executor cloud image..."`),
-			bk.Env("VERSION", version),
-			bk.Env("BUILD_TIMESTAMP", strconv.Itoa(int(timestamp.UTC().Unix()))),
-			bk.Cmd("./enterprise/cmd/executor/build.sh"),
-		}
+// func buildExecutor(timestamp time.Time, version string) operations.Operation {
+// 	return func(pipeline *bk.Pipeline) {
+// 		cmds := []bk.StepOpt{
+// 			bk.Cmd(`echo "Building executor cloud image..."`),
+// 			bk.Env("VERSION", version),
+// 			bk.Env("BUILD_TIMESTAMP", strconv.Itoa(int(timestamp.UTC().Unix()))),
+// 			bk.Cmd("./enterprise/cmd/executor/build.sh"),
+// 		}
 
-		pipeline.AddStep(":packer: :construction: executor image", cmds...)
-	}
-}
+// 		pipeline.AddStep(":packer: :construction: executor image", cmds...)
+// 	}
+// }
 
-func publishExecutor(timestamp time.Time, version string) operations.Operation {
-	return func(pipeline *bk.Pipeline) {
-		cmds := []bk.StepOpt{
-			bk.Cmd(`echo "Releasing executor cloud image..."`),
-			bk.Env("VERSION", version),
-			bk.Env("BUILD_TIMESTAMP", strconv.Itoa(int(timestamp.UTC().Unix()))),
-			bk.Cmd("./enterprise/cmd/executor/release.sh"),
-		}
+// func publishExecutor(timestamp time.Time, version string) operations.Operation {
+// 	return func(pipeline *bk.Pipeline) {
+// 		cmds := []bk.StepOpt{
+// 			bk.Cmd(`echo "Releasing executor cloud image..."`),
+// 			bk.Env("VERSION", version),
+// 			bk.Env("BUILD_TIMESTAMP", strconv.Itoa(int(timestamp.UTC().Unix()))),
+// 			bk.Cmd("./enterprise/cmd/executor/release.sh"),
+// 		}
 
-		pipeline.AddStep(":packer: :white_check_mark: executor image", cmds...)
-	}
-}
+// 		pipeline.AddStep(":packer: :white_check_mark: executor image", cmds...)
+// 	}
+// }

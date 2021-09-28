@@ -3,13 +3,12 @@ package protocol
 import (
 	"encoding/gob"
 	"fmt"
-	"regexp"
 	"strings"
 	"sync"
 	"time"
 )
 
-type SearchQuery interface {
+type Node interface {
 	String() string
 }
 
@@ -86,53 +85,36 @@ func (d DiffModifiesFile) String() string {
 	return fmt.Sprintf("%T(%s)", d, d.Expr)
 }
 
-// And is a predicate that matches if all of its children predicates match
-type And struct {
-	Children []SearchQuery
+type OperatorKind int
+
+const (
+	And OperatorKind = iota
+	Or
+	Not
+)
+
+type Operator struct {
+	Kind     OperatorKind
+	Operands []Node
 }
 
-func (a And) String() string {
-	cs := make([]string, 0, len(a.Children))
-	for _, child := range a.Children {
-		cs = append(cs, child.String())
+func (o Operator) String() string {
+	var sep, prefix string
+	switch o.Kind {
+	case And:
+		sep = " AND "
+	case Or:
+		sep = " OR "
+	case Not:
+		sep = " AND NOT "
+		prefix = "NOT "
 	}
-	return "(" + strings.Join(cs, " AND ") + ")"
-}
 
-// Or is a predicate that matches if any of its children predicates match
-type Or struct {
-	Children []SearchQuery
-}
-
-func (o Or) String() string {
-	cs := make([]string, 0, len(o.Children))
-	for _, child := range o.Children {
-		cs = append(cs, child.String())
+	cs := make([]string, 0, len(o.Operands))
+	for _, operand := range o.Operands {
+		cs = append(cs, operand.String())
 	}
-	return "(" + strings.Join(cs, " OR ") + ")"
-}
-
-// Not is a predicate that matches if its child predicate does not match
-type Not struct {
-	Child SearchQuery
-}
-
-func (n Not) String() string {
-	return "NOT " + n.Child.String()
-}
-
-// Regexp is a thin wrapper around the stdlib Regexp type that enables gob encoding
-type Regexp struct {
-	*regexp.Regexp
-}
-
-func (r Regexp) GobEncode() ([]byte, error) {
-	return []byte(r.String()), nil
-}
-
-func (r *Regexp) GobDecode(data []byte) (err error) {
-	r.Regexp, err = regexp.Compile(string(data))
-	return err
+	return "(" + prefix + strings.Join(cs, sep) + ")"
 }
 
 var registerOnce sync.Once
@@ -146,8 +128,6 @@ func RegisterGob() {
 		gob.Register(&MessageMatches{})
 		gob.Register(&DiffMatches{})
 		gob.Register(&DiffModifiesFile{})
-		gob.Register(&And{})
-		gob.Register(&Or{})
-		gob.Register(&Not{})
+		gob.Register(&Operator{})
 	})
 }
