@@ -276,15 +276,16 @@ func addDockerfileLint(pipeline *bk.Pipeline) {
 // Adds backend integration tests step.
 //
 // Runtime: ~11m
-func addBackendIntegrationTests(pipeline *bk.Pipeline) {
-	pipeline.AddStep(":chains: Backend integration tests",
-		bk.Cmd("pushd enterprise"),
-		bk.Cmd("./cmd/server/pre-build.sh"),
-		bk.Cmd("./cmd/server/build.sh"),
-		bk.Cmd("popd"),
-		bk.Cmd("./dev/ci/backend-integration.sh"),
-		bk.Cmd(`docker image rm -f "$IMAGE"`),
-		bk.ArtifactPaths("$HOME/.sourcegraph-dev/logs/**/*"))
+func addBackendIntegrationTests(candidateImageTag string) operations.Operation {
+	return func(pipeline *bk.Pipeline) {
+		pipeline.AddStep(":chains: Backend integration tests",
+			// Run tests against the candidate server image
+			bk.DependsOn(candidateImageStepKey("server")),
+			bk.Env("IMAGE",
+				images.DevRegistryImage("server", candidateImageTag)),
+			bk.Cmd("./dev/ci/backend-integration.sh"),
+			bk.ArtifactPaths("$HOME/.sourcegraph-dev/logs/**/*"))
+	}
 }
 
 func addBrowserExtensionE2ESteps(pipeline *bk.Pipeline) {
@@ -436,6 +437,12 @@ func triggerE2EandQA(opts e2eAndQAOptions) operations.Operation {
 	}
 }
 
+// candidateImageStepKey is the key for the given app (see the `images` package). Useful for
+// adding dependencies on a step.
+func candidateImageStepKey(app string) string {
+	return strings.ReplaceAll(app, ".", "-") + ":candidate"
+}
+
 // Build a candidate docker image that will re-tagged with the final
 // tags once the e2e tests pass.
 func buildCandidateDockerImage(app, version, tag string) operations.Operation {
@@ -444,6 +451,7 @@ func buildCandidateDockerImage(app, version, tag string) operations.Operation {
 		localImage := "sourcegraph/" + image + ":" + version
 
 		cmds := []bk.StepOpt{
+			bk.Key(candidateImageStepKey(app)),
 			bk.Cmd(fmt.Sprintf(`echo "Building candidate %s image..."`, app)),
 			bk.Env("DOCKER_BUILDKIT", "1"),
 			bk.Env("IMAGE", localImage),
@@ -470,12 +478,12 @@ func buildCandidateDockerImage(app, version, tag string) operations.Operation {
 			cmds = append(cmds, bk.Cmd(cmdDir+"/build.sh"))
 		}
 
-		devImage := fmt.Sprintf("%s/%s", images.SourcegraphDockerDevRegistry, image)
+		devImage := images.DevRegistryImage(app, tag)
 		cmds = append(cmds,
 			// Retag the local image for dev registry
-			bk.Cmd(fmt.Sprintf("docker tag %s %s:%s", localImage, devImage, tag)),
+			bk.Cmd(fmt.Sprintf("docker tag %s %s", localImage, devImage)),
 			// Publish tagged image
-			bk.Cmd(fmt.Sprintf("docker push %s:%s", devImage, tag)),
+			bk.Cmd(fmt.Sprintf("docker push %s", devImage)),
 		)
 
 		pipeline.AddStep(fmt.Sprintf(":docker: :construction: %s", app), cmds...)
@@ -488,9 +496,8 @@ func buildCandidateDockerImage(app, version, tag string) operations.Operation {
 // It requires Config as an argument because published images require a lot of metadata.
 func publishFinalDockerImage(c Config, app string, insiders bool) operations.Operation {
 	return func(pipeline *bk.Pipeline) {
-		image := strings.ReplaceAll(app, "/", "-")
-		devImage := fmt.Sprintf("%s/%s", images.SourcegraphDockerDevRegistry, image)
-		publishImage := fmt.Sprintf("%s/%s", images.SourcegraphDockerPublishRegistry, image)
+		devImage := images.DevRegistryImage(app, "")
+		publishImage := images.PublishedRegistryImage(app, "")
 
 		var images []string
 		for _, image := range []string{publishImage, devImage} {
