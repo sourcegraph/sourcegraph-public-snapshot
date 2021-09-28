@@ -101,6 +101,9 @@ export const createSharedIntegrationTestContext = async <
     directory,
 }: IntegrationTestOptions): Promise<IntegrationTestContext<TGraphQlOperations, TGraphQlOperationNames>> => {
     await driver.newPage()
+    // Create every new document with empty `localStorage`: https://github.com/puppeteer/puppeteer/issues/1607
+    await driver.page.evaluateOnNewDocument(() => localStorage.clear())
+
     const recordingsDirectory = path.join(directory, '__fixtures__', snakeCase(currentTest.fullTitle()))
     if (record) {
         await mkdir(recordingsDirectory, { recursive: true })
@@ -265,11 +268,6 @@ export const createSharedIntegrationTestContext = async <
                 recordCoverage(driver.browser),
                 DISPOSE_ACTION_TIMEOUT,
                 new Error('Recording coverage timed out')
-            )
-            await pTimeout(
-                driver.page.evaluate(() => localStorage.clear()),
-                DISPOSE_ACTION_TIMEOUT * 5, // localStorage reset needs more time.
-                () => console.warn('Failed to clear localStorage!')
             )
             await pTimeout(driver.page.close(), DISPOSE_ACTION_TIMEOUT, new Error('Closing Puppeteer page timed out'))
             await pTimeout(polly.stop(), DISPOSE_ACTION_TIMEOUT, new Error('Stopping Polly timed out'))
