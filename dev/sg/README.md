@@ -28,6 +28,7 @@
 `sg` is the CLI tool that Sourcegraph developers can use to develop Sourcegraph.
 
 - [Quickstart](#quickstart)
+- [Installation](#quickstart)
 - [Usage](#usage)
   - [`sg [start,run,run-set]` - Start dev environment](#sg-startrunrun-set---start-dev-environment)
   - [`sg test` - Running test suites](#sg-test---running-test-suites)
@@ -47,30 +48,12 @@
 
 ## Quickstart
 
+**`sg` requires the [Sourcegraph development dependencies](https://docs.sourcegraph.com/dev/getting-started/quickstart_1_install_dependencies) to be installed.**
+
 Run the following to install `sg` from inside `sourcegraph/sourcegraph`:
 
 ```
 ./dev/sg/install.sh
-```
-
-Make sure that `$HOME/go/bin` is in your `$PATH`. (If you use `$GOPATH` then `$GOPATH/bin` needs to be in the `$PATH`)
-
-**Note for Linux users:** A command called [sg](https://www.man7.org/linux/man-pages/man1/sg.1.html) is already available at `/usr/bin/sg`. To use the Sourcegraph `sg` CLI, you need to make sure that its location comes first in `PATH`. For example, by prepending `$GOPATH/bin`:
-
-```
-export PATH=$GOPATH/bin:$PATH
-```
-
-Instead of the more conventional:
-
-```
-export PATH=$PATH:$GOPATH/bin
-```
-
-Or you may add an alias to your `.bashrc`:
-
-```
-alias sg=$HOME/go/bin/sg
 ```
 
 Then, in the root of `sourcegraph/sourcegraph`, run:
@@ -79,17 +62,57 @@ Then, in the root of `sourcegraph/sourcegraph`, run:
 sg start
 ```
 
-This will boot the `default` commands in `sg.config.yaml` in the root of the repository.
+This will start the default Sourcegraph development environment.
 
-**Alternative install method** (if you want to move the binary to a custom location):
+Once the `web` process has finished compilation, open [`https://sourcegraph.test:3443`](https://sourcegraph.test:3443/) in your browser.
 
-In the root of `sourcegraph/sourcegraph`, run the following:
+## Installation
+
+**`sg` requires the [Sourcegraph development dependencies](https://docs.sourcegraph.com/dev/getting-started/quickstart_1_install_dependencies) to be installed.**
+
+### Using install script (recommended)
+
+Run the following in the root of `sourcegraph/sourcegraph`:
+
+```
+./dev/sg/install.sh
+```
+
+That builds the `sg` binary and moves it to the standard installation location for Go binaries.
+
+If you don't have a `$GOPATH` set (or don't know what that is), that location is `$HOME/go/bin`. If you do use `$GOPATH` the location is `$GOPATH/bin`.
+
+Make sure that location is in your `$PATH`. (If you use `$GOPATH` then `$GOPATH/bin` needs to be in the `$PATH`)
+
+> **Note for Linux users:** A command called [sg](https://www.man7.org/linux/man-pages/man1/sg.1.html) is already available at `/usr/bin/sg`. To use the Sourcegraph `sg` CLI, you need to make sure that its location comes first in `PATH`. For example, by prepending `$GOPATH/bin`:
+>
+> ```
+> export PATH=$GOPATH/bin:$PATH
+> ```
+>
+> Instead of the more conventional:
+>
+> ```
+> export PATH=$PATH:$GOPATH/bin
+> ```
+>
+> Or you may add an alias to your `.bashrc`:
+>
+> ```
+> alias sg=$HOME/go/bin/sg
+> ```
+
+### Manually building the binary
+
+If you want full control over where the `sg` binary ends up, use this option.
+
+In the root of `sourcegraph/sourcegraph`, run:
 
 ```
 go build -o ~/my/path/sg ./dev/sg
 ```
 
-Make sure that `~/my/path` is in your `$PATH` then.
+Then make sure that `~/my/path` is in your `$PATH`.
 
 ## Usage
 
