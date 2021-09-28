@@ -12,6 +12,14 @@
       "type": "object",
       "additionalProperties": false,
       "properties": {
+        "betterRepoPages": {
+          "description": "Enables better repository pages.",
+          "type": "boolean",
+          "default": false,
+          "!go": {
+            "pointer": true
+          }
+        },
         "codeInsights": {
           "description": "Enables code insights on directory pages.",
           "type": "boolean",
