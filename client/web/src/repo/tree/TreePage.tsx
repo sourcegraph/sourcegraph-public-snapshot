@@ -51,7 +51,8 @@ import { CodeInsightsProps } from '../../insights/types'
 import { Settings } from '../../schema/settings.schema'
 import { PatternTypeProps, CaseSensitivityProps, SearchContextProps } from '../../search'
 import { basename } from '../../util/path'
-import { fetchTreeEntries } from '../backend'
+import { serviceKindDisplayNameAndIcon } from '../actions/GoToCodeHostAction'
+import { externalLinkFieldsFragment, fetchTreeEntries } from '../backend'
 import { GitCommitNode, GitCommitNodeProps } from '../commits/GitCommitNode'
 import { gitCommitFragment } from '../commits/RepositoryCommitsPage'
 import { FilePathBreadcrumbs } from '../FilePathBreadcrumbs'
@@ -137,7 +138,12 @@ export const treePageRepositoryFragment = gql`
         name
         description
         viewerCanAdminister
+        externalURLs {
+            ...ExternalLinkFields
+        }
     }
+
+    ${externalLinkFieldsFragment}
 `
 
 export const TreePage: React.FunctionComponent<Props> = ({
@@ -321,6 +327,31 @@ export const TreePage: React.FunctionComponent<Props> = ({
             )}
         </div>
     )
+
+    const enableBetterRepoPage =
+    !isErrorLike(settingsCascade.final) && settingsCascade.final?.experimentalFeatures?.betterRepoPages !== false
+
+    if (filePath === '' && enableBetterRepoPage) {
+        const codeHost = repo.externalURLs && repo.externalURLs.length >= 0 ?
+            serviceKindDisplayNameAndIcon(repo.externalURLs[0].serviceKind)
+            : { displayName: displayRepoName(repo.name), icon: SourceRepositoryIcon }
+
+        return <div className="tree-page">
+            <Container className="tree-page__container">
+                <PageTitle title={getPageTitle()} />
+                <PageHeader
+                    path={[{
+                        icon: codeHost.icon || SourceRepositoryIcon,
+                        text: displayRepoName(repo.name),
+                        to: repo.externalURLs?.[0].url,
+                    }]}
+                    description={repo.description && <p>{repo.description}</p>}
+                    className="mb-3 test-tree-page-title"
+                />
+                Repo: {codeHost.displayName}
+            </Container>
+        </div>
+    }
 
     return (
         <div className="tree-page">
