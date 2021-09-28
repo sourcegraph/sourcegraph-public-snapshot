@@ -39,9 +39,9 @@ type CoreTestOperationsOptions struct {
 // and not as a condition for adding steps or commands.
 //
 // If the conditions for the addition of an operation cannot be expressed using the above
-// arguments, please add it from the switch case within `GeneratePipeline` instead.
+// arguments, please add it to the switch case within `GeneratePipeline` instead.
 func CoreTestOperations(changedFiles ChangedFiles, opts CoreTestOperationsOptions) []Operation {
-	// Special-case branches provide a nil changedFiles to only run all checks.
+	// Various RunTypes can provide a nil changedFiles to run all checks.
 	runAll := len(changedFiles) == 0
 
 	// Base set
