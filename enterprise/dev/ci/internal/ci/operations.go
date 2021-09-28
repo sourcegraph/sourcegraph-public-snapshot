@@ -422,11 +422,6 @@ func triggerE2EandQA(opts e2eAndQAOptions) operations.Operation {
 			bk.Async(opts.async),
 			bk.Build(customOptions),
 		)
-		pipeline.AddTrigger(":brain: Trigger Code Intel QA",
-			bk.Trigger("code-intel-qa"),
-			bk.Async(opts.async),
-			bk.Build(customOptions),
-		)
 	}
 }
 
