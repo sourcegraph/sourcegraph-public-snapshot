@@ -13,9 +13,21 @@ import (
 const (
 	// SourcegraphDockerDevRegistry is a private registry for dev images, and requires authentication to pull from.
 	SourcegraphDockerDevRegistry = "us.gcr.io/sourcegraph-dev"
-	// SourcegraphDockerPublishRegistry is a public registry for final iamges, and does not require authentication to pull from.
+	// SourcegraphDockerPublishRegistry is a public registry for final images, and does not require authentication to pull from.
 	SourcegraphDockerPublishRegistry = "index.docker.io/sourcegraph"
 )
+
+// DevRegistryImage returns the name of the image for the given app and tag on the
+// private dev registry.
+func DevRegistryImage(app, tag string) string {
+	return fmt.Sprintf("%s/%s:%s", SourcegraphDockerDevRegistry, app, tag)
+}
+
+// PublishedRegistryImage returns the name of the image for the given app and tag on the
+// publish registry.
+func PublishedRegistryImage(app, tag string) string {
+	return fmt.Sprintf("%s/%s:%s", SourcegraphDockerPublishRegistry, app, tag)
+}
 
 // SourcegraphDockerImages is a list of all images published by Sourcegraph.
 //

@@ -276,15 +276,16 @@ func addDockerfileLint(pipeline *bk.Pipeline) {
 // Adds backend integration tests step.
 //
 // Runtime: ~11m
-func addBackendIntegrationTests(pipeline *bk.Pipeline) {
-	pipeline.AddStep(":chains: Backend integration tests",
-		bk.Cmd("pushd enterprise"),
-		bk.Cmd("./cmd/server/pre-build.sh"),
-		bk.Cmd("./cmd/server/build.sh"),
-		bk.Cmd("popd"),
-		bk.Cmd("./dev/ci/backend-integration.sh"),
-		bk.Cmd(`docker image rm -f "$IMAGE"`),
-		bk.ArtifactPaths("$HOME/.sourcegraph-dev/logs/**/*"))
+func addBackendIntegrationTests(candidateImageTag string) operations.Operation {
+	return func(pipeline *bk.Pipeline) {
+		pipeline.AddStep(":chains: Backend integration tests",
+			// Run tests against the candidate server image
+			bk.DependsOn(candidateImageStepKey("server")),
+			bk.Env("IMAGE",
+				images.DevRegistryImage("server", candidateImageTag)),
+			bk.Cmd("./dev/ci/backend-integration.sh"),
+			bk.ArtifactPaths("$HOME/.sourcegraph-dev/logs/**/*"))
+	}
 }
 
 func addBrowserExtensionE2ESteps(pipeline *bk.Pipeline) {
@@ -436,6 +437,12 @@ func triggerE2EandQA(opts e2eAndQAOptions) operations.Operation {
 	}
 }
 
+// candidateImageStepKey is the key for the given app (see the `images` package). Useful for
+// adding dependencies on a step.
+func candidateImageStepKey(app string) string {
+	return app + "-candidate"
+}
+
 // Build a candidate docker image that will re-tagged with the final
 // tags once the e2e tests pass.
 func buildCandidateDockerImage(app, version, tag string) operations.Operation {
@@ -444,6 +451,7 @@ func buildCandidateDockerImage(app, version, tag string) operations.Operation {
 		localImage := "sourcegraph/" + image + ":" + version
 
 		cmds := []bk.StepOpt{
+			bk.Key(candidateImageStepKey(app)),
 			bk.Cmd(fmt.Sprintf(`echo "Building candidate %s image..."`, app)),
 			bk.Env("DOCKER_BUILDKIT", "1"),
 			bk.Env("IMAGE", localImage),

@@ -165,7 +165,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 
 		// Slow tests
 		if c.RunType.Is(BackendDryRun, MainDryRun, MainBranch) {
-			ops.Append(addBackendIntegrationTests)
+			ops.Append(addBackendIntegrationTests(c.candidateImageTag()))
 		}
 
 		// Core tests
@@ -189,7 +189,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		}
 
 		// Propogate changes elsewhere
-		if !c.RunType.Is(MainDryRun) {
+		if c.RunType.Is(MainBranch) {
 			ops.Append(
 				// wait for all steps to pass
 				wait,
