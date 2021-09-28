@@ -117,13 +117,18 @@ func parseGitInternalFormat(s string) (time.Time, error) {
 			return time.Time{}, errInvalidDate
 		}
 
-		offsetSeconds := hours*60*60 + minutes*60
+		offsetSeconds = hours*60*60 + minutes*60
 		if match[re.SubexpIndex("pm")] == "-" {
 			offsetSeconds *= -1
 		}
 	}
 
-	return time.Unix(int64(epochSeconds), 0).In(time.FixedZone(locationName, offsetSeconds)), nil
+	// This looks weird because there is no way to force the location of a time.Time.
+	// time.Unix() defaults to local time, but we need to set the time zone, and (*Time).setLoc() is private.
+	// Instead, we parse the unix timestamp into a time.Time in UTC, then use that to create a new  time
+	// with our desired time zone.
+	t := time.Unix(int64(epochSeconds), 0).In(time.UTC)
+	return time.Date(t.Year(), t.Month(), t.Day(), t.Hour(), t.Minute(), t.Second(), t.Nanosecond(), time.FixedZone(locationName, offsetSeconds)), nil
 }
 
 var (
