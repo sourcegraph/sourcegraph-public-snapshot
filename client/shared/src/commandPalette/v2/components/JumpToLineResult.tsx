@@ -10,6 +10,7 @@ interface JumpToLineResultProps {
     textDocumentData: TextDocumentData | null | undefined
 }
 
+// TODO: this is a web app specific implementation, abstract to platform context.
 // TODO: improve performance (whole app renders?)
 export const JumpToLineResult: React.FC<JumpToLineResultProps> = ({ value, onClick, textDocumentData }) => {
     const history = useHistory()

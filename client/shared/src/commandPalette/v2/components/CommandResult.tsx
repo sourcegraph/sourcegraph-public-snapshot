@@ -91,13 +91,13 @@ function filterAndRankItems(
     return sortBy(scoredItems, 'recentIndex', 'score', ({ item }) => item.action.id).map(({ item }) => item)
 }
 
-interface CommandListResultProps {
+interface CommandResultProps {
     value: string
     onRunAction: (action: ActionItemAction) => void
     actions: ActionItemAction[]
 }
 
-export const CommandListResult: React.FC<CommandListResultProps> = ({ actions, value, onRunAction }) => {
+export const CommandResult: React.FC<CommandResultProps> = ({ actions, value, onRunAction }) => {
     const [recentActions, setRecentActions] = useState(readRecentActions)
     const filteredActions = actions && filterAndRankItems(actions, value, recentActions)
 

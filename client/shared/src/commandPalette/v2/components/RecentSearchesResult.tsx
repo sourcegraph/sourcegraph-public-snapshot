@@ -91,6 +91,7 @@ export const RecentSearchesResult: React.FC<RecentSearchesResultProps> = ({
 
     const recentSearches = useObservable(
         useMemo(() => (authenticatedUserID ? fetchRecentSearches(authenticatedUserID, 10, platformContext) : EMPTY), [
+            // TODO: error handling
             authenticatedUserID,
             platformContext,
         ])
