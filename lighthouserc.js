@@ -13,13 +13,11 @@ const config = {
         skipAudits: [
           // SEO: Normally enabled dynamically for different paths in the production server
           'meta-description',
-          // Best practices: Https currently disabled in local server: https://github.com/sourcegraph/sourcegraph/issues/21869
+          // Best practices: HTTPS currently disabled in local server: https://github.com/sourcegraph/sourcegraph/issues/21869
           'is-on-https',
           'uses-http2',
           // SEO: Robots.txt file isn't served locally
           'robots-txt',
-          // Unreliable due to some inconsistencies in local server
-          'errors-in-console',
         ],
       },
     },
