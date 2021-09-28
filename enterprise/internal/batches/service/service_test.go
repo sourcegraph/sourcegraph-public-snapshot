@@ -1222,13 +1222,11 @@ func TestService(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			var workspaceIDs []int64
 			for _, repo := range rs {
 				ws := &btypes.BatchSpecWorkspace{BatchSpecID: spec.ID, RepoID: repo.ID}
 				if err := s.CreateBatchSpecWorkspace(ctx, ws); err != nil {
 					t.Fatal(err)
 				}
-				workspaceIDs = append(workspaceIDs, ws.ID)
 			}
 
 			newSpec, err := svc.ReplaceBatchSpecInput(ctx, ReplaceBatchSpecInputOpts{
