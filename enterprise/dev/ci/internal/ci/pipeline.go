@@ -10,6 +10,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/enterprise/dev/ci/images"
 	bk "github.com/sourcegraph/sourcegraph/enterprise/dev/ci/internal/buildkite"
+	"github.com/sourcegraph/sourcegraph/enterprise/dev/ci/internal/ci/operations"
 )
 
 // GeneratePipeline is the main pipeline generation function. It defines the build pipeline for each of the
@@ -83,40 +84,42 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 	}
 
 	// Set up operations that add steps to a pipeline.
-	var operations []Operation
-	// appendOps is a utility for adding an operation to the set of pipeline operations.
-	appendOps := func(ops ...Operation) {
-		operations = append(operations, ops...)
-	}
+	var ops operations.Set
 
 	// This statement outlines the pipeline steps for each CI case.
 	//
 	// PERF: Try to order steps such that slower steps are first.
 	switch c.RunType {
 	case PullRequest:
-		operations = CoreTestOperations(c.ChangedFiles, buildOptions)
+		if c.ChangedFiles.AffectsClient() {
+			// triggers a slow pipeline, currently only affects web. It's optional so we
+			// set it up separately from CoreTestOperations
+			ops.Append(triggerAsync(buildOptions))
+		}
+
+		ops.Merge(CoreTestOperations(c.ChangedFiles, CoreTestOperationsOptions{}))
 
 	case BextReleaseBranch:
 		// If this is a browser extension release branch, run the browser-extension tests and
 		// builds.
-		operations = []Operation{
-			addLint,
+		ops = operations.NewSet([]operations.Operation{
+			addTsLint,
 			addBrowserExt,
 			frontendTests,
 			wait,
 			addBrowserExtensionReleaseSteps,
-		}
+		})
 
 	case BextNightly:
 		// If this is a browser extension nightly build, run the browser-extension tests and
 		// e2e tests.
-		operations = []Operation{
-			addLint,
+		ops = operations.NewSet([]operations.Operation{
+			addTsLint,
 			addBrowserExt,
 			frontendTests,
 			wait,
 			addBrowserExtensionE2ESteps,
-		}
+		})
 
 	case ImagePatch:
 		// only build candidate image for the specified image in the branch name
@@ -125,52 +128,53 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		if !contains(images.SourcegraphDockerImages, patchImage) {
 			panic(fmt.Sprintf("no image %q found", patchImage))
 		}
-		operations = []Operation{
+		ops = operations.NewSet([]operations.Operation{
 			buildCandidateDockerImage(patchImage, c.Version, c.candidateImageTag()),
-		}
+		})
 		// Test images
-		appendOps(CoreTestOperations(nil, buildOptions)...)
+		ops.Merge(CoreTestOperations(nil, CoreTestOperationsOptions{}))
 		// Publish images
-		appendOps(publishFinalDockerImage(c, patchImage, false))
+		ops.Append(publishFinalDockerImage(c, patchImage, false))
 
 	case ImagePatchNoTest:
 		// If this is a no-test branch, then run only the Docker build. No tests are run.
 		app := c.Branch[27:]
-		operations = []Operation{
+		ops = operations.NewSet([]operations.Operation{
 			buildCandidateDockerImage(app, c.Version, c.candidateImageTag()),
 			wait,
 			publishFinalDockerImage(c, app, false),
-		}
+		})
 
 	case CandidatesNoTest:
-		operations = []Operation{}
 		for _, dockerImage := range images.SourcegraphDockerImages {
-			appendOps(
+			ops.Append(
 				buildCandidateDockerImage(dockerImage, c.Version, c.candidateImageTag()))
 		}
 
 	default:
+		// Slow async pipeline
+		ops.Append(triggerAsync(buildOptions))
+
 		// Slow image builds
 		for _, dockerImage := range images.SourcegraphDockerImages {
-			appendOps(buildCandidateDockerImage(dockerImage, c.Version, c.candidateImageTag()))
+			ops.Append(buildCandidateDockerImage(dockerImage, c.Version, c.candidateImageTag()))
 		}
 		if c.RunType.Is(MainDryRun, MainBranch) {
-			appendOps(buildExecutor(c.Time, c.Version))
+			ops.Append(buildExecutor(c.Time, c.Version))
 		}
 
 		// Slow tests
 		if c.RunType.Is(BackendDryRun, MainDryRun, MainBranch) {
-			appendOps(addBackendIntegrationTests)
-		}
-		if c.RunType.Is(MainDryRun, MainBranch) {
-			appendOps(clientIntegrationTests, clientChromaticTests(c.RunType.Is(MainBranch)))
+			ops.Append(addBackendIntegrationTests)
 		}
 
 		// Core tests
-		appendOps(CoreTestOperations(nil, buildOptions)...)
+		ops.Merge(CoreTestOperations(nil, CoreTestOperationsOptions{
+			ChromaticShouldAutoAccept: c.RunType.Is(MainBranch),
+		}))
 
 		// Trigger e2e late so that it can leverage candidate images
-		appendOps(triggerE2EandQA(e2eAndQAOptions{
+		ops.Append(triggerE2EandQA(e2eAndQAOptions{
 			candidateImage: c.candidateImageTag(),
 			buildOptions:   buildOptions,
 			async:          c.RunType.Is(MainBranch),
@@ -178,15 +182,15 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 
 		// Add final artifacts
 		for _, dockerImage := range images.SourcegraphDockerImages {
-			appendOps(publishFinalDockerImage(c, dockerImage, c.RunType.Is(MainBranch)))
+			ops.Append(publishFinalDockerImage(c, dockerImage, c.RunType.Is(MainBranch)))
 		}
 		if c.RunType.Is(MainBranch) {
-			appendOps(publishExecutor(c.Time, c.Version))
+			ops.Append(publishExecutor(c.Time, c.Version))
 		}
 
 		// Propogate changes elsewhere
 		if !c.RunType.Is(MainDryRun) {
-			appendOps(
+			ops.Append(
 				// wait for all steps to pass
 				wait,
 				triggerUpdaterPipeline)
@@ -197,8 +201,6 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 	pipeline := &bk.Pipeline{
 		Env: env,
 	}
-	for _, p := range operations {
-		p(pipeline)
-	}
+	ops.Apply(pipeline)
 	return pipeline, nil
 }
