@@ -51,10 +51,8 @@ curl -f http://localhost:7080
 curl -f http://localhost:7080/healthz
 
 echo "TEST: Running tests"
-pushd dev/precise-code-intel-tester
-go build ./cmd/upload
-go build ./cmd/query
+pushd dev/codeintel-qa
 ./scripts/download.sh
-./upload
-./query
+go build ./cmd/upload && ./upload
+go build ./cmd/query && ./query
 popd
