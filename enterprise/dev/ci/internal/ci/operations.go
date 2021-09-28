@@ -478,12 +478,12 @@ func buildCandidateDockerImage(app, version, tag string) operations.Operation {
 			cmds = append(cmds, bk.Cmd(cmdDir+"/build.sh"))
 		}
 
-		devImage := fmt.Sprintf("%s/%s", images.SourcegraphDockerDevRegistry, image)
+		devImage := images.DevRegistryImage(app, tag)
 		cmds = append(cmds,
 			// Retag the local image for dev registry
-			bk.Cmd(fmt.Sprintf("docker tag %s %s:%s", localImage, devImage, tag)),
+			bk.Cmd(fmt.Sprintf("docker tag %s %s", localImage, devImage)),
 			// Publish tagged image
-			bk.Cmd(fmt.Sprintf("docker push %s:%s", devImage, tag)),
+			bk.Cmd(fmt.Sprintf("docker push %s", devImage)),
 		)
 
 		pipeline.AddStep(fmt.Sprintf(":docker: :construction: %s", app), cmds...)
@@ -496,9 +496,8 @@ func buildCandidateDockerImage(app, version, tag string) operations.Operation {
 // It requires Config as an argument because published images require a lot of metadata.
 func publishFinalDockerImage(c Config, app string, insiders bool) operations.Operation {
 	return func(pipeline *bk.Pipeline) {
-		image := strings.ReplaceAll(app, "/", "-")
-		devImage := fmt.Sprintf("%s/%s", images.SourcegraphDockerDevRegistry, image)
-		publishImage := fmt.Sprintf("%s/%s", images.SourcegraphDockerPublishRegistry, image)
+		devImage := images.DevRegistryImage(app, "")
+		publishImage := images.PublishedRegistryImage(app, "")
 
 		var images []string
 		for _, image := range []string{publishImage, devImage} {
