@@ -56,31 +56,6 @@ Our documentation site (https://docs.sourcegraph.com) runs [docsite](https://git
 
 See "[Updating documentation](#updating-documentation)" and "[Previewing changes locally](#previewing-changes-locally)" for the most common workflows involving the documentation site.
 
-## SEO
-
-Every markdown document can be prefixed with front matter, which comes with a specific set of fields that are used
-to generate metatags and opengraph tags that improve our ranking. The excerpt below highlights all available fields, which are all optional. Invalid fields will raise an error at runtime but can be caught ahead by running `docsite check`
-
-```
----
-title: "That current page title"
-description: "A brief description of what that page is about"
-category: "Which category of the content does this belong"
-type: "article (will default to website otherwise)"
-imageURL: "https://sourcegraph.com/.assets/img/sourcegraph-logo-dark.svg"
-tags: 
-  - A list of tags such as
-  - Code Search
-  - How to
----
-
-# My markdown title 
-
-My content
-```
-
-See [the Open Graph protocl](https://ogp.me) to learn more about these tags.
-
 ## Forcing immediate reload of data
 
 The docs.sourcegraph.com site reloads content, templates, and assets every 5 minutes. After you push a [documentation update](#updating-documentation), just wait up to 5 minutes to see your changes reflected on docs.sourcegraph.com.
