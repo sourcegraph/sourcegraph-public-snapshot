@@ -49,11 +49,12 @@ popd
 echo "TEST: Checking Sourcegraph instance is accessible"
 curl -f http://localhost:7080
 curl -f http://localhost:7080/healthz
+
 echo "TEST: Running tests"
-pushd internal/cmd/precise-code-intel-tester
-go build
+pushd dev/precise-code-intel-tester
+go build ./cmd/upload
+go build ./cmd/query
 ./scripts/download.sh
-./precise-code-intel-tester upload
-sleep 10
-./precise-code-intel-tester query
+./upload
+./query
 popd
