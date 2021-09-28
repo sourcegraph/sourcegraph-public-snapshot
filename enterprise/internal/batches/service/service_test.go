@@ -1217,7 +1217,8 @@ func TestService(t *testing.T) {
 	})
 
 	t.Run("ReplaceBatchSpecInput", func(t *testing.T) {
-		t.Run("success", func(t *testing.T) {
+		createBatchSpecWithWorkspaces := func(t *testing.T) *btypes.BatchSpec {
+			t.Helper()
 			spec := testBatchSpec(admin.ID)
 			if err := s.CreateBatchSpec(ctx, spec); err != nil {
 				t.Fatal(err)
@@ -1238,6 +1239,11 @@ func TestService(t *testing.T) {
 					t.Fatal(err)
 				}
 			}
+			return spec
+		}
+
+		t.Run("success", func(t *testing.T) {
+			spec := createBatchSpecWithWorkspaces(t)
 
 			newSpec, err := svc.ReplaceBatchSpecInput(ctx, ReplaceBatchSpecInputOpts{
 				BatchSpecRandID: spec.RandID,
@@ -1280,6 +1286,48 @@ func TestService(t *testing.T) {
 				t.Fatalf("unexpected error: %s", err)
 			}
 		})
+
+		t.Run("success with importChangesets", func(t *testing.T) {
+			spec := createBatchSpecWithWorkspaces(t)
+
+			newSpec, err := svc.ReplaceBatchSpecInput(ctx, ReplaceBatchSpecInputOpts{
+				BatchSpecRandID: spec.RandID,
+				RawSpec: ct.BuildRawBatchSpecWithImportChangesets(t, []batcheslib.ImportChangeset{
+					{Repository: string(rs[0].Name), ExternalIDs: []interface{}{"#123", 456}},
+					{Repository: string(rs[1].Name), ExternalIDs: []interface{}{"789"}},
+				}),
+			})
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			resolutionJob, err := s.GetBatchSpecResolutionJob(ctx, store.GetBatchSpecResolutionJobOpts{
+				BatchSpecID: newSpec.ID,
+			})
+			if err != nil {
+				t.Fatal(err)
+			}
+			if want, have := btypes.BatchSpecResolutionJobStateQueued, resolutionJob.State; have != want {
+				t.Fatalf("resolution job has wrong state. want=%s, have=%s", want, have)
+			}
+
+			changesetSpecs, _, err := s.ListChangesetSpecs(ctx, store.ListChangesetSpecsOpts{BatchSpecID: newSpec.ID})
+			if err != nil {
+				t.Fatal(err)
+			}
+			// Assert that the number of changeset specs is correct. More
+			// extensive assertions are in the tests for
+			// CreateBatchSpecFromRaw.
+			if len(changesetSpecs) != 3 {
+				t.Fatalf("wrong number of changeset specs: %d", len(changesetSpecs))
+			}
+
+			// Assert that old batch spec is deleted
+			_, err = s.GetBatchSpec(ctx, store.GetBatchSpecOpts{ID: spec.ID})
+			if err != store.ErrNoResults {
+				t.Fatalf("unexpected error: %s", err)
+			}
+		})
 	})
 
 	t.Run("CreateBatchSpecFromRaw", func(t *testing.T) {
@@ -1304,22 +1352,13 @@ func TestService(t *testing.T) {
 		})
 
 		t.Run("success with importChangesets", func(t *testing.T) {
-			rawSpec := batcheslib.BatchSpec{
-				Name:        "test-batch-change",
-				Description: "only importing",
-				ImportChangesets: []batcheslib.ImportChangeset{
-					{Repository: string(rs[0].Name), ExternalIDs: []interface{}{"#123", 456}},
-					{Repository: string(rs[1].Name), ExternalIDs: []interface{}{"789"}},
-				},
-			}
-
-			marshaledRawSpec, err := json.Marshal(rawSpec)
-			if err != nil {
-				t.Fatal(err)
-			}
+			rawSpec := ct.BuildRawBatchSpecWithImportChangesets(t, []batcheslib.ImportChangeset{
+				{Repository: string(rs[0].Name), ExternalIDs: []interface{}{"#123", 456}},
+				{Repository: string(rs[1].Name), ExternalIDs: []interface{}{"789"}},
+			})
 
 			newSpec, err := svc.CreateBatchSpecFromRaw(ctx, CreateBatchSpecFromRawOpts{
-				RawSpec:         string(marshaledRawSpec),
+				RawSpec:         rawSpec,
 				NamespaceUserID: admin.ID,
 			})
 			if err != nil {
