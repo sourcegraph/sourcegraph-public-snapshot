@@ -49,12 +49,10 @@ type ResolveRevisionOptions struct {
 	NoEnsureRevision bool // do not try to fetch from remote if revision doesn't exist locally
 }
 
-const labelEnsureRevision = "ensure_revision"
-
 var resolveRevisionCounter = promauto.NewCounterVec(prometheus.CounterOpts{
 	Name: "src_resolve_revision_total",
 	Help: "The number of times we call internal/vcs/git/ResolveRevision",
-}, []string{labelEnsureRevision})
+}, []string{"ensure_revision"})
 
 // ResolveRevision will return the absolute commit for a commit-ish spec. If spec is empty, HEAD is
 // used.
