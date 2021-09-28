@@ -32,11 +32,17 @@ env CC=musl-gcc go build \
   -o "$OUTPUT/$(basename $pkg)" \
   "$pkg"
 
-# Make sure go-sqlite3 was compiled with cgo.
+# We can't use -v because the spawned container might not share
+# the same file system (e.g. when we're already inside docker
+# and the spawned docker container will be a sibling on the host).
+#
+# A workaround is to feed the file into the container via stdin:
+#
+#     'cat FILE | docker run ... -i ... sh -c "cat > FILE && ..."'
 echo "--- sanity check"
-docker run \
+# shellcheck disable=SC2002
+cat "$OUTPUT/$(basename $pkg)" | docker run \
   --rm \
-  -v "$OUTPUT":/host \
-  -e "SANITY_CHECK=true" \
+  -i \
   sourcegraph/alpine@sha256:ce099fbcd3cf70b338fc4cb2a4e1fa9ae847de21afdb0a849a393b87d94fb174 \
-  /host/symbols
+  sh -c "cat > /symbols && chmod a+x /symbols && env SANITY_CHECK=true /symbols"
