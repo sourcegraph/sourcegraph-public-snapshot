@@ -31,12 +31,12 @@ type CoreTestOperationsOptions struct {
 //
 // If the conditions for the addition of an operation cannot be expressed using the above
 // arguments, please add it to the switch case within `GeneratePipeline` instead.
-func CoreTestOperations(changedFiles changed.ChangedFiles, opts CoreTestOperationsOptions) *operations.Operations {
+func CoreTestOperations(changedFiles changed.Files, opts CoreTestOperationsOptions) *operations.Set {
 	// Various RunTypes can provide a nil changedFiles to run all checks.
 	runAll := len(changedFiles) == 0
 
 	// Base set
-	ops := operations.NewOperations([]operations.Operation{
+	ops := operations.NewSet([]operations.Operation{
 		// lightweight check that works over a lot of stuff - we are okay with running
 		// these on all PRs
 		addPrettier,

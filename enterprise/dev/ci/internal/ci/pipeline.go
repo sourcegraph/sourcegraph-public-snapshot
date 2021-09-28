@@ -84,7 +84,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 	}
 
 	// Set up operations that add steps to a pipeline.
-	var ops operations.Operations
+	var ops operations.Set
 
 	// This statement outlines the pipeline steps for each CI case.
 	//
@@ -102,7 +102,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 	case BextReleaseBranch:
 		// If this is a browser extension release branch, run the browser-extension tests and
 		// builds.
-		ops = operations.NewOperations([]operations.Operation{
+		ops = operations.NewSet([]operations.Operation{
 			addTsLint,
 			addBrowserExt,
 			frontendTests,
@@ -113,7 +113,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 	case BextNightly:
 		// If this is a browser extension nightly build, run the browser-extension tests and
 		// e2e tests.
-		ops = operations.NewOperations([]operations.Operation{
+		ops = operations.NewSet([]operations.Operation{
 			addTsLint,
 			addBrowserExt,
 			frontendTests,
@@ -128,7 +128,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		if !contains(images.SourcegraphDockerImages, patchImage) {
 			panic(fmt.Sprintf("no image %q found", patchImage))
 		}
-		ops = operations.NewOperations([]operations.Operation{
+		ops = operations.NewSet([]operations.Operation{
 			buildCandidateDockerImage(patchImage, c.Version, c.candidateImageTag()),
 		})
 		// Test images
@@ -139,7 +139,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 	case ImagePatchNoTest:
 		// If this is a no-test branch, then run only the Docker build. No tests are run.
 		app := c.Branch[27:]
-		ops = operations.NewOperations([]operations.Operation{
+		ops = operations.NewSet([]operations.Operation{
 			buildCandidateDockerImage(app, c.Version, c.candidateImageTag()),
 			wait,
 			publishFinalDockerImage(c, app, false),

@@ -31,7 +31,7 @@ type Config struct {
 
 	// ChangedFiles is the list of files that have changed since the
 	// merge-base with origin/main.
-	ChangedFiles changed.ChangedFiles
+	ChangedFiles changed.Files
 
 	// ProfilingEnabled, if true, tells buildkite to print timing and resource utilization information
 	// for each command
