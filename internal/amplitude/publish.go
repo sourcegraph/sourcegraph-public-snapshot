@@ -11,7 +11,7 @@ import (
 
 var AMPLITUDE_API_URL = "https://api2.amplitude.com/2/httpapi"
 
-func Publish(amplitudeAPIToken string, jsonReq []byte) error {
+func Publish(token string, body []byte) error {
 	data := bytes.NewBuffer(jsonReq)
 	req, err := http.NewRequest("POST", AMPLITUDE_API_URL, data)
 	if err != nil {
