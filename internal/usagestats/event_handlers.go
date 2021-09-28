@@ -177,7 +177,7 @@ func publishAmplitudeEvent(args Event) error {
 		return err
 	}
 
-	return amplitude.Publish(amplitudeAPIToken, amplitudeEvent)
+	return amplitude.Publish(amplitudeEvent)
 
 }
 

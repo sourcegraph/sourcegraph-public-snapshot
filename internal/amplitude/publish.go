@@ -9,11 +9,11 @@ import (
 	"github.com/inconshreveable/log15"
 )
 
-var AMPLITUDE_API_URL = "https://api2.amplitude.com/2/httpapi"
+const apiUrl = "https://api2.amplitude.com/2/httpapi"
 
-func Publish(token string, body []byte) error {
-	data := bytes.NewBuffer(jsonReq)
-	req, err := http.NewRequest("POST", AMPLITUDE_API_URL, data)
+func Publish(body []byte) error {
+	data := bytes.NewBuffer(body)
+	req, err := http.NewRequest("POST", apiUrl, data)
 	if err != nil {
 		log15.Warn("Could not log Amplitude event", "err", err)
 		return err
