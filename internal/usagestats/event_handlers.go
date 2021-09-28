@@ -140,10 +140,8 @@ func publishAmplitudeEvent(args Event) error {
 		return nil
 	}
 
-	for _, eventName := range amplitude.DenyList {
-		if eventName == args.EventName {
-			return nil
-		}
+	if _, ok := amplitude.DenyList[args.EventName]; ok {
+		return nil
 	}
 
 	// For anonymous users, do not assign a user ID.
