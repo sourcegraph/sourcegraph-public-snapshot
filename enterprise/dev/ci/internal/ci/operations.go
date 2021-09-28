@@ -440,7 +440,7 @@ func triggerE2EandQA(opts e2eAndQAOptions) operations.Operation {
 // candidateImageStepKey is the key for the given app (see the `images` package). Useful for
 // adding dependencies on a step.
 func candidateImageStepKey(app string) string {
-	return app + "-candidate"
+	return strings.ReplaceAll(app, ".", "-") + ":candidate"
 }
 
 // Build a candidate docker image that will re-tagged with the final
