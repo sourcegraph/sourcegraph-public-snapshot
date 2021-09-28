@@ -53,7 +53,7 @@ type InsightQueryArgs struct {
 
 // Get returns all matching viewable insight series.
 func (s *InsightStore) Get(ctx context.Context, args InsightQueryArgs) ([]types.InsightViewSeries, error) {
-	preds := make([]*sqlf.Query, 0, 3)
+	preds := make([]*sqlf.Query, 0, 4)
 
 	if len(args.UniqueIDs) > 0 {
 		elems := make([]*sqlf.Query, 0, len(args.UniqueIDs))
@@ -66,10 +66,7 @@ func (s *InsightStore) Get(ctx context.Context, args InsightQueryArgs) ([]types.
 		preds = append(preds, sqlf.Sprintf("iv.unique_id = %s", args.UniqueID))
 	}
 	preds = append(preds, viewPermissionsQuery(args))
-
-	if len(preds) == 0 {
-		preds = append(preds, sqlf.Sprintf("%s", "TRUE"))
-	}
+	preds = append(preds, sqlf.Sprintf("i.deleted_at IS NULL"))
 
 	q := sqlf.Sprintf(getInsightByViewSql, sqlf.Join(preds, "\n AND"))
 	return scanInsightViewSeries(s.Query(ctx, q))
