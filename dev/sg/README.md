@@ -48,23 +48,19 @@
 
 ## Quickstart
 
-**`sg` requires the [Sourcegraph development dependencies](https://docs.sourcegraph.com/dev/getting-started/quickstart_1_install_dependencies) to be installed.**
+1. Install the [Sourcegraph development dependencies](https://docs.sourcegraph.com/dev/getting-started/quickstart_1_install_dependencies).
+2. In your clone of [`sourcegraph/sourcegraph`](https://github.com/sourcegraph/sourcegraph), run:
 
-Run the following to install `sg` from inside `sourcegraph/sourcegraph`:
+    ```
+    ./dev/sg/install.sh
+    ```
+3. Start the default Sourcegraph environment:
 
-```
-./dev/sg/install.sh
-```
+    ```
+    sg start
+    ```
 
-Then, in the root of `sourcegraph/sourcegraph`, run:
-
-```
-sg start
-```
-
-This will start the default Sourcegraph development environment.
-
-Once the `web` process has finished compilation, open [`https://sourcegraph.test:3443`](https://sourcegraph.test:3443/) in your browser.
+    Once the `web` process has finished compilation, open [`https://sourcegraph.test:3443`](https://sourcegraph.test:3443/) in your browser.
 
 ## Installation
 
