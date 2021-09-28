@@ -73,7 +73,7 @@ func CoreTestOperations(changedFiles ChangedFiles, buildOptions bk.BuildOptions)
 
 	// Add additional steps
 	if changedFiles.affectsClient() {
-		operations = append(operations, clientIntegrationTests, clientChromaticTests(false))
+		operations = append(operations /* clientIntegrationTests, */, clientChromaticTests(false))
 	}
 
 	// wait for all steps to pass
