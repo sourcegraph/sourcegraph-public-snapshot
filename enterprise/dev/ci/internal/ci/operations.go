@@ -61,8 +61,8 @@ func CoreTestOperations(changedFiles changed.Files, opts CoreTestOperationsOptio
 			addGoTests,
 		)
 
-		// If the changes are only in ./dev/sg then we only need to run a subset of steps.
-		if !changedFiles.AffectsSg() {
+		// If the changes are only in ./dev/sg then we skip the build
+		if runAll || !changedFiles.AffectsSg() {
 			ops.Append(
 				addGoBuild, // ~0.5m
 			)
