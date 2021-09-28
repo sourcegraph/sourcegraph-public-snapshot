@@ -28,7 +28,7 @@
       "type": "amazon-ebs",
       "ami_name": "{{user `name`}}",
       "ssh_username": "ubuntu",
-      "instance_type": "t3.micro",
+      "instance_type": "t3.small",
       "source_ami": "ami-02868af3c3df4b3aa",
       "region": "us-west-2",
       "vpc_id": "vpc-095ba109c7ca96d76",
