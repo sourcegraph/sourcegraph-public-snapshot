@@ -190,7 +190,7 @@ func (s *IndexedUniverseSearchRequest) Search(ctx context.Context, c streaming.S
 	if s.Args == nil {
 		return nil
 	}
-	return doZoektSearchGlobal(ctx, s.Args.Query, s.Args.Typ, s.Args.Zoekt, s.Args.FileMatchLimit, s.Args.Select, c)
+	return doZoektSearchGlobal(ctx, s.Args, c)
 }
 
 // IndexedRepos for a request over the indexed universe cannot answer which
@@ -425,12 +425,12 @@ func zoektGlobalQuery(q zoektquery.Q, repoOptions search.RepoOptions, userPrivat
 	return zoektquery.Simplify(zoektquery.NewOr(qs...))
 }
 
-func doZoektSearchGlobal(ctx context.Context, q zoektquery.Q, typ search.IndexedRequestType, client zoekt.Streamer, fileMatchLimit int32, selector filter.SelectPath, c streaming.Sender) error {
+func doZoektSearchGlobal(ctx context.Context, args *search.ZoektParameters, c streaming.Sender) error {
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
-	k := ResultCountFactor(0, fileMatchLimit, true)
-	searchOpts := SearchOpts(ctx, k, fileMatchLimit)
+	k := ResultCountFactor(0, args.FileMatchLimit, true)
+	searchOpts := SearchOpts(ctx, k, args.FileMatchLimit)
 
 	if deadline, ok := ctx.Deadline(); ok {
 		// If the user manually specified a timeout, allow zoekt to use all of the remaining timeout.
@@ -451,8 +451,8 @@ func doZoektSearchGlobal(ctx context.Context, q zoektquery.Q, typ search.Indexed
 
 	// PERF: if we are going to be selecting to repo results only anyways, we can
 	// just ask zoekt for only results of type repo.
-	if selector.Root() == filter.Repository {
-		repoList, err := client.List(ctx, q, nil)
+	if args.Select.Root() == filter.Repository {
+		repoList, err := args.Zoekt.List(ctx, args.Query, nil)
 		if err != nil {
 			return err
 		}
@@ -472,14 +472,14 @@ func doZoektSearchGlobal(ctx context.Context, q zoektquery.Q, typ search.Indexed
 		return nil
 	}
 
-	return client.StreamSearch(ctx, q, &searchOpts, backend.ZoektStreamFunc(func(event *zoekt.SearchResult) {
+	return args.Zoekt.StreamSearch(ctx, args.Query, &searchOpts, backend.ZoektStreamFunc(func(event *zoekt.SearchResult) {
 		sendMatches(event, func(file *zoekt.FileMatch) (types.RepoName, []string) {
 			repo := types.RepoName{
 				ID:   api.RepoID(file.RepositoryID),
 				Name: api.RepoName(file.Repository),
 			}
 			return repo, []string{""}
-		}, typ, c)
+		}, args.Typ, c)
 	}))
 }
 
