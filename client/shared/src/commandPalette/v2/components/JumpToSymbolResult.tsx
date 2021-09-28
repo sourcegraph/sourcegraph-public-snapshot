@@ -1,9 +1,11 @@
 import React, { useMemo } from 'react'
+import { EMPTY } from 'rxjs'
 
 import { TextDocumentData } from '../../../api/viewerTypes'
 import { CommitSymbolsResult, CommitSymbolsVariables } from '../../../graphql-operations'
 import { gql } from '../../../graphql/graphql'
 import { PlatformContext, PlatformContextProps } from '../../../platform/context'
+import { parseRepoURI } from '../../../util/url'
 import { useObservable } from '../../../util/useObservable'
 
 interface JumpToSymbolResultProps extends PlatformContextProps<'requestGraphQL'> {
@@ -48,14 +50,17 @@ const COMMIT_SYMBOLS_QUERY = gql`
     }
 `
 
-function fetchCommitSymbols(platformContext: Pick<PlatformContext, 'requestGraphQL'>) {
+function fetchCommitSymbols(
+    { repo, revision, filePath }: { repo: string; revision: string; filePath: string },
+    platformContext: Pick<PlatformContext, 'requestGraphQL'>
+) {
     const result = platformContext.requestGraphQL<CommitSymbolsResult, CommitSymbolsVariables>({
         request: COMMIT_SYMBOLS_QUERY,
         variables: {
-            first: 10,
-            repo: 'github.com/sourcegraph/sourcegraph',
-            includePatterns: ['client/extension-api/src/sourcegraph.d.ts'],
-            revision: 'main',
+            first: 200,
+            repo,
+            revision,
+            includePatterns: [filePath],
         },
         mightContainPrivateInfo: true,
     })
@@ -69,10 +74,25 @@ export const JumpToSymbolResult: React.FC<JumpToSymbolResultProps> = ({
     textDocumentData,
     platformContext,
 }) => {
-    console.log('TODO')
+    const parsedURI = useMemo(() => (textDocumentData ? parseRepoURI(textDocumentData.uri) : null), [textDocumentData])
 
-    const commitSymbols = useObservable(useMemo(() => fetchCommitSymbols(platformContext), [platformContext]))
-    console.log({ commitSymbols })
+    const commitSymbols = useObservable(
+        useMemo(
+            () =>
+                parsedURI
+                    ? fetchCommitSymbols(
+                          {
+                              repo: parsedURI.repoName,
+                              revision: parsedURI.revision ?? '',
+                              filePath: parsedURI.filePath ?? '',
+                          },
+                          platformContext
+                      )
+                    : EMPTY,
+            [parsedURI, platformContext]
+        )
+    )
+    console.log({ parsedURI, commitSymbols })
     // Toggle whole repo symbol search? Wouldn't "jump preview" in that case though due to file loading times.
     if (!textDocumentData) {
         return (
