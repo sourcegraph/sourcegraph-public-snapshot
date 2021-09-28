@@ -36,7 +36,6 @@
       "associate_public_ip_address": true,
       "access_key": "{{user `awsAccessKey`}}",
       "secret_key": "{{user `awsSecretKey`}}",
-      "force_deregister": true,
       "aws_polling": {
         "delay_seconds": "{{user `awsMaxAttempts`}}",
         "max_attempts": "{{user `awsPollDelaySeconds`}}"
