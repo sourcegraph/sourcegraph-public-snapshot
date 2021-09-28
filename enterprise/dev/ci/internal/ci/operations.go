@@ -163,7 +163,7 @@ func addBrowserExt(pipeline *bk.Pipeline) {
 		bk.Cmd("dev/ci/codecov.sh -c -F typescript -F unit"))
 }
 
-func clientIntegrationTests(pipeline *bk.Pipeline) {
+func clientIntegrationTests(pipeline *bk.Pipeline) { //nolint // Step is temporarily disabled
 	chunkSize := 3
 	prepStepKey := "puppeteer:prep"
 	skipGitCloneStep := bk.Plugin("uber-workflow/run-without-clone", "")
