@@ -76,7 +76,6 @@ parallel_run go_build {} ::: "${PACKAGES[@]}"
 
 echo "--- ctags"
 cp -a ./cmd/symbols/ctags-install-alpine.sh "$OUTPUT"
-cp -a ./dev/libsqlite3-pcre/install-alpine.sh "$OUTPUT/libsqlite3-pcre-install-alpine.sh"
 
 echo "--- monitoring generation"
 # For code generation we need to match the local machine so we can run the generator

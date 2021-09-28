@@ -3,11 +3,14 @@ package indexing
 import (
 	"context"
 	"regexp"
+	"time"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
+	gprotocol "github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
+	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -21,6 +24,7 @@ type DBStore interface {
 	GetUploadByID(ctx context.Context, id int) (dbstore.Upload, bool, error)
 	ReferencesForUpload(ctx context.Context, uploadID int) (dbstore.PackageReferenceScanner, error)
 	InsertCloneableDependencyRepo(ctx context.Context, dependency precise.Package) (bool, error)
+	InsertDependencyIndexingJob(ctx context.Context, uploadID int, externalServiceKind string, syncTime time.Time) (int, error)
 }
 
 type DBStoreShim struct {
@@ -40,6 +44,10 @@ func (s *DBStoreShim) With(other basestore.ShareableStore) DBStore {
 	return &DBStoreShim{s.Store.With(s)}
 }
 
+type RepoUpdaterClient interface {
+	RepoLookup(ctx context.Context, args protocol.RepoLookupArgs) (result *protocol.RepoLookupResult, err error)
+}
+
 type ExternalServiceStore interface {
 	List(ctx context.Context, opt database.ExternalServicesListOptions) ([]*types.ExternalService, error)
 	Upsert(ctx context.Context, svcs ...*types.ExternalService) (err error)
@@ -51,6 +59,7 @@ type GitserverClient interface {
 	FileExists(ctx context.Context, repositoryID int, commit, file string) (bool, error)
 	RawContents(ctx context.Context, repositoryID int, commit, file string) ([]byte, error)
 	ResolveRevision(ctx context.Context, repositoryID int, versionString string) (api.CommitID, error)
+	RepoInfo(ctx context.Context, repos ...api.RepoName) (map[api.RepoName]*gprotocol.RepoInfo, error)
 }
 
 type IndexEnqueuer interface {

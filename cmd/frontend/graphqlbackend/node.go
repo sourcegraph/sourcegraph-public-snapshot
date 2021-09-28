@@ -219,8 +219,8 @@ func (r *NodeResolver) ToSavedSearch() (*savedSearchResolver, bool) {
 	return n, ok
 }
 
-func (r *NodeResolver) ToSearchContext() (*searchContextResolver, bool) {
-	n, ok := r.Node.(*searchContextResolver)
+func (r *NodeResolver) ToSearchContext() (SearchContextResolver, bool) {
+	n, ok := r.Node.(SearchContextResolver)
 	return n, ok
 }
 
@@ -254,7 +254,7 @@ func (r *NodeResolver) ToBulkOperation() (BulkOperationResolver, bool) {
 	return n, ok
 }
 
-func (r *NodeResolver) ToBatchSpecExecution() (BatchSpecExecutionResolver, bool) {
-	n, ok := r.Node.(BatchSpecExecutionResolver)
+func (r *NodeResolver) ToBatchSpecWorkspace() (BatchSpecWorkspaceResolver, bool) {
+	n, ok := r.Node.(BatchSpecWorkspaceResolver)
 	return n, ok
 }

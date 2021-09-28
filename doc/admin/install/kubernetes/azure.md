@@ -1,4 +1,4 @@
-# Kubernetes on Azure
+# Sourcegraph with Kubernetes on Azure
 
 Install the [Azure CLI tool](https://docs.microsoft.com/en-us/cli/azure/install-azure-cli?view=azure-cli-latest) and log in:
 

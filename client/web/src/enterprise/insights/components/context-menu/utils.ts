@@ -19,7 +19,7 @@ const DEFAULT_PADDING = 6
  * @param popoverRectangle - bounding client rect of the pop-over element. All calculation props
  * that are returned from this function will be applied to this element.
  */
-export const positionRight: Position = (targetRectangle, popoverRectangle) => {
+export const positionBottomRight: Position = (targetRectangle, popoverRectangle) => {
     if (!targetRectangle || !popoverRectangle) {
         return {}
     }

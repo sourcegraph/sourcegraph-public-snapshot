@@ -787,24 +787,26 @@ declare module 'sourcegraph' {
         data: D[]
 
         /** The series (lines) of the chart. */
-        series: {
-            /** The key in each data object for the values this line should be calculated from. */
-            dataKey: keyof D
-
-            /** The name of the line shown in the legend and tooltip. */
-            name?: string
-
-            /**
-             * The link URLs for each data point.
-             * A link URL should take the user to more details about the specific data point.
-             */
-            linkURLs?: string[]
-
-            /** The CSS color of the line. */
-            stroke?: string
-        }[]
+        series: LineChartSeries<D>[]
 
         xAxis: ChartAxis<XK, D>
+    }
+
+    export interface LineChartSeries<D> {
+        /** The key in each data object for the values this line should be calculated from. */
+        dataKey: keyof D
+
+        /** The name of the line shown in the legend and tooltip. */
+        name?: string
+
+        /**
+         * The link URLs for each data point.
+         * A link URL should take the user to more details about the specific data point.
+         */
+        linkURLs?: string[]
+
+        /** The CSS color of the line. */
+        stroke?: string
     }
 
     export interface BarChartContent<D extends object, XK extends keyof D> {

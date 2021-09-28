@@ -46,12 +46,12 @@ func (f *TemporarySettingsStore) GetTemporarySettings(ctx context.Context, userI
 	return &ts.TemporarySettings{Contents: contents}, nil
 }
 
-func (f *TemporarySettingsStore) UpsertTemporarySettings(ctx context.Context, userID int32, contents string) error {
-	if Mocks.TemporarySettings.UpsertTemporarySettings != nil {
-		return Mocks.TemporarySettings.UpsertTemporarySettings(ctx, userID, contents)
+func (f *TemporarySettingsStore) OverwriteTemporarySettings(ctx context.Context, userID int32, contents string) error {
+	if Mocks.TemporarySettings.OverwriteTemporarySettings != nil {
+		return Mocks.TemporarySettings.OverwriteTemporarySettings(ctx, userID, contents)
 	}
 
-	const upsertTemporarySettingsQuery = `
+	const overwriteTemporarySettingsQuery = `
 		INSERT INTO temporary_settings (user_id, contents)
 		VALUES (%s, %s)
 		ON CONFLICT (user_id) DO UPDATE SET
@@ -59,5 +59,21 @@ func (f *TemporarySettingsStore) UpsertTemporarySettings(ctx context.Context, us
 			updated_at = now();
 	`
 
-	return f.Exec(ctx, sqlf.Sprintf(upsertTemporarySettingsQuery, userID, contents, contents))
+	return f.Exec(ctx, sqlf.Sprintf(overwriteTemporarySettingsQuery, userID, contents, contents))
+}
+
+func (f *TemporarySettingsStore) EditTemporarySettings(ctx context.Context, userID int32, settingsToEdit string) error {
+	if Mocks.TemporarySettings.EditTemporarySettings != nil {
+		return Mocks.TemporarySettings.EditTemporarySettings(ctx, userID, settingsToEdit)
+	}
+
+	const editTemporarySettingsQuery = `
+		INSERT INTO temporary_settings AS t (user_id, contents)
+			VALUES (%s, %s)
+			ON CONFLICT (user_id) DO UPDATE SET
+				contents = t.contents || %s,
+				updated_at = now();
+	`
+
+	return f.Exec(ctx, sqlf.Sprintf(editTemporarySettingsQuery, userID, settingsToEdit, settingsToEdit))
 }

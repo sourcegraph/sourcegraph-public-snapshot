@@ -12,7 +12,6 @@ import (
 	"github.com/cockroachdb/errors"
 	"github.com/google/zoekt"
 	zoektquery "github.com/google/zoekt/query"
-	zoektrpc "github.com/google/zoekt/rpc"
 	"github.com/opentracing/opentracing-go/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
@@ -33,14 +32,11 @@ var (
 
 func getZoektClient(indexerEndpoints []string) zoekt.Streamer {
 	zoektOnce.Do(func() {
-		dial := func(endpoint string) zoekt.Streamer {
-			return backend.NewMeteredSearcher(endpoint, &backend.StreamSearchAdapter{zoektrpc.Client(endpoint)})
-		}
 		zoektClient = backend.NewMeteredSearcher(
 			"", // no hostname means its the aggregator
 			&backend.HorizontalSearcher{
 				Map:  &endpointMap,
-				Dial: dial,
+				Dial: backend.ZoektDial,
 			},
 		)
 	})

@@ -7,6 +7,7 @@ import (
 
 	"github.com/cockroachdb/errors"
 	"github.com/keegancsmith/sqlf"
+	"github.com/lib/pq"
 	"github.com/opentracing/opentracing-go/log"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/search"
@@ -376,23 +377,11 @@ func listChangesetSpecsQuery(opts *ListChangesetSpecsOpts) *sqlf.Query {
 	}
 
 	if len(opts.RandIDs) != 0 {
-		ids := make([]*sqlf.Query, 0, len(opts.RandIDs))
-		for _, id := range opts.RandIDs {
-			if id != "" {
-				ids = append(ids, sqlf.Sprintf("%s", id))
-			}
-		}
-		preds = append(preds, sqlf.Sprintf("changeset_specs.rand_id IN (%s)", sqlf.Join(ids, ",")))
+		preds = append(preds, sqlf.Sprintf("changeset_specs.rand_id = ANY (%s)", pq.Array(opts.RandIDs)))
 	}
 
 	if len(opts.IDs) != 0 {
-		ids := make([]*sqlf.Query, 0, len(opts.IDs))
-		for _, id := range opts.IDs {
-			if id != 0 {
-				ids = append(ids, sqlf.Sprintf("%s", id))
-			}
-		}
-		preds = append(preds, sqlf.Sprintf("changeset_specs.id IN (%s)", sqlf.Join(ids, ",")))
+		preds = append(preds, sqlf.Sprintf("changeset_specs.id = ANY (%s)", pq.Array(opts.IDs)))
 	}
 
 	return sqlf.Sprintf(

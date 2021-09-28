@@ -29,6 +29,7 @@ type Services struct {
 	CodeMonitorsResolver      graphqlbackend.CodeMonitorsResolver
 	LicenseResolver           graphqlbackend.LicenseResolver
 	DotcomResolver            graphqlbackend.DotcomRootResolver
+	SearchContextsResolver    graphqlbackend.SearchContextsResolver
 }
 
 // NewCodeIntelUploadHandler creates a new handler for the LSIF upload endpoint. The

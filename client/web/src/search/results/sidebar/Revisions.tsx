@@ -5,6 +5,7 @@ import React from 'react'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { dataOrThrowErrors, gql } from '@sourcegraph/shared/src/graphql/graphql'
 import { GitRefType } from '@sourcegraph/shared/src/graphql/schema'
+import { FilterType } from '@sourcegraph/shared/src/search/query/filters'
 
 import { useConnection } from '../../../components/FilteredConnection/hooks/useConnection'
 import { SyntaxHighlightedSearchQuery } from '../../../components/SyntaxHighlightedSearchQuery'
@@ -14,6 +15,7 @@ import {
     SearchSidebarGitRefFields,
 } from '../../../graphql-operations'
 import { useTemporarySetting } from '../../../settings/temporary/useTemporarySetting'
+import { QueryUpdate } from '../../navbarSearchQueryState'
 
 import { FilterLink } from './FilterLink'
 import styles from './SearchSidebarSection.module.scss'
@@ -151,7 +153,7 @@ export enum TabIndex {
 
 export interface RevisionsProps {
     repoName: string
-    onFilterClick: (filter: string, value: string) => void
+    onFilterClick: (updates: QueryUpdate[]) => void
     query: string
     /**
      * This property is only exposed for storybook tests.
@@ -159,38 +161,44 @@ export interface RevisionsProps {
     _initialTab?: TabIndex
 }
 
-export const Revisions: React.FunctionComponent<RevisionsProps> = ({ repoName, onFilterClick, query, _initialTab }) => {
-    const [selectedTab, setSelectedTab] = useTemporarySetting('search.sidebar.revisions.tab')
-    const onRevisionFilterClick = (value: string): void => onFilterClick('rev', value)
-    return (
-        <Tabs index={_initialTab ?? selectedTab ?? 0} onChange={setSelectedTab}>
-            <TabList className={styles.sidebarSectionTabsHeader}>
-                <Tab index={TabIndex.BRANCHES}>Branches</Tab>
-                <Tab index={TabIndex.TAGS}>Tags</Tab>
-            </TabList>
-            <TabPanels>
-                <TabPanel>
-                    <RevisionList
-                        pluralNoun="branches"
-                        repoName={repoName}
-                        type={GitRefType.GIT_BRANCH}
-                        onFilterClick={onRevisionFilterClick}
-                        query={query}
-                    />
-                </TabPanel>
-                <TabPanel>
-                    <RevisionList
-                        pluralNoun="tags"
-                        repoName={repoName}
-                        type={GitRefType.GIT_TAG}
-                        onFilterClick={onRevisionFilterClick}
-                        query={query}
-                    />
-                </TabPanel>
-            </TabPanels>
-        </Tabs>
-    )
-}
+export const Revisions: React.FunctionComponent<RevisionsProps> = React.memo(
+    ({ repoName, onFilterClick, query, _initialTab }) => {
+        const [selectedTab, setSelectedTab] = useTemporarySetting('search.sidebar.revisions.tab')
+        const onRevisionFilterClick = (value: string): void =>
+            onFilterClick([
+                { type: 'updateOrAppendFilter', field: FilterType.rev, value },
+                { type: 'appendFilter', field: FilterType.repo, value: `^${repoName}$`, unique: true },
+            ])
+        return (
+            <Tabs index={_initialTab ?? selectedTab ?? 0} onChange={setSelectedTab}>
+                <TabList className={styles.sidebarSectionTabsHeader}>
+                    <Tab index={TabIndex.BRANCHES}>Branches</Tab>
+                    <Tab index={TabIndex.TAGS}>Tags</Tab>
+                </TabList>
+                <TabPanels>
+                    <TabPanel>
+                        <RevisionList
+                            pluralNoun="branches"
+                            repoName={repoName}
+                            type={GitRefType.GIT_BRANCH}
+                            onFilterClick={onRevisionFilterClick}
+                            query={query}
+                        />
+                    </TabPanel>
+                    <TabPanel>
+                        <RevisionList
+                            pluralNoun="tags"
+                            repoName={repoName}
+                            type={GitRefType.GIT_TAG}
+                            onFilterClick={onRevisionFilterClick}
+                            query={query}
+                        />
+                    </TabPanel>
+                </TabPanels>
+            </Tabs>
+        )
+    }
+)
 
 export const getRevisions = (props: Omit<RevisionsProps, 'query'>) => (query: string) => (
     <Revisions {...props} query={query} />

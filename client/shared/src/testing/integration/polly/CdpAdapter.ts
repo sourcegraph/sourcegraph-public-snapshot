@@ -324,7 +324,14 @@ export class CdpAdapter extends PollyAdapter {
         event: Protocol.Fetch.RequestPausedEvent,
         cdpSession: Puppeteer.CDPSession
     ): void {
-        const { requestId } = event
+        const { requestId, request } = event
+
+        // Passthrough missing Chrome extension request because it's expected to fail if the extension is not installed.
+        if (request.url.includes('chrome-extension://invalid')) {
+            this.continuePausedRequest({ requestId: event.requestId }, cdpSession).catch(console.error)
+
+            return
+        }
 
         // First case: response was not received and encountered an error (for
         // example the connection was refused)

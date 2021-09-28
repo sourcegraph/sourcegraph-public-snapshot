@@ -3,34 +3,54 @@ package backend
 import (
 	"context"
 	"fmt"
+	"math/rand"
 	"strings"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/google/zoekt"
+	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 func TestReposSubset(t *testing.T) {
-	var indexed map[string][]string
+	var indexed map[string][]types.RepoName
 	index := &Indexers{
 		Map: prefixMap([]string{"foo", "bar", "baz.fully.qualified:80"}),
-		Indexed: func(ctx context.Context, k string) map[string]struct{} {
-			set := map[string]struct{}{}
+		Indexed: func(ctx context.Context, k string) map[uint32]*zoekt.MinimalRepoListEntry {
+			set := map[uint32]*zoekt.MinimalRepoListEntry{}
 			if indexed == nil {
 				return set
 			}
 			for _, s := range indexed[k] {
-				set[s] = struct{}{}
+				set[uint32(s.ID)] = &zoekt.MinimalRepoListEntry{HasSymbols: true}
 			}
 			return set
 		},
 	}
 
+	repos := make(map[string]types.RepoName)
+	getRepos := func(names ...string) (rs []types.RepoName) {
+		for _, name := range names {
+			r, ok := repos[name]
+			if !ok {
+				r = types.RepoName{
+					ID:   api.RepoID(rand.Int31()),
+					Name: api.RepoName(name),
+				}
+				repos[name] = r
+			}
+			rs = append(rs, r)
+		}
+		return rs
+	}
+
 	cases := []struct {
 		name     string
 		hostname string
-		indexed  map[string][]string
-		repos    []string
-		want     []string
+		indexed  map[string][]types.RepoName
+		repos    []types.RepoName
+		want     []types.RepoName
 		errS     string
 	}{{
 		name:     "bad hostname",
@@ -39,37 +59,37 @@ func TestReposSubset(t *testing.T) {
 	}, {
 		name:     "all",
 		hostname: "foo",
-		repos:    []string{"foo-1", "foo-2", "foo-3"},
-		want:     []string{"foo-1", "foo-2", "foo-3"},
+		repos:    getRepos("foo-1", "foo-2", "foo-3"),
+		want:     getRepos("foo-1", "foo-2", "foo-3"),
 	}, {
 		name:     "none",
 		hostname: "bar",
-		repos:    []string{"foo-1", "foo-2", "foo-3"},
-		want:     []string{},
+		repos:    getRepos("foo-1", "foo-2", "foo-3"),
+		want:     []types.RepoName{},
 	}, {
 		name:     "subset",
 		hostname: "foo",
-		repos:    []string{"foo-2", "bar-1", "foo-1", "foo-3"},
-		want:     []string{"foo-2", "foo-1", "foo-3"},
+		repos:    getRepos("foo-2", "bar-1", "foo-1", "foo-3"),
+		want:     getRepos("foo-2", "foo-1", "foo-3"),
 	}, {
 		name:     "qualified",
 		hostname: "baz.fully.qualified",
-		repos:    []string{"baz.fully.qualified:80-1", "baz.fully.qualified:80-2", "foo-1"},
-		want:     []string{"baz.fully.qualified:80-1", "baz.fully.qualified:80-2"},
+		repos:    getRepos("baz.fully.qualified:80-1", "baz.fully.qualified:80-2", "foo-1"),
+		want:     getRepos("baz.fully.qualified:80-1", "baz.fully.qualified:80-2"),
 	}, {
 		name:     "unqualified",
 		hostname: "baz",
-		repos:    []string{"baz.fully.qualified:80-1", "baz.fully.qualified:80-2", "foo-1"},
-		want:     []string{"baz.fully.qualified:80-1", "baz.fully.qualified:80-2"},
+		repos:    getRepos("baz.fully.qualified:80-1", "baz.fully.qualified:80-2", "foo-1"),
+		want:     getRepos("baz.fully.qualified:80-1", "baz.fully.qualified:80-2"),
 	}, {
 		name:     "drop",
 		hostname: "foo",
-		indexed: map[string][]string{
-			"foo": {"foo-1", "foo-drop", "bar-drop", "bar-keep"},
-			"bar": {"foo-1", "bar-drop"},
+		indexed: map[string][]types.RepoName{
+			"foo": getRepos("foo-1", "foo-drop", "bar-drop", "bar-keep"),
+			"bar": getRepos("foo-1", "bar-drop"),
 		},
-		repos: []string{"foo-1", "foo-2", "foo-3", "bar-drop", "bar-keep"},
-		want:  []string{"foo-1", "foo-2", "foo-3", "bar-keep"},
+		repos: getRepos("foo-1", "foo-2", "foo-3", "bar-drop", "bar-keep"),
+		want:  getRepos("foo-1", "foo-2", "foo-3", "bar-keep"),
 	}}
 
 	for _, tc := range cases {
@@ -187,14 +207,11 @@ func (m prefixMap) Endpoints() ([]string, error) {
 	return m, nil
 }
 
-func (m prefixMap) GetMany(keys ...string) ([]string, error) {
-	vs := make([]string, len(keys))
-	for i, k := range keys {
-		for _, v := range m {
-			if strings.HasPrefix(k, v) {
-				vs[i] = v
-			}
+func (m prefixMap) Get(k string) (string, error) {
+	for _, v := range m {
+		if strings.HasPrefix(k, v) {
+			return v, nil
 		}
 	}
-	return vs, nil
+	return "", nil
 }

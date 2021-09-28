@@ -17,9 +17,8 @@ set -o pipefail
 if [[ "${INSTALLED_VERSION}" != "${REQUIRED_VERSION}" ]]; then
   echo "Updating local installation of go-mockgen"
 
-  go get \
-    "github.com/derision-test/go-mockgen/cmd/go-mockgen@v${REQUIRED_VERSION}" \
-    golang.org/x/tools/cmd/goimports
+  go install "github.com/derision-test/go-mockgen/cmd/go-mockgen@v${REQUIRED_VERSION}"
+  go install "golang.org/x/tools/cmd/goimports"
 fi
 
 go-mockgen -f "$@"

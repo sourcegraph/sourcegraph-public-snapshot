@@ -1,15 +1,12 @@
 package dbtesting
 
 import (
-	"context"
 	"database/sql"
 	"net/url"
 	"os"
 	"os/user"
 	"strings"
 	"testing"
-
-	"github.com/jackc/pgx/v4"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
@@ -20,7 +17,6 @@ import (
 // The returned DB handle is initialized with a unique database just for the specified test, with
 // all migrations applied.
 func TimescaleDB(t testing.TB) (db *sql.DB, cleanup func()) {
-	ctx := context.Background()
 	// Setup TimescaleDB for testing.
 	if os.Getenv("CODEINSIGHTS_PGDATASOURCE") == "" {
 		os.Setenv("CODEINSIGHTS_PGDATASOURCE", "postgres://postgres:password@127.0.0.1:5435/postgres")
@@ -31,7 +27,7 @@ func TimescaleDB(t testing.TB) (db *sql.DB, cleanup func()) {
 	}
 
 	timescaleDSN := dbutil.PostgresDSN("codeinsights", username, os.Getenv)
-	initConn, err := pgx.Connect(ctx, timescaleDSN)
+	initConn, err := dbconn.NewRaw(timescaleDSN)
 	if err != nil {
 		t.Log("")
 		t.Log("README: To run these tests you need to have the codeinsights TimescaleDB running:")
@@ -44,17 +40,17 @@ func TimescaleDB(t testing.TB) (db *sql.DB, cleanup func()) {
 		if os.Getenv("CI") == "" {
 			t.Skip()
 		} else {
-			t.Fail()
+			t.FailNow()
 		}
 	}
 
 	// Create database just for this test.
 	dbname := "insights_test_" + strings.ToLower(strings.ReplaceAll(t.Name(), "/", "_"))
-	_, err = initConn.Exec(ctx, "DROP DATABASE IF EXISTS "+dbname+";")
+	_, err = initConn.Exec("DROP DATABASE IF EXISTS " + dbname + ";")
 	if err != nil {
 		t.Fatal("dropping test database", err)
 	}
-	_, err = initConn.Exec(ctx, "CREATE DATABASE "+dbname+";")
+	_, err = initConn.Exec("CREATE DATABASE " + dbname + ";")
 	if err != nil {
 		t.Fatal("creating test database", err)
 	}
@@ -79,7 +75,7 @@ func TimescaleDB(t testing.TB) (db *sql.DB, cleanup func()) {
 		if err := db.Close(); err != nil {
 			t.Log(err)
 		}
-		defer initConn.Close(ctx)
+		defer initConn.Close()
 		// It would be nice to cleanup by dropping the test DB we just created. But we can't:
 		//
 		// 	dropping test database ERROR: database "insights_test_testresolver_insights" is being accessed by other users (SQLSTATE 55006)

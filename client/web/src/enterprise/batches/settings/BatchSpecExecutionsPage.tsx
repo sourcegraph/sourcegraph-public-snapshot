@@ -8,15 +8,15 @@ import {
 import { Container, PageHeader } from '@sourcegraph/wildcard'
 
 import { PageTitle } from '../../../components/PageTitle'
-import { BatchSpecExecutionsFields } from '../../../graphql-operations'
+import { BatchSpecListFields } from '../../../graphql-operations'
 
-import { queryBatchSpecExecutions as _queryBatchSpecExecutions } from './backend'
+import { queryBatchSpecs as _queryBatchSpecs } from './backend'
 import { BatchSpecExecutionNode, BatchSpecExecutionNodeProps } from './BatchSpecExecutionNode'
 import styles from './BatchSpecExecutionsPage.module.scss'
 
 export interface BatchSpecExecutionsPageProps extends Pick<RouteComponentProps, 'history' | 'location'> {
     /** For testing purposes only. */
-    queryBatchSpecExecutions?: typeof _queryBatchSpecExecutions
+    queryBatchSpecs?: typeof _queryBatchSpecs
     /** For testing purposes only. Sets the current date */
     now?: () => Date
 }
@@ -24,7 +24,7 @@ export interface BatchSpecExecutionsPageProps extends Pick<RouteComponentProps, 
 export const BatchSpecExecutionsPage: React.FunctionComponent<BatchSpecExecutionsPageProps> = ({
     history,
     location,
-    queryBatchSpecExecutions = _queryBatchSpecExecutions,
+    queryBatchSpecs = _queryBatchSpecs,
     now,
 }) => {
     const query = useCallback(
@@ -33,9 +33,9 @@ export const BatchSpecExecutionsPage: React.FunctionComponent<BatchSpecExecution
                 first: args.first ?? null,
                 after: args.after ?? null,
             }
-            return queryBatchSpecExecutions(passedArguments)
+            return queryBatchSpecs(passedArguments)
         },
-        [queryBatchSpecExecutions]
+        [queryBatchSpecs]
     )
 
     return (
@@ -43,7 +43,7 @@ export const BatchSpecExecutionsPage: React.FunctionComponent<BatchSpecExecution
             <PageTitle title="Batch spec executions" />
             <PageHeader headingElement="h2" path={[{ text: 'Batch spec executions' }]} className="mb-3" />
             <Container>
-                <FilteredConnection<BatchSpecExecutionsFields, Omit<BatchSpecExecutionNodeProps, 'node'>>
+                <FilteredConnection<BatchSpecListFields, Omit<BatchSpecExecutionNodeProps, 'node'>>
                     history={history}
                     location={location}
                     nodeComponent={BatchSpecExecutionNode}

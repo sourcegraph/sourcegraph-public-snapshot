@@ -4,14 +4,14 @@ import React from 'react'
 import { MemoryRouter } from 'react-router'
 
 import { setLinkComponent } from '@sourcegraph/shared/src/components/Link'
-import { extensionsController, NOOP_SETTINGS_CASCADE } from '@sourcegraph/shared/src/util/searchTestHelpers'
-
-import { SearchPatternType } from '../graphql-operations'
 import {
     mockFetchAutoDefinedSearchContexts,
     mockFetchSearchContexts,
     mockGetUserSearchContextNamespaces,
-} from '../searchContexts/testHelpers'
+} from '@sourcegraph/shared/src/testing/searchContexts/testHelpers'
+import { extensionsController, NOOP_SETTINGS_CASCADE } from '@sourcegraph/shared/src/util/searchTestHelpers'
+
+import { SearchPatternType } from '../graphql-operations'
 import { ThemePreference } from '../theme'
 
 import { GlobalNavbar } from './GlobalNavbar'
@@ -27,8 +27,6 @@ const PROPS: React.ComponentProps<typeof GlobalNavbar> = {
     history: createMemoryHistory(),
     keyboardShortcuts: [],
     isSourcegraphDotCom: false,
-    navbarSearchQueryState: { query: 'q' },
-    onNavbarQueryChange: () => undefined,
     onThemePreferenceChange: () => undefined,
     isLightTheme: true,
     themePreference: ThemePreference.Light,
@@ -59,6 +57,7 @@ const PROPS: React.ComponentProps<typeof GlobalNavbar> = {
     showOnboardingTour: false,
     branding: undefined,
     routes: [],
+    searchContextsEnabled: true,
     fetchAutoDefinedSearchContexts: mockFetchAutoDefinedSearchContexts(),
     fetchSearchContexts: mockFetchSearchContexts,
     hasUserAddedRepositories: false,

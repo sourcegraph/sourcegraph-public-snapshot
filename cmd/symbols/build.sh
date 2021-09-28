@@ -12,7 +12,6 @@ cleanup() {
 trap cleanup EXIT
 
 cp -a ./cmd/symbols/ctags-install-alpine.sh "$OUTPUT"
-cp -a ./dev/libsqlite3-pcre/install-alpine.sh "$OUTPUT/libsqlite3-pcre-install-alpine.sh"
 
 # Build go binary into $OUTPUT
 ./cmd/symbols/go-build.sh "$OUTPUT"

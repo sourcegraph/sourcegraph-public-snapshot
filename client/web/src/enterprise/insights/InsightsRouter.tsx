@@ -12,6 +12,7 @@ import { withAuthenticatedUser } from '../../auth/withAuthenticatedUser'
 import { HeroPage } from '../../components/HeroPage'
 import { lazyComponent } from '../../util/lazyComponent'
 
+import { BetaConfirmationModal } from './modals/BetaConfirmationModal'
 import { DashboardsRoutes } from './pages/dashboards/DasbhoardsRoutes'
 import { CreationRoutes } from './pages/insights/creation/CreationRoutes'
 
@@ -44,38 +45,41 @@ export const InsightsRouter = withAuthenticatedUser<InsightsRouterProps>(props =
     const match = useRouteMatch()
 
     return (
-        <Switch>
-            <Redirect from={match.url} exact={true} to={`${match.url}/dashboards/all`} />
+        <>
+            <Route path="*" component={BetaConfirmationModal} />
+            <Switch>
+                <Redirect from={match.url} exact={true} to={`${match.url}/dashboards/all`} />
 
-            <Route path={`${match.url}/create`}>
-                <CreationRoutes
-                    platformContext={platformContext}
-                    authenticatedUser={authenticatedUser}
-                    settingsCascade={settingsCascade}
-                    telemetryService={telemetryService}
-                />
-            </Route>
-
-            <Route
-                path={`${match.url}/edit/:insightID`}
-                render={(props: RouteComponentProps<{ insightID: string }>) => (
-                    <EditInsightLazyPage
+                <Route path={`${match.url}/create`}>
+                    <CreationRoutes
                         platformContext={platformContext}
                         authenticatedUser={authenticatedUser}
                         settingsCascade={settingsCascade}
-                        insightID={props.match.params.insightID}
+                        telemetryService={telemetryService}
                     />
-                )}
-            />
+                </Route>
 
-            <DashboardsRoutes
-                authenticatedUser={authenticatedUser}
-                telemetryService={telemetryService}
-                platformContext={platformContext}
-                settingsCascade={settingsCascade}
-            />
+                <Route
+                    path={`${match.url}/edit/:insightID`}
+                    render={(props: RouteComponentProps<{ insightID: string }>) => (
+                        <EditInsightLazyPage
+                            platformContext={platformContext}
+                            authenticatedUser={authenticatedUser}
+                            settingsCascade={settingsCascade}
+                            insightID={props.match.params.insightID}
+                        />
+                    )}
+                />
 
-            <Route component={NotFoundPage} key="hardcoded-key" />
-        </Switch>
+                <DashboardsRoutes
+                    authenticatedUser={authenticatedUser}
+                    telemetryService={telemetryService}
+                    platformContext={platformContext}
+                    settingsCascade={settingsCascade}
+                />
+
+                <Route component={NotFoundPage} key="hardcoded-key" />
+            </Switch>
+        </>
     )
 })

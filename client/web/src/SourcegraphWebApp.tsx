@@ -65,6 +65,7 @@ import {
     parseSearchURL,
     getAvailableSearchContextSpecOrDefault,
     isSearchContextSpecAvailable,
+    SearchContextProps,
 } from './search'
 import {
     fetchSavedSearches,
@@ -80,7 +81,6 @@ import {
     getUserSearchContextNamespaces,
     fetchSearchContextBySpec,
 } from './search/backend'
-import { QueryState } from './search/helpers'
 import { SearchResultsCacheProvider } from './search/results/SearchResultsCacheProvider'
 import { TemporarySettingsProvider } from './settings/temporary/TemporarySettingsProvider'
 import { listUserRepositories } from './site-admin/backend'
@@ -107,6 +107,7 @@ export interface SourcegraphWebAppProps
     extends CodeIntelligenceProps,
         CodeInsightsProps,
         Pick<BatchChangesProps, 'batchChangesEnabled'>,
+        Pick<SearchContextProps, 'searchContextsEnabled'>,
         KeyboardShortcutsProps {
     extensionAreaRoutes: readonly ExtensionAreaRoute[]
     extensionAreaHeaderNavItems: readonly ExtensionAreaHeaderNavItem[]
@@ -132,18 +133,18 @@ export interface SourcegraphWebAppProps
 interface SourcegraphWebAppState extends SettingsCascadeProps {
     error?: Error
 
-    /** The currently authenticated user (or null if the viewer is anonymous). */
+    /**
+     * The currently authenticated user:
+     * - `undefined` until `CurrentAuthState` query completion.
+     * - `AuthenticatedUser` if the viewer is authenticated.
+     * - `null` if the viewer is anonymous.
+     */
     authenticatedUser?: AuthenticatedUser | null
 
     /** GraphQL client initialized asynchronously to restore persisted cache. */
     graphqlClient?: GraphQLClient
 
     viewerSubject: LayoutProps['viewerSubject']
-
-    /**
-     * The current search query in the navbar.
-     */
-    navbarSearchQueryState: QueryState
 
     /**
      * The current parsed search query, with all UI-configurable parameters
@@ -175,8 +176,6 @@ interface SourcegraphWebAppState extends SettingsCascadeProps {
      * The previously used version context, as specified in localStorage.
      */
     previousVersionContext: string | null
-
-    showRepogroupHomepage: boolean
 
     showOnboardingTour: boolean
 
@@ -287,7 +286,6 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
             : undefined
 
         this.state = {
-            navbarSearchQueryState: { query: '' },
             settingsCascade: EMPTY_SETTINGS_CASCADE,
             viewerSubject: SITE_SUBJECT_NO_ADMIN,
             parsedSearchQuery: parsedSearchURL.query || '',
@@ -296,7 +294,6 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
             versionContext: resolvedVersionContext,
             availableVersionContexts,
             previousVersionContext,
-            showRepogroupHomepage: false,
             showOnboardingTour: false,
             showSearchContext: false,
             showSearchContextManagement: false,
@@ -330,7 +327,11 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
             })
 
         this.subscriptions.add(
-            combineLatest([from(this.platformContext.settings), authenticatedUser.pipe(startWith(null))]).subscribe(
+            combineLatest([
+                from(this.platformContext.settings),
+                // Start with `undefined` while we don't know if the viewer is authenticated or not.
+                authenticatedUser.pipe(startWith(undefined)),
+            ]).subscribe(
                 ([settingsCascade, authenticatedUser]) => {
                     this.setState(state => ({
                         settingsCascade,
@@ -496,8 +497,6 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
                                                         this.state.settingsCascade
                                                     )}
                                                     // Search query
-                                                    navbarSearchQueryState={this.state.navbarSearchQueryState}
-                                                    onNavbarQueryChange={this.onNavbarQueryChange}
                                                     fetchHighlightedFileLineRanges={fetchHighlightedFileLineRanges}
                                                     parsedSearchQuery={this.state.parsedSearchQuery}
                                                     setParsedSearchQuery={this.setParsedSearchQuery}
@@ -514,8 +513,8 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
                                                     extensionsController={this.extensionsController}
                                                     telemetryService={eventLogger}
                                                     isSourcegraphDotCom={window.context.sourcegraphDotComMode}
-                                                    showRepogroupHomepage={this.state.showRepogroupHomepage}
                                                     showOnboardingTour={this.state.showOnboardingTour}
+                                                    searchContextsEnabled={this.props.searchContextsEnabled}
                                                     showSearchContext={this.state.showSearchContext}
                                                     hasUserAddedRepositories={this.hasUserAddedRepositories()}
                                                     hasUserAddedExternalServices={
@@ -571,10 +570,6 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
                 </ErrorBoundary>
             </ApolloProvider>
         )
-    }
-
-    private onNavbarQueryChange = (navbarSearchQueryState: QueryState): void => {
-        this.setState({ navbarSearchQueryState })
     }
 
     private setParsedSearchQuery = (query: string): void => {
@@ -633,6 +628,10 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
         this.state.showSearchContext ? this.state.selectedSearchContextSpec : undefined
 
     private setSelectedSearchContextSpec = (spec: string): void => {
+        if (!this.props.searchContextsEnabled) {
+            return
+        }
+
         const { defaultSearchContextSpec } = this.state
         this.subscriptions.add(
             getAvailableSearchContextSpecOrDefault({ spec, defaultSpec: defaultSearchContextSpec }).subscribe(

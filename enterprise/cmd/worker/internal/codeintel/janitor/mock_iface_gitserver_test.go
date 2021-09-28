@@ -20,8 +20,9 @@ func testUploadExpirerMockGitserverClient(branchMap map[string]map[string]string
 				}
 
 				refDescriptions[commit] = append(refDescriptions[commit], gitserver.RefDescription{
-					Name: branch,
-					Type: gitserver.RefTypeBranch,
+					Name:            branch,
+					Type:            gitserver.RefTypeBranch,
+					IsDefaultBranch: branch == "main",
 				})
 			}
 		}

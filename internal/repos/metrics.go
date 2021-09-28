@@ -16,6 +16,7 @@ const (
 	tagOwner   = "owner"
 	tagID      = "id"
 	tagSuccess = "success"
+	tagState   = "state"
 )
 
 var (
@@ -43,6 +44,11 @@ var (
 		Name: "src_repoupdater_syncer_sync_duration_seconds",
 		Help: "Time spent syncing",
 	}, []string{tagSuccess, tagFamily})
+
+	syncedTotal = promauto.NewCounterVec(prometheus.CounterOpts{
+		Name: "src_repoupdater_syncer_synced_repos_total",
+		Help: "Total number of synced repositories",
+	}, []string{tagState})
 
 	purgeSuccess = promauto.NewCounter(prometheus.CounterOpts{
 		Name: "src_repoupdater_purge_success",
@@ -143,16 +149,9 @@ AND deleted_at IS NULL
 		count, err := scanCount(`
 -- source: internal/repos/metrics.go:src_repoupdater_user_repos_total
 SELECT COUNT(*)
-FROM external_service_repos esr
-JOIN external_services es ON (
-  es.id = esr.external_service_id AND
-  es.namespace_user_id IS NOT NULL AND
-  es.deleted_at IS NULL
-)
-JOIN repo ON (
-  repo.id = esr.repo_id AND
-  repo.deleted_at IS NULL
-)`)
+FROM external_service_repos
+WHERE user_id IS NOT NULL
+`)
 		if err != nil {
 			log15.Error("Failed to get total user repositories", "err", err)
 			return 0

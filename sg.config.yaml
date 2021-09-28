@@ -139,6 +139,7 @@ commands:
       ENTERPRISE: 1
       SITE_CONFIG_FILE: '../dev-private/enterprise/dev/site-config.json'
       EXTSVC_CONFIG_FILE: '../dev-private/enterprise/dev/external-services-config.json'
+      SITE_CONFIG_ESCAPE_HATCH_PATH: '$HOME/.sourcegraph/site-config.json'
       # frontend processes need this to be so that the paths to the assets are rendered correctly
       WEBPACK_DEV_SERVER: 1
     watch:
@@ -223,12 +224,15 @@ commands:
   symbols:
     cmd: .bin/symbols
     install: |
-      ./dev/libsqlite3-pcre/build.sh &&
+      # Remove old pcre libs that might still be lying around.
+      # TODO delete these two lines after 2021-10-24 (1 month after removal of pcre).
+      rm -f libsqlite3-pcre.dylib || true
+      rm -f libsqlite3-pcre.so || true
+
       ./cmd/symbols/build-ctags.sh &&
       go build -o .bin/symbols github.com/sourcegraph/sourcegraph/cmd/symbols
     checkBinary: .bin/symbols
     env:
-      LIBSQLITE3_PCRE: ./dev/libsqlite3-pcre/build.sh libpath
       CTAGS_COMMAND: cmd/symbols/universal-ctags-dev
       CTAGS_PROCESSES: 2
     watch:
@@ -324,14 +328,17 @@ commands:
     env:
       DOCSITE_VERSION: v1.7.0 # make sure to update all DOCSITE_VERSION
 
-  syntect_server:
+  syntax-highlighter:
     ignoreStdout: true
     ignoreStderr: true
     cmd: |
-      docker run --name=syntect_server --rm -p9238:9238 \
+      docker run --name=syntax-highlighter --rm -p9238:9238 \
       -e WORKERS=1 -e ROCKET_ADDRESS=0.0.0.0 \
-      sourcegraph/syntect_server:32d880d@sha256:899661691c3a6f8d587186bed73c3224b065d1e1c3485aff2ea208c261c010f6
-    install: docker inspect syntect_server >/dev/null 2>&1 && docker rm -f syntect_server || true
+      sourcegraph/syntax-highlighter@sha256:92a5c181dbf2d8aead5171c985139bf38c496bef2ac98afbd64c3612967fe5cc
+    install: |
+      # Remove containers by the old name, too.
+      docker inspect syntect_server >/dev/null 2>&1 && docker rm -f syntect_server || true
+      docker inspect syntax-highlighter >/dev/null 2>&1 && docker rm -f syntax-highlighter || true
     env:
       # This is not needed actually
       INSECURE_DEV: 1
@@ -430,7 +437,7 @@ commands:
     cmd: |
       env TMPDIR="$HOME/.sourcegraph/batches-executor-temp" .bin/executor
     env:
-      EXECUTOR_QUEUE_NAME: batch-spec-workspaces
+      EXECUTOR_QUEUE_NAME: batches
       SRC_PROF_HTTP: ":6093"
 
   # If you want to use this, either start it with `sg run batches-executor-firecracker` or
@@ -443,7 +450,7 @@ commands:
           .bin/executor
     env:
       EXECUTOR_USE_FIRECRACKER: true
-      EXECUTOR_QUEUE_NAME: batch-spec-workspaces
+      EXECUTOR_QUEUE_NAME: batches
       SRC_PROF_HTTP: ":6093"
 
   minio:
@@ -675,7 +682,7 @@ commandsets:
       - web
       - caddy
       - docsite
-      - syntect_server
+      - syntax-highlighter
       - github-proxy
       - zoekt-indexserver-0
       - zoekt-indexserver-1
@@ -698,7 +705,7 @@ commandsets:
       - query-runner
       - caddy
       - docsite
-      - syntect_server
+      - syntax-highlighter
       - github-proxy
       - zoekt-indexserver-0
       - zoekt-indexserver-1
@@ -728,7 +735,7 @@ commandsets:
       - query-runner
       - caddy
       - docsite
-      - syntect_server
+      - syntax-highlighter
       - github-proxy
       - zoekt-indexserver-0
       - zoekt-indexserver-1
@@ -754,7 +761,7 @@ commandsets:
       - query-runner
       - caddy
       - docsite
-      - syntect_server
+      - syntax-highlighter
       - github-proxy
       - zoekt-indexserver-0
       - zoekt-indexserver-1
@@ -799,7 +806,7 @@ commandsets:
       - query-runner
       - caddy
       - docsite
-      - syntect_server
+      - syntax-highlighter
       - github-proxy
       - zoekt-indexserver-0
       - zoekt-indexserver-1
