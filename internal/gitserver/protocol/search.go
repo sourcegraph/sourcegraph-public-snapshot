@@ -9,7 +9,7 @@ import (
 	"time"
 )
 
-type SearchQuery interface {
+type Node interface {
 	String() string
 }
 
@@ -96,7 +96,7 @@ const (
 
 type Operator struct {
 	Kind     OperatorKind
-	Operands []SearchQuery
+	Operands []Node
 }
 
 func (o Operator) String() string {

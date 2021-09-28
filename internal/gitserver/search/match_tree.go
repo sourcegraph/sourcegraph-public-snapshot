@@ -13,7 +13,7 @@ import (
 // ToMatchTree converts a protocol.SearchQuery into its equivalent MatchTree.
 // We don't send a match tree directly over the wire so using the protocol
 // package doesn't pull in all the dependencies that the match tree needs.
-func ToMatchTree(q protocol.SearchQuery) (MatchTree, error) {
+func ToMatchTree(q protocol.Node) (MatchTree, error) {
 	switch v := q.(type) {
 	case *protocol.CommitBefore:
 		return &CommitBefore{*v}, nil

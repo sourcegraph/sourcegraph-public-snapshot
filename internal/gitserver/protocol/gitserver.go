@@ -11,7 +11,7 @@ import (
 type SearchRequest struct {
 	Repo        api.RepoName
 	Revisions   []RevisionSpecifier
-	Query       SearchQuery
+	Query       Node
 	IncludeDiff bool
 	Limit       int
 }
