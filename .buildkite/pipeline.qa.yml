@@ -31,9 +31,9 @@ steps:
   timeout_in_minutes: 30
 
 # code-intel-qa is disabled, see https://github.com/sourcegraph/sourcegraph/issues/25387
-# - label: ':docker::brain: Code Intel QA'
-#   command:
-#     - .buildkite/vagrant-run.sh sourcegraph-code-intel-test
-#   artifact_paths: ./*.log
-#   agents:
-#     queue: 'baremetal'
+- label: ':docker::brain: Code Intel QA'
+  command:
+    - .buildkite/vagrant-run.sh sourcegraph-code-intel-test
+  artifact_paths: ./*.log
+  agents:
+    queue: 'baremetal'
