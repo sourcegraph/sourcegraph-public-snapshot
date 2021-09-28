@@ -326,7 +326,7 @@ commands:
         -o .bin/docsite_${DOCSITE_VERSION} && chmod +x .bin/docsite_${DOCSITE_VERSION}
       fi
     env:
-      DOCSITE_VERSION: v1.8.2 # make sure to update all DOCSITE_VERSION
+      DOCSITE_VERSION: v1.7.0 # make sure to update all DOCSITE_VERSION
 
   syntax-highlighter:
     ignoreStdout: true
@@ -882,4 +882,4 @@ tests:
   docsite:
     cmd: .bin/docsite_${DOCSITE_VERSION} check ./doc
     env:
-      DOCSITE_VERSION: v1.8.2 # make sure to update all DOCSITE_VERSION
+      DOCSITE_VERSION: v1.7.0 # make sure to update all DOCSITE_VERSION
