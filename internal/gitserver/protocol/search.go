@@ -100,23 +100,22 @@ type Operator struct {
 }
 
 func (o Operator) String() string {
-	if o.Kind == Not {
-		return "NOT " + o.Operands[0].String()
-	}
-
-	var sep string
+	var sep, prefix string
 	switch o.Kind {
 	case And:
 		sep = " AND "
 	case Or:
 		sep = " OR "
+	case Not:
+		sep = " AND NOT "
+		prefix = "NOT "
 	}
 
 	cs := make([]string, 0, len(o.Operands))
 	for _, operand := range o.Operands {
 		cs = append(cs, operand.String())
 	}
-	return "(" + strings.Join(cs, sep) + ")"
+	return "(" + prefix + strings.Join(cs, sep) + ")"
 }
 
 // Regexp is a thin wrapper around the stdlib Regexp type that enables gob encoding
