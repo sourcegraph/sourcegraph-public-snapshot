@@ -805,7 +805,7 @@ RETURNING
 	kind,
 	display_name,
 	config,
-	created,
+	created_at,
 	updated_at,
 	deleted_at,
 	last_sync_at,
