@@ -16,7 +16,8 @@
     background: transparent;
     color: --body-color;
 
-    &, &:hover {
+    &,
+    &:hover {
         box-shadow: 0 0 0 transparent;
         border: 0 solid transparent;
         text-shadow: 0 0 0 transparent;
@@ -39,4 +40,14 @@
     display: flex;
     justify-content: center;
     align-items: center;
+}
+
+.item-container {
+    display: flex;
+    justify-content: flex-start;
+    align-items: center;
+}
+
+.item-icon {
+    margin-right: 0.5rem;
 }

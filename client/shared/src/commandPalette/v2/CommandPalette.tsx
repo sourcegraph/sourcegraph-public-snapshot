@@ -172,7 +172,6 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
             <Modal
                 isOpen={isOpen}
                 toggle={() => {
-                    console.log({ isOpen })
                     toggleIsOpen()
                 }}
                 autoFocus={false}

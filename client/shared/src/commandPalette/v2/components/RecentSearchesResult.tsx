@@ -1,4 +1,5 @@
 import React, { useMemo } from 'react'
+import { useHistory } from 'react-router'
 import { EMPTY, Observable, of } from 'rxjs'
 import { map } from 'rxjs/operators'
 
@@ -7,7 +8,13 @@ import { dataOrThrowErrors, gql } from '../../../graphql/graphql'
 import { PlatformContext, PlatformContextProps } from '../../../platform/context'
 import { useObservable } from '../../../util/useObservable'
 
-interface RecentSearchesResultProps extends PlatformContextProps<'requestGraphQL'> {
+import { Message } from './Message'
+import { NavigableList } from './NavigableList'
+import listStyles from './NavigableList.module.scss'
+import styles from './RecentSearchesResult.module.scss'
+
+interface RecentSearchesResultProps
+    extends PlatformContextProps<'requestGraphQL' | 'clientApplication' | 'sourcegraphURL'> {
     value: string
     onClick: () => void
     getAuthenticatedUserID: Observable<string | null>
@@ -77,39 +84,118 @@ export function fetchRecentSearches(
     return fetchEvents(userId, first, 'SearchResultsQueried', platformContext)
 }
 
+// TODO: pagination, narrowing with search should be enough for now
+const RESULT_COUNT = 200
+
 export const RecentSearchesResult: React.FC<RecentSearchesResultProps> = ({
     value,
     onClick,
     platformContext,
     getAuthenticatedUserID,
 }) => {
-    console.log('TODO')
-
-    // Need authenticated user, else show message encouraging users to sign up/in.
+    const history = useHistory()
 
     const authenticatedUserID = useObservable(getAuthenticatedUserID)
 
+    // TODO: error handling
     const recentSearches = useObservable(
-        useMemo(() => (authenticatedUserID ? fetchRecentSearches(authenticatedUserID, 10, platformContext) : EMPTY), [
-            // TODO: error handling
-            authenticatedUserID,
-            platformContext,
-        ])
+        useMemo(
+            () =>
+                authenticatedUserID ? fetchRecentSearches(authenticatedUserID, RESULT_COUNT, platformContext) : EMPTY,
+            [authenticatedUserID, platformContext]
+        )
     )
 
-    console.log({ authenticatedUserID, recentSearches })
-
     if (authenticatedUserID === undefined) {
-        // loading
+        return <Message>Loading...</Message>
     }
 
     if (authenticatedUserID === null) {
-        // tell users to sign up
+        return <Message>Sign in to view recent searches</Message>
+    }
+
+    // Navigable list, throttle (w leading n trailing) search query
+
+    // on bext, this will take you to SG! also, the first/default navigable item
+    // should be the input value, essentially making this an easy "search on sourcegraph"
+    // path!
+
+    const searches = (recentSearches && processRecentSearches(recentSearches)) || []
+
+    const onSearch = (query: string): void => {
+        if (platformContext.clientApplication === 'sourcegraph') {
+            history.push({
+                pathname: '/search',
+                search: new URLSearchParams([['q', query]]).toString(),
+                state: history.location.state,
+            })
+        } else {
+            window.location.href = `${platformContext.sourcegraphURL}/search?q=${query}`
+        }
+        onClick()
     }
 
     return (
         <div>
-            <h1>{value}</h1>
+            <NavigableList items={[null, ...searches]}>
+                {(search, { active }) => {
+                    if (search === null) {
+                        return (
+                            <NavigableList.Item active={active} onClick={() => onSearch(value)}>
+                                <span className={listStyles.itemContainer}>
+                                    <strong className={styles.queryPrompt}>Execute search with query: </strong> {value}
+                                </span>
+                            </NavigableList.Item>
+                        )
+                    }
+
+                    /* If browser extension, render external link icon */
+                    return (
+                        <NavigableList.Item active={active} onClick={() => onSearch(search.searchText)}>
+                            {search.searchText}
+                        </NavigableList.Item>
+                    )
+                }}
+            </NavigableList>
         </div>
     )
+}
+
+// TODO: share with recent searches panel
+interface RecentSearch {
+    count: number
+    searchText: string
+    timestamp: string
+    url: string
+}
+
+function processRecentSearches(eventLogResult?: EventLogResult): RecentSearch[] | null {
+    if (!eventLogResult) {
+        return null
+    }
+
+    const recentSearches: RecentSearch[] = []
+
+    for (const node of eventLogResult.nodes) {
+        if (node.argument) {
+            const parsedArguments = JSON.parse(node.argument)
+            const searchText: string | undefined = parsedArguments?.code_search?.query_data?.combined
+
+            if (searchText) {
+                if (recentSearches.length > 0 && recentSearches[recentSearches.length - 1].searchText === searchText) {
+                    recentSearches[recentSearches.length - 1].count += 1
+                } else {
+                    const parsedUrl = new URL(node.url)
+                    recentSearches.push({
+                        count: 1,
+                        url: parsedUrl.pathname + parsedUrl.search, // Strip domain from URL so clicking on it doesn't reload page
+                        searchText,
+                        timestamp: node.timestamp,
+                    })
+                }
+            }
+        }
+    }
+
+    return recentSearches
 }

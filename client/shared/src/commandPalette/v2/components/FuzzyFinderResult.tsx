@@ -17,9 +17,9 @@ import { PlatformContextProps } from '../../../platform/context'
 import { ParsedRepoURI, parseQueryAndHash, parseRepoURI } from '../../../util/url'
 import { useObservable } from '../../../util/useObservable'
 
-import styles from './FuzzyFinderResult.module.scss'
 import { Message } from './Message'
 import { NavigableList } from './NavigableList'
+import styles from './NavigableList.module.scss'
 
 interface FuzzyFinderResultProps extends PlatformContextProps<'requestGraphQL' | 'urlToFile' | 'clientApplication'> {
     value: string
@@ -132,10 +132,10 @@ export const FuzzyFinderResult: React.FC<FuzzyFinderResultProps> = ({
                             file.onClick?.()
                         }}
                     >
-                        <span role="link" data-href={file.url ?? ''} className={styles.linkContainer}>
+                        <span role="link" data-href={file.url ?? ''} className={styles.itemContainer}>
                             <LanguageIcon
                                 language={getModeFromPath(file.text)}
-                                className={classNames(styles.languageIcon, 'icon-inline')}
+                                className={classNames(styles.itemIcon, 'icon-inline')}
                             />
                             <HighlightedLink
                                 {...{

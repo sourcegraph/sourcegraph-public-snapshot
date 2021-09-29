@@ -26,6 +26,7 @@ const NavigableListItem: React.FC<NavigableListItemProps> = ({
     const Tag = href ? 'a' : 'button'
 
     const onClickReference = useRef(onClick)
+    onClickReference.current = onClick
 
     useEffect(() => {
         function handleKeyDown(event: KeyboardEvent): void {
@@ -40,6 +41,7 @@ const NavigableListItem: React.FC<NavigableListItemProps> = ({
     // TODO hack, find better way to do this.
     // Prevent infinite calls of onFocus when an item is active.
     const onFocusReference = useRef(onFocus)
+    onFocusReference.current = onFocus
 
     useEffect(() => {
         if (active) {
