@@ -109,11 +109,11 @@ export const percySnapshotWithVariants = async (
 
     // Theme-light
     await setColorScheme(page, 'light', config?.waitForCodeHighlighting)
-    await percySnapshot(page, `${name} - sg light theme`)
+    await percySnapshot(page, `${name} - light theme`)
 
     // Theme-dark
     await setColorScheme(page, 'dark', config?.waitForCodeHighlighting)
-    await percySnapshot(page, `${name} - sg dark theme`)
+    await percySnapshot(page, `${name} - dark theme`)
 
     // Reset to light theme
     await setColorScheme(page, 'light', config?.waitForCodeHighlighting)
