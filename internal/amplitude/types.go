@@ -19,8 +19,8 @@ type EventPayload struct {
 type AmplitudeEvent struct {
 	UserID          string          `json:"user_id"`
 	DeviceID        string          `json:"device_id"`
-	EventID         *int32          `json:"event_id"`
-	InsertID        *string         `json:"insert_id"`
+	EventID         int32           `json:"event_id"`
+	InsertID        string          `json:"insert_id"`
 	EventType       string          `json:"event_type"`
 	EventProperties json.RawMessage `json:"event_properties,omitempty"`
 	UserProperties  json.RawMessage `json:"user_properties,omitempty"`

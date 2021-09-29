@@ -3,6 +3,7 @@ package usagestats
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"time"
 
@@ -153,22 +154,31 @@ func publishAmplitudeEvent(args Event) error {
 		userID = fmt.Sprintf("%06d", args.UserID)
 	}
 
+	if args.DeviceID == nil {
+		return errors.New("amplitude: Missing device ID")
+	}
+	if args.EventID == nil {
+		return errors.New("amplitude: Missing event ID")
+	}
+	if args.InsertID == nil {
+		return errors.New("amplitude: Missing insert ID")
+	}
+	if args.UserProperties == nil {
+		return errors.New("amplitude: Missing user properties")
+	}
+
 	userProperties, err := getAmplitudeUserProperties(args)
 	if err != nil {
 		return err
 	}
 
-	var deviceID string
-	if args.DeviceID != nil {
-		deviceID = *args.DeviceID
-	}
 	amplitudeEvent, err := json.Marshal(amplitude.EventPayload{
 		APIKey: amplitudeAPIToken,
 		Events: []amplitude.AmplitudeEvent{{
 			UserID:          userID,
-			DeviceID:        deviceID,
-			InsertID:        args.InsertID,
-			EventID:         args.EventID,
+			DeviceID:        *args.DeviceID,
+			InsertID:        *args.InsertID,
+			EventID:         *args.EventID,
 			EventType:       args.EventName,
 			EventProperties: args.PublicArgument,
 			UserProperties:  userProperties,
