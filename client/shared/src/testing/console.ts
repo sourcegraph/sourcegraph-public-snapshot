@@ -73,6 +73,11 @@ export async function formatPuppeteerConsoleMessage(
               })
           )
 
+    console.log(
+        'WOW',
+        message.args().map(value => value.jsonValue())
+    )
+
     return [
         chalk.bold('🖥  Browser console:'),
         color(
