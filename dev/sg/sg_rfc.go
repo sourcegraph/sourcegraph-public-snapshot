@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"flag"
 	"fmt"
 	"net/http"
 	"os"
@@ -13,16 +14,30 @@ import (
 	"strings"
 
 	"github.com/cockroachdb/errors"
-	"github.com/sourcegraph/sourcegraph/lib/output"
+	"github.com/peterbourgon/ff/v3/ffcli"
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/google"
 	"google.golang.org/api/drive/v3"
 	"google.golang.org/api/option"
+
+	"github.com/sourcegraph/sourcegraph/lib/output"
 )
 
 const (
 	tokenFileName = ".sg.token.json"
 	credentials   = `{"installed":{"client_id":"1043390970557-1okrt0mo0qt2ogn2mkp217cfrirr1rfd.apps.googleusercontent.com","project_id":"sg-cli","auth_uri":"https://accounts.google.com/o/oauth2/auth","token_uri":"https://oauth2.googleapis.com/token","auth_provider_x509_cert_url":"https://www.googleapis.com/oauth2/v1/certs","client_secret":"gkQ2alKQZr2088IFGr55ET_I","redirect_uris":["urn:ietf:wg:oauth:2.0:oob","http://localhost"]}}` // CI:LOCALHOST_OK
+)
+
+var (
+	rfcFlagSet = flag.NewFlagSet("sg rfc", flag.ExitOnError)
+	rfcCommand = &ffcli.Command{
+		Name:       "rfc",
+		ShortUsage: "sg rfc [list|search|open]",
+		ShortHelp:  "Run the given RFC command to manage RFCs.",
+		LongHelp:   `List, search and open Sourcegraph RFCs`,
+		FlagSet:    rfcFlagSet,
+		Exec:       rfcExec,
+	}
 )
 
 func tokenFilePath() (string, error) {
