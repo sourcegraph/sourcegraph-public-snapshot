@@ -39,6 +39,7 @@ type Step struct {
 	ArtifactPaths    string                 `json:"artifact_paths,omitempty"`
 	ConcurrencyGroup string                 `json:"concurrency_group,omitempty"`
 	Concurrency      int                    `json:"concurrency,omitempty"`
+	Skip             string                 `json:"skip,omitempty"`
 	SoftFail         bool                   `json:"soft_fail,omitempty"`
 	Retry            *RetryOptions          `json:"retry,omitempty"`
 	Agents           map[string]string      `json:"agents,omitempty"`
@@ -140,6 +141,12 @@ func Concurrency(limit int) StepOpt {
 func Env(name, value string) StepOpt {
 	return func(step *Step) {
 		step.Env[name] = value
+	}
+}
+
+func Skip(reason string) StepOpt {
+	return func(step *Step) {
+		step.Skip = reason
 	}
 }
 
