@@ -5,6 +5,7 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"path/filepath"
 	"sort"
 	"strings"
 
@@ -13,6 +14,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/run"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/stdout"
+	"github.com/sourcegraph/sourcegraph/dev/sg/root"
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
 
@@ -88,6 +90,25 @@ func startExec(ctx context.Context, args []string) error {
 		os.Exit(1)
 	}
 
+	repoRoot, err := root.RepositoryRoot()
+	if err != nil {
+		out.WriteLine(output.Linef("", output.StyleWarning, "Failed to determine repository root location: %s", err))
+		os.Exit(1)
+	}
+
+	devPrivatePath := filepath.Join(repoRoot, "..", "dev-private")
+	exists, err := pathExists(devPrivatePath)
+	if err != nil {
+		out.WriteLine(output.Linef("", output.StyleWarning, "Failed to check whether dev-private repository exists: %s", err))
+		os.Exit(1)
+	}
+	if !exists {
+		out.WriteLine(output.Linef("", output.StyleWarning, "dev-private repository not found!"))
+		out.WriteLine(output.Linef("", output.StyleWarning, "It's expected to exist at: %s", devPrivatePath))
+		out.WriteLine(output.Line("", output.StyleWarning, "See the documentation for how to clone it: https://docs.sourcegraph.com/dev/getting-started/quickstart_2_clone_repository"))
+		os.Exit(1)
+	}
+
 	if len(args) > 2 {
 		out.WriteLine(output.Linef("", output.StyleWarning, "ERROR: too many arguments\n"))
 		return flag.ErrHelp
@@ -113,7 +134,7 @@ func startExec(ctx context.Context, args []string) error {
 		checks = append(checks, check)
 	}
 
-	ok, err := run.Checks(ctx, globalConf.Env, checks...)
+	ok, err = run.Checks(ctx, globalConf.Env, checks...)
 	if err != nil {
 		out.WriteLine(output.Linef("", output.StyleWarning, "ERROR: checks could not be run: %s\n", err))
 	}
@@ -210,4 +231,15 @@ func runSetExec(ctx context.Context, args []string) error {
 	stdout.Out.WriteLine(output.Linef("", deprecationStyle, "                               !  !                                      "))
 	stdout.Out.WriteLine(output.Linef("", deprecationStyle, "                               \\__/                                      "))
 	return startExec(ctx, args)
+}
+
+func pathExists(path string) (bool, error) {
+	_, err := os.Stat(path)
+	if err == nil {
+		return true, nil
+	}
+	if os.IsNotExist(err) {
+		return false, nil
+	}
+	return false, err
 }
