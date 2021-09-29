@@ -777,6 +777,8 @@ func (s *RepoStore) list(ctx context.Context, tr *trace.Trace, opt ReposListOpti
 
 	tr.LogFields(trace.SQL(q))
 
+	start := time.Now()
+
 	rows, err := s.Query(ctx, q)
 	if err != nil {
 		if e, ok := err.(*net.OpError); ok && e.Timeout() {
@@ -790,6 +792,10 @@ func (s *RepoStore) list(ctx context.Context, tr *trace.Trace, opt ReposListOpti
 		if err := scanRepo(rows); err != nil {
 			return err
 		}
+	}
+
+	if time.Since(start) > time.Second {
+		log15.Warn("RepoStore.list: heavy query", "query", q.Query(sqlf.PostgresBindVar), "args", q.Args())
 	}
 
 	return rows.Err()
