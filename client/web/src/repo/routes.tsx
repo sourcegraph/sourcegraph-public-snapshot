@@ -142,8 +142,13 @@ export const repoRevisionContainerRoutes: readonly RepoRevisionContainerRoute[] 
             // and https://github.com/ReactTraining/history/issues/505
             const filePath = decodeURIComponent(match.params.filePath || '') // empty string is root
 
+            const enableBetterRepoPage =
+                !isErrorLike(context.settingsCascade.final) &&
+                context.settingsCascade.final?.experimentalFeatures?.betterRepoPages !== false
+
             // Redirect tree and blob routes pointing to the root to the repo page
-            if (match.params.objectType && filePath.replace(/\/+$/g, '') === '') {
+            // If betterRepoPages is enabled, tree at repo root is a distinct page
+            if (match.params.objectType && filePath.replace(/\/+$/g, '') === '' && !enableBetterRepoPage) {
                 return <Redirect to={toRepoURL({ repoName: repo.name, revision: context.revision })} />
             }
 
@@ -218,7 +223,12 @@ export const repoRevisionContainerRoutes: readonly RepoRevisionContainerRoute[] 
                                         }
                                     />
                                 ) : (
-                                    <TreePage {...context} {...repoRevisionProps} repo={repo} />
+                                    <TreePage
+                                        {...context}
+                                        {...repoRevisionProps}
+                                        repo={repo}
+                                        isRootRepoPage={match.params.objectType !== 'tree' && filePath === ''}
+                                    />
                                 )}
                             </ErrorBoundary>
                         </div>

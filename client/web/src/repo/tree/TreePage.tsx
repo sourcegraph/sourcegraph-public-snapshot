@@ -1,5 +1,6 @@
 import { subYears, formatISO } from 'date-fns'
 import * as H from 'history'
+import BarChartIcon from 'mdi-react/BarChartIcon'
 import BookOpenVariantIcon from 'mdi-react/BookOpenVariantIcon'
 import BrainIcon from 'mdi-react/BrainIcon'
 import FolderIcon from 'mdi-react/FolderIcon'
@@ -12,7 +13,7 @@ import TagIcon from 'mdi-react/TagIcon'
 import UserIcon from 'mdi-react/UserIcon'
 import React, { useState, useMemo, useCallback, useEffect } from 'react'
 import { Link, Redirect } from 'react-router-dom'
-import { Observable, EMPTY } from 'rxjs'
+import { Observable, EMPTY, of } from 'rxjs'
 import { catchError, map } from 'rxjs/operators'
 
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
@@ -37,6 +38,7 @@ import { encodeURIPathComponent, toPrettyBlobURL, toURIWithPath } from '@sourceg
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
 import { Container, PageHeader } from '@sourcegraph/wildcard'
 
+import { AuthenticatedUser } from '../../auth'
 import { getFileDecorations } from '../../backend/features'
 import { queryGraphQL } from '../../backend/graphql'
 import { BatchChangesProps } from '../../batches'
@@ -46,18 +48,32 @@ import { ErrorAlert } from '../../components/alerts'
 import { BreadcrumbSetters } from '../../components/Breadcrumbs'
 import { FilteredConnection } from '../../components/FilteredConnection'
 import { PageTitle } from '../../components/PageTitle'
-import { GitCommitFields, Scalars, TreePageRepositoryFields } from '../../graphql-operations'
+import { BlobFileFields, GitCommitFields, Scalars, TreePageRepositoryFields } from '../../graphql-operations'
 import { CodeInsightsProps } from '../../insights/types'
+import { KeyboardShortcutsProps } from '../../keyboardShortcuts/keyboardShortcuts'
 import { Settings } from '../../schema/settings.schema'
-import { PatternTypeProps, CaseSensitivityProps, SearchContextProps } from '../../search'
+import { VersionContext } from '../../schema/site.schema'
+import {
+    PatternTypeProps,
+    CaseSensitivityProps,
+    SearchContextProps,
+    ParsedSearchQueryProps,
+    SearchContextInputProps,
+    searchQueryForRepoRevision,
+} from '../../search'
+import { SubmitSearchParameters } from '../../search/helpers'
+import { ThemePreferenceProps } from '../../theme'
 import { basename } from '../../util/path'
 import { serviceKindDisplayNameAndIcon } from '../actions/GoToCodeHostAction'
 import { externalLinkFieldsFragment, fetchTreeEntries } from '../backend'
+import { fetchBlob } from '../blob/backend'
+import { RenderedFile } from '../blob/RenderedFile'
 import { GitCommitNode, GitCommitNodeProps } from '../commits/GitCommitNode'
 import { gitCommitFragment } from '../commits/RepositoryCommitsPage'
 import { FilePathBreadcrumbs } from '../FilePathBreadcrumbs'
 
 import { TreeEntriesSection } from './TreeEntriesSection'
+import { TreePageSearchInput } from './TreePageSearchInput'
 
 const fetchTreeCommits = memoizeObservable(
     (args: {
@@ -112,15 +128,20 @@ interface Props
         ExtensionsControllerProps,
         PlatformContextProps,
         ThemeProps,
+        ThemePreferenceProps,
         TelemetryProps,
         ActivationProps,
         PatternTypeProps,
         CaseSensitivityProps,
+        KeyboardShortcutsProps,
         VersionContextProps,
         CodeIntelligenceProps,
         BatchChangesProps,
         CodeInsightsProps,
         Pick<SearchContextProps, 'selectedSearchContextSpec'>,
+        Pick<ParsedSearchQueryProps, 'parsedSearchQuery'>,
+        Pick<SubmitSearchParameters, 'source'>,
+        SearchContextInputProps,
         BreadcrumbSetters {
     repo: TreePageRepositoryFields
     /** The tree's path in TreePage. We call it filePath for consistency elsewhere. */
@@ -130,6 +151,14 @@ interface Props
     location: H.Location
     history: H.History
     globbing: boolean
+    authenticatedUser: AuthenticatedUser | null
+    isSourcegraphDotCom: boolean
+    setVersionContext: (versionContext: string | undefined) => Promise<void>
+    availableVersionContexts: VersionContext[] | undefined
+
+    // True if this is the root repository page "/github.com/golang/go" but not if it is the tree
+    // page "/github.com/golang/go/-/tree"
+    isRootRepoPage: boolean
 }
 
 export const treePageRepositoryFragment = gql`
@@ -146,6 +175,8 @@ export const treePageRepositoryFragment = gql`
     ${externalLinkFieldsFragment}
 `
 
+const LOADING = 'loading' as const
+
 export const TreePage: React.FunctionComponent<Props> = ({
     repo,
     commitID,
@@ -158,6 +189,7 @@ export const TreePage: React.FunctionComponent<Props> = ({
     codeIntelligenceEnabled,
     batchChangesEnabled,
     extensionViews: ExtensionViewsSection,
+    isRootRepoPage,
     ...props
 }) => {
     useEffect(() => {
@@ -329,28 +361,166 @@ export const TreePage: React.FunctionComponent<Props> = ({
     )
 
     const enableBetterRepoPage =
-    !isErrorLike(settingsCascade.final) && settingsCascade.final?.experimentalFeatures?.betterRepoPages !== false
+        !isErrorLike(settingsCascade.final) && settingsCascade.final?.experimentalFeatures?.betterRepoPages !== false
 
-    if (filePath === '' && enableBetterRepoPage) {
-        const codeHost = repo.externalURLs && repo.externalURLs.length >= 0 ?
-            serviceKindDisplayNameAndIcon(repo.externalURLs[0].serviceKind)
-            : { displayName: displayRepoName(repo.name), icon: SourceRepositoryIcon }
+    const blobInfoOrError = useCallback(
+        (filePath: string): Observable<BlobFileFields | null> =>
+            !enableBetterRepoPage || !isRootRepoPage
+                ? of(null)
+                : fetchBlob({
+                      repoName: repo.name,
+                      commitID,
+                      filePath,
+                      disableTimeout: false,
+                  }),
+        [enableBetterRepoPage, isRootRepoPage, repo.name, commitID]
+    )
+    const readmeMD = useObservable(blobInfoOrError('README.md')) || LOADING
+    const readme = useObservable(blobInfoOrError('README')) || LOADING
 
-        return <div className="tree-page">
-            <Container className="tree-page__container">
-                <PageTitle title={getPageTitle()} />
-                <PageHeader
-                    path={[{
-                        icon: codeHost.icon || SourceRepositoryIcon,
-                        text: displayRepoName(repo.name),
-                        to: repo.externalURLs?.[0].url,
-                    }]}
-                    description={repo.description && <p>{repo.description}</p>}
-                    className="mb-3 test-tree-page-title"
-                />
-                Repo: {codeHost.displayName}
-            </Container>
-        </div>
+    if (enableBetterRepoPage && isRootRepoPage) {
+        const codeHost =
+            repo.externalURLs && repo.externalURLs.length >= 0
+                ? serviceKindDisplayNameAndIcon(repo.externalURLs[0].serviceKind)
+                : { displayName: displayRepoName(repo.name), icon: SourceRepositoryIcon }
+
+        const repoQuery = searchQueryForRepoRevision(repo.name, props.globbing, revision)
+
+        return (
+            <div className="tree-page">
+                <Container className="tree-page__container">
+                    <PageTitle title={getPageTitle()} />
+                    <PageHeader
+                        path={[
+                            {
+                                icon: codeHost.icon || SourceRepositoryIcon,
+                                text: displayRepoName(repo.name),
+                                to: repo.externalURLs?.[0].url,
+                            },
+                        ]}
+                        description={repo.description && <>{repo.description}</>}
+                        className="mb-3 test-tree-page-title"
+                    />
+                    <div className="btn-group">
+                        {enableAPIDocs && (
+                            <Link
+                                className="btn btn-outline-secondary"
+                                to={`/${encodeURIPathComponent(repo.name)}/-/docs`}
+                            >
+                                <BookOpenVariantIcon className="icon-inline" /> API docs
+                            </Link>
+                        )}
+                        {batchChangesEnabled && (
+                            <RepoBatchChangesButton className="btn btn-outline-secondary" repoName={repo.name} />
+                        )}
+                        <Link className="btn btn-outline-secondary" to={`/${encodeURIPathComponent(repo.name)}/-/tree`}>
+                            <FolderIcon className="icon-inline" /> Browse
+                        </Link>
+                        <Link
+                            className="btn btn-outline-secondary"
+                            to={`/${encodeURIPathComponent(repo.name)}/-/stats/contributors`}
+                        >
+                            <UserIcon className="icon-inline" /> Contributors
+                        </Link>
+                        <Link
+                            className="btn btn-outline-secondary"
+                            to={`/${encodeURIPathComponent(repo.name)}/-/commits`}
+                        >
+                            <SourceCommitIcon className="icon-inline" /> Commits
+                        </Link>
+                        <Link
+                            className="btn btn-outline-secondary"
+                            to={`/${encodeURIPathComponent(repo.name)}/-/branches`}
+                        >
+                            <SourceBranchIcon className="icon-inline" /> Branches
+                        </Link>
+                        <Link className="btn btn-outline-secondary" to={`/${encodeURIPathComponent(repo.name)}/-/tags`}>
+                            <TagIcon className="icon-inline" /> Tags
+                        </Link>
+                        <Link
+                            className="btn btn-outline-secondary"
+                            to={
+                                revision
+                                    ? `/${encodeURIPathComponent(repo.name)}/-/compare/...${encodeURIComponent(
+                                          revision
+                                      )}`
+                                    : `/${encodeURIPathComponent(repo.name)}/-/compare`
+                            }
+                        >
+                            <HistoryIcon className="icon-inline" /> Compare
+                        </Link>
+                        {repo.viewerCanAdminister ? (
+                            <Link
+                                className="btn btn-outline-secondary"
+                                to={`/${encodeURIPathComponent(repo.name)}/-/settings`}
+                            >
+                                <SettingsIcon className="icon-inline" /> Settings
+                            </Link>
+                        ) : (
+                            codeIntelligenceEnabled && (
+                                <Link
+                                    className="btn btn-outline-secondary"
+                                    to={`/${encodeURIPathComponent(repo.name)}/-/code-intelligence`}
+                                >
+                                    <BrainIcon className="icon-inline" /> Code Intelligence
+                                </Link>
+                            )
+                        )}
+                    </div>
+                    <div className="tree-page__inner-container">
+                        <h2 className="mt-4">Search this repository</h2>
+                        <TreePageSearchInput
+                            className="mt-2"
+                            {...props}
+                            patternType={patternType}
+                            caseSensitive={caseSensitive}
+                            settingsCascade={settingsCascade}
+                            hiddenQueryPrefix={repoQuery}
+                            queryPrefix="file:"
+                        />
+                        <TreePageSearchInput
+                            className="mt-2"
+                            {...props}
+                            patternType={patternType}
+                            caseSensitive={caseSensitive}
+                            settingsCascade={settingsCascade}
+                            hiddenQueryPrefix={repoQuery}
+                            queryPrefix="type:symbol "
+                        />
+                        <TreePageSearchInput
+                            className="mt-2"
+                            {...props}
+                            patternType={patternType}
+                            caseSensitive={caseSensitive}
+                            settingsCascade={settingsCascade}
+                            hiddenQueryPrefix={repoQuery}
+                            queryPrefix="type:commit "
+                        />
+                        <TreePageSearchInput
+                            className="mt-2"
+                            {...props}
+                            patternType={patternType}
+                            caseSensitive={caseSensitive}
+                            settingsCascade={settingsCascade}
+                            hiddenQueryPrefix={repoQuery}
+                            queryPrefix="type:diff "
+                        />
+                        {readmeMD && readmeMD !== LOADING && !isErrorLike(readmeMD) ? (
+                            <RenderedFile
+                                className="mt-4"
+                                dangerousInnerHTML={decrementFirstHeadingLevel(readmeMD.richHTML)}
+                                location={props.location}
+                            />
+                        ) : readme && readme !== LOADING && !isErrorLike(readme) ? (
+                            <RenderedFile
+                                dangerousInnerHTML={decrementFirstHeadingLevel(readme.richHTML)}
+                                location={props.location}
+                            />
+                        ) : null}
+                    </div>
+                </Container>
+            </div>
+        )
     }
 
     return (
@@ -373,7 +543,7 @@ export const TreePage: React.FunctionComponent<Props> = ({
                 ) : (
                     <>
                         <header className="mb-3">
-                            {treeOrError.isRoot ? (
+                            {!enableBetterRepoPage && treeOrError.isRoot ? (
                                 <>
                                     <PageHeader
                                         path={[{ icon: SourceRepositoryIcon, text: displayRepoName(repo.name) }]}
@@ -384,12 +554,15 @@ export const TreePage: React.FunctionComponent<Props> = ({
                                         {enableAPIDocs && (
                                             <Link
                                                 className="btn btn-outline-secondary"
-                                                to={`${treeOrError.url}/-/docs`}
+                                                to={`/${treeOrError.url}/-/docs`}
                                             >
                                                 <BookOpenVariantIcon className="icon-inline" /> API docs
                                             </Link>
                                         )}
-                                        <Link className="btn btn-outline-secondary" to={`${treeOrError.url}/-/commits`}>
+                                        <Link
+                                            className="btn btn-outline-secondary"
+                                            to={`/${treeOrError.url}/-/commits`}
+                                        >
                                             <SourceCommitIcon className="icon-inline" /> Commits
                                         </Link>
                                         <Link
@@ -448,7 +621,7 @@ export const TreePage: React.FunctionComponent<Props> = ({
                                 </>
                             ) : (
                                 <PageHeader
-                                    path={[{ icon: FolderIcon, text: filePath }]}
+                                    path={[{ icon: FolderIcon, text: filePath || displayRepoName(repo.name) }]}
                                     className="mb-3 test-tree-page-title"
                                 />
                             )}
@@ -516,4 +689,18 @@ export const TreePage: React.FunctionComponent<Props> = ({
             </Container>
         </div>
     )
+}
+
+// Decrements the first <h1> element found in the HTML.
+function decrementFirstHeadingLevel(html: string): string {
+    const parser = new DOMParser()
+    const dom = parser.parseFromString(html, 'text/html')
+    const firstHeader = dom.querySelector('h1')
+    if (!firstHeader) {
+        return html
+    }
+    const dummy = dom.createElement('h2')
+    dummy.innerHTML = firstHeader.innerHTML
+    firstHeader.parentElement?.replaceChild(dummy, firstHeader)
+    return dom.documentElement.innerHTML
 }

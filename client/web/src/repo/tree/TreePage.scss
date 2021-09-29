@@ -16,6 +16,9 @@
         flex: 1;
         background-color: var(--code-bg);
     }
+    &__inner-container {
+        max-width: 50rem;
+    }
 
     &__title {
         display: flex;
