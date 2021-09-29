@@ -1,21 +1,23 @@
 import { Shortcut } from '@slimsag/react-shortcuts'
 import React, { useState } from 'react'
 
+import { FuzzySearch, SearchIndexing } from '@sourcegraph/shared/src/fuzzyFinder/FuzzySearch'
 import { gql } from '@sourcegraph/shared/src/graphql/graphql'
+import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 
 import { requestGraphQL } from '../../backend/graphql'
-import { FuzzySearch, SearchIndexing } from '../../fuzzyFinder/FuzzySearch'
 import { FileNamesResult, FileNamesVariables } from '../../graphql-operations'
 import {
     KEYBOARD_SHORTCUT_CLOSE_FUZZY_FINDER,
     KEYBOARD_SHORTCUT_FUZZY_FINDER,
 } from '../../keyboardShortcuts/keyboardShortcuts'
+import { parseBrowserRepoURL } from '../../util/url'
 
 import { FuzzyModal } from './FuzzyModal'
 
 const DEFAULT_MAX_RESULTS = 100
 
-export interface FuzzyFinderProps {
+export interface FuzzyFinderProps extends PlatformContextProps<'requestGraphQL'> {
     repoName: string
     commitID: string
 
@@ -59,6 +61,7 @@ export const FuzzyFinder: React.FunctionComponent<FuzzyFinderProps> = props => {
                     fsm={fsm}
                     setFsm={setFsm}
                     downloadFilenames={() => downloadFilenames(props)}
+                    parseRepoUrl={() => parseBrowserRepoURL(location.pathname + location.search + location.hash)}
                 />
             )}
         </>

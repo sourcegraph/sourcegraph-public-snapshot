@@ -21,6 +21,8 @@ export const FuzzyFinderResult: React.FC<FuzzyFinderResultProps> = ({ value, onC
         )
     }
 
+    // TODO: language icon by file extension
+
     return (
         <div>
             <h1>{value}</h1>

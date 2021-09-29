@@ -1,6 +1,7 @@
 import classnames from 'classnames'
 import React from 'react'
-import { Link } from 'react-router-dom'
+
+import { Link } from '../../components/Link'
 
 import styles from './HighlightedLink.module.scss'
 

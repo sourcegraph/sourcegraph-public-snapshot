@@ -425,6 +425,7 @@ export const RepoContainer: React.FunctionComponent<RepoContainerProps> = props 
                             props.settingsCascade.final?.experimentalFeatures
                                 ?.fuzzyFinderCaseInsensitiveFileCountThreshold
                         }
+                        platformContext={props.platformContext}
                     />
                 )}
             {(showExtensionAlert || showFirefoxAddonAlert) && (

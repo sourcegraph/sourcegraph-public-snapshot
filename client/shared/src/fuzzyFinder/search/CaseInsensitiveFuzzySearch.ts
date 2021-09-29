@@ -1,8 +1,7 @@
 import * as fzy from 'fzy.js'
 
-import { HighlightedLinkProps, RangePosition } from '../components/fuzzyFinder/HighlightedLink'
-
-import { FuzzySearch, FuzzySearchParameters, FuzzySearchResult, SearchValue } from './FuzzySearch'
+import { HighlightedLinkProps, RangePosition } from '../components/HighlightedLink'
+import { FuzzySearch, FuzzySearchParameters, FuzzySearchResult, SearchValue } from '../FuzzySearch'
 
 interface ScoredSearchValue extends SearchValue {
     score: number

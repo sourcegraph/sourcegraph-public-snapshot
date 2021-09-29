@@ -1,8 +1,9 @@
 import { storiesOf } from '@storybook/react'
 import React from 'react'
 
-import { CaseInsensitiveFuzzySearch } from '../../fuzzyFinder/CaseInsensitiveFuzzySearch'
-import { SearchValue } from '../../fuzzyFinder/FuzzySearch'
+import { SearchValue } from '@sourcegraph/shared/src/fuzzyFinder/FuzzySearch'
+import { CaseInsensitiveFuzzySearch } from '@sourcegraph/shared/src/fuzzyFinder/search/CaseInsensitiveFuzzySearch'
+
 import { WebStory } from '../WebStory'
 
 import { Ready } from './FuzzyFinder'
