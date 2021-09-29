@@ -328,21 +328,23 @@ func TestRedirectTreeOrBlob(t *testing.T) {
 			expLocation:   "/github.com/user/repo@master/-/tree/some/dir",
 		},
 
-		// "/github.com/user/repo/-/tree" -> "/github.com/user/repo"
-		{
-			name:  "redirct tree to root",
-			route: routeTree,
-			path:  "",
-			common: &Common{
-				Repo: &types.Repo{
-					Name: "github.com/user/repo",
-				},
-				CommitID: "eca7e807356b887ee24b7a7497973bbfc5688dac",
-			},
-			expHandled:    true,
-			expStatusCode: http.StatusTemporaryRedirect,
-			expLocation:   "/github.com/user/repo",
-		},
+		// disabled as part of betterRepoPages experiment; see redirectTreeOrBlob
+		// docs.
+		// // "/github.com/user/repo/-/tree" -> "/github.com/user/repo"
+		// {
+		// 	name:  "redirct tree to root",
+		// 	route: routeTree,
+		// 	path:  "",
+		// 	common: &Common{
+		// 		Repo: &types.Repo{
+		// 			Name: "github.com/user/repo",
+		// 		},
+		// 		CommitID: "eca7e807356b887ee24b7a7497973bbfc5688dac",
+		// 	},
+		// 	expHandled:    true,
+		// 	expStatusCode: http.StatusTemporaryRedirect,
+		// 	expLocation:   "/github.com/user/repo",
+		// },
 		// "/github.com/user/repo/-/blob" -> "/github.com/user/repo"
 		{
 			name:  "redirct blob to root",
@@ -358,22 +360,24 @@ func TestRedirectTreeOrBlob(t *testing.T) {
 			expStatusCode: http.StatusTemporaryRedirect,
 			expLocation:   "/github.com/user/repo",
 		},
-		// "/github.com/user/repo@master/-/tree" -> "/github.com/user/repo"
-		{
-			name:  "redirct tree to root on a revision",
-			route: routeTree,
-			path:  "",
-			common: &Common{
-				Repo: &types.Repo{
-					Name: "github.com/user/repo",
-				},
-				Rev:      "@master",
-				CommitID: "eca7e807356b887ee24b7a7497973bbfc5688dac",
-			},
-			expHandled:    true,
-			expStatusCode: http.StatusTemporaryRedirect,
-			expLocation:   "/github.com/user/repo@master",
-		},
+		// disabled as part of betterRepoPages experiment; see redirectTreeOrBlob
+		// docs.
+		// // "/github.com/user/repo@master/-/tree" -> "/github.com/user/repo"
+		// {
+		// 	name:  "redirct tree to root on a revision",
+		// 	route: routeTree,
+		// 	path:  "",
+		// 	common: &Common{
+		// 		Repo: &types.Repo{
+		// 			Name: "github.com/user/repo",
+		// 		},
+		// 		Rev:      "@master",
+		// 		CommitID: "eca7e807356b887ee24b7a7497973bbfc5688dac",
+		// 	},
+		// 	expHandled:    true,
+		// 	expStatusCode: http.StatusTemporaryRedirect,
+		// 	expLocation:   "/github.com/user/repo@master",
+		// },
 		// "/github.com/user/repo@master/-/blob" -> "/github.com/user/repo"
 		{
 			name:  "redirct blob to root on a revision",
