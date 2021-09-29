@@ -201,6 +201,9 @@ func DependsOn(dependency string) StepOpt {
 	}
 }
 
+// AllowDependencyFailure enables `allow_dependency_failure` attribute on the step.
+// Such a step will run when the depended-on jobs complete, fail or even did not run.
+// See extended docs here: https://buildkite.com/docs/pipelines/dependencies#allowing-dependency-failures
 func AllowDependencyFailure() StepOpt {
 	return func(step *Step) {
 		step.AllowDependencyFailure = true
