@@ -53,7 +53,7 @@ export const InstallBrowserExtensionAlert: React.FunctionComponent<Props> = ({
                             Sourcegraph's code intelligence will follow you to your code host. Your site admin set up
                             the Sourcegraph native integration for {displayName}.{' '}
                             <a
-                                className="alert-link"
+                                className="alert"
                                 href="https://docs.sourcegraph.com/integration/browser_extension"
                                 target="_blank"
                                 rel="noopener"

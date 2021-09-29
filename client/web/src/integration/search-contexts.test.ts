@@ -315,7 +315,7 @@ describe('Search contexts', () => {
         })
         await driver.page.goto(driver.sourcegraphBaseUrl + '/search')
         await driver.page.waitForSelector('.test-selected-search-context-spec', { visible: true })
-        expect(await isSearchContextFeatureTourStepVisible()).toBeFalsy()
+        expect(await isSearchContextFeatureTourStepVisible()).toBeTruthy()
         await clearLocalStorage()
     })
 
