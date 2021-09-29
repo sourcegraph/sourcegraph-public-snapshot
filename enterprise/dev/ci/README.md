@@ -33,7 +33,7 @@ If a step is flaky we need to get the build back to reliable as soon as possible
 
 An example use of `Skip`:
 
-``` diff
+```diff
 --- a/enterprise/dev/ci/internal/ci/operations.go
 +++ b/enterprise/dev/ci/internal/ci/operations.go
 @@ -260,7 +260,9 @@ func addGoBuild(pipeline *bk.Pipeline) {
