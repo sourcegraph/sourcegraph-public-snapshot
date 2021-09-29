@@ -334,6 +334,11 @@ func redirectTreeOrBlob(routeName, path string, common *Common, w http.ResponseW
 	}
 
 	if path == "/" || path == "" {
+		if routeName == "tree" {
+			// Disabled for now as part of betterRepoPages experiment. The frontend redirects anyway if this
+			// setting is disabled, so this could only harm e.g. Google SEO by not being enabled.
+			return false, nil
+		}
 		if routeName != routeRepo {
 			// Redirect to repo route
 			target := "/" + string(common.Repo.Name) + common.Rev
