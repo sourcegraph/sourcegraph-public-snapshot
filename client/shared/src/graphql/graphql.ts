@@ -13,8 +13,8 @@ import {
     MutationHookOptions,
     MutationTuple,
     QueryTuple,
-    TypedDocumentNode,
 } from '@apollo/client'
+import type { TypedDocumentNode } from '@graphql-typed-document-node/core'
 import { GraphQLError } from 'graphql'
 import { once } from 'lodash'
 import { useMemo } from 'react'
@@ -163,47 +163,4 @@ export const getDocumentNode = (document: GraphQLRequest<unknown, unknown>): Doc
         return apolloGql(document)
     }
     return document
-}
-
-const useDocumentNode = (document: GraphQLRequest<unknown, unknown>): DocumentNode =>
-    useMemo(() => getDocumentNode(document), [document])
-
-/**
- * Send a query to GraphQL and respond to updates.
- * Wrapper around Apollo `useQuery` that supports `DocumentNode` and `string` types.
- *
- * @param query GraphQL operation payload.
- * @param options Operation variables and request configuration
- * @returns GraphQL response
- */
-export function useQuery<TData = any, TVariables = OperationVariables>(
-    query: GraphQLRequest<TData, TVariables>,
-    options: QueryHookOptions<TData, TVariables>
-): QueryResult<TData, TVariables> {
-    const documentNode = useDocumentNode(query)
-    return useApolloQuery(documentNode, options)
-}
-
-export function useLazyQuery<TData = any, TVariables = OperationVariables>(
-    query: GraphQLRequest<TData, TVariables>,
-    options: QueryHookOptions<TData, TVariables>
-): QueryTuple<TData, TVariables> {
-    const documentNode = useDocumentNode(query)
-    return useApolloLazyQuery(documentNode, options)
-}
-
-/**
- * Send a mutation to GraphQL and respond to updates.
- * Wrapper around Apollo `useMutation` that supports `DocumentNode` and `string` types.
- *
- * @param mutation GraphQL operation payload.
- * @param options Operation variables and request configuration
- * @returns GraphQL response
- */
-export function useMutation<TData = any, TVariables = OperationVariables>(
-    mutation: GraphQLRequest<TData, TVariables>,
-    options?: MutationHookOptions<TData, TVariables>
-): MutationTuple<TData, TVariables> {
-    const documentNode = useDocumentNode(mutation)
-    return useApolloMutation(documentNode, options)
 }
