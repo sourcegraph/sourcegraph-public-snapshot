@@ -509,7 +509,12 @@ commands:
     #       PGUSER: sourcegraph
     #
     # You could also add an overwrite to add `redis-postgres` to the relevant command set(s).
-    cmd: docker-compose -f dev/redis-postgres.yml up --force-recreate
+    cmd: docker-compose -f dev/redis-postgres.yml up $COMPOSE_ARGS
+    env:
+      COMPOSE_ARGS: --force-recreate
+      # Set the following to a path on disk to persist data (or unset to not persist data)
+      PGDATA_DIR: $HOME/.sourcegraph-dev/data/postgresql
+      REDIS_DATA_DIR: ""
 
   jaeger:
     cmd: |
