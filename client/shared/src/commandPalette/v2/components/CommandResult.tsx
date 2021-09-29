@@ -4,7 +4,7 @@ import stringScore from 'string-score'
 
 import { ActionItemAction } from '../../../actions/ActionItem'
 
-import { CommandPaletteResultList } from './CommandPaletteResultList'
+import { NavigableList } from './NavigableList'
 
 const KEEP_RECENT_ACTIONS = 10
 const RECENT_ACTIONS_STORAGE_KEY = 'commandList.recentActions'
@@ -116,7 +116,7 @@ export const CommandResult: React.FC<CommandResultProps> = ({ actions, value, on
     )
 
     return (
-        <CommandPaletteResultList items={filteredActions}>
+        <NavigableList items={filteredActions}>
             {(item, { active }) => {
                 const { action, keybinding } = item
                 // TODO: share label between filteritems
@@ -125,7 +125,7 @@ export const CommandResult: React.FC<CommandResultProps> = ({ actions, value, on
                     .join(': ')
 
                 return (
-                    <CommandPaletteResultList.Item
+                    <NavigableList.Item
                         active={active}
                         label={label}
                         keybindings={keybinding ? [keybinding] : []}
@@ -133,6 +133,6 @@ export const CommandResult: React.FC<CommandResultProps> = ({ actions, value, on
                     />
                 )
             }}
-        </CommandPaletteResultList>
+        </NavigableList>
     )
 }

@@ -2,12 +2,12 @@ import React from 'react'
 
 import { COMMAND_PALETTE_SHORTCUTS } from '../constants'
 
-import { CommandPaletteResultList } from './CommandPaletteResultList'
+import { NavigableList } from './NavigableList'
 
-export const CommandsModesList: React.FC<{ onSelect: () => void }> = ({ onSelect }) => (
-    <CommandPaletteResultList items={COMMAND_PALETTE_SHORTCUTS}>
+export const CommandPaletteModesResult: React.FC<{ onSelect: () => void }> = ({ onSelect }) => (
+    <NavigableList items={COMMAND_PALETTE_SHORTCUTS}>
         {({ title, keybindings, onMatch }, { active }) => (
-            <CommandPaletteResultList.Item
+            <NavigableList.Item
                 active={active}
                 label={title}
                 onClick={() => {
@@ -17,5 +17,5 @@ export const CommandsModesList: React.FC<{ onSelect: () => void }> = ({ onSelect
                 keybindings={keybindings}
             />
         )}
-    </CommandPaletteResultList>
+    </NavigableList>
 )

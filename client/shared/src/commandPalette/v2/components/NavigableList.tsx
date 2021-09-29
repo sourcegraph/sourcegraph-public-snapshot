@@ -3,10 +3,11 @@ import React, { useState, useEffect } from 'react'
 
 import { Keybinding } from '../../../keyboardShortcuts'
 
-import styles from './CommandPaletteResultList.module.scss'
+import styles from './NavigableList.module.scss'
 
-interface CommandPaletteResultItemProps {
-    onClick: () => void
+interface NavigableListItemProps {
+    onClick?: () => void
+    onFocus?: () => void
     href?: string
     keybindings?: Keybinding[]
     label: string
@@ -15,8 +16,9 @@ interface CommandPaletteResultItemProps {
     icon?: JSX.Element
 }
 
-const CommandPaletteResultListItem: React.FC<CommandPaletteResultItemProps> = ({
+const NavigableListItem: React.FC<NavigableListItemProps> = ({
     onClick,
+    onFocus,
     href,
     keybindings = [],
     label,
@@ -27,12 +29,18 @@ const CommandPaletteResultListItem: React.FC<CommandPaletteResultItemProps> = ({
     useEffect(() => {
         function handleKeyDown(event: KeyboardEvent): void {
             if (event.key === 'Enter' && active) {
-                onClick()
+                onClick?.()
             }
         }
         document.addEventListener('keydown', handleKeyDown)
         return () => document.removeEventListener('keydown', handleKeyDown)
     }, [onClick, active])
+
+    useEffect(() => {
+        if (active) {
+            onFocus?.()
+        }
+    }, [active, onFocus])
 
     return (
         <li tabIndex={-1}>
@@ -57,20 +65,20 @@ const CommandPaletteResultListItem: React.FC<CommandPaletteResultItemProps> = ({
     )
 }
 
-interface CommandPaletteResultListProps<T> {
+interface NavigableListProps<T> {
     items: T[]
     children: (item: T, options: { active: boolean }) => JSX.Element
 }
 
-export function CommandPaletteResultList<T>({ children, items }: CommandPaletteResultListProps<T>): JSX.Element {
-    const [selected, setSelected] = useState<number | undefined>()
+export function NavigableList<T>({ children, items }: NavigableListProps<T>): JSX.Element {
+    const [activeIndex, setActiveIndex] = useState<number | undefined>()
 
     useEffect(() => {
         function handleKeyDown(event: KeyboardEvent): void {
             if (event.key === 'ArrowUp') {
-                setSelected(selected => ((selected || items.length) - 1) % items.length)
+                setActiveIndex(activeIndex => ((activeIndex || items.length) - 1) % items.length)
             } else if (event.key === 'ArrowDown') {
-                setSelected(selected => ((selected || 0) + 1) % items.length)
+                setActiveIndex(activeIndex => ((activeIndex || 0) + 1) % items.length)
             }
         }
         document.addEventListener('keydown', handleKeyDown)
@@ -80,10 +88,10 @@ export function CommandPaletteResultList<T>({ children, items }: CommandPaletteR
     return (
         <ul className={styles.list}>
             {items.map((item, index) => (
-                <React.Fragment key={index}>{children(item, { active: selected === index })}</React.Fragment>
+                <React.Fragment key={index}>{children(item, { active: activeIndex === index })}</React.Fragment>
             ))}
         </ul>
     )
 }
 
-CommandPaletteResultList.Item = CommandPaletteResultListItem
+NavigableList.Item = NavigableListItem

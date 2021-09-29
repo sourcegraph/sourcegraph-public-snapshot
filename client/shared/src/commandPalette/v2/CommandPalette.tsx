@@ -20,8 +20,8 @@ import { memoizeObservable } from '../../util/memoizeObservable'
 import { useObservable } from '../../util/useObservable'
 
 import styles from './CommandPalette.module.scss'
+import { CommandPaletteModesResult } from './components/CommandPaletteModesResult'
 import { CommandResult } from './components/CommandResult'
-import { CommandsModesList } from './components/CommandsModesList'
 import { FuzzyFinderResult } from './components/FuzzyFinderResult'
 import { JumpToLineResult } from './components/JumpToLineResult'
 import { JumpToSymbolResult } from './components/JumpToSymbolResult'
@@ -130,7 +130,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
         toggleIsOpen()
     }, [toggleIsOpen])
 
-    const handleInputFocus = useCallback(()=> {
+    const handleInputFocus = useCallback(() => {
         inputReference.current?.focus()
     }, [])
 
@@ -185,7 +185,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
                 <div className={styles.inputContainer}>
                     <MagnifyIcon className={styles.inputIcon} />
                     <input
-                    ref={inputReference}
+                        ref={inputReference}
                         autoComplete="off"
                         spellCheck="false"
                         aria-autocomplete="list"
@@ -198,7 +198,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
                         type="text"
                     />
                 </div>
-                {!mode && <CommandsModesList onSelect={handleInputFocus} />}
+                {!mode && <CommandPaletteModesResult onSelect={handleInputFocus} />}
                 {mode === CommandPaletteMode.Command && (
                     <CommandResult
                         actions={actions}
