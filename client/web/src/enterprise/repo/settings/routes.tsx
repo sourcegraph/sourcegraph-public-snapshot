@@ -30,6 +30,7 @@ export const enterpriseRepoSettingsAreaRoutes: readonly RepoSettingsAreaRoute[] 
             },
         }: RouteComponentProps<{ id: string }>) => <Redirect to={`../uploads/${id}`} />,
     },
+    // Used by betterRepoPages feature flag when users are admins only.
     {
         path: '/code-intelligence',
         exact: false,

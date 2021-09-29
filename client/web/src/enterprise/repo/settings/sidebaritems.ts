@@ -16,6 +16,11 @@ export const enterpriseRepoSettingsSidebarGroups: RepoSettingsSideBarGroups = re
                             exact: true,
                             label: 'Permissions',
                         },
+                        {
+                            to: '/code-intelligence',
+                            exact: true,
+                            label: 'Code intelligence',
+                        },
                     ],
                 },
             ]
