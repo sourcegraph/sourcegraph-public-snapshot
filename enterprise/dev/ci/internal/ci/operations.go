@@ -206,9 +206,13 @@ func clientIntegrationTests(pipeline *bk.Pipeline) {
 	}
 
 	finalizeSteps := []bk.StepOpt{
-		skipGitCloneStep,
 		// Allow to teardown the Percy build even if there was a failure in the earlier Percy steps.
 		bk.AllowDependencyFailure(),
+		// Percy service often fails for obscure reasons. The step is pretty fast, so we
+		// just retry a few times.
+		bk.AutomaticRetry(3),
+		// Finalize just uses a remote package.
+		skipGitCloneStep,
 		bk.Cmd("npx @percy/cli build:finalize"),
 	}
 
@@ -226,7 +230,7 @@ func clientChromaticTests(autoAcceptChanges bool) operations.Operation {
 		}
 
 		pipeline.AddStep(":chromatic: Upload Storybook to Chromatic",
-			bk.AutomaticRetry(5),
+			bk.AutomaticRetry(3),
 			bk.Cmd("yarn --mutex network --frozen-lockfile --network-timeout 60000"),
 			bk.Cmd("yarn gulp generate"),
 			bk.Env("MINIFY", "1"),
@@ -522,7 +526,11 @@ func publishFinalDockerImage(c Config, app string, insiders bool) operations.Ope
 		candidateImage := fmt.Sprintf("%s:%s", devImage, c.candidateImageTag())
 		cmd := fmt.Sprintf("./dev/ci/docker-publish.sh %s %s", candidateImage, strings.Join(images, " "))
 
-		pipeline.AddStep(fmt.Sprintf(":docker: :white_check_mark: %s", app), bk.Cmd(cmd))
+		pipeline.AddStep(fmt.Sprintf(":docker: :white_check_mark: %s", app),
+			// This step just pulls a prebuild image and pushes it to some registries. The
+			// only possible failure here is a registry flake, so we retry a few times.
+			bk.AutomaticRetry(3),
+			bk.Cmd(cmd))
 	}
 }
 
