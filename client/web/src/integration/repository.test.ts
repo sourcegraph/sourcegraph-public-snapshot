@@ -432,7 +432,7 @@ describe('Repository', () => {
             const repositoryName = `github.com/${shortRepositoryName}`
             const repositorySourcegraphUrl = `/${repositoryName}`
             const fileName = '% token.4288249258.sql'
-            const directoryName = "Geoffrey's random queries.32r242442bf"
+            const directoryName = "/Geoffrey's random queries.32r242442bf"
             const filePath = path.posix.join(directoryName, fileName)
 
             testContext.overrideGraphQL({
@@ -545,7 +545,7 @@ describe('Repository', () => {
             const breadcrumbTexts = await driver.page.evaluate(() =>
                 [...document.querySelectorAll('.test-breadcrumb')].map(breadcrumb => breadcrumb.textContent?.trim())
             )
-            assert.deepStrictEqual(breadcrumbTexts, [shortRepositoryName, '@master', 'readme.md'])
+            assert.deepStrictEqual(breadcrumbTexts, [shortRepositoryName, '@master', '/readme.md'])
         })
 
         it('works with spaces in the repository name', async () => {
