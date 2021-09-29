@@ -194,7 +194,12 @@ func logLevelOverrides() map[string]string {
 	overrides := make(map[string]string)
 	for level, services := range levelServices {
 		for _, service := range services {
-			overrides[service] = level
+			if level == "debug" && strings.HasPrefix(service, "zoekt-") {
+				// zoekt-indexserver and zoekt-webserver expects "dbug", not "debug".
+				overrides[service] = "dbug"
+			} else {
+				overrides[service] = level
+			}
 		}
 	}
 
