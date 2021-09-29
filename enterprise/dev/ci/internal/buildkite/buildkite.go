@@ -30,7 +30,7 @@ type Step struct {
 	Key                    string                 `json:"key,omitempty"`
 	Command                []string               `json:"command,omitempty"`
 	DependsOn              []string               `json:"depends_on,omitempty"`
-	AllowDependencyFailure bool                   `json:"allowDependencyFailure,omitempty"`
+	AllowDependencyFailure bool                   `json:"allow_dependency_failure,omitempty"`
 	TimeoutInMinutes       string                 `json:"timeout_in_minutes,omitempty"`
 	Trigger                string                 `json:"trigger,omitempty"`
 	Async                  bool                   `json:"async,omitempty"`
