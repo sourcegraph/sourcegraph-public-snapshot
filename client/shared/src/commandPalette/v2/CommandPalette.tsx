@@ -93,7 +93,7 @@ function useCommandList(value: string, extensionsController: CommandPaletteProps
 
 export interface CommandPaletteProps
     extends ExtensionsControllerProps<'extHostAPI' | 'executeCommand'>,
-        PlatformContextProps<'forceUpdateTooltip' | 'settings' | 'requestGraphQL'>,
+        PlatformContextProps<'forceUpdateTooltip' | 'settings' | 'requestGraphQL' | 'clientApplication'>,
         TelemetryProps {
     initialIsOpen?: boolean
     location: H.Location

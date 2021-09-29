@@ -2,7 +2,7 @@ import React from 'react'
 
 import { pluralize } from '@sourcegraph/shared/src/util/strings'
 
-import { ParsedRepoURI, toPrettyBlobURL } from '../util/url'
+import { ParsedRepoURI } from '../util/url'
 
 import { HighlightedLinkProps } from './components/HighlightedLink'
 import { FuzzyFinderProps, FuzzyFSM, Indexing } from './fsm'

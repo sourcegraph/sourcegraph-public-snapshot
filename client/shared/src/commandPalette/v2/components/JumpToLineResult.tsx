@@ -1,10 +1,14 @@
-import React, { useEffect } from 'react'
+import React, { useEffect, useMemo } from 'react'
 import { useHistory } from 'react-router'
+import { Subject } from 'rxjs'
+import { tap, throttleTime } from 'rxjs/operators'
 
 import { TextDocumentData } from '../../../api/viewerTypes'
 import { addLineRangeQueryParameter, toPositionOrRangeQueryParameter } from '../../../util/url'
+import { useObservable } from '../../../util/useObservable'
 
 import { Message } from './Message'
+import { NavigableList } from './NavigableList'
 
 interface JumpToLineResultProps {
     value: string
@@ -26,40 +30,62 @@ export const JumpToLineResult: React.FC<JumpToLineResultProps> = ({ value, onCli
     }
     const numberOfLines = lines.length
 
+    const lineUpdates = useMemo(() => new Subject<{ line: number; numberOfLines: number; isLineNaN: boolean }>(), [])
+    useObservable(
+        useMemo(
+            () =>
+                lineUpdates.pipe(
+                    throttleTime(150, undefined, { leading: true, trailing: true }),
+                    tap(({ line, isLineNaN, numberOfLines }) => {
+                        if (!isLineNaN && line <= numberOfLines) {
+                            // TODO: render mode (for markdown)
+                            // TODO: character
+                            // TODO: abstract for bext. Disable on bext? could work by setting window.location.href
+
+                            const searchParameters = addLineRangeQueryParameter(
+                                new URLSearchParams(history.location.search),
+
+                                toPositionOrRangeQueryParameter({
+                                    position: {
+                                        line,
+                                    },
+                                })
+                            )
+                            history.replace({
+                                ...history.location,
+                                search: searchParameters.toString(),
+                            })
+                        }
+                    })
+                ),
+            []
+        )
+    )
+
     // Change line position in hash
     useEffect(() => {
         if (textDocumentData) {
-            if (!isLineNaN && line <= numberOfLines) {
-                // TODO: render mode (for markdown)
-                // TODO: character
-                const searchParameters = addLineRangeQueryParameter(
-                    new URLSearchParams(history.location.search),
-
-                    toPositionOrRangeQueryParameter({
-                        position: {
-                            line,
-                        },
-                    })
-                )
-                history.replace({
-                    ...history.location,
-                    search: searchParameters.toString(),
-                })
-            }
+            lineUpdates.next({ line, numberOfLines, isLineNaN })
         }
-    }, [line, numberOfLines, isLineNaN, textDocumentData, history])
+    }, [line, numberOfLines, isLineNaN, textDocumentData, lineUpdates])
 
     if (!textDocumentData) {
         return <Message type="muted">Open a text document to jump to line</Message>
     }
 
-    if (!value) {
+    if (!value || isLineNaN || line > numberOfLines) {
         return <Message type="muted">Enter a line number between 1 and {lines.length}</Message>
     }
 
-    // TODO: `Enter a line number between 1 and ${length}`
-
     // TODO: If line is not a number or it is out of range, display helpful message
-    // TODO: Close on enter pressed
-    return <Message>Go to line {line}</Message>
+
+    return (
+        <NavigableList items={[null]}>
+            {() => (
+                <NavigableList.Item onClick={onClick} active={true}>
+                    <Message>Go to line {line}</Message>
+                </NavigableList.Item>
+            )}
+        </NavigableList>
+    )
 }

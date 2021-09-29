@@ -1,5 +1,5 @@
 import classNames from 'classnames'
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 
 import { Keybinding } from '../../../keyboardShortcuts'
 
@@ -25,21 +25,27 @@ const NavigableListItem: React.FC<NavigableListItemProps> = ({
 }) => {
     const Tag = href ? 'a' : 'button'
 
+    const onClickReference = useRef(onClick)
+
     useEffect(() => {
         function handleKeyDown(event: KeyboardEvent): void {
             if (event.key === 'Enter' && active) {
-                onClick?.()
+                onClickReference.current?.()
             }
         }
         document.addEventListener('keydown', handleKeyDown)
         return () => document.removeEventListener('keydown', handleKeyDown)
-    }, [onClick, active])
+    }, [active])
+
+    // TODO hack, find better way to do this.
+    // Prevent infinite calls of onFocus when an item is active.
+    const onFocusReference = useRef(onFocus)
 
     useEffect(() => {
         if (active) {
-            onFocus?.()
+            onFocusReference.current?.()
         }
-    }, [active, onFocus])
+    }, [active])
 
     return (
         <li tabIndex={-1}>
