@@ -2,6 +2,45 @@
     background: none;
 }
 
-// .dialog-content {
-//     box-shadow: ;
-// }
+$command-palette-border-radius: 0.75rem;
+
+.modal-dialog {
+    border-radius: $command-palette-border-radius;
+}
+
+.modal-content {
+    border-radius: $command-palette-border-radius;
+}
+
+.input {
+    height: 3rem;
+    font-size: 1.125rem;
+    border: none;
+    border-bottom: 1px solid var(--border-color-2);
+    border-radius: 0;
+    border-top-left-radius: $command-palette-border-radius;
+    border-top-right-radius: $command-palette-border-radius;
+
+    padding-left: 2.25rem; // Make room for background icon
+
+    &:focus {
+        // Override .form-control focus styles
+        border-color: var(--border-color-2);
+        outline: none;
+        box-shadow: none;
+    }
+}
+
+.input-container {
+    position: relative;
+    display: flex;
+}
+
+.input-icon {
+    align-self: center;
+    height: 1.5rem;
+    width: 1.5rem;
+    position: absolute;
+    left: 0.5rem;
+    color: var(--icon-muted);
+}

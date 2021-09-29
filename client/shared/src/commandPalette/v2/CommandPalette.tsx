@@ -1,7 +1,9 @@
-// import Dialog, { DialogContent, DialogOverlay } from '@reach/dialog'
+import classNames from 'classnames'
 import { Remote } from 'comlink'
 import * as H from 'history'
+import MagnifyIcon from 'mdi-react/MagnifyIcon'
 import React, { useMemo, useCallback, useEffect } from 'react'
+import { Modal } from 'reactstrap'
 import { from, Observable } from 'rxjs'
 import { filter, map, switchMap } from 'rxjs/operators'
 
@@ -23,7 +25,6 @@ import { CommandsModesList } from './components/CommandsModesList'
 import { FuzzyFinderResult } from './components/FuzzyFinderResult'
 import { JumpToLineResult } from './components/JumpToLineResult'
 import { JumpToSymbolResult } from './components/JumpToSymbolResult'
-import { Modal } from './components/Modal'
 import { RecentSearchesResult } from './components/RecentSearchesResult'
 import { ShortcutController } from './components/ShortcutController'
 import {
@@ -163,64 +164,70 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
         <>
             <ShortcutController shortcuts={shortcuts} />
             {/* Can be rendered at the main app shell level */}
-            <Modal.Host />
-            {/* USE STYLES */}
-            <Modal isOpen={isOpen} onDismiss={toggleIsOpen}>
-                <Modal.Content>
-                    <div>
-                        <h1>cmdpal</h1>
-                        <input
-                            autoComplete="off"
-                            spellCheck="false"
-                            aria-autocomplete="list"
-                            className="form-control py-1"
-                            placeholder="Search files by name (append : to jump to a line or @ to go to a symbol or > to search for a command)"
-                            value={value}
-                            onChange={handleChange}
-                            autoFocus={true}
-                            type="text"
-                        />
-                    </div>
-                    {!mode && <CommandsModesList />}
-                    {mode === CommandPaletteMode.Command && (
-                        <CommandResult
-                            actions={actions}
-                            value={searchText}
-                            onRunAction={action => {
-                                onRunAction(action)
-                                handleClose()
-                            }}
-                        />
-                    )}
-                    {mode === CommandPaletteMode.RecentSearches && (
-                        <RecentSearchesResult
-                            value={searchText}
-                            onClick={handleClose}
-                            getAuthenticatedUserID={getAuthenticatedUserID}
-                            platformContext={platformContext}
-                        />
-                    )}
-                    {/* TODO: Only when repo open */}
-                    {mode === CommandPaletteMode.Fuzzy && (
-                        <FuzzyFinderResult value={searchText} onClick={handleClose} workspaceRoot={workspaceRoot} />
-                    )}
-                    {/* TODO: Only when code editor open (possibly only when single open TODO) */}
-                    {mode === CommandPaletteMode.JumpToLine && (
-                        <JumpToLineResult
-                            value={searchText}
-                            onClick={handleClose}
-                            textDocumentData={activeTextDocument}
-                        />
-                    )}
-                    {mode === CommandPaletteMode.JumpToSymbol && (
-                        <JumpToSymbolResult
-                            value={searchText}
-                            onClick={handleClose}
-                            textDocumentData={activeTextDocument}
-                            platformContext={platformContext}
-                        />
-                    )}
-                </Modal.Content>
+
+            <Modal
+                isOpen={isOpen}
+                toggle={() => {
+                    console.log({ isOpen })
+                    toggleIsOpen()
+                }}
+                autoFocus={false}
+                backdropClassName="bg-transparent"
+                keyboard={true}
+                fade={false}
+                className={classNames(styles.modalDialog, 'shadow-lg')}
+                contentClassName={styles.modalContent}
+            >
+                <div className={styles.inputContainer}>
+                    <MagnifyIcon className={styles.inputIcon} />
+                    <input
+                        autoComplete="off"
+                        spellCheck="false"
+                        aria-autocomplete="list"
+                        className={classNames(styles.input, 'form-control py-1')}
+                        // TODO: different placeholder by mode
+                        placeholder="Select a mode (prefix or click)"
+                        value={value}
+                        onChange={handleChange}
+                        autoFocus={true}
+                        type="text"
+                    />
+                </div>
+                {!mode && <CommandsModesList />}
+                {mode === CommandPaletteMode.Command && (
+                    <CommandResult
+                        actions={actions}
+                        value={searchText}
+                        onRunAction={action => {
+                            onRunAction(action)
+                            handleClose()
+                        }}
+                    />
+                )}
+                {mode === CommandPaletteMode.RecentSearches && (
+                    <RecentSearchesResult
+                        value={searchText}
+                        onClick={handleClose}
+                        getAuthenticatedUserID={getAuthenticatedUserID}
+                        platformContext={platformContext}
+                    />
+                )}
+                {/* TODO: Only when repo open */}
+                {mode === CommandPaletteMode.Fuzzy && (
+                    <FuzzyFinderResult value={searchText} onClick={handleClose} workspaceRoot={workspaceRoot} />
+                )}
+                {/* TODO: Only when code editor open (possibly only when single open TODO) */}
+                {mode === CommandPaletteMode.JumpToLine && (
+                    <JumpToLineResult value={searchText} onClick={handleClose} textDocumentData={activeTextDocument} />
+                )}
+                {mode === CommandPaletteMode.JumpToSymbol && (
+                    <JumpToSymbolResult
+                        value={searchText}
+                        onClick={handleClose}
+                        textDocumentData={activeTextDocument}
+                        platformContext={platformContext}
+                    />
+                )}
             </Modal>
         </>
     )

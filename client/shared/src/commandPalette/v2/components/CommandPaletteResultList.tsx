@@ -7,6 +7,8 @@ interface CommandPaletteResultItemProps {
     href?: string
     keybindings?: Keybinding[]
     label: string
+    // TODO icon (for symbol type, action item icon)
+    icon?: JSX.Element
 }
 
 const CommandPaletteResultListItem: React.FC<CommandPaletteResultItemProps> = ({
@@ -36,6 +38,10 @@ const CommandPaletteResultListItem: React.FC<CommandPaletteResultItemProps> = ({
 
 export const CommandPaletteResultList: React.FC & {
     Item: typeof CommandPaletteResultListItem
-} = ({ children }) => <ul>{children}</ul>
+} = ({ children }) => {
+    console.log('LIST')
+    // TODO: keyboard navigation
+    return <ul>{children}</ul>
+}
 
 CommandPaletteResultList.Item = CommandPaletteResultListItem

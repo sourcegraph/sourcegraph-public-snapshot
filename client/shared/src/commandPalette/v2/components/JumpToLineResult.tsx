@@ -18,10 +18,16 @@ export const JumpToLineResult: React.FC<JumpToLineResultProps> = ({ value, onCli
     const line = parseInt(value, 10)
     const isLineNaN = isNaN(line)
 
+    const lines = textDocumentData?.text?.split('\n') || []
+    if (lines[lines.length - 1] === '') {
+        lines.splice(-1, 1)
+    }
+    const numberOfLines = lines.length
+
     // Change line position in hash
     useEffect(() => {
         if (textDocumentData) {
-            if (!isLineNaN) {
+            if (!isLineNaN && line <= numberOfLines) {
                 // TODO: render mode (for markdown)
                 // TODO: character
                 const searchParameters = addLineRangeQueryParameter(
@@ -39,7 +45,7 @@ export const JumpToLineResult: React.FC<JumpToLineResultProps> = ({ value, onCli
                 })
             }
         }
-    }, [line, isLineNaN, textDocumentData, history])
+    }, [line, numberOfLines, isLineNaN, textDocumentData, history])
 
     if (!textDocumentData) {
         return (
@@ -49,10 +55,15 @@ export const JumpToLineResult: React.FC<JumpToLineResultProps> = ({ value, onCli
         )
     }
 
+    console.log({ lines, text: textDocumentData.text })
+
+    // TODO: `Enter a line number between 1 and ${length}`
+
     // TODO: If line is not a number or it is out of range, display helpful message
     // TODO: Close on enter pressed
     return (
         <div>
+            {!value && <h3>Enter a line number between 1 and {lines.length}</h3>}
             <h1>Go to line {line}</h1>
         </div>
     )

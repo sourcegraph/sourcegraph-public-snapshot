@@ -1,4 +1,5 @@
 import * as H from 'history'
+import ConsoleIcon from 'mdi-react/ConsoleIcon'
 import React, { useCallback } from 'react'
 
 import { Form } from '@sourcegraph/branded/src/components/Form'
@@ -81,8 +82,8 @@ export const SearchNavbarItem: React.FunctionComponent<Props> = (props: Props) =
                 isSearchOnboardingTourVisible={false}
                 hideHelpButton={isSearchPage}
             />
-            <button type="button" onClick={toggleCommandPaletteIsOpen}>
-                CMDPAL
+            <button type="button" className="btn btn-link p-1" onClick={() => toggleCommandPaletteIsOpen()}>
+                <ConsoleIcon className="icon-inline-md" />
             </button>
         </Form>
     )
