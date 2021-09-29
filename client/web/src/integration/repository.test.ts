@@ -412,7 +412,7 @@ describe('Repository', () => {
             const breadcrumbTexts = await driver.page.evaluate(() =>
                 [...document.querySelectorAll('.test-breadcrumb')].map(breadcrumb => breadcrumb.textContent?.trim())
             )
-            assert.deepStrictEqual(breadcrumbTexts, [shortRepositoryName, '@master', clickedFileName])
+            assert.deepStrictEqual(breadcrumbTexts, [shortRepositoryName, '@master', `/${clickedFileName}`])
 
             // Return to repo page
             await driver.page.waitForSelector('.test-repo-header-repo-link')
@@ -432,7 +432,7 @@ describe('Repository', () => {
             const repositoryName = `github.com/${shortRepositoryName}`
             const repositorySourcegraphUrl = `/${repositoryName}`
             const fileName = '% token.4288249258.sql'
-            const directoryName = "/Geoffrey's random queries.32r242442bf"
+            const directoryName = "Geoffrey's random queries.32r242442bf"
             const filePath = path.posix.join(directoryName, fileName)
 
             testContext.overrideGraphQL({
@@ -484,7 +484,7 @@ describe('Repository', () => {
             const breadcrumbTexts = await driver.page.evaluate(() =>
                 [...document.querySelectorAll('.test-breadcrumb')].map(breadcrumb => breadcrumb.textContent?.trim())
             )
-            assert.deepStrictEqual(breadcrumbTexts, [shortRepositoryName, '@master', filePath])
+            assert.deepStrictEqual(breadcrumbTexts, [shortRepositoryName, '@master', `/${filePath}`])
 
             await driver.page.waitForSelector('#monaco-query-input .view-lines')
             // TODO: find a more reliable way to get the current search query,
@@ -572,7 +572,7 @@ describe('Repository', () => {
             const breadcrumbTexts = await driver.page.evaluate(() =>
                 [...document.querySelectorAll('.test-breadcrumb')].map(breadcrumb => breadcrumb.textContent?.trim())
             )
-            assert.deepStrictEqual(breadcrumbTexts, [shortRepositoryName, '@master', 'readme.md'])
+            assert.deepStrictEqual(breadcrumbTexts, [shortRepositoryName, '@master', '/readme.md'])
         })
     })
 
