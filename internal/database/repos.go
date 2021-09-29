@@ -778,6 +778,9 @@ func (s *RepoStore) list(ctx context.Context, tr *trace.Trace, opt ReposListOpti
 	tr.LogFields(trace.SQL(q))
 
 	start := time.Now()
+	if len(opt.Select) == 1 && opt.Select[0] == "COUNT(*)" {
+		defer debugHeavyQuery(start, q)
+	}
 
 	rows, err := s.Query(ctx, q)
 	if err != nil {
@@ -794,11 +797,33 @@ func (s *RepoStore) list(ctx context.Context, tr *trace.Trace, opt ReposListOpti
 		}
 	}
 
-	if time.Since(start) > time.Second {
-		log15.Warn("RepoStore.list: heavy query", "query", q.Query(sqlf.PostgresBindVar), "args", q.Args())
+	return rows.Err()
+}
+
+var lastDebugHeavyQuery time.Time
+
+func debugHeavyQuery(start time.Time, q *sqlf.Query) {
+	if time.Since(start) < time.Second || time.Since(lastDebugHeavyQuery) < time.Minute {
+		return
+	}
+	lastDebugHeavyQuery = start
+
+	queryTextLines := strings.Split(q.Query(sqlf.PostgresBindVar), "\n")
+	for i, line := range queryTextLines {
+		if strings.Contains(line, "--") {
+			parts := strings.Split(line, "--")
+			line = parts[0]
+		}
+
+		queryTextLines[i] = strings.TrimSpace(line)
 	}
 
-	return rows.Err()
+	var argList []string
+	for _, arg := range q.Args() {
+		argList = append(argList, fmt.Sprintf("%v", arg))
+	}
+
+	log15.Warn("RepoStore.list: heavy query", "query", strings.Join(queryTextLines, " "), "args", argList)
 }
 
 func (s *RepoStore) listSQL(ctx context.Context, opt ReposListOptions) (*sqlf.Query, error) {
