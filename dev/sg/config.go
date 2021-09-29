@@ -59,6 +59,10 @@ type Commandset struct {
 	Commands []string          `yaml:"commands"`
 	Checks   []string          `yaml:"checks"`
 	Env      map[string]string `yaml:"env"`
+
+	// If this is set to true, then the commandset doesn't need the dev-private
+	// repository.
+	NoDevPrivate bool `yaml:"noDevPrivate"`
 }
 
 // UnmarshalYAML implements the Unmarshaler interface.
