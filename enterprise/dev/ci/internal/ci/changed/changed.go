@@ -32,7 +32,7 @@ func (c Files) AffectsSg() bool {
 // AffectsGo returns whether the changes affects go files.
 func (c Files) AffectsGo() bool {
 	for _, p := range c {
-		if strings.HasSuffix(p, ".go") || p == "go.sum" || p == "go.mod" {
+		if strings.HasSuffix(p, ".go") || p == "go.sum" || p == "go.mod" || strings.HasPrefix(p, "migrations/") {
 			return true
 		}
 	}
