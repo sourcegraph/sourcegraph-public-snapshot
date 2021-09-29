@@ -54,11 +54,8 @@ func serveVerifyEmail(db dbutil.DB) func(w http.ResponseWriter, r *http.Request)
 			return
 		}
 		// Set the verified email as primary if user has no primary email
-		primary, _, err := database.UserEmails(db).GetPrimaryEmail(ctx, usr.ID)
+		_, _, err = database.UserEmails(db).GetPrimaryEmail(ctx, usr.ID)
 		if err != nil {
-			log15.Error("Failed to get user email", "error", err)
-		}
-		if len(primary) == 0 {
 			if err := database.UserEmails(db).SetPrimaryEmail(ctx, usr.ID, email); err != nil {
 				httpLogAndError(w, "Could not set primary email.", http.StatusInternalServerError, "userID", usr.ID, "email", email, "error", err)
 				return
