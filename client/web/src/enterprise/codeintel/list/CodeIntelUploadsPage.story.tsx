@@ -123,18 +123,19 @@ const Template: Story<CodeIntelUploadsPageProps> = args => {
 
 const defaults: Partial<CodeIntelUploadsPageProps> = {
     now,
-    fetchLsifUploads: () => of(makeResponse([])),
+    queryLsifUploadsByRepository: () => of(makeResponse([])),
 }
 
 export const EmptyGlobalPage = Template.bind({})
 EmptyGlobalPage.args = {
     ...defaults,
+    queryLsifUploadsList: () => of(makeResponse([])),
 }
 
 export const GlobalPage = Template.bind({})
 GlobalPage.args = {
     ...defaults,
-    fetchLsifUploads: () => of(makeResponse(testUploads)),
+    queryLsifUploadsList: () => of(makeResponse(testUploads)),
 }
 
 export const EmptyRepositoryPage = Template.bind({})
@@ -147,5 +148,5 @@ export const RepositoryPage = Template.bind({})
 RepositoryPage.args = {
     ...defaults,
     repo: { id: 'sourcegraph' },
-    fetchLsifUploads: () => of(makeResponse(testUploads)),
+    queryLsifUploadsByRepository: () => of(makeResponse(testUploads)),
 }

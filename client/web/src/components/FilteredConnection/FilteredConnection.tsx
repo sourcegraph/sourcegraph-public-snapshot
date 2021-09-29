@@ -26,7 +26,7 @@ import { QUERY_KEY } from './constants'
 import { FilteredConnectionFilter, FilteredConnectionFilterValue } from './FilterControl'
 import { ConnectionError, ConnectionLoading, ConnectionForm, ConnectionContainer } from './ui'
 import type { ConnectionFormProps } from './ui/ConnectionForm'
-import { getFilterFromURL, getUrlQuery, parseQueryInt } from './utils'
+import { getFilterFromURL, getUrlQuery, parseQueryInt, hasID } from './utils'
 
 /**
  * Fields that belong in FilteredConnectionProps and that don't depend on the type parameters. These are the fields
@@ -297,21 +297,30 @@ export class FilteredConnection<
                     }),
                     scan<PartialStateUpdate & { shouldRefresh: boolean }, PartialStateUpdate & { previousPage: N[] }>(
                         ({ previousPage }, { shouldRefresh, connectionOrError, ...rest }) => {
+                            // Set temp variable in case we update its nodes. We cannot directly update connectionOrError.nodes as they are read-only props.
+                            let temporaryConnection: C | ErrorLike | undefined = connectionOrError
                             let nodes: N[] = previousPage
                             let after: string | undefined
 
                             if (this.props.cursorPaging && connectionOrError && !isErrorLike(connectionOrError)) {
-                                if (!shouldRefresh) {
-                                    connectionOrError.nodes = previousPage.concat(connectionOrError.nodes)
-                                }
+                                nodes = !shouldRefresh
+                                    ? [...previousPage, ...connectionOrError.nodes]
+                                    : connectionOrError.nodes
+                                // Deduplicate any elements that occur between pages. This can happen as results are added during pagination.
+                                nodes = [
+                                    ...new Map(
+                                        nodes.map((node, index) => [hasID(node) ? node.id : index, node])
+                                    ).values(),
+                                ]
 
-                                const pageInfo = connectionOrError.pageInfo
-                                nodes = connectionOrError.nodes
+                                temporaryConnection = { ...connectionOrError, nodes }
+
+                                const pageInfo = temporaryConnection.pageInfo
                                 after = pageInfo?.endCursor || undefined
                             }
 
                             return {
-                                connectionOrError,
+                                connectionOrError: temporaryConnection,
                                 previousPage: nodes,
                                 after,
                                 ...rest,
