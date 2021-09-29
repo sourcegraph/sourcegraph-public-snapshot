@@ -810,9 +810,9 @@ RETURNING
 	deleted_at,
 	last_sync_at,
 	next_sync_at,
-  	namespace_user_id,
-  	unrestricted,
-  	cloud_default,
+	namespace_user_id,
+	unrestricted,
+	cloud_default,
 	encryption_key_id,
 	namespace_org_id
 `
