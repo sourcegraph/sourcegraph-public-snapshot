@@ -158,11 +158,15 @@ func publishAmplitudeEvent(args Event) error {
 		return err
 	}
 
+	var deviceID string
+	if args.DeviceID != nil {
+		deviceID = *args.DeviceID
+	}
 	amplitudeEvent, err := json.Marshal(amplitude.EventPayload{
 		APIKey: amplitudeAPIToken,
 		Events: []amplitude.AmplitudeEvent{{
 			UserID:          userID,
-			DeviceID:        *args.DeviceID,
+			DeviceID:        deviceID,
 			InsertID:        args.InsertID,
 			EventID:         args.EventID,
 			EventType:       args.EventName,
