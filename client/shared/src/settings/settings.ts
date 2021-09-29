@@ -25,6 +25,7 @@ export interface Settings {
         batchChangesExecution?: boolean
         showSearchContext?: boolean
         showSearchContextManagement?: boolean
+        betterRepoPages?: boolean
     }
     [key: string]: any
 
