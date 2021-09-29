@@ -701,7 +701,7 @@ func (e *ExternalServiceStore) Upsert(ctx context.Context, svcs ...*types.Extern
 
 	i := 0
 	for rows.Next() {
-		var keyID string
+		var encryptionKeyID string
 		err = rows.Scan(
 			&svcs[i].ID,
 			&svcs[i].Kind,
@@ -715,14 +715,14 @@ func (e *ExternalServiceStore) Upsert(ctx context.Context, svcs ...*types.Extern
 			&dbutil.NullInt32{N: &svcs[i].NamespaceUserID},
 			&svcs[i].Unrestricted,
 			&svcs[i].CloudDefault,
-			&keyID,
+			&encryptionKeyID,
 			&dbutil.NullInt32{N: &svcs[i].NamespaceOrgID},
 		)
 		if err != nil {
 			return err
 		}
 
-		svcs[i].Config, err = tx.maybeDecryptConfig(ctx, svcs[i].Config, keyID)
+		svcs[i].Config, err = tx.maybeDecryptConfig(ctx, svcs[i].Config, encryptionKeyID)
 		if err != nil {
 			return err
 		}
@@ -800,7 +800,21 @@ SET
   namespace_user_id  = excluded.namespace_user_id,
   unrestricted       = excluded.unrestricted,
   cloud_default      = excluded.cloud_default
-RETURNING *
+RETURNING
+	id,
+	kind,
+	display_name,
+	config,
+	created_at,
+	updated_at,
+	deleted_at,
+	last_sync_at,
+	next_sync_at,
+	namespace_user_id,
+	unrestricted,
+	cloud_default,
+	encryption_key_id,
+	namespace_org_id
 `
 
 // ExternalServiceUpdate contains optional fields to update.
