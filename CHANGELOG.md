@@ -16,6 +16,7 @@ All notable changes to Sourcegraph are documented in this file.
 ### Added
 
 - More rules have been added to the search query validation so that user get faster feedback on issues with their query. [#24747](https://github.com/sourcegraph/sourcegraph/pull/24747)
+- Bloom filters have been added to the zoekt indexing backend to accelerate queries with code fragments matching `\w{4,}`. [zoekt#126](https://github.com/sourcegraph/zoekt/pull/126)
 
 ### Changed
 
