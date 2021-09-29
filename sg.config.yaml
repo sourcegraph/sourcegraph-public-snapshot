@@ -670,9 +670,9 @@ checks:
     failMessage: 'Failed to connect to Postgres database. Make sure environment variables are setup correctly so that psql can connect.'
 
 commandsets:
-  # TODO: Should we be able to define "env" vars _per set_?
-
   oss:
+    # open-source version doesn't require the dev-private repository
+    requiresDevPrivate: false
     checks:
       - docker
       - redis
@@ -696,6 +696,7 @@ commandsets:
       - zoekt-webserver-1
 
   enterprise: &enterprise_set
+    requiresDevPrivate: true
     checks:
       - docker
       - redis
@@ -726,6 +727,7 @@ commandsets:
       SOURCEGRAPHDOTCOM_MODE: true
 
   enterprise-codeintel:
+    requiresDevPrivate: true
     checks:
       - docker
       - redis
@@ -752,6 +754,7 @@ commandsets:
       - codeintel-executor
 
   enterprise-codeinsights:
+    requiresDevPrivate: true
     checks:
       - docker
       - redis
@@ -779,6 +782,7 @@ commandsets:
       DISABLE_CODE_INSIGHTS: false
 
   api-only:
+    requiresDevPrivate: true
     checks:
       - docker
       - redis
@@ -797,6 +801,7 @@ commandsets:
       - zoekt-webserver-1
 
   batches:
+    requiresDevPrivate: true
     checks:
       - docker
       - redis
@@ -821,6 +826,7 @@ commandsets:
       - batches-executor
 
   core-app:
+    requiresDevPrivate: true
     checks:
       - docker
       - redis
