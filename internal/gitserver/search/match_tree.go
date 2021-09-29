@@ -220,7 +220,7 @@ type Operator struct {
 }
 
 func (o *Operator) Match(commit *LazyCommit) (bool, *MatchedCommit, error) {
-	var resultMatches *MatchedCommit
+	resultMatches := &MatchedCommit{}
 	hasMatch := false
 	for _, operand := range o.Operands {
 		matched, matches, err := operand.Match(commit)
