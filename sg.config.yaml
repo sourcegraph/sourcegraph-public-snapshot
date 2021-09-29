@@ -650,6 +650,9 @@ commands:
       - monitoring
     continueWatchOnExit: true
 
+  env:
+    cmd: env
+
 checks:
   docker:
     cmd: docker version
