@@ -361,7 +361,7 @@ export const TreePage: React.FunctionComponent<Props> = ({
     )
 
     const enableBetterRepoPage =
-        !isErrorLike(settingsCascade.final) && settingsCascade.final?.experimentalFeatures?.betterRepoPages !== false
+        !isErrorLike(settingsCascade.final) && settingsCascade.final?.experimentalFeatures?.betterRepoPages === true
 
     const blobInfoOrError = useCallback(
         (filePath: string): Observable<BlobFileFields | null> =>

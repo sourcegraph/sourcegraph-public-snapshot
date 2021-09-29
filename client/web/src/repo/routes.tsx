@@ -144,7 +144,7 @@ export const repoRevisionContainerRoutes: readonly RepoRevisionContainerRoute[] 
 
             const enableBetterRepoPage =
                 !isErrorLike(context.settingsCascade.final) &&
-                context.settingsCascade.final?.experimentalFeatures?.betterRepoPages !== false
+                context.settingsCascade.final?.experimentalFeatures?.betterRepoPages === true
 
             // Redirect tree and blob routes pointing to the root to the repo page
             // If betterRepoPages is enabled, tree at repo root is a distinct page
