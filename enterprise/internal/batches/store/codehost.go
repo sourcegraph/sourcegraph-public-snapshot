@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/keegancsmith/sqlf"
+	"github.com/lib/pq"
 
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -66,11 +67,7 @@ func listCodeHostsQuery(opts ListCodeHostsOpts) *sqlf.Query {
 	preds = append(preds, sqlf.Sprintf("repo.external_service_type IN (%s)", sqlf.Join(supportedTypes, ", ")))
 
 	if len(opts.RepoIDs) > 0 {
-		repoIDs := make([]*sqlf.Query, len(opts.RepoIDs))
-		for i, id := range opts.RepoIDs {
-			repoIDs[i] = sqlf.Sprintf("%s", id)
-		}
-		preds = append(preds, sqlf.Sprintf("repo.id IN (%s)", sqlf.Join(repoIDs, ",")))
+		preds = append(preds, sqlf.Sprintf("repo.id = ANY (%s)", pq.Array(opts.RepoIDs)))
 	}
 
 	return sqlf.Sprintf(listCodeHostsQueryFmtstr, sqlf.Sprintf("%s", "ssh://%"), sqlf.Join(preds, "AND"))

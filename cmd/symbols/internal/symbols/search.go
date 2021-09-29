@@ -2,12 +2,16 @@ package symbols
 
 import (
 	"context"
+	"database/sql"
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"regexp"
 	"regexp/syntax"
 	"strings"
 	"time"
+
+	"github.com/mattn/go-sqlite3"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 
@@ -23,6 +27,15 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 )
+
+func init() {
+	sql.Register("sqlite3_with_regexp",
+		&sqlite3.SQLiteDriver{
+			ConnectHook: func(conn *sqlite3.SQLiteConn) error {
+				return conn.RegisterFunc("REGEXP", regexp.MatchString, true)
+			},
+		})
+}
 
 // maxFileSize is the limit on file size in bytes. Only files smaller than this are processed.
 const maxFileSize = 1 << 19 // 512KB
@@ -82,7 +95,7 @@ func (s *Service) search(ctx context.Context, args protocol.SearchArgs) (*result
 	if err != nil {
 		return nil, err
 	}
-	db, err := sqlx.Open("sqlite3_with_pcre", dbFile)
+	db, err := sqlx.Open("sqlite3_with_regexp", dbFile)
 	if err != nil {
 		return nil, err
 	}
@@ -274,8 +287,8 @@ func symbolInDBToSymbol(symbolInDB symbolInDB) result.Symbol {
 
 // writeAllSymbolsToNewDB fetches the repo@commit from gitserver, parses all the
 // symbols, and writes them to the blank database file `dbFile`.
-func (s *Service) writeAllSymbolsToNewDB(ctx context.Context, dbFile string, repoName api.RepoName, commitID api.CommitID) error {
-	db, err := sqlx.Open("sqlite3_with_pcre", dbFile)
+func (s *Service) writeAllSymbolsToNewDB(ctx context.Context, dbFile string, repoName api.RepoName, commitID api.CommitID) (err error) {
+	db, err := sqlx.Open("sqlite3_with_regexp", dbFile)
 	if err != nil {
 		return err
 	}
@@ -286,6 +299,13 @@ func (s *Service) writeAllSymbolsToNewDB(ctx context.Context, dbFile string, rep
 	if err != nil {
 		return err
 	}
+	defer func() {
+		if err != nil {
+			_ = tx.Rollback()
+			return
+		}
+		err = tx.Commit()
+	}()
 
 	// The column names are the lowercase version of fields in `symbolInDB`
 	// because sqlx lowercases struct fields by default. See
@@ -339,17 +359,26 @@ func (s *Service) writeAllSymbolsToNewDB(ctx context.Context, dbFile string, rep
 		return err
 	}
 
-	err = s.parseUncached(ctx, repoName, commitID, func(symbol result.Symbol) error {
+	return s.parseUncached(ctx, repoName, commitID, func(symbol result.Symbol) error {
 		symbolInDBValue := symbolToSymbolInDB(symbol)
 		_, err := insertStatement.Exec(&symbolInDBValue)
 		return err
 	})
+}
+
+// SanityCheck makes sure that go-sqlite3 was compiled with cgo by
+// seeing if we can actually create a table.
+func SanityCheck() error {
+	db, err := sqlx.Open("sqlite3_with_regexp", ":memory:")
 	if err != nil {
 		return err
 	}
-
-	err = tx.Commit()
+	defer db.Close()
+	_, err = db.Exec("CREATE TABLE test (col TEXT);")
 	if err != nil {
+		// If go-sqlite3 was not compiled with cgo, the error will be:
+		//
+		// > Binary was compiled with 'CGO_ENABLED=0', go-sqlite3 requires cgo to work. This is a stub
 		return err
 	}
 

@@ -23,7 +23,7 @@ let warnedNoCoverage = false
  * Saves coverage recorded by the instrumented code in `.nyc_output` after each test.
  */
 export function afterEachRecordCoverage(getDriver: () => Driver): void {
-    afterEach('Record coverage', () => recordCoverage(getDriver().browser))
+    afterEach(() => recordCoverage(getDriver().browser))
 }
 
 /**

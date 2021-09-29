@@ -22,6 +22,7 @@ export const RetentionSettings: FunctionComponent<RetentionSettingsProps> = ({ p
                 title="Enabled"
                 value={policy.retentionEnabled}
                 onToggle={value => setPolicy({ ...policy, retentionEnabled: value })}
+                disabled={policy.protected}
             />
             <label htmlFor="retention-enabled" className="ml-2">
                 Enabled / disabled

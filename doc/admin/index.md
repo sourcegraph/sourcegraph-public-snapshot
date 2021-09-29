@@ -50,5 +50,5 @@ For deployment configuration, please refer to the relevant [installation guide](
 - [Pings](pings.md)
 - [Usage statistics](usage_statistics.md)
 - [User feedback surveys](user_surveys.md)
-- [Beta and prototype features](beta_and_prototype_features.md)
+- [Beta and experimental features](beta_and_experimental_features.md)
 - [Pricing and subscriptions](subscriptions/index.md)

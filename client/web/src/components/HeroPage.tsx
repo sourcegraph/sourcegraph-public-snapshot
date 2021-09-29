@@ -38,7 +38,11 @@ export const HeroPage: React.FunctionComponent<HeroPageProps> = props => (
             </div>
         )}
         {props.title && <div className={styles.title}>{props.title}</div>}
-        {props.subtitle && <div className={styles.subtitle}>{props.subtitle}</div>}
+        {props.subtitle && (
+            <div data-testid="hero-page-subtitle" className={styles.subtitle}>
+                {props.subtitle}
+            </div>
+        )}
         {props.detail && <div>{props.detail}</div>}
         {props.body}
         {props.cta && <div className={styles.cta}>{props.cta}</div>}

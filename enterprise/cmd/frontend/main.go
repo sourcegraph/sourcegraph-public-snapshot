@@ -23,6 +23,7 @@ import (
 	executor "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/executorqueue"
 	licensing "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/licensing/init"
 	_ "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/registry"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/searchcontexts"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
@@ -37,14 +38,15 @@ func init() {
 }
 
 var initFunctions = map[string]func(ctx context.Context, db dbutil.DB, outOfBandMigrationRunner *oobmigration.Runner, enterpriseServices *enterprise.Services) error{
-	"authz":        authz.Init,
-	"licensing":    licensing.Init,
-	"executor":     executor.Init,
-	"codeintel":    codeintel.Init,
-	"insights":     insights.Init,
-	"batches":      batches.Init,
-	"codemonitors": codemonitors.Init,
-	"dotcom":       dotcom.Init,
+	"authz":          authz.Init,
+	"licensing":      licensing.Init,
+	"executor":       executor.Init,
+	"codeintel":      codeintel.Init,
+	"insights":       insights.Init,
+	"batches":        batches.Init,
+	"codemonitors":   codemonitors.Init,
+	"dotcom":         dotcom.Init,
+	"searchcontexts": searchcontexts.Init,
 }
 
 func enterpriseSetupHook(db dbutil.DB, outOfBandMigrationRunner *oobmigration.Runner) enterprise.Services {

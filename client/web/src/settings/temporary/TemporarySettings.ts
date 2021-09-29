@@ -7,6 +7,9 @@ import { SectionID } from '../../search/results/sidebar/SearchSidebar'
  */
 export interface TemporarySettingsSchema {
     'search.collapsedSidebarSections': { [key in SectionID]?: boolean }
+    'search.sidebar.revisions.tab': number
+    'search.onboarding.tourCancelled': boolean
+    'insights.freeBetaAccepted': boolean
 }
 
 /**

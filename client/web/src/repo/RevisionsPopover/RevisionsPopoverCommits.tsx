@@ -164,6 +164,9 @@ export const RevisionsPopoverCommits: React.FunctionComponent<RevisionsPopoverCo
 
             return node.commit.ancestors
         },
+        options: {
+            fetchPolicy: 'cache-first',
+        },
     })
 
     const summary = response.connection && (
@@ -174,6 +177,7 @@ export const RevisionsPopoverCommits: React.FunctionComponent<RevisionsPopoverCo
             pluralNoun={pluralNoun}
             hasNextPage={response.hasNextPage}
             connectionQuery={query}
+            compact={true}
         />
     )
 

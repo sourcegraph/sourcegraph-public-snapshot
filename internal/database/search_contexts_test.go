@@ -782,3 +782,77 @@ func TestSearchContexts_OrderBy(t *testing.T) {
 		})
 	}
 }
+
+func TestSearchContexts_GetAllRevisionsForRepos(t *testing.T) {
+	db := dbtest.NewDB(t, "")
+	t.Parallel()
+	// Required for this DB query.
+	internalCtx := actor.WithInternalActor(context.Background())
+	sc := SearchContexts(db)
+	r := Repos(db)
+
+	repos := []*types.Repo{
+		{Name: "testA", URI: "https://example.com/a"},
+		{Name: "testB", URI: "https://example.com/b"},
+		{Name: "testC", URI: "https://example.com/c"},
+	}
+	err := r.Create(internalCtx, repos...)
+	if err != nil {
+		t.Fatalf("Expected no error, got %s", err)
+	}
+
+	testRevision := "asdf"
+	searchContexts := []*types.SearchContext{
+		{Name: "public-instance-level", Public: true},
+		{Name: "private-instance-level", Public: false},
+		{Name: "deleted", Public: true},
+	}
+	for idx, searchContext := range searchContexts {
+		searchContexts[idx], err = sc.CreateSearchContextWithRepositoryRevisions(
+			internalCtx,
+			searchContext,
+			[]*types.SearchContextRepositoryRevisions{{Repo: types.RepoName{ID: repos[idx].ID, Name: repos[idx].Name}, Revisions: []string{testRevision}}},
+		)
+		if err != nil {
+			t.Fatalf("Expected no error, got %s", err)
+		}
+	}
+
+	if err := sc.DeleteSearchContext(internalCtx, searchContexts[2].ID); err != nil {
+		t.Fatalf("Failed to delete search context %s", err)
+	}
+
+	listSearchContextsTests := []struct {
+		name    string
+		repoIDs []int32
+		want    map[int32][]string
+	}{
+		{
+			name:    "all contexts, deleted ones excluded",
+			repoIDs: []int32{int32(repos[0].ID), int32(repos[1].ID), int32(repos[2].ID)},
+			want: map[int32][]string{
+				int32(repos[0].ID): {testRevision},
+				int32(repos[1].ID): {testRevision},
+			},
+		},
+		{
+			name:    "subset of repos",
+			repoIDs: []int32{int32(repos[0].ID)},
+			want: map[int32][]string{
+				int32(repos[0].ID): {testRevision},
+			},
+		},
+	}
+
+	for _, tt := range listSearchContextsTests {
+		t.Run(tt.name, func(t *testing.T) {
+			gotSearchContexts, err := sc.GetAllRevisionsForRepos(internalCtx, tt.repoIDs)
+			if err != nil {
+				t.Fatalf("Expected no error, got %s", err)
+			}
+			if !reflect.DeepEqual(tt.want, gotSearchContexts) {
+				t.Fatalf("wanted %v search contexts, got %v", tt.want, gotSearchContexts)
+			}
+		})
+	}
+}

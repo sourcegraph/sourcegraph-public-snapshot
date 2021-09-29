@@ -38,11 +38,13 @@ func TestIndexedSearch(t *testing.T) {
 	reposHEAD := makeRepositoryRevisions("foo/bar", "foo/foobar")
 	zoektRepos := []*zoekt.RepoListEntry{{
 		Repository: zoekt.Repository{
+			ID:       uint32(reposHEAD[0].Repo.ID),
 			Name:     "foo/bar",
 			Branches: []zoekt.RepositoryBranch{{Name: "HEAD", Version: "barHEADSHA"}, {Name: "dev", Version: "bardevSHA"}, {Name: "main", Version: "barmainSHA"}},
 		},
 	}, {
 		Repository: zoekt.Repository{
+			ID:       uint32(reposHEAD[1].Repo.ID),
 			Name:     "foo/foobar",
 			Branches: []zoekt.RepositoryBranch{{Name: "HEAD", Version: "foobarHEADSHA"}},
 		},
@@ -259,16 +261,21 @@ func TestIndexedSearch(t *testing.T) {
 				PatternInfo:     tt.args.patternInfo,
 				Repos:           tt.args.repos,
 				UseFullDeadline: tt.args.useFullDeadline,
-				Zoekt: &searchbackend.Zoekt{
-					Client: &searchbackend.FakeSearcher{
-						Result: &zoekt.SearchResult{Files: tt.args.results},
-						Repos:  zoektRepos,
-					},
-					DisableCache: true,
+				Zoekt: &searchbackend.FakeSearcher{
+					Result: &zoekt.SearchResult{Files: tt.args.results},
+					Repos:  zoektRepos,
 				},
 			}
 
-			indexed, err := NewIndexedSubsetSearchRequest(context.Background(), args, search.TextRequest, MissingRepoRevStatus(streaming.StreamFunc(func(streaming.SearchEvent) {})))
+			zoektArgs := &search.ZoektParameters{
+				Query:          q,
+				Typ:            search.TextRequest,
+				FileMatchLimit: tt.args.patternInfo.FileMatchLimit,
+				Select:         tt.args.patternInfo.Select,
+				Zoekt:          args.Zoekt,
+			}
+
+			indexed, err := newIndexedSubsetSearchRequest(context.Background(), args, zoektArgs, MissingRepoRevStatus(streaming.StreamFunc(func(streaming.SearchEvent) {})))
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -340,21 +347,22 @@ func TestZoektIndexedRepos(t *testing.T) {
 		"foo/multi-rev@a:b",
 	)
 
-	zoektRepos := map[string]*zoekt.Repository{}
-	for _, r := range []*zoekt.Repository{{
-		Name:     "foo/indexed-one",
-		Branches: []zoekt.RepositoryBranch{{Name: "HEAD", Version: "deadbeef"}},
-	}, {
-		Name:     "foo/indexed-two",
-		Branches: []zoekt.RepositoryBranch{{Name: "HEAD", Version: "deadbeef"}},
-	}, {
-		Name: "foo/indexed-three",
-		Branches: []zoekt.RepositoryBranch{
+	zoektRepos := map[uint32]*zoekt.MinimalRepoListEntry{}
+	for i, branches := range [][]zoekt.RepositoryBranch{
+		{
+			{Name: "HEAD", Version: "deadbeef"},
+		},
+		{
+			{Name: "HEAD", Version: "deadbeef"},
+		},
+		{
 			{Name: "HEAD", Version: "deadbeef"},
 			{Name: "foobar", Version: "deadcow"},
 		},
-	}} {
-		zoektRepos[r.Name] = r
+	} {
+		r := repos[i]
+		branches := branches
+		zoektRepos[uint32(r.Repo.ID)] = &zoekt.MinimalRepoListEntry{Branches: branches}
 	}
 
 	makeIndexed := func(repos []*search.RepositoryRevisions) []*search.RepositoryRevisions {
@@ -465,15 +473,14 @@ func TestZoektResultCountFactor(t *testing.T) {
 func TestZoektIndexedRepos_single(t *testing.T) {
 	repoRev := func(revSpec string) *search.RepositoryRevisions {
 		return &search.RepositoryRevisions{
-			Repo: types.RepoName{ID: api.RepoID(0), Name: "test/repo"},
+			Repo: types.RepoName{ID: api.RepoID(1), Name: "test/repo"},
 			Revs: []search.RevisionSpecifier{
 				{RevSpec: revSpec},
 			},
 		}
 	}
-	zoektRepos := map[string]*zoekt.Repository{
-		"test/repo": {
-			Name: "test/repo",
+	zoektRepos := map[uint32]*zoekt.MinimalRepoListEntry{
+		1: {
 			Branches: []zoekt.RepositoryBranch{
 				{
 					Name:    "HEAD",

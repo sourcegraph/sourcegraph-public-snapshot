@@ -1,4 +1,3 @@
-import { ApolloClient, NormalizedCacheObject } from '@apollo/client'
 import { Endpoint } from 'comlink'
 import { isObject } from 'lodash'
 import { NextObserver, Observable, Subscribable, Subscription } from 'rxjs'
@@ -9,7 +8,7 @@ import { DiffPart } from '@sourcegraph/codeintellify'
 import { SettingsEdit } from '../api/client/services/settings'
 import { ExecutableExtension } from '../api/extension/activation'
 import { Scalars } from '../graphql-operations'
-import { GraphQLResult } from '../graphql/graphql'
+import { GraphQLClient, GraphQLResult } from '../graphql/graphql'
 import { Settings, SettingsCascadeOrError } from '../settings/settings'
 import { TelemetryService } from '../telemetry/telemetryService'
 import { ErrorLike } from '../util/errors'
@@ -95,8 +94,9 @@ export interface PlatformContext {
 
     /**
      * Returns promise that resolves into Apollo Client instance after cache restoration.
+     * Only `watchQuery` is available till https://github.com/sourcegraph/sourcegraph/issues/24953 is implemented.
      */
-    getGraphQLClient: () => Promise<ApolloClient<NormalizedCacheObject>>
+    getGraphQLClient: () => Promise<Pick<GraphQLClient, 'watchQuery'>>
 
     /**
      * Sends a request to the Sourcegraph GraphQL API and returns the response.

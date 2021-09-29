@@ -22,6 +22,9 @@ export interface Settings {
     experimentalFeatures?: {
         enableFastResultLoading?: boolean
         acceptSearchSuggestionOnEnter?: boolean
+        batchChangesExecution?: boolean
+        showSearchContext?: boolean
+        showSearchContextManagement?: boolean
     }
     [key: string]: any
 

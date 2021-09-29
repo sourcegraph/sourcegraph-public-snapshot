@@ -6,6 +6,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/executorqueue/handler"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/background"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	apiclient "github.com/sourcegraph/sourcegraph/enterprise/internal/executor"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
@@ -16,10 +17,11 @@ import (
 
 func QueueOptions(db dbutil.DB, config *Config, observationContext *observation.Context) handler.QueueOptions {
 	recordTransformer := func(ctx context.Context, record workerutil.Record) (apiclient.Job, error) {
-		return transformRecord(ctx, db, record.(*btypes.BatchSpecExecution), config)
+		batchesStore := store.New(db, observationContext, nil)
+		return transformBatchSpecWorkspaceExecutionJobRecord(ctx, batchesStore, record.(*btypes.BatchSpecWorkspaceExecutionJob), config)
 	}
 
-	store := background.NewExecutorStore(basestore.NewHandleWithDB(db, sql.TxOptions{}), observationContext)
+	store := background.NewBatchSpecWorkspaceExecutionWorkerStore(basestore.NewHandleWithDB(db, sql.TxOptions{}), observationContext)
 	return handler.QueueOptions{
 		Store:                  store,
 		RecordTransformer:      recordTransformer,

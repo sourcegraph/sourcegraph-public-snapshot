@@ -48,3 +48,8 @@ declare module '*.scss' {
     const cssModule: string
     export default cssModule
 }
+
+declare module '*.svg' {
+    const SVG: string
+    export default SVG
+}

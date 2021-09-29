@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"context"
 	"flag"
 	"fmt"
@@ -189,8 +190,9 @@ See the "checks:" in the configuration file.`,
 	funkyLogoFlagSet = flag.NewFlagSet("sg logo", flag.ExitOnError)
 	funkLogoCommand  = &ffcli.Command{
 		Name:       "logo",
-		ShortUsage: "sg logo",
+		ShortUsage: "sg logo [classic]",
 		ShortHelp:  "Print the sg logo",
+		LongHelp:   "Prints the sg logo in different colors. When the 'classic' argument is passed it prints the logo that's used in install.sh",
 		FlagSet:    funkyLogoFlagSet,
 		Exec:       logoExec,
 	}
@@ -258,9 +260,15 @@ func checkSgVersion() {
 		return
 	}
 
-	out, err := run.GitCmd("rev-list", fmt.Sprintf("%s..HEAD", BuildCommit), "./dev/sg")
+	rev := BuildCommit
+	if strings.HasPrefix(BuildCommit, "dev-") {
+		rev = BuildCommit[len("dev-"):]
+	}
+
+	out, err := run.GitCmd("rev-list", fmt.Sprintf("%s..HEAD", rev), "./dev/sg")
 	if err != nil {
-		fmt.Printf("error getting new commits in ./dev/sg: %s\n", err)
+		fmt.Printf("error getting new commits since %s in ./dev/sg: %s\n", rev, err)
+		fmt.Println("try reinstalling sg with `./dev/sg/install.sh`.")
 		os.Exit(1)
 	}
 
@@ -720,7 +728,7 @@ Use this to start your Sourcegraph environment!
 			}
 		}
 		sort.Strings(names)
-		fmt.Fprintf(&out, strings.Join(names, "\n"))
+		fmt.Fprint(&out, strings.Join(names, "\n"))
 	}
 
 	return out.String()
@@ -758,57 +766,6 @@ func migrationFixupExec(ctx context.Context, args []string) (err error) {
 	}
 }
 
-func printTestUsage(c *ffcli.Command) string {
-	var out strings.Builder
-
-	fmt.Fprintf(&out, "USAGE\n")
-	fmt.Fprintf(&out, "  sg %s <test suite>\n", c.Name)
-
-	// Attempt to parse config so we can list test suites, but don't fail on
-	// error, because we should never error when the user wants --help output.
-	_, _ = parseConf(*configFlag, *overwriteConfigFlag)
-
-	if globalConf != nil {
-		fmt.Fprintf(&out, "\n")
-		fmt.Fprintf(&out, "AVAILABLE TESTSUITES IN %s%s%s\n", output.StyleBold, *configFlag, output.StyleReset)
-
-		for name := range globalConf.Tests {
-			fmt.Fprintf(&out, "  %s\n", name)
-		}
-	}
-
-	return out.String()
-}
-
-func printRunSetUsage(c *ffcli.Command) string {
-	var out strings.Builder
-
-	fmt.Fprintf(&out, "DEPRECATED! 'sg run-set' has been deprecated. Please use 'sg start' instead.\n")
-
-	return out.String()
-}
-
-func printStartUsage(c *ffcli.Command) string {
-	var out strings.Builder
-
-	fmt.Fprintf(&out, "USAGE\n")
-	fmt.Fprintf(&out, "  sg %s [commandset]\n", c.Name)
-
-	// Attempt to parse config so we can list available sets, but don't fail on
-	// error, because we should never error when the user wants --help output.
-	_, _ = parseConf(*configFlag, *overwriteConfigFlag)
-	if globalConf != nil {
-		fmt.Fprintf(&out, "\n")
-		fmt.Fprintf(&out, "AVAILABLE COMMANDSETS IN %s%s%s\n", output.StyleBold, *configFlag, output.StyleReset)
-
-		for name := range globalConf.Commandsets {
-			fmt.Fprintf(&out, "  %s\n", name)
-		}
-	}
-
-	return out.String()
-}
-
 func constructLiveCmdLongHelp() string {
 	var out strings.Builder
 
@@ -832,21 +789,7 @@ func constructMigrationSubcmdLongHelp() string {
 	for _, name := range db.DatabaseNames() {
 		names = append(names, fmt.Sprintf("  %s", name))
 	}
-	fmt.Fprintf(&out, strings.Join(names, "\n"))
-
-	return out.String()
-}
-
-func printRFCUsage(c *ffcli.Command) string {
-	var out strings.Builder
-
-	fmt.Fprintf(&out, "USAGE\n")
-	fmt.Fprintf(&out, "  sg %s <command>\n", c.Name)
-	fmt.Fprintf(&out, "\n")
-	fmt.Fprintf(&out, "COMMANDS:\n")
-	fmt.Fprintf(&out, "    list - list all RFCs\n")
-	fmt.Fprintf(&out, "    search <query> - search for RFCs matching the query\n")
-	fmt.Fprintf(&out, "    open <number> - Open the specified RFC\n")
+	fmt.Fprint(&out, strings.Join(names, "\n"))
 
 	return out.String()
 }
@@ -909,6 +852,13 @@ func printLogo(out io.Writer) {
 }
 
 func logoExec(ctx context.Context, args []string) error {
+	if len(args) == 1 && args[0] == "classic" {
+		var logoOut bytes.Buffer
+		printLogo(&logoOut)
+		stdout.Out.Write(logoOut.String())
+		return nil
+	}
+
 	s1 := rand.NewSource(time.Now().UnixNano())
 	r1 := rand.New(s1)
 	randoColor := func() output.Style { return output.Fg256Color(r1.Intn(256)) }

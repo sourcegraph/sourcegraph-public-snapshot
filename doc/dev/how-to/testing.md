@@ -1,6 +1,10 @@
 # Testing
 
-_This documentation is specifically for the tests in the [sourcegraph/sourcegraph](https://github.com/sourcegraph/sourcegraph) repository. For our general testing principles, please see "[Testing Principles](../background-information/testing_principles.md)"._
+> NOTE: This documentation is specifically for the tests in the [sourcegraph/sourcegraph](https://github.com/sourcegraph/sourcegraph) repository. For our general testing principles, please see "[Testing Principles](../background-information/testing_principles.md)".
+
+<span class="virtual-br"></span>
+
+> NOTE: To learn more about our CI pipelines where these tests get run, please see "[Buildkite pipelines](../background-information/continuous_integration.md#buildkite-pipelines)".
 
 ## Backend tests
 
@@ -331,5 +335,5 @@ To manually test against a Kubernetes cluster, use https://k8s.sgdev.org.
 For testing with a single Docker image, run something like
 
 ```
-IMAGE=sourcegraph/server:3.31.1 ./dev/run-server-image.sh
+IMAGE=sourcegraph/server:3.32.0 ./dev/run-server-image.sh
 ```

@@ -158,8 +158,9 @@ func (q *QueryExecution) ToRecording(seriesID string, repoName string, repoID ap
 			Time:  q.RecordingTime,
 			Value: value,
 		},
-		RepoName: &repoName,
-		RepoID:   &repoID,
+		RepoName:    &repoName,
+		RepoID:      &repoID,
+		PersistMode: store.RecordMode,
 	}
 	args = append(args, base)
 	for _, sharedTime := range q.SharedRecordings {
@@ -181,6 +182,7 @@ func (q *QueryExecution) ToQueueJob(seriesID string, query string, cost priority
 		Priority:        int(jobPriority),
 		DependentFrames: q.SharedRecordings,
 		State:           "queued",
+		PersistMode:     string(store.RecordMode),
 	}
 }
 

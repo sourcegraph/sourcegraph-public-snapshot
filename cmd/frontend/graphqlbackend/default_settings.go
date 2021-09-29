@@ -12,6 +12,7 @@ import (
 )
 
 var builtinExtensions = map[string]bool{
+	"sourcegraph/apex":       true,
 	"sourcegraph/clojure":    true,
 	"sourcegraph/cobol":      true,
 	"sourcegraph/cpp":        true,

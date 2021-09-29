@@ -22,7 +22,7 @@ Additionally, we recommend reading the [configuration guide](configure.md#gettin
 
 - [Customization](./configure.md#customizations)
 - [Storage class](./configure.md#configure-a-storage-class)
-- [Network Acess](./configure.md#security-configure-network-access)
+- [Network Access](./configure.md#configure-network-access)
 - [PostgreSQL Database](./configure.md#sourcegraph-databases)
 - [Scaling services](./scale.md#tuning-replica-counts-for-horizontal-scalability)
 - [Cluster role administrator access](https://kubernetes.io/docs/reference/access-authn-authz/rbac/)
@@ -68,7 +68,9 @@ Once you are all set up, either [install Sourcegraph directly](#direct-installat
 > or other secure network that restricts unauthenticated access from the public Internet. You can later expose the
 > necessary ports via an
 > [Internet Gateway](http://docs.aws.amazon.com/AmazonVPC/latest/UserGuide/VPC_Internet_Gateway.html) or equivalent
-> mechanism. Take care to secure your cluster in a manner that meets your organization's security requirements.
+> mechanism. Note that SG must expose port 443 for outbound traffic to codehosts and to enable [telemetry](https://docs.sourcegraph.com/admin/pings) with 
+> Sourcegraph.com. Additionally port 22 may be opened to enable git SSH cloning by Sourcegraph. Take care to secure your cluster in a manner that meets your 
+> organization's security requirements.
 
 Follow the instructions linked in the table below to provision a Kubernetes cluster for the
 infrastructure provider of your choice, using the recommended node and list types in the
@@ -96,7 +98,7 @@ table.
 
 ### Kubernetes
 
-Kubernetes is a portable, extensible, open-source platform for managing containerized workloads and services, that facilitates both declarative configuration and automation. Applications are deployed via set a of YAML files to configure the various components (storage, networking, containers). Learn more about Kubernetes [here](https://kubernetes.io/docs/concepts/overview/what-is-kubernetes/).
+Kubernetes is a portable, extensible, open-source platform for managing containerized workloads and services, that facilitates both declarative configuration and automation. Applications are deployed via a set of YAML files to configure the various components (storage, networking, containers). Learn more about Kubernetes [here](https://kubernetes.io/docs/concepts/overview/what-is-kubernetes/).
 
 Our Kubernetes support has the following requirements:
 

@@ -7,17 +7,13 @@ import (
 	"github.com/cockroachdb/errors"
 	gqlerrors "github.com/graph-gophers/graphql-go/errors"
 
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	ts "github.com/sourcegraph/sourcegraph/internal/temporarysettings"
-	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 func TestTemporarySettingsNotSignedIn(t *testing.T) {
 	resetMocks()
-
-	database.Mocks.Users.GetByCurrentAuthUser = func(context.Context) (*types.User, error) {
-		return nil, database.ErrNoCurrentUser
-	}
 
 	calledGetTemporarySettings := false
 	database.Mocks.TemporarySettings.GetTemporarySettings = func(ctx context.Context, userID int32) (*ts.TemporarySettings, error) {
@@ -29,7 +25,9 @@ func TestTemporarySettingsNotSignedIn(t *testing.T) {
 
 	RunTests(t, []*Test{
 		{
-			Schema: mustParseGraphQLSchema(t),
+			// No actor set on context.
+			Context: context.Background(),
+			Schema:  mustParseGraphQLSchema(t),
 			Query: `
 				query {
 					temporarySettings {
@@ -56,19 +54,18 @@ func TestTemporarySettingsNotSignedIn(t *testing.T) {
 func TestTemporarySettings(t *testing.T) {
 	resetMocks()
 
-	database.Mocks.Users.GetByCurrentAuthUser = func(context.Context) (*types.User, error) {
-		return &types.User{ID: 1, SiteAdmin: false}, nil
-	}
-
 	calledGetTemporarySettings := false
+	var calledGetTemporarySettingsUserID int32
 	database.Mocks.TemporarySettings.GetTemporarySettings = func(ctx context.Context, userID int32) (*ts.TemporarySettings, error) {
 		calledGetTemporarySettings = true
+		calledGetTemporarySettingsUserID = userID
 		return &ts.TemporarySettings{Contents: "{\"search.collapsedSidebarSections\": {\"types\": false}}"}, nil
 	}
 
 	RunTests(t, []*Test{
 		{
-			Schema: mustParseGraphQLSchema(t),
+			Context: actor.WithActor(context.Background(), actor.FromUser(1)),
+			Schema:  mustParseGraphQLSchema(t),
 			Query: `
 				query {
 					temporarySettings {
@@ -89,18 +86,17 @@ func TestTemporarySettings(t *testing.T) {
 	if !calledGetTemporarySettings {
 		t.Fatal("should call GetTemporarySettings")
 	}
+	if calledGetTemporarySettingsUserID != 1 {
+		t.Fatalf("should call GetTemporarySettings with userID=1, got=%d", calledGetTemporarySettingsUserID)
+	}
 }
 
 func TestOverwriteTemporarySettingsNotSignedIn(t *testing.T) {
 	resetMocks()
 
-	database.Mocks.Users.GetByCurrentAuthUser = func(context.Context) (*types.User, error) {
-		return nil, database.ErrNoCurrentUser
-	}
-
-	calledUpsertTemporarySettings := false
-	database.Mocks.TemporarySettings.UpsertTemporarySettings = func(ctx context.Context, userID int32, contents string) error {
-		calledUpsertTemporarySettings = true
+	calledOverwriteTemporarySettings := false
+	database.Mocks.TemporarySettings.OverwriteTemporarySettings = func(ctx context.Context, userID int32, contents string) error {
+		calledOverwriteTemporarySettings = true
 		return nil
 	}
 
@@ -108,7 +104,9 @@ func TestOverwriteTemporarySettingsNotSignedIn(t *testing.T) {
 
 	RunTests(t, []*Test{
 		{
-			Schema: mustParseGraphQLSchema(t),
+			// No actor set on context.
+			Context: context.Background(),
+			Schema:  mustParseGraphQLSchema(t),
 			Query: `
 				mutation ModifyTemporarySettings {
 					overwriteTemporarySettings(
@@ -129,29 +127,28 @@ func TestOverwriteTemporarySettingsNotSignedIn(t *testing.T) {
 		},
 	})
 
-	if calledUpsertTemporarySettings {
-		t.Fatal("should not call UpsertTemporarySettings")
+	if calledOverwriteTemporarySettings {
+		t.Fatal("should not call OverwriteTemporarySettings")
 	}
 }
 
 func TestOverwriteTemporarySettings(t *testing.T) {
 	resetMocks()
 
-	database.Mocks.Users.GetByCurrentAuthUser = func(context.Context) (*types.User, error) {
-		return &types.User{ID: 1, SiteAdmin: false}, nil
-	}
-
-	calledUpsertTemporarySettings := false
-	database.Mocks.TemporarySettings.UpsertTemporarySettings = func(ctx context.Context, userID int32, contents string) error {
-		calledUpsertTemporarySettings = true
+	calledOverwriteTemporarySettings := false
+	var calledOverwriteTemporarySettingsUserID int32
+	database.Mocks.TemporarySettings.OverwriteTemporarySettings = func(ctx context.Context, userID int32, contents string) error {
+		calledOverwriteTemporarySettingsUserID = userID
+		calledOverwriteTemporarySettings = true
 		return nil
 	}
 
 	RunTests(t, []*Test{
 		{
-			Schema: mustParseGraphQLSchema(t),
+			Context: actor.WithActor(context.Background(), actor.FromUser(1)),
+			Schema:  mustParseGraphQLSchema(t),
 			Query: `
-				mutation ModifyTemporarySettings {
+				mutation OverwriteTemporarySettings {
 					overwriteTemporarySettings(
 						contents: "{\"search.collapsedSidebarSections\": []}"
 					) {
@@ -163,7 +160,46 @@ func TestOverwriteTemporarySettings(t *testing.T) {
 		},
 	})
 
-	if !calledUpsertTemporarySettings {
-		t.Fatal("should call UpsertTemporarySettings")
+	if !calledOverwriteTemporarySettings {
+		t.Fatal("should call OverwriteTemporarySettings")
+	}
+	if calledOverwriteTemporarySettingsUserID != 1 {
+		t.Fatalf("should call OverwriteTemporarySettings with userID=1, got=%d", calledOverwriteTemporarySettingsUserID)
+	}
+}
+
+func TestEditTemporarySettings(t *testing.T) {
+	resetMocks()
+
+	calledEditTemporarySettings := false
+	var calledEditTemporarySettingsUserID int32
+	database.Mocks.TemporarySettings.EditTemporarySettings = func(ctx context.Context, userID int32, settingsToEdit string) error {
+		calledEditTemporarySettingsUserID = userID
+		calledEditTemporarySettings = true
+		return nil
+	}
+
+	RunTests(t, []*Test{
+		{
+			Context: actor.WithActor(context.Background(), actor.FromUser(1)),
+			Schema:  mustParseGraphQLSchema(t),
+			Query: `
+				mutation EditTemporarySettings {
+					editTemporarySettings(
+						settingsToEdit: "{\"search.collapsedSidebarSections\": []}"
+					) {
+						alwaysNil
+					}
+				}
+			`,
+			ExpectedResult: "{\"editTemporarySettings\":{\"alwaysNil\":null}}",
+		},
+	})
+
+	if !calledEditTemporarySettings {
+		t.Fatal("should call EditTemporarySettings")
+	}
+	if calledEditTemporarySettingsUserID != 1 {
+		t.Fatalf("should call EditTemporarySettings with userID=1, got=%d", calledEditTemporarySettingsUserID)
 	}
 }

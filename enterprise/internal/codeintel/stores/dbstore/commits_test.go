@@ -259,6 +259,9 @@ func TestCalculateVisibleUploads(t *testing.T) {
 		t.Errorf("unexpected visible uploads (-want +got):\n%s", diff)
 	}
 
+	// Ensure data can be queried in reverse direction as well
+	assertCommitsVisibleFromUploads(t, store, uploads, expectedVisibleUploads)
+
 	if diff := cmp.Diff([]int{1}, getUploadsVisibleAtTip(t, db, 50)); diff != "" {
 		t.Errorf("unexpected uploads visible at tip (-want +got):\n%s", diff)
 	}
@@ -311,6 +314,9 @@ func TestCalculateVisibleUploadsAlternateCommitGraph(t *testing.T) {
 		t.Errorf("unexpected visible uploads (-want +got):\n%s", diff)
 	}
 
+	// Ensure data can be queried in reverse direction as well
+	assertCommitsVisibleFromUploads(t, store, uploads, expectedVisibleUploads)
+
 	if diff := cmp.Diff([]int{1}, getUploadsVisibleAtTip(t, db, 50)); diff != "" {
 		t.Errorf("unexpected uploads visible at tip (-want +got):\n%s", diff)
 	}
@@ -352,6 +358,9 @@ func TestCalculateVisibleUploadsDistinctRoots(t *testing.T) {
 	if diff := cmp.Diff(expectedVisibleUploads, getVisibleUploads(t, db, 50, keysOf(expectedVisibleUploads))); diff != "" {
 		t.Errorf("unexpected visible uploads (-want +got):\n%s", diff)
 	}
+
+	// Ensure data can be queried in reverse direction as well
+	assertCommitsVisibleFromUploads(t, store, uploads, expectedVisibleUploads)
 
 	if diff := cmp.Diff([]int{1, 2}, getUploadsVisibleAtTip(t, db, 50)); diff != "" {
 		t.Errorf("unexpected uploads visible at tip (-want +got):\n%s", diff)
@@ -427,6 +436,9 @@ func TestCalculateVisibleUploadsOverlappingRoots(t *testing.T) {
 		t.Errorf("unexpected visible uploads (-want +got):\n%s", diff)
 	}
 
+	// Ensure data can be queried in reverse direction as well
+	assertCommitsVisibleFromUploads(t, store, uploads, expectedVisibleUploads)
+
 	if diff := cmp.Diff([]int{1, 2, 7, 8, 9}, getUploadsVisibleAtTip(t, db, 50)); diff != "" {
 		t.Errorf("unexpected uploads visible at tip (-want +got):\n%s", diff)
 	}
@@ -481,6 +493,9 @@ func TestCalculateVisibleUploadsIndexerName(t *testing.T) {
 	if diff := cmp.Diff(expectedVisibleUploads, getVisibleUploads(t, db, 50, keysOf(expectedVisibleUploads))); diff != "" {
 		t.Errorf("unexpected visible uploads (-want +got):\n%s", diff)
 	}
+
+	// Ensure data can be queried in reverse direction as well
+	assertCommitsVisibleFromUploads(t, store, uploads, expectedVisibleUploads)
 
 	if diff := cmp.Diff([]int{1, 2, 3, 4, 5, 6, 7, 8}, getUploadsVisibleAtTip(t, db, 50)); diff != "" {
 		t.Errorf("unexpected uploads visible at tip (-want +got):\n%s", diff)
@@ -639,6 +654,9 @@ func TestCalculateVisibleUploadsNonDefaultBranches(t *testing.T) {
 		t.Errorf("unexpected visible uploads (-want +got):\n%s", diff)
 	}
 
+	// Ensure data can be queried in reverse direction as well
+	assertCommitsVisibleFromUploads(t, store, uploads, expectedVisibleUploads)
+
 	if diff := cmp.Diff([]int{3}, getUploadsVisibleAtTip(t, db, 50)); diff != "" {
 		t.Errorf("unexpected uploads visible at tip (-want +got):\n%s", diff)
 	}
@@ -748,12 +766,53 @@ func TestCalculateVisibleUploadsNonDefaultBranchesWithCustomRetentionConfigurati
 		t.Errorf("unexpected visible uploads (-want +got):\n%s", diff)
 	}
 
+	// Ensure data can be queried in reverse direction as well
+	assertCommitsVisibleFromUploads(t, store, uploads, expectedVisibleUploads)
+
 	if diff := cmp.Diff([]int{3}, getUploadsVisibleAtTip(t, db, 50)); diff != "" {
 		t.Errorf("unexpected uploads visible at tip (-want +got):\n%s", diff)
 	}
 
 	if diff := cmp.Diff([]int{2, 3, 5}, getProtectedUploads(t, db, 50)); diff != "" {
 		t.Errorf("unexpected protected uploads (-want +got):\n%s", diff)
+	}
+}
+
+func assertCommitsVisibleFromUploads(t *testing.T, store *Store, uploads []Upload, expectedVisibleUploads map[string][]int) {
+	expectedVisibleCommits := map[int][]string{}
+	for commit, uploadIDs := range expectedVisibleUploads {
+		for _, uploadID := range uploadIDs {
+			expectedVisibleCommits[uploadID] = append(expectedVisibleCommits[uploadID], commit)
+		}
+	}
+	for _, commits := range expectedVisibleCommits {
+		sort.Strings(commits)
+	}
+
+	// Test pagination by requesting only a couple of
+	// results at a time in this assertion helper.
+	testPageSize := 2
+
+	for _, upload := range uploads {
+		var token *string
+		var allCommits []string
+
+		for {
+			commits, nextToken, err := store.CommitsVisibleToUpload(context.Background(), upload.ID, testPageSize, token)
+			if err != nil {
+				t.Fatalf("unexpected error getting commits visible to upload %d: %s", upload.ID, err)
+			}
+			if nextToken == nil {
+				break
+			}
+
+			allCommits = append(allCommits, commits...)
+			token = nextToken
+		}
+
+		if diff := cmp.Diff(expectedVisibleCommits[upload.ID], allCommits); diff != "" {
+			t.Errorf("unexpected commits visible to upload %d (-want +got):\n%s", upload.ID, diff)
+		}
 	}
 }
 

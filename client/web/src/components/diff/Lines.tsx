@@ -85,6 +85,7 @@ export const Line: React.FunctionComponent<Line> = ({
                     data-line={lineNumber}
                     data-part={dataPart}
                     id={id || anchor}
+                    data-hunk-num=" "
                 >
                     {persistLines && (
                         <Link className={diffHunkStyles.numLine} to={{ hash: anchor }}>
@@ -100,7 +101,11 @@ export const Line: React.FunctionComponent<Line> = ({
                 data-diff-marker={diffHunkTypeIndicators[kind]}
             >
                 <div className={classNames('d-inline', styles.lineCode)}>
-                    <div dangerouslySetInnerHTML={{ __html: html }} data-diff-marker={diffHunkTypeIndicators[kind]} />
+                    <div
+                        className="d-inline-block"
+                        dangerouslySetInnerHTML={{ __html: html }}
+                        data-diff-marker={diffHunkTypeIndicators[kind]}
+                    />
                     {decorations.map((decoration, index) => {
                         const style = decorationAttachmentStyleForTheme(decoration.after, isLightTheme)
                         return (

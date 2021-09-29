@@ -159,6 +159,9 @@ export const RevisionsPopoverReferences: React.FunctionComponent<RevisionsPopove
             }
             return data.node.gitRefs
         },
+        options: {
+            fetchPolicy: 'cache-first',
+        },
     })
 
     const summary = response.connection && (
@@ -170,6 +173,7 @@ export const RevisionsPopoverReferences: React.FunctionComponent<RevisionsPopove
             pluralNoun={pluralNoun}
             hasNextPage={response.hasNextPage}
             connectionQuery={query}
+            compact={true}
         />
     )
 

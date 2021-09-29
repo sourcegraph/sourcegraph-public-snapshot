@@ -183,8 +183,7 @@ interface State {
     isOpen: boolean
 }
 
-const REFRESH_INTERVAL_AFTER_ERROR_MS = 3000
-const REFRESH_INTERVAL_MS = 10000
+const REFRESH_INTERVAL_MS = 60000
 
 /**
  * Displays a status icon in the navbar reflecting the completion of backend
@@ -225,7 +224,7 @@ export class StatusMessagesNavItem extends React.PureComponent<Props, State> {
                     catchError(error => [asError(error) as ErrorLike]),
                     // Poll on REFRESH_INTERVAL_MS, or REFRESH_INTERVAL_AFTER_ERROR_MS if there is an error.
                     repeatUntil(messagesOrError => isErrorLike(messagesOrError), { delay: REFRESH_INTERVAL_MS }),
-                    repeatWhen(completions => completions.pipe(delay(REFRESH_INTERVAL_AFTER_ERROR_MS))),
+                    repeatWhen(completions => completions.pipe(delay(REFRESH_INTERVAL_MS))),
                     distinctUntilChanged((a, b) => isEqual(a, b))
                 )
                 .subscribe(messagesOrError => {

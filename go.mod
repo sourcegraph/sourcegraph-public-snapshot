@@ -73,7 +73,7 @@ require (
 	github.com/gorilla/securecookie v1.1.1
 	github.com/gorilla/sessions v1.2.1
 	github.com/goware/urlx v0.3.1
-	github.com/grafana-tools/sdk v0.0.0-20210709154219-f35c5af8140d
+	github.com/grafana-tools/sdk v0.0.0-20210921191058-888ef9d18611
 	github.com/graph-gophers/graphql-go v0.0.0-20201113091052-beb923fada29
 	github.com/graphql-go/graphql v0.7.9
 	github.com/gregjones/httpcache v0.0.0-20190611155906-901d90724c79
@@ -111,6 +111,7 @@ require (
 	github.com/prometheus/common v0.30.0
 	github.com/qustavo/sqlhooks/v2 v2.1.0
 	github.com/rainycape/unidecode v0.0.0-20150907023854-cb7f23ec59be
+	github.com/rs/xid v1.3.0
 	github.com/russellhaering/gosaml2 v0.6.0
 	github.com/russellhaering/goxmldsig v1.1.1-0.20201210191726-3541f5e554ee
 	github.com/schollz/progressbar/v3 v3.5.0
@@ -119,9 +120,8 @@ require (
 	github.com/shurcooL/github_flavored_markdown v0.0.0-20181002035957-2122de532470
 	github.com/shurcooL/httpgzip v0.0.0-20190720172056-320755c1c1b0
 	github.com/snabb/sitemap v1.0.0
-	github.com/sourcegraph/batch-change-utils v0.0.0-20210708162152-c9f35b905d94
 	github.com/sourcegraph/ctxvfs v0.0.0-20180418081416-2b65f1b1ea81
-	github.com/sourcegraph/go-ctags v0.0.0-20210805071240-8c61152fb089
+	github.com/sourcegraph/go-ctags v0.0.0-20210923201916-00b9c039141c
 	github.com/sourcegraph/go-diff v0.6.1
 	github.com/sourcegraph/go-jsonschema v0.0.0-20200907102109-d14e9f2f3a28
 	github.com/sourcegraph/go-langserver v2.0.1-0.20181108233942-4a51fa2e1238+incompatible
@@ -137,6 +137,7 @@ require (
 	github.com/temoto/robotstxt v1.1.1
 	github.com/throttled/throttled/v2 v2.7.1
 	github.com/tidwall/gjson v1.8.1
+	github.com/tj/go-naturaldate v1.3.0
 	github.com/tomnomnom/linkheader v0.0.0-20180905144013-02ca5825eb80
 	github.com/uber/gonduit v0.13.0
 	github.com/uber/jaeger-client-go v2.29.1+incompatible
@@ -154,7 +155,7 @@ require (
 	golang.org/x/sync v0.0.0-20210220032951-036812b2e83c
 	golang.org/x/sys v0.0.0-20210823070655-63515b42dcdf
 	golang.org/x/time v0.0.0-20210723032227-1f47c861a9ac
-	golang.org/x/tools v0.1.5
+	golang.org/x/tools v0.1.6
 	google.golang.org/api v0.54.0
 	google.golang.org/genproto v0.0.0-20210824181836-a4879c3d0e89
 	google.golang.org/protobuf v1.27.1
@@ -272,7 +273,6 @@ require (
 	github.com/prometheus/procfs v0.6.0 // indirect
 	github.com/rivo/uniseg v0.1.0 // indirect
 	github.com/rogpeppe/go-internal v1.8.0 // indirect
-	github.com/rs/xid v1.3.0 // indirect
 	github.com/russross/blackfriday v1.5.2 // indirect
 	github.com/shurcooL/go-goon v0.0.0-20210110234559-7585751d9a17 // indirect
 	github.com/shurcooL/highlight_diff v0.0.0-20181222201841-111da2e7d480 // indirect
@@ -320,7 +320,7 @@ require (
 // or intentional forks.
 replace (
 	// We maintain our own fork of Zoekt. Update with ./dev/zoekt/update
-	github.com/google/zoekt => github.com/sourcegraph/zoekt v0.0.0-20210906083022-183d10fe355d
+	github.com/google/zoekt => github.com/sourcegraph/zoekt v0.0.0-20210928065217-b86ecca1cab6
 	// We use a fork of Alertmanager to allow prom-wrapper to better manipulate Alertmanager configuration.
 	// See https://docs.sourcegraph.com/dev/background-information/observability/prometheus
 	github.com/prometheus/alertmanager => github.com/sourcegraph/alertmanager v0.21.1-0.20210809100802-88b656a8713e
@@ -339,6 +339,7 @@ replace (
 replace (
 	// Pending: https://github.com/ghodss/yaml/pull/65
 	github.com/ghodss/yaml => github.com/sourcegraph/yaml v1.0.1-0.20200714132230-56936252f152
+	// Pending: https://github.com/shurcooL/httpgzip/pull/9
 	github.com/shurcooL/httpgzip => github.com/sourcegraph/httpgzip v0.0.0-20210213125624-48ebf036a6a1
 )
 

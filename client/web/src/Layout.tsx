@@ -18,6 +18,7 @@ import { AuthenticatedUser, authRequired as authRequiredObservable } from './aut
 import { BatchChangesProps } from './batches'
 import { CodeMonitoringProps } from './code-monitoring'
 import { CodeIntelligenceProps } from './codeintel'
+import { communitySearchContextsRoutes } from './communitySearchContexts/routes'
 import { useBreadcrumbs } from './components/Breadcrumbs'
 import { ErrorBoundary } from './components/ErrorBoundary'
 import { useScrollToLocationHash } from './components/useScrollToLocationHash'
@@ -29,6 +30,7 @@ import { ExtensionsAreaHeaderActionButton } from './extensions/ExtensionsAreaHea
 import { FeatureFlagProps } from './featureFlags/featureFlags'
 import { GlobalAlerts } from './global/GlobalAlerts'
 import { GlobalDebug } from './global/GlobalDebug'
+import { CodeInsightsProps } from './insights/types'
 import { KeyboardShortcutsProps, KEYBOARD_SHORTCUT_SHOW_HELP } from './keyboardShortcuts/keyboardShortcuts'
 import { KeyboardShortcutsHelp } from './keyboardShortcuts/KeyboardShortcutsHelp'
 import { SurveyToast } from './marketing/SurveyToast'
@@ -48,7 +50,6 @@ import {
     parseSearchURLQuery,
     PatternTypeProps,
     CaseSensitivityProps,
-    RepogroupHomepageProps,
     OnboardingTourProps,
     HomePanelsProps,
     SearchStreamingProps,
@@ -58,7 +59,6 @@ import {
     SearchContextProps,
     getGlobalSearchContextFilter,
 } from './search'
-import { QueryState } from './search/helpers'
 import { SiteAdminAreaRoute } from './site-admin/SiteAdminArea'
 import { SiteAdminSideBarGroups } from './site-admin/SiteAdminSidebar'
 import { useTheme } from './theme'
@@ -81,7 +81,6 @@ export interface LayoutProps
         PatternTypeProps,
         CaseSensitivityProps,
         MutableVersionContextProps,
-        RepogroupHomepageProps,
         OnboardingTourProps,
         SearchContextProps,
         HomePanelsProps,
@@ -91,6 +90,7 @@ export interface LayoutProps
         UserExternalServicesOrRepositoriesUpdateProps,
         CodeIntelligenceProps,
         BatchChangesProps,
+        CodeInsightsProps,
         FeatureFlagProps {
     extensionAreaRoutes: readonly ExtensionAreaRoute[]
     extensionAreaHeaderNavItems: readonly ExtensionAreaHeaderNavItem[]
@@ -121,8 +121,6 @@ export interface LayoutProps
     viewerSubject: Pick<GQL.ISettingsSubject, 'id' | 'viewerCanAdminister'>
 
     // Search
-    navbarSearchQueryState: QueryState
-    onNavbarQueryChange: (queryState: QueryState) => void
     fetchHighlightedFileLineRanges: (parameters: FetchFileParameters, force?: boolean) => Observable<string[][]>
 
     globbing: boolean
@@ -208,9 +206,8 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
         searchContextSpec,
     ])
 
-    // Hack! Hardcode these routes into cmd/frontend/internal/app/ui/router.go
-    const repogroupPages = ['/kubernetes', '/stanford', '/stackstorm', '/temporal', '/o3de', '/cncf']
-    const isRepogroupPage = repogroupPages.includes(props.location.pathname)
+    const communitySearchContextPaths = communitySearchContextsRoutes.map(route => route.path)
+    const isCommunitySearchContextPage = communitySearchContextPaths.includes(props.location.pathname)
 
     // TODO add a component layer as the parent of the Layout component rendering "top-level" routes that do not render the navbar,
     // so that Layout can always render the navbar.
@@ -270,11 +267,17 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
                     showSearchBox={
                         isSearchRelatedPage &&
                         !isSearchHomepage &&
-                        !isRepogroupPage &&
+                        !isCommunitySearchContextPage &&
                         !isSearchConsolePage &&
                         !isSearchNotebookPage
                     }
-                    variant={isSearchHomepage ? 'low-profile' : isRepogroupPage ? 'low-profile-with-logo' : 'default'}
+                    variant={
+                        isSearchHomepage
+                            ? 'low-profile'
+                            : isCommunitySearchContextPage
+                            ? 'low-profile-with-logo'
+                            : 'default'
+                    }
                     hideNavLinks={false}
                     minimalNavLinks={minimalNavLinks}
                     isSearchAutoFocusRequired={!isSearchAutoFocusRequired}

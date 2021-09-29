@@ -15,6 +15,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/vcs"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
@@ -87,6 +88,20 @@ func (c *Client) CommitDate(ctx context.Context, repositoryID int, commit string
 	}
 
 	return time.Parse(time.RFC3339, strings.TrimSpace(out))
+}
+
+func (c *Client) RepoInfo(ctx context.Context, repos ...api.RepoName) (_ map[api.RepoName]*protocol.RepoInfo, err error) {
+	ctx, endObservation := c.operations.repoInfo.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.Int("numRepos", len(repos)),
+	}})
+	defer endObservation(1, observation.Args{})
+
+	resp, err := gitserver.DefaultClient.RepoInfo(ctx, repos...)
+	if resp == nil {
+		return nil, err
+	}
+
+	return resp.Results, err
 }
 
 type CommitGraph struct {
@@ -314,6 +329,39 @@ func parseBranchesContaining(lines []string) []string {
 	sort.Strings(names)
 
 	return names
+}
+
+// DefaultBranchContains tells if the default branch contains the given commit ID.
+//
+// TODO(apidocs): future: This could be implemented more optimally, but since it is called
+// infrequently it is fine for now.
+func (c *Client) DefaultBranchContains(ctx context.Context, repositoryID int, commit string) (bool, error) {
+	// Determine default branch name.
+	descriptions, err := c.RefDescriptions(ctx, repositoryID)
+	if err != nil {
+		return false, errors.Wrap(err, "RefDescriptions")
+	}
+	var defaultBranchName string
+	for name, descriptions := range descriptions {
+		for _, ref := range descriptions {
+			if ref.IsDefaultBranch {
+				defaultBranchName = name
+				break
+			}
+		}
+	}
+
+	// Determine if branch contains commit.
+	branches, err := c.BranchesContaining(ctx, repositoryID, commit)
+	if err != nil {
+		return false, errors.Wrap(err, "BranchesContaining")
+	}
+	for _, branch := range branches {
+		if branch == defaultBranchName {
+			return true, nil
+		}
+	}
+	return false, nil
 }
 
 // RawContents returns the contents of a file in a particular commit of a repository.

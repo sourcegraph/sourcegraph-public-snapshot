@@ -75,7 +75,7 @@ export const SearchPageInput: React.FunctionComponent<Props> = (props: Props) =>
     const quickLinks =
         (isSettingsValid<Settings>(props.settingsCascade) && props.settingsCascade.final.quicklinks) || []
 
-    // This component is also used on the RepogroupPage.
+    // This component is also used on the CommunitySearchContextPage.
     // The search onboarding tour should only be shown on the homepage.
     const isHomepage = useMemo(() => props.location.pathname === '/search' && !props.parsedSearchQuery, [
         props.location.pathname,
@@ -108,6 +108,7 @@ export const SearchPageInput: React.FunctionComponent<Props> = (props: Props) =>
             <Form className="flex-grow-1 flex-shrink-past-contents" onSubmit={onSubmit}>
                 <div className="search-page__input-container">
                     <SearchBox
+                        showSearchContextFeatureTour={true}
                         {...props}
                         {...onboardingTourQueryInputProps}
                         submitSearchOnSearchContextChange={false}
@@ -116,7 +117,6 @@ export const SearchPageInput: React.FunctionComponent<Props> = (props: Props) =>
                         onChange={setUserQueryState}
                         onSubmit={onSubmit}
                         autoFocus={showOnboardingTour ? shouldFocusQueryInput : props.autoFocus !== false}
-                        showSearchContextFeatureTour={true}
                     />
                 </div>
                 {props.showQueryBuilder && (

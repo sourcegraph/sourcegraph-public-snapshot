@@ -2,7 +2,6 @@ package repos
 
 import (
 	"context"
-	"fmt"
 	"os"
 
 	"github.com/cockroachdb/errors"
@@ -60,28 +59,33 @@ func FetchStatusMessages(ctx context.Context, db dbutil.DB, u *types.User) ([]St
 		return messages, nil
 	}
 
-	// Now, for all the affiliated external services, look for any repos they own
-	// that have not yet been cloned
+	// Look for any repository that is not yet been cloned
 	opts := database.ReposListOptions{
 		NoCloned:           true,
 		ExternalServiceIDs: extsvcIDs,
+		LimitOffset: &database.LimitOffset{
+			Limit: 1,
+		},
 	}
-	notCloned, err := database.Repos(db).Count(ctx, opts)
+	notCloned, err := database.Repos(db).ListRepoNames(ctx, opts)
 	if err != nil {
-		return nil, errors.Wrap(err, "counting uncloned repos")
+		return nil, errors.Wrap(err, "listing not-cloned repos")
 	}
-	if notCloned > 0 {
+	if len(notCloned) > 0 {
 		messages = append(messages, StatusMessage{
 			Cloning: &CloningProgress{
-				Message: fmt.Sprintf("%d %s cloning...", notCloned, getRepoNoun(notCloned)),
+				Message: "Some repositories cloning...",
 			},
 		})
 	}
 
-	// Show the number of repos that we could not sync
+	// Look for any repository that we could not sync
 	opts = database.ReposListOptions{
 		ExternalServiceIDs: extsvcIDs,
 		FailedFetch:        true,
+		LimitOffset: &database.LimitOffset{
+			Limit: 1,
+		},
 	}
 	failedSync, err := database.Repos(db).Count(ctx, opts)
 	if err != nil {
@@ -90,19 +94,12 @@ func FetchStatusMessages(ctx context.Context, db dbutil.DB, u *types.User) ([]St
 	if failedSync > 0 {
 		messages = append(messages, StatusMessage{
 			SyncError: &SyncError{
-				Message: fmt.Sprintf("%d %s could not be synced", failedSync, getRepoNoun(failedSync)),
+				Message: "Some repositories could not be synced",
 			},
 		})
 	}
 
 	return messages, nil
-}
-
-func getRepoNoun(count int) string {
-	if count == 1 {
-		return "repository"
-	}
-	return "repositories"
 }
 
 type CloningProgress struct {

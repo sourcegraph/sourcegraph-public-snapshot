@@ -47,11 +47,13 @@ func (s *InsightStore) Transact(ctx context.Context) (*InsightStore, error) {
 type InsightQueryArgs struct {
 	UniqueIDs []string
 	UniqueID  string
+	UserID    []int
+	OrgID     []int
 }
 
 // Get returns all matching viewable insight series.
 func (s *InsightStore) Get(ctx context.Context, args InsightQueryArgs) ([]types.InsightViewSeries, error) {
-	preds := make([]*sqlf.Query, 0, 2)
+	preds := make([]*sqlf.Query, 0, 3)
 
 	if len(args.UniqueIDs) > 0 {
 		elems := make([]*sqlf.Query, 0, len(args.UniqueIDs))
@@ -63,6 +65,7 @@ func (s *InsightStore) Get(ctx context.Context, args InsightQueryArgs) ([]types.
 	if len(args.UniqueID) > 0 {
 		preds = append(preds, sqlf.Sprintf("iv.unique_id = %s", args.UniqueID))
 	}
+	preds = append(preds, viewPermissionsQuery(args))
 
 	if len(preds) == 0 {
 		preds = append(preds, sqlf.Sprintf("%s", "TRUE"))
@@ -70,6 +73,28 @@ func (s *InsightStore) Get(ctx context.Context, args InsightQueryArgs) ([]types.
 
 	q := sqlf.Sprintf(getInsightByViewSql, sqlf.Join(preds, "\n AND"))
 	return scanInsightViewSeries(s.Query(ctx, q))
+}
+
+// viewPermissionsQuery generates the SQL query for selecting insight views based on granted permissions.
+func viewPermissionsQuery(args InsightQueryArgs) *sqlf.Query {
+	permsPreds := make([]*sqlf.Query, 0, 2)
+	if len(args.OrgID) > 0 {
+		elems := make([]*sqlf.Query, 0, len(args.OrgID))
+		for _, id := range args.OrgID {
+			elems = append(elems, sqlf.Sprintf("%s", id))
+		}
+		permsPreds = append(permsPreds, sqlf.Sprintf("ivg.org_id IN (%s)", sqlf.Join(elems, ",")))
+	}
+	if len(args.UserID) > 0 {
+		elems := make([]*sqlf.Query, 0, len(args.UserID))
+		for _, id := range args.UserID {
+			elems = append(elems, sqlf.Sprintf("%s", id))
+		}
+		permsPreds = append(permsPreds, sqlf.Sprintf("ivg.user_id IN (%s)", sqlf.Join(elems, ",")))
+	}
+	permsPreds = append(permsPreds, sqlf.Sprintf("ivg.global is true"))
+
+	return sqlf.Sprintf("(%s)", sqlf.Join(permsPreds, "OR"))
 }
 
 func (s *InsightStore) GetMapped(ctx context.Context, args InsightQueryArgs) ([]types.Insight, error) {
@@ -181,6 +206,7 @@ group by for_time, reason;
 type GetDataSeriesArgs struct {
 	// NextRecordingBefore will filter for results for which the next_recording_after field falls before the specified time.
 	NextRecordingBefore time.Time
+	NextSnapshotBefore  time.Time
 	Deleted             bool
 	BackfillIncomplete  bool
 	SeriesID            string
@@ -191,6 +217,9 @@ func (s *InsightStore) GetDataSeries(ctx context.Context, args GetDataSeriesArgs
 
 	if !args.NextRecordingBefore.IsZero() {
 		preds = append(preds, sqlf.Sprintf("next_recording_after < %s", args.NextRecordingBefore))
+	}
+	if !args.NextSnapshotBefore.IsZero() {
+		preds = append(preds, sqlf.Sprintf("next_snapshot_after < %s", args.NextSnapshotBefore))
 	}
 	if args.Deleted {
 		preds = append(preds, sqlf.Sprintf("deleted_at IS NOT NULL"))
@@ -229,6 +258,8 @@ func scanDataSeries(rows *sql.Rows, queryErr error) (_ []types.InsightSeries, er
 			&temp.LastRecordedAt,
 			&temp.NextRecordingAfter,
 			&temp.RecordingIntervalDays,
+			&temp.LastSnapshotAt,
+			&temp.NextSnapshotAfter,
 		); err != nil {
 			return []types.InsightSeries{}, err
 		}
@@ -260,6 +291,8 @@ func scanInsightViewSeries(rows *sql.Rows, queryErr error) (_ []types.InsightVie
 			&temp.NextRecordingAfter,
 			&temp.BackfillQueuedAt,
 			&temp.RecordingIntervalDays,
+			&temp.LastSnapshotAt,
+			&temp.NextSnapshotAfter,
 		); err != nil {
 			return []types.InsightViewSeries{}, err
 		}
@@ -280,8 +313,14 @@ func (s *InsightStore) AttachSeriesToView(ctx context.Context,
 }
 
 // CreateView will create a new insight view with no associated data series. This view must have a unique identifier.
-func (s *InsightStore) CreateView(ctx context.Context, view types.InsightView) (types.InsightView, error) {
-	row := s.QueryRow(ctx, sqlf.Sprintf(createInsightViewSql,
+func (s *InsightStore) CreateView(ctx context.Context, view types.InsightView, grants []InsightViewGrant) (_ types.InsightView, err error) {
+	tx, err := s.Transact(ctx)
+	if err != nil {
+		return types.InsightView{}, err
+	}
+	defer func() { err = tx.Done(err) }()
+
+	row := tx.QueryRow(ctx, sqlf.Sprintf(createInsightViewSql,
 		view.Title,
 		view.Description,
 		view.UniqueID,
@@ -290,13 +329,62 @@ func (s *InsightStore) CreateView(ctx context.Context, view types.InsightView) (
 		return types.InsightView{}, row.Err()
 	}
 	var id int
-	err := row.Scan(&id)
+	err = row.Scan(&id)
 	if err != nil {
-		return types.InsightView{}, err
+		return types.InsightView{}, errors.Wrap(err, "failed to insert insight view")
 	}
 	view.ID = id
+	err = tx.AddViewGrants(ctx, view, grants)
+	if err != nil {
+		return types.InsightView{}, errors.Wrap(err, "failed to attach view grants")
+	}
 	return view, nil
 }
+
+func (s *InsightStore) AddViewGrants(ctx context.Context, view types.InsightView, grants []InsightViewGrant) error {
+	if view.ID == 0 {
+		return errors.New("unable to grant view permissions invalid insight view id")
+	} else if len(grants) == 0 {
+		return nil
+	}
+
+	values := make([]*sqlf.Query, 0, len(grants))
+	for _, grant := range grants {
+		values = append(values, grant.toQuery(view.ID))
+	}
+	q := sqlf.Sprintf(addViewGrantsSql, sqlf.Join(values, ",\n"))
+	err := s.Exec(ctx, q)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+const addViewGrantsSql = `
+-- source: enterprise/internal/insights/store/insight_store.go:AddViewGrants
+INSERT INTO insight_view_grants (insight_view_id, org_id, user_id, global)
+VALUES %s;
+`
+
+// DeleteViewByUniqueID deletes an insight view (cascading to dependent child tables) given a unique ID. This operation
+// is idempotent and can be executed many times with only one effect or error.
+func (s *InsightStore) DeleteViewByUniqueID(ctx context.Context, uniqueID string) error {
+	if len(uniqueID) == 0 {
+		return errors.New("unable to delete view invalid view ID")
+	}
+	conds := sqlf.Sprintf("unique_id = %s", uniqueID)
+	q := sqlf.Sprintf(deleteViewSql, conds)
+	err := s.Exec(ctx, q)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+const deleteViewSql = `
+-- source: enterprise/internal/insights/store/insight_store.go:DeleteView
+delete from insight_view where %s;
+`
 
 // CreateSeries will create a new insight data series. This series must be uniquely identified by the series ID.
 func (s *InsightStore) CreateSeries(ctx context.Context, series types.InsightSeries) (types.InsightSeries, error) {
@@ -305,6 +393,9 @@ func (s *InsightStore) CreateSeries(ctx context.Context, series types.InsightSer
 	}
 	if series.NextRecordingAfter.IsZero() {
 		series.NextRecordingAfter = s.Now()
+	}
+	if series.NextSnapshotAfter.IsZero() {
+		series.NextSnapshotAfter = s.Now()
 	}
 	if series.OldestHistoricalAt.IsZero() {
 		// TODO(insights): this value should probably somewhere more discoverable / obvious than here
@@ -318,6 +409,8 @@ func (s *InsightStore) CreateSeries(ctx context.Context, series types.InsightSer
 		series.LastRecordedAt,
 		series.NextRecordingAfter,
 		series.RecordingIntervalDays,
+		series.LastSnapshotAt,
+		series.NextSnapshotAfter,
 	))
 	var id int
 	err := row.Scan(&id)
@@ -331,6 +424,7 @@ func (s *InsightStore) CreateSeries(ctx context.Context, series types.InsightSer
 type DataSeriesStore interface {
 	GetDataSeries(ctx context.Context, args GetDataSeriesArgs) ([]types.InsightSeries, error)
 	StampRecording(ctx context.Context, series types.InsightSeries) (types.InsightSeries, error)
+	StampSnapshot(ctx context.Context, series types.InsightSeries) (types.InsightSeries, error)
 	StampBackfill(ctx context.Context, series types.InsightSeries) (types.InsightSeries, error)
 }
 
@@ -345,6 +439,18 @@ func (s *InsightStore) StampRecording(ctx context.Context, series types.InsightS
 	current := s.Now()
 	next := insights.NextRecording(current)
 	if err := s.Exec(ctx, sqlf.Sprintf(stampRecordingSql, current, next, series.ID)); err != nil {
+		return types.InsightSeries{}, err
+	}
+	series.LastRecordedAt = current
+	series.NextRecordingAfter = next
+	return series, nil
+}
+
+// StampSnapshot will update the recording metadata for this series and return the InsightSeries struct with updated values.
+func (s *InsightStore) StampSnapshot(ctx context.Context, series types.InsightSeries) (types.InsightSeries, error) {
+	current := s.Now()
+	next := insights.NextSnapshot(current)
+	if err := s.Exec(ctx, sqlf.Sprintf(stampSnapshotSql, current, next, series.ID)); err != nil {
 		return types.InsightSeries{}, err
 	}
 	series.LastRecordedAt = current
@@ -377,6 +483,14 @@ SET last_recorded_at = %s,
 WHERE id = %s;
 `
 
+const stampSnapshotSql = `
+-- source: enterprise/internal/insights/store/insight_store.go:StampSnapshot
+UPDATE insight_series
+SET last_snapshot_at = %s,
+    next_snapshot_after = %s
+WHERE id = %s;
+`
+
 const attachSeriesToViewSql = `
 -- source: enterprise/internal/insights/store/insight_store.go:AttachSeriesToView
 INSERT INTO insight_view_series (insight_series_id, insight_view_id, label, stroke)
@@ -392,24 +506,25 @@ returning id;`
 const createInsightSeriesSql = `
 -- source: enterprise/internal/insights/store/insight_store.go:CreateSeries
 INSERT INTO insight_series (series_id, query, created_at, oldest_historical_at, last_recorded_at,
-                            next_recording_after, recording_interval_days)
-VALUES (%s, %s, %s, %s, %s, %s, %s)
+                            next_recording_after, recording_interval_days, last_snapshot_at, next_snapshot_after)
+VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
 RETURNING id;`
 
 const getInsightByViewSql = `
 -- source: enterprise/internal/insights/store/insight_store.go:Get
 SELECT iv.unique_id, iv.title, iv.description, ivs.label, ivs.stroke,
 i.series_id, i.query, i.created_at, i.oldest_historical_at, i.last_recorded_at,
-i.next_recording_after, i.backfill_queued_at, i.recording_interval_days
+i.next_recording_after, i.backfill_queued_at, i.recording_interval_days, i.last_snapshot_at, i.next_snapshot_after
 FROM insight_view iv
          JOIN insight_view_series ivs ON iv.id = ivs.insight_view_id
          JOIN insight_series i ON ivs.insight_series_id = i.id
+         JOIN insight_view_grants ivg ON iv.id = ivg.insight_view_id
 WHERE %s
 ORDER BY iv.unique_id, i.series_id
 `
 
 const getInsightDataSeriesSql = `
 -- source: enterprise/internal/insights/store/insight_store.go:GetDataSeries
-select id, series_id, query, created_at, oldest_historical_at, last_recorded_at, next_recording_after, recording_interval_days from insight_series
+select id, series_id, query, created_at, oldest_historical_at, last_recorded_at, next_recording_after, recording_interval_days, last_snapshot_at, next_snapshot_after from insight_series
 WHERE %s
 `

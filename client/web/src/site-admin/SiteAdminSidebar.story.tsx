@@ -21,6 +21,7 @@ add(
                     groups={siteAdminSidebarGroups}
                     isSourcegraphDotCom={false}
                     batchChangesEnabled={false}
+                    batchChangesExecutionEnabled={false}
                 />
             )}
         </WebStory>

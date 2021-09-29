@@ -12,6 +12,7 @@ import (
 
 	"github.com/cockroachdb/errors"
 	"github.com/google/go-cmp/cmp"
+	"github.com/google/zoekt"
 	"github.com/gorilla/mux"
 
 	apirouter "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/httpapi/router"
@@ -61,8 +62,14 @@ func (mockAddrForRepo) AddrForRepo(name api.RepoName) string {
 }
 
 func TestReposIndex(t *testing.T) {
-	indexableRepos := []string{"github.com/popular/foo", "github.com/popular/bar"}
-	allRepos := append(indexableRepos, "github.com/alice/foo", "github.com/alice/bar")
+	allRepos := []types.RepoName{
+		{ID: 1, Name: "github.com/popular/foo"},
+		{ID: 2, Name: "github.com/popular/bar"},
+		{ID: 3, Name: "github.com/alice/foo"},
+		{ID: 4, Name: "github.com/alice/bar"},
+	}
+
+	indexableRepos := allRepos[:2]
 
 	cases := []struct {
 		name string
@@ -72,46 +79,38 @@ func TestReposIndex(t *testing.T) {
 	}{{
 		name: "indexers",
 		srv: &reposListServer{
-			Repos: &mockRepos{
-				indexableRepos: indexableRepos,
-				repos:          allRepos,
-			},
-			Indexers: suffixIndexers(true),
+			ListIndexable:   fakeListIndexable(allRepos),
+			StreamRepoNames: fakeStreamRepoNames(allRepos),
+			Indexers:        suffixIndexers(true),
 		},
 		body: `{"Hostname": "foo"}`,
 		want: []string{"github.com/popular/foo", "github.com/alice/foo"},
 	}, {
 		name: "indexers",
 		srv: &reposListServer{
-			Repos: &mockRepos{
-				indexableRepos: indexableRepos,
-				repos:          allRepos,
-			},
-			Indexers: suffixIndexers(true),
+			ListIndexable:   fakeListIndexable(allRepos),
+			StreamRepoNames: fakeStreamRepoNames(allRepos),
+			Indexers:        suffixIndexers(true),
 		},
 		body: `{"Hostname": "foo", "Indexed": ["github.com/alice/bar"]}`,
 		want: []string{"github.com/popular/foo", "github.com/alice/foo", "github.com/alice/bar"},
 	}, {
 		name: "dot-com indexers",
 		srv: &reposListServer{
-			SourcegraphDotComMode: true,
-			Repos: &mockRepos{
-				indexableRepos: indexableRepos,
-				repos:          allRepos,
-			},
-			Indexers: suffixIndexers(true),
+			ListIndexable:   fakeListIndexable(indexableRepos),
+			StreamRepoNames: fakeStreamRepoNames(allRepos),
+			Indexers:        suffixIndexers(true),
 		},
 		body: `{"Hostname": "foo"}`,
 		want: []string{"github.com/popular/foo"},
 	}, {
 		name: "none",
 		srv: &reposListServer{
-			Repos: &mockRepos{
-				indexableRepos: indexableRepos,
-				repos:          allRepos,
-			},
-			Indexers: suffixIndexers(true),
+			ListIndexable:   fakeListIndexable(allRepos),
+			StreamRepoNames: fakeStreamRepoNames(allRepos),
+			Indexers:        suffixIndexers(true),
 		},
+		want: []string{},
 		body: `{"Hostname": "baz"}`,
 	}}
 
@@ -145,40 +144,40 @@ func TestReposIndex(t *testing.T) {
 	}
 }
 
-type mockRepos struct {
-	indexableRepos []string
-	repos          []string
+func fakeListIndexable(indexable []types.RepoName) func(context.Context) ([]types.RepoName, error) {
+	return func(context.Context) ([]types.RepoName, error) {
+		return indexable, nil
+	}
 }
 
-func (r *mockRepos) ListIndexable(context.Context) ([]types.RepoName, error) {
-	var repos []types.RepoName
-	for _, name := range r.indexableRepos {
-		repos = append(repos, types.RepoName{
-			Name: api.RepoName(name),
-		})
-	}
-	return repos, nil
-}
+func fakeStreamRepoNames(repos []types.RepoName) func(context.Context, database.ReposListOptions, func(*types.RepoName)) error {
+	return func(ctx context.Context, opt database.ReposListOptions, cb func(*types.RepoName)) error {
+		names := make(map[string]bool, len(opt.Names))
+		for _, name := range opt.Names {
+			names[name] = true
+		}
 
-func (r *mockRepos) List(ctx context.Context, opt database.ReposListOptions) ([]*types.Repo, error) {
-	if opt.Index == nil || !*opt.Index {
-		return nil, errors.New("reposList test expects Index=true options")
-	}
+		ids := make(map[api.RepoID]bool, len(opt.IDs))
+		for _, id := range opt.IDs {
+			ids[id] = true
+		}
 
-	var repos []*types.Repo
-	for _, name := range r.repos {
-		repos = append(repos, &types.Repo{
-			Name: api.RepoName(name),
-		})
+		for i := range repos {
+			r := &repos[i]
+			if names[string(r.Name)] || ids[r.ID] {
+				cb(&repos[i])
+			}
+		}
+
+		return nil
 	}
-	return repos, nil
 }
 
 // suffixIndexers mocks Indexers. ReposSubset will return all repoNames with
 // the suffix of hostname.
 type suffixIndexers bool
 
-func (b suffixIndexers) ReposSubset(ctx context.Context, hostname string, indexed map[string]struct{}, repoNames []string) ([]string, error) {
+func (b suffixIndexers) ReposSubset(ctx context.Context, hostname string, indexed map[uint32]*zoekt.MinimalRepoListEntry, indexable []types.RepoName) ([]types.RepoName, error) {
 	if !b.Enabled() {
 		return nil, errors.New("indexers disabled")
 	}
@@ -186,12 +185,12 @@ func (b suffixIndexers) ReposSubset(ctx context.Context, hostname string, indexe
 		return nil, errors.New("empty hostname")
 	}
 
-	var filter []string
-	for _, name := range repoNames {
-		if strings.HasSuffix(name, hostname) {
-			filter = append(filter, name)
-		} else if _, ok := indexed[name]; ok {
-			filter = append(filter, name)
+	var filter []types.RepoName
+	for _, r := range indexable {
+		if strings.HasSuffix(string(r.Name), hostname) {
+			filter = append(filter, r)
+		} else if _, ok := indexed[uint32(r.ID)]; ok {
+			filter = append(filter, r)
 		}
 	}
 	return filter, nil

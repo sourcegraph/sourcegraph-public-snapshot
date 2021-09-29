@@ -1627,6 +1627,25 @@ func testStoreListChangesetSyncData(t *testing.T, ctx context.Context, s *Store,
 		}
 	})
 
+	t.Run("only for subset of changesets", func(t *testing.T) {
+		hs, err := s.ListChangesetSyncData(ctx, ListChangesetSyncDataOpts{ChangesetIDs: []int64{changesets[0].ID}})
+		if err != nil {
+			t.Fatal(err)
+		}
+		want := []*btypes.ChangesetSyncData{
+			{
+				ChangesetID:           changesets[0].ID,
+				UpdatedAt:             clock.Now(),
+				LatestEvent:           clock.Now(),
+				ExternalUpdatedAt:     clock.Now(),
+				RepoExternalServiceID: "https://github.com/",
+			},
+		}
+		if diff := cmp.Diff(want, hs); diff != "" {
+			t.Fatal(diff)
+		}
+	})
+
 	t.Run("ignore closed batch change", func(t *testing.T) {
 		closedBatchChangeID := changesets[0].BatchChanges[0].BatchChangeID
 		c, err := s.GetBatchChange(ctx, GetBatchChangeOpts{ID: closedBatchChangeID})
@@ -2145,8 +2164,7 @@ func TestCancelQueuedBatchChangeChangesets(t *testing.T) {
 	user := ct.CreateTestUser(t, db, true)
 	spec := ct.CreateBatchSpec(t, ctx, s, "test-batch-change", user.ID)
 	batchChange := ct.CreateBatchChange(t, ctx, s, "test-batch-change", user.ID, spec.ID)
-	repos, _ := ct.CreateTestRepos(t, ctx, s.DB(), 1)
-	repo := repos[0]
+	repo, _ := ct.CreateTestRepo(t, ctx, db)
 
 	c1 := ct.CreateChangeset(t, ctx, s, ct.TestChangesetOpts{
 		Repo:               repo.ID,
@@ -2280,8 +2298,7 @@ func TestEnqueueChangesetsToClose(t *testing.T) {
 	user := ct.CreateTestUser(t, db, true)
 	spec := ct.CreateBatchSpec(t, ctx, s, "test-batch-change", user.ID)
 	batchChange := ct.CreateBatchChange(t, ctx, s, "test-batch-change", user.ID, spec.ID)
-	repos, _ := ct.CreateTestRepos(t, ctx, s.DB(), 1)
-	repo := repos[0]
+	repo, _ := ct.CreateTestRepo(t, ctx, db)
 
 	wantEnqueued := ct.ChangesetAssertions{
 		Repo:               repo.ID,

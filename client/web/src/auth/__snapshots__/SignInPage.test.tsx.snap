@@ -4,7 +4,7 @@ exports[`SignInPage renders redirect when user is authenticated 1`] = `null`;
 
 exports[`SignInPage renders sign in page (cloud) 1`] = `
 <div
-  className="signin-signup-page sign-in-page"
+  className="signinSignupPage"
 >
   <div
     className="heroPage lessPadding"
@@ -44,10 +44,10 @@ exports[`SignInPage renders sign in page (cloud) 1`] = `
       Sign in to Sourcegraph Cloud
     </div>
     <div
-      className="mb-4 signin-page__container pb-5"
+      className="mb-4 pb-5 signinPageContainer"
     >
       <div
-        className="signin-signup-form signin-form test-signin-form rounded p-4 my-3 mt-4"
+        className="test-signin-form rounded p-4 my-3 signinSignupForm mt-4"
       >
         <form
           className=""
@@ -67,7 +67,7 @@ exports[`SignInPage renders sign in page (cloud) 1`] = `
               autoCapitalize="off"
               autoComplete="username"
               autoFocus={true}
-              className="form-control signin-signup-form__input"
+              className="form-control"
               disabled={false}
               id="username-or-email"
               onChange={[Function]}
@@ -100,7 +100,7 @@ exports[`SignInPage renders sign in page (cloud) 1`] = `
             </div>
             <input
               autoComplete="current-password"
-              className="form-control signin-signup-form__input"
+              className="form-control"
               disabled={false}
               id="password"
               name="password"
@@ -127,7 +127,7 @@ exports[`SignInPage renders sign in page (cloud) 1`] = `
           className="mb-3 py-1 d-flex align-items-center"
         >
           <div
-            className="w-100 or-divider__border"
+            className="w-100 border"
           />
           <small
             className="px-2 text-muted "
@@ -135,7 +135,7 @@ exports[`SignInPage renders sign in page (cloud) 1`] = `
             OR
           </small>
           <div
-            className="w-100 or-divider__border"
+            className="w-100 border"
           />
         </div>
         <div
@@ -178,7 +178,7 @@ exports[`SignInPage renders sign in page (cloud) 1`] = `
 
 exports[`SignInPage renders sign in page (server) 1`] = `
 <div
-  className="signin-signup-page sign-in-page"
+  className="signinSignupPage"
 >
   <div
     className="heroPage lessPadding"
@@ -213,10 +213,10 @@ exports[`SignInPage renders sign in page (server) 1`] = `
       Sign in to Sourcegraph Server
     </div>
     <div
-      className="mb-4 signin-page__container pb-5"
+      className="mb-4 pb-5 signinPageContainer"
     >
       <div
-        className="signin-signup-form signin-form test-signin-form rounded p-4 my-3 mt-4"
+        className="test-signin-form rounded p-4 my-3 signinSignupForm mt-4"
       >
         <form
           className=""
@@ -236,7 +236,7 @@ exports[`SignInPage renders sign in page (server) 1`] = `
               autoCapitalize="off"
               autoComplete="username"
               autoFocus={true}
-              className="form-control signin-signup-form__input"
+              className="form-control"
               disabled={false}
               id="username-or-email"
               onChange={[Function]}
@@ -269,7 +269,7 @@ exports[`SignInPage renders sign in page (server) 1`] = `
             </div>
             <input
               autoComplete="current-password"
-              className="form-control signin-signup-form__input"
+              className="form-control"
               disabled={false}
               id="password"
               name="password"
@@ -296,7 +296,7 @@ exports[`SignInPage renders sign in page (server) 1`] = `
           className="mb-3 py-1 d-flex align-items-center"
         >
           <div
-            className="w-100 or-divider__border"
+            className="w-100 border"
           />
           <small
             className="px-2 text-muted "
@@ -304,7 +304,7 @@ exports[`SignInPage renders sign in page (server) 1`] = `
             OR
           </small>
           <div
-            className="w-100 or-divider__border"
+            className="w-100 border"
           />
         </div>
         <div

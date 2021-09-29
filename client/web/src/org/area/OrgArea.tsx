@@ -233,6 +233,7 @@ export class OrgArea extends React.Component<Props> {
             telemetryService: this.props.telemetryService,
             isSourcegraphDotCom: this.props.isSourcegraphDotCom,
             batchChangesEnabled: this.props.batchChangesEnabled,
+            batchChangesExecutionEnabled: this.props.batchChangesExecutionEnabled,
             breadcrumbs: this.props.breadcrumbs,
             setBreadcrumb: this.state.setBreadcrumb,
             useBreadcrumb: this.state.useBreadcrumb,

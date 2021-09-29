@@ -158,6 +158,7 @@ DELETE FROM batch_changes WHERE id = %s
 type CountBatchChangesOpts struct {
 	ChangesetID int64
 	State       btypes.BatchChangeState
+	RepoID      api.RepoID
 
 	InitialApplierID int32
 
@@ -170,7 +171,12 @@ func (s *Store) CountBatchChanges(ctx context.Context, opts CountBatchChangesOpt
 	ctx, endObservation := s.operations.countBatchChanges.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
-	return s.queryCount(ctx, countBatchChangesQuery(&opts))
+	repoAuthzConds, err := database.AuthzQueryConds(ctx, s.Handle().DB())
+	if err != nil {
+		return 0, errors.Wrap(err, "CountBatchChanges generating authz query conds")
+	}
+
+	return s.queryCount(ctx, countBatchChangesQuery(&opts, repoAuthzConds))
 }
 
 var countBatchChangesQueryFmtstr = `
@@ -181,7 +187,7 @@ FROM batch_changes
 WHERE %s
 `
 
-func countBatchChangesQuery(opts *CountBatchChangesOpts) *sqlf.Query {
+func countBatchChangesQuery(opts *CountBatchChangesOpts, repoAuthzConds *sqlf.Query) *sqlf.Query {
 	joins := []*sqlf.Query{
 		sqlf.Sprintf("LEFT JOIN users namespace_user ON batch_changes.namespace_user_id = namespace_user.id"),
 		sqlf.Sprintf("LEFT JOIN orgs namespace_org ON batch_changes.namespace_org_id = namespace_org.id"),
@@ -213,6 +219,19 @@ func countBatchChangesQuery(opts *CountBatchChangesOpts) *sqlf.Query {
 
 	if opts.NamespaceOrgID != 0 {
 		preds = append(preds, sqlf.Sprintf("batch_changes.namespace_org_id = %s", opts.NamespaceOrgID))
+	}
+
+	if opts.RepoID != 0 {
+		preds = append(preds, sqlf.Sprintf(`EXISTS(
+			SELECT * FROM changesets
+			INNER JOIN repo ON changesets.repo_id = repo.id
+			WHERE
+				changesets.batch_change_ids ? batch_changes.id::TEXT AND
+				changesets.repo_id = %s AND
+				repo.deleted_at IS NULL AND
+				-- authz conditions:
+				%s
+		)`, opts.RepoID, repoAuthzConds))
 	}
 
 	if len(preds) == 0 {

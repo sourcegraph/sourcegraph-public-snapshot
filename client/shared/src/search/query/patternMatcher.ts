@@ -82,9 +82,7 @@ interface DataAnnotation<Value, Data> {
      *      }
      *    }
      */
-    $data:
-        | ((value: Value, context: MatchContext<Data>) => void)
-        | (Data extends any[] ? never : DataMapper<Value, Data>)
+    $data: DataMapper<Value, Data>
 }
 
 /**
@@ -99,9 +97,11 @@ interface DataAnnotation<Value, Data> {
  *   }
  * }
  */
-type DataMapper<Value, Data> = {
-    [K in keyof Data]?: ((value: Value, context: MatchContext<Data>) => Data[K]) | Data[K]
-}
+export type DataMapper<Value, Data> =
+    | ((value: Value, context: MatchContext<Data>) => void)
+    | (Data extends any[]
+          ? never
+          : { [K in keyof Data]?: ((value: Value, context: MatchContext<Data>) => Data[K]) | Data[K] })
 
 /**
  * Creates the union of all keys of each member.
@@ -189,7 +189,7 @@ export type PatternFunction<Value, Data> = (value: Value, context: MatchContext<
  */
 type PrimitivePattern<Value> = Value extends string
     ? RegExp | Value
-    : Value extends number | boolean | null
+    : Value extends number | boolean | null | undefined
     ? Value
     : never
 
@@ -212,22 +212,20 @@ export type PatternOf<Value, Data = unknown> =
     // A pattern function is always a valid value. The function receives the
     // value to be matched as argument.
     | PatternFunction<Value, Data>
+    | WrapperPattern<Value, Data>
     | (// Arrays always have to matched with a pattern function
       // The [...] around the types are necessary to avoid
       // distributing union types.
       [Value] extends [any[]]
           ? never
-          :
-                | WrapperPattern<Value, Data>
-                // Note that we are not checking types here (Value extends ...). For
-                // one, union types of mixed types (e.g. number|{x: number}) makes
-                // this a bit annoying, and what we really want to do do here is
-                // _filter_ 'Value' and allow/create an ObjectPattern for the objects in
-                // the union, and PrimitivePatterns for the primtives.
-                // ObjectMembers does the object filtering and PrimitivePattern
-                // includes type checks itself.
-                | ObjectPattern<ObjectMembers<Value>, Data>
-                | PrimitivePattern<Value>)
+          : // Note that we are not checking types here (Value extends ...). For
+            // one, union types of mixed types (e.g. number|{x: number}) makes
+            // this a bit annoying, and what we really want to do do here is
+            // _filter_ 'Value' and allow/create an ObjectPattern for the objects in
+            // the union, and PrimitivePatterns for the primtives.
+            // ObjectMembers does the object filtering and PrimitivePattern
+            // includes type checks itself.
+            ObjectPattern<ObjectMembers<Value>, Data> | PrimitivePattern<Value>)
 
 /**
  * Utility type to prevent TS from inferring the type from a function parameter
@@ -245,7 +243,7 @@ export type PatternOfNoInfer<Value, Data> = PatternOf<NoInfer<Value>, NoInfer<Da
  * Context that is passed to all pattern functions during a single pattern
  * application. Currently only holds the extracted data.
  */
-interface MatchContext<Data> {
+export interface MatchContext<Data> {
     data: Data
 }
 

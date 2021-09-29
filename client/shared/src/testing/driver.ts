@@ -1,7 +1,7 @@
 import * as os from 'os'
 import * as path from 'path'
 
-import { percySnapshot as realPercySnapshot } from '@percy/puppeteer'
+import realPercySnapshot from '@percy/puppeteer'
 import * as jsonc from '@sqs/jsonc-parser'
 import * as jsoncEdit from '@sqs/jsonc-parser/lib/edit'
 import delay from 'delay'
@@ -204,13 +204,22 @@ export class Driver {
         password: string
         email?: string
     }): Promise<void> {
-        await this.page.goto(this.sourcegraphBaseUrl)
+        /**
+         * Wait for redirects to complete to avoid using an outdated page URL.
+         *
+         * In case a user is not authenticated, and site-init is required, two redirects happen:
+         * 1. Redirect to /sign-in?returnTo=%2F
+         * 2. Redirect to /site-admin/init
+         */
+        await this.page.goto(this.sourcegraphBaseUrl, { waitUntil: 'networkidle0' })
         await this.page.evaluate(() => {
             localStorage.setItem('has-dismissed-browser-ext-toast', 'true')
             localStorage.setItem('has-dismissed-integrations-toast', 'true')
             localStorage.setItem('has-dismissed-survey-toast', 'true')
         })
+
         const url = new URL(this.page.url())
+
         if (url.pathname === '/site-admin/init') {
             await this.page.waitForSelector('.test-signup-form')
             if (email) {
@@ -354,8 +363,8 @@ export class Driver {
         // Delete existing external services if there are any.
         if (externalServices.totalCount !== 0) {
             await this.page.goto(this.sourcegraphBaseUrl + '/site-admin/external-services')
-            await this.page.waitFor('.test-filtered-connection')
-            await this.page.waitForSelector('.test-filtered-connection__loader', { hidden: true })
+            await this.page.waitForSelector('[data-testid="filtered-connection"]')
+            await this.page.waitForSelector('[data-testid="filtered-connection-loader"]', { hidden: true })
 
             // Matches buttons for deleting external services named ${displayName}.
             const deleteButtonSelector = `[data-test-external-service-name="${displayName}"] .test-delete-external-service-button`
@@ -828,7 +837,7 @@ export async function createDriverForTest(options?: Partial<DriverOptions>): Pro
  * Get the RevisionInfo (which contains the executable path) for the given
  * browser and revision string.
  */
-function getPuppeteerBrowser(browserName: string, revision: string): RevisionInfo {
+export function getPuppeteerBrowser(browserName: string, revision: string): RevisionInfo {
     const browserFetcher = puppeteer.createBrowserFetcher({ product: browserName })
     const revisionInfo = browserFetcher.revisionInfo(revision)
     if (!revisionInfo.local) {
