@@ -43,11 +43,15 @@ import { HeroPage } from '../components/HeroPage'
 import { ActionItemsBarProps, useWebActionItems } from '../extensions/components/ActionItemsBar'
 import { ExternalLinkFields, RepositoryFields } from '../graphql-operations'
 import { CodeInsightsProps } from '../insights/types'
+import { KeyboardShortcutsProps } from '../keyboardShortcuts/keyboardShortcuts'
 import { IS_CHROME } from '../marketing/util'
 import { Settings } from '../schema/settings.schema'
+import { VersionContext } from '../schema/site.schema'
 import {
     CaseSensitivityProps,
+    ParsedSearchQueryProps,
     PatternTypeProps,
+    SearchContextInputProps,
     SearchContextProps,
     searchQueryForRepoRevision,
     SearchStreamingProps,
@@ -85,8 +89,11 @@ export interface RepoContainerContext
         ActivationProps,
         PatternTypeProps,
         CaseSensitivityProps,
+        KeyboardShortcutsProps,
         VersionContextProps,
         Pick<SearchContextProps, 'selectedSearchContextSpec'>,
+        Pick<ParsedSearchQueryProps, 'parsedSearchQuery'>,
+        SearchContextInputProps,
         BreadcrumbSetters,
         ActionItemsBarProps,
         SearchStreamingProps,
@@ -104,6 +111,9 @@ export interface RepoContainerContext
 
     onDidUpdateExternalLinks: (externalLinks: ExternalLinkFields[] | undefined) => void
 
+    isSourcegraphDotCom: boolean
+    setVersionContext: (versionContext: string | undefined) => Promise<void>
+    availableVersionContexts: VersionContext[] | undefined
     globbing: boolean
 
     showSearchNotebook: boolean
@@ -129,8 +139,11 @@ interface RepoContainerProps
         ExtensionAlertProps,
         PatternTypeProps,
         CaseSensitivityProps,
+        KeyboardShortcutsProps,
         VersionContextProps,
         Pick<SearchContextProps, 'selectedSearchContextSpec'>,
+        Pick<ParsedSearchQueryProps, 'parsedSearchQuery'>,
+        SearchContextInputProps,
         BreadcrumbSetters,
         BreadcrumbsProps,
         SearchStreamingProps,
@@ -145,6 +158,9 @@ interface RepoContainerProps
     repoSettingsSidebarGroups: readonly RepoSettingsSideBarGroup[]
     authenticatedUser: AuthenticatedUser | null
     history: H.History
+    isSourcegraphDotCom: boolean
+    setVersionContext: (versionContext: string | undefined) => Promise<void>
+    availableVersionContexts: VersionContext[] | undefined
     globbing: boolean
     showSearchNotebook: boolean
     isMacPlatform: boolean

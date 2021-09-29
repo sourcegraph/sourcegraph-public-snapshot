@@ -60,8 +60,6 @@ import {
     SearchContextInputProps,
     searchQueryForRepoRevision,
 } from '../../search'
-import { SubmitSearchParameters } from '../../search/helpers'
-import { ThemePreferenceProps } from '../../theme'
 import { basename } from '../../util/path'
 import { serviceKindDisplayNameAndIcon } from '../actions/GoToCodeHostAction'
 import { externalLinkFieldsFragment, fetchTreeEntries } from '../backend'
@@ -127,7 +125,6 @@ interface Props
         ExtensionsControllerProps,
         PlatformContextProps,
         ThemeProps,
-        ThemePreferenceProps,
         TelemetryProps,
         ActivationProps,
         PatternTypeProps,
@@ -139,7 +136,6 @@ interface Props
         CodeInsightsProps,
         Pick<SearchContextProps, 'selectedSearchContextSpec'>,
         Pick<ParsedSearchQueryProps, 'parsedSearchQuery'>,
-        Pick<SubmitSearchParameters, 'source'>,
         SearchContextInputProps,
         BreadcrumbSetters {
     repo: TreePageRepositoryFields

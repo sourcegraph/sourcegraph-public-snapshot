@@ -41,9 +41,7 @@ import {
     SearchContextInputProps,
     ParsedSearchQueryProps,
 } from '../search'
-import { SubmitSearchParameters } from '../search/helpers'
 import { StreamingSearchResultsListProps } from '../search/results/StreamingSearchResultsList'
-import { ThemePreferenceProps } from '../theme'
 import { RouteDescriptor } from '../util/contributions'
 
 import { CopyPathAction } from './actions/CopyPathAction'
@@ -64,7 +62,6 @@ export interface RepoRevisionContainerContext
         ExtensionsControllerProps,
         PlatformContextProps,
         ThemeProps,
-        ThemePreferenceProps,
         TelemetryProps,
         HoverThresholdProps,
         ActivationProps,
@@ -76,7 +73,6 @@ export interface RepoRevisionContainerContext
         CodeIntelligenceProps,
         Pick<SearchContextProps, 'selectedSearchContextSpec'>,
         Pick<ParsedSearchQueryProps, 'parsedSearchQuery'>,
-        Pick<SubmitSearchParameters, 'source'>,
         SearchContextInputProps,
         RevisionSpec,
         BreadcrumbSetters,
@@ -117,8 +113,11 @@ interface RepoRevisionContainerProps
         ActivationProps,
         PatternTypeProps,
         CaseSensitivityProps,
+        KeyboardShortcutsProps,
         VersionContextProps,
         Pick<SearchContextProps, 'selectedSearchContextSpec'>,
+        Pick<ParsedSearchQueryProps, 'parsedSearchQuery'>,
+        SearchContextInputProps,
         RevisionSpec,
         BreadcrumbSetters,
         ActionItemsBarProps,
@@ -131,7 +130,6 @@ interface RepoRevisionContainerProps
     repoSettingsAreaRoutes: readonly RepoSettingsAreaRoute[]
     repoSettingsSidebarGroups: readonly RepoSettingsSideBarGroup[]
     repo: RepositoryFields
-    authenticatedUser: AuthenticatedUser | null
     routePrefix: string
 
     /**
@@ -142,6 +140,10 @@ interface RepoRevisionContainerProps
 
     history: H.History
 
+    authenticatedUser: AuthenticatedUser | null
+    isSourcegraphDotCom: boolean
+    setVersionContext: (versionContext: string | undefined) => Promise<void>
+    availableVersionContexts: VersionContext[] | undefined
     globbing: boolean
 
     showSearchNotebook: boolean

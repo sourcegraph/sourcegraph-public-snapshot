@@ -3,7 +3,6 @@ import * as H from 'history'
 import React, { useState, useCallback, useEffect } from 'react'
 import { Form } from 'reactstrap'
 
-import { ActivationProps } from '@sourcegraph/shared/src/components/activation/Activation'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { VersionContextProps } from '@sourcegraph/shared/src/search/util'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
@@ -15,22 +14,18 @@ import { KeyboardShortcutsProps } from '../../keyboardShortcuts/keyboardShortcut
 import { Settings } from '../../schema/settings.schema'
 import { VersionContext } from '../../schema/site.schema'
 import { PatternTypeProps, CaseSensitivityProps, ParsedSearchQueryProps, SearchContextInputProps } from '../../search'
-import { submitSearch, SubmitSearchParameters } from '../../search/helpers'
+import { submitSearch } from '../../search/helpers'
 import { SearchBox } from '../../search/input/SearchBox'
-import { ThemePreferenceProps } from '../../theme'
 
 interface Props
     extends SettingsCascadeProps<Settings>,
         ThemeProps,
-        ThemePreferenceProps,
-        ActivationProps,
         PatternTypeProps,
         CaseSensitivityProps,
         KeyboardShortcutsProps,
         TelemetryProps,
         Pick<ParsedSearchQueryProps, 'parsedSearchQuery'>,
         PlatformContextProps<'forceUpdateTooltip' | 'settings' | 'sourcegraphURL'>,
-        Pick<SubmitSearchParameters, 'source'>,
         VersionContextProps,
         SearchContextInputProps {
     authenticatedUser: AuthenticatedUser | null
