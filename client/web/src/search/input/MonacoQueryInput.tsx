@@ -255,8 +255,10 @@ export const MonacoQueryInput: React.FunctionComponent<MonacoQueryInputProps> = 
                 editor.revealPosition(position)
             }
         }
-        editor.focus()
-    }, [editor, queryState])
+        if (autoFocus) {
+            editor.focus()
+        }
+    }, [editor, autoFocus, queryState])
 
     // Prevent newline insertion in model, and surface query changes with stripped newlines.
     useEffect(() => {
