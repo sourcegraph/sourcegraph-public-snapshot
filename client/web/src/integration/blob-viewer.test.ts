@@ -1095,7 +1095,10 @@ describe('Blob viewer', () => {
                 })
 
                 await driver.page.goto(`${driver.sourcegraphBaseUrl}/github.com/sourcegraph/test/-/blob/test.ts`)
-                await driver.page.evaluate(() => localStorage.removeItem('hover-count'))
+                await driver.page.evaluate(() => {
+                    localStorage.removeItem('hover-count')
+                    localStorage.removeItem('has-dismissed-extension-alert')
+                })
                 await driver.page.reload()
 
                 await driver.page.waitForSelector('.test-go-to-code-host', { visible: true })
