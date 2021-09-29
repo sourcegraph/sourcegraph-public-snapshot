@@ -219,7 +219,12 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
                 )}
                 {/* TODO: Only when repo open */}
                 {mode === CommandPaletteMode.Fuzzy && (
-                    <FuzzyFinderResult value={searchText} onClick={handleClose} workspaceRoot={workspaceRoot} />
+                    <FuzzyFinderResult
+                        value={searchText}
+                        onClick={handleClose}
+                        workspaceRoot={workspaceRoot}
+                        platformContext={platformContext}
+                    />
                 )}
                 {/* TODO: Only when code editor open (possibly only when single open TODO) */}
                 {mode === CommandPaletteMode.JumpToLine && (

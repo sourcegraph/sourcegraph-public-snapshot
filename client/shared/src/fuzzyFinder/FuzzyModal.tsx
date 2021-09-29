@@ -37,16 +37,9 @@ export interface FuzzyModalProps extends FuzzyFinderProps {
     parseRepoUrl: () => ParsedRepoURI
 }
 
-interface FuzzyModalState {
+export interface FuzzyModalState {
     query: string
-    setQuery: (query: string) => void
-
-    focusIndex: number
-    setFocusIndex: (focusIndex: number) => void // TODO: only seems to be called by modal component, no need here.
-    // TODO: ALL the state setters should be called in response to user input in the component, not here.
-
     maxResults: number
-    increaseMaxResults: () => void
 }
 
 function plural(what: string, count: number, isComplete: boolean): string {
@@ -91,7 +84,20 @@ interface RenderedFuzzyResult {
     falsePositiveRatio?: number
 }
 
-export function renderFuzzyResult(props: FuzzyModalProps, state: FuzzyModalState): RenderedFuzzyResult {
+export function renderFuzzyResult(
+    props: Pick<
+        FuzzyModalProps,
+        | 'fsm'
+        | 'setFsm'
+        | 'downloadFilenames'
+        | 'parseRepoUrl'
+        | 'onClose'
+        | 'repoName'
+        | 'commitID'
+        | 'platformContext'
+    >, // TODO: separate type
+    state: FuzzyModalState
+): RenderedFuzzyResult {
     function empty(element: JSX.Element): RenderedFuzzyResult {
         return {
             element,
@@ -149,7 +155,7 @@ function renderFiles({
     indexing,
     repoUrl,
 }: {
-    props: FuzzyModalProps
+    props: Pick<FuzzyModalProps, 'onClose' | 'repoName' | 'commitID' | 'platformContext'>
     state: FuzzyModalState
     search: FuzzySearch
     indexing?: SearchIndexing
@@ -164,12 +170,14 @@ function renderFiles({
             query: state.query,
             maxResults: state.maxResults,
             createUrl: filename =>
-                toPrettyBlobURL({
-                    filePath: filename,
-                    revision: repoUrl.revision,
-                    repoName: props.repoName,
-                    commitID: props.commitID,
-                }),
+                props.platformContext.urlToFile(
+                    {
+                        repoName: props.repoName,
+                        revision: repoUrl.revision ?? props.commitID,
+                        filePath: filename,
+                    },
+                    { part: undefined }
+                ),
             onClick: () => props.onClose(),
         })
         fuzzyResult.elapsedMilliseconds = window.performance.now() - start
@@ -213,7 +221,7 @@ async function continueIndexing(indexing: SearchIndexing): Promise<FuzzyFSM> {
     }
 }
 
-async function handleEmpty(props: FuzzyModalProps): Promise<void> {
+async function handleEmpty(props: Pick<FuzzyModalProps, 'fsm' | 'setFsm' | 'downloadFilenames'>): Promise<void> {
     props.setFsm({ key: 'downloading' })
     try {
         const filenames = await props.downloadFilenames()

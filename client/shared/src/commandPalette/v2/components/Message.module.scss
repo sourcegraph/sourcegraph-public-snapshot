@@ -1,0 +1,14 @@
+.root {
+    margin: 0;
+    padding: 0.125rem 0.5rem;
+    font-size: 1rem;
+
+    // Temporary hack to clear fuzzy "message" element margin
+    & p {
+        margin: 0;
+    }
+}
+
+.is-type-muted {
+    color: var(--icon-muted);
+}

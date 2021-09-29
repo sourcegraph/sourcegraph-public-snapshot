@@ -4,6 +4,8 @@ import { useHistory } from 'react-router'
 import { TextDocumentData } from '../../../api/viewerTypes'
 import { addLineRangeQueryParameter, toPositionOrRangeQueryParameter } from '../../../util/url'
 
+import { Message } from './Message'
+
 interface JumpToLineResultProps {
     value: string
     onClick: () => void
@@ -48,23 +50,16 @@ export const JumpToLineResult: React.FC<JumpToLineResultProps> = ({ value, onCli
     }, [line, numberOfLines, isLineNaN, textDocumentData, history])
 
     if (!textDocumentData) {
-        return (
-            <div>
-                <h3>Open a text document to jump to line</h3>
-            </div>
-        )
+        return <Message type="muted">Open a text document to jump to line</Message>
     }
 
-    console.log({ lines, text: textDocumentData.text })
+    if (!value) {
+        return <Message type="muted">Enter a line number between 1 and {lines.length}</Message>
+    }
 
     // TODO: `Enter a line number between 1 and ${length}`
 
     // TODO: If line is not a number or it is out of range, display helpful message
     // TODO: Close on enter pressed
-    return (
-        <div>
-            {!value && <h3>Enter a line number between 1 and {lines.length}</h3>}
-            <h1>Go to line {line}</h1>
-        </div>
-    )
+    return <Message>Go to line {line}</Message>
 }

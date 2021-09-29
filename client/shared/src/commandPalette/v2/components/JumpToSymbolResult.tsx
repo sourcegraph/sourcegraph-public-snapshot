@@ -8,6 +8,8 @@ import { PlatformContext, PlatformContextProps } from '../../../platform/context
 import { parseRepoURI } from '../../../util/url'
 import { useObservable } from '../../../util/useObservable'
 
+import { Message } from './Message'
+
 interface JumpToSymbolResultProps extends PlatformContextProps<'requestGraphQL'> {
     value: string
     onClick: () => void
@@ -95,11 +97,7 @@ export const JumpToSymbolResult: React.FC<JumpToSymbolResultProps> = ({
     console.log({ parsedURI, commitSymbols })
     // Toggle whole repo symbol search? Wouldn't "jump preview" in that case though due to file loading times.
     if (!textDocumentData) {
-        return (
-            <div>
-                <h3>Open a text document to jump to symbol</h3>
-            </div>
-        )
+        return <Message type="muted">Open a text document to jump to symbol</Message>
     }
     // Can apollo cache this/share request w/ symbols sidebar?
 

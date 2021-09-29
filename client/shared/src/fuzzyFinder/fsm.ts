@@ -46,7 +46,7 @@ export interface Failed {
     errorMessage: string
 }
 
-export interface FuzzyFinderProps extends PlatformContextProps<'requestGraphQL'> {
+export interface FuzzyFinderProps extends PlatformContextProps<'requestGraphQL' | 'urlToFile'> {
     repoName: string
     commitID: string
 

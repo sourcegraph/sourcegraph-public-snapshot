@@ -4,7 +4,12 @@ import CloseIcon from 'mdi-react/CloseIcon'
 import React, { useState } from 'react'
 
 import { HighlightedLink } from '@sourcegraph/shared/src/fuzzyFinder/components/HighlightedLink'
-import { FuzzyModalProps, FuzzyResultsSummary, renderFuzzyResult } from '@sourcegraph/shared/src/fuzzyFinder/FuzzyModal'
+import {
+    FuzzyModalProps,
+    FuzzyModalState,
+    FuzzyResultsSummary,
+    renderFuzzyResult,
+} from '@sourcegraph/shared/src/fuzzyFinder/FuzzyModal'
 import { useLocalStorage } from '@sourcegraph/shared/src/util/useLocalStorage'
 
 import styles from './FuzzyModal.module.scss'
@@ -14,17 +19,6 @@ const FUZZY_MODAL_RESULTS = 'fuzzy-modal-results'
 
 // The number of results to jump by on PageUp/PageDown keyboard shortcuts.
 const PAGE_DOWN_INCREMENT = 10
-
-interface FuzzyModalState {
-    query: string
-    setQuery: (query: string) => void
-
-    focusIndex: number
-    setFocusIndex: (focusIndex: number) => void
-
-    maxResults: number
-    increaseMaxResults: () => void
-}
 
 /**
  * Component that interactively displays filenames in the open repository when given fuzzy queries.
@@ -48,15 +42,13 @@ export const FuzzyModal: React.FunctionComponent<FuzzyModalProps> = props => {
     // on a button at the bottom of the result list.
     const [maxResults, setMaxResults] = useState(props.initialMaxResults)
 
+    const increaseMaxResults = (): void => {
+        setMaxResults(maxResults + props.initialMaxResults)
+    }
+
     const state: FuzzyModalState = {
         query,
-        setQuery,
-        focusIndex,
-        setFocusIndex,
         maxResults,
-        increaseMaxResults: () => {
-            setMaxResults(maxResults + props.initialMaxResults)
-        },
     }
 
     const fuzzyResult = renderFuzzyResult(props, state)
@@ -65,10 +57,10 @@ export const FuzzyModal: React.FunctionComponent<FuzzyModalProps> = props => {
     // displayed filenames.  Cycles so that the user can press-hold the down
     // arrow and it goes all the way down and back up to the top result.
     function setRoundedFocusIndex(increment: number): void {
-        const newNumber = state.focusIndex + increment
+        const newNumber = focusIndex + increment
         const index = newNumber % fuzzyResult.resultsCount
         const nextIndex = index < 0 ? fuzzyResult.resultsCount + index : index
-        state.setFocusIndex(nextIndex)
+        setFocusIndex(nextIndex)
         document.querySelector(`#fuzzy-modal-result-${nextIndex}`)?.scrollIntoView(false)
     }
 
@@ -92,10 +84,8 @@ export const FuzzyModal: React.FunctionComponent<FuzzyModalProps> = props => {
                 setRoundedFocusIndex(-PAGE_DOWN_INCREMENT)
                 break
             case 'Enter':
-                if (state.focusIndex < fuzzyResult.resultsCount) {
-                    const fileAnchor = document.querySelector<HTMLAnchorElement>(
-                        `#fuzzy-modal-result-${state.focusIndex} a`
-                    )
+                if (focusIndex < fuzzyResult.resultsCount) {
+                    const fileAnchor = document.querySelector<HTMLAnchorElement>(`#fuzzy-modal-result-${focusIndex} a`)
                     fileAnchor?.click()
                     props.onClose()
                 }
@@ -111,8 +101,8 @@ export const FuzzyModal: React.FunctionComponent<FuzzyModalProps> = props => {
                     id={fuzzyResultId(fileIndex)}
                     key={file.text}
                     role="option"
-                    aria-selected={fileIndex === state.focusIndex}
-                    className={classNames('p-1', fileIndex === state.focusIndex && styles.focused)}
+                    aria-selected={fileIndex === focusIndex}
+                    className={classNames('p-1', fileIndex === focusIndex && styles.focused)}
                 >
                     <HighlightedLink {...file} />
                 </li>
@@ -143,14 +133,14 @@ export const FuzzyModal: React.FunctionComponent<FuzzyModalProps> = props => {
                     aria-controls={FUZZY_MODAL_RESULTS}
                     aria-owns={FUZZY_MODAL_RESULTS}
                     aria-expanded={props.fsm.key !== 'downloading'}
-                    aria-activedescendant={fuzzyResultId(state.focusIndex)}
+                    aria-activedescendant={fuzzyResultId(focusIndex)}
                     id="fuzzy-modal-input"
                     className={classNames('form-control py-1', styles.input)}
                     placeholder="Enter a partial file path or name"
                     value={state.query}
                     onChange={event => {
-                        state.setQuery(event.target.value)
-                        state.setFocusIndex(0)
+                        setQuery(event.target.value)
+                        setFocusIndex(0)
                     }}
                     type="text"
                     onKeyDown={onInputKeyDown}
@@ -164,7 +154,7 @@ export const FuzzyModal: React.FunctionComponent<FuzzyModalProps> = props => {
                     <button
                         className={classNames('btn btn-secondary', styles.showMore)}
                         type="button"
-                        onClick={() => state.increaseMaxResults()}
+                        onClick={() => increaseMaxResults()}
                     >
                         Show more
                     </button>

@@ -127,10 +127,11 @@ export const CommandResult: React.FC<CommandResultProps> = ({ actions, value, on
                 return (
                     <NavigableList.Item
                         active={active}
-                        label={label}
                         keybindings={keybinding ? [keybinding] : []}
                         onClick={() => handleRunAction(item)}
-                    />
+                    >
+                        {label}
+                    </NavigableList.Item>
                 )
             }}
         </NavigableList>

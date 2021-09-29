@@ -9,13 +9,14 @@ export const CommandPaletteModesResult: React.FC<{ onSelect: () => void }> = ({ 
         {({ title, keybindings, onMatch }, { active }) => (
             <NavigableList.Item
                 active={active}
-                label={title}
                 onClick={() => {
                     onMatch()
                     onSelect()
                 }}
                 keybindings={keybindings}
-            />
+            >
+                {title}
+            </NavigableList.Item>
         )}
     </NavigableList>
 )

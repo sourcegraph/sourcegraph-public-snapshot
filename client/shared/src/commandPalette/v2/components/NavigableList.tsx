@@ -10,7 +10,6 @@ interface NavigableListItemProps {
     onFocus?: () => void
     href?: string
     keybindings?: Keybinding[]
-    label: string
     active?: boolean
     // TODO icon (for symbol type, action item icon)
     icon?: JSX.Element
@@ -21,7 +20,7 @@ const NavigableListItem: React.FC<NavigableListItemProps> = ({
     onFocus,
     href,
     keybindings = [],
-    label,
+    children,
     active,
 }) => {
     const Tag = href ? 'a' : 'button'
@@ -51,7 +50,7 @@ const NavigableListItem: React.FC<NavigableListItemProps> = ({
                 onClick={onClick}
                 href={href}
             >
-                {label}
+                {children}
 
                 {keybindings.map(({ ordered, held }, index) => (
                     <span tabIndex={-1} key={index} className={styles.keybindings}>
@@ -71,14 +70,18 @@ interface NavigableListProps<T> {
 }
 
 export function NavigableList<T>({ children, items }: NavigableListProps<T>): JSX.Element {
-    const [activeIndex, setActiveIndex] = useState<number | undefined>()
+    const [activeIndex, setActiveIndex] = useState<number>(0)
 
     useEffect(() => {
         function handleKeyDown(event: KeyboardEvent): void {
             if (event.key === 'ArrowUp') {
                 setActiveIndex(activeIndex => ((activeIndex || items.length) - 1) % items.length)
+                // Prevent moving cursor for input
+                event.preventDefault()
             } else if (event.key === 'ArrowDown') {
-                setActiveIndex(activeIndex => ((activeIndex || 0) + 1) % items.length)
+                setActiveIndex(activeIndex => (activeIndex + 1) % items.length)
+                // Prevent moving cursor for input
+                event.preventDefault()
             }
         }
         document.addEventListener('keydown', handleKeyDown)
