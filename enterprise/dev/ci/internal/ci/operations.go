@@ -207,6 +207,8 @@ func clientIntegrationTests(pipeline *bk.Pipeline) {
 
 	finalizeSteps := []bk.StepOpt{
 		skipGitCloneStep,
+		// Allow to teardown the Percy build even if there was a failure in the earlier Percy steps.
+		bk.AllowDependencyFailure(),
 		bk.Cmd("npx @percy/cli build:finalize"),
 	}
 
