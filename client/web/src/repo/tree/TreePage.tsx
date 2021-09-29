@@ -1,6 +1,5 @@
 import { subYears, formatISO } from 'date-fns'
 import * as H from 'history'
-import BarChartIcon from 'mdi-react/BarChartIcon'
 import BookOpenVariantIcon from 'mdi-react/BookOpenVariantIcon'
 import BrainIcon from 'mdi-react/BrainIcon'
 import FolderIcon from 'mdi-react/FolderIcon'

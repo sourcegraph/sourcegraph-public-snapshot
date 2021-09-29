@@ -31,8 +31,12 @@ import { HeroPage } from '../components/HeroPage'
 import { ActionItemsBarProps } from '../extensions/components/ActionItemsBar'
 import { RepositoryFields } from '../graphql-operations'
 import { CodeInsightsProps } from '../insights/types'
-import { PatternTypeProps, CaseSensitivityProps, SearchContextProps, SearchStreamingProps } from '../search'
+import { KeyboardShortcutsProps } from '../keyboardShortcuts/keyboardShortcuts'
+import { VersionContext } from '../schema/site.schema'
+import { PatternTypeProps, CaseSensitivityProps, SearchContextProps, SearchStreamingProps, SearchContextInputProps, ParsedSearchQueryProps } from '../search'
+import { SubmitSearchParameters } from '../search/helpers'
 import { StreamingSearchResultsListProps } from '../search/results/StreamingSearchResultsList'
+import { ThemePreferenceProps } from '../theme'
 import { RouteDescriptor } from '../util/contributions'
 
 import { CopyPathAction } from './actions/CopyPathAction'
@@ -53,14 +57,20 @@ export interface RepoRevisionContainerContext
         ExtensionsControllerProps,
         PlatformContextProps,
         ThemeProps,
+        ThemePreferenceProps,
         TelemetryProps,
         HoverThresholdProps,
         ActivationProps,
         Omit<RepoContainerContext, 'onDidUpdateExternalLinks'>,
         PatternTypeProps,
         CaseSensitivityProps,
+        KeyboardShortcutsProps,
         VersionContextProps,
+        CodeIntelligenceProps,
         Pick<SearchContextProps, 'selectedSearchContextSpec'>,
+        Pick<ParsedSearchQueryProps, 'parsedSearchQuery'>,
+        Pick<SubmitSearchParameters, 'source'>,
+        SearchContextInputProps,
         RevisionSpec,
         BreadcrumbSetters,
         ActionItemsBarProps,
@@ -74,6 +84,10 @@ export interface RepoRevisionContainerContext
     /** The URL route match for {@link RepoRevisionContainer}. */
     routePrefix: string
 
+    authenticatedUser: AuthenticatedUser | null
+    isSourcegraphDotCom: boolean
+    setVersionContext: (versionContext: string | undefined) => Promise<void>
+    availableVersionContexts: VersionContext[] | undefined
     globbing: boolean
 
     showSearchNotebook: boolean
