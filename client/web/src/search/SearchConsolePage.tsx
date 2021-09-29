@@ -12,12 +12,11 @@ import { MonacoEditor } from '../components/MonacoEditor'
 import { PageTitle } from '../components/PageTitle'
 import { SearchPatternType } from '../graphql-operations'
 
-import { fetchSuggestions } from './backend'
 import { LATEST_VERSION } from './results/StreamingSearchResults'
 import { StreamingSearchResultsList, StreamingSearchResultsListProps } from './results/StreamingSearchResultsList'
 import { useQueryIntelligence, useQueryDiagnostics } from './useQueryIntelligence'
 
-import { parseSearchURLQuery, parseSearchURLPatternType, SearchStreamingProps } from '.'
+import { parseSearchURLQuery, parseSearchURLPatternType, SearchStreamingProps, fetchStreamSuggestions } from '.'
 
 interface SearchConsolePageProps
     extends SearchStreamingProps,
@@ -82,7 +81,7 @@ export const SearchConsolePage: React.FunctionComponent<SearchConsolePageProps> 
         }, [patternType, props.location.search, streamSearch])
     )
 
-    const sourcegraphSearchLanguageId = useQueryIntelligence(fetchSuggestions, {
+    const sourcegraphSearchLanguageId = useQueryIntelligence(fetchStreamSuggestions, {
         patternType,
         globbing,
         interpretComments: true,

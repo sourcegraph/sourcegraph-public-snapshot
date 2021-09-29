@@ -1,14 +1,15 @@
 import * as Monaco from 'monaco-editor'
-import { Observable, fromEventPattern, of, asyncScheduler, Subject } from 'rxjs'
-import { map, takeUntil, switchMap, debounceTime, share, observeOn } from 'rxjs/operators'
+import { Observable, fromEventPattern, of } from 'rxjs'
+import { map, takeUntil, switchMap, delay } from 'rxjs/operators'
 
 import { SearchPatternType } from '../../graphql-operations'
-import { SearchSuggestion } from '../suggestions'
+import { SearchMatch } from '../stream'
 
 import { getCompletionItems } from './completion'
 import { getMonacoTokens } from './decoratedToken'
 import { getHoverResult } from './hover'
 import { scanSearchQuery } from './scanner'
+import { isRepoFilter } from './validate'
 
 interface SearchFieldProviders {
     tokens: Monaco.languages.TokensProvider
@@ -32,7 +33,7 @@ const latin1Alpha = 'ÀÁÂÃÄÅÆÇÈÉÊËÌÍÎÏÐÑÒÓÔÕÖ×ØÙÚÛÜ�
  * hovers and completions for the Sourcegraph search syntax.
  */
 export function getProviders(
-    fetchSuggestions: (input: string) => Observable<SearchSuggestion[]>,
+    fetchSuggestions: (input: string) => Observable<SearchMatch[]>,
     options: {
         patternType: SearchPatternType
         globbing: boolean
@@ -40,12 +41,6 @@ export function getProviders(
         isSourcegraphDotCom?: boolean
     }
 ): SearchFieldProviders {
-    // To debounce the dynamic suggestions we have to pipe them through a Subject and supply the queries in `provideCompletionItems`.
-    // Debouncing the `fetchSuggestions` request directly in `provideCompletionItems` would have no effect, since the observables
-    // are not connected between `provideCompletionItems` calls.
-    const completionRequests = new Subject<string>()
-    const debouncedDynamicSuggestions = completionRequests.pipe(debounceTime(300), switchMap(fetchSuggestions), share())
-
     return {
         tokens: {
             getInitialState: () => SCANNER_STATE,
@@ -75,27 +70,46 @@ export function getProviders(
         completion: {
             // An explicit list of trigger characters is needed for the Monaco editor to show completions.
             triggerCharacters: [...printable, ...latin1Alpha],
-            provideCompletionItems: (textModel, position, context, token) => {
+            provideCompletionItems: (textModel, position, context, cancellationToken) => {
                 const value = textModel.getValue()
-                completionRequests.next(value)
-                return of(value)
-                    .pipe(
-                        map(value => scanSearchQuery(value, options.interpretComments ?? false, options.patternType)),
-                        switchMap(scanned =>
-                            scanned.type === 'error'
-                                ? of(null)
-                                : getCompletionItems(
-                                      scanned.term,
-                                      position,
-                                      debouncedDynamicSuggestions,
-                                      options.globbing,
-                                      options.isSourcegraphDotCom
-                                  )
-                        ),
-                        observeOn(asyncScheduler),
-                        map(completions => (token.isCancellationRequested ? undefined : completions))
-                    )
-                    .toPromise()
+
+                const scanned = scanSearchQuery(value, options.interpretComments ?? false, options.patternType)
+                if (scanned.type === 'error') {
+                    return null
+                }
+
+                const tokenAtColumn = scanned.term.find(
+                    ({ range }) => range.start + 1 <= position.column && range.end + 1 >= position.column
+                )
+                if (!tokenAtColumn) {
+                    throw new Error('getCompletionItems: no token at column')
+                }
+
+                if (isRepoFilter(tokenAtColumn)) {
+                    const suggestionQuery = `${tokenAtColumn.value?.value ?? ''} type:repo patterntype:regexp count:50`
+
+                    return of(suggestionQuery)
+                        .pipe(
+                            // We use a delay here to implement a custom debounce. In the next step we check if the current
+                            // completion request was cancelled in the meantime (`token.isCancellationRequested`).
+                            // This prevents us from needlessly running multiple suggestion queries.
+                            delay(100),
+                            switchMap(query =>
+                                cancellationToken.isCancellationRequested
+                                    ? Promise.resolve(null)
+                                    : getCompletionItems(
+                                          tokenAtColumn,
+                                          position,
+                                          fetchSuggestions(query),
+                                          options.globbing,
+                                          options.isSourcegraphDotCom
+                                      )
+                            )
+                        )
+                        .toPromise()
+                }
+
+                return null
             },
         },
     }

@@ -1,4 +1,5 @@
 /* eslint-disable id-length */
+import { noop } from 'lodash'
 import { Observable, fromEvent, Subscription, OperatorFunction, pipe, Subscriber, Notification } from 'rxjs'
 import { defaultIfEmpty, map, materialize, scan } from 'rxjs/operators'
 import { AggregableBadge } from 'sourcegraph'
@@ -82,7 +83,7 @@ export interface SymbolMatch {
     symbols: MatchedSymbol[]
 }
 
-interface MatchedSymbol {
+export interface MatchedSymbol {
     url: string
     name: string
     containerName: string
@@ -325,27 +326,27 @@ const switchAggregateSearchResults: OperatorFunction<SearchEvent, AggregateStrea
     defaultIfEmpty(emptyAggregateResults as AggregateStreamingSearchResults)
 )
 
-const observeMessages = <T extends SearchEvent>(
+const observeMessages = <T extends SearchEvent>(type: T['type'], eventSource: EventSource): Observable<T> =>
+    fromEvent(eventSource, type).pipe(
+        map((event: Event) => {
+            if (!(event instanceof MessageEvent)) {
+                throw new TypeError(`internal error: expected MessageEvent in streaming search ${type}`)
+            }
+            try {
+                const parsedData = JSON.parse(event.data) as T['data']
+                return parsedData
+            } catch {
+                throw new Error(`Could not parse ${type} message data in streaming search`)
+            }
+        }),
+        map(data => ({ type, data } as T))
+    )
+
+const observeMessagesHandler = <T extends SearchEvent>(
     type: T['type'],
     eventSource: EventSource,
     observer: Subscriber<SearchEvent>
-): Subscription =>
-    fromEvent(eventSource, type)
-        .pipe(
-            map((event: Event) => {
-                if (!(event instanceof MessageEvent)) {
-                    throw new TypeError(`internal error: expected MessageEvent in streaming search ${type}`)
-                }
-                try {
-                    const parsedData = JSON.parse(event.data) as T['data']
-                    return parsedData
-                } catch {
-                    throw new Error(`Could not parse ${type} message data in streaming search`)
-                }
-            }),
-            map(data => ({ type, data } as T))
-        )
-        .subscribe(observer)
+): Subscription => observeMessages(type, eventSource).subscribe(observer)
 
 type MessageHandler<EventType extends SearchEvent['type'] = SearchEvent['type']> = (
     type: EventType,
@@ -353,9 +354,11 @@ type MessageHandler<EventType extends SearchEvent['type'] = SearchEvent['type']>
     observer: Subscriber<SearchEvent>
 ) => Subscription
 
-const messageHandlers: {
+type MessageHandlers = {
     [EventType in SearchEvent['type']]: MessageHandler<EventType>
-} = {
+}
+
+const messageHandlers: MessageHandlers = {
     done: (type, eventSource, observer) =>
         fromEvent(eventSource, type).subscribe(() => {
             observer.complete()
@@ -386,10 +389,29 @@ const messageHandlers: {
             }
             eventSource.close()
         }),
-    matches: observeMessages,
-    progress: observeMessages,
-    filters: observeMessages,
-    alert: observeMessages,
+    matches: observeMessagesHandler,
+    progress: observeMessagesHandler,
+    filters: observeMessagesHandler,
+    alert: observeMessagesHandler,
+}
+
+const noopHandler = <T extends SearchEvent>(
+    type: T['type'],
+    eventSource: EventSource,
+    _observer: Subscriber<SearchEvent>
+): Subscription => fromEvent(eventSource, type).subscribe(noop)
+
+const firstMatchMessageHandlers: MessageHandlers = {
+    ...messageHandlers,
+    matches: (type, eventSource, observer) =>
+        observeMessages(type, eventSource).subscribe(data => {
+            observer.next(data)
+            observer.complete()
+            eventSource.close()
+        }),
+    progress: noopHandler,
+    filters: noopHandler,
+    alert: noopHandler,
 }
 
 export interface StreamSearchOptions {
@@ -409,16 +431,19 @@ export interface StreamSearchOptions {
  *
  * @param query the search query to send to Sourcegraph's backend.
  */
-function search({
-    query,
-    version,
-    patternType,
-    caseSensitive,
-    versionContext,
-    trace,
-    decorationKinds,
-    decorationContextLines,
-}: StreamSearchOptions): Observable<SearchEvent> {
+function search(
+    {
+        query,
+        version,
+        patternType,
+        caseSensitive,
+        versionContext,
+        trace,
+        decorationKinds,
+        decorationContextLines,
+    }: StreamSearchOptions,
+    messageHandlers: MessageHandlers
+): Observable<SearchEvent> {
     return new Observable<SearchEvent>(observer => {
         const parameters = [
             ['q', `${query} ${caseSensitive ? 'case:yes' : ''}`],
@@ -453,7 +478,12 @@ function search({
 
 /** Initiate a streaming search and aggregate the results */
 export function aggregateStreamingSearch(options: StreamSearchOptions): Observable<AggregateStreamingSearchResults> {
-    return search(options).pipe(switchAggregateSearchResults)
+    return search(options, messageHandlers).pipe(switchAggregateSearchResults)
+}
+
+/** Initiate a streaming search, stop at the first `matches` event, and aggregate the results */
+export function firstMatchStreamingSearch(options: StreamSearchOptions): Observable<AggregateStreamingSearchResults> {
+    return search(options, firstMatchMessageHandlers).pipe(switchAggregateSearchResults)
 }
 
 export function getRepositoryUrl(repository: string, branches?: string[]): string {

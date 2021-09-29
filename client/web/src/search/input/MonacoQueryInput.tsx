@@ -12,11 +12,10 @@ import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { isErrorLike } from '@sourcegraph/shared/src/util/errors'
 import { hasProperty } from '@sourcegraph/shared/src/util/types'
 
-import { CaseSensitivityProps, PatternTypeProps, SearchContextProps } from '..'
+import { CaseSensitivityProps, fetchStreamSuggestions, PatternTypeProps, SearchContextProps } from '..'
 import { MonacoEditor } from '../../components/MonacoEditor'
 import { KEYBOARD_SHORTCUT_FOCUS_SEARCHBAR } from '../../keyboardShortcuts/keyboardShortcuts'
 import { observeResize } from '../../util/dom'
-import { fetchSuggestions } from '../backend'
 import { QueryChangeSource, QueryState } from '../helpers'
 import { useQueryIntelligence, useQueryDiagnostics } from '../useQueryIntelligence'
 
@@ -137,7 +136,8 @@ export const MonacoQueryInput: React.FunctionComponent<MonacoQueryInputProps> = 
     }, [editor, container])
 
     const fetchSuggestionsWithContext = useCallback(
-        (query: string) => fetchSuggestions(appendContextFilter(query, selectedSearchContextSpec, versionContext)),
+        (query: string) =>
+            fetchStreamSuggestions(appendContextFilter(query, selectedSearchContextSpec, versionContext)),
         [selectedSearchContextSpec, versionContext]
     )
 
