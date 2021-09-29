@@ -29,7 +29,12 @@ export const FilePathBreadcrumbs: React.FunctionComponent<
         index === parts.length - 1 ? 'test-breadcrumb-part-last' : 'part-directory test-breadcrumb-part-directory'
 
     const spans: JSX.Element[] = [
-        <LinkOrSpan key="root-dir" className="className" to={repoUrl} aria-current={false}>
+        <LinkOrSpan
+            key="root-dir"
+            className="part-directory test-breadcrumb-part-directory"
+            to={repoUrl}
+            aria-current={false}
+        >
             /
         </LinkOrSpan>,
     ]
@@ -43,16 +48,9 @@ export const FilePathBreadcrumbs: React.FunctionComponent<
                 to={link}
                 aria-current={index === parts.length - 1 ? 'page' : 'false'}
             >
-                {part}
+                {index < parts.length - 1 ? `${part} /` : part}
             </LinkOrSpan>
         )
-        if (index < parts.length - 1) {
-            spans.push(
-                <span key={`sep${index}`} className="file-path-breadcrumbs__separator text-muted font-weight-medium">
-                    /
-                </span>
-            )
-        }
     }
 
     // Important: do not put spaces between the breadcrumbs or spaces will get added when copying the path
