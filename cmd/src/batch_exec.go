@@ -9,6 +9,7 @@ import (
 
 	"github.com/cockroachdb/errors"
 	"github.com/hashicorp/go-multierror"
+
 	"github.com/sourcegraph/src-cli/internal/batches/executor"
 	"github.com/sourcegraph/src-cli/internal/batches/graphql"
 	"github.com/sourcegraph/src-cli/internal/batches/service"
@@ -164,12 +165,17 @@ func executeBatchSpecInWorkspaces(ctx context.Context, opts executeBatchSpecOpts
 
 	taskExecUI := opts.ui.ExecutingTasks(*verbose, opts.flags.parallelism)
 	freshSpecs, _, err := coord.Execute(ctx, uncachedTasks, batchSpec, taskExecUI)
-	if err != nil && !opts.flags.skipErrors {
-		return err
-	}
-	taskExecUI.Success()
-	if err != nil && opts.flags.skipErrors {
-		opts.ui.ExecutingTasksSkippingErrors(err)
+	if err == nil || opts.flags.skipErrors {
+		if err == nil {
+			taskExecUI.Success()
+		} else {
+			opts.ui.ExecutingTasksSkippingErrors(err)
+		}
+	} else {
+		if err != nil {
+			taskExecUI.Failed(err)
+			return err
+		}
 	}
 
 	specs := append(cachedSpecs, freshSpecs...)

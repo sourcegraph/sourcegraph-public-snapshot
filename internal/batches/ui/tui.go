@@ -192,7 +192,7 @@ func (ui *TUI) CreatingBatchSpec() {
 	ui.pending = batchCreatePending(ui.Out, "Creating batch spec on Sourcegraph")
 }
 
-func (ui *TUI) CreatingBatchSpecSuccess() {
+func (ui *TUI) CreatingBatchSpecSuccess(previewURL string) {
 	batchCompletePending(ui.pending, "Creating batch spec on Sourcegraph")
 }
 

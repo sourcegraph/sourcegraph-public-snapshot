@@ -73,11 +73,11 @@ type executionOpts struct {
 func runSteps(ctx context.Context, opts *executionOpts) (result executionResult, stepResults []stepExecutionResult, err error) {
 	opts.ui.ArchiveDownloadStarted()
 	err = opts.task.Archive.Ensure(ctx)
+	opts.ui.ArchiveDownloadFinished(err)
 	if err != nil {
 		return executionResult{}, nil, errors.Wrap(err, "fetching repo")
 	}
 	defer opts.task.Archive.Close()
-	opts.ui.ArchiveDownloadFinished()
 
 	opts.ui.WorkspaceInitializationStarted()
 	workspace, err := opts.wc.Create(ctx, opts.task.Repository, opts.task.Steps, opts.task.Archive)
@@ -167,6 +167,16 @@ func runSteps(ctx context.Context, opts *executionOpts) (result executionResult,
 			return execResult, nil, err
 		}
 		stdoutBuffer, stderrBuffer, err := executeSingleStep(ctx, opts, workspace, i, step, digest, &stepContext)
+		defer func() {
+			if err != nil {
+				exitCode := -1
+				sfe := &stepFailedErr{}
+				if errors.As(err, sfe) {
+					exitCode = sfe.ExitCode
+				}
+				opts.ui.StepFailed(i+1, err, exitCode)
+			}
+		}()
 		if err != nil {
 			return execResult, nil, err
 		}
@@ -233,10 +243,11 @@ func executeSingleStep(
 	// ----------
 	// PREPARATION
 	// ----------
-	opts.ui.StepPreparing(i + 1)
+	opts.ui.StepPreparingStart(i + 1)
 
 	cidFile, cleanup, err := createCidFile(ctx, opts.tempDir, util.SlugForRepo(opts.task.Repository.Name, opts.task.Repository.Rev()))
 	if err != nil {
+		opts.ui.StepPreparingFailed(i+1, err)
 		return bytes.Buffer{}, bytes.Buffer{}, err
 	}
 	defer cleanup()
@@ -244,11 +255,14 @@ func executeSingleStep(
 	// For now, we only support shell scripts provided via the Run field.
 	shell, containerTemp, err := probeImageForShell(ctx, imageDigest)
 	if err != nil {
-		return bytes.Buffer{}, bytes.Buffer{}, errors.Wrapf(err, "probing image %q for shell", step.Container)
+		err = errors.Wrapf(err, "probing image %q for shell", step.Container)
+		opts.ui.StepPreparingFailed(i+1, err)
+		return bytes.Buffer{}, bytes.Buffer{}, err
 	}
 
 	runScriptFile, runScript, cleanup, err := createRunScriptFile(ctx, opts.tempDir, step.Run, stepContext)
 	if err != nil {
+		opts.ui.StepPreparingFailed(i+1, err)
 		return bytes.Buffer{}, bytes.Buffer{}, err
 	}
 	defer cleanup()
@@ -256,6 +270,7 @@ func executeSingleStep(
 	// Parse and render the step.Files.
 	filesToMount, cleanup, err := createFilesToMount(opts.tempDir, step, stepContext)
 	if err != nil {
+		opts.ui.StepPreparingFailed(i+1, err)
 		return bytes.Buffer{}, bytes.Buffer{}, err
 	}
 	defer cleanup()
@@ -263,13 +278,19 @@ func executeSingleStep(
 	// Resolve step.Env given the current environment.
 	stepEnv, err := step.Env.Resolve(os.Environ())
 	if err != nil {
-		return bytes.Buffer{}, bytes.Buffer{}, errors.Wrap(err, "resolving step environment")
+		err = errors.Wrap(err, "resolving step environment")
+		opts.ui.StepPreparingFailed(i+1, err)
+		return bytes.Buffer{}, bytes.Buffer{}, err
 	}
 	// Render the step.Env variables as templates.
 	env, err := template.RenderStepMap(stepEnv, stepContext)
 	if err != nil {
-		return bytes.Buffer{}, bytes.Buffer{}, errors.Wrap(err, "parsing step environment")
+		err = errors.Wrap(err, "parsing step environment")
+		opts.ui.StepPreparingFailed(i+1, err)
+		return bytes.Buffer{}, bytes.Buffer{}, err
 	}
+
+	opts.ui.StepPreparingSuccess(i + 1)
 
 	// ----------
 	// EXECUTION
@@ -330,8 +351,14 @@ func executeSingleStep(
 	}
 
 	newStepFailedErr := func(wrappedErr error) stepFailedErr {
+		exitCode := -1
+		exitErr := &exec.ExitError{}
+		if errors.As(wrappedErr, &exitErr) {
+			exitCode = exitErr.ExitCode()
+		}
 		return stepFailedErr{
 			Err:         wrappedErr,
+			ExitCode:    exitCode,
 			Args:        cmd.Args,
 			Run:         runScript,
 			Container:   step.Container,
@@ -570,7 +597,9 @@ type stepFailedErr struct {
 	Stdout string
 	Stderr string
 
-	Err error
+	// ExitCode of the command, or -1 if a non-command error occured.
+	ExitCode int
+	Err      error
 }
 
 func (e stepFailedErr) Cause() error { return e.Err }
@@ -607,8 +636,8 @@ func (e stepFailedErr) Error() string {
 		printOutput(e.Stderr)
 	}
 
-	if exitErr, ok := e.Err.(*exec.ExitError); ok {
-		out.WriteString(fmt.Sprintf("\nCommand failed with exit code %d.", exitErr.ExitCode()))
+	if e.ExitCode != -1 {
+		out.WriteString(fmt.Sprintf("\nCommand failed with exit code %d.", e.ExitCode))
 	} else {
 		out.WriteString(fmt.Sprintf("\nCommand failed: %s", e.Err))
 	}

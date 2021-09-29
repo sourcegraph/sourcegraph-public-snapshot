@@ -42,7 +42,7 @@ type ExecUI interface {
 	UploadingChangesetSpecsSuccess(ids []graphql.ChangesetSpecID)
 
 	CreatingBatchSpec()
-	CreatingBatchSpecSuccess()
+	CreatingBatchSpecSuccess(previewURL string)
 	CreatingBatchSpecError(err error) error
 
 	PreviewBatchSpec(previewURL string)

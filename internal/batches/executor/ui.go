@@ -11,6 +11,7 @@ import (
 type TaskExecutionUI interface {
 	Start([]*Task)
 	Success()
+	Failed(err error)
 
 	TaskStarted(*Task)
 	TaskFinished(*Task, error)
@@ -28,7 +29,7 @@ type StepOutputWriter interface {
 
 type StepsExecutionUI interface {
 	ArchiveDownloadStarted()
-	ArchiveDownloadFinished()
+	ArchiveDownloadFinished(error)
 
 	WorkspaceInitializationStarted()
 	WorkspaceInitializationFinished()
@@ -37,7 +38,9 @@ type StepsExecutionUI interface {
 
 	StepSkipped(int)
 
-	StepPreparing(int)
+	StepPreparingStart(int)
+	StepPreparingSuccess(int)
+	StepPreparingFailed(int, error)
 	StepStarted(stepIdx int, runScript string, env map[string]string)
 
 	StepOutputWriter(context.Context, *Task, int) StepOutputWriter
@@ -46,18 +49,21 @@ type StepsExecutionUI interface {
 	CalculatingDiffFinished()
 
 	StepFinished(idx int, diff []byte, changes *git.Changes, outputs map[string]interface{})
+	StepFailed(idx int, err error, exitCode int)
 }
 
 // NoopStepsExecUI is an implementation of StepsExecutionUI that does nothing.
 type NoopStepsExecUI struct{}
 
 func (noop NoopStepsExecUI) ArchiveDownloadStarted()                                       {}
-func (noop NoopStepsExecUI) ArchiveDownloadFinished()                                      {}
+func (noop NoopStepsExecUI) ArchiveDownloadFinished(error)                                 {}
 func (noop NoopStepsExecUI) WorkspaceInitializationStarted()                               {}
 func (noop NoopStepsExecUI) WorkspaceInitializationFinished()                              {}
 func (noop NoopStepsExecUI) SkippingStepsUpto(startStep int)                               {}
 func (noop NoopStepsExecUI) StepSkipped(step int)                                          {}
-func (noop NoopStepsExecUI) StepPreparing(step int)                                        {}
+func (noop NoopStepsExecUI) StepPreparingStart(step int)                                   {}
+func (noop NoopStepsExecUI) StepPreparingSuccess(step int)                                 {}
+func (noop NoopStepsExecUI) StepPreparingFailed(step int, err error)                       {}
 func (noop NoopStepsExecUI) StepStarted(step int, runScript string, env map[string]string) {}
 func (noop NoopStepsExecUI) StepOutputWriter(ctx context.Context, task *Task, step int) StepOutputWriter {
 	return NoopStepOutputWriter{}
@@ -65,6 +71,8 @@ func (noop NoopStepsExecUI) StepOutputWriter(ctx context.Context, task *Task, st
 func (noop NoopStepsExecUI) CalculatingDiffStarted()  {}
 func (noop NoopStepsExecUI) CalculatingDiffFinished() {}
 func (noop NoopStepsExecUI) StepFinished(idx int, diff []byte, changes *git.Changes, outputs map[string]interface{}) {
+}
+func (noop NoopStepsExecUI) StepFailed(idx int, err error, exitCode int) {
 }
 
 type NoopStepOutputWriter struct{}

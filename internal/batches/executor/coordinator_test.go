@@ -519,8 +519,9 @@ type dummyTaskExecutionUI struct {
 	specs           map[*Task][]*batcheslib.ChangesetSpec
 }
 
-func (d *dummyTaskExecutionUI) Start([]*Task) {}
-func (d *dummyTaskExecutionUI) Success()      {}
+func (d *dummyTaskExecutionUI) Start([]*Task)    {}
+func (d *dummyTaskExecutionUI) Success()         {}
+func (d *dummyTaskExecutionUI) Failed(err error) {}
 func (d *dummyTaskExecutionUI) TaskStarted(t *Task) {
 	d.mu.Lock()
 	defer d.mu.Unlock()

@@ -149,6 +149,9 @@ func (ui *taskExecTUI) Start(tasks []*executor.Task) {
 func (ui *taskExecTUI) Success() {
 	ui.progress.Complete()
 }
+func (ui *taskExecTUI) Failed(err error) {
+	// noop right now
+}
 
 func (ui *taskExecTUI) useFreeStatusBar(ts *taskStatus) (bar int, found bool) {
 	for i := 0; i < ui.numStatusBars; i++ {
@@ -434,7 +437,7 @@ type stepsExecTUI struct {
 func (ui stepsExecTUI) ArchiveDownloadStarted() {
 	ui.updateStatusBar("Downloading archive")
 }
-func (ui stepsExecTUI) ArchiveDownloadFinished() {}
+func (ui stepsExecTUI) ArchiveDownloadFinished(err error) {}
 func (ui stepsExecTUI) WorkspaceInitializationStarted() {
 	ui.updateStatusBar("Initializing workspace")
 }
@@ -451,8 +454,14 @@ func (ui stepsExecTUI) SkippingStepsUpto(startStep int) {
 func (ui stepsExecTUI) StepSkipped(step int) {
 	ui.updateStatusBar(fmt.Sprintf("Skipping step %d", step))
 }
-func (ui stepsExecTUI) StepPreparing(step int) {
+func (ui stepsExecTUI) StepPreparingStart(step int) {
 	ui.updateStatusBar(fmt.Sprintf("Preparing %d", step))
+}
+func (ui stepsExecTUI) StepPreparingSuccess(step int) {
+	// noop right now
+}
+func (ui stepsExecTUI) StepPreparingFailed(step int, err error) {
+	// noop right now
 }
 func (ui stepsExecTUI) StepStarted(step int, runScript string, _ map[string]string) {
 	ui.updateStatusBar(runScript)
@@ -469,5 +478,8 @@ func (ui stepsExecTUI) CalculatingDiffFinished() {
 	// noop right now
 }
 func (ui stepsExecTUI) StepFinished(idx int, diff []byte, changes *git.Changes, outputs map[string]interface{}) {
+	// noop right now
+}
+func (ui stepsExecTUI) StepFailed(idx int, err error, exitCode int) {
 	// noop right now
 }

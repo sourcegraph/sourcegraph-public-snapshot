@@ -25,76 +25,72 @@ var _ ExecUI = &JSONLines{}
 type JSONLines struct{}
 
 func (ui *JSONLines) ParsingBatchSpec() {
-	logOperationStart(batcheslib.LogEventOperationParsingBatchSpec, nil)
+	logOperationStart(batcheslib.LogEventOperationParsingBatchSpec, &batcheslib.ParsingBatchSpecMetadata{})
 }
 func (ui *JSONLines) ParsingBatchSpecSuccess() {
-	logOperationSuccess(batcheslib.LogEventOperationParsingBatchSpec, nil)
+	logOperationSuccess(batcheslib.LogEventOperationParsingBatchSpec, &batcheslib.ParsingBatchSpecMetadata{})
 }
 func (ui *JSONLines) ParsingBatchSpecFailure(err error) {
-	logOperationFailure(batcheslib.LogEventOperationParsingBatchSpec, map[string]interface{}{"error": err.Error()})
+	logOperationFailure(batcheslib.LogEventOperationParsingBatchSpec, &batcheslib.ParsingBatchSpecMetadata{Error: err.Error()})
 }
 
 func (ui *JSONLines) ResolvingNamespace() {
-	logOperationStart(batcheslib.LogEventOperationResolvingNamespace, nil)
+	logOperationStart(batcheslib.LogEventOperationResolvingNamespace, &batcheslib.ResolvingNamespaceMetadata{})
 }
 func (ui *JSONLines) ResolvingNamespaceSuccess(namespace string) {
-	logOperationSuccess(batcheslib.LogEventOperationResolvingNamespace, map[string]interface{}{"namespaceID": namespace})
+	logOperationSuccess(batcheslib.LogEventOperationResolvingNamespace, &batcheslib.ResolvingNamespaceMetadata{NamespaceID: namespace})
 }
 
 func (ui *JSONLines) PreparingContainerImages() {
-	logOperationStart(batcheslib.LogEventOperationPreparingDockerImages, nil)
+	logOperationStart(batcheslib.LogEventOperationPreparingDockerImages, &batcheslib.PreparingDockerImagesMetadata{})
 }
 func (ui *JSONLines) PreparingContainerImagesProgress(done, total int) {
-	logOperationProgress(batcheslib.LogEventOperationPreparingDockerImages, map[string]interface{}{"done": done, "total": total})
+	logOperationProgress(batcheslib.LogEventOperationPreparingDockerImages, &batcheslib.PreparingDockerImagesMetadata{Done: done, Total: total})
 }
 func (ui *JSONLines) PreparingContainerImagesSuccess() {
-	logOperationSuccess(batcheslib.LogEventOperationPreparingDockerImages, nil)
+	logOperationSuccess(batcheslib.LogEventOperationPreparingDockerImages, &batcheslib.PreparingDockerImagesMetadata{})
 }
 
 func (ui *JSONLines) DeterminingWorkspaceCreatorType() {
-	logOperationStart(batcheslib.LogEventOperationDeterminingWorkspaceType, nil)
+	logOperationStart(batcheslib.LogEventOperationDeterminingWorkspaceType, &batcheslib.DeterminingWorkspaceTypeMetadata{})
 }
 func (ui *JSONLines) DeterminingWorkspaceCreatorTypeSuccess(wt workspace.CreatorType) {
+	var t string
 	switch wt {
 	case workspace.CreatorTypeVolume:
-		logOperationSuccess(batcheslib.LogEventOperationDeterminingWorkspaceType, map[string]interface{}{"type": "VOLUME"})
+		t = "VOLUME"
 	case workspace.CreatorTypeBind:
-		logOperationSuccess(batcheslib.LogEventOperationDeterminingWorkspaceType, map[string]interface{}{"type": "BIND"})
+		t = "BIND"
 	}
+	logOperationSuccess(batcheslib.LogEventOperationDeterminingWorkspaceType, &batcheslib.DeterminingWorkspaceTypeMetadata{Type: t})
 }
 
 func (ui *JSONLines) ResolvingRepositories() {
-	logOperationStart(batcheslib.LogEventOperationResolvingRepositories, nil)
+	logOperationStart(batcheslib.LogEventOperationResolvingRepositories, &batcheslib.ResolvingRepositoriesMetadata{})
 }
 func (ui *JSONLines) ResolvingRepositoriesDone(repos []*graphql.Repository, unsupported batches.UnsupportedRepoSet, ignored batches.IgnoredRepoSet) {
-	if unsupported != nil && len(unsupported) != 0 {
-		logOperationSuccess(batcheslib.LogEventOperationResolvingRepositories, map[string]interface{}{"unsupported": len(unsupported)})
-	} else if ignored != nil && len(ignored) != 0 {
-		logOperationSuccess(batcheslib.LogEventOperationResolvingRepositories, map[string]interface{}{"ignored": len(ignored)})
-	} else {
-		logOperationSuccess(batcheslib.LogEventOperationResolvingRepositories, map[string]interface{}{"count": len(repos)})
-	}
+	logOperationSuccess(batcheslib.LogEventOperationResolvingRepositories, &batcheslib.ResolvingRepositoriesMetadata{
+		Unsupported: len(unsupported),
+		Ignored:     len(ignored),
+		Count:       len(repos),
+	})
 }
 
 func (ui *JSONLines) DeterminingWorkspaces() {
-	logOperationStart(batcheslib.LogEventOperationDeterminingWorkspaces, nil)
+	logOperationStart(batcheslib.LogEventOperationDeterminingWorkspaces, &batcheslib.DeterminingWorkspacesMetadata{})
 }
 func (ui *JSONLines) DeterminingWorkspacesSuccess(num int) {
-	metadata := map[string]interface{}{
-		"count": num,
-	}
-	logOperationSuccess(batcheslib.LogEventOperationDeterminingWorkspaces, metadata)
+	logOperationSuccess(batcheslib.LogEventOperationDeterminingWorkspaces, &batcheslib.DeterminingWorkspacesMetadata{Count: num})
 }
 
 func (ui *JSONLines) CheckingCache() {
-	logOperationStart(batcheslib.LogEventOperationCheckingCache, nil)
+	logOperationStart(batcheslib.LogEventOperationCheckingCache, &batcheslib.CheckingCacheMetadata{})
 }
 func (ui *JSONLines) CheckingCacheSuccess(cachedSpecsFound int, tasksToExecute int) {
-	metadata := map[string]interface{}{
-		"cachedSpecsFound": cachedSpecsFound,
-		"tasksToExecute":   tasksToExecute,
-	}
-	logOperationSuccess(batcheslib.LogEventOperationCheckingCache, metadata)
+	logOperationSuccess(batcheslib.LogEventOperationCheckingCache, &batcheslib.CheckingCacheMetadata{
+		CachedSpecsFound: cachedSpecsFound,
+		TasksToExecute:   tasksToExecute,
+	})
 }
 
 func (ui *JSONLines) ExecutingTasks(verbose bool, parallelism int) executor.TaskExecutionUI {
@@ -102,12 +98,15 @@ func (ui *JSONLines) ExecutingTasks(verbose bool, parallelism int) executor.Task
 }
 
 func (ui *JSONLines) ExecutingTasksSkippingErrors(err error) {
-	logOperationSuccess(batcheslib.LogEventOperationExecutingTasks, map[string]interface{}{"skipped": true, "error": err.Error()})
+	logOperationSuccess(batcheslib.LogEventOperationExecutingTasks, &batcheslib.ExecutingTasksMetadata{
+		Skipped: true,
+		Error:   err.Error(),
+	})
 }
 
 func (ui *JSONLines) LogFilesKept(files []string) {
-	for _, file := range files {
-		logOperationSuccess(batcheslib.LogEventOperationLogFileKept, map[string]interface{}{"path": file})
+	for _, path := range files {
+		logOperationSuccess(batcheslib.LogEventOperationLogFileKept, &batcheslib.LogFileKeptMetadata{Path: path})
 	}
 }
 
@@ -116,91 +115,67 @@ func (ui *JSONLines) NoChangesetSpecs() {
 }
 
 func (ui *JSONLines) UploadingChangesetSpecs(num int) {
-	logOperationStart(batcheslib.LogEventOperationUploadingChangesetSpecs, map[string]interface{}{
-		"total": num,
+	logOperationStart(batcheslib.LogEventOperationUploadingChangesetSpecs, &batcheslib.UploadingChangesetSpecsMetadata{
+		Done:  0,
+		Total: num,
 	})
 }
 
 func (ui *JSONLines) UploadingChangesetSpecsProgress(done, total int) {
-	logOperationProgress(batcheslib.LogEventOperationUploadingChangesetSpecs, map[string]interface{}{
-		"done":  done,
-		"total": total,
+	logOperationProgress(batcheslib.LogEventOperationUploadingChangesetSpecs, &batcheslib.UploadingChangesetSpecsMetadata{
+		Done:  done,
+		Total: total,
 	})
 }
 
 func (ui *JSONLines) UploadingChangesetSpecsSuccess(ids []graphql.ChangesetSpecID) {
-	logOperationSuccess(batcheslib.LogEventOperationUploadingChangesetSpecs, map[string]interface{}{
-		"ids": ids,
+	sIDs := make([]string, len(ids))
+	for i, id := range ids {
+		sIDs[i] = string(id)
+	}
+	logOperationSuccess(batcheslib.LogEventOperationUploadingChangesetSpecs, &batcheslib.UploadingChangesetSpecsMetadata{
+		Done:  len(ids),
+		Total: len(ids),
+		IDs:   sIDs,
 	})
 }
 
 func (ui *JSONLines) CreatingBatchSpec() {
-	logOperationStart(batcheslib.LogEventOperationCreatingBatchSpec, nil)
+	logOperationStart(batcheslib.LogEventOperationCreatingBatchSpec, &batcheslib.CreatingBatchSpecMetadata{})
 }
 
-func (ui *JSONLines) CreatingBatchSpecSuccess() {
+func (ui *JSONLines) CreatingBatchSpecSuccess(batchSpecURL string) {
+	logOperationSuccess(batcheslib.LogEventOperationCreatingBatchSpec, &batcheslib.CreatingBatchSpecMetadata{
+		PreviewURL: batchSpecURL,
+	})
 }
 
 func (ui *JSONLines) CreatingBatchSpecError(err error) error {
+	logOperationFailure(batcheslib.LogEventOperationCreatingBatchSpec, &batcheslib.CreatingBatchSpecMetadata{})
 	return err
 }
 
 func (ui *JSONLines) PreviewBatchSpec(batchSpecURL string) {
-	logOperationSuccess(batcheslib.LogEventOperationCreatingBatchSpec, map[string]interface{}{"batchSpecURL": batchSpecURL})
+	// Covered by CreatingBatchSpecSuccess.
 }
 
 func (ui *JSONLines) ApplyingBatchSpec() {
-	logOperationStart(batcheslib.LogEventOperationApplyingBatchSpec, nil)
+	logOperationStart(batcheslib.LogEventOperationApplyingBatchSpec, &batcheslib.ApplyingBatchSpecMetadata{})
 }
 
 func (ui *JSONLines) ApplyingBatchSpecSuccess(batchChangeURL string) {
-	logOperationSuccess(batcheslib.LogEventOperationApplyingBatchSpec, map[string]interface{}{"batchChangeURL": batchChangeURL})
+	logOperationSuccess(batcheslib.LogEventOperationApplyingBatchSpec, &batcheslib.ApplyingBatchSpecMetadata{BatchChangeURL: batchChangeURL})
 }
 
 func (ui *JSONLines) ExecutionError(err error) {
-	logOperationFailure(batcheslib.LogEventOperationBatchSpecExecution, map[string]interface{}{"error": err.Error()})
-}
-
-func logOperationStart(op batcheslib.LogEventOperation, metadata map[string]interface{}) {
-	logEvent(batcheslib.LogEvent{Operation: op, Status: batcheslib.LogEventStatusStarted, Metadata: metadata})
-}
-
-func logOperationSuccess(op batcheslib.LogEventOperation, metadata map[string]interface{}) {
-	logEvent(batcheslib.LogEvent{Operation: op, Status: batcheslib.LogEventStatusSuccess, Metadata: metadata})
-}
-
-func logOperationFailure(op batcheslib.LogEventOperation, metadata map[string]interface{}) {
-	logEvent(batcheslib.LogEvent{Operation: op, Status: batcheslib.LogEventStatusFailure, Metadata: metadata})
-}
-
-func logOperationProgress(op batcheslib.LogEventOperation, metadata map[string]interface{}) {
-	logEvent(batcheslib.LogEvent{Operation: op, Status: batcheslib.LogEventStatusProgress, Metadata: metadata})
-}
-
-func logEvent(e batcheslib.LogEvent) {
-	e.Timestamp = time.Now().UTC().Truncate(time.Millisecond)
-	err := json.NewEncoder(os.Stdout).Encode(e)
-	if err != nil {
-		fmt.Fprintln(os.Stderr, err)
-	}
-}
-
-// TODO: Until we've figured out what exactly we want to expose, we create
-// these smaller UI-specific structs.
-type jsonLinesTask struct {
-	ID                     string            `json:"id"`
-	Repository             string            `json:"repository"`
-	Workspace              string            `json:"workspace"`
-	Steps                  []batcheslib.Step `json:"steps"`
-	CachedStepResultsFound bool              `json:"cachedStepResultFound"`
-	StartStep              int               `json:"startStep"`
+	logOperationFailure(batcheslib.LogEventOperationBatchSpecExecution, &batcheslib.BatchSpecExecutionMetadata{Error: err.Error()})
 }
 
 type taskExecutionJSONLines struct {
 	verbose     bool
 	parallelism int
 
-	linesTasks map[*executor.Task]jsonLinesTask
+	linesTasks map[*executor.Task]batcheslib.JSONLinesTask
 }
 
 // seededRand is used in randomID() to generate a "random" number.
@@ -212,14 +187,14 @@ func randomID() (string, error) {
 }
 
 func (ui *taskExecutionJSONLines) Start(tasks []*executor.Task) {
-	ui.linesTasks = make(map[*executor.Task]jsonLinesTask, len(tasks))
-	linesTasks := []jsonLinesTask{}
+	ui.linesTasks = make(map[*executor.Task]batcheslib.JSONLinesTask, len(tasks))
+	linesTasks := []batcheslib.JSONLinesTask{}
 	for _, t := range tasks {
 		id, err := randomID()
 		if err != nil {
 			panic(err)
 		}
-		linesTask := jsonLinesTask{
+		linesTask := batcheslib.JSONLinesTask{
 			ID:                     id,
 			Repository:             t.Repository.Name,
 			Workspace:              t.Path,
@@ -231,12 +206,16 @@ func (ui *taskExecutionJSONLines) Start(tasks []*executor.Task) {
 		linesTasks = append(linesTasks, linesTask)
 	}
 
-	logOperationStart(batcheslib.LogEventOperationExecutingTasks, map[string]interface{}{
-		"tasks": linesTasks,
+	logOperationStart(batcheslib.LogEventOperationExecutingTasks, &batcheslib.ExecutingTasksMetadata{
+		Tasks: linesTasks,
 	})
 }
 func (ui *taskExecutionJSONLines) Success() {
-	logOperationSuccess(batcheslib.LogEventOperationExecutingTasks, nil)
+	logOperationSuccess(batcheslib.LogEventOperationExecutingTasks, &batcheslib.ExecutingTasksMetadata{})
+}
+
+func (ui *taskExecutionJSONLines) Failed(err error) {
+	logOperationFailure(batcheslib.LogEventOperationExecutingTasks, &batcheslib.ExecutingTasksMetadata{Error: err.Error()})
 }
 
 func (ui *taskExecutionJSONLines) TaskStarted(task *executor.Task) {
@@ -245,9 +224,7 @@ func (ui *taskExecutionJSONLines) TaskStarted(task *executor.Task) {
 		panic("unknown task started")
 	}
 
-	logOperationStart(batcheslib.LogEventOperationExecutingTask, map[string]interface{}{
-		"taskID": lt.ID,
-	})
+	logOperationStart(batcheslib.LogEventOperationExecutingTask, &batcheslib.ExecutingTaskMetadata{TaskID: lt.ID})
 }
 
 func (ui *taskExecutionJSONLines) TaskFinished(task *executor.Task, err error) {
@@ -257,16 +234,14 @@ func (ui *taskExecutionJSONLines) TaskFinished(task *executor.Task, err error) {
 	}
 
 	if err != nil {
-		logOperationFailure(batcheslib.LogEventOperationExecutingTask, map[string]interface{}{
-			"taskID": lt.ID,
-			"error":  err,
+		logOperationFailure(batcheslib.LogEventOperationExecutingTask, &batcheslib.ExecutingTaskMetadata{
+			TaskID: lt.ID,
+			Error:  err.Error(),
 		})
 		return
 	}
 
-	logOperationSuccess(batcheslib.LogEventOperationExecutingTask, map[string]interface{}{
-		"taskID": lt.ID,
-	})
+	logOperationSuccess(batcheslib.LogEventOperationExecutingTask, &batcheslib.ExecutingTaskMetadata{TaskID: lt.ID})
 }
 
 func (ui *taskExecutionJSONLines) TaskChangesetSpecsBuilt(task *executor.Task, specs []*batcheslib.ChangesetSpec) {
@@ -274,9 +249,8 @@ func (ui *taskExecutionJSONLines) TaskChangesetSpecsBuilt(task *executor.Task, s
 	if !ok {
 		panic("unknown task started")
 	}
-	logOperationSuccess(batcheslib.LogEventOperationTaskBuildChangesetSpecs, map[string]interface{}{
-		"taskID": lt.ID,
-	})
+
+	logOperationSuccess(batcheslib.LogEventOperationTaskBuildChangesetSpecs, &batcheslib.TaskBuildChangesetSpecsMetadata{TaskID: lt.ID})
 }
 
 func (ui *taskExecutionJSONLines) StepsExecutionUI(task *executor.Task) executor.StepsExecutionUI {
@@ -289,49 +263,59 @@ func (ui *taskExecutionJSONLines) StepsExecutionUI(task *executor.Task) executor
 }
 
 type stepsExecutionJSONLines struct {
-	linesTask *jsonLinesTask
+	linesTask *batcheslib.JSONLinesTask
 }
 
 const stepFlushDuration = 500 * time.Millisecond
 
 func (ui *stepsExecutionJSONLines) ArchiveDownloadStarted() {
-	logOperationStart(batcheslib.LogEventOperationTaskDownloadingArchive, map[string]interface{}{"taskID": ui.linesTask.ID})
+	logOperationStart(batcheslib.LogEventOperationTaskDownloadingArchive, &batcheslib.TaskDownloadingArchiveMetadata{TaskID: ui.linesTask.ID})
+}
+func (ui *stepsExecutionJSONLines) ArchiveDownloadFinished(err error) {
+	if err != nil {
+		logOperationFailure(batcheslib.LogEventOperationTaskDownloadingArchive, &batcheslib.TaskDownloadingArchiveMetadata{TaskID: ui.linesTask.ID, Error: err.Error()})
+	} else {
+		logOperationSuccess(batcheslib.LogEventOperationTaskDownloadingArchive, &batcheslib.TaskDownloadingArchiveMetadata{TaskID: ui.linesTask.ID})
+	}
 }
 
-func (ui *stepsExecutionJSONLines) ArchiveDownloadFinished() {
-	logOperationSuccess(batcheslib.LogEventOperationTaskDownloadingArchive, map[string]interface{}{"taskID": ui.linesTask.ID})
-}
 func (ui *stepsExecutionJSONLines) WorkspaceInitializationStarted() {
-	logOperationStart(batcheslib.LogEventOperationTaskInitializingWorkspace, map[string]interface{}{"taskID": ui.linesTask.ID})
+	logOperationStart(batcheslib.LogEventOperationTaskInitializingWorkspace, &batcheslib.TaskInitializingWorkspaceMetadata{TaskID: ui.linesTask.ID})
 }
 func (ui *stepsExecutionJSONLines) WorkspaceInitializationFinished() {
-	logOperationSuccess(batcheslib.LogEventOperationTaskInitializingWorkspace, map[string]interface{}{"taskID": ui.linesTask.ID})
+	logOperationSuccess(batcheslib.LogEventOperationTaskInitializingWorkspace, &batcheslib.TaskInitializingWorkspaceMetadata{TaskID: ui.linesTask.ID})
 }
 
 func (ui *stepsExecutionJSONLines) SkippingStepsUpto(startStep int) {
-	logOperationProgress(batcheslib.LogEventOperationTaskSkippingSteps, map[string]interface{}{"taskID": ui.linesTask.ID, "startStep": startStep})
+	logOperationProgress(batcheslib.LogEventOperationTaskSkippingSteps, &batcheslib.TaskSkippingStepsMetadata{TaskID: ui.linesTask.ID, StartStep: startStep})
 }
 
 func (ui *stepsExecutionJSONLines) StepSkipped(step int) {
-	logOperationProgress(batcheslib.LogEventOperationTaskStepSkipped, map[string]interface{}{"taskID": ui.linesTask.ID, "step": step})
+	logOperationProgress(batcheslib.LogEventOperationTaskStepSkipped, &batcheslib.TaskStepSkippedMetadata{TaskID: ui.linesTask.ID, Step: step})
 }
 
-func (ui *stepsExecutionJSONLines) StepPreparing(step int) {
-	logOperationProgress(batcheslib.LogEventOperationTaskPreparingStep, map[string]interface{}{"taskID": ui.linesTask.ID, "step": step})
+func (ui *stepsExecutionJSONLines) StepPreparingStart(step int) {
+	logOperationStart(batcheslib.LogEventOperationTaskPreparingStep, &batcheslib.TaskPreparingStepMetadata{TaskID: ui.linesTask.ID, Step: step})
+}
+func (ui *stepsExecutionJSONLines) StepPreparingSuccess(step int) {
+	logOperationSuccess(batcheslib.LogEventOperationTaskPreparingStep, &batcheslib.TaskPreparingStepMetadata{TaskID: ui.linesTask.ID, Step: step})
+}
+func (ui *stepsExecutionJSONLines) StepPreparingFailed(step int, err error) {
+	logOperationFailure(batcheslib.LogEventOperationTaskPreparingStep, &batcheslib.TaskPreparingStepMetadata{TaskID: ui.linesTask.ID, Step: step, Error: err.Error()})
 }
 
 func (ui *stepsExecutionJSONLines) StepStarted(step int, runScript string, env map[string]string) {
-	logOperationStart(batcheslib.LogEventOperationTaskStep, map[string]interface{}{"taskID": ui.linesTask.ID, "step": step, "runScript": runScript, "env": env})
+	logOperationStart(batcheslib.LogEventOperationTaskStep, &batcheslib.TaskStepMetadata{TaskID: ui.linesTask.ID, Step: step, Env: env})
 }
 
 func (ui *stepsExecutionJSONLines) StepOutputWriter(ctx context.Context, task *executor.Task, step int) executor.StepOutputWriter {
 	sink := func(data string) {
 		logOperationProgress(
 			batcheslib.LogEventOperationTaskStep,
-			map[string]interface{}{
-				"taskID": ui.linesTask.ID,
-				"step":   step,
-				"out":    data,
+			&batcheslib.TaskStepMetadata{
+				TaskID: ui.linesTask.ID,
+				Step:   step,
+				Out:    data,
 			},
 		)
 	}
@@ -341,19 +325,54 @@ func (ui *stepsExecutionJSONLines) StepOutputWriter(ctx context.Context, task *e
 func (ui *stepsExecutionJSONLines) StepFinished(step int, diff []byte, changes *git.Changes, outputs map[string]interface{}) {
 	logOperationSuccess(
 		batcheslib.LogEventOperationTaskStep,
-		map[string]interface{}{
-			"taskID":  ui.linesTask.ID,
-			"step":    step,
-			"diff":    string(diff),
-			"changes": changes,
-			"outputs": outputs,
+		&batcheslib.TaskStepMetadata{
+			TaskID:  ui.linesTask.ID,
+			Step:    step,
+			Diff:    string(diff),
+			Outputs: outputs,
+		},
+	)
+}
+
+func (ui *stepsExecutionJSONLines) StepFailed(step int, err error, exitCode int) {
+	logOperationFailure(
+		batcheslib.LogEventOperationTaskStep,
+		&batcheslib.TaskStepMetadata{
+			TaskID:   ui.linesTask.ID,
+			Step:     step,
+			Error:    err.Error(),
+			ExitCode: exitCode,
 		},
 	)
 }
 
 func (ui *stepsExecutionJSONLines) CalculatingDiffStarted() {
-	logOperationStart(batcheslib.LogEventOperationTaskCalculatingDiff, map[string]interface{}{"taskID": ui.linesTask.ID})
+	logOperationStart(batcheslib.LogEventOperationTaskCalculatingDiff, &batcheslib.TaskCalculatingDiffMetadata{TaskID: ui.linesTask.ID})
 }
 func (ui *stepsExecutionJSONLines) CalculatingDiffFinished() {
-	logOperationSuccess(batcheslib.LogEventOperationTaskCalculatingDiff, map[string]interface{}{"taskID": ui.linesTask.ID})
+	logOperationSuccess(batcheslib.LogEventOperationTaskCalculatingDiff, &batcheslib.TaskCalculatingDiffMetadata{TaskID: ui.linesTask.ID})
+}
+
+func logOperationStart(op batcheslib.LogEventOperation, metadata interface{}) {
+	logEvent(batcheslib.LogEvent{Operation: op, Status: batcheslib.LogEventStatusStarted, Metadata: metadata})
+}
+
+func logOperationSuccess(op batcheslib.LogEventOperation, metadata interface{}) {
+	logEvent(batcheslib.LogEvent{Operation: op, Status: batcheslib.LogEventStatusSuccess, Metadata: metadata})
+}
+
+func logOperationFailure(op batcheslib.LogEventOperation, metadata interface{}) {
+	logEvent(batcheslib.LogEvent{Operation: op, Status: batcheslib.LogEventStatusFailure, Metadata: metadata})
+}
+
+func logOperationProgress(op batcheslib.LogEventOperation, metadata interface{}) {
+	logEvent(batcheslib.LogEvent{Operation: op, Status: batcheslib.LogEventStatusProgress, Metadata: metadata})
+}
+
+func logEvent(e batcheslib.LogEvent) {
+	e.Timestamp = time.Now().UTC().Truncate(time.Millisecond)
+	err := json.NewEncoder(os.Stdout).Encode(e)
+	if err != nil {
+		fmt.Fprintln(os.Stderr, err)
+	}
 }
