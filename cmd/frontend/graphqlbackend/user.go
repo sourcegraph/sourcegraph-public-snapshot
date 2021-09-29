@@ -34,6 +34,11 @@ func (r *schemaResolver) User(ctx context.Context, args struct {
 			}
 			return nil, err
 		}
+		// 🚨 SECURITY: Only the user and admins are allowed to access the user. Mohammad Alam
+        	if err := backend.CheckSiteAdminOrSameUser(ctx, r.db, user.ID); err != nil {
+                	return nil, err
+        	}
+
 		return NewUserResolver(r.db, user), nil
 
 	case args.Email != nil:
