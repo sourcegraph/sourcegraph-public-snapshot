@@ -4,10 +4,18 @@ import { COMMAND_PALETTE_SHORTCUTS } from '../constants'
 
 import { CommandPaletteResultList } from './CommandPaletteResultList'
 
-export const CommandsModesList: React.FC = () => (
-    <CommandPaletteResultList>
-        {COMMAND_PALETTE_SHORTCUTS.map(({ id, title, keybindings, onMatch }) => (
-            <CommandPaletteResultList.Item key={id} label={title} onClick={onMatch} keybindings={keybindings} />
-        ))}
+export const CommandsModesList: React.FC<{ onSelect: () => void }> = ({ onSelect }) => (
+    <CommandPaletteResultList items={COMMAND_PALETTE_SHORTCUTS}>
+        {({ title, keybindings, onMatch }, { active }) => (
+            <CommandPaletteResultList.Item
+                active={active}
+                label={title}
+                onClick={() => {
+                    onMatch()
+                    onSelect()
+                }}
+                keybindings={keybindings}
+            />
+        )}
     </CommandPaletteResultList>
 )

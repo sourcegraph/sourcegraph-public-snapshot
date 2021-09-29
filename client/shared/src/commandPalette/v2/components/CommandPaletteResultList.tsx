@@ -1,4 +1,5 @@
-import React from 'react'
+import classNames from 'classnames'
+import React, { useState, useEffect } from 'react'
 
 import { Keybinding } from '../../../keyboardShortcuts'
 
@@ -9,6 +10,7 @@ interface CommandPaletteResultItemProps {
     href?: string
     keybindings?: Keybinding[]
     label: string
+    active?: boolean
     // TODO icon (for symbol type, action item icon)
     icon?: JSX.Element
 }
@@ -18,18 +20,35 @@ const CommandPaletteResultListItem: React.FC<CommandPaletteResultItemProps> = ({
     href,
     keybindings = [],
     label,
+    active,
 }) => {
     const Tag = href ? 'a' : 'button'
 
+    useEffect(() => {
+        function handleKeyDown(event: KeyboardEvent): void {
+            if (event.key === 'Enter' && active) {
+                onClick()
+            }
+        }
+        document.addEventListener('keydown', handleKeyDown)
+        return () => document.removeEventListener('keydown', handleKeyDown)
+    }, [onClick, active])
+
     return (
-        <li>
-            <Tag type="button" className={styles.Button} onClick={onClick} href={href}>
+        <li tabIndex={-1}>
+            <Tag
+                type="button"
+                tabIndex={0}
+                className={classNames(styles.button, { [styles.buttonActive]: active })}
+                onClick={onClick}
+                href={href}
+            >
                 {label}
 
                 {keybindings.map(({ ordered, held }, index) => (
-                    <span key={index} className={styles.Keybindings}>
-                        {[held || [], ...ordered].map(key => (
-                            <kbd key={key}>{key}</kbd>
+                    <span tabIndex={-1} key={index} className={styles.keybindings}>
+                        {[held || [], ...ordered].map((key, index) => (
+                            <kbd key={index}>{key}</kbd>
                         ))}
                     </span>
                 ))}
@@ -38,8 +57,33 @@ const CommandPaletteResultListItem: React.FC<CommandPaletteResultItemProps> = ({
     )
 }
 
-export const CommandPaletteResultList: React.FC & {
-    Item: typeof CommandPaletteResultListItem
-} = ({ children }) => <ul className={styles.List}>{children}</ul>
+interface CommandPaletteResultListProps<T> {
+    items: T[]
+    children: (item: T, options: { active: boolean }) => JSX.Element
+}
+
+export function CommandPaletteResultList<T>({ children, items }: CommandPaletteResultListProps<T>): JSX.Element {
+    const [selected, setSelected] = useState<number | undefined>()
+
+    useEffect(() => {
+        function handleKeyDown(event: KeyboardEvent): void {
+            if (event.key === 'ArrowUp') {
+                setSelected(selected => ((selected ?? items.length - 1) - 1) % items.length)
+            } else if (event.key === 'ArrowDown') {
+                setSelected(selected => ((selected ?? 0) + 1) % items.length)
+            }
+        }
+        document.addEventListener('keydown', handleKeyDown)
+        return () => document.removeEventListener('keydown', handleKeyDown)
+    }, [items])
+
+    return (
+        <ul className={styles.list}>
+            {items.map((item, index) => (
+                <React.Fragment key={index}>{children(item, { active: selected === index })}</React.Fragment>
+            ))}
+        </ul>
+    )
+}
 
 CommandPaletteResultList.Item = CommandPaletteResultListItem

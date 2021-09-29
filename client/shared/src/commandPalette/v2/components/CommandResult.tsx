@@ -116,8 +116,8 @@ export const CommandResult: React.FC<CommandResultProps> = ({ actions, value, on
     )
 
     return (
-        <CommandPaletteResultList>
-            {filteredActions?.map(item => {
+        <CommandPaletteResultList items={filteredActions}>
+            {(item, { active }) => {
                 const { action, keybinding } = item
                 // TODO: share label between filteritems
                 const label = [action.category, action.actionItem?.label || action.title || action.command]
@@ -126,13 +126,13 @@ export const CommandResult: React.FC<CommandResultProps> = ({ actions, value, on
 
                 return (
                     <CommandPaletteResultList.Item
-                        key={action.id}
+                        active={active}
                         label={label}
                         keybindings={keybinding ? [keybinding] : []}
                         onClick={() => handleRunAction(item)}
                     />
                 )
-            })}
+            }}
         </CommandPaletteResultList>
     )
 }

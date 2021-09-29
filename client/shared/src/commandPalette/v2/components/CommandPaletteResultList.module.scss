@@ -1,10 +1,10 @@
-.List {
+.list {
     margin: 0;
     padding: 0;
     list-style: none;
 }
 
-.Button {
+.button {
     width: 100%;
     text-align: left;
     display: flex;
@@ -21,8 +21,11 @@
         text-shadow: 0 0 0 transparent;
     }
 
-    &:hover {
+    &:hover,
+    &.button-active,
+    &:global(.focus-visible) {
         background: var(--color-bg-2);
+        outline: 1px solid var(--link-active-color);
 
         kbd {
             background: var(--color-bg-3);
@@ -31,7 +34,7 @@
     }
 }
 
-.Keybindings {
+.keybindings {
     display: flex;
     justify-content: center;
     align-items: center;

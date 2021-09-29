@@ -2,7 +2,7 @@ import classNames from 'classnames'
 import { Remote } from 'comlink'
 import * as H from 'history'
 import MagnifyIcon from 'mdi-react/MagnifyIcon'
-import React, { useMemo, useCallback, useEffect } from 'react'
+import React, { useMemo, useCallback, useEffect, useRef } from 'react'
 import { Modal } from 'reactstrap'
 import { from, Observable } from 'rxjs'
 import { filter, map, switchMap } from 'rxjs/operators'
@@ -117,7 +117,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
 }) => {
     const { isOpen, toggleIsOpen, value, setValue } = useCommandPaletteStore()
     const { actions, shortcuts, onRunAction } = useCommandList(value, extensionsController)
-
+    const inputReference = useRef<HTMLInputElement>(null)
     const mode = getMode(value)
 
     useEffect(() => {
@@ -129,6 +129,10 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
     const handleClose = useCallback(() => {
         toggleIsOpen()
     }, [toggleIsOpen])
+
+    const handleInputFocus = useCallback(()=> {
+        inputReference.current?.focus()
+    }, [])
 
     const handleChange = useCallback(
         (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -181,6 +185,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
                 <div className={styles.inputContainer}>
                     <MagnifyIcon className={styles.inputIcon} />
                     <input
+                    ref={inputReference}
                         autoComplete="off"
                         spellCheck="false"
                         aria-autocomplete="list"
@@ -193,7 +198,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
                         type="text"
                     />
                 </div>
-                {!mode && <CommandsModesList />}
+                {!mode && <CommandsModesList onSelect={handleInputFocus} />}
                 {mode === CommandPaletteMode.Command && (
                     <CommandResult
                         actions={actions}
