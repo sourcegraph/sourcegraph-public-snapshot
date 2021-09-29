@@ -23,6 +23,9 @@ const CurrentDefinitionsSchemaVersion = 2
 // CurrentReferencesSchemaVersion is the schema version used for new lsif_data_references rows.
 const CurrentReferencesSchemaVersion = 2
 
+// CurrentImplementationsSchemaVersion is the schema version used for new lsif_data_implementations rows.
+const CurrentImplementationsSchemaVersion = 1
+
 // WriteMeta is called (transactionally) from the precise-code-intel-worker.
 func (s *Store) WriteMeta(ctx context.Context, bundleID int, meta precise.MetaData) (err error) {
 	ctx, endObservation := s.operations.writeMeta.With(ctx, &err, observation.Args{LogFields: []log.Field{
@@ -199,7 +202,7 @@ func (s *Store) WriteDefinitions(ctx context.Context, bundleID int, monikerLocat
 	}})
 	defer endObservation(1, observation.Args{})
 
-	return s.writeDefinitionReferences(ctx, bundleID, "lsif_data_definitions", CurrentDefinitionsSchemaVersion, monikerLocations, traceLog)
+	return s.writeMonikers(ctx, bundleID, "lsif_data_definitions", CurrentDefinitionsSchemaVersion, monikerLocations, traceLog)
 }
 
 // WriteReferences is called (transactionally) from the precise-code-intel-worker.
@@ -209,7 +212,7 @@ func (s *Store) WriteReferences(ctx context.Context, bundleID int, monikerLocati
 	}})
 	defer endObservation(1, observation.Args{})
 
-	return s.writeDefinitionReferences(ctx, bundleID, "lsif_data_references", CurrentReferencesSchemaVersion, monikerLocations, traceLog)
+	return s.writeMonikers(ctx, bundleID, "lsif_data_references", CurrentReferencesSchemaVersion, monikerLocations, traceLog)
 }
 
 // WriteImplementations is called (transactionally) from the precise-code-intel-worker.
@@ -219,10 +222,10 @@ func (s *Store) WriteImplementations(ctx context.Context, bundleID int, monikerL
 	}})
 	defer endObservation(1, observation.Args{})
 
-	return s.writeDefinitionReferences(ctx, bundleID, "lsif_data_references", CurrentReferencesSchemaVersion, monikerLocations, traceLog)
+	return s.writeMonikers(ctx, bundleID, "lsif_data_implementations", CurrentImplementationsSchemaVersion, monikerLocations, traceLog)
 }
 
-func (s *Store) writeDefinitionReferences(ctx context.Context, bundleID int, tableName string, version int, monikerLocations chan precise.MonikerLocations, traceLog observation.TraceLogger) (err error) {
+func (s *Store) writeMonikers(ctx context.Context, bundleID int, tableName string, version int, monikerLocations chan precise.MonikerLocations, traceLog observation.TraceLogger) (err error) {
 	tx, err := s.Transact(ctx)
 	if err != nil {
 		return err
@@ -230,7 +233,7 @@ func (s *Store) writeDefinitionReferences(ctx context.Context, bundleID int, tab
 	defer func() { err = tx.Done(err) }()
 
 	// Create temporary table symmetric to the given target table without the dump id or schema version
-	if err := tx.Exec(ctx, sqlf.Sprintf(writeDefinitionsReferencesTemporaryTableQuery, sqlf.Sprintf(tableName))); err != nil {
+	if err := tx.Exec(ctx, sqlf.Sprintf(writeLocationsTemporaryTableQuery, sqlf.Sprintf(tableName))); err != nil {
 		return err
 	}
 
@@ -242,7 +245,7 @@ func (s *Store) writeDefinitionReferences(ctx context.Context, bundleID int, tab
 				return err
 			}
 
-			if err := inserter.Insert(ctx, v.Kind, v.Scheme, v.Identifier, data, len(v.Locations)); err != nil {
+			if err := inserter.Insert(ctx, v.Scheme, v.Identifier, data, len(v.Locations)); err != nil {
 				return err
 			}
 
@@ -257,7 +260,7 @@ func (s *Store) writeDefinitionReferences(ctx context.Context, bundleID int, tab
 		ctx,
 		tx.Handle().DB(),
 		"t_"+tableName,
-		[]string{"kind", "scheme", "identifier", "data", "num_locations"},
+		[]string{"scheme", "identifier", "data", "num_locations"},
 		inserter,
 	); err != nil {
 		return err
@@ -268,7 +271,7 @@ func (s *Store) writeDefinitionReferences(ctx context.Context, bundleID int, tab
 	// parameterized dump id and schema version here since it is the same for all rows
 	// in this operation.
 	err = tx.Exec(ctx, sqlf.Sprintf(
-		writeDefinitionReferencesInsertQuery,
+		writeLocationsInsertQuery,
 		sqlf.Sprintf(tableName),
 		bundleID,
 		version,
@@ -280,7 +283,7 @@ func (s *Store) writeDefinitionReferences(ctx context.Context, bundleID int, tab
 
 	// Drop the temporary table.
 	err = tx.Exec(ctx, sqlf.Sprintf(
-		dropDefinitionReferencesTemporaryTableQuery,
+		dropLocationsTemporaryTableQuery,
 		sqlf.Sprintf(tableName),
 	))
 	if err != nil {
@@ -290,10 +293,9 @@ func (s *Store) writeDefinitionReferences(ctx context.Context, bundleID int, tab
 	return nil
 }
 
-const writeDefinitionsReferencesTemporaryTableQuery = `
--- source: enterprise/internal/codeintel/stores/lsifstore/data_write.go:writeDefinitionReferences
+const writeLocationsTemporaryTableQuery = `
+-- source: enterprise/internal/codeintel/stores/lsifstore/data_write.go:writeLocations
 CREATE TEMPORARY TABLE t_%s (
-	kind text NOT NULL,
 	scheme text NOT NULL,
 	identifier text NOT NULL,
 	data bytea NOT NULL,
@@ -301,16 +303,16 @@ CREATE TEMPORARY TABLE t_%s (
 ) ON COMMIT DROP
 `
 
-const writeDefinitionReferencesInsertQuery = `
--- source: enterprise/internal/codeintel/stores/lsifstore/data_write.go:writeDefinitionReferences
-INSERT INTO %s (dump_id, schema_version, kind, scheme, identifier, data, num_locations)
-SELECT %s, %s, source.kind, source.scheme, source.identifier, source.data, source.num_locations
+const writeLocationsInsertQuery = `
+-- source: enterprise/internal/codeintel/stores/lsifstore/data_write.go:writeLocations
+INSERT INTO %s (dump_id, schema_version, scheme, identifier, data, num_locations)
+SELECT %s, %s, source.scheme, source.identifier, source.data, source.num_locations
 FROM t_%s source
 ON CONFLICT DO NOTHING
 `
 
-const dropDefinitionReferencesTemporaryTableQuery = `
--- source: enterprise/internal/codeintel/stores/lsifstore/data_write.go:writeDefinitionReferences
+const dropLocationsTemporaryTableQuery = `
+-- source: enterprise/internal/codeintel/stores/lsifstore/data_write.go:writeLocations
 DROP TABLE T_%s
 `
 

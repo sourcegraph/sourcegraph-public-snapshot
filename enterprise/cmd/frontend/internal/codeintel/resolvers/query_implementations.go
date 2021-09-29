@@ -10,7 +10,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 )
 
 const slowImplementationsRequestThreshold = time.Second
@@ -99,15 +98,8 @@ func (r *queryResolver) Implementations(ctx context.Context, line, character int
 		uploadsByID[definitionUploads[i].ID] = definitionUploads[i]
 	}
 
-	exports := []precise.QualifiedMonikerData{}
-	for _, moniker := range orderedMonikers {
-		moniker2 := moniker
-		moniker2.Kind = "export"
-		exports = append(exports, moniker2)
-	}
-
 	// Query a single page of location results
-	locations, hasMore, err := r.pageReferences(ctx, "implementations", "definitions", adjustedUploads, exports, definitionUploadIDs, uploadsByID, &cursor, limit)
+	locations, hasMore, err := r.pageReferences(ctx, "implementations", "definitions", adjustedUploads, orderedMonikers, definitionUploadIDs, uploadsByID, &cursor, limit)
 	if err != nil {
 		return nil, "", err
 	}
