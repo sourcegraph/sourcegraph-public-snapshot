@@ -162,7 +162,7 @@ func NewRepoInfo(r *types.Repo) *RepoInfo {
 		}
 	case extsvc.TypeBitbucketCloud:
 		repo := r.Metadata.(*bitbucketcloud.Repo)
-		if len(repo.Links.Clone) == 0 {
+		if repo.Links.HTML.Href == "" {
 			break
 		}
 
