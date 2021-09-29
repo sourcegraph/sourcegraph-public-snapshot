@@ -2,10 +2,8 @@ package graphqlbackend
 
 import (
 	"context"
-	"net/url"
-	"strings"
 
-	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -37,23 +35,9 @@ func (s *userEventLogResolver) AnonymousUserID() string {
 }
 
 func (s *userEventLogResolver) URL() string {
-	if s.event.URL == "" {
-		return ""
-	}
-
-	// Check if the URL looks like a real URL
-	u, err := url.Parse(s.event.URL)
-	if err != nil ||
-		(u.Scheme != "http" && u.Scheme != "https") {
-		return ""
-	}
-
-	// Check if the URL belongs to the current site
-	normalized := u.String()
-	if !strings.HasPrefix(normalized, conf.ExternalURL()) {
-		return ""
-	}
-	return normalized
+	// 🚨 SECURITY: It is important to sanitize event URL before responding to the
+	// client to prevent malicious data being rendered in browser.
+	return database.SanitizeEventURL(s.event.URL)
 }
 
 func (s *userEventLogResolver) Source() string {
