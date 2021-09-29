@@ -342,6 +342,9 @@ export const RepoContainer: React.FunctionComponent<RepoContainerProps> = props 
         isBrowserExtensionInstalled === false &&
         codeHostIntegrationMessaging === 'browser-extension' &&
         hoverCount >= HOVER_THRESHOLD
+
+    console.log('TESTING', { hasDismissedExtensionAlert, hoverCount, HOVER_THRESHOLD, isBrowserExtensionInstalled })
+
     const showExtensionAlert = useMemo(
         () => isBrowserExtensionInstalled === false && !hasDismissedExtensionAlert && hoverCount >= HOVER_THRESHOLD,
         // Intentionally use useMemo() here without a dependency on hoverCount to only show the alert on the next reload,
