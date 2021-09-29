@@ -107,7 +107,7 @@ func startExec(ctx context.Context, args []string) error {
 
 	// If the commandset requires the dev-private repository to be cloned, we
 	// check that it's at the right location here.
-	if !set.NoDevPrivate {
+	if set.RequiresDevPrivate {
 		repoRoot, err := root.RepositoryRoot()
 		if err != nil {
 			out.WriteLine(output.Linef("", output.StyleWarning, "Failed to determine repository root location: %s", err))
@@ -124,6 +124,17 @@ func startExec(ctx context.Context, args []string) error {
 			out.WriteLine(output.Linef("", output.StyleWarning, "ERROR: dev-private repository not found!"))
 			out.WriteLine(output.Linef("", output.StyleWarning, "It's expected to exist at: %s", devPrivatePath))
 			out.WriteLine(output.Line("", output.StyleWarning, "See the documentation for how to clone it: https://docs.sourcegraph.com/dev/getting-started/quickstart_2_clone_repository"))
+
+			out.Write("")
+			overwritePath := filepath.Join(repoRoot, "sg.config.overwrite.yaml")
+			out.WriteLine(output.Linef("", output.StylePending, "If you know what you're doing and want disable the check, add the following to %s:", overwritePath))
+			out.Write("")
+			out.Write(fmt.Sprintf(`  commandsets:
+    %s:
+      requiresDevPrivate: false
+`, set.Name))
+			out.Write("")
+
 			os.Exit(1)
 		}
 	}
