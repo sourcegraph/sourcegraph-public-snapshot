@@ -26,23 +26,24 @@ type BuildOptions struct {
 }
 
 type Step struct {
-	Label            string                 `json:"label"`
-	Key              string                 `json:"key,omitempty"`
-	Command          []string               `json:"command,omitempty"`
-	DependsOn        []string               `json:"depends_on,omitempty"`
-	TimeoutInMinutes string                 `json:"timeout_in_minutes,omitempty"`
-	Trigger          string                 `json:"trigger,omitempty"`
-	Async            bool                   `json:"async,omitempty"`
-	Build            *BuildOptions          `json:"build,omitempty"`
-	Env              map[string]string      `json:"env,omitempty"`
-	Plugins          map[string]interface{} `json:"plugins,omitempty"`
-	ArtifactPaths    string                 `json:"artifact_paths,omitempty"`
-	ConcurrencyGroup string                 `json:"concurrency_group,omitempty"`
-	Concurrency      int                    `json:"concurrency,omitempty"`
-	Skip             string                 `json:"skip,omitempty"`
-	SoftFail         bool                   `json:"soft_fail,omitempty"`
-	Retry            *RetryOptions          `json:"retry,omitempty"`
-	Agents           map[string]string      `json:"agents,omitempty"`
+	Label                  string                 `json:"label"`
+	Key                    string                 `json:"key,omitempty"`
+	Command                []string               `json:"command,omitempty"`
+	DependsOn              []string               `json:"depends_on,omitempty"`
+	AllowDependencyFailure bool                   `json:"allowDependencyFailure,omitempty"`
+	TimeoutInMinutes       string                 `json:"timeout_in_minutes,omitempty"`
+	Trigger                string                 `json:"trigger,omitempty"`
+	Async                  bool                   `json:"async,omitempty"`
+	Build                  *BuildOptions          `json:"build,omitempty"`
+	Env                    map[string]string      `json:"env,omitempty"`
+	Plugins                map[string]interface{} `json:"plugins,omitempty"`
+	ArtifactPaths          string                 `json:"artifact_paths,omitempty"`
+	ConcurrencyGroup       string                 `json:"concurrency_group,omitempty"`
+	Concurrency            int                    `json:"concurrency,omitempty"`
+	Skip                   string                 `json:"skip,omitempty"`
+	SoftFail               bool                   `json:"soft_fail,omitempty"`
+	Retry                  *RetryOptions          `json:"retry,omitempty"`
+	Agents                 map[string]string      `json:"agents,omitempty"`
 }
 
 type RetryOptions struct {
@@ -197,5 +198,11 @@ func Plugin(name string, plugin interface{}) StepOpt {
 func DependsOn(dependency string) StepOpt {
 	return func(step *Step) {
 		step.DependsOn = append(step.DependsOn, dependency)
+	}
+}
+
+func AllowDependencyFailure() StepOpt {
+	return func(step *Step) {
+		step.AllowDependencyFailure = true
 	}
 }

@@ -207,6 +207,7 @@ func clientIntegrationTests(pipeline *bk.Pipeline) {
 
 	finalizeSteps := []bk.StepOpt{
 		skipGitCloneStep,
+		bk.AllowDependencyFailure(),
 		bk.Cmd("npx @percy/cli build:finalize"),
 	}
 
