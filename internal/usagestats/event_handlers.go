@@ -3,9 +3,10 @@ package usagestats
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"time"
+
+	"github.com/cockroachdb/errors"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/amplitude"

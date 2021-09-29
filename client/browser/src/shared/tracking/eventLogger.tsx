@@ -1,4 +1,3 @@
-import cookies from 'js-cookie'
 import { noop } from 'lodash'
 import { Observable, ReplaySubject, Subscription } from 'rxjs'
 import { take } from 'rxjs/operators'
@@ -14,7 +13,6 @@ import { isInPage } from '../context'
 import { observeSourcegraphURL, getPlatformName } from '../util/context'
 
 const uidKey = 'sourcegraphAnonymousUid'
-const deviceIDKey = 'sourcegraphDeviceId'
 
 /**
  * Telemetry Service which only logs when the enable flag is set. Accepts an
@@ -63,7 +61,6 @@ export class ConditionalTelemetryService implements TelemetryService {
 
 export class EventLogger implements TelemetryService {
     private uid: string | null = null
-    private deviceID?: string = undefined
 
     private platform = getPlatformName()
 
@@ -86,7 +83,6 @@ export class EventLogger implements TelemetryService {
      * Generate a new anonymous user ID if one has not yet been set and stored.
      */
     private generateAnonUserID = (): string => uuid.v4()
-    private generateDeviceID = (): string => uuid.v4()
 
     /**
      * Get the anonymous identifier for this user (allows site admins on a private Sourcegraph
