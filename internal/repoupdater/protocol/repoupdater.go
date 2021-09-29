@@ -167,12 +167,11 @@ func NewRepoInfo(r *types.Repo) *RepoInfo {
 		}
 
 		href := repo.Links.HTML.Href
-		root := strings.TrimSuffix(href, "/browse")
 		info.Links = &RepoLinks{
 			Root:   href,
-			Tree:   pathAppend(root, "/src/{rev}/{path}"),
-			Blob:   pathAppend(root, "/src/{rev}/{path}"),
-			Commit: pathAppend(root, "/commits/{commit}"),
+			Tree:   pathAppend(href, "/src/{rev}/{path}"),
+			Blob:   pathAppend(href, "/src/{rev}/{path}"),
+			Commit: pathAppend(href, "/commits/{commit}"),
 		}
 	case extsvc.TypeAWSCodeCommit:
 		repo := r.Metadata.(*awscodecommit.Repository)
