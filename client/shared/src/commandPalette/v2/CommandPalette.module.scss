@@ -6,6 +6,8 @@ $command-palette-border-radius: 0.45rem;
 
 .modal-dialog {
     border-radius: $command-palette-border-radius;
+    max-width: min(900px, 80%);
+    margin-top: 7rem;
 }
 
 .modal-content {

@@ -18,47 +18,47 @@ export const COMMAND_PALETTE_SHORTCUTS: KeyboardShortcutWithCallback[] = [
         id: 'openCommandPallette',
         title: 'Command palette',
         keybindings: [{ held: ['Control'], ordered: ['k'] }],
-        onMatch: () => {
+        onMatch: (): void => {
             useCommandPaletteStore.getState().toggleIsOpen({ open: true })
         },
     },
     {
         id: 'openCommandPalletteCommandMode',
-        title: 'Command palette -> command mode',
+        title: 'Command palette > Command mode',
         keybindings: [{ held: ['Control'], ordered: ['>'] }],
-        onMatch: () => {
+        onMatch: (): void => {
             useCommandPaletteStore.getState().toggleIsOpen({ open: true, mode: CommandPaletteMode.Command })
         },
     },
     {
         id: 'openCommandPalletteRecentSearchesMode',
-        title: 'Command palette -> recent searches mode',
+        title: 'Command palette > Recent searches mode',
         keybindings: [{ held: ['Control'], ordered: ['#'] }],
-        onMatch: () => {
+        onMatch: (): void => {
             useCommandPaletteStore.getState().toggleIsOpen({ open: true, mode: CommandPaletteMode.RecentSearches })
         },
     },
     {
         id: 'openCommandPalletteFuzzyMode',
-        title: 'Command palette -> fuzzy mode',
+        title: 'Command palette > Fuzzy mode',
         keybindings: [{ held: ['Control'], ordered: ['$'] }],
-        onMatch: () => {
+        onMatch: (): void => {
             useCommandPaletteStore.getState().toggleIsOpen({ open: true, mode: CommandPaletteMode.Fuzzy })
         },
     },
     {
         id: 'openCommandPalletteJumpToLine',
-        title: 'Command palette -> jump to line mode',
+        title: 'Command palette > Jump to line mode',
         keybindings: [{ held: ['Control'], ordered: [':'] }],
-        onMatch: () => {
+        onMatch: (): void => {
             useCommandPaletteStore.getState().toggleIsOpen({ open: true, mode: CommandPaletteMode.JumpToLine })
         },
     },
     {
         id: 'openCommandPalletteJumpToSymbol',
-        title: 'Command palette -> jump to symbol mode',
+        title: 'Command palette > Jump to symbol mode',
         keybindings: [{ held: ['Control'], ordered: ['@'] }],
-        onMatch: () => {
+        onMatch: (): void => {
             useCommandPaletteStore.getState().toggleIsOpen({ open: true, mode: CommandPaletteMode.JumpToSymbol })
         },
     },

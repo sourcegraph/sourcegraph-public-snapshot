@@ -68,9 +68,9 @@ export function CommandPaletteResultList<T>({ children, items }: CommandPaletteR
     useEffect(() => {
         function handleKeyDown(event: KeyboardEvent): void {
             if (event.key === 'ArrowUp') {
-                setSelected(selected => ((selected ?? items.length - 1) - 1) % items.length)
+                setSelected(selected => ((selected || items.length) - 1) % items.length)
             } else if (event.key === 'ArrowDown') {
-                setSelected(selected => ((selected ?? 0) + 1) % items.length)
+                setSelected(selected => ((selected || 0) + 1) % items.length)
             }
         }
         document.addEventListener('keydown', handleKeyDown)
