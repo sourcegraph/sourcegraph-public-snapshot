@@ -33,7 +33,14 @@ import { RepositoryFields } from '../graphql-operations'
 import { CodeInsightsProps } from '../insights/types'
 import { KeyboardShortcutsProps } from '../keyboardShortcuts/keyboardShortcuts'
 import { VersionContext } from '../schema/site.schema'
-import { PatternTypeProps, CaseSensitivityProps, SearchContextProps, SearchStreamingProps, SearchContextInputProps, ParsedSearchQueryProps } from '../search'
+import {
+    PatternTypeProps,
+    CaseSensitivityProps,
+    SearchContextProps,
+    SearchStreamingProps,
+    SearchContextInputProps,
+    ParsedSearchQueryProps,
+} from '../search'
 import { SubmitSearchParameters } from '../search/helpers'
 import { StreamingSearchResultsListProps } from '../search/results/StreamingSearchResultsList'
 import { ThemePreferenceProps } from '../theme'
