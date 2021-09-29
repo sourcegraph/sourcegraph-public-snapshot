@@ -6,6 +6,7 @@ import (
 	"time"
 	"unicode/utf8"
 
+	"github.com/RoaringBitmap/roaring"
 	"github.com/cockroachdb/errors"
 	"github.com/google/zoekt"
 	zoektquery "github.com/google/zoekt/query"
@@ -28,31 +29,24 @@ import (
 // indexedRepoRevs creates both the Sourcegraph and Zoekt representation of a
 // list of repository and refs to search.
 type IndexedRepoRevs struct {
-	// repoRevs is the Sourcegraph representation of a the list of repoRevs
-	// repository and revisions to search.
-	repoRevs map[string]*search.RepositoryRevisions
+	// branch -> zoektquery.BranchRepos
+	branches map[string]*zoektquery.BranchRepos
 
-	// repoBranches will be used when we query zoekt. The order of branches
-	// must match that in a reporev such that we can map back results. IE this
-	// invariant is maintained:
-	//
-	//  repoBranches[reporev.Repo.Name][i] <-> reporev.Revs[i]
-	repoBranches map[string][]string
+	// branch -> revSpecs
+	revSpecs map[string][]string
 }
-
-// headBranch is used as a singleton of the indexedRepoRevs.repoBranches to save
-// common-case allocations within indexedRepoRevs.Add.
-var headBranch = []string{"HEAD"}
 
 // add will add reporev and repo to the list of repository and branches to
 // search if reporev's refs are a subset of repo's branches. It will return
 // the revision specifiers it can't add.
 func (rb *IndexedRepoRevs) add(reporev *search.RepositoryRevisions, repo *zoekt.MinimalRepoListEntry) []search.RevisionSpecifier {
-	// A repo should only appear once in revs. However, in case this
+	// A repo should only be added once. However, in case this
 	// invariant is broken we will treat later revs as if it isn't
 	// indexed.
-	if _, ok := rb.repoBranches[string(reporev.Repo.Name)]; ok {
-		return reporev.Revs
+	for _, b := range rb.branches {
+		if b.Repos.Contains(uint32(reporev.Repo.ID)) {
+			return reporev.Revs
+		}
 	}
 
 	if !reporev.OnlyExplicit() {
@@ -64,52 +58,49 @@ func (rb *IndexedRepoRevs) add(reporev *search.RepositoryRevisions, repo *zoekt.
 		return reporev.Revs
 	}
 
+	add := func(id api.RepoID, branch string) *zoektquery.BranchRepos {
+		b, ok := rb.branches[branch]
+		if !ok {
+			b = &zoektquery.BranchRepos{Branch: branch, Repos: roaring.New()}
+			rb.branches[branch] = b
+		}
+		b.Repos.Add(uint32(id))
+		return b
+	}
+
 	if len(reporev.Revs) == 1 && repo.Branches[0].Name == "HEAD" && (reporev.Revs[0].RevSpec == "" || reporev.Revs[0].RevSpec == "HEAD") {
-		rb.repoRevs[string(reporev.Repo.Name)] = reporev
-		rb.repoBranches[string(reporev.Repo.Name)] = headBranch
+		add(reporev.Repo.ID, "HEAD")
 		return nil
 	}
 
 	// Assume for large searches they will mostly involve indexed
 	// revisions, so just allocate that.
 	var unindexed []search.RevisionSpecifier
-	indexed := make([]search.RevisionSpecifier, 0, len(reporev.Revs))
-
-	branches := make([]string, 0, len(reporev.Revs))
 	for _, rev := range reporev.Revs {
 		if rev.RevSpec == "" || rev.RevSpec == "HEAD" {
-			// Zoekt convention that first branch is HEAD
-			branches = append(branches, repo.Branches[0].Name)
-			indexed = append(indexed, rev)
+			add(reporev.Repo.ID, "HEAD")
 			continue
 		}
 
 		found := false
 		for _, branch := range repo.Branches {
 			if branch.Name == rev.RevSpec {
-				branches = append(branches, branch.Name)
+				add(reporev.Repo.ID, branch.Name)
 				found = true
 				break
 			}
 			// Check if rev is an abbrev commit SHA
 			if len(rev.RevSpec) >= 4 && strings.HasPrefix(branch.Version, rev.RevSpec) {
-				branches = append(branches, branch.Name)
+				add(reporev.Repo.ID, branch.Name)
+				rb.revSpecs[branch.Name] = append(rb.revSpecs[branch.Name], rev.RevSpec)
 				found = true
 				break
 			}
 		}
 
-		if found {
-			indexed = append(indexed, rev)
-		} else {
+		if !found {
 			unindexed = append(unindexed, rev)
 		}
-	}
-
-	// We found indexed branches! Track them.
-	if len(indexed) > 0 {
-		rb.repoRevs[string(reporev.Repo.Name)] = reporev
-		rb.repoBranches[string(reporev.Repo.Name)] = branches
 	}
 
 	return unindexed
@@ -117,16 +108,9 @@ func (rb *IndexedRepoRevs) add(reporev *search.RepositoryRevisions, repo *zoekt.
 
 // getRepoInputRev returns the repo and inputRev associated with file.
 func (rb *IndexedRepoRevs) getRepoInputRev(file *zoekt.FileMatch) (repo types.RepoName, inputRevs []string) {
-	repoRev := rb.repoRevs[file.Repository]
-
 	inputRevs = make([]string, 0, len(file.Branches))
 	for _, branch := range file.Branches {
-		for i, b := range rb.repoBranches[file.Repository] {
-			if branch == b {
-				// RevSpec is guaranteed to be explicit via zoektIndexedRepos
-				inputRevs = append(inputRevs, repoRev.Revs[i].RevSpec)
-			}
-		}
+		inputRevs = append(inputRevs, rb.revSpecs[branch]...)
 	}
 
 	if len(inputRevs) == 0 {
@@ -135,7 +119,12 @@ func (rb *IndexedRepoRevs) getRepoInputRev(file *zoekt.FileMatch) (repo types.Re
 		inputRevs = append(inputRevs, file.Version)
 	}
 
-	return repoRev.Repo, inputRevs
+	repo = types.RepoName{
+		ID:   api.RepoID(file.RepositoryID),
+		Name: api.RepoName(file.Repository),
+	}
+
+	return repo, inputRevs
 }
 
 // IndexedSearchRequest exposes a method Search(...) to search over indexed
@@ -414,12 +403,17 @@ func zoektGlobalQuery(q zoektquery.Q, repoOptions search.RepoOptions, userPrivat
 
 	// Private or Any
 	if (repoOptions.Visibility == query.Private || repoOptions.Visibility == query.Any) && len(userPrivateRepos) > 0 {
-		privateRepoSet := make(map[string][]string, len(userPrivateRepos))
-		head := []string{"HEAD"}
-		for _, r := range userPrivateRepos {
-			privateRepoSet[string(r.Name)] = head
+		privateRepoSet := []zoektquery.BranchRepos{
+			{Branch: "HEAD", Repos: roaring.NewBitmap()},
 		}
-		qs = append(qs, zoektquery.NewAnd(&zoektquery.RepoBranches{Set: privateRepoSet}, q))
+
+		for _, r := range userPrivateRepos {
+			privateRepoSet[0].Repos.Add(uint32(r.ID))
+		}
+
+		privateRepoSet[0].Repos.RunOptimize()
+
+		qs = append(qs, zoektquery.NewAnd(&zoektquery.BranchesRepos{List: privateRepoSet}, q))
 	}
 
 	return zoektquery.Simplify(zoektquery.NewOr(qs...))
