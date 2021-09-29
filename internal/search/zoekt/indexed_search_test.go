@@ -256,26 +256,32 @@ func TestIndexedSearch(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			args := &search.TextParameters{
-				Query:           q,
-				PatternInfo:     tt.args.patternInfo,
-				Repos:           tt.args.repos,
-				UseFullDeadline: tt.args.useFullDeadline,
-				Zoekt: &searchbackend.FakeSearcher{
-					Result: &zoekt.SearchResult{Files: tt.args.results},
-					Repos:  zoektRepos,
-				},
+			zoekt := &searchbackend.FakeSearcher{
+				Result: &zoekt.SearchResult{Files: tt.args.results},
+				Repos:  zoektRepos,
+			}
+
+			zoektQuery, err := search.QueryToZoektQuery(tt.args.patternInfo, false)
+			if err != nil {
+				t.Fatal(err)
 			}
 
 			zoektArgs := &search.ZoektParameters{
-				Query:          q,
+				Query:          zoektQuery,
 				Typ:            search.TextRequest,
 				FileMatchLimit: tt.args.patternInfo.FileMatchLimit,
 				Select:         tt.args.patternInfo.Select,
-				Zoekt:          args.Zoekt,
+				Zoekt:          zoekt,
 			}
 
-			indexed, err := newIndexedSubsetSearchRequest(context.Background(), args, zoektArgs, MissingRepoRevStatus(streaming.StreamFunc(func(streaming.SearchEvent) {})))
+			indexed, err := newIndexedSubsetSearchRequest(
+				context.Background(),
+				tt.args.repos,
+				q,
+				tt.args.patternInfo.Index,
+				zoektArgs,
+				MissingRepoRevStatus(streaming.StreamFunc(func(streaming.SearchEvent) {})),
+			)
 			if err != nil {
 				t.Fatal(err)
 			}
