@@ -2,7 +2,7 @@
     background: none;
 }
 
-$command-palette-border-radius: 0.75rem;
+$command-palette-border-radius: 0.45rem;
 
 .modal-dialog {
     border-radius: $command-palette-border-radius;
@@ -13,21 +13,25 @@ $command-palette-border-radius: 0.75rem;
 }
 
 .input {
-    height: 3rem;
-    font-size: 1.125rem;
+    font-size: 1rem;
+    font-weight: 300;
+    font-style: italic;
     border: none;
+    color: --body-color;
     border-bottom: 1px solid var(--border-color-2);
     border-radius: 0;
     border-top-left-radius: $command-palette-border-radius;
     border-top-right-radius: $command-palette-border-radius;
-
-    padding-left: 2.25rem; // Make room for background icon
+    padding: 1rem 0 1rem 2rem; // Make room for background icon
 
     &:focus {
         // Override .form-control focus styles
         border-color: var(--border-color-2);
-        outline: none;
         box-shadow: none;
+    }
+
+    &:focus, &:active {
+        outline: 1px solid var(--link-active-color);
     }
 }
 
@@ -38,8 +42,8 @@ $command-palette-border-radius: 0.75rem;
 
 .input-icon {
     align-self: center;
-    height: 1.5rem;
-    width: 1.5rem;
+    height: 1.25rem;
+    width: 1.25rem;
     position: absolute;
     left: 0.5rem;
     color: var(--icon-muted);

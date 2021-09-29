@@ -1,0 +1,38 @@
+.List {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.Button {
+    width: 100%;
+    text-align: left;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-weight: 300;
+    padding: 0.125rem 0.5rem;
+    background: transparent;
+    color: --body-color;
+
+    &, &:hover {
+        box-shadow: 0 0 0 transparent;
+        border: 0 solid transparent;
+        text-shadow: 0 0 0 transparent;
+    }
+
+    &:hover {
+        background: var(--color-bg-2);
+
+        kbd {
+            background: var(--color-bg-3);
+            box-shadow: -1px 1px 1px var(--secondary-3);
+        }
+    }
+}
+
+.Keybindings {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
