@@ -118,37 +118,12 @@ export class EventLogger implements TelemetryService {
         return sourcegraphAnonymousUid
     }
 
-    private async getDeviceID(): Promise<string> {
-        if (this.deviceID) {
-            return this.deviceID
-        }
-
-        if (isInPage) {
-            let id = cookies.get(deviceIDKey)
-            if (!id) {
-                id = this.generateDeviceID()
-                localStorage.setItem(deviceIDKey, id)
-            }
-            this.deviceID = id
-            return this.deviceID
-        }
-
-        let { deviceID } = await storage.sync.get()
-        if (!deviceID) {
-            deviceID = this.generateDeviceID()
-            await storage.sync.set({ deviceID })
-        }
-        this.deviceID = deviceID
-        return deviceID
-    }
-
     /**
      * Log a user action on the associated self-hosted Sourcegraph instance (allows site admins on a private
      * Sourcegraph instance to see a count of unique users on a daily, weekly, and monthly basis).
      */
     public async logCodeIntelligenceEvent(event: string, userEvent: UserEvent, eventProperties?: any): Promise<void> {
         const anonUserId = await this.getAnonUserID()
-        const deviceId = await this.getDeviceID()
         const sourcegraphURL = await this.sourcegraphURLs.pipe(take(1)).toPromise()
         logUserEvent(userEvent, anonUserId, sourcegraphURL, this.requestGraphQL)
         logEvent(
@@ -156,7 +131,6 @@ export class EventLogger implements TelemetryService {
                 name: event,
                 userCookieID: anonUserId,
                 url: sourcegraphURL,
-                deviceID: deviceId,
                 argument: { platform: this.platform, ...eventProperties },
             },
             this.requestGraphQL
@@ -191,13 +165,11 @@ export class EventLogger implements TelemetryService {
     public async logViewEvent(pageTitle: string, eventProperties?: any): Promise<void> {
         const anonUserId = await this.getAnonUserID()
         const sourcegraphURL = await this.sourcegraphURLs.pipe(take(1)).toPromise()
-        const deviceId = await this.getDeviceID()
         logEvent(
             {
                 name: `View${pageTitle}`,
                 userCookieID: anonUserId,
                 url: sourcegraphURL,
-                deviceID: deviceId,
                 argument: { ...eventProperties, platform: this.platform },
             },
             this.requestGraphQL

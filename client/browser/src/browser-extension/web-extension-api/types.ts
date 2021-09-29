@@ -60,10 +60,6 @@ export interface SyncStorageItems extends SourcegraphURL {
      */
     clientSettings: string
     dismissedHoverAlerts: Record<string, boolean | undefined>
-    /**
-     * Generated device ID for analytics (used in Cloud only).
-     */
-    deviceID: string
 }
 
 export interface LocalStorageItems {
