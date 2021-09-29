@@ -58,6 +58,23 @@ changesetTemplate:
   published: false
 `
 
+func BuildRawBatchSpecWithImportChangesets(t *testing.T, imports []batcheslib.ImportChangeset) string {
+	t.Helper()
+
+	spec := batcheslib.BatchSpec{
+		Name:             "test-batch-change",
+		Description:      "only importing",
+		ImportChangesets: imports,
+	}
+
+	marshaledRawSpec, err := json.Marshal(spec)
+	if err != nil {
+		t.Fatalf("failed to marshal BatchSpec: %s", err)
+	}
+
+	return string(marshaledRawSpec)
+}
+
 var ChangesetSpecDiffStat = &diff.Stat{Added: 1, Changed: 2, Deleted: 1}
 
 const ChangesetSpecAuthorEmail = "mary@example.com"

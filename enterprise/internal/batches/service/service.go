@@ -15,12 +15,14 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
 )
 
 // New returns a Service.
@@ -135,6 +137,128 @@ func (s *Service) CreateBatchSpec(ctx context.Context, opts CreateBatchSpecOpts)
 	}
 
 	return spec, nil
+}
+
+type CreateBatchSpecFromRawOpts struct {
+	RawSpec string
+
+	NamespaceUserID int32
+	NamespaceOrgID  int32
+
+	AllowIgnored     bool
+	AllowUnsupported bool
+}
+
+// CreateBatchSpecFromRaw creates the BatchSpec.
+func (s *Service) CreateBatchSpecFromRaw(ctx context.Context, opts CreateBatchSpecFromRawOpts) (spec *btypes.BatchSpec, err error) {
+	actor := actor.FromContext(ctx)
+	tr, ctx := trace.New(ctx, "Service.CreateBatchSpecFromRaw", fmt.Sprintf("Actor %d", actor.UID))
+	defer func() {
+		tr.SetError(err)
+		tr.Finish()
+	}()
+
+	spec, err = btypes.NewBatchSpecFromRaw(opts.RawSpec)
+	if err != nil {
+		return nil, err
+	}
+
+	// Check whether the current user has access to either one of the namespaces.
+	err = s.CheckNamespaceAccess(ctx, opts.NamespaceUserID, opts.NamespaceOrgID)
+	if err != nil {
+		return nil, err
+	}
+	spec.NamespaceOrgID = opts.NamespaceOrgID
+	spec.NamespaceUserID = opts.NamespaceUserID
+	spec.UserID = actor.UID
+
+	tx, err := s.store.Transact(ctx)
+	if err != nil {
+		return nil, err
+	}
+	defer func() { err = tx.Done(err) }()
+
+	return spec, s.createBatchSpecForExecution(ctx, tx, createBatchSpecForExecutionOpts{
+		spec:             spec,
+		allowIgnored:     opts.AllowIgnored,
+		allowUnsupported: opts.AllowUnsupported,
+	})
+}
+
+type createBatchSpecForExecutionOpts struct {
+	spec             *btypes.BatchSpec
+	allowIgnored     bool
+	allowUnsupported bool
+}
+
+// createBatchSpecForExecution persists the given BatchSpec in the given
+// transaction, possibly creating ChangesetSpecs if the spec contains
+// importChangesets statements, and finally creating a BatchSpecResolutionJob.
+func (s *Service) createBatchSpecForExecution(ctx context.Context, tx *store.Store, opts createBatchSpecForExecutionOpts) error {
+	reposStore := tx.Repos()
+
+	if err := tx.CreateBatchSpec(ctx, opts.spec); err != nil {
+		return err
+	}
+
+	if len(opts.spec.Spec.ImportChangesets) != 0 {
+		var repoNames []string
+		for _, ic := range opts.spec.Spec.ImportChangesets {
+			repoNames = append(repoNames, ic.Repository)
+		}
+
+		// 🚨 SECURITY: We use database.Repos.List to get the ID and also to check
+		// whether the user has access to the repository or not.
+		//
+		// Further down, when iterating over
+		repos, err := reposStore.List(ctx, database.ReposListOptions{Names: repoNames})
+		if err != nil {
+			return err
+		}
+
+		repoNameIDs := make(map[api.RepoName]api.RepoID, len(repos))
+		for _, r := range repos {
+			repoNameIDs[r.Name] = r.ID
+		}
+
+		// If there are "importChangesets" statements in the spec we evaluate
+		// them now and create ChangesetSpecs for them.
+		for _, ic := range opts.spec.Spec.ImportChangesets {
+			for _, id := range ic.ExternalIDs {
+				repoID, ok := repoNameIDs[api.RepoName(ic.Repository)]
+				if !ok {
+					return errors.Newf("repository %s not found", ic.Repository)
+				}
+
+				extID, err := batcheslib.ParseChangesetSpecExternalID(id)
+				if err != nil {
+					return err
+				}
+
+				changesetSpec := &btypes.ChangesetSpec{
+					UserID: opts.spec.UserID,
+					RepoID: repoID,
+					Spec: &batcheslib.ChangesetSpec{
+						BaseRepository: string(graphqlbackend.MarshalRepositoryID(repoID)),
+						ExternalID:     extID,
+					},
+					BatchSpecID: opts.spec.ID,
+				}
+
+				if err = tx.CreateChangesetSpec(ctx, changesetSpec); err != nil {
+					return err
+				}
+			}
+		}
+	}
+
+	// Return spec and enqueue resolution
+	return tx.CreateBatchSpecResolutionJob(ctx, &btypes.BatchSpecResolutionJob{
+		State:            btypes.BatchSpecResolutionJobStateQueued,
+		BatchSpecID:      opts.spec.ID,
+		AllowIgnored:     opts.allowIgnored,
+		AllowUnsupported: opts.allowUnsupported,
+	})
 }
 
 type EnqueueBatchSpecResolutionOpts struct {
@@ -290,22 +414,11 @@ func (s *Service) ReplaceBatchSpecInput(ctx context.Context, opts ReplaceBatchSp
 	newSpec.NamespaceUserID = batchSpec.NamespaceUserID
 	newSpec.UserID = batchSpec.UserID
 
-	if err := tx.CreateBatchSpec(ctx, newSpec); err != nil {
-		return nil, err
-	}
-
-	// Create a new resolution job now in the transaction so that we switch the
-	// resolution jobs essentially.
-	err = tx.CreateBatchSpecResolutionJob(ctx, &btypes.BatchSpecResolutionJob{
-		BatchSpecID:      newSpec.ID,
-		AllowIgnored:     opts.AllowIgnored,
-		AllowUnsupported: opts.AllowUnsupported,
+	return newSpec, s.createBatchSpecForExecution(ctx, tx, createBatchSpecForExecutionOpts{
+		spec:             newSpec,
+		allowIgnored:     opts.AllowIgnored,
+		allowUnsupported: opts.AllowUnsupported,
 	})
-	if err != nil {
-		return nil, err
-	}
-
-	return newSpec, nil
 }
 
 // CreateChangesetSpec validates the given raw spec input and creates the ChangesetSpec.
