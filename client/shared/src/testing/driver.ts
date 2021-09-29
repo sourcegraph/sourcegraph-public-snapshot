@@ -765,7 +765,7 @@ export async function createDriverForTest(options?: Partial<DriverOptions>): Pro
         ...resolvedOptions,
         args,
         defaultViewport: null,
-        timeout: 30000,
+        timeout: 300000,
     }
     let browser: puppeteer.Browser
     const browserName = resolvedOptions.browser || 'chrome'
