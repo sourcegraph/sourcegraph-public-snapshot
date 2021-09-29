@@ -299,6 +299,26 @@ describe('getDiagnostics()', () => {
                   }
                 ]
             `)
+            expect(parseAndDiagnose('rev:main repo:', SearchPatternType.literal)).toMatchInlineSnapshot(`
+                [
+                  {
+                    "severity": 8,
+                    "message": "Error: query contains \`rev:\` with an empty \`repo:\` filter. Add a non-empty \`repo:\` filter.",
+                    "startLineNumber": 1,
+                    "endLineNumber": 1,
+                    "startColumn": 10,
+                    "endColumn": 14
+                  },
+                  {
+                    "severity": 8,
+                    "message": "Error: query contains \`rev:\` with an empty \`repo:\` filter. Add a non-empty \`repo:\` filter.",
+                    "startLineNumber": 1,
+                    "endLineNumber": 1,
+                    "startColumn": 1,
+                    "endColumn": 4
+                  }
+                ]
+            `)
         })
 
         test('accepts rev filter if valid repo filter is present', () => {
