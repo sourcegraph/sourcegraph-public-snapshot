@@ -2,6 +2,7 @@
 .command-palette-button--bitbucket-server {
     z-index: 3000;
     font-size: 13px;
+
     svg {
         // The icon we use is taller than the other items' font size, so make it a bit shorter.
         height: 13px;
@@ -15,9 +16,11 @@
     header {
         padding: 8px;
     }
+
     input {
         max-width: unset !important;
     }
+
     .no-results {
         padding: 10px;
     }
@@ -53,6 +56,7 @@
         flex: 0 2 auto;
         order: 1;
     }
+
     > .secondary {
         // Overrides
         float: none;
@@ -89,6 +93,7 @@
     border-bottom: none !important;
     border-top: none !important;
     border-right: none !important;
+
     &:first-child {
         border-left: none !important;
     }
@@ -105,6 +110,10 @@
     border: none !important;
     height: 16px !important;
     line-height: 16px !important;
+
+    &.close {
+        margin-right: -1.25rem;
+    }
 
     &:hover {
         opacity: 0.7;
