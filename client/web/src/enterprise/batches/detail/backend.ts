@@ -541,6 +541,7 @@ const changesetDiffFragment = gql`
         currentSpec {
             description {
                 ... on GitBranchChangesetDescription {
+                    __typename
                     commits {
                         diff
                     }
@@ -575,7 +576,9 @@ export async function getChangesetDiff(changeset: Scalars['ID']): Promise<string
                     throw new Error(`The given ID is a ${node.__typename}, not an ExternalChangeset`)
                 }
 
-                const commits = node.currentSpec?.description.commits
+                const commits =
+                    node.currentSpec?.description?.__typename === 'GitBranchChangesetDescription' &&
+                    node.currentSpec?.description.commits
                 if (!commits) {
                     throw new Error(`No commit available for changeset ID ${changeset}`)
                 } else if (commits.length !== 1) {
