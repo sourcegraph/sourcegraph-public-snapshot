@@ -23,7 +23,7 @@ func Publish(body []byte) error {
 	req.Header.Set("Accept", "*/*")
 	resp, err := httpcli.ExternalDoer.Do(req)
 	if err != nil {
-		return errors.WithMessage(err, "amplitude: Could not log Amplitude event", "error")
+		return errors.WithMessage(err, "amplitude: Could not log Amplitude event")
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode != http.StatusOK {
