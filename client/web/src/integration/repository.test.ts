@@ -484,7 +484,11 @@ describe('Repository', () => {
             const breadcrumbTexts = await driver.page.evaluate(() =>
                 [...document.querySelectorAll('.test-breadcrumb')].map(breadcrumb => breadcrumb.textContent?.trim())
             )
-            assert.deepStrictEqual(breadcrumbTexts, [shortRepositoryName, '@master', `/${filePath}`])
+            assert.deepStrictEqual(breadcrumbTexts, [
+                shortRepositoryName,
+                '@master',
+                "/Geoffrey's random queries.32r242442bf /% token.4288249258.sql",
+            ])
 
             await driver.page.waitForSelector('#monaco-query-input .view-lines')
             // TODO: find a more reliable way to get the current search query,
