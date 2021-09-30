@@ -339,6 +339,15 @@ func TestUpdateProtectedConfigurationPolicy(t *testing.T) {
 				t.Fatalf("expected error updating protected configuration policy")
 			}
 		})
+
+		t.Run("RetainIntermediateCommits", func(t *testing.T) {
+			newConfigurationPolicy := hydratedConfigurationPolicy
+			newConfigurationPolicy.RetainIntermediateCommits = true
+
+			if err := store.UpdateConfigurationPolicy(context.Background(), newConfigurationPolicy); err == nil {
+				t.Fatalf("expected error updating protected configuration policy")
+			}
+		})
 	})
 
 	t.Run("success", func(t *testing.T) {
@@ -348,7 +357,6 @@ func TestUpdateProtectedConfigurationPolicy(t *testing.T) {
 		newConfigurationPolicy := hydratedConfigurationPolicy
 		newConfigurationPolicy.Protected = true
 		newConfigurationPolicy.RetentionDuration = &d3
-		newConfigurationPolicy.RetainIntermediateCommits = true
 		newConfigurationPolicy.IndexingEnabled = true
 		newConfigurationPolicy.IndexCommitMaxAge = &d4
 		newConfigurationPolicy.IndexIntermediateCommits = false
