@@ -13,6 +13,9 @@ type Request struct {
 	// Repo is the name of the repository to search. eg "github.com/gorilla/mux"
 	Repo api.RepoName
 
+	// RepoID is the Sourcegraph repository id of the repo to search.
+	RepoID api.RepoID
+
 	// URL specifies the repository's Git remote URL (for gitserver). It is optional. See
 	// (gitserver.ExecRequest).URL for documentation on what it is used for.
 	URL string

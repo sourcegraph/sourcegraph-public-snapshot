@@ -6,6 +6,7 @@ import (
 	"time"
 	"unicode/utf8"
 
+	"github.com/RoaringBitmap/roaring"
 	"github.com/cockroachdb/errors"
 	"github.com/google/zoekt"
 	zoektquery "github.com/google/zoekt/query"
@@ -38,6 +39,10 @@ type IndexedRepoRevs struct {
 	//
 	//  repoBranches[reporev.Repo.Name][i] <-> reporev.Revs[i]
 	repoBranches map[string][]string
+
+	// branchRepos is used to construct a zoektquery.BranchesRepos to efficiently
+	// marshal and send to zoekt
+	branchRepos map[string]*zoektquery.BranchRepos
 }
 
 // headBranch is used as a singleton of the indexedRepoRevs.repoBranches to save
@@ -67,6 +72,12 @@ func (rb *IndexedRepoRevs) add(reporev *search.RepositoryRevisions, repo *zoekt.
 	if len(reporev.Revs) == 1 && repo.Branches[0].Name == "HEAD" && (reporev.Revs[0].RevSpec == "" || reporev.Revs[0].RevSpec == "HEAD") {
 		rb.repoRevs[string(reporev.Repo.Name)] = reporev
 		rb.repoBranches[string(reporev.Repo.Name)] = headBranch
+		br, ok := rb.branchRepos["HEAD"]
+		if !ok {
+			br = &zoektquery.BranchRepos{Branch: "HEAD", Repos: roaring.New()}
+			rb.branchRepos["HEAD"] = br
+		}
+		br.Repos.Add(uint32(reporev.Repo.ID))
 		return nil
 	}
 
@@ -110,6 +121,14 @@ func (rb *IndexedRepoRevs) add(reporev *search.RepositoryRevisions, repo *zoekt.
 	if len(indexed) > 0 {
 		rb.repoRevs[string(reporev.Repo.Name)] = reporev
 		rb.repoBranches[string(reporev.Repo.Name)] = branches
+		for _, branch := range branches {
+			br, ok := rb.branchRepos[branch]
+			if !ok {
+				br = &zoektquery.BranchRepos{Branch: branch, Repos: roaring.New()}
+				rb.branchRepos[branch] = br
+			}
+			br.Repos.Add(uint32(reporev.Repo.ID))
+		}
 	}
 
 	return unindexed
@@ -405,12 +424,11 @@ func zoektGlobalQuery(q zoektquery.Q, repoOptions search.RepoOptions, userPrivat
 
 	// Private or Any
 	if (repoOptions.Visibility == query.Private || repoOptions.Visibility == query.Any) && len(userPrivateRepos) > 0 {
-		privateRepoSet := make(map[string][]string, len(userPrivateRepos))
-		head := []string{"HEAD"}
+		ids := make([]uint32, 0, len(userPrivateRepos))
 		for _, r := range userPrivateRepos {
-			privateRepoSet[string(r.Name)] = head
+			ids = append(ids, uint32(r.ID))
 		}
-		qs = append(qs, &zoektquery.RepoBranches{Set: privateRepoSet})
+		qs = append(qs, zoektquery.NewSingleBranchesRepos("HEAD", ids...))
 	}
 
 	return zoektquery.Simplify(zoektquery.NewAnd(q, zoektquery.NewOr(qs...)))
@@ -483,7 +501,12 @@ func zoektSearch(ctx context.Context, repos *IndexedRepoRevs, q zoektquery.Q, ty
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
-	finalQuery := zoektquery.NewAnd(&zoektquery.RepoBranches{Set: repos.repoBranches}, q)
+	brs := make([]zoektquery.BranchRepos, 0, len(repos.branchRepos))
+	for _, br := range repos.branchRepos {
+		brs = append(brs, *br)
+	}
+
+	finalQuery := zoektquery.NewAnd(&zoektquery.BranchesRepos{List: brs}, q)
 
 	k := ResultCountFactor(len(repos.repoBranches), fileMatchLimit, false)
 	searchOpts := SearchOpts(ctx, k, fileMatchLimit)
@@ -720,6 +743,7 @@ func zoektIndexedRepos(indexedSet map[uint32]*zoekt.MinimalRepoListEntry, revs [
 	indexed = &IndexedRepoRevs{
 		repoRevs:     make(map[string]*search.RepositoryRevisions, len(revs)),
 		repoBranches: make(map[string][]string, len(revs)),
+		branchRepos:  make(map[string]*zoektquery.BranchRepos, 1),
 	}
 	unindexed = make([]*search.RepositoryRevisions, 0)
 

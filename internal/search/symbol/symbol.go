@@ -8,6 +8,7 @@ import (
 	"sort"
 	"time"
 
+	"github.com/RoaringBitmap/roaring"
 	"github.com/cockroachdb/errors"
 	"github.com/google/zoekt"
 	zoektquery "github.com/google/zoekt/query"
@@ -239,8 +240,8 @@ func searchZoekt(ctx context.Context, repoName types.RepoName, commitID api.Comm
 	}
 
 	ands := []zoektquery.Q{
-		&zoektquery.RepoBranches{Set: map[string][]string{
-			string(repoName.Name): {branch},
+		&zoektquery.BranchesRepos{List: []zoektquery.BranchRepos{
+			{Branch: branch, Repos: roaring.BitmapOf(uint32(repoName.ID))},
 		}},
 		&zoektquery.Symbol{Expr: query},
 	}

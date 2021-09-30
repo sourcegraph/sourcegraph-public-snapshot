@@ -4,6 +4,7 @@ import (
 	"context"
 	"sync"
 
+	"github.com/RoaringBitmap/roaring"
 	"github.com/cockroachdb/errors"
 	"github.com/google/zoekt"
 	zoektquery "github.com/google/zoekt/query"
@@ -38,7 +39,9 @@ type repoLister interface {
 
 func (r *repositoryTextSearchIndexResolver) resolve(ctx context.Context) (*zoekt.RepoListEntry, error) {
 	r.once.Do(func() {
-		q := &zoektquery.RepoBranches{Set: map[string][]string{r.repo.Name(): {"HEAD"}}}
+		q := &zoektquery.BranchesRepos{List: []zoektquery.BranchRepos{
+			{Branch: "HEAD", Repos: roaring.BitmapOf(uint32(r.repo.IDInt32()))},
+		}}
 		repoList, err := r.client.List(ctx, q, nil)
 		if err != nil {
 			r.err = err
