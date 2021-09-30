@@ -24,12 +24,17 @@ steps:
     label: ':lighthouse: lighthouse:homepage'
     env:
       SOURCEGRAPH_API_URL: https://sourcegraph.com
-  - command: dev/ci/yarn-lighthouse.sh search_results /search?q=repo:sourcegraph/sourcegraph+file:package.json
+  - command: dev/ci/yarn-lighthouse.sh search_results /search?q=repo:sourcegraph/lighthouse-ci-test-repository+file:index.js
     depends_on: lighthouse:prep
     label: ':lighthouse: lighthouse:search_results'
     env:
       SOURCEGRAPH_API_URL: https://sourcegraph.com
-  - command: dev/ci/yarn-lighthouse.sh file_blob /github.com/sourcegraph/sourcegraph/-/blob/package.json
+  - command: dev/ci/yarn-lighthouse.sh repository_page /github.com/sourcegraph/lighthouse-ci-test-repository
+    depends_on: lighthouse:prep
+    label: ':lighthouse: lighthouse:repository_page'
+    env:
+      SOURCEGRAPH_API_URL: https://sourcegraph.com
+  - command: dev/ci/yarn-lighthouse.sh file_blob /github.com/sourcegraph/lighthouse-ci-test-repository/-/blob/index.js
     depends_on: lighthouse:prep
     label: ':lighthouse: lighthouse:file_blob'
     env:
