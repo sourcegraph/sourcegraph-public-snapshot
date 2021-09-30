@@ -1,4 +1,4 @@
-package metrics
+package executorqueue
 
 import (
 	"context"
@@ -26,14 +26,14 @@ type awsConfig struct {
 
 func (c *awsConfig) load(parent *env.BaseConfig) {
 	c.MetricNamespace = parent.Get("EXECUTOR_METRIC_AWS_NAMESPACE", "", "The namespace to which to export the custom metric for scaling executors.")
-	c.Region = parent.Get("EXECUTOR_METRIC_AWS_REGION", "us-east-1", "The target AWS region.")
+	c.Region = parent.Get("EXECUTOR_METRIC_AWS_REGION", "", "The target AWS region.")
 	c.AccessKeyID = parent.Get("EXECUTOR_METRIC_AWS_ACCESS_KEY_ID", "", "An AWS access key associated with a user with access to CloudWatch.")
 	c.SecretAccessKey = parent.Get("EXECUTOR_METRIC_AWS_SECRET_ACCESS_KEY", "", "An AWS secret key associated with a user with access to CloudWatch.")
 	c.SessionToken = parent.GetOptional("EXECUTOR_METRIC_AWS_SESSION_TOKEN", "An optional AWS session token associated with a user with access to CloudWatch.")
 }
 
 func newAWSReporter(config *Config) (*awsMetricReporter, error) {
-	if config.AWSConfig.MetricNamespace == "" {
+	if config.AWSConfig.MetricNamespace == "" || config.AWSConfig.Region == "" {
 		return nil, nil
 	}
 
