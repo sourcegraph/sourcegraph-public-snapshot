@@ -59,11 +59,9 @@ func (m *RepoStatusMap) Iterate(f func(api.RepoID, RepoStatus)) {
 		return
 	}
 
-	for status, ids := range m.m {
-		ids.Iterate(func(id uint32) bool {
-			f(api.RepoID(id), status)
-			return true
-		})
+	all := roaring.New()
+	for ids := range m.m {
+		all.Or(ids)
 	}
 }
 
