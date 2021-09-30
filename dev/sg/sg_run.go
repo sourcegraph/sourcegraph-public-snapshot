@@ -33,7 +33,7 @@ func runExec(ctx context.Context, args []string) error {
 	}
 
 	if len(args) == 0 {
-		out.WriteLine(output.Linef("", output.StyleWarning, "No command specified\n"))
+		out.WriteLine(output.Linef("", output.StyleWarning, "No command specified"))
 		return flag.ErrHelp
 	}
 
@@ -41,7 +41,7 @@ func runExec(ctx context.Context, args []string) error {
 	for _, arg := range args {
 		cmd, ok := globalConf.Commands[arg]
 		if !ok {
-			out.WriteLine(output.Linef("", output.StyleWarning, "ERROR: command %q not found :(\n", arg))
+			out.WriteLine(output.Linef("", output.StyleWarning, "ERROR: command %q not found :(", arg))
 			return flag.ErrHelp
 		}
 		cmds = append(cmds, cmd)
