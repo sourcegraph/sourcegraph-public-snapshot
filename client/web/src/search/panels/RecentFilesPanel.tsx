@@ -4,6 +4,7 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { Observable } from 'rxjs'
 
 import { Link } from '@sourcegraph/shared/src/components/Link'
+import { not } from '@sourcegraph/shared/src/search/query/patternMatcher'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
 
@@ -126,26 +127,31 @@ function processRecentFiles(eventLogResult?: EventLogResult): RecentFile[] | nul
 
     for (const node of eventLogResult.nodes) {
         if (node.argument) {
-            const parsedArguments = JSON.parse(node.argument)
-            let repoName = parsedArguments?.repoName as string
-            let filePath = parsedArguments?.filePath as string
+            try {
+                const parsedArguments = JSON.parse(node.argument)
+                let repoName = parsedArguments?.repoName as string
+                let filePath = parsedArguments?.filePath as string
 
-            if (!repoName || !filePath) {
-                ;({ repoName, filePath } = extractFileInfoFromUrl(node.url))
-            }
+                if (!repoName || !filePath) {
+                    ;({ repoName, filePath } = extractFileInfoFromUrl(node.url))
+                }
 
-            if (
-                filePath &&
-                repoName &&
-                !recentFiles.some(file => file.repoName === repoName && file.filePath === filePath) // Don't show the same file twice
-            ) {
-                const parsedUrl = new URL(node.url)
-                recentFiles.push({
-                    url: parsedUrl.pathname + parsedUrl.search, // Strip domain from URL so clicking on it doesn't reload page
-                    repoName,
-                    filePath,
-                    timestamp: node.timestamp,
-                })
+                if (
+                    filePath &&
+                    repoName &&
+                    !recentFiles.some(file => file.repoName === repoName && file.filePath === filePath) // Don't show the same file twice
+                ) {
+                    const parsedUrl = new URL(node.url)
+                    recentFiles.push({
+                        url: parsedUrl.pathname + parsedUrl.search, // Strip domain from URL so clicking on it doesn't reload page
+                        repoName,
+                        filePath,
+                        timestamp: node.timestamp,
+                    })
+                }
+            } catch (error: unknown) {
+                console.error('RecentFilesPanel: Error parsing event')
+                console.error(error)
             }
         }
     }

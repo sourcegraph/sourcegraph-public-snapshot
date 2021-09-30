@@ -192,22 +192,30 @@ function processRecentSearches(eventLogResult?: EventLogResult): RecentSearch[] 
     const recentSearches: RecentSearch[] = []
 
     for (const node of eventLogResult.nodes) {
-        if (node.argument) {
-            const parsedArguments = JSON.parse(node.argument)
-            const searchText: string | undefined = parsedArguments?.code_search?.query_data?.combined
+        if (node.argument && node.url) {
+            try {
+                const parsedArguments = JSON.parse(node.argument)
+                const searchText: string | undefined = parsedArguments?.code_search?.query_data?.combined
 
-            if (searchText) {
-                if (recentSearches.length > 0 && recentSearches[recentSearches.length - 1].searchText === searchText) {
-                    recentSearches[recentSearches.length - 1].count += 1
-                } else {
-                    const parsedUrl = new URL(node.url)
-                    recentSearches.push({
-                        count: 1,
-                        url: parsedUrl.pathname + parsedUrl.search, // Strip domain from URL so clicking on it doesn't reload page
-                        searchText,
-                        timestamp: node.timestamp,
-                    })
+                if (searchText) {
+                    if (
+                        recentSearches.length > 0 &&
+                        recentSearches[recentSearches.length - 1].searchText === searchText
+                    ) {
+                        recentSearches[recentSearches.length - 1].count += 1
+                    } else {
+                        const parsedUrl = new URL(node.url)
+                        recentSearches.push({
+                            count: 1,
+                            url: parsedUrl.pathname + parsedUrl.search, // Strip domain from URL so clicking on it doesn't reload page
+                            searchText,
+                            timestamp: node.timestamp,
+                        })
+                    }
                 }
+            } catch (error: unknown) {
+                console.error('RecentSearchesPanel: Error parsing event')
+                console.error(error)
             }
         }
     }
