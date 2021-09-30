@@ -21,7 +21,9 @@ import { assertEnvironment } from '../environmentAssertion'
 import { storage } from '../web-extension-api/storage'
 
 const subscriptions = new Subscription()
-window.addEventListener('unload', () => subscriptions.unsubscribe(), { once: true })
+window.addEventListener('unload', () => subscriptions.unsubscribe(), {
+    once: true,
+})
 
 assertEnvironment('CONTENT')
 
@@ -40,7 +42,11 @@ async function main(): Promise<void> {
 
     // Make sure DOM is fully loaded
     if (document.readyState !== 'complete' && document.readyState !== 'interactive') {
-        await new Promise<Event>(resolve => document.addEventListener('DOMContentLoaded', resolve, { once: true }))
+        await new Promise<Event>(resolve =>
+            document.addEventListener('DOMContentLoaded', resolve, {
+                once: true,
+            })
+        )
     }
 
     // Allow users to set this via the console.
@@ -72,33 +78,50 @@ async function main(): Promise<void> {
 
     subscriptions.add(
         await injectCodeIntelligence(
-            { sourcegraphURL, assetsURL: getAssetsURL(DEFAULT_SOURCEGRAPH_URL) },
+            {
+                sourcegraphURL,
+                assetsURL: getAssetsURL(DEFAULT_SOURCEGRAPH_URL),
+            },
             IS_EXTENSION,
             async function onCodeHostFound() {
                 // Add style sheet and wait for it to load to avoid rendering unstyled elements (which causes an
                 // annoying flash/jitter when the stylesheet loads shortly thereafter).
-                const styleSheet = (() => {
-                    let styleSheet = document.querySelector<HTMLLinkElement>('#ext-style-sheet')
-                    // If does not exist, create
-                    if (!styleSheet) {
-                        styleSheet = document.createElement('link')
-                        styleSheet.id = 'ext-style-sheet'
+                let styleSheets = document.querySelectorAll<HTMLLinkElement>('.ext-style-sheet')
+
+                if (styleSheets?.length) {
+                    return
+                }
+
+                // If does not exist, create
+                const styles: Promise<void>[] = ['css/style.bundle.css', 'css/inject.bundle.css']
+                    .map(style => {
+                        const styleSheet = document.createElement('link')
+                        styleSheet.className = 'ext-style-sheet'
                         styleSheet.rel = 'stylesheet'
                         styleSheet.type = 'text/css'
-                        styleSheet.href = browser.extension.getURL('css/style.bundle.css')
-                    }
-                    return styleSheet
-                })()
-                // If not loaded yet, wait for it to load
-                if (!styleSheet.sheet) {
-                    await new Promise(resolve => {
-                        styleSheet.addEventListener('load', resolve, { once: true })
-                        // If not appended yet, append to <head>
-                        if (!styleSheet.parentNode) {
-                            document.head.append(styleSheet)
-                        }
+                        styleSheet.href = browser.extension.getURL(style)
+                        return styleSheet
                     })
-                }
+                    .map(
+                        styleSheet =>
+                            new Promise(resolve => {
+                                if (styleSheet.sheet) {
+                                    resolve()
+                                    return
+                                }
+
+                                // If not loaded yet, wait for it to load
+                                styleSheet.addEventListener('load', resolve as () => void, {
+                                    once: true,
+                                })
+                                // If not appended yet, append to <head>
+                                if (!styleSheet.parentNode) {
+                                    document.head.append(styleSheet)
+                                }
+                            })
+                    )
+
+                await Promise.all(styles)
             }
         )
     )

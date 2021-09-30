@@ -115,7 +115,7 @@ function useCommandList(value: string, extensionsController: CommandPaletteProps
 }
 
 export interface CommandPaletteProps
-    extends ExtensionsControllerProps<'extHostAPI' | 'executeCommand'>,
+    extends ExtensionsControllerProps,
         PlatformContextProps<
             'forceUpdateTooltip' | 'settings' | 'requestGraphQL' | 'clientApplication' | 'sourcegraphURL' | 'urlToFile'
         >,
@@ -125,6 +125,33 @@ export interface CommandPaletteProps
     // TODO: different for web and bext. change name
     getAuthenticatedUserID: Observable<string | null>
 }
+
+/**
+ * Note:
+- Mention existing (we learned)
+    - command palette
+    - fuzzy finder
+    - builtin actions (aka shortcuts)
+    - recent searches
+    - symbol mode
+
+Why:
+    - Make those cool features ACCESSIBLE, NOTICABLE and better by grouping them in a single awesome cool UI
+    - Fast/quick navigation + make users more productive
+    - Creating a room for new built-in common commands/patterns
+    - Extending an extension API to set shortcut for commands
+
+Future improvements:
+    - codehost integration + ability to customize and extend
+    - customizing shortcuts for each command
+
+What we learned:
+    - value of prototyping
+    - a bit more about existing codebase (fuzzy finder, etc)
+    - zustand state management
+    - pair programming productivty boost
+
+ */
 
 /**
  * EXPERIMENTAL: New command palette (RFC 467)

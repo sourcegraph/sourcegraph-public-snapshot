@@ -7,7 +7,6 @@ import { of } from 'rxjs'
 import { startWith } from 'rxjs/operators'
 
 import { isErrorLike } from '@sourcegraph/codeintellify/lib/errors'
-import { ContributableMenu } from '@sourcegraph/shared/src/api/protocol'
 import { ActivationProps } from '@sourcegraph/shared/src/components/activation/Activation'
 import { ActivationDropdown } from '@sourcegraph/shared/src/components/activation/ActivationDropdown'
 import { Link } from '@sourcegraph/shared/src/components/Link'
@@ -19,7 +18,6 @@ import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
-import { WebCommandListPopoverButton } from '@sourcegraph/web/src/components/shared'
 import { FeedbackPrompt } from '@sourcegraph/web/src/nav/Feedback/FeedbackPrompt'
 import { StatusMessagesNavItem } from '@sourcegraph/web/src/nav/StatusMessagesNavItem'
 import { NavGroup, NavItem, NavBar, NavLink, NavActions, NavAction } from '@sourcegraph/wildcard'
@@ -32,11 +30,7 @@ import { CodeMonitoringLogo } from '../code-monitoring/CodeMonitoringLogo'
 import { BrandLogo } from '../components/branding/BrandLogo'
 import { CodeInsightsProps } from '../insights/types'
 import { isCodeInsightsEnabled } from '../insights/utils/is-code-insights-enabled'
-import {
-    KeyboardShortcutsProps,
-    KEYBOARD_SHORTCUT_SHOW_COMMAND_PALETTE,
-    KEYBOARD_SHORTCUT_SWITCH_THEME,
-} from '../keyboardShortcuts/keyboardShortcuts'
+import { KeyboardShortcutsProps, KEYBOARD_SHORTCUT_SWITCH_THEME } from '../keyboardShortcuts/keyboardShortcuts'
 import { LayoutRouteProps } from '../routes'
 import { Settings } from '../schema/settings.schema'
 import { VersionContext } from '../schema/site.schema'
@@ -261,17 +255,6 @@ export const GlobalNavbar: React.FunctionComponent<Props> = ({
                     {props.authenticatedUser && (
                         <NavAction>
                             <FeedbackPrompt routes={props.routes} />
-                        </NavAction>
-                    )}
-                    {props.authenticatedUser && (
-                        <NavAction>
-                            <WebCommandListPopoverButton
-                                {...props}
-                                location={location}
-                                buttonClassName="btn btn-link p-0 m-0"
-                                menu={ContributableMenu.CommandPalette}
-                                keyboardShortcutForShow={KEYBOARD_SHORTCUT_SHOW_COMMAND_PALETTE}
-                            />
                         </NavAction>
                     )}
                     {props.authenticatedUser &&

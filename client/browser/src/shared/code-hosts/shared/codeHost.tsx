@@ -103,7 +103,13 @@ import { phabricatorCodeHost } from '../phabricator/codeHost'
 import { CodeView, trackCodeViews, fetchFileContentForDiffOrFileInfo } from './codeViews'
 import { ContentView, handleContentViews } from './contentViews'
 import { RepoURLParseError } from './errors'
-import { applyDecorations, initializeExtensions, renderCommandPalette, renderGlobalDebug } from './extensions'
+import {
+    applyDecorations,
+    initializeExtensions,
+    renderCommandPalette,
+    renderGlobalDebug,
+    renderNewCommandPalette,
+} from './extensions'
 import { createPrivateCodeHoverAlert, getActiveHoverAlerts, onHoverAlertDismissed } from './hoverAlerts'
 import {
     handleNativeTooltips,
@@ -326,6 +332,7 @@ export interface CodeIntelligenceProps extends TelemetryProps {
         | 'settings'
         | 'refreshSettings'
         | 'sourcegraphURL'
+        | 'clientApplication'
     >
     codeHost: CodeHost
     extensionsController: Controller
@@ -709,16 +716,33 @@ export function handleCodeHost({
     // Inject UI components
     // Render command palette
     if (codeHost.getCommandPaletteMount && !minimalUI) {
+        // subscriptions.add(
+        //     addedElements.pipe(map(codeHost.getCommandPaletteMount), filter(isDefined)).subscribe(
+        //         renderCommandPalette({
+        //             extensionsController,
+        //             history,
+        //             platformContext,
+        //             telemetryService,
+        //             render,
+        //             ...codeHost.commandPaletteClassProps,
+        //             notificationClassNames: codeHost.notificationClassNames,
+        //         })
+        //     )
+        // )
+
         subscriptions.add(
-            addedElements.pipe(map(codeHost.getCommandPaletteMount), filter(isDefined)).subscribe(
-                renderCommandPalette({
+            addedElements.pipe(map(codeHost.getCommandPaletteMount), filter(isDefined)).subscribe(mount =>
+                renderNewCommandPalette({
                     extensionsController,
-                    history,
-                    platformContext,
+                    location: H.createLocation(window.location),
                     telemetryService,
+                    getAuthenticatedUserID: of(null),
+                    platformContext,
                     render,
-                    ...codeHost.commandPaletteClassProps,
                     notificationClassNames: codeHost.notificationClassNames,
+                    mount,
+                    // TODO: might need these props for the button
+                    ...codeHost.commandPaletteClassProps,
                 })
             )
         )
