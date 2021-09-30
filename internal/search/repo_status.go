@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/RoaringBitmap/roaring"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 )
 
@@ -41,10 +42,15 @@ func (s RepoStatus) String() string {
 // RepoStatusMap is a mutable map from repository IDs to a union of
 // RepoStatus.
 type RepoStatusMap struct {
-	m map[api.RepoID]RepoStatus
+	m map[RepoStatus]*roaring.Bitmap
 
 	// status is a union of all repo status.
 	status RepoStatus
+}
+
+// NewRepoStatusMap returns a new RepoStatusMap with the given initial unioned status and map.
+func NewRepoStatusMap(s RepoStatus, m map[RepoStatus]*roaring.Bitmap) *RepoStatusMap {
+	return &RepoStatusMap{m: m, status: s}
 }
 
 // Iterate will call f for each RepoID in m.
@@ -53,8 +59,11 @@ func (m *RepoStatusMap) Iterate(f func(api.RepoID, RepoStatus)) {
 		return
 	}
 
-	for id, status := range m.m {
-		f(id, status)
+	for status, ids := range m.m {
+		ids.Iterate(func(id uint32) bool {
+			f(api.RepoID(id), status)
+			return true
+		})
 	}
 }
 
@@ -68,27 +77,44 @@ func (m *RepoStatusMap) Filter(mask RepoStatus, f func(api.RepoID)) {
 	if m.status&mask == 0 {
 		return
 	}
-	for id, status := range m.m {
+	for status, ids := range m.m {
 		if status&mask != 0 {
-			f(id)
+			ids.Iterate(func(id uint32) bool {
+				f(api.RepoID(id))
+				return false
+			})
 		}
 	}
 }
 
 // Get returns the RepoStatus for id.
-func (m *RepoStatusMap) Get(id api.RepoID) RepoStatus {
+func (m *RepoStatusMap) Get(id api.RepoID) (s RepoStatus) {
 	if m == nil {
-		return 0
+		return s
 	}
-	return m.m[id]
+
+	for status, ids := range m.m {
+		if ids.Contains(uint32(id)) {
+			s |= status
+		}
+	}
+
+	return s
 }
 
 // Update unions status for id with the current status.
 func (m *RepoStatusMap) Update(id api.RepoID, status RepoStatus) {
 	if m.m == nil {
-		m.m = make(map[api.RepoID]RepoStatus)
+		m.m = make(map[RepoStatus]*roaring.Bitmap)
 	}
-	m.m[id] |= status
+
+	ids, ok := m.m[status]
+	if !ok {
+		ids = roaring.New()
+		m.m[status] = ids
+	}
+
+	ids.Add(uint32(id))
 	m.status |= status
 }
 
@@ -96,10 +122,14 @@ func (m *RepoStatusMap) Update(id api.RepoID, status RepoStatus) {
 func (m *RepoStatusMap) Union(o *RepoStatusMap) {
 	m.status |= o.status
 	if m.m == nil && len(o.m) > 0 {
-		m.m = make(map[api.RepoID]RepoStatus, len(o.m))
+		m.m = make(map[RepoStatus]*roaring.Bitmap, len(o.m))
 	}
-	for id, status := range o.m {
-		m.m[id] |= status
+	for status, right := range o.m {
+		if left, ok := m.m[status]; ok {
+			left.Or(right)
+		} else {
+			m.m[status] = right
+		}
 	}
 }
 
@@ -116,7 +146,7 @@ func (m *RepoStatusMap) All(status RepoStatus) bool {
 	if !m.Any(status) {
 		return false
 	}
-	for _, s := range m.m {
+	for s := range m.m {
 		if s&status == 0 {
 			return false
 		}
@@ -136,7 +166,13 @@ func (m *RepoStatusMap) String() string {
 	if m == nil {
 		m = &RepoStatusMap{}
 	}
-	return fmt.Sprintf("RepoStatusMap{N=%d %s}", len(m.m), m.status)
+
+	n := 0
+	for _, ids := range m.m {
+		n += int(ids.GetCardinality())
+	}
+
+	return fmt.Sprintf("RepoStatusMap{N=%d %s}", n, m.status)
 }
 
 // RepoStatusSingleton is a convenience function to contain a RepoStatusMap
@@ -146,7 +182,7 @@ func RepoStatusSingleton(id api.RepoID, status RepoStatus) RepoStatusMap {
 		return RepoStatusMap{}
 	}
 	return RepoStatusMap{
-		m:      map[api.RepoID]RepoStatus{id: status},
+		m:      map[RepoStatus]*roaring.Bitmap{status: roaring.BitmapOf(uint32(id))},
 		status: status,
 	}
 }
