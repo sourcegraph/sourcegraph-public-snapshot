@@ -77,8 +77,6 @@ export const JumpToLineResult: React.FC<JumpToLineResultProps> = ({ value, onCli
         return <Message type="muted">Enter a line number between 1 and {lines.length}</Message>
     }
 
-    // TODO: If line is not a number or it is out of range, display helpful message
-
     return (
         <NavigableList items={[null]}>
             {() => (

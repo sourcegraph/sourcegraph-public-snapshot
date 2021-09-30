@@ -29,6 +29,7 @@ export const OpenCommandPaletteButton: React.FC<OpenCommandPaletteButtonProps> =
             onClick={toggleCommandPaletteIsOpen as () => void}
             tabIndex={0}
             onKeyDown={onKeyDown}
+            data-tooltip="Open command palette"
         >
             <ConsoleIcon className="icon-inline-md" />
         </ButtonElement>

@@ -1,19 +1,26 @@
+import classNames from 'classnames'
 import { sortBy } from 'lodash'
+import OpenInNewIcon from 'mdi-react/OpenInNewIcon'
 import React, { useState, useCallback } from 'react'
 import stringScore from 'string-score'
 
 import { HighlightedMatches } from '../../../components/HighlightedMatches'
 import { Keybinding } from '../../../keyboardShortcuts'
+import { isExternalLink } from '../../../util/url'
 
 import { NavigableList } from './NavigableList'
 
 const KEEP_RECENT_ACTIONS = 10
 const RECENT_ACTIONS_STORAGE_KEY = 'commandList.recentActions'
+import listStyles from './NavigableList.module.scss'
 
 export interface CommandItem {
     id: string
     title: string
     keybindings?: Keybinding[]
+    /** Either icon data URL or icon component. */
+    icon?: string | React.ComponentType<{ className?: string }>
+    href?: string
     onClick: () => void
 }
 
@@ -116,17 +123,32 @@ export const CommandResult: React.FC<CommandResultProps> = ({ actions, value, on
 
     return (
         <NavigableList items={filteredActions} getKey={({ id }) => id}>
-            {({ title, id, keybindings, onClick }, { active }) => (
-                <NavigableList.Item
-                    active={active}
-                    keybindings={keybindings ?? []}
-                    onClick={() => handleClick(id, onClick)}
-                >
-                    <HighlightedMatches text={title} pattern={value} />
-                    {/* TODO add role=link and data-href for 'open'/'openPanel' commands,
-                        render OpenInNewIcon */}
-                </NavigableList.Item>
-            )}
+            {({ title, id, keybindings, icon: Icon, href, onClick }, { active }) => {
+                let renderedIcon: JSX.Element | undefined = undefined
+                if (Icon && typeof Icon === 'string') {
+                    renderedIcon = <img src={Icon} alt="" className={classNames(listStyles.itemIcon, 'icon-inline')} />
+                } else if (Icon !== undefined) {
+                    renderedIcon = <Icon className={classNames(listStyles.itemIcon, 'icon-inline')} />
+                }
+
+                const externalLink = !!(href && isExternalLink(href))
+
+                return (
+                    <NavigableList.Item
+                        active={active}
+                        keybindings={keybindings ?? []}
+                        onClick={() => handleClick(id, onClick)}
+                        href={href}
+                        isExternalLink={externalLink}
+                    >
+                        <span className={listStyles.itemContainer}>
+                            {renderedIcon ?? <span className={listStyles.emptyIcon}></span>}
+                            <HighlightedMatches text={title} pattern={value} />
+                            {externalLink && <OpenInNewIcon className="icon-inline" style={{ marginLeft: '.25rem' }} />}
+                        </span>
+                    </NavigableList.Item>
+                )
+            }}
         </NavigableList>
     )
 }

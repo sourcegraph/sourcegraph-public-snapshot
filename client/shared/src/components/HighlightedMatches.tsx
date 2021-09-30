@@ -10,8 +10,11 @@ export const HighlightedMatches: React.FunctionComponent<{
 
     /** The class name for the <strong> element for matches. */
     className?: string
-}> = ({ text, pattern, className }) => (
-    <span>
+
+    /** The class name for the <span> element container. */
+    containerClassName?: string
+}> = ({ text, pattern, className, containerClassName }) => (
+    <span className={containerClassName}>
         {fuzzyMatches(text.toLowerCase(), pattern.toLowerCase()).map((span, index) =>
             span.match ? (
                 <strong key={index} className={className}>

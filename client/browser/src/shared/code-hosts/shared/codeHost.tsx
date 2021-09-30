@@ -120,6 +120,7 @@ import {
 import { resolveRepoNamesForDiffOrFileInfo, defaultRevisionToCommitID } from './util/fileInfo'
 import { ViewOnSourcegraphButtonClassProps, ViewOnSourcegraphButton } from './ViewOnSourcegraphButton'
 import { delayUntilIntersecting, trackViews, ViewResolver } from './views'
+import { getCurrentUserID } from '../../backend/currentUser'
 
 registerHighlightContributions()
 
@@ -736,7 +737,7 @@ export function handleCodeHost({
                     extensionsController,
                     location: H.createLocation(window.location),
                     telemetryService,
-                    getAuthenticatedUserID: of(null),
+                    getAuthenticatedUserID: () => getCurrentUserID(platformContext.requestGraphQL),
                     platformContext,
                     render,
                     notificationClassNames: codeHost.notificationClassNames,

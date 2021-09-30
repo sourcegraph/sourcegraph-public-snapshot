@@ -15,11 +15,14 @@
     font-weight: 300;
     padding: 0.125rem 0.5rem;
     background: transparent;
-    color: --body-color;
+    color: var(--body-color);
+    text-decoration: none;
     height: 1.5rem;
 
     &,
     &:hover {
+        text-decoration: none;
+        color: var(--body-color);
         box-shadow: 0 0 0 transparent;
         border: 0 solid transparent;
         text-shadow: 0 0 0 transparent;
@@ -60,8 +63,19 @@
     display: flex;
     justify-content: flex-start;
     align-items: center;
+
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    overflow: hidden;
 }
 
 .item-icon {
     margin-right: 0.5rem;
+    flex-shrink: 0;
+}
+
+// Used as spacer for items without icon
+.empty-icon {
+    width: 1.5rem;
+    flex-shrink: 0;
 }

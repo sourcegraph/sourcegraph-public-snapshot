@@ -16,6 +16,7 @@ import { useObservable } from '../../../util/useObservable'
 
 import { Message } from './Message'
 import { NavigableList } from './NavigableList'
+import listStyles from './NavigableList.module.scss'
 
 interface JumpToSymbolResultProps extends PlatformContextProps<'requestGraphQL'> {
     value: string
@@ -201,7 +202,7 @@ export const JumpToSymbolResult: React.FC<JumpToSymbolResultProps> = ({
                     if (symbol === null) {
                         return (
                             <NavigableList.Item active={active}>
-                                <span className="d-flex justify-content-start align-items-center">
+                                <span className={listStyles.itemContainer}>
                                     <SymbolIcon kind={SymbolKind.FILE} className="icon-inline mr-2" />
                                     {parsedURI?.filePath ? `Symbols in ${parsedURI.filePath}` : 'Symbol results'}
                                 </span>
@@ -215,7 +216,7 @@ export const JumpToSymbolResult: React.FC<JumpToSymbolResultProps> = ({
                             onClick={() => onSymbolClick(symbol)}
                             active={active}
                         >
-                            <span className="d-flex justify-content-start align-items-center">
+                            <span className={listStyles.itemContainer}>
                                 <SymbolIcon kind={symbol.kind} className="icon-inline mr-2" />
                                 {symbol.name}
                             </span>

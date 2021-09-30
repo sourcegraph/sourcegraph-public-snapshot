@@ -1,3 +1,9 @@
 .query-prompt {
     margin-right: 0.5rem;
 }
+
+.text-container {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}

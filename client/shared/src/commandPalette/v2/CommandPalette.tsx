@@ -7,16 +7,18 @@ import { Modal } from 'reactstrap'
 import { from, Observable } from 'rxjs'
 import { filter, map, switchMap } from 'rxjs/operators'
 
-import { ActionItemAction } from '../../actions/ActionItem'
+import { ActionItemAction, urlForClientCommandOpen } from '../../actions/ActionItem'
 import { wrapRemoteObservable } from '../../api/client/api/common'
 import { FlatExtensionHostAPI } from '../../api/contract'
 import { haveInitialExtensionsLoaded } from '../../api/features'
 import { ContributableMenu } from '../../api/protocol'
+import { SourcegraphIcon } from '../../components/SourcegraphIcon'
 import { getContributedActionItems } from '../../contributions/contributions'
 import { ExtensionsControllerProps } from '../../extensions/controller'
 import { PlatformContextProps } from '../../platform/context'
 import { TelemetryProps } from '../../telemetry/telemetryService'
 import { memoizeObservable } from '../../util/memoizeObservable'
+import { isExternalLink } from '../../util/url'
 import { useObservable } from '../../util/useObservable'
 
 import styles from './CommandPalette.module.scss'
@@ -76,14 +78,23 @@ function useCommandList(value: string, extensionsController: CommandPaletteProps
             return []
         }
         return getContributedActionItems(extensionContributions, ContributableMenu.CommandPalette).map(
-            ({ action, keybinding }) => ({
-                id: action.id,
-                title: [action.category, action.title || action.command].filter(Boolean).join(': '),
-                keybindings: keybinding ? [keybinding] : [],
-                onClick: () => {
-                    onRunAction(action)
-                },
-            })
+            ({ action, keybinding }) => {
+                const href = urlForClientCommandOpen(action, window.location)
+
+                return {
+                    id: action.id,
+                    title: [action.category, action.title || action.command].filter(Boolean).join(': '),
+                    keybindings: keybinding ? [keybinding] : [],
+                    onClick: () => {
+                        // Don't execute command since clicking on the link will essentially do the same thing.
+                        if (!href) {
+                            onRunAction(action)
+                        }
+                    },
+                    icon: action.iconURL ?? action.actionItem?.iconURL,
+                    href,
+                }
+            }
         )
     }, [extensionContributions, onRunAction])
 
@@ -123,7 +134,7 @@ export interface CommandPaletteProps
     initialIsOpen?: boolean
     location: H.Location
     // TODO: different for web and bext. change name
-    getAuthenticatedUserID: Observable<string | null>
+    getAuthenticatedUserID: () => Observable<string | null>
 }
 
 /**
@@ -238,7 +249,11 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
                     returnFocusAfterClose={false}
                 >
                     <div className={styles.inputContainer}>
-                        <MagnifyIcon className={styles.inputIcon} />
+                        {platformContext.clientApplication === 'sourcegraph' ? (
+                            <MagnifyIcon className={styles.inputIcon} />
+                        ) : (
+                            <SourcegraphIcon className={styles.inputIcon} />
+                        )}
                         <input
                             ref={inputReference}
                             autoComplete="off"

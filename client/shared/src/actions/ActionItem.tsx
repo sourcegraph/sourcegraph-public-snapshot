@@ -327,7 +327,7 @@ export class ActionItem extends React.PureComponent<ActionItemProps, State> {
 
 export function urlForClientCommandOpen(
     action: Pick<Evaluated<ActionContribution>, 'command' | 'commandArguments'>,
-    location: H.Location
+    location: Pick<H.Location, 'hash'>
 ): string | undefined {
     if (action.command === 'open' && action.commandArguments) {
         const url = action.commandArguments[0]

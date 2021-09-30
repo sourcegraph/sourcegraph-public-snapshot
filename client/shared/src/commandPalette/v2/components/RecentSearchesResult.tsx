@@ -20,7 +20,7 @@ interface RecentSearchesResultProps
     extends PlatformContextProps<'requestGraphQL' | 'clientApplication' | 'sourcegraphURL'> {
     value: string
     onClick: () => void
-    getAuthenticatedUserID: Observable<string | null>
+    getAuthenticatedUserID: () => Observable<string | null>
 }
 
 export interface EventLogResult {
@@ -98,8 +98,8 @@ export const RecentSearchesResult: React.FC<RecentSearchesResultProps> = ({
 }) => {
     const history = useHistory()
 
-    const authenticatedUserID = useObservable(getAuthenticatedUserID)
-
+    const authenticatedUserID = useObservable(useMemo(() => getAuthenticatedUserID(), [getAuthenticatedUserID]))
+    console.log({ authenticatedUserID })
     // TODO: error handling
     const recentSearches = useObservable(
         useMemo(
@@ -152,11 +152,14 @@ export const RecentSearchesResult: React.FC<RecentSearchesResultProps> = ({
                         )
                     }
 
-                    /* If browser extension, render external link icon */
                     return (
                         <NavigableList.Item active={active} onClick={() => onSearch(search.searchText)}>
                             {value ? (
-                                <HighlightedMatches text={search.searchText} pattern={value} />
+                                <HighlightedMatches
+                                    containerClassName={styles.textContainer}
+                                    text={search.searchText}
+                                    pattern={value}
+                                />
                             ) : (
                                 search.searchText
                             )}

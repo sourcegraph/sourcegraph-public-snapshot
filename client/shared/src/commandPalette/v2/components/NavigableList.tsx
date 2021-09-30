@@ -1,5 +1,6 @@
 import classNames from 'classnames'
 import React, { useState, useEffect, useRef } from 'react'
+import { Link } from '../../../components/Link'
 
 import { Keybinding } from '../../../keyboardShortcuts'
 
@@ -9,6 +10,7 @@ interface NavigableListItemProps {
     onClick?: () => void
     onFocus?: () => void
     href?: string
+    isExternalLink?: boolean
     keybindings?: Keybinding[]
     active?: boolean
     // TODO icon (for symbol type, action item icon)
@@ -16,14 +18,15 @@ interface NavigableListItemProps {
 }
 
 const NavigableListItem: React.FC<NavigableListItemProps> = React.memo(
-    ({ onClick, onFocus, href, keybindings = [], children, active }) => {
-        const Tag = href ? 'a' : 'button'
+    ({ onClick, onFocus, href, isExternalLink, keybindings = [], children, active }) => {
+        const Tag = href ? Link : 'button' // use Link component?
 
         const listItemReference = useRef<HTMLLIElement | null>(null)
 
         const onClickReference = useRef(onClick)
         onClickReference.current = onClick
 
+        // TODO external vs internal link
         useEffect(() => {
             function handleKeyDown(event: KeyboardEvent): void {
                 if (event.key === 'Enter' && active) {
@@ -47,6 +50,15 @@ const NavigableListItem: React.FC<NavigableListItemProps> = React.memo(
             }
         }, [active])
 
+        // Open in new tab if an external link
+        const newTabProps =
+            href && isExternalLink
+                ? {
+                      target: '_blank',
+                      rel: 'noopener noreferrer',
+                  }
+                : {}
+
         return (
             <li tabIndex={-1} ref={listItemReference}>
                 <Tag
@@ -54,7 +66,8 @@ const NavigableListItem: React.FC<NavigableListItemProps> = React.memo(
                     tabIndex={0}
                     className={classNames(styles.button, { [styles.buttonActive]: active })}
                     onClick={onClick}
-                    href={href}
+                    to={href ?? ''}
+                    {...newTabProps}
                 >
                     {children}
 
