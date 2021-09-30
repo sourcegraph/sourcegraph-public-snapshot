@@ -5,17 +5,17 @@ import (
 	"sort"
 )
 
-type HighlightedString struct {
-	Content    string `json:"content"`
-	Highlights Ranges `json:"highlights"`
+type MatchedString struct {
+	Content       string `json:"content"`
+	MatchedRanges Ranges `json:"matched_ranges"`
 }
 
-func (h *HighlightedString) Merge(other HighlightedString) {
+func (h *MatchedString) Merge(other MatchedString) {
 	if h.Content == "" {
 		h.Content = other.Content
 	}
-	h.Highlights = append(h.Highlights, other.Highlights...)
-	sort.Sort(h.Highlights)
+	h.MatchedRanges = append(h.MatchedRanges, other.MatchedRanges...)
+	sort.Sort(h.MatchedRanges)
 }
 
 type Location struct {

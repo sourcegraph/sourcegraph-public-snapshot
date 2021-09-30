@@ -36,7 +36,7 @@ export function fetchLsifUpload({ id }: { id: string }): Observable<LsifUploadFi
     return requestGraphQL<LsifUploadResult, LsifUploadVariables>(query, { id }).pipe(
         map(dataOrThrowErrors),
         map(({ node }) => {
-            if (!node) {
+            if (!node || node.__typename !== 'LSIFUpload') {
                 throw new Error('No such LSIFUpload')
             }
             return node
@@ -58,7 +58,7 @@ export function fetchLsifIndex({ id }: { id: string }): Observable<LsifIndexFiel
     return requestGraphQL<LsifIndexResult, LsifIndexVariables>(query, { id }).pipe(
         map(dataOrThrowErrors),
         map(({ node }) => {
-            if (!node) {
+            if (!node || node.__typename !== 'LSIFIndex') {
                 throw new Error('No such LSIFIndex')
             }
             return node

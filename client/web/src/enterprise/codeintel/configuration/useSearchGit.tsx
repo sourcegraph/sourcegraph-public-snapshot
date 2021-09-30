@@ -1,5 +1,6 @@
 import { ApolloError } from '@apollo/client'
 
+import { Maybe } from '@sourcegraph/shared/src/graphql-operations'
 import { gql, useQuery } from '@sourcegraph/shared/src/graphql/graphql'
 
 import {
@@ -47,7 +48,11 @@ export const useSearchGitTags = (id: string, pattern: string): SearchGitObjectRe
         variables: { id, query: pattern },
     })
 
-    const { tags: { nodes = [], totalCount = 0 } = {}, name = '' } = data?.node || {}
+    const node = hasNodeRepositoryType(data) ? data.node : { tags: { nodes: [], totalCount: 0 }, name: '' }
+    const {
+        tags: { nodes, totalCount },
+        name,
+    } = node
     const previewResult = { preview: nodes.map(({ displayName: revlike }) => ({ name, revlike })), totalCount }
 
     return {
@@ -83,7 +88,12 @@ export const useSearchGitBranches = (id: string, pattern: string): SearchGitObje
         SEARCH_GIT_BRANCHES,
         { variables: { id, query: pattern } }
     )
-    const { branches: { nodes = [], totalCount = 0 } = {}, name = '' } = data?.node || {}
+
+    const node = hasNodeRepositoryType(data) ? data.node : { branches: { nodes: [], totalCount: 0 }, name: '' }
+    const {
+        branches: { nodes, totalCount },
+        name,
+    } = node
     const previewResult = { preview: nodes.map(({ displayName: revlike }) => ({ name, revlike })), totalCount }
 
     return {
@@ -112,7 +122,7 @@ export const useSearchRepoName = (id: string, pattern: string): SearchGitObjectR
         variables: { id },
     })
 
-    const previewResult = data?.node
+    const previewResult = hasNodeRepositoryType(data)
         ? { preview: [{ name: data?.node.name, revlike: pattern }], totalCount: 1 }
         : { preview: [], totalCount: 0 }
 
@@ -121,4 +131,20 @@ export const useSearchRepoName = (id: string, pattern: string): SearchGitObjectR
         isLoadingPreview: loading,
         previewError: error,
     }
+}
+
+function hasNodeRepositoryType<
+    T extends {
+        node: Maybe<{
+            __typename?: string | 'Repository'
+        }>
+    }
+>(
+    data: T | undefined
+): data is T & {
+    node: {
+        __typename: 'Repository'
+    }
+} {
+    return data?.node?.__typename === 'Repository'
 }

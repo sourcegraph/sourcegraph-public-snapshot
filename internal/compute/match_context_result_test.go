@@ -53,6 +53,8 @@ func TestFromLineMatches(t *testing.T) {
   "ThisIsNamed": "b"
 }`).Equal(t, test("(a)(?P<ThisIsNamed>b)", environment))
 
+	autogold.Want("no slice out of bounds access on capture group", "{}").Equal(t, test("(lasvegans)|abcdefgh", environment))
+
 	autogold.Want("compute regexp submatch nonempty environment", `{
   "matches": [
     {

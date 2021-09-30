@@ -93,3 +93,19 @@ groups:
           - name: symbol_small # ~72 results
             query: >
                 type:symbol IndexFormatVersion
+
+          # Diff search
+          - name: diff_small # ~42 results
+            query: >
+                type:diff 
+                repo:^github\.com/sourcegraph/sourcegraph$ 
+                author:camden 
+                before:"february 1 2021"
+
+          # Commit search
+          - name: commit_small # ~42 results
+            query: >
+                type:commit
+                repo:^github\.com/sourcegraph/sourcegraph$ 
+                author:camden 
+                before:"february 1 2021"
