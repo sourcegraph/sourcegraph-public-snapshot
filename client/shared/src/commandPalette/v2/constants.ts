@@ -68,11 +68,9 @@ export const BUILT_IN_ACTIONS: Pick<ActionItemAction, 'action' | 'active' | 'key
     {
         action: {
             id: 'SOURCEGRAPH.switchColorTheme',
-            actionItem: {
-                label: 'Switch color theme',
-            },
             command: 'open',
             commandArguments: ['https://google.com'],
+            title: 'Switch color theme',
         },
         keybinding: {
             ordered: ['T'],

@@ -3,6 +3,7 @@ import React, { useState, useCallback } from 'react'
 import stringScore from 'string-score'
 
 import { ActionItemAction } from '../../../actions/ActionItem'
+import { HighlightedMatches } from '../../../components/HighlightedMatches'
 
 import { NavigableList } from './NavigableList'
 
@@ -67,11 +68,7 @@ function filterAndRankItems(
         .filter((item, index) => {
             let label = labels[index]
             if (label === undefined) {
-                label = item.action.actionItem?.label
-                    ? item.action.actionItem?.label
-                    : `${item.action.category ? `${item.action.category}: ` : ''}${
-                          item.action.title || item.action.command || ''
-                      }`
+                label = [item.action.category, item.action.title || item.action.command].filter(Boolean).join(': ')
                 labels[index] = label
             }
 
@@ -119,10 +116,6 @@ export const CommandResult: React.FC<CommandResultProps> = ({ actions, value, on
         <NavigableList items={filteredActions}>
             {(item, { active }) => {
                 const { action, keybinding } = item
-                // TODO: share label between filteritems
-                const label = [action.category, action.actionItem?.label || action.title || action.command]
-                    .filter(Boolean)
-                    .join(': ')
 
                 return (
                     <NavigableList.Item
@@ -130,7 +123,12 @@ export const CommandResult: React.FC<CommandResultProps> = ({ actions, value, on
                         keybindings={keybinding ? [keybinding] : []}
                         onClick={() => handleRunAction(item)}
                     >
-                        {label}
+                        <HighlightedMatches
+                            text={[action.category, action.title || action.command].filter(Boolean).join(': ')}
+                            pattern={value}
+                        />
+                        {/* TODO add role=link and data-href for 'open'/'openPanel' commands,
+                        render OpenInNewIcon */}
                     </NavigableList.Item>
                 )
             }}

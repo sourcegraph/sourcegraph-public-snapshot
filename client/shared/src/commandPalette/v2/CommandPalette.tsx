@@ -45,6 +45,7 @@ const getContributions = memoizeObservable(
     () => 'getContributions' // only one instance
 )
 
+// eslint-disable-next-line @typescript-eslint/explicit-function-return-type
 function useCommandList(value: string, extensionsController: CommandPaletteProps['extensionsController']) {
     const extensionContributions = useObservable(
         useMemo(
@@ -71,9 +72,22 @@ function useCommandList(value: string, extensionsController: CommandPaletteProps
         [extensionContributions]
     )
 
-    const onRunAction = useCallback((action: ActionItemAction) => {
-        console.log('running action', action)
-    }, [])
+    const onRunAction = useCallback(
+        ({ action }: ActionItemAction) => {
+            if (!action.command) {
+                // Unexpectedly arrived here; noop actions should not have event handlers that trigger
+                // this.
+                return
+            }
+
+            extensionsController
+                .executeCommand({ command: action.command, args: action.commandArguments })
+                .catch(error => console.error(error))
+
+            // TODO update recent actions
+        },
+        [extensionsController]
+    )
 
     const shortcuts = useMemo((): KeyboardShortcutWithCallback[] => {
         const actionsWithShortcuts: KeyboardShortcutWithCallback[] = actions
@@ -93,7 +107,9 @@ function useCommandList(value: string, extensionsController: CommandPaletteProps
 
 export interface CommandPaletteProps
     extends ExtensionsControllerProps<'extHostAPI' | 'executeCommand'>,
-        PlatformContextProps<'forceUpdateTooltip' | 'settings' | 'requestGraphQL' | 'clientApplication'>,
+        PlatformContextProps<
+            'forceUpdateTooltip' | 'settings' | 'requestGraphQL' | 'clientApplication' | 'sourcegraphURL' | 'urlToFile'
+        >,
         TelemetryProps {
     initialIsOpen?: boolean
     location: H.Location
@@ -103,6 +119,8 @@ export interface CommandPaletteProps
 
 /**
  * EXPERIMENTAL: New command palette (RFC 467)
+ *
+ * TODO: WRAP WITH ERROR BOUNDARY AT ALL CALL SITES
  *
  * @description this is a singleton component that is always rendered.
  */
@@ -175,10 +193,10 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
                     toggleIsOpen()
                 }}
                 autoFocus={false}
-                backdropClassName="bg-transparent"
+                backdropClassName="bg-transparent" // TODO: remove utility classes for bext
                 keyboard={true}
                 fade={false}
-                className={classNames(styles.modalDialog, 'shadow-lg')}
+                className={classNames(styles.modalDialog, 'shadow-lg')} // TODO: remove utility classes for bext
                 contentClassName={styles.modalContent}
             >
                 <div className={styles.inputContainer}>
@@ -188,7 +206,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
                         autoComplete="off"
                         spellCheck="false"
                         aria-autocomplete="list"
-                        className={classNames(styles.input, 'form-control py-1')}
+                        className={classNames(styles.input, 'form-control py-1')} // TODO: remove utility classes for bext
                         // TODO: different placeholder by mode
                         placeholder="Select a mode (prefix or click)"
                         value={value}
