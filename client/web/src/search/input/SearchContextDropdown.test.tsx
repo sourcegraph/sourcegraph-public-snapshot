@@ -33,7 +33,6 @@ describe('SearchContextDropdown', () => {
         patternType: SearchPatternType.literal,
         versionContext: undefined,
         submitSearch: () => {},
-        isSearchOnboardingTourVisible: false,
         hasUserAddedRepositories: false,
         hasUserAddedExternalServices: false,
         isSourcegraphDotCom: false,

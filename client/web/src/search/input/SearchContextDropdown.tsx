@@ -27,7 +27,6 @@ export interface SearchContextDropdownProps
     submitSearchOnSearchContextChange?: boolean
     query: string
     history: H.History
-    isSearchOnboardingTourVisible: boolean
     className?: string
 }
 

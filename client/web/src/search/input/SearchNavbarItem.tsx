@@ -73,7 +73,6 @@ export const SearchNavbarItem: React.FunctionComponent<Props> = (props: Props) =
                 onChange={setQueryState}
                 onSubmit={onSubmit}
                 autoFocus={autoFocus}
-                isSearchOnboardingTourVisible={false}
                 hideHelpButton={isSearchPage}
             />
         </Form>
