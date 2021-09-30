@@ -288,7 +288,7 @@ func TestSearchFilesInRepos_multipleRevsPerRepo(t *testing.T) {
 }
 
 func TestRepoShouldBeSearched(t *testing.T) {
-	searcher.MockSearch = func(ctx context.Context, repo api.RepoName, commit api.CommitID, p *search.TextPatternInfo, fetchTimeout time.Duration, onMatches func([]*protocol.FileMatch)) (limitHit bool, err error) {
+	searcher.MockSearch = func(ctx context.Context, repo api.RepoName, repoID api.RepoID, commit api.CommitID, p *search.TextPatternInfo, fetchTimeout time.Duration, onMatches func([]*protocol.FileMatch)) (limitHit bool, err error) {
 		repoName := repo
 		switch repoName {
 		case "foo/one":
@@ -308,7 +308,7 @@ func TestRepoShouldBeSearched(t *testing.T) {
 		FilePatternsReposMustInclude: []string{"main"},
 	}
 
-	shouldBeSearched, err := repoShouldBeSearched(context.Background(), nil, info, "foo/one", "1a2b3c", time.Minute)
+	shouldBeSearched, err := repoShouldBeSearched(context.Background(), nil, info, types.RepoName{Name: "foo/one", ID: 1}, "1a2b3c", time.Minute)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -316,7 +316,7 @@ func TestRepoShouldBeSearched(t *testing.T) {
 		t.Errorf("expected repo to be searched, got shouldn't be searched")
 	}
 
-	shouldBeSearched, err = repoShouldBeSearched(context.Background(), nil, info, "foo/no-filematch", "1a2b3c", time.Minute)
+	shouldBeSearched, err = repoShouldBeSearched(context.Background(), nil, info, types.RepoName{Name: "foo/no-filematch", ID: 2}, "1a2b3c", time.Minute)
 	if err != nil {
 		t.Fatal(err)
 	}
