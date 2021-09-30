@@ -44,7 +44,7 @@ func Publish(body []byte) error {
 		case http.StatusInternalServerError:
 			return errors.WithMessage(err, "amplitude: Could not log event: Internal server error.")
 		default:
-			return errors.Errorf("amplitude: failed with %d %s", resp.StatusCode, string(body))
+			return errors.Errorf("amplitude: Failed with %d %s", resp.StatusCode, string(body))
 		}
 	}
 
