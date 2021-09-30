@@ -12,6 +12,8 @@ import (
 )
 
 // InitMetricsConfig initializes and returns an instance of a metrics config.
+// When using this config embedded in another, make sure to overload both Load
+// and Validate to forward errors produced in this config.
 func InitMetricsConfig() *Config {
 	res, _ := initMetricsConfig.Init()
 	return res.(*Config)
