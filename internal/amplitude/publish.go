@@ -48,7 +48,7 @@ func Publish(body []byte) error {
 		default:
 			log15.Error("amplitude: Could not log Amplitude event", "error", err)
 		}
-		return errors.Errorf("amplitude: failed with %d %s", resp.StatusCode, string(body))
+		return errors.Errorf("amplitude: failed with %d - %s", resp.StatusCode, string(body))
 	}
 
 	return nil
