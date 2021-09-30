@@ -436,6 +436,20 @@ func validateTypeStructural(nodes []Node) error {
 	return nil
 }
 
+func validateRefGlobs(nodes []Node) error {
+	if !ContainsRefGlobs(nodes) {
+		return nil
+	}
+	var indexValue string
+	VisitField(nodes, FieldIndex, func(value string, _ bool, _ Annotation) {
+		indexValue = value
+	})
+	if ParseYesNoOnly(indexValue) == Only {
+		return errors.Errorf("invalid index:%s (revisions with glob pattern cannot be resolved for indexed searches)", indexValue)
+	}
+	return nil
+}
+
 // validatePredicates validates predicate parameters with respect to their validation logic.
 func validatePredicate(field, value string, negated bool) error {
 	if negated {
@@ -542,6 +556,7 @@ func validate(nodes []Node) error {
 		validateRepoHasFile,
 		validateCommitParameters,
 		validateTypeStructural,
+		validateRefGlobs,
 	)
 }
 

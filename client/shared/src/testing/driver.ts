@@ -234,7 +234,7 @@ export class Driver {
             // you back to the login page
             await delay(1000)
             await this.page.click('button[type=submit]')
-            await this.page.waitForNavigation({ timeout: 3 * 10000 })
+            await this.page.waitForNavigation({ timeout: 300000 })
         } else if (url.pathname === '/sign-in') {
             await this.page.waitForSelector('.test-signin-form')
             await this.page.type('input', username)
@@ -242,7 +242,7 @@ export class Driver {
             // TODO(uwedeportivo): see comment above, same reason
             await delay(1000)
             await this.page.click('button[type=submit]')
-            await this.page.waitForNavigation({ timeout: 3 * 10000 })
+            await this.page.waitForNavigation({ timeout: 300000 })
         }
     }
 

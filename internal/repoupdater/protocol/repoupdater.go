@@ -9,6 +9,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/awscodecommit"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketcloud"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
@@ -158,6 +159,19 @@ func NewRepoInfo(r *types.Repo) *RepoInfo {
 			Tree:   pathAppend(root, "/browse/{path}?at={rev}"),
 			Blob:   pathAppend(root, "/browse/{path}?at={rev}"),
 			Commit: pathAppend(root, "/commits/{commit}"),
+		}
+	case extsvc.TypeBitbucketCloud:
+		repo := r.Metadata.(*bitbucketcloud.Repo)
+		if repo.Links.HTML.Href == "" {
+			break
+		}
+
+		href := repo.Links.HTML.Href
+		info.Links = &RepoLinks{
+			Root:   href,
+			Tree:   pathAppend(href, "/src/{rev}/{path}"),
+			Blob:   pathAppend(href, "/src/{rev}/{path}"),
+			Commit: pathAppend(href, "/commits/{commit}"),
 		}
 	case extsvc.TypeAWSCodeCommit:
 		repo := r.Metadata.(*awscodecommit.Repository)

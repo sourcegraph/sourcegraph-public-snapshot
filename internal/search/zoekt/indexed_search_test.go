@@ -256,35 +256,52 @@ func TestIndexedSearch(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			args := &search.TextParameters{
-				Query:           q,
-				PatternInfo:     tt.args.patternInfo,
-				Repos:           tt.args.repos,
-				UseFullDeadline: tt.args.useFullDeadline,
-				Zoekt: &searchbackend.FakeSearcher{
-					Result: &zoekt.SearchResult{Files: tt.args.results},
-					Repos:  zoektRepos,
-				},
+			zoekt := &searchbackend.FakeSearcher{
+				Result: &zoekt.SearchResult{Files: tt.args.results},
+				Repos:  zoektRepos,
 			}
 
-			zoektArgs := &search.ZoektParameters{
-				Query:          q,
-				Typ:            search.TextRequest,
-				FileMatchLimit: tt.args.patternInfo.FileMatchLimit,
-				Select:         tt.args.patternInfo.Select,
-				Zoekt:          args.Zoekt,
-			}
-
-			indexed, err := newIndexedSubsetSearchRequest(context.Background(), args, zoektArgs, MissingRepoRevStatus(streaming.StreamFunc(func(streaming.SearchEvent) {})))
+			zoektQuery, err := search.QueryToZoektQuery(tt.args.patternInfo, false)
 			if err != nil {
 				t.Fatal(err)
 			}
 
-			if diff := cmp.Diff(tt.wantUnindexed, indexed.Unindexed, cmpopts.EquateEmpty()); diff != "" {
+			zoektArgs := &search.ZoektParameters{
+				Query:          zoektQuery,
+				Typ:            search.TextRequest,
+				FileMatchLimit: tt.args.patternInfo.FileMatchLimit,
+				Select:         tt.args.patternInfo.Select,
+				Zoekt:          zoekt,
+			}
+
+			args := &search.TextParameters{
+				Repos: tt.args.repos,
+				PatternInfo: &search.TextPatternInfo{
+					Index:          tt.args.patternInfo.Index,
+					FileMatchLimit: zoektArgs.FileMatchLimit,
+					Select:         zoektArgs.Select,
+				},
+				Query: q,
+				Zoekt: zoektArgs.Zoekt,
+			}
+
+			indexed, err := NewIndexedSearchRequest(
+				context.Background(),
+				args,
+				search.TextRequest,
+				MissingRepoRevStatus(streaming.StreamFunc(func(streaming.SearchEvent) {})),
+			)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			indexedSubset := indexed.(*IndexedSubsetSearchRequest)
+
+			if diff := cmp.Diff(tt.wantUnindexed, indexedSubset.Unindexed, cmpopts.EquateEmpty()); diff != "" {
 				t.Errorf("unindexed mismatch (-want +got):\n%s", diff)
 			}
 
-			indexed.since = tt.args.since
+			indexedSubset.since = tt.args.since
 
 			// This is a quick fix which will break once we enable the zoekt client for true streaming.
 			// Once we return more than one event we have to account for the proper order of results

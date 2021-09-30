@@ -437,6 +437,25 @@ type Mutation {
         such as search queries or repository names.
         """
         publicArgument: String
+        """
+        User properties for Amplitude analytics. Used on Sourcegraph Cloud only. Avoid including any PII.
+        """
+        userProperties: String
+        """
+        Device ID used for Amplitude analytics. Used on Sourcegraph Cloud only.
+        """
+        deviceID: String
+        """
+        Event ID used to deduplicate events that occur simultaneously in Amplitude analytics.
+        See https://developers.amplitude.com/docs/http-api-v2#optional-keys. Used on Sourcegraph Cloud only.
+        """
+        eventID: Int
+        """
+        Insert ID used to deduplicate events that re-occur in the event of retries or
+        backfills in Amplitude analytics. See https://developers.amplitude.com/docs/http-api-v2#optional-keys.
+        Used on Sourcegraph Cloud only.
+        """
+        insertID: String
     ): EmptyResponse
     """
     Sends a test notification for the saved search. Be careful: this will send a notifcation (email and other

@@ -212,6 +212,7 @@ export const repoRevisionContainerRoutes: readonly RepoRevisionContainerRoute[] 
                                         {...repoRevisionProps}
                                         repoID={repo.id}
                                         repoName={repo.name}
+                                        repoUrl={repo.url}
                                         mode={mode}
                                         repoHeaderContributionsLifecycleProps={
                                             context.repoHeaderContributionsLifecycleProps
