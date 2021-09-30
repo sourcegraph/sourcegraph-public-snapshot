@@ -432,7 +432,7 @@ describe('Repository', () => {
             const repositoryName = `github.com/${shortRepositoryName}`
             const repositorySourcegraphUrl = `/${repositoryName}`
             const fileName = '% token.4288249258.sql'
-            const directoryName = "Geoffrey's random queries.32r242442bf"
+            const directoryName = "Geoffrey's random queries.32r242442bf "
             const filePath = path.posix.join(directoryName, fileName)
 
             testContext.overrideGraphQL({
