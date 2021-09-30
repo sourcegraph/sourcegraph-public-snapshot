@@ -17,19 +17,32 @@ Batch Changes is compatible with the following code hosts:
 
 In order for Sourcegraph to interface with these, admins and users must first [configure credentials](../how-tos/configuring_credentials.md) for each relevant code host.
 
-### Batch Changes effect on code host rate limits
+### Changeset syncing
 
+#### How Batch Changes syncs changesets
 For each changeset, Sourcegraph periodically makes API requests to its code host to update its status. Sourcegraph intelligently schedules these requests to avoid overwhelming the code host's rate limits. In environments with many open batch changes, this can result in outdated changesets as they await their turn in the update queue.
 
-We **highly recommend** enabling webhooks on code hosts where batch change changesets are created. Doing so removes the lag time in updating the status of a changeset and reduces the API requests associated with large batch changes. We have instructions for each supported code host:
+#### Setting up webhooks to sync changesets
+
+We **highly recommend** enabling webhooks on code hosts where batch change changesets are created. Doing so removes the lag time in updating the status of a changeset and reduces the API requests associated with large batch changes. 
+
+See the instructions for your code host:
 
 * [GitHub](../../admin/external_service/github.md#webhooks)
 * [Bitbucket Server](../../admin/external_service/bitbucket_server.md#webhooks)
 * [GitLab](../../admin/external_service/gitlab.md#webhooks)
 
+#### Opting out of webhooks
+
+If webhooks are not setup on an instance where Batch Changes is enabled, admins and users will see a warning message explaining that changesets may be out of date (from Sourcegraph 3.3x). If you prefer not to setup webhooks and that Sourcegraph only uses polling to update changesets, you can disable the warning message.
+
+To do so, add the `batch_changes.disable_webhooks_warning:true` to your site admin configuration.
+
 ### A note on Batch Changes effect on CI systems
 
-Batch Changes makes it possible to create changesets in tens, hundreds, or thousands of repositories. Opening and updating these changesets may trigger many checks or continuous integration jobs, and in turn may stress the resources allotted to these systems. Batch Changes supports [partial publishing for changesets](../how-tos/publishing_changesets.md#publishing-a-subset-of-changesets) to help mitigate these issues. You may also consider publishing your changesets at times of low activity.  
+Batch Changes makes it possible to create changesets in tens, hundreds, or thousands of repositories. Opening and updating these changesets may trigger many checks or continuous integration jobs, and in turn may stress the resources allotted to these systems. To help mitigate these issues, Batch Changes supports
+- [partial publishing for changesets](../how-tos/publishing_changesets.md#publishing-a-subset-of-changesets) 
+- [rollout windows]() to define schedules and limits for changesets publication
 
 ## Requirements for batch change creators
 
