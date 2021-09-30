@@ -169,6 +169,10 @@ func startExec(ctx context.Context, args []string) error {
 		cmds = append(cmds, cmd)
 	}
 
+	if len(cmds) == 0 {
+		out.WriteLine(output.Linef("", output.StyleWarning, "WARNING: no commands to run"))
+	}
+
 	levelOverrides := logLevelOverrides()
 	for _, cmd := range cmds {
 		enrichWithLogLevels(&cmd, levelOverrides)
