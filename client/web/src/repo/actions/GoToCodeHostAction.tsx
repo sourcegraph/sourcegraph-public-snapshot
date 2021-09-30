@@ -264,6 +264,8 @@ export function serviceKindDisplayNameAndIcon(
             return { displayName: 'GitLab', icon: GitlabIcon }
         case ExternalServiceKind.BITBUCKETSERVER:
             return { displayName: 'Bitbucket Server', icon: BitbucketIcon }
+        case ExternalServiceKind.BITBUCKETCLOUD:
+            return { displayName: 'Bitbucket Cloud', icon: BitbucketIcon }
         case ExternalServiceKind.PHABRICATOR:
             return { displayName: 'Phabricator', icon: PhabricatorIcon }
         case ExternalServiceKind.AWSCODECOMMIT:
