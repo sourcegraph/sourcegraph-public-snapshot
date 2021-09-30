@@ -8,6 +8,8 @@ $command-palette-border-radius: 0.45rem;
     border-radius: $command-palette-border-radius;
     max-width: min(900px, 80%);
     margin-top: 7rem;
+    max-height: min(500px, 90%);
+    overflow: auto;
 }
 
 .modal-content {
@@ -38,7 +40,8 @@ $command-palette-border-radius: 0.45rem;
 }
 
 .input-container {
-    position: relative;
+    position: sticky;
+    top: 0;
     display: flex;
 }
 
