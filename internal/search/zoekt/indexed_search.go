@@ -33,7 +33,7 @@ type IndexedRepoRevs struct {
 	branches map[string]*zoektquery.BranchRepos
 
 	// branch -> revSpecs
-	revSpecs map[string][]string
+	revSpecs map[string][]zoektquery.BranchRepos
 }
 
 // add will add reporev and repo to the list of repository and branches to
@@ -58,18 +58,29 @@ func (rb *IndexedRepoRevs) add(reporev *search.RepositoryRevisions, repo *zoekt.
 		return reporev.Revs
 	}
 
-	add := func(id api.RepoID, branch string) *zoektquery.BranchRepos {
+	add := func(id api.RepoID, branch, revSpec string) {
 		b, ok := rb.branches[branch]
 		if !ok {
 			b = &zoektquery.BranchRepos{Branch: branch, Repos: roaring.New()}
 			rb.branches[branch] = b
 		}
+
 		b.Repos.Add(uint32(id))
-		return b
+
+		for _, r := range rb.revSpecs[branch] {
+			if r.Branch == revSpec {
+				return
+			}
+		}
+
+		rb.revSpecs[branch] = append(rb.revSpecs[branch], zoektquery.BranchRepos{
+			Branch: revSpec,
+			Repos:  b.Repos,
+		})
 	}
 
 	if len(reporev.Revs) == 1 && repo.Branches[0].Name == "HEAD" && (reporev.Revs[0].RevSpec == "" || reporev.Revs[0].RevSpec == "HEAD") {
-		add(reporev.Repo.ID, "HEAD")
+		add(reporev.Repo.ID, "HEAD", reporev.Revs[0].RevSpec)
 		return nil
 	}
 
@@ -78,21 +89,20 @@ func (rb *IndexedRepoRevs) add(reporev *search.RepositoryRevisions, repo *zoekt.
 	var unindexed []search.RevisionSpecifier
 	for _, rev := range reporev.Revs {
 		if rev.RevSpec == "" || rev.RevSpec == "HEAD" {
-			add(reporev.Repo.ID, "HEAD")
+			add(reporev.Repo.ID, "HEAD", rev.RevSpec)
 			continue
 		}
 
 		found := false
 		for _, branch := range repo.Branches {
 			if branch.Name == rev.RevSpec {
-				add(reporev.Repo.ID, branch.Name)
+				add(reporev.Repo.ID, branch.Name, rev.RevSpec)
 				found = true
 				break
 			}
 			// Check if rev is an abbrev commit SHA
 			if len(rev.RevSpec) >= 4 && strings.HasPrefix(branch.Version, rev.RevSpec) {
-				add(reporev.Repo.ID, branch.Name)
-				rb.revSpecs[branch.Name] = append(rb.revSpecs[branch.Name], rev.RevSpec)
+				add(reporev.Repo.ID, branch.Name, rev.RevSpec)
 				found = true
 				break
 			}
@@ -110,7 +120,11 @@ func (rb *IndexedRepoRevs) add(reporev *search.RepositoryRevisions, repo *zoekt.
 func (rb *IndexedRepoRevs) getRepoInputRev(file *zoekt.FileMatch) (repo types.RepoName, inputRevs []string) {
 	inputRevs = make([]string, 0, len(file.Branches))
 	for _, branch := range file.Branches {
-		inputRevs = append(inputRevs, rb.revSpecs[branch]...)
+		for _, revSpec := range rb.revSpecs[branch] {
+			if revSpec.Repos.Contains(file.RepositoryID) {
+				inputRevs = append(inputRevs, revSpec.Branch)
+			}
+		}
 	}
 
 	if len(inputRevs) == 0 {
@@ -479,16 +493,23 @@ func doZoektSearchGlobal(ctx context.Context, args *search.ZoektParameters, c st
 
 // zoektSearch searches repositories using zoekt.
 func zoektSearch(ctx context.Context, repos *IndexedRepoRevs, q zoektquery.Q, typ search.IndexedRequestType, client zoekt.Streamer, fileMatchLimit int32, selector filter.SelectPath, since func(t time.Time) time.Duration, c streaming.Sender) error {
-	if len(repos.repoRevs) == 0 {
+	if len(repos.branches) == 0 {
 		return nil
 	}
 
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
-	finalQuery := zoektquery.NewAnd(&zoektquery.RepoBranches{Set: repos.repoBranches}, q)
+	numRepos := 0
+	brs := make([]zoektquery.BranchRepos, 0, len(repos.branches))
+	for _, br := range repos.branches {
+		numRepos += int(br.Repos.GetCardinality())
+		brs = append(brs, *br)
+	}
 
-	k := ResultCountFactor(len(repos.repoBranches), fileMatchLimit, false)
+	finalQuery := zoektquery.NewAnd(&zoektquery.BranchesRepos{List: brs}, q)
+
+	k := ResultCountFactor(numRepos, fileMatchLimit, false)
 	searchOpts := SearchOpts(ctx, k, fileMatchLimit)
 
 	// Start event stream.
@@ -514,12 +535,15 @@ func zoektSearch(ctx context.Context, repos *IndexedRepoRevs, q zoektquery.Q, ty
 	// PERF: if we are going to be selecting to repo results only anyways, we can just ask
 	// zoekt for only results of type repo.
 	if selector.Root() == filter.Repository {
-		return zoektSearchReposOnly(ctx, client, finalQuery, c, func() map[api.RepoID]*search.RepositoryRevisions {
-			repoRevMap := make(map[api.RepoID]*search.RepositoryRevisions, len(repos.repoRevs))
-			for _, r := range repos.repoRevs {
-				repoRevMap[r.Repo.ID] = r
+		// TODO(tsenart): Ask Keegan about type:repo optimization for this code path. I don't think List supports
+		// any other query atom than `Repo`, so this may be one source of memory usage spikes when List cache invalidates.
+		return zoektSearchReposOnly(ctx, client, finalQuery, c, func(id uint32) bool {
+			for _, br := range brs {
+				if br.Repos.Contains(id) {
+					return true
+				}
 			}
-			return repoRevMap
+			return false
 		})
 	}
 
@@ -598,28 +622,20 @@ func sendMatches(event *zoekt.SearchResult, getRepoInputRev repoRevFunc, typ sea
 // zoektSearchReposOnly is used when select:repo is set, in which case we can ask zoekt
 // only for the repos that contain matches for the query. This is a performance optimization,
 // and not required for proper function of select:repo.
-func zoektSearchReposOnly(ctx context.Context, client zoekt.Streamer, query zoektquery.Q, c streaming.Sender, getRepoRevMap func() map[api.RepoID]*search.RepositoryRevisions) error {
-	repoList, err := client.List(ctx, query, &zoekt.ListOptions{Minimal: true})
+func zoektSearchReposOnly(ctx context.Context, client zoekt.Streamer, query zoektquery.Q, c streaming.Sender, pred func(uint32) bool) error {
+	repoList, err := client.List(ctx, query, nil)
 	if err != nil {
 		return err
 	}
 
-	repoRevMap := getRepoRevMap()
-	if repoRevMap == nil {
-		return nil
-	}
-
-	matches := make([]result.Match, 0, len(repoList.Minimal))
-	for id := range repoList.Minimal {
-		rev, ok := repoRevMap[api.RepoID(id)]
-		if !ok {
-			continue
+	matches := make([]result.Match, 0, len(repoList.Repos))
+	for _, r := range repoList.Repos {
+		if pred(r.Repository.ID) {
+			matches = append(matches, &result.RepoMatch{
+				Name: api.RepoName(r.Repository.Name),
+				ID:   api.RepoID(r.Repository.ID),
+			})
 		}
-
-		matches = append(matches, &result.RepoMatch{
-			Name: rev.Repo.Name,
-			ID:   rev.Repo.ID,
-		})
 	}
 
 	c.Send(streaming.SearchEvent{
