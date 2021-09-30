@@ -99,20 +99,14 @@ func (s *uploadExpirerMockStore) UpdateUploadRetention(ctx context.Context, prot
 	return nil
 }
 
-func (state *uploadExpirerMockStore) SelectRepositoriesForRetentionScanFunc(ctx context.Context, processDelay time.Duration, limit int) (map[int]*time.Time, error) {
-	var scannedIDs []int
+func (state *uploadExpirerMockStore) SelectRepositoriesForRetentionScanFunc(ctx context.Context, processDelay time.Duration, limit int) (scannedIDs []int, _ error) {
 	if len(state.repositoryIDs) <= limit {
 		scannedIDs, state.repositoryIDs = state.repositoryIDs, nil
 	} else {
 		scannedIDs, state.repositoryIDs = state.repositoryIDs[:limit], state.repositoryIDs[limit:]
 	}
 
-	idsMap := map[int]*time.Time{}
-	for _, id := range scannedIDs {
-		idsMap[id] = nil
-	}
-
-	return idsMap, nil
+	return scannedIDs, nil
 }
 
 func (state *uploadExpirerMockStore) GetConfigurationPolicies(ctx context.Context, opts dbstore.GetConfigurationPoliciesOptions) ([]dbstore.ConfigurationPolicy, error) {
