@@ -125,7 +125,7 @@ const rules: PatternOf<Token[], PatternData>[] = [
                 not(some({ ...repoFilterPattern, value: { value: value => value !== '' } })),
                 some({
                     ...repoFilterPattern,
-                    value: { value: '' },
+                    value: oneOf(undefined, { value: '' }),
                     $data: (token: Token, context: MatchContext<PatternData>) => {
                         const errorMessage =
                             'Error: query contains `rev:` with an empty `repo:` filter. Add a non-empty `repo:` filter.'

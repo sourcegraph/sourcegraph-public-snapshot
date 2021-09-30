@@ -661,7 +661,7 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
     }
 
     private setUserProperties = (
-        reposResult: NonNullable<UserRepositoriesResult['node']>['repositories'],
+        reposResult: NonNullable<UserRepositoriesResult['node'] & { __typename: 'User' }>['repositories'],
         extensionSvcResult: ExternalServicesResult['externalServices'],
         authenticatedUser: AuthenticatedUser | null
     ): void => {

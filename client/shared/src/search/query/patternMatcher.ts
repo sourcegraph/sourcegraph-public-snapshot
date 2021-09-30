@@ -175,6 +175,10 @@ interface WrapperPattern<Value, Data> extends DataAnnotation<Value, Data> {
     $pattern: PatternFunction<Value, Data> | PrimitivePattern<Value>
 }
 
+function isWrapperPattern(value: any): value is WrapperPattern<any, any> {
+    return typeof value === 'object' && '$pattern' in value
+}
+
 /**
  * A PatternFunction accepts the value to match against, the current match
  * context (which also holds the extracted data) and the internal match function
@@ -286,16 +290,25 @@ function matches<Value, Data>(
     pattern: PatternOfNoInfer<Value, Data> | undefined
 ): boolean {
     if (typeof pattern === 'function') {
-        return pattern(value, context, matches)
+        const result = pattern(value, context, matches)
+        return result
     }
     if (pattern instanceof RegExp) {
         return typeof value === 'string' && pattern.test(value)
     }
     if (pattern && typeof pattern === 'object') {
-        // 'pattern' can be a wrapper pattern or an object pattern
-        let match = true
+        let match = false
+        let matchKeys = value && typeof value === 'object'
 
-        if (value && typeof value === 'object') {
+        if (isWrapperPattern(pattern)) {
+            // TS2345:  Type 'RegExp' is not assignable to type '[NoInfer<Value>] extends [any[]] ? never : WrapperPattern<NoInfer<Value>, NoInfer<Data>> | ObjectPattern<ObjectMembers<NoInfer<Value>>, NoInfer<Data>> | PrimitivePattern<NoInfer<Value>>'
+            // @ts-expect-error TBH I don't know why RegExp is causing problems here
+            match = matches(context, value, pattern.$pattern)
+            // There is no point in looking at the remaining properties if the
+            // $pattern function didn't match.
+            matchKeys = match
+        }
+        if (matchKeys) {
             const keys = Object.getOwnPropertyNames(pattern).filter(key => !specialKeys.has(key))
             if (keys.length > 0) {
                 match = keys.every(
@@ -306,15 +319,7 @@ function matches<Value, Data>(
                 )
             }
         }
-
-        // In case of object patterns, "real" keys have priority and we only
-        // check $pattern if the real keys match.  Otherwise the context might
-        // get polluted with values that shouldn't exist.
-        if (match && pattern.$pattern) {
-            // TS2345:  Type 'RegExp' is not assignable to type '[NoInfer<Value>] extends [any[]] ? never : WrapperPattern<NoInfer<Value>, NoInfer<Data>> | ObjectPattern<ObjectMembers<NoInfer<Value>>, NoInfer<Data>> | PrimitivePattern<NoInfer<Value>>'
-            // @ts-expect-error TBH I don't know why RegExp is causing problems here
-            match = matches(context, value, pattern.$pattern)
-        }
+        // else: either no match or value isn't an object (but pattern is) so there can't be a match
 
         // Special property to capture values
         if (match && pattern.$data) {
