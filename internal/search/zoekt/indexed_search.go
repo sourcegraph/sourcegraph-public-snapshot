@@ -310,9 +310,6 @@ func newIndexedSubsetSearchRequest(ctx context.Context, repos []*search.Reposito
 	tr, ctx := trace.New(ctx, "newIndexedSubsetSearchRequest", string(zoektArgs.Typ))
 	// Fallback to Unindexed if the query contains ref-globs
 	if query.ContainsRefGlobs(q) {
-		if index == query.Only {
-			return nil, errors.Errorf("invalid index:%q (revsions with glob pattern cannot be resolved for indexed searches)", index)
-		}
 		return &IndexedSubsetSearchRequest{
 			Unindexed: limitUnindexedRepos(repos, maxUnindexedRepoRevSearchesPerQuery, onMissing),
 		}, nil
