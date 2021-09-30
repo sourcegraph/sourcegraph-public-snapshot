@@ -534,8 +534,8 @@ func zoektSearch(ctx context.Context, repos *IndexedRepoRevs, q zoektquery.Q, ty
 
 	mkStatusMap := func(mask search.RepoStatus) search.RepoStatusMap {
 		var statusMap search.RepoStatusMap
-		for _, r := range repos.repoRevs {
-			statusMap.Update(r.Repo.ID, mask)
+		for _, br := range brs {
+			statusMap.Union(search.NewRepoStatusMap(mask, map[search.RepoStatus]*roaring.Bitmap{mask: br.Repos}))
 		}
 		return statusMap
 	}
