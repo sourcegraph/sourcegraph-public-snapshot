@@ -1,5 +1,3 @@
-import { KEYBOARD_SHORTCUT_SWITCH_THEME } from '@sourcegraph/web/src/keyboardShortcuts/keyboardShortcuts'
-
 import { CommandItem } from './components/CommandResult'
 import { useCommandPaletteStore } from './store'
 
@@ -68,12 +66,5 @@ export const COMMAND_PALETTE_COMMANDS: CommandItem[] = [
                 mode: CommandPaletteMode.JumpToSymbol,
             })
         },
-    },
-]
-
-export const BUILT_IN_COMMANDS: CommandItem[] = [
-    {
-        ...KEYBOARD_SHORTCUT_SWITCH_THEME,
-        onClick: KEYBOARD_SHORTCUT_SWITCH_THEME.onMatch,
     },
 ]

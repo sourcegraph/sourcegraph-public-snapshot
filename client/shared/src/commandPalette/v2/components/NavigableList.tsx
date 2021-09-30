@@ -15,74 +15,71 @@ interface NavigableListItemProps {
     icon?: JSX.Element
 }
 
-const NavigableListItem: React.FC<NavigableListItemProps> = ({
-    onClick,
-    onFocus,
-    href,
-    keybindings = [],
-    children,
-    active,
-}) => {
-    const Tag = href ? 'a' : 'button'
+const NavigableListItem: React.FC<NavigableListItemProps> = React.memo(
+    ({ onClick, onFocus, href, keybindings = [], children, active }) => {
+        const Tag = href ? 'a' : 'button'
 
-    const listItemReference = useRef<HTMLLIElement | null>(null)
+        const listItemReference = useRef<HTMLLIElement | null>(null)
 
-    const onClickReference = useRef(onClick)
-    onClickReference.current = onClick
+        const onClickReference = useRef(onClick)
+        onClickReference.current = onClick
 
-    useEffect(() => {
-        function handleKeyDown(event: KeyboardEvent): void {
-            if (event.key === 'Enter' && active) {
-                onClickReference.current?.()
+        useEffect(() => {
+            function handleKeyDown(event: KeyboardEvent): void {
+                if (event.key === 'Enter' && active) {
+                    event.preventDefault()
+                    onClickReference.current?.()
+                }
             }
-        }
-        document.addEventListener('keydown', handleKeyDown)
-        return () => document.removeEventListener('keydown', handleKeyDown)
-    }, [active])
+            document.addEventListener('keydown', handleKeyDown)
+            return () => document.removeEventListener('keydown', handleKeyDown)
+        }, [active])
 
-    // TODO hack, find better way to do this.
-    // Prevent infinite calls of onFocus when an item is active.
-    const onFocusReference = useRef(onFocus)
-    onFocusReference.current = onFocus
+        // TODO hack, find better way to do this.
+        // Prevent infinite calls of onFocus when an item is active.
+        const onFocusReference = useRef(onFocus)
+        onFocusReference.current = onFocus
 
-    useEffect(() => {
-        if (active) {
-            listItemReference.current?.scrollIntoView(false)
-            onFocusReference.current?.()
-        }
-    }, [active])
+        useEffect(() => {
+            if (active) {
+                listItemReference.current?.scrollIntoView(false)
+                onFocusReference.current?.()
+            }
+        }, [active])
 
-    return (
-        <li tabIndex={-1} ref={listItemReference}>
-            <Tag
-                type="button"
-                tabIndex={0}
-                className={classNames(styles.button, { [styles.buttonActive]: active })}
-                onClick={onClick}
-                href={href}
-            >
-                {children}
+        return (
+            <li tabIndex={-1} ref={listItemReference}>
+                <Tag
+                    type="button"
+                    tabIndex={0}
+                    className={classNames(styles.button, { [styles.buttonActive]: active })}
+                    onClick={onClick}
+                    href={href}
+                >
+                    {children}
 
-                <span className={styles.keybindings}>
-                    {keybindings.map(({ ordered, held }, index) => (
-                        <span tabIndex={-1} key={index} className={styles.keybinding}>
-                            {[...(held || []), ...ordered].map((key, index) => (
-                                <kbd key={index}>{key}</kbd>
-                            ))}
-                        </span>
-                    ))}
-                </span>
-            </Tag>
-        </li>
-    )
-}
+                    <span className={styles.keybindings}>
+                        {keybindings.map(({ ordered, held }, index) => (
+                            <span tabIndex={-1} key={index} className={styles.keybinding}>
+                                {[...(held || []), ...ordered].map((key, index) => (
+                                    <kbd key={index}>{key}</kbd>
+                                ))}
+                            </span>
+                        ))}
+                    </span>
+                </Tag>
+            </li>
+        )
+    }
+)
 
 interface NavigableListProps<T> {
     items: T[]
+    getKey?: (item: T) => string
     children: (item: T, options: { active: boolean }) => JSX.Element
 }
 
-export function NavigableList<T>({ children, items }: NavigableListProps<T>): JSX.Element {
+export function NavigableList<T>({ children, items, getKey }: NavigableListProps<T>): JSX.Element {
     const [activeIndex, setActiveIndex] = useState<number>(0)
 
     useEffect(() => {
@@ -104,7 +101,9 @@ export function NavigableList<T>({ children, items }: NavigableListProps<T>): JS
     return (
         <ul className={styles.list}>
             {items.map((item, index) => (
-                <React.Fragment key={index}>{children(item, { active: activeIndex === index })}</React.Fragment>
+                <React.Fragment key={getKey?.(item) || index}>
+                    {children(item, { active: activeIndex === index })}
+                </React.Fragment>
             ))}
         </ul>
     )

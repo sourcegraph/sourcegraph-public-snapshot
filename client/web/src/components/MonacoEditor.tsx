@@ -6,6 +6,8 @@ import { Subscription, Subject } from 'rxjs'
 import { map, distinctUntilChanged } from 'rxjs/operators'
 
 import { KeyboardShortcut } from '@sourcegraph/shared/src/keyboardShortcuts'
+import { useCommandPaletteStore } from '@sourcegraph/shared/src/commandPalette/v2/store'
+
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 
 const SOURCEGRAPH_LIGHT = 'sourcegraph-light'
@@ -194,6 +196,7 @@ export class MonacoEditor extends React.PureComponent<Props, State> {
     private subscriptions = new Subscription()
 
     private componentUpdates = new Subject<Props>()
+    private removeCommandPaletteCommand: Function | undefined
 
     private editor: monaco.editor.ICodeEditor | undefined
 
@@ -238,6 +241,7 @@ export class MonacoEditor extends React.PureComponent<Props, State> {
     }
 
     public componentDidMount(): void {
+        const { addCommand } = useCommandPaletteStore.getState()
         this.subscriptions.add(
             this.componentUpdates
                 .pipe(
@@ -247,6 +251,12 @@ export class MonacoEditor extends React.PureComponent<Props, State> {
                 .subscribe(theme => monaco.editor.setTheme(theme))
         )
         this.componentUpdates.next(this.props)
+        if (this.props.keyboardShortcutForFocus) {
+            this.removeCommandPaletteCommand = addCommand({
+                ...this.props.keyboardShortcutForFocus,
+                onClick: this.focusInput.bind(this),
+            })
+        }
     }
 
     public componentWillUnmount(): void {
@@ -259,6 +269,7 @@ export class MonacoEditor extends React.PureComponent<Props, State> {
                 element.remove()
             }
         }
+        this.removeCommandPaletteCommand?.()
     }
 
     public render(): JSX.Element | null {

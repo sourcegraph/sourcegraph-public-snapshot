@@ -82,7 +82,6 @@ function filterAndRankItems(items: CommandItem[], query: string, recentActions: 
         })
         .map((item, index) => {
             const recentIndex = recentActions?.indexOf(item.id)
-            console.log({ index }) // How could index align with the array before it was filtered??
             return {
                 item,
                 score: scores[index],
@@ -116,7 +115,7 @@ export const CommandResult: React.FC<CommandResultProps> = ({ actions, value, on
     )
 
     return (
-        <NavigableList items={filteredActions}>
+        <NavigableList items={filteredActions} getKey={({ id }) => id}>
             {({ title, id, keybindings, onClick }, { active }) => (
                 <NavigableList.Item
                     active={active}

@@ -1,14 +1,16 @@
 import * as H from 'history'
 import LinkIcon from 'mdi-react/LinkIcon'
 import * as React from 'react'
-import { fromEvent, Subscription } from 'rxjs'
-import { filter } from 'rxjs/operators'
+import { Subscription } from 'rxjs'
+
+import { BuiltInCommand } from '@sourcegraph/shared/src/commandPalette/v2/store'
 
 import { ButtonLink } from '@sourcegraph/shared/src/components/LinkOrButton'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
 import { replaceRevisionInURL } from '../../util/url'
 import { RepoHeaderContext } from '../RepoHeader'
+import { CommandItem } from '@sourcegraph/shared/src/commandPalette/v2/components/CommandResult'
 
 /**
  * A repository header action that replaces the revision in the URL with the canonical 40-character
@@ -33,28 +35,6 @@ export class GoToPermalinkAction extends React.PureComponent<
 > {
     private subscriptions = new Subscription()
 
-    public componentDidMount(): void {
-        // Trigger the user presses 'y'.
-        this.subscriptions.add(
-            fromEvent<KeyboardEvent>(window, 'keydown')
-                .pipe(
-                    filter(
-                        event =>
-                            // 'y' shortcut (if no input element is focused)
-                            event.key === 'y' &&
-                            !!document.activeElement &&
-                            !['INPUT', 'TEXTAREA'].includes(document.activeElement.nodeName)
-                    )
-                )
-                .subscribe(event => {
-                    event.preventDefault()
-
-                    // Replace the revision in the current URL with the new one and push to history.
-                    this.props.history.push(this.permalinkURL)
-                })
-        )
-    }
-
     public componentWillUnmount(): void {
         this.subscriptions.unsubscribe()
     }
@@ -66,26 +46,32 @@ export class GoToPermalinkAction extends React.PureComponent<
 
         if (this.props.actionType === 'dropdown') {
             return (
-                <ButtonLink
-                    className="btn repo-header__file-action"
-                    to={this.permalinkURL}
-                    onSelect={this.onClick.bind(this)}
-                >
-                    <LinkIcon className="icon-inline" />
-                    <span>Permalink (with full Git commit SHA)</span>
-                </ButtonLink>
+                <>
+                    <BuiltInCommand commandItem={this.commandItem} />
+                    <ButtonLink
+                        className="btn repo-header__file-action"
+                        to={this.permalinkURL}
+                        onSelect={this.onClick.bind(this)}
+                    >
+                        <LinkIcon className="icon-inline" />
+                        <span>Permalink (with full Git commit SHA)</span>
+                    </ButtonLink>
+                </>
             )
         }
 
         return (
-            <ButtonLink
-                to={this.permalinkURL}
-                data-tooltip="Permalink (with full Git commit SHA)"
-                onSelect={this.onClick.bind(this)}
-                className="btn btn-icon repo-header__action"
-            >
-                <LinkIcon className="icon-inline" />
-            </ButtonLink>
+            <>
+                <BuiltInCommand commandItem={this.commandItem} />
+                <ButtonLink
+                    to={this.permalinkURL}
+                    data-tooltip="Permalink (with full Git commit SHA)"
+                    onSelect={this.onClick.bind(this)}
+                    className="btn btn-icon repo-header__action"
+                >
+                    <LinkIcon className="icon-inline" />
+                </ButtonLink>
+            </>
         )
     }
 
@@ -94,6 +80,15 @@ export class GoToPermalinkAction extends React.PureComponent<
             repoName: this.props.repoName,
             commitID: this.props.commitID,
         })
+    }
+
+    private commandItem: CommandItem = {
+        id: 'expandURL',
+        title: 'Expand URL to its canonical form (on file or tree page)',
+        keybindings: [{ ordered: ['y'] }],
+        onClick: () => {
+            this.props.history.push(this.permalinkURL)
+        },
     }
 
     private get permalinkURL(): string {

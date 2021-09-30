@@ -27,7 +27,7 @@ import { JumpToLineResult } from './components/JumpToLineResult'
 import { JumpToSymbolResult } from './components/JumpToSymbolResult'
 import { RecentSearchesResult } from './components/RecentSearchesResult'
 import { ShortcutController, KeyboardShortcutWithCallback } from './components/ShortcutController'
-import { COMMAND_PALETTE_COMMANDS, CommandPaletteMode, BUILT_IN_COMMANDS } from './constants'
+import { COMMAND_PALETTE_COMMANDS, CommandPaletteMode } from './constants'
 import { useCommandPaletteStore } from './store'
 
 const getMode = (text: string): CommandPaletteMode | undefined =>
@@ -42,6 +42,8 @@ const getContributions = memoizeObservable(
 
 // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
 function useCommandList(value: string, extensionsController: CommandPaletteProps['extensionsController']) {
+    const { extraCommands } = useCommandPaletteStore()
+
     const extensionContributions = useObservable(
         useMemo(
             () =>
@@ -101,12 +103,12 @@ function useCommandList(value: string, extensionsController: CommandPaletteProps
     const builtInCommands: CommandItem[] = useMemo(
         () => [
             // Note: KEYBOARD_SHORTCUTS are shortcuts are already handled in different places
-            ...BUILT_IN_COMMANDS,
+            ...extraCommands,
             ...COMMAND_PALETTE_COMMANDS,
         ],
-        []
+        [extraCommands]
     )
-
+    console.log({ extraCommands })
     const actions = useMemo(() => [...extensionCommands, ...builtInCommands], [extensionCommands, builtInCommands])
 
     return { actions, shortcuts }
@@ -194,67 +196,74 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
             <ShortcutController shortcuts={shortcuts} />
             {/* Can be rendered at the main app shell level */}
 
-            <Modal
-                isOpen={isOpen}
-                toggle={() => {
-                    toggleIsOpen()
-                }}
-                autoFocus={false}
-                backdropClassName="bg-transparent" // TODO: remove utility classes for bext
-                keyboard={true}
-                fade={false}
-                className={classNames(styles.modalDialog, 'shadow-lg')} // TODO: remove utility classes for bext
-                contentClassName={styles.modalContent}
-            >
-                <div className={styles.inputContainer}>
-                    <MagnifyIcon className={styles.inputIcon} />
-                    <input
-                        ref={inputReference}
-                        autoComplete="off"
-                        spellCheck="false"
-                        aria-autocomplete="list"
-                        className={classNames(styles.input, 'form-control py-1')} // TODO: remove utility classes for bext
-                        placeholder="Select a mode (prefix or click)"
-                        value={value}
-                        onChange={handleChange}
-                        autoFocus={true}
-                        type="text"
-                    />
-                </div>
-                {!mode && <CommandPaletteModesResult onSelect={handleInputFocus} />}
-                {mode === CommandPaletteMode.Command && (
-                    <CommandResult actions={actions} value={searchText} onClick={handleClose} />
-                )}
-                {mode === CommandPaletteMode.RecentSearches && (
-                    <RecentSearchesResult
-                        value={searchText}
-                        onClick={handleClose}
-                        getAuthenticatedUserID={getAuthenticatedUserID}
-                        platformContext={platformContext}
-                    />
-                )}
-                {/* TODO: Only when repo open */}
-                {mode === CommandPaletteMode.Fuzzy && (
-                    <FuzzyFinderResult
-                        value={searchText}
-                        onClick={handleClose}
-                        workspaceRoot={workspaceRoot}
-                        platformContext={platformContext}
-                    />
-                )}
-                {/* TODO: Only when code editor open (possibly only when single open TODO) */}
-                {mode === CommandPaletteMode.JumpToLine && (
-                    <JumpToLineResult value={searchText} onClick={handleClose} textDocumentData={activeTextDocument} />
-                )}
-                {mode === CommandPaletteMode.JumpToSymbol && (
-                    <JumpToSymbolResult
-                        value={searchText}
-                        onClick={handleClose}
-                        textDocumentData={activeTextDocument}
-                        platformContext={platformContext}
-                    />
-                )}
-            </Modal>
+            {isOpen && (
+                <Modal
+                    isOpen={isOpen}
+                    toggle={() => {
+                        toggleIsOpen()
+                    }}
+                    autoFocus={false}
+                    backdropClassName="bg-transparent" // TODO: remove utility classes for bext
+                    keyboard={true}
+                    fade={false}
+                    className={classNames(styles.modalDialog, 'shadow-lg')} // TODO: remove utility classes for bext
+                    contentClassName={styles.modalContent}
+                    returnFocusAfterClose={false}
+                >
+                    <div className={styles.inputContainer}>
+                        <MagnifyIcon className={styles.inputIcon} />
+                        <input
+                            ref={inputReference}
+                            autoComplete="off"
+                            spellCheck="false"
+                            aria-autocomplete="list"
+                            className={classNames(styles.input, 'form-control py-1')} // TODO: remove utility classes for bext
+                            placeholder="Select a mode (prefix or click)"
+                            value={value}
+                            onChange={handleChange}
+                            autoFocus={true}
+                            type="text"
+                        />
+                    </div>
+                    {!mode && <CommandPaletteModesResult onSelect={handleInputFocus} />}
+                    {mode === CommandPaletteMode.Command && (
+                        <CommandResult actions={actions} value={searchText} onClick={handleClose} />
+                    )}
+                    {mode === CommandPaletteMode.RecentSearches && (
+                        <RecentSearchesResult
+                            value={searchText}
+                            onClick={handleClose}
+                            getAuthenticatedUserID={getAuthenticatedUserID}
+                            platformContext={platformContext}
+                        />
+                    )}
+                    {/* TODO: Only when repo open */}
+                    {mode === CommandPaletteMode.Fuzzy && (
+                        <FuzzyFinderResult
+                            value={searchText}
+                            onClick={handleClose}
+                            workspaceRoot={workspaceRoot}
+                            platformContext={platformContext}
+                        />
+                    )}
+                    {/* TODO: Only when code editor open (possibly only when single open TODO) */}
+                    {mode === CommandPaletteMode.JumpToLine && (
+                        <JumpToLineResult
+                            value={searchText}
+                            onClick={handleClose}
+                            textDocumentData={activeTextDocument}
+                        />
+                    )}
+                    {mode === CommandPaletteMode.JumpToSymbol && (
+                        <JumpToSymbolResult
+                            value={searchText}
+                            onClick={handleClose}
+                            textDocumentData={activeTextDocument}
+                            platformContext={platformContext}
+                        />
+                    )}
+                </Modal>
+            )}
         </>
     )
 }
