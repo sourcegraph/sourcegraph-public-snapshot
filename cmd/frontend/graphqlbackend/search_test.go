@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"net/http"
 	"net/http/httptest"
 	"reflect"
 	"strings"
@@ -14,7 +13,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/google/zoekt"
-	zoektrpc "github.com/google/zoekt/rpc"
+	"github.com/google/zoekt/web"
 	"github.com/graph-gophers/graphql-go"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -539,13 +538,13 @@ func mkFileMatch(repo types.RepoName, path string, lineNumbers ...int32) *result
 func BenchmarkSearchResults(b *testing.B) {
 	db := new(dbtesting.MockDB)
 
-	minimalRepos, zoektRepos := generateRepos(5000)
-	zoektFileMatches := generateZoektMatches(50)
+	minimalRepos, zoektRepos := generateRepos(500_000)
+	zoektFileMatches := generateZoektMatches(1000)
 
-	z := &searchbackend.FakeSearcher{
+	z := zoektRPC(b, &searchbackend.FakeSearcher{
 		Repos:  zoektRepos,
 		Result: &zoekt.SearchResult{Files: zoektFileMatches},
-	}
+	})
 
 	ctx := context.Background()
 
@@ -561,7 +560,7 @@ func BenchmarkSearchResults(b *testing.B) {
 	b.ReportAllocs()
 
 	for n := 0; n < b.N; n++ {
-		plan, err := query.Pipeline(query.InitLiteral(`print index:only count:350`))
+		plan, err := query.Pipeline(query.InitLiteral(`print repo:foo index:only count:1000`))
 		if err != nil {
 			b.Fatal(err)
 		}
@@ -637,13 +636,20 @@ func generateZoektMatches(count int) []zoekt.FileMatch {
 // zoektRPC starts zoekts rpc interface and returns a client to
 // searcher. Useful for capturing CPU/memory usage when benchmarking the zoekt
 // client.
-func zoektRPC(s zoekt.Streamer) (zoekt.Streamer, func()) {
-	mux := http.NewServeMux()
-	mux.Handle(zoektrpc.DefaultRPCPath, zoektrpc.Server(s))
-	ts := httptest.NewServer(mux)
+func zoektRPC(t testing.TB, s zoekt.Streamer) zoekt.Streamer {
+	srv, err := web.NewMux(&web.Server{
+		Searcher: s,
+		RPC:      true,
+		Top:      web.Top,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	ts := httptest.NewServer(srv)
 	cl := backend.ZoektDial(strings.TrimPrefix(ts.URL, "http://"))
-	return cl, func() {
+	t.Cleanup(func() {
 		cl.Close()
 		ts.Close()
-	}
+	})
+	return cl
 }
