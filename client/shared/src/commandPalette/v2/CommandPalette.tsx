@@ -42,6 +42,23 @@ const getContributions = memoizeObservable(
     () => 'getContributions' // only one instance
 )
 
+// TEMPORARY MOCK FOR DEMO, REMOVE AFTER
+const HACKATHON_DEMO_COMMANDS: CommandItem[] = [
+    {
+        id: 'githubCodeHost.newIssueWithSelection',
+        title: 'GitHub: Open new issue in repository with selection',
+        icon: 'https://upload.wikimedia.org/wikipedia/commons/9/91/Octicons-mark-github.svg',
+        keybindings: [{ held: ['Alt'], ordered: ['I'] }],
+        onClick: () => {
+            const body = encodeURIComponent(
+                'See selection:\n\nhttps://github.com/sourcegraph/sourcegraph/blob/c229c12a3a8eb82b3e62b1b8d7515b91641ca7f2/client/shared/src/api/extension/worker.ts#L9-L15'
+            )
+
+            window.open(`https://github.com/sourcegraph/sourcegraph/issues/new?body=${body}`, '_blank')
+        },
+    },
+]
+
 // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
 function useCommandList(value: string, extensionsController: CommandPaletteProps['extensionsController']) {
     const { extraCommands } = useCommandPaletteStore()
@@ -100,7 +117,7 @@ function useCommandList(value: string, extensionsController: CommandPaletteProps
 
     const shortcuts: KeyboardShortcutWithCallback[] = useMemo(
         () =>
-            [...extensionCommands, ...COMMAND_PALETTE_COMMANDS]
+            [...extensionCommands, ...COMMAND_PALETTE_COMMANDS, ...HACKATHON_DEMO_COMMANDS]
                 .filter(({ keybindings }) => keybindings?.length)
                 .map(({ id, keybindings = [], onClick, title }) => ({
                     keybindings,
@@ -116,6 +133,7 @@ function useCommandList(value: string, extensionsController: CommandPaletteProps
             // Note: KEYBOARD_SHORTCUTS are shortcuts are already handled in different places
             ...extraCommands,
             ...COMMAND_PALETTE_COMMANDS,
+            ...HACKATHON_DEMO_COMMANDS,
         ],
         [extraCommands]
     )

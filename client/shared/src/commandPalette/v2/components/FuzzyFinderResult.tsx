@@ -114,7 +114,7 @@ export const FuzzyFinderResult: React.FC<FuzzyFinderResultProps> = ({
             if (platformContext.clientApplication === 'sourcegraph') {
                 history.push(url)
             } else {
-                window.location.href = 'https://sourcegraph.test:3443' + url
+                window.location.href = url
             }
         }
     }

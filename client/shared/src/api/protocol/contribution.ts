@@ -1,4 +1,5 @@
 import { Primitive } from 'utility-types'
+import { Keybinding } from '../../keyboardShortcuts'
 
 import { KeyPath } from '../client/services/settings'
 import { Expression, TemplateExpression } from '../extension/api/context/expr/evaluator'
@@ -280,6 +281,11 @@ export interface MenuItemContribution {
      * group sorting last. The client must not display the group value.
      */
     group?: string
+
+    /**
+     * TODO HACKATHON DEMO
+     */
+    keybinding?: Keybinding
 }
 
 /**

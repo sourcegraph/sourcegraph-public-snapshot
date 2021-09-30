@@ -121,6 +121,8 @@ import { resolveRepoNamesForDiffOrFileInfo, defaultRevisionToCommitID } from './
 import { ViewOnSourcegraphButtonClassProps, ViewOnSourcegraphButton } from './ViewOnSourcegraphButton'
 import { delayUntilIntersecting, trackViews, ViewResolver } from './views'
 import { getCurrentUserID } from '../../backend/currentUser'
+import { CommandItem } from '@sourcegraph/shared/src/commandPalette/v2/components/CommandResult'
+import { useCommandPaletteStore } from '@sourcegraph/shared/src/commandPalette/v2/store'
 
 registerHighlightContributions()
 
@@ -286,6 +288,8 @@ export interface CodeHost extends ApplyLinkPreviewOptions {
      * Whether or not code views need to be tokenized. Defaults to false.
      */
     codeViewsRequireTokenization?: boolean
+
+    getCommandItems?: (context: { repoName: string }) => CommandItem[]
 }
 
 /**
@@ -747,6 +751,13 @@ export function handleCodeHost({
                 })
             )
         )
+
+        // FAKE AT THE MOMENT FOR HACKATHON DEMO
+        // TODO: pass observable of context (should this just be context from extension host merged with some extras?)
+        const commandItems = codeHost.getCommandItems?.({ repoName: 'FAKE' })
+        for (const commandItem of commandItems ?? []) {
+            useCommandPaletteStore.getState().addCommand(commandItem)
+        }
     }
 
     // Render extension debug menu

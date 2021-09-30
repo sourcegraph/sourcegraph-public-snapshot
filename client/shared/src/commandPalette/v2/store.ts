@@ -19,6 +19,7 @@ export interface CommandPaletteState {
     setValue: (value: string) => void
     extraCommands: CommandItem[]
     addCommand: (command: CommandItem) => () => void
+    // TODO add commands in bulk? need to think more about conditional/contextual builtin actions
 }
 
 const BUILT_IN_COMMANDS: CommandItem[] = [

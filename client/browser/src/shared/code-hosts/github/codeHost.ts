@@ -504,4 +504,29 @@ export const githubCodeHost: CodeHost = {
         return `https://${target.rawRepoName}/blob/${revision}/${target.filePath}${fragment}`
     },
     codeViewsRequireTokenization: true,
+    // TODO: should be an observable that changes based on context? Like repo, files.
+    getCommandItems: context => [
+        {
+            id: 'githubCodeHost.newIssue', // Perhaps this can just be in GitHub extras to enable the SG -> GH path? Not sure
+            title: 'GitHub: Open new issue in repository',
+            icon: 'https://upload.wikimedia.org/wikipedia/commons/9/91/Octicons-mark-github.svg',
+            keybindings: [{ held: ['Control'], ordered: ['!'] }],
+            onClick: () => {
+                window.location.href = 'https://github.com/sourcegraph/sourcegraph/issues/new'
+            },
+        },
+        {
+            id: 'githubCodeHost.newIssueWithSelection',
+            title: 'GitHub: Open new issue in repository with selection',
+            icon: 'https://upload.wikimedia.org/wikipedia/commons/9/91/Octicons-mark-github.svg',
+            keybindings: [{ held: ['Control'], ordered: ['!'] }],
+            onClick: () => {
+                const body = encodeURIComponent(
+                    'See selection:\n\nhttps://github.com/sourcegraph/sourcegraph/blob/c229c12a3a8eb82b3e62b1b8d7515b91641ca7f2/client/shared/src/api/extension/worker.ts#L9-L15'
+                )
+
+                window.location.href = `https://github.com/sourcegraph/sourcegraph/issues/new?body=${body}`
+            },
+        },
+    ],
 }
