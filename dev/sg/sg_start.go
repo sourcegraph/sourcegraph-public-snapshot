@@ -95,8 +95,11 @@ func startExec(ctx context.Context, args []string) error {
 		return flag.ErrHelp
 	}
 
-	if len(args) == 0 {
-		args = append(args, "default")
+	if len(args) == 0 && globalConf.DefaultCommandSet != "" {
+		args = append(args, globalConf.DefaultCommandSet)
+	} else {
+		out.WriteLine(output.Linef("", output.StyleWarning, "ERROR: No commandset specified and no 'defaultCommandSet' specified in sg.config.yaml\n"))
+		return flag.ErrHelp
 	}
 
 	set, ok := globalConf.Commandsets[args[0]]
