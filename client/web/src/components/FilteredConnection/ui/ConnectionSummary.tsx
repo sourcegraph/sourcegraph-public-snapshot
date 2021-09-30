@@ -7,6 +7,7 @@ import { ConnectionNodesState, ConnectionProps, getTotalCount } from '../Connect
 import { Connection } from '../ConnectionType'
 
 import styles from './ConnectionSummary.module.scss'
+import { EmptyAutoIndex } from './EmptyAutoIndex'
 
 interface ConnectionNodesSummaryProps<C extends Connection<N>, N, NP = {}, HP = {}>
     extends Pick<
@@ -86,18 +87,5 @@ export const ConnectionSummary = <C extends Connection<N>, N, NP = {}, HP = {}>(
         return null
     }
 
-    return (
-        emptyElement || (
-            <p className={summaryClassName} data-testid="summary">
-                <small>
-                    No {pluralNoun}{' '}
-                    {connectionQuery && (
-                        <span>
-                            matching <strong>{connectionQuery}</strong>
-                        </span>
-                    )}
-                </small>
-            </p>
-        )
-    )
+    return emptyElement || <EmptyAutoIndex pluralNoun={pluralNoun} />
 }
