@@ -10,6 +10,7 @@ import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryServi
 
 import { CaseSensitivityProps, PatternTypeProps, SearchContextInputProps } from '..'
 import { AuthenticatedUser } from '../../auth'
+import { useTemporarySetting } from '../../settings/temporary/useTemporarySetting'
 import styles from '../FeatureTour.module.scss'
 import { SubmitSearchParameters } from '../helpers'
 import { getTourOptions, HAS_SEEN_SEARCH_CONTEXTS_FEATURE_TOUR_KEY, useFeatureTour } from '../useFeatureTour'
@@ -96,6 +97,13 @@ export const SearchContextDropdown: React.FunctionComponent<SearchContextDropdow
             },
         })
     )
+
+    const [hasUsedNonGlobalContext, setHasUsedNonGlobalContext] = useTemporarySetting('search.usedNonGlobalContext')
+    useEffect(() => {
+        if (selectedSearchContextSpec && selectedSearchContextSpec !== 'global' && !hasUsedNonGlobalContext) {
+            setHasUsedNonGlobalContext(true)
+        }
+    }, [selectedSearchContextSpec, setHasUsedNonGlobalContext, hasUsedNonGlobalContext])
 
     const [isOpen, setIsOpen] = useState(false)
     const toggleOpen = useCallback(() => {
@@ -186,7 +194,7 @@ export const SearchContextDropdown: React.FunctionComponent<SearchContextDropdow
                 </code>
             </DropdownToggle>
             <DropdownMenu positionFixed={true} className="search-context-dropdown__menu">
-                {isSourcegraphDotCom && !hasUserAddedRepositories ? (
+                {isSourcegraphDotCom && !hasUserAddedRepositories && !hasUsedNonGlobalContext ? (
                     <SearchContextCtaPrompt
                         telemetryService={telemetryService}
                         authenticatedUser={authenticatedUser}
