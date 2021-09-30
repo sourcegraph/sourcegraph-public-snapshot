@@ -11,7 +11,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
-	gitapi "github.com/sourcegraph/sourcegraph/internal/vcs/git/api"
+	"github.com/sourcegraph/sourcegraph/internal/vcs/git/gitapi"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/util"
 )
 

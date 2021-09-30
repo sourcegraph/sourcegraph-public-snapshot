@@ -7,7 +7,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
-	gitapi "github.com/sourcegraph/sourcegraph/internal/vcs/git/api"
+	"github.com/sourcegraph/sourcegraph/internal/vcs/git/gitapi"
 )
 
 type gitCommitConnectionResolver struct {

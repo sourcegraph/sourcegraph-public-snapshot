@@ -5,7 +5,7 @@ import (
 	"io/fs"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	gitapi "github.com/sourcegraph/sourcegraph/internal/vcs/git/api"
+	"github.com/sourcegraph/sourcegraph/internal/vcs/git/gitapi"
 )
 
 // Mocks is used to mock behavior in tests. Tests must call ResetMocks() when finished to ensure its

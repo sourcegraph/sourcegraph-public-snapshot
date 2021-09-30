@@ -11,7 +11,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/inventory"
 	"github.com/sourcegraph/sourcegraph/internal/types"
-	gitapi "github.com/sourcegraph/sourcegraph/internal/vcs/git/api"
+	"github.com/sourcegraph/sourcegraph/internal/vcs/git/gitapi"
 )
 
 type MockRepos struct {

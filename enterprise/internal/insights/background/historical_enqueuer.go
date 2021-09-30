@@ -35,7 +35,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
-	gitapi "github.com/sourcegraph/sourcegraph/internal/vcs/git/api"
+	"github.com/sourcegraph/sourcegraph/internal/vcs/git/gitapi"
 )
 
 // The historical enqueuer takes regular search insights like a search for `errorf` and runs them

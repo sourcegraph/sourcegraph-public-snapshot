@@ -1,8 +1,8 @@
-// Package api contains types to be shared across much of the application.
+// Package gitapi contains types to be shared across much of the application.
 // This is partitionined into its own subpackage so importing these
 // widely-used types does not add transitive dependencies on all of
 // the dependencies of internal/vcs/git.
-package api
+package gitapi
 
 import (
 	"strings"

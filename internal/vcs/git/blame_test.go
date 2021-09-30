@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	gitapi "github.com/sourcegraph/sourcegraph/internal/vcs/git/api"
+	"github.com/sourcegraph/sourcegraph/internal/vcs/git/gitapi"
 )
 
 func TestRepository_BlameFile(t *testing.T) {

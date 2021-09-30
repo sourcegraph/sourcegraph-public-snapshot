@@ -18,7 +18,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/pathmatch"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
-	gitapi "github.com/sourcegraph/sourcegraph/internal/vcs/git/api"
+	"github.com/sourcegraph/sourcegraph/internal/vcs/git/gitapi"
 )
 
 // TextSearchOptions contains common options for text search commands.
