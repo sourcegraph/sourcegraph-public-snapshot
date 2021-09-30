@@ -1469,7 +1469,7 @@ func (r *searchResolver) doResults(ctx context.Context, args *search.TextParamet
 		cancel()
 		requiredWg.Wait()
 		optionalWg.Wait()
-		_, _, _ = agg.Get()
+		_, _, _, _ = agg.Get()
 	}()
 
 	args.RepoOptions = r.toRepoOptions(args.Query, resolveRepositoriesOpts{})
@@ -1640,7 +1640,7 @@ func (r *searchResolver) doResults(ctx context.Context, args *search.TextParamet
 // toSearchResults relies on all WaitGroups being done since it relies on
 // collecting from the streams.
 func (r *searchResolver) toSearchResults(ctx context.Context, agg *run.Aggregator) (*SearchResults, error) {
-	matches, common, aggErrs := agg.Get()
+	matches, common, matchCount, aggErrs := agg.Get()
 
 	if aggErrs == nil {
 		return nil, errors.New("aggErrs should never be nil")
@@ -1648,7 +1648,7 @@ func (r *searchResolver) toSearchResults(ctx context.Context, agg *run.Aggregato
 
 	ao := alertObserver{
 		Inputs:     r.SearchInputs,
-		hasResults: len(matches) > 0,
+		hasResults: matchCount > 0,
 	}
 	for _, err := range aggErrs.Errors {
 		ao.Error(ctx, err)
