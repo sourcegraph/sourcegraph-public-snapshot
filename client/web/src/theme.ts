@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo } from 'react'
+import create from 'zustand'
 
 import { observeSystemIsLightTheme, ThemeProps } from '@sourcegraph/shared/src/theme'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
@@ -39,6 +40,23 @@ const readStoredThemePreference = (localStorage: Pick<Storage, 'getItem' | 'setI
     }
 }
 
+interface ThemeState {
+    themePreference: ThemePreference
+    onThemePreferenceChange: (themePreference?: ThemePreference) => void
+}
+
+export const useThemeStore = create<ThemeState>(set => ({
+    themePreference: readStoredThemePreference(localStorage),
+    onThemePreferenceChange: (preference?: ThemePreference) => {
+        set(({ themePreference }) => {
+            const newPreference =
+                preference ?? (themePreference === ThemePreference.Dark ? ThemePreference.Light : ThemePreference.Dark)
+            localStorage.setItem(LIGHT_THEME_LOCAL_STORAGE_KEY, newPreference)
+            return { themePreference: newPreference }
+        })
+    },
+}))
+
 /**
  * A React hook for getting and setting the theme.
  *
@@ -51,21 +69,13 @@ export const useTheme = (
     documentElement: Pick<HTMLElement, 'classList'> = document.documentElement,
     localStorage: Pick<Storage, 'getItem' | 'setItem'> = window.localStorage
 ): ThemeProps & ThemePreferenceProps => {
+    const { onThemePreferenceChange, themePreference } = useThemeStore()
     // React to system-wide theme change.
     const { observable: systemIsLightThemeObservable, initialValue: systemIsLightThemeInitialValue } = useMemo(
         () => observeSystemIsLightTheme(window_),
         [window_]
     )
     const systemIsLightTheme = useObservable(systemIsLightThemeObservable) ?? systemIsLightThemeInitialValue
-
-    const [themePreference, setThemePreference] = useState(readStoredThemePreference(localStorage))
-    const onThemePreferenceChange = useCallback(
-        (themePreference: ThemePreference) => {
-            localStorage.setItem(LIGHT_THEME_LOCAL_STORAGE_KEY, themePreference)
-            setThemePreference(themePreference)
-        },
-        [localStorage]
-    )
 
     const isLightTheme = themePreference === 'system' ? systemIsLightTheme : themePreference === 'light'
     useEffect(() => {

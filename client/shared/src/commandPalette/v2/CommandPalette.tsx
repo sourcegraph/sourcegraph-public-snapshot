@@ -7,8 +7,6 @@ import { Modal } from 'reactstrap'
 import { from, Observable } from 'rxjs'
 import { filter, map, switchMap } from 'rxjs/operators'
 
-import { KEYBOARD_SHORTCUTS } from '@sourcegraph/web/src/keyboardShortcuts/keyboardShortcuts'
-
 import { ActionItemAction } from '../../actions/ActionItem'
 import { wrapRemoteObservable } from '../../api/client/api/common'
 import { FlatExtensionHostAPI } from '../../api/contract'
@@ -29,7 +27,7 @@ import { JumpToLineResult } from './components/JumpToLineResult'
 import { JumpToSymbolResult } from './components/JumpToSymbolResult'
 import { RecentSearchesResult } from './components/RecentSearchesResult'
 import { ShortcutController, KeyboardShortcutWithCallback } from './components/ShortcutController'
-import { COMMAND_PALETTE_COMMANDS, CommandPaletteMode } from './constants'
+import { COMMAND_PALETTE_COMMANDS, CommandPaletteMode, BUILT_IN_COMMANDS } from './constants'
 import { useCommandPaletteStore } from './store'
 
 const getMode = (text: string): CommandPaletteMode | undefined =>
@@ -67,31 +65,25 @@ function useCommandList(value: string, extensionsController: CommandPaletteProps
             extensionsController
                 .executeCommand({ command: action.command, args: action.commandArguments })
                 .catch(error => console.error(error))
-
-            // TODO update recent actions
         },
         [extensionsController]
     )
 
-    const extensionCommands: CommandItem[] = useMemo(
-        () => {
-            if (!extensionContributions) {
-                return []
-            }
-            return getContributedActionItems(extensionContributions, ContributableMenu.CommandPalette).map(
-                ({ action, keybinding }) => ({
-                    id: action.id,
-                    title: [action.category, action.title || action.command].filter(Boolean).join(': '),
-                    keybindings: keybinding ? [keybinding] : [],
-                    onClick: () => {
-                        onRunAction(action)
-                    },
-                })
-            )
-        },
-        // TODO: combine and map all actionItems
-        [extensionContributions, onRunAction]
-    )
+    const extensionCommands: CommandItem[] = useMemo(() => {
+        if (!extensionContributions) {
+            return []
+        }
+        return getContributedActionItems(extensionContributions, ContributableMenu.CommandPalette).map(
+            ({ action, keybinding }) => ({
+                id: action.id,
+                title: [action.category, action.title || action.command].filter(Boolean).join(': '),
+                keybindings: keybinding ? [keybinding] : [],
+                onClick: () => {
+                    onRunAction(action)
+                },
+            })
+        )
+    }, [extensionContributions, onRunAction])
 
     const shortcuts: KeyboardShortcutWithCallback[] = useMemo(
         () =>
@@ -109,23 +101,7 @@ function useCommandList(value: string, extensionsController: CommandPaletteProps
     const builtInCommands: CommandItem[] = useMemo(
         () => [
             // Note: KEYBOARD_SHORTCUTS are shortcuts are already handled in different places
-            ...KEYBOARD_SHORTCUTS.map(({ id, title, keybindings }) => ({
-                id,
-                title: 'Built-in: ' + title,
-                keybindings,
-                onClick: () => {
-                    /** TODO: refactor existing handler to use the centralized store approach */
-                    const [keybinding] = keybindings
-                    if (!keybinding) {
-                        console.log('No keybinding for built-in command')
-                        return
-                    }
-
-                    for (const key of [...(keybinding.held || []), ...keybinding.ordered]) {
-                        window.dispatchEvent(new KeyboardEvent('keydown', { key }))
-                    }
-                },
-            })),
+            ...BUILT_IN_COMMANDS,
             ...COMMAND_PALETTE_COMMANDS,
         ],
         []
@@ -238,7 +214,6 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
                         spellCheck="false"
                         aria-autocomplete="list"
                         className={classNames(styles.input, 'form-control py-1')} // TODO: remove utility classes for bext
-                        // TODO: different placeholder by mode
                         placeholder="Select a mode (prefix or click)"
                         value={value}
                         onChange={handleChange}

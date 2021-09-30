@@ -7,7 +7,7 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { ButtonDropdown, DropdownItem, DropdownMenu, DropdownToggle, Tooltip } from 'reactstrap'
 
-import { KeyboardShortcut } from '@sourcegraph/shared/src/keyboardShortcuts'
+import { KeyboardShortcutWithCallback } from '@sourcegraph/shared/src/commandPalette/v2/components/ShortcutController'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { useTimeoutManager } from '@sourcegraph/shared/src/util/useTimeoutManager'
 
@@ -28,7 +28,7 @@ export interface UserNavItemProps
         'username' | 'avatarURL' | 'settingsURL' | 'organizations' | 'siteAdmin' | 'session' | 'displayName'
     >
     showDotComMarketing: boolean
-    keyboardShortcutForSwitchTheme?: KeyboardShortcut
+    keyboardShortcutForSwitchTheme?: KeyboardShortcutWithCallback
     testIsOpen?: boolean
     codeHostIntegrationMessaging: 'browser-extension' | 'native-integration'
     showRepositorySection?: boolean
@@ -100,10 +100,6 @@ export const UserNavItem: React.FunctionComponent<UserNavItemProps> = props => {
         },
         [onThemePreferenceChange]
     )
-
-    const onThemeCycle = useCallback((): void => {
-        onThemePreferenceChange(themePreference === ThemePreference.Dark ? ThemePreference.Light : ThemePreference.Dark)
-    }, [onThemePreferenceChange, themePreference])
 
     // Target ID for tooltip
     const targetID = 'target-user-avatar'
@@ -197,7 +193,7 @@ export const UserNavItem: React.FunctionComponent<UserNavItemProps> = props => {
                         </div>
                     )}
                     {props.keyboardShortcutForSwitchTheme?.keybindings.map((keybinding, index) => (
-                        <Shortcut key={index} {...keybinding} onMatch={onThemeCycle} />
+                        <Shortcut key={index} {...keybinding} onMatch={props.keyboardShortcutForSwitchTheme.onMatch} />
                     ))}
                 </div>
                 {props.authenticatedUser.organizations.nodes.length > 0 && (

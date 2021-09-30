@@ -22,5 +22,7 @@ export const useCommandPaletteStore = create<CommandPaletteState>(set => ({
         set(({ isOpen, value }) => ({
             isOpen: typeof open === 'boolean' ? open : !isOpen,
             value: mode === value[0] ? value : mode ?? '',
+            // TODO: when command palette closes, the mode selector flashes.
+            // this may be this culprit.
         })),
 }))

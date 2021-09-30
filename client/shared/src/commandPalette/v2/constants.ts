@@ -1,3 +1,5 @@
+import { KEYBOARD_SHORTCUT_SWITCH_THEME } from '@sourcegraph/web/src/keyboardShortcuts/keyboardShortcuts'
+
 import { CommandItem } from './components/CommandResult'
 import { useCommandPaletteStore } from './store'
 
@@ -31,7 +33,10 @@ export const COMMAND_PALETTE_COMMANDS: CommandItem[] = [
         title: '[Beta] Command palette : Recent searches mode',
         keybindings: [{ held: ['Control'], ordered: ['#'] }],
         onClick: (): void => {
-            useCommandPaletteStore.getState().toggleIsOpen({ open: true, mode: CommandPaletteMode.RecentSearches })
+            useCommandPaletteStore.getState().toggleIsOpen({
+                open: true,
+                mode: CommandPaletteMode.RecentSearches,
+            })
         },
     },
     {
@@ -47,7 +52,10 @@ export const COMMAND_PALETTE_COMMANDS: CommandItem[] = [
         title: '[Beta] Command palette : Jump to line mode',
         keybindings: [{ held: ['Control'], ordered: [':'] }],
         onClick: (): void => {
-            useCommandPaletteStore.getState().toggleIsOpen({ open: true, mode: CommandPaletteMode.JumpToLine })
+            useCommandPaletteStore.getState().toggleIsOpen({
+                open: true,
+                mode: CommandPaletteMode.JumpToLine,
+            })
         },
     },
     {
@@ -55,7 +63,17 @@ export const COMMAND_PALETTE_COMMANDS: CommandItem[] = [
         title: '[Beta] Command palette : Jump to symbol mode',
         keybindings: [{ held: ['Control'], ordered: ['@'] }],
         onClick: (): void => {
-            useCommandPaletteStore.getState().toggleIsOpen({ open: true, mode: CommandPaletteMode.JumpToSymbol })
+            useCommandPaletteStore.getState().toggleIsOpen({
+                open: true,
+                mode: CommandPaletteMode.JumpToSymbol,
+            })
         },
+    },
+]
+
+export const BUILT_IN_COMMANDS: CommandItem[] = [
+    {
+        ...KEYBOARD_SHORTCUT_SWITCH_THEME,
+        onClick: KEYBOARD_SHORTCUT_SWITCH_THEME.onMatch,
     },
 ]

@@ -8,8 +8,6 @@ $command-palette-border-radius: 0.45rem;
     border-radius: $command-palette-border-radius;
     max-width: min(900px, 80%);
     margin-top: 7rem;
-    max-height: min(500px, 90%);
-    overflow: auto;
 }
 
 .modal-content {
@@ -34,7 +32,8 @@ $command-palette-border-radius: 0.45rem;
         box-shadow: none;
     }
 
-    &:focus, &:active {
+    &:focus,
+    &:active {
         // outline: 1px solid var(--link-active-color);
     }
 }

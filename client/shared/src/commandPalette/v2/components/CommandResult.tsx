@@ -82,6 +82,7 @@ function filterAndRankItems(items: CommandItem[], query: string, recentActions: 
         })
         .map((item, index) => {
             const recentIndex = recentActions?.indexOf(item.id)
+            console.log({ index }) // How could index align with the array before it was filtered??
             return {
                 item,
                 score: scores[index],

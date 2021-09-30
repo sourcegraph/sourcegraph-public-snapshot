@@ -1,5 +1,7 @@
+import { KeyboardShortcutWithCallback } from '@sourcegraph/shared/src/commandPalette/v2/components/ShortcutController'
 import { KeyboardShortcut } from '@sourcegraph/shared/src/keyboardShortcuts'
 
+import { useThemeStore } from '../theme'
 import { isMacPlatform } from '../util'
 
 export const KEYBOARD_SHORTCUT_SHOW_COMMAND_PALETTE: KeyboardShortcut = {
@@ -8,10 +10,13 @@ export const KEYBOARD_SHORTCUT_SHOW_COMMAND_PALETTE: KeyboardShortcut = {
     keybindings: [{ held: ['Control'], ordered: ['p'] }, { ordered: ['F1'] }, { held: ['Alt'], ordered: ['x'] }],
 }
 
-export const KEYBOARD_SHORTCUT_SWITCH_THEME: KeyboardShortcut = {
+export const KEYBOARD_SHORTCUT_SWITCH_THEME: KeyboardShortcutWithCallback = {
     id: 'switchTheme',
     title: 'Switch color theme',
     keybindings: [{ held: ['Alt'], ordered: ['t'] }],
+    onMatch: () => {
+        useThemeStore.getState().onThemePreferenceChange()
+    },
 }
 
 export const KEYBOARD_SHORTCUT_SHOW_HELP: KeyboardShortcut = {
@@ -21,10 +26,11 @@ export const KEYBOARD_SHORTCUT_SHOW_HELP: KeyboardShortcut = {
     hideInHelp: true,
 }
 
-export const KEYBOARD_SHORTCUT_FOCUS_SEARCHBAR: KeyboardShortcut = {
+export const KEYBOARD_SHORTCUT_FOCUS_SEARCHBAR: KeyboardShortcutWithCallback = {
     id: 'focusSearch',
     title: 'Focus search bar',
     keybindings: [{ ordered: ['/'] }],
+    onMatch: () => {},
 }
 
 export const KEYBOARD_SHORTCUT_FUZZY_FINDER: KeyboardShortcut = {

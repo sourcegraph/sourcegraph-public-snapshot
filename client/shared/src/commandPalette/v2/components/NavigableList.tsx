@@ -25,6 +25,8 @@ const NavigableListItem: React.FC<NavigableListItemProps> = ({
 }) => {
     const Tag = href ? 'a' : 'button'
 
+    const listItemReference = useRef<HTMLLIElement | null>(null)
+
     const onClickReference = useRef(onClick)
     onClickReference.current = onClick
 
@@ -45,12 +47,13 @@ const NavigableListItem: React.FC<NavigableListItemProps> = ({
 
     useEffect(() => {
         if (active) {
+            listItemReference.current?.scrollIntoView(false)
             onFocusReference.current?.()
         }
     }, [active])
 
     return (
-        <li tabIndex={-1}>
+        <li tabIndex={-1} ref={listItemReference}>
             <Tag
                 type="button"
                 tabIndex={0}

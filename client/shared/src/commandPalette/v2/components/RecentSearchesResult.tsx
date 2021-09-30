@@ -1,8 +1,11 @@
+import { sortBy } from 'lodash'
 import React, { useMemo } from 'react'
 import { useHistory } from 'react-router'
 import { EMPTY, Observable, of } from 'rxjs'
 import { map } from 'rxjs/operators'
+import stringScore from 'string-score'
 
+import { HighlightedMatches } from '../../../components/HighlightedMatches'
 import { EventLogsDataResult, EventLogsDataVariables, Scalars } from '../../../graphql-operations'
 import { dataOrThrowErrors, gql } from '../../../graphql/graphql'
 import { PlatformContext, PlatformContextProps } from '../../../platform/context'
@@ -120,7 +123,7 @@ export const RecentSearchesResult: React.FC<RecentSearchesResultProps> = ({
     // should be the input value, essentially making this an easy "search on sourcegraph"
     // path!
 
-    const searches = (recentSearches && processRecentSearches(recentSearches)) || []
+    const searches = filterAndRankResults(value, (recentSearches && processRecentSearches(recentSearches)) || [])
 
     const onSearch = (query: string): void => {
         if (platformContext.clientApplication === 'sourcegraph') {
@@ -152,7 +155,11 @@ export const RecentSearchesResult: React.FC<RecentSearchesResultProps> = ({
                     /* If browser extension, render external link icon */
                     return (
                         <NavigableList.Item active={active} onClick={() => onSearch(search.searchText)}>
-                            {search.searchText}
+                            {value ? (
+                                <HighlightedMatches text={search.searchText} pattern={value} />
+                            ) : (
+                                search.searchText
+                            )}
                         </NavigableList.Item>
                     )
                 }}
@@ -198,4 +205,31 @@ function processRecentSearches(eventLogResult?: EventLogResult): RecentSearch[] 
     }
 
     return recentSearches
+}
+
+function filterAndRankResults(query: string, recentSearches: RecentSearch[]): RecentSearch[] {
+    if (!query) {
+        // Should already be sorted by time
+        return recentSearches
+    }
+
+    const filteredSearches = recentSearches
+        .map(search => ({
+            ...search,
+            score: stringScore(search.searchText, query, 0),
+        }))
+        .filter(({ score }) => score > 0)
+
+    const sortedSearches = sortBy(filteredSearches, 'score', 'count')
+
+    // Depduplicate by search text
+    const usedSearchText = new Set<string>()
+    const searches: RecentSearch[] = []
+    for (const search of sortedSearches) {
+        if (!usedSearchText.has(search.searchText)) {
+            searches.push(search)
+            usedSearchText.add(search.searchText)
+        }
+    }
+    return searches
 }
