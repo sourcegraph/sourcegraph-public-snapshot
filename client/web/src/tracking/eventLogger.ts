@@ -10,6 +10,7 @@ import { getPreviousMonday, redactSensitiveInfoFromAppURL, stripURLParameters } 
 export const ANONYMOUS_USER_ID_KEY = 'sourcegraphAnonymousUid'
 export const COHORT_ID_KEY = 'sourcegraphCohortId'
 export const FIRST_SOURCE_URL_KEY = 'sourcegraphSourceUrl'
+export const DEVICE_ID_KEY = 'sourcegraphDeviceId'
 
 export class EventLogger implements TelemetryService {
     private hasStrippedQueryParameters = false
@@ -17,6 +18,8 @@ export class EventLogger implements TelemetryService {
     private anonymousUserID = ''
     private cohortID?: string
     private firstSourceURL?: string
+    private deviceID = ''
+    private eventID = 0
 
     private readonly cookieSettings: CookieAttributes = {
         // 365 days expiry, but renewed on activity.
@@ -75,6 +78,7 @@ export class EventLogger implements TelemetryService {
         }
         serverAdmin.trackAction(eventLabel, eventProperties, publicArgument)
         this.logToConsole(eventLabel, eventProperties)
+        this.eventID++
     }
 
     private logToConsole(eventLabel: string, object?: any): void {
@@ -113,6 +117,26 @@ export class EventLogger implements TelemetryService {
         return firstSourceURL
     }
 
+    // Device ID is a require field for Amplitude events.
+    // https://developers.amplitude.com/docs/http-api-v2
+    public getDeviceID(): string {
+        return this.deviceID
+    }
+
+    // Insert ID is used to deduplicate events in Amplitude.
+    // https://developers.amplitude.com/docs/http-api-v2#optional-keys
+    public getInsertID(): string {
+        const insertID = this.getDeviceID() + Date.now().toString()
+        return insertID
+    }
+
+    // Event ID is used to deduplicate events in Amplitude.
+    // This is used in the case that multiple events with the same userID and timestamp
+    // are sent. https://developers.amplitude.com/docs/http-api-v2#optional-keys
+    public getEventID(): number {
+        return this.eventID
+    }
+
     public getReferrer(): string {
         const referrer = document.referrer
         try {
@@ -129,6 +153,14 @@ export class EventLogger implements TelemetryService {
         }
     }
 
+    public getUserProperties(): string {
+        const userProps = localStorage.getItem('SOURCEGRAPH_USER_PROPERTIES')
+        if (userProps) {
+            return userProps
+        }
+
+        return JSON.stringify({})
+    }
     /**
      * Gets the anonymous user ID and cohort ID of the user from cookies.
      * If user doesn't have an anonymous user ID yet, a new one is generated, along with
@@ -142,7 +174,6 @@ export class EventLogger implements TelemetryService {
     private initializeLogParameters(): void {
         let anonymousUserID = cookies.get(ANONYMOUS_USER_ID_KEY) || localStorage.getItem(ANONYMOUS_USER_ID_KEY)
         let cohortID = cookies.get(COHORT_ID_KEY)
-
         if (!anonymousUserID) {
             anonymousUserID = uuid.v4()
             cohortID = getPreviousMonday(new Date())
@@ -156,8 +187,15 @@ export class EventLogger implements TelemetryService {
             cookies.set(COHORT_ID_KEY, cohortID, this.cookieSettings)
         }
 
+        let deviceID = cookies.get(DEVICE_ID_KEY)
+        if (!deviceID) {
+            deviceID = uuid.v4()
+            cookies.set(DEVICE_ID_KEY, deviceID)
+        }
+
         this.anonymousUserID = anonymousUserID
         this.cohortID = cohortID
+        this.deviceID = deviceID
     }
 }
 

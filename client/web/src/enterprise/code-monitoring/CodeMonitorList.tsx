@@ -125,7 +125,7 @@ export const CodeMonitorList: React.FunctionComponent<CodeMonitorListProps> = ({
                             pluralNoun="code monitors"
                             noSummaryIfAllNodesVisible={true}
                             cursorPaging={true}
-                            className="filtered-connection__centered-summary"
+                            withCenteredSummary={true}
                             emptyElement={<CodeMonitorEmptyList authenticatedUser={authenticatedUser} />}
                         />
                     </Container>

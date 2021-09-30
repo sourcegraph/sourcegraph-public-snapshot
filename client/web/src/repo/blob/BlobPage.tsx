@@ -60,12 +60,13 @@ interface Props
     globbing: boolean
     isMacPlatform: boolean
     showSearchNotebook: boolean
+    repoUrl: string
 }
 
 export const BlobPage: React.FunctionComponent<Props> = props => {
     const [wrapCode, setWrapCode] = useState(ToggleLineWrap.getValue())
     let renderMode = ToggleRenderedFileMode.getModeFromURL(props.location)
-    const { repoName, revision, commitID, filePath, isLightTheme, useBreadcrumb, mode } = props
+    const { repoName, revision, commitID, filePath, isLightTheme, useBreadcrumb, mode, repoUrl } = props
 
     // Log view event whenever a new Blob, or a Blob with a different render mode, is visited.
     useEffect(() => {
@@ -89,10 +90,11 @@ export const BlobPage: React.FunctionComponent<Props> = props => {
                         revision={revision}
                         filePath={filePath}
                         isDir={false}
+                        repoUrl={repoUrl}
                     />
                 ),
             }
-        }, [filePath, revision, repoName])
+        }, [filePath, revision, repoName, repoUrl])
     )
 
     // Bundle latest blob with all other file info to pass to `Blob`

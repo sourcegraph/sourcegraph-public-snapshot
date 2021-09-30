@@ -124,6 +124,11 @@ const mockDiff: NonNullable<ExternalChangesetFileDiffsFields['diff']> = {
     },
 }
 
+const mockChangesetSpecFileDiffs: NonNullable<ExternalChangesetFileDiffsFields['diff']> = {
+    __typename: 'PreviewRepositoryComparison',
+    fileDiffs: mockDiff.fileDiffs,
+}
+
 const ChangesetCountsOverTime: (variables: ChangesetCountsOverTimeVariables) => ChangesetCountsOverTimeResult = () => ({
     node: {
         __typename: 'BatchChange',
@@ -664,7 +669,7 @@ describe('Batches', () => {
                             __typename: 'VisibleChangesetSpec',
                             description: {
                                 __typename: 'GitBranchChangesetDescription',
-                                diff: mockDiff,
+                                diff: mockChangesetSpecFileDiffs,
                             },
                         },
                     }),

@@ -13,7 +13,7 @@ import (
 // ToMatchTree converts a protocol.SearchQuery into its equivalent MatchTree.
 // We don't send a match tree directly over the wire so using the protocol
 // package doesn't pull in all the dependencies that the match tree needs.
-func ToMatchTree(q protocol.SearchQuery) (MatchTree, error) {
+func ToMatchTree(q protocol.Node) (MatchTree, error) {
 	switch v := q.(type) {
 	case *protocol.CommitBefore:
 		return &CommitBefore{*v}, nil
@@ -34,32 +34,16 @@ func ToMatchTree(q protocol.SearchQuery) (MatchTree, error) {
 	case *protocol.DiffModifiesFile:
 		re, err := casetransform.CompileRegexp(v.Expr, v.IgnoreCase)
 		return &DiffModifiesFile{re}, err
-	case *protocol.And:
-		children := make([]MatchTree, 0, len(v.Children))
-		for _, child := range v.Children {
-			sub, err := ToMatchTree(child)
+	case *protocol.Operator:
+		operands := make([]MatchTree, 0, len(v.Operands))
+		for _, operand := range v.Operands {
+			sub, err := ToMatchTree(operand)
 			if err != nil {
 				return nil, err
 			}
-			children = append(children, sub)
+			operands = append(operands, sub)
 		}
-		return &And{Children: children}, nil
-	case *protocol.Or:
-		children := make([]MatchTree, 0, len(v.Children))
-		for _, child := range v.Children {
-			sub, err := ToMatchTree(child)
-			if err != nil {
-				return nil, err
-			}
-			children = append(children, sub)
-		}
-		return &Or{Children: children}, nil
-	case *protocol.Not:
-		sub, err := ToMatchTree(v.Child)
-		if err != nil {
-			return nil, err
-		}
-		return &Not{Child: sub}, nil
+		return &Operator{Kind: v.Kind, Operands: operands}, nil
 	default:
 		return nil, errors.Errorf("unknown protocol query type %T", q)
 	}
@@ -69,7 +53,7 @@ func ToMatchTree(q protocol.SearchQuery) (MatchTree, error) {
 type MatchTree interface {
 	// Match returns whether the given predicate matches a commit and, if it does,
 	// the portions of the commit that match in the form of *CommitHighlights
-	Match(*LazyCommit) (matched bool, highlights *CommitHighlights, err error)
+	Match(*LazyCommit) (matched bool, highlights *MatchedCommit, err error)
 }
 
 // AuthorMatches is a predicate that matches if the author's name or email address
@@ -78,7 +62,7 @@ type AuthorMatches struct {
 	*casetransform.Regexp
 }
 
-func (a *AuthorMatches) Match(lc *LazyCommit) (bool, *CommitHighlights, error) {
+func (a *AuthorMatches) Match(lc *LazyCommit) (bool, *MatchedCommit, error) {
 	return a.Regexp.Match(lc.AuthorName, &lc.LowerBuf) || a.Regexp.Match(lc.AuthorEmail, &lc.LowerBuf), nil, nil
 }
 
@@ -88,7 +72,7 @@ type CommitterMatches struct {
 	*casetransform.Regexp
 }
 
-func (c *CommitterMatches) Match(lc *LazyCommit) (bool, *CommitHighlights, error) {
+func (c *CommitterMatches) Match(lc *LazyCommit) (bool, *MatchedCommit, error) {
 	return c.Regexp.Match(lc.CommitterName, &lc.LowerBuf) || c.Regexp.Match(lc.CommitterEmail, &lc.LowerBuf), nil, nil
 }
 
@@ -97,7 +81,7 @@ type CommitBefore struct {
 	protocol.CommitBefore
 }
 
-func (c *CommitBefore) Match(lc *LazyCommit) (bool, *CommitHighlights, error) {
+func (c *CommitBefore) Match(lc *LazyCommit) (bool, *MatchedCommit, error) {
 	authorDate, err := lc.AuthorDate()
 	if err != nil {
 		return false, nil, err
@@ -110,7 +94,7 @@ type CommitAfter struct {
 	protocol.CommitAfter
 }
 
-func (c *CommitAfter) Match(lc *LazyCommit) (bool, *CommitHighlights, error) {
+func (c *CommitAfter) Match(lc *LazyCommit) (bool, *MatchedCommit, error) {
 	authorDate, err := lc.AuthorDate()
 	if err != nil {
 		return false, nil, err
@@ -124,13 +108,13 @@ type MessageMatches struct {
 	*casetransform.Regexp
 }
 
-func (m *MessageMatches) Match(lc *LazyCommit) (bool, *CommitHighlights, error) {
+func (m *MessageMatches) Match(lc *LazyCommit) (bool, *MatchedCommit, error) {
 	results := m.FindAllIndex(lc.Message, -1, &lc.LowerBuf)
 	if results == nil {
 		return false, nil, nil
 	}
 
-	return true, &CommitHighlights{
+	return true, &MatchedCommit{
 		Message: matchesToRanges(lc.Message, results),
 	}, nil
 }
@@ -141,7 +125,7 @@ type DiffMatches struct {
 	*casetransform.Regexp
 }
 
-func (dm *DiffMatches) Match(lc *LazyCommit) (bool, *CommitHighlights, error) {
+func (dm *DiffMatches) Match(lc *LazyCommit) (bool, *MatchedCommit, error) {
 	diff, err := lc.Diff()
 	if err != nil {
 		return false, nil, err
@@ -149,9 +133,9 @@ func (dm *DiffMatches) Match(lc *LazyCommit) (bool, *CommitHighlights, error) {
 
 	foundMatch := false
 
-	var fileDiffHighlights map[int]FileDiffHighlight
+	var fileDiffHighlights map[int]MatchedFileDiff
 	for fileIdx, fileDiff := range diff {
-		var hunkHighlights map[int]HunkHighlight
+		var hunkHighlights map[int]MatchedHunk
 		for hunkIdx, hunk := range fileDiff.Hunks {
 			var lineHighlights map[int]protocol.Ranges
 			for lineIdx, line := range bytes.Split(hunk.Body, []byte("\n")) {
@@ -178,20 +162,20 @@ func (dm *DiffMatches) Match(lc *LazyCommit) (bool, *CommitHighlights, error) {
 
 			if len(lineHighlights) > 0 {
 				if hunkHighlights == nil {
-					hunkHighlights = make(map[int]HunkHighlight, 1)
+					hunkHighlights = make(map[int]MatchedHunk, 1)
 				}
-				hunkHighlights[hunkIdx] = HunkHighlight{lineHighlights}
+				hunkHighlights[hunkIdx] = MatchedHunk{lineHighlights}
 			}
 		}
 		if len(hunkHighlights) > 0 {
 			if fileDiffHighlights == nil {
-				fileDiffHighlights = make(map[int]FileDiffHighlight)
+				fileDiffHighlights = make(map[int]MatchedFileDiff)
 			}
-			fileDiffHighlights[fileIdx] = FileDiffHighlight{HunkHighlights: hunkHighlights}
+			fileDiffHighlights[fileIdx] = MatchedFileDiff{MatchedHunks: hunkHighlights}
 		}
 	}
 
-	return foundMatch, &CommitHighlights{
+	return foundMatch, &MatchedCommit{
 		Diff: fileDiffHighlights,
 	}, nil
 }
@@ -202,87 +186,71 @@ type DiffModifiesFile struct {
 	*casetransform.Regexp
 }
 
-func (dmf *DiffModifiesFile) Match(lc *LazyCommit) (bool, *CommitHighlights, error) {
+func (dmf *DiffModifiesFile) Match(lc *LazyCommit) (bool, *MatchedCommit, error) {
 	diff, err := lc.Diff()
 	if err != nil {
 		return false, nil, err
 	}
 
 	foundMatch := false
-	var fileDiffHighlights map[int]FileDiffHighlight
+	var fileDiffHighlights map[int]MatchedFileDiff
 	for fileIdx, fileDiff := range diff {
 		oldFileMatches := dmf.FindAllIndex([]byte(fileDiff.OrigName), -1, &lc.LowerBuf)
 		newFileMatches := dmf.FindAllIndex([]byte(fileDiff.NewName), -1, &lc.LowerBuf)
 		if oldFileMatches != nil || newFileMatches != nil {
 			if fileDiffHighlights == nil {
-				fileDiffHighlights = make(map[int]FileDiffHighlight)
+				fileDiffHighlights = make(map[int]MatchedFileDiff)
 			}
 			foundMatch = true
-			fileDiffHighlights[fileIdx] = FileDiffHighlight{
+			fileDiffHighlights[fileIdx] = MatchedFileDiff{
 				OldFile: matchesToRanges([]byte(fileDiff.OrigName), oldFileMatches),
 				NewFile: matchesToRanges([]byte(fileDiff.NewName), newFileMatches),
 			}
 		}
 	}
 
-	return foundMatch, &CommitHighlights{
+	return foundMatch, &MatchedCommit{
 		Diff: fileDiffHighlights,
 	}, nil
 }
 
-// And is a predicate that matches if all of its children predicates match
-type And struct {
-	Children []MatchTree
+type Operator struct {
+	Kind     protocol.OperatorKind
+	Operands []MatchTree
 }
 
-func (a *And) Match(commit *LazyCommit) (bool, *CommitHighlights, error) {
-	highlights := &CommitHighlights{}
-	for _, child := range a.Children {
-		childMatched, childHighlights, err := child.Match(commit)
-		if err != nil {
-			return false, nil, err
-		}
-
-		if !childMatched {
-			// Since we don't care about the highlights if we don't match all children, we can short-circuit
-			return false, nil, nil
-		}
-		highlights.Merge(childHighlights)
-	}
-	return true, highlights, nil
-}
-
-// Or is a predicate that matches if any of its children predicates match
-type Or struct {
-	Children []MatchTree
-}
-
-func (o *Or) Match(commit *LazyCommit) (bool, *CommitHighlights, error) {
+func (o *Operator) Match(commit *LazyCommit) (bool, *MatchedCommit, error) {
+	resultMatches := &MatchedCommit{}
 	hasMatch := false
-	mergedHighlights := &CommitHighlights{}
-	for _, child := range o.Children {
-		matched, highlights, err := child.Match(commit)
+	for _, operand := range o.Operands {
+		matched, matches, err := operand.Match(commit)
 		if err != nil {
 			return false, nil, err
 		}
-		if matched {
-			// Because we want to highlight every match, we can't short circuit
+
+		switch o.Kind {
+		case protocol.Not:
+			if matched {
+				return false, nil, nil
+			}
+			return true, nil, nil
+		case protocol.And:
+			if !matched {
+				return false, nil, nil
+			}
 			hasMatch = true
-			mergedHighlights.Merge(highlights)
+			resultMatches = resultMatches.Merge(matches)
+		case protocol.Or:
+			if matched {
+				hasMatch = true
+				resultMatches = resultMatches.Merge(matches)
+			}
+		default:
+			panic("unreachable")
 		}
 	}
-	return hasMatch, mergedHighlights, nil
-}
 
-// Not is a predicate that matches if its child predicate does not match
-type Not struct {
-	Child MatchTree
-}
-
-func (n *Not) Match(commit *LazyCommit) (bool, *CommitHighlights, error) {
-	// Even if the child highlights, since we're negating, the match shouldn't be highlighted
-	foundMatch, _, err := n.Child.Match(commit)
-	return !foundMatch, nil, err
+	return hasMatch, resultMatches, nil
 }
 
 // matchesToRanges is a helper that takes the return value of regexp.FindAllStringIndex()

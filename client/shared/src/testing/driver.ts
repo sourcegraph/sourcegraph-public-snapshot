@@ -234,7 +234,7 @@ export class Driver {
             // you back to the login page
             await delay(1000)
             await this.page.click('button[type=submit]')
-            await this.page.waitForNavigation({ timeout: 3 * 10000 })
+            await this.page.waitForNavigation({ timeout: 300000 })
         } else if (url.pathname === '/sign-in') {
             await this.page.waitForSelector('.test-signin-form')
             await this.page.type('input', username)
@@ -242,7 +242,7 @@ export class Driver {
             // TODO(uwedeportivo): see comment above, same reason
             await delay(1000)
             await this.page.click('button[type=submit]')
-            await this.page.waitForNavigation({ timeout: 3 * 10000 })
+            await this.page.waitForNavigation({ timeout: 300000 })
         }
     }
 
@@ -363,8 +363,8 @@ export class Driver {
         // Delete existing external services if there are any.
         if (externalServices.totalCount !== 0) {
             await this.page.goto(this.sourcegraphBaseUrl + '/site-admin/external-services')
-            await this.page.waitFor('.test-filtered-connection')
-            await this.page.waitForSelector('.test-filtered-connection__loader', { hidden: true })
+            await this.page.waitForSelector('[data-testid="filtered-connection"]')
+            await this.page.waitForSelector('[data-testid="filtered-connection-loader"]', { hidden: true })
 
             // Matches buttons for deleting external services named ${displayName}.
             const deleteButtonSelector = `[data-test-external-service-name="${displayName}"] .test-delete-external-service-button`
@@ -765,7 +765,7 @@ export async function createDriverForTest(options?: Partial<DriverOptions>): Pro
         ...resolvedOptions,
         args,
         defaultViewport: null,
-        timeout: 30000,
+        timeout: 300000,
     }
     let browser: puppeteer.Browser
     const browserName = resolvedOptions.browser || 'chrome'

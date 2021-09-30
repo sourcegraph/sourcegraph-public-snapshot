@@ -275,6 +275,11 @@ func validateField(field, value string, negated bool, seen map[string]struct{}) 
 		return err
 	}
 
+	isValidGitDate := func() error {
+		_, err := ParseGitDate(value, time.Now)
+		return err
+	}
+
 	satisfies := func(fns ...func() error) error {
 		for _, fn := range fns {
 			if err := fn(); err != nil {
@@ -321,7 +326,7 @@ func validateField(field, value string, negated bool, seen map[string]struct{}) 
 	case
 		FieldBefore,
 		FieldAfter:
-		return satisfies(isNotNegated)
+		return satisfies(isNotNegated, isValidGitDate)
 	case
 		FieldAuthor,
 		FieldCommitter,
@@ -427,6 +432,20 @@ func validateTypeStructural(nodes []Node) error {
 			basic = basic + " and is not currently supported for diff searches"
 		}
 		return errors.New(basic)
+	}
+	return nil
+}
+
+func validateRefGlobs(nodes []Node) error {
+	if !ContainsRefGlobs(nodes) {
+		return nil
+	}
+	var indexValue string
+	VisitField(nodes, FieldIndex, func(value string, _ bool, _ Annotation) {
+		indexValue = value
+	})
+	if ParseYesNoOnly(indexValue) == Only {
+		return errors.Errorf("invalid index:%s (revisions with glob pattern cannot be resolved for indexed searches)", indexValue)
 	}
 	return nil
 }
@@ -537,6 +556,7 @@ func validate(nodes []Node) error {
 		validateRepoHasFile,
 		validateCommitParameters,
 		validateTypeStructural,
+		validateRefGlobs,
 	)
 }
 

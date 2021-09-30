@@ -34,15 +34,6 @@ const batchSpecExecutionFieldsFragment = gql`
             namespaceName
         }
     }
-
-    fragment BatchSpecExecutionLogEntryFields on ExecutionLogEntry {
-        key
-        command
-        startTime
-        exitCode
-        durationMilliseconds
-        out
-    }
 `
 
 export const fetchBatchSpecExecution = (id: Scalars['ID']): Observable<BatchSpecExecutionFields | null> =>
