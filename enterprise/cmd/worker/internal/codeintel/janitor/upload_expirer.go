@@ -48,13 +48,13 @@ func NewUploadExpirer(
 	interval time.Duration,
 	metrics *metrics,
 ) goroutine.BackgroundRoutine {
-	return goroutine.NewPeriodicGoroutine(context.Background() /*interval*/, time.Second, &uploadExpirer{
+	return goroutine.NewPeriodicGoroutine(context.Background(), time.Second, &uploadExpirer{
 		dbStore:                dbStore,
 		gitserverClient:        gitserverClient,
 		metrics:                metrics,
-		repositoryProcessDelay: time.Second, // repositoryProcessDelay,
+		repositoryProcessDelay: repositoryProcessDelay,
 		repositoryBatchSize:    repositoryBatchSize,
-		uploadProcessDelay:     time.Second, // uploadProcessDelay,
+		uploadProcessDelay:     uploadProcessDelay,
 		uploadBatchSize:        uploadBatchSize,
 		commitBatchSize:        commitBatchSize,
 		branchesCacheMaxKeys:   branchesCacheMaxKeys,
