@@ -37,9 +37,21 @@
 }
 
 .keybindings {
+    flex-grow: 1;
+    display: flex;
+    justify-content: flex-end;
+}
+
+.keybinding {
     display: flex;
     justify-content: center;
     align-items: center;
+
+    &:not(:last-child)::after {
+        content: 'or';
+        padding: 0.1rem;
+        display: inline;
+    }
 }
 
 .item-container {

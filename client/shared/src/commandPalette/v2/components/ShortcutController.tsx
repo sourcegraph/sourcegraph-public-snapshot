@@ -1,7 +1,9 @@
 import { Shortcut, ShortcutProvider } from '@slimsag/react-shortcuts'
 import React from 'react'
 
-import { KeyboardShortcutWithCallback } from '../constants'
+import { KeyboardShortcut } from '../../../keyboardShortcuts'
+
+export type KeyboardShortcutWithCallback = KeyboardShortcut & { onMatch: () => void }
 
 export const ShortcutController: React.FC<{
     shortcuts: KeyboardShortcutWithCallback[]

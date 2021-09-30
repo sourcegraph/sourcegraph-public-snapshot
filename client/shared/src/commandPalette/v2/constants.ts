@@ -1,6 +1,4 @@
-import { ActionItemAction } from '../../actions/ActionItem'
-import { KeyboardShortcut } from '../../keyboardShortcuts'
-
+import { CommandItem } from './components/CommandResult'
 import { useCommandPaletteStore } from './store'
 
 export enum CommandPaletteMode {
@@ -11,71 +9,53 @@ export enum CommandPaletteMode {
     RecentSearches = '#',
 }
 
-export type KeyboardShortcutWithCallback = KeyboardShortcut & { onMatch: () => void }
-
-export const COMMAND_PALETTE_SHORTCUTS: KeyboardShortcutWithCallback[] = [
+export const COMMAND_PALETTE_COMMANDS: CommandItem[] = [
     {
         id: 'openCommandPallette',
-        title: 'Command palette',
+        title: '[Beta] Command palette',
         keybindings: [{ held: ['Control'], ordered: ['k'] }],
-        onMatch: (): void => {
+        onClick: (): void => {
             useCommandPaletteStore.getState().toggleIsOpen({ open: true })
         },
     },
     {
         id: 'openCommandPalletteCommandMode',
-        title: 'Command palette > Command mode',
+        title: '[Beta] Command palette : Command mode',
         keybindings: [{ held: ['Control'], ordered: ['>'] }],
-        onMatch: (): void => {
+        onClick: (): void => {
             useCommandPaletteStore.getState().toggleIsOpen({ open: true, mode: CommandPaletteMode.Command })
         },
     },
     {
         id: 'openCommandPalletteRecentSearchesMode',
-        title: 'Command palette > Recent searches mode',
+        title: '[Beta] Command palette : Recent searches mode',
         keybindings: [{ held: ['Control'], ordered: ['#'] }],
-        onMatch: (): void => {
+        onClick: (): void => {
             useCommandPaletteStore.getState().toggleIsOpen({ open: true, mode: CommandPaletteMode.RecentSearches })
         },
     },
     {
         id: 'openCommandPalletteFuzzyMode',
-        title: 'Command palette > Fuzzy mode',
+        title: '[Beta] Command palette : Fuzzy mode',
         keybindings: [{ held: ['Control'], ordered: ['$'] }],
-        onMatch: (): void => {
+        onClick: (): void => {
             useCommandPaletteStore.getState().toggleIsOpen({ open: true, mode: CommandPaletteMode.Fuzzy })
         },
     },
     {
         id: 'openCommandPalletteJumpToLine',
-        title: 'Command palette > Jump to line mode',
+        title: '[Beta] Command palette : Jump to line mode',
         keybindings: [{ held: ['Control'], ordered: [':'] }],
-        onMatch: (): void => {
+        onClick: (): void => {
             useCommandPaletteStore.getState().toggleIsOpen({ open: true, mode: CommandPaletteMode.JumpToLine })
         },
     },
     {
         id: 'openCommandPalletteJumpToSymbol',
-        title: 'Command palette > Jump to symbol mode',
+        title: '[Beta] Command palette : Jump to symbol mode',
         keybindings: [{ held: ['Control'], ordered: ['@'] }],
-        onMatch: (): void => {
+        onClick: (): void => {
             useCommandPaletteStore.getState().toggleIsOpen({ open: true, mode: CommandPaletteMode.JumpToSymbol })
         },
-    },
-]
-
-export const BUILT_IN_ACTIONS: Pick<ActionItemAction, 'action' | 'active' | 'keybinding'>[] = [
-    {
-        action: {
-            id: 'SOURCEGRAPH.switchColorTheme',
-            command: 'open',
-            commandArguments: ['https://google.com'],
-            title: 'Switch color theme',
-        },
-        keybinding: {
-            ordered: ['T'],
-            held: ['Control', 'Alt'],
-        },
-        active: true,
     },
 ]

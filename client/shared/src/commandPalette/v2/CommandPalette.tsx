@@ -7,6 +7,8 @@ import { Modal } from 'reactstrap'
 import { from, Observable } from 'rxjs'
 import { filter, map, switchMap } from 'rxjs/operators'
 
+import { KEYBOARD_SHORTCUTS } from '@sourcegraph/web/src/keyboardShortcuts/keyboardShortcuts'
+
 import { ActionItemAction } from '../../actions/ActionItem'
 import { wrapRemoteObservable } from '../../api/client/api/common'
 import { FlatExtensionHostAPI } from '../../api/contract'
@@ -21,18 +23,13 @@ import { useObservable } from '../../util/useObservable'
 
 import styles from './CommandPalette.module.scss'
 import { CommandPaletteModesResult } from './components/CommandPaletteModesResult'
-import { CommandResult } from './components/CommandResult'
+import { CommandResult, CommandItem } from './components/CommandResult'
 import { FuzzyFinderResult } from './components/FuzzyFinderResult'
 import { JumpToLineResult } from './components/JumpToLineResult'
 import { JumpToSymbolResult } from './components/JumpToSymbolResult'
 import { RecentSearchesResult } from './components/RecentSearchesResult'
-import { ShortcutController } from './components/ShortcutController'
-import {
-    COMMAND_PALETTE_SHORTCUTS,
-    CommandPaletteMode,
-    BUILT_IN_ACTIONS,
-    KeyboardShortcutWithCallback,
-} from './constants'
+import { ShortcutController, KeyboardShortcutWithCallback } from './components/ShortcutController'
+import { COMMAND_PALETTE_COMMANDS, CommandPaletteMode } from './constants'
 import { useCommandPaletteStore } from './store'
 
 const getMode = (text: string): CommandPaletteMode | undefined =>
@@ -59,21 +56,8 @@ function useCommandList(value: string, extensionsController: CommandPaletteProps
         )
     )
 
-    // Built in action items
-
-    const actions = useMemo(
-        () => [
-            ...(extensionContributions
-                ? getContributedActionItems(extensionContributions, ContributableMenu.CommandPalette)
-                : []),
-            ...BUILT_IN_ACTIONS,
-        ],
-        // TODO: combine and map all actionItems
-        [extensionContributions]
-    )
-
     const onRunAction = useCallback(
-        ({ action }: ActionItemAction) => {
+        (action: ActionItemAction['action']) => {
             if (!action.command) {
                 // Unexpectedly arrived here; noop actions should not have event handlers that trigger
                 // this.
@@ -89,20 +73,67 @@ function useCommandList(value: string, extensionsController: CommandPaletteProps
         [extensionsController]
     )
 
-    const shortcuts = useMemo((): KeyboardShortcutWithCallback[] => {
-        const actionsWithShortcuts: KeyboardShortcutWithCallback[] = actions
-            .filter(({ keybinding }) => !!keybinding)
-            .map(action => ({
-                keybindings: action.keybinding ? [action.keybinding] : [],
-                onMatch: () => onRunAction(action),
-                id: action.action.id,
-                title: action.action.title ?? action.action.actionItem?.label ?? '',
-            }))
+    const extensionCommands: CommandItem[] = useMemo(
+        () => {
+            if (!extensionContributions) {
+                return []
+            }
+            return getContributedActionItems(extensionContributions, ContributableMenu.CommandPalette).map(
+                ({ action, keybinding }) => ({
+                    id: action.id,
+                    title: [action.category, action.title || action.command].filter(Boolean).join(': '),
+                    keybindings: keybinding ? [keybinding] : [],
+                    onClick: () => {
+                        onRunAction(action)
+                    },
+                })
+            )
+        },
+        // TODO: combine and map all actionItems
+        [extensionContributions, onRunAction]
+    )
 
-        return [...COMMAND_PALETTE_SHORTCUTS, ...actionsWithShortcuts]
-    }, [actions, onRunAction])
+    const shortcuts: KeyboardShortcutWithCallback[] = useMemo(
+        () =>
+            [...extensionCommands, ...COMMAND_PALETTE_COMMANDS]
+                .filter(({ keybindings }) => keybindings?.length)
+                .map(({ id, keybindings = [], onClick, title }) => ({
+                    keybindings,
+                    onMatch: onClick,
+                    id,
+                    title,
+                })),
+        [extensionCommands]
+    )
 
-    return { actions, shortcuts, onRunAction }
+    const builtInCommands: CommandItem[] = useMemo(
+        () => [
+            // Note: KEYBOARD_SHORTCUTS are shortcuts are already handled in different places
+            ...KEYBOARD_SHORTCUTS.map(({ id, title, keybindings }) => ({
+                id,
+                title: 'Built-in: ' + title,
+                keybindings,
+                onClick: () => {
+                    /** TODO: refactor existing handler to use the centralized store approach */
+                    const [keybinding] = keybindings
+                    if (!keybinding) {
+                        console.log('No keybinding for built-in command')
+                        return
+                    }
+
+                    for (const key of [...(keybinding.held || []), ...keybinding.ordered]) {
+                        window.dispatchEvent(new KeyboardEvent('keydown', { key }))
+                    }
+                },
+            })),
+            ...COMMAND_PALETTE_COMMANDS,
+        ],
+        []
+    )
+
+    const actions = useMemo(() => [...extensionCommands, ...builtInCommands], [extensionCommands, builtInCommands])
+
+    return { actions, shortcuts }
 }
 
 export interface CommandPaletteProps
@@ -134,7 +165,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
     getAuthenticatedUserID,
 }) => {
     const { isOpen, toggleIsOpen, value, setValue } = useCommandPaletteStore()
-    const { actions, shortcuts, onRunAction } = useCommandList(value, extensionsController)
+    const { actions, shortcuts } = useCommandList(value, extensionsController)
     const inputReference = useRef<HTMLInputElement>(null)
     const mode = getMode(value)
 
@@ -217,14 +248,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
                 </div>
                 {!mode && <CommandPaletteModesResult onSelect={handleInputFocus} />}
                 {mode === CommandPaletteMode.Command && (
-                    <CommandResult
-                        actions={actions}
-                        value={searchText}
-                        onRunAction={action => {
-                            onRunAction(action)
-                            handleClose()
-                        }}
-                    />
+                    <CommandResult actions={actions} value={searchText} onClick={handleClose} />
                 )}
                 {mode === CommandPaletteMode.RecentSearches && (
                     <RecentSearchesResult

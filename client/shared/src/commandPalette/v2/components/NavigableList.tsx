@@ -60,13 +60,15 @@ const NavigableListItem: React.FC<NavigableListItemProps> = ({
             >
                 {children}
 
-                {keybindings.map(({ ordered, held }, index) => (
-                    <span tabIndex={-1} key={index} className={styles.keybindings}>
-                        {[held || [], ...ordered].map((key, index) => (
-                            <kbd key={index}>{key}</kbd>
-                        ))}
-                    </span>
-                ))}
+                <span className={styles.keybindings}>
+                    {keybindings.map(({ ordered, held }, index) => (
+                        <span tabIndex={-1} key={index} className={styles.keybinding}>
+                            {[...(held || []), ...ordered].map((key, index) => (
+                                <kbd key={index}>{key}</kbd>
+                            ))}
+                        </span>
+                    ))}
+                </span>
             </Tag>
         </li>
     )

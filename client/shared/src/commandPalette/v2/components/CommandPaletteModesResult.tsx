@@ -1,16 +1,16 @@
 import React from 'react'
 
-import { COMMAND_PALETTE_SHORTCUTS } from '../constants'
+import { COMMAND_PALETTE_COMMANDS } from '../constants'
 
 import { NavigableList } from './NavigableList'
 
 export const CommandPaletteModesResult: React.FC<{ onSelect: () => void }> = ({ onSelect }) => (
-    <NavigableList items={COMMAND_PALETTE_SHORTCUTS}>
-        {({ title, keybindings, onMatch }, { active }) => (
+    <NavigableList items={COMMAND_PALETTE_COMMANDS}>
+        {({ title, keybindings, onClick }, { active }) => (
             <NavigableList.Item
                 active={active}
                 onClick={() => {
-                    onMatch()
+                    onClick()
                     onSelect()
                 }}
                 keybindings={keybindings}
