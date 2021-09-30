@@ -1,5 +1,5 @@
 import * as H from 'history'
-import React, { FunctionComponent, useEffect } from 'react'
+import React, { FunctionComponent, useState, useEffect } from 'react'
 import { RouteComponentProps } from 'react-router'
 
 import { TelemetryProps, TelemetryService } from '@sourcegraph/shared/src/telemetry/telemetryService'
@@ -7,6 +7,8 @@ import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { PageTitle } from '@sourcegraph/web/src/components/PageTitle'
 import { PageHeader } from '@sourcegraph/wildcard'
 
+import { CodeIntelConfigurationPageHeader } from './CodeIntelConfigurationPageHeader'
+import { PolicyListActions } from './PolicyListActions'
 import { RepositoryConfiguration } from './RepositoryConfiguration'
 import { RepositoryPolicies } from './RepositoryPolicies'
 
@@ -26,22 +28,28 @@ export const CodeIntelConfigurationPage: FunctionComponent<CodeIntelConfiguratio
     history,
 }) => {
     useEffect(() => telemetryService.logViewEvent('CodeIntelConfigurationPage'), [telemetryService])
+    const [displayActions, setDisplayAction] = useState(true)
+    const [isDeleting, setIsDeleting] = useState(false)
+    const [isLoading, setIsLoading] = useState(false)
 
     return (
         <>
             <PageTitle title="Precise code intelligence configuration" />
-            <PageHeader
-                headingElement="h2"
-                path={[
-                    {
-                        text: <>Precise code intelligence configuration</>,
-                    },
-                ]}
-                description={`Rules that define configuration for precise code intelligence ${
-                    repo ? 'in this repository' : 'over all repositories'
-                }.`}
-                className="mb-3"
-            />
+            <CodeIntelConfigurationPageHeader>
+                <PageHeader
+                    headingElement="h2"
+                    path={[
+                        {
+                            text: <>Precise code intelligence configuration zzz</>,
+                        },
+                    ]}
+                    description={`Rules that define configuration for precise code intelligence ${
+                        repo ? 'in this repository' : 'over all repositories'
+                    }.`}
+                    className="mb-3"
+                />
+                {displayActions && <PolicyListActions disabled={isLoading} deleting={isDeleting} history={history} />}
+            </CodeIntelConfigurationPageHeader>
 
             {repo ? (
                 <RepositoryConfiguration
@@ -50,9 +58,20 @@ export const CodeIntelConfigurationPage: FunctionComponent<CodeIntelConfiguratio
                     isLightTheme={isLightTheme}
                     telemetryService={telemetryService}
                     history={history}
+                    onHandleDisplayAction={setDisplayAction}
+                    onHandleIsDeleting={setIsDeleting}
+                    onHandleIsLoading={setIsLoading}
                 />
             ) : (
-                <RepositoryPolicies repo={repo} isGlobal={true} indexingEnabled={indexingEnabled} history={history} />
+                <RepositoryPolicies
+                    repo={repo}
+                    isGlobal={true}
+                    indexingEnabled={indexingEnabled}
+                    history={history}
+                    onHandleDisplayAction={setDisplayAction}
+                    onHandleIsDeleting={setIsDeleting}
+                    onHandleIsLoading={setIsLoading}
+                />
             )}
         </>
     )

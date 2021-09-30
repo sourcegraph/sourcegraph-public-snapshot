@@ -12,13 +12,12 @@ import { CodeIntelligenceConfigurationPolicyFields } from '../../../graphql-oper
 import styles from './CodeIntelligencePolicyTable.module.scss'
 import { IndexingPolicyDescription } from './IndexingPolicyDescription'
 import { RetentionPolicyDescription } from './RetentionPolicyDescription'
-import { DeletePolicyResult } from './usePoliciesConfigurations'
 
 export interface CodeIntelligencePolicyTableProps {
     indexingEnabled: boolean
     disabled: boolean
     policies: CodeIntelligenceConfigurationPolicyFields[]
-    onDeletePolicy?: (id: string, name: string) => DeletePolicyResult
+    onDeletePolicy?: (id: string, name: string) => Promise<void>
     history: H.History
 }
 
@@ -29,7 +28,7 @@ export const CodeIntelligencePolicyTable: FunctionComponent<CodeIntelligencePoli
     onDeletePolicy,
     history,
 }) => (
-    <div className={classNames(styles.grid, 'mb-3')}>
+    <div className={styles.grid}>
         {policies.map(policy => (
             <React.Fragment key={policy.id}>
                 <span className={styles.separator} />

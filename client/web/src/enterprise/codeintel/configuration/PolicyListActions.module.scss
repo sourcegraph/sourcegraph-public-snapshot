@@ -1,0 +1,13 @@
+.delete {
+    grid-area: button;
+    display: block;
+    align-self: center;
+    justify-self: start;
+    margin: 0 0 0 5px;
+}
+
+.btn {
+    grid-area: button;
+    align-self: center;
+    justify-self: end;
+}
