@@ -76,6 +76,7 @@ export const CodeIntelligencePolicyTable: FunctionComponent<CodeIntelligencePoli
                             onClick={() => history.push(`./configuration/${policy.id}`)}
                             className="p-0"
                             disabled={disabled}
+                            title="Edit the policy"
                         >
                             <PencilIcon className="icon-inline" />
                         </Button>
@@ -87,6 +88,7 @@ export const CodeIntelligencePolicyTable: FunctionComponent<CodeIntelligencePoli
                             onClick={() => onDeletePolicy(policy.id, policy.name)}
                             className="ml-2 p-0"
                             disabled={disabled}
+                            title="Delete the policy"
                         >
                             <TrashIcon className="icon-inline text-danger" />
                         </Button>
