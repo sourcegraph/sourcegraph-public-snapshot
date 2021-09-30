@@ -93,12 +93,11 @@ export const CodeIntelConfigurationPolicyPage: FunctionComponent<CodeIntelConfig
                             setPolicy={setPolicy}
                             disabled={policy.protected}
                         />
-                    </Container>
 
-                    <RetentionSettings policy={policy} setPolicy={setPolicy} />
-                    {indexingEnabled && <IndexingSettings policy={policy} setPolicy={setPolicy} />}
+                        <RetentionSettings policy={policy} setPolicy={setPolicy} />
 
-                    <Container className="mt-2">
+                        {indexingEnabled && <IndexingSettings policy={policy} setPolicy={setPolicy} />}
+
                         <Button
                             type="submit"
                             variant="primary"

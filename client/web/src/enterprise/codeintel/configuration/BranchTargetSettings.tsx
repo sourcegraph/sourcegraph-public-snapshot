@@ -20,7 +20,7 @@ export const BranchTargetSettings: FunctionComponent<BranchTargetSettingsProps> 
     const [pattern, setPattern] = useState(policy.pattern)
 
     return (
-        <>
+        <div className="form-group">
             <div className="form-group">
                 <label htmlFor="name">Name</label>
                 <input
@@ -75,6 +75,6 @@ export const BranchTargetSettings: FunctionComponent<BranchTargetSettingsProps> 
             </div>
 
             {repoId && <GitObjectPreview repoId={repoId} type={policy.type} pattern={pattern} />}
-        </>
+        </div>
     )
 }
