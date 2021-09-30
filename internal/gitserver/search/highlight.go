@@ -3,13 +3,13 @@ package search
 import (
 	"sort"
 
-	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
+	"github.com/sourcegraph/sourcegraph/internal/search/result"
 )
 
 // MatchedCommit are the portions of a commit that match a query
 type MatchedCommit struct {
 	// Message is the set of ranges of the commit message that were matched
-	Message protocol.Ranges
+	Message result.Ranges
 
 	// Diff is the set of files deltas that have matches in the parsed diff.
 	// The key of the map is the index of the delta in the diff.
@@ -40,8 +40,8 @@ func (c *MatchedCommit) Merge(other *MatchedCommit) *MatchedCommit {
 }
 
 type MatchedFileDiff struct {
-	OldFile      protocol.Ranges
-	NewFile      protocol.Ranges
+	OldFile      result.Ranges
+	NewFile      result.Ranges
 	MatchedHunks map[int]MatchedHunk
 }
 
@@ -63,7 +63,7 @@ func (f MatchedFileDiff) Merge(other MatchedFileDiff) MatchedFileDiff {
 }
 
 type MatchedHunk struct {
-	MatchedLines map[int]protocol.Ranges
+	MatchedLines map[int]result.Ranges
 }
 
 func (h MatchedHunk) Merge(other MatchedHunk) MatchedHunk {

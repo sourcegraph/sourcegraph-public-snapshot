@@ -1,4 +1,4 @@
-package protocol
+package result
 
 import (
 	"encoding/json"
