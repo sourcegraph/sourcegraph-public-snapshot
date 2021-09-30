@@ -83,22 +83,11 @@ func (s *GitserverRepoStore) IterateRepoGitserverStatus(ctx context.Context, opt
 		return errors.New("nil repoFn")
 	}
 
-	q := `
--- source: internal/database/gitserver_repos.go:GitserverRepoStore.IterateRepoGitserverStatus
-SELECT repo.id,
-       repo.name,
-       gr.clone_status,
-       gr.shard_id,
-       gr.last_external_service,
-       gr.last_error,
-       gr.last_fetched,
-       gr.updated_at
-FROM repo
-    LEFT JOIN gitserver_repos gr ON gr.repo_id = repo.id
-    WHERE repo.deleted_at IS NULL
-`
+	var q string
 	if options.OnlyWithoutShard {
-		q = q + "AND (gr.shard_id = '' OR gr IS NULL)"
+		q = iterateRepoGitserverStatusWithoutShardQuery
+	} else {
+		q = iterateRepoGitserverQuery
 	}
 
 	rows, err := s.Query(ctx, sqlf.Sprintf(q))
@@ -146,6 +135,52 @@ FROM repo
 
 	return nil
 }
+
+const iterateRepoGitserverQuery = `
+-- source: internal/database/gitserver_repos.go:GitserverRepoStore.IterateRepoGitserverStatus
+SELECT
+	repo.id,
+	repo.name,
+	gr.clone_status,
+	gr.shard_id,
+	gr.last_external_service,
+	gr.last_error,
+	gr.last_fetched,
+	gr.updated_at
+FROM repo
+LEFT JOIN gitserver_repos gr ON gr.repo_id = repo.id
+WHERE repo.deleted_at IS NULL
+`
+
+const iterateRepoGitserverStatusWithoutShardQuery = `
+-- source: internal/database/gitserver_repos.go:GitserverRepoStore.IterateRepoGitserverStatus
+(
+	SELECT
+		repo.id,
+		repo.name,
+		NULL AS clone_status,
+		NULL AS shard_id,
+		NULL AS last_external_service,
+		NULL AS last_error,
+		NULL AS last_fetched,
+		NULL AS updated_at
+	FROM repo
+	WHERE repo.deleted_at IS NULL AND NOT EXISTS (SELECT 1 FROM gitserver_repos gr WHERE gr.repo_id = repo.id)
+) UNION ALL (
+	SELECT
+		repo.id,
+		repo.name,
+		gr.clone_status,
+		gr.shard_id,
+		gr.last_external_service,
+		gr.last_error,
+		gr.last_fetched,
+		gr.updated_at
+	FROM repo
+	JOIN gitserver_repos gr ON gr.repo_id = repo.id
+	WHERE repo.deleted_at IS NULL AND gr.shard_id = ''
+)
+`
 
 func (s *GitserverRepoStore) GetByID(ctx context.Context, id api.RepoID) (*types.GitserverRepo, error) {
 	q := `

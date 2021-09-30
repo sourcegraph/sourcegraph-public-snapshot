@@ -29,7 +29,7 @@ jobs:
             $PSDefaultParameterValues['*GitHub*:Token'] = ConvertTo-SecureString -String $env:GITHUB_TOKEN -AsPlainText -Force
             $PSDefaultParameterValues['*GitHubBetaProject*:ProjectNodeId'] = 'MDExOlByb2plY3ROZXh0MzI3Ng==' # https://github.com/orgs/sourcegraph/projects/200
 
-            $fixIssuePattern = "(?:close|fixe?|resolve)(?:[sd])? (?:#|(?<owner>[^/]+)/(?<repo>[^/]+)|https://github\.com/(?<owner>[^/]+)/(?<repo>[^/]+)/issues/)(?<number>\d+)"
+            $fixIssuePattern = "(?:close|fixe?|resolve)(?:[sd])? (?:#|(?<owner>[^/]+)/(?<repo>[^/]+)#|https://github\.com/(?<owner>[^/]+)/(?<repo>[^/]+)/issues/)(?<number>\d+)"
 
             switch ($github.event_name) {
 
@@ -47,7 +47,7 @@ jobs:
                 $status = if ($github.event.action -eq 'closed') { 'Done' } else { 'In Progress' }
 
                 Get-GitHubBetaProjectItem |
-                  Where-Object { $_.content.number -eq $github.event.issue.number } |
+                  Where-Object { $_.content -and $_.content.number -eq $github.event.issue.number } |
                   Select-Object -First 1 |
                   Set-GitHubBetaProjectItemField -FieldName 'Status' -Value $status |
                   ForEach-Object { Write-Information "Updated `"Status`" field of project item for $($_.content.url) to `"$status`"" }

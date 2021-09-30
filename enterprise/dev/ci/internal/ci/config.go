@@ -12,6 +12,7 @@ import (
 	"github.com/hashicorp/go-multierror"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/dev/ci/images"
+	"github.com/sourcegraph/sourcegraph/enterprise/dev/ci/internal/ci/changed"
 )
 
 // Config is the set of configuration parameters that determine the structure of the CI build. These
@@ -30,7 +31,7 @@ type Config struct {
 
 	// ChangedFiles is the list of files that have changed since the
 	// merge-base with origin/main.
-	ChangedFiles ChangedFiles
+	ChangedFiles changed.Files
 
 	// ProfilingEnabled, if true, tells buildkite to print timing and resource utilization information
 	// for each command

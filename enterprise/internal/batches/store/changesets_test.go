@@ -1627,6 +1627,25 @@ func testStoreListChangesetSyncData(t *testing.T, ctx context.Context, s *Store,
 		}
 	})
 
+	t.Run("only for subset of changesets", func(t *testing.T) {
+		hs, err := s.ListChangesetSyncData(ctx, ListChangesetSyncDataOpts{ChangesetIDs: []int64{changesets[0].ID}})
+		if err != nil {
+			t.Fatal(err)
+		}
+		want := []*btypes.ChangesetSyncData{
+			{
+				ChangesetID:           changesets[0].ID,
+				UpdatedAt:             clock.Now(),
+				LatestEvent:           clock.Now(),
+				ExternalUpdatedAt:     clock.Now(),
+				RepoExternalServiceID: "https://github.com/",
+			},
+		}
+		if diff := cmp.Diff(want, hs); diff != "" {
+			t.Fatal(diff)
+		}
+	})
+
 	t.Run("ignore closed batch change", func(t *testing.T) {
 		closedBatchChangeID := changesets[0].BatchChanges[0].BatchChangeID
 		c, err := s.GetBatchChange(ctx, GetBatchChangeOpts{ID: closedBatchChangeID})

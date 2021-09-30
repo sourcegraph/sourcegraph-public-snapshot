@@ -59,6 +59,10 @@ type Commandset struct {
 	Commands []string          `yaml:"commands"`
 	Checks   []string          `yaml:"checks"`
 	Env      map[string]string `yaml:"env"`
+
+	// If this is set to true, then the commandset requires the dev-private
+	// repository to be cloned at the same level as the sourcegraph repository.
+	RequiresDevPrivate bool `yaml:"requiresDevPrivate"`
 }
 
 // UnmarshalYAML implements the Unmarshaler interface.

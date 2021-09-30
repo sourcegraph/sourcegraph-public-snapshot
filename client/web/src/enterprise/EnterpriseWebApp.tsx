@@ -51,5 +51,6 @@ export const EnterpriseWebApp: React.FunctionComponent = () => (
         codeIntelligenceEnabled={true}
         codeInsightsEnabled={true}
         batchChangesEnabled={window.context.batchChangesEnabled}
+        searchContextsEnabled={true}
     />
 )

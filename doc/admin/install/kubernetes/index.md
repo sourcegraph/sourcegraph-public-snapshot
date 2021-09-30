@@ -22,7 +22,7 @@ Additionally, we recommend reading the [configuration guide](configure.md#gettin
 
 - [Customization](./configure.md#customizations)
 - [Storage class](./configure.md#configure-a-storage-class)
-- [Network Acess](./configure.md#security-configure-network-access)
+- [Network Access](./configure.md#configure-network-access)
 - [PostgreSQL Database](./configure.md#sourcegraph-databases)
 - [Scaling services](./scale.md#tuning-replica-counts-for-horizontal-scalability)
 - [Cluster role administrator access](https://kubernetes.io/docs/reference/access-authn-authz/rbac/)
@@ -98,7 +98,7 @@ table.
 
 ### Kubernetes
 
-Kubernetes is a portable, extensible, open-source platform for managing containerized workloads and services, that facilitates both declarative configuration and automation. Applications are deployed via set a of YAML files to configure the various components (storage, networking, containers). Learn more about Kubernetes [here](https://kubernetes.io/docs/concepts/overview/what-is-kubernetes/).
+Kubernetes is a portable, extensible, open-source platform for managing containerized workloads and services, that facilitates both declarative configuration and automation. Applications are deployed via a set of YAML files to configure the various components (storage, networking, containers). Learn more about Kubernetes [here](https://kubernetes.io/docs/concepts/overview/what-is-kubernetes/).
 
 Our Kubernetes support has the following requirements:
 

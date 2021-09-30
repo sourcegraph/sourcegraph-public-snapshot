@@ -92,6 +92,7 @@ export const RepositoriesPopover: React.FunctionComponent<RepositoriesPopoverPro
             hasNextPage={hasNextPage}
             connectionQuery={query}
             noSummaryIfAllNodesVisible={true}
+            compact={true}
         />
     )
 
@@ -104,21 +105,22 @@ export const RepositoriesPopover: React.FunctionComponent<RepositoriesPopoverPro
                     inputPlaceholder="Search repositories..."
                     inputClassName="connection-popover__input"
                     autoFocus={true}
+                    compact={true}
                 />
-                <SummaryContainer>{query && summary}</SummaryContainer>
-                {error && <ConnectionError errors={[error.message]} />}
+                <SummaryContainer compact={true}>{query && summary}</SummaryContainer>
+                {error && <ConnectionError errors={[error.message]} compact={true} />}
                 {connection && (
-                    <ConnectionList className="connection-popover__nodes">
+                    <ConnectionList compact={true} className="connection-popover__nodes">
                         {connection.nodes.map(node => (
                             <RepositoryNode key={node.id} node={node} currentRepo={currentRepo} />
                         ))}
                     </ConnectionList>
                 )}
-                {loading && <ConnectionLoading />}
+                {loading && <ConnectionLoading compact={true} />}
                 {!loading && connection && (
-                    <SummaryContainer>
+                    <SummaryContainer compact={true}>
                         {!query && summary}
-                        {hasNextPage && <ShowMoreButton onClick={fetchMore} />}
+                        {hasNextPage && <ShowMoreButton compact={true} onClick={fetchMore} />}
                     </SummaryContainer>
                 )}
             </ConnectionContainer>

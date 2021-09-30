@@ -106,6 +106,9 @@ async function webpackDevelopmentServer() {
     hot: !process.env.NO_HOT,
     host: DEV_SERVER_LISTEN_ADDR.host,
     port: DEV_SERVER_LISTEN_ADDR.port,
+    // Disable compression on the dev server because gzip buffers the full
+    // response before sending it, which makes streaming search not stream.
+    compress: false,
     client: {
       overlay: false,
       webSocketTransport: 'ws',

@@ -21,47 +21,48 @@
         }
     }
 
-    .filtered-connection & {
-        &__nodes {
-            &:empty {
-                display: none;
-            }
-            border-top: solid 1px var(--border-color-2);
-            padding-top: 0.25rem;
-            padding-bottom: 0.25rem;
+    &__nodes {
+        &:empty {
+            display: none;
         }
 
-        &__node {
+        border-top: solid 1px var(--border-color-2);
+        padding-top: 0.25rem !important;
+        padding-bottom: 0.25rem !important;
+    }
+
+    &__node {
+        border-bottom: none;
+
+        &:last-child {
             border-bottom: none;
+        }
 
-            &:last-child {
-                border-bottom: none;
-            }
-            &-link {
-                display: flex;
-                align-items: center;
-                padding: var(--popover-item-padding-v) var(--popover-item-padding-h);
-                color: var(--text-muted);
+        &-link {
+            display: flex;
+            align-items: center;
+            padding: var(--popover-item-padding-v) var(--popover-item-padding-h);
+            color: var(--text-muted);
+            text-decoration: none;
+            border: none !important;
+
+            &:hover,
+            &:focus {
+                background-color: var(--primary);
+                color: var(--light-text);
                 text-decoration: none;
-                border: none;
+            }
 
-                &:hover,
-                &:focus {
-                    background-color: var(--primary);
-                    color: var(--light-text);
-                }
-
-                &--active {
-                    font-weight: inherit;
-                    background-color: var(--color-bg-3);
-                }
+            &--active {
+                font-weight: inherit;
+                background-color: var(--color-bg-3);
             }
         }
+    }
 
-        &__input {
-            margin: 0.5rem;
-            padding-left: 0.5rem;
-            padding-right: 0.5rem;
-        }
+    &__input {
+        margin: 0.5rem;
+        padding-left: 0.5rem;
+        padding-right: 0.5rem;
     }
 }

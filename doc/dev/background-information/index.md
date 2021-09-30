@@ -37,6 +37,7 @@
 - [Developing an out-of-band migration](oobmigrations.md)
 - [Developing a background routine](backgroundroutine.md)
 - [High-performance SQL](sql.md)
+- [Code host connections on local dev environment](code-host.md)
 
 ## [Languages](languages/index.md)
 

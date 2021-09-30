@@ -127,6 +127,7 @@ export const commonWebGraphQlResults: Partial<WebGraphQlOperations & SharedGraph
     }),
     EventLogsData: () => ({
         node: {
+            __typename: 'User',
             eventLogs: {
                 nodes: [],
                 totalCount: 0,
@@ -196,6 +197,7 @@ export const commonWebGraphQlResults: Partial<WebGraphQlOperations & SharedGraph
     }),
     UserRepositories: () => ({
         node: {
+            __typename: 'User',
             repositories: {
                 totalCount: 0,
                 nodes: [],
@@ -221,6 +223,11 @@ export const commonWebGraphQlResults: Partial<WebGraphQlOperations & SharedGraph
     GetTemporarySettings: () => ({
         temporarySettings: {
             contents: '{}',
+        },
+    }),
+    EditTemporarySettings: () => ({
+        editTemporarySettings: {
+            alwaysNil: null,
         },
     }),
 }

@@ -137,6 +137,7 @@ export const treePageRepositoryFragment = gql`
         name
         description
         viewerCanAdminister
+        url
     }
 `
 
@@ -177,10 +178,11 @@ export const TreePage: React.FunctionComponent<Props> = ({
                         revision={revision}
                         filePath={filePath}
                         isDir={true}
+                        repoUrl={repo.url}
                     />
                 ),
             }
-        }, [repo.name, revision, filePath])
+        }, [repo.name, repo.url, revision, filePath])
     )
 
     const [showOlderCommits, setShowOlderCommits] = useState(false)

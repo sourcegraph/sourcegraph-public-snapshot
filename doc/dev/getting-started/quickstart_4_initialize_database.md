@@ -5,6 +5,7 @@
 The Sourcegraph server reads PostgreSQL connection configuration from the [`PG*` environment variables](http://www.postgresql.org/docs/current/static/libpq-envars.html).
 
 The development server startup script as well as the docker compose file provide default settings, so it will work out of the box.
+
 To initialize your database, you may have to set the appropriate environment variables before running the `createdb` command:
 
 ```sh
@@ -56,7 +57,7 @@ You need a fresh Postgres database and a database user that has full ownership o
 
     The Sourcegraph server reads PostgreSQL connection configuration from the [`PG*` environment variables](http://www.postgresql.org/docs/current/static/libpq-envars.html).
 
-    The startup script sets default values that work with the setup described here, but if you are using different values you can overwrite them, for example, in your `~/.bashrc`:
+    Our configuration in `sg.config.yaml` (we'll see what `sg` is in the next step) sets values that work with the setup described here, but if you are using different values you can overwrite them, for example, in your `~/.bashrc`:
 
     ```
     export PGPORT=5432

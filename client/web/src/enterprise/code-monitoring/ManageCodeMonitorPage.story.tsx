@@ -4,11 +4,10 @@ import React from 'react'
 import { NEVER, of } from 'rxjs'
 import sinon from 'sinon'
 
-import { AuthenticatedUser } from '../../auth'
 import { EnterpriseWebStory } from '../components/EnterpriseWebStory'
 
 import { ManageCodeMonitorPage } from './ManageCodeMonitorPage'
-import { mockCodeMonitor } from './testing/util'
+import { mockCodeMonitor, mockUser } from './testing/util'
 
 const { add } = storiesOf('web/enterprise/code-monitoring/ManageCodeMonitorPage', module).addParameters({
     design: {
@@ -23,7 +22,7 @@ add('Example', () => (
         {props => (
             <ManageCodeMonitorPage
                 {...props}
-                authenticatedUser={{ id: 'foobar', username: 'alice', email: 'alice@alice.com' } as AuthenticatedUser}
+                authenticatedUser={{ ...mockUser, id: 'foobar', username: 'alice', email: 'alice@alice.com' }}
                 updateCodeMonitor={sinon.fake()}
                 fetchCodeMonitor={sinon.fake((id: string) => of(mockCodeMonitor))}
                 deleteCodeMonitor={sinon.fake((id: string) => NEVER)}
@@ -43,9 +42,7 @@ add('Disabled toggles', () => {
             {props => (
                 <ManageCodeMonitorPage
                     {...props}
-                    authenticatedUser={
-                        { id: 'foobar', username: 'alice', email: 'alice@alice.com' } as AuthenticatedUser
-                    }
+                    authenticatedUser={{ ...mockUser, id: 'foobar', username: 'alice', email: 'alice@alice.com' }}
                     updateCodeMonitor={sinon.fake()}
                     fetchCodeMonitor={sinon.fake((id: string) => of(monitor))}
                     deleteCodeMonitor={sinon.fake((id: string) => NEVER)}

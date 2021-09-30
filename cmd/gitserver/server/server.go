@@ -7,10 +7,12 @@ import (
 	"container/list"
 	"context"
 	"crypto/sha256"
+	"encoding/gob"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"io"
+	"math"
 	"net/http"
 	"os"
 	"os/exec"
@@ -29,6 +31,7 @@ import (
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
+	"golang.org/x/sync/errgroup"
 	"golang.org/x/time/rate"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
@@ -39,10 +42,12 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/search"
 	"github.com/sourcegraph/sourcegraph/internal/honey"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/internal/mutablelimiter"
 	"github.com/sourcegraph/sourcegraph/internal/repotrackutil"
+	streamhttp "github.com/sourcegraph/sourcegraph/internal/search/streaming/http"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -257,7 +262,7 @@ func shortGitCommandTimeout(args []string) time.Duration {
 		// example a search over all repos in an organization may have several
 		// large repos. All of those repos will be competing for IO => we need
 		// a larger timeout.
-		return longGitCommandTimeout
+		return conf.GitLongCommandTimeout()
 
 	case "ls-remote":
 		return 30 * time.Second
@@ -285,11 +290,6 @@ func shortGitCommandSlow(args []string) time.Duration {
 		return 2500 * time.Millisecond
 	}
 }
-
-// This is a timeout for long git commands like clone or remote update.
-// that may take a while for large repos. These types of commands should
-// be run in the background.
-var longGitCommandTimeout = time.Hour
 
 // Handler returns the http.Handler that should be used to serve requests.
 func (s *Server) Handler() http.Handler {
@@ -338,6 +338,7 @@ func (s *Server) Handler() http.Handler {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/archive", s.handleArchive)
 	mux.HandleFunc("/exec", s.handleExec)
+	mux.HandleFunc("/search", s.handleSearch)
 	mux.HandleFunc("/p4-exec", s.handleP4Exec)
 	mux.HandleFunc("/list", s.handleList)
 	mux.HandleFunc("/list-gitolite", s.handleListGitolite)
@@ -430,20 +431,8 @@ func (s *Server) cloneJobProducer(ctx context.Context, jobs chan<- *cloneJob) {
 	}
 }
 
-// This counter is introduced along with the asyncDoCloneInvoked and the cloneQueueLength
-// counters. We want to verify if the value of all these counters are same in a given time
-// period. This would help us verify our producer-consumer pipeline for asynchronouse repo
-// cloning. For more, see associated commeents attached with the declaration of the mentioned
-// counters in this file.
-var cloneJobProcessed = promauto.NewCounter(prometheus.CounterOpts{
-	Name: "src_gitserver_clone_job_processed",
-	Help: "Number of cloneJobs processed",
-})
-
 func (s *Server) cloneJobConsumer(ctx context.Context, jobs <-chan *cloneJob) {
-	// TODO: What we want eventually.
-	// for j := range jobs {
-	for range jobs {
+	for j := range jobs {
 		select {
 		case <-ctx.Done():
 			log15.Error("cloneJobConsumer: ", "error", ctx.Err())
@@ -451,26 +440,22 @@ func (s *Server) cloneJobConsumer(ctx context.Context, jobs <-chan *cloneJob) {
 		default:
 		}
 
-		// TODO: We will uncomment this once we know our changes work as expected.
-		//
-		// ctx, cancel, err := s.acquireCloneLimiter(ctx)
-		// if err != nil {
-		// 	log15.Error("cloneJobConsumer: ", "error", err)
-		// 	continue
-		// }
+		ctx, cancel, err := s.acquireCloneLimiter(ctx)
+		if err != nil {
+			log15.Error("cloneJobConsumer: ", "error", err)
+			continue
+		}
 
-		// go func() {
-		// 	defer cancel()
+		go func(job *cloneJob) {
+			defer cancel()
 
-		// 	err := s.doClone(ctx, j.repo, j.dir, j.syncer, j.lock, j.remoteURL, j.options)
-		// 	if err != nil {
-		// 		log15.Error("failed to clone repo", "repo", j.repo, "error", err)
-		// 	}
+			err := s.doClone(ctx, job.repo, job.dir, job.syncer, job.lock, job.remoteURL, job.options)
+			if err != nil {
+				log15.Error("failed to clone repo", "repo", job.repo, "error", err)
+			}
 
-		// 	s.setLastErrorNonFatal(ctx, j.repo, err)
-		// }()
-
-		cloneJobProcessed.Inc()
+			s.setLastErrorNonFatal(ctx, job.repo, err)
+		}(j)
 	}
 }
 
@@ -803,7 +788,7 @@ func (s *Server) handleRepoUpdate(w http.ResponseWriter, r *http.Request) {
 	// cancel the git commands partway through if the request terminates.
 	ctx, cancel1 := s.serverContext()
 	defer cancel1()
-	ctx, cancel2 := context.WithTimeout(ctx, longGitCommandTimeout)
+	ctx, cancel2 := context.WithTimeout(ctx, conf.GitLongCommandTimeout())
 	defer cancel2()
 	resp.QueueCap, resp.QueueLen = s.queryCloneLimiter()
 	if !repoCloned(dir) && !s.skipCloneForTests {
@@ -905,6 +890,172 @@ func (s *Server) handleArchive(w http.ResponseWriter, r *http.Request) {
 	req.Args = append(req.Args, paths...)
 
 	s.exec(w, r, req)
+}
+
+func (s *Server) handleSearch(w http.ResponseWriter, r *http.Request) {
+	protocol.RegisterGob()
+	var req protocol.SearchRequest
+	if err := gob.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	s.search(w, r, &req)
+}
+
+func (s *Server) search(w http.ResponseWriter, r *http.Request, args *protocol.SearchRequest) {
+	ctx := r.Context()
+	args.Repo = protocol.NormalizeRepo(args.Repo)
+	if args.Limit == 0 {
+		args.Limit = math.MaxInt32
+	}
+
+	dir := s.dir(args.Repo)
+	if !repoCloned(dir) {
+		if conf.Get().DisableAutoGitUpdates {
+			log15.Debug("not cloning on demand as DisableAutoGitUpdates is set")
+			w.WriteHeader(http.StatusNotFound)
+			_ = json.NewEncoder(w).Encode(&protocol.NotFoundPayload{})
+			return
+		}
+
+		cloneProgress, cloneInProgress := s.locker.Status(dir)
+		if cloneInProgress {
+			w.WriteHeader(http.StatusNotFound)
+			_ = json.NewEncoder(w).Encode(&protocol.NotFoundPayload{
+				CloneInProgress: true,
+				CloneProgress:   cloneProgress,
+			})
+			return
+		}
+
+		cloneProgress, err := s.cloneRepo(ctx, args.Repo, nil)
+		if err != nil {
+			log15.Debug("error starting repo clone", "repo", args.Repo, "err", err)
+			w.WriteHeader(http.StatusNotFound)
+			_ = json.NewEncoder(w).Encode(&protocol.NotFoundPayload{CloneInProgress: false})
+			return
+		}
+		w.WriteHeader(http.StatusNotFound)
+		_ = json.NewEncoder(w).Encode(&protocol.NotFoundPayload{
+			CloneInProgress: true,
+			CloneProgress:   cloneProgress,
+		})
+		return
+	}
+
+	if !conf.Get().DisableAutoGitUpdates {
+		for _, rev := range args.Revisions {
+			// TODO add result to trace
+			if rev.RevSpec != "" {
+				_ = s.ensureRevision(ctx, args.Repo, rev.RevSpec, dir)
+			} else if rev.RefGlob != "" {
+				_ = s.ensureRevision(ctx, args.Repo, rev.RefGlob, dir)
+			}
+		}
+	}
+
+	eventWriter, err := streamhttp.NewWriter(w)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	matchesBuf := streamhttp.NewJSONArrayBuf(8*1024, func(data []byte) error {
+		return eventWriter.EventBytes("matches", data)
+	})
+
+	g, ctx := errgroup.WithContext(ctx)
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
+
+	// Search all commits, sending matching commits down resultChan
+	resultChan := make(chan *protocol.CommitMatch, 128)
+	g.Go(func() error {
+		defer close(resultChan)
+		done := ctx.Done()
+
+		mt, err := search.ToMatchTree(args.Query)
+		if err != nil {
+			return err
+		}
+
+		var conversionErr error
+		err = search.Search(ctx, dir.Path(), args.Revisions, mt, func(match *search.LazyCommit, highlights *search.MatchedCommit) bool {
+			res, err := search.CreateCommitMatch(match, highlights, args.IncludeDiff)
+			if err != nil {
+				conversionErr = err
+				return false
+			}
+
+			select {
+			case <-done:
+				return false
+			case resultChan <- res:
+				return true
+			}
+		})
+		if err != nil {
+			return err
+		}
+		return conversionErr
+	})
+
+	// Write matching commits to the stream, flushing occasionally
+	limitHit := false
+	g.Go(func() error {
+		defer cancel()
+		defer matchesBuf.Flush()
+
+		flushTicker := time.NewTicker(50 * time.Millisecond)
+		defer flushTicker.Stop()
+
+		sentCount := 0
+		firstMatch := true
+		for {
+			select {
+			case result, ok := <-resultChan:
+				if !ok {
+					return nil
+				}
+
+				if sentCount >= args.Limit {
+					limitHit = true
+					return nil
+				}
+				sentCount += matchCount(result)
+
+				_ = matchesBuf.Append(result) // EOF only
+
+				// Send immediately if this if the first result we've seen
+				if firstMatch {
+					_ = matchesBuf.Flush() // EOF only
+					firstMatch = false
+				}
+			case <-flushTicker.C:
+				_ = matchesBuf.Flush() // EOF only
+			}
+		}
+	})
+
+	err = g.Wait()
+	doneEvent := protocol.NewSearchEventDone(limitHit, err)
+	if err := eventWriter.Event("done", doneEvent); err != nil {
+		log15.Warn("failed to send done event", "error", err)
+	}
+}
+
+// matchCount returns either:
+// 1) the number of diff matches if there are any
+// 2) the number of messsage matches if there are any
+// 3) one, to represent matching the commit, but nothing inside it
+func matchCount(cm *protocol.CommitMatch) int {
+	if len(cm.Diff.MatchedRanges) > 0 {
+		return len(cm.Diff.MatchedRanges)
+	}
+	if len(cm.Message.MatchedRanges) > 0 {
+		return len(cm.Message.MatchedRanges)
+	}
+	return 1
 }
 
 func (s *Server) handleExec(w http.ResponseWriter, r *http.Request) {
@@ -1363,26 +1514,10 @@ type cloneOptions struct {
 	Overwrite bool
 }
 
-// These counters are introduced to safely add the new pipeline to asynchronously clone repos via
-// long lived goroutines in the producer-consumer pipeline. If our changes are right, the value for
-// these counters should be the same. This is because, we continue to use our existing approach of
-// spawning new goroutine for each new non-blocking clone request, but also add a corresponding
-// cloneJob to Server.CloneQueue.
-var (
-	asyncDoCloneInvoked = promauto.NewCounter(prometheus.CounterOpts{
-		Name: "src_gitserver_async_doclone_invoked_counter",
-		Help: "Number of times Server.doClone was invoked asynchronsously",
-	})
-	cloneQueueLength = promauto.NewCounter(prometheus.CounterOpts{
-		Name: "src_gitserver_clone_queue_length_counter",
-		Help: "Length of Server.CloneQueue",
-	})
-)
-
 // cloneRepo performs a clone operation for the given repository. It is
 // non-blocking by default.
 func (s *Server) cloneRepo(ctx context.Context, repo api.RepoName, opts *cloneOptions) (string, error) {
-	if strings.ToLower(string(repo)) == "github.com/sourcegraphtest/alwayscloningtest" {
+	if isAlwaysCloningTest(repo) {
 		return "This will never finish cloning", nil
 	}
 
@@ -1443,7 +1578,6 @@ func (s *Server) cloneRepo(ctx context.Context, repo api.RepoName, opts *cloneOp
 	// We clone to a temporary location first to avoid having incomplete
 	// clones in the repo tree. This also avoids leaving behind corrupt clones
 	// if the clone is interrupted.
-
 	if opts != nil && opts.Block {
 		ctx, cancel, err := s.acquireCloneLimiter(ctx)
 		if err != nil {
@@ -1459,31 +1593,9 @@ func (s *Server) cloneRepo(ctx context.Context, repo api.RepoName, opts *cloneOp
 		return "", err
 	}
 
-	// TODO: Remove this goroutine when we are confident that the producer-consumer pipeline works.
-	// And enable the commented out code in cloneJobConsumer.
-	go func() {
-		asyncDoCloneInvoked.Inc()
-
-		// Create a new context because this is in a background goroutine. The outer context's
-		// cancel will be invoked when cloneRepo returns, but we don't want this goroutine to get
-		// cancelled. Thus a new context is required here.
-		ctx, cancel1 := s.serverContext()
-		defer cancel1()
-
-		ctx, cancel2, err := s.acquireCloneLimiter(ctx)
-		if err != nil {
-			log15.Error("failed to clone repo", "repo", repo, "error", err)
-			return
-		}
-		defer cancel2()
-
-		err = s.doClone(ctx, repo, dir, syncer, lock, remoteURL, opts)
-		if err != nil {
-			log15.Error("failed to clone repo", "repo", repo, "error", err)
-		}
-		s.setLastErrorNonFatal(ctx, repo, err)
-	}()
-
+	// We push the cloneJob to a queue and let the producer-consumer pipeline take over from this
+	// point. See definitions of cloneJobProducer and cloneJobConsumer to understand how these jobs
+	// are processed.
 	s.CloneQueue.push(&cloneJob{
 		repo:      repo,
 		dir:       dir,
@@ -1492,8 +1604,6 @@ func (s *Server) cloneRepo(ctx context.Context, repo api.RepoName, opts *cloneOp
 		remoteURL: remoteURL,
 		options:   opts,
 	})
-
-	cloneQueueLength.Inc()
 
 	return "", nil
 }
@@ -1505,7 +1615,7 @@ func (s *Server) doClone(ctx context.Context, repo api.RepoName, dir GitDir, syn
 		return err
 	}
 
-	ctx, cancel2 := context.WithTimeout(ctx, longGitCommandTimeout)
+	ctx, cancel2 := context.WithTimeout(ctx, conf.GitLongCommandTimeout())
 	defer cancel2()
 
 	dstPath := string(dir)

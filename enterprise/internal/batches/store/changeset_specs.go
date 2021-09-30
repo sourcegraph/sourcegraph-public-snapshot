@@ -7,6 +7,7 @@ import (
 
 	"github.com/cockroachdb/errors"
 	"github.com/keegancsmith/sqlf"
+	"github.com/lib/pq"
 	"github.com/opentracing/opentracing-go/log"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/search"
@@ -216,6 +217,7 @@ DELETE FROM changeset_specs WHERE id = %s
 // ChangesetSpecs.
 type CountChangesetSpecsOpts struct {
 	BatchSpecID int64
+	Type        batcheslib.ChangesetSpecDescriptionType
 }
 
 // CountChangesetSpecs returns the number of changeset specs in the database.
@@ -244,6 +246,16 @@ func countChangesetSpecsQuery(opts *CountChangesetSpecsOpts) *sqlf.Query {
 	if opts.BatchSpecID != 0 {
 		cond := sqlf.Sprintf("changeset_specs.batch_spec_id = %s", opts.BatchSpecID)
 		preds = append(preds, cond)
+	}
+
+	if opts.Type != "" {
+		if opts.Type == batcheslib.ChangesetSpecDescriptionTypeExisting {
+			// Check that externalID is not empty.
+			preds = append(preds, sqlf.Sprintf("COALESCE(changeset_specs.spec->>'externalID', NULL) IS NOT NULL", opts.BatchSpecID))
+		} else {
+			// Check that externalID is empty.
+			preds = append(preds, sqlf.Sprintf("COALESCE(changeset_specs.spec->>'externalID', NULL) IS NULL", opts.BatchSpecID))
+		}
 	}
 
 	if len(preds) == 0 {
@@ -330,6 +342,7 @@ type ListChangesetSpecsOpts struct {
 	BatchSpecID int64
 	RandIDs     []string
 	IDs         []int64
+	Type        batcheslib.ChangesetSpecDescriptionType
 }
 
 // ListChangesetSpecs lists ChangesetSpecs with the given filters.
@@ -376,23 +389,21 @@ func listChangesetSpecsQuery(opts *ListChangesetSpecsOpts) *sqlf.Query {
 	}
 
 	if len(opts.RandIDs) != 0 {
-		ids := make([]*sqlf.Query, 0, len(opts.RandIDs))
-		for _, id := range opts.RandIDs {
-			if id != "" {
-				ids = append(ids, sqlf.Sprintf("%s", id))
-			}
-		}
-		preds = append(preds, sqlf.Sprintf("changeset_specs.rand_id IN (%s)", sqlf.Join(ids, ",")))
+		preds = append(preds, sqlf.Sprintf("changeset_specs.rand_id = ANY (%s)", pq.Array(opts.RandIDs)))
 	}
 
 	if len(opts.IDs) != 0 {
-		ids := make([]*sqlf.Query, 0, len(opts.IDs))
-		for _, id := range opts.IDs {
-			if id != 0 {
-				ids = append(ids, sqlf.Sprintf("%s", id))
-			}
+		preds = append(preds, sqlf.Sprintf("changeset_specs.id = ANY (%s)", pq.Array(opts.IDs)))
+	}
+
+	if opts.Type != "" {
+		if opts.Type == batcheslib.ChangesetSpecDescriptionTypeExisting {
+			// Check that externalID is not empty.
+			preds = append(preds, sqlf.Sprintf("COALESCE(changeset_specs.spec->>'externalID', NULL) IS NOT NULL", opts.BatchSpecID))
+		} else {
+			// Check that externalID is empty.
+			preds = append(preds, sqlf.Sprintf("COALESCE(changeset_specs.spec->>'externalID', NULL) IS NULL", opts.BatchSpecID))
 		}
-		preds = append(preds, sqlf.Sprintf("changeset_specs.id IN (%s)", sqlf.Join(ids, ",")))
 	}
 
 	return sqlf.Sprintf(

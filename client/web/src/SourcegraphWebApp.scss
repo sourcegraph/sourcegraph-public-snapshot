@@ -87,9 +87,7 @@ body,
 @import './search/home/SearchPage';
 @import './search/SearchConsolePage';
 @import './search/ShepherdTour';
-@import './repogroups/RepogroupPage';
 @import './search/queryBuilder/index';
-@import './searchContexts/index';
 @import './search/results/SearchResultsInfoBar';
 @import './search/results/progress/StreamingProgress.scss';
 @import './settings/MonacoSettingsEditor';
@@ -105,7 +103,6 @@ body,
 @import './repo/settings/RepoSettingsArea';
 @import './repo/actions/InstallBrowserExtensionPopover.scss';
 @import './repo/actions/InstallBrowserExtensionAlert.scss';
-@import './components/FilteredConnection';
 @import './components/Dialog';
 @import './user/settings/UserSettingsArea';
 @import './site/DockerForMacAlert';

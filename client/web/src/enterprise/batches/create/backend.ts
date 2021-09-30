@@ -1,13 +1,18 @@
 import { dataOrThrowErrors, gql } from '@sourcegraph/shared/src/graphql/graphql'
 
 import { requestGraphQL } from '../../../backend/graphql'
-import { BatchSpecCreateFields, CreateBatchSpecResult, CreateBatchSpecVariables } from '../../../graphql-operations'
+import {
+    BatchSpecCreateFields,
+    CreateBatchSpecResult,
+    CreateBatchSpecVariables,
+    Scalars,
+} from '../../../graphql-operations'
 
-export async function createBatchSpec(spec: string): Promise<BatchSpecCreateFields> {
+export async function createBatchSpec(spec: Scalars['ID']): Promise<BatchSpecCreateFields> {
     const result = await requestGraphQL<CreateBatchSpecResult, CreateBatchSpecVariables>(
         gql`
-            mutation CreateBatchSpec($spec: String!) {
-                createBatchSpecFromRaw(batchSpec: $spec) {
+            mutation CreateBatchSpec($id: ID!) {
+                executeBatchSpec(batchSpec: $id) {
                     ...BatchSpecCreateFields
                 }
             }
@@ -19,7 +24,7 @@ export async function createBatchSpec(spec: string): Promise<BatchSpecCreateFiel
                 }
             }
         `,
-        { spec }
+        { id: spec }
     ).toPromise()
-    return dataOrThrowErrors(result).createBatchSpecFromRaw
+    return dataOrThrowErrors(result).executeBatchSpec
 }

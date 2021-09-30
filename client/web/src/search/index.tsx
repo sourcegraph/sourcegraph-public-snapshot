@@ -181,15 +181,12 @@ export interface MutableVersionContextProps extends VersionContextProps {
     previousVersionContext: string | null
 }
 
-export interface RepogroupHomepageProps {
-    showRepogroupHomepage: boolean
-}
-
 export interface OnboardingTourProps {
     showOnboardingTour: boolean
 }
 
 export interface SearchContextProps {
+    searchContextsEnabled: boolean
     showSearchContext: boolean
     showSearchContextManagement: boolean
     showSearchContextFeatureTour?: boolean
@@ -212,6 +209,7 @@ export interface SearchContextProps {
 
 export type SearchContextInputProps = Pick<
     SearchContextProps,
+    | 'searchContextsEnabled'
     | 'showSearchContext'
     | 'hasUserAddedRepositories'
     | 'hasUserAddedExternalServices'
