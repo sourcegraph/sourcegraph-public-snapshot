@@ -137,7 +137,6 @@ const commonProps = () =>
         hasUserAddedExternalServices: false,
         getUserSearchContextNamespaces: mockGetUserSearchContextNamespaces,
         fetchSearchContextBySpec: fetchCommunitySearchContext,
-        showSearchContextFeatureTour: false,
     })
 
 add('Temporal', () => (
