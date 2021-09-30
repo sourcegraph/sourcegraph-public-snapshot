@@ -33,7 +33,7 @@ type IndexedRepoRevs struct {
 	branches map[string]*zoektquery.BranchRepos
 
 	// branch -> revSpecs
-	revSpecs map[string][]zoektquery.BranchRepos
+	revSpecs map[string][]string
 }
 
 // add will add reporev and repo to the list of repository and branches to
@@ -67,16 +67,13 @@ func (rb *IndexedRepoRevs) add(reporev *search.RepositoryRevisions, repo *zoekt.
 
 		b.Repos.Add(uint32(id))
 
-		for _, r := range rb.revSpecs[branch] {
-			if r.Branch == revSpec {
+		for _, rs := range rb.revSpecs[branch] {
+			if rs == revSpec {
 				return
 			}
 		}
 
-		rb.revSpecs[branch] = append(rb.revSpecs[branch], zoektquery.BranchRepos{
-			Branch: revSpec,
-			Repos:  b.Repos,
-		})
+		rb.revSpecs[branch] = append(rb.revSpecs[branch], revSpec)
 	}
 
 	if len(reporev.Revs) == 1 && repo.Branches[0].Name == "HEAD" && (reporev.Revs[0].RevSpec == "" || reporev.Revs[0].RevSpec == "HEAD") {
@@ -120,10 +117,8 @@ func (rb *IndexedRepoRevs) add(reporev *search.RepositoryRevisions, repo *zoekt.
 func (rb *IndexedRepoRevs) getRepoInputRev(file *zoekt.FileMatch) (repo types.RepoName, inputRevs []string) {
 	inputRevs = make([]string, 0, len(file.Branches))
 	for _, branch := range file.Branches {
-		for _, revSpec := range rb.revSpecs[branch] {
-			if revSpec.Repos.Contains(file.RepositoryID) {
-				inputRevs = append(inputRevs, revSpec.Branch)
-			}
+		if br, ok := rb.branches[branch]; ok && br.Repos.Contains(file.RepositoryID) {
+			inputRevs = append(inputRevs, rb.revSpecs[branch]...)
 		}
 	}
 
