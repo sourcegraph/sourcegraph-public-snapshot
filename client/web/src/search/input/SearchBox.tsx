@@ -1,6 +1,7 @@
 import classNames from 'classnames'
 import React, { useState } from 'react'
 
+import { isErrorLike } from '@sourcegraph/codeintellify/lib/errors'
 import { KeyboardShortcut } from '@sourcegraph/shared/src/keyboardShortcuts'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
@@ -95,14 +96,18 @@ export const SearchBox: React.FunctionComponent<SearchBoxProps> = props => {
                 </div>
             </div>
             <SearchButton hideHelpButton={props.hideHelpButton} className={styles.searchBoxButton} />
-            {isFuzzyFinderVisible && props.settingsCascade.final?.experimentalFeatures?.fuzzyFinder && (
-                <FuzzyFinder
-                    caseInsensitiveFileCountThreshold={
-                        props.settingsCascade.final?.experimentalFeatures?.fuzzyFinderCaseInsensitiveFileCountThreshold
-                    }
-                    setIsVisible={bool => setIsFuzzyFinderVisible(bool)}
-                />
-            )}
+            {isFuzzyFinderVisible &&
+                !isErrorLike(props.settingsCascade.final) &&
+                !isErrorLike(props.settingsCascade.final?.experimentalFeatures) &&
+                props.settingsCascade.final?.experimentalFeatures?.fuzzyFinder && (
+                    <FuzzyFinder
+                        caseInsensitiveFileCountThreshold={
+                            props.settingsCascade.final?.experimentalFeatures
+                                ?.fuzzyFinderCaseInsensitiveFileCountThreshold
+                        }
+                        setIsVisible={bool => setIsFuzzyFinderVisible(bool)}
+                    />
+                )}
         </div>
     )
 }

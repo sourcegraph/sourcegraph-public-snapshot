@@ -1,6 +1,6 @@
 import { ApolloClient, useApolloClient } from '@apollo/client'
 import { Shortcut } from '@slimsag/react-shortcuts'
-import React, { useState, Dispatch, SetStateAction } from 'react'
+import React, { useState, useEffect, Dispatch, SetStateAction } from 'react'
 
 import { gql, getDocumentNode } from '@sourcegraph/shared/src/graphql/graphql'
 
@@ -32,8 +32,13 @@ export const FuzzyFinder: React.FunctionComponent<FuzzyFinderProps> = props => {
     // about the state transititions.
     const apolloClient = useApolloClient()
     const [fsm, setFsm] = useState<FuzzyFSM>({ key: 'empty' })
-
     const { repoName = '', commitID = '' } = parseBrowserRepoURL(location.pathname + location.search + location.hash)
+
+    useEffect(() => {
+        if (repoName === 'search' || !repoName) {
+            props.setIsVisible(false)
+        }
+    }, [repoName, props])
 
     if (repoName === 'search' || !repoName) {
         return null
