@@ -400,7 +400,7 @@ func zoektGlobalQuery(q zoektquery.Q, repoOptions search.RepoOptions, userPrivat
 		apply(zoektquery.RcOnlyForks, repoOptions.OnlyForks)
 		apply(zoektquery.RcNoForks, repoOptions.NoForks)
 
-		qs = append(qs, zoektquery.NewAnd(&zoektquery.Branch{Pattern: "HEAD", Exact: true}, rc, q))
+		qs = append(qs, zoektquery.NewAnd(&zoektquery.Branch{Pattern: "HEAD", Exact: true}, rc))
 	}
 
 	// Private or Any
@@ -410,10 +410,10 @@ func zoektGlobalQuery(q zoektquery.Q, repoOptions search.RepoOptions, userPrivat
 		for _, r := range userPrivateRepos {
 			privateRepoSet[string(r.Name)] = head
 		}
-		qs = append(qs, zoektquery.NewAnd(&zoektquery.RepoBranches{Set: privateRepoSet}, q))
+		qs = append(qs, &zoektquery.RepoBranches{Set: privateRepoSet})
 	}
 
-	return zoektquery.Simplify(zoektquery.NewOr(qs...))
+	return zoektquery.Simplify(zoektquery.NewAnd(q, zoektquery.NewOr(qs...)))
 }
 
 func doZoektSearchGlobal(ctx context.Context, args *search.ZoektParameters, c streaming.Sender) error {
