@@ -54,6 +54,7 @@ import { OrgAreaRoute } from './org/area/OrgArea'
 import { OrgAreaHeaderNavItem } from './org/area/OrgHeader'
 import { createPlatformContext } from './platform/context'
 import { fetchHighlightedFileLineRanges } from './repo/backend'
+import { CodeTourProvider } from './repo/blob/panel/useCodeTour'
 import { RepoContainerRoute } from './repo/RepoContainer'
 import { RepoHeaderActionButton } from './repo/RepoHeader'
 import { RepoRevisionContainerRoute } from './repo/RepoRevisionContainer'
@@ -495,81 +496,87 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
                         <TemporarySettingsProvider isAuthenticatedUser={window.context?.isAuthenticatedUser}>
                             <SearchResultsCacheProvider>
                                 <Router history={history} key={0}>
-                                    <Route
-                                        path="/"
-                                        render={routeComponentProps => (
-                                            <CodeHostScopeProvider authenticatedUser={authenticatedUser}>
-                                                <LayoutWithActivation
-                                                    {...props}
-                                                    {...routeComponentProps}
-                                                    authenticatedUser={authenticatedUser}
-                                                    viewerSubject={this.state.viewerSubject}
-                                                    settingsCascade={this.state.settingsCascade}
-                                                    batchChangesEnabled={this.props.batchChangesEnabled}
-                                                    batchChangesExecutionEnabled={isBatchChangesExecutionEnabled(
-                                                        this.state.settingsCascade
-                                                    )}
-                                                    // Search query
-                                                    fetchHighlightedFileLineRanges={fetchHighlightedFileLineRanges}
-                                                    parsedSearchQuery={this.state.parsedSearchQuery}
-                                                    setParsedSearchQuery={this.setParsedSearchQuery}
-                                                    patternType={this.state.searchPatternType}
-                                                    setPatternType={this.setPatternType}
-                                                    caseSensitive={this.state.searchCaseSensitivity}
-                                                    setCaseSensitivity={this.setCaseSensitivity}
-                                                    versionContext={this.state.versionContext}
-                                                    setVersionContext={this.setVersionContext}
-                                                    availableVersionContexts={this.state.availableVersionContexts}
-                                                    previousVersionContext={this.state.previousVersionContext}
-                                                    // Extensions
-                                                    platformContext={this.platformContext}
-                                                    extensionsController={this.extensionsController}
-                                                    telemetryService={eventLogger}
-                                                    isSourcegraphDotCom={window.context.sourcegraphDotComMode}
-                                                    showOnboardingTour={this.state.showOnboardingTour}
-                                                    searchContextsEnabled={this.props.searchContextsEnabled}
-                                                    showSearchContext={this.state.showSearchContext}
-                                                    hasUserAddedRepositories={this.hasUserAddedRepositories()}
-                                                    hasUserAddedExternalServices={
-                                                        this.state.hasUserAddedExternalServices
-                                                    }
-                                                    showSearchContextManagement={this.state.showSearchContextManagement}
-                                                    selectedSearchContextSpec={this.getSelectedSearchContextSpec()}
-                                                    setSelectedSearchContextSpec={this.setSelectedSearchContextSpec}
-                                                    getUserSearchContextNamespaces={getUserSearchContextNamespaces}
-                                                    fetchAutoDefinedSearchContexts={fetchAutoDefinedSearchContexts}
-                                                    fetchSearchContexts={fetchSearchContexts}
-                                                    fetchSearchContextBySpec={fetchSearchContextBySpec}
-                                                    fetchSearchContext={fetchSearchContext}
-                                                    createSearchContext={createSearchContext}
-                                                    updateSearchContext={updateSearchContext}
-                                                    deleteSearchContext={deleteSearchContext}
-                                                    convertVersionContextToSearchContext={
-                                                        convertVersionContextToSearchContext
-                                                    }
-                                                    isSearchContextSpecAvailable={isSearchContextSpecAvailable}
-                                                    defaultSearchContextSpec={this.state.defaultSearchContextSpec}
-                                                    showEnterpriseHomePanels={this.state.showEnterpriseHomePanels}
-                                                    globbing={this.state.globbing}
-                                                    showMultilineSearchConsole={this.state.showMultilineSearchConsole}
-                                                    showSearchNotebook={this.state.showSearchNotebook}
-                                                    showQueryBuilder={this.state.showQueryBuilder}
-                                                    enableCodeMonitoring={this.state.enableCodeMonitoring}
-                                                    fetchSavedSearches={fetchSavedSearches}
-                                                    fetchRecentSearches={fetchRecentSearches}
-                                                    fetchRecentFileViews={fetchRecentFileViews}
-                                                    streamSearch={aggregateStreamingSearch}
-                                                    onUserExternalServicesOrRepositoriesUpdate={
-                                                        this.onUserExternalServicesOrRepositoriesUpdate
-                                                    }
-                                                    onSyncedPublicRepositoriesUpdate={
-                                                        this.onSyncedPublicRepositoriesUpdate
-                                                    }
-                                                    featureFlags={this.state.featureFlags}
-                                                />
-                                            </CodeHostScopeProvider>
-                                        )}
-                                    />
+                                    <CodeTourProvider>
+                                        <Route
+                                            path="/"
+                                            render={routeComponentProps => (
+                                                <CodeHostScopeProvider authenticatedUser={authenticatedUser}>
+                                                    <LayoutWithActivation
+                                                        {...props}
+                                                        {...routeComponentProps}
+                                                        authenticatedUser={authenticatedUser}
+                                                        viewerSubject={this.state.viewerSubject}
+                                                        settingsCascade={this.state.settingsCascade}
+                                                        batchChangesEnabled={this.props.batchChangesEnabled}
+                                                        batchChangesExecutionEnabled={isBatchChangesExecutionEnabled(
+                                                            this.state.settingsCascade
+                                                        )}
+                                                        // Search query
+                                                        fetchHighlightedFileLineRanges={fetchHighlightedFileLineRanges}
+                                                        parsedSearchQuery={this.state.parsedSearchQuery}
+                                                        setParsedSearchQuery={this.setParsedSearchQuery}
+                                                        patternType={this.state.searchPatternType}
+                                                        setPatternType={this.setPatternType}
+                                                        caseSensitive={this.state.searchCaseSensitivity}
+                                                        setCaseSensitivity={this.setCaseSensitivity}
+                                                        versionContext={this.state.versionContext}
+                                                        setVersionContext={this.setVersionContext}
+                                                        availableVersionContexts={this.state.availableVersionContexts}
+                                                        previousVersionContext={this.state.previousVersionContext}
+                                                        // Extensions
+                                                        platformContext={this.platformContext}
+                                                        extensionsController={this.extensionsController}
+                                                        telemetryService={eventLogger}
+                                                        isSourcegraphDotCom={window.context.sourcegraphDotComMode}
+                                                        showOnboardingTour={this.state.showOnboardingTour}
+                                                        searchContextsEnabled={this.props.searchContextsEnabled}
+                                                        showSearchContext={this.state.showSearchContext}
+                                                        hasUserAddedRepositories={this.hasUserAddedRepositories()}
+                                                        hasUserAddedExternalServices={
+                                                            this.state.hasUserAddedExternalServices
+                                                        }
+                                                        showSearchContextManagement={
+                                                            this.state.showSearchContextManagement
+                                                        }
+                                                        selectedSearchContextSpec={this.getSelectedSearchContextSpec()}
+                                                        setSelectedSearchContextSpec={this.setSelectedSearchContextSpec}
+                                                        getUserSearchContextNamespaces={getUserSearchContextNamespaces}
+                                                        fetchAutoDefinedSearchContexts={fetchAutoDefinedSearchContexts}
+                                                        fetchSearchContexts={fetchSearchContexts}
+                                                        fetchSearchContextBySpec={fetchSearchContextBySpec}
+                                                        fetchSearchContext={fetchSearchContext}
+                                                        createSearchContext={createSearchContext}
+                                                        updateSearchContext={updateSearchContext}
+                                                        deleteSearchContext={deleteSearchContext}
+                                                        convertVersionContextToSearchContext={
+                                                            convertVersionContextToSearchContext
+                                                        }
+                                                        isSearchContextSpecAvailable={isSearchContextSpecAvailable}
+                                                        defaultSearchContextSpec={this.state.defaultSearchContextSpec}
+                                                        showEnterpriseHomePanels={this.state.showEnterpriseHomePanels}
+                                                        globbing={this.state.globbing}
+                                                        showMultilineSearchConsole={
+                                                            this.state.showMultilineSearchConsole
+                                                        }
+                                                        showSearchNotebook={this.state.showSearchNotebook}
+                                                        showQueryBuilder={this.state.showQueryBuilder}
+                                                        enableCodeMonitoring={this.state.enableCodeMonitoring}
+                                                        fetchSavedSearches={fetchSavedSearches}
+                                                        fetchRecentSearches={fetchRecentSearches}
+                                                        fetchRecentFileViews={fetchRecentFileViews}
+                                                        streamSearch={aggregateStreamingSearch}
+                                                        onUserExternalServicesOrRepositoriesUpdate={
+                                                            this.onUserExternalServicesOrRepositoriesUpdate
+                                                        }
+                                                        onSyncedPublicRepositoriesUpdate={
+                                                            this.onSyncedPublicRepositoriesUpdate
+                                                        }
+                                                        featureFlags={this.state.featureFlags}
+                                                    />
+                                                </CodeHostScopeProvider>
+                                            )}
+                                        />
+                                    </CodeTourProvider>
                                 </Router>
                                 <Tooltip key={1} />
                                 <Notifications

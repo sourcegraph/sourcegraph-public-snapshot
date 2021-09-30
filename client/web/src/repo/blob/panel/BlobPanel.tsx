@@ -16,6 +16,8 @@ import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
 
 import { RepoRevisionSidebarCommits } from '../../RepoRevisionSidebarCommits'
 
+import { CodeTour } from './CodeTour'
+
 interface Props extends AbsoluteRepoFile, ModeSpec, ExtensionsControllerProps, ActivationProps {
     location: H.Location
     history: H.History
@@ -185,6 +187,18 @@ export function useBlobPanelViews({
                                 )
                             )
                         )
+                    ),
+                },
+                {
+                    id: 'codetour',
+                    provider: panelSubjectChanges.pipe(
+                        map(({ repoID, revision, filePath, history, location }) => ({
+                            title: 'Code Tour',
+                            content: '',
+                            priority: 200,
+                            locationProvider: undefined,
+                            reactElement: <CodeTour />,
+                        }))
                     ),
                 },
             ],

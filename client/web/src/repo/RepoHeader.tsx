@@ -1,6 +1,7 @@
 import classNames from 'classnames'
 import * as H from 'history'
 import DotsVerticalIcon from 'mdi-react/DotsVerticalIcon'
+import PinIcon from 'mdi-react/PinIcon'
 import React, { useState, useMemo, useEffect, useCallback } from 'react'
 import { ButtonDropdown, DropdownItem, DropdownMenu, DropdownToggle } from 'reactstrap'
 
@@ -10,6 +11,7 @@ import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { SettingsCascadeOrError } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ErrorLike } from '@sourcegraph/shared/src/util/errors'
+import { Button } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
 import { Breadcrumbs, BreadcrumbsProps } from '../components/Breadcrumbs'
@@ -19,6 +21,7 @@ import { ActionButtonDescriptor } from '../util/contributions'
 import { useBreakpoint } from '../util/dom'
 
 import { ResolvedRevision } from './backend'
+import { useCodeTour } from './blob/panel/useCodeTour'
 
 /**
  * Stores the list of RepoHeaderContributions, manages addition/deletion, and ensures they are sorted.
@@ -186,6 +189,8 @@ export const RepoHeader: React.FunctionComponent<Props> = ({
 
     const isLarge = useBreakpoint('lg')
 
+    const { setRoute } = useCodeTour()
+
     const context: Omit<RepoHeaderContext, 'actionType'> = useMemo(
         () => ({
             repoName: repo.name,
@@ -231,6 +236,11 @@ export const RepoHeader: React.FunctionComponent<Props> = ({
                         {a.element}
                     </li>
                 ))}
+                <li className="nav-item">
+                    <Button data-tooltip="Pin line" onClick={() => setRoute()}>
+                        <PinIcon size={16} />
+                    </Button>
+                </li>
             </ul>
             <div className="repo-header__spacer" />
             <ErrorBoundary
