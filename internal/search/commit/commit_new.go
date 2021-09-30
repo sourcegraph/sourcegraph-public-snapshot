@@ -18,7 +18,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
+	"github.com/sourcegraph/sourcegraph/internal/vcs/git/gitapi"
 )
 
 func searchInReposNew(ctx context.Context, db dbutil.DB, textParams *search.TextParametersForCommitParameters, params searchCommitsInReposParameters) error {
@@ -182,19 +182,19 @@ func protocolMatchToCommitMatch(repo types.RepoName, diff bool, in protocol.Comm
 	}
 
 	return &result.CommitMatch{
-		Commit: git.Commit{
+		Commit: gitapi.Commit{
 			ID: in.Oid,
-			Author: git.Signature{
+			Author: gitapi.Signature{
 				Name:  in.Author.Name,
 				Email: in.Author.Email,
 				Date:  in.Author.Date,
 			},
-			Committer: &git.Signature{
+			Committer: &gitapi.Signature{
 				Name:  in.Committer.Name,
 				Email: in.Committer.Email,
 				Date:  in.Committer.Date,
 			},
-			Message: git.Message(in.Message.Content),
+			Message: gitapi.Message(in.Message.Content),
 			Parents: in.Parents,
 		},
 		Repo: repo,

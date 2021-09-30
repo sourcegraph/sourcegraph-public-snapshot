@@ -24,6 +24,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
+	"github.com/sourcegraph/sourcegraph/internal/vcs/git/gitapi"
 )
 
 func TestSearchCommitsInRepo(t *testing.T) {
@@ -31,7 +32,7 @@ func TestSearchCommitsInRepo(t *testing.T) {
 	db := new(dbtesting.MockDB)
 
 	var calledVCSRawLogDiffSearch bool
-	gitSignatureWithDate := git.Signature{Date: time.Now().UTC().AddDate(0, 0, -1)}
+	gitSignatureWithDate := gitapi.Signature{Date: time.Now().UTC().AddDate(0, 0, -1)}
 	git.Mocks.RawLogDiffSearch = func(opt git.RawLogDiffSearchOptions) ([]*git.LogCommitSearchResult, bool, error) {
 		calledVCSRawLogDiffSearch = true
 		if want := "p"; opt.Query.Pattern != want {
@@ -48,7 +49,7 @@ func TestSearchCommitsInRepo(t *testing.T) {
 		}
 		return []*git.LogCommitSearchResult{
 			{
-				Commit: git.Commit{ID: "c1", Author: gitSignatureWithDate},
+				Commit: gitapi.Commit{ID: "c1", Author: gitSignatureWithDate},
 				Diff:   &git.RawDiff{Raw: "x"},
 			},
 		}, true, nil
@@ -74,7 +75,7 @@ func TestSearchCommitsInRepo(t *testing.T) {
 	}
 
 	want := []*result.CommitMatch{{
-		Commit:      git.Commit{ID: "c1", Author: gitSignatureWithDate},
+		Commit:      gitapi.Commit{ID: "c1", Author: gitSignatureWithDate},
 		Repo:        types.RepoName{ID: 1, Name: "repo"},
 		DiffPreview: &result.HighlightedString{Value: "x", Highlights: []result.HighlightedRange{}},
 		Body:        result.HighlightedString{Value: "```diff\nx```", Highlights: []result.HighlightedRange{}},
