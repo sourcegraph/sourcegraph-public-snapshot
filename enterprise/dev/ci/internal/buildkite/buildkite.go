@@ -41,7 +41,7 @@ type Step struct {
 	ConcurrencyGroup       string                 `json:"concurrency_group,omitempty"`
 	Concurrency            int                    `json:"concurrency,omitempty"`
 	Skip                   string                 `json:"skip,omitempty"`
-	SoftFail               bool                   `json:"soft_fail,omitempty"`
+	SoftFail               []softFailExitStatus   `json:"soft_fail,omitempty"`
 	Retry                  *RetryOptions          `json:"retry,omitempty"`
 	Agents                 map[string]string      `json:"agents,omitempty"`
 }
@@ -151,9 +151,19 @@ func Skip(reason string) StepOpt {
 	}
 }
 
-func SoftFail(softFail bool) StepOpt {
+type softFailExitStatus struct {
+	ExitStatus int `json:"exit_status"`
+}
+
+// SoftFail indicates the specified exit codes should trigger a soft fail.
+// https://buildkite.com/docs/pipelines/command-step#command-step-attributes
+func SoftFail(exitCodes ...int) StepOpt {
 	return func(step *Step) {
-		step.SoftFail = softFail
+		for _, code := range exitCodes {
+			step.SoftFail = append(step.SoftFail, softFailExitStatus{
+				ExitStatus: code,
+			})
+		}
 	}
 }
 

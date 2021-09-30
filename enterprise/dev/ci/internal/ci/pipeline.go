@@ -36,7 +36,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		"FORCE_COLOR":                      "3",
 		"ENTERPRISE":                       "1",
 		// Add debug flags for scripts to consume
-		"CI_DEBUG_PROFILE": strconv.FormatBool(c.ProfilingEnabled),
+		"CI_DEBUG_PROFILE": strconv.FormatBool(c.MessageFlags.ProfilingEnabled),
 		// Bump Node.js memory to prevent OOM crashes
 		"NODE_OPTIONS": "--max_old_space_size=4096",
 	}
@@ -72,7 +72,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 	})
 
 	// Toggle profiling of each step
-	if c.ProfilingEnabled {
+	if c.MessageFlags.ProfilingEnabled {
 		bk.AfterEveryStepOpts = append(bk.AfterEveryStepOpts, func(s *bk.Step) {
 			// wrap "time -v" around each command for CPU/RAM utilization information
 			var prefixed []string
@@ -151,20 +151,24 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 				buildCandidateDockerImage(dockerImage, c.Version, c.candidateImageTag()))
 		}
 
+	case ExecutorPatchNotest:
+		ops = operations.NewSet([]operations.Operation{
+			buildExecutor(c.Version, c.MessageFlags.SkipHashCompare),
+			publishExecutor(c.Version, c.MessageFlags.SkipHashCompare),
+		})
+
 	default:
 		// Slow async pipeline
 		ops.Append(triggerAsync(buildOptions))
 
 		// Slow image builds
+		skipHashCompare := c.MessageFlags.SkipHashCompare || c.RunType.Is(ReleaseBranch)
 		for _, dockerImage := range images.SourcegraphDockerImages {
 			ops.Append(buildCandidateDockerImage(dockerImage, c.Version, c.candidateImageTag()))
 		}
-		// TODO: Disabled because it tends to time out when multiple main builds
-		// are running at the same time. See https://github.com/sourcegraph/sourcegraph/issues/25487
-		// for details.
-		// if c.RunType.Is(MainDryRun, MainBranch) {
-		// 	ops.Append(buildExecutor(c.Time, c.Version))
-		// }
+		if c.RunType.Is(MainDryRun, MainBranch) {
+			ops.Append(buildExecutor(c.Version, skipHashCompare))
+		}
 
 		// Slow tests
 		if c.RunType.Is(BackendDryRun, MainDryRun, MainBranch) {
@@ -187,12 +191,9 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		for _, dockerImage := range images.SourcegraphDockerImages {
 			ops.Append(publishFinalDockerImage(c, dockerImage, c.RunType.Is(MainBranch)))
 		}
-		// TODO: Disabled because it tends to time out when multiple main builds
-		// are running at the same time. See https://github.com/sourcegraph/sourcegraph/issues/25487
-		// for details.
-		// if c.RunType.Is(MainBranch) {
-		// 	ops.Append(publishExecutor(c.Time, c.Version))
-		// }
+		if c.RunType.Is(MainBranch) {
+			ops.Append(publishExecutor(c.Version, skipHashCompare))
+		}
 
 		// Propogate changes elsewhere
 		if c.RunType.Is(MainBranch) {
