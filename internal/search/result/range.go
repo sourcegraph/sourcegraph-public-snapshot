@@ -1,4 +1,4 @@
-package protocol
+package result
 
 import (
 	"encoding/json"
@@ -10,17 +10,15 @@ type MatchedString struct {
 	MatchedRanges Ranges `json:"matched_ranges"`
 }
 
-func (h *MatchedString) Merge(other MatchedString) {
-	if h.Content == "" {
-		h.Content = other.Content
-	}
-	h.MatchedRanges = append(h.MatchedRanges, other.MatchedRanges...)
-	sort.Sort(h.MatchedRanges)
-}
-
 type Location struct {
+	// Offset is the number of unicode code points (not bytes) from the
+	// beginning of the matched text
 	Offset int
-	Line   int
+
+	// Line is the count of newlines before the offset in the matched text
+	Line int
+
+	// Column is the count of unicode code points after the last newline in the matched text
 	Column int
 }
 

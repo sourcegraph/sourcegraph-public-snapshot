@@ -8,6 +8,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/search/casetransform"
+	"github.com/sourcegraph/sourcegraph/internal/search/result"
 )
 
 // ToMatchTree converts a protocol.SearchQuery into its equivalent MatchTree.
@@ -137,7 +138,7 @@ func (dm *DiffMatches) Match(lc *LazyCommit) (bool, *MatchedCommit, error) {
 	for fileIdx, fileDiff := range diff {
 		var hunkHighlights map[int]MatchedHunk
 		for hunkIdx, hunk := range fileDiff.Hunks {
-			var lineHighlights map[int]protocol.Ranges
+			var lineHighlights map[int]result.Ranges
 			for lineIdx, line := range bytes.Split(hunk.Body, []byte("\n")) {
 				if len(line) == 0 {
 					continue
@@ -154,7 +155,7 @@ func (dm *DiffMatches) Match(lc *LazyCommit) (bool, *MatchedCommit, error) {
 				if matches != nil {
 					foundMatch = true
 					if lineHighlights == nil {
-						lineHighlights = make(map[int]protocol.Ranges, 1)
+						lineHighlights = make(map[int]result.Ranges, 1)
 					}
 					lineHighlights[lineIdx] = matchesToRanges(lineWithoutPrefix, matches)
 				}
@@ -257,7 +258,7 @@ func (o *Operator) Match(commit *LazyCommit) (bool, *MatchedCommit, error) {
 // and converts it to Ranges.
 // INVARIANT: matches must be ordered and non-overlapping,
 // which is guaranteed by regexp.FindAllIndex()
-func matchesToRanges(content []byte, matches [][]int) protocol.Ranges {
+func matchesToRanges(content []byte, matches [][]int) result.Ranges {
 	var (
 		unscannedOffset          = 0
 		scannedNewlines          = 0
@@ -278,13 +279,13 @@ func matchesToRanges(content []byte, matches [][]int) protocol.Ranges {
 		return scannedNewlines, column, scannedRunes
 	}
 
-	res := make(protocol.Ranges, 0, len(matches))
+	res := make(result.Ranges, 0, len(matches))
 	for _, match := range matches {
 		startLine, startColumn, startOffset := lineColumnOffset(match[0])
 		endLine, endColumn, endOffset := lineColumnOffset(match[1])
-		res = append(res, protocol.Range{
-			Start: protocol.Location{Line: startLine, Column: startColumn, Offset: startOffset},
-			End:   protocol.Location{Line: endLine, Column: endColumn, Offset: endOffset},
+		res = append(res, result.Range{
+			Start: result.Location{Line: startLine, Column: startColumn, Offset: startOffset},
+			End:   result.Location{Line: endLine, Column: endColumn, Offset: endOffset},
 		})
 	}
 	return res

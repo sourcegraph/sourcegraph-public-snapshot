@@ -13,6 +13,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
+	"github.com/sourcegraph/sourcegraph/internal/search/result"
 )
 
 // initGitRepository initializes a new Git repository and runs cmds in a new
@@ -171,13 +172,13 @@ func TestSearch(t *testing.T) {
 				0: {
 					MatchedHunks: map[int]MatchedHunk{
 						0: {
-							MatchedLines: map[int]protocol.Ranges{
+							MatchedLines: map[int]result.Ranges{
 								0: {{
-									Start: protocol.Location{},
-									End:   protocol.Location{Offset: 5, Column: 5},
+									Start: result.Location{},
+									End:   result.Location{Offset: 5, Column: 5},
 								}, {
-									Start: protocol.Location{Offset: 6, Column: 6},
-									End:   protocol.Location{Offset: 11, Column: 11},
+									Start: result.Location{Offset: 6, Column: 6},
+									End:   result.Location{Offset: 11, Column: 11},
 								}},
 							},
 						},
@@ -340,21 +341,21 @@ index 0000000000..7e54670557
 
 	require.Equal(t, expectedFormatted, formatted)
 
-	expectedRanges := protocol.Ranges{{
-		Start: protocol.Location{Offset: 115, Line: 3, Column: 60},
-		End:   protocol.Location{Offset: 121, Line: 3, Column: 66},
+	expectedRanges := result.Ranges{{
+		Start: result.Location{Offset: 115, Line: 3, Column: 60},
+		End:   result.Location{Offset: 121, Line: 3, Column: 66},
 	}, {
-		Start: protocol.Location{Offset: 152, Line: 6, Column: 24},
-		End:   protocol.Location{Offset: 158, Line: 6, Column: 30},
+		Start: result.Location{Offset: 152, Line: 6, Column: 24},
+		End:   result.Location{Offset: 158, Line: 6, Column: 30},
 	}, {
-		Start: protocol.Location{Offset: 288, Line: 8, Column: 33},
-		End:   protocol.Location{Offset: 292, Line: 8, Column: 37},
+		Start: result.Location{Offset: 288, Line: 8, Column: 33},
+		End:   result.Location{Offset: 292, Line: 8, Column: 37},
 	}, {
-		Start: protocol.Location{Offset: 345, Line: 11, Column: 9},
-		End:   protocol.Location{Offset: 349, Line: 11, Column: 13},
+		Start: result.Location{Offset: 345, Line: 11, Column: 9},
+		End:   result.Location{Offset: 349, Line: 11, Column: 13},
 	}, {
-		Start: protocol.Location{Offset: 453, Line: 14, Column: 60},
-		End:   protocol.Location{Offset: 459, Line: 14, Column: 66},
+		Start: result.Location{Offset: 453, Line: 14, Column: 60},
+		End:   result.Location{Offset: 459, Line: 14, Column: 66},
 	}}
 
 	require.Equal(t, expectedRanges, ranges)
