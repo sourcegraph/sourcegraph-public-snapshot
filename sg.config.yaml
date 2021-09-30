@@ -519,10 +519,9 @@ commands:
 
   jaeger:
     cmd: |
-      .bin/jaeger-all-in-one-${JAEGER_VERSION}-$(go env GOOS)-$(go env GOARCH) --log-level ${JAEGER_LOG_LEVEL} >> "${JAEGER_LOGS}"/jaeger.log 2>&1
+      .bin/jaeger-all-in-one-${JAEGER_VERSION}-$(go env GOOS)-$(go env GOARCH) --log-level ${JAEGER_LOG_LEVEL}
     install: |
       mkdir -p "${JAEGER_DISK}"
-      mkdir -p "${JAEGER_LOGS}"
 
       suffix="${JAEGER_VERSION}-$(go env GOOS)-$(go env GOARCH)"
       target="$PWD/.bin/jaeger-all-in-one-${suffix}"
@@ -538,7 +537,6 @@ commands:
     env:
       JAEGER_VERSION: 1.18.1
       JAEGER_DISK: $HOME/.sourcegraph-dev/data/jaeger
-      JAEGER_LOGS: $HOME/.sourcegraph-dev/logs/jaeger
       JAEGER_LOG_LEVEL: info
       QUERY_BASE_PATH: /-/debug/jaeger
 
