@@ -274,34 +274,23 @@ func TestIndexedSearch(t *testing.T) {
 				Zoekt:          zoekt,
 			}
 
-			args := &search.TextParameters{
-				Repos: tt.args.repos,
-				PatternInfo: &search.TextPatternInfo{
-					Index:          tt.args.patternInfo.Index,
-					FileMatchLimit: zoektArgs.FileMatchLimit,
-					Select:         zoektArgs.Select,
-				},
-				Query: q,
-				Zoekt: zoektArgs.Zoekt,
-			}
-
-			indexed, err := NewIndexedSearchRequest(
+			indexed, err := newIndexedSubsetSearchRequest(
 				context.Background(),
-				args,
-				search.TextRequest,
+				tt.args.repos,
+				q,
+				tt.args.patternInfo.Index,
+				zoektArgs,
 				MissingRepoRevStatus(streaming.StreamFunc(func(streaming.SearchEvent) {})),
 			)
 			if err != nil {
 				t.Fatal(err)
 			}
 
-			indexedSubset := indexed.(*IndexedSubsetSearchRequest)
-
-			if diff := cmp.Diff(tt.wantUnindexed, indexedSubset.Unindexed, cmpopts.EquateEmpty()); diff != "" {
+			if diff := cmp.Diff(tt.wantUnindexed, indexed.Unindexed, cmpopts.EquateEmpty()); diff != "" {
 				t.Errorf("unindexed mismatch (-want +got):\n%s", diff)
 			}
 
-			indexedSubset.since = tt.args.since
+			indexed.since = tt.args.since
 
 			// This is a quick fix which will break once we enable the zoekt client for true streaming.
 			// Once we return more than one event we have to account for the proper order of results
