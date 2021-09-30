@@ -2,6 +2,8 @@ package backend
 
 import (
 	"context"
+	"fmt"
+	"runtime/debug"
 	"sync/atomic"
 	"testing"
 	"time"
@@ -88,6 +90,9 @@ type mockUncachedSearcher struct {
 }
 
 func (s *mockUncachedSearcher) List(ctx context.Context, q zoektquery.Q, opts *zoekt.ListOptions) (*zoekt.RepoList, error) {
+	fmt.Println()
+	debug.PrintStack()
+	fmt.Println()
 	atomic.AddInt64(&s.ListCalls, 1)
 	return s.FakeSearcher.List(ctx, q, opts)
 }

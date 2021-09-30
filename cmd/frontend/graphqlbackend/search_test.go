@@ -16,13 +16,11 @@ import (
 	"github.com/google/zoekt"
 	zoektrpc "github.com/google/zoekt/rpc"
 	"github.com/graph-gophers/graphql-go"
-	"github.com/keegancsmith/sqlf"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/search/backend"
 	searchbackend "github.com/sourcegraph/sourcegraph/internal/search/backend"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
@@ -541,7 +539,7 @@ func mkFileMatch(repo types.RepoName, path string, lineNumbers ...int32) *result
 func BenchmarkSearchResults(b *testing.B) {
 	db := new(dbtesting.MockDB)
 
-	minimalRepos, _, zoektRepos := generateRepos(5000)
+	minimalRepos, zoektRepos := generateRepos(5000)
 	zoektFileMatches := generateZoektMatches(50)
 
 	z := &searchbackend.FakeSearcher{
@@ -551,7 +549,7 @@ func BenchmarkSearchResults(b *testing.B) {
 
 	ctx := context.Background()
 
-	database.Mocks.Repos.List = func(_ context.Context, op database.ReposListOptions) ([]*types.Repo, error) {
+	database.Mocks.Repos.ListRepoNames = func(_ context.Context, op database.ReposListOptions) ([]types.RepoName, error) {
 		return minimalRepos, nil
 	}
 	database.Mocks.Repos.Count = func(ctx context.Context, opt database.ReposListOptions) (int, error) {
@@ -563,14 +561,15 @@ func BenchmarkSearchResults(b *testing.B) {
 	b.ReportAllocs()
 
 	for n := 0; n < b.N; n++ {
-		q, err := query.ParseLiteral(`print index:only count:350`)
+		plan, err := query.Pipeline(query.InitLiteral(`print index:only count:350`))
 		if err != nil {
 			b.Fatal(err)
 		}
 		resolver := &searchResolver{
 			db: db,
 			SearchInputs: &run.SearchInputs{
-				Query:        q,
+				Plan:         plan,
+				Query:        plan.ToParseTree(),
 				UserSettings: &schema.Settings{},
 			},
 			zoekt:    z,
@@ -587,107 +586,19 @@ func BenchmarkSearchResults(b *testing.B) {
 	}
 }
 
-func BenchmarkIntegrationSearchResults(b *testing.B) {
-	db := dbtesting.GetDB(b)
-
-	ctx := context.Background()
-
-	_, repos, zoektRepos := generateRepos(5000)
-	zoektFileMatches := generateZoektMatches(50)
-
-	z, cleanup := zoektRPC(&searchbackend.FakeSearcher{
-		Repos:  zoektRepos,
-		Result: &zoekt.SearchResult{Files: zoektFileMatches},
-	})
-	defer cleanup()
-
-	rows := make([]*sqlf.Query, 0, len(repos))
-	for _, r := range repos {
-		rows = append(rows, sqlf.Sprintf(
-			"(%s, %s, %s, %s, %s, %s, %s)",
-			r.Name,
-			r.Description,
-			r.Fork,
-			true,
-			r.ExternalRepo.ServiceType,
-			r.ExternalRepo.ServiceID,
-			r.ExternalRepo.ID,
-		))
-	}
-
-	q := sqlf.Sprintf(`
-		INSERT INTO repo (
-			name,
-			description,
-			fork,
-			enabled,
-			external_service_type,
-			external_service_id,
-			external_id
-		)
-		VALUES %s`,
-		sqlf.Join(rows, ","),
-	)
-
-	_, err := db.ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
-	if err != nil {
-		b.Fatal(err)
-	}
-
-	b.ResetTimer()
-	b.ReportAllocs()
-
-	for n := 0; n < b.N; n++ {
-		q, err := query.ParseLiteral(`print index:only count:350`)
-		if err != nil {
-			b.Fatal(err)
-		}
-		resolver := &searchResolver{
-			db: db,
-			SearchInputs: &run.SearchInputs{
-				Query: q,
-			},
-			zoekt:    z,
-			reposMu:  &sync.Mutex{},
-			resolved: &searchrepos.Resolved{},
-		}
-		results, err := resolver.Results(ctx)
-		if err != nil {
-			b.Fatal("Results:", err)
-		}
-		if int(results.MatchCount()) != len(zoektFileMatches) {
-			b.Fatalf("wrong results length. want=%d, have=%d\n", len(zoektFileMatches), results.MatchCount())
-		}
-	}
-}
-
-func generateRepos(count int) ([]*types.Repo, []*types.Repo, []*zoekt.RepoListEntry) {
-	var reposWithIDs []*types.Repo
-	var repos []*types.Repo
-	var zoektRepos []*zoekt.RepoListEntry
+func generateRepos(count int) ([]types.RepoName, []*zoekt.RepoListEntry) {
+	repos := make([]types.RepoName, 0, count)
+	zoektRepos := make([]*zoekt.RepoListEntry, 0, count)
 
 	for i := 1; i <= count; i++ {
 		name := fmt.Sprintf("repo-%d", i)
 
-		repoWithIDs := &types.Repo{
+		repoWithIDs := types.RepoName{
 			ID:   api.RepoID(i),
 			Name: api.RepoName(name),
-			ExternalRepo: api.ExternalRepoSpec{
-				ID:          name,
-				ServiceType: extsvc.TypeGitHub,
-				ServiceID:   "https://github.com",
-			}}
+		}
 
-		reposWithIDs = append(reposWithIDs, repoWithIDs)
-
-		repos = append(repos, &types.Repo{
-
-			ID:           repoWithIDs.ID,
-			Name:         repoWithIDs.Name,
-			ExternalRepo: repoWithIDs.ExternalRepo,
-			URI:          fmt.Sprintf("https://github.com/foobar/%s", repoWithIDs.Name),
-			Description:  "this repositoriy contains a side project that I haven't maintained in 2 years",
-		})
+		repos = append(repos, repoWithIDs)
 
 		zoektRepos = append(zoektRepos, &zoekt.RepoListEntry{
 			Repository: zoekt.Repository{
@@ -697,7 +608,7 @@ func generateRepos(count int) ([]*types.Repo, []*types.Repo, []*zoekt.RepoListEn
 			},
 		})
 	}
-	return reposWithIDs, repos, zoektRepos
+	return repos, zoektRepos
 }
 
 func generateZoektMatches(count int) []zoekt.FileMatch {
