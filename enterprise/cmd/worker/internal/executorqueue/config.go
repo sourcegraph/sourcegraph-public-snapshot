@@ -3,14 +3,28 @@ package executorqueue
 import (
 	"encoding/json"
 	"os"
+	"sync"
 
 	"github.com/cockroachdb/errors"
 
+	"github.com/sourcegraph/sourcegraph/cmd/worker/shared"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 )
 
+// InitMetricsConfig initializes and returns an instance of a metrics config.
+func InitMetricsConfig() *Config {
+	res, _ := initMetricsConfig.Init()
+	return res.(*Config)
+}
+
+var initMetricsConfig = shared.NewMemoizedConstructor(func() (interface{}, error) {
+	return &Config{}, nil
+})
+
 type Config struct {
 	env.BaseConfig
+
+	once sync.Once
 
 	EnvironmentLabel string
 	Allocations      map[string]QueueAllocation
@@ -24,19 +38,21 @@ var (
 )
 
 func (c *Config) Load() {
-	c.EnvironmentLabel = c.Get("EXECUTOR_METRIC_ENVIRONMENT_LABEL", "dev", "A label to pass to the custom metric to distinguish environments.")
+	c.once.Do(func() {
+		c.EnvironmentLabel = c.Get("EXECUTOR_METRIC_ENVIRONMENT_LABEL", "dev", "A label to pass to the custom metric to distinguish environments.")
 
-	var err error
-	if c.Allocations, err = parseAllocations(c.GetOptional("EXECUTOR_ALLOCATIONS", "Allocation map to distribute workloads across different clouds.")); err != nil {
-		c.AddError(err)
-	}
+		var err error
+		if c.Allocations, err = parseAllocations(c.GetOptional("EXECUTOR_ALLOCATIONS", "Allocation map to distribute workloads across different clouds.")); err != nil {
+			c.AddError(err)
+		}
 
-	if awsConfigured {
-		c.AWSConfig.load(&c.BaseConfig)
-	}
-	if gcpConfigured {
-		c.GCPConfig.load(&c.BaseConfig)
-	}
+		if awsConfigured {
+			c.AWSConfig.load(&c.BaseConfig)
+		}
+		if gcpConfigured {
+			c.GCPConfig.load(&c.BaseConfig)
+		}
+	})
 }
 
 func parseAllocations(allocations string) (map[string]QueueAllocation, error) {

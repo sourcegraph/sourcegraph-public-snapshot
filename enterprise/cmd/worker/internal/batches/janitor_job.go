@@ -42,7 +42,7 @@ func (j *janitorJob) Routines(ctx context.Context) ([]goroutine.BackgroundRoutin
 
 	executorStore := background.NewBatchSpecWorkspaceExecutionWorkerStore(basestore.NewHandleWithDB(db, sql.TxOptions{}), observationContext)
 
-	executorMetricsReporter, err := executorqueue.NewMetricReporter(observationContext, "batches", executorStore, &janitorConfigInst.MetricsConfig)
+	executorMetricsReporter, err := executorqueue.NewMetricReporter(observationContext, "batches", executorStore, janitorConfigInst.MetricsConfig)
 	if err != nil {
 		return nil, err
 	}

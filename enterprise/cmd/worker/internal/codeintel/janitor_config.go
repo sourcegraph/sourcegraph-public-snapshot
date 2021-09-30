@@ -22,7 +22,7 @@ type janitorConfig struct {
 	CommitBatchSize                         int
 	BranchesCacheMaxKeys                    int
 
-	MetricsConfig executorqueue.Config
+	MetricsConfig *executorqueue.Config
 }
 
 var janitorConfigInst = &janitorConfig{}
@@ -40,6 +40,6 @@ func (c *janitorConfig) Load() {
 	c.CommitBatchSize = c.GetInt("PRECISE_CODE_INTEL_RETENTION_COMMIT_BATCH_SIZE", "100", "The number of commits to process per upload at a time.")
 	c.BranchesCacheMaxKeys = c.GetInt("PRECISE_CODE_INTEL_RETENTION_BRANCHES_CACHE_MAX_KEYS", "10000", "The number of maximum keys used to cache the set of branches visible from a commit.")
 
-	c.MetricsConfig = executorqueue.Config{BaseConfig: c.BaseConfig}
+	c.MetricsConfig = executorqueue.InitMetricsConfig()
 	c.MetricsConfig.Load()
 }

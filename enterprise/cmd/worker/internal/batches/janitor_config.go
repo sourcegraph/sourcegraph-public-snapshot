@@ -8,12 +8,12 @@ import (
 type janitorConfig struct {
 	env.BaseConfig
 
-	MetricsConfig executorqueue.Config
+	MetricsConfig *executorqueue.Config
 }
 
 var janitorConfigInst = &janitorConfig{}
 
 func (c *janitorConfig) Load() {
-	c.MetricsConfig = executorqueue.Config{BaseConfig: c.BaseConfig}
+	c.MetricsConfig = executorqueue.InitMetricsConfig()
 	c.MetricsConfig.Load()
 }

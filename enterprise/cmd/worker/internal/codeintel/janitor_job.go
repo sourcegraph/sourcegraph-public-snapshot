@@ -59,7 +59,7 @@ func (j *janitorJob) Routines(ctx context.Context) ([]goroutine.BackgroundRoutin
 	indexWorkerStore := dbstore.WorkerutilIndexStore(dbStoreShim, observationContext)
 	metrics := janitor.NewMetrics(observationContext)
 
-	executorMetricsReporter, err := executorqueue.NewMetricReporter(observationContext, "codeintel", indexWorkerStore, &janitorConfigInst.MetricsConfig)
+	executorMetricsReporter, err := executorqueue.NewMetricReporter(observationContext, "codeintel", indexWorkerStore, janitorConfigInst.MetricsConfig)
 	if err != nil {
 		return nil, err
 	}
