@@ -656,6 +656,11 @@ commands:
       - monitoring
     continueWatchOnExit: true
 
+  # This will execute `env`, a utility to print the process environment. Can
+  # be used to debug which global vars `sg` uses.
+  debug-env:
+    cmd: env
+
 checks:
   docker:
     cmd: docker version

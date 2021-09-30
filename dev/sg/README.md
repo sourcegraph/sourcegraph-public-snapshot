@@ -222,6 +222,8 @@ To modify your configuration locally, you can overwrite chunks of configuration 
 If an `sg.config.overwrite.yaml` file exists, its contents will be merged with the content of `sg.config.yaml`, overwriting where there are conflicts. This is useful for running custom command sets or adding environment variables
 specific to your work.
 
+You can run `sg run debug-env` to see the environment variables passed `sg`'s child processes.
+
 ### Examples
 
 #### Changing database configuration
