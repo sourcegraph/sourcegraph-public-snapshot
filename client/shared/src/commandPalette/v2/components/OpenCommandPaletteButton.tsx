@@ -1,14 +1,36 @@
 import React from 'react'
 import ConsoleIcon from 'mdi-react/ConsoleIcon'
 import { useCommandPaletteStore } from '../store'
+import classNames from 'classnames'
+import { Key } from 'ts-key-enum'
+import styles from './OpenCommandPaletteButton.module.scss'
 
-// TODO(tj) TODO(erzhan) command palette button style
-export const OpenCommandPaletteButton: React.FC = () => {
+export interface OpenCommandPaletteButtonProps {
+    buttonClassName?: string
+    buttonElement?: 'span' | 'a'
+}
+
+export const OpenCommandPaletteButton: React.FC<OpenCommandPaletteButtonProps> = ({
+    buttonClassName,
+    buttonElement: ButtonElement = 'span',
+}) => {
     const toggleCommandPaletteIsOpen = useCommandPaletteStore(state => state.toggleIsOpen)
 
+    const onKeyDown: React.KeyboardEventHandler<HTMLSpanElement> = event => {
+        if (event.key === Key.Enter) {
+            toggleCommandPaletteIsOpen()
+        }
+    }
+
     return (
-        <button type="button" className="btn btn-link p-1" onClick={toggleCommandPaletteIsOpen as () => void}>
+        <ButtonElement
+            role="button"
+            className={classNames(buttonClassName, styles.button)}
+            onClick={toggleCommandPaletteIsOpen as () => void}
+            tabIndex={0}
+            onKeyDown={onKeyDown}
+        >
             <ConsoleIcon className="icon-inline-md" />
-        </button>
+        </ButtonElement>
     )
 }

@@ -9,29 +9,39 @@ $command-palette-border-radius: 0.45rem;
     max-width: min(900px, 80%);
     margin-top: 7rem;
 
-    // box shadow
+    box-shadow: 0 0.4rem 1rem rgba(0, 0, 0, 0.25) !important;
 }
 
 .modal-content {
     border-radius: $command-palette-border-radius;
+    border: 1px solid var(--border-color);
+}
+
+.modal-backdrop {
+    background-color: transparent !important;
 }
 
 .input {
+    height: 2.25rem;
+    width: 100%;
     font-size: 1rem;
     font-weight: 300;
     font-style: italic;
     border: none;
-    color: --body-color;
+    color: var(--input-color);
+    background-color: var(--input-bg);
     border-bottom: 1px solid var(--border-color-2);
     border-radius: 0;
     border-top-left-radius: $command-palette-border-radius;
     border-top-right-radius: $command-palette-border-radius;
-    padding: 1rem 0 1rem 2rem; // Make room for background icon
+    padding-left: 2rem; // Make room for background icon
 
-    &:focus {
-        // Override .form-control focus styles
-        border-color: var(--border-color-2);
+    &:focus,
+    &:focus-visible {
+        border: none;
+        border-bottom: 1px solid var(--border-color-2);
         box-shadow: none;
+        outline: none;
     }
 
     &:focus,

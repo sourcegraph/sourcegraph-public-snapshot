@@ -78,7 +78,7 @@ export const SearchNavbarItem: React.FunctionComponent<Props> = (props: Props) =
                 isSearchOnboardingTourVisible={false}
                 hideHelpButton={isSearchPage}
             />
-            <OpenCommandPaletteButton />
+            <OpenCommandPaletteButton buttonClassName="btn btn-link p-1" />
         </Form>
     )
 }

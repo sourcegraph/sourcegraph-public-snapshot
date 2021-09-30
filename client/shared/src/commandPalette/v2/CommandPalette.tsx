@@ -230,10 +230,10 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
                         toggleIsOpen()
                     }}
                     autoFocus={false}
-                    backdropClassName="bg-transparent" // TODO: remove utility classes for bext
+                    backdropClassName={styles.modalBackdrop}
                     keyboard={true}
                     fade={false}
-                    className={classNames(styles.modalDialog, 'shadow-lg')} // TODO: remove utility classes for bext
+                    className={styles.modalDialog}
                     contentClassName={styles.modalContent}
                     returnFocusAfterClose={false}
                 >
@@ -244,7 +244,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
                             autoComplete="off"
                             spellCheck="false"
                             aria-autocomplete="list"
-                            className={classNames(styles.input, 'form-control py-1')} // TODO: remove utility classes for bext
+                            className={styles.input}
                             placeholder="Select a mode (prefix or click)"
                             value={value}
                             onChange={handleChange}

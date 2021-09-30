@@ -34,7 +34,10 @@ import { createPlatformContext, SourcegraphIntegrationURLs, BrowserPlatformConte
 import { CodeHost } from './codeHost'
 import { DOMFunctions } from './codeViews'
 import { CommandPalette, CommandPaletteProps } from '@sourcegraph/shared/src/commandPalette/v2/CommandPalette'
-import { OpenCommandPaletteButton } from '@sourcegraph/shared/src/commandPalette/v2/components/OpenCommandPaletteButton'
+import {
+    OpenCommandPaletteButton,
+    OpenCommandPaletteButtonProps,
+} from '@sourcegraph/shared/src/commandPalette/v2/components/OpenCommandPaletteButton'
 
 /**
  * Initializes extensions for a page. It creates the {@link PlatformContext} and extensions controller.
@@ -85,7 +88,7 @@ export const renderCommandPalette = ({
     )
 }
 
-interface NewInjectProps extends CommandPaletteProps, NotificationClassNameProps {
+interface NewInjectProps extends CommandPaletteProps, NotificationClassNameProps, OpenCommandPaletteButtonProps {
     render: typeof render
     mount: HTMLElement
 }
@@ -98,10 +101,11 @@ export const renderNewCommandPalette = ({
     platformContext,
     telemetryService,
     mount,
+    buttonClassName,
 }: NewInjectProps): void => {
     render(
         <ShortcutProvider>
-            <OpenCommandPaletteButton />
+            <OpenCommandPaletteButton buttonClassName={buttonClassName} />
             <CommandPalette
                 location={location}
                 getAuthenticatedUserID={getAuthenticatedUserID}

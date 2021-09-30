@@ -39,6 +39,7 @@ $line-height-base: (20/14);
 @import 'bootstrap/scss/utilities/text';
 @import 'bootstrap/scss/utilities/screenreaders';
 @import '../../shared/src/global-styles/icons';
+@import '../../shared/src/symbols/SymbolIcon.scss';
 @import './highlight';
 @import './shared';
 @import './shared/components/CodeViewToolbar.scss';
