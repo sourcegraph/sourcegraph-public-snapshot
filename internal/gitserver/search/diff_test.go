@@ -32,12 +32,12 @@ func TestDiffSearch(t *testing.T) {
 	require.NoError(t, err)
 	require.True(t, matched)
 
-	expectedHighlights := &CommitHighlights{
-		Diff: map[int]FileDiffHighlight{
+	expectedHighlights := &MatchedCommit{
+		Diff: map[int]MatchedFileDiff{
 			1: {
-				HunkHighlights: map[int]HunkHighlight{
+				MatchedHunks: map[int]MatchedHunk{
 					0: {
-						LineHighlights: map[int]protocol.Ranges{
+						MatchedLines: map[int]protocol.Ranges{
 							3: {{
 								Start: protocol.Location{Offset: 9, Column: 9},
 								End:   protocol.Location{Offset: 14, Column: 14},

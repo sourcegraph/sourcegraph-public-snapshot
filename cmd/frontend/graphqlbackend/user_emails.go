@@ -80,6 +80,7 @@ func (r *schemaResolver) AddUserEmail(ctx context.Context, args *struct {
 	if err != nil {
 		return nil, err
 	}
+
 	if err := backend.UserEmails.Add(ctx, r.db, userID, args.Email); err != nil {
 		return nil, err
 	}

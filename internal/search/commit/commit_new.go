@@ -37,7 +37,7 @@ func searchInReposNew(ctx context.Context, db dbutil.DB, textParams *search.Text
 		args := &protocol.SearchRequest{
 			Repo:        rr.Repo.Name,
 			Revisions:   searchRevsToGitserverRevs(rr.Revs),
-			Query:       &gitprotocol.And{Children: queryNodesToPredicates(query, query.IsCaseSensitive(), diff)},
+			Query:       &gitprotocol.Operator{Kind: protocol.And, Operands: queryNodesToPredicates(query, query.IsCaseSensitive(), diff)},
 			IncludeDiff: diff,
 			Limit:       limit,
 		}
@@ -78,10 +78,10 @@ func searchRevsToGitserverRevs(in []search.RevisionSpecifier) []gitprotocol.Revi
 	return out
 }
 
-func queryNodesToPredicates(nodes []query.Node, caseSensitive, diff bool) []gitprotocol.SearchQuery {
-	res := make([]gitprotocol.SearchQuery, 0, len(nodes))
+func queryNodesToPredicates(nodes []query.Node, caseSensitive, diff bool) []gitprotocol.Node {
+	res := make([]gitprotocol.Node, 0, len(nodes))
 	for _, node := range nodes {
-		var newPred gitprotocol.SearchQuery
+		var newPred gitprotocol.Node
 		switch v := node.(type) {
 		case query.Operator:
 			newPred = queryOperatorToPredicate(v, caseSensitive, diff)
@@ -97,25 +97,25 @@ func queryNodesToPredicates(nodes []query.Node, caseSensitive, diff bool) []gitp
 	return res
 }
 
-func queryOperatorToPredicate(op query.Operator, caseSensitive, diff bool) gitprotocol.SearchQuery {
+func queryOperatorToPredicate(op query.Operator, caseSensitive, diff bool) gitprotocol.Node {
 	switch op.Kind {
 	case query.And:
-		return &gitprotocol.And{Children: queryNodesToPredicates(op.Operands, caseSensitive, diff)}
+		return &gitprotocol.Operator{Kind: protocol.And, Operands: queryNodesToPredicates(op.Operands, caseSensitive, diff)}
 	case query.Or:
-		return &gitprotocol.Or{Children: queryNodesToPredicates(op.Operands, caseSensitive, diff)}
+		return &gitprotocol.Operator{Kind: protocol.And, Operands: queryNodesToPredicates(op.Operands, caseSensitive, diff)}
 	default:
 		// I don't think we should have concats at this point, but ignore it if we do
 		return nil
 	}
 }
 
-func queryPatternToPredicate(pattern query.Pattern, caseSensitive, diff bool) gitprotocol.SearchQuery {
+func queryPatternToPredicate(pattern query.Pattern, caseSensitive, diff bool) gitprotocol.Node {
 	patString := pattern.Value
 	if pattern.Annotation.Labels.IsSet(query.Literal) {
 		patString = regexp.QuoteMeta(pattern.Value)
 	}
 
-	var newPred gitprotocol.SearchQuery
+	var newPred gitprotocol.Node
 	if diff {
 		newPred = &gitprotocol.DiffMatches{Expr: patString, IgnoreCase: !caseSensitive}
 	} else {
@@ -123,13 +123,13 @@ func queryPatternToPredicate(pattern query.Pattern, caseSensitive, diff bool) gi
 	}
 
 	if pattern.Negated {
-		return &gitprotocol.Not{Child: newPred}
+		return &gitprotocol.Operator{Kind: protocol.Not, Operands: []gitprotocol.Node{newPred}}
 	}
 	return newPred
 }
 
-func queryParameterToPredicate(parameter query.Parameter, caseSensitive, diff bool) gitprotocol.SearchQuery {
-	var newPred gitprotocol.SearchQuery
+func queryParameterToPredicate(parameter query.Parameter, caseSensitive, diff bool) gitprotocol.Node {
+	var newPred gitprotocol.Node
 	switch parameter.Field {
 	case query.FieldAuthor:
 		// TODO(@camdencheek) look up emails (issue #25180)
@@ -137,9 +137,11 @@ func queryParameterToPredicate(parameter query.Parameter, caseSensitive, diff bo
 	case query.FieldCommitter:
 		newPred = &gitprotocol.CommitterMatches{Expr: parameter.Value, IgnoreCase: !caseSensitive}
 	case query.FieldBefore:
-		newPred = &gitprotocol.CommitBefore{Time: time.Now()} // TODO(@camdencheek) parse the time in with go-naturaldate (issue #25357)
+		t, _ := query.ParseGitDate(parameter.Value, time.Now) // field already validated
+		newPred = &gitprotocol.CommitBefore{Time: t}
 	case query.FieldAfter:
-		newPred = &gitprotocol.CommitAfter{Time: time.Now()}
+		t, _ := query.ParseGitDate(parameter.Value, time.Now) // field already validated
+		newPred = &gitprotocol.CommitAfter{Time: t}
 	case query.FieldMessage:
 		newPred = &gitprotocol.MessageMatches{Expr: parameter.Value, IgnoreCase: !caseSensitive}
 	case query.FieldContent:
@@ -155,7 +157,7 @@ func queryParameterToPredicate(parameter query.Parameter, caseSensitive, diff bo
 	}
 
 	if parameter.Negated {
-		return &gitprotocol.Not{Child: newPred}
+		return &gitprotocol.Operator{Kind: protocol.Not, Operands: []gitprotocol.Node{newPred}}
 	}
 	return newPred
 }
@@ -169,14 +171,14 @@ func protocolMatchToCommitMatch(repo types.RepoName, diff bool, in protocol.Comm
 
 	if diff {
 		matchBody = "```diff\n" + in.Diff.Content + "\n```"
-		matchHighlights = searchRangesToHighlights(matchBody, in.Diff.Highlights.Add(gitprotocol.Location{Line: 1, Offset: len("```diff\n")}))
+		matchHighlights = searchRangesToHighlights(matchBody, in.Diff.MatchedRanges.Add(gitprotocol.Location{Line: 1, Offset: len("```diff\n")}))
 		diffPreview = &result.HighlightedString{
 			Value:      in.Diff.Content,
-			Highlights: searchRangesToHighlights(in.Diff.Content, in.Diff.Highlights),
+			Highlights: searchRangesToHighlights(in.Diff.Content, in.Diff.MatchedRanges),
 		}
 	} else {
 		matchBody = "```COMMIT_EDITMSG\n" + in.Message.Content + "\n```"
-		matchHighlights = searchRangesToHighlights(matchBody, in.Message.Highlights.Add(gitprotocol.Location{Line: 1, Offset: len("```COMMIT_EDITMSG\n")}))
+		matchHighlights = searchRangesToHighlights(matchBody, in.Message.MatchedRanges.Add(gitprotocol.Location{Line: 1, Offset: len("```COMMIT_EDITMSG\n")}))
 	}
 
 	return &result.CommitMatch{
@@ -198,7 +200,7 @@ func protocolMatchToCommitMatch(repo types.RepoName, diff bool, in protocol.Comm
 		Repo: repo,
 		MessagePreview: &result.HighlightedString{
 			Value:      in.Message.Content,
-			Highlights: searchRangesToHighlights(in.Message.Content, in.Message.Highlights),
+			Highlights: searchRangesToHighlights(in.Message.Content, in.Message.MatchedRanges),
 		},
 		DiffPreview: diffPreview,
 		Body: result.HighlightedString{

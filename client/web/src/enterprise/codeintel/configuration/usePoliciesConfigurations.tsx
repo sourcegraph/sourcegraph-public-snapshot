@@ -87,7 +87,7 @@ export const useRepositoryConfig = (id: string): UseRepositoryConfigResult => {
         variables: { id },
     })
 
-    const configuration = data?.node?.indexConfiguration?.configuration || ''
+    const configuration = (data?.node?.__typename === 'Repository' && data.node.indexConfiguration?.configuration) || ''
 
     return {
         configuration,
@@ -122,7 +122,8 @@ export const useInferredConfig = (id: string): UseInferredConfigResult => {
         variables: { id },
     })
 
-    const inferredConfiguration = data?.node?.indexConfiguration?.inferredConfiguration || ''
+    const inferredConfiguration =
+        (data?.node?.__typename === 'Repository' && data.node.indexConfiguration?.inferredConfiguration) || ''
 
     return {
         inferredConfiguration,
@@ -168,7 +169,7 @@ export const usePolicyConfigurationByID = (id: string): UsePolicyConfigResult =>
         skip: id === 'new',
     })
 
-    const response = data?.node || undefined
+    const response = (data?.node?.__typename === 'CodeIntelligenceConfigurationPolicy' && data.node) || undefined
     const isNew = id === 'new'
 
     return {

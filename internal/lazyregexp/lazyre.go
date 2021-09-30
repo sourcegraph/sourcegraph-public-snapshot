@@ -96,6 +96,10 @@ func (r *Regexp) ReplaceAll(src, repl []byte) []byte {
 	return r.re().ReplaceAll(src, repl)
 }
 
+func (r *Regexp) SubexpIndex(s string) int {
+	return r.re().SubexpIndex(s)
+}
+
 var inTest = len(os.Args) > 0 && strings.HasSuffix(strings.TrimSuffix(os.Args[0], ".exe"), ".test")
 
 // New creates a new lazy regexp, delaying the compiling work until it is first

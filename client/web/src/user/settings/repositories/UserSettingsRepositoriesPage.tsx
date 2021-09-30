@@ -154,6 +154,7 @@ export const UserSettingsRepositoriesPage: React.FunctionComponent<Props> = ({
                         ) {
                             node(id: $id) {
                                 ... on User {
+                                    __typename
                                     repositories(
                                         first: $first
                                         query: $query
@@ -218,10 +219,14 @@ export const UserSettingsRepositoriesPage: React.FunctionComponent<Props> = ({
 
         // check if user has any manually added or affiliated repositories
         const result = await fetchUserReposCount()
-        if (result?.node?.repositories?.totalCount && result.node.repositories.totalCount > 0) {
+        const userRepoCount =
+            result?.node?.__typename === 'User' && result.node.repositories.totalCount
+                ? result.node.repositories.totalCount
+                : 0
+        if (userRepoCount) {
             setHasRepos(true)
         }
-        onUserExternalServicesOrRepositoriesUpdate(services.length, result?.node?.repositories.totalCount ?? 0)
+        onUserExternalServicesOrRepositoriesUpdate(services.length, userRepoCount)
 
         // configure filters
         const specificCodeHostFilters = services.map(service => ({
@@ -302,7 +307,7 @@ export const UserSettingsRepositoriesPage: React.FunctionComponent<Props> = ({
     const queryRepositories = useCallback(
         (
             args: FilteredConnectionQueryArguments
-        ): Observable<NonNullable<UserRepositoriesResult['node']>['repositories']> =>
+        ): Observable<(NonNullable<UserRepositoriesResult['node']> & { __typename: 'User' })['repositories']> =>
             listUserRepositories({ ...args, id: userID }).pipe(
                 tap(() => {
                     if (status === 'schedule-complete') {

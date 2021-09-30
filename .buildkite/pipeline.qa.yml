@@ -1,6 +1,13 @@
 env:
   VAGRANT_RUN_ENV: "CI"
 steps:
+- label: ':chromium: Sourcegraph E2E'
+  artifact_paths: ./*.png;./*.mp4;./ffmpeg.log
+  command:
+    - .buildkite/vagrant-run.sh sourcegraph-e2e
+  agents:
+    queue: 'baremetal'
+
 - label: ':docker::chromium: Sourcegraph QA'
   command:
     - .buildkite/vagrant-run.sh sourcegraph-qa-test
@@ -22,3 +29,11 @@ steps:
   concurrency: 1
   concurrency_group: "cluster-test"
   timeout_in_minutes: 30
+
+# code-intel-qa is disabled, see https://github.com/sourcegraph/sourcegraph/issues/25387
+# - label: ':docker::brain: Code Intel QA'
+#   command:
+#     - .buildkite/vagrant-run.sh sourcegraph-code-intel-test
+#   artifact_paths: ./*.log
+#   agents:
+#     queue: 'baremetal'

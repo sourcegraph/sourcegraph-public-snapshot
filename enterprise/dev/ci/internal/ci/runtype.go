@@ -33,7 +33,7 @@ const (
 	// Special run cases
 
 	MainDryRun    // run everything main does, except for deploy-related steps
-	BackendDryRun // ???
+	BackendDryRun // run backend tests that are used on main
 )
 
 func computeRunType(tag, branch string) RunType {

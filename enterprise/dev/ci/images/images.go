@@ -13,9 +13,30 @@ import (
 const (
 	// SourcegraphDockerDevRegistry is a private registry for dev images, and requires authentication to pull from.
 	SourcegraphDockerDevRegistry = "us.gcr.io/sourcegraph-dev"
-	// SourcegraphDockerPublishRegistry is a public registry for final iamges, and does not require authentication to pull from.
+	// SourcegraphDockerPublishRegistry is a public registry for final images, and does not require authentication to pull from.
 	SourcegraphDockerPublishRegistry = "index.docker.io/sourcegraph"
 )
+
+// DevRegistryImage returns the name of the image for the given app and tag on the
+// private dev registry.
+func DevRegistryImage(app, tag string) string {
+	root := fmt.Sprintf("%s/%s", SourcegraphDockerDevRegistry, app)
+	return maybeTaggedImage(root, tag)
+}
+
+// PublishedRegistryImage returns the name of the image for the given app and tag on the
+// publish registry.
+func PublishedRegistryImage(app, tag string) string {
+	root := fmt.Sprintf("%s/%s", SourcegraphDockerPublishRegistry, app)
+	return maybeTaggedImage(root, tag)
+}
+
+func maybeTaggedImage(rootImage, tag string) string {
+	if tag != "" {
+		return fmt.Sprintf("%s:%s", rootImage, tag)
+	}
+	return rootImage
+}
 
 // SourcegraphDockerImages is a list of all images published by Sourcegraph.
 //
@@ -23,6 +44,7 @@ const (
 //
 // - dev images (candidates - see `candidateImageTag`) are published to `SourcegraphDockerDevRegistry`
 // - final images (releases, `insiders`) are published to `SourcegraphDockerPublishRegistry`
+// - app must be a legal Docker image name (e.g. no `/`)
 //
 // The `addDockerImages` pipeline step determines what images are built and published.
 var SourcegraphDockerImages = []string{
