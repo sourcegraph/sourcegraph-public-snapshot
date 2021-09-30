@@ -34,7 +34,8 @@ $command-palette-border-radius: 0.45rem;
     border-radius: 0;
     border-top-left-radius: $command-palette-border-radius;
     border-top-right-radius: $command-palette-border-radius;
-    padding-left: 2rem; // Make room for background icon
+    padding-left: 2rem; // Make room for magnify icon
+    padding-right: 2rem; // Make room for clear icon
 
     &:focus,
     &:focus-visible {
@@ -42,11 +43,6 @@ $command-palette-border-radius: 0.45rem;
         border-bottom: 1px solid var(--border-color-2);
         box-shadow: none;
         outline: none;
-    }
-
-    &:focus,
-    &:active {
-        // outline: 1px solid var(--link-active-color);
     }
 }
 
@@ -63,4 +59,20 @@ $command-palette-border-radius: 0.45rem;
     position: absolute;
     left: 0.5rem;
     color: var(--icon-muted);
+}
+
+.clear-input-icon {
+    align-self: center;
+    position: absolute;
+    right: 0.5rem;
+
+    & > svg {
+        height: 1rem;
+        width: 1rem;
+        color: var(--icon-muted);
+
+        &:hover {
+            color: var(--body-color);
+        }
+    }
 }

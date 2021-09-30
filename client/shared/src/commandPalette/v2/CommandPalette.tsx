@@ -1,7 +1,7 @@
-import classNames from 'classnames'
 import { Remote } from 'comlink'
 import * as H from 'history'
 import MagnifyIcon from 'mdi-react/MagnifyIcon'
+import CloseCircleIcon from 'mdi-react/CloseCircleIcon'
 import React, { useMemo, useCallback, useEffect, useRef } from 'react'
 import { Modal } from 'reactstrap'
 import { from, Observable } from 'rxjs'
@@ -18,7 +18,6 @@ import { ExtensionsControllerProps } from '../../extensions/controller'
 import { PlatformContextProps } from '../../platform/context'
 import { TelemetryProps } from '../../telemetry/telemetryService'
 import { memoizeObservable } from '../../util/memoizeObservable'
-import { isExternalLink } from '../../util/url'
 import { useObservable } from '../../util/useObservable'
 
 import styles from './CommandPalette.module.scss'
@@ -31,6 +30,7 @@ import { RecentSearchesResult } from './components/RecentSearchesResult'
 import { ShortcutController, KeyboardShortcutWithCallback } from './components/ShortcutController'
 import { COMMAND_PALETTE_COMMANDS, CommandPaletteMode } from './constants'
 import { useCommandPaletteStore } from './store'
+import { Key } from 'ts-key-enum'
 
 const getMode = (text: string): CommandPaletteMode | undefined =>
     Object.values(CommandPaletteMode).find(value => text.startsWith(value))
@@ -119,7 +119,7 @@ function useCommandList(value: string, extensionsController: CommandPaletteProps
         ],
         [extraCommands]
     )
-    console.log({ extraCommands })
+
     const actions = useMemo(() => [...extensionCommands, ...builtInCommands], [extensionCommands, builtInCommands])
 
     return { actions, shortcuts }
@@ -206,6 +206,20 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
         [setValue]
     )
 
+    const handleClearKeyDown: React.KeyboardEventHandler<HTMLSpanElement> = event => {
+        if (event.key === Key.Enter) {
+            if (mode) {
+                // Clearing when a mode is selected doesn't restore focus to input
+                setTimeout(() => {
+                    inputReference.current?.focus()
+                }, 0)
+            }
+
+            event.stopPropagation()
+            setValue('')
+        }
+    }
+
     const activeTextDocument = useObservable(
         useMemo(
             () =>
@@ -266,6 +280,18 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
                             autoFocus={true}
                             type="text"
                         />
+                        {value && (
+                            <span
+                                role="button"
+                                tabIndex={0}
+                                data-tooltip="Clear"
+                                className={styles.clearInputIcon}
+                                onClick={() => setValue('')}
+                                onKeyDown={handleClearKeyDown}
+                            >
+                                <CloseCircleIcon />
+                            </span>
+                        )}
                     </div>
                     {!mode && <CommandPaletteModesResult onSelect={handleInputFocus} />}
                     {mode === CommandPaletteMode.Command && (
