@@ -424,12 +424,11 @@ func zoektGlobalQuery(q zoektquery.Q, repoOptions search.RepoOptions, userPrivat
 
 	// Private or Any
 	if (repoOptions.Visibility == query.Private || repoOptions.Visibility == query.Any) && len(userPrivateRepos) > 0 {
-		privateRepoSet := make(map[string][]string, len(userPrivateRepos))
-		head := []string{"HEAD"}
+		ids := make([]uint32, 0, len(userPrivateRepos))
 		for _, r := range userPrivateRepos {
-			privateRepoSet[string(r.Name)] = head
+			ids = append(ids, uint32(r.ID))
 		}
-		qs = append(qs, &zoektquery.RepoBranches{Set: privateRepoSet})
+		qs = append(qs, zoektquery.NewSingleBranchesRepos("HEAD", ids...))
 	}
 
 	return zoektquery.Simplify(zoektquery.NewAnd(q, zoektquery.NewOr(qs...)))
