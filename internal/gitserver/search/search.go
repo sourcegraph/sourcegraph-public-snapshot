@@ -78,12 +78,7 @@ var (
 
 type job struct {
 	batch      []*RawCommit
-	resultChan chan searchResult
-}
-
-type searchResult struct {
-	lazyCommit        *LazyCommit
-	highlightedCommit *MatchedCommit
+	resultChan chan *protocol.CommitMatch
 }
 
 const (
@@ -93,9 +88,10 @@ const (
 )
 
 type CommitSearcher struct {
-	RepoDir   string
-	Query     MatchTree
-	Revisions []protocol.RevisionSpecifier
+	RepoDir     string
+	Query       MatchTree
+	Revisions   []protocol.RevisionSpecifier
+	IncludeDiff bool
 }
 
 // Search runs a search for commits matching the given predicate across the revisions passed in as revisionArgs.
@@ -106,7 +102,7 @@ type CommitSearcher struct {
 // that job should be sent down. We then read from the result channels in the same order that the jobs were sent.
 // This allows our worker pool to run the jobs in parallel, but we still emit matches in the same order that
 // git log outputs them.
-func (cs *CommitSearcher) Search(ctx context.Context, onMatch func(*LazyCommit, *MatchedCommit) bool) error {
+func (cs *CommitSearcher) Search(ctx context.Context, onMatch func(*protocol.CommitMatch) bool) error {
 	g, ctx := errgroup.WithContext(ctx)
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
@@ -114,7 +110,7 @@ func (cs *CommitSearcher) Search(ctx context.Context, onMatch func(*LazyCommit, 
 	revArgs := revsToGitArgs(cs.Revisions)
 
 	jobs := make(chan job, 128)
-	resultChans := make(chan chan searchResult, 128)
+	resultChans := make(chan chan *protocol.CommitMatch, 128)
 
 	// Start feeder
 	g.Go(func() error {
@@ -138,7 +134,7 @@ func (cs *CommitSearcher) Search(ctx context.Context, onMatch func(*LazyCommit, 
 
 		batch := make([]*RawCommit, 0, batchSize)
 		sendBatch := func() {
-			resultChan := make(chan searchResult, 128)
+			resultChan := make(chan *protocol.CommitMatch, 128)
 			resultChans <- resultChan
 			jobs <- job{
 				batch:      batch,
@@ -199,10 +195,11 @@ func (cs *CommitSearcher) Search(ctx context.Context, onMatch func(*LazyCommit, 
 						return err
 					}
 					if commitMatches {
-						j.resultChan <- searchResult{
-							lazyCommit:        lc,
-							highlightedCommit: highlights,
+						cm, err := CreateCommitMatch(lc, highlights, cs.IncludeDiff)
+						if err != nil {
+							return err
 						}
+						j.resultChan <- cm
 					}
 				}
 				return nil
@@ -226,7 +223,7 @@ func (cs *CommitSearcher) Search(ctx context.Context, onMatch func(*LazyCommit, 
 					// Drain all the channels to keep from blocking writers
 					continue
 				}
-				keepGoing := onMatch(result.lazyCommit, result.highlightedCommit)
+				keepGoing := onMatch(result)
 				if !keepGoing {
 					skip = true
 					cancel()
@@ -360,6 +357,10 @@ func (c *CommitScanner) Err() error {
 }
 
 func CreateCommitMatch(lc *LazyCommit, hc *MatchedCommit, includeDiff bool) (*protocol.CommitMatch, error) {
+	if hc == nil {
+		hc = &MatchedCommit{}
+	}
+
 	authorDate, err := lc.AuthorDate()
 	if err != nil {
 		return nil, err
