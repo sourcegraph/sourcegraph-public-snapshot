@@ -75,7 +75,7 @@ export PERCY_TOKEN=#{ENV['PERCY_TOKEN']}
 export CODECOV_TOKEN=#{ENV['CODECOV_TOKEN']}
 export CI=#{ENV['CI']}
 
-# Env vars shared by e2e and QA tests - see:
+# Env vars shared by e2e and QA tests
 export TEST_USER_EMAIL=#{ENV['TEST_USER_EMAIL']}
 export TEST_USER_PASSWORD=#{ENV['TEST_USER_PASSWORD']}
 export SLOMO=#{ENV['SLOMO']}
