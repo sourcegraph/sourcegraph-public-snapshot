@@ -1,59 +1,95 @@
 #!/usr/bin/env bash
 
-# shellcheck disable=SC1091
-source /root/.profile
-root_dir="$(dirname "${BASH_SOURCE[0]}")/../../../.."
-cd "$root_dir"
-root_dir=$(pwd)
+# This script runs the codeintel-qa test utility against a candidate server image.
 
+cd "$(dirname "${BASH_SOURCE[0]}")/../../../.."
+SG_ROOT=$(pwd)
 set -ex
 
-dev/ci/test/setup-deps.sh
+IMAGE="us.gcr.io/sourcegraph-dev/server:$CANDIDATE_VERSION"
+yes | gcloud auth configure-docker
 
 # ==========================
 
-CONTAINER=sourcegraph-server
+URL="http://localhost:7080"
+export SOURCEGRAPH_BASE_URL="${URL}"
 
-docker_logs() {
-  pushd "$root_dir"
-  LOGFILE=$(docker inspect ${CONTAINER} --format '{{.LogPath}}')
-  cp "$LOGFILE" $CONTAINER.log
-  chmod 744 $CONTAINER.log
-  popd
-}
-
-if [[ $VAGRANT_RUN_ENV = "CI" ]]; then
-  IMAGE=us.gcr.io/sourcegraph-dev/server:$CANDIDATE_VERSION
-else
-  # shellcheck disable=SC2034
-  IMAGE=sourcegraph/server:insiders
+if curl --output /dev/null --silent --head --fail $URL; then
+  echo "❌ Can't run a new Sourcegraph instance on $URL because another instance is already running."
+  echo "❌ The last time this happened, there was a runaway integration test run on the same Buildkite agent and the fix was to delete the pod and rebuild."
+  exit 1
 fi
 
-./dev/run-server-image.sh -d --name $CONTAINER
-trap docker_logs exit
-sleep 15
+echo "--- Running a daemonized $IMAGE as the test subject..."
+CONTAINER="$(docker container run -d -e GOTRACEBACK=all "$IMAGE")"
+function cleanup() {
+  exit_status=$?
+  if [ $exit_status -ne 0 ]; then
+    # Expand the output if our run failed.
+    echo "^^^ +++"
+  fi
+
+  jobs -p -r | xargs kill
+  echo "--- server logs"
+  docker logs --timestamps "$CONTAINER"
+  echo "--- docker cleanup"
+  docker container rm -f "$CONTAINER"
+  docker image rm -f "$IMAGE"
+
+  if [ $exit_status -ne 0 ]; then
+    # This command will fail, so our last step will be expanded. We don't want
+    # to expand "docker cleanup" so we add in a dummy section.
+    echo "--- gqltest failed"
+    echo "See go test section for test runner logs."
+  fi
+}
+trap cleanup EXIT
+
+docker exec "$CONTAINER" apk add --no-cache socat
+# Connect the server container's port 7080 to localhost:7080 so that integration tests
+# can hit it. This is similar to port-forwarding via SSH tunneling, but uses `docker exec`
+# as the transport.
+socat tcp-listen:7080,reuseaddr,fork system:"docker exec -i $CONTAINER socat stdio 'tcp:localhost:7080'" &
+
+echo "--- Waiting for $URL to be up"
+set +e
+timeout 120s bash -c "until curl --output /dev/null --silent --head --fail $URL; do
+    echo Waiting 5s for $URL...
+    sleep 5
+done"
+# shellcheck disable=SC2181
+if [ $? -ne 0 ]; then
+  echo "^^^ +++"
+  echo "$URL was not accessible within 120s. Here's the output of docker inspect and docker logs:"
+  docker inspect "$CONTAINER"
+  exit 1
+fi
+set -e
+echo "Waiting for $URL... done"
+
+# ==========================
 
 pushd internal/cmd/init-sg
-go build -o /usr/local/bin/init-sg
+go build -o "${SG_ROOT}/init-sg"
 popd
 
 pushd dev/ci/test/code-intel
-init-sg initSG
-# # Load variables set up by init-server, disabling `-x` to avoid printing variables
+"${SG_ROOT}/init-sg" initSG
+# Disable `-x` to avoid printing secrets
 set +x
 source /root/.profile
+export GITHUB_TOKEN="${GITHUB_USER_BOB_TOKEN}"
 set -x
-init-sg addRepos -config repos.json
+"${SG_ROOT}/init-sg" addRepos -config repos.json
 popd
 
-echo "TEST: Checking Sourcegraph instance is accessible"
-curl -f http://localhost:7080
-curl -f http://localhost:7080/healthz
+# ==========================
+
 echo "TEST: Running tests"
-pushd internal/cmd/precise-code-intel-tester
-go build
+pushd dev/codeintel-qa
 ./scripts/download.sh
-./precise-code-intel-tester upload
-sleep 10
-./precise-code-intel-tester query
+go build ./cmd/upload
+go build ./cmd/query
+./upload --verbose --timeout=5m
+./query
 popd
