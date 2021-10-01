@@ -1,9 +1,11 @@
-import React, { FunctionComponent, useState } from 'react'
+import { debounce } from 'lodash'
+import React, { FunctionComponent, useState, useMemo } from 'react'
 
 import { CodeIntelligenceConfigurationPolicyFields, GitObjectType } from '../../../graphql-operations'
 
 import { GitObjectPreview } from './GitObjectPreview'
 
+const DEBOUNCED_WAIT = 250
 export interface BranchTargetSettingsProps {
     repoId?: string
     policy: CodeIntelligenceConfigurationPolicyFields
@@ -18,6 +20,7 @@ export const BranchTargetSettings: FunctionComponent<BranchTargetSettingsProps> 
     disabled = false,
 }) => {
     const [pattern, setPattern] = useState(policy.pattern)
+    const debouncedSetPattern = useMemo(() => debounce(value => setPattern(value), DEBOUNCED_WAIT), [])
 
     return (
         <div className="form-group">
@@ -68,7 +71,7 @@ export const BranchTargetSettings: FunctionComponent<BranchTargetSettingsProps> 
                     value={policy.pattern}
                     onChange={({ target: { value } }) => {
                         setPolicy({ ...policy, pattern: value })
-                        setPattern(value)
+                        debouncedSetPattern(value)
                     }}
                     disabled={disabled}
                 />
