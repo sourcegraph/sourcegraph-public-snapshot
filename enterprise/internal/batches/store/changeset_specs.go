@@ -433,11 +433,13 @@ HAVING COUNT(*) > 1
 ;
 `
 
-func (s *Store) ListChangesetSpecsWithConflictingHeadRef(ctx context.Context, batchSpecID int64) ([]ChangesetSpecHeadRefConflict, error) {
+func (s *Store) ListChangesetSpecsWithConflictingHeadRef(ctx context.Context, batchSpecID int64) (conflicts []ChangesetSpecHeadRefConflict, err error) {
+	ctx, endObservation := s.operations.createChangesetSpec.With(ctx, &err, observation.Args{})
+	defer endObservation(1, observation.Args{})
+
 	q := sqlf.Sprintf(listChangesetSpecsWithConflictingHeadQueryFmtstr, batchSpecID)
 
-	var conflicts []ChangesetSpecHeadRefConflict
-	err := s.query(ctx, q, func(sc scanner) error {
+	err = s.query(ctx, q, func(sc scanner) error {
 		var c ChangesetSpecHeadRefConflict
 		if err := sc.Scan(&c.RepoID, &c.HeadRef, &c.Count); err != nil {
 			return errors.Wrap(err, "scanning head ref conflict")

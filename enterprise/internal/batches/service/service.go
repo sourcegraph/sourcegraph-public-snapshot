@@ -74,6 +74,7 @@ type operations struct {
 	createChangesetJobs                  *observation.Operation
 	applyBatchChange                     *observation.Operation
 	reconcileBatchChange                 *observation.Operation
+	validateChangesetSpecs               *observation.Operation
 }
 
 var (
@@ -120,6 +121,7 @@ func newOperations(observationContext *observation.Context) *operations {
 			createChangesetJobs:                  op("CreateChangesetJobs"),
 			applyBatchChange:                     op("ApplyBatchChange"),
 			reconcileBatchChange:                 op("ReconcileBatchChange"),
+			validateChangesetSpecs:               op("ValidateChangesetSpecs"),
 		}
 	})
 
@@ -979,7 +981,10 @@ func (s *Service) CreateChangesetJobs(ctx context.Context, batchChangeID int64, 
 // ValidateChangesetSpecs checks whether the given BachSpec has ChangesetSpecs
 // that would publish to the same branch in the same repository.
 // If the return value is nil, then the BatchSpec is valid.
-func (s *Service) ValidateChangesetSpecs(ctx context.Context, batchSpecID int64) error {
+func (s *Service) ValidateChangesetSpecs(ctx context.Context, batchSpecID int64) (err error) {
+	ctx, endObservation := s.operations.validateChangesetSpecs.With(ctx, &err, observation.Args{})
+	defer endObservation(1, observation.Args{})
+
 	conflicts, err := s.store.ListChangesetSpecsWithConflictingHeadRef(ctx, batchSpecID)
 	if err != nil {
 		return err
