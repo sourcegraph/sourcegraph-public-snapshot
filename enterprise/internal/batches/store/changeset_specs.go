@@ -12,6 +12,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/search"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -411,6 +412,41 @@ func listChangesetSpecsQuery(opts *ListChangesetSpecsOpts) *sqlf.Query {
 		sqlf.Join(changesetSpecColumns, ", "),
 		sqlf.Join(preds, "\n AND "),
 	)
+}
+
+type ChangesetSpecHeadRefConflict struct {
+	RepoID  api.RepoID
+	HeadRef string
+	Count   int
+}
+
+var listChangesetSpecsWithConflictingHeadQueryFmtstr = `
+SELECT
+	repo_id, spec->>'headRef', COUNT(*)
+FROM
+	changeset_specs
+WHERE
+	batch_spec_id = %s
+GROUP BY
+	repo_id, spec->>'headRef'
+HAVING COUNT(*) > 1
+;
+`
+
+func (s *Store) ListChangesetSpecsWithConflictingHeadRef(ctx context.Context, batchSpecID int64) ([]ChangesetSpecHeadRefConflict, error) {
+	q := sqlf.Sprintf(listChangesetSpecsWithConflictingHeadQueryFmtstr, batchSpecID)
+
+	var conflicts []ChangesetSpecHeadRefConflict
+	err := s.query(ctx, q, func(sc scanner) error {
+		var c ChangesetSpecHeadRefConflict
+		if err := sc.Scan(&c.RepoID, &c.HeadRef, &c.Count); err != nil {
+			return errors.Wrap(err, "scanning head ref conflict")
+		}
+		conflicts = append(conflicts, c)
+		return nil
+	})
+
+	return conflicts, err
 }
 
 // DeleteExpiredChangesetSpecs deletes each ChangesetSpec that has not been

@@ -8,6 +8,7 @@ import (
 
 	"github.com/cockroachdb/errors"
 	"github.com/graph-gophers/graphql-go"
+	"github.com/hashicorp/go-multierror"
 	"github.com/opentracing/opentracing-go/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
@@ -973,4 +974,56 @@ func (s *Service) CreateChangesetJobs(ctx context.Context, batchChangeID int64, 
 	}
 
 	return bulkGroupID, nil
+}
+
+// ValidateChangesetSpecs checks whether the given BachSpec has ChangesetSpecs
+// that would publish to the same branch in the same repository.
+// If the return value is nil, then the BatchSpec is valid.
+func (s *Service) ValidateChangesetSpecs(ctx context.Context, batchSpecID int64) error {
+	conflicts, err := s.store.ListChangesetSpecsWithConflictingHeadRef(ctx, batchSpecID)
+	if err != nil {
+		return err
+	}
+
+	if len(conflicts) == 0 {
+		return nil
+	}
+
+	repoIDs := make([]api.RepoID, 0, len(conflicts))
+	for _, c := range conflicts {
+		repoIDs = append(repoIDs, c.RepoID)
+	}
+
+	// 🚨 SECURITY: database.Repos.GetRepoIDsSet uses the authzFilter under the hood and
+	// filters out repositories that the user doesn't have access to.
+	accessibleReposByID, err := s.store.Repos().GetReposSetByIDs(ctx, repoIDs...)
+	if err != nil {
+		return err
+	}
+
+	var errs *multierror.Error
+	for _, c := range conflicts {
+		conflictErr := &changesetSpecHeadRefConflict{count: c.Count, headRef: c.HeadRef}
+
+		// If the user has access to the repository, we can show the name
+		if repo, ok := accessibleReposByID[c.RepoID]; ok {
+			conflictErr.repo = repo
+		}
+		errs = multierror.Append(errs, conflictErr)
+	}
+
+	return errs.ErrorOrNil()
+}
+
+type changesetSpecHeadRefConflict struct {
+	repo    *types.Repo
+	count   int
+	headRef string
+}
+
+func (c changesetSpecHeadRefConflict) Error() string {
+	if c.repo != nil {
+		return fmt.Sprintf("%d changeset specs in %s use the same branch: %s", c.count, c.repo.Name, c.headRef)
+	}
+	return fmt.Sprintf("%d changeset specs in the same repository use the same branch: %s", c.count, c.headRef)
 }

@@ -53,6 +53,9 @@ type batchSpecResolver struct {
 	workspaces     []*btypes.BatchSpecWorkspace
 	workspacesErr  error
 
+	validateSpecsOnce sync.Once
+	validateSpecsErr  error
+
 	// TODO(campaigns-deprecation): This should be removed once we remove campaigns completely
 	shouldActAsCampaignSpec bool
 }
@@ -333,7 +336,11 @@ func (r *batchSpecResolver) AutoApplyEnabled() bool {
 	return false
 }
 
-func (r *batchSpecResolver) State() string {
+func (r *batchSpecResolver) State(ctx context.Context) string {
+	validationErr := r.validateChangesetSpecs(ctx)
+	if validationErr != nil {
+		return "FAILED"
+	}
 	// TODO(ssbc): not implemented
 	return "PROCESSING"
 }
@@ -381,9 +388,16 @@ func (r *batchSpecResolver) FailureMessage(ctx context.Context) (*string, error)
 	if err != nil {
 		return nil, err
 	}
-	if resolution != nil {
+	if resolution != nil && resolution.FailureMessage != nil {
 		return resolution.FailureMessage, nil
 	}
+
+	validationErr := r.validateChangesetSpecs(ctx)
+	if validationErr != nil {
+		message := validationErr.Error()
+		return &message, nil
+	}
+
 	// TODO: look at execution jobs.
 	return nil, nil
 }
@@ -480,6 +494,14 @@ func (r *batchSpecResolver) computeResolutionJob(ctx context.Context) (*btypes.B
 		}
 	})
 	return r.resolution, r.resolutionErr
+}
+
+func (r *batchSpecResolver) validateChangesetSpecs(ctx context.Context) error {
+	r.validateSpecsOnce.Do(func() {
+		svc := service.New(r.store)
+		r.validateSpecsErr = svc.ValidateChangesetSpecs(ctx, r.batchSpec.ID)
+	})
+	return r.validateSpecsErr
 }
 
 func (r *batchSpecResolver) computeBatchSpecWorkspaces(ctx context.Context) ([]*btypes.BatchSpecWorkspace, error) {
