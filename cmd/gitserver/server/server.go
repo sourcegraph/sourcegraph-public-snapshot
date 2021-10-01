@@ -960,19 +960,22 @@ func (s *Server) search(w http.ResponseWriter, r *http.Request, args *protocol.S
 		}
 	}
 
-	eventWriter, err := streamhttp.NewWriter(w)
+	g, ctx := errgroup.WithContext(ctx)
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
+
+	mt, err := search.ToMatchTree(args.Query)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	matchesBuf := streamhttp.NewJSONArrayBuf(8*1024, func(data []byte) error {
-		return eventWriter.EventBytes("matches", data)
-	})
-
-	g, ctx := errgroup.WithContext(ctx)
-	ctx, cancel := context.WithCancel(ctx)
-	defer cancel()
+	searcher := &search.CommitSearcher{
+		RepoDir:     string(dir),
+		Query:       mt,
+		Revisions:   args.Revisions,
+		IncludeDiff: args.IncludeDiff,
+	}
 
 	// Search all commits, sending matching commits down resultChan
 	resultChan := make(chan *protocol.CommitMatch, 128)
@@ -980,30 +983,23 @@ func (s *Server) search(w http.ResponseWriter, r *http.Request, args *protocol.S
 		defer close(resultChan)
 		done := ctx.Done()
 
-		mt, err := search.ToMatchTree(args.Query)
-		if err != nil {
-			return err
-		}
-
-		var conversionErr error
-		err = search.Search(ctx, dir.Path(), args.Revisions, mt, func(match *search.LazyCommit, highlights *search.MatchedCommit) bool {
-			res, err := search.CreateCommitMatch(match, highlights, args.IncludeDiff)
-			if err != nil {
-				conversionErr = err
-				return false
-			}
-
+		return searcher.Search(ctx, func(cm *protocol.CommitMatch) {
 			select {
 			case <-done:
-				return false
-			case resultChan <- res:
-				return true
+			case resultChan <- cm:
 			}
 		})
-		if err != nil {
-			return err
-		}
-		return conversionErr
+	})
+
+	eventWriter, err := streamhttp.NewWriter(w)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	matchesBuf := streamhttp.NewJSONArrayBuf(16*1024, func(data []byte) error {
+		tr.LogFields(otlog.Int("flushing", len(data)))
+		return eventWriter.EventBytes("matches", data)
 	})
 
 	// Write matching commits to the stream, flushing occasionally

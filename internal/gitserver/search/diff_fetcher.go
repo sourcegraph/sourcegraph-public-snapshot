@@ -20,6 +20,8 @@ type DiffFetcher struct {
 	cmd     *exec.Cmd
 }
 
+var endOfPatchToken = []byte("ENDOFPATCH\n")
+
 // StartDiffFetcher starts a git diff-tree subprocess that waits, listening on stdin
 // for comimt hashes to generate patches for.
 func StartDiffFetcher(dir string) (*DiffFetcher, error) {
@@ -60,7 +62,11 @@ func StartDiffFetcher(dir string) (*DiffFetcher, error) {
 	scanner.Split(func(data []byte, atEOF bool) (advance int, token []byte, err error) {
 		// Note that this only works when we write to stdin, then read from stdout before writing
 		// anything else to stdin, since we are using `HasSuffix` and not `Contains`.
-		if bytes.HasSuffix(data, []byte("ENDOFPATCH\n")) {
+		if bytes.HasSuffix(data, endOfPatchToken) {
+			if bytes.Equal(data, endOfPatchToken) {
+				// Empty patch, so return an empty token (different from nil)
+				return len(data), data[:0], nil
+			}
 			return len(data), data[:len(data)-len("ENDOFPATCH\n")], nil
 		}
 
@@ -84,6 +90,16 @@ func (d *DiffFetcher) Stop() {
 // Fetch fetches a diff from the git diff-tree subprocess, writing to its stdin
 // and waiting for its response on stdout. Note that this is not safe to call concurrently.
 func (d *DiffFetcher) Fetch(hash []byte) ([]byte, error) {
+	if _, err := d.stdin.Write(hash); err != nil {
+		return nil, err
+	}
+	if _, err := d.stdin.Write([]byte{'\n'}); err != nil {
+		return nil, err
+	}
+	if _, err := d.stdin.Write(endOfPatchToken); err != nil {
+		return nil, err
+	}
+
 	// HACK: There is no way (as far as I can tell) to make `git diff-tree --stdin` to
 	// write a trailing null byte or tell us how much to read in advance, and since we're
 	// using a long-running process, the stream doesn't close at the end, and we can't use the
@@ -91,10 +107,6 @@ func (d *DiffFetcher) Fetch(hash []byte) ([]byte, error) {
 	// serially. We resort to sending the subprocess a bogus commit hash named "ENDOFPATCH", which it
 	// will fail to read as a tree, and print back to stdout literally. We use this as a signal
 	// that the subprocess is done outputting for this commit.
-	_, err := d.stdin.Write(append(hash, []byte("\nENDOFPATCH\n")...))
-	if err != nil {
-		return nil, err
-	}
 
 	if d.scanner.Scan() {
 		return d.scanner.Bytes(), nil
@@ -103,5 +115,5 @@ func (d *DiffFetcher) Fetch(hash []byte) ([]byte, error) {
 	} else if stderr, _ := io.ReadAll(d.stderr); len(stderr) > 0 {
 		return nil, errors.Errorf("git subprocess stderr: %s", string(stderr))
 	}
-	return nil, errors.New("expected scan to succeed")
+	return nil, errors.Errorf("failed to scan for commit %s", string(hash))
 }

@@ -76,21 +76,23 @@ var (
 	sep                = []byte{0x0}
 )
 
-type job struct {
-	batch      []*RawCommit
-	resultChan chan searchResult
-}
-
-type searchResult struct {
-	lazyCommit        *LazyCommit
-	highlightedCommit *MatchedCommit
-}
-
 const (
 	// The size of a batch of commits sent in each worker job
 	batchSize  = 512
 	numWorkers = 4
 )
+
+type CommitSearcher struct {
+	RepoDir     string
+	Query       MatchTree
+	Revisions   []protocol.RevisionSpecifier
+	IncludeDiff bool
+}
+
+type searchJob struct {
+	batch      []*RawCommit
+	resultChan chan *protocol.CommitMatch
+}
 
 // Search runs a search for commits matching the given predicate across the revisions passed in as revisionArgs.
 //
@@ -100,138 +102,136 @@ const (
 // that job should be sent down. We then read from the result channels in the same order that the jobs were sent.
 // This allows our worker pool to run the jobs in parallel, but we still emit matches in the same order that
 // git log outputs them.
-func Search(ctx context.Context, dir string, revs []protocol.RevisionSpecifier, p MatchTree, onMatch func(*LazyCommit, *MatchedCommit) bool) error {
+func (cs *CommitSearcher) Search(ctx context.Context, onMatch func(*protocol.CommitMatch)) error {
+	jobs := make(chan searchJob, 128)
+	resultChans := make(chan chan *protocol.CommitMatch, 128)
+
 	g, ctx := errgroup.WithContext(ctx)
-	ctx, cancel := context.WithCancel(ctx)
-	defer cancel()
-
-	revArgs := revsToGitArgs(revs)
-
-	jobs := make(chan job, 128)
-	resultChans := make(chan chan searchResult, 128)
 
 	// Start feeder
 	g.Go(func() error {
-		defer close(resultChans)
-		defer close(jobs)
-
-		cmd := exec.CommandContext(ctx, "git", append(logArgsWithoutRefs, revArgs...)...)
-		pr, pw := io.Pipe()
-		cmd.Stdout = pw
-		cmd.Dir = dir
-		if err := cmd.Start(); err != nil {
-			return err
-		}
-
-		// Wait for the git subprocess to finish, closing the pipe when it does
-		var cmdErr error
-		go func() {
-			defer pw.Close()
-			cmdErr = cmd.Wait()
-		}()
-
-		batch := make([]*RawCommit, 0, batchSize)
-		sendBatch := func() {
-			resultChan := make(chan searchResult, 128)
-			resultChans <- resultChan
-			jobs <- job{
-				batch:      batch,
-				resultChan: resultChan,
-			}
-			batch = make([]*RawCommit, 0, batchSize)
-		}
-
-		cs := NewCommitScanner(pr)
-		for cs.Scan() {
-			if ctx.Err() != nil {
-				return ctx.Err()
-			}
-			cv := cs.NextRawCommit()
-			batch = append(batch, cv)
-			if len(batch) == batchSize {
-				sendBatch()
-			}
-		}
-
-		if len(batch) > 0 {
-			sendBatch()
-		}
-
-		if cmdErr != nil {
-			return cmdErr
-		}
-		return cs.Err()
+		return cs.feedCommitBatches(ctx, jobs, resultChans)
 	})
 
 	// Start workers
 	for i := 0; i < numWorkers; i++ {
 		g.Go(func() error {
-			// Create a new diff fetcher subprocess for each worker
-			diffFetcher, err := StartDiffFetcher(dir)
-			if err != nil {
-				return err
-			}
-			defer diffFetcher.Stop()
-
-			startBuf := make([]byte, 1024)
-
-			runJob := func(j job) error {
-				defer close(j.resultChan)
-				if ctx.Err() != nil {
-					// ignore context error, and don't spend time running the job
-					return nil
-				}
-
-				for _, cv := range j.batch {
-					lc := &LazyCommit{
-						RawCommit:   cv,
-						diffFetcher: diffFetcher,
-						LowerBuf:    startBuf,
-					}
-					commitMatches, highlights, err := p.Match(lc)
-					if err != nil {
-						return err
-					}
-					if commitMatches {
-						j.resultChan <- searchResult{
-							lazyCommit:        lc,
-							highlightedCommit: highlights,
-						}
-					}
-				}
-				return nil
-			}
-
-			var errors error
-			for j := range jobs {
-				multierror.Append(errors, runJob(j))
-			}
-			return errors
+			return cs.runJobs(ctx, jobs)
 		})
 	}
 
-	// Consumer goroutine that consumes results in the order jobs were
-	// submitted to the job queue
+	// Consume results in the order jobs were submitted to the job queue
 	g.Go(func() error {
-		skip := false
 		for resultChan := range resultChans {
 			for result := range resultChan {
-				if skip {
-					// Drain all the channels to keep from blocking writers
-					continue
-				}
-				keepGoing := onMatch(result.lazyCommit, result.highlightedCommit)
-				if !keepGoing {
-					skip = true
-					cancel()
-				}
+				onMatch(result)
 			}
 		}
-
 		return nil
 	})
 
 	return g.Wait()
+}
+
+// feedCommitBatches iterates over the commits in the repo, batches them, and sends them down the jobs channel. Additionally,
+// for each job it creates, it creates a results chan for that job and sends that channel to the resultChans channel the results
+// for each job can be read sequentially.
+func (cs *CommitSearcher) feedCommitBatches(ctx context.Context, jobs chan searchJob, resultChans chan chan *protocol.CommitMatch) error {
+	defer close(resultChans)
+	defer close(jobs)
+
+	revArgs := revsToGitArgs(cs.Revisions)
+	cmd := exec.CommandContext(ctx, "git", append(logArgsWithoutRefs, revArgs...)...)
+	cmd.Dir = cs.RepoDir
+	stdoutReader, err := cmd.StdoutPipe()
+	if err != nil {
+		return err
+	}
+
+	if err := cmd.Start(); err != nil {
+		return err
+	}
+
+	batch := make([]*RawCommit, 0, batchSize)
+	sendBatch := func() {
+		resultChan := make(chan *protocol.CommitMatch, 128)
+		resultChans <- resultChan
+		jobs <- searchJob{
+			batch:      batch,
+			resultChan: resultChan,
+		}
+		batch = make([]*RawCommit, 0, batchSize)
+	}
+
+	scanner := NewCommitScanner(stdoutReader)
+	for scanner.Scan() {
+		if ctx.Err() != nil {
+			return nil
+		}
+		cv := scanner.NextRawCommit()
+		batch = append(batch, cv)
+		if len(batch) == batchSize {
+			sendBatch()
+		}
+	}
+
+	if scanner.Err() != nil {
+		return scanner.Err()
+	}
+
+	if len(batch) > 0 {
+		sendBatch()
+	}
+
+	return cmd.Wait()
+}
+
+// runJobs reads off the jobs channel and searches the commits in that job. For each match it finds,
+// it sends the match to the job's result channel.
+func (cs *CommitSearcher) runJobs(ctx context.Context, jobs chan searchJob) error {
+	// Create a new diff fetcher subprocess for each worker
+	diffFetcher, err := StartDiffFetcher(cs.RepoDir)
+	if err != nil {
+		return err
+	}
+	defer diffFetcher.Stop()
+
+	lowerBuf := make([]byte, 1024)
+	runJob := func(j searchJob) error {
+		defer close(j.resultChan)
+
+		for _, cv := range j.batch {
+			if ctx.Err() != nil {
+				// ignore context error, and don't spend time continuing the job
+				return nil
+			}
+
+			lc := &LazyCommit{
+				RawCommit:   cv,
+				diffFetcher: diffFetcher,
+				LowerBuf:    lowerBuf,
+			}
+			matched, highlights, err := cs.Query.Match(lc)
+			if err != nil {
+				return err
+			}
+
+			if matched {
+				cm, err := createCommitMatch(lc, highlights, cs.IncludeDiff)
+				if err != nil {
+					return err
+				}
+				j.resultChan <- cm
+			}
+		}
+		return nil
+	}
+
+	var errors error
+	for j := range jobs {
+		multierror.Append(errors, runJob(j))
+	}
+	return errors
 }
 
 func revsToGitArgs(revs []protocol.RevisionSpecifier) []string {
@@ -353,7 +353,7 @@ func (c *CommitScanner) Err() error {
 	return c.err
 }
 
-func CreateCommitMatch(lc *LazyCommit, hc *MatchedCommit, includeDiff bool) (*protocol.CommitMatch, error) {
+func createCommitMatch(lc *LazyCommit, hc *MatchedCommit, includeDiff bool) (*protocol.CommitMatch, error) {
 	authorDate, err := lc.AuthorDate()
 	if err != nil {
 		return nil, err
