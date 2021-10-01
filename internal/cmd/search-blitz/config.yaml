@@ -82,7 +82,7 @@ groups:
                 repo:^github\.com/sgtest/element$
                 repeat-click
 
-          - name: literal_repo_excluded_scope # ~5 results
+          - name: literal_repo_excluded_scope # ~30 results
             query: >
                 patterntype:literal
                 -repo:^github\.com/sourcegraph/sourcegraph$
