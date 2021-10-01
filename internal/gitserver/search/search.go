@@ -354,6 +354,10 @@ func (c *CommitScanner) Err() error {
 }
 
 func createCommitMatch(lc *lazyCommit, hc *MatchedCommit, includeDiff bool) (*protocol.CommitMatch, error) {
+	if hc == nil {
+		hc = &MatchedCommit{}
+	}
+
 	authorDate, err := lc.AuthorDate()
 	if err != nil {
 		return nil, err
