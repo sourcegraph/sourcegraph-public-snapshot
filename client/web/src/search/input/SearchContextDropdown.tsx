@@ -52,12 +52,7 @@ export const SearchContextDropdown: React.FunctionComponent<SearchContextDropdow
         telemetryService,
     } = props
 
-    const [hasUsedNonGlobalContext, setHasUsedNonGlobalContext] = useTemporarySetting('search.usedNonGlobalContext')
-    useEffect(() => {
-        if (selectedSearchContextSpec && selectedSearchContextSpec !== 'global' && !hasUsedNonGlobalContext) {
-            setHasUsedNonGlobalContext(true)
-        }
-    }, [selectedSearchContextSpec, setHasUsedNonGlobalContext, hasUsedNonGlobalContext])
+    const [hasUsedNonGlobalContext] = useTemporarySetting('search.usedNonGlobalContext')
 
     const [isOpen, setIsOpen] = useState(false)
     const toggleOpen = useCallback(() => {
