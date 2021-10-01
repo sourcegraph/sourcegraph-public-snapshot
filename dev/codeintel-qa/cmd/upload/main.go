@@ -14,7 +14,6 @@ import (
 var (
 	numConcurrentUploads int
 	indexDir             string
-	srcCliPath           string
 	verbose              bool
 	pollInterval         time.Duration
 	timeout              time.Duration
@@ -26,7 +25,6 @@ func init() {
 	// Default assumes running from the dev/codeintel-qa directory
 	flag.StringVar(&indexDir, "index-dir", "./testdata/indexes", "The location of the testdata directory")
 	flag.IntVar(&numConcurrentUploads, "num-concurrent-uploads", 5, "The maximum number of concurrent uploads")
-	flag.StringVar(&srcCliPath, "src-cli-path", "src", "The location of the src-cli binary")
 	flag.BoolVar(&verbose, "verbose", false, "Display full state from graphql")
 	flag.DurationVar(&pollInterval, "poll-interval", time.Second*5, "The time to wait between graphql requests")
 	flag.DurationVar(&timeout, "timeout", 0, "The time it should take to upload and process all targets")
