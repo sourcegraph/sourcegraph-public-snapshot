@@ -4,7 +4,7 @@
 # passed a path to a bash script that runs the actual tests against a running instance. The passed
 # script will be passed a single parameter: the target URL from which the instance is accessible.
 
-cd "$(dirname "${BASH_SOURCE[0]}")"/../..
+cd "$(dirname "${BASH_SOURCE[0]}")/../../"
 set -ex
 
 if [ -z "$IMAGE" ]; then

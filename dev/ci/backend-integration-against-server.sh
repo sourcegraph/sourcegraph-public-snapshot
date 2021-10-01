@@ -3,7 +3,7 @@
 # This script runs the backend integration tests against a running server.
 # This script is invoked by ./dev/ci/run-integration.sh after running an instance.
 
-cd "$(dirname "${BASH_SOURCE[0]}")/../../../.."
+cd "$(dirname "${BASH_SOURCE[0]}")/../.."
 set -ex
 
 echo '--- integration test ./dev/gqltest -long'
