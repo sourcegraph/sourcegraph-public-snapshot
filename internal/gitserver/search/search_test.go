@@ -67,7 +67,11 @@ func TestSearch(t *testing.T) {
 		require.NoError(t, err)
 		var commits []*LazyCommit
 		var highlights []*MatchedCommit
-		err = Search(context.Background(), dir, nil, tree, func(lc *LazyCommit, hl *MatchedCommit) bool {
+		searcher := &CommitSearcher{
+			RepoDir: dir,
+			Query:   tree,
+		}
+		err = searcher.Search(context.Background(), func(lc *LazyCommit, hl *MatchedCommit) bool {
 			commits = append(commits, lc)
 			highlights = append(highlights, hl)
 			return true
@@ -83,7 +87,11 @@ func TestSearch(t *testing.T) {
 		require.NoError(t, err)
 		var commits []*LazyCommit
 		var highlights []*MatchedCommit
-		err = Search(context.Background(), dir, nil, tree, func(lc *LazyCommit, hl *MatchedCommit) bool {
+		searcher := &CommitSearcher{
+			RepoDir: dir,
+			Query:   tree,
+		}
+		err = searcher.Search(context.Background(), func(lc *LazyCommit, hl *MatchedCommit) bool {
 			commits = append(commits, lc)
 			highlights = append(highlights, hl)
 			return true
@@ -101,7 +109,11 @@ func TestSearch(t *testing.T) {
 		require.NoError(t, err)
 		var commits []*LazyCommit
 		var highlights []*MatchedCommit
-		err = Search(context.Background(), dir, nil, tree, func(lc *LazyCommit, hl *MatchedCommit) bool {
+		searcher := &CommitSearcher{
+			RepoDir: dir,
+			Query:   tree,
+		}
+		err = searcher.Search(context.Background(), func(lc *LazyCommit, hl *MatchedCommit) bool {
 			commits = append(commits, lc)
 			highlights = append(highlights, hl)
 			return true
@@ -118,7 +130,11 @@ func TestSearch(t *testing.T) {
 		require.NoError(t, err)
 		var commits []*LazyCommit
 		var highlights []*MatchedCommit
-		err = Search(context.Background(), dir, nil, tree, func(lc *LazyCommit, hl *MatchedCommit) bool {
+		searcher := &CommitSearcher{
+			RepoDir: dir,
+			Query:   tree,
+		}
+		err = searcher.Search(context.Background(), func(lc *LazyCommit, hl *MatchedCommit) bool {
 			commits = append(commits, lc)
 			highlights = append(highlights, hl)
 			return true
@@ -135,7 +151,11 @@ func TestSearch(t *testing.T) {
 		require.NoError(t, err)
 		var commits []*LazyCommit
 		var highlights []*MatchedCommit
-		err = Search(context.Background(), dir, nil, tree, func(lc *LazyCommit, hl *MatchedCommit) bool {
+		searcher := &CommitSearcher{
+			RepoDir: dir,
+			Query:   tree,
+		}
+		err = searcher.Search(context.Background(), func(lc *LazyCommit, hl *MatchedCommit) bool {
 			commits = append(commits, lc)
 			highlights = append(highlights, hl)
 			return true
@@ -158,7 +178,11 @@ func TestSearch(t *testing.T) {
 		require.NoError(t, err)
 		var commits []*LazyCommit
 		var highlights []*MatchedCommit
-		err = Search(context.Background(), dir, nil, tree, func(lc *LazyCommit, hl *MatchedCommit) bool {
+		searcher := &CommitSearcher{
+			RepoDir: dir,
+			Query:   tree,
+		}
+		err = searcher.Search(context.Background(), func(lc *LazyCommit, hl *MatchedCommit) bool {
 			commits = append(commits, lc)
 			highlights = append(highlights, hl)
 			return true
