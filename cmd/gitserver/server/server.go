@@ -986,8 +986,14 @@ func (s *Server) search(w http.ResponseWriter, r *http.Request, args *protocol.S
 			return err
 		}
 
+		searcher := &search.CommitSearcher{
+			RepoDir:   dir.Path(),
+			Revisions: args.Revisions,
+			Query:     mt,
+		}
+
 		var conversionErr error
-		err = search.Search(ctx, dir.Path(), args.Revisions, mt, func(match *search.LazyCommit, highlights *search.MatchedCommit) bool {
+		err = searcher.Search(ctx, func(match *search.LazyCommit, highlights *search.MatchedCommit) bool {
 			res, err := search.CreateCommitMatch(match, highlights, args.IncludeDiff)
 			if err != nil {
 				conversionErr = err
