@@ -54,7 +54,7 @@ func ToMatchTree(q protocol.Node) (MatchTree, error) {
 type MatchTree interface {
 	// Match returns whether the given predicate matches a commit and, if it does,
 	// the portions of the commit that match in the form of *CommitHighlights
-	Match(*LazyCommit) (matched bool, highlights *MatchedCommit, err error)
+	Match(*lazyCommit) (matched bool, highlights *MatchedCommit, err error)
 }
 
 // AuthorMatches is a predicate that matches if the author's name or email address
@@ -63,7 +63,7 @@ type AuthorMatches struct {
 	*casetransform.Regexp
 }
 
-func (a *AuthorMatches) Match(lc *LazyCommit) (bool, *MatchedCommit, error) {
+func (a *AuthorMatches) Match(lc *lazyCommit) (bool, *MatchedCommit, error) {
 	return a.Regexp.Match(lc.AuthorName, &lc.LowerBuf) || a.Regexp.Match(lc.AuthorEmail, &lc.LowerBuf), nil, nil
 }
 
@@ -73,7 +73,7 @@ type CommitterMatches struct {
 	*casetransform.Regexp
 }
 
-func (c *CommitterMatches) Match(lc *LazyCommit) (bool, *MatchedCommit, error) {
+func (c *CommitterMatches) Match(lc *lazyCommit) (bool, *MatchedCommit, error) {
 	return c.Regexp.Match(lc.CommitterName, &lc.LowerBuf) || c.Regexp.Match(lc.CommitterEmail, &lc.LowerBuf), nil, nil
 }
 
@@ -82,7 +82,7 @@ type CommitBefore struct {
 	protocol.CommitBefore
 }
 
-func (c *CommitBefore) Match(lc *LazyCommit) (bool, *MatchedCommit, error) {
+func (c *CommitBefore) Match(lc *lazyCommit) (bool, *MatchedCommit, error) {
 	authorDate, err := lc.AuthorDate()
 	if err != nil {
 		return false, nil, err
@@ -95,7 +95,7 @@ type CommitAfter struct {
 	protocol.CommitAfter
 }
 
-func (c *CommitAfter) Match(lc *LazyCommit) (bool, *MatchedCommit, error) {
+func (c *CommitAfter) Match(lc *lazyCommit) (bool, *MatchedCommit, error) {
 	authorDate, err := lc.AuthorDate()
 	if err != nil {
 		return false, nil, err
@@ -109,7 +109,7 @@ type MessageMatches struct {
 	*casetransform.Regexp
 }
 
-func (m *MessageMatches) Match(lc *LazyCommit) (bool, *MatchedCommit, error) {
+func (m *MessageMatches) Match(lc *lazyCommit) (bool, *MatchedCommit, error) {
 	results := m.FindAllIndex(lc.Message, -1, &lc.LowerBuf)
 	if results == nil {
 		return false, nil, nil
@@ -126,7 +126,7 @@ type DiffMatches struct {
 	*casetransform.Regexp
 }
 
-func (dm *DiffMatches) Match(lc *LazyCommit) (bool, *MatchedCommit, error) {
+func (dm *DiffMatches) Match(lc *lazyCommit) (bool, *MatchedCommit, error) {
 	diff, err := lc.Diff()
 	if err != nil {
 		return false, nil, err
@@ -187,7 +187,7 @@ type DiffModifiesFile struct {
 	*casetransform.Regexp
 }
 
-func (dmf *DiffModifiesFile) Match(lc *LazyCommit) (bool, *MatchedCommit, error) {
+func (dmf *DiffModifiesFile) Match(lc *lazyCommit) (bool, *MatchedCommit, error) {
 	diff, err := lc.Diff()
 	if err != nil {
 		return false, nil, err
@@ -220,7 +220,7 @@ type Operator struct {
 	Operands []MatchTree
 }
 
-func (o *Operator) Match(commit *LazyCommit) (bool, *MatchedCommit, error) {
+func (o *Operator) Match(commit *lazyCommit) (bool, *MatchedCommit, error) {
 	resultMatches := &MatchedCommit{}
 	hasMatch := false
 	for _, operand := range o.Operands {

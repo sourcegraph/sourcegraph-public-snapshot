@@ -10,10 +10,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 )
 
-// LazyCommit wraps a RawCommit and a DiffFetcher so that we can have a unified interface
+// lazyCommit wraps a RawCommit and a DiffFetcher so that we can have a unified interface
 // that makes all the information we need available without paying the cost of fetching
 // diffs or parsing times when they're not unneeded.
-type LazyCommit struct {
+type lazyCommit struct {
 	*RawCommit
 
 	// diff is the parsed output from the diff fetcher, cached here for performance
@@ -24,7 +24,7 @@ type LazyCommit struct {
 	LowerBuf []byte
 }
 
-func (l *LazyCommit) AuthorDate() (time.Time, error) {
+func (l *lazyCommit) AuthorDate() (time.Time, error) {
 	unixSeconds, err := strconv.Atoi(string(l.RawCommit.AuthorDate))
 	if err != nil {
 		return time.Time{}, err
@@ -33,7 +33,7 @@ func (l *LazyCommit) AuthorDate() (time.Time, error) {
 	return time.Unix(int64(unixSeconds), 0), nil
 }
 
-func (l *LazyCommit) CommitterDate() (time.Time, error) {
+func (l *lazyCommit) CommitterDate() (time.Time, error) {
 	unixSeconds, err := strconv.Atoi(string(l.RawCommit.CommitterDate))
 	if err != nil {
 		return time.Time{}, err
@@ -43,12 +43,12 @@ func (l *LazyCommit) CommitterDate() (time.Time, error) {
 }
 
 // RawDiff returns the diff exactly as returned by git diff-tree
-func (l *LazyCommit) RawDiff() ([]byte, error) {
+func (l *lazyCommit) RawDiff() ([]byte, error) {
 	return l.diffFetcher.Fetch(l.Hash)
 }
 
 // Diff fetches the diff, then parses it with go-diff, caching the result
-func (l *LazyCommit) Diff() ([]*diff.FileDiff, error) {
+func (l *lazyCommit) Diff() ([]*diff.FileDiff, error) {
 	if l.diff != nil {
 		return l.diff, nil
 	}
@@ -67,7 +67,7 @@ func (l *LazyCommit) Diff() ([]*diff.FileDiff, error) {
 	return diff, nil
 }
 
-func (l *LazyCommit) ParentIDs() []api.CommitID {
+func (l *lazyCommit) ParentIDs() []api.CommitID {
 	strs := strings.Split(string(l.ParentHashes), " ")
 	commitIDs := make([]api.CommitID, 0, len(strs))
 	for _, str := range strs {
@@ -76,10 +76,10 @@ func (l *LazyCommit) ParentIDs() []api.CommitID {
 	return commitIDs
 }
 
-func (l *LazyCommit) RefNames() []string {
+func (l *lazyCommit) RefNames() []string {
 	return strings.Split(string(l.RawCommit.RefNames), ", ")
 }
 
-func (l *LazyCommit) SourceRefs() []string {
+func (l *lazyCommit) SourceRefs() []string {
 	return strings.Split(string(l.RawCommit.SourceRefs), ", ")
 }

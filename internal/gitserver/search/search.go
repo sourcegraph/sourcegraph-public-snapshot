@@ -206,7 +206,7 @@ func (cs *CommitSearcher) runJobs(ctx context.Context, jobs chan searchJob) erro
 				return nil
 			}
 
-			lc := &LazyCommit{
+			lc := &lazyCommit{
 				RawCommit:   cv,
 				diffFetcher: diffFetcher,
 				LowerBuf:    lowerBuf,
@@ -353,7 +353,7 @@ func (c *CommitScanner) Err() error {
 	return c.err
 }
 
-func createCommitMatch(lc *LazyCommit, hc *MatchedCommit, includeDiff bool) (*protocol.CommitMatch, error) {
+func createCommitMatch(lc *lazyCommit, hc *MatchedCommit, includeDiff bool) (*protocol.CommitMatch, error) {
 	authorDate, err := lc.AuthorDate()
 	if err != nil {
 		return nil, err

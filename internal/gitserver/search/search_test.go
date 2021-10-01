@@ -65,9 +65,9 @@ func TestSearch(t *testing.T) {
 		query := &protocol.MessageMatches{Expr: "commit2"}
 		tree, err := ToMatchTree(query)
 		require.NoError(t, err)
-		var commits []*LazyCommit
+		var commits []*lazyCommit
 		var highlights []*MatchedCommit
-		err = Search(context.Background(), dir, nil, tree, func(lc *LazyCommit, hl *MatchedCommit) bool {
+		err = Search(context.Background(), dir, nil, tree, func(lc *lazyCommit, hl *MatchedCommit) bool {
 			commits = append(commits, lc)
 			highlights = append(highlights, hl)
 			return true
@@ -81,9 +81,9 @@ func TestSearch(t *testing.T) {
 		query := &protocol.MessageMatches{Expr: "c"}
 		tree, err := ToMatchTree(query)
 		require.NoError(t, err)
-		var commits []*LazyCommit
+		var commits []*lazyCommit
 		var highlights []*MatchedCommit
-		err = Search(context.Background(), dir, nil, tree, func(lc *LazyCommit, hl *MatchedCommit) bool {
+		err = Search(context.Background(), dir, nil, tree, func(lc *lazyCommit, hl *MatchedCommit) bool {
 			commits = append(commits, lc)
 			highlights = append(highlights, hl)
 			return true
@@ -99,9 +99,9 @@ func TestSearch(t *testing.T) {
 		query := &protocol.DiffMatches{Expr: "ipsum"}
 		tree, err := ToMatchTree(query)
 		require.NoError(t, err)
-		var commits []*LazyCommit
+		var commits []*lazyCommit
 		var highlights []*MatchedCommit
-		err = Search(context.Background(), dir, nil, tree, func(lc *LazyCommit, hl *MatchedCommit) bool {
+		err = Search(context.Background(), dir, nil, tree, func(lc *lazyCommit, hl *MatchedCommit) bool {
 			commits = append(commits, lc)
 			highlights = append(highlights, hl)
 			return true
@@ -116,9 +116,9 @@ func TestSearch(t *testing.T) {
 		query := &protocol.AuthorMatches{Expr: "2"}
 		tree, err := ToMatchTree(query)
 		require.NoError(t, err)
-		var commits []*LazyCommit
+		var commits []*lazyCommit
 		var highlights []*MatchedCommit
-		err = Search(context.Background(), dir, nil, tree, func(lc *LazyCommit, hl *MatchedCommit) bool {
+		err = Search(context.Background(), dir, nil, tree, func(lc *lazyCommit, hl *MatchedCommit) bool {
 			commits = append(commits, lc)
 			highlights = append(highlights, hl)
 			return true
@@ -133,9 +133,9 @@ func TestSearch(t *testing.T) {
 		query := &protocol.DiffModifiesFile{Expr: "file1"}
 		tree, err := ToMatchTree(query)
 		require.NoError(t, err)
-		var commits []*LazyCommit
+		var commits []*lazyCommit
 		var highlights []*MatchedCommit
-		err = Search(context.Background(), dir, nil, tree, func(lc *LazyCommit, hl *MatchedCommit) bool {
+		err = Search(context.Background(), dir, nil, tree, func(lc *lazyCommit, hl *MatchedCommit) bool {
 			commits = append(commits, lc)
 			highlights = append(highlights, hl)
 			return true
@@ -156,9 +156,9 @@ func TestSearch(t *testing.T) {
 		}
 		tree, err := ToMatchTree(query)
 		require.NoError(t, err)
-		var commits []*LazyCommit
+		var commits []*lazyCommit
 		var highlights []*MatchedCommit
-		err = Search(context.Background(), dir, nil, tree, func(lc *LazyCommit, hl *MatchedCommit) bool {
+		err = Search(context.Background(), dir, nil, tree, func(lc *lazyCommit, hl *MatchedCommit) bool {
 			commits = append(commits, lc)
 			highlights = append(highlights, hl)
 			return true
@@ -292,7 +292,7 @@ index 0000000000..7e54670557
 	parsedDiff, err := diff.NewMultiFileDiffReader(strings.NewReader(rawDiff)).ReadAllFiles()
 	require.NoError(t, err)
 
-	lc := &LazyCommit{
+	lc := &lazyCommit{
 		RawCommit: &RawCommit{
 			AuthorName: []byte("Camden Cheek"),
 		},
