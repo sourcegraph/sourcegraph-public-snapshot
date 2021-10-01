@@ -6,7 +6,7 @@ steps:
   retry:
     automatic:
       exit_status: "*"
-      limit: 3
+      limit: 1
   agents:
     queue: 'baremetal'
   command:
@@ -16,7 +16,7 @@ steps:
   retry:
     automatic:
       exit_status: "*"
-      limit: 3
+      limit: 1
   artifact_paths: ./*.png;./*.mp4;./*.log
   agents:
     queue: 'baremetal'
@@ -24,6 +24,10 @@ steps:
     - .buildkite/vagrant-run.sh sourcegraph-qa-test
 
 - label: ':docker::arrow_double_up: Sourcegraph Upgrade'
+  retry:
+    automatic:
+      exit_status: "*"
+      limit: 1
   command:
   - .buildkite/vagrant-run.sh sourcegraph-upgrade
   artifact_paths: ./*.png;./*.mp4;./*.log
