@@ -27,6 +27,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/jscontext"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/handlerutil"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/routevar"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/cookie"
@@ -69,6 +70,7 @@ type Common struct {
 	Injected InjectedHTML
 	Metadata *Metadata
 	Context  jscontext.JSContext
+	BlobContext template.HTML
 	Title    string
 	Error    *pageError
 
@@ -224,6 +226,11 @@ func newCommon(w http.ResponseWriter, r *http.Request, title string, indexed boo
 			return nil, errors.New("error caused by Always500Test repo name")
 		}
 		common.Rev = mux.Vars(r)["Rev"]
+
+		blobPath := mux.Vars(r)["Path"]
+		file, _ := search.DecorateFileHTML(r.Context(), common.Repo.Name, common.CommitID, blobPath)
+		common.BlobContext = file
+
 		// Update gitserver contents for a repo whenever it is visited.
 		go func() {
 			ctx := context.Background()

@@ -1,4 +1,4 @@
-import { Observable } from 'rxjs'
+import { Observable, of } from 'rxjs'
 import { map } from 'rxjs/operators'
 
 import { dataOrThrowErrors, gql } from '@sourcegraph/shared/src/graphql/graphql'
@@ -18,8 +18,23 @@ export const fetchBlob = memoizeObservable(
         commitID: string
         filePath: string
         disableTimeout: boolean
-    }): Observable<BlobFileFields | null> =>
-        requestGraphQL<BlobResult, BlobVariables>(
+    }): Observable<BlobFileFields | null> => {
+        const cacheKey = new URLSearchParams(window.location.search).get('cache')
+        const cachedBlob = window.blob as string
+        console.log('cacheKey', cacheKey)
+
+        if (cachedBlob && cacheKey) {
+            return of({
+                content: '',
+                richHTML: '',
+                highlight: {
+                    aborted: false,
+                    html: cachedBlob,
+                },
+            })
+        }
+
+        return requestGraphQL<BlobResult, BlobVariables>(
             gql`
                 query Blob($repoName: String!, $commitID: String!, $filePath: String!, $disableTimeout: Boolean!) {
                     repository(name: $repoName) {
@@ -49,6 +64,7 @@ export const fetchBlob = memoizeObservable(
                 }
                 return data.repository.commit.file
             })
-        ),
+        )
+    },
     fetchBlobCacheKey
 )
