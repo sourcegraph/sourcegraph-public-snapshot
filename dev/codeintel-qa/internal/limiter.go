@@ -17,7 +17,7 @@ func NewLimiter(concurrency int) *Limiter {
 	return &Limiter{ch: ch}
 }
 
-// Acquire blocks until it can Acquire a value from the inner channel.
+// Acquire blocks until it can acquire a value from the inner channel.
 func (l *Limiter) Acquire(ctx context.Context) error {
 	select {
 	case <-l.ch:
