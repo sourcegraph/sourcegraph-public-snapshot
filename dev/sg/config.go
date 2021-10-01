@@ -89,7 +89,7 @@ type Config struct {
 	Env               map[string]string      `yaml:"env"`
 	Commands          map[string]run.Command `yaml:"commands"`
 	Commandsets       map[string]*Commandset `yaml:"commandsets"`
-	DefaultCommandSet string                 `yaml:"defaultCommandset"`
+	DefaultCommandset string                 `yaml:"defaultCommandset"`
 	Tests             map[string]run.Command `yaml:"tests"`
 	Checks            map[string]run.Check   `yaml:"checks"`
 }
