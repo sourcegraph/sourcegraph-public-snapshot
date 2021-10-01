@@ -113,6 +113,10 @@ func (c *Config) Merge(other *Config) {
 		c.Commandsets[k] = v
 	}
 
+	if other.DefaultCommandset != "" {
+		c.DefaultCommandset = other.DefaultCommandset
+	}
+
 	for k, v := range other.Tests {
 		if original, ok := c.Tests[k]; ok {
 			c.Tests[k] = original.Merge(v)
