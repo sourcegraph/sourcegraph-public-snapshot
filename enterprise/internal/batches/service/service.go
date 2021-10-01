@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"fmt"
+	"strings"
 	"sync"
 	"time"
 
@@ -1006,7 +1007,7 @@ func (s *Service) ValidateChangesetSpecs(ctx context.Context, batchSpecID int64)
 		return err
 	}
 
-	var errs *multierror.Error
+	errs := &multierror.Error{ErrorFormat: formatChangesetSpecHeadRefConflicts}
 	for _, c := range conflicts {
 		conflictErr := &changesetSpecHeadRefConflict{count: c.Count, headRef: c.HeadRef}
 
@@ -1031,4 +1032,19 @@ func (c changesetSpecHeadRefConflict) Error() string {
 		return fmt.Sprintf("%d changeset specs in %s use the same branch: %s", c.count, c.repo.Name, c.headRef)
 	}
 	return fmt.Sprintf("%d changeset specs in the same repository use the same branch: %s", c.count, c.headRef)
+}
+
+func formatChangesetSpecHeadRefConflicts(es []error) string {
+	if len(es) == 1 {
+		return fmt.Sprintf("Validating changeset specs resulted in an error:\n* %s\n", es[0])
+	}
+
+	points := make([]string, len(es))
+	for i, err := range es {
+		points[i] = fmt.Sprintf("* %s", err)
+	}
+
+	return fmt.Sprintf(
+		"%d errors when validating changeset specs:\n%s\n",
+		len(es), strings.Join(points, "\n"))
 }
