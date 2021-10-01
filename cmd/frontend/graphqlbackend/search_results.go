@@ -540,11 +540,24 @@ func withMode(args search.TextParameters, st query.SearchType, versionContext *s
 		if versionContext != nil && *versionContext != "" {
 			return false
 		}
-		querySearchContextSpec, _ := args.Query.StringValue(query.FieldContext)
-		if !searchcontexts.IsGlobalSearchContextSpec(querySearchContextSpec) {
-			return false
-		}
-		return len(args.Query.Values(query.FieldRepo)) == 0 && len(args.Query.Values(query.FieldRepoGroup)) == 0 && len(args.Query.Values(query.FieldRepoHasFile)) == 0
+
+		return query.ForAll(args.Query, func(node query.Node) bool {
+			n, ok := node.(query.Parameter)
+			if !ok {
+				return true
+			}
+			switch n.Field {
+			case query.FieldContext:
+				return searchcontexts.IsGlobalSearchContextSpec(n.Value)
+			case
+				query.FieldRepo,
+				query.FieldRepoGroup,
+				query.FieldRepoHasFile:
+				return false
+			default:
+				return true
+			}
+		})
 	}
 
 	hasGlobalSearchResultType := args.ResultTypes.Has(result.TypeFile | result.TypePath | result.TypeSymbol)
