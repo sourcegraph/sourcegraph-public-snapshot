@@ -15,7 +15,6 @@ import { deleteExternalService } from './backend'
 
 export interface ExternalServiceNodeProps {
     node: ListExternalServiceFields
-    onDidUpdate: () => void
     history: H.History
     routingPrefix: string
     afterDeleteRoute: string
@@ -23,7 +22,6 @@ export interface ExternalServiceNodeProps {
 
 export const ExternalServiceNode: React.FunctionComponent<ExternalServiceNodeProps> = ({
     node,
-    onDidUpdate,
     history,
     routingPrefix,
     afterDeleteRoute,
@@ -37,14 +35,13 @@ export const ExternalServiceNode: React.FunctionComponent<ExternalServiceNodePro
         try {
             await deleteExternalService(node.id)
             setIsDeleting(false)
-            onDidUpdate()
             // eslint-disable-next-line rxjs/no-ignored-subscription
             refreshSiteFlags().subscribe()
             history.push(afterDeleteRoute)
         } catch (error) {
             setIsDeleting(asError(error))
         }
-    }, [afterDeleteRoute, history, node.displayName, node.id, onDidUpdate])
+    }, [afterDeleteRoute, history, node.displayName, node.id])
 
     return (
         <li className="external-service-node list-group-item py-2" data-test-external-service-name={node.displayName}>
