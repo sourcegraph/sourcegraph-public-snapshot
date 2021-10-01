@@ -25,7 +25,7 @@ steps:
 
 - label: ':docker::brain: Code Intel QA'
   command:
-    - .buildkite/vagrant-run.sh sourcegraph-code-intel-test
+    - dev/ci/test/codeintel-qa/test.sh
   artifact_paths: ./*.log
 
 - label: ':docker::arrow_double_up: Sourcegraph Upgrade'
