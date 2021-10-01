@@ -5,6 +5,8 @@ import { EMPTY, Observable, of } from 'rxjs'
 import { map } from 'rxjs/operators'
 import stringScore from 'string-score'
 
+import { SyntaxHighlightedSearchQuery } from '@sourcegraph/web/src/components/SyntaxHighlightedSearchQuery'
+
 import { HighlightedMatches } from '../../../components/HighlightedMatches'
 import { EventLogsDataResult, EventLogsDataVariables, Scalars } from '../../../graphql-operations'
 import { dataOrThrowErrors, gql } from '../../../graphql/graphql'
@@ -142,11 +144,16 @@ export const RecentSearchesResult: React.FC<RecentSearchesResultProps> = ({
         <div>
             <NavigableList items={[null, ...searches]}>
                 {(search, { active }) => {
+                    if (search === null && !value) {
+                        return null
+                    }
+
                     if (search === null) {
                         return (
                             <NavigableList.Item active={active} onClick={() => onSearch(value)}>
                                 <span className={listStyles.itemContainer}>
-                                    <strong className={styles.queryPrompt}>Execute search with query: </strong> {value}
+                                    {/* <strong className={styles.queryPrompt}>Execute query: </strong> */}
+                                    <SyntaxHighlightedSearchQuery query={value} className={styles.query} />
                                 </span>
                             </NavigableList.Item>
                         )
@@ -161,7 +168,7 @@ export const RecentSearchesResult: React.FC<RecentSearchesResultProps> = ({
                                     pattern={value}
                                 />
                             ) : (
-                                search.searchText
+                                <SyntaxHighlightedSearchQuery query={search.searchText} className={styles.query} />
                             )}
                         </NavigableList.Item>
                     )

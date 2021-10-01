@@ -70,11 +70,11 @@ export const JumpToLineResult: React.FC<JumpToLineResultProps> = ({ value, onCli
     }, [line, numberOfLines, isLineNaN, textDocumentData, lineUpdates])
 
     if (!textDocumentData) {
-        return <Message type="muted">Open a text document to jump to line</Message>
+        return <Message>Navigate to a text document to jump to line</Message>
     }
 
     if (!value || isLineNaN || line > numberOfLines) {
-        return <Message type="muted">Enter a line number between 1 and {lines.length}</Message>
+        return <Message>Enter a line number between 1 and {lines.length}</Message>
     }
 
     return (

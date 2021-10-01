@@ -2,13 +2,11 @@
     margin: 0;
     padding: 0.125rem 0.5rem;
     font-size: 1rem;
+    font-weight: 300;
+    font-style: italic;
 
     // Temporary hack to clear fuzzy "message" element margin
     & p {
         margin: 0;
     }
-}
-
-.is-type-muted {
-    color: var(--icon-muted);
 }

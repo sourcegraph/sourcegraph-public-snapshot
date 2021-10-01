@@ -6,16 +6,27 @@ export enum CommandPaletteMode {
     Command = '>',
     JumpToLine = ':',
     JumpToSymbol = '@',
-    RecentSearches = '#',
+    Help = '?',
 }
+
+export const getMode = (text: string): CommandPaletteMode | undefined =>
+    Object.values(CommandPaletteMode).find(value => text.startsWith(value))
+
+const [open, close] = ['[', ']']
+export const PLACEHOLDER = `Recent searches (or change mode by prefixing with ${Object.values(CommandPaletteMode)
+    .filter(mode => mode !== CommandPaletteMode.Help)
+    .map(mode => `${open}${mode}${close}`)
+    .join(' ')} or ${open}?${close} for help)`
 
 export const COMMAND_PALETTE_COMMANDS: CommandItem[] = [
     {
-        id: 'openCommandPallette',
-        title: '[Beta] Command palette',
+        id: 'openCommandPalletteRecentSearchesMode',
+        title: '[Beta] Command palette : Recent searches mode',
         keybindings: [{ held: ['Control'], ordered: ['k'] }],
         onClick: (): void => {
-            useCommandPaletteStore.getState().toggleIsOpen({ open: true })
+            useCommandPaletteStore.getState().toggleIsOpen({
+                open: true,
+            })
         },
     },
     {
@@ -24,17 +35,6 @@ export const COMMAND_PALETTE_COMMANDS: CommandItem[] = [
         keybindings: [{ held: ['Control'], ordered: ['>'] }],
         onClick: (): void => {
             useCommandPaletteStore.getState().toggleIsOpen({ open: true, mode: CommandPaletteMode.Command })
-        },
-    },
-    {
-        id: 'openCommandPalletteRecentSearchesMode',
-        title: '[Beta] Command palette : Recent searches mode',
-        keybindings: [{ held: ['Control'], ordered: ['#'] }],
-        onClick: (): void => {
-            useCommandPaletteStore.getState().toggleIsOpen({
-                open: true,
-                mode: CommandPaletteMode.RecentSearches,
-            })
         },
     },
     {

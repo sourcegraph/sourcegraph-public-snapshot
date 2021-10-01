@@ -106,7 +106,7 @@ export const FuzzyFinderResult: React.FC<FuzzyFinderResultProps> = ({
     }, [throttledValue, onClick, fsm, platformContext, repoUrl, workspaceRoot?.inputRevision, maxResults])
 
     if (!workspaceRoot) {
-        return <Message type="muted">Navigate to a repo to use fuzzy finder</Message>
+        return <Message>Navigate to a repo to use fuzzy finder</Message>
     }
 
     const onFuzzyResultClick = (url?: string): void => {

@@ -26,11 +26,8 @@ import { JumpToLineResult } from './components/JumpToLineResult'
 import { JumpToSymbolResult } from './components/JumpToSymbolResult'
 import { RecentSearchesResult } from './components/RecentSearchesResult'
 import { ShortcutController, KeyboardShortcutWithCallback } from './components/ShortcutController'
-import { COMMAND_PALETTE_COMMANDS, CommandPaletteMode } from './constants'
+import { COMMAND_PALETTE_COMMANDS, CommandPaletteMode, getMode, PLACEHOLDER } from './constants'
 import { useCommandPaletteStore } from './store'
-
-const getMode = (text: string): CommandPaletteMode | undefined =>
-    Object.values(CommandPaletteMode).find(value => text.startsWith(value))
 
 // Memoize contributions to prevent flashing loading spinners on subsequent mounts
 const getContributions = memoizeObservable(
@@ -227,14 +224,6 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
             [extensionsController]
         )
     )
-
-    const placeholder = useMemo(
-        () =>
-            `Select mode by prefixing ${Object.values(CommandPaletteMode)
-                .map(mode => `[${mode}]`)
-                .join(' ')}`,
-        []
-    )
     const searchText = mode ? value.slice(1) : value
 
     return (
@@ -258,20 +247,20 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
                         ref={inputReference}
                         value={value}
                         onChange={setValue}
-                        placeholder={placeholder}
+                        placeholder={PLACEHOLDER}
                         isNative={platformContext.clientApplication === 'sourcegraph'}
                     />
-                    {!mode && <CommandPaletteModesResult onSelect={handleInputFocus} />}
-                    {mode === CommandPaletteMode.Command && (
-                        <CommandResult actions={actions} value={searchText} onClick={handleClose} />
-                    )}
-                    {mode === CommandPaletteMode.RecentSearches && (
+                    {!mode && (
                         <RecentSearchesResult
                             value={searchText}
                             onClick={handleClose}
                             currentUserID={currentUserID}
                             platformContext={platformContext}
                         />
+                    )}
+                    {mode === CommandPaletteMode.Help && <CommandPaletteModesResult onSelect={handleInputFocus} />}
+                    {mode === CommandPaletteMode.Command && (
+                        <CommandResult actions={actions} value={searchText} onClick={handleClose} />
                     )}
                     {/* TODO: Only when repo open */}
                     {mode === CommandPaletteMode.Fuzzy && (

@@ -1,7 +1,7 @@
 import classNames from 'classnames'
 import React, { useState, useEffect, useRef } from 'react'
-import { Link } from '../../../components/Link'
 
+import { Link } from '../../../components/Link'
 import { Keybinding } from '../../../keyboardShortcuts'
 
 import styles from './NavigableList.module.scss'
@@ -19,7 +19,8 @@ interface NavigableListItemProps {
 
 const NavigableListItem: React.FC<NavigableListItemProps> = React.memo(
     ({ onClick, onFocus, href, isExternalLink, keybindings = [], children, active }) => {
-        const Tag = href ? Link : 'button' // use Link component?
+        // TODO: refactor to support href and closing command palette + target=_blank
+        const Tag = href ? Link : 'button'
 
         const listItemReference = useRef<HTMLLIElement | null>(null)
 
@@ -89,10 +90,10 @@ const NavigableListItem: React.FC<NavigableListItemProps> = React.memo(
 interface NavigableListProps<T> {
     items: T[]
     getKey?: (item: T) => string
-    children: (item: T, options: { active: boolean }) => JSX.Element
+    children: (item: T, options: { active: boolean }) => JSX.Element | null
 }
 
-export function NavigableList<T>({ children, items, getKey }: NavigableListProps<T>): JSX.Element {
+export function NavigableList<T>({ children, items, getKey }: NavigableListProps<T>): JSX.Element | null {
     const [activeIndex, setActiveIndex] = useState<number>(0)
 
     useEffect(() => {
@@ -110,6 +111,10 @@ export function NavigableList<T>({ children, items, getKey }: NavigableListProps
         document.addEventListener('keydown', handleKeyDown)
         return () => document.removeEventListener('keydown', handleKeyDown)
     }, [items])
+
+    if (items.length === 0) {
+        return null
+    }
 
     return (
         <ul className={styles.list}>

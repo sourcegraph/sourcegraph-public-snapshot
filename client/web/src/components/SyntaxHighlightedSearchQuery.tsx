@@ -1,9 +1,13 @@
+import classNames from 'classnames'
 import React, { Fragment, useMemo } from 'react'
 
 import { scanSearchQuery } from '@sourcegraph/shared/src/search/query/scanner'
 
 // A read-only syntax highlighted search query
-export const SyntaxHighlightedSearchQuery: React.FunctionComponent<{ query: string }> = ({ query }) => {
+export const SyntaxHighlightedSearchQuery: React.FunctionComponent<{ query: string; className?: string }> = ({
+    query,
+    className,
+}) => {
     const tokens = useMemo(() => {
         const scannedQuery = scanSearchQuery(query)
         return scannedQuery.type === 'success'
@@ -30,5 +34,5 @@ export const SyntaxHighlightedSearchQuery: React.FunctionComponent<{ query: stri
             : [<Fragment key="0">{query}</Fragment>]
     }, [query])
 
-    return <span className="text-monospace search-query-link">{tokens}</span>
+    return <span className={classNames('text-monospace search-query-link', className)}>{tokens}</span>
 }

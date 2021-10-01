@@ -159,7 +159,7 @@ export const JumpToSymbolResult: React.FC<JumpToSymbolResultProps> = ({
     )
 
     if (!textDocumentData) {
-        return <Message type="muted">Open a text document to jump to symbol</Message>
+        return <Message>Navigate to a text document to jump to symbol</Message>
     }
 
     const onSymbolFocus = (symbol: SymbolNode): void => {
