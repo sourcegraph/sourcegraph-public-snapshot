@@ -47,7 +47,9 @@ export const RepositoryPolicies: FunctionComponent<RepositoryPoliciesProps> = ({
     )
 
     useEffect(() => {
-        onHandleDisplayAction(!isGlobal || repo.id === null)
+        if (!isGlobal || repo.id === null) {
+            onHandleDisplayAction(true)
+        }
         onHandleIsDeleting(isDeleting)
         onHandleIsLoading(loadingPolicies)
     }, [onHandleDisplayAction, isGlobal, repo.id, onHandleIsDeleting, isDeleting, onHandleIsLoading, loadingPolicies])
