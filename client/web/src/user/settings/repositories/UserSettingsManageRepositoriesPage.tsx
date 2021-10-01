@@ -610,7 +610,7 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
             <input
                 className="form-control user-settings-repos__filter-input"
                 type="search"
-                placeholder="Search repositories..."
+                placeholder="Filter repositories..."
                 name="query"
                 autoComplete="off"
                 autoCorrect="off"

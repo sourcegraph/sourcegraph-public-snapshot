@@ -7,7 +7,7 @@ import (
 
 	"github.com/sourcegraph/go-diff/diff"
 
-	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
+	"github.com/sourcegraph/sourcegraph/internal/search/result"
 )
 
 const (
@@ -17,10 +17,10 @@ const (
 	maxFiles          = 5
 )
 
-func FormatDiff(rawDiff []*diff.FileDiff, highlights map[int]MatchedFileDiff) (string, protocol.Ranges) {
+func FormatDiff(rawDiff []*diff.FileDiff, highlights map[int]MatchedFileDiff) (string, result.Ranges) {
 	var buf strings.Builder
-	var loc protocol.Location
-	var ranges protocol.Ranges
+	var loc result.Location
+	var ranges result.Ranges
 
 	fileCount := 0
 	for fileIdx, fileDiff := range rawDiff {
@@ -118,7 +118,7 @@ func splitHunkMatches(hunks []*diff.Hunk, hunkHighlights map[int]MatchedHunk, ma
 		var cur *diff.Hunk
 		var curLines [][]byte
 		origHighlights := hunkHighlights[i].MatchedLines
-		curHighlights := make(map[int]protocol.Ranges, len(hunkHighlights))
+		curHighlights := make(map[int]result.Ranges, len(hunkHighlights))
 
 		lines := bytes.SplitAfter(hunk.Body, []byte("\n"))
 		lineInfo := computeDiffHunkInfo(lines, hunkHighlights[i].MatchedLines, matchContextLines)
@@ -161,7 +161,7 @@ func splitHunkMatches(hunks []*diff.Hunk, hunkHighlights map[int]MatchedHunk, ma
 				cur.Body = bytes.Join(curLines, nil)
 				if len(curHighlights) > 0 {
 					newHighlights[len(results)] = MatchedHunk{MatchedLines: curHighlights}
-					curHighlights = make(map[int]protocol.Ranges)
+					curHighlights = make(map[int]result.Ranges)
 				}
 				results = append(results, cur)
 				cur = nil
@@ -199,7 +199,7 @@ type diffHunkLineInfo struct {
 
 func (info diffHunkLineInfo) changed() bool { return info.added || info.removed }
 
-func computeDiffHunkInfo(lines [][]byte, lineHighlights map[int]protocol.Ranges, matchContextLines int) []diffHunkLineInfo {
+func computeDiffHunkInfo(lines [][]byte, lineHighlights map[int]result.Ranges, matchContextLines int) []diffHunkLineInfo {
 	// Return context line numbers for a given line number.
 	contextLines := func(line int) (start, end int) {
 		start = line - matchContextLines

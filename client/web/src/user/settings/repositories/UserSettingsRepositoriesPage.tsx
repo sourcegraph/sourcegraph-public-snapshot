@@ -12,6 +12,7 @@ import { asError, ErrorLike, isErrorLike } from '@sourcegraph/shared/src/util/er
 import { repeatUntil } from '@sourcegraph/shared/src/util/rxjs/repeatUntil'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
 import { Badge } from '@sourcegraph/web/src/components/Badge'
+import { SelfHostedCtaLink } from '@sourcegraph/web/src/components/SelfHostedCtaLink'
 import { Container, PageHeader } from '@sourcegraph/wildcard'
 
 import { requestGraphQL } from '../../../backend/graphql'
@@ -392,6 +393,11 @@ export const UserSettingsRepositoriesPage: React.FunctionComponent<Props> = ({
 
     return (
         <div className="user-settings-repos">
+            <SelfHostedCtaLink
+                className="user-settings-repos__self-hosted-cta"
+                telemetryService={telemetryService}
+                page="settings/repositories"
+            />
             {status === 'scheduled' && (
                 <div className="alert alert-info">
                     <span className="font-weight-bold">{getCodeHostsSyncMessage()}</span> Repositories list may not be

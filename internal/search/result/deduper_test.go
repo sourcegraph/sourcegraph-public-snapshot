@@ -7,7 +7,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
+	"github.com/sourcegraph/sourcegraph/internal/vcs/git/gitapi"
 )
 
 func TestDeduper(t *testing.T) {
@@ -16,7 +16,7 @@ func TestDeduper(t *testing.T) {
 			Repo: types.RepoName{
 				Name: api.RepoName(repo),
 			},
-			Commit: git.Commit{
+			Commit: gitapi.Commit{
 				ID: api.CommitID(id),
 			},
 		}
@@ -27,7 +27,7 @@ func TestDeduper(t *testing.T) {
 			Repo: types.RepoName{
 				Name: api.RepoName(repo),
 			},
-			Commit: git.Commit{
+			Commit: gitapi.Commit{
 				ID: api.CommitID(id),
 			},
 			DiffPreview: &HighlightedString{},

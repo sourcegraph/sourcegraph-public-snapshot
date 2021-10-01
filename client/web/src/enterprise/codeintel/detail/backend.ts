@@ -11,38 +11,11 @@ import { requestGraphQL } from '../../../backend/graphql'
 import {
     DeleteLsifIndexResult,
     DeleteLsifIndexVariables,
-    DeleteLsifUploadResult,
-    DeleteLsifUploadVariables,
     LsifIndexFields,
     LsifIndexResult,
     LsifIndexVariables,
-    LsifUploadFields,
-    LsifUploadResult,
-    LsifUploadVariables,
 } from '../../../graphql-operations'
-import { lsifIndexFieldsFragment, lsifUploadFieldsFragment } from '../shared/backend'
-
-export function fetchLsifUpload({ id }: { id: string }): Observable<LsifUploadFields | null> {
-    const query = gql`
-        query LsifUpload($id: ID!) {
-            node(id: $id) {
-                ...LsifUploadFields
-            }
-        }
-
-        ${lsifUploadFieldsFragment}
-    `
-
-    return requestGraphQL<LsifUploadResult, LsifUploadVariables>(query, { id }).pipe(
-        map(dataOrThrowErrors),
-        map(({ node }) => {
-            if (!node || node.__typename !== 'LSIFUpload') {
-                throw new Error('No such LSIFUpload')
-            }
-            return node
-        })
-    )
-}
+import { lsifIndexFieldsFragment } from '../shared/backend'
 
 export function fetchLsifIndex({ id }: { id: string }): Observable<LsifIndexFields | null> {
     const query = gql`
@@ -62,25 +35,6 @@ export function fetchLsifIndex({ id }: { id: string }): Observable<LsifIndexFiel
                 throw new Error('No such LSIFIndex')
             }
             return node
-        })
-    )
-}
-
-export function deleteLsifUpload({ id }: { id: string }): Observable<void> {
-    const query = gql`
-        mutation DeleteLsifUpload($id: ID!) {
-            deleteLSIFUpload(id: $id) {
-                alwaysNil
-            }
-        }
-    `
-
-    return requestGraphQL<DeleteLsifUploadResult, DeleteLsifUploadVariables>(query, { id }).pipe(
-        map(dataOrThrowErrors),
-        map(data => {
-            if (!data.deleteLSIFUpload) {
-                throw createInvalidGraphQLMutationResponseError('DeleteLsifUpload')
-            }
         })
     )
 }

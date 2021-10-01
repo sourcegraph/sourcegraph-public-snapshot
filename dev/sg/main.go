@@ -151,13 +151,13 @@ func parseConf(confFile, overwriteFile string) (bool, output.FancyLine) {
 
 	globalConf, err = ParseConfigFile(confFile)
 	if err != nil {
-		return false, output.Linef("", output.StyleWarning, "Failed to parse %s%s%s%s as configuration file:%s\n%s\n", output.StyleBold, confFile, output.StyleReset, output.StyleWarning, output.StyleReset, err)
+		return false, output.Linef("", output.StyleWarning, "Failed to parse %s%s%s%s as configuration file:%s\n%s", output.StyleBold, confFile, output.StyleReset, output.StyleWarning, output.StyleReset, err)
 	}
 
 	if ok, _ := fileExists(overwriteFile); ok {
 		overwriteConf, err := ParseConfigFile(overwriteFile)
 		if err != nil {
-			return false, output.Linef("", output.StyleWarning, "Failed to parse %s%s%s%s as overwrites configuration file:%s\n%s\n", output.StyleBold, overwriteFile, output.StyleReset, output.StyleWarning, output.StyleReset, err)
+			return false, output.Linef("", output.StyleWarning, "Failed to parse %s%s%s%s as overwrites configuration file:%s\n%s", output.StyleBold, overwriteFile, output.StyleReset, output.StyleWarning, output.StyleReset, err)
 		}
 		globalConf.Merge(overwriteConf)
 	}

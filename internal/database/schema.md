@@ -1803,12 +1803,7 @@ Referenced by:
  timestamp         | timestamp with time zone |           | not null | 
 Indexes:
     "security_event_logs_pkey" PRIMARY KEY, btree (id)
-    "security_event_logs_anonymous_user_id" btree (anonymous_user_id)
-    "security_event_logs_name" btree (name)
-    "security_event_logs_source" btree (source)
     "security_event_logs_timestamp" btree ("timestamp")
-    "security_event_logs_timestamp_at_utc" btree (date(timezone('UTC'::text, "timestamp")))
-    "security_event_logs_user_id" btree (user_id)
 Check constraints:
     "security_event_logs_check_has_user" CHECK (user_id = 0 AND anonymous_user_id <> ''::text OR user_id <> 0 AND anonymous_user_id = ''::text OR user_id <> 0 AND anonymous_user_id <> ''::text)
     "security_event_logs_check_name_not_empty" CHECK (name <> ''::text)

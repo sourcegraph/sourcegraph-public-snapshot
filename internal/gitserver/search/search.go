@@ -14,6 +14,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
+	"github.com/sourcegraph/sourcegraph/internal/search/result"
 )
 
 // Git formatting directives as described in man git-log (see PRETTY FORMATS)
@@ -363,7 +364,7 @@ func CreateCommitMatch(lc *LazyCommit, hc *MatchedCommit, includeDiff bool) (*pr
 		return nil, err
 	}
 
-	diff := protocol.MatchedString{}
+	diff := result.MatchedString{}
 	if includeDiff {
 		rawDiff, err := lc.Diff()
 		if err != nil {
@@ -387,7 +388,7 @@ func CreateCommitMatch(lc *LazyCommit, hc *MatchedCommit, includeDiff bool) (*pr
 		Parents:    lc.ParentIDs(),
 		SourceRefs: lc.SourceRefs(),
 		Refs:       lc.RefNames(),
-		Message: protocol.MatchedString{
+		Message: result.MatchedString{
 			Content:       string(lc.Message),
 			MatchedRanges: hc.Message,
 		},
