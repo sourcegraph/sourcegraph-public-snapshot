@@ -903,7 +903,13 @@ func (s *Server) handleSearch(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) search(w http.ResponseWriter, r *http.Request, args *protocol.SearchRequest) {
-	ctx := r.Context()
+	tr, ctx := trace.New(r.Context(), "search", "")
+	tr.LogFields(
+		otlog.String("query", args.Query.String()),
+		otlog.Int("limit", args.Limit),
+	)
+	defer tr.Finish()
+
 	args.Repo = protocol.NormalizeRepo(args.Repo)
 	if args.Limit == 0 {
 		args.Limit = math.MaxInt32
@@ -961,6 +967,7 @@ func (s *Server) search(w http.ResponseWriter, r *http.Request, args *protocol.S
 	}
 
 	matchesBuf := streamhttp.NewJSONArrayBuf(8*1024, func(data []byte) error {
+		tr.LogFields(otlog.Int("flushing", len(data)))
 		return eventWriter.EventBytes("matches", data)
 	})
 
