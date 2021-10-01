@@ -70,9 +70,8 @@ func TestSearch(t *testing.T) {
 			Query:   tree,
 		}
 		var matches []*protocol.CommitMatch
-		err = searcher.Search(context.Background(), func(match *protocol.CommitMatch) bool {
+		err = searcher.Search(context.Background(), func(match *protocol.CommitMatch) {
 			matches = append(matches, match)
-			return true
 		})
 		require.NoError(t, err)
 		require.Len(t, matches, 1)
@@ -87,9 +86,8 @@ func TestSearch(t *testing.T) {
 			Query:   tree,
 		}
 		var matches []*protocol.CommitMatch
-		err = searcher.Search(context.Background(), func(match *protocol.CommitMatch) bool {
+		err = searcher.Search(context.Background(), func(match *protocol.CommitMatch) {
 			matches = append(matches, match)
-			return true
 		})
 		require.NoError(t, err)
 		require.Len(t, matches, 2)
@@ -106,9 +104,8 @@ func TestSearch(t *testing.T) {
 			Query:   tree,
 		}
 		var matches []*protocol.CommitMatch
-		err = searcher.Search(context.Background(), func(match *protocol.CommitMatch) bool {
+		err = searcher.Search(context.Background(), func(match *protocol.CommitMatch) {
 			matches = append(matches, match)
-			return true
 		})
 		require.NoError(t, err)
 		require.Len(t, matches, 1)
@@ -124,9 +121,8 @@ func TestSearch(t *testing.T) {
 			Query:   tree,
 		}
 		var matches []*protocol.CommitMatch
-		err = searcher.Search(context.Background(), func(match *protocol.CommitMatch) bool {
+		err = searcher.Search(context.Background(), func(match *protocol.CommitMatch) {
 			matches = append(matches, match)
-			return true
 		})
 		require.NoError(t, err)
 		require.Len(t, matches, 1)
@@ -142,9 +138,8 @@ func TestSearch(t *testing.T) {
 			Query:   tree,
 		}
 		var matches []*protocol.CommitMatch
-		err = searcher.Search(context.Background(), func(match *protocol.CommitMatch) bool {
+		err = searcher.Search(context.Background(), func(match *protocol.CommitMatch) {
 			matches = append(matches, match)
-			return true
 		})
 		require.NoError(t, err)
 		require.Len(t, matches, 1)
@@ -167,9 +162,8 @@ func TestSearch(t *testing.T) {
 			IncludeDiff: true,
 		}
 		var matches []*protocol.CommitMatch
-		err = searcher.Search(context.Background(), func(match *protocol.CommitMatch) bool {
+		err = searcher.Search(context.Background(), func(match *protocol.CommitMatch) {
 			matches = append(matches, match)
-			return true
 		})
 		require.NoError(t, err)
 		require.Len(t, matches, 1)

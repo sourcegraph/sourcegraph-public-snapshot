@@ -993,12 +993,10 @@ func (s *Server) search(w http.ResponseWriter, r *http.Request, args *protocol.S
 			IncludeDiff: args.IncludeDiff,
 		}
 
-		return searcher.Search(ctx, func(match *protocol.CommitMatch) bool {
+		return searcher.Search(ctx, func(match *protocol.CommitMatch) {
 			select {
 			case <-done:
-				return false
 			case resultChan <- match:
-				return true
 			}
 		})
 	})
