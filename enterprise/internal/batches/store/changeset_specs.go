@@ -427,6 +427,8 @@ FROM
 	changeset_specs
 WHERE
 	batch_spec_id = %s
+AND
+	spec->>'headRef' IS NOT NULL
 GROUP BY
 	repo_id, spec->>'headRef'
 HAVING COUNT(*) > 1

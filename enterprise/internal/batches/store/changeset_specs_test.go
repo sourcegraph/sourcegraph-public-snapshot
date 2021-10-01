@@ -705,6 +705,7 @@ func testStoreChangesetSpecs(t *testing.T, ctx context.Context, s *Store, clock 
 		conflictingBatchSpec := ct.CreateBatchSpec(t, ctx, s, "no-conflicts", user.ID)
 		conflictingRef := "refs/heads/conflicting-head-ref"
 		for _, opts := range []ct.TestSpecOpts{
+			{ExternalID: "4321", Repo: repo.ID, BatchSpec: conflictingBatchSpec.ID},
 			{HeadRef: conflictingRef, Repo: repo.ID, BatchSpec: conflictingBatchSpec.ID},
 			{HeadRef: conflictingRef, Repo: repo.ID, BatchSpec: conflictingBatchSpec.ID},
 			{HeadRef: conflictingRef, Repo: repo2.ID, BatchSpec: conflictingBatchSpec.ID},
@@ -729,6 +730,7 @@ func testStoreChangesetSpecs(t *testing.T, ctx context.Context, s *Store, clock 
 
 		nonConflictingBatchSpec := ct.CreateBatchSpec(t, ctx, s, "no-conflicts", user.ID)
 		for _, opts := range []ct.TestSpecOpts{
+			{ExternalID: "1234", Repo: repo.ID, BatchSpec: nonConflictingBatchSpec.ID},
 			{HeadRef: "refs/heads/branch-1", Repo: repo.ID, BatchSpec: nonConflictingBatchSpec.ID},
 			{HeadRef: "refs/heads/branch-2", Repo: repo.ID, BatchSpec: nonConflictingBatchSpec.ID},
 			{HeadRef: "refs/heads/branch-1", Repo: repo2.ID, BatchSpec: nonConflictingBatchSpec.ID},
