@@ -20,7 +20,7 @@ function run_tests() {
   # Disable `-x` to avoid printing secrets
   set +x
   source /root/.profile
-  export GITHUB_TOKEN="${GITHUB_USER_BOB_TOKEN}"
+  export GITHUB_TOKEN="${GITHUB_USER_TOKEN}"
   set -x
   "${SG_ROOT}/init-sg" addRepos -config repos.json
   popd
