@@ -13,4 +13,4 @@ export IMAGE="us.gcr.io/sourcegraph-dev/server:${CANDIDATE_VERSION}"
 yes | gcloud auth configure-docker
 
 # Setup single-server instance and run tests
-./dev/ci/run-integration.sh "${SG_ROOT}/dev/ci/code-intel/test-against-server.sh"
+./dev/ci/run-integration.sh "${SG_ROOT}/dev/ci/test/code-intel/test-against-server.sh"
