@@ -8,28 +8,20 @@ import (
 	"sync"
 	"time"
 
-	"github.com/prometheus/client_golang/prometheus"
-
-	itypes "github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
-
-	"github.com/sourcegraph/sourcegraph/internal/types"
-
-	"github.com/sourcegraph/sourcegraph/internal/insights/priority"
-
-	"github.com/cockroachdb/errors"
-
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/compression"
-
 	"golang.org/x/time/rate"
 
+	"github.com/cockroachdb/errors"
 	"github.com/hashicorp/go-multierror"
 	"github.com/inconshreveable/log15"
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/xhit/go-str2duration/v2"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/background/queryrunner"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/compression"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/discovery"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
+	itypes "github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -37,10 +29,13 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/dbcache"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
+	"github.com/sourcegraph/sourcegraph/internal/insights/priority"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
+	"github.com/sourcegraph/sourcegraph/internal/vcs/git/gitapi"
 )
 
 // The historical enqueuer takes regular search insights like a search for `errorf` and runs them
@@ -141,7 +136,7 @@ func newInsightHistoricalEnqueuer(ctx context.Context, workerBaseStore *basestor
 			return err
 		},
 		gitFirstEverCommit: (&cachedGitFirstEverCommit{impl: git.FirstEverCommit}).gitFirstEverCommit,
-		gitFindRecentCommit: func(ctx context.Context, repoName api.RepoName, target time.Time) ([]*git.Commit, error) {
+		gitFindRecentCommit: func(ctx context.Context, repoName api.RepoName, target time.Time) ([]*gitapi.Commit, error) {
 			return git.Commits(ctx, repoName, git.CommitsOptions{N: 1, Before: target.Format(time.RFC3339), DateOrder: true})
 		},
 
@@ -225,8 +220,8 @@ type historicalEnqueuer struct {
 	dataSeriesStore       store.DataSeriesStore
 	repoStore             RepoStore
 	enqueueQueryRunnerJob func(ctx context.Context, job *queryrunner.Job) error
-	gitFirstEverCommit    func(ctx context.Context, repoName api.RepoName) (*git.Commit, error)
-	gitFindRecentCommit   func(ctx context.Context, repoName api.RepoName, target time.Time) ([]*git.Commit, error)
+	gitFirstEverCommit    func(ctx context.Context, repoName api.RepoName) (*gitapi.Commit, error)
+	gitFindRecentCommit   func(ctx context.Context, repoName api.RepoName, target time.Time) ([]*gitapi.Commit, error)
 	frameFilter           compression.DataFrameFilter
 
 	// framesToBackfill describes the number of historical timeframes to backfill data for.
@@ -397,7 +392,7 @@ type buildSeriesContext struct {
 	repo *types.Repo
 
 	// The first commit made in the repository on the default branch.
-	firstHEADCommit *git.Commit
+	firstHEADCommit *gitapi.Commit
 
 	// The series we're building historical data for.
 	seriesID string
@@ -497,7 +492,7 @@ func (h *historicalEnqueuer) buildSeries(ctx context.Context, bctx *buildSeriesC
 			hardErr = errors.Wrap(err, "FindNearestCommit")
 			return
 		}
-		var nearestCommit *git.Commit
+		var nearestCommit *gitapi.Commit
 		if len(recentCommits) > 0 {
 			nearestCommit = recentCommits[0]
 		}
@@ -526,17 +521,17 @@ func (h *historicalEnqueuer) buildSeries(ctx context.Context, bctx *buildSeriesC
 // using a map, and entries are never evicted because they are expected to be small and in general
 // unchanging.
 type cachedGitFirstEverCommit struct {
-	impl func(ctx context.Context, repoName api.RepoName) (*git.Commit, error)
+	impl func(ctx context.Context, repoName api.RepoName) (*gitapi.Commit, error)
 
 	mu    sync.Mutex
-	cache map[api.RepoName]*git.Commit
+	cache map[api.RepoName]*gitapi.Commit
 }
 
-func (c *cachedGitFirstEverCommit) gitFirstEverCommit(ctx context.Context, repoName api.RepoName) (*git.Commit, error) {
+func (c *cachedGitFirstEverCommit) gitFirstEverCommit(ctx context.Context, repoName api.RepoName) (*gitapi.Commit, error) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	if c.cache == nil {
-		c.cache = map[api.RepoName]*git.Commit{}
+		c.cache = map[api.RepoName]*gitapi.Commit{}
 	}
 	if cached, ok := c.cache[repoName]; ok {
 		return cached, nil

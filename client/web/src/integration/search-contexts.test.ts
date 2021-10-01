@@ -142,13 +142,6 @@ describe('Search contexts', () => {
     const getSelectedSearchContextSpec = () =>
         driver.page.evaluate(() => document.querySelector('.test-selected-search-context-spec')?.textContent)
 
-    const isSearchContextFeatureTourStepVisible = () =>
-        driver.page.evaluate(
-            () =>
-                document.querySelector<HTMLDivElement>('div[data-shepherd-step-id="search-contexts-start-tour"]') !==
-                null
-        )
-
     const isSearchContextDropdownDisabled = () =>
         driver.page.evaluate(() => document.querySelector<HTMLButtonElement>('.test-search-context-dropdown')?.disabled)
 
@@ -267,57 +260,6 @@ describe('Search contexts', () => {
             () => document.querySelectorAll('.test-converted-context').length
         )
         expect(convertedContexts).toBe(versionContexts.length)
-    })
-
-    test('Feature tour step should not be visible with empty local storage on search homepage', async () => {
-        await driver.page.goto(driver.sourcegraphBaseUrl + '/search')
-        await driver.page.waitForSelector('.test-selected-search-context-spec', { visible: true })
-        expect(await isSearchContextFeatureTourStepVisible()).toBeFalsy()
-    })
-
-    test('Feature tour step should be visible with empty local storage on search results page', async () => {
-        await driver.page.goto(driver.sourcegraphBaseUrl + '/search?q=test')
-        await driver.page.waitForSelector('.test-selected-search-context-spec', { visible: true })
-        expect(await isSearchContextFeatureTourStepVisible()).toBeTruthy()
-    })
-
-    test('Feature tour on search homepage', async () => {
-        testContext.overrideGraphQL({
-            GetTemporarySettings: () => ({
-                temporarySettings: {
-                    contents: '{"search.onboarding.tourCancelled": true}',
-                },
-            }),
-        })
-
-        await driver.page.goto(driver.sourcegraphBaseUrl + '/search', {
-            waitUntil: 'networkidle0',
-        })
-        await driver.page.goto(driver.sourcegraphBaseUrl + '/search')
-        await driver.page.waitForSelector('.test-selected-search-context-spec', { visible: true })
-        expect(await isSearchContextFeatureTourStepVisible()).toBeTruthy()
-        await clearLocalStorage()
-    })
-
-    test('Do not show feature tour on search homepage if already seen', async () => {
-        testContext.overrideGraphQL({
-            GetTemporarySettings: () => ({
-                temporarySettings: {
-                    contents: '{"search.onboarding.tourCancelled": true}',
-                },
-            }),
-        })
-
-        await driver.page.goto(driver.sourcegraphBaseUrl + '/search', {
-            waitUntil: 'networkidle0',
-        })
-        await driver.page.evaluate(() => {
-            localStorage.setItem('has-seen-search-contexts-dropdown-highlight-tour-step', 'true')
-        })
-        await driver.page.goto(driver.sourcegraphBaseUrl + '/search')
-        await driver.page.waitForSelector('.test-selected-search-context-spec', { visible: true })
-        expect(await isSearchContextFeatureTourStepVisible()).toBeFalsy()
-        await clearLocalStorage()
     })
 
     test('Create search context', async () => {

@@ -5,14 +5,15 @@ import (
 	"net/url"
 	"strings"
 
+	"github.com/xeonx/timeago"
+
 	"github.com/sourcegraph/sourcegraph/internal/search/filter"
 	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
-	"github.com/xeonx/timeago"
+	"github.com/sourcegraph/sourcegraph/internal/vcs/git/gitapi"
 )
 
 type CommitMatch struct {
-	Commit         git.Commit
+	Commit         gitapi.Commit
 	Repo           types.RepoName
 	Refs           []string
 	SourceRefs     []string

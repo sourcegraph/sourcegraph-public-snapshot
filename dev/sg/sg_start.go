@@ -91,17 +91,22 @@ func startExec(ctx context.Context, args []string) error {
 	}
 
 	if len(args) > 2 {
-		out.WriteLine(output.Linef("", output.StyleWarning, "ERROR: too many arguments\n"))
+		out.WriteLine(output.Linef("", output.StyleWarning, "ERROR: too many arguments"))
 		return flag.ErrHelp
 	}
 
-	if len(args) == 0 {
-		args = append(args, "default")
+	if len(args) != 1 {
+		if globalConf.DefaultCommandset != "" {
+			args = append(args, globalConf.DefaultCommandset)
+		} else {
+			out.WriteLine(output.Linef("", output.StyleWarning, "ERROR: No commandset specified and no 'defaultCommandset' specified in sg.config.yaml\n"))
+			return flag.ErrHelp
+		}
 	}
 
 	set, ok := globalConf.Commandsets[args[0]]
 	if !ok {
-		out.WriteLine(output.Linef("", output.StyleWarning, "ERROR: commandset %q not found :(\n", args[0]))
+		out.WriteLine(output.Linef("", output.StyleWarning, "ERROR: commandset %q not found :(", args[0]))
 		return flag.ErrHelp
 	}
 
@@ -143,7 +148,7 @@ func startExec(ctx context.Context, args []string) error {
 	for _, name := range set.Checks {
 		check, ok := globalConf.Checks[name]
 		if !ok {
-			out.WriteLine(output.Linef("", output.StyleWarning, "WARNING: check %s not found in config\n", name))
+			out.WriteLine(output.Linef("", output.StyleWarning, "WARNING: check %s not found in config", name))
 			continue
 		}
 		checks = append(checks, check)
@@ -151,11 +156,11 @@ func startExec(ctx context.Context, args []string) error {
 
 	ok, err := run.Checks(ctx, globalConf.Env, checks...)
 	if err != nil {
-		out.WriteLine(output.Linef("", output.StyleWarning, "ERROR: checks could not be run: %s\n", err))
+		out.WriteLine(output.Linef("", output.StyleWarning, "ERROR: checks could not be run: %s", err))
 	}
 
 	if !ok {
-		out.WriteLine(output.Linef("", output.StyleWarning, "ERROR: checks did not pass, aborting start of commandset %s\n", set.Name))
+		out.WriteLine(output.Linef("", output.StyleWarning, "ERROR: checks did not pass, aborting start of commandset %s", set.Name))
 		return nil
 	}
 
@@ -167,6 +172,10 @@ func startExec(ctx context.Context, args []string) error {
 		}
 
 		cmds = append(cmds, cmd)
+	}
+
+	if len(cmds) == 0 {
+		out.WriteLine(output.Linef("", output.StyleWarning, "WARNING: no commands to run"))
 	}
 
 	levelOverrides := logLevelOverrides()

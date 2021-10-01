@@ -6,6 +6,7 @@ import (
 	"github.com/cockroachdb/errors"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/search/result"
 )
 
 type SearchRequest struct {
@@ -62,8 +63,8 @@ type CommitMatch struct {
 	Refs       []string       `json:",omitempty"`
 	SourceRefs []string       `json:",omitempty"`
 
-	Message MatchedString `json:",omitempty"`
-	Diff    MatchedString `json:",omitempty"`
+	Message result.MatchedString `json:",omitempty"`
+	Diff    result.MatchedString `json:",omitempty"`
 }
 
 type Signature struct {

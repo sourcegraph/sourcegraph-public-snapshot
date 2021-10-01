@@ -109,11 +109,11 @@ func constructMigrationSubcmdLongHelp() string {
 
 func migrationAddExec(ctx context.Context, args []string) error {
 	if len(args) == 0 {
-		out.WriteLine(output.Linef("", output.StyleWarning, "No migration name specified\n"))
+		out.WriteLine(output.Linef("", output.StyleWarning, "No migration name specified"))
 		return flag.ErrHelp
 	}
 	if len(args) != 1 {
-		out.WriteLine(output.Linef("", output.StyleWarning, "ERROR: too many arguments\n"))
+		out.WriteLine(output.Linef("", output.StyleWarning, "ERROR: too many arguments"))
 		return flag.ErrHelp
 	}
 
@@ -123,7 +123,7 @@ func migrationAddExec(ctx context.Context, args []string) error {
 		database, ok  = db.DatabaseByName(databaseName)
 	)
 	if !ok {
-		out.WriteLine(output.Linef("", output.StyleWarning, "ERROR: database %q not found :(\n", databaseName))
+		out.WriteLine(output.Linef("", output.StyleWarning, "ERROR: database %q not found :(", databaseName))
 		return flag.ErrHelp
 	}
 
@@ -142,7 +142,7 @@ func migrationAddExec(ctx context.Context, args []string) error {
 
 func migrationUpExec(ctx context.Context, args []string) error {
 	if len(args) != 0 {
-		out.WriteLine(output.Linef("", output.StyleWarning, "ERROR: too many arguments\n"))
+		out.WriteLine(output.Linef("", output.StyleWarning, "ERROR: too many arguments"))
 		return flag.ErrHelp
 	}
 
@@ -151,7 +151,7 @@ func migrationUpExec(ctx context.Context, args []string) error {
 		database, ok = db.DatabaseByName(databaseName)
 	)
 	if !ok {
-		out.WriteLine(output.Linef("", output.StyleWarning, "ERROR: database %q not found :(\n", databaseName))
+		out.WriteLine(output.Linef("", output.StyleWarning, "ERROR: database %q not found :(", databaseName))
 		return flag.ErrHelp
 	}
 
@@ -170,7 +170,7 @@ func migrationUpExec(ctx context.Context, args []string) error {
 
 func migrationDownExec(ctx context.Context, args []string) error {
 	if len(args) != 0 {
-		out.WriteLine(output.Linef("", output.StyleWarning, "ERROR: too many arguments\n"))
+		out.WriteLine(output.Linef("", output.StyleWarning, "ERROR: too many arguments"))
 		return flag.ErrHelp
 	}
 
@@ -179,7 +179,7 @@ func migrationDownExec(ctx context.Context, args []string) error {
 		database, ok = db.DatabaseByName(databaseName)
 	)
 	if !ok {
-		out.WriteLine(output.Linef("", output.StyleWarning, "ERROR: database %q not found :(\n", databaseName))
+		out.WriteLine(output.Linef("", output.StyleWarning, "ERROR: database %q not found :(", databaseName))
 		return flag.ErrHelp
 	}
 
@@ -196,11 +196,11 @@ const minimumMigrationSquashDistance = 2
 
 func migrationSquashExec(ctx context.Context, args []string) (err error) {
 	if len(args) == 0 {
-		out.WriteLine(output.Linef("", output.StyleWarning, "No current-version specified\n"))
+		out.WriteLine(output.Linef("", output.StyleWarning, "No current-version specified"))
 		return flag.ErrHelp
 	}
 	if len(args) != 1 {
-		out.WriteLine(output.Linef("", output.StyleWarning, "ERROR: too many arguments\n"))
+		out.WriteLine(output.Linef("", output.StyleWarning, "ERROR: too many arguments"))
 		return flag.ErrHelp
 	}
 
@@ -210,7 +210,7 @@ func migrationSquashExec(ctx context.Context, args []string) (err error) {
 		database, ok  = db.DatabaseByName(databaseName)
 	)
 	if !ok {
-		out.WriteLine(output.Linef("", output.StyleWarning, "ERROR: database %q not found :(\n", databaseName))
+		out.WriteLine(output.Linef("", output.StyleWarning, "ERROR: database %q not found :(", databaseName))
 		return flag.ErrHelp
 	}
 
@@ -228,7 +228,7 @@ func migrationSquashExec(ctx context.Context, args []string) (err error) {
 
 func migrationFixupExec(ctx context.Context, args []string) (err error) {
 	if len(args) != 0 {
-		out.WriteLine(output.Linef("", output.StyleWarning, "ERROR: too many arguments\n"))
+		out.WriteLine(output.Linef("", output.StyleWarning, "ERROR: too many arguments"))
 		return flag.ErrHelp
 	}
 
@@ -250,7 +250,7 @@ func migrationFixupExec(ctx context.Context, args []string) (err error) {
 	} else {
 		database, ok := db.DatabaseByName(databaseName)
 		if !ok {
-			out.WriteLine(output.Linef("", output.StyleWarning, "ERROR: database %q not found :(\n", databaseName))
+			out.WriteLine(output.Linef("", output.StyleWarning, "ERROR: database %q not found :(", databaseName))
 			return flag.ErrHelp
 		}
 

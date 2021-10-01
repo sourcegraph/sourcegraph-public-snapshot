@@ -3,19 +3,31 @@ env:
 steps:
 - label: ':chromium: Sourcegraph E2E'
   artifact_paths: ./*.png;./*.mp4;./ffmpeg.log
-  command:
-    - .buildkite/vagrant-run.sh sourcegraph-e2e
+  retry:
+    automatic:
+      exit_status: "*"
+      limit: 1
   agents:
     queue: 'baremetal'
+  command:
+    - .buildkite/vagrant-run.sh sourcegraph-e2e
 
 - label: ':docker::chromium: Sourcegraph QA'
-  command:
-    - .buildkite/vagrant-run.sh sourcegraph-qa-test
+  retry:
+    automatic:
+      exit_status: "*"
+      limit: 1
   artifact_paths: ./*.png;./*.mp4;./*.log
   agents:
     queue: 'baremetal'
+  command:
+    - .buildkite/vagrant-run.sh sourcegraph-qa-test
 
 - label: ':docker::arrow_double_up: Sourcegraph Upgrade'
+  retry:
+    automatic:
+      exit_status: "*"
+      limit: 1
   command:
   - .buildkite/vagrant-run.sh sourcegraph-upgrade
   artifact_paths: ./*.png;./*.mp4;./*.log

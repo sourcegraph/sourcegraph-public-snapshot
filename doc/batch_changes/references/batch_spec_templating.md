@@ -295,3 +295,13 @@ steps:
     run: echo "hello workspace" >> workspace.txt
     container: golang
 ```
+
+Combine the [template helper functions](#template-helpers-functions) with the helper functions built into Go's [`text/template`](https://pkg.go.dev/text/template) library:
+
+```yaml
+changesetTemplate:
+  # [...]
+  body: |
+    The host of the repository: ${{ index (split repository.name "/") 0 }}
+    The org of the repository: ${{ index (split repository.name "/") 1 }}
+```

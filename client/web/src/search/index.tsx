@@ -195,7 +195,6 @@ export interface SearchContextProps {
     searchContextsEnabled: boolean
     showSearchContext: boolean
     showSearchContextManagement: boolean
-    showSearchContextFeatureTour?: boolean
     hasUserAddedRepositories: boolean
     hasUserAddedExternalServices: boolean
     defaultSearchContextSpec: string
@@ -220,7 +219,6 @@ export type SearchContextInputProps = Pick<
     | 'hasUserAddedRepositories'
     | 'hasUserAddedExternalServices'
     | 'showSearchContextManagement'
-    | 'showSearchContextFeatureTour'
     | 'defaultSearchContextSpec'
     | 'selectedSearchContextSpec'
     | 'setSelectedSearchContextSpec'
