@@ -10,6 +10,7 @@ import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryServi
 
 import { CaseSensitivityProps, PatternTypeProps, SearchContextInputProps } from '..'
 import { AuthenticatedUser } from '../../auth'
+import { useTemporarySetting } from '../../settings/temporary/useTemporarySetting'
 import { SubmitSearchParameters } from '../helpers'
 
 import { SearchContextCtaPrompt } from './SearchContextCtaPrompt'
@@ -50,6 +51,8 @@ export const SearchContextDropdown: React.FunctionComponent<SearchContextDropdow
         className,
         telemetryService,
     } = props
+
+    const [hasUsedNonGlobalContext] = useTemporarySetting('search.usedNonGlobalContext')
 
     const [isOpen, setIsOpen] = useState(false)
     const toggleOpen = useCallback(() => {
@@ -139,7 +142,7 @@ export const SearchContextDropdown: React.FunctionComponent<SearchContextDropdow
                 </code>
             </DropdownToggle>
             <DropdownMenu positionFixed={true} className="search-context-dropdown__menu">
-                {isSourcegraphDotCom && !hasUserAddedRepositories ? (
+                {isSourcegraphDotCom && !hasUserAddedRepositories && !hasUsedNonGlobalContext ? (
                     <SearchContextCtaPrompt
                         telemetryService={telemetryService}
                         authenticatedUser={authenticatedUser}
