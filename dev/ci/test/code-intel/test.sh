@@ -36,10 +36,8 @@ function run_tests() {
   popd
 }
 
-export IMAGE="us.gcr.io/sourcegraph-dev/server:$CANDIDATE_VERSION"
-
 # us.gcr.io is a private registry, ensure we can pull
 yes | gcloud auth configure-docker
 
 # Setup single-server instance and run tests
-./dev/ci/backend-integration-setup.sh run_tests
+IMAGE="us.gcr.io/sourcegraph-dev/server:$CANDIDATE_VERSION" ./dev/ci/backend-integration-setup.sh run_tests
