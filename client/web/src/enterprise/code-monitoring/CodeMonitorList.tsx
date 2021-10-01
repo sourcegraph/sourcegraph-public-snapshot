@@ -1,27 +1,37 @@
 import classnames from 'classnames'
 import PlusIcon from 'mdi-react/PlusIcon'
-import React, { useCallback, useState } from 'react'
-import { useHistory, useLocation } from 'react-router'
-import { of } from 'rxjs'
+import React, { useState } from 'react'
+import { useLocation } from 'react-router'
 
 import { Link } from '@sourcegraph/shared/src/components/Link'
+import { dataOrThrowErrors } from '@sourcegraph/shared/src/graphql/graphql'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { isErrorLike } from '@sourcegraph/shared/src/util/errors'
+import { useConnection } from '@sourcegraph/web/src/components/FilteredConnection/hooks/useConnection'
+import {
+    ConnectionContainer,
+    ConnectionError,
+    ConnectionList,
+    ConnectionLoading,
+    ConnectionSummary,
+    ShowMoreButton,
+    SummaryContainer,
+} from '@sourcegraph/web/src/components/FilteredConnection/ui'
 import { Container } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
-import { FilteredConnection } from '../../components/FilteredConnection'
 import { CodeMonitorFields, ListUserCodeMonitorsResult, ListUserCodeMonitorsVariables } from '../../graphql-operations'
 import { Settings } from '../../schema/settings.schema'
 
-import { CodeMonitorNode, CodeMonitorNodeProps } from './CodeMonitoringNode'
+import { ListUserCodeMonitors } from './backend'
+import { CodeMonitorNode } from './CodeMonitoringNode'
 import { CodeMonitoringPageProps } from './CodeMonitoringPage'
 import { CodeMonitorSignUpLink } from './CodeMonitoringSignUpLink'
 
 type CodeMonitorFilter = 'all' | 'user'
 
 interface CodeMonitorListProps
-    extends Required<Pick<CodeMonitoringPageProps, 'fetchUserCodeMonitors' | 'toggleCodeMonitorEnabled'>>,
+    extends Required<Pick<CodeMonitoringPageProps, 'toggleCodeMonitorEnabled'>>,
         SettingsCascadeProps<Settings> {
     authenticatedUser: AuthenticatedUser | null
 }
@@ -42,33 +52,61 @@ const CodeMonitorEmptyList: React.FunctionComponent<{ authenticatedUser: Authent
     </div>
 )
 
+const BATCH_COUNT = 10
+
 export const CodeMonitorList: React.FunctionComponent<CodeMonitorListProps> = ({
     authenticatedUser,
     settingsCascade,
-    fetchUserCodeMonitors,
     toggleCodeMonitorEnabled,
 }) => {
     const location = useLocation()
-    const history = useHistory()
     const [monitorListFilter, setMonitorListFilter] = useState<CodeMonitorFilter>('all')
 
-    const queryConnection = useCallback(
-        (args: Partial<ListUserCodeMonitorsVariables>) => {
-            if (!authenticatedUser) {
-                return of({
-                    totalCount: 0,
-                    nodes: [],
-                    pageInfo: { endCursor: null, hasNextPage: false },
-                })
+    const { connection: queryConnection, loading, error, fetchMore, hasNextPage } = useConnection<
+        ListUserCodeMonitorsResult,
+        ListUserCodeMonitorsVariables,
+        CodeMonitorFields
+    >({
+        query: ListUserCodeMonitors,
+        variables: {
+            // We skip this query when authenticateUser is falsy
+            id: authenticatedUser!.id,
+            first: BATCH_COUNT,
+            after: null,
+        },
+        options: {
+            skip: !authenticatedUser,
+            useURL: true,
+        },
+        getConnection: result => {
+            const data = dataOrThrowErrors(result)
+            if (!data.node) {
+                throw new Error('namespace not found')
             }
 
-            return fetchUserCodeMonitors({
-                id: authenticatedUser.id,
-                first: args.first ?? null,
-                after: args.after ?? null,
-            })
+            if (data.node.__typename !== 'User') {
+                throw new Error(`Requested node is a ${data.node.__typename}, not a User or Org`)
+            }
+
+            return data.node.monitors
         },
-        [authenticatedUser, fetchUserCodeMonitors]
+    })
+
+    const connection = authenticatedUser
+        ? queryConnection
+        : { totalCount: 0, nodes: [], pageInfo: { endCursor: null, hasNextPage: false } }
+
+    const summary = connection && (
+        <ConnectionSummary
+            connection={connection}
+            first={BATCH_COUNT}
+            noun="code monitor"
+            pluralNoun="code monitors"
+            hasNextPage={hasNextPage}
+            noSummaryIfAllNodesVisible={true}
+            emptyElement={<CodeMonitorEmptyList authenticatedUser={authenticatedUser} />}
+            centered={true}
+        />
     )
 
     return (
@@ -100,34 +138,35 @@ export const CodeMonitorList: React.FunctionComponent<CodeMonitorListProps> = ({
                         {`${monitorListFilter === 'all' ? 'All code monitors' : 'Your code monitors'}`}
                     </h3>
                     <Container>
-                        <FilteredConnection<
-                            CodeMonitorFields,
-                            Omit<CodeMonitorNodeProps, 'node'>,
-                            (ListUserCodeMonitorsResult['node'] & { __typename: 'User' })['monitors']
-                        >
-                            location={location}
-                            history={history}
-                            defaultFirst={10}
-                            queryConnection={queryConnection}
-                            hideSearch={true}
-                            nodeComponent={CodeMonitorNode}
-                            nodeComponentProps={{
-                                isSiteAdminUser: authenticatedUser?.siteAdmin ?? false,
-                                location,
-                                showCodeMonitoringTestEmailButton:
-                                    (!isErrorLike(settingsCascade.final) &&
-                                        settingsCascade.final?.experimentalFeatures
-                                            ?.showCodeMonitoringTestEmailButton) ||
-                                    false,
-                                toggleCodeMonitorEnabled,
-                            }}
-                            noun="code monitor"
-                            pluralNoun="code monitors"
-                            noSummaryIfAllNodesVisible={true}
-                            cursorPaging={true}
-                            withCenteredSummary={true}
-                            emptyElement={<CodeMonitorEmptyList authenticatedUser={authenticatedUser} />}
-                        />
+                        <ConnectionContainer>
+                            {error && <ConnectionError errors={[error.message]} />}
+                            {connection && (
+                                <ConnectionList>
+                                    {connection.nodes.map(node => (
+                                        <CodeMonitorNode
+                                            key={node.id}
+                                            node={node}
+                                            isSiteAdminUser={authenticatedUser?.siteAdmin ?? false}
+                                            location={location}
+                                            toggleCodeMonitorEnabled={toggleCodeMonitorEnabled}
+                                            showCodeMonitoringTestEmailButton={
+                                                (!isErrorLike(settingsCascade.final) &&
+                                                    settingsCascade.final?.experimentalFeatures
+                                                        ?.showCodeMonitoringTestEmailButton) ||
+                                                false
+                                            }
+                                        />
+                                    ))}
+                                </ConnectionList>
+                            )}
+                            {loading && <ConnectionLoading />}
+                            {!loading && connection && (
+                                <SummaryContainer centered={true}>
+                                    {summary}
+                                    {hasNextPage && <ShowMoreButton onClick={fetchMore} centered={true} />}
+                                </SummaryContainer>
+                            )}
+                        </ConnectionContainer>
                     </Container>
                 </div>
             </div>

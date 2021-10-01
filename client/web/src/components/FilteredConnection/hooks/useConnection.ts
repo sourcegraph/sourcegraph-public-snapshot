@@ -22,6 +22,8 @@ interface UseConnectionConfig {
     useURL?: boolean
     /** Allows modifying how the query interacts with the Apollo cache */
     fetchPolicy?: WatchQueryFetchPolicy
+    /** Set to true to skip running the query for any reason */
+    skip?: boolean
 }
 
 interface UseConnectionParameters<TResult, TVariables, TData> {
@@ -99,6 +101,7 @@ export const useConnection = <TResult, TVariables, TData>({
         },
         notifyOnNetworkStatusChange: true, // Ensures loading state is updated on `fetchMore`
         fetchPolicy: options?.fetchPolicy,
+        skip: options?.skip,
     })
 
     /**
