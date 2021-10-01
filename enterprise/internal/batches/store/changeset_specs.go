@@ -421,6 +421,7 @@ type ChangesetSpecHeadRefConflict struct {
 }
 
 var listChangesetSpecsWithConflictingHeadQueryFmtstr = `
+-- source: enterprise/internal/batches/store.go:ListChangesetSpecsWithConflictingHeadRef
 SELECT
 	repo_id, spec->>'headRef', COUNT(*)
 FROM
