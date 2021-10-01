@@ -78,8 +78,8 @@ table.
 
 |Provider|Node type|Boot/ephemeral disk size|
 |--- |--- |--- |
-|[Amazon EKS (better than plain EC2)](eks.md)|m5.4xlarge|N/A|
-|[AWS EC2](https://kubernetes.io/docs/getting-started-guides/aws/)|m5.4xlarge|N/A|
+|[Amazon EKS (better than plain EC2)](eks.md)|m5.4xlarge| 100 GB (SSD preferred) |
+|[AWS EC2](https://kubernetes.io/docs/getting-started-guides/aws/)|m5.4xlarge|  100 GB (SSD preferred) |
 |[Google Kubernetes Engine (GKE)](https://cloud.google.com/kubernetes-engine/docs/quickstart)|n1-standard-16|100 GB (default)|
 |[Azure](azure.md)|D16 v3|100 GB (SSD preferred)|
 |[Other](https://kubernetes.io/docs/setup/pick-right-solution/)|16 vCPU, 60 GiB memory per node|100 GB (SSD preferred)|
@@ -104,6 +104,7 @@ Our Kubernetes support has the following requirements:
 
 - [Sourcegraph Enterprise license](configure.md#add-license-key). _You can run through these instructions without one, but you must obtain a license for instances of more than 10 users._
 - Minimum Kubernetes version: [v1.15](https://kubernetes.io/blog/2019/06/19/kubernetes-1-15-release-announcement/) and [kubectl](https://kubernetes.io/docs/tasks/tools/install-kubectl/) v1.15 or later.
+- Support for Persistent Volumes. 
 
 We also recommend familiarizing yourself with the following before proceeding with the install steps:
 
