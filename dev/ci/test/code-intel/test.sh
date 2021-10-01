@@ -20,19 +20,16 @@ function run_tests() {
   # Disable `-x` to avoid printing secrets
   set +x
   source /root/.profile
-  export GITHUB_TOKEN="${GITHUB_USER_TOKEN}"
   set -x
   "${SG_ROOT}/init-sg" addRepos -config repos.json
   popd
 
   pushd dev/codeintel-qa
-  echo '--- downloading testdata from GCS'
+  echo '--- downloading test data from GCS'
   ./scripts/download.sh
-
   echo '--- integration test ./dev/codeintel-qa/cmd/upload'
   go build ./cmd/upload
-  ./upload --verbose --timeout=5m
-
+  ./upload --timeout=5m
   echo '--- integration test ./dev/codeintel-qa/cmd/query'
   go build ./cmd/query
   ./query
