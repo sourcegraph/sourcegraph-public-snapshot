@@ -10,13 +10,10 @@ import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryServi
 
 import { CaseSensitivityProps, PatternTypeProps, SearchContextInputProps } from '..'
 import { AuthenticatedUser } from '../../auth'
-import styles from '../FeatureTour.module.scss'
 import { SubmitSearchParameters } from '../helpers'
-import { getTourOptions, HAS_SEEN_SEARCH_CONTEXTS_FEATURE_TOUR_KEY, useFeatureTour } from '../useFeatureTour'
 
 import { SearchContextCtaPrompt } from './SearchContextCtaPrompt'
 import { SearchContextMenu } from './SearchContextMenu'
-import { defaultPopperModifiers } from './tour-options'
 
 export interface SearchContextDropdownProps
     extends Omit<SearchContextInputProps, 'showSearchContext'>,
@@ -30,32 +27,7 @@ export interface SearchContextDropdownProps
     submitSearchOnSearchContextChange?: boolean
     query: string
     history: H.History
-    isSearchOnboardingTourVisible: boolean
     className?: string
-}
-
-function getFeatureTourElement(onClose: () => void): HTMLElement {
-    const container = document.createElement('div')
-    container.className = styles.featureTourStep
-    container.innerHTML = `
-        <div>
-            <strong>New: Search contexts</strong>
-        </div>
-        <div class="mt-2 mb-2">Search just the code you care about with search contexts.</div>
-        <div>
-            <a href="https://docs.sourcegraph.com/code_search/explanations/features#search-contexts" target="_blank">
-                Learn more
-            </a>
-        </div>
-        <div class="d-flex justify-content-end">
-            <button type="button" class="btn btn-sm">
-                Close
-            </button>
-        </div>
-    `
-    const button = container.querySelector('button')
-    button?.addEventListener('click', onClose)
-    return container
 }
 
 export const SearchContextDropdown: React.FunctionComponent<SearchContextDropdownProps> = props => {
@@ -74,35 +46,16 @@ export const SearchContextDropdown: React.FunctionComponent<SearchContextDropdow
         submitSearch,
         fetchAutoDefinedSearchContexts,
         fetchSearchContexts,
-        showSearchContextFeatureTour = false,
         submitSearchOnSearchContextChange = true,
-        isSearchOnboardingTourVisible,
         className,
         telemetryService,
     } = props
-
-    const tour = useFeatureTour(
-        'search-contexts-start-tour',
-        !!authenticatedUser && showSearchContextFeatureTour && !isSearchOnboardingTourVisible,
-        getFeatureTourElement,
-        HAS_SEEN_SEARCH_CONTEXTS_FEATURE_TOUR_KEY,
-        getTourOptions({
-            attachTo: {
-                element: '.search-context-dropdown__button',
-                on: 'bottom',
-            },
-            popperOptions: {
-                modifiers: [...defaultPopperModifiers, { name: 'offset', options: { offset: [140, 16] } }],
-            },
-        })
-    )
 
     const [isOpen, setIsOpen] = useState(false)
     const toggleOpen = useCallback(() => {
         telemetryService.log('SearchContextDropdownToggled')
         setIsOpen(value => !value)
-        tour.cancel()
-    }, [tour, telemetryService])
+    }, [telemetryService])
 
     const isContextFilterInQuery = useMemo(() => filterExists(query, FilterType.context), [query])
 
