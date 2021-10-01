@@ -903,7 +903,13 @@ func (s *Server) handleSearch(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) search(w http.ResponseWriter, r *http.Request, args *protocol.SearchRequest) {
-	ctx := r.Context()
+	tr, ctx := trace.New(r.Context(), "search", "")
+	tr.LogFields(
+		otlog.String("query", args.Query.String()),
+		otlog.Int("limit", args.Limit),
+	)
+	defer tr.Finish()
+
 	args.Repo = protocol.NormalizeRepo(args.Repo)
 	if args.Limit == 0 {
 		args.Limit = math.MaxInt32
