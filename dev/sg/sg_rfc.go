@@ -28,21 +28,21 @@ func rfcExec(ctx context.Context, args []string) error {
 
 	switch args[0] {
 	case "list":
-		return rfc.ListRFCs(ctx, out)
+		return rfc.List(ctx, out)
 
 	case "search":
 		if len(args) != 2 {
 			return errors.New("no search query given")
 		}
 
-		return rfc.SearchRFCs(ctx, args[1], out)
+		return rfc.Search(ctx, args[1], out)
 
 	case "open":
 		if len(args) != 2 {
 			return errors.New("no number given")
 		}
 
-		return rfc.OpenRFC(ctx, args[1], out)
+		return rfc.Open(ctx, args[1], out)
 	}
 
 	return nil

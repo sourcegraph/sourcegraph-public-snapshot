@@ -1,4 +1,4 @@
-package urlutil
+package open
 
 import (
 	"fmt"
@@ -6,7 +6,7 @@ import (
 	"runtime"
 )
 
-func OpenURL(url string) error {
+func URL(url string) error {
 	var err error
 	switch runtime.GOOS {
 	case "linux":

@@ -11,7 +11,7 @@ import (
 	"strings"
 
 	"github.com/cockroachdb/errors"
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/urlutil"
+	"github.com/sourcegraph/sourcegraph/dev/sg/internal/open"
 	"github.com/sourcegraph/sourcegraph/dev/sg/root"
 
 	"github.com/sourcegraph/sourcegraph/lib/output"
@@ -57,7 +57,7 @@ func getTokenFromWeb(ctx context.Context, config *oauth2.Config, out *output.Out
 	authURL := config.AuthCodeURL("state-token", oauth2.AccessTypeOffline)
 
 	out.Writef("Opening %s ...", authURL)
-	if err := urlutil.OpenURL(authURL); err != nil {
+	if err := open.URL(authURL); err != nil {
 		return nil, err
 	}
 
@@ -131,18 +131,18 @@ func queryRFCs(ctx context.Context, query string, orderBy string, pager func(r *
 	return list.Pages(ctx, pager)
 }
 
-func ListRFCs(ctx context.Context, out *output.Output) error {
+func List(ctx context.Context, out *output.Output) error {
 	return queryRFCs(ctx, "", "createdTime,name", rfcTitlesPrinter(out), out)
 }
 
-func SearchRFCs(ctx context.Context, query string, out *output.Output) error {
+func Search(ctx context.Context, query string, out *output.Output) error {
 	return queryRFCs(ctx, fmt.Sprintf("(name contains '%s' or fullText contains '%s')", query, query), "", rfcTitlesPrinter(out), out)
 }
 
-func OpenRFC(ctx context.Context, number string, out *output.Output) error {
+func Open(ctx context.Context, number string, out *output.Output) error {
 	return queryRFCs(ctx, fmt.Sprintf("name contains 'RFC %s'", number), "", func(r *drive.FileList) error {
 		for _, f := range r.Files {
-			urlutil.OpenURL(fmt.Sprintf("https://docs.google.com/document/d/%s/edit", f.Id))
+			open.URL(fmt.Sprintf("https://docs.google.com/document/d/%s/edit", f.Id))
 		}
 		return nil
 	}, out)
