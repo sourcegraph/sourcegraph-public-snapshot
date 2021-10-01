@@ -123,11 +123,14 @@ function useCommandList(extensionsController: CommandPaletteProps['extensionsCon
     )
 
     const builtInCommands: CommandItem[] = useMemo(
-        () => [...extraCommands, ...COMMAND_PALETTE_COMMANDS, ...HACKATHON_DEMO_COMMANDS],
+        () => [...extraCommands, ...COMMAND_PALETTE_COMMANDS].map(commandItem => ({ ...commandItem, icon: 'https://sourcegraph.test/.assets/img/sourcegraph-mark.svg?v2' })),
         [extraCommands]
     )
 
-    const actions = useMemo(() => [...extensionCommands, ...builtInCommands], [extensionCommands, builtInCommands])
+    const actions = useMemo(() => [...extensionCommands, ...builtInCommands, ...HACKATHON_DEMO_COMMANDS], [
+        extensionCommands,
+        builtInCommands,
+    ])
 
     return { actions, shortcuts }
 }

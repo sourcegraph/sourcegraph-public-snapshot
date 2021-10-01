@@ -124,11 +124,13 @@ export const CommandResult: React.FC<CommandResultProps> = ({ actions, value, on
     return (
         <NavigableList items={filteredActions} getKey={({ id }) => id}>
             {({ title, id, keybindings, icon: Icon, href, onClick }, { active }) => {
-                let renderedIcon: JSX.Element | undefined = undefined
-                if (Icon && typeof Icon === 'string') {
-                    renderedIcon = <img src={Icon} alt="" className={classNames(listStyles.itemIcon, 'icon-inline')} />
+                let icon: JSX.Element
+                if (typeof Icon === 'string') {
+                    icon = <img src={Icon} alt="" className={classNames(listStyles.itemIcon, 'icon-inline')} />
                 } else if (Icon !== undefined) {
-                    renderedIcon = <Icon className={classNames(listStyles.itemIcon, 'icon-inline')} />
+                    icon = <Icon className={classNames(listStyles.itemIcon, 'icon-inline')} />
+                } else {
+                    icon = <span className={listStyles.emptyIcon} />
                 }
 
                 const externalLink = !!(href && isExternalLink(href))
@@ -142,7 +144,7 @@ export const CommandResult: React.FC<CommandResultProps> = ({ actions, value, on
                         isExternalLink={externalLink}
                     >
                         <span className={listStyles.itemContainer}>
-                            {renderedIcon ?? <span className={listStyles.emptyIcon}></span>}
+                            {icon}
                             <HighlightedMatches text={title} pattern={value} />
                             {externalLink && <OpenInNewIcon className="icon-inline" style={{ marginLeft: '.25rem' }} />}
                         </span>
