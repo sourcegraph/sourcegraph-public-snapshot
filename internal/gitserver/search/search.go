@@ -140,19 +140,15 @@ func (cs *CommitSearcher) Search(ctx context.Context, onMatch func(*protocol.Com
 func (cs *CommitSearcher) feedBatches(ctx context.Context, jobs chan job, resultChans chan chan *protocol.CommitMatch) error {
 	revArgs := revsToGitArgs(cs.Revisions)
 	cmd := exec.CommandContext(ctx, "git", append(logArgsWithoutRefs, revArgs...)...)
-	pr, pw := io.Pipe()
-	cmd.Stdout = pw
 	cmd.Dir = cs.RepoDir
-	if err := cmd.Start(); err != nil {
+	stdoutReader, err := cmd.StdoutPipe()
+	if err != nil {
 		return err
 	}
 
-	// Wait for the git subprocess to finish, closing the pipe when it does
-	var cmdErr error
-	go func() {
-		defer pw.Close()
-		cmdErr = cmd.Wait()
-	}()
+	if err := cmd.Start(); err != nil {
+		return err
+	}
 
 	batch := make([]*RawCommit, 0, batchSize)
 	sendBatch := func() {
@@ -165,7 +161,7 @@ func (cs *CommitSearcher) feedBatches(ctx context.Context, jobs chan job, result
 		batch = make([]*RawCommit, 0, batchSize)
 	}
 
-	scanner := NewCommitScanner(pr)
+	scanner := NewCommitScanner(stdoutReader)
 	for scanner.Scan() {
 		if ctx.Err() != nil {
 			return ctx.Err()
@@ -181,10 +177,11 @@ func (cs *CommitSearcher) feedBatches(ctx context.Context, jobs chan job, result
 		sendBatch()
 	}
 
-	if cmdErr != nil {
-		return cmdErr
+	if scanner.Err() != nil {
+		return scanner.Err()
 	}
-	return scanner.Err()
+
+	return cmd.Wait()
 }
 
 func (cs *CommitSearcher) runJobs(ctx context.Context, jobs chan job) error {
