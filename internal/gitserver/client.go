@@ -18,6 +18,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/sourcegraph/sourcegraph/cmd/gitserver/domain"
+
 	"github.com/cockroachdb/errors"
 	"github.com/hashicorp/go-multierror"
 	"github.com/inconshreveable/log15"
@@ -989,4 +991,11 @@ func (c *Client) CreateCommitFromPatch(ctx context.Context, req protocol.CreateC
 		return res.Rev, res.Error
 	}
 	return res.Rev, nil
+}
+
+// GetObject fetches git object data in the supplied repo.
+// TODO: This will replace vcs/git/GetObject
+func (c *Client) GetObject(ctx context.Context, repo api.RepoName, objectName string) (*domain.GitObject, error) {
+	// TODO: HTTP call to gitserver/commands/get-object
+	return nil, errors.New("TODO")
 }

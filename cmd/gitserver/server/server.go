@@ -25,6 +25,10 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/sourcegraph/sourcegraph/cmd/gitserver/adapters"
+
+	"github.com/sourcegraph/sourcegraph/cmd/gitserver/domain"
+
 	"github.com/cockroachdb/errors"
 	"github.com/inconshreveable/log15"
 	"github.com/opentracing/opentracing-go/ext"
@@ -356,6 +360,12 @@ func (s *Server) Handler() http.Handler {
 	})
 
 	mux.Handle("/git/", http.StripPrefix("/git", s.gitServiceHandler()))
+
+	gitAdapter := &adapters.Git{}
+	mux.HandleFunc("/commands/get-object", s.handleGetObject(domain.GetObjectService{
+		RevParser:   gitAdapter,
+		ObjectTyper: gitAdapter,
+	}))
 
 	return mux
 }
