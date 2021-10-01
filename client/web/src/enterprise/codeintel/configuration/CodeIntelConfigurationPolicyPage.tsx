@@ -52,7 +52,16 @@ export const CodeIntelConfigurationPolicyPage: FunctionComponent<CodeIntelConfig
         }
 
         const variables = repo?.id ? { ...policy, repositoryId: repo.id ?? null } : { ...policy }
-        return savePolicyConfiguration({ variables }).then(() => history.push('./'))
+        return savePolicyConfiguration({ variables })
+            .then(() =>
+                history.push({
+                    pathname: './',
+                    state: { modal: 'SUCCESS', message: 'Policy configuration has been saved.' },
+                })
+            )
+            .catch(() =>
+                history.push({ pathname: './', state: { modal: 'ERROR', message: 'There was an error while saving.' } })
+            )
     }, [policy, repo, savePolicyConfiguration, history])
 
     if (policyConfigError || policy === undefined) {

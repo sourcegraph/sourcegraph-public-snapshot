@@ -8,6 +8,7 @@ import { PageTitle } from '@sourcegraph/web/src/components/PageTitle'
 import { PageHeader } from '@sourcegraph/wildcard'
 
 import { CodeIntelConfigurationPageHeader } from './CodeIntelConfigurationPageHeader'
+import { FlashMessage } from './FlashMessage'
 import { PolicyListActions } from './PolicyListActions'
 import { RepositoryConfiguration } from './RepositoryConfiguration'
 import { RepositoryPolicies } from './RepositoryPolicies'
@@ -50,6 +51,10 @@ export const CodeIntelConfigurationPage: FunctionComponent<CodeIntelConfiguratio
                 />
                 {displayActions && <PolicyListActions disabled={isLoading} deleting={isDeleting} history={history} />}
             </CodeIntelConfigurationPageHeader>
+
+            {history.location.state && (
+                <FlashMessage state={history.location.state.modal} message={history.location.state.message} />
+            )}
 
             {repo ? (
                 <RepositoryConfiguration
