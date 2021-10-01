@@ -1,9 +1,8 @@
 #!/usr/bin/env bash
 
-# This script sets up a Sourcegraph instance for integration testing. This script
-# expects to be passed a bash function that takes a single parameter, which is the
-# URL from whic the instance is accessible. This script will clean up the instance
-# after the tests complete (hence necessitating the "callback").
+# This script sets up a Sourcegraph instance for integration testing. This script expects to be
+# passed a path to a bash script that runs the actual tests against a running instance. The passed
+# script will be passed a single parameter: the target URL from which the instance is accessible.
 
 cd "$(dirname "${BASH_SOURCE[0]}")"/../..
 set -ex
@@ -68,5 +67,5 @@ fi
 set -e
 echo "Waiting for $URL... done"
 
-# Run tests
-"$1" "$URL"
+# Run tests against instance
+"${1}" "${URL}"
