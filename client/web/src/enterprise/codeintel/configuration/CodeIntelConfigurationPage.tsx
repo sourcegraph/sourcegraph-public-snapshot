@@ -40,7 +40,7 @@ export const CodeIntelConfigurationPage: FunctionComponent<CodeIntelConfiguratio
                     headingElement="h2"
                     path={[
                         {
-                            text: <>Precise code intelligence configuration zzz</>,
+                            text: <>Precise code intelligence configuration</>,
                         },
                     ]}
                     description={`Rules that define configuration for precise code intelligence ${
