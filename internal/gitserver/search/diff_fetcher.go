@@ -90,12 +90,6 @@ func (d *DiffFetcher) Stop() {
 // Fetch fetches a diff from the git diff-tree subprocess, writing to its stdin
 // and waiting for its response on stdout. Note that this is not safe to call concurrently.
 func (d *DiffFetcher) Fetch(hash []byte) ([]byte, error) {
-	if _, err := d.stdin.Write(hash); err != nil {
-		return nil, err
-	}
-	if _, err := d.stdin.Write([]byte{'\n'}); err != nil {
-		return nil, err
-	}
 	// HACK: There is no way (as far as I can tell) to make `git diff-tree --stdin` to
 	// write a trailing null byte or tell us how much to read in advance, and since we're
 	// using a long-running process, the stream doesn't close at the end, and we can't use the
@@ -103,7 +97,7 @@ func (d *DiffFetcher) Fetch(hash []byte) ([]byte, error) {
 	// serially. We resort to sending the subprocess a bogus commit hash named "ENDOFPATCH", which it
 	// will fail to read as a tree, and print back to stdout literally. We use this as a signal
 	// that the subprocess is done outputting for this commit.
-	if _, err := d.stdin.Write(endOfPatchToken); err != nil {
+	if _, err := d.stdin.Write(append(append(hash, '\n'), endOfPatchToken...)); err != nil {
 		return nil, err
 	}
 
