@@ -359,9 +359,9 @@ func TestZoektIndexedRepos(t *testing.T) {
 		"foo/indexed-one@",
 		"foo/indexed-two@",
 		"foo/indexed-three@",
+		"foo/partially-indexed@HEAD:bad-rev",
 		"foo/unindexed-one",
 		"foo/unindexed-two",
-		"foo/multi-rev@a:b",
 	)
 
 	zoektRepos := map[uint32]*zoekt.MinimalRepoListEntry{}
@@ -376,22 +376,13 @@ func TestZoektIndexedRepos(t *testing.T) {
 			{Name: "HEAD", Version: "deadbeef"},
 			{Name: "foobar", Version: "deadcow"},
 		},
+		{
+			{Name: "HEAD", Version: "deadbeef"},
+		},
 	} {
 		r := repos[i]
 		branches := branches
 		zoektRepos[uint32(r.Repo.ID)] = &zoekt.MinimalRepoListEntry{Branches: branches}
-	}
-
-	makeIndexed := func(repos []*search.RepositoryRevisions) []*search.RepositoryRevisions {
-		var indexed []*search.RepositoryRevisions
-		for _, r := range repos {
-			rev := &search.RepositoryRevisions{
-				Repo: r.Repo,
-				Revs: r.Revs,
-			}
-			indexed = append(indexed, rev)
-		}
-		return indexed
 	}
 
 	cases := []struct {
@@ -400,19 +391,25 @@ func TestZoektIndexedRepos(t *testing.T) {
 		indexed   []*search.RepositoryRevisions
 		unindexed []*search.RepositoryRevisions
 	}{{
-		name:      "all",
-		repos:     repos,
-		indexed:   makeIndexed(repos[:3]),
-		unindexed: repos[3:],
+		name:  "all",
+		repos: repos,
+		indexed: []*search.RepositoryRevisions{
+			repos[0], repos[1], repos[2],
+			{Repo: repos[3].Repo, Revs: repos[3].Revs[:1]},
+		},
+		unindexed: []*search.RepositoryRevisions{
+			{Repo: repos[3].Repo, Revs: repos[3].Revs[1:]},
+			repos[4], repos[5],
+		},
 	}, {
 		name:      "one unindexed",
-		repos:     repos[3:4],
+		repos:     repos[4:5],
 		indexed:   repos[:0],
-		unindexed: repos[3:4],
+		unindexed: repos[4:5],
 	}, {
 		name:      "one indexed",
 		repos:     repos[:1],
-		indexed:   makeIndexed(repos[:1]),
+		indexed:   repos[:1],
 		unindexed: repos[:0],
 	}}
 
