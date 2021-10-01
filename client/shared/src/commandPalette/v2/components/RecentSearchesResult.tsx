@@ -20,7 +20,7 @@ interface RecentSearchesResultProps
     extends PlatformContextProps<'requestGraphQL' | 'clientApplication' | 'sourcegraphURL'> {
     value: string
     onClick: () => void
-    getAuthenticatedUserID: () => Observable<string | null>
+    currentUserID: Observable<string | null>
 }
 
 export interface EventLogResult {
@@ -94,11 +94,11 @@ export const RecentSearchesResult: React.FC<RecentSearchesResultProps> = ({
     value,
     onClick,
     platformContext,
-    getAuthenticatedUserID,
+    currentUserID,
 }) => {
     const history = useHistory()
 
-    const authenticatedUserID = useObservable(useMemo(() => getAuthenticatedUserID(), [getAuthenticatedUserID]))
+    const authenticatedUserID = useObservable(useMemo(() => currentUserID, [currentUserID]))
     console.log({ authenticatedUserID })
     // TODO: error handling
     const recentSearches = useObservable(

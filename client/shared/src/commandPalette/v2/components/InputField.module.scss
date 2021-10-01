@@ -1,0 +1,47 @@
+$command-palette-border-radius: 0.45rem;
+
+.input-container {
+    position: sticky;
+    top: 0;
+    display: flex;
+}
+
+.input {
+    height: 2.25rem;
+    width: 100%;
+    font-size: 1rem;
+    font-weight: 300;
+    font-style: italic;
+    border: none;
+    color: var(--input-color);
+    background-color: var(--input-bg);
+    border-bottom: 1px solid var(--border-color-2);
+    border-radius: 0;
+    border-top-left-radius: $command-palette-border-radius;
+    border-top-right-radius: $command-palette-border-radius;
+    padding-left: 2rem; // Make room for magnify icon
+    padding-right: 1rem;
+
+    &:focus,
+    &:focus-visible {
+        border: none;
+        border-bottom: 1px solid var(--border-color-2);
+        box-shadow: none;
+        outline: none;
+    }
+
+    &::-webkit-search-cancel-button {
+        height: 1rem;
+        width: 1rem;
+        background: var(--body-color);
+    }
+}
+
+.input-icon {
+    align-self: center;
+    height: 1.25rem;
+    width: 1.25rem;
+    position: absolute;
+    left: 0.5rem;
+    color: var(--icon-muted);
+}

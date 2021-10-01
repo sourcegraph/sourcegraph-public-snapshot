@@ -1,7 +1,5 @@
 import { Remote } from 'comlink'
 import * as H from 'history'
-import MagnifyIcon from 'mdi-react/MagnifyIcon'
-import CloseCircleIcon from 'mdi-react/CloseCircleIcon'
 import React, { useMemo, useCallback, useEffect, useRef } from 'react'
 import { Modal } from 'reactstrap'
 import { from, Observable } from 'rxjs'
@@ -12,7 +10,6 @@ import { wrapRemoteObservable } from '../../api/client/api/common'
 import { FlatExtensionHostAPI } from '../../api/contract'
 import { haveInitialExtensionsLoaded } from '../../api/features'
 import { ContributableMenu } from '../../api/protocol'
-import { SourcegraphIcon } from '../../components/SourcegraphIcon'
 import { getContributedActionItems } from '../../contributions/contributions'
 import { ExtensionsControllerProps } from '../../extensions/controller'
 import { PlatformContextProps } from '../../platform/context'
@@ -24,13 +21,13 @@ import styles from './CommandPalette.module.scss'
 import { CommandPaletteModesResult } from './components/CommandPaletteModesResult'
 import { CommandResult, CommandItem } from './components/CommandResult'
 import { FuzzyFinderResult } from './components/FuzzyFinderResult'
+import { InputField } from './components/InputField'
 import { JumpToLineResult } from './components/JumpToLineResult'
 import { JumpToSymbolResult } from './components/JumpToSymbolResult'
 import { RecentSearchesResult } from './components/RecentSearchesResult'
 import { ShortcutController, KeyboardShortcutWithCallback } from './components/ShortcutController'
 import { COMMAND_PALETTE_COMMANDS, CommandPaletteMode } from './constants'
 import { useCommandPaletteStore } from './store'
-import { Key } from 'ts-key-enum'
 
 const getMode = (text: string): CommandPaletteMode | undefined =>
     Object.values(CommandPaletteMode).find(value => text.startsWith(value))
@@ -60,7 +57,7 @@ const HACKATHON_DEMO_COMMANDS: CommandItem[] = [
 ]
 
 // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
-function useCommandList(value: string, extensionsController: CommandPaletteProps['extensionsController']) {
+function useCommandList(extensionsController: CommandPaletteProps['extensionsController']) {
     const { extraCommands } = useCommandPaletteStore()
 
     const extensionContributions = useObservable(
@@ -129,12 +126,7 @@ function useCommandList(value: string, extensionsController: CommandPaletteProps
     )
 
     const builtInCommands: CommandItem[] = useMemo(
-        () => [
-            // Note: KEYBOARD_SHORTCUTS are shortcuts are already handled in different places
-            ...extraCommands,
-            ...COMMAND_PALETTE_COMMANDS,
-            ...HACKATHON_DEMO_COMMANDS,
-        ],
+        () => [...extraCommands, ...COMMAND_PALETTE_COMMANDS, ...HACKATHON_DEMO_COMMANDS],
         [extraCommands]
     )
 
@@ -151,35 +143,34 @@ export interface CommandPaletteProps
         TelemetryProps {
     initialIsOpen?: boolean
     location: H.Location
-    // TODO: different for web and bext. change name
-    getAuthenticatedUserID: () => Observable<string | null>
+    currentUserID: Observable<string | null>
 }
 
 /**
- * Note:
-- Mention existing (we learned)
-    - command palette
-    - fuzzy finder
-    - builtin actions (aka shortcuts)
-    - recent searches
-    - symbol mode
+NOTE:
+
+Mention existing (we learned)
+- command palette
+- fuzzy finder
+- builtin actions (aka shortcuts)
+- recent searches
+- symbol mode
 
 Why:
-    - Make those cool features ACCESSIBLE, NOTICABLE and better by grouping them in a single awesome cool UI
-    - Fast/quick navigation + make users more productive
-    - Creating a room for new built-in common commands/patterns
-    - Extending an extension API to set shortcut for commands
+- Make those cool features ACCESSIBLE, NOTICABLE and better by grouping them in a single awesome cool UI
+- Fast/quick navigation + make users more productive
+- Creating a room for new built-in common commands/patterns
+- Extending an extension API to set shortcut for commands
 
 Future improvements:
-    - codehost integration + ability to customize and extend
-    - customizing shortcuts for each command
+- codehost integration + ability to customize and extend
+- customizing shortcuts for each command
 
 What we learned:
-    - value of prototyping
-    - a bit more about existing codebase (fuzzy finder, etc)
-    - zustand state management
-    - pair programming productivty boost
-
+- value of prototyping
+- a bit more about existing codebase (fuzzy finder, etc)
+- zustand state management
+- pair programming productivty boost
  */
 
 /**
@@ -191,15 +182,14 @@ What we learned:
  */
 export const CommandPalette: React.FC<CommandPaletteProps> = ({
     initialIsOpen = false,
-    // TODO: add ability to set default/initial mode
     extensionsController,
     platformContext,
+    currentUserID,
     telemetryService,
     location,
-    getAuthenticatedUserID,
 }) => {
     const { isOpen, toggleIsOpen, value, setValue } = useCommandPaletteStore()
-    const { actions, shortcuts } = useCommandList(value, extensionsController)
+    const { actions, shortcuts } = useCommandList(extensionsController)
     const inputReference = useRef<HTMLInputElement>(null)
     const mode = getMode(value)
 
@@ -216,27 +206,6 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
     const handleInputFocus = useCallback(() => {
         inputReference.current?.focus()
     }, [])
-
-    const handleChange = useCallback(
-        (event: React.ChangeEvent<HTMLInputElement>) => {
-            setValue(event.target.value)
-        },
-        [setValue]
-    )
-
-    const handleClearKeyDown: React.KeyboardEventHandler<HTMLSpanElement> = event => {
-        if (event.key === Key.Enter) {
-            if (mode) {
-                // Clearing when a mode is selected doesn't restore focus to input
-                setTimeout(() => {
-                    inputReference.current?.focus()
-                }, 0)
-            }
-
-            event.stopPropagation()
-            setValue('')
-        }
-    }
 
     const activeTextDocument = useObservable(
         useMemo(
@@ -259,6 +228,13 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
         )
     )
 
+    const placeholder = useMemo(
+        () =>
+            `Select mode by prefixing ${Object.values(CommandPaletteMode)
+                .map(mode => `[${mode}]`)
+                .join(' ')}`,
+        []
+    )
     const searchText = mode ? value.slice(1) : value
 
     return (
@@ -269,9 +245,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
             {isOpen && (
                 <Modal
                     isOpen={isOpen}
-                    toggle={() => {
-                        toggleIsOpen()
-                    }}
+                    toggle={toggleIsOpen as () => void}
                     autoFocus={false}
                     backdropClassName={styles.modalBackdrop}
                     keyboard={true}
@@ -280,37 +254,13 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
                     contentClassName={styles.modalContent}
                     returnFocusAfterClose={false}
                 >
-                    <div className={styles.inputContainer}>
-                        {platformContext.clientApplication === 'sourcegraph' ? (
-                            <MagnifyIcon className={styles.inputIcon} />
-                        ) : (
-                            <SourcegraphIcon className={styles.inputIcon} />
-                        )}
-                        <input
-                            ref={inputReference}
-                            autoComplete="off"
-                            spellCheck="false"
-                            aria-autocomplete="list"
-                            className={styles.input}
-                            placeholder="Select a mode (prefix or click)"
-                            value={value}
-                            onChange={handleChange}
-                            autoFocus={true}
-                            type="text"
-                        />
-                        {value && (
-                            <span
-                                role="button"
-                                tabIndex={0}
-                                data-tooltip="Clear"
-                                className={styles.clearInputIcon}
-                                onClick={() => setValue('')}
-                                onKeyDown={handleClearKeyDown}
-                            >
-                                <CloseCircleIcon />
-                            </span>
-                        )}
-                    </div>
+                    <InputField
+                        ref={inputReference}
+                        value={value}
+                        onChange={setValue}
+                        placeholder={placeholder}
+                        isNative={platformContext.clientApplication === 'sourcegraph'}
+                    />
                     {!mode && <CommandPaletteModesResult onSelect={handleInputFocus} />}
                     {mode === CommandPaletteMode.Command && (
                         <CommandResult actions={actions} value={searchText} onClick={handleClose} />
@@ -319,7 +269,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
                         <RecentSearchesResult
                             value={searchText}
                             onClick={handleClose}
-                            getAuthenticatedUserID={getAuthenticatedUserID}
+                            currentUserID={currentUserID}
                             platformContext={platformContext}
                         />
                     )}

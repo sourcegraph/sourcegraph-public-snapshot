@@ -56,6 +56,8 @@ import {
     CommandListClassProps,
     CommandListPopoverButtonClassProps,
 } from '@sourcegraph/shared/src/commandPalette/CommandList'
+import { CommandItem } from '@sourcegraph/shared/src/commandPalette/v2/components/CommandResult'
+import { useCommandPaletteStore } from '@sourcegraph/shared/src/commandPalette/v2/store'
 import { ApplyLinkPreviewOptions } from '@sourcegraph/shared/src/components/linkPreviews/linkPreviews'
 import { Controller } from '@sourcegraph/shared/src/extensions/controller'
 import { registerHighlightContributions } from '@sourcegraph/shared/src/highlight/contributions'
@@ -121,8 +123,6 @@ import { resolveRepoNamesForDiffOrFileInfo, defaultRevisionToCommitID } from './
 import { ViewOnSourcegraphButtonClassProps, ViewOnSourcegraphButton } from './ViewOnSourcegraphButton'
 import { delayUntilIntersecting, trackViews, ViewResolver } from './views'
 import { getCurrentUserID } from '../../backend/currentUser'
-import { CommandItem } from '@sourcegraph/shared/src/commandPalette/v2/components/CommandResult'
-import { useCommandPaletteStore } from '@sourcegraph/shared/src/commandPalette/v2/store'
 
 registerHighlightContributions()
 
@@ -741,7 +741,7 @@ export function handleCodeHost({
                     extensionsController,
                     location: H.createLocation(window.location),
                     telemetryService,
-                    getAuthenticatedUserID: () => getCurrentUserID(platformContext.requestGraphQL),
+                    currentUserID: getCurrentUserID(platformContext.requestGraphQL),
                     platformContext,
                     render,
                     notificationClassNames: codeHost.notificationClassNames,

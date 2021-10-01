@@ -239,7 +239,7 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
         startExtensionAlertAnimation()
     }, [startExtensionAlertAnimation])
 
-    const getAuthenticatedUserID = useMemo(
+    const currentUserID = useMemo(
         () => authenticatedUser.pipe(map(authenticatedUser => (authenticatedUser ? authenticatedUser.id : null))),
         []
     )
@@ -269,7 +269,7 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
                 extensionsController={props.extensionsController}
                 platformContext={props.platformContext}
                 telemetryService={props.telemetryService}
-                getAuthenticatedUserID={getAuthenticatedUserID}
+                currentUserID={currentUserID}
             />
             <GlobalAlerts authenticatedUser={props.authenticatedUser} settingsCascade={props.settingsCascade} />
             {!isSiteInit && <SurveyToast authenticatedUser={props.authenticatedUser} />}

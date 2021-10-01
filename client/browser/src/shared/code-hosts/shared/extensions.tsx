@@ -17,6 +17,11 @@ import {
     CommandListPopoverButton,
     CommandListPopoverButtonProps,
 } from '@sourcegraph/shared/src/commandPalette/CommandList'
+import { CommandPalette, CommandPaletteProps } from '@sourcegraph/shared/src/commandPalette/v2/CommandPalette'
+import {
+    OpenCommandPaletteButton,
+    OpenCommandPaletteButtonProps,
+} from '@sourcegraph/shared/src/commandPalette/v2/components/OpenCommandPaletteButton'
 import {
     createController as createExtensionsController,
     ExtensionsControllerProps,
@@ -33,11 +38,6 @@ import { createPlatformContext, SourcegraphIntegrationURLs, BrowserPlatformConte
 
 import { CodeHost } from './codeHost'
 import { DOMFunctions } from './codeViews'
-import { CommandPalette, CommandPaletteProps } from '@sourcegraph/shared/src/commandPalette/v2/CommandPalette'
-import {
-    OpenCommandPaletteButton,
-    OpenCommandPaletteButtonProps,
-} from '@sourcegraph/shared/src/commandPalette/v2/components/OpenCommandPaletteButton'
 
 /**
  * Initializes extensions for a page. It creates the {@link PlatformContext} and extensions controller.
@@ -96,7 +96,7 @@ interface NewInjectProps extends CommandPaletteProps, NotificationClassNameProps
 export const renderNewCommandPalette = ({
     location,
     notificationClassNames,
-    getAuthenticatedUserID,
+    currentUserID,
     extensionsController,
     platformContext,
     telemetryService,
@@ -108,7 +108,7 @@ export const renderNewCommandPalette = ({
             <OpenCommandPaletteButton buttonClassName={buttonClassName} />
             <CommandPalette
                 location={location}
-                getAuthenticatedUserID={getAuthenticatedUserID}
+                currentUserID={currentUserID}
                 extensionsController={extensionsController}
                 platformContext={platformContext}
                 telemetryService={telemetryService}
