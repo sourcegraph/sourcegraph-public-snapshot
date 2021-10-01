@@ -7,10 +7,11 @@ export interface ApolloContext {
      * Turns on/off concurrent/parallel requests apollo link.
      * See `./links/concurrent-requests-link.ts` for more details.
      */
-    concurrent?: boolean
+    concurrentRequests?: {
+        /** Group requests by this key and run them concurrently/in parallel */
+        key?: string
 
-    /**
-     * Group requests by this key and run them concurrently/in parallel.
-     */
-    concurrentKey?: string
+        /** The size of parallel requests queue for particular group of requests */
+        limit?: number
+    }
 }

@@ -2,11 +2,13 @@ import { ApolloLink, FetchResult, NextLink, Operation, Observable, Observer } fr
 
 import { ApolloContext } from '../types'
 
+const DEFAULT_PARALLEL_CONCURRENT_REQUESTS = 3
+
 interface OperationQueueEntry {
     operation: Operation
     forward: NextLink
-
     groupKey: string
+    limit: number
     observable: Observable<FetchResult>
     observers: Observer<unknown>[]
     currentSubscription?: ZenObservable.Subscription
@@ -24,16 +26,19 @@ export class ConcurrentRequestsLink extends ApolloLink {
         const context = (operation.getContext() ?? {}) as ApolloContext
 
         // Ignore and pass further all operations that don't required being run
-        // in concurrent mode.
-        if (!context.concurrent) {
+        // in parallel concurrent mode.
+        if (!context.concurrentRequests) {
             return forward(operation)
         }
+
+        const { key = '', limit } = context.concurrentRequests
 
         const event: OperationQueueEntry = {
             operation,
             forward,
             observers: [],
-            groupKey: context.concurrentKey ?? '',
+            groupKey: key,
+            limit: limit ?? DEFAULT_PARALLEL_CONCURRENT_REQUESTS,
             observable: new Observable<FetchResult>(observer => {
                 // Called for each subscriber, so need to save all listeners(next, error, complete)
                 event.observers.push(observer)
@@ -84,8 +89,9 @@ export class ConcurrentRequestsLink extends ApolloLink {
 
     private scheduleOperations(groupKey: string): void {
         const { activeQueue, queue } = this.requests[groupKey]
+        const maxParallelRequests = Math.max(...queue.map(event => event.limit))
 
-        while (activeQueue.length < 2 && queue.length > 0) {
+        while (activeQueue.length < maxParallelRequests && queue.length > 0) {
             const event = queue.shift()
 
             if (event) {
@@ -111,25 +117,23 @@ export class ConcurrentRequestsLink extends ApolloLink {
             observer.error?.(error)
         }
 
-        const { activeQueue } = this.requests[event.groupKey]
-        // Delete errored event from the active queue in order to run other
-        // queued events.
-        this.requests[event.groupKey].activeQueue = activeQueue.filter(operation => operation !== event)
-
-        // Run queued events.
-        this.scheduleOperations(event.groupKey)
+        this.finishEventExecution(event)
     }
 
     private onComplete(event: OperationQueueEntry): void {
+        for (const observer of event.observers) {
+            observer.complete?.()
+        }
+
+        this.finishEventExecution(event)
+    }
+
+    private finishEventExecution(event: OperationQueueEntry): void {
         const { activeQueue } = this.requests[event.groupKey]
 
         // Delete completed event from the active queue in order to run other
         // queued events.
         this.requests[event.groupKey].activeQueue = activeQueue.filter(operation => operation !== event)
-
-        for (const observer of event.observers) {
-            observer.complete?.()
-        }
 
         // Run queued events
         this.scheduleOperations(event.groupKey)
