@@ -90,22 +90,3 @@ export const TabPanel: React.FunctionComponent = ({ children }) => {
     const { isMounted } = useTabPanelBehavior()
     return <ReachTabPanel data-testid="wildcard-tab-panel">{isMounted ? children : null}</ReachTabPanel>
 }
-
-interface TabPanelProps {
-    children: (isSelected: boolean) => JSX.Element
-    isSelected: boolean
-}
-
-export const TabWithState: React.FC<TabPanelProps> = props => {
-    const { isSelected, children } = props
-
-    const { isMounted } = useTabPanelBehavior()
-    if (!children) {
-        return null
-    }
-    return (
-        <ReachTab {...props} data-testid="wildcard-tab-panel">
-            {isMounted ? children(isSelected) : null}
-        </ReachTab>
-    )
-}
