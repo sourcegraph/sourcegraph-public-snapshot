@@ -221,37 +221,43 @@ type Operator struct {
 }
 
 func (o *Operator) Match(commit *LazyCommit) (bool, *MatchedCommit, error) {
-	resultMatches := &MatchedCommit{}
-	hasMatch := false
-	for _, operand := range o.Operands {
-		matched, matches, err := operand.Match(commit)
+	switch o.Kind {
+	case protocol.Not:
+		matched, _, err := o.Operands[0].Match(commit)
 		if err != nil {
 			return false, nil, err
 		}
-
-		switch o.Kind {
-		case protocol.Not:
-			if matched {
-				return false, nil, nil
+		return matched, nil, nil
+	case protocol.And:
+		resultMatches := &MatchedCommit{}
+		for _, operand := range o.Operands {
+			matched, matches, err := operand.Match(commit)
+			if err != nil {
+				return false, nil, err
 			}
-			return true, nil, nil
-		case protocol.And:
 			if !matched {
-				return false, nil, nil
+				return false, nil, err
 			}
-			hasMatch = true
-			resultMatches = resultMatches.Merge(matches)
-		case protocol.Or:
+			resultMatches.Merge(matches)
+		}
+		return true, resultMatches, nil
+	case protocol.Or:
+		resultMatches := &MatchedCommit{}
+		hasMatch := false
+		for _, operand := range o.Operands {
+			matched, matches, err := operand.Match(commit)
+			if err != nil {
+				return false, nil, err
+			}
 			if matched {
 				hasMatch = true
-				resultMatches = resultMatches.Merge(matches)
+				resultMatches.Merge(matches)
 			}
-		default:
-			panic("unreachable")
 		}
+		return hasMatch, resultMatches, nil
+	default:
+		panic("invalid operator kind")
 	}
-
-	return hasMatch, resultMatches, nil
 }
 
 // matchesToRanges is a helper that takes the return value of regexp.FindAllStringIndex()
