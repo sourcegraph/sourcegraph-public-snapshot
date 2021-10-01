@@ -351,6 +351,7 @@ func (s *Server) Handler() http.Handler {
 	mux.HandleFunc("/repo-update", s.handleRepoUpdate)
 	mux.HandleFunc("/getGitolitePhabricatorMetadata", s.handleGetGitolitePhabricatorMetadata)
 	mux.HandleFunc("/create-commit-from-patch", s.handleCreateCommitFromPatch)
+	mux.HandleFunc("/repo-archive", s.handleRepoArchive)
 	mux.HandleFunc("/ping", func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusOK)
 	})
@@ -1440,6 +1441,19 @@ func (s *Server) p4exec(w http.ResponseWriter, r *http.Request, req *protocol.P4
 	w.Header().Set("X-Exec-Error", errorString(execErr))
 	w.Header().Set("X-Exec-Exit-Status", status)
 	w.Header().Set("X-Exec-Stderr", stderr)
+}
+
+func (s *Server) handleRepoArchive(w http.ResponseWriter, r *http.Request) {
+	repo := r.URL.Query().Get("repo")
+	if repo == "" {
+		w.WriteHeader(http.StatusBadRequest)
+		log15.Error("gitserver.repoarchive", "error", "empty query arg: repo")
+		return
+	}
+
+	if !repoCloned(s.dir(api.RepoName(repo))) {
+		w.WriteHeader(http.StatusNotFound)
+	}
 }
 
 func (s *Server) setLastError(ctx context.Context, name api.RepoName, error string) (err error) {

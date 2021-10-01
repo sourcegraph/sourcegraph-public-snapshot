@@ -256,6 +256,50 @@ func TestServer_handleP4Exec(t *testing.T) {
 	}
 }
 
+func TestServer_handleRepoArchive(t *testing.T) {
+	tests := []Test{
+		{
+			Name:         "empty repo",
+			Request:      httptest.NewRequest("GET", "/repo-archive", strings.NewReader("")),
+			ExpectedCode: http.StatusBadRequest,
+			ExpectedBody: "",
+		},
+		{
+			Name:         "repo not found",
+			Request:      httptest.NewRequest("GET", "/repo-archive?repo=foo", strings.NewReader("")),
+			ExpectedCode: http.StatusNotFound,
+			ExpectedBody: "",
+		},
+	}
+
+	s := &Server{
+		skipCloneForTests: true,
+	}
+
+	h := s.Handler()
+
+	for _, test := range tests {
+		t.Run(test.Name, func(t *testing.T) {
+			w := httptest.ResponseRecorder{Body: new(bytes.Buffer)}
+			h.ServeHTTP(&w, test.Request)
+
+			res := w.Result()
+			if res.StatusCode != test.ExpectedCode {
+				t.Errorf("wrong status: expected %d, got %d", test.ExpectedCode, w.Code)
+			}
+
+			body, err := io.ReadAll(res.Body)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if strings.TrimSpace(string(body)) != test.ExpectedBody {
+				t.Errorf("wrong body: expected %q, got %q", test.ExpectedBody, string(body))
+			}
+		})
+	}
+}
+
 func BenchmarkQuickRevParseHeadQuickSymbolicRefHead_packed_refs(b *testing.B) {
 	tmp, err := os.MkdirTemp("", "gitserver_test")
 	if err != nil {
