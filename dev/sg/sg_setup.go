@@ -38,12 +38,15 @@ func setupExec(ctx context.Context, args []string) error {
 
 	var instructions []instruction
 
-	if runtime.GOOS == "darwin" {
+	currentOS := runtime.GOOS
+	if overridesOS, ok := os.LookupEnv("SG_FORCE_OS"); ok {
+		currentOS = overridesOS
+	}
+	if currentOS == "darwin" {
 		instructions = macOSInstructions
 	} else {
 		instructions = linuxInstructions
 	}
-
 	instructions = append(instructions, httpReverseProxyInstructions...)
 
 	conditions := map[string]bool{}
