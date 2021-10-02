@@ -217,7 +217,7 @@ func NewIndexedSearchRequest(ctx context.Context, args *search.TextParameters, t
 		// all shards anyway.
 		return newIndexedUniverseSearchRequest(ctx, zoektArgs, args.RepoOptions, args.UserPrivateRepos)
 	}
-	return newIndexedSubsetSearchRequest(ctx, args.Repos, args.Query, args.PatternInfo.Index, zoektArgs, onMissing)
+	return newIndexedSubsetSearchRequest(ctx, args.Repos, args.PatternInfo.Index, zoektArgs, onMissing)
 }
 
 // IndexedUniverseSearchRequest represents a request to run a search over the universe of indexed repositories.
@@ -345,7 +345,7 @@ func MissingRepoRevStatus(stream streaming.Sender) OnMissingRepoRevs {
 // a subset of repos. Strongly avoid calling this constructor directly, and use
 // NewIndexedSearchRequest instead, which will validate your inputs and figure
 // out the kind of indexed search to run.
-func newIndexedSubsetSearchRequest(ctx context.Context, repos []*search.RepositoryRevisions, q query.Q, index query.YesNoOnly, zoektArgs *search.ZoektParameters, onMissing OnMissingRepoRevs) (_ *IndexedSubsetSearchRequest, err error) {
+func newIndexedSubsetSearchRequest(ctx context.Context, repos []*search.RepositoryRevisions, index query.YesNoOnly, zoektArgs *search.ZoektParameters, onMissing OnMissingRepoRevs) (_ *IndexedSubsetSearchRequest, err error) {
 	tr, ctx := trace.New(ctx, "newIndexedSubsetSearchRequest", string(zoektArgs.Typ))
 	// Only include indexes with symbol information if a symbol request.
 	var filter func(repo *zoekt.MinimalRepoListEntry) bool
