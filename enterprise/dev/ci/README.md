@@ -10,7 +10,7 @@ In the [pipeline settings](https://buildkite.com/sourcegraph/sourcegraph/setting
 go run ./enterprise/dev/ci/gen-pipeline.go | buildkite-agent pipeline upload
 ```
 
-## Secrets managements 
+## Secrets managements
 
 Our CI pipeline must never leak secrets:
 
