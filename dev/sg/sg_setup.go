@@ -51,7 +51,8 @@ func setupExec(ctx context.Context, args []string) error {
 
 	conditions := map[string]bool{}
 
-	for i, instruction := range instructions {
+	i := 0
+	for _, instruction := range instructions {
 		if instruction.ifBool != "" {
 			val, ok := conditions[instruction.ifBool]
 			if !ok {
@@ -73,6 +74,7 @@ func setupExec(ctx context.Context, args []string) error {
 			}
 		}
 
+		i++
 		out.WriteLine(output.Line("", output.StylePending, "------------------------------------------"))
 		out.Writef("%sStep %d:%s%s %s%s", output.StylePending, i+1, output.StyleReset, output.StyleSuccess, instruction.prompt, output.StyleReset)
 		out.Write("")
