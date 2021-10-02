@@ -37,15 +37,16 @@ func setupExec(ctx context.Context, args []string) error {
 	out.Write("")
 
 	var instructions []instruction
+	instructions = append(instructions, codeInstructions...)
 
 	currentOS := runtime.GOOS
 	if overridesOS, ok := os.LookupEnv("SG_FORCE_OS"); ok {
 		currentOS = overridesOS
 	}
 	if currentOS == "darwin" {
-		instructions = macOSInstructions
+		instructions = append(instructions, macOSInstructions...)
 	} else {
-		instructions = linuxInstructions
+		instructions = append(instructions, linuxInstructions...)
 	}
 	instructions = append(instructions, httpReverseProxyInstructions...)
 
@@ -76,7 +77,7 @@ func setupExec(ctx context.Context, args []string) error {
 
 		i++
 		out.WriteLine(output.Line("", output.StylePending, "------------------------------------------"))
-		out.Writef("%sStep %d:%s%s %s%s", output.StylePending, i+1, output.StyleReset, output.StyleSuccess, instruction.prompt, output.StyleReset)
+		out.Writef("%sStep %d:%s%s %s%s", output.StylePending, i, output.StyleReset, output.StyleSuccess, instruction.prompt, output.StyleReset)
 		out.Write("")
 
 		if instruction.comment != "" {
