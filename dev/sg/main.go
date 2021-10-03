@@ -12,6 +12,7 @@ import (
 	"github.com/peterbourgon/ff/v3/ffcli"
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/run"
+	"github.com/sourcegraph/sourcegraph/dev/sg/internal/secrets"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/stdout"
 	"github.com/sourcegraph/sourcegraph/dev/sg/root"
 	"github.com/sourcegraph/sourcegraph/lib/output"
@@ -20,7 +21,10 @@ import (
 const (
 	defaultConfigFile          = "sg.config.yaml"
 	defaultConfigOverwriteFile = "sg.config.overwrite.yaml"
+	defaultSecretsFile         = "sg.secrets.json"
 )
+
+var secretsStore *secrets.Store
 
 var (
 	BuildCommit string = "dev"
@@ -107,7 +111,21 @@ func checkSgVersion() {
 	}
 }
 
+func loadSecrets() error {
+	homePath, err := root.GetSGHomePath()
+	if err != nil {
+		return err
+	}
+	fp := filepath.Join(homePath, defaultSecretsFile)
+	secretsStore, err = secrets.LoadFile(fp)
+	return err
+}
+
 func main() {
+	if err := loadSecrets(); err != nil {
+		fmt.Printf("failed to open secrets: %s\n", err)
+	}
+
 	if err := rootCommand.Parse(os.Args[1:]); err != nil {
 		os.Exit(1)
 	}
