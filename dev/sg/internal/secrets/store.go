@@ -21,6 +21,7 @@ type Store struct {
 
 type storeKey struct{}
 
+// FromContext fetches a store from context.
 func FromContext(ctx context.Context) *Store {
 	if store, ok := ctx.Value(storeKey{}).(*Store); ok {
 		return store
@@ -61,6 +62,7 @@ func LoadFile(filepath string) (*Store, error) {
 	return s, nil
 }
 
+// Write serializes the store content in the given writer.
 func (s *Store) Write(w io.Writer) error {
 	enc := json.NewEncoder(w)
 	return enc.Encode(s.m)
@@ -86,6 +88,7 @@ func (s *Store) Put(key string, data interface{}) error {
 	return nil
 }
 
+// PutAndSave saves automatically after calling Put.
 func (s *Store) PutAndSave(key string, data interface{}) error {
 	err := s.Put(key, data)
 	if err != nil {
@@ -94,7 +97,7 @@ func (s *Store) PutAndSave(key string, data interface{}) error {
 	return s.SaveFile()
 }
 
-// Get fetches a value from memory.
+// Get fetches a value from memory and uses the given target to deserialize it.
 func (s *Store) Get(key string, target interface{}) error {
 	if v, ok := s.m[key]; ok {
 		return json.Unmarshal(v, target)
