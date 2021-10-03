@@ -2,7 +2,6 @@ package secrets
 
 import (
 	"os"
-	"strings"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -10,54 +9,54 @@ import (
 
 var input = `{"foo": {"bar": "baz"}}`
 
-func TestSecrets(t *testing.T) {
-	t.Run("Load", func(t *testing.T) {
-		s, err := Load(strings.NewReader(input))
-		if err != nil {
-			t.Fatalf("%v", err)
-		}
-		if s == nil {
-			t.Fatalf("want secrets, got nil")
-		}
-		if got, ok := s.m["foo"]; !ok || got == nil {
-			t.Fatal("want secret to include foo, found nothing")
-		}
-	})
+type mySecrets struct {
+	ID     string
+	Secret string
+}
 
+func TestSecrets(t *testing.T) {
 	t.Run("Put and Get", func(t *testing.T) {
-		data := map[string]string{"key": "val"}
-		store := New()
+		data := mySecrets{ID: "foo", Secret: "bar"}
+		store := New("")
 		err := store.Put("foo", data)
 		if err != nil {
 			t.Fatalf("want no error, got %v", err)
 		}
 
 		want := data
-		got, err := store.Get("foo")
+		got := mySecrets{}
+		err = store.Get("foo", &got)
+		if err != nil {
+			t.Fatalf("%v", err)
+		}
 		if diff := cmp.Diff(want, got); diff != "" {
 			t.Fatalf("wrong secret data. (-want +got):\n%s", diff)
 		}
 	})
 
-	t.Run("Save and Load", func(t *testing.T) {
+	t.Run("SaveFile and LoadFile", func(t *testing.T) {
 		f, err := os.CreateTemp(os.TempDir(), "secrets*.json")
 		if err != nil {
 			t.Fatalf("%v", err)
 		}
+		f.Close()
 		filepath := f.Name()
+		_ = os.Remove(filepath) // we just want the path, not the file
 		t.Cleanup(func() {
 			_ = os.Remove(filepath)
 		})
 
 		// Assign a secret and save it
-		s := New()
-		data := map[string]interface{}{"key": "val"}
-		s.Put("foo", data)
-		err = s.Save(f)
+		s, err := LoadFile(filepath)
 		if err != nil {
 			t.Fatalf("%v", err)
 		}
-		f.Close()
+		data := map[string]interface{}{"key": "val"}
+		s.Put("foo", data)
+		err = s.SaveFile()
+		if err != nil {
+			t.Fatalf("%v", err)
+		}
 
 		// Fetch it back and compare
 		got, err := LoadFile(filepath)
