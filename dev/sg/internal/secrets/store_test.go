@@ -7,8 +7,6 @@ import (
 	"github.com/google/go-cmp/cmp"
 )
 
-var input = `{"foo": {"bar": "baz"}}`
-
 type mySecrets struct {
 	ID     string
 	Secret string
