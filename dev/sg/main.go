@@ -140,6 +140,9 @@ func migrateSecrets() error {
 				return err
 			}
 			s, err := secrets.LoadFile(newfile)
+			if err != nil {
+				return err
+			}
 			err = s.PutAndSave("rfc", json.RawMessage(b))
 			if err != nil {
 				return err
