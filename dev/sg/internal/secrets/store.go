@@ -86,6 +86,14 @@ func (s *Store) Put(key string, data interface{}) error {
 	return nil
 }
 
+func (s *Store) PutAndSave(key string, data interface{}) error {
+	err := s.Put(key, data)
+	if err != nil {
+		return err
+	}
+	return s.SaveFile()
+}
+
 // Get fetches a value from memory.
 func (s *Store) Get(key string, target interface{}) error {
 	if v, ok := s.m[key]; ok {

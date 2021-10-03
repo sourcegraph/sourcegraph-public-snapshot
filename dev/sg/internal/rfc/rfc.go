@@ -34,11 +34,7 @@ func getClient(ctx context.Context, config *oauth2.Config, out *output.Output) (
 		if err != nil {
 			return nil, err
 		}
-		err := sec.Put("rfc", tok)
-		if err != nil {
-			return nil, err
-		}
-		err = sec.SaveFile()
+		err := sec.PutAndSave("rfc", tok)
 		if err != nil {
 			return nil, err
 		}
