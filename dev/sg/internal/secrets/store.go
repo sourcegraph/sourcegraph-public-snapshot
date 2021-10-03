@@ -3,10 +3,11 @@ package secrets
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io"
 	"os"
+
+	"github.com/cockroachdb/errors"
 )
 
 var (
