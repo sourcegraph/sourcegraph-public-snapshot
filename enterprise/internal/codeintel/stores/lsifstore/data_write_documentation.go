@@ -327,13 +327,13 @@ func (s *Store) WriteDocumentationSearch(ctx context.Context, upload dbstore.Upl
 const purgeDocumentationSearchOldData = `
 -- source: enterprise/internal/codeintel/stores/lsifstore/data_write_documentation.go:WriteDocumentationSearch
 WITH candidates AS (
-	SELECT id FROM lsif_dumps
-	WHERE repository_id=%s
-	AND root=%s
+	SELECT dump_id FROM $TABLE_NAME
+	WHERE repo_id=%s
+	AND dump_root=%s
 
 	-- Lock these rows in a deterministic order so that we don't deadlock with other processes
 	-- updating the lsif_data_documentation_search_* tables.
-	ORDER BY id FOR UPDATE
+	ORDER BY dump_id FOR UPDATE
 )
 DELETE FROM $TABLE_NAME
 WHERE dump_id IN (SELECT dump_id FROM candidates)
