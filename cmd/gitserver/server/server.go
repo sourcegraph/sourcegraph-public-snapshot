@@ -361,7 +361,9 @@ func (s *Server) Handler() http.Handler {
 
 	mux.Handle("/git/", http.StripPrefix("/git", s.gitServiceHandler()))
 
-	gitAdapter := &adapters.Git{}
+	gitAdapter := &adapters.Git{
+		ReposDir: s.ReposDir,
+	}
 	mux.HandleFunc("/commands/get-object", s.handleGetObject(domain.GetObjectService{
 		RevParser:   gitAdapter,
 		ObjectTyper: gitAdapter,
