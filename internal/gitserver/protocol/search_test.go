@@ -62,4 +62,52 @@ func TestQueryConstruction(t *testing.T) {
 		}
 		require.Equal(t, expected, input)
 	})
+
+	t.Run("sibling and operators are merged", func(t *testing.T) {
+		input := NewOr(
+			NewAnd(&Constant{true}, &Constant{false}),
+			&AuthorMatches{},
+			NewAnd(&Constant{false}, &Constant{true}),
+		)
+		expected := &Operator{
+			Kind: Or,
+			Operands: []Node{
+				&AuthorMatches{},
+				&Operator{
+					Kind: And,
+					Operands: []Node{
+						&Constant{true},
+						&Constant{false},
+						&Constant{false},
+						&Constant{true},
+					},
+				},
+			},
+		}
+		require.Equal(t, expected, input)
+	})
+
+	t.Run("sibling or operators are merged", func(t *testing.T) {
+		input := NewAnd(
+			NewOr(&Constant{true}, &Constant{false}),
+			&AuthorMatches{},
+			NewOr(&Constant{false}, &Constant{true}),
+		)
+		expected := &Operator{
+			Kind: And,
+			Operands: []Node{
+				&AuthorMatches{},
+				&Operator{
+					Kind: Or,
+					Operands: []Node{
+						&Constant{true},
+						&Constant{false},
+						&Constant{false},
+						&Constant{true},
+					},
+				},
+			},
+		}
+		require.Equal(t, expected, input)
+	})
 }
