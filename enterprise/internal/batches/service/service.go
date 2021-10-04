@@ -982,13 +982,17 @@ func (s *Service) CreateChangesetJobs(ctx context.Context, batchChangeID int64, 
 // ValidateChangesetSpecs checks whether the given BachSpec has ChangesetSpecs
 // that would publish to the same branch in the same repository.
 // If the return value is nil, then the BatchSpec is valid.
-func (s *Service) ValidateChangesetSpecs(ctx context.Context, batchSpecID int64) (err error) {
-	ctx, endObservation := s.operations.validateChangesetSpecs.With(ctx, &err, observation.Args{})
+func (s *Service) ValidateChangesetSpecs(ctx context.Context, batchSpecID int64) error {
+	// We don't use `err` here to distinguish between errors we want to trace
+	// as such and the validation errors that we want to return without logging
+	// them as errors.
+	var nonValidationErr error
+	ctx, endObservation := s.operations.validateChangesetSpecs.With(ctx, &nonValidationErr, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
-	conflicts, err := s.store.ListChangesetSpecsWithConflictingHeadRef(ctx, batchSpecID)
-	if err != nil {
-		return err
+	conflicts, nonValidationErr := s.store.ListChangesetSpecsWithConflictingHeadRef(ctx, batchSpecID)
+	if nonValidationErr != nil {
+		return nonValidationErr
 	}
 
 	if len(conflicts) == 0 {
@@ -1002,9 +1006,9 @@ func (s *Service) ValidateChangesetSpecs(ctx context.Context, batchSpecID int64)
 
 	// 🚨 SECURITY: database.Repos.GetRepoIDsSet uses the authzFilter under the hood and
 	// filters out repositories that the user doesn't have access to.
-	accessibleReposByID, err := s.store.Repos().GetReposSetByIDs(ctx, repoIDs...)
-	if err != nil {
-		return err
+	accessibleReposByID, nonValidationErr := s.store.Repos().GetReposSetByIDs(ctx, repoIDs...)
+	if nonValidationErr != nil {
+		return nonValidationErr
 	}
 
 	errs := &multierror.Error{ErrorFormat: formatChangesetSpecHeadRefConflicts}
