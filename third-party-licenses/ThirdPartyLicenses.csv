@@ -464,13 +464,14 @@ Go,github.com/sourcegraph/jsonx,v0.0.0-20200629203448-1a936bd500cf,MIT,"",Approv
 Go,github.com/sourcegraph/oauth2,v0.0.0-20210825125341-77c1d99ece3c,New BSD,"",Approved
 Go,github.com/sourcegraph/syntaxhighlight,v0.0.0-20170531221838-bd320f5d308e,New BSD,"",Approved
 Go,github.com/sourcegraph/yaml,v1.0.1-0.20200714132230-56936252f152,MIT,"",Approved
-Go,github.com/sourcegraph/zoekt,v0.0.0-20210923202240-05c4b0636968,Apache 2.0,"",Approved
+Go,github.com/sourcegraph/zoekt,v0.0.0-20210930114328-078fa3e9d530,Apache 2.0,"",Approved
 Go,github.com/src-d/gcfg,v1.4.0,New BSD,"",Approved
 Go,github.com/stripe/stripe-go,v70.15.0,MIT,"",Approved
 Go,github.com/throttled/throttled/v2,v2.7.1,New BSD,"",Approved
 Go,github.com/tidwall/gjson,v1.8.1,MIT,"",Approved
 Go,github.com/tidwall/match,v1.0.3,MIT,"",Approved
 Go,github.com/tidwall/pretty,v1.1.0,MIT,"",Approved
+Go,github.com/tj/go-naturaldate,v1.3.0,MIT,"",Approved
 Go,github.com/tomnomnom/linkheader,v0.0.0-20180905144013-02ca5825eb80,MIT,"",Approved
 Go,github.com/uber/gonduit,v0.13.0,MIT,"",Approved
 Go,github.com/uber/jaeger-client-go,v2.29.1,Apache 2.0,"",Approved
