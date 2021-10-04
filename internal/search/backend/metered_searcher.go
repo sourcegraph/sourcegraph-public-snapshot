@@ -14,7 +14,6 @@ import (
 	"github.com/opentracing/opentracing-go/log"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
-	"github.com/rs/xid"
 
 	"github.com/sourcegraph/sourcegraph/internal/honey"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
@@ -68,7 +67,6 @@ func (m *meteredSearcher) StreamSearch(ctx context.Context, q query.Q, opts *zoe
 		event = honey.Event("search-zoekt")
 		event.AddField("category", cat)
 		event.AddField("query", qStr)
-		event.AddField("xid", xid.New().String())
 		for _, t := range tags {
 			event.AddField(t.Key, t.Value)
 		}
@@ -244,7 +242,6 @@ func (m *meteredSearcher) List(ctx context.Context, q query.Q, opts *zoekt.ListO
 		event = honey.Event("search-zoekt")
 		event.AddField("category", cat)
 		event.AddField("query", qStr)
-		event.AddField("xid", xid.New().String())
 		event.AddField("opts.minimal", opts != nil && opts.Minimal)
 		for _, t := range tags {
 			event.AddField(t.Key, t.Value)
