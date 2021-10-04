@@ -31,24 +31,23 @@
 }
 
 .code-wrapper {
-    background: var(--marketing-gradient);
-    border-radius: var(--border-radius);
-    padding: 0.25rem;
     margin: 0.625rem 0;
 }
 
-.code {
+.code-content {
+    background-color: var(--code-bg);
+}
+
+.code-block {
     white-space: normal;
     word-break: break-word;
     display: block;
-    background-color: var(--code-bg);
-    border-radius: var(--border-radius);
-    padding: 0.5rem;
 }
 
 .copy-button {
     float: right;
     padding: 0.5rem;
+    margin: -0.5rem -0.5rem 0 0;
 }
 
 .contact-link {

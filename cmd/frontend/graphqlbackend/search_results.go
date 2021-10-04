@@ -540,11 +540,24 @@ func withMode(args search.TextParameters, st query.SearchType, versionContext *s
 		if versionContext != nil && *versionContext != "" {
 			return false
 		}
-		querySearchContextSpec, _ := args.Query.StringValue(query.FieldContext)
-		if !searchcontexts.IsGlobalSearchContextSpec(querySearchContextSpec) {
-			return false
-		}
-		return len(args.Query.Values(query.FieldRepo)) == 0 && len(args.Query.Values(query.FieldRepoGroup)) == 0 && len(args.Query.Values(query.FieldRepoHasFile)) == 0
+
+		return query.ForAll(args.Query, func(node query.Node) bool {
+			n, ok := node.(query.Parameter)
+			if !ok {
+				return true
+			}
+			switch n.Field {
+			case query.FieldContext:
+				return searchcontexts.IsGlobalSearchContextSpec(n.Value)
+			case
+				query.FieldRepo,
+				query.FieldRepoGroup,
+				query.FieldRepoHasFile:
+				return false
+			default:
+				return true
+			}
+		})
 	}
 
 	hasGlobalSearchResultType := args.ResultTypes.Has(result.TypeFile | result.TypePath | result.TypeSymbol)
@@ -1469,7 +1482,7 @@ func (r *searchResolver) doResults(ctx context.Context, args *search.TextParamet
 		cancel()
 		requiredWg.Wait()
 		optionalWg.Wait()
-		_, _, _ = agg.Get()
+		_, _, _, _ = agg.Get()
 	}()
 
 	args.RepoOptions = r.toRepoOptions(args.Query, resolveRepositoriesOpts{})
@@ -1640,7 +1653,7 @@ func (r *searchResolver) doResults(ctx context.Context, args *search.TextParamet
 // toSearchResults relies on all WaitGroups being done since it relies on
 // collecting from the streams.
 func (r *searchResolver) toSearchResults(ctx context.Context, agg *run.Aggregator) (*SearchResults, error) {
-	matches, common, aggErrs := agg.Get()
+	matches, common, matchCount, aggErrs := agg.Get()
 
 	if aggErrs == nil {
 		return nil, errors.New("aggErrs should never be nil")
@@ -1648,7 +1661,7 @@ func (r *searchResolver) toSearchResults(ctx context.Context, agg *run.Aggregato
 
 	ao := alertObserver{
 		Inputs:     r.SearchInputs,
-		hasResults: len(matches) > 0,
+		hasResults: matchCount > 0,
 	}
 	for _, err := range aggErrs.Errors {
 		ao.Error(ctx, err)

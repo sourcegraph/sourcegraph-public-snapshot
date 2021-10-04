@@ -2,8 +2,10 @@ import React, { useCallback, useState, useEffect } from 'react'
 
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { Link } from '@sourcegraph/shared/src/components/Link'
+import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { asError, ErrorLike, isErrorLike } from '@sourcegraph/shared/src/util/errors'
 import { isDefined, keyExistsIn } from '@sourcegraph/shared/src/util/types'
+import { SelfHostedCta } from '@sourcegraph/web/src/components/SelfHostedCta'
 import { Container, PageHeader } from '@sourcegraph/wildcard'
 
 import { ErrorAlert } from '../../../components/alerts'
@@ -23,7 +25,8 @@ type AuthProvider = SourcegraphContext['authProviders'][0]
 type AuthProvidersByKind = Partial<Record<ExternalServiceKind, AuthProvider>>
 
 export interface UserAddCodeHostsPageProps
-    extends Pick<UserExternalServicesOrRepositoriesUpdateProps, 'onUserExternalServicesOrRepositoriesUpdate'> {
+    extends Pick<UserExternalServicesOrRepositoriesUpdateProps, 'onUserExternalServicesOrRepositoriesUpdate'>,
+        TelemetryProps {
     user: { id: Scalars['ID']; tags: string[] }
     codeHostExternalServices: Record<string, AddExternalServiceOptions>
     routingPrefix: string
@@ -64,6 +67,7 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
     routingPrefix,
     context,
     onUserExternalServicesOrRepositoriesUpdate,
+    telemetryService,
 }) => {
     const [statusOrError, setStatusOrError] = useState<Status>()
     const { scopes, setScope } = useCodeHostScopeContext()
@@ -264,7 +268,6 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
                 }
                 className="mb-3"
             />
-
             {/* display external service errors and success banners */}
             {getErrorAndSuccessBanners(statusOrError)}
             {/* display other errors, e.g. network errors */}
@@ -298,6 +301,13 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
                     <LoadingSpinner className="icon-inline" />
                 </div>
             )}
+
+            <SelfHostedCta className="mt-5" page="settings/code-hosts" telemetryService={telemetryService}>
+                <p className="mb-2">
+                    <strong>Require support for Bitbucket, or nearly any other code host?</strong>
+                </p>
+                <p className="mb-2">You may need our self-hosted installation.</p>
+            </SelfHostedCta>
         </div>
     )
 }

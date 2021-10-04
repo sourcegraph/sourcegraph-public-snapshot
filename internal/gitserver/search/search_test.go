@@ -13,6 +13,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
+	"github.com/sourcegraph/sourcegraph/internal/search/result"
 )
 
 // initGitRepository initializes a new Git repository and runs cmds in a new
@@ -65,8 +66,8 @@ func TestSearch(t *testing.T) {
 		tree, err := ToMatchTree(query)
 		require.NoError(t, err)
 		var commits []*LazyCommit
-		var highlights []*CommitHighlights
-		err = Search(context.Background(), dir, nil, tree, func(lc *LazyCommit, hl *CommitHighlights) bool {
+		var highlights []*MatchedCommit
+		err = Search(context.Background(), dir, nil, tree, func(lc *LazyCommit, hl *MatchedCommit) bool {
 			commits = append(commits, lc)
 			highlights = append(highlights, hl)
 			return true
@@ -81,8 +82,8 @@ func TestSearch(t *testing.T) {
 		tree, err := ToMatchTree(query)
 		require.NoError(t, err)
 		var commits []*LazyCommit
-		var highlights []*CommitHighlights
-		err = Search(context.Background(), dir, nil, tree, func(lc *LazyCommit, hl *CommitHighlights) bool {
+		var highlights []*MatchedCommit
+		err = Search(context.Background(), dir, nil, tree, func(lc *LazyCommit, hl *MatchedCommit) bool {
 			commits = append(commits, lc)
 			highlights = append(highlights, hl)
 			return true
@@ -99,8 +100,8 @@ func TestSearch(t *testing.T) {
 		tree, err := ToMatchTree(query)
 		require.NoError(t, err)
 		var commits []*LazyCommit
-		var highlights []*CommitHighlights
-		err = Search(context.Background(), dir, nil, tree, func(lc *LazyCommit, hl *CommitHighlights) bool {
+		var highlights []*MatchedCommit
+		err = Search(context.Background(), dir, nil, tree, func(lc *LazyCommit, hl *MatchedCommit) bool {
 			commits = append(commits, lc)
 			highlights = append(highlights, hl)
 			return true
@@ -116,8 +117,8 @@ func TestSearch(t *testing.T) {
 		tree, err := ToMatchTree(query)
 		require.NoError(t, err)
 		var commits []*LazyCommit
-		var highlights []*CommitHighlights
-		err = Search(context.Background(), dir, nil, tree, func(lc *LazyCommit, hl *CommitHighlights) bool {
+		var highlights []*MatchedCommit
+		err = Search(context.Background(), dir, nil, tree, func(lc *LazyCommit, hl *MatchedCommit) bool {
 			commits = append(commits, lc)
 			highlights = append(highlights, hl)
 			return true
@@ -133,8 +134,8 @@ func TestSearch(t *testing.T) {
 		tree, err := ToMatchTree(query)
 		require.NoError(t, err)
 		var commits []*LazyCommit
-		var highlights []*CommitHighlights
-		err = Search(context.Background(), dir, nil, tree, func(lc *LazyCommit, hl *CommitHighlights) bool {
+		var highlights []*MatchedCommit
+		err = Search(context.Background(), dir, nil, tree, func(lc *LazyCommit, hl *MatchedCommit) bool {
 			commits = append(commits, lc)
 			highlights = append(highlights, hl)
 			return true
@@ -146,15 +147,18 @@ func TestSearch(t *testing.T) {
 	})
 
 	t.Run("and match", func(t *testing.T) {
-		query := &protocol.And{[]protocol.SearchQuery{
-			&protocol.DiffMatches{Expr: "lorem"},
-			&protocol.DiffMatches{Expr: "ipsum"},
-		}}
+		query := &protocol.Operator{
+			Kind: protocol.And,
+			Operands: []protocol.Node{
+				&protocol.DiffMatches{Expr: "lorem"},
+				&protocol.DiffMatches{Expr: "ipsum"},
+			},
+		}
 		tree, err := ToMatchTree(query)
 		require.NoError(t, err)
 		var commits []*LazyCommit
-		var highlights []*CommitHighlights
-		err = Search(context.Background(), dir, nil, tree, func(lc *LazyCommit, hl *CommitHighlights) bool {
+		var highlights []*MatchedCommit
+		err = Search(context.Background(), dir, nil, tree, func(lc *LazyCommit, hl *MatchedCommit) bool {
 			commits = append(commits, lc)
 			highlights = append(highlights, hl)
 			return true
@@ -163,18 +167,18 @@ func TestSearch(t *testing.T) {
 		require.Len(t, commits, 1)
 		require.Len(t, highlights, 1)
 		require.Equal(t, commits[0].AuthorName, []byte("camden1"))
-		expectedHighlights := &CommitHighlights{
-			Diff: map[int]FileDiffHighlight{
+		expectedHighlights := &MatchedCommit{
+			Diff: map[int]MatchedFileDiff{
 				0: {
-					HunkHighlights: map[int]HunkHighlight{
+					MatchedHunks: map[int]MatchedHunk{
 						0: {
-							LineHighlights: map[int]protocol.Ranges{
+							MatchedLines: map[int]result.Ranges{
 								0: {{
-									Start: protocol.Location{},
-									End:   protocol.Location{Offset: 5, Column: 5},
+									Start: result.Location{},
+									End:   result.Location{Offset: 5, Column: 5},
 								}, {
-									Start: protocol.Location{Offset: 6, Column: 6},
-									End:   protocol.Location{Offset: 11, Column: 11},
+									Start: result.Location{Offset: 6, Column: 6},
+									End:   result.Location{Offset: 11, Column: 11},
 								}},
 							},
 						},
@@ -295,14 +299,20 @@ index 0000000000..7e54670557
 		diff: parsedDiff,
 	}
 
-	mt, err := ToMatchTree(&protocol.And{[]protocol.SearchQuery{
-		&protocol.AuthorMatches{Expr: "Camden"},
-		&protocol.DiffModifiesFile{Expr: "test"},
-		&protocol.And{[]protocol.SearchQuery{
-			&protocol.DiffMatches{Expr: "result"},
-			&protocol.DiffMatches{Expr: "test"},
-		}},
-	}})
+	mt, err := ToMatchTree(&protocol.Operator{
+		Kind: protocol.And,
+		Operands: []protocol.Node{
+			&protocol.AuthorMatches{Expr: "Camden"},
+			&protocol.DiffModifiesFile{Expr: "test"},
+			&protocol.Operator{
+				Kind: protocol.And,
+				Operands: []protocol.Node{
+					&protocol.DiffMatches{Expr: "result"},
+					&protocol.DiffMatches{Expr: "test"},
+				},
+			},
+		},
+	})
 	require.NoError(t, err)
 
 	matches, highlights, err := mt.Match(lc)
@@ -331,21 +341,21 @@ index 0000000000..7e54670557
 
 	require.Equal(t, expectedFormatted, formatted)
 
-	expectedRanges := protocol.Ranges{{
-		Start: protocol.Location{Offset: 115, Line: 3, Column: 60},
-		End:   protocol.Location{Offset: 121, Line: 3, Column: 66},
+	expectedRanges := result.Ranges{{
+		Start: result.Location{Offset: 115, Line: 3, Column: 60},
+		End:   result.Location{Offset: 121, Line: 3, Column: 66},
 	}, {
-		Start: protocol.Location{Offset: 152, Line: 6, Column: 24},
-		End:   protocol.Location{Offset: 158, Line: 6, Column: 30},
+		Start: result.Location{Offset: 152, Line: 6, Column: 24},
+		End:   result.Location{Offset: 158, Line: 6, Column: 30},
 	}, {
-		Start: protocol.Location{Offset: 288, Line: 8, Column: 33},
-		End:   protocol.Location{Offset: 292, Line: 8, Column: 37},
+		Start: result.Location{Offset: 288, Line: 8, Column: 33},
+		End:   result.Location{Offset: 292, Line: 8, Column: 37},
 	}, {
-		Start: protocol.Location{Offset: 345, Line: 11, Column: 9},
-		End:   protocol.Location{Offset: 349, Line: 11, Column: 13},
+		Start: result.Location{Offset: 345, Line: 11, Column: 9},
+		End:   result.Location{Offset: 349, Line: 11, Column: 13},
 	}, {
-		Start: protocol.Location{Offset: 453, Line: 14, Column: 60},
-		End:   protocol.Location{Offset: 459, Line: 14, Column: 66},
+		Start: result.Location{Offset: 453, Line: 14, Column: 60},
+		End:   result.Location{Offset: 459, Line: 14, Column: 66},
 	}}
 
 	require.Equal(t, expectedRanges, ranges)

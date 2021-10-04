@@ -8,8 +8,6 @@ import (
 	"time"
 
 	"github.com/cockroachdb/errors"
-	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/client_golang/prometheus/promauto"
 )
 
 const devVersion = "0.0.0+dev"                              // version string for unreleased development builds
@@ -24,9 +22,6 @@ var version = devVersion
 func init() {
 	exportedVersion := expvar.NewString("sourcegraph.version")
 	exportedVersion.Set(version)
-	promauto.NewGaugeVec(prometheus.GaugeOpts{
-		Name: "src_version",
-	}, []string{"version"}).WithLabelValues(version).Set(1)
 }
 
 // Version returns the version string configured at build time.

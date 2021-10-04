@@ -49,12 +49,13 @@ function cluster_setup() {
   kubectl get -n "$NAMESPACE" pods
 
   pushd "$DIR/deploy-sourcegraph/"
-  pwd
-  # see $DOCKER_CLUSTER_IMAGES_TXT in pipeline-steps.go for env var
-  # replace all docker image tags with previously built candidate images
   set +e
   set +o pipefail
   pushd base
+  # Remove cAdvisor, it deploys on all Buildkite nodes as a daemonset and is non-critical.
+  rm -rf ./cadvisor
+  # See $DOCKER_CLUSTER_IMAGES_TXT in pipeline-steps.go for env var
+  # replace all docker image tags with previously built candidate images
   while IFS= read -r line; do
     echo "$line"
     grep -lr '.' -e "index.docker.io/sourcegraph/$line" --include \*.yaml | xargs sed -i -E "s#index.docker.io/sourcegraph/$line:.*#us.gcr.io/sourcegraph-dev/$line:$CANDIDATE_VERSION#g"

@@ -12,7 +12,7 @@ import (
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database/locker"
-	"github.com/sourcegraph/sourcegraph/internal/trace"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
 // ErrApplyClosedBatchChange is returned by ApplyBatchChange when the batch change
@@ -52,11 +52,8 @@ func (s *Service) ApplyBatchChange(
 	ctx context.Context,
 	opts ApplyBatchChangeOpts,
 ) (batchChange *btypes.BatchChange, err error) {
-	tr, ctx := trace.New(ctx, "Service.ApplyBatchChange", opts.String())
-	defer func() {
-		tr.SetError(err)
-		tr.Finish()
-	}()
+	ctx, endObservation := s.operations.applyBatchChange.With(ctx, &err, observation.Args{})
+	defer endObservation(1, observation.Args{})
 
 	batchSpec, err := s.store.GetBatchSpec(ctx, store.GetBatchSpecOpts{
 		RandID: opts.BatchSpecRandID,
@@ -170,6 +167,9 @@ func (s *Service) ReconcileBatchChange(
 	ctx context.Context,
 	batchSpec *btypes.BatchSpec,
 ) (batchChange *btypes.BatchChange, previousSpecID int64, err error) {
+	ctx, endObservation := s.operations.reconcileBatchChange.With(ctx, &err, observation.Args{})
+	defer endObservation(1, observation.Args{})
+
 	batchChange, err = s.GetBatchChangeMatchingBatchSpec(ctx, batchSpec)
 	if err != nil {
 		return nil, 0, err

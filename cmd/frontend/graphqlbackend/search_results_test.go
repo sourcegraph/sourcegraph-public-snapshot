@@ -890,7 +890,7 @@ func TestEvaluateAnd(t *testing.T) {
 		},
 	}
 
-	minimalRepos, _, zoektRepos := generateRepos(5000)
+	minimalRepos, zoektRepos := generateRepos(5000)
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

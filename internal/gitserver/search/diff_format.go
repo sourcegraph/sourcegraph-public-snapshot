@@ -7,7 +7,7 @@ import (
 
 	"github.com/sourcegraph/go-diff/diff"
 
-	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
+	"github.com/sourcegraph/sourcegraph/internal/search/result"
 )
 
 const (
@@ -17,10 +17,10 @@ const (
 	maxFiles          = 5
 )
 
-func FormatDiff(rawDiff []*diff.FileDiff, highlights map[int]FileDiffHighlight) (string, protocol.Ranges) {
+func FormatDiff(rawDiff []*diff.FileDiff, highlights map[int]MatchedFileDiff) (string, result.Ranges) {
 	var buf strings.Builder
-	var loc protocol.Location
-	var ranges protocol.Ranges
+	var loc result.Location
+	var ranges result.Ranges
 
 	fileCount := 0
 	for fileIdx, fileDiff := range rawDiff {
@@ -46,7 +46,7 @@ func FormatDiff(rawDiff []*diff.FileDiff, highlights map[int]FileDiffHighlight) 
 		loc.Line++
 		loc.Column = 0
 
-		filteredHunks, filteredHighlights := splitHunkMatches(fileDiff.Hunks, fdh.HunkHighlights, matchContextLines, maxLinesPerHunk)
+		filteredHunks, filteredHighlights := splitHunkMatches(fileDiff.Hunks, fdh.MatchedHunks, matchContextLines, maxLinesPerHunk)
 
 		hunkCount := 0
 		for hunkIdx, hunk := range filteredHunks {
@@ -82,7 +82,7 @@ func FormatDiff(rawDiff []*diff.FileDiff, highlights map[int]FileDiffHighlight) 
 				loc.Offset = buf.Len()
 				loc.Column = 1
 
-				if lineHighlights, ok := hmh.LineHighlights[lineIdx]; ok {
+				if lineHighlights, ok := hmh.MatchedLines[lineIdx]; ok {
 					ranges = append(ranges, lineHighlights.Add(loc)...)
 				}
 
@@ -102,7 +102,7 @@ func FormatDiff(rawDiff []*diff.FileDiff, highlights map[int]FileDiffHighlight) 
 // filtered down to only hunks that matched, determined by whether the hunk has highlights.
 // and non-matching changed lines are eliminated, and the hunk header (start/end
 // lines) are adjusted accordingly. The provided highlights are adjusted accordingly.
-func splitHunkMatches(hunks []*diff.Hunk, hunkHighlights map[int]HunkHighlight, matchContextLines, maxLinesPerHunk int) (results []*diff.Hunk, newHighlights map[int]HunkHighlight) {
+func splitHunkMatches(hunks []*diff.Hunk, hunkHighlights map[int]MatchedHunk, matchContextLines, maxLinesPerHunk int) (results []*diff.Hunk, newHighlights map[int]MatchedHunk) {
 	addExtraHunkMatchesSection := func(hunk *diff.Hunk, extraHunkMatches int) {
 		if extraHunkMatches > 0 {
 			if hunk.Section != "" {
@@ -112,16 +112,16 @@ func splitHunkMatches(hunks []*diff.Hunk, hunkHighlights map[int]HunkHighlight, 
 		}
 	}
 
-	newHighlights = make(map[int]HunkHighlight, len(hunkHighlights))
+	newHighlights = make(map[int]MatchedHunk, len(hunkHighlights))
 
 	for i, hunk := range hunks {
 		var cur *diff.Hunk
 		var curLines [][]byte
-		origHighlights := hunkHighlights[i].LineHighlights
-		curHighlights := make(map[int]protocol.Ranges, len(hunkHighlights))
+		origHighlights := hunkHighlights[i].MatchedLines
+		curHighlights := make(map[int]result.Ranges, len(hunkHighlights))
 
 		lines := bytes.SplitAfter(hunk.Body, []byte("\n"))
-		lineInfo := computeDiffHunkInfo(lines, hunkHighlights[i].LineHighlights, matchContextLines)
+		lineInfo := computeDiffHunkInfo(lines, hunkHighlights[i].MatchedLines, matchContextLines)
 
 		extraHunkMatches := 0
 		var origLineOffset, newLineOffset int32
@@ -160,8 +160,8 @@ func splitHunkMatches(hunks []*diff.Hunk, hunkHighlights map[int]HunkHighlight, 
 				addExtraHunkMatchesSection(cur, extraHunkMatches)
 				cur.Body = bytes.Join(curLines, nil)
 				if len(curHighlights) > 0 {
-					newHighlights[len(results)] = HunkHighlight{LineHighlights: curHighlights}
-					curHighlights = make(map[int]protocol.Ranges)
+					newHighlights[len(results)] = MatchedHunk{MatchedLines: curHighlights}
+					curHighlights = make(map[int]result.Ranges)
 				}
 				results = append(results, cur)
 				cur = nil
@@ -181,7 +181,7 @@ func splitHunkMatches(hunks []*diff.Hunk, hunkHighlights map[int]HunkHighlight, 
 			addExtraHunkMatchesSection(cur, extraHunkMatches)
 			cur.Body = bytes.Join(curLines, nil)
 			if len(curHighlights) > 0 {
-				newHighlights[len(results)] = HunkHighlight{LineHighlights: curHighlights}
+				newHighlights[len(results)] = MatchedHunk{MatchedLines: curHighlights}
 			}
 			results = append(results, cur)
 		}
@@ -199,7 +199,7 @@ type diffHunkLineInfo struct {
 
 func (info diffHunkLineInfo) changed() bool { return info.added || info.removed }
 
-func computeDiffHunkInfo(lines [][]byte, lineHighlights map[int]protocol.Ranges, matchContextLines int) []diffHunkLineInfo {
+func computeDiffHunkInfo(lines [][]byte, lineHighlights map[int]result.Ranges, matchContextLines int) []diffHunkLineInfo {
 	// Return context line numbers for a given line number.
 	contextLines := func(line int) (start, end int) {
 		start = line - matchContextLines

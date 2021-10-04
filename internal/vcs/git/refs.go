@@ -18,6 +18,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/internal/vcs"
+	"github.com/sourcegraph/sourcegraph/internal/vcs/git/gitapi"
 )
 
 // HumanReadableBranchName returns a human readable branch name from the
@@ -65,7 +66,7 @@ type Branch struct {
 	Head api.CommitID `json:"Head,omitempty"`
 	// Commit optionally contains commit information for this branch's head commit.
 	// It is populated if IncludeCommit option is set.
-	Commit *Commit `json:"Commit,omitempty"`
+	Commit *gitapi.Commit `json:"Commit,omitempty"`
 	// Counts optionally contains the commit counts relative to specified branch.
 	Counts *BehindAhead `json:"Counts,omitempty"`
 }

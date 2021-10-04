@@ -1,6 +1,9 @@
 package batches
 
 import (
+	"reflect"
+	"strconv"
+
 	"github.com/cockroachdb/errors"
 
 	jsonutil "github.com/sourcegraph/sourcegraph/lib/batches/json"
@@ -28,6 +31,29 @@ func ParseChangesetSpec(rawSpec []byte) (*ChangesetSpec, error) {
 	}
 
 	return spec, nil
+}
+
+// ParseChangesetSpecExternalID attempts to parse the ID of a changeset in the
+// batch spec that should be imported.
+func ParseChangesetSpecExternalID(id interface{}) (string, error) {
+	var sid string
+
+	switch tid := id.(type) {
+	case string:
+		sid = tid
+	case int, int8, int16, int32, int64:
+		sid = strconv.FormatInt(reflect.ValueOf(id).Int(), 10)
+	case uint, uint8, uint16, uint32, uint64:
+		sid = strconv.FormatUint(reflect.ValueOf(id).Uint(), 10)
+	case float32:
+		sid = strconv.FormatFloat(float64(tid), 'f', -1, 32)
+	case float64:
+		sid = strconv.FormatFloat(tid, 'f', -1, 64)
+	default:
+		return "", errors.Errorf("cannot convert value of type %T into a valid external ID: expected string or int", id)
+	}
+
+	return sid, nil
 }
 
 type ChangesetSpec struct {

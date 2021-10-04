@@ -7,7 +7,7 @@ import (
 	"github.com/sourcegraph/go-diff/diff"
 	"github.com/stretchr/testify/require"
 
-	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
+	"github.com/sourcegraph/sourcegraph/internal/search/result"
 )
 
 func TestDiffFormat(t *testing.T) {
@@ -24,12 +24,12 @@ index dbace57d5f..53357b4971 100644
 		parsedDiff, err := diff.NewMultiFileDiffReader(strings.NewReader(rawDiff)).ReadAllFiles()
 		require.NoError(t, err)
 
-		highlights := map[int]FileDiffHighlight{
-			0: {HunkHighlights: map[int]HunkHighlight{
-				0: {LineHighlights: map[int]protocol.Ranges{
+		highlights := map[int]MatchedFileDiff{
+			0: {MatchedHunks: map[int]MatchedHunk{
+				0: {MatchedLines: map[int]result.Ranges{
 					2: {{
-						Start: protocol.Location{Offset: 0, Line: 0, Column: 0},
-						End:   protocol.Location{Offset: 6, Line: 0, Column: 6},
+						Start: result.Location{Offset: 0, Line: 0, Column: 0},
+						End:   result.Location{Offset: 6, Line: 0, Column: 6},
 					}},
 				}},
 			}},
@@ -43,9 +43,9 @@ index dbace57d5f..53357b4971 100644
 `
 		require.Equal(t, expectedFormatted, formatted)
 
-		expectedRanges := protocol.Ranges{{
-			Start: protocol.Location{Offset: 142, Line: 3, Column: 1},
-			End:   protocol.Location{Offset: 148, Line: 3, Column: 7},
+		expectedRanges := result.Ranges{{
+			Start: result.Location{Offset: 142, Line: 3, Column: 1},
+			End:   result.Location{Offset: 148, Line: 3, Column: 7},
 		}}
 		require.Equal(t, expectedRanges, ranges)
 
