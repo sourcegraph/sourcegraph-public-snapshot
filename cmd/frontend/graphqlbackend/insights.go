@@ -69,7 +69,7 @@ type InsightDirtyQueryResolver interface {
 }
 
 type InsightDashboardsArgs struct {
-	First *int
+	First *int32
 	After *string
 }
 
