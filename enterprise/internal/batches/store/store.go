@@ -243,6 +243,9 @@ type operations struct {
 	createBatchSpecResolutionJob *observation.Operation
 	getBatchSpecResolutionJob    *observation.Operation
 	listBatchSpecResolutionJobs  *observation.Operation
+
+	setSpecWorkspaceExecutionJobAccessToken   *observation.Operation
+	resetSpecWorkspaceExecutionJobAccessToken *observation.Operation
 }
 
 var (
@@ -363,6 +366,9 @@ func newOperations(observationContext *observation.Context) *operations {
 			createBatchSpecResolutionJob: op("CreateBatchSpecResolutionJob"),
 			getBatchSpecResolutionJob:    op("GetBatchSpecResolutionJob"),
 			listBatchSpecResolutionJobs:  op("ListBatchSpecResolutionJobs"),
+
+			setSpecWorkspaceExecutionJobAccessToken:   op("SetSpecWorkspaceExecutionJobAccessToken"),
+			resetSpecWorkspaceExecutionJobAccessToken: op("ResetSpecWorkspaceExecutionJobAccessToken"),
 		}
 	})
 

@@ -303,10 +303,10 @@ func (s *Store) cancelBatchSpecWorkspaceExecutionJobQuery(id int64) *sqlf.Query 
 
 // SetSpecWorkspaceExecutionJobAccessToken sets the access_token_id column to the given ID.
 func (s *Store) SetSpecWorkspaceExecutionJobAccessToken(ctx context.Context, jobID, tokenID int64) (err error) {
-	// ctx, endObservation := s.operations.setSpecWorkspaceExecutionJobAccessToken.With(ctx, &err, observation.Args{LogFields: []log.Field{
-	// 	log.Int("ID", int(id)),
-	// }})
-	// defer endObservation(1, observation.Args{})
+	ctx, endObservation := s.operations.setSpecWorkspaceExecutionJobAccessToken.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.Int("ID", int(jobID)),
+	}})
+	defer endObservation(1, observation.Args{})
 
 	q := sqlf.Sprintf(setSpecWorkspaceExecutionJobAccessTokenFmtstr, tokenID, jobID)
 	return s.Exec(ctx, q)
@@ -324,10 +324,10 @@ WHERE
 
 // ResetSpecWorkspaceExecutionJobAccessToken sets the access_token_id column to the given ID.
 func (s *Store) ResetSpecWorkspaceExecutionJobAccessToken(ctx context.Context, jobID int64) (tokenID int64, err error) {
-	// ctx, endObservation := s.operations.resetSpecWorkspaceExecutionJobAccessToken.With(ctx, &err, observation.Args{LogFields: []log.Field{
-	// 	log.Int("ID", int(id)),
-	// }})
-	// defer endObservation(1, observation.Args{})
+	ctx, endObservation := s.operations.resetSpecWorkspaceExecutionJobAccessToken.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.Int("ID", int(jobID)),
+	}})
+	defer endObservation(1, observation.Args{})
 
 	q := sqlf.Sprintf(resetSpecWorkspaceExecutionJobAccessTokenFmtstr, jobID, jobID)
 	id, ok, err := basestore.ScanFirstInt(s.Query(ctx, q))
