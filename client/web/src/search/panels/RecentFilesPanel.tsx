@@ -126,32 +126,27 @@ function processRecentFiles(eventLogResult?: EventLogResult): RecentFile[] | nul
     const recentFiles: RecentFile[] = []
 
     for (const node of eventLogResult.nodes) {
-        if (node.argument) {
-            try {
-                const parsedArguments = JSON.parse(node.argument)
-                let repoName = parsedArguments?.repoName as string
-                let filePath = parsedArguments?.filePath as string
+        if (node.argument && node.url) {
+            const parsedArguments = JSON.parse(node.argument)
+            let repoName = parsedArguments?.repoName as string
+            let filePath = parsedArguments?.filePath as string
 
-                if (!repoName || !filePath) {
-                    ;({ repoName, filePath } = extractFileInfoFromUrl(node.url))
-                }
+            if (!repoName || !filePath) {
+                ;({ repoName, filePath } = extractFileInfoFromUrl(node.url))
+            }
 
-                if (
-                    filePath &&
-                    repoName &&
-                    !recentFiles.some(file => file.repoName === repoName && file.filePath === filePath) // Don't show the same file twice
-                ) {
-                    const parsedUrl = new URL(node.url)
-                    recentFiles.push({
-                        url: parsedUrl.pathname + parsedUrl.search, // Strip domain from URL so clicking on it doesn't reload page
-                        repoName,
-                        filePath,
-                        timestamp: node.timestamp,
-                    })
-                }
-            } catch (error: unknown) {
-                console.error('RecentFilesPanel: Error parsing event')
-                console.error(error)
+            if (
+                filePath &&
+                repoName &&
+                !recentFiles.some(file => file.repoName === repoName && file.filePath === filePath) // Don't show the same file twice
+            ) {
+                const parsedUrl = new URL(node.url)
+                recentFiles.push({
+                    url: parsedUrl.pathname + parsedUrl.search, // Strip domain from URL so clicking on it doesn't reload page
+                    repoName,
+                    filePath,
+                    timestamp: node.timestamp,
+                })
             }
         }
     }

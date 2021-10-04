@@ -131,7 +131,7 @@ function processRepositories(eventLogResult: EventLogResult): string[] | null {
     const recentlySearchedRepos: string[] = []
 
     for (const node of eventLogResult.nodes) {
-        try {
+        if (node.url) {
             const url = new URL(node.url)
             const queryFromURL = parseSearchURLQuery(url.search)
             const scannedQuery = scanSearchQuery(queryFromURL || '')
@@ -144,9 +144,6 @@ function processRepositories(eventLogResult: EventLogResult): string[] | null {
                     }
                 }
             }
-        } catch (error: unknown) {
-            console.error('RepositoriesPanel: Error parsing event')
-            console.error(error)
         }
     }
     return recentlySearchedRepos
