@@ -4,7 +4,6 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { Observable } from 'rxjs'
 
 import { Link } from '@sourcegraph/shared/src/components/Link'
-import { not } from '@sourcegraph/shared/src/search/query/patternMatcher'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
 
