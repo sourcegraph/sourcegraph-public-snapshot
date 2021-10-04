@@ -79,7 +79,6 @@ func (r *queryResolver) References(ctx context.Context, line, character, limit i
 	// one of the adjusted indexes. This data may already be stashed in the cursor decoded above,
 	// in which case we don't need to hit the database.
 
-	// Set of dumps that cover the monikers' packages
 	definitionUploadIDs, definitionUploads, err := r.definitionUploadIDsFromCursor(ctx, adjustedUploads, orderedMonikers, &cursor)
 	if err != nil {
 		return nil, "", err
