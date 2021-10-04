@@ -126,7 +126,7 @@ func (o Operator) String() string {
 	return "(" + prefix + strings.Join(cs, sep) + ")"
 }
 
-func NewOperator(kind OperatorKind, operands ...Node) *Operator {
+func newOperator(kind OperatorKind, operands ...Node) *Operator {
 	// Merge sibling operators of the same type
 	merged := operands[:0]
 	var mergedOrOperands, mergedAndOperands []Node
@@ -183,7 +183,7 @@ func NewAnd(operands ...Node) Node {
 		}
 	}
 
-	return NewOperator(And, flattened...)
+	return newOperator(And, flattened...)
 }
 
 func NewOr(operands ...Node) Node {
@@ -207,7 +207,7 @@ func NewOr(operands ...Node) Node {
 		}
 	}
 
-	return NewOperator(Or, flattened...)
+	return newOperator(Or, flattened...)
 }
 
 func NewNot(operand Node) Node {
@@ -237,7 +237,7 @@ func NewNot(operand Node) Node {
 	}
 
 	// If an atom node, just negate it
-	return NewOperator(Not, operand)
+	return newOperator(Not, operand)
 }
 
 var registerOnce sync.Once
