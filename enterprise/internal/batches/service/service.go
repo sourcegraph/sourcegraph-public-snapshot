@@ -3,11 +3,13 @@ package service
 import (
 	"context"
 	"fmt"
+	"strings"
 	"sync"
 	"time"
 
 	"github.com/cockroachdb/errors"
 	"github.com/graph-gophers/graphql-go"
+	"github.com/hashicorp/go-multierror"
 	"github.com/opentracing/opentracing-go/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
@@ -73,6 +75,7 @@ type operations struct {
 	createChangesetJobs                  *observation.Operation
 	applyBatchChange                     *observation.Operation
 	reconcileBatchChange                 *observation.Operation
+	validateChangesetSpecs               *observation.Operation
 }
 
 var (
@@ -119,6 +122,7 @@ func newOperations(observationContext *observation.Context) *operations {
 			createChangesetJobs:                  op("CreateChangesetJobs"),
 			applyBatchChange:                     op("ApplyBatchChange"),
 			reconcileBatchChange:                 op("ReconcileBatchChange"),
+			validateChangesetSpecs:               op("ValidateChangesetSpecs"),
 		}
 	})
 
@@ -973,4 +977,74 @@ func (s *Service) CreateChangesetJobs(ctx context.Context, batchChangeID int64, 
 	}
 
 	return bulkGroupID, nil
+}
+
+// ValidateChangesetSpecs checks whether the given BachSpec has ChangesetSpecs
+// that would publish to the same branch in the same repository.
+// If the return value is nil, then the BatchSpec is valid.
+func (s *Service) ValidateChangesetSpecs(ctx context.Context, batchSpecID int64) (err error) {
+	ctx, endObservation := s.operations.validateChangesetSpecs.With(ctx, &err, observation.Args{})
+	defer endObservation(1, observation.Args{})
+
+	conflicts, err := s.store.ListChangesetSpecsWithConflictingHeadRef(ctx, batchSpecID)
+	if err != nil {
+		return err
+	}
+
+	if len(conflicts) == 0 {
+		return nil
+	}
+
+	repoIDs := make([]api.RepoID, 0, len(conflicts))
+	for _, c := range conflicts {
+		repoIDs = append(repoIDs, c.RepoID)
+	}
+
+	// 🚨 SECURITY: database.Repos.GetRepoIDsSet uses the authzFilter under the hood and
+	// filters out repositories that the user doesn't have access to.
+	accessibleReposByID, err := s.store.Repos().GetReposSetByIDs(ctx, repoIDs...)
+	if err != nil {
+		return err
+	}
+
+	errs := &multierror.Error{ErrorFormat: formatChangesetSpecHeadRefConflicts}
+	for _, c := range conflicts {
+		conflictErr := &changesetSpecHeadRefConflict{count: c.Count, headRef: c.HeadRef}
+
+		// If the user has access to the repository, we can show the name
+		if repo, ok := accessibleReposByID[c.RepoID]; ok {
+			conflictErr.repo = repo
+		}
+		errs = multierror.Append(errs, conflictErr)
+	}
+
+	return errs.ErrorOrNil()
+}
+
+type changesetSpecHeadRefConflict struct {
+	repo    *types.Repo
+	count   int
+	headRef string
+}
+
+func (c changesetSpecHeadRefConflict) Error() string {
+	if c.repo != nil {
+		return fmt.Sprintf("%d changeset specs in %s use the same branch: %s", c.count, c.repo.Name, c.headRef)
+	}
+	return fmt.Sprintf("%d changeset specs in the same repository use the same branch: %s", c.count, c.headRef)
+}
+
+func formatChangesetSpecHeadRefConflicts(es []error) string {
+	if len(es) == 1 {
+		return fmt.Sprintf("Validating changeset specs resulted in an error:\n* %s\n", es[0])
+	}
+
+	points := make([]string, len(es))
+	for i, err := range es {
+		points[i] = fmt.Sprintf("* %s", err)
+	}
+
+	return fmt.Sprintf(
+		"%d errors when validating changeset specs:\n%s\n",
+		len(es), strings.Join(points, "\n"))
 }
