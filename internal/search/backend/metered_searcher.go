@@ -64,18 +64,20 @@ func (m *meteredSearcher) StreamSearch(ctx context.Context, q query.Q, opts *zoe
 		}
 	}
 
+	qStr := queryString(q)
+
 	var event *libhoney.Event
 	if searchCoreOOMDebug && cat == "SearchAll" {
 		event = honey.Event("search-core-oom-debug")
 		event.AddField("category", cat)
-		event.AddField("query", queryString(q))
+		event.AddField("query", qStr)
 		event.AddField("xid", xid.New().String())
 		for _, t := range tags {
 			event.AddField(t.Key, t.Value)
 		}
 	}
 
-	tr, ctx := trace.New(ctx, "zoekt."+cat, queryString(q), tags...)
+	tr, ctx := trace.New(ctx, "zoekt."+cat, qStr, tags...)
 	defer func() {
 		tr.SetErrorIfNotContext(err)
 		tr.Finish()
@@ -235,14 +237,16 @@ func (m *meteredSearcher) List(ctx context.Context, q query.Q, opts *zoekt.ListO
 		}
 	}
 
-	tr, ctx := trace.New(ctx, "zoekt."+cat, queryString(q), tags...)
+	qStr := queryString(q)
+
+	tr, ctx := trace.New(ctx, "zoekt."+cat, qStr, tags...)
 	tr.LogFields(trace.Stringer("opts", opts))
 
 	var event *libhoney.Event
 	if searchCoreOOMDebug && cat == "ListAll" {
 		event = honey.Event("search-core-oom-debug")
 		event.AddField("category", cat)
-		event.AddField("query", queryString(q))
+		event.AddField("query", qStr)
 		event.AddField("xid", xid.New().String())
 		event.AddField("opts.minimal", opts != nil && opts.Minimal)
 		for _, t := range tags {
