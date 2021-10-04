@@ -18,6 +18,7 @@ import { FlashMessage } from '../configuration/FlashMessage'
 import { enqueueIndexJob as defaultEnqueueIndexJob, fetchLsifIndexes as defaultFetchLsifIndexes } from './backend'
 import styles from './CodeIntelIndexesPage.module.scss'
 import { CodeIntelIndexNode, CodeIntelIndexNodeProps } from './CodeIntelIndexNode'
+import { EmptyAutoIndex } from './EmptyAutoIndex'
 import { EnqueueForm } from './EnqueueForm'
 
 export interface CodeIntelIndexesPageProps extends RouteComponentProps<{}>, TelemetryProps {
@@ -120,6 +121,7 @@ export const CodeIntelIndexesPage: FunctionComponent<CodeIntelIndexesPageProps> 
                         location={props.location}
                         cursorPaging={true}
                         filters={filters}
+                        emptyElement={<EmptyAutoIndex />}
                     />
                 </div>
             </Container>
