@@ -217,7 +217,7 @@ We use asdf in buildkite to lock the versions of the tools that we use on a per-
 
 #### asdf binary
 
-See the [installation instructions on the official asdf documentation](https://asdf-vm.com/#/core-manage-asdf?id=install).
+See the [installation instructions on the official asdf documentation](https://asdf-vm.com/guide/getting-started.html).
 
 #### Plugins
 
