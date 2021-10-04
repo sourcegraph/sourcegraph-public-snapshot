@@ -53,14 +53,7 @@ func LoadFile(filepath string) (*Store, error) {
 	}
 	defer f.Close()
 	dec := json.NewDecoder(f)
-	err = dec.Decode(&s.m)
-	if err != nil {
-		return nil, err
-	}
-	if err != nil {
-		return nil, err
-	}
-	return s, nil
+	return s, dec.Decode(&s.m)
 }
 
 // Write serializes the store content in the given writer.
