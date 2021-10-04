@@ -1,0 +1,6 @@
+BEGIN;
+
+DROP TABLE IF EXISTS dashboard_grants;
+DROP TABLE IF EXISTS dashboard;
+
+COMMIT;
