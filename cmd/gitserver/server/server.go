@@ -987,30 +987,20 @@ func (s *Server) search(w http.ResponseWriter, r *http.Request, args *protocol.S
 		}
 
 		searcher := &search.CommitSearcher{
-			RepoDir:   dir.Path(),
-			Revisions: args.Revisions,
-			Query:     mt,
+			RepoDir:     dir.Path(),
+			Revisions:   args.Revisions,
+			Query:       mt,
+			IncludeDiff: args.IncludeDiff,
 		}
 
-		var conversionErr error
-		err = searcher.Search(ctx, func(match *search.LazyCommit, highlights *search.MatchedCommit) bool {
-			res, err := search.CreateCommitMatch(match, highlights, args.IncludeDiff)
-			if err != nil {
-				conversionErr = err
-				return false
-			}
-
+		return searcher.Search(ctx, func(match *protocol.CommitMatch) bool {
 			select {
 			case <-done:
 				return false
-			case resultChan <- res:
+			case resultChan <- match:
 				return true
 			}
 		})
-		if err != nil {
-			return err
-		}
-		return conversionErr
 	})
 
 	// Write matching commits to the stream, flushing occasionally
