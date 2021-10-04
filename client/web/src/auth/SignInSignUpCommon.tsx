@@ -78,9 +78,9 @@ export function getReturnTo(location: H.Location): string {
 }
 
 export function maybeAddPostSignUpRedirect(url?: string): string {
-    const { enablePostSignupFlow } = window.context.experimentalFeatures
-    const { sourcegraphDotComMode } = window.context
-    const shouldAddRedirect = sourcegraphDotComMode && enablePostSignupFlow
+    const enablePostSignupFlow = window.context?.experimentalFeatures?.enablePostSignupFlow
+    const isDotCom = window.context?.sourcegraphDotComMode
+    const shouldAddRedirect = isDotCom && enablePostSignupFlow
 
     if (url) {
         return shouldAddRedirect ? `${url}&redirect=/welcome` : url
