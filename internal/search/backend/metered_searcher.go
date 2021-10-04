@@ -64,15 +64,15 @@ func (m *meteredSearcher) StreamSearch(ctx context.Context, q query.Q, opts *zoe
 		}
 	}
 
-	var evAfter *libhoney.Event
+	var event *libhoney.Event
 	debugAdd := func(key string, value interface{}) {
-		if evAfter == nil {
+		if event == nil {
 			return
 		}
-		evAfter.AddField(key, value)
+		event.AddField(key, value)
 	}
 	if searchCoreOOMDebug && cat == "SearchAll" {
-		evAfter = honey.Event("search-core-oom-debug")
+		event = honey.Event("search-core-oom-debug")
 		debugAdd("category", cat)
 		debugAdd("query", queryString(q))
 		debugAdd("xid", xid.New().String())
@@ -202,15 +202,15 @@ func (m *meteredSearcher) StreamSearch(ctx context.Context, q query.Q, opts *zoe
 		log.Int64("stats.wait_ms", statsAgg.Wait.Milliseconds()),
 	}
 	tr.LogFields(fields...)
-	if evAfter != nil {
-		evAfter.AddField("duration_ms", time.Since(start).Milliseconds())
+	if event != nil {
+		event.AddField("duration_ms", time.Since(start).Milliseconds())
 		if err != nil {
-			evAfter.AddField("error", err)
+			event.AddField("error", err)
 		}
 		for _, f := range fields {
-			evAfter.AddField(f.Key(), f.Value())
+			event.AddField(f.Key(), f.Value())
 		}
-		evAfter.Send()
+		event.Send()
 	}
 
 	// Record total duration of stream
@@ -239,15 +239,15 @@ func (m *meteredSearcher) List(ctx context.Context, q query.Q, opts *zoekt.ListO
 		}
 	}
 
-	var evAfter *libhoney.Event
+	var event *libhoney.Event
 	debugAdd := func(key string, value interface{}) {
-		if evAfter == nil {
+		if event == nil {
 			return
 		}
-		evAfter.AddField(key, value)
+		event.AddField(key, value)
 	}
 	if searchCoreOOMDebug && cat == "ListAll" {
-		evAfter = honey.Event("search-core-oom-debug")
+		event = honey.Event("search-core-oom-debug")
 		debugAdd("category", cat)
 		debugAdd("query", queryString(q))
 		debugAdd("xid", xid.New().String())
@@ -268,16 +268,16 @@ func (m *meteredSearcher) List(ctx context.Context, q query.Q, opts *zoekt.ListO
 		code = "error"
 	}
 
-	if evAfter != nil {
-		evAfter.AddField("duration_ms", time.Since(start).Milliseconds())
+	if event != nil {
+		event.AddField("duration_ms", time.Since(start).Milliseconds())
 		if zsl != nil {
-			evAfter.AddField("repos", len(zsl.Repos))
-			evAfter.AddField("minimal_repos", len(zsl.Minimal))
+			event.AddField("repos", len(zsl.Repos))
+			event.AddField("minimal_repos", len(zsl.Minimal))
 		}
 		if err != nil {
-			evAfter.AddField("error", err)
+			event.AddField("error", err)
 		}
-		evAfter.Send()
+		event.Send()
 	}
 
 	requestDuration.WithLabelValues(m.hostname, cat, code).Observe(time.Since(start).Seconds())
