@@ -2,7 +2,6 @@ package backend
 
 import (
 	"context"
-	"os"
 	"sync"
 	"time"
 
@@ -21,8 +20,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 )
-
-var searchCoreOOMDebug = os.Getenv("SRC_SEARCH_CORE_OOM_DEBUG") != ""
 
 var requestDuration = promauto.NewHistogramVec(prometheus.HistogramOpts{
 	Name:    "src_zoekt_request_duration_seconds",
@@ -67,8 +64,8 @@ func (m *meteredSearcher) StreamSearch(ctx context.Context, q query.Q, opts *zoe
 	qStr := queryString(q)
 
 	var event *libhoney.Event
-	if searchCoreOOMDebug && cat == "SearchAll" {
-		event = honey.Event("search-core-oom-debug")
+	if honey.Enabled() && cat == "SearchAll" {
+		event = honey.Event("search-zoekt")
 		event.AddField("category", cat)
 		event.AddField("query", qStr)
 		event.AddField("xid", xid.New().String())
@@ -243,8 +240,8 @@ func (m *meteredSearcher) List(ctx context.Context, q query.Q, opts *zoekt.ListO
 	tr.LogFields(trace.Stringer("opts", opts))
 
 	var event *libhoney.Event
-	if searchCoreOOMDebug && cat == "ListAll" {
-		event = honey.Event("search-core-oom-debug")
+	if honey.Enabled() && cat == "ListAll" {
+		event = honey.Event("search-zoekt")
 		event.AddField("category", cat)
 		event.AddField("query", qStr)
 		event.AddField("xid", xid.New().String())
