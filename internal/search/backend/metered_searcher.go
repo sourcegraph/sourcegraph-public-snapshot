@@ -191,8 +191,11 @@ func (m *meteredSearcher) StreamSearch(ctx context.Context, q query.Q, opts *zoe
 		log.Int("stats.match_count", statsAgg.MatchCount),
 		log.Int("stats.ngram_matches", statsAgg.NgramMatches),
 		log.Int("stats.shard_files_considered", statsAgg.ShardFilesConsidered),
+		log.Int("stats.shards_scanned", statsAgg.ShardsScanned),
 		log.Int("stats.shards_skipped", statsAgg.ShardsSkipped),
+		log.Int("stats.shards_skipped_filter", statsAgg.ShardsSkippedFilter),
 		log.Int64("stats.wait_ms", statsAgg.Wait.Milliseconds()),
+		log.Int("stats.regexps_considered", statsAgg.RegexpsConsidered),
 	}
 	tr.LogFields(fields...)
 	if event != nil {
