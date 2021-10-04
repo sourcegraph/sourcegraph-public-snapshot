@@ -43,7 +43,9 @@ export const RepositoryPolicies: FunctionComponent<RepositoryPoliciesProps> = ({
                 update: cache => updateDeletePolicyCache(cache, id),
             }).then(() => {
                 onHandleIsDeleting(false)
-                history.push({ state: { modal: 'SUCCESS', message: 'Policy configuration has been deleted.' } })
+                history.push({
+                    state: { modal: 'SUCCESS', message: `Configuration for policy ${name}  has been deleted.` },
+                })
             })
         },
         [policies, handleDeleteConfig, configType, onHandleIsDeleting, history]

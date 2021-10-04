@@ -13,6 +13,7 @@ import {
 } from '../../../components/FilteredConnection'
 import { PageTitle } from '../../../components/PageTitle'
 import { LsifIndexFields, LSIFIndexState } from '../../../graphql-operations'
+import { FlashMessage } from '../configuration/FlashMessage'
 
 import { enqueueIndexJob as defaultEnqueueIndexJob, fetchLsifIndexes as defaultFetchLsifIndexes } from './backend'
 import styles from './CodeIntelIndexesPage.module.scss'
@@ -72,6 +73,7 @@ export const CodeIntelIndexesPage: FunctionComponent<CodeIntelIndexesPageProps> 
     enqueueIndexJob = defaultEnqueueIndexJob,
     now,
     telemetryService,
+    history,
     ...props
 }) => {
     useEffect(() => telemetryService.logViewEvent('CodeIntelIndexes'), [telemetryService])
@@ -99,6 +101,10 @@ export const CodeIntelIndexesPage: FunctionComponent<CodeIntelIndexesPageProps> 
                 </Container>
             )}
 
+            {history.location.state && (
+                <FlashMessage state={history.location.state.modal} message={history.location.state.message} />
+            )}
+
             <Container>
                 <div className="list-group position-relative">
                     <FilteredConnection<LsifIndexFields, Omit<CodeIntelIndexNodeProps, 'node'>>
@@ -110,7 +116,7 @@ export const CodeIntelIndexesPage: FunctionComponent<CodeIntelIndexesPageProps> 
                         nodeComponent={CodeIntelIndexNode}
                         nodeComponentProps={{ now }}
                         queryConnection={queryIndexes}
-                        history={props.history}
+                        history={history}
                         location={props.location}
                         cursorPaging={true}
                         filters={filters}

@@ -56,11 +56,14 @@ export const CodeIntelConfigurationPolicyPage: FunctionComponent<CodeIntelConfig
             .then(() =>
                 history.push({
                     pathname: './',
-                    state: { modal: 'SUCCESS', message: 'Policy configuration has been saved.' },
+                    state: { modal: 'SUCCESS', message: `Configuration for policy: ${policy.name} has been saved.` },
                 })
             )
             .catch(() =>
-                history.push({ pathname: './', state: { modal: 'ERROR', message: 'There was an error while saving.' } })
+                history.push({
+                    pathname: './',
+                    state: { modal: 'ERROR', message: `There was an error while saving policy: ${policy.name}.` },
+                })
             )
     }, [policy, repo, savePolicyConfiguration, history])
 

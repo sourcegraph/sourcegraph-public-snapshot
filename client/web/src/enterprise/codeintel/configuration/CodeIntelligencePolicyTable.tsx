@@ -4,6 +4,7 @@ import PencilIcon from 'mdi-react/PencilIcon'
 import TrashIcon from 'mdi-react/TrashIcon'
 import React, { FunctionComponent } from 'react'
 
+import { Tooltip } from '@sourcegraph/branded/src/components/tooltip/Tooltip'
 import { GitObjectType } from '@sourcegraph/shared/src/graphql/schema'
 import { Button } from '@sourcegraph/wildcard'
 
@@ -76,9 +77,9 @@ export const CodeIntelligencePolicyTable: FunctionComponent<CodeIntelligencePoli
                             onClick={() => history.push(`./configuration/${policy.id}`)}
                             className="p-0"
                             disabled={disabled}
-                            title="Edit the policy"
                         >
-                            <PencilIcon className="icon-inline" />
+                            <Tooltip />
+                            <PencilIcon className="icon-inline" data-tooltip="Edit the policy" />
                         </Button>
                     )}
                 </span>
@@ -88,9 +89,9 @@ export const CodeIntelligencePolicyTable: FunctionComponent<CodeIntelligencePoli
                             onClick={() => onDeletePolicy(policy.id, policy.name)}
                             className="ml-2 p-0"
                             disabled={disabled}
-                            title="Delete the policy"
                         >
-                            <TrashIcon className="icon-inline text-danger" />
+                            <Tooltip />
+                            <TrashIcon className="icon-inline text-danger" data-tooltip="Delete the policy" />
                         </Button>
                     )}
                 </span>

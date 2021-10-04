@@ -1,6 +1,6 @@
 import { useApolloClient } from '@apollo/client'
 import classNames from 'classnames'
-import React, { FunctionComponent, useCallback, useEffect, useMemo } from 'react'
+import React, { FunctionComponent, useCallback, useEffect, useMemo, useState } from 'react'
 import { RouteComponentProps } from 'react-router'
 import { of } from 'rxjs'
 
@@ -15,6 +15,7 @@ import {
 } from '../../../components/FilteredConnection'
 import { PageTitle } from '../../../components/PageTitle'
 import { LsifUploadFields, LSIFUploadState } from '../../../graphql-operations'
+import { FlashMessage } from '../configuration/FlashMessage'
 import {
     queryLsifUploadsByRepository as defaultQueryLsifUploadsByRepository,
     queryLsifUploadsList as defaultQueryLsifUploadsList,
@@ -99,6 +100,7 @@ export const CodeIntelUploadsPage: FunctionComponent<CodeIntelUploadsPageProps> 
     fetchCommitGraphMetadata = defaultFetchCommitGraphMetadata,
     now,
     telemetryService,
+    history,
     ...props
 }) => {
     useEffect(() => telemetryService.logViewEvent('CodeIntelUploads'), [telemetryService])
@@ -121,6 +123,17 @@ export const CodeIntelUploadsPage: FunctionComponent<CodeIntelUploadsPageProps> 
         ])
     )
 
+    const [deleteStatus, setDeleteStatus] = useState({ isDeleting: false, message: '', state: '' })
+    useEffect(() => {
+        if (history.location.state) {
+            setDeleteStatus({
+                isDeleting: true,
+                message: history.location.state.message,
+                state: history.location.state.modal,
+            })
+        }
+    }, [history.location.state])
+
     return (
         <div className="code-intel-uploads">
             <PageTitle title="Precise code intelligence uploads" />
@@ -132,6 +145,12 @@ export const CodeIntelUploadsPage: FunctionComponent<CodeIntelUploadsPageProps> 
                 }.`}
                 className="mb-3"
             />
+
+            {deleteStatus.isDeleting && (
+                <Container className="mb-2">
+                    <FlashMessage className="mb-0" state={deleteStatus.state} message={deleteStatus.message} />
+                </Container>
+            )}
 
             {repo && commitGraphMetadata && (
                 <Container className="mb-2">
@@ -154,7 +173,7 @@ export const CodeIntelUploadsPage: FunctionComponent<CodeIntelUploadsPageProps> 
                         nodeComponent={CodeIntelUploadNode}
                         nodeComponentProps={{ now }}
                         queryConnection={queryLsifUploads}
-                        history={props.history}
+                        history={history}
                         location={props.location}
                         cursorPaging={true}
                         filters={filters}
