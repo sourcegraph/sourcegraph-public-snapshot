@@ -4,8 +4,7 @@ import React, { FunctionComponent } from 'react'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { Button } from '@sourcegraph/wildcard'
 
-import styles from './PolicyListActions.module.scss'
-
+import { loading, btn } from './PolicyListActions.module.scss'
 export interface PolicyListActionsProps {
     disabled: boolean
     deleting: boolean
@@ -15,7 +14,7 @@ export interface PolicyListActionsProps {
 export const PolicyListActions: FunctionComponent<PolicyListActionsProps> = ({ disabled, deleting, history }) => (
     <>
         <Button
-            className={styles.btn}
+            className={btn}
             variant="primary"
             onClick={() => history.push('./configuration/new')}
             disabled={disabled}
@@ -24,7 +23,7 @@ export const PolicyListActions: FunctionComponent<PolicyListActionsProps> = ({ d
         </Button>
 
         {deleting && (
-            <span className={styles.delete}>
+            <span className={loading}>
                 <LoadingSpinner className="icon-inline" /> Deleting...
             </span>
         )}
