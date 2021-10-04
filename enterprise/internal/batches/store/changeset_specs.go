@@ -421,7 +421,7 @@ type ChangesetSpecHeadRefConflict struct {
 }
 
 var listChangesetSpecsWithConflictingHeadQueryFmtstr = `
--- source: enterprise/internal/batches/store.go:ListChangesetSpecsWithConflictingHeadRef
+-- source: enterprise/internal/batches/store/changeset_specs.go:ListChangesetSpecsWithConflictingHeadRef
 SELECT
 	repo_id, spec->>'headRef', COUNT(*)
 FROM
@@ -433,7 +433,6 @@ AND
 GROUP BY
 	repo_id, spec->>'headRef'
 HAVING COUNT(*) > 1
-;
 `
 
 func (s *Store) ListChangesetSpecsWithConflictingHeadRef(ctx context.Context, batchSpecID int64) (conflicts []ChangesetSpecHeadRefConflict, err error) {
@@ -469,7 +468,7 @@ func (s *Store) DeleteExpiredChangesetSpecs(ctx context.Context) (err error) {
 }
 
 var deleteExpiredChangesetSpecsQueryFmtstr = `
--- source: enterprise/internal/batches/store.go:DeleteExpiredChangesetSpecs
+-- source: enterprise/internal/batches/store/changeset_specs.go:DeleteExpiredChangesetSpecs
 DELETE FROM
   changeset_specs cspecs
 WHERE

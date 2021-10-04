@@ -67,7 +67,8 @@ func (s *Service) ApplyBatchChange(
 		return nil, err
 	}
 
-	// Validate ChangesetSpecs and return error if not
+	// Validate ChangesetSpecs and return error if they're invalid and the
+	// BatchSpec can't be applied safely.
 	if err := s.ValidateChangesetSpecs(ctx, batchSpec.ID); err != nil {
 		return nil, err
 	}
