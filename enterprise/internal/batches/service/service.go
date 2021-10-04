@@ -982,7 +982,8 @@ func (s *Service) CreateChangesetJobs(ctx context.Context, batchChangeID int64, 
 // ValidateChangesetSpecs checks whether the given BachSpec has ChangesetSpecs
 // that would publish to the same branch in the same repository.
 // If the return value is nil, then the BatchSpec is valid.
-func (s *Service) ValidateChangesetSpecs(ctx context.Context, batchSpecID int64) (err error) {
+func (s *Service) ValidateChangesetSpecs(ctx context.Context, batchSpecID int64) (err2 error) {
+	var err error
 	ctx, endObservation := s.operations.validateChangesetSpecs.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
