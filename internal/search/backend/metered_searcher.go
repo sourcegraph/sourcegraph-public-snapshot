@@ -64,16 +64,14 @@ func (m *meteredSearcher) StreamSearch(ctx context.Context, q query.Q, opts *zoe
 		}
 	}
 
-	var evBefore, evAfter *libhoney.Event
+	var evAfter *libhoney.Event
 	debugAdd := func(key string, value interface{}) {
-		if evBefore == nil {
+		if evAfter == nil {
 			return
 		}
-		evBefore.AddField(key, value)
 		evAfter.AddField(key, value)
 	}
 	if searchCoreOOMDebug && cat == "SearchAll" {
-		evBefore = honey.Event("search-core-oom-debug")
 		evAfter = honey.Event("search-core-oom-debug")
 		debugAdd("category", cat)
 		debugAdd("query", queryString(q))
@@ -135,10 +133,6 @@ func (m *meteredSearcher) StreamSearch(ctx context.Context, q query.Q, opts *zoe
 				writeRequestDone = time.Now()
 			},
 		})
-	}
-
-	if evBefore != nil {
-		evBefore.Send()
 	}
 
 	var (
@@ -245,16 +239,14 @@ func (m *meteredSearcher) List(ctx context.Context, q query.Q, opts *zoekt.ListO
 		}
 	}
 
-	var evBefore, evAfter *libhoney.Event
+	var evAfter *libhoney.Event
 	debugAdd := func(key string, value interface{}) {
-		if evBefore == nil {
+		if evAfter == nil {
 			return
 		}
-		evBefore.AddField(key, value)
 		evAfter.AddField(key, value)
 	}
 	if searchCoreOOMDebug && cat == "ListAll" {
-		evBefore = honey.Event("search-core-oom-debug")
 		evAfter = honey.Event("search-core-oom-debug")
 		debugAdd("category", cat)
 		debugAdd("query", queryString(q))
@@ -268,10 +260,6 @@ func (m *meteredSearcher) List(ctx context.Context, q query.Q, opts *zoekt.ListO
 	tr.LogFields(trace.Stringer("opts", opts))
 
 	debugAdd("opts.minimal", opts != nil && opts.Minimal)
-
-	if evBefore != nil {
-		evBefore.Send()
-	}
 
 	zsl, err := m.Streamer.List(ctx, q, opts)
 
