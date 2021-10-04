@@ -283,7 +283,19 @@ func (c *Cmd) sendExec(ctx context.Context) (_ io.ReadCloser, _ http.Header, err
 
 // Search executes a search as specified by args, streaming the results as it goes by calling onMatches with each set of results it
 // receives in response.
-func (c *Client) Search(ctx context.Context, args *protocol.SearchRequest, onMatches func([]protocol.CommitMatch)) (limitHit bool, _ error) {
+func (c *Client) Search(ctx context.Context, args *protocol.SearchRequest, onMatches func([]protocol.CommitMatch)) (limitHit bool, err error) {
+	span, ctx := ot.StartSpanFromContext(ctx, "GitserverClient.Search")
+	span.SetTag("query", args.Query.String())
+	span.SetTag("diff", args.IncludeDiff)
+	span.SetTag("limit", args.Limit)
+	defer func() {
+		if err != nil {
+			ext.Error.Set(span, true)
+			span.SetTag("err", err.Error())
+		}
+		span.Finish()
+	}()
+
 	repoName := protocol.NormalizeRepo(args.Repo)
 
 	protocol.RegisterGob()

@@ -60,7 +60,7 @@ func SignIn(baseURL, email, password string) (*Client, error) {
 
 // authenticate initializes an authenticated client with given request body.
 func authenticate(baseURL, path string, body interface{}) (*Client, error) {
-	client, err := newClient(baseURL)
+	client, err := NewClient(baseURL)
 	if err != nil {
 		return nil, errors.Wrap(err, "new client")
 	}
@@ -101,9 +101,9 @@ type Client struct {
 	userID string
 }
 
-// newClient instantiates a new client by performing a GET request then obtains the
+// NewClient instantiates a new client by performing a GET request then obtains the
 // CSRF token and cookie from its response.
-func newClient(baseURL string) (*Client, error) {
+func NewClient(baseURL string) (*Client, error) {
 	resp, err := http.Get(baseURL)
 	if err != nil {
 		return nil, errors.Wrap(err, "get URL")

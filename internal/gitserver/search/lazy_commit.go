@@ -19,6 +19,9 @@ type LazyCommit struct {
 	// diff is the parsed output from the diff fetcher, cached here for performance
 	diff        []*diff.FileDiff
 	diffFetcher *DiffFetcher
+
+	// LowerBuf is a re-usable buffer for doing case-transformations on the fields of LazyCommit
+	LowerBuf []byte
 }
 
 func (l *LazyCommit) AuthorDate() (time.Time, error) {

@@ -6,7 +6,6 @@ import (
 	"os"
 	"os/exec"
 	"path"
-	"regexp"
 	"strings"
 	"testing"
 
@@ -14,6 +13,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
+	"github.com/sourcegraph/sourcegraph/internal/search/result"
 )
 
 // initGitRepository initializes a new Git repository and runs cmds in a new
@@ -62,122 +62,119 @@ func TestSearch(t *testing.T) {
 	dir := initGitRepository(t, cmds...)
 
 	t.Run("match one", func(t *testing.T) {
-		query := &protocol.MessageMatches{protocol.Regexp{regexp.MustCompile("commit2")}}
-		tree := ToMatchTree(query)
-		var commits []*LazyCommit
-		var highlights []*CommitHighlights
-		err := Search(context.Background(), dir, nil, tree, func(lc *LazyCommit, hl *CommitHighlights) bool {
-			commits = append(commits, lc)
-			highlights = append(highlights, hl)
+		query := &protocol.MessageMatches{Expr: "commit2"}
+		tree, err := ToMatchTree(query)
+		require.NoError(t, err)
+		searcher := &CommitSearcher{
+			RepoDir: dir,
+			Query:   tree,
+		}
+		var matches []*protocol.CommitMatch
+		err = searcher.Search(context.Background(), func(match *protocol.CommitMatch) bool {
+			matches = append(matches, match)
 			return true
 		})
 		require.NoError(t, err)
-		require.Len(t, commits, 1)
-		require.Len(t, highlights, 1)
+		require.Len(t, matches, 1)
 	})
 
 	t.Run("match both, in order", func(t *testing.T) {
-		query := &protocol.MessageMatches{protocol.Regexp{regexp.MustCompile("c")}}
-		tree := ToMatchTree(query)
-		var commits []*LazyCommit
-		var highlights []*CommitHighlights
-		err := Search(context.Background(), dir, nil, tree, func(lc *LazyCommit, hl *CommitHighlights) bool {
-			commits = append(commits, lc)
-			highlights = append(highlights, hl)
+		query := &protocol.MessageMatches{Expr: "c"}
+		tree, err := ToMatchTree(query)
+		require.NoError(t, err)
+		searcher := &CommitSearcher{
+			RepoDir: dir,
+			Query:   tree,
+		}
+		var matches []*protocol.CommitMatch
+		err = searcher.Search(context.Background(), func(match *protocol.CommitMatch) bool {
+			matches = append(matches, match)
 			return true
 		})
 		require.NoError(t, err)
-		require.Len(t, commits, 2)
-		require.Len(t, highlights, 2)
-		require.Equal(t, commits[0].AuthorName, []byte("camden2"))
-		require.Equal(t, commits[1].AuthorName, []byte("camden1"))
+		require.Len(t, matches, 2)
+		require.Equal(t, matches[0].Author.Name, "camden2")
+		require.Equal(t, matches[1].Author.Name, "camden1")
 	})
 
 	t.Run("match diff content", func(t *testing.T) {
-		query := &protocol.DiffMatches{protocol.Regexp{regexp.MustCompile("ipsum")}}
-		tree := ToMatchTree(query)
-		var commits []*LazyCommit
-		var highlights []*CommitHighlights
-		err := Search(context.Background(), dir, nil, tree, func(lc *LazyCommit, hl *CommitHighlights) bool {
-			commits = append(commits, lc)
-			highlights = append(highlights, hl)
+		query := &protocol.DiffMatches{Expr: "ipsum"}
+		tree, err := ToMatchTree(query)
+		require.NoError(t, err)
+		searcher := &CommitSearcher{
+			RepoDir: dir,
+			Query:   tree,
+		}
+		var matches []*protocol.CommitMatch
+		err = searcher.Search(context.Background(), func(match *protocol.CommitMatch) bool {
+			matches = append(matches, match)
 			return true
 		})
 		require.NoError(t, err)
-		require.Len(t, commits, 1)
-		require.Len(t, highlights, 1)
-		require.Equal(t, commits[0].AuthorName, []byte("camden1"))
+		require.Len(t, matches, 1)
+		require.Equal(t, matches[0].Author.Name, "camden1")
 	})
 
 	t.Run("author matches", func(t *testing.T) {
-		query := &protocol.AuthorMatches{protocol.Regexp{regexp.MustCompile("2")}}
-		tree := ToMatchTree(query)
-		var commits []*LazyCommit
-		var highlights []*CommitHighlights
-		err := Search(context.Background(), dir, nil, tree, func(lc *LazyCommit, hl *CommitHighlights) bool {
-			commits = append(commits, lc)
-			highlights = append(highlights, hl)
+		query := &protocol.AuthorMatches{Expr: "2"}
+		tree, err := ToMatchTree(query)
+		require.NoError(t, err)
+		searcher := &CommitSearcher{
+			RepoDir: dir,
+			Query:   tree,
+		}
+		var matches []*protocol.CommitMatch
+		err = searcher.Search(context.Background(), func(match *protocol.CommitMatch) bool {
+			matches = append(matches, match)
 			return true
 		})
 		require.NoError(t, err)
-		require.Len(t, commits, 1)
-		require.Len(t, highlights, 1)
-		require.Equal(t, commits[0].AuthorName, []byte("camden2"))
+		require.Len(t, matches, 1)
+		require.Equal(t, matches[0].Author.Name, "camden2")
 	})
 
 	t.Run("file matches", func(t *testing.T) {
-		query := &protocol.DiffModifiesFile{protocol.Regexp{regexp.MustCompile("file1")}}
-		tree := ToMatchTree(query)
-		var commits []*LazyCommit
-		var highlights []*CommitHighlights
-		err := Search(context.Background(), dir, nil, tree, func(lc *LazyCommit, hl *CommitHighlights) bool {
-			commits = append(commits, lc)
-			highlights = append(highlights, hl)
+		query := &protocol.DiffModifiesFile{Expr: "file1"}
+		tree, err := ToMatchTree(query)
+		require.NoError(t, err)
+		searcher := &CommitSearcher{
+			RepoDir: dir,
+			Query:   tree,
+		}
+		var matches []*protocol.CommitMatch
+		err = searcher.Search(context.Background(), func(match *protocol.CommitMatch) bool {
+			matches = append(matches, match)
 			return true
 		})
 		require.NoError(t, err)
-		require.Len(t, commits, 1)
-		require.Len(t, highlights, 1)
-		require.Equal(t, commits[0].AuthorName, []byte("camden1"))
+		require.Len(t, matches, 1)
+		require.Equal(t, matches[0].Author.Name, "camden1")
 	})
 
 	t.Run("and match", func(t *testing.T) {
-		query := &protocol.And{[]protocol.SearchQuery{
-			&protocol.DiffMatches{protocol.Regexp{regexp.MustCompile("lorem")}},
-			&protocol.DiffMatches{protocol.Regexp{regexp.MustCompile("ipsum")}},
-		}}
-		tree := ToMatchTree(query)
-		var commits []*LazyCommit
-		var highlights []*CommitHighlights
-		err := Search(context.Background(), dir, nil, tree, func(lc *LazyCommit, hl *CommitHighlights) bool {
-			commits = append(commits, lc)
-			highlights = append(highlights, hl)
+		query := &protocol.Operator{
+			Kind: protocol.And,
+			Operands: []protocol.Node{
+				&protocol.DiffMatches{Expr: "lorem"},
+				&protocol.DiffMatches{Expr: "ipsum"},
+			},
+		}
+		tree, err := ToMatchTree(query)
+		require.NoError(t, err)
+		searcher := &CommitSearcher{
+			RepoDir:     dir,
+			Query:       tree,
+			IncludeDiff: true,
+		}
+		var matches []*protocol.CommitMatch
+		err = searcher.Search(context.Background(), func(match *protocol.CommitMatch) bool {
+			matches = append(matches, match)
 			return true
 		})
 		require.NoError(t, err)
-		require.Len(t, commits, 1)
-		require.Len(t, highlights, 1)
-		require.Equal(t, commits[0].AuthorName, []byte("camden1"))
-		expectedHighlights := &CommitHighlights{
-			Diff: map[int]FileDiffHighlight{
-				0: {
-					HunkHighlights: map[int]HunkHighlight{
-						0: {
-							LineHighlights: map[int]protocol.Ranges{
-								0: {{
-									Start: protocol.Location{},
-									End:   protocol.Location{Offset: 5, Column: 5},
-								}, {
-									Start: protocol.Location{Offset: 6, Column: 6},
-									End:   protocol.Location{Offset: 11, Column: 11},
-								}},
-							},
-						},
-					},
-				},
-			},
-		}
-		require.Equal(t, expectedHighlights, highlights[0])
+		require.Len(t, matches, 1)
+		require.Equal(t, matches[0].Author.Name, "camden1")
+		require.Len(t, strings.Split(matches[0].Diff.Content, "\n"), 4)
 	})
 }
 
@@ -290,14 +287,21 @@ index 0000000000..7e54670557
 		diff: parsedDiff,
 	}
 
-	mt := ToMatchTree(&protocol.And{[]protocol.SearchQuery{
-		&protocol.AuthorMatches{protocol.Regexp{regexp.MustCompile("Camden")}},
-		&protocol.DiffModifiesFile{protocol.Regexp{regexp.MustCompile("test")}},
-		&protocol.And{[]protocol.SearchQuery{
-			&protocol.DiffMatches{protocol.Regexp{regexp.MustCompile("result")}},
-			&protocol.DiffMatches{protocol.Regexp{regexp.MustCompile("test")}},
-		}},
-	}})
+	mt, err := ToMatchTree(&protocol.Operator{
+		Kind: protocol.And,
+		Operands: []protocol.Node{
+			&protocol.AuthorMatches{Expr: "Camden"},
+			&protocol.DiffModifiesFile{Expr: "test"},
+			&protocol.Operator{
+				Kind: protocol.And,
+				Operands: []protocol.Node{
+					&protocol.DiffMatches{Expr: "result"},
+					&protocol.DiffMatches{Expr: "test"},
+				},
+			},
+		},
+	})
+	require.NoError(t, err)
 
 	matches, highlights, err := mt.Match(lc)
 	require.NoError(t, err)
@@ -325,21 +329,21 @@ index 0000000000..7e54670557
 
 	require.Equal(t, expectedFormatted, formatted)
 
-	expectedRanges := protocol.Ranges{{
-		Start: protocol.Location{Offset: 115, Line: 3, Column: 60},
-		End:   protocol.Location{Offset: 121, Line: 3, Column: 66},
+	expectedRanges := result.Ranges{{
+		Start: result.Location{Offset: 115, Line: 3, Column: 60},
+		End:   result.Location{Offset: 121, Line: 3, Column: 66},
 	}, {
-		Start: protocol.Location{Offset: 152, Line: 6, Column: 24},
-		End:   protocol.Location{Offset: 158, Line: 6, Column: 30},
+		Start: result.Location{Offset: 152, Line: 6, Column: 24},
+		End:   result.Location{Offset: 158, Line: 6, Column: 30},
 	}, {
-		Start: protocol.Location{Offset: 288, Line: 8, Column: 33},
-		End:   protocol.Location{Offset: 292, Line: 8, Column: 37},
+		Start: result.Location{Offset: 288, Line: 8, Column: 33},
+		End:   result.Location{Offset: 292, Line: 8, Column: 37},
 	}, {
-		Start: protocol.Location{Offset: 345, Line: 11, Column: 9},
-		End:   protocol.Location{Offset: 349, Line: 11, Column: 13},
+		Start: result.Location{Offset: 345, Line: 11, Column: 9},
+		End:   result.Location{Offset: 349, Line: 11, Column: 13},
 	}, {
-		Start: protocol.Location{Offset: 453, Line: 14, Column: 60},
-		End:   protocol.Location{Offset: 459, Line: 14, Column: 66},
+		Start: result.Location{Offset: 453, Line: 14, Column: 60},
+		End:   result.Location{Offset: 459, Line: 14, Column: 66},
 	}}
 
 	require.Equal(t, expectedRanges, ranges)

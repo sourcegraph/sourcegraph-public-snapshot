@@ -12,6 +12,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
+	"github.com/sourcegraph/sourcegraph/internal/vcs/git/gitapi"
 )
 
 // BlameOptions configures a blame.
@@ -30,7 +31,7 @@ type Hunk struct {
 	StartByte int // 0-indexed start byte position (inclusive)
 	EndByte   int // 0-indexed end byte position (exclusive)
 	api.CommitID
-	Author  Signature
+	Author  gitapi.Signature
 	Message string
 }
 
@@ -72,7 +73,7 @@ func blameFileCmd(ctx context.Context, command cmdFunc, path string, opt *BlameO
 		return nil, nil
 	}
 
-	commits := make(map[string]Commit)
+	commits := make(map[string]gitapi.Commit)
 	hunks := make([]*Hunk, 0)
 	remainingLines := strings.Split(string(out[:len(out)-1]), "\n")
 	byteOffset := 0
@@ -108,10 +109,10 @@ func blameFileCmd(ctx context.Context, command cmdFunc, path string, opt *BlameO
 				return nil, errors.Errorf("Failed to parse author-time %q", remainingLines[3])
 			}
 			summary := strings.Join(strings.Split(remainingLines[9], " ")[1:], " ")
-			commit := Commit{
+			commit := gitapi.Commit{
 				ID:      api.CommitID(commitID),
-				Message: Message(summary),
-				Author: Signature{
+				Message: gitapi.Message(summary),
+				Author: gitapi.Signature{
 					Name:  author,
 					Email: email,
 					Date:  time.Unix(authorTime, 0).UTC(),

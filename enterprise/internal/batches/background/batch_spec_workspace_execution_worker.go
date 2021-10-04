@@ -5,7 +5,6 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
-	"strings"
 	"time"
 
 	"github.com/cockroachdb/errors"
@@ -21,6 +20,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker"
 	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
+	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
 )
 
 // batchSpecWorkspaceExecutionJobStalledJobMaximumAge is the maximum allowable
@@ -208,9 +208,8 @@ var ErrNoChangesetSpecIDs = errors.New("no changeset ids found in execution logs
 
 func extractChangesetSpecRandIDs(logs []workerutil.ExecutionLogEntry) ([]string, error) {
 	var (
-		randIDs []string
-		entry   workerutil.ExecutionLogEntry
-		found   bool
+		entry workerutil.ExecutionLogEntry
+		found bool
 	)
 
 	for _, e := range logs {
@@ -221,28 +220,18 @@ func extractChangesetSpecRandIDs(logs []workerutil.ExecutionLogEntry) ([]string,
 		}
 	}
 	if !found {
-		return randIDs, ErrNoChangesetSpecIDs
+		return nil, ErrNoChangesetSpecIDs
 	}
 
-	for _, l := range strings.Split(entry.Out, "\n") {
-		const outputLinePrefix = "stdout: "
-
-		if !strings.HasPrefix(l, outputLinePrefix) {
+	logLines := btypes.ParseJSONLogsFromOutput(entry.Out)
+	for _, l := range logLines {
+		if l.Status != batcheslib.LogEventStatusSuccess {
 			continue
 		}
-
-		jsonPart := l[len(outputLinePrefix):]
-
-		var e changesetSpecsUploadedLogLine
-		if err := json.Unmarshal([]byte(jsonPart), &e); err != nil {
-			// If we can't unmarshal the line as JSON we skip it
-			continue
-		}
-
-		if e.Operation == operationUploadingChangesetSpecs && e.Status == "SUCCESS" {
-			rawIDs := e.Metadata.IDs
+		if m, ok := l.Metadata.(*batcheslib.UploadingChangesetSpecsMetadata); ok {
+			rawIDs := m.IDs
 			if len(rawIDs) == 0 {
-				return randIDs, ErrNoChangesetSpecIDs
+				return nil, ErrNoChangesetSpecIDs
 			}
 
 			var randIDs []string
@@ -259,16 +248,5 @@ func extractChangesetSpecRandIDs(logs []workerutil.ExecutionLogEntry) ([]string,
 		}
 	}
 
-	return randIDs, ErrNoChangesetSpecIDs
+	return nil, ErrNoChangesetSpecIDs
 }
-
-type changesetSpecsUploadedLogLine struct {
-	Operation string
-	Timestamp time.Time
-	Status    string
-	Metadata  struct {
-		IDs []string `json:"ids"`
-	}
-}
-
-const operationUploadingChangesetSpecs = "UPLOADING_CHANGESET_SPECS"

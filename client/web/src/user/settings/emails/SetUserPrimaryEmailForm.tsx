@@ -11,7 +11,7 @@ import { LoaderButton } from '../../../components/LoaderButton'
 import { SetUserEmailPrimaryResult, SetUserEmailPrimaryVariables, UserEmailsResult } from '../../../graphql-operations'
 import { eventLogger } from '../../../tracking/eventLogger'
 
-type UserEmail = NonNullable<UserEmailsResult['node']>['emails'][number]
+type UserEmail = (NonNullable<UserEmailsResult['node']> & { __typename: 'User' })['emails'][number]
 
 interface Props {
     user: string

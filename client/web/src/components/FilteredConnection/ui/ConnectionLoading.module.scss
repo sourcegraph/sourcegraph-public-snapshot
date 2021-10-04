@@ -1,0 +1,13 @@
+.normal {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.compact {
+    padding: var(--compact-summary-padding);
+    flex: 0 0;
+    // Consistent with the summary to avoid layout shifting
+    border-top: var(--compact-summary-divider);
+    min-height: var(--compact-summary-min-height);
+}

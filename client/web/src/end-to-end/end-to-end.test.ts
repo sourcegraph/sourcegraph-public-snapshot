@@ -820,7 +820,7 @@ describe('e2e test suite', () => {
                     await driver.page.waitForSelector('[data-tab-content="symbols"]')
                     await driver.page.click('[data-tab-content="symbols"]')
                     await driver.page.waitForSelector('.test-symbol-name', { visible: true })
-                    await driver.page.click(`.filtered-connection__nodes li:nth-child(${index + 1}) a`)
+                    await driver.page.click(`[data-testid="filtered-connection-nodes"] li:nth-child(${index + 1}) a`)
 
                     await driver.page.waitForSelector('.test-blob .selected .line')
                     const selectedLineNumber = await driver.page.evaluate(() => {

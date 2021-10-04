@@ -14,6 +14,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
+	"github.com/sourcegraph/sourcegraph/internal/search/result"
 )
 
 // Git formatting directives as described in man git-log (see PRETTY FORMATS)
@@ -77,12 +78,7 @@ var (
 
 type job struct {
 	batch      []*RawCommit
-	resultChan chan searchResult
-}
-
-type searchResult struct {
-	lazyCommit        *LazyCommit
-	highlightedCommit *CommitHighlights
+	resultChan chan *protocol.CommitMatch
 }
 
 const (
@@ -90,6 +86,13 @@ const (
 	batchSize  = 512
 	numWorkers = 4
 )
+
+type CommitSearcher struct {
+	RepoDir     string
+	Query       MatchTree
+	Revisions   []protocol.RevisionSpecifier
+	IncludeDiff bool
+}
 
 // Search runs a search for commits matching the given predicate across the revisions passed in as revisionArgs.
 //
@@ -99,110 +102,25 @@ const (
 // that job should be sent down. We then read from the result channels in the same order that the jobs were sent.
 // This allows our worker pool to run the jobs in parallel, but we still emit matches in the same order that
 // git log outputs them.
-func Search(ctx context.Context, dir string, revs []protocol.RevisionSpecifier, p MatchTree, onMatch func(*LazyCommit, *CommitHighlights) bool) error {
+func (cs *CommitSearcher) Search(ctx context.Context, onMatch func(*protocol.CommitMatch) bool) error {
 	g, ctx := errgroup.WithContext(ctx)
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
-	revArgs := revsToGitArgs(revs)
-
 	jobs := make(chan job, 128)
-	resultChans := make(chan chan searchResult, 128)
+	resultChans := make(chan chan *protocol.CommitMatch, 128)
 
 	// Start feeder
 	g.Go(func() error {
 		defer close(resultChans)
 		defer close(jobs)
-
-		cmd := exec.CommandContext(ctx, "git", append(logArgsWithoutRefs, revArgs...)...)
-		pr, pw := io.Pipe()
-		cmd.Stdout = pw
-		cmd.Dir = dir
-		if err := cmd.Start(); err != nil {
-			return err
-		}
-
-		// Wait for the git subprocess to finish, closing the pipe when it does
-		var cmdErr error
-		go func() {
-			defer pw.Close()
-			cmdErr = cmd.Wait()
-		}()
-
-		batch := make([]*RawCommit, 0, batchSize)
-		sendBatch := func() {
-			resultChan := make(chan searchResult, 128)
-			resultChans <- resultChan
-			jobs <- job{
-				batch:      batch,
-				resultChan: resultChan,
-			}
-			batch = make([]*RawCommit, 0, batchSize)
-		}
-
-		cs := NewCommitScanner(pr)
-		for cs.Scan() {
-			if ctx.Err() != nil {
-				return ctx.Err()
-			}
-			cv := cs.NextRawCommit()
-			batch = append(batch, cv)
-			if len(batch) == batchSize {
-				sendBatch()
-			}
-		}
-
-		if len(batch) > 0 {
-			sendBatch()
-		}
-
-		if cmdErr != nil {
-			return cmdErr
-		}
-		return cs.Err()
+		return cs.feedBatches(ctx, jobs, resultChans)
 	})
 
 	// Start workers
 	for i := 0; i < numWorkers; i++ {
 		g.Go(func() error {
-			// Create a new diff fetcher subprocess for each worker
-			diffFetcher, err := StartDiffFetcher(dir)
-			if err != nil {
-				return err
-			}
-			defer diffFetcher.Stop()
-
-			runJob := func(j job) error {
-				defer close(j.resultChan)
-				if ctx.Err() != nil {
-					// ignore context error, and don't spend time running the job
-					return nil
-				}
-
-				for _, cv := range j.batch {
-					lc := &LazyCommit{
-						RawCommit:   cv,
-						diffFetcher: diffFetcher,
-					}
-					commitMatches, highlights, err := p.Match(lc)
-					if err != nil {
-						return err
-					}
-					if commitMatches {
-						j.resultChan <- searchResult{
-							lazyCommit:        lc,
-							highlightedCommit: highlights,
-						}
-					}
-				}
-				return nil
-			}
-
-			var errors error
-			for j := range jobs {
-				multierror.Append(errors, runJob(j))
-			}
-			return errors
+			return cs.runJobs(ctx, jobs)
 		})
 	}
 
@@ -216,7 +134,7 @@ func Search(ctx context.Context, dir string, revs []protocol.RevisionSpecifier, 
 					// Drain all the channels to keep from blocking writers
 					continue
 				}
-				keepGoing := onMatch(result.lazyCommit, result.highlightedCommit)
+				keepGoing := onMatch(result)
 				if !keepGoing {
 					skip = true
 					cancel()
@@ -228,6 +146,101 @@ func Search(ctx context.Context, dir string, revs []protocol.RevisionSpecifier, 
 	})
 
 	return g.Wait()
+}
+
+func (cs *CommitSearcher) feedBatches(ctx context.Context, jobs chan job, resultChans chan chan *protocol.CommitMatch) error {
+	revArgs := revsToGitArgs(cs.Revisions)
+	cmd := exec.CommandContext(ctx, "git", append(logArgsWithoutRefs, revArgs...)...)
+	pr, pw := io.Pipe()
+	cmd.Stdout = pw
+	cmd.Dir = cs.RepoDir
+	if err := cmd.Start(); err != nil {
+		return err
+	}
+
+	// Wait for the git subprocess to finish, closing the pipe when it does
+	var cmdErr error
+	go func() {
+		defer pw.Close()
+		cmdErr = cmd.Wait()
+	}()
+
+	batch := make([]*RawCommit, 0, batchSize)
+	sendBatch := func() {
+		resultChan := make(chan *protocol.CommitMatch, 128)
+		resultChans <- resultChan
+		jobs <- job{
+			batch:      batch,
+			resultChan: resultChan,
+		}
+		batch = make([]*RawCommit, 0, batchSize)
+	}
+
+	scanner := NewCommitScanner(pr)
+	for scanner.Scan() {
+		if ctx.Err() != nil {
+			return ctx.Err()
+		}
+		cv := scanner.NextRawCommit()
+		batch = append(batch, cv)
+		if len(batch) == batchSize {
+			sendBatch()
+		}
+	}
+
+	if len(batch) > 0 {
+		sendBatch()
+	}
+
+	if cmdErr != nil {
+		return cmdErr
+	}
+	return scanner.Err()
+}
+
+func (cs *CommitSearcher) runJobs(ctx context.Context, jobs chan job) error {
+	// Create a new diff fetcher subprocess for each worker
+	diffFetcher, err := StartDiffFetcher(cs.RepoDir)
+	if err != nil {
+		return err
+	}
+	defer diffFetcher.Stop()
+
+	startBuf := make([]byte, 1024)
+
+	runJob := func(j job) error {
+		defer close(j.resultChan)
+		if ctx.Err() != nil {
+			// ignore context error, and don't spend time running the job
+			return nil
+		}
+
+		for _, cv := range j.batch {
+			lc := &LazyCommit{
+				RawCommit:   cv,
+				diffFetcher: diffFetcher,
+				LowerBuf:    startBuf,
+			}
+			commitMatches, highlights, err := cs.Query.Match(lc)
+			if err != nil {
+				return err
+			}
+			if commitMatches {
+				cm, err := CreateCommitMatch(lc, highlights, cs.IncludeDiff)
+				if err != nil {
+					return err
+				}
+				j.resultChan <- cm
+			}
+		}
+		return nil
+	}
+
+	var errors error
+	for j := range jobs {
+		multierror.Append(errors, runJob(j))
+	}
+	return errors
 }
 
 func revsToGitArgs(revs []protocol.RevisionSpecifier) []string {
@@ -349,7 +362,11 @@ func (c *CommitScanner) Err() error {
 	return c.err
 }
 
-func CreateCommitMatch(lc *LazyCommit, hc *CommitHighlights, includeDiff bool) (*protocol.CommitMatch, error) {
+func CreateCommitMatch(lc *LazyCommit, hc *MatchedCommit, includeDiff bool) (*protocol.CommitMatch, error) {
+	if hc == nil {
+		hc = &MatchedCommit{}
+	}
+
 	authorDate, err := lc.AuthorDate()
 	if err != nil {
 		return nil, err
@@ -360,13 +377,13 @@ func CreateCommitMatch(lc *LazyCommit, hc *CommitHighlights, includeDiff bool) (
 		return nil, err
 	}
 
-	diff := protocol.HighlightedString{}
+	diff := result.MatchedString{}
 	if includeDiff {
 		rawDiff, err := lc.Diff()
 		if err != nil {
 			return nil, err
 		}
-		diff.Content, diff.Highlights = FormatDiff(rawDiff, hc.Diff)
+		diff.Content, diff.MatchedRanges = FormatDiff(rawDiff, hc.Diff)
 	}
 
 	return &protocol.CommitMatch{
@@ -384,9 +401,9 @@ func CreateCommitMatch(lc *LazyCommit, hc *CommitHighlights, includeDiff bool) (
 		Parents:    lc.ParentIDs(),
 		SourceRefs: lc.SourceRefs(),
 		Refs:       lc.RefNames(),
-		Message: protocol.HighlightedString{
-			Content:    string(lc.Message),
-			Highlights: hc.Message,
+		Message: result.MatchedString{
+			Content:       string(lc.Message),
+			MatchedRanges: hc.Message,
 		},
 		Diff: diff,
 	}, nil

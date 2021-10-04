@@ -2,48 +2,51 @@ package search
 
 import (
 	"bytes"
-	"fmt"
-	"regexp"
 	"unicode/utf8"
 
+	"github.com/cockroachdb/errors"
+
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
+	"github.com/sourcegraph/sourcegraph/internal/search/casetransform"
+	"github.com/sourcegraph/sourcegraph/internal/search/result"
 )
 
 // ToMatchTree converts a protocol.SearchQuery into its equivalent MatchTree.
 // We don't send a match tree directly over the wire so using the protocol
 // package doesn't pull in all the dependencies that the match tree needs.
-func ToMatchTree(q protocol.SearchQuery) MatchTree {
+func ToMatchTree(q protocol.Node) (MatchTree, error) {
 	switch v := q.(type) {
-	case *protocol.AuthorMatches:
-		return &AuthorMatches{*v}
-	case *protocol.CommitterMatches:
-		return &CommitterMatches{*v}
 	case *protocol.CommitBefore:
-		return &CommitBefore{*v}
+		return &CommitBefore{*v}, nil
 	case *protocol.CommitAfter:
-		return &CommitAfter{*v}
+		return &CommitAfter{*v}, nil
+	case *protocol.AuthorMatches:
+		re, err := casetransform.CompileRegexp(v.Expr, v.IgnoreCase)
+		return &AuthorMatches{re}, err
+	case *protocol.CommitterMatches:
+		re, err := casetransform.CompileRegexp(v.Expr, v.IgnoreCase)
+		return &CommitterMatches{re}, err
 	case *protocol.MessageMatches:
-		return &MessageMatches{*v}
+		re, err := casetransform.CompileRegexp(v.Expr, v.IgnoreCase)
+		return &MessageMatches{re}, err
 	case *protocol.DiffMatches:
-		return &DiffMatches{*v}
+		re, err := casetransform.CompileRegexp(v.Expr, v.IgnoreCase)
+		return &DiffMatches{re}, err
 	case *protocol.DiffModifiesFile:
-		return &DiffModifiesFile{*v}
-	case *protocol.And:
-		children := make([]MatchTree, 0, len(v.Children))
-		for _, child := range v.Children {
-			children = append(children, ToMatchTree(child))
+		re, err := casetransform.CompileRegexp(v.Expr, v.IgnoreCase)
+		return &DiffModifiesFile{re}, err
+	case *protocol.Operator:
+		operands := make([]MatchTree, 0, len(v.Operands))
+		for _, operand := range v.Operands {
+			sub, err := ToMatchTree(operand)
+			if err != nil {
+				return nil, err
+			}
+			operands = append(operands, sub)
 		}
-		return &And{Children: children}
-	case *protocol.Or:
-		children := make([]MatchTree, 0, len(v.Children))
-		for _, child := range v.Children {
-			children = append(children, ToMatchTree(child))
-		}
-		return &Or{Children: children}
-	case *protocol.Not:
-		return &Not{Child: ToMatchTree(v.Child)}
+		return &Operator{Kind: v.Kind, Operands: operands}, nil
 	default:
-		panic(fmt.Sprintf("unknown protocol query type %T", q))
+		return nil, errors.Errorf("unknown protocol query type %T", q)
 	}
 }
 
@@ -51,27 +54,27 @@ func ToMatchTree(q protocol.SearchQuery) MatchTree {
 type MatchTree interface {
 	// Match returns whether the given predicate matches a commit and, if it does,
 	// the portions of the commit that match in the form of *CommitHighlights
-	Match(*LazyCommit) (matched bool, highlights *CommitHighlights, err error)
+	Match(*LazyCommit) (matched bool, highlights *MatchedCommit, err error)
 }
 
 // AuthorMatches is a predicate that matches if the author's name or email address
 // matches the regex pattern.
 type AuthorMatches struct {
-	protocol.AuthorMatches
+	*casetransform.Regexp
 }
 
-func (a *AuthorMatches) Match(cv *LazyCommit) (bool, *CommitHighlights, error) {
-	return a.Regexp.Match(cv.AuthorName) || a.Regexp.Match(cv.AuthorEmail), nil, nil
+func (a *AuthorMatches) Match(lc *LazyCommit) (bool, *MatchedCommit, error) {
+	return a.Regexp.Match(lc.AuthorName, &lc.LowerBuf) || a.Regexp.Match(lc.AuthorEmail, &lc.LowerBuf), nil, nil
 }
 
 // CommitterMatches is a predicate that matches if the author's name or email address
 // matches the regex pattern.
 type CommitterMatches struct {
-	protocol.CommitterMatches
+	*casetransform.Regexp
 }
 
-func (c *CommitterMatches) Match(cv *LazyCommit) (bool, *CommitHighlights, error) {
-	return c.Regexp.Match(cv.CommitterName) || c.Regexp.Match(cv.CommitterEmail), nil, nil
+func (c *CommitterMatches) Match(lc *LazyCommit) (bool, *MatchedCommit, error) {
+	return c.Regexp.Match(lc.CommitterName, &lc.LowerBuf) || c.Regexp.Match(lc.CommitterEmail, &lc.LowerBuf), nil, nil
 }
 
 // CommitBefore is a predicate that matches if the commit is before the given date
@@ -79,7 +82,7 @@ type CommitBefore struct {
 	protocol.CommitBefore
 }
 
-func (c *CommitBefore) Match(lc *LazyCommit) (bool, *CommitHighlights, error) {
+func (c *CommitBefore) Match(lc *LazyCommit) (bool, *MatchedCommit, error) {
 	authorDate, err := lc.AuthorDate()
 	if err != nil {
 		return false, nil, err
@@ -92,7 +95,7 @@ type CommitAfter struct {
 	protocol.CommitAfter
 }
 
-func (c *CommitAfter) Match(lc *LazyCommit) (bool, *CommitHighlights, error) {
+func (c *CommitAfter) Match(lc *LazyCommit) (bool, *MatchedCommit, error) {
 	authorDate, err := lc.AuthorDate()
 	if err != nil {
 		return false, nil, err
@@ -103,39 +106,39 @@ func (c *CommitAfter) Match(lc *LazyCommit) (bool, *CommitHighlights, error) {
 // MessageMatches is a predicate that matches if the commit message matches
 // the provided regex pattern.
 type MessageMatches struct {
-	protocol.MessageMatches
+	*casetransform.Regexp
 }
 
-func (m *MessageMatches) Match(commit *LazyCommit) (bool, *CommitHighlights, error) {
-	results := m.FindAllIndex(commit.Message, -1)
+func (m *MessageMatches) Match(lc *LazyCommit) (bool, *MatchedCommit, error) {
+	results := m.FindAllIndex(lc.Message, -1, &lc.LowerBuf)
 	if results == nil {
 		return false, nil, nil
 	}
 
-	return true, &CommitHighlights{
-		Message: matchesToRanges(commit.Message, results),
+	return true, &MatchedCommit{
+		Message: matchesToRanges(lc.Message, results),
 	}, nil
 }
 
 // DiffMatches is a a predicate that matches if any of the lines changed by
 // the commit match the given regex pattern.
 type DiffMatches struct {
-	protocol.DiffMatches
+	*casetransform.Regexp
 }
 
-func (dm *DiffMatches) Match(commit *LazyCommit) (bool, *CommitHighlights, error) {
-	diff, err := commit.Diff()
+func (dm *DiffMatches) Match(lc *LazyCommit) (bool, *MatchedCommit, error) {
+	diff, err := lc.Diff()
 	if err != nil {
 		return false, nil, err
 	}
 
 	foundMatch := false
 
-	var fileDiffHighlights map[int]FileDiffHighlight
+	var fileDiffHighlights map[int]MatchedFileDiff
 	for fileIdx, fileDiff := range diff {
-		var hunkHighlights map[int]HunkHighlight
+		var hunkHighlights map[int]MatchedHunk
 		for hunkIdx, hunk := range fileDiff.Hunks {
-			var lineHighlights map[int]protocol.Ranges
+			var lineHighlights map[int]result.Ranges
 			for lineIdx, line := range bytes.Split(hunk.Body, []byte("\n")) {
 				if len(line) == 0 {
 					continue
@@ -148,11 +151,11 @@ func (dm *DiffMatches) Match(commit *LazyCommit) (bool, *CommitHighlights, error
 					continue
 				}
 
-				matches := dm.FindAllIndex(lineWithoutPrefix, -1)
+				matches := dm.FindAllIndex(lineWithoutPrefix, -1, &lc.LowerBuf)
 				if matches != nil {
 					foundMatch = true
 					if lineHighlights == nil {
-						lineHighlights = make(map[int]protocol.Ranges, 1)
+						lineHighlights = make(map[int]result.Ranges, 1)
 					}
 					lineHighlights[lineIdx] = matchesToRanges(lineWithoutPrefix, matches)
 				}
@@ -160,20 +163,20 @@ func (dm *DiffMatches) Match(commit *LazyCommit) (bool, *CommitHighlights, error
 
 			if len(lineHighlights) > 0 {
 				if hunkHighlights == nil {
-					hunkHighlights = make(map[int]HunkHighlight, 1)
+					hunkHighlights = make(map[int]MatchedHunk, 1)
 				}
-				hunkHighlights[hunkIdx] = HunkHighlight{lineHighlights}
+				hunkHighlights[hunkIdx] = MatchedHunk{lineHighlights}
 			}
 		}
 		if len(hunkHighlights) > 0 {
 			if fileDiffHighlights == nil {
-				fileDiffHighlights = make(map[int]FileDiffHighlight)
+				fileDiffHighlights = make(map[int]MatchedFileDiff)
 			}
-			fileDiffHighlights[fileIdx] = FileDiffHighlight{HunkHighlights: hunkHighlights}
+			fileDiffHighlights[fileIdx] = MatchedFileDiff{MatchedHunks: hunkHighlights}
 		}
 	}
 
-	return foundMatch, &CommitHighlights{
+	return foundMatch, &MatchedCommit{
 		Diff: fileDiffHighlights,
 	}, nil
 }
@@ -181,111 +184,81 @@ func (dm *DiffMatches) Match(commit *LazyCommit) (bool, *CommitHighlights, error
 // DiffModifiesFile is a predicate that matches if the commit modifies any files
 // that match the given regex pattern.
 type DiffModifiesFile struct {
-	protocol.DiffModifiesFile
+	*casetransform.Regexp
 }
 
-func (dmf *DiffModifiesFile) Match(commit *LazyCommit) (bool, *CommitHighlights, error) {
-	diff, err := commit.Diff()
+func (dmf *DiffModifiesFile) Match(lc *LazyCommit) (bool, *MatchedCommit, error) {
+	diff, err := lc.Diff()
 	if err != nil {
 		return false, nil, err
 	}
 
 	foundMatch := false
-	var fileDiffHighlights map[int]FileDiffHighlight
+	var fileDiffHighlights map[int]MatchedFileDiff
 	for fileIdx, fileDiff := range diff {
-		oldFileMatches := dmf.FindAllStringIndex(fileDiff.OrigName, -1)
-		newFileMatches := dmf.FindAllStringIndex(fileDiff.NewName, -1)
+		oldFileMatches := dmf.FindAllIndex([]byte(fileDiff.OrigName), -1, &lc.LowerBuf)
+		newFileMatches := dmf.FindAllIndex([]byte(fileDiff.NewName), -1, &lc.LowerBuf)
 		if oldFileMatches != nil || newFileMatches != nil {
 			if fileDiffHighlights == nil {
-				fileDiffHighlights = make(map[int]FileDiffHighlight)
+				fileDiffHighlights = make(map[int]MatchedFileDiff)
 			}
 			foundMatch = true
-			fileDiffHighlights[fileIdx] = FileDiffHighlight{
+			fileDiffHighlights[fileIdx] = MatchedFileDiff{
 				OldFile: matchesToRanges([]byte(fileDiff.OrigName), oldFileMatches),
 				NewFile: matchesToRanges([]byte(fileDiff.NewName), newFileMatches),
 			}
 		}
 	}
 
-	return foundMatch, &CommitHighlights{
+	return foundMatch, &MatchedCommit{
 		Diff: fileDiffHighlights,
 	}, nil
 }
 
-// And is a predicate that matches if all of its children predicates match
-type And struct {
-	Children []MatchTree
+type Operator struct {
+	Kind     protocol.OperatorKind
+	Operands []MatchTree
 }
 
-func (a *And) Match(commit *LazyCommit) (bool, *CommitHighlights, error) {
-	highlights := &CommitHighlights{}
-	for _, child := range a.Children {
-		childMatched, childHighlights, err := child.Match(commit)
-		if err != nil {
-			return false, nil, err
-		}
-
-		if !childMatched {
-			// Since we don't care about the highlights if we don't match all children, we can short-circuit
-			return false, nil, nil
-		}
-		highlights.Merge(childHighlights)
-	}
-	return true, highlights, nil
-}
-
-// Or is a predicate that matches if any of its children predicates match
-type Or struct {
-	Children []MatchTree
-}
-
-func (o *Or) Match(commit *LazyCommit) (bool, *CommitHighlights, error) {
+func (o *Operator) Match(commit *LazyCommit) (bool, *MatchedCommit, error) {
+	resultMatches := &MatchedCommit{}
 	hasMatch := false
-	mergedHighlights := &CommitHighlights{}
-	for _, child := range o.Children {
-		matched, highlights, err := child.Match(commit)
+	for _, operand := range o.Operands {
+		matched, matches, err := operand.Match(commit)
 		if err != nil {
 			return false, nil, err
 		}
-		if matched {
-			// Because we want to highlight every match, we can't short circuit
+
+		switch o.Kind {
+		case protocol.Not:
+			if matched {
+				return false, nil, nil
+			}
+			return true, nil, nil
+		case protocol.And:
+			if !matched {
+				return false, nil, nil
+			}
 			hasMatch = true
-			mergedHighlights.Merge(highlights)
+			resultMatches = resultMatches.Merge(matches)
+		case protocol.Or:
+			if matched {
+				hasMatch = true
+				resultMatches = resultMatches.Merge(matches)
+			}
+		default:
+			panic("unreachable")
 		}
 	}
-	return hasMatch, mergedHighlights, nil
-}
 
-// Not is a predicate that matches if its child predicate does not match
-type Not struct {
-	Child MatchTree
-}
-
-func (n *Not) Match(commit *LazyCommit) (bool, *CommitHighlights, error) {
-	// Even if the child highlights, since we're negating, the match shouldn't be highlighted
-	foundMatch, _, err := n.Child.Match(commit)
-	return !foundMatch, nil, err
-}
-
-// Regexp is a thin wrapper around the stdlib Regexp type that enables gob encoding
-type Regexp struct {
-	*regexp.Regexp
-}
-
-func (r Regexp) GobEncode() ([]byte, error) {
-	return []byte(r.String()), nil
-}
-
-func (r *Regexp) GobDecode(data []byte) (err error) {
-	r.Regexp, err = regexp.Compile(string(data))
-	return err
+	return hasMatch, resultMatches, nil
 }
 
 // matchesToRanges is a helper that takes the return value of regexp.FindAllStringIndex()
 // and converts it to Ranges.
 // INVARIANT: matches must be ordered and non-overlapping,
 // which is guaranteed by regexp.FindAllIndex()
-func matchesToRanges(content []byte, matches [][]int) protocol.Ranges {
+func matchesToRanges(content []byte, matches [][]int) result.Ranges {
 	var (
 		unscannedOffset          = 0
 		scannedNewlines          = 0
@@ -306,13 +279,13 @@ func matchesToRanges(content []byte, matches [][]int) protocol.Ranges {
 		return scannedNewlines, column, scannedRunes
 	}
 
-	res := make(protocol.Ranges, 0, len(matches))
+	res := make(result.Ranges, 0, len(matches))
 	for _, match := range matches {
 		startLine, startColumn, startOffset := lineColumnOffset(match[0])
 		endLine, endColumn, endOffset := lineColumnOffset(match[1])
-		res = append(res, protocol.Range{
-			Start: protocol.Location{Line: startLine, Column: startColumn, Offset: startOffset},
-			End:   protocol.Location{Line: endLine, Column: endColumn, Offset: endOffset},
+		res = append(res, result.Range{
+			Start: result.Location{Line: startLine, Column: startColumn, Offset: startOffset},
+			End:   result.Location{Line: endLine, Column: endColumn, Offset: endOffset},
 		})
 	}
 	return res

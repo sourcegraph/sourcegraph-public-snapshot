@@ -319,7 +319,6 @@ interface UseSearchOnboardingTourReturnValue
      * (`false` on the search homepage when the tour is active).
      */
     shouldFocusQueryInput: boolean
-    isSearchOnboardingTourVisible: boolean
 }
 
 /**
@@ -415,6 +414,5 @@ export const useSearchOnboardingTour = ({
         onFocus,
         onSuggestionsInitialized,
         shouldFocusQueryInput: !shouldShowTour,
-        isSearchOnboardingTourVisible: shouldShowTour,
     }
 }

@@ -14,8 +14,9 @@ export const FilePathBreadcrumbs: React.FunctionComponent<
     RepoRevision & {
         filePath: string
         isDir: boolean
+        repoUrl: string
     }
-> = ({ repoName, revision, filePath, isDir }) => {
+> = ({ repoName, repoUrl, revision, filePath, isDir }) => {
     const parts = filePath.split('/')
     const partToUrl = (index: number): string => {
         const partPath = parts.slice(0, index + 1).join('/')
@@ -27,27 +28,29 @@ export const FilePathBreadcrumbs: React.FunctionComponent<
     const partToClassName = (index: number): string =>
         index === parts.length - 1 ? 'test-breadcrumb-part-last' : 'part-directory test-breadcrumb-part-directory'
 
-    const spans: JSX.Element[] = []
+    const spans: JSX.Element[] = [
+        <LinkOrSpan
+            key="root-dir"
+            className="part-directory test-breadcrumb-part-directory"
+            to={repoUrl}
+            aria-current={false}
+        >
+            /
+        </LinkOrSpan>,
+    ]
     for (const [index, part] of parts.entries()) {
         const link = partToUrl(index)
         const className = classNames('part', partToClassName?.(index))
         spans.push(
             <LinkOrSpan
-                key={index}
+                key={`link-${index}`}
                 className={className}
                 to={link}
                 aria-current={index === parts.length - 1 ? 'page' : 'false'}
             >
-                {part}
+                {index < parts.length - 1 ? `${part} /` : part}
             </LinkOrSpan>
         )
-        if (index < parts.length - 1) {
-            spans.push(
-                <span key={`sep${index}`} className="file-path-breadcrumbs__separator text-muted font-weight-medium">
-                    /
-                </span>
-            )
-        }
     }
 
     // Important: do not put spaces between the breadcrumbs or spaces will get added when copying the path

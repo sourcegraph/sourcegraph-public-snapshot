@@ -24,6 +24,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
+	"github.com/sourcegraph/sourcegraph/internal/vcs/git/gitapi"
 )
 
 type RepoStore interface {
@@ -34,7 +35,7 @@ type CommitIndexer struct {
 	limiter           *rate.Limiter
 	allReposIterator  func(ctx context.Context, each func(repoName string) error) error
 	getRepoID         func(ctx context.Context, name api.RepoName) (*types.Repo, error)
-	getCommits        func(ctx context.Context, name api.RepoName, after time.Time, operation *observation.Operation) ([]*git.Commit, error)
+	getCommits        func(ctx context.Context, name api.RepoName, after time.Time, operation *observation.Operation) ([]*gitapi.Commit, error)
 	commitStore       CommitStore
 	maxHistoricalTime time.Time
 	background        context.Context
@@ -177,7 +178,7 @@ func (i *CommitIndexer) index(name string) (err error) {
 }
 
 //getCommits fetches the commits from the remote gitserver for a repository after a certain time.
-func getCommits(ctx context.Context, name api.RepoName, after time.Time, operation *observation.Operation) (_ []*git.Commit, err error) {
+func getCommits(ctx context.Context, name api.RepoName, after time.Time, operation *observation.Operation) (_ []*gitapi.Commit, err error) {
 	ctx, endObservation := operation.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 

@@ -12,19 +12,12 @@ import {
     MonitorEmailPriority,
 } from '@sourcegraph/shared/src/graphql-operations'
 
-import { AuthenticatedUser } from '../../auth'
+import { FetchCodeMonitorResult } from '../../graphql-operations'
 
 import { ManageCodeMonitorPage } from './ManageCodeMonitorPage'
-import { mockCodeMonitor } from './testing/util'
+import { mockCodeMonitor, mockCodeMonitorFields, mockUser } from './testing/util'
 
 describe('ManageCodeMonitorPage', () => {
-    const mockUser = {
-        id: 'userID',
-        username: 'username',
-        email: 'user@me.com',
-        siteAdmin: true,
-    } as AuthenticatedUser
-
     const history = H.createMemoryHistory()
     history.location.pathname = '/code-monitoring/test-monitor-id'
     const props = {
@@ -40,9 +33,9 @@ describe('ManageCodeMonitorPage', () => {
                 monitorEditInput: MonitorEditInput,
                 triggerEditInput: MonitorEditTriggerInput,
                 actionEditInput: MonitorEditActionInput[]
-            ) => of(mockCodeMonitor.node)
+            ) => of(mockCodeMonitorFields)
         ),
-        fetchCodeMonitor: sinon.spy((id: string) => of(mockCodeMonitor)),
+        fetchCodeMonitor: sinon.spy((id: string) => of(mockCodeMonitor as FetchCodeMonitorResult)),
         match: {
             params: { id: 'test-id' },
             isExact: true,

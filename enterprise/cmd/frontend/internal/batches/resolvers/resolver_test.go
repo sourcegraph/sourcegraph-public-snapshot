@@ -91,6 +91,7 @@ func TestNullIDResilience(t *testing.T) {
 		fmt.Sprintf(`mutation { closeChangesets(batchChange: %q, changesets: [%q]) { id } }`, marshalBatchChangeID(1), marshalChangesetID(0)),
 		fmt.Sprintf(`mutation { publishChangesets(batchChange: %q, changesets: []) { id } }`, marshalBatchChangeID(0)),
 		fmt.Sprintf(`mutation { publishChangesets(batchChange: %q, changesets: [%q]) { id } }`, marshalBatchChangeID(1), marshalChangesetID(0)),
+		fmt.Sprintf(`mutation { executeBatchSpec(batchSpec: %q) { id } }`, marshalBatchSpecRandID("")),
 	}
 
 	for _, m := range mutations {
@@ -662,7 +663,7 @@ func TestApplyOrCreateBatchSpecWithPublicationStates(t *testing.T) {
 			User:      userID,
 			Repo:      repo.ID,
 			BatchSpec: batchSpec.ID,
-			HeadRef:   "main",
+			HeadRef:   "refs/heads/my-branch-1",
 		})
 
 		// We need a couple more changeset specs to make this useful: we need to
@@ -674,14 +675,14 @@ func TestApplyOrCreateBatchSpecWithPublicationStates(t *testing.T) {
 			User:      userID,
 			Repo:      repo.ID,
 			BatchSpec: otherBatchSpec.ID,
-			HeadRef:   "main",
+			HeadRef:   "refs/heads/my-branch-2",
 		})
 
 		publishedChangesetSpec := ct.CreateChangesetSpec(t, ctx, cstore, ct.TestSpecOpts{
 			User:      userID,
 			Repo:      repo.ID,
 			BatchSpec: batchSpec.ID,
-			HeadRef:   "main",
+			HeadRef:   "refs/heads/my-branch-3",
 			Published: true,
 		})
 

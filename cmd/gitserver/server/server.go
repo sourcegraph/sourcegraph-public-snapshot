@@ -262,7 +262,7 @@ func shortGitCommandTimeout(args []string) time.Duration {
 		// example a search over all repos in an organization may have several
 		// large repos. All of those repos will be competing for IO => we need
 		// a larger timeout.
-		return longGitCommandTimeout
+		return conf.GitLongCommandTimeout()
 
 	case "ls-remote":
 		return 30 * time.Second
@@ -290,11 +290,6 @@ func shortGitCommandSlow(args []string) time.Duration {
 		return 2500 * time.Millisecond
 	}
 }
-
-// This is a timeout for long git commands like clone or remote update.
-// that may take a while for large repos. These types of commands should
-// be run in the background.
-var longGitCommandTimeout = time.Hour
 
 // Handler returns the http.Handler that should be used to serve requests.
 func (s *Server) Handler() http.Handler {
@@ -793,7 +788,7 @@ func (s *Server) handleRepoUpdate(w http.ResponseWriter, r *http.Request) {
 	// cancel the git commands partway through if the request terminates.
 	ctx, cancel1 := s.serverContext()
 	defer cancel1()
-	ctx, cancel2 := context.WithTimeout(ctx, longGitCommandTimeout)
+	ctx, cancel2 := context.WithTimeout(ctx, conf.GitLongCommandTimeout())
 	defer cancel2()
 	resp.QueueCap, resp.QueueLen = s.queryCloneLimiter()
 	if !repoCloned(dir) && !s.skipCloneForTests {
@@ -908,7 +903,13 @@ func (s *Server) handleSearch(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) search(w http.ResponseWriter, r *http.Request, args *protocol.SearchRequest) {
-	ctx := r.Context()
+	tr, ctx := trace.New(r.Context(), "search", "")
+	tr.LogFields(
+		otlog.String("query", args.Query.String()),
+		otlog.Int("limit", args.Limit),
+	)
+	defer tr.Finish()
+
 	args.Repo = protocol.NormalizeRepo(args.Repo)
 	if args.Limit == 0 {
 		args.Limit = math.MaxInt32
@@ -966,6 +967,7 @@ func (s *Server) search(w http.ResponseWriter, r *http.Request, args *protocol.S
 	}
 
 	matchesBuf := streamhttp.NewJSONArrayBuf(8*1024, func(data []byte) error {
+		tr.LogFields(otlog.Int("flushing", len(data)))
 		return eventWriter.EventBytes("matches", data)
 	})
 
@@ -979,25 +981,26 @@ func (s *Server) search(w http.ResponseWriter, r *http.Request, args *protocol.S
 		defer close(resultChan)
 		done := ctx.Done()
 
-		var conversionErr error
-		err := search.Search(ctx, dir.Path(), args.Revisions, search.ToMatchTree(args.Query), func(match *search.LazyCommit, highlights *search.CommitHighlights) bool {
-			res, err := search.CreateCommitMatch(match, highlights, args.IncludeDiff)
-			if err != nil {
-				conversionErr = err
-				return false
-			}
-
-			select {
-			case <-done:
-				return false
-			case resultChan <- res:
-				return true
-			}
-		})
+		mt, err := search.ToMatchTree(args.Query)
 		if err != nil {
 			return err
 		}
-		return conversionErr
+
+		searcher := &search.CommitSearcher{
+			RepoDir:     dir.Path(),
+			Revisions:   args.Revisions,
+			Query:       mt,
+			IncludeDiff: args.IncludeDiff,
+		}
+
+		return searcher.Search(ctx, func(match *protocol.CommitMatch) bool {
+			select {
+			case <-done:
+				return false
+			case resultChan <- match:
+				return true
+			}
+		})
 	})
 
 	// Write matching commits to the stream, flushing occasionally
@@ -1049,11 +1052,11 @@ func (s *Server) search(w http.ResponseWriter, r *http.Request, args *protocol.S
 // 2) the number of messsage matches if there are any
 // 3) one, to represent matching the commit, but nothing inside it
 func matchCount(cm *protocol.CommitMatch) int {
-	if len(cm.Diff.Highlights) > 0 {
-		return len(cm.Diff.Highlights)
+	if len(cm.Diff.MatchedRanges) > 0 {
+		return len(cm.Diff.MatchedRanges)
 	}
-	if len(cm.Message.Highlights) > 0 {
-		return len(cm.Message.Highlights)
+	if len(cm.Message.MatchedRanges) > 0 {
+		return len(cm.Message.MatchedRanges)
 	}
 	return 1
 }
@@ -1615,7 +1618,7 @@ func (s *Server) doClone(ctx context.Context, repo api.RepoName, dir GitDir, syn
 		return err
 	}
 
-	ctx, cancel2 := context.WithTimeout(ctx, longGitCommandTimeout)
+	ctx, cancel2 := context.WithTimeout(ctx, conf.GitLongCommandTimeout())
 	defer cancel2()
 
 	dstPath := string(dir)

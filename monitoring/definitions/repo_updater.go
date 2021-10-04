@@ -431,6 +431,7 @@ func RepoUpdater() *monitoring.Container {
 			},
 
 			shared.Batches.NewDBStoreGroup(containerName),
+			shared.Batches.NewServiceGroup(containerName),
 
 			shared.CodeIntelligence.NewCoursierGroup(containerName),
 
