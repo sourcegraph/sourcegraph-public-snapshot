@@ -6,8 +6,8 @@ import styles from './Toast.module.scss'
 
 interface ToastProps {
     icon: JSX.Element
-    title: string
-    subtitle?: string
+    title: React.ReactNode
+    subtitle?: React.ReactNode
     cta?: JSX.Element
     onDismiss: () => void
 }

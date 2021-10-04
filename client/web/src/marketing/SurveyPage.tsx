@@ -15,8 +15,7 @@ interface SurveyPageProps {
     authenticatedUser: AuthenticatedUser | null
 }
 
-// TODO: Better naming
-const intScore = (score?: string): number | undefined =>
+const getScoreFromString = (score?: string): number | undefined =>
     score ? Math.max(0, Math.min(10, Math.round(+score))) : undefined
 
 export const SurveyPage: React.FunctionComponent<SurveyPageProps> = props => {
@@ -43,7 +42,7 @@ export const SurveyPage: React.FunctionComponent<SurveyPageProps> = props => {
     return (
         <div className={styles.surveyPage}>
             <PageTitle title="Almost there..." />
-            <HeroPage title="Almost there..." cta={<SurveyForm score={intScore(score)} {...props} />} />
+            <HeroPage title="Almost there..." cta={<SurveyForm score={getScoreFromString(score)} {...props} />} />
         </div>
     )
 }

@@ -1,36 +1,40 @@
 import EmoticonIcon from 'mdi-react/EmoticonIcon'
 import React, { useEffect, useState } from 'react'
 
-import { AuthenticatedUser } from '../auth'
 import { eventLogger } from '../tracking/eventLogger'
 
+import { HAS_DISMISSED_TOAST_STORAGE_KEY } from './constants'
 import { SurveyCTA } from './SurveyCta'
 import { Toast } from './Toast'
-import { daysActiveCount } from './util'
+import { getDaysActiveCount } from './util'
 
-const HAS_DISMISSED_TOAST_KEY = 'has-dismissed-survey-toast'
+/**
+ * Show a toast notification if:
+ * 1. User has not recently dismissed the notification
+ * 2. User has been active for 3 days OR has been 30 days since they were last shown the notification
+ */
+const shouldShowToast = (): boolean =>
+    localStorage.getItem(HAS_DISMISSED_TOAST_STORAGE_KEY) !== 'true' && getDaysActiveCount() % 30 === 3
 
-interface SurveyToastProps {
-    authenticatedUser: AuthenticatedUser | null
-}
-
-export const SurveyToast: React.FunctionComponent<SurveyToastProps> = () => {
-    const [visible, setVisible] = useState(
-        localStorage.getItem(HAS_DISMISSED_TOAST_KEY) !== 'true' && daysActiveCount % 30 === 3
-    )
+export const SurveyToast: React.FunctionComponent = () => {
+    const daysActive = getDaysActiveCount()
+    const [visible, setVisible] = useState(shouldShowToast())
 
     useEffect(() => {
         if (visible) {
             eventLogger.log('SurveyReminderViewed')
-        } else if (daysActiveCount % 30 === 0) {
-            // Reset toast dismissal 3 days before it will be shown
-            localStorage.setItem(HAS_DISMISSED_TOAST_KEY, 'false')
         }
     }, [visible])
 
+    useEffect(() => {
+        if (daysActive % 30 === 0) {
+            // Reset toast dismissal 3 days before it will be shown
+            localStorage.setItem(HAS_DISMISSED_TOAST_STORAGE_KEY, 'false')
+        }
+    }, [daysActive])
+
     const handleDismiss = (): void => {
-        localStorage.setItem(HAS_DISMISSED_TOAST_KEY, 'true')
-        // TODO: Check weird condition where this is immediately set back to false if 3 days before shown again
+        localStorage.setItem(HAS_DISMISSED_TOAST_STORAGE_KEY, 'true')
         setVisible(false)
     }
 
@@ -42,8 +46,10 @@ export const SurveyToast: React.FunctionComponent<SurveyToastProps> = () => {
         <Toast
             icon={<EmoticonIcon className="icon-inline" />}
             title="Tell us what you think"
-            subtitle="How likely is it that you would recommend Sourcegraph to a friend?"
-            cta={<SurveyCTA onChange={handleDismiss} openSurveyInNewTab={true} />}
+            subtitle={
+                <span id="survey-toast-scores">How likely is it that you would recommend Sourcegraph to a friend?</span>
+            }
+            cta={<SurveyCTA onChange={handleDismiss} openSurveyInNewTab={true} ariaLabelledby="survey-toast-scores" />}
             onDismiss={handleDismiss}
         />
     )
