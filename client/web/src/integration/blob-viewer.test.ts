@@ -1155,7 +1155,7 @@ describe('Blob viewer', () => {
                 await driver.page.reload()
 
                 // Alert should be visible now that the user has seen $HOVER_THRESHOLD hovers
-                await driver.page.waitForSelector('.install-browser-extension-alert', { timeout: 5000 })
+                await driver.page.waitForSelector('.install-browser-extension-alert-kek', { timeout: 5000 })
 
                 // Dismiss alert
                 await driver.page.click('.test-close-alert')
