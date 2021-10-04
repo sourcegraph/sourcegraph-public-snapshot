@@ -10,6 +10,8 @@ import {
     BatchSpecWorkspacesFields,
     CreateBatchSpecFromRawResult,
     CreateBatchSpecFromRawVariables,
+    ReplaceBatchSpecInputResult,
+    ReplaceBatchSpecInputVariables,
     Scalars,
 } from '../../../../graphql-operations'
 
@@ -24,6 +26,7 @@ const fragment = gql`
                 }
             }
             state
+            failureMessage
         }
         allowUnsupported
         allowIgnored
@@ -70,6 +73,27 @@ export function createBatchSpecFromRaw(spec: string): Observable<BatchSpecWorksp
     ).pipe(
         map(dataOrThrowErrors),
         map(result => result.createBatchSpecFromRaw)
+    )
+}
+
+export function replaceBatchSpecInput(
+    previousSpec: Scalars['ID'],
+    spec: string
+): Observable<BatchSpecWorkspacesFields> {
+    return requestGraphQL<ReplaceBatchSpecInputResult, ReplaceBatchSpecInputVariables>(
+        gql`
+            mutation ReplaceBatchSpecInput($previousSpec: ID!, $spec: String!) {
+                replaceBatchSpecInput(previousSpec: $previousSpec, batchSpec: $spec) {
+                    ...BatchSpecWorkspacesFields
+                }
+            }
+
+            ${fragment}
+        `,
+        { previousSpec, spec }
+    ).pipe(
+        map(dataOrThrowErrors),
+        map(result => result.replaceBatchSpecInput)
     )
 }
 

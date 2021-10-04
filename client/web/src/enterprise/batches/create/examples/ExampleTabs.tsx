@@ -1,47 +1,48 @@
-import { Tab, TabList, TabPanel, TabPanels, Tabs, useTabsContext } from '@reach/tabs'
-import classNames from 'classnames'
+import AJV from 'ajv'
+import addFormats from 'ajv-formats'
+import { load as loadYAML } from 'js-yaml'
 import CloseIcon from 'mdi-react/CloseIcon'
+import WarningIcon from 'mdi-react/WarningIcon'
 import React, { useState, useCallback, useEffect, useMemo } from 'react'
-import { Subject } from 'rxjs'
-import { catchError, debounceTime, delay, repeatWhen, startWith, switchMap } from 'rxjs/operators'
+import { asyncScheduler, concat, Observable, of, OperatorFunction, SchedulerLike, Subject } from 'rxjs'
+import {
+    catchError,
+    debounceTime,
+    delay,
+    distinctUntilChanged,
+    map,
+    mergeMap,
+    publish,
+    repeatWhen,
+    startWith,
+    switchMap,
+    take,
+    takeWhile,
+    tap,
+} from 'rxjs/operators'
 
 import { isErrorLike } from '@sourcegraph/codeintellify/lib/errors'
+import { BatchSpecWorkspaceResolutionState } from '@sourcegraph/shared/src/graphql-operations'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { asError } from '@sourcegraph/shared/src/util/errors'
+import { asError, ErrorLike } from '@sourcegraph/shared/src/util/errors'
+import { pluralize } from '@sourcegraph/shared/src/util/strings'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
 import { Container, LoadingSpinner } from '@sourcegraph/wildcard'
 
 import batchSpecSchemaJSON from '../../../../../../../schema/batch_spec.schema.json'
 import { ErrorAlert } from '../../../../components/alerts'
-import { SidebarGroup, SidebarGroupHeader } from '../../../../components/Sidebar'
 import { BatchSpecWorkspacesFields, Scalars } from '../../../../graphql-operations'
-import { MonacoSettingsEditor } from '../../../../settings/MonacoSettingsEditor'
+import { BatchSpec } from '../../../../schema/batch_spec.schema'
 import { BatchSpecDownloadLink, getFileName } from '../../BatchSpec'
 import { excludeRepo } from '../yaml-util'
 
-import { createBatchSpecFromRaw, fetchBatchSpec } from './backend'
-import combySample from './comby.batch.yaml'
-import helloWorldSample from './empty.batch.yaml'
-import styles from './ExampleTabs.module.scss'
-import goImportsSample from './go-imports.batch.yaml'
-import minimalSample from './minimal.batch.yaml'
-
-interface Example {
-    name: string
-    code: string
-}
+import { createBatchSpecFromRaw, fetchBatchSpec, replaceBatchSpecInput } from './backend'
+import { MonacoSettingsEditor } from './MonacoBatchSpecEditor'
 
 export interface Spec {
     fileName: string
     code: string
 }
-
-const EXAMPLES: [Example, Example, Example, Example] = [
-    { name: 'Hello world', code: helloWorldSample },
-    { name: 'Modify with comby', code: combySample },
-    { name: 'Update go imports', code: goImportsSample },
-    { name: 'Minimal', code: minimalSample },
-]
 
 interface ExampleTabsProps extends ThemeProps {
     updateSpec: (spec: Spec) => void
@@ -49,72 +50,16 @@ interface ExampleTabsProps extends ThemeProps {
 }
 
 export const ExampleTabs: React.FunctionComponent<ExampleTabsProps> = ({ isLightTheme, updateSpec, setPreviewID }) => (
-    <Tabs className={styles.exampleTabs}>
-        <TabList className="d-flex flex-column flex-shrink-0">
-            <SidebarGroup>
-                <SidebarGroupHeader label="Examples" />
-                {EXAMPLES.map((example, index) => (
-                    <ExampleTab key={example.name} index={index}>
-                        {example.name}
-                    </ExampleTab>
-                ))}
-            </SidebarGroup>
-        </TabList>
-
-        <div className="ml-3 flex-grow-1">
-            <TabPanels>
-                {EXAMPLES.map((example, index) => (
-                    <ExampleTabPanel
-                        key={example.name}
-                        example={example}
-                        isLightTheme={isLightTheme}
-                        index={index}
-                        updateSpec={updateSpec}
-                        setPreviewID={setPreviewID}
-                    />
-                ))}
-            </TabPanels>
-        </div>
-    </Tabs>
+    <ExampleTabPanel isLightTheme={isLightTheme} updateSpec={updateSpec} setPreviewID={setPreviewID} />
 )
 
-const ExampleTab: React.FunctionComponent<{ index: number }> = ({ children, index }) => {
-    const { selectedIndex } = useTabsContext()
-
-    return (
-        <Tab>
-            <button
-                type="button"
-                className={classNames(
-                    'btn text-left sidebar__link--inactive d-flex w-100',
-                    index === selectedIndex && 'btn-primary'
-                )}
-            >
-                {children}
-            </button>
-        </Tab>
-    )
-}
-
 interface ExampleTabPanelProps extends ThemeProps {
-    example: Example
     updateSpec: (spec: Spec) => void
     setPreviewID: (id: Scalars['ID']) => void
-    index: number
 }
 
-const ExampleTabPanel: React.FunctionComponent<ExampleTabPanelProps> = ({
-    example,
-    isLightTheme,
-    index,
-    updateSpec,
-    setPreviewID,
-    ...props
-}) => {
-    const { selectedIndex } = useTabsContext()
-    const isSelected = useMemo(() => selectedIndex === index, [selectedIndex, index])
-
-    const [code, setCode] = useState<string>(example.code)
+const ExampleTabPanel: React.FunctionComponent<ExampleTabPanelProps> = ({ isLightTheme, updateSpec, setPreviewID }) => {
+    const [code, setCode] = useState<string>('name:')
     const [codeUpdateError, setCodeUpdateError] = useState<string>()
 
     // Updates the batch spec code when the user wants to exclude a repo resolved in the
@@ -142,18 +87,76 @@ const ExampleTabPanel: React.FunctionComponent<ExampleTabPanelProps> = ({
         codeUpdates.next(code)
     }, [codeUpdates, code])
 
+    const [previewStale, setPreviewStale] = useState<boolean>(true)
+
+    const specValidator = useMemo(() => {
+        const ajv = new AJV()
+        addFormats(ajv)
+        return ajv.compile<BatchSpec>(batchSpecSchemaJSON)
+    }, [])
+
+    const [invalid, setInvalid] = useState<boolean>(false)
+
     const preview = useObservable(
         useMemo(
-            () =>
-                codeUpdates.pipe(
+            () => {
+                const initialFetchRunning = false
+                let initialFetchCompleted = false
+                return codeUpdates.pipe(
                     startWith(code),
-                    debounceTime(5000),
-                    switchMap(code => createBatchSpecFromRaw(code)),
-                    switchMap(spec =>
-                        fetchBatchSpec(spec.id).pipe(repeatWhen(completed => completed.pipe(delay(5000))))
-                    ),
+                    distinctUntilChanged(),
+                    tap(() => {
+                        setPreviewStale(true)
+                    }),
+                    debounceTimeAfterFirst(250),
+                    map(code => {
+                        try {
+                            const parsedDocument = loadYAML(code)
+                            const valid = specValidator(parsedDocument)
+                            setInvalid(!valid)
+                        } catch {
+                            setInvalid(true)
+                        }
+                        return code
+                    }),
+                    switchMap(code => {
+                        let specCreator: Observable<BatchSpecWorkspacesFields>
+                        if (preview !== undefined && !isErrorLike(preview)) {
+                            specCreator = replaceBatchSpecInput(preview.id, code)
+                        } else {
+                            specCreator = createBatchSpecFromRaw(code).pipe(
+                                tap(() => {
+                                    initialFetchCompleted = true
+                                })
+                            )
+                        }
+                        return specCreator.pipe(
+                            switchMap(spec =>
+                                concat(
+                                    of(spec),
+                                    fetchBatchSpec(spec.id).pipe(
+                                        // Poll the batch spec until resolution is complete or failed.
+                                        repeatWhen(completed => completed.pipe(delay(500))),
+                                        takeWhile(
+                                            response =>
+                                                [
+                                                    BatchSpecWorkspaceResolutionState.PROCESSING,
+                                                    BatchSpecWorkspaceResolutionState.QUEUED,
+                                                ].includes(response.workspaceResolution?.state as any),
+                                            true
+                                        )
+                                    )
+                                )
+                            ),
+                            catchError(error => [asError(error)])
+                        )
+                    }),
+                    tap(() => {
+                        setPreviewStale(false)
+                    }),
                     catchError(error => [asError(error)])
-                ),
+                )
+            },
             // Don't want to trigger on changes to code, it's just the initial value.
             // eslint-disable-next-line react-hooks/exhaustive-deps
             [codeUpdates]
@@ -168,21 +171,15 @@ const ExampleTabPanel: React.FunctionComponent<ExampleTabPanelProps> = ({
 
     // Update the spec in parent state whenever the code changes
     useEffect(() => {
-        if (isSelected) {
-            updateSpec({ code, fileName: getFileName(example.name) })
-        }
-    }, [code, example.name, isSelected, updateSpec])
+        updateSpec({ code, fileName: getFileName('whatever') })
+    }, [code, updateSpec])
 
-    const reset = useCallback(() => setCode(example.code), [example.code])
+    console.log(specValidator.errors)
 
     return (
-        <TabPanel {...props}>
+        <>
             <div className="d-flex justify-content-end align-items-center mb-2">
-                {/* TODO: Confirmation before discarding changes */}
-                <button className="text-right btn btn-outline-secondary text-nowrap mr-2" type="button" onClick={reset}>
-                    Reset
-                </button>
-                <BatchSpecDownloadLink name={example.name} originalInput={code} />
+                <BatchSpecDownloadLink name="whatever" originalInput={code} />
             </div>
             <Container className="mb-3">
                 <MonacoSettingsEditor
@@ -195,34 +192,58 @@ const ExampleTabPanel: React.FunctionComponent<ExampleTabPanelProps> = ({
             </Container>
             <Container>
                 {codeUpdateError && <ErrorAlert error={codeUpdateError} />}
-                <PreviewWorkspaces excludeRepo={excludeRepoFromSpec} preview={preview} />
+                {invalid && specValidator.errors && (
+                    <ErrorAlert error={`The entered spec is invalid ${specValidator.errors}`} />
+                )}
+                <PreviewWorkspaces excludeRepo={excludeRepoFromSpec} preview={preview} previewStale={previewStale} />
             </Container>
-        </TabPanel>
+        </>
     )
 }
 
 interface PreviewWorkspacesProps {
     excludeRepo: (repo: string, branch: string) => void
     preview: BatchSpecWorkspacesFields | Error | undefined
+    previewStale: boolean
 }
 
-const PreviewWorkspaces: React.FunctionComponent<PreviewWorkspacesProps> = ({ excludeRepo, preview }) => {
-    if (isErrorLike(preview)) {
-        return <ErrorAlert error={preview} />
-    }
-    if (!preview) {
+const PreviewWorkspaces: React.FunctionComponent<PreviewWorkspacesProps> = ({ excludeRepo, preview, previewStale }) => {
+    if (!preview || previewStale) {
         return <LoadingSpinner />
+    }
+    if (isErrorLike(preview)) {
+        return <ErrorAlert error={preview} className="mb-0" />
+    }
+    if (!preview.workspaceResolution) {
+        throw new Error('Expected workspace resolution to exist.')
     }
     return (
         <>
-            <h3>Preview workspaces ({preview.workspaceResolution?.workspaces.nodes.length})</h3>
+            <h3>
+                Preview workspaces ({preview.workspaceResolution.workspaces.nodes.length})
+                {preview.workspaceResolution.state === BatchSpecWorkspaceResolutionState.QUEUED && (
+                    <LoadingSpinner className="icon-inline" />
+                )}
+                {preview.workspaceResolution.state === BatchSpecWorkspaceResolutionState.PROCESSING && (
+                    <LoadingSpinner className="icon-inline" />
+                )}
+                {preview.workspaceResolution.state === BatchSpecWorkspaceResolutionState.ERRORED && (
+                    <WarningIcon className="text-danger icon-inline" />
+                )}
+                {preview.workspaceResolution.state === BatchSpecWorkspaceResolutionState.FAILED && (
+                    <WarningIcon className="text-danger icon-inline" />
+                )}
+            </h3>
+            {preview.workspaceResolution.failureMessage !== null && (
+                <ErrorAlert error={preview.workspaceResolution.failureMessage} />
+            )}
             <p className="text-monospace">
                 allowUnsupported: {JSON.stringify(preview.allowUnsupported)}
                 <br />
                 allowIgnored: {JSON.stringify(preview.allowIgnored)}
             </p>
             <ul className="list-group p-1 mb-0">
-                {preview.workspaceResolution?.workspaces.nodes.map(item => (
+                {preview.workspaceResolution.workspaces.nodes.map(item => (
                     <li
                         className="d-flex border-bottom mb-3"
                         key={`${item.repository.id}_${item.branch.target.oid}_${item.path || '/'}`}
@@ -238,67 +259,33 @@ const PreviewWorkspaces: React.FunctionComponent<PreviewWorkspacesProps> = ({ ex
                         </button>
                         <div className="mb-2 flex-1">
                             <p>
-                                {item.repository.name}:{item.branch.abbrevName}@{item.branch.target.oid} Path:{' '}
-                                {item.path || '/'}
+                                {item.repository.name}:{item.branch.abbrevName} Path: {item.path || '/'}
                             </p>
-                            <p>{item.searchResultPaths.join(', ')}</p>
-                            <ul>
-                                {item.steps.map((step, index) => (
-                                    // eslint-disable-next-line react/no-array-index-key
-                                    <li key={index}>
-                                        <span className="text-monospace">{step.run}</span>
-                                        <br />
-                                        <span className="text-muted">{step.container}</span>
-                                    </li>
-                                ))}
-                            </ul>
+                            <p>
+                                {item.searchResultPaths.length} {pluralize('result', item.searchResultPaths.length)}
+                            </p>
                         </div>
                     </li>
                 ))}
             </ul>
-            {preview.workspaceResolution?.workspaces.nodes.length === 0 && (
+            {preview.workspaceResolution.workspaces.nodes.length === 0 && (
                 <span className="text-muted">No workspaces found</span>
             )}
-            {/* <hr />
-            {preview.ignored.length > 0 && (
-                <>
-                    <p>
-                        {preview.ignored.length} {pluralize('repo is', preview.ignored.length, 'repos are')} ignored
-                        {preview.allowIgnored && (
-                            <>
-                                , but {pluralize('it has', preview.ignored.length, 'they have')} been included, based on
-                                settings
-                            </>
-                        )}
-                        .
-                    </p>
-                    <ul>
-                        {preview.ignored.map(repo => (
-                            <li key={repo.id}>{repo.name}</li>
-                        ))}
-                    </ul>
-                </>
-            )} */}
-            {/* {preview.unsupported.length > 0 && (
-                <>
-                    <p>
-                        {preview.unsupported.length} {pluralize('repo is', preview.unsupported.length, 'repos are')}{' '}
-                        unsupported
-                        {preview.allowUnsupported && (
-                            <>
-                                , but {pluralize('it has', preview.unsupported.length, 'they have')} been included,
-                                based on settings
-                            </>
-                        )}
-                        .
-                    </p>
-                    <ul>
-                        {preview.unsupported.map(repo => (
-                            <li key={repo.id}>{repo.name}</li>
-                        ))}
-                    </ul>
-                </>
-            )} */}
         </>
     )
+}
+
+export function debounceTimeAfter<T>(
+    amount: number,
+    dueTime: number,
+    scheduler: SchedulerLike = asyncScheduler
+): OperatorFunction<T, T> {
+    return publish(value => concat(value.pipe(take(amount)), value.pipe(debounceTime(dueTime, scheduler))))
+}
+
+export function debounceTimeAfterFirst<T>(
+    dueTime: number,
+    scheduler: SchedulerLike = asyncScheduler
+): OperatorFunction<T, T> {
+    return debounceTimeAfter(1, dueTime, scheduler)
 }
