@@ -110,4 +110,52 @@ func TestQueryConstruction(t *testing.T) {
 		}
 		require.Equal(t, expected, input)
 	})
+
+	t.Run("nested and operators are flattened", func(t *testing.T) {
+		input := NewAnd(
+			NewOr(&Constant{false}, &Constant{true}),
+			NewAnd(&Constant{true}, &Constant{false}),
+			&AuthorMatches{},
+		)
+		expected := &Operator{
+			Kind: And,
+			Operands: []Node{
+				&Constant{true},
+				&Constant{false},
+				&AuthorMatches{},
+				&Operator{
+					Kind: Or,
+					Operands: []Node{
+						&Constant{false},
+						&Constant{true},
+					},
+				},
+			},
+		}
+		require.Equal(t, expected, input)
+	})
+
+	t.Run("nested or operators are flattened", func(t *testing.T) {
+		input := NewOr(
+			NewAnd(&Constant{true}, &Constant{false}),
+			NewOr(&Constant{false}, &Constant{true}),
+			&AuthorMatches{},
+		)
+		expected := &Operator{
+			Kind: Or,
+			Operands: []Node{
+				&Constant{false},
+				&Constant{true},
+				&AuthorMatches{},
+				&Operator{
+					Kind: And,
+					Operands: []Node{
+						&Constant{true},
+						&Constant{false},
+					},
+				},
+			},
+		}
+		require.Equal(t, expected, input)
+	})
 }

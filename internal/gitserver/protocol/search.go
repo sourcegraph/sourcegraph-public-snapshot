@@ -173,7 +173,17 @@ func NewAnd(operands ...Node) Node {
 		return operands[0]
 	}
 
-	return NewOperator(And, operands...)
+	// Flatten any nested And operands
+	flattened := make([]Node, 0, len(operands))
+	for _, operand := range operands {
+		if nestedOperator, ok := operand.(*Operator); ok && nestedOperator.Kind == And {
+			flattened = append(flattened, nestedOperator.Operands...)
+		} else {
+			flattened = append(flattened, operand)
+		}
+	}
+
+	return NewOperator(And, flattened...)
 }
 
 func NewOr(operands ...Node) Node {
@@ -187,7 +197,17 @@ func NewOr(operands ...Node) Node {
 		return operands[0]
 	}
 
-	return NewOperator(Or, operands...)
+	// Flatten any nested Or operands
+	flattened := make([]Node, 0, len(operands))
+	for _, operand := range operands {
+		if nestedOperator, ok := operand.(*Operator); ok && nestedOperator.Kind == Or {
+			flattened = append(flattened, nestedOperator.Operands...)
+		} else {
+			flattened = append(flattened, operand)
+		}
+	}
+
+	return NewOperator(Or, flattened...)
 }
 
 func NewNot(operand Node) Node {
