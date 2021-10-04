@@ -131,3 +131,22 @@ func RegisterGob() {
 		gob.Register(&Operator{})
 	})
 }
+
+func NewOperator(kind OperatorKind, operands ...Node) *Operator {
+	return &Operator{
+		Kind:     kind,
+		Operands: operands,
+	}
+}
+
+func NewAnd(operands ...Node) *Operator {
+	return NewOperator(And, operands...)
+}
+
+func NewOr(operands ...Node) *Operator {
+	return NewOperator(Or, operands...)
+}
+
+func NewNot(operand Node) *Operator {
+	return NewOperator(Not, operand)
+}

@@ -96,7 +96,7 @@ func TestSearch(t *testing.T) {
 	})
 
 	t.Run("and with no operands matches all", func(t *testing.T) {
-		query := &protocol.Operator{Kind: protocol.And}
+		query := protocol.NewAnd()
 		tree, err := ToMatchTree(query)
 		require.NoError(t, err)
 		searcher := &CommitSearcher{
@@ -163,13 +163,10 @@ func TestSearch(t *testing.T) {
 	})
 
 	t.Run("and match", func(t *testing.T) {
-		query := &protocol.Operator{
-			Kind: protocol.And,
-			Operands: []protocol.Node{
-				&protocol.DiffMatches{Expr: "lorem"},
-				&protocol.DiffMatches{Expr: "ipsum"},
-			},
-		}
+		query := protocol.NewAnd(
+			&protocol.DiffMatches{Expr: "lorem"},
+			&protocol.DiffMatches{Expr: "ipsum"},
+		)
 		tree, err := ToMatchTree(query)
 		require.NoError(t, err)
 		searcher := &CommitSearcher{
@@ -297,20 +294,14 @@ index 0000000000..7e54670557
 		diff: parsedDiff,
 	}
 
-	mt, err := ToMatchTree(&protocol.Operator{
-		Kind: protocol.And,
-		Operands: []protocol.Node{
-			&protocol.AuthorMatches{Expr: "Camden"},
-			&protocol.DiffModifiesFile{Expr: "test"},
-			&protocol.Operator{
-				Kind: protocol.And,
-				Operands: []protocol.Node{
-					&protocol.DiffMatches{Expr: "result"},
-					&protocol.DiffMatches{Expr: "test"},
-				},
-			},
-		},
-	})
+	mt, err := ToMatchTree(protocol.NewAnd(
+		&protocol.AuthorMatches{Expr: "Camden"},
+		&protocol.DiffModifiesFile{Expr: "test"},
+		protocol.NewAnd(
+			&protocol.DiffMatches{Expr: "result"},
+			&protocol.DiffMatches{Expr: "test"},
+		),
+	))
 	require.NoError(t, err)
 
 	matches, highlights, err := mt.Match(lc)
