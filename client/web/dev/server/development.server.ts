@@ -1,4 +1,5 @@
 import chalk from 'chalk'
+import compression from 'compression'
 import { RequestHandler } from 'express'
 import { createProxyMiddleware, Options as HTTPProxyMiddlewareOptions } from 'http-proxy-middleware'
 import { once } from 'lodash'
@@ -10,13 +11,14 @@ import { getManifest } from '../esbuild/manifestPlugin'
 import { esbuildDevelopmentServer } from '../esbuild/server'
 import {
     getCSRFTokenCookieMiddleware,
-    PROXY_ROUTES,
     environmentConfig,
     getAPIProxySettings,
     getCSRFTokenAndCookie,
+    shouldCompressResponse,
     STATIC_ASSETS_PATH,
     STATIC_ASSETS_URL,
     WEB_SERVER_URL,
+    PROXY_ROUTES,
 } from '../utils'
 import { getHTMLPage } from '../webpack/get-html-webpack-plugins'
 
@@ -93,8 +95,12 @@ async function startWebpackDevelopmentServer({
             publicPath: [STATIC_ASSETS_URL, '/'],
         },
         proxy: [proxyConfig],
+        // Disable default DevServer compression. We need more fine grained compression to support streaming search.
+        compress: false,
         onBeforeSetupMiddleware: developmentServer => {
             developmentServer.app.use(csrfTokenCookieMiddleware)
+            // Re-enable gzip compression using our own `compression` filter.
+            developmentServer.app.use(compression({ filter: shouldCompressResponse }))
         },
     }
 
