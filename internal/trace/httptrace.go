@@ -19,6 +19,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promauto"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/repotrackutil"
 	"github.com/sourcegraph/sourcegraph/internal/sentry"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
@@ -56,10 +57,15 @@ var requestHeartbeat = promauto.NewGaugeVec(prometheus.GaugeOpts{
 	Help: "Last time a request finished for a http endpoint.",
 }, metricLabels)
 
+var minDuration time.Duration
+var minCode int
+
 func Init() {
 	if origin := os.Getenv("METRICS_TRACK_ORIGIN"); origin != "" {
 		trackOrigin = origin
 	}
+	minDuration = env.MustGetDuration("SRC_HTTP_LOG_MIN_DURATION", 1*time.Second, "min duration before slow http requests are logged")
+	minCode = env.MustGetInt("SRC_HTTP_LOG_MIN_CODE", 500, "min http code before http responses are logged")
 }
 
 // GraphQLRequestName returns the GraphQL request name for a request context. For example,
@@ -207,15 +213,6 @@ func HTTPTraceMiddleware(next http.Handler) http.Handler {
 			return !gqlErr
 		})
 
-		minCode, _ := strconv.Atoi(os.Getenv("SRC_HTTP_LOG_MIN_CODE"))
-		if minCode == 0 {
-			minCode = 500
-		}
-
-		minDuration, _ := time.ParseDuration(os.Getenv("SRC_HTTP_LOG_MIN_DURATION"))
-		if minDuration == 0 {
-			minDuration = time.Second
-		}
 		if customDuration, ok := slowPaths[r.URL.Path]; ok {
 			minDuration = customDuration
 		}
