@@ -11,6 +11,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/sourcegraph/sourcegraph/cmd/gitserver/domain"
+
 	"github.com/cockroachdb/errors"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
@@ -184,7 +186,7 @@ var runCommitLog = func(ctx context.Context, cmd *gitserver.Cmd, opt CommitsOpti
 	if err != nil {
 		data = bytes.TrimSpace(data)
 		if isBadObjectErr(string(stderr), opt.Range) {
-			return nil, &gitserver.RevisionNotFoundError{Repo: cmd.Repo, Spec: opt.Range}
+			return nil, &domain.RevisionNotFoundError{Repo: cmd.Repo, Spec: opt.Range}
 		}
 		return nil, errors.WithMessage(err, fmt.Sprintf("git command %v failed (output: %q)", cmd.Args, data))
 	}

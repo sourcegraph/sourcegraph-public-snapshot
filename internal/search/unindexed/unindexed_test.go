@@ -15,12 +15,12 @@ import (
 	"github.com/cockroachdb/errors"
 	"github.com/google/go-cmp/cmp"
 
+	"github.com/sourcegraph/sourcegraph/cmd/gitserver/domain"
 	"github.com/sourcegraph/sourcegraph/cmd/searcher/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/endpoint"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	searchbackend "github.com/sourcegraph/sourcegraph/internal/search/backend"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
@@ -74,7 +74,7 @@ func TestSearchFilesInRepos(t *testing.T) {
 			// TODO we do not specify a rev when searching "foo/no-rev", so it
 			// is treated as an empty repository. We need to test the fatal
 			// case of trying to search a revision which doesn't exist.
-			return false, &gitserver.RevisionNotFoundError{Repo: repoName, Spec: "missing"}
+			return false, &domain.RevisionNotFoundError{Repo: repoName, Spec: "missing"}
 		default:
 			return false, errors.New("Unexpected repo")
 		}
@@ -149,7 +149,7 @@ func TestSearchFilesInRepos(t *testing.T) {
 		UseFullDeadline: args.UseFullDeadline,
 	}
 	_, _, err = SearchFilesInReposBatch(context.Background(), zoektArgs, searcherArgs, args.Mode != search.SearcherOnly)
-	if !errors.HasType(err, &gitserver.RevisionNotFoundError{}) {
+	if !errors.HasType(err, &domain.RevisionNotFoundError{}) {
 		t.Fatalf("searching non-existent rev expected to fail with RevisionNotFoundError got: %v", err)
 	}
 }

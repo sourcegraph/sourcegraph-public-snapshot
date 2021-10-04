@@ -9,6 +9,8 @@ import (
 	"os"
 	"testing"
 
+	"github.com/sourcegraph/sourcegraph/cmd/gitserver/domain"
+
 	"github.com/gorilla/mux"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
@@ -20,7 +22,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/database/globalstatedb"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs"
@@ -129,7 +130,7 @@ func TestNewCommon_repo_error(t *testing.T) {
 	}, {
 		name: "rev-404",
 		rev:  "@marco",
-		err:  &gitserver.RevisionNotFoundError{Repo: "rev-404", Spec: "marco"},
+		err:  &domain.RevisionNotFoundError{Repo: "rev-404", Spec: "marco"},
 		want: "revision not found: rev-404@marco",
 		code: 404,
 	}, {

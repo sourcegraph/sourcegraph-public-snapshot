@@ -8,7 +8,11 @@ import (
 	"github.com/cockroachdb/errors"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/vcs"
 )
+
+// TODO: This is our domain package, we don't want it importing anything
+// TODO: This whole package should probably live in internal/gitserver/domain so that cmd/gitserver becomes thinner
 
 // OID is a Git OID (40-char hex-encoded).
 type OID [20]byte
@@ -42,11 +46,14 @@ type GetObjectService struct {
 }
 
 func (s *GetObjectService) GetObject(ctx context.Context, repo api.RepoName, objectName string) (*GitObject, error) {
+	// TODO: We shouldn't need this mock since we can instead mock out the adapters
 	//if Mocks.GetObject != nil {
 	//	return Mocks.GetObject(objectName)
 	//}
 
-	// TODO: Maybe we can have a general wrapper around the service
+	// TODO: Maybe we can have a general wrapper around the service. Tracing
+	// shouldn't be something the domain package is concerned by.
+
 	//span, ctx := ot.StartSpanFromContext(ctx, "Git: GetObject")
 	//span.SetTag("objectName", objectName)
 	//defer span.Finish()
@@ -57,7 +64,24 @@ func (s *GetObjectService) GetObject(ctx context.Context, repo api.RepoName, obj
 
 	sha, err := s.RevParser.RevParse(ctx, repo, objectName)
 	if err != nil {
-		return nil, errors.Wrap(err, "performing rev-parse")
+		if vcs.IsRepoNotExist(err) {
+			return nil, err
+		}
+		if strings.Contains(sha, "unknown revision") {
+			return nil, &RevisionNotFoundError{Repo: repo, Spec: objectName}
+		}
+		return nil, err
+	}
+
+	commit := strings.TrimSpace(sha)
+	if !IsAbsoluteRevision(commit) {
+		if commit == "HEAD" {
+			// We don't verify the existence of HEAD, but if HEAD doesn't point to anything
+			// git just returns `HEAD` as the output of rev-parse. An example where this
+			// occurs is an empty repository.
+			return nil, &RevisionNotFoundError{Repo: repo, Spec: objectName}
+		}
+		return nil, BadCommitError{Spec: objectName, Commit: api.CommitID(commit), Repo: repo}
 	}
 
 	oid, err := decodeOID(sha)
@@ -93,4 +117,22 @@ func decodeOID(sha string) (OID, error) {
 	var oid OID
 	copy(oid[:], oidBytes)
 	return oid, nil
+}
+
+// IsAbsoluteRevision checks if the revision is a git OID SHA string.
+//
+// Note: This doesn't mean the SHA exists in a repository, nor does it mean it
+// isn't a ref. Git allows 40-char hexadecimal strings to be references.
+func IsAbsoluteRevision(s string) bool {
+	if len(s) != 40 {
+		return false
+	}
+	for _, r := range s {
+		if !(('0' <= r && r <= '9') ||
+			('a' <= r && r <= 'f') ||
+			('A' <= r && r <= 'F')) {
+			return false
+		}
+	}
+	return true
 }

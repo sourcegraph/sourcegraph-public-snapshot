@@ -6,6 +6,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/sourcegraph/sourcegraph/cmd/gitserver/domain"
+
 	"github.com/cockroachdb/errors"
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
@@ -173,7 +175,7 @@ func (r *RepositoryResolver) Commit(ctx context.Context, args *RepositoryCommitA
 
 	commitID, err := backend.Repos.ResolveRev(ctx, repo, args.Rev)
 	if err != nil {
-		if errors.HasType(err, &gitserver.RevisionNotFoundError{}) {
+		if errors.HasType(err, &domain.RevisionNotFoundError{}) {
 			return nil, nil
 		}
 		return nil, err
@@ -420,7 +422,7 @@ func (r *schemaResolver) ResolvePhabricatorDiff(ctx context.Context, args *struc
 	}
 
 	// If we already created the commit
-	if commit, err := getCommit(); commit != nil || (err != nil && !errors.HasType(err, &gitserver.RevisionNotFoundError{})) {
+	if commit, err := getCommit(); commit != nil || (err != nil && !errors.HasType(err, &domain.RevisionNotFoundError{})) {
 		return commit, err
 	}
 

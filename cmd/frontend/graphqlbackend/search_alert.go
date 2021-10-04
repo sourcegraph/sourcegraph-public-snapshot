@@ -11,6 +11,8 @@ import (
 	"time"
 	"unicode"
 
+	"github.com/sourcegraph/sourcegraph/cmd/gitserver/domain"
+
 	"github.com/cockroachdb/errors"
 	"github.com/hashicorp/go-multierror"
 	"github.com/inconshreveable/log15"
@@ -27,7 +29,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/run"
 	"github.com/sourcegraph/sourcegraph/internal/search/searchcontexts"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
-	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
 
 type searchAlert struct {
@@ -560,7 +561,7 @@ func errorToAlert(err error) (*searchAlert, error) {
 	}
 
 	{
-		var e git.BadCommitError
+		var e domain.BadCommitError
 		if errors.As(err, &e) {
 			return alertForInvalidRevision(e.Spec), nil
 		}

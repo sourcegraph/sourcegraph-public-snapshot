@@ -9,6 +9,8 @@ import (
 	"net/http"
 	"strconv"
 
+	"github.com/sourcegraph/sourcegraph/cmd/gitserver/domain"
+
 	"github.com/aws/aws-sdk-go-v2/feature/s3/manager"
 	"github.com/cockroachdb/errors"
 	"github.com/inconshreveable/log15"
@@ -20,7 +22,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs"
@@ -399,7 +400,7 @@ func ensureRepoAndCommitExist(ctx context.Context, w http.ResponseWriter, repoNa
 	}
 
 	if _, err := backend.Repos.ResolveRev(ctx, repo, commit); err != nil {
-		if errors.HasType(err, &gitserver.RevisionNotFoundError{}) {
+		if errors.HasType(err, &domain.RevisionNotFoundError{}) {
 			http.Error(w, fmt.Sprintf("unknown commit %q", commit), http.StatusNotFound)
 			return nil, false
 		}

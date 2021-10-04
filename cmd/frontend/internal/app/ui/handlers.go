@@ -14,6 +14,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/sourcegraph/sourcegraph/cmd/gitserver/domain"
+
 	"github.com/cockroachdb/errors"
 	"github.com/gorilla/mux"
 	"github.com/inconshreveable/log15"
@@ -159,7 +161,7 @@ func newCommon(w http.ResponseWriter, r *http.Request, title string, indexed boo
 		// Common repo pages (blob, tree, etc).
 		var err error
 		common.Repo, common.CommitID, err = handlerutil.GetRepoAndRev(r.Context(), mux.Vars(r))
-		isRepoEmptyError := routevar.ToRepoRev(mux.Vars(r)).Rev == "" && errors.HasType(err, &gitserver.RevisionNotFoundError{}) // should reply with HTTP 200
+		isRepoEmptyError := routevar.ToRepoRev(mux.Vars(r)).Rev == "" && errors.HasType(err, &domain.RevisionNotFoundError{}) // should reply with HTTP 200
 		if err != nil && !isRepoEmptyError {
 			var urlMovedError *handlerutil.URLMovedError
 			if errors.As(err, &urlMovedError) {
@@ -183,7 +185,7 @@ func newCommon(w http.ResponseWriter, r *http.Request, title string, indexed boo
 				http.Redirect(w, r, u.String(), http.StatusSeeOther)
 				return nil, nil
 			}
-			if errors.HasType(err, &gitserver.RevisionNotFoundError{}) {
+			if errors.HasType(err, &domain.RevisionNotFoundError{}) {
 				// Revision does not exist.
 				serveError(w, r, err, http.StatusNotFound)
 				return nil, nil

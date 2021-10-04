@@ -4,9 +4,11 @@ import (
 	"bytes"
 	"context"
 
+	"github.com/sourcegraph/sourcegraph/cmd/gitserver/domain"
+
 	"github.com/cockroachdb/errors"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/vcs"
 )
 
@@ -30,7 +32,7 @@ func GetDefaultBranch(ctx context.Context, repo api.RepoName) (refName string, c
 
 	// If we fail to get the default branch due to cloning or being empty, we return nothing.
 	if err != nil {
-		if vcs.IsCloneInProgress(err) || errors.HasType(err, &gitserver.RevisionNotFoundError{}) {
+		if vcs.IsCloneInProgress(err) || errors.HasType(err, &domain.RevisionNotFoundError{}) {
 			return "", "", nil
 		}
 		return "", "", err

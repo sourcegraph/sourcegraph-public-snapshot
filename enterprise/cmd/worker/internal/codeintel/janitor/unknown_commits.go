@@ -4,13 +4,14 @@ import (
 	"context"
 	"time"
 
+	"github.com/sourcegraph/sourcegraph/cmd/gitserver/domain"
+
 	"github.com/cockroachdb/errors"
 	"github.com/derision-test/glock"
 	"github.com/inconshreveable/log15"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/vcs"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
@@ -115,7 +116,7 @@ func (j *unknownCommitJanitor) handleCommit(ctx context.Context, tx DBStore, rep
 		// of the record so we can move on to other data; we deleted records associated
 		// with deleted repositories in a separate janitor process.
 		shouldDelete = false
-	} else if errors.HasType(err, &gitserver.RevisionNotFoundError{}) {
+	} else if errors.HasType(err, &domain.RevisionNotFoundError{}) {
 		// Target condition: repository is resolvable bu the commit is not; was probably
 		// force-pushed away and the commit was gc'd after some time or after a re-clone
 		// in gitserver.

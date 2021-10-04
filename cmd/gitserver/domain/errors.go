@@ -1,4 +1,4 @@
-package gitserver
+package domain
 
 import (
 	"fmt"
@@ -22,4 +22,14 @@ func (e *RevisionNotFoundError) HTTPStatusCode() int {
 
 func (RevisionNotFoundError) NotFound() bool {
 	return true
+}
+
+type BadCommitError struct {
+	Spec   string
+	Commit api.CommitID
+	Repo   api.RepoName
+}
+
+func (e BadCommitError) Error() string {
+	return fmt.Sprintf("ResolveRevision: got bad commit %q for repo %q at revision %q", e.Commit, e.Repo, e.Spec)
 }

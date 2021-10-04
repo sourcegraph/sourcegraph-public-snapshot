@@ -5,6 +5,8 @@ import (
 	"sort"
 	"time"
 
+	"github.com/sourcegraph/sourcegraph/cmd/gitserver/domain"
+
 	"github.com/cockroachdb/errors"
 	"github.com/hashicorp/go-multierror"
 	"github.com/inconshreveable/log15"
@@ -12,7 +14,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	searchrepos "github.com/sourcegraph/sourcegraph/internal/search/repos"
@@ -98,7 +99,7 @@ func (s *IndexScheduler) Handle(ctx context.Context) error {
 	var queueErr error
 	for _, repositoryID := range repositoryIDs {
 		if _, err := s.indexEnqueuer.QueueIndexes(ctx, repositoryID, "HEAD", "", false); err != nil {
-			if errors.HasType(err, &gitserver.RevisionNotFoundError{}) {
+			if errors.HasType(err, &domain.RevisionNotFoundError{}) {
 				continue
 			}
 

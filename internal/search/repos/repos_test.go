@@ -8,6 +8,8 @@ import (
 	"sort"
 	"testing"
 
+	"github.com/sourcegraph/sourcegraph/cmd/gitserver/domain"
+
 	"github.com/cockroachdb/errors"
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/zoekt"
@@ -16,7 +18,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -35,7 +36,7 @@ func TestRevisionValidation(t *testing.T) {
 	git.Mocks.ResolveRevision = func(spec string, opt git.ResolveRevisionOptions) (api.CommitID, error) {
 		// trigger errors
 		if spec == "bad_commit" {
-			return "", git.BadCommitError{}
+			return "", domain.BadCommitError{}
 		}
 		if spec == "deadline_exceeded" {
 			return "", context.DeadlineExceeded
@@ -49,7 +50,7 @@ func TestRevisionValidation(t *testing.T) {
 		if _, ok := m[spec]; ok {
 			return "", nil
 		}
-		return "", &gitserver.RevisionNotFoundError{Repo: "repoFoo", Spec: spec}
+		return "", &domain.RevisionNotFoundError{Repo: "repoFoo", Spec: spec}
 	}
 	defer func() { git.Mocks.ResolveRevision = nil }()
 
@@ -130,13 +131,13 @@ func TestRevisionValidation(t *testing.T) {
 			repoFilters:              []string{"repoFoo@revBar:bad_commit"},
 			wantRepoRevs:             nil,
 			wantMissingRepoRevisions: nil,
-			wantErr:                  git.BadCommitError{},
+			wantErr:                  domain.BadCommitError{},
 		},
 		{
 			repoFilters:              []string{"repoFoo@revBar:^bad_commit"},
 			wantRepoRevs:             nil,
 			wantMissingRepoRevisions: nil,
-			wantErr:                  git.BadCommitError{},
+			wantErr:                  domain.BadCommitError{},
 		},
 		{
 			repoFilters:              []string{"repoFoo@revBar:deadline_exceeded"},

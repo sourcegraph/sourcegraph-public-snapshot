@@ -10,6 +10,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/sourcegraph/sourcegraph/cmd/gitserver/domain"
+
 	"github.com/cockroachdb/errors"
 	"github.com/opentracing/opentracing-go/log"
 
@@ -64,7 +66,7 @@ func (c *Client) Head(ctx context.Context, repositoryID int) (_ string, revision
 
 	revision, err := c.execGitCommand(ctx, repositoryID, "rev-parse", "HEAD")
 	if err != nil {
-		if errors.HasType(err, &gitserver.RevisionNotFoundError{}) {
+		if errors.HasType(err, &domain.RevisionNotFoundError{}) {
 			err = nil
 		}
 

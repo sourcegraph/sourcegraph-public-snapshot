@@ -143,7 +143,7 @@ func (a *archiveReader) Read(p []byte) (int, error) {
 	if err != nil {
 		// handle the special case where git archive failed because of an invalid spec
 		if strings.Contains(err.Error(), "Not a valid object") {
-			return 0, &RevisionNotFoundError{Repo: a.repo, Spec: a.spec}
+			return 0, &domain.RevisionNotFoundError{Repo: a.repo, Spec: a.spec}
 		}
 	}
 	return n, err

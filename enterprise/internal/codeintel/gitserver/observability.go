@@ -3,9 +3,10 @@ package gitserver
 import (
 	"fmt"
 
+	"github.com/sourcegraph/sourcegraph/cmd/gitserver/domain"
+
 	"github.com/cockroachdb/errors"
 
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
@@ -39,7 +40,7 @@ func newOperations(observationContext *observation.Context) *operations {
 			MetricLabelValues: []string{name},
 			Metrics:           metrics,
 			ErrorFilter: func(err error) observation.ErrorFilterBehaviour {
-				if errors.HasType(err, &gitserver.RevisionNotFoundError{}) {
+				if errors.HasType(err, &domain.RevisionNotFoundError{}) {
 					return observation.EmitForNone
 				}
 				return observation.EmitForAll

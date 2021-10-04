@@ -15,12 +15,12 @@ import (
 	"github.com/neelance/parallel"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
+	"github.com/sourcegraph/sourcegraph/cmd/gitserver/domain"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
@@ -278,10 +278,10 @@ func (r *Resolver) Resolve(ctx context.Context, op search.RepoOptions) (Resolved
 				if errors.Is(err, context.DeadlineExceeded) {
 					return Resolved{}, context.DeadlineExceeded
 				}
-				if errors.HasType(err, git.BadCommitError{}) {
+				if errors.HasType(err, domain.BadCommitError{}) {
 					return Resolved{}, err
 				}
-				if errors.HasType(err, &gitserver.RevisionNotFoundError{}) {
+				if errors.HasType(err, &domain.RevisionNotFoundError{}) {
 					// The revspec does not exist, so don't include it, and report that it's missing.
 					if rev.RevSpec == "" {
 						// Report as HEAD not "" (empty string) to avoid user confusion.
@@ -583,7 +583,7 @@ func filterRepoHasCommitAfter(ctx context.Context, revisions []*search.Repositor
 			for _, rev := range revs.Revs {
 				ok, err := git.HasCommitAfter(ctx, revs.GitserverRepo(), after, rev.RevSpec)
 				if err != nil {
-					if errors.HasType(err, &gitserver.RevisionNotFoundError{}) || vcs.IsRepoNotExist(err) {
+					if errors.HasType(err, &domain.RevisionNotFoundError{}) || vcs.IsRepoNotExist(err) {
 						continue
 					}
 
@@ -646,7 +646,7 @@ func HandleRepoSearchResult(repoRev *search.RepositoryRevisions, limitHit, timed
 		} else {
 			status |= search.RepoStatusMissing
 		}
-	} else if errors.HasType(searchErr, &gitserver.RevisionNotFoundError{}) {
+	} else if errors.HasType(searchErr, &domain.RevisionNotFoundError{}) {
 		if len(repoRev.Revs) == 0 || len(repoRev.Revs) == 1 && repoRev.Revs[0].RevSpec == "" {
 			// If we didn't specify an input revision, then the repo is empty and can be ignored.
 		} else {
