@@ -65,19 +65,13 @@ func (m *meteredSearcher) StreamSearch(ctx context.Context, q query.Q, opts *zoe
 	}
 
 	var event *libhoney.Event
-	debugAdd := func(key string, value interface{}) {
-		if event == nil {
-			return
-		}
-		event.AddField(key, value)
-	}
 	if searchCoreOOMDebug && cat == "SearchAll" {
 		event = honey.Event("search-core-oom-debug")
-		debugAdd("category", cat)
-		debugAdd("query", queryString(q))
-		debugAdd("xid", xid.New().String())
+		event.AddField("category", cat)
+		event.AddField("query", queryString(q))
+		event.AddField("xid", xid.New().String())
 		for _, t := range tags {
-			debugAdd(t.Key, t.Value)
+			event.AddField(t.Key, t.Value)
 		}
 	}
 
@@ -98,8 +92,10 @@ func (m *meteredSearcher) StreamSearch(ctx context.Context, q query.Q, opts *zoe
 			log.Int("opts.max_doc_display_count", opts.MaxDocDisplayCount),
 		}
 		tr.LogFields(fields...)
-		for _, f := range fields {
-			debugAdd(f.Key(), f.Value())
+		if event != nil {
+			for _, f := range fields {
+				event.AddField(f.Key(), f.Value())
+			}
 		}
 	}
 
@@ -239,27 +235,20 @@ func (m *meteredSearcher) List(ctx context.Context, q query.Q, opts *zoekt.ListO
 		}
 	}
 
-	var event *libhoney.Event
-	debugAdd := func(key string, value interface{}) {
-		if event == nil {
-			return
-		}
-		event.AddField(key, value)
-	}
-	if searchCoreOOMDebug && cat == "ListAll" {
-		event = honey.Event("search-core-oom-debug")
-		debugAdd("category", cat)
-		debugAdd("query", queryString(q))
-		debugAdd("xid", xid.New().String())
-		for _, t := range tags {
-			debugAdd(t.Key, t.Value)
-		}
-	}
-
 	tr, ctx := trace.New(ctx, "zoekt."+cat, queryString(q), tags...)
 	tr.LogFields(trace.Stringer("opts", opts))
 
-	debugAdd("opts.minimal", opts != nil && opts.Minimal)
+	var event *libhoney.Event
+	if searchCoreOOMDebug && cat == "ListAll" {
+		event = honey.Event("search-core-oom-debug")
+		event.AddField("category", cat)
+		event.AddField("query", queryString(q))
+		event.AddField("xid", xid.New().String())
+		event.AddField("opts.minimal", opts != nil && opts.Minimal)
+		for _, t := range tags {
+			event.AddField(t.Key, t.Value)
+		}
+	}
 
 	zsl, err := m.Streamer.List(ctx, q, opts)
 
