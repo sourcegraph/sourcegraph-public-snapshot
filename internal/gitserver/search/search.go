@@ -92,6 +92,12 @@ const (
 	numWorkers = 4
 )
 
+type CommitSearcher struct {
+	RepoDir   string
+	Query     MatchTree
+	Revisions []protocol.RevisionSpecifier
+}
+
 // Search runs a search for commits matching the given predicate across the revisions passed in as revisionArgs.
 //
 // We have some slightly complex logic here in order to run searches in parallel (big benefit to diff searches),
@@ -100,12 +106,12 @@ const (
 // that job should be sent down. We then read from the result channels in the same order that the jobs were sent.
 // This allows our worker pool to run the jobs in parallel, but we still emit matches in the same order that
 // git log outputs them.
-func Search(ctx context.Context, dir string, revs []protocol.RevisionSpecifier, p MatchTree, onMatch func(*LazyCommit, *MatchedCommit) bool) error {
+func (cs *CommitSearcher) Search(ctx context.Context, onMatch func(*LazyCommit, *MatchedCommit) bool) error {
 	g, ctx := errgroup.WithContext(ctx)
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
-	revArgs := revsToGitArgs(revs)
+	revArgs := revsToGitArgs(cs.Revisions)
 
 	jobs := make(chan job, 128)
 	resultChans := make(chan chan searchResult, 128)
@@ -118,7 +124,7 @@ func Search(ctx context.Context, dir string, revs []protocol.RevisionSpecifier, 
 		cmd := exec.CommandContext(ctx, "git", append(logArgsWithoutRefs, revArgs...)...)
 		pr, pw := io.Pipe()
 		cmd.Stdout = pw
-		cmd.Dir = dir
+		cmd.Dir = cs.RepoDir
 		if err := cmd.Start(); err != nil {
 			return err
 		}
@@ -141,12 +147,12 @@ func Search(ctx context.Context, dir string, revs []protocol.RevisionSpecifier, 
 			batch = make([]*RawCommit, 0, batchSize)
 		}
 
-		cs := NewCommitScanner(pr)
-		for cs.Scan() {
+		scanner := NewCommitScanner(pr)
+		for scanner.Scan() {
 			if ctx.Err() != nil {
 				return ctx.Err()
 			}
-			cv := cs.NextRawCommit()
+			cv := scanner.NextRawCommit()
 			batch = append(batch, cv)
 			if len(batch) == batchSize {
 				sendBatch()
@@ -160,14 +166,14 @@ func Search(ctx context.Context, dir string, revs []protocol.RevisionSpecifier, 
 		if cmdErr != nil {
 			return cmdErr
 		}
-		return cs.Err()
+		return scanner.Err()
 	})
 
 	// Start workers
 	for i := 0; i < numWorkers; i++ {
 		g.Go(func() error {
 			// Create a new diff fetcher subprocess for each worker
-			diffFetcher, err := StartDiffFetcher(dir)
+			diffFetcher, err := StartDiffFetcher(cs.RepoDir)
 			if err != nil {
 				return err
 			}
@@ -188,7 +194,7 @@ func Search(ctx context.Context, dir string, revs []protocol.RevisionSpecifier, 
 						diffFetcher: diffFetcher,
 						LowerBuf:    startBuf,
 					}
-					commitMatches, highlights, err := p.Match(lc)
+					commitMatches, highlights, err := cs.Query.Match(lc)
 					if err != nil {
 						return err
 					}
