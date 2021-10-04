@@ -7,6 +7,7 @@ import (
 	"net/url"
 
 	"github.com/cockroachdb/errors"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
@@ -23,12 +24,8 @@ const (
 	accessTokenScope = "user:all"
 )
 
-func createAccessToken(ctx context.Context, db dbutil.DB, userID int32) (string, error) {
-	_, token, err := database.AccessTokens(db).Create(ctx, userID, []string{accessTokenScope}, accessTokenNote, userID)
-	if err != nil {
-		return "", err
-	}
-	return token, err
+func createAccessToken(ctx context.Context, db dbutil.DB, userID int32) (int64, string, error) {
+	return database.AccessTokens(db).Create(ctx, userID, []string{accessTokenScope}, accessTokenNote, userID)
 }
 
 func makeURL(base, username, password string) (string, error) {
@@ -44,6 +41,7 @@ func makeURL(base, username, password string) (string, error) {
 type batchesStore interface {
 	GetBatchSpecWorkspace(context.Context, store.GetBatchSpecWorkspaceOpts) (*btypes.BatchSpecWorkspace, error)
 	GetBatchSpec(context.Context, store.GetBatchSpecOpts) (*btypes.BatchSpec, error)
+	SetSpecWorkspaceExecutionJobAccessToken(ctx context.Context, jobID, tokenID int64) (err error)
 
 	DB() dbutil.DB
 }
@@ -107,8 +105,11 @@ func transformBatchSpecWorkspaceExecutionJobRecord(ctx context.Context, s batche
 	// GetOrCreate doesn't work because once an access token has been created
 	// in the database Sourcegraph can't access the plain-text token anymore.
 	// Only a hash for verification is kept in the database.
-	token, err := createAccessToken(ctx, s.DB(), batchSpec.UserID)
+	tokenID, token, err := createAccessToken(ctx, s.DB(), batchSpec.UserID)
 	if err != nil {
+		return apiclient.Job{}, err
+	}
+	if err := s.SetSpecWorkspaceExecutionJobAccessToken(ctx, job.ID, tokenID); err != nil {
 		return apiclient.Job{}, err
 	}
 

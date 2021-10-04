@@ -24,8 +24,11 @@ type AccessToken struct {
 	Scopes        []string
 	Note          string
 	CreatorUserID int32
-	CreatedAt     time.Time
-	LastUsedAt    *time.Time
+	// Internal determines whether or not the token shows up in the UI. Tokens
+	// with internal=true are to be used with the executor service.
+	Internal   bool
+	CreatedAt  time.Time
+	LastUsedAt *time.Time
 }
 
 // ErrAccessTokenNotFound occurs when a database operation expects a specific access token to exist
@@ -76,6 +79,10 @@ func (s *AccessTokenStore) Create(ctx context.Context, subjectUserID int32, scop
 		return Mocks.AccessTokens.Create(subjectUserID, scopes, note, creatorUserID)
 	}
 
+	return s.createToken(ctx, subjectUserID, scopes, note, creatorUserID, false)
+}
+
+func (s *AccessTokenStore) createToken(ctx context.Context, subjectUserID int32, scopes []string, note string, creatorUserID int32, internal bool) (id int64, token string, err error) {
 	var b [20]byte
 	if _, err := rand.Read(b[:]); err != nil {
 		return 0, "", err
@@ -99,16 +106,24 @@ creator_user AS (
   SELECT id FROM users WHERE id=$5 AND deleted_at IS NULL FOR UPDATE
 ),
 insert_values AS (
-  SELECT subject_user.id AS subject_user_id, $2::text[] AS scopes, $3::bytea AS value_sha256, $4::text AS note, creator_user.id AS creator_user_id
+  SELECT subject_user.id AS subject_user_id, $2::text[] AS scopes, $3::bytea AS value_sha256, $4::text AS note, creator_user.id AS creator_user_id, $6::boolean AS internal
   FROM subject_user, creator_user
 )
-INSERT INTO access_tokens(subject_user_id, scopes, value_sha256, note, creator_user_id) SELECT * FROM insert_values RETURNING id
+INSERT INTO access_tokens(subject_user_id, scopes, value_sha256, note, creator_user_id, internal) SELECT * FROM insert_values RETURNING id
 `,
-		subjectUserID, pq.Array(scopes), toSHA256Bytes(b[:]), note, creatorUserID,
+		subjectUserID, pq.Array(scopes), toSHA256Bytes(b[:]), note, creatorUserID, internal,
 	).Scan(&id); err != nil {
 		return 0, "", err
 	}
 	return id, token, nil
+}
+
+func (s *AccessTokenStore) CreateInternal(ctx context.Context, subjectUserID int32, scopes []string, note string, creatorUserID int32) (id int64, token string, err error) {
+	if Mocks.AccessTokens.CreateInternal != nil {
+		return Mocks.AccessTokens.CreateInternal(subjectUserID, scopes, note, creatorUserID)
+	}
+
+	return s.createToken(ctx, subjectUserID, scopes, note, creatorUserID, true)
 }
 
 // Lookup looks up the access token. If it's valid and contains the required scope, it returns the
@@ -191,14 +206,15 @@ func (s *AccessTokenStore) get(ctx context.Context, conds []*sqlf.Query) (*Acces
 
 // AccessTokensListOptions contains options for listing access tokens.
 type AccessTokensListOptions struct {
-	SubjectUserID  int32 // only list access tokens with this user as the subject
-	LastUsedAfter  *time.Time
-	LastUsedBefore *time.Time
+	SubjectUserID   int32 // only list access tokens with this user as the subject
+	LastUsedAfter   *time.Time
+	LastUsedBefore  *time.Time
+	IncludeInternal bool
 	*LimitOffset
 }
 
 func (o AccessTokensListOptions) sqlConditions() []*sqlf.Query {
-	conds := []*sqlf.Query{sqlf.Sprintf("deleted_at IS NULL")}
+	conds := []*sqlf.Query{sqlf.Sprintf("deleted_at IS NULL"), sqlf.Sprintf("internal IS FALSE")}
 	if o.SubjectUserID != 0 {
 		conds = append(conds, sqlf.Sprintf("subject_user_id=%d", o.SubjectUserID))
 	}
@@ -221,7 +237,7 @@ func (s *AccessTokenStore) List(ctx context.Context, opt AccessTokensListOptions
 
 func (s *AccessTokenStore) list(ctx context.Context, conds []*sqlf.Query, limitOffset *LimitOffset) ([]*AccessToken, error) {
 	q := sqlf.Sprintf(`
-SELECT id, subject_user_id, scopes, note, creator_user_id, created_at, last_used_at FROM access_tokens
+SELECT id, subject_user_id, scopes, note, creator_user_id, internal, created_at, last_used_at FROM access_tokens
 WHERE (%s)
 ORDER BY now() - created_at < interval '5 minutes' DESC, -- show recently created tokens first
 last_used_at DESC NULLS FIRST, -- ensure newly created tokens show first
@@ -240,7 +256,7 @@ created_at DESC
 	var results []*AccessToken
 	for rows.Next() {
 		var t AccessToken
-		if err := rows.Scan(&t.ID, &t.SubjectUserID, pq.Array(&t.Scopes), &t.Note, &t.CreatorUserID, &t.CreatedAt, &t.LastUsedAt); err != nil {
+		if err := rows.Scan(&t.ID, &t.SubjectUserID, pq.Array(&t.Scopes), &t.Note, &t.CreatorUserID, &t.Internal, &t.CreatedAt, &t.LastUsedAt); err != nil {
 			return nil, err
 		}
 		results = append(results, &t)
@@ -309,8 +325,9 @@ func toSHA256Bytes(input []byte) []byte {
 }
 
 type MockAccessTokens struct {
-	Create     func(subjectUserID int32, scopes []string, note string, creatorUserID int32) (id int64, token string, err error)
-	DeleteByID func(id int64) error
-	Lookup     func(tokenHexEncoded, requiredScope string) (subjectUserID int32, err error)
-	GetByID    func(id int64) (*AccessToken, error)
+	Create         func(subjectUserID int32, scopes []string, note string, creatorUserID int32) (id int64, token string, err error)
+	CreateInternal func(subjectUserID int32, scopes []string, note string, creatorUserID int32) (id int64, token string, err error)
+	DeleteByID     func(id int64) error
+	Lookup         func(tokenHexEncoded, requiredScope string) (subjectUserID int32, err error)
+	GetByID        func(id int64) (*AccessToken, error)
 }

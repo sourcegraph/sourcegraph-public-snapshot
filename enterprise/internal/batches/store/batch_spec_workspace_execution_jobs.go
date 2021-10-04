@@ -9,6 +9,7 @@ import (
 	"github.com/opentracing/opentracing-go/log"
 
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
+	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/batch"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -18,6 +19,7 @@ import (
 
 var batchSpecWorkspaceExecutionJobInsertColumns = []string{
 	"batch_spec_workspace_id",
+	"access_token_id",
 
 	"created_at",
 	"updated_at",
@@ -27,6 +29,7 @@ var BatchSpecWorkspaceExecutionJobColums = SQLColumns{
 	"batch_spec_workspace_execution_jobs.id",
 
 	"batch_spec_workspace_execution_jobs.batch_spec_workspace_id",
+	"batch_spec_workspace_execution_jobs.access_token_id",
 
 	"batch_spec_workspace_execution_jobs.state",
 	"batch_spec_workspace_execution_jobs.failure_message",
@@ -86,6 +89,7 @@ func (s *Store) CreateBatchSpecWorkspaceExecutionJob(ctx context.Context, jobs .
 			if err := inserter.Insert(
 				ctx,
 				job.BatchSpecWorkspaceID,
+				job.AccessTokenID,
 				job.CreatedAt,
 				job.UpdatedAt,
 			); err != nil {
@@ -297,6 +301,59 @@ func (s *Store) cancelBatchSpecWorkspaceExecutionJobQuery(id int64) *sqlf.Query 
 	)
 }
 
+// SetSpecWorkspaceExecutionJobAccessToken sets the access_token_id column to the given ID.
+func (s *Store) SetSpecWorkspaceExecutionJobAccessToken(ctx context.Context, jobID, tokenID int64) (err error) {
+	// ctx, endObservation := s.operations.setSpecWorkspaceExecutionJobAccessToken.With(ctx, &err, observation.Args{LogFields: []log.Field{
+	// 	log.Int("ID", int(id)),
+	// }})
+	// defer endObservation(1, observation.Args{})
+
+	q := sqlf.Sprintf(setSpecWorkspaceExecutionJobAccessTokenFmtstr, tokenID, jobID)
+	return s.Exec(ctx, q)
+}
+
+var setSpecWorkspaceExecutionJobAccessTokenFmtstr = `
+-- source: enterprise/internal/batches/store/batch_spec_workspace_execution_jobs.go:SetSpecWorkspaceExecutionJobAccessToken
+UPDATE
+	batch_spec_workspace_execution_jobs
+SET
+	access_token_id = %s
+WHERE
+	id = %s
+`
+
+// ResetSpecWorkspaceExecutionJobAccessToken sets the access_token_id column to the given ID.
+func (s *Store) ResetSpecWorkspaceExecutionJobAccessToken(ctx context.Context, jobID int64) (tokenID int64, err error) {
+	// ctx, endObservation := s.operations.resetSpecWorkspaceExecutionJobAccessToken.With(ctx, &err, observation.Args{LogFields: []log.Field{
+	// 	log.Int("ID", int(id)),
+	// }})
+	// defer endObservation(1, observation.Args{})
+
+	q := sqlf.Sprintf(resetSpecWorkspaceExecutionJobAccessTokenFmtstr, jobID, jobID)
+	id, ok, err := basestore.ScanFirstInt(s.Query(ctx, q))
+	if err != nil {
+		return 0, err
+	}
+	if !ok {
+		return 0, ErrNoResults
+	}
+	return int64(id), nil
+}
+
+var resetSpecWorkspaceExecutionJobAccessTokenFmtstr = `
+-- source: enterprise/internal/batches/store/batch_spec_workspace_execution_jobs.go:ResetSpecWorkspaceExecutionJobAccessToken
+WITH old AS (
+	SELECT access_token_id FROM batch_spec_workspace_execution_jobs WHERE id = %s
+)
+UPDATE
+	batch_spec_workspace_execution_jobs
+SET
+	access_token_id = NULL
+WHERE
+	id = %s
+RETURNING (SELECT access_token_id FROM old)
+`
+
 func scanBatchSpecWorkspaceExecutionJob(wj *btypes.BatchSpecWorkspaceExecutionJob, s scanner) error {
 	var executionLogs []dbworkerstore.ExecutionLogEntry
 	var failureMessage string
@@ -304,6 +361,7 @@ func scanBatchSpecWorkspaceExecutionJob(wj *btypes.BatchSpecWorkspaceExecutionJo
 	if err := s.Scan(
 		&wj.ID,
 		&wj.BatchSpecWorkspaceID,
+		&dbutil.NullInt64{N: &wj.AccessTokenID},
 		&wj.State,
 		&dbutil.NullString{S: &failureMessage},
 		&dbutil.NullTime{Time: &wj.StartedAt},

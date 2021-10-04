@@ -138,3 +138,6 @@ func (db *dummyBatchesStore) GetBatchSpec(context.Context, store.GetBatchSpecOpt
 	return db.batchSpec, nil
 }
 func (db *dummyBatchesStore) DB() dbutil.DB { return db.dbHandle }
+func (db *dummyBatchesStore) SetSpecWorkspaceExecutionJobAccessToken(ctx context.Context, jobID, tokenID int64) (err error) {
+	return nil
+}
