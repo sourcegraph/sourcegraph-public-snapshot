@@ -13,7 +13,6 @@ interface SurveyCTAProps {
     score?: number
     onChange?: (score: number) => void
     openSurveyInNewTab?: boolean
-    'aria-labelledby'?: string
 }
 
 export const SurveyCTA: React.FunctionComponent<SurveyCTAProps> = props => {
