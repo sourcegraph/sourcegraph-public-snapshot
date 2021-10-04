@@ -319,7 +319,7 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
     public componentDidMount(): void {
         updateUserSessionStores()
 
-        document.documentElement.classList.add('theme')
+        // document.documentElement.classList.add('theme')
 
         getWebGraphQLClient()
             .then(graphqlClient => this.setState({ graphqlClient }))
