@@ -982,6 +982,7 @@ func (s *Service) CreateChangesetJobs(ctx context.Context, batchChangeID int64, 
 // ValidateChangesetSpecs checks whether the given BachSpec has ChangesetSpecs
 // that would publish to the same branch in the same repository.
 // If the return value is nil, then the BatchSpec is valid.
+<<<<<<< HEAD
 func (s *Service) ValidateChangesetSpecs(ctx context.Context, batchSpecID int64) error {
 	// We don't use `err` here to distinguish between errors we want to trace
 	// as such and the validation errors that we want to return without logging
