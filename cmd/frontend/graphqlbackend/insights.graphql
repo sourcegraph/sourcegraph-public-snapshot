@@ -181,46 +181,46 @@ type InsightSeriesStatus {
     backfillQueuedAt: DateTime
 }
 
-extend type Mutation {
-    """
-    Create a new dashboard. Permissions will automatically be granted to the user creating the dashboard.
-    """
-    createInsightsDashboard(input: DashboardInput!): Dashboard!
-
-    """
-    Edit an existing dashboard.
-    """
-    updateInsightsDashboard(id: ID!, input: DashboardInput!): Dashboard!
-
-    """
-    Delete a dashboard. Any views that would become dangling will be deleted.
-    """
-    deleteInsightsDashboard(input: ID!): EmptyResponse!
-
-    """
-    Associate an existing insight view with this dashboard.
-    """
-    attachInsightViewToDashboard(id: ID!, viewID: ID!): Dashboard!
-
-    """
-    Remove an insight view from this dashboard. If the view would become dangling it will be deleted.
-    """
-    detachInsightViewFromDashboard(id: ID!, viewID: ID!): Dashboard!
-}
+#extend type Mutation {
+#    """
+#    Create a new dashboard. Permissions will automatically be granted to the user creating the dashboard.
+#    """
+#    createInsightsDashboard(input: InsightDashboardInput!): InsightDashboard!
+#
+#    """
+#    Edit an existing dashboard.
+#    """
+#    updateInsightsDashboard(id: ID!, input: InsightDashboardInput!): InsightDashboard!
+#
+#    """
+#    Delete a dashboard. Any views that would become dangling will be deleted.
+#    """
+#    deleteInsightsDashboard(input: ID!): EmptyResponse!
+#
+#    """
+#    Associate an existing insight view with this dashboard.
+#    """
+#    attachInsightViewToDashboard(id: ID!, viewID: ID!): InsightDashboard!
+#
+#    """
+#    Remove an insight view from this dashboard. If the view would become dangling it will be deleted.
+#    """
+#    detachInsightViewFromDashboard(id: ID!, viewID: ID!): InsightDashboard!
+#}
 
 extend type Query {
     """
     Return dashboards visible to the authenticated user.
     """
-    dashboards(first: Int, after: String): DashboardConnection!
+    insightDashboards(first: Int, after: String): InsightsDashboardConnection!
 }
 
-type DashboardConnection {
+type InsightsDashboardConnection {
 
     """
     A list of dashboards.
     """
-    nodes: [Dashboard!]!
+    nodes: [InsightDashboard!]!
 
     """
     Pagination information.
@@ -228,18 +228,18 @@ type DashboardConnection {
     pageInfo: PageInfo!
 }
 
-input DashboardInput {
+input InsightDashboardInput {
     title: String!
-    grants: PermissionGrants
+    grants: InsightsPermissionGrants
 }
 
-input PermissionGrants {
+input InsightsPermissionGrants {
     users: [ID!]
     organizations: [ID!]
     global: Boolean
 }
 
-type Dashboard implements Node {
+type InsightDashboard implements Node {
     id: ID!
     title: String!
     views: InsightViewConnection
@@ -260,6 +260,6 @@ type InsightViewConnection {
 """
 Stub for insight view
 """
-type InsightView {
+type InsightView implements Node {
     id: ID!
 }
