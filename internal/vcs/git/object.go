@@ -34,6 +34,7 @@ const (
 )
 
 // GetObject looks up a Git object and returns information about it.
+// TODO: This should be replaced by gitserver.Client.GetObject
 func GetObject(ctx context.Context, repo api.RepoName, objectName string) (oid OID, objectType ObjectType, err error) {
 	if Mocks.GetObject != nil {
 		return Mocks.GetObject(objectName)

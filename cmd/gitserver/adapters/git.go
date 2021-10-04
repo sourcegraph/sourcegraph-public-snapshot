@@ -18,14 +18,23 @@ type Git struct {
 	ReposDir string // The root directory where repos are stored
 }
 
+// RevParse will run rev-parse on the goven rev
 func (g *Git) RevParse(ctx context.Context, repo api.RepoName, rev string) (string, error) {
-	return "", errors.New("TODO")
+	cmd := exec.CommandContext(ctx, "git", "rev-parse", rev)
+	cmd.Dir = repoDir(repo, g.ReposDir)
+
+	out, err := cmd.CombinedOutput()
+	if err != nil {
+		return "", errors.WithMessage(err, fmt.Sprintf("git command %v failed (output: %q)", cmd.Args, out))
+	}
+
+	return string(out), nil
 }
 
 // GetObjectType returns the object type given an objectID
 func (g *Git) GetObjectType(ctx context.Context, repo api.RepoName, objectID string) (domain.ObjectType, error) {
 	cmd := exec.CommandContext(ctx, "git", "cat-file", "-t", "--", objectID)
-	cmd.Path = repoDir(repo, g.ReposDir)
+	cmd.Dir = repoDir(repo, g.ReposDir)
 
 	out, err := cmd.CombinedOutput()
 	if err != nil {
