@@ -133,7 +133,9 @@ func migrateSecrets() error {
 	if _, err := os.Stat(newfile); os.IsNotExist(err) {
 		// new secrets file is not present
 		if _, err := os.Stat(oldfile); err == nil {
-			fmt.Println("previous secret format found, migrating ...")
+			stdout.Out.WriteLine(output.Linef("", output.StyleSearchMatch, "--------------------------------------------------------------------------"))
+			stdout.Out.WriteLine(output.Linef("", output.StyleSearchMatch, "New version has breaking changes, attempting to migrate automatically"))
+			stdout.Out.WriteLine(output.Linef("", output.StyleSearchMatch, "Previous secret format found, migrating ..."))
 			// but the old one is
 			b, err := os.ReadFile(oldfile)
 			if err != nil {
@@ -151,13 +153,16 @@ func migrateSecrets() error {
 			if err != nil {
 				return err
 			}
-			fmt.Println("done! A backup has been created at ", oldfile+".backup")
+			stdout.Out.WriteLine(output.Linef("", output.StyleSearchMatch, "Done! A backup has been created: %s", oldfile+".backup"))
+			stdout.Out.WriteLine(output.Linef("", output.StyleSearchMatch, "New secrets file: %s", newfile))
+			stdout.Out.WriteLine(output.Linef("", output.StyleSearchMatch, "--------------------------------------------------------------------------"))
 		}
 	}
 	return nil
 }
 
 func main() {
+	// TODO(@jhchabran) drop this on Nov 15th.
 	if err := migrateSecrets(); err != nil {
 		fmt.Printf("failed to migrate secrets: %s\n", err)
 	}
