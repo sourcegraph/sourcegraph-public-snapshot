@@ -102,10 +102,8 @@ type CommitSearcher struct {
 // that job should be sent down. We then read from the result channels in the same order that the jobs were sent.
 // This allows our worker pool to run the jobs in parallel, but we still emit matches in the same order that
 // git log outputs them.
-func (cs *CommitSearcher) Search(ctx context.Context, onMatch func(*protocol.CommitMatch) bool) error {
+func (cs *CommitSearcher) Search(ctx context.Context, onMatch func(*protocol.CommitMatch)) error {
 	g, ctx := errgroup.WithContext(ctx)
-	ctx, cancel := context.WithCancel(ctx)
-	defer cancel()
 
 	jobs := make(chan job, 128)
 	resultChans := make(chan chan *protocol.CommitMatch, 128)
@@ -127,18 +125,9 @@ func (cs *CommitSearcher) Search(ctx context.Context, onMatch func(*protocol.Com
 	// Consumer goroutine that consumes results in the order jobs were
 	// submitted to the job queue
 	g.Go(func() error {
-		skip := false
 		for resultChan := range resultChans {
 			for result := range resultChan {
-				if skip {
-					// Drain all the channels to keep from blocking writers
-					continue
-				}
-				keepGoing := onMatch(result)
-				if !keepGoing {
-					skip = true
-					cancel()
-				}
+				onMatch(result)
 			}
 		}
 
@@ -210,12 +199,13 @@ func (cs *CommitSearcher) runJobs(ctx context.Context, jobs chan job) error {
 
 	runJob := func(j job) error {
 		defer close(j.resultChan)
-		if ctx.Err() != nil {
-			// ignore context error, and don't spend time running the job
-			return nil
-		}
 
 		for _, cv := range j.batch {
+			if ctx.Err() != nil {
+				// ignore context error, and don't spend time running the job
+				return nil
+			}
+
 			lc := &LazyCommit{
 				RawCommit:   cv,
 				diffFetcher: diffFetcher,
