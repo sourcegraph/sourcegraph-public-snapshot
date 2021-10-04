@@ -34,6 +34,8 @@ All users that use our bundled (built-in) database instances **must** read throu
 
 > NOTE: The above does not apply to users that use external databases (e.x: Amazon RDS, Google Cloud SQL, etc.).
 
+A [change](https://github.com/sourcegraph/sourcegraph/pull/23921) to the indexed-search hashing scheme assumes that a deployments service, and statefulSet names have not diverged from the defaults found in the deploy-sourcegraph repo. If your deployment requires alteration of these naming conventions you can continue using the old hashing scheme by setting the environment variable `INDEXED_SEARCH_SERVERS=k8s+rpc://indexed-search:6070` in your frontend pod's `sourcegraph-frontend.Deployment.yaml`. In v3.33 a [revised](https://github.com/sourcegraph/sourcegraph/pull/25146) environment variable will be available allowing for the new hashing scheme with divergent statefulSet names. Ex: `INDEXED_SEARCH_SERVERS=k8s+rpc://<CUSTOM INDEXED-SEARCH STATEFULSET NAME>:6070?kind=sts`
+
 ## 3.29 -> 3.30.3
 
 > WARNING: **Users on 3.29.x are advised to upgrade directly to 3.30.3**. If you have already upgraded to 3.30.0, 3.30.1, or 3.30.2 please follow [this migration guide](../migration/3_30.md).
