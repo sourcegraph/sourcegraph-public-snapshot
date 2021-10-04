@@ -127,38 +127,9 @@ func (o Operator) String() string {
 }
 
 func newOperator(kind OperatorKind, operands ...Node) *Operator {
-	// Merge sibling operators of the same type
-	merged := operands[:0]
-	var mergedOrOperands, mergedAndOperands []Node
-	for _, operand := range operands {
-		operator, ok := operand.(*Operator)
-		if !ok || operator.Kind == Not {
-			merged = append(merged, operand)
-			continue
-		}
-
-		if operator.Kind == And {
-			mergedAndOperands = append(mergedAndOperands, operator.Operands...)
-			continue
-		}
-
-		if operator.Kind == Or {
-			mergedOrOperands = append(mergedOrOperands, operator.Operands...)
-			continue
-		}
-	}
-
-	if len(mergedOrOperands) > 0 {
-		merged = append(merged, NewOr(mergedOrOperands...))
-	}
-
-	if len(mergedAndOperands) > 0 {
-		merged = append(merged, NewAnd(mergedAndOperands...))
-	}
-
 	return &Operator{
 		Kind:     kind,
-		Operands: merged,
+		Operands: operands,
 	}
 }
 
