@@ -4,7 +4,7 @@ import * as React from 'react'
 
 import styles from './Toast.module.scss'
 
-interface Props {
+interface ToastProps {
     icon: JSX.Element
     title: string
     subtitle?: string
@@ -12,7 +12,7 @@ interface Props {
     onDismiss: () => void
 }
 
-export const Toast: React.FunctionComponent<Props> = props => (
+export const Toast: React.FunctionComponent<ToastProps> = props => (
     <div className={classNames('card', styles.toast)}>
         <div className="card-body px-3 pb-3 pt-2">
             <header className="card-title d-flex align-items-center">
