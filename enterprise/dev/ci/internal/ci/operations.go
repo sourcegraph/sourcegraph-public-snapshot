@@ -199,6 +199,7 @@ func clientIntegrationTests(pipeline *bk.Pipeline) {
 		pipeline.AddStep(stepLabel,
 			bk.Key(stepKey),
 			bk.DependsOn(prepStepKey),
+			bk.DisableManualRetry("The Percy build is finalized even if one of the concurrent agents fails. To retry correctly, restart the entire pipeline."),
 			percyBrowserExecutableEnv,
 			bk.Env("PERCY_ON", "true"),
 			bk.Cmd(fmt.Sprintf(`dev/ci/yarn-web-integration.sh "%s"`, chunkTestFiles)),
