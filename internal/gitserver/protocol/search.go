@@ -85,6 +85,15 @@ func (d DiffModifiesFile) String() string {
 	return fmt.Sprintf("%T(%s)", d, d.Expr)
 }
 
+// Constant is a predicate that will either always match or never match
+type Constant struct {
+	Value bool
+}
+
+func (c Constant) String() string {
+	return fmt.Sprintf("%T(%t)", c, c.Value)
+}
+
 type OperatorKind int
 
 const (
@@ -117,6 +126,49 @@ func (o Operator) String() string {
 	return "(" + prefix + strings.Join(cs, sep) + ")"
 }
 
+func NewOperator(kind OperatorKind, operands ...Node) *Operator {
+	return &Operator{
+		Kind:     kind,
+		Operands: operands,
+	}
+}
+
+func NewAnd(operands ...Node) Node {
+	// An empty And operator will always match a commit
+	if len(operands) == 0 {
+		return &Constant{true}
+	}
+
+	// An And operator with a single operand can be unwrapped
+	if len(operands) == 1 {
+		return operands[0]
+	}
+
+	return NewOperator(And, operands...)
+}
+
+func NewOr(operands ...Node) Node {
+	// An empty Or operator will never match a commit
+	if len(operands) == 0 {
+		return &Constant{false}
+	}
+
+	// An Or operator with a single operand can be unwrapped
+	if len(operands) == 1 {
+		return operands[0]
+	}
+
+	return NewOperator(Or, operands...)
+}
+
+func NewNot(operand Node) Node {
+	// Unwrap double negation
+	if operator, ok := operand.(*Operator); ok && operator.Kind == Not {
+		return operator.Operands[0]
+	}
+	return NewOperator(Not, operand)
+}
+
 var registerOnce sync.Once
 
 func RegisterGob() {
@@ -128,25 +180,7 @@ func RegisterGob() {
 		gob.Register(&MessageMatches{})
 		gob.Register(&DiffMatches{})
 		gob.Register(&DiffModifiesFile{})
+		gob.Register(&Constant{})
 		gob.Register(&Operator{})
 	})
-}
-
-func NewOperator(kind OperatorKind, operands ...Node) *Operator {
-	return &Operator{
-		Kind:     kind,
-		Operands: operands,
-	}
-}
-
-func NewAnd(operands ...Node) *Operator {
-	return NewOperator(And, operands...)
-}
-
-func NewOr(operands ...Node) *Operator {
-	return NewOperator(Or, operands...)
-}
-
-func NewNot(operand Node) *Operator {
-	return NewOperator(Not, operand)
 }
