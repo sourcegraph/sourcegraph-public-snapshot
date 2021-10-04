@@ -1,7 +1,5 @@
 import React, { useEffect } from 'react'
-import { RouteComponentProps } from 'react-router'
-
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
+import { useLocation, useParams } from 'react-router'
 
 import { AuthenticatedUser } from '../auth'
 import { FeedbackText } from '../components/FeedbackText'
@@ -13,7 +11,7 @@ import { SurveyForm } from './SurveyForm'
 import styles from './SurveyPage.module.scss'
 import { TweetFeedback } from './TweetFeedback'
 
-interface SurveyPageProps extends RouteComponentProps<{ score?: string }>, ThemeProps {
+interface SurveyPageProps {
     authenticatedUser: AuthenticatedUser | null
 }
 
@@ -22,12 +20,8 @@ const intScore = (score?: string): number | undefined =>
     score ? Math.max(0, Math.min(10, Math.round(+score))) : undefined
 
 export const SurveyPage: React.FunctionComponent<SurveyPageProps> = props => {
-    const {
-        location,
-        match: {
-            params: { score },
-        },
-    } = props
+    const location = useLocation()
+    const { score } = useParams<{ score?: string }>()
 
     useEffect(() => {
         eventLogger.logViewEvent('Survey')

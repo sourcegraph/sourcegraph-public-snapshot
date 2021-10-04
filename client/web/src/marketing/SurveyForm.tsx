@@ -20,7 +20,7 @@ interface SurveyFormProps {
     onSubmit?: () => void
 }
 
-const SUBMIT_SURVEY = gql`
+export const SUBMIT_SURVEY = gql`
     mutation SubmitSurvey($input: SurveySubmissionInput!) {
         submitSurvey(input: $input) {
             alwaysNil
