@@ -123,7 +123,6 @@ func resetAndDeleteAccessToken(ctx context.Context, batchesStore *store.Store, i
 func (s *batchSpecWorkspaceExecutionWorkerStore) MarkErrored(ctx context.Context, id int, failureMessage string, options dbworkerstore.MarkFinalOptions) (_ bool, err error) {
 	batchesStore := store.New(s.Store.Handle().DB(), s.observationContext, nil)
 	if err := resetAndDeleteAccessToken(ctx, batchesStore, int64(id)); err != nil {
-		fmt.Printf("err: %s", err)
 		return false, err
 	}
 	return s.Store.MarkErrored(ctx, id, failureMessage, options)
@@ -132,7 +131,6 @@ func (s *batchSpecWorkspaceExecutionWorkerStore) MarkErrored(ctx context.Context
 func (s *batchSpecWorkspaceExecutionWorkerStore) MarkFailed(ctx context.Context, id int, failureMessage string, options dbworkerstore.MarkFinalOptions) (_ bool, err error) {
 	batchesStore := store.New(s.Store.Handle().DB(), s.observationContext, nil)
 	if err := resetAndDeleteAccessToken(ctx, batchesStore, int64(id)); err != nil {
-		fmt.Printf("err: %s", err)
 		return false, err
 	}
 	return s.Store.MarkFailed(ctx, id, failureMessage, options)
@@ -149,13 +147,11 @@ func (s *batchSpecWorkspaceExecutionWorkerStore) MarkComplete(ctx context.Contex
 
 	job, changesetSpecIDs, err := loadAndExtractChangesetSpecIDs(ctx, tx, int64(id))
 	if err != nil {
-		fmt.Printf("err: %s", err)
 		// If we couldn't extract the changeset IDs, we mark the job as failed
 		return s.MarkFailed(ctx, id, fmt.Sprintf("failed to extract changeset IDs ID: %s", err), options)
 	}
 
 	if err := resetAndDeleteAccessToken(ctx, tx, int64(id)); err != nil {
-		fmt.Printf("err: %s", err)
 		return false, err
 	}
 
