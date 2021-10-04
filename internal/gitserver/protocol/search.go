@@ -162,10 +162,32 @@ func NewOr(operands ...Node) Node {
 }
 
 func NewNot(operand Node) Node {
-	// Unwrap double negation
-	if operator, ok := operand.(*Operator); ok && operator.Kind == Not {
-		return operator.Operands[0]
+	// If an operator, push the negation down to the atom nodes recursively
+	if operator, ok := operand.(*Operator); ok {
+		switch operator.Kind {
+		case Not:
+			// Unwrap double negation
+			return operator.Operands[0]
+		case And:
+			// Apply De Morgan's law to push negation down the tree
+			newOperands := make([]Node, 0, len(operator.Operands))
+			for _, operand := range operator.Operands {
+				newOperands = append(newOperands, NewNot(operand))
+			}
+			return NewOr(newOperands...)
+		case Or:
+			// Apply De Morgan's law to push negation down the tree
+			newOperands := make([]Node, 0, len(operator.Operands))
+			for _, operand := range operator.Operands {
+				newOperands = append(newOperands, NewNot(operand))
+			}
+			return NewAnd(newOperands...)
+		default:
+			panic("unknown operator type")
+		}
 	}
+
+	// If an atom node, just negate it
 	return NewOperator(Not, operand)
 }
 
