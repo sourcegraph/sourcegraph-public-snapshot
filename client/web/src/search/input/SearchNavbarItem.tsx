@@ -1,12 +1,14 @@
 import * as H from 'history'
-import React, { useCallback } from 'react'
+import React, { useCallback, useState } from 'react'
 
 import { Form } from '@sourcegraph/branded/src/components/Form'
+import { isErrorLike } from '@sourcegraph/codeintellify/lib/errors'
 import { ActivationProps } from '@sourcegraph/shared/src/components/activation/Activation'
 import { VersionContextProps } from '@sourcegraph/shared/src/search/util'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
+import { FuzzyFinder } from '@sourcegraph/web/src/components/fuzzyFinder/FuzzyFinder'
 
 import {
     PatternTypeProps,
@@ -38,6 +40,7 @@ interface Props
     isSourcegraphDotCom: boolean
     globbing: boolean
     isSearchAutoFocusRequired?: boolean
+    isRepositoryRelatedPage?: boolean
     setVersionContext: (versionContext: string | undefined) => Promise<void>
     availableVersionContexts: VersionContext[] | undefined
 }
@@ -50,7 +53,7 @@ export const SearchNavbarItem: React.FunctionComponent<Props> = (props: Props) =
     // This uses the same logic as in Layout.tsx until we have a better solution
     // or remove the search help button
     const isSearchPage = props.location.pathname === '/search' && Boolean(parseSearchURLQuery(props.location.search))
-
+    const [isFuzzyFinderVisible, setIsFuzzyFinderVisible] = useState(false)
     const { queryState, setQueryState } = useNavbarQueryState()
 
     const onSubmit = useCallback(
@@ -76,7 +79,21 @@ export const SearchNavbarItem: React.FunctionComponent<Props> = (props: Props) =
                 showSearchContextFeatureTour={true}
                 isSearchOnboardingTourVisible={false}
                 hideHelpButton={isSearchPage}
+                onHandleFuzzyFinder={setIsFuzzyFinderVisible}
             />
+            {isFuzzyFinderVisible &&
+                props.isRepositoryRelatedPage &&
+                !isErrorLike(props.settingsCascade.final) &&
+                !isErrorLike(props.settingsCascade.final?.experimentalFeatures) &&
+                props.settingsCascade.final?.experimentalFeatures?.fuzzyFinder && (
+                    <FuzzyFinder
+                        caseInsensitiveFileCountThreshold={
+                            props.settingsCascade.final?.experimentalFeatures
+                                ?.fuzzyFinderCaseInsensitiveFileCountThreshold
+                        }
+                        setIsVisible={bool => setIsFuzzyFinderVisible(bool)}
+                    />
+                )}
         </Form>
     )
 }

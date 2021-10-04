@@ -36,7 +36,7 @@ export interface MonacoQueryInputProps
     onSuggestionsInitialized?: (actions: { trigger: () => void }) => void
     autoFocus?: boolean
     keyboardShortcutForFocus?: KeyboardShortcut
-    setIsFuzzyFinderVisible: React.Dispatch<React.SetStateAction<boolean>>
+    onHandleFuzzyFinder?: React.Dispatch<React.SetStateAction<boolean>>
     // Whether globbing is enabled for filters.
     globbing: boolean
 
@@ -116,7 +116,7 @@ export const MonacoQueryInput: React.FunctionComponent<MonacoQueryInputProps> = 
     isLightTheme,
     className,
     settingsCascade,
-    setIsFuzzyFinderVisible,
+    onHandleFuzzyFinder,
 }) => {
     const acceptSearchSuggestionOnEnter: boolean | undefined =
         !isErrorLike(settingsCascade.final) &&
@@ -291,13 +291,18 @@ export const MonacoQueryInput: React.FunctionComponent<MonacoQueryInputProps> = 
                         editor.trigger('submitOnEnter', 'hideSuggestWidget', [])
                     },
                 }),
-                editor.addAction({
-                    id: 'triggerFuzzyFinder',
-                    label: 'triggerFuzzyFinder',
-                    keybindings: [Monaco.KeyMod.CtrlCmd | Monaco.KeyCode.KEY_P],
-                    run: () => setIsFuzzyFinderVisible(true),
-                }),
             ]
+
+            if (onHandleFuzzyFinder) {
+                disposables.push(
+                    editor.addAction({
+                        id: 'triggerFuzzyFinder',
+                        label: 'triggerFuzzyFinder',
+                        keybindings: [Monaco.KeyMod.CtrlCmd | Monaco.KeyCode.KEY_P],
+                        run: () => onHandleFuzzyFinder(true),
+                    })
+                )
+            }
 
             return () => {
                 for (const disposable of disposables) {
@@ -334,7 +339,7 @@ export const MonacoQueryInput: React.FunctionComponent<MonacoQueryInputProps> = 
                 disposable.dispose()
             }
         }
-    }, [editor, onSubmit, setIsFuzzyFinderVisible, acceptSearchSuggestionOnEnter])
+    }, [editor, onSubmit, onHandleFuzzyFinder, acceptSearchSuggestionOnEnter])
 
     const options: Monaco.editor.IStandaloneEditorConstructionOptions = {
         readOnly: false,
