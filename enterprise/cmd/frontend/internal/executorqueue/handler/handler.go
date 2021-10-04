@@ -101,10 +101,13 @@ func (h *handler) markComplete(ctx context.Context, executorName string, jobID i
 		// both executors that ever got the job would be writing to the same record. This prevents it.
 		WorkerHostname: executorName,
 	})
+	if err != nil {
+		return err
+	}
 	if !ok {
 		return ErrUnknownJob
 	}
-	return err
+	return nil
 }
 
 // markErrored calls MarkErrored for the given job.
@@ -115,10 +118,13 @@ func (h *handler) markErrored(ctx context.Context, executorName string, jobID in
 		// both executors that ever got the job would be writing to the same record. This prevents it.
 		WorkerHostname: executorName,
 	})
+	if err != nil {
+		return err
+	}
 	if !ok {
 		return ErrUnknownJob
 	}
-	return err
+	return nil
 }
 
 // markFailed calls MarkFailed for the given job.
@@ -129,10 +135,13 @@ func (h *handler) markFailed(ctx context.Context, executorName string, jobID int
 		// both executors that ever got the job would be writing to the same record. This prevents it.
 		WorkerHostname: executorName,
 	})
+	if err != nil {
+		return err
+	}
 	if !ok {
 		return ErrUnknownJob
 	}
-	return err
+	return nil
 }
 
 // heartbeat calls Heartbeat for the given jobs.
