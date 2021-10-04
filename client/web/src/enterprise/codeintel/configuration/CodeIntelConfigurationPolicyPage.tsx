@@ -1,3 +1,4 @@
+import { ApolloError } from '@apollo/client'
 import * as H from 'history'
 import React, { FunctionComponent, useCallback, useEffect, useState } from 'react'
 import { RouteComponentProps } from 'react-router'
@@ -59,10 +60,13 @@ export const CodeIntelConfigurationPolicyPage: FunctionComponent<CodeIntelConfig
                     state: { modal: 'SUCCESS', message: `Configuration for policy: ${policy.name} has been saved.` },
                 })
             )
-            .catch(() =>
+            .catch((error: ApolloError) =>
                 history.push({
                     pathname: './',
-                    state: { modal: 'ERROR', message: `There was an error while saving policy: ${policy.name}.` },
+                    state: {
+                        modal: 'ERROR',
+                        message: `There was an error while saving policy: ${policy.name}. See error: ${error.message}`,
+                    },
                 })
             )
     }, [policy, repo, savePolicyConfiguration, history])
