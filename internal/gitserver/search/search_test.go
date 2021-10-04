@@ -95,6 +95,22 @@ func TestSearch(t *testing.T) {
 		require.Equal(t, matches[1].Author.Name, "camden1")
 	})
 
+	t.Run("and with no operands matches all", func(t *testing.T) {
+		query := &protocol.Operator{Kind: protocol.And}
+		tree, err := ToMatchTree(query)
+		require.NoError(t, err)
+		searcher := &CommitSearcher{
+			RepoDir: dir,
+			Query:   tree,
+		}
+		var matches []*protocol.CommitMatch
+		err = searcher.Search(context.Background(), func(match *protocol.CommitMatch) {
+			matches = append(matches, match)
+		})
+		require.NoError(t, err)
+		require.Len(t, matches, 2)
+	})
+
 	t.Run("match diff content", func(t *testing.T) {
 		query := &protocol.DiffMatches{Expr: "ipsum"}
 		tree, err := ToMatchTree(query)
