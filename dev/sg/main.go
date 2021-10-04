@@ -165,6 +165,7 @@ func main() {
 	if err := loadSecrets(); err != nil {
 		fmt.Printf("failed to open secrets: %s\n", err)
 	}
+	ctx := secrets.WithContext(context.Background(), secretsStore)
 
 	if err := rootCommand.Parse(os.Args[1:]); err != nil {
 		os.Exit(1)
@@ -178,7 +179,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	if err := rootCommand.Run(context.Background()); err != nil {
+	if err := rootCommand.Run(ctx); err != nil {
 		fmt.Printf("error: %s\n", err)
 		os.Exit(1)
 	}

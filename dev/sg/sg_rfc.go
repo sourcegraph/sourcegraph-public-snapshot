@@ -7,7 +7,6 @@ import (
 	"github.com/cockroachdb/errors"
 	"github.com/peterbourgon/ff/v3/ffcli"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/rfc"
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/secrets"
 )
 
 var (
@@ -23,8 +22,6 @@ var (
 )
 
 func rfcExec(ctx context.Context, args []string) error {
-	ctx = secrets.WithContext(ctx, secretsStore)
-
 	if len(args) == 0 {
 		args = append(args, "list")
 	}
