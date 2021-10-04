@@ -59,4 +59,20 @@ func TestGetDashboard(t *testing.T) {
 
 		autogold.Equal(t, got, autogold.ExportedOnly())
 	})
+	t.Run("test user 3 can see both dashboards limit 1", func(t *testing.T) {
+		got, err := store.GetDashboards(ctx, DashboardQueryArgs{UserID: []int{3}, Limit: 1})
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		autogold.Equal(t, got, autogold.ExportedOnly())
+	})
+	t.Run("test user 3 can see both dashboards after 1", func(t *testing.T) {
+		got, err := store.GetDashboards(ctx, DashboardQueryArgs{UserID: []int{3}, After: 1})
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		autogold.Equal(t, got, autogold.ExportedOnly())
+	})
 }

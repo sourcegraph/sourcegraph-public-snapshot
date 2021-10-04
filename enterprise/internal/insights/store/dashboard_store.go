@@ -13,29 +13,29 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 )
 
-type DashboardStore struct {
+type DBDashboardStore struct {
 	*basestore.Store
 	Now func() time.Time
 }
 
-// NewDashboardStore returns a new DashboardStore backed by the given Timescale db.
-func NewDashboardStore(db dbutil.DB) *DashboardStore {
-	return &DashboardStore{Store: basestore.NewWithDB(db, sql.TxOptions{}), Now: time.Now}
+// NewDashboardStore returns a new DBDashboardStore backed by the given Timescale db.
+func NewDashboardStore(db dbutil.DB) *DBDashboardStore {
+	return &DBDashboardStore{Store: basestore.NewWithDB(db, sql.TxOptions{}), Now: time.Now}
 }
 
 // Handle returns the underlying transactable database handle.
 // Needed to implement the ShareableStore interface.
-func (s *DashboardStore) Handle() *basestore.TransactableHandle { return s.Store.Handle() }
+func (s *DBDashboardStore) Handle() *basestore.TransactableHandle { return s.Store.Handle() }
 
-// With creates a new DashboardStore with the given basestore. Shareable store as the underlying basestore.Store.
+// With creates a new DBDashboardStore with the given basestore. Shareable store as the underlying basestore.Store.
 // Needed to implement the basestore.Store interface
-func (s *DashboardStore) With(other *DashboardStore) *DashboardStore {
-	return &DashboardStore{Store: s.Store.With(other.Store), Now: other.Now}
+func (s *DBDashboardStore) With(other *DBDashboardStore) *DBDashboardStore {
+	return &DBDashboardStore{Store: s.Store.With(other.Store), Now: other.Now}
 }
 
-func (s *DashboardStore) Transact(ctx context.Context) (*DashboardStore, error) {
+func (s *DBDashboardStore) Transact(ctx context.Context) (*DBDashboardStore, error) {
 	txBase, err := s.Store.Transact(ctx)
-	return &DashboardStore{Store: txBase, Now: s.Now}, err
+	return &DBDashboardStore{Store: txBase, Now: s.Now}, err
 }
 
 type DashboardQueryArgs struct {
@@ -43,24 +43,36 @@ type DashboardQueryArgs struct {
 	OrgID   []int
 	ID      int
 	Deleted bool
+	Limit   int
+	After   int
 }
 
-func (s *DashboardStore) GetDashboards(ctx context.Context, args DashboardQueryArgs) ([]*types.Dashboard, error) {
+func (s *DBDashboardStore) GetDashboards(ctx context.Context, args DashboardQueryArgs) ([]*types.Dashboard, error) {
 	preds := make([]*sqlf.Query, 0, 1)
 	if args.ID > 0 {
-		preds = append(preds, sqlf.Sprintf("id = %s", args.ID))
+		preds = append(preds, sqlf.Sprintf("db.id = %s", args.ID))
 	}
 	if args.Deleted {
-		preds = append(preds, sqlf.Sprintf("deleted_at is not null"))
+		preds = append(preds, sqlf.Sprintf("db.deleted_at is not null"))
 	} else {
-		preds = append(preds, sqlf.Sprintf("deleted_at is null"))
+		preds = append(preds, sqlf.Sprintf("db.deleted_at is null"))
 	}
+	if args.After > 0 {
+		preds = append(preds, sqlf.Sprintf("db.id > %s", args.After))
+	}
+
 	preds = append(preds, dashboardPermissionsQuery(args))
 	if len(preds) == 0 {
 		preds = append(preds, sqlf.Sprintf("%s", "TRUE"))
 	}
+	var limitClause *sqlf.Query
+	if args.Limit > 0 {
+		limitClause = sqlf.Sprintf("LIMIT %s", args.Limit)
+	} else {
+		limitClause = sqlf.Sprintf("")
+	}
 
-	q := sqlf.Sprintf(getDashboardSql, sqlf.Join(preds, "\n AND"))
+	q := sqlf.Sprintf(getDashboardSql, sqlf.Join(preds, "\n AND"), limitClause)
 	return scanDashboard(s.Query(ctx, q))
 }
 
@@ -109,5 +121,10 @@ const getDashboardSql = `
 SELECT db.id, db.title
 FROM dashboard db
 JOIN dashboard_grants dg ON db.id = dg.dashboard_id
-WHERE %S;
+WHERE %S
+%S;
 `
+
+type DashboardStore interface {
+	GetDashboards(ctx context.Context, args DashboardQueryArgs) ([]*types.Dashboard, error)
+}
