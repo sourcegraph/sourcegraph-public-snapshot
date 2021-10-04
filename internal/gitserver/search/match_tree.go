@@ -237,7 +237,7 @@ func (o *Operator) Match(commit *LazyCommit) (bool, MatchedCommit, error) {
 		if err != nil {
 			return false, MatchedCommit{}, err
 		}
-		return matched, MatchedCommit{}, nil
+		return !matched, MatchedCommit{}, nil
 	case protocol.And:
 		resultMatches := MatchedCommit{}
 		for _, operand := range o.Operands {

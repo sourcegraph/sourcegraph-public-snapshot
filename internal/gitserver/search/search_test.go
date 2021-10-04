@@ -3,12 +3,16 @@ package search
 import (
 	"bytes"
 	"context"
+	"math/rand"
 	"os"
 	"os/exec"
 	"path"
+	"reflect"
 	"strings"
 	"testing"
+	"testing/quick"
 
+	"github.com/cockroachdb/errors"
 	"github.com/sourcegraph/go-diff/diff"
 	"github.com/stretchr/testify/require"
 
@@ -349,4 +353,186 @@ index 0000000000..7e54670557
 
 	require.Equal(t, expectedRanges, ranges)
 
+}
+
+func TestQueryCNF(t *testing.T) {
+	t.Run("fuzz error 1", func(t *testing.T) {
+		rawQuery := &protocol.Operator{
+			Kind: protocol.And,
+			Operands: []protocol.Node{
+				&protocol.Operator{
+					Kind: protocol.Not,
+					Operands: []protocol.Node{
+						&protocol.Operator{
+							Kind: protocol.Or,
+							Operands: []protocol.Node{
+								&protocol.Operator{
+									Kind: protocol.Or,
+									Operands: []protocol.Node{
+										&protocol.AuthorMatches{Expr: "a"},
+										&protocol.AuthorMatches{Expr: "b"},
+									},
+								},
+								&protocol.Operator{
+									Kind: protocol.Or,
+									Operands: []protocol.Node{
+										&protocol.AuthorMatches{Expr: "h"},
+										&protocol.AuthorMatches{Expr: "i"},
+									},
+								},
+							},
+						},
+					},
+				},
+				&protocol.Operator{
+					Kind: protocol.And,
+					Operands: []protocol.Node{
+						&protocol.AuthorMatches{Expr: "a"},
+					},
+				},
+			},
+		}
+		rawMatchTree, err := ToMatchTree(rawQuery)
+		require.NoError(t, err)
+
+		reducedMatchTree, err := ToMatchTree(reduceQuery(rawQuery))
+		require.NoError(t, err)
+
+		lc := &LazyCommit{
+			RawCommit: &RawCommit{
+				AuthorName: []byte("dedjkibajj"),
+			},
+		}
+		rawMatches, _, err := rawMatchTree.Match(lc)
+		require.NoError(t, err)
+		require.Equal(t, false, rawMatches)
+
+		reducedMatches, _, err := reducedMatchTree.Match(lc)
+		require.NoError(t, err)
+		require.Equal(t, false, reducedMatches)
+	})
+
+}
+
+func TestFuzzQueryCNF(t *testing.T) {
+	queryMatches := func(q queryGenerator, a authorNameGenerator) bool {
+		mt, err := ToMatchTree(q.RawQuery)
+		require.NoError(t, err)
+		lc := &LazyCommit{
+			RawCommit: &RawCommit{
+				AuthorName: []byte(a),
+			},
+		}
+		matches, _, err := mt.Match(lc)
+		require.NoError(t, err)
+		return matches
+	}
+	reducedQueryMatches := func(q queryGenerator, a authorNameGenerator) bool {
+		mt, err := ToMatchTree(q.ReducedQuery())
+		require.NoError(t, err)
+		lc := &LazyCommit{
+			RawCommit: &RawCommit{
+				AuthorName: []byte(a),
+			},
+		}
+		matches, _, err := mt.Match(lc)
+		require.NoError(t, err)
+		return matches
+	}
+	err := quick.CheckEqual(queryMatches, reducedQueryMatches, nil)
+	var e *quick.CheckEqualError
+	if err != nil && errors.As(err, &e) {
+		t.Fatalf("Different outputs for same inputs\n  RawQuery: %s\n  ReducedQuery: %s\n  AuthorName: %s\n",
+			e.In[0].(queryGenerator).RawQuery.String(),
+			e.In[0].(queryGenerator).ReducedQuery().String(),
+			string(e.In[1].([]uint8)),
+		)
+	} else if err != nil {
+		t.Fatal(err)
+	}
+}
+
+type queryGenerator struct {
+	RawQuery protocol.Node
+}
+
+func (queryGenerator) Generate(rand *rand.Rand, size int) reflect.Value {
+	if size > 4 {
+		size = 4
+	}
+	return reflect.ValueOf(queryGenerator{generateQuery(rand, size)})
+}
+
+func (q queryGenerator) ReducedQuery() protocol.Node {
+	return reduceQuery(q.RawQuery)
+}
+
+func reduceQuery(q protocol.Node) protocol.Node {
+	switch v := q.(type) {
+	case *protocol.Operator:
+		newOperands := make([]protocol.Node, 0, len(v.Operands))
+		for _, operand := range v.Operands {
+			newOperands = append(newOperands, reduceQuery(operand))
+		}
+		switch v.Kind {
+		case protocol.And:
+			return protocol.NewAnd(newOperands...)
+		case protocol.Or:
+			return protocol.NewOr(newOperands...)
+		case protocol.Not:
+			return protocol.NewNot(newOperands[0])
+		default:
+			panic("unreachable")
+		}
+	default:
+		return v
+	}
+}
+
+const chars = `abcdefghijkl`
+
+func generateAtom(rand *rand.Rand) protocol.Node {
+	return &protocol.AuthorMatches{
+		Expr: string(chars[rand.Int()%len(chars)]),
+	}
+}
+
+func generateQuery(rand *rand.Rand, depth int) protocol.Node {
+	if depth == 0 {
+		return generateAtom(rand)
+	}
+
+	switch rand.Int() % 4 {
+	case 0:
+		return &protocol.Operator{Kind: protocol.Not, Operands: []protocol.Node{generateQuery(rand, depth-1)}}
+	case 1:
+		var operands []protocol.Node
+		for i := 0; i < rand.Int()%4; i++ {
+			operands = append(operands, generateQuery(rand, depth-1))
+		}
+		return &protocol.Operator{Kind: protocol.And, Operands: operands}
+	case 2:
+		var operands []protocol.Node
+		for i := 0; i < rand.Int()%4; i++ {
+			operands = append(operands, generateQuery(rand, depth-1))
+		}
+		return &protocol.Operator{Kind: protocol.Or, Operands: operands}
+	case 3:
+		return generateAtom(rand)
+	default:
+		panic("unreachable")
+	}
+}
+
+type authorNameGenerator []byte
+
+func (authorNameGenerator) Generate(rand *rand.Rand, size int) reflect.Value {
+	if size > 10 {
+		size = 10
+	}
+	var buf bytes.Buffer
+	for i := 0; i < size; i++ {
+		buf.WriteByte(chars[rand.Int()%len(chars)])
+	}
+	return reflect.ValueOf(buf.Bytes())
 }

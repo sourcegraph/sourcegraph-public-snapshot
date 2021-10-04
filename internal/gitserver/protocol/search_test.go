@@ -1,7 +1,10 @@
 package protocol
 
 import (
+	"rand"
+	"reflect"
 	"testing"
+	"testing/quick"
 
 	"github.com/stretchr/testify/require"
 )
@@ -65,23 +68,13 @@ func TestQueryConstruction(t *testing.T) {
 
 	t.Run("nested and operators are flattened", func(t *testing.T) {
 		input := NewAnd(
-			NewOr(&Constant{false}, &Constant{true}),
 			NewAnd(&Constant{true}, &Constant{false}),
-			&AuthorMatches{},
 		)
 		expected := &Operator{
 			Kind: And,
 			Operands: []Node{
-				&Operator{
-					Kind: Or,
-					Operands: []Node{
-						&Constant{false},
-						&Constant{true},
-					},
-				},
 				&Constant{true},
 				&Constant{false},
-				&AuthorMatches{},
 			},
 		}
 		require.Equal(t, expected, input)
@@ -89,25 +82,49 @@ func TestQueryConstruction(t *testing.T) {
 
 	t.Run("nested or operators are flattened", func(t *testing.T) {
 		input := NewOr(
-			NewAnd(&Constant{true}, &Constant{false}),
 			NewOr(&Constant{false}, &Constant{true}),
-			&AuthorMatches{},
 		)
 		expected := &Operator{
 			Kind: Or,
 			Operands: []Node{
-				&Operator{
-					Kind: And,
-					Operands: []Node{
-						&Constant{true},
-						&Constant{false},
-					},
-				},
 				&Constant{false},
 				&Constant{true},
-				&AuthorMatches{},
 			},
 		}
+		require.Equal(t, expected, input)
+	})
+
+	t.Run("queries are CNF-ed", func(t *testing.T) {
+		input := NewOr(
+			&AuthorMatches{Expr: "P"},
+			NewAnd(
+				&AuthorMatches{Expr: "Q"},
+				&AuthorMatches{Expr: "R"},
+			),
+			&AuthorMatches{Expr: "S"},
+		)
+		expected := &Operator{
+			Kind: And,
+			Operands: []Node{
+				&Operator{
+					Kind: Or,
+					Operands: []Node{
+						&AuthorMatches{Expr: "P"},
+						&AuthorMatches{Expr: "S"},
+						&AuthorMatches{Expr: "Q"},
+					},
+				},
+				&Operator{
+					Kind: Or,
+					Operands: []Node{
+						&AuthorMatches{Expr: "P"},
+						&AuthorMatches{Expr: "S"},
+						&AuthorMatches{Expr: "R"},
+					},
+				},
+			},
+		}
+		// P ∨ (Q ∧ R) ∨ S <=> (P ∨ S) ∨ (Q ∧ R) <=> (P ∨ S ∨ Q) ∧ (P ∨ S ∨ R)
 		require.Equal(t, expected, input)
 	})
 }

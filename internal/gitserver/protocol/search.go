@@ -144,7 +144,8 @@ func NewAnd(operands ...Node) Node {
 		return operands[0]
 	}
 
-	// Flatten any nested And operands
+	// Flatten any nested And operands since And is associative
+	// P ∧ (Q ∧ R) <=> (P ∧ Q) ∧ R
 	flattened := make([]Node, 0, len(operands))
 	for _, operand := range operands {
 		if nestedOperator, ok := operand.(*Operator); ok && nestedOperator.Kind == And {
@@ -168,7 +169,8 @@ func NewOr(operands ...Node) Node {
 		return operands[0]
 	}
 
-	// Flatten any nested Or operands
+	// Flatten any nested Or operands since Or is associative
+	// P ∨ (Q ∨ R) <=> (P ∨ Q) ∨ R
 	flattened := make([]Node, 0, len(operands))
 	for _, operand := range operands {
 		if nestedOperator, ok := operand.(*Operator); ok && nestedOperator.Kind == Or {
@@ -176,6 +178,27 @@ func NewOr(operands ...Node) Node {
 		} else {
 			flattened = append(flattened, operand)
 		}
+	}
+
+	// Distribute a single nested And operand if it exists.
+	// Additional And operands will be distributed in the recursive call.
+	// P ∨ Q ∨ (R ∧ S) <=> (P ∨ Q ∨ R) ∧ (P ∨ Q ∨ S)
+	for i, operand := range flattened {
+		operator, ok := operand.(*Operator)
+		if !ok || operator.Kind != And {
+			continue
+		}
+		andOperator := operator
+
+		siblings := append(flattened[:i], flattened[i+1:]...)
+		newAndOperands := make([]Node, 0, len(andOperator.Operands))
+		for _, andOperand := range andOperator.Operands {
+			newOrOperands := make([]Node, len(siblings)+1)
+			copy(newOrOperands, append(siblings, andOperand))
+			newAndOperands = append(newAndOperands, NewOr(newOrOperands...))
+		}
+		a := NewAnd(newAndOperands...)
+		return a
 	}
 
 	return newOperator(Or, flattened...)
