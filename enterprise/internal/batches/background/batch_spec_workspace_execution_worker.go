@@ -5,13 +5,13 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
-	"strings"
 	"time"
 
 	"github.com/cockroachdb/errors"
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/keegancsmith/sqlf"
+	"github.com/lib/pq"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
@@ -20,6 +20,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker"
 	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
+	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
 )
 
 // batchSpecWorkspaceExecutionJobStalledJobMaximumAge is the maximum allowable
@@ -145,23 +146,20 @@ UPDATE batch_spec_workspaces SET changeset_spec_ids = %s WHERE id = %s
 const setBatchSpecIDOnChangesetSpecs = `
 UPDATE changeset_specs
 SET batch_spec_id = (SELECT batch_spec_id FROM batch_spec_workspaces WHERE id = %s LIMIT 1)
-WHERE id IN (%s)
+WHERE id = ANY (%s)
 `
 
 func markBatchSpecWorkspaceExecutionJobComplete(ctx context.Context, tx *store.Store, job *btypes.BatchSpecWorkspaceExecutionJob, changesetSpecIDs []int64, workerHostname string) (bool, error) {
-	ids := []*sqlf.Query{}
-	m := make(map[int64]struct{}, len(changesetSpecIDs))
-	for _, id := range changesetSpecIDs {
-		ids = append(ids, sqlf.Sprintf("%s", id))
-		m[id] = struct{}{}
-	}
-
 	// Set the batch_spec_id on the changeset_specs that were created
-	err := tx.Exec(ctx, sqlf.Sprintf(setBatchSpecIDOnChangesetSpecs, job.BatchSpecWorkspaceID, sqlf.Join(ids, ",")))
+	err := tx.Exec(ctx, sqlf.Sprintf(setBatchSpecIDOnChangesetSpecs, job.BatchSpecWorkspaceID, pq.Array(changesetSpecIDs)))
 	if err != nil {
 		return false, err
 	}
 
+	m := make(map[int64]struct{}, len(changesetSpecIDs))
+	for _, id := range changesetSpecIDs {
+		m[id] = struct{}{}
+	}
 	marshaledIDs, err := json.Marshal(m)
 	if err != nil {
 		return false, err
@@ -210,9 +208,8 @@ var ErrNoChangesetSpecIDs = errors.New("no changeset ids found in execution logs
 
 func extractChangesetSpecRandIDs(logs []workerutil.ExecutionLogEntry) ([]string, error) {
 	var (
-		randIDs []string
-		entry   workerutil.ExecutionLogEntry
-		found   bool
+		entry workerutil.ExecutionLogEntry
+		found bool
 	)
 
 	for _, e := range logs {
@@ -223,28 +220,18 @@ func extractChangesetSpecRandIDs(logs []workerutil.ExecutionLogEntry) ([]string,
 		}
 	}
 	if !found {
-		return randIDs, ErrNoChangesetSpecIDs
+		return nil, ErrNoChangesetSpecIDs
 	}
 
-	for _, l := range strings.Split(entry.Out, "\n") {
-		const outputLinePrefix = "stdout: "
-
-		if !strings.HasPrefix(l, outputLinePrefix) {
+	logLines := btypes.ParseJSONLogsFromOutput(entry.Out)
+	for _, l := range logLines {
+		if l.Status != batcheslib.LogEventStatusSuccess {
 			continue
 		}
-
-		jsonPart := l[len(outputLinePrefix):]
-
-		var e changesetSpecsUploadedLogLine
-		if err := json.Unmarshal([]byte(jsonPart), &e); err != nil {
-			// If we can't unmarshal the line as JSON we skip it
-			continue
-		}
-
-		if e.Operation == operationUploadingChangesetSpecs && e.Status == "SUCCESS" {
-			rawIDs := e.Metadata.IDs
+		if m, ok := l.Metadata.(*batcheslib.UploadingChangesetSpecsMetadata); ok {
+			rawIDs := m.IDs
 			if len(rawIDs) == 0 {
-				return randIDs, ErrNoChangesetSpecIDs
+				return nil, ErrNoChangesetSpecIDs
 			}
 
 			var randIDs []string
@@ -261,16 +248,5 @@ func extractChangesetSpecRandIDs(logs []workerutil.ExecutionLogEntry) ([]string,
 		}
 	}
 
-	return randIDs, ErrNoChangesetSpecIDs
+	return nil, ErrNoChangesetSpecIDs
 }
-
-type changesetSpecsUploadedLogLine struct {
-	Operation string
-	Timestamp time.Time
-	Status    string
-	Metadata  struct {
-		IDs []string `json:"ids"`
-	}
-}
-
-const operationUploadingChangesetSpecs = "UPLOADING_CHANGESET_SPECS"

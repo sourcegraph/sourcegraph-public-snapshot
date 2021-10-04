@@ -3,9 +3,13 @@ package usagestats
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"time"
 
+	"github.com/cockroachdb/errors"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
+	"github.com/sourcegraph/sourcegraph/internal/amplitude"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
@@ -17,6 +21,7 @@ import (
 
 // pubSubDotComEventsTopicID is the topic ID of the topic that forwards messages to Sourcegraph.com events' pub/sub subscribers.
 var pubSubDotComEventsTopicID = env.Get("PUBSUB_DOTCOM_EVENTS_TOPIC_ID", "", "Pub/sub dotcom events topic ID is the pub/sub topic id where Sourcegraph.com events are published.")
+var amplitudeAPIToken = env.Get("AMPLITUDE_API_TOKEN", "", "The API token for the Amplitude project to send data to.")
 
 // Event represents a request to log telemetry.
 type Event struct {
@@ -35,6 +40,10 @@ type Event struct {
 	Referrer       *string
 	Argument       json.RawMessage
 	PublicArgument json.RawMessage
+	UserProperties json.RawMessage
+	DeviceID       *string
+	InsertID       *string
+	EventID        *int32
 }
 
 // LogBackendEvent is a convenience function for logging backend events.
@@ -59,6 +68,10 @@ func LogEvent(ctx context.Context, db dbutil.DB, args Event) error {
 	}
 	if envvar.SourcegraphDotComMode() {
 		err := publishSourcegraphDotComEvent(args)
+		if err != nil {
+			return err
+		}
+		err = publishAmplitudeEvent(args)
 		if err != nil {
 			return err
 		}
@@ -100,7 +113,8 @@ func publishSourcegraphDotComEvent(args Event) error {
 	if err != nil {
 		return err
 	}
-	event, err := json.Marshal(bigQueryEvent{
+
+	pubsubEvent, err := json.Marshal(bigQueryEvent{
 		EventName:       args.EventName,
 		UserID:          int(args.UserID),
 		AnonymousUserID: args.UserCookieID,
@@ -116,7 +130,103 @@ func publishSourcegraphDotComEvent(args Event) error {
 	if err != nil {
 		return err
 	}
-	return pubsub.Publish(pubSubDotComEventsTopicID, string(event))
+
+	return pubsub.Publish(pubSubDotComEventsTopicID, string(pubsubEvent))
+}
+
+func publishAmplitudeEvent(args Event) error {
+	if !envvar.SourcegraphDotComMode() {
+		return nil
+	}
+	if amplitudeAPIToken == "" {
+		return nil
+	}
+
+	if _, ok := amplitude.DenyList[args.EventName]; ok {
+		return nil
+	}
+
+	// For anonymous users, do not assign a user ID.
+	// Amplitude does not want User IDs for anonymous users
+	// so it can perform merging for users who sign up based on device ID.
+	var userID string
+	if args.UserID != 0 {
+		// Minimum length for an Amplitude user ID is 5 characters.
+		userID = fmt.Sprintf("%06d", args.UserID)
+	}
+
+	if args.DeviceID == nil {
+		return errors.New("amplitude: Missing device ID")
+	}
+	if args.EventID == nil {
+		return errors.New("amplitude: Missing event ID")
+	}
+	if args.InsertID == nil {
+		return errors.New("amplitude: Missing insert ID")
+	}
+	if args.UserProperties == nil {
+		return errors.New("amplitude: Missing user properties")
+	}
+
+	userProperties, err := getAmplitudeUserProperties(args)
+	if err != nil {
+		return err
+	}
+
+	amplitudeEvent, err := json.Marshal(amplitude.EventPayload{
+		APIKey: amplitudeAPIToken,
+		Events: []amplitude.AmplitudeEvent{{
+			UserID:          userID,
+			DeviceID:        *args.DeviceID,
+			InsertID:        *args.InsertID,
+			EventID:         *args.EventID,
+			EventType:       args.EventName,
+			EventProperties: args.PublicArgument,
+			UserProperties:  userProperties,
+			Time:            time.Now().Unix(),
+		}},
+	})
+	if err != nil {
+		return err
+	}
+
+	return amplitude.Publish(amplitudeEvent)
+
+}
+
+func getAmplitudeUserProperties(args Event) (json.RawMessage, error) {
+	firstSourceURL := ""
+	if args.FirstSourceURL != nil {
+		firstSourceURL = *args.FirstSourceURL
+	}
+	referrer := ""
+	if args.Referrer != nil {
+		referrer = *args.Referrer
+	}
+	var userPropertiesFromFrontend amplitude.FrontendUserProperties
+	err := json.Unmarshal(args.UserProperties, &userPropertiesFromFrontend)
+	if err != nil {
+		return nil, err
+	}
+	userProperties, err := json.Marshal(amplitude.UserProperties{
+		AnonymousUserID:         args.UserCookieID,
+		FirstSourceURL:          firstSourceURL,
+		Referrer:                referrer,
+		CohortID:                args.CohortID,
+		FeatureFlags:            args.FeatureFlags,
+		HasCloudAccount:         args.UserID != 0,
+		NumberOfReposAdded:      userPropertiesFromFrontend.NumberOfReposAdded,
+		HasAddedRepos:           userPropertiesFromFrontend.HasAddedRepos,
+		NumberPublicReposAdded:  userPropertiesFromFrontend.NumberPublicReposAdded,
+		NumberPrivateReposAdded: userPropertiesFromFrontend.NumberPrivateReposAdded,
+		HasActiveCodeHost:       userPropertiesFromFrontend.HasActiveCodeHost,
+		IsSourcegraphTeammate:   userPropertiesFromFrontend.IsSourcegraphTeammate,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return userProperties, nil
 }
 
 // logLocalEvent logs users events.

@@ -173,6 +173,7 @@ export const RevisionsPopoverReferences: React.FunctionComponent<RevisionsPopove
             pluralNoun={pluralNoun}
             hasNextPage={response.hasNextPage}
             connectionQuery={query}
+            compact={true}
         />
     )
 

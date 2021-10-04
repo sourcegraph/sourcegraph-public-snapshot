@@ -10,5 +10,6 @@
   "update.channel": "release",
   "experimentalFeatures": {},
   "disablePublicRepoRedirects": true,
-  "repoListUpdateInterval": 1
+  "repoListUpdateInterval": 1,
+  "externalService.userMode": "all"
 }

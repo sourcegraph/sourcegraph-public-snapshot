@@ -44,8 +44,6 @@ export interface SearchBoxProps
     /** Whether comments are parsed and highlighted */
     interpretComments?: boolean
 
-    isSearchOnboardingTourVisible: boolean
-
     /** Don't show the version contexts dropdown. */
     hideVersionContexts?: boolean
 
@@ -72,7 +70,7 @@ export const SearchBox: React.FunctionComponent<SearchBoxProps> = props => {
                 />
             )}
             <div className={classNames(styles.searchBoxBackgroundContainer, 'flex-shrink-past-contents')}>
-                {props.showSearchContext && (
+                {props.searchContextsEnabled && props.showSearchContext && (
                     <>
                         <SearchContextDropdown
                             {...props}

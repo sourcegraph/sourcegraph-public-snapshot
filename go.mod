@@ -39,7 +39,6 @@ require (
 	github.com/dgraph-io/ristretto v0.0.3
 	github.com/dineshappavoo/basex v0.0.0-20170425072625-481a6f6dc663
 	github.com/dnaeon/go-vcr v1.2.0
-	github.com/efritz/pentimento v0.0.0-20190429011147-ade47d831101
 	github.com/fatih/color v1.12.0
 	github.com/fatih/structs v1.1.0
 	github.com/felixge/fgprof v0.9.1
@@ -121,7 +120,7 @@ require (
 	github.com/shurcooL/httpgzip v0.0.0-20190720172056-320755c1c1b0
 	github.com/snabb/sitemap v1.0.0
 	github.com/sourcegraph/ctxvfs v0.0.0-20180418081416-2b65f1b1ea81
-	github.com/sourcegraph/go-ctags v0.0.0-20210805071240-8c61152fb089
+	github.com/sourcegraph/go-ctags v0.0.0-20210923201916-00b9c039141c
 	github.com/sourcegraph/go-diff v0.6.1
 	github.com/sourcegraph/go-jsonschema v0.0.0-20200907102109-d14e9f2f3a28
 	github.com/sourcegraph/go-langserver v2.0.1-0.20181108233942-4a51fa2e1238+incompatible
@@ -137,6 +136,7 @@ require (
 	github.com/temoto/robotstxt v1.1.1
 	github.com/throttled/throttled/v2 v2.7.1
 	github.com/tidwall/gjson v1.8.1
+	github.com/tj/go-naturaldate v1.3.0
 	github.com/tomnomnom/linkheader v0.0.0-20180905144013-02ca5825eb80
 	github.com/uber/gonduit v0.13.0
 	github.com/uber/jaeger-client-go v2.29.1+incompatible
@@ -189,7 +189,7 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/sts v1.6.2 // indirect
 	github.com/aymerick/douceur v0.2.0 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
-	github.com/bits-and-blooms/bitset v1.2.0 // indirect
+	github.com/bits-and-blooms/bitset v1.2.1 // indirect
 	github.com/bmatcuk/doublestar v1.3.4 // indirect
 	github.com/certifi/gocertifi v0.0.0-20210507211836-431795d63e8d // indirect
 	github.com/chris-ramon/douceur v0.2.0 // indirect
@@ -319,7 +319,7 @@ require (
 // or intentional forks.
 replace (
 	// We maintain our own fork of Zoekt. Update with ./dev/zoekt/update
-	github.com/google/zoekt => github.com/sourcegraph/zoekt v0.0.0-20210914071702-65ca553d3a98
+	github.com/google/zoekt => github.com/sourcegraph/zoekt v0.0.0-20211001135449-614ab2f31e14
 	// We use a fork of Alertmanager to allow prom-wrapper to better manipulate Alertmanager configuration.
 	// See https://docs.sourcegraph.com/dev/background-information/observability/prometheus
 	github.com/prometheus/alertmanager => github.com/sourcegraph/alertmanager v0.21.1-0.20210809100802-88b656a8713e

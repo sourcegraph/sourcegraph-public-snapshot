@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 
 import { FilterType } from '@sourcegraph/shared/src/search/query/filters'
 import { scanSearchQuery } from '@sourcegraph/shared/src/search/query/scanner'
+import { Filter as QueryFilter } from '@sourcegraph/shared/src/search/query/token'
 import { findFilters } from '@sourcegraph/shared/src/search/query/validate'
 import { Filter } from '@sourcegraph/shared/src/search/stream'
 
@@ -21,12 +22,13 @@ export function useLastRepoName(query: string, filters: Filter[] = []): string {
     useEffect(() => {
         // Determine whether query contains a single repo filter and remember it
         // if it exists
-        let repoQuery = ''
+        let queryRepoFilters: QueryFilter[] = []
+        let queryRepo = ''
         const scanResult = scanSearchQuery(query)
         if (scanResult.type === 'success') {
-            const repoQueryFilters = findFilters(scanResult.term, FilterType.repo)
-            if (repoQueryFilters.length === 1) {
-                repoQuery = repoQueryFilters[0].value?.value ?? ''
+            queryRepoFilters = findFilters(scanResult.term, FilterType.repo)
+            if (queryRepoFilters.length === 1) {
+                queryRepo = queryRepoFilters[0].value?.value ?? ''
             }
         }
         const repoFilters = getFiltersOfKind(filters, FilterType.repo)
@@ -35,14 +37,22 @@ export function useLastRepoName(query: string, filters: Filter[] = []): string {
                 // Reuse last repo name if query contains a repo filter and
                 // it's the same as the previous one, otherwise clear previous
                 // repo name
-                if (!repoQuery || repoQuery !== lastRepoQuery.current) {
+                if (!queryRepo || queryRepo !== lastRepoQuery.current) {
                     lastRepoQuery.current = ''
                     setRepoName('')
                 }
                 break
             case 1:
                 // Update last repo name and repo query
-                lastRepoQuery.current = repoQuery
+                if (queryRepoFilters.length === 0) {
+                    // This is a special case: If the query doesn't contain a
+                    // repo but the results are from a single repo, we record the
+                    // repo name from the search results. This way, if one of the
+                    // rev links is clicked and we add both, rev and repo filters
+                    // (see ./Revisions.tsx), the revisions section won't disappear.
+                    queryRepo = `^${repoFilters[0].label}$`
+                }
+                lastRepoQuery.current = queryRepo
                 setRepoName(repoFilters[0].label)
                 break
             default:

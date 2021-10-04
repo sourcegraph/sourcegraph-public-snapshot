@@ -5,6 +5,7 @@ import (
 	"os"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf/confdefaults"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
@@ -19,10 +20,10 @@ func TestSearchIndexEnabled(t *testing.T) {
 		env  []string
 		want interface{}
 	}{{
-		name: "SearchIndex defaults to false in docker",
+		name: "SearchIndex defaults to true in docker",
 		sc:   &Unified{},
 		env:  []string{"DEPLOY_TYPE=docker-container"},
-		want: false,
+		want: true,
 	}, {
 		name: "SearchIndex defaults to true in k8s",
 		sc:   &Unified{},
@@ -38,16 +39,6 @@ func TestSearchIndexEnabled(t *testing.T) {
 		sc:   &Unified{SiteConfiguration: schema.SiteConfiguration{SearchIndexEnabled: boolPtr(false)}},
 		env:  []string{"DEPLOY_TYPE=docker-container"},
 		want: false,
-	}, {
-		name: "SearchIndex INDEXED_SEARCH=f",
-		sc:   &Unified{},
-		env:  []string{"DEPLOY_TYPE=docker-container", "INDEXED_SEARCH=f"},
-		want: false,
-	}, {
-		name: "SearchIndex INDEXED_SEARCH=t",
-		sc:   &Unified{},
-		env:  []string{"DEPLOY_TYPE=docker-container", "INDEXED_SEARCH=t"},
-		want: true,
 	}}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
@@ -109,6 +100,35 @@ func TestAuthPasswordResetLinkDuration(t *testing.T) {
 			Mock(test.sc)
 			if got, want := AuthPasswordResetLinkExpiry(), test.want; got != want {
 				t.Fatalf("AuthPasswordResetLinkExpiry() = %v, want %v", got, want)
+			}
+		})
+	}
+}
+
+func TestGitLongCommandTimeout(t *testing.T) {
+	tests := []struct {
+		name string
+		sc   *Unified
+		want time.Duration
+	}{{
+		name: "Git long command timeout has a default value if null",
+		sc:   &Unified{},
+		want: defaultGitLongCommandTimeout,
+	}, {
+		name: "Git long command timeout has a default value if blank",
+		sc:   &Unified{SiteConfiguration: schema.SiteConfiguration{GitLongCommandTimeout: 0}},
+		want: defaultGitLongCommandTimeout,
+	}, {
+		name: "Git long command timeout can be customized",
+		sc:   &Unified{SiteConfiguration: schema.SiteConfiguration{GitLongCommandTimeout: 60}},
+		want: time.Duration(60) * time.Second,
+	}}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			Mock(test.sc)
+			if got, want := GitLongCommandTimeout(), test.want; got != want {
+				t.Fatalf("GitLongCommandTimeout() = %v, want %v", got, want)
 			}
 		})
 	}

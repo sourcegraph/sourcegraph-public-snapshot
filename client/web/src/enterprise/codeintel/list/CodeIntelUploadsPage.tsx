@@ -1,3 +1,4 @@
+import { useApolloClient } from '@apollo/client'
 import classNames from 'classnames'
 import React, { FunctionComponent, useCallback, useEffect, useMemo } from 'react'
 import { RouteComponentProps } from 'react-router'
@@ -14,7 +15,10 @@ import {
 } from '../../../components/FilteredConnection'
 import { PageTitle } from '../../../components/PageTitle'
 import { LsifUploadFields, LSIFUploadState } from '../../../graphql-operations'
-import { fetchLsifUploads as defaultFetchLsifUploads } from '../shared/backend'
+import {
+    queryLsifUploadsByRepository as defaultQueryLsifUploadsByRepository,
+    queryLsifUploadsList as defaultQueryLsifUploadsList,
+} from '../detail/useLsifUpload'
 
 import { fetchCommitGraphMetadata as defaultFetchCommitGraphMetadata } from './backend'
 import { CodeIntelUploadNode, CodeIntelUploadNodeProps } from './CodeIntelUploadNode'
@@ -24,7 +28,8 @@ import { EmptyUploads } from './EmptyUploads'
 
 export interface CodeIntelUploadsPageProps extends RouteComponentProps<{}>, TelemetryProps {
     repo?: { id: string }
-    fetchLsifUploads?: typeof defaultFetchLsifUploads
+    queryLsifUploadsByRepository?: typeof defaultQueryLsifUploadsByRepository
+    queryLsifUploadsList?: typeof defaultQueryLsifUploadsList
     fetchCommitGraphMetadata?: typeof defaultFetchCommitGraphMetadata
     now?: () => Date
 }
@@ -89,7 +94,8 @@ const filters: FilteredConnectionFilter[] = [
 
 export const CodeIntelUploadsPage: FunctionComponent<CodeIntelUploadsPageProps> = ({
     repo,
-    fetchLsifUploads = defaultFetchLsifUploads,
+    queryLsifUploadsByRepository = defaultQueryLsifUploadsByRepository,
+    queryLsifUploadsList = defaultQueryLsifUploadsList,
     fetchCommitGraphMetadata = defaultFetchCommitGraphMetadata,
     now,
     telemetryService,
@@ -97,9 +103,15 @@ export const CodeIntelUploadsPage: FunctionComponent<CodeIntelUploadsPageProps> 
 }) => {
     useEffect(() => telemetryService.logViewEvent('CodeIntelUploads'), [telemetryService])
 
-    const queryUploads = useCallback(
-        (args: FilteredConnectionQueryArguments) => fetchLsifUploads({ repository: repo?.id, ...args }),
-        [repo?.id, fetchLsifUploads]
+    const apolloClient = useApolloClient()
+    const queryLsifUploads = useCallback(
+        (args: FilteredConnectionQueryArguments) => {
+            if (repo?.id) {
+                return queryLsifUploadsByRepository({ ...args }, repo?.id, apolloClient)
+            }
+            return queryLsifUploadsList({ ...args }, apolloClient)
+        },
+        [repo?.id, queryLsifUploadsByRepository, queryLsifUploadsList, apolloClient]
     )
 
     const commitGraphMetadata = useObservable(
@@ -141,7 +153,7 @@ export const CodeIntelUploadsPage: FunctionComponent<CodeIntelUploadsPageProps> 
                         pluralNoun="uploads"
                         nodeComponent={CodeIntelUploadNode}
                         nodeComponentProps={{ now }}
-                        queryConnection={queryUploads}
+                        queryConnection={queryLsifUploads}
                         history={props.history}
                         location={props.location}
                         cursorPaging={true}

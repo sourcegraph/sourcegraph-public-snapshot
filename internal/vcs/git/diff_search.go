@@ -18,6 +18,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/pathmatch"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
+	"github.com/sourcegraph/sourcegraph/internal/vcs/git/gitapi"
 )
 
 // TextSearchOptions contains common options for text search commands.
@@ -82,9 +83,9 @@ type RawLogDiffSearchOptions struct {
 
 // LogCommitSearchResult describes a matching diff from (Repository).RawLogDiffSearch.
 type LogCommitSearchResult struct {
-	Commit         Commit      // the commit whose diff was matched
-	Diff           *RawDiff    // the diff, with non-matching/irrelevant portions deleted (respecting diff syntax)
-	DiffHighlights []Highlight // highlighted query matches in the diff
+	Commit         gitapi.Commit // the commit whose diff was matched
+	Diff           *RawDiff      // the diff, with non-matching/irrelevant portions deleted (respecting diff syntax)
+	DiffHighlights []Highlight   // highlighted query matches in the diff
 
 	// Refs is the list of ref names of this commit (from `git log --decorate`).
 	Refs []string
@@ -382,7 +383,7 @@ func rawShowSearch(ctx context.Context, repo api.RepoName, opt RawLogDiffSearchO
 		return nil, complete, err
 	}
 	for len(data) > 0 {
-		var commit *Commit
+		var commit *gitapi.Commit
 		var refs []string
 		var err error
 		commit, refs, data, err = parseCommitFromLog(data)

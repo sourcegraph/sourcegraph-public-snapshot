@@ -64,6 +64,8 @@ set -e
 echo "Waiting for $URL... done"
 
 echo "--- yarn run test-e2e"
+echo "TEST: Downloading Puppeteer"
+yarn --cwd client/shared run download-puppeteer-browser
 env SOURCEGRAPH_BASE_URL="$URL" PERCY_ON=true ./node_modules/.bin/percy exec -- yarn run cover-e2e
 
 echo "--- coverage"

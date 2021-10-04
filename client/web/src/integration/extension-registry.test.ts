@@ -93,12 +93,14 @@ const registryExtensionNodes: RegistryExtensionFieldsForList[] = [
 
 const extensionNodes: ExtensionsResult['extensionRegistry']['extensions']['nodes'] = [
     {
+        id: 'typescript',
         extensionID: 'sourcegraph/typescript',
         manifest: {
             jsonFields: typescriptRawManifest,
         },
     },
     {
+        id: 'count',
         extensionID: 'sqs/word-count',
         manifest: {
             jsonFields: wordCountRawManifest,

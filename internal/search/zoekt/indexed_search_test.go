@@ -256,27 +256,52 @@ func TestIndexedSearch(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			args := &search.TextParameters{
-				Query:           q,
-				PatternInfo:     tt.args.patternInfo,
-				Repos:           tt.args.repos,
-				UseFullDeadline: tt.args.useFullDeadline,
-				Zoekt: &searchbackend.FakeSearcher{
-					Result: &zoekt.SearchResult{Files: tt.args.results},
-					Repos:  zoektRepos,
-				},
+			zoekt := &searchbackend.FakeSearcher{
+				Result: &zoekt.SearchResult{Files: tt.args.results},
+				Repos:  zoektRepos,
 			}
 
-			indexed, err := NewIndexedSubsetSearchRequest(context.Background(), args, search.TextRequest, MissingRepoRevStatus(streaming.StreamFunc(func(streaming.SearchEvent) {})))
+			zoektQuery, err := search.QueryToZoektQuery(tt.args.patternInfo, false)
 			if err != nil {
 				t.Fatal(err)
 			}
 
-			if diff := cmp.Diff(tt.wantUnindexed, indexed.Unindexed, cmpopts.EquateEmpty()); diff != "" {
+			zoektArgs := &search.ZoektParameters{
+				Query:          zoektQuery,
+				Typ:            search.TextRequest,
+				FileMatchLimit: tt.args.patternInfo.FileMatchLimit,
+				Select:         tt.args.patternInfo.Select,
+				Zoekt:          zoekt,
+			}
+
+			args := &search.TextParameters{
+				Repos: tt.args.repos,
+				PatternInfo: &search.TextPatternInfo{
+					Index:          tt.args.patternInfo.Index,
+					FileMatchLimit: zoektArgs.FileMatchLimit,
+					Select:         zoektArgs.Select,
+				},
+				Query: q,
+				Zoekt: zoektArgs.Zoekt,
+			}
+
+			indexed, err := NewIndexedSearchRequest(
+				context.Background(),
+				args,
+				search.TextRequest,
+				MissingRepoRevStatus(streaming.StreamFunc(func(streaming.SearchEvent) {})),
+			)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			indexedSubset := indexed.(*IndexedSubsetSearchRequest)
+
+			if diff := cmp.Diff(tt.wantUnindexed, indexedSubset.Unindexed, cmpopts.EquateEmpty()); diff != "" {
 				t.Errorf("unindexed mismatch (-want +got):\n%s", diff)
 			}
 
-			indexed.since = tt.args.since
+			indexedSubset.since = tt.args.since
 
 			// This is a quick fix which will break once we enable the zoekt client for true streaming.
 			// Once we return more than one event we have to account for the proper order of results
@@ -334,9 +359,9 @@ func TestZoektIndexedRepos(t *testing.T) {
 		"foo/indexed-one@",
 		"foo/indexed-two@",
 		"foo/indexed-three@",
+		"foo/partially-indexed@HEAD:bad-rev",
 		"foo/unindexed-one",
 		"foo/unindexed-two",
-		"foo/multi-rev@a:b",
 	)
 
 	zoektRepos := map[uint32]*zoekt.MinimalRepoListEntry{}
@@ -351,22 +376,13 @@ func TestZoektIndexedRepos(t *testing.T) {
 			{Name: "HEAD", Version: "deadbeef"},
 			{Name: "foobar", Version: "deadcow"},
 		},
+		{
+			{Name: "HEAD", Version: "deadbeef"},
+		},
 	} {
 		r := repos[i]
 		branches := branches
 		zoektRepos[uint32(r.Repo.ID)] = &zoekt.MinimalRepoListEntry{Branches: branches}
-	}
-
-	makeIndexed := func(repos []*search.RepositoryRevisions) []*search.RepositoryRevisions {
-		var indexed []*search.RepositoryRevisions
-		for _, r := range repos {
-			rev := &search.RepositoryRevisions{
-				Repo: r.Repo,
-				Revs: r.Revs,
-			}
-			indexed = append(indexed, rev)
-		}
-		return indexed
 	}
 
 	cases := []struct {
@@ -375,19 +391,25 @@ func TestZoektIndexedRepos(t *testing.T) {
 		indexed   []*search.RepositoryRevisions
 		unindexed []*search.RepositoryRevisions
 	}{{
-		name:      "all",
-		repos:     repos,
-		indexed:   makeIndexed(repos[:3]),
-		unindexed: repos[3:],
+		name:  "all",
+		repos: repos,
+		indexed: []*search.RepositoryRevisions{
+			repos[0], repos[1], repos[2],
+			{Repo: repos[3].Repo, Revs: repos[3].Revs[:1]},
+		},
+		unindexed: []*search.RepositoryRevisions{
+			{Repo: repos[3].Repo, Revs: repos[3].Revs[1:]},
+			repos[4], repos[5],
+		},
 	}, {
 		name:      "one unindexed",
-		repos:     repos[3:4],
+		repos:     repos[4:5],
 		indexed:   repos[:0],
-		unindexed: repos[3:4],
+		unindexed: repos[4:5],
 	}, {
 		name:      "one indexed",
 		repos:     repos[:1],
-		indexed:   makeIndexed(repos[:1]),
+		indexed:   repos[:1],
 		unindexed: repos[:0],
 	}}
 

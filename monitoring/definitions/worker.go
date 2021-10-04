@@ -101,6 +101,9 @@ func Worker() *monitoring.Container {
 			shared.CodeIntelligence.NewGitserverClientGroup(containerName),
 			shared.CodeIntelligence.NewDependencyReposStoreGroup(containerName),
 
+			shared.Batches.NewDBStoreGroup(containerName),
+			shared.Batches.NewServiceGroup(containerName),
+
 			// src_codeintel_background_upload_resets_total
 			// src_codeintel_background_upload_reset_failures_total
 			// src_codeintel_background_upload_reset_errors_total

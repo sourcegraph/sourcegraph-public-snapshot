@@ -2,7 +2,7 @@ import * as H from 'history'
 
 import { SearchPatternType } from '@sourcegraph/shared/src/graphql/schema'
 
-import { getSearchTypeFromQuery, toggleSearchType, toggleSearchFilter, submitSearch } from './helpers'
+import { getSearchTypeFromQuery, toggleSearchType, toggleSubquery, submitSearch } from './helpers'
 import { SearchType } from './results/StreamingSearchResults'
 
 describe('search/helpers', () => {
@@ -111,15 +111,15 @@ describe('search/helpers', () => {
 
     describe('toggleSearchFilter', () => {
         it('adds filter if it is not already in query', () => {
-            expect(toggleSearchFilter('repo:test ', 'lang:c++')).toStrictEqual('repo:test lang:c++ ')
+            expect(toggleSubquery('repo:test ', 'lang:c++')).toStrictEqual('repo:test lang:c++ ')
         })
 
         it('adds filter if it is not already in query, even if it matches substring for an existing filter', () => {
-            expect(toggleSearchFilter('repo:test lang:c++ ', 'lang:c')).toStrictEqual('repo:test lang:c++ lang:c ')
+            expect(toggleSubquery('repo:test lang:c++ ', 'lang:c')).toStrictEqual('repo:test lang:c++ lang:c ')
         })
 
         it('removes filter from query it it exists', () => {
-            expect(toggleSearchFilter('repo:test lang:c++ lang:c ', 'lang:c')).toStrictEqual('repo:test lang:c++')
+            expect(toggleSubquery('repo:test lang:c++ lang:c ', 'lang:c')).toStrictEqual('repo:test lang:c++')
         })
     })
 })

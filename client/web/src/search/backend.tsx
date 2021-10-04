@@ -107,21 +107,21 @@ export function convertVersionContextToSearchContext(
     )
 }
 
-export const fetchAutoDefinedSearchContexts = defer(() =>
-    requestGraphQL<AutoDefinedSearchContextsResult, AutoDefinedSearchContextsVariables>(gql`
+export function fetchAutoDefinedSearchContexts(): Observable<
+    AutoDefinedSearchContextsResult['autoDefinedSearchContexts']
+> {
+    return requestGraphQL<AutoDefinedSearchContextsResult, AutoDefinedSearchContextsVariables>(gql`
         query AutoDefinedSearchContexts {
             autoDefinedSearchContexts {
                 ...SearchContextFields
             }
         }
         ${searchContextFragment}
-    `)
-).pipe(
-    map(dataOrThrowErrors),
-    map(({ autoDefinedSearchContexts }) => autoDefinedSearchContexts as GQL.ISearchContext[]),
-    publishReplay(1),
-    refCount()
-)
+    `).pipe(
+        map(dataOrThrowErrors),
+        map(({ autoDefinedSearchContexts }) => autoDefinedSearchContexts as GQL.ISearchContext[])
+    )
+}
 
 export function getUserSearchContextNamespaces(authenticatedUser: AuthenticatedUser | null): Maybe<Scalars['ID']>[] {
     return authenticatedUser
@@ -296,7 +296,6 @@ export function isSearchContextAvailable(
 export function fetchSuggestions(query: string): Observable<SearchSuggestion[]> {
     return combineLatest([
         repogroupSuggestions,
-        fetchAutoDefinedSearchContexts,
         queryGraphQL(
             gql`
                 query SearchSuggestions($query: String!) {
@@ -346,13 +345,7 @@ export function fetchSuggestions(query: string): Observable<SearchSuggestion[]> 
                 return data.search.suggestions
             })
         ),
-    ]).pipe(
-        map(([repogroups, autoDefinedSearchContexts, dynamicSuggestions]) => [
-            ...repogroups,
-            ...autoDefinedSearchContexts,
-            ...dynamicSuggestions,
-        ])
-    )
+    ]).pipe(map(([repogroups, dynamicSuggestions]) => [...repogroups, ...dynamicSuggestions]))
 }
 
 export function fetchReposByQuery(query: string): Observable<{ name: string; url: string }[]> {
@@ -586,6 +579,7 @@ function fetchEvents(userId: Scalars['ID'], first: number, eventName: string): O
             query EventLogsData($userId: ID!, $first: Int, $eventName: String!) {
                 node(id: $userId) {
                     ... on User {
+                        __typename
                         eventLogs(first: $first, eventName: $eventName) {
                             nodes {
                                 argument
@@ -608,7 +602,7 @@ function fetchEvents(userId: Scalars['ID'], first: number, eventName: string): O
         map(dataOrThrowErrors),
         map(
             (data: EventLogsDataResult): EventLogResult => {
-                if (!data.node) {
+                if (!data.node || data.node.__typename !== 'User') {
                     throw new Error('User not found')
                 }
                 return data.node.eventLogs

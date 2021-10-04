@@ -330,7 +330,7 @@ func prometheusGraphQLRequestName(requestName string) string {
 	return "other"
 }
 
-func NewSchema(db dbutil.DB, batchChanges BatchChangesResolver, codeIntel CodeIntelResolver, insights InsightsResolver, authz AuthzResolver, codeMonitors CodeMonitorsResolver, license LicenseResolver, dotcom DotcomRootResolver) (*graphql.Schema, error) {
+func NewSchema(db dbutil.DB, batchChanges BatchChangesResolver, codeIntel CodeIntelResolver, insights InsightsResolver, authz AuthzResolver, codeMonitors CodeMonitorsResolver, license LicenseResolver, dotcom DotcomRootResolver, searchContexts SearchContextsResolver) (*graphql.Schema, error) {
 	resolver := newSchemaResolver(db)
 	schemas := []string{mainSchema}
 
@@ -393,6 +393,16 @@ func NewSchema(db dbutil.DB, batchChanges BatchChangesResolver, codeIntel CodeIn
 		}
 	}
 
+	if searchContexts != nil {
+		EnterpriseResolvers.searchContextsResolver = searchContexts
+		resolver.SearchContextsResolver = searchContexts
+		schemas = append(schemas, searchContextsSchema)
+		// Register NodeByID handlers.
+		for kind, res := range searchContexts.NodeResolvers() {
+			resolver.nodeByIDFns[kind] = res
+		}
+	}
+
 	schemas = append(schemas, computeSchema)
 
 	return graphql.ParseSchema(
@@ -415,6 +425,7 @@ type schemaResolver struct {
 	CodeMonitorsResolver
 	LicenseResolver
 	DotcomRootResolver
+	SearchContextsResolver
 
 	db                dbutil.DB
 	repoupdaterClient *repoupdater.Client
@@ -469,9 +480,6 @@ func newSchemaResolver(db dbutil.DB) *schemaResolver {
 		"OutOfBandMigration": func(ctx context.Context, id graphql.ID) (Node, error) {
 			return r.OutOfBandMigrationByID(ctx, id)
 		},
-		"SearchContext": func(ctx context.Context, id graphql.ID) (Node, error) {
-			return r.SearchContextByID(ctx, id)
-		},
 	}
 	return r
 }
@@ -479,14 +487,15 @@ func newSchemaResolver(db dbutil.DB) *schemaResolver {
 // EnterpriseResolvers holds the instances of resolvers which are enabled only
 // in enterprise mode. These resolver instances are nil when running as OSS.
 var EnterpriseResolvers = struct {
-	codeIntelResolver    CodeIntelResolver
-	computeResolver      ComputeResolver
-	insightsResolver     InsightsResolver
-	authzResolver        AuthzResolver
-	batchChangesResolver BatchChangesResolver
-	codeMonitorsResolver CodeMonitorsResolver
-	licenseResolver      LicenseResolver
-	dotcomResolver       DotcomRootResolver
+	codeIntelResolver      CodeIntelResolver
+	computeResolver        ComputeResolver
+	insightsResolver       InsightsResolver
+	authzResolver          AuthzResolver
+	batchChangesResolver   BatchChangesResolver
+	codeMonitorsResolver   CodeMonitorsResolver
+	licenseResolver        LicenseResolver
+	dotcomResolver         DotcomRootResolver
+	searchContextsResolver SearchContextsResolver
 }{}
 
 // DEPRECATED
