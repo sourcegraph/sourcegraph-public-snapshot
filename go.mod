@@ -39,7 +39,6 @@ require (
 	github.com/dgraph-io/ristretto v0.0.3
 	github.com/dineshappavoo/basex v0.0.0-20170425072625-481a6f6dc663
 	github.com/dnaeon/go-vcr v1.2.0
-	github.com/efritz/pentimento v0.0.0-20190429011147-ade47d831101
 	github.com/fatih/color v1.12.0
 	github.com/fatih/structs v1.1.0
 	github.com/felixge/fgprof v0.9.1
