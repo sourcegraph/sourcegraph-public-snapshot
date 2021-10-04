@@ -1,0 +1,62 @@
+package store
+
+import (
+	"context"
+	"testing"
+	"time"
+
+	"github.com/hexops/autogold"
+
+	insightsdbtesting "github.com/sourcegraph/sourcegraph/enterprise/internal/insights/dbtesting"
+)
+
+func TestGetDashboard(t *testing.T) {
+	timescale, cleanup := insightsdbtesting.TimescaleDB(t)
+	defer cleanup()
+	now := time.Now().Truncate(time.Microsecond).Round(0)
+
+	_, err := timescale.Exec(`
+		INSERT INTO dashboard (id, title)
+		VALUES (1, 'test dashboard'), (2, 'private dashboard for user 3');`)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	ctx := context.Background()
+
+	// assign some global grants just so the test can immediately fetch the created dashboard
+	_, err = timescale.Exec(`INSERT INTO dashboard_grants (dashboard_id, global)
+									VALUES (1, true)`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	// assign a private grant
+	_, err = timescale.Exec(`INSERT INTO dashboard_grants (dashboard_id, user_id)
+									VALUES (2, 3)`)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	store := NewDashboardStore(timescale)
+	store.Now = func() time.Time {
+		return now
+	}
+
+	t.Run("test get all", func(t *testing.T) {
+		got, err := store.GetDashboards(ctx, DashboardQueryArgs{})
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		autogold.Equal(t, got, autogold.ExportedOnly())
+	})
+
+	t.Run("test user 3 can see both dashboards", func(t *testing.T) {
+		got, err := store.GetDashboards(ctx, DashboardQueryArgs{UserID: []int{3}})
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		autogold.Equal(t, got, autogold.ExportedOnly())
+	})
+}

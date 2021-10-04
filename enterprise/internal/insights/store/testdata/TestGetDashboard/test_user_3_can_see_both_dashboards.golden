@@ -1,0 +1,10 @@
+[]*types.Dashboard{
+	&types.Dashboard{
+		ID:    1,
+		Title: "test dashboard",
+	},
+	&types.Dashboard{
+		ID:    2,
+		Title: "private dashboard for user 3",
+	},
+}
