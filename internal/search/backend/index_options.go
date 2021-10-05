@@ -16,6 +16,9 @@ import (
 //
 // We only specify a subset of the fields.
 type zoektIndexOptions struct {
+	// Name is the Repository Name.
+	Name string
+
 	// RepoID is the Sourcegraph Repository ID.
 	RepoID int32
 
@@ -50,6 +53,9 @@ type zoektIndexOptions struct {
 // RepoIndexOptions are the options used by GetIndexOptions for a specific
 // repository.
 type RepoIndexOptions struct {
+	// Name is the Repository Name.
+	Name string
+
 	// RepoID is the Sourcegraph Repository ID.
 	RepoID int32
 
@@ -114,6 +120,7 @@ func getIndexOptions(
 	}
 
 	o := &zoektIndexOptions{
+		Name:       opts.Name,
 		RepoID:     opts.RepoID,
 		Public:     opts.Public,
 		Priority:   opts.Priority,
