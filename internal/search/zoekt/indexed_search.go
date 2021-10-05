@@ -212,7 +212,7 @@ func NewIndexedSearchRequest(ctx context.Context, args *search.TextParameters, t
 		return fallbackUnindexed(args.Repos, maxUnindexedRepoRevSearchesPerQuery, onMissing), nil
 	}
 
-	q, err := search.QueryToZoektQuery(args.PatternInfo, typ == search.SymbolRequest)
+	q, err := search.QueryToZoektQuery(args.PatternInfo, typ)
 	if err != nil {
 		return nil, err
 	}
