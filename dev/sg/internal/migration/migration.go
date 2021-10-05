@@ -23,7 +23,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/stdout"
 	"github.com/sourcegraph/sourcegraph/dev/sg/root"
 	"github.com/sourcegraph/sourcegraph/lib/output"
-	"github.com/sourcegraph/sourcegraph/lib/postgresdsnostgresdsn"
+	"github.com/sourcegraph/sourcegraph/lib/postgresdsn"
 )
 
 var once sync.Once
