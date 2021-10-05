@@ -195,21 +195,39 @@ func fallbackUnindexed(repos []*search.RepositoryRevisions, limit int, onMissing
 	}
 }
 
-func NewIndexedSearchRequest(ctx context.Context, args *search.TextParameters, typ search.IndexedRequestType, onMissing OnMissingRepoRevs) (IndexedSearchRequest, error) {
+// UseOnlyUnindexedSearchRequest returns an IndexedSearchRequest that represents
+// a search fallback to unindexed search if an indexed search is explicitly
+// disabled (`index:no`) or we cannot for some other reason run one. When the
+// second argument returns true, this request should be used to run a search. If
+// it returns false, then it is safe to create a NewIndexedSearchRequest and use
+// that request. This function is a temporary helper to simplify query
+// construction logic.
+func UseOnlyUnindexedSearchRequest(args *search.TextParameters, onMissing OnMissingRepoRevs) (IndexedSearchRequest, bool, error) {
 	// If Zoekt is disabled just fallback to Unindexed.
 	if args.Zoekt == nil {
 		if args.PatternInfo.Index == query.Only {
-			return nil, errors.Errorf("invalid index:%q (indexed search is not enabled)", args.PatternInfo.Index)
+			return nil, false, errors.Errorf("invalid index:%q (indexed search is not enabled)", args.PatternInfo.Index)
 		}
-		return fallbackIndexUnavailable(args.Repos, maxUnindexedRepoRevSearchesPerQuery, onMissing), nil
+		return fallbackIndexUnavailable(args.Repos, maxUnindexedRepoRevSearchesPerQuery, onMissing), true, nil
 	}
 	// Fallback to Unindexed if the query contains valid ref-globs.
 	if query.ContainsRefGlobs(args.Query) {
-		return fallbackUnindexed(args.Repos, maxUnindexedRepoRevSearchesPerQuery, onMissing), nil
+		return fallbackUnindexed(args.Repos, maxUnindexedRepoRevSearchesPerQuery, onMissing), true, nil
 	}
 	// Fallback to Unindexed if index:no
 	if args.PatternInfo.Index == query.No {
-		return fallbackUnindexed(args.Repos, maxUnindexedRepoRevSearchesPerQuery, onMissing), nil
+		return fallbackUnindexed(args.Repos, maxUnindexedRepoRevSearchesPerQuery, onMissing), true, nil
+	}
+	return nil, false, nil
+}
+
+func NewIndexedSearchRequest(ctx context.Context, args *search.TextParameters, typ search.IndexedRequestType, onMissing OnMissingRepoRevs) (IndexedSearchRequest, error) {
+	request, onlyUnindexed, err := UseOnlyUnindexedSearchRequest(args, onMissing)
+	if err != nil {
+		return nil, err
+	}
+	if onlyUnindexed {
+		return request, nil
 	}
 
 	q, err := search.QueryToZoektQuery(args.PatternInfo, typ == search.SymbolRequest)
@@ -223,7 +241,6 @@ func NewIndexedSearchRequest(ctx context.Context, args *search.TextParameters, t
 		Select:         args.PatternInfo.Select,
 		Zoekt:          args.Zoekt,
 	}
-
 	if args.Mode == search.ZoektGlobalSearch {
 		// performance: optimize global searches where Zoekt searches
 		// all shards anyway.
