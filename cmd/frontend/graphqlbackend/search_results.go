@@ -1459,6 +1459,36 @@ func (r *searchResolver) doResults(ctx context.Context, args *search.TextParamet
 
 	agg := run.NewAggregator(r.db, stream)
 
+	// finalize converts the content of the aggregator to a proper return value.
+	// finalize relies on all WaitGroups being done since it relies on collecting
+	// from the streams.
+	finalize := func() (*SearchResults, error) {
+		matches, common, aggErrs := agg.Get()
+
+		if aggErrs == nil {
+			return nil, errors.New("aggErrs should never be nil")
+		}
+
+		ao := alertObserver{
+			Inputs:     r.SearchInputs,
+			hasResults: len(matches) > 0,
+		}
+		for _, err := range aggErrs.Errors {
+			ao.Error(ctx, err)
+		}
+		alert, err := ao.Done(&common)
+
+		tr.LazyPrintf("matches=%d %s", len(matches), &common)
+
+		r.sortResults(matches)
+
+		return &SearchResults{
+			Matches: matches,
+			Stats:   common,
+			Alert:   alert,
+		}, err
+	}
+
 	// This ensures we properly cleanup in the case of an early return. In
 	// particular we want to cancel global searches before returning early.
 	hasStartedAllBackends := false
@@ -1530,7 +1560,7 @@ func (r *searchResolver) doResults(ctx context.Context, args *search.TextParamet
 			tr.LazyPrintf("context canceled during repo resolution: %v", err)
 			optionalWg.Wait()
 			requiredWg.Wait()
-			return r.toSearchResults(ctx, agg)
+			return finalize()
 		}
 		return nil, err
 	}
@@ -1632,36 +1662,7 @@ func (r *searchResolver) doResults(ctx context.Context, args *search.TextParamet
 
 	timer.Stop()
 
-	return r.toSearchResults(ctx, agg)
-}
-
-// toSearchResults converts an Aggregator to SearchResults.
-//
-// toSearchResults relies on all WaitGroups being done since it relies on
-// collecting from the streams.
-func (r *searchResolver) toSearchResults(ctx context.Context, agg *run.Aggregator) (*SearchResults, error) {
-	matches, common, aggErrs := agg.Get()
-
-	if aggErrs == nil {
-		return nil, errors.New("aggErrs should never be nil")
-	}
-
-	ao := alertObserver{
-		Inputs:     r.SearchInputs,
-		hasResults: len(matches) > 0,
-	}
-	for _, err := range aggErrs.Errors {
-		ao.Error(ctx, err)
-	}
-	alert, err := ao.Done(&common)
-
-	r.sortResults(matches)
-
-	return &SearchResults{
-		Matches: matches,
-		Stats:   common,
-		Alert:   alert,
-	}, err
+	return finalize()
 }
 
 // isContextError returns true if ctx.Err() is not nil or if err
