@@ -1,12 +1,10 @@
 import { Shortcut } from '@slimsag/react-shortcuts'
-import classNames from 'classnames'
 import React, { useCallback, useState } from 'react'
 import { Modal } from 'reactstrap'
 
 import { KeyboardShortcut } from '@sourcegraph/shared/src/keyboardShortcuts'
 
 import { KeyboardShortcutsProps } from './keyboardShortcuts'
-import styles from './KeyboardShortcutsHelp.module.scss'
 
 interface Props extends KeyboardShortcutsProps {
     /** The keyboard shortcut to show this modal. */
@@ -50,7 +48,7 @@ export const KeyboardShortcutsHelp: React.FunctionComponent<Props> = ({
                         <span aria-hidden="true">&times;</span>
                     </button>
                 </div>
-                <div className={classNames(styles.modalBodyHelp, 'modal-body')}>
+                <div className="modal-body modal-body--full">
                     <ul className="list-group list-group-flush">
                         {[...keyboardShortcuts, ...LEGACY_KEYBOARD_SHORTCUTS]
                             .filter(({ hideInHelp }) => !hideInHelp)
