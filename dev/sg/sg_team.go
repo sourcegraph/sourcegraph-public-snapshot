@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"flag"
+	"fmt"
 
 	"github.com/cockroachdb/errors"
 	"github.com/peterbourgon/ff/v3/ffcli"
@@ -48,6 +49,6 @@ func teammateExec(ctx context.Context, args []string) error {
 		open.URL(str)
 		return nil
 	default:
-		return errors.New("unknown teammate command")
+		return fmt.Errorf("unknown teammate command: %s", args[0])
 	}
 }

@@ -14,8 +14,7 @@ import (
 )
 
 var (
-	ErrUserNotFound                = errors.New("User not found")
-	out             *output.Output = stdout.Out
+	out *output.Output = stdout.Out
 )
 
 type slackToken struct {
@@ -72,7 +71,7 @@ func queryUserCurrentTime(token, nick string) (string, error) {
 	}
 	u := findUserByNickname(users, nick)
 	if u == nil {
-		return "", errors.Wrapf(err, "cannot find nickname '%s'", nick)
+		return "", fmt.Errorf("cannot find user with nickname '%s'", nick)
 	}
 	loc, err := time.LoadLocation(u.TZ)
 	if err != nil {
@@ -104,21 +103,21 @@ func queryUserHandbook(token, nick string) (string, error) {
 	}
 	u := findUserByNickname(users, nick)
 	if u == nil {
-		return "", errors.Wrapf(err, "cannot find nickname '%s'", nick)
+		return "", fmt.Errorf("cannot find user with nickname '%s'", nick)
 	}
 	p, err := api.GetUserProfile(&slack.GetUserProfileParameters{
 		UserID:        u.ID,
 		IncludeLabels: true,
 	})
 	if err != nil {
-		panic(err)
+		return "", err
 	}
 	for _, v := range p.FieldsMap() {
 		if v.Label == "Handbook link" {
 			return v.Value, nil
 		}
 	}
-	return "", ErrUserNotFound
+	return "", fmt.Errorf("no handbook link found for %s", nick)
 }
 
 // findUserByNickname searches for a user by its nickname, e.g. what we type in Slack after a '@' character.
