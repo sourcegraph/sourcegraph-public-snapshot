@@ -355,28 +355,6 @@ index 0000000000..7e54670557
 
 }
 
-func TestQueryCNF(t *testing.T) {
-	t.Run("fuzz error 1", func(t *testing.T) {
-		a := protocol.NewAnd(
-			&protocol.AuthorMatches{Expr: "b"},
-			&protocol.AuthorMatches{Expr: "g"},
-			&protocol.AuthorMatches{Expr: "k"},
-		)
-		println("A: ", a.String())
-		o := protocol.NewOr(
-			&protocol.AuthorMatches{Expr: "j"},
-			a,
-			&protocol.AuthorMatches{Expr: "k"},
-		)
-		println("O: ", o.String())
-		n1 := protocol.NewNot(o)
-		println("N1: ", n1.String())
-		n2 := protocol.NewNot(n1)
-		println("N2: ", n2.String())
-	})
-
-}
-
 func TestFuzzQueryCNF(t *testing.T) {
 	matchTreeMatches := func(mt MatchTree, a authorNameGenerator) bool {
 		lc := &LazyCommit{
@@ -396,7 +374,7 @@ func TestFuzzQueryCNF(t *testing.T) {
 	}
 
 	reducedQueryMatches := func(q queryGenerator, a authorNameGenerator) bool {
-		mt, err := ToMatchTree(q.ReducedQuery())
+		mt, err := ToMatchTree(q.ConstructedQuery())
 		require.NoError(t, err)
 		return matchTreeMatches(mt, a)
 	}
@@ -406,7 +384,7 @@ func TestFuzzQueryCNF(t *testing.T) {
 	if err != nil && errors.As(err, &e) {
 		t.Fatalf("Different outputs for same inputs\n  RawQuery: %s\n  ReducedQuery: %s\n  AuthorName: %s\n",
 			e.In[0].(queryGenerator).RawQuery.String(),
-			e.In[0].(queryGenerator).ReducedQuery().String(),
+			e.In[0].(queryGenerator).ConstructedQuery().String(),
 			string(e.In[1].([]uint8)),
 		)
 	} else if err != nil {
@@ -416,7 +394,7 @@ func TestFuzzQueryCNF(t *testing.T) {
 
 // queryGenerator is a type that satisfies the tesing/quick Generator interface,
 // generating random, unreduced queries in its RawQuery field. Additionally,
-// it exposes a ReducedQuery() convienence method that allows the caller to get the
+// it exposes a ConstructedQuery() convienence method that allows the caller to get the
 // query as if it had been created with the protocol.New* functions.
 type queryGenerator struct {
 	RawQuery protocol.Node
@@ -430,20 +408,21 @@ func (queryGenerator) Generate(rand *rand.Rand, size int) reflect.Value {
 	return reflect.ValueOf(queryGenerator{generateQuery(rand, size)})
 }
 
-func (q queryGenerator) ReducedQuery() protocol.Node {
-	return reduceQuery(q.RawQuery)
+// ConstructedQuery returns the query as if constructted with the protocol.New* functions
+func (q queryGenerator) ConstructedQuery() protocol.Node {
+	return constructedQuery(q.RawQuery)
 }
 
-// reduceQuery takes any query and recursively reduces it with the
+// constructedQuery takes any query and recursively reduces it with the
 // protocol.New* functions. This is not meant to be used outside of fuzz testing
 // because any caller should be using the protocol.New* functions directly, which
 // reduce the query on construction.
-func reduceQuery(q protocol.Node) protocol.Node {
+func constructedQuery(q protocol.Node) protocol.Node {
 	switch v := q.(type) {
 	case *protocol.Operator:
 		newOperands := make([]protocol.Node, 0, len(v.Operands))
 		for _, operand := range v.Operands {
-			newOperands = append(newOperands, reduceQuery(operand))
+			newOperands = append(newOperands, constructedQuery(operand))
 		}
 		switch v.Kind {
 		case protocol.And:
