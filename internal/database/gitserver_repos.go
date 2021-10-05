@@ -278,17 +278,17 @@ type GitserverFetchData struct {
 	ShardID string
 }
 
-// SetLastFetched will attempt to update ONLY the last fetched time of a GitServerRepo.
+// SetLastFetched will attempt to update ONLY the last fetched data of a GitServerRepo.
 // a matching row does not yet exist a new one will be created.
 func (s *GitserverRepoStore) SetLastFetched(ctx context.Context, name api.RepoName, data GitserverFetchData) error {
 	err := s.Exec(ctx, sqlf.Sprintf(`
 -- source: internal/database/gitserver_repos.go:GitserverRepoStore.SetLastFetched
 INSERT INTO gitserver_repos(repo_id, last_fetched, last_changed, shard_id, updated_at)
-SELECT id, %s, %s, now()
+SELECT id, %s, %s, %s, now()
 FROM repo WHERE name = %s
 ON CONFLICT (repo_id) DO UPDATE
-SET (last_fetched, shard_id, updated_at) =
-    (EXCLUDED.last_fetched, EXCLUDED.shard_id, now())
+SET (last_fetched, last_changed, shard_id, updated_at) =
+    (EXCLUDED.last_fetched, EXCLUDED.last_changed, EXCLUDED.shard_id, now())
 `, data.LastFetched, data.LastChanged, data.ShardID, name))
 
 	return errors.Wrap(err, "setting last fetched")
