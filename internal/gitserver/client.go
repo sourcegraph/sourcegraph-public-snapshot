@@ -992,9 +992,30 @@ func (c *Client) CreateCommitFromPatch(ctx context.Context, req protocol.CreateC
 	return res.Rev, nil
 }
 
-// GetObject fetches git object data in the supplied repo.
-// TODO: This will replace vcs/git/GetObject
+// GetObject fetches git object data in the supplied repo
 func (c *Client) GetObject(ctx context.Context, repo api.RepoName, objectName string) (*domain.GitObject, error) {
-	// TODO: HTTP call to gitserver/commands/get-object
-	return nil, errors.New("TODO")
+	req := protocol.GetObjectRequest{
+		Repo:       repo,
+		ObjectName: objectName,
+	}
+	resp, err := c.httpPost(ctx, req.Repo, "commands/get-object", req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	data, err := io.ReadAll(resp.Body)
+	if err != nil {
+		log15.Warn("reading gitserver get-object response", "err", err.Error())
+		return nil, &url.Error{URL: resp.Request.URL.String(), Op: "GetObject", Err: errors.Errorf("GetObject: http status %d %s", resp.StatusCode, err.Error())}
+	}
+
+	var res protocol.GetObjectResponse
+	err = json.Unmarshal(data, &res)
+	if err != nil {
+		log15.Warn("decoding gitserver get-object response", "err", err.Error())
+		return nil, &url.Error{URL: resp.Request.URL.String(), Op: "GetObject", Err: errors.Errorf("GetObject: http status %d %s", resp.StatusCode, string(data))}
+	}
+
+	return &res.Object, nil
 }

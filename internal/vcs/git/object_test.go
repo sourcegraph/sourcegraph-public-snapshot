@@ -4,6 +4,8 @@ import (
 	"context"
 	"testing"
 
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/domain"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -33,15 +35,16 @@ func TestGetObject(t *testing.T) {
 
 	for label, test := range tests {
 		t.Run(label, func(t *testing.T) {
-			oid, objectType, err := GetObject(context.Background(), test.repo, test.objectName)
+			obj, err := gitserver.DefaultClient.GetObject(context.Background(), test.repo, test.objectName)
 			if err != nil {
 				t.Fatal(err)
 			}
+			oid := obj.ID
 			if oid.String() != test.wantOID {
 				t.Errorf("got OID %q, want %q", oid, test.wantOID)
 			}
-			if objectType != test.wantObjectType {
-				t.Errorf("got object type %q, want %q", objectType, test.wantObjectType)
+			if obj.Type != test.wantObjectType {
+				t.Errorf("got object type %q, want %q", obj.Type, test.wantObjectType)
 			}
 		})
 	}

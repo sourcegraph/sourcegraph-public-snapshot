@@ -361,6 +361,8 @@ func (s *Server) Handler() http.Handler {
 
 	mux.Handle("/git/", http.StripPrefix("/git", s.gitServiceHandler()))
 
+	// Migration to hexagonal architecture starting here:
+
 	gitAdapter := &adapters.Git{
 		ReposDir: s.ReposDir,
 	}

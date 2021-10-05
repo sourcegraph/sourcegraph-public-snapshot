@@ -44,11 +44,6 @@ type GetObjectService struct {
 }
 
 func (s *GetObjectService) GetObject(ctx context.Context, repo api.RepoName, objectName string) (*GitObject, error) {
-	// TODO: We shouldn't need this mock since we can instead mock out the adapters
-	//if Mocks.GetObject != nil {
-	//	return Mocks.GetObject(objectName)
-	//}
-
 	// TODO: Maybe we can have a general wrapper around the service. Tracing
 	// shouldn't be something the domain package is concerned by.
 
@@ -71,15 +66,15 @@ func (s *GetObjectService) GetObject(ctx context.Context, repo api.RepoName, obj
 		return nil, err
 	}
 
-	commit := strings.TrimSpace(sha)
-	if !IsAbsoluteRevision(commit) {
-		if commit == "HEAD" {
+	sha = strings.TrimSpace(sha)
+	if !IsAbsoluteRevision(sha) {
+		if sha == "HEAD" {
 			// We don't verify the existence of HEAD, but if HEAD doesn't point to anything
 			// git just returns `HEAD` as the output of rev-parse. An example where this
 			// occurs is an empty repository.
 			return nil, &RevisionNotFoundError{Repo: repo, Spec: objectName}
 		}
-		return nil, BadCommitError{Spec: objectName, Commit: api.CommitID(commit), Repo: repo}
+		return nil, BadCommitError{Spec: objectName, Commit: api.CommitID(sha), Repo: repo}
 	}
 
 	oid, err := decodeOID(sha)
