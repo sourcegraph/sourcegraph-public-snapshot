@@ -19,7 +19,7 @@ type AuthorMatches struct {
 	IgnoreCase bool
 }
 
-func (a AuthorMatches) String() string {
+func (a *AuthorMatches) String() string {
 	return fmt.Sprintf("%T(%s)", a, a.Expr)
 }
 
@@ -30,7 +30,7 @@ type CommitterMatches struct {
 	IgnoreCase bool
 }
 
-func (c CommitterMatches) String() string {
+func (c *CommitterMatches) String() string {
 	return fmt.Sprintf("%T(%s)", c, c.Expr)
 }
 
@@ -39,7 +39,7 @@ type CommitBefore struct {
 	time.Time
 }
 
-func (c CommitBefore) String() string {
+func (c *CommitBefore) String() string {
 	return fmt.Sprintf("%T(%s)", c, c.Time.String())
 }
 
@@ -48,7 +48,7 @@ type CommitAfter struct {
 	time.Time
 }
 
-func (c CommitAfter) String() string {
+func (c *CommitAfter) String() string {
 	return fmt.Sprintf("%T(%s)", c, c.Time.String())
 }
 
@@ -59,7 +59,7 @@ type MessageMatches struct {
 	IgnoreCase bool
 }
 
-func (m MessageMatches) String() string {
+func (m *MessageMatches) String() string {
 	return fmt.Sprintf("%T(%s)", m, m.Expr)
 }
 
@@ -70,7 +70,7 @@ type DiffMatches struct {
 	IgnoreCase bool
 }
 
-func (d DiffMatches) String() string {
+func (d *DiffMatches) String() string {
 	return fmt.Sprintf("%T(%s)", d, d.Expr)
 }
 
@@ -81,7 +81,7 @@ type DiffModifiesFile struct {
 	IgnoreCase bool
 }
 
-func (d DiffModifiesFile) String() string {
+func (d *DiffModifiesFile) String() string {
 	return fmt.Sprintf("%T(%s)", d, d.Expr)
 }
 
@@ -98,7 +98,7 @@ type Operator struct {
 	Operands []Node
 }
 
-func (o Operator) String() string {
+func (o *Operator) String() string {
 	var sep, prefix string
 	switch o.Kind {
 	case And:
