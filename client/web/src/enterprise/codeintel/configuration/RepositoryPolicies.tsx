@@ -44,7 +44,7 @@ export const RepositoryPolicies: FunctionComponent<RepositoryPoliciesProps> = ({
             }).then(() => {
                 onHandleIsDeleting(false)
                 history.push({
-                    state: { modal: 'SUCCESS', message: `Configuration for policy ${name}  has been deleted.` },
+                    state: { modal: 'SUCCESS', message: `Configuration for policy ${name} has been deleted.` },
                 })
             })
         },

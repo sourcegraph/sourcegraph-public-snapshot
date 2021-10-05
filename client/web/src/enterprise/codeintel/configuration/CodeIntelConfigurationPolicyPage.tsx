@@ -57,7 +57,7 @@ export const CodeIntelConfigurationPolicyPage: FunctionComponent<CodeIntelConfig
             .then(() =>
                 history.push({
                     pathname: './',
-                    state: { modal: 'SUCCESS', message: `Configuration for policy: ${policy.name} has been saved.` },
+                    state: { modal: 'SUCCESS', message: `Configuration for policy ${policy.name} has been saved.` },
                 })
             )
             .catch((error: ApolloError) =>

@@ -1,5 +1,4 @@
 .loading {
-    grid-area: button;
     display: block;
     align-self: center;
     justify-self: start;
@@ -7,7 +6,6 @@
 }
 
 .btn {
-    grid-area: button;
     align-self: center;
     justify-self: end;
 }

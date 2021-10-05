@@ -4,6 +4,7 @@ import React, { FunctionComponent } from 'react'
 import { CodeIntelligenceConfigurationPolicyFields } from '../../../graphql-operations'
 
 import { CodeIntelligencePolicyTable } from './CodeIntelligencePolicyTable'
+import { EmptyPoliciesList } from './EmptyPoliciesList'
 
 export interface PoliciesListProps {
     policies: CodeIntelligenceConfigurationPolicyFields[]
@@ -16,7 +17,7 @@ export interface PoliciesListProps {
 export const PoliciesList: FunctionComponent<PoliciesListProps> = ({ policies, onDeletePolicy, ...props }) => (
     <>
         {policies.length === 0 ? (
-            <div>No policies have been defined.</div>
+            <EmptyPoliciesList />
         ) : (
             <CodeIntelligencePolicyTable {...props} policies={policies} onDeletePolicy={onDeletePolicy} />
         )}
