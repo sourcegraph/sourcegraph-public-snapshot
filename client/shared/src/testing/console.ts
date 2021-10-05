@@ -50,33 +50,25 @@ export async function formatPuppeteerConsoleMessage(
                     : '\t' + formattedLocation)
     )
 
-    const argumentObjects = simple
-        ? // Firefox tests with `puppeteer-firefox`: It does not support
-          // `argumentHandle.evaluateHandle` so messages will be broken, until we
-          // migrate away from `puppeteer-firefox` which is deprecated.
-          []
-        : await Promise.allSettled(
-              message.args().map(async argumentHandle => {
-                  const json = (await (
-                      await argumentHandle.evaluateHandle(value =>
-                          JSON.stringify(value, (key, value: unknown) => {
-                              // Check if value is error, because Errors are not serializable but commonly logged
-                              if (value instanceof Error) {
-                                  return value.stack
-                              }
-                              return value
-                          })
-                      )
-                  ).jsonValue()) as string
-                  const parsed: unknown = JSON.parse(json)
-                  return parsed
-              })
-          )
-
-    console.log(
-        'WOW',
-        message.args().map(value => value.jsonValue())
+    const argumentObjects = await Promise.allSettled(
+        message.args().map(async argumentHandle => {
+            const json = (await (
+                await argumentHandle.evaluateHandle(value =>
+                    JSON.stringify(value, (key, value: unknown) => {
+                        // Check if value is error, because Errors are not serializable but commonly logged
+                        if (value instanceof Error) {
+                            return value.stack
+                        }
+                        return value
+                    })
+                )
+            ).jsonValue()) as string
+            const parsed: unknown = JSON.parse(json)
+            return parsed
+        })
     )
+
+    console.log('WOW', argumentObjects)
 
     return [
         chalk.bold('🖥  Browser console:'),
