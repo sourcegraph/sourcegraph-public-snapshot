@@ -115,7 +115,7 @@ func (s *batchSpecWorkspaceExecutionWorkerStore) FetchCanceled(ctx context.Conte
 func resetAndDeleteAccessToken(ctx context.Context, batchesStore *store.Store, id int64) error {
 	tokenID, err := batchesStore.ResetSpecWorkspaceExecutionJobAccessToken(ctx, id)
 	if err != nil {
-		return errors.Wrap(err, "everything goes in a wrap")
+		return err
 	}
 	return database.AccessTokensWith(batchesStore).HardDeleteByID(ctx, tokenID)
 }
@@ -147,12 +147,11 @@ func (s *batchSpecWorkspaceExecutionWorkerStore) MarkComplete(ctx context.Contex
 
 	job, changesetSpecIDs, err := loadAndExtractChangesetSpecIDs(ctx, tx, int64(id))
 	if err != nil {
-		// If we couldn't extract the changeset IDs, we mark the job as failed
 		return s.MarkFailed(ctx, id, fmt.Sprintf("failed to extract changeset IDs ID: %s", err), options)
 	}
 
-	if err := resetAndDeleteAccessToken(ctx, tx, int64(id)); err != nil {
-		return false, errors.Wrap(err, "wrapping here")
+	if err := resetAndDeleteAccessToken(ctx, tx, int64(id)); err != nil && err != store.ErrNoResults {
+		return s.MarkFailed(ctx, id, fmt.Sprintf("failed to delete internal access token: %s", err), options)
 	}
 
 	return markBatchSpecWorkspaceExecutionJobComplete(ctx, tx, job, changesetSpecIDs, options.WorkerHostname)
