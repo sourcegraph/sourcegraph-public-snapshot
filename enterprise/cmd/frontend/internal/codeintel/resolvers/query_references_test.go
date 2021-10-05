@@ -128,11 +128,9 @@ func TestReferencesRemote(t *testing.T) {
 	mockLSIFStore.MonikersByPositionFunc.PushReturn([][]precise.MonikerData{{monikers[3]}}, nil)
 
 	packageInformation1 := precise.PackageInformationData{Name: "leftpad", Version: "0.1.0"}
-	packageInformation2 := precise.PackageInformationData{Name: "leftpad", Version: "0.2.0"}
-	packageInformation3 := precise.PackageInformationData{Name: "leftpad", Version: "0.3.0"}
+	packageInformation2 := precise.PackageInformationData{Name: "leftpad", Version: "0.3.0"}
 	mockLSIFStore.PackageInformationFunc.PushReturn(packageInformation1, true, nil)
 	mockLSIFStore.PackageInformationFunc.PushReturn(packageInformation2, true, nil)
-	mockLSIFStore.PackageInformationFunc.PushReturn(packageInformation3, true, nil)
 
 	locations := []lsifstore.Location{
 		{DumpID: 51, Path: "a.go", Range: testRange1},
@@ -199,8 +197,7 @@ func TestReferencesRemote(t *testing.T) {
 	} else {
 		expectedMonikers := []precise.QualifiedMonikerData{
 			{MonikerData: monikers[0], PackageInformationData: packageInformation1},
-			{MonikerData: monikers[1], PackageInformationData: packageInformation2},
-			{MonikerData: monikers[2], PackageInformationData: packageInformation3},
+			{MonikerData: monikers[2], PackageInformationData: packageInformation2},
 		}
 		if diff := cmp.Diff(expectedMonikers, history[0].Arg1); diff != "" {
 			t.Errorf("unexpected monikers (-want +got):\n%s", diff)
@@ -216,7 +213,6 @@ func TestReferencesRemote(t *testing.T) {
 
 		expectedMonikers := []precise.MonikerData{
 			monikers[0],
-			monikers[1],
 			monikers[2],
 		}
 		if diff := cmp.Diff(expectedMonikers, history[0].Arg3); diff != "" {
