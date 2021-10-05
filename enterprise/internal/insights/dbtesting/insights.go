@@ -26,7 +26,7 @@ func TimescaleDB(t testing.TB) (db *sql.DB, cleanup func()) {
 		username = user.Username
 	}
 
-	timescaleDSN := dbutil.PostgresDSN("codeinsights", username, os.Getenv)
+	timescaleDSN := postgresdsn.New("codeinsights", username, os.Getenv)
 	initConn, err := dbconn.NewRaw(timescaleDSN)
 	if err != nil {
 		t.Log("")
