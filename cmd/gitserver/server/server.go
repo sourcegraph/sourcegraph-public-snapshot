@@ -903,7 +903,13 @@ func (s *Server) handleSearch(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) search(w http.ResponseWriter, r *http.Request, args *protocol.SearchRequest) {
-	ctx := r.Context()
+	tr, ctx := trace.New(r.Context(), "search", "")
+	tr.LogFields(
+		otlog.String("query", args.Query.String()),
+		otlog.Int("limit", args.Limit),
+	)
+	defer tr.Finish()
+
 	args.Repo = protocol.NormalizeRepo(args.Repo)
 	if args.Limit == 0 {
 		args.Limit = math.MaxInt32
@@ -961,6 +967,7 @@ func (s *Server) search(w http.ResponseWriter, r *http.Request, args *protocol.S
 	}
 
 	matchesBuf := streamhttp.NewJSONArrayBuf(8*1024, func(data []byte) error {
+		tr.LogFields(otlog.Int("flushing", len(data)))
 		return eventWriter.EventBytes("matches", data)
 	})
 
@@ -979,25 +986,19 @@ func (s *Server) search(w http.ResponseWriter, r *http.Request, args *protocol.S
 			return err
 		}
 
-		var conversionErr error
-		err = search.Search(ctx, dir.Path(), args.Revisions, mt, func(match *search.LazyCommit, highlights *search.MatchedCommit) bool {
-			res, err := search.CreateCommitMatch(match, highlights, args.IncludeDiff)
-			if err != nil {
-				conversionErr = err
-				return false
-			}
+		searcher := &search.CommitSearcher{
+			RepoDir:     dir.Path(),
+			Revisions:   args.Revisions,
+			Query:       mt,
+			IncludeDiff: args.IncludeDiff,
+		}
 
+		return searcher.Search(ctx, func(match *protocol.CommitMatch) {
 			select {
 			case <-done:
-				return false
-			case resultChan <- res:
-				return true
+			case resultChan <- match:
 			}
 		})
-		if err != nil {
-			return err
-		}
-		return conversionErr
 	})
 
 	// Write matching commits to the stream, flushing occasionally

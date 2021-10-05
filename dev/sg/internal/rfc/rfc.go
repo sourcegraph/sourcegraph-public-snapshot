@@ -2,17 +2,14 @@ package rfc
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"net/http"
-	"os"
-	"path/filepath"
 	"regexp"
 	"strings"
 
 	"github.com/cockroachdb/errors"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/open"
-	"github.com/sourcegraph/sourcegraph/dev/sg/root"
+	"github.com/sourcegraph/sourcegraph/dev/sg/internal/secrets"
 
 	"github.com/sourcegraph/sourcegraph/lib/output"
 
@@ -23,28 +20,22 @@ import (
 )
 
 const (
-	googleTokenFileName = ".sg.token.json"
-	credentials         = `{"installed":{"client_id":"1043390970557-1okrt0mo0qt2ogn2mkp217cfrirr1rfd.apps.googleusercontent.com","project_id":"sg-cli","auth_uri":"https://accounts.google.com/o/oauth2/auth","token_uri":"https://oauth2.googleapis.com/token","auth_provider_x509_cert_url":"https://www.googleapis.com/oauth2/v1/certs","client_secret":"gkQ2alKQZr2088IFGr55ET_I","redirect_uris":["urn:ietf:wg:oauth:2.0:oob","http://localhost"]}}` // CI:LOCALHOST_OK
+	credentials = `{"installed":{"client_id":"1043390970557-1okrt0mo0qt2ogn2mkp217cfrirr1rfd.apps.googleusercontent.com","project_id":"sg-cli","auth_uri":"https://accounts.google.com/o/oauth2/auth","token_uri":"https://oauth2.googleapis.com/token","auth_provider_x509_cert_url":"https://www.googleapis.com/oauth2/v1/certs","client_secret":"gkQ2alKQZr2088IFGr55ET_I","redirect_uris":["urn:ietf:wg:oauth:2.0:oob","http://localhost"]}}` // CI:LOCALHOST_OK
 )
 
 // Retrieve a token, saves the token, then returns the generated client.
 func getClient(ctx context.Context, config *oauth2.Config, out *output.Output) (*http.Client, error) {
-	homePath, err := root.GetSGHomePath()
-	if err != nil {
-		return nil, err
-	}
-	fp := filepath.Join(homePath, googleTokenFileName)
-
-	// Try to read token from file...
-	tok, err := readTokenFromFile(fp)
-	if err != nil {
+	sec := secrets.FromContext(ctx)
+	tok := &oauth2.Token{}
+	if err := sec.Get("rfc", tok); err != nil {
 		// ...if it doesn't exist, open browser and ask user to give us
 		// permissions
 		tok, err = getTokenFromWeb(ctx, config, out)
 		if err != nil {
 			return nil, err
 		}
-		if err := saveToken(fp, tok); err != nil {
+		err := sec.PutAndSave("rfc", tok)
+		if err != nil {
 			return nil, err
 		}
 	}
@@ -68,30 +59,6 @@ func getTokenFromWeb(ctx context.Context, config *oauth2.Config, out *output.Out
 	}
 
 	return config.Exchange(ctx, authCode)
-}
-
-// Retrieves a token from a local file.
-func readTokenFromFile(file string) (*oauth2.Token, error) {
-	f, err := os.Open(file)
-	if err != nil {
-		return nil, err
-	}
-	defer f.Close()
-
-	tok := &oauth2.Token{}
-	return tok, json.NewDecoder(f).Decode(tok)
-}
-
-// Saves a token to a file path.
-func saveToken(path string, token *oauth2.Token) error {
-	fmt.Printf("Saving credential file to: %s\n", path)
-	f, err := os.OpenFile(path, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0600)
-	if err != nil {
-		return errors.Wrap(err, "unable to cache oauth token")
-	}
-	defer f.Close()
-
-	return json.NewEncoder(f).Encode(token)
 }
 
 func queryRFCs(ctx context.Context, query string, orderBy string, pager func(r *drive.FileList) error, out *output.Output) error {

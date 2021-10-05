@@ -436,7 +436,7 @@ type BatchSpecResolver interface {
 	ActAsCampaignSpec() bool
 
 	AutoApplyEnabled() bool
-	State() string
+	State(context.Context) string
 	StartedAt(ctx context.Context) (*DateTime, error)
 	FinishedAt(ctx context.Context) (*DateTime, error)
 	FailureMessage(ctx context.Context) (*string, error)

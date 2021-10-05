@@ -59,15 +59,15 @@ func IsStreamingCompatible(p Plan) bool {
 	return false
 }
 
-// exists traverses every node in nodes and returns early as soon as fn is satisfied.
-func exists(nodes []Node, fn func(node Node) bool) bool {
+// Exists traverses every node in nodes and returns early as soon as fn is satisfied.
+func Exists(nodes []Node, fn func(node Node) bool) bool {
 	found := false
 	for _, node := range nodes {
 		if fn(node) {
 			return true
 		}
 		if operator, ok := node.(Operator); ok {
-			if exists(operator.Operands, fn) {
+			if Exists(operator.Operands, fn) {
 				return true
 			}
 		}
@@ -75,15 +75,15 @@ func exists(nodes []Node, fn func(node Node) bool) bool {
 	return found
 }
 
-// forAll traverses every node in nodes and returns whether all nodes satisfy fn.
-func forAll(nodes []Node, fn func(node Node) bool) bool {
+// ForAll traverses every node in nodes and returns whether all nodes satisfy fn.
+func ForAll(nodes []Node, fn func(node Node) bool) bool {
 	sat := true
 	for _, node := range nodes {
 		if !fn(node) {
 			return false
 		}
 		if operator, ok := node.(Operator); ok {
-			return forAll(operator.Operands, fn)
+			return ForAll(operator.Operands, fn)
 		}
 	}
 	return sat
@@ -91,7 +91,7 @@ func forAll(nodes []Node, fn func(node Node) bool) bool {
 
 // returns true if the query contains a predicate value.
 func ContainsPredicate(nodes []Node) bool {
-	return exists(nodes, func(node Node) bool {
+	return Exists(nodes, func(node Node) bool {
 		if v, ok := node.(Parameter); ok && v.Annotation.Labels.IsSet(IsPredicate) {
 			return true
 		}
@@ -102,7 +102,7 @@ func ContainsPredicate(nodes []Node) bool {
 // isPatternExpression returns true if every leaf node in nodes is a search
 // pattern expression.
 func isPatternExpression(nodes []Node) bool {
-	return !exists(nodes, func(node Node) bool {
+	return !Exists(nodes, func(node Node) bool {
 		// Any non-pattern leaf, i.e., Parameter, falsifies the condition.
 		_, ok := node.(Parameter)
 		return ok
@@ -111,7 +111,7 @@ func isPatternExpression(nodes []Node) bool {
 
 // containsPattern returns true if any descendent of nodes is a search pattern.
 func containsPattern(node Node) bool {
-	return exists([]Node{node}, func(node Node) bool {
+	return Exists([]Node{node}, func(node Node) bool {
 		_, ok := node.(Pattern)
 		return ok
 	})
@@ -373,7 +373,7 @@ func validateRepoRevPair(nodes []Node) error {
 			seenRepoWithCommit = true
 		}
 	})
-	revSpecified := exists(nodes, func(node Node) bool {
+	revSpecified := Exists(nodes, func(node Node) bool {
 		n, ok := node.(Parameter)
 		if ok && n.Field == FieldRev {
 			return true
@@ -416,7 +416,7 @@ func validateTypeStructural(nodes []Node) error {
 	seenStructural := false
 	seenType := false
 	typeDiff := false
-	invalid := exists(nodes, func(node Node) bool {
+	invalid := Exists(nodes, func(node Node) bool {
 		if p, ok := node.(Pattern); ok && p.Annotation.Labels.IsSet(Structural) {
 			seenStructural = true
 		}
@@ -486,7 +486,7 @@ func validateRepoHasFile(nodes []Node) error {
 // operators nested inside concat. It may happen that we interpret a query this
 // way due to ambiguity. If this happens, return an error message.
 func validatePureLiteralPattern(nodes []Node, balanced bool) error {
-	impure := exists(nodes, func(node Node) bool {
+	impure := Exists(nodes, func(node Node) bool {
 		if operator, ok := node.(Operator); ok && operator.Kind == Concat {
 			for _, node := range operator.Operands {
 				if op, ok := node.(Operator); ok && (op.Kind == Or || op.Kind == And) {

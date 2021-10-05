@@ -23,6 +23,11 @@ steps:
   command:
     - .buildkite/vagrant-run.sh sourcegraph-qa-test
 
+- label: ':docker::brain: Code Intel QA'
+  command:
+    - dev/ci/test/code-intel/test.sh
+  artifact_paths: ./*.log
+
 - label: ':docker::arrow_double_up: Sourcegraph Upgrade'
   retry:
     automatic:
@@ -41,11 +46,3 @@ steps:
   concurrency: 1
   concurrency_group: "cluster-test"
   timeout_in_minutes: 30
-
-# code-intel-qa is disabled, see https://github.com/sourcegraph/sourcegraph/issues/25387
-# - label: ':docker::brain: Code Intel QA'
-#   command:
-#     - .buildkite/vagrant-run.sh sourcegraph-code-intel-test
-#   artifact_paths: ./*.log
-#   agents:
-#     queue: 'baremetal'

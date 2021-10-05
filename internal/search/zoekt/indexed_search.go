@@ -141,6 +141,18 @@ func (rb *IndexedRepoRevs) add(reporev *search.RepositoryRevisions, repo *zoekt.
 func (rb *IndexedRepoRevs) getRepoInputRev(file *zoekt.FileMatch) (repo types.RepoName, inputRevs []string) {
 	repoRev := rb.repoRevs[file.Repository]
 
+	// We search zoekt by repo ID. It is possible that the name has come out
+	// of sync, so the above lookup will fail. We fallback to linking the rev
+	// hash in that case. We intend to restucture this code to avoid this, but
+	// this is the fix to avoid potential nil panics.
+	if repoRev == nil {
+		repo := types.RepoName{
+			ID:   api.RepoID(file.RepositoryID),
+			Name: api.RepoName(file.Repository),
+		}
+		return repo, []string{file.Version}
+	}
+
 	inputRevs = make([]string, 0, len(file.Branches))
 	for _, branch := range file.Branches {
 		for i, b := range rb.repoBranches[file.Repository] {
@@ -217,7 +229,7 @@ func NewIndexedSearchRequest(ctx context.Context, args *search.TextParameters, t
 		// all shards anyway.
 		return newIndexedUniverseSearchRequest(ctx, zoektArgs, args.RepoOptions, args.UserPrivateRepos)
 	}
-	return newIndexedSubsetSearchRequest(ctx, args.Repos, args.Query, args.PatternInfo.Index, zoektArgs, onMissing)
+	return newIndexedSubsetSearchRequest(ctx, args.Repos, args.PatternInfo.Index, zoektArgs, onMissing)
 }
 
 // IndexedUniverseSearchRequest represents a request to run a search over the universe of indexed repositories.
@@ -345,7 +357,7 @@ func MissingRepoRevStatus(stream streaming.Sender) OnMissingRepoRevs {
 // a subset of repos. Strongly avoid calling this constructor directly, and use
 // NewIndexedSearchRequest instead, which will validate your inputs and figure
 // out the kind of indexed search to run.
-func newIndexedSubsetSearchRequest(ctx context.Context, repos []*search.RepositoryRevisions, q query.Q, index query.YesNoOnly, zoektArgs *search.ZoektParameters, onMissing OnMissingRepoRevs) (_ *IndexedSubsetSearchRequest, err error) {
+func newIndexedSubsetSearchRequest(ctx context.Context, repos []*search.RepositoryRevisions, index query.YesNoOnly, zoektArgs *search.ZoektParameters, onMissing OnMissingRepoRevs) (_ *IndexedSubsetSearchRequest, err error) {
 	tr, ctx := trace.New(ctx, "newIndexedSubsetSearchRequest", string(zoektArgs.Typ))
 	// Only include indexes with symbol information if a symbol request.
 	var filter func(repo *zoekt.MinimalRepoListEntry) bool
