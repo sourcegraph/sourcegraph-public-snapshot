@@ -81,6 +81,37 @@ var SourcegraphDockerImages = []string{
 	"postgres_exporter",
 }
 
+// Used to cross check images in the deploy-sourcegraph repo. If you are adding a new image to https://github.com/sourcegraph/deploy-sourcegraph
+// it must also be added to this list.
+var DeploySourcegraphDockerImages = []string{
+	"alpine-3.12",
+	"cadvisor",
+	"codeinsights-db",
+	"codeintel-db",
+	"frontend",
+	"github-proxy",
+	"gitserver",
+	"grafana",
+	"indexed-searcher",
+	"jaeger-agent",
+	"jaeger-all-in-one",
+	"minio",
+	"postgres-12.6-alpine",
+	"postgres_exporter",
+	"precise-code-intel-worker",
+	"prometheus",
+	"query-runner",
+	"redis-cache",
+	"redis-store",
+	"redis_exporter",
+	"repo-updater",
+	"search-indexer",
+	"searcher",
+	"symbols",
+	"syntax-highlighter",
+	"worker",
+}
+
 // CandidateImageTag provides the tag for a candidate image built for this Buildkite run.
 //
 // Note that the availability of this image depends on whether a candidate gets built,
