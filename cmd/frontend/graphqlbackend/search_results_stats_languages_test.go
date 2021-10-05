@@ -9,6 +9,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/sourcegraph/sourcegraph/cmd/gitserver/domain"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/inventory"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
@@ -47,10 +48,10 @@ func TestSearchResultsStatsLanguages(t *testing.T) {
 		}
 		return wantCommitID, nil
 	}
-	git.Mocks.GetObject = func(objectName string) (git.OID, git.ObjectType, error) {
-		oid := git.OID{} // empty is OK for this test
+	git.Mocks.GetObject = func(objectName string) (domain.OID, domain.ObjectType, error) {
+		oid := domain.OID{} // empty is OK for this test
 		copy(oid[:], bytes.Repeat([]byte{0xaa}, 40))
-		return oid, git.ObjectTypeTree, nil
+		return oid, domain.ObjectTypeTree, nil
 	}
 	defer git.ResetMocks()
 

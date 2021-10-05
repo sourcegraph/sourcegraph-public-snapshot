@@ -4,6 +4,8 @@ import (
 	"context"
 	"testing"
 
+	"github.com/sourcegraph/sourcegraph/cmd/gitserver/domain"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
 )
 
@@ -19,13 +21,13 @@ func TestGetObject(t *testing.T) {
 		repo           api.RepoName
 		objectName     string
 		wantOID        string
-		wantObjectType ObjectType
+		wantObjectType domain.ObjectType
 	}{
 		"basic": {
 			repo:           MakeGitRepository(t, gitCommands...),
 			objectName:     "e86b31b62399cfc86199e8b6e21a35e76d0e8b5e^{tree}",
 			wantOID:        "a1dffc7a64c0b2d395484bf452e9aeb1da3a18f2",
-			wantObjectType: ObjectTypeTree,
+			wantObjectType: domain.ObjectTypeTree,
 		},
 	}
 

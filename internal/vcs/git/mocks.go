@@ -4,6 +4,7 @@ import (
 	"io"
 	"io/fs"
 
+	"github.com/sourcegraph/sourcegraph/cmd/gitserver/domain"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git/gitapi"
 )
@@ -23,7 +24,7 @@ var Mocks, emptyMocks struct {
 	LsFiles          func(repo api.RepoName, commit api.CommitID) ([]string, error)
 	ResolveRevision  func(spec string, opt ResolveRevisionOptions) (api.CommitID, error)
 	Stat             func(commit api.CommitID, name string) (fs.FileInfo, error)
-	GetObject        func(objectName string) (OID, ObjectType, error)
+	GetObject        func(objectName string) (domain.OID, domain.ObjectType, error)
 	Commits          func(repo api.RepoName, opt CommitsOptions) ([]*gitapi.Commit, error)
 	MergeBase        func(repo api.RepoName, a, b api.CommitID) (api.CommitID, error)
 	GetDefaultBranch func(repo api.RepoName) (refName string, commit api.CommitID, err error)

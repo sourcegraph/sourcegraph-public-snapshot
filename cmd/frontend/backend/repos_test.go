@@ -13,6 +13,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/inconshreveable/log15"
 
+	"github.com/sourcegraph/sourcegraph/cmd/gitserver/domain"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
@@ -137,8 +138,8 @@ func TestRepos_Add_NonPublicCodehosts(t *testing.T) {
 
 type gitObjectInfo string
 
-func (oid gitObjectInfo) OID() git.OID {
-	var v git.OID
+func (oid gitObjectInfo) OID() domain.OID {
+	var v domain.OID
 	copy(v[:], []byte(oid))
 	return v
 }

@@ -3,6 +3,8 @@ package git
 import (
 	"os"
 
+	"github.com/sourcegraph/sourcegraph/cmd/gitserver/domain"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
 )
 
@@ -30,9 +32,9 @@ type Submodule struct {
 // ObjectInfo holds information about a Git object and is returned in (fs.FileInfo).Sys for blobs
 // and trees from Stat/Lstat/ReadDir calls.
 type ObjectInfo interface {
-	OID() OID
+	OID() domain.OID
 }
 
-type objectInfo OID
+type objectInfo domain.OID
 
-func (oid objectInfo) OID() OID { return OID(oid) }
+func (oid objectInfo) OID() domain.OID { return domain.OID(oid) }

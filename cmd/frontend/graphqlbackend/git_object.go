@@ -6,6 +6,7 @@ import (
 
 	"github.com/cockroachdb/errors"
 
+	"github.com/sourcegraph/sourcegraph/cmd/gitserver/domain"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
 
@@ -21,15 +22,15 @@ const (
 	GitObjectTypeUnknown GitObjectType = "GIT_UNKNOWN"
 )
 
-func toGitObjectType(t git.ObjectType) GitObjectType {
+func toGitObjectType(t domain.ObjectType) GitObjectType {
 	switch t {
-	case git.ObjectTypeCommit:
+	case domain.ObjectTypeCommit:
 		return GitObjectTypeCommit
-	case git.ObjectTypeTag:
+	case domain.ObjectTypeTag:
 		return GitObjectTypeTag
-	case git.ObjectTypeTree:
+	case domain.ObjectTypeTree:
 		return GitObjectTypeTree
-	case git.ObjectTypeBlob:
+	case domain.ObjectTypeBlob:
 		return GitObjectTypeBlob
 	}
 	return GitObjectTypeUnknown
