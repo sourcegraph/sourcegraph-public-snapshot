@@ -80,7 +80,6 @@ func transformBatchSpecWorkspaceExecutionJobRecord(ctx context.Context, s batche
 		return apiclient.Job{}, err
 	}
 
-
 	executionInput := batcheslib.WorkspacesExecutionInput{
 		RawSpec: batchSpec.RawSpec,
 		Workspaces: []*batcheslib.Workspace{
