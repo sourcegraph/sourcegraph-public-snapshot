@@ -125,8 +125,8 @@ export const UserSettingsRepositoriesPage: React.FunctionComponent<Props> = ({
 
             {externalServices?.length === 0 ? (
                 <small>
-                    <Link to={`${routingPrefix}/code-hosts`}>Connect code hosts</Link> to start searching your own
-                    repositories, or <Link to={`${routingPrefix}/repositories/manage`}>add public repositories</Link>{' '}
+                    <Link to={`${routingPrefix}/code-hosts`}>Connect a code host</Link> to add your code to Sourcegraph.
+                    You can also <Link to={`${routingPrefix}/repositories/manage`}>add other public repositories</Link>{' '}
                     from GitHub or GitLab.
                 </small>
             ) : (
@@ -405,21 +405,21 @@ export const UserSettingsRepositoriesPage: React.FunctionComponent<Props> = ({
                 </div>
             )}
             {isErrorLike(status) && <ErrorAlert error={status} icon={true} />}
-            <PageTitle title="Repositories" />
+            <PageTitle title="Your repositories" />
             <PageHeader
                 headingElement="h2"
                 path={[
                     {
                         text: (
                             <div className="d-flex">
-                                Repositories <Badge status="beta" className="ml-2" />
+                                Your repositories <Badge status="beta" className="ml-2" />
                             </div>
                         ),
                     },
                 ]}
                 description={
                     <div className="text-muted">
-                        All repositories synced with Sourcegraph from{' '}
+                        All repositories synced with Sourcegraph from your{' '}
                         <Link to={`${routingPrefix}/code-hosts`}>connected code hosts</Link>
                     </div>
                 }

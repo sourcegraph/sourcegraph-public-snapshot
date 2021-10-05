@@ -10,6 +10,7 @@ export interface UserAddCodeHostsPageContainerProps
 export const UserAddCodeHostsPageContainer: React.FunctionComponent<UserAddCodeHostsPageContainerProps> = props => (
     <UserAddCodeHostsPage
         {...props}
+        entity={props.entity}
         codeHostExternalServices={{
             github: codeHostExternalServices.github,
             gitlabcom: codeHostExternalServices.gitlabcom,

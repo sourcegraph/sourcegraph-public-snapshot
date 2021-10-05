@@ -11,7 +11,8 @@ export interface UserProps {
 export const externalServiceUserMode = (props: UserProps): 'disabled' | 'public' | 'all' | 'unknown' =>
     externalServiceUserModeFromTags(props.user.tags || [])
 
-export const userExternalServicesEnabled = (props: UserProps): boolean => modeEnabled(externalServiceUserMode(props))
+// DO NOT COMMIT
+export const userExternalServicesEnabled = (props: UserProps): boolean => true // modeEnabled(externalServiceUserMode(props))
 
 export const userExternalServicesEnabledFromTags = (tags: string[]): boolean =>
     modeEnabled(externalServiceUserModeFromTags(tags))
@@ -41,11 +42,13 @@ export const externalServiceUserModeFromTags = (tags: string[]): 'disabled' | 'p
 
 // If the user is allowed to add private code but they don't have the 'repo' scope
 // then we need to request it.
-export const githubRepoScopeRequired = (tags: string[], scopes?: Scopes): boolean => requiredScope('repo', tags, scopes)
+export const githubRepoScopeRequired = (tags: string[] = [], scopes?: Scopes): boolean =>
+    requiredScope('repo', tags, scopes)
 
 // If the user is allowed to add private code but they don't have the 'api' scope
 // then we need to request it.
-export const gitlabAPIScopeRequired = (tags: string[], scopes?: Scopes): boolean => requiredScope('api', tags, scopes)
+export const gitlabAPIScopeRequired = (tags: string[] = [], scopes?: Scopes): boolean =>
+    requiredScope('api', tags, scopes)
 
 const requiredScope = (scope: string, tags: string[], scopes?: Scopes): boolean => {
     const allowedPrivate = externalServiceUserModeFromTags(tags) === 'all'

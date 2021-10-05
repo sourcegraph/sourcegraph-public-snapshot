@@ -27,7 +27,7 @@ type AuthProvidersByKind = Partial<Record<ExternalServiceKind, AuthProvider>>
 export interface UserAddCodeHostsPageProps
     extends Pick<UserExternalServicesOrRepositoriesUpdateProps, 'onUserExternalServicesOrRepositoriesUpdate'>,
         TelemetryProps {
-    user: { id: Scalars['ID']; tags: string[] }
+    user: { id: Scalars['ID']; tags?: string[] }
     codeHostExternalServices: Record<string, AddExternalServiceOptions>
     routingPrefix: string
     context: Pick<SourcegraphContext, 'authProviders'>
@@ -62,7 +62,7 @@ export const ifNotNavigated = (callback: () => void, waitMS: number = 2000): voi
 }
 
 export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageProps> = ({
-    user,
+    entity,
     codeHostExternalServices,
     routingPrefix,
     context,
@@ -74,12 +74,12 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
 
     // If we have a GitHub or GitLab services, check whether we need to prompt the user to
     // update their scope
-    const isGitHubTokenUpdateRequired = scopes.github ? githubRepoScopeRequired(user.tags, scopes.github) : false
-    const isGitLabTokenUpdateRequired = scopes.gitlab ? gitlabAPIScopeRequired(user.tags, scopes.gitlab) : false
+    const isGitHubTokenUpdateRequired = scopes.github ? githubRepoScopeRequired(entity.tags, scopes.github) : false
+    const isGitLabTokenUpdateRequired = scopes.gitlab ? gitlabAPIScopeRequired(entity.tags, scopes.gitlab) : false
 
     const isTokenUpdateRequired: Partial<Record<ExternalServiceKind, boolean | undefined>> = {
-        [ExternalServiceKind.GITHUB]: githubRepoScopeRequired(user.tags, scopes.github),
-        [ExternalServiceKind.GITLAB]: gitlabAPIScopeRequired(user.tags, scopes.gitlab),
+        [ExternalServiceKind.GITHUB]: githubRepoScopeRequired(entity.tags, scopes.github),
+        [ExternalServiceKind.GITLAB]: gitlabAPIScopeRequired(entity.tags, scopes.gitlab),
     }
 
     useEffect(() => {
@@ -90,7 +90,7 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
         setStatusOrError('loading')
 
         const { nodes: fetchedServices } = await queryExternalServices({
-            namespace: user.id,
+            namespace: entity.id,
             first: null,
             after: null,
         }).toPromise()
@@ -105,7 +105,7 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
 
         const repoCount = fetchedServices.reduce((sum, codeHost) => sum + codeHost.repoCount, 0)
         onUserExternalServicesOrRepositoriesUpdate(fetchedServices.length, repoCount)
-    }, [user.id, onUserExternalServicesOrRepositoriesUpdate])
+    }, [entity.id, onUserExternalServicesOrRepositoriesUpdate])
 
     const removeService = (kind: ExternalServiceKind) => (): void => {
         if (
