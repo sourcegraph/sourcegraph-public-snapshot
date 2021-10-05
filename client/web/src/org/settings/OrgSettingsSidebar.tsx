@@ -42,6 +42,12 @@ export const OrgSettingsSidebar: React.FunctionComponent<Props> = ({ org, authen
                 <SidebarNavItem to={`${match.url}/members`} exact={true}>
                     Members
                 </SidebarNavItem>
+                <SidebarNavItem to={`${match.url}/code-hosts`} exact={true}>
+                    Code host connections
+                </SidebarNavItem>
+                <SidebarNavItem to={`${match.url}/repositories`} exact={true}>
+                    Repositories
+                </SidebarNavItem>
             </SidebarGroup>
         </div>
     )
