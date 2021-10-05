@@ -11,7 +11,7 @@ export interface TemporarySettingsSchema {
     'search.onboarding.tourCancelled': boolean
     'search.usedNonGlobalContext': boolean
     'insights.freeBetaAccepted': boolean
-    'survey.toastDismissal': 'temporary' | 'permanent'
+    'survey.toastDismissed': 'temporarily' | 'permanently' | false
 }
 
 /**

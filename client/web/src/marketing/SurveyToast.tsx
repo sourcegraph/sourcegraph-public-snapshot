@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react'
 
 import { Checkbox } from '@sourcegraph/wildcard'
 
+import { TemporarySettingsSchema } from '../settings/temporary/TemporarySettings'
 import { useTemporarySetting } from '../settings/temporary/useTemporarySetting'
 import { eventLogger } from '../tracking/eventLogger'
 
@@ -15,15 +16,16 @@ interface SurveyToastProps {
      */
     forceVisible?: boolean
 }
+const shouldShowToast = (dismissed?: TemporarySettingsSchema['survey.toastDismissed']): boolean =>
+    dismissed !== undefined && dismissed === false && getDaysActiveCount() % 30 === 3
 
+/**
+ * TODO: Flash of content
+ */
 export const SurveyToast: React.FunctionComponent<SurveyToastProps> = ({ forceVisible }) => {
-    const [toastDismissal, setToastDismissal] = useTemporarySetting('survey.toastDismissal')
-    const [shouldPermanentlyDismissToast, setShouldPermanentlyDismissToast] = useState(false)
-    const daysActive = getDaysActiveCount()
-
-    console.log('toastDismissal', toastDismissal)
-
-    const visible = forceVisible || (!toastDismissal && daysActive % 30 === 3)
+    const [shouldPermanentlyDismiss, setShouldPermanentlyDismiss] = useState(false)
+    const [toastDismissed, setToastDismissed] = useTemporarySetting('survey.toastDismissed', false)
+    const visible = forceVisible || shouldShowToast(toastDismissed)
 
     useEffect(() => {
         if (visible) {
@@ -32,12 +34,15 @@ export const SurveyToast: React.FunctionComponent<SurveyToastProps> = ({ forceVi
     }, [visible])
 
     useEffect(() => {
-        if (toastDismissal && toastDismissal !== 'permanent' && daysActive % 30 === 0) {
-            setToastDismissal(() => undefined)
+        // Reset 3 days before something
+        if (toastDismissed === 'temporarily' && getDaysActiveCount() % 30 === 0) {
+            setToastDismissed(false)
         }
-    }, [daysActive, setToastDismissal, toastDismissal])
+    }, [toastDismissed, setToastDismissed])
 
-    const handleDismiss = (): void => setToastDismissal(shouldPermanentlyDismissToast ? 'permanent' : 'temporary')
+    const handleDismiss = (): void => {
+        setToastDismissed(shouldPermanentlyDismiss ? 'permanently' : 'temporarily')
+    }
 
     if (!visible) {
         return null
@@ -60,8 +65,7 @@ export const SurveyToast: React.FunctionComponent<SurveyToastProps> = ({ forceVi
                 <Checkbox
                     id="survey-toast-refuse"
                     label="Don't show this again"
-                    checked={shouldPermanentlyDismissToast}
-                    onChange={event => setShouldPermanentlyDismissToast(event.target.checked)}
+                    onChange={event => setShouldPermanentlyDismiss(event.target.checked)}
                 />
             }
             onDismiss={handleDismiss}
