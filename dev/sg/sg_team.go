@@ -11,20 +11,20 @@ import (
 )
 
 var (
-	teammatesFlagSet = flag.NewFlagSet("sg teammates", flag.ExitOnError)
-	teammatesCommand = &ffcli.Command{
-		Name:       "teammates",
-		ShortUsage: "sg teammates [time|handbook]",
+	teammateFlagSet = flag.NewFlagSet("sg teammate", flag.ExitOnError)
+	teammateCommand = &ffcli.Command{
+		Name:       "teammate",
+		ShortUsage: "sg teammate [time|handbook]",
 		ShortHelp:  "Run the given teammates command show informations about teammates",
 		LongHelp:   `Display current time, handbook link of sourcegraphers`,
-		FlagSet:    teammatesFlagSet,
-		Exec:       teammatesExec,
+		FlagSet:    teammateFlagSet,
+		Exec:       teammateExec,
 	}
 )
 
-func teammatesExec(ctx context.Context, args []string) error {
+func teammateExec(ctx context.Context, args []string) error {
 	if len(args) == 0 {
-		return errors.New("no teammates command given")
+		return errors.New("no teammate command given")
 	}
 	switch args[0] {
 	case "time":
@@ -48,6 +48,6 @@ func teammatesExec(ctx context.Context, args []string) error {
 		open.URL(str)
 		return nil
 	default:
-		return nil
+		return errors.New("unknown teammate command")
 	}
 }

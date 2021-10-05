@@ -56,7 +56,7 @@ var (
 			migrationCommand,
 			rfcCommand,
 			funkLogoCommand,
-			teammatesCommand,
+			teammateCommand,
 		},
 	}
 )
