@@ -2,6 +2,7 @@
 package server
 
 import (
+	"archive/zip"
 	"bufio"
 	"bytes"
 	"container/list"
@@ -12,7 +13,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"io/ioutil"
+	"io/fs"
 	"math"
 	"net/http"
 	"os"
@@ -1458,41 +1459,66 @@ func (s *Server) handleRepoArchive(w http.ResponseWriter, r *http.Request) {
 		// return
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), time.Minute*10)
-	defer cancel()
-
 	repoRoot := dir.Root()
 
-	zipFileName := strings.Replace(repoRoot, "/", "", 1)
-	zipFileName = strings.Replace(zipFileName, "/", "-", -1) + ".zip"
+	// Write zip archive directly into the http.ResponseWriter.
+	zw := zip.NewWriter(w)
 
-	cmd := exec.CommandContext(ctx, "zip", "-r", zipFileName, repoRoot)
-	cmd.Dir = repoRoot
-
-	exitCode, err := runCommand(ctx, cmd)
-	if err != nil {
+	if err := os.Chdir(repoRoot); err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		log15.Error("handleRepoArchive.runCommand", "exitCode", exitCode, "error", err)
+		log15.Error("handleRepoArchive: os.Chdir", "error", err)
 		return
 	}
 
-	log15.Info("handleRepoArchive", "cmd", cmd)
-	log15.Info("handleRepoArchive", "path", cmd.Path)
-	log15.Info("handleRepoArchive", "dir", cmd.Dir)
+	if err := filepath.WalkDir(repoRoot, func(path string, d fs.DirEntry, err error) error {
+		log15.Info("handleRepoArchive: filepath.WalkDir", "dir", d.Name())
+		if d.IsDir() {
+			return nil
+		}
 
-	zipFileAbsoluteName := filepath.Join(repoRoot, zipFileName)
+		relativePath := strings.TrimPrefix(path, repoRoot+"/")
+		log15.Info("handleRepoArchive: filepath.WalkDir", "path", path, "relativePath", relativePath)
 
-	// TODO: This could be a monorepo pain point.
-	data, err := ioutil.ReadFile(zipFileAbsoluteName)
-	if err != nil {
+		// relativePath = filepath.Join("./", relativePath)
+
+		f, err := os.Open(relativePath)
+
+		// f, err := os.Open(path)
+		if err != nil {
+			return err
+		}
+		defer f.Close()
+
+		log15.Info("handleRepoArchive: filepath.WalkDir", "file path", f.Name())
+
+		w, err := zw.Create(f.Name())
+		if err != nil {
+			return err
+		}
+
+		io.Copy(w, f)
+
+		return nil
+	}); err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		log15.Error("handleRepoArchive.ioutil.ReadFile", "error", err)
+		log15.Error("handleRepoArchive: filepath.WalkDir", "error", err)
 		return
 	}
 
 	w.Header().Set("Content-Type", "application/zip")
-	w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=%q", zipFileAbsoluteName))
-	w.Write(data)
+
+	// First we remove the leading / in the repoRoot.
+	zipFileName := strings.TrimPrefix(repoRoot, "/")
+	// Next we replace all the remaining "/" with "-".
+	zipFileName = strings.Replace(zipFileName, "/", "-", -1) + ".zip"
+
+	w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=%q", zipFileName))
+
+	if err := zw.Close(); err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		log15.Error("handleRepoArchive: os.CreateTemp", "error", err)
+		return
+	}
 }
 
 func (s *Server) setLastError(ctx context.Context, name api.RepoName, error string) (err error) {
