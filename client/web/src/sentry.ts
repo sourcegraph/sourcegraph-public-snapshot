@@ -15,7 +15,6 @@ window.addEventListener('error', error => {
 
     if (process.env.NODE_ENV === 'production' && isResizeObserverLoopError) {
         error.stopImmediatePropagation()
-        error.stopPropagation()
     }
 })
 
