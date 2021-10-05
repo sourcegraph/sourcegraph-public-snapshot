@@ -369,7 +369,7 @@ func partition(nodes []Node, fn func(node Node) bool) (left, right []Node) {
 	return left, right
 }
 
-// product appends the list of n elements in right to each of the m rows in
+///distribute product appends the list of n elements in right to each of the m rows in
 // left. If left is empty, it is initialized with right.
 func product(left [][]Node, right []Node) [][]Node {
 	result := [][]Node{}

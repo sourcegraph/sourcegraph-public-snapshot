@@ -37,7 +37,7 @@ func searchInReposNew(ctx context.Context, db dbutil.DB, textParams *search.Text
 		args := &protocol.SearchRequest{
 			Repo:        rr.Repo.Name,
 			Revisions:   searchRevsToGitserverRevs(rr.Revs),
-			Query:       gitprotocol.NewAnd(queryNodesToPredicates(query, query.IsCaseSensitive(), diff)...),
+			Query:       gitprotocol.Reduce(gitprotocol.NewAnd(queryNodesToPredicates(query, query.IsCaseSensitive(), diff)...)),
 			IncludeDiff: diff,
 			Limit:       limit,
 		}

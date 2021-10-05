@@ -126,6 +126,9 @@ func (o *Operator) String() string {
 	return "(" + prefix + strings.Join(cs, sep) + ")"
 }
 
+// newOperator is a convenience function for internal construction of operators.
+// It does no simplification of its arguments, so generally should not be used
+// by consumers directly. Prefer NewAnd, NewOr, and NewNot.
 func newOperator(kind OperatorKind, operands ...Node) *Operator {
 	return &Operator{
 		Kind:     kind,
@@ -135,7 +138,7 @@ func newOperator(kind OperatorKind, operands ...Node) *Operator {
 
 // NewAnd creates a new And node from the given operands
 // Optimizations/simplifications:
-// - And() => Constant(true)
+// - And() => Boolean(true)
 // - And(x) => x
 // - And(x, And(y, z)) => And(x, y, z)
 func NewAnd(operands ...Node) Node {
@@ -165,7 +168,7 @@ func NewAnd(operands ...Node) Node {
 
 // NewOr creates a new Or node from the given operands.
 // Optimizations/simplifications:
-// - Or() => Constant(false)
+// - Or() => Boolean(false)
 // - Or(x) => x
 // - Or(x, Or(y, z)) => Or(x, y, z)
 func NewOr(operands ...Node) Node {
@@ -179,8 +182,7 @@ func NewOr(operands ...Node) Node {
 		return operands[0]
 	}
 
-	// Flatten any nested Or operands since Or is associative
-	// P ∨ (Q ∨ R) <=> (P ∨ Q) ∨ R
+	// Flatten any nested Or operands
 	flattened := make([]Node, 0, len(operands))
 	for _, operand := range operands {
 		if nestedOperator, ok := operand.(*Operator); ok && nestedOperator.Kind == Or {
@@ -193,7 +195,7 @@ func NewOr(operands ...Node) Node {
 	return newOperator(Or, flattened...)
 }
 
-// NewNot creates a new negated node from the given operand.
+// NewNot creates a new negated node from the given operand
 // Optimizations/simplifications:
 // - Not(Not(x)) => x
 func NewNot(operand Node) Node {
