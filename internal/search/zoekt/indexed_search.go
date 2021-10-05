@@ -6,6 +6,7 @@ import (
 	"time"
 	"unicode/utf8"
 
+	"github.com/RoaringBitmap/roaring"
 	"github.com/cockroachdb/errors"
 	"github.com/google/zoekt"
 	zoektquery "github.com/google/zoekt/query"
@@ -38,6 +39,10 @@ type IndexedRepoRevs struct {
 	//
 	//  repoBranches[reporev.Repo.Name][i] <-> reporev.Revs[i]
 	repoBranches map[string][]string
+
+	// branchRepos is used to construct a zoektquery.BranchesRepos to efficiently
+	// marshal and send to zoekt
+	branchRepos map[string]*zoektquery.BranchRepos
 }
 
 // headBranch is used as a singleton of the indexedRepoRevs.repoBranches to save
@@ -67,15 +72,23 @@ func (rb *IndexedRepoRevs) add(reporev *search.RepositoryRevisions, repo *zoekt.
 	if len(reporev.Revs) == 1 && repo.Branches[0].Name == "HEAD" && (reporev.Revs[0].RevSpec == "" || reporev.Revs[0].RevSpec == "HEAD") {
 		rb.repoRevs[string(reporev.Repo.Name)] = reporev
 		rb.repoBranches[string(reporev.Repo.Name)] = headBranch
+		br, ok := rb.branchRepos["HEAD"]
+		if !ok {
+			br = &zoektquery.BranchRepos{Branch: "HEAD", Repos: roaring.New()}
+			rb.branchRepos["HEAD"] = br
+		}
+		br.Repos.Add(uint32(reporev.Repo.ID))
 		return nil
 	}
 
 	// Assume for large searches they will mostly involve indexed
 	// revisions, so just allocate that.
 	var unindexed []search.RevisionSpecifier
-	indexed := make([]search.RevisionSpecifier, 0, len(reporev.Revs))
 
 	branches := make([]string, 0, len(reporev.Revs))
+	reporev = reporev.Copy()
+	indexed := reporev.Revs[:0]
+
 	for _, rev := range reporev.Revs {
 		if rev.RevSpec == "" || rev.RevSpec == "HEAD" {
 			// Zoekt convention that first branch is HEAD
@@ -108,8 +121,17 @@ func (rb *IndexedRepoRevs) add(reporev *search.RepositoryRevisions, repo *zoekt.
 
 	// We found indexed branches! Track them.
 	if len(indexed) > 0 {
+		reporev.Revs = indexed
 		rb.repoRevs[string(reporev.Repo.Name)] = reporev
 		rb.repoBranches[string(reporev.Repo.Name)] = branches
+		for _, branch := range branches {
+			br, ok := rb.branchRepos[branch]
+			if !ok {
+				br = &zoektquery.BranchRepos{Branch: branch, Repos: roaring.New()}
+				rb.branchRepos[branch] = br
+			}
+			br.Repos.Add(uint32(reporev.Repo.ID))
+		}
 	}
 
 	return unindexed
@@ -118,6 +140,18 @@ func (rb *IndexedRepoRevs) add(reporev *search.RepositoryRevisions, repo *zoekt.
 // getRepoInputRev returns the repo and inputRev associated with file.
 func (rb *IndexedRepoRevs) getRepoInputRev(file *zoekt.FileMatch) (repo types.RepoName, inputRevs []string) {
 	repoRev := rb.repoRevs[file.Repository]
+
+	// We search zoekt by repo ID. It is possible that the name has come out
+	// of sync, so the above lookup will fail. We fallback to linking the rev
+	// hash in that case. We intend to restucture this code to avoid this, but
+	// this is the fix to avoid potential nil panics.
+	if repoRev == nil {
+		repo := types.RepoName{
+			ID:   api.RepoID(file.RepositoryID),
+			Name: api.RepoName(file.Repository),
+		}
+		return repo, []string{file.Version}
+	}
 
 	inputRevs = make([]string, 0, len(file.Branches))
 	for _, branch := range file.Branches {
@@ -195,7 +229,7 @@ func NewIndexedSearchRequest(ctx context.Context, args *search.TextParameters, t
 		// all shards anyway.
 		return newIndexedUniverseSearchRequest(ctx, zoektArgs, args.RepoOptions, args.UserPrivateRepos)
 	}
-	return newIndexedSubsetSearchRequest(ctx, args.Repos, args.Query, args.PatternInfo.Index, zoektArgs, onMissing)
+	return newIndexedSubsetSearchRequest(ctx, args.Repos, args.PatternInfo.Index, zoektArgs, onMissing)
 }
 
 // IndexedUniverseSearchRequest represents a request to run a search over the universe of indexed repositories.
@@ -323,7 +357,7 @@ func MissingRepoRevStatus(stream streaming.Sender) OnMissingRepoRevs {
 // a subset of repos. Strongly avoid calling this constructor directly, and use
 // NewIndexedSearchRequest instead, which will validate your inputs and figure
 // out the kind of indexed search to run.
-func newIndexedSubsetSearchRequest(ctx context.Context, repos []*search.RepositoryRevisions, q query.Q, index query.YesNoOnly, zoektArgs *search.ZoektParameters, onMissing OnMissingRepoRevs) (_ *IndexedSubsetSearchRequest, err error) {
+func newIndexedSubsetSearchRequest(ctx context.Context, repos []*search.RepositoryRevisions, index query.YesNoOnly, zoektArgs *search.ZoektParameters, onMissing OnMissingRepoRevs) (_ *IndexedSubsetSearchRequest, err error) {
 	tr, ctx := trace.New(ctx, "newIndexedSubsetSearchRequest", string(zoektArgs.Typ))
 	// Only include indexes with symbol information if a symbol request.
 	var filter func(repo *zoekt.MinimalRepoListEntry) bool
@@ -405,12 +439,11 @@ func zoektGlobalQuery(q zoektquery.Q, repoOptions search.RepoOptions, userPrivat
 
 	// Private or Any
 	if (repoOptions.Visibility == query.Private || repoOptions.Visibility == query.Any) && len(userPrivateRepos) > 0 {
-		privateRepoSet := make(map[string][]string, len(userPrivateRepos))
-		head := []string{"HEAD"}
+		ids := make([]uint32, 0, len(userPrivateRepos))
 		for _, r := range userPrivateRepos {
-			privateRepoSet[string(r.Name)] = head
+			ids = append(ids, uint32(r.ID))
 		}
-		qs = append(qs, &zoektquery.RepoBranches{Set: privateRepoSet})
+		qs = append(qs, zoektquery.NewSingleBranchesRepos("HEAD", ids...))
 	}
 
 	return zoektquery.Simplify(zoektquery.NewAnd(q, zoektquery.NewOr(qs...)))
@@ -483,7 +516,12 @@ func zoektSearch(ctx context.Context, repos *IndexedRepoRevs, q zoektquery.Q, ty
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
-	finalQuery := zoektquery.NewAnd(&zoektquery.RepoBranches{Set: repos.repoBranches}, q)
+	brs := make([]zoektquery.BranchRepos, 0, len(repos.branchRepos))
+	for _, br := range repos.branchRepos {
+		brs = append(brs, *br)
+	}
+
+	finalQuery := zoektquery.NewAnd(&zoektquery.BranchesRepos{List: brs}, q)
 
 	k := ResultCountFactor(len(repos.repoBranches), fileMatchLimit, false)
 	searchOpts := SearchOpts(ctx, k, fileMatchLimit)
@@ -720,6 +758,7 @@ func zoektIndexedRepos(indexedSet map[uint32]*zoekt.MinimalRepoListEntry, revs [
 	indexed = &IndexedRepoRevs{
 		repoRevs:     make(map[string]*search.RepositoryRevisions, len(revs)),
 		repoBranches: make(map[string][]string, len(revs)),
+		branchRepos:  make(map[string]*zoektquery.BranchRepos, 1),
 	}
 	unindexed = make([]*search.RepositoryRevisions, 0)
 

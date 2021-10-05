@@ -37,23 +37,23 @@ Watch the video or follow the written directions below:
 1. Verify the list of repositories for which you wish to enable LSIF:
    ```
    # Use the values you set in your GitHub secrets for SRC_ENDPOINT and SRC_ACCESS_TOKEN
-   SRC_ENDPOINT= SRC_ACCESS_TOKEN= src campaigns repos -f lsif-go.campaign.yaml
+   SRC_ENDPOINT= SRC_ACCESS_TOKEN= src batch repositories -f lsif-go.campaign.yaml
    ```
    If the set of repositories displayed is not the set of repositories for which you want to enable LSIF, modify the `repositoriesMatchingQuery` line in `lsif-go.campaign.yaml` to specify the Sourcegraph search query that selects the desired repository set.
-1. Run the campaign to generate a list of all pull requests that will be created:
+1. Execute the batch spec to generate a list of all pull requests that will be created:
    ```
    # Use the values you set in your GitHub secrets for SRC_ENDPOINT and SRC_ACCESS_TOKEN.
-   SRC_ENDPOINT= SRC_ACCESS_TOKEN= src campaigns preview -f lsif-go.campaign.yaml
+   SRC_ENDPOINT= SRC_ACCESS_TOKEN= src batch preview -f lsif-go.campaign.yaml
    ```
-   This will create a campaign preview in Sourcegraph. Navigate to the URL printed in the
+   This will create a batch change preview in Sourcegraph. Navigate to the URL printed in the
      terminal to preview all the pull requests that will be created.
 
 1. Once you've verified the preview looks correct, change `published: false` to `published: true` in `lsif-go.campaign.yaml` and run the following:
   ```
    # Use the values you set in your GitHub secrets for SRC_ENDPOINT and SRC_ACCESS_TOKEN.
-  SRC_ENDPOINT= SRC_ACCESS_TOKEN= src campaigns apply -f lsif-go.campaign.yaml
+  SRC_ENDPOINT= SRC_ACCESS_TOKEN= src batch apply -f lsif-go.campaign.yaml
   ```
-  Now, go back to the campaign page and verify the pull requests have been
+  Now, go back to the batch change page and verify the pull requests have been
   created.
   1. If there are errors creating any pull request, check to make sure the GitHub token in the
      Sourcegraph code host configuration (Site admin > Manage repositories) has the
@@ -64,6 +64,6 @@ Watch the video or follow the written directions below:
      intelligence: Uploads. You should also be able to explore the code at that
      revision with precise code navigation.
 
-1. Merge the pull requests created by the campaign and close the campaign. The
-   GitHub action should now run on each push, generating LSIF data for the
+1. Merge the pull requests created by the batch change and close the batch
+   change. The GitHub action should now run on each push, generating LSIF data for the
    pushed revision and uploading this data to your Sourcegraph instance.

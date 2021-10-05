@@ -11,6 +11,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
+	"github.com/sourcegraph/sourcegraph/internal/vcs/git/gitapi"
 )
 
 func TestRepos_ResolveRev_noRevSpecified_getsDefaultBranch(t *testing.T) {
@@ -183,9 +184,9 @@ func TestRepos_GetCommit_repoupdaterError(t *testing.T) {
 	}
 	defer func() { repoupdater.MockRepoLookup = nil }()
 	var calledVCSRepoGetCommit bool
-	git.Mocks.GetCommit = func(commitID api.CommitID) (*git.Commit, error) {
+	git.Mocks.GetCommit = func(commitID api.CommitID) (*gitapi.Commit, error) {
 		calledVCSRepoGetCommit = true
-		return &git.Commit{ID: want}, nil
+		return &gitapi.Commit{ID: want}, nil
 	}
 	defer git.ResetMocks()
 

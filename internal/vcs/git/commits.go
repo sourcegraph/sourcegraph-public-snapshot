@@ -20,44 +20,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
+	"github.com/sourcegraph/sourcegraph/internal/vcs/git/gitapi"
 )
-
-type Commit struct {
-	ID        api.CommitID `json:"ID,omitempty"`
-	Author    Signature    `json:"Author"`
-	Committer *Signature   `json:"Committer,omitempty"`
-	Message   Message      `json:"Message,omitempty"`
-	// Parents are the commit IDs of this commit's parent commits.
-	Parents []api.CommitID `json:"Parents,omitempty"`
-}
-
-type Message string
-
-// Subject returns the first line of the commit message
-func (m Message) Subject() string {
-	message := string(m)
-	i := strings.Index(message, "\n")
-	if i == -1 {
-		return strings.TrimSpace(message)
-	}
-	return strings.TrimSpace(message[:i])
-}
-
-// Body returns the contents of the Git commit message after the subject.
-func (m Message) Body() string {
-	message := string(m)
-	i := strings.Index(message, "\n")
-	if i == -1 {
-		return ""
-	}
-	return strings.TrimSpace(message[i:])
-}
-
-type Signature struct {
-	Name  string    `json:"Name,omitempty"`
-	Email string    `json:"Email,omitempty"`
-	Date  time.Time `json:"Date"`
-}
 
 // CommitsOptions specifies options for (Repository).Commits (Repository).CommitCount.
 type CommitsOptions struct {
@@ -88,7 +52,7 @@ var logEntryPattern = lazyregexp.New(`^\s*([0-9]+)\s+(.*)$`)
 var recordGetCommitQueries = os.Getenv("RECORD_GET_COMMIT_QUERIES") == "1"
 
 // getCommit returns the commit with the given id.
-func getCommit(ctx context.Context, repo api.RepoName, id api.CommitID, opt ResolveRevisionOptions) (_ *Commit, err error) {
+func getCommit(ctx context.Context, repo api.RepoName, id api.CommitID, opt ResolveRevisionOptions) (_ *gitapi.Commit, err error) {
 	if Mocks.GetCommit != nil {
 		return Mocks.GetCommit(id)
 	}
@@ -141,7 +105,7 @@ func getCommit(ctx context.Context, repo api.RepoName, id api.CommitID, opt Reso
 // The remoteURLFunc is called to get the Git remote URL if it's not set in repo and if it is
 // needed. The Git remote URL is only required if the gitserver doesn't already contain a clone of
 // the repository or if the commit must be fetched from the remote.
-func GetCommit(ctx context.Context, repo api.RepoName, id api.CommitID, opt ResolveRevisionOptions) (*Commit, error) {
+func GetCommit(ctx context.Context, repo api.RepoName, id api.CommitID, opt ResolveRevisionOptions) (*gitapi.Commit, error) {
 	span, ctx := ot.StartSpanFromContext(ctx, "Git: GetCommit")
 	span.SetTag("Commit", id)
 	defer span.Finish()
@@ -150,7 +114,7 @@ func GetCommit(ctx context.Context, repo api.RepoName, id api.CommitID, opt Reso
 }
 
 // Commits returns all commits matching the options.
-func Commits(ctx context.Context, repo api.RepoName, opt CommitsOptions) ([]*Commit, error) {
+func Commits(ctx context.Context, repo api.RepoName, opt CommitsOptions) ([]*gitapi.Commit, error) {
 	if Mocks.Commits != nil {
 		return Mocks.Commits(repo, opt)
 	}
@@ -198,7 +162,7 @@ func isBadObjectErr(output, obj string) bool {
 // commitLog returns a list of commits.
 //
 // The caller is responsible for doing checkSpecArgSafety on opt.Head and opt.Base.
-func commitLog(ctx context.Context, repo api.RepoName, opt CommitsOptions) (commits []*Commit, err error) {
+func commitLog(ctx context.Context, repo api.RepoName, opt CommitsOptions) (commits []*gitapi.Commit, err error) {
 	args, err := commitLogArgs([]string{"log", logFormatWithoutRefs}, opt)
 	if err != nil {
 		return nil, err
@@ -215,7 +179,7 @@ func commitLog(ctx context.Context, repo api.RepoName, opt CommitsOptions) (comm
 // runCommitLog sends the git command to gitserver. It interprets missing
 // revision responses and converts them into RevisionNotFoundError.
 // It is declared as a variable so that we can swap it out in tests
-var runCommitLog = func(ctx context.Context, cmd *gitserver.Cmd, opt CommitsOptions) ([]*Commit, error) {
+var runCommitLog = func(ctx context.Context, cmd *gitserver.Cmd, opt CommitsOptions) ([]*gitapi.Commit, error) {
 	data, stderr, err := cmd.DividedOutput(ctx)
 	if err != nil {
 		data = bytes.TrimSpace(data)
@@ -227,9 +191,9 @@ var runCommitLog = func(ctx context.Context, cmd *gitserver.Cmd, opt CommitsOpti
 
 	allParts := bytes.Split(data, []byte{'\x00'})
 	numCommits := len(allParts) / partsPerCommit
-	commits := make([]*Commit, 0, numCommits)
+	commits := make([]*gitapi.Commit, 0, numCommits)
 	for len(data) > 0 {
-		var commit *Commit
+		var commit *gitapi.Commit
 		var err error
 		commit, _, data, err = parseCommitFromLog(data)
 		if err != nil {
@@ -311,7 +275,7 @@ func CommitCount(ctx context.Context, repo api.RepoName, opt CommitsOptions) (ui
 }
 
 // FirstEverCommit returns the first commit ever made to the repository.
-func FirstEverCommit(ctx context.Context, repo api.RepoName) (*Commit, error) {
+func FirstEverCommit(ctx context.Context, repo api.RepoName) (*gitapi.Commit, error) {
 	span, ctx := ot.StartSpanFromContext(ctx, "Git: FirstEverCommit")
 	defer span.Finish()
 
@@ -331,7 +295,7 @@ func FirstEverCommit(ctx context.Context, repo api.RepoName) (*Commit, error) {
 //
 // Can return a commit very far away if no nearby one exists.
 // Can theoretically return nil, nil if no commits at all are found.
-func FindNearestCommit(ctx context.Context, repoName api.RepoName, revSpec string, target time.Time) (*Commit, error) {
+func FindNearestCommit(ctx context.Context, repoName api.RepoName, revSpec string, target time.Time) (*gitapi.Commit, error) {
 	if revSpec == "" {
 		revSpec = "HEAD"
 	}
@@ -351,7 +315,7 @@ func FindNearestCommit(ctx context.Context, repoName api.RepoName, revSpec strin
 	if err != nil {
 		return nil, err
 	}
-	var commitOnOrAfter *Commit
+	var commitOnOrAfter *gitapi.Commit
 	if len(commitsAfter) > 0 {
 		commitOnOrAfter = commitsAfter[0]
 	}
@@ -366,7 +330,7 @@ func FindNearestCommit(ctx context.Context, repoName api.RepoName, revSpec strin
 	if err != nil {
 		return nil, err
 	}
-	var commitBefore *Commit
+	var commitBefore *gitapi.Commit
 	if len(commitsBefore) > 0 {
 		commitBefore = commitsBefore[0]
 	}
@@ -410,7 +374,7 @@ const (
 // parseCommitFromLog parses the next commit from data and returns the commit and the remaining
 // data. The data arg is a byte array that contains NUL-separated log fields as formatted by
 // logFormatFlag.
-func parseCommitFromLog(data []byte) (commit *Commit, refs []string, rest []byte, err error) {
+func parseCommitFromLog(data []byte) (commit *gitapi.Commit, refs []string, rest []byte, err error) {
 	parts := bytes.SplitN(data, []byte{'\x00'}, partsPerCommit+1)
 	if len(parts) < partsPerCommit {
 		return nil, nil, nil, errors.Errorf("invalid commit log entry: %q", parts)
@@ -443,11 +407,11 @@ func parseCommitFromLog(data []byte) (commit *Commit, refs []string, rest []byte
 		refs = strings.Split(string(parts[1]), ", ")
 	}
 
-	commit = &Commit{
+	commit = &gitapi.Commit{
 		ID:        commitID,
-		Author:    Signature{Name: string(parts[2]), Email: string(parts[3]), Date: time.Unix(authorTime, 0).UTC()},
-		Committer: &Signature{Name: string(parts[5]), Email: string(parts[6]), Date: time.Unix(committerTime, 0).UTC()},
-		Message:   Message(strings.TrimSuffix(string(parts[8]), "\n")),
+		Author:    gitapi.Signature{Name: string(parts[2]), Email: string(parts[3]), Date: time.Unix(authorTime, 0).UTC()},
+		Committer: &gitapi.Signature{Name: string(parts[5]), Email: string(parts[6]), Date: time.Unix(committerTime, 0).UTC()},
+		Message:   gitapi.Message(strings.TrimSuffix(string(parts[8]), "\n")),
 		Parents:   parents,
 	}
 

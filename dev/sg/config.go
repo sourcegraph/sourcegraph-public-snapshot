@@ -86,11 +86,12 @@ func (c *Commandset) UnmarshalYAML(unmarshal func(interface{}) error) error {
 }
 
 type Config struct {
-	Env         map[string]string      `yaml:"env"`
-	Commands    map[string]run.Command `yaml:"commands"`
-	Commandsets map[string]*Commandset `yaml:"commandsets"`
-	Tests       map[string]run.Command `yaml:"tests"`
-	Checks      map[string]run.Check   `yaml:"checks"`
+	Env               map[string]string      `yaml:"env"`
+	Commands          map[string]run.Command `yaml:"commands"`
+	Commandsets       map[string]*Commandset `yaml:"commandsets"`
+	DefaultCommandset string                 `yaml:"defaultCommandset"`
+	Tests             map[string]run.Command `yaml:"tests"`
+	Checks            map[string]run.Check   `yaml:"checks"`
 }
 
 // Merges merges the top-level entries of two Config objects, with the receiver
@@ -110,6 +111,10 @@ func (c *Config) Merge(other *Config) {
 
 	for k, v := range other.Commandsets {
 		c.Commandsets[k] = v
+	}
+
+	if other.DefaultCommandset != "" {
+		c.DefaultCommandset = other.DefaultCommandset
 	}
 
 	for k, v := range other.Tests {

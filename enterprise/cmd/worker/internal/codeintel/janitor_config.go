@@ -3,6 +3,7 @@ package codeintel
 import (
 	"time"
 
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/executorqueue"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 )
 
@@ -20,6 +21,8 @@ type janitorConfig struct {
 	UploadBatchSize                         int
 	CommitBatchSize                         int
 	BranchesCacheMaxKeys                    int
+
+	MetricsConfig *executorqueue.Config
 }
 
 var janitorConfigInst = &janitorConfig{}
@@ -36,4 +39,7 @@ func (c *janitorConfig) Load() {
 	c.UploadBatchSize = c.GetInt("PRECISE_CODE_INTEL_RETENTION_UPLOAD_BATCH_SIZE", "100", "The number of uploads to consider for expiration at a time.")
 	c.CommitBatchSize = c.GetInt("PRECISE_CODE_INTEL_RETENTION_COMMIT_BATCH_SIZE", "100", "The number of commits to process per upload at a time.")
 	c.BranchesCacheMaxKeys = c.GetInt("PRECISE_CODE_INTEL_RETENTION_BRANCHES_CACHE_MAX_KEYS", "10000", "The number of maximum keys used to cache the set of branches visible from a commit.")
+
+	c.MetricsConfig = executorqueue.InitMetricsConfig()
+	c.MetricsConfig.Load()
 }

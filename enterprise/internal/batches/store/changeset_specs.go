@@ -12,6 +12,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/search"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -413,6 +414,45 @@ func listChangesetSpecsQuery(opts *ListChangesetSpecsOpts) *sqlf.Query {
 	)
 }
 
+type ChangesetSpecHeadRefConflict struct {
+	RepoID  api.RepoID
+	HeadRef string
+	Count   int
+}
+
+var listChangesetSpecsWithConflictingHeadQueryFmtstr = `
+-- source: enterprise/internal/batches/store/changeset_specs.go:ListChangesetSpecsWithConflictingHeadRef
+SELECT
+	repo_id, spec->>'headRef', COUNT(*)
+FROM
+	changeset_specs
+WHERE
+	batch_spec_id = %s
+AND
+	spec->>'headRef' IS NOT NULL
+GROUP BY
+	repo_id, spec->>'headRef'
+HAVING COUNT(*) > 1
+`
+
+func (s *Store) ListChangesetSpecsWithConflictingHeadRef(ctx context.Context, batchSpecID int64) (conflicts []ChangesetSpecHeadRefConflict, err error) {
+	ctx, endObservation := s.operations.createChangesetSpec.With(ctx, &err, observation.Args{})
+	defer endObservation(1, observation.Args{})
+
+	q := sqlf.Sprintf(listChangesetSpecsWithConflictingHeadQueryFmtstr, batchSpecID)
+
+	err = s.query(ctx, q, func(sc scanner) error {
+		var c ChangesetSpecHeadRefConflict
+		if err := sc.Scan(&c.RepoID, &c.HeadRef, &c.Count); err != nil {
+			return errors.Wrap(err, "scanning head ref conflict")
+		}
+		conflicts = append(conflicts, c)
+		return nil
+	})
+
+	return conflicts, err
+}
+
 // DeleteExpiredChangesetSpecs deletes each ChangesetSpec that has not been
 // attached to a BatchSpec within ChangesetSpecTTL, OR that is attached
 // to a BatchSpec that is not applied and is not attached to a Changeset
@@ -428,7 +468,7 @@ func (s *Store) DeleteExpiredChangesetSpecs(ctx context.Context) (err error) {
 }
 
 var deleteExpiredChangesetSpecsQueryFmtstr = `
--- source: enterprise/internal/batches/store.go:DeleteExpiredChangesetSpecs
+-- source: enterprise/internal/batches/store/changeset_specs.go:DeleteExpiredChangesetSpecs
 DELETE FROM
   changeset_specs cspecs
 WHERE

@@ -5,6 +5,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
+	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
 )
 
@@ -14,7 +15,7 @@ type batchSpecWorkspaceStepResolver struct {
 	baseRev  string
 	index    int
 	step     batcheslib.Step
-	logLines []batcheslib.LogEvent
+	stepInfo *btypes.StepInfo
 }
 
 func (r *batchSpecWorkspaceStepResolver) Run() string {
@@ -31,38 +32,11 @@ func (r *batchSpecWorkspaceStepResolver) CachedResultFound() bool {
 }
 
 func (r *batchSpecWorkspaceStepResolver) Skipped() bool {
-	for _, l := range r.logLines {
-		if m, ok := l.Metadata.(*batcheslib.TaskSkippingStepsMetadata); ok {
-			if m.StartStep-1 > r.index {
-				return true
-			}
-		}
-		if m, ok := l.Metadata.(*batcheslib.TaskStepSkippedMetadata); ok {
-			if m.Step-1 == r.index {
-				return true
-			}
-		}
-	}
-
-	return false
+	return r.stepInfo.Skipped
 }
 
 func (r *batchSpecWorkspaceStepResolver) OutputLines(ctx context.Context, args *graphqlbackend.BatchSpecWorkspaceStepOutputLinesArgs) (*[]string, error) {
-	lines := []string{}
-	for _, l := range r.logLines {
-		if l.Status != batcheslib.LogEventStatusProgress {
-			continue
-		}
-		if m, ok := l.Metadata.(*batcheslib.TaskStepMetadata); ok {
-			if m.Step-1 != r.index {
-				continue
-			}
-			if m.Out == "" {
-				continue
-			}
-			lines = append(lines, m.Out)
-		}
-	}
+	lines := r.stepInfo.OutputLines
 	if args.After != nil {
 		lines = lines[*args.After:]
 	}
@@ -74,46 +48,25 @@ func (r *batchSpecWorkspaceStepResolver) OutputLines(ctx context.Context, args *
 }
 
 func (r *batchSpecWorkspaceStepResolver) StartedAt() *graphqlbackend.DateTime {
-	for _, l := range r.logLines {
-		if l.Status != batcheslib.LogEventStatusStarted {
-			continue
-		}
-		if m, ok := l.Metadata.(*batcheslib.TaskPreparingStepMetadata); ok {
-			if m.Step-1 == r.index {
-				return &graphqlbackend.DateTime{Time: l.Timestamp}
-			}
-		}
+	if r.stepInfo.StartedAt.IsZero() {
+		return nil
 	}
-	return nil
+	return &graphqlbackend.DateTime{Time: r.stepInfo.StartedAt}
 }
 
 func (r *batchSpecWorkspaceStepResolver) FinishedAt() *graphqlbackend.DateTime {
-	for _, l := range r.logLines {
-		if l.Status != batcheslib.LogEventStatusSuccess && l.Status != batcheslib.LogEventStatusFailure {
-			continue
-		}
-		if m, ok := l.Metadata.(*batcheslib.TaskStepMetadata); ok {
-			if m.Step-1 == r.index {
-				return &graphqlbackend.DateTime{Time: l.Timestamp}
-			}
-		}
+	if r.stepInfo.FinishedAt.IsZero() {
+		return nil
 	}
-	return nil
+	return &graphqlbackend.DateTime{Time: r.stepInfo.FinishedAt}
 }
 
 func (r *batchSpecWorkspaceStepResolver) ExitCode() *int32 {
-	for _, l := range r.logLines {
-		if l.Status != batcheslib.LogEventStatusSuccess && l.Status != batcheslib.LogEventStatusFailure {
-			continue
-		}
-		if m, ok := l.Metadata.(*batcheslib.TaskStepMetadata); ok {
-			if m.Step-1 == r.index {
-				code := int32(m.ExitCode)
-				return &code
-			}
-		}
+	if r.stepInfo.ExitCode == nil {
+		return nil
 	}
-	return nil
+	code := int32(*r.stepInfo.ExitCode)
+	return &code
 }
 
 func (r *batchSpecWorkspaceStepResolver) Environment() ([]graphqlbackend.BatchSpecWorkspaceEnvironmentVariableResolver, error) {
@@ -121,23 +74,11 @@ func (r *batchSpecWorkspaceStepResolver) Environment() ([]graphqlbackend.BatchSp
 	// known at the time when we resolve the workspace. If the step already started, src cli has logged
 	// the final env. Otherwise, we fall back to the preliminary set of env vars as determined by the
 	// resolve workspaces step.
-	found := false
-	var env map[string]string
-	for _, l := range r.logLines {
-		if l.Status != batcheslib.LogEventStatusStarted {
-			continue
-		}
-		if m, ok := l.Metadata.(*batcheslib.TaskStepMetadata); ok {
-			if m.Step-1 == r.index {
-				if m.Env != nil {
-					found = true
-					env = m.Env
-				}
-			}
-		}
-	}
 
-	if !found {
+	var env map[string]string = r.stepInfo.Environment
+
+	// Not yet resolved, do a server-side pass.
+	if env == nil {
 		var err error
 		env, err = r.step.Env.Resolve([]string{})
 		if err != nil {
@@ -153,21 +94,15 @@ func (r *batchSpecWorkspaceStepResolver) Environment() ([]graphqlbackend.BatchSp
 }
 
 func (r *batchSpecWorkspaceStepResolver) OutputVariables() *[]graphqlbackend.BatchSpecWorkspaceOutputVariableResolver {
-	for _, l := range r.logLines {
-		if l.Status != batcheslib.LogEventStatusSuccess {
-			continue
-		}
-		if m, ok := l.Metadata.(*batcheslib.TaskStepMetadata); ok {
-			if m.Step-1 == r.index {
-				resolvers := make([]graphqlbackend.BatchSpecWorkspaceOutputVariableResolver, 0, len(m.Outputs))
-				for k, v := range m.Outputs {
-					resolvers = append(resolvers, &batchSpecWorkspaceOutputVariableResolver{key: k, value: v})
-				}
-				return &resolvers
-			}
-		}
+	if r.stepInfo.OutputVariables == nil {
+		return nil
 	}
-	return nil
+
+	resolvers := make([]graphqlbackend.BatchSpecWorkspaceOutputVariableResolver, 0, len(r.stepInfo.OutputVariables))
+	for k, v := range r.stepInfo.OutputVariables {
+		resolvers = append(resolvers, &batchSpecWorkspaceOutputVariableResolver{key: k, value: v})
+	}
+	return &resolvers
 }
 
 func (r *batchSpecWorkspaceStepResolver) DiffStat(ctx context.Context) (*graphqlbackend.DiffStat, error) {
@@ -186,17 +121,9 @@ func (r *batchSpecWorkspaceStepResolver) DiffStat(ctx context.Context) (*graphql
 }
 
 func (r *batchSpecWorkspaceStepResolver) Diff(ctx context.Context) (graphqlbackend.PreviewRepositoryComparisonResolver, error) {
-	for _, l := range r.logLines {
-		if l.Status != batcheslib.LogEventStatusSuccess {
-			continue
-		}
-		if m, ok := l.Metadata.(*batcheslib.TaskStepMetadata); ok {
-			if m.Step-1 == r.index {
-				return graphqlbackend.NewPreviewRepositoryComparisonResolver(ctx, r.store.DB(), r.repo, r.baseRev, m.Diff)
-			}
-		}
+	if r.stepInfo.Diff != nil {
+		return graphqlbackend.NewPreviewRepositoryComparisonResolver(ctx, r.store.DB(), r.repo, r.baseRev, *r.stepInfo.Diff)
 	}
-
 	return nil, nil
 }
 

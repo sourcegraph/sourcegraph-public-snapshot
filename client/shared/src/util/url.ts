@@ -469,7 +469,10 @@ function findLineInSearchParameters(searchParameters: URLSearchParams): LineOrPo
     return key ? parseLineOrPositionOrRange(key) : undefined
 }
 
-function findLineKeyInSearchParameters(searchParameters: URLSearchParams): string | undefined {
+/**
+ * Finds an existing line range search parameter like "L1-2:3"
+ */
+export function findLineKeyInSearchParameters(searchParameters: URLSearchParams): string | undefined {
     for (const key of searchParameters.keys()) {
         if (key.startsWith('L')) {
             return key

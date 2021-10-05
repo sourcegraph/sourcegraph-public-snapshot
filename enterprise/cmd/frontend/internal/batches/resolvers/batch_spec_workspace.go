@@ -2,7 +2,6 @@ package resolvers
 
 import (
 	"context"
-	"encoding/json"
 	"strings"
 	"sync"
 
@@ -14,7 +13,6 @@ import (
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
-	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
 )
 
 const batchSpecWorkspaceIDKind = "BatchSpecWorkspace"
@@ -78,22 +76,12 @@ func (r *batchSpecWorkspaceResolver) SearchResultPaths() []string {
 }
 
 func (r *batchSpecWorkspaceResolver) Steps(ctx context.Context) ([]graphqlbackend.BatchSpecWorkspaceStepResolver, error) {
-	logLines := []batcheslib.LogEvent{}
+	var stepInfo = make(map[int]*btypes.StepInfo)
 	if r.execution != nil {
 		entry, ok := findExecutionLogEntry(r.execution, "step.src.0")
 		if ok {
-			for _, line := range strings.Split(entry.Out, "\n") {
-				if !strings.HasPrefix(line, "stdout: ") {
-					continue
-				}
-				line = line[len("stdout: "):]
-				var parsed batcheslib.LogEvent
-				err := json.Unmarshal([]byte(line), &parsed)
-				if err != nil {
-					return nil, err
-				}
-				logLines = append(logLines, parsed)
-			}
+			logLines := btypes.ParseJSONLogsFromOutput(entry.Out)
+			stepInfo = btypes.ParseLogLines(logLines)
 		}
 	}
 
@@ -101,9 +89,15 @@ func (r *batchSpecWorkspaceResolver) Steps(ctx context.Context) ([]graphqlbacken
 	if err != nil {
 		return nil, err
 	}
+
 	resolvers := make([]graphqlbackend.BatchSpecWorkspaceStepResolver, 0, len(r.workspace.Steps))
 	for idx, step := range r.workspace.Steps {
-		resolvers = append(resolvers, &batchSpecWorkspaceStepResolver{index: idx, step: step, logLines: logLines, store: r.store, repo: repo, baseRev: r.workspace.Commit})
+		si, ok := stepInfo[idx+1]
+		if !ok {
+			// Step hasn't run yet.
+			si = &btypes.StepInfo{}
+		}
+		resolvers = append(resolvers, &batchSpecWorkspaceStepResolver{index: idx, step: step, stepInfo: si, store: r.store, repo: repo, baseRev: r.workspace.Commit})
 	}
 
 	return resolvers, nil

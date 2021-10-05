@@ -65,12 +65,14 @@ func (e *uploadExpirer) Handle(ctx context.Context) (err error) {
 	// Get the batch of repositories that we'll handle in this invocation of the periodic goroutine. This
 	// set should contain repositories that have yet to be updated, or that have been updated least recently.
 	// This allows us to update every repository reliably, even if it takes a long time to process through
-	// the backlog.
-	lastUpdatedAtByRepository, err := e.dbStore.SelectRepositoriesForRetentionScan(ctx, e.repositoryProcessDelay, e.repositoryBatchSize)
+	// the backlog. Note that this set of repositories require a fresh commit graph, so we're not trying to
+	// process records that have been uploaded but the commits from which they are visible have yet to be
+	// determined (and appearing as if they are visible to no commit).
+	repositories, err := e.dbStore.SelectRepositoriesForRetentionScan(ctx, e.repositoryProcessDelay, e.repositoryBatchSize)
 	if err != nil {
 		return errors.Wrap(err, "dbstore.SelectRepositoriesForRetentionScan")
 	}
-	if len(lastUpdatedAtByRepository) == 0 {
+	if len(repositories) == 0 {
 		// All repositories updated recently enough
 		return nil
 	}
@@ -86,8 +88,8 @@ func (e *uploadExpirer) Handle(ctx context.Context) (err error) {
 
 	now := timeutil.Now()
 
-	for repositoryID, repositoryLastUpdatedAt := range lastUpdatedAtByRepository {
-		if repositoryErr := e.handleRepository(ctx, repositoryID, repositoryLastUpdatedAt, globalPolicies, now); repositoryErr != nil {
+	for _, repositoryID := range repositories {
+		if repositoryErr := e.handleRepository(ctx, repositoryID, globalPolicies, now); repositoryErr != nil {
 			if err == nil {
 				err = repositoryErr
 			} else {
@@ -107,7 +109,6 @@ func (e *uploadExpirer) HandleError(err error) {
 func (e *uploadExpirer) handleRepository(
 	ctx context.Context,
 	repositoryID int,
-	repositoryLastUpdatedAt *time.Time,
 	globalPolicies []dbstore.ConfigurationPolicy,
 	now time.Time,
 ) error {
@@ -173,7 +174,6 @@ func (e *uploadExpirer) handleRepository(
 			OldestFirst:             true,
 			Limit:                   e.uploadBatchSize,
 			LastRetentionScanBefore: &lastRetentionScanBefore,
-			UploadedBefore:          repositoryLastUpdatedAt,
 		})
 		if err != nil || len(uploads) == 0 {
 			return err
