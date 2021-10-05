@@ -18,7 +18,7 @@ type Git struct {
 	ReposDir string // The root directory where repos are stored
 }
 
-// RevParse will run rev-parse on the goven rev
+// RevParse will run rev-parse on the given rev
 func (g *Git) RevParse(ctx context.Context, repo api.RepoName, rev string) (string, error) {
 	cmd := exec.CommandContext(ctx, "git", "rev-parse", rev)
 	cmd.Dir = repoDir(repo, g.ReposDir)
