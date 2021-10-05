@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"os/user"
 	"path/filepath"
 	"sort"
 	"strconv"
@@ -336,22 +337,11 @@ func doRunMigrations(database db.Database, n *int, name string, f func(*migrate.
 // the default, the PG* environment variables are prefixed with the database name. The
 // resulting address depends on the environment.
 func makePostgresDSN(database db.Database) string {
-	var prefix string
-	if database.Name != db.DefaultDatabase.Name {
-		prefix = strings.ToUpper(database.Name) + "_"
+	username := ""
+	if user, err := user.Current(); err == nil {
+		username = user.Username
 	}
-
-	var port string
-	if value := os.Getenv(fmt.Sprintf("%sPGPORT", prefix)); value != "" {
-		port = ":" + value
-	}
-
-	return fmt.Sprintf(
-		"postgres://%s%s/%s",
-		os.Getenv(fmt.Sprintf("%sPGHOST", prefix)),
-		port,
-		os.Getenv(fmt.Sprintf("%sPGDATABASE", prefix)),
-	)
+	return postgresDSN(database.Name, username, os.Getenv)
 }
 
 // ReadFilenamesNamesInDirectory returns a list of names in the given directory.
