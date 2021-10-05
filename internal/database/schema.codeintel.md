@@ -129,8 +129,8 @@ Associates documentation page pathIDs to information about what is at that pathI
 
 # Table "public.lsif_data_documentation_search_private"
 ```
-   Column   |  Type   | Collation | Nullable | Default 
-------------+---------+-----------+----------+---------
+   Column   |  Type   | Collation | Nullable | Default  
+------------+---------+-----------+----------+----------
  dump_id    | integer |           | not null | 
  repo_id    | integer |           | not null | 
  path_id    | text    |           | not null | 
@@ -140,6 +140,7 @@ Associates documentation page pathIDs to information about what is at that pathI
  search_key | text    |           | not null | 
  label      | text    |           | not null | 
  tags       | text    |           | not null | 
+ dump_root  | text    |           | not null | ''::text
 Indexes:
     "lsif_data_documentation_search_private_pkey" PRIMARY KEY, btree (dump_id, path_id)
     "lsif_data_documentation_search_private_label_trgm" gin (label gin_trgm_ops)
@@ -157,6 +158,8 @@ A trigram index over documentation for search (private repos only)
 
 **dump_id**: The identifier of the associated dump in the lsif_uploads table (state=completed).
 
+**dump_root**: Identical to lsif_dumps.root; The working directory of the indexer image relative to the repository root.
+
 **label**: The label string of the result, e.g. a one-line function signature. See protocol/documentation.go:Documentation
 
 **lang**: The lowercase language name (go, java, etc.) OR, if unknown, the LSIF indexer name
@@ -173,8 +176,8 @@ A trigram index over documentation for search (private repos only)
 
 # Table "public.lsif_data_documentation_search_public"
 ```
-   Column   |  Type   | Collation | Nullable | Default 
-------------+---------+-----------+----------+---------
+   Column   |  Type   | Collation | Nullable | Default  
+------------+---------+-----------+----------+----------
  dump_id    | integer |           | not null | 
  repo_id    | integer |           | not null | 
  path_id    | text    |           | not null | 
@@ -184,8 +187,11 @@ A trigram index over documentation for search (private repos only)
  search_key | text    |           | not null | 
  label      | text    |           | not null | 
  tags       | text    |           | not null | 
+ dump_root  | text    |           | not null | ''::text
 Indexes:
     "lsif_data_documentation_search_public_pkey" PRIMARY KEY, btree (dump_id, path_id)
+    "lsif_data_documentation_search_private_dump_root_idx" btree (dump_root)
+    "lsif_data_documentation_search_public_dump_root_idx" btree (dump_root)
     "lsif_data_documentation_search_public_label_trgm" gin (label gin_trgm_ops)
     "lsif_data_documentation_search_public_lang_trgm" gin (lang gin_trgm_ops)
     "lsif_data_documentation_search_public_repo_id_idx" btree (repo_id)
@@ -200,6 +206,8 @@ A trigram index over documentation for search (public repos only)
 **detail**: The detail string (e.g. the full function signature and its docs). See protocol/documentation.go:Documentation
 
 **dump_id**: The identifier of the associated dump in the lsif_uploads table (state=completed).
+
+**dump_root**: Identical to lsif_dumps.root; The working directory of the indexer image relative to the repository root.
 
 **label**: The label string of the result, e.g. a one-line function signature. See protocol/documentation.go:Documentation
 
