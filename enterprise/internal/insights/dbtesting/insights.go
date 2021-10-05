@@ -9,7 +9,7 @@ import (
 	"testing"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/lib/postgresdsn"
 )
 
 // TimescaleDB returns a handle to the Code Insights TimescaleDB instance.
