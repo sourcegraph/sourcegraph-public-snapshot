@@ -112,36 +112,37 @@ func (s *batchSpecWorkspaceExecutionWorkerStore) FetchCanceled(ctx context.Conte
 	return ids, nil
 }
 
-// resetAndDeleteAccessToken tries to delete the associated internal access
+// deleteAccessToken tries to delete the associated internal access
 // token. If the token cannot be found it does *not* return an error.
-func resetAndDeleteAccessToken(ctx context.Context, batchesStore *store.Store, id int64) error {
-	tokenID, err := batchesStore.ResetSpecWorkspaceExecutionJobAccessToken(ctx, id)
-	if err != nil && err != store.ErrNoResults {
-		return err
-	}
-	err = database.AccessTokensWith(batchesStore).HardDeleteByID(ctx, tokenID)
+func deleteAccessToken(ctx context.Context, batchesStore *store.Store, tokenID int64) error {
+	err := database.AccessTokensWith(batchesStore).HardDeleteByID(ctx, tokenID)
 	if err != nil && err != database.ErrAccessTokenNotFound {
 		return err
 	}
 	return nil
 }
 
-func (s *batchSpecWorkspaceExecutionWorkerStore) MarkErrored(ctx context.Context, id int, failureMessage string, options dbworkerstore.MarkFinalOptions) (_ bool, err error) {
+type markFinalMethod func(ctx context.Context, id int, failureMessage string, options dbworkerstore.MarkFinalOptions) (_ bool, err error)
+
+func (s *batchSpecWorkspaceExecutionWorkerStore) deleteAccessTokenAndMarkFinal(ctx context.Context, id int, failureMessage string, options dbworkerstore.MarkFinalOptions, fn markFinalMethod) (bool, error) {
 	batchesStore := store.New(s.Store.Handle().DB(), s.observationContext, nil)
-	err = resetAndDeleteAccessToken(ctx, batchesStore, int64(id))
+	job, err := batchesStore.GetBatchSpecWorkspaceExecutionJob(ctx, store.GetBatchSpecWorkspaceExecutionJobOpts{ID: int64(id)})
 	if err != nil {
 		return false, err
 	}
-	return s.Store.MarkErrored(ctx, id, failureMessage, options)
+	err = deleteAccessToken(ctx, batchesStore, job.AccessTokenID)
+	if err != nil {
+		return false, err
+	}
+	return fn(ctx, id, failureMessage, options)
+}
+
+func (s *batchSpecWorkspaceExecutionWorkerStore) MarkErrored(ctx context.Context, id int, failureMessage string, options dbworkerstore.MarkFinalOptions) (_ bool, err error) {
+	return s.deleteAccessTokenAndMarkFinal(ctx, id, failureMessage, options, s.Store.MarkErrored)
 }
 
 func (s *batchSpecWorkspaceExecutionWorkerStore) MarkFailed(ctx context.Context, id int, failureMessage string, options dbworkerstore.MarkFinalOptions) (_ bool, err error) {
-	batchesStore := store.New(s.Store.Handle().DB(), s.observationContext, nil)
-	err = resetAndDeleteAccessToken(ctx, batchesStore, int64(id))
-	if err != nil {
-		return false, err
-	}
-	return s.Store.MarkFailed(ctx, id, failureMessage, options)
+	return s.deleteAccessTokenAndMarkFinal(ctx, id, failureMessage, options, s.Store.MarkFailed)
 }
 
 func (s *batchSpecWorkspaceExecutionWorkerStore) MarkComplete(ctx context.Context, id int, options dbworkerstore.MarkFinalOptions) (_ bool, err error) {
@@ -159,7 +160,7 @@ func (s *batchSpecWorkspaceExecutionWorkerStore) MarkComplete(ctx context.Contex
 		return s.MarkFailed(ctx, id, fmt.Sprintf("failed to extract changeset IDs ID: %s", err), options)
 	}
 
-	err = resetAndDeleteAccessToken(ctx, tx, int64(id))
+	err = deleteAccessToken(ctx, tx, job.AccessTokenID)
 	if err != nil {
 		// Rollback transaction but ignore rollback errors
 		tx.Done(err)

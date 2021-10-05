@@ -20,7 +20,7 @@ Foreign-key constraints:
     "access_tokens_creator_user_id_fkey" FOREIGN KEY (creator_user_id) REFERENCES users(id)
     "access_tokens_subject_user_id_fkey" FOREIGN KEY (subject_user_id) REFERENCES users(id)
 Referenced by:
-    TABLE "batch_spec_workspace_execution_jobs" CONSTRAINT "batch_spec_workspace_execution_jobs_access_token_id_fkey" FOREIGN KEY (access_token_id) REFERENCES access_tokens(id) ON DELETE CASCADE DEFERRABLE
+    TABLE "batch_spec_workspace_execution_jobs" CONSTRAINT "batch_spec_workspace_execution_jobs_access_token_id_fkey" FOREIGN KEY (access_token_id) REFERENCES access_tokens(id) ON DELETE SET NULL
 
 ```
 
@@ -131,7 +131,7 @@ Indexes:
     "batch_spec_workspace_execution_jobs_cancel" btree (cancel)
 Foreign-key constraints:
     "batch_spec_workspace_execution_job_batch_spec_workspace_id_fkey" FOREIGN KEY (batch_spec_workspace_id) REFERENCES batch_spec_workspaces(id) ON DELETE CASCADE DEFERRABLE
-    "batch_spec_workspace_execution_jobs_access_token_id_fkey" FOREIGN KEY (access_token_id) REFERENCES access_tokens(id) ON DELETE CASCADE DEFERRABLE
+    "batch_spec_workspace_execution_jobs_access_token_id_fkey" FOREIGN KEY (access_token_id) REFERENCES access_tokens(id) ON DELETE SET NULL
 
 ```
 
