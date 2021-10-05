@@ -9,7 +9,7 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/sourcegraph/sourcegraph/cmd/gitserver/domain"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/domain"
 
 	"github.com/aws/aws-sdk-go-v2/feature/s3/manager"
 	"github.com/cockroachdb/errors"

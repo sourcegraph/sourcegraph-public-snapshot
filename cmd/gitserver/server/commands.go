@@ -5,7 +5,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 
-	"github.com/sourcegraph/sourcegraph/cmd/gitserver/domain"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/domain"
 )
 
 func (s *Server) handleGetObject(svc domain.GetObjectService) func(w http.ResponseWriter, r *http.Request) {

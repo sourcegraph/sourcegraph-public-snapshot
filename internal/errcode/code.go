@@ -9,10 +9,10 @@ import (
 	"os"
 	"strings"
 
-	"github.com/sourcegraph/sourcegraph/cmd/gitserver/domain"
-
 	"github.com/cockroachdb/errors"
 	"github.com/gorilla/schema"
+
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/domain"
 )
 
 // HTTP returns the most appropriate HTTP status code that describes

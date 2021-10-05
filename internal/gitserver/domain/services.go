@@ -11,7 +11,6 @@ import (
 )
 
 // TODO: This is our domain package, we don't want it importing anything
-// TODO: This whole package should probably live in internal/gitserver/domain so that cmd/gitserver becomes thinner
 
 // OID is a Git OID (40-char hex-encoded).
 type OID [20]byte

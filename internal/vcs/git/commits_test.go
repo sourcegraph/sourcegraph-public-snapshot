@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/cmd/gitserver/domain"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/domain"
 
 	"github.com/cockroachdb/errors"
 

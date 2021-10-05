@@ -8,7 +8,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/cmd/gitserver/domain"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/domain"
 
 	"golang.org/x/time/rate"
 
