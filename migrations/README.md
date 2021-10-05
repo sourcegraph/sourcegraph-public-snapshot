@@ -138,8 +138,8 @@ If a PR which contains a DB migration was reverted, it may still have been appli
 
 To fix this, you should create a PR to revert the migration from the DB. Say the migration files were:
 
-* `1234_do_something.up.sql`
-* `1234_do_something.down.sql`
+- `1234_do_something.up.sql`
+- `1234_do_something.down.sql`
 
 You should then:
 
