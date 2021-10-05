@@ -422,6 +422,14 @@ func newIndexedSubsetSearchRequest(ctx context.Context, repos []*search.Reposito
 // simpler because we don't have to resolve revisions before sending off (global)
 // requests to Zoekt.
 func zoektGlobalQuery(q zoektquery.Q, repoOptions search.RepoOptions, userPrivateRepos []types.RepoName) (zoektquery.Q, error) {
+	scopeQ, err := zoektGlobalQueryScope(repoOptions, userPrivateRepos)
+	if err != nil {
+		return nil, err
+	}
+	return zoektquery.Simplify(zoektquery.NewAnd(q, scopeQ)), nil
+}
+
+func zoektGlobalQueryScope(repoOptions search.RepoOptions, userPrivateRepos []types.RepoName) (zoektquery.Q, error) {
 	var qs []zoektquery.Q
 
 	// Public or Any
@@ -459,7 +467,7 @@ func zoektGlobalQuery(q zoektquery.Q, repoOptions search.RepoOptions, userPrivat
 		qs = append(qs, zoektquery.NewSingleBranchesRepos("HEAD", ids...))
 	}
 
-	return zoektquery.Simplify(zoektquery.NewAnd(q, zoektquery.NewOr(qs...))), nil
+	return zoektquery.NewOr(qs...), nil
 }
 
 func doZoektSearchGlobal(ctx context.Context, args *search.ZoektParameters, c streaming.Sender) error {
