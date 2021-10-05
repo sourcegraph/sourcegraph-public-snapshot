@@ -46,6 +46,7 @@ func (r *schemaResolver) AddExternalService(ctx context.Context, args *addExtern
 
 	// 🚨 SECURITY: Only site admins may add external services if user mode is disabled.
 	namespaceUserID := int32(0)
+	namespaceOrgID := int32(0)
 	isSiteAdmin := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db) == nil
 	allowUserExternalServices, err := database.Users(r.db).CurrentUserAllowedExternalServices(ctx)
 	if err != nil {
@@ -61,6 +62,8 @@ func (r *schemaResolver) AddExternalService(ctx context.Context, args *addExtern
 		switch relay.UnmarshalKind(*args.Input.Namespace) {
 		case "User":
 			err = relay.UnmarshalSpec(*args.Input.Namespace, &namespaceUserID)
+		case "Org":
+			err = relay.UnmarshalSpec(*args.Input.Namespace, &namespaceOrgID)
 		default:
 			err = errors.Errorf("invalid namespace %q", *args.Input.Namespace)
 		}
@@ -84,6 +87,9 @@ func (r *schemaResolver) AddExternalService(ctx context.Context, args *addExtern
 	}
 	if namespaceUserID > 0 {
 		externalService.NamespaceUserID = namespaceUserID
+	}
+	if namespaceOrgID > 0 {
+		externalService.NamespaceOrgID = namespaceOrgID
 	}
 
 	if err := database.ExternalServices(r.db).Create(ctx, conf.Get, externalService); err != nil {
@@ -126,9 +132,9 @@ func (r *schemaResolver) UpdateExternalService(ctx context.Context, args *update
 	// 🚨 SECURITY: Site admins can only update site level external services.
 	// Otherwise, the current user can only update their own external services.
 	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
-		if es.NamespaceUserID == 0 {
+		if es.NamespaceUserID == 0 || es.NamespaceOrgID == 0 {
 			return nil, err
-		} else if actor.FromContext(ctx).UID != es.NamespaceUserID {
+		} else if es.NamespaceUserID > 0 && actor.FromContext(ctx).UID != es.NamespaceUserID {
 			return nil, errNoAccessExternalService
 		}
 	}
@@ -187,6 +193,7 @@ func syncExternalService(ctx context.Context, svc *types.ExternalService, timeou
 		LastSyncAt:      svc.LastSyncAt,
 		NextSyncAt:      svc.NextSyncAt,
 		NamespaceUserID: svc.NamespaceUserID,
+		NamespaceOrgID:  svc.NamespaceOrgID,
 	})
 
 	// If context error is anything but a deadline exceeded error, we do not want to propagate
@@ -260,7 +267,7 @@ var errNoAccessExternalService = errors.New("the authenticated user does not hav
 //
 // 🚨 SECURITY: Site admins can view external services with no owner, otherwise
 // only the owner of the external service is allowed to access it.
-func checkExternalServiceAccess(ctx context.Context, db dbutil.DB, namespaceUserID int32) error {
+func checkExternalServiceAccess(ctx context.Context, db dbutil.DB, namespaceUserID int32, namespaceOrgID int32) error {
 	// Fast path that doesn't need to hit DB as we can get id from context
 	if a := actor.FromContext(ctx); a.IsAuthenticated() && namespaceUserID == a.UID {
 		return nil
@@ -276,11 +283,14 @@ func checkExternalServiceAccess(ctx context.Context, db dbutil.DB, namespaceUser
 
 func (r *schemaResolver) ExternalServices(ctx context.Context, args *ExternalServicesArgs) (*externalServiceConnectionResolver, error) {
 	var namespaceUserID int32
+	var namespaceOrgID int32
 	if args.Namespace != nil {
 		var err error
 		switch relay.UnmarshalKind(*args.Namespace) {
 		case "User":
 			err = relay.UnmarshalSpec(*args.Namespace, &namespaceUserID)
+		case "Org":
+			err = relay.UnmarshalSpec(*args.Namespace, &namespaceOrgID)
 		default:
 			err = errors.Errorf("invalid namespace %q", *args.Namespace)
 		}
@@ -290,7 +300,9 @@ func (r *schemaResolver) ExternalServices(ctx context.Context, args *ExternalSer
 		}
 	}
 
-	if err := checkExternalServiceAccess(ctx, r.db, namespaceUserID); err != nil {
+	// return nil, errors.Errorf("This is the namespace %q %q %q", namespaceUserID, namespaceOrgID, anotherVar)
+
+	if err := checkExternalServiceAccess(ctx, r.db, namespaceUserID, namespaceOrgID); err != nil {
 		return nil, err
 	}
 
@@ -305,6 +317,7 @@ func (r *schemaResolver) ExternalServices(ctx context.Context, args *ExternalSer
 
 	opt := database.ExternalServicesListOptions{
 		NamespaceUserID: namespaceUserID,
+		NamespaceOrgID:  namespaceOrgID,
 		AfterID:         afterID,
 	}
 	args.ConnectionArgs.Set(&opt.LimitOffset)
