@@ -4,6 +4,7 @@ import (
 	"context"
 	"flag"
 	"fmt"
+	"strings"
 
 	"github.com/cockroachdb/errors"
 	"github.com/peterbourgon/ff/v3/ffcli"
@@ -29,20 +30,20 @@ func teammateExec(ctx context.Context, args []string) error {
 	}
 	switch args[0] {
 	case "time":
-		if len(args) != 2 {
+		if len(args) < 2 {
 			return errors.New("no nickname given")
 		}
-		str, err := slack.QueryUserCurrentTime(ctx, args[1])
+		str, err := slack.QueryUserCurrentTime(ctx, strings.Join(args[1:], " "))
 		if err != nil {
 			return err
 		}
 		out.Writef(str)
 		return nil
 	case "handbook":
-		if len(args) != 2 {
+		if len(args) < 2 {
 			return errors.New("no nickname given")
 		}
-		str, err := slack.QueryUserHandbook(ctx, args[1])
+		str, err := slack.QueryUserHandbook(ctx, strings.Join(args[1:], " "))
 		if err != nil {
 			return err
 		}
