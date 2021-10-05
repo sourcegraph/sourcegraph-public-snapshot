@@ -141,7 +141,7 @@ const symbolToCompletion = (
     detail: `${startCase(kind.toLowerCase())} - ${path} - ${repository}`,
 })
 
-const suggestionToCompletionItem = (
+const suggestionToCompletionItems = (
     suggestion: SearchMatch,
     options: { isFilterValue: boolean; globbing: boolean }
 ): PartialCompletionItem[] => {
@@ -211,7 +211,7 @@ async function completeDefault(
         suggestions: [
             ...staticSuggestions,
             ...(await dynamicSuggestions.pipe(first()).toPromise())
-                .flatMap(suggestion => suggestionToCompletionItem(suggestion, { isFilterValue: false, globbing }))
+                .flatMap(suggestion => suggestionToCompletionItems(suggestion, { isFilterValue: false, globbing }))
                 .filter(isDefined)
                 .map(completionItem => ({
                     ...completionItem,
@@ -273,7 +273,7 @@ async function completeFilter(
         const suggestions = await serverSuggestions.toPromise()
         dynamicSuggestions = suggestions
             .filter(({ type }) => type === resolvedFilter.definition.suggestions)
-            .flatMap(suggestion => suggestionToCompletionItem(suggestion, { isFilterValue: true, globbing }))
+            .flatMap(suggestion => suggestionToCompletionItems(suggestion, { isFilterValue: true, globbing }))
             .filter(isDefined)
             .map((partialCompletionItem, index) => ({
                 ...partialCompletionItem,
