@@ -1457,8 +1457,14 @@ func (s *Server) setLastFetched(ctx context.Context, name api.RepoName) error {
 		return errors.Wrapf(err, "failed to get last fetched for %s", name)
 	}
 
+	lastChanged, err := repoLastChanged(dir)
+	if err != nil {
+		return errors.Wrapf(err, "failed to get last changed for %s", name)
+	}
+
 	return database.GitserverRepos(s.DB).SetLastFetched(ctx, name, database.GitserverFetchData{
 		LastFetched: lastFetched,
+		LastChanged: lastChanged,
 		ShardID:     s.Hostname,
 	})
 }
