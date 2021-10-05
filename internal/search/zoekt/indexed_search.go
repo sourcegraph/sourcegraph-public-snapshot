@@ -222,14 +222,6 @@ func UseOnlyUnindexedSearchRequest(args *search.TextParameters, onMissing OnMiss
 }
 
 func NewIndexedSearchRequest(ctx context.Context, args *search.TextParameters, typ search.IndexedRequestType, onMissing OnMissingRepoRevs) (IndexedSearchRequest, error) {
-	request, onlyUnindexed, err := UseOnlyUnindexedSearchRequest(args, onMissing)
-	if err != nil {
-		return nil, err
-	}
-	if onlyUnindexed {
-		return request, nil
-	}
-
 	q, err := search.QueryToZoektQuery(args.PatternInfo, typ == search.SymbolRequest)
 	if err != nil {
 		return nil, err

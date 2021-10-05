@@ -285,17 +285,18 @@ func TestIndexedSearch(t *testing.T) {
 				Zoekt: zoektArgs.Zoekt,
 			}
 
-			indexed, err := NewIndexedSearchRequest(
-				context.Background(),
-				args,
-				search.TextRequest,
-				MissingRepoRevStatus(streaming.StreamFunc(func(streaming.SearchEvent) {})),
-			)
+			request, onlyUnindexed, err := UseOnlyUnindexedSearchRequest(args, MissingRepoRevStatus(streaming.StreamFunc(func(streaming.SearchEvent) {})))
 			if err != nil {
 				t.Fatal(err)
 			}
+			if !onlyUnindexed {
+				request, err = NewIndexedSearchRequest(context.Background(), args, search.TextRequest, MissingRepoRevStatus(streaming.StreamFunc(func(streaming.SearchEvent) {})))
+				if err != nil {
+					t.Fatal(err)
+				}
+			}
 
-			indexedSubset := indexed.(*IndexedSubsetSearchRequest)
+			indexedSubset := request.(*IndexedSubsetSearchRequest)
 
 			if diff := cmp.Diff(tt.wantUnindexed, indexedSubset.Unindexed, cmpopts.EquateEmpty()); diff != "" {
 				t.Errorf("unindexed mismatch (-want +got):\n%s", diff)
@@ -307,7 +308,7 @@ func TestIndexedSearch(t *testing.T) {
 			// Once we return more than one event we have to account for the proper order of results
 			// in the tests.
 			gotMatches, gotCommon, err := streaming.CollectStream(func(stream streaming.Sender) error {
-				return indexed.Search(tt.args.ctx, stream)
+				return request.Search(tt.args.ctx, stream)
 			})
 			if (err != nil) != tt.wantErr {
 				t.Errorf("zoektSearchHEAD() error = %v, wantErr = %v", err, tt.wantErr)

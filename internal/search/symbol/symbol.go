@@ -58,9 +58,15 @@ func Search(ctx context.Context, args *search.TextParameters, limit int, stream 
 	ctx, stream, cancel := streaming.WithLimit(ctx, stream, limit)
 	defer cancel()
 
-	request, err := zoektutil.NewIndexedSearchRequest(ctx, args, search.SymbolRequest, zoektutil.MissingRepoRevStatus(stream))
+	request, onlyUnindexed, err := zoektutil.UseOnlyUnindexedSearchRequest(args, zoektutil.MissingRepoRevStatus(stream))
 	if err != nil {
 		return err
+	}
+	if !onlyUnindexed {
+		request, err = zoektutil.NewIndexedSearchRequest(ctx, args, search.SymbolRequest, zoektutil.MissingRepoRevStatus(stream))
+		if err != nil {
+			return err
+		}
 	}
 
 	run := parallel.NewRun(conf.SearchSymbolsParallelism())

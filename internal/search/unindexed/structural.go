@@ -70,9 +70,15 @@ func NewRepoFetcher(stream streaming.Sender, args *search.TextParameters) RepoFe
 // allows parameterizing the request to specify a context, for when multiple
 // Get() calls are required with different limits or timeouts.
 func (r *RepoFetcher) Get(ctx context.Context) ([]repoData, error) {
-	request, err := zoektutil.NewIndexedSearchRequest(ctx, r.args, search.TextRequest, r.onMissingRepoRevs)
+	request, onlyUnindexed, err := zoektutil.UseOnlyUnindexedSearchRequest(r.args, r.onMissingRepoRevs)
 	if err != nil {
 		return nil, err
+	}
+	if !onlyUnindexed {
+		request, err = zoektutil.NewIndexedSearchRequest(ctx, r.args, search.TextRequest, r.onMissingRepoRevs)
+		if err != nil {
+			return nil, err
+		}
 	}
 	repoSets := []repoData{UnindexedList(request.UnindexedRepos())} // unindexed included by default
 	if r.mode != search.SearcherOnly {
