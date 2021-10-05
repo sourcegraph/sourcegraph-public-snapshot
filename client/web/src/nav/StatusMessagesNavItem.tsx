@@ -441,20 +441,22 @@ export class StatusMessagesNavItem extends React.PureComponent<Props, State> {
     }
 
     public render(): JSX.Element | null {
-        const { messagesOrError } = this.state
+        const { messagesOrError, isOpen } = this.state
 
-        const messageTypes =
-            typeof messagesOrError === 'string'
-                ? [messagesOrError]
-                : isErrorLike(messagesOrError)
-                ? ['error']
-                : messagesOrError.map(message => message.__typename)
+        if (isOpen) {
+            const messageTypes =
+                typeof messagesOrError === 'string'
+                    ? [messagesOrError]
+                    : isErrorLike(messagesOrError)
+                    ? ['error']
+                    : messagesOrError.map(message => message.type)
 
-        const payload = {
-            status: messageTypes || ['success'],
+            const payload = {
+                status: messageTypes.length === 0 ? ['success'] : messageTypes,
+            }
+
+            eventLogger.log('UserNotificationsOpened', payload, payload)
         }
-
-        eventLogger.log('UserNotificationsOpened', payload, payload)
 
         return (
             <ButtonDropdown
