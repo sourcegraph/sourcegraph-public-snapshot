@@ -79,7 +79,7 @@ func NewConfig(now time.Time) Config {
 	// evaluates what type of pipeline run this is
 	runType := computeRunType(tag, branch)
 
-	// special adjustments based on run type
+	// special tag adjustments based on run type
 	switch {
 	case runType.Is(TaggedRelease):
 		// The Git tag "v1.2.3" should map to the Docker image "1.2.3" (without v prefix).
@@ -87,7 +87,7 @@ func NewConfig(now time.Time) Config {
 	default:
 		tag = fmt.Sprintf("%05d_%s_%.7s", buildNumber, now.Format("2006-01-02"), commit)
 	}
-	if runType.Is(ImagePatch, ImagePatchNoTest) {
+	if runType.Is(ImagePatch, ImagePatchNoTest, ExecutorPatchNoTest) {
 		// Add additional patch suffix
 		tag = tag + "_patch"
 	}
