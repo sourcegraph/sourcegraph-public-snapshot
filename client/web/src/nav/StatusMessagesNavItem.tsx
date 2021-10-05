@@ -119,7 +119,7 @@ const getMessageColor = (entryType: EntryType): string => {
 
 const StatusMessagesNavItemEntry: React.FunctionComponent<StatusMessageEntryProps> = props => {
     const onLinkClick = (event: React.MouseEvent<HTMLAnchorElement, MouseEvent>): void => {
-        const payload = { href: props.linkTo, notificationType: props.entryType }
+        const payload = { notificationType: props.entryType }
         eventLogger.log('UserNotificationsLinkClicked', payload, payload)
         props.linkOnClick(event)
     }
