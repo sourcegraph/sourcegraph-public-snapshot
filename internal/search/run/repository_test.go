@@ -34,8 +34,8 @@ func TestSearchRepositories(t *testing.T) {
 
 	zoekt := &searchbackend.FakeSearcher{}
 
-	unindexed.MockSearchFilesInRepos = func(args *search.TextParameters) (matches []result.Match, common *streaming.Stats, err error) {
-		repoName := args.Repos[0].Repo.Name
+	unindexed.MockSearchFilesInRepos = func() ([]result.Match, *streaming.Stats, error) {
+		repoName := repositories[0].Repo.Name
 		rev := "1a2b3c"
 		switch repoName {
 		case "foo/one":
@@ -128,31 +128,11 @@ func searchRepositoriesBatch(ctx context.Context, args *search.TextParameters, l
 }
 
 func TestRepoShouldBeAdded(t *testing.T) {
-	unindexed.MockSearchFilesInRepos = func(args *search.TextParameters) (matches []result.Match, common *streaming.Stats, err error) {
-		repoName := args.Repos[0].Repo.Name
-		rev := "1a2b3c"
-		switch repoName {
-		case "foo/one":
-			return []result.Match{&result.FileMatch{
-				File: result.File{
-					Repo:     types.RepoName{ID: 123, Name: repoName},
-					InputRev: &rev,
-					Path:     "foo.go",
-				},
-			}}, &streaming.Stats{}, nil
-		case "foo/no-match":
-			return nil, &streaming.Stats{}, nil
-		default:
-			return nil, &streaming.Stats{}, errors.New("Unexpected repo")
-		}
-	}
-	defer func() { unindexed.MockSearchFilesInRepos = nil }()
-
 	zoekt := &searchbackend.FakeSearcher{}
 
 	t.Run("repo should be included in results, query has repoHasFile filter", func(t *testing.T) {
 		repo := &search.RepositoryRevisions{Repo: types.RepoName{ID: 123, Name: "foo/one"}, Revs: []search.RevisionSpecifier{{RevSpec: ""}}}
-		unindexed.MockSearchFilesInRepos = func(args *search.TextParameters) (matches []result.Match, common *streaming.Stats, err error) {
+		unindexed.MockSearchFilesInRepos = func() ([]result.Match, *streaming.Stats, error) {
 			rev := "1a2b3c"
 			return []result.Match{&result.FileMatch{
 				File: result.File{
@@ -174,7 +154,7 @@ func TestRepoShouldBeAdded(t *testing.T) {
 
 	t.Run("repo shouldn't be included in results, query has repoHasFile filter ", func(t *testing.T) {
 		repo := &search.RepositoryRevisions{Repo: types.RepoName{Name: "foo/no-match"}, Revs: []search.RevisionSpecifier{{RevSpec: ""}}}
-		unindexed.MockSearchFilesInRepos = func(args *search.TextParameters) (matches []result.Match, common *streaming.Stats, err error) {
+		unindexed.MockSearchFilesInRepos = func() ([]result.Match, *streaming.Stats, error) {
 			return nil, &streaming.Stats{}, nil
 		}
 		pat := &search.TextPatternInfo{Pattern: "", FilePatternsReposMustInclude: []string{"foo"}, IsRegExp: true, FileMatchLimit: 1, PathPatternsAreCaseSensitive: false, PatternMatchesContent: true, PatternMatchesPath: true}
@@ -189,7 +169,7 @@ func TestRepoShouldBeAdded(t *testing.T) {
 
 	t.Run("repo shouldn't be included in results, query has -repoHasFile filter", func(t *testing.T) {
 		repo := &search.RepositoryRevisions{Repo: types.RepoName{ID: 123, Name: "foo/one"}, Revs: []search.RevisionSpecifier{{RevSpec: ""}}}
-		unindexed.MockSearchFilesInRepos = func(args *search.TextParameters) (matches []result.Match, common *streaming.Stats, err error) {
+		unindexed.MockSearchFilesInRepos = func() ([]result.Match, *streaming.Stats, error) {
 			rev := "1a2b3c"
 			return []result.Match{&result.FileMatch{
 				File: result.File{
@@ -211,7 +191,7 @@ func TestRepoShouldBeAdded(t *testing.T) {
 
 	t.Run("repo should be included in results, query has -repoHasFile filter", func(t *testing.T) {
 		repo := &search.RepositoryRevisions{Repo: types.RepoName{Name: "foo/no-match"}, Revs: []search.RevisionSpecifier{{RevSpec: ""}}}
-		unindexed.MockSearchFilesInRepos = func(args *search.TextParameters) (matches []result.Match, common *streaming.Stats, err error) {
+		unindexed.MockSearchFilesInRepos = func() ([]result.Match, *streaming.Stats, error) {
 			return nil, &streaming.Stats{}, nil
 		}
 		pat := &search.TextPatternInfo{Pattern: "", FilePatternsReposMustExclude: []string{"foo"}, IsRegExp: true, FileMatchLimit: 1, PathPatternsAreCaseSensitive: false, PatternMatchesContent: true, PatternMatchesPath: true}
