@@ -33,7 +33,7 @@ func TestDiffSearch(t *testing.T) {
 	require.NoError(t, err)
 	require.True(t, matched)
 
-	expectedHighlights := &MatchedCommit{
+	expectedHighlights := MatchedCommit{
 		Diff: map[int]MatchedFileDiff{
 			1: {
 				MatchedHunks: map[int]MatchedHunk{
