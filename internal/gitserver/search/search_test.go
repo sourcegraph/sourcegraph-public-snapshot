@@ -401,9 +401,9 @@ type queryGenerator struct {
 }
 
 func (queryGenerator) Generate(rand *rand.Rand, size int) reflect.Value {
-	// Set max depth because these query trees can get ridiculously large
-	if size > 4 {
-		size = 4
+	// Set max depth to avoid massive trees
+	if size > 10 {
+		size = 10
 	}
 	return reflect.ValueOf(queryGenerator{generateQuery(rand, size)})
 }
