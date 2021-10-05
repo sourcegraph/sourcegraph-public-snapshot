@@ -5,6 +5,7 @@ import React, { useEffect, useMemo } from 'react'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
 import { useQuery } from '@sourcegraph/shared/src/graphql/apollo'
+import { ErrorMessage } from '@sourcegraph/web/src/components/alerts'
 import { PageHeader } from '@sourcegraph/wildcard'
 
 import { BatchChangesIcon } from '../../../batches/icons'
@@ -63,11 +64,17 @@ export const BatchChangeDetailsPage: React.FunctionComponent<BatchChangeDetailsP
         {
             variables: { namespaceID, batchChange: batchChangeName, createdAfter },
             fetchPolicy: 'cache-and-network',
-            // TODO: Why do we need to poll this every 5 seconds??
-            // pollInterval: 5000,
+            // We continuously poll for changes to the batch change, in case the bulk
+            // operations, diff stats, or changeset stats are updated, or in case someone
+            // applied a new batch spec in the meantime. This isn't the most effective use
+            // of network bandwidth since many of these fields aren't changing and most of
+            // the time there will be no changes at all, but it's also the easiest way to
+            // keep this in sync for now at the cost of a bit of excess network resources.
+            pollInterval: 5000,
         }
     )
 
+    // If we're loading and haven't received any data yet
     if (loading && !data) {
         return (
             <div className="text-center">
@@ -75,7 +82,12 @@ export const BatchChangeDetailsPage: React.FunctionComponent<BatchChangeDetailsP
             </div>
         )
     }
-    if (error || !data || !data.batchChange) {
+    // If we received an error before we had received any data
+    if (error && !data) {
+        throw new Error(error.message)
+    }
+    // If there weren't any errors and we just didn't receive any data
+    if (!data || !data.batchChange) {
         return <HeroPage icon={AlertCircleIcon} title="Batch change not found" />
     }
 
@@ -84,6 +96,13 @@ export const BatchChangeDetailsPage: React.FunctionComponent<BatchChangeDetailsP
     return (
         <>
             <PageTitle title={batchChange.name} />
+            {/* If we received an error after we already had data, we keep the
+                data on the page but also surface the error with an alert. */}
+            {error && (
+                <div className="alert alert-danger">
+                    <ErrorMessage error={error.message} />
+                </div>
+            )}
             <PageHeader
                 path={[
                     {
