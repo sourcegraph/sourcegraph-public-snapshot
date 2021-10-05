@@ -12,6 +12,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"math"
 	"net/http"
 	"os"
@@ -1451,9 +1452,47 @@ func (s *Server) handleRepoArchive(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if !repoCloned(s.dir(api.RepoName(repo))) {
+	dir := s.dir(api.RepoName(repo))
+	if !repoCloned(dir) {
 		w.WriteHeader(http.StatusNotFound)
+		// return
 	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute*10)
+	defer cancel()
+
+	repoRoot := dir.Root()
+
+	zipFileName := strings.Replace(repoRoot, "/", "", 1)
+	zipFileName = strings.Replace(zipFileName, "/", "-", -1) + ".zip"
+
+	cmd := exec.CommandContext(ctx, "zip", "-r", zipFileName, repoRoot)
+	cmd.Dir = repoRoot
+
+	exitCode, err := runCommand(ctx, cmd)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		log15.Error("handleRepoArchive.runCommand", "exitCode", exitCode, "error", err)
+		return
+	}
+
+	log15.Info("handleRepoArchive", "cmd", cmd)
+	log15.Info("handleRepoArchive", "path", cmd.Path)
+	log15.Info("handleRepoArchive", "dir", cmd.Dir)
+
+	zipFileAbsoluteName := filepath.Join(repoRoot, zipFileName)
+
+	// TODO: This could be a monorepo pain point.
+	data, err := ioutil.ReadFile(zipFileAbsoluteName)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		log15.Error("handleRepoArchive.ioutil.ReadFile", "error", err)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/zip")
+	w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=%q", zipFileAbsoluteName))
+	w.Write(data)
 }
 
 func (s *Server) setLastError(ctx context.Context, name api.RepoName, error string) (err error) {

@@ -37,6 +37,13 @@ func (dir GitDir) Path(elem ...string) string {
 	return filepath.Join(append([]string{string(dir)}, elem...)...)
 }
 
+// Root is a helper which returns the absolute path of the root of the GitDir. So for example, if
+// GitDir is /github.com/sourcegraph/sourcegraph/.git, then Root will return
+// /github.com/sourcegraph/sourcegraph.
+func (dir GitDir) Root() string {
+	return dir.Path("..")
+}
+
 // Set updates cmd so that it will run in dir.
 //
 // Note: GitDir is always a valid GIT_DIR, so we additionally set the
