@@ -260,9 +260,18 @@ WHERE gitserver_repos.last_error IS DISTINCT FROM EXCLUDED.last_error
 	return errors.Wrap(err, "setting last error")
 }
 
+// GitserverFetchData is the metadata associated with a fetch operation on
+// gitserver.
+type GitserverFetchData struct {
+	// LastFetched was the time the fetch operation completed (gitserver_repos.last_fetched).
+	LastFetched time.Time
+	// ShardID is the name of the gitserver the fetch ran on (gitserver.shard_id).
+	ShardID string
+}
+
 // SetLastFetched will attempt to update ONLY the last fetched time of a GitServerRepo.
 // a matching row does not yet exist a new one will be created.
-func (s *GitserverRepoStore) SetLastFetched(ctx context.Context, name api.RepoName, lastFetched time.Time, shardID string) error {
+func (s *GitserverRepoStore) SetLastFetched(ctx context.Context, name api.RepoName, data GitserverFetchData) error {
 	err := s.Exec(ctx, sqlf.Sprintf(`
 -- source: internal/database/gitserver_repos.go:GitserverRepoStore.SetLastFetched
 INSERT INTO gitserver_repos(repo_id, last_fetched, shard_id, updated_at)
@@ -271,7 +280,7 @@ FROM repo WHERE name = %s
 ON CONFLICT (repo_id) DO UPDATE
 SET (last_fetched, shard_id, updated_at) =
     (EXCLUDED.last_fetched, EXCLUDED.shard_id, now())
-`, lastFetched, shardID, name))
+`, data.LastFetched, data.ShardID, name))
 
 	return errors.Wrap(err, "setting last fetched")
 }
