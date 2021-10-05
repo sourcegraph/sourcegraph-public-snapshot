@@ -172,7 +172,6 @@ func NewAnd(operands ...Node) Node {
 // - Or() => Constant(false)
 // - Or(x) => x
 // - Or(x, Or(y, z)) => Or(x, y, z)
-// - Or(x, And(y, z)) => And(Or(x, y), Or(x, z))
 func NewOr(operands ...Node) Node {
 	// An empty Or operator will never match a commit
 	if len(operands) == 0 {
@@ -195,27 +194,6 @@ func NewOr(operands ...Node) Node {
 		}
 	}
 
-	// Distribute a single nested And operand if it exists.
-	// Additional And operands will be distributed in the recursive call.
-	// P ∨ Q ∨ (R ∧ S) <=> (P ∨ Q ∨ R) ∧ (P ∨ Q ∨ S)
-	for i, operand := range flattened {
-		operator, ok := operand.(*Operator)
-		if !ok || operator.Kind != And {
-			continue
-		}
-		andOperator := operator
-
-		siblings := append(flattened[:i], flattened[i+1:]...)
-		newAndOperands := make([]Node, 0, len(andOperator.Operands))
-		for _, andOperand := range andOperator.Operands {
-			newOrOperands := make([]Node, len(siblings)+1)
-			copy(newOrOperands, append(siblings, andOperand))
-			newAndOperands = append(newAndOperands, NewOr(newOrOperands...))
-		}
-		a := NewAnd(newAndOperands...)
-		return a
-	}
-
 	return newOperator(Or, flattened...)
 }
 
@@ -229,28 +207,8 @@ func NewOr(operands ...Node) Node {
 // - Not(Or(x,y)) => And(Not(x), Not(y))
 func NewNot(operand Node) Node {
 	// If an operator, push the negation down to the atom nodes recursively
-	if operator, ok := operand.(*Operator); ok {
-		switch operator.Kind {
-		case Not:
-			// Unwrap double negation
-			return operator.Operands[0]
-		case And:
-			// Apply De Morgan's law to push negation down the tree
-			newOperands := make([]Node, 0, len(operator.Operands))
-			for _, operand := range operator.Operands {
-				newOperands = append(newOperands, NewNot(operand))
-			}
-			return NewOr(newOperands...)
-		case Or:
-			// Apply De Morgan's law to push negation down the tree
-			newOperands := make([]Node, 0, len(operator.Operands))
-			for _, operand := range operator.Operands {
-				newOperands = append(newOperands, NewNot(operand))
-			}
-			return NewAnd(newOperands...)
-		default:
-			panic("unknown operator type")
-		}
+	if operator, ok := operand.(*Operator); ok && operator.Kind == Not {
+		return operator.Operands[0]
 	}
 
 	// If an atom node, just negate it
