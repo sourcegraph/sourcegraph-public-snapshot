@@ -174,7 +174,7 @@ func TestQueryToZoektQuery(t *testing.T) {
 			if err != nil {
 				t.Fatalf("failed to parse %q: %v", tt.Query, err)
 			}
-			got, err := QueryToZoektQuery(tt.Pattern, tt.Type == SymbolRequest)
+			got, err := QueryToZoektQuery(tt.Pattern, tt.Type)
 			if err != nil {
 				t.Fatal("queryToZoektQuery failed:", err)
 			}
